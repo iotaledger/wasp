@@ -17,17 +17,17 @@ import (
 // doesn't parse correctly as a SC request
 func (vmctx *VMContext) RunTheRequest(req *sctransaction.Request, inputIndex int) {
 	vmctx.mustSetUpRequestContext(req, inputIndex)
-	vmctx.mustPreProcessRequest()
 
+	enoughFees := true
+	if !vmctx.isInitChainRequest() {
+		vmctx.mustGetBaseValues()
+		enoughFees = vmctx.mustHandleFees()
+	}
 	defer vmctx.finalizeRequestCall()
 
-	if vmctx.contractRecord == nil {
-		// sc does not exist, stop here
-		vmctx.lastResult = nil
-		vmctx.lastError = fmt.Errorf("smart contract '%s' does not exist", vmctx.req.GetMetadata().TargetContract())
+	if !enoughFees {
 		return
 	}
-
 	// snapshot state baseline for rollback in case of panic
 	snapshotTxBuilder := vmctx.txBuilder.Clone()
 	snapshotStateUpdate := vmctx.stateUpdate.Clone()
@@ -50,10 +50,11 @@ func (vmctx *VMContext) RunTheRequest(req *sctransaction.Request, inputIndex int
 
 	if vmctx.lastError != nil {
 		// treating panic and error returned from request the same way
+		// restore the txbuilder and state back to the moment before calling VM plugin
 		vmctx.txBuilder = snapshotTxBuilder
 		vmctx.stateUpdate = snapshotStateUpdate
 
-		vmctx.mustHandleFallback()
+		vmctx.mustSendBack(vmctx.remainingAfterFees)
 	}
 }
 
@@ -98,33 +99,32 @@ func (vmctx *VMContext) mustSetUpRequestContext(req *sctransaction.Request, inpu
 	}
 }
 
-func (vmctx *VMContext) mustPreProcessRequest() {
-	if vmctx.isInitChainRequest() {
-		return
-	}
-	vmctx.mustGetBaseValues()
-	vmctx.mustHandleFees()
-}
-
-// mustHandleFees:
-// - handles node fee, including fallback if not enough
-func (vmctx *VMContext) mustHandleFees() {
+// mustHandleFees handles node fees. If not enough, takes as much as it can, the rest sends back
+// Return false if not enough fees
+func (vmctx *VMContext) mustHandleFees() bool {
 	totalFee := vmctx.ownerFee + vmctx.validatorFee
-	if totalFee == 0 || vmctx.requesterIsChainOwner() {
+	if totalFee == 0 || vmctx.requesterIsLocal() {
 		// no fees enabled or the caller is the chain owner
 		vmctx.log.Debugf("mustHandleFees: no fees charged")
-		return
+		return true
 	}
 	// handle fees
-	if f, ok := vmctx.remainingAfterFees.Get(vmctx.feeColor); !ok || f < totalFee {
-		// TODO more sophisticated policy, for example taking fees to chain owner, the rest returned to senderAccount
-		// fallback: not enough fees. Accrue everything to the senderAccount (adjusted to core contracts)
-		senderAccount := vmctx.adjustAccount(vmctx.req.SenderAgentID())
-		vmctx.creditToAccount(senderAccount, vmctx.remainingAfterFees)
-		vmctx.lastError = fmt.Errorf("mustHandleFees: not enough fees for request %s. Transfer accrued to %s",
-			vmctx.req.Output().ID().Base58(), senderAccount.String())
+	availableForFees, _ := vmctx.remainingAfterFees.Get(vmctx.feeColor)
+	if availableForFees < totalFee {
+		// take as much as available, the rest send back
+		rem := vmctx.remainingAfterFees.Map()
+		delete(rem, vmctx.feeColor)
+		if availableForFees > 0 {
+			accrue := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
+				vmctx.feeColor: availableForFees,
+			})
+			vmctx.creditToAccount(vmctx.commonAccount(), accrue)
+		}
+		vmctx.mustSendBack(ledgerstate.NewColoredBalances(rem))
+		vmctx.lastError = fmt.Errorf("mustHandleFees: not enough fees for request %s. Tokens sent back to %s",
+			vmctx.req.ID(), vmctx.req.SenderAddress())
 		vmctx.remainingAfterFees = nil
-		return
+		return false
 	}
 	// enough fees. Split between owner and validator
 	if vmctx.ownerFee > 0 {
@@ -149,16 +149,17 @@ func (vmctx *VMContext) mustHandleFees() {
 		delete(remaining, vmctx.feeColor)
 	}
 	vmctx.remainingAfterFees = ledgerstate.NewColoredBalances(remaining)
+	return true
 }
 
-// mustHandleFallback all remaining tokens are:
-// -- if sender is address, sent to that address
-// -- otherwise accrue to the sender on-chain
-func (vmctx *VMContext) mustHandleFallback() {
+func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
+	if tokens == nil || tokens.Size() == 0 {
+		return
+	}
 	sender := vmctx.req.SenderAgentID()
 	if sender.Address().Equals(vmctx.chainID.AsAddress()) {
 		// if sender is on the same chain, just accrue tokens back to it
-		vmctx.creditToAccount(vmctx.adjustAccount(sender), vmctx.remainingAfterFees)
+		vmctx.creditToAccount(vmctx.adjustAccount(sender), tokens)
 		return
 	}
 	// send tokens back
@@ -168,13 +169,9 @@ func (vmctx *VMContext) mustHandleFallback() {
 	backToAddress := sender.Address()
 	backToContract := vmctx.req.GetMetadata().SenderContract()
 	metadata := sctransaction.NewRequestMetadata().WithTarget(backToContract)
-	err := vmctx.txBuilder.AddExtendedOutputSimple(
-		backToAddress,
-		metadata.Bytes(),
-		vmctx.remainingAfterFees.Map(),
-	)
+	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), tokens.Map())
 	if err != nil {
-		vmctx.log.Panicf("mustHandleFallback: transferring tokens to address %s: %v", backToAddress, err)
+		vmctx.log.Errorf("mustSendBack: %v", err)
 	}
 }
 

@@ -100,8 +100,9 @@ func (vmctx *VMContext) callerIsRoot() bool {
 	return caller.Hname() == root.Interface.Hname()
 }
 
-func (vmctx *VMContext) requesterIsChainOwner() bool {
-	return vmctx.chainOwnerID.Equals(vmctx.req.SenderAgentID())
+func (vmctx *VMContext) requesterIsLocal() bool {
+	return vmctx.chainOwnerID.Equals(vmctx.req.SenderAgentID()) ||
+		vmctx.chainID.AsAddress().Equals(vmctx.req.SenderAgentID().Address())
 }
 
 func (vmctx *VMContext) Params() dict.Dict {

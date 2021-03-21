@@ -15,7 +15,7 @@ import (
 
 // AssertAddressBalance asserts the UTXODB address balance of specific color in the address
 func (env *Solo) AssertAddressBalance(addr ledgerstate.Address, col ledgerstate.Color, expected uint64) {
-	require.EqualValues(env.T, expected, env.GetAddressBalance(addr, col))
+	require.EqualValues(env.T, int(expected), int(env.GetAddressBalance(addr, col)))
 }
 
 // CheckChain checks fundamental integrity of the chain
@@ -60,7 +60,7 @@ func (ch *Chain) CheckAccountLedger() {
 	accs := ch.GetAccounts()
 	sum := make(map[ledgerstate.Color]uint64)
 	for _, acc := range accs {
-		bals := ch.GetAccountBalance(acc)
+		bals := ch.GetAccountBalance(&acc)
 		bals.ForEach(func(col ledgerstate.Color, bal uint64) bool {
 			s, _ := sum[col]
 			sum[col] = s + bal
@@ -68,15 +68,46 @@ func (ch *Chain) CheckAccountLedger() {
 		})
 	}
 	require.True(ch.Env.T, coretypes.EqualColoredBalances(total, ledgerstate.NewColoredBalances(sum)))
+	coreacc := coretypes.NewAgentID(ch.ChainID.AsAddress(), root.Interface.Hname())
+	require.Zero(ch.Env.T, ch.GetAccountBalance(coreacc).Size())
+	coreacc = coretypes.NewAgentID(ch.ChainID.AsAddress(), blob.Interface.Hname())
+	require.Zero(ch.Env.T, ch.GetAccountBalance(coreacc).Size())
+	coreacc = coretypes.NewAgentID(ch.ChainID.AsAddress(), accounts.Interface.Hname())
+	require.Zero(ch.Env.T, ch.GetAccountBalance(coreacc).Size())
+	coreacc = coretypes.NewAgentID(ch.ChainID.AsAddress(), eventlog.Interface.Hname())
+	require.Zero(ch.Env.T, ch.GetAccountBalance(coreacc).Size())
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertAccountBalance(agentID coretypes.AgentID, col ledgerstate.Color, bal uint64) {
+func (ch *Chain) AssertAccountBalance(agentID *coretypes.AgentID, col ledgerstate.Color, bal uint64) {
 	bals := ch.GetAccountBalance(agentID)
 	b, _ := bals.Get(col)
 	require.EqualValues(ch.Env.T, bal, b)
 }
 
-func (ch *Chain) AssertIotas(agentID coretypes.AgentID, bal uint64) {
+func (ch *Chain) AssertIotas(agentID *coretypes.AgentID, bal uint64) {
 	ch.AssertAccountBalance(agentID, ledgerstate.ColorIOTA, bal)
+}
+
+// AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
+func (ch *Chain) AssertOwnersBalance(col ledgerstate.Color, bal uint64) {
+	bals := ch.GetOwnersBalance()
+	b, _ := bals.Get(col)
+	require.EqualValues(ch.Env.T, int(bal), int(b))
+}
+
+func (ch *Chain) AssertOwnersIotas(bal uint64) {
+	require.EqualValues(ch.Env.T, int(bal), int(ch.GetOwnersIotas()))
+}
+
+// AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
+func (ch *Chain) AssertTotalAssets(col ledgerstate.Color, bal uint64) {
+	bals := ch.GetTotalAssets()
+	b, _ := bals.Get(col)
+	require.EqualValues(ch.Env.T, int(bal), int(b))
+}
+
+func (ch *Chain) AssertTotalIotas(bal uint64) {
+	iotas := ch.GetTotalIotas()
+	require.EqualValues(ch.Env.T, int(bal), int(iotas))
 }

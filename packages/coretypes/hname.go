@@ -23,8 +23,15 @@ const HnameLength = 4
 // FuncInit is a name of the init function for any smart contract
 const FuncInit = "init"
 
-// EntryPointInit is a hashed name of the init function
-var EntryPointInit = Hn(FuncInit)
+// well known hnames
+var (
+	EntryPointInit = Hn(FuncInit)
+	HnameRoot      = Hn("root")
+	HnameAccount   = Hn("accounts")
+	HnameBlob      = Hn("blob")
+	HnameEventlog  = Hn("eventlog")
+	HnameDefault   = Hname(0)
+)
 
 // NewHnameFromBytes constructor, unmarshalling
 func NewHnameFromBytes(data []byte) (ret Hname, err error) {

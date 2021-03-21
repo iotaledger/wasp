@@ -54,10 +54,10 @@ func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
 	caller := ctx.Caller()
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetAgentID := params.MustGetAgentID(ParamAgentID, *caller)
-
-	// funds currently are in the common account, they must be moved to the target
-	commonAccount := coretypes.NewAgentID(ctx.ChainID().AsAddress(), 0)
-	succ := MoveBetweenAccounts(state, commonAccount, targetAgentID, ctx.IncomingTransfer())
+	targetAgentID = adjustAccount(ctx, targetAgentID)
+	// funds currently are in the owners account, they must be moved to the target
+	ownersAccount := coretypes.NewAgentID(ctx.ChainID().AsAddress(), 0)
+	succ := MoveBetweenAccounts(state, ownersAccount, targetAgentID, ctx.IncomingTransfer())
 	assert.NewAssert(ctx.Log()).Require(succ, "internal error: failed to deposit to %s", caller.String())
 
 	incoming := ctx.IncomingTransfer()
@@ -76,14 +76,16 @@ func withdraw(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	a.Require(!ctx.Caller().Address().Equals(ctx.ChainID().AsAddress()), "caller can't be from the same chain")
 
-	bals, ok := GetAccountBalances(state, ctx.Caller())
+	account := ctx.Caller()
+	account = adjustAccount(ctx, account)
+	bals, ok := GetAccountBalances(state, account)
 	if !ok {
 		// empty balance, nothing to withdraw
 		return nil, nil
 	}
 	// sending beck to default entry point
 	sendTokens := ledgerstate.NewColoredBalances(bals)
-	a.Require(DebitFromAccount(state, ctx.Caller(), sendTokens),
+	a.Require(DebitFromAccount(state, account, sendTokens),
 		"accounts.withdraw.inconsistency. failed to remove tokens from the chain")
 
 	a.Require(ctx.Send(ctx.Caller().Address(), sendTokens, &coretypes.SendMetadata{
@@ -92,4 +94,22 @@ func withdraw(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", sendTokens.String())
 	return nil, nil
+}
+
+func adjustAccount(ctx coretypes.Sandbox, agentID *coretypes.AgentID) *coretypes.AgentID {
+	if agentID.Equals(ctx.ChainOwnerID()) {
+		return ownersAccount(ctx)
+	}
+	if !agentID.Address().Equals(ctx.ChainID().AsAddress()) {
+		return agentID
+	}
+	switch agentID.Hname() {
+	case coretypes.HnameRoot, coretypes.HnameAccount, coretypes.HnameBlob, coretypes.HnameEventlog:
+		return ownersAccount(ctx)
+	}
+	return agentID
+}
+
+func ownersAccount(ctx coretypes.Sandbox) *coretypes.AgentID {
+	return coretypes.NewAgentID(ctx.ChainID().AsAddress(), 0)
 }

@@ -112,7 +112,7 @@ func debitFromAccount(state kv.KVStore, account *collections.Map, transfer *ledg
 }
 
 func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *coretypes.AgentID, transfer *ledgerstate.ColoredBalances) bool {
-	if fromAgentID == toAgentID {
+	if fromAgentID.Equals(toAgentID) {
 		// no need to move
 		return true
 	}

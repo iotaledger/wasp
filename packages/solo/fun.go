@@ -41,7 +41,7 @@ func (ch *Chain) DumpAccounts() string {
 	acc := ch.GetAccounts()
 	for _, aid := range acc {
 		ret += fmt.Sprintf("  %s:\n", aid.String())
-		bals := ch.GetAccountBalance(aid)
+		bals := ch.GetAccountBalance(&aid)
 		bals.ForEach(func(col ledgerstate.Color, bal uint64) bool {
 			ret += fmt.Sprintf("       %s: %d\n", col, bal)
 			return true
@@ -100,7 +100,9 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 	require.EqualValues(ch.Env.T, feeColor, ledgerstate.ColorIOTA)
 	totalFee := ownerFee + validatorFee
 	if totalFee > 0 {
-		req.WithTransfer(ledgerstate.ColorIOTA, totalFee)
+		req.WithIotas(totalFee)
+	} else {
+		req.WithIotas(1)
 	}
 	res, err := ch.PostRequestSync(req, keyPair)
 	if err != nil {
@@ -135,6 +137,7 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, 
 	// The call returns map of keys/value pairs which were replaced by hashes. These data must be uploaded
 	// separately
 	req, toUpload := NewCallParamsOptimized(blob.Interface.Name, blob.FuncStoreBlob, optimalSize, params...)
+	req.WithIotas(1)
 	// the too big data we first upload into the blobCache
 	for _, v := range toUpload {
 		ch.Env.PutBlobDataIntoRegistry(v)
@@ -227,7 +230,7 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 func (ch *Chain) DeployContract(keyPair *ed25519.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
 	par := []interface{}{root.ParamProgramHash, programHash, root.ParamName, name}
 	par = append(par, params...)
-	req := NewCallParams(root.Interface.Name, root.FuncDeployContract, par...)
+	req := NewCallParams(root.Interface.Name, root.FuncDeployContract, par...).WithIotas(1)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -311,10 +314,19 @@ func (ch *Chain) getAccountBalance(d dict.Dict, err error) *ledgerstate.ColoredB
 
 // GetAccountBalance return all balances of colored tokens contained in the on-chain
 // account controlled by the 'agentID'
-func (ch *Chain) GetAccountBalance(agentID coretypes.AgentID) *ledgerstate.ColoredBalances {
+func (ch *Chain) GetAccountBalance(agentID *coretypes.AgentID) *ledgerstate.ColoredBalances {
 	return ch.getAccountBalance(
 		ch.CallView(accounts.Interface.Name, accounts.FuncBalance, accounts.ParamAgentID, agentID),
 	)
+}
+
+func (ch *Chain) GetOwnersBalance() *ledgerstate.ColoredBalances {
+	return ch.GetAccountBalance(ch.OwnersAccount())
+}
+
+func (ch *Chain) GetOwnersIotas() uint64 {
+	ret, _ := ch.GetAccountBalance(ch.OwnersAccount()).Get(ledgerstate.ColorIOTA)
+	return ret
 }
 
 // GetTotalAssets return total sum of colored tokens contained in the on-chain accounts
@@ -322,6 +334,12 @@ func (ch *Chain) GetTotalAssets() *ledgerstate.ColoredBalances {
 	return ch.getAccountBalance(
 		ch.CallView(accounts.Interface.Name, accounts.FuncTotalAssets),
 	)
+}
+
+// GetTotalIotas return total sum of iotas
+func (ch *Chain) GetTotalIotas() uint64 {
+	ret, _ := ch.GetTotalAssets().Get(ledgerstate.ColorIOTA)
+	return ret
 }
 
 // GetFeeInfo returns the fee info for the specific chain and smart contract
@@ -399,4 +417,8 @@ func (ch *Chain) GetEventLogNumRecords(name string) int {
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 	return int(ret)
+}
+
+func (ch *Chain) OwnersAccount() *coretypes.AgentID {
+	return coretypes.NewAgentID(ch.ChainID.AsAddress(), 0)
 }

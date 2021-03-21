@@ -3,7 +3,10 @@ package vmcontext
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
@@ -100,4 +103,32 @@ func (vmctx *VMContext) EventPublisher() vm.ContractEventPublisher {
 
 func (vmctx *VMContext) RequestID() ledgerstate.OutputID {
 	return vmctx.req.Output().ID()
+}
+
+const maxParamSize = 512
+
+func (vmctx *VMContext) Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *coretypes.SendMetadata, options ...coretypes.SendOptions) bool {
+	data := sctransaction.NewRequestMetadata()
+	if metadata != nil {
+		var args requestargs.RequestArgs
+		if metadata.Args != nil && len(metadata.Args) > 0 {
+			var opt map[kv.Key][]byte
+			args, opt = requestargs.NewOptimizedRequestArgs(metadata.Args, maxParamSize)
+			if len(opt) > 0 {
+				// some parameters  too big
+				vmctx.log.Errorf("Send: too big data in parameters")
+				return false
+			}
+		}
+		data.WithTarget(metadata.TargetContract).
+			WithSender(vmctx.CurrentContractHname()).
+			WithEntryPoint(metadata.EntryPoint).
+			WithArgs(args)
+	}
+	err := vmctx.txBuilder.AddExtendedOutputSpend(target, data.Bytes(), tokens.Map())
+	if err != nil {
+		vmctx.log.Errorf("Send: %v", err)
+		return false
+	}
+	return true
 }

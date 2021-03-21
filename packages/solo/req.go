@@ -133,7 +133,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 		Bytes()
 
 	txb := utxoutil.NewBuilder(allOuts...)
-	err := txb.AddExtendedOutputSimple(ch.ChainID.AsAddress(), metadata, req.transfer.Map())
+	err := txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), metadata, req.transfer.Map())
 	require.NoError(ch.Env.T, err)
 
 	err = txb.AddReminderOutputIfNeeded(addr, nil, true)

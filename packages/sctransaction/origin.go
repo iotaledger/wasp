@@ -67,7 +67,7 @@ func NewRootInitRequestTransaction(
 		WithEntryPoint(coretypes.EntryPointInit).
 		WithArgs(args).
 		Bytes()
-	err := txb.AddExtendedOutputSimple(chainID.AsAddress(), metadata, map[ledgerstate.Color]uint64{
+	err := txb.AddExtendedOutputConsume(chainID.AsAddress(), metadata, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 1,
 	})
 	if err != nil {

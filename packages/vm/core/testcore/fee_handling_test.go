@@ -19,7 +19,7 @@ func TestInit(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 1)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 1)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-2)
 
 	checkFees(chain, blob.Interface.Name, 0, 0)
@@ -39,7 +39,7 @@ func TestBase(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-3)
 
 	checkFees(chain, blob.Interface.Name, 1, 0)
@@ -56,7 +56,7 @@ func TestFeeIsEnough1(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-3)
 
 	checkFees(chain, blob.Interface.Name, 1, 0)
@@ -67,7 +67,7 @@ func TestFeeIsEnough1(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 3)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 3)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-5)
 }
 
@@ -82,7 +82,7 @@ func TestFeeIsEnough2(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 2)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-3)
 
 	checkFees(chain, blob.Interface.Name, 2, 0)
@@ -95,9 +95,9 @@ func TestFeeIsEnough2(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, ledgerstate.ColorIOTA, 4)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 4)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-3)
 
-	chain.AssertAccountBalance(*userAgentID, ledgerstate.ColorIOTA, 1)
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 1)
 	env.AssertAddressBalance(userAddr, ledgerstate.ColorIOTA, solo.Saldo-3)
 }

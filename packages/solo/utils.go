@@ -28,6 +28,6 @@ func (ch *Chain) RevokeDeployPermission(keyPair *ed25519.KeyPair, deployerAgentI
 	return err
 }
 
-func (ch *Chain) ContractAgentID(name string) coretypes.AgentID {
-	return *coretypes.NewAgentID(ch.ChainID.AsAddress(), coretypes.Hn(name))
+func (ch *Chain) ContractAgentID(name string) *coretypes.AgentID {
+	return coretypes.NewAgentID(ch.ChainID.AsAddress(), coretypes.Hn(name))
 }

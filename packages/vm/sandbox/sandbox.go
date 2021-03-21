@@ -99,7 +99,7 @@ func (s *sandbox) GetEntropy() hashing.HashValue {
 }
 
 func (s *sandbox) Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *coretypes.SendMetadata, options ...coretypes.SendOptions) bool {
-	panic("SendTransfer: not implemented")
+	return s.vmctx.Send(target, tokens, metadata, options...)
 }
 
 func (s *sandbox) Log() coretypes.LogInterface {
