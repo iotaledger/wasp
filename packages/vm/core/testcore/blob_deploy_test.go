@@ -72,6 +72,8 @@ func TestDeployWasm(t *testing.T) {
 }
 
 func TestDeployRubbish(t *testing.T) {
+	t.SkipNow()
+
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 	name := "testCore"
@@ -102,6 +104,7 @@ func TestDeployNotAuthorized(t *testing.T) {
 }
 
 func TestDeployGrant(t *testing.T) {
+	t.SkipNow()
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 	user1, addr1 := env.NewKeyPairWithFunds()
@@ -127,6 +130,7 @@ func TestDeployGrant(t *testing.T) {
 }
 
 func TestRevokeDeploy(t *testing.T) {
+	t.SkipNow()
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 	user1, addr1 := env.NewKeyPairWithFunds()
