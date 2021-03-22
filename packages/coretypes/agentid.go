@@ -161,3 +161,7 @@ func (a *AgentID) Read(r io.Reader) error {
 	}
 	return nil
 }
+
+func (a *AgentID) IsNil() bool {
+	return a.Equals(&NilAgentID)
+}

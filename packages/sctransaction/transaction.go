@@ -73,17 +73,20 @@ func (tx *ParsedTransaction) Requests() []*Request {
 type Request struct {
 	output          *ledgerstate.ExtendedLockedOutput
 	senderAddress   ledgerstate.Address
-	minted          uint64
+	minted          map[ledgerstate.Color]uint64
 	requestMetadata RequestMetadata
 	solidArgs       dict.Dict
 }
 
 // RequestDataFromOutput
-func RequestFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...uint64) *Request {
+func RequestFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...map[ledgerstate.Color]uint64) *Request {
 	ret := &Request{output: output, senderAddress: senderAddr}
 	ret.requestMetadata = *RequestMetadataFromBytes(output.GetPayload())
+	ret.minted = make(map[ledgerstate.Color]uint64, 0)
 	if len(minted) > 0 {
-		ret.minted = minted[0]
+		for k, v := range minted[0] {
+			ret.minted[k] = v
+		}
 	}
 	return ret
 }
@@ -116,7 +119,7 @@ func (req *Request) MintColor() ledgerstate.Color {
 	return blake2b.Sum256(req.Output().ID().Bytes())
 }
 
-func (req *Request) MintedAmount() uint64 {
+func (req *Request) MintedAmounts() map[ledgerstate.Color]uint64 {
 	return req.minted
 }
 

@@ -90,7 +90,7 @@ func (r *CallParams) WithIotas(amount uint64) *CallParams {
 	return r.WithTransfer(ledgerstate.ColorIOTA, amount)
 }
 
-func (r *CallParams) WithMint(mint uint64) *CallParams {
+func (r *CallParams) WithMint(targetAddress ledgerstate.Address, mint uint64) *CallParams {
 	r.mint = mint
 	return r
 }

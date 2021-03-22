@@ -21,7 +21,7 @@ func TestNoContractPost(t *testing.T) {
 
 	req := solo.NewCallParams("dummyContract", "dummyEP").WithIotas(2)
 	_, err := chain.PostRequestSync(req, nil)
-	require.Error(t, err)
+	require.NoError(t, err)
 }
 
 func TestNoContractView(t *testing.T) {

@@ -85,8 +85,10 @@ func withdraw(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}
 	// sending beck to default entry point
 	sendTokens := ledgerstate.NewColoredBalances(bals)
-	a.Require(DebitFromAccount(state, account, sendTokens),
-		"accounts.withdraw.inconsistency. failed to remove tokens from the chain")
+
+	// bring balances to the current account  (owner's account)
+	a.Require(MoveBetweenAccounts(state, account, ownersAccount(ctx), sendTokens),
+		"accounts.withdraw.inconsistency. failed to move tokens to owner's account")
 
 	a.Require(ctx.Send(ctx.Caller().Address(), sendTokens, &coretypes.SendMetadata{
 		TargetContract: ctx.Caller().Hname(),

@@ -13,7 +13,7 @@ func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof(FuncWithdrawToChain)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetChain := params.MustGetChainID(ParamChainID)
-	succ := ctx.Send(targetChain.AsAddress(), coretypes.NewTransferIotas(2), &coretypes.SendMetadata{
+	succ := ctx.Send(targetChain.AsAddress(), coretypes.NewTransferIotas(1), &coretypes.SendMetadata{
 		TargetContract: accounts.Interface.Hname(),
 		EntryPoint:     coretypes.Hn(accounts.FuncWithdraw),
 		Args:           nil,

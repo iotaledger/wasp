@@ -24,7 +24,7 @@ func testMainCallsFromFullEP(t *testing.T, w bool) {
 		sbtestsc.ParamCaller, userAgentID,
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
 		sbtestsc.ParamContractCreator, userAgentID,
-	)
+	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, user)
 	require.NoError(t, err)
 }
@@ -71,7 +71,7 @@ func testMintedSupplyOk(t *testing.T, w bool) {
 	if w {
 		extraIota = 1
 	}
-	chain.Env.AssertAddressIotas(userAddress, solo.Saldo-3-extraIota-newSupply)
+	chain.Env.AssertAddressIotas(userAddress, solo.Saldo-2-extraIota-newSupply)
 	chain.Env.AssertAddressBalance(userAddress, color, newSupply)
 
 	supplyBack, ok, err := codec.DecodeUint64(ret.MustGet(sbtestsc.VarMintedSupply))

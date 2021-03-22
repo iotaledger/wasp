@@ -212,7 +212,7 @@ func testChainLogMultiple(t *testing.T, w bool) {
 	req = solo.NewCallParams(sbtestsc.Interface.Name,
 		sbtestsc.FuncEventLogGenericData,
 		sbtestsc.VarCounter, 33333,
-	)
+	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 

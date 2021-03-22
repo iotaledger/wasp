@@ -281,7 +281,8 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]*sc
 		if !ok {
 			lst = make([]*sctransaction.Request, 0)
 		}
-		ret[arr] = append(lst, sctransaction.RequestFromOutput(o, sender))
+
+		ret[arr] = append(lst, sctransaction.RequestFromOutput(o, sender, utxoutil.GetMintedAmounts(tx)))
 	}
 	return ret
 }
@@ -326,12 +327,12 @@ func (ch *Chain) addToBacklog(r *sctransaction.Request) {
 	defer ch.backlogMutex.Unlock()
 	ch.backlog = append(ch.backlog, r)
 	tl := r.Output().TimeLock()
+	idStr := coretypes.RequestID(r.Output().ID()).String()
 	if tl == 0 {
-		ch.Log.Infof("added to backlog: %s len: %d", r.Output().ID().String(), len(ch.backlog))
+		ch.Log.Infof("added to backlog: %s len: %d", idStr, len(ch.backlog))
 	} else {
 		tlTime := time.Unix(int64(tl), 0)
-		ch.Log.Infof("added to backlog: %s. Time locked for: %v",
-			r.Output().ID().String(), tlTime.Sub(ch.Env.LogicalTime()))
+		ch.Log.Infof("added to backlog: %s. Time locked for: %v", idStr, tlTime.Sub(ch.Env.LogicalTime()))
 	}
 }
 

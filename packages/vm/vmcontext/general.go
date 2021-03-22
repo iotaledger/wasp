@@ -35,8 +35,8 @@ func (vmctx *VMContext) MyAgentID() *coretypes.AgentID {
 	return coretypes.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
 }
 
-func (vmctx *VMContext) CommonAgentID() *coretypes.AgentID {
-	return coretypes.NewAgentID(vmctx.ChainID().AsAddress(), 0)
+func (vmctx *VMContext) Minted() map[ledgerstate.Color]uint64 {
+	return vmctx.req.MintedAmounts()
 }
 
 func (vmctx *VMContext) IsRequestContext() bool {
@@ -129,7 +129,8 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens *ledgerstate.Col
 			WithEntryPoint(metadata.EntryPoint).
 			WithArgs(args)
 	}
-	if !vmctx.debitFromAccount(vmctx.MyAgentID(), tokens) {
+	sourceAccount := vmctx.adjustAccount(vmctx.MyAgentID())
+	if !vmctx.debitFromAccount(sourceAccount, tokens) {
 		return false
 	}
 	err := vmctx.txBuilder.AddExtendedOutputSpend(target, data.Bytes(), tokens.Map())

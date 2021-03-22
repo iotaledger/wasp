@@ -6,6 +6,7 @@ package solo
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -33,26 +34,33 @@ func (ch *Chain) CheckChain() {
 	emptyRootRecord := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
 	require.EqualValues(ch.Env.T, root.EncodeContractRecord(emptyRootRecord), root.EncodeContractRecord(rootRec))
 
+	defaultRec, err := ch.FindContract(_default.Interface.Name)
+	require.NoError(ch.Env.T, err)
+	require.EqualValues(ch.Env.T, _default.Interface.Name, defaultRec.Name)
+	require.EqualValues(ch.Env.T, _default.Interface.Description, defaultRec.Description)
+	require.EqualValues(ch.Env.T, _default.Interface.ProgramHash, defaultRec.ProgramHash)
+	require.True(ch.Env.T, defaultRec.Creator.IsNil())
+
 	accountsRec, err := ch.FindContract(accounts.Interface.Name)
 	require.NoError(ch.Env.T, err)
 	require.EqualValues(ch.Env.T, accounts.Interface.Name, accountsRec.Name)
 	require.EqualValues(ch.Env.T, accounts.Interface.Description, accountsRec.Description)
 	require.EqualValues(ch.Env.T, accounts.Interface.ProgramHash, accountsRec.ProgramHash)
-	require.EqualValues(ch.Env.T, ch.OriginatorAgentID, accountsRec.Creator)
+	require.True(ch.Env.T, accountsRec.Creator.IsNil())
 
 	blobRec, err := ch.FindContract(blob.Interface.Name)
 	require.NoError(ch.Env.T, err)
 	require.EqualValues(ch.Env.T, blob.Interface.Name, blobRec.Name)
 	require.EqualValues(ch.Env.T, blob.Interface.Description, blobRec.Description)
 	require.EqualValues(ch.Env.T, blob.Interface.ProgramHash, blobRec.ProgramHash)
-	require.EqualValues(ch.Env.T, ch.OriginatorAgentID, blobRec.Creator)
+	require.True(ch.Env.T, blobRec.Creator.IsNil())
 
 	chainlogRec, err := ch.FindContract(eventlog.Interface.Name)
 	require.NoError(ch.Env.T, err)
 	require.EqualValues(ch.Env.T, eventlog.Interface.Name, chainlogRec.Name)
 	require.EqualValues(ch.Env.T, eventlog.Interface.Description, chainlogRec.Description)
 	require.EqualValues(ch.Env.T, eventlog.Interface.ProgramHash, chainlogRec.ProgramHash)
-	require.EqualValues(ch.Env.T, ch.OriginatorAgentID, chainlogRec.Creator)
+	require.True(ch.Env.T, chainlogRec.Creator.IsNil())
 
 	ch.CheckAccountLedger()
 }

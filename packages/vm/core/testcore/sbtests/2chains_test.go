@@ -3,6 +3,7 @@ package sbtests
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
@@ -11,6 +12,8 @@ import (
 
 func Test2Chains(t *testing.T) { run2(t, test2Chains) }
 func test2Chains(t *testing.T, w bool) {
+	core.PrintWellKnownHnames()
+
 	env := solo.New(t, false, false)
 	chain1 := env.NewChain(nil, "ch1")
 	chain2 := env.NewChain(nil, "ch2")
@@ -24,10 +27,14 @@ func test2Chains(t *testing.T, w bool) {
 	userAgentID := coretypes.NewAgentID(userAddress, 0)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
-	chain1.AssertIotas(contractAgentID1, 0)
+	chain1.AssertIotas(contractAgentID1, 1)
 	chain1.AssertIotas(contractAgentID2, 0)
+	chain1.AssertOwnersIotas(2)
+	chain1.AssertTotalIotas(3)
 	chain2.AssertIotas(contractAgentID1, 0)
-	chain2.AssertIotas(contractAgentID2, 0)
+	chain2.AssertIotas(contractAgentID2, 1)
+	chain2.AssertOwnersIotas(2)
+	chain2.AssertTotalIotas(3)
 
 	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit,
 		accounts.ParamAgentID, contractAgentID2,
@@ -35,25 +42,21 @@ func test2Chains(t *testing.T, w bool) {
 	_, err := chain1.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	accountsAgentID1 := coretypes.NewAgentID(chain1.ChainID.AsAddress(), coretypes.HnameAccounts)
-	accountsAgentID2 := coretypes.NewAgentID(chain2.ChainID.AsAddress(), coretypes.HnameAccounts)
-
-	env.AssertAddressIotas(userAddress, solo.Saldo-43)
-	chain1.AssertIotas(userAgentID, 1)
-	chain2.AssertIotas(userAgentID, 0)
-	chain1.AssertIotas(contractAgentID1, 0)
+	env.AssertAddressIotas(userAddress, solo.Saldo-42)
+	chain1.AssertIotas(userAgentID, 0)
+	chain1.AssertIotas(contractAgentID1, 1)
 	chain1.AssertIotas(contractAgentID2, 42)
+	chain1.AssertOwnersIotas(2)
+	chain1.AssertTotalIotas(45)
+	chain2.AssertIotas(userAgentID, 0)
 	chain2.AssertIotas(contractAgentID1, 0)
-	chain2.AssertIotas(contractAgentID2, 0)
-
-	chain1.AssertIotas(accountsAgentID1, 0)
-	chain1.AssertIotas(accountsAgentID2, 0)
-	chain2.AssertIotas(accountsAgentID1, 0)
-	chain2.AssertIotas(accountsAgentID2, 0)
+	chain2.AssertIotas(contractAgentID2, 1)
+	chain2.AssertOwnersIotas(2)
+	chain2.AssertTotalIotas(3)
 
 	req = solo.NewCallParams(sbtestsc.Name, sbtestsc.FuncWithdrawToChain,
 		sbtestsc.ParamChainID, chain1.ChainID,
-	).WithIotas(3)
+	).WithIotas(1)
 
 	_, err = chain2.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
@@ -61,16 +64,15 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.WaitForEmptyBacklog()
 	chain2.WaitForEmptyBacklog()
 
-	env.AssertAddressIotas(userAddress, solo.Saldo-47)
-	chain1.AssertIotas(userAgentID, 1)
+	env.AssertAddressIotas(userAddress, solo.Saldo-43)
+	chain1.AssertIotas(userAgentID, 0)
+	chain1.AssertIotas(contractAgentID1, 1)
+	chain1.AssertIotas(contractAgentID2, 0)
+	chain1.AssertOwnersIotas(3)
+	chain1.AssertTotalIotas(4)
 	chain2.AssertIotas(userAgentID, 0)
-	chain1.AssertIotas(contractAgentID1, 0)
-	chain1.AssertIotas(contractAgentID2, 42)
 	chain2.AssertIotas(contractAgentID1, 0)
 	chain2.AssertIotas(contractAgentID2, 43)
-
-	chain1.AssertIotas(accountsAgentID1, 0)
-	chain1.AssertIotas(accountsAgentID2, 0)
-	chain2.AssertIotas(accountsAgentID1, 0)
-	chain2.AssertIotas(accountsAgentID2, 0)
+	chain2.AssertOwnersIotas(2)
+	chain2.AssertTotalIotas(45)
 }

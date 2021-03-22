@@ -91,7 +91,7 @@ func (s *sandbox) RequestID() ledgerstate.OutputID {
 
 // Minted
 func (s *sandbox) Minted() map[ledgerstate.Color]uint64 {
-	panic("Minted: implement me")
+	return s.vmctx.Minted()
 }
 
 func (s *sandbox) GetEntropy() hashing.HashValue {
