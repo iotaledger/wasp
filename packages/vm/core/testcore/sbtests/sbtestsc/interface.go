@@ -99,10 +99,10 @@ const (
 
 	//Variables
 	VarCounter              = "counter"
-	VarContractID           = "contractID"
 	VarSandboxCall          = "sandboxCall"
 	VarContractNameDeployed = "exampleDeployTR"
 	VarMintedSupply         = "mintedSupply"
+	VarMintedColor          = "mintedColor"
 
 	// parameters
 	ParamFail            = "initFailParam"

@@ -22,13 +22,14 @@ import (
 )
 
 type CallParams struct {
-	targetName string
-	target     coretypes.Hname
-	epName     string
-	entryPoint coretypes.Hname
-	transfer   *ledgerstate.ColoredBalances
-	mint       uint64
-	args       requestargs.RequestArgs
+	targetName  string
+	target      coretypes.Hname
+	epName      string
+	entryPoint  coretypes.Hname
+	transfer    *ledgerstate.ColoredBalances
+	mintAmount  uint64
+	mintAddress ledgerstate.Address
+	args        requestargs.RequestArgs
 }
 
 func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
@@ -90,8 +91,10 @@ func (r *CallParams) WithIotas(amount uint64) *CallParams {
 	return r.WithTransfer(ledgerstate.ColorIOTA, amount)
 }
 
-func (r *CallParams) WithMint(targetAddress ledgerstate.Address, mint uint64) *CallParams {
-	r.mint = mint
+// WithMint adds additional mint proof
+func (r *CallParams) WithMint(targetAddress ledgerstate.Address, amount uint64) *CallParams {
+	r.mintAddress = targetAddress
+	r.mintAmount = amount
 	return r
 }
 
@@ -142,11 +145,10 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 
 	txb := utxoutil.NewBuilder(allOuts...)
 	var err error
-	if req.mint > 0 {
-		err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), data, req.transfer.Map(), req.mint)
-		require.NoError(ch.Env.T, err)
-	} else {
-		err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), data, req.transfer.Map())
+	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), data, req.transfer.Map())
+	require.NoError(ch.Env.T, err)
+	if req.mintAmount > 0 {
+		err = txb.AddMintingOutputConsume(req.mintAddress, req.mintAmount)
 		require.NoError(ch.Env.T, err)
 	}
 

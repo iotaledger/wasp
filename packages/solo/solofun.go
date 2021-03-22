@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/xerrors"
 )
 
 // NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme
@@ -44,13 +45,10 @@ func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (ledgerstate
 	allOuts := env.utxoDB.GetAddressOutputs(addr)
 
 	txb := utxoutil.NewBuilder(allOuts...)
-	numIotas := DustThresholdIotas
-	if amount > numIotas {
-		numIotas = amount
+	if amount < DustThresholdIotas {
+		return [32]byte{}, xerrors.New("can't mint number of tokens below dust threshold")
 	}
-	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: numIotas}
-
-	if err := txb.AddExtendedOutputConsume(addr, nil, bals, amount); err != nil {
+	if err := txb.AddMintingOutputConsume(addr, amount); err != nil {
 		return [32]byte{}, err
 	}
 	if err := txb.AddReminderOutputIfNeeded(addr, nil, true); err != nil {
