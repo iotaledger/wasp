@@ -47,18 +47,19 @@ Rust, that we will use to showcase the features of WasmLib:
 fn on_load() {
     let exports = ScExports::new();
     exports.add_func("divide", func_divide);
+    exports.add_func("init", func_init);
     exports.add_func("member", func_member);
     exports.add_view("getFactor", view_get_factor);
 }
 ```
 
 As you can see this on_load() function first creates the required ScExports
-context and then proceeds to define two Funcs named `divide` and `member` by
-calling the add_func() method of the ScExports context and then one View named
-`getFactor` by calling its add_view() method. The second parameter to these
-methods is the smart contract function associated with the name specified. These
-methods will also automatically assign unique identifiers and then send it all
-to the host.
+context and then proceeds to define three Funcs named `divide`, `init` and
+`member` by calling the add_func() method of the ScExports context and then one
+View named `getFactor` by calling its add_view() method. The second parameter to
+these methods is the smart contract function associated with the name specified.
+These methods will also automatically assign unique identifiers and then send it
+all to the host.
 
 In its simplest form this is all that is necessary to initialize a smart
 contract. To finalize this example, here is what the skeleton function
@@ -67,6 +68,10 @@ implementations for the above smart contract definition would look like:
 ```rust
 fn func_divide(ctx: &ScFuncContext) {
     ctx.log("Calling dividend.divide");
+}
+
+fn func_init(ctx: &ScFuncContext) {
+    ctx.log("Calling dividend.init");
 }
 
 fn func_member(ctx: &ScFuncContext) {
@@ -79,7 +84,7 @@ fn view_get_factor(ctx: &ScViewContext) {
 ```
 
 As you can see the functions are each provided with a context parameter, which
-is conventionally named _ctx_. Notice that the two Funcs are passed an
+is conventionally named _ctx_. Notice that the three Funcs are passed an
 ScFuncContext, whereas the View is passed an ScViewContext. We're also already
 showcasing an important feature of the contexts: the log() method. This can be
 used to log human-readable text to the host's log output. Logging text is the
@@ -89,7 +94,6 @@ method, called trace(), that can be used to provide extra debug information to
 the host's log output, and which can be selectively turned on and off at the
 host.
 
-In the next section we will go deeper into how function parameters are 
-passed to a smart contract function.
+In the next section we will go deeper into how to initialize a smart contract.
 
-Next: [Function Parameters](Params.md)
+Next: [Smart Contract Initialization](Init.md)

@@ -1,17 +1,63 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// This example implements 'dividend', a simple smart contract that automatically
-// disperses iota tokens which are sent to the contract to a group of member
-// addresses according to predefined division factors. The intent is to showcase
-// basic functionality of WasmLib through a minimal implementation and not
-// to come up with a complete real-world solution.
+// This example implements 'dividend', a simple smart contract that will
+// automatically disperse iota tokens which are sent to the contract to a group
+// of member addresses according to predefined division factors. The intent is
+// to showcase basic functionality of WasmLib through a minimal implementation
+// and not to come up with a complete robust real-world solution.
 
 use wasmlib::*;
 
 use crate::*;
 
-// 'member' is a function that can be used only by the entity that created the
+// 'init' is used as a way to initialize a smart contract. It is an optional
+// function that will automatically be called upon contract deployment. In this
+// case we use it to initialize the 'owner' state variable so that we can later
+// use this information to prevent non-owners from calling certain functions.
+// The 'init' function takes a single optional parameter:
+// - 'owner', which is the agent id of the entity owning the contract.
+// When this parameter is omitted the owner will default to the contract creator.
+pub fn func_init(ctx: &ScFuncContext) {
+
+    // Log the fact that we have initiated the 'init' Func in the host log.
+    ctx.log("dividend.init");
+
+    // First we set up a default value for the owner in case the optional
+    // 'owner' parameter was omitted.
+    let mut owner: ScAgentId = ctx.contract_creator();
+
+    // Now it is time to check if parameters were provided to the function.
+    // We create an ScImmutableMap proxy to the params map on the host.
+    let p: ScImmutableMap = ctx.params();
+
+    // Then we create an ScImmutableAgentId proxy to the 'owner' parameter.
+    let param_owner: ScImmutableAgentId = p.get_agent_id(PARAM_OWNER);
+
+    // Now we check if the 'owner' parameter is present in the params map.
+    if param_owner.exists() {
+        // Yes, it was present, so now we overwrite the default owner with
+        // the one specified by the 'owner' parameter.
+        owner = param_owner.value();
+    }
+
+    // Now that we have sorted out which agent will be the owner of this contract
+    // we will save this value in the state storage on the host. First we create
+    // an ScMutableMap proxy that refers to the state storage map on the host.
+    let state: ScMutableMap = ctx.state();
+
+    // Then we create an ScMutableAgentId proxy to an 'owner' variable in state storage.
+    let state_owner: ScMutableAgentId = state.get_agent_id(VAR_OWNER);
+
+    // And then we save the owner value in the 'owner' variable in state storage.
+    state_owner.set_value(&owner);
+
+    // Finally, we log the fact that we have successfully completed execution
+    // of the 'init' Func in the host log.
+    ctx.log("dividend.init ok");
+}
+
+// 'member' is a function that can be used only by the entity that owns the
 // 'dividend' smart contract. It can be used to define the group of member
 // addresses and dispersal factors one by one prior to sending tokens to the
 // smart contract's 'divide' function. The 'member' function takes 2 parameters,
@@ -27,10 +73,19 @@ pub fn func_member(ctx: &ScFuncContext) {
     // Log the fact that we have initiated the 'member' Func in the host log.
     ctx.log("dividend.member");
 
-    // Only the smart contract creator can add members, so we require that the
-    // caller agent id is equal to the contract creator's agent id. Otherwise
-    // we panic out with an error message.
-    ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+    // The 'init' func previously determined which agent is the owner of this
+    // contract and stored that value in the 'owner' variable in state storage.
+    // So we start out by accessing state storage by creating an ScMutableMap
+    // proxy that refers to the state storage map on the host.
+    let state: ScMutableMap = ctx.state();
+
+    // Next we create an ScMutableAgentId proxy to the 'owner' variable in state storage.
+    let owner: ScMutableAgentId = state.get_agent_id(VAR_OWNER);
+
+    // Only the defined smart contract owner can add members, so we require
+    // that the caller's agent id is equal to the stored owner's agent id.
+    // Otherwise we panic out with an error message.
+    ctx.require(ctx.caller() == owner.value(), "no permission");
 
     // Now it is time to check the parameters that were provided to the function.
     // First we create an ScImmutableMap proxy to the params map on the host.
@@ -73,11 +128,6 @@ pub fn func_member(ctx: &ScFuncContext) {
     if factor < 0 {
         ctx.panic("negative factor");
     }
-
-    // Now that we have sorted out the parameters we will start using the state
-    // storage on the host. First we create an ScMutableMap proxy that refers to
-    // the state storage map on the host.
-    let state: ScMutableMap = ctx.state();
 
     // We will store the address/factor combinations in a key/value sub-map inside
     // the state map. We tell the state map proxy to create an ScMutableMap proxy

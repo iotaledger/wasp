@@ -9,22 +9,13 @@ In both cases it is possible to pass parameters to the smart contract function
 that is being invoked. These parameters are presented as a key/value map through
 the params() method of the function context. Keys can be any byte array, but as
 a convention we will use human-readable string names, which greatly simplifies
-debugging. To show how this all works we will slowly start fleshing out the
-smart contract functions of the `dividend` example. Here is the first part of
-the Rust code that implements it:
+debugging.
+
+We will use the 'member' function of the dividend smart contract to highlight
+how we can properly interact with these parameters:
 
 ```rust
-// This example implements 'dividend', a simple smart contract that automatically
-// disperses iota tokens which are sent to the contract to a group of member
-// addresses according to predefined division factors. The intent is to showcase
-// basic functionality of WasmLib through a minimal implementation and not
-// to come up with a complete real-world solution.
-
-use wasmlib::*;
-
-use crate::*;
-
-// 'member' is a function that can be used only by the entity that created the
+// 'member' is a function that can be used only by the entity that owns the
 // 'dividend' smart contract. It can be used to define the group of member
 // addresses and dispersal factors one by one prior to sending tokens to the
 // smart contract's 'divide' function. The 'member' function takes 2 parameters,
@@ -40,10 +31,20 @@ pub fn func_member(ctx: &ScFuncContext) {
     // Log the fact that we have initiated the 'member' Func in the host log.
     ctx.log("dividend.member");
 
-    // Only the smart contract creator can add members, so we require that the
-    // caller agent id is equal to the contract creator's agent id. Otherwise
-    // we panic out with an error message.
-    ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+    // The 'init' func previously determined which agent is the owner of this
+    // contract and stored that value in the 'owner' variable in state storage.
+    // So we start out by accessing state storage by creating an ScMutableMap
+    // proxy that refers to the state storage map on the host.
+    let state: ScMutableMap = ctx.state();
+
+    // Next we create an ScMutableAgentId proxy to the 'owner' variable in state
+    // storage.
+    let owner: ScMutableAgentId = state.get_agent_id(VAR_OWNER);
+
+    // Only the defined smart contract owner can add members, so we require
+    // that the caller's agent id is equal to the stored owner's agent id.
+    // Otherwise we panic out with an error message.
+    ctx.require(ctx.caller() == owner.value(), "no permission");
 ```
 
 Note how we use the require() method of the function context to verify that a
@@ -62,7 +63,7 @@ condition can occur that *can* be handled by the smart contract correctly we
 will provide a method to explicitly test for that condition.
 
 ```rust
-    // Now it is time to check the parameters that were provided to the function.
+// Now it is time to check the parameters that were provided to the function.
 // First we create an ScImmutableMap proxy to the params map on the host.
 let p: ScImmutableMap = ctx.params();
 
@@ -102,7 +103,7 @@ value type. When that fails, it will automatically panic() out of the function.
 Now let's do the same for the mandatory "factor" parameter.
 
 ```rust
-    // Create an ScImmutableInt64 proxy to the 'factor' parameter that is still
+// Create an ScImmutableInt64 proxy to the 'factor' parameter that is still
 // stored in the map on the host. Note how the get_xxx() method defines what
 // type of parameter we expect. In this case it's an Int64 parameter.
 let param_factor: ScImmutableInt64 = p.get_int64(PARAM_FACTOR);
@@ -123,12 +124,12 @@ let factor: i64 = param_factor.value();
 // ctx.require(factor >= 0, "negative factor");
 // Using the require() method reduces typing and enhances readability.
 if factor < 0 {
-    ctx.panic("negative factor");
+ctx.panic("negative factor");
 }
 ```
 
-This concludes the checking of the parameters and retrieving their values. In 
-the next section we will show how to access the state storeage of the smart 
+This concludes the checking of the parameters and retrieving their values. In
+the next section we will show how to access the state storage of the smart
 contract.
 
 Next: [Smart Contract State](State.md)

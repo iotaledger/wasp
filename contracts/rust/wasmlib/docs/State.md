@@ -18,7 +18,7 @@ Let's look at how the 'member' function of the 'dividend' smart contract goes
 about accessing its state:
 
 ```rust
-    // Now that we have sorted out the parameters we will start using the state
+// Now that we have sorted out the parameters we will start using the state
 // storage on the host. First we create an ScMutableMap proxy that refers to
 // the state storage map on the host.
 let state: ScMutableMap = ctx.state();
@@ -31,10 +31,10 @@ let members: ScMutableMap = state.get_map(VAR_MEMBERS);
 
 // Now we create an ScMutableInt64 proxy for the value stored in the 'members'
 // map under the key defined by the 'address' parameter we retrieved earlier.
-let current_factor: ScMutableInt64 = members.get_int64(&address);
+let current_factor: ScMutableInt64 = members.get_int64( & address);
 
 // Check to see if this key/value combination exists in the 'members' map
-if !current_factor.exists() {
+if ! current_factor.exists() {
     // If it does not exist yet then we have to add this new address to the
     // 'memberList' array. We tell the state map proxy to create an
     // ScMutableAddressArray proxy to an Address array named 'memberList' in
@@ -52,16 +52,16 @@ if !current_factor.exists() {
     
     // And finally we append the new address to the array by telling the proxy
     // to update the value it refers with the 'address' parameter.
-    new_address.set_value(&address);
+    new_address.set_value( &address);
 }
 ```
 
-Note how we start out with an empty state storage map and simply define a 
-nested structure of containers within the state map by using them as if they 
-already existed. The same thing goes for values in the containers. You can 
-immediately start using them, and they will default to all-zero values for 
-fixed size value types, and to zero-length values for variable sized value 
-types. You will see the latter in action in the fragment below.
+Note how we simply define a nested structure of containers within the state map
+by using them as if they already existed. The same thing goes for values in the
+containers. You can immediately start using them, and they will default to
+all-zero values for fixed size value types, and to zero-length values for
+variable sized value types. You will see default values in action in the
+fragment below.
 
 ```rust
 // Create an ScMutableInt64 proxy named 'totalFactor' for an Int64 value in

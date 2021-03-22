@@ -63,6 +63,7 @@ Here is a list of the topics this tutorial will cover:
 * [WasmLib Overview](wasmlib/docs/Overview.md)
 * [WasmLib Data Types](wasmlib/docs/Types.md)
 * [Function Call Context](wasmlib/docs/Context.md)
+* [Smart Contract Initialization](wasmlib/docs/Init.md)
 * [Function Parameters](wasmlib/docs/Params.md)
 * [Smart Contract State](wasmlib/docs/State.md)
 * [Token Transfers](wasmlib/docs/Transfers.md)
