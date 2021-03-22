@@ -3,8 +3,10 @@ package sbtestsc
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -115,17 +117,14 @@ func doNothing(ctx coretypes.Sandbox) (dict.Dict, error) {
 // Panics if wrong parameter or unauthorized access
 func sendToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof(FuncSendToAddress)
-	if ctx.Caller() != ctx.ContractCreator() {
-		ctx.Log().Panicf(MsgPanicUnauthorized)
-	}
-	targetAddress, ok, err := codec.DecodeAddress(ctx.Params().MustGet(ParamAddress))
-	if err != nil || !ok {
-		ctx.Log().Panicf("wrong parameter '%s'", ParamAddress)
-	}
+	a := assert.NewAssert(ctx.Log())
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	a.Require(ctx.Caller().Equals(ctx.ContractCreator()), MsgPanicUnauthorized)
+	targetAddress := par.MustGetAddress(ParamAddress)
 	myTokens := ctx.Balances()
-	succ := ctx.Send(targetAddress, myTokens, nil)
-	if !succ {
-		ctx.Log().Panicf("failed send to %s: tokens:\n%s", targetAddress, myTokens.String())
-	}
+	a.Require(ctx.Send(targetAddress, myTokens, nil),
+		fmt.Sprintf("failed send to %s: tokens:\n%s", targetAddress, myTokens.String()))
+
+	ctx.Log().Infof("sent to %s: tokens:\n%s", targetAddress.Base58(), myTokens.String())
 	return nil, nil
 }

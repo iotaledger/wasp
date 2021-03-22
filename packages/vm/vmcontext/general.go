@@ -108,6 +108,10 @@ func (vmctx *VMContext) RequestID() ledgerstate.OutputID {
 const maxParamSize = 512
 
 func (vmctx *VMContext) Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *coretypes.SendMetadata, options ...coretypes.SendOptions) bool {
+	if tokens == nil || tokens.Size() == 0 {
+		vmctx.log.Errorf("Send: transfer can't be empty")
+		return false
+	}
 	data := sctransaction.NewRequestMetadata()
 	if metadata != nil {
 		var args requestargs.RequestArgs
@@ -124,6 +128,9 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens *ledgerstate.Col
 			WithSender(vmctx.CurrentContractHname()).
 			WithEntryPoint(metadata.EntryPoint).
 			WithArgs(args)
+	}
+	if !vmctx.debitFromAccount(vmctx.MyAgentID(), tokens) {
+		return false
 	}
 	err := vmctx.txBuilder.AddExtendedOutputSpend(target, data.Bytes(), tokens.Map())
 	if err != nil {
