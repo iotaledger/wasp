@@ -90,6 +90,11 @@ func (r *CallParams) WithIotas(amount uint64) *CallParams {
 	return r.WithTransfer(ledgerstate.ColorIOTA, amount)
 }
 
+func (r *CallParams) WithMint(mint uint64) *CallParams {
+	r.mint = mint
+	return r
+}
+
 // makes map without hashing
 func toMap(params ...interface{}) map[string]interface{} {
 	par := make(map[string]interface{})
@@ -129,12 +134,21 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 	metadata := sctransaction.NewRequestMetadata().
 		WithTarget(req.target).
 		WithEntryPoint(req.entryPoint).
-		WithArgs(req.args).
-		Bytes()
+		WithArgs(req.args)
+
+	data := metadata.Bytes()
+	mdataBack := sctransaction.RequestMetadataFromBytes(data)
+	require.True(ch.Env.T, mdataBack.ParsedOk())
 
 	txb := utxoutil.NewBuilder(allOuts...)
-	err := txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), metadata, req.transfer.Map())
-	require.NoError(ch.Env.T, err)
+	var err error
+	if req.mint > 0 {
+		err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), data, req.transfer.Map(), req.mint)
+		require.NoError(ch.Env.T, err)
+	} else {
+		err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), data, req.transfer.Map())
+		require.NoError(ch.Env.T, err)
+	}
 
 	err = txb.AddReminderOutputIfNeeded(addr, nil, true)
 	require.NoError(ch.Env.T, err)

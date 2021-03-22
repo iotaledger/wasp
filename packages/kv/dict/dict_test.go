@@ -3,6 +3,7 @@ package dict
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/util"
@@ -127,4 +128,17 @@ func TestJSONMarshaling(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.EqualValues(t, util.GetHashValue(vars1), util.GetHashValue(vars2))
+}
+
+func TestBytes2(t *testing.T) {
+	d := New()
+	d.Set("k1", []byte{})
+	data, err := util.Bytes(d)
+	require.NoError(t, err)
+
+	dBack := New()
+	rdr := bytes.NewReader(data)
+	err = dBack.Read(rdr)
+	require.NoError(t, err)
+	require.True(t, d.Equals(dBack))
 }

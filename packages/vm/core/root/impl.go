@@ -54,7 +54,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
 
 	// install empty default contract at hname == 0
-	rec := NewContractRecord(_default.Interface, ctx.Caller())
+	rec := NewContractRecord(_default.Interface, &coretypes.AgentID{})
 	contractRegistry.MustSetAt(_default.Interface.Hname().Bytes(), EncodeContractRecord(rec))
 
 	// install root contract itself
@@ -62,17 +62,17 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	contractRegistry.MustSetAt(Interface.Hname().Bytes(), EncodeContractRecord(rec))
 
 	// deploy blob contract
-	rec = NewContractRecord(blob.Interface, ctx.Caller())
+	rec = NewContractRecord(blob.Interface, &coretypes.AgentID{})
 	err := storeAndInitContract(ctx, rec, nil)
 	a.Require(err == nil, "root.init.fail: %v", err)
 
 	// deploy accounts
-	rec = NewContractRecord(accounts.Interface, ctx.Caller())
+	rec = NewContractRecord(accounts.Interface, &coretypes.AgentID{})
 	err = storeAndInitContract(ctx, rec, nil)
 	a.Require(err == nil, "root.init.fail: %v", err)
 
 	// deploy eventlog
-	rec = NewContractRecord(eventlog.Interface, ctx.Caller())
+	rec = NewContractRecord(eventlog.Interface, &coretypes.AgentID{})
 	err = storeAndInitContract(ctx, rec, nil)
 	a.Require(err == nil, "root.init.fail: %v", err)
 

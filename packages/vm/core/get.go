@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -16,6 +17,9 @@ const (
 
 func GetProcessor(programHash hashing.HashValue) (coretypes.VMProcessor, error) {
 	switch programHash {
+	case _default.Interface.ProgramHash:
+		return _default.Interface, nil
+
 	case root.Interface.ProgramHash:
 		return root.Interface, nil
 

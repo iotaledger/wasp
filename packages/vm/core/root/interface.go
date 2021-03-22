@@ -120,6 +120,9 @@ type ChainInfo struct {
 }
 
 func (p *ContractRecord) Hname() coretypes.Hname {
+	if p.Name == "_default" {
+		return 0
+	}
 	return coretypes.Hn(p.Name)
 }
 

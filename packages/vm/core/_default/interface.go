@@ -2,11 +2,10 @@ package _default
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/hashing"
 )
 
 const (
-	Name        = "default"
+	Name        = "_default"
 	description = "Default Contract"
 )
 
@@ -14,7 +13,6 @@ var (
 	Interface = &coreutil.ContractInterface{
 		Name:        Name,
 		Description: description,
-		ProgramHash: hashing.HashStrings(Name),
 	}
 )
 

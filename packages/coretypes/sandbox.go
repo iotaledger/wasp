@@ -44,8 +44,9 @@ type Sandbox interface {
 	Balances() *ledgerstate.ColoredBalances
 	// IncomingTransfer return colored balances transferred by the call. They are already accounted into the Balances()
 	IncomingTransfer() *ledgerstate.ColoredBalances
-	// MintedSupply is number of new tokens minted in the request and newly minted color
-	Minted() (ledgerstate.Color, uint64)
+	// Minted represents new colored tokens which has been minted in the request transaction
+	// Note that the minted tokens can be sent to nay addresses, not necessarily the chain address
+	Minted() map[ledgerstate.Color]uint64
 	// TODO proofs of ownership and mint - special collection of methods
 	// Balance return number of tokens of specific color in the balance of the smart contract
 	Balance(col ledgerstate.Color) uint64

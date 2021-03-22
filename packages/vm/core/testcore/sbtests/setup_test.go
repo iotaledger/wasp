@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
@@ -29,21 +30,22 @@ var (
 )
 
 func setupChain(t *testing.T, keyPairOriginator *ed25519.KeyPair) (*solo.Solo, *solo.Chain) {
+	core.PrintWellKnownHnames()
 	env := solo.New(t, DEBUG, false)
 	chain := env.NewChain(keyPairOriginator, "ch1")
 	return env, chain
 }
 
-func setupDeployer(t *testing.T, chain *solo.Chain) *ed25519.KeyPair {
+func setupDeployer(t *testing.T, chain *solo.Chain) (*ed25519.KeyPair, ledgerstate.Address, *coretypes.AgentID) {
 	user, userAddr := chain.Env.NewKeyPairWithFunds()
 	chain.Env.AssertAddressIotas(userAddr, solo.Saldo)
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, coretypes.NewAgentID(userAddr, 0),
-	)
+	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
-	return user
+	return user, userAddr, coretypes.NewAgentID(userAddr, 0)
 }
 
 func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
@@ -59,9 +61,9 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	//}
 }
 
-func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, runWasm bool) (*coretypes.AgentID, int64) {
+func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, runWasm bool) (*coretypes.AgentID, uint64) {
 	var err error
-	var extraToken int64
+	var extraToken uint64
 	if runWasm {
 		err = chain.DeployWasmContract(user, SandboxSCName, WasmFileTestcore)
 		extraToken = 1
@@ -72,7 +74,7 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, 
 	require.NoError(t, err)
 
 	deployed := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn(sbtestsc.Interface.Name))
-	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing)
+	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing).WithIotas(1)
 	_, err = chain.PostRequestSync(req, user)
 	require.NoError(t, err)
 	t.Logf("deployed test_sandbox'%s': %s", SandboxSCName, coretypes.Hn(SandboxSCName))
@@ -112,14 +114,14 @@ func testSetup1(t *testing.T, w bool) {
 func TestSetup2(t *testing.T) { run2(t, testSetup2) }
 func testSetup2(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
-	user := setupDeployer(t, chain)
+	user, _, _ := setupDeployer(t, chain)
 	setupTestSandboxSC(t, chain, user, w)
 }
 
 func TestSetup3(t *testing.T) { run2(t, testSetup3) }
 func testSetup3(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
-	user := setupDeployer(t, chain)
+	user, _, _ := setupDeployer(t, chain)
 	setupTestSandboxSC(t, chain, user, w)
 	//setupERC20(t, chain, user, w)
 }

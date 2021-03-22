@@ -159,7 +159,7 @@ func OutputsFromRequests(requests ...*Request) []ledgerstate.Output {
 
 // RequestMetadata represents content of the data payload of the output
 type RequestMetadata struct {
-	parsedOk       bool
+	err            error
 	senderContract coretypes.Hname
 	// ID of the target smart contract
 	targetContract coretypes.Hname
@@ -171,15 +171,13 @@ type RequestMetadata struct {
 
 func NewRequestMetadata() *RequestMetadata {
 	return &RequestMetadata{
-		parsedOk: true,
-		args:     requestargs.RequestArgs(dict.New()),
+		args: requestargs.RequestArgs(dict.New()),
 	}
 }
 
 func RequestMetadataFromBytes(data []byte) *RequestMetadata {
 	ret := NewRequestMetadata()
-	err := ret.Read(bytes.NewReader(data))
-	ret.parsedOk = err == nil
+	ret.err = ret.Read(bytes.NewReader(data))
 	return ret
 }
 
@@ -210,32 +208,36 @@ func (p *RequestMetadata) Clone() *RequestMetadata {
 }
 
 func (p *RequestMetadata) ParsedOk() bool {
-	return p.parsedOk
+	return p.err == nil
+}
+
+func (p *RequestMetadata) ParsedError() error {
+	return p.err
 }
 
 func (p *RequestMetadata) SenderContract() coretypes.Hname {
-	if !p.parsedOk {
+	if !p.ParsedOk() {
 		return 0
 	}
 	return p.senderContract
 }
 
 func (p *RequestMetadata) TargetContract() coretypes.Hname {
-	if !p.parsedOk {
+	if !p.ParsedOk() {
 		return 0
 	}
 	return p.targetContract
 }
 
 func (p *RequestMetadata) EntryPoint() coretypes.Hname {
-	if !p.parsedOk {
+	if !p.ParsedOk() {
 		return 0
 	}
 	return p.entryPoint
 }
 
 func (p *RequestMetadata) Args() requestargs.RequestArgs {
-	if !p.parsedOk {
+	if !p.ParsedOk() {
 		return requestargs.RequestArgs(dict.New())
 	}
 	return p.args

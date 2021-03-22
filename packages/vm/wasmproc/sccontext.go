@@ -79,8 +79,9 @@ func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
 		//cid := o.vm.contractID()
 		//return cid.Bytes()
 	case wasmhost.KeyMinted:
-		_, m := o.vm.ctx.Minted()
-		return codec.EncodeUint64(m)
+		// TODO Minted
+		//_, m := o.vm.ctx.Minted()
+		return codec.EncodeUint64(0)
 	case wasmhost.KeyRequestId:
 		rid := o.vm.ctx.RequestID()
 		return rid[:]

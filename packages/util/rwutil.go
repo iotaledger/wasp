@@ -172,15 +172,15 @@ func ReadBytes16(r io.Reader) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if length != 0 {
-		ret := make([]byte, length)
-		_, err = r.Read(ret)
-		if err != nil {
-			return nil, err
-		}
-		return ret, nil
+	if length == 0 {
+		return []byte{}, nil
 	}
-	return nil, nil
+	ret := make([]byte, length)
+	_, err = r.Read(ret)
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func WriteBytes32(w io.Writer, data []byte) error {
@@ -197,6 +197,9 @@ func ReadBytes32(r io.Reader) ([]byte, error) {
 	err := ReadUint32(r, &length)
 	if err != nil {
 		return nil, err
+	}
+	if length == 0 {
+		return []byte{}, nil
 	}
 	ret := make([]byte, length)
 	_, err = r.Read(ret)

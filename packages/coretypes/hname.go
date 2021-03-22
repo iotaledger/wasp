@@ -27,7 +27,7 @@ const FuncInit = "init"
 var (
 	EntryPointInit = Hn(FuncInit)
 	HnameRoot      = Hn("root")
-	HnameAccount   = Hn("accounts")
+	HnameAccounts  = Hn("accounts")
 	HnameBlob      = Hn("blob")
 	HnameEventlog  = Hn("eventlog")
 	HnameDefault   = Hname(0)

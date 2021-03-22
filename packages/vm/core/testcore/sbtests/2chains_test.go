@@ -17,67 +17,60 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.CheckAccountLedger()
 	chain2.CheckAccountLedger()
 
-	contractID1, _ := setupTestSandboxSC(t, chain1, nil, w)
-	contractID2, _ := setupTestSandboxSC(t, chain2, nil, w)
+	contractAgentID1, _ := setupTestSandboxSC(t, chain1, nil, w)
+	contractAgentID2, _ := setupTestSandboxSC(t, chain2, nil, w)
 
-	contractAgentID1 := coretypes.NewAgentIDFromContractID(contractID1)
-	contractAgentID2 := coretypes.NewAgentIDFromContractID(contractID2)
+	userWallet, userAddress := env.NewKeyPairWithFunds()
+	userAgentID := coretypes.NewAgentID(userAddress, 0)
+	env.AssertAddressIotas(userAddress, solo.Saldo)
 
-	userWallet := env.NewKeyPairWithFunds()
-	userAddress := userWallet.Address()
-	userAgentID := coretypes.NewAgentIDFromAddress(userAddress)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo)
-
-	chain1.AssertAccountBalance(contractAgentID1, balance.ColorIOTA, 0)
-	chain1.AssertAccountBalance(contractAgentID2, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(contractAgentID1, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(contractAgentID2, balance.ColorIOTA, 0)
+	chain1.AssertIotas(contractAgentID1, 0)
+	chain1.AssertIotas(contractAgentID2, 0)
+	chain2.AssertIotas(contractAgentID1, 0)
+	chain2.AssertIotas(contractAgentID2, 0)
 
 	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit,
 		accounts.ParamAgentID, contractAgentID2,
-	).WithTransfer(
-		balance.ColorIOTA, 42,
-	)
+	).WithIotas(42)
 	_, err := chain1.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	accountsAgentID1 := coretypes.NewAgentIDFromContractID(accounts.Interface.ContractID(chain1.ChainID))
-	accountsAgentID2 := coretypes.NewAgentIDFromContractID(accounts.Interface.ContractID(chain2.ChainID))
+	accountsAgentID1 := coretypes.NewAgentID(chain1.ChainID.AsAddress(), coretypes.HnameAccounts)
+	accountsAgentID2 := coretypes.NewAgentID(chain2.ChainID.AsAddress(), coretypes.HnameAccounts)
 
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo-43)
-	chain1.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
-	chain2.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0)
-	chain1.AssertAccountBalance(contractAgentID1, balance.ColorIOTA, 0)
-	chain1.AssertAccountBalance(contractAgentID2, balance.ColorIOTA, 42)
-	chain2.AssertAccountBalance(contractAgentID1, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(contractAgentID2, balance.ColorIOTA, 0)
+	env.AssertAddressIotas(userAddress, solo.Saldo-43)
+	chain1.AssertIotas(userAgentID, 1)
+	chain2.AssertIotas(userAgentID, 0)
+	chain1.AssertIotas(contractAgentID1, 0)
+	chain1.AssertIotas(contractAgentID2, 42)
+	chain2.AssertIotas(contractAgentID1, 0)
+	chain2.AssertIotas(contractAgentID2, 0)
 
-	chain1.AssertAccountBalance(accountsAgentID1, balance.ColorIOTA, 0)
-	chain1.AssertAccountBalance(accountsAgentID2, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(accountsAgentID1, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(accountsAgentID2, balance.ColorIOTA, 0)
+	chain1.AssertIotas(accountsAgentID1, 0)
+	chain1.AssertIotas(accountsAgentID2, 0)
+	chain2.AssertIotas(accountsAgentID1, 0)
+	chain2.AssertIotas(accountsAgentID2, 0)
 
 	req = solo.NewCallParams(sbtestsc.Name, sbtestsc.FuncWithdrawToChain,
 		sbtestsc.ParamChainID, chain1.ChainID,
-	).WithTransfer(
-		balance.ColorIOTA, 3,
-	)
+	).WithIotas(3)
+
 	_, err = chain2.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	chain1.WaitForEmptyBacklog()
 	chain2.WaitForEmptyBacklog()
 
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, solo.Saldo-47)
-	chain1.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
-	chain2.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
-	chain1.AssertAccountBalance(contractAgentID1, balance.ColorIOTA, 0)
-	chain1.AssertAccountBalance(contractAgentID2, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(contractAgentID1, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(contractAgentID2, balance.ColorIOTA, 43)
+	env.AssertAddressIotas(userAddress, solo.Saldo-47)
+	chain1.AssertIotas(userAgentID, 1)
+	chain2.AssertIotas(userAgentID, 0)
+	chain1.AssertIotas(contractAgentID1, 0)
+	chain1.AssertIotas(contractAgentID2, 42)
+	chain2.AssertIotas(contractAgentID1, 0)
+	chain2.AssertIotas(contractAgentID2, 43)
 
-	chain1.AssertAccountBalance(accountsAgentID1, balance.ColorIOTA, 1) // !!!! TODO
-	chain1.AssertAccountBalance(accountsAgentID2, balance.ColorIOTA, 0)
-	chain2.AssertAccountBalance(accountsAgentID1, balance.ColorIOTA, 1) // !!!! TODO
-	chain2.AssertAccountBalance(accountsAgentID2, balance.ColorIOTA, 0)
+	chain1.AssertIotas(accountsAgentID1, 0)
+	chain1.AssertIotas(accountsAgentID2, 0)
+	chain2.AssertIotas(accountsAgentID1, 0)
+	chain2.AssertIotas(accountsAgentID2, 0)
 }

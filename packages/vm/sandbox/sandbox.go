@@ -90,7 +90,7 @@ func (s *sandbox) RequestID() ledgerstate.OutputID {
 }
 
 // Minted
-func (s *sandbox) Minted() (ledgerstate.Color, uint64) {
+func (s *sandbox) Minted() map[ledgerstate.Color]uint64 {
 	panic("Minted: implement me")
 }
 

@@ -1,6 +1,8 @@
 package sbtests
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -15,7 +17,7 @@ func testCounter(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncIncCounter)
+	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncIncCounter).WithIotas(1)
 	for i := 0; i < 33; i++ {
 		_, err := chain.PostRequestSync(req, nil)
 		require.NoError(t, err)
@@ -69,7 +71,7 @@ func testConcurrency(t *testing.T, w bool) {
 	if w {
 		extraIota = 1
 	}
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, int64(sum+3+extraIota))
+	chain.AssertIotas(&chain.OriginatorAgentID, uint64(sum+3+extraIota))
 }
 
 func TestConcurrency2(t *testing.T) { run2(t, testConcurrency2) }
@@ -81,14 +83,15 @@ func testConcurrency2(t *testing.T, w bool) {
 	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncIncCounter)
 
 	repeats := []int{300, 100, 100, 100, 100, 100, 100, 100, 100, 100}
-	users := make([]signaturescheme.SignatureScheme, len(repeats))
+	users := make([]*ed25519.KeyPair, len(repeats))
+	userAddr := make([]ledgerstate.Address, len(repeats))
 	sum := 0
 	for _, i := range repeats {
 		sum += i
 	}
 	for r, n := range repeats {
 		go func(r, n int) {
-			users[r], _ = chain.Env.NewKeyPairWithFunds()
+			users[r], userAddr[r] = chain.Env.NewKeyPairWithFunds()
 			for i := 0; i < n; i++ {
 				tx, err := chain.RequestFromParamsToLedger(req, users[r])
 				require.NoError(t, err)
@@ -107,6 +110,6 @@ func testConcurrency2(t *testing.T, w bool) {
 	require.EqualValues(t, sum, res)
 
 	for i := range users {
-		chain.AssertAccountBalance(coretypes.NewAgentIDFromAddress(users[i].Address()), balance.ColorIOTA, int64(repeats[i]))
+		chain.AssertIotas(coretypes.NewAgentID(userAddr[i], 0), uint64(repeats[i]))
 	}
 }

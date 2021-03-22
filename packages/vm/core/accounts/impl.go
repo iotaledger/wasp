@@ -104,7 +104,7 @@ func adjustAccount(ctx coretypes.Sandbox, agentID *coretypes.AgentID) *coretypes
 		return agentID
 	}
 	switch agentID.Hname() {
-	case coretypes.HnameRoot, coretypes.HnameAccount, coretypes.HnameBlob, coretypes.HnameEventlog:
+	case coretypes.HnameRoot, coretypes.HnameAccounts, coretypes.HnameBlob, coretypes.HnameEventlog:
 		return ownersAccount(ctx)
 	}
 	return agentID

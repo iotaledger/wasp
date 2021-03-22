@@ -125,7 +125,7 @@ func (i *ContractInterface) GetDescription() string {
 
 // Hname caches the value
 func (i *ContractInterface) Hname() coretypes.Hname {
-	if i.Name == "default" {
+	if i.Name == "_default" {
 		return 0
 	}
 	if i.hname == 0 {
