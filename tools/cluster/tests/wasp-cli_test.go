@@ -203,6 +203,13 @@ func TestWaspCliContract(t *testing.T) {
 	out = w.Run("chain", "call-view", name, "getCounter")
 	out = w.Pipe(out, "decode", "string", "counter", "int")
 	require.Regexp(t, "(?m)counter:[[:space:]]+1$", out[0])
+
+	// include a funds transfer
+	w.Run("chain", "post-request", name, "increment", "--transfer=IOTA:10")
+
+	out = w.Run("chain", "call-view", name, "getCounter")
+	out = w.Pipe(out, "decode", "string", "counter", "int")
+	require.Regexp(t, "(?m)counter:[[:space:]]+2$", out[0])
 }
 
 func TestWaspCliBlobContract(t *testing.T) {

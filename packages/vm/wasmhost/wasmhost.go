@@ -50,8 +50,8 @@ func (host *WasmHost) LoadWasm(wasmData []byte) error {
 	return nil
 }
 
-func (host *WasmHost) RunFunction(functionName string) (err error) {
-	return host.vm.RunFunction(functionName)
+func (host *WasmHost) RunFunction(functionName string, args ...interface{}) (err error) {
+	return host.vm.RunFunction(functionName, args...)
 }
 
 func (host *WasmHost) RunScFunction(functionName string) (err error) {

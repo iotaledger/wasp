@@ -136,6 +136,9 @@ func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 	objId = o.host.TrackObject(newObject)
 	newObject.InitObj(objId, keyId, o)
 	o.objects[keyId] = objId
+	if (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 {
+		o.length++
+	}
 	return objId
 }
 
