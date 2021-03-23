@@ -15,6 +15,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	creatorIndex      = 2
+	stateControlIndex = 3
+)
+
 func start(t *testing.T) (*utxodbledger.UtxoDBLedger, *NodeConn) {
 	t.Helper()
 
@@ -59,8 +64,8 @@ func send(t *testing.T, n *NodeConn, sendMsg func() error, rcv func(msg waspconn
 
 	select {
 	case <-done:
-	case <-time.After(10 * time.Second):
-		t.Fatal("timeout")
+		/*case <-time.After(10 * time.Second):
+		t.Fatal("timeout")*/
 	}
 }
 
@@ -93,11 +98,6 @@ func createChain(t *testing.T, u *utxodbledger.UtxoDBLedger, creatorIndex int, s
 }
 
 func TestRequestBacklog(t *testing.T) {
-	const (
-		creatorIndex      = 2
-		stateControlIndex = 3
-	)
-
 	ledger, n := start(t)
 
 	tx, chainAddress := createChain(t, ledger, creatorIndex, stateControlIndex, map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100})
@@ -151,11 +151,6 @@ func postRequest(t *testing.T, u *utxodbledger.UtxoDBLedger, fromIndex int, chai
 }
 
 func TestPostRequest(t *testing.T) {
-	const (
-		creatorIndex      = 2
-		stateControlIndex = 3
-	)
-
 	ledger, n := start(t)
 
 	createTx, chainAddress := createChain(t, ledger, creatorIndex, stateControlIndex, map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100})
@@ -185,55 +180,54 @@ func TestPostRequest(t *testing.T) {
 	require.True(t, seen[reqTx.ID()])
 }
 
-/*
 func TestRequestInclusionLevel(t *testing.T) {
 	ledger, n := start(t)
-
-	// transfer 1337 iotas to addr
-	seed := ed25519.NewSeed()
-	addr := ledgerstate.NewED25519Address(seed.KeyPair(0).PublicKey)
-	err := ledger.RequestFunds(addr)
-	require.NoError(t, err)
-
-	// find out tx id
-	var txID ledgerstate.TransactionID
-	for outID := range ledger.GetAddressOutputs(addr) {
-		txID = outID.TransactionID()
-	}
-	require.NotEqualValues(t, ledgerstate.TransactionID{}, txID)
+	createTx, chainAddress := createChain(t, ledger, creatorIndex, stateControlIndex, map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100})
 
 	// request inclusion level
-	var resp *waspconn.WaspFromNodeBranchInclusionStateMsg
-	send(t, n, &resp, func() error {
-		return n.RequestBranchInclusionStateFromNode(txID, addr)
-	})
+	var resp *waspconn.WaspFromNodeTxInclusionStateMsg
+	send(t, n,
+		func() error {
+			return n.RequestTxInclusionStateFromNode(chainAddress, createTx.ID())
+		},
+		func(msg waspconn.Message) bool {
+			if msg, ok := msg.(*waspconn.WaspFromNodeTxInclusionStateMsg); ok {
+				resp = msg
+				return false
+			}
+			return true
+		},
+	)
+
 	require.EqualValues(t, ledgerstate.Confirmed, resp.State)
 }
 
 func TestSubscribe(t *testing.T) {
 	ledger, n := start(t)
+	_, chainAddress := createChain(t, ledger, creatorIndex, stateControlIndex, map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100})
 
-	// transfer 1337 iotas to addr
-	seed := ed25519.NewSeed()
-	addr := ledgerstate.NewED25519Address(seed.KeyPair(0).PublicKey)
-	err := ledger.RequestFunds(addr)
-	require.NoError(t, err)
+	// subscribe to chain address
+	n.Subscribe(chainAddress)
 
-	// subscribe to addr
-	n.Subscribe(addr, ledgerstate.ColorIOTA)
-	n.log.Debugf("XXX before")
-	time.Sleep(5 * time.Second)
-	n.log.Debugf("XXX after")
+	// post a request to chain, expect to receive notification
+	var reqTx *ledgerstate.Transaction
+	var txMsg *waspconn.WaspFromNodeTransactionMsg
+	send(t, n,
+		func() error {
+			reqTx = postRequest(t, ledger, 2, chainAddress)
+			return nil
+		},
+		func(msg waspconn.Message) bool {
+			switch msg := msg.(type) {
+			case *waspconn.WaspFromNodeTransactionMsg:
+				if msg.Tx.ID() == reqTx.ID() {
+					txMsg = msg
+					return false
+				}
+			}
+			return true
+		},
+	)
 
-	// transfer 1 iota from fromAddr to addr2
-	addr2 := ledgerstate.NewED25519Address(seed.KeyPair(1).PublicKey)
-	tx := transfer(t, ledger, seed.KeyPair(0), addr2, 1)
-
-	// request tx
-	var txMsg *waspconn.WaspFromNodeAddressUpdateMsg
-	send(t, n, &txMsg, func() error {
-		return n.PostTransactionToNode(tx, addr, 0)
-	})
-	require.EqualValues(t, txMsg.Tx.ID(), tx.ID())
+	require.EqualValues(t, txMsg.Tx.ID(), reqTx.ID())
 }
-*/
