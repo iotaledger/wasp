@@ -38,8 +38,12 @@ func (n *NodeConn) sendSubscriptions(forceSend bool, goshimerNodeAddress string)
 	}
 
 	addrs := make([]*ledgerstate.AliasAddress, len(n.subscriptions))
-	for _, addr := range n.subscriptions {
-		addrs = append(addrs, addr)
+	{
+		i := 0
+		for _, addr := range n.subscriptions {
+			addrs[i] = addr
+			i++
+		}
 	}
 	n.subscriptionsSent = true
 	go func() {

@@ -328,11 +328,10 @@ func (ch *Chain) addToBacklog(r *sctransaction.Request) {
 	ch.backlog = append(ch.backlog, r)
 	tl := r.Output().TimeLock()
 	idStr := coretypes.RequestID(r.Output().ID()).String()
-	if tl == 0 {
+	if tl.UnixNano() == 0 {
 		ch.Log.Infof("added to backlog: %s len: %d", idStr, len(ch.backlog))
 	} else {
-		tlTime := time.Unix(int64(tl), 0)
-		ch.Log.Infof("added to backlog: %s. Time locked for: %v", idStr, tlTime.Sub(ch.Env.LogicalTime()))
+		ch.Log.Infof("added to backlog: %s. Time locked for: %v", idStr, tl.Sub(ch.Env.LogicalTime()))
 	}
 }
 
@@ -346,9 +345,9 @@ func (ch *Chain) collateBatch() []*sctransaction.Request {
 	remain := ch.backlog[:0]
 	for _, req := range ch.backlog {
 		// using logical clock
-		if int64(req.Output().TimeLock()) <= ch.Env.LogicalTime().Unix() {
-			if req.Output().TimeLock() != 0 {
-				ch.Log.Infof("unlocked time-locked request %s", req.Output().ID().String())
+		if req.Output().TimeLock().Before(ch.Env.LogicalTime()) {
+			if req.Output().TimeLock().UnixNano() != 0 {
+				ch.Log.Infof("unlocked time-locked request %s", coretypes.RequestID(req.Output().ID()).String())
 			}
 			ret = append(ret, req)
 		} else {
