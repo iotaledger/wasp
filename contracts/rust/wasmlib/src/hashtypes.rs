@@ -294,6 +294,16 @@ impl MapKey for ScHname {
     }
 }
 
+// allow direct xor operations between ScHNames
+impl std::ops::BitXor for ScHname {
+    type Output = Self;
+
+    fn bitxor(self, rhs_schname: Self) -> Self::Output {
+        Self(self.0 ^ rhs_schname.0)
+    }
+}
+
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // value object for 34-byte transaction request ids
