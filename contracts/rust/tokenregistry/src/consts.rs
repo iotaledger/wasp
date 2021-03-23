@@ -6,7 +6,7 @@
 use wasmlib::*;
 
 pub const SC_NAME: &str = "tokenregistry";
-pub const SC_HNAME: ScHname = ScHname(0xe1ba0c78);
+pub const HSC_NAME: ScHname = ScHname(0xe1ba0c78);
 
 pub const PARAM_COLOR: &str = "color";
 pub const PARAM_DESCRIPTION: &str = "description";

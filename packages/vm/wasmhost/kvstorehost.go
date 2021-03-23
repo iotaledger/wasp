@@ -9,6 +9,7 @@ import (
 	"github.com/mr-tron/base58"
 )
 
+// all type id values should exactly match their counterpart values on the client!
 const (
 	OBJTYPE_ARRAY int32 = 0x20
 
@@ -26,6 +27,9 @@ const (
 	OBJTYPE_STRING      int32 = 12
 )
 
+// flag to indicate that this key id originally comes from a string key
+// note that this includes the predefined key ids as they are all negative
+// this allows us to display better readable tracing information
 const KeyFromString int32 = 0x4000
 
 var HostTracing = false
@@ -40,8 +44,8 @@ type HostObject interface {
 }
 
 // KvStoreHost implements WaspLib.client.ScHost interface
-// it allows wasplib/govm to bypass Wasm and access the sandbox
-// directly so that it is possible to debug into SC code
+// it allows WasmGoVM to bypass Wasm and access the sandbox directly
+// so that it is possible to debug into SC code that was written in Go
 type KvStoreHost struct {
 	keyIdToKey    [][]byte
 	keyIdToKeyMap [][]byte
