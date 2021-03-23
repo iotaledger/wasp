@@ -112,7 +112,8 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens *ledgerstate.Col
 		vmctx.log.Errorf("Send: transfer can't be empty")
 		return false
 	}
-	data := sctransaction.NewRequestMetadata()
+	data := sctransaction.NewRequestMetadata().
+		WithSender(vmctx.CurrentContractHname())
 	if metadata != nil {
 		var args requestargs.RequestArgs
 		if metadata.Args != nil && len(metadata.Args) > 0 {
@@ -125,7 +126,6 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens *ledgerstate.Col
 			}
 		}
 		data.WithTarget(metadata.TargetContract).
-			WithSender(vmctx.CurrentContractHname()).
 			WithEntryPoint(metadata.EntryPoint).
 			WithArgs(args)
 	}
