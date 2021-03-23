@@ -37,7 +37,7 @@ func testConcurrency(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncIncCounter)
+	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncIncCounter).WithIotas(1)
 
 	repeats := []int{300, 100, 100, 100, 100, 100, 100, 100, 100, 100}
 	sum := 0
@@ -67,11 +67,14 @@ func testConcurrency(t *testing.T, w bool) {
 	res := deco.MustGetInt64(sbtestsc.VarCounter)
 	require.EqualValues(t, sum, res)
 
-	extraIota := 0
+	extraIota := uint64(0)
 	if w {
 		extraIota = 1
 	}
-	chain.AssertIotas(&chain.OriginatorAgentID, uint64(sum+3+extraIota))
+	chain.AssertIotas(&chain.OriginatorAgentID, extraIota)
+	chain.AssertOwnersIotas(extraIota + 2)
+	agentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), sbtestsc.Interface.Hname())
+	chain.AssertIotas(agentID, uint64(sum)+1)
 }
 
 func TestConcurrency2(t *testing.T) { run2(t, testConcurrency2) }
@@ -80,7 +83,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncIncCounter)
+	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncIncCounter).WithIotas(1)
 
 	repeats := []int{300, 100, 100, 100, 100, 100, 100, 100, 100, 100}
 	users := make([]*ed25519.KeyPair, len(repeats))
@@ -110,6 +113,15 @@ func testConcurrency2(t *testing.T, w bool) {
 	require.EqualValues(t, sum, res)
 
 	for i := range users {
-		chain.AssertIotas(coretypes.NewAgentID(userAddr[i], 0), uint64(repeats[i]))
+		chain.AssertIotas(coretypes.NewAgentID(userAddr[i], 0), 0)
+		chain.Env.AssertAddressIotas(userAddr[i], solo.Saldo-uint64(repeats[i]))
 	}
+	extraIota := uint64(0)
+	if w {
+		extraIota = 1
+	}
+	chain.AssertIotas(&chain.OriginatorAgentID, extraIota)
+	chain.AssertOwnersIotas(extraIota + 2)
+	agentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), sbtestsc.Interface.Hname())
+	chain.AssertIotas(agentID, uint64(sum)+1)
 }
