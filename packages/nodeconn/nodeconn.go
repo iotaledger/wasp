@@ -6,23 +6,19 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/waspconn"
-	"github.com/iotaledger/goshimmer/packages/waspconn/chopper"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/hive.go/netutil/buffconn"
 )
 
 type NodeConn struct {
 	netID         string
-	dial          DialFunc
 	log           *logger.Logger
-	mu            sync.Mutex
-	bconn         *buffconn.BufferedConnection
+	chSendToNode  chan waspconn.Message
 	chSubscribe   chan *ledgerstate.AliasAddress
 	chUnsubscribe chan *ledgerstate.AliasAddress
-	msgChopper    *chopper.Chopper
 	shutdown      chan bool
 	Events        NodeConnEvents
+	wgConnected   sync.WaitGroup
 }
 
 type NodeConnEvents struct {
@@ -43,11 +39,10 @@ func handleConnected(handler interface{}, params ...interface{}) {
 func New(netID string, log *logger.Logger, dial DialFunc) *NodeConn {
 	n := &NodeConn{
 		netID:         netID,
-		dial:          dial,
 		log:           log,
+		chSendToNode:  make(chan waspconn.Message),
 		chSubscribe:   make(chan *ledgerstate.AliasAddress),
 		chUnsubscribe: make(chan *ledgerstate.AliasAddress),
-		msgChopper:    chopper.NewChopper(),
 		shutdown:      make(chan bool),
 		Events: NodeConnEvents{
 			MessageReceived: events.NewEvent(handleMessageReceived),
@@ -56,21 +51,13 @@ func New(netID string, log *logger.Logger, dial DialFunc) *NodeConn {
 	}
 
 	go n.subscriptionsLoop()
-	go n.nodeConnectLoop()
+	go n.nodeConnectLoop(dial)
 
 	return n
 }
 
 func (n *NodeConn) Close() {
-	go func() {
-		n.mu.Lock()
-		defer n.mu.Unlock()
-		if n.bconn != nil {
-			n.log.Infof("Closing connection with node..")
-			_ = n.bconn.Close()
-			n.log.Infof("Closing connection with node.. Done")
-		}
-	}()
 	close(n.shutdown)
 	n.Events.MessageReceived.DetachAll()
+	n.Events.Connected.DetachAll()
 }

@@ -56,11 +56,5 @@ func (n *NodeConn) sendSubscriptions(subscriptions map[[ledgerstate.AddressLengt
 		}
 	}
 
-	if err := n.sendToNode(&waspconn.WaspToNodeUpdateSubscriptionsMsg{
-		ChainAddresses: addrs,
-	}); err != nil {
-		n.log.Errorf("sending subscriptions to node: %v", err)
-	} else {
-		n.log.Infof("sent subscriptions to node for addresses %+v", addrs)
-	}
+	n.SendToNode(&waspconn.WaspToNodeUpdateSubscriptionsMsg{ChainAddresses: addrs})
 }

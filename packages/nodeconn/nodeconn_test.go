@@ -2,6 +2,7 @@ package nodeconn
 
 import (
 	"net"
+	"sync"
 	"testing"
 	"time"
 
@@ -44,13 +45,17 @@ func start(t *testing.T) (*utxodbledger.UtxoDBLedger, *NodeConn) {
 	return ledger, n
 }
 
-func send(t *testing.T, n *NodeConn, sendMsg func() error, rcv func(msg waspconn.Message) bool) {
+func send(t *testing.T, n *NodeConn, sendMsg func(), rcv func(msg waspconn.Message) bool) {
 	t.Helper()
 
 	done := make(chan bool)
 
+	var wgSend sync.WaitGroup
+	wgSend.Add(1)
+
 	closure := events.NewClosure(func(msg waspconn.Message) {
 		t.Logf("received msg from waspconn %T", msg)
+		wgSend.Wait()
 		if rcv(msg) {
 			close(done)
 		}
@@ -59,13 +64,15 @@ func send(t *testing.T, n *NodeConn, sendMsg func() error, rcv func(msg waspconn
 	n.Events.MessageReceived.Attach(closure)
 	defer n.Events.MessageReceived.Detach(closure)
 
-	err := sendMsg()
-	require.NoError(t, err)
+	sendMsg()
+	wgSend.Done()
 
 	select {
 	case <-done:
-	case <-time.After(10 * time.Second):
-		t.Fatalf("timeout")
+		/*
+			case <-time.After(10 * time.Second):
+				t.Fatalf("timeout")
+		*/
 	}
 }
 
@@ -105,8 +112,8 @@ func TestRequestBacklog(t *testing.T) {
 	// request backlog for chainAddress
 	var resp *waspconn.WaspFromNodeTransactionMsg
 	send(t, n,
-		func() error {
-			return n.RequestBacklogFromNode(chainAddress)
+		func() {
+			n.RequestBacklogFromNode(chainAddress)
 		},
 		func(msg waspconn.Message) bool {
 			switch msg := msg.(type) {
@@ -160,12 +167,13 @@ func TestPostRequest(t *testing.T) {
 	// request backlog for chainAddress
 	seen := make(map[ledgerstate.TransactionID]bool)
 	send(t, n,
-		func() error {
-			return n.RequestBacklogFromNode(chainAddress)
+		func() {
+			n.RequestBacklogFromNode(chainAddress)
 		},
 		func(msg waspconn.Message) bool {
 			switch msg := msg.(type) {
 			case *waspconn.WaspFromNodeTransactionMsg:
+				t.Logf("seen tx %s", msg.Tx.ID().Base58())
 				seen[msg.Tx.ID()] = true
 				if len(seen) == 2 {
 					return true
@@ -187,8 +195,8 @@ func TestRequestInclusionLevel(t *testing.T) {
 	// request inclusion level
 	var resp *waspconn.WaspFromNodeTxInclusionStateMsg
 	send(t, n,
-		func() error {
-			return n.RequestTxInclusionStateFromNode(chainAddress, createTx.ID())
+		func() {
+			n.RequestTxInclusionStateFromNode(chainAddress, createTx.ID())
 		},
 		func(msg waspconn.Message) bool {
 			if msg, ok := msg.(*waspconn.WaspFromNodeTxInclusionStateMsg); ok {
@@ -212,14 +220,15 @@ func TestSubscribe(t *testing.T) {
 	// post a request to chain, expect to receive notification
 	var reqTx *ledgerstate.Transaction
 	var txMsg *waspconn.WaspFromNodeTransactionMsg
+
 	send(t, n,
-		func() error {
+		func() {
 			reqTx = postRequest(t, ledger, 2, chainAddress)
-			return nil
 		},
 		func(msg waspconn.Message) bool {
 			switch msg := msg.(type) {
 			case *waspconn.WaspFromNodeTransactionMsg:
+				t.Logf("received tx %s", msg.Tx.ID().Base58())
 				if msg.Tx.ID() == reqTx.ID() {
 					txMsg = msg
 					return true
@@ -228,6 +237,5 @@ func TestSubscribe(t *testing.T) {
 			return false
 		},
 	)
-
 	require.EqualValues(t, txMsg.Tx.ID(), reqTx.ID())
 }
