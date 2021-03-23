@@ -51,7 +51,7 @@ func send(t *testing.T, n *NodeConn, sendMsg func() error, rcv func(msg waspconn
 
 	closure := events.NewClosure(func(msg waspconn.Message) {
 		t.Logf("received msg from waspconn %T", msg)
-		if !rcv(msg) {
+		if rcv(msg) {
 			close(done)
 		}
 	})
@@ -62,11 +62,7 @@ func send(t *testing.T, n *NodeConn, sendMsg func() error, rcv func(msg waspconn
 	err := sendMsg()
 	require.NoError(t, err)
 
-	select {
-	case <-done:
-		/*case <-time.After(10 * time.Second):
-		t.Fatal("timeout")*/
-	}
+	<-done
 }
 
 func createChain(t *testing.T, u *utxodbledger.UtxoDBLedger, creatorIndex int, stateControlIndex int, balances map[ledgerstate.Color]uint64) (*ledgerstate.Transaction, *ledgerstate.AliasAddress) {
@@ -112,9 +108,9 @@ func TestRequestBacklog(t *testing.T) {
 			switch msg := msg.(type) {
 			case *waspconn.WaspFromNodeTransactionMsg:
 				resp = msg
-				return false
+				return true
 			}
-			return true
+			return false
 		},
 	)
 
@@ -168,10 +164,10 @@ func TestPostRequest(t *testing.T) {
 			case *waspconn.WaspFromNodeTransactionMsg:
 				seen[msg.Tx.ID()] = true
 				if len(seen) == 2 {
-					return false
+					return true
 				}
 			}
-			return true
+			return false
 		},
 	)
 
@@ -193,9 +189,9 @@ func TestRequestInclusionLevel(t *testing.T) {
 		func(msg waspconn.Message) bool {
 			if msg, ok := msg.(*waspconn.WaspFromNodeTxInclusionStateMsg); ok {
 				resp = msg
-				return false
+				return true
 			}
-			return true
+			return false
 		},
 	)
 
@@ -222,10 +218,10 @@ func TestSubscribe(t *testing.T) {
 			case *waspconn.WaspFromNodeTransactionMsg:
 				if msg.Tx.ID() == reqTx.ID() {
 					txMsg = msg
-					return false
+					return true
 				}
 			}
-			return true
+			return false
 		},
 	)
 
