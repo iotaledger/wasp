@@ -34,11 +34,11 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
 
     // Now it is time to check the parameter.
     // First we create an ScImmutableMap proxy to the params map on the host.
-    let p = ctx.params();
+    let p: ScImmutableMap = ctx.params();
 
     // Create an ScImmutablInt64 proxy to the 'number' parameter that is still stored
     // in the params map on the host using a constant defined in consts.rs.
-    let param_number = p.get_int64(PARAM_NUMBER);
+    let param_number: ScImmutableInt64 = p.get_int64(PARAM_NUMBER);
 
     // Require that the mandatory 'number' parameter actually exists in the map on the host.
     // If it doesn't we panic out with an error message.
@@ -46,17 +46,17 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
 
     // Now that we are sure that the 'number' parameter actually exists we can
     // retrieve its actual value into an i64.
-    let number = param_number.value();
+    let number: i64 = param_number.value();
     // require that the number is a valid number to bet on, otherwise panic out.
     ctx.require(number >= 1 && number <= MAX_NUMBER, "invalid number");
 
     // Create ScBalances proxy to the incoming balances for this Func request.
     // Note that ScBalances wraps an ScImmutableMap of token color/amount combinations
     // in a simpler to use interface.
-    let incoming = ctx.incoming();
+    let incoming: ScBalances = ctx.incoming();
 
     // Retrieve the amount of plain iota tokens from the incoming balance
-    let amount = incoming.balance(&ScColor::IOTA);
+    let amount: i64 = incoming.balance(&ScColor::IOTA);
 
     // require that there are actually some iotas there
     ctx.require(amount > 0, "empty bet");
@@ -71,13 +71,13 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
     };
 
     // Create an ScMutableMap proxy to the state storage map on the host.
-    let state = ctx.state();
+    let state: ScMutableMap = ctx.state();
 
     // Create an ScMutableBytesArray proxy to a bytes array named "bets" in the state storage.
-    let bets = state.get_bytes_array(VAR_BETS);
+    let bets: ScMutableBytesArray = state.get_bytes_array(VAR_BETS);
 
     // Determine what the next bet number is by retrieving the length of the bets array.
-    let bet_nr = bets.length();
+    let bet_nr: i32 = bets.length();
 
     // Append the bet data to the bets array. We get an ScBytes proxy to the bytes stored
     // using the bet number as index. Then we set the bytes value in the best array on the
@@ -88,7 +88,7 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
     if bet_nr == 0 {
         // Yes it was, query the state for the length of the playing period in seconds by
         // retrieving the "playPeriod" from state storage
-        let mut play_period = state.get_int64(VAR_PLAY_PERIOD).value();
+        let mut play_period: i64 = state.get_int64(VAR_PLAY_PERIOD).value();
 
         // if the play period is less than 10 seconds we override it with the default duration.
         // Note that this will also happen when the play period was not set yet because in that
@@ -129,23 +129,23 @@ pub fn func_lock_bets(ctx: &ScFuncContext) {
     ctx.require(ctx.caller() == ctx.contract_id().as_agent_id(), "no permission");
 
     // Create an ScMutableMap proxy to the state storage map on the host.
-    let state = ctx.state();
+    let state: ScMutableMap = ctx.state();
 
     // Create an ScMutableBytesArray proxy to the bytes array named 'bets' in state storage.
-    let bets = state.get_bytes_array(VAR_BETS);
+    let bets: ScMutableBytesArray = state.get_bytes_array(VAR_BETS);
 
     // Create an ScMutableBytesArray proxy to a bytes array named 'lockedBets' in state storage.
-    let locked_bets = state.get_bytes_array(VAR_LOCKED_BETS);
+    let locked_bets: ScMutableBytesArray = state.get_bytes_array(VAR_LOCKED_BETS);
 
     // Determine the amount of bets in the 'bets' array.
-    let nr_bets = bets.length();
+    let nr_bets: i32 = bets.length();
 
     // Copy all bet data from the 'bets' array to the 'lockedBets' array by
     // looping through all indexes of the array and copying the best one by one.
     for i in 0..nr_bets {
 
         // Get the bytes stored at the next index in the 'bets' array.
-        let bytes = bets.get_bytes(i).value();
+        let bytes: Vec<u8> = bets.get_bytes(i).value();
 
         // Save the bytes at the next index in the 'lockedBets' array.
         locked_bets.get_bytes(i).set_value(&bytes);
@@ -190,10 +190,10 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     // generator will use the next 8 bytes from the hash as its random Int64 number and once
     // it runs out of data it simply hashes the previous hash for a next psuedo-random sequence.
     // Here we determine the winning number for this round in the range of 1 thru 5 (inclusive).
-    let winning_number = ctx.utility().random(5) + 1;
+    let winning_number: i64 = ctx.utility().random(5) + 1;
 
     // Create an ScMutableMap proxy to the state storage map on the host.
-    let state = ctx.state();
+    let state: ScMutableMap = ctx.state();
 
     // Save the last winning number in state storage under 'lastWinningNumber' so that there is
     // (limited) time for people to call the 'getLastWinningNumber' View to verify the last winning
@@ -204,23 +204,23 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
 
     // Gather all winners and calculate some totals at the same time.
     // Keep track of the total bet amount, the total win amount, and all the winners
-    let mut total_bet_amount = 0_i64;
-    let mut total_win_amount = 0_i64;
+    let mut total_bet_amount: i64 = 0_i64;
+    let mut total_win_amount: i64 = 0_i64;
     let mut winners: Vec<Bet> = Vec::new();
 
     // Create an ScMutableBytesArray proxy to the 'lockedBets' bytes array in state storage.
-    let locked_bets = state.get_bytes_array(VAR_LOCKED_BETS);
+    let locked_bets: ScMutableBytesArray = state.get_bytes_array(VAR_LOCKED_BETS);
 
     // Determine the amount of bets in the 'lockedBets' array.
-    let nr_bets = locked_bets.length();
+    let nr_bets: i32 = locked_bets.length();
 
     // Loop through all indexes of the 'lockedBets' array.
     for i in 0..nr_bets {
         // Retrieve the bytes stored at the next index
-        let bytes = locked_bets.get_bytes(i).value();
+        let bytes: Vec<u8> = locked_bets.get_bytes(i).value();
 
         // Deserialize the bytes into the original Bet structure
-        let bet = Bet::from_bytes(&bytes);
+        let bet: Bet = Bet::from_bytes(&bytes);
 
         // Add this bet amount to the running total bet ammount
         total_bet_amount += bet.amount;
@@ -249,17 +249,17 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     // a small percentage that would go to the owner of the smart contract as hosting payment.
 
     // Keep track of the total payout so we can calculate the remainder after truncation
-    let mut total_payout = 0_i64;
+    let mut total_payout: i64 = 0_i64;
 
     // Loop through all winners
-    let size = winners.len();
+    let size: usize = winners.len();
     for i in 0..size {
 
         // Get the next winner
-        let bet = &winners[i];
+        let bet: &Bet = &winners[i];
 
         // Determine the proportional winning (we could take our percentage here)
-        let payout = total_bet_amount * bet.amount / total_win_amount;
+        let payout: i64 = total_bet_amount * bet.amount / total_win_amount;
 
         // Anything to pay to the winner?
         if payout != 0 {
@@ -271,7 +271,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
             // in a simpler to use interface. The constructor we use here creates and initializes
             // a single token color transfer in a single statement. The actual color and amount
             // values passed in will be stored in a new map on the host.
-            let transfers = ScTransfers::new(&ScColor::IOTA, payout);
+            let transfers: ScTransfers = ScTransfers::new(&ScColor::IOTA, payout);
 
             // Perform the actual transfer of tokens from the smart contract to the better
             // address. The transfer_to_address() method receives the address value and
@@ -281,16 +281,16 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
         }
 
         // Log who got sent what in the log on the host
-        let text = "Pay ".to_string() + &payout.to_string() + " to " + &bet.better.to_string();
+        let text: String = "Pay ".to_string() + &payout.to_string() + " to " + &bet.better.to_string();
         ctx.log(&text);
     }
 
     // This is where we transfer the remainder after payout to the creator of the smart contract.
     // The bank always wins :-P
-    let remainder = total_bet_amount - total_payout;
+    let remainder: i64 = total_bet_amount - total_payout;
     if remainder != 0 {
         // We have a remainder First create a transfer for the remainder.
-        let transfers = ScTransfers::new(&ScColor::IOTA, remainder);
+        let transfers: ScTransfers = ScTransfers::new(&ScColor::IOTA, remainder);
 
         // Send the remainder to the contract creator.
         ctx.transfer_to_address(&ctx.contract_creator().address(), transfers);
@@ -314,11 +314,11 @@ pub fn func_play_period(ctx: &ScFuncContext) {
     ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
 
     // First we create an ScImmutableMap proxy to the params map on the host.
-    let p = ctx.params();
+    let p: ScImmutableMap = ctx.params();
 
     // Create an ScImmutableInt64 proxy to the 'playPeriod' parameter that
     // is still stored in the map on the host.
-    let param_play_period = p.get_int64(PARAM_PLAY_PERIOD);
+    let param_play_period: ScImmutableInt64 = p.get_int64(PARAM_PLAY_PERIOD);
 
     // Require that the mandatory 'playPeriod' parameter actually exists in the map
     // on the host. If it doesn't we panic out with an error message.
@@ -326,7 +326,7 @@ pub fn func_play_period(ctx: &ScFuncContext) {
 
     // Now that we are sure that the 'playPeriod' parameter actually exists we can
     // retrieve its actual value into an i64 value.
-    let play_period = param_play_period.value();
+    let play_period: i64 = param_play_period.value();
 
     // Require that the play period (in seconds) is not ridiculously low.
     // Otherwise panic out with an error message.
@@ -347,15 +347,15 @@ pub fn view_last_winning_number(ctx: &ScViewContext) {
     ctx.log("fairroulette.lastWinningNumber");
 
     // Create an ScImmutableMap proxy to the state storage map on the host.
-    let state = ctx.state();
+    let state: ScImmutableMap = ctx.state();
 
     // Get the 'lastWinningNumber' int64 value from state storage through
     // an ScImmutableInt64 proxy.
-    let last_winning_number = state.get_int64(VAR_LAST_WINNING_NUMBER).value();
+    let last_winning_number: i64 = state.get_int64(VAR_LAST_WINNING_NUMBER).value();
 
     // Create an ScMutableMap proxy to the map on the host that will store the
     // key/value pairs that we want to return from this View function
-    let results = ctx.results();
+    let results: ScMutableMap = ctx.results();
 
     // Set the value associated with the 'lastWinningNumber' key to the value
     // we got from state storage

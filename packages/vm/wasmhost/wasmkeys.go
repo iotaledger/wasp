@@ -1,5 +1,8 @@
 package wasmhost
 
+// all predefined key id values should exactly match their counterpart values on the client!
+// note that predefined key ids are negative values to distinguish them from indexes
+
 const (
 	KeyAddress         = int32(-1)
 	KeyBalances        = int32(-2)
@@ -44,10 +47,11 @@ const (
 
 	// Treat this one like a version number. When anything changes
 	// to the keys give this one a different value and make sure
-	// the client side in wasplib is updated accordingly
+	// that the client side is updated accordingly
 	KeyZzzzzzz = int32(-41)
 )
 
+// associate names with predefined key ids
 var keyMap = map[string]int32{
 	"address":         KeyAddress,
 	"balances":        KeyBalances,

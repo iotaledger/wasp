@@ -26,28 +26,28 @@ func NewWasmTimeVM() *WasmTimeVM {
 
 func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
 	vm.WasmVmBase.LinkHost(impl, host)
-	err := vm.linker.DefineFunc("wasplib", "hostGetBytes",
+	err := vm.linker.DefineFunc("WasmLib", "hostGetBytes",
 		func(objId int32, keyId int32, typeId int32, stringRef int32, size int32) int32 {
 			return vm.HostGetBytes(objId, keyId, typeId, stringRef, size)
 		})
 	if err != nil {
 		return err
 	}
-	err = vm.linker.DefineFunc("wasplib", "hostGetKeyId",
+	err = vm.linker.DefineFunc("WasmLib", "hostGetKeyId",
 		func(keyRef int32, size int32) int32 {
 			return vm.HostGetKeyId(keyRef, size)
 		})
 	if err != nil {
 		return err
 	}
-	err = vm.linker.DefineFunc("wasplib", "hostGetObjectId",
+	err = vm.linker.DefineFunc("WasmLib", "hostGetObjectId",
 		func(objId int32, keyId int32, typeId int32) int32 {
 			return vm.HostGetObjectId(objId, keyId, typeId)
 		})
 	if err != nil {
 		return err
 	}
-	err = vm.linker.DefineFunc("wasplib", "hostSetBytes",
+	err = vm.linker.DefineFunc("WasmLib", "hostSetBytes",
 		func(objId int32, keyId int32, typeId int32, stringRef int32, size int32) {
 			vm.HostSetBytes(objId, keyId, typeId, stringRef, size)
 		})
@@ -96,9 +96,9 @@ func (vm *WasmTimeVM) RunFunction(functionName string, args ...interface{}) erro
 }
 
 func (vm *WasmTimeVM) RunScFunction(index int32) error {
-	export := vm.instance.GetExport("on_call_entrypoint")
+	export := vm.instance.GetExport("on_call")
 	if export == nil {
-		return errors.New("unknown export function: 'on_call_entrypoint'")
+		return errors.New("unknown export function: 'on_call'")
 	}
 	frame := vm.PreCall()
 	_, err := export.Func().Call(index)

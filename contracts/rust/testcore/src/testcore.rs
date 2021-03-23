@@ -38,9 +38,9 @@ pub fn func_call_on_chain(ctx: &ScFuncContext) {
     ctx.log(&format!("call depth = {} hnameContract = {} hnameEP = {} counter = {}",
                      param_int, &target_contract.to_string(), &target_ep.to_string(), counter));
 
-    let params = ScMutableMap::new();
-    params.get_int64(PARAM_INT_VALUE).set_value(param_int);
-    let ret = ctx.call(target_contract, target_ep, Some(params), None);
+    let parms = ScMutableMap::new();
+    parms.get_int64(PARAM_INT_VALUE).set_value(param_int);
+    let ret = ctx.call(target_contract, target_ep, Some(parms), None);
 
     let ret_val = ret.get_int64(PARAM_INT_VALUE);
     ctx.results().get_int64(PARAM_INT_VALUE).set_value(ret_val.value());
@@ -70,6 +70,12 @@ pub fn func_check_context_from_full_ep(ctx: &ScFuncContext) {
 pub fn func_do_nothing(ctx: &ScFuncContext) {
     ctx.log("testcore.doNothing");
     ctx.log("testcore.doNothing ok");
+}
+
+pub fn func_get_minted_supply(ctx: &ScFuncContext) {
+    ctx.log("testcore.getMintedSupply");
+    ctx.results().get_int64(VAR_MINTED_SUPPLY).set_value(ctx.minted_supply());
+    ctx.log("testcore.setInt ok");
 }
 
 pub fn func_init(ctx: &ScFuncContext) {
@@ -159,31 +165,25 @@ pub fn func_set_int(ctx: &ScFuncContext) {
     ctx.log("testcore.setInt ok");
 }
 
-pub fn func_get_minted_supply(ctx: &ScFuncContext) {
-    ctx.log("testcore.getMintedSupply");
-    ctx.results().get_int64(PARAM_MINTED_SUPPLY).set_value(ctx.minted_supply());
-    ctx.log("testcore.setInt ok");
-}
-
 pub fn func_test_call_panic_full_ep(ctx: &ScFuncContext) {
     ctx.log("testcore.testCallPanicFullEP");
     ctx.call_self(HFUNC_TEST_PANIC_FULL_EP, None, None);
     ctx.log("testcore.testCallPanicFullEP ok");
 }
 
-pub fn func_test_call_panic_view_epfrom_full(ctx: &ScFuncContext) {
+pub fn func_test_call_panic_view_ep_from_full(ctx: &ScFuncContext) {
     ctx.log("testcore.testCallPanicViewEPFromFull");
     ctx.call_self(HVIEW_TEST_PANIC_VIEW_EP, None, None);
     ctx.log("testcore.testCallPanicViewEPFromFull ok");
 }
 
-pub fn func_test_chain_owner_idfull(ctx: &ScFuncContext) {
+pub fn func_test_chain_owner_id_full(ctx: &ScFuncContext) {
     ctx.log("testcore.testChainOwnerIDFull");
     ctx.results().get_agent_id(PARAM_CHAIN_OWNER_ID).set_value(&ctx.chain_owner_id());
     ctx.log("testcore.testChainOwnerIDFull ok");
 }
 
-pub fn func_test_contract_idfull(ctx: &ScFuncContext) {
+pub fn func_test_contract_id_full(ctx: &ScFuncContext) {
     ctx.log("testcore.testContractIDFull");
     ctx.results().get_contract_id(PARAM_CONTRACT_ID).set_value(&ctx.contract_id());
     ctx.log("testcore.testContractIDFull ok");
@@ -284,12 +284,6 @@ pub fn view_fibonacci(ctx: &ScViewContext) {
     ctx.log("testcore.fibonacci ok");
 }
 
-pub fn func_inc_counter(ctx: &ScFuncContext) {
-    ctx.log("testcore.incCounter");
-    ctx.state().get_int64(VAR_COUNTER).set_value(ctx.state().get_int64(VAR_COUNTER).value() + 1);
-    ctx.log("testcore.incCounter ok");
-}
-
 pub fn view_get_counter(ctx: &ScViewContext) {
     ctx.log("testcore.getCounter");
     let counter = ctx.state().get_int64(VAR_COUNTER);
@@ -310,6 +304,12 @@ pub fn view_get_int(ctx: &ScViewContext) {
     ctx.require(value.exists(), "param 'value' not found");
     ctx.results().get_int64(&name).set_value(value.value());
     ctx.log("testcore.getInt ok");
+}
+
+pub fn func_inc_counter(ctx: &ScFuncContext) {
+    ctx.log("testcore.incCounter");
+    ctx.state().get_int64(VAR_COUNTER).set_value(ctx.state().get_int64(VAR_COUNTER).value() + 1);
+    ctx.log("testcore.incCounter ok");
 }
 
 pub fn view_just_view(ctx: &ScViewContext) {
@@ -348,19 +348,19 @@ pub fn view_pass_types_view(ctx: &ScViewContext) {
     ctx.log("testcore.passTypesView ok");
 }
 
-pub fn view_test_call_panic_view_epfrom_view(ctx: &ScViewContext) {
+pub fn view_test_call_panic_view_ep_from_view(ctx: &ScViewContext) {
     ctx.log("testcore.testCallPanicViewEPFromView");
     ctx.call_self(HVIEW_TEST_PANIC_VIEW_EP, None);
     ctx.log("testcore.testCallPanicViewEPFromView ok");
 }
 
-pub fn view_test_chain_owner_idview(ctx: &ScViewContext) {
+pub fn view_test_chain_owner_id_view(ctx: &ScViewContext) {
     ctx.log("testcore.testChainOwnerIDView");
     ctx.results().get_agent_id(PARAM_CHAIN_OWNER_ID).set_value(&ctx.chain_owner_id());
     ctx.log("testcore.testChainOwnerIDView ok");
 }
 
-pub fn view_test_contract_idview(ctx: &ScViewContext) {
+pub fn view_test_contract_id_view(ctx: &ScViewContext) {
     ctx.log("testcore.testContractIDView");
     ctx.results().get_contract_id(PARAM_CONTRACT_ID).set_value(&ctx.contract_id());
     ctx.log("testcore.testContractIDView ok");
