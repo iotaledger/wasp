@@ -24,7 +24,7 @@ contract, called 'getFactor':
 // associated with the (mandatory) address parameter it was provided with.
 pub fn view_get_factor(ctx: &ScViewContext) {
 
-    // Log the fact that we have initiated the 'getFactor' View in the host log.
+    // Log initiation of the 'getFactor' Func in the host log.
     ctx.log("dividend.getFactor");
 
     // Now it is time to check the mandatory parameter.
@@ -77,9 +77,8 @@ that it is not possible to modify the state in any way.
     // Set the value associated with the 'factor' key to the factor we got from
     // the members map through an ScMutableInt64 proxy to the results map.
     results.get_int64(VAR_FACTOR).set_value(factor);
-    
-    // Finally, we log the fact that we have successfully completed execution
-    // of the 'getFactor' View in the host log.
+
+    // Log successful completion of the 'getFactor' Func in the host log.
     ctx.log("dividend.getFactor ok");
 }
 ```

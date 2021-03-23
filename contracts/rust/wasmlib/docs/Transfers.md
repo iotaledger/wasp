@@ -46,7 +46,7 @@ Here is how the 'divide' function starts:
 // dispersion amounts.
 pub fn func_divide(ctx: &ScFuncContext) {
 
-    // Log the fact that we have initiated the 'divide' Func in the host log.
+    // Log initiation of the 'divide' Func in the host log.
     ctx.log("dividend.divide");
 
     // Create an ScBalances map proxy to the total account balances for this
@@ -125,8 +125,7 @@ for i in 0..size {
     }
 }
 
-// Finally, we log the fact that we have successfully completed execution
-// of the 'divide' Func in the host log.
+// Log successful completion of the 'divide' Func in the host log.
 ctx.log("dividend.divide ok");
 ```
 

@@ -28,7 +28,7 @@ how we can properly interact with these parameters:
 // 'divide' function can simply start using these precalculated values
 pub fn func_member(ctx: &ScFuncContext) {
 
-    // Log the fact that we have initiated the 'member' Func in the host log.
+    // Log initiation of the 'member' Func in the host log.
     ctx.log("dividend.member");
 
     // The 'init' func previously determined which agent is the owner of this
@@ -124,7 +124,7 @@ let factor: i64 = param_factor.value();
 // ctx.require(factor >= 0, "negative factor");
 // Using the require() method reduces typing and enhances readability.
 if factor < 0 {
-ctx.panic("negative factor");
+    ctx.panic("negative factor");
 }
 ```
 

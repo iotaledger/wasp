@@ -20,10 +20,9 @@ understandable as possible these are limited to only two different kinds. Arrays
 proxies and map proxies. These are enough to be able to define quite complex
 data structures, because we allow nesting of container objects. The underlying
 ISCP sandbox provides access to its data in the form of simple key/value stores
-that can have arbitrary byte data for both key and value. WasmLib
-provides an abstraction on top of this two-dimensional storage system that 
-allows nesting of maps and arrays very similar to the way objects in JSON can 
-be nested.
+that can have arbitrary byte data for both key and value. WasmLib provides an
+abstraction on top of this one-dimensional storage system that allows nesting of
+maps and arrays very similar to the way objects in JSON can be nested.
 
 A map is a key/value store where the key is one of our supported value types.
 The value associated with a key can again be one of our supported value types,
@@ -32,8 +31,8 @@ but it can also be a container object (map or array).
 An array can be seen as a special kind of key/value store, where the key is an
 integer value with the property that keys form a sequence from 0 to N-1 for an
 array with N elements. Arrays always store elements of the same data type, which
-can be one of the value types, or a map. We do not support arrays of
-arrays at this moment.
+can be one of the value types, or a map. We do not support arrays of arrays at
+this moment.
 
 Here is an example of how proxies are used in WasmLib:
 
@@ -43,11 +42,11 @@ In this example we have a single map in ISCP state storage that contains a
 number of key/value combinations (Key 1 thru Key 4). One of them (Key 4) refers
 to an array, which in turn contains indexed values stored at indexes 0 thru N.
 Notice how the WasmLib proxies mirror these exactly. There is a proxy for every
-container, and also for every value stored. Each container proxy can 
-uniquely identify the container it references through the container's id. 
-Each value proxy uniquely identifies the value it references through the 
-container id of the container it is in, and the key (or index) id that 
-correlates to its position in the container.
+container, and also for every value stored. Each container proxy can uniquely
+identify the container it references through the container's id. Each value
+proxy uniquely identifies the value it references through the container id of
+the container it is in, and the key id (or index) that correlates to its
+position in the container.
 
 In the next section we will go into more detail about the supported data types.
 

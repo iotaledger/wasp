@@ -49,6 +49,7 @@ fn on_load() {
     exports.add_func("divide", func_divide);
     exports.add_func("init", func_init);
     exports.add_func("member", func_member);
+    exports.add_func("setOwner", func_set_owner);
     exports.add_view("getFactor", view_get_factor);
 }
 ```

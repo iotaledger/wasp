@@ -57,6 +57,39 @@ ctx.require(ctx.caller() == owner, "no permission");
 It is very important to thoroughly think access limitation and other security
 measures through before deploying a smart contract on a chain.
 
+For completeness here is the 'setOwner' function of the dividend smart contract:
+```rust
+
+// 'setOwner' is used to change the owner of the smart contract.
+// It updates the 'owner' state variable with the provided agent id.
+// The 'setOwner' function takes a single mandatory parameter:
+// - 'owner', which is the agent id of the entity that will own the contract.
+// Only the current owner can change the owner.
+pub fn func_set_owner(ctx: &ScFuncContext) {
+
+    // Log initiation of the 'setOwner' Func in the host log.
+    ctx.log("dividend.setOwner");
+
+    // Get a proxy to the 'owner' variable in state storage.
+    let state_owner: ScMutableAgentId = ctx.state().get_agent_id(VAR_OWNER);
+
+    // Require the caller to be the current owner.
+    ctx.require(ctx.caller() == state_owner.value(), "no permission");
+
+    // Get a proxy to the 'owner' parameter.
+    let param_owner: ScImmutableAgentId = ctx.params().get_agent_id(PARAM_OWNER);
+
+    // Require that the 'owner' parameter is mandatory.
+    ctx.require(param_owner.exists(), "missing mandatory owner");
+
+    // Save the new owner parameter value in the 'owner' variable in state storage.
+    state_owner.set_value(&param_owner.value());
+
+    // Log successful completion of the 'setOwner' Func in the host log.
+    ctx.log("dividend.setOwner ok");
+}
+```
+
 In the next section we will explore how we can have smart contracts invoke or
 call other smart contract functions.
 

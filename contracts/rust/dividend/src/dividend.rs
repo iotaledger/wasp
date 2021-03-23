@@ -6,6 +6,9 @@
 // of member addresses according to predefined division factors. The intent is
 // to showcase basic functionality of WasmLib through a minimal implementation
 // and not to come up with a complete robust real-world solution.
+// Note that we have drawn out constructs that could have been done in a single
+// line over multiple statements to be able to properly document step by step
+// what is happening in the code.
 
 use wasmlib::*;
 
@@ -20,7 +23,7 @@ use crate::*;
 // When this parameter is omitted the owner will default to the contract creator.
 pub fn func_init(ctx: &ScFuncContext) {
 
-    // Log the fact that we have initiated the 'init' Func in the host log.
+    // Log initiation of the 'init' Func in the host log.
     ctx.log("dividend.init");
 
     // First we set up a default value for the owner in case the optional
@@ -52,8 +55,7 @@ pub fn func_init(ctx: &ScFuncContext) {
     // And then we save the owner value in the 'owner' variable in state storage.
     state_owner.set_value(&owner);
 
-    // Finally, we log the fact that we have successfully completed execution
-    // of the 'init' Func in the host log.
+    // Log successful completion of the 'init' Func in the host log.
     ctx.log("dividend.init ok");
 }
 
@@ -70,7 +72,7 @@ pub fn func_init(ctx: &ScFuncContext) {
 // 'divide' function can simply start using these precalculated values
 pub fn func_member(ctx: &ScFuncContext) {
 
-    // Log the fact that we have initiated the 'member' Func in the host log.
+    // Log initiation of the 'member' Func in the host log.
     ctx.log("dividend.member");
 
     // The 'init' func previously determined which agent is the owner of this
@@ -181,8 +183,7 @@ pub fn func_member(ctx: &ScFuncContext) {
     // parameters in the state storage that the proxy refers to
     current_factor.set_value(factor);
 
-    // Finally, we log the fact that we have successfully completed execution
-    // of the 'member' Func in the host log.
+    // Log successful completion of the 'member' Func in the host log.
     ctx.log("dividend.member ok");
 }
 
@@ -197,7 +198,7 @@ pub fn func_member(ctx: &ScFuncContext) {
 // dispersion amounts.
 pub fn func_divide(ctx: &ScFuncContext) {
 
-    // Log the fact that we have initiated the 'divide' Func in the host log.
+    // Log initiation of the 'divide' Func in the host log.
     ctx.log("dividend.divide");
 
     // Create an ScBalances map proxy to the total account balances for this
@@ -271,16 +272,44 @@ pub fn func_divide(ctx: &ScFuncContext) {
         }
     }
 
-    // Finally, we log the fact that we have successfully completed execution
-    // of the 'divide' Func in the host log.
+    // Log successful completion of the 'divide' Func in the host log.
     ctx.log("dividend.divide ok");
+}
+
+// 'setOwner' is used to change the owner of the smart contract.
+// It updates the 'owner' state variable with the provided agent id.
+// The 'setOwner' function takes a single mandatory parameter:
+// - 'owner', which is the agent id of the entity that will own the contract.
+// Only the current owner can change the owner.
+pub fn func_set_owner(ctx: &ScFuncContext) {
+
+    // Log initiation of the 'setOwner' Func in the host log.
+    ctx.log("dividend.setOwner");
+
+    // Get a proxy to the 'owner' variable in state storage.
+    let state_owner: ScMutableAgentId = ctx.state().get_agent_id(VAR_OWNER);
+
+    // Require the caller to be the current owner.
+    ctx.require(ctx.caller() == state_owner.value(), "no permission");
+
+    // Get a proxy to the 'owner' parameter.
+    let param_owner: ScImmutableAgentId = ctx.params().get_agent_id(PARAM_OWNER);
+
+    // Require that the 'owner' parameter is mandatory.
+    ctx.require(param_owner.exists(), "missing mandatory owner");
+
+    // Save the new owner parameter value in the 'owner' variable in state storage.
+    state_owner.set_value(&param_owner.value());
+
+    // Log successful completion of the 'setOwner' Func in the host log.
+    ctx.log("dividend.setOwner ok");
 }
 
 // 'getFactor' is a simple View function. It will retrieve the factor
 // associated with the (mandatory) address parameter it was provided with.
 pub fn view_get_factor(ctx: &ScViewContext) {
 
-    // Log the fact that we have initiated the 'getFactor' View in the host log.
+    // Log initiation of the 'getFactor' View in the host log.
     ctx.log("dividend.getFactor");
 
     // Now it is time to check the mandatory parameter.
@@ -323,7 +352,6 @@ pub fn view_get_factor(ctx: &ScViewContext) {
     // the members map through an ScMutableInt64 proxy to the results map.
     results.get_int64(VAR_FACTOR).set_value(factor);
 
-    // Finally, we log the fact that we have successfully completed execution
-    // of the 'getFactor' View in the host log.
+    // Log successful completion of the 'getFactor' View in the host log.
     ctx.log("dividend.getFactor ok");
 }

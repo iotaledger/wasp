@@ -28,16 +28,16 @@ used as key and/or stored value. There are also array proxies for arrays of each
 of these value types and for arrays of maps.
 
 Another thing we need to consider is that some data provided by the host is
-mutable, whereas some may be immutable. To facilitate this each proxy type comes
-in two flavors that reflect this and make sure the data is only used as
+mutable, whereas other data may be immutable. To facilitate this each proxy type
+comes in two flavors that reflect this and make sure the data is only used as
 intended. The rule is that an immutable container proxy can only produce
 immutable container and value proxies. The contents of these containers can
 never be changed through these proxies. Separating these constraints for types
 into separate proxy types allows us to use a compiler's static type checking to
 enforce these constraints. The ISCP sandbox will also check these constraints at
-runtime on the host to prevent malicious client code from bypassing them.
+runtime on the host to guard against client code that bypasses them.
 
-So here is the full matrix of WasmLib types (excluding array proxies):
+Here is the full matrix of WasmLib types (excluding array proxies):
 
 | ISCP type  | WasmLib type | Mutable proxy type  | Immutable proxy type  |
 | ---------- | ------------ | ------------------- | --------------------- |

@@ -84,8 +84,7 @@ total_factor.set_value(new_total_factor);
 // parameters in the state storage that the proxy refers to
 current_factor.set_value(factor);
 
-// Finally, we log the fact that we have successfully completed execution
-// of the 'member' Func in the host log.
+// Log successful completion of the 'member' Func in the host log.
 ctx.log("dividend.member ok");
 ```
 

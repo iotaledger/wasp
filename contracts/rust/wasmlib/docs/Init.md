@@ -5,12 +5,20 @@ be able to define initial state, for example if your contract is configurable.
 You want to be able to pass this configuration to the contract upon deployment,
 so that its state reflects that configuration once the first request comes in.
 To support this initialization we allow the smart contract creator to provide an
-optional function named `init`. This function, when provided, will automatically
-be called immediately after the contract has been deployed on the VM.
+optional function named `init`.
 
-To show how this all works we will slowly start fleshing out the smart contract
-functions of the `dividend` example. Here is the first part of the Rust code
-that implements it, which contains the 'init' function:
+This 'init' function, when provided, will automatically be called immediately
+after the first time the contract has been deployed to the VM. Note that this is
+a one-time initialization call, meant to be performed by the contract deployment
+mechanism. ISCP will prevent anyone else from calling this function ever again.
+So if you need to be able to reconfigure the contract later on, then you will
+need to provide a separate configuration function, and guard it from being 
+accessed by anyone else than properly authorized entities.
+
+To show how creating a smart contract with WasmLib works we will slowly start
+fleshing out the smart contract functions of the `dividend` example in this 
+tutorial. Here is the first part of the Rust code that implements it, which
+contains the 'init' function:
 
 ```rust
 // This example implements 'dividend', a simple smart contract that will
@@ -18,6 +26,9 @@ that implements it, which contains the 'init' function:
 // of member addresses according to predefined division factors. The intent is
 // to showcase basic functionality of WasmLib through a minimal implementation
 // and not to come up with a complete robust real-world solution.
+// Note that we have drawn out constructs that could have been done in a single
+// line over multiple statements to be able to properly document step by step
+// what is happening in the code.
 
 use wasmlib::*;
 
@@ -32,7 +43,7 @@ use crate::*;
 // When this parameter is omitted the owner will default to the contract creator.
 pub fn func_init(ctx: &ScFuncContext) {
 
-    // Log the fact that we have initiated the 'init' Func in the host log.
+    // Log initiation of the 'init' Func in the host log.
     ctx.log("dividend.init");
 
     // First we set up a default value for the owner in case the optional
@@ -52,20 +63,36 @@ pub fn func_init(ctx: &ScFuncContext) {
         // the one specified by the 'owner' parameter.
         owner = param_owner.value();
     }
+```
 
+We define an owner variable and allow it to be something other than the default
+value of contract creator. It is always a good idea to be flexible enough to be
+able to transfer ownership to another entity if necessary. Remember that once a
+smart contract is deployed it is no longer possible to change it. Therefore, it
+is good practice thinking through those situations that could require change in
+advance and allow the contract itself to handle such changes through its state
+by providing a proper function interface.
+
+We only define a single owner here. Proper fall-back could require multiple
+owners in case the owner entity could disappear, which would allow others to
+take over instead of the contract becoming immutable w.r.t. owner functionality.
+Again, we cannot stress enough how important it is to think through every aspect
+of a smart contract before deployment.
+
+```rust
     // Now that we have sorted out which agent will be the owner of this contract
     // we will save this value in the state storage on the host. First we create
     // an ScMutableMap proxy that refers to the state storage map on the host.
     let state: ScMutableMap = ctx.state();
 
-    // Then we create an ScMutableAgentId proxy to an 'owner' variable in state storage.
+    // Then we create an ScMutableAgentId proxy to an 'owner' variable in state
+    // storage on the host.
     let state_owner: ScMutableAgentId = state.get_agent_id(VAR_OWNER);
 
     // And then we save the owner value in the 'owner' variable in state storage.
     state_owner.set_value(&owner);
 
-    // Finally, we log the fact that we have successfully completed execution
-    // of the 'init' Func in the host log.
+    // Log successful completion of the 'init' Func in the host log.
     ctx.log("dividend.init ok");
 }
 ```
