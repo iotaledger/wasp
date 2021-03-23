@@ -26,7 +26,7 @@ const (
 var dialRetryPolicy = backoff.ConstantBackOff(backoffDelay).With(backoff.MaxRetries(dialRetries))
 
 // dials outbound address and established connection
-func (n *NodeConn) nodeConnect() {
+func (n *NodeConn) nodeConnectLoop() {
 	var addr string
 	var conn net.Conn
 	if err := backoff.Retry(dialRetryPolicy, func() error {
@@ -113,7 +113,7 @@ func (n *NodeConn) IsConnected() bool {
 func (n *NodeConn) retryNodeConnect() {
 	n.log.Infof("will retry connecting to the node after %v", retryAfter)
 	time.Sleep(retryAfter)
-	go n.nodeConnect()
+	go n.nodeConnectLoop()
 }
 
 func (n *NodeConn) sendToNode(msg waspconn.Message) error {

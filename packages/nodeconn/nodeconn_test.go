@@ -35,7 +35,7 @@ func start(t *testing.T) (*utxodbledger.UtxoDBLedger, *NodeConn) {
 		return "pipe", conn1, nil
 	})
 
-	n := New("test", logger.NewExampleLogger("nodeconn"), dial, "goshimerTest")
+	n := New("test", logger.NewExampleLogger("nodeconn"), dial)
 	t.Cleanup(n.Close)
 
 	ok := n.WaitForConnection(10 * time.Second)
@@ -62,7 +62,11 @@ func send(t *testing.T, n *NodeConn, sendMsg func() error, rcv func(msg waspconn
 	err := sendMsg()
 	require.NoError(t, err)
 
-	<-done
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatalf("timeout")
+	}
 }
 
 func createChain(t *testing.T, u *utxodbledger.UtxoDBLedger, creatorIndex int, stateControlIndex int, balances map[ledgerstate.Color]uint64) (*ledgerstate.Transaction, *ledgerstate.AliasAddress) {
