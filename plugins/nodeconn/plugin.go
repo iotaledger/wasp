@@ -7,6 +7,8 @@ import (
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/plugins/peering"
+	"net"
+	"time"
 )
 
 // PluginName is the name of the NodeConn plugin.
@@ -16,6 +18,8 @@ const dialTimeout = 1 * time.Second
 
 var (
 	log *logger.Logger
+
+	NodeConn *nodeconn.NodeConn
 )
 
 func Init() *node.Plugin {
@@ -31,11 +35,12 @@ func run(_ *node.Plugin) {
 		addr := parameters.GetString(parameters.NodeAddress)
 		dial := nodeconn.DialFunc(func() (string, net.Conn, error) {
 			log.Infof("connecting with node at %s", addr)
-			return addr, net.DialTimeout("tcp", addr, dialTimeout)
+			conn, err := net.DialTimeout("tcp", addr, dialTimeout)
+			return addr, conn, err
 		})
 
-		n := nodeconn.New(peering.DefaultNetworkProvider().Self().NetID(), log, dial)
-		defer n.Close()
+		NodeConn := nodeconn.New(peering.DefaultNetworkProvider().Self().NetID(), log, dial)
+		defer NodeConn.Close()
 
 		<-shutdownSignal
 

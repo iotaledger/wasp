@@ -6,15 +6,16 @@
 package dispatcher
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
+	"github.com/iotaledger/goshimmer/packages/waspconn"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	_ "github.com/iotaledger/wasp/packages/chain/chainimpl" // activate init
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 )
 
@@ -54,7 +55,7 @@ func run(_ *node.Plugin) {
 
 			log.Infof("Stopping %s..", PluginName)
 			go func() {
-				nodeconn.EventMessageReceived.Detach(processNodeMsgClosure)
+				nodeconn.NodeConn.Events.MessageReceived.Detach(processNodeMsgClosure)
 
 				close(chNodeMsg)
 				log.Infof("Stopping %s.. Done", PluginName)
@@ -67,7 +68,7 @@ func run(_ *node.Plugin) {
 
 		// event attachments
 		// receiving events from NodeConn --> producing dispatcher events
-		nodeconn.EventMessageReceived.Attach(processNodeMsgClosure)
+		nodeconn.NodeConn.Events.MessageReceived.Attach(processNodeMsgClosure)
 
 		log.Infof("dispatcher started")
 
@@ -80,29 +81,25 @@ func run(_ *node.Plugin) {
 
 func processNodeMsg(msg interface{}) {
 	switch msgt := msg.(type) {
-
-	case *waspconn.WaspFromNodeConfirmedTransactionMsg:
-		tx, err := sctransaction_old.ParseValueTransaction(msgt.Tx)
-		if err != nil {
-			log.Debugw("!!!! after parsing", "txid", msgt.Tx.ID().String(), "err", err)
-			// not a SC transaction. Ignore
+	case *waspconn.WaspFromNodeTransactionMsg:
+		chainID := coretypes.NewChainID(msgt.ChainAddress)
+		chain := chains.GetChain(chainID)
+		if chain == nil {
 			return
 		}
-		dispatchState(tx)
+		log.Debugw("dispatch transaction",
+			"txid", msgt.Tx.ID().String(),
+			"chainid", chainID.String(),
+		)
+		chain.ReceiveMessage(msgt)
 
-	case *waspconn.WaspFromNodeAddressOutputsMsg:
-		dispatchBalances(msgt.Address, msgt.Balances)
-
-	case *waspconn.WaspFromNodeAddressUpdateMsg:
-		tx, err := sctransaction_old.ParseValueTransaction(msgt.Tx)
-		if err != nil {
-			log.Debugw("!!!! after parsing", "txid", msgt.Tx.ID().String(), "err", err)
-			// not a SC transaction. Ignore
+	case *waspconn.WaspFromNodeTxInclusionStateMsg:
+		chainID := coretypes.NewChainID(msgt.ChainAddress)
+		ch := chains.GetChain(chainID)
+		if ch == nil {
 			return
 		}
-		dispatchAddressUpdate(msgt.Address, msgt.Balances, tx)
-
-	case *waspconn.WaspFromNodeTransactionInclusionLevelMsg:
-		dispatchTxInclusionLevel(msgt.Level, &msgt.TxId, msgt.SubscribedAddresses)
+		ch.ReceiveMessage(msgt)
 	}
+	log.Errorf("wrong message type")
 }

@@ -17,11 +17,11 @@ type NodeConn struct {
 	chSubscribe   chan *ledgerstate.AliasAddress
 	chUnsubscribe chan *ledgerstate.AliasAddress
 	shutdown      chan bool
-	Events        NodeConnEvents
+	Events        Events
 	wgConnected   sync.WaitGroup
 }
 
-type NodeConnEvents struct {
+type Events struct {
 	MessageReceived *events.Event
 	Connected       *events.Event
 }
@@ -44,7 +44,7 @@ func New(netID string, log *logger.Logger, dial DialFunc) *NodeConn {
 		chSubscribe:   make(chan *ledgerstate.AliasAddress),
 		chUnsubscribe: make(chan *ledgerstate.AliasAddress),
 		shutdown:      make(chan bool),
-		Events: NodeConnEvents{
+		Events: Events{
 			MessageReceived: events.NewEvent(handleMessageReceived),
 			Connected:       events.NewEvent(handleConnected),
 		},

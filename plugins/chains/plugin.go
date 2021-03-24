@@ -2,9 +2,9 @@ package chains
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"sync"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -22,7 +22,7 @@ const PluginName = "Chains"
 var (
 	log *logger.Logger
 
-	chains      = make(map[coretypes.ChainID]chain.Chain)
+	chains      = make(map[[ledgerstate.AddressLength]byte]chain.Chain)
 	chainsMutex = &sync.RWMutex{}
 )
 
@@ -51,7 +51,7 @@ func run(_ *node.Plugin) {
 		for _, chr := range chainRecords {
 			if chr.Active {
 				if err := ActivateChain(chr); err != nil {
-					log.Errorf("cannot activate committee %s: %v", chr.ChainID, err)
+					log.Errorf("cannot activate chain %s: %v", chr.ChainID, err)
 				}
 			}
 		}
@@ -59,14 +59,14 @@ func run(_ *node.Plugin) {
 		<-shutdownSignal
 
 		func() {
-			log.Infof("shutdown signal received: dismissing committees..")
+			log.Infof("shutdown signal received: dismissing chains..")
 			chainsMutex.RLock()
 			defer chainsMutex.RUnlock()
 
 			for _, com := range chains {
 				com.Dismiss()
 			}
-			log.Infof("shutdown signal received: dismissing committees.. Done")
+			log.Infof("shutdown signal received: dismissing chains.. Done")
 		}()
 	})
 	if err != nil {
@@ -86,8 +86,8 @@ func ActivateChain(chr *registry_pkg.ChainRecord) error {
 	if !chr.Active {
 		return fmt.Errorf("cannot activate chain for deactivated chain record")
 	}
-
-	_, ok := chains[chr.ChainID]
+	chainArr := chr.ChainID.Array()
+	_, ok := chains[chainArr]
 	if ok {
 		log.Debugf("chain is already active: %s", chr.ChainID.String())
 		return nil
@@ -95,10 +95,10 @@ func ActivateChain(chr *registry_pkg.ChainRecord) error {
 	// create new chain object
 	defaultRegistry := registry.DefaultRegistry()
 	c := chain.New(chr, log, peering.DefaultNetworkProvider(), defaultRegistry, defaultRegistry, func() {
-		nodeconn.Subscribe((address.Address)(chr.ChainID), chr.Color)
+		nodeconn.NodeConn.Subscribe(chr.ChainID.AliasAddress)
 	})
 	if c != nil {
-		chains[chr.ChainID] = c
+		chains[chainArr] = c
 		log.Infof("activated chain:\n%s", chr.String())
 	} else {
 		log.Infof("failed to activate chain:\n%s", chr.String())
@@ -111,7 +111,7 @@ func DeactivateChain(chr *registry_pkg.ChainRecord) error {
 	chainsMutex.Lock()
 	defer chainsMutex.Unlock()
 
-	c, ok := chains[chr.ChainID]
+	c, ok := chains[chr.ChainID.Array()]
 	if !ok || c.IsDismissed() {
 		log.Debugf("chain is not active: %s", chr.ChainID.String())
 		return nil
@@ -122,14 +122,15 @@ func DeactivateChain(chr *registry_pkg.ChainRecord) error {
 }
 
 // GetChain returns active chain object or nil if it doesn't exist
-func GetChain(chainID coretypes.ChainID) chain.Chain {
+func GetChain(chainID *coretypes.ChainID) chain.Chain {
 	chainsMutex.RLock()
 	defer chainsMutex.RUnlock()
 
-	ret, ok := chains[chainID]
+	addrArr := chainID.Array()
+	ret, ok := chains[addrArr]
 	if ok && ret.IsDismissed() {
-		delete(chains, chainID)
-		nodeconn.Unsubscribe((address.Address)(chainID))
+		delete(chains, addrArr)
+		nodeconn.NodeConn.Unsubscribe(chainID.AliasAddress)
 		return nil
 	}
 	return ret
