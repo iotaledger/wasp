@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/iotaledger/wasp/plugins/dashboard"
 	"github.com/iotaledger/wasp/plugins/database"
-	"github.com/iotaledger/wasp/plugins/dispatcher"
 	"github.com/iotaledger/wasp/plugins/dkg"
 	"github.com/iotaledger/wasp/plugins/globals"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
@@ -43,7 +42,6 @@ func main() {
 		peering.Init(suite),
 		dkg.Init(suite),
 		nodeconn.Init(),
-		dispatcher.Init(),
 		chains.Init(),
 		publisher.Init(),
 		dashboard.Init(),

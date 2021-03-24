@@ -18,7 +18,12 @@ type ChainID struct {
 
 var NilChainID = ChainID{}
 
-// NewChainIDFromAddress temporary
+// NewChainID creates new chain ID from alias address
+func NewChainID(addr *ledgerstate.AliasAddress) *ChainID {
+	return &ChainID{addr}
+}
+
+// NewChainIDFromAddress creates a chainIDD from alias address. Returns and error if not an alias address type
 func NewChainIDFromAddress(addr ledgerstate.Address) (*ChainID, error) {
 	alias, ok := addr.(*ledgerstate.AliasAddress)
 	if !ok {

@@ -35,7 +35,7 @@ func handleActivateChain(c echo.Context) error {
 		return err
 	}
 
-	log.Debugw("calling committees.ActivateChain", "chainID", bd.ChainID.String())
+	log.Debugw("calling committees.Activate", "chainID", bd.ChainID.String())
 	if err := chains.ActivateChain(bd); err != nil {
 		return err
 	}
