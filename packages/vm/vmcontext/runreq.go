@@ -179,7 +179,7 @@ func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
 func (vmctx *VMContext) mustCallFromRequest() {
 	vmctx.log.Debugf("mustCallFromRequest: %s", vmctx.req.ID().String())
 
-	// calling only non vew entry points. Calling the view will trigger error and fallback
+	// calling only non view entry points. Calling the view will trigger error and fallback
 	md := vmctx.req.GetMetadata()
 	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
 		md.TargetContract(), md.EntryPoint(), vmctx.req.SolidArgs(), vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)

@@ -78,7 +78,7 @@ func donate(ctx coretypes.Sandbox) error {
 
 	// how many iotas are sent by the request.
 	// only iotas are considered donation. Other colors are ignored
-	donated := ctx.IncomingTransfer().Balance(balance.ColorIOTA)
+	donated := ctx.IncomingTransfer().Balance(ledgerstate.ColorIOTA)
 	// take feedback text contained in the request
 	feedback, ok, err := codec.DecodeString(params.MustGet(donatewithfeedback.VarReqFeedback))
 	feedback = util.GentleTruncate(feedback, maxComment)
@@ -108,7 +108,7 @@ func donate(ctx coretypes.Sandbox) error {
 		// if error occurred, return all donated tokens back to the sender
 		// in this case error message will be recorded in the donation record
 
-		//ctx.MoveTokens(sender, balance.ColorIOTA, donated)
+		//ctx.MoveTokens(sender, ledgerstate.ColorIOTA, donated)
 		di.Amount = 0
 	}
 	// store donation info record in the state (append to the timestamped log)
@@ -144,7 +144,7 @@ func withdraw(ctx coretypes.Sandbox) error {
 	//	return fmt.Errorf("withdraw: not authorized")
 	//}
 	// take argument value coming with the request
-	bal := ctx.Balance(balance.ColorIOTA)
+	bal := ctx.Balance(ledgerstate.ColorIOTA)
 	withdrawSum, amountGiven, err := codec.DecodeInt64(params.MustGet(donatewithfeedback.VarReqWithdrawSum))
 	if err != nil {
 		// the error from MustGetInt64 means binary data sent as a value of the variable
@@ -152,8 +152,8 @@ func withdraw(ctx coretypes.Sandbox) error {
 		// return everything TODO RefundAll function ?
 		//
 		//sender := ctx.Caller()
-		//sent := ctx.IncomingTransfer().Balance(balance.ColorIOTA)
-		//ctx.MoveTokens(sender, balance.ColorIOTA, sent)
+		//sent := ctx.IncomingTransfer().Balance(ledgerstate.ColorIOTA)
+		//ctx.MoveTokens(sender, ledgerstate.ColorIOTA, sent)
 		return fmt.Errorf("DonateWithFeedback: withdraw wrong argument %v", err)
 	}
 	// determine how much we can withdraw
@@ -169,7 +169,7 @@ func withdraw(ctx coretypes.Sandbox) error {
 	}
 	// transfer iotas to the owner address
 	// TODO refactor to new account system
-	//ctx.AccessSCAccount().MoveTokens(ctx.OriginatorAddress(), &balance.ColorIOTA, withdrawSum)
+	//ctx.AccessSCAccount().MoveTokens(ctx.OriginatorAddress(), &ledgerstate.ColorIOTA, withdrawSum)
 	//ctx.Event(fmt.Sprintf("DonateWithFeedback: withdraw. Withdraw %d iotas", withdrawSum))
 	return nil
 }

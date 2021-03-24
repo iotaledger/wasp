@@ -262,7 +262,7 @@ pub fn func_divide(ctx: &ScFuncContext) {
             // interface. The constructor we use here creates and initializes a
             // single token color transfer in a single statement. The actual color
             // and amount values passed in will be stored in a new map on the host.
-            let transfers: ScTransfers = ScTransfers::new(&ScColor::IOTA, share);
+            let transfers: ScTransfers = ScTransfers::iotas(share);
 
             // Perform the actual transfer of tokens from the smart contract to the
             // member address. The transfer_to_address() method receives the address

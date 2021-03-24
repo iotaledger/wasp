@@ -12,6 +12,8 @@ import (
 
 func Test2Chains(t *testing.T) { run2(t, test2Chains) }
 func test2Chains(t *testing.T, w bool) {
+	if w { t.SkipNow() }
+
 	core.PrintWellKnownHnames()
 
 	env := solo.New(t, false, false)
@@ -20,8 +22,8 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.CheckAccountLedger()
 	chain2.CheckAccountLedger()
 
-	contractAgentID1, _ := setupTestSandboxSC(t, chain1, nil, w)
-	contractAgentID2, _ := setupTestSandboxSC(t, chain2, nil, w)
+	contractAgentID1, extraToken1 := setupTestSandboxSC(t, chain1, nil, w)
+	contractAgentID2, extraToken2 := setupTestSandboxSC(t, chain2, nil, w)
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentID(userAddress, 0)
@@ -29,12 +31,13 @@ func test2Chains(t *testing.T, w bool) {
 
 	chain1.AssertIotas(contractAgentID1, 1)
 	chain1.AssertIotas(contractAgentID2, 0)
-	chain1.AssertOwnersIotas(2)
-	chain1.AssertTotalIotas(3)
+	chain1.AssertOwnersIotas(2+extraToken1)
+	chain1.AssertTotalIotas(3+extraToken1)
+
 	chain2.AssertIotas(contractAgentID1, 0)
 	chain2.AssertIotas(contractAgentID2, 1)
-	chain2.AssertOwnersIotas(2)
-	chain2.AssertTotalIotas(3)
+	chain2.AssertOwnersIotas(2+extraToken2)
+	chain2.AssertTotalIotas(3+extraToken2)
 
 	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit,
 		accounts.ParamAgentID, contractAgentID2,
@@ -43,16 +46,18 @@ func test2Chains(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	env.AssertAddressIotas(userAddress, solo.Saldo-42)
+
 	chain1.AssertIotas(userAgentID, 0)
 	chain1.AssertIotas(contractAgentID1, 1)
 	chain1.AssertIotas(contractAgentID2, 42)
-	chain1.AssertOwnersIotas(2)
-	chain1.AssertTotalIotas(45)
+	chain1.AssertOwnersIotas(2+extraToken1)
+	chain1.AssertTotalIotas(45+extraToken1)
+
 	chain2.AssertIotas(userAgentID, 0)
 	chain2.AssertIotas(contractAgentID1, 0)
 	chain2.AssertIotas(contractAgentID2, 1)
-	chain2.AssertOwnersIotas(2)
-	chain2.AssertTotalIotas(3)
+	chain2.AssertOwnersIotas(2+extraToken2)
+	chain2.AssertTotalIotas(3+extraToken2)
 
 	req = solo.NewCallParams(sbtestsc.Name, sbtestsc.FuncWithdrawToChain,
 		sbtestsc.ParamChainID, chain1.ChainID,
@@ -64,15 +69,17 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.WaitForEmptyBacklog()
 	chain2.WaitForEmptyBacklog()
 
-	env.AssertAddressIotas(userAddress, solo.Saldo-43)
+	env.AssertAddressIotas(userAddress, solo.Saldo-42-1)
+
 	chain1.AssertIotas(userAgentID, 0)
 	chain1.AssertIotas(contractAgentID1, 1)
 	chain1.AssertIotas(contractAgentID2, 0)
-	chain1.AssertOwnersIotas(3)
-	chain1.AssertTotalIotas(4)
+	chain1.AssertOwnersIotas(3+extraToken1)
+	chain1.AssertTotalIotas(4+extraToken1)
+
 	chain2.AssertIotas(userAgentID, 0)
 	chain2.AssertIotas(contractAgentID1, 0)
 	chain2.AssertIotas(contractAgentID2, 43)
-	chain2.AssertOwnersIotas(2)
-	chain2.AssertTotalIotas(45)
+	chain2.AssertOwnersIotas(2+extraToken2)
+	chain2.AssertTotalIotas(45+extraToken2)
 }

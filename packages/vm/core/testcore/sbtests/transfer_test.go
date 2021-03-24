@@ -19,9 +19,9 @@ func testDoNothing(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(cAID, 43)
-	chain.AssertOwnersIotas(2)
+	chain.AssertOwnersIotas(2+extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-2-1-42-extraToken)
 }
 
@@ -35,12 +35,12 @@ func testDoNothingUser(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 43)
 	env.AssertAddressIotas(userAddr, solo.Saldo-42)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
-	chain.AssertOwnersIotas(3)
+	chain.AssertOwnersIotas(3+extraToken)
 }
 
 func TestWithdrawToAddress(t *testing.T) { run2(t, testWithdrawToAddress) }
@@ -55,11 +55,11 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 43)
-	chain.AssertOwnersIotas(3)
-	chain.AssertTotalIotas(46)
+	chain.AssertOwnersIotas(3+extraToken)
+	chain.AssertTotalIotas(46+extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo-42)
 
@@ -72,11 +72,11 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	chain.WaitForEmptyBacklog()
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 0)
-	chain.AssertOwnersIotas(3)
-	chain.AssertTotalIotas(3)
+	chain.AssertOwnersIotas(3+extraToken)
+	chain.AssertTotalIotas(3+extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo+2)
 }
@@ -88,11 +88,11 @@ func testDoPanicUser(t *testing.T, w bool) {
 	user, userAddress, userAgentID := setupDeployer(t, chain)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
-	chain.AssertOwnersIotas(3)
-	chain.AssertTotalIotas(4)
+	chain.AssertOwnersIotas(3+extraToken)
+	chain.AssertTotalIotas(4+extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
@@ -102,11 +102,11 @@ func testDoPanicUser(t *testing.T, w bool) {
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
-	chain.AssertOwnersIotas(3)
-	chain.AssertTotalIotas(4)
+	chain.AssertOwnersIotas(3+extraToken)
+	chain.AssertTotalIotas(4+extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 }
@@ -118,11 +118,11 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	user, userAddress, userAgentID := setupDeployer(t, chain)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
-	chain.AssertOwnersIotas(3)
-	chain.AssertTotalIotas(4)
+	chain.AssertOwnersIotas(3+extraToken)
+	chain.AssertTotalIotas(4+extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
@@ -132,11 +132,11 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
-	chain.AssertOwnersIotas(3)
-	chain.AssertTotalIotas(4)
+	chain.AssertOwnersIotas(3+extraToken)
+	chain.AssertTotalIotas(4+extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
@@ -144,11 +144,11 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	_, err = chain.PostRequestSync(req, user)
 	require.NoError(t, err)
 
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
-	chain.AssertOwnersIotas(4)
-	chain.AssertTotalIotas(5)
+	chain.AssertOwnersIotas(4+extraToken)
+	chain.AssertTotalIotas(5+extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo-1)
 }
@@ -160,11 +160,11 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	user, userAddress, userAgentID := setupDeployer(t, chain)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
-	chain.AssertOwnersIotas(3)
-	chain.AssertTotalIotas(4)
+	chain.AssertOwnersIotas(3+extraToken)
+	chain.AssertTotalIotas(4+extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
@@ -175,11 +175,11 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
-	chain.AssertOwnersIotas(4)
-	chain.AssertTotalIotas(5)
+	chain.AssertOwnersIotas(4+extraToken)
+	chain.AssertTotalIotas(5+extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-1-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
@@ -188,11 +188,11 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
-	chain.AssertOwnersIotas(14)
-	chain.AssertTotalIotas(15)
+	chain.AssertOwnersIotas(14+extraToken)
+	chain.AssertTotalIotas(15+extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-1-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo-10)
 }
@@ -204,11 +204,11 @@ func testRequestToView(t *testing.T, w bool) {
 	user, userAddress, userAgentID := setupDeployer(t, chain)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
-	chain.AssertOwnersIotas(3)
-	chain.AssertTotalIotas(4)
+	chain.AssertOwnersIotas(3+extraToken)
+	chain.AssertTotalIotas(4+extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
@@ -218,11 +218,11 @@ func testRequestToView(t *testing.T, w bool) {
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, extraToken)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
-	chain.AssertOwnersIotas(3)
-	chain.AssertTotalIotas(4)
+	chain.AssertOwnersIotas(3+extraToken)
+	chain.AssertTotalIotas(4+extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 }

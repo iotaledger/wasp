@@ -11,22 +11,25 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
+	"time"
 )
 
 var typeIds = map[int32]int32{
+	wasmhost.KeyAccountId:       wasmhost.OBJTYPE_AGENT_ID,
 	wasmhost.KeyBalances:        wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyCall:            wasmhost.OBJTYPE_BYTES,
 	wasmhost.KeyCaller:          wasmhost.OBJTYPE_AGENT_ID,
+	wasmhost.KeyChainId:         wasmhost.OBJTYPE_CHAIN_ID,
 	wasmhost.KeyChainOwnerId:    wasmhost.OBJTYPE_AGENT_ID,
+	wasmhost.KeyContract:        wasmhost.OBJTYPE_HNAME,
 	wasmhost.KeyContractCreator: wasmhost.OBJTYPE_AGENT_ID,
 	wasmhost.KeyDeploy:          wasmhost.OBJTYPE_BYTES,
 	wasmhost.KeyEvent:           wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyExports:         wasmhost.OBJTYPE_STRING | wasmhost.OBJTYPE_ARRAY,
-	wasmhost.KeyContractId:      wasmhost.OBJTYPE_CONTRACT_ID,
 	wasmhost.KeyIncoming:        wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyLog:             wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyMaps:            wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
-	wasmhost.KeyMinted:          wasmhost.OBJTYPE_INT64,
+	wasmhost.KeyMinted:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyPanic:           wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyParams:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyPost:            wasmhost.OBJTYPE_BYTES,
@@ -65,23 +68,23 @@ func (o *ScContext) Exists(keyId int32, typeId int32) bool {
 func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
 	var aid *coretypes.AgentID
 	switch keyId {
+	case wasmhost.KeyAccountId:
+		aid = o.vm.ctx.AccountID()
+		return aid.Bytes()
 	case wasmhost.KeyCaller:
 		aid = o.vm.ctx.Caller()
 		return aid.Bytes()
+	case wasmhost.KeyChainId:
+		cid := o.vm.chainID()
+		return cid.Bytes()
 	case wasmhost.KeyChainOwnerId:
 		aid = o.vm.chainOwnerID()
 		return aid.Bytes()
+	case wasmhost.KeyContract:
+		return o.vm.contract().Bytes()
 	case wasmhost.KeyContractCreator:
 		aid = o.vm.contractCreator()
 		return aid.Bytes()
-	case wasmhost.KeyContractId:
-		panic("TODO refactor")
-		//cid := o.vm.contractID()
-		//return cid.Bytes()
-	case wasmhost.KeyMinted:
-		// TODO Minted
-		//_, m := o.vm.ctx.Minted()
-		return codec.EncodeUint64(0)
 	case wasmhost.KeyRequestId:
 		rid := o.vm.ctx.RequestID()
 		return rid[:]
@@ -100,10 +103,11 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 	}
 
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		wasmhost.KeyBalances:  func() WaspObject { return NewScBalances(o.vm, false) },
+		wasmhost.KeyBalances:  func() WaspObject { return NewScBalances(o.vm, keyId) },
 		wasmhost.KeyExports:   func() WaspObject { return NewScExports(o.vm) },
-		wasmhost.KeyIncoming:  func() WaspObject { return NewScBalances(o.vm, true) },
+		wasmhost.KeyIncoming:  func() WaspObject { return NewScBalances(o.vm, keyId) },
 		wasmhost.KeyMaps:      func() WaspObject { return NewScMaps(o.vm) },
+		wasmhost.KeyMinted:    func() WaspObject { return NewScBalances(o.vm, keyId) },
 		wasmhost.KeyParams:    func() WaspObject { return NewScDictFromKvStore(&o.vm.KvStoreHost, o.vm.params()) },
 		wasmhost.KeyResults:   func() WaspObject { return NewScDict(o.vm) },
 		wasmhost.KeyReturn:    func() WaspObject { return NewScDict(o.vm) },
@@ -183,30 +187,47 @@ func (o *ScContext) processDeploy(bytes []byte) {
 
 // TODO refactor
 func (o *ScContext) processPost(bytes []byte) {
-	panic("TODO refactor")
-	//decode := NewBytesDecoder(bytes)
-	//contract, err := coretypes.NewContractIDFromBytes(decode.Bytes())
-	//if err != nil {
-	//	o.Panic(err.Error())
-	//}
-	//function, err := coretypes.NewHnameFromBytes(decode.Bytes())
-	//if err != nil {
-	//	o.Panic(err.Error())
-	//}
-	//o.Trace("POST c'%s' f'%s'", contract.String(), function.String())
-	//params := o.getParams(int32(decode.Int64()))
-	//transfer := o.getTransfer(int32(decode.Int64()))
-	//delay := decode.Int64()
-	//if delay < -1 {
-	//	o.Panic("invalid delay: %d", delay)
-	//}
-	//o.vm.ctx.PostRequest(coretypes.PostRequestParams{
-	//	TargetContractID: *contract,
-	//	VMProcessorEntryPoint:       function,
-	//	Params:           params,
-	//	Transfer:         transfer,
-	//	TimeLock:         uint32(delay),
-	//})
+	decode := NewBytesDecoder(bytes)
+	chainId, err := coretypes.NewChainIDFromBytes(decode.Bytes())
+	if err != nil {
+		o.Panic(err.Error())
+	}
+	contract, err := coretypes.NewHnameFromBytes(decode.Bytes())
+	if err != nil {
+		o.Panic(err.Error())
+	}
+	function, err := coretypes.NewHnameFromBytes(decode.Bytes())
+	if err != nil {
+		o.Panic(err.Error())
+	}
+	o.Trace("POST c'%s' f'%s'", contract.String(), function.String())
+	params := o.getParams(int32(decode.Int64()))
+	transfer := o.getTransfer(int32(decode.Int64()))
+	metadata := &coretypes.SendMetadata{
+		TargetContract: contract,
+		EntryPoint:     function,
+		Args:           params,
+	}
+	delay := decode.Int64()
+	if delay == 0 {
+		if !o.vm.ctx.Send(chainId.AsAddress(), transfer, metadata) {
+			o.Panic("failed to send to %s", chainId.AsAddress().String())
+		}
+		return
+	}
+
+	if delay < -1 {
+		o.Panic("invalid delay: %d", delay)
+	}
+
+	timeLock := time.Unix(0, o.vm.ctx.GetTimestamp())
+	timeLock = timeLock.Add(time.Duration(delay) * time.Second)
+	options := coretypes.SendOptions{
+		TimeLock: uint32(timeLock.Unix()),
+	}
+	if !o.vm.ctx.Send(chainId.AsAddress(), transfer, metadata, options) {
+		o.Panic("failed to send to %s", chainId.AsAddress().String())
+	}
 }
 
 func (o *ScContext) getParams(paramsId int32) dict.Dict {

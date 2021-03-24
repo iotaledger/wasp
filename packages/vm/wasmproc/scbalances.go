@@ -13,18 +13,28 @@ import (
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-func NewScBalances(vm *wasmProcessor, incoming bool) *ScDict {
+func NewScBalances(vm *wasmProcessor, keyId int32) *ScDict {
 	o := NewScDict(vm)
-	if incoming {
+	switch keyId {
+	case wasmhost.KeyIncoming:
 		if vm.ctx == nil {
-			o.Panic("No incoming transfers on views")
+			o.Panic("no incoming() on views")
 		}
 		return loadBalances(o, vm.ctx.IncomingTransfer())
+	case wasmhost.KeyMinted:
+		if vm.ctx == nil {
+			o.Panic("no minted() on views")
+		}
+		return loadBalances(o, ledgerstate.NewColoredBalances(vm.ctx.Minted()))
+
+	case wasmhost.KeyBalances:
+		if vm.ctx != nil {
+			return loadBalances(o, vm.ctx.Balances())
+		}
+		return loadBalances(o, vm.ctxView.Balances())
 	}
-	if vm.ctx != nil {
-		return loadBalances(o, vm.ctx.Balances())
-	}
-	return loadBalances(o, vm.ctxView.Balances())
+	o.Panic("unknown balances: %s", vm.GetKeyStringFromId(keyId))
+	return nil
 }
 
 func loadBalances(o *ScDict, balances *ledgerstate.ColoredBalances) *ScDict {

@@ -12,7 +12,7 @@ pub const HSC_NAME: ScHname = ScHname(0x370d33ad);
 pub const PARAM_ADDRESS: &str = "address";
 pub const PARAM_AGENT_ID: &str = "agentID";
 pub const PARAM_CALLER: &str = "caller";
-pub const PARAM_CHAIN_ID: &str = "chainid";
+pub const PARAM_CHAIN_ID: &str = "chainID";
 pub const PARAM_CHAIN_OWNER_ID: &str = "chainOwnerID";
 pub const PARAM_CONTRACT_CREATOR: &str = "contractCreator";
 pub const PARAM_CONTRACT_ID: &str = "contractID";
@@ -31,6 +31,7 @@ pub const PARAM_STRING_ZERO: &str = "string-0";
 
 pub const VAR_COUNTER: &str = "counter";
 pub const VAR_HNAME_EP: &str = "hnameEP";
+pub const VAR_MINTED_COLOR: &str = "mintedColor";
 pub const VAR_MINTED_SUPPLY: &str = "mintedSupply";
 
 pub const FUNC_CALL_ON_CHAIN: &str = "callOnChain";

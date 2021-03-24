@@ -40,6 +40,11 @@ pub struct ScTransfers {
 }
 
 impl ScTransfers {
+    // create a new transfers object and initialize it with the specified amount of iotas
+    pub fn iotas(amount: i64) -> ScTransfers {
+        ScTransfers::new(&ScColor::IOTA, amount)
+    }
+
     // create a new transfers object and initialize it with the specified token transfer
     pub fn new(color: &ScColor, amount: i64) -> ScTransfers {
         let transfer = ScTransfers::new_transfers();
@@ -176,9 +181,19 @@ pub(crate) fn base58_encode(bytes: &[u8]) -> String {
 
 // shared interface part of ScFuncContext and ScViewContext
 pub trait ScBaseContext {
+    // retrieve the agent id of this contract account
+    fn account_id(&self) -> ScAgentId {
+        ROOT.get_agent_id(&KEY_ACCOUNT_ID).value()
+    }
+
     // access the current balances for all token colors
     fn balances(&self) -> ScBalances {
         ScBalances { balances: ROOT.get_map(&KEY_BALANCES).immutable() }
+    }
+
+    // retrieve the chain id of the chain this contract lives on
+    fn chain_id(&self) -> ScChainId {
+        ROOT.get_chain_id(&KEY_CHAIN_ID).value()
     }
 
     // retrieve the agent id of the owner of the chain this contract lives on
@@ -186,14 +201,14 @@ pub trait ScBaseContext {
         ROOT.get_agent_id(&KEY_CHAIN_OWNER_ID).value()
     }
 
+    // retrieve the hname of this contract
+    fn contract(&self) -> ScHname {
+        ROOT.get_hname(&KEY_CONTRACT).value()
+    }
+
     // retrieve the agent id of the creator of this contract
     fn contract_creator(&self) -> ScAgentId {
         ROOT.get_agent_id(&KEY_CONTRACT_CREATOR).value()
-    }
-
-    // retrieve the id of this contract
-    fn contract_id(&self) -> ScContractId {
-        ROOT.get_contract_id(&KEY_CONTRACT_ID).value()
     }
 
     // logs informational text message in the log on the host
@@ -271,7 +286,7 @@ impl ScFuncContext {
 
     // shorthand to synchronously call a smart contract function of the current contract
     pub fn call_self(&self, hfunction: ScHname, params: Option<ScMutableMap>, transfers: Option<ScTransfers>) -> ScImmutableMap {
-        self.call(self.contract_id().hname(), hfunction, params, transfers)
+        self.call(self.contract(), hfunction, params, transfers)
     }
 
     // retrieve the agent id of the caller of the smart contract
@@ -302,20 +317,18 @@ impl ScFuncContext {
         ScBalances { balances: ROOT.get_map(&KEY_INCOMING).immutable() }
     }
 
-    // retrieve the color of the tokens that were minted in this transaction
-    pub fn minted_color(&self) -> ScColor { ScColor::from_request_id(&self.request_id()) }
-
-    // retrieve the amount of tokens that were minted in this transaction
-    pub fn minted_supply(&self) -> i64 {
-        ROOT.get_int64(&KEY_MINTED).value()
+    // retrieve the tokens that were minted in this transaction
+    pub fn minted(&self) -> ScBalances {
+        ScBalances { balances: ROOT.get_map(&KEY_MINTED).immutable() }
     }
 
     // asynchronously calls the specified smart contract function,
     // passing the provided parameters and token transfers to it
     // it is possible to schedule the call for a later execution by specifying a delay
-    pub fn post(&self, contract_id: &ScContractId, function: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>, delay: i64) {
+    pub fn post(&self, chain_id: &ScChainId, contract: ScHname, function: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>, delay: i64) {
         let mut encode = BytesEncoder::new();
-        encode.contract_id(contract_id);
+        encode.chain_id(chain_id);
+        encode.hname(&contract);
         encode.hname(&function);
         if let Some(params) = &params {
             encode.int64(params.obj_id as i64);
@@ -333,7 +346,7 @@ impl ScFuncContext {
 
     // shorthand to asynchronously call a smart contract function of the current contract
     pub fn post_self(&self, function: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>, delay: i64) {
-        self.post(&self.contract_id(), function, params, transfer, delay);
+        self.post(&self.chain_id(), self.contract(), function, params, transfer, delay);
     }
 
     // retrieve the request id of this transaction
@@ -382,7 +395,7 @@ impl ScViewContext {
 
     // shorthand to synchronously call a smart contract view of the current contract
     pub fn call_self(&self, function: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
-        self.call(self.contract_id().hname(), function, params)
+        self.call(self.contract(), function, params)
     }
 
     // access immutable state storage on the host

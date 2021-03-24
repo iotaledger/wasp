@@ -52,13 +52,13 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	t.Run(fmt.Sprintf("run CORE version of %s", t.Name()), func(t *testing.T) {
 		test(t, false)
 	})
-	//if len(skipWasm) == 0 || !skipWasm[0] {
-	//	t.Run(fmt.Sprintf("run WASM version of %s", t.Name()), func(t *testing.T) {
-	//		test(t, true)
-	//	})
-	//} else {
-	//	t.Logf("skipped WASM version of '%s'", t.Name())
-	//}
+	if len(skipWasm) == 0 || !skipWasm[0] {
+		t.Run(fmt.Sprintf("run WASM version of %s", t.Name()), func(t *testing.T) {
+			test(t, true)
+		})
+	} else {
+		t.Logf("skipped WASM version of '%s'", t.Name())
+	}
 }
 
 func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, runWasm bool) (*coretypes.AgentID, uint64) {

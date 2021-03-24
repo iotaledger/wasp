@@ -140,6 +140,20 @@ func (host *wasmProcessor) IsView() bool {
 	return host.WasmHost.IsView(host.function)
 }
 
+func (host *wasmProcessor) contract() coretypes.Hname {
+	if host.ctx != nil {
+		return host.ctx.Contract()
+	}
+	return host.ctxView.Contract()
+}
+
+func (host *wasmProcessor) chainID() *coretypes.ChainID {
+	if host.ctx != nil {
+		return host.ctx.ChainID()
+	}
+	return host.ctxView.ChainID()
+}
+
 func (host *wasmProcessor) chainOwnerID() *coretypes.AgentID {
 	if host.ctx != nil {
 		return host.ctx.ChainOwnerID()
@@ -153,14 +167,6 @@ func (host *wasmProcessor) contractCreator() *coretypes.AgentID {
 	}
 	return host.ctxView.ContractCreator()
 }
-
-// TODO refactor
-//func (host *wasmProcessor) contractID() *coretypes.ContractID {
-//	if host.ctx != nil {
-//		return host.ctx.ContractID()
-//	}
-//	return host.ctxView.ContractID()
-//}
 
 func (host *wasmProcessor) log() coretypes.LogInterface {
 	if host.ctx != nil {

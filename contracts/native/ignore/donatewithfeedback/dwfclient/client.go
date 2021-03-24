@@ -32,7 +32,7 @@ func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction_old.
 		dwf.contractHname,
 		donatewithfeedback.RequestDonate,
 		chainclient.PostRequestParams{
-			Transfer: map[balance.Color]int64{balance.ColorIOTA: amount},
+			Transfer: map[balance.Color]int64{ledgerstate.ColorIOTA: amount},
 			ArgsRaw:  codec.MakeDict(map[string]interface{}{donatewithfeedback.VarReqFeedback: feedback}),
 		},
 	)

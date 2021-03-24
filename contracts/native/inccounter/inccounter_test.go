@@ -1,7 +1,6 @@
 package inccounter
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
@@ -28,8 +27,8 @@ func TestDeployInc(t *testing.T) {
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash)
 	require.NoError(t, err)
 	chain.CheckChain()
-	_, contracts := chain.GetInfo()
-	require.EqualValues(t, 5, len(contracts))
+	_,_, contracts := chain.GetInfo()
+	require.EqualValues(t, 6, len(contracts))
 	checkCounter(chain, 0)
 	chain.CheckAccountLedger()
 }
@@ -54,7 +53,8 @@ func TestIncDefaultParam(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	_, err = chain.PostRequestSync(solo.NewCallParams(incName, FuncIncCounter), nil)
+	req := solo.NewCallParams(incName, FuncIncCounter).WithIotas(1)
+	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	checkCounter(chain, 18)
 	chain.CheckAccountLedger()
@@ -69,7 +69,8 @@ func TestIncParam(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	_, err = chain.PostRequestSync(solo.NewCallParams(incName, FuncIncCounter, VarCounter, 3), nil)
+	req := solo.NewCallParams(incName, FuncIncCounter, VarCounter, 3).WithIotas(1)
+	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	checkCounter(chain, 20)
 
@@ -84,8 +85,7 @@ func TestIncWith1Post(t *testing.T) {
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter5s).
-		WithTransfer(balance.ColorIOTA, 1)
+	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter5s).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	// advance logical clock to unlock that timelocked request

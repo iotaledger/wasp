@@ -107,7 +107,7 @@ func (fc *FairAuctionClient) StartAuction(
 		fairauction.RequestStartAuction,
 		chainclient.PostRequestParams{
 			Transfer: map[balance.Color]int64{
-				balance.ColorIOTA: fee,
+				ledgerstate.ColorIOTA: fee,
 				*color:            tokensForSale,
 			},
 			ArgsRaw: codec.MakeDict(map[string]interface{}{
@@ -125,7 +125,7 @@ func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (
 		fc.contractHname,
 		fairauction.RequestPlaceBid,
 		chainclient.PostRequestParams{
-			Transfer: map[balance.Color]int64{balance.ColorIOTA: amountIotas},
+			Transfer: map[balance.Color]int64{ledgerstate.ColorIOTA: amountIotas},
 			ArgsRaw:  codec.MakeDict(map[string]interface{}{fairauction.VarReqAuctionColor: color.String()}),
 		},
 	)

@@ -5,6 +5,8 @@ package wasmproc
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -41,30 +43,28 @@ func NewScTransferInfo(vm *wasmProcessor) *ScTransferInfo {
 
 // TODO refactor
 func (o *ScTransferInfo) Invoke(balances int32) {
-	panic("TODO refactor")
-
-	//balancesMap := make(map[ledgerstate.Color]uint64)
-	//balancesObj := o.host.FindObject(balances).(*ScDict)
-	//balancesObj.kvStore.MustIterate("", func(key kv.Key, value []byte) bool {
-	//	if len(key) != ledgerstate.ColorLength {
-	//		return true
-	//	}
-	//	color, _, err := codec.DecodeColor([]byte(key))
-	//	if err != nil {
-	//		o.Panic(err.Error())
-	//	}
-	//	amount, _, err := codec.DecodeUint64(value)
-	//	if err != nil {
-	//		o.Panic(err.Error())
-	//	}
-	//	o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.String())
-	//	balancesMap[color] = amount
-	//	return true
-	//})
-	//transfer := ledgerstate.NewColoredBalances(balancesMap)
-	//if !o.vm.ctx.TransferToAddress(o.address, transfer) {
-	//	o.Panic("failed to transfer to %s", o.address.String())
-	//}
+	balancesMap := make(map[ledgerstate.Color]uint64)
+	balancesObj := o.host.FindObject(balances).(*ScDict)
+	balancesObj.kvStore.MustIterate("", func(key kv.Key, value []byte) bool {
+		if len(key) != ledgerstate.ColorLength {
+			return true
+		}
+		color, _, err := codec.DecodeColor([]byte(key))
+		if err != nil {
+			o.Panic(err.Error())
+		}
+		amount, _, err := codec.DecodeUint64(value)
+		if err != nil {
+			o.Panic(err.Error())
+		}
+		o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.String())
+		balancesMap[color] = amount
+		return true
+	})
+	transfer := ledgerstate.NewColoredBalances(balancesMap)
+	if !o.vm.ctx.Send(o.address, transfer, nil) {
+		o.Panic("failed to send to %s", o.address.String())
+	}
 }
 
 func (o *ScTransferInfo) SetBytes(keyId int32, typeId int32, bytes []byte) {

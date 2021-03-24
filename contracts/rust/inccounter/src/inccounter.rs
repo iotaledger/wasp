@@ -56,7 +56,8 @@ pub fn func_local_state_post(ctx: &ScFuncContext) {
     unsafe {
         LOCAL_STATE_MUST_INCREMENT = false;
     }
-    ctx.post_self(HFUNC_WHEN_MUST_INCREMENT, None, None, 0);
+    let transfer1 = ScTransfers::iotas(1);
+    ctx.post_self(HFUNC_WHEN_MUST_INCREMENT, None, Some(transfer1), 0);
     unsafe {
         LOCAL_STATE_MUST_INCREMENT = true;
     }
@@ -83,7 +84,8 @@ pub fn func_post_increment(ctx: &ScFuncContext) {
     let value = counter.value();
     counter.set_value(value + 1);
     if value == 0 {
-        ctx.post_self(HFUNC_POST_INCREMENT, None, None, 0);
+        let transfer = ScTransfers::iotas(1);
+        ctx.post_self(HFUNC_POST_INCREMENT, None, Some(transfer), 0);
     }
 }
 
@@ -103,7 +105,8 @@ pub fn func_repeat_many(ctx: &ScFuncContext) {
         }
     }
     state_repeats.set_value(repeats - 1);
-    ctx.post_self(HFUNC_REPEAT_MANY, None, None, 0);
+    let transfer = ScTransfers::iotas(1);
+    ctx.post_self(HFUNC_REPEAT_MANY, None, Some(transfer), 0);
 }
 
 pub fn func_when_must_increment(ctx: &ScFuncContext) {

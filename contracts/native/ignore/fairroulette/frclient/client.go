@@ -159,7 +159,7 @@ func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction_old.Tr
 		frc.contractHname,
 		fairroulette.RequestPlaceBet,
 		chainclient.PostRequestParams{
-			Transfer: map[balance.Color]int64{balance.ColorIOTA: int64(amount)},
+			Transfer: map[balance.Color]int64{ledgerstate.ColorIOTA: int64(amount)},
 			ArgsRaw:  codec.MakeDict(map[string]interface{}{fairroulette.ReqVarColor: int64(color)}),
 		},
 	)

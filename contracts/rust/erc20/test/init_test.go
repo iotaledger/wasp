@@ -15,15 +15,15 @@ func TestDeployErc20(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	creator := env.NewKeyPairWithFunds()
-	creatorAgentID := coretypes.NewAgentIDFromAddress(creator.Address())
+	creator, creatorAddr = env.NewKeyPairWithFunds()
+	creatorAgentID = coretypes.NewAgentID(creatorAddr, 0)
 	err := chain.DeployWasmContract(nil, ScName, erc20file,
 		ParamSupply, 1000000,
 		ParamCreator, creatorAgentID,
 	)
 	require.NoError(t, err)
-	_, rec := chain.GetInfo()
-	require.EqualValues(t, 5, len(rec))
+	_, _, rec := chain.GetInfo()
+	require.EqualValues(t, 6, len(rec))
 
 	_, err = chain.FindContract(ScName)
 	require.NoError(t, err)
@@ -34,8 +34,8 @@ func TestDeployErc20(t *testing.T) {
 		ParamCreator, creatorAgentID,
 	)
 	require.Error(t, err)
-	_, rec = chain.GetInfo()
-	require.EqualValues(t, 5, len(rec))
+	_, _, rec = chain.GetInfo()
+	require.EqualValues(t, 6, len(rec))
 }
 
 func TestDeployErc20Fail1(t *testing.T) {
@@ -43,8 +43,8 @@ func TestDeployErc20Fail1(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 	err := chain.DeployWasmContract(nil, ScName, erc20file)
 	require.Error(t, err)
-	_, rec := chain.GetInfo()
-	require.EqualValues(t, 4, len(rec))
+	_, _, rec := chain.GetInfo()
+	require.EqualValues(t, 5, len(rec))
 }
 
 func TestDeployErc20Fail2(t *testing.T) {
@@ -54,34 +54,34 @@ func TestDeployErc20Fail2(t *testing.T) {
 		ParamSupply, 1000000,
 	)
 	require.Error(t, err)
-	_, rec := chain.GetInfo()
-	require.EqualValues(t, 4, len(rec))
+	_, _, rec := chain.GetInfo()
+	require.EqualValues(t, 5, len(rec))
 }
 
 func TestDeployErc20Fail3(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	creator := env.NewKeyPairWithFunds()
-	creatorAgentID := coretypes.NewAgentIDFromAddress(creator.Address())
+	creator, creatorAddr = env.NewKeyPairWithFunds()
+	creatorAgentID = coretypes.NewAgentID(creatorAddr, 0)
 	err := chain.DeployWasmContract(nil, ScName, erc20file,
 		ParamCreator, creatorAgentID,
 	)
 	require.Error(t, err)
-	_, rec := chain.GetInfo()
-	require.EqualValues(t, 4, len(rec))
+	_, _, rec := chain.GetInfo()
+	require.EqualValues(t, 5, len(rec))
 }
 
 func TestDeployErc20Fail3Repeat(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	creator := env.NewKeyPairWithFunds()
-	creatorAgentID := coretypes.NewAgentIDFromAddress(creator.Address())
+	creator, creatorAddr = env.NewKeyPairWithFunds()
+	creatorAgentID = coretypes.NewAgentID(creatorAddr, 0)
 	err := chain.DeployWasmContract(nil, ScName, erc20file,
 		ParamCreator, creatorAgentID,
 	)
 	require.Error(t, err)
-	_, rec := chain.GetInfo()
-	require.EqualValues(t, 4, len(rec))
+	_, _, rec := chain.GetInfo()
+	require.EqualValues(t, 5, len(rec))
 
 	// repeat after failure
 	err = chain.DeployWasmContract(nil, ScName, erc20file,
@@ -89,8 +89,8 @@ func TestDeployErc20Fail3Repeat(t *testing.T) {
 		ParamCreator, creatorAgentID,
 	)
 	require.NoError(t, err)
-	_, rec = chain.GetInfo()
-	require.EqualValues(t, 5, len(rec))
+	_, _, rec = chain.GetInfo()
+	require.EqualValues(t, 6, len(rec))
 
 	_, err = chain.FindContract(ScName)
 	require.NoError(t, err)

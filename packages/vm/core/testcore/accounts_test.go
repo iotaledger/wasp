@@ -70,7 +70,7 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 	newOwner, newOwnerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := coretypes.NewAgentID(newOwnerAddr, 0)
 	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit).
-		WithTransfer(ledgerstate.ColorIOTA, 42)
+		WithIotas(42)
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
@@ -102,7 +102,7 @@ func TestAccountsDepositWithdrawToChainFail(t *testing.T) {
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := coretypes.NewAgentID(ownerAddr, 0)
 	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit).
-		WithTransfer(ledgerstate.ColorIOTA, 42)
+		WithIotas(42)
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 

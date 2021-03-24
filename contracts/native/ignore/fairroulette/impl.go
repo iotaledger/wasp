@@ -167,7 +167,7 @@ func placeBet(ctx coretypes.Sandbox) error {
 
 	// look if there're some iotas left for the bet after minimum rewards are already taken.
 	// Here we are accessing only the part of the UTXOs which the ones which are coming with the current request
-	sum := ctx.IncomingTransfer().Balance(balance.ColorIOTA)
+	sum := ctx.IncomingTransfer().Balance(ledgerstate.ColorIOTA)
 	if sum == 0 {
 		// nothing to bet
 		return fmt.Errorf("placeBet: sum == 0: nothing to bet")
@@ -356,7 +356,7 @@ func playAndDistribute(ctx coretypes.Sandbox) error {
 		// However, it is healthy to compress number of outputs in the address
 
 		//agent := coretypes.NewAgentIDFromContractID(ctx.ContractID())
-		//if !ctx.MoveTokens(agent, balance.ColorIOTA, totalLockedAmount) {
+		//if !ctx.MoveTokens(agent, ledgerstate.ColorIOTA, totalLockedAmount) {
 		//	// inconsistency. A disaster
 		//	ctx.Event(fmt.Sprintf("$$$$$$$$$$ something went wrong 1"))
 		//	ctx.Log().Panicf("MoveTokens failed")
@@ -441,11 +441,11 @@ func distributeLockedAmount(ctx coretypes.Sandbox, bets []*BetInfo, totalLockedA
 	// distribute iotas
 	for i := range finalWinners {
 
-		available := ctx.Balance(balance.ColorIOTA)
+		available := ctx.Balance(ledgerstate.ColorIOTA)
 		ctx.Event(fmt.Sprintf("sending reward iotas %d to the winner %s. Available iotas: %d",
 			sumsByPlayers[finalWinners[i]], finalWinners[i].String(), available))
 
-		//if !ctx.MoveTokens(finalWinners[i], balance.ColorIOTA, sumsByPlayers[finalWinners[i]]) {
+		//if !ctx.MoveTokens(finalWinners[i], ledgerstate.ColorIOTA, sumsByPlayers[finalWinners[i]]) {
 		//	return false
 		//}
 	}

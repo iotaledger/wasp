@@ -107,7 +107,7 @@ const (
 	// parameters
 	ParamFail            = "initFailParam"
 	ParamAddress         = "address"
-	ParamChainID         = "chainid"
+	ParamChainID         = "chainID"
 	ParamChainOwnerID    = "chainOwnerID"
 	ParamCaller          = "caller"
 	ParamAgentID         = "agentID"

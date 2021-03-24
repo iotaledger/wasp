@@ -13,18 +13,17 @@ import (
 const (
 	OBJTYPE_ARRAY int32 = 0x20
 
-	OBJTYPE_ADDRESS     int32 = 1
-	OBJTYPE_AGENT_ID    int32 = 2
-	OBJTYPE_BYTES       int32 = 3
-	OBJTYPE_CHAIN_ID    int32 = 4
-	OBJTYPE_COLOR       int32 = 5
-	OBJTYPE_CONTRACT_ID int32 = 6
-	OBJTYPE_HASH        int32 = 7
-	OBJTYPE_HNAME       int32 = 8
-	OBJTYPE_INT64       int32 = 9
-	OBJTYPE_MAP         int32 = 10
-	OBJTYPE_REQUEST_ID  int32 = 11
-	OBJTYPE_STRING      int32 = 12
+	OBJTYPE_ADDRESS    int32 = 1
+	OBJTYPE_AGENT_ID   int32 = 2
+	OBJTYPE_BYTES      int32 = 3
+	OBJTYPE_CHAIN_ID   int32 = 4
+	OBJTYPE_COLOR      int32 = 5
+	OBJTYPE_HASH       int32 = 6
+	OBJTYPE_HNAME      int32 = 7
+	OBJTYPE_INT64      int32 = 8
+	OBJTYPE_MAP        int32 = 9
+	OBJTYPE_REQUEST_ID int32 = 10
+	OBJTYPE_STRING     int32 = 11
 )
 
 // flag to indicate that this key id originally comes from a string key

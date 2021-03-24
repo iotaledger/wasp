@@ -13,13 +13,15 @@ import (
 // Sandbox is an interface given to the processor to access the VMContext
 // and virtual state, transaction builder and request parameters through it.
 type Sandbox interface {
-	// ChainOwnerID AgentID of the current owner of the chain
+	// AccountID agentID of the current contract
+    AccountID() *AgentID
+	// ChainOwnerID agentID of the current owner of the chain
 	ChainOwnerID() *AgentID
 	// ContractCreator agentID which deployed contract
 	ContractCreator() *AgentID
 	// ChainID id of the chain
 	ChainID() *ChainID
-	// Contract ID of the contract in the current chain
+	// Contract Hname of the contract in the current chain
 	Contract() Hname
 	// Caller is the agentID of the caller.
 	Caller() *AgentID

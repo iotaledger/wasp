@@ -71,7 +71,7 @@ func testConcurrency(t *testing.T, w bool) {
 	if w {
 		extraIota = 1
 	}
-	chain.AssertIotas(&chain.OriginatorAgentID, extraIota)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertOwnersIotas(extraIota + 2)
 	agentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), sbtestsc.Interface.Hname())
 	chain.AssertIotas(agentID, uint64(sum)+1)
@@ -120,7 +120,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	if w {
 		extraIota = 1
 	}
-	chain.AssertIotas(&chain.OriginatorAgentID, extraIota)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertOwnersIotas(extraIota + 2)
 	agentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), sbtestsc.Interface.Hname())
 	chain.AssertIotas(agentID, uint64(sum)+1)
