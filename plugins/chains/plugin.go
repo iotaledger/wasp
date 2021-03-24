@@ -27,7 +27,7 @@ func configure(_ *node.Plugin) {
 func run(_ *node.Plugin) {
 	log.Infof("running %s plugin..", PluginName)
 	if err := nodeconn.Ready.Wait(); err != nil {
-		log.Errorf("failed waiting for NodeConn plugin ready. Abort %s plugin", PluginName)
+		log.Errorf("failed waiting for NodeConn plugin ready. Abort %s plugin. Err = %v", PluginName, err)
 		return
 	}
 	allChains = chains.New(log, nodeconn.NodeConn)

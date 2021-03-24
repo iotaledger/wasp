@@ -1,35 +1,43 @@
+// package implement a simple primitive to wait for readiness of concurrent modules
 package ready
 
 import (
-	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
+	"sync"
 	"time"
 )
 
 type Ready struct {
-	r *atomic.Bool
+	wg sync.WaitGroup
 }
 
-func New() Ready {
-	return Ready{atomic.NewBool(false)}
-
+// New creates new ready object in 'not ready state'
+func New() *Ready {
+	r := &Ready{}
+	r.wg.Add(1)
+	return r
 }
 
+// Wait waits for a timeout until set ready
 func (r *Ready) Wait(timeout ...time.Duration) error {
 	t := 10 * time.Second
 	if len(timeout) > 0 {
 		t = timeout[0]
 	}
-	deadline := time.Now().Add(t)
-	for !r.r.Load() {
-		if time.Now().After(deadline) {
-			return xerrors.New("not ready after timeout")
-		}
-		time.Sleep(100 * time.Millisecond)
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		r.wg.Wait()
+	}()
+	select {
+	case <-c:
+		return nil
+	case <-time.After(t):
+		return xerrors.New("not ready after timeout")
 	}
-	return nil
 }
 
+// SetReady sets the object ready
 func (r *Ready) SetReady() {
-	r.r.Store(true)
+	r.wg.Done()
 }
