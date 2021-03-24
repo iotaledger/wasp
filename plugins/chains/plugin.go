@@ -1,25 +1,19 @@
 package chains
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/events"
-	"sync"
+	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/plugins/nodeconn"
 
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/chain"
-	registry_pkg "github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/plugins/nodeconn"
 )
 
 const PluginName = "Chains"
 
 var (
-	log *logger.Logger
-
-	allChains   = make(map[[ledgerstate.AddressLength]byte]chain.Chain)
-	chainsMutex = sync.RWMutex{}
+	log       *logger.Logger
+	allChains *chains.Chains
 )
 
 func Init() *node.Plugin {
@@ -32,64 +26,29 @@ func configure(_ *node.Plugin) {
 
 func run(_ *node.Plugin) {
 	log.Infof("running %s plugin..", PluginName)
+	if err := nodeconn.Ready.Wait(); err != nil {
+		log.Errorf("failed waiting for NodeConn plugin ready. Abort %s plugin", PluginName)
+		return
+	}
+	allChains = chains.New(log, nodeconn.NodeConn)
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		if err := initChains(); err != nil {
+		if err := allChains.ActivateAllFromRegistry(); err != nil {
+			log.Errorf("failed to read chain activation records from registry: %v", err)
+			return
 		}
-		// init dispatcher
-		chNodeMsg := make(chan interface{}, 100)
-		processNodeMsgClosure := events.NewClosure(func(msg interface{}) {
-			chNodeMsg <- msg
-		})
-		go func() {
-			for msg := range chNodeMsg {
-				processNodeMsg(msg)
-			}
-		}()
-		nodeconn.NodeConn.Events.MessageReceived.Attach(processNodeMsgClosure)
+		allChains.Attach()
 
 		<-shutdownSignal
 
+		log.Info("dismissing chains...")
 		go func() {
-			nodeconn.NodeConn.Events.MessageReceived.Detach(processNodeMsgClosure)
-			close(chNodeMsg)
+			allChains.Detach()
+			allChains.Dismiss()
+			log.Info("dismissing chains... Done")
 		}()
-		go shutdownChains()
 	})
 	if err != nil {
 		log.Error(err)
 		return
 	}
-}
-
-func initChains() error {
-	chainRecords, err := registry_pkg.GetChainRecords()
-	if err != nil {
-		return err
-	}
-
-	astr := make([]string, len(chainRecords))
-	for i := range astr {
-		astr[i] = chainRecords[i].ChainID.String()[:10] + ".."
-	}
-	log.Debugf("loaded %d chain record(s) from registry: %+v", len(chainRecords), astr)
-
-	for _, chr := range chainRecords {
-		if chr.Active {
-			if err := ActivateChain(chr); err != nil {
-				log.Errorf("cannot activate chain %s: %v", chr.ChainID, err)
-			}
-		}
-	}
-	return nil
-}
-
-func shutdownChains() {
-	log.Infof("dismissing all chains...")
-	chainsMutex.RLock()
-	defer chainsMutex.RUnlock()
-
-	for _, ch := range allChains {
-		ch.Dismiss()
-	}
-	log.Infof("dismissing all chains.. Done")
 }

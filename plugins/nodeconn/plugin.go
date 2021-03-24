@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"net"
 	"time"
@@ -20,6 +21,7 @@ var (
 	log *logger.Logger
 
 	NodeConn *nodeconn.NodeConn
+	Ready    = ready.New()
 )
 
 func Init() *node.Plugin {
@@ -49,4 +51,5 @@ func run(_ *node.Plugin) {
 	if err != nil {
 		log.Errorf("failed to start NodeConn worker")
 	}
+	Ready.SetReady()
 }
