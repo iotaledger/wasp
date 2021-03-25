@@ -81,6 +81,9 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error
 	if stateHash != ret.virtualState.Hash() {
 		return nil, xerrors.New("MustNewVMContext: state hash mismatch")
 	}
+	if ret.virtualState.BlockIndex() != task.ChainInput.GetStateIndex() {
+		return nil, xerrors.New("MustNewVMContext: state index is inconsistent")
+	}
 	return ret, nil
 }
 
