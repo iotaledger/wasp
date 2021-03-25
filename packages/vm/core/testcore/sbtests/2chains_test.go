@@ -12,8 +12,6 @@ import (
 
 func Test2Chains(t *testing.T) { run2(t, test2Chains) }
 func test2Chains(t *testing.T, w bool) {
-	if w { t.SkipNow() }
-
 	core.PrintWellKnownHnames()
 
 	env := solo.New(t, false, false)

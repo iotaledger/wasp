@@ -20,6 +20,7 @@ type wasmProcessor struct {
 	scContext *ScContext
 }
 
+const FuncDefault = "_default"
 const ViewCopyAllState = "copy_all_state"
 
 var GoWasmVM wasmhost.WasmVM
@@ -43,7 +44,12 @@ func NewWasmProcessor(vm wasmhost.WasmVM, logger *logger.Logger) (*wasmProcessor
 func (host *wasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.SandboxView) (dict.Dict, error) {
 	if host.function == "" {
 		// init function was missing, do nothing
-		return dict.New(), nil
+		return nil, nil
+	}
+
+	if host.function == FuncDefault {
+		//TODO default function, do nothing for now
+		return nil, nil
 	}
 
 	if host.function == ViewCopyAllState {
@@ -118,9 +124,8 @@ func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProc
 	return host, true
 }
 
-// TODO refactor implement default
 func (host *wasmProcessor) GetDefaultEntryPoint() coretypes.VMProcessorEntryPoint {
-	host.function = "default"
+	host.function = FuncDefault
 	return host
 }
 

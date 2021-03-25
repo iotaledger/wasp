@@ -33,7 +33,7 @@ func TestNoContractView(t *testing.T) {
 }
 
 func TestNoEPPost(t *testing.T) {
-	env := solo.New(t, true, false)
+	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(root.Interface.Name, "dummyEP").WithIotas(2)
@@ -50,7 +50,7 @@ func TestNoEPView(t *testing.T) {
 }
 
 func TestOkCall(t *testing.T) {
-	env := solo.New(t, true, false)
+	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
@@ -61,7 +61,7 @@ func TestOkCall(t *testing.T) {
 }
 
 func TestNoTokens(t *testing.T) {
-	env := solo.New(t, true, false)
+	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,

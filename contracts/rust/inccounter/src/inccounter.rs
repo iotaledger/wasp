@@ -56,14 +56,21 @@ pub fn func_local_state_post(ctx: &ScFuncContext) {
     unsafe {
         LOCAL_STATE_MUST_INCREMENT = false;
     }
-    let transfer1 = ScTransfers::iotas(1);
-    ctx.post_self(HFUNC_WHEN_MUST_INCREMENT, None, Some(transfer1), 0);
+    // prevent multiple identical posts, need a dummy param to differentiate them
+    local_state_post(ctx, 1);
     unsafe {
         LOCAL_STATE_MUST_INCREMENT = true;
     }
-    ctx.post_self(HFUNC_WHEN_MUST_INCREMENT, None, None, 0);
-    ctx.post_self(HFUNC_WHEN_MUST_INCREMENT, None, None, 0);
+    local_state_post(ctx, 2);
+    local_state_post(ctx, 3);
     // counter ends up as 0
+}
+
+fn local_state_post(ctx: &ScFuncContext, nr: i64) {
+    let params = ScMutableMap::new();
+    params.get_int64(VAR_INT1).set_value(nr);
+    let transfer = ScTransfers::iotas(1);
+    ctx.post_self(HFUNC_WHEN_MUST_INCREMENT, Some(params), Some(transfer), 0);
 }
 
 pub fn func_local_state_sandbox_call(ctx: &ScFuncContext) {

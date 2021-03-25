@@ -131,9 +131,6 @@ func TestIncrementLocalStateSandboxCall(t *testing.T) {
 }
 
 func TestIncrementLocalStatePost(t *testing.T) {
-	//TODO how to post to self 3 times in one function call?
-	t.SkipNow()
-
 	chain := setupTest(t)
 
 	req := solo.NewCallParams(ScName, FuncLocalStatePost,
