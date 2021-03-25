@@ -21,7 +21,7 @@ type block struct {
 }
 
 // validates, enumerates and creates a block from array of state updates
-func NewBlock(stateUpdates []StateUpdate) (Block, error) {
+func NewBlock(stateUpdates ...StateUpdate) (Block, error) {
 	if len(stateUpdates) == 0 {
 		return nil, fmt.Errorf("block can't be empty")
 	}
@@ -37,7 +37,7 @@ func NewBlock(stateUpdates []StateUpdate) (Block, error) {
 	}, nil
 }
 
-func NewBlockFromBytes(data []byte) (Block, error) {
+func BlockFromBytes(data []byte) (Block, error) {
 	ret := new(block)
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, err
@@ -47,11 +47,22 @@ func NewBlockFromBytes(data []byte) (Block, error) {
 
 // block with empty state update and nil state hash
 func MustNewOriginBlock(originTxID ledgerstate.TransactionID) Block {
-	ret, err := NewBlock([]StateUpdate{NewStateUpdate(ledgerstate.OutputID{})})
+	ret, err := NewBlock(NewStateUpdate(ledgerstate.OutputID{}))
 	if err != nil {
 		log.Panic(err)
 	}
 	return ret.WithStateTransaction(originTxID)
+}
+
+// OriginBlockHash block has does not depend on the transaction hash
+func OriginBlockHash() hashing.HashValue {
+	return MustNewOriginBlock(ledgerstate.TransactionID{}).EssenceHash()
+}
+
+func (b *block) Bytes() []byte {
+	var buf bytes.Buffer
+	_ = b.Write(&buf)
+	return buf.Bytes()
 }
 
 func (b *block) String() string {
@@ -185,5 +196,5 @@ func LoadBlock(chainID *coretypes.ChainID, stateIndex uint32) (Block, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewBlockFromBytes(data)
+	return BlockFromBytes(data)
 }

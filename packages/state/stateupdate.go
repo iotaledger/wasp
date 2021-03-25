@@ -68,8 +68,7 @@ func (su *stateUpdate) Write(w io.Writer) error {
 }
 
 func (su *stateUpdate) Read(r io.Reader) error {
-	var rid ledgerstate.OutputID
-	if n, err := r.Read(rid[:]); err != nil || n != ledgerstate.OutputIDLength {
+	if n, err := r.Read(su.requestID[:]); err != nil || n != ledgerstate.OutputIDLength {
 		return err
 	}
 	if err := su.mutations.Read(r); err != nil {

@@ -52,7 +52,7 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	}
 
 	// create block from state updates.
-	task.ResultBlock, err = state.NewBlock(stateUpdates)
+	task.ResultBlock, err = state.NewBlock(stateUpdates...)
 	if err != nil {
 		task.OnFinish(nil, nil, fmt.Errorf("RunVM.NewBlock: %v", err))
 		return
@@ -66,7 +66,7 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		return
 	}
 
-	task.ResultTransaction, err = vmctx.BuildTransactionEssence(vsClone.BlockIndex(), vsClone.Hash())
+	task.ResultTransaction, err = vmctx.BuildTransactionEssence(vsClone.Hash())
 	if err != nil {
 		task.OnFinish(nil, nil, fmt.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return

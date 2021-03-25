@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"io"
 
@@ -26,17 +27,29 @@ type virtualState struct {
 	variables  buffered.BufferedKVStore
 }
 
-func NewVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
-	return &virtualState{
-		chainID:   *chainID,
+func NewVirtualState(db kvstore.KVStore, chainID ...*coretypes.ChainID) *virtualState {
+	ret := &virtualState{
 		db:        db,
 		variables: buffered.NewBufferedKVStore(subRealm(db, []byte{dbprovider.ObjectTypeStateVariable})),
 		empty:     true,
 	}
+	if len(chainID) > 0 {
+		ret.chainID = *chainID[0]
+	}
+	return ret
 }
 
 func NewEmptyVirtualState(chainID *coretypes.ChainID) *virtualState {
 	return NewVirtualState(getSCPartition(chainID), chainID)
+}
+
+func OriginStateHash() hashing.HashValue {
+	emptyVirtualState := NewVirtualState(mapdb.NewMapDB())
+	originBlock := MustNewOriginBlock(ledgerstate.TransactionID{})
+	if err := emptyVirtualState.ApplyBlock(originBlock); err != nil {
+		panic(err)
+	}
+	return emptyVirtualState.Hash()
 }
 
 func getSCPartition(chainID *coretypes.ChainID) kvstore.KVStore {
@@ -223,7 +236,7 @@ func loadSolidState(db kvstore.KVStore, chainID *coretypes.ChainID) (VirtualStat
 		return nil, nil, false, fmt.Errorf("loading variable state: %v", err)
 	}
 
-	batch, err := NewBlockFromBytes(values[1])
+	batch, err := BlockFromBytes(values[1])
 	if err != nil {
 		return nil, nil, false, fmt.Errorf("loading block: %v", err)
 	}
