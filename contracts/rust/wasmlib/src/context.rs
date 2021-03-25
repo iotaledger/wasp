@@ -325,7 +325,7 @@ impl ScFuncContext {
     // asynchronously calls the specified smart contract function,
     // passing the provided parameters and token transfers to it
     // it is possible to schedule the call for a later execution by specifying a delay
-    pub fn post(&self, chain_id: &ScChainId, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>, delay: i64) {
+    pub fn post(&self, chain_id: &ScChainId, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>, transfer: ScTransfers, delay: i64) {
         let mut encode = BytesEncoder::new();
         encode.chain_id(chain_id);
         encode.hname(&hcontract);
@@ -335,17 +335,13 @@ impl ScFuncContext {
         } else {
             encode.int64(0);
         }
-        if let Some(transfer) = &transfer {
-            encode.int64(transfer.transfers.obj_id as i64);
-        } else {
-            encode.int64(0);
-        }
+        encode.int64(transfer.transfers.obj_id as i64);
         encode.int64(delay);
         ROOT.get_bytes(&KEY_POST).set_value(&encode.data());
     }
 
     // shorthand to asynchronously call a smart contract function of the current contract
-    pub fn post_self(&self, hfunction: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>, delay: i64) {
+    pub fn post_self(&self, hfunction: ScHname, params: Option<ScMutableMap>, transfer: ScTransfers, delay: i64) {
         self.post(&self.chain_id(), self.contract(), hfunction, params, transfer, delay);
     }
 

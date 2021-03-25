@@ -70,7 +70,7 @@ fn local_state_post(ctx: &ScFuncContext, nr: i64) {
     let params = ScMutableMap::new();
     params.get_int64(VAR_INT1).set_value(nr);
     let transfer = ScTransfers::iotas(1);
-    ctx.post_self(HFUNC_WHEN_MUST_INCREMENT, Some(params), Some(transfer), 0);
+    ctx.post_self(HFUNC_WHEN_MUST_INCREMENT, Some(params), transfer, 0);
 }
 
 pub fn func_local_state_sandbox_call(ctx: &ScFuncContext) {
@@ -92,7 +92,7 @@ pub fn func_post_increment(ctx: &ScFuncContext) {
     counter.set_value(value + 1);
     if value == 0 {
         let transfer = ScTransfers::iotas(1);
-        ctx.post_self(HFUNC_POST_INCREMENT, None, Some(transfer), 0);
+        ctx.post_self(HFUNC_POST_INCREMENT, None, transfer, 0);
     }
 }
 
@@ -113,7 +113,7 @@ pub fn func_repeat_many(ctx: &ScFuncContext) {
     }
     state_repeats.set_value(repeats - 1);
     let transfer = ScTransfers::iotas(1);
-    ctx.post_self(HFUNC_REPEAT_MANY, None, Some(transfer), 0);
+    ctx.post_self(HFUNC_REPEAT_MANY, None, transfer, 0);
 }
 
 pub fn func_when_must_increment(ctx: &ScFuncContext) {

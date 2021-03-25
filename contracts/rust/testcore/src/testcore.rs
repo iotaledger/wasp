@@ -235,8 +235,8 @@ pub fn func_withdraw_to_chain(ctx: &ScFuncContext) {
 
     ctx.require(param_chain_id.exists(), "missing mandatory chainId");
 
-    let transfers = ScTransfers::iotas(1);
-    ctx.post(&param_chain_id.value(), CORE_ACCOUNTS, CORE_ACCOUNTS_FUNC_WITHDRAW, None, Some(transfers), 0);
+    let transfer = ScTransfers::iotas(1);
+    ctx.post(&param_chain_id.value(), CORE_ACCOUNTS, CORE_ACCOUNTS_FUNC_WITHDRAW, None, transfer, 0);
     ctx.log("testcore.withdrawToChain ok");
 }
 

@@ -103,7 +103,7 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
         // be placed. Once the 'lockBets' function gets triggered by the ISCP it will gather all
         // bets up to that moment as the ones to consider for determining the winner.
         let transfer = ScTransfers::iotas(1);
-        ctx.post_self(HFUNC_LOCK_BETS, None, Some(transfer), play_period);
+        ctx.post_self(HFUNC_LOCK_BETS, None, transfer, play_period);
     }
 
     // Finally, we log the fact that we have successfully completed execution
@@ -160,7 +160,7 @@ pub fn func_lock_bets(ctx: &ScFuncContext) {
     // Next we trigger an immediate request to the 'payWinners' function
     // See more explanation of the why below.
     let transfer = ScTransfers::iotas(1);
-    ctx.post_self(HFUNC_PAY_WINNERS, None, Some(transfer), 0);
+    ctx.post_self(HFUNC_PAY_WINNERS, None, transfer, 0);
 
     // Finally, we log the fact that we have successfully completed execution
     // of the 'lockBets' Func in the log on the host.
