@@ -251,7 +251,12 @@ func (op *operator) checkQuorum() {
 
 	// posting finalized transaction to goshimmer
 	addr := op.chain.Address()
-	err = nodeconn.PostTransactionToNode(op.leaderStatus.resultTx.Transaction, &addr, op.chain.OwnPeerIndex())
+	tx := op.leaderStatus.resultTx.Transaction
+	if len(tx.Bytes()) > parameters.MaxSerializedTransactionToGoshimmer {
+		op.log.Warnf("transaction too large")
+		return
+	}
+	err = nodeconn.PostTransactionToNode(tx, &addr, op.chain.OwnPeerIndex())
 	if err != nil {
 		op.log.Warnf("PostTransactionToNode failed: %v", err)
 		return

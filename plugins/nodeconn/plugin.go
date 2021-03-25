@@ -1,15 +1,15 @@
 package nodeconn
 
 import (
+	"net"
+	"time"
+
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/iotaledger/wasp/plugins/peering"
-	"net"
-	"time"
 )
 
 // PluginName is the name of the NodeConn plugin.
@@ -20,7 +20,7 @@ const dialTimeout = 1 * time.Second
 var (
 	log *logger.Logger
 
-	NodeConn *nodeconn.NodeConn
+	NodeConn *client.Client
 	Ready    = ready.New()
 )
 
@@ -35,13 +35,13 @@ func configure(_ *node.Plugin) {
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 		addr := parameters.GetString(parameters.NodeAddress)
-		dial := nodeconn.DialFunc(func() (string, net.Conn, error) {
+		dial := client.DialFunc(func() (string, net.Conn, error) {
 			log.Infof("connecting with node at %s", addr)
 			conn, err := net.DialTimeout("tcp", addr, dialTimeout)
 			return addr, conn, err
 		})
 
-		NodeConn := nodeconn.New(peering.DefaultNetworkProvider().Self().NetID(), log, dial)
+		NodeConn := client.New(peering.DefaultNetworkProvider().Self().NetID(), log, dial)
 		defer NodeConn.Close()
 
 		<-shutdownSignal
