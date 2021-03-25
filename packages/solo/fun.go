@@ -66,7 +66,12 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 	if retBin == nil {
 		return nil, fmt.Errorf("smart contract '%s' not found", scName)
 	}
-	return root.DecodeContractRecord(retBin)
+	record, err := root.DecodeContractRecord(retBin)
+	if err != nil { return nil, err }
+	if record.Name != scName {
+		return nil, fmt.Errorf("smart contract '%s' not found", scName)
+	}
+	return record, err
 }
 
 // GetBlobInfo return info about blob with the given hash with existence flag

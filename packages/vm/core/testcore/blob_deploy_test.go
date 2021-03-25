@@ -72,12 +72,12 @@ func TestDeployWasm(t *testing.T) {
 }
 
 func TestDeployRubbish(t *testing.T) {
-	t.SkipNow()
-
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 	name := "testCore"
-	err := chain.DeployWasmContract(nil, name, "blob_deploy_test.go")
+	_, err := chain.FindContract(name)
+	require.Error(t, err)
+	err = chain.DeployWasmContract(nil, name, "blob_deploy_test.go")
 	require.Error(t, err)
 
 	_, err = chain.FindContract(name)
@@ -104,7 +104,6 @@ func TestDeployNotAuthorized(t *testing.T) {
 }
 
 func TestDeployGrant(t *testing.T) {
-	t.SkipNow()
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 	user1, addr1 := env.NewKeyPairWithFunds()
@@ -112,7 +111,7 @@ func TestDeployGrant(t *testing.T) {
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
-	)
+	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -120,17 +119,16 @@ func TestDeployGrant(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, contacts := chain.GetInfo()
-	require.EqualValues(t, 5, len(contacts))
+	require.EqualValues(t, 6, len(contacts))
 
 	err = chain.DeployWasmContract(user1, "testInccounter2", wasmFile)
 	require.NoError(t, err)
 
 	_, _, contacts = chain.GetInfo()
-	require.EqualValues(t, 6, len(contacts))
+	require.EqualValues(t, 7, len(contacts))
 }
 
 func TestRevokeDeploy(t *testing.T) {
-	t.SkipNow()
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 	user1, addr1 := env.NewKeyPairWithFunds()
@@ -138,7 +136,7 @@ func TestRevokeDeploy(t *testing.T) {
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
-	)
+	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -146,11 +144,11 @@ func TestRevokeDeploy(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, contacts := chain.GetInfo()
-	require.EqualValues(t, 5, len(contacts))
+	require.EqualValues(t, 6, len(contacts))
 
 	req = solo.NewCallParams(root.Interface.Name, root.FuncRevokeDeploy,
 		root.ParamDeployer, user1AgentID,
-	)
+	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -158,7 +156,7 @@ func TestRevokeDeploy(t *testing.T) {
 	require.Error(t, err)
 
 	_, _, contacts = chain.GetInfo()
-	require.EqualValues(t, 5, len(contacts))
+	require.EqualValues(t, 6, len(contacts))
 }
 
 func TestDeployGrantFail(t *testing.T) {
@@ -169,7 +167,7 @@ func TestDeployGrantFail(t *testing.T) {
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
 		root.ParamDeployer, user1AgentID,
-	)
+	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, user1)
 	require.Error(t, err)
 
