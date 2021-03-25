@@ -25,7 +25,7 @@ func TestIncSoloInc(t *testing.T) {
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
 	req := solo.NewCallParams(incName, "increment").
-		WithTransfer(balance.ColorIOTA, 1)
+		WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	ret, err := chain.CallView(incName, "getCounter")
@@ -41,7 +41,7 @@ func TestIncSoloRepeatMany(t *testing.T) {
 	err := chain.DeployWasmContract(nil, incName, incFile)
 	require.NoError(t, err)
 	req := solo.NewCallParams(incName, "repeatMany", varNumRepeats, 2).
-		WithTransfer(balance.ColorIOTA, 1)
+		WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	chain.WaitForEmptyBacklog()

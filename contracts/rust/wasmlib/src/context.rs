@@ -325,11 +325,11 @@ impl ScFuncContext {
     // asynchronously calls the specified smart contract function,
     // passing the provided parameters and token transfers to it
     // it is possible to schedule the call for a later execution by specifying a delay
-    pub fn post(&self, chain_id: &ScChainId, contract: ScHname, function: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>, delay: i64) {
+    pub fn post(&self, chain_id: &ScChainId, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>, delay: i64) {
         let mut encode = BytesEncoder::new();
         encode.chain_id(chain_id);
-        encode.hname(&contract);
-        encode.hname(&function);
+        encode.hname(&hcontract);
+        encode.hname(&hfunction);
         if let Some(params) = &params {
             encode.int64(params.obj_id as i64);
         } else {
@@ -345,8 +345,8 @@ impl ScFuncContext {
     }
 
     // shorthand to asynchronously call a smart contract function of the current contract
-    pub fn post_self(&self, function: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>, delay: i64) {
-        self.post(&self.chain_id(), self.contract(), function, params, transfer, delay);
+    pub fn post_self(&self, hfunction: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>, delay: i64) {
+        self.post(&self.chain_id(), self.contract(), hfunction, params, transfer, delay);
     }
 
     // retrieve the request id of this transaction
@@ -379,10 +379,10 @@ impl ScBaseContext for ScViewContext {}
 impl ScViewContext {
     // synchronously calls the specified smart contract view,
     // passing the provided parameters to it
-    pub fn call(&self, contract: ScHname, function: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
+    pub fn call(&self, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
         let mut encode = BytesEncoder::new();
-        encode.hname(&contract);
-        encode.hname(&function);
+        encode.hname(&hcontract);
+        encode.hname(&hfunction);
         if let Some(params) = params {
             encode.int64(params.obj_id as i64);
         } else {
@@ -394,8 +394,8 @@ impl ScViewContext {
     }
 
     // shorthand to synchronously call a smart contract view of the current contract
-    pub fn call_self(&self, function: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
-        self.call(self.contract(), function, params)
+    pub fn call_self(&self, hfunction: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
+        self.call(self.contract(), hfunction, params)
     }
 
     // access immutable state storage on the host

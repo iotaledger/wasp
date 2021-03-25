@@ -83,6 +83,12 @@ pub fn func_get_minted_supply(ctx: &ScFuncContext) {
     ctx.log("testcore.setInt ok");
 }
 
+pub fn func_inc_counter(ctx: &ScFuncContext) {
+    ctx.log("testcore.incCounter");
+    ctx.state().get_int64(VAR_COUNTER).set_value(ctx.state().get_int64(VAR_COUNTER).value() + 1);
+    ctx.log("testcore.incCounter ok");
+}
+
 pub fn func_init(ctx: &ScFuncContext) {
     ctx.log("testcore.init");
     ctx.log("testcore.init ok");
@@ -132,10 +138,10 @@ pub fn func_run_recursion(ctx: &ScFuncContext) {
         return;
     }
 
-    let params = ScMutableMap::new();
-    params.get_int64(PARAM_INT_VALUE).set_value(depth - 1);
-    params.get_hname(PARAM_HNAME_EP).set_value(HFUNC_RUN_RECURSION);
-    ctx.call_self(HFUNC_CALL_ON_CHAIN, Some(params), None);
+    let parms = ScMutableMap::new();
+    parms.get_int64(PARAM_INT_VALUE).set_value(depth - 1);
+    parms.get_hname(PARAM_HNAME_EP).set_value(HFUNC_RUN_RECURSION);
+    ctx.call_self(HFUNC_CALL_ON_CHAIN, Some(parms), None);
     // TODO how would I return result of the call ???
     ctx.results().get_int64(PARAM_INT_VALUE).set_value(depth - 1);
     ctx.log("testcore.runRecursion ok");
@@ -192,8 +198,7 @@ pub fn func_test_event_log_deploy(ctx: &ScFuncContext) {
     ctx.log("testcore.testEventLogDeploy");
     //Deploy the same contract with another name
     let program_hash = ctx.utility().hash_blake2b("test_sandbox".as_bytes());
-    ctx.deploy(&program_hash, CONTRACT_NAME_DEPLOYED,
-               "test contract deploy log", None);
+    ctx.deploy(&program_hash, CONTRACT_NAME_DEPLOYED, "test contract deploy log", None);
     ctx.log("testcore.testEventLogDeploy ok");
 }
 
@@ -265,14 +270,14 @@ pub fn view_fibonacci(ctx: &ScViewContext) {
         ctx.results().get_int64(PARAM_INT_VALUE).set_value(n);
         return;
     }
-    let params1 = ScMutableMap::new();
-    params1.get_int64(PARAM_INT_VALUE).set_value(n - 1);
-    let results1 = ctx.call_self(HVIEW_FIBONACCI, Some(params1));
+    let parms1 = ScMutableMap::new();
+    parms1.get_int64(PARAM_INT_VALUE).set_value(n - 1);
+    let results1 = ctx.call_self(HVIEW_FIBONACCI, Some(parms1));
     let n1 = results1.get_int64(PARAM_INT_VALUE).value();
 
-    let params2 = ScMutableMap::new();
-    params2.get_int64(PARAM_INT_VALUE).set_value(n - 2);
-    let results2 = ctx.call_self(HVIEW_FIBONACCI, Some(params2));
+    let parms2 = ScMutableMap::new();
+    parms2.get_int64(PARAM_INT_VALUE).set_value(n - 2);
+    let results2 = ctx.call_self(HVIEW_FIBONACCI, Some(parms2));
     let n2 = results2.get_int64(PARAM_INT_VALUE).value();
 
     ctx.results().get_int64(PARAM_INT_VALUE).set_value(n1 + n2);
@@ -299,12 +304,6 @@ pub fn view_get_int(ctx: &ScViewContext) {
     ctx.require(value.exists(), "param 'value' not found");
     ctx.results().get_int64(&name).set_value(value.value());
     ctx.log("testcore.getInt ok");
-}
-
-pub fn func_inc_counter(ctx: &ScFuncContext) {
-    ctx.log("testcore.incCounter");
-    ctx.state().get_int64(VAR_COUNTER).set_value(ctx.state().get_int64(VAR_COUNTER).value() + 1);
-    ctx.log("testcore.incCounter ok");
 }
 
 pub fn view_just_view(ctx: &ScViewContext) {
