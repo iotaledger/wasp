@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/crypto/blake2b"
 	"io"
 )
@@ -285,60 +284,3 @@ func (p *RequestMetadata) Read(r io.Reader) error {
 }
 
 // endregion
-
-// region StateMetadata  ///////////////////////////////////////////////////////
-
-type StateMetadata struct {
-	blockIndex uint32
-	stateHash  hashing.HashValue
-}
-
-func NewStateMetadata(blockIndex uint32, stateHash hashing.HashValue) *StateMetadata {
-	return &StateMetadata{
-		blockIndex: blockIndex,
-		stateHash:  stateHash,
-	}
-}
-
-func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
-	ret := &StateMetadata{}
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
-func (s *StateMetadata) Bytes() []byte {
-	ret, _ := util.Bytes(s)
-	return ret
-}
-
-func (s *StateMetadata) BlockIndex() uint32 {
-	return s.blockIndex
-}
-
-func (s *StateMetadata) StateHash() hashing.HashValue {
-	return s.stateHash
-}
-
-func (s *StateMetadata) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, s.blockIndex); err != nil {
-		return err
-	}
-	if _, err := w.Write(s.stateHash[:]); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *StateMetadata) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &s.blockIndex); err != nil {
-		return err
-	}
-	if err := util.ReadHashValue(r, &s.stateHash); err != nil {
-		return err
-	}
-	return nil
-}
-
-// endregion  ///////////////////////////////////////////////////////////

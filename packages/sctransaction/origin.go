@@ -6,8 +6,8 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/state"
 )
 
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
@@ -19,8 +19,9 @@ func NewChainOriginTransaction(
 	allInputs ...ledgerstate.Output) (*ledgerstate.Transaction, coretypes.ChainID, error) {
 	walletAddr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	txb := utxoutil.NewBuilder(allInputs...)
-	stateMetadata := NewStateMetadata(0, hashing.NilHash)
-	if err := txb.AddNewChainMint(balance, stateAddress, stateMetadata.Bytes()); err != nil {
+
+	stateHash := state.OriginStateHash()
+	if err := txb.AddNewChainMint(balance, stateAddress, stateHash.Bytes()); err != nil {
 		return nil, coretypes.ChainID{}, err
 	}
 	// adding reminder in compressing mode, i.e. all provided inputs will be consumed

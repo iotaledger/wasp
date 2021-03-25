@@ -224,9 +224,8 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 		vmctx.req.GetMetadata().EntryPoint() == coretypes.EntryPointInit
 }
 
-func (vmctx *VMContext) BuildTransactionEssence(blockIndex uint32, stateHash hashing.HashValue) (*ledgerstate.TransactionEssence, error) {
-	stateMetadata := sctransaction.NewStateMetadata(blockIndex, stateHash)
-	if err := vmctx.txBuilder.AddChainOutputAsReminder(vmctx.chainID.AsAddress(), stateMetadata.Bytes()); err != nil {
+func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue) (*ledgerstate.TransactionEssence, error) {
+	if err := vmctx.txBuilder.AddChainOutputAsReminder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
 		return nil, xerrors.Errorf("finalizeRequestCall: %v", err)
 	}
 	tx, _, err := vmctx.txBuilder.BuildEssence()

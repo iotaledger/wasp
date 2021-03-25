@@ -73,13 +73,13 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error
 		// chain input must always be present
 		return nil, xerrors.Errorf("MustNewVMContext: can't find chain input %v", err)
 	}
-	metadata, err := sctransaction.StateMetadataFromBytes(task.ChainInput.GetStateData())
+	stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
 	if err != nil {
 		// chain input must always be present
-		return nil, xerrors.Errorf("MustNewVMContext: can't parse state metadata %v", err)
+		return nil, xerrors.Errorf("MustNewVMContext: can't parse state hash %v", err)
 	}
-	if metadata.BlockIndex() != ret.virtualState.BlockIndex() {
-		return nil, xerrors.Errorf("MustNewVMContext: block index mismatch %v", err)
+	if stateHash != ret.virtualState.Hash() {
+		return nil, xerrors.New("MustNewVMContext: state hash mismatch")
 	}
 	return ret, nil
 }
