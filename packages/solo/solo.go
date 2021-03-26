@@ -309,8 +309,8 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 	}
 }
 
-func (ch *Chain) GetChainOutput() *ledgerstate.ChainOutput {
-	outs := ch.Env.utxoDB.GetChainOutputs(ch.ChainID.AsAddress())
+func (ch *Chain) GetChainOutput() *ledgerstate.AliasOutput {
+	outs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
 	require.EqualValues(ch.Env.T, 1, len(outs))
 
 	return outs[0]

@@ -225,7 +225,7 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 }
 
 func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue) (*ledgerstate.TransactionEssence, error) {
-	if err := vmctx.txBuilder.AddChainOutputAsReminder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
+	if err := vmctx.txBuilder.AddAliasOutputAsReminder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
 		return nil, xerrors.Errorf("finalizeRequestCall: %v", err)
 	}
 	tx, _, err := vmctx.txBuilder.BuildEssence()

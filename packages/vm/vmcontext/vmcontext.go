@@ -68,7 +68,7 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error
 		timestamp:    task.Timestamp.UnixNano(),
 		callStack:    make([]*callContext, 0),
 	}
-	err = txb.ConsumeChainInput(task.ChainInput.Address())
+	err = txb.ConsumeAliasInput(task.ChainInput.Address())
 	if err != nil {
 		// chain input must always be present
 		return nil, xerrors.Errorf("MustNewVMContext: can't find chain input %v", err)

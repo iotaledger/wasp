@@ -21,7 +21,7 @@ func NewChainOriginTransaction(
 	txb := utxoutil.NewBuilder(allInputs...)
 
 	stateHash := state.OriginStateHash()
-	if err := txb.AddNewChainMint(balance, stateAddress, stateHash.Bytes()); err != nil {
+	if err := txb.AddNewAliasMint(balance, stateAddress, stateHash.Bytes()); err != nil {
 		return nil, coretypes.ChainID{}, err
 	}
 	// adding reminder in compressing mode, i.e. all provided inputs will be consumed
@@ -33,7 +33,7 @@ func NewChainOriginTransaction(
 		return nil, coretypes.ChainID{}, err
 	}
 	// determine aliasAddress of the newly minted chain
-	chained, err := utxoutil.GetSingleChainedOutput(tx.Essence())
+	chained, err := utxoutil.GetSingleChainedAliasOutput(tx.Essence())
 	if err != nil {
 		return nil, coretypes.ChainID{}, err
 	}

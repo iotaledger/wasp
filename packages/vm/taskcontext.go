@@ -19,7 +19,7 @@ import (
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
 	Processors         *processors.ProcessorCache
-	ChainInput         *ledgerstate.ChainOutput
+	ChainInput         *ledgerstate.AliasOutput
 	Requests           []*sctransaction.Request
 	Timestamp          time.Time
 	VirtualState       state.VirtualState // input immutable

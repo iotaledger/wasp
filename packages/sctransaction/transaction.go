@@ -19,7 +19,7 @@ type ParsedTransaction struct {
 	*ledgerstate.Transaction
 	receivingChainID coretypes.ChainID
 	senderAddr       ledgerstate.Address
-	chainOutput      *ledgerstate.ChainOutput
+	chainOutput      *ledgerstate.AliasOutput
 	stateHash        hashing.HashValue
 	requests         []*Request
 }
@@ -39,7 +39,7 @@ func Parse(tx *ledgerstate.Transaction, sender ledgerstate.Address, receivingCha
 		switch o := out.(type) {
 		case *ledgerstate.ExtendedLockedOutput:
 			ret.requests = append(ret.requests, RequestFromOutput(o, sender))
-		case *ledgerstate.ChainOutput:
+		case *ledgerstate.AliasOutput:
 			h, err := hashing.HashValueFromBytes(o.GetStateData())
 			if err == nil {
 				ret.stateHash = h
@@ -53,7 +53,7 @@ func Parse(tx *ledgerstate.Transaction, sender ledgerstate.Address, receivingCha
 }
 
 // ChainOutput return chain output or nil if the transaction is not a state anchor
-func (tx *ParsedTransaction) ChainOutput() *ledgerstate.ChainOutput {
+func (tx *ParsedTransaction) ChainOutput() *ledgerstate.AliasOutput {
 	return tx.chainOutput
 }
 
