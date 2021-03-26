@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 )

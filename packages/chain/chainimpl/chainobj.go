@@ -4,7 +4,6 @@
 package chainimpl
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"sync"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus"
@@ -37,7 +35,7 @@ type chainObj struct {
 	//
 	chainID         coretypes.ChainID
 	procset         *processors.ProcessorCache
-	color           balance.Color
+	color           ledgerstate.Color
 	peers           peering.GroupProvider
 	size            uint16
 	quorum          uint16

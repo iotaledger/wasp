@@ -9,7 +9,7 @@ import (
 )
 
 func listContractsCmd(args []string) {
-	info, err := SCClient(root.Interface.Hname()).CallView(root.FuncGetChainInfo, nil)
+	info, err := SCClient(root.Interface.Hname()).CallView(root.FuncGetChainInfo)
 	log.Check(err)
 
 	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))

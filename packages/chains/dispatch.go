@@ -1,7 +1,6 @@
 package chains
 
 import (
-	"github.com/iotaledger/goshimmer/packages/waspconn"
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
 

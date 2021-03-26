@@ -2,11 +2,9 @@
 package nodeping
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"math/rand"
 	"time"
 )

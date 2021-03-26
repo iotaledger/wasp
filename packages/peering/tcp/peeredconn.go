@@ -4,9 +4,9 @@
 package tcp
 
 import (
+	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
 	"net"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"

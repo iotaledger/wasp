@@ -29,10 +29,10 @@ import (
 // - deploys other core contracts: 'accounts', 'blob', 'eventlog' by creating records in the registry and calling constructors
 // Input:
 // - ParamChainID coretypes.ChainID. ID of the chain. Cannot be changed
-// - ParamChainColor balance.Color
+// - ParamChainColor ledgerstate.Color
 // - ParamChainAddress address.Address
 // - ParamDescription string defaults to "N/A"
-// - ParamFeeColor balance.Color fee color code. Defaults to IOTA color. It cannot be changed
+// - ParamFeeColor ledgerstate.Color fee color code. Defaults to IOTA color. It cannot be changed
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.initialize.begin")
 	state := ctx.State()
@@ -227,7 +227,7 @@ func claimChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 // Input:
 // - ParamHname coretypes.Hname contract id
 // Output:
-// - ParamFeeColor balance.Color color of tokens accepted for fees
+// - ParamFeeColor ledgerstate.Color color of tokens accepted for fees
 // - ParamValidatorFee int64 minimum fee for contract
 // Note: return default chain values if contract doesn't exist
 func getFeeInfo(ctx coretypes.SandboxView) (dict.Dict, error) {

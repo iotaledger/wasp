@@ -1,11 +1,11 @@
 package chain
 
 import (
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"os"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -15,9 +15,10 @@ func logCmd(args []string) {
 	if len(args) != 1 {
 		log.Fatal("Usage: %s chain log <name>", os.Args[0])
 	}
-	r, err := SCClient(eventlog.Interface.Hname()).CallView(eventlog.FuncGetRecords, codec.MakeDict(map[string]interface{}{
-		eventlog.ParamContractHname: codec.EncodeHname(coretypes.Hn(args[0])),
-	}))
+	r, err := SCClient(eventlog.Interface.Hname()).CallView(eventlog.FuncGetRecords,
+		dict.Dict{
+			eventlog.ParamContractHname: coretypes.Hn(args[0]).Bytes(),
+		})
 	log.Check(err)
 
 	records := collections.NewArrayReadOnly(r, eventlog.ParamRecords)

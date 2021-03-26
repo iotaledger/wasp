@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/sctransaction_old"
 )
 
 // WaitUntilRequestProcessed blocks until the request has been processed by all nodes

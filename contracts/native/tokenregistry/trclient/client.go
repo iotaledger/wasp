@@ -6,12 +6,9 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
 )
@@ -57,13 +54,13 @@ func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sct
 type Status struct {
 	*chainclient.SCStatus
 
-	Registry                     map[balance.Color]*tokenregistry.TokenMetadata
+	Registry                     map[ledgerstate.Color]*tokenregistry.TokenMetadata
 	RegistrySortedByMintTimeDesc []*TokenMetadataWithColor // may be nil
 }
 
 type TokenMetadataWithColor struct {
 	tokenregistry.TokenMetadata
-	Color balance.Color
+	Color ledgerstate.Color
 }
 
 func (trc *TokenRegistryClient) FetchStatus(sortByAgeDesc bool) (*Status, error) {
@@ -98,8 +95,8 @@ func (trc *TokenRegistryClient) FetchStatus(sortByAgeDesc bool) (*Status, error)
 	return status, nil
 }
 
-func decodeRegistry(result *statequery.MapResult) (map[balance.Color]*tokenregistry.TokenMetadata, error) {
-	registry := make(map[balance.Color]*tokenregistry.TokenMetadata)
+func decodeRegistry(result *statequery.MapResult) (map[ledgerstate.Color]*tokenregistry.TokenMetadata, error) {
+	registry := make(map[ledgerstate.Color]*tokenregistry.TokenMetadata)
 	for _, e := range result.Entries {
 		color, _, err := balance.ColorFromBytes(e.Key)
 		if err != nil {
@@ -114,7 +111,7 @@ func decodeRegistry(result *statequery.MapResult) (map[balance.Color]*tokenregis
 	return registry, nil
 }
 
-func (trc *TokenRegistryClient) Query(color *balance.Color) (*tokenregistry.TokenMetadata, error) {
+func (trc *TokenRegistryClient) Query(color *ledgerstate.Color) (*tokenregistry.TokenMetadata, error) {
 	query := statequery.NewRequest()
 	query.AddMapElement(tokenregistry.VarStateTheRegistry, color.Bytes())
 

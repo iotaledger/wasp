@@ -3,14 +3,13 @@ package model
 import (
 	"encoding/json"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// Color is the base58 representation of balance.Color
+// Color is the base58 representation of ledgerstate.Color
 type Color string
 
-func NewColor(color *balance.Color) Color {
+func NewColor(color *ledgerstate.Color) Color {
 	return Color(color.String())
 }
 
@@ -28,7 +27,7 @@ func (c *Color) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-func (c Color) Color() balance.Color {
+func (c Color) Color() ledgerstate.Color {
 	col, err := util.ColorFromString(string(c))
 	if err != nil {
 		panic(err)

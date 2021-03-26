@@ -9,7 +9,6 @@ package tokenregistry
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -103,7 +102,7 @@ func mintSupply(ctx coretypes.Sandbox) error {
 	params := ctx.Params()
 
 	reqId := ctx.RequestID()
-	colorOfTheSupply := (balance.Color)(*reqId.TransactionID())
+	colorOfTheSupply := (ledgerstate.Color)(*reqId.TransactionID())
 
 	registry := collections.NewMap(ctx.State(), VarStateTheRegistry)
 	// check for duplicated colors

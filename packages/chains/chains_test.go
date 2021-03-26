@@ -1,8 +1,8 @@
 package chains
 
 import (
-	"github.com/iotaledger/wasp/packages/nodeconn"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"golang.org/x/xerrors"
 	"net"
 	"testing"

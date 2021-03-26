@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -103,7 +102,7 @@ func fetchAccounts(chain chain.Chain) ([]coretypes.AgentID, error) {
 	return ret, nil
 }
 
-func fetchTotalAssets(chain chain.Chain) (map[balance.Color]int64, error) {
+func fetchTotalAssets(chain chain.Chain) (map[ledgerstate.Color]uint64, error) {
 	bal, err := callView(chain, accounts.Interface.Hname(), accounts.FuncTotalAssets, nil)
 	if err != nil {
 		return nil, err
@@ -129,7 +128,7 @@ type ChainTemplateParams struct {
 	VirtualState state.VirtualState
 	RootInfo     RootInfo
 	Accounts     []coretypes.AgentID
-	TotalAssets  map[balance.Color]int64
+	TotalAssets  map[ledgerstate.Color]uint64
 	Blobs        map[hashing.HashValue]uint32
 	Committee    struct {
 		Size       uint16

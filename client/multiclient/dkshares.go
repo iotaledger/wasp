@@ -1,7 +1,6 @@
 package multiclient
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 )

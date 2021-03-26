@@ -3,9 +3,6 @@ package vtxbuilder
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/client/level1"
 )
 
@@ -22,7 +19,7 @@ func NewColoredTokensTransaction(client level1.Level1Client, sigScheme signature
 	if err != nil {
 		return nil, err
 	}
-	if err := txb.MintColoredTokens(addr, balance.ColorIOTA, amount); err != nil {
+	if err := txb.MintColoredTokens(addr, ledgerstate.ColorIOTA, amount); err != nil {
 		return nil, err
 	}
 	tx := txb.Build(false)

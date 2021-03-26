@@ -6,11 +6,11 @@ package udp
 import (
 	"errors"
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
 	"net"
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"

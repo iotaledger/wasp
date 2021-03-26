@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
@@ -74,7 +73,7 @@ type TRTemplateParams struct {
 	dashboard.BaseTemplateParams
 	Config      *sc.Config
 	Status      *trclient.Status
-	Color       *balance.Color
+	Color       *ledgerstate.Color
 	QueryResult *tokenregistry.TokenMetadata
 }
 

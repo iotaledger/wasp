@@ -2,8 +2,6 @@ package model
 
 import (
 	"encoding/json"
-
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 )
 
 // Address is the base58-encoded representation of address.Address

@@ -11,9 +11,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/level1"
 	"github.com/iotaledger/wasp/client/multiclient"
@@ -37,7 +34,7 @@ type CreateChainParams struct {
 // DeployChain performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
 // noinspection ALL
-func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *balance.Color, error) {
+func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *ledgerstate.Color, error) {
 	var err error
 	textout := ioutil.Discard
 	if par.Textout != nil {
@@ -109,7 +106,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 		fmt.Fprintf(textout, "posting origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 	}
 
-	chainColor := balance.Color(originTx.ID())
+	chainColor := ledgerstate.Color(originTx.ID())
 	committee := multiclient.New(par.CommitteeApiHosts)
 	// ------------ put chain records to hosts
 	err = committee.PutChainRecord(&registry.ChainRecord{
@@ -178,7 +175,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 		return nil, nil, nil, err
 	}
 
-	scColor := (balance.Color)(originTx.ID())
+	scColor := (ledgerstate.Color)(originTx.ID())
 	fmt.Fprint(textout, par.Prefix)
 
 	fmt.Fprintf(textout, "chain has been created succesfully on the Tangle. ChainID: %s, MustAddress: %s, Color: %s, N = %d, T = %d\n",

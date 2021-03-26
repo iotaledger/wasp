@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -63,7 +62,7 @@ type ChainAccountTemplateParams struct {
 	ChainID coretypes.ChainID
 	AgentID coretypes.AgentID
 
-	Balances map[balance.Color]int64
+	Balances map[ledgerstate.Color]uint64
 }
 
 const tplChainAccount = `

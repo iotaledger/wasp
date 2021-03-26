@@ -3,13 +3,13 @@ package tests
 import (
 	"flag"
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"io/ioutil"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -79,18 +79,18 @@ func deployContract(wasmName string, scDescription string, initParams map[string
 }
 
 func postRequest(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, tokens int, params map[string]interface{}) {
-	var transfer map[balance.Color]int64
+	var transfer map[ledgerstate.Color]uint64
 	if tokens != 0 {
-		transfer = map[balance.Color]int64{
-			balance.ColorIOTA: int64(tokens),
+		transfer = map[ledgerstate.Color]uint64{
+			ledgerstate.ColorIOTA: uint64(tokens),
 		}
 	}
 	postRequestFull(t, contract, entryPoint, transfer, params)
 }
 
-func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, transfer map[balance.Color]int64, params map[string]interface{}) {
+func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, transfer map[ledgerstate.Color]uint64, params map[string]interface{}) {
 	tx, err := client.PostRequest(contract, entryPoint, chainclient.PostRequestParams{
-		Transfer: coretypes.NewColoredBalancesFromMap(transfer),
+		Transfer: ledgerstate.NewColoredBalances(transfer),
 		Args:     requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
 	})
 	check(err, t)

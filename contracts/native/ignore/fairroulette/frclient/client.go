@@ -6,12 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
@@ -159,7 +156,7 @@ func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction_old.Tr
 		frc.contractHname,
 		fairroulette.RequestPlaceBet,
 		chainclient.PostRequestParams{
-			Transfer: map[balance.Color]int64{ledgerstate.ColorIOTA: int64(amount)},
+			Transfer: map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: int64(amount)},
 			ArgsRaw:  codec.MakeDict(map[string]interface{}{fairroulette.ReqVarColor: int64(color)}),
 		},
 	)

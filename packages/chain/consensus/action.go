@@ -4,14 +4,13 @@
 package consensus
 
 import (
+	"github.com/iotaledger/wasp/packages/parameters"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/plugins/nodeconn"
 )
 
 // takeAction analyzes the state and updates it and takes action such as sending of message,

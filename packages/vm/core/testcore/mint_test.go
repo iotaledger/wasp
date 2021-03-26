@@ -55,16 +55,16 @@ func TestMintFail(t *testing.T) {
 //	chain.CheckChain()
 //
 //	wallet := env.NewKeyPairWithFunds()
-//	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, solo.Saldo)
+//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo)
 //
 //	color1, err := env.MintTokens(wallet, 1000)
 //	require.NoError(t, err)
-//	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, solo.Saldo-1000)
+//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000)
 //	env.AssertAddressBalance(wallet.Address(), color1, 1000)
 //
 //	err = env.DestroyColoredTokens(wallet, color1, 100)
 //	require.NoError(t, err)
-//	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, solo.Saldo-1000+100)
+//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000+100)
 //	env.AssertAddressBalance(wallet.Address(), color1, 1000-100)
 //}
 //
@@ -75,16 +75,16 @@ func TestMintFail(t *testing.T) {
 //	chain.CheckChain()
 //
 //	wallet := env.NewKeyPairWithFunds()
-//	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, solo.Saldo)
+//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo)
 //
 //	color1, err := env.MintTokens(wallet, 1000)
 //	require.NoError(t, err)
-//	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, solo.Saldo-1000)
+//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000)
 //	env.AssertAddressBalance(wallet.Address(), color1, 1000)
 //
 //	err = env.DestroyColoredTokens(wallet, color1, 1000)
 //	require.NoError(t, err)
-//	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, solo.Saldo)
+//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo)
 //	env.AssertAddressBalance(wallet.Address(), color1, 0)
 //}
 //
@@ -95,15 +95,15 @@ func TestMintFail(t *testing.T) {
 //	chain.CheckChain()
 //
 //	wallet := env.NewKeyPairWithFunds()
-//	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, solo.Saldo)
+//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo)
 //
 //	color1, err := env.MintTokens(wallet, 1000)
 //	require.NoError(t, err)
-//	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, solo.Saldo-1000)
+//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000)
 //	env.AssertAddressBalance(wallet.Address(), color1, 1000)
 //
 //	err = env.DestroyColoredTokens(wallet, color1, 1100)
 //	require.Error(t, err)
-//	env.AssertAddressBalance(wallet.Address(), balance.ColorIOTA, solo.Saldo-1000)
+//	env.AssertAddressBalance(wallet.Address(), ledgerstate.ColorIOTA, solo.Saldo-1000)
 //	env.AssertAddressBalance(wallet.Address(), color1, 1000)
 //}

@@ -56,11 +56,6 @@ func (d Dict) Clone() Dict {
 	return clone
 }
 
-// FromGoMap casts map to Dict
-func FromGoMap(d map[kv.Key][]byte) Dict {
-	return d
-}
-
 // FromKVStore convert (copy) any KVStore to dict
 func FromKVStore(s kv.KVStore) (Dict, error) {
 	d := make(Dict)

@@ -13,7 +13,7 @@ package peering
 import (
 	"bytes"
 	"errors"
-	"github.com/iotaledger/goshimmer/packages/waspconn/chopper"
+	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
 	"hash/crc32"
 	"time"
 

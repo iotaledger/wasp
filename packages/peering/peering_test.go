@@ -2,11 +2,11 @@ package peering_test
 
 import (
 	"bytes"
+	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
 	"math/rand"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/stretchr/testify/require"
@@ -16,7 +16,7 @@ func TestPeerMessageCodec(t *testing.T) {
 	var err error
 	var src, dst *peering.PeerMessage
 	src = &peering.PeerMessage{
-		ChainID:     coretypes.NewRandomChainID(),
+		ChainID:     *coretypes.NewRandomChainID(),
 		SenderIndex: uint16(123),
 		Timestamp:   time.Now().UnixNano(),
 		MsgType:     peering.FirstUserMsgCode + 17,
@@ -46,7 +46,7 @@ func TestPeerMessageChunks(t *testing.T) {
 		data[i] = byte(rand.Intn(255))
 	}
 	src = &peering.PeerMessage{
-		ChainID:     coretypes.NewRandomChainID(),
+		ChainID:     *coretypes.NewRandomChainID(),
 		SenderIndex: uint16(123),
 		Timestamp:   time.Now().UnixNano(),
 		MsgType:     peering.FirstUserMsgCode + 17,

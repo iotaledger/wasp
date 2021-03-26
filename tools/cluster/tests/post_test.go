@@ -1,25 +1,23 @@
 package tests
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/solo"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction_old"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
-func deployInccounter42(t *testing.T, name string, counter int64) coretypes.ContractID {
+func deployInccounter42(t *testing.T, name string, counter int64) *coretypes.AgentID {
 	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
 	programHash = inccounter.Interface.ProgramHash
@@ -56,12 +54,10 @@ func deployInccounter42(t *testing.T, name string, counter int64) coretypes.Cont
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(root.Interface.Hname()),
-		root.FuncFindContract,
-		dict.FromGoMap(map[kv.Key][]byte{
+		chain.ChainID, root.Interface.Hname(), root.FuncFindContract,
+		dict.Dict{
 			root.ParamHname: hname.Bytes(),
-		}),
-	)
+		})
 	check(err, t)
 	recb, err := ret.Get(root.ParamData)
 	check(err, t)
@@ -70,7 +66,7 @@ func deployInccounter42(t *testing.T, name string, counter int64) coretypes.Cont
 	require.EqualValues(t, description, rec.Description)
 
 	expectCounter(t, hname, counter)
-	return coretypes.NewContractID(chain.ChainID, hname)
+	return coretypes.NewAgentID(chain.ChainID.AsAddress(), hname)
 }
 
 func expectCounter(t *testing.T, hname coretypes.Hname, counter int64) {
@@ -80,9 +76,7 @@ func expectCounter(t *testing.T, hname coretypes.Hname, counter int64) {
 
 func getCounter(t *testing.T, hname coretypes.Hname) int64 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(hname),
-		"getCounter",
-		nil,
+		chain.ChainID, hname, "getCounter",
 	)
 	check(err, t)
 
@@ -149,7 +143,7 @@ func TestPost3Recursive(t *testing.T) {
 	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany, chainclient.PostRequestParams{
-		Transfer: coretypes.NewIotasOnly(1),
+		Transfer: coretypes.NewTransferIotas(1),
 		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		})),
@@ -178,7 +172,7 @@ func TestPost5Requests(t *testing.T) {
 	testOwner := wallet.WithIndex(1)
 	mySigScheme := testOwner.SigScheme()
 	myAddress := testOwner.Address()
-	myAgentID := coretypes.NewAgentIDFromAddress(*myAddress)
+	myAgentID := coretypes.NewAgentID(myAddress, 0)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
@@ -192,10 +186,10 @@ func TestPost5Requests(t *testing.T) {
 	}
 
 	expectCounter(t, contractID.Hname(), 42+5)
-	checkBalanceOnChain(t, chain, myAgentID, balance.ColorIOTA, 5)
+	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 5)
 
-	if !clu.VerifyAddressBalances(myAddress, testutil.RequestFundsAmount-5, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 5,
+	if !clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - 5,
 	}, "myAddress in the end") {
 		t.Fail()
 	}
@@ -215,7 +209,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 	testOwner := wallet.WithIndex(1)
 	mySigScheme := testOwner.SigScheme()
 	myAddress := testOwner.Address()
-	myAgentID := coretypes.NewAgentIDFromAddress(*myAddress)
+	myAgentID := coretypes.NewAgentID(myAddress, 0)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
@@ -235,10 +229,10 @@ func TestPost5AsyncRequests(t *testing.T) {
 	}
 
 	expectCounter(t, contractID.Hname(), 42+5)
-	checkBalanceOnChain(t, chain, myAgentID, balance.ColorIOTA, 5)
+	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 5)
 
-	if !clu.VerifyAddressBalances(myAddress, testutil.RequestFundsAmount-5, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 5,
+	if !clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - 5,
 	}, "myAddress in the end") {
 		t.Fail()
 	}

@@ -5,7 +5,6 @@ package util
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 )
 
@@ -20,7 +19,7 @@ func DumpSCStatus(name string, status *chainclient.SCStatus) {
 	fmt.Printf("  ----\n")
 }
 
-func dumpBalance(bal map[balance.Color]int64) {
+func dumpBalance(bal map[ledgerstate.Color]uint64) {
 	fmt.Printf("  SC balance:\n")
 	for color, amount := range bal {
 		fmt.Printf("    %s: %d\n", color, amount)

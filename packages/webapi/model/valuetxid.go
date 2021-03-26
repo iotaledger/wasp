@@ -2,8 +2,6 @@ package model
 
 import (
 	"encoding/json"
-
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 )
 
 // ValueTxID is the base58 representation of a transaction ID

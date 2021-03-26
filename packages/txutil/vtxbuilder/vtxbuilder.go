@@ -7,9 +7,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"github.com/iotaledger/wasp/packages/txutil"
 )
 
@@ -22,19 +19,19 @@ type inputBalances struct {
 type Builder struct {
 	finalized             bool
 	inputBalancesByOutput []inputBalances
-	outputBalances        map[address.Address]map[balance.Color]int64
+	outputBalances        map[address.Address]map[ledgerstate.Color]uint64
 }
 
 func newVTBuilder(orig *Builder) *Builder {
 	if orig == nil {
 		return &Builder{
 			inputBalancesByOutput: make([]inputBalances, 0),
-			outputBalances:        make(map[address.Address]map[balance.Color]int64),
+			outputBalances:        make(map[address.Address]map[ledgerstate.Color]uint64),
 		}
 	}
 	ret := &Builder{
 		inputBalancesByOutput: make([]inputBalances, len(orig.inputBalancesByOutput)),
-		outputBalances:        make(map[address.Address]map[balance.Color]int64),
+		outputBalances:        make(map[address.Address]map[ledgerstate.Color]uint64),
 	}
 	for i := range ret.inputBalancesByOutput {
 		ret.inputBalancesByOutput[i].outputId = orig.inputBalancesByOutput[i].outputId
@@ -42,7 +39,7 @@ func newVTBuilder(orig *Builder) *Builder {
 		ret.inputBalancesByOutput[i].consumed = txutil.CloneBalances(orig.inputBalancesByOutput[i].consumed)
 	}
 	for addr, bals := range orig.outputBalances {
-		ret.outputBalances[addr] = make(map[balance.Color]int64)
+		ret.outputBalances[addr] = make(map[ledgerstate.Color]uint64)
 		for col, b := range bals {
 			ret.outputBalances[addr][col] = b
 		}
@@ -60,7 +57,7 @@ func NewFromAddressBalances(addr *address.Address, addressBalances map[valuetran
 	ret := newVTBuilder(nil)
 	var err error
 	for txid, bals := range addressBalances {
-		if (balance.Color)(txid) == balance.ColorNew || (balance.Color)(txid) == balance.ColorIOTA {
+		if (ledgerstate.Color)(txid) == balance.ColorNew || (ledgerstate.Color)(txid) == ledgerstate.ColorIOTA {
 			return nil, errorWrongInputs
 		}
 		inb := inputBalances{
@@ -83,7 +80,7 @@ func NewFromOutputBalances(outputBalances map[valuetransaction.OutputID][]*balan
 	ret := newVTBuilder(nil)
 	var err error
 	for oid, bals := range outputBalances {
-		if (balance.Color)(oid.TransactionID()) == balance.ColorNew || (balance.Color)(oid.TransactionID()) == balance.ColorIOTA {
+		if (ledgerstate.Color)(oid.TransactionID()) == balance.ColorNew || (ledgerstate.Color)(oid.TransactionID()) == ledgerstate.ColorIOTA {
 			return nil, errorWrongInputs
 		}
 		inb := inputBalances{
@@ -108,7 +105,7 @@ func compressAndSortBalances(bals []*balance.Balance) ([]*balance.Balance, error
 	if len(bals) == 0 {
 		return nil, nil
 	}
-	bmap := make(map[balance.Color]int64)
+	bmap := make(map[ledgerstate.Color]uint64)
 	for _, bal := range bals {
 		if bal.Color == balance.ColorNew {
 			return nil, errorWrongColor
@@ -173,7 +170,7 @@ func (vtxb *Builder) SetConsumerPriorityLargerBalances() {
 }
 
 // GetInputBalance what is available in inputs
-func (vtxb *Builder) GetInputBalance(col balance.Color) int64 {
+func (vtxb *Builder) GetInputBalance(col ledgerstate.Color) int64 {
 	if vtxb.finalized {
 		panic("using finalized transaction builder")
 	}
@@ -185,7 +182,7 @@ func (vtxb *Builder) GetInputBalance(col balance.Color) int64 {
 }
 
 // Returns consumed and unconsumed total
-func subtractAmount(bals []*balance.Balance, col balance.Color, amount int64) (int64, int64) {
+func subtractAmount(bals []*balance.Balance, col ledgerstate.Color, amount int64) (int64, int64) {
 	if amount == 0 {
 		return 0, 0
 	}
@@ -202,7 +199,7 @@ func subtractAmount(bals []*balance.Balance, col balance.Color, amount int64) (i
 	return 0, amount
 }
 
-func addAmount(bals []*balance.Balance, col balance.Color, amount int64) []*balance.Balance {
+func addAmount(bals []*balance.Balance, col ledgerstate.Color, amount int64) []*balance.Balance {
 	if amount == 0 {
 		return bals
 	}
@@ -216,7 +213,7 @@ func addAmount(bals []*balance.Balance, col balance.Color, amount int64) []*bala
 }
 
 // don't do any validation, may panic
-func (vtxb *Builder) moveAmount(targetAddr address.Address, origColor, targetColor balance.Color, amountToConsume int64) {
+func (vtxb *Builder) moveAmount(targetAddr address.Address, origColor, targetColor ledgerstate.Color, amountToConsume int64) {
 	saveAmount := amountToConsume
 	if amountToConsume == 0 {
 		return
@@ -235,7 +232,7 @@ func (vtxb *Builder) moveAmount(targetAddr address.Address, origColor, targetCol
 	vtxb.addToOutputs(targetAddr, targetColor, saveAmount)
 }
 
-func (vtxb *Builder) moveAmountFromTransaction(targetAddr address.Address, origColor, targetColor balance.Color, amountToConsume int64, txid valuetransaction.ID) {
+func (vtxb *Builder) moveAmountFromTransaction(targetAddr address.Address, origColor, targetColor ledgerstate.Color, amountToConsume int64, txid valuetransaction.ID) {
 	saveAmount := amountToConsume
 	if amountToConsume == 0 {
 		return
@@ -257,10 +254,10 @@ func (vtxb *Builder) moveAmountFromTransaction(targetAddr address.Address, origC
 	vtxb.addToOutputs(targetAddr, targetColor, saveAmount)
 }
 
-func (vtxb *Builder) addToOutputs(targetAddr address.Address, col balance.Color, amount int64) {
+func (vtxb *Builder) addToOutputs(targetAddr address.Address, col ledgerstate.Color, amount int64) {
 	cmap, ok := vtxb.outputBalances[targetAddr]
 	if !ok {
-		cmap = make(map[balance.Color]int64)
+		cmap = make(map[ledgerstate.Color]uint64)
 		vtxb.outputBalances[targetAddr] = cmap
 	}
 	b, _ := cmap[col]
@@ -268,7 +265,7 @@ func (vtxb *Builder) addToOutputs(targetAddr address.Address, col balance.Color,
 }
 
 // MoveTokensToAddress move token without changing color
-func (vtxb *Builder) MoveTokensToAddress(targetAddr address.Address, col balance.Color, amount int64) error {
+func (vtxb *Builder) MoveTokensToAddress(targetAddr address.Address, col ledgerstate.Color, amount int64) error {
 	if vtxb.finalized {
 		panic("using finalized transaction builder")
 	}
@@ -279,7 +276,7 @@ func (vtxb *Builder) MoveTokensToAddress(targetAddr address.Address, col balance
 	return nil
 }
 
-func (vtxb *Builder) EraseColor(targetAddr address.Address, col balance.Color, amount int64) error {
+func (vtxb *Builder) EraseColor(targetAddr address.Address, col ledgerstate.Color, amount int64) error {
 	if vtxb.finalized {
 		panic("using finalized transaction builder")
 	}
@@ -288,12 +285,12 @@ func (vtxb *Builder) EraseColor(targetAddr address.Address, col balance.Color, a
 		return fmt.Errorf("EraseColor: not enough balance: need %d, found %d, color %s",
 			amount, actualBalance, col.String())
 	}
-	vtxb.moveAmount(targetAddr, col, balance.ColorIOTA, amount)
+	vtxb.moveAmount(targetAddr, col, ledgerstate.ColorIOTA, amount)
 	return nil
 }
 
 // MintColoredTokens creates output of NewColor tokens out of inputs with specified color
-func (vtxb *Builder) MintColoredTokens(targetAddr address.Address, sourceColor balance.Color, amount int64) error {
+func (vtxb *Builder) MintColoredTokens(targetAddr address.Address, sourceColor ledgerstate.Color, amount int64) error {
 	if vtxb.finalized {
 		panic("using finalized transaction builder")
 	}

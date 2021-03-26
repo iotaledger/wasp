@@ -216,8 +216,8 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 
 	req = solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee, root.ParamValidatorFee, 1999).WithIotas(1)
 	//.WithTransfers(
-	//		map[balance.Color]int64{
-	//			balance.ColorIOTA: 800,
+	//		map[ledgerstate.Color]uint64{
+	//			ledgerstate.ColorIOTA: 800,
 	//		},
 	//	)
 	_, err = chain.PostRequestSync(req, nil)

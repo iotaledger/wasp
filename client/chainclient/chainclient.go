@@ -1,14 +1,13 @@
 package chainclient
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/level1"
 	"github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/sctransaction_old"
 )
 
 // Client allows to send webapi requests to a specific chain in the node
@@ -35,7 +34,7 @@ func New(
 }
 
 type PostRequestParams struct {
-	Transfer coretypes.ColoredBalancesOld
+	Transfer *ledgerstate.ColoredBalances
 	Args     requestargs.RequestArgs
 }
 

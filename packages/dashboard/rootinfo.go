@@ -3,8 +3,6 @@ package dashboard
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -13,7 +11,7 @@ import (
 )
 
 type RootInfo struct {
-	ChainColor   balance.Color
+	ChainColor   ledgerstate.Color
 	ChainAddress address.Address
 
 	OwnerID          coretypes.AgentID
@@ -22,7 +20,7 @@ type RootInfo struct {
 	Description string
 	Contracts   map[coretypes.Hname]*root.ContractRecord
 
-	FeeColor            balance.Color
+	FeeColor            ledgerstate.Color
 	DefaultOwnerFee     int64
 	DefaultValidatorFee int64
 }

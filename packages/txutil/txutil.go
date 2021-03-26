@@ -3,10 +3,8 @@ package txutil
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"sort"
-
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 )
 
 func BalancesToString(outs map[valuetransaction.ID][]*balance.Balance) string {
@@ -33,8 +31,8 @@ func BalancesToString(outs map[valuetransaction.ID][]*balance.Balance) string {
 	return ret
 }
 
-func BalancesByColor(outs map[valuetransaction.ID][]*balance.Balance) (map[balance.Color]int64, int64) {
-	ret := make(map[balance.Color]int64)
+func BalancesByColor(outs map[valuetransaction.ID][]*balance.Balance) (map[ledgerstate.Color]uint64, int64) {
+	ret := make(map[ledgerstate.Color]uint64)
 	var total int64
 	for _, bals := range outs {
 		for _, b := range bals {
@@ -49,8 +47,8 @@ func BalancesByColor(outs map[valuetransaction.ID][]*balance.Balance) (map[balan
 	return ret, total
 }
 
-func OutputBalancesByColor(outs map[valuetransaction.OutputID][]*balance.Balance) (map[balance.Color]int64, int64) {
-	ret := make(map[balance.Color]int64)
+func OutputBalancesByColor(outs map[valuetransaction.OutputID][]*balance.Balance) (map[ledgerstate.Color]uint64, uint64) {
+	ret := make(map[ledgerstate.Color]uint64)
 	var total int64
 	for _, bals := range outs {
 		for _, b := range bals {
@@ -65,7 +63,7 @@ func OutputBalancesByColor(outs map[valuetransaction.OutputID][]*balance.Balance
 	return ret, total
 }
 
-func BalanceOfColor(bals []*balance.Balance, color balance.Color) int64 {
+func BalanceOfColor(bals []*balance.Balance, color ledgerstate.Color) uint64 {
 	sum := int64(0)
 	for _, b := range bals {
 		if b.Color == color {

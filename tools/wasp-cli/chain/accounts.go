@@ -2,11 +2,10 @@ package chain
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"os"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
@@ -15,7 +14,7 @@ import (
 )
 
 func listAccountsCmd(args []string) {
-	ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncAccounts, nil)
+	ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncAccounts)
 	log.Check(err)
 
 	log.Printf("Total %d account(s) in chain %s\n", len(ret), GetCurrentChainID())
@@ -40,16 +39,17 @@ func balanceCmd(args []string) {
 	agentID, err := coretypes.NewAgentIDFromString(args[0])
 	log.Check(err)
 
-	ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncBalance, dict.FromGoMap(map[kv.Key][]byte{
-		accounts.ParamAgentID: agentID[:],
-	}))
+	ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncBalance,
+		dict.Dict{
+			accounts.ParamAgentID: agentID.Bytes(),
+		})
 	log.Check(err)
 
 	header := []string{"color", "amount"}
 	rows := make([][]string, len(ret))
 	i := 0
 	for k, v := range ret {
-		color, _, err := balance.ColorFromBytes([]byte(k))
+		color, _, err := ledgerstate.ColorFromBytes([]byte(k))
 		log.Check(err)
 		bal, err := util.Uint64From8Bytes(v)
 		log.Check(err)

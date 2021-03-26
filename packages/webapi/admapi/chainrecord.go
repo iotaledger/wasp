@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -17,7 +16,7 @@ import (
 func addChainRecordEndpoints(adm echoswagger.ApiGroup) {
 	example := model.ChainRecord{
 		ChainID:        model.NewChainID(&coretypes.ChainID{1, 2, 3, 4}),
-		Color:          model.NewColor(&balance.Color{5, 6, 7, 8}),
+		Color:          model.NewColor(&ledgerstate.Color{5, 6, 7, 8}),
 		CommitteeNodes: []string{"wasp1:4000", "wasp2:4000"},
 		Active:         false,
 	}

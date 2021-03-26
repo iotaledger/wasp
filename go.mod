@@ -1,6 +1,6 @@
 module github.com/iotaledger/wasp
 
-go 1.15
+go 1.16
 
 require (
 	github.com/bytecodealliance/wasmtime-go v0.21.0

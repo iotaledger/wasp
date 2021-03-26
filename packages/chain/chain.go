@@ -17,7 +17,7 @@ import (
 
 type Chain interface {
 	ID() *coretypes.ChainID
-	Color() *balance.Color
+	Color() *ledgerstate.Color
 	Address() address.Address
 	Size() uint16
 	Quorum() uint16

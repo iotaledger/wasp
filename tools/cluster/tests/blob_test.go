@@ -2,21 +2,20 @@ package tests
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/solo"
 	"io/ioutil"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -46,8 +45,8 @@ func setupBlobTest(t *testing.T) *cluster.Chain {
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	if !clu.VerifyAddressBalances(myAddress, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
+	if !clu.VerifyAddressBalances(myAddress, solo.Saldo, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo,
 	}, "myAddress after request funds") {
 		t.Fail()
 	}
@@ -56,12 +55,10 @@ func setupBlobTest(t *testing.T) *cluster.Chain {
 
 func getBlobInfo(t *testing.T, chain *cluster.Chain, hash hashing.HashValue) map[string]uint32 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(blob.Interface.Hname()),
-		blob.FuncGetBlobInfo,
-		dict.FromGoMap(map[kv.Key][]byte{
+		chain.ChainID, blob.Interface.Hname(), blob.FuncGetBlobInfo,
+		dict.Dict{
 			blob.ParamHash: hash[:],
-		}),
-	)
+		})
 	check(err, t)
 	decoded, err := blob.DecodeSizesMap(ret)
 	check(err, t)
@@ -70,13 +67,11 @@ func getBlobInfo(t *testing.T, chain *cluster.Chain, hash hashing.HashValue) map
 
 func getBlobFieldValue(t *testing.T, chain *cluster.Chain, blobHash hashing.HashValue, field string) []byte {
 	v, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(blob.Interface.Hname()),
-		blob.FuncGetBlobField,
-		dict.FromGoMap(map[kv.Key][]byte{
+		chain.ChainID, blob.Interface.Hname(), blob.FuncGetBlobField,
+		dict.Dict{
 			blob.ParamHash:  blobHash[:],
 			blob.ParamField: []byte(field),
-		}),
-	)
+		})
 	check(err, t)
 	if v.IsEmpty() {
 		return nil

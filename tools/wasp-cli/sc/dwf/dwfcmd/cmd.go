@@ -3,9 +3,6 @@
 package dwfcmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/iotaledger/wasp/tools/wasp-cli/sc/dwf"
 )
 

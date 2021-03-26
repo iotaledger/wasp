@@ -1,22 +1,24 @@
 # wasp-cluster
 
-`wasp-cluster` is a tool that allows to easily run a cluster of Wasp nodes
-along with a Goshimmer node (needed for Wasp), all in a single host, to
-experiment with smart contracts in a controlled environment.
+`wasp-cluster` is a tool that allows to easily run a cluster of Wasp nodes along
+with a Goshimmer node (needed for Wasp), all in a single host, to experiment
+with smart contracts in a controlled environment.
 
 Note: `wasp-cluster` is intended for testing purposes, and is *not* the
 recommended way to run a cluster in a production environment.
 
 ## Before
 
-Make sure you have all needed binaries compiled and installed in the system path:
+Make sure you have all needed binaries compiled and installed in the system
+path:
 
 * `goshimmer` (Goshimmer server with the `waspconn` plugin)
 * `wasp` (Wasp server)
 * `wasp-cli` (CLI client for the Wasp node)
 * `wasp-cluster` (this tool)
 
-You can find instructions in the [main README file](../../../readme.md#Prerequisites).
+You can find instructions in
+the [main README file](../../../readme.md#Prerequisites).
 
 ## Initialize the cluster configuration
 
@@ -46,8 +48,8 @@ my-cluster/
 By default the cluster contains 4 Wasp nodes. You can change this with the
 `-n` parameter. E.g.: `wasp-cluster init my-cluster -n 2`.
 
-If you need to change the default configuration of the nodes, you can do so
-now, by editing the `config.json` files.
+If you need to change the default configuration of the nodes, you can do so now,
+by editing the `config.json` files.
 
 Note: by default `wasp-cluster` configures all nodes to store the database in
 main memory: all data will be lost when the cluster is stopped (remember that
@@ -68,13 +70,13 @@ When done using the cluster, press `Ctrl-C` to stop it.
 ## Connecting to an existing Goshimmer network
 
 By default, the cluster includes a single Goshimmer node configured in such a
-way that the ledger can be operated without the need for consensus. This is
-good for quick tests, but is far from how Goshimmer works in a production
+way that the ledger can be operated without the need for consensus. This is good
+for quick tests, but is far from how Goshimmer works in a production
 environment.
 
 To connect the Wasp cluster to a more realistic environment (e.g. to be able to
-persist the ledger), you can use the `docker-network` tool available
-in the Goshimmer repository (`develop+wasp` branch) in order to start a cluster of
+persist the ledger), you can use the `docker-network` tool available in the
+Goshimmer repository (`develop+wasp` branch) in order to start a cluster of
 Goshimmer nodes.
 
 Example steps:
@@ -86,7 +88,8 @@ cd <goshimmer>/tools/docker-network
 ./run.sh 2 0
 ```
 
-2. In another console, initialize a cluster of 4 Wasp nodes (`-n 4`) with no Goshimmer node (`-g`).
+2. In another console, initialize a cluster of 4 Wasp nodes (`-n 4`) with no
+   Goshimmer node (`-g`).
 
 ```
 wasp-cluster init my-cluster -n 4 -g

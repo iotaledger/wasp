@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -18,7 +17,7 @@ func infoCmd(args []string) {
 	log.Printf("Active: %v\n", chain.Active)
 
 	if chain.Active {
-		info, err := SCClient(root.Interface.Hname()).CallView(root.FuncGetChainInfo, nil)
+		info, err := SCClient(root.Interface.Hname()).CallView(root.FuncGetChainInfo)
 		log.Check(err)
 
 		color, _, err := codec.DecodeColor(info.MustGet(root.VarChainColor))

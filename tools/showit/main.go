@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/client"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
 	"os"
 )
 

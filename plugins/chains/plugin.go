@@ -2,7 +2,6 @@ package chains
 
 import (
 	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/plugins/nodeconn"
 
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"

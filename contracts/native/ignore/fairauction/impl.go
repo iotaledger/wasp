@@ -10,9 +10,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -121,7 +119,7 @@ func (ep fairAuctionEntryPoint) CallView(ctx coretypes.SandboxView) (dict.Dict, 
 type AuctionInfo struct {
 	// color of the tokens for sale. Max one auction per color at same time is allowed
 	// all tokens are being sold as one lot
-	Color balance.Color
+	Color ledgerstate.Color
 	// number of tokens for sale
 	NumTokens int64
 	// minimum bid. Set by the auction initiator
@@ -337,9 +335,9 @@ func startAuction(ctx coretypes.Sandbox) error {
 
 	// prepare and send request FinalizeAuction to self time-locked for the duration
 	// the FinalizeAuction request will be time locked for the duration and then auction will be run
-	args := dict.FromGoMap(map[kv.Key][]byte{
+	args := dict.Dict{
 		VarReqAuctionColor: codec.EncodeString(colorForSale.String()),
-	})
+	}
 	ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: ctx.ContractID(),
 		EntryPoint:       RequestFinalizeAuction,
@@ -624,7 +622,7 @@ func setOwnerMargin(ctx coretypes.Sandbox) error {
 
 // TODO implement universal 'refund' function to be used in rollback situations
 // refundFromRequest returns all tokens of the given color to the sender minus sunkFee
-func refundFromRequest(ctx coretypes.Sandbox, color *balance.Color, harvest int64) {
+func refundFromRequest(ctx coretypes.Sandbox, color *ledgerstate.Color, harvest int64) {
 	// TODO
 	//account := ctx.AccessSCAccount()
 	//ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)

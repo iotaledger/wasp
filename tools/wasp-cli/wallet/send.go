@@ -4,8 +4,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/txutil/vtxbuilder"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
@@ -43,7 +41,7 @@ func sendFundsCmd(args []string) {
 	clientutil.PostTransaction(tx)
 }
 
-func decodeColor(s string) *balance.Color {
+func decodeColor(s string) *ledgerstate.Color {
 	color, err := util.ColorFromString(s)
 	log.Check(err)
 	return &color

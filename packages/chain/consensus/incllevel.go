@@ -5,9 +5,6 @@ package consensus
 
 import (
 	"time"
-
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
 )
 
 const (

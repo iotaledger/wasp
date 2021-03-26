@@ -6,11 +6,9 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/sctransaction_old"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
@@ -33,7 +31,7 @@ type Status struct {
 
 	OwnerMarginPromille int64
 	AuctionsLen         uint32
-	Auctions            map[balance.Color]*fairauction.AuctionInfo
+	Auctions            map[ledgerstate.Color]*fairauction.AuctionInfo
 }
 
 func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
@@ -52,7 +50,7 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 
 	auctions := results.Get(fairauction.VarStateAuctions).MustMapResult()
 	status.AuctionsLen = auctions.Len
-	status.Auctions = make(map[balance.Color]*fairauction.AuctionInfo)
+	status.Auctions = make(map[ledgerstate.Color]*fairauction.AuctionInfo)
 	for _, entry := range auctions.Entries {
 		ai := &fairauction.AuctionInfo{}
 		if err := ai.Read(bytes.NewReader(entry.Value)); err != nil {
@@ -93,7 +91,7 @@ func (fc *FairAuctionClient) GetFeeAmount(minimumBid int64) (int64, error) {
 
 func (fc *FairAuctionClient) StartAuction(
 	description string,
-	color *balance.Color,
+	color *ledgerstate.Color,
 	tokensForSale int64,
 	minimumBid int64,
 	durationMinutes int64,
@@ -106,7 +104,7 @@ func (fc *FairAuctionClient) StartAuction(
 		fc.contractHname,
 		fairauction.RequestStartAuction,
 		chainclient.PostRequestParams{
-			Transfer: map[balance.Color]int64{
+			Transfer: map[ledgerstate.Color]uint64{
 				ledgerstate.ColorIOTA: fee,
 				*color:            tokensForSale,
 			},
@@ -120,12 +118,12 @@ func (fc *FairAuctionClient) StartAuction(
 	)
 }
 
-func (fc *FairAuctionClient) PlaceBid(color *balance.Color, amountIotas int64) (*sctransaction_old.TransactionEssence, error) {
+func (fc *FairAuctionClient) PlaceBid(color *ledgerstate.Color, amountIotas int64) (*sctransaction_old.TransactionEssence, error) {
 	return fc.PostRequest(
 		fc.contractHname,
 		fairauction.RequestPlaceBid,
 		chainclient.PostRequestParams{
-			Transfer: map[balance.Color]int64{ledgerstate.ColorIOTA: amountIotas},
+			Transfer: map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: amountIotas},
 			ArgsRaw:  codec.MakeDict(map[string]interface{}{fairauction.VarReqAuctionColor: color.String()}),
 		},
 	)
