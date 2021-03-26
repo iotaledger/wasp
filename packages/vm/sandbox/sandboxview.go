@@ -12,40 +12,52 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
-func init() {
-	vmcontext.NewSandboxView = func(vmctx *vmcontext.VMContext) coretypes.SandboxView {
-		return sandboxView{vmctx}
-	}
-}
-
 type sandboxView struct {
 	vmctx *vmcontext.VMContext
 }
 
 var _ coretypes.SandboxView = sandboxView{}
 
-func (s sandboxView) Utils() coretypes.Utils {
-	return sandbox_utils.NewUtils()
+func init() {
+	vmcontext.NewSandboxView = func(vmctx *vmcontext.VMContext) coretypes.SandboxView {
+		return sandboxView{vmctx}
+	}
 }
 
-func (s sandboxView) ChainOwnerID() *coretypes.AgentID {
-	return s.vmctx.ChainOwnerID()
+func (s sandboxView) AccountID() *coretypes.AgentID {
+	return s.vmctx.AccountID()
 }
 
-func (s sandboxView) ContractCreator() *coretypes.AgentID {
-	return s.vmctx.ContractCreator()
+func (s sandboxView) Balances() *ledgerstate.ColoredBalances {
+	return s.vmctx.GetMyBalances()
+}
+
+func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict) (dict.Dict, error) {
+	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 
 func (s sandboxView) ChainID() *coretypes.ChainID {
 	return s.vmctx.ChainID()
 }
 
+func (s sandboxView) ChainOwnerID() *coretypes.AgentID {
+	return s.vmctx.ChainOwnerID()
+}
+
 func (s sandboxView) Contract() coretypes.Hname {
 	return s.vmctx.CurrentContractHname()
 }
 
+func (s sandboxView) ContractCreator() *coretypes.AgentID {
+	return s.vmctx.ContractCreator()
+}
+
 func (s sandboxView) GetTimestamp() int64 {
 	return s.vmctx.Timestamp()
+}
+
+func (s sandboxView) Log() coretypes.LogInterface {
+	return s.vmctx
 }
 
 func (s sandboxView) Params() dict.Dict {
@@ -56,14 +68,6 @@ func (s sandboxView) State() kv.KVStoreReader {
 	return s.vmctx.State()
 }
 
-func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict) (dict.Dict, error) {
-	return s.vmctx.Call(contractHname, entryPoint, params, nil)
-}
-
-func (s sandboxView) Balances() *ledgerstate.ColoredBalances {
-	return s.vmctx.GetMyBalances()
-}
-
-func (s sandboxView) Log() coretypes.LogInterface {
-	return s.vmctx
+func (s sandboxView) Utils() coretypes.Utils {
+	return sandbox_utils.NewUtils()
 }

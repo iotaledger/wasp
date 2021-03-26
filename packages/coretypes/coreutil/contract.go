@@ -12,6 +12,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
+const DefaultHandler = "defaultHandler"
+
 // ContractInterface represents smart contract interface
 type ContractInterface struct {
 	Name        string
@@ -75,7 +77,7 @@ func Funcs(init Handler, fns []ContractFunctionInterface, defaultHandler ...Hand
 	}
 	// under hname == 0 always resides default handler
 	ret[0] = ContractFunctionInterface{
-		Name:    "defaultHandler",
+		Name:    DefaultHandler,
 		Handler: def,
 	}
 	return ret

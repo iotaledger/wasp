@@ -9,6 +9,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 )
@@ -22,14 +25,16 @@ func InitLogger() {
 }
 
 type sandboxview struct {
-	vctx          *viewcontext
 	contractHname coretypes.Hname
-	params        dict.Dict
-	state         kv.KVStore // TODO change to KVStoreReader when Writable store removed from wasmhost
 	events        vm.ContractEventPublisher
+	params        dict.Dict
+	state         kv.KVStoreReader
+	vctx          *viewcontext
 }
 
 var _ coretypes.SandboxView = &sandboxview{}
+
+var getChainInfoHname = coretypes.Hn(root.FuncGetChainInfo)
 
 func newSandboxView(vctx *viewcontext, contractHname coretypes.Hname, params dict.Dict) *sandboxview {
 	return &sandboxview{
@@ -41,20 +46,13 @@ func newSandboxView(vctx *viewcontext, contractHname coretypes.Hname, params dic
 	}
 }
 
-func (s *sandboxview) Utils() coretypes.Utils {
-	return sandbox_utils.NewUtils()
-}
-
-func (s *sandboxview) Params() dict.Dict {
-	return s.params
-}
-
-func (s *sandboxview) State() kv.KVStoreReader {
-	return s.state
-}
-
-func (s *sandboxview) WriteableState() kv.KVStore {
-	return s.state
+func (s *sandboxview) AccountID() *coretypes.AgentID {
+	hname := s.contractHname
+	switch hname {
+	case root.Interface.Hname(), accounts.Interface.Hname(), blob.Interface.Hname(), eventlog.Interface.Hname():
+		hname = 0
+	}
+	return coretypes.NewAgentID(s.vctx.chainID.AsAddress(), hname)
 }
 
 func (s *sandboxview) Balances() *ledgerstate.ColoredBalances {
@@ -69,22 +67,16 @@ func (s *sandboxview) ChainID() *coretypes.ChainID {
 	return &s.vctx.chainID
 }
 
-func (s *sandboxview) Contract() coretypes.Hname {
-	return s.contractHname
-}
-
-func (s *sandboxview) Log() coretypes.LogInterface {
-	return s.vctx
-}
-
-var getChainInfoHname = coretypes.Hn(root.FuncGetChainInfo)
-
 func (s *sandboxview) ChainOwnerID() *coretypes.AgentID {
 	r, err := s.Call(root.Interface.Hname(), getChainInfoHname, nil)
 	a := assert.NewAssert(s.Log())
 	a.RequireNoError(err)
 	res := kvdecoder.New(r, s.Log())
 	return res.MustGetAgentID(root.VarChainOwnerID)
+}
+
+func (s *sandboxview) Contract() coretypes.Hname {
+	return s.contractHname
 }
 
 func (s *sandboxview) ContractCreator() *coretypes.AgentID {
@@ -97,4 +89,20 @@ func (s *sandboxview) ContractCreator() *coretypes.AgentID {
 
 func (s *sandboxview) GetTimestamp() int64 {
 	return s.vctx.timestamp
+}
+
+func (s *sandboxview) Log() coretypes.LogInterface {
+	return s.vctx
+}
+
+func (s *sandboxview) Params() dict.Dict {
+	return s.params
+}
+
+func (s *sandboxview) State() kv.KVStoreReader {
+	return s.state
+}
+
+func (s *sandboxview) Utils() coretypes.Utils {
+	return sandbox_utils.NewUtils()
 }

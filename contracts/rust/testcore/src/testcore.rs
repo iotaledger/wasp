@@ -57,8 +57,7 @@ pub fn func_check_context_from_full_ep(ctx: &ScFuncContext) {
     let param_chain_owner_id = p.get_agent_id(PARAM_CHAIN_OWNER_ID);
     let param_contract_creator = p.get_agent_id(PARAM_CONTRACT_CREATOR);
 
-    let agent_id = ScAgentId::new(&ctx.chain_id(), &ctx.contract());
-    ctx.require(param_agent_id.value() == agent_id, "fail: agentID");
+    ctx.require(param_agent_id.value() == ctx.account_id(), "fail: agentID");
     ctx.require(param_caller.value() == ctx.caller(), "fail: caller");
     ctx.require(param_chain_id.value() == ctx.chain_id(), "fail: chainID");
     ctx.require(param_chain_owner_id.value() == ctx.chain_owner_id(), "fail: chainOwnerID");
@@ -249,8 +248,7 @@ pub fn view_check_context_from_view_ep(ctx: &ScViewContext) {
     let param_chain_owner_id = p.get_agent_id(PARAM_CHAIN_OWNER_ID);
     let param_contract_creator = p.get_agent_id(PARAM_CONTRACT_CREATOR);
 
-    let agent_id = ScAgentId::new(&ctx.chain_id(), &ctx.contract());
-    ctx.require(param_agent_id.value() == agent_id, "fail: agentID");
+    ctx.require(param_agent_id.value() == ctx.account_id(), "fail: agentID");
     ctx.require(param_chain_id.value() == ctx.chain_id(), "fail: chainID");
     ctx.require(param_chain_owner_id.value() == ctx.chain_owner_id(), "fail: chainOwnerID");
     ctx.require(param_contract_creator.value() == ctx.contract_creator(), "fail: contractCreator");

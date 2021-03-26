@@ -69,7 +69,7 @@ func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
 	var aid *coretypes.AgentID
 	switch keyId {
 	case wasmhost.KeyAccountId:
-		aid = o.vm.ctx.AccountID()
+		aid = o.vm.accountID()
 		return aid.Bytes()
 	case wasmhost.KeyCaller:
 		aid = o.vm.ctx.Caller()

@@ -145,6 +145,13 @@ func (host *wasmProcessor) IsView() bool {
 	return host.WasmHost.IsView(host.function)
 }
 
+func (host *wasmProcessor) accountID() *coretypes.AgentID {
+	if host.ctx != nil {
+		return host.ctx.AccountID()
+	}
+	return host.ctxView.AccountID()
+}
+
 func (host *wasmProcessor) contract() coretypes.Hname {
 	if host.ctx != nil {
 		return host.ctx.Contract()

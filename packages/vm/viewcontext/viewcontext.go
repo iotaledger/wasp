@@ -3,11 +3,10 @@ package viewcontext
 import (
 	"fmt"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"

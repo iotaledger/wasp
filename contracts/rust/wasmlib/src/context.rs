@@ -275,8 +275,8 @@ impl ScFuncContext {
         } else {
             encode.int64(0);
         }
-        if let Some(transfers) = transfer {
-            encode.int64(transfers.transfers.obj_id as i64);
+        if let Some(transfer) = transfer {
+            encode.int64(transfer.transfers.obj_id as i64);
         } else {
             encode.int64(0);
         }
