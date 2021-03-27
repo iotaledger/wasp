@@ -2,6 +2,7 @@ package admapi
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -24,12 +25,15 @@ func addChainEndpoints(adm echoswagger.ApiGroup) {
 }
 
 func handleActivateChain(c echo.Context) error {
-	scAddress, err := address.FromBase58(c.Param("chainID"))
+	scAddress, err := ledgerstate.AddressFromBase58EncodedString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address: %s", c.Param("address")))
 	}
-	chainID := (coretypes.ChainID)(scAddress)
-	bd, err := registry.ActivateChainRecord(&chainID)
+	chainID, err := coretypes.NewChainIDFromAddress(scAddress)
+	if err != nil {
+		return err
+	}
+	bd, err := registry.ActivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}
@@ -43,13 +47,15 @@ func handleActivateChain(c echo.Context) error {
 }
 
 func handleDeactivateChain(c echo.Context) error {
-	scAddress, err := address.FromBase58(c.Param("chainID"))
+	scAddress, err := ledgerstate.AddressFromBase58EncodedString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain id: %s", c.Param("chainID")))
 	}
-
-	chainID := (coretypes.ChainID)(scAddress)
-	bd, err := registry.DeactivateChainRecord(&chainID)
+	chainID, err := coretypes.NewChainIDFromAddress(scAddress)
+	if err != nil {
+		return err
+	}
+	bd, err := registry.DeactivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}

@@ -622,7 +622,7 @@ func setOwnerMargin(ctx coretypes.Sandbox) error {
 
 // TODO implement universal 'refund' function to be used in rollback situations
 // refundFromRequest returns all tokens of the given color to the sender minus sunkFee
-func refundFromRequest(ctx coretypes.Sandbox, color *ledgerstate.Color, harvest int64) {
+func refundFromRequest(ctx coretypes.Sandbox, color ledgerstate.Color, harvest int64) {
 	// TODO
 	//account := ctx.AccessSCAccount()
 	//ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)

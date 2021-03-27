@@ -80,7 +80,7 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		return
 	}
 	diffAssets := util.DiffColoredBalances(chainOutput.Balances(), lastTotalAssets)
-	if iotas, ok := diffAssets[ledgerstate.ColorIOTA]; !ok || iotas != int64(ledgerstate.DustThresholdAliasOutputIOTA) {
+	if iotas, ok := diffAssets[ledgerstate.ColorIOTA]; !ok || iotas != ledgerstate.DustThresholdAliasOutputIOTA {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: inconsistency between L1 and L2 ledgers"))
 		return
 	}

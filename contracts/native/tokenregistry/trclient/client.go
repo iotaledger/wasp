@@ -24,12 +24,12 @@ func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *Tok
 
 type MintAndRegisterParams struct {
 	Supply          int64           // number of tokens to mint
-	MintTarget      address.Address // where to mint new Supply
+	MintTarget      ledgerstate.Address // where to mint new Supply
 	Description     string
 	UserDefinedData []byte
 }
 
-func (trc *TokenRegistryClient) OwnerAddress() address.Address {
+func (trc *TokenRegistryClient) OwnerAddress() ledgerstate.Address {
 	return trc.SigScheme.Address()
 }
 
@@ -45,7 +45,7 @@ func (trc *TokenRegistryClient) MintAndRegister(par MintAndRegisterParams) (*sct
 		trc.contractHname,
 		tokenregistry.RequestMintSupply,
 		chainclient.PostRequestParams{
-			Mint:    map[address.Address]int64{par.MintTarget: par.Supply},
+			Mint:    map[ledgerstate.Address]uint64{par.MintTarget: par.Supply},
 			ArgsRaw: codec.MakeDict(args),
 		},
 	)
@@ -111,7 +111,7 @@ func decodeRegistry(result *statequery.MapResult) (map[ledgerstate.Color]*tokenr
 	return registry, nil
 }
 
-func (trc *TokenRegistryClient) Query(color *ledgerstate.Color) (*tokenregistry.TokenMetadata, error) {
+func (trc *TokenRegistryClient) Query(color ledgerstate.Color) (*tokenregistry.TokenMetadata, error) {
 	query := statequery.NewRequest()
 	query.AddMapElement(tokenregistry.VarStateTheRegistry, color.Bytes())
 

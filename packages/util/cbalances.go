@@ -30,15 +30,15 @@ func EqualColoredBalances(b1, b2 *ledgerstate.ColoredBalances) bool {
 	return true
 }
 
-func DiffColoredBalances(b1, b2 *ledgerstate.ColoredBalances) map[ledgerstate.Color]int64 {
-	ret := make(map[ledgerstate.Color]int64)
+func DiffColoredBalances(b1, b2 *ledgerstate.ColoredBalances) map[ledgerstate.Color]uint64 {
+	ret := make(map[ledgerstate.Color]uint64)
 	if b1 == b2 {
 		return ret
 	}
 	for col := range allColors(b1, b2) {
 		v1, _ := b1.Get(col)
 		v2, _ := b2.Get(col)
-		ret[col] = int64(v1) - int64(v2)
+		ret[col] = v1 - v2
 	}
 	return ret
 }

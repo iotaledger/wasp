@@ -210,7 +210,7 @@ func (r *QueryResult) MustString() (string, bool) {
 	return s, ok
 }
 
-func (r *QueryResult) MustAddress() address.Address {
+func (r *QueryResult) MustAddress() ledgerstate.Address {
 	v, _, err := codec.DecodeAddress(r.MustBytes())
 	if err != nil {
 		panic(err)

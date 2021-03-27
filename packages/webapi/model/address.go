@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 )
 
-// Address is the base58-encoded representation of address.Address
+// Address is the base58-encoded representation of ledgerstate.Address
 type Address string
 
 func NewAddress(address ledgerstate.Address) Address {

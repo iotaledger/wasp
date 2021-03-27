@@ -5,6 +5,7 @@ package faclient
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -91,7 +92,7 @@ func (fc *FairAuctionClient) GetFeeAmount(minimumBid int64) (int64, error) {
 
 func (fc *FairAuctionClient) StartAuction(
 	description string,
-	color *ledgerstate.Color,
+	color ledgerstate.Color,
 	tokensForSale int64,
 	minimumBid int64,
 	durationMinutes int64,
@@ -118,7 +119,7 @@ func (fc *FairAuctionClient) StartAuction(
 	)
 }
 
-func (fc *FairAuctionClient) PlaceBid(color *ledgerstate.Color, amountIotas int64) (*sctransaction_old.TransactionEssence, error) {
+func (fc *FairAuctionClient) PlaceBid(color ledgerstate.Color, amountIotas uint64) (*sctransaction_old.TransactionEssence, error) {
 	return fc.PostRequest(
 		fc.contractHname,
 		fairauction.RequestPlaceBid,

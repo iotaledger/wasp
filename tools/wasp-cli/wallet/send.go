@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"os"
 	"strconv"
 
@@ -19,7 +20,7 @@ func sendFundsCmd(args []string) {
 	wallet := Load()
 	sourceAddress := wallet.Address()
 
-	targetAddress, err := address.FromBase58(args[0])
+	targetAddress, err := ledgerstate.AddressFromBase58EncodedString(args[0])
 	log.Check(err)
 
 	color := decodeColor(args[1])
@@ -27,13 +28,13 @@ func sendFundsCmd(args []string) {
 	amount, err := strconv.Atoi(args[2])
 	log.Check(err)
 
-	bals, err := config.GoshimmerClient().GetConfirmedOutputs(&sourceAddress)
+	bals, err := config.GoshimmerClient().GetConfirmedOutputs(sourceAddress)
 	log.Check(err)
 
 	vtxb, err := vtxbuilder.NewFromOutputBalances(bals)
 	log.Check(err)
 
-	log.Check(vtxb.MoveTokensToAddress(targetAddress, *color, int64(amount)))
+	log.Check(vtxb.MoveTokensToAddress(targetAddress, color, uint64(amount)))
 
 	tx := vtxb.Build(false)
 	tx.Sign(wallet.SignatureScheme())
@@ -41,8 +42,8 @@ func sendFundsCmd(args []string) {
 	clientutil.PostTransaction(tx)
 }
 
-func decodeColor(s string) *ledgerstate.Color {
-	color, err := util.ColorFromString(s)
+func decodeColor(s string) ledgerstate.Color {
+	color, err := ledgerstate.ColorFromBase58EncodedString(s)
 	log.Check(err)
-	return &color
+	return color
 }

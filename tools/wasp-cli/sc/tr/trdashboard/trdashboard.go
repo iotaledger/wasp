@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry/trclient"
 	"github.com/iotaledger/wasp/tools/wasp-cli/dashboard"
@@ -52,7 +51,7 @@ func handleTR(c echo.Context) error {
 }
 
 func handleTRQuery(c echo.Context) error {
-	color, err := util.ColorFromString(c.Param("color"))
+	color, err := ledgerstate.ColorFromBase58EncodedString(c.Param("color"))
 	if err != nil {
 		return err
 	}

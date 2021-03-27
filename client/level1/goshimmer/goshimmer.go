@@ -3,6 +3,7 @@ package goshimmer
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/client"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/level1"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/txutil"
@@ -19,7 +20,7 @@ type goshimmerClient struct {
 	goshimmerClient *client.GoShimmerAPI
 }
 
-func (api *goshimmerClient) RequestFunds(targetAddress *address.Address) error {
+func (api *goshimmerClient) RequestFunds(targetAddress ledgerstate.Address) error {
 	initialBalance, err := api.balanceIOTA(targetAddress)
 	if err != nil {
 		return fmt.Errorf("balanceIOTA: %s", err)
@@ -41,7 +42,7 @@ func (api *goshimmerClient) RequestFunds(targetAddress *address.Address) error {
 	return fmt.Errorf("Faucet request seems to have failed")
 }
 
-func (api *goshimmerClient) balanceIOTA(targetAddress *address.Address) (int64, error) {
+func (api *goshimmerClient) balanceIOTA(targetAddress ledgerstate.Address) (uint64, error) {
 	outs, err := api.GetConfirmedAccountOutputs(targetAddress)
 	if err != nil {
 		return 0, fmt.Errorf("GetConfirmedOutputs: %s", err)
@@ -50,7 +51,7 @@ func (api *goshimmerClient) balanceIOTA(targetAddress *address.Address) (int64, 
 	return bals[ledgerstate.ColorIOTA], nil
 }
 
-func (api *goshimmerClient) GetConfirmedAccountOutputs(address *address.Address) (map[valuetransaction.OutputID][]*balance.Balance, error) {
+func (api *goshimmerClient) GetConfirmedAccountOutputs(address ledgerstate.Address) (map[valuetransaction.OutputID][]*balance.Balance, error) {
 	r, err := api.goshimmerClient.GetUnspentOutputs([]string{address.String()})
 	if err != nil {
 		return nil, fmt.Errorf("GetUnspentOutputs: %s", err)
@@ -70,7 +71,7 @@ func (api *goshimmerClient) GetConfirmedAccountOutputs(address *address.Address)
 			}
 			balances := make([]*balance.Balance, 0)
 			for _, b := range outid.Balances {
-				color, err := util.ColorFromString(b.Color)
+				color, err := ledgerstate.ColorFromBase58EncodedString(b.Color)
 				if err != nil {
 					return nil, fmt.Errorf("ColorFromString: %s", err)
 				}

@@ -2,6 +2,7 @@ package admapi
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -16,7 +17,7 @@ import (
 func addChainRecordEndpoints(adm echoswagger.ApiGroup) {
 	example := model.ChainRecord{
 		ChainID:        model.NewChainID(&coretypes.ChainID{1, 2, 3, 4}),
-		Color:          model.NewColor(&ledgerstate.Color{5, 6, 7, 8}),
+		Color:          model.NewColor(ledgerstate.Color{5, 6, 7, 8}),
 		CommitteeNodes: []string{"wasp1:4000", "wasp2:4000"},
 		Active:         false,
 	}

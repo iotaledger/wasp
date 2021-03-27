@@ -41,7 +41,7 @@ type Status struct {
 
 	NextPlayTimestamp time.Time
 
-	PlayerStats map[address.Address]*fairroulette.PlayerStats
+	PlayerStats map[ledgerstate.Address]*fairroulette.PlayerStats
 
 	WinsPerColor []uint32
 }
@@ -132,8 +132,8 @@ func decodeWinsPerColor(result *statequery.ArrayResult) ([]uint32, error) {
 	return ret, nil
 }
 
-func decodePlayerStats(result *statequery.MapResult) (map[address.Address]*fairroulette.PlayerStats, error) {
-	playerStats := make(map[address.Address]*fairroulette.PlayerStats)
+func decodePlayerStats(result *statequery.MapResult) (map[ledgerstate.Address]*fairroulette.PlayerStats, error) {
+	playerStats := make(map[ledgerstate.Address]*fairroulette.PlayerStats)
 	for _, e := range result.Entries {
 		if len(e.Key) != address.Length {
 			return nil, fmt.Errorf("not an address: %v", e.Key)

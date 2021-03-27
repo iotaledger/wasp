@@ -21,7 +21,7 @@ func mintCmd(args []string) {
 	log.Check(err)
 
 	tx := util.WithTransaction(func() (*transaction.Transaction, error) {
-		return vtxbuilder.NewColoredTokensTransaction(config.GoshimmerClient(), wallet.SignatureScheme(), int64(amount))
+		return vtxbuilder.NewColoredTokensTransaction(config.GoshimmerClient(), wallet.SignatureScheme(), uint64(amount))
 	})
 
 	log.Printf("Minted %d tokens of color %s\n", amount, tx.ID())

@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -42,8 +43,8 @@ func (w *Wallet) KeyPair() *ed25519.KeyPair {
 	return w.seed.KeyPair(uint64(addressIndex))
 }
 
-func (w *Wallet) Address() address.Address {
-	return w.seed.Address(uint64(addressIndex)).Address
+func (w *Wallet) Address() ledgerstate.Address {
+	return w.seed.Address(uint64(addressIndex)).Address()
 }
 
 func (w *Wallet) SignatureScheme() signaturescheme.SignatureScheme {

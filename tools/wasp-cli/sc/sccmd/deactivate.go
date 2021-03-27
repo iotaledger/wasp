@@ -15,7 +15,7 @@ func deactivateCmd(args []string) {
 		deactivateUsage()
 	}
 
-	scAddress, err := address.FromBase58(args[0])
+	scAddress, err := ledgerstate.AddressFromBase58EncodedString(args[0])
 	log.Check(err)
 	committee := parseIntList(args[1])
 

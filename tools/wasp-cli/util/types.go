@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"os"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -16,13 +17,13 @@ import (
 func ValueFromString(vtype string, s string) []byte {
 	switch vtype {
 	case "color":
-		col, err := util.ColorFromString(s)
+		col, err := ledgerstate.ColorFromBase58EncodedString(s)
 		log.Check(err)
 		return col.Bytes()
 	case "agentid":
 		agentid, err := coretypes.NewAgentIDFromString(s)
 		log.Check(err)
-		return agentid[:]
+		return agentid.Bytes()
 	case "file":
 		return ReadFile(s)
 	case "string":

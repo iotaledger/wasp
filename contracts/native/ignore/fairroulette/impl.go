@@ -396,7 +396,7 @@ func addToWinsPerColor(ctx coretypes.Sandbox, winningColor byte) {
 
 // distributeLockedAmount distributes total locked amount proportionally to placed sums
 func distributeLockedAmount(ctx coretypes.Sandbox, bets []*BetInfo, totalLockedAmount int64) bool {
-	sumsByPlayers := make(map[coretypes.AgentID]int64)
+	sumsByPlayers := make(map[coretypes.AgentID]uint64)
 	totalWinningAmount := int64(0)
 	for _, bet := range bets {
 		if _, ok := sumsByPlayers[bet.Player]; !ok {

@@ -20,7 +20,7 @@ func NewWallet(b58walletSeed string) *Wallet {
 }
 
 func (w *Wallet) Address() ledgerstate.Address {
-	addr := w.seed.Address(w.index).Address
+	addr := w.seed.Address(w.index).Address()
 	return addr
 }
 

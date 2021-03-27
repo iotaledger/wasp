@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"os"
 
 	"github.com/iotaledger/wasp/client"
@@ -170,17 +171,17 @@ func Set(key string, value interface{}) {
 	log.Check(viper.WriteConfig())
 }
 
-func TrySCAddress(scAlias string) *address.Address {
+func TrySCAddress(scAlias string) ledgerstate.Address {
 	b58 := viper.GetString("sc." + scAlias + ".address")
 	if len(b58) == 0 {
 		return nil
 	}
-	address, err := address.FromBase58(b58)
+	address, err := ledgerstate.AddressFromBase58EncodedString(b58)
 	log.Check(err)
-	return &address
+	return address
 }
 
-func GetSCAddress(scAlias string) *address.Address {
+func GetSCAddress(scAlias string) ledgerstate.Address {
 	address := TrySCAddress(scAlias)
 	if address == nil {
 		log.Fatal("call `%s set sc.%s.address` or deploy a contract first", os.Args[0], scAlias)

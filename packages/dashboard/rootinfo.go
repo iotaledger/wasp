@@ -12,7 +12,7 @@ import (
 
 type RootInfo struct {
 	ChainColor   ledgerstate.Color
-	ChainAddress address.Address
+	ChainAddress ledgerstate.Address
 
 	OwnerID          coretypes.AgentID
 	OwnerIDDelegated *coretypes.AgentID

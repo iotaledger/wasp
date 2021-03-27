@@ -8,6 +8,7 @@ package admapi
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"net/http"
 	"time"
 
@@ -31,7 +32,7 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup) {
 		TimeoutMS:   10000,
 	}
 	infoExample := model.DKSharesInfo{
-		Address:      address.Address{5, 6, 7, 8}.String(),
+		Address:      ledgerstate.Address{5, 6, 7, 8}.String(),
 		SharedPubKey: base64.StdEncoding.EncodeToString([]byte("key")),
 		PubKeyShares: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
 		Threshold:    3,
@@ -104,11 +105,11 @@ func handleDKSharesPost(c echo.Context) error {
 func handleDKSharesGet(c echo.Context) error {
 	var err error
 	var dkShare *tcrypto.DKShare
-	var sharedAddress address.Address
-	if sharedAddress, err = address.FromBase58(c.Param("sharedAddress")); err != nil {
+	var sharedAddress ledgerstate.Address
+	if sharedAddress, err = ledgerstate.AddressFromBase58EncodedString(c.Param("sharedAddress")); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
-	if dkShare, err = registry.DefaultRegistry().LoadDKShare(&sharedAddress); err != nil {
+	if dkShare, err = registry.DefaultRegistry().LoadDKShare(sharedAddress); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err)
 	}
 	var response *model.DKSharesInfo

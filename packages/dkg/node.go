@@ -101,7 +101,7 @@ func (n *Node) GenerateDistributedKey(
 	defer netGroup.Close()
 	dkgID := coretypes.NewRandomChainID()
 	recvCh := make(chan *peering.RecvEvent, peerCount*2)
-	attachID := n.netProvider.Attach(&dkgID, func(recv *peering.RecvEvent) {
+	attachID := n.netProvider.Attach(dkgID, func(recv *peering.RecvEvent) {
 		recvCh <- recv
 	})
 	defer n.netProvider.Detach(attachID)
@@ -124,7 +124,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep0Initialize,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep0Initialize, peer.NetID())
-			peer.SendMsg(makePeerMessage(&dkgID, rabinStep0Initialize, &initiatorInitMsg{
+			peer.SendMsg(makePeerMessage(dkgID, rabinStep0Initialize, &initiatorInitMsg{
 				dkgRef:       dkgID.String(), // It could be some other identifier.
 				peerNetIDs:   peerNetIDs,
 				peerPubs:     peerPubs,
@@ -141,19 +141,19 @@ func (n *Node) GenerateDistributedKey(
 	// Perform the DKG steps, each step in parallel, all steps sequentially.
 	// Step numbering (R) is according to <https://github.com/dedis/kyber/blob/master/share/dkg/rabin/dkg.go>.
 	if peerCount > 1 {
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep1R21SendDeals); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep1R21SendDeals); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep2R22SendResponses); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep2R22SendResponses); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep3R23SendJustifications); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep3R23SendJustifications); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep4R4SendSecretCommits); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep4R4SendSecretCommits); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep5R5SendComplaintCommits); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep5R5SendComplaintCommits); err != nil {
 			return nil, err
 		}
 	}
@@ -164,7 +164,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorMsgs(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep6R6SendReconstructCommits,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep6R6SendReconstructCommits, peer.NetID())
-			peer.SendMsg(makePeerMessage(&dkgID, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
+			peer.SendMsg(makePeerMessage(dkgID, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
 		},
 		func(recv *peering.RecvEvent, initMsg initiatorMsg) (bool, error) {
 			switch msg := initMsg.(type) {
@@ -183,7 +183,7 @@ func (n *Node) GenerateDistributedKey(
 	sharedPublic := pubShareResponses[0].sharedPublic
 	publicShares := make([]kyber.Point, peerCount)
 	for i := range pubShareResponses {
-		if *sharedAddress != *pubShareResponses[i].sharedAddress {
+		if !sharedAddress.Equals(pubShareResponses[i].sharedAddress) {
 			return nil, fmt.Errorf("nodes generated different addresses")
 		}
 		if !sharedPublic.Equal(pubShareResponses[i].sharedPublic) {
@@ -212,7 +212,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.NetID())
-			peer.SendMsg(makePeerMessage(&dkgID, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
+			peer.SendMsg(makePeerMessage(dkgID, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
 				pubShares: publicShares,
 			}))
 		},

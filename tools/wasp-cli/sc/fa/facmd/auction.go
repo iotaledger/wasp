@@ -39,12 +39,12 @@ func startAuctionCmd(args []string) {
 	log.Check(err)
 }
 
-func decodeColor(s string) *ledgerstate.Color {
+func decodeColor(s string) ledgerstate.Color {
 	b, err := base58.Decode(s)
 	log.Check(err)
 	color, _, err := balance.ColorFromBytes(b)
 	log.Check(err)
-	return &color
+	return color
 }
 
 func placeBidCmd(args []string) {

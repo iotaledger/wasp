@@ -30,7 +30,7 @@ import (
 // Input:
 // - ParamChainID coretypes.ChainID. ID of the chain. Cannot be changed
 // - ParamChainColor ledgerstate.Color
-// - ParamChainAddress address.Address
+// - ParamChainAddress ledgerstate.Address
 // - ParamDescription string defaults to "N/A"
 // - ParamFeeColor ledgerstate.Color fee color code. Defaults to IOTA color. It cannot be changed
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {

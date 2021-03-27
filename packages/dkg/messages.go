@@ -11,6 +11,7 @@ package dkg
 import (
 	"bytes"
 	"errors"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"io"
 	"time"
 
@@ -398,7 +399,7 @@ func (m *initiatorDoneMsg) IsResponse() bool {
 //
 type initiatorPubShareMsg struct {
 	step          byte
-	sharedAddress *address.Address
+	sharedAddress ledgerstate.Address
 	sharedPublic  kyber.Point
 	publicShare   kyber.Point
 	signature     []byte
@@ -439,14 +440,14 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 		return err
 	}
 	var sharedAddressBin []byte
-	var sharedAddress address.Address
+	var sharedAddress ledgerstate.Address
 	if sharedAddressBin, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if sharedAddress, _, err = address.FromBytes(sharedAddressBin); err != nil {
+	if sharedAddress, _, err = ledgerstate.AddressFromBytes(sharedAddressBin); err != nil {
 		return err
 	}
-	m.sharedAddress = &sharedAddress
+	m.sharedAddress = sharedAddress
 	m.sharedPublic = m.suite.Point()
 	if err = util.ReadMarshaled(r, m.sharedPublic); err != nil {
 		return err

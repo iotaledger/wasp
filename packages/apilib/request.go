@@ -5,6 +5,7 @@ package apilib
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 
 	"github.com/iotaledger/wasp/client/level1"
@@ -23,14 +24,14 @@ type CreateRequestTransactionParams struct {
 	Level1Client         level1.Level1Client
 	SenderSigScheme      signaturescheme.SignatureScheme
 	RequestSectionParams []RequestSectionParams
-	Mint                 map[address.Address]int64 // free tokens to be minted from IOTA color
+	Mint                 map[ledgerstate.Address]uint64 // free tokens to be minted from IOTA color
 	Post                 bool
 	WaitForConfirmation  bool
 }
 
 func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransaction_old.TransactionEssence, error) {
 	senderAddr := par.SenderSigScheme.Address()
-	allOuts, err := par.Level1Client.GetConfirmedOutputs(&senderAddr)
+	allOuts, err := par.Level1Client.GetConfirmedOutputs(senderAddr)
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}

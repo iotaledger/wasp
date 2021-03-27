@@ -36,7 +36,7 @@ func publicKey(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 // addWarrant adds payment warrant for specific service address
 // Params:
-// - ParamServiceAddress address.Address
+// - ParamServiceAddress ledgerstate.Address
 func addWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
@@ -72,7 +72,7 @@ func addWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 // revokeWarrant revokes payment warrant for specific service address
 // It will be in effect next 1 hour, the will be deleted
 // Params:
-// - ParamServiceAddress address.Address
+// - ParamServiceAddress ledgerstate.Address
 func revokeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
@@ -106,8 +106,8 @@ func revokeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 }
 
 // closeWarrant can only be sent from self. It closes the warrant account
-// - ParamServiceAddress address.Address
-// - ParamPayerAddress address.Address
+// - ParamServiceAddress ledgerstate.Address
+// - ParamPayerAddress ledgerstate.Address
 func closeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	myAgentId := coretypes.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
@@ -151,8 +151,8 @@ func settle(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 // getWarrantInfo return warrant info for given payer and services addresses
 // Params:
-// - ParamServiceAddress address.Address
-// - ParamPayerAddress address.Address
+// - ParamServiceAddress ledgerstate.Address
+// - ParamPayerAddress ledgerstate.Address
 // Output:
 // - ParamWarrant int64 if == 0 no warrant
 // - ParamRevoked int64 is exists, timestamp in Unix nanosec when warrant will be revoked

@@ -31,9 +31,9 @@ func BalancesToString(outs map[valuetransaction.ID][]*balance.Balance) string {
 	return ret
 }
 
-func BalancesByColor(outs map[valuetransaction.ID][]*balance.Balance) (map[ledgerstate.Color]uint64, int64) {
+func BalancesByColor(outs map[valuetransaction.ID][]*balance.Balance) (map[ledgerstate.Color]uint64, uint64) {
 	ret := make(map[ledgerstate.Color]uint64)
-	var total int64
+	var total uint64
 	for _, bals := range outs {
 		for _, b := range bals {
 			if s, ok := ret[b.Color]; !ok {
@@ -64,7 +64,7 @@ func OutputBalancesByColor(outs map[valuetransaction.OutputID][]*balance.Balance
 }
 
 func BalanceOfColor(bals []*balance.Balance, color ledgerstate.Color) uint64 {
-	sum := int64(0)
+	sum := uint64(0)
 	for _, b := range bals {
 		if b.Color == color {
 			sum += b.Value
@@ -82,7 +82,7 @@ func CloneBalances(bals []*balance.Balance) []*balance.Balance {
 }
 
 func BalancesSumTotal(bals []*balance.Balance) int64 {
-	var ret int64
+	var ret uint64
 	for _, b := range bals {
 		ret += b.Value
 	}
