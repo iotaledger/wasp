@@ -87,7 +87,7 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 		CommitteePeeringHosts: chain.PeeringHosts(),
 		N:                     uint16(len(committeeNodes)),
 		T:                     quorum,
-		OriginatorSigScheme:   chain.OriginatorSigScheme(),
+		OriginatorKeyPair:     chain.OriginatorSigScheme(),
 		Description:           description,
 		Textout:               os.Stdout,
 		Prefix:                "[cluster] ",

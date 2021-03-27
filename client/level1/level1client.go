@@ -10,14 +10,14 @@ type Level1Client interface {
 	RequestFunds(targetAddress ledgerstate.Address) error
 
 	// GetConfirmedAccountOutputs fetches all confirmed outputs belonging to the given address
-	GetConfirmedAccountOutputs(address ledgerstate.Address) (map[transaction.OutputID][]*balance.Balance, error)
+	GetConfirmedAccountOutputs(address ledgerstate.Address) ([]ledgerstate.Output, error)
 
 	// PostTransaction posts a transaction to the ledger
-	PostTransaction(tx *transaction.Transaction) error
+	PostTransaction(tx *ledgerstate.Transaction) error
 
 	// PostAndWaitForConfirmation posts a transaction to the ledger and blocks until it is confirmed
-	PostAndWaitForConfirmation(tx *transaction.Transaction) error
+	PostAndWaitForConfirmation(tx *ledgerstate.Transaction) error
 
 	// WaitForConfirmation blocks until a transaction is confirmed in the ledger
-	WaitForConfirmation(txid transaction.ID) error
+	WaitForConfirmation(txid ledgerstate.TransactionID) error
 }

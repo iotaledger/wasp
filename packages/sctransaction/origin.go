@@ -21,6 +21,9 @@ func NewChainOriginTransaction(
 	txb := utxoutil.NewBuilder(allInputs...)
 
 	stateHash := state.OriginStateHash()
+	if len(balance) == 0 {
+		balance = map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA}
+	}
 	if err := txb.AddNewAliasMint(balance, stateAddress, stateHash.Bytes()); err != nil {
 		return nil, coretypes.ChainID{}, err
 	}

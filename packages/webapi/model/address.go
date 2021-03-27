@@ -2,13 +2,14 @@ package model
 
 import (
 	"encoding/json"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 )
 
 // Address is the base58-encoded representation of address.Address
 type Address string
 
-func NewAddress(address *address.Address) Address {
-	return Address(address.String())
+func NewAddress(address ledgerstate.Address) Address {
+	return Address(address.Base58())
 }
 
 func (a Address) MarshalJSON() ([]byte, error) {
@@ -20,13 +21,13 @@ func (a *Address) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
-	_, err := address.FromBase58(s)
+	_, err := ledgerstate.AddressFromBase58EncodedString(s)
 	*a = Address(s)
 	return err
 }
 
-func (a Address) Address() address.Address {
-	addr, err := address.FromBase58(string(a))
+func (a Address) Address() ledgerstate.Address {
+	addr, err := ledgerstate.AddressFromBase58EncodedString(string(a))
 	if err != nil {
 		panic(err)
 	}

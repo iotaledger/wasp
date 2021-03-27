@@ -6,6 +6,7 @@ package tcrypto
 import (
 	"bytes"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/bls"
 	"io"
 
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
@@ -215,27 +216,23 @@ func (s *DKShare) VerifyMasterSignature(data []byte, signature []byte) error {
 
 // RecoverFullSignature generates (recovers) master signature from partial sigshares.
 // returns signature as defined in the value Tangle
-func (s *DKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (signaturescheme.Signature, error) {
+func (s *DKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (*bls.SignatureWithPublicKey, error) {
 	var err error
-	var recoveredSignature []byte
+	var recoveredSignatureBin []byte
 	if s.N > 1 {
 		pubPoly := share.NewPubPoly(s.suite, nil, s.PublicCommits)
-		recoveredSignature, err = tbdn.Recover(s.suite, pubPoly, data, sigShares, int(s.T), int(s.N))
+		recoveredSignatureBin, err = tbdn.Recover(s.suite, pubPoly, data, sigShares, int(s.T), int(s.N))
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		singleSigShare := tbdn.SigShare(sigShares[0])
-		recoveredSignature = singleSigShare.Value()
+		recoveredSignatureBin = singleSigShare.Value()
 	}
-	pubKeyBin, err := s.SharedPublic.MarshalBinary()
+	sig, _, err := bls.SignatureFromBytes(recoveredSignatureBin)
 	if err != nil {
 		return nil, err
 	}
-	finalSignature := signaturescheme.NewBLSSignature(pubKeyBin, recoveredSignature)
-
-	if finalSignature.Address().String() != s.Address.String() {
-		panic("finalSignature.ChainID() != op.dkShare.ChainID")
-	}
-	return finalSignature, nil
+	ret := bls.NewSignatureWithPublicKey(bls.PublicKey{Point: s.SharedPublic}, sig)
+	return &ret, nil
 }

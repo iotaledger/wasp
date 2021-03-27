@@ -5,13 +5,13 @@ import "bytes"
 const (
 	ObjectTypeDBSchemaVersion byte = iota
 	ObjectTypeChainRecord
+	ObjectTypeCommitteeRecord
 	ObjectTypeDistributedKeyData
 	ObjectTypeSolidState
 	ObjectTypeStateUpdateBatch
 	ObjectTypeProcessedRequestId
 	ObjectTypeSolidStateIndex
 	ObjectTypeStateVariable
-	ObjectTypeProgramMetadata
 	ObjectTypeNodeIdentity
 	ObjectTypeBlobCache
 	ObjectTypeBlobCacheTTL

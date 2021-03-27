@@ -23,7 +23,7 @@ func addChainRecordEndpoints(adm echoswagger.ApiGroup) {
 
 	adm.POST(routes.PutChainRecord(), handlePutChainRecord).
 		SetSummary("Create a new chain record").
-		AddParamBody(example, "ChainRecord", "Chain record", true)
+		AddParamBody(example, "Record", "Chain record", true)
 
 	adm.GET(routes.GetChainRecord(":chainID"), handleGetChainRecord).
 		SetSummary("Find the chain record for the given chain ID").
@@ -42,20 +42,20 @@ func handlePutChainRecord(c echo.Context) error {
 		return httperrors.BadRequest("Invalid request body")
 	}
 
-	bd := req.ChainRecord()
+	bd := req.Record()
 
 	bd2, err := registry.GetChainRecord(&bd.ChainID)
 	if err != nil {
 		return err
 	}
 	if bd2 != nil {
-		return httperrors.Conflict(fmt.Sprintf("ChainRecord already exists: %s", bd.ChainID.String()))
+		return httperrors.Conflict(fmt.Sprintf("Record already exists: %s", bd.ChainID.String()))
 	}
 	if err = registry.SaveChainRecord(bd); err != nil {
 		return err
 	}
 
-	log.Infof("ChainRecord saved for addr: %s color: %s", bd.ChainID.String(), bd.Color.String())
+	log.Infof("Record saved for addr: %s color: %s", bd.ChainID.String(), bd.Color.String())
 
 	return c.NoContent(http.StatusCreated)
 }
@@ -70,7 +70,7 @@ func handleGetChainRecord(c echo.Context) error {
 		return err
 	}
 	if bd == nil {
-		return httperrors.NotFound(fmt.Sprintf("ChainRecord not found: %s", chainID))
+		return httperrors.NotFound(fmt.Sprintf("Record not found: %s", chainID))
 	}
 	return c.JSON(http.StatusOK, model.NewChainRecord(bd))
 }

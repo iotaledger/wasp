@@ -1,17 +1,19 @@
 package chains
 
 import (
-	"fmt"
+	"sync"
+
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	registry_pkg "github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
-	"sync"
 )
 
 type Chains struct {
@@ -20,10 +22,10 @@ type Chains struct {
 	allChains         map[[ledgerstate.AddressLength]byte]chain.Chain
 	chMessages        chan interface{}
 	processMsgClosure *events.Closure
-	nodeConn          *nodeconn.NodeConn
+	nodeConn          *txstream.Client
 }
 
-func New(log *logger.Logger, conn *nodeconn.NodeConn) *Chains {
+func New(log *logger.Logger, conn *txstream.Client) *Chains {
 	ret := &Chains{
 		log:       log,
 		allChains: make(map[[ledgerstate.AddressLength]byte]chain.Chain),
@@ -101,7 +103,7 @@ func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
 	defer c.mutex.Unlock()
 
 	if !chr.Active {
-		return fmt.Errorf("cannot activate chain for deactivated chain record")
+		return xerrors.Errorf("cannot activate chain for deactivated chain record")
 	}
 	chainArr := chr.ChainID.Array()
 	_, ok := c.allChains[chainArr]

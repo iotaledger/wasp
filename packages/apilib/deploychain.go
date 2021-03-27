@@ -5,6 +5,8 @@ package apilib
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"io"
 	"io/ioutil"
@@ -25,7 +27,7 @@ type CreateChainParams struct {
 	CommitteePeeringHosts []string
 	N                     uint16
 	T                     uint16
-	OriginatorSigScheme   signaturescheme.SignatureScheme
+	OriginatorKeyPair     *ed25519.KeyPair
 	Description           string
 	Textout               io.Writer
 	Prefix                string
@@ -34,13 +36,13 @@ type CreateChainParams struct {
 // DeployChain performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
 // noinspection ALL
-func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *ledgerstate.Color, error) {
+func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address, error) {
 	var err error
 	textout := ioutil.Discard
 	if par.Textout != nil {
 		textout = par.Textout
 	}
-	originatorAddr := par.OriginatorSigScheme.Address()
+	originatorAddr := ledgerstate.NewED25519Address(par.OriginatorKeyPair.PublicKey)
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "creating new chain. Owner address is %s. Parameters N = %d, T = %d\n",
@@ -55,70 +57,81 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 		PeerNetIDs:  par.CommitteePeeringHosts,
 		PeerPubKeys: nil,
 		Threshold:   par.T,
-		TimeoutMS:   60000, // 1 min
+		TimeoutMS:   60 * 1000, // 1 min
 	})
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "generating distributed key set.. FAILED: %v\n", err)
-		return nil, nil, nil, err
+		return nil, nil, err
 	} else {
 		fmt.Fprintf(textout, "generating distributed key set.. OK. Generated address = %s\n", dkShares.Address)
 	}
-	var chainAddr address.Address
-	if chainAddr, err = address.FromBase58(dkShares.Address); err != nil {
-		return nil, nil, nil, err
+	var stateControllerAddr ledgerstate.Address
+	if stateControllerAddr, err = ledgerstate.AddressFromBase58EncodedString(dkShares.Address); err != nil {
+		return nil, nil, err
 	}
-	var chainID coretypes.ChainID = coretypes.ChainID(chainAddr) // That's temporary, a color should be used later.
+	committee := multiclient.New(par.CommitteeApiHosts)
+
+	// ------------ put committee records to hosts
+	err = committee.PutCommitteeRecord(&registry.CommitteeRecord{
+		Address:        stateControllerAddr,
+		CommitteeNodes: par.CommitteeApiHosts,
+	})
+	fmt.Fprint(textout, par.Prefix)
+	if err != nil {
+		fmt.Fprintf(textout, "sending committee record to nodes.. FAILED: %v\n", err)
+		return nil, nil, err
+	} else {
+		fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
+	}
 
 	// ----------- request owner address' outputs from the ledger
-	allOuts, err := par.Node.GetConfirmedAccountOutputs(&originatorAddr)
+	allOuts, err := par.Node.GetConfirmedAccountOutputs(originatorAddr)
 
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
-		fmt.Fprintf(textout, "requesting owner address' UTXOs from node.. FAILED: %v\n", err)
-		return nil, nil, nil, err
+		fmt.Fprintf(textout, "requesting UTXOs from node.. FAILED: %v\n", err)
+		return nil, nil, err
 	} else {
 		fmt.Fprint(textout, "requesting owner address' UTXOs from node.. OK\n")
 	}
 
 	// ----------- create origin transaction
-	originTx, err := sctransaction.NewChainOriginTransaction(sctransaction.NewChainOriginTransactionParams{
-		OriginAddress:             chainAddr,
-		OriginatorSignatureScheme: par.OriginatorSigScheme,
-		AllInputs:                 allOuts,
-	})
+	originTx, chainID, err := sctransaction.NewChainOriginTransaction(
+		par.OriginatorKeyPair,
+		stateControllerAddr,
+		nil,
+		allOuts...,
+	)
 
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "creating origin transaction.. FAILED: %v\n", err)
-		return nil, nil, nil, err
+		return nil, nil, err
 	} else {
 		fmt.Fprintf(textout, "creating origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 	}
 
 	// ------------- post origin transaction and wait for confirmation
-	err = par.Node.PostAndWaitForConfirmation(originTx.Transaction)
+	err = par.Node.PostAndWaitForConfirmation(originTx)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "posting origin transaction.. FAILED: %v\n", err)
-		return nil, nil, nil, err
+		return nil, nil, err
 	} else {
 		fmt.Fprintf(textout, "posting origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 	}
 
-	chainColor := ledgerstate.Color(originTx.ID())
-	committee := multiclient.New(par.CommitteeApiHosts)
 	// ------------ put chain records to hosts
 	err = committee.PutChainRecord(&registry.ChainRecord{
-		ChainID:        chainID,
-		Color:          chainColor,
-		CommitteeNodes: par.CommitteePeeringHosts,
+		ChainID:         chainID,
+		StateAddressTmp: stateControllerAddr,
 	})
 
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
-		fmt.Fprintf(textout, "sending smart contract metadata to Wasp nodes.. FAILED: %v\n", err)
-		return nil, nil, nil, err
+		fmt.Fprintf(textout, "sending chain data to Wasp nodes.. FAILED: %v\n", err)
+		return nil, nil, err
 	}
 	fmt.Fprint(textout, "sending smart contract metadata to Wasp nodes.. OK.\n")
 
@@ -128,43 +141,39 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "activating chain.. FAILED: %v\n", err)
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	fmt.Fprint(textout, "activating chain.. OK.\n")
 
 	// ============= create root init request for the root contract
 
-	// TODO to via chainclient with timeout etc
-
 	// ------------- get UTXOs of the owner
-	allOuts, err = par.Node.GetConfirmedAccountOutputs(&originatorAddr)
+	allOuts, err = par.Node.GetConfirmedAccountOutputs(originatorAddr)
 	if err != nil {
 		fmt.Fprintf(textout, "GetConfirmedAccountOutputs.. FAILED: %v\n", err)
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	// NOTE: whoever send first init request, is an owner of the chain
 	// create root init transaction
-	reqTx, err := sctransaction.NewRootInitRequestTransaction(sctransaction.NewRootInitRequestTransactionParams{
-		ChainID:              chainID,
-		ChainColor:           chainColor,
-		ChainAddress:         chainAddr,
-		OwnerSignatureScheme: par.OriginatorSigScheme,
-		AllInputs:            allOuts,
-		Description:          par.Description,
-	})
+	reqTx, err := sctransaction.NewRootInitRequestTransaction(
+		par.OriginatorKeyPair,
+		chainID,
+		par.Description,
+		allOuts...,
+	)
 	if err != nil {
 		fmt.Fprintf(textout, "creating root init request.. FAILED: %v\n", err)
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	fmt.Fprintf(textout, "creating root init request.. OK: %v\n", err)
 
 	// ---------- post root init request transaction and wait for confirmation
-	err = par.Node.PostAndWaitForConfirmation(reqTx.Transaction)
+	err = par.Node.PostAndWaitForConfirmation(reqTx)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "posting root init request transaction.. FAILED: %v\n", err)
-		return nil, nil, nil, err
+		return nil, nil, err
 	} else {
 		fmt.Fprintf(textout, "posting root init request transaction.. OK. Origin txid = %s\n", reqTx.ID().String())
 	}
@@ -172,14 +181,14 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, *address.Address, *
 	// ---------- wait until the request is processed in all committee nodes
 	if err = committee.WaitUntilAllRequestsProcessed(reqTx, 30*time.Second); err != nil {
 		fmt.Fprintf(textout, "waiting root init request transaction.. FAILED: %v\n", err)
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 
 	scColor := (ledgerstate.Color)(originTx.ID())
 	fmt.Fprint(textout, par.Prefix)
 
 	fmt.Fprintf(textout, "chain has been created succesfully on the Tangle. ChainID: %s, MustAddress: %s, Color: %s, N = %d, T = %d\n",
-		chainID.String(), chainAddr.String(), scColor.String(), par.N, par.T)
+		chainID.String(), stateControllerAddr.String(), scColor.String(), par.N, par.T)
 
-	return &chainID, &chainAddr, &scColor, err
+	return &chainID, stateControllerAddr, err
 }

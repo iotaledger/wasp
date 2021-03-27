@@ -145,7 +145,7 @@ const tplChain = `
 {{define "body"}}
 	{{ $chainid := .ChainID }}
 
-	{{if .ChainRecord}}
+	{{if .Record}}
 		{{ $rootinfo := .RootInfo }}
 		{{ $desc := trim 50 $rootinfo.Description }}
 
@@ -153,11 +153,11 @@ const tplChain = `
 			<h2 class="section">{{if $desc}}{{$desc}}{{else}}Chain <tt>{{$chainid}}</tt>{{end}}</h2>
 
 			<dl>
-				<dt>ChainID</dt><dd><tt>{{.ChainRecord.ChainID}}</tt></dd>
+				<dt>ChainID</dt><dd><tt>{{.Record.ChainID}}</tt></dd>
 				<dt>Chain address</dt><dd>{{template "address" .RootInfo.ChainAddress}}</dd>
 				<dt>Chain color</dt><dd><tt>{{.RootInfo.ChainColor}}</tt></dd>
-				<dt>Active</dt><dd><tt>{{.ChainRecord.Active}}</tt></dd>
-				{{if .ChainRecord.Active}}
+				<dt>Active</dt><dd><tt>{{.Record.Active}}</tt></dd>
+				{{if .Record.Active}}
 					<dt>Owner ID</dt><dd>{{template "agentid" (args .ChainID $rootinfo.OwnerID)}}</dd>
 					<dt>Delegated Owner ID</dt><dd>
 						{{- if $rootinfo.OwnerIDDelegated -}}
@@ -170,7 +170,7 @@ const tplChain = `
 			</dl>
 		</div>
 
-		{{if .ChainRecord.Active}}
+		{{if .Record.Active}}
 			<div class="card fluid">
 				<h3 class="section">Contracts</h3>
 				<dl>

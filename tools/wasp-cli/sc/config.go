@@ -151,7 +151,7 @@ func Deploy(params *DeployParams) (*address.Address, error) {
 		CommitteePeeringHosts: config.CommitteePeering(params.Committee),
 		N:                     uint16(len(params.Committee)),
 		T:                     uint16(params.Quorum),
-		OriginatorSigScheme:   params.SigScheme,
+		OriginatorKeyPair:     params.SigScheme,
 		ProgramHash:           params.progHash(),
 		Description:           params.Description,
 		Textout:               os.Stdout,

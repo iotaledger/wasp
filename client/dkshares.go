@@ -7,6 +7,7 @@ package client
 // The Golang API in this file tries to follow the REST conventions.
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -21,9 +22,9 @@ func (c *WaspClient) DKSharesPost(request *model.DKSharesPostRequest) (*model.DK
 }
 
 // DKSharesGet retrieves the representation of an existing DKShare.
-func (c *WaspClient) DKSharesGet(sharedAddress *address.Address) (*model.DKSharesInfo, error) {
-	var sharedAddressStr = sharedAddress.String()
+func (c *WaspClient) DKSharesGet(addr ledgerstate.Address) (*model.DKSharesInfo, error) {
+	addrStr := addr.Base58()
 	var response model.DKSharesInfo
-	err := c.do(http.MethodGet, routes.DKSharesGet(sharedAddressStr), nil, &response)
+	err := c.do(http.MethodGet, routes.DKSharesGet(addrStr), nil, &response)
 	return &response, err
 }

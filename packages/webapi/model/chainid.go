@@ -10,7 +10,7 @@ import (
 type ChainID string
 
 func NewChainID(chainID *coretypes.ChainID) ChainID {
-	return ChainID(chainID.String())
+	return ChainID(chainID.Base58())
 }
 
 func (ch ChainID) MarshalJSON() ([]byte, error) {
@@ -32,5 +32,5 @@ func (ch ChainID) ChainID() coretypes.ChainID {
 	if err != nil {
 		panic(err)
 	}
-	return chainID
+	return *chainID
 }

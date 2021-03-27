@@ -9,18 +9,18 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-// PutChainRecord sends a request to write a ChainRecord
-func (c *WaspClient) PutChainRecord(bd *registry.ChainRecord) error {
-	return c.do(http.MethodPost, routes.PutChainRecord(), model.NewChainRecord(bd), nil)
+// PutChainRecord sends a request to write a Record
+func (c *WaspClient) PutChainRecord(rec *registry.ChainRecord) error {
+	return c.do(http.MethodPost, routes.PutChainRecord(), model.NewChainRecord(rec), nil)
 }
 
-// GetChainRecord fetches a ChainRecord by address
+// GetChainRecord fetches a Record by address
 func (c *WaspClient) GetChainRecord(chainid coretypes.ChainID) (*registry.ChainRecord, error) {
 	res := &model.ChainRecord{}
 	if err := c.do(http.MethodGet, routes.GetChainRecord(chainid.String()), nil, res); err != nil {
 		return nil, err
 	}
-	return res.ChainRecord(), nil
+	return res.Record(), nil
 }
 
 // GetChainRecordList fetches the list of all chains in the node
@@ -31,7 +31,7 @@ func (c *WaspClient) GetChainRecordList() ([]*registry.ChainRecord, error) {
 	}
 	list := make([]*registry.ChainRecord, len(res))
 	for i, bd := range res {
-		list[i] = bd.ChainRecord()
+		list[i] = bd.Record()
 	}
 	return list, nil
 }
