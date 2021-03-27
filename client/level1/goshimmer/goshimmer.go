@@ -44,7 +44,7 @@ func (api *goshimmerClient) RequestFunds(targetAddress *address.Address) error {
 func (api *goshimmerClient) balanceIOTA(targetAddress *address.Address) (int64, error) {
 	outs, err := api.GetConfirmedAccountOutputs(targetAddress)
 	if err != nil {
-		return 0, fmt.Errorf("GetConfirmedAccountOutputs: %s", err)
+		return 0, fmt.Errorf("GetConfirmedOutputs: %s", err)
 	}
 	bals, _ := txutil.OutputBalancesByColor(outs)
 	return bals[ledgerstate.ColorIOTA], nil

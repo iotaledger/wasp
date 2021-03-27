@@ -69,7 +69,7 @@ func (c *Client) FetchSCStatus(addCustomQueries func(query *statequery.Request))
 
 func (c *Client) FetchBalance() (map[ledgerstate.Color]uint64, error) {
 	addr := (address.Address)(c.ChainID)
-	outs, err := c.Level1Client.GetConfirmedAccountOutputs(&addr)
+	outs, err := c.Level1Client.GetConfirmedOutputs(&addr)
 	if err != nil {
 		return nil, err
 	}

@@ -30,7 +30,7 @@ type CreateRequestTransactionParams struct {
 
 func CreateRequestTransaction(par CreateRequestTransactionParams) (*sctransaction_old.TransactionEssence, error) {
 	senderAddr := par.SenderSigScheme.Address()
-	allOuts, err := par.Level1Client.GetConfirmedAccountOutputs(&senderAddr)
+	allOuts, err := par.Level1Client.GetConfirmedOutputs(&senderAddr)
 	if err != nil {
 		return nil, fmt.Errorf("can't get outputs from the node: %v", err)
 	}

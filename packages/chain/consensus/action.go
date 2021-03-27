@@ -123,7 +123,7 @@ func (op *operator) startCalculationsAsLeader() {
 			BlockIndex: op.stateTx.MustState().BlockIndex(),
 		},
 		FeeDestination: rewardAddress,
-		Balances:       op.balances,
+		Inputs:         op.balances,
 		RequestIds:     reqIds,
 	})
 

@@ -5,6 +5,8 @@ package chain
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/txstream"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -17,8 +19,7 @@ import (
 
 type Chain interface {
 	ID() *coretypes.ChainID
-	Color() *ledgerstate.Color
-	Address() address.Address
+	Address() ledgerstate.Address
 	Size() uint16
 	Quorum() uint16
 	OwnPeerIndex() uint16
@@ -26,18 +27,20 @@ type Chain interface {
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
 	SendMsgToCommitteePeers(msgType byte, msgData []byte, ts int64) uint16
 	IsAlivePeer(peerIndex uint16) bool
-	ReceiveMessage(msg interface{})
-	InitTestRound()
 	HasQuorum() bool
 	PeerStatus() []*PeerStatus
 	BlobCache() coretypes.BlobCache
+	// TODO distinguish external messages from internal and peer messages
+	ReceiveMessage(msg interface{})
+	ReceiveTransactionMessage(msg *txstream.MsgTransaction)
+	ReceiveInclusionStateMessage(msg *txstream.MsgTxInclusionState)
 	//
 	SetReadyStateManager()
 	SetReadyConsensus()
 	Dismiss()
 	IsDismissed() bool
 	// requests
-	GetRequestProcessingStatus(*coretypes.RequestID) RequestProcessingStatus
+	GetRequestProcessingStatus(id *coretypes.RequestID) RequestProcessingStatus
 	EventRequestProcessed() *events.Event
 	// chain processors
 	Processors() *processors.ProcessorCache
@@ -68,7 +71,7 @@ type StateManager interface {
 	EventGetBlockMsg(msg *GetBlockMsg)
 	EventBlockHeaderMsg(msg *BlockHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)
-	EventStateTransactionMsg(msg *StateTransactionMsg)
+	EventStateTransactionMsg(msg *txstream.MsgTransaction)
 	EventPendingBlockMsg(msg PendingBlockMsg)
 	EventTimerMsg(msg TimerTick)
 	Close()
@@ -83,7 +86,7 @@ type Operator interface {
 	EventResultCalculated(msg *VMResultMsg)
 	EventSignedHashMsg(*SignedHashMsg)
 	EventNotifyFinalResultPostedMsg(*NotifyFinalResultPostedMsg)
-	EventTransactionInclusionLevelMsg(msg *TransactionInclusionLevelMsg)
+	EventTransactionInclusionLevelMsg(msg *txstream.MsgTxInclusionState)
 	EventTimerMsg(TimerTick)
 	Close()
 	//

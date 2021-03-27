@@ -1,12 +1,12 @@
 package chains
 
 import (
+	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"sync"
 
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -17,19 +17,15 @@ import (
 )
 
 type Chains struct {
-	mutex             sync.RWMutex
-	log               *logger.Logger
-	allChains         map[[ledgerstate.AddressLength]byte]chain.Chain
-	chMessages        chan interface{}
-	processMsgClosure *events.Closure
-	nodeConn          *txstream.Client
+	mutex     sync.RWMutex
+	log       *logger.Logger
+	allChains map[[ledgerstate.AddressLength]byte]chain.Chain
 }
 
-func New(log *logger.Logger, conn *txstream.Client) *Chains {
+func New(log *logger.Logger) *Chains {
 	ret := &Chains{
 		log:       log,
 		allChains: make(map[[ledgerstate.AddressLength]byte]chain.Chain),
-		nodeConn:  conn,
 	}
 	return ret
 }
@@ -45,31 +41,8 @@ func (c *Chains) Dismiss() {
 }
 
 func (c *Chains) Attach() {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	c.chMessages = make(chan interface{}, 100)
-	c.processMsgClosure = events.NewClosure(func(msg interface{}) {
-		c.chMessages <- msg
-	})
-	go func() {
-		for msg := range c.chMessages {
-			c.dispatchMsg(msg)
-		}
-	}()
-	c.nodeConn.Events.MessageReceived.Attach(c.processMsgClosure)
-}
-
-func (c *Chains) Detach() {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	c.nodeConn.Events.MessageReceived.Detach(c.processMsgClosure)
-	if c.chMessages != nil {
-		close(c.chMessages)
-	}
-	c.processMsgClosure = nil
-	c.chMessages = nil
+	nodeconn.NodeConnection().Events.TransactionReceived.Attach(events.NewClosure(c.dispatchMsgTransaction))
+	nodeconn.NodeConnection().Events.InclusionStateReceived.Attach(events.NewClosure(c.dispatchMsgInclusionState))
 }
 
 func (c *Chains) ActivateAllFromRegistry() error {
@@ -114,7 +87,7 @@ func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
 	// create new chain object
 	defaultRegistry := registry.DefaultRegistry()
 	ch := chain.New(chr, c.log, peering.DefaultNetworkProvider(), defaultRegistry, defaultRegistry, func() {
-		c.nodeConn.Subscribe(chr.ChainID.AliasAddress)
+		nodeconn.NodeConnection().Subscribe(chr.ChainID.AliasAddress)
 	})
 	if ch != nil {
 		c.allChains[chainArr] = ch
@@ -136,7 +109,7 @@ func (c *Chains) Deactivate(chr *registry_pkg.ChainRecord) error {
 		return nil
 	}
 	ch.Dismiss()
-	c.nodeConn.Unsubscribe(chr.ChainID.AliasAddress)
+	nodeconn.NodeConnection().Unsubscribe(chr.ChainID.AliasAddress)
 	c.log.Debugf("chain has been deactivated: %s", chr.ChainID.String())
 	return nil
 }
@@ -151,7 +124,7 @@ func (c *Chains) Get(chainID *coretypes.ChainID) chain.Chain {
 	ret, ok := c.allChains[addrArr]
 	if ok && ret.IsDismissed() {
 		delete(c.allChains, addrArr)
-		c.nodeConn.Unsubscribe(chainID.AliasAddress)
+		nodeconn.NodeConnection().Unsubscribe(chainID.AliasAddress)
 		return nil
 	}
 	return ret

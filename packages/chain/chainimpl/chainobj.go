@@ -35,7 +35,6 @@ type chainObj struct {
 	//
 	chainID         coretypes.ChainID
 	procset         *processors.ProcessorCache
-	color           ledgerstate.Color
 	peers           peering.GroupProvider
 	size            uint16
 	quorum          uint16
@@ -53,11 +52,7 @@ type chainObj struct {
 	blobProvider          coretypes.BlobCache
 }
 
-func requestIDCaller(handler interface{}, params ...interface{}) {
-	handler.(func(interface{}))(params[0])
-}
-
-func newCommitteeObj(
+func newChainObj(
 	chr *registry.ChainRecord,
 	log *logger.Logger,
 	netProvider peering.NetworkProvider,
@@ -66,31 +61,36 @@ func newCommitteeObj(
 	onActivation func(),
 ) chain.Chain {
 	var err error
-	log.Debugw("creating committee", "addr", chr.ChainID.String())
+	log.Debugf("creating chain: %s", chr)
 
-	addr := address.Address(chr.ChainID)
-	if util.ContainsDuplicates(chr.CommitteeNodes) {
-		log.Errorf("can't create chain object for %s: chain record contains duplicate node addresses. Chain nodes: %+v",
-			addr.String(), chr.CommitteeNodes)
+	// TODO temporary. Committee address must come from chain transaction
+	cmtRec, err := registry.CommitteeRecordFromRegistry(chr.StateAddressTmp)
+	if err != nil || cmtRec == nil {
+		log.Errorf("failed to lead committee record for address %s. err = %v", chr.StateAddressTmp, err)
 		return nil
 	}
-	dkshare, err := dksProvider.LoadDKShare(&addr)
+	if util.ContainsDuplicates(cmtRec.CommitteeNodes) {
+		log.Errorf("can't create chain object for %s: committee record contains duplicate node addresses: %+v",
+			chr.StateAddressTmp, cmtRec.CommitteeNodes)
+		return nil
+	}
+	dkshare, err := dksProvider.LoadDKShare(cmtRec.Address)
 	if err != nil {
 		log.Error(err)
 		return nil
 	}
-	if dkshare.Index == nil || !iAmInTheCommittee(chr.CommitteeNodes, dkshare.N, *dkshare.Index, netProvider) {
+	if dkshare.Index == nil || !iAmInTheCommittee(cmtRec.CommitteeNodes, dkshare.N, *dkshare.Index, netProvider) {
 		log.Errorf(
 			"chain record inconsistency: the own node %s is not in the committee for %s: %+v",
-			netProvider.Self().NetID(), addr.String(), chr.CommitteeNodes,
+			netProvider.Self().NetID(), cmtRec.Address, cmtRec.CommitteeNodes,
 		)
 		return nil
 	}
 	var peers peering.GroupProvider
-	if peers, err = netProvider.Group(chr.CommitteeNodes); err != nil {
+	if peers, err = netProvider.Group(cmtRec.CommitteeNodes); err != nil {
 		log.Errorf(
 			"node %s failed to setup committee communication with %+v, reason=%+v",
-			netProvider.Self().NetID(), chr.CommitteeNodes, err,
+			netProvider.Self().NetID(), cmtRec.CommitteeNodes, err,
 		)
 		return nil
 	}
@@ -99,7 +99,6 @@ func newCommitteeObj(
 		procset:      processors.MustNew(),
 		chMsg:        make(chan interface{}, 100),
 		chainID:      chr.ChainID,
-		color:        chr.Color,
 		peers:        peers,
 		onActivation: onActivation,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {

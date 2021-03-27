@@ -86,7 +86,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	}
 
 	// ----------- request owner address' outputs from the ledger
-	allOuts, err := par.Node.GetConfirmedAccountOutputs(originatorAddr)
+	allOuts, err := par.Node.GetConfirmedOutputs(originatorAddr)
 
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
@@ -148,9 +148,9 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	// ============= create root init request for the root contract
 
 	// ------------- get UTXOs of the owner
-	allOuts, err = par.Node.GetConfirmedAccountOutputs(originatorAddr)
+	allOuts, err = par.Node.GetConfirmedOutputs(originatorAddr)
 	if err != nil {
-		fmt.Fprintf(textout, "GetConfirmedAccountOutputs.. FAILED: %v\n", err)
+		fmt.Fprintf(textout, "GetConfirmedOutputs.. FAILED: %v\n", err)
 		return nil, nil, err
 	}
 

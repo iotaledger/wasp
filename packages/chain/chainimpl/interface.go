@@ -5,6 +5,8 @@ package chainimpl
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/txstream"
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
@@ -18,7 +20,7 @@ import (
 )
 
 func init() {
-	chain.RegisterChainConstructor(newCommitteeObj)
+	chain.RegisterChainConstructor(newChainObj)
 }
 
 func (c *chainObj) IsOpenQueue() bool {
@@ -141,12 +143,8 @@ func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
 }
 
-func (c *chainObj) Color() *ledgerstate.Color {
-	return &c.color
-}
-
-func (c *chainObj) Address() address.Address {
-	return address.Address(c.chainID)
+func (c *chainObj) Address() ledgerstate.Address {
+	return c.chainID.AsAddress()
 }
 
 func (c *chainObj) Size() uint16 {
@@ -169,6 +167,14 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 			}()
 		}
 	}
+}
+
+func (c *chainObj) ReceiveTransactionMessage(msg *txstream.MsgTransaction) {
+	c.ReceiveMessage(msg) // TODO special entry point
+}
+
+func (c *chainObj) ReceiveInclusionStateMessage(msg *txstream.MsgTxInclusionState) {
+	c.ReceiveMessage(msg) // TODO special entry point
 }
 
 // SendMsg sends message to peer by index. It can be both committee peer or access peer.
@@ -299,7 +305,8 @@ func (c *chainObj) GetRequestProcessingStatus(reqID *coretypes.RequestID) chain.
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	processed, err := state.IsRequestCompleted(c.ID(), reqID)
+	oid := ledgerstate.OutputID(*reqID)
+	processed, err := state.IsRequestCompleted(c.ID(), &oid)
 	if err != nil || !processed {
 		return chain.RequestProcessingStatusUnknown
 	}

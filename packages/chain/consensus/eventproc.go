@@ -5,6 +5,7 @@ package consensus
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/txstream"
 	"strings"
 	"time"
 
@@ -54,7 +55,7 @@ func (op *operator) eventBalancesMsg(reqMsg chain.BalancesMsg) {
 	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", txutil.BalancesToString(reqMsg.Balances))
 
 	// TODO here redundant. Should be checked in the dispatcher by tx.Properties (?)
-	//if err := op.checkChainToken(reqMsg.Balances); err != nil {
+	//if err := op.checkChainToken(reqMsg.Inputs); err != nil {
 	//	op.log.Debugf("EventBalancesMsg: balances not included: %v", err)
 	//	return
 	//}
@@ -168,7 +169,7 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 	op.runCalculationsAsync(runCalculationsParams{
 		requests:        reqs,
 		timestamp:       msg.Timestamp,
-		balances:        msg.Balances,
+		balances:        msg.Inputs,
 		accrueFeesTo:    msg.FeeDestination,
 		leaderPeerIndex: msg.SenderIndex,
 	})
@@ -283,12 +284,12 @@ func (op *operator) eventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResult
 }
 
 // EventTransactionInclusionLevelMsg goshimmer send information about transaction
-func (op *operator) EventTransactionInclusionLevelMsg(msg *chain.TransactionInclusionLevelMsg) {
+func (op *operator) EventTransactionInclusionLevelMsg(msg *txstream.MsgTxInclusionState) {
 	op.eventTransactionInclusionLevelMsgCh <- msg
 }
 
 // eventTransactionInclusionLevelMsg intrenal handler
-func (op *operator) eventTransactionInclusionLevelMsg(msg *chain.TransactionInclusionLevelMsg) {
+func (op *operator) eventTransactionInclusionLevelMsg(msg *txstream.MsgTxInclusionState) {
 	op.log.Debugw("EventTransactionInclusionLevelMsg",
 		"txid", msg.TxId.String(),
 		"level", waspconn.InclusionLevelText(msg.Level),

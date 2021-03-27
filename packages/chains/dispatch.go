@@ -1,30 +1,46 @@
 package chains
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/txstream"
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
-func (c *Chains) dispatchMsg(msg interface{}) {
-	switch msgt := msg.(type) {
-	case *waspconn.WaspFromNodeTransactionMsg:
-		chainID := coretypes.NewChainID(msgt.ChainAddress)
-		chain := c.Get(chainID)
-		if chain == nil {
-			return
-		}
-		c.log.Debugw("dispatch transaction",
-			"txid", msgt.Tx.ID().String(),
-			"chainid", chainID.String(),
-		)
-		chain.ReceiveMessage(msgt)
-
-	case *waspconn.WaspFromNodeTxInclusionStateMsg:
-		chainID := coretypes.NewChainID(msgt.ChainAddress)
-		ch := c.Get(chainID)
-		if ch == nil {
-			return
-		}
-		ch.ReceiveMessage(msgt)
+func (c *Chains) dispatchMsgTransaction(msg *txstream.MsgTransaction) {
+	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
+	if !ok {
+		c.log.Warnf("chains: cannot dispatch transaction message to non-alias address")
+		return
 	}
-	c.log.Errorf("wrong message type")
+	chainID := coretypes.NewChainID(aliasAddr)
+	chain := c.Get(chainID)
+	if chain == nil {
+		// not interested in this chainID
+		return
+	}
+	c.log.Debugw("dispatch transaction",
+		"txid", msg.Tx.ID().Base58(),
+		"chainid", chainID.String(),
+	)
+	chain.ReceiveTransactionMessage(msg)
+}
+
+func (c *Chains) dispatchMsgInclusionState(msg *txstream.MsgTxInclusionState) {
+	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
+	if !ok {
+		c.log.Warnf("chains: cannot dispatch inclusion state message to non-alias address")
+		return
+	}
+	chainID := coretypes.NewChainID(aliasAddr)
+	chain := c.Get(chainID)
+	if chain == nil {
+		// not interested in this chainID
+		return
+	}
+	c.log.Debugw("dispatch transaction",
+		"txid", msg.TxID.Base58(),
+		"chainid", chainID.String(),
+		"inclusion", msg.State.String(),
+	)
+	chain.ReceiveInclusionStateMessage(msg)
 }

@@ -7,15 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
-type StateTransactionMsg struct {
-	*sctransaction_old.TransactionEssence
-}
-
-type TransactionInclusionLevelMsg struct {
-	TxId  *valuetransaction.ID
-	Level byte
-}
-
 type BalancesMsg struct {
 	Balances map[valuetransaction.ID][]*balance.Balance
 }

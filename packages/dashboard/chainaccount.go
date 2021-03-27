@@ -69,7 +69,7 @@ const tplChainAccount = `
 {{define "title"}}On-chain account details{{end}}
 
 {{define "body"}}
-	{{if .Balances}}
+	{{if .Inputs}}
 		<div class="card fluid">
 			<h2 class="section">On-chain account</h2>
 			<dl>
@@ -77,8 +77,8 @@ const tplChainAccount = `
 			</dl>
 		</div>
 		<div class="card fluid">
-			<h3 class="section">Balances</h3>
-			{{ template "balances" .Balances }}
+			<h3 class="section">Inputs</h3>
+			{{ template "balances" .Inputs }}
 		</div>
 		{{ template "ws" .ChainID }}
 	{{else}}

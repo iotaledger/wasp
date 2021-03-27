@@ -22,12 +22,18 @@ const dialTimeout = 1 * time.Second
 var (
 	log *logger.Logger
 
-	NodeConn *txstream.Client
-	Ready    = ready.New()
+	nodeConn    *txstream.Client
+	initialized = ready.New("NodeConn")
 )
 
+// Init initializes the plugin
 func Init() *node.Plugin {
 	return node.NewPlugin(PluginName, node.Enabled, configure, run)
+}
+
+func NodeConnection() *txstream.Client {
+	initialized.MustWait(5 * time.Second)
+	return nodeConn
 }
 
 func configure(_ *node.Plugin) {
@@ -43,8 +49,8 @@ func run(_ *node.Plugin) {
 			return addr, conn, err
 		})
 
-		NodeConn := txstream.New(peering.DefaultNetworkProvider().Self().NetID(), log, dial)
-		defer NodeConn.Close()
+		nodeConn = txstream.New(peering.DefaultNetworkProvider().Self().NetID(), log, dial)
+		defer nodeConn.Close()
 
 		<-shutdownSignal
 
@@ -53,5 +59,5 @@ func run(_ *node.Plugin) {
 	if err != nil {
 		log.Errorf("failed to start NodeConn worker")
 	}
-	Ready.SetReady()
+	initialized.SetReady()
 }

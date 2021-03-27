@@ -14,10 +14,10 @@ import (
 	"github.com/iotaledger/wasp/plugins/globals"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"github.com/iotaledger/wasp/plugins/logger"
+	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/publisher"
 	"github.com/iotaledger/wasp/plugins/registry"
-	"github.com/iotaledger/wasp/plugins/testplugins/nodeping"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/plugins/webapi"
 	"go.dedis.ch/kyber/v3/pairing"
@@ -48,12 +48,7 @@ func main() {
 		globals.Init(),
 	)
 
-	testPlugins := node.Plugins(
-		nodeping.Init(),
-	)
-
 	node.Run(
 		plugins,
-		testPlugins,
 	)
 }

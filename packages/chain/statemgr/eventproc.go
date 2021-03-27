@@ -4,6 +4,7 @@
 package statemgr
 
 import (
+	"github.com/iotaledger/goshimmer/packages/txstream"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -138,7 +139,7 @@ func (sm *stateManager) eventStateUpdateMsg(msg *chain.StateUpdateMsg) {
 		}
 	}
 	// the whole block received
-	batch, err := state.NewBlock(sm.syncedBatch.stateUpdates)
+	batch, err := state.NewBlock(sm.syncedBatch.stateUpdates...)
 	if err != nil {
 		sm.log.Errorf("failed to create block: %v", err)
 		sm.syncedBatch = nil
@@ -157,10 +158,10 @@ func (sm *stateManager) eventStateUpdateMsg(msg *chain.StateUpdateMsg) {
 
 // EventStateTransactionMsg triggered whenever new state transaction arrives
 // the state transaction may be confirmed or not
-func (sm *stateManager) EventStateTransactionMsg(msg *chain.StateTransactionMsg) {
+func (sm *stateManager) EventStateTransactionMsg(msg *txstream.MsgTransaction) {
 	sm.eventStateTransactionMsgCh <- msg
 }
-func (sm *stateManager) eventStateTransactionMsg(msg *chain.StateTransactionMsg) {
+func (sm *stateManager) eventStateTransactionMsg(msg *txstream.MsgTransaction) {
 	stateBlock, ok := msg.TransactionEssence.State()
 	if !ok {
 		// should not happen: must have state block

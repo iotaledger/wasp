@@ -458,9 +458,9 @@ func (cluster *Cluster) PostTransaction(tx *sctransaction_old.TransactionEssence
 }
 
 func (cluster *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpected uint64, expect map[ledgerstate.Color]uint64, comment ...string) bool {
-	allOuts, err := cluster.Level1Client().GetConfirmedAccountOutputs(addr)
+	allOuts, err := cluster.Level1Client().GetConfirmedOutputs(addr)
 	if err != nil {
-		fmt.Printf("[cluster] GetConfirmedAccountOutputs error: %v\n", err)
+		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
 		return false
 	}
 	byColor, total := txutil.OutputBalancesByColor(allOuts)
@@ -479,7 +479,7 @@ func (cluster *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExp
 	if len(comment) > 0 {
 		cmt = " (" + comment[0] + ")"
 	}
-	fmt.Printf("[cluster] Balances of the address %s%s\n      Total tokens: %d %s\n%s\n",
+	fmt.Printf("[cluster] Inputs of the address %s%s\n      Total tokens: %d %s\n%s\n",
 		addr.String(), cmt, total, totalExpectedStr, dumpStr)
 
 	if !assertionOk {

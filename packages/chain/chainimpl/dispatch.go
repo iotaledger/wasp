@@ -5,6 +5,7 @@ package chainimpl
 
 import (
 	"bytes"
+	"github.com/iotaledger/goshimmer/packages/txstream"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -16,7 +17,6 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 	}
 
 	switch msgt := msg.(type) {
-
 	case *peering.PeerMessage:
 		// receive a message from peer
 		c.processPeerMessage(msgt)
@@ -33,11 +33,11 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 	case chain.PendingBlockMsg:
 		c.stateMgr.EventPendingBlockMsg(msgt)
 
-	case *chain.StateTransactionMsg:
+	case *txstream.MsgTransaction:
 		// receive state transaction message
 		c.stateMgr.EventStateTransactionMsg(msgt)
 
-	case *chain.TransactionInclusionLevelMsg:
+	case *txstream.MsgTxInclusionState:
 		if c.operator != nil {
 			c.operator.EventTransactionInclusionLevelMsg(msgt)
 		}
@@ -180,16 +180,6 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 
 		msgt.SenderIndex = msg.SenderIndex
 		c.stateMgr.EventStateUpdateMsg(msgt)
-
-	case chain.MsgTestTrace:
-		msgt := &chain.TestTraceMsg{}
-		if err := msgt.Read(rdr); err != nil {
-			c.log.Error(err)
-			return
-		}
-
-		msgt.SenderIndex = msg.SenderIndex
-		c.testTrace(msgt)
 
 	default:
 		c.log.Errorf("processPeerMessage: wrong msg type")

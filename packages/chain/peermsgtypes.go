@@ -4,6 +4,7 @@
 package chain
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -22,7 +23,6 @@ const (
 	MsgGetBatch                = 5 + peering.FirstUserMsgCode
 	MsgStateUpdate             = 6 + peering.FirstUserMsgCode
 	MsgBatchHeader             = 7 + peering.FirstUserMsgCode
-	MsgTestTrace               = 8 + peering.FirstUserMsgCode
 )
 
 type TimerTick int
@@ -56,7 +56,7 @@ type NotifyReqMsg struct {
 // Final signature is sent to prevent possibility for a leader node to lie (is it necessary)
 type NotifyFinalResultPostedMsg struct {
 	PeerMsgHeader
-	TxId valuetransaction.ID
+	TxId ledgerstate.TransactionID
 }
 
 // message is sent by the leader to other peers to initiate request processing
@@ -71,7 +71,7 @@ type StartProcessingBatchMsg struct {
 	// reward address
 	FeeDestination coretypes.AgentID
 	// balances/outputs
-	Balances map[valuetransaction.ID][]*balance.Balance
+	Inputs []ledgerstate.Output
 }
 
 // after calculations the result peer responds to the start processing msg
@@ -100,7 +100,7 @@ type GetBlockMsg struct {
 type BlockHeaderMsg struct {
 	PeerMsgHeader
 	Size                uint16
-	AnchorTransactionID valuetransaction.ID
+	AnchorTransactionID ledgerstate.TransactionID
 }
 
 // state update sent to peer. Used in sync process, as part of batch
@@ -112,15 +112,6 @@ type StateUpdateMsg struct {
 	IndexInTheBlock uint16
 }
 
-// used for testing of the communications
-type TestTraceMsg struct {
-	PeerMsgHeader
-	InitTime      int64
-	InitPeerIndex uint16
-	Sequence      []uint16
-	NumHops       uint16
-}
-
 // state manager notifies consensus operator about changed state
 // only sent internally within committee
 // state transition is always from state N to state N+1
@@ -128,7 +119,7 @@ type StateTransitionMsg struct {
 	// new variable state
 	VariableState state.VirtualState
 	// corresponding state transaction
-	AnchorTransaction *sctransaction_old.TransactionEssence
+	AnchorTransaction *ledgerstate.TransactionEssence
 	// processed requests
 	RequestIDs []*coretypes.RequestID
 	// is the state index last seen
@@ -144,7 +135,7 @@ type PendingBlockMsg struct {
 // message is sent to the consensus manager after it receives state transaction
 // which is valid but not confirmed yet.
 type StateTransactionEvidenced struct {
-	TxId      valuetransaction.ID
+	TxId      ledgerstate.TransactionID
 	StateHash hashing.HashValue
 }
 

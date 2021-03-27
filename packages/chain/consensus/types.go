@@ -4,6 +4,7 @@
 package consensus
 
 import (
+	"github.com/iotaledger/goshimmer/packages/txstream"
 	"sync"
 	"time"
 
@@ -65,7 +66,7 @@ type operator struct {
 	eventResultCalculatedCh             chan *chain.VMResultMsg
 	eventSignedHashMsgCh                chan *chain.SignedHashMsg
 	eventNotifyFinalResultPostedMsgCh   chan *chain.NotifyFinalResultPostedMsg
-	eventTransactionInclusionLevelMsgCh chan *chain.TransactionInclusionLevelMsg
+	eventTransactionInclusionLevelMsgCh chan *txstream.MsgTxInclusionState
 	eventTimerMsgCh                     chan chain.TimerTick
 	closeCh                             chan bool
 }

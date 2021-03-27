@@ -6,6 +6,7 @@
 package statemgr
 
 import (
+	"github.com/iotaledger/goshimmer/packages/txstream"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -69,7 +70,7 @@ type stateManager struct {
 	eventGetBlockMsgCh           chan *chain.GetBlockMsg
 	eventBlockHeaderMsgCh        chan *chain.BlockHeaderMsg
 	eventStateUpdateMsgCh        chan *chain.StateUpdateMsg
-	eventStateTransactionMsgCh   chan *chain.StateTransactionMsg
+	eventStateTransactionMsgCh   chan *txstream.MsgTransaction
 	eventPendingBlockMsgCh       chan chain.PendingBlockMsg
 	eventTimerMsgCh              chan chain.TimerTick
 	closeCh                      chan bool
