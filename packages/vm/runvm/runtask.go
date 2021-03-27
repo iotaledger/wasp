@@ -1,14 +1,16 @@
 package runvm
 
 import (
-	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
+	"golang.org/x/xerrors"
 )
 
 // MustRunComputationsAsync runs computations for the batch of requests in the background
@@ -41,12 +43,13 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	var lastResult dict.Dict
 	var lastErr error
 	var lastStateUpdate state.StateUpdate
+	var lastTotalAssets *ledgerstate.ColoredBalances
 
 	// loop over the batch of requests and run each request on the VM.
 	// the result accumulates in the VMContext and in the list of stateUpdates
 	for i, req := range task.Requests {
 		vmctx.RunTheRequest(req, i)
-		lastStateUpdate, lastResult, lastErr = vmctx.GetResult()
+		lastStateUpdate, lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
 
 		stateUpdates = append(stateUpdates, lastStateUpdate)
 	}
@@ -54,7 +57,7 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	// create block from state updates.
 	task.ResultBlock, err = state.NewBlock(stateUpdates...)
 	if err != nil {
-		task.OnFinish(nil, nil, fmt.Errorf("RunVM.NewBlock: %v", err))
+		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.NewBlock: %v", err))
 		return
 	}
 	task.ResultBlock.WithBlockIndex(task.VirtualState.BlockIndex() + 1)
@@ -62,16 +65,26 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	// calculate resulting state hash
 	vsClone := task.VirtualState.Clone()
 	if err = vsClone.ApplyBlock(task.ResultBlock); err != nil {
-		task.OnFinish(nil, nil, fmt.Errorf("RunVM.ApplyBlock: %v", err))
+		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.ApplyBlock: %v", err))
 		return
 	}
 
 	task.ResultTransaction, err = vmctx.BuildTransactionEssence(vsClone.Hash())
 	if err != nil {
-		task.OnFinish(nil, nil, fmt.Errorf("RunVM.BuildTransactionEssence: %v", err))
+		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return
 	}
-	// Note: can't take tx ID!!
+	chainOutput, err := utxoutil.GetSingleChainedAliasOutput(task.ResultTransaction)
+	if err != nil {
+		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
+		return
+	}
+	diffAssets := util.DiffColoredBalances(chainOutput.Balances(), lastTotalAssets)
+	if iotas, ok := diffAssets[ledgerstate.ColorIOTA]; !ok || iotas != int64(ledgerstate.DustThresholdAliasOutputIOTA) {
+		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: inconsistency between L1 and L2 ledgers"))
+		return
+	}
+
 	task.Log.Debugw("runTask OUT",
 		"batch size", task.ResultBlock.Size(),
 		"block index", task.ResultBlock.StateIndex(),

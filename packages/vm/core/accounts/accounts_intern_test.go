@@ -21,7 +21,7 @@ func TestBasic(t *testing.T) {
 var color = ledgerstate.Color(hashing.HashStrings("dummy string"))
 
 func checkLedger(t *testing.T, state dict.Dict, cp string) *ledgerstate.ColoredBalances {
-	total := getTotalAssetsIntern(state)
+	total := GetTotalAssets(state)
 	t.Logf("checkpoint '%s.%s':\n%s", curTest, cp, total.String())
 	require.NotPanics(t, func() {
 		mustCheckLedger(state, cp)

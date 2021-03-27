@@ -177,7 +177,7 @@ func GetAccountBalances(state kv.KVStoreReader, agentID *coretypes.AgentID) (map
 	return getAccountBalances(account), true
 }
 
-func getTotalAssetsIntern(state kv.KVStoreReader) *ledgerstate.ColoredBalances {
+func GetTotalAssets(state kv.KVStoreReader) *ledgerstate.ColoredBalances {
 	return ledgerstate.NewColoredBalances(getAccountBalances(getTotalAssetsAccountR(state)))
 }
 
@@ -197,7 +197,7 @@ func calcTotalAssets(state kv.KVStoreReader) *ledgerstate.ColoredBalances {
 }
 
 func mustCheckLedger(state kv.KVStore, checkpoint string) {
-	a := getTotalAssetsIntern(state)
+	a := GetTotalAssets(state)
 	c := calcTotalAssets(state)
 	if !coretypes.EqualColoredBalances(a, c) {
 		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'", checkpoint))

@@ -44,6 +44,13 @@ func (vmctx *VMContext) moveBetweenAccounts(fromAgentID, toAgentID *coretypes.Ag
 	return accounts.MoveBetweenAccounts(vmctx.State(), fromAgentID, toAgentID, transfer)
 }
 
+func (vmctx *VMContext) totalAssets() *ledgerstate.ColoredBalances {
+	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	return accounts.GetTotalAssets(vmctx.State())
+}
+
 func (vmctx *VMContext) findContractByHname(contractHname coretypes.Hname) (*root.ContractRecord, bool) {
 	vmctx.pushCallContext(root.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()

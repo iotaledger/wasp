@@ -16,6 +16,8 @@ import (
 // RunTheRequest processes any request based on the Extended output, even if it
 // doesn't parse correctly as a SC request
 func (vmctx *VMContext) RunTheRequest(req *sctransaction.Request, inputIndex int) {
+	defer vmctx.finalizeRequestCall()
+
 	vmctx.mustSetUpRequestContext(req, inputIndex)
 
 	enoughFees := true
@@ -23,7 +25,6 @@ func (vmctx *VMContext) RunTheRequest(req *sctransaction.Request, inputIndex int
 		vmctx.mustGetBaseValues()
 		enoughFees = vmctx.mustHandleFees()
 	}
-	defer vmctx.finalizeRequestCall()
 
 	if !enoughFees {
 		return
@@ -187,6 +188,7 @@ func (vmctx *VMContext) mustCallFromRequest() {
 
 func (vmctx *VMContext) finalizeRequestCall() {
 	vmctx.mustRequestToEventLog(vmctx.lastError)
+	vmctx.lastTotalAssets = vmctx.totalAssets()
 	vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
 
 	vmctx.log.Debugw("runTheRequest OUT",

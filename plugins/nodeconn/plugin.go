@@ -4,6 +4,8 @@ import (
 	"net"
 	"time"
 
+	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
+
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -20,7 +22,7 @@ const dialTimeout = 1 * time.Second
 var (
 	log *logger.Logger
 
-	NodeConn *client.Client
+	NodeConn *txstream.Client
 	Ready    = ready.New()
 )
 
@@ -35,13 +37,13 @@ func configure(_ *node.Plugin) {
 func run(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 		addr := parameters.GetString(parameters.NodeAddress)
-		dial := client.DialFunc(func() (string, net.Conn, error) {
+		dial := txstream.DialFunc(func() (string, net.Conn, error) {
 			log.Infof("connecting with node at %s", addr)
 			conn, err := net.DialTimeout("tcp", addr, dialTimeout)
 			return addr, conn, err
 		})
 
-		NodeConn := client.New(peering.DefaultNetworkProvider().Self().NetID(), log, dial)
+		NodeConn := txstream.New(peering.DefaultNetworkProvider().Self().NetID(), log, dial)
 		defer NodeConn.Close()
 
 		<-shutdownSignal

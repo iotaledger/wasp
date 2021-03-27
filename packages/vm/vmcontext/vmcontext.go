@@ -34,14 +34,15 @@ type VMContext struct {
 	ownerFee           uint64
 	validatorFee       uint64
 	// request context
-	req            *sctransaction.Request
-	entropy        hashing.HashValue // mutates with each request
-	contractRecord *root.ContractRecord
-	timestamp      int64
-	stateUpdate    state.StateUpdate
-	lastError      error     // mutated
-	lastResult     dict.Dict // mutated. Used only by 'solo'
-	callStack      []*callContext
+	req             *sctransaction.Request
+	entropy         hashing.HashValue // mutates with each request
+	contractRecord  *root.ContractRecord
+	timestamp       int64
+	stateUpdate     state.StateUpdate
+	lastError       error     // mutated
+	lastResult      dict.Dict // mutated. Used only by 'solo'
+	lastTotalAssets *ledgerstate.ColoredBalances
+	callStack       []*callContext
 }
 
 type callContext struct {
@@ -68,11 +69,6 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error
 		timestamp:    task.Timestamp.UnixNano(),
 		callStack:    make([]*callContext, 0),
 	}
-	err = txb.ConsumeAliasInput(task.ChainInput.Address())
-	if err != nil {
-		// chain input must always be present
-		return nil, xerrors.Errorf("MustNewVMContext: can't find chain input %v", err)
-	}
 	stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
 	if err != nil {
 		// chain input must always be present
@@ -84,9 +80,14 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error
 	if ret.virtualState.BlockIndex() != task.ChainInput.GetStateIndex() {
 		return nil, xerrors.New("MustNewVMContext: state index is inconsistent")
 	}
+	err = txb.ConsumeAliasInput(task.ChainInput.Address())
+	if err != nil {
+		// chain input must always be present
+		return nil, xerrors.Errorf("MustNewVMContext: can't find chain input %v", err)
+	}
 	return ret, nil
 }
 
-func (vmctx *VMContext) GetResult() (state.StateUpdate, dict.Dict, error) {
-	return vmctx.stateUpdate, vmctx.lastResult, vmctx.lastError
+func (vmctx *VMContext) GetResult() (state.StateUpdate, dict.Dict, *ledgerstate.ColoredBalances, error) {
+	return vmctx.stateUpdate, vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError
 }
