@@ -215,5 +215,5 @@ func (op *operator) mustStateIndex() uint32 {
 func (op *operator) getFeeDestination() coretypes.AgentID {
 	// TODO
 	// temporary to the chain owner's account
-	return coretypes.NewAgentIDFromContractID(coretypes.NewContractID(*op.chain.ID(), accounts.Interface.Hname()))
+	return *coretypes.NewAgentID(op.chain.ID().AsAddress(), accounts.Interface.Hname())
 }

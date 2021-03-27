@@ -26,7 +26,7 @@ func infoCmd(args []string) {
 
 		addr, _, err := codec.DecodeAddress(info.MustGet(root.VarChainAddress))
 		log.Check(err)
-		log.Printf("Chain Address: %s\n", ledgerstate.Address(addr))
+		log.Printf("Chain Address: %s\n", addr.String())
 
 		description, _, err := codec.DecodeString(info.MustGet(root.VarDescription))
 		log.Check(err)

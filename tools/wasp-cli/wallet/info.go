@@ -19,7 +19,7 @@ func balanceCmd(args []string) {
 	wallet := Load()
 	address := wallet.Address()
 
-	outs, err := config.GoshimmerClient().GetConfirmedOutputs(&address)
+	outs, err := config.GoshimmerClient().GetConfirmedOutputs(address)
 	log.Check(err)
 
 	log.Printf("Address index %d\n", addressIndex)

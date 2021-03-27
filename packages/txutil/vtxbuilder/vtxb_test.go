@@ -1,6 +1,8 @@
 package vtxbuilder
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

@@ -23,7 +23,7 @@ func TestFakeNetwork(t *testing.T) {
 	var netProviders []peering.NetworkProvider = network.NetworkProviders()
 	//
 	// Node "a" listens for chain1 messages.
-	netProviders[0].Attach(&chain1, func(recv *peering.RecvEvent) {
+	netProviders[0].Attach(chain1, func(recv *peering.RecvEvent) {
 		doneCh <- true
 	})
 	//
@@ -31,9 +31,9 @@ func TestFakeNetwork(t *testing.T) {
 	var a, c peering.PeerSender
 	a, _ = netProviders[1].PeerByNetID("a")
 	c, _ = netProviders[1].PeerByNetID("c")
-	a.SendMsg(&peering.PeerMessage{ChainID: chain1, MsgType: 1}) // Will be delivered.
-	a.SendMsg(&peering.PeerMessage{ChainID: chain2, MsgType: 2}) // Will be dropped.
-	c.SendMsg(&peering.PeerMessage{ChainID: chain1, MsgType: 3}) // Will be dropped.
+	a.SendMsg(&peering.PeerMessage{ChainID: *chain1, MsgType: 1}) // Will be delivered.
+	a.SendMsg(&peering.PeerMessage{ChainID: *chain2, MsgType: 2}) // Will be dropped.
+	c.SendMsg(&peering.PeerMessage{ChainID: *chain1, MsgType: 3}) // Will be dropped.
 	//
 	// Wait for the result.
 	select {

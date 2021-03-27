@@ -54,7 +54,7 @@ func TestIncDeployment(t *testing.T) {
 		crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(&rec)))
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
 		//--
 		crBytes = contractRegistry.MustGetAt(incHname.Bytes())
 		require.NotNil(t, crBytes)
@@ -112,7 +112,7 @@ func testNothing(t *testing.T, numRequests int) {
 		crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(&rec)))
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
 		//--
 		crBytes = contractRegistry.MustGetAt(incHname.Bytes())
 		require.NotNil(t, crBytes)
@@ -169,7 +169,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
 		rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(&rec)))
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
 		//--
 		crBytes = contractRegistry.MustGetAt(incHname.Bytes())
 		require.NotNil(t, crBytes)

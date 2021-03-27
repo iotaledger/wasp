@@ -23,7 +23,7 @@ func initDeployFlags(flags *pflag.FlagSet) {
 func deployCmd(args []string) {
 	alias := GetChainAlias()
 
-	chainid, _, _, err := apilib.DeployChain(apilib.CreateChainParams{
+	chainid, _, err := apilib.DeployChain(apilib.CreateChainParams{
 		Node:                  config.GoshimmerClient(),
 		CommitteeApiHosts:     config.CommitteeApi(committee),
 		CommitteePeeringHosts: config.CommitteePeering(committee),

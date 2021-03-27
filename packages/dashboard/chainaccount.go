@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"net/http"
 	"strings"
 
