@@ -113,8 +113,8 @@ func (b *block) Size() uint16 {
 	return uint16(len(b.stateUpdates))
 }
 
-func (b *block) RequestIDs() []ledgerstate.OutputID {
-	ret := make([]ledgerstate.OutputID, b.Size())
+func (b *block) RequestIDs() []coretypes.RequestID {
+	ret := make([]coretypes.RequestID, b.Size())
 	for i, su := range b.stateUpdates {
 		ret[i] = su.RequestID()
 	}

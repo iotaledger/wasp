@@ -96,7 +96,7 @@ func RequestOnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderA
 }
 
 // RequestsOnLedgerFromTransaction creates RequestOnLedger object from transaction and output index
-func RequestsOnLedgerFromTransaction(tx *ledgerstate.Transaction, outputIndex uint16) ([]*RequestOnLedger, error) {
+func RequestsOnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr ledgerstate.Address) ([]*RequestOnLedger, error) {
 	senderAddr, err := utxoutil.GetSingleSender(tx)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,9 @@ func RequestsOnLedgerFromTransaction(tx *ledgerstate.Transaction, outputIndex ui
 	ret := make([]*RequestOnLedger, 0)
 	for _, o := range tx.Essence().Outputs() {
 		if out, ok := o.(*ledgerstate.ExtendedLockedOutput); ok {
-			ret = append(ret, RequestOnLedgerFromOutput(out, senderAddr, mintedAmounts))
+			if out.Address().Equals(targetAddr) {
+				ret = append(ret, RequestOnLedgerFromOutput(out, senderAddr, mintedAmounts))
+			}
 		}
 	}
 	return ret, nil

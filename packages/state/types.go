@@ -2,6 +2,7 @@ package state
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -38,7 +39,7 @@ type VirtualState interface {
 // ResultBlock is completed when it contains one state update for each index
 type StateUpdate interface {
 	// request which resulted in this state update
-	RequestID() ledgerstate.OutputID
+	RequestID() coretypes.RequestID
 	Timestamp() int64
 	WithTimestamp(int64) StateUpdate
 	// the payload of variables/values
@@ -58,7 +59,7 @@ type Block interface {
 	WithStateTransaction(ledgerstate.TransactionID) Block
 	Timestamp() int64
 	Size() uint16
-	RequestIDs() []ledgerstate.OutputID
+	RequestIDs() []coretypes.RequestID
 	EssenceHash() hashing.HashValue // except state transaction id
 	String() string
 	Write(io.Writer) error

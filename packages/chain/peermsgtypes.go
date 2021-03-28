@@ -67,11 +67,9 @@ type StartProcessingBatchMsg struct {
 	// timestamp of the message. Field is set upon receive the message to sender's timestamp
 	Timestamp int64
 	// batch of request ids
-	RequestIds []coretypes.RequestID
+	RequestIDs []coretypes.RequestID
 	// reward address
 	FeeDestination coretypes.AgentID
-	// balances/outputs
-	Inputs []ledgerstate.Output
 }
 
 // after calculations the result peer responds to the start processing msg
@@ -119,7 +117,7 @@ type StateTransitionMsg struct {
 	// new variable state
 	VariableState state.VirtualState
 	// corresponding state transaction
-	AnchorTransaction *ledgerstate.TransactionEssence
+	ChainOutput *ledgerstate.AliasOutput
 	// processed requests
 	RequestIDs []*coretypes.RequestID
 	// is the state index last seen
@@ -143,4 +141,9 @@ type StateTransactionEvidenced struct {
 type VMResultMsg struct {
 	Task   *vm.VMTask
 	Leader uint16
+}
+
+type InclusionStateMsg struct {
+	TxID  ledgerstate.TransactionID
+	State ledgerstate.InclusionState
 }

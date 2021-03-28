@@ -22,7 +22,7 @@ func (c *Chains) dispatchMsgTransaction(msg *txstream.MsgTransaction) {
 		"txid", msg.Tx.ID().Base58(),
 		"chainid", chainID.String(),
 	)
-	chain.ReceiveTransactionMessage(msg)
+	chain.ReceiveTransaction(msg.Tx)
 }
 
 func (c *Chains) dispatchMsgInclusionState(msg *txstream.MsgTxInclusionState) {
@@ -42,5 +42,5 @@ func (c *Chains) dispatchMsgInclusionState(msg *txstream.MsgTxInclusionState) {
 		"chainid", chainID.String(),
 		"inclusion", msg.State.String(),
 	)
-	chain.ReceiveInclusionStateMessage(msg)
+	chain.ReceiveInclusionState(msg.TxID, msg.State)
 }

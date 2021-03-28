@@ -4,7 +4,8 @@
 package chain
 
 import (
-	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"golang.org/x/xerrors"
 	"io"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -79,8 +80,8 @@ func (msg *NotifyFinalResultPostedMsg) Read(r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	if err := util.ReadTransactionId(r, &msg.TxId); err != nil {
-		return err
+	if n, err := r.Read(msg.TxId[:]); err != nil || n != ledgerstate.TransactionIDLength {
+		return xerrors.Errorf("failed to read transaction id: err=%v", err)
 	}
 	return nil
 }
@@ -89,18 +90,15 @@ func (msg *StartProcessingBatchMsg) Write(w io.Writer) error {
 	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
 		return err
 	}
-	if err := util.WriteUint16(w, uint16(len(msg.RequestIds))); err != nil {
+	if err := util.WriteUint16(w, uint16(len(msg.RequestIDs))); err != nil {
 		return err
 	}
-	for i := range msg.RequestIds {
-		if _, err := w.Write(msg.RequestIds[i][:]); err != nil {
+	for i := range msg.RequestIDs {
+		if _, err := w.Write(msg.RequestIDs[i][:]); err != nil {
 			return err
 		}
 	}
-	if _, err := w.Write(msg.FeeDestination[:]); err != nil {
-		return err
-	}
-	if err := waspconn.WriteBalances(w, msg.Inputs); err != nil {
+	if err := msg.FeeDestination.Write(w); err != nil {
 		return err
 	}
 	return nil
@@ -114,17 +112,13 @@ func (msg *StartProcessingBatchMsg) Read(r io.Reader) error {
 	if err := util.ReadUint16(r, &size); err != nil {
 		return err
 	}
-	msg.RequestIds = make([]coretypes.RequestID, size)
-	for i := range msg.RequestIds {
-		if err := msg.RequestIds[i].Read(r); err != nil {
+	msg.RequestIDs = make([]coretypes.RequestID, size)
+	for i := range msg.RequestIDs {
+		if n, err := r.Read(msg.RequestIDs[i][:]); err != nil || n != ledgerstate.OutputIDLength {
 			return err
 		}
 	}
-	if err := coretypes.ReadAgentID(r, &msg.FeeDestination); err != nil {
-		return err
-	}
-	var err error
-	if msg.Inputs, err = waspconn.ReadBalances(r); err != nil {
+	if err := msg.FeeDestination.Read(r); err != nil {
 		return err
 	}
 	return nil
@@ -223,64 +217,12 @@ func (msg *StateUpdateMsg) Read(r io.Reader) error {
 	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
 		return err
 	}
-	msg.StateUpdate = state.NewStateUpdate(nil)
+	msg.StateUpdate = state.NewStateUpdate(ledgerstate.OutputID{})
 	if err := msg.StateUpdate.Read(r); err != nil {
 		return err
 	}
 	if err := util.ReadUint16(r, &msg.IndexInTheBlock); err != nil {
 		return err
-	}
-	return nil
-}
-
-func (msg *TestTraceMsg) Write(w io.Writer) error {
-	if !util.ValidPermutation(msg.Sequence) {
-		panic(fmt.Sprintf("Write: wrong permutation %+v", msg.Sequence))
-	}
-	if err := util.WriteUint64(w, uint64(msg.InitTime)); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, msg.InitPeerIndex); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, uint16(len(msg.Sequence))); err != nil {
-		return err
-	}
-	for _, idx := range msg.Sequence {
-		if err := util.WriteUint16(w, idx); err != nil {
-			return err
-		}
-	}
-	if err := util.WriteUint16(w, msg.NumHops); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (msg *TestTraceMsg) Read(r io.Reader) error {
-	var initTime uint64
-	if err := util.ReadUint64(r, &initTime); err != nil {
-		return err
-	}
-	msg.InitTime = int64(initTime)
-	if err := util.ReadUint16(r, &msg.InitPeerIndex); err != nil {
-		return err
-	}
-	var size uint16
-	if err := util.ReadUint16(r, &size); err != nil {
-		return err
-	}
-	msg.Sequence = make([]uint16, size)
-	for i := range msg.Sequence {
-		if err := util.ReadUint16(r, &msg.Sequence[i]); err != nil {
-			return err
-		}
-	}
-	if err := util.ReadUint16(r, &msg.NumHops); err != nil {
-		return err
-	}
-	if !util.ValidPermutation(msg.Sequence) {
-		panic(fmt.Sprintf("Read: wrong permutation %+v", msg.Sequence))
 	}
 	return nil
 }

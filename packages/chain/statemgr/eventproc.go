@@ -4,8 +4,9 @@
 package statemgr
 
 import (
-	"github.com/iotaledger/goshimmer/packages/txstream"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -158,53 +159,43 @@ func (sm *stateManager) eventStateUpdateMsg(msg *chain.StateUpdateMsg) {
 
 // EventStateTransactionMsg triggered whenever new state transaction arrives
 // the state transaction may be confirmed or not
-func (sm *stateManager) EventStateTransactionMsg(msg *txstream.MsgTransaction) {
-	sm.eventStateTransactionMsgCh <- msg
+func (sm *stateManager) EventStateTransactionMsg(msg *ledgerstate.AliasOutput) {
+	sm.eventStateOutputMsg <- msg
 }
-func (sm *stateManager) eventStateTransactionMsg(msg *txstream.MsgTransaction) {
-	stateBlock, ok := msg.TransactionEssence.State()
-	if !ok {
-		// should not happen: must have state block
-		return
+func (sm *stateManager) eventStateTransactionMsg(chainOutput *ledgerstate.AliasOutput) {
+	stateHash, err := hashing.HashValueFromBytes(chainOutput.GetStateData())
+	if err != nil {
+		sm.log.Panicf("failed to parse state hash: %v", err)
 	}
-
-	vh := stateBlock.StateHash()
 	sm.log.Debugw("EventStateTransactionMsg",
-		"txid", msg.ID().String(),
-		"state index", stateBlock.BlockIndex(),
-		"state hash", vh.String(),
+		"chainOutput", chainOutput.ID().Base58(),
+		"state index", chainOutput.GetStateIndex(),
+		"state hash", stateHash.String(),
 	)
 
-	//prop, err := msg.TransactionEssence.Properties()
-	//if err != nil{
-	//	sm.log.Errorf("EventStateTransactionMsg: %v", err)
-	//	return
-	//}
-	//sm.log.Debugf("EventStateTransactionMsg:\n%s", prop.String())
-
-	sm.evidenceStateIndex(stateBlock.BlockIndex())
+	sm.evidenceStateIndex(chainOutput.GetStateIndex())
 
 	if sm.solidStateValid {
-		if stateBlock.BlockIndex() != sm.solidState.BlockIndex()+1 {
+		if chainOutput.GetStateIndex() != sm.solidState.BlockIndex()+1 {
 			sm.log.Debugf("skip state transaction: expected with state index #%d, got #%d, Txid: %s",
-				sm.solidState.BlockIndex()+1, stateBlock.BlockIndex(), msg.ID().String())
+				sm.solidState.BlockIndex()+1, chainOutput.GetStateIndex(), chainOutput.ID().Base58())
 			return
 		}
 	} else {
 		if sm.solidState == nil {
 			// pre-origin
-			if stateBlock.BlockIndex() != 0 {
+			if chainOutput.GetStateIndex() != 0 {
 				sm.log.Debugf("sm.solidState == nil && stateBlock.BlockIndex() != 0")
 				return
 			}
 		} else {
-			if stateBlock.BlockIndex() != sm.solidState.BlockIndex() {
+			if chainOutput.GetStateIndex() != sm.solidState.BlockIndex() {
 				sm.log.Debugf("sm.solidState == nil && stateBlock.BlockIndex() != sm.solidState.BlockIndex()")
 				return
 			}
 		}
 	}
-	sm.nextStateTransaction = msg.TransactionEssence
+	sm.nextStateOutput = chainOutput
 
 	sm.takeAction()
 }

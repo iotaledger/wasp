@@ -5,6 +5,8 @@ package consensus
 
 import (
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -35,7 +37,11 @@ func (op *operator) solidifyRequestArgsIfNeeded() {
 		return r.hasMessage() && !r.hasSolidArgs()
 	})
 	for _, req := range reqs {
-		ok, err := req.reqTx.Requests()[req.reqId.Index()].SolidifyArgs(op.chain.BlobCache())
+		reqOnLedger, ok := req.req.(*sctransaction.RequestOnLedger)
+		if !ok {
+			continue
+		}
+		ok, err := reqOnLedger.SolidifyArgs(op.chain.BlobCache())
 		if err != nil {
 			req.log.Errorf("failed to solidify request arguments: %v", err)
 		} else {
@@ -53,14 +59,11 @@ func (op *operator) solidifyRequestArgsIfNeeded() {
 // If the update about the tx state didn't come as expected (timeout), send the query about it
 // to the goshimmer (pull)
 func (op *operator) pullInclusionLevel() {
-	if op.postedResultTxid == nil {
+	if op.postedResultTxid == nilTxID {
 		return
 	}
 	if time.Now().After(op.nextPullInclusionLevel) {
-		addr := op.chain.Address()
-		if err := nodeconn.RequestInclusionLevelFromNode(op.postedResultTxid, &addr); err != nil {
-			op.log.Errorf("RequestInclusionLevelFromNode: %v", err)
-		}
+		nodeconn.NodeConnection().RequestTxInclusionState(op.chain.ID().AsAddress(), op.postedResultTxid)
 		op.setNextPullInclusionStageDeadline()
 	}
 }
@@ -80,7 +83,7 @@ func (op *operator) rotateLeader() {
 	// starting from scratch with the new leader
 	op.leaderStatus = nil
 	op.sentResultToLeader = nil
-	op.postedResultTxid = nil
+	op.postedResultTxid = nilTxID
 
 	op.log.Infof("LEADER ROTATED #%d --> #%d, I am the leader = %v",
 		prevlead, leader, op.iAmCurrentLeader())
@@ -120,17 +123,16 @@ func (op *operator) startCalculationsAsLeader() {
 	msgData := util.MustBytes(&chain.StartProcessingBatchMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
 			// timestamp is set by SendMsgToCommitteePeers
-			BlockIndex: op.stateTx.MustState().BlockIndex(),
+			BlockIndex: op.stateOutput.GetStateIndex(),
 		},
 		FeeDestination: rewardAddress,
-		Inputs:         op.balances,
-		RequestIds:     reqIds,
+		RequestIDs:     reqIds,
 	})
 
 	// determine timestamp. Must be max(local clock, prev timestamp+1).
 	// Adjustment enforced, when needed
 	ts := time.Now().UnixNano()
-	prevTs := op.stateTx.MustState().Timestamp()
+	prevTs := op.stateOutput.MustState().Timestamp()
 	if ts <= prevTs {
 		op.log.Warnf("local clock is not ahead the timestamp of the previous state. prevTs: %d, currentTs: %d, diff: %d ns",
 			prevTs, ts, prevTs-ts)
@@ -266,7 +268,7 @@ func (op *operator) checkQuorum() {
 	msgData := util.MustBytes(&chain.NotifyFinalResultPostedMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
 			// timestamp is set by SendMsgToCommitteePeers
-			BlockIndex: op.stateTx.MustState().BlockIndex(),
+			BlockIndex: op.stateOutput.MustState().BlockIndex(),
 		},
 		TxId: txid,
 	})
@@ -282,7 +284,7 @@ func (op *operator) checkQuorum() {
 
 // sets new currentState transaction and initializes respective variables
 func (op *operator) setNewSCState(stateTx *sctransaction_old.TransactionEssence, variableState state.VirtualState, synchronized bool) {
-	op.stateTx = stateTx
+	op.stateOutput = stateTx
 	op.currentState = variableState
 	op.sentResultToLeader = nil
 	op.postedResultTxid = nil

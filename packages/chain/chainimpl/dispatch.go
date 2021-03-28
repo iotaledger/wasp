@@ -6,6 +6,7 @@ package chainimpl
 import (
 	"bytes"
 	"github.com/iotaledger/goshimmer/packages/txstream"
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -18,11 +19,9 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 
 	switch msgt := msg.(type) {
 	case *peering.PeerMessage:
-		// receive a message from peer
 		c.processPeerMessage(msgt)
 
 	case *chain.StateUpdateMsg:
-		// StateUpdateMsg may come from peer and from own consensus operator
 		c.stateMgr.EventStateUpdateMsg(msgt)
 
 	case *chain.StateTransitionMsg:
@@ -37,20 +36,15 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		// receive state transaction message
 		c.stateMgr.EventStateTransactionMsg(msgt)
 
-	case *txstream.MsgTxInclusionState:
+	case *chain.InclusionStateMsg:
 		if c.operator != nil {
-			c.operator.EventTransactionInclusionLevelMsg(msgt)
+			c.operator.EventTransactionInclusionStateMsg(msgt)
 		}
 
-	case *chain.RequestMsg:
+	case coretypes.Request:
 		// receive request message
 		if c.operator != nil {
 			c.operator.EventRequestMsg(msgt)
-		}
-
-	case chain.BalancesMsg:
-		if c.operator != nil {
-			c.operator.EventBalancesMsg(msgt)
 		}
 
 	case *chain.VMResultMsg:

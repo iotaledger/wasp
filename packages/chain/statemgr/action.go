@@ -5,6 +5,9 @@ package statemgr
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"strconv"
 	"time"
 
@@ -14,6 +17,8 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
+
+var nilTxID ledgerstate.TransactionID
 
 func (sm *stateManager) takeAction() {
 	sm.sendPingsIfNeeded()
@@ -38,9 +43,9 @@ func (sm *stateManager) notifyConsensusOnStateTransitionIfNeeded() {
 
 	sm.consensusNotifiedOnStateTransition = true
 	go sm.chain.ReceiveMessage(&chain.StateTransitionMsg{
-		VariableState:     sm.solidState.Clone(),
-		AnchorTransaction: sm.approvingTransaction,
-		Synchronized:      sm.isSynchronized(),
+		VariableState: sm.solidState.Clone(),
+		ChainOutput:   sm.approvingStateOutput,
+		Synchronized:  sm.isSynchronized(),
 	})
 }
 
@@ -68,14 +73,17 @@ func (sm *stateManager) sendPingsIfNeeded() {
 }
 
 // checks the state of the state manager. If one of pending blocks is confirmed
-// by the nextStateTransaction changes the state to the next
+// by the nextStateOutput changes the state to the next
 func (sm *stateManager) checkStateApproval() bool {
-	if sm.nextStateTransaction == nil {
+	if sm.nextStateOutput == nil {
 		return false
 	}
 	// among pending state update batches we locate the one which
 	// is approved by the transaction
-	varStateHash := sm.nextStateTransaction.MustState().StateHash()
+	varStateHash, err := hashing.HashValueFromBytes(sm.nextStateOutput.GetStateData())
+	if err != nil {
+		sm.log.Panic(err)
+	}
 	pending, ok := sm.pendingBlocks[varStateHash]
 	if !ok {
 		// corresponding block wasn't found among pending state updates
@@ -83,14 +91,14 @@ func (sm *stateManager) checkStateApproval() bool {
 		return false
 	}
 
-	// found a pending block which is approved by the nextStateTransaction
+	// found a pending block which is approved by the nextStateOutput
 
-	if pending.block.StateTransactionID() == niltxid {
+	if pending.block.StateTransactionID() == nilTxID {
 		// not committed yet block. Link it to the transaction
-		pending.block.WithStateTransaction(sm.nextStateTransaction.ID())
+		pending.block.WithStateTransaction(sm.nextStateOutput.ID().TransactionID())
 	} else {
 		txid1 := pending.block.StateTransactionID()
-		txid2 := sm.nextStateTransaction.ID()
+		txid2 := sm.nextStateOutput.ID().TransactionID()
 		if txid1 != txid2 {
 			sm.log.Errorf("major inconsistency: var state hash %s is approved by two different tx: txid1 = %s, txid2 = %s",
 				varStateHash.String(), txid1.String(), txid2.String())
@@ -101,9 +109,8 @@ func (sm *stateManager) checkStateApproval() bool {
 	if sm.solidStateValid || sm.solidState == nil {
 		if sm.solidState == nil {
 			// pre-origin
-			if sm.nextStateTransaction.ID() != (valuetransaction.ID)(*sm.chain.Color()) {
-				sm.log.Errorf("major inconsistency: origin transaction hash %s not equal to the color of the SC %s",
-					sm.nextStateTransaction.ID().String(), sm.chain.Color().String())
+			if !sm.nextStateOutput.Address().Equals(sm.chain.ID().AsAddress()) {
+				sm.log.Errorf("major inconsistency")
 				sm.chain.Dismiss()
 				return false
 			}
@@ -115,29 +122,29 @@ func (sm *stateManager) checkStateApproval() bool {
 
 		if sm.solidState != nil {
 			sm.log.Infof("STATE TRANSITION TO #%d. Anchor transaction: %s, block size: %d",
-				pending.nextState.BlockIndex(), sm.nextStateTransaction.ID().String(), pending.block.Size())
+				pending.nextState.BlockIndex(), sm.nextStateOutput.ID().String(), pending.block.Size())
 			sm.log.Debugf("STATE TRANSITION. State hash: %s, block essence: %s",
 				varStateHash.String(), pending.block.EssenceHash().String())
 		} else {
 			sm.log.Infof("ORIGIN STATE SAVED. Origin transaction: %s",
-				sm.nextStateTransaction.ID().String())
+				sm.nextStateOutput.ID().String())
 			sm.log.Debugf("ORIGIN STATE SAVED. State hash: %s, state txid: %s, block essence: %s",
-				varStateHash.String(), sm.nextStateTransaction.ID().String(), pending.block.EssenceHash().String())
+				varStateHash.String(), sm.nextStateOutput.ID().String(), pending.block.EssenceHash().String())
 		}
 
 	} else {
 		// !sm.solidStateValid && sm.solidState != nil --> initial load
 
 		sm.log.Infof("INITIAL STATE #%d LOADED FROM DB. State hash: %s, state txid: %s",
-			sm.solidState.BlockIndex(), varStateHash.String(), sm.nextStateTransaction.ID().String())
+			sm.solidState.BlockIndex(), varStateHash.String(), sm.nextStateOutput.ID().String())
 	}
 	sm.solidStateValid = true
 	sm.solidState = pending.nextState
 
-	sm.approvingTransaction = sm.nextStateTransaction
+	sm.approvingStateOutput = sm.nextStateOutput
 
 	// update state manager variables to the new state
-	sm.nextStateTransaction = nil
+	sm.nextStateOutput = nil
 	sm.pendingBlocks = make(map[hashing.HashValue]*pendingBlock) // clear pending batches
 	sm.permutation.Shuffle(varStateHash[:])
 	sm.syncMessageDeadline = time.Now() // if not synced then immediately
@@ -148,7 +155,7 @@ func (sm *stateManager) checkStateApproval() bool {
 		sm.chain.ID().String(),
 		strconv.Itoa(int(sm.solidState.BlockIndex())),
 		strconv.Itoa(int(pending.block.Size())),
-		sm.approvingTransaction.ID().String(),
+		sm.approvingStateOutput.ID().String(),
 		varStateHash.String(),
 		fmt.Sprintf("%d", pending.block.Timestamp()),
 	)
@@ -160,7 +167,7 @@ func (sm *stateManager) checkStateApproval() bool {
 		publisher.Publish("request_out",
 			sm.chain.ID().String(),
 			reqid.TransactionID().String(),
-			fmt.Sprintf("%d", reqid.Index()),
+			fmt.Sprintf("%d", coretypes.RequestID(reqid).String()),
 			strconv.Itoa(int(sm.solidState.BlockIndex())),
 			strconv.Itoa(i),
 			strconv.Itoa(int(pending.block.Size())),
@@ -229,8 +236,6 @@ func (sm *stateManager) isSynchronized() bool {
 	return sm.largestEvidencedStateIndex == sm.solidState.BlockIndex()
 }
 
-var niltxid valuetransaction.ID
-
 // adding block of state updates to the 'pending' map
 func (sm *stateManager) addPendingBlock(block state.Block) bool {
 	sm.log.Debugw("addPendingBlock",
@@ -280,7 +285,7 @@ func (sm *stateManager) addPendingBlock(block state.Block) bool {
 	// include the bach to pending batches map
 	vh := stateToApprove.Hash()
 	pb, ok := sm.pendingBlocks[vh]
-	if !ok || pb.block.StateTransactionID() == niltxid {
+	if !ok || pb.block.StateTransactionID() == nilTxID {
 		pb = &pendingBlock{
 			block:     block,
 			nextState: stateToApprove,
@@ -294,7 +299,7 @@ func (sm *stateManager) addPendingBlock(block state.Block) bool {
 		"approving tx", pb.block.StateTransactionID().String(),
 	)
 	// request approving transaction from the node. It may also come without request
-	if block.StateTransactionID() != niltxid {
+	if block.StateTransactionID() != nilTxID {
 		sm.requestStateTransaction(pb)
 	}
 	return true
@@ -309,11 +314,11 @@ func (sm *stateManager) createStateToApprove() state.VirtualState {
 
 // for committed batches request approving transaction if deadline has passed
 func (sm *stateManager) requestStateTransactionIfNeeded() {
-	if sm.nextStateTransaction != nil {
+	if sm.nextStateOutput != nil {
 		return
 	}
 	for _, pb := range sm.pendingBlocks {
-		if pb.block.StateTransactionID() != niltxid && pb.stateTransactionRequestDeadline.Before(time.Now()) {
+		if pb.block.StateTransactionID() != nilTxID && pb.stateTransactionRequestDeadline.Before(time.Now()) {
 			sm.requestStateTransaction(pb)
 		}
 	}
@@ -322,7 +327,7 @@ func (sm *stateManager) requestStateTransactionIfNeeded() {
 func (sm *stateManager) requestStateTransaction(pb *pendingBlock) {
 	txid := pb.block.StateTransactionID()
 	sm.log.Debugf("query transaction from the node. txid = %s", txid.String())
-	_ = nodeconn.RequestConfirmedTransactionFromNode(&txid)
+	nodeconn.NodeConnection().RequestConfirmedTransaction(sm.chain.ID().AsAddress(), txid)
 	pb.stateTransactionRequestDeadline = time.Now().Add(chain.StateTransactionRequestTimeout)
 }
 

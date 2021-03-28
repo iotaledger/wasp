@@ -6,7 +6,6 @@ package chain
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/txstream"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -31,9 +30,10 @@ type Chain interface {
 	PeerStatus() []*PeerStatus
 	BlobCache() coretypes.BlobCache
 	// TODO distinguish external messages from internal and peer messages
-	ReceiveMessage(msg interface{})
-	ReceiveTransactionMessage(msg *txstream.MsgTransaction)
-	ReceiveInclusionStateMessage(msg *txstream.MsgTxInclusionState)
+	ReceiveMessage(interface{})
+	ReceiveTransaction(*ledgerstate.Transaction)
+	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
+	ReceiveRequest(coretypes.Request)
 	//
 	SetReadyStateManager()
 	SetReadyConsensus()
@@ -71,7 +71,7 @@ type StateManager interface {
 	EventGetBlockMsg(msg *GetBlockMsg)
 	EventBlockHeaderMsg(msg *BlockHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)
-	EventStateTransactionMsg(msg *txstream.MsgTransaction)
+	EventStateTransactionMsg(msg *ledgerstate.AliasOutput)
 	EventPendingBlockMsg(msg PendingBlockMsg)
 	EventTimerMsg(msg TimerTick)
 	Close()
@@ -79,14 +79,13 @@ type StateManager interface {
 
 type Operator interface {
 	EventStateTransitionMsg(*StateTransitionMsg)
-	EventBalancesMsg(BalancesMsg)
-	EventRequestMsg(*RequestMsg)
+	EventRequestMsg(coretypes.Request)
 	EventNotifyReqMsg(*NotifyReqMsg)
 	EventStartProcessingBatchMsg(*StartProcessingBatchMsg)
 	EventResultCalculated(msg *VMResultMsg)
 	EventSignedHashMsg(*SignedHashMsg)
 	EventNotifyFinalResultPostedMsg(*NotifyFinalResultPostedMsg)
-	EventTransactionInclusionLevelMsg(msg *txstream.MsgTxInclusionState)
+	EventTransactionInclusionStateMsg(msg *InclusionStateMsg)
 	EventTimerMsg(TimerTick)
 	Close()
 	//

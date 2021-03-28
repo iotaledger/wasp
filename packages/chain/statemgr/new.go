@@ -6,7 +6,7 @@
 package statemgr
 
 import (
-	"github.com/iotaledger/goshimmer/packages/txstream"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -39,10 +39,10 @@ type stateManager struct {
 
 	// state transaction with +1 state index from the state index of solid variable state
 	// it may be nil if does not exist or not fetched yet
-	nextStateTransaction *sctransaction_old.TransactionEssence
+	nextStateOutput *ledgerstate.AliasOutput
 
 	// state transaction which approves current state
-	approvingTransaction *sctransaction_old.TransactionEssence
+	approvingStateOutput *ledgerstate.AliasOutput
 
 	// was state transition message of the current state sent to the consensus operator
 	consensusNotifiedOnStateTransition bool
@@ -70,7 +70,7 @@ type stateManager struct {
 	eventGetBlockMsgCh           chan *chain.GetBlockMsg
 	eventBlockHeaderMsgCh        chan *chain.BlockHeaderMsg
 	eventStateUpdateMsgCh        chan *chain.StateUpdateMsg
-	eventStateTransactionMsgCh   chan *txstream.MsgTransaction
+	eventStateOutputMsg          chan *ledgerstate.AliasOutput
 	eventPendingBlockMsgCh       chan chain.PendingBlockMsg
 	eventTimerMsgCh              chan chain.TimerTick
 	closeCh                      chan bool
@@ -80,7 +80,7 @@ type syncedBatch struct {
 	msgCounter   uint16
 	stateIndex   uint32
 	stateUpdates []state.StateUpdate
-	stateTxId    valuetransaction.ID
+	stateTxId    ledgerstate.TransactionID
 }
 
 type pendingBlock struct {
@@ -104,7 +104,7 @@ func New(c chain.Chain, log *logger.Logger) chain.StateManager {
 		eventGetBlockMsgCh:           make(chan *chain.GetBlockMsg),
 		eventBlockHeaderMsgCh:        make(chan *chain.BlockHeaderMsg),
 		eventStateUpdateMsgCh:        make(chan *chain.StateUpdateMsg),
-		eventStateTransactionMsgCh:   make(chan *chain.StateTransactionMsg),
+		eventStateOutputMsg:          make(chan *ledgerstate.AliasOutput),
 		eventPendingBlockMsgCh:       make(chan chain.PendingBlockMsg),
 		eventTimerMsgCh:              make(chan chain.TimerTick),
 		closeCh:                      make(chan bool),
@@ -146,7 +146,7 @@ func (sm *stateManager) initLoadState() {
 	} else {
 		// pre-origin state. Origin block is empty block.
 		// Will be waiting for the origin transaction to arrive
-		sm.addPendingBlock(state.MustNewOriginBlock(sm.chain.Color()))
+		sm.addPendingBlock(state.MustNewOriginBlock(ledgerstate.TransactionID{}))
 
 		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
 	}
@@ -178,7 +178,7 @@ func (sm *stateManager) recvLoop() {
 			if ok {
 				sm.eventStateUpdateMsg(msg)
 			}
-		case msg, ok := <-sm.eventStateTransactionMsgCh:
+		case msg, ok := <-sm.eventStateOutputMsg:
 			if ok {
 				sm.eventStateTransactionMsg(msg)
 			}

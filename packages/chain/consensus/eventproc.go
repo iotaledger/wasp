@@ -5,12 +5,11 @@ package consensus
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/txstream"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
@@ -21,12 +20,12 @@ func (op *operator) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 
 // eventStateTransitionMsg internal event handler
 func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
-	op.setNewSCState(msg.AnchorTransaction, msg.VariableState, msg.Synchronized)
+	op.setNewSCState(msg.ChainOutput, msg.VariableState, msg.Synchronized)
 
 	vh := op.currentState.Hash()
 	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v tx: %s, state hash: %s, backlog: %d",
 		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(), op.iAmCurrentLeader(),
-		op.stateTx.ID().String(), vh.String(), len(op.requests))
+		op.stateOutput.ID().String(), vh.String(), len(op.requests))
 
 	// remove all processed requests from the local backlog
 	if err := op.deleteCompletedRequests(); err != nil {
@@ -45,42 +44,22 @@ func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.takeAction()
 }
 
-// EventBalancesMsg is triggered whenever address balances are coming from the goshimmer
-func (op *operator) EventBalancesMsg(reqMsg chain.BalancesMsg) {
-	op.eventBalancesMsgCh <- reqMsg
-}
-
-// eventBalancesMsg internal event handler
-func (op *operator) eventBalancesMsg(reqMsg chain.BalancesMsg) {
-	op.log.Debugf("EventBalancesMsg: balances arrived\n%s", txutil.BalancesToString(reqMsg.Balances))
-
-	// TODO here redundant. Should be checked in the dispatcher by tx.Properties (?)
-	//if err := op.checkChainToken(reqMsg.Inputs); err != nil {
-	//	op.log.Debugf("EventBalancesMsg: balances not included: %v", err)
-	//	return
-	//}
-	op.balances = reqMsg.Balances
-	op.requestBalancesDeadline = time.Now().Add(chain.RequestBalancesPeriod)
-	op.takeAction()
-}
-
 // EventRequestMsg triggered by new request msg from the node
-func (op *operator) EventRequestMsg(reqMsg *chain.RequestMsg) {
-	op.eventRequestMsgCh <- reqMsg
+func (op *operator) EventRequestMsg(req coretypes.Request) {
+	op.eventRequestMsgCh <- req
 }
 
 // eventRequestMsg internal handler
-func (op *operator) eventRequestMsg(reqMsg *chain.RequestMsg) {
+func (op *operator) eventRequestMsg(reqMsg coretypes.Request) {
 	op.log.Debugw("EventRequestMsg",
-		"reqid", reqMsg.RequestId().Short(),
+		"reqid", reqMsg.ID().Short(),
 		"backlog req", len(op.requests),
 		"backlog notif", len(op.notificationsBacklog),
-		"free tokens attached", reqMsg.FreeTokens != nil,
 	)
 	// place request into the backlog
 	req, _ := op.requestFromMsg(reqMsg)
 	if req == nil {
-		op.log.Warn("received already processed request id = %s", reqMsg.RequestId().Short())
+		op.log.Warn("received already processed request id = %s", reqMsg.ID().Short())
 		return
 	}
 	op.takeAction()
@@ -110,13 +89,13 @@ func (op *operator) EventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 
 // eventStartProcessingBatchMsg internal handler
 func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatchMsg) {
-	bh := vm.BatchHash(msg.RequestIds, msg.Timestamp, msg.SenderIndex)
+	bh := vm.BatchHash(msg.RequestIDs, time.Unix(0, msg.Timestamp), msg.SenderIndex)
 
 	op.log.Debugw("EventStartProcessingBatchMsg",
 		"sender", msg.SenderIndex,
 		"ts", msg.Timestamp,
 		"batch hash", bh.String(),
-		"reqIds", idsShortStr(msg.RequestIds),
+		"reqIds", idsShortStr(msg.RequestIDs),
 	)
 	stateIndex, ok := op.blockIndex()
 	if !ok || msg.BlockIndex != stateIndex {
@@ -129,12 +108,12 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 			"sender", msg.SenderIndex,
 			"state index", stateIndex,
 			"iAmTheLeader", true,
-			"reqIds", idsShortStr(msg.RequestIds),
+			"reqIds", idsShortStr(msg.RequestIDs),
 		)
 		return
 	}
-	numOrig := len(msg.RequestIds)
-	reqs := op.collectProcessableBatch(msg.RequestIds)
+	numOrig := len(msg.RequestIDs)
+	reqs := op.collectProcessableBatch(msg.RequestIDs)
 	if len(reqs) != numOrig {
 		// some request were filtered out because not messages didn't reach the node yet.
 		// can't happen? Redundant? panic?
@@ -169,7 +148,6 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 	op.runCalculationsAsync(runCalculationsParams{
 		requests:        reqs,
 		timestamp:       msg.Timestamp,
-		balances:        msg.Inputs,
 		accrueFeesTo:    msg.FeeDestination,
 		leaderPeerIndex: msg.SenderIndex,
 	})
@@ -280,21 +258,21 @@ func (op *operator) eventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResult
 		return
 	}
 	op.setNextConsensusStage(consensusStageSubResultFinalized)
-	op.setFinalizedTransaction(&msg.TxId)
+	op.setFinalizedTransaction(msg.TxId)
 }
 
 // EventTransactionInclusionLevelMsg goshimmer send information about transaction
-func (op *operator) EventTransactionInclusionLevelMsg(msg *txstream.MsgTxInclusionState) {
+func (op *operator) EventTransactionInclusionStateMsg(msg *chain.InclusionStateMsg) {
 	op.eventTransactionInclusionLevelMsgCh <- msg
 }
 
-// eventTransactionInclusionLevelMsg intrenal handler
-func (op *operator) eventTransactionInclusionLevelMsg(msg *txstream.MsgTxInclusionState) {
-	op.log.Debugw("EventTransactionInclusionLevelMsg",
-		"txid", msg.TxId.String(),
-		"level", waspconn.InclusionLevelText(msg.Level),
+// eventTransactionInclusionStateMsg internal handler
+func (op *operator) eventTransactionInclusionStateMsg(msg *chain.InclusionStateMsg) {
+	op.log.Debugw("EventTransactionInclusionStateMsg",
+		"txid", msg.TxID.Base58(),
+		"level", msg.State.String(),
 	)
-	op.checkInclusionLevel(msg.TxId, msg.Level)
+	op.checkInclusionLevel(&msg.TxID, msg.State)
 }
 
 // EventTimerMsg timer tick
@@ -333,7 +311,7 @@ func timelockedToString(reqs []*request) string {
 	ret := make([]string, len(reqs))
 	nowis := uint32(time.Now().Unix())
 	for i := range ret {
-		ret[i] = fmt.Sprintf("%s: %d (-%d)", reqs[i].reqId.Short(), reqs[i].timelock(), reqs[i].timelock()-nowis)
+		ret[i] = fmt.Sprintf("%s: %d (-%d)", reqs[i].req.ID().Short(), reqs[i].timelock(), reqs[i].timelock()-nowis)
 	}
 	return fmt.Sprintf("now: %d, [%s]", nowis, strings.Join(ret, ","))
 }

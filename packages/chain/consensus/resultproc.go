@@ -18,7 +18,6 @@ import (
 type runCalculationsParams struct {
 	requests        []*request
 	leaderPeerIndex uint16
-	balances        map[valuetransaction.ID][]*balance.Balance
 	accrueFeesTo    coretypes.AgentID
 	timestamp       int64
 }
@@ -33,7 +32,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		Processors:         op.chain.Processors(),
 		ChainID:            *op.chain.ID(),
 		Color:              *op.chain.Color(),
-		Entropy:            (hashing.HashValue)(op.stateTx.ID()),
+		Entropy:            (hashing.HashValue)(op.stateOutput.ID()),
 		Balances:           par.balances,
 		ValidatorFeeTarget: par.accrueFeesTo,
 		Requests:           takeRefs(par.requests),

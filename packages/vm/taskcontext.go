@@ -33,7 +33,7 @@ type VMTask struct {
 }
 
 // BatchHash is used to uniquely identify the VM task
-func BatchHash(reqids []ledgerstate.OutputID, ts time.Time, leaderIndex uint16) hashing.HashValue {
+func BatchHash(reqids []coretypes.RequestID, ts time.Time, leaderIndex uint16) hashing.HashValue {
 	var buf bytes.Buffer
 	for i := range reqids {
 		buf.Write(reqids[i][:])

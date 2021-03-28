@@ -250,10 +250,10 @@ func dbkeyStateVariable(key kv.Key) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeStateVariable, []byte(key))
 }
 
-func dbkeyRequest(reqid *ledgerstate.OutputID) []byte {
+func dbkeyRequest(reqid *coretypes.RequestID) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeProcessedRequestId, reqid[:])
 }
 
-func IsRequestCompleted(addr *coretypes.ChainID, reqid *ledgerstate.OutputID) (bool, error) {
-	return getSCPartition(addr).Has(dbkeyRequest(reqid))
+func IsRequestCompleted(addr *coretypes.ChainID, reqid coretypes.RequestID) (bool, error) {
+	return getSCPartition(addr).Has(dbkeyRequest(&reqid))
 }

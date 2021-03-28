@@ -6,7 +6,7 @@ package chainimpl
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/txstream"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
@@ -169,12 +169,29 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 	}
 }
 
-func (c *chainObj) ReceiveTransactionMessage(msg *txstream.MsgTransaction) {
-	c.ReceiveMessage(msg) // TODO special entry point
+func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
+	reqs, err := sctransaction.RequestsOnLedgerFromTransaction(tx, c.chainID.AsAddress())
+	if err != nil {
+		c.log.Warnf("failed to parse transaction %s: %v", tx.ID().Base58(), err)
+		return
+	}
+	for _, req := range reqs {
+		c.ReceiveRequest(req)
+	}
+	if chainOut := sctransaction.FindAliasOutput(tx.Essence(), c.chainID.AsAddress()); chainOut != nil {
+		c.ReceiveMessage(chainOut)
+	}
 }
 
-func (c *chainObj) ReceiveInclusionStateMessage(msg *txstream.MsgTxInclusionState) {
-	c.ReceiveMessage(msg) // TODO special entry point
+func (c *chainObj) ReceiveRequest(req coretypes.Request) {
+	c.ReceiveMessage(req) //
+}
+
+func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
+	c.ReceiveMessage(&chain.InclusionStateMsg{
+		TxID:  txID,
+		State: inclusionState,
+	}) // TODO special entry point
 }
 
 // SendMsg sends message to peer by index. It can be both committee peer or access peer.

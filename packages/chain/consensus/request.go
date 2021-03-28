@@ -5,10 +5,9 @@ package consensus
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
@@ -16,10 +15,8 @@ import (
 )
 
 func (op *operator) newRequest(reqId coretypes.RequestID) *request {
-	reqLog := op.log.Named(reqId.Short())
 	ret := &request{
-		reqId:         reqId,
-		log:           reqLog,
+		log:           op.log.Named(reqId.Short()),
 		notifications: make([]bool, op.size()),
 	}
 	return ret
@@ -28,7 +25,7 @@ func (op *operator) newRequest(reqId coretypes.RequestID) *request {
 // request record is retrieved by request id.
 // If it doesn't exist and is not in the list of processed requests, it is created
 func (op *operator) requestFromId(reqId coretypes.RequestID) (*request, bool) {
-	if op.isRequestProcessed(&reqId) {
+	if op.isRequestProcessed(reqId) {
 		return nil, false
 	}
 	ret, ok := op.requests[reqId]
@@ -41,47 +38,42 @@ func (op *operator) requestFromId(reqId coretypes.RequestID) (*request, bool) {
 }
 
 // request record retrieved (or created) by request message
-func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
-	reqId := reqMsg.RequestId()
-	if op.isRequestProcessed(reqId) {
+func (op *operator) requestFromMsg(req coretypes.Request) (*request, bool) {
+	if op.isRequestProcessed(req.ID()) {
 		return nil, false
 	}
-	ret, ok := op.requests[*reqId]
-	msgFirstTime := !ok || ret.reqTx == nil
+	ret, ok := op.requests[req.ID()]
+	msgFirstTime := !ok || ret.req == nil
 
 	newMsg := false
 	if ok {
 		if msgFirstTime {
-			ret.reqTx = reqMsg.TransactionEssence
-			ret.freeTokens = reqMsg.FreeTokens
+			ret.req = req
 			ret.whenMsgReceived = time.Now()
 			newMsg = true
 		}
 	} else {
-		ret = op.newRequest(*reqId)
+		ret = op.newRequest(req.ID())
 		ret.whenMsgReceived = time.Now()
-		ret.reqTx = reqMsg.TransactionEssence
-		ret.freeTokens = reqMsg.FreeTokens
-		op.requests[*reqId] = ret
-		op.addRequestIdConcurrent(reqId)
+		ret.req = req
+		op.requests[req.ID()] = ret
+		op.addRequestIdConcurrent(req.ID())
 		newMsg = true
 	}
 	if newMsg {
 		// solidify arguments by resolving blob references from the registry
 		// the request will not be selected for processing until ret.argsSolid == true
-		ok, err := reqMsg.RequestBlock().SolidifyArgs(op.chain.BlobCache())
-		if err != nil {
-			ret.log.Errorf("inconsistency: can't solidify args: %v", err)
-		} else {
-			ret.argsSolid = ok
+		if reqOnLedger, ok := req.(*sctransaction.RequestOnLedger); ok {
+			ok, err := reqOnLedger.SolidifyArgs(op.chain.BlobCache())
+			if err != nil {
+				ret.log.Errorf("inconsistency: can't solidify args: %v", err)
+			} else {
+				ret.argsSolid = ok
+			}
 		}
 	}
 	if newMsg {
-		publisher.Publish("request_in",
-			op.chain.ID().String(),
-			reqMsg.TransactionEssence.ID().String(),
-			fmt.Sprintf("%d", reqMsg.Index),
-		)
+		publisher.Publish("request_in", op.chain.ID().String(), req.ID().String())
 	}
 
 	ret.notifications[op.peerIndex()] = true
@@ -95,12 +87,12 @@ func (op *operator) requestFromMsg(reqMsg *chain.RequestMsg) (*request, bool) {
 	return ret, msgFirstTime
 }
 
-func (req *request) requestCode() coretypes.Hname {
-	return req.reqTx.Requests()[req.reqId.Index()].EntryPointCode()
-}
-
 func (req *request) timelock() uint32 {
-	return req.reqTx.Requests()[req.reqId.Index()].Timelock()
+	reqOnLedger, ok := req.req.(*sctransaction.RequestOnLedger)
+	if !ok {
+		return 0
+	}
+	return uint32(reqOnLedger.TimeLock().Unix())
 }
 
 func (req *request) isTimeLocked(nowis time.Time) bool {
@@ -108,14 +100,14 @@ func (req *request) isTimeLocked(nowis time.Time) bool {
 }
 
 func (req *request) hasMessage() bool {
-	return req.reqTx != nil
+	return req.req != nil
 }
 
 func (req *request) hasSolidArgs() bool {
 	return req.argsSolid
 }
 
-func (op *operator) isRequestProcessed(reqid *coretypes.RequestID) bool {
+func (op *operator) isRequestProcessed(reqid coretypes.RequestID) bool {
 	processed, err := state.IsRequestCompleted(op.chain.ID(), reqid)
 	if err != nil {
 		panic(err)
@@ -125,20 +117,20 @@ func (op *operator) isRequestProcessed(reqid *coretypes.RequestID) bool {
 
 // deleteCompletedRequests deletes requests which were successfully processed or failed more than maximum retry limit
 func (op *operator) deleteCompletedRequests() error {
-	toDelete := make([]*coretypes.RequestID, 0)
+	toDelete := make([]coretypes.RequestID, 0)
 
 	for _, req := range op.requests {
-		if completed, err := state.IsRequestCompleted(op.chain.ID(), &req.reqId); err != nil {
+		if completed, err := state.IsRequestCompleted(op.chain.ID(), req.req.ID()); err != nil {
 			return err
 		} else {
 			if completed {
-				toDelete = append(toDelete, &req.reqId)
+				toDelete = append(toDelete, req.req.ID())
 			}
 		}
 	}
 	for _, rid := range toDelete {
-		delete(op.requests, *rid)
-		op.removeRequestIdConcurrent(rid)
+		delete(op.requests, rid)
+		op.removeRequestIdConcurrent(&rid)
 		op.log.Debugf("removed from backlog: processed request %s", rid.String())
 	}
 	return nil
@@ -167,30 +159,16 @@ func (op *operator) takeFromIds(reqIds []coretypes.RequestID) []*request {
 func takeIds(reqs []*request) []coretypes.RequestID {
 	ret := make([]coretypes.RequestID, len(reqs))
 	for i := range ret {
-		ret[i] = reqs[i].reqId
+		ret[i] = reqs[i].req.ID()
 	}
 	return ret
 }
 
-func takeRefs(reqs []*request) []vm.RequestRefWithFreeTokens {
-	ret := make([]vm.RequestRefWithFreeTokens, len(reqs))
-	for i := range ret {
-		ret[i] = vm.RequestRefWithFreeTokens{
-			RequestRef: sctransaction_old.RequestRef{
-				Tx:    reqs[i].reqTx,
-				Index: reqs[i].reqId.Index(),
-			},
-			FreeTokens: reqs[i].freeTokens,
-		}
-	}
-	return ret
-}
-
-func (op *operator) addRequestIdConcurrent(reqId *coretypes.RequestID) {
+func (op *operator) addRequestIdConcurrent(reqId coretypes.RequestID) {
 	op.concurrentAccessMutex.Lock()
 	defer op.concurrentAccessMutex.Unlock()
 
-	op.requestIdsProtected[*reqId] = true
+	op.requestIdsProtected[reqId] = true
 }
 
 func (op *operator) removeRequestIdConcurrent(reqId *coretypes.RequestID) {
