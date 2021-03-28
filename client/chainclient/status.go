@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
 )

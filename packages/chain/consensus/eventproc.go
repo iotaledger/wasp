@@ -147,7 +147,7 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 	// start async calculation as requested by the leader
 	op.runCalculationsAsync(runCalculationsParams{
 		requests:        reqs,
-		timestamp:       msg.Timestamp,
+		timestamp:       time.Unix(0, msg.Timestamp),
 		accrueFeesTo:    msg.FeeDestination,
 		leaderPeerIndex: msg.SenderIndex,
 	})

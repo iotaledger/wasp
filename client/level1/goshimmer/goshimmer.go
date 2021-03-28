@@ -6,8 +6,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/level1"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/txutil"
-	"github.com/iotaledger/wasp/packages/util"
 	"time"
 )
 

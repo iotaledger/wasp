@@ -21,12 +21,8 @@ import (
 	"github.com/iotaledger/wasp/client/level1/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 

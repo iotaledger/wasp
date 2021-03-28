@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"github.com/iotaledger/wasp/packages/txutil"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )

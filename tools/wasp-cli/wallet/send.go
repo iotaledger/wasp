@@ -5,7 +5,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/iotaledger/wasp/packages/txutil/vtxbuilder"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	clientutil "github.com/iotaledger/wasp/tools/wasp-cli/util"
