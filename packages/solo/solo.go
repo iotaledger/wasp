@@ -99,8 +99,8 @@ type Chain struct {
 	// related to asynchronous backlog processing
 	runVMMutex   *sync.Mutex
 	reqCounter   atomic.Int32
-	chInRequest  chan *sctransaction.Request
-	backlog      []*sctransaction.Request
+	chInRequest  chan *sctransaction.RequestOnLedger
+	backlog      []*sctransaction.RequestOnLedger
 	backlogMutex *sync.RWMutex
 }
 
@@ -202,8 +202,8 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		Log:                    env.logger.Named(name),
 		//
 		runVMMutex:   &sync.Mutex{},
-		chInRequest:  make(chan *sctransaction.Request),
-		backlog:      make([]*sctransaction.Request, 0),
+		chInRequest:  make(chan *sctransaction.RequestOnLedger),
+		backlog:      make([]*sctransaction.RequestOnLedger, 0),
 		backlogMutex: &sync.RWMutex{},
 	}
 	require.NoError(env.T, err)
@@ -251,7 +251,7 @@ func (env *Solo) AddToLedger(tx *ledgerstate.Transaction) error {
 	return env.utxoDB.AddTransaction(tx)
 }
 
-func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chid coretypes.ChainID) ([]*sctransaction.Request, error) {
+func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chid coretypes.ChainID) ([]*sctransaction.RequestOnLedger, error) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 
@@ -263,10 +263,10 @@ func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chid coretypes.Ch
 	return ret, nil
 }
 
-func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]*sctransaction.Request {
+func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]*sctransaction.RequestOnLedger {
 	sender, err := utxoutil.GetSingleSender(tx)
 	require.NoError(env.T, err)
-	ret := make(map[[33]byte][]*sctransaction.Request)
+	ret := make(map[[33]byte][]*sctransaction.RequestOnLedger)
 	for _, out := range tx.Essence().Outputs() {
 		o, ok := out.(*ledgerstate.ExtendedLockedOutput)
 		if !ok {
@@ -279,10 +279,10 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]*sc
 		}
 		lst, ok := ret[arr]
 		if !ok {
-			lst = make([]*sctransaction.Request, 0)
+			lst = make([]*sctransaction.RequestOnLedger, 0)
 		}
 
-		ret[arr] = append(lst, sctransaction.RequestFromOutput(o, sender, utxoutil.GetMintedAmounts(tx)))
+		ret[arr] = append(lst, sctransaction.RequestOnLedgerFromOutput(o, sender, utxoutil.GetMintedAmounts(tx)))
 	}
 	return ret
 }
@@ -322,11 +322,11 @@ func (ch *Chain) readRequestsLoop() {
 	}
 }
 
-func (ch *Chain) addToBacklog(r *sctransaction.Request) {
+func (ch *Chain) addToBacklog(r *sctransaction.RequestOnLedger) {
 	ch.backlogMutex.Lock()
 	defer ch.backlogMutex.Unlock()
 	ch.backlog = append(ch.backlog, r)
-	tl := r.Output().TimeLock()
+	tl := r.TimeLock()
 	idStr := coretypes.RequestID(r.Output().ID()).String()
 	if tl.UnixNano() == 0 {
 		ch.Log.Infof("added to backlog: %s len: %d", idStr, len(ch.backlog))
@@ -337,16 +337,16 @@ func (ch *Chain) addToBacklog(r *sctransaction.Request) {
 
 // collateBatch selects requests which are not time locked
 // returns batch and and 'remains unprocessed' flag
-func (ch *Chain) collateBatch() []*sctransaction.Request {
+func (ch *Chain) collateBatch() []*sctransaction.RequestOnLedger {
 	ch.backlogMutex.Lock()
 	defer ch.backlogMutex.Unlock()
 
-	ret := make([]*sctransaction.Request, 0)
+	ret := make([]*sctransaction.RequestOnLedger, 0)
 	remain := ch.backlog[:0]
 	for _, req := range ch.backlog {
 		// using logical clock
-		if req.Output().TimeLock().Before(ch.Env.LogicalTime()) {
-			if req.Output().TimeLock().UnixNano() != 0 {
+		if req.TimeLock().Before(ch.Env.LogicalTime()) {
+			if req.TimeLock().UnixNano() != 0 {
 				ch.Log.Infof("unlocked time-locked request %s", coretypes.RequestID(req.Output().ID()).String())
 			}
 			ret = append(ret, req)

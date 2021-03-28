@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -34,7 +33,7 @@ type VMContext struct {
 	ownerFee           uint64
 	validatorFee       uint64
 	// request context
-	req             *sctransaction.Request
+	req             coretypes.Request
 	entropy         hashing.HashValue // mutates with each request
 	contractRecord  *root.ContractRecord
 	timestamp       int64

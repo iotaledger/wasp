@@ -36,7 +36,7 @@ func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params dict.Di
 	isRequestContext := len(vmctx.callStack) == 0
 	if isRequestContext {
 		// request context
-		caller = vmctx.req.SenderAgentID()
+		caller = vmctx.req.SenderAccount()
 	} else {
 		caller = vmctx.MyAgentID()
 	}

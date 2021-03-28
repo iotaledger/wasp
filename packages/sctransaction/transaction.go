@@ -3,12 +3,14 @@ package sctransaction
 import (
 	"bytes"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"golang.org/x/crypto/blake2b"
 	"io"
+	"time"
 )
 
 // region ParsedTransaction //////////////////////////////////////////////////////////////////
@@ -21,7 +23,7 @@ type ParsedTransaction struct {
 	senderAddr       ledgerstate.Address
 	chainOutput      *ledgerstate.AliasOutput
 	stateHash        hashing.HashValue
-	requests         []*Request
+	requests         []*RequestOnLedger
 }
 
 // Parse analyzes value transaction and parses its data
@@ -30,7 +32,7 @@ func Parse(tx *ledgerstate.Transaction, sender ledgerstate.Address, receivingCha
 		Transaction:      tx,
 		receivingChainID: receivingChainID,
 		senderAddr:       sender,
-		requests:         make([]*Request, 0),
+		requests:         make([]*RequestOnLedger, 0),
 	}
 	for _, out := range tx.Essence().Outputs() {
 		if !out.Address().Equals(receivingChainID.AsAddress()) {
@@ -38,7 +40,7 @@ func Parse(tx *ledgerstate.Transaction, sender ledgerstate.Address, receivingCha
 		}
 		switch o := out.(type) {
 		case *ledgerstate.ExtendedLockedOutput:
-			ret.requests = append(ret.requests, RequestFromOutput(o, sender))
+			ret.requests = append(ret.requests, RequestOnLedgerFromOutput(o, sender))
 		case *ledgerstate.AliasOutput:
 			h, err := hashing.HashValueFromBytes(o.GetStateData())
 			if err == nil {
@@ -61,25 +63,28 @@ func (tx *ParsedTransaction) SenderAddress() ledgerstate.Address {
 	return tx.senderAddr
 }
 
-func (tx *ParsedTransaction) Requests() []*Request {
+func (tx *ParsedTransaction) Requests() []*RequestOnLedger {
 	return tx.requests
 }
 
 // endregion /////////////////////////////////////////////////////////////////
 
-// region Request //////////////////////////////////////////////////////////////////
+// region RequestOnLedger //////////////////////////////////////////////////////////////////
 
-type Request struct {
-	output          *ledgerstate.ExtendedLockedOutput
+type RequestOnLedger struct {
+	outputObj       *ledgerstate.ExtendedLockedOutput
 	senderAddress   ledgerstate.Address
 	minted          map[ledgerstate.Color]uint64
 	requestMetadata RequestMetadata
 	solidArgs       dict.Dict
 }
 
+// implements coretypes.Request interface
+var _ coretypes.Request = &RequestOnLedger{}
+
 // RequestDataFromOutput
-func RequestFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...map[ledgerstate.Color]uint64) *Request {
-	ret := &Request{output: output, senderAddress: senderAddr}
+func RequestOnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...map[ledgerstate.Color]uint64) *RequestOnLedger {
+	ret := &RequestOnLedger{outputObj: output, senderAddress: senderAddr}
 	ret.requestMetadata = *RequestMetadataFromBytes(output.GetPayload())
 	ret.minted = make(map[ledgerstate.Color]uint64, 0)
 	if len(minted) > 0 {
@@ -90,45 +95,82 @@ func RequestFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledg
 	return ret
 }
 
-func (req *Request) ID() coretypes.RequestID {
+// RequestsOnLedgerFromTransaction creates RequestOnLedger object from transaction and output index
+func RequestsOnLedgerFromTransaction(tx *ledgerstate.Transaction, outputIndex uint16) ([]*RequestOnLedger, error) {
+	senderAddr, err := utxoutil.GetSingleSender(tx)
+	if err != nil {
+		return nil, err
+	}
+	mintedAmounts := utxoutil.GetMintedAmounts(tx)
+	ret := make([]*RequestOnLedger, 0)
+	for _, o := range tx.Essence().Outputs() {
+		if out, ok := o.(*ledgerstate.ExtendedLockedOutput); ok {
+			ret = append(ret, RequestOnLedgerFromOutput(out, senderAddr, mintedAmounts))
+		}
+	}
+	return ret, nil
+}
+
+func (req *RequestOnLedger) ID() coretypes.RequestID {
 	return coretypes.RequestID(req.Output().ID())
 }
 
-func (req *Request) Output() *ledgerstate.ExtendedLockedOutput {
-	return req.output
+func (req *RequestOnLedger) IsFeePrepaid() bool {
+	return false
 }
 
-func (req *Request) SenderAddress() ledgerstate.Address {
+func (req *RequestOnLedger) Output() ledgerstate.Output {
+	return req.output()
+}
+
+func (req *RequestOnLedger) output() *ledgerstate.ExtendedLockedOutput {
+	return req.outputObj
+}
+
+func (req *RequestOnLedger) TimeLock() time.Time {
+	return req.outputObj.TimeLock()
+}
+
+func (req *RequestOnLedger) SenderAddress() ledgerstate.Address {
 	return req.senderAddress
 }
 
-func (req *Request) SenderAgentID() *coretypes.AgentID {
+func (req *RequestOnLedger) SenderAccount() *coretypes.AgentID {
 	return coretypes.NewAgentID(req.senderAddress, req.requestMetadata.SenderContract())
 }
 
-func (req *Request) SetMetadata(d *RequestMetadata) {
+func (req *RequestOnLedger) SetMetadata(d *RequestMetadata) {
 	req.requestMetadata = *d.Clone()
 }
 
-func (req *Request) GetMetadata() *RequestMetadata {
+func (req *RequestOnLedger) GetMetadata() *RequestMetadata {
 	return &req.requestMetadata
 }
 
-func (req *Request) MintColor() ledgerstate.Color {
+// Target returns target contract and target entry point
+func (req *RequestOnLedger) Target() (coretypes.Hname, coretypes.Hname) {
+	return req.requestMetadata.targetContract, req.requestMetadata.entryPoint
+}
+
+func (req *RequestOnLedger) MintColor() ledgerstate.Color {
 	return blake2b.Sum256(req.Output().ID().Bytes())
 }
 
-func (req *Request) MintedAmounts() map[ledgerstate.Color]uint64 {
+func (req *RequestOnLedger) MintedAmounts() map[ledgerstate.Color]uint64 {
 	return req.minted
 }
 
-// SolidArgs returns solid args if decoded already or nil otherwise
-func (req *Request) SolidArgs() dict.Dict {
+// Args returns solid args if decoded already or nil otherwise
+func (req *RequestOnLedger) Params() dict.Dict {
 	return req.solidArgs
 }
 
+func (req *RequestOnLedger) Tokens() *ledgerstate.ColoredBalances {
+	return req.outputObj.Balances()
+}
+
 // SolidifyArgs return true if solidified successfully
-func (req *Request) SolidifyArgs(reg coretypes.BlobCache) (bool, error) {
+func (req *RequestOnLedger) SolidifyArgs(reg coretypes.BlobCache) (bool, error) {
 	if req.solidArgs != nil {
 		return true, nil
 	}
@@ -143,16 +185,8 @@ func (req *Request) SolidifyArgs(reg coretypes.BlobCache) (bool, error) {
 	return true, nil
 }
 
-func (req *Request) Short() string {
-	return req.output.ID().Base58()[:6] + ".."
-}
-
-func OutputsFromRequests(requests ...*Request) []ledgerstate.Output {
-	ret := make([]ledgerstate.Output, len(requests))
-	for i, req := range requests {
-		ret[i] = req.Output()
-	}
-	return ret
+func (req *RequestOnLedger) Short() string {
+	return req.outputObj.ID().Base58()[:6] + ".."
 }
 
 // endregion /////////////////////////////////////////////////////////////////

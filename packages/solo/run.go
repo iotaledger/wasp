@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/sctransaction"
@@ -19,24 +20,26 @@ import (
 	"time"
 )
 
-func (ch *Chain) runBatch(batch []*sctransaction.Request, trace string) (dict.Dict, error) {
+func (ch *Chain) runBatch(batch []*sctransaction.RequestOnLedger, trace string) (dict.Dict, error) {
 	ch.Log.Debugf("runBatch ('%s')", trace)
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	// solidify arguments
-	for _, req := range batch {
+	requests := make([]coretypes.Request, len(batch))
+	for i, req := range batch {
+		// solidify arguments
 		if ok, err := req.SolidifyArgs(ch.Env.blobCache); err != nil || !ok {
 			return nil, fmt.Errorf("solo inconsistency: failed to solidify request args")
 		}
+		requests[i] = req
 	}
 
 	timestamp := ch.Env.LogicalTime().Add(time.Duration(len(batch)) * time.Nanosecond)
 	task := &vm.VMTask{
 		Processors:         ch.proc,
 		ChainInput:         ch.GetChainOutput(),
-		Requests:           batch,
+		Requests:           requests,
 		Timestamp:          timestamp,
 		VirtualState:       ch.State.Clone(),
 		Entropy:            hashing.RandomHash(nil),

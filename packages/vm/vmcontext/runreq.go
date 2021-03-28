@@ -15,10 +15,10 @@ import (
 
 // RunTheRequest processes any request based on the Extended output, even if it
 // doesn't parse correctly as a SC request
-func (vmctx *VMContext) RunTheRequest(req *sctransaction.Request, inputIndex int) {
+func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 	defer vmctx.finalizeRequestCall()
 
-	vmctx.mustSetUpRequestContext(req, inputIndex)
+	vmctx.mustSetUpRequestContext(req)
 
 	enoughFees := true
 	if !vmctx.isInitChainRequest() {
@@ -60,30 +60,28 @@ func (vmctx *VMContext) RunTheRequest(req *sctransaction.Request, inputIndex int
 }
 
 // mustSetUpRequestContext sets up VMContext for request
-func (vmctx *VMContext) mustSetUpRequestContext(req *sctransaction.Request, inputIndex int) {
-	if req.SolidArgs() == nil {
+func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
+	if req.Params() == nil {
 		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: request args should had been solidified")
 	}
 	vmctx.req = req
-	inp, err := vmctx.txBuilder.InputByIndex(inputIndex)
-	if err != nil {
-		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: %v", err)
-	}
-	input, ok := inp.(*ledgerstate.ExtendedLockedOutput)
-	if !ok {
-		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: unexpected input type")
-	}
-	if err := vmctx.txBuilder.ConsumeInputByIndex(inputIndex); err != nil {
-		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
+	if req.Output() != nil {
+		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.Output().ID()); err != nil {
+			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
+		}
+
 	}
 	vmctx.timestamp += 1
 	t := time.Unix(0, vmctx.timestamp)
-	if input.TimeLockedNow(t) {
-		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", t, input.String())
-	}
-	if !input.UnlockAddressNow(t).Equals(vmctx.chainID.AsAddress()) {
-		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
-			t, input.String(), vmctx.chainID.String())
+	if input, ok := req.Output().(*ledgerstate.ExtendedLockedOutput); ok {
+		// it is an on-ledger request
+		if input.TimeLockedNow(t) {
+			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", t, input.String())
+		}
+		if !input.UnlockAddressNow(t).Equals(vmctx.chainID.AsAddress()) {
+			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
+				t, input.String(), vmctx.chainID.String())
+		}
 	}
 
 	vmctx.remainingAfterFees = req.Output().Balances().Clone()
@@ -91,8 +89,9 @@ func (vmctx *VMContext) mustSetUpRequestContext(req *sctransaction.Request, inpu
 	vmctx.stateUpdate = state.NewStateUpdate(req.Output().ID()).WithTimestamp(vmctx.timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 
-	vmctx.contractRecord, ok = vmctx.findContractByHname(req.GetMetadata().TargetContract())
-	if !ok {
+	targetContract, _ := req.Target()
+	var ok bool
+	if vmctx.contractRecord, ok = vmctx.findContractByHname(targetContract); !ok {
 		vmctx.log.Panicf("inconsistency: findContractByHname")
 	}
 	if vmctx.contractRecord.Hname() == 0 {
@@ -157,7 +156,7 @@ func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
 	if tokens == nil || tokens.Size() == 0 {
 		return
 	}
-	sender := vmctx.req.SenderAgentID()
+	sender := vmctx.req.SenderAccount()
 	if sender.Address().Equals(vmctx.chainID.AsAddress()) {
 		// if sender is on the same chain, just accrue tokens back to it
 		vmctx.creditToAccount(vmctx.adjustAccount(sender), tokens)
@@ -168,7 +167,7 @@ func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
 	// otherwise will be sent to _default contract. In case if sender
 	// is ordinary wallet the tokens (less fees) will be returned back
 	backToAddress := sender.Address()
-	backToContract := vmctx.req.GetMetadata().SenderContract()
+	backToContract := vmctx.req.SenderAccount().Hname()
 	metadata := sctransaction.NewRequestMetadata().WithTarget(backToContract)
 	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), tokens.Map())
 	if err != nil {
@@ -181,9 +180,9 @@ func (vmctx *VMContext) mustCallFromRequest() {
 	vmctx.log.Debugf("mustCallFromRequest: %s", vmctx.req.ID().String())
 
 	// calling only non view entry points. Calling the view will trigger error and fallback
-	md := vmctx.req.GetMetadata()
+	targetContract, entryPoint := vmctx.req.Target()
 	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
-		md.TargetContract(), md.EntryPoint(), vmctx.req.SolidArgs(), vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)
+		targetContract, entryPoint, vmctx.req.Params(), vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)
 }
 
 func (vmctx *VMContext) finalizeRequestCall() {
@@ -191,9 +190,10 @@ func (vmctx *VMContext) finalizeRequestCall() {
 	vmctx.lastTotalAssets = vmctx.totalAssets()
 	vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
 
+	_, ep := vmctx.req.Target()
 	vmctx.log.Debugw("runTheRequest OUT",
 		"reqId", vmctx.req.ID().Short(),
-		"entry point", vmctx.req.GetMetadata().EntryPoint().String(),
+		"entry point", ep.String(),
 	)
 }
 
@@ -208,7 +208,8 @@ func (vmctx *VMContext) mustRequestToEventLog(err error) {
 	reqStr := coretypes.RequestID(vmctx.req.Output().ID()).String()
 	msg := fmt.Sprintf("[req] %s: %s", reqStr, e)
 	vmctx.log.Infof("eventlog -> '%s'", msg)
-	vmctx.StoreToEventLog(vmctx.req.GetMetadata().TargetContract(), []byte(msg))
+	targetContract, _ := vmctx.req.Target()
+	vmctx.StoreToEventLog(targetContract, []byte(msg))
 }
 
 // mustGetBaseValues only makes sense if chain is already deployed
@@ -222,8 +223,8 @@ func (vmctx *VMContext) mustGetBaseValues() {
 }
 
 func (vmctx *VMContext) isInitChainRequest() bool {
-	return vmctx.req.GetMetadata().TargetContract() == root.Interface.Hname() &&
-		vmctx.req.GetMetadata().EntryPoint() == coretypes.EntryPointInit
+	targetContract, entryPoint := vmctx.req.Target()
+	return targetContract == root.Interface.Hname() && entryPoint == coretypes.EntryPointInit
 }
 
 func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue) (*ledgerstate.TransactionEssence, error) {

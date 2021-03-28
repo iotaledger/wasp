@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -20,7 +19,7 @@ import (
 type VMTask struct {
 	Processors         *processors.ProcessorCache
 	ChainInput         *ledgerstate.AliasOutput
-	Requests           []*sctransaction.Request
+	Requests           []coretypes.Request
 	Timestamp          time.Time
 	VirtualState       state.VirtualState // input immutable
 	Entropy            hashing.HashValue

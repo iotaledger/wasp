@@ -36,7 +36,10 @@ func (vmctx *VMContext) MyAgentID() *coretypes.AgentID {
 }
 
 func (vmctx *VMContext) Minted() map[ledgerstate.Color]uint64 {
-	return vmctx.req.MintedAmounts()
+	if req, ok := vmctx.req.(*sctransaction.RequestOnLedger); ok {
+		return req.MintedAmounts()
+	}
+	return nil
 }
 
 func (vmctx *VMContext) IsRequestContext() bool {

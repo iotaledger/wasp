@@ -3,9 +3,9 @@ package runvm
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -20,7 +20,7 @@ func MustRunComputationsAsync(ctx *vm.VMTask) {
 	if len(ctx.Requests) == 0 {
 		ctx.Log.Panicf("MustRunComputationsAsync: must be at least 1 request")
 	}
-	outputs := sctransaction.OutputsFromRequests(ctx.Requests...)
+	outputs := outputsFromRequests(ctx.Requests...)
 	txb := utxoutil.NewBuilder(append(outputs, ctx.ChainInput)...)
 
 	go runTask(ctx, txb)
@@ -93,4 +93,15 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		"tx finalTimestamp", task.ResultTransaction.Timestamp(),
 	)
 	task.OnFinish(lastResult, lastErr, nil)
+}
+
+// outputsFromRequests collect all outputs from requests which are on-ledger
+func outputsFromRequests(requests ...coretypes.Request) []ledgerstate.Output {
+	ret := make([]ledgerstate.Output, 0)
+	for _, req := range requests {
+		if out := req.Output(); out != nil {
+			ret = append(ret, out)
+		}
+	}
+	return ret
 }

@@ -101,8 +101,8 @@ func (vmctx *VMContext) callerIsRoot() bool {
 }
 
 func (vmctx *VMContext) requesterIsLocal() bool {
-	return vmctx.chainOwnerID.Equals(vmctx.req.SenderAgentID()) ||
-		vmctx.chainID.AsAddress().Equals(vmctx.req.SenderAgentID().Address())
+	return vmctx.chainOwnerID.Equals(vmctx.req.SenderAccount()) ||
+		vmctx.chainID.AsAddress().Equals(vmctx.req.SenderAccount().Address())
 }
 
 func (vmctx *VMContext) Params() dict.Dict {
