@@ -6,7 +6,6 @@ package statemgr
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"strconv"
 	"time"
@@ -45,6 +44,7 @@ func (sm *stateManager) notifyConsensusOnStateTransitionIfNeeded() {
 	go sm.chain.ReceiveMessage(&chain.StateTransitionMsg{
 		VariableState: sm.solidState.Clone(),
 		ChainOutput:   sm.approvingStateOutput,
+		Timestamp:     sm.approvingStateOutputTimestamp,
 		Synchronized:  sm.isSynchronized(),
 	})
 }
@@ -121,12 +121,12 @@ func (sm *stateManager) checkStateApproval() bool {
 		}
 
 		if sm.solidState != nil {
-			sm.log.Infof("STATE TRANSITION TO #%d. Anchor transaction: %s, block size: %d",
+			sm.log.Infof("STATE TRANSITION TO #%d. Chain output: %s, block size: %d",
 				pending.nextState.BlockIndex(), sm.nextStateOutput.ID().String(), pending.block.Size())
 			sm.log.Debugf("STATE TRANSITION. State hash: %s, block essence: %s",
 				varStateHash.String(), pending.block.EssenceHash().String())
 		} else {
-			sm.log.Infof("ORIGIN STATE SAVED. Origin transaction: %s",
+			sm.log.Infof("ORIGIN STATE SAVED. Origin state output: %s",
 				sm.nextStateOutput.ID().String())
 			sm.log.Debugf("ORIGIN STATE SAVED. State hash: %s, state txid: %s, block essence: %s",
 				varStateHash.String(), sm.nextStateOutput.ID().String(), pending.block.EssenceHash().String())
@@ -142,6 +142,7 @@ func (sm *stateManager) checkStateApproval() bool {
 	sm.solidState = pending.nextState
 
 	sm.approvingStateOutput = sm.nextStateOutput
+	sm.approvingStateOutputTimestamp = sm.nextStateOutputTimestamp
 
 	// update state manager variables to the new state
 	sm.nextStateOutput = nil
@@ -166,8 +167,7 @@ func (sm *stateManager) checkStateApproval() bool {
 
 		publisher.Publish("request_out",
 			sm.chain.ID().String(),
-			reqid.TransactionID().String(),
-			fmt.Sprintf("%d", coretypes.RequestID(reqid).String()),
+			reqid.String(),
 			strconv.Itoa(int(sm.solidState.BlockIndex())),
 			strconv.Itoa(i),
 			strconv.Itoa(int(pending.block.Size())),

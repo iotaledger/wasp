@@ -39,10 +39,12 @@ type stateManager struct {
 
 	// state transaction with +1 state index from the state index of solid variable state
 	// it may be nil if does not exist or not fetched yet
-	nextStateOutput *ledgerstate.AliasOutput
+	nextStateOutput          *ledgerstate.AliasOutput
+	nextStateOutputTimestamp time.Time
 
 	// state transaction which approves current state
-	approvingStateOutput *ledgerstate.AliasOutput
+	approvingStateOutput          *ledgerstate.AliasOutput
+	approvingStateOutputTimestamp time.Time
 
 	// was state transition message of the current state sent to the consensus operator
 	consensusNotifiedOnStateTransition bool
@@ -70,7 +72,7 @@ type stateManager struct {
 	eventGetBlockMsgCh           chan *chain.GetBlockMsg
 	eventBlockHeaderMsgCh        chan *chain.BlockHeaderMsg
 	eventStateUpdateMsgCh        chan *chain.StateUpdateMsg
-	eventStateOutputMsg          chan *ledgerstate.AliasOutput
+	eventStateOutputMsgCh        chan *chain.StateOutputMsg
 	eventPendingBlockMsgCh       chan chain.PendingBlockMsg
 	eventTimerMsgCh              chan chain.TimerTick
 	closeCh                      chan bool
@@ -104,7 +106,7 @@ func New(c chain.Chain, log *logger.Logger) chain.StateManager {
 		eventGetBlockMsgCh:           make(chan *chain.GetBlockMsg),
 		eventBlockHeaderMsgCh:        make(chan *chain.BlockHeaderMsg),
 		eventStateUpdateMsgCh:        make(chan *chain.StateUpdateMsg),
-		eventStateOutputMsg:          make(chan *ledgerstate.AliasOutput),
+		eventStateOutputMsgCh:        make(chan *chain.StateOutputMsg),
 		eventPendingBlockMsgCh:       make(chan chain.PendingBlockMsg),
 		eventTimerMsgCh:              make(chan chain.TimerTick),
 		closeCh:                      make(chan bool),
@@ -178,9 +180,9 @@ func (sm *stateManager) recvLoop() {
 			if ok {
 				sm.eventStateUpdateMsg(msg)
 			}
-		case msg, ok := <-sm.eventStateOutputMsg:
+		case msg, ok := <-sm.eventStateOutputMsgCh:
 			if ok {
-				sm.eventStateTransactionMsg(msg)
+				sm.eventStateOutputMsg(msg)
 			}
 		case msg, ok := <-sm.eventPendingBlockMsgCh:
 			if ok {

@@ -24,8 +24,9 @@ type operator struct {
 
 	dkshare *tcrypto.DKShare
 	//currentState
-	currentState state.VirtualState
-	stateOutput  *ledgerstate.AliasOutput
+	currentState   state.VirtualState
+	stateOutput    *ledgerstate.AliasOutput
+	stateTimestamp time.Time
 
 	// consensus stage
 	consensusStage         int
@@ -70,13 +71,13 @@ type operator struct {
 }
 
 type leaderStatus struct {
-	reqs          []*request
-	batch         state.Block
-	batchHash     hashing.HashValue
-	timestamp     int64
-	resultTx      *ledgerstate.TransactionEssence
-	finalized     bool
-	signedResults []*signedResult
+	reqs            []*request
+	batch           state.Block
+	batchHash       hashing.HashValue
+	timestamp       time.Time
+	resultTxEssence *ledgerstate.TransactionEssence
+	finalized       bool
+	signedResults   []*signedResult
 }
 
 type signedResult struct {

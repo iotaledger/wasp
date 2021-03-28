@@ -20,7 +20,7 @@ func (op *operator) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 
 // eventStateTransitionMsg internal event handler
 func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
-	op.setNewSCState(msg.ChainOutput, msg.VariableState, msg.Synchronized)
+	op.setNewSCState(msg)
 
 	vh := op.currentState.Hash()
 	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v tx: %s, state hash: %s, backlog: %d",

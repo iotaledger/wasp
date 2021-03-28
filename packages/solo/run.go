@@ -94,11 +94,10 @@ func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.
 	ch.Env.ClockStep()
 }
 
-func batchShortStr(reqIds []ledgerstate.OutputID) string {
+func batchShortStr(reqIds []coretypes.RequestID) string {
 	ret := make([]string, len(reqIds))
 	for i, r := range reqIds {
-		s := r.Base58()
-		ret[i] = s[:6] + ".."
+		ret[i] = r.Short()
 	}
 	return fmt.Sprintf("[%s]", strings.Join(ret, ","))
 }

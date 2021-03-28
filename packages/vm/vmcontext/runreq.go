@@ -86,7 +86,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
 
 	vmctx.remainingAfterFees = req.Output().Balances().Clone()
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
-	vmctx.stateUpdate = state.NewStateUpdate(req.Output().ID()).WithTimestamp(vmctx.timestamp)
+	vmctx.stateUpdate = state.NewStateUpdate(req.ID()).WithTimestamp(vmctx.timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 
 	targetContract, _ := req.Target()

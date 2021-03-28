@@ -71,7 +71,7 @@ type StateManager interface {
 	EventGetBlockMsg(msg *GetBlockMsg)
 	EventBlockHeaderMsg(msg *BlockHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)
-	EventStateTransactionMsg(msg *ledgerstate.AliasOutput)
+	EventStateOutputMsg(msg *StateOutputMsg)
 	EventPendingBlockMsg(msg PendingBlockMsg)
 	EventTimerMsg(msg TimerTick)
 	Close()

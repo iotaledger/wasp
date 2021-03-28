@@ -179,7 +179,10 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 		c.ReceiveRequest(req)
 	}
 	if chainOut := sctransaction.FindAliasOutput(tx.Essence(), c.chainID.AsAddress()); chainOut != nil {
-		c.ReceiveMessage(chainOut)
+		c.ReceiveMessage(&chain.StateOutputMsg{
+			ChainOutput: chainOut,
+			Timestamp:   tx.Essence().Timestamp(),
+		})
 	}
 }
 
@@ -322,8 +325,7 @@ func (c *chainObj) GetRequestProcessingStatus(reqID *coretypes.RequestID) chain.
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	oid := ledgerstate.OutputID(*reqID)
-	processed, err := state.IsRequestCompleted(c.ID(), &oid)
+	processed, err := state.IsRequestCompleted(c.ID(), *reqID)
 	if err != nil || !processed {
 		return chain.RequestProcessingStatusUnknown
 	}

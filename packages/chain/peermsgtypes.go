@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/vm"
+	"time"
 )
 
 // Message types for the committee communications.
@@ -118,6 +119,8 @@ type StateTransitionMsg struct {
 	VariableState state.VirtualState
 	// corresponding state transaction
 	ChainOutput *ledgerstate.AliasOutput
+	//
+	Timestamp time.Time
 	// processed requests
 	RequestIDs []*coretypes.RequestID
 	// is the state index last seen
@@ -130,13 +133,6 @@ type PendingBlockMsg struct {
 	Block state.Block
 }
 
-// message is sent to the consensus manager after it receives state transaction
-// which is valid but not confirmed yet.
-type StateTransactionEvidenced struct {
-	TxId      ledgerstate.TransactionID
-	StateHash hashing.HashValue
-}
-
 // VMResultMsg is the message sent by the async VM task to the chan object upon success full finish
 type VMResultMsg struct {
 	Task   *vm.VMTask
@@ -146,4 +142,9 @@ type VMResultMsg struct {
 type InclusionStateMsg struct {
 	TxID  ledgerstate.TransactionID
 	State ledgerstate.InclusionState
+}
+
+type StateOutputMsg struct {
+	ChainOutput *ledgerstate.AliasOutput
+	Timestamp   time.Time
 }

@@ -5,7 +5,6 @@ package chainimpl
 
 import (
 	"bytes"
-	"github.com/iotaledger/goshimmer/packages/txstream"
 	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -20,33 +19,25 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 	switch msgt := msg.(type) {
 	case *peering.PeerMessage:
 		c.processPeerMessage(msgt)
-
 	case *chain.StateUpdateMsg:
 		c.stateMgr.EventStateUpdateMsg(msgt)
-
 	case *chain.StateTransitionMsg:
 		if c.operator != nil {
 			c.operator.EventStateTransitionMsg(msgt)
 		}
-
 	case chain.PendingBlockMsg:
 		c.stateMgr.EventPendingBlockMsg(msgt)
-
-	case *txstream.MsgTransaction:
-		// receive state transaction message
-		c.stateMgr.EventStateTransactionMsg(msgt)
-
 	case *chain.InclusionStateMsg:
 		if c.operator != nil {
 			c.operator.EventTransactionInclusionStateMsg(msgt)
 		}
-
+	case *chain.StateOutputMsg:
+		c.stateMgr.EventStateOutputMsg(msgt)
 	case coretypes.Request:
 		// receive request message
 		if c.operator != nil {
 			c.operator.EventRequestMsg(msgt)
 		}
-
 	case *chain.VMResultMsg:
 		// VM finished working
 		if c.operator != nil {

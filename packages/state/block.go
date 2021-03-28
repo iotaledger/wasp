@@ -47,7 +47,7 @@ func BlockFromBytes(data []byte) (Block, error) {
 
 // block with empty state update and nil state hash
 func MustNewOriginBlock(originTxID ledgerstate.TransactionID) Block {
-	ret, err := NewBlock(NewStateUpdate(ledgerstate.OutputID{}))
+	ret, err := NewBlock(NewStateUpdate(coretypes.RequestID{}))
 	if err != nil {
 		log.Panic(err)
 	}

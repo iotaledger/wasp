@@ -96,7 +96,7 @@ func (op *operator) adjustNotifications() {
 	// clear all the notification markers
 	for _, req := range op.requests {
 		setAllFalse(req.notifications)
-		req.notifications[op.peerIndex()] = req.reqTx != nil
+		req.notifications[op.peerIndex()] = req.req != nil
 	}
 	// put markers of the current state
 	op.markRequestsNotified(op.notificationsBacklog)

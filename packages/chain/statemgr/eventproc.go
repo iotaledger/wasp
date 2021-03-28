@@ -4,7 +4,6 @@
 package statemgr
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
@@ -159,43 +158,44 @@ func (sm *stateManager) eventStateUpdateMsg(msg *chain.StateUpdateMsg) {
 
 // EventStateTransactionMsg triggered whenever new state transaction arrives
 // the state transaction may be confirmed or not
-func (sm *stateManager) EventStateTransactionMsg(msg *ledgerstate.AliasOutput) {
-	sm.eventStateOutputMsg <- msg
+func (sm *stateManager) EventStateOutputMsg(msg *chain.StateOutputMsg) {
+	sm.eventStateOutputMsgCh <- msg
 }
-func (sm *stateManager) eventStateTransactionMsg(chainOutput *ledgerstate.AliasOutput) {
-	stateHash, err := hashing.HashValueFromBytes(chainOutput.GetStateData())
+func (sm *stateManager) eventStateOutputMsg(msg *chain.StateOutputMsg) {
+	stateHash, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
 	if err != nil {
 		sm.log.Panicf("failed to parse state hash: %v", err)
 	}
-	sm.log.Debugw("EventStateTransactionMsg",
-		"chainOutput", chainOutput.ID().Base58(),
-		"state index", chainOutput.GetStateIndex(),
+	sm.log.Debugw("EventStateOutputMsg",
+		"chainOutput", msg.ChainOutput.ID().Base58(),
+		"state index", msg.ChainOutput.GetStateIndex(),
 		"state hash", stateHash.String(),
 	)
 
-	sm.evidenceStateIndex(chainOutput.GetStateIndex())
+	sm.evidenceStateIndex(msg.ChainOutput.GetStateIndex())
 
 	if sm.solidStateValid {
-		if chainOutput.GetStateIndex() != sm.solidState.BlockIndex()+1 {
+		if msg.ChainOutput.GetStateIndex() != sm.solidState.BlockIndex()+1 {
 			sm.log.Debugf("skip state transaction: expected with state index #%d, got #%d, Txid: %s",
-				sm.solidState.BlockIndex()+1, chainOutput.GetStateIndex(), chainOutput.ID().Base58())
+				sm.solidState.BlockIndex()+1, msg.ChainOutput.GetStateIndex(), msg.ChainOutput.ID().Base58())
 			return
 		}
 	} else {
 		if sm.solidState == nil {
 			// pre-origin
-			if chainOutput.GetStateIndex() != 0 {
+			if msg.ChainOutput.GetStateIndex() != 0 {
 				sm.log.Debugf("sm.solidState == nil && stateBlock.BlockIndex() != 0")
 				return
 			}
 		} else {
-			if chainOutput.GetStateIndex() != sm.solidState.BlockIndex() {
+			if msg.ChainOutput.GetStateIndex() != sm.solidState.BlockIndex() {
 				sm.log.Debugf("sm.solidState == nil && stateBlock.BlockIndex() != sm.solidState.BlockIndex()")
 				return
 			}
 		}
 	}
-	sm.nextStateOutput = chainOutput
+	sm.nextStateOutput = msg.ChainOutput
+	sm.nextStateOutputTimestamp = msg.Timestamp
 
 	sm.takeAction()
 }

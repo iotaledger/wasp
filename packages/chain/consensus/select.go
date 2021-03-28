@@ -74,7 +74,7 @@ func (op *operator) requestsTimeLocked() []*request {
 
 	nowis := time.Now()
 	for _, req := range op.requests {
-		if req.reqTx == nil {
+		if req.req == nil {
 			continue
 		}
 		if !req.isTimeLocked(nowis) {

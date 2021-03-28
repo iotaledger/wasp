@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 )
@@ -131,16 +130,15 @@ func (op *operator) startCalculationsAsLeader() {
 
 	// determine timestamp. Must be max(local clock, prev timestamp+1).
 	// Adjustment enforced, when needed
-	ts := time.Now().UnixNano()
-	prevTs := op.stateOutput.MustState().Timestamp()
-	if ts <= prevTs {
-		op.log.Warnf("local clock is not ahead the timestamp of the previous state. prevTs: %d, currentTs: %d, diff: %d ns",
-			prevTs, ts, prevTs-ts)
-		ts = prevTs + 1
-		op.log.Info("timestamp was adjusted to %d", ts)
+	ts := time.Now()
+	prevTs := op.stateTimestamp
+	if !ts.After(prevTs) {
+		op.log.Warn("local clock is not ahead of the timestamp of the previous state")
+		ts = prevTs.Add(1 * time.Nanosecond)
+		op.log.Info("timestamp was adjusted to %v", ts)
 	}
 
-	numSucc := op.chain.SendMsgToCommitteePeers(chain.MsgStartProcessingRequest, msgData, ts)
+	numSucc := op.chain.SendMsgToCommitteePeers(chain.MsgStartProcessingRequest, msgData, ts.UnixNano())
 
 	op.log.Debugf("%d 'msgStartProcessingRequest' messages sent to peers", numSucc)
 
@@ -155,7 +153,6 @@ func (op *operator) startCalculationsAsLeader() {
 	op.leaderStatus = &leaderStatus{
 		reqs:          reqs,
 		batchHash:     batchHash,
-		balances:      op.balances,
 		timestamp:     ts,
 		signedResults: make([]*signedResult, op.chain.Size()),
 	}
@@ -168,7 +165,6 @@ func (op *operator) startCalculationsAsLeader() {
 	op.runCalculationsAsync(runCalculationsParams{
 		requests:        reqs,
 		leaderPeerIndex: op.chain.OwnPeerIndex(),
-		balances:        op.balances,
 		timestamp:       ts,
 		accrueFeesTo:    rewardAddress,
 	})
@@ -187,7 +183,7 @@ func (op *operator) checkQuorum() {
 		// checking quorum only if leader calculations has been finished
 		return
 	}
-	if op.leaderStatus == nil || op.leaderStatus.resultTx == nil || op.leaderStatus.finalized {
+	if op.leaderStatus == nil || op.leaderStatus.resultTxEssence == nil || op.leaderStatus.finalized {
 		return
 	}
 
@@ -205,7 +201,7 @@ func (op *operator) checkQuorum() {
 			op.leaderStatus.signedResults[i] = nil // ignoring
 			continue
 		}
-		err := op.dkshare.VerifySigShare(op.leaderStatus.resultTx.EssenceBytes(), op.leaderStatus.signedResults[i].sigShare)
+		err := op.dkshare.VerifySigShare(op.leaderStatus.resultTxEssence.Bytes(), op.leaderStatus.signedResults[i].sigShare)
 		if err != nil {
 			// TODO here we are ignoring wrong signatures. In general, it means it is an attack
 			// In the future when each message will be signed by the peer's identity, the invalidity
@@ -227,68 +223,50 @@ func (op *operator) checkQuorum() {
 	// quorum detected
 
 	// finalizing result transaction with signatures
-	if err := op.aggregateSigShares(sigShares); err != nil {
+	finalTx, err := op.aggregateSigShares(sigShares)
+	if err != nil {
 		// should not normally happen
 		op.log.Errorf("aggregateSigShares returned: %v", err)
 		return
 	}
 
-	// just in case we are double-checking semantic validity of the transaction
-	// Invalidity of properties means internal error
-	// Nota that tx ID is not known and cannot be taken before this point,
-	_, err := op.leaderStatus.resultTx.Properties()
-	if err != nil {
-		op.log.Panicf("internal error: invalid tx properties: %v\ndump tx: %s\ndump vtx: %s\n", err,
-			op.leaderStatus.resultTx.String(), op.leaderStatus.resultTx.Transaction.String())
-		return
-	}
-
-	txid := op.leaderStatus.resultTx.ID()
-	sh := op.leaderStatus.resultTx.MustState().StateHash()
-	stateIndex := op.leaderStatus.resultTx.MustState().BlockIndex()
-	op.log.Infof("FINALIZED RESULT. txid: %s, state index: #%d, state hash: %s, contributors: %+v",
-		txid.String(), stateIndex, sh.String(), contributingPeers)
+	op.log.Infof("FINALIZED RESULT. txid: %s, contributors: %+v", finalTx.ID().Base58(), contributingPeers)
 	op.leaderStatus.finalized = true
 
 	// posting finalized transaction to goshimmer
-	addr := op.chain.Address()
-	tx := op.leaderStatus.resultTx.Transaction
-	if len(tx.Bytes()) > parameters.MaxSerializedTransactionToGoshimmer {
+	if len(finalTx.Bytes()) > parameters.MaxSerializedTransactionToGoshimmer {
 		op.log.Warnf("transaction too large")
 		return
 	}
-	err = nodeconn.PostTransactionToNode(tx, &addr, op.chain.OwnPeerIndex())
-	if err != nil {
-		op.log.Warnf("PostTransactionToNode failed: %v", err)
-		return
-	}
-	op.log.Debugf("result transaction has been posted to node. txid: %s", txid.String())
+	nodeconn.NodeConnection().PostTransaction(finalTx, op.chain.ID().AsAddress(), op.chain.OwnPeerIndex())
+	op.log.Debugf("result transaction has been posted to node. txid: %s", finalTx.ID().Base58())
 
 	// notify peers about finalization of the transaction
 	msgData := util.MustBytes(&chain.NotifyFinalResultPostedMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
 			// timestamp is set by SendMsgToCommitteePeers
-			BlockIndex: op.stateOutput.MustState().BlockIndex(),
+			BlockIndex: op.stateOutput.GetStateIndex(),
 		},
-		TxId: txid,
+		TxId: finalTx.ID(),
 	})
 
 	numSent := op.chain.SendMsgToCommitteePeers(chain.MsgNotifyFinalResultPosted, msgData, time.Now().UnixNano())
 	op.log.Debugf("%d peers has been notified about finalized result", numSent)
 
 	op.setNextConsensusStage(consensusStageLeaderResultFinalized)
-	op.setFinalizedTransaction(&txid)
+	op.setFinalizedTransaction(finalTx.ID())
 
 	return
 }
 
 // sets new currentState transaction and initializes respective variables
-func (op *operator) setNewSCState(stateTx *sctransaction_old.TransactionEssence, variableState state.VirtualState, synchronized bool) {
-	op.stateOutput = stateTx
-	op.currentState = variableState
+func (op *operator) setNewSCState(msg *chain.StateTransitionMsg) {
+	op.stateOutput = msg.ChainOutput
+	op.stateTimestamp = msg.Timestamp
+	op.currentState = msg.VariableState
 	op.sentResultToLeader = nil
-	op.postedResultTxid = nil
+	op.postedResultTxid = nilTxID
 	op.requestBalancesDeadline = time.Now()
-	op.resetLeader(stateTx.ID().Bytes())
+	op.resetLeader(op.stateOutput.ID().Bytes())
 	op.adjustNotifications()
 }

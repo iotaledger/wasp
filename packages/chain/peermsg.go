@@ -217,7 +217,7 @@ func (msg *StateUpdateMsg) Read(r io.Reader) error {
 	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
 		return err
 	}
-	msg.StateUpdate = state.NewStateUpdate(ledgerstate.OutputID{})
+	msg.StateUpdate = state.NewStateUpdate(coretypes.RequestID{})
 	if err := msg.StateUpdate.Read(r); err != nil {
 		return err
 	}
