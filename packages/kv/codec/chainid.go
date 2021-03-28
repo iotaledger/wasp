@@ -8,7 +8,7 @@ func DecodeChainID(b []byte) (coretypes.ChainID, bool, error) {
 	if b == nil {
 		return coretypes.ChainID{}, false, nil
 	}
-	r, err := coretypes.NewChainIDFromBytes(b)
+	r, err := coretypes.ChainIDFromBytes(b)
 	return *r, err == nil, err
 }
 

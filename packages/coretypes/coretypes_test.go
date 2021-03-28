@@ -12,7 +12,7 @@ import (
 )
 
 func TestChainID(t *testing.T) {
-	chid := NewRandomChainID()
+	chid := RandomChainID()
 
 	chid58 := chid.Base58()
 	t.Logf("chid58 = %s", chid58)
@@ -20,11 +20,11 @@ func TestChainID(t *testing.T) {
 	chidString := chid.String()
 	t.Logf("chidString = %s", chidString)
 
-	chidback, err := NewChainIDFromBytes(chid.Bytes())
+	chidback, err := ChainIDFromBytes(chid.Bytes())
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
 
-	chidback, err = NewChainIDFromBase58(chid58)
+	chidback, err = ChainIDFromBase58(chid58)
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
 }
@@ -64,7 +64,7 @@ func TestHname(t *testing.T) {
 	hn1 := Hn("first")
 
 	hn1bytes := hn1.Bytes()
-	hn1back, err := NewHnameFromBytes(hn1bytes)
+	hn1back, err := HnameFromBytes(hn1bytes)
 	require.NoError(t, err)
 	require.EqualValues(t, hn1, hn1back)
 

@@ -3,10 +3,35 @@ package coretypes
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 type RequestID ledgerstate.OutputID
+
+func RequestIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestID, error) {
+	ret, err := ledgerstate.OutputIDFromMarshalUtil(mu)
+	return RequestID(ret), err
+}
+
+func RequestIDFromBytes(data []byte) (RequestID, error) {
+	return RequestIDFromMarshalUtil(marshalutil.New(data))
+}
+
+func RequestIDFromBase58(b58 string) (ret RequestID, err error) {
+	var oid ledgerstate.OutputID
+	oid, err = ledgerstate.OutputIDFromBase58(b58)
+	if err != nil {
+		return
+	}
+	ret = RequestID(oid)
+	return
+}
+
+func (r *RequestID) Bytes() []byte {
+	ret := *r
+	return ret[:]
+}
 
 func (rid RequestID) String() string {
 	return fmt.Sprintf("[%d]%s", ledgerstate.OutputID(rid).OutputIndex(), ledgerstate.OutputID(rid).TransactionID().Base58())

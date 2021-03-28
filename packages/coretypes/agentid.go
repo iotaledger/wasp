@@ -84,7 +84,7 @@ func NewAgentIDFromString(s string) (*AgentID, error) {
 
 // NewRandomAgentID creates random AgentID
 func NewRandomAgentID() *AgentID {
-	addr := NewRandomChainID().AsAddress()
+	addr := RandomChainID().AsAddress()
 	hname := Hn("testName")
 	return NewAgentID(addr, hname)
 }

@@ -99,7 +99,7 @@ func (n *Node) GenerateDistributedKey(
 		return nil, err
 	}
 	defer netGroup.Close()
-	dkgID := coretypes.NewRandomChainID()
+	dkgID := coretypes.RandomChainID()
 	recvCh := make(chan *peering.RecvEvent, peerCount*2)
 	attachID := n.netProvider.Attach(dkgID, func(recv *peering.RecvEvent) {
 		recvCh <- recv

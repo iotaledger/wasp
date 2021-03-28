@@ -2,7 +2,6 @@ package admapi
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -15,11 +14,12 @@ import (
 )
 
 func addChainRecordEndpoints(adm echoswagger.ApiGroup) {
+	rnd1 := coretypes.RandomChainID()
+	rnd2 := coretypes.RandomChainID([]byte{1, 2, 3}).AsAddress()
 	example := model.ChainRecord{
-		ChainID:        model.NewChainID(&coretypes.ChainID{1, 2, 3, 4}),
-		Color:          model.NewColor(ledgerstate.Color{5, 6, 7, 8}),
-		CommitteeNodes: []string{"wasp1:4000", "wasp2:4000"},
-		Active:         false,
+		ChainID:      model.NewChainID(rnd1),
+		StateAddrTmp: model.NewAddress(rnd2),
+		Active:       false,
 	}
 
 	adm.POST(routes.PutChainRecord(), handlePutChainRecord).
@@ -45,28 +45,28 @@ func handlePutChainRecord(c echo.Context) error {
 
 	bd := req.Record()
 
-	bd2, err := registry.GetChainRecord(&bd.ChainID)
+	bd2, err := registry.ChainRecordFromRegistry(&bd.ChainID)
 	if err != nil {
 		return err
 	}
 	if bd2 != nil {
 		return httperrors.Conflict(fmt.Sprintf("Record already exists: %s", bd.ChainID.String()))
 	}
-	if err = registry.SaveChainRecord(bd); err != nil {
+	if err = bd.SaveToRegistry(); err != nil {
 		return err
 	}
 
-	log.Infof("Record saved for addr: %s color: %s", bd.ChainID.String(), bd.Color.String())
+	log.Infof("Record saved. ChainID: %s", bd.ChainID.String())
 
 	return c.NoContent(http.StatusCreated)
 }
 
 func handleGetChainRecord(c echo.Context) error {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainID"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
-	bd, err := registry.GetChainRecord(&chainID)
+	bd, err := registry.ChainRecordFromRegistry(chainID)
 	if err != nil {
 		return err
 	}

@@ -5,13 +5,16 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/util/ready"
+	"time"
 )
 
 const PluginName = "Chains"
 
 var (
-	log       *logger.Logger
-	allChains *chains.Chains
+	log         *logger.Logger
+	allChains   *chains.Chains
+	initialized = ready.New("Chains")
 )
 
 func Init() *node.Plugin {
@@ -44,4 +47,9 @@ func run(_ *node.Plugin) {
 		log.Error(err)
 		return
 	}
+}
+
+func AllChains() *chains.Chains {
+	initialized.MustWait(5 * time.Second)
+	return allChains
 }

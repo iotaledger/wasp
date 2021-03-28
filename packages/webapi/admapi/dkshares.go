@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"net/http"
 	"time"
 
@@ -31,8 +32,9 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup) {
 		Threshold:   3,
 		TimeoutMS:   10000,
 	}
+	addr1 := coretypes.RandomChainID().AsAddress()
 	infoExample := model.DKSharesInfo{
-		Address:      ledgerstate.Address{5, 6, 7, 8}.String(),
+		Address:      addr1.String(),
 		SharedPubKey: base64.StdEncoding.EncodeToString([]byte("key")),
 		PubKeyShares: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
 		Threshold:    3,

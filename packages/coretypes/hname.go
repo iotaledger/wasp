@@ -33,13 +33,13 @@ var (
 	HnameDefault   = Hname(0)
 )
 
-// NewHnameFromBytes constructor, unmarshalling
-func NewHnameFromBytes(data []byte) (ret Hname, err error) {
+// HnameFromBytes constructor, unmarshalling
+func HnameFromBytes(data []byte) (ret Hname, err error) {
 	err = ret.Read(bytes.NewReader(data))
 	return
 }
 
-// Hn created hname from arbitrary string.
+// Hn create hname from arbitrary string.
 func Hn(funname string) (ret Hname) {
 	h := hashing.HashStrings(funname)
 	_ = ret.Read(bytes.NewReader(h[:HnameLength]))

@@ -14,7 +14,7 @@ import (
 func TestSetThenGet(t *testing.T) {
 	db := mapdb.NewMapDB()
 
-	chainID := coretypes.NewRandomChainID([]byte("mmm"))
+	chainID := coretypes.RandomChainID([]byte("mmm"))
 
 	virtualState := state.NewVirtualState(db, chainID)
 	stateUpdate := state.NewStateUpdate(ledgerstate.OutputID{})
@@ -63,7 +63,7 @@ func TestSetThenGet(t *testing.T) {
 func TestIterate(t *testing.T) {
 	db := mapdb.NewMapDB()
 
-	chainID := coretypes.NewRandomChainID([]byte("mmm"))
+	chainID := coretypes.RandomChainID([]byte("mmm"))
 
 	virtualState := state.NewVirtualState(db, chainID)
 	stateUpdate := state.NewStateUpdate(ledgerstate.OutputID{})

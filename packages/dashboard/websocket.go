@@ -20,7 +20,7 @@ func addWsEndpoints(e *echo.Echo) {
 }
 
 func handleWebSocket(c echo.Context) error {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}

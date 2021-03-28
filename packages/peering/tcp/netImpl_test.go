@@ -46,8 +46,8 @@ func TestBasic(t *testing.T) {
 		doneCh <- true
 	})
 
-	chain1 := *coretypes.NewRandomChainID()
-	chain2 := *coretypes.NewRandomChainID()
+	chain1 := *coretypes.RandomChainID()
+	chain2 := *coretypes.RandomChainID()
 	n0p2.SendMsg(&peering.PeerMessage{ChainID: chain1, MsgType: 125})
 	n1p1.SendMsg(&peering.PeerMessage{ChainID: chain1, MsgType: 125})
 	n2p0.SendMsg(&peering.PeerMessage{ChainID: chain2, MsgType: 125})

@@ -25,23 +25,26 @@ func addStateEndpoints(adm echoswagger.ApiGroup) {
 }
 
 func handleDumpSCState(c echo.Context) error {
-	contractID, err := coretypes.NewContractIDFromBase58(c.Param("contractID"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid SC id: %s", c.Param("contractID")))
+		return httperrors.BadRequest(fmt.Sprintf("Invalid SC id: %s", c.Param("chainID")))
+	}
+	contractHname, err := coretypes.HnameFromString(c.Param("contractHname"))
+	if err != nil {
+		return httperrors.BadRequest(fmt.Sprintf("Invalid SC id: %s", c.Param("contractHname")))
 	}
 
-	chainID := contractID.ChainID()
-	virtualState, _, ok, err := state.LoadSolidState(&chainID)
+	virtualState, _, ok, err := state.LoadSolidState(chainID)
 	if err != nil {
 		return err
 	}
 	if !ok {
-		return httperrors.NotFound(fmt.Sprintf("State not found for contract %s", contractID.String()))
+		return httperrors.NotFound(fmt.Sprintf("State not found for chainID %s", chainID.String()))
 	}
 
 	vars, err := dict.FromKVStore(subrealm.New(
 		virtualState.Variables().DangerouslyDumpToDict(),
-		kv.Key(contractID.Hname().Bytes()),
+		kv.Key(contractHname.Bytes()),
 	))
 	if err != nil {
 		return err

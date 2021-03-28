@@ -20,7 +20,7 @@ func initChainContract(e *echo.Echo, r renderer) {
 }
 
 func handleChainContract(c echo.Context) error {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
@@ -31,16 +31,16 @@ func handleChainContract(c echo.Context) error {
 	}
 
 	result := &ChainContractTemplateParams{
-		BaseTemplateParams: BaseParams(c, chainBreadcrumb(c.Echo(), chainID), Tab{
+		BaseTemplateParams: BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
 			Path:  c.Path(),
 			Title: fmt.Sprintf("Contract %d", hname),
 			Href:  "#",
 		}),
-		ChainID: chainID,
+		ChainID: *chainID,
 		Hname:   hname,
 	}
 
-	chain := chains.GetChain(chainID)
+	chain := chains.AllChains().Get(chainID)
 	if chain != nil {
 		r, err := callView(chain, root.Interface.Hname(), root.FuncFindContract, codec.MakeDict(map[string]interface{}{
 			root.ParamHname: codec.EncodeHname(hname),

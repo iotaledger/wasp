@@ -90,17 +90,17 @@ func handleWaitRequestProcessed(c echo.Context) error {
 }
 
 func parseParams(c echo.Context) (chain.Chain, *coretypes.RequestID, error) {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainID"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
-		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid chain ID %+v: %s", c.Param("chainID"), err.Error()))
+		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid theChain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}
-	chain := chains.GetChain(chainID)
-	if chain == nil {
-		return nil, nil, httperrors.NotFound(fmt.Sprintf("Chain not found: %+v", chainID.String()))
+	theChain := chains.AllChains().Get(chainID)
+	if theChain == nil {
+		return nil, nil, httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID.String()))
 	}
-	reqID, err := coretypes.NewRequestIDFromBase58(c.Param("reqID"))
+	reqID, err := coretypes.RequestIDFromBase58(c.Param("reqID"))
 	if err != nil {
 		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid request id %+v: %s", c.Param("reqID"), err.Error()))
 	}
-	return chain, &reqID, nil
+	return theChain, &reqID, nil
 }

@@ -34,7 +34,7 @@ func AddChainAlias(chainAlias string, id string) {
 }
 
 func GetCurrentChainID() coretypes.ChainID {
-	chid, err := coretypes.NewChainIDFromBase58(viper.GetString("chains." + GetChainAlias()))
+	chid, err := coretypes.ChainIDFromBase58(viper.GetString("chains." + GetChainAlias()))
 	log.Check(err)
 	return *chid
 }

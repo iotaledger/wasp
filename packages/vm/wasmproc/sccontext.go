@@ -144,11 +144,11 @@ func (o *ScContext) SetBytes(keyId int32, typeId int32, bytes []byte) {
 
 func (o *ScContext) processCall(bytes []byte) {
 	decode := NewBytesDecoder(bytes)
-	contract, err := coretypes.NewHnameFromBytes(decode.Bytes())
+	contract, err := coretypes.HnameFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	function, err := coretypes.NewHnameFromBytes(decode.Bytes())
+	function, err := coretypes.HnameFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
@@ -188,15 +188,15 @@ func (o *ScContext) processDeploy(bytes []byte) {
 // TODO refactor
 func (o *ScContext) processPost(bytes []byte) {
 	decode := NewBytesDecoder(bytes)
-	chainId, err := coretypes.NewChainIDFromBytes(decode.Bytes())
+	chainId, err := coretypes.ChainIDFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	contract, err := coretypes.NewHnameFromBytes(decode.Bytes())
+	contract, err := coretypes.HnameFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	function, err := coretypes.NewHnameFromBytes(decode.Bytes())
+	function, err := coretypes.HnameFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}

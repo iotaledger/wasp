@@ -295,7 +295,7 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 	requests := env.requestsByChain(tx)
 
 	for chidArr, reqs := range requests {
-		chid, err := coretypes.NewChainIDFromBytes(chidArr[:])
+		chid, err := coretypes.ChainIDFromBytes(chidArr[:])
 		require.NoError(env.T, err)
 		chain, ok := env.chains[chidArr]
 		if !ok {

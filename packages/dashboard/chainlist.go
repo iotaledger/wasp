@@ -39,7 +39,7 @@ func fetchChains() ([]*ChainOverview, error) {
 	}
 	r := make([]*ChainOverview, len(crs))
 	for i, cr := range crs {
-		info, err := fetchRootInfo(chains.GetChain(cr.ChainID))
+		info, err := fetchRootInfo(chains.AllChains().Get(&cr.ChainID))
 		r[i] = &ChainOverview{
 			ChainRecord: cr,
 			RootInfo:    info,

@@ -17,8 +17,8 @@ func TestFakeNetwork(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	doneCh := make(chan bool)
-	chain1 := coretypes.NewRandomChainID()
-	chain2 := coretypes.NewRandomChainID()
+	chain1 := coretypes.RandomChainID()
+	chain2 := coretypes.RandomChainID()
 	network := testutil.NewPeeringNetworkForLocs([]string{"a", "b", "c"}, 100, log)
 	var netProviders []peering.NetworkProvider = network.NetworkProviders()
 	//

@@ -16,7 +16,7 @@ func TestPeerMessageCodec(t *testing.T) {
 	var err error
 	var src, dst *peering.PeerMessage
 	src = &peering.PeerMessage{
-		ChainID:     *coretypes.NewRandomChainID(),
+		ChainID:     *coretypes.RandomChainID(),
 		SenderIndex: uint16(123),
 		Timestamp:   time.Now().UnixNano(),
 		MsgType:     peering.FirstUserMsgCode + 17,
@@ -46,7 +46,7 @@ func TestPeerMessageChunks(t *testing.T) {
 		data[i] = byte(rand.Intn(255))
 	}
 	src = &peering.PeerMessage{
-		ChainID:     *coretypes.NewRandomChainID(),
+		ChainID:     *coretypes.RandomChainID(),
 		SenderIndex: uint16(123),
 		Timestamp:   time.Now().UnixNano(),
 		MsgType:     peering.FirstUserMsgCode + 17,

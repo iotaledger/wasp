@@ -58,8 +58,6 @@ const (
 // param variables
 const (
 	ParamChainID      = "$$chainid$$"
-	ParamChainColor   = "$$color$$"
-	ParamChainAddress = "$$address$$"
 	ParamChainOwner   = "$$owner$$"
 	ParamProgramHash  = "$$proghash$$"
 	ParamDescription  = "$$description$$"

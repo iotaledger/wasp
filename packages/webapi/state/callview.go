@@ -30,9 +30,13 @@ func AddEndpoints(server echoswagger.ApiRouter) {
 }
 
 func handleCallView(c echo.Context) error {
-	contractID, err := coretypes.NewContractIDFromBase58(c.Param("contractID"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid contract ID: %+v", c.Param("contractID")))
+		return httperrors.BadRequest(fmt.Sprintf("Invalid theChain ID: %+v", c.Param("chainID")))
+	}
+	contractHname, err := coretypes.HnameFromString(c.Param("contractHname"))
+	if err != nil {
+		return httperrors.BadRequest(fmt.Sprintf("Invalid contract ID: %+v", c.Param("contractHname")))
 	}
 
 	fname := c.Param("fname")
@@ -45,17 +49,17 @@ func handleCallView(c echo.Context) error {
 		}
 	}
 
-	chain := chains.GetChain(contractID.ChainID())
-	if chain == nil {
-		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", contractID.ChainID()))
+	theChain := chains.AllChains().Get(chainID)
+	if theChain == nil {
+		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
 
-	vctx, err := viewcontext.NewFromDB(*chain.ID(), chain.Processors())
+	vctx, err := viewcontext.NewFromDB(*theChain.ID(), theChain.Processors())
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
 	}
 
-	ret, err := vctx.CallView(contractID.Hname(), coretypes.Hn(fname), params)
+	ret, err := vctx.CallView(contractHname, coretypes.Hn(fname), params)
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("View call failed: %v", err))
 	}

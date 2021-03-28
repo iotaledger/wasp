@@ -20,7 +20,7 @@ func initChainAccount(e *echo.Echo, r renderer) {
 }
 
 func handleChainAccount(c echo.Context) error {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
@@ -31,18 +31,18 @@ func handleChainAccount(c echo.Context) error {
 	}
 
 	result := &ChainAccountTemplateParams{
-		BaseTemplateParams: BaseParams(c, chainBreadcrumb(c.Echo(), chainID), Tab{
+		BaseTemplateParams: BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
 			Path:  c.Path(),
 			Title: fmt.Sprintf("Account %.8s…", agentID),
 			Href:  "#",
 		}),
-		ChainID: chainID,
-		AgentID: agentID,
+		ChainID: *chainID,
+		AgentID: *agentID,
 	}
 
-	chain := chains.GetChain(chainID)
-	if chain != nil {
-		bal, err := callView(chain, accounts.Interface.Hname(), accounts.FuncBalance, codec.MakeDict(map[string]interface{}{
+	theChain := chains.AllChains().Get(chainID)
+	if theChain != nil {
+		bal, err := callView(theChain, accounts.Interface.Hname(), accounts.FuncBalance, codec.MakeDict(map[string]interface{}{
 			accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 		}))
 		if err != nil {

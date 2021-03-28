@@ -12,8 +12,8 @@ import (
 )
 
 type RootInfo struct {
-	ChainColor   ledgerstate.Color
-	ChainAddress ledgerstate.Address
+	ChainID      coretypes.ChainID
+	StateAddress ledgerstate.Address
 
 	OwnerID          coretypes.AgentID
 	OwnerIDDelegated *coretypes.AgentID
@@ -22,8 +22,8 @@ type RootInfo struct {
 	Contracts   map[coretypes.Hname]*root.ContractRecord
 
 	FeeColor            ledgerstate.Color
-	DefaultOwnerFee     int64
-	DefaultValidatorFee int64
+	DefaultOwnerFee     uint64
+	DefaultValidatorFee uint64
 }
 
 func fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
@@ -32,16 +32,13 @@ func fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
 		err = fmt.Errorf("root view call failed: %v", err)
 		return
 	}
-
-	ret.ChainColor, _, err = codec.DecodeColor(info.MustGet(root.VarChainColor))
-	if err != nil {
-		return
-	}
-
-	ret.ChainAddress, _, err = codec.DecodeAddress(info.MustGet(root.VarChainAddress))
-	if err != nil {
-		return
-	}
+	// TODO
+	//  VarChainID
+	//  VarChainOwnerID
+	//  VarDescription
+	//  VarFeeColor
+	//  VarDefaultOwnerFee
+	//  VarDefaultValidatorFee
 
 	ret.Contracts, err = root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
 	if err != nil {

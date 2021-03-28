@@ -40,7 +40,7 @@ func NewChainOriginTransaction(
 	if err != nil {
 		return nil, coretypes.ChainID{}, err
 	}
-	chainID, err := coretypes.NewChainIDFromAddress(chained.Address())
+	chainID, err := coretypes.ChainIDFromAddress(chained.Address())
 	if err != nil {
 		return nil, coretypes.ChainID{}, err
 	}

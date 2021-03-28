@@ -24,7 +24,7 @@ func initChainBlob(e *echo.Echo, r renderer) {
 }
 
 func handleChainBlob(c echo.Context) error {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
@@ -35,16 +35,16 @@ func handleChainBlob(c echo.Context) error {
 	}
 
 	result := &ChainBlobTemplateParams{
-		BaseTemplateParams: BaseParams(c, chainBreadcrumb(c.Echo(), chainID), Tab{
+		BaseTemplateParams: BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
 			Path:  c.Path(),
 			Title: fmt.Sprintf("Blob %.8s…", c.Param("hash")),
 			Href:  "#",
 		}),
-		ChainID: chainID,
+		ChainID: *chainID,
 		Hash:    hash,
 	}
 
-	chain := chains.GetChain(chainID)
+	chain := chains.AllChains().Get(chainID)
 	if chain != nil {
 		fields, err := callView(chain, blob.Interface.Hname(), blob.FuncGetBlobInfo, codec.MakeDict(map[string]interface{}{
 			blob.ParamHash: hash,
@@ -73,7 +73,7 @@ func handleChainBlob(c echo.Context) error {
 }
 
 func handleChainBlobDownload(c echo.Context) error {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func handleChainBlobDownload(c echo.Context) error {
 		return err
 	}
 
-	chain := chains.GetChain(chainID)
+	chain := chains.AllChains().Get(chainID)
 	if chain == nil {
 		return httperrors.NotFound("Not found")
 	}

@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -31,52 +32,52 @@ func initChain(e *echo.Echo, r renderer) {
 }
 
 func handleChain(c echo.Context) error {
-	chainid, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+	chainid, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
 
-	tab := chainBreadcrumb(c.Echo(), chainid)
+	tab := chainBreadcrumb(c.Echo(), *chainid)
 
 	result := &ChainTemplateParams{
 		BaseTemplateParams: BaseParams(c, tab),
-		ChainID:            chainid,
+		ChainID:            *chainid,
 	}
 
-	result.ChainRecord, err = registry.GetChainRecord(&chainid)
+	result.ChainRecord, err = registry.ChainRecordFromRegistry(chainid)
 	if err != nil {
 		return err
 	}
 
 	if result.ChainRecord != nil && result.ChainRecord.Active {
-		result.VirtualState, result.Block, _, err = state.LoadSolidState(&chainid)
+		result.VirtualState, result.Block, _, err = state.LoadSolidState(chainid)
 		if err != nil {
 			return err
 		}
 
-		chain := chains.GetChain(chainid)
+		theChain := chains.AllChains().Get(chainid)
 
-		result.Committee.Size = chain.Size()
-		result.Committee.Quorum = chain.Quorum()
-		result.Committee.NumPeers = chain.NumPeers()
-		result.Committee.HasQuorum = chain.HasQuorum()
-		result.Committee.PeerStatus = chain.PeerStatus()
-		result.RootInfo, err = fetchRootInfo(chain)
+		result.Committee.Size = theChain.Size()
+		result.Committee.Quorum = theChain.Quorum()
+		result.Committee.NumPeers = theChain.NumPeers()
+		result.Committee.HasQuorum = theChain.HasQuorum()
+		result.Committee.PeerStatus = theChain.PeerStatus()
+		result.RootInfo, err = fetchRootInfo(theChain)
 		if err != nil {
 			return err
 		}
 
-		result.Accounts, err = fetchAccounts(chain)
+		result.Accounts, err = fetchAccounts(theChain)
 		if err != nil {
 			return err
 		}
 
-		result.TotalAssets, err = fetchTotalAssets(chain)
+		result.TotalAssets, err = fetchTotalAssets(theChain)
 		if err != nil {
 			return err
 		}
 
-		result.Blobs, err = fetchBlobs(chain)
+		result.Blobs, err = fetchBlobs(theChain)
 		if err != nil {
 			return err
 		}

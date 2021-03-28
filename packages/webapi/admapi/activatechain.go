@@ -29,7 +29,7 @@ func handleActivateChain(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address: %s", c.Param("address")))
 	}
-	chainID, err := coretypes.NewChainIDFromAddress(scAddress)
+	chainID, err := coretypes.ChainIDFromAddress(scAddress)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func handleActivateChain(c echo.Context) error {
 	}
 
 	log.Debugw("calling committees.Activate", "chainID", bd.ChainID.String())
-	if err := chains.ActivateChain(bd); err != nil {
+	if err := chains.AllChains().Activate(bd); err != nil {
 		return err
 	}
 
@@ -51,7 +51,7 @@ func handleDeactivateChain(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain id: %s", c.Param("chainID")))
 	}
-	chainID, err := coretypes.NewChainIDFromAddress(scAddress)
+	chainID, err := coretypes.ChainIDFromAddress(scAddress)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func handleDeactivateChain(c echo.Context) error {
 		return err
 	}
 
-	err = chains.DeactivateChain(bd)
+	err = chains.AllChains().Deactivate(bd)
 	if err != nil {
 		return err
 	}

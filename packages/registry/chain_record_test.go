@@ -11,7 +11,7 @@ import (
 func TestChainRecord(t *testing.T) {
 	keyPair := ed25519.GenerateKeyPair()
 	stateAddr := ledgerstate.NewED25519Address(keyPair.PublicKey)
-	chainID := coretypes.NewRandomChainID()
+	chainID := coretypes.RandomChainID()
 
 	rec := NewChainRecord(chainID, stateAddr)
 	recBack, err := ChainRecordFromBytes(rec.Bytes())

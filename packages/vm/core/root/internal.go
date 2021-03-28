@@ -112,7 +112,7 @@ func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[cor
 	var err error
 	contractRegistry.MustIterate(func(k []byte, v []byte) bool {
 		var deploymentHash coretypes.Hname
-		deploymentHash, err = coretypes.NewHnameFromBytes(k)
+		deploymentHash, err = coretypes.HnameFromBytes(k)
 		if err != nil {
 			return false
 		}

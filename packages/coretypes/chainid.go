@@ -23,8 +23,8 @@ func NewChainID(addr *ledgerstate.AliasAddress) *ChainID {
 	return &ChainID{addr}
 }
 
-// NewChainIDFromAddress creates a chainIDD from alias address. Returns and error if not an alias address type
-func NewChainIDFromAddress(addr ledgerstate.Address) (*ChainID, error) {
+// ChainIDFromAddress creates a chainIDD from alias address. Returns and error if not an alias address type
+func ChainIDFromAddress(addr ledgerstate.Address) (*ChainID, error) {
 	alias, ok := addr.(*ledgerstate.AliasAddress)
 	if !ok {
 		return nil, xerrors.New("chain id must be an alias address")
@@ -32,8 +32,8 @@ func NewChainIDFromAddress(addr ledgerstate.Address) (*ChainID, error) {
 	return &ChainID{alias}, nil
 }
 
-// NewChainIDFromBase58 constructor decodes base58 string to the ChainID
-func NewChainIDFromBase58(b58 string) (*ChainID, error) {
+// ChainIDFromBase58 constructor decodes base58 string to the ChainID
+func ChainIDFromBase58(b58 string) (*ChainID, error) {
 	alias, err := ledgerstate.AliasAddressFromBase58EncodedString(b58)
 	if err != nil {
 		return nil, err
@@ -41,8 +41,8 @@ func NewChainIDFromBase58(b58 string) (*ChainID, error) {
 	return &ChainID{alias}, nil
 }
 
-// NewChainIDFromBytes reconstructs a ChainID from its binary representation.
-func NewChainIDFromBytes(data []byte) (*ChainID, error) {
+// ChainIDFromBytes reconstructs a ChainID from its binary representation.
+func ChainIDFromBytes(data []byte) (*ChainID, error) {
 	alias, _, err := ledgerstate.AliasAddressFromBytes(data)
 	if err != nil {
 		return nil, err
@@ -50,8 +50,8 @@ func NewChainIDFromBytes(data []byte) (*ChainID, error) {
 	return &ChainID{alias}, nil
 }
 
-// NewRandomChainID creates a random chain ID.
-func NewRandomChainID(seed ...[]byte) *ChainID {
+// RandomChainID creates a random chain ID.
+func RandomChainID(seed ...[]byte) *ChainID {
 	var h hashing.HashValue
 	if len(seed) > 0 {
 		h = hashing.HashData(seed[0])

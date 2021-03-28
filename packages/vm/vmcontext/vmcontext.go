@@ -54,7 +54,7 @@ type callContext struct {
 
 // MustNewVMContext a constructor
 func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
-	chainID, err := coretypes.NewChainIDFromAddress(task.ChainInput.Address())
+	chainID, err := coretypes.ChainIDFromAddress(task.ChainInput.Address())
 	if err != nil {
 		return nil, xerrors.Errorf("MustNewVMContext: %v", err)
 	}

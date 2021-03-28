@@ -22,13 +22,13 @@ func (ch *ChainID) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
-	_, err := coretypes.NewChainIDFromBase58(s)
+	_, err := coretypes.ChainIDFromBase58(s)
 	*ch = ChainID(s)
 	return err
 }
 
 func (ch ChainID) ChainID() coretypes.ChainID {
-	chainID, err := coretypes.NewChainIDFromBase58(string(ch))
+	chainID, err := coretypes.ChainIDFromBase58(string(ch))
 	if err != nil {
 		panic(err)
 	}
