@@ -17,6 +17,8 @@ type WasmTimeVM struct {
 	store    *wasmtime.Store
 }
 
+var _ WasmVM = &WasmTimeVM{}
+
 func NewWasmTimeVM() *WasmTimeVM {
 	vm := &WasmTimeVM{}
 	vm.store = wasmtime.NewStore(wasmtime.NewEngine())

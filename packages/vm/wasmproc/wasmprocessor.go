@@ -20,6 +20,8 @@ type wasmProcessor struct {
 	scContext *ScContext
 }
 
+var _ coretypes.VMProcessor = &wasmProcessor{}
+
 const FuncDefault = "_default"
 const ViewCopyAllState = "copy_all_state"
 
