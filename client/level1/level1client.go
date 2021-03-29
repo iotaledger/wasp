@@ -2,6 +2,7 @@ package level1
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/plugins/webapi/value"
 )
 
 // Level1Client is an interface to interact with the IOTA level 1 ledger
@@ -10,7 +11,7 @@ type Level1Client interface {
 	RequestFunds(targetAddress ledgerstate.Address) error
 
 	// GetConfirmedAccountOutputs fetches all confirmed outputs belonging to the given address
-	GetConfirmedOutputs(address ledgerstate.Address) ([]ledgerstate.Output, error)
+	GetConfirmedOutputs(address ledgerstate.Address) ([]value.Output, error)
 
 	// PostTransaction posts a transaction to the ledger
 	PostTransaction(tx *ledgerstate.Transaction) error

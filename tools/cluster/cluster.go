@@ -45,10 +45,7 @@ func New(name string, config *ClusterConfig) *Cluster {
 }
 
 func (clu *Cluster) Level1Client() level1.Level1Client {
-	if clu.Config.Goshimmer.Provided {
-		return goshimmer.NewGoshimmerClient(clu.Config.goshimmerApiHost())
-	}
-	return testutil.NewGoshimmerUtxodbClient(clu.Config.goshimmerApiHost())
+	return goshimmer.NewGoshimmerClient(clu.Config.goshimmerApiHost())
 }
 
 func (clu *Cluster) DeployDefaultChain() (*Chain, error) {

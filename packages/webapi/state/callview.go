@@ -21,9 +21,10 @@ func AddEndpoints(server echoswagger.ApiRouter) {
 		kv.Key("key1"): []byte("value1"),
 	}.JSONDict()
 
-	server.GET(routes.CallView(":contractID", ":fname"), handleCallView).
+	server.GET(routes.CallView(":chainID", ":contractHname", ":fname"), handleCallView).
 		SetSummary("Call a view function on a contract").
-		AddParamPath("", "contractID", "ContractID (base58-encoded)").
+		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "contractHname", "Contract Hname").
 		AddParamPath("getInfo", "fname", "Function name").
 		AddParamBody(dictExample, "params", "Parameters", false).
 		AddResponse(http.StatusOK, "Result", dictExample, nil)
