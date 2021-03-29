@@ -66,28 +66,21 @@ func (o *ScContext) Exists(keyId int32, typeId int32) bool {
 }
 
 func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
-	var aid *coretypes.AgentID
 	switch keyId {
 	case wasmhost.KeyAccountId:
-		aid = o.vm.accountID()
-		return aid.Bytes()
+		return o.vm.accountID().Bytes()
 	case wasmhost.KeyCaller:
-		aid = o.vm.ctx.Caller()
-		return aid.Bytes()
+		return o.vm.ctx.Caller().Bytes()
 	case wasmhost.KeyChainId:
-		cid := o.vm.chainID()
-		return cid.Bytes()
+		return o.vm.chainID().Bytes()
 	case wasmhost.KeyChainOwnerId:
-		aid = o.vm.chainOwnerID()
-		return aid.Bytes()
+		return o.vm.chainOwnerID().Bytes()
 	case wasmhost.KeyContract:
 		return o.vm.contract().Bytes()
 	case wasmhost.KeyContractCreator:
-		aid = o.vm.contractCreator()
-		return aid.Bytes()
+		return o.vm.contractCreator().Bytes()
 	case wasmhost.KeyRequestId:
-		rid := o.vm.ctx.RequestID()
-		return rid[:]
+		return o.vm.ctx.RequestID().Bytes()
 	case wasmhost.KeyTimestamp:
 		return codec.EncodeInt64(o.vm.ctx.GetTimestamp())
 	}

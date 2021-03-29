@@ -37,7 +37,7 @@ pub fn func_init(ctx: &ScFuncContext) {
     // Then we create an ScImmutableAgentId proxy to the 'owner' parameter.
     let param_owner: ScImmutableAgentId = p.get_agent_id(PARAM_OWNER);
 
-    // Now we check if the 'owner' parameter is present in the params map.
+    // Now we check if the optional 'owner' parameter is present in the params map.
     if param_owner.exists() {
         // Yes, it was present, so now we overwrite the default owner with
         // the one specified by the 'owner' parameter.

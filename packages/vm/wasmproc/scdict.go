@@ -142,11 +142,18 @@ func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 	return objId
 }
 
+var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 8, 0, 34, 0}
+
 func (o *ScDict) GetBytes(keyId int32, typeId int32) []byte {
 	if keyId == wasmhost.KeyLength && (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 {
 		return o.Int64Bytes(int64(o.length))
 	}
-	return o.kvStore.MustGet(o.key(keyId, typeId))
+	bytes := o.kvStore.MustGet(o.key(keyId, typeId))
+	typeSize := typeSizes[typeId]
+	if typeSize != 0 && typeSize != len(bytes) {
+		o.Panic("GetBytes: Invalid type size")
+	}
+	return bytes
 }
 
 func (o *ScDict) GetObjectId(keyId int32, typeId int32) int32 {
@@ -230,7 +237,15 @@ func (o *ScDict) SetBytes(keyId int32, typeId int32, bytes []byte) {
 		o.length = 0
 		return
 	}
-	o.kvStore.Set(o.key(keyId, typeId), bytes)
+
+	key := o.key(keyId, typeId)
+
+	typeSize := typeSizes[typeId]
+	if typeSize != 0 && typeSize != len(bytes) {
+		o.Panic("SetBytes: Invalid type size")
+	}
+
+	o.kvStore.Set(key, bytes)
 }
 
 func (o *ScDict) Suffix(keyId int32) string {
