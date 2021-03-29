@@ -48,7 +48,7 @@ func (rid RequestID) Short() string {
 type Request interface {
 	// index == 0 for off ledger requests
 	ID() RequestID
-	// ledgerstate.Output interface for on-ledger reguests, nil for off ledger requests
+	// ledgerstate.Output interface for on-ledger reguests, nil for off-ledger requests
 	Output() ledgerstate.Output
 	// address of the sender for all requests,
 	SenderAddress() ledgerstate.Address
@@ -56,7 +56,7 @@ type Request interface {
 	SenderAccount() *AgentID
 	// returns contract/entry point pair
 	Target() (Hname, Hname)
-	// true or false for on-ledger requests, false for off-ledger
+	// true or false for on-ledger requests, true for off-ledger
 	IsFeePrepaid() bool
 	// always nil for off-ledger
 	Tokens() *ledgerstate.ColoredBalances

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -28,7 +27,7 @@ var (
 // version is stored in niladdr partition.
 // it consists of one byte of version and the hash (checksum) of that one byte
 func checkDatabaseVersion() error {
-	db := GetPartition(&coretypes.NilChainID)
+	db := GetPartition(nil)
 	ver, err := db.Get(dbprovider.MakeKey(dbprovider.ObjectTypeDBSchemaVersion))
 
 	var versiondata [1 + hashing.HashSize]byte

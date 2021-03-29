@@ -1,7 +1,7 @@
 package chains
 
 import (
-	"github.com/iotaledger/wasp/plugins/nodeconn"
+	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"sync"
 
 	"golang.org/x/xerrors"
@@ -20,6 +20,7 @@ type Chains struct {
 	mutex     sync.RWMutex
 	log       *logger.Logger
 	allChains map[[ledgerstate.AddressLength]byte]chain.Chain
+	nodeConn  *txstream.Client
 }
 
 func New(log *logger.Logger) *Chains {
@@ -40,9 +41,14 @@ func (c *Chains) Dismiss() {
 	c.allChains = make(map[[ledgerstate.AddressLength]byte]chain.Chain)
 }
 
-func (c *Chains) Attach() {
-	nodeconn.NodeConnection().Events.TransactionReceived.Attach(events.NewClosure(c.dispatchMsgTransaction))
-	nodeconn.NodeConnection().Events.InclusionStateReceived.Attach(events.NewClosure(c.dispatchMsgInclusionState))
+func (c *Chains) Attach(nodeConn *txstream.Client) {
+	if c.nodeConn != nil {
+		c.log.Panicf("Chains: already attached")
+	}
+	c.nodeConn = nodeConn
+	c.nodeConn.Events.TransactionReceived.Attach(events.NewClosure(c.dispatchMsgTransaction))
+	c.nodeConn.Events.InclusionStateReceived.Attach(events.NewClosure(c.dispatchMsgInclusionState))
+	// TODO attach to off-ledger request module
 }
 
 func (c *Chains) ActivateAllFromRegistry() error {
@@ -87,7 +93,7 @@ func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
 	// create new chain object
 	defaultRegistry := registry.DefaultRegistry()
 	ch := chain.New(chr, c.log, peering.DefaultNetworkProvider(), defaultRegistry, defaultRegistry, func() {
-		nodeconn.NodeConnection().Subscribe(chr.ChainID.AliasAddress)
+		c.nodeConn.Subscribe(chr.ChainID.AliasAddress)
 	})
 	if ch != nil {
 		c.allChains[chainArr] = ch
@@ -109,7 +115,7 @@ func (c *Chains) Deactivate(chr *registry_pkg.ChainRecord) error {
 		return nil
 	}
 	ch.Dismiss()
-	nodeconn.NodeConnection().Unsubscribe(chr.ChainID.AliasAddress)
+	c.nodeConn.Unsubscribe(chr.ChainID.AliasAddress)
 	c.log.Debugf("chain has been deactivated: %s", chr.ChainID.String())
 	return nil
 }
@@ -124,7 +130,7 @@ func (c *Chains) Get(chainID *coretypes.ChainID) chain.Chain {
 	ret, ok := c.allChains[addrArr]
 	if ok && ret.IsDismissed() {
 		delete(c.allChains, addrArr)
-		nodeconn.NodeConnection().Unsubscribe(chainID.AliasAddress)
+		c.nodeConn.Unsubscribe(chainID.AliasAddress)
 		return nil
 	}
 	return ret

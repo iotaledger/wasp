@@ -16,8 +16,6 @@ type ChainID struct {
 	*ledgerstate.AliasAddress
 }
 
-var NilChainID = ChainID{}
-
 // NewChainID creates new chain ID from alias address
 func NewChainID(addr *ledgerstate.AliasAddress) *ChainID {
 	return &ChainID{addr}
