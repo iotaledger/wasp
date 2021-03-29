@@ -162,7 +162,6 @@ func NewPeerMessageFromBytes(buf []byte) (*PeerMessage, error) {
 			return nil, err
 		}
 	default:
-		m.ChainID = coretypes.NilChainID
 		if err = m.ChainID.Read(r); err != nil {
 			return nil, err
 		}

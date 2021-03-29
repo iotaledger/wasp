@@ -50,6 +50,7 @@ func run(_ *node.Plugin) {
 		})
 
 		nodeConn = txstream.New(peering.DefaultNetworkProvider().Self().NetID(), log, dial)
+		initialized.SetReady()
 		defer nodeConn.Close()
 
 		<-shutdownSignal
@@ -59,5 +60,4 @@ func run(_ *node.Plugin) {
 	if err != nil {
 		log.Errorf("failed to start NodeConn worker")
 	}
-	initialized.SetReady()
 }

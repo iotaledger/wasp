@@ -2,6 +2,7 @@ package dbprovider
 
 import (
 	"github.com/iotaledger/goshimmer/packages/database"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/timeutil"
@@ -14,7 +15,7 @@ type DBProvider struct {
 	log             *logger.Logger
 	db              database.DB
 	store           kvstore.KVStore
-	partitions      map[coretypes.ChainID]kvstore.KVStore
+	partitions      map[[ledgerstate.AddressLength]byte]kvstore.KVStore
 	partitionsMutex *sync.RWMutex
 }
 
@@ -23,7 +24,7 @@ func newDBProvider(db database.DB, log *logger.Logger) *DBProvider {
 		log:             log,
 		db:              db,
 		store:           db.NewStore(),
-		partitions:      make(map[coretypes.ChainID]kvstore.KVStore),
+		partitions:      make(map[[ledgerstate.AddressLength]byte]kvstore.KVStore),
 		partitionsMutex: &sync.RWMutex{},
 	}
 }
@@ -46,8 +47,12 @@ func NewPersistentDBProvider(dbDir string, log *logger.Logger) *DBProvider {
 
 // GetPartition returns a Partition, which is a KVStore prefixed with the chain ID.
 func (dbp *DBProvider) GetPartition(chainID *coretypes.ChainID) kvstore.KVStore {
+	var chainIDArr [ledgerstate.AddressLength]byte
+	if chainID != nil {
+		chainIDArr = chainID.Array()
+	}
 	dbp.partitionsMutex.RLock()
-	ret, ok := dbp.partitions[*chainID]
+	ret, ok := dbp.partitions[chainIDArr]
 	if ok {
 		defer dbp.partitionsMutex.RUnlock()
 		return ret
@@ -57,12 +62,12 @@ func (dbp *DBProvider) GetPartition(chainID *coretypes.ChainID) kvstore.KVStore 
 	dbp.partitionsMutex.Lock()
 	defer dbp.partitionsMutex.Unlock()
 
-	dbp.partitions[*chainID] = dbp.store.WithRealm(chainID.Bytes())
-	return dbp.partitions[*chainID]
+	dbp.partitions[chainIDArr] = dbp.store.WithRealm(chainIDArr[:])
+	return dbp.partitions[chainIDArr]
 }
 
 func (dbp *DBProvider) GetRegistryPartition() kvstore.KVStore {
-	return dbp.GetPartition(&coretypes.NilChainID)
+	return dbp.GetPartition(nil)
 }
 
 func (dbp *DBProvider) Close() {

@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/util/ready"
+	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"time"
 )
 
@@ -33,7 +34,7 @@ func run(_ *node.Plugin) {
 			log.Errorf("failed to read chain activation records from registry: %v", err)
 			return
 		}
-		allChains.Attach()
+		allChains.Attach(nodeconn.NodeConnection())
 
 		<-shutdownSignal
 
