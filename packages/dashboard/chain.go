@@ -57,11 +57,11 @@ func handleChain(c echo.Context) error {
 
 		theChain := chains.AllChains().Get(chainid)
 
-		result.Committee.Size = theChain.Size()
-		result.Committee.Quorum = theChain.Quorum()
-		result.Committee.NumPeers = theChain.NumPeers()
-		result.Committee.HasQuorum = theChain.HasQuorum()
-		result.Committee.PeerStatus = theChain.PeerStatus()
+		result.Committee.Size = theChain.Committee().Size()
+		result.Committee.Quorum = theChain.Committee().Quorum()
+		//result.Committee.NumPeers = theChain.Committee().NumPeers()
+		result.Committee.HasQuorum = theChain.Committee().QuorumIsAlive()
+		result.Committee.PeerStatus = theChain.Committee().PeerStatus()
 		result.RootInfo, err = fetchRootInfo(theChain)
 		if err != nil {
 			return err
@@ -237,7 +237,7 @@ const tplChain = `
 				<dt>Size</dt>      <dd><tt>{{.Committee.Size}}</tt></dd>
 				<dt>Quorum</dt>    <dd><tt>{{.Committee.Quorum}}</tt></dd>
 				<dt>NumPeers</dt>  <dd><tt>{{.Committee.NumPeers}}</tt></dd>
-				<dt>HasQuorum</dt> <dd><tt>{{.Committee.HasQuorum}}</tt></dd>
+				<dt>QuorumIsAlive</dt> <dd><tt>{{.Committee.QuorumIsAlive}}</tt></dd>
 				</dl>
 				<h4>Peer status</h4>
 				<table>

@@ -57,7 +57,7 @@ func (sm *stateManager) sendPingsIfNeeded() {
 		// no need for pinging, all state information is gathered already
 		return
 	}
-	if !sm.chain.HasQuorum() {
+	if !sm.chain.QuorumIsAlive() {
 		// doesn't make sense the pinging, alive nodes does not make quorum
 		return
 	}

@@ -179,13 +179,13 @@ func (op *operator) eventResultCalculated(ctx *chain.VMResultMsg) {
 	// inform own state manager about new result block. The state manager will start waiting
 	// from confirmation of it from the tangle
 	go func() {
-		op.chain.ReceiveMessage(chain.PendingBlockMsg{
+		op.committee.Chain().ReceiveMessage(chain.PendingBlockMsg{
 			Block: ctx.Task.ResultBlock,
 		})
 	}()
 
 	// save own result or send to the leader
-	if ctx.Leader == op.chain.OwnPeerIndex() {
+	if ctx.Leader == op.committee.OwnPeerIndex() {
 		op.saveOwnResult(ctx.Task)
 	} else {
 		op.sendResultToTheLeader(ctx.Task, ctx.Leader)

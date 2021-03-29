@@ -92,7 +92,7 @@ func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
 	}
 	// create new chain object
 	defaultRegistry := registry.DefaultRegistry()
-	ch := chain.New(chr, c.log, peering.DefaultNetworkProvider(), defaultRegistry, defaultRegistry, func() {
+	ch := chain.New(chr, c.log, c.nodeConn, peering.DefaultNetworkProvider(), defaultRegistry, defaultRegistry, func() {
 		c.nodeConn.Subscribe(chr.ChainID.AliasAddress)
 	})
 	if ch != nil {

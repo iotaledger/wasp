@@ -36,7 +36,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		reqs[i] = req.req
 	}
 	ctx := &vm.VMTask{
-		Processors:         op.chain.Processors(),
+		Processors:         op.committee.Chain().Processors(),
 		ChainInput:         op.stateOutput,
 		Entropy:            hashing.HashData(h[:]),
 		ValidatorFeeTarget: par.accrueFeesTo,
@@ -50,7 +50,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 			op.log.Errorf("VM task failed: %v", vmError)
 			return
 		}
-		op.chain.ReceiveMessage(&chain.VMResultMsg{
+		op.committee.Chain().ReceiveMessage(&chain.VMResultMsg{
 			Task:   ctx,
 			Leader: par.leaderPeerIndex,
 		})
@@ -66,7 +66,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask, leader uint16) {
 		return
 	}
 
-	sigShare, err := op.dkshare.SignShare(result.ResultTransaction.Bytes())
+	sigShare, err := op.committee.DKShare().SignShare(result.ResultTransaction.Bytes())
 	if err != nil {
 		op.log.Errorf("error while signing transaction %v", err)
 		return
@@ -97,7 +97,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask, leader uint16) {
 		SigShare:      sigShare,
 	})
 
-	if err := op.chain.SendMsg(leader, chain.MsgSignedHash, msgData); err != nil {
+	if err := op.committee.SendMsg(leader, chain.MsgSignedHash, msgData); err != nil {
 		op.log.Error(err)
 		return
 	}
@@ -113,7 +113,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 			stages[consensusStageLeaderCalculationsStarted].name, stages[op.consensusStage].name)
 		return
 	}
-	sigShare, err := op.dkshare.SignShare(result.ResultTransaction.Bytes())
+	sigShare, err := op.committee.DKShare().SignShare(result.ResultTransaction.Bytes())
 	if err != nil {
 		op.log.Errorf("error while signing transaction %v", err)
 		return
@@ -124,7 +124,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		reqids[i] = result.Requests[i].ID()
 	}
 
-	bh := vm.BatchHash(reqids, result.Timestamp, op.chain.OwnPeerIndex())
+	bh := vm.BatchHash(reqids, result.Timestamp, op.committee.OwnPeerIndex())
 	if bh != op.leaderStatus.batchHash {
 		panic("bh != op.leaderStatus.batchHash")
 	}
@@ -141,7 +141,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 
 	op.leaderStatus.resultTxEssence = result.ResultTransaction
 	op.leaderStatus.batch = result.ResultBlock
-	op.leaderStatus.signedResults[op.chain.OwnPeerIndex()] = &signedResult{
+	op.leaderStatus.signedResults[op.committee.OwnPeerIndex()] = &signedResult{
 		essenceHash: essenceHash,
 		sigShare:    sigShare,
 	}
@@ -151,7 +151,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 func (op *operator) aggregateSigShares(sigShares [][]byte) (*ledgerstate.Transaction, error) {
 	resTx := op.leaderStatus.resultTxEssence
 
-	signatureWithPK, err := op.dkshare.RecoverFullSignature(sigShares, resTx.Bytes())
+	signatureWithPK, err := op.committee.DKShare().RecoverFullSignature(sigShares, resTx.Bytes())
 	if err != nil {
 		return nil, err
 	}
