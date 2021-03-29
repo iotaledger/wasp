@@ -34,21 +34,18 @@ type chainObj struct {
 	dismissed                    atomic.Bool
 	dismissOnce                  sync.Once
 	onActivation                 func()
-	//
-	chainID         coretypes.ChainID
-	procset         *processors.ProcessorCache
-	chMsg           chan interface{}
-	stateMgr        chain.StateManager
-	operator        chain.Operator
-	isCommitteeNode atomic.Bool
-	//
-	eventRequestProcessed *events.Event
-	log                   *logger.Logger
-	nodeConn              *txstream.Client
-	netProvider           peering.NetworkProvider
-	peersAttachRef        interface{}
-	dksProvider           tcrypto.RegistryProvider
-	blobProvider          coretypes.BlobCache
+	chainID                      coretypes.ChainID
+	procset                      *processors.ProcessorCache
+	chMsg                        chan interface{}
+	stateMgr                     chain.StateManager
+	operator                     chain.Consensus
+	isCommitteeNode              atomic.Bool
+	eventRequestProcessed        *events.Event
+	log                          *logger.Logger
+	nodeConn                     *txstream.Client
+	netProvider                  peering.NetworkProvider
+	dksProvider                  tcrypto.RegistryProvider
+	blobProvider                 coretypes.BlobCache
 }
 
 func newChainObj(

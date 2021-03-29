@@ -42,7 +42,6 @@ type Chain interface {
 	ReceiveTransaction(*ledgerstate.Transaction)
 	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	ReceiveRequest(coretypes.Request)
-	//
 	SetReadyStateManager() // TODO get rid
 	SetReadyConsensus()    // TODO get rid
 	Dismiss()
@@ -85,7 +84,7 @@ type StateManager interface {
 	Close()
 }
 
-type Operator interface {
+type Consensus interface {
 	EventStateTransitionMsg(*StateTransitionMsg)
 	EventRequestMsg(coretypes.Request)
 	EventNotifyReqMsg(*NotifyReqMsg)
