@@ -5,6 +5,7 @@ package consensus
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"sync"
 	"time"
 
@@ -13,16 +14,13 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 type operator struct {
-	chain chain.Chain
-
-	dkshare *tcrypto.DKShare
+	committee chain.Committee
+	nodeConn  *txstream.Client
 	//currentState
 	currentState   state.VirtualState
 	stateOutput    *ledgerstate.AliasOutput
@@ -97,12 +95,10 @@ type request struct {
 	log *logger.Logger
 }
 
-func NewOperator(committee chain.Chain, dkshare *tcrypto.DKShare, log *logger.Logger) *operator {
-	defer committee.SetReadyConsensus()
-
+func New(committee chain.Committee, nodeConn *txstream.Client, log *logger.Logger) *operator {
 	ret := &operator{
-		chain:                               committee,
-		dkshare:                             dkshare,
+		committee:                           committee,
+		nodeConn:                            nodeConn,
 		requests:                            make(map[coretypes.RequestID]*request),
 		requestIdsProtected:                 make(map[coretypes.RequestID]bool),
 		peerPermutation:                     util.NewPermutation16(committee.Size(), nil),
@@ -173,15 +169,15 @@ func (op *operator) recvLoop() {
 }
 
 func (op *operator) peerIndex() uint16 {
-	return *op.dkshare.Index
+	return op.committee.OwnPeerIndex()
 }
 
 func (op *operator) quorum() uint16 {
-	return op.dkshare.T
+	return op.committee.Quorum()
 }
 
 func (op *operator) size() uint16 {
-	return op.dkshare.N
+	return op.committee.Size()
 }
 
 func (op *operator) blockIndex() (uint32, bool) {
@@ -200,7 +196,5 @@ func (op *operator) mustStateIndex() uint32 {
 }
 
 func (op *operator) getFeeDestination() coretypes.AgentID {
-	// TODO
-	// temporary to the chain owner's account
-	return *coretypes.NewAgentID(op.chain.ID().AsAddress(), accounts.Interface.Hname())
+	return op.committee.FeeDestination()
 }

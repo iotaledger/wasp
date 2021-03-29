@@ -6,6 +6,7 @@ package chain
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -16,18 +17,25 @@ import (
 	"sync"
 )
 
-type Chain interface {
-	ID() *coretypes.ChainID
-	Address() ledgerstate.Address
+type Committee interface {
+	Chain() Chain // TODO temporary. Used for BlobCache access inside consensus. Not needed in the future
 	Size() uint16
 	Quorum() uint16
 	OwnPeerIndex() uint16
-	NumPeers() uint16
+	DKShare() *tcrypto.DKShare
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
-	SendMsgToCommitteePeers(msgType byte, msgData []byte, ts int64) uint16
+	SendMsgToPeers(msgType byte, msgData []byte, ts int64) uint16
 	IsAlivePeer(peerIndex uint16) bool
-	HasQuorum() bool
+	QuorumIsAlive() bool
 	PeerStatus() []*PeerStatus
+	OnPeerMessage(fun func(recv *peering.RecvEvent))
+	Close()
+	FeeDestination() coretypes.AgentID
+}
+
+type Chain interface {
+	Committee() Committee
+	ID() *coretypes.ChainID
 	BlobCache() coretypes.BlobCache
 	// TODO distinguish external messages from internal and peer messages
 	ReceiveMessage(interface{})
@@ -35,8 +43,8 @@ type Chain interface {
 	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	ReceiveRequest(coretypes.Request)
 	//
-	SetReadyStateManager()
-	SetReadyConsensus()
+	SetReadyStateManager() // TODO get rid
+	SetReadyConsensus()    // TODO get rid
 	Dismiss()
 	IsDismissed() bool
 	// requests
@@ -95,6 +103,7 @@ type Operator interface {
 type chainConstructor func(
 	chr *registry.ChainRecord,
 	log *logger.Logger,
+	nodeConn *txstream.Client,
 	netProvider peering.NetworkProvider,
 	dksProvider tcrypto.RegistryProvider,
 	blobProvider coretypes.BlobCache,
@@ -117,10 +126,11 @@ func RegisterChainConstructor(constr chainConstructor) {
 func New(
 	chr *registry.ChainRecord,
 	log *logger.Logger,
+	nodeConn *txstream.Client,
 	netProvider peering.NetworkProvider,
 	dksProvider tcrypto.RegistryProvider,
 	blobProvider coretypes.BlobCache,
 	onActivation func(),
 ) Chain {
-	return constructorNew(chr, log, netProvider, dksProvider, blobProvider, onActivation)
+	return constructorNew(chr, log, nodeConn, netProvider, dksProvider, blobProvider, onActivation)
 }

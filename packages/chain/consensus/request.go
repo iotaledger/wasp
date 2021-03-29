@@ -64,7 +64,7 @@ func (op *operator) requestFromMsg(req coretypes.Request) (*request, bool) {
 		// solidify arguments by resolving blob references from the registry
 		// the request will not be selected for processing until ret.argsSolid == true
 		if reqOnLedger, ok := req.(*sctransaction.RequestOnLedger); ok {
-			ok, err := reqOnLedger.SolidifyArgs(op.chain.BlobCache())
+			ok, err := reqOnLedger.SolidifyArgs(op.committee.Chain().BlobCache())
 			if err != nil {
 				ret.log.Errorf("inconsistency: can't solidify args: %v", err)
 			} else {
@@ -73,7 +73,7 @@ func (op *operator) requestFromMsg(req coretypes.Request) (*request, bool) {
 		}
 	}
 	if newMsg {
-		publisher.Publish("request_in", op.chain.ID().String(), req.ID().String())
+		publisher.Publish("request_in", op.committee.Chain().ID().String(), req.ID().String())
 	}
 
 	ret.notifications[op.peerIndex()] = true
@@ -108,7 +108,7 @@ func (req *request) hasSolidArgs() bool {
 }
 
 func (op *operator) isRequestProcessed(reqid coretypes.RequestID) bool {
-	processed, err := state.IsRequestCompleted(op.chain.ID(), reqid)
+	processed, err := state.IsRequestCompleted(op.committee.Chain().ID(), reqid)
 	if err != nil {
 		panic(err)
 	}
@@ -120,7 +120,7 @@ func (op *operator) deleteCompletedRequests() error {
 	toDelete := make([]coretypes.RequestID, 0)
 
 	for _, req := range op.requests {
-		if completed, err := state.IsRequestCompleted(op.chain.ID(), req.req.ID()); err != nil {
+		if completed, err := state.IsRequestCompleted(op.committee.Chain().ID(), req.req.ID()); err != nil {
 			return err
 		} else {
 			if completed {
