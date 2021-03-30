@@ -215,7 +215,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 
 	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
 
-	tx := [5]*sctransaction_old.TransactionEssence{}
+	tx := [5]*ledgerstate.Transaction{}
 	var err error
 
 	for i := 0; i < 5; i++ {

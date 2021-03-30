@@ -21,7 +21,7 @@ func storeBlobCmd(args []string) {
 }
 
 func uploadBlob(fieldValues dict.Dict, forceWait bool) (hash hashing.HashValue) {
-	util.WithSCTransaction(func() (tx *sctransaction_old.TransactionEssence, err error) {
+	util.WithSCTransaction(func() (tx *ledgerstate.Transaction, err error) {
 		hash, tx, err = Client().UploadBlob(fieldValues, config.CommitteeApi(chainCommittee()), uploadQuorum)
 		if err == nil {
 			log.Printf("uploaded blob to chain -- hash: %s", hash)

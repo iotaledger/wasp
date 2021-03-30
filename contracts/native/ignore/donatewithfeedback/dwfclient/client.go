@@ -25,7 +25,7 @@ func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *DWF
 	}
 }
 
-func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction_old.TransactionEssence, error) {
+func (dwf *DWFClient) Donate(amount int64, feedback string) (*ledgerstate.Transaction, error) {
 	return dwf.PostRequest(
 		dwf.contractHname,
 		donatewithfeedback.RequestDonate,
@@ -36,7 +36,7 @@ func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction_old.
 	)
 }
 
-func (dwf *DWFClient) Withdraw(amount int64) (*sctransaction_old.TransactionEssence, error) {
+func (dwf *DWFClient) Withdraw(amount int64) (*ledgerstate.Transaction, error) {
 	return dwf.PostRequest(
 		dwf.contractHname,
 		donatewithfeedback.RequestWithdraw,

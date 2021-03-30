@@ -26,7 +26,7 @@ type Config struct {
 	chainRecord *registry.ChainRecord
 }
 
-func (c *Config) MakeClient(sigScheme signaturescheme.SignatureScheme) *chainclient.Client {
+func (c *Config) MakeClient(sigScheme *ed25519.KeyPair) *chainclient.Client {
 	var timeout time.Duration
 	client := chainclient.New(
 		config.GoshimmerClient(),
@@ -120,7 +120,7 @@ func (c *Config) IsAvailable() bool {
 	return config.TrySCAddress(c.Alias()) != nil
 }
 
-func (c *Config) Deploy(sigScheme signaturescheme.SignatureScheme) error {
+func (c *Config) Deploy(sigScheme *ed25519.KeyPair) error {
 	scAddress, err := Deploy(&DeployParams{
 		Quorum:      c.Quorum(),
 		Committee:   c.Committee(),
@@ -141,7 +141,7 @@ type DeployParams struct {
 	Committee   []int
 	Description string
 	ProgramHash string
-	SigScheme   signaturescheme.SignatureScheme
+	SigScheme   *ed25519.KeyPair
 }
 
 func Deploy(params *DeployParams) (ledgerstate.Address, error) {

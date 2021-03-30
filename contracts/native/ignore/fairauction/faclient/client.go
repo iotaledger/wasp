@@ -63,7 +63,7 @@ func (fc *FairAuctionClient) FetchStatus() (*Status, error) {
 	return status, nil
 }
 
-func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*sctransaction_old.TransactionEssence, error) {
+func (fc *FairAuctionClient) SetOwnerMargin(margin int64) (*ledgerstate.Transaction, error) {
 	return fc.PostRequest(
 		fc.contractHname,
 		fairauction.RequestSetOwnerMargin,
@@ -96,7 +96,7 @@ func (fc *FairAuctionClient) StartAuction(
 	tokensForSale int64,
 	minimumBid int64,
 	durationMinutes int64,
-) (*sctransaction_old.TransactionEssence, error) {
+) (*ledgerstate.Transaction, error) {
 	fee, err := fc.GetFeeAmount(minimumBid)
 	if err != nil {
 		return nil, fmt.Errorf("GetFeeAmount failed: %v", err)
@@ -119,7 +119,7 @@ func (fc *FairAuctionClient) StartAuction(
 	)
 }
 
-func (fc *FairAuctionClient) PlaceBid(color ledgerstate.Color, amountIotas uint64) (*sctransaction_old.TransactionEssence, error) {
+func (fc *FairAuctionClient) PlaceBid(color ledgerstate.Color, amountIotas uint64) (*ledgerstate.Transaction, error) {
 	return fc.PostRequest(
 		fc.contractHname,
 		fairauction.RequestPlaceBid,

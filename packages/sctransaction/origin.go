@@ -16,7 +16,8 @@ func NewChainOriginTransaction(
 	keyPair *ed25519.KeyPair,
 	stateAddress ledgerstate.Address,
 	balance map[ledgerstate.Color]uint64,
-	allInputs ...ledgerstate.Output) (*ledgerstate.Transaction, coretypes.ChainID, error) {
+	allInputs ...ledgerstate.Output,
+) (*ledgerstate.Transaction, coretypes.ChainID, error) {
 	walletAddr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	txb := utxoutil.NewBuilder(allInputs...)
 
@@ -55,7 +56,8 @@ func NewRootInitRequestTransaction(
 	keyPair *ed25519.KeyPair,
 	chainID coretypes.ChainID,
 	description string,
-	allInputs ...ledgerstate.Output) (*ledgerstate.Transaction, error) {
+	allInputs ...ledgerstate.Output,
+) (*ledgerstate.Transaction, error) {
 	txb := utxoutil.NewBuilder(allInputs...)
 
 	args := requestargs.New(nil)

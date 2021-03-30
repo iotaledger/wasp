@@ -10,8 +10,9 @@ import (
 )
 
 type GoshimmerConfig struct {
-	ApiPort  int
-	Provided bool
+	TxStreamPort int
+	ApiPort      int
+	Provided     bool
 }
 
 type WaspConfig struct {
@@ -39,8 +40,9 @@ func DefaultConfig() *ClusterConfig {
 			FirstDashboardPort: 7000,
 		},
 		Goshimmer: GoshimmerConfig{
-			ApiPort:  8080,
-			Provided: false,
+			TxStreamPort: 5000,
+			ApiPort:      8080,
+			Provided:     false,
 		},
 	}
 }
@@ -144,15 +146,6 @@ func (c *ClusterConfig) NanomsgPort(nodeIndex int) int {
 
 func (c *ClusterConfig) DashboardPort(nodeIndex int) int {
 	return c.Wasp.FirstDashboardPort + nodeIndex
-}
-
-func (c *ClusterConfig) GoshimmerConfigTemplateParams() *templates.GoshimmerConfigParams {
-	if c.Goshimmer.Provided {
-		panic("should not reach here")
-	}
-	return &templates.GoshimmerConfigParams{
-		ApiPort: c.Goshimmer.ApiPort,
-	}
 }
 
 func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigParams {

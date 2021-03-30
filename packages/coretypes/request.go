@@ -28,6 +28,10 @@ func RequestIDFromBase58(b58 string) (ret RequestID, err error) {
 	return
 }
 
+func (rid RequestID) OutputID() ledgerstate.OutputID {
+	return ledgerstate.OutputID(rid)
+}
+
 // Base58 returns a base58 encoded version of the request id.
 func (rid RequestID) Base58() string {
 	return ledgerstate.OutputID(rid).Base58()
@@ -38,12 +42,12 @@ func (rid RequestID) Bytes() []byte {
 }
 
 func (rid RequestID) String() string {
-	return fmt.Sprintf("[%d]%s", ledgerstate.OutputID(rid).OutputIndex(), ledgerstate.OutputID(rid).TransactionID().Base58())
+	return fmt.Sprintf("[%d]%s", rid.OutputID().OutputIndex(), rid.OutputID().TransactionID().Base58())
 }
 
 func (rid RequestID) Short() string {
-	txid := ledgerstate.OutputID(rid).TransactionID().Base58()
-	return fmt.Sprintf("[%d]%s", ledgerstate.OutputID(rid).OutputIndex(), txid[:6]+"..")
+	txid := rid.OutputID().TransactionID().Base58()
+	return fmt.Sprintf("[%d]%s", rid.OutputID().OutputIndex(), txid[:6]+"..")
 }
 
 // Request has two main implementation

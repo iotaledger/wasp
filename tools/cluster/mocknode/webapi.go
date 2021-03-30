@@ -2,6 +2,7 @@ package mocknode
 
 import (
 	"errors"
+	"net"
 	"net/http"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func (m *MockNode) startWebAPI(bindAddress string) {
+func (m *MockNode) startWebAPI(bindAddress string, initOk chan<- bool) {
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
@@ -26,7 +27,16 @@ func (m *MockNode) startWebAPI(bindAddress string) {
 	stopped := make(chan struct{})
 	go func() {
 		defer close(stopped)
-		if err := e.Start(bindAddress); err != nil {
+
+		l, err := net.Listen("tcp", bindAddress)
+		if err != nil {
+			e.Logger.Fatal(err)
+		}
+		e.Listener = l
+
+		initOk <- true
+
+		if err := e.Start(""); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				m.log.Error(err)
 			}

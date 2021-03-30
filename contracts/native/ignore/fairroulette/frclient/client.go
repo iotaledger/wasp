@@ -151,7 +151,7 @@ func decodePlayerStats(result *statequery.MapResult) (map[ledgerstate.Address]*f
 	return playerStats, nil
 }
 
-func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction_old.TransactionEssence, error) {
+func (frc *FairRouletteClient) Bet(color int, amount int) (*ledgerstate.Transaction, error) {
 	return frc.PostRequest(
 		frc.contractHname,
 		fairroulette.RequestPlaceBet,
@@ -162,7 +162,7 @@ func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction_old.Tr
 	)
 }
 
-func (frc *FairRouletteClient) SetPeriod(seconds int) (*sctransaction_old.TransactionEssence, error) {
+func (frc *FairRouletteClient) SetPeriod(seconds int) (*ledgerstate.Transaction, error) {
 	return frc.PostRequest(
 		frc.contractHname,
 		fairroulette.RequestSetPlayPeriod,

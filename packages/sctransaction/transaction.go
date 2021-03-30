@@ -2,6 +2,9 @@ package sctransaction
 
 import (
 	"bytes"
+	"io"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -9,8 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"golang.org/x/crypto/blake2b"
-	"io"
-	"time"
 )
 
 // region ParsedTransaction //////////////////////////////////////////////////////////////////
@@ -65,6 +66,10 @@ func (tx *ParsedTransaction) SenderAddress() ledgerstate.Address {
 
 func (tx *ParsedTransaction) Requests() []*RequestOnLedger {
 	return tx.requests
+}
+
+func (tx *ParsedTransaction) ReceivingChainID() coretypes.ChainID {
+	return tx.receivingChainID
 }
 
 // endregion /////////////////////////////////////////////////////////////////

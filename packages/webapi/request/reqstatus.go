@@ -89,7 +89,7 @@ func handleWaitRequestProcessed(c echo.Context) error {
 	}
 }
 
-func parseParams(c echo.Context) (chain.Chain, *coretypes.RequestID, error) {
+func parseParams(c echo.Context) (chain.Chain, coretypes.RequestID, error) {
 	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid theChain ID %+v: %s", c.Param("chainID"), err.Error()))
@@ -102,5 +102,5 @@ func parseParams(c echo.Context) (chain.Chain, *coretypes.RequestID, error) {
 	if err != nil {
 		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid request id %+v: %s", c.Param("reqID"), err.Error()))
 	}
-	return theChain, &reqID, nil
+	return theChain, reqID, nil
 }

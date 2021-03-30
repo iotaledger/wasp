@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"io"
 	"os"
 	"os/exec"
@@ -15,14 +14,14 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/level1"
 	"github.com/iotaledger/wasp/client/level1/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
-	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/tools/cluster/mocknode"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -31,16 +30,15 @@ type Cluster struct {
 	Config  *ClusterConfig
 	Started bool
 
-	goshimmerCmd *exec.Cmd
-	waspCmds     []*exec.Cmd
+	goshimmer *mocknode.MockNode
+	waspCmds  []*exec.Cmd
 }
 
 func New(name string, config *ClusterConfig) *Cluster {
 	return &Cluster{
-		Name:         name,
-		Config:       config,
-		goshimmerCmd: nil,
-		waspCmds:     make([]*exec.Cmd, config.Wasp.NumNodes),
+		Name:     name,
+		Config:   config,
+		waspCmds: make([]*exec.Cmd, config.Wasp.NumNodes),
 	}
 }
 
@@ -74,13 +72,13 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 		return nil, err
 	}
 
-	chainid, addr, color, err := waspapi.DeployChain(waspapi.CreateChainParams{
+	chainid, addr, err := apilib.DeployChain(apilib.CreateChainParams{
 		Node:                  clu.Level1Client(),
 		CommitteeApiHosts:     chain.ApiHosts(),
 		CommitteePeeringHosts: chain.PeeringHosts(),
 		N:                     uint16(len(committeeNodes)),
 		T:                     quorum,
-		OriginatorKeyPair:     chain.OriginatorSigScheme(),
+		OriginatorKeyPair:     chain.OriginatorKeyPair(),
 		Description:           description,
 		Textout:               os.Stdout,
 		Prefix:                "[cluster] ",
@@ -89,15 +87,14 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 		return nil, err
 	}
 
-	chain.Address = *addr
+	chain.Address = addr
 	chain.ChainID = *chainid
-	chain.Color = *color
 
 	return chain, nil
 }
 
 func (cluster *Cluster) IsGoshimmerUp() bool {
-	return cluster.goshimmerCmd != nil
+	return cluster.goshimmer != nil
 }
 
 func (cluster *Cluster) IsNodeUp(i int) bool {
@@ -148,24 +145,6 @@ func (cluster *Cluster) InitDataPath(templatesPath string, dataPath string, remo
 		}
 	}
 
-	if !cluster.Config.Goshimmer.Provided {
-		err = initNodeConfig(
-			goshimmerDataPath(dataPath),
-			path.Join(templatesPath, "goshimmer-config-template.json"),
-			templates.GoshimmerConfig,
-			cluster.Config.GoshimmerConfigTemplateParams(),
-		)
-		if err != nil {
-			return err
-		}
-		err = cluster.copySnapshotBin(
-			path.Join(templatesPath, "snapshot.bin"),
-			path.Join(goshimmerDataPath(dataPath), "snapshot.bin"),
-		)
-		if err != nil {
-			return err
-		}
-	}
 	for i := 0; i < cluster.Config.Wasp.NumNodes; i++ {
 		err = initNodeConfig(
 			waspNodeDataPath(dataPath, i),
@@ -211,53 +190,6 @@ func initNodeConfig(nodePath string, configTemplatePath string, defaultTemplate 
 	return configTmpl.Execute(f, params)
 }
 
-func (cluster *Cluster) copySnapshotBin(srcFilename string, dstFilename string) error {
-	exists, err := fileExists(srcFilename)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		// generate a snapshot from scratch
-		const genesisBalance = 1000000000
-		seed := ed25519.NewSeed()
-		genesisAddr := address.FromED25519PubKey(seed.KeyPair(0).PublicKey)
-		snapshot := tangle.Snapshot{
-			transaction.GenesisID: {
-				genesisAddr: {
-					balance.New(ledgerstate.ColorIOTA, genesisBalance),
-				},
-			},
-		}
-
-		f, err := os.Create(dstFilename)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-
-		_, err = snapshot.WriteTo(f)
-		if err != nil {
-			return err
-		}
-		return nil
-	} else {
-		snapshotSrc, err := os.Open(srcFilename)
-		if err != nil {
-			return err
-		}
-		defer snapshotSrc.Close()
-
-		snapshotDest, err := os.Create(dstFilename)
-		if err != nil {
-			return err
-		}
-		defer snapshotDest.Close()
-
-		_, err = io.Copy(snapshotDest, snapshotSrc)
-		return err
-	}
-}
-
 // Start launches all wasp nodes in the cluster, each running in its own directory
 func (cluster *Cluster) Start(dataPath string) error {
 	exists, err := fileExists(dataPath)
@@ -283,11 +215,12 @@ func (cluster *Cluster) start(dataPath string) error {
 	initOk := make(chan bool, cluster.Config.Wasp.NumNodes)
 
 	if !cluster.Config.Goshimmer.Provided {
-		cmd, err := cluster.startServer("goshimmer", goshimmerDataPath(dataPath), "goshimmer", initOk, "WebAPI started")
-		if err != nil {
-			return err
-		}
-		cluster.goshimmerCmd = cmd
+		goshimmer := mocknode.Start(
+			fmt.Sprintf(":%d", cluster.Config.Goshimmer.TxStreamPort),
+			fmt.Sprintf(":%d", cluster.Config.Goshimmer.ApiPort),
+			initOk,
+		)
+		cluster.goshimmer = goshimmer
 
 		select {
 		case <-initOk:
@@ -372,12 +305,8 @@ func (cluster *Cluster) stopGoshimmer() {
 	if !cluster.IsGoshimmerUp() {
 		return
 	}
-	url := cluster.Config.goshimmerApiHost()
-	fmt.Printf("[cluster] Sending shutdown to goshimmer at %s\n", url)
-	err := nodeapi.Shutdown(url)
-	if err != nil {
-		fmt.Println(err)
-	}
+	fmt.Printf("[cluster] Stopping Goshimmer MockNode\n")
+	cluster.goshimmer.Stop()
 }
 
 func (cluster *Cluster) stopNode(nodeIndex int) {
@@ -407,7 +336,6 @@ func (cluster *Cluster) Stop() {
 }
 
 func (cluster *Cluster) Wait() {
-	waitCmd(&cluster.goshimmerCmd)
 	for i := 0; i < cluster.Config.Wasp.NumNodes; i++ {
 		waitCmd(&cluster.waspCmds[i])
 	}
@@ -439,11 +367,15 @@ func (cluster *Cluster) StartMessageCounter(expectations map[string]int) (*Messa
 	return NewMessageCounter(cluster, cluster.Config.AllNodes(), expectations)
 }
 
-func (cluster *Cluster) PostTransaction(tx *sctransaction_old.TransactionEssence) error {
+func (cluster *Cluster) PostTransaction(tx *ledgerstate.Transaction) error {
 	fmt.Printf("[cluster] posting request tx: %s\n", tx.ID().String())
-	err := cluster.Level1Client().PostAndWaitForConfirmation(tx.Transaction)
+	err := cluster.Level1Client().PostTransaction(tx)
 	if err != nil {
-		fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.Transaction.String(), err)
+		fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.String(), err)
+		return err
+	}
+	if err = cluster.Level1Client().WaitForConfirmation(tx.ID()); err != nil {
+		fmt.Printf("[cluster] posting tx: %v\n", err)
 		return err
 	}
 	fmt.Printf("[cluster] request tx confirmed: %s\n", tx.ID().String())
@@ -456,7 +388,7 @@ func (cluster *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExp
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
 		return false
 	}
-	byColor, total := txutil.OutputBalancesByColor(allOuts)
+	byColor, total := util.OutputBalancesByColor(allOuts)
 	dumpStr, assertionOk := dumpBalancesByColor(byColor, expect)
 
 	totalExpectedStr := "(-)"

@@ -1,6 +1,7 @@
 package chainclient
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
@@ -17,7 +18,7 @@ const optimalSize = 32
 // - uploads big binary data chunks to blob caches of at least `quorum` of `waspHosts` directly
 // - posts a 'storeBlob' request to the 'blob' contract with optimized parameters
 // - the chain reconstructs original parameters upn settlement of the request
-func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, optSize ...int) (hashing.HashValue, *sctransaction_old.TransactionEssence, error) {
+func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, optSize ...int) (hashing.HashValue, *ledgerstate.Transaction, error) {
 	var osize int
 	if len(optSize) > 0 {
 		osize = optSize[0]

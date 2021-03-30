@@ -4,8 +4,8 @@
 package apilib
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"io"
 	"io/ioutil"
 	"os"
@@ -95,10 +95,10 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 			ret = false
 			continue
 		}
-		if consistentChainRecords(first, bdRecords[i]) {
+		if bytes.Equal(first.Bytes(), bdRecords[i].Bytes()) {
 			fmt.Fprintf(out, prefix+"%2d: %s -> chainrecord OK\n", i, host)
 		} else {
-			fmt.Fprintf(out, prefix+"%2d: %s -> chainrecord is WRONG. Expected equal to example, got %s\n",
+			fmt.Fprintf(out, prefix+"%2d: %s -> chainrecord is wrong. Expected equal to example, got %s\n",
 				i, host, bdRecords[i].String())
 			ret = false
 		}
@@ -165,23 +165,4 @@ func publicKeyInfoToString(pki *model.DKSharesInfo) string {
 	ret += fmt.Sprintf("    T: %d\n", pki.Threshold)
 	ret += fmt.Sprintf("    Public keys: %+v\n", pki.PubKeyShares)
 	return ret
-}
-
-func consistentChainRecords(bd1, bd2 *registry.ChainRecord) bool {
-	if bd1.ChainID != bd2.ChainID {
-		return false
-	}
-	if bd1.Color != bd2.Color {
-		return false
-	}
-	if len(bd1.CommitteeNodes) != len(bd2.CommitteeNodes) {
-		return false
-	}
-	for i := range bd1.CommitteeNodes {
-		if bd1.CommitteeNodes[i] != bd2.CommitteeNodes[i] {
-			return false
-		}
-	}
-	// access nodes can be any, do not check
-	return true
 }

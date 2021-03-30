@@ -24,7 +24,7 @@ func WithTransaction(f func() (*transaction.Transaction, error)) *transaction.Tr
 	return tx
 }
 
-func WithSCTransaction(f func() (*sctransaction_old.TransactionEssence, error), forceWait ...bool) *sctransaction_old.TransactionEssence {
+func WithSCTransaction(f func() (*ledgerstate.Transaction, error), forceWait ...bool) *ledgerstate.Transaction {
 	tx, err := f()
 	log.Check(err)
 

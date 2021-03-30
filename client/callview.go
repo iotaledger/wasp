@@ -15,7 +15,6 @@ func (c *WaspClient) CallView(chainID coretypes.ChainID, hContract coretypes.Hna
 		arguments = args[0]
 	}
 	var res dict.Dict
-	contractID := coretypes.NewAgentID(chainID.AsAddress(), hContract)
 	if err := c.do(http.MethodGet, routes.CallView(chainID.Base58(), hContract.String(), functionName), arguments, &res); err != nil {
 		return nil, err
 	}
