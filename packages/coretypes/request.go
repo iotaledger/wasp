@@ -28,9 +28,13 @@ func RequestIDFromBase58(b58 string) (ret RequestID, err error) {
 	return
 }
 
-func (r *RequestID) Bytes() []byte {
-	ret := *r
-	return ret[:]
+// Base58 returns a base58 encoded version of the request id.
+func (rid RequestID) Base58() string {
+	return ledgerstate.OutputID(rid).Base58()
+}
+
+func (rid RequestID) Bytes() []byte {
+	return rid[:]
 }
 
 func (rid RequestID) String() string {
