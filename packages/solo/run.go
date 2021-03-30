@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-func (ch *Chain) runBatch(batch []*sctransaction.RequestOnLedger, trace string) (dict.Dict, error) {
+func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, error) {
 	ch.Log.Debugf("runBatch ('%s')", trace)
 
 	ch.runVMMutex.Lock()
@@ -29,8 +29,10 @@ func (ch *Chain) runBatch(batch []*sctransaction.RequestOnLedger, trace string) 
 	requests := make([]coretypes.Request, len(batch))
 	for i, req := range batch {
 		// solidify arguments
-		if ok, err := req.SolidifyArgs(ch.Env.blobCache); err != nil || !ok {
-			return nil, fmt.Errorf("solo inconsistency: failed to solidify request args")
+		if onLedgerRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
+			if ok, err := onLedgerRequest.SolidifyArgs(ch.Env.blobCache); err != nil || !ok {
+				return nil, fmt.Errorf("Solo inconsistency: failed to solidify request args")
+			}
 		}
 		requests[i] = req
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
+	"math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -37,6 +38,7 @@ const (
 	Saldo              = uint64(1337)
 	DustThresholdIotas = uint64(1)
 	ChainDustThreshold = uint64(100)
+	MaxRequestsInBlock = 100
 )
 
 var DustThreshold = map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: DustThresholdIotas}
@@ -99,8 +101,8 @@ type Chain struct {
 	// related to asynchronous backlog processing
 	runVMMutex   *sync.Mutex
 	reqCounter   atomic.Int32
-	chInRequest  chan *sctransaction.RequestOnLedger
-	backlog      []*sctransaction.RequestOnLedger
+	chInRequest  chan coretypes.Request
+	backlog      []coretypes.Request
 	backlogMutex *sync.RWMutex
 }
 
@@ -202,8 +204,8 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		Log:                    env.logger.Named(name),
 		//
 		runVMMutex:   &sync.Mutex{},
-		chInRequest:  make(chan *sctransaction.RequestOnLedger),
-		backlog:      make([]*sctransaction.RequestOnLedger, 0),
+		chInRequest:  make(chan coretypes.Request),
+		backlog:      make([]coretypes.Request, 0),
 		backlogMutex: &sync.RWMutex{},
 	}
 	require.NoError(env.T, err)
@@ -251,7 +253,7 @@ func (env *Solo) AddToLedger(tx *ledgerstate.Transaction) error {
 	return env.utxoDB.AddTransaction(tx)
 }
 
-func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chid coretypes.ChainID) ([]*sctransaction.RequestOnLedger, error) {
+func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chid coretypes.ChainID) ([]coretypes.Request, error) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 
@@ -263,10 +265,10 @@ func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chid coretypes.Ch
 	return ret, nil
 }
 
-func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]*sctransaction.RequestOnLedger {
+func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]coretypes.Request {
 	sender, err := utxoutil.GetSingleSender(tx)
 	require.NoError(env.T, err)
-	ret := make(map[[33]byte][]*sctransaction.RequestOnLedger)
+	ret := make(map[[33]byte][]coretypes.Request)
 	for _, out := range tx.Essence().Outputs() {
 		o, ok := out.(*ledgerstate.ExtendedLockedOutput)
 		if !ok {
@@ -279,9 +281,8 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]*sc
 		}
 		lst, ok := ret[arr]
 		if !ok {
-			lst = make([]*sctransaction.RequestOnLedger, 0)
+			lst = make([]coretypes.Request, 0)
 		}
-
 		ret[arr] = append(lst, sctransaction.RequestOnLedgerFromOutput(o, sender, utxoutil.GetMintedAmounts(tx)))
 	}
 	return ret
@@ -322,36 +323,46 @@ func (ch *Chain) readRequestsLoop() {
 	}
 }
 
-func (ch *Chain) addToBacklog(r *sctransaction.RequestOnLedger) {
+func (ch *Chain) addToBacklog(r coretypes.Request) {
 	ch.backlogMutex.Lock()
 	defer ch.backlogMutex.Unlock()
 	ch.backlog = append(ch.backlog, r)
-	tl := r.TimeLock()
-	idStr := coretypes.RequestID(r.Output().ID()).String()
-	if tl.UnixNano() == 0 {
-		ch.Log.Infof("added to backlog: %s len: %d", idStr, len(ch.backlog))
-	} else {
-		ch.Log.Infof("added to backlog: %s. Time locked for: %v", idStr, tl.Sub(ch.Env.LogicalTime()))
+	if onLedgerRequest, ok := r.(*sctransaction.RequestOnLedger); ok {
+		tl := onLedgerRequest.TimeLock()
+		if tl.UnixNano() == 0 {
+			ch.Log.Infof("added to backlog: %s len: %d", r.ID(), len(ch.backlog))
+		} else {
+			ch.Log.Infof("added to backlog: %s. Time locked for: %v", r.ID(), tl.Sub(ch.Env.LogicalTime()))
+		}
 	}
 }
 
 // collateBatch selects requests which are not time locked
 // returns batch and and 'remains unprocessed' flag
-func (ch *Chain) collateBatch() []*sctransaction.RequestOnLedger {
+func (ch *Chain) collateBatch() []coretypes.Request {
 	ch.backlogMutex.Lock()
 	defer ch.backlogMutex.Unlock()
 
-	ret := make([]*sctransaction.RequestOnLedger, 0)
+	// emulating variable sized blocks
+	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
+
+	ret := make([]coretypes.Request, 0)
 	remain := ch.backlog[:0]
 	for _, req := range ch.backlog {
-		// using logical clock
-		if req.TimeLock().Before(ch.Env.LogicalTime()) {
-			if req.TimeLock().UnixNano() != 0 {
-				ch.Log.Infof("unlocked time-locked request %s", coretypes.RequestID(req.Output().ID()).String())
-			}
-			ret = append(ret, req)
-		} else {
+		if len(ret) >= maxBatch {
 			remain = append(remain, req)
+			continue
+		}
+		// using logical clock
+		if onLegderRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
+			if onLegderRequest.TimeLock().Before(ch.Env.LogicalTime()) {
+				if onLegderRequest.TimeLock().UnixNano() != 0 {
+					ch.Log.Infof("unlocked time-locked request %s", req.ID())
+				}
+				ret = append(ret, req)
+			}
+		} else {
+			ret = append(ret, req)
 		}
 	}
 	ch.backlog = remain
