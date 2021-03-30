@@ -4,11 +4,11 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	webapi_faucet "github.com/iotaledger/goshimmer/plugins/webapi/faucet"
+	"github.com/iotaledger/goshimmer/plugins/webapi/jsonmodels"
 	"github.com/iotaledger/goshimmer/plugins/webapi/value"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -60,55 +60,17 @@ func (m *MockNode) addEndpoints(e *echo.Echo) {
 }
 
 func (m *MockNode) unspentOutputsHandler(c echo.Context) error {
-	var request value.UnspentOutputsRequest
-	if err := c.Bind(&request); err != nil {
-		m.log.Error(err)
-		return c.JSON(http.StatusBadRequest, value.UnspentOutputsResponse{Error: err.Error()})
+	address, err := ledgerstate.AddressFromBase58EncodedString(c.Param("address"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
 	}
 
-	var unspents []value.UnspentOutput
-	for _, strAddress := range request.Addresses {
-		address, err := ledgerstate.AddressFromBase58EncodedString(strAddress)
-		if err != nil {
-			return c.JSON(http.StatusBadRequest, value.UnspentOutputsResponse{Error: err.Error()})
-		}
+	var outputs []ledgerstate.Output
+	m.Ledger.GetUnspentOutputs(address, func(output ledgerstate.Output) {
+		outputs = append(outputs, output.Clone())
+	})
 
-		outputids := make([]value.OutputID, 0)
-		// get outputids by address
-		m.Ledger.GetUnspentOutputs(address, func(output ledgerstate.Output) {
-			// iterate balances
-			var b []value.Balance
-			output.Balances().ForEach(func(color ledgerstate.Color, balance uint64) bool {
-				b = append(b, value.Balance{
-					Value: int64(balance),
-					Color: color.String(),
-				})
-				return true
-			})
-
-			var timestamp time.Time
-			m.Ledger.GetConfirmedTransaction(output.ID().TransactionID(), func(tx *ledgerstate.Transaction) {
-				timestamp = tx.Essence().Timestamp()
-			})
-
-			outputids = append(outputids, value.OutputID{
-				ID:       output.ID().Base58(),
-				Balances: b,
-				InclusionState: value.InclusionState{
-					Finalized: true,
-					Confirmed: true,
-				},
-				Metadata: value.Metadata{Timestamp: timestamp},
-			})
-		})
-
-		unspents = append(unspents, value.UnspentOutput{
-			Address:   strAddress,
-			OutputIDs: outputids,
-		})
-	}
-
-	return c.JSON(http.StatusOK, value.UnspentOutputsResponse{UnspentOutputs: unspents})
+	return c.JSON(http.StatusOK, jsonmodels.NewGetAddressResponse(address, outputs))
 }
 
 func (m *MockNode) getTransactionByIDHandler(c echo.Context) error {
