@@ -1,13 +1,15 @@
 package chains
 
 import (
+	"time"
+
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	_ "github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
-	"time"
 )
 
 const PluginName = "Chains"
@@ -27,7 +29,6 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	log.Infof("running %s plugin..", PluginName)
 	allChains = chains.New(log)
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 		if err := allChains.ActivateAllFromRegistry(); err != nil {

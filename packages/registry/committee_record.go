@@ -10,6 +10,7 @@ import (
 )
 
 // CommitteeRecord represents committee information
+// TODO optimize: no need to persists address in the structure
 type CommitteeRecord struct {
 	Address        ledgerstate.Address
 	CommitteeNodes []string // "host_addr:port"

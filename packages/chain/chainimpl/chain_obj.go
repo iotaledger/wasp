@@ -4,7 +4,9 @@
 package chainimpl
 
 import (
+	"bytes"
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
+	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"sync"
 	"time"
 
@@ -14,7 +16,6 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -38,8 +39,7 @@ type chainObj struct {
 	procset                      *processors.ProcessorCache
 	chMsg                        chan interface{}
 	stateMgr                     chain.StateManager
-	operator                     chain.Consensus
-	isCommitteeNode              atomic.Bool
+	consensus                    chain.Consensus
 	eventRequestProcessed        *events.Event
 	log                          *logger.Logger
 	nodeConn                     *txstream.Client
@@ -57,7 +57,6 @@ func newChainObj(
 	blobProvider coretypes.BlobCache,
 	onActivation func(),
 ) chain.Chain {
-	var err error
 	log.Debugf("creating chain: %s", chr)
 
 	chainLog := log.Named(util.Short(chr.ChainID.String()))
@@ -75,18 +74,7 @@ func newChainObj(
 		dksProvider:  dksProvider,
 		blobProvider: blobProvider,
 	}
-	ret.committee, err = NewCommittee(ret, chr.StateAddressTmp, netProvider, dksProvider)
-	if err != nil {
-		log.Errorf("failed to create chain. ChainID: %s: %v", chr.ChainID, err)
-		return nil
-	}
-	ret.committee.OnPeerMessage(func(recv *peering.RecvEvent) {
-		ret.ReceiveMessage(recv.Msg)
-	})
-
-	ret.stateMgr = statemgr.New(ret, ret.log)
-	ret.operator = consensus.New(ret.committee, nodeConn, ret.log)
-	ret.isCommitteeNode.Store(true)
+	ret.stateMgr = statemgr.New(ret, newPeers(nil), ret.log)
 	go func() {
 		for msg := range ret.chMsg {
 			ret.dispatchMessage(msg)
@@ -117,4 +105,194 @@ func iAmInTheCommittee(committeeNodes []string, n, index uint16, netProvider pee
 		return false
 	}
 	return committeeNodes[index] == netProvider.Self().NetID()
+}
+
+func (c *chainObj) dispatchMessage(msg interface{}) {
+	if !c.isOpenQueue.Load() {
+		return
+	}
+
+	switch msgt := msg.(type) {
+	case *peering.PeerMessage:
+		c.processPeerMessage(msgt)
+	case *chain.StateUpdateMsg:
+		c.stateMgr.EventStateUpdateMsg(msgt)
+	case *chain.StateTransitionMsg:
+		if c.consensus != nil {
+			c.consensus.EventStateTransitionMsg(msgt)
+		}
+	case chain.PendingBlockMsg:
+		c.stateMgr.EventPendingBlockMsg(msgt)
+	case *chain.InclusionStateMsg:
+		if c.consensus != nil {
+			c.consensus.EventTransactionInclusionStateMsg(msgt)
+		}
+	case *chain.StateMsg:
+		c.processStateMessage(msgt)
+	case coretypes.Request:
+		// receive request message
+		if c.consensus != nil {
+			c.consensus.EventRequestMsg(msgt)
+		}
+	case *chain.VMResultMsg:
+		// VM finished working
+		if c.consensus != nil {
+			c.consensus.EventResultCalculated(msgt)
+		}
+
+	case chain.TimerTick:
+
+		if msgt%2 == 0 {
+			if c.stateMgr != nil {
+				c.stateMgr.EventTimerMsg(msgt / 2)
+			}
+		} else {
+			if c.consensus != nil {
+				c.consensus.EventTimerMsg(msgt / 2)
+			}
+		}
+	}
+}
+
+func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
+
+	rdr := bytes.NewReader(msg.MsgData)
+
+	switch msg.MsgType {
+
+	case chain.MsgStateIndexPingPong:
+		msgt := &chain.StateIndexPingPongMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		msgt.SenderIndex = msg.SenderIndex
+
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
+		c.stateMgr.EventStateIndexPingPongMsg(msgt)
+
+	case chain.MsgNotifyRequests:
+		msgt := &chain.NotifyReqMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
+
+		msgt.SenderIndex = msg.SenderIndex
+
+		if c.consensus != nil {
+			c.consensus.EventNotifyReqMsg(msgt)
+		}
+
+	case chain.MsgNotifyFinalResultPosted:
+		msgt := &chain.NotifyFinalResultPostedMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
+
+		msgt.SenderIndex = msg.SenderIndex
+
+		if c.consensus != nil {
+			c.consensus.EventNotifyFinalResultPostedMsg(msgt)
+		}
+
+	case chain.MsgStartProcessingRequest:
+		msgt := &chain.StartProcessingBatchMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
+
+		msgt.SenderIndex = msg.SenderIndex
+		msgt.Timestamp = msg.Timestamp
+
+		if c.consensus != nil {
+			c.consensus.EventStartProcessingBatchMsg(msgt)
+		}
+
+	case chain.MsgSignedHash:
+		msgt := &chain.SignedHashMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
+
+		msgt.SenderIndex = msg.SenderIndex
+		msgt.Timestamp = msg.Timestamp
+
+		if c.consensus != nil {
+			c.consensus.EventSignedHashMsg(msgt)
+		}
+
+	case chain.MsgGetBatch:
+		msgt := &chain.GetBlockMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+
+		msgt.SenderIndex = msg.SenderIndex
+
+		c.stateMgr.EventGetBlockMsg(msgt)
+
+	case chain.MsgBatchHeader:
+		msgt := &chain.BlockHeaderMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
+
+		msgt.SenderIndex = msg.SenderIndex
+		c.stateMgr.EventBlockHeaderMsg(msgt)
+
+	case chain.MsgStateUpdate:
+		msgt := &chain.StateUpdateMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
+
+		msgt.SenderIndex = msg.SenderIndex
+		c.stateMgr.EventStateUpdateMsg(msgt)
+
+	default:
+		c.log.Errorf("processPeerMessage: wrong msg type")
+	}
+}
+
+// processStateMessage processes chain output
+// If necessary, it creates/changes committee object and sends new peers to the stateManager
+func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
+	if c.committee != nil && c.committee.DKShare().Address.Equals(msg.ChainOutput.GetStateAddress()) {
+		// nothing changed in the committee
+		c.stateMgr.EventStateOutputMsg(msg)
+		return
+	}
+	// create or change committee object
+	if c.committee != nil {
+		c.committee.Close()
+	}
+	if c.consensus != nil {
+		c.consensus.Close()
+	}
+	c.committee, c.consensus = nil, nil
+	var err error
+	if c.committee, err = NewCommittee(c, msg.ChainOutput.GetStateAddress(), c.netProvider, c.dksProvider); err != nil {
+		c.committee = nil
+		c.log.Errorf("failed to create committee object for address %s. ChainID: %s",
+			msg.ChainOutput.GetStateAddress(), c.chainID)
+		return
+	}
+	c.committee.OnPeerMessage(func(recv *peering.RecvEvent) {
+		c.ReceiveMessage(recv.Msg)
+	})
+	c.consensus = consensus.New(c.committee, c.nodeConn, c.log)
+	c.stateMgr.SetPeers(newPeers(c.committee))
 }

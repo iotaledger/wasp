@@ -18,6 +18,7 @@ import (
 
 type stateManager struct {
 	chain chain.Chain
+	peers chain.Peers
 
 	// becomes true after initially loaded state is validated.
 	// after that it is always true
@@ -72,7 +73,7 @@ type stateManager struct {
 	eventGetBlockMsgCh           chan *chain.GetBlockMsg
 	eventBlockHeaderMsgCh        chan *chain.BlockHeaderMsg
 	eventStateUpdateMsgCh        chan *chain.StateUpdateMsg
-	eventStateOutputMsgCh        chan *chain.StateOutputMsg
+	eventStateOutputMsgCh        chan *chain.StateMsg
 	eventPendingBlockMsgCh       chan chain.PendingBlockMsg
 	eventTimerMsgCh              chan chain.TimerTick
 	closeCh                      chan bool
@@ -94,26 +95,30 @@ type pendingBlock struct {
 	stateTransactionRequestDeadline time.Time
 }
 
-func New(c chain.Chain, log *logger.Logger) chain.StateManager {
+func New(c chain.Chain, peers chain.Peers, log *logger.Logger) chain.StateManager {
 	ret := &stateManager{
 		chain:                        c,
-		pingPong:                     make([]bool, c.Size()),
 		pendingBlocks:                make(map[hashing.HashValue]*pendingBlock),
-		permutation:                  util.NewPermutation16(c.NumPeers(), nil),
 		log:                          log.Named("s"),
 		evidenceStateIndexCh:         make(chan uint32),
 		eventStateIndexPingPongMsgCh: make(chan *chain.StateIndexPingPongMsg),
 		eventGetBlockMsgCh:           make(chan *chain.GetBlockMsg),
 		eventBlockHeaderMsgCh:        make(chan *chain.BlockHeaderMsg),
 		eventStateUpdateMsgCh:        make(chan *chain.StateUpdateMsg),
-		eventStateOutputMsgCh:        make(chan *chain.StateOutputMsg),
+		eventStateOutputMsgCh:        make(chan *chain.StateMsg),
 		eventPendingBlockMsgCh:       make(chan chain.PendingBlockMsg),
 		eventTimerMsgCh:              make(chan chain.TimerTick),
 		closeCh:                      make(chan bool),
 	}
+	ret.SetPeers(peers)
 	go ret.initLoadState()
 
 	return ret
+}
+
+func (sm *stateManager) SetPeers(p chain.Peers) {
+	sm.peers = p
+	sm.pingPong = make([]bool, p.NumPeers())
 }
 
 func (sm *stateManager) Close() {

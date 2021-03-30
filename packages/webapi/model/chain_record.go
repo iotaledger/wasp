@@ -5,23 +5,20 @@ import (
 )
 
 type ChainRecord struct {
-	ChainID      ChainID `swagger:"desc(ChainID (base58-encoded))"`
-	StateAddrTmp Address `swagger:"desc(Chain color (base58-encoded))"`
-	Active       bool    `swagger:"desc(Whether or not the chain is active)"`
+	ChainID ChainID `swagger:"desc(ChainID (base58-encoded))"`
+	Active  bool    `swagger:"desc(Whether or not the chain is active)"`
 }
 
 func NewChainRecord(rec *registry.ChainRecord) *ChainRecord {
 	return &ChainRecord{
-		ChainID:      NewChainID(&rec.ChainID),
-		StateAddrTmp: NewAddress(rec.StateAddressTmp),
-		Active:       rec.Active,
+		ChainID: NewChainID(&rec.ChainID),
+		Active:  rec.Active,
 	}
 }
 
 func (bd *ChainRecord) Record() *registry.ChainRecord {
 	return &registry.ChainRecord{
-		ChainID:         bd.ChainID.ChainID(),
-		StateAddressTmp: bd.StateAddrTmp.Address(),
-		Active:          bd.Active,
+		ChainID: bd.ChainID.ChainID(),
+		Active:  bd.Active,
 	}
 }

@@ -133,7 +133,7 @@ func (c *chainObj) Dismiss() {
 
 		c.committee.Close()
 		c.stateMgr.Close()
-		c.operator.Close()
+		c.consensus.Close()
 	})
 
 	publisher.Publish("dismissed_chain", c.chainID.Base58())
@@ -167,15 +167,19 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 		c.ReceiveRequest(req)
 	}
 	if chainOut := sctransaction.FindAliasOutput(tx.Essence(), c.chainID.AsAddress()); chainOut != nil {
-		c.ReceiveMessage(&chain.StateOutputMsg{
-			ChainOutput: chainOut,
-			Timestamp:   tx.Essence().Timestamp(),
-		})
+		c.ReceiveState(chainOut, tx.Essence().Timestamp())
 	}
 }
 
 func (c *chainObj) ReceiveRequest(req coretypes.Request) {
 	c.ReceiveMessage(req) //
+}
+
+func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
+	c.ReceiveMessage(&chain.StateMsg{
+		ChainOutput: stateOutput,
+		Timestamp:   timestamp,
+	})
 }
 
 func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
@@ -193,11 +197,8 @@ func (c *chainObj) GetRequestProcessingStatus(reqID *coretypes.RequestID) chain.
 	if c.IsDismissed() {
 		return chain.RequestProcessingStatusUnknown
 	}
-	if c.isCommitteeNode.Load() {
-		if c.IsDismissed() {
-			return chain.RequestProcessingStatusUnknown
-		}
-		if c.operator.IsRequestInBacklog(reqID) {
+	if c.consensus != nil {
+		if c.consensus.IsRequestInBacklog(reqID) {
 			return chain.RequestProcessingStatusBacklog
 		}
 	}

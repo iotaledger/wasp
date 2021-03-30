@@ -51,7 +51,7 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 
 	sm.log.Debugf("EventGetBlockMsg for state index #%d --> peer %d", msg.BlockIndex, msg.SenderIndex)
 
-	err = sm.chain.SendMsg(msg.SenderIndex, chain.MsgBatchHeader, util.MustBytes(&chain.BlockHeaderMsg{
+	err = sm.peers.SendMsg(msg.SenderIndex, chain.MsgBatchHeader, util.MustBytes(&chain.BlockHeaderMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
 			BlockIndex: msg.BlockIndex,
 		},
@@ -62,7 +62,7 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 		return
 	}
 	block.ForEach(func(batchIndex uint16, stateUpdate state.StateUpdate) bool {
-		err = sm.chain.SendMsg(msg.SenderIndex, chain.MsgStateUpdate, util.MustBytes(&chain.StateUpdateMsg{
+		err = sm.peers.SendMsg(msg.SenderIndex, chain.MsgStateUpdate, util.MustBytes(&chain.StateUpdateMsg{
 			PeerMsgHeader: chain.PeerMsgHeader{
 				BlockIndex: msg.BlockIndex,
 			},
@@ -158,10 +158,10 @@ func (sm *stateManager) eventStateUpdateMsg(msg *chain.StateUpdateMsg) {
 
 // EventStateTransactionMsg triggered whenever new state transaction arrives
 // the state transaction may be confirmed or not
-func (sm *stateManager) EventStateOutputMsg(msg *chain.StateOutputMsg) {
+func (sm *stateManager) EventStateOutputMsg(msg *chain.StateMsg) {
 	sm.eventStateOutputMsgCh <- msg
 }
-func (sm *stateManager) eventStateOutputMsg(msg *chain.StateOutputMsg) {
+func (sm *stateManager) eventStateOutputMsg(msg *chain.StateMsg) {
 	stateHash, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
 	if err != nil {
 		sm.log.Panicf("failed to parse state hash: %v", err)

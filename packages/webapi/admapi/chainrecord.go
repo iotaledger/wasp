@@ -15,11 +15,9 @@ import (
 
 func addChainRecordEndpoints(adm echoswagger.ApiGroup) {
 	rnd1 := coretypes.RandomChainID()
-	rnd2 := coretypes.RandomChainID([]byte{1, 2, 3}).AsAddress()
 	example := model.ChainRecord{
-		ChainID:      model.NewChainID(rnd1),
-		StateAddrTmp: model.NewAddress(rnd2),
-		Active:       false,
+		ChainID: model.NewChainID(rnd1),
+		Active:  false,
 	}
 
 	adm.POST(routes.PutChainRecord(), handlePutChainRecord).

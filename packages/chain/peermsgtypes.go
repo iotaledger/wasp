@@ -144,7 +144,7 @@ type InclusionStateMsg struct {
 	State ledgerstate.InclusionState
 }
 
-type StateOutputMsg struct {
+type StateMsg struct {
 	ChainOutput *ledgerstate.AliasOutput
 	Timestamp   time.Time
 }

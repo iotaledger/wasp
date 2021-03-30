@@ -57,7 +57,7 @@ func (sm *stateManager) sendPingsIfNeeded() {
 		// no need for pinging, all state information is gathered already
 		return
 	}
-	if !sm.chain.QuorumIsAlive() {
+	if !sm.peers.QuorumIsAlive() {
 		// doesn't make sense the pinging, alive nodes does not make quorum
 		return
 	}
@@ -69,7 +69,7 @@ func (sm *stateManager) sendPingsIfNeeded() {
 		// not time yet
 		return
 	}
-	sm.sendPingsToCommitteePeers()
+	sm.sendPingsToPeers()
 }
 
 // checks the state of the state manager. If one of pending blocks is confirmed
@@ -193,12 +193,8 @@ func (sm *stateManager) requestStateUpdateFromPeerIfNeeded() {
 		},
 	})
 	// send messages until first without error
-	for i := uint16(0); i < sm.chain.Size(); i++ {
-		if err := sm.chain.SendMsg(sm.permutation.Next(), chain.MsgGetBatch, data); err == nil {
-			break
-		}
-		sm.syncMessageDeadline = time.Now().Add(chain.PeriodBetweenSyncMessages)
-	}
+	sm.peers.SendToAllUntilFirstError(chain.MsgGetBatch, data)
+	sm.syncMessageDeadline = time.Now().Add(chain.PeriodBetweenSyncMessages)
 }
 
 // index of evidenced state index is passed to record the largest one.
@@ -342,7 +338,7 @@ func (sm *stateManager) numPongs() uint16 {
 }
 
 func (sm *stateManager) numPongsHasQuorum() bool {
-	return sm.numPongs() >= sm.chain.Quorum()-1
+	return sm.numPongs() >= sm.peers.Quorum()-1
 }
 
 func (sm *stateManager) pingPongReceived(senderIndex uint16) {
@@ -350,7 +346,7 @@ func (sm *stateManager) pingPongReceived(senderIndex uint16) {
 }
 
 func (sm *stateManager) respondPongToPeer(targetPeerIndex uint16) {
-	sm.chain.SendMsg(targetPeerIndex, chain.MsgStateIndexPingPong, util.MustBytes(&chain.StateIndexPingPongMsg{
+	sm.peers.SendMsg(targetPeerIndex, chain.MsgStateIndexPingPong, util.MustBytes(&chain.StateIndexPingPongMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
 			BlockIndex: sm.solidState.BlockIndex(),
 		},
@@ -358,7 +354,7 @@ func (sm *stateManager) respondPongToPeer(targetPeerIndex uint16) {
 	}))
 }
 
-func (sm *stateManager) sendPingsToCommitteePeers() {
+func (sm *stateManager) sendPingsToPeers() {
 	sm.log.Debugf("pinging peers")
 
 	data := util.MustBytes(&chain.StateIndexPingPongMsg{
@@ -372,7 +368,7 @@ func (sm *stateManager) sendPingsToCommitteePeers() {
 		if pinged {
 			continue
 		}
-		if err := sm.chain.SendMsg(uint16(i), chain.MsgStateIndexPingPong, data); err == nil {
+		if err := sm.peers.SendMsg(uint16(i), chain.MsgStateIndexPingPong, data); err == nil {
 			numSent++
 		}
 	}

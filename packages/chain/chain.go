@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"sync"
+	"time"
 )
 
 type Committee interface {
@@ -33,15 +34,27 @@ type Committee interface {
 	FeeDestination() coretypes.AgentID
 }
 
+// TODO temporary wrapper for Committee need replacement for all peers, not only committee
+type Peers interface {
+	NumPeers() uint16
+	Quorum() uint16
+	QuorumIsAlive() bool
+	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
+	SendToAllUntilFirstError(msgType byte, msgData []byte) uint16
+}
+
 type Chain interface {
 	Committee() Committee
 	ID() *coretypes.ChainID
 	BlobCache() coretypes.BlobCache
+
 	// TODO distinguish external messages from internal and peer messages
-	ReceiveMessage(interface{})
+	ReceiveMessage(interface{}) // generic
 	ReceiveTransaction(*ledgerstate.Transaction)
 	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	ReceiveRequest(coretypes.Request)
+	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
+
 	SetReadyStateManager() // TODO get rid
 	SetReadyConsensus()    // TODO get rid
 	Dismiss()
@@ -73,12 +86,13 @@ const (
 )
 
 type StateManager interface {
+	SetPeers(Peers)
 	EvidenceStateIndex(idx uint32)
 	EventStateIndexPingPongMsg(msg *StateIndexPingPongMsg)
 	EventGetBlockMsg(msg *GetBlockMsg)
 	EventBlockHeaderMsg(msg *BlockHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)
-	EventStateOutputMsg(msg *StateOutputMsg)
+	EventStateOutputMsg(msg *StateMsg)
 	EventPendingBlockMsg(msg PendingBlockMsg)
 	EventTimerMsg(msg TimerTick)
 	Close()

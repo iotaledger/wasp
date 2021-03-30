@@ -12,21 +12,20 @@ import (
 )
 
 // ChainRecord represents chain the node is participating in
+// TODO optimize, no need for a persistent structure, simple activity tag is enough
 type ChainRecord struct {
-	ChainID         coretypes.ChainID
-	StateAddressTmp ledgerstate.Address // TODO temporary, should be removed
-	Active          bool
+	ChainID coretypes.ChainID
+	Active  bool
 }
 
-func NewChainRecord(chainID *coretypes.ChainID, addrTmp ledgerstate.Address, active ...bool) *ChainRecord {
+func NewChainRecord(chainID *coretypes.ChainID, active ...bool) *ChainRecord {
 	act := false
 	if len(active) > 0 {
 		act = active[0]
 	}
 	return &ChainRecord{
-		ChainID:         chainID.Clone(),
-		StateAddressTmp: addrTmp.Clone(),
-		Active:          act,
+		ChainID: chainID.Clone(),
+		Active:  act,
 	}
 }
 
@@ -38,10 +37,6 @@ func ChainRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, erro
 	}
 	ret.ChainID = *coretypes.NewChainID(aliasAddr)
 
-	ret.StateAddressTmp, err = ledgerstate.AddressFromMarshalUtil(mu)
-	if err != nil {
-		return nil, err
-	}
 	ret.Active, err = mu.ReadBool()
 	if err != nil {
 		return nil, err
@@ -70,7 +65,6 @@ func ChainRecordFromRegistry(chainID *coretypes.ChainID) (*ChainRecord, error) {
 func (rec *ChainRecord) Bytes() []byte {
 	return marshalutil.New().
 		WriteBytes(rec.ChainID.Bytes()).
-		WriteBytes(rec.StateAddressTmp.Bytes()).
 		WriteBool(rec.Active).
 		Bytes()
 }
@@ -137,7 +131,6 @@ func GetChainRecords() ([]*ChainRecord, error) {
 
 func (rec *ChainRecord) String() string {
 	ret := "ChainID: " + rec.ChainID.String() + "\n"
-	ret += fmt.Sprintf("      State address: %+v\n", rec.StateAddressTmp.Base58())
 	ret += fmt.Sprintf("      Active: %v\n", rec.Active)
 	return ret
 }
