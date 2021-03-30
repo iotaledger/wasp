@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 type stateManager struct {
@@ -60,9 +59,6 @@ type stateManager struct {
 
 	// current block being synced
 	syncedBatch *syncedBatch
-
-	// for the pseudo-random sequence of peers
-	permutation *util.Permutation16
 
 	// logger
 	log *logger.Logger

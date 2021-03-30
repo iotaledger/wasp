@@ -147,8 +147,7 @@ func (sm *stateManager) checkStateApproval() bool {
 	// update state manager variables to the new state
 	sm.nextStateOutput = nil
 	sm.pendingBlocks = make(map[hashing.HashValue]*pendingBlock) // clear pending batches
-	sm.permutation.Shuffle(varStateHash[:])
-	sm.syncMessageDeadline = time.Now() // if not synced then immediately
+	sm.syncMessageDeadline = time.Now()                          // if not synced then immediately
 	sm.consensusNotifiedOnStateTransition = false
 
 	// publish state transition
