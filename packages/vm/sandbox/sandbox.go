@@ -98,7 +98,7 @@ func (s *sandbox) Params() dict.Dict {
 	return s.vmctx.Params()
 }
 
-func (s *sandbox) RequestID() ledgerstate.OutputID {
+func (s *sandbox) RequestID() coretypes.RequestID {
 	return s.vmctx.RequestID()
 }
 

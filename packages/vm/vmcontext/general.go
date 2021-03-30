@@ -104,8 +104,8 @@ func (vmctx *VMContext) EventPublisher() vm.ContractEventPublisher {
 	return vm.NewContractEventPublisher(vmctx.ChainID(), vmctx.CurrentContractHname(), vmctx.log)
 }
 
-func (vmctx *VMContext) RequestID() ledgerstate.OutputID {
-	return vmctx.req.Output().ID()
+func (vmctx *VMContext) RequestID() coretypes.RequestID {
+	return coretypes.RequestID(vmctx.req.Output().ID())
 }
 
 const maxParamSize = 512

@@ -52,7 +52,7 @@ type Sandbox interface {
 	// Params of the current call
 	Params() dict.Dict
 	// RequestID of the request in the context of which is the current call
-	RequestID() ledgerstate.OutputID
+	RequestID() RequestID
 	// Send one generic method for sending assets with ledgerstate.ExtendedLockedOutput
 	// replaces TransferToAddress and PostRequest
 	Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *SendMetadata, options ...SendOptions) bool

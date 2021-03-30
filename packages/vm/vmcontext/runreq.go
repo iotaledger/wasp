@@ -69,18 +69,19 @@ func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
 		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.Output().ID()); err != nil {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
 		}
-
 	}
 	vmctx.timestamp += 1
 	t := time.Unix(0, vmctx.timestamp)
-	if input, ok := req.Output().(*ledgerstate.ExtendedLockedOutput); ok {
-		// it is an on-ledger request
-		if input.TimeLockedNow(t) {
-			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", t, input.String())
-		}
-		if !input.UnlockAddressNow(t).Equals(vmctx.chainID.AsAddress()) {
-			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
-				t, input.String(), vmctx.chainID.String())
+	if req.Output() != nil {
+		if input, ok := req.Output().(*ledgerstate.ExtendedLockedOutput); ok {
+			// it is an on-ledger request
+			if input.TimeLockedNow(t) {
+				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", t, input.String())
+			}
+			if !input.UnlockAddressNow(t).Equals(vmctx.chainID.AsAddress()) {
+				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
+					t, input.String(), vmctx.chainID.String())
+			}
 		}
 	}
 
