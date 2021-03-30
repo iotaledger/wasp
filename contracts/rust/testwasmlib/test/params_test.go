@@ -68,8 +68,8 @@ func TestValidParams(t *testing.T) {
 	require.NoError(t, err)
 	hash, err := hashing.HashValueFromBytes([]byte("0123456789abcdeffedcba9876543210"))
 	require.NoError(t, err)
-	//requestId,err := coretypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))
-	//require.NoError(t, err)
+	requestId,err := coretypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))
+	require.NoError(t, err)
 	req := solo.NewCallParams(testwasmlib.ScName, testwasmlib.FuncParamTypes,
 		ParamAddress, address,
 		ParamAgentId, agentId,
@@ -79,7 +79,7 @@ func TestValidParams(t *testing.T) {
 		ParamHash, hash,
 		ParamHname, hname,
 		ParamInt64, int64(1234567890123456789),
-		//ParamRequestId, requestId,
+		ParamRequestId, requestId,
 		ParamString, "this is a string",
 	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
