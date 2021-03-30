@@ -122,7 +122,7 @@ type StateTransitionMsg struct {
 	//
 	Timestamp time.Time
 	// processed requests
-	RequestIDs []*coretypes.RequestID
+	RequestIDs []coretypes.RequestID
 	// is the state index last seen
 	Synchronized bool
 }

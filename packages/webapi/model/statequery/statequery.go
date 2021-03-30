@@ -30,7 +30,7 @@ type Results struct {
 	Timestamp  time.Time
 	StateHash  *hashing.HashValue
 	StateTxId  model.ValueTxID
-	Requests   []*coretypes.RequestID
+	Requests   []coretypes.RequestID
 }
 
 type KeyQuery struct {

@@ -12,6 +12,6 @@ func DecodeRequestID(b []byte) (coretypes.RequestID, bool, error) {
 	return r, err == nil, err
 }
 
-func EncodeRequestID(value *coretypes.RequestID) []byte {
+func EncodeRequestID(value coretypes.RequestID) []byte {
 	return value.Bytes()
 }

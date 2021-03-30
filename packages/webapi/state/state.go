@@ -54,7 +54,7 @@ func handleStateQuery(c echo.Context) error {
 		Timestamp:  time.Unix(0, state.Timestamp()),
 		StateHash:  state.Hash(),
 		StateTxId:  model.NewValueTxID(&txid),
-		Requests:   make([]*coretypes.RequestID, len(batch.RequestIDs())),
+		Requests:   make([]coretypes.RequestID, len(batch.RequestIDs())),
 	}
 	copy(ret.Requests, batch.RequestIDs())
 	vars := state.Variables()

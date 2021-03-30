@@ -60,7 +60,7 @@ type Chain interface {
 	Dismiss()
 	IsDismissed() bool
 	// requests
-	GetRequestProcessingStatus(id *coretypes.RequestID) RequestProcessingStatus
+	GetRequestProcessingStatus(id coretypes.RequestID) RequestProcessingStatus
 	EventRequestProcessed() *events.Event
 	// chain processors
 	Processors() *processors.ProcessorCache
@@ -110,7 +110,7 @@ type Consensus interface {
 	EventTimerMsg(TimerTick)
 	Close()
 	//
-	IsRequestInBacklog(*coretypes.RequestID) bool
+	IsRequestInBacklog(coretypes.RequestID) bool
 }
 
 type chainConstructor func(

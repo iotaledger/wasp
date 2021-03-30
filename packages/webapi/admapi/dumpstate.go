@@ -17,8 +17,9 @@ import (
 )
 
 func addStateEndpoints(adm echoswagger.ApiGroup) {
-	adm.GET(routes.DumpState(":contractID"), handleDumpSCState).
-		AddParamPath("", "contractID", "ContractID").
+	adm.GET(routes.DumpState(":chainID", ":contractHname"), handleDumpSCState).
+		AddParamPath("", "chainID", "Chain ID").
+		AddParamPath("", "contractHname", "Contract Hname").
 		AddResponse(http.StatusOK, "State dump", model.SCStateDump{}, nil).
 		SetSummary("Dump the whole contract state").
 		SetDescription("This may be a dangerous operation if the state is too large. Only for testing use!")

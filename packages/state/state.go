@@ -189,7 +189,7 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	// store processed request IDs
 	// TODO store request IDs in the 'log' contract
 	for _, rid := range b.RequestIDs() {
-		keys = append(keys, dbkeyRequest(&rid))
+		keys = append(keys, dbkeyRequest(rid))
 		values = append(values, []byte{0})
 	}
 
@@ -249,10 +249,10 @@ func dbkeyStateVariable(key kv.Key) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeStateVariable, []byte(key))
 }
 
-func dbkeyRequest(reqid *coretypes.RequestID) []byte {
+func dbkeyRequest(reqid coretypes.RequestID) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeProcessedRequestId, reqid[:])
 }
 
 func IsRequestCompleted(addr *coretypes.ChainID, reqid coretypes.RequestID) (bool, error) {
-	return getSCPartition(addr).Has(dbkeyRequest(&reqid))
+	return getSCPartition(addr).Has(dbkeyRequest(reqid))
 }

@@ -130,7 +130,7 @@ func (op *operator) deleteCompletedRequests() error {
 	}
 	for _, rid := range toDelete {
 		delete(op.requests, rid)
-		op.removeRequestIdConcurrent(&rid)
+		op.removeRequestIdConcurrent(rid)
 		op.log.Debugf("removed from backlog: processed request %s", rid.String())
 	}
 	return nil
@@ -171,21 +171,21 @@ func (op *operator) addRequestIdConcurrent(reqId coretypes.RequestID) {
 	op.requestIdsProtected[reqId] = true
 }
 
-func (op *operator) removeRequestIdConcurrent(reqId *coretypes.RequestID) {
+func (op *operator) removeRequestIdConcurrent(reqId coretypes.RequestID) {
 	op.concurrentAccessMutex.Lock()
 	defer op.concurrentAccessMutex.Unlock()
 
-	delete(op.requestIdsProtected, *reqId)
+	delete(op.requestIdsProtected, reqId)
 }
 
-func (op *operator) hasRequestIdConcurrent(reqId *coretypes.RequestID) bool {
+func (op *operator) hasRequestIdConcurrent(reqId coretypes.RequestID) bool {
 	op.concurrentAccessMutex.RLock()
 	defer op.concurrentAccessMutex.RUnlock()
 
-	_, ok := op.requestIdsProtected[*reqId]
+	_, ok := op.requestIdsProtected[reqId]
 	return ok
 }
 
-func (op *operator) IsRequestInBacklog(reqId *coretypes.RequestID) bool {
+func (op *operator) IsRequestInBacklog(reqId coretypes.RequestID) bool {
 	return op.hasRequestIdConcurrent(reqId)
 }
