@@ -63,8 +63,9 @@ type ScDict struct {
 	typeId    int32
 	types     map[int32]int32
 }
-
 var _ WaspObject = &ScDict{}
+
+var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 8, 0, 34, 0}
 
 func NewScDict(vm *wasmProcessor) *ScDict {
 	return NewScDictFromKvStore(&vm.KvStoreHost, dict.New())
@@ -145,24 +146,12 @@ func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 	return objId
 }
 
-var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 8, 0, 34, 0}
-
 func (o *ScDict) GetBytes(keyId int32, typeId int32) []byte {
 	if keyId == wasmhost.KeyLength && (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 {
 		return o.Int64Bytes(int64(o.length))
 	}
 	bytes := o.kvStore.MustGet(o.key(keyId, typeId))
-	typeSize := typeSizes[typeId]
-	if typeSize != 0 && typeSize != len(bytes) {
-		o.Panic("GetBytes: invalid type size")
-	}
-	switch typeId {
-	case wasmhost.OBJTYPE_CHAIN_ID:
-		// chain id must be alias address
-		if ledgerstate.AddressType(bytes[0]) != ledgerstate.AliasAddressType {
-			o.Panic("GetBytes: invalid chain id")
-		}
-	}
+	o.typeCheck(typeId, bytes)
 	return bytes
 }
 
@@ -249,18 +238,7 @@ func (o *ScDict) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	}
 
 	key := o.key(keyId, typeId)
-
-	typeSize := typeSizes[typeId]
-	if typeSize != 0 && typeSize != len(bytes) {
-		o.Panic("SetBytes: invalid type size")
-	}
-	switch typeId {
-	case wasmhost.OBJTYPE_CHAIN_ID:
-		// chain id must be alias address
-		if ledgerstate.AddressType(bytes[0]) != ledgerstate.AliasAddressType {
-			o.Panic("SetBytes: invalid chain id")
-		}
-	}
+	o.typeCheck(typeId, bytes)
 	o.kvStore.Set(key, bytes)
 }
 
@@ -274,6 +252,35 @@ func (o *ScDict) Suffix(keyId int32) string {
 
 func (o *ScDict) Trace(format string, a ...interface{}) {
 	o.host.Trace(format, a...)
+}
+
+func (o *ScDict) typeCheck(typeId int32, bytes []byte) {
+	typeSize := typeSizes[typeId]
+	if typeSize != 0 && typeSize != len(bytes) {
+		o.Panic("typeCheck: invalid type size")
+	}
+	switch typeId {
+	case wasmhost.OBJTYPE_ADDRESS:
+		// address bytes must start with valid address type
+		if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
+			o.Panic("typeCheck: invalid address type")
+		}
+	case wasmhost.OBJTYPE_AGENT_ID:
+		// address bytes in agent id must start with valid address type
+		if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
+			o.Panic("typeCheck: invalid agent id address type")
+		}
+	case wasmhost.OBJTYPE_CHAIN_ID:
+		// chain id must be alias address
+		if ledgerstate.AddressType(bytes[0]) != ledgerstate.AliasAddressType {
+			o.Panic("typeCheck: invalid chain id address type")
+		}
+	case wasmhost.OBJTYPE_REQUEST_ID:
+		outputIndex := binary.LittleEndian.Uint16(bytes[ledgerstate.TransactionIDLength:])
+		if outputIndex > ledgerstate.MaxOutputCount {
+			o.Panic("typeCheck: invalid request id output index")
+		}
+	}
 }
 
 func (o *ScDict) validate(keyId int32, typeId int32) {
