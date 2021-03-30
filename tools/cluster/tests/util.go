@@ -189,7 +189,7 @@ func printAccounts(t *testing.T, chain *cluster.Chain, title string) {
 	fmt.Println(s)
 }
 
-func diffBalancesOnChain(t *testing.T, chain *cluster.Chain) *ledgerstate.ColoredBalances {
+func checkLedger(t *testing.T, chain *cluster.Chain) {
 	balances := getBalancesOnChain(t, chain)
 	sum := make(map[ledgerstate.Color]uint64)
 	for _, bal := range balances {
@@ -200,16 +200,8 @@ func diffBalancesOnChain(t *testing.T, chain *cluster.Chain) *ledgerstate.Colore
 	}
 
 	total := ledgerstate.NewColoredBalances(getTotalBalance(t, chain))
-	return ledgerstate.NewColoredBalances(sum).Diff(total)
-}
 
-func checkLedger(t *testing.T, chain *cluster.Chain) {
-	diff := diffBalancesOnChain(t, chain)
-	if diff == nil || diff.Size() == 0 {
-		return
-	}
-	fmt.Printf("\ninconsistent ledger %s\n", diff.String())
-	require.EqualValues(t, 0, diff.Size())
+	require.EqualValues(t, sum, total.Map())
 }
 
 func getChainInfo(t *testing.T, chain *cluster.Chain) (coretypes.ChainID, coretypes.AgentID) {

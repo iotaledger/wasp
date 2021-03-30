@@ -3,29 +3,29 @@ package tests
 import (
 	"flag"
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"io/ioutil"
 	"testing"
 	"time"
 
+	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/tools/cluster"
 	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
+	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	useGo       = flag.Bool("go", false, "use Go instead of Rust")
 	useWasp     = flag.Bool("wasp", false, "use Wasp built-in instead of Rust")
-	seed        = "C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr"
-	wallet      = testutil.NewWallet(seed)
-	scOwner     = wallet.WithIndex(0)
-	scOwnerAddr = scOwner.Address()
+	wallet      = initSeed()
+	scOwner     = wallet.KeyPair(0)
+	scOwnerAddr = ledgerstate.NewED25519Address(scOwner.PublicKey)
 	chain       *cluster.Chain
 	clu         *cluster.Cluster
 	client      *chainclient.Client
@@ -33,6 +33,14 @@ var (
 	programHash hashing.HashValue
 	err         error
 )
+
+func initSeed() *seed.Seed {
+	b, err := base58.Decode("C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr")
+	if err != nil {
+		panic(err)
+	}
+	return seed.NewSeed(b)
+}
 
 // TODO detached example code
 //var builtinProgramHash = map[string]string{
@@ -94,7 +102,7 @@ func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretype
 		Args:     requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
 	})
 	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(client.ChainID, tx, 30*time.Second)
 	check(err, t)
 	if !counter.WaitUntilExpectationsMet() {
 		t.Fail()
@@ -137,5 +145,5 @@ func setupAndLoad(t *testing.T, name string, description string, nrOfRequests in
 	err = requestFunds(clu, scOwnerAddr, "client")
 	check(err, t)
 
-	client = chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
+	client = chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, scOwner)
 }
