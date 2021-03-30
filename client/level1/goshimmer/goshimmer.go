@@ -55,41 +55,19 @@ func (api *goshimmerClient) balanceIOTA(targetAddress ledgerstate.Address) (uint
 }
 
 func (api *goshimmerClient) GetConfirmedOutputs(address ledgerstate.Address) ([]ledgerstate.Output, error) {
-	panic("TODO")
-	/*
-		r, err := api.goshimmerClient.GetUnspentOutputs([]string{address.String()})
+	r, err := api.goshimmerClient.GetAddressUnspentOutputs(address.Base58())
+	if err != nil {
+		return nil, fmt.Errorf("GetUnspentOutputs: %w", err)
+	}
+	ret := make([]ledgerstate.Output, len(r.Outputs))
+	for i, out := range r.Outputs {
+		var err error
+		ret[i], err = out.ToLedgerstateOutput()
 		if err != nil {
-			return nil, fmt.Errorf("GetUnspentOutputs: %w", err)
+			return nil, err
 		}
-		if r.Error != "" {
-			return nil, fmt.Errorf("%s", r.Error)
-		}
-		ret := make([]value.Output, 0)
-		for _, out := range r.UnspentOutputs {
-			for _, outid := range out.OutputIDs {
-				if !outid.InclusionState.Confirmed {
-					continue
-				}
-				id, err := ledgerstate.OutputIDFromBase58(outid.ID)
-				if err != nil {
-					return nil, fmt.Errorf("OutputIDFromBase58: %w", err)
-				}
-				txres, err := api.goshimmerClient.GetTransactionByID(id.TransactionID().Base58())
-				if err != nil {
-					return nil, fmt.Errorf("GetTransactionByID: %w", err)
-				}
-				if txres.InclusionState.Confirmed {
-					continue
-				}
-				i := id.OutputIndex()
-				if int(i) > len(txres.Transaction.Outputs)-1 {
-					return nil, fmt.Errorf("can't find output with index %d", i)
-				}
-				ret = append(ret, txres.Transaction.Outputs[i])
-			}
-		}
-		return ret, nil
-	*/
+	}
+	return ret, nil
 }
 
 func (api *goshimmerClient) sendTx(tx *ledgerstate.Transaction) error {
