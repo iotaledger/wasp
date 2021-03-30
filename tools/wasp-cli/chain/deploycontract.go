@@ -3,6 +3,7 @@ package chain
 import (
 	"os"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
@@ -31,7 +32,7 @@ func deployContractCmd(args []string) {
 
 	progHash := uploadBlob(blobFieldValues, true)
 
-	util.WithSCTransaction(func() (*ledgerstate.Transaction, error) {
+	util.WithSCTransaction(GetCurrentChainID(), func() (*ledgerstate.Transaction, error) {
 		return Client().PostRequest(
 			root.Interface.Hname(),
 			coretypes.Hn(root.FuncDeployContract),

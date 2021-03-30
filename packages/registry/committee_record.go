@@ -12,24 +12,24 @@ import (
 // CommitteeRecord represents committee information
 // TODO optimize: no need to persists address in the structure
 type CommitteeRecord struct {
-	Address        ledgerstate.Address
-	CommitteeNodes []string // "host_addr:port"
+	Address ledgerstate.Address
+	Nodes   []string // "host_addr:port"
 }
 
 // NewCommitteeRecord
 func NewCommitteeRecord(addr ledgerstate.Address, nodes ...string) *CommitteeRecord {
 	ret := &CommitteeRecord{
-		Address:        addr,
-		CommitteeNodes: make([]string, len(nodes)),
+		Address: addr,
+		Nodes:   make([]string, len(nodes)),
 	}
-	copy(ret.CommitteeNodes, nodes)
+	copy(ret.Nodes, nodes)
 	return ret
 }
 
 // CommitteeRecordFromMarshalUtil
 func CommitteeRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*CommitteeRecord, error) {
 	ret := &CommitteeRecord{
-		CommitteeNodes: make([]string, 0),
+		Nodes: make([]string, 0),
 	}
 	var err error
 	ret.Address, err = ledgerstate.AddressFromMarshalUtil(mu)
@@ -49,7 +49,7 @@ func CommitteeRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*CommitteeReco
 		if err != nil {
 			return nil, err
 		}
-		ret.CommitteeNodes = append(ret.CommitteeNodes, string(d))
+		ret.Nodes = append(ret.Nodes, string(d))
 	}
 	return ret, nil
 }
@@ -75,8 +75,8 @@ func CommitteeRecordFromRegistry(addr ledgerstate.Address) (*CommitteeRecord, er
 func (rec *CommitteeRecord) Bytes() []byte {
 	mu := marshalutil.New().
 		WriteBytes(rec.Address.Bytes()).
-		WriteUint16(uint16(len(rec.CommitteeNodes)))
-	for _, s := range rec.CommitteeNodes {
+		WriteUint16(uint16(len(rec.Nodes)))
+	for _, s := range rec.Nodes {
 		b := []byte(s)
 		mu.WriteUint16(uint16(len(b))).WriteBytes(b)
 	}
@@ -92,5 +92,5 @@ func (rec *CommitteeRecord) SaveToRegistry() error {
 }
 
 func (rec *CommitteeRecord) String() string {
-	return fmt.Sprintf("Committee: %s. %+v", rec.Address.Base58(), rec.CommitteeNodes)
+	return fmt.Sprintf("Committee: %s. %+v", rec.Address.Base58(), rec.Nodes)
 }

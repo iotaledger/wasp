@@ -83,7 +83,7 @@ const tplChainList = `
 					<td data-label="ID">{{ if not $c.Error }}<a href="{{ uri "chain" $id }}"><tt>{{ $id }}</tt></a>{{ else }}<tt>{{ $id }}</tt>{{ end }}</td>
 					<td data-label="Description">{{ trim 50 $c.RootInfo.Description }}
 						{{- if $c.Error }}<div class="card fluid error">{{ $c.Error }}</div>{{ end }}</td>
-					<td data-label="#Nodes">{{if not $c.Error}}<tt>{{ len $c.Record.CommitteeNodes }}</tt>{{ end }}</td>
+					<td data-label="#Nodes">{{if not $c.Error}}<tt>{{ len $c.Record.Nodes }}</tt>{{ end }}</td>
 					<td data-label="#Contracts">{{if not $c.Error}}<tt>{{ len $c.RootInfo.Contracts }}</tt>{{ end }}</td>
 					<td data-label="Active?">{{ if $c.Record.Active }} yes {{ else }} no {{ end }}</td>
 				</tr>

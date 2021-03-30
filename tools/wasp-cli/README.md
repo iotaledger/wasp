@@ -37,8 +37,6 @@ in `wasp-cli.json`): `wasp-cli set <name> <value>`
 
 Example: `wasp-cli set wasp.1.api wasp1.example.com:9091`
 
-*Note:* If the cluster is using Utxodb: `wasp-cli set utxodb true`
-
 ## IOTA wallet
 
 `wasp-cli` provides the following commands for manipulating an IOTA wallet:

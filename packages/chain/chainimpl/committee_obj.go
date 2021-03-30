@@ -34,22 +34,22 @@ func NewCommittee(chainObj chain.Chain, stateAddr ledgerstate.Address, netProvid
 		return nil, xerrors.Errorf(
 			"NewCommittee: failed loading DKShare for address %s: %v", stateAddr, err)
 	}
-	if util.ContainsDuplicates(cmtRec.CommitteeNodes) {
+	if util.ContainsDuplicates(cmtRec.Nodes) {
 		return nil, xerrors.Errorf(
 			"NewCommittee: committee record for %s contains duplicate node addresses: %+v",
-			stateAddr, cmtRec.CommitteeNodes)
+			stateAddr, cmtRec.Nodes)
 	}
-	if dkshare.Index == nil || !iAmInTheCommittee(cmtRec.CommitteeNodes, dkshare.N, *dkshare.Index, netProvider) {
+	if dkshare.Index == nil || !iAmInTheCommittee(cmtRec.Nodes, dkshare.N, *dkshare.Index, netProvider) {
 		return nil, xerrors.Errorf(
 			"NewCommittee: chain record inconsistency. the own node %s is not in the committee for %s: %+v",
-			netProvider.Self().NetID(), cmtRec.Address, cmtRec.CommitteeNodes,
+			netProvider.Self().NetID(), cmtRec.Address, cmtRec.Nodes,
 		)
 	}
 	var peers peering.GroupProvider
-	if peers, err = netProvider.Group(cmtRec.CommitteeNodes); err != nil {
+	if peers, err = netProvider.Group(cmtRec.Nodes); err != nil {
 		return nil, xerrors.Errorf(
 			"node %s failed to setup committee communication with %+v, reason=%+v",
-			netProvider.Self().NetID(), cmtRec.CommitteeNodes, err,
+			netProvider.Self().NetID(), cmtRec.Nodes, err,
 		)
 	}
 	return &committeeObj{

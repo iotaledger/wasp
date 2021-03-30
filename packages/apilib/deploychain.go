@@ -73,8 +73,8 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 
 	// ------------ put committee records to hosts
 	err = committee.PutCommitteeRecord(&registry.CommitteeRecord{
-		Address:        stateControllerAddr,
-		CommitteeNodes: par.CommitteeApiHosts,
+		Address: stateControllerAddr,
+		Nodes:   par.CommitteeApiHosts,
 	})
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {

@@ -3,9 +3,9 @@ package util
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"os"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -40,7 +40,7 @@ func ValueFromString(vtype string, s string) []byte {
 func ValueToString(vtype string, v []byte) string {
 	switch vtype {
 	case "color":
-		col, _, err := balance.ColorFromBytes(v)
+		col, _, err := ledgerstate.ColorFromBytes(v)
 		log.Check(err)
 		return col.String()
 	case "int":

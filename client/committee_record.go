@@ -15,8 +15,8 @@ func (c *WaspClient) PutCommitteeRecord(rec *registry.CommitteeRecord) error {
 }
 
 // GetChainRecord fetches a Record by address
-func (c *WaspClient) GetCommitteeRecord(addr ledgerstate.Address) (*registry.ChainRecord, error) {
-	res := &model.ChainRecord{}
+func (c *WaspClient) GetCommitteeRecord(addr ledgerstate.Address) (*registry.CommitteeRecord, error) {
+	res := &model.CommitteeRecord{}
 	if err := c.do(http.MethodGet, routes.GetCommitteeRecord(addr.Base58()), nil, res); err != nil {
 		return nil, err
 	}

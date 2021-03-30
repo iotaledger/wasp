@@ -1,13 +1,14 @@
 package wallet
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"os"
 	"strconv"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	clientutil "github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
 
 func sendFundsCmd(args []string) {
@@ -26,18 +27,20 @@ func sendFundsCmd(args []string) {
 	amount, err := strconv.Atoi(args[2])
 	log.Check(err)
 
-	bals, err := config.GoshimmerClient().GetConfirmedOutputs(sourceAddress)
+	outs, err := config.GoshimmerClient().GetConfirmedOutputs(sourceAddress)
 	log.Check(err)
 
-	vtxb, err := vtxbuilder.NewFromOutputBalances(bals)
-	log.Check(err)
+	tx := util.WithTransaction(func() (*ledgerstate.Transaction, error) {
+		txb := utxoutil.NewBuilder(outs...)
+		err := txb.AddSigLockedColoredOutput(targetAddress, map[ledgerstate.Color]uint64{color: uint64(amount)})
+		log.Check(err)
+		err = txb.AddReminderOutputIfNeeded(sourceAddress, nil, true)
+		log.Check(err)
+		return txb.BuildWithED25519(wallet.KeyPair())
 
-	log.Check(vtxb.MoveTokensToAddress(targetAddress, color, uint64(amount)))
+	})
 
-	tx := vtxb.Build(false)
-	tx.Sign(wallet.SignatureScheme())
-
-	clientutil.PostTransaction(tx)
+	log.Printf("Transaction %s posted successfully.\n", tx.ID())
 }
 
 func decodeColor(s string) ledgerstate.Color {

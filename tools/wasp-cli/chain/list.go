@@ -17,13 +17,11 @@ func listCmd(args []string) {
 }
 
 func showChainList(chains []*registry.ChainRecord) {
-	header := []string{"chainid", "color", "committee", "active"}
+	header := []string{"chainid", "active"}
 	rows := make([][]string, len(chains))
 	for i, chain := range chains {
 		rows[i] = []string{
 			chain.ChainID.String(),
-			chain.Color.String(),
-			fmt.Sprintf("%v", chain.CommitteeNodes),
 			fmt.Sprintf("%v", chain.Active),
 		}
 	}

@@ -12,21 +12,16 @@ func infoCmd(args []string) {
 	chain, err := config.WaspClient().GetChainRecord(GetCurrentChainID())
 	log.Check(err)
 
+	committee, err := config.WaspClient().GetCommitteeRecord(chain.ChainID.AsAddress())
+	log.Check(err)
+
 	log.Printf("Chain ID: %s\n", chain.ChainID)
-	log.Printf("Committee nodes: %+v\n", chain.CommitteeNodes)
+	log.Printf("Committee nodes: %+v\n", committee.Nodes)
 	log.Printf("Active: %v\n", chain.Active)
 
 	if chain.Active {
 		info, err := SCClient(root.Interface.Hname()).CallView(root.FuncGetChainInfo)
 		log.Check(err)
-
-		color, _, err := codec.DecodeColor(info.MustGet(root.VarChainColor))
-		log.Check(err)
-		log.Printf("Chain Color: %s\n", color)
-
-		addr, _, err := codec.DecodeAddress(info.MustGet(root.VarChainAddress))
-		log.Check(err)
-		log.Printf("Chain Address: %s\n", addr.String())
 
 		description, _, err := codec.DecodeString(info.MustGet(root.VarDescription))
 		log.Check(err)

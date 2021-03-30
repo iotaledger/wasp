@@ -14,7 +14,7 @@ func TestCommitteeRecord(t *testing.T) {
 	recBack, err := CommitteeRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)
 	require.True(t, rec.Address.Equals(recBack.Address))
-	require.EqualValues(t, rec.CommitteeNodes, recBack.CommitteeNodes)
+	require.EqualValues(t, rec.Nodes, recBack.Nodes)
 
 	t.Logf("%s", rec)
 }

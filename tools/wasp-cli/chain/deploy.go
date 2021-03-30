@@ -29,7 +29,7 @@ func deployCmd(args []string) {
 		CommitteePeeringHosts: config.CommitteePeering(committee),
 		N:                     uint16(len(committee)),
 		T:                     uint16(quorum),
-		OriginatorKeyPair:     wallet.Load().SignatureScheme(),
+		OriginatorKeyPair:     wallet.Load().KeyPair(),
 		Description:           description,
 		Textout:               os.Stdout,
 		Prefix:                "",

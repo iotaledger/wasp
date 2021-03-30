@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/level1"
 	"github.com/iotaledger/wasp/client/level1/goshimmer"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -64,16 +63,8 @@ func GoshimmerApi() string {
 	return "127.0.0.1:8080"
 }
 
-func Utxodb() bool {
-	return viper.GetBool("utxodb")
-}
-
 func GoshimmerClient() level1.Level1Client {
 	log.Verbose("using Goshimmer host %s\n", GoshimmerApi())
-	if Utxodb() {
-		log.Verbose("using utxodb\n")
-		return testutil.NewGoshimmerUtxodbClient(GoshimmerApi())
-	}
 	return goshimmer.NewGoshimmerClient(GoshimmerApi())
 }
 

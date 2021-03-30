@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -21,13 +22,16 @@ func storeBlobCmd(args []string) {
 }
 
 func uploadBlob(fieldValues dict.Dict, forceWait bool) (hash hashing.HashValue) {
-	util.WithSCTransaction(func() (tx *ledgerstate.Transaction, err error) {
-		hash, tx, err = Client().UploadBlob(fieldValues, config.CommitteeApi(chainCommittee()), uploadQuorum)
-		if err == nil {
-			log.Printf("uploaded blob to chain -- hash: %s", hash)
-		}
-		return
-	}, forceWait)
+	util.WithSCTransaction(
+		GetCurrentChainID(),
+		func() (tx *ledgerstate.Transaction, err error) {
+			hash, tx, err = Client().UploadBlob(fieldValues, config.CommitteeApi(chainCommittee()), uploadQuorum)
+			if err == nil {
+				log.Printf("uploaded blob to chain -- hash: %s", hash)
+			}
+			return
+		},
+		forceWait)
 	return
 }
 
