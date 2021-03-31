@@ -20,9 +20,9 @@ func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.setNewSCState(msg)
 
 	vh := op.currentState.Hash()
-	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v tx: %s, state hash: %s",
+	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v stateOutput: %s, state hash: %s",
 		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(), op.iAmCurrentLeader(),
-		op.stateOutput.ID().String(), vh.String())
+		op.stateOutput.ID().Base58(), vh.String())
 
 	op.mempool.RemoveRequests(msg.RequestIDs...)
 

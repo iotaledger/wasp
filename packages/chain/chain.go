@@ -82,7 +82,6 @@ type StateManager interface {
 
 type Consensus interface {
 	EventStateTransitionMsg(*StateTransitionMsg)
-	EventRequestMsg(coretypes.Request)
 	EventNotifyReqMsg(*NotifyReqMsg)
 	EventStartProcessingBatchMsg(*StartProcessingBatchMsg)
 	EventResultCalculated(msg *VMResultMsg)
@@ -91,8 +90,6 @@ type Consensus interface {
 	EventTransactionInclusionStateMsg(msg *InclusionStateMsg)
 	EventTimerMsg(TimerTick)
 	Close()
-	//
-	IsRequestInBacklog(coretypes.RequestID) bool
 }
 
 type ReadyListRecord struct {

@@ -63,7 +63,7 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 	}
 
 	wg.Add(1)
-	runvm.MustRunComputationsAsync(task)
+	runvm.MustRunVMTaskAsync(task)
 	require.NoError(ch.Env.T, err)
 	wg.Wait()
 

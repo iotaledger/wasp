@@ -5,7 +5,6 @@ package consensus
 
 import (
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -13,10 +12,7 @@ import (
 // it is only possible in the `consensusStageLeaderStarting` stage for non-leader
 func (op *operator) sendRequestNotificationsToLeader() {
 	readyRequests := op.mempool.GetReadyList(op.quorum())
-	reqIds := make([]coretypes.RequestID, len(readyRequests))
-	for i := range reqIds {
-		reqIds[i] = readyRequests[i].ID()
-	}
+	reqIds := takeIDs(readyRequests...)
 	currentLeaderPeerIndex, _ := op.currentLeader()
 
 	op.log.Debugf("sending %d request notifications to #%d", len(readyRequests), currentLeaderPeerIndex)
@@ -32,7 +28,7 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	op.log.Infow("sendRequestNotificationsToLeader",
 		"leader", currentLeaderPeerIndex,
 		"state index", op.mustStateIndex(),
-		"reqs", reqIds,
+		"reqs", idsShortStr(reqIds...),
 	)
 	if err := op.committee.SendMsg(currentLeaderPeerIndex, chain.MsgNotifyRequests, msgData); err != nil {
 		op.log.Errorf("sending notifications to %d: %v", currentLeaderPeerIndex, err)

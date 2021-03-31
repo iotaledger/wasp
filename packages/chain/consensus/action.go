@@ -238,7 +238,6 @@ func (op *operator) setNewSCState(msg *chain.StateTransitionMsg) {
 	op.currentState = msg.VariableState
 	op.sentResultToLeader = nil
 	op.postedResultTxid = nilTxID
-	op.requestBalancesDeadline = time.Now()
 	op.resetLeader(op.stateOutput.ID().Bytes())
 }
 

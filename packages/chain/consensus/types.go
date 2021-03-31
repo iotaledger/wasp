@@ -30,8 +30,6 @@ type operator struct {
 	// consensus stage
 	consensusStage         int
 	consensusStageDeadline time.Time
-	//
-	requestBalancesDeadline time.Time
 
 	peerPermutation *util.Permutation16
 
