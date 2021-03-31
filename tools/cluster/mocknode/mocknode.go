@@ -29,7 +29,10 @@ func Start(txStreamBindAddress string, webapiBindAddress string) *MockNode {
 	}
 
 	// start the web api server
-	m.startWebAPI(webapiBindAddress)
+	err = m.startWebAPI(webapiBindAddress)
+	if err != nil {
+		panic(err)
+	}
 
 	return m
 }
