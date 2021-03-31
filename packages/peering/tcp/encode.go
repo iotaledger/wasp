@@ -20,7 +20,7 @@ import (
 //  -- if MsgType == 1 (handshake)
 // MsgData (handshakeMsg) --> end of message
 //  -- if MsgType >= FirstUserMsgCode
-// ChainID 32 bytes
+// PeeringID 32 bytes
 // SenderIndex 2 bytes
 // MsgData variable bytes to the end
 //  -- otherwise panic wrong MsgType
@@ -49,7 +49,7 @@ func encodeMessage(msg *peering.PeerMessage, ts int64) []byte {
 
 	case msg.MsgType >= peering.FirstUserMsgCode:
 		buf.WriteByte(msg.MsgType)
-		msg.ChainID.Write(&buf)
+		msg.PeeringID.Write(&buf)
 		util.WriteUint16(&buf, msg.SenderIndex)
 		util.WriteBytes32(&buf, msg.MsgData)
 
@@ -87,7 +87,7 @@ func decodeMessage(data []byte) (*peering.PeerMessage, error) {
 
 	case ret.MsgType >= peering.FirstUserMsgCode:
 		// committee message
-		if err = ret.ChainID.Read(rdr); err != nil {
+		if err = ret.PeeringID.Read(rdr); err != nil {
 			return nil, err
 		}
 		if err = util.ReadUint16(rdr, &ret.SenderIndex); err != nil {

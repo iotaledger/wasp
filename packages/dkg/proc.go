@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/mr-tron/base58"
@@ -38,11 +37,11 @@ const (
 // Stands for a DKG procedure instance on a particular node.
 //
 type proc struct {
-	dkgRef       string             // User supplied unique ID for this instance.
-	dkgID        *coretypes.ChainID // DKG procedure ID we are participating in.
-	dkShare      *tcrypto.DKShare   // This will be generated as a result of this procedure.
-	node         *Node              // DKG node we are running in.
-	nodeIndex    uint16             // Index of this node.
+	dkgRef       string            // User supplied unique ID for this instance.
+	dkgID        peering.PeeringID // DKG procedure ID we are participating in.
+	dkShare      *tcrypto.DKShare  // This will be generated as a result of this procedure.
+	node         *Node             // DKG node we are running in.
+	nodeIndex    uint16            // Index of this node.
 	initiatorPub kyber.Point
 	threshold    uint16
 	roundRetry   time.Duration               // Retry period for the Peer <-> Peer communication.
@@ -56,7 +55,7 @@ type proc struct {
 	steps        map[byte]*procStep          // All the steps for the procedure.
 }
 
-func onInitiatorInit(dkgID *coretypes.ChainID, msg *initiatorInitMsg, node *Node) (*proc, error) {
+func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node) (*proc, error) {
 	log := node.log.With("dkgID", dkgID.String())
 	var err error
 
@@ -142,7 +141,7 @@ func onInitiatorInit(dkgID *coretypes.ChainID, msg *initiatorInitMsg, node *Node
 		)
 	}
 	go p.processLoop(msg.timeout, p.steps[rabinStep7CommitAndTerminate].doneCh)
-	p.attachID = p.netGroup.Attach(dkgID, p.onPeerMessage)
+	p.attachID = p.netGroup.Attach(&dkgID, p.onPeerMessage)
 	stepsStart <- make(map[uint16]*peering.PeerMessage)
 	return &p, nil
 }

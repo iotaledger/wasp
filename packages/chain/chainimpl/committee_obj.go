@@ -2,6 +2,7 @@ package chainimpl
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -16,6 +17,7 @@ type committeeObj struct {
 	chainObj    chain.Chain
 	netProvider peering.NetworkProvider
 	peers       peering.GroupProvider
+	peeringID   peering.PeeringID
 	size        uint16
 	quorum      uint16
 	ownIndex    uint16
@@ -55,6 +57,7 @@ func NewCommittee(chainObj chain.Chain, stateAddr ledgerstate.Address, netProvid
 	return &committeeObj{
 		chainObj:    chainObj,
 		peers:       peers,
+		peeringID:   chainObj.ID().Array(), // TODO: Maybe we need to use different ID here.
 		netProvider: netProvider,
 		size:        dkshare.N,
 		quorum:      dkshare.T,
@@ -81,9 +84,8 @@ func (c *committeeObj) DKShare() *tcrypto.DKShare {
 
 func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
 	if peer, ok := c.peers.OtherNodes()[targetPeerIndex]; ok {
-		chainID := *c.chainObj.ID()
 		peer.SendMsg(&peering.PeerMessage{
-			ChainID:     chainID,
+			PeeringID:   c.peeringID,
 			SenderIndex: c.ownIndex,
 			MsgType:     msgType,
 			MsgData:     msgData,
@@ -95,7 +97,7 @@ func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []b
 
 func (c *committeeObj) SendMsgToPeers(msgType byte, msgData []byte, ts int64) uint16 {
 	msg := &peering.PeerMessage{
-		ChainID:     *c.chainObj.ID(),
+		PeeringID:   c.peeringID,
 		SenderIndex: c.ownIndex,
 		Timestamp:   ts,
 		MsgType:     msgType,
@@ -156,7 +158,7 @@ func (c *committeeObj) PeerStatus() []*chain.PeerStatus {
 }
 
 func (c *committeeObj) OnPeerMessage(fun func(recv *peering.RecvEvent)) {
-	c.attachID = c.peers.Attach(c.chainObj.ID(), fun)
+	c.attachID = c.peers.Attach(&c.peeringID, fun)
 }
 
 func (c *committeeObj) Close() {
