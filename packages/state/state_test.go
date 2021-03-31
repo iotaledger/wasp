@@ -46,14 +46,14 @@ func TestVariableStateBasic(t *testing.T) {
 func TestApply(t *testing.T) {
 	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 1"))
 	reqid1 := ledgerstate.NewOutputID(txid1, 5)
-	su1 := NewStateUpdate(reqid1)
+	su1 := NewStateUpdate(coretypes.RequestID(reqid1))
 
 	require.EqualValues(t, su1.RequestID(), reqid1)
 
 	txid2 := ledgerstate.TransactionID(hashing.HashStrings("test string 2"))
 	reqid2 := ledgerstate.NewOutputID(txid2, 2)
-	su2 := NewStateUpdate(reqid2)
-	suwrong := NewStateUpdate(reqid2)
+	su2 := NewStateUpdate(coretypes.RequestID(reqid2))
+	suwrong := NewStateUpdate(coretypes.RequestID(reqid2))
 
 	require.EqualValues(t, su2.RequestID(), reqid2)
 
@@ -102,9 +102,9 @@ func TestApply2(t *testing.T) {
 	reqid2 := ledgerstate.NewOutputID(txid1, 2)
 	reqid3 := ledgerstate.NewOutputID(txid1, 5)
 
-	su1 := NewStateUpdate(reqid1)
-	su2 := NewStateUpdate(reqid2)
-	su3 := NewStateUpdate(reqid3)
+	su1 := NewStateUpdate(coretypes.RequestID(reqid1))
+	su2 := NewStateUpdate(coretypes.RequestID(reqid2))
+	su3 := NewStateUpdate(coretypes.RequestID(reqid3))
 
 	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
 	db := mapdb.NewMapDB()
@@ -138,8 +138,8 @@ func TestApply3(t *testing.T) {
 	reqid1 := ledgerstate.NewOutputID(txid1, 0)
 	reqid2 := ledgerstate.NewOutputID(txid1, 2)
 
-	su1 := NewStateUpdate(reqid1)
-	su2 := NewStateUpdate(reqid2)
+	su1 := NewStateUpdate(coretypes.RequestID(reqid1))
+	su2 := NewStateUpdate(coretypes.RequestID(reqid2))
 
 	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
 	db := mapdb.NewMapDB()
@@ -166,7 +166,7 @@ func TestCommit(t *testing.T) {
 
 	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 2"))
 	reqid1 := ledgerstate.NewOutputID(txid1, 5)
-	su1 := NewStateUpdate(reqid1)
+	su1 := NewStateUpdate(coretypes.RequestID(reqid1))
 
 	su1.Mutations().Add(buffered.NewMutationSet("x", []byte{1}))
 
@@ -204,7 +204,7 @@ func TestCommit(t *testing.T) {
 
 	txid2 := ledgerstate.TransactionID(hashing.HashStrings("test string 2"))
 	reqid2 := ledgerstate.NewOutputID(txid2, 6)
-	su2 := NewStateUpdate(reqid2)
+	su2 := NewStateUpdate(coretypes.RequestID(reqid2))
 
 	su2.Mutations().Add(buffered.NewMutationDel("x"))
 

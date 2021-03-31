@@ -56,18 +56,18 @@ func (rid RequestID) Short() string {
 type Request interface {
 	// index == 0 for off ledger requests
 	ID() RequestID
-	// ledgerstate.Output interface for on-ledger reguests, nil for off-ledger requests
-	Output() ledgerstate.Output
-	// address of the sender for all requests,
-	SenderAddress() ledgerstate.Address
-	// account of the sander
-	SenderAccount() *AgentID
-	// returns contract/entry point pair
-	Target() (Hname, Hname)
 	// true or false for on-ledger requests, true for off-ledger
 	IsFeePrepaid() bool
-	// always nil for off-ledger
-	Tokens() *ledgerstate.ColoredBalances
+	// ledgerstate.Output interface for on-ledger reguests, nil for off-ledger requests
+	Output() ledgerstate.Output
 	// arguments of the call. Must be != nil (solidified). No arguments means empty dictionary
 	Params() dict.Dict
+	// account of the sender
+	SenderAccount() *AgentID
+	// address of the sender for all requests,
+	SenderAddress() ledgerstate.Address
+	// returns contract/entry point pair
+	Target() (Hname, Hname)
+	// always nil for off-ledger
+	Tokens() *ledgerstate.ColoredBalances
 }

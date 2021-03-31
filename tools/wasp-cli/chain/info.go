@@ -33,12 +33,12 @@ func infoCmd(args []string) {
 
 		ownerID, _, err := codec.DecodeAgentID(info.MustGet(root.VarChainOwnerID))
 		log.Check(err)
-		log.Printf("Owner: %s\n", ownerID)
+		log.Printf("Owner: %s\n", ownerID.String())
 
 		delegated, ok, err := codec.DecodeAgentID(info.MustGet(root.VarChainOwnerIDDelegated))
 		log.Check(err)
 		if ok {
-			log.Printf("Delegated owner: %s\n", delegated)
+			log.Printf("Delegated owner: %s\n", delegated.String())
 		}
 
 		feeColor, defaultOwnerFee, defaultValidatorFee, err := root.GetDefaultFeeInfo(info)

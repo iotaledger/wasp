@@ -130,20 +130,35 @@ func (req *RequestOnLedger) Output() ledgerstate.Output {
 	return req.output()
 }
 
+//TODO inline this in Output()?
 func (req *RequestOnLedger) output() *ledgerstate.ExtendedLockedOutput {
 	return req.outputObj
 }
 
-func (req *RequestOnLedger) TimeLock() time.Time {
-	return req.outputObj.TimeLock()
+// Args returns solid args if decoded already or nil otherwise
+func (req *RequestOnLedger) Params() dict.Dict {
+	return req.solidArgs
+}
+
+func (req *RequestOnLedger) SenderAccount() *coretypes.AgentID {
+	return coretypes.NewAgentID(req.senderAddress, req.requestMetadata.SenderContract())
 }
 
 func (req *RequestOnLedger) SenderAddress() ledgerstate.Address {
 	return req.senderAddress
 }
 
-func (req *RequestOnLedger) SenderAccount() *coretypes.AgentID {
-	return coretypes.NewAgentID(req.senderAddress, req.requestMetadata.SenderContract())
+// Target returns target contract and target entry point
+func (req *RequestOnLedger) Target() (coretypes.Hname, coretypes.Hname) {
+	return req.requestMetadata.targetContract, req.requestMetadata.entryPoint
+}
+
+func (req *RequestOnLedger) Tokens() *ledgerstate.ColoredBalances {
+	return req.outputObj.Balances()
+}
+
+func (req *RequestOnLedger) TimeLock() time.Time {
+	return req.outputObj.TimeLock()
 }
 
 func (req *RequestOnLedger) SetMetadata(d *RequestMetadata) {
@@ -154,26 +169,12 @@ func (req *RequestOnLedger) GetMetadata() *RequestMetadata {
 	return &req.requestMetadata
 }
 
-// Target returns target contract and target entry point
-func (req *RequestOnLedger) Target() (coretypes.Hname, coretypes.Hname) {
-	return req.requestMetadata.targetContract, req.requestMetadata.entryPoint
-}
-
 func (req *RequestOnLedger) MintColor() ledgerstate.Color {
 	return blake2b.Sum256(req.Output().ID().Bytes())
 }
 
 func (req *RequestOnLedger) MintedAmounts() map[ledgerstate.Color]uint64 {
 	return req.minted
-}
-
-// Args returns solid args if decoded already or nil otherwise
-func (req *RequestOnLedger) Params() dict.Dict {
-	return req.solidArgs
-}
-
-func (req *RequestOnLedger) Tokens() *ledgerstate.ColoredBalances {
-	return req.outputObj.Balances()
 }
 
 // SolidifyArgs return true if solidified successfully
@@ -194,6 +195,61 @@ func (req *RequestOnLedger) SolidifyArgs(reg coretypes.BlobCache) (bool, error) 
 
 func (req *RequestOnLedger) Short() string {
 	return req.outputObj.ID().Base58()[:6] + ".."
+}
+
+// endregion /////////////////////////////////////////////////////////////////
+
+// region RequestOffLedger  ///////////////////////////////////////////////////////
+
+type RequestOffLedger struct {
+	outputObj       *ledgerstate.ExtendedLockedOutput
+	senderAddress   ledgerstate.Address
+	minted          map[ledgerstate.Color]uint64
+	requestMetadata RequestMetadata
+	solidArgs       dict.Dict
+}
+
+// implements coretypes.Request interface
+var _ coretypes.Request = &RequestOffLedger{}
+
+// index == 0 for off ledger requests
+func (req *RequestOffLedger) ID() coretypes.RequestID {
+	panic("implement me")
+}
+
+// true or false for on-ledger requests, true for off-ledger
+func (req *RequestOffLedger) IsFeePrepaid() bool {
+	return true
+}
+
+// ledgerstate.Output interface for on-ledger reguests, nil for off-ledger requests
+func (req *RequestOffLedger) Output() ledgerstate.Output {
+	return nil
+}
+
+// arguments of the call. Must be != nil (solidified). No arguments means empty dictionary
+func (req *RequestOffLedger) Params() dict.Dict {
+	return req.solidArgs
+}
+
+// account of the sender
+func (req *RequestOffLedger) SenderAccount() *coretypes.AgentID {
+	return coretypes.NewAgentID(req.senderAddress, req.requestMetadata.SenderContract())
+}
+
+// address of the sender for all requests,
+func (req *RequestOffLedger) SenderAddress() ledgerstate.Address {
+	return req.senderAddress
+}
+
+// returns contract/entry point pair
+func (req *RequestOffLedger) Target() (coretypes.Hname, coretypes.Hname) {
+	return req.requestMetadata.targetContract, req.requestMetadata.entryPoint
+}
+
+// always nil for off-ledger
+func (req *RequestOffLedger) Tokens() *ledgerstate.ColoredBalances {
+	return nil
 }
 
 // endregion /////////////////////////////////////////////////////////////////
