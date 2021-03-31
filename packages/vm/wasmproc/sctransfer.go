@@ -57,13 +57,13 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.String())
+		o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.Base58())
 		balancesMap[color] = amount
 		return true
 	})
 	transfer := ledgerstate.NewColoredBalances(balancesMap)
 	if !o.vm.ctx.Send(o.address, transfer, nil) {
-		o.Panic("failed to send to %s", o.address.String())
+		o.Panic("failed to send to %s", o.address.Base58())
 	}
 }
 

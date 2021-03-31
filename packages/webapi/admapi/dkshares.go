@@ -8,10 +8,11 @@ package admapi
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"net/http"
 	"time"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	dkg_pkg "github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -34,7 +35,7 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup) {
 	}
 	addr1 := coretypes.RandomChainID().AsAddress()
 	infoExample := model.DKSharesInfo{
-		Address:      addr1.String(),
+		Address:      addr1.Base58(),
 		SharedPubKey: base64.StdEncoding.EncodeToString([]byte("key")),
 		PubKeyShares: []string{base64.StdEncoding.EncodeToString([]byte("key"))},
 		Threshold:    3,
@@ -56,7 +57,7 @@ func handleDKSharesPost(c echo.Context) error {
 	var req model.DKSharesPostRequest
 	var err error
 
-	var suite = dkg.DefaultNode().GroupSuite()
+	suite := dkg.DefaultNode().GroupSuite()
 
 	if err = c.Bind(&req); err != nil {
 		return httperrors.BadRequest("Invalid request body.")
@@ -140,7 +141,7 @@ func makeDKSharesInfo(dkShare *tcrypto.DKShare) (*model.DKSharesInfo, error) {
 	}
 
 	return &model.DKSharesInfo{
-		Address:      dkShare.Address.String(),
+		Address:      dkShare.Address.Base58(),
 		SharedPubKey: sharedPubKey,
 		PubKeyShares: pubKeyShares,
 		Threshold:    dkShare.T,

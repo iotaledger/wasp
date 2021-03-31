@@ -5,8 +5,15 @@ package apilib
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
+	"math/rand"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
@@ -14,10 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/webapi/model"
-	"io"
-	"io/ioutil"
-	"math/rand"
-	"time"
 )
 
 type CreateChainParams struct {
@@ -50,7 +53,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	fmt.Fprint(textout, par.Prefix)
 
 	// ----------- run DKG on committee nodes
-	var dkgInitiatorIndex = rand.Intn(len(par.CommitteeApiHosts))
+	dkgInitiatorIndex := rand.Intn(len(par.CommitteeApiHosts))
 	var dkShares *model.DKSharesInfo
 	dkShares, err = client.NewWaspClient(par.CommitteeApiHosts[dkgInitiatorIndex]).DKSharesPost(&model.DKSharesPostRequest{
 		PeerNetIDs:  par.CommitteePeeringHosts,
@@ -61,13 +64,13 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "generating distributed key set.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, xerrors.Errorf("DKSharesPost: %w", err)
 	} else {
 		fmt.Fprintf(textout, "generating distributed key set.. OK. Generated address = %s\n", dkShares.Address)
 	}
 	var stateControllerAddr ledgerstate.Address
 	if stateControllerAddr, err = ledgerstate.AddressFromBase58EncodedString(dkShares.Address); err != nil {
-		return nil, nil, err
+		return nil, nil, xerrors.Errorf("AddressFromBase58EncodedString: %w", err)
 	}
 	committee := multiclient.New(par.CommitteeApiHosts)
 
@@ -79,7 +82,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "sending committee record to nodes.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, xerrors.Errorf("PutCommitteeRecord: %w", err)
 	} else {
 		fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
 	}
@@ -90,7 +93,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "requesting UTXOs from node.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, xerrors.Errorf("GetConfirmedOutputs: %w", err)
 	} else {
 		fmt.Fprint(textout, "requesting owner address' UTXOs from node.. OK\n")
 	}
@@ -106,7 +109,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "creating origin transaction.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, xerrors.Errorf("NewChainOriginTransaction: %w", err)
 	} else {
 		fmt.Fprintf(textout, "creating origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 	}
@@ -116,7 +119,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "posting origin transaction.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, xerrors.Errorf("posting origin transaction: %w", err)
 	} else {
 		fmt.Fprintf(textout, "posting origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 	}
@@ -129,7 +132,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "sending chain data to Wasp nodes.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, xerrors.Errorf("PutChainRecord: %w", err)
 	}
 	fmt.Fprint(textout, "sending smart contract metadata to Wasp nodes.. OK.\n")
 
@@ -139,7 +142,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "activating chain.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, xerrors.Errorf("ActivateChain: %w", err)
 	}
 	fmt.Fprint(textout, "activating chain.. OK.\n")
 
@@ -149,7 +152,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	allOuts, err = par.Node.GetConfirmedOutputs(originatorAddr)
 	if err != nil {
 		fmt.Fprintf(textout, "GetConfirmedOutputs.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, xerrors.Errorf("GetConfirmedOutputs: %w", err)
 	}
 
 	// NOTE: whoever send first init request, is an owner of the chain
@@ -162,7 +165,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	)
 	if err != nil {
 		fmt.Fprintf(textout, "creating root init request.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, xerrors.Errorf("NewRootInitRequestTransaction: %w", err)
 	}
 	fmt.Fprintf(textout, "creating root init request.. OK: %v\n", err)
 
@@ -171,7 +174,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "posting root init request transaction.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, xerrors.Errorf("posting root init request: %w", err)
 	} else {
 		fmt.Fprintf(textout, "posting root init request transaction.. OK. Origin txid = %s\n", reqTx.ID().String())
 	}
@@ -179,7 +182,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	// ---------- wait until the request is processed in all committee nodes
 	if err = committee.WaitUntilAllRequestsProcessed(chainID, reqTx, 30*time.Second); err != nil {
 		fmt.Fprintf(textout, "waiting root init request transaction.. FAILED: %v\n", err)
-		return nil, nil, err
+		return nil, nil, xerrors.Errorf("WaitUntilAllRequestsProcessed: %w", err)
 	}
 
 	scColor := (ledgerstate.Color)(originTx.ID())
