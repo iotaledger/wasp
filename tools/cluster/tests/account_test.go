@@ -109,7 +109,7 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 	check(err, t)
 
 	transferIotas := uint64(42)
-	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, scOwner)
+	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, scOwner)
 	reqTx, err := chClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
 		Transfer: coretypes.NewTransferIotas(transferIotas),
 	})
@@ -232,7 +232,7 @@ func TestBasic2Accounts(t *testing.T) {
 	check(err, t)
 
 	transferIotas := uint64(42)
-	myWalletClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, myWallet)
+	myWalletClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, myWallet)
 	reqTx, err := myWalletClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
 		Transfer: coretypes.NewTransferIotas(transferIotas),
 	})
@@ -283,7 +283,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 	// withdraw back 2 iotas to originator address
 	fmt.Printf("\norig addres from sigsheme: %s\n", originatorAddress.String())
-	originatorClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, originatorSigScheme)
+	originatorClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, originatorSigScheme)
 	reqTx2, err := originatorClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
 	check(err, t)
 

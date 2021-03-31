@@ -94,6 +94,11 @@ type Consensus interface {
 	IsRequestInBacklog(coretypes.RequestID) bool
 }
 
+type ReadyListRecord struct {
+	Request coretypes.Request
+	Seen    map[uint16]bool
+}
+
 type Mempool interface {
 	// ReceiveRequest request is introduced to the mempool. Must be prevalidated before
 	ReceiveRequest(req coretypes.Request)
@@ -103,6 +108,8 @@ type Mempool interface {
 	ClearSeenMarks()
 	// returns all requests which are ready to be processed by the node: time unlocked and with solidified paranmeters
 	GetReadyList(seenThreshold uint16) []coretypes.Request
+	// ready list with 'seen' makrs
+	GetReadyListFull(seenThreshold uint16) []*ReadyListRecord
 	// removes requests from the mempool
 	RemoveRequests(reqs ...coretypes.RequestID)
 	//

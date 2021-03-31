@@ -16,8 +16,7 @@ import (
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/level1"
-	"github.com/iotaledger/wasp/client/level1/goshimmer"
+	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/util"
@@ -42,8 +41,8 @@ func New(name string, config *ClusterConfig) *Cluster {
 	}
 }
 
-func (clu *Cluster) Level1Client() level1.Level1Client {
-	return goshimmer.NewGoshimmerClient(clu.Config.goshimmerApiHost())
+func (clu *Cluster) GoshimmerClient() *goshimmer.Client {
+	return goshimmer.NewClient(clu.Config.goshimmerApiHost())
 }
 
 func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
@@ -67,13 +66,13 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 		Cluster:        clu,
 	}
 
-	err := clu.Level1Client().RequestFunds(chain.OriginatorAddress())
+	err := clu.GoshimmerClient().RequestFunds(chain.OriginatorAddress())
 	if err != nil {
 		return nil, err
 	}
 
 	chainid, addr, err := apilib.DeployChain(apilib.CreateChainParams{
-		Node:                  clu.Level1Client(),
+		Node:                  clu.GoshimmerClient(),
 		CommitteeApiHosts:     chain.ApiHosts(),
 		CommitteePeeringHosts: chain.PeeringHosts(),
 		N:                     uint16(len(committeeNodes)),
@@ -361,12 +360,12 @@ func (cluster *Cluster) StartMessageCounter(expectations map[string]int) (*Messa
 
 func (cluster *Cluster) PostTransaction(tx *ledgerstate.Transaction) error {
 	fmt.Printf("[cluster] posting request tx: %s\n", tx.ID().String())
-	err := cluster.Level1Client().PostTransaction(tx)
+	err := cluster.GoshimmerClient().PostTransaction(tx)
 	if err != nil {
 		fmt.Printf("[cluster] posting tx: %s err = %v\n", tx.String(), err)
 		return err
 	}
-	if err = cluster.Level1Client().WaitForConfirmation(tx.ID()); err != nil {
+	if err = cluster.GoshimmerClient().WaitForConfirmation(tx.ID()); err != nil {
 		fmt.Printf("[cluster] posting tx: %v\n", err)
 		return err
 	}
@@ -375,7 +374,7 @@ func (cluster *Cluster) PostTransaction(tx *ledgerstate.Transaction) error {
 }
 
 func (cluster *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpected uint64, expect map[ledgerstate.Color]uint64, comment ...string) bool {
-	allOuts, err := cluster.Level1Client().GetConfirmedOutputs(addr)
+	allOuts, err := cluster.GoshimmerClient().GetConfirmedOutputs(addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
 		return false
