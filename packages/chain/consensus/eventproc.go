@@ -22,15 +22,12 @@ func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.setNewSCState(msg)
 
 	vh := op.currentState.Hash()
-	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v tx: %s, state hash: %s, backlog: %d",
+	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v tx: %s, state hash: %s",
 		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(), op.iAmCurrentLeader(),
-		op.stateOutput.ID().String(), vh.String(), len(op.requests))
+		op.stateOutput.ID().String(), vh.String())
 
-	// remove all processed requests from the local backlog
-	if err := op.deleteCompletedRequests(); err != nil {
-		op.log.Errorf("deleteCompletedRequests: %v", err)
-		return
-	}
+	op.mempool.RemoveRequests(msg.RequestIDs...)
+
 	if msg.Synchronized {
 		if op.iAmCurrentLeader() {
 			op.setNextConsensusStage(consensusStageLeaderStarting)

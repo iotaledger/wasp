@@ -104,7 +104,7 @@ type Mempool interface {
 	// returns all requests which are ready to be processed by the node: time unlocked and with solidified paranmeters
 	GetReadyList(seenThreshold uint16) []coretypes.Request
 	// removes requests from the mempool
-	RemoveRequests(reqs ...*coretypes.RequestID)
+	RemoveRequests(reqs ...coretypes.RequestID)
 	//
 	Close()
 }

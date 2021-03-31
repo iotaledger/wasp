@@ -94,7 +94,6 @@ func New(mempool chain.Mempool, committee chain.Committee, nodeConn *txstream.Cl
 		committee:                           committee,
 		mempool:                             mempool,
 		nodeConn:                            nodeConn,
-		requests:                            make(map[coretypes.RequestID]*request),
 		requestIdsProtected:                 make(map[coretypes.RequestID]bool),
 		peerPermutation:                     util.NewPermutation16(committee.Size(), nil),
 		log:                                 log.Named("c"),

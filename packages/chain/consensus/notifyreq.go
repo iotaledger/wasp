@@ -39,34 +39,3 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	}
 	op.setNextConsensusStage(consensusStageSubNotificationsSent)
 }
-
-// adjust all notification information to the current state index
-func (op *operator) adjustNotifications() {
-	stateIndex, stateDefined := op.blockIndex()
-	if !stateDefined {
-		return
-	}
-	// clear all the notification markers
-	for _, req := range op.requests {
-		setAllFalse(req.notifications)
-		req.notifications[op.peerIndex()] = req.req != nil
-	}
-	// put markers of the current state
-	op.markRequestsNotified(op.notificationsBacklog)
-
-	// clean notification backlog from messages from current and and past stages
-	newBacklog := op.notificationsBacklog[:0] // new slice, same underlying array!
-	for _, msg := range op.notificationsBacklog {
-		if msg.BlockIndex < stateIndex {
-			continue
-		}
-		newBacklog = append(newBacklog, msg)
-	}
-	op.notificationsBacklog = newBacklog
-}
-
-func setAllFalse(bs []bool) {
-	for i := range bs {
-		bs[i] = false
-	}
-}

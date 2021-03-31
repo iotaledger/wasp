@@ -71,12 +71,12 @@ func (m *mempool) ClearSeenMarks() {
 	}
 }
 
-func (m *mempool) RemoveRequests(reqs ...*coretypes.RequestID) {
+func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	for _, rid := range reqs {
-		delete(m.requests, *rid)
+		delete(m.requests, rid)
 	}
 }
 
