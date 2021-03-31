@@ -107,7 +107,7 @@ type Mempool interface {
 	GetReadyList(seenThreshold uint16) []coretypes.Request
 	GetReadyListFull(seenThreshold uint16) []*ReadyListRecord
 	TakeAllReady(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
-	RemoveRequests(reqs ...*coretypes.RequestID)
+	RemoveRequests(reqs ...coretypes.RequestID)
 	HasRequest(id coretypes.RequestID) bool
 	Close()
 }
