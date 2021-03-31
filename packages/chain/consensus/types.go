@@ -63,7 +63,7 @@ type operator struct {
 }
 
 type leaderStatus struct {
-	reqs            []*request
+	reqs            []coretypes.Request
 	batch           state.Block
 	batchHash       hashing.HashValue
 	timestamp       time.Time

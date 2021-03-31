@@ -4,6 +4,7 @@
 package consensus
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"time"
 
@@ -82,8 +83,8 @@ func (op *operator) startCalculationsAsLeader() {
 		// empty backlog or nothing is ready
 		return
 	}
-	reqIds := takeIds(reqs)
-	reqIdsStr := idsShortStr(reqIds)
+	reqIds := takeIDs(reqs...)
+	reqIdsStr := idsShortStr(reqIds...)
 
 	op.log.Debugf("requests selected to process. Current state: %d, Reqs: %+v", op.mustStateIndex(), reqIdsStr)
 	rewardAddress := op.getFeeDestination()
@@ -239,5 +240,38 @@ func (op *operator) setNewSCState(msg *chain.StateTransitionMsg) {
 	op.postedResultTxid = nilTxID
 	op.requestBalancesDeadline = time.Now()
 	op.resetLeader(op.stateOutput.ID().Bytes())
-	op.adjustNotifications()
+}
+
+func (op *operator) selectRequestsToProcess() []coretypes.Request {
+	preSelection := op.mempool.GetReadyListFull(op.quorum() - 1)
+	if len(preSelection) == 0 {
+		return nil
+	}
+	lattice := make([][]bool, len(preSelection))
+	for i := range lattice {
+		lattice[i] = make([]bool, op.size())
+		for peerIndex := range preSelection[i].Seen {
+			lattice[i][op.committee.OwnPeerIndex()] = true
+			if peerIndex < op.size() {
+				lattice[i][peerIndex] = true
+			}
+		}
+	}
+	// only first element in preselection
+	// it has at least quorum of seen's
+	ret := []coretypes.Request{preSelection[0].Request}
+	first := lattice[0]
+	for reqIdx, req := range preSelection[1:] {
+		countIntersect := 0
+		for i := range first {
+			if first[i] && lattice[reqIdx][i] {
+				countIntersect++
+			}
+		}
+		if countIntersect >= int(op.quorum()) {
+			ret = append(ret, req.Request)
+		}
+	}
+	op.log.Debugf("requests selected for process: %d out of total ready %d", len(ret), len(preSelection))
+	return ret
 }

@@ -90,11 +90,14 @@ func (msg *StartProcessingBatchMsg) Write(w io.Writer) error {
 	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
 		return err
 	}
+	if _, err := w.Write(msg.ChainOutputID.Bytes()); err != nil {
+		return err
+	}
 	if err := util.WriteUint16(w, uint16(len(msg.RequestIDs))); err != nil {
 		return err
 	}
 	for i := range msg.RequestIDs {
-		if _, err := w.Write(msg.RequestIDs[i][:]); err != nil {
+		if _, err := w.Write(msg.RequestIDs[i].Bytes()); err != nil {
 			return err
 		}
 	}
@@ -106,6 +109,9 @@ func (msg *StartProcessingBatchMsg) Write(w io.Writer) error {
 
 func (msg *StartProcessingBatchMsg) Read(r io.Reader) error {
 	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
+		return err
+	}
+	if n, err := r.Read(msg.ChainOutputID[:]); err != nil || n != ledgerstate.OutputIDLength {
 		return err
 	}
 	var size uint16

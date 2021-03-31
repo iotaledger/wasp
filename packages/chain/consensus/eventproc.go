@@ -72,8 +72,7 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		"batch hash", bh.String(),
 		"reqIds", msg.RequestIDs,
 	)
-	stateIndex, ok := op.blockIndex()
-	if !ok || msg.BlockIndex != stateIndex {
+	if op.stateOutput == nil || op.stateOutput.ID() != msg.ChainOutputID {
 		op.log.Debugf("EventStartProcessingBatchMsg: batch out of context. Won't start processing")
 		return
 	}
@@ -81,7 +80,7 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		// TODO should not happen. Probably redundant. panic?
 		op.log.Warnw("EventStartProcessingBatchMsg: ignored",
 			"sender", msg.SenderIndex,
-			"state index", stateIndex,
+			"state index", op.stateOutput.GetStateIndex(),
 			"iAmTheLeader", true,
 			"reqIds", msg.RequestIDs,
 		)
