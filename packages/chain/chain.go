@@ -34,8 +34,9 @@ type Committee interface {
 	FeeDestination() coretypes.AgentID
 }
 
-// TODO temporary wrapper for Committee need replacement for all peers, not only committee. Must be close to GroupProvider
-type Peers interface {
+// TODO temporary wrapper for Committee need replacement for all peers, not only committee.
+//  Must be close to GroupProvider but less functions
+type PeerGroupProvider interface {
 	NumPeers() uint16
 	NumIsAlive(quorum uint16) bool
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
@@ -85,7 +86,7 @@ const (
 )
 
 type StateManager interface {
-	SetPeers(Peers)
+	SetPeers(PeerGroupProvider)
 	EvidenceStateIndex(idx uint32)
 	EventStateIndexPingPongMsg(msg *StateIndexPingPongMsg)
 	EventGetBlockMsg(msg *GetBlockMsg)

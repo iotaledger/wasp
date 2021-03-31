@@ -17,7 +17,7 @@ import (
 
 type stateManager struct {
 	chain chain.Chain
-	peers chain.Peers
+	peers chain.PeerGroupProvider
 
 	// becomes true after initially loaded state is validated.
 	// after that it is always true
@@ -91,7 +91,7 @@ type pendingBlock struct {
 	stateTransactionRequestDeadline time.Time
 }
 
-func New(c chain.Chain, peers chain.Peers, log *logger.Logger) chain.StateManager {
+func New(c chain.Chain, peers chain.PeerGroupProvider, log *logger.Logger) chain.StateManager {
 	ret := &stateManager{
 		chain:                        c,
 		pendingBlocks:                make(map[hashing.HashValue]*pendingBlock),
@@ -112,7 +112,7 @@ func New(c chain.Chain, peers chain.Peers, log *logger.Logger) chain.StateManage
 	return ret
 }
 
-func (sm *stateManager) SetPeers(p chain.Peers) {
+func (sm *stateManager) SetPeers(p chain.PeerGroupProvider) {
 	sm.peers = p
 	sm.pingPong = make([]bool, p.NumPeers())
 }

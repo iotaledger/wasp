@@ -11,9 +11,9 @@ type peerObj struct {
 	permutation *util.Permutation16
 }
 
-var _ chain.Peers = &peerObj{}
+var _ chain.PeerGroupProvider = &peerObj{}
 
-func newPeers(c chain.Committee) chain.Peers {
+func newPeers(c chain.Committee) chain.PeerGroupProvider {
 	ret := &peerObj{committee: c}
 	if c != nil {
 		var rndBytes [32]byte
