@@ -172,7 +172,7 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 }
 
 func (c *chainObj) ReceiveRequest(req coretypes.Request) {
-	c.ReceiveMessage(req) //
+	c.mempool.ReceiveRequest(req)
 }
 
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {

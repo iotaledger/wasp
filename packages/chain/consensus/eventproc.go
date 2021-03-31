@@ -5,7 +5,6 @@ package consensus
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"strings"
 	"time"
 
@@ -44,27 +43,6 @@ func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.takeAction()
 }
 
-// EventRequestMsg triggered by new request msg from the node
-func (op *operator) EventRequestMsg(req coretypes.Request) {
-	op.eventRequestMsgCh <- req
-}
-
-// eventRequestMsg internal handler
-func (op *operator) eventRequestMsg(reqMsg coretypes.Request) {
-	op.log.Debugw("EventRequestMsg",
-		"reqid", reqMsg.ID().Short(),
-		"backlog req", len(op.requests),
-		"backlog notif", len(op.notificationsBacklog),
-	)
-	// place request into the backlog
-	req, _ := op.requestFromMsg(reqMsg)
-	if req == nil {
-		op.log.Warn("received already processed request id = %s", reqMsg.ID().Short())
-		return
-	}
-	op.takeAction()
-}
-
 // EventNotifyReqMsg request notification received from the peer
 func (op *operator) EventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 	op.eventNotifyReqMsgCh <- msg
@@ -77,8 +55,10 @@ func (op *operator) eventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.BlockIndex,
 	)
-	op.storeNotification(msg)
-	op.markRequestsNotified([]*chain.NotifyReqMsg{msg})
+	for _, rid := range msg.RequestIDs {
+		r := rid
+		op.mempool.MarkSeenByCommitteePeer(&r, msg.SenderIndex)
+	}
 	op.takeAction()
 }
 

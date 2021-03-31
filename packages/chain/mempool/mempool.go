@@ -1,10 +1,12 @@
 package mempool
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"sort"
 	"sync"
 	"time"
 )
@@ -110,6 +112,9 @@ func (m *mempool) GetReadyList(seenThreshold uint16) []coretypes.Request {
 			ret = append(ret, req.req)
 		}
 	}
+	sort.Slice(ret, func(i, j int) bool {
+		return bytes.Compare(ret[i].Output().ID().Bytes(), ret[j].Output().ID().Bytes()) < 0
+	})
 	return ret
 }
 

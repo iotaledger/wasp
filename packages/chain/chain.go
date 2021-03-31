@@ -82,7 +82,6 @@ type StateManager interface {
 
 type Consensus interface {
 	EventStateTransitionMsg(*StateTransitionMsg)
-	EventRequestMsg(coretypes.Request)
 	EventNotifyReqMsg(*NotifyReqMsg)
 	EventStartProcessingBatchMsg(*StartProcessingBatchMsg)
 	EventResultCalculated(msg *VMResultMsg)

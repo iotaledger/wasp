@@ -5,39 +5,22 @@ package consensus
 
 import (
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 // sendRequestNotificationsToLeader sends current leader the backlog of requests
 // it is only possible in the `consensusStageLeaderStarting` stage for non-leader
 func (op *operator) sendRequestNotificationsToLeader() {
-	if len(op.requests) == 0 {
-		return
-	}
-	if op.iAmCurrentLeader() {
-		return
-	}
-	if op.consensusStage != consensusStageSubStarting {
-		return
-	}
-	if !op.committee.QuorumIsAlive() {
-		op.log.Debugf("sendRequestNotificationsToLeader: postponed due to no quorum. Peer status: %s",
-			op.committee.PeerStatus())
-		return
+	readyRequests := op.mempool.GetReadyList(op.quorum())
+	reqIds := make([]coretypes.RequestID, len(readyRequests))
+	for i := range reqIds {
+		reqIds[i] = readyRequests[i].ID()
 	}
 	currentLeaderPeerIndex, _ := op.currentLeader()
-	reqs := op.requestCandidateList()
-	//reqs = op.filterOutRequestsWithoutTokens(reqs)
 
-	// get not time-locked requests with the message known
-	if len(reqs) == 0 {
-		// nothing to notify about
-		return
-	}
-	op.log.Debugf("sending notifications to #%d, backlog: %d, candidates (with tokens): %d",
-		currentLeaderPeerIndex, len(op.requests), len(reqs))
+	op.log.Debugf("sending %d request notifications to #%d", len(readyRequests), currentLeaderPeerIndex)
 
-	reqIds := takeIds(reqs)
 	msgData := util.MustBytes(&chain.NotifyReqMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
 			BlockIndex: op.mustStateIndex(),
@@ -55,36 +38,6 @@ func (op *operator) sendRequestNotificationsToLeader() {
 		op.log.Errorf("sending notifications to %d: %v", currentLeaderPeerIndex, err)
 	}
 	op.setNextConsensusStage(consensusStageSubNotificationsSent)
-}
-
-func (op *operator) storeNotification(msg *chain.NotifyReqMsg) {
-	stateIndex, stateDefined := op.blockIndex()
-	if stateDefined && msg.BlockIndex < stateIndex {
-		// don't save from earlier. The current currentState saved only for tracking
-		return
-	}
-	op.notificationsBacklog = append(op.notificationsBacklog, msg)
-}
-
-// markRequestsNotified stores information about notification in the current currentState
-func (op *operator) markRequestsNotified(msgs []*chain.NotifyReqMsg) {
-	stateIndex, stateDefined := op.blockIndex()
-	if !stateDefined {
-		return
-	}
-	for _, msg := range msgs {
-		if msg.BlockIndex != stateIndex {
-			continue
-		}
-		for _, reqid := range msg.RequestIDs {
-			req, ok := op.requestFromId(reqid)
-			if !ok {
-				continue
-			}
-			// mark request was seen by sender
-			req.notifications[msg.SenderIndex] = true
-		}
-	}
 }
 
 // adjust all notification information to the current state index

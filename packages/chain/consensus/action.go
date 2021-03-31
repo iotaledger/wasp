@@ -5,7 +5,6 @@ package consensus
 
 import (
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -17,39 +16,11 @@ import (
 // IF IT IS REQUIRED BY THE STATE (for example if deadline achieved, if needed data is not here and similar .
 // Is called from timer ticks, also when messages received
 func (op *operator) takeAction() {
-	op.solidifyRequestArgsIfNeeded()
 	op.sendRequestNotificationsToLeader()
 	op.startCalculationsAsLeader()
 	op.checkQuorum()
 	op.rotateLeader()
 	op.pullInclusionLevel()
-}
-
-// solidifyRequestArgsIfNeeded runs through all requests and, if needed, attempts to solidify args
-func (op *operator) solidifyRequestArgsIfNeeded() {
-	if time.Now().Before(op.nextArgSolidificationDeadline) {
-		return
-	}
-	reqs := op.allRequests()
-	reqs = filterRequests(reqs, func(r *request) bool {
-		return r.hasMessage() && !r.hasSolidArgs()
-	})
-	for _, req := range reqs {
-		reqOnLedger, ok := req.req.(*sctransaction.RequestOnLedger)
-		if !ok {
-			continue
-		}
-		ok, err := reqOnLedger.SolidifyArgs(op.committee.Chain().BlobCache())
-		if err != nil {
-			req.log.Errorf("failed to solidify request arguments: %v", err)
-		} else {
-			req.argsSolid = ok
-			if ok {
-				req.log.Infof("solidified request arguments")
-			}
-		}
-	}
-	op.nextArgSolidificationDeadline = time.Now().Add(chain.CheckArgSolidificationEvery)
 }
 
 // pullInclusionLevel if it is known that result transaction was posted by the leader,

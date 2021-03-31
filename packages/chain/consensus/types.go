@@ -20,6 +20,7 @@ import (
 
 type operator struct {
 	committee chain.Committee
+	mempool   chain.Mempool
 	nodeConn  *txstream.Client
 	//currentState
 	currentState   state.VirtualState
@@ -31,12 +32,6 @@ type operator struct {
 	consensusStageDeadline time.Time
 	//
 	requestBalancesDeadline time.Time
-
-	// notifications with future currentState indices
-	notificationsBacklog []*chain.NotifyReqMsg
-
-	// backlog of requests with all information
-	requests map[coretypes.RequestID]*request
 
 	peerPermutation *util.Permutation16
 
@@ -57,7 +52,6 @@ type operator struct {
 
 	// Channels for accepting external events.
 	eventStateTransitionMsgCh           chan *chain.StateTransitionMsg
-	eventRequestMsgCh                   chan coretypes.Request
 	eventNotifyReqMsgCh                 chan *chain.NotifyReqMsg
 	eventStartProcessingBatchMsgCh      chan *chain.StartProcessingBatchMsg
 	eventResultCalculatedCh             chan *chain.VMResultMsg
@@ -95,16 +89,16 @@ type request struct {
 	log *logger.Logger
 }
 
-func New(committee chain.Committee, nodeConn *txstream.Client, log *logger.Logger) *operator {
+func New(mempool chain.Mempool, committee chain.Committee, nodeConn *txstream.Client, log *logger.Logger) *operator {
 	ret := &operator{
 		committee:                           committee,
+		mempool:                             mempool,
 		nodeConn:                            nodeConn,
 		requests:                            make(map[coretypes.RequestID]*request),
 		requestIdsProtected:                 make(map[coretypes.RequestID]bool),
 		peerPermutation:                     util.NewPermutation16(committee.Size(), nil),
 		log:                                 log.Named("c"),
 		eventStateTransitionMsgCh:           make(chan *chain.StateTransitionMsg),
-		eventRequestMsgCh:                   make(chan coretypes.Request),
 		eventNotifyReqMsgCh:                 make(chan *chain.NotifyReqMsg),
 		eventStartProcessingBatchMsgCh:      make(chan *chain.StartProcessingBatchMsg),
 		eventResultCalculatedCh:             make(chan *chain.VMResultMsg),
@@ -129,10 +123,6 @@ func (op *operator) recvLoop() {
 		case msg, ok := <-op.eventStateTransitionMsgCh:
 			if ok {
 				op.eventStateTransitionMsg(msg)
-			}
-		case msg, ok := <-op.eventRequestMsgCh:
-			if ok {
-				op.eventRequestMsg(msg)
 			}
 		case msg, ok := <-op.eventNotifyReqMsgCh:
 			if ok {
