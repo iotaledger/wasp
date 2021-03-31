@@ -30,13 +30,6 @@ func (p *peerObj) NumPeers() uint16 {
 	return p.committee.Size()
 }
 
-func (p *peerObj) Quorum() uint16 {
-	if p.committee == nil {
-		return 0
-	}
-	return p.committee.Quorum()
-}
-
 func (p *peerObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
 	if p.committee == nil {
 		return nil
@@ -61,9 +54,9 @@ func (p *peerObj) SendToAllUntilFirstError(msgType byte, msgData []byte) uint16 
 	return p.committee.Size()
 }
 
-func (p *peerObj) QuorumIsAlive() bool {
+func (p *peerObj) NumIsAlive(quorum uint16) bool {
 	if p.committee == nil {
 		return false
 	}
-	return p.committee.QuorumIsAlive()
+	return p.committee.QuorumIsAlive(quorum)
 }

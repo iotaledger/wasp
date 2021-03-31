@@ -57,8 +57,7 @@ func (sm *stateManager) sendPingsIfNeeded() {
 		// no need for pinging, all state information is gathered already
 		return
 	}
-	if !sm.peers.QuorumIsAlive() {
-		// doesn't make sense the pinging, alive nodes does not make quorum
+	if !sm.peers.NumIsAlive(sm.peers.NumPeers()/3 + 1) {
 		return
 	}
 	if !sm.solidStateValid {
@@ -337,7 +336,7 @@ func (sm *stateManager) numPongs() uint16 {
 }
 
 func (sm *stateManager) numPongsHasQuorum() bool {
-	return sm.numPongs() >= sm.peers.Quorum()-1
+	return sm.numPongs() >= sm.peers.NumPeers()/3
 }
 
 func (sm *stateManager) pingPongReceived(senderIndex uint16) {

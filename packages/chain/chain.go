@@ -27,18 +27,17 @@ type Committee interface {
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
 	SendMsgToPeers(msgType byte, msgData []byte, ts int64) uint16
 	IsAlivePeer(peerIndex uint16) bool
-	QuorumIsAlive() bool
+	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
 	OnPeerMessage(fun func(recv *peering.RecvEvent))
 	Close()
 	FeeDestination() coretypes.AgentID
 }
 
-// TODO temporary wrapper for Committee need replacement for all peers, not only committee
+// TODO temporary wrapper for Committee need replacement for all peers, not only committee. Must be close to GroupProvider
 type Peers interface {
 	NumPeers() uint16
-	Quorum() uint16
-	QuorumIsAlive() bool
+	NumIsAlive(quorum uint16) bool
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
 	SendToAllUntilFirstError(msgType byte, msgData []byte) uint16
 }

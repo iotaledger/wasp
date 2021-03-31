@@ -237,7 +237,7 @@ const tplChain = `
 				<dt>Size</dt>      <dd><tt>{{.Committee.Size}}</tt></dd>
 				<dt>Quorum</dt>    <dd><tt>{{.Committee.Quorum}}</tt></dd>
 				<dt>NumPeers</dt>  <dd><tt>{{.Committee.NumPeers}}</tt></dd>
-				<dt>QuorumIsAlive</dt> <dd><tt>{{.Committee.QuorumIsAlive}}</tt></dd>
+				<dt>NumIsAlive</dt> <dd><tt>{{.Committee.NumIsAlive}}</tt></dd>
 				</dl>
 				<h4>Peer status</h4>
 				<table>

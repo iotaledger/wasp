@@ -119,13 +119,17 @@ func (c *committeeObj) IsAlivePeer(peerIndex uint16) bool {
 	return allNodes[peerIndex].IsAlive()
 }
 
-func (c *committeeObj) QuorumIsAlive() bool {
+func (c *committeeObj) QuorumIsAlive(quorum ...uint16) bool {
+	q := c.quorum
+	if len(quorum) > 0 {
+		q = quorum[0]
+	}
 	count := uint16(0)
 	for _, peer := range c.peers.OtherNodes() {
 		if peer.IsAlive() {
 			count++
 		}
-		if count+1 >= c.quorum {
+		if count+1 >= q {
 			return true
 		}
 	}
