@@ -142,20 +142,22 @@ func (m *mempool) GetReadyListFull(seenThreshold uint16) []*chain.ReadyListRecor
 	return ret
 }
 
-func (m *mempool) AreAllReady(nowis time.Time, reqids ...coretypes.RequestID) bool {
+func (m *mempool) TakeAllReady(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
+	ret := make([]coretypes.Request, len(reqids))
 	for i := range reqids {
 		req, ok := m.requests[reqids[i]]
 		if !ok {
-			return false
+			return nil, false
 		}
 		if !isRequestReady(req, 0, nowis) {
-			return false
+			return nil, false
 		}
+		ret[i] = req.req
 	}
-	return true
+	return ret, true
 }
 
 func (m *mempool) Close() {
