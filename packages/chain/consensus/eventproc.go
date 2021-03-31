@@ -89,38 +89,10 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		)
 		return
 	}
-	numOrig := len(msg.RequestIDs)
-	reqs := op.collectProcessableBatch(msg.RequestIDs)
-	if len(reqs) != numOrig {
-		// some request were filtered out because not messages didn't reach the node yet.
-		// can't happen? Redundant? panic?
-		op.log.Warnf("node can't process the batch: some requests are not known to the node")
+	if !op.mempool.AreAllReady(time.Unix(0, msg.Timestamp), msg.RequestIDs...) {
+		op.log.Warnf("node can't process the batch: some requests are not ready on the node")
 		return
 	}
-	// TODO remove
-	//reqs = op.filterNotReadyYet(reqs)
-	//if len(reqs) != numOrig {
-	//	// do not start processing batch if some of it's requests are not ready yet
-	//	op.log.Warn("node is not ready to process the batch")
-	//	return
-	//}
-
-	// check timestamp. If the local clock is different from the timestamp from the leader more
-	// tha threshold, ignore command from the leader.
-	// Note that if leader's clock is ot synced with the peers clock significantly, committee
-	// will ignore the leader and leader will never earn reward.
-	// TODO: attack analysis
-	localts := time.Now().UnixNano()
-	diff := localts - msg.Timestamp
-	if diff < 0 {
-		diff = -diff
-	}
-	if diff > chain.MaxClockDifferenceAllowed.Nanoseconds() {
-		op.log.Warn("reject consensus on timestamp: clock difference is too big. Leader ts: %d, local ts: %d, diff: %d",
-			msg.Timestamp, localts, diff)
-		return
-	}
-
 	// start async calculation as requested by the leader
 	op.runCalculationsAsync(runCalculationsParams{
 		requests:        reqs,
