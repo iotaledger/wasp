@@ -45,6 +45,7 @@ type PeerGroupProvider interface {
 
 type Chain interface {
 	Committee() Committee
+	Mempool() Mempool
 	ID() *coretypes.ChainID
 	BlobCache() coretypes.BlobCache
 
@@ -65,25 +66,6 @@ type Chain interface {
 	// chain processors
 	Processors() *processors.ProcessorCache
 }
-
-type PeerStatus struct {
-	Index     int
-	PeeringID string
-	IsSelf    bool
-	Connected bool
-}
-
-func (p *PeerStatus) String() string {
-	return fmt.Sprintf("%+v", *p)
-}
-
-type RequestProcessingStatus int
-
-const (
-	RequestProcessingStatusUnknown = RequestProcessingStatus(iota)
-	RequestProcessingStatusBacklog
-	RequestProcessingStatusCompleted
-)
 
 type StateManager interface {
 	SetPeers(PeerGroupProvider)
@@ -112,6 +94,40 @@ type Consensus interface {
 	//
 	IsRequestInBacklog(coretypes.RequestID) bool
 }
+
+type Mempool interface {
+	// ReceiveRequest request is introduced to the mempool. Must be prevalidated before
+	ReceiveRequest(req coretypes.Request)
+	// Marks request id as seen by the peer
+	MarkSeenByCommitteePeer(reqid *coretypes.RequestID, peerIndex uint16)
+	// Clears all marks about it was seen by whom. In case of committee change
+	ClearSeenMarks()
+	// returns all requests which are ready to be processed by the node: time unlocked and with solidified paranmeters
+	GetReadyList(seenThreshold uint16) []coretypes.Request
+	// removes requests from the mempool
+	RemoveRequests(reqs ...*coretypes.RequestID)
+	//
+	Close()
+}
+
+type PeerStatus struct {
+	Index     int
+	PeeringID string
+	IsSelf    bool
+	Connected bool
+}
+
+func (p *PeerStatus) String() string {
+	return fmt.Sprintf("%+v", *p)
+}
+
+type RequestProcessingStatus int
+
+const (
+	RequestProcessingStatusUnknown = RequestProcessingStatus(iota)
+	RequestProcessingStatusBacklog
+	RequestProcessingStatusCompleted
+)
 
 type chainConstructor func(
 	chr *registry.ChainRecord,
@@ -146,4 +162,23 @@ func New(
 	onActivation func(),
 ) Chain {
 	return constructorNew(chr, log, nodeConn, netProvider, dksProvider, blobProvider, onActivation)
+}
+
+type mempoolConstructor func(cache coretypes.BlobCache) Mempool
+
+var mempoolConstructorFun mempoolConstructor
+var mempoolConstructorFunMutex sync.Mutex
+
+func RegisterMempoollConstructor(constr mempoolConstructor) {
+	mempoolConstructorFunMutex.Lock()
+	defer mempoolConstructorFunMutex.Unlock()
+
+	if mempoolConstructorFun != nil {
+		panic("RegistermempoolConstructor: already registered")
+	}
+	mempoolConstructorFun = constr
+}
+
+func NewMempool(blobCache coretypes.BlobCache) Mempool {
+	return mempoolConstructorFun(blobCache)
 }

@@ -26,6 +26,7 @@ import (
 
 type chainObj struct {
 	committee                    chain.Committee
+	mempool                      chain.Mempool
 	isReadyStateManager          bool
 	isReadyConsensus             bool
 	isConnectPeriodOver          bool
@@ -61,6 +62,7 @@ func newChainObj(
 
 	chainLog := log.Named(util.Short(chr.ChainID.String()))
 	ret := &chainObj{
+		mempool:      chain.NewMempool(blobProvider),
 		procset:      processors.MustNew(),
 		chMsg:        make(chan interface{}, 100),
 		chainID:      chr.ChainID,

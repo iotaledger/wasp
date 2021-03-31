@@ -136,8 +136,8 @@ func (req *RequestOnLedger) output() *ledgerstate.ExtendedLockedOutput {
 }
 
 // Args returns solid args if decoded already or nil otherwise
-func (req *RequestOnLedger) Params() dict.Dict {
-	return req.solidArgs
+func (req *RequestOnLedger) Params() (dict.Dict, bool) {
+	return req.solidArgs, req.solidArgs != nil
 }
 
 func (req *RequestOnLedger) SenderAccount() *coretypes.AgentID {
@@ -228,8 +228,8 @@ func (req *RequestOffLedger) Output() ledgerstate.Output {
 }
 
 // arguments of the call. Must be != nil (solidified). No arguments means empty dictionary
-func (req *RequestOffLedger) Params() dict.Dict {
-	return req.solidArgs
+func (req *RequestOffLedger) Params() (dict.Dict, bool) {
+	return req.solidArgs, false
 }
 
 // account of the sender

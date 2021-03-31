@@ -34,6 +34,8 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 				return nil, fmt.Errorf("Solo inconsistency: failed to solidify request args")
 			}
 		}
+		_, solidArgs := req.Params()
+		require.True(ch.Env.T, solidArgs)
 		requests[i] = req
 	}
 

@@ -60,8 +60,8 @@ type Request interface {
 	IsFeePrepaid() bool
 	// ledgerstate.Output interface for on-ledger reguests, nil for off-ledger requests
 	Output() ledgerstate.Output
-	// arguments of the call. Must be != nil (solidified). No arguments means empty dictionary
-	Params() dict.Dict
+	// arguments of the call with the flag if they are ready. No arguments mean empty dictionary and true
+	Params() (dict.Dict, bool)
 	// account of the sender
 	SenderAccount() *AgentID
 	// address of the sender for all requests,

@@ -216,3 +216,7 @@ func (c *chainObj) Processors() *processors.ProcessorCache {
 func (c *chainObj) EventRequestProcessed() *events.Event {
 	return c.eventRequestProcessed
 }
+
+func (c *chainObj) Mempool() chain.Mempool {
+	return c.mempool
+}

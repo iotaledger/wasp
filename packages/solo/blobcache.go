@@ -9,7 +9,7 @@ type dummyBlobCache struct {
 	b map[hashing.HashValue][]byte
 }
 
-func newDummyBlobCache() *dummyBlobCache {
+func NewDummyBlobCache() *dummyBlobCache {
 	return &dummyBlobCache{make(map[hashing.HashValue][]byte)}
 }
 
