@@ -24,7 +24,7 @@ func (api *goshimmerClient) RequestFunds(targetAddress ledgerstate.Address) erro
 	if err != nil {
 		return fmt.Errorf("balanceIOTA: %s", err)
 	}
-	_, err = api.goshimmerClient.SendFaucetRequest(targetAddress.String())
+	_, err = api.goshimmerClient.SendFaucetRequest(targetAddress.Base58())
 	if err != nil {
 		return fmt.Errorf("SendFaucetRequest: %s", err)
 	}
@@ -94,7 +94,7 @@ func (api *goshimmerClient) PostAndWaitForConfirmation(tx *ledgerstate.Transacti
 func (api *goshimmerClient) WaitForConfirmation(txid ledgerstate.TransactionID) error {
 	for {
 		time.Sleep(1 * time.Second)
-		tx, err := api.goshimmerClient.GetTransactionByID(txid.String())
+		tx, err := api.goshimmerClient.GetTransactionByID(txid.Base58())
 		if err != nil {
 			return err
 		}

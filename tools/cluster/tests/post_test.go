@@ -107,18 +107,17 @@ func TestPost1Request(t *testing.T) {
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 
-	testOwner := wallet.WithIndex(1)
-	mySigScheme := testOwner.SigScheme()
-	myAddress := testOwner.Address()
+	testOwner := wallet.KeyPair(1)
+	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), testOwner)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncCounter)
 	check(err, t)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 	check(err, t)
 
 	expectCounter(t, contractID.Hname(), 43)
@@ -134,13 +133,12 @@ func TestPost3Recursive(t *testing.T) {
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 
-	testOwner := wallet.WithIndex(1)
-	mySigScheme := testOwner.SigScheme()
-	myAddress := testOwner.Address()
+	testOwner := wallet.KeyPair(1)
+	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), testOwner)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany, chainclient.PostRequestParams{
 		Transfer: coretypes.NewTransferIotas(1),
@@ -150,7 +148,7 @@ func TestPost3Recursive(t *testing.T) {
 	})
 	check(err, t)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 	check(err, t)
 
 	// must wait for recursion to complete
@@ -169,19 +167,18 @@ func TestPost5Requests(t *testing.T) {
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 
-	testOwner := wallet.WithIndex(1)
-	mySigScheme := testOwner.SigScheme()
-	myAddress := testOwner.Address()
+	testOwner := wallet.KeyPair(1)
+	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 	myAgentID := coretypes.NewAgentID(myAddress, 0)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), testOwner)
 
 	for i := 0; i < 5; i++ {
 		tx, err := myClient.PostRequest(inccounter.FuncIncCounter)
 		check(err, t)
-		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 		check(err, t)
 	}
 
@@ -206,14 +203,13 @@ func TestPost5AsyncRequests(t *testing.T) {
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 
-	testOwner := wallet.WithIndex(1)
-	mySigScheme := testOwner.SigScheme()
-	myAddress := testOwner.Address()
+	testOwner := wallet.KeyPair(1)
+	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 	myAgentID := coretypes.NewAgentID(myAddress, 0)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), testOwner)
 
 	tx := [5]*ledgerstate.Transaction{}
 	var err error
@@ -224,7 +220,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx[i], 30*time.Second)
+		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx[i], 30*time.Second)
 		check(err, t)
 	}
 

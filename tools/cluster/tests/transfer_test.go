@@ -17,9 +17,8 @@ func TestDepositWithdraw(t *testing.T) {
 	chain, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	testOwner := wallet.WithIndex(1)
-	mySigScheme := testOwner.SigScheme()
-	myAddress := testOwner.Address()
+	testOwner := wallet.KeyPair(1)
+	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
@@ -34,7 +33,6 @@ func TestDepositWithdraw(t *testing.T) {
 		t.Fail()
 	}
 	if !clu.VerifyAddressBalances(chain.ChainAddress(), 2, map[ledgerstate.Color]uint64{
-		chain.Color:           1,
 		ledgerstate.ColorIOTA: 1,
 	}, "chainAddress begin") {
 		t.Fail()
@@ -50,12 +48,12 @@ func TestDepositWithdraw(t *testing.T) {
 
 	// deposit some iotas to the chain
 	depositIotas := uint64(42)
-	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, mySigScheme)
+	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, testOwner)
 	reqTx, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
 		Transfer: coretypes.NewTransferIotas(depositIotas),
 	})
 	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
 	check(err, t)
 	checkLedger(t, chain)
 	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, depositIotas+1) // 1 iota from request
@@ -70,7 +68,7 @@ func TestDepositWithdraw(t *testing.T) {
 	// withdraw iotas back
 	reqTx3, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
 	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx3, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx3, 30*time.Second)
 	check(err, t)
 
 	check(err, t)
