@@ -54,7 +54,7 @@ func handlePutChainRecord(c echo.Context) error {
 		return err
 	}
 
-	log.Infof("Record saved. ChainID: %s", bd.ChainID.String())
+	log.Infof("Chain record saved. ChainID: %s", bd.ChainID.String())
 
 	return c.NoContent(http.StatusCreated)
 }
