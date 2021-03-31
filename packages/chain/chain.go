@@ -111,6 +111,8 @@ type Mempool interface {
 	GetReadyList(seenThreshold uint16) []coretypes.Request
 	// ready list with 'seen' makrs
 	GetReadyListFull(seenThreshold uint16) []*ReadyListRecord
+	// check if ALL requests are ready for processing
+	AreAllReady(nowis time.Time, reqids ...coretypes.RequestID) bool
 	// removes requests from the mempool
 	RemoveRequests(reqs ...*coretypes.RequestID)
 	//
