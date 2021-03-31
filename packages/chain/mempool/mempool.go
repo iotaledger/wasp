@@ -118,6 +118,30 @@ func (m *mempool) GetReadyList(seenThreshold uint16) []coretypes.Request {
 	return ret
 }
 
+func (m *mempool) GetReadyListFull(seenThreshold uint16) []*chain.ReadyListRecord {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	ret := make([]*chain.ReadyListRecord, 0, len(m.requests))
+	nowis := time.Now()
+	for _, req := range m.requests {
+		if isRequestReady(req, seenThreshold, nowis) {
+			rec := &chain.ReadyListRecord{
+				Request: req.req,
+				Seen:    make(map[uint16]bool),
+			}
+			for p := range req.seen {
+				rec.Seen[p] = true
+			}
+			ret = append(ret, rec)
+		}
+	}
+	sort.Slice(ret, func(i, j int) bool {
+		return bytes.Compare(ret[i].Request.Output().ID().Bytes(), ret[j].Request.Output().ID().Bytes()) < 0
+	})
+	return ret
+}
+
 func (m *mempool) Close() {
 	close(m.chStop)
 }
