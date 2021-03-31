@@ -9,11 +9,11 @@ import (
 
 func TestCreateOrigin(t *testing.T) {
 	u := utxodb.New()
-	user, addr := utxodb.NewKeyPairByIndex(1)
+	user, addr := u.NewKeyPairByIndex(1)
 	_, err := u.RequestFunds(addr)
 	require.NoError(t, err)
 
-	_, stateAddr := utxodb.NewKeyPairByIndex(2)
+	_, stateAddr := u.NewKeyPairByIndex(2)
 
 	require.EqualValues(t, utxodb.RequestFundsAmount, u.BalanceIOTA(addr))
 	require.EqualValues(t, 0, u.BalanceIOTA(stateAddr))
@@ -30,11 +30,11 @@ func TestCreateOrigin(t *testing.T) {
 
 func TestInitChain(t *testing.T) {
 	u := utxodb.New()
-	user, addr := utxodb.NewKeyPairByIndex(1)
+	user, addr := u.NewKeyPairByIndex(1)
 	_, err := u.RequestFunds(addr)
 	require.NoError(t, err)
 
-	_, stateAddr := utxodb.NewKeyPairByIndex(2)
+	_, stateAddr := u.NewKeyPairByIndex(2)
 
 	require.EqualValues(t, utxodb.RequestFundsAmount, u.BalanceIOTA(addr))
 	require.EqualValues(t, 0, u.BalanceIOTA(stateAddr))
