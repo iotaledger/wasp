@@ -68,7 +68,7 @@ func (ch *Chain) OriginatorClient() *chainclient.Client {
 
 func (ch *Chain) Client(sigScheme *ed25519.KeyPair) *chainclient.Client {
 	return chainclient.New(
-		ch.Cluster.Level1Client(),
+		ch.Cluster.GoshimmerClient(),
 		ch.Cluster.WaspClient(ch.CommitteeNodes[0]),
 		ch.ChainID,
 		sigScheme,

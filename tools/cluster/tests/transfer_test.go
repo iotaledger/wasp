@@ -48,7 +48,7 @@ func TestDepositWithdraw(t *testing.T) {
 
 	// deposit some iotas to the chain
 	depositIotas := uint64(42)
-	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, testOwner)
+	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, testOwner)
 	reqTx, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
 		Transfer: coretypes.NewTransferIotas(depositIotas),
 	})

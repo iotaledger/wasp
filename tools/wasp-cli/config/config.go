@@ -6,8 +6,7 @@ import (
 	"os"
 
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/level1"
-	"github.com/iotaledger/wasp/client/level1/goshimmer"
+	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -63,9 +62,9 @@ func GoshimmerApi() string {
 	return "127.0.0.1:8080"
 }
 
-func GoshimmerClient() level1.Level1Client {
+func GoshimmerClient() *goshimmer.Client {
 	log.Verbose("using Goshimmer host %s\n", GoshimmerApi())
-	return goshimmer.NewGoshimmerClient(GoshimmerApi())
+	return goshimmer.NewClient(GoshimmerApi())
 }
 
 func WaspClient() *client.WaspClient {

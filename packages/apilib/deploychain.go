@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/level1"
+	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -21,7 +21,7 @@ import (
 )
 
 type CreateChainParams struct {
-	Node                  level1.Level1Client
+	Node                  *goshimmer.Client
 	CommitteeApiHosts     []string
 	CommitteePeeringHosts []string
 	N                     uint16

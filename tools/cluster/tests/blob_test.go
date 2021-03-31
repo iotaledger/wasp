@@ -97,7 +97,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	expectedHash := blob.MustGetBlobHash(fv)
 	t.Logf("expected hash: %s", expectedHash.String())
 
-	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, testOwner)
+	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, testOwner)
 	reqTx, err := chClient.PostRequest(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
@@ -138,7 +138,7 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 	t.Logf("================= total size: %d. Files: %+v", totalSize, fileNames)
 
 	fv := codec.MakeDict(blobFieldValues)
-	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, testOwner)
+	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, testOwner)
 	expectedHash, tx, err := chClient.UploadBlob(fv, clu.Config.ApiHosts(clu.Config.AllNodes()), int(chain.Quorum))
 	require.NoError(t, err)
 	err = chClient.WaspClient.WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
@@ -181,7 +181,7 @@ func TestBlobRefConsensus(t *testing.T) {
 	argsEncoded, optimizedBlobs := requestargs.NewOptimizedRequestArgs(fv)
 
 	// sending storeBlob request (data is not uploaded yet)
-	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, testOwner)
+	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, testOwner)
 	reqTx, err := chClient.PostRequest(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
