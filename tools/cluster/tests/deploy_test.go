@@ -191,7 +191,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	})
 	check(err, t)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 	check(err, t)
 
 	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {

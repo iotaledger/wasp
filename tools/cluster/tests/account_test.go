@@ -2,17 +2,17 @@ package tests
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/solo"
 	"testing"
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -101,7 +101,6 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 
 	if !clu.VerifyAddressBalances(chain.Address, 3, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 2,
-		chain.Color:           1,
 	}, "chain after deployment") {
 		t.Fail()
 	}
@@ -110,13 +109,13 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 	check(err, t)
 
 	transferIotas := uint64(42)
-	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
+	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, scOwner)
 	reqTx, err := chClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
 		Transfer: coretypes.NewTransferIotas(transferIotas),
 	})
 	check(err, t)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
 	check(err, t)
 
 	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
@@ -132,7 +131,6 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 
 	if !clu.VerifyAddressBalances(chain.Address, 4+transferIotas, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 3 + transferIotas,
-		chain.Color:           1,
 	}, "chain after") {
 		t.Fail()
 	}
@@ -213,12 +211,11 @@ func TestBasic2Accounts(t *testing.T) {
 
 	if !clu.VerifyAddressBalances(chain.Address, 3, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 2,
-		chain.Color:           1,
 	}, "chain after deployment") {
 		t.Fail()
 	}
 
-	originatorSigScheme := chain.OriginatorSigScheme()
+	originatorSigScheme := chain.OriginatorKeyPair()
 	originatorAddress := chain.OriginatorAddress()
 
 	if !clu.VerifyAddressBalances(originatorAddress, solo.Saldo-3, map[ledgerstate.Color]uint64{
@@ -228,20 +225,20 @@ func TestBasic2Accounts(t *testing.T) {
 	}
 	checkLedger(t, chain)
 
-	myWallet := wallet.WithIndex(3)
-	myWalletAddr := myWallet.Address()
+	myWallet := wallet.KeyPair(3)
+	myWalletAddr := ledgerstate.NewED25519Address(myWallet.PublicKey)
 
 	err = requestFunds(clu, myWalletAddr, "myWalletAddress")
 	check(err, t)
 
 	transferIotas := uint64(42)
-	myWalletClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, myWallet.SigScheme())
+	myWalletClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, myWallet)
 	reqTx, err := myWalletClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
 		Transfer: coretypes.NewTransferIotas(transferIotas),
 	})
 	check(err, t)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
 	check(err, t)
 	checkLedger(t, chain)
 
@@ -262,7 +259,6 @@ func TestBasic2Accounts(t *testing.T) {
 	}
 	if !clu.VerifyAddressBalances(chain.Address, 4+transferIotas, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 3 + transferIotas,
-		chain.Color:           1,
 	}, "chain after") {
 		t.Fail()
 	}
@@ -286,12 +282,12 @@ func TestBasic2Accounts(t *testing.T) {
 	printAccounts(t, chain, "withdraw before")
 
 	// withdraw back 2 iotas to originator address
-	fmt.Printf("\norig addres from sigsheme: %s\n", originatorSigScheme.Address().String())
+	fmt.Printf("\norig addres from sigsheme: %s\n", originatorAddress.String())
 	originatorClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, originatorSigScheme)
 	reqTx2, err := originatorClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
 	check(err, t)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx2, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx2, 30*time.Second)
 	check(err, t)
 
 	checkLedger(t, chain)

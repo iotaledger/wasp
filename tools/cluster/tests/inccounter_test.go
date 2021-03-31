@@ -86,7 +86,7 @@ func testNothing(t *testing.T, numRequests int) {
 	for i := 0; i < numRequests; i++ {
 		tx, err := client.PostRequest(incHname, entryPoint)
 		check(err, t)
-		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 		check(err, t)
 	}
 
@@ -143,7 +143,7 @@ func testIncrement(t *testing.T, numRequests int) {
 	for i := 0; i < numRequests; i++ {
 		tx, err := client.PostRequest(incHname, entryPoint)
 		check(err, t)
-		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 		check(err, t)
 	}
 
@@ -189,7 +189,6 @@ func TestIncrementWithTransfer(t *testing.T) {
 
 	if !clu.VerifyAddressBalances(chain.Address, 4, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 3,
-		chain.Color:           1,
 	}, "chain after deployment") {
 		t.Fail()
 	}
@@ -204,7 +203,6 @@ func TestIncrementWithTransfer(t *testing.T) {
 	}
 	if !clu.VerifyAddressBalances(chain.Address, 5+42, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 4 + 42,
-		chain.Color:           1,
 	}, "chain after") {
 		t.Fail()
 	}
