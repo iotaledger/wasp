@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/client"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,8 +14,12 @@ func TestMockNode(t *testing.T) {
 		t.Skip("Skipping mocknode test in short mode")
 	}
 
-	m := Start(":5000", ":8080")
+	initOk := make(chan bool)
+
+	m := Start(":5000", ":8080", initOk)
 	defer m.Stop()
+
+	<-initOk
 
 	time.Sleep(1 * time.Second)
 
@@ -26,12 +31,14 @@ func TestMockNode(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
-	r, err := cl.GetUnspentOutputs([]string{addr.Base58()})
-
+	r, err := cl.GetAddressUnspentOutputs(addr.Base58())
 	require.NoError(t, err)
-	require.Equal(t, 1, len(r.UnspentOutputs))
-	require.Equal(t, addr.Base58(), r.UnspentOutputs[0].Address)
-	require.Equal(t, 1, len(r.UnspentOutputs[0].OutputIDs))
-	require.Equal(t, 1, len(r.UnspentOutputs[0].OutputIDs[0].Balances))
-	require.EqualValues(t, 1337, r.UnspentOutputs[0].OutputIDs[0].Balances[0].Value)
+
+	require.Equal(t, 1, len(r.Outputs))
+	out, err := r.Outputs[0].ToLedgerstateOutput()
+	require.NoError(t, err)
+	require.Equal(t, addr.Base58(), out.Address().Base58())
+	require.Equal(t, 1, out.Balances().Size())
+	b, _ := out.Balances().Get(ledgerstate.ColorIOTA)
+	require.EqualValues(t, 1337, b)
 }

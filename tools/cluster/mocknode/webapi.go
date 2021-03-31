@@ -53,7 +53,7 @@ func (m *MockNode) addEndpoints(e *echo.Echo) {
 	// These endpoints share the same schema as the endpoints in Goshimmer,
 	// so they should work with the official Goshimmer client.
 
-	e.POST("value/unspentOutputs", m.unspentOutputsHandler)
+	e.GET("ledgerstate/addresses/:address/unspentOutputs", m.unspentOutputsHandler)
 	e.GET("value/transactionByID", m.getTransactionByIDHandler)
 	e.POST("value/sendTransaction", m.sendTransactionHandler)
 	e.POST("faucet", m.requestFundsHandler)
