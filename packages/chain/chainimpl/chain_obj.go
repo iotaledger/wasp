@@ -5,10 +5,11 @@ package chainimpl
 
 import (
 	"bytes"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
-	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"sync"
 	"time"
+
+	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
+	"github.com/iotaledger/wasp/packages/chain/consensus"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/tcrypto"

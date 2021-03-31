@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 )
 
@@ -182,8 +181,8 @@ func (g *groupImpl) OtherNodes() map[uint16]peering.PeerSender {
 // Attach starts listening for messages. Messages in this case will be filtered
 // to those received from nodes in the group only. SenderIndex will be filled
 // for the messages according to the message source.
-func (g *groupImpl) Attach(chainID *coretypes.ChainID, callback func(recv *peering.RecvEvent)) interface{} {
-	return g.netProvider.Attach(chainID, func(recv *peering.RecvEvent) {
+func (g *groupImpl) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {
+	return g.netProvider.Attach(peeringID, func(recv *peering.RecvEvent) {
 		if idx, err := g.PeerIndexByNetID(recv.From.NetID()); err == nil && idx != NotInGroup {
 			recv.Msg.SenderIndex = idx
 			callback(recv)

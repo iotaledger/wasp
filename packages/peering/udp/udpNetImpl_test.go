@@ -4,10 +4,10 @@
 package udp_test
 
 import (
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/udp"
 	"github.com/stretchr/testify/require"
@@ -44,11 +44,11 @@ func TestUDPPeeringImpl(t *testing.T) {
 		doneCh <- true
 	})
 
-	chain1 := *coretypes.RandomChainID()
-	chain2 := *coretypes.RandomChainID()
-	n0p2.SendMsg(&peering.PeerMessage{ChainID: chain1, MsgType: 125})
-	n1p1.SendMsg(&peering.PeerMessage{ChainID: chain1, MsgType: 125})
-	n2p0.SendMsg(&peering.PeerMessage{ChainID: chain2, MsgType: 125})
+	chain1 := peering.RandomPeeringID()
+	chain2 := peering.RandomPeeringID()
+	n0p2.SendMsg(&peering.PeerMessage{PeeringID: chain1, MsgType: 125})
+	n1p1.SendMsg(&peering.PeerMessage{PeeringID: chain1, MsgType: 125})
+	n2p0.SendMsg(&peering.PeerMessage{PeeringID: chain2, MsgType: 125})
 
 	<-doneCh
 }

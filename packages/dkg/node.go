@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
@@ -99,9 +98,9 @@ func (n *Node) GenerateDistributedKey(
 		return nil, err
 	}
 	defer netGroup.Close()
-	dkgID := coretypes.RandomChainID()
+	dkgID := peering.RandomPeeringID()
 	recvCh := make(chan *peering.RecvEvent, peerCount*2)
-	attachID := n.netProvider.Attach(dkgID, func(recv *peering.RecvEvent) {
+	attachID := n.netProvider.Attach(&dkgID, func(recv *peering.RecvEvent) {
 		recvCh <- recv
 	})
 	defer n.netProvider.Detach(attachID)
@@ -267,7 +266,7 @@ func (n *Node) onInitMsg(recv *peering.RecvEvent) {
 		// To have idempotence for retries, we need to consider duplicate
 		// messages as success, if process is already created.
 		n.procLock.RUnlock()
-		recv.From.SendMsg(makePeerMessage(&recv.Msg.ChainID, req.step, &initiatorStatusMsg{
+		recv.From.SendMsg(makePeerMessage(recv.Msg.PeeringID, req.step, &initiatorStatusMsg{
 			error: nil,
 		}))
 		return
@@ -277,11 +276,11 @@ func (n *Node) onInitMsg(recv *peering.RecvEvent) {
 		// This part should be executed async, because it accesses the network again, and can
 		// be locked because of the naive implementation of `events.Event`. It locks on all the callbacks.
 		n.procLock.Lock()
-		if p, err = onInitiatorInit(&recv.Msg.ChainID, &req, n); err == nil {
+		if p, err = onInitiatorInit(recv.Msg.PeeringID, &req, n); err == nil {
 			n.processes[p.dkgRef] = p
 		}
 		n.procLock.Unlock()
-		recv.From.SendMsg(makePeerMessage(&recv.Msg.ChainID, req.step, &initiatorStatusMsg{
+		recv.From.SendMsg(makePeerMessage(recv.Msg.PeeringID, req.step, &initiatorStatusMsg{
 			error: err,
 		}))
 	}()
@@ -304,7 +303,7 @@ func (n *Node) exchangeInitiatorStep(
 	recvCh chan *peering.RecvEvent,
 	retryTimeout time.Duration,
 	giveUpTimeout time.Duration,
-	dkgID *coretypes.ChainID,
+	dkgID peering.PeeringID,
 	step byte,
 ) error {
 	sendCB := func(peerIdx uint16, peer peering.PeerSender) {

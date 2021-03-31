@@ -4,11 +4,11 @@
 package testutil_test
 
 import (
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/testutil"
 )
@@ -17,13 +17,13 @@ func TestFakeNetwork(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	doneCh := make(chan bool)
-	chain1 := coretypes.RandomChainID()
-	chain2 := coretypes.RandomChainID()
+	chain1 := peering.RandomPeeringID()
+	chain2 := peering.RandomPeeringID()
 	network := testutil.NewPeeringNetworkForLocs([]string{"a", "b", "c"}, 100, log)
 	var netProviders []peering.NetworkProvider = network.NetworkProviders()
 	//
 	// Node "a" listens for chain1 messages.
-	netProviders[0].Attach(chain1, func(recv *peering.RecvEvent) {
+	netProviders[0].Attach(&chain1, func(recv *peering.RecvEvent) {
 		doneCh <- true
 	})
 	//
@@ -31,9 +31,9 @@ func TestFakeNetwork(t *testing.T) {
 	var a, c peering.PeerSender
 	a, _ = netProviders[1].PeerByNetID("a")
 	c, _ = netProviders[1].PeerByNetID("c")
-	a.SendMsg(&peering.PeerMessage{ChainID: *chain1, MsgType: 1}) // Will be delivered.
-	a.SendMsg(&peering.PeerMessage{ChainID: *chain2, MsgType: 2}) // Will be dropped.
-	c.SendMsg(&peering.PeerMessage{ChainID: *chain1, MsgType: 3}) // Will be dropped.
+	a.SendMsg(&peering.PeerMessage{PeeringID: chain1, MsgType: 1}) // Will be delivered.
+	a.SendMsg(&peering.PeerMessage{PeeringID: chain2, MsgType: 2}) // Will be dropped.
+	c.SendMsg(&peering.PeerMessage{PeeringID: chain1, MsgType: 3}) // Will be dropped.
 	//
 	// Wait for the result.
 	select {

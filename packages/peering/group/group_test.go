@@ -1,10 +1,10 @@
 package group_test
 
 import (
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/udp"
 	"github.com/stretchr/testify/require"
@@ -50,7 +50,7 @@ func TestGroupProvider(t *testing.T) {
 	require.Nil(t, err1)
 	//
 	// Broadcast a message and wait until it will be received on all the nodes.
-	g.Broadcast(&peering.PeerMessage{ChainID: *coretypes.RandomChainID(), MsgType: 125}, true)
+	g.Broadcast(&peering.PeerMessage{PeeringID: peering.RandomPeeringID(), MsgType: 125}, true)
 	<-doneCh0
 	<-doneCh1
 	<-doneCh2
