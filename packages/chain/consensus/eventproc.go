@@ -48,7 +48,7 @@ func (op *operator) EventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 // eventNotifyReqMsg internal handler
 func (op *operator) eventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 	op.log.Debugw("EventNotifyReqMsg",
-		"reqIds", idsShortStr(msg.RequestIDs),
+		"reqIds", msg.RequestIDs,
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.BlockIndex,
 	)
@@ -72,7 +72,7 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		"sender", msg.SenderIndex,
 		"ts", msg.Timestamp,
 		"batch hash", bh.String(),
-		"reqIds", idsShortStr(msg.RequestIDs),
+		"reqIds", msg.RequestIDs,
 	)
 	stateIndex, ok := op.blockIndex()
 	if !ok || msg.BlockIndex != stateIndex {
@@ -85,7 +85,7 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 			"sender", msg.SenderIndex,
 			"state index", stateIndex,
 			"iAmTheLeader", true,
-			"reqIds", idsShortStr(msg.RequestIDs),
+			"reqIds", msg.RequestIDs,
 		)
 		return
 	}
