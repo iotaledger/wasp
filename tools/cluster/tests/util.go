@@ -93,7 +93,7 @@ func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
 }
 
 func requestFunds(wasps *cluster.Cluster, addr ledgerstate.Address, who string) error {
-	err := wasps.Level1Client().RequestFunds(addr)
+	err := wasps.GoshimmerClient().RequestFunds(addr)
 	if err != nil {
 		return err
 	}
