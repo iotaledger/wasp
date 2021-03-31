@@ -24,7 +24,10 @@ func initCmd(args []string) {
 	log.Check(viper.WriteConfig())
 
 	log.Printf("Initialized wallet seed in %s\n", config.ConfigPath)
-	log.Verbose("Seed: %s\n", seed)
+	log.Printf("\nIMPORTANT: wasp-cli is alpha phase. The seed is currently being stored " +
+		"in a plain text file which is NOT secure. Do not use this seed to store funds " +
+		"in the mainnet!\n")
+	log.Verbose("\nSeed: %s\n", seed)
 }
 
 func Load() *Wallet {

@@ -3,6 +3,9 @@
 `wasp-cli` is a command line tool for interacting with Wasp and its smart
 contracts.
 
+**Note:** `wasp-cli` is in its early stages, only suitable for testing
+purposes.
+
 Flags common to all subcommands:
 
 * `-w`: Wait for requests to complete before returning
@@ -43,6 +46,10 @@ Example: `wasp-cli set wasp.1.api wasp1.example.com:9091`
 
 * Create a new wallet seed (creates `wasp-cli.json` which stores the
   seed): `wasp-cli init`
+
+  **Note:** `wasp-cli` is alpha phase. The seed is currently being stored in a
+  plain text file, which is NOT secure; do not use this seed to store funds in
+  the mainnet!
 
 * Show private key + public key + account address for index 0 (index optional,
   default 0): `wasp-cli address [-i index]`
