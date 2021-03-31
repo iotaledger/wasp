@@ -4,8 +4,6 @@
 package consensus
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -89,7 +87,8 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		)
 		return
 	}
-	if !op.mempool.AreAllReady(time.Unix(0, msg.Timestamp), msg.RequestIDs...) {
+	reqs, allReady := op.mempool.TakeAllReady(time.Unix(0, msg.Timestamp), msg.RequestIDs...)
+	if !allReady {
 		op.log.Warnf("node can't process the batch: some requests are not ready on the node")
 		return
 	}
@@ -241,26 +240,10 @@ func (op *operator) eventTimerMsg(msg chain.TimerTick) {
 		op.log.Infow("timer tick",
 			"#", msg,
 			"block index", si,
-			"req backlog", len(op.requests),
 			"leader", leader,
-			"selection", len(op.selectRequestsToProcess()),
-			"timelocked", timelockedToString(op.requestsTimeLocked()),
-			"notif backlog", len(op.notificationsBacklog),
 		)
 	}
 	if msg%2 == 0 {
 		op.takeAction()
 	}
-}
-
-func timelockedToString(reqs []*request) string {
-	if len(reqs) == 0 {
-		return "[]"
-	}
-	ret := make([]string, len(reqs))
-	nowis := uint32(time.Now().Unix())
-	for i := range ret {
-		ret[i] = fmt.Sprintf("%s: %d (-%d)", reqs[i].req.ID().Short(), reqs[i].timelock(), reqs[i].timelock()-nowis)
-	}
-	return fmt.Sprintf("now: %d, [%s]", nowis, strings.Join(ret, ","))
 }

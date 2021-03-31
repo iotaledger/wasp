@@ -32,7 +32,7 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	op.log.Infow("sendRequestNotificationsToLeader",
 		"leader", currentLeaderPeerIndex,
 		"state index", op.mustStateIndex(),
-		"reqs", idsShortStr(reqIds),
+		"reqs", reqIds,
 	)
 	if err := op.committee.SendMsg(currentLeaderPeerIndex, chain.MsgNotifyRequests, msgData); err != nil {
 		op.log.Errorf("sending notifications to %d: %v", currentLeaderPeerIndex, err)
