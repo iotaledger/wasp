@@ -23,7 +23,10 @@ func Start(txStreamBindAddress string, webapiBindAddress string) *MockNode {
 	}
 
 	// start the txstream server
-	go server.Listen(m.Ledger, txStreamBindAddress, m.log.Named("txstream"), m.shutdownSignal)
+	err := server.Listen(m.Ledger, txStreamBindAddress, m.log.Named("txstream"), m.shutdownSignal)
+	if err != nil {
+		panic(err)
+	}
 
 	// start the web api server
 	m.startWebAPI(webapiBindAddress)
