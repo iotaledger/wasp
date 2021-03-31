@@ -198,7 +198,7 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 		return chain.RequestProcessingStatusUnknown
 	}
 	if c.consensus != nil {
-		if c.consensus.IsRequestInBacklog(reqID) {
+		if c.mempool.HasRequest(reqID) {
 			return chain.RequestProcessingStatusBacklog
 		}
 	}

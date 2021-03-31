@@ -90,8 +90,6 @@ type Consensus interface {
 	EventTransactionInclusionStateMsg(msg *InclusionStateMsg)
 	EventTimerMsg(TimerTick)
 	Close()
-	//
-	IsRequestInBacklog(coretypes.RequestID) bool
 }
 
 type ReadyListRecord struct {
