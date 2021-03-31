@@ -1,10 +1,12 @@
 package mocknode
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/tangle"
@@ -15,39 +17,41 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func (m *MockNode) startWebAPI(bindAddress string) {
+func (m *MockNode) startWebAPI(bindAddress string) error {
 	l, err := net.Listen("tcp", bindAddress)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
+	e := echo.New()
+	e.HideBanner = true
+	e.HidePort = true
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
+	}))
+	e.Listener = l
+
+	m.addEndpoints(e)
+
 	go func() {
-		e := echo.New()
-		e.HideBanner = true
-		e.HidePort = true
-		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-			Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
-		}))
-		e.Listener = l
-
-		m.addEndpoints(e)
-
-		stopped := make(chan struct{})
-		go func() {
-			defer close(stopped)
-
-			if err := e.Start(""); err != nil {
-				if !errors.Is(err, http.ErrServerClosed) {
-					m.log.Error(err)
-				}
+		if err := e.Start(""); err != nil {
+			if !errors.Is(err, http.ErrServerClosed) {
+				m.log.Error(err)
 			}
-		}()
-
-		select {
-		case <-m.shutdownSignal:
-		case <-stopped:
 		}
 	}()
+
+	go func() {
+		<-m.shutdownSignal
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := e.Shutdown(ctx); err != nil {
+			e.Logger.Fatal(err)
+		}
+	}()
+
+	return nil
 }
 
 func (m *MockNode) addEndpoints(e *echo.Echo) {

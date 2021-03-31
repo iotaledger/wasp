@@ -1,18 +1,16 @@
 # wasp-cluster
 
-`wasp-cluster` is a tool that allows to easily run a cluster of Wasp nodes along
-with a Goshimmer node (needed for Wasp), all in a single host, to experiment
-with smart contracts in a controlled environment.
+`wasp-cluster` is a tool that allows to easily run a cluster of Wasp nodes
+in a single host, to experiment with smart contracts in a controlled environment.
 
-Note: `wasp-cluster` is intended for testing purposes, and is *not* the
-recommended way to run a cluster in a production environment.
+**Note:** `wasp-cluster` is intended for **testing purposes**, and is *not*
+suitable for running a cluster in a production environment.
 
 ## Before
 
 Make sure you have all needed binaries compiled and installed in the system
 path:
 
-* `goshimmer` (Goshimmer server with the `waspconn` plugin)
 * `wasp` (Wasp server)
 * `wasp-cli` (CLI client for the Wasp node)
 * `wasp-cluster` (this tool)
@@ -32,9 +30,6 @@ configuration file (`cluster.json`) and one subdirectory for each node.
 ```
 my-cluster/
 ├── cluster.json
-├── goshimmer
-│   ├── config.json
-│   └── snapshot.bin
 ├── wasp0
 │   └── config.json
 ├── wasp1
@@ -69,13 +64,13 @@ When done using the cluster, press `Ctrl-C` to stop it.
 
 ## Connecting to an existing Goshimmer network
 
-By default, the cluster includes a single Goshimmer node configured in such a
-way that the ledger can be operated without the need for consensus. This is good
-for quick tests, but is far from how Goshimmer works in a production
+By default, `wasp-cluster` provides a mock Goshimmer node to operate a
+simulated ledger without the need for consensus. This is good
+for quick tests, but is far from how the ledger works in a production
 environment.
 
 To connect the Wasp cluster to a more realistic environment (e.g. to be able to
-persist the ledger), you can use the `docker-network` tool available in the
+persist changes in the ledger), you can use the `docker-network` tool available in the
 Goshimmer repository (`develop+wasp` branch) in order to start a cluster of
 Goshimmer nodes.
 
@@ -89,7 +84,7 @@ cd <goshimmer>/tools/docker-network
 ```
 
 2. In another console, initialize a cluster of 4 Wasp nodes (`-n 4`) with no
-   Goshimmer node (`-g`).
+   mock Goshimmer node (`-g`).
 
 ```
 wasp-cluster init my-cluster -n 4 -g

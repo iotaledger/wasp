@@ -160,6 +160,14 @@ func (m *mempool) TakeAllReady(nowis time.Time, reqids ...coretypes.RequestID) (
 	return ret, true
 }
 
+func (m *mempool) HasRequest(id coretypes.RequestID) bool {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	rec, ok := m.requests[id]
+	return ok && rec.req != nil
+}
+
 func (m *mempool) Close() {
 	close(m.chStop)
 }

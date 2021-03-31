@@ -42,12 +42,13 @@ Note: The only difference between standard Goshimmer (`master` branch) and the
 [WaspConn](https://github.com/iotaledger/goshimmer/tree/develop+wasp/dapps/waspconn)
 plugin, which accepts connections from Wasp nodes.
 
-###Microsoft Windows installation errors:
+### Microsoft Windows installation errors:
 
 If the go install command is telling you it cannot find gcc you will need to
 install [MinGW-w64](https://sourceforge.net/projects/mingw-w64/). When you do
 make sure to select *x86_64* architecture instead of the preselected *i686*
 architecture. After installation make sure to add this folder to your PATH variable:
+
 ```
 C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
 ```
@@ -66,7 +67,7 @@ On Windows you will need to use `go install -buildmode=exe ./...` instead
 - Run all tests (including integration tests which may take several minutes): `go test -timeout 20m ./...`
 - Run only unit tests: `go test -short ./...`
 
-Note: integration tests require the `goshimmer`, `wasp` and `wasp-cli` commands
+Note: integration tests require the `wasp` and `wasp-cli` commands
 in the system path (i.e. you need to run `go install ./...` before running
 tests).
 
