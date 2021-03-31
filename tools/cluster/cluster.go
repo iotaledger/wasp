@@ -212,23 +212,15 @@ func (cluster *Cluster) Start(dataPath string) error {
 func (cluster *Cluster) start(dataPath string) error {
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", cluster.Config.Wasp.NumNodes)
 
-	initOk := make(chan bool, cluster.Config.Wasp.NumNodes)
-
 	if !cluster.Config.Goshimmer.Provided {
-		goshimmer := mocknode.Start(
+		cluster.goshimmer = mocknode.Start(
 			fmt.Sprintf(":%d", cluster.Config.Goshimmer.TxStreamPort),
 			fmt.Sprintf(":%d", cluster.Config.Goshimmer.ApiPort),
-			initOk,
 		)
-		cluster.goshimmer = goshimmer
-
-		select {
-		case <-initOk:
-		case <-time.After(10 * time.Second):
-			return fmt.Errorf("Timeout starting goshimmer node\n")
-		}
 		fmt.Printf("[cluster] started goshimmer node\n")
 	}
+
+	initOk := make(chan bool, cluster.Config.Wasp.NumNodes)
 
 	for i := 0; i < cluster.Config.Wasp.NumNodes; i++ {
 		cmd, err := cluster.startServer("wasp", waspNodeDataPath(dataPath, i), fmt.Sprintf("wasp %d", i), initOk, "nanomsg publisher is running")

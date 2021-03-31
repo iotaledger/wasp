@@ -14,12 +14,8 @@ func TestMockNode(t *testing.T) {
 		t.Skip("Skipping mocknode test in short mode")
 	}
 
-	initOk := make(chan bool)
-
-	m := Start(":5000", ":8080", initOk)
+	m := Start(":5000", ":8080")
 	defer m.Stop()
-
-	<-initOk
 
 	time.Sleep(1 * time.Second)
 

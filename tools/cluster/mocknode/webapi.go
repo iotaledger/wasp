@@ -2,6 +2,7 @@ package mocknode
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 
@@ -14,39 +15,39 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func (m *MockNode) startWebAPI(bindAddress string, initOk chan<- bool) {
-	e := echo.New()
-	e.HideBanner = true
-	e.HidePort = true
-	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
-	}))
+func (m *MockNode) startWebAPI(bindAddress string) {
+	l, err := net.Listen("tcp", bindAddress)
+	if err != nil {
+		panic(err)
+	}
 
-	m.addEndpoints(e)
-
-	stopped := make(chan struct{})
 	go func() {
-		defer close(stopped)
-
-		l, err := net.Listen("tcp", bindAddress)
-		if err != nil {
-			e.Logger.Fatal(err)
-		}
+		e := echo.New()
+		e.HideBanner = true
+		e.HidePort = true
+		e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+			Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
+		}))
 		e.Listener = l
 
-		initOk <- true
+		m.addEndpoints(e)
 
-		if err := e.Start(""); err != nil {
-			if !errors.Is(err, http.ErrServerClosed) {
-				m.log.Error(err)
+		stopped := make(chan struct{})
+		go func() {
+			defer close(stopped)
+
+			if err := e.Start(""); err != nil {
+				if !errors.Is(err, http.ErrServerClosed) {
+					m.log.Error(err)
+				}
 			}
+		}()
+
+		select {
+		case <-m.shutdownSignal:
+		case <-stopped:
 		}
 	}()
-
-	select {
-	case <-m.shutdownSignal:
-	case <-stopped:
-	}
 }
 
 func (m *MockNode) addEndpoints(e *echo.Echo) {
@@ -129,17 +130,19 @@ func (m *MockNode) sendTransactionHandler(c echo.Context) error {
 
 func (m *MockNode) requestFundsHandler(c echo.Context) error {
 	var request webapi_faucet.Request
-	var addr ledgerstate.Address
 	if err := c.Bind(&request); err != nil {
 		return c.JSON(http.StatusBadRequest, webapi_faucet.Response{Error: err.Error()})
 	}
 
 	addr, err := ledgerstate.AddressFromBase58EncodedString(request.Address)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, webapi_faucet.Response{Error: "Invalid address"})
+		return c.JSON(http.StatusBadRequest, webapi_faucet.Response{Error: fmt.Sprintf("invalid address (%s): %s", request.Address, err.Error())})
 	}
 
 	err = m.Ledger.RequestFunds(addr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, webapi_faucet.Response{Error: fmt.Sprintf("ledger.RequestFunds: %s", err.Error())})
+	}
 
 	return c.JSON(http.StatusOK, webapi_faucet.Response{ID: tangle.EmptyMessageID.String()})
 }
