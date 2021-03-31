@@ -4,9 +4,10 @@
 package chainimpl
 
 import (
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/sctransaction"
-	"time"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -106,7 +107,7 @@ func (c *chainObj) checkReady() bool {
 		c.onActivation()
 
 		c.log.Infof("committee now is fully initialized")
-		publisher.Publish("active_committee", c.chainID.String())
+		publisher.Publish("active_committee", c.chainID.Base58())
 	}
 	return c.isReady()
 }

@@ -10,9 +10,11 @@ import (
 	"github.com/spf13/pflag"
 )
 
-var committee []int
-var quorum int
-var description string
+var (
+	committee   []int
+	quorum      int
+	description string
+)
 
 func initDeployFlags(flags *pflag.FlagSet) {
 	flags.IntSliceVarP(&committee, "committee", "", []int{0, 1, 2, 3}, "committee indices")
@@ -36,5 +38,5 @@ func deployCmd(args []string) {
 	})
 	log.Check(err)
 
-	AddChainAlias(alias, chainid.String())
+	AddChainAlias(alias, chainid.Base58())
 }
