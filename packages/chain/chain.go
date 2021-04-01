@@ -168,7 +168,7 @@ type mempoolConstructor func(cache coretypes.BlobCache) Mempool
 var mempoolConstructorFun mempoolConstructor
 var mempoolConstructorFunMutex sync.Mutex
 
-func RegisterMempoollConstructor(constr mempoolConstructor) {
+func RegisterMempoolConstructor(constr mempoolConstructor) {
 	mempoolConstructorFunMutex.Lock()
 	defer mempoolConstructorFunMutex.Unlock()
 

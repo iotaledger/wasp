@@ -37,6 +37,8 @@ func run(_ *node.Plugin) {
 		}
 		allChains.Attach(nodeconn.NodeConnection())
 
+		initialized.SetReady()
+
 		<-shutdownSignal
 
 		log.Info("dismissing chains...")
