@@ -132,9 +132,14 @@ func (c *chainObj) Dismiss() {
 
 		close(c.chMsg)
 
-		c.committee.Close()
+		c.mempool.Close()
 		c.stateMgr.Close()
-		c.consensus.Close()
+		if c.committee != nil {
+			c.committee.Close()
+		}
+		if c.consensus != nil {
+			c.consensus.Close()
+		}
 	})
 
 	publisher.Publish("dismissed_chain", c.chainID.Base58())
