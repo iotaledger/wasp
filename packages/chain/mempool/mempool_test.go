@@ -8,7 +8,6 @@ import (
 )
 
 func TestMempool(t *testing.T) {
-	chain.RegisterMempoolConstructor(newMempool)
 	m := chain.NewMempool(solo.NewDummyBlobCache())
 	time.Sleep(2 * time.Second)
 	m.Close()
