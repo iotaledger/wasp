@@ -7,7 +7,7 @@ import (
 
 func chainCommittee() []int {
 	chainID := GetCurrentChainID()
-	committee, err := config.WaspClient().GetCommitteeRecord(chainID.AsAddress())
+	committee, err := config.WaspClient().GetCommitteeForChain(chainID)
 	log.Check(err)
 
 	r := []int{}

@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
+	"github.com/iotaledger/wasp/plugins/chains"
 )
 
 func addCommitteeRecordEndpoints(adm echoswagger.ApiGroup) {
@@ -29,6 +30,11 @@ func addCommitteeRecordEndpoints(adm echoswagger.ApiGroup) {
 	adm.GET(routes.GetCommitteeRecord(":address"), handleGetCommitteeRecord).
 		SetSummary("Find the committee record for the given address").
 		AddParamPath("", "address", "Address (base58)").
+		AddResponse(http.StatusOK, "Committee Record", example, nil)
+
+	adm.GET(routes.GetCommitteeForChain(":chainID"), handleGetCommitteeForChain).
+		SetSummary("Find the committee record that manages the given chain").
+		AddParamPath("", "chainID", "ChainID (base58)").
 		AddResponse(http.StatusOK, "Committee Record", example, nil)
 }
 
@@ -62,6 +68,26 @@ func handleGetCommitteeRecord(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
+	cr, err := registry.CommitteeRecordFromRegistry(address)
+	if err != nil {
+		return err
+	}
+	if cr == nil {
+		return httperrors.NotFound(fmt.Sprintf("Record not found: %s", address))
+	}
+	return c.JSON(http.StatusOK, model.NewCommitteeRecord(cr))
+}
+
+func handleGetCommitteeForChain(c echo.Context) error {
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
+	if err != nil {
+		return httperrors.BadRequest(err.Error())
+	}
+	chain := chains.AllChains().Get(chainID)
+	if chain == nil {
+		return httperrors.NotFound(fmt.Sprintf("Active chain %s not found", chainID))
+	}
+	address := chain.Committee().DKShare().Address
 	cr, err := registry.CommitteeRecordFromRegistry(address)
 	if err != nil {
 		return err
