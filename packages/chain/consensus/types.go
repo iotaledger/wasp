@@ -116,6 +116,10 @@ func (op *operator) Close() {
 
 func (op *operator) recvLoop() {
 	for {
+		if !op.committee.IsReady() {
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
 		select {
 		case msg, ok := <-op.eventStateTransitionMsgCh:
 			if ok {

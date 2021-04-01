@@ -22,6 +22,7 @@ type Committee interface {
 	Chain() Chain // TODO temporary. Used for BlobCache access inside consensus. Not needed in the future
 	Size() uint16
 	Quorum() uint16
+	IsReady() bool
 	OwnPeerIndex() uint16
 	DKShare() *tcrypto.DKShare
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error

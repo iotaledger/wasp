@@ -4,6 +4,7 @@ package globals
 import (
 	"github.com/iotaledger/hive.go/node"
 	_ "github.com/iotaledger/wasp/contracts/native/inccounter"
+	_ "github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 )
 

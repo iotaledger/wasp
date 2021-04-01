@@ -2,6 +2,9 @@ package chainimpl
 
 import (
 	"fmt"
+	"github.com/iotaledger/hive.go/logger"
+	"go.uber.org/atomic"
+	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -15,6 +18,7 @@ import (
 
 type committeeObj struct {
 	chainObj    chain.Chain
+	isReady     *atomic.Bool
 	netProvider peering.NetworkProvider
 	peers       peering.GroupProvider
 	peeringID   peering.PeeringID
@@ -23,9 +27,10 @@ type committeeObj struct {
 	ownIndex    uint16
 	dkshare     *tcrypto.DKShare
 	attachID    interface{}
+	log         *logger.Logger
 }
 
-func NewCommittee(chainObj chain.Chain, stateAddr ledgerstate.Address, netProvider peering.NetworkProvider, dksProvider tcrypto.RegistryProvider) (chain.Committee, error) {
+func NewCommittee(chainObj chain.Chain, stateAddr ledgerstate.Address, netProvider peering.NetworkProvider, dksProvider tcrypto.RegistryProvider, log *logger.Logger) (chain.Committee, error) {
 	cmtRec, err := registry.CommitteeRecordFromRegistry(stateAddr)
 	if err != nil || cmtRec == nil {
 		return nil, xerrors.Errorf(
@@ -54,8 +59,10 @@ func NewCommittee(chainObj chain.Chain, stateAddr ledgerstate.Address, netProvid
 			netProvider.Self().NetID(), cmtRec.Nodes, err,
 		)
 	}
-	return &committeeObj{
+
+	ret := &committeeObj{
 		chainObj:    chainObj,
+		isReady:     atomic.NewBool(false),
 		peers:       peers,
 		peeringID:   chainObj.ID().Array(), // TODO: Maybe we need to use different ID here.
 		netProvider: netProvider,
@@ -63,7 +70,11 @@ func NewCommittee(chainObj chain.Chain, stateAddr ledgerstate.Address, netProvid
 		quorum:      dkshare.T,
 		ownIndex:    *dkshare.Index,
 		dkshare:     dkshare,
-	}, nil
+		log:         log,
+	}
+	go ret.waitReady()
+
+	return ret, nil
 }
 
 func (c *committeeObj) Size() uint16 {
@@ -72,6 +83,10 @@ func (c *committeeObj) Size() uint16 {
 
 func (c *committeeObj) Quorum() uint16 {
 	return c.quorum
+}
+
+func (c *committeeObj) IsReady() bool {
+	return c.isReady.Load()
 }
 
 func (c *committeeObj) OwnPeerIndex() uint16 {
@@ -162,6 +177,7 @@ func (c *committeeObj) OnPeerMessage(fun func(recv *peering.RecvEvent)) {
 }
 
 func (c *committeeObj) Close() {
+	c.isReady.Store(false)
 	c.peers.Detach(c.attachID)
 	c.peers.Close()
 }
@@ -172,4 +188,13 @@ func (c *committeeObj) FeeDestination() coretypes.AgentID {
 
 func (c *committeeObj) Chain() chain.Chain {
 	return c.chainObj
+}
+
+func (c *committeeObj) waitReady() {
+	c.log.Infof("wait for at least quorum of comittee peers (%d) to connect before activating the committee", c.Quorum())
+	for !c.QuorumIsAlive() {
+		time.Sleep(500 * time.Millisecond)
+	}
+	c.log.Infof("peer status: %s", c.PeerStatus())
+	c.isReady.Store(true)
 }
