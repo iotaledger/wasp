@@ -24,6 +24,10 @@ type request struct {
 	seen            map[uint16]bool
 }
 
+func init() {
+	chain.RegisterMempoolConstructor(newMempool)
+}
+
 var _ chain.Mempool = &mempool{}
 
 func newMempool(blobCache coretypes.BlobCache) chain.Mempool {
