@@ -5,11 +5,9 @@ package chainimpl
 
 import (
 	"bytes"
-	"sync"
-	"time"
-
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/wasp/packages/chain/consensus"
+	"sync"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -82,22 +80,6 @@ func newChainObj(
 		for msg := range ret.chMsg {
 			ret.dispatchMessage(msg)
 		}
-	}()
-	go func() {
-		ret.log.Infof("wait for at least quorum of peers (%d) connected before activating the committee", ret.committee.Quorum())
-		for !ret.committee.QuorumIsAlive() && !ret.IsDismissed() {
-			time.Sleep(500 * time.Millisecond)
-		}
-		ret.log.Infof("peer status: %s", ret.committee.PeerStatus())
-		ret.SetQuorumOfConnectionsReached()
-
-		go func() {
-			ret.log.Infof("wait for %s more before activating the committee", chain.AdditionalConnectPeriod)
-			time.Sleep(chain.AdditionalConnectPeriod)
-			ret.log.Infof("connection period is over. Peer status: %s", ret.committee.PeerStatus())
-
-			ret.SetConnectPeriodOver()
-		}()
 	}()
 	return ret
 }
@@ -287,7 +269,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	}
 	c.committee, c.consensus = nil, nil
 	var err error
-	if c.committee, err = NewCommittee(c, msg.ChainOutput.GetStateAddress(), c.netProvider, c.dksProvider); err != nil {
+	if c.committee, err = NewCommittee(c, msg.ChainOutput.GetStateAddress(), c.netProvider, c.dksProvider, c.log); err != nil {
 		c.committee = nil
 		c.log.Errorf("failed to create committee object for address %s. ChainID: %s",
 			msg.ChainOutput.GetStateAddress(), c.chainID)
