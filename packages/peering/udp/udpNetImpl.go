@@ -13,7 +13,6 @@ import (
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/group"
 	"go.dedis.ch/kyber/v3"
@@ -111,9 +110,9 @@ func (n *NetImpl) Group(peerNetIDs []string) (peering.GroupProvider, error) {
 }
 
 // Attach implements peering.NetworkProvider.
-func (n *NetImpl) Attach(chainID *coretypes.ChainID, callback func(recv *peering.RecvEvent)) interface{} {
+func (n *NetImpl) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {
 	closure := events.NewClosure(func(recv *peering.RecvEvent) {
-		if chainID == nil || *chainID == recv.Msg.ChainID {
+		if peeringID == nil || *peeringID == recv.Msg.PeeringID {
 			callback(recv)
 		}
 	})

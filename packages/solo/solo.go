@@ -356,7 +356,7 @@ func (ch *Chain) collateBatch() []coretypes.Request {
 		// using logical clock
 		if onLegderRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
 			if onLegderRequest.TimeLock().Before(ch.Env.LogicalTime()) {
-				if onLegderRequest.TimeLock().UnixNano() != 0 {
+				if !onLegderRequest.TimeLock().IsZero() {
 					ch.Log.Infof("unlocked time-locked request %s", req.ID())
 				}
 				ret = append(ret, req)
@@ -387,17 +387,4 @@ func (ch *Chain) batchLoop() {
 // backlogLen is a thread-safe function to return size of the current backlog
 func (ch *Chain) backlogLen() int {
 	return int(ch.reqCounter.Load())
-}
-
-func AboveDustThreshold(m map[ledgerstate.Color]uint64) bool {
-	if len(m) == 0 {
-		return false
-	}
-	for col, bal := range DustThreshold {
-		s, _ := m[col]
-		if s < bal {
-			return false
-		}
-	}
-	return true
 }

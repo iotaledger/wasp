@@ -31,7 +31,7 @@ func handleWebSocket(c echo.Context) error {
 		c.Logger().Infof("[WebSocket] opened for %s", c.Request().RemoteAddr)
 		defer c.Logger().Infof("[WebSocket] closed for %s", c.Request().RemoteAddr)
 
-		v, _ := wsClients.LoadOrStore(chainID.String(), &sync.Map{})
+		v, _ := wsClients.LoadOrStore(chainID.Base58(), &sync.Map{})
 		chainWsClients := v.(*sync.Map)
 
 		clientCh := make(chan string)

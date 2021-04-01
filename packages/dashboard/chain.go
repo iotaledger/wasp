@@ -2,8 +2,9 @@ package dashboard
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"net/http"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -21,7 +22,7 @@ func chainBreadcrumb(e *echo.Echo, chainID coretypes.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("chain"),
 		Title: fmt.Sprintf("Chain %.8s…", chainID),
-		Href:  e.Reverse("chain", chainID.String()),
+		Href:  e.Reverse("chain", chainID.Base58()),
 	}
 }
 
@@ -59,7 +60,7 @@ func handleChain(c echo.Context) error {
 
 		result.Committee.Size = theChain.Committee().Size()
 		result.Committee.Quorum = theChain.Committee().Quorum()
-		//result.Committee.NumPeers = theChain.Committee().NumPeers()
+		// result.Committee.NumPeers = theChain.Committee().NumPeers()
 		result.Committee.HasQuorum = theChain.Committee().QuorumIsAlive()
 		result.Committee.PeerStatus = theChain.Committee().PeerStatus()
 		result.RootInfo, err = fetchRootInfo(theChain)

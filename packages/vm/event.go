@@ -22,5 +22,5 @@ func NewContractEventPublisher(chainID *coretypes.ChainID, contract coretypes.Hn
 
 func (c ContractEventPublisher) Publish(msg string) {
 	c.log.Info(c.chainID.String() + "::" + c.contract.String() + "/event " + msg)
-	publisher.Publish("vmmsg", c.chainID.String(), c.contract.String(), msg)
+	publisher.Publish("vmmsg", c.chainID.Base58(), c.contract.String(), msg)
 }

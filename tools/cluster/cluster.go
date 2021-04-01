@@ -15,6 +15,8 @@ import (
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
@@ -68,7 +70,7 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 
 	err := clu.GoshimmerClient().RequestFunds(chain.OriginatorAddress())
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("RequestFunds: %w", err)
 	}
 
 	chainid, addr, err := apilib.DeployChain(apilib.CreateChainParams{
@@ -83,7 +85,7 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 		Prefix:                "[cluster] ",
 	})
 	if err != nil {
-		return nil, err
+		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
 
 	chain.Address = addr
@@ -396,7 +398,7 @@ func (cluster *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExp
 		cmt = " (" + comment[0] + ")"
 	}
 	fmt.Printf("[cluster] Inputs of the address %s%s\n      Total tokens: %d %s\n%s\n",
-		addr.String(), cmt, total, totalExpectedStr, dumpStr)
+		addr.Base58(), cmt, total, totalExpectedStr, dumpStr)
 
 	if !assertionOk {
 		fmt.Printf("[cluster] assertion on balances failed\n")

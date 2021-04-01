@@ -17,7 +17,7 @@ func (c *WaspClient) PutChainRecord(rec *registry.ChainRecord) error {
 // GetChainRecord fetches a Record by address
 func (c *WaspClient) GetChainRecord(chainid coretypes.ChainID) (*registry.ChainRecord, error) {
 	res := &model.ChainRecord{}
-	if err := c.do(http.MethodGet, routes.GetChainRecord(chainid.String()), nil, res); err != nil {
+	if err := c.do(http.MethodGet, routes.GetChainRecord(chainid.Base58()), nil, res); err != nil {
 		return nil, err
 	}
 	return res.Record(), nil
