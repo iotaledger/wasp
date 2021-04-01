@@ -17,10 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
-func init() {
-	chain.RegisterChainConstructor(newChainObj)
-}
-
 func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
 }

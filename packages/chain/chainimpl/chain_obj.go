@@ -5,21 +5,21 @@ package chainimpl
 
 import (
 	"bytes"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
-	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"sync"
 
+	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/vm/processors"
-
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/consensus"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 )
 
@@ -48,7 +48,7 @@ type chainObj struct {
 	blobProvider                 coretypes.BlobCache
 }
 
-func newChainObj(
+func New(
 	chr *registry.ChainRecord,
 	log *logger.Logger,
 	nodeConn *txstream.Client,
@@ -61,7 +61,7 @@ func newChainObj(
 
 	chainLog := log.Named(util.Short(chr.ChainID.String()))
 	ret := &chainObj{
-		mempool:      chain.NewMempool(blobProvider),
+		mempool:      mempool.New(blobProvider),
 		procset:      processors.MustNew(),
 		chMsg:        make(chan interface{}, 100),
 		chainID:      chr.ChainID,
@@ -140,7 +140,6 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 }
 
 func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
-
 	rdr := bytes.NewReader(msg.MsgData)
 
 	switch msg.MsgType {

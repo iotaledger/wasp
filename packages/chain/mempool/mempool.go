@@ -3,12 +3,13 @@ package mempool
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
 type mempool struct {
@@ -24,13 +25,9 @@ type request struct {
 	seen            map[uint16]bool
 }
 
-func init() {
-	chain.RegisterMempoolConstructor(newMempool)
-}
-
 var _ chain.Mempool = &mempool{}
 
-func newMempool(blobCache coretypes.BlobCache) chain.Mempool {
+func New(blobCache coretypes.BlobCache) chain.Mempool {
 	ret := &mempool{
 		requests:  make(map[coretypes.RequestID]*request),
 		chStop:    make(chan bool),
