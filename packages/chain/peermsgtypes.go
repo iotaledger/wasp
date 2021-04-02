@@ -67,6 +67,8 @@ type StartProcessingBatchMsg struct {
 	PeerMsgHeader
 	// timestamp of the message. Field is set upon receive the message to sender's timestamp
 	Timestamp int64
+	// chain outputID
+	ChainOutputID ledgerstate.OutputID
 	// batch of request ids
 	RequestIDs []coretypes.RequestID
 	// reward address

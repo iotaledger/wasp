@@ -114,11 +114,6 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		}
 	case *chain.StateMsg:
 		c.processStateMessage(msgt)
-	case coretypes.Request:
-		// receive request message
-		if c.consensus != nil {
-			c.consensus.EventRequestMsg(msgt)
-		}
 	case *chain.VMResultMsg:
 		// VM finished working
 		if c.consensus != nil {
@@ -277,6 +272,6 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	c.committee.OnPeerMessage(func(recv *peering.RecvEvent) {
 		c.ReceiveMessage(recv.Msg)
 	})
-	c.consensus = consensus.New(c.committee, c.nodeConn, c.log)
+	c.consensus = consensus.New(c.mempool, c.committee, c.nodeConn, c.log)
 	c.stateMgr.SetPeers(newPeers(c.committee))
 }

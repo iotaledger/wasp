@@ -128,9 +128,14 @@ func (c *chainObj) Dismiss() {
 
 		close(c.chMsg)
 
-		c.committee.Close()
+		c.mempool.Close()
 		c.stateMgr.Close()
-		c.consensus.Close()
+		if c.committee != nil {
+			c.committee.Close()
+		}
+		if c.consensus != nil {
+			c.consensus.Close()
+		}
 	})
 
 	publisher.Publish("dismissed_chain", c.chainID.Base58())
@@ -169,7 +174,7 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 }
 
 func (c *chainObj) ReceiveRequest(req coretypes.Request) {
-	c.ReceiveMessage(req) //
+	c.mempool.ReceiveRequest(req)
 }
 
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
@@ -195,7 +200,7 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 		return chain.RequestProcessingStatusUnknown
 	}
 	if c.consensus != nil {
-		if c.consensus.IsRequestInBacklog(reqID) {
+		if c.mempool.HasRequest(reqID) {
 			return chain.RequestProcessingStatusBacklog
 		}
 	}

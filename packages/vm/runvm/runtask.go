@@ -13,12 +13,12 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// MustRunComputationsAsync runs computations for the batch of requests in the background
+// MustRunVMTaskAsync runs computations for the batch of requests in the background
 // This is the main entry point to the VM
 // TODO timeout for VM. Gas limit
-func MustRunComputationsAsync(ctx *vm.VMTask) {
+func MustRunVMTaskAsync(ctx *vm.VMTask) {
 	if len(ctx.Requests) == 0 {
-		ctx.Log.Panicf("MustRunComputationsAsync: must be at least 1 request")
+		ctx.Log.Panicf("MustRunVMTaskAsync: must be at least 1 request")
 	}
 	outputs := outputsFromRequests(ctx.Requests...)
 	txb := utxoutil.NewBuilder(append(outputs, ctx.ChainInput)...)

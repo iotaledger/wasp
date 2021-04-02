@@ -4,9 +4,6 @@
 package consensus
 
 import (
-	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -23,15 +20,12 @@ func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.setNewSCState(msg)
 
 	vh := op.currentState.Hash()
-	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v tx: %s, state hash: %s, backlog: %d",
+	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v stateOutput: %s, state hash: %s",
 		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(), op.iAmCurrentLeader(),
-		op.stateOutput.ID().String(), vh.String(), len(op.requests))
+		op.stateOutput.ID().Base58(), vh.String())
 
-	// remove all processed requests from the local backlog
-	if err := op.deleteCompletedRequests(); err != nil {
-		op.log.Errorf("deleteCompletedRequests: %v", err)
-		return
-	}
+	op.mempool.RemoveRequests(msg.RequestIDs...)
+
 	if msg.Synchronized {
 		if op.iAmCurrentLeader() {
 			op.setNextConsensusStage(consensusStageLeaderStarting)
@@ -44,27 +38,6 @@ func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.takeAction()
 }
 
-// EventRequestMsg triggered by new request msg from the node
-func (op *operator) EventRequestMsg(req coretypes.Request) {
-	op.eventRequestMsgCh <- req
-}
-
-// eventRequestMsg internal handler
-func (op *operator) eventRequestMsg(reqMsg coretypes.Request) {
-	op.log.Debugw("EventRequestMsg",
-		"reqid", reqMsg.ID().Short(),
-		"backlog req", len(op.requests),
-		"backlog notif", len(op.notificationsBacklog),
-	)
-	// place request into the backlog
-	req, _ := op.requestFromMsg(reqMsg)
-	if req == nil {
-		op.log.Warn("received already processed request id = %s", reqMsg.ID().Short())
-		return
-	}
-	op.takeAction()
-}
-
 // EventNotifyReqMsg request notification received from the peer
 func (op *operator) EventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 	op.eventNotifyReqMsgCh <- msg
@@ -73,12 +46,14 @@ func (op *operator) EventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 // eventNotifyReqMsg internal handler
 func (op *operator) eventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 	op.log.Debugw("EventNotifyReqMsg",
-		"reqIds", idsShortStr(msg.RequestIDs),
+		"reqIds", idsShortStr(msg.RequestIDs...),
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.BlockIndex,
 	)
-	op.storeNotification(msg)
-	op.markRequestsNotified([]*chain.NotifyReqMsg{msg})
+	for _, rid := range msg.RequestIDs {
+		r := rid
+		op.mempool.MarkSeenByCommitteePeer(&r, msg.SenderIndex)
+	}
 	op.takeAction()
 }
 
@@ -95,10 +70,9 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		"sender", msg.SenderIndex,
 		"ts", msg.Timestamp,
 		"batch hash", bh.String(),
-		"reqIds", idsShortStr(msg.RequestIDs),
+		"reqIds", idsShortStr(msg.RequestIDs...),
 	)
-	stateIndex, ok := op.blockIndex()
-	if !ok || msg.BlockIndex != stateIndex {
+	if op.stateOutput == nil || op.stateOutput.ID() != msg.ChainOutputID {
 		op.log.Debugf("EventStartProcessingBatchMsg: batch out of context. Won't start processing")
 		return
 	}
@@ -106,44 +80,17 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		// TODO should not happen. Probably redundant. panic?
 		op.log.Warnw("EventStartProcessingBatchMsg: ignored",
 			"sender", msg.SenderIndex,
-			"state index", stateIndex,
+			"state index", op.stateOutput.GetStateIndex(),
 			"iAmTheLeader", true,
-			"reqIds", idsShortStr(msg.RequestIDs),
+			"reqIds", idsShortStr(msg.RequestIDs...),
 		)
 		return
 	}
-	numOrig := len(msg.RequestIDs)
-	reqs := op.collectProcessableBatch(msg.RequestIDs)
-	if len(reqs) != numOrig {
-		// some request were filtered out because not messages didn't reach the node yet.
-		// can't happen? Redundant? panic?
-		op.log.Warnf("node can't process the batch: some requests are not known to the node")
+	reqs, allReady := op.mempool.TakeAllReady(time.Unix(0, msg.Timestamp), msg.RequestIDs...)
+	if !allReady {
+		op.log.Warnf("node can't process the batch: some requests are not ready on the node")
 		return
 	}
-	// TODO remove
-	//reqs = op.filterNotReadyYet(reqs)
-	//if len(reqs) != numOrig {
-	//	// do not start processing batch if some of it's requests are not ready yet
-	//	op.log.Warn("node is not ready to process the batch")
-	//	return
-	//}
-
-	// check timestamp. If the local clock is different from the timestamp from the leader more
-	// tha threshold, ignore command from the leader.
-	// Note that if leader's clock is ot synced with the peers clock significantly, committee
-	// will ignore the leader and leader will never earn reward.
-	// TODO: attack analysis
-	localts := time.Now().UnixNano()
-	diff := localts - msg.Timestamp
-	if diff < 0 {
-		diff = -diff
-	}
-	if diff > chain.MaxClockDifferenceAllowed.Nanoseconds() {
-		op.log.Warn("reject consensus on timestamp: clock difference is too big. Leader ts: %d, local ts: %d, diff: %d",
-			msg.Timestamp, localts, diff)
-		return
-	}
-
 	// start async calculation as requested by the leader
 	op.runCalculationsAsync(runCalculationsParams{
 		requests:        reqs,
@@ -292,26 +239,10 @@ func (op *operator) eventTimerMsg(msg chain.TimerTick) {
 		op.log.Infow("timer tick",
 			"#", msg,
 			"block index", si,
-			"req backlog", len(op.requests),
 			"leader", leader,
-			"selection", len(op.selectRequestsToProcess()),
-			"timelocked", timelockedToString(op.requestsTimeLocked()),
-			"notif backlog", len(op.notificationsBacklog),
 		)
 	}
 	if msg%2 == 0 {
 		op.takeAction()
 	}
-}
-
-func timelockedToString(reqs []*request) string {
-	if len(reqs) == 0 {
-		return "[]"
-	}
-	ret := make([]string, len(reqs))
-	nowis := uint32(time.Now().Unix())
-	for i := range ret {
-		ret[i] = fmt.Sprintf("%s: %d (-%d)", reqs[i].req.ID().Short(), reqs[i].timelock(), reqs[i].timelock()-nowis)
-	}
-	return fmt.Sprintf("now: %d, [%s]", nowis, strings.Join(ret, ","))
 }

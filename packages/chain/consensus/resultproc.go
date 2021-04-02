@@ -18,7 +18,7 @@ import (
 )
 
 type runCalculationsParams struct {
-	requests        []*request
+	requests        []coretypes.Request
 	leaderPeerIndex uint16
 	accrueFeesTo    coretypes.AgentID
 	timestamp       time.Time
@@ -31,31 +31,27 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		return
 	}
 	h := op.stateOutput.ID()
-	reqs := make([]coretypes.Request, len(par.requests))
-	for i, req := range par.requests {
-		reqs[i] = req.req
-	}
-	ctx := &vm.VMTask{
+	task := &vm.VMTask{
 		Processors:         op.committee.Chain().Processors(),
 		ChainInput:         op.stateOutput,
 		Entropy:            hashing.HashData(h[:]),
 		ValidatorFeeTarget: par.accrueFeesTo,
-		Requests:           reqs,
+		Requests:           par.requests,
 		Timestamp:          par.timestamp,
 		VirtualState:       op.currentState,
 		Log:                op.log,
 	}
-	ctx.OnFinish = func(_ dict.Dict, _ error, vmError error) {
+	task.OnFinish = func(_ dict.Dict, _ error, vmError error) {
 		if vmError != nil {
 			op.log.Errorf("VM task failed: %v", vmError)
 			return
 		}
 		op.committee.Chain().ReceiveMessage(&chain.VMResultMsg{
-			Task:   ctx,
+			Task:   task,
 			Leader: par.leaderPeerIndex,
 		})
 	}
-	runvm.MustRunComputationsAsync(ctx)
+	runvm.MustRunVMTaskAsync(task)
 }
 
 func (op *operator) sendResultToTheLeader(result *vm.VMTask, leader uint16) {

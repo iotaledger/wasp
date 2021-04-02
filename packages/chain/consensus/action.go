@@ -4,8 +4,8 @@
 package consensus
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -17,39 +17,11 @@ import (
 // IF IT IS REQUIRED BY THE STATE (for example if deadline achieved, if needed data is not here and similar .
 // Is called from timer ticks, also when messages received
 func (op *operator) takeAction() {
-	op.solidifyRequestArgsIfNeeded()
 	op.sendRequestNotificationsToLeader()
 	op.startCalculationsAsLeader()
 	op.checkQuorum()
 	op.rotateLeader()
 	op.pullInclusionLevel()
-}
-
-// solidifyRequestArgsIfNeeded runs through all requests and, if needed, attempts to solidify args
-func (op *operator) solidifyRequestArgsIfNeeded() {
-	if time.Now().Before(op.nextArgSolidificationDeadline) {
-		return
-	}
-	reqs := op.allRequests()
-	reqs = filterRequests(reqs, func(r *request) bool {
-		return r.hasMessage() && !r.hasSolidArgs()
-	})
-	for _, req := range reqs {
-		reqOnLedger, ok := req.req.(*sctransaction.RequestOnLedger)
-		if !ok {
-			continue
-		}
-		ok, err := reqOnLedger.SolidifyArgs(op.committee.Chain().BlobCache())
-		if err != nil {
-			req.log.Errorf("failed to solidify request arguments: %v", err)
-		} else {
-			req.argsSolid = ok
-			if ok {
-				req.log.Infof("solidified request arguments")
-			}
-		}
-	}
-	op.nextArgSolidificationDeadline = time.Now().Add(chain.CheckArgSolidificationEvery)
 }
 
 // pullInclusionLevel if it is known that result transaction was posted by the leader,
@@ -111,8 +83,8 @@ func (op *operator) startCalculationsAsLeader() {
 		// empty backlog or nothing is ready
 		return
 	}
-	reqIds := takeIds(reqs)
-	reqIdsStr := idsShortStr(reqIds)
+	reqIds := takeIDs(reqs...)
+	reqIdsStr := idsShortStr(reqIds...)
 
 	op.log.Debugf("requests selected to process. Current state: %d, Reqs: %+v", op.mustStateIndex(), reqIdsStr)
 	rewardAddress := op.getFeeDestination()
@@ -266,7 +238,39 @@ func (op *operator) setNewSCState(msg *chain.StateTransitionMsg) {
 	op.currentState = msg.VariableState
 	op.sentResultToLeader = nil
 	op.postedResultTxid = nilTxID
-	op.requestBalancesDeadline = time.Now()
 	op.resetLeader(op.stateOutput.ID().Bytes())
-	op.adjustNotifications()
+}
+
+func (op *operator) selectRequestsToProcess() []coretypes.Request {
+	preSelection := op.mempool.GetReadyListFull(op.quorum() - 1)
+	if len(preSelection) == 0 {
+		return nil
+	}
+	lattice := make([][]bool, len(preSelection))
+	for i := range lattice {
+		lattice[i] = make([]bool, op.size())
+		for peerIndex := range preSelection[i].Seen {
+			lattice[i][op.committee.OwnPeerIndex()] = true
+			if peerIndex < op.size() {
+				lattice[i][peerIndex] = true
+			}
+		}
+	}
+	// only first element in preselection
+	// it has at least quorum of seen's
+	ret := []coretypes.Request{preSelection[0].Request}
+	first := lattice[0]
+	for reqIdx, req := range preSelection[1:] {
+		countIntersect := 0
+		for i := range first {
+			if first[i] && lattice[reqIdx][i] {
+				countIntersect++
+			}
+		}
+		if countIntersect >= int(op.quorum()) {
+			ret = append(ret, req.Request)
+		}
+	}
+	op.log.Debugf("requests selected for process: %d out of total ready %d", len(ret), len(preSelection))
+	return ret
 }
