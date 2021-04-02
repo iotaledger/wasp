@@ -2,7 +2,6 @@ package mempool
 
 import (
 	"bytes"
-	"fmt"
 	"sort"
 	"sync"
 	"time"
@@ -175,7 +174,6 @@ func (m *mempool) Close() {
 
 func (m *mempool) solidificationLoop() {
 	for {
-		fmt.Printf("mempool start\n")
 		select {
 		case <-time.Tick(200 * time.Millisecond):
 			m.mutex.Lock()
@@ -189,7 +187,6 @@ func (m *mempool) solidificationLoop() {
 			}
 			m.mutex.Unlock()
 		case <-m.chStop:
-			fmt.Printf("mempool stop\n")
 			return
 		}
 	}
