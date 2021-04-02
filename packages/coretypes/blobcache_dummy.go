@@ -1,14 +1,18 @@
-package solo
+package coretypes
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"time"
 )
 
+//dummyBlobCache is supposed to be used as BlobCache in tests through
+//factory method NewDummyBlobCache
+//NOTE: Implements coretypes.BlobCache
 type dummyBlobCache struct {
 	b map[hashing.HashValue][]byte
 }
 
+//NewDummyBlobCache is a factory method for dummyBlobCache
 func NewDummyBlobCache() *dummyBlobCache {
 	return &dummyBlobCache{make(map[hashing.HashValue][]byte)}
 }

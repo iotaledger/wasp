@@ -131,7 +131,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		T:           t,
 		logger:      glbLogger,
 		utxoDB:      utxodb.New(),
-		blobCache:   NewDummyBlobCache(),
+		blobCache:   coretypes.NewDummyBlobCache(),
 		glbMutex:    &sync.RWMutex{},
 		clockMutex:  &sync.RWMutex{},
 		ledgerMutex: &sync.RWMutex{},

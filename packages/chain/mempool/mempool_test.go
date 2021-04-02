@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
 func TestMempool(t *testing.T) {
-	m := New(solo.NewDummyBlobCache())
+	m := New(coretypes.NewDummyBlobCache())
 	time.Sleep(2 * time.Second)
 	m.Close()
 	time.Sleep(1 * time.Second)
