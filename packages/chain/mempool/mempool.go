@@ -2,6 +2,7 @@ package mempool
 
 import (
 	"bytes"
+	"github.com/iotaledger/hive.go/logger"
 	"sort"
 	"sync"
 	"time"
@@ -16,6 +17,7 @@ type mempool struct {
 	requests  map[coretypes.RequestID]*request
 	chStop    chan bool
 	blobCache coretypes.BlobCache
+	log       *logger.Logger
 }
 
 type request struct {
@@ -26,11 +28,12 @@ type request struct {
 
 var _ chain.Mempool = &mempool{}
 
-func New(blobCache coretypes.BlobCache) chain.Mempool {
+func New(blobCache coretypes.BlobCache, log *logger.Logger) chain.Mempool {
 	ret := &mempool{
 		requests:  make(map[coretypes.RequestID]*request),
 		chStop:    make(chan bool),
 		blobCache: blobCache,
+		log:       log.Named("m"),
 	}
 	go ret.solidificationLoop()
 	return ret
@@ -42,6 +45,14 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 
 	if _, ok := m.requests[req.ID()]; ok {
 		return
+	}
+	if onLedgerRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
+		tl := onLedgerRequest.TimeLock()
+		if tl.IsZero() {
+			m.log.Infof("RECEIVED request %s", req.ID())
+		} else {
+			m.log.Infof("RECEIVED request %s timelocked for %v", req.ID(), tl.Sub(time.Now()))
+		}
 	}
 	m.requests[req.ID()] = &request{
 		req:             req,
@@ -77,6 +88,7 @@ func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 
 	for _, rid := range reqs {
 		delete(m.requests, rid)
+		m.log.Infof("REMOVED request %s", rid)
 	}
 }
 

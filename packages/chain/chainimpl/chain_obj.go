@@ -51,9 +51,9 @@ func NewChain(
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chr.ChainID.String())
 
-	chainLog := log.Named(chr.ChainID.Base58()[:6] + "..")
+	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
 	ret := &chainObj{
-		mempool: mempool.New(blobProvider),
+		mempool: mempool.New(blobProvider, chainLog),
 		procset: processors.MustNew(),
 		chMsg:   make(chan interface{}, 100),
 		chainID: chr.ChainID,

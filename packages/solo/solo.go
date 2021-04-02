@@ -189,6 +189,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	env.logger.Infof("     chain '%s'. state controller address: %s", chainID.String(), stateAddr.Base58())
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Base58())
 
+	chainlog := env.logger.Named(name)
 	ret := &Chain{
 		Env:                    env,
 		Name:                   name,
@@ -201,10 +202,10 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		ValidatorFeeTarget:     *feeTarget,
 		State:                  state.NewVirtualState(mapdb.NewMapDB(), &chainID),
 		proc:                   processors.MustNew(),
-		Log:                    env.logger.Named(name),
+		Log:                    chainlog,
 		//
 		runVMMutex: &sync.Mutex{},
-		mempool:    mempool.New(env.blobCache),
+		mempool:    mempool.New(env.blobCache, chainlog),
 	}
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
@@ -304,8 +305,8 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 			continue
 		}
 		chain.reqCounter.Add(int32(len(reqs)))
-		for _, reqRef := range reqs {
-			chain.addToBacklog(reqRef)
+		for _, req := range reqs {
+			chain.mempool.ReceiveRequest(req)
 		}
 	}
 }
@@ -315,18 +316,6 @@ func (ch *Chain) GetChainOutput() *ledgerstate.AliasOutput {
 	require.EqualValues(ch.Env.T, 1, len(outs))
 
 	return outs[0]
-}
-
-func (ch *Chain) addToBacklog(r coretypes.Request) {
-	ch.mempool.ReceiveRequest(r)
-	if onLedgerRequest, ok := r.(*sctransaction.RequestOnLedger); ok {
-		tl := onLedgerRequest.TimeLock()
-		if tl.IsZero() {
-			ch.Log.Infof("added to backlog: %s", r.ID())
-		} else {
-			ch.Log.Infof("added to backlog: %s. Time locked for: %v", r.ID(), tl.Sub(ch.Env.LogicalTime()))
-		}
-	}
 }
 
 // collateBatch selects requests which are not time locked
