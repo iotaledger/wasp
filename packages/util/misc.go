@@ -31,3 +31,10 @@ func UnixAfterSec(sec int) uint32 {
 func TimeNowUnix() uint32 {
 	return uint32(time.Now().Unix())
 }
+
+func MinInt(i int, j int) int {
+	if i < j {
+		return i
+	}
+	return j
+}

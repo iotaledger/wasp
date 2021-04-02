@@ -7,8 +7,11 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
 	"math/rand"
@@ -99,11 +102,9 @@ type Chain struct {
 	proc *processors.ProcessorCache
 
 	// related to asynchronous backlog processing
-	runVMMutex   *sync.Mutex
-	reqCounter   atomic.Int32
-	chInRequest  chan coretypes.Request
-	backlog      []coretypes.Request
-	backlogMutex *sync.RWMutex
+	runVMMutex *sync.Mutex
+	reqCounter atomic.Int32
+	backlog    chain.Mempool
 }
 
 var (
@@ -203,10 +204,8 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		proc:                   processors.MustNew(),
 		Log:                    env.logger.Named(name),
 		//
-		runVMMutex:   &sync.Mutex{},
-		chInRequest:  make(chan coretypes.Request),
-		backlog:      make([]coretypes.Request, 0),
-		backlogMutex: &sync.RWMutex{},
+		runVMMutex: &sync.Mutex{},
+		backlog:    mempool.New(env.blobCache),
 	}
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
@@ -233,7 +232,6 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	env.chains[chainID.Array()] = ret
 	env.glbMutex.Unlock()
 
-	go ret.readRequestsLoop()
 	go ret.batchLoop()
 
 	initReq, err := env.RequestsForChain(initTx, chainID)
@@ -305,7 +303,7 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 		}
 		chain.reqCounter.Add(int32(len(reqs)))
 		for _, reqRef := range reqs {
-			chain.chInRequest <- reqRef
+			chain.addToBacklog(reqRef)
 		}
 	}
 }
@@ -317,20 +315,12 @@ func (ch *Chain) GetChainOutput() *ledgerstate.AliasOutput {
 	return outs[0]
 }
 
-func (ch *Chain) readRequestsLoop() {
-	for r := range ch.chInRequest {
-		ch.addToBacklog(r)
-	}
-}
-
 func (ch *Chain) addToBacklog(r coretypes.Request) {
-	ch.backlogMutex.Lock()
-	defer ch.backlogMutex.Unlock()
-	ch.backlog = append(ch.backlog, r)
+	ch.backlog.ReceiveRequest(r)
 	if onLedgerRequest, ok := r.(*sctransaction.RequestOnLedger); ok {
 		tl := onLedgerRequest.TimeLock()
 		if tl.UnixNano() == 0 {
-			ch.Log.Infof("added to backlog: %s len: %d", r.ID(), len(ch.backlog))
+			ch.Log.Infof("added to backlog: %s", r.ID())
 		} else {
 			ch.Log.Infof("added to backlog: %s. Time locked for: %v", r.ID(), tl.Sub(ch.Env.LogicalTime()))
 		}
@@ -340,19 +330,13 @@ func (ch *Chain) addToBacklog(r coretypes.Request) {
 // collateBatch selects requests which are not time locked
 // returns batch and and 'remains unprocessed' flag
 func (ch *Chain) collateBatch() []coretypes.Request {
-	ch.backlogMutex.Lock()
-	defer ch.backlogMutex.Unlock()
-
 	// emulating variable sized blocks
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
 	ret := make([]coretypes.Request, 0)
-	remain := ch.backlog[:0]
-	for _, req := range ch.backlog {
-		if len(ret) >= maxBatch {
-			remain = append(remain, req)
-			continue
-		}
+	ready := ch.backlog.GetReadyList(0)
+	ready = ready[:util.MinInt(len(ready), maxBatch)]
+	for _, req := range ready {
 		// using logical clock
 		if onLegderRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
 			if onLegderRequest.TimeLock().Before(ch.Env.LogicalTime()) {
@@ -365,7 +349,6 @@ func (ch *Chain) collateBatch() []coretypes.Request {
 			ret = append(ret, req)
 		}
 	}
-	ch.backlog = remain
 	return ret
 }
 
