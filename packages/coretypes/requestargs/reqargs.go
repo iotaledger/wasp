@@ -3,6 +3,7 @@ package requestargs
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -106,11 +107,12 @@ func (a RequestArgs) Read(r io.Reader) error {
 }
 
 // SolidifyRequestArguments decodes RequestArgs.
-// each value treated according to the value of the first byte:
-//  - if the value is '*' the data is a content reference. First 32 bytes always treated as data hash.
+// each key-value pair ir treated according to the first byte of the key:
+//  - if the key starts with '*' the value is a content reference.
+//    First 32 bytes of the value are always treated as data hash.
 //    The rest (if any) is a content address. It will be treated by a downloader
-//  - otherwise it is a raw data
-func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache) (dict.Dict, bool, error) {
+//  - otherwise, value is treated a raw data and the first byte of the key is ignored
+func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache, downloaderOpt ...*downloader.Downloader) (dict.Dict, bool, error) {
 	ret := dict.New()
 	ok := true
 	var err error
@@ -143,6 +145,13 @@ func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache) (dict.Dic
 			return false
 		}
 		if !ok {
+			var downloaderObj *downloader.Downloader
+			if len(downloaderOpt) > 0 {
+				downloaderObj = downloaderOpt[0]
+			} else {
+				downloaderObj = downloader.GetDefaultDownloader()
+			}
+			downloaderObj.DownloadAndStore(h, string(value[hashing.HashSize:]), reg)
 			ok = false
 			return false
 		}
