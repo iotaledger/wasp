@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/util"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
 	"math/rand"
@@ -104,7 +103,7 @@ type Chain struct {
 	// related to asynchronous backlog processing
 	runVMMutex *sync.Mutex
 	reqCounter atomic.Int32
-	backlog    chain.Mempool
+	mempool    chain.Mempool
 }
 
 var (
@@ -205,7 +204,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		Log:                    env.logger.Named(name),
 		//
 		runVMMutex: &sync.Mutex{},
-		backlog:    mempool.New(env.blobCache),
+		mempool:    mempool.New(env.blobCache),
 	}
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
@@ -316,7 +315,7 @@ func (ch *Chain) GetChainOutput() *ledgerstate.AliasOutput {
 }
 
 func (ch *Chain) addToBacklog(r coretypes.Request) {
-	ch.backlog.ReceiveRequest(r)
+	ch.mempool.ReceiveRequest(r)
 	if onLedgerRequest, ok := r.(*sctransaction.RequestOnLedger); ok {
 		tl := onLedgerRequest.TimeLock()
 		if tl.UnixNano() == 0 {
@@ -334,8 +333,12 @@ func (ch *Chain) collateBatch() []coretypes.Request {
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
 	ret := make([]coretypes.Request, 0)
-	ready := ch.backlog.GetReadyList(0)
-	ready = ready[:util.MinInt(len(ready), maxBatch)]
+	ready := ch.mempool.GetReadyList(0)
+	batchSize := len(ready)
+	if batchSize > maxBatch {
+		batchSize = maxBatch
+	}
+	ready = ready[:batchSize]
 	for _, req := range ready {
 		// using logical clock
 		if onLegderRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
