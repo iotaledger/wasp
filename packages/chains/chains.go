@@ -1,8 +1,9 @@
 package chains
 
 import (
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"sync"
+
+	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 
 	"golang.org/x/xerrors"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	registry_pkg "github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/peering"
@@ -92,15 +94,10 @@ func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
 	}
 	// create new chain object
 	defaultRegistry := registry.DefaultRegistry()
-	ch := chain.New(chr, c.log, c.nodeConn, peering.DefaultNetworkProvider(), defaultRegistry, defaultRegistry, func() {
+	c.allChains[chainArr] = chainimpl.New(chr, c.log, c.nodeConn, peering.DefaultNetworkProvider(), defaultRegistry, defaultRegistry, func() {
 		c.nodeConn.Subscribe(chr.ChainID.AliasAddress)
 	})
-	if ch != nil {
-		c.allChains[chainArr] = ch
-		c.log.Infof("activated chain:\n%s", chr.String())
-	} else {
-		c.log.Infof("failed to activate chain:\n%s", chr.String())
-	}
+	c.log.Infof("activated chain:\n%s", chr.String())
 	return nil
 }
 

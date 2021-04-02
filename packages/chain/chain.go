@@ -5,17 +5,14 @@ package chain
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"sync"
-	"time"
 )
 
 type Committee interface {
@@ -131,57 +128,3 @@ const (
 	RequestProcessingStatusBacklog
 	RequestProcessingStatusCompleted
 )
-
-type chainConstructor func(
-	chr *registry.ChainRecord,
-	log *logger.Logger,
-	nodeConn *txstream.Client,
-	netProvider peering.NetworkProvider,
-	dksProvider tcrypto.RegistryProvider,
-	blobProvider coretypes.BlobCache,
-	onActivation func(),
-) Chain
-
-var constructorNew chainConstructor
-var constructorNewMutex sync.Mutex
-
-func RegisterChainConstructor(constr chainConstructor) {
-	constructorNewMutex.Lock()
-	defer constructorNewMutex.Unlock()
-
-	if constructorNew != nil {
-		panic("RegisterChainConstructor: already registered")
-	}
-	constructorNew = constr
-}
-
-func New(
-	chr *registry.ChainRecord,
-	log *logger.Logger,
-	nodeConn *txstream.Client,
-	netProvider peering.NetworkProvider,
-	dksProvider tcrypto.RegistryProvider,
-	blobProvider coretypes.BlobCache,
-	onActivation func(),
-) Chain {
-	return constructorNew(chr, log, nodeConn, netProvider, dksProvider, blobProvider, onActivation)
-}
-
-type mempoolConstructor func(cache coretypes.BlobCache) Mempool
-
-var mempoolConstructorFun mempoolConstructor
-var mempoolConstructorFunMutex sync.Mutex
-
-func RegisterMempoolConstructor(constr mempoolConstructor) {
-	mempoolConstructorFunMutex.Lock()
-	defer mempoolConstructorFunMutex.Unlock()
-
-	if mempoolConstructorFun != nil {
-		panic("RegistermempoolConstructor: already registered")
-	}
-	mempoolConstructorFun = constr
-}
-
-func NewMempool(blobCache coretypes.BlobCache) Mempool {
-	return mempoolConstructorFun(blobCache)
-}
