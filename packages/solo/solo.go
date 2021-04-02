@@ -318,7 +318,7 @@ func (ch *Chain) addToBacklog(r coretypes.Request) {
 	ch.mempool.ReceiveRequest(r)
 	if onLedgerRequest, ok := r.(*sctransaction.RequestOnLedger); ok {
 		tl := onLedgerRequest.TimeLock()
-		if tl.UnixNano() == 0 {
+		if tl.IsZero() {
 			ch.Log.Infof("added to backlog: %s", r.ID())
 		} else {
 			ch.Log.Infof("added to backlog: %s. Time locked for: %v", r.ID(), tl.Sub(ch.Env.LogicalTime()))
