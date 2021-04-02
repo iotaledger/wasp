@@ -378,6 +378,7 @@ func (ch *Chain) backlogLen() int {
 	return int(ch.reqCounter.Load())
 }
 
+// solidifies request arguments without mempool (only for solo)
 func (ch *Chain) solidifyRequest(r coretypes.Request) {
 	onLedgerRequest, ok := r.(*sctransaction.RequestOnLedger)
 	require.True(ch.Env.T, ok)
