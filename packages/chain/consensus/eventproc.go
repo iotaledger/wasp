@@ -46,7 +46,7 @@ func (op *operator) EventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 // eventNotifyReqMsg internal handler
 func (op *operator) eventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 	op.log.Debugw("EventNotifyReqMsg",
-		"reqIds", msg.RequestIDs,
+		"reqIds", idsShortStr(msg.RequestIDs...),
 		"sender", msg.SenderIndex,
 		"stateIdx", msg.BlockIndex,
 	)
@@ -70,7 +70,7 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		"sender", msg.SenderIndex,
 		"ts", msg.Timestamp,
 		"batch hash", bh.String(),
-		"reqIds", msg.RequestIDs,
+		"reqIds", idsShortStr(msg.RequestIDs...),
 	)
 	if op.stateOutput == nil || op.stateOutput.ID() != msg.ChainOutputID {
 		op.log.Debugf("EventStartProcessingBatchMsg: batch out of context. Won't start processing")
@@ -82,7 +82,7 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 			"sender", msg.SenderIndex,
 			"state index", op.stateOutput.GetStateIndex(),
 			"iAmTheLeader", true,
-			"reqIds", msg.RequestIDs,
+			"reqIds", idsShortStr(msg.RequestIDs...),
 		)
 		return
 	}
