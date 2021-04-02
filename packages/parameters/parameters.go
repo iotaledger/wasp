@@ -30,6 +30,8 @@ const (
 	PeeringPort    = "peering.port"
 
 	NanomsgPublisherPort = "nanomsg.port"
+
+	IpfsGatewayAddress = "ipfs.gatewayAddress"
 )
 
 func InitFlags() {
@@ -57,6 +59,8 @@ func InitFlags() {
 	flag.String(PeeringMyNetId, "127.0.0.1:4000", "node host address as it is recognized by other peers")
 
 	flag.Int(NanomsgPublisherPort, 5550, "the port for nanomsg even publisher")
+
+	flag.String(IpfsGatewayAddress, "https://ipfs.io/", "the address of HTTP(s) gateway to which download from ipfs requests will be forwarded")
 }
 
 func GetBool(name string) bool {

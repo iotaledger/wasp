@@ -52,7 +52,7 @@ type Solo struct {
 	T           *testing.T
 	logger      *logger.Logger
 	utxoDB      *utxodb.UtxoDB
-	blobCache   coretypes.BlobCacheFull
+	blobCache   coretypes.BlobCache
 	glbMutex    *sync.RWMutex
 	ledgerMutex *sync.RWMutex
 	clockMutex  *sync.RWMutex

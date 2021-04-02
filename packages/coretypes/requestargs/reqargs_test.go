@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -120,7 +121,7 @@ func TestRequestArguments4(t *testing.T) {
 	db := dbprovider.NewInMemoryDBProvider(log)
 	reg := registry.NewRegistry(nil, log, db)
 
-	_, ok, err := r.SolidifyRequestArguments(reg)
+	_, ok, err := r.SolidifyRequestArguments(reg, downloader.New(log, "http://some.fake.address.lt"))
 	require.NoError(t, err)
 	require.False(t, ok)
 }
