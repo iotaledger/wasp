@@ -1,7 +1,6 @@
 package mempool
 
 import (
-	"bytes"
 	"github.com/iotaledger/hive.go/logger"
 	"sort"
 	"sync"
@@ -49,9 +48,9 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	if onLedgerRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
 		tl := onLedgerRequest.TimeLock()
 		if tl.IsZero() {
-			m.log.Infof("RECEIVED request %s", req.ID())
+			m.log.Infof("IN MEMPOOL %s", req.ID())
 		} else {
-			m.log.Infof("RECEIVED request %s timelocked for %v", req.ID(), tl.Sub(time.Now()))
+			m.log.Infof("IN MEMPOOL %s timelocked for %v", req.ID(), tl.Sub(time.Now()))
 		}
 	}
 	m.requests[req.ID()] = &request{
@@ -88,7 +87,7 @@ func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 
 	for _, rid := range reqs {
 		delete(m.requests, rid)
-		m.log.Infof("REMOVED request %s", rid)
+		m.log.Infof("OUT MEMPOOL %s", rid)
 	}
 }
 
@@ -125,7 +124,7 @@ func (m *mempool) GetReadyList(seenThreshold uint16) []coretypes.Request {
 		}
 	}
 	sort.Slice(ret, func(i, j int) bool {
-		return bytes.Compare(ret[i].Output().ID().Bytes(), ret[j].Output().ID().Bytes()) < 0
+		return ret[i].Order() < ret[j].Order()
 	})
 	return ret
 }
@@ -149,7 +148,7 @@ func (m *mempool) GetReadyListFull(seenThreshold uint16) []*chain.ReadyListRecor
 		}
 	}
 	sort.Slice(ret, func(i, j int) bool {
-		return bytes.Compare(ret[i].Request.Output().ID().Bytes(), ret[j].Request.Output().ID().Bytes()) < 0
+		return ret[i].Request.Order() < ret[j].Request.Order()
 	})
 	return ret
 }
@@ -178,6 +177,27 @@ func (m *mempool) HasRequest(id coretypes.RequestID) bool {
 
 	rec, ok := m.requests[id]
 	return ok && rec.req != nil
+}
+
+// Stats return total number, number with messages, number solid
+func (m *mempool) Stats() (int, int, int) {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	total := len(m.requests)
+	withMsg, solid := 0, 0
+	for _, req := range m.requests {
+		if req.req == nil {
+			continue
+		}
+		withMsg++
+		if onTangleRequest, ok := req.req.(*sctransaction.RequestOnLedger); ok {
+			if isSolid, _ := onTangleRequest.SolidifyArgs(m.blobCache); isSolid {
+				solid++
+			}
+		}
+	}
+	return total, withMsg, solid
 }
 
 func (m *mempool) Close() {

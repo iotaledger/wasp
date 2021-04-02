@@ -127,12 +127,11 @@ func (req *RequestOnLedger) IsFeePrepaid() bool {
 }
 
 func (req *RequestOnLedger) Output() ledgerstate.Output {
-	return req.output()
+	return req.outputObj
 }
 
-//TODO inline this in Output()?
-func (req *RequestOnLedger) output() *ledgerstate.ExtendedLockedOutput {
-	return req.outputObj
+func (req *RequestOnLedger) Order() uint64 {
+	return uint64(req.outputObj.TimeLock().UnixNano())
 }
 
 // Args returns solid args if decoded already or nil otherwise
@@ -201,56 +200,56 @@ func (req *RequestOnLedger) Short() string {
 
 // region RequestOffLedger  ///////////////////////////////////////////////////////
 
-type RequestOffLedger struct {
-	outputObj       *ledgerstate.ExtendedLockedOutput
-	senderAddress   ledgerstate.Address
-	minted          map[ledgerstate.Color]uint64
-	requestMetadata RequestMetadata
-	solidArgs       dict.Dict
-}
-
-// implements coretypes.Request interface
-var _ coretypes.Request = &RequestOffLedger{}
-
-// index == 0 for off ledger requests
-func (req *RequestOffLedger) ID() coretypes.RequestID {
-	panic("implement me")
-}
-
-// true or false for on-ledger requests, true for off-ledger
-func (req *RequestOffLedger) IsFeePrepaid() bool {
-	return true
-}
-
-// ledgerstate.Output interface for on-ledger reguests, nil for off-ledger requests
-func (req *RequestOffLedger) Output() ledgerstate.Output {
-	return nil
-}
-
-// arguments of the call. Must be != nil (solidified). No arguments means empty dictionary
-func (req *RequestOffLedger) Params() (dict.Dict, bool) {
-	return req.solidArgs, false
-}
-
-// account of the sender
-func (req *RequestOffLedger) SenderAccount() *coretypes.AgentID {
-	return coretypes.NewAgentID(req.senderAddress, req.requestMetadata.SenderContract())
-}
-
-// address of the sender for all requests,
-func (req *RequestOffLedger) SenderAddress() ledgerstate.Address {
-	return req.senderAddress
-}
-
-// returns contract/entry point pair
-func (req *RequestOffLedger) Target() (coretypes.Hname, coretypes.Hname) {
-	return req.requestMetadata.targetContract, req.requestMetadata.entryPoint
-}
-
-// always nil for off-ledger
-func (req *RequestOffLedger) Tokens() *ledgerstate.ColoredBalances {
-	return nil
-}
+//type RequestOffLedger struct {
+//	outputObj       *ledgerstate.ExtendedLockedOutput
+//	senderAddress   ledgerstate.Address
+//	minted          map[ledgerstate.Color]uint64
+//	requestMetadata RequestMetadata
+//	solidArgs       dict.Dict
+//}
+//
+//// implements coretypes.Request interface
+//var _ coretypes.Request = &RequestOffLedger{}
+//
+//// index == 0 for off ledger requests
+//func (req *RequestOffLedger) ID() coretypes.RequestID {
+//	panic("implement me")
+//}
+//
+//// true or false for on-ledger requests, true for off-ledger
+//func (req *RequestOffLedger) IsFeePrepaid() bool {
+//	return true
+//}
+//
+//// ledgerstate.Output interface for on-ledger reguests, nil for off-ledger requests
+//func (req *RequestOffLedger) Output() ledgerstate.Output {
+//	return nil
+//}
+//
+//// arguments of the call. Must be != nil (solidified). No arguments means empty dictionary
+//func (req *RequestOffLedger) Params() (dict.Dict, bool) {
+//	return req.solidArgs, false
+//}
+//
+//// account of the sender
+//func (req *RequestOffLedger) SenderAccount() *coretypes.AgentID {
+//	return coretypes.NewAgentID(req.senderAddress, req.requestMetadata.SenderContract())
+//}
+//
+//// address of the sender for all requests,
+//func (req *RequestOffLedger) SenderAddress() ledgerstate.Address {
+//	return req.senderAddress
+//}
+//
+//// returns contract/entry point pair
+//func (req *RequestOffLedger) Target() (coretypes.Hname, coretypes.Hname) {
+//	return req.requestMetadata.targetContract, req.requestMetadata.entryPoint
+//}
+//
+//// always nil for off-ledger
+//func (req *RequestOffLedger) Tokens() *ledgerstate.ColoredBalances {
+//	return nil
+//}
 
 // endregion /////////////////////////////////////////////////////////////////
 

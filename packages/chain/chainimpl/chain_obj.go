@@ -72,6 +72,7 @@ func NewChain(
 			ret.dispatchMessage(msg)
 		}
 	}()
+	ret.startTimer()
 	return ret
 }
 
@@ -108,15 +109,16 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		}
 
 	case chain.TimerTick:
-
 		if msgt%2 == 0 {
-			if c.stateMgr != nil {
-				c.stateMgr.EventTimerMsg(msgt / 2)
-			}
+			c.stateMgr.EventTimerMsg(msgt / 2)
 		} else {
 			if c.consensus != nil {
 				c.consensus.EventTimerMsg(msgt / 2)
 			}
+		}
+		if msgt%40 == 0 {
+			total, withMsg, solid := c.mempool.Stats()
+			c.log.Debugf("mempool total = %d, withMsg = %d solid = %d", total, withMsg, solid)
 		}
 	}
 }

@@ -102,6 +102,7 @@ type Mempool interface {
 	TakeAllReady(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
 	RemoveRequests(reqs ...coretypes.RequestID)
 	HasRequest(id coretypes.RequestID) bool
+	Stats() (int, int, int)
 	Close()
 }
 

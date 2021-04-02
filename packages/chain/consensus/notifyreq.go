@@ -11,7 +11,17 @@ import (
 // sendRequestNotificationsToLeader sends current leader the backlog of requests
 // it is only possible in the `consensusStageLeaderStarting` stage for non-leader
 func (op *operator) sendRequestNotificationsToLeader() {
-	readyRequests := op.mempool.GetReadyList(op.quorum())
+	stateIndex, stateExist := op.blockIndex()
+	if !stateExist {
+		return
+	}
+	if op.iAmCurrentLeader() {
+		return
+	}
+	readyRequests := op.mempool.GetReadyList(0)
+	if len(readyRequests) == 0 {
+		return
+	}
 	reqIds := takeIDs(readyRequests...)
 	currentLeaderPeerIndex, _ := op.currentLeader()
 
@@ -19,7 +29,7 @@ func (op *operator) sendRequestNotificationsToLeader() {
 
 	msgData := util.MustBytes(&chain.NotifyReqMsg{
 		PeerMsgHeader: chain.PeerMsgHeader{
-			BlockIndex: op.mustStateIndex(),
+			BlockIndex: stateIndex,
 		},
 		RequestIDs: reqIds,
 	})
@@ -27,7 +37,7 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	// send until first success, but no more than number of nodes in the committee
 	op.log.Infow("sendRequestNotificationsToLeader",
 		"leader", currentLeaderPeerIndex,
-		"state index", op.mustStateIndex(),
+		"state index", stateIndex,
 		"reqs", idsShortStr(reqIds...),
 	)
 	if err := op.committee.SendMsg(currentLeaderPeerIndex, chain.MsgNotifyRequests, msgData); err != nil {

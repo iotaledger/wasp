@@ -77,4 +77,6 @@ type Request interface {
 	Target() (Hname, Hname)
 	// always nil for off-ledger
 	Tokens() *ledgerstate.ColoredBalances
+	// number used for ordering requests in the mempool. Priority order is a descending order
+	Order() uint64
 }
