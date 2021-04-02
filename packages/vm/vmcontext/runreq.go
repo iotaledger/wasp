@@ -208,7 +208,7 @@ func (vmctx *VMContext) mustRequestToEventLog(err error) {
 	if err != nil {
 		e = err.Error()
 	}
-	reqStr := coretypes.RequestID(vmctx.req.Output().ID()).String()
+	reqStr := coretypes.OID(vmctx.req.Output().ID())
 	msg := fmt.Sprintf("[req] %s: %s", reqStr, e)
 	vmctx.log.Infof("eventlog -> '%s'", msg)
 	targetContract, _ := vmctx.req.Target()

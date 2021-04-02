@@ -191,6 +191,8 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*
 	initReq, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
 
+	ch.solidifyRequest(initReq[0])
+
 	ch.reqCounter.Add(1)
 	res, err := ch.runBatch(initReq, "post")
 	if err != nil {

@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
@@ -26,24 +25,28 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	requests := make([]coretypes.Request, len(batch))
-	for i, req := range batch {
-		// solidify arguments
-		if onLedgerRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
-			if ok, err := onLedgerRequest.SolidifyArgs(ch.Env.blobCache); err != nil || !ok {
-				return nil, fmt.Errorf("Solo inconsistency: failed to solidify request args")
-			}
-		}
-		_, solidArgs := req.Params()
-		require.True(ch.Env.T, solidArgs)
-		requests[i] = req
-	}
+	//requests := make([]coretypes.Request, len(batch))
+	//for i, req := range batch {
+	//	// solidify arguments
+	//	if onLedgerRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
+	//		if ok, err := onLedgerRequest.SolidifyArgs(ch.Env.blobCache); err != nil || !ok {
+	//			return nil, fmt.Errorf("Solo inconsistency: failed to solidify request args")
+	//		}
+	//	}
+	//	_, solidArgs := req.Params()
+	//	require.True(ch.Env.T, solidArgs)
+	//	requests[i] = req
+	//}
 
+	for _, r := range batch {
+		_, solidArgs := r.Params()
+		require.True(ch.Env.T, solidArgs)
+	}
 	timestamp := ch.Env.LogicalTime().Add(time.Duration(len(batch)) * time.Nanosecond)
 	task := &vm.VMTask{
 		Processors:         ch.proc,
 		ChainInput:         ch.GetChainOutput(),
-		Requests:           requests,
+		Requests:           batch,
 		Timestamp:          timestamp,
 		VirtualState:       ch.State.Clone(),
 		Entropy:            hashing.RandomHash(nil),

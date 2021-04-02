@@ -236,6 +236,9 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	initReq, err := env.RequestsForChain(initTx, chainID)
 	require.NoError(env.T, err)
 
+	// put to mempool and take back to solidify
+	ret.solidifyRequest(initReq[0])
+
 	ret.reqCounter.Add(1)
 	_, err = ret.runBatch(initReq, "new")
 	require.NoError(env.T, err)
@@ -373,4 +376,12 @@ func (ch *Chain) batchLoop() {
 // backlogLen is a thread-safe function to return size of the current backlog
 func (ch *Chain) backlogLen() int {
 	return int(ch.reqCounter.Load())
+}
+
+func (ch *Chain) solidifyRequest(r coretypes.Request) {
+	onLedgerRequest, ok := r.(*sctransaction.RequestOnLedger)
+	require.True(ch.Env.T, ok)
+	ok, err := onLedgerRequest.SolidifyArgs(ch.Env.blobCache)
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, ok)
 }
