@@ -113,6 +113,9 @@ func New(c chain.Chain, peers chain.PeerGroupProvider, log *logger.Logger) chain
 }
 
 func (sm *stateManager) SetPeers(p chain.PeerGroupProvider) {
+	if p != nil {
+		sm.log.Debugf("SetPeers: num = %d", p.NumPeers())
+	}
 	sm.peers = p
 	sm.pingPong = make([]bool, p.NumPeers())
 }
@@ -153,9 +156,7 @@ func (sm *stateManager) initLoadState() {
 
 		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
 	}
-
-	sm.chain.SetReadyStateManager() // Open msg queue for the committee
-	sm.recvLoop()                   // Start to process external events.
+	sm.recvLoop() // Start to process external events.
 }
 
 func (sm *stateManager) recvLoop() {

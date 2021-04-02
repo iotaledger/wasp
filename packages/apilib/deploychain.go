@@ -77,7 +77,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	// ------------ put committee records to hosts
 	err = committee.PutCommitteeRecord(&registry.CommitteeRecord{
 		Address: stateControllerAddr,
-		Nodes:   par.CommitteeApiHosts,
+		Nodes:   par.CommitteePeeringHosts,
 	})
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
@@ -121,7 +121,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 		fmt.Fprintf(textout, "posting origin transaction.. FAILED: %v\n", err)
 		return nil, nil, xerrors.Errorf("posting origin transaction: %w", err)
 	} else {
-		fmt.Fprintf(textout, "posting origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
+		fmt.Fprintf(textout, "posting origin transaction.. OK. txid: %s\n", originTx.ID().Base58())
 	}
 
 	// ------------ put chain records to hosts
@@ -134,7 +134,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 		fmt.Fprintf(textout, "sending chain data to Wasp nodes.. FAILED: %v\n", err)
 		return nil, nil, xerrors.Errorf("PutChainRecord: %w", err)
 	}
-	fmt.Fprint(textout, "sending smart contract metadata to Wasp nodes.. OK.\n")
+	fmt.Fprint(textout, "sending chain data to Wasp nodes.. OK.\n")
 
 	// ------------- activate chain
 	err = committee.ActivateChain(chainID)
@@ -163,11 +163,12 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 		par.Description,
 		allOuts...,
 	)
+	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "creating root init request.. FAILED: %v\n", err)
 		return nil, nil, xerrors.Errorf("NewRootInitRequestTransaction: %w", err)
 	}
-	fmt.Fprintf(textout, "creating root init request.. OK: %v\n", err)
+	fmt.Fprintf(textout, "creating root init request.. OK\n")
 
 	// ---------- post root init request transaction and wait for confirmation
 	err = par.Node.PostAndWaitForConfirmation(reqTx)
@@ -176,7 +177,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 		fmt.Fprintf(textout, "posting root init request transaction.. FAILED: %v\n", err)
 		return nil, nil, xerrors.Errorf("posting root init request: %w", err)
 	} else {
-		fmt.Fprintf(textout, "posting root init request transaction.. OK. Origin txid = %s\n", reqTx.ID().String())
+		fmt.Fprintf(textout, "posting root init request.. OK. txid: %s\n", reqTx.ID().Base58())
 	}
 
 	// ---------- wait until the request is processed in all committee nodes

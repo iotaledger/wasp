@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
@@ -41,7 +40,7 @@ func NewCommittee(chainObj chain.Chain, stateAddr ledgerstate.Address, netProvid
 		return nil, xerrors.Errorf(
 			"NewCommittee: failed loading DKShare for address %s: %v", stateAddr, err)
 	}
-	if util.ContainsDuplicates(cmtRec.Nodes) {
+	if containsDuplicates(cmtRec.Nodes) {
 		return nil, xerrors.Errorf(
 			"NewCommittee: committee record for %s contains duplicate node addresses: %+v",
 			stateAddr, cmtRec.Nodes)
@@ -49,7 +48,7 @@ func NewCommittee(chainObj chain.Chain, stateAddr ledgerstate.Address, netProvid
 	if dkshare.Index == nil || !iAmInTheCommittee(cmtRec.Nodes, dkshare.N, *dkshare.Index, netProvider) {
 		return nil, xerrors.Errorf(
 			"NewCommittee: chain record inconsistency. the own node %s is not in the committee for %s: %+v",
-			netProvider.Self().NetID(), cmtRec.Address, cmtRec.Nodes,
+			netProvider.Self().NetID(), cmtRec.Address.Base58(), cmtRec.Nodes,
 		)
 	}
 	var peers peering.GroupProvider
@@ -195,6 +194,18 @@ func (c *committeeObj) waitReady() {
 	for !c.QuorumIsAlive() {
 		time.Sleep(500 * time.Millisecond)
 	}
-	c.log.Infof("peer status: %s", c.PeerStatus())
+	c.log.Infof("committee is ready for addr %s", c.dkshare.Address.Base58())
+	c.log.Debugf("peer status: %s", c.PeerStatus())
 	c.isReady.Store(true)
+}
+
+func containsDuplicates(lst []string) bool {
+	for i := range lst {
+		for j := i + 1; j < len(lst); j++ {
+			if lst[i] == lst[j] {
+				return true
+			}
+		}
+	}
+	return false
 }

@@ -5,6 +5,8 @@ package chainimpl
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"golang.org/x/xerrors"
 	"sync"
 
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
@@ -18,54 +20,44 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 )
 
 type chainObj struct {
-	committee                    chain.Committee
-	mempool                      chain.Mempool
-	isReadyStateManager          bool
-	isReadyConsensus             bool
-	isConnectPeriodOver          bool
-	isQuorumOfConnectionsReached bool
-	mutexIsReady                 sync.Mutex
-	isOpenQueue                  atomic.Bool
-	dismissed                    atomic.Bool
-	dismissOnce                  sync.Once
-	onActivation                 func()
-	chainID                      coretypes.ChainID
-	procset                      *processors.ProcessorCache
-	chMsg                        chan interface{}
-	stateMgr                     chain.StateManager
-	consensus                    chain.Consensus
-	eventRequestProcessed        *events.Event
-	log                          *logger.Logger
-	nodeConn                     *txstream.Client
-	netProvider                  peering.NetworkProvider
-	dksProvider                  tcrypto.RegistryProvider
-	blobProvider                 coretypes.BlobCache
+	committee             chain.Committee
+	mempool               chain.Mempool
+	dismissed             atomic.Bool
+	dismissOnce           sync.Once
+	chainID               coretypes.ChainID
+	procset               *processors.ProcessorCache
+	chMsg                 chan interface{}
+	stateMgr              chain.StateManager
+	consensus             chain.Consensus
+	eventRequestProcessed *events.Event
+	log                   *logger.Logger
+	nodeConn              *txstream.Client
+	netProvider           peering.NetworkProvider
+	dksProvider           tcrypto.RegistryProvider
+	blobProvider          coretypes.BlobCache
 }
 
-func New(
+func NewChain(
 	chr *registry.ChainRecord,
 	log *logger.Logger,
 	nodeConn *txstream.Client,
 	netProvider peering.NetworkProvider,
 	dksProvider tcrypto.RegistryProvider,
 	blobProvider coretypes.BlobCache,
-	onActivation func(),
 ) chain.Chain {
-	log.Debugf("creating chain: %s", chr)
+	log.Debugf("creating chain object for %s", chr.ChainID.String())
 
-	chainLog := log.Named(util.Short(chr.ChainID.String()))
+	chainLog := log.Named(chr.ChainID.Base58()[:6] + "..")
 	ret := &chainObj{
-		mempool:      mempool.New(blobProvider),
-		procset:      processors.MustNew(),
-		chMsg:        make(chan interface{}, 100),
-		chainID:      chr.ChainID,
-		onActivation: onActivation,
+		mempool: mempool.New(blobProvider),
+		procset: processors.MustNew(),
+		chMsg:   make(chan interface{}, 100),
+		chainID: chr.ChainID,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
 		}),
@@ -93,10 +85,6 @@ func iAmInTheCommittee(committeeNodes []string, n, index uint16, netProvider pee
 }
 
 func (c *chainObj) dispatchMessage(msg interface{}) {
-	if !c.isOpenQueue.Load() {
-		return
-	}
-
 	switch msgt := msg.(type) {
 	case *peering.PeerMessage:
 		c.processPeerMessage(msgt)
@@ -249,6 +237,16 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 // processStateMessage processes chain output
 // If necessary, it creates/changes committee object and sends new peers to the stateManager
 func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
+	sh, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
+	if err != nil {
+		c.log.Error(xerrors.Errorf("parsing state hash: %w", err))
+		return
+	}
+	c.log.Debugw("processStateMessage",
+		"stateIndex", msg.ChainOutput.GetStateIndex(),
+		"stateHash", sh.String(),
+		"stateAddr", msg.ChainOutput.GetStateAddress().Base58(),
+	)
 	if c.committee != nil && c.committee.DKShare().Address.Equals(msg.ChainOutput.GetStateAddress()) {
 		// nothing changed in the committee
 		c.stateMgr.EventStateOutputMsg(msg)
@@ -262,16 +260,18 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 		c.consensus.Close()
 	}
 	c.committee, c.consensus = nil, nil
-	var err error
+	c.log.Debugf("creating new committee...")
 	if c.committee, err = NewCommittee(c, msg.ChainOutput.GetStateAddress(), c.netProvider, c.dksProvider, c.log); err != nil {
 		c.committee = nil
-		c.log.Errorf("failed to create committee object for address %s. ChainID: %s",
-			msg.ChainOutput.GetStateAddress(), c.chainID)
+		c.log.Errorf("failed to create committee object for address %s: %v", msg.ChainOutput.GetStateAddress(), err)
 		return
 	}
 	c.committee.OnPeerMessage(func(recv *peering.RecvEvent) {
 		c.ReceiveMessage(recv.Msg)
 	})
+	c.log.Debugf("created new committee for state address %s", msg.ChainOutput.GetStateAddress().Base58())
+
+	c.log.Debugf("creating new consensus object..")
 	c.consensus = consensus.New(c.mempool, c.committee, c.nodeConn, c.log)
 	c.stateMgr.SetPeers(newPeers(c.committee))
 }

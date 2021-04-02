@@ -25,11 +25,11 @@ func addChainEndpoints(adm echoswagger.ApiGroup) {
 }
 
 func handleActivateChain(c echo.Context) error {
-	scAddress, err := ledgerstate.AddressFromBase58EncodedString(c.Param("chainID"))
+	aliasAddress, err := ledgerstate.AliasAddressFromBase58EncodedString(c.Param("chainID"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address: %s", c.Param("address")))
+		return httperrors.BadRequest(fmt.Sprintf("Invalid alias address: %s", c.Param("chainID")))
 	}
-	chainID, err := coretypes.ChainIDFromAddress(scAddress)
+	chainID, err := coretypes.ChainIDFromAddress(aliasAddress)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func handleActivateChain(c echo.Context) error {
 		return err
 	}
 
-	log.Debugw("calling committees.Activate", "chainID", bd.ChainID.String())
+	log.Debugw("calling Chains.Activate", "chainID", bd.ChainID.String())
 	if err := chains.AllChains().Activate(bd); err != nil {
 		return err
 	}

@@ -54,8 +54,6 @@ type Chain interface {
 	ReceiveRequest(coretypes.Request)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
 
-	SetReadyStateManager() // TODO get rid
-	SetReadyConsensus()    // TODO get rid
 	Dismiss()
 	IsDismissed() bool
 	// requests

@@ -5,7 +5,10 @@ import (
 	"github.com/iotaledger/goshimmer/packages/txstream/utxodbledger"
 	"github.com/iotaledger/hive.go/logger"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
+
+const debugLogging = true
 
 // MockNode provides the bare minimum to emulate a Goshimmer node in a wasp-cluster
 // environment, namely the txstream plugin + a few web api endpoints.
@@ -45,6 +48,9 @@ func initLog() *logger.Logger {
 	log, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
+	}
+	if debugLogging {
+		log.WithOptions(zap.IncreaseLevel(zapcore.DebugLevel), zap.AddStacktrace(zapcore.PanicLevel))
 	}
 	return log.Sugar()
 }

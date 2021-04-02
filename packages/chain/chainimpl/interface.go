@@ -25,93 +25,10 @@ func (c *chainObj) Committee() chain.Committee {
 	return c.committee
 }
 
-func (c *chainObj) IsOpenQueue() bool {
-	if c.IsDismissed() {
-		return false
-	}
-	if c.isOpenQueue.Load() {
-		return true
-	}
-	c.mutexIsReady.Lock()
-	defer c.mutexIsReady.Unlock()
-
-	return c.checkReady()
-}
-
-func (c *chainObj) SetReadyStateManager() {
-	if c.IsDismissed() {
-		return
-	}
-	c.mutexIsReady.Lock()
-	defer c.mutexIsReady.Unlock()
-
-	c.isReadyStateManager = true
-	c.log.Debugf("State Manager object was created")
-	c.checkReady()
-}
-
-func (c *chainObj) SetReadyConsensus() {
-	if c.IsDismissed() {
-		return
-	}
-	c.mutexIsReady.Lock()
-	defer c.mutexIsReady.Unlock()
-
-	c.isReadyConsensus = true
-	c.log.Debugf("consensus object was created")
-	c.checkReady()
-}
-
-func (c *chainObj) SetConnectPeriodOver() {
-	if c.IsDismissed() {
-		return
-	}
-	c.mutexIsReady.Lock()
-	defer c.mutexIsReady.Unlock()
-
-	c.isConnectPeriodOver = true
-	c.log.Debugf("connect period is over")
-	c.checkReady()
-}
-
-func (c *chainObj) SetQuorumOfConnectionsReached() {
-	if c.IsDismissed() {
-		return
-	}
-	c.mutexIsReady.Lock()
-	defer c.mutexIsReady.Unlock()
-
-	c.isQuorumOfConnectionsReached = true
-	c.log.Debugf("quorum of connections has been reached")
-	c.checkReady()
-}
-
-func (c *chainObj) isReady() bool {
-	return c.isReadyConsensus &&
-		c.isReadyStateManager &&
-		c.isConnectPeriodOver &&
-		c.isQuorumOfConnectionsReached
-}
-
-func (c *chainObj) checkReady() bool {
-	if c.IsDismissed() {
-		panic("dismissed")
-	}
-	if c.isReady() {
-		c.isOpenQueue.Store(true)
-		c.startTimer()
-		c.onActivation()
-
-		c.log.Infof("committee now is fully initialized")
-		publisher.Publish("active_committee", c.chainID.Base58())
-	}
-	return c.isReady()
-}
-
 func (c *chainObj) startTimer() {
 	go func() {
 		tick := 0
-		for c.isOpenQueue.Load() {
+		for !c.IsDismissed() {
 			time.Sleep(chain.TimerTickPeriod)
 			c.ReceiveMessage(chain.TimerTick(tick))
 			tick++
@@ -123,7 +40,6 @@ func (c *chainObj) Dismiss() {
 	c.log.Infof("Dismiss chain %s", c.chainID)
 
 	c.dismissOnce.Do(func() {
-		c.isOpenQueue.Store(false)
 		c.dismissed.Store(true)
 
 		close(c.chMsg)
@@ -146,7 +62,7 @@ func (c *chainObj) IsDismissed() bool {
 }
 
 func (c *chainObj) ReceiveMessage(msg interface{}) {
-	if c.isOpenQueue.Load() {
+	if !c.IsDismissed() {
 		select {
 		case c.chMsg <- msg:
 		default:
@@ -160,6 +76,7 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 }
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
+	c.log.Debugf("ReceiveTransaction: %s", tx.ID().Base58())
 	reqs, err := sctransaction.RequestsOnLedgerFromTransaction(tx, c.chainID.AsAddress())
 	if err != nil {
 		c.log.Warnf("failed to parse transaction %s: %v", tx.ID().Base58(), err)
@@ -178,6 +95,8 @@ func (c *chainObj) ReceiveRequest(req coretypes.Request) {
 }
 
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
+	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
+		stateOutput.GetStateIndex(), coretypes.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
 	c.ReceiveMessage(&chain.StateMsg{
 		ChainOutput: stateOutput,
 		Timestamp:   timestamp,

@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
+// region RequestID ///////////////////////////////////////////////////////////////
 type RequestID ledgerstate.OutputID
 
 func RequestIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestID, error) {
@@ -42,13 +43,19 @@ func (rid RequestID) Bytes() []byte {
 }
 
 func (rid RequestID) String() string {
-	return fmt.Sprintf("[%d]%s", rid.OutputID().OutputIndex(), rid.OutputID().TransactionID().Base58())
+	return OID(rid.OutputID())
 }
 
 func (rid RequestID) Short() string {
 	txid := rid.OutputID().TransactionID().Base58()
 	return fmt.Sprintf("[%d]%s", rid.OutputID().OutputIndex(), txid[:6]+"..")
 }
+
+func OID(o ledgerstate.OutputID) string {
+	return fmt.Sprintf("[%d]%s", o.OutputIndex(), o.TransactionID().Base58())
+}
+
+// endregion ////////////////////////////////////////////////////////////////////////////////////
 
 // Request has two main implementation
 // - sctransaction.RequestOnLedger
