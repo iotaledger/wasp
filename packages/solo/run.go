@@ -88,6 +88,8 @@ func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.
 	err = newState.CommitToDb(block)
 	require.NoError(ch.Env.T, err)
 
+	ch.mempool.RemoveRequests(block.RequestIDs()...)
+
 	ch.State = newState
 
 	ch.Log.Infof("state transition #%d --> #%d. Requests in the block: %d. Outputs: %d",
