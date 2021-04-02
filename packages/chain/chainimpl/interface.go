@@ -91,6 +91,7 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 }
 
 func (c *chainObj) ReceiveRequest(req coretypes.Request) {
+	c.log.Debugf("ReceiveRequest: %s", req.ID())
 	c.mempool.ReceiveRequest(req)
 }
 

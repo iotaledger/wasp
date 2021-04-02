@@ -5,10 +5,6 @@ package chainimpl
 
 import (
 	"bytes"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"golang.org/x/xerrors"
-	"sync"
-
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -17,11 +13,14 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
+	"golang.org/x/xerrors"
+	"sync"
 )
 
 type chainObj struct {
@@ -274,4 +273,5 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	c.log.Debugf("creating new consensus object..")
 	c.consensus = consensus.New(c.mempool, c.committee, c.nodeConn, c.log)
 	c.stateMgr.SetPeers(newPeers(c.committee))
+	c.stateMgr.EventStateOutputMsg(msg)
 }

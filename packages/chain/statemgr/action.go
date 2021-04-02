@@ -6,6 +6,7 @@ package statemgr
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"strconv"
 	"time"
@@ -121,14 +122,13 @@ func (sm *stateManager) checkStateApproval() bool {
 
 		if sm.solidState != nil {
 			sm.log.Infof("STATE TRANSITION TO #%d. Chain output: %s, block size: %d",
-				pending.nextState.BlockIndex(), sm.nextStateOutput.ID().String(), pending.block.Size())
+				pending.nextState.BlockIndex(), coretypes.OID(sm.nextStateOutput.ID()), pending.block.Size())
 			sm.log.Debugf("STATE TRANSITION. State hash: %s, block essence: %s",
 				varStateHash.String(), pending.block.EssenceHash().String())
 		} else {
-			sm.log.Infof("ORIGIN STATE SAVED. Origin state output: %s",
-				sm.nextStateOutput.ID().String())
-			sm.log.Debugf("ORIGIN STATE SAVED. State hash: %s, state txid: %s, block essence: %s",
-				varStateHash.String(), sm.nextStateOutput.ID().String(), pending.block.EssenceHash().String())
+			sm.log.Infof("ORIGIN STATE SAVED. Output id: %s", coretypes.OID(sm.nextStateOutput.ID()))
+			sm.log.Debugf("ORIGIN STATE SAVED. Output id: %s, state txid: %s, block essence: %s",
+				varStateHash.String(), coretypes.OID(sm.nextStateOutput.ID()), pending.block.EssenceHash().String())
 		}
 
 	} else {
