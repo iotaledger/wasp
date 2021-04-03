@@ -183,7 +183,7 @@ func (msg *BlockHeaderMsg) Write(w io.Writer) error {
 	if err := util.WriteUint16(w, msg.Size); err != nil {
 		return err
 	}
-	if _, err := w.Write(msg.AnchorTransactionID.Bytes()); err != nil {
+	if _, err := w.Write(msg.ApprovingOutputID.Bytes()); err != nil {
 		return err
 	}
 	return nil
@@ -196,7 +196,7 @@ func (msg *BlockHeaderMsg) Read(r io.Reader) error {
 	if err := util.ReadUint16(r, &msg.Size); err != nil {
 		return err
 	}
-	if _, err := r.Read(msg.AnchorTransactionID[:]); err != nil {
+	if err := readOutputID(r, &msg.ApprovingOutputID); err != nil {
 		return err
 	}
 	return nil

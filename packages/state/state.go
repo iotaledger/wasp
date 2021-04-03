@@ -44,7 +44,7 @@ func NewEmptyVirtualState(chainID *coretypes.ChainID) *virtualState {
 
 func OriginStateHash() hashing.HashValue {
 	emptyVirtualState := NewVirtualState(mapdb.NewMapDB())
-	originBlock := MustNewOriginBlock(ledgerstate.TransactionID{})
+	originBlock := MustNewOriginBlock(ledgerstate.OutputID{})
 	if err := emptyVirtualState.ApplyBlock(originBlock); err != nil {
 		panic(err)
 	}

@@ -82,10 +82,10 @@ type GetBlockMsg struct {
 // the header of the block message sent by peers in the process of syncing
 // it is sent as a first message while syncing a batch
 type BlockHeaderMsg struct {
-	SenderIndex         uint16
-	BlockIndex          uint32
-	Size                uint16
-	AnchorTransactionID ledgerstate.TransactionID
+	SenderIndex       uint16
+	BlockIndex        uint32
+	Size              uint16
+	ApprovingOutputID ledgerstate.OutputID
 }
 
 // state update sent to peer. Used in sync process, as part of batch

@@ -210,7 +210,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
-	originBlock := state.MustNewOriginBlock(originTx.ID())
+	originBlock := state.MustNewOriginBlock(ledgerstate.NewOutputID(originTx.ID(), 0))
 	err = ret.State.ApplyBlock(originBlock)
 	require.NoError(env.T, err)
 	err = ret.State.CommitToDb(originBlock)

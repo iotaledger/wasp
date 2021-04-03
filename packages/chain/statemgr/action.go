@@ -5,7 +5,6 @@ package statemgr
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"strconv"
 	"time"
@@ -16,8 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
-
-var nilTxID ledgerstate.TransactionID
 
 func (sm *stateManager) takeAction() {
 	sm.sendPingsIfNeeded()
@@ -109,7 +106,7 @@ func (sm *stateManager) checkStateApproval() {
 
 	// found a pending block which is approved by the stateOutput
 	// set the transaction id from output
-	pending.block.WithStateTransaction(sm.stateOutput.ID().TransactionID())
+	pending.block.WithApprovingOutputID(sm.stateOutput.ID())
 
 	if err := pending.nextState.CommitToDb(pending.block); err != nil {
 		sm.log.Errorw("failed to save state at index #%d", pending.nextState.BlockIndex())
@@ -121,9 +118,9 @@ func (sm *stateManager) checkStateApproval() {
 		sm.log.Debugf("STATE TRANSITION. State hash: %s, block essence: %s",
 			varStateHash.String(), pending.block.EssenceHash().String())
 	} else {
-		sm.log.Infof("ORIGIN STATE SAVED. Output id: %s", coretypes.OID(sm.stateOutput.ID()))
-		sm.log.Debugf("ORIGIN STATE SAVED. Output id: %s, state txid: %s, block essence: %s",
-			varStateHash.String(), coretypes.OID(sm.stateOutput.ID()), pending.block.EssenceHash().String())
+		sm.log.Infof("ORIGIN STATE SAVED. State output id: %s", coretypes.OID(sm.stateOutput.ID()))
+		sm.log.Debugf("ORIGIN STATE SAVED. state hash: %s, block essence: %s",
+			varStateHash.String(), pending.block.EssenceHash().String())
 	}
 	sm.solidState = pending.nextState
 	sm.pendingBlocks = make(map[hashing.HashValue]*pendingBlock) // clear pending batches
@@ -159,11 +156,8 @@ func (sm *stateManager) addPendingBlock(block state.Block) {
 		"block index", block.StateIndex(),
 		"timestamp", block.Timestamp(),
 		"size", block.Size(),
-		"state tx", block.StateTransactionID().String(),
+		"approving output", coretypes.OID(block.ApprovingOutputID()),
 	)
-	if !sm.isSolidStateValidated() {
-		return
-	}
 
 	var stateToApprove state.VirtualState
 	if sm.solidState == nil {
@@ -191,11 +185,6 @@ func (sm *stateManager) createStateToApprove() state.VirtualState {
 		return state.NewEmptyVirtualState(sm.chain.ID())
 	}
 	return sm.solidState.Clone()
-}
-
-func (sm *stateManager) requestStateTransaction(txid ledgerstate.TransactionID) {
-	sm.log.Debugf("query transaction from the node. txid = %s", txid.String())
-	sm.nodeConn.RequestConfirmedTransaction(sm.chain.ID().AsAddress(), txid)
 }
 
 func (sm *stateManager) numPongs() uint16 {

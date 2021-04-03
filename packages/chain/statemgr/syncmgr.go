@@ -42,7 +42,7 @@ func (sm *stateManager) blockHeaderArrived(msg *chain.BlockHeaderMsg) {
 		return
 	}
 	syncBlk.stateUpdates = make([]state.StateUpdate, msg.Size)
-	syncBlk.stateTxID = msg.AnchorTransactionID
+	syncBlk.stateOutputID = msg.ApprovingOutputID
 	syncBlk.pullDeadline = time.Now().Add(periodBetweenSyncMessages)
 }
 
@@ -74,7 +74,7 @@ func (sm *stateManager) stateUpdateArrived(msg *chain.StateUpdateMsg) {
 			sm.log.Errorf("failed to create block: %v", err)
 			return
 		}
-		block.WithBlockIndex(msg.BlockIndex).WithStateTransaction(syncBlk.stateTxID)
+		block.WithBlockIndex(msg.BlockIndex).WithApprovingOutputID(syncBlk.stateOutputID)
 		syncBlk.block = block
 		syncBlk.stateUpdates = nil
 	}

@@ -41,10 +41,11 @@ func TestBatches(t *testing.T) {
 
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
-	batch1.WithStateTransaction(txid1)
+	outID := ledgerstate.NewOutputID(txid1, 0)
+	batch1.WithApprovingOutputID(outID)
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
-	batch2.WithStateTransaction(txid1)
+	batch2.WithApprovingOutputID(outID)
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
 	assert.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch2))
@@ -76,9 +77,11 @@ func TestBatchMarshaling(t *testing.T) {
 
 func TestOriginBlock(t *testing.T) {
 	txid1 := ledgerstate.TransactionID{}
+	outID1 := ledgerstate.NewOutputID(txid1, 0)
 	txid2 := ledgerstate.TransactionID(hashing.RandomHash(nil))
+	outID2 := ledgerstate.NewOutputID(txid1, 0)
 	require.NotEqualValues(t, txid1, txid2)
-	b1 := MustNewOriginBlock(txid1).WithBlockIndex(100)
-	b2 := MustNewOriginBlock(txid2).WithBlockIndex(100)
+	b1 := MustNewOriginBlock(outID1).WithBlockIndex(100)
+	b2 := MustNewOriginBlock(outID2).WithBlockIndex(100)
 	require.EqualValues(t, b1.EssenceHash(), b2.EssenceHash())
 }

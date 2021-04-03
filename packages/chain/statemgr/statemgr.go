@@ -67,11 +67,11 @@ const (
 )
 
 type syncingBlock struct {
-	msgCounter   uint16
-	stateUpdates []state.StateUpdate
-	stateTxID    ledgerstate.TransactionID
-	pullDeadline time.Time
-	block        state.Block
+	msgCounter    uint16
+	stateUpdates  []state.StateUpdate
+	stateOutputID ledgerstate.OutputID
+	pullDeadline  time.Time
+	block         state.Block
 }
 
 type pendingBlock struct {
@@ -129,11 +129,12 @@ func (sm *stateManager) initLoadState() {
 	}
 	if stateExists {
 		h := sm.solidState.Hash()
-		txh := batch.StateTransactionID()
+		txh := batch.ApprovingOutputID()
 		sm.log.Infof("solid state has been loaded. Block index: $%d, State hash: %s, ancor tx: %s",
 			sm.solidState.BlockIndex(), h.String(), txh.String())
 	} else {
 		sm.solidState = nil
+		sm.addPendingBlock(state.MustNewOriginBlock(ledgerstate.OutputID{}))
 		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
 	}
 	sm.recvLoop() // Start to process external events.

@@ -55,8 +55,8 @@ type Block interface {
 	ForEach(func(uint16, StateUpdate) bool)
 	StateIndex() uint32
 	WithBlockIndex(uint32) Block
-	StateTransactionID() ledgerstate.TransactionID
-	WithStateTransaction(ledgerstate.TransactionID) Block
+	ApprovingOutputID() ledgerstate.OutputID
+	WithApprovingOutputID(ledgerstate.OutputID) Block
 	Timestamp() int64
 	Size() uint16
 	RequestIDs() []coretypes.RequestID

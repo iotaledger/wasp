@@ -56,9 +56,9 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 	sm.log.Debugf("EventGetBlockMsg for state index #%d --> peer %d", msg.BlockIndex, msg.SenderIndex)
 
 	err = sm.peers.SendMsg(msg.SenderIndex, chain.MsgBatchHeader, util.MustBytes(&chain.BlockHeaderMsg{
-		BlockIndex:          msg.BlockIndex,
-		Size:                block.Size(),
-		AnchorTransactionID: block.StateTransactionID(),
+		BlockIndex:        msg.BlockIndex,
+		Size:              block.Size(),
+		ApprovingOutputID: block.ApprovingOutputID(),
 	}))
 	if err != nil {
 		return
@@ -87,7 +87,7 @@ func (sm *stateManager) eventBlockHeaderMsg(msg *chain.BlockHeaderMsg) {
 		"sender", msg.SenderIndex,
 		"state index", msg.BlockIndex,
 		"size", msg.Size,
-		"state tx", msg.AnchorTransactionID.String(),
+		"state tx", msg.ApprovingOutputID.String(),
 	)
 	sm.blockHeaderArrived(msg)
 	sm.takeAction()
@@ -149,7 +149,7 @@ func (sm *stateManager) eventPendingBlockMsg(msg chain.PendingBlockMsg) {
 	sm.log.Debugw("EventPendingBlockMsg",
 		"state index", msg.Block.StateIndex(),
 		"size", msg.Block.Size(),
-		"txid", msg.Block.StateTransactionID().String(),
+		"txid", msg.Block.ApprovingOutputID().String(),
 		"block essence", msg.Block.EssenceHash().String(),
 		"ts", msg.Block.Timestamp(),
 	)

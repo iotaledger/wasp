@@ -46,7 +46,7 @@ func handleStateQuery(c echo.Context) error {
 	if !exist {
 		return httperrors.NotFound(fmt.Sprintf("State not found with address %s", chainID.String()))
 	}
-	txid := batch.StateTransactionID()
+	txid := batch.ApprovingOutputID()
 	ret := &statequery.Results{
 		KeyQueryResults: make([]*statequery.QueryResult, len(req.KeyQueries)),
 

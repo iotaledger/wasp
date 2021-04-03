@@ -15,9 +15,9 @@ import (
 )
 
 type block struct {
-	stateIndex   uint32
-	stateTxId    ledgerstate.TransactionID
-	stateUpdates []StateUpdate
+	stateIndex    uint32
+	stateOutputID ledgerstate.OutputID
+	stateUpdates  []StateUpdate
 }
 
 // validates, enumerates and creates a block from array of state updates
@@ -46,17 +46,12 @@ func BlockFromBytes(data []byte) (Block, error) {
 }
 
 // block with empty state update and nil state hash
-func MustNewOriginBlock(originTxID ledgerstate.TransactionID) Block {
+func MustNewOriginBlock(originOutputID ledgerstate.OutputID) Block {
 	ret, err := NewBlock(NewStateUpdate(coretypes.RequestID{}))
 	if err != nil {
 		log.Panic(err)
 	}
-	return ret.WithStateTransaction(originTxID)
-}
-
-// OriginBlockHash block has does not depend on the transaction hash
-func OriginBlockHash() hashing.HashValue {
-	return MustNewOriginBlock(ledgerstate.TransactionID{}).EssenceHash()
+	return ret.WithApprovingOutputID(originOutputID)
 }
 
 func (b *block) Bytes() []byte {
@@ -68,7 +63,7 @@ func (b *block) Bytes() []byte {
 func (b *block) String() string {
 	ret := ""
 	ret += fmt.Sprintf("Block: state index: %d\n", b.StateIndex())
-	ret += fmt.Sprintf("state txid: %s\n", b.StateTransactionID().String())
+	ret += fmt.Sprintf("state txid: %s\n", b.ApprovingOutputID().String())
 	ret += fmt.Sprintf("timestamp: %d\n", b.Timestamp())
 	ret += fmt.Sprintf("size: %d\n", b.Size())
 	ret += fmt.Sprintf("essence: %s\n", b.EssenceHash().String())
@@ -78,8 +73,8 @@ func (b *block) String() string {
 	return ret
 }
 
-func (b *block) StateTransactionID() ledgerstate.TransactionID {
-	return b.stateTxId
+func (b *block) ApprovingOutputID() ledgerstate.OutputID {
+	return b.stateOutputID
 }
 
 func (b *block) StateIndex() uint32 {
@@ -96,8 +91,8 @@ func (b *block) WithBlockIndex(stateIndex uint32) Block {
 	return b
 }
 
-func (b *block) WithStateTransaction(vtxid ledgerstate.TransactionID) Block {
-	b.stateTxId = vtxid
+func (b *block) WithApprovingOutputID(vtxid ledgerstate.OutputID) Block {
+	b.stateOutputID = vtxid
 	return b
 }
 
@@ -134,7 +129,7 @@ func (b *block) Write(w io.Writer) error {
 	if err := b.writeEssence(w); err != nil {
 		return err
 	}
-	if _, err := w.Write(b.stateTxId.Bytes()); err != nil {
+	if _, err := w.Write(b.stateOutputID.Bytes()); err != nil {
 		return err
 	}
 	return nil
@@ -159,7 +154,7 @@ func (b *block) Read(r io.Reader) error {
 	if err := b.readEssence(r); err != nil {
 		return err
 	}
-	if _, err := r.Read(b.stateTxId[:]); err != nil {
+	if _, err := r.Read(b.stateOutputID[:]); err != nil {
 		return err
 	}
 	return nil

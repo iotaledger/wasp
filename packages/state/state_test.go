@@ -76,10 +76,12 @@ func TestApply(t *testing.T) {
 
 	require.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
-	batch1.WithStateTransaction(txid1)
+	outID1 := ledgerstate.NewOutputID(txid1, 0)
+
+	batch1.WithApprovingOutputID(outID1)
 	require.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
-	batch2.WithStateTransaction(txid1)
+	batch2.WithApprovingOutputID(outID1)
 	require.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
 	require.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch2))
@@ -227,4 +229,9 @@ func TestCommit(t *testing.T) {
 
 	v, _ = partition.Get(dbkeyStateVariable(kv.Key([]byte("x"))))
 	require.Nil(t, v)
+}
+
+func TestOriginHash(t *testing.T) {
+	chainID := coretypes.RandomChainID()
+	require.EqualValues(t, OriginStateHash(), NewEmptyVirtualState(chainID).Hash())
 }
