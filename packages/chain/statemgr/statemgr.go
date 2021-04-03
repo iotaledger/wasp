@@ -7,6 +7,7 @@ package statemgr
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -16,16 +17,15 @@ import (
 )
 
 type stateManager struct {
-	chain chain.Chain
-	peers chain.PeerGroupProvider
-
-	// becomes true after initially loaded state is validated.
-	// after that it is always true
-	solidStateValid bool
+	chain    chain.Chain
+	peers    chain.PeerGroupProvider
+	nodeConn *txstream.Client
 
 	// flag pingPong[idx] if ping-pong message was received from the peer idx
 	pingPong              []bool
 	deadlineForPongQuorum time.Time
+
+	pullStateDeadline time.Time
 
 	// pending batches of state updates are candidates to confirmation by the state transaction
 	// which leads to the state transition
@@ -39,33 +39,19 @@ type stateManager struct {
 
 	// state transaction with +1 state index from the state index of solid variable state
 	// it may be nil if does not exist or not fetched yet
-	nextStateOutput          *ledgerstate.AliasOutput
-	nextStateOutputTimestamp time.Time
+	stateOutput          *ledgerstate.AliasOutput
+	stateOutputTimestamp time.Time
 
-	// state transaction which approves current state
-	approvingStateOutput          *ledgerstate.AliasOutput
-	approvingStateOutputTimestamp time.Time
+	syncedBlocks map[uint32]*syncingBlock
 
 	// was state transition message of the current state sent to the consensus operator
 	consensusNotifiedOnStateTransition bool
-
-	// largest state index evidenced by other messages. If this index is more than 1 step ahead
-	// of the solid variable state, it means the state of the smart contract in the current node
-	// falls behind the state of the smart contract, i.e. it is not synced
-	largestEvidencedStateIndex uint32
-
-	// the timeout deadline for sync inquiries
-	syncMessageDeadline time.Time
-
-	// current block being synced
-	syncedBatch *syncedBatch
 
 	// logger
 	log *logger.Logger
 
 	// Channels for accepting external events.
-	evidenceStateIndexCh         chan uint32
-	eventStateIndexPingPongMsgCh chan *chain.StateIndexPingPongMsg
+	eventStateIndexPingPongMsgCh chan *chain.BlockIndexPingPongMsg
 	eventGetBlockMsgCh           chan *chain.GetBlockMsg
 	eventBlockHeaderMsgCh        chan *chain.BlockHeaderMsg
 	eventStateUpdateMsgCh        chan *chain.StateUpdateMsg
@@ -75,11 +61,17 @@ type stateManager struct {
 	closeCh                      chan bool
 }
 
-type syncedBatch struct {
+const (
+	pullStateTimeout          = 5 * time.Second
+	periodBetweenSyncMessages = 1 * time.Second
+)
+
+type syncingBlock struct {
 	msgCounter   uint16
-	stateIndex   uint32
 	stateUpdates []state.StateUpdate
-	stateTxId    ledgerstate.TransactionID
+	stateTxID    ledgerstate.TransactionID
+	pullDeadline time.Time
+	block        state.Block
 }
 
 type pendingBlock struct {
@@ -87,17 +79,16 @@ type pendingBlock struct {
 	block state.Block
 	// resulting variable state after applied the block to the solidState
 	nextState state.VirtualState
-	// state transaction request deadline. For committed batches only
-	stateTransactionRequestDeadline time.Time
 }
 
-func New(c chain.Chain, peers chain.PeerGroupProvider, log *logger.Logger) chain.StateManager {
+func New(c chain.Chain, peers chain.PeerGroupProvider, nodeconn *txstream.Client, log *logger.Logger) chain.StateManager {
 	ret := &stateManager{
 		chain:                        c,
+		nodeConn:                     nodeconn,
+		syncedBlocks:                 make(map[uint32]*syncingBlock),
 		pendingBlocks:                make(map[hashing.HashValue]*pendingBlock),
 		log:                          log.Named("s"),
-		evidenceStateIndexCh:         make(chan uint32),
-		eventStateIndexPingPongMsgCh: make(chan *chain.StateIndexPingPongMsg),
+		eventStateIndexPingPongMsgCh: make(chan *chain.BlockIndexPingPongMsg),
 		eventGetBlockMsgCh:           make(chan *chain.GetBlockMsg),
 		eventBlockHeaderMsgCh:        make(chan *chain.BlockHeaderMsg),
 		eventStateUpdateMsgCh:        make(chan *chain.StateUpdateMsg),
@@ -136,24 +127,13 @@ func (sm *stateManager) initLoadState() {
 		sm.chain.Dismiss()
 		return
 	}
-
 	if stateExists {
-		// state loaded, will be waiting for it to be confirmed from the tangle
-		sm.addPendingBlock(batch)
-		sm.largestEvidencedStateIndex = sm.solidState.BlockIndex()
-
 		h := sm.solidState.Hash()
 		txh := batch.StateTransactionID()
-		sm.log.Debugw("solid state has been loaded",
-			"state index", sm.solidState.BlockIndex(),
-			"state hash", h.String(),
-			"approving tx", txh.String(),
-		)
+		sm.log.Infof("solid state has been loaded. Block index: $%d, State hash: %s, ancor tx: %s",
+			sm.solidState.BlockIndex(), h.String(), txh.String())
 	} else {
-		// pre-origin state. Origin block is empty block.
-		// Will be waiting for the origin transaction to arrive
-		sm.addPendingBlock(state.MustNewOriginBlock(ledgerstate.TransactionID{}))
-
+		sm.solidState = nil
 		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
 	}
 	sm.recvLoop() // Start to process external events.
@@ -162,10 +142,6 @@ func (sm *stateManager) initLoadState() {
 func (sm *stateManager) recvLoop() {
 	for {
 		select {
-		case msg, ok := <-sm.evidenceStateIndexCh:
-			if ok {
-				sm.evidenceStateIndex(msg)
-			}
 		case msg, ok := <-sm.eventStateIndexPingPongMsgCh:
 			if ok {
 				sm.eventStateIndexPingPongMsg(msg)
@@ -184,7 +160,7 @@ func (sm *stateManager) recvLoop() {
 			}
 		case msg, ok := <-sm.eventStateOutputMsgCh:
 			if ok {
-				sm.eventStateOutputMsg(msg)
+				sm.eventStateMsg(msg)
 			}
 		case msg, ok := <-sm.eventPendingBlockMsgCh:
 			if ok {

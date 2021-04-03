@@ -4,6 +4,7 @@
 package consensus
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -21,19 +22,15 @@ func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 
 	vh := op.currentState.Hash()
 	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v stateOutput: %s, state hash: %s",
-		op.mustStateIndex(), msg.Synchronized, op.peerPermutation.Current(), op.iAmCurrentLeader(),
+		op.mustStateIndex(), op.peerPermutation.Current(), op.iAmCurrentLeader(),
 		op.stateOutput.ID().Base58(), vh.String())
 
 	op.mempool.RemoveRequests(msg.RequestIDs...)
 
-	if msg.Synchronized {
-		if op.iAmCurrentLeader() {
-			op.setNextConsensusStage(consensusStageLeaderStarting)
-		} else {
-			op.setNextConsensusStage(consensusStageSubStarting)
-		}
+	if op.iAmCurrentLeader() {
+		op.setNextConsensusStage(consensusStageLeaderStarting)
 	} else {
-		op.setNextConsensusStage(consensusStageNoSync)
+		op.setNextConsensusStage(consensusStageSubStarting)
 	}
 	op.takeAction()
 }
@@ -48,8 +45,12 @@ func (op *operator) eventNotifyReqMsg(msg *chain.NotifyReqMsg) {
 	op.log.Debugw("EventNotifyReqMsg",
 		"reqIds", idsShortStr(msg.RequestIDs...),
 		"sender", msg.SenderIndex,
-		"stateIdx", msg.BlockIndex,
+		"stateID", coretypes.OID(msg.StateOutputID),
 	)
+	if op.stateOutput == nil || op.stateOutput.ID() != msg.StateOutputID {
+		op.log.Debugf("EventNotifyReqMsg: out of context")
+		return
+	}
 	for _, rid := range msg.RequestIDs {
 		r := rid
 		op.mempool.MarkSeenByCommitteePeer(&r, msg.SenderIndex)
@@ -72,7 +73,7 @@ func (op *operator) eventStartProcessingBatchMsg(msg *chain.StartProcessingBatch
 		"batch hash", bh.String(),
 		"reqIds", idsShortStr(msg.RequestIDs...),
 	)
-	if op.stateOutput == nil || op.stateOutput.ID() != msg.ChainOutputID {
+	if op.stateOutput == nil || op.stateOutput.ID() != msg.StateOutputID {
 		op.log.Debugf("EventStartProcessingBatchMsg: batch out of context. Won't start processing")
 		return
 	}
@@ -158,8 +159,8 @@ func (op *operator) eventSignedHashMsg(msg *chain.SignedHashMsg) {
 		// shouldn't be, probably an attack
 		return
 	}
-	if stateIndex, ok := op.blockIndex(); !ok || msg.BlockIndex != stateIndex {
-		// out of context, current node is lagging behind
+	if op.stateOutput == nil || op.stateOutput.ID() != msg.StateOutputID {
+		// notification out of context
 		op.log.Debugf("EventSignedHashMsg: out of context")
 		return
 	}
@@ -193,10 +194,10 @@ func (op *operator) EventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResult
 func (op *operator) eventNotifyFinalResultPostedMsg(msg *chain.NotifyFinalResultPostedMsg) {
 	op.log.Debugw("EventNotifyFinalResultPostedMsg",
 		"sender", msg.SenderIndex,
-		"stateIdx", msg.BlockIndex,
+		"stateID", coretypes.OID(msg.StateOutputID),
 		"txid", msg.TxId.String(),
 	)
-	if stateIndex, ok := op.blockIndex(); !ok || msg.BlockIndex != stateIndex {
+	if op.stateOutput == nil || op.stateOutput.ID() != msg.StateOutputID {
 		// the leader probably is lagging behind or it is an attack
 		return
 	}

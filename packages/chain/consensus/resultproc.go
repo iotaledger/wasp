@@ -84,9 +84,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask, leader uint16) {
 	)
 
 	msgData := util.MustBytes(&chain.SignedHashMsg{
-		PeerMsgHeader: chain.PeerMsgHeader{
-			BlockIndex: op.mustStateIndex(),
-		},
+		StateOutputID: op.stateOutput.ID(),
 		BatchHash:     batchHash,
 		OrigTimestamp: result.Timestamp.UnixNano(),
 		EssenceHash:   essenceHash,

@@ -13,22 +13,19 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (msg *StateIndexPingPongMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
-		return err
+func readOutputID(r io.Reader, oid *ledgerstate.OutputID) error {
+	n, err := r.Read(oid[:])
+	if err != nil {
+		return xerrors.Errorf("failed parse OutputID: %w", err)
 	}
-	return util.WriteBoolByte(w, msg.RSVP)
-}
-
-func (msg *StateIndexPingPongMsg) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
-		return err
+	if n != ledgerstate.OutputIDLength {
+		return xerrors.Errorf("failed parse OutputID: wrong data length")
 	}
-	return util.ReadBoolByte(r, &msg.RSVP)
+	return nil
 }
 
 func (msg *NotifyReqMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
+	if _, err := w.Write(msg.StateOutputID.Bytes()); err != nil {
 		return err
 	}
 	if err := util.WriteUint16(w, uint16(len(msg.RequestIDs))); err != nil {
@@ -43,12 +40,11 @@ func (msg *NotifyReqMsg) Write(w io.Writer) error {
 }
 
 func (msg *NotifyReqMsg) Read(r io.Reader) error {
-	err := util.ReadUint32(r, &msg.BlockIndex)
-	if err != nil {
+	if err := readOutputID(r, &msg.StateOutputID); err != nil {
 		return err
 	}
 	var arrLen uint16
-	err = util.ReadUint16(r, &arrLen)
+	err := util.ReadUint16(r, &arrLen)
 	if err != nil {
 		return err
 	}
@@ -66,7 +62,7 @@ func (msg *NotifyReqMsg) Read(r io.Reader) error {
 }
 
 func (msg *NotifyFinalResultPostedMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
+	if _, err := w.Write(msg.StateOutputID.Bytes()); err != nil {
 		return err
 	}
 	if _, err := w.Write(msg.TxId.Bytes()); err != nil {
@@ -76,7 +72,7 @@ func (msg *NotifyFinalResultPostedMsg) Write(w io.Writer) error {
 }
 
 func (msg *NotifyFinalResultPostedMsg) Read(r io.Reader) error {
-	err := util.ReadUint32(r, &msg.BlockIndex)
+	err := readOutputID(r, &msg.StateOutputID)
 	if err != nil {
 		return err
 	}
@@ -87,10 +83,7 @@ func (msg *NotifyFinalResultPostedMsg) Read(r io.Reader) error {
 }
 
 func (msg *StartProcessingBatchMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
-		return err
-	}
-	if _, err := w.Write(msg.ChainOutputID.Bytes()); err != nil {
+	if _, err := w.Write(msg.StateOutputID.Bytes()); err != nil {
 		return err
 	}
 	if err := util.WriteUint16(w, uint16(len(msg.RequestIDs))); err != nil {
@@ -108,10 +101,7 @@ func (msg *StartProcessingBatchMsg) Write(w io.Writer) error {
 }
 
 func (msg *StartProcessingBatchMsg) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
-		return err
-	}
-	if n, err := r.Read(msg.ChainOutputID[:]); err != nil || n != ledgerstate.OutputIDLength {
+	if err := readOutputID(r, &msg.StateOutputID); err != nil {
 		return err
 	}
 	var size uint16
@@ -131,7 +121,7 @@ func (msg *StartProcessingBatchMsg) Read(r io.Reader) error {
 }
 
 func (msg *SignedHashMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
+	if _, err := w.Write(msg.StateOutputID.Bytes()); err != nil {
 		return err
 	}
 	if err := util.WriteUint64(w, uint64(msg.OrigTimestamp)); err != nil {
@@ -150,7 +140,7 @@ func (msg *SignedHashMsg) Write(w io.Writer) error {
 }
 
 func (msg *SignedHashMsg) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
+	if err := readOutputID(r, &msg.StateOutputID); err != nil {
 		return err
 	}
 	var ts uint64
@@ -173,11 +163,17 @@ func (msg *SignedHashMsg) Read(r io.Reader) error {
 }
 
 func (msg *GetBlockMsg) Write(w io.Writer) error {
-	return util.WriteUint32(w, msg.BlockIndex)
+	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (msg *GetBlockMsg) Read(r io.Reader) error {
-	return util.ReadUint32(r, &msg.BlockIndex)
+	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (msg *BlockHeaderMsg) Write(w io.Writer) error {
@@ -231,4 +227,18 @@ func (msg *StateUpdateMsg) Read(r io.Reader) error {
 		return err
 	}
 	return nil
+}
+
+func (msg *BlockIndexPingPongMsg) Write(w io.Writer) error {
+	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
+		return err
+	}
+	return util.WriteBoolByte(w, msg.RSVP)
+}
+
+func (msg *BlockIndexPingPongMsg) Read(r io.Reader) error {
+	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
+		return err
+	}
+	return util.ReadBoolByte(r, &msg.RSVP)
 }

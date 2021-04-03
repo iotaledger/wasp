@@ -91,10 +91,7 @@ func (op *operator) startCalculationsAsLeader() {
 
 	// send to subordinated peers requests to process the batch
 	msgData := util.MustBytes(&chain.StartProcessingBatchMsg{
-		PeerMsgHeader: chain.PeerMsgHeader{
-			// timestamp is set by SendMsgToPeers
-			BlockIndex: op.stateOutput.GetStateIndex(),
-		},
+		StateOutputID:  op.stateOutput.ID(),
 		FeeDestination: rewardAddress,
 		RequestIDs:     reqIds,
 	})
@@ -215,11 +212,8 @@ func (op *operator) checkQuorum() {
 
 	// notify peers about finalization of the transaction
 	msgData := util.MustBytes(&chain.NotifyFinalResultPostedMsg{
-		PeerMsgHeader: chain.PeerMsgHeader{
-			// timestamp is set by SendMsgToPeers
-			BlockIndex: op.stateOutput.GetStateIndex(),
-		},
-		TxId: finalTx.ID(),
+		StateOutputID: op.stateOutput.ID(),
+		TxId:          finalTx.ID(),
 	})
 
 	numSent := op.committee.SendMsgToPeers(chain.MsgNotifyFinalResultPosted, msgData, time.Now().UnixNano())

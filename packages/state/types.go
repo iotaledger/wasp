@@ -22,7 +22,7 @@ type VirtualState interface {
 	// applies block of state updates, state index and timestamp
 	ApplyBlock(Block) error
 	// commit means saving virtual state to sc db, making it persistent (solid)
-	CommitToDb(batch Block) error
+	CommitToDb(block Block) error
 	// return hash of the variable state. It is a root of the Merkle chain of all
 	// state updates starting from the origin
 	Hash() hashing.HashValue

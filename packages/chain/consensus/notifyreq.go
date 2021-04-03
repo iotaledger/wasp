@@ -28,10 +28,8 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	op.log.Debugf("sending %d request notifications to #%d", len(readyRequests), currentLeaderPeerIndex)
 
 	msgData := util.MustBytes(&chain.NotifyReqMsg{
-		PeerMsgHeader: chain.PeerMsgHeader{
-			BlockIndex: stateIndex,
-		},
-		RequestIDs: reqIds,
+		StateOutputID: op.stateOutput.ID(),
+		RequestIDs:    reqIds,
 	})
 
 	// send until first success, but no more than number of nodes in the committee

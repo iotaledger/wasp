@@ -28,27 +28,13 @@ const (
 
 type TimerTick int
 
-// all peer messages have this
-type PeerMsgHeader struct {
-	// is set upon receive the message
-	SenderIndex uint16
-	// state index in the context of which the message is sent
-	BlockIndex uint32
-}
-
-// Ping is sent to receive Pong
-type StateIndexPingPongMsg struct {
-	PeerMsgHeader
-	RSVP bool
-}
-
 // message is sent to the leader of the state processing
 // it is sent upon state change or upon arrival of the new request
 // the receiving operator will ignore repeating messages
 type NotifyReqMsg struct {
-	PeerMsgHeader
-	// list of request ids ordered by the time of arrival
-	RequestIDs []coretypes.RequestID
+	SenderIndex   uint16
+	StateOutputID ledgerstate.OutputID
+	RequestIDs    []coretypes.RequestID
 }
 
 // message is sent by the leader to all peers immediately after the final transaction is posted
@@ -56,19 +42,19 @@ type NotifyReqMsg struct {
 // in long confirmation times
 // Final signature is sent to prevent possibility for a leader node to lie (is it necessary)
 type NotifyFinalResultPostedMsg struct {
-	PeerMsgHeader
-	TxId ledgerstate.TransactionID
+	SenderIndex   uint16
+	StateOutputID ledgerstate.OutputID
+	TxId          ledgerstate.TransactionID
 }
 
 // message is sent by the leader to other peers to initiate request processing
 // other peers are expected to check is timestamp is acceptable then
 // process request batch and sign the result hash with the timestamp proposed by the leader
 type StartProcessingBatchMsg struct {
-	PeerMsgHeader
+	SenderIndex   uint16
+	StateOutputID ledgerstate.OutputID
 	// timestamp of the message. Field is set upon receive the message to sender's timestamp
 	Timestamp int64
-	// chain outputID
-	ChainOutputID ledgerstate.OutputID
 	// batch of request ids
 	RequestIDs []coretypes.RequestID
 	// reward address
@@ -78,39 +64,43 @@ type StartProcessingBatchMsg struct {
 // after calculations the result peer responds to the start processing msg
 // with SignedHashMsg, which contains result hash and signatures
 type SignedHashMsg struct {
-	PeerMsgHeader
-	// timestamp of this message. Field is set upon receive the message to sender's timestamp
-	Timestamp int64
-	// returns hash of all req ids
-	BatchHash hashing.HashValue
-	// original timestamp, the parameter for calculations, which is signed as part of the essence
+	SenderIndex   uint16
+	StateOutputID ledgerstate.OutputID
+	Timestamp     int64
+	BatchHash     hashing.HashValue
 	OrigTimestamp int64
-	// hash of the signed data (essence)
-	EssenceHash hashing.HashValue
-	// signature
-	SigShare tbdn.SigShare
+	EssenceHash   hashing.HashValue
+	SigShare      tbdn.SigShare
 }
 
 // request block of updates from peer. Used in syn process
 type GetBlockMsg struct {
-	PeerMsgHeader
+	SenderIndex uint16
+	BlockIndex  uint32
 }
 
 // the header of the block message sent by peers in the process of syncing
 // it is sent as a first message while syncing a batch
 type BlockHeaderMsg struct {
-	PeerMsgHeader
+	SenderIndex         uint16
+	BlockIndex          uint32
 	Size                uint16
 	AnchorTransactionID ledgerstate.TransactionID
 }
 
 // state update sent to peer. Used in sync process, as part of batch
 type StateUpdateMsg struct {
-	PeerMsgHeader
-	// state update
-	StateUpdate state.StateUpdate
-	// position in a batch
+	SenderIndex     uint16
+	BlockIndex      uint32
+	StateUpdate     state.StateUpdate
 	IndexInTheBlock uint16
+}
+
+// Ping is sent to receive Pong
+type BlockIndexPingPongMsg struct {
+	SenderIndex uint16
+	BlockIndex  uint32
+	RSVP        bool
 }
 
 // state manager notifies consensus operator about changed state
@@ -125,8 +115,6 @@ type StateTransitionMsg struct {
 	Timestamp time.Time
 	// processed requests
 	RequestIDs []coretypes.RequestID
-	// is the state index last seen
-	Synchronized bool
 }
 
 // message of complete batch. Is sent by consensus operator to the state manager as a VM result

@@ -66,7 +66,7 @@ func NewChain(
 		dksProvider:  dksProvider,
 		blobProvider: blobProvider,
 	}
-	ret.stateMgr = statemgr.New(ret, newPeers(nil), ret.log)
+	ret.stateMgr = statemgr.New(ret, newPeers(nil), nodeConn, ret.log)
 	go func() {
 		for msg := range ret.chMsg {
 			ret.dispatchMessage(msg)
@@ -129,14 +129,13 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 	switch msg.MsgType {
 
 	case chain.MsgStateIndexPingPong:
-		msgt := &chain.StateIndexPingPongMsg{}
+		msgt := &chain.BlockIndexPingPongMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
 		}
 		msgt.SenderIndex = msg.SenderIndex
 
-		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 		c.stateMgr.EventStateIndexPingPongMsg(msgt)
 
 	case chain.MsgNotifyRequests:
@@ -145,7 +144,6 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 
@@ -159,7 +157,6 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 
@@ -173,7 +170,6 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 		msgt.Timestamp = msg.Timestamp
@@ -188,7 +184,6 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 		msgt.Timestamp = msg.Timestamp
@@ -214,7 +209,6 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 		c.stateMgr.EventBlockHeaderMsg(msgt)
@@ -225,7 +219,6 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		c.stateMgr.EvidenceStateIndex(msgt.BlockIndex)
 
 		msgt.SenderIndex = msg.SenderIndex
 		c.stateMgr.EventStateUpdateMsg(msgt)
@@ -250,7 +243,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	)
 	if c.committee != nil && c.committee.DKShare().Address.Equals(msg.ChainOutput.GetStateAddress()) {
 		// nothing changed in the committee
-		c.stateMgr.EventStateOutputMsg(msg)
+		c.stateMgr.EventStateMsg(msg)
 		return
 	}
 	// create or change committee object
@@ -275,5 +268,5 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	c.log.Debugf("creating new consensus object..")
 	c.consensus = consensus.New(c.mempool, c.committee, c.nodeConn, c.log)
 	c.stateMgr.SetPeers(newPeers(c.committee))
-	c.stateMgr.EventStateOutputMsg(msg)
+	c.stateMgr.EventStateMsg(msg)
 }

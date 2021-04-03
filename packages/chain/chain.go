@@ -65,12 +65,11 @@ type Chain interface {
 
 type StateManager interface {
 	SetPeers(PeerGroupProvider)
-	EvidenceStateIndex(idx uint32)
-	EventStateIndexPingPongMsg(msg *StateIndexPingPongMsg)
+	EventStateIndexPingPongMsg(msg *BlockIndexPingPongMsg)
 	EventGetBlockMsg(msg *GetBlockMsg)
 	EventBlockHeaderMsg(msg *BlockHeaderMsg)
 	EventStateUpdateMsg(msg *StateUpdateMsg)
-	EventStateOutputMsg(msg *StateMsg)
+	EventStateMsg(msg *StateMsg)
 	EventPendingBlockMsg(msg PendingBlockMsg)
 	EventTimerMsg(msg TimerTick)
 	Close()
