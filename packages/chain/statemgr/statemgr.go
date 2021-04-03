@@ -17,38 +17,19 @@ import (
 )
 
 type stateManager struct {
-	chain    chain.Chain
-	peers    chain.PeerGroupProvider
-	nodeConn *txstream.Client
-
-	// flag pingPong[idx] if ping-pong message was received from the peer idx
-	pingPong              []bool
-	deadlineForPongQuorum time.Time
-
-	pullStateDeadline time.Time
-
-	// pending batches of state updates are candidates to confirmation by the state transaction
-	// which leads to the state transition
-	// the map key is hash of the variable state which is a result of applying the
-	// block of state updates to the solid variable state
-	pendingBlocks map[hashing.HashValue]*pendingBlock
-
-	// last variable state stored in the database
-	// it may be nil at bootstrap when origin variable state is calculated
-	solidState state.VirtualState
-
-	// state transaction with +1 state index from the state index of solid variable state
-	// it may be nil if does not exist or not fetched yet
-	stateOutput          *ledgerstate.AliasOutput
-	stateOutputTimestamp time.Time
-
-	syncedBlocks map[uint32]*syncingBlock
-
-	// was state transition message of the current state sent to the consensus operator
+	chain                              chain.Chain
+	peers                              chain.PeerGroupProvider
+	nodeConn                           *txstream.Client
+	pingPong                           []bool
+	deadlineForPongQuorum              time.Time
+	pullStateDeadline                  time.Time
+	blockCandidates                    map[hashing.HashValue]*pendingBlock
+	solidState                         state.VirtualState
+	stateOutput                        *ledgerstate.AliasOutput
+	stateOutputTimestamp               time.Time
+	syncingBlocks                      map[uint32]*syncingBlock
 	consensusNotifiedOnStateTransition bool
-
-	// logger
-	log *logger.Logger
+	log                                *logger.Logger
 
 	// Channels for accepting external events.
 	eventStateIndexPingPongMsgCh chan *chain.BlockIndexPingPongMsg
@@ -56,7 +37,7 @@ type stateManager struct {
 	eventBlockHeaderMsgCh        chan *chain.BlockHeaderMsg
 	eventStateUpdateMsgCh        chan *chain.StateUpdateMsg
 	eventStateOutputMsgCh        chan *chain.StateMsg
-	eventPendingBlockMsgCh       chan chain.PendingBlockMsg
+	eventPendingBlockMsgCh       chan chain.BlockCandidateMsg
 	eventTimerMsgCh              chan chain.TimerTick
 	closeCh                      chan bool
 }
@@ -85,15 +66,15 @@ func New(c chain.Chain, peers chain.PeerGroupProvider, nodeconn *txstream.Client
 	ret := &stateManager{
 		chain:                        c,
 		nodeConn:                     nodeconn,
-		syncedBlocks:                 make(map[uint32]*syncingBlock),
-		pendingBlocks:                make(map[hashing.HashValue]*pendingBlock),
+		syncingBlocks:                make(map[uint32]*syncingBlock),
+		blockCandidates:              make(map[hashing.HashValue]*pendingBlock),
 		log:                          log.Named("s"),
 		eventStateIndexPingPongMsgCh: make(chan *chain.BlockIndexPingPongMsg),
 		eventGetBlockMsgCh:           make(chan *chain.GetBlockMsg),
 		eventBlockHeaderMsgCh:        make(chan *chain.BlockHeaderMsg),
 		eventStateUpdateMsgCh:        make(chan *chain.StateUpdateMsg),
 		eventStateOutputMsgCh:        make(chan *chain.StateMsg),
-		eventPendingBlockMsgCh:       make(chan chain.PendingBlockMsg),
+		eventPendingBlockMsgCh:       make(chan chain.BlockCandidateMsg),
 		eventTimerMsgCh:              make(chan chain.TimerTick),
 		closeCh:                      make(chan bool),
 	}
@@ -134,7 +115,7 @@ func (sm *stateManager) initLoadState() {
 			sm.solidState.BlockIndex(), h.String(), txh.String())
 	} else {
 		sm.solidState = nil
-		sm.addPendingBlock(state.MustNewOriginBlock(ledgerstate.OutputID{}))
+		sm.addBlockCandidate(state.MustNewOriginBlock(ledgerstate.OutputID{}))
 		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
 	}
 	sm.recvLoop() // Start to process external events.
@@ -165,7 +146,7 @@ func (sm *stateManager) recvLoop() {
 			}
 		case msg, ok := <-sm.eventPendingBlockMsgCh:
 			if ok {
-				sm.eventPendingBlockMsg(msg)
+				sm.eventBlockCandidateMsg(msg)
 			}
 		case msg, ok := <-sm.eventTimerMsgCh:
 			if ok {

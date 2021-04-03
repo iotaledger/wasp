@@ -74,6 +74,7 @@ func (op *operator) startCalculationsAsLeader() {
 		return
 	}
 	if !op.committee.QuorumIsAlive() {
+		op.log.Debugf("no quorum")
 		// no quorum, doesn't make sense to start
 		return
 	}
@@ -81,6 +82,7 @@ func (op *operator) startCalculationsAsLeader() {
 	reqs := op.selectRequestsToProcess()
 	if len(reqs) == 0 {
 		// empty backlog or nothing is ready
+		op.log.Debugf("empty backlog")
 		return
 	}
 	reqIds := takeIDs(reqs...)
@@ -164,8 +166,8 @@ func (op *operator) checkQuorum() {
 			continue
 		}
 		if op.leaderStatus.signedResults[i].essenceHash != mainHash {
-			op.log.Warnf("wrong EssenceHash from peer #%d: %s",
-				i, op.leaderStatus.signedResults[i].essenceHash.String())
+			op.log.Warnf("WRONG EssenceHash from peer #%d: %s. Expected: %s",
+				i, op.leaderStatus.signedResults[i].essenceHash.String(), mainHash.String())
 			op.leaderStatus.signedResults[i] = nil // ignoring
 			continue
 		}
@@ -174,7 +176,7 @@ func (op *operator) checkQuorum() {
 			// TODO here we are ignoring wrong signatures. In general, it means it is an attack
 			// In the future when each message will be signed by the peer's identity, the invalidity
 			// of the BLS signature means the node is misbehaving.
-			op.log.Warnf("wrong signature from peer #%d: %v", i, err)
+			op.log.Warnf("WRONG signature from peer #%d: %v", i, err)
 			op.leaderStatus.signedResults[i] = nil // ignoring
 			continue
 		}

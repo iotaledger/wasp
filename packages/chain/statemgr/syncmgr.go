@@ -10,10 +10,10 @@ import (
 
 // return if synced already
 func (sm *stateManager) syncBlock(blockIndex uint32) state.Block {
-	if _, already := sm.syncedBlocks[blockIndex]; !already {
-		sm.syncedBlocks[blockIndex] = &syncingBlock{}
+	if _, already := sm.syncingBlocks[blockIndex]; !already {
+		sm.syncingBlocks[blockIndex] = &syncingBlock{}
 	}
-	blk := sm.syncedBlocks[blockIndex]
+	blk := sm.syncingBlocks[blockIndex]
 	if blk.block != nil {
 		return blk.block
 	}
@@ -32,7 +32,7 @@ func (sm *stateManager) syncBlock(blockIndex uint32) state.Block {
 }
 
 func (sm *stateManager) blockHeaderArrived(msg *chain.BlockHeaderMsg) {
-	syncBlk, ok := sm.syncedBlocks[msg.BlockIndex]
+	syncBlk, ok := sm.syncingBlocks[msg.BlockIndex]
 	if !ok {
 		// not asked
 		return
@@ -47,7 +47,7 @@ func (sm *stateManager) blockHeaderArrived(msg *chain.BlockHeaderMsg) {
 }
 
 func (sm *stateManager) stateUpdateArrived(msg *chain.StateUpdateMsg) {
-	syncBlk, ok := sm.syncedBlocks[msg.BlockIndex]
+	syncBlk, ok := sm.syncingBlocks[msg.BlockIndex]
 	if !ok {
 		// not asked
 		return
@@ -111,8 +111,8 @@ func (sm *stateManager) doSyncIfNeeded() {
 func (sm *stateManager) mustCommitSynced(fromIndex uint32) {
 	// all synced, we need to push all blocks into the state
 	defer func() {
-		if len(sm.syncedBlocks) != 0 {
-			sm.log.Panicf("inconsistency: expected syncedBlocks empty")
+		if len(sm.syncingBlocks) != 0 {
+			sm.log.Panicf("inconsistency: expected syncingBlocks empty")
 		}
 	}()
 	var tentativeState state.VirtualState
@@ -128,7 +128,7 @@ func (sm *stateManager) mustCommitSynced(fromIndex uint32) {
 		if err := tentativeState.ApplyBlock(sb); err != nil {
 			sm.log.Errorf("failed to apply synced block. Start syncing from scratch from block #%d to #%d. Error: %v",
 				fromIndex, sm.stateOutput.GetStateIndex(), err)
-			sm.syncedBlocks = make(map[uint32]*syncingBlock)
+			sm.syncingBlocks = make(map[uint32]*syncingBlock)
 			return
 		}
 	}
@@ -141,7 +141,7 @@ func (sm *stateManager) mustCommitSynced(fromIndex uint32) {
 	if stateHash1 != stateHash2 {
 		sm.log.Errorf("state hashes mismatch between state and anchor transaction. Start syncing from scratch from block #%d to #%d",
 			fromIndex, sm.stateOutput.GetStateIndex())
-		sm.syncedBlocks = make(map[uint32]*syncingBlock)
+		sm.syncingBlocks = make(map[uint32]*syncingBlock)
 		return
 	}
 	// again applying blocks, this time seriously
@@ -154,10 +154,10 @@ func (sm *stateManager) mustCommitSynced(fromIndex uint32) {
 			return
 		}
 		if err := sm.solidState.CommitToDb(block); err == nil {
-			delete(sm.syncedBlocks, block.StateIndex())
+			delete(sm.syncingBlocks, block.StateIndex())
 		} else {
 			sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
-			sm.syncedBlocks = make(map[uint32]*syncingBlock)
+			sm.syncingBlocks = make(map[uint32]*syncingBlock)
 			return
 		}
 	}

@@ -21,9 +21,9 @@ func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.setNewSCState(msg)
 
 	vh := op.currentState.Hash()
-	op.log.Infof("STATE FOR CONSENSUS #%d, synced: %v, leader: %d iAmTheLeader: %v stateOutput: %s, state hash: %s",
+	op.log.Infof("STATE FOR CONSENSUS #%d, leader: %d, iAmTheLeader: %v, stateOutput: %s, state hash: %s",
 		op.mustStateIndex(), op.peerPermutation.Current(), op.iAmCurrentLeader(),
-		op.stateOutput.ID().Base58(), vh.String())
+		coretypes.OID(op.stateOutput.ID()), vh.String())
 
 	op.mempool.RemoveRequests(msg.RequestIDs...)
 
@@ -127,7 +127,7 @@ func (op *operator) eventResultCalculated(ctx *chain.VMResultMsg) {
 	// inform own state manager about new result block. The state manager will start waiting
 	// from confirmation of it from the tangle
 	go func() {
-		op.committee.Chain().ReceiveMessage(chain.PendingBlockMsg{
+		op.committee.Chain().ReceiveMessage(chain.BlockCandidateMsg{
 			Block: ctx.Task.ResultBlock,
 		})
 	}()

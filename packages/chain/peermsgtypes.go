@@ -119,7 +119,7 @@ type StateTransitionMsg struct {
 
 // message of complete batch. Is sent by consensus operator to the state manager as a VM result
 // - state manager to itself when batch is completed after syncing
-type PendingBlockMsg struct {
+type BlockCandidateMsg struct {
 	Block state.Block
 }
 

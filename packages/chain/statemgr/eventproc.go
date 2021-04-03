@@ -128,8 +128,12 @@ func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 		"state hash", stateHash.String(),
 	)
 	if sm.stateOutput != nil {
-		if sm.stateOutput.GetStateIndex() >= msg.ChainOutput.GetStateIndex() {
-			sm.log.Debugf("EventStateMsg: out of order or repeated state output")
+		switch {
+		case sm.stateOutput.GetStateIndex() == msg.ChainOutput.GetStateIndex():
+			sm.log.Debug("EventStateMsg: repeated state output")
+			return
+		case sm.stateOutput.GetStateIndex() > msg.ChainOutput.GetStateIndex():
+			sm.log.Warn("EventStateMsg: out of order state output")
 			return
 		}
 	}
@@ -139,22 +143,22 @@ func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 	sm.takeAction()
 }
 
-func (sm *stateManager) EventPendingBlockMsg(msg chain.PendingBlockMsg) {
+func (sm *stateManager) EventBlockCandidateMsg(msg chain.BlockCandidateMsg) {
 	sm.eventPendingBlockMsgCh <- msg
 }
-func (sm *stateManager) eventPendingBlockMsg(msg chain.PendingBlockMsg) {
+func (sm *stateManager) eventBlockCandidateMsg(msg chain.BlockCandidateMsg) {
 	if sm.stateOutput == nil {
 		return
 	}
-	sm.log.Debugw("EventPendingBlockMsg",
+	sm.log.Debugw("EventBlockCandidateMsg",
 		"state index", msg.Block.StateIndex(),
 		"size", msg.Block.Size(),
-		"txid", msg.Block.ApprovingOutputID().String(),
+		"state output", coretypes.OID(msg.Block.ApprovingOutputID()),
 		"block essence", msg.Block.EssenceHash().String(),
 		"ts", msg.Block.Timestamp(),
 	)
 
-	sm.addPendingBlock(msg.Block)
+	sm.addBlockCandidate(msg.Block)
 	sm.checkStateApproval()
 	sm.takeAction()
 }

@@ -143,6 +143,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 }
 
 func (op *operator) aggregateSigShares(sigShares [][]byte) (*ledgerstate.Transaction, error) {
+	op.log.Debugf("aggregating sig shares..")
 	resTx := op.leaderStatus.resultTxEssence
 
 	signatureWithPK, err := op.committee.DKShare().RecoverFullSignature(sigShares, resTx.Bytes())

@@ -94,8 +94,8 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		if c.consensus != nil {
 			c.consensus.EventStateTransitionMsg(msgt)
 		}
-	case chain.PendingBlockMsg:
-		c.stateMgr.EventPendingBlockMsg(msgt)
+	case chain.BlockCandidateMsg:
+		c.stateMgr.EventBlockCandidateMsg(msgt)
 	case *chain.InclusionStateMsg:
 		if c.consensus != nil {
 			c.consensus.EventTransactionInclusionStateMsg(msgt)

@@ -28,7 +28,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 	if sm.pullStateDeadline.Before(nowis) {
 		return
 	}
-	if sm.stateOutput == nil || len(sm.pendingBlocks) > 0 {
+	if sm.stateOutput == nil || len(sm.blockCandidates) > 0 {
 		sm.nodeConn.RequestBacklog(sm.chain.ID().AsAddress())
 	}
 	sm.pullStateDeadline = nowis.Add(pullStateTimeout)
@@ -97,7 +97,7 @@ func (sm *stateManager) checkStateApproval() {
 	if err != nil {
 		sm.log.Panic(err)
 	}
-	pending, ok := sm.pendingBlocks[varStateHash]
+	pending, ok := sm.blockCandidates[varStateHash]
 	if !ok {
 		// corresponding block wasn't found among pending state updates
 		// transaction doesn't approve anything
@@ -123,7 +123,7 @@ func (sm *stateManager) checkStateApproval() {
 			varStateHash.String(), pending.block.EssenceHash().String())
 	}
 	sm.solidState = pending.nextState
-	sm.pendingBlocks = make(map[hashing.HashValue]*pendingBlock) // clear pending batches
+	sm.blockCandidates = make(map[hashing.HashValue]*pendingBlock) // clear pending batches
 	sm.consensusNotifiedOnStateTransition = false
 
 	// publish state transition
@@ -151,8 +151,8 @@ func (sm *stateManager) checkStateApproval() {
 }
 
 // adding block of state updates to the 'pending' map
-func (sm *stateManager) addPendingBlock(block state.Block) {
-	sm.log.Debugw("addPendingBlock",
+func (sm *stateManager) addBlockCandidate(block state.Block) {
+	sm.log.Debugw("addBlockCandidate",
 		"block index", block.StateIndex(),
 		"timestamp", block.Timestamp(),
 		"size", block.Size(),
@@ -171,12 +171,12 @@ func (sm *stateManager) addPendingBlock(block state.Block) {
 	}
 	// include the bach to pending batches map
 	vh := stateToApprove.Hash()
-	sm.pendingBlocks[vh] = &pendingBlock{
+	sm.blockCandidates[vh] = &pendingBlock{
 		block:     block,
 		nextState: stateToApprove,
 	}
 
-	sm.log.Debugf("added new pending block. State index: %d, state hash: %s", block.StateIndex(), vh.String())
+	sm.log.Debugf("added new block candidate. State index: %d, state hash: %s", block.StateIndex(), vh.String())
 	sm.pullStateDeadline = time.Now().Add(pullStateTimeout)
 }
 

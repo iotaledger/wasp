@@ -11,6 +11,9 @@ import (
 // sendRequestNotificationsToLeader sends current leader the backlog of requests
 // it is only possible in the `consensusStageLeaderStarting` stage for non-leader
 func (op *operator) sendRequestNotificationsToLeader() {
+	if op.consensusStage != consensusStageSubStarting {
+		return
+	}
 	stateIndex, stateExist := op.blockIndex()
 	if !stateExist {
 		return
@@ -25,7 +28,7 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	reqIds := takeIDs(readyRequests...)
 	currentLeaderPeerIndex, _ := op.currentLeader()
 
-	op.log.Debugf("sending %d request notifications to #%d", len(readyRequests), currentLeaderPeerIndex)
+	op.log.Debugf("sending request notifications to #%d: %+v", currentLeaderPeerIndex, idsShortStr(reqIds...))
 
 	msgData := util.MustBytes(&chain.NotifyReqMsg{
 		StateOutputID: op.stateOutput.ID(),
