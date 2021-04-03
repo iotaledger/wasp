@@ -84,9 +84,9 @@ func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
 					t, input.String(), vmctx.chainID.String())
 			}
 		}
+		vmctx.remainingAfterFees = req.Output().Balances().Clone()
 	}
 
-	vmctx.remainingAfterFees = req.Output().Balances().Clone()
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
 	vmctx.stateUpdate = state.NewStateUpdate(req.ID()).WithTimestamp(vmctx.timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
@@ -208,7 +208,7 @@ func (vmctx *VMContext) mustRequestToEventLog(err error) {
 	if err != nil {
 		e = err.Error()
 	}
-	reqStr := coretypes.OID(vmctx.req.Output().ID())
+	reqStr := coretypes.OID(vmctx.req.ID().OutputID())
 	msg := fmt.Sprintf("[req] %s: %s", reqStr, e)
 	vmctx.log.Infof("eventlog -> '%s'", msg)
 	targetContract, _ := vmctx.req.Target()

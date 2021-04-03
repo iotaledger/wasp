@@ -57,9 +57,9 @@ func OID(o ledgerstate.OutputID) string {
 
 // endregion ////////////////////////////////////////////////////////////////////////////////////
 
-// Request has two main implementation
+// Request has two main implementations
 // - sctransaction.RequestOnLedger
-// - RequestOffLedger
+// - sctransaction.RequestOffLedger
 type Request interface {
 	// index == 0 for off ledger requests
 	ID() RequestID
