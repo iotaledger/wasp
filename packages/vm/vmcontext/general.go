@@ -105,7 +105,7 @@ func (vmctx *VMContext) EventPublisher() vm.ContractEventPublisher {
 }
 
 func (vmctx *VMContext) RequestID() coretypes.RequestID {
-	return coretypes.RequestID(vmctx.req.Output().ID())
+	return vmctx.req.ID()
 }
 
 const maxParamSize = 512
