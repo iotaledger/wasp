@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/bytecodealliance/wasmtime-go v0.21.0
-	github.com/iotaledger/goshimmer v0.5.4-0.20210402084543-8af4460a90dd
+	github.com/iotaledger/goshimmer v0.5.4-0.20210404082841-7b160f0001d3
 	github.com/iotaledger/hive.go v0.0.0-20210327095456-8b9171badf36
 	github.com/knadh/koanf v0.15.0
 	github.com/labstack/echo/v4 v4.1.13
@@ -22,3 +22,5 @@ require (
 	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 )
+
+replace github.com/iotaledger/hive.go v0.0.0-20210331170324-e7699d9dfdbb => github.com/lunfardo314/hive.go v0.0.0-20210404054736-665eabab5ed9

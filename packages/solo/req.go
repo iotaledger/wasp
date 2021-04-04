@@ -143,7 +143,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 	mdataBack := sctransaction.RequestMetadataFromBytes(data)
 	require.True(ch.Env.T, mdataBack.ParsedOk())
 
-	txb := utxoutil.NewBuilder(allOuts...)
+	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.LogicalTime())
 	var err error
 	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), data, req.transfer.Map())
 	require.NoError(ch.Env.T, err)

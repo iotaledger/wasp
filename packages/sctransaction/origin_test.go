@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 func TestCreateOrigin(t *testing.T) {
@@ -19,7 +20,7 @@ func TestCreateOrigin(t *testing.T) {
 	require.EqualValues(t, 0, u.BalanceIOTA(stateAddr))
 
 	bal100 := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
-	tx, chainID, err := NewChainOriginTransaction(user, stateAddr, bal100, u.GetAddressOutputs(addr)...)
+	tx, chainID, err := NewChainOriginTransaction(user, stateAddr, bal100, time.Now(), u.GetAddressOutputs(addr)...)
 	require.NoError(t, err)
 
 	t.Logf("New chain alias: %s", chainID.Base58())
@@ -40,7 +41,7 @@ func TestInitChain(t *testing.T) {
 	require.EqualValues(t, 0, u.BalanceIOTA(stateAddr))
 
 	bal100 := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
-	tx, chainID, err := NewChainOriginTransaction(user, stateAddr, bal100, u.GetAddressOutputs(addr)...)
+	tx, chainID, err := NewChainOriginTransaction(user, stateAddr, bal100, time.Now(), u.GetAddressOutputs(addr)...)
 	require.NoError(t, err)
 
 	t.Logf("New chain alias: %s", chainID.Base58())
@@ -48,7 +49,7 @@ func TestInitChain(t *testing.T) {
 	err = u.AddTransaction(tx)
 	require.NoError(t, err)
 
-	tx, err = NewRootInitRequestTransaction(user, chainID, "test chain", u.GetAddressOutputs(addr)...)
+	tx, err = NewRootInitRequestTransaction(user, chainID, "test chain", time.Now(), u.GetAddressOutputs(addr)...)
 	require.NoError(t, err)
 
 	err = u.AddTransaction(tx)

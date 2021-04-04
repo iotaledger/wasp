@@ -103,6 +103,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 		par.OriginatorKeyPair,
 		stateControllerAddr,
 		nil,
+		time.Now(),
 		allOuts...,
 	)
 
@@ -161,6 +162,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 		par.OriginatorKeyPair,
 		chainID,
 		par.Description,
+		time.Now(),
 		allOuts...,
 	)
 	fmt.Fprint(textout, par.Prefix)

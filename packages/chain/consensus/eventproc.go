@@ -123,6 +123,8 @@ func (op *operator) eventResultCalculated(ctx *chain.VMResultMsg) {
 		"batch size", ctx.Task.ResultBlock.Size(),
 		"blockIndex", op.mustStateIndex(),
 	)
+	//op.log.Debugf("!!!!! RESULT TX. Essence: %s\n %s",
+	//	hashing.HashData(ctx.Task.ResultTransaction.Bytes()).String(), ctx.Task.ResultTransaction.String())
 
 	// inform own state manager about new result block. The state manager will start waiting
 	// from confirmation of it from the tangle

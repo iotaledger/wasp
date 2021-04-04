@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"golang.org/x/xerrors"
+	"time"
 )
 
 // MustRunVMTaskAsync runs computations for the batch of requests in the background
@@ -69,7 +70,7 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		return
 	}
 
-	task.ResultTransaction, err = vmctx.BuildTransactionEssence(vsClone.Hash())
+	task.ResultTransaction, err = vmctx.BuildTransactionEssence(vsClone.Hash(), time.Unix(0, vsClone.Timestamp()))
 	if err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return

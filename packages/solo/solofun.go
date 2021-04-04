@@ -19,7 +19,7 @@ func (env *Solo) NewKeyPairWithFunds() (*ed25519.KeyPair, ledgerstate.Address) {
 	env.ledgerMutex.Lock()
 	defer env.ledgerMutex.Unlock()
 
-	_, err := env.utxoDB.RequestFunds(addr)
+	_, err := env.utxoDB.RequestFunds(addr, env.LogicalTime())
 	require.NoError(env.T, err)
 	env.AssertAddressBalance(addr, ledgerstate.ColorIOTA, Saldo)
 
@@ -44,7 +44,7 @@ func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (ledgerstate
 	addr := ledgerstate.NewED25519Address(wallet.PublicKey)
 	allOuts := env.utxoDB.GetAddressOutputs(addr)
 
-	txb := utxoutil.NewBuilder(allOuts...)
+	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(env.LogicalTime())
 	if amount < DustThresholdIotas {
 		return [32]byte{}, xerrors.New("can't mint number of tokens below dust threshold")
 	}

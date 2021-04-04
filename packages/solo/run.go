@@ -42,12 +42,11 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 		_, solidArgs := r.Params()
 		require.True(ch.Env.T, solidArgs)
 	}
-	timestamp := ch.Env.LogicalTime().Add(time.Duration(len(batch)) * time.Nanosecond)
 	task := &vm.VMTask{
 		Processors:         ch.proc,
 		ChainInput:         ch.GetChainOutput(),
 		Requests:           batch,
-		Timestamp:          timestamp,
+		Timestamp:          ch.Env.LogicalTime(),
 		VirtualState:       ch.State.Clone(),
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
@@ -69,6 +68,8 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 	runvm.MustRunVMTaskAsync(task)
 	require.NoError(ch.Env.T, err)
 	wg.Wait()
+
+	ch.Env.AdvanceClockBy(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 
 	inputs, err := ch.Env.utxoDB.CollectUnspentOutputsFromInputs(task.ResultTransaction)
 	require.NoError(ch.Env.T, err)

@@ -230,11 +230,12 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 	return targetContract == root.Interface.Hname() && entryPoint == coretypes.EntryPointInit
 }
 
-func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue) (*ledgerstate.TransactionEssence, error) {
+func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) (*ledgerstate.TransactionEssence, error) {
 	if err := vmctx.txBuilder.AddAliasOutputAsReminder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
 		return nil, xerrors.Errorf("finalizeRequestCall: %v", err)
 	}
-	tx, _, err := vmctx.txBuilder.BuildEssence()
+	tx, _, err := vmctx.txBuilder.WithTimestamp(timestamp).BuildEssence()
+
 	if err != nil {
 		return nil, err
 	}

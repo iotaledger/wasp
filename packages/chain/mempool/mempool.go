@@ -94,7 +94,7 @@ func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 const timeAheadTolerance = 1000 * time.Nanosecond
 
 func isRequestReady(req *request, seenThreshold uint16, nowis time.Time) bool {
-	if req == nil {
+	if req.req == nil {
 		return false
 	}
 	if len(req.seen) < int(seenThreshold) {

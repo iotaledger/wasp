@@ -126,18 +126,20 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		err := processors.RegisterVMType(wasmtimevm.VMType, wasmtimeConstructor)
 		require.NoError(t, err)
 	})
+	initialTime := time.Now()
 	ret := &Solo{
 		T:           t,
 		logger:      glbLogger,
-		utxoDB:      utxodb.New(),
+		utxoDB:      utxodb.NewWithTimestamp(initialTime),
 		blobCache:   coretypes.NewDummyBlobCache(),
 		glbMutex:    &sync.RWMutex{},
 		clockMutex:  &sync.RWMutex{},
 		ledgerMutex: &sync.RWMutex{},
-		logicalTime: time.Now(),
+		logicalTime: initialTime,
 		timeStep:    DefaultTimeStep,
 		chains:      make(map[[33]byte]*Chain),
 	}
+	ret.logger.Infof("Solo environment created with initial logical time %v", initialTime)
 	return ret
 }
 
@@ -165,7 +167,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		kp := ed25519.GenerateKeyPair()
 		chainOriginator = &kp
 		originatorAddr = ledgerstate.NewED25519Address(kp.PublicKey)
-		_, err := env.utxoDB.RequestFunds(originatorAddr)
+		_, err := env.utxoDB.RequestFunds(originatorAddr, env.LogicalTime())
 		require.NoError(env.T, err)
 	} else {
 		originatorAddr = ledgerstate.NewED25519Address(chainOriginator.PublicKey)
@@ -178,7 +180,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 
 	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
 	inputs := env.utxoDB.GetAddressOutputs(originatorAddr)
-	originTx, chainID, err := sctransaction.NewChainOriginTransaction(chainOriginator, stateAddr, bals, inputs...)
+	originTx, chainID, err := sctransaction.NewChainOriginTransaction(chainOriginator, stateAddr, bals, env.LogicalTime(), inputs...)
 	require.NoError(env.T, err)
 	err = env.utxoDB.AddTransaction(originTx)
 	require.NoError(env.T, err)
@@ -220,6 +222,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		ret.OriginatorKeyPair,
 		chainID,
 		"'solo' testing chain",
+		env.LogicalTime(),
 		env.utxoDB.GetAddressOutputs(ret.OriginatorAddress)...,
 	)
 	require.NoError(env.T, err)

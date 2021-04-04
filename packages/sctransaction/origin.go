@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
+	"time"
 )
 
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
@@ -16,10 +17,11 @@ func NewChainOriginTransaction(
 	keyPair *ed25519.KeyPair,
 	stateAddress ledgerstate.Address,
 	balance map[ledgerstate.Color]uint64,
+	timestamp time.Time,
 	allInputs ...ledgerstate.Output,
 ) (*ledgerstate.Transaction, coretypes.ChainID, error) {
 	walletAddr := ledgerstate.NewED25519Address(keyPair.PublicKey)
-	txb := utxoutil.NewBuilder(allInputs...)
+	txb := utxoutil.NewBuilder(allInputs...).WithTimestamp(timestamp)
 
 	stateHash := state.OriginStateHash()
 	if len(balance) == 0 {
@@ -56,9 +58,10 @@ func NewRootInitRequestTransaction(
 	keyPair *ed25519.KeyPair,
 	chainID coretypes.ChainID,
 	description string,
+	timestamp time.Time,
 	allInputs ...ledgerstate.Output,
 ) (*ledgerstate.Transaction, error) {
-	txb := utxoutil.NewBuilder(allInputs...)
+	txb := utxoutil.NewBuilder(allInputs...).WithTimestamp(timestamp)
 
 	args := requestargs.New(nil)
 
