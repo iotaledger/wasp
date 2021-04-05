@@ -15,6 +15,12 @@ import (
 type Sandbox interface {
 	// AccountID agentID of the current contract
 	AccountID() *AgentID
+	// Params of the current call
+	Params() dict.Dict
+	// State k/v store of the current call (in the context of the smart contract)
+	State() kv.KVStore
+	// RequestID of the request in the context of which is the current call
+	RequestID() RequestID
 	// Balance return number of tokens of specific color in the balance of the smart contract
 	Balance(col ledgerstate.Color) uint64
 	// Balances returns colored balances owned by the smart contract
@@ -48,16 +54,9 @@ type Sandbox interface {
 	// Minted represents new colored tokens which has been minted in the request transaction
 	// Note that the minted tokens can be sent to any addresses, not necessarily the chain address
 	Minted() map[ledgerstate.Color]uint64
-	// TODO proofs of ownership and mint - special collection of methods
-	// Params of the current call
-	Params() dict.Dict
-	// RequestID of the request in the context of which is the current call
-	RequestID() RequestID
 	// Send one generic method for sending assets with ledgerstate.ExtendedLockedOutput
 	// replaces TransferToAddress and PostRequest
 	Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *SendMetadata, options ...SendOptions) bool
-	// State k/v store of the current call (in the context of the smart contract)
-	State() kv.KVStore
 	// Utils provides access to common necessary functionality
 	Utils() Utils
 }

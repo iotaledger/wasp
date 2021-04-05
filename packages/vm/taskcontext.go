@@ -19,9 +19,9 @@ import (
 type VMTask struct {
 	Processors         *processors.ProcessorCache
 	ChainInput         *ledgerstate.AliasOutput
+	VirtualState       state.VirtualState
 	Requests           []coretypes.Request
 	Timestamp          time.Time
-	VirtualState       state.VirtualState // input immutable
 	Entropy            hashing.HashValue
 	ValidatorFeeTarget coretypes.AgentID
 	Log                *logger.Logger

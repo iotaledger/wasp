@@ -13,6 +13,10 @@ import (
 type SandboxView interface {
 	// AccountID agentID of the current contract
 	AccountID() *AgentID
+	// Params of the current call
+	Params() dict.Dict
+	// State immutable k/v store of the current call (in the context of the smart contract)
+	State() kv.KVStoreReader
 	// Balances is colored balances owned by the contract
 	Balances() *ledgerstate.ColoredBalances
 	// Call calls another contract. Only calls view entry points
@@ -29,10 +33,6 @@ type SandboxView interface {
 	GetTimestamp() int64
 	// Log interface provides local logging on the machine. It includes Panicf method
 	Log() LogInterface
-	// Params of the current call
-	Params() dict.Dict
-	// State immutable k/v store of the current call (in the context of the smart contract)
-	State() kv.KVStoreReader
 	// Utils provides access to common necessary functionality
 	Utils() Utils
 }
