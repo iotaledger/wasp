@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/plugins/chains"
+	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/labstack/echo/v4"
 )
 
@@ -51,7 +52,7 @@ func handleChain(c echo.Context) error {
 	}
 
 	if result.ChainRecord != nil && result.ChainRecord.Active {
-		result.VirtualState, result.Block, _, err = state.LoadSolidState(chainid)
+		result.VirtualState, result.Block, _, err = state.LoadSolidState(database.GetInstance(), chainid)
 		if err != nil {
 			return err
 		}

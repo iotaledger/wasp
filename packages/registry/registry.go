@@ -31,3 +31,7 @@ func NewRegistry(suite tcrypto.Suite, log *logger.Logger, dbp ...*dbprovider.DBP
 	}
 	return ret
 }
+
+func (i *Impl) DBProvider() *dbprovider.DBProvider {
+	return i.dbProvider
+}
