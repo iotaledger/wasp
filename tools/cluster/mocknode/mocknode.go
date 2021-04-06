@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const debugLogging = true
+const debugLogging = false
 
 // MockNode provides the bare minimum to emulate a Goshimmer node in a wasp-cluster
 // environment, namely the txstream plugin + a few web api endpoints.

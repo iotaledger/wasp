@@ -167,7 +167,7 @@ func (op *operator) aggregateSigShares(sigShares [][]byte) (*ledgerstate.Transac
 		if i == indexChainInput {
 			blocks[i] = sigUnlockBlock
 		} else {
-			blocks[i] = ledgerstate.NewAliasUnlockBlock(uint16(i))
+			blocks[i] = ledgerstate.NewAliasUnlockBlock(uint16(indexChainInput))
 		}
 	}
 	return ledgerstate.NewTransaction(resTx, blocks), nil

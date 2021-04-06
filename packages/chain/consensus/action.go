@@ -208,7 +208,7 @@ func (op *operator) checkQuorum() {
 		op.log.Warnf("transaction too large")
 		return
 	}
-	// TODO get rid on dependency from plugin
+
 	op.nodeConn.PostTransaction(finalTx, op.committee.Chain().ID().AsAddress(), op.committee.OwnPeerIndex())
 	op.log.Debugf("result transaction has been posted to node. txid: %s", finalTx.ID().Base58())
 

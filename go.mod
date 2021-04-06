@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/bytecodealliance/wasmtime-go v0.21.0
-	github.com/iotaledger/goshimmer v0.5.6-0.20210406133857-9ebd2b6aae9a
+	github.com/iotaledger/goshimmer v0.5.6-0.20210406152623-f320e3a41097
 	github.com/iotaledger/hive.go v0.0.0-20210406075748-aa0aa533e376
 	github.com/knadh/koanf v0.15.0
 	github.com/labstack/echo/v4 v4.1.13
