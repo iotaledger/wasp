@@ -1,13 +1,16 @@
 package state
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/stretchr/testify/require"
-	"testing"
+	"go.uber.org/zap"
 
 	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -232,6 +235,8 @@ func TestCommit(t *testing.T) {
 }
 
 func TestOriginHash(t *testing.T) {
+	log, err := zap.NewDevelopment()
+	require.NoError(t, err)
 	chainID := coretypes.RandomChainID()
-	require.EqualValues(t, OriginStateHash(), NewEmptyVirtualState(chainID).Hash())
+	require.EqualValues(t, OriginStateHash(), NewEmptyVirtualState(dbprovider.NewInMemoryDBProvider(log.Sugar()), chainID).Hash())
 }
