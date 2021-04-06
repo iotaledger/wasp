@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	_ "embed"
 	"fmt"
 	"net/http"
 
@@ -12,6 +13,9 @@ import (
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 )
+
+//go:embed templates/chaincontract.tmpl
+var tplChainContract string
 
 func initChainContract(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid/contract/:hname", handleChainContract)
@@ -88,55 +92,3 @@ type ChainContractTemplateParams struct {
 	Log            []*collections.TimestampedLogRecord
 	RootInfo       RootInfo
 }
-
-const tplChainContract = `
-{{define "title"}}Contract details{{end}}
-
-{{define "body"}}
-	{{ $c := .ContractRecord }}
-	{{ $chainid := .ChainID }}
-	{{ $rootinfo := .RootInfo }}
-	{{ if $c }}
-		<div class="card fluid">
-			<h2 class="section">Contract</h2>
-			<dl>
-				<dt>Name</dt><dd><tt>{{trim 50 $c.Name}}</tt></dd>
-				<dt>Hname</dt><dd><tt>{{.Hname}}</tt></dd>
-				<dt>Description</dt><dd><tt>{{trim 50 $c.Description}}</tt></dd>
-				<dt>Program hash</dt><dd><tt>{{$c.ProgramHash.String}}</tt></dd>
-				{{if $c.HasCreator}}<dt>Creator</dt><dd>{{ template "agentid" (args $chainid $c.Creator) }}</dd>{{end}}
-				<dt>Owner fee</dt><dd>
-					{{- if $c.OwnerFee -}}
-						<tt>{{- $c.OwnerFee }} {{ $rootinfo.FeeColor -}}</tt>
-					{{- else -}}
-						<tt>{{- $rootinfo.DefaultOwnerFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
-					{{- end -}}
-				</dd>
-				<dt>Validator fee</dt><dd>
-					{{- if $c.ValidatorFee -}}
-						<tt>{{- $c.ValidatorFee }} {{ $rootinfo.FeeColor -}}
-					{{- else -}}
-						<tt>{{- $rootinfo.DefaultValidatorFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
-					{{- end -}}
-				</dd>
-			</dl>
-		</div>
-
-		<div class="card fluid">
-			<h3 class="section">Log</h3>
-			<dl style="align-items: center">
-				{{ range $_, $rec := .Log }}
-					<dt><tt>{{ formatTimestamp $rec.Timestamp }}</tt></dt>
-					<dd><pre>{{- trim 1000 (bytesToString $rec.Data) -}}</pre></dd>
-				{{ end }}
-			</dl>
-		</div>
-		{{ template "ws" .ChainID }}
-	{{else}}
-		<div class="card fluid error">Not found.</div>
-	{{end}}
-</div>
-</div>
-</div>
-{{end}}
-`

@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	_ "embed"
 	"strings"
 	"sync"
 
@@ -10,6 +11,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/net/websocket"
 )
+
+//go:embed templates/websocket.tmpl
+var tplWs string
 
 // ChainID -> *sync.Map{} (map of connected clients)
 var wsClients = sync.Map{}
@@ -71,28 +75,3 @@ func startWsForwarder() {
 		}
 	}))
 }
-
-const tplWs = `
-{{define "ws"}}
-	<script>
-		const url = 'ws://' +  location.host + '{{ uri "chainWs" . }}';
-		console.log('opening WebSocket to ' + url);
-		const ws = new WebSocket(url);
-
-		ws.addEventListener('error', function (event) {
-			console.error('WebSocket error!', event);
-		});
-
-		const connectedAt = new Date();
-		ws.addEventListener('message', function (event) {
-			console.log('Message from server: ', event.data);
-			ws.close();
-			if (new Date() - connectedAt > 5000) {
-				location.reload();
-			} else {
-				setTimeout(() => location.reload(), 5000);
-			}
-		});
-	</script>
-{{end}}
-`

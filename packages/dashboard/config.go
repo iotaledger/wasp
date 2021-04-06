@@ -4,11 +4,15 @@
 package dashboard
 
 import (
+	_ "embed"
 	"net/http"
 
 	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/labstack/echo/v4"
 )
+
+//go:embed templates/config.tmpl
+var tplConfig string
 
 func configInit(e *echo.Echo, r renderer) Tab {
 	route := e.GET("/", handleConfig)
@@ -34,20 +38,3 @@ type ConfigTemplateParams struct {
 	BaseTemplateParams
 	Configuration map[string]interface{}
 }
-
-const tplConfig = `
-{{define "title"}}Node configuration{{end}}
-
-{{define "body"}}
-<div class="card fluid">
-	<h2 class="section">Node configuration</h2>
-
-	<dl>
-		{{range $k, $v := .Configuration}}
-				<dt><tt>{{$k}}</tt></dt>
-				<dd><tt>{{$v}}</tt></dd>
-		{{end}}
-	</dl>
-</div>
-{{end}}
-`

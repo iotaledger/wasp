@@ -1,12 +1,16 @@
 package dashboard
 
 import (
+	_ "embed"
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 )
+
+//go:embed templates/chainlist.tmpl
+var tplChainList string
 
 func initChainList(e *echo.Echo, r renderer) Tab {
 	route := e.GET("/chains", handleChainList)
@@ -59,37 +63,3 @@ type ChainOverview struct {
 	RootInfo    RootInfo
 	Error       error
 }
-
-const tplChainList = `
-{{define "title"}}Chains{{end}}
-
-{{define "body"}}
-<div class="card fluid">
-	<h2 class="section">Chains</h2>
-	<table>
-		<thead>
-			<tr>
-				<th>ID</th>
-				<th>Description</th>
-				<th>#Nodes</th>
-				<th>#Contracts</th>
-				<th>Active?</th>
-			</tr>
-		</thead>
-		<tbody>
-			{{range $_, $c := .Chains}}
-				{{ $id := $c.Record.ChainID }}
-				<tr>
-					<td data-label="ID">{{ if not $c.Error }}<a href="{{ uri "chain" $id }}"><tt>{{ $id }}</tt></a>{{ else }}<tt>{{ $id }}</tt>{{ end }}</td>
-					<td data-label="Description">{{ trim 50 $c.RootInfo.Description }}
-						{{- if $c.Error }}<div class="card fluid error">{{ $c.Error }}</div>{{ end }}</td>
-					<td data-label="#Nodes">{{if not $c.Error}}<tt>{{ len $c.Record.Nodes }}</tt>{{ end }}</td>
-					<td data-label="#Contracts">{{if not $c.Error}}<tt>{{ len $c.RootInfo.Contracts }}</tt>{{ end }}</td>
-					<td data-label="Active?">{{ if $c.Record.Active }} yes {{ else }} no {{ end }}</td>
-				</tr>
-			{{end}}
-		</tbody>
-	</table>
-</div>
-{{end}}
-`
