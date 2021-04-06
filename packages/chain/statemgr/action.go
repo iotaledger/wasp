@@ -5,9 +5,10 @@ package statemgr
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"strconv"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -161,7 +162,7 @@ func (sm *stateManager) addBlockCandidate(block state.Block) {
 
 	var stateToApprove state.VirtualState
 	if sm.solidState == nil {
-		stateToApprove = state.NewEmptyVirtualState(sm.chain.ID())
+		stateToApprove = state.NewEmptyVirtualState(sm.dbp, sm.chain.ID())
 	} else {
 		stateToApprove = sm.solidState.Clone()
 	}
@@ -182,7 +183,7 @@ func (sm *stateManager) addBlockCandidate(block state.Block) {
 
 func (sm *stateManager) createStateToApprove() state.VirtualState {
 	if sm.solidState == nil {
-		return state.NewEmptyVirtualState(sm.chain.ID())
+		return state.NewEmptyVirtualState(sm.dbp, sm.chain.ID())
 	}
 	return sm.solidState.Clone()
 }

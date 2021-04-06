@@ -5,6 +5,8 @@ package chainimpl
 
 import (
 	"bytes"
+	"sync"
+
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -13,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -20,7 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
-	"sync"
 )
 
 type chainObj struct {
@@ -36,6 +38,7 @@ type chainObj struct {
 	eventRequestProcessed *events.Event
 	log                   *logger.Logger
 	nodeConn              *txstream.Client
+	dbProvider            *dbprovider.DBProvider
 	netProvider           peering.NetworkProvider
 	dksProvider           tcrypto.RegistryProvider
 	blobProvider          coretypes.BlobCache
@@ -45,6 +48,7 @@ func NewChain(
 	chr *registry.ChainRecord,
 	log *logger.Logger,
 	nodeConn *txstream.Client,
+	dbProvider *dbprovider.DBProvider,
 	netProvider peering.NetworkProvider,
 	dksProvider tcrypto.RegistryProvider,
 	blobProvider coretypes.BlobCache,
@@ -62,11 +66,12 @@ func NewChain(
 		}),
 		log:          chainLog,
 		nodeConn:     nodeConn,
+		dbProvider:   dbProvider,
 		netProvider:  netProvider,
 		dksProvider:  dksProvider,
 		blobProvider: blobProvider,
 	}
-	ret.stateMgr = statemgr.New(ret, newPeers(nil), nodeConn, ret.log)
+	ret.stateMgr = statemgr.New(dbProvider, ret, newPeers(nil), nodeConn, ret.log)
 	go func() {
 		for msg := range ret.chMsg {
 			ret.dispatchMessage(msg)
