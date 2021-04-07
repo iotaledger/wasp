@@ -26,6 +26,8 @@ type request struct {
 	seen            map[uint16]bool
 }
 
+const constSolidificationLoopDelay = 200 * time.Millisecond
+
 var _ chain.Mempool = &mempool{}
 
 func New(blobCache coretypes.BlobCache, log *logger.Logger) chain.Mempool {
@@ -209,19 +211,24 @@ func (m *mempool) Close() {
 func (m *mempool) solidificationLoop() {
 	for {
 		select {
-		case <-time.Tick(200 * time.Millisecond):
-			m.mutex.Lock()
-			for _, req := range m.requests {
-				if req.req == nil {
-					continue
-				}
-				if onTangleRequest, ok := req.req.(*sctransaction.RequestOnLedger); ok {
-					_, _ = onTangleRequest.SolidifyArgs(m.blobCache)
-				}
-			}
-			m.mutex.Unlock()
 		case <-m.chStop:
 			return
+		default:
+			m.doSolidifyRequests()
+		}
+		time.Sleep(constSolidificationLoopDelay)
+	}
+}
+
+func (m *mempool) doSolidifyRequests() {
+	m.mutex.Lock()
+	for _, req := range m.requests {
+		if req.req == nil {
+			continue
+		}
+		if onTangleRequest, ok := req.req.(*sctransaction.RequestOnLedger); ok {
+			_, _ = onTangleRequest.SolidifyArgs(m.blobCache)
 		}
 	}
+	m.mutex.Unlock()
 }
