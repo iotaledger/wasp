@@ -12,6 +12,7 @@ import (
 // region RequestOnLedger //////////////////////////////////////////////////////////////////
 
 type RequestOnLedger struct {
+	timestamp       time.Time
 	minted          map[ledgerstate.Color]uint64
 	outputObj       *ledgerstate.ExtendedLockedOutput
 	requestMetadata *RequestMetadata
@@ -66,7 +67,7 @@ func (req *RequestOnLedger) Output() ledgerstate.Output {
 }
 
 func (req *RequestOnLedger) Order() uint64 {
-	return uint64(req.outputObj.TimeLock().UnixNano())
+	return uint64(req.timestamp.UnixNano())
 }
 
 // Args returns solid args if decoded already or nil otherwise

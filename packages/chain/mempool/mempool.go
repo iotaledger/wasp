@@ -21,6 +21,7 @@ type mempool struct {
 
 type request struct {
 	req             coretypes.Request
+	timestamp       time.Time
 	whenMsgReceived time.Time
 	seen            map[uint16]bool
 }
@@ -38,7 +39,7 @@ func New(blobCache coretypes.BlobCache, log *logger.Logger) chain.Mempool {
 	return ret
 }
 
-func (m *mempool) ReceiveRequest(req coretypes.Request) {
+func (m *mempool) ReceiveRequest(req coretypes.Request, timestamp time.Time) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -55,6 +56,7 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	}
 	m.requests[req.ID()] = &request{
 		req:             req,
+		timestamp:       timestamp,
 		whenMsgReceived: time.Now(),
 		seen:            make(map[uint16]bool),
 	}

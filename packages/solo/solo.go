@@ -305,7 +305,7 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 		}
 		chain.reqCounter.Add(int32(len(reqs)))
 		for _, req := range reqs {
-			chain.mempool.ReceiveRequest(req)
+			chain.mempool.ReceiveRequest(req, tx.Essence().Timestamp())
 		}
 	}
 }
