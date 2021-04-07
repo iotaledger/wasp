@@ -99,19 +99,9 @@ func TestTakeAllReady(t *testing.T) {
 	pool.ReceiveRequest(requests[2])
 	pool.ReceiveRequest(requests[3])
 	pool.ReceiveRequest(requests[4])
+	pool.(*mempool).doSolidifyRequests()
+
 	ready, result := pool.TakeAllReady(time.Now(),
-		requests[0].ID(),
-		requests[1].ID(),
-		requests[2].ID(),
-		requests[3].ID(),
-		requests[4].ID(),
-	)
-	//NOTE: solidifaction waits for 200 miliseconds after start before proceeding
-	//see packages/chain/mempool/mempool.go funcition solidificationLoop()
-	require.False(t, result)
-	require.Nil(t, ready)
-	time.Sleep(200 * time.Millisecond)
-	ready, result = pool.TakeAllReady(time.Now(),
 		requests[0].ID(),
 		requests[1].ID(),
 		requests[2].ID(),
@@ -164,18 +154,15 @@ func initSeenTest(t *testing.T) (chain.Mempool, []*sctransaction.RequestOnLedger
 
 	pool.ReceiveRequest(requests[4])
 
+	pool.(*mempool).doSolidifyRequests()
+
 	return pool, requests
 }
 
 func TestGetReadyList(t *testing.T) {
 	pool, requests := initSeenTest(t)
 
-	//NOTE: solidifaction waits for 200 miliseconds after start before proceeding
-	//see packages/chain/mempool/mempool.go funcition solidificationLoop()
 	ready := pool.GetReadyList(0)
-	require.True(t, len(ready) == 0)
-	time.Sleep(200 * time.Millisecond)
-	ready = pool.GetReadyList(0)
 	require.True(t, len(ready) == 5)
 	require.Contains(t, ready, requests[0])
 	require.Contains(t, ready, requests[1])
@@ -210,6 +197,7 @@ func TestGetReadyList(t *testing.T) {
 
 func TestGetReadyListFull(t *testing.T) {
 	pool, requests := initSeenTest(t)
+
 	request0Full := &chain.ReadyListRecord{
 		Request: requests[0],
 		Seen:    map[uint16]bool{0: true, 1: true, 2: true, 3: true},
@@ -231,12 +219,7 @@ func TestGetReadyListFull(t *testing.T) {
 		Seen:    map[uint16]bool{},
 	}
 
-	//NOTE: solidifaction waits for 200 miliseconds after start before proceeding
-	//see packages/chain/mempool/mempool.go funcition solidificationLoop()
 	ready := pool.GetReadyListFull(0)
-	require.True(t, len(ready) == 0)
-	time.Sleep(200 * time.Millisecond)
-	ready = pool.GetReadyListFull(0)
 	require.True(t, len(ready) == 5)
 	require.Contains(t, ready, request0Full)
 	require.Contains(t, ready, request1Full)
@@ -267,4 +250,34 @@ func TestGetReadyListFull(t *testing.T) {
 	pool.ClearSeenMarks()
 	ready = pool.GetReadyListFull(1)
 	require.True(t, len(ready) == 0)
+}
+
+func TestSolidifyLoop(t *testing.T) {
+	pool := New(coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t)) //Solidification initiated on pool creation
+	require.NotNil(t, pool)
+	requests := getRequestsOnLedger(t, 4)
+
+	pool.ReceiveRequest(requests[0])
+	_, result := pool.TakeAllReady(time.Now(), requests[0].ID())
+	require.False(t, result) //No solidification yet => request is not ready
+
+	time.Sleep(2 * constSolidificationLoopDelay) //Double the delay to make sure that solidification has really happened
+	ready, result := pool.TakeAllReady(time.Now(), requests[0].ID())
+	require.True(t, result) //Solidification initiated automatically after delay => the request is ready
+	require.True(t, len(ready) == 1)
+	require.Contains(t, ready, requests[0])
+
+	pool.ReceiveRequest(requests[1])
+	pool.ReceiveRequest(requests[2])
+	pool.ReceiveRequest(requests[3])
+	_, result = pool.TakeAllReady(time.Now(), requests[1].ID(), requests[2].ID(), requests[3].ID())
+	require.False(t, result) //No solidification after receiving requests yet => requests are not ready
+
+	time.Sleep(2 * constSolidificationLoopDelay) //Double the delay to make sure that solidification has really happened
+	ready, result = pool.TakeAllReady(time.Now(), requests[1].ID(), requests[2].ID(), requests[3].ID())
+	require.True(t, result) //Solidification initiated automatically after delay => several requests made ready in one cycle iteration
+	require.True(t, len(ready) == 3)
+	require.Contains(t, ready, requests[1])
+	require.Contains(t, ready, requests[2])
+	require.Contains(t, ready, requests[3])
 }
