@@ -12,14 +12,14 @@ import (
 func (c *WaspClient) PutBlob(data []byte) (hashing.HashValue, error) {
 	req := model.NewBlobData(data)
 	res := &model.BlobInfo{}
-	err := c.do(http.MethodGet, routes.PutBlob(), req, res)
+	err := c.do(http.MethodPost, routes.PutBlob(), req, res)
 	return res.Hash.HashValue(), err
 }
 
 // GetBlob fetches a blob by its hash
 func (c *WaspClient) GetBlob(hash hashing.HashValue) ([]byte, error) {
 	res := &model.BlobData{}
-	err := c.do(http.MethodGet, routes.GetBlob(hash.String()), nil, res)
+	err := c.do(http.MethodGet, routes.GetBlob(hash.Base58()), nil, res)
 	if err != nil {
 		return nil, err
 	}
@@ -29,6 +29,6 @@ func (c *WaspClient) GetBlob(hash hashing.HashValue) ([]byte, error) {
 // HasBlob returns whether or not a blob exists
 func (c *WaspClient) HasBlob(hash hashing.HashValue) (bool, error) {
 	res := &model.BlobInfo{}
-	err := c.do(http.MethodGet, routes.HasBlob(hash.String()), nil, res)
+	err := c.do(http.MethodGet, routes.HasBlob(hash.Base58()), nil, res)
 	return res.Exists, err
 }
