@@ -239,7 +239,7 @@ func TestOriginHash(t *testing.T) {
 	t.Logf("zero state hash = %s", NewZeroVirtualState(mapdb.NewMapDB()).Hash().String())
 	require.EqualValues(t, OriginStateHashBase58, OriginStateHash().String())
 
-	emptyState := NewVirtualState(mapdb.NewMapDB())
+	emptyState := NewVirtualState(mapdb.NewMapDB(), nil)
 	err := emptyState.ApplyBlock(origBlock)
 	require.NoError(t, err)
 	require.EqualValues(t, emptyState.Hash(), OriginStateHash())

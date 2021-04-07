@@ -25,20 +25,20 @@ type virtualState struct {
 	variables  buffered.BufferedKVStore
 }
 
-func NewVirtualState(db kvstore.KVStore, chainID ...*coretypes.ChainID) *virtualState {
+func NewVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
 	ret := &virtualState{
 		db:        db,
 		variables: buffered.NewBufferedKVStore(subRealm(db, []byte{dbprovider.ObjectTypeStateVariable})),
 		empty:     true,
 	}
-	if len(chainID) > 0 {
-		ret.chainID = *chainID[0]
+	if chainID != nil {
+		ret.chainID = *chainID
 	}
 	return ret
 }
 
 func NewZeroVirtualState(db kvstore.KVStore) *virtualState {
-	ret := NewVirtualState(db)
+	ret := NewVirtualState(db, nil)
 	originBlock := MustNewOriginBlock()
 	if err := ret.ApplyBlock(originBlock); err != nil {
 		panic(err)

@@ -21,7 +21,6 @@ func (sm *stateManager) syncBlock(blockIndex uint32) state.Block {
 	if !blk.pullDeadline.After(time.Now()) {
 		return nil
 	}
-	// it is time to ask for the next state update to next peer in the permutation
 	data := util.MustBytes(&chain.GetBlockMsg{
 		BlockIndex: blockIndex,
 	})

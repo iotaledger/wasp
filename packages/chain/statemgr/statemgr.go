@@ -87,11 +87,13 @@ func New(dbp *dbprovider.DBProvider, c chain.Chain, peers chain.PeerGroupProvide
 }
 
 func (sm *stateManager) SetPeers(p chain.PeerGroupProvider) {
+	n := uint16(0)
 	if p != nil {
-		sm.log.Debugf("SetPeers: num = %d", p.NumPeers())
+		n = p.NumPeers()
+		sm.log.Debugf("SetPeers: num = %d", n)
 	}
 	sm.peers = p
-	sm.pingPong = make([]bool, p.NumPeers())
+	sm.pingPong = make([]bool, n)
 }
 
 func (sm *stateManager) Close() {
