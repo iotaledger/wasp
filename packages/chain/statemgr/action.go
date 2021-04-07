@@ -89,9 +89,6 @@ func (sm *stateManager) notifyConsensusOnStateTransitionIfNeeded() {
 }
 
 func (sm *stateManager) checkStateApproval() {
-	if !sm.isSolidStateValidated() {
-		return
-	}
 	// among pending state update batches we locate the one which
 	// is approved by the state output
 	varStateHash, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())

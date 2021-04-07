@@ -50,7 +50,8 @@ func initLog() *logger.Logger {
 		panic(err)
 	}
 	if debugLogging {
-		log.WithOptions(zap.IncreaseLevel(zapcore.DebugLevel), zap.AddStacktrace(zapcore.PanicLevel))
+		log.WithOptions(zap.IncreaseLevel(zapcore.DebugLevel))
 	}
+	log.WithOptions(zap.AddStacktrace(zapcore.PanicLevel))
 	return log.Sugar()
 }

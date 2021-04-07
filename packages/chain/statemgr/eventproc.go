@@ -150,7 +150,7 @@ func (sm *stateManager) eventBlockCandidateMsg(msg chain.BlockCandidateMsg) {
 	if sm.stateOutput == nil {
 		return
 	}
-	sm.log.Infow("EventBlockCandidateMsg",
+	sm.log.Debugw("EventBlockCandidateMsg",
 		"state index", msg.Block.StateIndex(),
 		"size", msg.Block.Size(),
 		"state output", coretypes.OID(msg.Block.ApprovingOutputID()),

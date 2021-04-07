@@ -37,7 +37,7 @@ func (c *chainObj) startTimer() {
 }
 
 func (c *chainObj) Dismiss() {
-	c.log.Infof("Dismiss chain %s", c.chainID)
+	c.log.Infof("Dismiss chain %s", c.chainID.Base58())
 
 	c.dismissOnce.Do(func() {
 		c.dismissed.Store(true)
