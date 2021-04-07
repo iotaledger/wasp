@@ -18,20 +18,19 @@ import (
 )
 
 type stateManager struct {
-	dbp                                *dbprovider.DBProvider
-	chain                              chain.Chain
-	peers                              chain.PeerGroupProvider
-	nodeConn                           *txstream.Client
-	pingPong                           []bool
-	deadlineForPongQuorum              time.Time
-	pullStateDeadline                  time.Time
-	blockCandidates                    map[hashing.HashValue]*pendingBlock
-	solidState                         state.VirtualState
-	stateOutput                        *ledgerstate.AliasOutput
-	stateOutputTimestamp               time.Time
-	syncingBlocks                      map[uint32]*syncingBlock
-	consensusNotifiedOnStateTransition bool
-	log                                *logger.Logger
+	dbp                   *dbprovider.DBProvider
+	chain                 chain.Chain
+	peers                 chain.PeerGroupProvider
+	nodeConn              *txstream.Client
+	pingPong              []bool
+	deadlineForPongQuorum time.Time
+	pullStateDeadline     time.Time
+	blockCandidates       map[hashing.HashValue]*candidateBlock
+	solidState            state.VirtualState
+	stateOutput           *ledgerstate.AliasOutput
+	stateOutputTimestamp  time.Time
+	syncingBlocks         map[uint32]*syncingBlock
+	log                   *logger.Logger
 
 	// Channels for accepting external events.
 	eventStateIndexPingPongMsgCh chan *chain.BlockIndexPingPongMsg
@@ -57,7 +56,7 @@ type syncingBlock struct {
 	block         state.Block
 }
 
-type pendingBlock struct {
+type candidateBlock struct {
 	// block of state updates, not validated yet
 	block state.Block
 	// resulting variable state after applied the block to the solidState
@@ -70,7 +69,7 @@ func New(dbp *dbprovider.DBProvider, c chain.Chain, peers chain.PeerGroupProvide
 		chain:                        c,
 		nodeConn:                     nodeconn,
 		syncingBlocks:                make(map[uint32]*syncingBlock),
-		blockCandidates:              make(map[hashing.HashValue]*pendingBlock),
+		blockCandidates:              make(map[hashing.HashValue]*candidateBlock),
 		log:                          log.Named("s"),
 		eventStateIndexPingPongMsgCh: make(chan *chain.BlockIndexPingPongMsg),
 		eventGetBlockMsgCh:           make(chan *chain.GetBlockMsg),

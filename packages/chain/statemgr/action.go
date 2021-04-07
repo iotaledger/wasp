@@ -21,7 +21,6 @@ func (sm *stateManager) takeAction() {
 	sm.sendPingsIfNeeded()
 	sm.pullStateIfNeeded()
 	sm.doSyncIfNeeded()
-	sm.notifyConsensusOnStateTransitionIfNeeded()
 }
 
 func (sm *stateManager) pullStateIfNeeded() {
@@ -67,85 +66,78 @@ func (sm *stateManager) isSolidStateValidated() bool {
 	return false
 }
 
-func (sm *stateManager) notifyConsensusOnStateTransitionIfNeeded() {
-	if sm.stateOutput == nil {
-		return
-	}
-	if !sm.isSolidStateValidated() {
-		return
-	}
-	if sm.consensusNotifiedOnStateTransition {
-		return
-	}
-	if !sm.numPongsHasQuorum() {
-		return
-	}
-	sm.consensusNotifiedOnStateTransition = true
-	go sm.chain.ReceiveMessage(&chain.StateTransitionMsg{
-		VariableState: sm.solidState.Clone(),
-		ChainOutput:   sm.stateOutput,
-		Timestamp:     sm.stateOutputTimestamp,
-	})
-}
-
 func (sm *stateManager) checkStateApproval() {
-	// among pending state update batches we locate the one which
+	// among candidate state update batches we locate the one which
 	// is approved by the state output
 	varStateHash, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())
 	if err != nil {
 		sm.log.Panic(err)
 	}
-	pending, ok := sm.blockCandidates[varStateHash]
+	candidate, ok := sm.blockCandidates[varStateHash]
 	if !ok {
-		// corresponding block wasn't found among pending state updates
+		// corresponding block wasn't found among candidate state updates
 		// transaction doesn't approve anything
 		return
 	}
 
-	// found a pending block which is approved by the stateOutput
+	// found a candidate block which is approved by the stateOutput
 	// set the transaction id from output
-	pending.block.WithApprovingOutputID(sm.stateOutput.ID())
+	candidate.block.WithApprovingOutputID(sm.stateOutput.ID())
 
-	if err := pending.nextState.CommitToDb(pending.block); err != nil {
-		sm.log.Errorw("failed to save state at index #%d", pending.nextState.BlockIndex())
+	if err := candidate.nextState.CommitToDb(candidate.block); err != nil {
+		sm.log.Errorw("failed to save state at index #%d", candidate.nextState.BlockIndex())
 		return
 	}
 	if sm.solidState != nil {
 		sm.log.Infof("STATE TRANSITION TO #%d. Chain output: %s, block size: %d",
-			pending.nextState.BlockIndex(), coretypes.OID(sm.stateOutput.ID()), pending.block.Size())
+			candidate.nextState.BlockIndex(), coretypes.OID(sm.stateOutput.ID()), candidate.block.Size())
 		sm.log.Debugf("STATE TRANSITION. State hash: %s, block essence: %s",
-			varStateHash.String(), pending.block.EssenceHash().String())
+			varStateHash.String(), candidate.block.EssenceHash().String())
 	} else {
 		sm.log.Infof("ORIGIN STATE SAVED. State output id: %s", coretypes.OID(sm.stateOutput.ID()))
 		sm.log.Debugf("ORIGIN STATE SAVED. state hash: %s, block essence: %s",
-			varStateHash.String(), pending.block.EssenceHash().String())
+			varStateHash.String(), candidate.block.EssenceHash().String())
 	}
-	sm.solidState = pending.nextState
-	sm.blockCandidates = make(map[hashing.HashValue]*pendingBlock) // clear pending batches
-	sm.consensusNotifiedOnStateTransition = false
+	sm.solidState = candidate.nextState
+	sm.blockCandidates = make(map[hashing.HashValue]*candidateBlock) // clear candidate batches
 
-	// publish state transition
-	publisher.Publish("state",
-		sm.chain.ID().String(),
-		strconv.Itoa(int(sm.solidState.BlockIndex())),
-		strconv.Itoa(int(pending.block.Size())),
-		sm.stateOutput.ID().String(),
-		varStateHash.String(),
-		fmt.Sprintf("%d", pending.block.Timestamp()),
-	)
-	// publish processed requests
-	for i, reqid := range pending.block.RequestIDs() {
+	sm.announceNewState(candidate)
+}
 
-		sm.chain.EventRequestProcessed().Trigger(reqid)
+func (sm *stateManager) announceNewState(candidate *candidateBlock) {
+	cloneState := sm.solidState.Clone()
+	go func() {
+		// send to consensus
+		sm.chain.ReceiveMessage(&chain.StateTransitionMsg{
+			VariableState: cloneState,
+			ChainOutput:   sm.stateOutput,
+			Timestamp:     sm.stateOutputTimestamp,
+			RequestIDs:    candidate.block.RequestIDs(),
+		})
 
-		publisher.Publish("request_out",
+		// publish state transition
+		publisher.Publish("state",
 			sm.chain.ID().String(),
-			reqid.String(),
 			strconv.Itoa(int(sm.solidState.BlockIndex())),
-			strconv.Itoa(i),
-			strconv.Itoa(int(pending.block.Size())),
+			strconv.Itoa(int(candidate.block.Size())),
+			sm.stateOutput.ID().String(),
+			candidate.nextState.Hash().String(),
+			fmt.Sprintf("%d", candidate.block.Timestamp()),
 		)
-	}
+		// publish processed requests
+		for i, reqid := range candidate.block.RequestIDs() {
+
+			sm.chain.EventRequestProcessed().Trigger(reqid)
+
+			publisher.Publish("request_out",
+				sm.chain.ID().String(),
+				reqid.String(),
+				strconv.Itoa(int(sm.solidState.BlockIndex())),
+				strconv.Itoa(i),
+				strconv.Itoa(int(candidate.block.Size())),
+			)
+		}
+	}()
 }
 
 // adding block of state updates to the 'pending' map
@@ -177,7 +169,7 @@ func (sm *stateManager) addBlockCandidate(block state.Block) {
 	if sm.solidState == nil && vh.String() != state.OriginStateHashBase58 {
 		sm.log.Panicf("major inconsistency: stateToApprove hash is %s, expected %s", vh.String(), state.OriginStateHashBase58)
 	}
-	sm.blockCandidates[vh] = &pendingBlock{
+	sm.blockCandidates[vh] = &candidateBlock{
 		block:     block,
 		nextState: stateToApprove,
 	}
