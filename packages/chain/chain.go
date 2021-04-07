@@ -51,7 +51,7 @@ type Chain interface {
 	ReceiveMessage(interface{}) // generic
 	ReceiveTransaction(*ledgerstate.Transaction)
 	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
-	ReceiveRequest(coretypes.Request)
+	ReceiveRequest(coretypes.Request, time.Time)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
 
 	Dismiss()
@@ -93,7 +93,7 @@ type ReadyListRecord struct {
 }
 
 type Mempool interface {
-	ReceiveRequest(req coretypes.Request)
+	ReceiveRequest(req coretypes.Request, timestamp time.Time)
 	MarkSeenByCommitteePeer(reqid *coretypes.RequestID, peerIndex uint16)
 	ClearSeenMarks()
 	GetReadyList(seenThreshold uint16) []coretypes.Request
