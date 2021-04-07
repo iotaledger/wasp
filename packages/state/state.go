@@ -3,11 +3,10 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"io"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -38,20 +37,24 @@ func NewVirtualState(db kvstore.KVStore, chainID ...*coretypes.ChainID) *virtual
 	return ret
 }
 
-func NewEmptyVirtualState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) *virtualState {
-	return NewVirtualState(getSCPartition(dbp, chainID), chainID)
-}
-
-func OriginStateHash() hashing.HashValue {
-	emptyVirtualState := NewVirtualState(mapdb.NewMapDB())
-	originBlock := MustNewOriginBlock(ledgerstate.OutputID{})
-	if err := emptyVirtualState.ApplyBlock(originBlock); err != nil {
+func NewZeroVirtualState(db kvstore.KVStore) *virtualState {
+	ret := NewVirtualState(db)
+	originBlock := MustNewOriginBlock()
+	if err := ret.ApplyBlock(originBlock); err != nil {
 		panic(err)
 	}
+	return ret
+}
+
+const OriginStateHashBase58 = "AnjsyXHHLnh1Ko5FVwXaVGmgfz88yun9NA4GE4HUeBHs"
+
+// OriginStateHash is independent from db provider nor chainID
+func OriginStateHash() hashing.HashValue {
+	emptyVirtualState := NewZeroVirtualState(mapdb.NewMapDB())
 	return emptyVirtualState.Hash()
 }
 
-func getSCPartition(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) kvstore.KVStore {
+func getChainPartition(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) kvstore.KVStore {
 	return dbp.GetPartition(chainID)
 }
 
@@ -211,7 +214,7 @@ func (vs *virtualState) CommitToDb(b Block) error {
 }
 
 func LoadSolidState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
-	return loadSolidState(getSCPartition(dbp, chainID), chainID)
+	return loadSolidState(getChainPartition(dbp, chainID), chainID)
 }
 
 func loadSolidState(db kvstore.KVStore, chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
@@ -254,5 +257,5 @@ func dbkeyRequest(reqid coretypes.RequestID) []byte {
 }
 
 func IsRequestCompleted(dbp *dbprovider.DBProvider, addr *coretypes.ChainID, reqid coretypes.RequestID) (bool, error) {
-	return getSCPartition(dbp, addr).Has(dbkeyRequest(reqid))
+	return getChainPartition(dbp, addr).Has(dbkeyRequest(reqid))
 }

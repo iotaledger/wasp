@@ -120,7 +120,7 @@ func (sm *stateManager) mustCommitSynced(fromIndex uint32) {
 	if sm.solidState != nil {
 		tentativeState = sm.solidState.Clone()
 	} else {
-		tentativeState = state.NewEmptyVirtualState(sm.dbp, sm.chain.ID())
+		tentativeState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
 	}
 	syncedBlocks := make([]state.Block, 0)
 	for i := fromIndex; i < sm.stateOutput.GetStateIndex(); i++ {
@@ -147,7 +147,7 @@ func (sm *stateManager) mustCommitSynced(fromIndex uint32) {
 	}
 	// again applying blocks, this time seriously
 	if sm.solidState == nil {
-		sm.solidState = state.NewEmptyVirtualState(sm.dbp, sm.chain.ID())
+		sm.solidState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
 	}
 	for _, block := range syncedBlocks {
 		if err := tentativeState.ApplyBlock(block); err != nil {

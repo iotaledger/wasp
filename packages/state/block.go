@@ -20,6 +20,8 @@ type block struct {
 	stateUpdates  []StateUpdate
 }
 
+const OriginBlockHashBase58 = "3WNypZFokE7aRAdpSxnS93DKpSK5HVBnjaAYC3icpoe1"
+
 // validates, enumerates and creates a block from array of state updates
 func NewBlock(stateUpdates ...StateUpdate) (Block, error) {
 	if len(stateUpdates) == 0 {
@@ -46,12 +48,12 @@ func BlockFromBytes(data []byte) (Block, error) {
 }
 
 // block with empty state update and nil state hash
-func MustNewOriginBlock(originOutputID ledgerstate.OutputID) Block {
+func MustNewOriginBlock() Block {
 	ret, err := NewBlock(NewStateUpdate(coretypes.RequestID{}))
 	if err != nil {
 		log.Panic(err)
 	}
-	return ret.WithApprovingOutputID(originOutputID)
+	return ret
 }
 
 func (b *block) Bytes() []byte {

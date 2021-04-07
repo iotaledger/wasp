@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"go.uber.org/atomic"
@@ -19,7 +20,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
@@ -43,18 +43,17 @@ const (
 	MaxRequestsInBlock = 100
 )
 
-var DustThreshold = map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: DustThresholdIotas}
-
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
 	T           *testing.T
 	logger      *logger.Logger
+	dbProvider  *dbprovider.DBProvider
 	utxoDB      *utxodb.UtxoDB
 	blobCache   coretypes.BlobCache
-	glbMutex    *sync.RWMutex
-	ledgerMutex *sync.RWMutex
-	clockMutex  *sync.RWMutex
+	glbMutex    sync.RWMutex
+	ledgerMutex sync.RWMutex
+	clockMutex  sync.RWMutex
 	logicalTime time.Time
 	timeStep    time.Duration
 	chains      map[[33]byte]*Chain
@@ -130,11 +129,9 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 	ret := &Solo{
 		T:           t,
 		logger:      glbLogger,
+		dbProvider:  dbprovider.NewInMemoryDBProvider(glbLogger.Named("db")),
 		utxoDB:      utxodb.NewWithTimestamp(initialTime),
-		blobCache:   coretypes.NewDummyBlobCache(),
-		glbMutex:    &sync.RWMutex{},
-		clockMutex:  &sync.RWMutex{},
-		ledgerMutex: &sync.RWMutex{},
+		blobCache:   coretypes.NewInMemoryBlobCache(),
 		logicalTime: initialTime,
 		timeStep:    DefaultTimeStep,
 		chains:      make(map[[33]byte]*Chain),
@@ -202,7 +199,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      *originatorAgentID,
 		ValidatorFeeTarget:     *feeTarget,
-		State:                  state.NewVirtualState(mapdb.NewMapDB(), &chainID),
+		State:                  state.NewZeroVirtualState(env.dbProvider.GetPartition(&chainID)),
 		proc:                   processors.MustNew(),
 		Log:                    chainlog,
 		//
@@ -212,9 +209,8 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
-	originBlock := state.MustNewOriginBlock(ledgerstate.NewOutputID(originTx.ID(), 0))
-	err = ret.State.ApplyBlock(originBlock)
-	require.NoError(env.T, err)
+	originBlock := state.MustNewOriginBlock().
+		WithApprovingOutputID(ledgerstate.NewOutputID(originTx.ID(), 0))
 	err = ret.State.CommitToDb(originBlock)
 	require.NoError(env.T, err)
 

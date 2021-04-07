@@ -120,10 +120,10 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 
 	bh := vm.BatchHash(reqids, result.Timestamp, op.committee.OwnPeerIndex())
 	if bh != op.leaderStatus.batchHash {
-		panic("bh != op.leaderStatus.batchHash")
+		op.log.Panic("bh != op.leaderStatus.batchHash")
 	}
 	if len(result.Requests) != int(result.ResultBlock.Size()) {
-		panic("len(result.RequestIDs) != int(result.ResultBlock.Size())")
+		op.log.Panic("len(result.RequestIDs) != int(result.ResultBlock.Size())")
 	}
 
 	essenceHash := hashing.HashData(result.ResultTransaction.Bytes())
