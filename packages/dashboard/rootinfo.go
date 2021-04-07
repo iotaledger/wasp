@@ -33,13 +33,6 @@ func fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
 		err = fmt.Errorf("root view call failed: %v", err)
 		return
 	}
-	// TODO
-	//  VarChainID
-	//  VarChainOwnerID
-	//  VarDescription
-	//  VarFeeColor
-	//  VarDefaultOwnerFee
-	//  VarDefaultValidatorFee
 
 	ret.Contracts, err = root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
 	if err != nil {
