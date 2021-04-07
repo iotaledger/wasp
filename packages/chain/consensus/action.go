@@ -4,8 +4,11 @@
 package consensus
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"golang.org/x/xerrors"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -200,7 +203,23 @@ func (op *operator) checkQuorum() {
 		return
 	}
 
-	op.log.Infof("FINALIZED RESULT. txid: %s, contributors: %+v", finalTx.ID().Base58(), contributingPeers)
+	// check consistency and log
+	chainOut, err := utxoutil.GetSingleChainedAliasOutput(finalTx.Essence())
+	if err != nil {
+		op.log.Panic(xerrors.Errorf("major inconsistency: %w", err))
+	}
+	resultingStateHash, err := hashing.HashValueFromBytes(chainOut.GetStateData())
+	if err != nil {
+		op.log.Panic(xerrors.Errorf("major inconsistency: %w", err))
+	}
+
+	op.log.Infow("FINALIZED RESULT",
+		"txid:", finalTx.ID().Base58(),
+		"state index", chainOut.GetStateIndex(),
+		"state hash", resultingStateHash.String(),
+		"contributors", contributingPeers,
+	)
+
 	op.leaderStatus.finalized = true
 
 	// posting finalized transaction to goshimmer
@@ -208,7 +227,7 @@ func (op *operator) checkQuorum() {
 		op.log.Warnf("transaction too large")
 		return
 	}
-	// TODO get rid on dependency from plugin
+
 	op.nodeConn.PostTransaction(finalTx, op.committee.Chain().ID().AsAddress(), op.committee.OwnPeerIndex())
 	op.log.Debugf("result transaction has been posted to node. txid: %s", finalTx.ID().Base58())
 

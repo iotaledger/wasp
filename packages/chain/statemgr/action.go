@@ -5,9 +5,10 @@ package statemgr
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"strconv"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -88,9 +89,6 @@ func (sm *stateManager) notifyConsensusOnStateTransitionIfNeeded() {
 }
 
 func (sm *stateManager) checkStateApproval() {
-	if !sm.isSolidStateValidated() {
-		return
-	}
 	// among pending state update batches we locate the one which
 	// is approved by the state output
 	varStateHash, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())
@@ -152,39 +150,40 @@ func (sm *stateManager) checkStateApproval() {
 
 // adding block of state updates to the 'pending' map
 func (sm *stateManager) addBlockCandidate(block state.Block) {
-	sm.log.Debugw("addBlockCandidate",
-		"block index", block.StateIndex(),
-		"timestamp", block.Timestamp(),
-		"size", block.Size(),
-		"approving output", coretypes.OID(block.ApprovingOutputID()),
-	)
-
+	if block != nil {
+		sm.log.Debugw("addBlockCandidate",
+			"block index", block.StateIndex(),
+			"timestamp", block.Timestamp(),
+			"size", block.Size(),
+			"approving output", coretypes.OID(block.ApprovingOutputID()),
+		)
+	} else {
+		sm.log.Debugf("addBlockCandidate: add origin candidate block")
+	}
 	var stateToApprove state.VirtualState
 	if sm.solidState == nil {
-		stateToApprove = state.NewEmptyVirtualState(sm.chain.ID())
+		// ignore parameter and assume original block if solidState == nil
+		block = state.MustNewOriginBlock()
+		stateToApprove = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
 	} else {
 		stateToApprove = sm.solidState.Clone()
-	}
-	if err := stateToApprove.ApplyBlock(block); err != nil {
-		sm.log.Error("can't apply update to the current state: %v", err)
-		return
+		if err := stateToApprove.ApplyBlock(block); err != nil {
+			sm.log.Error("can't apply update to the current state: %v", err)
+			return
+		}
 	}
 	// include the bach to pending batches map
 	vh := stateToApprove.Hash()
+	if sm.solidState == nil && vh.String() != state.OriginStateHashBase58 {
+		sm.log.Panicf("major inconsistency: stateToApprove hash is %s, expected %s", vh.String(), state.OriginStateHashBase58)
+	}
 	sm.blockCandidates[vh] = &pendingBlock{
 		block:     block,
 		nextState: stateToApprove,
 	}
 
-	sm.log.Debugf("added new block candidate. State index: %d, state hash: %s", block.StateIndex(), vh.String())
+	sm.log.Infof("added new block candidate. State index: %d, state hash: %s", block.StateIndex(), vh.String())
 	sm.pullStateDeadline = time.Now().Add(pullStateTimeout)
-}
-
-func (sm *stateManager) createStateToApprove() state.VirtualState {
-	if sm.solidState == nil {
-		return state.NewEmptyVirtualState(sm.chain.ID())
-	}
-	return sm.solidState.Clone()
 }
 
 func (sm *stateManager) numPongs() uint16 {

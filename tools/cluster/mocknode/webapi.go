@@ -10,9 +10,8 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/tangle"
-	webapi_faucet "github.com/iotaledger/goshimmer/plugins/webapi/faucet"
 	"github.com/iotaledger/goshimmer/plugins/webapi/jsonmodels"
-	"github.com/iotaledger/goshimmer/plugins/webapi/value"
+	"github.com/iotaledger/goshimmer/plugins/webapi/jsonmodels/value"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -133,20 +132,20 @@ func (m *MockNode) sendTransactionHandler(c echo.Context) error {
 }
 
 func (m *MockNode) requestFundsHandler(c echo.Context) error {
-	var request webapi_faucet.Request
+	var request jsonmodels.FaucetRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, webapi_faucet.Response{Error: err.Error()})
+		return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: err.Error()})
 	}
 
 	addr, err := ledgerstate.AddressFromBase58EncodedString(request.Address)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, webapi_faucet.Response{Error: fmt.Sprintf("invalid address (%s): %s", request.Address, err.Error())})
+		return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: fmt.Sprintf("invalid address (%s): %s", request.Address, err.Error())})
 	}
 
 	err = m.Ledger.RequestFunds(addr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, webapi_faucet.Response{Error: fmt.Sprintf("ledger.RequestFunds: %s", err.Error())})
+		return c.JSON(http.StatusBadRequest, jsonmodels.FaucetResponse{Error: fmt.Sprintf("ledger.RequestFunds: %s", err.Error())})
 	}
 
-	return c.JSON(http.StatusOK, webapi_faucet.Response{ID: tangle.EmptyMessageID.String()})
+	return c.JSON(http.StatusOK, jsonmodels.FaucetResponse{ID: tangle.EmptyMessageID.String()})
 }

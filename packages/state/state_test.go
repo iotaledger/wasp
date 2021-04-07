@@ -1,11 +1,10 @@
 package state
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/iotaledger/goshimmer/packages/database"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -13,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/stretchr/testify/require"
 )
 
 func TestVariableStateBasic(t *testing.T) {
@@ -232,6 +232,15 @@ func TestCommit(t *testing.T) {
 }
 
 func TestOriginHash(t *testing.T) {
-	chainID := coretypes.RandomChainID()
-	require.EqualValues(t, OriginStateHash(), NewEmptyVirtualState(chainID).Hash())
+	origBlock := MustNewOriginBlock()
+	t.Logf("origin block hash = %s", origBlock.EssenceHash().String())
+	require.EqualValues(t, OriginBlockHashBase58, origBlock.EssenceHash().String())
+	t.Logf("origin state hash = %s", OriginStateHash().String())
+	t.Logf("zero state hash = %s", NewZeroVirtualState(mapdb.NewMapDB()).Hash().String())
+	require.EqualValues(t, OriginStateHashBase58, OriginStateHash().String())
+
+	emptyState := NewVirtualState(mapdb.NewMapDB())
+	err := emptyState.ApplyBlock(origBlock)
+	require.NoError(t, err)
+	require.EqualValues(t, emptyState.Hash(), OriginStateHash())
 }

@@ -1,52 +1,36 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"strings"
-
 	"github.com/iotaledger/wasp/tools/wasp-cli/blob"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/decode"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
-	"github.com/spf13/pflag"
+	"github.com/spf13/cobra"
 )
 
-func usage(commands map[string]func([]string), flags *pflag.FlagSet) {
-	cmdNames := make([]string, 0)
-	for k := range commands {
-		cmdNames = append(cmdNames, k)
-	}
+var rootCmd = &cobra.Command{
+	Version: "0.1.1",
+	Use:     "wasp-cli",
+	Short:   "wasp-cli is a command line tool for interacting with Wasp and its smart contracts.",
+	Long: `wasp-cli is a command line tool for interacting with Wasp and its smart contracts.
+NOTE: this is alpha software, only suitable for testing purposes.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		cmd.Help()
+	},
+}
 
-	fmt.Printf("Usage: %s [options] [%s]\n", os.Args[0], strings.Join(cmdNames, "|"))
-	flags.PrintDefaults()
-	os.Exit(1)
+func init() {
+	log.Init(rootCmd)
+	config.Init(rootCmd)
+	wallet.Init(rootCmd)
+	chain.Init(rootCmd)
+	decode.Init(rootCmd)
+	blob.Init(rootCmd)
 }
 
 func main() {
-	commands := map[string]func([]string){}
-	flags := pflag.NewFlagSet("global flags", pflag.ExitOnError)
-
-	log.InitCommands(commands, flags)
-	config.InitCommands(commands, flags)
-	wallet.InitCommands(commands, flags)
-	chain.InitCommands(commands, flags)
-	decode.InitCommands(commands, flags)
-	blob.InitCommands(commands, flags)
-
-	log.Check(flags.Parse(os.Args[1:]))
-
 	config.Read()
-
-	if flags.NArg() < 1 {
-		usage(commands, flags)
-	}
-
-	cmd, ok := commands[flags.Arg(0)]
-	if !ok {
-		usage(commands, flags)
-	}
-	cmd(flags.Args()[1:])
+	log.Check(rootCmd.Execute())
 }

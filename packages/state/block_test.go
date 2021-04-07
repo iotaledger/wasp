@@ -81,7 +81,7 @@ func TestOriginBlock(t *testing.T) {
 	txid2 := ledgerstate.TransactionID(hashing.RandomHash(nil))
 	outID2 := ledgerstate.NewOutputID(txid1, 0)
 	require.NotEqualValues(t, txid1, txid2)
-	b1 := MustNewOriginBlock(outID1).WithBlockIndex(100)
-	b2 := MustNewOriginBlock(outID2).WithBlockIndex(100)
+	b1 := MustNewOriginBlock().WithApprovingOutputID(outID1).WithBlockIndex(100)
+	b2 := MustNewOriginBlock().WithApprovingOutputID(outID2).WithBlockIndex(100)
 	require.EqualValues(t, b1.EssenceHash(), b2.EssenceHash())
 }

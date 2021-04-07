@@ -6,17 +6,19 @@
 package statemgr
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type stateManager struct {
+	dbp                                *dbprovider.DBProvider
 	chain                              chain.Chain
 	peers                              chain.PeerGroupProvider
 	nodeConn                           *txstream.Client
@@ -62,8 +64,9 @@ type pendingBlock struct {
 	nextState state.VirtualState
 }
 
-func New(c chain.Chain, peers chain.PeerGroupProvider, nodeconn *txstream.Client, log *logger.Logger) chain.StateManager {
+func New(dbp *dbprovider.DBProvider, c chain.Chain, peers chain.PeerGroupProvider, nodeconn *txstream.Client, log *logger.Logger) chain.StateManager {
 	ret := &stateManager{
+		dbp:                          dbp,
 		chain:                        c,
 		nodeConn:                     nodeconn,
 		syncingBlocks:                make(map[uint32]*syncingBlock),
@@ -102,7 +105,7 @@ func (sm *stateManager) initLoadState() {
 	var batch state.Block
 	var stateExists bool
 
-	sm.solidState, batch, stateExists, err = state.LoadSolidState(sm.chain.ID())
+	sm.solidState, batch, stateExists, err = state.LoadSolidState(sm.dbp, sm.chain.ID())
 	if err != nil {
 		sm.log.Errorf("initLoadState: %v", err)
 		sm.chain.Dismiss()
@@ -115,7 +118,7 @@ func (sm *stateManager) initLoadState() {
 			sm.solidState.BlockIndex(), h.String(), txh.String())
 	} else {
 		sm.solidState = nil
-		sm.addBlockCandidate(state.MustNewOriginBlock(ledgerstate.OutputID{}))
+		sm.addBlockCandidate(nil)
 		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
 	}
 	sm.recvLoop() // Start to process external events.

@@ -2,18 +2,38 @@ package config
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"os"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/pflag"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var ConfigPath string
-var WaitForCompletion bool
+var (
+	ConfigPath        string
+	WaitForCompletion bool
+)
+
+var configSetCmd = &cobra.Command{
+	Use:   "set <key> <value>",
+	Short: "Set a configuration value",
+	Args:  cobra.ExactArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
+		v := args[1]
+		switch v {
+		case "true":
+			Set(args[0], true)
+		case "false":
+			Set(args[0], true)
+		default:
+			Set(args[0], v)
+		}
+	},
+}
 
 const (
 	HostKindApi     = "api"
@@ -21,28 +41,11 @@ const (
 	HostKindNanomsg = "nanomsg"
 )
 
-func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
-	commands["set"] = setCmd
+func Init(rootCmd *cobra.Command) {
+	rootCmd.PersistentFlags().StringVarP(&ConfigPath, "config", "c", "wasp-cli.json", "path to wasp-cli.json")
+	rootCmd.PersistentFlags().BoolVarP(&WaitForCompletion, "wait", "w", true, "wait for request completion")
 
-	fs := pflag.NewFlagSet("config", pflag.ExitOnError)
-	fs.StringVarP(&ConfigPath, "config", "c", "wasp-cli.json", "path to wasp-cli.json")
-	fs.BoolVarP(&WaitForCompletion, "wait", "w", true, "wait for request completion")
-	flags.AddFlagSet(fs)
-}
-
-func setCmd(args []string) {
-	if len(args) != 2 {
-		log.Usage("%s set <key> <value>\n", os.Args[0])
-	}
-	v := args[1]
-	switch v {
-	case "true":
-		Set(args[0], true)
-	case "false":
-		Set(args[0], true)
-	default:
-		Set(args[0], v)
-	}
+	rootCmd.AddCommand(configSetCmd)
 }
 
 func Read() {

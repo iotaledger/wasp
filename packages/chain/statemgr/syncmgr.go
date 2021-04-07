@@ -1,11 +1,12 @@
 package statemgr
 
 import (
+	"time"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"time"
 )
 
 // return if synced already
@@ -119,7 +120,7 @@ func (sm *stateManager) mustCommitSynced(fromIndex uint32) {
 	if sm.solidState != nil {
 		tentativeState = sm.solidState.Clone()
 	} else {
-		tentativeState = state.NewEmptyVirtualState(sm.chain.ID())
+		tentativeState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
 	}
 	syncedBlocks := make([]state.Block, 0)
 	for i := fromIndex; i < sm.stateOutput.GetStateIndex(); i++ {
@@ -146,7 +147,7 @@ func (sm *stateManager) mustCommitSynced(fromIndex uint32) {
 	}
 	// again applying blocks, this time seriously
 	if sm.solidState == nil {
-		sm.solidState = state.NewEmptyVirtualState(sm.chain.ID())
+		sm.solidState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
 	}
 	for _, block := range syncedBlocks {
 		if err := tentativeState.ApplyBlock(block); err != nil {

@@ -1,14 +1,15 @@
 package dbprovider
 
 import (
+	"sync"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/timeutil"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"sync"
-	"time"
 )
 
 type DBProvider struct {

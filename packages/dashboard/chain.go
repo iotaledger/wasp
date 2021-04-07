@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	_ "embed"
 	"fmt"
 	"net/http"
 
@@ -15,8 +16,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/plugins/chains"
+	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/labstack/echo/v4"
 )
+
+//go:embed templates/chain.tmpl
+var tplChain string
 
 func chainBreadcrumb(e *echo.Echo, chainID coretypes.ChainID) Tab {
 	return Tab{
@@ -51,7 +56,7 @@ func handleChain(c echo.Context) error {
 	}
 
 	if result.ChainRecord != nil && result.ChainRecord.Active {
-		result.VirtualState, result.Block, _, err = state.LoadSolidState(chainid)
+		result.VirtualState, result.Block, _, err = state.LoadSolidState(database.GetInstance(), chainid)
 		if err != nil {
 			return err
 		}
@@ -140,130 +145,3 @@ type ChainTemplateParams struct {
 		PeerStatus []*chain.PeerStatus
 	}
 }
-
-const tplChain = `
-{{define "title"}}Chain details{{end}}
-
-{{define "body"}}
-	{{ $chainid := .ChainID }}
-
-	{{if .Record}}
-		{{ $rootinfo := .RootInfo }}
-		{{ $desc := trim 50 $rootinfo.Description }}
-
-		<div class="card fluid">
-			<h2 class="section">{{if $desc}}{{$desc}}{{else}}Chain <tt>{{$chainid}}</tt>{{end}}</h2>
-
-			<dl>
-				<dt>ChainID</dt><dd><tt>{{.Record.ChainID}}</tt></dd>
-				<dt>Chain address</dt><dd>{{template "address" .RootInfo.ChainAddress}}</dd>
-				<dt>Chain color</dt><dd><tt>{{.RootInfo.ChainColor}}</tt></dd>
-				<dt>Active</dt><dd><tt>{{.Record.Active}}</tt></dd>
-				{{if .Record.Active}}
-					<dt>Owner ID</dt><dd>{{template "agentid" (args .ChainID $rootinfo.OwnerID)}}</dd>
-					<dt>Delegated Owner ID</dt><dd>
-						{{- if $rootinfo.OwnerIDDelegated -}}
-							{{- template "agentid" (args .ChainID $rootinfo.OwnerIDDelegated) -}}
-						{{- end -}}
-					</dd>
-					<dt>Default owner fee</dt><dd><tt>{{$rootinfo.DefaultOwnerFee}} {{$rootinfo.FeeColor}}</tt></dd>
-					<dt>Default validator fee</dt><dd><tt>{{$rootinfo.DefaultValidatorFee}} {{$rootinfo.FeeColor}}</tt></dd>
-				{{end}}
-			</dl>
-		</div>
-
-		{{if .Record.Active}}
-			<div class="card fluid">
-				<h3 class="section">Contracts</h3>
-				<dl>
-				{{range $_, $c := $rootinfo.Contracts}}
-					<dt><a href="{{ uri "chainContract" $chainid $c.Hname }}"><tt>{{trim 30 $c.Name}}</tt></a></dt>
-					<dd><tt>{{trim 50 $c.Description}}</tt></dd>
-				{{end}}
-				</dl>
-			</div>
-
-			<div class="card fluid">
-				<h3 class="section">On-chain accounts</h3>
-				<table>
-					<thead>
-						<tr>
-							<th>AgentID</th>
-						</tr>
-					</thead>
-					<tbody>
-					{{range $_, $agentid := .Accounts}}
-						<tr>
-							<td>{{template "agentid" (args $chainid $agentid)}}</td>
-						</tr>
-					{{end}}
-					</tbody>
-				</table>
-				<h4>Total assets</h4>
-				{{ template "balances" .TotalAssets }}
-			</div>
-
-			<div class="card fluid">
-				<h3 class="section">Blobs</h3>
-				<table>
-					<thead>
-						<tr>
-							<th style="flex: 2">Hash</th>
-							<th>Size (bytes)</th>
-						</tr>
-					</thead>
-					<tbody>
-					{{range $hash, $size := .Blobs}}
-						<tr>
-							<td style="flex: 2"><a href="{{ uri "chainBlob" $chainid (hashref $hash) }}"><tt>{{ hashref $hash }}</tt></a></td>
-							<td>{{ $size }}</td>
-						</tr>
-					{{end}}
-					</tbody>
-				</table>
-			</div>
-
-			<div class="card fluid">
-				<h3 class="section">State</h3>
-				<dl>
-					<dt>State index</dt><dd><tt>{{.Block.StateIndex}}</tt></dd>
-					<dt>State hash</dt><dd><tt>{{.VirtualState.Hash}}</tt></dd>
-					<dt>Last updated</dt><dd><tt>{{formatTimestamp .Block.Timestamp}}</tt> in transaction <tt>{{.Block.StateTransactionID}}</tt></dd>
-				</dl>
-			</div>
-
-			<div class="card fluid">
-				<h3 class="section">Committee</h3>
-				<dl>
-				<dt>Size</dt>      <dd><tt>{{.Committee.Size}}</tt></dd>
-				<dt>Quorum</dt>    <dd><tt>{{.Committee.Quorum}}</tt></dd>
-				<dt>NumPeers</dt>  <dd><tt>{{.Committee.NumPeers}}</tt></dd>
-				<dt>NumIsAlive</dt> <dd><tt>{{.Committee.NumIsAlive}}</tt></dd>
-				</dl>
-				<h4>Peer status</h4>
-				<table>
-				<thead>
-					<tr>
-						<th>Index</th>
-						<th>ID</th>
-						<th>Status</th>
-					</tr>
-				</thead>
-				<tbody>
-				{{range $_, $s := .Committee.PeerStatus}}
-					<tr>
-						<td>{{$s.Index}}</td>
-						<td><tt>{{$s.PeeringID}}</tt></td>
-						<td>{{if $s.Connected}}up{{else}}down{{end}}</td>
-					</tr>
-				{{end}}
-				</tbody>
-				</table>
-			</div>
-		{{end}}
-		{{ template "ws" .ChainID }}
-	{{else}}
-		<div class="card fluid error">No chain record for ID <td>{{$chainid}}</tt></div>
-	{{end}}
-{{end}}
-`

@@ -1,10 +1,12 @@
 package dashboard
 
 import (
+	_ "embed"
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"net/http"
 	"strings"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -12,6 +14,9 @@ import (
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 )
+
+//go:embed templates/chainaccount.tmpl
+var tplChainAccount string
 
 func initChainAccount(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid/account/:agentid", handleChainAccount)
@@ -65,25 +70,3 @@ type ChainAccountTemplateParams struct {
 
 	Balances map[ledgerstate.Color]uint64
 }
-
-const tplChainAccount = `
-{{define "title"}}On-chain account details{{end}}
-
-{{define "body"}}
-	{{if .Inputs}}
-		<div class="card fluid">
-			<h2 class="section">On-chain account</h2>
-			<dl>
-				<dt>AgentID</dt><dd><tt>{{.AgentID}}</tt></dd>
-			</dl>
-		</div>
-		<div class="card fluid">
-			<h3 class="section">Inputs</h3>
-			{{ template "balances" .Inputs }}
-		</div>
-		{{ template "ws" .ChainID }}
-	{{else}}
-		<div class="card fluid error">Not found.</div>
-	{{end}}
-{{end}}
-`

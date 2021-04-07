@@ -5,35 +5,46 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/spf13/cobra"
 )
 
-func addressCmd(args []string) {
-	wallet := Load()
-	kp := wallet.KeyPair()
-	log.Printf("Address index %d\n", addressIndex)
-	log.Verbose("  Private key: %s\n", kp.PrivateKey)
-	log.Verbose("  Public key:  %s\n", kp.PublicKey)
-	log.Printf("  Address:     %s\n", wallet.Address())
+var addressCmd = &cobra.Command{
+	Use:   "address",
+	Short: "Show the wallet address",
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		wallet := Load()
+		kp := wallet.KeyPair()
+		log.Printf("Address index %d\n", addressIndex)
+		log.Verbose("  Private key: %s\n", kp.PrivateKey)
+		log.Verbose("  Public key:  %s\n", kp.PublicKey)
+		log.Printf("  Address:     %s\n", wallet.Address().Base58())
+	},
 }
 
-func balanceCmd(args []string) {
-	wallet := Load()
-	address := wallet.Address()
+var balanceCmd = &cobra.Command{
+	Use:   "balance",
+	Short: "Show the wallet balance",
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		wallet := Load()
+		address := wallet.Address()
 
-	outs, err := config.GoshimmerClient().GetConfirmedOutputs(address)
-	log.Check(err)
+		outs, err := config.GoshimmerClient().GetConfirmedOutputs(address)
+		log.Check(err)
 
-	log.Printf("Address index %d\n", addressIndex)
-	log.Printf("  Address: %s\n", address)
-	log.Printf("  Balance:\n")
-	var total uint64
-	if log.VerboseFlag {
-		total = byOutputId(outs)
-	} else {
-		total = byColor(outs)
-	}
-	log.Printf("    ------\n")
-	log.Printf("    Total: %d\n", total)
+		log.Printf("Address index %d\n", addressIndex)
+		log.Printf("  Address: %s\n", address.Base58())
+		log.Printf("  Balance:\n")
+		var total uint64
+		if log.VerboseFlag {
+			total = byOutputId(outs)
+		} else {
+			total = byColor(outs)
+		}
+		log.Printf("    ------\n")
+		log.Printf("    Total: %d\n", total)
+	},
 }
 
 func byColor(outs []ledgerstate.Output) uint64 {

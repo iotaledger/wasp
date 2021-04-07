@@ -16,7 +16,7 @@ import (
 )
 
 func TestMempool(t *testing.T) {
-	m := New(coretypes.NewDummyBlobCache(), testlogger.NewLogger(t))
+	m := New(coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	time.Sleep(2 * time.Second)
 	m.Close()
 	time.Sleep(1 * time.Second)

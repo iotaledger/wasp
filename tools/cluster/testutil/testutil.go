@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"flag"
 	"os"
 	"path"
 	"testing"
@@ -9,12 +10,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var numNodes = flag.Int("num-nodes", 4, "amount of wasp nodes")
+
 func NewCluster(t *testing.T) *cluster.Cluster {
 	if testing.Short() {
 		t.Skip("Skipping cluster test in short mode")
 	}
 
 	config := cluster.DefaultConfig()
+	config.Wasp.NumNodes = *numNodes
 	clu := cluster.New(t.Name(), config)
 
 	dataPath := path.Join(os.TempDir(), "wasp-cluster")

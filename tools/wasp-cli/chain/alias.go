@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/pflag"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -24,8 +24,8 @@ func SetCurrentChain(chainAlias string) {
 	config.Set("chain", chainAlias)
 }
 
-func initAliasFlags(flags *pflag.FlagSet) {
-	flags.StringVarP(&chainAlias, "chain", "a", "", "chain alias")
+func initAliasFlags(chainCmd *cobra.Command) {
+	chainCmd.PersistentFlags().StringVarP(&chainAlias, "chain", "a", "", "chain alias")
 }
 
 func AddChainAlias(chainAlias string, id string) {

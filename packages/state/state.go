@@ -3,17 +3,16 @@ package state
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"io"
+
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/plugins/database"
-	"io"
 )
 
 type virtualState struct {
@@ -38,21 +37,25 @@ func NewVirtualState(db kvstore.KVStore, chainID ...*coretypes.ChainID) *virtual
 	return ret
 }
 
-func NewEmptyVirtualState(chainID *coretypes.ChainID) *virtualState {
-	return NewVirtualState(getSCPartition(chainID), chainID)
-}
-
-func OriginStateHash() hashing.HashValue {
-	emptyVirtualState := NewVirtualState(mapdb.NewMapDB())
-	originBlock := MustNewOriginBlock(ledgerstate.OutputID{})
-	if err := emptyVirtualState.ApplyBlock(originBlock); err != nil {
+func NewZeroVirtualState(db kvstore.KVStore) *virtualState {
+	ret := NewVirtualState(db)
+	originBlock := MustNewOriginBlock()
+	if err := ret.ApplyBlock(originBlock); err != nil {
 		panic(err)
 	}
+	return ret
+}
+
+const OriginStateHashBase58 = "AnjsyXHHLnh1Ko5FVwXaVGmgfz88yun9NA4GE4HUeBHs"
+
+// OriginStateHash is independent from db provider nor chainID
+func OriginStateHash() hashing.HashValue {
+	emptyVirtualState := NewZeroVirtualState(mapdb.NewMapDB())
 	return emptyVirtualState.Hash()
 }
 
-func getSCPartition(chainID *coretypes.ChainID) kvstore.KVStore {
-	return database.GetPartition(chainID)
+func getChainPartition(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) kvstore.KVStore {
+	return dbp.GetPartition(chainID)
 }
 
 func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
@@ -210,8 +213,8 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	return nil
 }
 
-func LoadSolidState(chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
-	return loadSolidState(getSCPartition(chainID), chainID)
+func LoadSolidState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
+	return loadSolidState(getChainPartition(dbp, chainID), chainID)
 }
 
 func loadSolidState(db kvstore.KVStore, chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
@@ -253,6 +256,6 @@ func dbkeyRequest(reqid coretypes.RequestID) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeProcessedRequestId, reqid[:])
 }
 
-func IsRequestCompleted(addr *coretypes.ChainID, reqid coretypes.RequestID) (bool, error) {
-	return getSCPartition(addr).Has(dbkeyRequest(reqid))
+func IsRequestCompleted(dbp *dbprovider.DBProvider, addr *coretypes.ChainID, reqid coretypes.RequestID) (bool, error) {
+	return getChainPartition(dbp, addr).Has(dbkeyRequest(reqid))
 }
