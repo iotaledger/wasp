@@ -8,8 +8,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-const debugLogging = false
-
 // MockNode provides the bare minimum to emulate a Goshimmer node in a wasp-cluster
 // environment, namely the txstream plugin + a few web api endpoints.
 type MockNode struct {
@@ -49,9 +47,6 @@ func initLog() *logger.Logger {
 	if err != nil {
 		panic(err)
 	}
-	if debugLogging {
-		log.WithOptions(zap.IncreaseLevel(zapcore.DebugLevel))
-	}
-	log.WithOptions(zap.AddStacktrace(zapcore.PanicLevel))
+	log = log.WithOptions(zap.AddStacktrace(zapcore.PanicLevel))
 	return log.Sugar()
 }
