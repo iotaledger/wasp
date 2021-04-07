@@ -51,7 +51,7 @@ func getRequestsOnLedger(t *testing.T, amount int) []*sctransaction.RequestOnLed
 }
 
 func TestAddRequest(t *testing.T) {
-	pool := New(coretypes.NewDummyBlobCache(), testlogger.NewLogger(t))
+	pool := New(coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 1)
 
@@ -60,7 +60,7 @@ func TestAddRequest(t *testing.T) {
 }
 
 func TestAddRemoveRequests(t *testing.T) {
-	pool := New(coretypes.NewDummyBlobCache(), testlogger.NewLogger(t))
+	pool := New(coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 6)
 
@@ -90,7 +90,7 @@ func TestAddRemoveRequests(t *testing.T) {
 }
 
 func TestTakeAllReady(t *testing.T) {
-	pool := New(coretypes.NewDummyBlobCache(), testlogger.NewLogger(t))
+	pool := New(coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 5)
 
@@ -135,7 +135,7 @@ func TestTakeAllReady(t *testing.T) {
 //        Request3  +
 //        Request4
 func initSeenTest(t *testing.T) (chain.Mempool, []*sctransaction.RequestOnLedger) {
-	pool := New(coretypes.NewDummyBlobCache(), testlogger.NewLogger(t))
+	pool := New(coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 5)
 	request0ID := requests[0].ID()
