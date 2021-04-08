@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 )
 
+//NodeConn is implemented by packages/txstream/client.Client in goshimmer
 type NodeConn interface {
 	RequestBacklog(addr ledgerstate.Address)
 }
