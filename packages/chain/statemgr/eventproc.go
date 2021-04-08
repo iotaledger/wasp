@@ -47,7 +47,7 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 		"sender index", msg.SenderIndex,
 		"block index", msg.BlockIndex,
 	)
-	block, err := state.LoadBlock(sm.chain.ID(), msg.BlockIndex)
+	block, err := state.LoadBlock(sm.dbp.GetPartition(sm.chain.ID()), msg.BlockIndex)
 	if err != nil || block == nil {
 		// can't load block, can't respond
 		return

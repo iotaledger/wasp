@@ -100,7 +100,7 @@ type Chain struct {
 	proc *processors.ProcessorCache
 
 	// related to asynchronous backlog processing
-	runVMMutex *sync.Mutex
+	runVMMutex sync.Mutex
 	reqCounter atomic.Int32
 	mempool    chain.Mempool
 }
@@ -202,9 +202,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		State:                  state.NewZeroVirtualState(env.dbProvider.GetPartition(&chainID)),
 		proc:                   processors.MustNew(),
 		Log:                    chainlog,
-		//
-		runVMMutex: &sync.Mutex{},
-		mempool:    mempool.New(env.blobCache, chainlog),
+		mempool:                mempool.New(env.dbProvider.GetPartition(&chainID), env.blobCache, chainlog),
 	}
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)

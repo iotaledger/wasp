@@ -124,7 +124,7 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	processed, err := state.IsRequestCompleted(c.dbProvider, c.ID(), reqID)
+	processed, err := state.IsRequestCompleted(c.dbProvider.GetPartition(c.ID()), reqID)
 	if err != nil {
 		panic(err)
 	}
