@@ -86,7 +86,8 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 		c.ReceiveRequest(req, tx.Essence().Timestamp())
 	}
 	if chainOut := sctransaction.FindAliasOutput(tx.Essence(), c.chainID.AsAddress()); chainOut != nil {
-		c.ReceiveState(chainOut, tx.Essence().Timestamp())
+		chainOut1 := chainOut.UpdateMintingColor().(*ledgerstate.AliasOutput)
+		c.ReceiveState(chainOut1, tx.Essence().Timestamp())
 	}
 }
 
@@ -125,7 +126,10 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 		}
 	}
 	processed, err := state.IsRequestCompleted(c.dbProvider, c.ID(), reqID)
-	if err != nil || !processed {
+	if err != nil {
+		panic(err)
+	}
+	if !processed {
 		return chain.RequestProcessingStatusUnknown
 	}
 	return chain.RequestProcessingStatusCompleted

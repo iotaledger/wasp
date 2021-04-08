@@ -397,6 +397,14 @@ github.com/iotaledger/goshimmer v0.5.6-0.20210406152623-f320e3a41097 h1:dOs+LYz4
 github.com/iotaledger/goshimmer v0.5.6-0.20210406152623-f320e3a41097/go.mod h1:aMoUqBkUyED4ICBoPeU1Vx1FrguMeoQViJp0O4X4JoA=
 github.com/iotaledger/goshimmer v0.5.6-0.20210407082947-c9d69751a9c2 h1:tiu+8cGwF+jb/cfT8i4YwhW+FKcJdeWun6OyLopAsOo=
 github.com/iotaledger/goshimmer v0.5.6-0.20210407082947-c9d69751a9c2/go.mod h1:aMoUqBkUyED4ICBoPeU1Vx1FrguMeoQViJp0O4X4JoA=
+github.com/iotaledger/goshimmer v0.5.6-0.20210408070054-99bbdb7ecb25 h1:MwwqA/2SMddjQDrVm1+w2/la3Ap5sW2ftxdRuwj4Kww=
+github.com/iotaledger/goshimmer v0.5.6-0.20210408070054-99bbdb7ecb25/go.mod h1:aMoUqBkUyED4ICBoPeU1Vx1FrguMeoQViJp0O4X4JoA=
+github.com/iotaledger/goshimmer v0.5.6-0.20210408084012-2889b8c6d5a1 h1:F4yCAx01bYjCoNPgbG3quz0ViiZxzoq/pBuCUnrlqpk=
+github.com/iotaledger/goshimmer v0.5.6-0.20210408084012-2889b8c6d5a1/go.mod h1:aMoUqBkUyED4ICBoPeU1Vx1FrguMeoQViJp0O4X4JoA=
+github.com/iotaledger/goshimmer v0.5.6-0.20210408085556-1a46c26b1742 h1:HRc+w5f0pDUA0O1L+eZBwITc8AMWE9o7kQLbtoXAFRg=
+github.com/iotaledger/goshimmer v0.5.6-0.20210408085556-1a46c26b1742/go.mod h1:aMoUqBkUyED4ICBoPeU1Vx1FrguMeoQViJp0O4X4JoA=
+github.com/iotaledger/goshimmer v0.5.6-0.20210408105953-5f61df3993a7 h1:Pfk2Ty2ChmrM0Ha6P8N6GGNr8ejRKgTJfG/Bew3WMCE=
+github.com/iotaledger/goshimmer v0.5.6-0.20210408105953-5f61df3993a7/go.mod h1:aMoUqBkUyED4ICBoPeU1Vx1FrguMeoQViJp0O4X4JoA=
 github.com/iotaledger/hive.go v0.0.0-20210406075748-aa0aa533e376 h1:ylpE2ptyNvmB756kFnt2KA3pGu9DzUJAQkTlv4DBwdE=
 github.com/iotaledger/hive.go v0.0.0-20210406075748-aa0aa533e376/go.mod h1:NyBg/Ny7FFAdDs59zdwTVoysU2ZbJVQnRwyLIDFKJYA=
 github.com/ipfs/go-cid v0.0.1/go.mod h1:GHWU/WuQdMPmIosc4Yn1bcCT7dSeX4lBafM7iqUPQvM=

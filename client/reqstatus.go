@@ -39,7 +39,7 @@ func (c *WaspClient) WaitUntilRequestProcessed(chainID *coretypes.ChainID, reqID
 // by the node
 func (c *WaspClient) WaitUntilAllRequestsProcessed(chainID coretypes.ChainID, tx *ledgerstate.Transaction, timeout time.Duration) error {
 	for _, out := range tx.Essence().Outputs() {
-		if out.Address().Equals(chainID.AsAddress()) {
+		if !out.Address().Equals(chainID.AsAddress()) {
 			continue
 		}
 		out, ok := out.(*ledgerstate.ExtendedLockedOutput)

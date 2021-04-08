@@ -39,7 +39,7 @@ func NewChainOriginTransaction(
 		return nil, coretypes.ChainID{}, err
 	}
 	// determine aliasAddress of the newly minted chain
-	chained, err := utxoutil.GetSingleChainedAliasOutput(tx.Essence())
+	chained, err := utxoutil.GetSingleChainedAliasOutput(tx)
 	if err != nil {
 		return nil, coretypes.ChainID{}, err
 	}

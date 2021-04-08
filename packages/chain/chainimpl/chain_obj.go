@@ -99,6 +99,9 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		if c.consensus != nil {
 			c.consensus.EventStateTransitionMsg(msgt)
 		}
+		for _, reqID := range msgt.RequestIDs {
+			c.eventRequestProcessed.Trigger(reqID)
+		}
 	case chain.BlockCandidateMsg:
 		c.stateMgr.EventBlockCandidateMsg(msgt)
 	case *chain.InclusionStateMsg:
