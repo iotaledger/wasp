@@ -147,7 +147,7 @@ func TestWaspCli1Chain(t *testing.T) {
 
 	// test chain list-contracts command
 	out = w.Run("chain", "list-contracts")
-	require.Contains(t, out[0], "Total 4 contracts")
+	require.Regexp(t, `Total \d+ contracts`, out[0])
 
 	// test chain list-accounts command
 	out = w.Run("chain", "list-accounts")
@@ -172,7 +172,6 @@ func TestWaspCli1Chain(t *testing.T) {
 }
 
 func TestWaspCliContract(t *testing.T) {
-
 	w := NewWaspCliTest(t)
 	w.Run("init")
 	w.Run("request-funds")
@@ -189,7 +188,14 @@ func TestWaspCliContract(t *testing.T) {
 	w.Run("chain", "deploy-contract", vmtype, name, description, file)
 
 	out := w.Run("chain", "list-contracts")
-	require.Contains(t, out[0], "Total 5 contracts")
+	found := false
+	for _, s := range out {
+		if strings.Contains(s, name) {
+			found = true
+			break
+		}
+	}
+	require.True(t, found)
 
 	// test chain call-view command
 	out = w.Run("chain", "call-view", name, "getCounter")

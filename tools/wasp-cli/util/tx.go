@@ -26,14 +26,14 @@ func WithTransaction(f func() (*ledgerstate.Transaction, error)) *ledgerstate.Tr
 	return tx
 }
 
-func WithSCTransaction(chainID coretypes.ChainID, f func() (*ledgerstate.Transaction, error), forceWait ...bool) *ledgerstate.Transaction {
+func WithSCTransaction(chainID *coretypes.ChainID, f func() (*ledgerstate.Transaction, error), forceWait ...bool) *ledgerstate.Transaction {
 	tx, err := f()
 	log.Check(err)
 	log.Printf("Posted transaction %s\n", tx.ID())
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
-		log.Check(config.WaspClient().WaitUntilAllRequestsProcessed(chainID, tx, 1*time.Minute))
+		log.Check(config.WaspClient().WaitUntilAllRequestsProcessed(*chainID, tx, 1*time.Minute))
 	}
 
 	return tx

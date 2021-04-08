@@ -14,7 +14,7 @@ import (
 
 func TestPutBlob(t *testing.T) {
 	blobCache := coretypes.NewInMemoryBlobCache()
-	b := &blobWebAPI{blobCache}
+	b := &blobWebAPI{func() coretypes.BlobCache { return blobCache }}
 
 	data := []byte{1, 3, 3, 7}
 	hash := hashing.HashData(data)
@@ -37,7 +37,7 @@ func TestPutBlob(t *testing.T) {
 
 func TestGetBlob(t *testing.T) {
 	blobCache := coretypes.NewInMemoryBlobCache()
-	b := &blobWebAPI{blobCache}
+	b := &blobWebAPI{func() coretypes.BlobCache { return blobCache }}
 
 	data := []byte{1, 3, 3, 7}
 
@@ -59,7 +59,7 @@ func TestGetBlob(t *testing.T) {
 
 func TestHasBlob(t *testing.T) {
 	blobCache := coretypes.NewInMemoryBlobCache()
-	b := &blobWebAPI{blobCache}
+	b := &blobWebAPI{func() coretypes.BlobCache { return blobCache }}
 
 	data := []byte{1, 3, 3, 7}
 

@@ -22,7 +22,7 @@ var listAccountsCmd = &cobra.Command{
 		ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncAccounts)
 		log.Check(err)
 
-		log.Printf("Total %d account(s) in chain %s\n", len(ret), GetCurrentChainID())
+		log.Printf("Total %d account(s) in chain %s\n", len(ret), GetCurrentChainID().Base58())
 
 		header := []string{"agentid"}
 		rows := make([][]string, len(ret))

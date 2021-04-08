@@ -13,7 +13,7 @@ func Client() *chainclient.Client {
 	return chainclient.New(
 		config.GoshimmerClient(),
 		config.WaspClient(),
-		GetCurrentChainID(),
+		*GetCurrentChainID(),
 		wallet.Load().KeyPair(),
 	)
 }

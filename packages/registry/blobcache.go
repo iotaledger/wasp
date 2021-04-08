@@ -1,12 +1,13 @@
 package registry
 
 import (
+	"time"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"time"
 )
 
 // implements BlobCacheProvide interface

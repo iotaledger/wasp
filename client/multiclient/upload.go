@@ -1,6 +1,8 @@
 package multiclient
 
-import "github.com/iotaledger/wasp/client"
+import (
+	"github.com/iotaledger/wasp/client"
+)
 
 // UploadBlobDataWithQuorum upload data chunks to the blob cache in
 // the registries of at least quorum nodes.
