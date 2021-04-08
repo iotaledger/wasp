@@ -53,8 +53,8 @@ func handleWebSocket(c echo.Context) error {
 	return nil
 }
 
-func startWsForwarder() {
-	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
+func (d *Dashboard) startWsForwarder() {
+	cl := events.NewClosure(func(msgType string, parts []string) {
 		if msgType == "state" {
 			if len(parts) < 1 {
 				return
@@ -73,5 +73,10 @@ func startWsForwarder() {
 				return true
 			})
 		}
-	}))
+	})
+	publisher.Event.Attach(cl)
+	go func() {
+		<-d.stop
+		publisher.Event.Detach(cl)
+	}()
 }

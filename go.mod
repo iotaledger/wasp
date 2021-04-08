@@ -3,6 +3,7 @@ module github.com/iotaledger/wasp
 go 1.16
 
 require (
+	github.com/PuerkitoBio/goquery v1.6.1 // indirect
 	github.com/bytecodealliance/wasmtime-go v0.21.0
 	github.com/iotaledger/goshimmer v0.5.6-0.20210408133950-3d884ba3673b
 	github.com/iotaledger/hive.go v0.0.0-20210406075748-aa0aa533e376

@@ -8,7 +8,7 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/labstack/echo/v4"
 	"github.com/mr-tron/base58"
 )
@@ -30,38 +30,57 @@ type BaseTemplateParams struct {
 	MyNetworkId string
 }
 
-var navPages []Tab
+type WaspServices interface {
+	ConfigDump() map[string]interface{}
+	ExploreAddressBaseURL() string
+	NetworkProvider() peering.NetworkProvider
+}
 
-func Init(server *echo.Echo) {
+type Dashboard struct {
+	navPages []Tab
+	stop     chan bool
+	wasp     WaspServices
+}
+
+func Init(server *echo.Echo, waspServices WaspServices) *Dashboard {
 	r := renderer{}
 	server.Renderer = r
 
-	navPages = []Tab{
-		configInit(server, r),
-		peeringInit(server, r),
-		chainsInit(server, r),
+	d := &Dashboard{
+		stop: make(chan bool),
+		wasp: waspServices,
+	}
+	d.navPages = []Tab{
+		d.configInit(server, r),
+		d.peeringInit(server, r),
+		d.chainsInit(server, r),
 	}
 
 	addWsEndpoints(server)
-	startWsForwarder()
+	d.startWsForwarder()
 
 	useHTMLErrorHandler(server)
+
+	return d
 }
 
-func BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateParams {
-	b := BaseTemplateParams{
-		NavPages:    navPages,
+func (d *Dashboard) Stop() {
+	close(d.stop)
+}
+
+func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateParams {
+	return BaseTemplateParams{
+		NavPages:    d.navPages,
 		Breadcrumbs: breadcrumbs,
 		Path:        c.Path(),
-		MyNetworkId: peering.DefaultNetworkProvider().Self().NetID(),
+		MyNetworkId: d.wasp.NetworkProvider().Self().NetID(),
 	}
-	return b
 }
 
-func makeTemplate(e *echo.Echo, parts ...string) *template.Template {
+func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Template {
 	t := template.New("").Funcs(template.FuncMap{
 		"formatTimestamp":   formatTimestamp,
-		"exploreAddressUrl": exploreAddressUrl(exploreAddressBaseUrl()),
+		"exploreAddressUrl": exploreAddressUrl(d.wasp.ExploreAddressBaseURL()),
 		"args":              args,
 		"hashref":           hashref,
 		"trim":              trim,

@@ -31,13 +31,13 @@ func chainBreadcrumb(e *echo.Echo, chainID coretypes.ChainID) Tab {
 	}
 }
 
-func initChain(e *echo.Echo, r renderer) {
-	route := e.GET("/chain/:chainid", handleChain)
+func (d *Dashboard) initChain(e *echo.Echo, r renderer) {
+	route := e.GET("/chain/:chainid", d.handleChain)
 	route.Name = "chain"
-	r[route.Path] = makeTemplate(e, tplChain, tplWs)
+	r[route.Path] = d.makeTemplate(e, tplChain, tplWs)
 }
 
-func handleChain(c echo.Context) error {
+func (d *Dashboard) handleChain(c echo.Context) error {
 	chainid, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func handleChain(c echo.Context) error {
 	tab := chainBreadcrumb(c.Echo(), *chainid)
 
 	result := &ChainTemplateParams{
-		BaseTemplateParams: BaseParams(c, tab),
+		BaseTemplateParams: d.BaseParams(c, tab),
 		ChainID:            *chainid,
 	}
 

@@ -18,16 +18,16 @@ import (
 //go:embed templates/chainblob.tmpl
 var tplChainBlob string
 
-func initChainBlob(e *echo.Echo, r renderer) {
-	route := e.GET("/chain/:chainid/blob/:hash", handleChainBlob)
+func (d *Dashboard) initChainBlob(e *echo.Echo, r renderer) {
+	route := e.GET("/chain/:chainid/blob/:hash", d.handleChainBlob)
 	route.Name = "chainBlob"
-	r[route.Path] = makeTemplate(e, tplChainBlob, tplWs)
+	r[route.Path] = d.makeTemplate(e, tplChainBlob, tplWs)
 
 	route = e.GET("/chain/:chainid/blob/:hash/raw/:field", handleChainBlobDownload)
 	route.Name = "chainBlobDownload"
 }
 
-func handleChainBlob(c echo.Context) error {
+func (d *Dashboard) handleChainBlob(c echo.Context) error {
 	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
@@ -39,7 +39,7 @@ func handleChainBlob(c echo.Context) error {
 	}
 
 	result := &ChainBlobTemplateParams{
-		BaseTemplateParams: BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
+		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
 			Path:  c.Path(),
 			Title: fmt.Sprintf("Blob %.8s…", c.Param("hash")),
 			Href:  "#",

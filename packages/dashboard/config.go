@@ -7,18 +7,17 @@ import (
 	_ "embed"
 	"net/http"
 
-	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/labstack/echo/v4"
 )
 
 //go:embed templates/config.tmpl
 var tplConfig string
 
-func configInit(e *echo.Echo, r renderer) Tab {
-	route := e.GET("/", handleConfig)
+func (d *Dashboard) configInit(e *echo.Echo, r renderer) Tab {
+	route := e.GET("/", d.handleConfig)
 	route.Name = "config"
 
-	r[route.Path] = makeTemplate(e, tplConfig)
+	r[route.Path] = d.makeTemplate(e, tplConfig)
 
 	return Tab{
 		Path:  route.Path,
@@ -27,10 +26,10 @@ func configInit(e *echo.Echo, r renderer) Tab {
 	}
 }
 
-func handleConfig(c echo.Context) error {
+func (d *Dashboard) handleConfig(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), &ConfigTemplateParams{
-		BaseTemplateParams: BaseParams(c),
-		Configuration:      config.Dump(),
+		BaseTemplateParams: d.BaseParams(c),
+		Configuration:      d.wasp.ConfigDump(),
 	})
 }
 

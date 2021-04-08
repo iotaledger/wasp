@@ -20,7 +20,7 @@ func TestPutBlob(t *testing.T) {
 	hash := hashing.HashData(data)
 
 	var res model.BlobInfo
-	testutil.CallHTTPRequestHandler(
+	testutil.CallWebAPIRequestHandler(
 		t,
 		b.handlePutBlob,
 		http.MethodPost,
@@ -45,7 +45,7 @@ func TestGetBlob(t *testing.T) {
 	require.NoError(t, err)
 
 	var res model.BlobData
-	testutil.CallHTTPRequestHandler(
+	testutil.CallWebAPIRequestHandler(
 		t,
 		b.handleGetBlob,
 		http.MethodGet,
@@ -67,7 +67,7 @@ func TestHasBlob(t *testing.T) {
 	require.NoError(t, err)
 
 	var res model.BlobInfo
-	testutil.CallHTTPRequestHandler(
+	testutil.CallWebAPIRequestHandler(
 		t,
 		b.handleHasBlob,
 		http.MethodGet,

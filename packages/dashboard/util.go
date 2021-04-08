@@ -2,11 +2,9 @@ package dashboard
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 func args(args ...interface{}) []interface{} {
@@ -43,20 +41,4 @@ func exploreAddressUrl(baseUrl string) func(address fmt.Stringer) string {
 	return func(address fmt.Stringer) string {
 		return baseUrl + "/" + address.String()
 	}
-}
-
-func exploreAddressBaseUrl() string {
-	baseUrl := parameters.GetString(parameters.DashboardExploreAddressUrl)
-	if baseUrl != "" {
-		return baseUrl
-	}
-	return exploreAddressUrlFromGoshimmerUri(parameters.GetString(parameters.NodeAddress))
-}
-
-func exploreAddressUrlFromGoshimmerUri(uri string) string {
-	url := strings.Split(uri, ":")[0] + ":8081/explorer/address"
-	if !strings.HasPrefix(url, "http") {
-		return "http://" + url
-	}
-	return url
 }
