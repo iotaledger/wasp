@@ -164,7 +164,7 @@ func (sm *stateManager) addBlockCandidate(block state.Block) {
 			return
 		}
 	}
-	// include the bach to pending batches map
+	// include the batch to pending batches map
 	vh := stateToApprove.Hash()
 	if sm.solidState == nil && vh.String() != state.OriginStateHashBase58 {
 		sm.log.Panicf("major inconsistency: stateToApprove hash is %s, expected %s", vh.String(), state.OriginStateHashBase58)
