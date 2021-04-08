@@ -1,17 +1,14 @@
 package blob
 
 import (
-	"bytes"
-	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/labstack/echo/v4"
+	"github.com/iotaledger/wasp/packages/webapi/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,7 +20,7 @@ func TestPutBlob(t *testing.T) {
 	hash := hashing.HashData(data)
 
 	var res model.BlobInfo
-	do(
+	testutil.CallHTTPRequestHandler(
 		t,
 		b.handlePutBlob,
 		http.MethodPost,
@@ -48,7 +45,7 @@ func TestGetBlob(t *testing.T) {
 	require.NoError(t, err)
 
 	var res model.BlobData
-	do(
+	testutil.CallHTTPRequestHandler(
 		t,
 		b.handleGetBlob,
 		http.MethodGet,
@@ -70,7 +67,7 @@ func TestHasBlob(t *testing.T) {
 	require.NoError(t, err)
 
 	var res model.BlobInfo
-	do(
+	testutil.CallHTTPRequestHandler(
 		t,
 		b.handleHasBlob,
 		http.MethodGet,
@@ -80,45 +77,4 @@ func TestHasBlob(t *testing.T) {
 		&res,
 	)
 	require.EqualValues(t, hashing.HashData(data), res.Hash.HashValue())
-}
-
-func do(
-	t *testing.T,
-	handler echo.HandlerFunc,
-	method string,
-	route string,
-	params map[string]string,
-	body interface{},
-	res interface{},
-) {
-	e := echo.New()
-
-	var req *http.Request
-	if body != nil {
-		dataJSON, err := json.Marshal(body)
-		require.NoError(t, err)
-		req = httptest.NewRequest(method, "/", bytes.NewReader(dataJSON))
-	} else {
-		req = httptest.NewRequest(method, "/", nil)
-	}
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-
-	rec := httptest.NewRecorder()
-
-	c := e.NewContext(req, rec)
-	c.SetPath(route)
-	for k, v := range params {
-		c.SetParamNames(k)
-		c.SetParamValues(v)
-	}
-
-	err := handler(c)
-	require.NoError(t, err)
-
-	require.Equal(t, http.StatusOK, rec.Code)
-
-	if res != nil {
-		err = json.Unmarshal(rec.Body.Bytes(), res)
-		require.NoError(t, err)
-	}
 }
