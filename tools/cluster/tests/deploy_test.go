@@ -20,12 +20,9 @@ func TestDeployChain(t *testing.T) {
 	setup(t, "test_cluster")
 
 	counter, err := clu.StartMessageCounter(map[string]int{
-		"chainrec":            2,
-		"active_committee":    1,
-		"dismissed_committee": 0,
-		"state":               2,
-		"request_in":          1,
-		"request_out":         2,
+		"dismissed_chain": 0,
+		"state":           2,
+		"request_out":     2,
 	})
 	check(err, t)
 	defer counter.Close()
@@ -38,7 +35,7 @@ func TestDeployChain(t *testing.T) {
 	}
 	chainID, chainOwnerID := getChainInfo(t, chain)
 	require.Equal(t, chainID, chain.ChainID)
-	require.Equal(t, chainOwnerID, coretypes.NewAgentID(chain.OriginatorAddress(), 0))
+	require.Equal(t, chainOwnerID, *coretypes.NewAgentID(chain.OriginatorAddress(), 0))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 

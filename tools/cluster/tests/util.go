@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core/_default"
+	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -71,9 +73,7 @@ func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
 	require.EqualValues(t, root.Interface.Name, recRoot.Name)
 	require.EqualValues(t, root.Interface.ProgramHash, recRoot.ProgramHash)
 	require.EqualValues(t, root.Interface.Description, recRoot.Description)
-	require.EqualValues(t, coretypes.AgentID{}, recRoot.Creator)
-
-	origAgentID := coretypes.NewAgentID(chain.OriginatorAddress(), 0)
+	require.True(t, recRoot.Creator.IsNil())
 
 	recBlob, err := findContract(chain, blob.Interface.Name)
 	check(err, t)
@@ -81,7 +81,7 @@ func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
 	require.EqualValues(t, blob.Interface.Name, recBlob.Name)
 	require.EqualValues(t, blob.Interface.ProgramHash, recBlob.ProgramHash)
 	require.EqualValues(t, blob.Interface.Description, recBlob.Description)
-	require.EqualValues(t, origAgentID, recBlob.Creator)
+	require.True(t, recBlob.Creator.IsNil())
 
 	recAccounts, err := findContract(chain, accounts.Interface.Name)
 	check(err, t)
@@ -89,7 +89,23 @@ func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
 	require.EqualValues(t, accounts.Interface.Name, recAccounts.Name)
 	require.EqualValues(t, accounts.Interface.ProgramHash, recAccounts.ProgramHash)
 	require.EqualValues(t, accounts.Interface.Description, recAccounts.Description)
-	require.EqualValues(t, origAgentID, recAccounts.Creator)
+	require.True(t, recAccounts.Creator.IsNil())
+
+	recEventlog, err := findContract(chain, eventlog.Interface.Name)
+	check(err, t)
+	require.NotNil(t, recEventlog)
+	require.EqualValues(t, eventlog.Interface.Name, recEventlog.Name)
+	require.EqualValues(t, eventlog.Interface.ProgramHash, recEventlog.ProgramHash)
+	require.EqualValues(t, eventlog.Interface.Description, recEventlog.Description)
+	require.True(t, recEventlog.Creator.IsNil())
+
+	recDefault, err := findContract(chain, _default.Interface.Name)
+	check(err, t)
+	require.NotNil(t, recDefault)
+	require.EqualValues(t, _default.Interface.Name, recDefault.Name)
+	require.EqualValues(t, _default.Interface.ProgramHash, recDefault.ProgramHash)
+	require.EqualValues(t, _default.Interface.Description, recDefault.Description)
+	require.True(t, recDefault.Creator.IsNil())
 }
 
 func requestFunds(wasps *cluster.Cluster, addr ledgerstate.Address, who string) error {
