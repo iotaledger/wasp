@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/info"
 	"github.com/iotaledger/wasp/packages/webapi/request"
 	"github.com/iotaledger/wasp/packages/webapi/state"
+	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
@@ -17,8 +18,8 @@ var log *logger.Logger
 func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP) {
 	log = logger.NewLogger("WebAPI")
 
-	server.SetRequestContentType("application/json")
-	server.SetResponseContentType("application/json")
+	server.SetRequestContentType(echo.MIMEApplicationJSON)
+	server.SetResponseContentType(echo.MIMEApplicationJSON)
 
 	pub := server.Group("public", "").SetDescription("Public endpoints")
 	blob.AddEndpoints(pub)

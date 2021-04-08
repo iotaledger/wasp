@@ -56,11 +56,16 @@ type Chain interface {
 
 	Dismiss()
 	IsDismissed() bool
-	// requests
-	GetRequestProcessingStatus(id coretypes.RequestID) RequestProcessingStatus
-	EventRequestProcessed() *events.Event
+
+	ChainRequests
+
 	// chain processors
 	Processors() *processors.ProcessorCache
+}
+
+type ChainRequests interface {
+	GetRequestProcessingStatus(id coretypes.RequestID) RequestProcessingStatus
+	EventRequestProcessed() *events.Event
 }
 
 type StateManager interface {
