@@ -204,7 +204,7 @@ func (op *operator) checkQuorum() {
 	}
 
 	// check consistency and log
-	chainOut, err := utxoutil.GetSingleChainedAliasOutput(finalTx.Essence())
+	chainOut, err := utxoutil.GetSingleChainedAliasOutput(finalTx)
 	if err != nil {
 		op.log.Panic(xerrors.Errorf("major inconsistency: %w", err))
 	}

@@ -86,7 +86,8 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 		c.ReceiveRequest(req, tx.Essence().Timestamp())
 	}
 	if chainOut := sctransaction.FindAliasOutput(tx.Essence(), c.chainID.AsAddress()); chainOut != nil {
-		c.ReceiveState(chainOut, tx.Essence().Timestamp())
+		chainOut1 := chainOut.UpdateMintingColor().(*ledgerstate.AliasOutput)
+		c.ReceiveState(chainOut1, tx.Essence().Timestamp())
 	}
 }
 

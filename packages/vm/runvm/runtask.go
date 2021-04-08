@@ -75,17 +75,10 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return
 	}
-	chainOutput, err := utxoutil.GetSingleChainedAliasOutput(task.ResultTransaction)
-	if err != nil {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
+	if err := checkTotalAssets(task.ResultTransaction, lastTotalAssets); err != nil {
+		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.checkTotalAssets: %v", err))
 		return
 	}
-	diffAssets := util.DiffColoredBalances(chainOutput.Balances(), lastTotalAssets)
-	if iotas, ok := diffAssets[ledgerstate.ColorIOTA]; !ok || iotas != ledgerstate.DustThresholdAliasOutputIOTA {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: inconsistency between L1 and L2 ledgers"))
-		return
-	}
-
 	task.Log.Debugw("runTask OUT",
 		"batch size", task.ResultBlock.Size(),
 		"block index", task.ResultBlock.StateIndex(),
@@ -105,4 +98,21 @@ func outputsFromRequests(requests ...coretypes.Request) []ledgerstate.Output {
 		}
 	}
 	return ret
+}
+
+func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalAssets *ledgerstate.ColoredBalances) error {
+	var chainOutput *ledgerstate.AliasOutput
+	for _, o := range essence.Outputs() {
+		if out, ok := o.(*ledgerstate.AliasOutput); ok {
+			chainOutput = out
+		}
+	}
+	if chainOutput == nil {
+		return xerrors.New("inconsistency: chain output not found")
+	}
+	diffAssets := util.DiffColoredBalances(chainOutput.Balances(), lastTotalAssets)
+	if iotas, ok := diffAssets[ledgerstate.ColorIOTA]; !ok || iotas != ledgerstate.DustThresholdAliasOutputIOTA {
+		return xerrors.Errorf("RunVM.BuildTransactionEssence: inconsistency between L1 and L2 ledgers")
+	}
+	return nil
 }
