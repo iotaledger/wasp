@@ -71,7 +71,7 @@ type SignedHashMsg struct {
 	SigShare      tbdn.SigShare
 }
 
-// request block of updates from peer. Used in syn process
+// request block of updates from peer. Used in sync process
 type GetBlockMsg struct {
 	SenderIndex uint16
 	BlockIndex  uint32
@@ -82,7 +82,12 @@ type BlockMsg struct {
 	Block       state.Block
 }
 
-// state manager notifies consensus operator about changed state
+// DismissChainMsg sent by component to the chain core in case of major setback
+type DismissChainMsg struct {
+	Reason string
+}
+
+// state manager notifies consensus about changed state
 // only sent internally within committee
 // state transition is always from state N to state N+1
 type StateTransitionMsg struct {

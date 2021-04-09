@@ -5,6 +5,9 @@ package chainimpl
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
+	"github.com/iotaledger/wasp/packages/publisher"
+	"strconv"
 	"sync"
 
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
@@ -35,13 +38,14 @@ type chainObj struct {
 	chMsg                 chan interface{}
 	stateMgr              chain.StateManager
 	consensus             chain.Consensus
-	eventRequestProcessed *events.Event
 	log                   *logger.Logger
 	nodeConn              *txstream.Client
 	dbProvider            *dbprovider.DBProvider
 	netProvider           peering.NetworkProvider
 	dksProvider           tcrypto.RegistryProvider
 	blobProvider          coretypes.BlobCache
+	eventRequestProcessed *events.Event
+	eventStateTransition  *events.Event
 }
 
 func NewChain(
@@ -57,20 +61,24 @@ func NewChain(
 
 	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
 	ret := &chainObj{
-		mempool: mempool.New(dbProvider.GetPartition(&chr.ChainID), blobProvider, chainLog),
-		procset: processors.MustNew(),
-		chMsg:   make(chan interface{}, 100),
-		chainID: chr.ChainID,
-		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
-		}),
+		mempool:      mempool.New(dbProvider.GetPartition(&chr.ChainID), blobProvider, chainLog),
+		procset:      processors.MustNew(),
+		chMsg:        make(chan interface{}, 100),
+		chainID:      chr.ChainID,
 		log:          chainLog,
 		nodeConn:     nodeConn,
 		dbProvider:   dbProvider,
 		netProvider:  netProvider,
 		dksProvider:  dksProvider,
 		blobProvider: blobProvider,
+		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
+			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
+		}),
+		eventStateTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
+			handler.(func(_ *chain.StateTransitionEventData))(params[0].(*chain.StateTransitionEventData))
+		}),
 	}
+	ret.eventStateTransition.Attach(events.NewClosure(ret.processStateTransition))
 	ret.stateMgr = statemgr.New(dbProvider, ret, newPeers(nil), nodeConn, ret.log)
 	go func() {
 		for msg := range ret.chMsg {
@@ -81,18 +89,14 @@ func NewChain(
 	return ret
 }
 
-// iAmInTheCommittee checks if NetIDs makes sense
-func iAmInTheCommittee(committeeNodes []string, n, index uint16, netProvider peering.NetworkProvider) bool {
-	if len(committeeNodes) != int(n) {
-		return false
-	}
-	return committeeNodes[index] == netProvider.Self().NetID()
-}
-
 func (c *chainObj) dispatchMessage(msg interface{}) {
 	switch msgt := msg.(type) {
 	case *peering.PeerMessage:
 		c.processPeerMessage(msgt)
+
+	case *chain.DismissChainMsg:
+		c.Dismiss(msgt.Reason)
+
 	case *chain.StateTransitionMsg:
 		if c.consensus != nil {
 			c.consensus.EventStateTransitionMsg(msgt)
@@ -241,7 +245,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	}
 	c.committee, c.consensus = nil, nil
 	c.log.Debugf("creating new committee...")
-	if c.committee, err = NewCommittee(c, msg.ChainOutput.GetStateAddress(), c.netProvider, c.dksProvider, c.log); err != nil {
+	if c.committee, err = committeeimpl.NewCommittee(c, msg.ChainOutput.GetStateAddress(), c.netProvider, c.dksProvider, c.log); err != nil {
 		c.committee = nil
 		c.log.Errorf("failed to create committee object for address %s: %v", msg.ChainOutput.GetStateAddress(), err)
 		return
@@ -252,7 +256,48 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	c.log.Debugf("created new committee for state address %s", msg.ChainOutput.GetStateAddress().Base58())
 
 	c.log.Debugf("creating new consensus object..")
-	c.consensus = consensus.New(c.mempool, c.committee, c.nodeConn, c.log)
+	c.consensus = consensus.New(c, c.mempool, c.committee, c.nodeConn, c.log)
 	c.stateMgr.SetPeers(newPeers(c.committee))
 	c.stateMgr.EventStateMsg(msg)
+}
+
+func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
+	if msg.ChainOutput.GetStateIndex() > 0 {
+		c.log.Infof("STATE TRANSITION TO #%d. Chain output: %s, block size: %d",
+			msg.VariableState.BlockIndex(), coretypes.OID(msg.ChainOutput.ID()), len(msg.RequestIDs))
+		c.log.Debugf("STATE TRANSITION. State hash: %s, block essence: %s",
+			msg.VariableState.Hash().String(), msg.BlockEssenceHash.String())
+	} else {
+		c.log.Infof("ORIGIN STATE SAVED. State output id: %s", coretypes.OID(msg.ChainOutput.ID()))
+		c.log.Debugf("ORIGIN STATE SAVED. state hash: %s, block essence: %s",
+			msg.VariableState.Hash().String(), msg.BlockEssenceHash.String())
+	}
+
+	// send to consensus
+	c.ReceiveMessage(&chain.StateTransitionMsg{
+		VariableState: msg.VariableState,
+		ChainOutput:   msg.ChainOutput,
+		Timestamp:     msg.Timestamp,
+		RequestIDs:    msg.RequestIDs,
+	})
+
+	// publish state transition
+	publisher.Publish("state",
+		c.ID().String(),
+		strconv.Itoa(int(msg.VariableState.BlockIndex())),
+		strconv.Itoa(len(msg.RequestIDs)),
+		coretypes.OID(msg.ChainOutput.ID()),
+		msg.VariableState.Hash().String(),
+	)
+	// publish processed requests
+	for _, reqid := range msg.RequestIDs {
+		c.eventRequestProcessed.Trigger(reqid)
+
+		publisher.Publish("request_out",
+			c.ID().String(),
+			reqid.String(),
+			strconv.Itoa(int(msg.VariableState.BlockIndex())),
+			strconv.Itoa(len(msg.RequestIDs)),
+		)
+	}
 }

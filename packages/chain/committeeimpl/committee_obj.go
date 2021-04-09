@@ -1,4 +1,4 @@
-package chainimpl
+package committeeimpl
 
 import (
 	"fmt"
@@ -208,4 +208,12 @@ func containsDuplicates(lst []string) bool {
 		}
 	}
 	return false
+}
+
+// iAmInTheCommittee checks if NetIDs makes sense
+func iAmInTheCommittee(committeeNodes []string, n, index uint16, netProvider peering.NetworkProvider) bool {
+	if len(committeeNodes) != int(n) {
+		return false
+	}
+	return committeeNodes[index] == netProvider.Self().NetID()
 }

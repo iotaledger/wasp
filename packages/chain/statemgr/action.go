@@ -4,15 +4,12 @@
 package statemgr
 
 import (
-	"fmt"
-	"strconv"
+	"github.com/iotaledger/wasp/packages/chain"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -62,61 +59,17 @@ func (sm *stateManager) checkStateApproval() {
 	// found a candidate block which is approved by the stateOutput
 	// set the transaction id from output
 	candidate.block.WithApprovingOutputID(sm.stateOutput.ID())
-
-	if err := candidate.nextState.CommitToDb(candidate.block); err != nil {
-		sm.log.Errorw("failed to save state at index #%d", candidate.nextState.BlockIndex())
-		return
-	}
-	if sm.solidState != nil {
-		sm.log.Infof("STATE TRANSITION TO #%d. Chain output: %s, block size: %d",
-			candidate.nextState.BlockIndex(), coretypes.OID(sm.stateOutput.ID()), candidate.block.Size())
-		sm.log.Debugf("STATE TRANSITION. State hash: %s, block essence: %s",
-			varStateHash.String(), candidate.block.EssenceHash().String())
-	} else {
-		sm.log.Infof("ORIGIN STATE SAVED. State output id: %s", coretypes.OID(sm.stateOutput.ID()))
-		sm.log.Debugf("ORIGIN STATE SAVED. state hash: %s, block essence: %s",
-			varStateHash.String(), candidate.block.EssenceHash().String())
-	}
 	sm.solidState = candidate.nextState
 	sm.blockCandidates = make(map[hashing.HashValue]*candidateBlock) // clear candidate batches
 
-	sm.announceNewState(candidate)
-}
-
-func (sm *stateManager) announceNewState(candidate *candidateBlock) {
 	cloneState := sm.solidState.Clone()
-	go func() {
-		// send to consensus
-		sm.chain.ReceiveMessage(&chain.StateTransitionMsg{
-			VariableState: cloneState,
-			ChainOutput:   sm.stateOutput,
-			Timestamp:     sm.stateOutputTimestamp,
-			RequestIDs:    candidate.block.RequestIDs(),
-		})
-
-		// publish state transition
-		publisher.Publish("state",
-			sm.chain.ID().String(),
-			strconv.Itoa(int(sm.solidState.BlockIndex())),
-			strconv.Itoa(int(candidate.block.Size())),
-			sm.stateOutput.ID().String(),
-			candidate.nextState.Hash().String(),
-			fmt.Sprintf("%d", candidate.block.Timestamp()),
-		)
-		// publish processed requests
-		for i, reqid := range candidate.block.RequestIDs() {
-
-			sm.chain.EventRequestProcessed().Trigger(reqid)
-
-			publisher.Publish("request_out",
-				sm.chain.ID().String(),
-				reqid.String(),
-				strconv.Itoa(int(sm.solidState.BlockIndex())),
-				strconv.Itoa(i),
-				strconv.Itoa(int(candidate.block.Size())),
-			)
-		}
-	}()
+	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
+		VariableState:    cloneState,
+		BlockEssenceHash: candidate.block.EssenceHash(),
+		ChainOutput:      sm.stateOutput,
+		Timestamp:        sm.stateOutputTimestamp,
+		RequestIDs:       candidate.block.RequestIDs(),
+	})
 }
 
 // adding block of state updates to the 'pending' map

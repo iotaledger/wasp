@@ -19,6 +19,7 @@ import (
 )
 
 type operator struct {
+	chain     chain.ChainCore
 	committee chain.Committee
 	mempool   chain.Mempool
 	nodeConn  *txstream.Client
@@ -75,20 +76,9 @@ type signedResult struct {
 	sigShare    tbdn.SigShare
 }
 
-// backlog entry. Keeps stateOutput of the request
-type request struct {
-	req             coretypes.Request
-	whenMsgReceived time.Time
-	// notification vector for the current state
-	notifications []bool
-	// true if arguments were decoded/solidified already. If not, the request in not eligible for the batch
-	argsSolid bool
-
-	log *logger.Logger
-}
-
-func New(mempool chain.Mempool, committee chain.Committee, nodeConn *txstream.Client, log *logger.Logger) *operator {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn *txstream.Client, log *logger.Logger) *operator {
 	ret := &operator{
+		chain:                               chainCore,
 		committee:                           committee,
 		mempool:                             mempool,
 		nodeConn:                            nodeConn,

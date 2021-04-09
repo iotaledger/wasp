@@ -87,13 +87,16 @@ func handleGetCommitteeForChain(c echo.Context) error {
 	if chain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Active chain %s not found", chainID))
 	}
-	address := chain.Committee().DKShare().Address
-	cr, err := registry.CommitteeRecordFromRegistry(address)
+	committeeInfo := chain.GetCommitteeInfo()
+	if committeeInfo == nil {
+		return httperrors.NotFound(fmt.Sprintf("Committee info for chain %s is not available", chainID))
+	}
+	cr, err := registry.CommitteeRecordFromRegistry(committeeInfo.Address)
 	if err != nil {
 		return err
 	}
 	if cr == nil {
-		return httperrors.NotFound(fmt.Sprintf("Record not found: %s", address))
+		return httperrors.NotFound(fmt.Sprintf("Committee record not found for address: %s", committeeInfo.Address.Base58()))
 	}
 	return c.JSON(http.StatusOK, model.NewCommitteeRecord(cr))
 }

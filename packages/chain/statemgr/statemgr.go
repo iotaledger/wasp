@@ -6,6 +6,7 @@
 package statemgr
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -19,7 +20,7 @@ import (
 
 type stateManager struct {
 	dbp                  *dbprovider.DBProvider
-	chain                chain.Chain
+	chain                chain.ChainCore
 	peers                chain.PeerGroupProvider
 	nodeConn             *txstream.Client
 	pullStateDeadline    time.Time
@@ -59,7 +60,7 @@ type candidateBlock struct {
 	nextState state.VirtualState
 }
 
-func New(dbp *dbprovider.DBProvider, c chain.Chain, peers chain.PeerGroupProvider, nodeconn *txstream.Client, log *logger.Logger) chain.StateManager {
+func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers chain.PeerGroupProvider, nodeconn *txstream.Client, log *logger.Logger) chain.StateManager {
 	ret := &stateManager{
 		dbp:                    dbp,
 		chain:                  c,
@@ -102,8 +103,9 @@ func (sm *stateManager) initLoadState() {
 
 	sm.solidState, batch, stateExists, err = state.LoadSolidState(sm.dbp, sm.chain.ID())
 	if err != nil {
-		sm.log.Errorf("initLoadState: %v", err)
-		sm.chain.Dismiss()
+		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
+			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err)},
+		)
 		return
 	}
 	if stateExists {

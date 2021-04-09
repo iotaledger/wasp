@@ -126,7 +126,7 @@ func (op *operator) eventResultCalculated(ctx *chain.VMResultMsg) {
 	// inform own state manager about new result block. The state manager will start waiting
 	// from confirmation of it from the tangle
 	go func() {
-		op.committee.Chain().ReceiveMessage(chain.BlockCandidateMsg{
+		op.chain.ReceiveMessage(chain.BlockCandidateMsg{
 			Block: ctx.Task.ResultBlock,
 		})
 	}()
