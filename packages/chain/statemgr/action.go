@@ -14,11 +14,9 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 func (sm *stateManager) takeAction() {
-	sm.sendPingsIfNeeded()
 	sm.pullStateIfNeeded()
 	sm.doSyncActionIfNeeded()
 }
@@ -32,25 +30,6 @@ func (sm *stateManager) pullStateIfNeeded() {
 		sm.nodeConn.RequestBacklog(sm.chain.ID().AsAddress())
 	}
 	sm.pullStateDeadline = nowis.Add(pullStateTimeout)
-}
-
-func (sm *stateManager) sendPingsIfNeeded() {
-	if sm.numPongsHasQuorum() {
-		// no need for pinging, all state information is gathered already
-		return
-	}
-	if !sm.peers.NumIsAlive(sm.peers.NumPeers()/3 + 1) {
-		return
-	}
-	if !sm.isSolidStateValidated() {
-		// own solid state has not been validated yet
-		return
-	}
-	if sm.deadlineForPongQuorum.After(time.Now()) {
-		// not time yet
-		return
-	}
-	sm.sendPingsToPeers()
 }
 
 func (sm *stateManager) isSolidStateValidated() bool {
@@ -176,49 +155,4 @@ func (sm *stateManager) addBlockCandidate(block state.Block) {
 
 	sm.log.Infof("added new block candidate. State index: %d, state hash: %s", block.StateIndex(), vh.String())
 	sm.pullStateDeadline = time.Now().Add(pullStateTimeout)
-}
-
-func (sm *stateManager) numPongs() uint16 {
-	ret := uint16(0)
-	for _, f := range sm.pingPong {
-		if f {
-			ret++
-		}
-	}
-	return ret
-}
-
-func (sm *stateManager) numPongsHasQuorum() bool {
-	return sm.numPongs() >= sm.peers.NumPeers()/3
-}
-
-func (sm *stateManager) pingPongReceived(senderIndex uint16) {
-	sm.pingPong[senderIndex] = true
-}
-
-func (sm *stateManager) respondPongToPeer(targetPeerIndex uint16) {
-	_ = sm.peers.SendMsg(targetPeerIndex, chain.MsgStateIndexPingPong, util.MustBytes(&chain.BlockIndexPingPongMsg{
-		BlockIndex: sm.stateOutput.GetStateIndex(),
-		RSVP:       false,
-	}))
-}
-
-func (sm *stateManager) sendPingsToPeers() {
-	sm.log.Debugf("pinging peers")
-
-	data := util.MustBytes(&chain.BlockIndexPingPongMsg{
-		BlockIndex: sm.stateOutput.GetStateIndex(),
-		RSVP:       true,
-	})
-	numSent := 0
-	for i, pinged := range sm.pingPong {
-		if pinged {
-			continue
-		}
-		if err := sm.peers.SendMsg(uint16(i), chain.MsgStateIndexPingPong, data); err == nil {
-			numSent++
-		}
-	}
-	sm.log.Debugf("sent pings to %d committee peers", numSent)
-	sm.deadlineForPongQuorum = time.Now().Add(chain.RepeatPingAfter)
 }

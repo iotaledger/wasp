@@ -70,7 +70,6 @@ type ChainRequests interface {
 
 type StateManager interface {
 	SetPeers(PeerGroupProvider)
-	EventStateIndexPingPongMsg(msg *BlockIndexPingPongMsg)
 	EventGetBlockMsg(msg *GetBlockMsg)
 	EventBlockMsg(msg *BlockMsg)
 	EventStateMsg(msg *StateMsg)

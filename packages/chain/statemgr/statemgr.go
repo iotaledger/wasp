@@ -18,29 +18,26 @@ import (
 )
 
 type stateManager struct {
-	dbp                   *dbprovider.DBProvider
-	chain                 chain.Chain
-	peers                 chain.PeerGroupProvider
-	nodeConn              *txstream.Client
-	pingPong              []bool
-	deadlineForPongQuorum time.Time
-	pullStateDeadline     time.Time
-	blockCandidates       map[hashing.HashValue]*candidateBlock
-	solidState            state.VirtualState
-	stateOutput           *ledgerstate.AliasOutput
-	stateOutputTimestamp  time.Time
-	syncingBlocks         map[uint32]*syncingBlock
-	log                   *logger.Logger
+	dbp                  *dbprovider.DBProvider
+	chain                chain.Chain
+	peers                chain.PeerGroupProvider
+	nodeConn             *txstream.Client
+	pullStateDeadline    time.Time
+	blockCandidates      map[hashing.HashValue]*candidateBlock
+	solidState           state.VirtualState
+	stateOutput          *ledgerstate.AliasOutput
+	stateOutputTimestamp time.Time
+	syncingBlocks        map[uint32]*syncingBlock
+	log                  *logger.Logger
 
 	// Channels for accepting external events.
-	eventStateIndexPingPongMsgCh chan *chain.BlockIndexPingPongMsg
-	eventGetBlockMsgCh           chan *chain.GetBlockMsg
-	eventBlockMsgCh              chan *chain.BlockMsg
-	eventStateOutputMsgCh        chan *chain.StateMsg
-	eventOutputMsgCh             chan ledgerstate.Output
-	eventPendingBlockMsgCh       chan chain.BlockCandidateMsg
-	eventTimerMsgCh              chan chain.TimerTick
-	closeCh                      chan bool
+	eventGetBlockMsgCh     chan *chain.GetBlockMsg
+	eventBlockMsgCh        chan *chain.BlockMsg
+	eventStateOutputMsgCh  chan *chain.StateMsg
+	eventOutputMsgCh       chan ledgerstate.Output
+	eventPendingBlockMsgCh chan chain.BlockCandidateMsg
+	eventTimerMsgCh        chan chain.TimerTick
+	closeCh                chan bool
 }
 
 const (
@@ -64,20 +61,19 @@ type candidateBlock struct {
 
 func New(dbp *dbprovider.DBProvider, c chain.Chain, peers chain.PeerGroupProvider, nodeconn *txstream.Client, log *logger.Logger) chain.StateManager {
 	ret := &stateManager{
-		dbp:                          dbp,
-		chain:                        c,
-		nodeConn:                     nodeconn,
-		syncingBlocks:                make(map[uint32]*syncingBlock),
-		blockCandidates:              make(map[hashing.HashValue]*candidateBlock),
-		log:                          log.Named("s"),
-		eventStateIndexPingPongMsgCh: make(chan *chain.BlockIndexPingPongMsg),
-		eventGetBlockMsgCh:           make(chan *chain.GetBlockMsg),
-		eventBlockMsgCh:              make(chan *chain.BlockMsg),
-		eventStateOutputMsgCh:        make(chan *chain.StateMsg),
-		eventOutputMsgCh:             make(chan ledgerstate.Output),
-		eventPendingBlockMsgCh:       make(chan chain.BlockCandidateMsg),
-		eventTimerMsgCh:              make(chan chain.TimerTick),
-		closeCh:                      make(chan bool),
+		dbp:                    dbp,
+		chain:                  c,
+		nodeConn:               nodeconn,
+		syncingBlocks:          make(map[uint32]*syncingBlock),
+		blockCandidates:        make(map[hashing.HashValue]*candidateBlock),
+		log:                    log.Named("s"),
+		eventGetBlockMsgCh:     make(chan *chain.GetBlockMsg),
+		eventBlockMsgCh:        make(chan *chain.BlockMsg),
+		eventStateOutputMsgCh:  make(chan *chain.StateMsg),
+		eventOutputMsgCh:       make(chan ledgerstate.Output),
+		eventPendingBlockMsgCh: make(chan chain.BlockCandidateMsg),
+		eventTimerMsgCh:        make(chan chain.TimerTick),
+		closeCh:                make(chan bool),
 	}
 	ret.SetPeers(peers)
 	go ret.initLoadState()
@@ -92,7 +88,6 @@ func (sm *stateManager) SetPeers(p chain.PeerGroupProvider) {
 		sm.log.Debugf("SetPeers: num = %d", n)
 	}
 	sm.peers = p
-	sm.pingPong = make([]bool, n)
 }
 
 func (sm *stateManager) Close() {
@@ -127,10 +122,6 @@ func (sm *stateManager) initLoadState() {
 func (sm *stateManager) recvLoop() {
 	for {
 		select {
-		case msg, ok := <-sm.eventStateIndexPingPongMsgCh:
-			if ok {
-				sm.eventStateIndexPingPongMsg(msg)
-			}
 		case msg, ok := <-sm.eventGetBlockMsgCh:
 			if ok {
 				sm.eventGetBlockMsg(msg)

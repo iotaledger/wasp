@@ -134,16 +134,6 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 
 	switch msg.MsgType {
 
-	case chain.MsgStateIndexPingPong:
-		msgt := &chain.BlockIndexPingPongMsg{}
-		if err := msgt.Read(rdr); err != nil {
-			c.log.Error(err)
-			return
-		}
-		msgt.SenderIndex = msg.SenderIndex
-
-		c.stateMgr.EventStateIndexPingPongMsg(msgt)
-
 	case chain.MsgNotifyRequests:
 		msgt := &chain.NotifyReqMsg{}
 		if err := msgt.Read(rdr); err != nil {
