@@ -187,12 +187,6 @@ func testIncrement(t *testing.T, numRequests int) {
 func TestIncrementWithTransfer(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
 
-	if !clu.VerifyAddressBalances(chain.Address, 4, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: 3,
-	}, "chain after deployment") {
-		t.Fail()
-	}
-
 	entryPoint := coretypes.Hn("increment")
 	postRequest(t, incHname, entryPoint, 42, nil)
 
@@ -201,18 +195,13 @@ func TestIncrementWithTransfer(t *testing.T) {
 	}, "owner after") {
 		t.Fail()
 	}
-	if !clu.VerifyAddressBalances(chain.Address, 5+42, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: 4 + 42,
-	}, "chain after") {
-		t.Fail()
-	}
 	agentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), incHname)
 	actual := getAgentBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
 	require.EqualValues(t, 42, actual)
 
 	agentID = coretypes.NewAgentID(scOwnerAddr, 0)
 	actual = getAgentBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
-	require.EqualValues(t, 1, actual) // 1 request sent
+	require.EqualValues(t, 0, actual) // 1 request sent
 
 	agentID = coretypes.NewAgentID(chain.OriginatorAddress(), 0)
 	actual = getAgentBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)

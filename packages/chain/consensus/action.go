@@ -85,7 +85,7 @@ func (op *operator) startCalculationsAsLeader() {
 	reqs := op.selectRequestsToProcess()
 	if len(reqs) == 0 {
 		// empty backlog or nothing is ready
-		op.log.Debugf("empty backlog")
+		//op.log.Debugf("empty backlog")
 		return
 	}
 	reqIds := takeIDs(reqs...)

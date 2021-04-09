@@ -53,11 +53,8 @@ func TestDeployContractOnly(t *testing.T) {
 	setup(t, "test_cluster")
 
 	counter, err := clu.StartMessageCounter(map[string]int{
-		"chainrec":            2,
-		"active_committee":    1,
 		"dismissed_committee": 0,
 		"state":               2,
-		"request_in":          1,
 		"request_out":         2,
 	})
 	check(err, t)
@@ -124,11 +121,8 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	setup(t, "test_cluster")
 
 	counter, err := clu.StartMessageCounter(map[string]int{
-		"chainrec":            2,
-		"active_committee":    1,
 		"dismissed_committee": 0,
 		"state":               2,
-		"request_in":          1,
 		"request_out":         2,
 	})
 	check(err, t)
