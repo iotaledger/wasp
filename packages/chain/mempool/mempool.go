@@ -24,7 +24,6 @@ type mempool struct {
 
 type request struct {
 	req             coretypes.Request
-	timestamp       time.Time
 	whenMsgReceived time.Time
 	seen            map[uint16]bool
 }
