@@ -83,16 +83,16 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 		return
 	}
 	for _, req := range reqs {
-		c.ReceiveRequest(req, tx.Essence().Timestamp())
+		c.ReceiveRequest(req)
 	}
 	if chainOut := sctransaction.GetAliasOutput(tx, c.chainID.AsAddress()); chainOut != nil {
 		c.ReceiveState(chainOut, tx.Essence().Timestamp())
 	}
 }
 
-func (c *chainObj) ReceiveRequest(req coretypes.Request, timestamp time.Time) {
+func (c *chainObj) ReceiveRequest(req coretypes.Request) {
 	c.log.Debugf("ReceiveRequest: %s", req.ID())
-	c.mempool.ReceiveRequest(req, timestamp)
+	c.mempool.ReceiveRequest(req)
 }
 
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {

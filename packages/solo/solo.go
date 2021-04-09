@@ -281,7 +281,7 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]cor
 		if !ok {
 			lst = make([]coretypes.Request, 0)
 		}
-		ret[arr] = append(lst, sctransaction.RequestOnLedgerFromOutput(o, sender, utxoutil.GetMintedAmounts(tx)))
+		ret[arr] = append(lst, sctransaction.RequestOnLedgerFromOutput(o, tx.Essence().Timestamp(), sender, utxoutil.GetMintedAmounts(tx)))
 	}
 	return ret
 }
@@ -303,7 +303,7 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 		}
 		chain.reqCounter.Add(int32(len(reqs)))
 		for _, req := range reqs {
-			chain.mempool.ReceiveRequest(req, tx.Essence().Timestamp())
+			chain.mempool.ReceiveRequest(req)
 		}
 	}
 }

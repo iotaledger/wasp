@@ -24,8 +24,12 @@ type RequestOnLedger struct {
 var _ coretypes.Request = &RequestOnLedger{}
 
 // RequestOnLedgerFromOutput
-func RequestOnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...map[ledgerstate.Color]uint64) *RequestOnLedger {
-	ret := &RequestOnLedger{outputObj: output, senderAddress: senderAddr}
+func RequestOnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, timestamp time.Time, senderAddr ledgerstate.Address, minted ...map[ledgerstate.Color]uint64) *RequestOnLedger {
+	ret := &RequestOnLedger{
+		outputObj:     output,
+		timestamp:     timestamp,
+		senderAddress: senderAddr,
+	}
 	ret.requestMetadata = RequestMetadataFromBytes(output.GetPayload())
 	ret.minted = make(map[ledgerstate.Color]uint64, 0)
 	if len(minted) > 0 {
@@ -48,7 +52,7 @@ func RequestsOnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr led
 		if out, ok := o.(*ledgerstate.ExtendedLockedOutput); ok {
 			if out.Address().Equals(targetAddr) {
 				out1 := out.UpdateMintingColor().(*ledgerstate.ExtendedLockedOutput)
-				ret = append(ret, RequestOnLedgerFromOutput(out1, senderAddr, mintedAmounts))
+				ret = append(ret, RequestOnLedgerFromOutput(out1, tx.Essence().Timestamp(), senderAddr, mintedAmounts))
 			}
 		}
 	}
@@ -91,6 +95,11 @@ func (req *RequestOnLedger) Target() (coretypes.Hname, coretypes.Hname) {
 
 func (req *RequestOnLedger) Tokens() *ledgerstate.ColoredBalances {
 	return req.outputObj.Balances()
+}
+
+// coming from the transaction timestamp
+func (req *RequestOnLedger) Timestamp() time.Time {
+	return req.timestamp
 }
 
 func (req *RequestOnLedger) TimeLock() time.Time {
