@@ -176,54 +176,20 @@ func (msg *GetBlockMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (msg *BlockHeaderMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, msg.Size); err != nil {
-		return err
-	}
-	if _, err := w.Write(msg.ApprovingOutputID.Bytes()); err != nil {
+func (msg *BlockMsg) Write(w io.Writer) error {
+	if err := util.WriteBytes32(w, msg.Block.Bytes()); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (msg *BlockHeaderMsg) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
+func (msg *BlockMsg) Read(r io.Reader) error {
+	data, err := util.ReadBytes32(r)
+	if err != nil {
 		return err
 	}
-	if err := util.ReadUint16(r, &msg.Size); err != nil {
-		return err
-	}
-	if err := readOutputID(r, &msg.ApprovingOutputID); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (msg *StateUpdateMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
-		return err
-	}
-	if err := msg.StateUpdate.Write(w); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, msg.IndexInTheBlock); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (msg *StateUpdateMsg) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
-		return err
-	}
-	msg.StateUpdate = state.NewStateUpdate(coretypes.RequestID{})
-	if err := msg.StateUpdate.Read(r); err != nil {
-		return err
-	}
-	if err := util.ReadUint16(r, &msg.IndexInTheBlock); err != nil {
+	msg.Block, err = state.BlockFromBytes(data)
+	if err != nil {
 		return err
 	}
 	return nil

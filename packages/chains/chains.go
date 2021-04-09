@@ -50,6 +50,7 @@ func (c *Chains) Attach(nodeConn *txstream.Client) {
 	c.nodeConn = nodeConn
 	c.nodeConn.Events.TransactionReceived.Attach(events.NewClosure(c.dispatchMsgTransaction))
 	c.nodeConn.Events.InclusionStateReceived.Attach(events.NewClosure(c.dispatchMsgInclusionState))
+	c.nodeConn.Events.OutputReceived.Attach(events.NewClosure(c.dispatchOutputMsg))
 	// TODO attach to off-ledger request module
 }
 

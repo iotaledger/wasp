@@ -111,6 +111,10 @@ func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusi
 	}) // TODO special entry point
 }
 
+func (c *chainObj) ReceiveOutput(output ledgerstate.Output) {
+	c.stateMgr.EventOutputMsg(output)
+}
+
 func (c *chainObj) BlobCache() coretypes.BlobCache {
 	return c.blobProvider
 }

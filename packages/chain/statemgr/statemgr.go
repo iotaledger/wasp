@@ -35,9 +35,9 @@ type stateManager struct {
 	// Channels for accepting external events.
 	eventStateIndexPingPongMsgCh chan *chain.BlockIndexPingPongMsg
 	eventGetBlockMsgCh           chan *chain.GetBlockMsg
-	eventBlockHeaderMsgCh        chan *chain.BlockHeaderMsg
-	eventStateUpdateMsgCh        chan *chain.StateUpdateMsg
+	eventBlockMsgCh              chan *chain.BlockMsg
 	eventStateOutputMsgCh        chan *chain.StateMsg
+	eventOutputMsgCh             chan ledgerstate.Output
 	eventPendingBlockMsgCh       chan chain.BlockCandidateMsg
 	eventTimerMsgCh              chan chain.TimerTick
 	closeCh                      chan bool
@@ -49,11 +49,10 @@ const (
 )
 
 type syncingBlock struct {
-	msgCounter    uint16
-	stateUpdates  []state.StateUpdate
-	stateOutputID ledgerstate.OutputID
-	pullDeadline  time.Time
-	block         state.Block
+	pullDeadline time.Time
+	block        state.Block
+	approved     bool
+	finalHash    hashing.HashValue
 }
 
 type candidateBlock struct {
@@ -73,9 +72,9 @@ func New(dbp *dbprovider.DBProvider, c chain.Chain, peers chain.PeerGroupProvide
 		log:                          log.Named("s"),
 		eventStateIndexPingPongMsgCh: make(chan *chain.BlockIndexPingPongMsg),
 		eventGetBlockMsgCh:           make(chan *chain.GetBlockMsg),
-		eventBlockHeaderMsgCh:        make(chan *chain.BlockHeaderMsg),
-		eventStateUpdateMsgCh:        make(chan *chain.StateUpdateMsg),
+		eventBlockMsgCh:              make(chan *chain.BlockMsg),
 		eventStateOutputMsgCh:        make(chan *chain.StateMsg),
+		eventOutputMsgCh:             make(chan ledgerstate.Output),
 		eventPendingBlockMsgCh:       make(chan chain.BlockCandidateMsg),
 		eventTimerMsgCh:              make(chan chain.TimerTick),
 		closeCh:                      make(chan bool),
@@ -136,17 +135,17 @@ func (sm *stateManager) recvLoop() {
 			if ok {
 				sm.eventGetBlockMsg(msg)
 			}
-		case msg, ok := <-sm.eventBlockHeaderMsgCh:
+		case msg, ok := <-sm.eventBlockMsgCh:
 			if ok {
-				sm.eventBlockHeaderMsg(msg)
-			}
-		case msg, ok := <-sm.eventStateUpdateMsgCh:
-			if ok {
-				sm.eventStateUpdateMsg(msg)
+				sm.eventBlockMsg(msg)
 			}
 		case msg, ok := <-sm.eventStateOutputMsgCh:
 			if ok {
 				sm.eventStateMsg(msg)
+			}
+		case msg, ok := <-sm.eventOutputMsgCh:
+			if ok {
+				sm.eventOutputMsg(msg)
 			}
 		case msg, ok := <-sm.eventPendingBlockMsgCh:
 			if ok {

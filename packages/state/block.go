@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"io"
 
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
@@ -44,6 +44,17 @@ func BlockFromBytes(data []byte) (Block, error) {
 		return nil, err
 	}
 	return ret, nil
+}
+
+func LoadBlock(chainState kvstore.KVStore, stateIndex uint32) (Block, error) {
+	data, err := chainState.Get(dbkeyBatch(stateIndex))
+	if err == kvstore.ErrKeyNotFound {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return BlockFromBytes(data)
 }
 
 // block with empty state update and nil state hash
@@ -184,13 +195,23 @@ func dbkeyBatch(stateIndex uint32) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeStateUpdateBatch, util.Uint32To4Bytes(stateIndex))
 }
 
-func LoadBlock(chainState kvstore.KVStore, stateIndex uint32) (Block, error) {
-	data, err := chainState.Get(dbkeyBatch(stateIndex))
-	if err == kvstore.ErrKeyNotFound {
-		return nil, nil
+func (b *block) IsApprovedBy(chainOutput *ledgerstate.AliasOutput) bool {
+	if chainOutput == nil {
+		return false
 	}
+	if b.StateIndex() != chainOutput.GetStateIndex() {
+		return false
+	}
+	var nilOID ledgerstate.OutputID
+	if b.ApprovingOutputID() != nilOID && b.ApprovingOutputID() != chainOutput.ID() {
+		return false
+	}
+	sh, err := hashing.HashValueFromBytes(chainOutput.GetStateData())
 	if err != nil {
-		return nil, err
+		return false
 	}
-	return BlockFromBytes(data)
+	if b.EssenceHash() != sh {
+		return false
+	}
+	return true
 }

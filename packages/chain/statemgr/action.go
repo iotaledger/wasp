@@ -20,7 +20,7 @@ import (
 func (sm *stateManager) takeAction() {
 	sm.sendPingsIfNeeded()
 	sm.pullStateIfNeeded()
-	sm.doSyncIfNeeded()
+	sm.doSyncActionIfNeeded()
 }
 
 func (sm *stateManager) pullStateIfNeeded() {

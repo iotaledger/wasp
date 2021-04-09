@@ -53,6 +53,7 @@ type Chain interface {
 	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	ReceiveRequest(coretypes.Request, time.Time)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
+	ReceiveOutput(output ledgerstate.Output)
 
 	Dismiss()
 	IsDismissed() bool
@@ -72,9 +73,9 @@ type StateManager interface {
 	SetPeers(PeerGroupProvider)
 	EventStateIndexPingPongMsg(msg *BlockIndexPingPongMsg)
 	EventGetBlockMsg(msg *GetBlockMsg)
-	EventBlockHeaderMsg(msg *BlockHeaderMsg)
-	EventStateUpdateMsg(msg *StateUpdateMsg)
+	EventBlockMsg(msg *BlockMsg)
 	EventStateMsg(msg *StateMsg)
+	EventOutputMsg(msg ledgerstate.Output)
 	EventBlockCandidateMsg(msg BlockCandidateMsg)
 	EventTimerMsg(msg TimerTick)
 	Close()
