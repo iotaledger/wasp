@@ -18,13 +18,13 @@ import (
 //go:embed templates/chainaccount.tmpl
 var tplChainAccount string
 
-func initChainAccount(e *echo.Echo, r renderer) {
-	route := e.GET("/chain/:chainid/account/:agentid", handleChainAccount)
+func (d *Dashboard) initChainAccount(e *echo.Echo, r renderer) {
+	route := e.GET("/chain/:chainid/account/:agentid", d.handleChainAccount)
 	route.Name = "chainAccount"
-	r[route.Path] = makeTemplate(e, tplChainAccount, tplWs)
+	r[route.Path] = d.makeTemplate(e, tplChainAccount, tplWs)
 }
 
-func handleChainAccount(c echo.Context) error {
+func (d *Dashboard) handleChainAccount(c echo.Context) error {
 	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func handleChainAccount(c echo.Context) error {
 	}
 
 	result := &ChainAccountTemplateParams{
-		BaseTemplateParams: BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
+		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
 			Path:  c.Path(),
 			Title: fmt.Sprintf("Account %.8s…", agentID),
 			Href:  "#",

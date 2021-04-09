@@ -1,7 +1,9 @@
 package mempool
 
 import (
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/state"
 	"sort"
 	"sync"
 	"time"
@@ -12,11 +14,12 @@ import (
 )
 
 type mempool struct {
-	mutex     sync.RWMutex
-	requests  map[coretypes.RequestID]*request
-	chStop    chan bool
-	blobCache coretypes.BlobCache
-	log       *logger.Logger
+	mutex      sync.RWMutex
+	chainState kvstore.KVStore
+	requests   map[coretypes.RequestID]*request
+	chStop     chan bool
+	blobCache  coretypes.BlobCache
+	log        *logger.Logger
 }
 
 type request struct {
@@ -30,12 +33,13 @@ const constSolidificationLoopDelay = 200 * time.Millisecond
 
 var _ chain.Mempool = &mempool{}
 
-func New(blobCache coretypes.BlobCache, log *logger.Logger) chain.Mempool {
+func New(chainState kvstore.KVStore, blobCache coretypes.BlobCache, log *logger.Logger) chain.Mempool {
 	ret := &mempool{
-		requests:  make(map[coretypes.RequestID]*request),
-		chStop:    make(chan bool),
-		blobCache: blobCache,
-		log:       log.Named("m"),
+		chainState: chainState,
+		requests:   make(map[coretypes.RequestID]*request),
+		chStop:     make(chan bool),
+		blobCache:  blobCache,
+		log:        log.Named("m"),
 	}
 	go ret.solidificationLoop()
 	return ret
@@ -45,6 +49,14 @@ func (m *mempool) ReceiveRequest(req coretypes.Request, timestamp time.Time) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
+	isCompleted, err := state.IsRequestCompleted(m.chainState, req.ID())
+	if err != nil {
+		m.log.Errorf("ReceiveRequest.IsRequestCompleted: %s", err)
+		return
+	}
+	if isCompleted {
+		return
+	}
 	if _, ok := m.requests[req.ID()]; ok {
 		return
 	}

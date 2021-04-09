@@ -1,6 +1,8 @@
 package statemgr
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -9,78 +11,89 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// return if synced already
-func (sm *stateManager) syncBlock(blockIndex uint32) state.Block {
+// returns block if it is known and flag if it is approved by some output
+func (sm *stateManager) syncBlock(blockIndex uint32) (state.Block, bool) {
 	if _, already := sm.syncingBlocks[blockIndex]; !already {
 		sm.syncingBlocks[blockIndex] = &syncingBlock{}
 	}
 	blk := sm.syncingBlocks[blockIndex]
+	if blk.approved {
+		return blk.block, true
+	}
 	if blk.block != nil {
-		return blk.block
+		if time.Now().After(blk.pullDeadline) {
+			// approval didnt come in time, probably does not exist (prunned)
+			return blk.block, false
+		}
+		// will wait for some time more for the approval
+		return nil, false
 	}
-	if !blk.pullDeadline.After(time.Now()) {
-		return nil
+	// blk.block == nil
+	if time.Now().Before(blk.pullDeadline) {
+		// still waiting
+		return nil, false
 	}
+	// have to pull
 	data := util.MustBytes(&chain.GetBlockMsg{
 		BlockIndex: blockIndex,
 	})
 	// send messages until first without error
 	// TODO optimize
-	sm.peers.SendToAllUntilFirstError(chain.MsgGetBatch, data)
+	sm.peers.SendToAllUntilFirstError(chain.MsgGetBlock, data)
 	blk.pullDeadline = time.Now().Add(periodBetweenSyncMessages)
-	return nil
+	return nil, false
 }
 
-func (sm *stateManager) blockHeaderArrived(msg *chain.BlockHeaderMsg) {
-	syncBlk, ok := sm.syncingBlocks[msg.BlockIndex]
-	if !ok {
-		// not asked
-		return
-	}
-	if syncBlk.block != nil || syncBlk.stateUpdates != nil {
-		// already
-		return
-	}
-	syncBlk.stateUpdates = make([]state.StateUpdate, msg.Size)
-	syncBlk.stateOutputID = msg.ApprovingOutputID
-	syncBlk.pullDeadline = time.Now().Add(periodBetweenSyncMessages)
-}
-
-func (sm *stateManager) stateUpdateArrived(msg *chain.StateUpdateMsg) {
-	syncBlk, ok := sm.syncingBlocks[msg.BlockIndex]
+func (sm *stateManager) blockArrived(block state.Block) {
+	syncBlk, ok := sm.syncingBlocks[block.StateIndex()]
 	if !ok {
 		// not asked
 		return
 	}
 	if syncBlk.block != nil {
-		// already synced this block
-		return
-	}
-	if syncBlk.stateUpdates == nil {
-		// header must come first
-		return
-	}
-	if int(msg.IndexInTheBlock) >= len(syncBlk.stateUpdates) {
-		// wrong index
-		return
-	}
-	if syncBlk.stateUpdates[msg.IndexInTheBlock] == nil {
-		syncBlk.stateUpdates[msg.IndexInTheBlock] = msg.StateUpdate
-		syncBlk.msgCounter++
-	}
-	if int(syncBlk.msgCounter) == len(syncBlk.stateUpdates) {
-		block, err := state.NewBlock(syncBlk.stateUpdates...)
-		if err != nil {
-			sm.log.Errorf("failed to create block: %v", err)
+		// already have block. Check consistency. If inconsistent, start from scratch
+		if syncBlk.block.ApprovingOutputID() != block.ApprovingOutputID() {
+			sm.log.Errorf("conflicting block arrived. Block index: %d, present approving outputID: %s, arrived approving outputID: %s",
+				block.StateIndex(), coretypes.OID(syncBlk.block.ApprovingOutputID()), coretypes.OID(block.ApprovingOutputID()))
+			syncBlk.block = nil
 			return
 		}
-		block.WithBlockIndex(msg.BlockIndex).WithApprovingOutputID(syncBlk.stateOutputID)
-		syncBlk.block = block
-		syncBlk.stateUpdates = nil
+		if syncBlk.block.EssenceHash() != block.EssenceHash() {
+			sm.log.Errorf("conflicting block arrived. Block index: %d, present state hash: %s, arrived state hash: %s",
+				block.StateIndex(), syncBlk.block.EssenceHash().String(), block.EssenceHash().String())
+			syncBlk.block = nil
+			return
+		}
+		return
+	}
+	// new block
+	// ask for approving output
+	sm.nodeConn.RequestConfirmedOutput(sm.chain.ID().AsAddress(), block.ApprovingOutputID())
+	syncBlk.block = block
+	syncBlk.pullDeadline = time.Now().Add(periodBetweenSyncMessages * 2)
+}
+
+func (sm *stateManager) chainOutputArrived(chainOutput *ledgerstate.AliasOutput) {
+	syncBlk, ok := sm.syncingBlocks[chainOutput.GetStateIndex()]
+	if !ok {
+		// not interested
+		return
+	}
+	if syncBlk.block == nil || syncBlk.approved {
+		// no need yet or too late
+		return
+	}
+	if syncBlk.block.IsApprovedBy(chainOutput) {
+		finalHash, err := hashing.HashValueFromBytes(chainOutput.GetStateData())
+		if err != nil {
+			return
+		}
+		syncBlk.finalHash = finalHash
+		syncBlk.approved = true
 	}
 }
 
-func (sm *stateManager) doSyncIfNeeded() {
+func (sm *stateManager) doSyncActionIfNeeded() {
 	if sm.stateOutput == nil {
 		return
 	}
@@ -96,69 +109,64 @@ func (sm *stateManager) doSyncIfNeeded() {
 		sm.log.Panicf("inconsistency: solid state index is larger than state output index")
 	}
 	// not synced
-	allSynced := true
 	for i := currentIndex + 1; i < sm.stateOutput.GetStateIndex(); i++ {
-		if sm.syncBlock(i) == nil {
-			allSynced = false
+		block, approved := sm.syncBlock(i)
+		if block == nil {
+			// some block are still unknown. Can't sync
+			return
+		}
+		if approved {
+			blocks := make([]state.Block, 0)
+			for j := currentIndex + 1; j <= i; j++ {
+				b, _ := sm.syncBlock(j)
+				blocks = append(blocks, b)
+			}
+			sm.mustCommitSynced(blocks, sm.syncingBlocks[i].finalHash)
+			return
 		}
 	}
-	if allSynced {
-		sm.mustCommitSynced(currentIndex + 1)
+	// nothing is approved but all blocks are here
+	blocks := make([]state.Block, 0)
+	for i := currentIndex + 1; i < sm.stateOutput.GetStateIndex(); i++ {
+		blocks = append(blocks, sm.syncingBlocks[i].block)
 	}
+	finalHash, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())
+	if err != nil {
+		return
+	}
+	sm.mustCommitSynced(blocks, finalHash)
 }
 
 // assumes all synced already
-func (sm *stateManager) mustCommitSynced(fromIndex uint32) {
-	// all synced, we need to push all blocks into the state
-	defer func() {
-		if len(sm.syncingBlocks) != 0 {
-			sm.log.Panicf("inconsistency: expected syncingBlocks empty")
-		}
-	}()
+func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing.HashValue) {
 	var tentativeState state.VirtualState
 	if sm.solidState != nil {
 		tentativeState = sm.solidState.Clone()
 	} else {
 		tentativeState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
 	}
-	syncedBlocks := make([]state.Block, 0)
-	for i := fromIndex; i < sm.stateOutput.GetStateIndex(); i++ {
-		sb := sm.syncBlock(i)
-		syncedBlocks = append(syncedBlocks, sb)
-		if err := tentativeState.ApplyBlock(sb); err != nil {
-			sm.log.Errorf("failed to apply synced block. Start syncing from scratch from block #%d to #%d. Error: %v",
-				fromIndex, sm.stateOutput.GetStateIndex(), err)
-			sm.syncingBlocks = make(map[uint32]*syncingBlock)
+	for _, block := range blocks {
+		if err := tentativeState.ApplyBlock(block); err != nil {
+			sm.log.Errorf("failed to apply synced block index #%d. Error: %v", block.StateIndex(), err)
 			return
 		}
 	}
 	// state hashes must be equal
-	stateHash1 := tentativeState.Hash()
-	stateHash2, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())
-	if err != nil {
-		sm.log.Panicf("failed to decode state hash")
-	}
-	if stateHash1 != stateHash2 {
-		sm.log.Errorf("state hashes mismatch between state and anchor transaction. Start syncing from scratch from block #%d to #%d",
-			fromIndex, sm.stateOutput.GetStateIndex())
-		sm.syncingBlocks = make(map[uint32]*syncingBlock)
+	stateHash := tentativeState.Hash()
+	if stateHash != finalHash {
+		sm.log.Errorf("state hashes mismatch")
 		return
 	}
 	// again applying blocks, this time seriously
 	if sm.solidState == nil {
 		sm.solidState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
 	}
-	for _, block := range syncedBlocks {
-		if err := tentativeState.ApplyBlock(block); err != nil {
-			sm.log.Errorf("inconsistency: %v", err)
-			return
-		}
-		if err := sm.solidState.CommitToDb(block); err == nil {
-			delete(sm.syncingBlocks, block.StateIndex())
-		} else {
+	for _, block := range blocks {
+		if err := sm.solidState.CommitToDb(block); err != nil {
 			sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
 			sm.syncingBlocks = make(map[uint32]*syncingBlock)
 			return
 		}
+		delete(sm.syncingBlocks, block.StateIndex())
 	}
 }

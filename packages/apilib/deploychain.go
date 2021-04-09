@@ -188,11 +188,10 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 		return nil, nil, xerrors.Errorf("WaitUntilAllRequestsProcessed: %w", err)
 	}
 
-	scColor := (ledgerstate.Color)(originTx.ID())
 	fmt.Fprint(textout, par.Prefix)
 
-	fmt.Fprintf(textout, "chain has been created succesfully on the Tangle. ChainID: %s, MustAddress: %s, Color: %s, N = %d, T = %d\n",
-		chainID.String(), stateControllerAddr.String(), scColor.String(), par.N, par.T)
+	fmt.Fprintf(textout, "chain has been created succesfully on the Tangle. ChainID: %s, State address: %s, N = %d, T = %d\n",
+		chainID.String(), stateControllerAddr.Base58(), par.N, par.T)
 
 	return &chainID, stateControllerAddr, err
 }

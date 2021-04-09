@@ -17,13 +17,13 @@ import (
 //go:embed templates/chaincontract.tmpl
 var tplChainContract string
 
-func initChainContract(e *echo.Echo, r renderer) {
-	route := e.GET("/chain/:chainid/contract/:hname", handleChainContract)
+func (d *Dashboard) initChainContract(e *echo.Echo, r renderer) {
+	route := e.GET("/chain/:chainid/contract/:hname", d.handleChainContract)
 	route.Name = "chainContract"
-	r[route.Path] = makeTemplate(e, tplChainContract, tplWs)
+	r[route.Path] = d.makeTemplate(e, tplChainContract, tplWs)
 }
 
-func handleChainContract(c echo.Context) error {
+func (d *Dashboard) handleChainContract(c echo.Context) error {
 	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
@@ -35,7 +35,7 @@ func handleChainContract(c echo.Context) error {
 	}
 
 	result := &ChainContractTemplateParams{
-		BaseTemplateParams: BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
+		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
 			Path:  c.Path(),
 			Title: fmt.Sprintf("Contract %d", hname),
 			Href:  "#",

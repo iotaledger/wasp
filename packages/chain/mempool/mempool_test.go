@@ -4,8 +4,10 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
@@ -16,7 +18,8 @@ import (
 )
 
 func TestMempool(t *testing.T) {
-	m := New(coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	db := mapdb.NewMapDB()
+	m := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	time.Sleep(2 * time.Second)
 	m.Close()
 	time.Sleep(1 * time.Second)
@@ -51,7 +54,8 @@ func getRequestsOnLedger(t *testing.T, amount int) []*sctransaction.RequestOnLed
 }
 
 func TestAddRequest(t *testing.T) {
-	pool := New(coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	db := mapdb.NewMapDB()
+	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 1)
 
@@ -59,8 +63,56 @@ func TestAddRequest(t *testing.T) {
 	require.True(t, pool.HasRequest(requests[0].ID()))
 }
 
+func TestAddRequestTwice(t *testing.T) {
+	db := mapdb.NewMapDB()
+	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	require.NotNil(t, pool)
+	requests := getRequestsOnLedger(t, 1)
+
+	pool.ReceiveRequest(requests[0], time.Now())
+	require.True(t, pool.HasRequest(requests[0].ID()))
+
+	total, withMsg, solid := pool.Stats()
+	require.EqualValues(t, 1, total)
+	require.EqualValues(t, 1, withMsg)
+	require.EqualValues(t, 1, solid)
+
+	pool.ReceiveRequest(requests[0], time.Now())
+	require.True(t, pool.HasRequest(requests[0].ID()))
+
+	total, withMsg, solid = pool.Stats()
+	require.EqualValues(t, 1, total)
+	require.EqualValues(t, 1, withMsg)
+	require.EqualValues(t, 1, solid)
+}
+
+func TestCompletedRequest(t *testing.T) {
+	db := mapdb.NewMapDB()
+	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	require.NotNil(t, pool)
+
+	total, withMsg, solid := pool.Stats()
+	require.EqualValues(t, 0, total)
+	require.EqualValues(t, 0, withMsg)
+	require.EqualValues(t, 0, solid)
+
+	requests := getRequestsOnLedger(t, 1)
+
+	err := state.StoreRequestCompleted(db, requests[0].ID())
+	require.NoError(t, err)
+
+	pool.ReceiveRequest(requests[0], time.Now())
+	require.False(t, pool.HasRequest(requests[0].ID()))
+
+	total, withMsg, solid = pool.Stats()
+	require.EqualValues(t, 0, total)
+	require.EqualValues(t, 0, withMsg)
+	require.EqualValues(t, 0, solid)
+}
+
 func TestAddRemoveRequests(t *testing.T) {
-	pool := New(coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	db := mapdb.NewMapDB()
+	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 6)
 
@@ -90,7 +142,8 @@ func TestAddRemoveRequests(t *testing.T) {
 }
 
 func TestTakeAllReady(t *testing.T) {
-	pool := New(coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	db := mapdb.NewMapDB()
+	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 5)
 
@@ -125,7 +178,8 @@ func TestTakeAllReady(t *testing.T) {
 //        Request3  +
 //        Request4
 func initSeenTest(t *testing.T) (chain.Mempool, []*sctransaction.RequestOnLedger) {
-	pool := New(coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	db := mapdb.NewMapDB()
+	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 5)
 	request0ID := requests[0].ID()
@@ -253,7 +307,8 @@ func TestGetReadyListFull(t *testing.T) {
 }
 
 func TestSolidifyLoop(t *testing.T) {
-	pool := New(coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t)) //Solidification initiated on pool creation
+	db := mapdb.NewMapDB()
+	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t)) //Solidification initiated on pool creation
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 4)
 

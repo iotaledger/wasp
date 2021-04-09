@@ -100,6 +100,20 @@ func (w *WaspCliTest) copyFile(srcFile string) {
 	require.NoError(w.t, err)
 }
 
+func (w *WaspCliTest) committeeConfig() (string, string) {
+	var committee []string
+	for i := 0; i < w.clu.Config.Wasp.NumNodes; i++ {
+		committee = append(committee, fmt.Sprintf("%d", i))
+	}
+
+	quorum := 3 * w.clu.Config.Wasp.NumNodes / 4
+	if quorum < 1 {
+		quorum = 1
+	}
+
+	return "--committee=" + strings.Join(committee, ","), fmt.Sprintf("--quorum=%d", quorum)
+}
+
 func TestWaspCliNoChains(t *testing.T) {
 	w := NewWaspCliTest(t)
 
@@ -128,8 +142,10 @@ func TestWaspCli1Chain(t *testing.T) {
 
 	alias := "chain1"
 
+	committee, quorum := w.committeeConfig()
+
 	// test chain deploy command
-	w.Run("chain", "deploy", "--chain="+alias, "--committee=0,1,2,3", "--quorum=3")
+	w.Run("chain", "deploy", "--chain="+alias, committee, quorum)
 
 	// test chain info command
 	out = w.Run("chain", "info")
@@ -147,7 +163,7 @@ func TestWaspCli1Chain(t *testing.T) {
 
 	// test chain list-contracts command
 	out = w.Run("chain", "list-contracts")
-	require.Contains(t, out[0], "Total 4 contracts")
+	require.Regexp(t, `Total \d+ contracts`, out[0])
 
 	// test chain list-accounts command
 	out = w.Run("chain", "list-accounts")
@@ -172,11 +188,11 @@ func TestWaspCli1Chain(t *testing.T) {
 }
 
 func TestWaspCliContract(t *testing.T) {
-
 	w := NewWaspCliTest(t)
 	w.Run("init")
 	w.Run("request-funds")
-	w.Run("chain", "deploy", "--chain=chain1", "--committee=0,1,2,3", "--quorum=3")
+	committee, quorum := w.committeeConfig()
+	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	vmtype := "wasmtimevm"
 	name := "inccounter"
@@ -189,7 +205,14 @@ func TestWaspCliContract(t *testing.T) {
 	w.Run("chain", "deploy-contract", vmtype, name, description, file)
 
 	out := w.Run("chain", "list-contracts")
-	require.Contains(t, out[0], "Total 5 contracts")
+	found := false
+	for _, s := range out {
+		if strings.Contains(s, name) {
+			found = true
+			break
+		}
+	}
+	require.True(t, found)
 
 	// test chain call-view command
 	out = w.Run("chain", "call-view", name, "getCounter")
@@ -215,7 +238,8 @@ func TestWaspCliBlobContract(t *testing.T) {
 	w := NewWaspCliTest(t)
 	w.Run("init")
 	w.Run("request-funds")
-	w.Run("chain", "deploy", "--chain=chain1", "--committee=0,1,2,3", "--quorum=3")
+	committee, quorum := w.committeeConfig()
+	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	// test chain list-blobs command
 	out := w.Run("chain", "list-blobs")

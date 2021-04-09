@@ -12,11 +12,11 @@ import (
 //go:embed templates/chainlist.tmpl
 var tplChainList string
 
-func initChainList(e *echo.Echo, r renderer) Tab {
-	route := e.GET("/chains", handleChainList)
+func (d *Dashboard) initChainList(e *echo.Echo, r renderer) Tab {
+	route := e.GET("/chains", d.handleChainList)
 	route.Name = "chainList"
 
-	r[route.Path] = makeTemplate(e, tplChainList)
+	r[route.Path] = d.makeTemplate(e, tplChainList)
 
 	return Tab{
 		Path:  route.Path,
@@ -25,13 +25,13 @@ func initChainList(e *echo.Echo, r renderer) Tab {
 	}
 }
 
-func handleChainList(c echo.Context) error {
+func (d *Dashboard) handleChainList(c echo.Context) error {
 	chains, err := fetchChains()
 	if err != nil {
 		return err
 	}
 	return c.Render(http.StatusOK, c.Path(), &ChainListTemplateParams{
-		BaseTemplateParams: BaseParams(c),
+		BaseTemplateParams: d.BaseParams(c),
 		Chains:             chains,
 	})
 }

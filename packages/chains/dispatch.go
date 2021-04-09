@@ -44,3 +44,22 @@ func (c *Chains) dispatchMsgInclusionState(msg *txstream.MsgTxInclusionState) {
 	)
 	chain.ReceiveInclusionState(msg.TxID, msg.State)
 }
+
+func (c *Chains) dispatchOutputMsg(msg *txstream.MsgOutput) {
+	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
+	if !ok {
+		c.log.Warnf("chains: cannot dispatch output message to non-alias address")
+		return
+	}
+	chainID := coretypes.NewChainID(aliasAddr)
+	chain := c.Get(chainID)
+	if chain == nil {
+		// not interested in this chainID
+		return
+	}
+	c.log.Debugw("dispatch output",
+		"outputID", coretypes.OID(msg.Output.ID()),
+		"chainid", chainID.String(),
+	)
+	chain.ReceiveOutput(msg.Output)
+}

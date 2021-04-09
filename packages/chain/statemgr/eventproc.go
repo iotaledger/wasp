@@ -4,6 +4,7 @@
 package statemgr
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -47,7 +48,7 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 		"sender index", msg.SenderIndex,
 		"block index", msg.BlockIndex,
 	)
-	block, err := state.LoadBlock(sm.chain.ID(), msg.BlockIndex)
+	block, err := state.LoadBlock(sm.dbp.GetPartition(sm.chain.ID()), msg.BlockIndex)
 	if err != nil || block == nil {
 		// can't load block, can't respond
 		return
@@ -55,60 +56,42 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 
 	sm.log.Debugf("EventGetBlockMsg for state index #%d --> peer %d", msg.BlockIndex, msg.SenderIndex)
 
-	err = sm.peers.SendMsg(msg.SenderIndex, chain.MsgBatchHeader, util.MustBytes(&chain.BlockHeaderMsg{
-		BlockIndex:        msg.BlockIndex,
-		Size:              block.Size(),
-		ApprovingOutputID: block.ApprovingOutputID(),
+	err = sm.peers.SendMsg(msg.SenderIndex, chain.MsgBlock, util.MustBytes(&chain.BlockMsg{
+		Block: block,
 	}))
 	if err != nil {
 		return
 	}
-	block.ForEach(func(batchIndex uint16, stateUpdate state.StateUpdate) bool {
-		err = sm.peers.SendMsg(msg.SenderIndex, chain.MsgStateUpdate, util.MustBytes(&chain.StateUpdateMsg{
-			BlockIndex:      msg.BlockIndex,
-			StateUpdate:     stateUpdate,
-			IndexInTheBlock: batchIndex,
-		}))
-		sh := util.GetHashValue(stateUpdate)
-		sm.log.Debugw("EventGetBlockMsg: sending stateUpdate", "hash", sh.String())
-		return true
-	})
 }
 
-// EventBlockHeaderMsg
-func (sm *stateManager) EventBlockHeaderMsg(msg *chain.BlockHeaderMsg) {
-	sm.eventBlockHeaderMsgCh <- msg
+// EventBlockMsg
+func (sm *stateManager) EventBlockMsg(msg *chain.BlockMsg) {
+	sm.eventBlockMsgCh <- msg
 }
-func (sm *stateManager) eventBlockHeaderMsg(msg *chain.BlockHeaderMsg) {
+func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
 	if sm.stateOutput == nil {
 		return
 	}
-	sm.log.Debugw("EventBlockHeaderMsg",
+	sm.log.Debugw("EventBlockMsg",
 		"sender", msg.SenderIndex,
-		"state index", msg.BlockIndex,
-		"size", msg.Size,
-		"state tx", msg.ApprovingOutputID.String(),
+		"block index", msg.Block.StateIndex(),
+		"essence hash", msg.Block.EssenceHash().String(),
+		"approving output", coretypes.OID(msg.Block.ApprovingOutputID()),
 	)
-	sm.blockHeaderArrived(msg)
+	sm.blockArrived(msg.Block)
 	sm.takeAction()
 }
 
-// response to the state update msg.
-// It collects state updates while waiting for the anchoring state transaction
-func (sm *stateManager) EventStateUpdateMsg(msg *chain.StateUpdateMsg) {
-	sm.eventStateUpdateMsgCh <- msg
+func (sm *stateManager) EventOutputMsg(msg ledgerstate.Output) {
+	sm.eventOutputMsgCh <- msg
 }
-func (sm *stateManager) eventStateUpdateMsg(msg *chain.StateUpdateMsg) {
-	if sm.stateOutput == nil {
+func (sm *stateManager) eventOutputMsg(msg ledgerstate.Output) {
+	sm.log.Debugf("EventOutputMsg: %s", coretypes.OID(msg.ID()))
+	chainOutput, ok := msg.(*ledgerstate.AliasOutput)
+	if !ok {
 		return
 	}
-	sm.log.Debugw("EventStateUpdateMsg",
-		"sender", msg.SenderIndex,
-		"state index", msg.BlockIndex,
-		"block index", msg.IndexInTheBlock,
-	)
-	sm.stateUpdateArrived(msg)
-	sm.takeAction()
+	sm.chainOutputArrived(chainOutput)
 }
 
 // EventStateTransactionMsg triggered whenever new state transaction arrives

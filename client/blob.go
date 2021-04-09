@@ -13,7 +13,10 @@ func (c *WaspClient) PutBlob(data []byte) (hashing.HashValue, error) {
 	req := model.NewBlobData(data)
 	res := &model.BlobInfo{}
 	err := c.do(http.MethodPost, routes.PutBlob(), req, res)
-	return res.Hash.HashValue(), err
+	if err != nil {
+		return hashing.HashValue{}, err
+	}
+	return res.Hash.HashValue(), nil
 }
 
 // GetBlob fetches a blob by its hash

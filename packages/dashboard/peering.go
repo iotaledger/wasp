@@ -15,11 +15,11 @@ import (
 //go:embed templates/peering.tmpl
 var tplPeering string
 
-func peeringInit(e *echo.Echo, r renderer) Tab {
-	route := e.GET("/peering", handlePeering)
+func (d *Dashboard) peeringInit(e *echo.Echo, r renderer) Tab {
+	route := e.GET("/peering", d.handlePeering)
 	route.Name = "peering"
 
-	r[route.Path] = makeTemplate(e, tplPeering)
+	r[route.Path] = d.makeTemplate(e, tplPeering)
 
 	return Tab{
 		Path:  route.Path,
@@ -28,9 +28,9 @@ func peeringInit(e *echo.Echo, r renderer) Tab {
 	}
 }
 
-func handlePeering(c echo.Context) error {
+func (d *Dashboard) handlePeering(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), &PeeringTemplateParams{
-		BaseTemplateParams: BaseParams(c),
+		BaseTemplateParams: d.BaseParams(c),
 		NetworkProvider:    peering.DefaultNetworkProvider(),
 	})
 }

@@ -33,7 +33,7 @@ func TestRequestStatus(t *testing.T) {
 	reqID := coretypes.RequestID(ledgerstate.OutputID{})
 
 	var res model.RequestStatusResponse
-	testutil.CallHTTPRequestHandler(
+	testutil.CallWebAPIRequestHandler(
 		t,
 		r.handleRequestStatus,
 		http.MethodGet,

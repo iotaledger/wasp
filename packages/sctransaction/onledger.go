@@ -47,7 +47,8 @@ func RequestsOnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr led
 	for _, o := range tx.Essence().Outputs() {
 		if out, ok := o.(*ledgerstate.ExtendedLockedOutput); ok {
 			if out.Address().Equals(targetAddr) {
-				ret = append(ret, RequestOnLedgerFromOutput(out, senderAddr, mintedAmounts))
+				out1 := out.UpdateMintingColor().(*ledgerstate.ExtendedLockedOutput)
+				ret = append(ret, RequestOnLedgerFromOutput(out1, senderAddr, mintedAmounts))
 			}
 		}
 	}

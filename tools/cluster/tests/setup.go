@@ -117,12 +117,9 @@ func setupAndLoad(t *testing.T, name string, description string, nrOfRequests in
 	setup(t, "test_cluster")
 
 	expectations := map[string]int{
-		"chainrec":            2,
-		"active_committee":    1,
 		"dismissed_committee": 0,
 		//"state":               3 + nrOfRequests,
-		"request_in": 2 + nrOfRequests,
-		//"request_out": 3 + nrOfRequests,    // not always coming from all nodes, but from quorum only
+		//"request_out":         3 + nrOfRequests,    // not always coming from all nodes, but from quorum only
 	}
 	if nrOfRequests == 1 {
 		expectations["state"] = 4

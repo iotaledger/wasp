@@ -25,8 +25,7 @@ In ISCP we distinguish two things:
 * VM plugins, a pluggable part of VM
 
 The _VM_ itself is a deterministic executable, a "black box", which is used by the distributed part of the protocol,
-to calculate output (resut) from inputs before coming to _consensus_ among multiple VMs and finally submitting  
-the result it to the ledger as the state update of the chain, the block.  
+to calculate output (result) from inputs before coming to _consensus_ among multiple VMs and finally submitting the result it to the ledger as the state update of the chain, the block.  
 Naturally, results of calculations, the output, is fully defined by inputs.
 
 The VM contains multiple dynamically attached _VM plugins_ or _processors_.  
@@ -48,7 +47,7 @@ It is called each time the Wasp node needs to run computations.
 
 The function _MustRunVMTaskAsync_ start a parallel goroutine to run calculations.  
 Upon completion the VM notifies the calling code through the callback.  
-The _MustRunVMTaskAsync takes as a parameter [vm.VMTask](taskcontext.go#L19):
+The _MustRunVMTaskAsync_ takes as a parameter [vm.VMTask](taskcontext.go#L19):
 ```go
 type VMTask struct {
 	Processors         *processors.ProcessorCache
@@ -60,10 +59,10 @@ type VMTask struct {
 	ValidatorFeeTarget coretypes.AgentID
 	Log                *logger.Logger
 	// call when finished
-	OnFinish func(callResult dict.Dict, callError error, vmError error)
+	OnFinish           func(callResult dict.Dict, callError error, vmError error)
 	// result
-	ResultTransaction *ledgerstate.TransactionEssence
-	ResultBlock       state.Block
+	ResultTransaction  *ledgerstate.TransactionEssence
+	ResultBlock        state.Block
 }
 ```
 At input, the most important parameters are:
@@ -76,7 +75,7 @@ It is _virtual_ in a sense that all updates to that state produced by smart cont
 and only are written (committed) into the database upon confirmation of the block
 
 * _Requests_ represents a batch of requests. Each _request_ carries call parameters
-as well as attached tokens (digital assets). Each request is processed by a smart contract it is targeting to.
+as well as attached tokens (digital assets). Each request is processed by a smart contract it is targeting.
 The requests update the _virtual state_ sequentially one by one, in each step producing a new virtual state.
 
 ### Result of running the VM
@@ -89,8 +88,7 @@ Tangle ledger for confirmation.
 The _VirtualState_ at the output of the task is always equal to the _VirtualState_ at the output with applied all
 mutations contained in the _block_.
 
-The _VirtualState_ has _state hash_ (Merkle root or similar) which is deterministically calculated from  
-the initial _VirtualState_ and the resulting _block_.
+The _VirtualState_ has _state hash_ (Merkle root or similar) which is deterministically calculated from the initial _VirtualState_ and the resulting _block_.
 
 The hash of the resulting _VirtualState_ is contained in the _ResultTransaction_, therefore upon confirmation
 of the transaction on the Tangle ledger the virtual state is immutably anchored.
@@ -123,15 +121,15 @@ and other related interfaces.
 
  The _deployContract_ request takes two parameters :
 * _VM type_ parameter defines interpreter of the smart contract binary code
-* _blob hash_ parameter is a hash of the binary (a reference to t) which is loaded into the interpreter to create a _processor_.
+* _blob hash_ parameter is a hash of the binary (a reference to it) which must be loaded into the interpreter to create a _processor_.
+The binary, the blob, must be uploaded into the chain beforehand, usually with IPFS as a uploading/downloading service.
 
 ### VM type
 All _VM types_ are statically predefined in the Wasp node. It means, to implement a new type of VM plugin, you will need
-to modify the Wasp node by adding a new VM type. The _VM type_ is part of _VM abstraction_, adding new _VM type_  
-is transparent to the rest of the Wasp code.
+to modify the Wasp node by adding a new VM type. The _VM type_ is part of _VM abstraction_, so adding a new _VM type_ is transparent to the rest of the Wasp code.
 
-A new _VM Type_ is introduced to the rest of the VM abstraction logic through the call to the function  
-[`processors.RegisterVMType`](processors/factory.go#L20).
+A new _VM Type_ is introduced to the rest of the VM abstraction logic through the call to the function
+ [`processors.RegisterVMType`](processors/factory.go#L20).
 
 The call to `processors.RegisterVMType` takes name of the new _VM type_ and the constructor, a function which creates  
 new `coretypes.Processor` object from the binary data of the program.
@@ -145,16 +143,16 @@ To implement new types of interpreters, for example EVM, other languages or inte
 must be implemented into the Wasp.
 
 ### Program binary and blob hash
-To dynamically deploy a smart contract we need code of it in some binary format and  
-dynamical linking of it to be able to call from VM. The very idea is to make the binary executable code of  
-the smart contract immutable, which means it must be part of the chain's state.
+To dynamically deploy a smart contract we need code of it in some binary format and dynamical linking of it  
+to be able to call from VM. The very idea is to make the binary executable code of the smart contract immutable,  
+which means it must be a part of the chain's state.
 
 For example, `WebAssembly` (_wasm_) smart contracts produced by the `Rust/Wasm` environment provided together  
 with the Wasp, are represented by `wasm` binaries. Other VM types may take different formats to represent its  
 executable code.
 
 To deploy a `wasmtimevm` smart contract on the chain, first we need to upload the corresponding `wasm` binary.  
-All `wasm` binaries (as well as any other chunks of data) are kept in the registry handled by the `blob` core contact.  
+All `wasm` binaries (as well as any other files of data) are kept in the registry handled by the `blob` core contact.  
 To upload a `wasm` binary to the chain one must send a request to the `blob`. Each blob on the chain is referenced by  
 its hash.
 
@@ -170,8 +168,7 @@ In native and `wasmtimevm` implementations one _processor_ represents one smart 
 to the smart contracts on the ISCP chain, such as manipulate native IOTA assets, call other smart contracts (processors)
 on the same chain and send requests and assets to other ISCP chains.
 
-Each processor object implements two simple [interfaces](../coretypes/vmprocessor.go#L15):  
-`coretypes.VMProcessor`:and `coretypes.VMProcessorEntryPoint`.
+Each processor object implements two simple [interfaces](../coretypes/vmprocessor.go#L15): `coretypes.VMProcessor`:and `coretypes.VMProcessorEntryPoint`.
 
 ```go
 type VMProcessor interface {
@@ -219,7 +216,7 @@ Each new VM type has to provide its own `VMProcessor` and `VMProcessorEntryPoint
 
 ### Sandbox interface
 
-The `coretypes.Sandbox` interface implements a number of functions which can be used by the processor's implementation  
+The `coretypes.Sandbox` [interface](../coretypes/sandbox.go) implements a number of functions which can be used by the processor's implementation  
 (a smart contract). Here are some of them:
 
 * `Params()` returns a dictionary (key/value pairs) of the call parameters
@@ -243,7 +240,7 @@ to run on the host than on an interpreter.
 The view entry points are called from outside, for example by a web server to query state of specific  
 smart contracts. By intention those entry points cannot modify the state of the chain.
 
-The `SandboxView` interface must be passed as a parameter to the view entry points.  
+The `SandboxView` [interface](../coretypes/sandboxview.go) must be passed as a parameter to the view entry points.  
 The `SandboxView` implements limited access to the state, fo example it doesn't have a concept of  
 `IncomingTransfer` or possibility of `Send()` tokens.  
 The `State()` interface provides read-only access to the `VirtualState`.

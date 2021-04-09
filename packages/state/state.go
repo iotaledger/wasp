@@ -256,6 +256,10 @@ func dbkeyRequest(reqid coretypes.RequestID) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeProcessedRequestId, reqid[:])
 }
 
-func IsRequestCompleted(dbp *dbprovider.DBProvider, addr *coretypes.ChainID, reqid coretypes.RequestID) (bool, error) {
-	return getChainPartition(dbp, addr).Has(dbkeyRequest(reqid))
+func IsRequestCompleted(chainState kvstore.KVStore, reqid coretypes.RequestID) (bool, error) {
+	return chainState.Has(dbkeyRequest(reqid))
+}
+
+func StoreRequestCompleted(chainState kvstore.KVStore, reqID coretypes.RequestID) error {
+	return chainState.Set(dbkeyRequest(reqID), []byte{0})
 }

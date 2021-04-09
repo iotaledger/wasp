@@ -21,9 +21,8 @@ const (
 	MsgNotifyFinalResultPosted = 2 + peering.FirstUserMsgCode
 	MsgStartProcessingRequest  = 3 + peering.FirstUserMsgCode
 	MsgSignedHash              = 4 + peering.FirstUserMsgCode
-	MsgGetBatch                = 5 + peering.FirstUserMsgCode
-	MsgStateUpdate             = 6 + peering.FirstUserMsgCode
-	MsgBatchHeader             = 7 + peering.FirstUserMsgCode
+	MsgGetBlock                = 5 + peering.FirstUserMsgCode
+	MsgBlock                   = 6 + peering.FirstUserMsgCode
 )
 
 type TimerTick int
@@ -79,21 +78,9 @@ type GetBlockMsg struct {
 	BlockIndex  uint32
 }
 
-// the header of the block message sent by peers in the process of syncing
-// it is sent as a first message while syncing a batch
-type BlockHeaderMsg struct {
-	SenderIndex       uint16
-	BlockIndex        uint32
-	Size              uint16
-	ApprovingOutputID ledgerstate.OutputID
-}
-
-// state update sent to peer. Used in sync process, as part of batch
-type StateUpdateMsg struct {
-	SenderIndex     uint16
-	BlockIndex      uint32
-	StateUpdate     state.StateUpdate
-	IndexInTheBlock uint16
+type BlockMsg struct {
+	SenderIndex uint16
+	Block       state.Block
 }
 
 // Ping is sent to receive Pong

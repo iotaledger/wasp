@@ -85,9 +85,8 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 	for _, req := range reqs {
 		c.ReceiveRequest(req, tx.Essence().Timestamp())
 	}
-	if chainOut := sctransaction.FindAliasOutput(tx.Essence(), c.chainID.AsAddress()); chainOut != nil {
-		chainOut1 := chainOut.UpdateMintingColor().(*ledgerstate.AliasOutput)
-		c.ReceiveState(chainOut1, tx.Essence().Timestamp())
+	if chainOut := sctransaction.GetAliasOutput(tx, c.chainID.AsAddress()); chainOut != nil {
+		c.ReceiveState(chainOut, tx.Essence().Timestamp())
 	}
 }
 
@@ -112,6 +111,10 @@ func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusi
 	}) // TODO special entry point
 }
 
+func (c *chainObj) ReceiveOutput(output ledgerstate.Output) {
+	c.stateMgr.EventOutputMsg(output)
+}
+
 func (c *chainObj) BlobCache() coretypes.BlobCache {
 	return c.blobProvider
 }
@@ -125,7 +128,7 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	processed, err := state.IsRequestCompleted(c.dbProvider, c.ID(), reqID)
+	processed, err := state.IsRequestCompleted(c.dbProvider.GetPartition(c.ID()), reqID)
 	if err != nil {
 		panic(err)
 	}

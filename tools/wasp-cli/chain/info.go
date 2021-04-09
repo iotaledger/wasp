@@ -14,13 +14,13 @@ var infoCmd = &cobra.Command{
 	Short: "Show information about the chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		chain, err := config.WaspClient().GetChainRecord(GetCurrentChainID())
+		chain, err := config.WaspClient().GetChainRecord(*GetCurrentChainID())
 		log.Check(err)
 
 		committee, err := config.WaspClient().GetCommitteeForChain(chain.ChainID)
 		log.Check(err)
 
-		log.Printf("Chain ID: %s\n", chain.ChainID)
+		log.Printf("Chain ID: %s\n", chain.ChainID.Base58())
 		log.Printf("Committee nodes: %+v\n", committee.Nodes)
 		log.Printf("Active: %v\n", chain.Active)
 

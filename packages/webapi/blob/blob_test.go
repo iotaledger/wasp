@@ -14,13 +14,13 @@ import (
 
 func TestPutBlob(t *testing.T) {
 	blobCache := coretypes.NewInMemoryBlobCache()
-	b := &blobWebAPI{blobCache}
+	b := &blobWebAPI{func() coretypes.BlobCache { return blobCache }}
 
 	data := []byte{1, 3, 3, 7}
 	hash := hashing.HashData(data)
 
 	var res model.BlobInfo
-	testutil.CallHTTPRequestHandler(
+	testutil.CallWebAPIRequestHandler(
 		t,
 		b.handlePutBlob,
 		http.MethodPost,
@@ -37,7 +37,7 @@ func TestPutBlob(t *testing.T) {
 
 func TestGetBlob(t *testing.T) {
 	blobCache := coretypes.NewInMemoryBlobCache()
-	b := &blobWebAPI{blobCache}
+	b := &blobWebAPI{func() coretypes.BlobCache { return blobCache }}
 
 	data := []byte{1, 3, 3, 7}
 
@@ -45,7 +45,7 @@ func TestGetBlob(t *testing.T) {
 	require.NoError(t, err)
 
 	var res model.BlobData
-	testutil.CallHTTPRequestHandler(
+	testutil.CallWebAPIRequestHandler(
 		t,
 		b.handleGetBlob,
 		http.MethodGet,
@@ -59,7 +59,7 @@ func TestGetBlob(t *testing.T) {
 
 func TestHasBlob(t *testing.T) {
 	blobCache := coretypes.NewInMemoryBlobCache()
-	b := &blobWebAPI{blobCache}
+	b := &blobWebAPI{func() coretypes.BlobCache { return blobCache }}
 
 	data := []byte{1, 3, 3, 7}
 
@@ -67,7 +67,7 @@ func TestHasBlob(t *testing.T) {
 	require.NoError(t, err)
 
 	var res model.BlobInfo
-	testutil.CallHTTPRequestHandler(
+	testutil.CallWebAPIRequestHandler(
 		t,
 		b.handleHasBlob,
 		http.MethodGet,

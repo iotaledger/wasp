@@ -57,7 +57,7 @@ func NewChain(
 
 	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
 	ret := &chainObj{
-		mempool: mempool.New(blobProvider, chainLog),
+		mempool: mempool.New(dbProvider.GetPartition(&chr.ChainID), blobProvider, chainLog),
 		procset: processors.MustNew(),
 		chMsg:   make(chan interface{}, 100),
 		chainID: chr.ChainID,
@@ -93,8 +93,6 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 	switch msgt := msg.(type) {
 	case *peering.PeerMessage:
 		c.processPeerMessage(msgt)
-	case *chain.StateUpdateMsg:
-		c.stateMgr.EventStateUpdateMsg(msgt)
 	case *chain.StateTransitionMsg:
 		if c.consensus != nil {
 			c.consensus.EventStateTransitionMsg(msgt)
@@ -200,7 +198,7 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.consensus.EventSignedHashMsg(msgt)
 		}
 
-	case chain.MsgGetBatch:
+	case chain.MsgGetBlock:
 		msgt := &chain.GetBlockMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
@@ -211,25 +209,15 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 
 		c.stateMgr.EventGetBlockMsg(msgt)
 
-	case chain.MsgBatchHeader:
-		msgt := &chain.BlockHeaderMsg{}
+	case chain.MsgBlock:
+		msgt := &chain.BlockMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
 		}
 
 		msgt.SenderIndex = msg.SenderIndex
-		c.stateMgr.EventBlockHeaderMsg(msgt)
-
-	case chain.MsgStateUpdate:
-		msgt := &chain.StateUpdateMsg{}
-		if err := msgt.Read(rdr); err != nil {
-			c.log.Error(err)
-			return
-		}
-
-		msgt.SenderIndex = msg.SenderIndex
-		c.stateMgr.EventStateUpdateMsg(msgt)
+		c.stateMgr.EventBlockMsg(msgt)
 
 	default:
 		c.log.Errorf("processPeerMessage: wrong msg type")

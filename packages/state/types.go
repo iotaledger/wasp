@@ -61,7 +61,9 @@ type Block interface {
 	Size() uint16
 	RequestIDs() []coretypes.RequestID
 	EssenceHash() hashing.HashValue // except state transaction id
+	IsApprovedBy(*ledgerstate.AliasOutput) bool
 	String() string
+	Bytes() []byte
 	Write(io.Writer) error
 	Read(io.Reader) error
 }
