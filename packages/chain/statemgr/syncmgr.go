@@ -68,7 +68,7 @@ func (sm *stateManager) blockArrived(block state.Block) {
 	}
 	// new block
 	// ask for approving output
-	sm.nodeConn.RequestConfirmedOutput(sm.chain.ID().AsAddress(), block.ApprovingOutputID())
+	sm.nodeConn.PullConfirmedOutput(sm.chain.ID().AsAddress(), block.ApprovingOutputID())
 	syncBlk.block = block
 	syncBlk.pullDeadline = time.Now().Add(periodBetweenSyncMessages * 2)
 }

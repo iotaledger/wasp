@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package consensus
+package consensusimpl
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -36,7 +36,7 @@ func (op *operator) pullInclusionLevel() {
 		return
 	}
 	if time.Now().After(op.nextPullInclusionLevel) {
-		op.nodeConn.RequestTxInclusionState(op.chain.ID().AsAddress(), op.postedResultTxid)
+		op.nodeConn.PullTransactionInclusionState(op.chain.ID().AsAddress(), op.postedResultTxid)
 		op.setNextPullInclusionStageDeadline()
 	}
 }

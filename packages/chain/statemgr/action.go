@@ -24,7 +24,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 		return
 	}
 	if sm.stateOutput == nil || len(sm.blockCandidates) > 0 {
-		sm.nodeConn.RequestBacklog(sm.chain.ID().AsAddress())
+		sm.nodeConn.PullBacklog(sm.chain.ID().AsAddress())
 	}
 	sm.pullStateDeadline = nowis.Add(pullStateTimeout)
 }

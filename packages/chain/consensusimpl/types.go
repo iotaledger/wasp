@@ -1,11 +1,10 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package consensus
+package consensusimpl
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"sync"
 	"time"
 
@@ -22,7 +21,7 @@ type operator struct {
 	chain     chain.ChainCore
 	committee chain.Committee
 	mempool   chain.Mempool
-	nodeConn  *txstream.Client
+	nodeConn  chain.NodeConnection
 	//currentState
 	currentState   state.VirtualState
 	stateOutput    *ledgerstate.AliasOutput
@@ -76,7 +75,7 @@ type signedResult struct {
 	sigShare    tbdn.SigShare
 }
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn *txstream.Client, log *logger.Logger) *operator {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, log *logger.Logger) *operator {
 	ret := &operator{
 		chain:                               chainCore,
 		committee:                           committee,

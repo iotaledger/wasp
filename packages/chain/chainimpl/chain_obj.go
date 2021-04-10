@@ -6,6 +6,7 @@ package chainimpl
 import (
 	"bytes"
 	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
+	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"strconv"
 	"sync"
@@ -14,7 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/consensus"
+	"github.com/iotaledger/wasp/packages/chain/consensusimpl"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -79,7 +80,7 @@ func NewChain(
 		}),
 	}
 	ret.eventStateTransition.Attach(events.NewClosure(ret.processStateTransition))
-	ret.stateMgr = statemgr.New(dbProvider, ret, newPeers(nil), nodeConn, ret.log)
+	ret.stateMgr = statemgr.New(dbProvider, ret, newPeers(nil), nodeconnimpl.New(ret.nodeConn), ret.log)
 	go func() {
 		for msg := range ret.chMsg {
 			ret.dispatchMessage(msg)
@@ -256,7 +257,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	c.log.Debugf("created new committee for state address %s", msg.ChainOutput.GetStateAddress().Base58())
 
 	c.log.Debugf("creating new consensus object..")
-	c.consensus = consensus.New(c, c.mempool, c.committee, c.nodeConn, c.log)
+	c.consensus = consensusimpl.New(c, c.mempool, c.committee, nodeconnimpl.New(c.nodeConn), c.log)
 	c.stateMgr.SetPeers(newPeers(c.committee))
 	c.stateMgr.EventStateMsg(msg)
 }

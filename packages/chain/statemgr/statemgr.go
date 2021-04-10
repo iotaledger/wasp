@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/dbprovider"
@@ -22,7 +21,7 @@ type stateManager struct {
 	dbp                  *dbprovider.DBProvider
 	chain                chain.ChainCore
 	peers                chain.PeerGroupProvider
-	nodeConn             *txstream.Client
+	nodeConn             chain.NodeConnection
 	pullStateDeadline    time.Time
 	blockCandidates      map[hashing.HashValue]*candidateBlock
 	solidState           state.VirtualState
@@ -60,7 +59,7 @@ type candidateBlock struct {
 	nextState state.VirtualState
 }
 
-func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers chain.PeerGroupProvider, nodeconn *txstream.Client, log *logger.Logger) chain.StateManager {
+func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers chain.PeerGroupProvider, nodeconn chain.NodeConnection, log *logger.Logger) chain.StateManager {
 	ret := &stateManager{
 		dbp:                    dbp,
 		chain:                  c,

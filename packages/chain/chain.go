@@ -74,6 +74,14 @@ type ChainRequests interface {
 	EventRequestProcessed() *events.Event
 }
 
+type NodeConnection interface {
+	PullBacklog(addr ledgerstate.Address)
+	PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID)
+	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
+	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
+	PostTransaction(tx *ledgerstate.Transaction, fromSc ledgerstate.Address, fromLeader uint16)
+}
+
 type StateManager interface {
 	SetPeers(PeerGroupProvider)
 	EventGetBlockMsg(msg *GetBlockMsg)

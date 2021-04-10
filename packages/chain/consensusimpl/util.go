@@ -1,4 +1,4 @@
-package consensus
+package consensusimpl
 
 import "github.com/iotaledger/wasp/packages/coretypes"
 
