@@ -27,8 +27,8 @@ func NewMockedChain(chainID coretypes.ChainID, log *logger.Logger) *mockedChain 
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
 		}),
-		onEventStateTransition: func(d *chain.StateTransitionEventData) {
-			log.Infof("onEventStateTransition: %+v", *d)
+		onEventStateTransition: func(msg *chain.StateTransitionEventData) {
+			chain.LogStateTransition(msg, log)
 		},
 		onEventRequestProcessed: func(id coretypes.RequestID) {
 			log.Infof("onEventRequestProcessed: %s", id)

@@ -263,17 +263,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 }
 
 func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
-	if msg.ChainOutput.GetStateIndex() > 0 {
-		c.log.Infof("STATE TRANSITION TO #%d. Chain output: %s, block size: %d",
-			msg.VariableState.BlockIndex(), coretypes.OID(msg.ChainOutput.ID()), len(msg.RequestIDs))
-		c.log.Debugf("STATE TRANSITION. State hash: %s, block essence: %s",
-			msg.VariableState.Hash().String(), msg.BlockEssenceHash.String())
-	} else {
-		c.log.Infof("ORIGIN STATE SAVED. State output id: %s", coretypes.OID(msg.ChainOutput.ID()))
-		c.log.Debugf("ORIGIN STATE SAVED. state hash: %s, block essence: %s",
-			msg.VariableState.Hash().String(), msg.BlockEssenceHash.String())
-	}
-
+	chain.LogStateTransition(msg, c.log)
 	// send to consensus
 	c.ReceiveMessage(&chain.StateTransitionMsg{
 		VariableState: msg.VariableState,

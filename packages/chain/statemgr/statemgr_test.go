@@ -59,7 +59,7 @@ func TestGetInitialState(t *testing.T) {
 	manager.EventTimerMsg(2)
 
 	time.Sleep(200 * time.Millisecond)
-	require.NotNil(t, manager.(*stateManager).stateOutput)
+	require.True(t, chainOutput.Compare(manager.(*stateManager).stateOutput) == 0)
 	require.True(t, manager.(*stateManager).stateOutput.GetStateIndex() == 0)
 	require.EqualValues(t, manager.(*stateManager).solidState.Hash(), state.OriginStateHash())
 }
