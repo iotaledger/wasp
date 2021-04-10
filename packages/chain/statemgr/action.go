@@ -59,6 +59,11 @@ func (sm *stateManager) checkStateApproval() {
 	// found a candidate block which is approved by the stateOutput
 	// set the transaction id from output
 	candidate.block.WithApprovingOutputID(sm.stateOutput.ID())
+	// save state to db
+	if err := candidate.nextState.CommitToDb(candidate.block); err != nil {
+		sm.log.Errorf("failed to save state at index #%d: %v", candidate.nextState.BlockIndex(), err)
+		return
+	}
 	sm.solidState = candidate.nextState
 	sm.blockCandidates = make(map[hashing.HashValue]*candidateBlock) // clear candidate batches
 
