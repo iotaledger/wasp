@@ -36,7 +36,7 @@ func (op *operator) pullInclusionLevel() {
 		return
 	}
 	if time.Now().After(op.nextPullInclusionLevel) {
-		op.nodeConn.RequestTxInclusionState(op.committee.Chain().ID().AsAddress(), op.postedResultTxid)
+		op.nodeConn.RequestTxInclusionState(op.chain.ID().AsAddress(), op.postedResultTxid)
 		op.setNextPullInclusionStageDeadline()
 	}
 }
@@ -228,7 +228,7 @@ func (op *operator) checkQuorum() {
 		return
 	}
 
-	op.nodeConn.PostTransaction(finalTx, op.committee.Chain().ID().AsAddress(), op.committee.OwnPeerIndex())
+	op.nodeConn.PostTransaction(finalTx, op.chain.ID().AsAddress(), op.committee.OwnPeerIndex())
 	op.log.Debugf("result transaction has been posted to node. txid: %s", finalTx.ID().Base58())
 
 	// notify peers about finalization of the transaction

@@ -38,7 +38,7 @@ func (c *Chains) Dismiss() {
 	defer c.mutex.RUnlock()
 
 	for _, ch := range c.allChains {
-		ch.Dismiss()
+		ch.Dismiss("shutdown")
 	}
 	c.allChains = make(map[[ledgerstate.AddressLength]byte]chain.Chain)
 }
@@ -119,7 +119,7 @@ func (c *Chains) Deactivate(chr *registry_pkg.ChainRecord) error {
 		c.log.Debugf("chain is not active: %s", chr.ChainID.String())
 		return nil
 	}
-	ch.Dismiss()
+	ch.Dismiss("deactivate")
 	c.nodeConn.Unsubscribe(chr.ChainID.AliasAddress)
 	c.log.Debugf("chain has been deactivated: %s", chr.ChainID.String())
 	return nil

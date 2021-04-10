@@ -32,7 +32,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 	}
 	h := op.stateOutput.ID()
 	task := &vm.VMTask{
-		Processors:         op.committee.Chain().Processors(),
+		Processors:         op.chain.Processors(),
 		ChainInput:         op.stateOutput,
 		Entropy:            hashing.HashData(h[:]),
 		ValidatorFeeTarget: par.accrueFeesTo,
@@ -46,7 +46,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 			op.log.Errorf("VM task failed: %v", vmError)
 			return
 		}
-		op.committee.Chain().ReceiveMessage(&chain.VMResultMsg{
+		op.chain.ReceiveMessage(&chain.VMResultMsg{
 			Task:   task,
 			Leader: par.leaderPeerIndex,
 		})

@@ -16,13 +16,12 @@ import (
 
 // Message types for the committee communications.
 const (
-	MsgStateIndexPingPong      = 0 + peering.FirstUserMsgCode
-	MsgNotifyRequests          = 1 + peering.FirstUserMsgCode
-	MsgNotifyFinalResultPosted = 2 + peering.FirstUserMsgCode
-	MsgStartProcessingRequest  = 3 + peering.FirstUserMsgCode
-	MsgSignedHash              = 4 + peering.FirstUserMsgCode
-	MsgGetBlock                = 5 + peering.FirstUserMsgCode
-	MsgBlock                   = 6 + peering.FirstUserMsgCode
+	MsgNotifyRequests          = 0 + peering.FirstUserMsgCode
+	MsgNotifyFinalResultPosted = 1 + peering.FirstUserMsgCode
+	MsgStartProcessingRequest  = 2 + peering.FirstUserMsgCode
+	MsgSignedHash              = 3 + peering.FirstUserMsgCode
+	MsgGetBlock                = 4 + peering.FirstUserMsgCode
+	MsgBlock                   = 5 + peering.FirstUserMsgCode
 )
 
 type TimerTick int
@@ -72,7 +71,7 @@ type SignedHashMsg struct {
 	SigShare      tbdn.SigShare
 }
 
-// request block of updates from peer. Used in syn process
+// request block of updates from peer. Used in sync process
 type GetBlockMsg struct {
 	SenderIndex uint16
 	BlockIndex  uint32
@@ -83,14 +82,12 @@ type BlockMsg struct {
 	Block       state.Block
 }
 
-// Ping is sent to receive Pong
-type BlockIndexPingPongMsg struct {
-	SenderIndex uint16
-	BlockIndex  uint32
-	RSVP        bool
+// DismissChainMsg sent by component to the chain core in case of major setback
+type DismissChainMsg struct {
+	Reason string
 }
 
-// state manager notifies consensus operator about changed state
+// state manager notifies consensus about changed state
 // only sent internally within committee
 // state transition is always from state N to state N+1
 type StateTransitionMsg struct {

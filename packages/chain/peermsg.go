@@ -194,17 +194,3 @@ func (msg *BlockMsg) Read(r io.Reader) error {
 	}
 	return nil
 }
-
-func (msg *BlockIndexPingPongMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
-		return err
-	}
-	return util.WriteBoolByte(w, msg.RSVP)
-}
-
-func (msg *BlockIndexPingPongMsg) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
-		return err
-	}
-	return util.ReadBoolByte(r, &msg.RSVP)
-}

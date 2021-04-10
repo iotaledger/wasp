@@ -24,7 +24,6 @@ type mempool struct {
 
 type request struct {
 	req             coretypes.Request
-	timestamp       time.Time
 	whenMsgReceived time.Time
 	seen            map[uint16]bool
 }
@@ -45,7 +44,7 @@ func New(chainState kvstore.KVStore, blobCache coretypes.BlobCache, log *logger.
 	return ret
 }
 
-func (m *mempool) ReceiveRequest(req coretypes.Request, timestamp time.Time) {
+func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -70,7 +69,6 @@ func (m *mempool) ReceiveRequest(req coretypes.Request, timestamp time.Time) {
 	}
 	m.requests[req.ID()] = &request{
 		req:             req,
-		timestamp:       timestamp,
 		whenMsgReceived: time.Now(),
 		seen:            make(map[uint16]bool),
 	}

@@ -5,6 +5,8 @@ package chain
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/state"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -15,8 +17,34 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
+type ChainCore interface {
+	ID() *coretypes.ChainID
+	GetCommitteeInfo() *CommitteeInfo
+	ReceiveMessage(interface{})
+	Events() ChainEvents
+	Processors() *processors.ProcessorCache
+}
+
+type Chain interface {
+	ChainCore
+
+	ReceiveTransaction(*ledgerstate.Transaction)
+	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
+	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
+	ReceiveOutput(output ledgerstate.Output)
+
+	Dismiss(reason string)
+	IsDismissed() bool
+
+	ChainRequests
+}
+
+type ChainEvents interface {
+	RequestProcessed() *events.Event
+	StateTransition() *events.Event
+}
+
 type Committee interface {
-	Chain() Chain // TODO temporary. Used for BlobCache access inside consensus. Not needed in the future
 	Size() uint16
 	Quorum() uint16
 	IsReady() bool
@@ -41,29 +69,6 @@ type PeerGroupProvider interface {
 	SendToAllUntilFirstError(msgType byte, msgData []byte) uint16
 }
 
-type Chain interface {
-	Committee() Committee
-	Mempool() Mempool
-	ID() *coretypes.ChainID
-	BlobCache() coretypes.BlobCache
-
-	// TODO distinguish external messages from internal and peer messages
-	ReceiveMessage(interface{}) // generic
-	ReceiveTransaction(*ledgerstate.Transaction)
-	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
-	ReceiveRequest(coretypes.Request, time.Time)
-	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
-	ReceiveOutput(output ledgerstate.Output)
-
-	Dismiss()
-	IsDismissed() bool
-
-	ChainRequests
-
-	// chain processors
-	Processors() *processors.ProcessorCache
-}
-
 type ChainRequests interface {
 	GetRequestProcessingStatus(id coretypes.RequestID) RequestProcessingStatus
 	EventRequestProcessed() *events.Event
@@ -71,7 +76,6 @@ type ChainRequests interface {
 
 type StateManager interface {
 	SetPeers(PeerGroupProvider)
-	EventStateIndexPingPongMsg(msg *BlockIndexPingPongMsg)
 	EventGetBlockMsg(msg *GetBlockMsg)
 	EventBlockMsg(msg *BlockMsg)
 	EventStateMsg(msg *StateMsg)
@@ -93,13 +97,8 @@ type Consensus interface {
 	Close()
 }
 
-type ReadyListRecord struct {
-	Request coretypes.Request
-	Seen    map[uint16]bool
-}
-
 type Mempool interface {
-	ReceiveRequest(req coretypes.Request, timestamp time.Time)
+	ReceiveRequest(req coretypes.Request)
 	MarkSeenByCommitteePeer(reqid *coretypes.RequestID, peerIndex uint16)
 	ClearSeenMarks()
 	GetReadyList(seenThreshold uint16) []coretypes.Request
@@ -111,11 +110,32 @@ type Mempool interface {
 	Close()
 }
 
+type ReadyListRecord struct {
+	Request coretypes.Request
+	Seen    map[uint16]bool
+}
+
+type CommitteeInfo struct {
+	Address       ledgerstate.Address
+	Size          uint16
+	Quorum        uint16
+	QuorumIsAlive bool
+	PeerStatus    []*PeerStatus
+}
+
 type PeerStatus struct {
 	Index     int
 	PeeringID string
 	IsSelf    bool
 	Connected bool
+}
+
+type StateTransitionEventData struct {
+	VariableState    state.VirtualState
+	BlockEssenceHash hashing.HashValue
+	ChainOutput      *ledgerstate.AliasOutput
+	Timestamp        time.Time
+	RequestIDs       []coretypes.RequestID
 }
 
 func (p *PeerStatus) String() string {

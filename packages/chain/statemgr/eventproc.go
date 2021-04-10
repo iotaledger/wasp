@@ -12,36 +12,12 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// EventPingPongMsg reacts to the PinPong message
-func (sm *stateManager) EventStateIndexPingPongMsg(msg *chain.BlockIndexPingPongMsg) {
-	sm.eventStateIndexPingPongMsgCh <- msg
-}
-func (sm *stateManager) eventStateIndexPingPongMsg(msg *chain.BlockIndexPingPongMsg) {
-	before := sm.numPongsHasQuorum()
-	sm.pingPongReceived(msg.SenderIndex)
-	after := sm.numPongsHasQuorum()
-
-	if msg.RSVP && sm.isSolidStateValidated() {
-		// only respond if current solid state is validated
-		sm.respondPongToPeer(msg.SenderIndex)
-	}
-	if !before && after {
-		sm.log.Infof("collected %d evidences of state indices of peers", sm.numPongs())
-	}
-	//sm.log.Debugw("EventStateIndexPingPongMsg",
-	//	"sender", msg.SenderIndex,
-	//	"state", msg.BlockIndex,
-	//	"rsvp", msg.RSVP,
-	//	"numPongs", sm.numPongs(),
-	//)
-}
-
 // EventGetBlockMsg is a request for a block while syncing
 func (sm *stateManager) EventGetBlockMsg(msg *chain.GetBlockMsg) {
 	sm.eventGetBlockMsgCh <- msg
 }
 func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
-	if sm.stateOutput == nil {
+	if sm.stateOutput == nil || sm.solidState == nil {
 		return
 	}
 	sm.log.Debugw("EventGetBlockMsg",

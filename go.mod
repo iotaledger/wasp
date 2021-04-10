@@ -24,5 +24,3 @@ require (
 	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 )
-
-replace github.com/iotaledger/hive.go v0.0.0-20210331170324-e7699d9dfdbb => github.com/lunfardo314/hive.go v0.0.0-20210404054736-665eabab5ed9

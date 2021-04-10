@@ -21,8 +21,17 @@ func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
 }
 
-func (c *chainObj) Committee() chain.Committee {
-	return c.committee
+func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {
+	if c.committee == nil {
+		return nil
+	}
+	return &chain.CommitteeInfo{
+		Address:       c.committee.DKShare().Address,
+		Size:          c.committee.Size(),
+		Quorum:        c.committee.Quorum(),
+		QuorumIsAlive: c.committee.QuorumIsAlive(),
+		PeerStatus:    c.committee.PeerStatus(),
+	}
 }
 
 func (c *chainObj) startTimer() {
@@ -36,8 +45,8 @@ func (c *chainObj) startTimer() {
 	}()
 }
 
-func (c *chainObj) Dismiss() {
-	c.log.Infof("Dismiss chain %s", c.chainID.Base58())
+func (c *chainObj) Dismiss(reason string) {
+	c.log.Infof("Dismiss chain. Reason: '%s'", reason)
 
 	c.dismissOnce.Do(func() {
 		c.dismissed.Store(true)
@@ -52,6 +61,8 @@ func (c *chainObj) Dismiss() {
 		if c.consensus != nil {
 			c.consensus.Close()
 		}
+		c.eventRequestProcessed.DetachAll()
+		c.eventStateTransition.DetachAll()
 	})
 
 	publisher.Publish("dismissed_chain", c.chainID.Base58())
@@ -83,16 +94,16 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 		return
 	}
 	for _, req := range reqs {
-		c.ReceiveRequest(req, tx.Essence().Timestamp())
+		c.ReceiveRequest(req)
 	}
 	if chainOut := sctransaction.GetAliasOutput(tx, c.chainID.AsAddress()); chainOut != nil {
 		c.ReceiveState(chainOut, tx.Essence().Timestamp())
 	}
 }
 
-func (c *chainObj) ReceiveRequest(req coretypes.Request, timestamp time.Time) {
+func (c *chainObj) ReceiveRequest(req coretypes.Request) {
 	c.log.Debugf("ReceiveRequest: %s", req.ID())
-	c.mempool.ReceiveRequest(req, timestamp)
+	c.mempool.ReceiveRequest(req)
 }
 
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
@@ -144,6 +155,18 @@ func (c *chainObj) Processors() *processors.ProcessorCache {
 
 func (c *chainObj) EventRequestProcessed() *events.Event {
 	return c.eventRequestProcessed
+}
+
+func (c *chainObj) RequestProcessed() *events.Event {
+	return c.eventRequestProcessed
+}
+
+func (c *chainObj) StateTransition() *events.Event {
+	return c.eventStateTransition
+}
+
+func (c *chainObj) Events() chain.ChainEvents {
+	return c
 }
 
 func (c *chainObj) Mempool() chain.Mempool {

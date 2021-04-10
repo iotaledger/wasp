@@ -63,11 +63,14 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 
 		theChain := chains.AllChains().Get(chainid)
 
-		result.Committee.Size = theChain.Committee().Size()
-		result.Committee.Quorum = theChain.Committee().Quorum()
-		// result.Committee.NumPeers = theChain.Committee().NumPeers()
-		result.Committee.HasQuorum = theChain.Committee().QuorumIsAlive()
-		result.Committee.PeerStatus = theChain.Committee().PeerStatus()
+		committeeInfo := theChain.GetCommitteeInfo()
+		if committeeInfo != nil {
+			result.Committee.Size = committeeInfo.Size
+			result.Committee.Quorum = committeeInfo.Quorum
+			//result.Committee.NumPeers = theChain.Committee().NumPeers()
+			result.Committee.HasQuorum = committeeInfo.QuorumIsAlive
+			result.Committee.PeerStatus = committeeInfo.PeerStatus
+		}
 		result.RootInfo, err = fetchRootInfo(theChain)
 		if err != nil {
 			return err

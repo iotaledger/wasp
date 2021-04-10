@@ -59,7 +59,7 @@ func TestAddRequest(t *testing.T) {
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 1)
 
-	pool.ReceiveRequest(requests[0], time.Now())
+	pool.ReceiveRequest(requests[0])
 	require.True(t, pool.HasRequest(requests[0].ID()))
 }
 
@@ -69,7 +69,7 @@ func TestAddRequestTwice(t *testing.T) {
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 1)
 
-	pool.ReceiveRequest(requests[0], time.Now())
+	pool.ReceiveRequest(requests[0])
 	require.True(t, pool.HasRequest(requests[0].ID()))
 
 	total, withMsg, solid := pool.Stats()
@@ -77,7 +77,7 @@ func TestAddRequestTwice(t *testing.T) {
 	require.EqualValues(t, 1, withMsg)
 	require.EqualValues(t, 1, solid)
 
-	pool.ReceiveRequest(requests[0], time.Now())
+	pool.ReceiveRequest(requests[0])
 	require.True(t, pool.HasRequest(requests[0].ID()))
 
 	total, withMsg, solid = pool.Stats()
@@ -101,7 +101,7 @@ func TestCompletedRequest(t *testing.T) {
 	err := state.StoreRequestCompleted(db, requests[0].ID())
 	require.NoError(t, err)
 
-	pool.ReceiveRequest(requests[0], time.Now())
+	pool.ReceiveRequest(requests[0])
 	require.False(t, pool.HasRequest(requests[0].ID()))
 
 	total, withMsg, solid = pool.Stats()
@@ -116,12 +116,12 @@ func TestAddRemoveRequests(t *testing.T) {
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 6)
 
-	pool.ReceiveRequest(requests[0], time.Now())
-	pool.ReceiveRequest(requests[1], time.Now())
-	pool.ReceiveRequest(requests[2], time.Now())
-	pool.ReceiveRequest(requests[3], time.Now())
-	pool.ReceiveRequest(requests[4], time.Now())
-	pool.ReceiveRequest(requests[5], time.Now())
+	pool.ReceiveRequest(requests[0])
+	pool.ReceiveRequest(requests[1])
+	pool.ReceiveRequest(requests[2])
+	pool.ReceiveRequest(requests[3])
+	pool.ReceiveRequest(requests[4])
+	pool.ReceiveRequest(requests[5])
 	require.True(t, pool.HasRequest(requests[0].ID()))
 	require.True(t, pool.HasRequest(requests[1].ID()))
 	require.True(t, pool.HasRequest(requests[2].ID()))
@@ -147,11 +147,11 @@ func TestTakeAllReady(t *testing.T) {
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 5)
 
-	pool.ReceiveRequest(requests[0], time.Now())
-	pool.ReceiveRequest(requests[1], time.Now())
-	pool.ReceiveRequest(requests[2], time.Now())
-	pool.ReceiveRequest(requests[3], time.Now())
-	pool.ReceiveRequest(requests[4], time.Now())
+	pool.ReceiveRequest(requests[0])
+	pool.ReceiveRequest(requests[1])
+	pool.ReceiveRequest(requests[2])
+	pool.ReceiveRequest(requests[3])
+	pool.ReceiveRequest(requests[4])
 	pool.(*mempool).doSolidifyRequests()
 
 	ready, result := pool.TakeAllReady(time.Now(),
@@ -187,26 +187,26 @@ func initSeenTest(t *testing.T) (chain.Mempool, []*sctransaction.RequestOnLedger
 	request2ID := requests[2].ID()
 	request3ID := requests[3].ID()
 
-	pool.ReceiveRequest(requests[0], time.Now())
+	pool.ReceiveRequest(requests[0])
 	pool.MarkSeenByCommitteePeer(&request0ID, 0)
 
-	pool.ReceiveRequest(requests[1], time.Now())
+	pool.ReceiveRequest(requests[1])
 	pool.MarkSeenByCommitteePeer(&request0ID, 0)
 	pool.MarkSeenByCommitteePeer(&request0ID, 1)
 	pool.MarkSeenByCommitteePeer(&request1ID, 1)
 
-	pool.ReceiveRequest(requests[2], time.Now())
+	pool.ReceiveRequest(requests[2])
 	pool.MarkSeenByCommitteePeer(&request2ID, 0)
 	pool.MarkSeenByCommitteePeer(&request2ID, 2)
 	pool.MarkSeenByCommitteePeer(&request2ID, 3)
 
-	pool.ReceiveRequest(requests[3], time.Now())
+	pool.ReceiveRequest(requests[3])
 	pool.MarkSeenByCommitteePeer(&request0ID, 2)
 	pool.MarkSeenByCommitteePeer(&request0ID, 3)
 	pool.MarkSeenByCommitteePeer(&request1ID, 2)
 	pool.MarkSeenByCommitteePeer(&request3ID, 0)
 
-	pool.ReceiveRequest(requests[4], time.Now())
+	pool.ReceiveRequest(requests[4])
 
 	pool.(*mempool).doSolidifyRequests()
 
@@ -312,7 +312,7 @@ func TestSolidifyLoop(t *testing.T) {
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 4)
 
-	pool.ReceiveRequest(requests[0], time.Now())
+	pool.ReceiveRequest(requests[0])
 	_, result := pool.TakeAllReady(time.Now(), requests[0].ID())
 	require.False(t, result) //No solidification yet => request is not ready
 
@@ -322,9 +322,9 @@ func TestSolidifyLoop(t *testing.T) {
 	require.True(t, len(ready) == 1)
 	require.Contains(t, ready, requests[0])
 
-	pool.ReceiveRequest(requests[1], time.Now())
-	pool.ReceiveRequest(requests[2], time.Now())
-	pool.ReceiveRequest(requests[3], time.Now())
+	pool.ReceiveRequest(requests[1])
+	pool.ReceiveRequest(requests[2])
+	pool.ReceiveRequest(requests[3])
 	_, result = pool.TakeAllReady(time.Now(), requests[1].ID(), requests[2].ID(), requests[3].ID())
 	require.False(t, result) //No solidification after receiving requests yet => requests are not ready
 
