@@ -1,4 +1,4 @@
-package test_statemgr
+package mock_chain
 
 import (
 	"github.com/iotaledger/hive.go/events"
