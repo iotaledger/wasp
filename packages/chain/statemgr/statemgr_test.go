@@ -11,27 +11,55 @@ import (
 
 //---------------------------------------------
 //Tests if state manager is started and initialised correctly
-func TestStateManager(t *testing.T) {
+func TestEnv(t *testing.T) {
 	env, _ := NewMockedEnv(t, false)
-	node := env.NewMockedNode("n0")
+	env.SetupPeerGroupSimple()
+	node0 := env.NewMockedNode(0)
 	time.Sleep(200 * time.Millisecond)
-	require.Nil(t, node.StateManager.(*stateManager).solidState)
-	require.True(t, len(node.StateManager.(*stateManager).blockCandidates) == 1)
+	require.Nil(t, node0.StateManager.(*stateManager).solidState)
+	require.True(t, len(node0.StateManager.(*stateManager).blockCandidates) == 1)
+	require.EqualValues(t, 0, env.Peers.NumPeers())
+	env.AddNode(node0)
+	require.EqualValues(t, 1, env.Peers.NumPeers())
+
+	node0.StartTimer()
+
+	require.Panics(t, func() {
+		env.AddNode(node0)
+	})
+
+	node1 := env.NewMockedNode(1)
+	require.NotPanics(t, func() {
+		env.AddNode(node1)
+	})
+	require.EqualValues(t, 2, env.Peers.NumPeers())
+	time.Sleep(200 * time.Millisecond)
+	require.Nil(t, node1.StateManager.(*stateManager).solidState)
+	require.True(t, len(node1.StateManager.(*stateManager).blockCandidates) == 1)
+
+	node1.StartTimer()
+
+	env.RemoveNode(0)
+	require.EqualValues(t, 1, env.Peers.NumPeers())
+
+	env.AddNode(node0)
+	require.EqualValues(t, 2, env.Peers.NumPeers())
 }
 
 func TestGetInitialState(t *testing.T) {
 	env, originTx := NewMockedEnv(t, false)
-	node := env.NewMockedNode("n0")
+	node := env.NewMockedNode(0)
 	time.Sleep(200 * time.Millisecond)
 	require.Nil(t, node.StateManager.(*stateManager).solidState)
 	require.True(t, len(node.StateManager.(*stateManager).blockCandidates) == 1)
+
+	node.StartTimer()
 
 	originOut, err := utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
 	env.AddNode(node)
 	manager := node.StateManager.(*stateManager)
-	manager.EventTimerMsg(2)
 
 	time.Sleep(200 * time.Millisecond)
 	require.True(t, originOut.Compare(manager.stateOutput) == 0)
@@ -41,17 +69,18 @@ func TestGetInitialState(t *testing.T) {
 
 func TestGetNextState(t *testing.T) {
 	env, originTx := NewMockedEnv(t, false)
-	node := env.NewMockedNode("n0")
+	node := env.NewMockedNode(0)
 	time.Sleep(200 * time.Millisecond)
 	require.Nil(t, node.StateManager.(*stateManager).solidState)
 	require.True(t, len(node.StateManager.(*stateManager).blockCandidates) == 1)
+
+	node.StartTimer()
 
 	originOut, err := utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
 	env.AddNode(node)
 	manager := node.StateManager.(*stateManager)
-	manager.EventTimerMsg(2)
 
 	time.Sleep(200 * time.Millisecond)
 	require.True(t, originOut.Compare(manager.stateOutput) == 0)
