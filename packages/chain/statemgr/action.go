@@ -20,26 +20,14 @@ func (sm *stateManager) takeAction() {
 
 func (sm *stateManager) pullStateIfNeeded() {
 	nowis := time.Now()
-	if sm.pullStateDeadline.Before(nowis) {
+	if sm.pullStateDeadline.After(nowis) {
 		return
 	}
 	if sm.stateOutput == nil || len(sm.blockCandidates) > 0 {
+		sm.log.Debugf("pull backlog")
 		sm.nodeConn.PullBacklog(sm.chain.ID().AsAddress())
 	}
-	sm.pullStateDeadline = nowis.Add(pullStateTimeout)
-}
-
-func (sm *stateManager) isSolidStateValidated() bool {
-	if sm.stateOutput == nil {
-		return false
-	}
-	if sm.solidState == nil && sm.stateOutput.GetStateIndex() == 0 {
-		return true
-	}
-	if sm.solidState != nil && sm.stateOutput.GetStateIndex() == sm.solidState.BlockIndex() {
-		return true
-	}
-	return false
+	sm.pullStateDeadline = nowis.Add(pullStatePeriod)
 }
 
 func (sm *stateManager) checkStateApproval() {
@@ -112,5 +100,5 @@ func (sm *stateManager) addBlockCandidate(block state.Block) {
 	}
 
 	sm.log.Infof("added new block candidate. State index: %d, state hash: %s", block.StateIndex(), vh.String())
-	sm.pullStateDeadline = time.Now().Add(pullStateTimeout)
+	sm.pullStateDeadline = time.Now()
 }

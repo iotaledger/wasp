@@ -13,22 +13,22 @@ import (
 	"testing"
 )
 
-type mockedStateTransition struct {
+type MockedStateTransition struct {
 	t           *testing.T
 	ledger      *utxodb.UtxoDB
 	chainKey    *ed25519.KeyPair
 	onNextState func(block state.Block, tx *ledgerstate.Transaction)
 }
 
-func NewMockedStateTransition(t *testing.T, ledger *utxodb.UtxoDB, chainKey *ed25519.KeyPair) *mockedStateTransition {
-	return &mockedStateTransition{
+func NewMockedStateTransition(t *testing.T, ledger *utxodb.UtxoDB, chainKey *ed25519.KeyPair) *MockedStateTransition {
+	return &MockedStateTransition{
 		t:        t,
 		ledger:   ledger,
 		chainKey: chainKey,
 	}
 }
 
-func (c *mockedStateTransition) NextState(virtualState state.VirtualState, chainOutput *ledgerstate.AliasOutput) {
+func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chainOutput *ledgerstate.AliasOutput) {
 	require.True(c.t, chainOutput.GetStateAddress().Equals(ledgerstate.NewED25519Address(c.chainKey.PublicKey)))
 
 	nextVirtualState := virtualState.Clone()
@@ -45,7 +45,6 @@ func (c *mockedStateTransition) NextState(virtualState state.VirtualState, chain
 
 	err = nextVirtualState.ApplyBlock(block)
 	require.NoError(c.t, err)
-	nextVirtualState.ApplyBlockIndex(chainOutput.GetStateIndex() + 1)
 
 	nextStateHash := nextVirtualState.Hash()
 
@@ -58,6 +57,6 @@ func (c *mockedStateTransition) NextState(virtualState state.VirtualState, chain
 	c.onNextState(block, tx)
 }
 
-func (c *mockedStateTransition) OnNextState(f func(block state.Block, tx *ledgerstate.Transaction)) {
+func (c *MockedStateTransition) OnNextState(f func(block state.Block, tx *ledgerstate.Transaction)) {
 	c.onNextState = f
 }

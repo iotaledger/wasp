@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"time"
 )
 
 // EventGetBlockMsg is a request for a block while syncing
@@ -98,6 +99,7 @@ func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 	}
 	sm.stateOutput = msg.ChainOutput
 	sm.stateOutputTimestamp = msg.Timestamp
+	sm.pullStateDeadline = time.Now()
 	sm.checkStateApproval()
 	sm.takeAction()
 }
@@ -116,7 +118,6 @@ func (sm *stateManager) eventBlockCandidateMsg(msg chain.BlockCandidateMsg) {
 		"block essence", msg.Block.EssenceHash().String(),
 		"ts", msg.Block.Timestamp(),
 	)
-
 	sm.addBlockCandidate(msg.Block)
 	sm.checkStateApproval()
 	sm.takeAction()

@@ -8,17 +8,18 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
-type mockedChain struct {
+type MockedChainCore struct {
 	chainID                 coretypes.ChainID
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
 	onEventStateTransition  func(data *chain.StateTransitionEventData)
 	onEventRequestProcessed func(id coretypes.RequestID)
+	onReceiveMessage        func(i interface{})
 	log                     *logger.Logger
 }
 
-func NewMockedChain(chainID coretypes.ChainID, log *logger.Logger) *mockedChain {
-	ret := &mockedChain{
+func NewMockedChainCore(chainID coretypes.ChainID, log *logger.Logger) *MockedChainCore {
+	ret := &MockedChainCore{
 		chainID: chainID,
 		log:     log,
 		eventStateTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
@@ -44,38 +45,42 @@ func NewMockedChain(chainID coretypes.ChainID, log *logger.Logger) *mockedChain 
 	return ret
 }
 
-func (m *mockedChain) ID() *coretypes.ChainID {
+func (m *MockedChainCore) ID() *coretypes.ChainID {
 	return &m.chainID
 }
 
-func (m *mockedChain) GetCommitteeInfo() *chain.CommitteeInfo {
+func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {
 	panic("implement me")
 }
 
-func (m *mockedChain) ReceiveMessage(i interface{}) {
-	panic("implement me")
+func (m *MockedChainCore) ReceiveMessage(i interface{}) {
+	m.onReceiveMessage(i)
 }
 
-func (m *mockedChain) Events() chain.ChainEvents {
+func (m *MockedChainCore) Events() chain.ChainEvents {
 	return m
 }
 
-func (m *mockedChain) Processors() *processors.ProcessorCache {
+func (m *MockedChainCore) Processors() *processors.ProcessorCache {
 	panic("implement me")
 }
 
-func (m *mockedChain) RequestProcessed() *events.Event {
+func (m *MockedChainCore) RequestProcessed() *events.Event {
 	return m.eventRequestProcessed
 }
 
-func (m *mockedChain) StateTransition() *events.Event {
+func (m *MockedChainCore) StateTransition() *events.Event {
 	return m.eventStateTransition
 }
 
-func (m *mockedChain) OnStateTransition(f func(data *chain.StateTransitionEventData)) {
+func (m *MockedChainCore) OnStateTransition(f func(data *chain.StateTransitionEventData)) {
 	m.onEventStateTransition = f
 }
 
-func (m *mockedChain) OnRequestProcessed(f func(id coretypes.RequestID)) {
+func (m *MockedChainCore) OnRequestProcessed(f func(id coretypes.RequestID)) {
 	m.onEventRequestProcessed = f
+}
+
+func (m *MockedChainCore) OnReceiveMessage(f func(i interface{})) {
+	m.onReceiveMessage = f
 }

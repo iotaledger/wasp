@@ -1,6 +1,7 @@
 package statemgr
 
 import (
+	"bytes"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"time"
@@ -11,9 +12,17 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
+func (sm *stateManager) isSynced() bool {
+	if sm.stateOutput == nil || sm.solidState == nil {
+		return false
+	}
+	return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
+}
+
 // returns block if it is known and flag if it is approved by some output
 func (sm *stateManager) syncBlock(blockIndex uint32) (state.Block, bool) {
 	if _, already := sm.syncingBlocks[blockIndex]; !already {
+		sm.log.Debugf("start syncing block $%d", blockIndex)
 		sm.syncingBlocks[blockIndex] = &syncingBlock{}
 	}
 	blk := sm.syncingBlocks[blockIndex]
@@ -109,6 +118,9 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 		sm.log.Panicf("inconsistency: solid state index is larger than state output index")
 	}
 	// not synced
+	if currentIndex+1 >= sm.stateOutput.GetStateIndex() {
+		return
+	}
 	for i := currentIndex + 1; i < sm.stateOutput.GetStateIndex(); i++ {
 		block, approved := sm.syncBlock(i)
 		if block == nil {
@@ -139,6 +151,10 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 
 // assumes all synced already
 func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing.HashValue) {
+	if len(blocks) == 0 {
+		// shouldn't be here
+		sm.log.Panicf("len(blocks) == 0")
+	}
 	var tentativeState state.VirtualState
 	if sm.solidState != nil {
 		tentativeState = sm.solidState.Clone()
@@ -152,9 +168,9 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 		}
 	}
 	// state hashes must be equal
-	stateHash := tentativeState.Hash()
-	if stateHash != finalHash {
-		sm.log.Errorf("state hashes mismatch")
+	tentativeHash := tentativeState.Hash()
+	if tentativeHash != finalHash {
+		sm.log.Errorf("state hashes mismatch: expected final hash: %s, tentative hash: %s", finalHash, tentativeHash)
 		return
 	}
 	// again applying blocks, this time seriously

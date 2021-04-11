@@ -41,7 +41,7 @@ type stateManager struct {
 }
 
 const (
-	pullStateTimeout          = 5 * time.Second
+	pullStatePeriod           = 5 * time.Second
 	periodBetweenSyncMessages = 1 * time.Second
 )
 
