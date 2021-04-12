@@ -15,9 +15,10 @@ func TestEnv(t *testing.T) {
 	env, _ := NewMockedEnv(t, false)
 	env.SetupPeerGroupSimple()
 	node0 := env.NewMockedNode(0)
-	time.Sleep(200 * time.Millisecond)
+	node0.StateManager.Ready().MustWait()
+
 	require.Nil(t, node0.StateManager.(*stateManager).solidState)
-	require.True(t, len(node0.StateManager.(*stateManager).blockCandidates) == 1)
+	require.EqualValues(t, 1, len(node0.StateManager.(*stateManager).blockCandidates))
 	require.EqualValues(t, 0, env.Peers.NumPeers())
 	env.AddNode(node0)
 	require.EqualValues(t, 1, env.Peers.NumPeers())
@@ -33,11 +34,12 @@ func TestEnv(t *testing.T) {
 		env.AddNode(node1)
 	})
 	require.EqualValues(t, 2, env.Peers.NumPeers())
-	time.Sleep(200 * time.Millisecond)
+	node1.StateManager.Ready().MustWait()
 	require.Nil(t, node1.StateManager.(*stateManager).solidState)
-	require.True(t, len(node1.StateManager.(*stateManager).blockCandidates) == 1)
+	require.EqualValues(t, 1, len(node1.StateManager.(*stateManager).blockCandidates))
 
 	node1.StartTimer()
+	time.Sleep(200 * time.Millisecond)
 
 	env.RemoveNode(0)
 	require.EqualValues(t, 1, env.Peers.NumPeers())
@@ -49,9 +51,9 @@ func TestEnv(t *testing.T) {
 func TestGetInitialState(t *testing.T) {
 	env, originTx := NewMockedEnv(t, false)
 	node := env.NewMockedNode(0)
-	time.Sleep(200 * time.Millisecond)
+	node.StateManager.Ready().MustWait()
 	require.Nil(t, node.StateManager.(*stateManager).solidState)
-	require.True(t, len(node.StateManager.(*stateManager).blockCandidates) == 1)
+	require.EqualValues(t, 1, len(node.StateManager.(*stateManager).blockCandidates))
 
 	node.StartTimer()
 
@@ -70,7 +72,7 @@ func TestGetInitialState(t *testing.T) {
 func TestGetNextState(t *testing.T) {
 	env, originTx := NewMockedEnv(t, false)
 	node := env.NewMockedNode(0)
-	time.Sleep(200 * time.Millisecond)
+	node.StateManager.Ready().MustWait()
 	require.Nil(t, node.StateManager.(*stateManager).solidState)
 	require.True(t, len(node.StateManager.(*stateManager).blockCandidates) == 1)
 

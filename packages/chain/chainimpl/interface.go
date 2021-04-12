@@ -36,6 +36,7 @@ func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {
 
 func (c *chainObj) startTimer() {
 	go func() {
+		c.stateMgr.Ready().MustWait()
 		tick := 0
 		for !c.IsDismissed() {
 			time.Sleep(chain.TimerTickPeriod)

@@ -55,3 +55,7 @@ func (r *Ready) MustWait(timeout ...time.Duration) {
 func (r *Ready) SetReady() {
 	r.wg.Done()
 }
+
+func (r *Ready) IsReady() bool {
+	return r.ready.Load()
+}

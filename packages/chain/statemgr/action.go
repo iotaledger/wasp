@@ -14,6 +14,10 @@ import (
 )
 
 func (sm *stateManager) takeAction() {
+	if !sm.ready.IsReady() {
+		return
+	}
+	sm.checkStateApproval()
 	sm.pullStateIfNeeded()
 	sm.doSyncActionIfNeeded()
 }
@@ -31,6 +35,9 @@ func (sm *stateManager) pullStateIfNeeded() {
 }
 
 func (sm *stateManager) checkStateApproval() {
+	if sm.stateOutput == nil {
+		return
+	}
 	// among candidate state update batches we locate the one which
 	// is approved by the state output
 	varStateHash, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())

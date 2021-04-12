@@ -140,6 +140,7 @@ func (env *MockedEnv) NewMockedNode(index uint16) *MockedNode {
 
 func (node *MockedNode) StartTimer() {
 	go func() {
+		node.StateManager.Ready().MustWait()
 		counter := 0
 		for {
 			node.StateManager.EventTimerMsg(chain.TimerTick(counter))

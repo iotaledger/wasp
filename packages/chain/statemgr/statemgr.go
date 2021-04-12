@@ -7,6 +7,7 @@ package statemgr
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/util/ready"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -18,6 +19,7 @@ import (
 )
 
 type stateManager struct {
+	ready                *ready.Ready
 	dbp                  *dbprovider.DBProvider
 	chain                chain.ChainCore
 	peers                chain.PeerGroupProvider
@@ -61,6 +63,7 @@ type candidateBlock struct {
 
 func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers chain.PeerGroupProvider, nodeconn chain.NodeConnection, log *logger.Logger) chain.StateManager {
 	ret := &stateManager{
+		ready:                  ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
 		dbp:                    dbp,
 		chain:                  c,
 		nodeConn:               nodeconn,
@@ -120,7 +123,12 @@ func (sm *stateManager) initLoadState() {
 	sm.recvLoop() // Start to process external events.
 }
 
+func (sm *stateManager) Ready() *ready.Ready {
+	return sm.ready
+}
+
 func (sm *stateManager) recvLoop() {
+	sm.ready.SetReady()
 	for {
 		select {
 		case msg, ok := <-sm.eventGetBlockMsgCh:

@@ -100,7 +100,7 @@ func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 	sm.stateOutput = msg.ChainOutput
 	sm.stateOutputTimestamp = msg.Timestamp
 	sm.pullStateDeadline = time.Now()
-	sm.checkStateApproval()
+	//sm.checkStateApproval()
 	sm.takeAction()
 }
 
@@ -119,7 +119,7 @@ func (sm *stateManager) eventBlockCandidateMsg(msg chain.BlockCandidateMsg) {
 		"ts", msg.Block.Timestamp(),
 	)
 	sm.addBlockCandidate(msg.Block)
-	sm.checkStateApproval()
+	//sm.checkStateApproval()
 	sm.takeAction()
 }
 

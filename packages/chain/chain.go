@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/ready"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -83,6 +84,7 @@ type NodeConnection interface {
 }
 
 type StateManager interface {
+	Ready() *ready.Ready
 	SetPeers(PeerGroupProvider)
 	EventGetBlockMsg(msg *GetBlockMsg)
 	EventBlockMsg(msg *BlockMsg)
