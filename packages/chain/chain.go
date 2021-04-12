@@ -142,7 +142,7 @@ type PeerStatus struct {
 }
 
 type StateTransitionEventData struct {
-	VariableState    state.VirtualState
+	VirtualState     state.VirtualState
 	BlockEssenceHash hashing.HashValue
 	ChainOutput      *ledgerstate.AliasOutput
 	Timestamp        time.Time

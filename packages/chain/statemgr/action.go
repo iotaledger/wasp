@@ -64,7 +64,7 @@ func (sm *stateManager) checkStateApproval() {
 
 	cloneState := sm.solidState.Clone()
 	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
-		VariableState:    cloneState,
+		VirtualState:     cloneState,
 		BlockEssenceHash: candidate.block.EssenceHash(),
 		ChainOutput:      sm.stateOutput,
 		Timestamp:        sm.stateOutputTimestamp,

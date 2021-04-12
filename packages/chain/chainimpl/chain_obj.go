@@ -273,7 +273,7 @@ func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 	chain.LogStateTransition(msg, c.log)
 	// send to consensus
 	c.ReceiveMessage(&chain.StateTransitionMsg{
-		VariableState: msg.VariableState,
+		VariableState: msg.VirtualState,
 		ChainOutput:   msg.ChainOutput,
 		Timestamp:     msg.Timestamp,
 		RequestIDs:    msg.RequestIDs,
@@ -282,10 +282,10 @@ func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 	// publish state transition
 	publisher.Publish("state",
 		c.ID().String(),
-		strconv.Itoa(int(msg.VariableState.BlockIndex())),
+		strconv.Itoa(int(msg.VirtualState.BlockIndex())),
 		strconv.Itoa(len(msg.RequestIDs)),
 		coretypes.OID(msg.ChainOutput.ID()),
-		msg.VariableState.Hash().String(),
+		msg.VirtualState.Hash().String(),
 	)
 	// publish processed requests
 	for _, reqid := range msg.RequestIDs {
@@ -294,7 +294,7 @@ func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 		publisher.Publish("request_out",
 			c.ID().String(),
 			reqid.String(),
-			strconv.Itoa(int(msg.VariableState.BlockIndex())),
+			strconv.Itoa(int(msg.VirtualState.BlockIndex())),
 			strconv.Itoa(len(msg.RequestIDs)),
 		)
 	}
