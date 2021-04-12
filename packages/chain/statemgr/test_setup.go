@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mock_chain"
@@ -15,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	"sync"
@@ -34,6 +32,7 @@ type MockedEnv struct {
 	ChainID           coretypes.ChainID
 	mutex             sync.Mutex
 	Nodes             map[uint16]*MockedNode
+	push              bool
 }
 
 type MockedNode struct {
@@ -95,6 +94,9 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 			ret.Log.Error(err)
 			return
 		}
+		// Push transaction to nodes
+		go ret.pushStateToNodesIfSet(tx)
+
 		ret.Log.Infof("MockedEnv: posted transaction to ledger: %s", tx.ID().Base58())
 	})
 	ret.NodeConn.OnPullBacklog(func(addr ledgerstate.Address) {
@@ -120,6 +122,30 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 	})
 
 	return ret, originTx
+}
+
+func (env *MockedEnv) SetPushStateToNodesOption(push bool) {
+	env.mutex.Lock()
+	defer env.mutex.Unlock()
+	env.push = push
+}
+
+func (env *MockedEnv) pushStateToNodesIfSet(tx *ledgerstate.Transaction) {
+	env.mutex.Lock()
+	defer env.mutex.Unlock()
+
+	if !env.push {
+		return
+	}
+	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
+	require.NoError(env.T, err)
+
+	for _, node := range env.Nodes {
+		go node.StateManager.EventStateMsg(&chain.StateMsg{
+			ChainOutput: stateOutput,
+			Timestamp:   tx.Essence().Timestamp(),
+		})
+	}
 }
 
 func (env *MockedEnv) NewMockedNode(index uint16) *MockedNode {
@@ -152,17 +178,20 @@ func (node *MockedNode) StartTimer() {
 	}()
 }
 
-func (node *MockedNode) WaitSyncBlockIndex(index uint32, timeout time.Duration) {
-	r := ready.New(fmt.Sprintf("wait sync #%d", index))
-	closure := events.NewClosure(func(outid ledgerstate.OutputID, blockIndex uint32) {
-		if blockIndex == index {
-			r.SetReady()
+func (node *MockedNode) WaitSyncBlockIndex(index uint32, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	var stateData *chain.StateData
+	for {
+		if time.Now().After(deadline) {
+			return fmt.Errorf("WaitSyncBlockIndex: target index %d, timeout %v reached", index, timeout)
 		}
-	})
-	node.ChainCore.Events().StateSynced().Attach(closure)
-	err := r.Wait(timeout)
-	require.NoError(node.Env.T, err)
-	node.ChainCore.Events().StateSynced().Detach(closure)
+		stateData = node.StateManager.GetCurrentStateData()
+		if stateData != nil && stateData.BlockIndex >= index {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return nil
 }
 
 func (env *MockedEnv) AddNode(node *MockedNode) {

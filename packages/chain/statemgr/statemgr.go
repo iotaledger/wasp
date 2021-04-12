@@ -8,6 +8,7 @@ package statemgr
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/util/ready"
+	"go.uber.org/atomic"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -29,6 +30,7 @@ type stateManager struct {
 	solidState           state.VirtualState
 	stateOutput          *ledgerstate.AliasOutput
 	stateOutputTimestamp time.Time
+	currentStateData     atomic.Value
 	syncingBlocks        map[uint32]*syncingBlock
 	log                  *logger.Logger
 
@@ -43,7 +45,7 @@ type stateManager struct {
 }
 
 const (
-	pullStatePeriod           = 5 * time.Second
+	pullStatePeriod           = 2 * time.Second
 	periodBetweenSyncMessages = 1 * time.Second
 )
 
@@ -126,6 +128,14 @@ func (sm *stateManager) initLoadState() {
 
 func (sm *stateManager) Ready() *ready.Ready {
 	return sm.ready
+}
+
+func (sm *stateManager) GetCurrentStateData() *chain.StateData {
+	v := sm.currentStateData.Load()
+	if v == nil {
+		return nil
+	}
+	return v.(*chain.StateData)
 }
 
 func (sm *stateManager) recvLoop() {
