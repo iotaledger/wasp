@@ -5,6 +5,7 @@ package chainimpl
 
 import (
 	"bytes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -47,6 +48,7 @@ type chainObj struct {
 	blobProvider          coretypes.BlobCache
 	eventRequestProcessed *events.Event
 	eventStateTransition  *events.Event
+	eventSynced           *events.Event
 }
 
 func NewChain(
@@ -78,8 +80,13 @@ func NewChain(
 		eventStateTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.StateTransitionEventData))(params[0].(*chain.StateTransitionEventData))
 		}),
+		eventSynced: events.NewEvent(func(handler interface{}, params ...interface{}) {
+			handler.(func(outputID ledgerstate.OutputID, blockIndex uint32))(params[0].(ledgerstate.OutputID), params[1].(uint32))
+		}),
 	}
 	ret.eventStateTransition.Attach(events.NewClosure(ret.processStateTransition))
+	ret.eventSynced.Attach(events.NewClosure(ret.processSynced))
+
 	ret.stateMgr = statemgr.New(dbProvider, ret, newPeers(nil), nodeconnimpl.New(ret.nodeConn), ret.log)
 	go func() {
 		for msg := range ret.chMsg {
@@ -291,4 +298,8 @@ func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 			strconv.Itoa(len(msg.RequestIDs)),
 		)
 	}
+}
+
+func (c *chainObj) processSynced(outputID ledgerstate.OutputID, blockIndex uint32) {
+	chain.LogSyncedEvent(outputID, blockIndex, c.log)
 }

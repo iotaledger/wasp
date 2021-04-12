@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mock_chain"
@@ -14,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	"sync"
@@ -130,7 +132,7 @@ func (env *MockedEnv) NewMockedNode(index uint16) *MockedNode {
 		Log:       log,
 	}
 	ret.StateManager = New(ret.Db, ret.ChainCore, env.Peers, env.NodeConn, log)
-	ret.StateTransition = mock_chain.NewMockedStateTransition(env.T, env.Ledger, env.OriginatorKeyPair)
+	ret.StateTransition = mock_chain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(block state.Block, tx *ledgerstate.Transaction) {
 		go ret.StateManager.EventBlockCandidateMsg(chain.BlockCandidateMsg{Block: block})
 		go env.NodeConn.PostTransaction(tx, ret.ChainCore.ID().AsAddress(), 0)
@@ -148,6 +150,19 @@ func (node *MockedNode) StartTimer() {
 			time.Sleep(50 * time.Millisecond)
 		}
 	}()
+}
+
+func (node *MockedNode) WaitSyncBlockIndex(index uint32, timeout time.Duration) {
+	r := ready.New(fmt.Sprintf("wait sync #%d", index))
+	closure := events.NewClosure(func(outid ledgerstate.OutputID, blockIndex uint32) {
+		if blockIndex == index {
+			r.SetReady()
+		}
+	})
+	node.ChainCore.Events().StateSynced().Attach(closure)
+	err := r.Wait(timeout)
+	require.NoError(node.Env.T, err)
+	node.ChainCore.Events().StateSynced().Detach(closure)
 }
 
 func (env *MockedEnv) AddNode(node *MockedNode) {

@@ -64,6 +64,7 @@ func (c *chainObj) Dismiss(reason string) {
 		}
 		c.eventRequestProcessed.DetachAll()
 		c.eventStateTransition.DetachAll()
+		c.eventSynced.DetachAll()
 	})
 
 	publisher.Publish("dismissed_chain", c.chainID.Base58())
@@ -164,6 +165,10 @@ func (c *chainObj) RequestProcessed() *events.Event {
 
 func (c *chainObj) StateTransition() *events.Event {
 	return c.eventStateTransition
+}
+
+func (c *chainObj) StateSynced() *events.Event {
+	return c.eventSynced
 }
 
 func (c *chainObj) Events() chain.ChainEvents {

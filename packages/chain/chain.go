@@ -43,6 +43,7 @@ type Chain interface {
 type ChainEvents interface {
 	RequestProcessed() *events.Event
 	StateTransition() *events.Event
+	StateSynced() *events.Event
 }
 
 type Committee interface {

@@ -2,7 +2,6 @@ package mock_chain
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -15,15 +14,13 @@ import (
 
 type MockedStateTransition struct {
 	t           *testing.T
-	ledger      *utxodb.UtxoDB
 	chainKey    *ed25519.KeyPair
 	onNextState func(block state.Block, tx *ledgerstate.Transaction)
 }
 
-func NewMockedStateTransition(t *testing.T, ledger *utxodb.UtxoDB, chainKey *ed25519.KeyPair) *MockedStateTransition {
+func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedStateTransition {
 	return &MockedStateTransition{
 		t:        t,
-		ledger:   ledger,
 		chainKey: chainKey,
 	}
 }

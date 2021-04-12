@@ -24,6 +24,7 @@ func TestEnv(t *testing.T) {
 	require.EqualValues(t, 1, env.Peers.NumPeers())
 
 	node0.StartTimer()
+	node0.WaitSyncBlockIndex(0, 1*time.Second)
 
 	require.Panics(t, func() {
 		env.AddNode(node0)
@@ -35,11 +36,13 @@ func TestEnv(t *testing.T) {
 	})
 	require.EqualValues(t, 2, env.Peers.NumPeers())
 	node1.StateManager.Ready().MustWait()
+
 	require.Nil(t, node1.StateManager.(*stateManager).solidState)
 	require.EqualValues(t, 1, len(node1.StateManager.(*stateManager).blockCandidates))
 
 	node1.StartTimer()
-	time.Sleep(200 * time.Millisecond)
+	node1.WaitSyncBlockIndex(0, 1*time.Second)
+	//time.Sleep(200 * time.Millisecond)
 
 	env.RemoveNode(0)
 	require.EqualValues(t, 1, env.Peers.NumPeers())

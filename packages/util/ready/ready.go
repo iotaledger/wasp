@@ -41,7 +41,7 @@ func (r *Ready) Wait(timeout ...time.Duration) error {
 		r.ready.Store(true)
 		return nil
 	case <-time.After(t):
-		return xerrors.Errorf("not ready after timeout %v", t)
+		return xerrors.Errorf("'%s' not ready after timeout %v", r.name, t)
 	}
 }
 

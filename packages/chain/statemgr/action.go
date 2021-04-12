@@ -70,6 +70,7 @@ func (sm *stateManager) checkStateApproval() {
 		Timestamp:        sm.stateOutputTimestamp,
 		RequestIDs:       candidate.block.RequestIDs(),
 	})
+	go sm.chain.Events().StateSynced().Trigger(sm.stateOutput.ID(), sm.stateOutput.GetStateIndex())
 }
 
 // adding block of state updates to the 'pending' map

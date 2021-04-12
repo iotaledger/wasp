@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
@@ -17,4 +18,8 @@ func LogStateTransition(msg *StateTransitionEventData, log *logger.Logger) {
 		log.Debugf("ORIGIN STATE SAVED. state hash: %s, block essence: %s",
 			msg.VariableState.Hash().String(), msg.BlockEssenceHash.String())
 	}
+}
+
+func LogSyncedEvent(outputID ledgerstate.OutputID, blockIndex uint32, log *logger.Logger) {
+	log.Infof("EVENT: state was synced to block index #%d, approving output: %s", blockIndex, coretypes.OID(outputID))
 }

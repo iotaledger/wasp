@@ -98,6 +98,7 @@ func (sm *stateManager) chainOutputArrived(chainOutput *ledgerstate.AliasOutput)
 			return
 		}
 		syncBlk.finalHash = finalHash
+		syncBlk.approvingOutputID = chainOutput.ID()
 		syncBlk.approved = true
 	}
 }
@@ -133,7 +134,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 				b, _ := sm.syncBlock(j)
 				blocks = append(blocks, b)
 			}
-			sm.mustCommitSynced(blocks, sm.syncingBlocks[i].finalHash)
+			sm.mustCommitSynced(blocks, sm.syncingBlocks[i].finalHash, sm.syncingBlocks[i].approvingOutputID)
 			return
 		}
 	}
@@ -146,11 +147,11 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	if err != nil {
 		return
 	}
-	sm.mustCommitSynced(blocks, finalHash)
+	sm.mustCommitSynced(blocks, finalHash, sm.stateOutput.ID())
 }
 
 // assumes all synced already
-func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing.HashValue) {
+func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing.HashValue, outputID ledgerstate.OutputID) {
 	if len(blocks) == 0 {
 		// shouldn't be here
 		sm.log.Panicf("len(blocks) == 0")
@@ -177,12 +178,15 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 	if sm.solidState == nil {
 		sm.solidState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
 	}
+	stateIndex := uint32(0)
 	for _, block := range blocks {
+		stateIndex = block.StateIndex()
 		if err := sm.solidState.CommitToDb(block); err != nil {
 			sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
 			sm.syncingBlocks = make(map[uint32]*syncingBlock)
 			return
 		}
-		delete(sm.syncingBlocks, block.StateIndex())
+		delete(sm.syncingBlocks, stateIndex)
 	}
+	go sm.chain.Events().StateSynced().Trigger(outputID, stateIndex)
 }

@@ -48,10 +48,11 @@ const (
 )
 
 type syncingBlock struct {
-	pullDeadline time.Time
-	block        state.Block
-	approved     bool
-	finalHash    hashing.HashValue
+	pullDeadline      time.Time
+	block             state.Block
+	approved          bool
+	finalHash         hashing.HashValue
+	approvingOutputID ledgerstate.OutputID
 }
 
 type candidateBlock struct {
