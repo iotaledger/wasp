@@ -10,7 +10,6 @@ package commoncoin
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"time"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -98,7 +98,7 @@ func (ccn *commonCoinNode) GetCoin(sid []byte) ([]byte, error) {
 	if coin, ok := <-waitCh; ok {
 		return coin, nil
 	}
-	return nil, errors.New("timeout waiting for a common coin")
+	return nil, xerrors.New("timeout waiting for a common coin")
 }
 
 // Close terminates the CommonCoin peer.
@@ -169,7 +169,7 @@ func (ccn *commonCoinNode) onCoinShare(recvEvent *peering.RecvEvent) {
 	var cc = ccn.getCoinObj(msg.sid)
 	var reconstructed bool
 	reconstructed, err = cc.acceptCoinShare(uint16(peerIndex), msg.coinShare, msg.needReply, recvEvent.From)
-	if err != nil && err.Error() != "tbls: threshold not reached" && !reconstructed {
+	if err != nil && err.Error() != "threshold not reached" && !reconstructed {
 		ccn.log.Debugf("The coin is not revealed yet, reason=%+v", err)
 	}
 }
@@ -236,8 +236,7 @@ func (cc *commonCoin) addOurShare() (bool, error) {
 	var err error
 	var signed tbdn.SigShare
 	if signed, err = cc.node.dkShare.SignShare(cc.sid); err != nil {
-		cc.node.log.Errorf("Failed to sign our share, reason=%+v", err)
-		return false, err
+		return false, xerrors.Errorf("failed to sign our share: %w", err)
 	}
 	return cc.acceptCoinShare(*cc.node.dkShare.Index, signed, false, nil)
 }
@@ -245,7 +244,7 @@ func (cc *commonCoin) addOurShare() (bool, error) {
 func (cc *commonCoin) acceptCoinShare(peerIndex uint16, coinShare []byte, needReply bool, peer peering.PeerSender) (bool, error) {
 	var err error
 	if len(cc.shares) <= int(peerIndex) {
-		return false, errors.New("peerIndex out of range")
+		return false, xerrors.New("peerIndex out of range")
 	}
 	if needReply && peer != nil {
 		cc.resendCoinShare(peerIndex, peer)
@@ -262,15 +261,15 @@ func (cc *commonCoin) acceptCoinShare(peerIndex uint16, coinShare []byte, needRe
 		}
 	}
 	if uint16(len(receivedShares)) < cc.node.dkShare.T {
-		return false, errors.New("tbls: threshold not reached")
+		return false, xerrors.New("threshold not reached")
 	}
 	var sig *bls.SignatureWithPublicKey
 	if sig, err = cc.node.dkShare.RecoverFullSignature(receivedShares, cc.sid); err != nil {
-		return false, err
+		return false, xerrors.Errorf("unable to reconstruct the signature: %w", err)
 	}
 	var value = sig.Signature.Bytes()
 	if err = cc.node.dkShare.VerifyMasterSignature(cc.sid, value); err != nil {
-		return false, err
+		return false, xerrors.Errorf("unable to verify the master signature: %w", err)
 	}
 	cc.value = value
 	if cc.waitCh != nil {
@@ -372,13 +371,13 @@ type commonCoinMsg struct {
 func (m *commonCoinMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteBytes16(w, m.sid); err != nil {
-		return err
+		return xerrors.Errorf("failed to write commonCoinMsg.sid: %w", err)
 	}
 	if err = util.WriteBytes16(w, m.coinShare); err != nil {
-		return err
+		return xerrors.Errorf("failed to write commonCoinMsg.coinShare: %w", err)
 	}
 	if err = util.WriteBoolByte(w, m.needReply); err != nil {
-		return err
+		return xerrors.Errorf("failed to write commonCoinMsg.needReply: %w", err)
 	}
 	return nil
 }
@@ -386,13 +385,13 @@ func (m *commonCoinMsg) Write(w io.Writer) error {
 func (m *commonCoinMsg) Read(r io.Reader) error {
 	var err error
 	if m.sid, err = util.ReadBytes16(r); err != nil {
-		return err
+		return xerrors.Errorf("failed to read commonCoinMsg.sid: %w", err)
 	}
 	if m.coinShare, err = util.ReadBytes16(r); err != nil {
-		return err
+		return xerrors.Errorf("failed to read commonCoinMsg.coinShare: %w", err)
 	}
 	if err = util.ReadBoolByte(r, &m.needReply); err != nil {
-		return err
+		return xerrors.Errorf("failed to read commonCoinMsg.needReply: %w", err)
 	}
 	return nil
 }
