@@ -45,7 +45,7 @@ func (c *Chains) Dismiss() {
 
 func (c *Chains) Attach(nodeConn *txstream.Client) {
 	if c.nodeConn != nil {
-		c.log.Panicf("Nodes: already attached")
+		c.log.Panicf("Chains: already attached")
 	}
 	c.nodeConn = nodeConn
 	c.nodeConn.Events.TransactionReceived.Attach(events.NewClosure(c.dispatchMsgTransaction))

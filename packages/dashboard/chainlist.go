@@ -20,7 +20,7 @@ func (d *Dashboard) initChainList(e *echo.Echo, r renderer) Tab {
 
 	return Tab{
 		Path:  route.Path,
-		Title: "Nodes",
+		Title: "Chains",
 		Href:  route.Path,
 	}
 }
