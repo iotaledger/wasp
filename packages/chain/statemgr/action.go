@@ -20,6 +20,7 @@ func (sm *stateManager) takeAction() {
 	sm.checkStateApproval()
 	sm.pullStateIfNeeded()
 	sm.doSyncActionIfNeeded()
+	sm.storeSyncingData()
 }
 
 func (sm *stateManager) pullStateIfNeeded() {
@@ -109,4 +110,24 @@ func (sm *stateManager) addBlockCandidate(block state.Block) {
 
 	sm.log.Infof("added new block candidate. State index: %d, state hash: %s", block.StateIndex(), vh.String())
 	sm.pullStateDeadline = time.Now()
+}
+
+func (sm *stateManager) storeSyncingData() {
+	if sm.solidState == nil || sm.stateOutput == nil {
+		return
+	}
+	outputStateHash, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())
+	if err != nil {
+		return
+	}
+	sm.currentSyncData.Store(&chain.SyncInfo{
+		Synced:                sm.solidState.Hash() == outputStateHash,
+		SyncedBlockIndex:      sm.solidState.BlockIndex(),
+		SyncedStateHash:       sm.solidState.Hash(),
+		SyncedStateTimestamp:  time.Unix(0, sm.solidState.Timestamp()),
+		StateOutputBlockIndex: sm.stateOutput.GetStateIndex(),
+		StateOutputID:         sm.stateOutput.ID(),
+		StateOutputHash:       outputStateHash,
+		StateOutputTimestamp:  sm.stateOutputTimestamp,
+	})
 }

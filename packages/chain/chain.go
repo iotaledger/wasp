@@ -93,7 +93,7 @@ type StateManager interface {
 	EventOutputMsg(msg ledgerstate.Output)
 	EventBlockCandidateMsg(msg BlockCandidateMsg)
 	EventTimerMsg(msg TimerTick)
-	GetCurrentStateData() *StateData
+	GetSyncInfo() *SyncInfo
 	Close()
 }
 
@@ -122,11 +122,15 @@ type Mempool interface {
 	Close()
 }
 
-type StateData struct {
-	BlockIndex     uint32
-	StateOutputID  ledgerstate.OutputID
-	StateHash      hashing.HashValue
-	StateTimestamp time.Time
+type SyncInfo struct {
+	Synced                bool
+	SyncedBlockIndex      uint32
+	SyncedStateHash       hashing.HashValue
+	SyncedStateTimestamp  time.Time
+	StateOutputBlockIndex uint32
+	StateOutputID         ledgerstate.OutputID
+	StateOutputHash       hashing.HashValue
+	StateOutputTimestamp  time.Time
 }
 
 type ReadyListRecord struct {

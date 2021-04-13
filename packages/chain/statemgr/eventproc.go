@@ -99,12 +99,6 @@ func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 	}
 	sm.stateOutput = msg.ChainOutput
 	sm.stateOutputTimestamp = msg.Timestamp
-	sm.currentStateData.Store(&chain.StateData{
-		BlockIndex:     msg.ChainOutput.GetStateIndex(),
-		StateOutputID:  msg.ChainOutput.ID(),
-		StateHash:      stateHash,
-		StateTimestamp: msg.Timestamp,
-	})
 	sm.pullStateDeadline = time.Now()
 	sm.takeAction()
 }

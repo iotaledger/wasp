@@ -30,7 +30,7 @@ type stateManager struct {
 	solidState           state.VirtualState
 	stateOutput          *ledgerstate.AliasOutput
 	stateOutputTimestamp time.Time
-	currentStateData     atomic.Value
+	currentSyncData      atomic.Value
 	syncingBlocks        map[uint32]*syncingBlock
 	log                  *logger.Logger
 
@@ -130,12 +130,12 @@ func (sm *stateManager) Ready() *ready.Ready {
 	return sm.ready
 }
 
-func (sm *stateManager) GetCurrentStateData() *chain.StateData {
-	v := sm.currentStateData.Load()
+func (sm *stateManager) GetSyncInfo() *chain.SyncInfo {
+	v := sm.currentSyncData.Load()
 	if v == nil {
 		return nil
 	}
-	return v.(*chain.StateData)
+	return v.(*chain.SyncInfo)
 }
 
 func (sm *stateManager) recvLoop() {

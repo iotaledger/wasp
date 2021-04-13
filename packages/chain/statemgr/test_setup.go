@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
+	"golang.org/x/xerrors"
 	"sync"
 	"testing"
 	"time"
@@ -178,20 +179,19 @@ func (node *MockedNode) StartTimer() {
 	}()
 }
 
-func (node *MockedNode) WaitSyncBlockIndex(index uint32, timeout time.Duration) error {
+func (node *MockedNode) WaitSyncBlockIndex(index uint32, timeout time.Duration) (*chain.SyncInfo, error) {
 	deadline := time.Now().Add(timeout)
-	var stateData *chain.StateData
+	var syncInfo *chain.SyncInfo
 	for {
 		if time.Now().After(deadline) {
-			return fmt.Errorf("WaitSyncBlockIndex: target index %d, timeout %v reached", index, timeout)
+			return nil, xerrors.Errorf("WaitSyncBlockIndex: target index %d, timeout %v reached", index, timeout)
 		}
-		stateData = node.StateManager.GetCurrentStateData()
-		if stateData != nil && stateData.BlockIndex >= index {
-			break
+		syncInfo = node.StateManager.GetSyncInfo()
+		if syncInfo != nil && syncInfo.SyncedBlockIndex >= index {
+			return syncInfo, nil
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	return nil
 }
 
 func (env *MockedEnv) AddNode(node *MockedNode) {

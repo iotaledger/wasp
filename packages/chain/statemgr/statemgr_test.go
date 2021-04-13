@@ -25,8 +25,9 @@ func TestEnv(t *testing.T) {
 	require.EqualValues(t, 1, env.Peers.NumPeers())
 
 	node0.StartTimer()
-	err := node0.WaitSyncBlockIndex(0, 1*time.Second)
+	si, err := node0.WaitSyncBlockIndex(0, 1*time.Second)
 	require.NoError(t, err)
+	require.True(t, si.Synced)
 
 	require.Panics(t, func() {
 		env.AddNode(node0)
@@ -43,8 +44,9 @@ func TestEnv(t *testing.T) {
 	require.EqualValues(t, 1, len(node1.StateManager.(*stateManager).blockCandidates))
 
 	node1.StartTimer()
-	err = node1.WaitSyncBlockIndex(0, 1*time.Second)
+	si, err = node1.WaitSyncBlockIndex(0, 1*time.Second)
 	require.NoError(t, err)
+	require.True(t, si.Synced)
 
 	env.RemoveNode(0)
 	require.EqualValues(t, 1, env.Peers.NumPeers())
@@ -68,11 +70,14 @@ func TestGetInitialState(t *testing.T) {
 	env.AddNode(node)
 	manager := node.StateManager.(*stateManager)
 
-	err = node.WaitSyncBlockIndex(0, 3*time.Second)
+	syncInfo, err := node.WaitSyncBlockIndex(0, 3*time.Second)
 	require.NoError(t, err)
+	require.True(t, syncInfo.Synced)
 	require.True(t, originOut.Compare(manager.stateOutput) == 0)
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
 	require.EqualValues(t, manager.solidState.Hash(), state.OriginStateHash())
+	require.EqualValues(t, 0, syncInfo.SyncedBlockIndex)
+	require.EqualValues(t, 0, syncInfo.StateOutputBlockIndex)
 }
 
 func TestGetNextState(t *testing.T) {
@@ -90,8 +95,9 @@ func TestGetNextState(t *testing.T) {
 	env.AddNode(node)
 	manager := node.StateManager.(*stateManager)
 
-	err = node.WaitSyncBlockIndex(0, 1*time.Second)
+	si, err := node.WaitSyncBlockIndex(0, 1*time.Second)
 	require.NoError(t, err)
+	require.True(t, si.Synced)
 	require.True(t, originOut.Compare(manager.stateOutput) == 0)
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
 	require.EqualValues(t, manager.solidState.Hash(), state.OriginStateHash())
@@ -106,8 +112,9 @@ func TestGetNextState(t *testing.T) {
 	require.EqualValues(t, currh[:], currentStateOutput.GetStateData())
 
 	node.StateTransition.NextState(currentState, currentStateOutput)
-	err = node.WaitSyncBlockIndex(1, 3*time.Second)
+	si, err = node.WaitSyncBlockIndex(1, 3*time.Second)
 	require.NoError(t, err)
+	require.True(t, si.Synced)
 
 	require.EqualValues(t, 1, manager.stateOutput.GetStateIndex())
 	require.EqualValues(t, manager.solidState.Hash().Bytes(), manager.stateOutput.GetStateData())
@@ -135,6 +142,7 @@ func TestManyStateTransitions(t *testing.T) {
 			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
 		}
 	})
-	err := node.WaitSyncBlockIndex(targetBlockIndex, 20*time.Second)
+	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 20*time.Second)
 	require.NoError(t, err)
+	require.True(t, si.Synced)
 }
