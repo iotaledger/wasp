@@ -11,7 +11,7 @@ type ChainRecord struct {
 
 func NewChainRecord(rec *registry.ChainRecord) *ChainRecord {
 	return &ChainRecord{
-		ChainID: NewChainID(&rec.ChainID),
+		ChainID: NewChainID(rec.ChainID),
 		Active:  rec.Active,
 	}
 }

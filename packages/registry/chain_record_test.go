@@ -1,9 +1,10 @@
 package registry
 
 import (
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestChainRecord(t *testing.T) {
@@ -13,7 +14,7 @@ func TestChainRecord(t *testing.T) {
 	require.False(t, rec.Active)
 	recBack, err := ChainRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)
-	require.True(t, rec.ChainID.Equals(&recBack.ChainID))
+	require.True(t, rec.ChainID.Equals(recBack.ChainID))
 	require.EqualValues(t, rec.Active, recBack.Active)
 
 	t.Logf("\n%s", rec)
@@ -22,6 +23,6 @@ func TestChainRecord(t *testing.T) {
 	require.True(t, rec.Active)
 	recBack, err = ChainRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)
-	require.True(t, rec.ChainID.Equals(&recBack.ChainID))
+	require.True(t, rec.ChainID.Equals(recBack.ChainID))
 	require.EqualValues(t, rec.Active, recBack.Active)
 }

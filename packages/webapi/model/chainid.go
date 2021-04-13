@@ -27,10 +27,10 @@ func (ch *ChainID) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-func (ch ChainID) ChainID() coretypes.ChainID {
+func (ch ChainID) ChainID() *coretypes.ChainID {
 	chainID, err := coretypes.ChainIDFromBase58(string(ch))
 	if err != nil {
 		panic(err)
 	}
-	return *chainID
+	return chainID
 }

@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 )
 
@@ -26,7 +25,7 @@ func (d *Dashboard) initChainList(e *echo.Echo, r renderer) Tab {
 }
 
 func (d *Dashboard) handleChainList(c echo.Context) error {
-	chains, err := fetchChains()
+	chains, err := d.fetchChains()
 	if err != nil {
 		return err
 	}
@@ -36,14 +35,14 @@ func (d *Dashboard) handleChainList(c echo.Context) error {
 	})
 }
 
-func fetchChains() ([]*ChainOverview, error) {
-	crs, err := registry.GetChainRecords()
+func (d *Dashboard) fetchChains() ([]*ChainOverview, error) {
+	crs, err := d.wasp.GetChainRecords()
 	if err != nil {
 		return nil, err
 	}
 	r := make([]*ChainOverview, len(crs))
 	for i, cr := range crs {
-		info, err := fetchRootInfo(chains.AllChains().Get(&cr.ChainID))
+		info, err := d.fetchRootInfo(d.wasp.GetChain(cr.ChainID))
 		r[i] = &ChainOverview{
 			ChainRecord: cr,
 			RootInfo:    info,

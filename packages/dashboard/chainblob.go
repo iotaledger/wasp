@@ -23,7 +23,7 @@ func (d *Dashboard) initChainBlob(e *echo.Echo, r renderer) {
 	route.Name = "chainBlob"
 	r[route.Path] = d.makeTemplate(e, tplChainBlob, tplWs)
 
-	route = e.GET("/chain/:chainid/blob/:hash/raw/:field", handleChainBlobDownload)
+	route = e.GET("/chain/:chainid/blob/:hash/raw/:field", d.handleChainBlobDownload)
 	route.Name = "chainBlobDownload"
 }
 
@@ -50,7 +50,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 
 	chain := chains.AllChains().Get(chainID)
 	if chain != nil {
-		fields, err := callView(chain, blob.Interface.Hname(), blob.FuncGetBlobInfo, codec.MakeDict(map[string]interface{}{
+		fields, err := d.wasp.CallView(chain, blob.Interface.Hname(), blob.FuncGetBlobInfo, codec.MakeDict(map[string]interface{}{
 			blob.ParamHash: hash,
 		}))
 		if err != nil {
@@ -59,7 +59,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 		result.Blob = []BlobField{}
 		for field := range fields {
 			field := []byte(field)
-			value, err := callView(chain, blob.Interface.Hname(), blob.FuncGetBlobField, codec.MakeDict(map[string]interface{}{
+			value, err := d.wasp.CallView(chain, blob.Interface.Hname(), blob.FuncGetBlobField, codec.MakeDict(map[string]interface{}{
 				blob.ParamHash:  hash,
 				blob.ParamField: field,
 			}))
@@ -76,7 +76,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), result)
 }
 
-func handleChainBlobDownload(c echo.Context) error {
+func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
 	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func handleChainBlobDownload(c echo.Context) error {
 		return httperrors.NotFound("Not found")
 	}
 
-	value, err := callView(chain, blob.Interface.Hname(), blob.FuncGetBlobField, codec.MakeDict(map[string]interface{}{
+	value, err := d.wasp.CallView(chain, blob.Interface.Hname(), blob.FuncGetBlobField, codec.MakeDict(map[string]interface{}{
 		blob.ParamHash:  hash,
 		blob.ParamField: field,
 	}))

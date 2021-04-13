@@ -8,7 +8,11 @@ import (
 	"html/template"
 	"strings"
 
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/mr-tron/base58"
 )
@@ -34,6 +38,9 @@ type WaspServices interface {
 	ConfigDump() map[string]interface{}
 	ExploreAddressBaseURL() string
 	NetworkProvider() peering.NetworkProvider
+	GetChainRecords() ([]*registry.ChainRecord, error)
+	GetChain(chainID *coretypes.ChainID) chain.Chain
+	CallView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error)
 }
 
 type Dashboard struct {
