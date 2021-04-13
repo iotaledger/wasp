@@ -82,5 +82,12 @@ func CallHTMLRequestHandler(t *testing.T, e *echo.Echo, handler echo.HandlerFunc
 
 	doc, err := goquery.NewDocumentFromReader(rec.Body)
 	require.NoError(t, err)
+
+	{
+		h, err := doc.Html()
+		require.NoError(t, err)
+		t.Log(h)
+	}
+
 	return doc
 }

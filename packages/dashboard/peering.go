@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/labstack/echo/v4"
 )
 
@@ -31,7 +30,7 @@ func (d *Dashboard) peeringInit(e *echo.Echo, r renderer) Tab {
 func (d *Dashboard) handlePeering(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), &PeeringTemplateParams{
 		BaseTemplateParams: d.BaseParams(c),
-		NetworkProvider:    peering.DefaultNetworkProvider(),
+		NetworkProvider:    d.wasp.NetworkProvider(),
 	})
 }
 

@@ -7,14 +7,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConfig(t *testing.T) {
+func TestDashboardConfig(t *testing.T) {
 	e, d := mockDashboard()
 
 	html := testutil.CallHTMLRequestHandler(t, e, d.handleConfig, "/", nil)
 
-	t.Log(html)
-
-	// match this:
+	// test that the configuration key/values returned by ConfigDump() are
+	// shown like this:
+	//
 	// <div class="card fluid">
 	//	 <h2 class="section">Node configuration</h2>
 	//	 <dl>
