@@ -17,6 +17,11 @@ func (n *nodeConnImplementation) PullBacklog(addr ledgerstate.Address) {
 	n.client.RequestBacklog(addr)
 }
 
+func (n *nodeConnImplementation) PullState(addr ledgerstate.Address) {
+	// TODO adjust nodeconn
+	n.client.RequestBacklog(addr)
+}
+
 func (n *nodeConnImplementation) PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
 	n.client.RequestConfirmedTransaction(addr, txid)
 }

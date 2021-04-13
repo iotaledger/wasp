@@ -17,6 +17,8 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
+const pullBacklogPeriod = 3 * time.Second
+
 type operator struct {
 	chain     chain.ChainCore
 	committee chain.Committee
@@ -36,6 +38,8 @@ type operator struct {
 	leaderStatus            *leaderStatus
 	sentResultToLeaderIndex uint16
 	sentResultToLeader      *ledgerstate.TransactionEssence
+
+	pullBacklogDeadline time.Time
 
 	postedResultTxid       ledgerstate.TransactionID
 	nextPullInclusionLevel time.Time // if postedResultTxid != nil

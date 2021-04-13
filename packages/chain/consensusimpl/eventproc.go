@@ -32,6 +32,7 @@ func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	} else {
 		op.setNextConsensusStage(consensusStageSubStarting)
 	}
+	op.pullBacklogDeadline = time.Now()
 	op.takeAction()
 }
 

@@ -29,8 +29,8 @@ func (sm *stateManager) pullStateIfNeeded() {
 		return
 	}
 	if sm.stateOutput == nil || len(sm.blockCandidates) > 0 {
-		sm.log.Debugf("pull backlog")
-		sm.nodeConn.PullBacklog(sm.chain.ID().AsAddress())
+		sm.log.Debugf("pull state")
+		sm.nodeConn.PullState(sm.chain.ID().AsAddress())
 	}
 	sm.pullStateDeadline = nowis.Add(pullStatePeriod)
 }
@@ -85,11 +85,11 @@ func (sm *stateManager) addBlockCandidate(block state.Block) {
 		)
 	} else {
 		sm.log.Debugf("addBlockCandidate: add origin candidate block")
+		block = state.MustNewOriginBlock()
 	}
 	var stateToApprove state.VirtualState
 	if sm.solidState == nil {
 		// ignore parameter and assume original block if solidState == nil
-		block = state.MustNewOriginBlock()
 		stateToApprove = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
 	} else {
 		stateToApprove = sm.solidState.Clone()

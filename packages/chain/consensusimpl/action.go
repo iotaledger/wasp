@@ -25,6 +25,14 @@ func (op *operator) takeAction() {
 	op.checkQuorum()
 	op.rotateLeader()
 	op.pullInclusionLevel()
+	op.pullBacklog()
+}
+
+func (op *operator) pullBacklog() {
+	if time.Now().After(op.pullBacklogDeadline) {
+		op.nodeConn.PullBacklog(op.chain.ID().AsAddress())
+		op.pullBacklogDeadline = time.Now().Add(pullBacklogPeriod)
+	}
 }
 
 // pullInclusionLevel if it is known that result transaction was posted by the leader,
