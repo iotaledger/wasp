@@ -51,10 +51,22 @@ func (p *peeringNetworkProvider) PeerByPubKey(peerPub kyber.Point) (peering.Peer
 }
 
 func (p *peeringNetworkProvider) PeerStatus() []peering.PeerStatusProvider {
-	panic("not implemented")
+	return []peering.PeerStatusProvider{
+		&peeringNode{},
+		&peeringNode{},
+		&peeringNode{},
+	}
 }
 
 type peeringNode struct{}
+
+func (p *peeringNode) IsInbound() bool {
+	return false
+}
+
+func (p *peeringNode) NumUsers() int {
+	return 1
+}
 
 func (p *peeringNode) NetID() string {
 	return "127.0.0.1:4000"
@@ -69,7 +81,7 @@ func (p *peeringNode) SendMsg(msg *peering.PeerMessage) {
 }
 
 func (p *peeringNode) IsAlive() bool {
-	panic("not implemented") // TODO: Implement
+	return true
 }
 
 func (p *peeringNode) Await(timeout time.Duration) error {
