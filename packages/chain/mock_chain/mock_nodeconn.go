@@ -5,8 +5,8 @@ import (
 )
 
 type MockedNodeConn struct {
-	onPullBacklog                   func(addr ledgerstate.Address)
-	onPullState                     func(addr ledgerstate.Address)
+	onPullBacklog                   func(addr *ledgerstate.AliasAddress)
+	onPullState                     func(addr *ledgerstate.AliasAddress)
 	onPullConfirmedTransaction      func(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	onPullTransactionInclusionState func(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	onPullConfirmedOutput           func(addr ledgerstate.Address, outputID ledgerstate.OutputID)
@@ -17,11 +17,11 @@ func NewMockedNodeConnection() *MockedNodeConn {
 	return &MockedNodeConn{}
 }
 
-func (m *MockedNodeConn) PullBacklog(addr ledgerstate.Address) {
+func (m *MockedNodeConn) PullBacklog(addr *ledgerstate.AliasAddress) {
 	m.onPullBacklog(addr)
 }
 
-func (n *MockedNodeConn) PullState(addr ledgerstate.Address) {
+func (n *MockedNodeConn) PullState(addr *ledgerstate.AliasAddress) {
 	n.onPullState(addr)
 }
 
@@ -41,11 +41,11 @@ func (m *MockedNodeConn) PostTransaction(tx *ledgerstate.Transaction, fromSc led
 	m.onPostTransaction(tx, fromSc, fromLeader)
 }
 
-func (m *MockedNodeConn) OnPullBacklog(f func(addr ledgerstate.Address)) {
+func (m *MockedNodeConn) OnPullBacklog(f func(addr *ledgerstate.AliasAddress)) {
 	m.onPullBacklog = f
 }
 
-func (m *MockedNodeConn) OnPullState(f func(addr ledgerstate.Address)) {
+func (m *MockedNodeConn) OnPullState(f func(addr *ledgerstate.AliasAddress)) {
 	m.onPullState = f
 }
 

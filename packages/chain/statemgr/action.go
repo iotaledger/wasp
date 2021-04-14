@@ -30,7 +30,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 	}
 	if sm.stateOutput == nil || len(sm.blockCandidates) > 0 {
 		sm.log.Debugf("pull state")
-		sm.nodeConn.PullState(sm.chain.ID().AsAddress())
+		sm.nodeConn.PullState(sm.chain.ID().AsAliasAddress())
 	}
 	sm.pullStateDeadline = nowis.Add(pullStatePeriod)
 }

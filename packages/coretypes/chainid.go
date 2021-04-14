@@ -77,8 +77,11 @@ func (chid *ChainID) String() string {
 	return "$/" + chid.Base58()
 }
 
-// AsAddress Temporary
 func (chid *ChainID) AsAddress() ledgerstate.Address {
+	return chid.AliasAddress
+}
+
+func (chid *ChainID) AsAliasAddress() *ledgerstate.AliasAddress {
 	return chid.AliasAddress
 }
 

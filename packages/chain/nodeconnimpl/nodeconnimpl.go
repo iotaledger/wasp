@@ -1,6 +1,7 @@
 package nodeconnimpl
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 )
@@ -13,13 +14,14 @@ func New(nodeConnClient *txstream.Client) *nodeConnImplementation {
 	return &nodeConnImplementation{client: nodeConnClient}
 }
 
-func (n *nodeConnImplementation) PullBacklog(addr ledgerstate.Address) {
+func (n *nodeConnImplementation) PullBacklog(addr *ledgerstate.AliasAddress) {
+	fmt.Printf("++++++++++++ pulling backlog %s\n", addr.Base58())
 	n.client.RequestBacklog(addr)
 }
 
-func (n *nodeConnImplementation) PullState(addr ledgerstate.Address) {
-	// TODO adjust nodeconn
-	n.client.RequestBacklog(addr)
+func (n *nodeConnImplementation) PullState(addr *ledgerstate.AliasAddress) {
+	fmt.Printf("++++++++++++ pulling state %s\n", addr.Base58())
+	n.client.RequestUnspentAliasOutput(addr)
 }
 
 func (n *nodeConnImplementation) PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID) {

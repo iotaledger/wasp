@@ -4,6 +4,7 @@
 package chainimpl
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -109,6 +110,8 @@ func (c *chainObj) ReceiveRequest(req coretypes.Request) {
 }
 
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
+	fmt.Printf("++++++++++++ receive state %s\n", stateOutput.Address().Base58())
+
 	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
 		stateOutput.GetStateIndex(), coretypes.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
 	c.ReceiveMessage(&chain.StateMsg{

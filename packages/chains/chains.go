@@ -48,9 +48,10 @@ func (c *Chains) Attach(nodeConn *txstream.Client) {
 		c.log.Panicf("Chains: already attached")
 	}
 	c.nodeConn = nodeConn
-	c.nodeConn.Events.TransactionReceived.Attach(events.NewClosure(c.dispatchMsgTransaction))
-	c.nodeConn.Events.InclusionStateReceived.Attach(events.NewClosure(c.dispatchMsgInclusionState))
+	c.nodeConn.Events.TransactionReceived.Attach(events.NewClosure(c.dispatchTransactionMsg))
+	c.nodeConn.Events.InclusionStateReceived.Attach(events.NewClosure(c.dispatchInclusionStateMsg))
 	c.nodeConn.Events.OutputReceived.Attach(events.NewClosure(c.dispatchOutputMsg))
+	c.nodeConn.Events.UnspentAliasOutputReceived.Attach(events.NewClosure(c.dispatchUnspentAliasOutputMsg))
 	// TODO attach to off-ledger request module
 }
 

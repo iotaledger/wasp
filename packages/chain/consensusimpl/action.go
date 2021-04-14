@@ -30,7 +30,7 @@ func (op *operator) takeAction() {
 
 func (op *operator) pullBacklog() {
 	if time.Now().After(op.pullBacklogDeadline) {
-		op.nodeConn.PullBacklog(op.chain.ID().AsAddress())
+		op.nodeConn.PullBacklog(op.chain.ID().AsAliasAddress())
 		op.pullBacklogDeadline = time.Now().Add(pullBacklogPeriod)
 	}
 }
