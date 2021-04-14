@@ -100,7 +100,7 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 
 		ret.Log.Infof("MockedEnv: posted transaction to ledger: %s", tx.ID().Base58())
 	})
-	pullStateOutputClosure := func(addr ledgerstate.Address) {
+	pullStateOutputClosure := func(addr *ledgerstate.AliasAddress) {
 		outputs := ret.Ledger.GetAddressOutputs(addr)
 		require.EqualValues(t, 1, len(outputs))
 		outTx, ok := ret.Ledger.GetTransaction(outputs[0].ID().TransactionID())
@@ -121,7 +121,6 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 			}(node.StateManager, node.Log)
 		}
 	}
-	ret.NodeConn.OnPullBacklog(pullStateOutputClosure)
 	ret.NodeConn.OnPullState(pullStateOutputClosure)
 
 	return ret, originTx
