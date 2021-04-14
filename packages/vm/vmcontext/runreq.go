@@ -79,23 +79,30 @@ func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
 	}
 	vmctx.timestamp += 1
 	t := time.Unix(0, vmctx.timestamp)
-	if req.Output() != nil {
-		if input, ok := req.Output().(*ledgerstate.ExtendedLockedOutput); ok {
-			// it is an on-ledger request
-			if input.TimeLockedNow(t) {
-				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", t, input.String())
-			}
-			if !input.UnlockAddressNow(t).Equals(vmctx.chainID.AsAddress()) {
-				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
-					t, input.String(), vmctx.chainID.String())
-			}
-		}
-		vmctx.remainingAfterFees = req.Output().Balances().Clone()
-	}
 
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
 	vmctx.stateUpdate = state.NewStateUpdate(req.ID()).WithTimestamp(vmctx.timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
+
+	if isRequestTimeLockedNow(req, t) {
+		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", t, req.ID().String())
+	}
+	if req.Output() != nil {
+		// on-ledger request
+		if input, ok := req.Output().(*ledgerstate.ExtendedLockedOutput); ok {
+			// it is an on-ledger request
+			if !input.UnlockAddressNow(t).Equals(vmctx.chainID.AsAddress()) {
+				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
+					t, input.String(), vmctx.chainID.String())
+			}
+		} else {
+			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: unexpected UTXO type")
+		}
+		vmctx.remainingAfterFees = req.Output().Balances().Clone()
+	} else {
+		// off-ledger request
+		vmctx.remainingAfterFees = vmctx.adjustOffLedgerTransfer()
+	}
 
 	targetContract, _ := req.Target()
 	var ok bool
@@ -105,46 +112,48 @@ func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
 	if vmctx.contractRecord.Hname() == 0 {
 		vmctx.log.Warn("default contract will be called")
 	}
-
-	vmctx.adjustOffLedgerTransfer()
 }
 
-func (vmctx *VMContext) adjustOffLedgerTransfer() {
-	if req, ok := vmctx.req.(*sctransaction.RequestOffLedger); ok {
-		vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
-		defer vmctx.popCallContext()
-
-		// take sender-provided token transfer info and adjust it to
-		// reflect what is actually available in the local sender account
-		sender := req.SenderAccount()
-		transfers := make(map[ledgerstate.Color]uint64)
-		if tokens := req.Tokens(); tokens != nil {
-			tokens.ForEach(func(color ledgerstate.Color, balance uint64) bool {
-				available := accounts.GetBalance(vmctx.State(), sender, color)
-				if balance > available {
-					vmctx.log.Warn("adjusting transfer from ", balance, " to ", available)
-					balance = available
-				}
-				transfers[color] = balance
-				return true
-			})
-		}
-		vmctx.remainingAfterFees = ledgerstate.NewColoredBalances(transfers)
+func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
+	req, ok := vmctx.req.(*sctransaction.RequestOffLedger)
+	if !ok {
+		vmctx.log.Panicf("adjustOffLedgerTransfer.inconsistency: unexpected request type")
 	}
+	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	// take sender-provided token transfer info and adjust it to
+	// reflect what is actually available in the local sender account
+	sender := req.SenderAccount()
+	transfers := make(map[ledgerstate.Color]uint64)
+	if tokens := req.Tokens(); tokens != nil {
+		tokens.ForEach(func(color ledgerstate.Color, balance uint64) bool {
+			available := accounts.GetBalance(vmctx.State(), sender, color)
+			if balance > available {
+				vmctx.log.Warn("adjusting transfer from ", balance, " to ", available)
+				balance = available
+			}
+			if balance > 0 {
+				transfers[color] = balance
+			}
+			return true
+		})
+	}
+	return ledgerstate.NewColoredBalances(transfers)
 }
 
 func (vmctx *VMContext) mustPreventReplay() bool {
-	if _, ok := vmctx.req.(*sctransaction.RequestOffLedger); ok {
-		vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
-		defer vmctx.popCallContext()
-
-		state := vmctx.State()
-		address := vmctx.req.SenderAddress()
-		lastOrder := accounts.GetOrder(state, address)
-		order := vmctx.req.Order()
-		return order < lastOrder
+	_, ok := vmctx.req.(*sctransaction.RequestOffLedger)
+	if !ok {
+		return false
 	}
-	return false
+	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	address := vmctx.req.SenderAddress()
+	lastOrder := accounts.GetOrder(vmctx.State(), address)
+	order := vmctx.req.Order()
+	return order <= lastOrder
 }
 
 // mustHandleFees handles node fees. If not enough, takes as much as it can, the rest sends back
@@ -314,4 +323,11 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 		return nil, err
 	}
 	return tx, nil
+}
+
+func isRequestTimeLockedNow(req coretypes.Request, nowis time.Time) bool {
+	if req.TimeLock().IsZero() {
+		return false
+	}
+	return req.TimeLock().After(nowis)
 }
