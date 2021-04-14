@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -38,6 +39,18 @@ func TestDashboardChainView(t *testing.T) {
 	e, d := mockDashboard()
 	html := testutil.CallHTMLRequestHandler(t, e, d.handleChain, "/chain/:chainid", map[string]string{
 		"chainid": coretypes.RandomChainID().Base58(),
+	})
+
+	// make sure we are using .Base58()
+	require.NotContains(t, html.Text(), "OutputID {")
+	require.NotContains(t, html.Text(), "Address {")
+}
+
+func TestDashboardChainAccount(t *testing.T) {
+	e, d := mockDashboard()
+	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainAccount, "/chain/:chainid/account/:agentid", map[string]string{
+		"chainid": coretypes.RandomChainID().Base58(),
+		"agentid": strings.Replace(coretypes.NewRandomAgentID().String(), "/", ":", 1),
 	})
 
 	// make sure we are using .Base58()

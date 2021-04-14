@@ -170,6 +170,11 @@ func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname 
 			ledgerstate.ColorIOTA: 42,
 		}), nil
 
+	case hname == accounts.Interface.Hname() && fname == accounts.FuncBalance:
+		return accounts.EncodeBalances(map[ledgerstate.Color]uint64{
+			ledgerstate.ColorIOTA: 42,
+		}), nil
+
 	case hname == blob.Interface.Hname() && fname == blob.FuncListBlobs:
 		ret := dict.New()
 		ret.Set(kv.Key(hashing.RandomHash(nil).Bytes()), []byte{1, 3, 3, 7})
