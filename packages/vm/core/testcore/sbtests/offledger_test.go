@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
@@ -25,7 +26,6 @@ func testOffLedgerNoFeeNoTransfer(t *testing.T, w bool) {
 	)
 	err := chain.PostRequestOffLedger(req, owner)
 	require.NoError(t, err)
-	chain.WaitForEmptyBacklog()
 
 	ownerAgentID := coretypes.NewAgentID(ownerAddr, 0)
 	chain.AssertAccountBalance(ownerAgentID, ledgerstate.ColorIOTA, 0)
@@ -68,7 +68,6 @@ func testOffLedgerFeesEnough(t *testing.T, w bool) {
 	).WithIotas(10)
 	err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
-	chain.WaitForEmptyBacklog()
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
@@ -106,8 +105,8 @@ func testOffLedgerFeesNotEnough(t *testing.T, w bool) {
 	req = solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing,
 	).WithIotas(10)
 	err = chain.PostRequestOffLedger(req, user)
-	require.NoError(t, err)
-	chain.WaitForEmptyBacklog()
+	require.Error(t, err)
+	require.True(t, strings.Contains(err.Error(), "not enough fees"))
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
@@ -146,7 +145,6 @@ func testOffLedgerFeesExtra(t *testing.T, w bool) {
 	).WithIotas(10)
 	err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
-	chain.WaitForEmptyBacklog()
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
@@ -185,7 +183,6 @@ func testOffLedgerTransferWithFeesEnough(t *testing.T, w bool) {
 	).WithIotas(10+42)
 	err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
-	chain.WaitForEmptyBacklog()
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
@@ -224,7 +221,6 @@ func testOffLedgerTransferWithFeesNotEnough(t *testing.T, w bool) {
 	).WithIotas(10+42)
 	err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
-	chain.WaitForEmptyBacklog()
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
@@ -263,7 +259,6 @@ func testOffLedgerTransferWithFeesExtra(t *testing.T, w bool) {
 	).WithIotas(10+42)
 	err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
-	chain.WaitForEmptyBacklog()
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
@@ -295,7 +290,6 @@ func testOffLedgerTransferEnough(t *testing.T, w bool) {
 	).WithIotas(42)
 	err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
-	chain.WaitForEmptyBacklog()
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
@@ -327,7 +321,6 @@ func testOffLedgerTransferNotEnough(t *testing.T, w bool) {
 	).WithIotas(42)
 	err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
-	chain.WaitForEmptyBacklog()
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
@@ -359,7 +352,6 @@ func testOffLedgerTransferExtra(t *testing.T, w bool) {
 	).WithIotas(42)
 	err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
-	chain.WaitForEmptyBacklog()
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)

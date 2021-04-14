@@ -198,7 +198,10 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair)
 	request.Sign(keyPair)
 	ch.reqCounter.Add(1)
 	ch.mempool.ReceiveRequest(request)
-	return nil
+	ready := ch.mempool.GetReadyList(0)
+	_, err = ch.runBatch(ready, "off-ledger")
+
+	return err
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, dict.Dict, error) {
