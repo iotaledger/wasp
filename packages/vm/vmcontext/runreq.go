@@ -22,7 +22,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 	vmctx.mustSetUpRequestContext(req)
 
 	// guard against replaying here to prevent replaying fee deduction
-	if vmctx.mustPreventReplay() {
+	if vmctx.preventReplay() {
 		vmctx.log.Warn("RunTheRequest.replayPrevention: ", req.ID().String())
 		return
 	}
@@ -142,7 +142,7 @@ func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
 	return ledgerstate.NewColoredBalances(transfers)
 }
 
-func (vmctx *VMContext) mustPreventReplay() bool {
+func (vmctx *VMContext) preventReplay() bool {
 	_, ok := vmctx.req.(*sctransaction.RequestOffLedger)
 	if !ok {
 		return false
@@ -150,10 +150,7 @@ func (vmctx *VMContext) mustPreventReplay() bool {
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	address := vmctx.req.SenderAddress()
-	lastOrder := accounts.GetOrder(vmctx.State(), address)
-	order := vmctx.req.Order()
-	return order <= lastOrder
+	return vmctx.req.Order() <= accounts.GetOrder(vmctx.State(), vmctx.req.SenderAddress())
 }
 
 // mustHandleFees handles node fees. If not enough, takes as much as it can, the rest sends back
