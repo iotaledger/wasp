@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -51,6 +52,30 @@ func TestDashboardChainAccount(t *testing.T) {
 	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainAccount, "/chain/:chainid/account/:agentid", map[string]string{
 		"chainid": coretypes.RandomChainID().Base58(),
 		"agentid": strings.Replace(coretypes.NewRandomAgentID().String(), "/", ":", 1),
+	})
+
+	// make sure we are using .Base58()
+	require.NotContains(t, html.Text(), "OutputID {")
+	require.NotContains(t, html.Text(), "Address {")
+}
+
+func TestDashboardChainBlob(t *testing.T) {
+	e, d := mockDashboard()
+	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainBlob, "/chain/:chainid/blob/:hash", map[string]string{
+		"chainid": coretypes.RandomChainID().Base58(),
+		"hash":    hashing.RandomHash(nil).Base58(),
+	})
+
+	// make sure we are using .Base58()
+	require.NotContains(t, html.Text(), "OutputID {")
+	require.NotContains(t, html.Text(), "Address {")
+}
+
+func TestDashboardChainContract(t *testing.T) {
+	e, d := mockDashboard()
+	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainContract, "/chain/:chainid/contract/:hname", map[string]string{
+		"chainid": coretypes.RandomChainID().Base58(),
+		"hname":   coretypes.Hname(0).String(),
 	})
 
 	// make sure we are using .Base58()

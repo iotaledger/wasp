@@ -3,10 +3,10 @@ package root
 import (
 	"bytes"
 	"errors"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
@@ -104,7 +104,7 @@ type ContractRecord struct {
 	ValidatorFee uint64 // validator part of the fee
 	// The agentID of the entity which deployed the instance. It can be interpreted as
 	// an priviledged user of the instance, however it is up to the smart contract.
-	Creator coretypes.AgentID
+	Creator *coretypes.AgentID
 }
 
 // ChainInfo is an API structure which contains main properties of the chain in on place
@@ -141,8 +141,13 @@ func (p *ContractRecord) Write(w io.Writer) error {
 	if err := util.WriteUint64(w, p.ValidatorFee); err != nil {
 		return err
 	}
-	if err := p.Creator.Write(w); err != nil {
+	if err := util.WriteBoolByte(w, p.Creator != nil); err != nil {
 		return err
+	}
+	if p.Creator != nil {
+		if err := p.Creator.Write(w); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -164,8 +169,15 @@ func (p *ContractRecord) Read(r io.Reader) error {
 	if err := util.ReadUint64(r, &p.ValidatorFee); err != nil {
 		return err
 	}
-	if err := p.Creator.Read(r); err != nil {
+	var hasCreator bool
+	if err := util.ReadBoolByte(r, &hasCreator); err != nil {
 		return err
+	}
+	if hasCreator {
+		p.Creator = &coretypes.AgentID{}
+		if err := p.Creator.Read(r); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -185,10 +197,10 @@ func NewContractRecord(itf *coreutil.ContractInterface, creator *coretypes.Agent
 		ProgramHash: itf.ProgramHash,
 		Description: itf.Description,
 		Name:        itf.Name,
-		Creator:     *creator,
+		Creator:     creator,
 	}
 }
 
 func (p *ContractRecord) HasCreator() bool {
-	return p.Creator != coretypes.AgentID{}
+	return p.Creator != nil
 }

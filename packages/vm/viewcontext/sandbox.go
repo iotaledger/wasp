@@ -16,9 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 )
 
-var (
-	logDefault *logger.Logger
-)
+var logDefault *logger.Logger
 
 func InitLogger() {
 	logDefault = logger.NewLogger("view")
@@ -84,7 +82,7 @@ func (s *sandboxview) ContractCreator() *coretypes.AgentID {
 	if err != nil {
 		s.Log().Panicf("failed to find contract %s: %v", s.contractHname, err)
 	}
-	return &contractRecord.Creator
+	return contractRecord.Creator
 }
 
 func (s *sandboxview) GetTimestamp() int64 {

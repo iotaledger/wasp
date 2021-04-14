@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 )
 
@@ -40,11 +39,11 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 			Title: fmt.Sprintf("Contract %d", hname),
 			Href:  "#",
 		}),
-		ChainID: *chainID,
+		ChainID: chainID,
 		Hname:   hname,
 	}
 
-	chain := chains.AllChains().Get(chainID)
+	chain := d.wasp.GetChain(chainID)
 	if chain != nil {
 		r, err := d.wasp.CallView(chain, root.Interface.Hname(), root.FuncFindContract, codec.MakeDict(map[string]interface{}{
 			root.ParamHname: codec.EncodeHname(hname),
@@ -85,7 +84,7 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 type ChainContractTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID coretypes.ChainID
+	ChainID *coretypes.ChainID
 	Hname   coretypes.Hname
 
 	ContractRecord *root.ContractRecord
