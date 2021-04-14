@@ -3,6 +3,7 @@ package vmcontext
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/sctransaction"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -13,7 +14,15 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, pa
 		agentID := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), contract)
 		agentID = vmctx.adjustAccount(agentID)
 		if len(vmctx.callStack) == 0 {
-			vmctx.creditToAccount(agentID, transfer)
+			// was this an off-ledger request?
+			if _, ok := vmctx.req.(*sctransaction.RequestOffLedger); ok {
+				sender := vmctx.req.SenderAccount()
+				if ! vmctx.moveBetweenAccounts(sender, agentID, transfer) {
+					return fmt.Errorf("pushCallContextWithTransfer: off-ledger transfer failed")
+				}
+			} else {
+				vmctx.creditToAccount(agentID, transfer)
+			}
 		} else {
 			fromAgentID := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
 			fromAgentID = vmctx.adjustAccount(fromAgentID)

@@ -183,6 +183,24 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *ed25519.KeyPair) (dic
 	return ret, err
 }
 
+func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair) error {
+	args, ok, err := req.args.SolidifyRequestArguments(ch.Env.blobCache)
+	if err != nil || !ok {
+		return fmt.Errorf("solo.internal error: can't solidify args")
+	}
+	request := sctransaction.NewRequestOffLedger(req.target, req.entryPoint, args)
+	if keyPair == nil {
+		keyPair = ch.OriginatorKeyPair
+	}
+	if req.transfer != nil {
+		request.Transfer(req.transfer)
+	}
+	request.Sign(keyPair)
+	ch.reqCounter.Add(1)
+	ch.mempool.ReceiveRequest(request)
+	return nil
+}
+
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, dict.Dict, error) {
 	tx, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {

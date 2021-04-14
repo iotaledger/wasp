@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"time"
 )
 
 // region RequestID ///////////////////////////////////////////////////////////////
@@ -63,9 +64,9 @@ func OID(o ledgerstate.OutputID) string {
 type Request interface {
 	// index == 0 for off ledger requests
 	ID() RequestID
-	// true or false for on-ledger requests, true for off-ledger
+	// true or false for on-ledger requests, always true for off-ledger
 	IsFeePrepaid() bool
-	// ledgerstate.Output interface for on-ledger reguests, nil for off-ledger requests
+	// ledgerstate.Output interface for on-ledger requests, nil for off-ledger requests
 	Output() ledgerstate.Output
 	// arguments of the call with the flag if they are ready. No arguments mean empty dictionary and true
 	Params() (dict.Dict, bool)
@@ -75,7 +76,9 @@ type Request interface {
 	SenderAddress() ledgerstate.Address
 	// returns contract/entry point pair
 	Target() (Hname, Hname)
-	// always nil for off-ledger
+	// returns time lock time or zero time if no time lock
+	TimeLock() time.Time
+	// returns tokens to transfer
 	Tokens() *ledgerstate.ColoredBalances
 	// number used for ordering requests in the mempool. Priority order is a descending order
 	Order() uint64

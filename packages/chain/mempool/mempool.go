@@ -48,6 +48,14 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
+	// only allow off-ledger requests with valid signature
+	if offLedgerReq, ok := req.(*sctransaction.RequestOffLedger); ok {
+		if !offLedgerReq.VerifySignature() {
+			m.log.Errorf("ReceiveRequest.VerifySignature:invalid signature")
+			return
+		}
+	}
+
 	isCompleted, err := state.IsRequestCompleted(m.chainState, req.ID())
 	if err != nil {
 		m.log.Errorf("ReceiveRequest.IsRequestCompleted: %s", err)
@@ -59,13 +67,11 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	if _, ok := m.requests[req.ID()]; ok {
 		return
 	}
-	if onLedgerRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
-		tl := onLedgerRequest.TimeLock()
-		if tl.IsZero() {
-			m.log.Infof("IN MEMPOOL %s", req.ID())
-		} else {
-			m.log.Infof("IN MEMPOOL %s timelocked for %v", req.ID(), tl.Sub(time.Now()))
-		}
+	tl := req.TimeLock()
+	if tl.IsZero() {
+		m.log.Infof("IN MEMPOOL %s", req.ID())
+	} else {
+		m.log.Infof("IN MEMPOOL %s timelocked for %v", req.ID(), tl.Sub(time.Now()))
 	}
 	m.requests[req.ID()] = &request{
 		req:             req,
@@ -117,9 +123,9 @@ func isRequestReady(req *request, seenThreshold uint16, nowis time.Time) bool {
 	if _, paramsReady := req.req.Params(); !paramsReady {
 		return false
 	}
-	if r, ok := req.req.(*sctransaction.RequestOnLedger); ok {
+	if !req.req.TimeLock().IsZero() {
 		timeBaseline := nowis.Add(timeAheadTolerance)
-		if !r.TimeLock().IsZero() && r.TimeLock().After(timeBaseline) {
+		if req.req.TimeLock().After(timeBaseline) {
 			return false
 		}
 	}
@@ -209,6 +215,8 @@ func (m *mempool) Stats() (int, int, int) {
 			if isSolid, _ := onTangleRequest.SolidifyArgs(m.blobCache); isSolid {
 				solid++
 			}
+		} else {
+			solid++
 		}
 	}
 	return total, withMsg, solid
