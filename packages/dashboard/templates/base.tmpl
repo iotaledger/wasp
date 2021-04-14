@@ -7,14 +7,14 @@
 {{end}}
 
 {{define "address"}}
-	<tt>{{.}}</tt> {{ template "exploreAddressInTangle" . }}
+	<tt>{{.Base58}}</tt> {{ template "exploreAddressInTangle" . }}
 {{end}}
 
 {{define "agentid"}}
-	{{ $chainid := index . 0 }}
-	{{ $agentid := index . 1 }}
-	<a href="{{ uri "chainAccount" $chainid (replace $agentid.String "/" ":" 1) }}"><tt>{{ $agentid }}</tt></a>
-	{{if $agentid.IsNonAliasAddress}} {{ template "exploreAddressInTangle" $agentid.MustAddress }} {{end}}
+	{{ $chainid := (index . 0) }}
+	{{ $agentid := (index . 1) }}
+	<a href="{{ uri "chainAccount" $chainid.Base58 (replace $agentid.String "/" ":" 1) }}"><tt>{{ $agentid }}</tt></a>
+	{{ template "exploreAddressInTangle" $agentid.Address }}
 {{end}}
 
 {{define "balances"}}

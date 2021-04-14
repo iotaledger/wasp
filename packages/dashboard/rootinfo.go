@@ -13,10 +13,9 @@ import (
 )
 
 type RootInfo struct {
-	ChainID      coretypes.ChainID
-	StateAddress ledgerstate.Address
+	ChainID coretypes.ChainID
 
-	OwnerID          coretypes.AgentID
+	OwnerID          *coretypes.AgentID
 	OwnerIDDelegated *coretypes.AgentID
 
 	Description string
@@ -40,10 +39,11 @@ func (d *Dashboard) fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
 		return
 	}
 
-	ret.OwnerID, _, err = codec.DecodeAgentID(info.MustGet(root.VarChainOwnerID))
+	ownerID, _, err := codec.DecodeAgentID(info.MustGet(root.VarChainOwnerID))
 	if err != nil {
 		return
 	}
+	ret.OwnerID = &ownerID
 	delegated, ok, err := codec.DecodeAgentID(info.MustGet(root.VarChainOwnerIDDelegated))
 	if err != nil {
 		return
