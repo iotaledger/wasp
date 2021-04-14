@@ -5,12 +5,13 @@ package chainimpl
 
 import (
 	"bytes"
+	"strconv"
+	"sync"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/publisher"
-	"strconv"
-	"sync"
 
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
@@ -64,10 +65,10 @@ func NewChain(
 
 	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
 	ret := &chainObj{
-		mempool:      mempool.New(dbProvider.GetPartition(&chr.ChainID), blobProvider, chainLog),
+		mempool:      mempool.New(dbProvider.GetPartition(chr.ChainID), blobProvider, chainLog),
 		procset:      processors.MustNew(),
 		chMsg:        make(chan interface{}, 100),
-		chainID:      chr.ChainID,
+		chainID:      *chr.ChainID,
 		log:          chainLog,
 		nodeConn:     nodeConn,
 		dbProvider:   dbProvider,

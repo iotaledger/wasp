@@ -2,6 +2,7 @@ package registry
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/marshalutil"
@@ -14,7 +15,7 @@ import (
 // ChainRecord represents chain the node is participating in
 // TODO optimize, no need for a persistent structure, simple activity tag is enough
 type ChainRecord struct {
-	ChainID coretypes.ChainID
+	ChainID *coretypes.ChainID
 	Active  bool
 }
 
@@ -35,7 +36,7 @@ func ChainRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, erro
 	if err != nil {
 		return nil, err
 	}
-	ret.ChainID = *coretypes.NewChainID(aliasAddr)
+	ret.ChainID = coretypes.NewChainID(aliasAddr)
 
 	ret.Active, err = mu.ReadBool()
 	if err != nil {
@@ -74,7 +75,7 @@ func dbKeyChainRecord(chainID *coretypes.ChainID) []byte {
 }
 
 func (rec *ChainRecord) SaveToRegistry() error {
-	return database.GetRegistryPartition().Set(dbKeyChainRecord(&rec.ChainID), rec.Bytes())
+	return database.GetRegistryPartition().Set(dbKeyChainRecord(rec.ChainID), rec.Bytes())
 }
 
 func UpdateChainRecord(chainID *coretypes.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error) {
