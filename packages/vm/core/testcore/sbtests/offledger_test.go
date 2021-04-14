@@ -24,7 +24,7 @@ func testOffLedgerNoFeeNoTransfer(t *testing.T, w bool) {
 		sbtestsc.ParamIntParamName, "ppp",
 		sbtestsc.ParamIntParamValue, 314,
 	)
-	err := chain.PostRequestOffLedger(req, owner)
+	_, err := chain.PostRequestOffLedger(req, owner)
 	require.NoError(t, err)
 
 	ownerAgentID := coretypes.NewAgentID(ownerAddr, 0)
@@ -66,7 +66,7 @@ func testOffLedgerFeesEnough(t *testing.T, w bool) {
 
 	req = solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing,
 	).WithIotas(10)
-	err = chain.PostRequestOffLedger(req, user)
+	_, err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -104,7 +104,7 @@ func testOffLedgerFeesNotEnough(t *testing.T, w bool) {
 
 	req = solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing,
 	).WithIotas(10)
-	err = chain.PostRequestOffLedger(req, user)
+	_, err = chain.PostRequestOffLedger(req, user)
 	require.Error(t, err)
 	require.True(t, strings.Contains(err.Error(), "not enough fees"))
 
@@ -143,7 +143,7 @@ func testOffLedgerFeesExtra(t *testing.T, w bool) {
 
 	req = solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing,
 	).WithIotas(10)
-	err = chain.PostRequestOffLedger(req, user)
+	_, err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -181,7 +181,7 @@ func testOffLedgerTransferWithFeesEnough(t *testing.T, w bool) {
 
 	req = solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing,
 	).WithIotas(10+42)
-	err = chain.PostRequestOffLedger(req, user)
+	_, err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -219,7 +219,7 @@ func testOffLedgerTransferWithFeesNotEnough(t *testing.T, w bool) {
 
 	req = solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing,
 	).WithIotas(10+42)
-	err = chain.PostRequestOffLedger(req, user)
+	_, err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -257,7 +257,7 @@ func testOffLedgerTransferWithFeesExtra(t *testing.T, w bool) {
 
 	req = solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing,
 	).WithIotas(10+42)
-	err = chain.PostRequestOffLedger(req, user)
+	_, err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -288,7 +288,7 @@ func testOffLedgerTransferEnough(t *testing.T, w bool) {
 
 	req = solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing,
 	).WithIotas(42)
-	err = chain.PostRequestOffLedger(req, user)
+	_, err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -319,7 +319,7 @@ func testOffLedgerTransferNotEnough(t *testing.T, w bool) {
 
 	req = solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing,
 	).WithIotas(42)
-	err = chain.PostRequestOffLedger(req, user)
+	_, err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
@@ -350,7 +350,7 @@ func testOffLedgerTransferExtra(t *testing.T, w bool) {
 
 	req = solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing,
 	).WithIotas(42)
-	err = chain.PostRequestOffLedger(req, user)
+	_, err = chain.PostRequestOffLedger(req, user)
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
