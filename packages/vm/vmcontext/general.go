@@ -23,8 +23,7 @@ func (vmctx *VMContext) ContractCreator() *coretypes.AgentID {
 	if !ok {
 		vmctx.log.Panicf("can't find current contract")
 	}
-	ret := rec.Creator
-	return &ret
+	return rec.Creator
 }
 
 func (vmctx *VMContext) CurrentContractHname() coretypes.Hname {

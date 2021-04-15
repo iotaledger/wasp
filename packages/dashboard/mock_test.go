@@ -5,14 +5,20 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/labstack/echo/v4"
@@ -41,11 +47,23 @@ func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.Chain {
 }
 
 func (w *waspServices) GetChainRecords() ([]*registry.ChainRecord, error) {
-	return []*registry.ChainRecord{
-		{
-			ChainID: coretypes.RandomChainID(),
-			Active:  true,
-		},
+	r, _ := w.GetChainRecord(coretypes.RandomChainID())
+	return []*registry.ChainRecord{r}, nil
+}
+
+func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*registry.ChainRecord, error) {
+	return &registry.ChainRecord{
+		ChainID: chainID,
+		Active:  true,
+	}, nil
+}
+
+func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*ChainState, error) {
+	return &ChainState{
+		Index:             1,
+		Hash:              hashing.RandomHash(nil),
+		Timestamp:         0,
+		ApprovingOutputID: ledgerstate.OutputID{},
 	}, nil
 }
 
@@ -127,7 +145,17 @@ func (p *peeringNode) Close() {
 func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
 	chainID := chain.ID()
 
-	if hname == root.Interface.Hname() && fname == root.FuncGetChainInfo {
+	contract := &root.ContractRecord{
+		ProgramHash:  hashing.RandomHash(nil),
+		Description:  "mock contract",
+		Name:         "mock",
+		OwnerFee:     42,
+		ValidatorFee: 1,
+		Creator:      coretypes.NewRandomAgentID(),
+	}
+
+	switch {
+	case hname == root.Interface.Hname() && fname == root.FuncGetChainInfo:
 		ret := dict.New()
 		ret.Set(root.VarChainID, codec.EncodeChainID(*chainID))
 		ret.Set(root.VarChainOwnerID, codec.EncodeAgentID(coretypes.NewRandomAgentID()))
@@ -138,8 +166,49 @@ func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname 
 
 		dst := collections.NewMap(ret, root.VarContractRegistry)
 		for i := 0; i < 5; i++ {
-			dst.MustSetAt(coretypes.Hname(uint32(i)).Bytes(), root.EncodeContractRecord(&root.ContractRecord{}))
+			dst.MustSetAt(coretypes.Hname(uint32(i)).Bytes(), root.EncodeContractRecord(contract))
 		}
+		return ret, nil
+
+	case hname == root.Interface.Hname() && fname == root.FuncFindContract:
+		ret := dict.New()
+		ret.Set(root.ParamData, root.EncodeContractRecord(contract))
+		return ret, nil
+
+	case hname == accounts.Interface.Hname() && fname == accounts.FuncAccounts:
+		ret := dict.New()
+		ret.Set(kv.Key(coretypes.NewRandomAgentID().Bytes()), []byte{})
+		return ret, nil
+
+	case hname == accounts.Interface.Hname() && fname == accounts.FuncTotalAssets:
+		return accounts.EncodeBalances(map[ledgerstate.Color]uint64{
+			ledgerstate.ColorIOTA: 42,
+		}), nil
+
+	case hname == accounts.Interface.Hname() && fname == accounts.FuncBalance:
+		return accounts.EncodeBalances(map[ledgerstate.Color]uint64{
+			ledgerstate.ColorIOTA: 42,
+		}), nil
+
+	case hname == blob.Interface.Hname() && fname == blob.FuncListBlobs:
+		ret := dict.New()
+		ret.Set(kv.Key(hashing.RandomHash(nil).Bytes()), blob.EncodeSize(4))
+		return ret, nil
+
+	case hname == blob.Interface.Hname() && fname == blob.FuncGetBlobInfo:
+		ret := dict.New()
+		ret.Set(kv.Key([]byte("key")), blob.EncodeSize(4))
+		return ret, nil
+
+	case hname == blob.Interface.Hname() && fname == blob.FuncGetBlobField:
+		ret := dict.New()
+		ret.Set(blob.ParamBytes, []byte{1, 3, 3, 7})
+		return ret, nil
+
+	case hname == eventlog.Interface.Hname() && fname == eventlog.FuncGetRecords:
+		ret := dict.New()
+		a := collections.NewArray(ret, eventlog.ParamRecords)
+		a.MustPush([]byte("log entry"))
 		return ret, nil
 	}
 
@@ -153,7 +222,26 @@ func (m *mockChain) ID() *coretypes.ChainID {
 }
 
 func (m *mockChain) GetCommitteeInfo() *chain.CommitteeInfo {
-	panic("not implemented")
+	return &chain.CommitteeInfo{
+		Address:       ledgerstate.NewED25519Address(ed25519.PublicKey{}),
+		Size:          2,
+		Quorum:        1,
+		QuorumIsAlive: true,
+		PeerStatus: []*chain.PeerStatus{
+			&chain.PeerStatus{
+				Index:     0,
+				PeeringID: "0",
+				IsSelf:    true,
+				Connected: true,
+			},
+			&chain.PeerStatus{
+				Index:     1,
+				PeeringID: "1",
+				IsSelf:    false,
+				Connected: true,
+			},
+		},
+	}
 }
 
 func (m *mockChain) ReceiveMessage(_ interface{}) {

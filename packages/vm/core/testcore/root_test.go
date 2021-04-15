@@ -83,7 +83,7 @@ func TestDeployExample(t *testing.T) {
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
 	require.EqualValues(t, 0, rec.OwnerFee)
-	require.EqualValues(t, chain.OriginatorAgentID, rec.Creator)
+	require.True(t, chain.OriginatorAgentID.Equals(rec.Creator))
 	require.EqualValues(t, sbtestsc.Interface.ProgramHash, rec.ProgramHash)
 
 	recFind, err := chain.FindContract(name)
@@ -121,7 +121,7 @@ func TestDeployDouble(t *testing.T) {
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
 	require.EqualValues(t, 0, rec.OwnerFee)
-	require.EqualValues(t, chain.OriginatorAgentID, rec.Creator)
+	require.True(t, chain.OriginatorAgentID.Equals(rec.Creator))
 	require.EqualValues(t, sbtestsc.Interface.ProgramHash, rec.ProgramHash)
 }
 

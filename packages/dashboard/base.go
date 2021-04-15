@@ -39,6 +39,8 @@ type WaspServices interface {
 	ExploreAddressBaseURL() string
 	NetworkProvider() peering.NetworkProvider
 	GetChainRecords() ([]*registry.ChainRecord, error)
+	GetChainRecord(chainID *coretypes.ChainID) (*registry.ChainRecord, error)
+	GetChainState(chainID *coretypes.ChainID) (*ChainState, error)
 	GetChain(chainID *coretypes.ChainID) chain.Chain
 	CallView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error)
 }
