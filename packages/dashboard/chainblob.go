@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
-	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 	"github.com/mr-tron/base58"
 )
@@ -48,7 +47,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 		Hash:    hash,
 	}
 
-	chain := chains.AllChains().Get(chainID)
+	chain := d.wasp.GetChain(chainID)
 	if chain != nil {
 		fields, err := d.wasp.CallView(chain, blob.Interface.Hname(), blob.FuncGetBlobInfo, codec.MakeDict(map[string]interface{}{
 			blob.ParamHash: hash,
@@ -92,7 +91,7 @@ func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
 		return err
 	}
 
-	chain := chains.AllChains().Get(chainID)
+	chain := d.wasp.GetChain(chainID)
 	if chain == nil {
 		return httperrors.NotFound("Not found")
 	}

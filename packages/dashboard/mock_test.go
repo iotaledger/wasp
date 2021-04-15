@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/labstack/echo/v4"
@@ -144,6 +145,15 @@ func (p *peeringNode) Close() {
 func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
 	chainID := chain.ID()
 
+	contract := &root.ContractRecord{
+		ProgramHash:  hashing.RandomHash(nil),
+		Description:  "mock contract",
+		Name:         "mock",
+		OwnerFee:     42,
+		ValidatorFee: 1,
+		Creator:      coretypes.NewRandomAgentID(),
+	}
+
 	switch {
 	case hname == root.Interface.Hname() && fname == root.FuncGetChainInfo:
 		ret := dict.New()
@@ -156,8 +166,13 @@ func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname 
 
 		dst := collections.NewMap(ret, root.VarContractRegistry)
 		for i := 0; i < 5; i++ {
-			dst.MustSetAt(coretypes.Hname(uint32(i)).Bytes(), root.EncodeContractRecord(&root.ContractRecord{}))
+			dst.MustSetAt(coretypes.Hname(uint32(i)).Bytes(), root.EncodeContractRecord(contract))
 		}
+		return ret, nil
+
+	case hname == root.Interface.Hname() && fname == root.FuncFindContract:
+		ret := dict.New()
+		ret.Set(root.ParamData, root.EncodeContractRecord(contract))
 		return ret, nil
 
 	case hname == accounts.Interface.Hname() && fname == accounts.FuncAccounts:
@@ -177,7 +192,23 @@ func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname 
 
 	case hname == blob.Interface.Hname() && fname == blob.FuncListBlobs:
 		ret := dict.New()
-		ret.Set(kv.Key(hashing.RandomHash(nil).Bytes()), []byte{1, 3, 3, 7})
+		ret.Set(kv.Key(hashing.RandomHash(nil).Bytes()), blob.EncodeSize(4))
+		return ret, nil
+
+	case hname == blob.Interface.Hname() && fname == blob.FuncGetBlobInfo:
+		ret := dict.New()
+		ret.Set(kv.Key([]byte("key")), blob.EncodeSize(4))
+		return ret, nil
+
+	case hname == blob.Interface.Hname() && fname == blob.FuncGetBlobField:
+		ret := dict.New()
+		ret.Set(blob.ParamBytes, []byte{1, 3, 3, 7})
+		return ret, nil
+
+	case hname == eventlog.Interface.Hname() && fname == eventlog.FuncGetRecords:
+		ret := dict.New()
+		a := collections.NewArray(ret, eventlog.ParamRecords)
+		a.MustPush([]byte("log entry"))
 		return ret, nil
 	}
 

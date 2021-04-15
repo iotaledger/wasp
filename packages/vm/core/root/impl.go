@@ -8,6 +8,7 @@ package root
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
@@ -129,7 +130,7 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 		ProgramHash: progHash,
 		Description: description,
 		Name:        name,
-		Creator:     *ctx.Caller(),
+		Creator:     ctx.Caller(),
 	}, initParams)
 	a.Require(err == nil, "root.deployContract.fail: %v", err)
 
