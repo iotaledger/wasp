@@ -119,10 +119,10 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 		sm.log.Panicf("inconsistency: solid state index is larger than state output index")
 	}
 	// not synced
-	if currentIndex+1 >= sm.stateOutput.GetStateIndex() {
+	if len(sm.blockCandidates) > 0 && currentIndex+1 >= sm.stateOutput.GetStateIndex() {
 		return
 	}
-	for i := currentIndex + 1; i < sm.stateOutput.GetStateIndex(); i++ {
+	for i := currentIndex + 1; i <= sm.stateOutput.GetStateIndex(); i++ {
 		block, approved := sm.syncBlock(i)
 		if block == nil {
 			// some block are still unknown. Can't sync
@@ -181,6 +181,7 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 	stateIndex := uint32(0)
 	for _, block := range blocks {
 		stateIndex = block.StateIndex()
+		sm.solidState.ApplyBlock(block)
 		if err := sm.solidState.CommitToDb(block); err != nil {
 			sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
 			sm.syncingBlocks = make(map[uint32]*syncingBlock)
@@ -188,5 +189,6 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 		}
 		delete(sm.syncingBlocks, stateIndex)
 	}
+	sm.blockCandidates = make(map[hashing.HashValue]*candidateBlock) // clear candidate batches
 	go sm.chain.Events().StateSynced().Trigger(outputID, stateIndex)
 }

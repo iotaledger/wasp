@@ -206,12 +206,5 @@ func (b *block) IsApprovedBy(chainOutput *ledgerstate.AliasOutput) bool {
 	if b.ApprovingOutputID() != nilOID && b.ApprovingOutputID() != chainOutput.ID() {
 		return false
 	}
-	sh, err := hashing.HashValueFromBytes(chainOutput.GetStateData())
-	if err != nil {
-		return false
-	}
-	if b.EssenceHash() != sh {
-		return false
-	}
 	return true
 }

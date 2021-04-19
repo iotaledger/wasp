@@ -18,6 +18,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/xerrors"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -28,7 +29,6 @@ type MockedEnv struct {
 	Ledger            *utxodb.UtxoDB
 	OriginatorKeyPair *ed25519.KeyPair
 	OriginatorAddress ledgerstate.Address
-	Peers             *mock_chain.MockedPeerGroupProvider
 	NodeConn          *mock_chain.MockedNodeConn
 	ChainID           coretypes.ChainID
 	mutex             sync.Mutex
@@ -41,6 +41,7 @@ type MockedNode struct {
 	Env             *MockedEnv
 	Db              *dbprovider.DBProvider
 	ChainCore       *mock_chain.MockedChainCore
+	Peers           *mock_chain.MockedPeerGroupProvider
 	StateManager    chain.StateManager
 	StateTransition *mock_chain.MockedStateTransition
 	Log             *logger.Logger
@@ -58,7 +59,6 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 		Ledger:            utxodb.New(),
 		OriginatorKeyPair: nil,
 		OriginatorAddress: nil,
-		Peers:             mock_chain.NewMockedPeerGroup(),
 		NodeConn:          mock_chain.NewMockedNodeConnection(),
 		Nodes:             make(map[uint16]*MockedNode),
 	}
@@ -100,7 +100,10 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 
 		ret.Log.Infof("MockedEnv: posted transaction to ledger: %s", tx.ID().Base58())
 	})
+	var pullStateOutputCounter uint64 = 0
 	pullStateOutputClosure := func(addr *ledgerstate.AliasAddress) {
+		requestID := atomic.AddUint64(&pullStateOutputCounter, 1)
+		log.Infof("MockedNodeConn.OnPullBacklog request %d received for address %v", requestID, addr.Base58)
 		outputs := ret.Ledger.GetAddressOutputs(addr)
 		require.EqualValues(t, 1, len(outputs))
 		outTx, ok := ret.Ledger.GetTransaction(outputs[0].ID().TransactionID())
@@ -111,9 +114,10 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 		ret.mutex.Lock()
 		defer ret.mutex.Unlock()
 
+		// TODO: avoid broadcast
 		for _, node := range ret.Nodes {
 			go func(manager chain.StateManager, log *logger.Logger) {
-				log.Infof("MockedNodeConn.OnPullBacklog: call EventStateMsg: chain output %s", coretypes.OID(stateOutput.ID()))
+				log.Infof("MockedNodeConn.OnPullBacklog request %d: call EventStateMsg: chain output %s", requestID, coretypes.OID(stateOutput.ID()))
 				manager.EventStateMsg(&chain.StateMsg{
 					ChainOutput: stateOutput,
 					Timestamp:   outTx.Essence().Timestamp(),
@@ -157,9 +161,10 @@ func (env *MockedEnv) NewMockedNode(index uint16) *MockedNode {
 		Env:       env,
 		Db:        dbprovider.NewInMemoryDBProvider(log),
 		ChainCore: mock_chain.NewMockedChainCore(env.ChainID, log),
+		Peers:     mock_chain.NewMockedPeerGroup(),
 		Log:       log,
 	}
-	ret.StateManager = New(ret.Db, ret.ChainCore, env.Peers, env.NodeConn, log)
+	ret.StateManager = New(ret.Db, ret.ChainCore, ret.Peers, env.NodeConn, log)
 	ret.StateTransition = mock_chain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(block state.Block, tx *ledgerstate.Transaction) {
 		go ret.StateManager.EventBlockCandidateMsg(chain.BlockCandidateMsg{Block: block})
@@ -212,21 +217,19 @@ func (env *MockedEnv) RemoveNode(index uint16) {
 }
 
 // SetupPeerGroupSimple sets up simple communication between nodes
-func (env *MockedEnv) SetupPeerGroupSimple() {
-	env.Peers.OnNumPeers(func() uint16 {
-		env.mutex.Lock()
-		defer env.mutex.Unlock()
-		return uint16(len(env.Nodes))
+func (nThis *MockedNode) SetupPeerGroupSimple() {
+	nThis.Peers.OnNumPeers(func() uint16 {
+		nThis.Env.mutex.Lock()
+		defer nThis.Env.mutex.Unlock()
+		return uint16(len(nThis.Env.Nodes))
 	})
-	env.Peers.OnNumIsAlive(func(q uint16) bool {
-		env.mutex.Lock()
-		defer env.mutex.Unlock()
-		return q <= uint16(len(env.Nodes))
+	nThis.Peers.OnNumIsAlive(func(q uint16) bool {
+		nThis.Env.mutex.Lock()
+		defer nThis.Env.mutex.Unlock()
+		return q <= uint16(len(nThis.Env.Nodes))
 	})
-	env.Peers.OnSendMsg(func(targetPeerIndex uint16, msgType byte, msgData []byte) error {
-		env.mutex.Lock()
-		defer env.mutex.Unlock()
-		node, ok := env.Nodes[targetPeerIndex]
+	nThis.Peers.OnSendMsg(func(targetPeerIndex uint16, msgType byte, msgData []byte) error {
+		node, ok := nThis.Env.Nodes[targetPeerIndex]
 		if !ok {
 			return fmt.Errorf("wrong peer index %d", targetPeerIndex)
 		}
@@ -237,6 +240,7 @@ func (env *MockedEnv) SetupPeerGroupSimple() {
 			if err := msg.Read(rdr); err != nil {
 				return fmt.Errorf("error reading MsgGetBlock message: %v", err)
 			}
+			msg.SenderIndex = nThis.Index
 			go node.StateManager.EventGetBlockMsg(&msg)
 
 		case chain.MsgBlock:
@@ -247,17 +251,17 @@ func (env *MockedEnv) SetupPeerGroupSimple() {
 			go node.StateManager.EventBlockMsg(&msg)
 
 		default:
-			env.Log.Panicf("msg type %d not implemented in the simple mocked peer group")
+			nThis.Log.Panicf("msg type %d not implemented in the simple mocked peer group")
 		}
 		return nil
 	})
 
-	env.Peers.OnSendToAllUntilFirstError(func(msgType byte, msgData []byte) uint16 {
-		env.mutex.Lock()
-		defer env.mutex.Unlock()
+	nThis.Peers.OnSendToAllUntilFirstError(func(msgType byte, msgData []byte) uint16 {
+		nThis.Env.mutex.Lock()
+		defer nThis.Env.mutex.Unlock()
 		counter := uint16(0)
-		for idx := range env.Nodes {
-			if err := env.Peers.SendMsg(idx, msgType, msgData); err != nil {
+		for idx := range nThis.Env.Nodes {
+			if err := nThis.Peers.SendMsg(idx, msgType, msgData); err != nil {
 				break
 			}
 			counter++
