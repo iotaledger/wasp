@@ -25,19 +25,6 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	//requests := make([]coretypes.Request, len(batch))
-	//for i, req := range batch {
-	//	// solidify arguments
-	//	if onLedgerRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
-	//		if ok, err := onLedgerRequest.SolidifyArgs(ch.Env.blobCache); err != nil || !ok {
-	//			return nil, fmt.Errorf("Solo inconsistency: failed to solidify request args")
-	//		}
-	//	}
-	//	_, solidArgs := req.Params()
-	//	require.True(ch.Env.T, solidArgs)
-	//	requests[i] = req
-	//}
-
 	for _, r := range batch {
 		_, solidArgs := r.Params()
 		require.True(ch.Env.T, solidArgs)

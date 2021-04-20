@@ -245,10 +245,11 @@ func (m *mempool) solidificationLoop() {
 
 func (m *mempool) doSolidifyRequests() {
 	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
 	for _, req := range m.requests {
 		if req.req != nil {
 			_, _ = req.req.SolidifyArgs(m.blobCache)
 		}
 	}
-	m.mutex.Unlock()
 }
