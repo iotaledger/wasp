@@ -67,15 +67,15 @@ func (req *RequestOnLedger) IsFeePrepaid() bool {
 	return false
 }
 
-func (req *RequestOnLedger) Output() ledgerstate.Output {
-	return req.outputObj
-}
-
 func (req *RequestOnLedger) Order() uint64 {
 	return uint64(req.timestamp.UnixNano())
 }
 
-// Args returns solid args if decoded already or nil otherwise
+func (req *RequestOnLedger) Output() ledgerstate.Output {
+	return req.outputObj
+}
+
+// Params returns solid args if decoded already or nil otherwise
 func (req *RequestOnLedger) Params() (dict.Dict, bool) {
 	return req.solidArgs, req.solidArgs != nil
 }
@@ -86,40 +86,6 @@ func (req *RequestOnLedger) SenderAccount() *coretypes.AgentID {
 
 func (req *RequestOnLedger) SenderAddress() ledgerstate.Address {
 	return req.senderAddress
-}
-
-// Target returns target contract and target entry point
-func (req *RequestOnLedger) Target() (coretypes.Hname, coretypes.Hname) {
-	return req.requestMetadata.TargetContract(), req.requestMetadata.EntryPoint()
-}
-
-func (req *RequestOnLedger) Tokens() *ledgerstate.ColoredBalances {
-	return req.outputObj.Balances()
-}
-
-// coming from the transaction timestamp
-func (req *RequestOnLedger) Timestamp() time.Time {
-	return req.timestamp
-}
-
-func (req *RequestOnLedger) TimeLock() time.Time {
-	return req.outputObj.TimeLock()
-}
-
-func (req *RequestOnLedger) SetMetadata(d *RequestMetadata) {
-	req.requestMetadata = d.Clone()
-}
-
-func (req *RequestOnLedger) GetMetadata() *RequestMetadata {
-	return req.requestMetadata
-}
-
-func (req *RequestOnLedger) MintColor() ledgerstate.Color {
-	return blake2b.Sum256(req.Output().ID().Bytes())
-}
-
-func (req *RequestOnLedger) MintedAmounts() map[ledgerstate.Color]uint64 {
-	return req.minted
 }
 
 // SolidifyArgs return true if solidified successfully
@@ -136,6 +102,40 @@ func (req *RequestOnLedger) SolidifyArgs(reg coretypes.BlobCache) (bool, error) 
 		panic("req.solidArgs == nil")
 	}
 	return true, nil
+}
+
+// Target returns target contract and target entry point
+func (req *RequestOnLedger) Target() (coretypes.Hname, coretypes.Hname) {
+	return req.requestMetadata.TargetContract(), req.requestMetadata.EntryPoint()
+}
+
+func (req *RequestOnLedger) TimeLock() time.Time {
+	return req.outputObj.TimeLock()
+}
+
+func (req *RequestOnLedger) Tokens() *ledgerstate.ColoredBalances {
+	return req.outputObj.Balances()
+}
+
+// coming from the transaction timestamp
+func (req *RequestOnLedger) Timestamp() time.Time {
+	return req.timestamp
+}
+
+func (req *RequestOnLedger) SetMetadata(d *RequestMetadata) {
+	req.requestMetadata = d.Clone()
+}
+
+func (req *RequestOnLedger) GetMetadata() *RequestMetadata {
+	return req.requestMetadata
+}
+
+func (req *RequestOnLedger) MintColor() ledgerstate.Color {
+	return blake2b.Sum256(req.Output().ID().Bytes())
+}
+
+func (req *RequestOnLedger) MintedAmounts() map[ledgerstate.Color]uint64 {
+	return req.minted
 }
 
 func (req *RequestOnLedger) Short() string {

@@ -66,6 +66,8 @@ type Request interface {
 	ID() RequestID
 	// true or false for on-ledger requests, always true for off-ledger
 	IsFeePrepaid() bool
+	// number used for ordering requests in the mempool. Priority order is a descending order
+	Order() uint64
 	// ledgerstate.Output interface for on-ledger requests, nil for off-ledger requests
 	Output() ledgerstate.Output
 	// arguments of the call with the flag if they are ready. No arguments mean empty dictionary and true
@@ -74,12 +76,12 @@ type Request interface {
 	SenderAccount() *AgentID
 	// address of the sender for all requests,
 	SenderAddress() ledgerstate.Address
+	// return true if solidified successfully
+	SolidifyArgs(reg BlobCache) (bool, error)
 	// returns contract/entry point pair
 	Target() (Hname, Hname)
 	// returns time lock time or zero time if no time lock
 	TimeLock() time.Time
 	// returns tokens to transfer
 	Tokens() *ledgerstate.ColoredBalances
-	// number used for ordering requests in the mempool. Priority order is a descending order
-	Order() uint64
 }

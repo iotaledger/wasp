@@ -312,6 +312,8 @@ func TestSolidifyLoop(t *testing.T) {
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 4)
 
+	//TODO we need a request that actually requires solidification
+	// because ReceiveRequest will already try to solidify
 	pool.ReceiveRequest(requests[0])
 	_, result := pool.TakeAllReady(time.Now(), requests[0].ID())
 	require.False(t, result) //No solidification yet => request is not ready

@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
@@ -14,6 +15,7 @@ import (
 // region RequestOffLedger  ///////////////////////////////////////////////////////
 
 type RequestOffLedger struct {
+	args       requestargs.RequestArgs
 	contract   coretypes.Hname
 	entryPoint coretypes.Hname
 	params     dict.Dict
@@ -28,14 +30,11 @@ type RequestOffLedger struct {
 var _ coretypes.Request = &RequestOffLedger{}
 
 // NewRequestOffLedger creates a basic request
-func NewRequestOffLedger(contract coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict) *RequestOffLedger {
-	if params == nil {
-		params = dict.New()
-	}
+func NewRequestOffLedger(contract coretypes.Hname, entryPoint coretypes.Hname, args requestargs.RequestArgs) *RequestOffLedger {
 	return &RequestOffLedger{
+		args:       args.Clone(),
 		contract:   contract,
 		entryPoint: entryPoint,
-		params:     params,
 		timestamp:  time.Now(),
 	}
 }
@@ -43,7 +42,7 @@ func NewRequestOffLedger(contract coretypes.Hname, entryPoint coretypes.Hname, p
 // NewRequestOffLedgerFromBytes creates a basic request from previously serialized bytes
 func NewRequestOffLedgerFromBytes(data []byte) (request *RequestOffLedger, err error) {
 	req := &RequestOffLedger{
-		params: dict.New(),
+		args: requestargs.New(nil),
 	}
 	buf := bytes.NewBuffer(data)
 	if err = req.contract.Read(buf); err != nil {
@@ -52,7 +51,7 @@ func NewRequestOffLedgerFromBytes(data []byte) (request *RequestOffLedger, err e
 	if err = req.entryPoint.Read(buf); err != nil {
 		return
 	}
-	if err = req.params.Read(buf); err != nil {
+	if err = req.args.Read(buf); err != nil {
 		return
 	}
 	var n int
@@ -95,11 +94,11 @@ func (req *RequestOffLedger) Essence() []byte {
 	buf := bytes.NewBuffer(make([]byte, 0, 1024))
 	_ = req.contract.Write(buf)
 	_ = req.entryPoint.Write(buf)
-	_ = req.params.Write(buf)
+	_ = req.args.Write(buf)
 	_, _ = buf.Write(req.publicKey[:])
 	_ = util.WriteTime(buf, req.timestamp)
 	if req.transfer == nil {
-		_ = util.WriteUint32(buf,0)
+		_ = util.WriteUint32(buf, 0)
 		return buf.Bytes()
 	}
 	_, _ = buf.Write(req.transfer.Bytes())
@@ -152,7 +151,7 @@ func (req *RequestOffLedger) Output() ledgerstate.Output {
 }
 
 func (req *RequestOffLedger) Params() (dict.Dict, bool) {
-	return req.params, true
+	return req.params, req.params != nil
 }
 
 func (req *RequestOffLedger) SenderAccount() *coretypes.AgentID {
@@ -166,6 +165,22 @@ func (req *RequestOffLedger) SenderAddress() ledgerstate.Address {
 	return req.sender
 }
 
+// SolidifyArgs return true if solidified successfully
+func (req *RequestOffLedger) SolidifyArgs(reg coretypes.BlobCache) (bool, error) {
+	if req.params != nil {
+		return true, nil
+	}
+	solid, ok, err := req.args.SolidifyRequestArguments(reg)
+	if err != nil || !ok {
+		return ok, err
+	}
+	req.params = solid
+	if req.params == nil {
+		panic("req.solidArgs == nil")
+	}
+	return true, nil
+}
+
 func (req *RequestOffLedger) Target() (coretypes.Hname, coretypes.Hname) {
 	return req.contract, req.entryPoint
 }
@@ -176,8 +191,6 @@ func (req *RequestOffLedger) TimeLock() time.Time {
 	return time.Time{}
 }
 
-//TODO allow to use prepaid tokens in transfer!
-// currently always nil for off-ledger
 func (req *RequestOffLedger) Tokens() *ledgerstate.ColoredBalances {
 	return req.transfer
 }

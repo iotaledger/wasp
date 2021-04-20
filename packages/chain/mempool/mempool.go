@@ -67,6 +67,16 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	if _, ok := m.requests[req.ID()]; ok {
 		return
 	}
+
+	// attempt solidification for those requests that do not require blobs
+	// instead of having to wait for the solidification goroutine to kick in
+	// also weeds out requests with solidification errors
+	_, err = req.SolidifyArgs(m.blobCache)
+	if err != nil {
+		m.log.Errorf("ReceiveRequest.SolidifyArgs: %s", err)
+		return
+	}
+
 	tl := req.TimeLock()
 	if tl.IsZero() {
 		m.log.Infof("IN MEMPOOL %s", req.ID())
@@ -207,16 +217,11 @@ func (m *mempool) Stats() (int, int, int) {
 	total := len(m.requests)
 	withMsg, solid := 0, 0
 	for _, req := range m.requests {
-		if req.req == nil {
-			continue
-		}
-		withMsg++
-		if onTangleRequest, ok := req.req.(*sctransaction.RequestOnLedger); ok {
-			if isSolid, _ := onTangleRequest.SolidifyArgs(m.blobCache); isSolid {
+		if req.req != nil {
+			withMsg++
+			if isSolid, _ := req.req.SolidifyArgs(m.blobCache); isSolid {
 				solid++
 			}
-		} else {
-			solid++
 		}
 	}
 	return total, withMsg, solid
@@ -241,11 +246,8 @@ func (m *mempool) solidificationLoop() {
 func (m *mempool) doSolidifyRequests() {
 	m.mutex.Lock()
 	for _, req := range m.requests {
-		if req.req == nil {
-			continue
-		}
-		if onTangleRequest, ok := req.req.(*sctransaction.RequestOnLedger); ok {
-			_, _ = onTangleRequest.SolidifyArgs(m.blobCache)
+		if req.req != nil {
+			_, _ = req.req.SolidifyArgs(m.blobCache)
 		}
 	}
 	m.mutex.Unlock()

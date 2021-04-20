@@ -184,11 +184,7 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *ed25519.KeyPair) (dic
 }
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair) (dict.Dict, error) {
-	args, ok, err := req.args.SolidifyRequestArguments(ch.Env.blobCache)
-	if err != nil || !ok {
-		return nil, fmt.Errorf("solo.internal error: can't solidify args")
-	}
-	request := sctransaction.NewRequestOffLedger(req.target, req.entryPoint, args)
+	request := sctransaction.NewRequestOffLedger(req.target, req.entryPoint, req.args)
 	if keyPair == nil {
 		keyPair = ch.OriginatorKeyPair
 	}
@@ -198,7 +194,9 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair)
 	request.Sign(keyPair)
 	ch.reqCounter.Add(1)
 	ch.mempool.ReceiveRequest(request)
+
 	ready := ch.mempool.GetReadyList(0)
+	ch.reqCounter.Add(1)
 	return ch.runBatch(ready, "off-ledger")
 }
 
