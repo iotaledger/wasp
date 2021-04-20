@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/bytecodealliance/wasmtime-go v0.21.0
+	github.com/ethereum/go-ethereum v1.10.3
 	github.com/iotaledger/goshimmer v0.5.7-0.20210502183158-8fffbc9e00f2
 	github.com/iotaledger/hive.go v0.0.0-20210420114224-0b2c378f627f
 	github.com/knadh/koanf v0.15.0
@@ -20,7 +21,7 @@ require (
 	go.nanomsg.org/mangos/v3 v3.0.1
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.16.0
-	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
-	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
+	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 )
