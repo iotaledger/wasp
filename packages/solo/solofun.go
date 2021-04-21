@@ -51,7 +51,7 @@ func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (ledgerstate
 	if err := txb.AddMintingOutputConsume(addr, amount); err != nil {
 		return [32]byte{}, err
 	}
-	if err := txb.AddReminderOutputIfNeeded(addr, nil, true); err != nil {
+	if err := txb.AddRemainderOutputIfNeeded(addr, nil, true); err != nil {
 		return [32]byte{}, err
 	}
 	tx, err := txb.BuildWithED25519(wallet)
