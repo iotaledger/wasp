@@ -17,7 +17,7 @@ func (sm *stateManager) takeAction() {
 	if !sm.ready.IsReady() {
 		return
 	}
-	sm.checkStateApproval()
+	//sm.checkStateApproval()
 	sm.pullStateIfNeeded()
 	sm.doSyncActionIfNeeded()
 	sm.storeSyncingData()
@@ -28,14 +28,14 @@ func (sm *stateManager) pullStateIfNeeded() {
 	if sm.pullStateDeadline.After(nowis) {
 		return
 	}
-	if sm.stateOutput == nil || len(sm.blockCandidates) > 0 {
+	if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidates() {
 		sm.log.Debugf("pull state")
 		sm.nodeConn.PullState(sm.chain.ID().AsAliasAddress())
 	}
 	sm.pullStateDeadline = nowis.Add(pullStatePeriod)
 }
 
-func (sm *stateManager) checkStateApproval() {
+/*func (sm *stateManager) checkStateApproval() {
 	if sm.stateOutput == nil {
 		return
 	}
@@ -72,44 +72,55 @@ func (sm *stateManager) checkStateApproval() {
 		RequestIDs:       candidate.block.RequestIDs(),
 	})
 	go sm.chain.Events().StateSynced().Trigger(sm.stateOutput.ID(), sm.stateOutput.GetStateIndex())
-}
+}*/
 
 // adding block of state updates to the 'pending' map
-func (sm *stateManager) addBlockCandidate(block state.Block) {
-	if block != nil {
-		sm.log.Debugw("addBlockCandidate",
-			"block index", block.StateIndex(),
-			"timestamp", block.Timestamp(),
-			"size", block.Size(),
-			"approving output", coretypes.OID(block.ApprovingOutputID()),
-		)
-	} else {
-		sm.log.Debugf("addBlockCandidate: add origin candidate block")
-		block = state.MustNewOriginBlock()
-	}
-	var stateToApprove state.VirtualState
+func (sm *stateManager) addBlockFromCommitee(block state.Block) {
+	sm.log.Debugw("addBlockCandidate",
+		"block index", block.StateIndex(),
+		"timestamp", block.Timestamp(),
+		"size", block.Size(),
+		"approving output", coretypes.OID(block.ApprovingOutputID()),
+	)
+
+	var nextState state.VirtualState
 	if sm.solidState == nil {
 		// ignore parameter and assume original block if solidState == nil
-		stateToApprove = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
+		nextState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
 	} else {
-		stateToApprove = sm.solidState.Clone()
-		if err := stateToApprove.ApplyBlock(block); err != nil {
+		nextState = sm.solidState.Clone()
+		if err := nextState.ApplyBlock(block); err != nil {
 			sm.log.Error("can't apply update to the current state: %v", err)
 			return
 		}
 	}
 	// include the batch to pending batches map
-	vh := stateToApprove.Hash()
-	if sm.solidState == nil && vh.String() != state.OriginStateHashBase58 {
-		sm.log.Panicf("major inconsistency: stateToApprove hash is %s, expected %s", vh.String(), state.OriginStateHashBase58)
-	}
-	sm.blockCandidates[vh] = &candidateBlock{
-		block:     block,
-		nextState: stateToApprove,
+	nextStateHash := nextState.Hash()
+	if sm.solidState == nil && nextStateHash.String() != state.OriginStateHashBase58 {
+		sm.log.Panicf("major inconsistency: stateToApprove hash is %s, expected %s", nextStateHash.String(), state.OriginStateHashBase58)
 	}
 
-	sm.log.Infof("added new block candidate. State index: %d, state hash: %s", block.StateIndex(), vh.String())
+	_, err := sm.syncingBlocks.addBlockCandidate(block, &nextStateHash)
+	if err != nil {
+		return
+	}
 	sm.pullStateDeadline = time.Now()
+}
+
+func (sm *stateManager) addBlockFromNode(block state.Block) {
+	if !sm.syncingBlocks.isSyncing(block.StateIndex()) {
+		// not asked
+		return
+	}
+	isBlockNew, err := sm.syncingBlocks.addBlockCandidate(block, nil)
+	if err != nil {
+		sm.log.Error(err)
+		return
+	}
+	if isBlockNew {
+		// ask for approving output
+		sm.nodeConn.PullConfirmedOutput(sm.chain.ID().AsAddress(), block.ApprovingOutputID())
+	}
 }
 
 func (sm *stateManager) storeSyncingData() {

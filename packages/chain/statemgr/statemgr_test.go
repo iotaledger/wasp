@@ -22,7 +22,7 @@ func TestEnv(t *testing.T) {
 	node0.StateManager.Ready().MustWait()
 
 	require.Nil(t, node0.StateManager.(*stateManager).solidState)
-	require.EqualValues(t, 1, len(node0.StateManager.(*stateManager).blockCandidates))
+	require.EqualValues(t, 1, node0.StateManager.(*stateManager).syncingBlocks.getBlockCandidatesCount(0))
 	require.EqualValues(t, 0, node0.Peers.NumPeers())
 	env.AddNode(node0)
 	require.EqualValues(t, 1, node0.Peers.NumPeers())
@@ -46,7 +46,7 @@ func TestEnv(t *testing.T) {
 	node1.StateManager.Ready().MustWait()
 
 	require.Nil(t, node1.StateManager.(*stateManager).solidState)
-	require.EqualValues(t, 1, len(node1.StateManager.(*stateManager).blockCandidates))
+	require.EqualValues(t, 1, node1.StateManager.(*stateManager).syncingBlocks.getBlockCandidatesCount(0))
 
 	node1.StartTimer()
 	si, err = node1.WaitSyncBlockIndex(0, 1*time.Second)
@@ -66,7 +66,7 @@ func TestGetInitialState(t *testing.T) {
 	node := env.NewMockedNode(0)
 	node.StateManager.Ready().MustWait()
 	require.Nil(t, node.StateManager.(*stateManager).solidState)
-	require.EqualValues(t, 1, len(node.StateManager.(*stateManager).blockCandidates))
+	require.EqualValues(t, 1, node.StateManager.(*stateManager).syncingBlocks.getBlockCandidatesCount(0))
 
 	node.StartTimer()
 
@@ -91,7 +91,7 @@ func TestGetNextState(t *testing.T) {
 	node := env.NewMockedNode(0)
 	node.StateManager.Ready().MustWait()
 	require.Nil(t, node.StateManager.(*stateManager).solidState)
-	require.True(t, len(node.StateManager.(*stateManager).blockCandidates) == 1)
+	require.True(t, node.StateManager.(*stateManager).syncingBlocks.getBlockCandidatesCount(0) == 1)
 
 	node.StartTimer()
 
@@ -124,7 +124,7 @@ func TestGetNextState(t *testing.T) {
 
 	require.EqualValues(t, 1, manager.stateOutput.GetStateIndex())
 	require.EqualValues(t, manager.solidState.Hash().Bytes(), manager.stateOutput.GetStateData())
-	require.EqualValues(t, 0, len(manager.blockCandidates))
+	require.False(t, manager.syncingBlocks.hasBlockCandidates())
 }
 
 func TestManyStateTransitionsPush(t *testing.T) {

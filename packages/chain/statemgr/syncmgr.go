@@ -1,26 +1,25 @@
 package statemgr
 
 import (
-	"bytes"
+	//	"bytes"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (sm *stateManager) isSynced() bool {
+/*func (sm *stateManager) isSynced() bool {
 	if sm.stateOutput == nil || sm.solidState == nil {
 		return false
 	}
 	return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
-}
+}*/
 
 // returns block if it is known and flag if it is approved by some output
-func (sm *stateManager) syncBlock(blockIndex uint32) (state.Block, bool) {
+/*func (sm *stateManager) syncBlock(blockIndex uint32) (state.Block, bool) {
+
 	if _, already := sm.syncingBlocks[blockIndex]; !already {
 		sm.log.Debugf("start syncing block $%d", blockIndex)
 		sm.syncingBlocks[blockIndex] = &syncingBlock{}
@@ -51,56 +50,31 @@ func (sm *stateManager) syncBlock(blockIndex uint32) (state.Block, bool) {
 	sm.peers.SendToAllUntilFirstError(chain.MsgGetBlock, data)
 	blk.pullDeadline = time.Now().Add(periodBetweenSyncMessages)
 	return nil, false
-}
+}*/
 
-func (sm *stateManager) blockArrived(block state.Block) {
-	syncBlk, ok := sm.syncingBlocks[block.StateIndex()]
-	if !ok {
-		// not asked
-		return
-	}
-	if syncBlk.block != nil {
-		// already have block. Check consistency. If inconsistent, start from scratch
-		if syncBlk.block.ApprovingOutputID() != block.ApprovingOutputID() {
-			sm.log.Errorf("conflicting block arrived. Block index: %d, present approving outputID: %s, arrived approving outputID: %s",
-				block.StateIndex(), coretypes.OID(syncBlk.block.ApprovingOutputID()), coretypes.OID(block.ApprovingOutputID()))
-			syncBlk.block = nil
-			return
-		}
-		if syncBlk.block.EssenceHash() != block.EssenceHash() {
-			sm.log.Errorf("conflicting block arrived. Block index: %d, present state hash: %s, arrived state hash: %s",
-				block.StateIndex(), syncBlk.block.EssenceHash().String(), block.EssenceHash().String())
-			syncBlk.block = nil
-			return
-		}
-		return
-	}
-	// new block
-	// ask for approving output
-	sm.nodeConn.PullConfirmedOutput(sm.chain.ID().AsAddress(), block.ApprovingOutputID())
-	syncBlk.block = block
-	syncBlk.pullDeadline = time.Now().Add(periodBetweenSyncMessages * 2)
-}
-
-func (sm *stateManager) chainOutputArrived(chainOutput *ledgerstate.AliasOutput) {
-	syncBlk, ok := sm.syncingBlocks[chainOutput.GetStateIndex()]
-	if !ok {
+func (sm *stateManager) outputReceived(output *ledgerstate.AliasOutput) {
+	if !sm.syncingBlocks.isSyncing(output.GetStateIndex()) {
 		// not interested
 		return
 	}
-	if syncBlk.block == nil || syncBlk.approved {
-		// no need yet or too late
-		return
-	}
-	if syncBlk.block.IsApprovedBy(chainOutput) {
-		finalHash, err := hashing.HashValueFromBytes(chainOutput.GetStateData())
-		if err != nil {
+	sm.syncingBlocks.approveBlockCandidates(output)
+}
+
+func (sm *stateManager) outputPushed(output *ledgerstate.AliasOutput, timestamp time.Time) {
+	if sm.stateOutput != nil {
+		switch {
+		case sm.stateOutput.GetStateIndex() == output.GetStateIndex():
+			sm.log.Debug("EventStateMsg: repeated state output")
+			return
+		case sm.stateOutput.GetStateIndex() > output.GetStateIndex():
+			sm.log.Warn("EventStateMsg: out of order state output")
 			return
 		}
-		syncBlk.finalHash = finalHash
-		syncBlk.approvingOutputID = chainOutput.ID()
-		syncBlk.approved = true
 	}
+	sm.stateOutput = output
+	sm.stateOutputTimestamp = timestamp
+	sm.pullStateDeadline = time.Now()
+	sm.outputReceived(output)
 }
 
 func (sm *stateManager) doSyncActionIfNeeded() {
@@ -119,39 +93,111 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 		sm.log.Panicf("inconsistency: solid state index is larger than state output index")
 	}
 	// not synced
-	if len(sm.blockCandidates) > 0 && currentIndex+1 >= sm.stateOutput.GetStateIndex() {
-		return
-	}
+	//TODO: is it needed?
+	//if len(sm.blockCandidates) > 0 && currentIndex+1 >= sm.stateOutput.GetStateIndex() {
+	//	return
+	//}
 	for i := currentIndex + 1; i <= sm.stateOutput.GetStateIndex(); i++ {
-		block, approved := sm.syncBlock(i)
-		if block == nil {
-			// some block are still unknown. Can't sync
+		if sm.syncingBlocks.getBlockCandidatesCount(i) == 0 {
+			// some block is still unknown. Can't sync
+			sm.requestBlockIfNeeded(i)
 			return
 		}
-		if approved {
-			blocks := make([]state.Block, 0)
-			for j := currentIndex + 1; j <= i; j++ {
-				b, _ := sm.syncBlock(j)
-				blocks = append(blocks, b)
+		if sm.syncingBlocks.getApprovedBlockCandidatesCount(i) > 0 {
+			if sm.tryToCommitCandidates(currentIndex+1, i, true) {
+				return
 			}
-			sm.mustCommitSynced(blocks, sm.syncingBlocks[i].finalHash, sm.syncingBlocks[i].approvingOutputID)
-			return
 		}
 	}
 	// nothing is approved but all blocks are here
-	blocks := make([]state.Block, 0)
-	for i := currentIndex + 1; i < sm.stateOutput.GetStateIndex(); i++ {
-		blocks = append(blocks, sm.syncingBlocks[i].block)
-	}
-	finalHash, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())
-	if err != nil {
+	sm.tryToCommitCandidates(currentIndex+1, sm.stateOutput.GetStateIndex(), false)
+}
+
+func (sm *stateManager) requestBlockIfNeeded(stateIndex uint32) {
+	if time.Now().Before(sm.syncingBlocks.getPullDeadline(stateIndex)) {
+		// still waiting
 		return
 	}
-	sm.mustCommitSynced(blocks, finalHash, sm.stateOutput.ID())
+	// have to pull
+	data := util.MustBytes(&chain.GetBlockMsg{
+		BlockIndex: stateIndex,
+	})
+	// send messages until first without error
+	// TODO optimize
+	sm.peers.SendToAllUntilFirstError(chain.MsgGetBlock, data)
+	sm.syncingBlocks.setPullDeadline(stateIndex, time.Now().Add(periodBetweenSyncMessages))
+}
+
+func (sm *stateManager) tryToCommitCandidates(fromStateIndex uint32, toStateIndex uint32, lastStateApprovedOnly bool) bool {
+	candidates, ok := sm.getCandidatesToCommit(make([]*candidateBlock, toStateIndex-fromStateIndex+1), fromStateIndex, toStateIndex, lastStateApprovedOnly)
+	if ok {
+		sm.commitCandidates(candidates)
+	}
+	return ok
+}
+
+func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex uint32, toStateIndex uint32, lastStateApprovedOnly bool) ([]*candidateBlock, bool) {
+	if fromStateIndex > toStateIndex {
+		//Blocks gathered. Check if the correct result is received if they are applied
+		var tentativeState state.VirtualState
+		if sm.solidState != nil {
+			tentativeState = sm.solidState.Clone()
+		} else {
+			tentativeState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
+		}
+		for _, candidate := range candidateAcc {
+			block := candidate.getBlock()
+			if err := tentativeState.ApplyBlock(block); err != nil {
+				sm.log.Errorf("failed to apply synced block index #%d. Error: %v", block.StateIndex(), err)
+				return nil, false
+			}
+		}
+		// state hashes must be equal
+		tentativeHash := tentativeState.Hash()
+		finalHash := candidateAcc[len(candidateAcc)-1].getStateHash()
+		if tentativeHash != finalHash {
+			sm.log.Errorf("state hashes mismatch: expected final hash: %s, tentative hash: %s", finalHash, tentativeHash)
+			return nil, false
+		}
+		return candidateAcc, true
+	}
+	var stateCandidateBlocks []*candidateBlock
+	if fromStateIndex == toStateIndex && lastStateApprovedOnly {
+		stateCandidateBlocks = sm.syncingBlocks.getApprovedBlockCandidates(fromStateIndex)
+	} else {
+		stateCandidateBlocks = sm.syncingBlocks.getBlockCandidates(fromStateIndex)
+	}
+	//TODO: sort
+	for _, stateCandidateBlock := range stateCandidateBlocks {
+		resultBlocks, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex, lastStateApprovedOnly)
+		if ok {
+			return resultBlocks, true
+		}
+	}
+	return nil, false
+}
+
+func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
+	if sm.solidState == nil {
+		sm.solidState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
+	}
+	stateIndex := uint32(0)
+	for _, candidate := range candidates {
+		block := candidate.getBlock()
+		stateIndex := block.StateIndex()
+		sm.solidState.ApplyBlock(block)
+		if err := sm.solidState.CommitToDb(block); err != nil {
+			sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
+			sm.syncingBlocks.restartSyncing()
+			return
+		}
+		sm.syncingBlocks.deleteSyncingBlock(stateIndex)
+	}
+	go sm.chain.Events().StateSynced().Trigger(candidates[len(candidates)-1].getApprovindOutputID(), stateIndex)
 }
 
 // assumes all synced already
-func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing.HashValue, outputID ledgerstate.OutputID) {
+/*func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing.HashValue, outputID ledgerstate.OutputID) {
 	if len(blocks) == 0 {
 		// shouldn't be here
 		sm.log.Panicf("len(blocks) == 0")
@@ -191,4 +237,4 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 	}
 	sm.blockCandidates = make(map[hashing.HashValue]*candidateBlock) // clear candidate batches
 	go sm.chain.Events().StateSynced().Trigger(outputID, stateIndex)
-}
+}*/

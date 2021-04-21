@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"time"
 )
 
 // EventGetBlockMsg is a request for a block while syncing
@@ -55,7 +54,7 @@ func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
 		"essence hash", msg.Block.EssenceHash().String(),
 		"approving output", coretypes.OID(msg.Block.ApprovingOutputID()),
 	)
-	sm.blockArrived(msg.Block)
+	sm.addBlockFromNode(msg.Block)
 	sm.takeAction()
 }
 
@@ -68,7 +67,8 @@ func (sm *stateManager) eventOutputMsg(msg ledgerstate.Output) {
 	if !ok {
 		return
 	}
-	sm.chainOutputArrived(chainOutput)
+	sm.outputReceived(chainOutput)
+	sm.takeAction()
 }
 
 // EventStateTransactionMsg triggered whenever new state transaction arrives
@@ -87,19 +87,7 @@ func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 		"chainOutput", coretypes.OID(msg.ChainOutput.ID()),
 		"state hash", stateHash.String(),
 	)
-	if sm.stateOutput != nil {
-		switch {
-		case sm.stateOutput.GetStateIndex() == msg.ChainOutput.GetStateIndex():
-			sm.log.Debug("EventStateMsg: repeated state output")
-			return
-		case sm.stateOutput.GetStateIndex() > msg.ChainOutput.GetStateIndex():
-			sm.log.Warn("EventStateMsg: out of order state output")
-			return
-		}
-	}
-	sm.stateOutput = msg.ChainOutput
-	sm.stateOutputTimestamp = msg.Timestamp
-	sm.pullStateDeadline = time.Now()
+	sm.outputPushed(msg.ChainOutput, msg.Timestamp)
 	sm.takeAction()
 }
 
@@ -117,8 +105,7 @@ func (sm *stateManager) eventBlockCandidateMsg(msg chain.BlockCandidateMsg) {
 		"block essence", msg.Block.EssenceHash().String(),
 		"ts", msg.Block.Timestamp(),
 	)
-	sm.addBlockCandidate(msg.Block)
-	//sm.checkStateApproval()
+	sm.addBlockFromCommitee(msg.Block)
 	sm.takeAction()
 }
 

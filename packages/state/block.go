@@ -195,7 +195,7 @@ func dbkeyBatch(stateIndex uint32) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeStateUpdateBatch, util.Uint32To4Bytes(stateIndex))
 }
 
-func (b *block) IsApprovedBy(chainOutput *ledgerstate.AliasOutput) bool {
+/*func (b *block) IsApprovedBy(chainOutput *ledgerstate.AliasOutput) bool {
 	if chainOutput == nil {
 		return false
 	}
@@ -207,4 +207,4 @@ func (b *block) IsApprovedBy(chainOutput *ledgerstate.AliasOutput) bool {
 		return false
 	}
 	return true
-}
+}*/
