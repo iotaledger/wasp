@@ -23,12 +23,15 @@ import (
 )
 
 func TestBasic(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	var peerCount uint16 = 10
 	var threshold uint16 = 7
-	var suite = pairing.NewSuiteBn256()
-	var peeringID = peering.RandomPeeringID()
+	suite := pairing.NewSuiteBn256()
+	peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerPubs, peerSecs := setupKeys(peerCount, suite)
 	address, nodeRegistries := setupDkg(t, threshold, peerNetIDs, peerPubs, peerSecs, suite, log)
 	networkProviders := setupNet(t, peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(), log)
@@ -67,8 +70,8 @@ func TestUnreliableNet(t *testing.T) {
 	defer log.Sync()
 	var peerCount uint16 = 10
 	var threshold uint16 = 7
-	var suite = pairing.NewSuiteBn256()
-	var peeringID = peering.RandomPeeringID()
+	suite := pairing.NewSuiteBn256()
+	peeringID := peering.RandomPeeringID()
 	netBehavior := testutil.NewPeeringNetUnreliable( // NOTE: Network parameters.
 		80,                                         // Delivered %
 		20,                                         // Duplicated %
@@ -148,8 +151,8 @@ func setupDkg(
 	suite *pairing.SuiteBn256,
 	log *logger.Logger,
 ) (ledgerstate.Address, []tcrypto.RegistryProvider) {
-	var timeout = 100 * time.Second
-	var networkProviders = setupNet(t, peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(), log)
+	timeout := 100 * time.Second
+	networkProviders := setupNet(t, peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(), log)
 	//
 	// Initialize the DKG subsystem in each node.
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
