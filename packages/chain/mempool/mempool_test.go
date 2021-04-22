@@ -1,21 +1,20 @@
 package mempool
 
 import (
-	request2 "github.com/iotaledger/wasp/packages/coretypes/request"
-	"testing"
-	"time"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
-
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"testing"
+	"time"
 )
 
 func TestMempool(t *testing.T) {
@@ -26,7 +25,7 @@ func TestMempool(t *testing.T) {
 	time.Sleep(1 * time.Second)
 }
 
-func getRequestsOnLedger(t *testing.T, amount int) []*request2.RequestOnLedger {
+func getRequestsOnLedger(t *testing.T, amount int) []*request.RequestOnLedger {
 	utxo := utxodb.New()
 	keyPair, addr := utxo.NewKeyPairByIndex(0)
 	_, err := utxo.RequestFunds(addr)
@@ -48,7 +47,7 @@ func getRequestsOnLedger(t *testing.T, amount int) []*request2.RequestOnLedger {
 	require.NoError(t, err)
 	require.NotNil(t, tx)
 
-	requests, err := request2.RequestsOnLedgerFromTransaction(tx, targetAddr)
+	requests, err := request.RequestsOnLedgerFromTransaction(tx, targetAddr)
 	require.NoError(t, err)
 	require.True(t, amount == len(requests))
 	return requests
@@ -178,7 +177,7 @@ func TestTakeAllReady(t *testing.T) {
 //        Request2  +       +   +
 //        Request3  +
 //        Request4
-func initSeenTest(t *testing.T) (chain.Mempool, []*request2.RequestOnLedger) {
+func initSeenTest(t *testing.T) (chain.Mempool, []*request.RequestOnLedger) {
 	db := mapdb.NewMapDB()
 	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
@@ -307,27 +306,50 @@ func TestGetReadyListFull(t *testing.T) {
 	require.True(t, len(ready) == 0)
 }
 
-func TestSolidifyLoop(t *testing.T) {
+func TestSolidification(t *testing.T) {
 	db := mapdb.NewMapDB()
-	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t)) // Solidification initiated on pool creation
+	logger := testlogger.NewLogger(t)
+	blobCache := coretypes.NewInMemoryBlobCache()
+	pool := New(db, blobCache, logger) // Solidification initiated on pool creation
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 4)
 
-	//TODO we need a request that actually requires solidification
-	// because ReceiveRequest will already try to solidify
+	// we need a request that actually requires solidification
+	// because ReceiveRequest will already attempt to solidify
+	blobData := []byte("blobData")
+	args := requestargs.New(nil)
+	hash := args.AddAsBlobRef("blob", blobData)
+	meta := request.NewRequestMetadata().WithArgs(args)
+	requests[0].SetMetadata(meta)
 	pool.ReceiveRequest(requests[0])
-	ready, result := pool.TakeAllReady(time.Now(), requests[0].ID())
-	require.True(t, result) // No solidification yet => request is not ready
 
-	require.True(t, result) // Solidification initiated automatically after delay => the request is ready
+	// no solidification yet => request is not ready
+	ready, result := pool.TakeAllReady(time.Now(), requests[0].ID())
+	require.False(t, result)
+	require.True(t, len(ready) == 0)
+
+	// provide the blob data in the blob cache
+	blob, err := blobCache.PutBlob(blobData)
+	require.NoError(t, err)
+	require.EqualValues(t, blob, hash)
+
+	// force another solidification attempt
+	solid, err := requests[0].SolidifyArgs(blobCache)
+	require.NoError(t, err)
+	require.True(t, solid)
+
+	// now that solidification happened => request is ready
+	ready, result = pool.TakeAllReady(time.Now(), requests[0].ID())
+	require.True(t, result)
 	require.True(t, len(ready) == 1)
 	require.Contains(t, ready, requests[0])
 
+	// solidifiable requests
 	pool.ReceiveRequest(requests[1])
 	pool.ReceiveRequest(requests[2])
 	pool.ReceiveRequest(requests[3])
 	ready, result = pool.TakeAllReady(time.Now(), requests[1].ID(), requests[2].ID(), requests[3].ID())
-	require.True(t, result) // Solidification initiated automatically after delay => several requests made ready in one cycle iteration
+	require.True(t, result)
 	require.True(t, len(ready) == 3)
 	require.Contains(t, ready, requests[1])
 	require.Contains(t, ready, requests[2])
