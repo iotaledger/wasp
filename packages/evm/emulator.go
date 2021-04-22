@@ -40,17 +40,21 @@ type EVMEmulator struct {
 
 var GasLimit = uint64(math.MaxUint64 / 2)
 
-func NewEVMEmulator(db ethdb.Database, alloc core.GenesisAlloc) *EVMEmulator {
-	config := params.AllEthashProtocolChanges
+var Config = params.AllEthashProtocolChanges
 
+func Signer() types.Signer {
+	return types.NewEIP155Signer(Config.ChainID)
+}
+
+func NewEVMEmulator(db ethdb.Database, alloc core.GenesisAlloc) *EVMEmulator {
 	// initialize the blockchain if needed
 	stored := rawdb.ReadCanonicalHash(db, 0)
 	if (stored == common.Hash{}) {
-		genesis := core.Genesis{Config: config, Alloc: alloc, GasLimit: GasLimit}
+		genesis := core.Genesis{Config: Config, Alloc: alloc, GasLimit: GasLimit}
 		genesis.MustCommit(db)
 	}
 
-	blockchain, _ := core.NewBlockChain(db, nil, config, ethash.NewFaker(), vm.Config{}, nil, nil)
+	blockchain, _ := core.NewBlockChain(db, nil, Config, ethash.NewFaker(), vm.Config{}, nil, nil)
 
 	e := &EVMEmulator{
 		database:   db,
@@ -494,7 +498,7 @@ func (e *EVMEmulator) Blockchain() *core.BlockChain {
 }
 
 func (e *EVMEmulator) Signer() types.Signer {
-	return types.NewEIP155Signer(e.Blockchain().Config().ChainID)
+	return Signer()
 }
 
 // callMsg implements core.Message to allow passing it as a transaction simulator.

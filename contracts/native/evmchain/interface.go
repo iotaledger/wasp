@@ -22,14 +22,23 @@ var Interface = &coreutil.ContractInterface{
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
+		coreutil.Func(FuncSendTransaction, applyTransaction),
 		coreutil.ViewFunc(FuncGetBalance, getBalance),
+		coreutil.ViewFunc(FuncCallView, callView),
 	})
 	native.AddProcessor(Interface)
 }
 
-const FuncGetBalance = "getBalance"
+const (
+	FuncGetBalance      = "getBalance"
+	FuncSendTransaction = "sendTransaction"
+	FuncCallView        = "callView"
+)
 
 const (
-	FieldAddress = "a"
-	FieldBalance = "b"
+	FieldAddress         = "a"
+	FieldTransactionData = "t"
+	FieldBalance         = "b"
+	FieldCallArguments   = "c"
+	FieldResult          = "r"
 )
