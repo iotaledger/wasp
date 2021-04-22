@@ -130,7 +130,7 @@ func (req *RequestOffLedger) VerifySignature() bool {
 // ID returns request id for this request
 // index part of request id is always 0 for off ledger requests
 // note that request needs to have been signed before this value is
-// considered valid, because we use the first 32 bytes of the signature
+// considered valid
 func (req *RequestOffLedger) ID() (requestId coretypes.RequestID) {
 	txid := ledgerstate.TransactionID(hashing.HashData(req.Bytes()))
 	return coretypes.RequestID(ledgerstate.NewOutputID(txid, 0))
