@@ -5,11 +5,12 @@ package coretypes
 
 import (
 	"bytes"
+	"io"
+	"strings"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
-	"io"
-	"strings"
 )
 
 // AgentID represents address on the ledger with optional hname

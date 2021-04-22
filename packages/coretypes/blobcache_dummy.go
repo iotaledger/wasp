@@ -1,8 +1,9 @@
 package coretypes
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/hashing"
 )
 
 //inMemoryBlobCache is supposed to be used as BlobCache in tests through

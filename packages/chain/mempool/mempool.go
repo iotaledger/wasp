@@ -1,12 +1,13 @@
 package mempool
 
 import (
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/state"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/state"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"

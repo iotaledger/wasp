@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"golang.org/x/xerrors"
 	"io"
 	"strconv"
 
@@ -84,7 +85,7 @@ func (hn *Hname) Read(r io.Reader) error {
 		return err
 	}
 	if n != HnameLength {
-		return ErrWrongDataLength
+		return xerrors.New("wrong data length")
 	}
 	t := binary.LittleEndian.Uint32(b[:])
 	*hn = (Hname)(t)
