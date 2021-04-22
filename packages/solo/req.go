@@ -196,6 +196,10 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair)
 	ch.mempool.ReceiveRequest(request)
 
 	ready := ch.mempool.GetReadyList(0)
+	if len(ready) == 0 {
+		ch.Log.Infof("waiting for solidification")
+		return nil, nil
+	}
 	return ch.runBatch(ready, "off-ledger")
 }
 
