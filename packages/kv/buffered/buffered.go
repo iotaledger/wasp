@@ -3,6 +3,7 @@ package buffered
 import (
 	"encoding/hex"
 	"fmt"
+	"sort"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -10,13 +11,13 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-// BufferedKVStore represents a KVStore backed by a database. Writes are cached in-memory as
-// a MutationSequence; reads are delegated to the backing database when not cached.
+// BufferedKVStore represents a KVStore backed by a database. Writes are cached in-memory;
+// reads are delegated to the backing database when not cached.
 type BufferedKVStore interface {
 	kv.KVStore
 
 	// the uncommitted mutations
-	Mutations() MutationSequence
+	Mutations() *Mutations
 	ClearMutations()
 	Clone() BufferedKVStore
 
@@ -45,13 +46,13 @@ func asDBError(e error) error {
 
 type bufferedKVStore struct {
 	db        kvstore.KVStore
-	mutations MutationSequence
+	mutations *Mutations
 }
 
 func NewBufferedKVStore(db kvstore.KVStore) BufferedKVStore {
 	return &bufferedKVStore{
 		db:        db,
-		mutations: NewMutationSequence(),
+		mutations: NewMutations(),
 	}
 }
 
@@ -62,12 +63,12 @@ func (b *bufferedKVStore) Clone() BufferedKVStore {
 	}
 }
 
-func (b *bufferedKVStore) Mutations() MutationSequence {
+func (b *bufferedKVStore) Mutations() *Mutations {
 	return b.mutations
 }
 
 func (b *bufferedKVStore) ClearMutations() {
-	b.mutations = NewMutationSequence()
+	b.mutations = NewMutations()
 }
 
 // iterates over all key-value pairs in KVStore
@@ -107,25 +108,24 @@ func slice(s string) string {
 }
 
 func (b *bufferedKVStore) flag(k kv.Key) string {
-	mut := b.mutations.Latest(k)
-	if mut != nil {
+	if b.mutations.Contains(k) {
 		return "+"
 	}
 	return " "
 }
 
 func (b *bufferedKVStore) Set(key kv.Key, value []byte) {
-	b.mutations.Add(NewMutationSet(key, value))
+	b.mutations.Set(key, value)
 }
 
 func (b *bufferedKVStore) Del(key kv.Key) {
-	b.mutations.Add(NewMutationDel(key))
+	b.mutations.Del(key)
 }
 
 func (b *bufferedKVStore) Get(key kv.Key) ([]byte, error) {
-	mut := b.mutations.Latest(key)
-	if mut != nil {
-		return mut.Value(), nil
+	v, ok := b.mutations.Get(key)
+	if ok {
+		return v, nil
 	}
 	v, err := b.db.Get(kvstore.Key(key))
 	if err == kvstore.ErrKeyNotFound {
@@ -139,12 +139,12 @@ func (b *bufferedKVStore) MustGet(key kv.Key) []byte {
 }
 
 func (b *bufferedKVStore) Has(key kv.Key) (bool, error) {
-	mut := b.mutations.Latest(key)
-	if mut != nil {
-		return mut.Value() != nil, nil
+	v, ok := b.mutations.Get(key)
+	if ok {
+		return v != nil, nil
 	}
-	v, err := b.db.Has(kvstore.Key(key))
-	return v, asDBError(err)
+	ok, err := b.db.Has(kvstore.Key(key))
+	return ok, asDBError(err)
 }
 
 func (b *bufferedKVStore) MustHas(key kv.Key) bool {
@@ -152,18 +152,19 @@ func (b *bufferedKVStore) MustHas(key kv.Key) bool {
 }
 
 func (b *bufferedKVStore) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
-	seen, done := b.mutations.IterateValues(prefix, f)
-	if done {
-		return nil
-	}
-	return b.db.Iterate([]byte(prefix), func(key kvstore.Key, value kvstore.Value) bool {
-		k := kv.Key(key)
-		_, ok := seen[k]
-		if ok {
-			return true
+	var err error
+	err2 := b.IterateKeys(prefix, func(k kv.Key) bool {
+		var v []byte
+		v, err = b.Get(k)
+		if err != nil {
+			return false
 		}
-		return f(k, value)
+		return f(k, v)
 	})
+	if err2 != nil {
+		return err2
+	}
+	return err
 }
 
 func (b *bufferedKVStore) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
@@ -171,22 +172,82 @@ func (b *bufferedKVStore) MustIterate(prefix kv.Key, f func(key kv.Key, value []
 }
 
 func (b *bufferedKVStore) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
-	seen, done := b.mutations.IterateValues(prefix, func(key kv.Key, value []byte) bool {
-		return f(key)
-	})
-	if done {
-		return nil
-	}
-	return b.db.IterateKeys([]byte(prefix), func(key kvstore.Key) bool {
-		k := kv.Key(key)
-		_, ok := seen[k]
-		if ok {
-			return true
+	for k := range b.mutations.Sets {
+		if !k.HasPrefix(prefix) {
+			continue
 		}
-		return f(k)
+		if !f(k) {
+			return nil
+		}
+	}
+	return b.db.IterateKeys([]byte(prefix), func(k kvstore.Key) bool {
+		{
+			k := kv.Key(k)
+			if !b.mutations.Contains(k) {
+				return f(k)
+			}
+		}
+		return true
 	})
+}
+
+func (b *bufferedKVStore) IterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+	var err error
+	err2 := b.IterateKeysSorted(prefix, func(k kv.Key) bool {
+		var v []byte
+		v, err = b.Get(k)
+		if err != nil {
+			return false
+		}
+		return f(k, v)
+	})
+	if err2 != nil {
+		return err2
+	}
+	return err
+}
+
+func (b *bufferedKVStore) MustIterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	kv.MustIterateSorted(b, prefix, f)
+}
+
+func (b *bufferedKVStore) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
+	var keys []kv.Key
+
+	for k := range b.mutations.Sets {
+		if !k.HasPrefix(prefix) {
+			continue
+		}
+		keys = append(keys, k)
+	}
+
+	err := b.db.IterateKeys([]byte(prefix), func(k kvstore.Key) bool {
+		{
+			k := kv.Key(k)
+			if !b.mutations.Contains(k) {
+				keys = append(keys, k)
+			}
+		}
+		return true
+	})
+	if err != nil {
+		return err
+	}
+
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+
+	for _, k := range keys {
+		if !f(k) {
+			break
+		}
+	}
+	return nil
 }
 
 func (b *bufferedKVStore) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 	kv.MustIterateKeys(b, prefix, f)
+}
+
+func (b *bufferedKVStore) MustIterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
+	kv.MustIterateKeysSorted(b, prefix, f)
 }

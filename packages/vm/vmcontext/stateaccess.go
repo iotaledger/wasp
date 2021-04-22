@@ -1,9 +1,10 @@
 package vmcontext
 
 import (
+	"sort"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -37,69 +38,110 @@ func (vmctx *VMContext) stateWrapper() stateWrapper {
 
 func (s stateWrapper) Has(name kv.Key) (bool, error) {
 	name = s.addContractSubPartition(name)
-	mut := s.stateUpdate.Mutations().Latest(name)
-	if mut != nil {
-		return mut.Value() != nil, nil
+	_, ok := s.stateUpdate.Mutations().Sets[name]
+	if ok {
+		return true, nil
 	}
 	return s.virtualState.Variables().Has(name)
 }
 
 func (s stateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) error {
-	prefix = s.addContractSubPartition(prefix)
-	seen, done := s.stateUpdate.Mutations().IterateValues(prefix, func(key kv.Key, value []byte) bool {
-		return f(key[len(s.contractSubPartitionPrefix):], value)
-	})
-	if done {
-		return nil
-	}
-	return s.virtualState.Variables().Iterate(prefix, func(key kv.Key, value []byte) bool {
-		_, ok := seen[key]
-		if ok {
-			return true
+	var err error
+	err2 := s.IterateKeys(prefix, func(k kv.Key) bool {
+		var v []byte
+		v, err = s.Get(k)
+		if err != nil {
+			return false
 		}
-		return f(key[len(s.contractSubPartitionPrefix):], value)
+		return f(k, v)
 	})
+	if err2 != nil {
+		return err2
+	}
+	return err
 }
 
 func (s stateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	prefix = s.addContractSubPartition(prefix)
-	seen, done := s.stateUpdate.Mutations().IterateValues(prefix, func(key kv.Key, value []byte) bool {
-		return f(key[len(s.contractSubPartitionPrefix):])
-	})
-	if done {
-		return nil
-	}
-	return s.virtualState.Variables().IterateKeys(prefix, func(key kv.Key) bool {
-		_, ok := seen[key]
-		if ok {
-			return true
+	for k := range s.stateUpdate.Mutations().Sets {
+		if k.HasPrefix(prefix) {
+			if !f(k[len(s.contractSubPartitionPrefix):]) {
+				return nil
+			}
 		}
-		return f(key[len(s.contractSubPartitionPrefix):])
+	}
+	return s.virtualState.Variables().IterateKeys(prefix, func(k kv.Key) bool {
+		if !s.stateUpdate.Mutations().Contains(k) {
+			return f(k[len(s.contractSubPartitionPrefix):])
+		}
+		return true
 	})
+}
+
+func (s stateWrapper) IterateSorted(prefix kv.Key, f func(kv.Key, []byte) bool) error {
+	var err error
+	err2 := s.IterateKeysSorted(prefix, func(k kv.Key) bool {
+		var v []byte
+		v, err = s.Get(k)
+		if err != nil {
+			return false
+		}
+		return f(k, v)
+	})
+	if err2 != nil {
+		return err2
+	}
+	return err
+}
+
+func (s stateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
+	prefix = s.addContractSubPartition(prefix)
+	var keys []kv.Key
+	for k := range s.stateUpdate.Mutations().Sets {
+		if k.HasPrefix(prefix) {
+			keys = append(keys, k)
+		}
+	}
+	err := s.virtualState.Variables().IterateKeysSorted(prefix, func(k kv.Key) bool {
+		if !s.stateUpdate.Mutations().Contains(k) {
+			keys = append(keys, k)
+		}
+		return true
+	})
+	if err != nil {
+		return err
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	for _, k := range keys {
+		if !f(k[len(s.contractSubPartitionPrefix):]) {
+			break
+		}
+	}
+	return nil
 }
 
 func (s stateWrapper) Get(name kv.Key) ([]byte, error) {
 	name = s.addContractSubPartition(name)
-	mut := s.stateUpdate.Mutations().Latest(name)
-	if mut != nil {
-		return mut.Value(), nil
+	v, ok := s.stateUpdate.Mutations().Sets[name]
+	if ok {
+		return v, nil
 	}
 	return s.virtualState.Variables().Get(name)
 }
 
 func (s stateWrapper) Del(name kv.Key) {
 	name = s.addContractSubPartition(name)
-	s.stateUpdate.Mutations().Add(buffered.NewMutationDel(name))
+	s.stateUpdate.Mutations().Del(name)
 }
 
 func (s stateWrapper) Set(name kv.Key, value []byte) {
 	name = s.addContractSubPartition(name)
-	s.stateUpdate.Mutations().Add(buffered.NewMutationSet(name, value))
+	s.stateUpdate.Mutations().Set(name, value)
 }
 
 func (vmctx *VMContext) State() kv.KVStore {
 	w := vmctx.stateWrapper()
-	//vmctx.log.Debugf("state wrapper: %s", w.contractHname.String())
+	// vmctx.log.Debugf("state wrapper: %s", w.contractHname.String())
 	return w
 }
 
@@ -117,4 +159,12 @@ func (s stateWrapper) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte
 
 func (s stateWrapper) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 	kv.MustIterateKeys(s, prefix, f)
+}
+
+func (s stateWrapper) MustIterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	kv.MustIterateSorted(s, prefix, f)
+}
+
+func (s stateWrapper) MustIterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
+	kv.MustIterateKeysSorted(s, prefix, f)
 }
