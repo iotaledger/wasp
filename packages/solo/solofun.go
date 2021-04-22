@@ -72,39 +72,6 @@ func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (ledgerstate
 	return ret, nil
 }
 
-// DestroyColoredTokens uncolors specified amount of colored tokens, i.e. converts them into IOTAs
-//func (env *Solo) DestroyColoredTokens(wallet *ed25519.KeyPair, color ledgerstate.Color, amount uint64) error {
-//	env.ledgerMutex.Lock()
-//	defer env.ledgerMutex.Unlock()
-//
-//	addr := ledgerstate.NewED25519Address(wallet.PublicKey)
-//
-//	allOuts := env.utxoDB.GetAddressOutputs(addr)
-//	utxoutil.ConsumeRemaining(allOuts...)
-//	if !utxoutil.ConsumeColored(color, amount){
-//		return xerrors.New("not enough balance")
-//	}
-//
-//	txb := utxoutil.NewBuilder(allOuts...)
-//	numIotas := DustThresholdIotas
-//	if amount > numIotas {
-//		numIotas = amount
-//	}
-//	bals := map[ledgerstate.Color]uint64{ledgerstate.}
-//
-//	allOuts := env.utxoDB.GetAddressOutputs(wallet.Address())
-//	txb, err := txbuilder.NewFromOutputBalances(allOuts)
-//	require.NoError(env.T, err)
-//
-//	if err = txb.EraseColor(wallet.Address(), color, amount); err != nil {
-//		return err
-//	}
-//	tx := txb.BuildValueTransactionOnly(false)
-//	tx.Sign(wallet)
-//
-//	return env.utxoDB.AddTransaction(tx)
-//}
-
 func (env *Solo) PutBlobDataIntoRegistry(data []byte) hashing.HashValue {
 	h, err := env.blobCache.PutBlob(data)
 	require.NoError(env.T, err)
