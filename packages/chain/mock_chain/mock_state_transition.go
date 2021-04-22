@@ -1,6 +1,8 @@
 package mock_chain
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -9,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type MockedStateTransition struct {
@@ -46,7 +47,7 @@ func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chain
 	nextStateHash := nextVirtualState.Hash()
 
 	txBuilder := utxoutil.NewBuilder(chainOutput)
-	err = txBuilder.AddAliasOutputAsReminder(chainOutput.GetAliasAddress(), nextStateHash[:])
+	err = txBuilder.AddAliasOutputAsRemainder(chainOutput.GetAliasAddress(), nextStateHash[:])
 	require.NoError(c.t, err)
 	tx, err := txBuilder.BuildWithED25519(c.chainKey)
 	require.NoError(c.t, err)

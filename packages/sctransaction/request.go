@@ -39,7 +39,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*ledgerstate.Transa
 	}
 
 	addr := ledgerstate.NewED25519Address(par.SenderKeyPair.PublicKey)
-	if err := txb.AddReminderOutputIfNeeded(addr, nil, true); err != nil {
+	if err := txb.AddRemainderOutputIfNeeded(addr, nil, true); err != nil {
 		return nil, err
 	}
 	tx, err := txb.BuildWithED25519(par.SenderKeyPair)

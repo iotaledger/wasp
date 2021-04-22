@@ -1,6 +1,9 @@
 package mempool
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -11,8 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
@@ -41,7 +42,7 @@ func getRequestsOnLedger(t *testing.T, amount int) []*sctransaction.RequestOnLed
 		err = txBuilder.AddExtendedOutputConsume(targetAddr, util.Uint64To8Bytes(i), map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 1})
 		require.NoError(t, err)
 	}
-	err = txBuilder.AddReminderOutputIfNeeded(addr, nil)
+	err = txBuilder.AddRemainderOutputIfNeeded(addr, nil)
 	require.NoError(t, err)
 	tx, err := txBuilder.BuildWithED25519(keyPair)
 	require.NoError(t, err)
@@ -308,7 +309,7 @@ func TestGetReadyListFull(t *testing.T) {
 
 func TestSolidifyLoop(t *testing.T) {
 	db := mapdb.NewMapDB()
-	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t)) //Solidification initiated on pool creation
+	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t)) // Solidification initiated on pool creation
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 4)
 
@@ -316,11 +317,11 @@ func TestSolidifyLoop(t *testing.T) {
 	// because ReceiveRequest will already try to solidify
 	pool.ReceiveRequest(requests[0])
 	_, result := pool.TakeAllReady(time.Now(), requests[0].ID())
-	require.False(t, result) //No solidification yet => request is not ready
+	require.False(t, result) // No solidification yet => request is not ready
 
-	time.Sleep(2 * constSolidificationLoopDelay) //Double the delay to make sure that solidification has really happened
+	time.Sleep(2 * constSolidificationLoopDelay) // Double the delay to make sure that solidification has really happened
 	ready, result := pool.TakeAllReady(time.Now(), requests[0].ID())
-	require.True(t, result) //Solidification initiated automatically after delay => the request is ready
+	require.True(t, result) // Solidification initiated automatically after delay => the request is ready
 	require.True(t, len(ready) == 1)
 	require.Contains(t, ready, requests[0])
 
@@ -328,11 +329,11 @@ func TestSolidifyLoop(t *testing.T) {
 	pool.ReceiveRequest(requests[2])
 	pool.ReceiveRequest(requests[3])
 	_, result = pool.TakeAllReady(time.Now(), requests[1].ID(), requests[2].ID(), requests[3].ID())
-	require.False(t, result) //No solidification after receiving requests yet => requests are not ready
+	require.False(t, result) // No solidification after receiving requests yet => requests are not ready
 
-	time.Sleep(2 * constSolidificationLoopDelay) //Double the delay to make sure that solidification has really happened
+	time.Sleep(2 * constSolidificationLoopDelay) // Double the delay to make sure that solidification has really happened
 	ready, result = pool.TakeAllReady(time.Now(), requests[1].ID(), requests[2].ID(), requests[3].ID())
-	require.True(t, result) //Solidification initiated automatically after delay => several requests made ready in one cycle iteration
+	require.True(t, result) // Solidification initiated automatically after delay => several requests made ready in one cycle iteration
 	require.True(t, len(ready) == 3)
 	require.Contains(t, ready, requests[1])
 	require.Contains(t, ready, requests[2])

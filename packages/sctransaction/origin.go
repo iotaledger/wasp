@@ -31,7 +31,7 @@ func NewChainOriginTransaction(
 		return nil, coretypes.ChainID{}, err
 	}
 	// adding reminder in compressing mode, i.e. all provided inputs will be consumed
-	if err := txb.AddReminderOutputIfNeeded(walletAddr, nil, true); err != nil {
+	if err := txb.AddRemainderOutputIfNeeded(walletAddr, nil, true); err != nil {
 		return nil, coretypes.ChainID{}, err
 	}
 	tx, err := txb.BuildWithED25519(keyPair)
@@ -83,7 +83,7 @@ func NewRootInitRequestTransaction(
 		return nil, err
 	}
 	addr := ledgerstate.NewED25519Address(keyPair.PublicKey)
-	if err := txb.AddReminderOutputIfNeeded(addr, nil, true); err != nil {
+	if err := txb.AddRemainderOutputIfNeeded(addr, nil, true); err != nil {
 		return nil, err
 	}
 	tx, err := txb.BuildWithED25519(keyPair)

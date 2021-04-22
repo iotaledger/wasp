@@ -152,7 +152,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 		require.NoError(ch.Env.T, err)
 	}
 
-	err = txb.AddReminderOutputIfNeeded(addr, nil, true)
+	err = txb.AddRemainderOutputIfNeeded(addr, nil, true)
 	require.NoError(ch.Env.T, err)
 
 	tx, err := txb.BuildWithED25519(keyPair)
