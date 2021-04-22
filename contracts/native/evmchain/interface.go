@@ -21,6 +21,15 @@ var Interface = &coreutil.ContractInterface{
 }
 
 func init() {
-	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{})
+	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
+		coreutil.ViewFunc(FuncGetBalance, getBalance),
+	})
 	native.AddProcessor(Interface)
 }
+
+const FuncGetBalance = "getBalance"
+
+const (
+	FieldAddress = "a"
+	FieldBalance = "b"
+)
