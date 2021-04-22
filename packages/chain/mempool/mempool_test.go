@@ -1,21 +1,19 @@
 package mempool
 
 import (
-	request2 "github.com/iotaledger/wasp/packages/coretypes/request"
-	"testing"
-	"time"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
-
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"testing"
+	"time"
 )
 
 func TestMempool(t *testing.T) {
@@ -26,7 +24,7 @@ func TestMempool(t *testing.T) {
 	time.Sleep(1 * time.Second)
 }
 
-func getRequestsOnLedger(t *testing.T, amount int) []*request2.RequestOnLedger {
+func getRequestsOnLedger(t *testing.T, amount int) []*request.RequestOnLedger {
 	utxo := utxodb.New()
 	keyPair, addr := utxo.NewKeyPairByIndex(0)
 	_, err := utxo.RequestFunds(addr)
@@ -48,7 +46,7 @@ func getRequestsOnLedger(t *testing.T, amount int) []*request2.RequestOnLedger {
 	require.NoError(t, err)
 	require.NotNil(t, tx)
 
-	requests, err := request2.RequestsOnLedgerFromTransaction(tx, targetAddr)
+	requests, err := request.RequestsOnLedgerFromTransaction(tx, targetAddr)
 	require.NoError(t, err)
 	require.True(t, amount == len(requests))
 	return requests
@@ -178,7 +176,7 @@ func TestTakeAllReady(t *testing.T) {
 //        Request2  +       +   +
 //        Request3  +
 //        Request4
-func initSeenTest(t *testing.T) (chain.Mempool, []*request2.RequestOnLedger) {
+func initSeenTest(t *testing.T) (chain.Mempool, []*request.RequestOnLedger) {
 	db := mapdb.NewMapDB()
 	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
