@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -52,21 +53,26 @@ import (
 	return nil, false
 }*/
 
-func (sm *stateManager) outputReceived(output *ledgerstate.AliasOutput) {
+func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) {
+	sm.log.Infof("XXX outputPulled %v", coretypes.OID(output.ID()))
 	if !sm.syncingBlocks.isSyncing(output.GetStateIndex()) {
 		// not interested
+		sm.log.Infof("XXX outputReceived: not interested %v", output.GetStateIndex())
 		return
 	}
 	sm.syncingBlocks.approveBlockCandidates(output)
 }
 
 func (sm *stateManager) outputPushed(output *ledgerstate.AliasOutput, timestamp time.Time) {
+	sm.log.Infof("XXX outputPushed %v %v %v", output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
 	if sm.stateOutput != nil {
 		switch {
 		case sm.stateOutput.GetStateIndex() == output.GetStateIndex():
+			sm.log.Infof("XXX outputPushed sm.stateOutput.GetStateIndex() == output.GetStateIndex() == %v", sm.stateOutput.GetStateIndex())
 			sm.log.Debug("EventStateMsg: repeated state output")
 			return
 		case sm.stateOutput.GetStateIndex() > output.GetStateIndex():
+			sm.log.Infof("XXX outputPushed sm.stateOutput.GetStateIndex() > output.GetStateIndex(): %v > %v", sm.stateOutput.GetStateIndex(), output.GetStateIndex())
 			sm.log.Warn("EventStateMsg: out of order state output")
 			return
 		}
@@ -74,22 +80,25 @@ func (sm *stateManager) outputPushed(output *ledgerstate.AliasOutput, timestamp 
 	sm.stateOutput = output
 	sm.stateOutputTimestamp = timestamp
 	sm.pullStateDeadline = time.Now()
-	sm.outputReceived(output)
+	sm.syncingBlocks.approveBlockCandidates(output)
 }
 
 func (sm *stateManager) doSyncActionIfNeeded() {
+	sm.log.Infof("XXX doSyncActionIfNeeded")
 	if sm.stateOutput == nil {
+		sm.log.Infof("XXX doSyncActionIfNeeded: output nil")
 		return
 	}
-	currentIndex := uint32(0)
+	startSyncFromIndex := uint32(0)
 	if sm.solidState != nil {
-		currentIndex = sm.solidState.BlockIndex()
+		startSyncFromIndex = sm.solidState.BlockIndex() + 1
 	}
 	switch {
-	case currentIndex == sm.stateOutput.GetStateIndex():
+	case startSyncFromIndex == sm.stateOutput.GetStateIndex()+1:
 		// synced
+		sm.log.Infof("XXX doSyncActionIfNeeded: synced")
 		return
-	case currentIndex > sm.stateOutput.GetStateIndex():
+	case startSyncFromIndex > sm.stateOutput.GetStateIndex():
 		sm.log.Panicf("inconsistency: solid state index is larger than state output index")
 	}
 	// not synced
@@ -97,25 +106,29 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	//if len(sm.blockCandidates) > 0 && currentIndex+1 >= sm.stateOutput.GetStateIndex() {
 	//	return
 	//}
-	for i := currentIndex + 1; i <= sm.stateOutput.GetStateIndex(); i++ {
+	sm.log.Infof("XXX doSyncActionIfNeeded: from %v to %v", startSyncFromIndex, sm.stateOutput.GetStateIndex())
+	for i := startSyncFromIndex; i <= sm.stateOutput.GetStateIndex(); i++ {
+		sm.log.Infof("XXX doSyncActionIfNeeded: syncing %v block candidates %v approved block candidates %v", i, sm.syncingBlocks.getBlockCandidatesCount(i), sm.syncingBlocks.getApprovedBlockCandidatesCount(i))
 		if sm.syncingBlocks.getBlockCandidatesCount(i) == 0 {
 			// some block is still unknown. Can't sync
 			sm.requestBlockIfNeeded(i)
 			return
 		}
 		if sm.syncingBlocks.getApprovedBlockCandidatesCount(i) > 0 {
-			if sm.tryToCommitCandidates(currentIndex+1, i, true) {
+			if sm.tryToCommitCandidates(startSyncFromIndex, i, true) {
 				return
 			}
 		}
 	}
 	// nothing is approved but all blocks are here
-	sm.tryToCommitCandidates(currentIndex+1, sm.stateOutput.GetStateIndex(), false)
+	//sm.tryToCommitCandidates(startSyncFromIndex, sm.stateOutput.GetStateIndex(), false)
 }
 
 func (sm *stateManager) requestBlockIfNeeded(stateIndex uint32) {
+	sm.log.Infof("XXX requestBlockIfNeeded: %v", stateIndex)
 	if time.Now().Before(sm.syncingBlocks.getPullDeadline(stateIndex)) {
 		// still waiting
+		sm.log.Infof("XXX requestBlockIfNeeded: before deadline %v", sm.syncingBlocks.getPullDeadline(stateIndex))
 		return
 	}
 	// have to pull
@@ -124,12 +137,15 @@ func (sm *stateManager) requestBlockIfNeeded(stateIndex uint32) {
 	})
 	// send messages until first without error
 	// TODO optimize
+	sm.log.Infof("XXX requestBlockIfNeeded: sending to peers")
 	sm.peers.SendToAllUntilFirstError(chain.MsgGetBlock, data)
+	sm.syncingBlocks.startSyncingIfNeeded(stateIndex)
 	sm.syncingBlocks.setPullDeadline(stateIndex, time.Now().Add(periodBetweenSyncMessages))
 }
 
 func (sm *stateManager) tryToCommitCandidates(fromStateIndex uint32, toStateIndex uint32, lastStateApprovedOnly bool) bool {
-	candidates, ok := sm.getCandidatesToCommit(make([]*candidateBlock, toStateIndex-fromStateIndex+1), fromStateIndex, toStateIndex, lastStateApprovedOnly)
+	sm.log.Infof("XXX tryToCommitCandidates: from %v to %v last approved %v", fromStateIndex, toStateIndex, lastStateApprovedOnly)
+	candidates, ok := sm.getCandidatesToCommit(make([]*candidateBlock, 0, toStateIndex-fromStateIndex+1), fromStateIndex, toStateIndex, lastStateApprovedOnly)
 	if ok {
 		sm.commitCandidates(candidates)
 	}
@@ -137,15 +153,18 @@ func (sm *stateManager) tryToCommitCandidates(fromStateIndex uint32, toStateInde
 }
 
 func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex uint32, toStateIndex uint32, lastStateApprovedOnly bool) ([]*candidateBlock, bool) {
+	sm.log.Infof("XXX getCandidatesToCommit: from %v to %v last approved %v accumulator %v", fromStateIndex, toStateIndex, lastStateApprovedOnly, candidateAcc)
 	if fromStateIndex > toStateIndex {
 		//Blocks gathered. Check if the correct result is received if they are applied
 		var tentativeState state.VirtualState
 		if sm.solidState != nil {
 			tentativeState = sm.solidState.Clone()
 		} else {
-			tentativeState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
+			//tentativeState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
+			tentativeState = state.NewVirtualState(sm.dbp.GetPartition(sm.chain.ID()), nil)
 		}
-		for _, candidate := range candidateAcc {
+		for i, candidate := range candidateAcc {
+			sm.log.Infof("XXX getCandidatesToCommit: candidate %v is null %v", i, candidate == nil)
 			block := candidate.getBlock()
 			if err := tentativeState.ApplyBlock(block); err != nil {
 				sm.log.Errorf("failed to apply synced block index #%d. Error: %v", block.StateIndex(), err)
@@ -167,6 +186,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 	} else {
 		stateCandidateBlocks = sm.syncingBlocks.getBlockCandidates(fromStateIndex)
 	}
+	sm.log.Infof("XXX getCandidatesToCommit: stateCandidateBlocks %v", stateCandidateBlocks)
 	//TODO: sort
 	for _, stateCandidateBlock := range stateCandidateBlocks {
 		resultBlocks, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex, lastStateApprovedOnly)
@@ -179,17 +199,26 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 
 func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
 	if sm.solidState == nil {
-		sm.solidState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
+		sm.solidState = state.NewVirtualState(sm.dbp.GetPartition(sm.chain.ID()), nil)
 	}
 	stateIndex := uint32(0)
 	for _, candidate := range candidates {
 		block := candidate.getBlock()
-		stateIndex := block.StateIndex()
+		stateIndex = block.StateIndex()
 		sm.solidState.ApplyBlock(block)
 		if err := sm.solidState.CommitToDb(block); err != nil {
 			sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
 			sm.syncingBlocks.restartSyncing()
 			return
+		}
+		if candidate.isLocal() {
+			go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
+				VirtualState:     sm.solidState.Clone(),
+				BlockEssenceHash: candidate.block.EssenceHash(),
+				ChainOutput:      sm.stateOutput,
+				Timestamp:        sm.stateOutputTimestamp,
+				RequestIDs:       candidate.block.RequestIDs(),
+			})
 		}
 		sm.syncingBlocks.deleteSyncingBlock(stateIndex)
 	}

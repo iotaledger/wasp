@@ -20,22 +20,29 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 	if sm.stateOutput == nil || sm.solidState == nil {
 		return
 	}
+	sm.log.Infow("XXX EventGetBlockMsg",
+		"sender index", msg.SenderIndex,
+		"block index", msg.BlockIndex,
+	)
 	sm.log.Debugw("EventGetBlockMsg",
 		"sender index", msg.SenderIndex,
 		"block index", msg.BlockIndex,
 	)
 	block, err := state.LoadBlock(sm.dbp.GetPartition(sm.chain.ID()), msg.BlockIndex)
 	if err != nil || block == nil {
+		sm.log.Infof("XXX EventGetBlockMsg: can't load message %v: %v", msg.BlockIndex, err)
 		// can't load block, can't respond
 		return
 	}
 
+	sm.log.Infof("XXX EventGetBlockMsg for state index #%d --> peer %d", msg.BlockIndex, msg.SenderIndex)
 	sm.log.Debugf("EventGetBlockMsg for state index #%d --> peer %d", msg.BlockIndex, msg.SenderIndex)
 
 	err = sm.peers.SendMsg(msg.SenderIndex, chain.MsgBlock, util.MustBytes(&chain.BlockMsg{
 		Block: block,
 	}))
 	if err != nil {
+		sm.log.Infof("XXX EventGetBlockMsg: erro sending %v", err)
 		return
 	}
 }
@@ -48,6 +55,12 @@ func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
 	if sm.stateOutput == nil {
 		return
 	}
+	sm.log.Infow("XXX EventBlockMsg",
+		"sender", msg.SenderIndex,
+		"block index", msg.Block.StateIndex(),
+		"essence hash", msg.Block.EssenceHash().String(),
+		"approving output", coretypes.OID(msg.Block.ApprovingOutputID()),
+	)
 	sm.log.Debugw("EventBlockMsg",
 		"sender", msg.SenderIndex,
 		"block index", msg.Block.StateIndex(),
@@ -67,7 +80,7 @@ func (sm *stateManager) eventOutputMsg(msg ledgerstate.Output) {
 	if !ok {
 		return
 	}
-	sm.outputReceived(chainOutput)
+	sm.outputPulled(chainOutput)
 	sm.takeAction()
 }
 

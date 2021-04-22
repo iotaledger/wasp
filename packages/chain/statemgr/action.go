@@ -24,11 +24,14 @@ func (sm *stateManager) takeAction() {
 }
 
 func (sm *stateManager) pullStateIfNeeded() {
+	sm.log.Infof("XXX pullStateIfNeeded")
 	nowis := time.Now()
 	if sm.pullStateDeadline.After(nowis) {
+		sm.log.Infof("XXX pullStateIfNeeded: after deadline")
 		return
 	}
-	if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidates() {
+	if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidates() { //TODO: hasBlockCandidatesLaterThan(stateOutput.StaeIndex())
+		sm.log.Infof("XXX pullStateIfNeeded: pull it")
 		sm.log.Debugf("pull state")
 		sm.nodeConn.PullState(sm.chain.ID().AsAliasAddress())
 	}
@@ -76,6 +79,12 @@ func (sm *stateManager) pullStateIfNeeded() {
 
 // adding block of state updates to the 'pending' map
 func (sm *stateManager) addBlockFromCommitee(block state.Block) {
+	sm.log.Infow("XXX addBlockFromCommitee",
+		"block index", block.StateIndex(),
+		"timestamp", block.Timestamp(),
+		"size", block.Size(),
+		"approving output", coretypes.OID(block.ApprovingOutputID()),
+	)
 	sm.log.Debugw("addBlockCandidate",
 		"block index", block.StateIndex(),
 		"timestamp", block.Timestamp(),
@@ -85,14 +94,13 @@ func (sm *stateManager) addBlockFromCommitee(block state.Block) {
 
 	var nextState state.VirtualState
 	if sm.solidState == nil {
-		// ignore parameter and assume original block if solidState == nil
-		nextState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
+		nextState = state.NewVirtualState(sm.dbp.GetPartition(sm.chain.ID()), nil)
 	} else {
 		nextState = sm.solidState.Clone()
-		if err := nextState.ApplyBlock(block); err != nil {
-			sm.log.Error("can't apply update to the current state: %v", err)
-			return
-		}
+	}
+	if err := nextState.ApplyBlock(block); err != nil {
+		sm.log.Error("can't apply update to the current state: %v", err)
+		return
 	}
 	// include the batch to pending batches map
 	nextStateHash := nextState.Hash()
@@ -100,30 +108,40 @@ func (sm *stateManager) addBlockFromCommitee(block state.Block) {
 		sm.log.Panicf("major inconsistency: stateToApprove hash is %s, expected %s", nextStateHash.String(), state.OriginStateHashBase58)
 	}
 
-	_, err := sm.syncingBlocks.addBlockCandidate(block, &nextStateHash)
-	if err != nil {
-		return
-	}
+	sm.addBlockAndCheckStateOutput(block, &nextStateHash)
 	sm.pullStateDeadline = time.Now()
 }
 
 func (sm *stateManager) addBlockFromNode(block state.Block) {
+	sm.log.Infof("XXX addBlockFromNode %v", block.StateIndex())
 	if !sm.syncingBlocks.isSyncing(block.StateIndex()) {
 		// not asked
+		sm.log.Infof("XXX addBlockFromNode %v: not asked", block.StateIndex())
 		return
 	}
-	isBlockNew, err := sm.syncingBlocks.addBlockCandidate(block, nil)
-	if err != nil {
-		sm.log.Error(err)
-		return
-	}
-	if isBlockNew {
+	if sm.addBlockAndCheckStateOutput(block, nil) {
 		// ask for approving output
 		sm.nodeConn.PullConfirmedOutput(sm.chain.ID().AsAddress(), block.ApprovingOutputID())
 	}
 }
 
+func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, stateHash *hashing.HashValue) bool {
+	isBlockNew, candidate, err := sm.syncingBlocks.addBlockCandidate(block, stateHash)
+	if err != nil {
+		sm.log.Error(err)
+		return false
+	}
+	if isBlockNew {
+		if sm.stateOutput != nil {
+			candidate.approveIfRightOutput(sm.stateOutput)
+		}
+		return !candidate.isApproved()
+	}
+	return false
+}
+
 func (sm *stateManager) storeSyncingData() {
+	sm.log.Infof("XXX storeSyncingData")
 	if sm.solidState == nil || sm.stateOutput == nil {
 		return
 	}
@@ -131,6 +149,7 @@ func (sm *stateManager) storeSyncingData() {
 	if err != nil {
 		return
 	}
+	sm.log.Infof("XXX storeSyncingData: synced %v block index %v state hash %v state timestamp %v output index %v output id %v output hash %v output timestamp %v", sm.solidState.Hash() == outputStateHash, sm.solidState.BlockIndex(), sm.solidState.Hash(), time.Unix(0, sm.solidState.Timestamp()), sm.stateOutput.GetStateIndex(), sm.stateOutput.ID(), outputStateHash, sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
 		Synced:                sm.solidState.Hash() == outputStateHash,
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),

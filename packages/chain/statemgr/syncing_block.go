@@ -51,9 +51,9 @@ func (syncsThis *syncingBlocks) setPullDeadline(stateIndex uint32, pullDeadline 
 func (syncsThis *syncingBlocks) getBlockCandidates(stateIndex uint32) []*candidateBlock {
 	sync, ok := syncsThis.blocks[stateIndex]
 	if !ok {
-		return make([]*candidateBlock, 0)
+		return make([]*candidateBlock, 0, 0)
 	}
-	result := make([]*candidateBlock, len(sync.blockCandidates))
+	result := make([]*candidateBlock, 0, len(sync.blockCandidates))
 	for _, candidate := range sync.blockCandidates {
 		result = append(result, candidate)
 	}
@@ -61,7 +61,7 @@ func (syncsThis *syncingBlocks) getBlockCandidates(stateIndex uint32) []*candida
 }
 
 func (syncsThis *syncingBlocks) getApprovedBlockCandidates(stateIndex uint32) []*candidateBlock {
-	result := make([]*candidateBlock, 1)
+	result := make([]*candidateBlock, 0, 1)
 	sync, ok := syncsThis.blocks[stateIndex]
 	if ok {
 		for _, candidate := range sync.blockCandidates {
@@ -104,55 +104,55 @@ func (syncsThis *syncingBlocks) hasBlockCandidates() bool {
 	return false
 }
 
-func (syncsThis *syncingBlocks) addBlockCandidate(block state.Block, stateHash *hashing.HashValue) (isBlockNew bool, err error) {
+func (syncsThis *syncingBlocks) addBlockCandidate(block state.Block, stateHash *hashing.HashValue) (isBlockNew bool, candidate *candidateBlock, err error) {
 	stateIndex := block.StateIndex()
-	sync, ok := syncsThis.blocks[stateIndex]
-	if !ok {
-		sync = &syncingBlock{
-			//pullDeadline      time.Time       // // TODO:
-			blockCandidates: make(map[hashing.HashValue]*candidateBlock),
-		}
-		syncsThis.blocks[stateIndex] = sync
-	}
+	syncsThis.startSyncingIfNeeded(stateIndex)
+	sync, _ := syncsThis.blocks[stateIndex]
 	hash := block.EssenceHash()
 	candidateExisting, ok := sync.blockCandidates[hash]
 	if ok {
 		// already have block. Check consistency. If inconsistent, start from scratch
 		if candidateExisting.getBlock().ApprovingOutputID() != block.ApprovingOutputID() {
 			delete(sync.blockCandidates, hash)
-			return false, fmt.Errorf("conflicting block arrived. Block index: %d, present approving outputID: %s, arrived approving outputID: %s",
+			return false, nil, fmt.Errorf("conflicting block arrived. Block index: %d, present approving outputID: %s, arrived approving outputID: %s",
 				stateIndex, coretypes.OID(candidateExisting.getBlock().ApprovingOutputID()), coretypes.OID(block.ApprovingOutputID()))
 
 		}
 		candidateExisting.addVote()
 		syncsThis.log.Infof("added existing block candidate. State index: %d, state hash: %s", stateIndex, hash.String())
-		return false, nil
+		return false, candidateExisting, nil
 	}
-	sync.blockCandidates[hash] = newCandidateBlock(block, stateHash)
+	candidate = newCandidateBlock(block, stateHash)
+	sync.blockCandidates[hash] = candidate
 	sync.pullDeadline = time.Now().Add(periodBetweenSyncMessages * 2)
 	syncsThis.log.Infof("added new block candidate. State index: %d, state hash: %s", stateIndex, hash.String())
-	return true, nil
+	return true, candidate, nil
 }
 
 func (syncsThis *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOutput) {
+	syncsThis.log.Infof("XXX approveBlockCandidates %v", coretypes.OID(output.ID()))
 	if output == nil {
 		return
 	}
 	stateIndex := output.GetStateIndex()
 	sync, ok := syncsThis.blocks[stateIndex]
+	syncsThis.log.Infof("XXX approveBlockCandidates: candidates=%v", syncsThis.hasBlockCandidates())
 	if ok {
-		outputID := output.ID()
-		finalHash, err := hashing.HashValueFromBytes(output.GetStateData())
-		if err != nil {
-			return
+		syncsThis.log.Infof("XXX approveBlockCandidates: sync block %v found", stateIndex)
+		for i, candidate := range sync.blockCandidates {
+			//syncsThis.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v, block hash %v output hash %v, block id %v output id %v", i, candidate.isLocal(), candidate.isApproved(), candidate.getStateHash(), finalHash, candidate.getBlock().ApprovingOutputID(), outputID)
+			//syncsThis.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v, output hash %v, output id %v", i, candidate.isLocal(), candidate.isApproved(), finalHash, outputID)
+			syncsThis.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v", i, candidate.isLocal(), candidate.isApproved())
+			candidate.approveIfRightOutput(output)
 		}
-		for _, candidate := range sync.blockCandidates {
-			if candidate.getBlock().ApprovingOutputID() == outputID {
-				if !candidate.isApproved() {
-					candidate.approveIfPossible(finalHash, outputID)
-				}
-				// else too late, candidate is already approved
-			}
+	}
+}
+
+func (syncsThis *syncingBlocks) startSyncingIfNeeded(stateIndex uint32) {
+	if !syncsThis.isSyncing(stateIndex) {
+		syncsThis.blocks[stateIndex] = &syncingBlock{
+			//pullDeadline      time.Time       // // TODO:
+			blockCandidates: make(map[hashing.HashValue]*candidateBlock),
 		}
 	}
 }

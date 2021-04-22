@@ -229,6 +229,7 @@ func (nThis *MockedNode) SetupPeerGroupSimple() {
 		return q <= uint16(len(nThis.Env.Nodes))
 	})
 	nThis.Peers.OnSendMsg(func(targetPeerIndex uint16, msgType byte, msgData []byte) error {
+		nThis.Log.Infof("XXX MockedPeerGroup:OnSendMsg peer %v", targetPeerIndex)
 		node, ok := nThis.Env.Nodes[targetPeerIndex]
 		if !ok {
 			return fmt.Errorf("wrong peer index %d", targetPeerIndex)
@@ -236,6 +237,7 @@ func (nThis *MockedNode) SetupPeerGroupSimple() {
 		rdr := bytes.NewReader(msgData)
 		switch msgType {
 		case chain.MsgGetBlock:
+			nThis.Log.Infof("XXX MockedPeerGroup:OnSendMsg MsgGetBlock")
 			msg := chain.GetBlockMsg{}
 			if err := msg.Read(rdr); err != nil {
 				return fmt.Errorf("error reading MsgGetBlock message: %v", err)
@@ -244,6 +246,7 @@ func (nThis *MockedNode) SetupPeerGroupSimple() {
 			go node.StateManager.EventGetBlockMsg(&msg)
 
 		case chain.MsgBlock:
+			nThis.Log.Infof("XXX MockedPeerGroup:OnSendMsg MsgBlock")
 			msg := chain.BlockMsg{}
 			if err := msg.Read(rdr); err != nil {
 				return fmt.Errorf("error reading MsgBlock message: %v", err)
@@ -257,6 +260,7 @@ func (nThis *MockedNode) SetupPeerGroupSimple() {
 	})
 
 	nThis.Peers.OnSendToAllUntilFirstError(func(msgType byte, msgData []byte) uint16 {
+		nThis.Log.Infof("XXX MockedPeerGroup:OnSendToAllUntilFirstError")
 		nThis.Env.mutex.Lock()
 		defer nThis.Env.mutex.Unlock()
 		counter := uint16(0)
