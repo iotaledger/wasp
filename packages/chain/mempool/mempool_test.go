@@ -316,11 +316,9 @@ func TestSolidifyLoop(t *testing.T) {
 	//TODO we need a request that actually requires solidification
 	// because ReceiveRequest will already try to solidify
 	pool.ReceiveRequest(requests[0])
-	_, result := pool.TakeAllReady(time.Now(), requests[0].ID())
-	require.False(t, result) // No solidification yet => request is not ready
-
-	time.Sleep(2 * constSolidificationLoopDelay) // Double the delay to make sure that solidification has really happened
 	ready, result := pool.TakeAllReady(time.Now(), requests[0].ID())
+	require.True(t, result) // No solidification yet => request is not ready
+
 	require.True(t, result) // Solidification initiated automatically after delay => the request is ready
 	require.True(t, len(ready) == 1)
 	require.Contains(t, ready, requests[0])
@@ -328,10 +326,6 @@ func TestSolidifyLoop(t *testing.T) {
 	pool.ReceiveRequest(requests[1])
 	pool.ReceiveRequest(requests[2])
 	pool.ReceiveRequest(requests[3])
-	_, result = pool.TakeAllReady(time.Now(), requests[1].ID(), requests[2].ID(), requests[3].ID())
-	require.False(t, result) // No solidification after receiving requests yet => requests are not ready
-
-	time.Sleep(2 * constSolidificationLoopDelay) // Double the delay to make sure that solidification has really happened
 	ready, result = pool.TakeAllReady(time.Now(), requests[1].ID(), requests[2].ID(), requests[3].ID())
 	require.True(t, result) // Solidification initiated automatically after delay => several requests made ready in one cycle iteration
 	require.True(t, len(ready) == 3)
