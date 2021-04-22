@@ -1,286 +1,140 @@
 package buffered
 
 import (
-	"fmt"
 	"io"
+	"sort"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// Mutation represents a single "set" or "del" operation over a KVStore
-type Mutation interface {
-	Read(io.Reader) error
-	Write(io.Writer) error
-
-	String() string
-
-	ApplyTo(w kv.KVStoreWriter)
-
-	// Key returns the key that is mutated
-	Key() kv.Key
-	// Value returns the value after the mutation (nil if deleted)
-	Value() []byte
-
-	getMagic() int
+type Mutations struct {
+	Sets map[kv.Key][]byte
+	Dels map[kv.Key]struct{}
 }
 
-type MutationSequence interface {
-	Read(io.Reader) error
-	Write(io.Writer) error
-
-	String() string
-
-	Clone() MutationSequence
-
-	Len() int
-
-	// Iterate over all mutations in order, even ones affecting the same key repeatedly
-	Iterate(func(mut Mutation) bool)
-	// Iterate over the latest mutation recorded for each key
-	IterateLatest(func(key kv.Key, mut Mutation) bool)
-	// Iterate over the latest value recorded for each non-deleted key
-	IterateValues(prefix kv.Key, f func(key kv.Key, value []byte) bool) (map[kv.Key]bool, bool)
-
-	Latest(key kv.Key) Mutation
-
-	Add(mut Mutation)
-
-	ApplyTo(w kv.KVStoreWriter)
-}
-
-const (
-	mutationMagicSet = iota
-	mutationMagicDel
-)
-
-type mutationSequence struct {
-	muts        []Mutation
-	latestByKey map[kv.Key]*Mutation
-}
-
-func NewMutationSequence() MutationSequence {
-	return &mutationSequence{
-		muts:        make([]Mutation, 0),
-		latestByKey: make(map[kv.Key]*Mutation),
+func NewMutations() *Mutations {
+	return &Mutations{
+		Sets: make(map[kv.Key][]byte),
+		Dels: make(map[kv.Key]struct{}),
 	}
 }
 
-func (ms *mutationSequence) String() string {
-	ret := ""
-	for _, mut := range ms.muts {
-		ret += fmt.Sprintf("[%s] ", mut.String())
+func (ms *Mutations) Write(w io.Writer) error {
+	if err := util.WriteUint32(w, uint32(len(ms.Sets))); err != nil {
+		return err
 	}
+	for _, item := range ms.SetsSorted() {
+		if err := util.WriteString16(w, string(item.Key)); err != nil {
+			return err
+		}
+		if err := util.WriteBytes32(w, item.Value); err != nil {
+			return err
+		}
+	}
+	if err := util.WriteUint32(w, uint32(len(ms.Dels))); err != nil {
+		return err
+	}
+	for _, k := range ms.DelsSorted() {
+		if err := util.WriteString16(w, string(k)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (ms *Mutations) Read(r io.Reader) error {
+	var err error
+	var n uint32
+	if err = util.ReadUint32(r, &n); err != nil {
+		return err
+	}
+	for i := uint32(0); i < n; i++ {
+		var k string
+		var v []byte
+		if k, err = util.ReadString16(r); err != nil {
+			return err
+		}
+		if v, err = util.ReadBytes32(r); err != nil {
+			return err
+		}
+		ms.Set(kv.Key(k), v)
+	}
+	if err = util.ReadUint32(r, &n); err != nil {
+		return err
+	}
+	for i := uint32(0); i < n; i++ {
+		var k string
+		if k, err = util.ReadString16(r); err != nil {
+			return err
+		}
+		ms.Del(kv.Key(k))
+	}
+	return nil
+}
+
+func (ms *Mutations) SetsSorted() kv.Items {
+	var ret kv.Items
+	for k, v := range ms.Sets {
+		ret = append(ret, kv.Item{Key: k, Value: v})
+	}
+	sort.Sort(ret)
 	return ret
 }
 
-func (ms *mutationSequence) Write(w io.Writer) error {
-	n := len(ms.muts)
-	if n > util.MaxUint16 {
-		return fmt.Errorf("Too many mutations")
+func (ms *Mutations) DelsSorted() []kv.Key {
+	var ret []kv.Key
+	for k := range ms.Dels {
+		ret = append(ret, k)
 	}
-	if err := util.WriteUint16(w, uint16(n)); err != nil {
-		return err
-	}
-	for _, mut := range ms.muts {
-		if err := util.WriteUint16(w, uint16(mut.getMagic())); err != nil {
-			return err
-		}
-		if err := mut.Write(w); err != nil {
-			return err
-		}
-	}
-	return nil
+	sort.Slice(ret, func(i, j int) bool { return ret[i] < ret[j] })
+	return ret
 }
 
-func (ms *mutationSequence) Read(r io.Reader) error {
-	var n uint16
-	if err := util.ReadUint16(r, &n); err != nil {
-		return err
+func (ms *Mutations) Contains(k kv.Key) bool {
+	_, ok := ms.Sets[k]
+	if ok {
+		return true
 	}
-	for i := uint16(0); i < n; i++ {
-		var magic uint16
-		if err := util.ReadUint16(r, &magic); err != nil {
-			return err
-		}
-		mut, err := newFromMagic(int(magic))
-		if err != nil {
-			return err
-		}
-		if err = mut.Read(r); err != nil {
-			return err
-		}
-		ms.Add(mut)
-	}
-	return nil
+	_, ok = ms.Dels[k]
+	return ok
 }
 
-func (ms *mutationSequence) Iterate(f func(mut Mutation) bool) {
-	for _, mut := range ms.muts {
-		if !f(mut) {
-			break
-		}
+func (ms *Mutations) Get(k kv.Key) ([]byte, bool) {
+	v, ok := ms.Sets[k]
+	if ok {
+		return v, ok
+	}
+	_, ok = ms.Dels[k]
+	return nil, ok
+}
+
+func (ms *Mutations) Set(k kv.Key, v []byte) {
+	delete(ms.Dels, k)
+	ms.Sets[k] = v
+}
+
+func (ms *Mutations) Del(k kv.Key) {
+	delete(ms.Sets, k)
+	ms.Dels[k] = struct{}{}
+}
+
+func (ms *Mutations) ApplyTo(w kv.KVStoreWriter) {
+	for k, v := range ms.Sets {
+		w.Set(k, v)
+	}
+	for k := range ms.Dels {
+		w.Del(k)
 	}
 }
 
-func (ms *mutationSequence) IterateLatest(f func(kv.Key, Mutation) bool) {
-	for key, mut := range ms.latestByKey {
-		if !f(key, *mut) {
-			break
-		}
+func (ms *Mutations) Clone() *Mutations {
+	clone := NewMutations()
+	for k, v := range ms.Sets {
+		clone.Set(k, v)
 	}
-}
-
-func (ms *mutationSequence) IterateValues(prefix kv.Key, f func(key kv.Key, value []byte) bool) (map[kv.Key]bool, bool) {
-	seen := make(map[kv.Key]bool)
-	for key, mut := range ms.latestByKey {
-		if !key.HasPrefix(prefix) {
-			continue
-		}
-		seen[key] = true
-		v := (*mut).Value()
-		if v != nil && !f(key, v) {
-			return seen, true
-		}
+	for k := range ms.Dels {
+		clone.Del(k)
 	}
-	return seen, false
-}
-
-func (ms *mutationSequence) Len() int {
-	return len(ms.muts)
-}
-
-func (ms *mutationSequence) Add(mut Mutation) {
-	ms.muts = append(ms.muts, mut)
-	ms.latestByKey[mut.Key()] = &mut
-}
-
-func (ms *mutationSequence) ApplyTo(w kv.KVStoreWriter) {
-	for _, mut := range ms.muts {
-		mut.ApplyTo(w)
-	}
-}
-
-func (ms *mutationSequence) Latest(key kv.Key) Mutation {
-	mut, ok := ms.latestByKey[key]
-	if !ok {
-		return nil
-	}
-	return *mut
-}
-
-func (ms *mutationSequence) Clone() MutationSequence {
-	mapClone := make(map[kv.Key]*Mutation)
-	for k, v := range ms.latestByKey {
-		mapClone[k] = v
-	}
-	return &mutationSequence{muts: ms.muts[:], latestByKey: mapClone}
-}
-
-type mutationSet struct {
-	k kv.Key
-	v []byte
-}
-
-type mutationDel struct {
-	k kv.Key
-}
-
-func newFromMagic(magic int) (Mutation, error) {
-	switch magic {
-	case mutationMagicSet:
-		return &mutationSet{}, nil
-	case mutationMagicDel:
-		return &mutationDel{}, nil
-	}
-	return nil, fmt.Errorf("Unknown mutation magic %d", magic)
-}
-
-func NewMutationSet(k kv.Key, v []byte) *mutationSet {
-	return &mutationSet{k: k, v: v}
-}
-
-func (m *mutationSet) getMagic() int {
-	return mutationMagicSet
-}
-
-func (m *mutationSet) Write(w io.Writer) error {
-	if err := util.WriteBytes16(w, []byte(m.k)); err != nil {
-		return err
-	}
-	if err := util.WriteBytes32(w, m.v); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *mutationSet) Read(r io.Reader) error {
-	k, err := util.ReadBytes16(r)
-	if err != nil {
-		return err
-	}
-	v, err := util.ReadBytes32(r)
-	if err != nil {
-		return err
-	}
-	m.k = kv.Key(k)
-	m.v = v
-	return nil
-}
-
-func (m *mutationSet) String() string {
-	if len(m.v) > 80 {
-		// avoid dumping for example the entire Wasm binary
-		return fmt.Sprintf("SET \"%s\"={%x...}", m.k, m.v[:80])
-	}
-	return fmt.Sprintf("SET \"%s\"={%x}", m.k, m.v)
-}
-
-func (m *mutationSet) Key() kv.Key {
-	return m.k
-}
-
-func (m *mutationSet) Value() []byte {
-	return m.v
-}
-
-func (m *mutationSet) ApplyTo(w kv.KVStoreWriter) {
-	w.Set(m.k, m.v)
-}
-
-func (m *mutationDel) getMagic() int {
-	return mutationMagicDel
-}
-
-func NewMutationDel(k kv.Key) *mutationDel {
-	return &mutationDel{k: k}
-}
-
-func (m *mutationDel) Write(w io.Writer) error {
-	return util.WriteBytes16(w, []byte(m.k))
-}
-
-func (m *mutationDel) Read(r io.Reader) error {
-	k, err := util.ReadBytes16(r)
-	if err != nil {
-		return err
-	}
-	m.k = kv.Key(k)
-	return nil
-}
-
-func (m *mutationDel) String() string {
-	return fmt.Sprintf("DEL %s", m.k)
-}
-
-func (m *mutationDel) Key() kv.Key {
-	return m.k
-}
-
-func (m *mutationDel) Value() []byte {
-	return nil
-}
-
-func (m *mutationDel) ApplyTo(w kv.KVStoreWriter) {
-	w.Del(m.k)
+	return clone
 }

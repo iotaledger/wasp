@@ -2,10 +2,10 @@ package state
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -13,13 +13,13 @@ import (
 type stateUpdate struct {
 	requestID coretypes.RequestID
 	timestamp int64
-	mutations buffered.MutationSequence
+	mutations *buffered.Mutations
 }
 
 func NewStateUpdate(reqid coretypes.RequestID) StateUpdate {
 	return &stateUpdate{
 		requestID: reqid,
-		mutations: buffered.NewMutationSequence(),
+		mutations: buffered.NewMutations(),
 	}
 }
 
@@ -54,7 +54,7 @@ func (su *stateUpdate) RequestID() coretypes.RequestID {
 	return su.requestID
 }
 
-func (su *stateUpdate) Mutations() buffered.MutationSequence {
+func (su *stateUpdate) Mutations() *buffered.Mutations {
 	return su.mutations
 }
 

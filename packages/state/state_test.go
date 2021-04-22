@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
@@ -170,7 +169,7 @@ func TestCommit(t *testing.T) {
 	reqid1 := ledgerstate.NewOutputID(txid1, 5)
 	su1 := NewStateUpdate(coretypes.RequestID(reqid1))
 
-	su1.Mutations().Add(buffered.NewMutationSet("x", []byte{1}))
+	su1.Mutations().Set("x", []byte{1})
 
 	batch1, err := NewBlock(su1)
 	require.NoError(t, err)
@@ -201,14 +200,14 @@ func TestCommit(t *testing.T) {
 	require.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch1_2))
 	require.EqualValues(t, vs1.Hash(), vs1_2.Hash())
 
-	v, _ = vs1_2.Variables().Get(kv.Key([]byte("x")))
+	v, _ = vs1_2.Variables().Get(kv.Key("x"))
 	require.Equal(t, []byte{1}, v)
 
 	txid2 := ledgerstate.TransactionID(hashing.HashStrings("test string 2"))
 	reqid2 := ledgerstate.NewOutputID(txid2, 6)
 	su2 := NewStateUpdate(coretypes.RequestID(reqid2))
 
-	su2.Mutations().Add(buffered.NewMutationDel("x"))
+	su2.Mutations().Del("x")
 
 	batch2, err := NewBlock(su2)
 	require.NoError(t, err)
@@ -218,16 +217,16 @@ func TestCommit(t *testing.T) {
 	err = vs2.ApplyBlock(batch2)
 	require.NoError(t, err)
 
-	v, _ = vs2.Variables().Get(kv.Key([]byte("x")))
+	v, _ = vs2.Variables().Get(kv.Key("x"))
 	require.Nil(t, v)
 
-	v, _ = partition.Get(dbkeyStateVariable(kv.Key([]byte("x"))))
+	v, _ = partition.Get(dbkeyStateVariable(kv.Key("x")))
 	require.Equal(t, []byte{1}, v)
 
 	err = vs2.CommitToDb(batch2)
 	require.NoError(t, err)
 
-	v, _ = partition.Get(dbkeyStateVariable(kv.Key([]byte("x"))))
+	v, _ = partition.Get(dbkeyStateVariable(kv.Key("x")))
 	require.Nil(t, v)
 }
 

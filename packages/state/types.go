@@ -1,10 +1,10 @@
 package state
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"io"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
@@ -44,7 +44,7 @@ type StateUpdate interface {
 	WithTimestamp(int64) StateUpdate
 	// the payload of variables/values
 	String() string
-	Mutations() buffered.MutationSequence
+	Mutations() *buffered.Mutations
 	Clone() StateUpdate
 	Write(io.Writer) error
 	Read(io.Reader) error
