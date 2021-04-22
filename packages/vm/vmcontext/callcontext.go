@@ -17,8 +17,8 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, pa
 			// was this an off-ledger request?
 			if _, ok := vmctx.req.(*sctransaction.RequestOffLedger); ok {
 				sender := vmctx.req.SenderAccount()
-				if ! vmctx.moveBetweenAccounts(sender, agentID, transfer) {
-					return fmt.Errorf("pushCallContextWithTransfer: off-ledger transfer failed")
+				if !vmctx.moveBetweenAccounts(sender, agentID, transfer) {
+					return fmt.Errorf("pushCallContextWithTransfer: off-ledger transfer failed: not enough funds")
 				}
 			} else {
 				vmctx.creditToAccount(agentID, transfer)
@@ -27,7 +27,7 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, pa
 			fromAgentID := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
 			fromAgentID = vmctx.adjustAccount(fromAgentID)
 			if !vmctx.moveBetweenAccounts(fromAgentID, agentID, transfer) {
-				return fmt.Errorf("pushCallContextWithTransfer: transfer failed")
+				return fmt.Errorf("pushCallContextWithTransfer: transfer failed: not enough funds")
 			}
 		}
 	}
