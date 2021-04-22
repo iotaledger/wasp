@@ -8,9 +8,9 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"golang.org/x/xerrors"
 	"time"
 
@@ -134,13 +134,13 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 	addr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	allOuts := ch.Env.utxoDB.GetAddressOutputs(addr)
 
-	metadata := sctransaction.NewRequestMetadata().
+	metadata := request.NewRequestMetadata().
 		WithTarget(req.target).
 		WithEntryPoint(req.entryPoint).
 		WithArgs(req.args)
 
 	data := metadata.Bytes()
-	mdataBack := sctransaction.RequestMetadataFromBytes(data)
+	mdataBack := request.RequestMetadataFromBytes(data)
 	require.True(ch.Env.T, mdataBack.ParsedOk())
 
 	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.LogicalTime())
@@ -184,7 +184,7 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *ed25519.KeyPair) (dic
 }
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair) (dict.Dict, error) {
-	request := sctransaction.NewRequestOffLedger(req.target, req.entryPoint, req.args)
+	request := request.NewRequestOffLedger(req.target, req.entryPoint, req.args)
 	if keyPair == nil {
 		keyPair = ch.OriginatorKeyPair
 	}

@@ -3,9 +3,8 @@ package vmcontext
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -15,7 +14,7 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, pa
 		agentID = vmctx.adjustAccount(agentID)
 		if len(vmctx.callStack) == 0 {
 			// was this an off-ledger request?
-			if _, ok := vmctx.req.(*sctransaction.RequestOffLedger); ok {
+			if _, ok := vmctx.req.(*request.RequestOffLedger); ok {
 				sender := vmctx.req.SenderAccount()
 				if !vmctx.moveBetweenAccounts(sender, agentID, transfer) {
 					return fmt.Errorf("pushCallContextWithTransfer: off-ledger transfer failed: not enough funds")

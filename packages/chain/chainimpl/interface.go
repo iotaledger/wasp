@@ -5,10 +5,11 @@ package chainimpl
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/transaction"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -91,7 +92,7 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 	c.log.Debugf("ReceiveTransaction: %s", tx.ID().Base58())
-	reqs, err := sctransaction.RequestsOnLedgerFromTransaction(tx, c.chainID.AsAddress())
+	reqs, err := request.RequestsOnLedgerFromTransaction(tx, c.chainID.AsAddress())
 	if err != nil {
 		c.log.Warnf("failed to parse transaction %s: %v", tx.ID().Base58(), err)
 		return
@@ -99,7 +100,7 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 	for _, req := range reqs {
 		c.ReceiveRequest(req)
 	}
-	if chainOut := sctransaction.GetAliasOutput(tx, c.chainID.AsAddress()); chainOut != nil {
+	if chainOut := transaction.GetAliasOutput(tx, c.chainID.AsAddress()); chainOut != nil {
 		c.ReceiveState(chainOut, tx.Essence().Timestamp())
 	}
 }

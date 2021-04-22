@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
@@ -99,7 +99,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	}
 
 	// ----------- create origin transaction
-	originTx, chainID, err := sctransaction.NewChainOriginTransaction(
+	originTx, chainID, err := transaction.NewChainOriginTransaction(
 		par.OriginatorKeyPair,
 		stateControllerAddr,
 		nil,
@@ -158,7 +158,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 
 	// NOTE: whoever send first init request, is an owner of the chain
 	// create root init transaction
-	reqTx, err := sctransaction.NewRootInitRequestTransaction(
+	reqTx, err := transaction.NewRootInitRequestTransaction(
 		par.OriginatorKeyPair,
 		chainID,
 		par.Description,

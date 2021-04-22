@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	request2 "github.com/iotaledger/wasp/packages/coretypes/request"
 	"sort"
 	"sync"
 	"time"
@@ -11,7 +12,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
 type mempool struct {
@@ -50,7 +50,7 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	defer m.mutex.Unlock()
 
 	// only allow off-ledger requests with valid signature
-	if offLedgerReq, ok := req.(*sctransaction.RequestOffLedger); ok {
+	if offLedgerReq, ok := req.(*request2.RequestOffLedger); ok {
 		if !offLedgerReq.VerifySignature() {
 			m.log.Errorf("ReceiveRequest.VerifySignature:invalid signature")
 			return

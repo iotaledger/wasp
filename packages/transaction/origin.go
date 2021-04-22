@@ -1,10 +1,11 @@
-package sctransaction
+package transaction
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
@@ -71,7 +72,7 @@ func NewRootInitRequestTransaction(
 	args.AddEncodeSimple(paramChainID, codec.EncodeChainID(chainID))
 	args.AddEncodeSimple(paramDescription, codec.EncodeString(description))
 
-	metadata := NewRequestMetadata().
+	metadata := request.NewRequestMetadata().
 		WithTarget(coretypes.Hn("root")).
 		WithEntryPoint(coretypes.EntryPointInit).
 		WithArgs(args).

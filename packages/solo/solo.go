@@ -9,9 +9,10 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/dbprovider"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
 	"math/rand"
@@ -177,7 +178,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 
 	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
 	inputs := env.utxoDB.GetAddressOutputs(originatorAddr)
-	originTx, chainID, err := sctransaction.NewChainOriginTransaction(chainOriginator, stateAddr, bals, env.LogicalTime(), inputs...)
+	originTx, chainID, err := transaction.NewChainOriginTransaction(chainOriginator, stateAddr, bals, env.LogicalTime(), inputs...)
 	require.NoError(env.T, err)
 	err = env.utxoDB.AddTransaction(originTx)
 	require.NoError(env.T, err)
@@ -212,7 +213,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	err = ret.State.CommitToDb(originBlock)
 	require.NoError(env.T, err)
 
-	initTx, err := sctransaction.NewRootInitRequestTransaction(
+	initTx, err := transaction.NewRootInitRequestTransaction(
 		ret.OriginatorKeyPair,
 		chainID,
 		"'solo' testing chain",
@@ -281,7 +282,7 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]cor
 		if !ok {
 			lst = make([]coretypes.Request, 0)
 		}
-		ret[arr] = append(lst, sctransaction.RequestOnLedgerFromOutput(o, tx.Essence().Timestamp(), sender, utxoutil.GetMintedAmounts(tx)))
+		ret[arr] = append(lst, request.RequestOnLedgerFromOutput(o, tx.Essence().Timestamp(), sender, utxoutil.GetMintedAmounts(tx)))
 	}
 	return ret
 }
@@ -330,7 +331,7 @@ func (ch *Chain) collateBatch() []coretypes.Request {
 	ready = ready[:batchSize]
 	for _, req := range ready {
 		// using logical clock
-		if onLegderRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
+		if onLegderRequest, ok := req.(*request.RequestOnLedger); ok {
 			if onLegderRequest.TimeLock().Before(ch.Env.LogicalTime()) {
 				if !onLegderRequest.TimeLock().IsZero() {
 					ch.Log.Infof("unlocked time-locked request %s", req.ID())

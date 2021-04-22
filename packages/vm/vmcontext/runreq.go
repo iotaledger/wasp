@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -115,7 +115,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
 }
 
 func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
-	req, ok := vmctx.req.(*sctransaction.RequestOffLedger)
+	req, ok := vmctx.req.(*request.RequestOffLedger)
 	if !ok {
 		vmctx.log.Panicf("adjustOffLedgerTransfer.inconsistency: unexpected request type")
 	}
@@ -143,7 +143,7 @@ func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
 }
 
 func (vmctx *VMContext) preventReplay() bool {
-	_, ok := vmctx.req.(*sctransaction.RequestOffLedger)
+	_, ok := vmctx.req.(*request.RequestOffLedger)
 	if !ok {
 		return false
 	}
@@ -236,7 +236,7 @@ func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
 	// is ordinary wallet the tokens (less fees) will be returned back
 	backToAddress := sender.Address()
 	backToContract := sender.Hname()
-	metadata := sctransaction.NewRequestMetadata().WithTarget(backToContract)
+	metadata := request.NewRequestMetadata().WithTarget(backToContract)
 	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), tokens.Map())
 	if err != nil {
 		vmctx.log.Errorf("mustSendBack: %v", err)
@@ -257,7 +257,7 @@ func (vmctx *VMContext) mustCallFromRequest() {
 }
 
 func (vmctx *VMContext) mustSaveRequestOrder() {
-	if _, ok := vmctx.req.(*sctransaction.RequestOffLedger); ok {
+	if _, ok := vmctx.req.(*request.RequestOffLedger); ok {
 		vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 		defer vmctx.popCallContext()
 

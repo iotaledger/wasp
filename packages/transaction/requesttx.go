@@ -1,10 +1,11 @@
-package sctransaction
+package transaction
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 )
 
@@ -25,7 +26,7 @@ type NewRequestTransactionParams struct {
 func NewRequestTransaction(par NewRequestTransactionParams) (*ledgerstate.Transaction, error) {
 	txb := utxoutil.NewBuilder(par.UnspentOutputs...)
 	for _, req := range par.Requests {
-		metadata := NewRequestMetadata().
+		metadata := request.NewRequestMetadata().
 			WithTarget(req.Contract).
 			WithEntryPoint(req.EntryPoint).
 			WithArgs(req.Args).
