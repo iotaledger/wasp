@@ -2,6 +2,9 @@ package vmcontext
 
 import (
 	"fmt"
+	"runtime/debug"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
@@ -11,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"golang.org/x/xerrors"
-	"time"
 )
 
 // RunTheRequest processes any request based on the Extended output, even if it
@@ -45,7 +47,8 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 		defer func() {
 			if r := recover(); r != nil {
 				vmctx.lastResult = nil
-				vmctx.lastError = fmt.Errorf("recovered from panic in VM: %v", r)
+				vmctx.lastError = xerrors.Errorf("%s: recovered from panic in VM: %v", req, r)
+				vmctx.Debugf(string(debug.Stack()))
 				if dberr, ok := r.(buffered.DBError); ok {
 					// There was an error accessing the DB. The world stops
 					vmctx.Panicf("DB error: %v", dberr)
@@ -67,7 +70,6 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 
 // mustSetUpRequestContext sets up VMContext for request
 func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
-
 	if _, ok := req.Params(); !ok {
 		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: request args should had been solidified")
 	}
@@ -315,7 +317,6 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 		return nil, xerrors.Errorf("finalizeRequestCall: %v", err)
 	}
 	tx, _, err := vmctx.txBuilder.WithTimestamp(timestamp).BuildEssence()
-
 	if err != nil {
 		return nil, err
 	}

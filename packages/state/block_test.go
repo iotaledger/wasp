@@ -1,16 +1,14 @@
 package state
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/stretchr/testify/require"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/kv/buffered"
-
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBatches(t *testing.T) {
@@ -59,9 +57,9 @@ func TestBatchMarshaling(t *testing.T) {
 	t.Logf("req2: %s", coretypes.RequestID(reqid2).String())
 
 	su1 := NewStateUpdate(coretypes.RequestID(reqid1))
-	su1.Mutations().Add(buffered.NewMutationSet("k", []byte{1}))
+	su1.Mutations().Set("k", []byte{1})
 	su2 := NewStateUpdate(coretypes.RequestID(reqid2))
-	su2.Mutations().Add(buffered.NewMutationSet("k", []byte{2}))
+	su2.Mutations().Set("k", []byte{2})
 	batch1, err := NewBlock(su1, su2)
 	assert.NoError(t, err)
 	batch1.WithBlockIndex(2)

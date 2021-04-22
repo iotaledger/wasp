@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/require"
@@ -36,7 +35,7 @@ func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chain
 	require.NoError(c.t, err)
 
 	stateUpdate := state.NewStateUpdate(coretypes.RequestID{})
-	stateUpdate.Mutations().Add(buffered.NewMutationSet("counter", codec.EncodeUint64(counter+1)))
+	stateUpdate.Mutations().Set("counter", codec.EncodeUint64(counter+1))
 	block, err := state.NewBlock(stateUpdate)
 	require.NoError(c.t, err)
 	block.WithBlockIndex(nextVirtualState.BlockIndex() + 1)
