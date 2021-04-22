@@ -34,10 +34,6 @@ func (vmctx *VMContext) debitFromAccount(agentID *coretypes.AgentID, transfer *l
 }
 
 func (vmctx *VMContext) moveBetweenAccounts(fromAgentID, toAgentID *coretypes.AgentID, transfer *ledgerstate.ColoredBalances) bool {
-	if len(vmctx.callStack) == 0 {
-		vmctx.log.Panicf("moveBetweenAccounts can't be called from request context")
-	}
-
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil) // create local context for the state
 	defer vmctx.popCallContext()
 

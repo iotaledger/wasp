@@ -5,6 +5,7 @@ package testcore
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -246,6 +247,9 @@ func TestFeeNotEnough(t *testing.T) {
 	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 
+	chain.AssertOwnersIotas(2)
+	chain.AssertTotalIotas(2)
+
 	user, _ := env.NewKeyPairWithFunds()
 	req = solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
 		root.ParamOwnerFee, 1000,
@@ -257,7 +261,9 @@ func TestFeeNotEnough(t *testing.T) {
 	checkFees(chain, accounts.Interface.Name, 0, 0)
 	checkFees(chain, blob.Interface.Name, 0, 0)
 
-	chain.AssertOwnersIotas(101)
+	//TODO no validator was provided, so iotas end up in null account
+	chain.AssertIotas(&coretypes.NilAgentID, 99)
+	chain.AssertOwnersIotas(2)
 	chain.AssertTotalIotas(101)
 }
 

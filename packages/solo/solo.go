@@ -365,10 +365,8 @@ func (ch *Chain) backlogLen() int {
 }
 
 // solidifies request arguments without mempool (only for solo)
-func (ch *Chain) solidifyRequest(r coretypes.Request) {
-	onLedgerRequest, ok := r.(*sctransaction.RequestOnLedger)
-	require.True(ch.Env.T, ok)
-	ok, err := onLedgerRequest.SolidifyArgs(ch.Env.blobCache)
+func (ch *Chain) solidifyRequest(req coretypes.Request) {
+	ok, err := req.SolidifyArgs(ch.Env.blobCache)
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 }

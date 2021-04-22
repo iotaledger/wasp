@@ -1,8 +1,9 @@
 package coretypes
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/hashing"
 )
 
 const DefaultTTL = 1 * time.Hour

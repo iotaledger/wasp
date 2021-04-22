@@ -183,6 +183,26 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *ed25519.KeyPair) (dic
 	return ret, err
 }
 
+func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair) (dict.Dict, error) {
+	request := sctransaction.NewRequestOffLedger(req.target, req.entryPoint, req.args)
+	if keyPair == nil {
+		keyPair = ch.OriginatorKeyPair
+	}
+	if req.transfer != nil {
+		request.Transfer(req.transfer)
+	}
+	request.Sign(keyPair)
+	ch.reqCounter.Add(1)
+	ch.mempool.ReceiveRequest(request)
+
+	ready := ch.mempool.GetReadyList(0)
+	if len(ready) == 0 {
+		ch.Log.Infof("waiting for solidification")
+		return nil, nil
+	}
+	return ch.runBatch(ready, "off-ledger")
+}
+
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, dict.Dict, error) {
 	tx, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {

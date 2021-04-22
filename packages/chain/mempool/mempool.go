@@ -1,12 +1,13 @@
 package mempool
 
 import (
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/state"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/state"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -48,6 +49,14 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
+	// only allow off-ledger requests with valid signature
+	if offLedgerReq, ok := req.(*sctransaction.RequestOffLedger); ok {
+		if !offLedgerReq.VerifySignature() {
+			m.log.Errorf("ReceiveRequest.VerifySignature:invalid signature")
+			return
+		}
+	}
+
 	isCompleted, err := state.IsRequestCompleted(m.chainState, req.ID())
 	if err != nil {
 		m.log.Errorf("ReceiveRequest.IsRequestCompleted: %s", err)
@@ -59,13 +68,21 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	if _, ok := m.requests[req.ID()]; ok {
 		return
 	}
-	if onLedgerRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
-		tl := onLedgerRequest.TimeLock()
-		if tl.IsZero() {
-			m.log.Infof("IN MEMPOOL %s", req.ID())
-		} else {
-			m.log.Infof("IN MEMPOOL %s timelocked for %v", req.ID(), tl.Sub(time.Now()))
-		}
+
+	// attempt solidification for those requests that do not require blobs
+	// instead of having to wait for the solidification goroutine to kick in
+	// also weeds out requests with solidification errors
+	_, err = req.SolidifyArgs(m.blobCache)
+	if err != nil {
+		m.log.Errorf("ReceiveRequest.SolidifyArgs: %s", err)
+		return
+	}
+
+	tl := req.TimeLock()
+	if tl.IsZero() {
+		m.log.Infof("IN MEMPOOL %s", req.ID())
+	} else {
+		m.log.Infof("IN MEMPOOL %s timelocked for %v", req.ID(), tl.Sub(time.Now()))
 	}
 	m.requests[req.ID()] = &request{
 		req:             req,
@@ -117,9 +134,9 @@ func isRequestReady(req *request, seenThreshold uint16, nowis time.Time) bool {
 	if _, paramsReady := req.req.Params(); !paramsReady {
 		return false
 	}
-	if r, ok := req.req.(*sctransaction.RequestOnLedger); ok {
+	if !req.req.TimeLock().IsZero() {
 		timeBaseline := nowis.Add(timeAheadTolerance)
-		if !r.TimeLock().IsZero() && r.TimeLock().After(timeBaseline) {
+		if req.req.TimeLock().After(timeBaseline) {
 			return false
 		}
 	}
@@ -201,12 +218,9 @@ func (m *mempool) Stats() (int, int, int) {
 	total := len(m.requests)
 	withMsg, solid := 0, 0
 	for _, req := range m.requests {
-		if req.req == nil {
-			continue
-		}
-		withMsg++
-		if onTangleRequest, ok := req.req.(*sctransaction.RequestOnLedger); ok {
-			if isSolid, _ := onTangleRequest.SolidifyArgs(m.blobCache); isSolid {
+		if req.req != nil {
+			withMsg++
+			if isSolid, _ := req.req.SolidifyArgs(m.blobCache); isSolid {
 				solid++
 			}
 		}
@@ -232,13 +246,11 @@ func (m *mempool) solidificationLoop() {
 
 func (m *mempool) doSolidifyRequests() {
 	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
 	for _, req := range m.requests {
-		if req.req == nil {
-			continue
-		}
-		if onTangleRequest, ok := req.req.(*sctransaction.RequestOnLedger); ok {
-			_, _ = onTangleRequest.SolidifyArgs(m.blobCache)
+		if req.req != nil {
+			_, _ = req.req.SolidifyArgs(m.blobCache)
 		}
 	}
-	m.mutex.Unlock()
 }
