@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"io"
@@ -131,8 +132,8 @@ func (req *RequestOffLedger) VerifySignature() bool {
 // note that request needs to have been signed before this value is
 // considered valid, because we use the first 32 bytes of the signature
 func (req *RequestOffLedger) ID() (requestId coretypes.RequestID) {
-	copy(requestId[:], req.signature[:ledgerstate.TransactionIDLength])
-	return
+	txid := ledgerstate.TransactionID(hashing.HashData(req.Bytes()))
+	return coretypes.RequestID(ledgerstate.NewOutputID(txid, 0))
 }
 
 // IsFeePrepaid always true for off-ledger
