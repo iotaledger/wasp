@@ -50,7 +50,7 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	// only allow off-ledger requests with valid signature
 	if offLedgerReq, ok := req.(*request.RequestOffLedger); ok {
 		if !offLedgerReq.VerifySignature() {
-			m.log.Errorf("ReceiveRequest.VerifySignature:invalid signature")
+			m.log.Errorf("ReceiveRequest.VerifySignature: invalid signature")
 			return
 		}
 	}
