@@ -119,7 +119,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 		return
 	}
 	if !ok {
-		err = fmt.Errorf("interbal error: no hash returned")
+		err = fmt.Errorf("internal error: no hash returned")
 		return
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)

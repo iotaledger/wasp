@@ -3,26 +3,25 @@ package mempool
 import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/state"
 	"sort"
 	"sync"
 	"time"
-
-	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 )
 
 type mempool struct {
-	mutex      sync.RWMutex
-	chainState kvstore.KVStore
-	requests   map[coretypes.RequestID]*request
-	chStop     chan bool
-	blobCache  coretypes.BlobCache
-	log        *logger.Logger
+	mutex       sync.RWMutex
+	chainState  kvstore.KVStore
+	requestRefs map[coretypes.RequestID]*requestRef
+	chStop      chan bool
+	blobCache   coretypes.BlobCache
+	log         *logger.Logger
 }
 
-type request struct {
+type requestRef struct {
 	req             coretypes.Request
 	whenMsgReceived time.Time
 	seen            map[uint16]bool
@@ -34,11 +33,11 @@ var _ chain.Mempool = &mempool{}
 
 func New(chainState kvstore.KVStore, blobCache coretypes.BlobCache, log *logger.Logger) chain.Mempool {
 	ret := &mempool{
-		chainState: chainState,
-		requests:   make(map[coretypes.RequestID]*request),
-		chStop:     make(chan bool),
-		blobCache:  blobCache,
-		log:        log.Named("m"),
+		chainState:  chainState,
+		requestRefs: make(map[coretypes.RequestID]*requestRef),
+		chStop:      make(chan bool),
+		blobCache:   blobCache,
+		log:         log.Named("m"),
 	}
 	go ret.solidificationLoop()
 	return ret
@@ -48,6 +47,14 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
+	// only allow off-ledger requests with valid signature
+	if offLedgerReq, ok := req.(*request.RequestOffLedger); ok {
+		if !offLedgerReq.VerifySignature() {
+			m.log.Errorf("ReceiveRequest.VerifySignature:invalid signature")
+			return
+		}
+	}
+
 	isCompleted, err := state.IsRequestCompleted(m.chainState, req.ID())
 	if err != nil {
 		m.log.Errorf("ReceiveRequest.IsRequestCompleted: %s", err)
@@ -56,18 +63,26 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	if isCompleted {
 		return
 	}
-	if _, ok := m.requests[req.ID()]; ok {
+	if _, ok := m.requestRefs[req.ID()]; ok {
 		return
 	}
-	if onLedgerRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
-		tl := onLedgerRequest.TimeLock()
-		if tl.IsZero() {
-			m.log.Infof("IN MEMPOOL %s", req.ID())
-		} else {
-			m.log.Infof("IN MEMPOOL %s timelocked for %v", req.ID(), tl.Sub(time.Now()))
-		}
+
+	// attempt solidification for those requests that do not require blobs
+	// instead of having to wait for the solidification goroutine to kick in
+	// also weeds out requests with solidification errors
+	_, err = req.SolidifyArgs(m.blobCache)
+	if err != nil {
+		m.log.Errorf("ReceiveRequest.SolidifyArgs: %s", err)
+		return
 	}
-	m.requests[req.ID()] = &request{
+
+	tl := req.TimeLock()
+	if tl.IsZero() {
+		m.log.Infof("IN MEMPOOL %s", req.ID())
+	} else {
+		m.log.Infof("IN MEMPOOL %s timelocked for %v", req.ID(), tl.Sub(time.Now()))
+	}
+	m.requestRefs[req.ID()] = &requestRef{
 		req:             req,
 		whenMsgReceived: time.Now(),
 		seen:            make(map[uint16]bool),
@@ -78,19 +93,19 @@ func (m *mempool) MarkSeenByCommitteePeer(reqid *coretypes.RequestID, peerIndex 
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if _, ok := m.requests[*reqid]; !ok {
-		m.requests[*reqid] = &request{
+	if _, ok := m.requestRefs[*reqid]; !ok {
+		m.requestRefs[*reqid] = &requestRef{
 			seen: make(map[uint16]bool),
 		}
 	}
-	m.requests[*reqid].seen[peerIndex] = true
+	m.requestRefs[*reqid].seen[peerIndex] = true
 }
 
 func (m *mempool) ClearSeenMarks() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	for _, rec := range m.requests {
+	for _, rec := range m.requestRefs {
 		rec.seen = make(map[uint16]bool)
 	}
 }
@@ -100,26 +115,26 @@ func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 	defer m.mutex.Unlock()
 
 	for _, rid := range reqs {
-		delete(m.requests, rid)
+		delete(m.requestRefs, rid)
 		m.log.Infof("OUT MEMPOOL %s", rid)
 	}
 }
 
 const timeAheadTolerance = 1000 * time.Nanosecond
 
-func isRequestReady(req *request, seenThreshold uint16, nowis time.Time) bool {
-	if req.req == nil {
+func isRequestReady(ref *requestRef, seenThreshold uint16, nowis time.Time) bool {
+	if ref.req == nil {
 		return false
 	}
-	if len(req.seen) < int(seenThreshold) {
+	if len(ref.seen) < int(seenThreshold) {
 		return false
 	}
-	if _, paramsReady := req.req.Params(); !paramsReady {
+	if _, paramsReady := ref.req.Params(); !paramsReady {
 		return false
 	}
-	if r, ok := req.req.(*sctransaction.RequestOnLedger); ok {
+	if !ref.req.TimeLock().IsZero() {
 		timeBaseline := nowis.Add(timeAheadTolerance)
-		if !r.TimeLock().IsZero() && r.TimeLock().After(timeBaseline) {
+		if ref.req.TimeLock().After(timeBaseline) {
 			return false
 		}
 	}
@@ -130,11 +145,11 @@ func (m *mempool) GetReadyList(seenThreshold uint16) []coretypes.Request {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	ret := make([]coretypes.Request, 0, len(m.requests))
+	ret := make([]coretypes.Request, 0, len(m.requestRefs))
 	nowis := time.Now()
-	for _, req := range m.requests {
-		if isRequestReady(req, seenThreshold, nowis) {
-			ret = append(ret, req.req)
+	for _, ref := range m.requestRefs {
+		if isRequestReady(ref, seenThreshold, nowis) {
+			ret = append(ret, ref.req)
 		}
 	}
 	sort.Slice(ret, func(i, j int) bool {
@@ -147,15 +162,15 @@ func (m *mempool) GetReadyListFull(seenThreshold uint16) []*chain.ReadyListRecor
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	ret := make([]*chain.ReadyListRecord, 0, len(m.requests))
+	ret := make([]*chain.ReadyListRecord, 0, len(m.requestRefs))
 	nowis := time.Now()
-	for _, req := range m.requests {
-		if isRequestReady(req, seenThreshold, nowis) {
+	for _, ref := range m.requestRefs {
+		if isRequestReady(ref, seenThreshold, nowis) {
 			rec := &chain.ReadyListRecord{
-				Request: req.req,
+				Request: ref.req,
 				Seen:    make(map[uint16]bool),
 			}
-			for p := range req.seen {
+			for p := range ref.seen {
 				rec.Seen[p] = true
 			}
 			ret = append(ret, rec)
@@ -173,14 +188,14 @@ func (m *mempool) TakeAllReady(nowis time.Time, reqids ...coretypes.RequestID) (
 
 	ret := make([]coretypes.Request, len(reqids))
 	for i := range reqids {
-		req, ok := m.requests[reqids[i]]
+		ref, ok := m.requestRefs[reqids[i]]
 		if !ok {
 			return nil, false
 		}
-		if !isRequestReady(req, 0, nowis) {
+		if !isRequestReady(ref, 0, nowis) {
 			return nil, false
 		}
-		ret[i] = req.req
+		ret[i] = ref.req
 	}
 	return ret, true
 }
@@ -189,7 +204,7 @@ func (m *mempool) HasRequest(id coretypes.RequestID) bool {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	rec, ok := m.requests[id]
+	rec, ok := m.requestRefs[id]
 	return ok && rec.req != nil
 }
 
@@ -198,15 +213,12 @@ func (m *mempool) Stats() (int, int, int) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	total := len(m.requests)
+	total := len(m.requestRefs)
 	withMsg, solid := 0, 0
-	for _, req := range m.requests {
-		if req.req == nil {
-			continue
-		}
-		withMsg++
-		if onTangleRequest, ok := req.req.(*sctransaction.RequestOnLedger); ok {
-			if isSolid, _ := onTangleRequest.SolidifyArgs(m.blobCache); isSolid {
+	for _, ref := range m.requestRefs {
+		if ref.req != nil {
+			withMsg++
+			if isSolid, _ := ref.req.SolidifyArgs(m.blobCache); isSolid {
 				solid++
 			}
 		}
@@ -232,13 +244,11 @@ func (m *mempool) solidificationLoop() {
 
 func (m *mempool) doSolidifyRequests() {
 	m.mutex.Lock()
-	for _, req := range m.requests {
-		if req.req == nil {
-			continue
-		}
-		if onTangleRequest, ok := req.req.(*sctransaction.RequestOnLedger); ok {
-			_, _ = onTangleRequest.SolidifyArgs(m.blobCache)
+	defer m.mutex.Unlock()
+
+	for _, ref := range m.requestRefs {
+		if ref.req != nil {
+			_, _ = ref.req.SolidifyArgs(m.blobCache)
 		}
 	}
-	m.mutex.Unlock()
 }

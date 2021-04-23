@@ -3,8 +3,8 @@ package vmcontext
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -13,12 +13,20 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, pa
 		agentID := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), contract)
 		agentID = vmctx.adjustAccount(agentID)
 		if len(vmctx.callStack) == 0 {
-			vmctx.creditToAccount(agentID, transfer)
+			// was this an off-ledger request?
+			if _, ok := vmctx.req.(*request.RequestOffLedger); ok {
+				sender := vmctx.req.SenderAccount()
+				if !vmctx.moveBetweenAccounts(sender, agentID, transfer) {
+					return fmt.Errorf("pushCallContextWithTransfer: off-ledger transfer failed: not enough funds")
+				}
+			} else {
+				vmctx.creditToAccount(agentID, transfer)
+			}
 		} else {
 			fromAgentID := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
 			fromAgentID = vmctx.adjustAccount(fromAgentID)
 			if !vmctx.moveBetweenAccounts(fromAgentID, agentID, transfer) {
-				return fmt.Errorf("pushCallContextWithTransfer: transfer failed")
+				return fmt.Errorf("pushCallContextWithTransfer: transfer failed: not enough funds")
 			}
 		}
 	}

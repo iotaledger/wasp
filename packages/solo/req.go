@@ -8,9 +8,9 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"golang.org/x/xerrors"
 	"time"
 
@@ -134,13 +134,13 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 	addr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	allOuts := ch.Env.utxoDB.GetAddressOutputs(addr)
 
-	metadata := sctransaction.NewRequestMetadata().
+	metadata := request.NewRequestMetadata().
 		WithTarget(req.target).
 		WithEntryPoint(req.entryPoint).
 		WithArgs(req.args)
 
 	data := metadata.Bytes()
-	mdataBack := sctransaction.RequestMetadataFromBytes(data)
+	mdataBack := request.RequestMetadataFromBytes(data)
 	require.True(ch.Env.T, mdataBack.ParsedOk())
 
 	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.LogicalTime())
@@ -152,7 +152,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 		require.NoError(ch.Env.T, err)
 	}
 
-	err = txb.AddReminderOutputIfNeeded(addr, nil, true)
+	err = txb.AddRemainderOutputIfNeeded(addr, nil, true)
 	require.NoError(ch.Env.T, err)
 
 	tx, err := txb.BuildWithED25519(keyPair)
@@ -181,6 +181,26 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 func (ch *Chain) PostRequestSync(req *CallParams, keyPair *ed25519.KeyPair) (dict.Dict, error) {
 	_, ret, err := ch.PostRequestSyncTx(req, keyPair)
 	return ret, err
+}
+
+func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair) (dict.Dict, error) {
+	request := request.NewRequestOffLedger(req.target, req.entryPoint, req.args)
+	if keyPair == nil {
+		keyPair = ch.OriginatorKeyPair
+	}
+	if req.transfer != nil {
+		request.Transfer(req.transfer)
+	}
+	request.Sign(keyPair)
+	ch.reqCounter.Add(1)
+	ch.mempool.ReceiveRequest(request)
+
+	ready := ch.mempool.GetReadyList(0)
+	if len(ready) == 0 {
+		ch.Log.Infof("waiting for solidification")
+		return nil, nil
+	}
+	return ch.runBatch(ready, "off-ledger")
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, dict.Dict, error) {

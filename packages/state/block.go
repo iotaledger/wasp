@@ -3,12 +3,12 @@ package state
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/wasp/packages/dbprovider"
 	"io"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -19,7 +19,7 @@ type block struct {
 	stateUpdates  []StateUpdate
 }
 
-const OriginBlockHashBase58 = "3WNypZFokE7aRAdpSxnS93DKpSK5HVBnjaAYC3icpoe1"
+const OriginBlockHashBase58 = "4YdxXy76cShQsVbGvkoDCeMaHDrxEgZVWuA4puUBjU7H"
 
 // validates, enumerates and creates a block from array of state updates
 func NewBlock(stateUpdates ...StateUpdate) (Block, error) {

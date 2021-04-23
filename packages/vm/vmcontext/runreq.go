@@ -2,15 +2,18 @@ package vmcontext
 
 import (
 	"fmt"
+	"runtime/debug"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"golang.org/x/xerrors"
-	"time"
 )
 
 // RunTheRequest processes any request based on the Extended output, even if it
@@ -20,15 +23,20 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 
 	vmctx.mustSetUpRequestContext(req)
 
-	enoughFees := true
-	if !vmctx.isInitChainRequest() {
-		vmctx.mustGetBaseValues()
-		enoughFees = vmctx.mustHandleFees()
-	}
-
-	if !enoughFees {
+	// guard against replaying here to prevent replaying fee deduction
+	if vmctx.preventReplay() {
+		vmctx.log.Warn("RunTheRequest.replayPrevention: ", req.ID().String())
 		return
 	}
+
+	if !vmctx.isInitChainRequest() {
+		vmctx.mustGetBaseValues()
+		enoughFees := vmctx.mustHandleFees()
+		if !enoughFees {
+			return
+		}
+	}
+
 	// snapshot state baseline for rollback in case of panic
 	snapshotTxBuilder := vmctx.txBuilder.Clone()
 	snapshotStateUpdate := vmctx.stateUpdate.Clone()
@@ -39,8 +47,9 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 		defer func() {
 			if r := recover(); r != nil {
 				vmctx.lastResult = nil
-				vmctx.lastError = fmt.Errorf("recovered from panic in VM: %v", r)
-				if dberr, ok := r.(buffered.DBError); ok {
+				vmctx.lastError = xerrors.Errorf("%s: recovered from panic in VM: %v", req, r)
+				vmctx.Debugf(string(debug.Stack()))
+				if dberr, ok := r.(*kv.DBError); ok {
 					// There was an error accessing the DB. The world stops
 					vmctx.Panicf("DB error: %v", dberr)
 				}
@@ -61,7 +70,6 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 
 // mustSetUpRequestContext sets up VMContext for request
 func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
-
 	if _, ok := req.Params(); !ok {
 		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: request args should had been solidified")
 	}
@@ -73,23 +81,30 @@ func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
 	}
 	vmctx.timestamp += 1
 	t := time.Unix(0, vmctx.timestamp)
-	if req.Output() != nil {
-		if input, ok := req.Output().(*ledgerstate.ExtendedLockedOutput); ok {
-			// it is an on-ledger request
-			if input.TimeLockedNow(t) {
-				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", t, input.String())
-			}
-			if !input.UnlockAddressNow(t).Equals(vmctx.chainID.AsAddress()) {
-				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
-					t, input.String(), vmctx.chainID.String())
-			}
-		}
-		vmctx.remainingAfterFees = req.Output().Balances().Clone()
-	}
 
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
 	vmctx.stateUpdate = state.NewStateUpdate(req.ID()).WithTimestamp(vmctx.timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
+
+	if isRequestTimeLockedNow(req, t) {
+		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", t, req.ID().String())
+	}
+	if req.Output() != nil {
+		// on-ledger request
+		if input, ok := req.Output().(*ledgerstate.ExtendedLockedOutput); ok {
+			// it is an on-ledger request
+			if !input.UnlockAddressNow(t).Equals(vmctx.chainID.AsAddress()) {
+				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
+					t, input.String(), vmctx.chainID.String())
+			}
+		} else {
+			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: unexpected UTXO type")
+		}
+		vmctx.remainingAfterFees = req.Output().Balances().Clone()
+	} else {
+		// off-ledger request
+		vmctx.remainingAfterFees = vmctx.adjustOffLedgerTransfer()
+	}
 
 	targetContract, _ := req.Target()
 	var ok bool
@@ -101,6 +116,45 @@ func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
 	}
 }
 
+func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
+	req, ok := vmctx.req.(*request.RequestOffLedger)
+	if !ok {
+		vmctx.log.Panicf("adjustOffLedgerTransfer.inconsistency: unexpected request type")
+	}
+	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	// take sender-provided token transfer info and adjust it to
+	// reflect what is actually available in the local sender account
+	sender := req.SenderAccount()
+	transfers := make(map[ledgerstate.Color]uint64)
+	if tokens := req.Tokens(); tokens != nil {
+		tokens.ForEach(func(color ledgerstate.Color, balance uint64) bool {
+			available := accounts.GetBalance(vmctx.State(), sender, color)
+			if balance > available {
+				vmctx.log.Warn("adjusting transfer from ", balance, " to ", available)
+				balance = available
+			}
+			if balance > 0 {
+				transfers[color] = balance
+			}
+			return true
+		})
+	}
+	return ledgerstate.NewColoredBalances(transfers)
+}
+
+func (vmctx *VMContext) preventReplay() bool {
+	_, ok := vmctx.req.(*request.RequestOffLedger)
+	if !ok {
+		return false
+	}
+	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	return vmctx.req.Order() <= accounts.GetOrder(vmctx.State(), vmctx.req.SenderAddress())
+}
+
 // mustHandleFees handles node fees. If not enough, takes as much as it can, the rest sends back
 // Return false if not enough fees
 func (vmctx *VMContext) mustHandleFees() bool {
@@ -110,52 +164,66 @@ func (vmctx *VMContext) mustHandleFees() bool {
 		vmctx.log.Debugf("mustHandleFees: no fees charged")
 		return true
 	}
-	// handle fees
-	availableForFees, _ := vmctx.remainingAfterFees.Get(vmctx.feeColor)
-	if availableForFees < totalFee {
-		// take as much as available, the rest send back
-		rem := vmctx.remainingAfterFees.Map()
-		delete(rem, vmctx.feeColor)
-		if availableForFees > 0 {
-			accrue := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
-				vmctx.feeColor: availableForFees,
-			})
-			vmctx.creditToAccount(vmctx.commonAccount(), accrue)
-		}
-		vmctx.mustSendBack(ledgerstate.NewColoredBalances(rem))
-		vmctx.lastError = fmt.Errorf("mustHandleFees: not enough fees for request %s. Remaining tokens were sent back to %s",
-			vmctx.req.ID(), vmctx.req.SenderAddress().Base58())
-		vmctx.remainingAfterFees = nil
+
+	// process fees for owner and validator
+	if vmctx.grabFee(vmctx.commonAccount(), vmctx.ownerFee) &&
+		vmctx.grabFee(&vmctx.validatorFeeTarget, vmctx.validatorFee) {
+		// there were enough fees for both
+		return true
+	}
+
+	// not enough fees available
+	vmctx.mustSendBack(vmctx.remainingAfterFees)
+	vmctx.remainingAfterFees = nil
+	vmctx.lastError = fmt.Errorf("mustHandleFees: not enough fees for request %s. Remaining tokens were sent back to %s",
+		vmctx.req.ID(), vmctx.req.SenderAddress().Base58())
+	return false
+}
+
+// Return false if not enough fees
+func (vmctx *VMContext) grabFee(account *coretypes.AgentID, amount uint64) bool {
+	if amount == 0 {
+		return true
+	}
+
+	// determine how much fees we can actually take
+	available, _ := vmctx.remainingAfterFees.Get(vmctx.feeColor)
+	if available == 0 {
 		return false
 	}
-	// enough fees. Split between owner and validator
-	if vmctx.ownerFee > 0 {
-		t := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
-			vmctx.feeColor: vmctx.ownerFee,
-		})
-		// send to common account
-		vmctx.creditToAccount(vmctx.commonAccount(), t)
+	enoughFees := available >= amount
+	if !enoughFees {
+		// just take whatever is there
+		amount = available
 	}
-	if vmctx.validatorFee > 0 {
-		t := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
-			vmctx.feeColor: vmctx.validatorFee,
-		})
-		vmctx.creditToAccount(&vmctx.validatorFeeTarget, t)
-	}
-	// subtract fees from the transfer
+	available -= amount
+
+	// take fee from remainingAfterFees
 	remaining := vmctx.remainingAfterFees.Map()
-	s, _ := remaining[vmctx.feeColor]
-	if s > totalFee {
-		remaining[vmctx.feeColor] = s - totalFee
-	} else {
+	if available == 0 {
 		delete(remaining, vmctx.feeColor)
+	} else {
+		remaining[vmctx.feeColor] = available
 	}
 	vmctx.remainingAfterFees = ledgerstate.NewColoredBalances(remaining)
-	return true
+
+	// get ready to transfer the fees
+	transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
+		vmctx.feeColor: amount,
+	})
+
+	if !vmctx.req.IsFeePrepaid() {
+		vmctx.creditToAccount(account, transfer)
+		return enoughFees
+	}
+
+	// fees should have been deposited in sender account on chain
+	sender := vmctx.req.SenderAccount()
+	return vmctx.moveBetweenAccounts(sender, account, transfer) && enoughFees
 }
 
 func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
-	if tokens == nil || tokens.Size() == 0 {
+	if tokens == nil || tokens.Size() == 0 || vmctx.req.Output() == nil {
 		return
 	}
 	sender := vmctx.req.SenderAccount()
@@ -169,8 +237,8 @@ func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
 	// otherwise will be sent to _default contract. In case if sender
 	// is ordinary wallet the tokens (less fees) will be returned back
 	backToAddress := sender.Address()
-	backToContract := vmctx.req.SenderAccount().Hname()
-	metadata := sctransaction.NewRequestMetadata().WithTarget(backToContract)
+	backToContract := sender.Hname()
+	metadata := request.NewRequestMetadata().WithTarget(backToContract)
 	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), tokens.Map())
 	if err != nil {
 		vmctx.log.Errorf("mustSendBack: %v", err)
@@ -181,11 +249,25 @@ func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
 func (vmctx *VMContext) mustCallFromRequest() {
 	vmctx.log.Debugf("mustCallFromRequest: %s", vmctx.req.ID().String())
 
+	vmctx.mustSaveRequestOrder()
+
 	// calling only non view entry points. Calling the view will trigger error and fallback
 	targetContract, entryPoint := vmctx.req.Target()
 	params, _ := vmctx.req.Params()
 	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
 		targetContract, entryPoint, params, vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)
+}
+
+func (vmctx *VMContext) mustSaveRequestOrder() {
+	if _, ok := vmctx.req.(*request.RequestOffLedger); ok {
+		vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
+		defer vmctx.popCallContext()
+
+		state := vmctx.State()
+		address := vmctx.req.SenderAddress()
+		order := vmctx.req.Order()
+		accounts.SetOrder(state, address, order)
+	}
 }
 
 func (vmctx *VMContext) finalizeRequestCall() {
@@ -231,13 +313,19 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 }
 
 func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) (*ledgerstate.TransactionEssence, error) {
-	if err := vmctx.txBuilder.AddAliasOutputAsReminder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
+	if err := vmctx.txBuilder.AddAliasOutputAsRemainder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
 		return nil, xerrors.Errorf("finalizeRequestCall: %v", err)
 	}
 	tx, _, err := vmctx.txBuilder.WithTimestamp(timestamp).BuildEssence()
-
 	if err != nil {
 		return nil, err
 	}
 	return tx, nil
+}
+
+func isRequestTimeLockedNow(req coretypes.Request, nowis time.Time) bool {
+	if req.TimeLock().IsZero() {
+		return false
+	}
+	return req.TimeLock().After(nowis)
 }

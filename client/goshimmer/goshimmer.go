@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/client"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 // Client is a wrapper for the official Goshimmer client, providing a cleaner interface
@@ -107,7 +107,7 @@ func (c *Client) WaitForConfirmation(txid ledgerstate.TransactionID) error {
 	return nil
 }
 
-func (c *Client) PostRequestTransaction(par sctransaction.NewRequestTransactionParams) (*ledgerstate.Transaction, error) {
+func (c *Client) PostRequestTransaction(par transaction.NewRequestTransactionParams) (*ledgerstate.Transaction, error) {
 	var err error
 
 	if len(par.UnspentOutputs) == 0 {
@@ -118,7 +118,7 @@ func (c *Client) PostRequestTransaction(par sctransaction.NewRequestTransactionP
 		}
 	}
 
-	tx, err := sctransaction.NewRequestTransaction(par)
+	tx, err := transaction.NewRequestTransaction(par)
 	if err != nil {
 		return nil, err
 	}

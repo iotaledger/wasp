@@ -28,7 +28,7 @@ var mintCmd = &cobra.Command{
 		tx := util.WithTransaction(func() (*ledgerstate.Transaction, error) {
 			txb := utxoutil.NewBuilder(outs...)
 			log.Check(txb.AddSigLockedColoredOutput(address, nil, uint64(amount)))
-			log.Check(txb.AddReminderOutputIfNeeded(address, nil, true))
+			log.Check(txb.AddRemainderOutputIfNeeded(address, nil, true))
 			return txb.BuildWithED25519(wallet.KeyPair())
 		})
 

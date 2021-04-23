@@ -1,4 +1,4 @@
-package sctransaction
+package transaction
 
 import "github.com/iotaledger/goshimmer/packages/ledgerstate"
 

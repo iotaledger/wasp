@@ -3,6 +3,11 @@ package statemgr
 import (
 	"bytes"
 	"fmt"
+	"sync"
+	"sync/atomic"
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -17,10 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/xerrors"
-	"sync"
-	"sync/atomic"
-	"testing"
-	"time"
 )
 
 type MockedEnv struct {
@@ -73,7 +74,7 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 	txBuilder := utxoutil.NewBuilder(outputs...)
 	err = txBuilder.AddNewAliasMint(bals, ret.OriginatorAddress, state.OriginStateHash().Bytes())
 	require.NoError(t, err)
-	err = txBuilder.AddReminderOutputIfNeeded(ret.OriginatorAddress, nil)
+	err = txBuilder.AddRemainderOutputIfNeeded(ret.OriginatorAddress, nil)
 	require.NoError(t, err)
 	originTx, err := txBuilder.BuildWithED25519(ret.OriginatorKeyPair)
 	require.NoError(t, err)
