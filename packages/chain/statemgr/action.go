@@ -30,7 +30,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 		sm.log.Infof("XXX pullStateIfNeeded: after deadline")
 		return
 	}
-	if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidates() { //TODO: hasBlockCandidatesLaterThan(stateOutput.StaeIndex())
+	if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidates() { //TODO: hasBlockCandidatesLaterThan(stateOutput.StateIndex())
 		sm.log.Infof("XXX pullStateIfNeeded: pull it")
 		sm.log.Debugf("pull state")
 		sm.nodeConn.PullState(sm.chain.ID().AsAliasAddress())
@@ -78,7 +78,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 }*/
 
 // adding block of state updates to the 'pending' map
-func (sm *stateManager) addBlockFromCommitee(block state.Block) {
+func (sm *stateManager) addBlockFromSelf(block state.Block) {
 	sm.log.Infow("XXX addBlockFromCommitee",
 		"block index", block.StateIndex(),
 		"timestamp", block.Timestamp(),
@@ -112,7 +112,7 @@ func (sm *stateManager) addBlockFromCommitee(block state.Block) {
 	sm.pullStateDeadline = time.Now()
 }
 
-func (sm *stateManager) addBlockFromNode(block state.Block) {
+func (sm *stateManager) addBlockFromPeer(block state.Block) {
 	sm.log.Infof("XXX addBlockFromNode %v", block.StateIndex())
 	if !sm.syncingBlocks.isSyncing(block.StateIndex()) {
 		// not asked

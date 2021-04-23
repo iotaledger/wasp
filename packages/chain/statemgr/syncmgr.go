@@ -187,7 +187,10 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 		stateCandidateBlocks = sm.syncingBlocks.getBlockCandidates(fromStateIndex)
 	}
 	sm.log.Infof("XXX getCandidatesToCommit: stateCandidateBlocks %v", stateCandidateBlocks)
-	//TODO: sort
+	//TODO: sort.Slice(slice, func(i int, j int) bool{
+	//return slice[i]<slice[j]
+	//})
+
 	for _, stateCandidateBlock := range stateCandidateBlocks {
 		resultBlocks, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex, lastStateApprovedOnly)
 		if ok {

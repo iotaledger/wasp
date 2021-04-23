@@ -102,7 +102,7 @@ func (sm *stateManager) initLoadState() {
 			sm.solidState.BlockIndex(), h.String(), txh.String())
 	} else {
 		sm.solidState = nil
-		sm.addBlockFromCommitee(state.MustNewOriginBlock())
+		sm.addBlockFromSelf(state.MustNewOriginBlock())
 		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
 	}
 	sm.recvLoop() // Start to process external events.

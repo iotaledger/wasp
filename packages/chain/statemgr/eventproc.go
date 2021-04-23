@@ -67,7 +67,7 @@ func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
 		"essence hash", msg.Block.EssenceHash().String(),
 		"approving output", coretypes.OID(msg.Block.ApprovingOutputID()),
 	)
-	sm.addBlockFromNode(msg.Block)
+	sm.addBlockFromPeer(msg.Block)
 	sm.takeAction()
 }
 
@@ -118,7 +118,7 @@ func (sm *stateManager) eventBlockCandidateMsg(msg chain.BlockCandidateMsg) {
 		"block essence", msg.Block.EssenceHash().String(),
 		"ts", msg.Block.Timestamp(),
 	)
-	sm.addBlockFromCommitee(msg.Block)
+	sm.addBlockFromSelf(msg.Block)
 	sm.takeAction()
 }
 

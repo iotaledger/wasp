@@ -16,8 +16,8 @@ type candidateBlock struct {
 	block             state.Block
 	local             bool
 	votes             int
-	approvingOutputID *ledgerstate.OutputID
-	stateHash         *hashing.HashValue
+	approvingOutputID *ledgerstate.OutputID // TODO: block should have approvingOutputID; change it to `approved bool`
+	stateHash         *hashing.HashValue    // TODO: may the pointer be removed?
 }
 
 func newCandidateBlock(block state.Block, stateHash *hashing.HashValue) *candidateBlock {
