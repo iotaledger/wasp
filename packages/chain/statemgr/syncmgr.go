@@ -223,7 +223,7 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
 		}
 		sm.syncingBlocks.deleteSyncingBlock(stateIndex)
 	}
-	go sm.chain.Events().StateSynced().Trigger(candidates[len(candidates)-1].getApprovindOutputID(), stateIndex)
+	go sm.chain.Events().StateSynced().Trigger(candidates[len(candidates)-1].getApprovingOutputID(), stateIndex)
 }
 
 // assumes all synced already

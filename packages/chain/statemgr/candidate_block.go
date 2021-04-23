@@ -13,11 +13,11 @@ import (
 
 type candidateBlock struct {
 	// block of state updates, not validated yet
-	block             state.Block
-	local             bool
-	votes             int
-	approvingOutputID *ledgerstate.OutputID // TODO: block should have approvingOutputID; change it to `approved bool`
-	stateHash         *hashing.HashValue    // TODO: may the pointer be removed?
+	block     state.Block
+	local     bool
+	votes     int
+	approved  bool
+	stateHash *hashing.HashValue // TODO: may the pointer be removed?
 }
 
 func newCandidateBlock(block state.Block, stateHash *hashing.HashValue) *candidateBlock {
@@ -28,11 +28,11 @@ func newCandidateBlock(block state.Block, stateHash *hashing.HashValue) *candida
 		local = true
 	}
 	return &candidateBlock{
-		block:             block,
-		local:             local,
-		votes:             1,
-		approvingOutputID: nil,
-		stateHash:         stateHash,
+		block:     block,
+		local:     local,
+		votes:     1,
+		approved:  false,
+		stateHash: stateHash,
 	}
 }
 
@@ -53,7 +53,7 @@ func (cThis *candidateBlock) isLocal() bool {
 }
 
 func (cThis *candidateBlock) isApproved() bool {
-	return cThis.approvingOutputID != nil
+	return cThis.approved
 }
 
 func (cThis *candidateBlock) approveIfRightOutput(output *ledgerstate.AliasOutput) {
@@ -65,12 +65,12 @@ func (cThis *candidateBlock) approveIfRightOutput(output *ledgerstate.AliasOutpu
 		}
 		if cThis.isLocal() {
 			if *(cThis.stateHash) == finalHash {
-				cThis.approvingOutputID = &outputID
+				cThis.approved = true
 				cThis.block.WithApprovingOutputID(outputID)
 			}
 		} else {
 			if cThis.block.ApprovingOutputID() == outputID {
-				cThis.approvingOutputID = &outputID
+				cThis.approved = true
 				cThis.stateHash = &finalHash
 			}
 		}
@@ -84,9 +84,6 @@ func (cThis *candidateBlock) getStateHash() hashing.HashValue {
 	return *(cThis.stateHash)
 }
 
-func (cThis *candidateBlock) getApprovindOutputID() ledgerstate.OutputID {
-	/*if cThis.approvingOutputID == nil {
-		return ledgerstate.OutputID{}
-	}*/
-	return *(cThis.approvingOutputID)
+func (cThis *candidateBlock) getApprovingOutputID() ledgerstate.OutputID {
+	return cThis.block.ApprovingOutputID()
 }

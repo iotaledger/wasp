@@ -112,10 +112,10 @@ func (syncsThis *syncingBlocks) addBlockCandidate(block state.Block, stateHash *
 	candidateExisting, ok := sync.blockCandidates[hash]
 	if ok {
 		// already have block. Check consistency. If inconsistent, start from scratch
-		if candidateExisting.getBlock().ApprovingOutputID() != block.ApprovingOutputID() {
+		if candidateExisting.getApprovingOutputID() != block.ApprovingOutputID() {
 			delete(sync.blockCandidates, hash)
 			return false, nil, fmt.Errorf("conflicting block arrived. Block index: %d, present approving outputID: %s, arrived approving outputID: %s",
-				stateIndex, coretypes.OID(candidateExisting.getBlock().ApprovingOutputID()), coretypes.OID(block.ApprovingOutputID()))
+				stateIndex, coretypes.OID(candidateExisting.getApprovingOutputID()), coretypes.OID(block.ApprovingOutputID()))
 
 		}
 		candidateExisting.addVote()
@@ -140,7 +140,7 @@ func (syncsThis *syncingBlocks) approveBlockCandidates(output *ledgerstate.Alias
 	if ok {
 		syncsThis.log.Infof("XXX approveBlockCandidates: sync block %v found", stateIndex)
 		for i, candidate := range sync.blockCandidates {
-			//syncsThis.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v, block hash %v output hash %v, block id %v output id %v", i, candidate.isLocal(), candidate.isApproved(), candidate.getStateHash(), finalHash, candidate.getBlock().ApprovingOutputID(), outputID)
+			//syncsThis.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v, block hash %v output hash %v, block id %v output id %v", i, candidate.isLocal(), candidate.isApproved(), candidate.getStateHash(), finalHash, candidate.getApprovingOutputID(), outputID)
 			//syncsThis.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v, output hash %v, output id %v", i, candidate.isLocal(), candidate.isApproved(), finalHash, outputID)
 			syncsThis.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v", i, candidate.isLocal(), candidate.isApproved())
 			candidate.approveIfRightOutput(output)
