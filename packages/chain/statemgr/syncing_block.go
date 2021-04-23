@@ -33,23 +33,23 @@ func newSyncingBlocks(log *logger.Logger) *syncingBlocks {
 	}
 }
 
-func (syncsThis *syncingBlocks) getPullDeadline(stateIndex uint32) time.Time {
-	sync, ok := syncsThis.blocks[stateIndex]
+func (syncsT *syncingBlocks) getPullDeadline(stateIndex uint32) time.Time {
+	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {
 		return time.Time{}
 	}
 	return sync.pullDeadline
 }
 
-func (syncsThis *syncingBlocks) setPullDeadline(stateIndex uint32, pullDeadline time.Time) {
-	sync, ok := syncsThis.blocks[stateIndex]
+func (syncsT *syncingBlocks) setPullDeadline(stateIndex uint32, pullDeadline time.Time) {
+	sync, ok := syncsT.blocks[stateIndex]
 	if ok {
 		sync.pullDeadline = pullDeadline
 	}
 }
 
-func (syncsThis *syncingBlocks) getBlockCandidates(stateIndex uint32) []*candidateBlock {
-	sync, ok := syncsThis.blocks[stateIndex]
+func (syncsT *syncingBlocks) getBlockCandidates(stateIndex uint32) []*candidateBlock {
+	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {
 		return make([]*candidateBlock, 0, 0)
 	}
@@ -60,9 +60,9 @@ func (syncsThis *syncingBlocks) getBlockCandidates(stateIndex uint32) []*candida
 	return result
 }
 
-func (syncsThis *syncingBlocks) getApprovedBlockCandidates(stateIndex uint32) []*candidateBlock {
+func (syncsT *syncingBlocks) getApprovedBlockCandidates(stateIndex uint32) []*candidateBlock {
 	result := make([]*candidateBlock, 0, 1)
-	sync, ok := syncsThis.blocks[stateIndex]
+	sync, ok := syncsT.blocks[stateIndex]
 	if ok {
 		for _, candidate := range sync.blockCandidates {
 			if candidate.isApproved() {
@@ -73,16 +73,16 @@ func (syncsThis *syncingBlocks) getApprovedBlockCandidates(stateIndex uint32) []
 	return result
 }
 
-func (syncsThis *syncingBlocks) getBlockCandidatesCount(stateIndex uint32) int {
-	sync, ok := syncsThis.blocks[stateIndex]
+func (syncsT *syncingBlocks) getBlockCandidatesCount(stateIndex uint32) int {
+	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {
 		return 0
 	}
 	return len(sync.blockCandidates)
 }
 
-func (syncsThis *syncingBlocks) getApprovedBlockCandidatesCount(stateIndex uint32) int {
-	sync, ok := syncsThis.blocks[stateIndex]
+func (syncsT *syncingBlocks) getApprovedBlockCandidatesCount(stateIndex uint32) int {
+	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {
 		return 0
 	}
@@ -95,8 +95,8 @@ func (syncsThis *syncingBlocks) getApprovedBlockCandidatesCount(stateIndex uint3
 	return approvedCount
 }
 
-func (syncsThis *syncingBlocks) hasBlockCandidates() bool {
-	for _, sync := range syncsThis.blocks {
+func (syncsT *syncingBlocks) hasBlockCandidates() bool {
+	for _, sync := range syncsT.blocks {
 		if len(sync.blockCandidates) > 0 {
 			return true
 		}
@@ -104,10 +104,10 @@ func (syncsThis *syncingBlocks) hasBlockCandidates() bool {
 	return false
 }
 
-func (syncsThis *syncingBlocks) addBlockCandidate(block state.Block, stateHash *hashing.HashValue) (isBlockNew bool, candidate *candidateBlock, err error) {
+func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, stateHash *hashing.HashValue) (isBlockNew bool, candidate *candidateBlock, err error) {
 	stateIndex := block.StateIndex()
-	syncsThis.startSyncingIfNeeded(stateIndex)
-	sync, _ := syncsThis.blocks[stateIndex]
+	syncsT.startSyncingIfNeeded(stateIndex)
+	sync, _ := syncsT.blocks[stateIndex]
 	hash := block.EssenceHash()
 	candidateExisting, ok := sync.blockCandidates[hash]
 	if ok {
@@ -119,53 +119,53 @@ func (syncsThis *syncingBlocks) addBlockCandidate(block state.Block, stateHash *
 
 		}
 		candidateExisting.addVote()
-		syncsThis.log.Infof("added existing block candidate. State index: %d, state hash: %s", stateIndex, hash.String())
+		syncsT.log.Infof("added existing block candidate. State index: %d, state hash: %s", stateIndex, hash.String())
 		return false, candidateExisting, nil
 	}
 	candidate = newCandidateBlock(block, stateHash)
 	sync.blockCandidates[hash] = candidate
 	sync.pullDeadline = time.Now().Add(periodBetweenSyncMessages * 2)
-	syncsThis.log.Infof("added new block candidate. State index: %d, state hash: %s", stateIndex, hash.String())
+	syncsT.log.Infof("added new block candidate. State index: %d, state hash: %s", stateIndex, hash.String())
 	return true, candidate, nil
 }
 
-func (syncsThis *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOutput) {
-	syncsThis.log.Infof("XXX approveBlockCandidates %v", coretypes.OID(output.ID()))
+func (syncsT *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOutput) {
+	syncsT.log.Infof("XXX approveBlockCandidates %v", coretypes.OID(output.ID()))
 	if output == nil {
 		return
 	}
 	stateIndex := output.GetStateIndex()
-	sync, ok := syncsThis.blocks[stateIndex]
-	syncsThis.log.Infof("XXX approveBlockCandidates: candidates=%v", syncsThis.hasBlockCandidates())
+	sync, ok := syncsT.blocks[stateIndex]
+	syncsT.log.Infof("XXX approveBlockCandidates: candidates=%v", syncsT.hasBlockCandidates())
 	if ok {
-		syncsThis.log.Infof("XXX approveBlockCandidates: sync block %v found", stateIndex)
+		syncsT.log.Infof("XXX approveBlockCandidates: sync block %v found", stateIndex)
 		for i, candidate := range sync.blockCandidates {
-			//syncsThis.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v, block hash %v output hash %v, block id %v output id %v", i, candidate.isLocal(), candidate.isApproved(), candidate.getStateHash(), finalHash, candidate.getApprovingOutputID(), outputID)
-			//syncsThis.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v, output hash %v, output id %v", i, candidate.isLocal(), candidate.isApproved(), finalHash, outputID)
-			syncsThis.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v", i, candidate.isLocal(), candidate.isApproved())
+			//syncsT.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v, block hash %v output hash %v, block id %v output id %v", i, candidate.isLocal(), candidate.isApproved(), candidate.getStateHash(), finalHash, candidate.getApprovingOutputID(), outputID)
+			//syncsT.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v, output hash %v, output id %v", i, candidate.isLocal(), candidate.isApproved(), finalHash, outputID)
+			syncsT.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v", i, candidate.isLocal(), candidate.isApproved())
 			candidate.approveIfRightOutput(output)
 		}
 	}
 }
 
-func (syncsThis *syncingBlocks) startSyncingIfNeeded(stateIndex uint32) {
-	if !syncsThis.isSyncing(stateIndex) {
-		syncsThis.blocks[stateIndex] = &syncingBlock{
+func (syncsT *syncingBlocks) startSyncingIfNeeded(stateIndex uint32) {
+	if !syncsT.isSyncing(stateIndex) {
+		syncsT.blocks[stateIndex] = &syncingBlock{
 			//pullDeadline      time.Time       // // TODO:
 			blockCandidates: make(map[hashing.HashValue]*candidateBlock),
 		}
 	}
 }
 
-func (syncsThis *syncingBlocks) isSyncing(stateIndex uint32) bool {
-	_, ok := syncsThis.blocks[stateIndex]
+func (syncsT *syncingBlocks) isSyncing(stateIndex uint32) bool {
+	_, ok := syncsT.blocks[stateIndex]
 	return ok
 }
 
-func (syncsThis *syncingBlocks) restartSyncing() {
-	syncsThis.blocks = make(map[uint32]*syncingBlock)
+func (syncsT *syncingBlocks) restartSyncing() {
+	syncsT.blocks = make(map[uint32]*syncingBlock)
 }
 
-func (syncsThis *syncingBlocks) deleteSyncingBlock(stateIndex uint32) {
-	delete(syncsThis.blocks, stateIndex)
+func (syncsT *syncingBlocks) deleteSyncingBlock(stateIndex uint32) {
+	delete(syncsT.blocks, stateIndex)
 }

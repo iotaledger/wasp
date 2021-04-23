@@ -39,51 +39,51 @@ func newCandidateBlock(block state.Block, stateHashIfProvided *hashing.HashValue
 	}
 }
 
-func (cThis *candidateBlock) getBlock() state.Block {
-	return cThis.block
+func (cT *candidateBlock) getBlock() state.Block {
+	return cT.block
 }
 
-func (cThis *candidateBlock) addVote() {
-	cThis.votes++
+func (cT *candidateBlock) addVote() {
+	cT.votes++
 }
 
-func (cThis *candidateBlock) getVotes() int {
-	return cThis.votes
+func (cT *candidateBlock) getVotes() int {
+	return cT.votes
 }
 
-func (cThis *candidateBlock) isLocal() bool {
-	return cThis.local
+func (cT *candidateBlock) isLocal() bool {
+	return cT.local
 }
 
-func (cThis *candidateBlock) isApproved() bool {
-	return cThis.approved
+func (cT *candidateBlock) isApproved() bool {
+	return cT.approved
 }
 
-func (cThis *candidateBlock) approveIfRightOutput(output *ledgerstate.AliasOutput) {
-	if cThis.block.StateIndex() == output.GetStateIndex() {
+func (cT *candidateBlock) approveIfRightOutput(output *ledgerstate.AliasOutput) {
+	if cT.block.StateIndex() == output.GetStateIndex() {
 		outputID := output.ID()
 		finalHash, err := hashing.HashValueFromBytes(output.GetStateData())
 		if err != nil {
 			return
 		}
-		if cThis.isLocal() {
-			if cThis.stateHash == finalHash {
-				cThis.approved = true
-				cThis.block.WithApprovingOutputID(outputID)
+		if cT.isLocal() {
+			if cT.stateHash == finalHash {
+				cT.approved = true
+				cT.block.WithApprovingOutputID(outputID)
 			}
 		} else {
-			if cThis.block.ApprovingOutputID() == outputID {
-				cThis.approved = true
-				cThis.stateHash = finalHash
+			if cT.block.ApprovingOutputID() == outputID {
+				cT.approved = true
+				cT.stateHash = finalHash
 			}
 		}
 	}
 }
 
-func (cThis *candidateBlock) getStateHash() hashing.HashValue {
-	return cThis.stateHash
+func (cT *candidateBlock) getStateHash() hashing.HashValue {
+	return cT.stateHash
 }
 
-func (cThis *candidateBlock) getApprovingOutputID() ledgerstate.OutputID {
-	return cThis.block.ApprovingOutputID()
+func (cT *candidateBlock) getApprovingOutputID() ledgerstate.OutputID {
+	return cT.block.ApprovingOutputID()
 }

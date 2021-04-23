@@ -217,36 +217,36 @@ func (env *MockedEnv) RemoveNode(index uint16) {
 }
 
 // SetupPeerGroupSimple sets up simple communication between nodes
-func (nThis *MockedNode) SetupPeerGroupSimple() {
-	nThis.Peers.OnNumPeers(func() uint16 {
-		nThis.Env.mutex.Lock()
-		defer nThis.Env.mutex.Unlock()
-		return uint16(len(nThis.Env.Nodes))
+func (nT *MockedNode) SetupPeerGroupSimple() {
+	nT.Peers.OnNumPeers(func() uint16 {
+		nT.Env.mutex.Lock()
+		defer nT.Env.mutex.Unlock()
+		return uint16(len(nT.Env.Nodes))
 	})
-	nThis.Peers.OnNumIsAlive(func(q uint16) bool {
-		nThis.Env.mutex.Lock()
-		defer nThis.Env.mutex.Unlock()
-		return q <= uint16(len(nThis.Env.Nodes))
+	nT.Peers.OnNumIsAlive(func(q uint16) bool {
+		nT.Env.mutex.Lock()
+		defer nT.Env.mutex.Unlock()
+		return q <= uint16(len(nT.Env.Nodes))
 	})
-	nThis.Peers.OnSendMsg(func(targetPeerIndex uint16, msgType byte, msgData []byte) error {
-		nThis.Log.Infof("XXX MockedPeerGroup:OnSendMsg peer %v", targetPeerIndex)
-		node, ok := nThis.Env.Nodes[targetPeerIndex]
+	nT.Peers.OnSendMsg(func(targetPeerIndex uint16, msgType byte, msgData []byte) error {
+		nT.Log.Infof("XXX MockedPeerGroup:OnSendMsg peer %v", targetPeerIndex)
+		node, ok := nT.Env.Nodes[targetPeerIndex]
 		if !ok {
 			return fmt.Errorf("wrong peer index %d", targetPeerIndex)
 		}
 		rdr := bytes.NewReader(msgData)
 		switch msgType {
 		case chain.MsgGetBlock:
-			nThis.Log.Infof("XXX MockedPeerGroup:OnSendMsg MsgGetBlock")
+			nT.Log.Infof("XXX MockedPeerGroup:OnSendMsg MsgGetBlock")
 			msg := chain.GetBlockMsg{}
 			if err := msg.Read(rdr); err != nil {
 				return fmt.Errorf("error reading MsgGetBlock message: %v", err)
 			}
-			msg.SenderIndex = nThis.Index
+			msg.SenderIndex = nT.Index
 			go node.StateManager.EventGetBlockMsg(&msg)
 
 		case chain.MsgBlock:
-			nThis.Log.Infof("XXX MockedPeerGroup:OnSendMsg MsgBlock")
+			nT.Log.Infof("XXX MockedPeerGroup:OnSendMsg MsgBlock")
 			msg := chain.BlockMsg{}
 			if err := msg.Read(rdr); err != nil {
 				return fmt.Errorf("error reading MsgBlock message: %v", err)
@@ -254,18 +254,18 @@ func (nThis *MockedNode) SetupPeerGroupSimple() {
 			go node.StateManager.EventBlockMsg(&msg)
 
 		default:
-			nThis.Log.Panicf("msg type %d not implemented in the simple mocked peer group")
+			nT.Log.Panicf("msg type %d not implemented in the simple mocked peer group")
 		}
 		return nil
 	})
 
-	nThis.Peers.OnSendToAllUntilFirstError(func(msgType byte, msgData []byte) uint16 {
-		nThis.Log.Infof("XXX MockedPeerGroup:OnSendToAllUntilFirstError")
-		nThis.Env.mutex.Lock()
-		defer nThis.Env.mutex.Unlock()
+	nT.Peers.OnSendToAllUntilFirstError(func(msgType byte, msgData []byte) uint16 {
+		nT.Log.Infof("XXX MockedPeerGroup:OnSendToAllUntilFirstError")
+		nT.Env.mutex.Lock()
+		defer nT.Env.mutex.Unlock()
 		counter := uint16(0)
-		for idx := range nThis.Env.Nodes {
-			if err := nThis.Peers.SendMsg(idx, msgType, msgData); err != nil {
+		for idx := range nT.Env.Nodes {
+			if err := nT.Peers.SendMsg(idx, msgType, msgData); err != nil {
 				break
 			}
 			counter++
