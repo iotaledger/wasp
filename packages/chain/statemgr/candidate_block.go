@@ -17,15 +17,18 @@ type candidateBlock struct {
 	local     bool
 	votes     int
 	approved  bool
-	stateHash *hashing.HashValue // TODO: may the pointer be removed?
+	stateHash hashing.HashValue
 }
 
-func newCandidateBlock(block state.Block, stateHash *hashing.HashValue) *candidateBlock {
+func newCandidateBlock(block state.Block, stateHashIfProvided *hashing.HashValue) *candidateBlock {
 	var local bool
-	if stateHash == nil {
+	var stateHash hashing.HashValue
+	if stateHashIfProvided == nil {
 		local = false
+		stateHash = hashing.NilHash
 	} else {
 		local = true
+		stateHash = *stateHashIfProvided
 	}
 	return &candidateBlock{
 		block:     block,
@@ -64,24 +67,21 @@ func (cThis *candidateBlock) approveIfRightOutput(output *ledgerstate.AliasOutpu
 			return
 		}
 		if cThis.isLocal() {
-			if *(cThis.stateHash) == finalHash {
+			if cThis.stateHash == finalHash {
 				cThis.approved = true
 				cThis.block.WithApprovingOutputID(outputID)
 			}
 		} else {
 			if cThis.block.ApprovingOutputID() == outputID {
 				cThis.approved = true
-				cThis.stateHash = &finalHash
+				cThis.stateHash = finalHash
 			}
 		}
 	}
 }
 
 func (cThis *candidateBlock) getStateHash() hashing.HashValue {
-	/*if cThis.stateHash == nil {
-		return hashing.HashValue{}
-	}*/
-	return *(cThis.stateHash)
+	return cThis.stateHash
 }
 
 func (cThis *candidateBlock) getApprovingOutputID() ledgerstate.OutputID {
