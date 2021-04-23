@@ -2,24 +2,25 @@ package viewcontext
 
 import (
 	"fmt"
+	"runtime/debug"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"golang.org/x/xerrors"
 )
 
 type viewcontext struct {
 	processors *processors.ProcessorCache
-	state      kv.KVStore // buffered.BufferedKVStore
+	state      kv.KVStore
 	chainID    coretypes.ChainID
 	timestamp  int64
 	log        *logger.Logger
@@ -59,8 +60,9 @@ func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.H
 		defer func() {
 			if r := recover(); r != nil {
 				ret = nil
-				err = fmt.Errorf("recovered from panic in VM: %v", r)
-				if dberr, ok := r.(buffered.DBError); ok {
+				err = xerrors.Errorf("recovered from panic in VM: %v", r)
+				v.log.Debugf(string(debug.Stack()))
+				if dberr, ok := r.(*kv.DBError); ok {
 					// There was an error accessing DB. The world stops
 					v.log.Panicf("DB error: %v", dberr)
 				}
