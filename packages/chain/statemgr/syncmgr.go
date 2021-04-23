@@ -3,6 +3,7 @@ package statemgr
 import (
 	//	"bytes"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"sort"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -187,10 +188,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 		stateCandidateBlocks = sm.syncingBlocks.getBlockCandidates(fromStateIndex)
 	}
 	sm.log.Infof("XXX getCandidatesToCommit: stateCandidateBlocks %v", stateCandidateBlocks)
-	//TODO: sort.Slice(slice, func(i int, j int) bool{
-	//return slice[i]<slice[j]
-	//})
-
+	sort.Slice(stateCandidateBlocks, func(i, j int) bool { return stateCandidateBlocks[i].getVotes() > stateCandidateBlocks[j].getVotes() })
 	for _, stateCandidateBlock := range stateCandidateBlocks {
 		resultBlocks, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex, lastStateApprovedOnly)
 		if ok {

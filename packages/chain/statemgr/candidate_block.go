@@ -44,6 +44,10 @@ func (cThis *candidateBlock) addVote() {
 	cThis.votes++
 }
 
+func (cThis *candidateBlock) getVotes() int {
+	return cThis.votes
+}
+
 func (cThis *candidateBlock) isLocal() bool {
 	return cThis.local
 }
