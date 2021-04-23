@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -49,7 +49,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 				vmctx.lastResult = nil
 				vmctx.lastError = xerrors.Errorf("%s: recovered from panic in VM: %v", req, r)
 				vmctx.Debugf(string(debug.Stack()))
-				if dberr, ok := r.(buffered.DBError); ok {
+				if dberr, ok := r.(*kv.DBError); ok {
 					// There was an error accessing the DB. The world stops
 					vmctx.Panicf("DB error: %v", dberr)
 				}

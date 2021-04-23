@@ -19,7 +19,7 @@ func TestBufferedKVStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("v1"), v)
 
-	b := NewBufferedKVStore(realm)
+	b := NewBufferedKVStore(kv.NewHiveKVStoreReader(realm))
 
 	v, err = b.Get(kv.Key([]byte("cd")))
 	assert.NoError(t, err)
@@ -93,7 +93,7 @@ func TestIterateSorted(t *testing.T) {
 	_ = db.Set([]byte("1245"), []byte("v1245"))
 
 	realm := db.WithRealm([]byte("1"))
-	b := NewBufferedKVStore(realm)
+	b := NewBufferedKVStore(kv.NewHiveKVStoreReader(realm))
 
 	b.Del("246")
 	b.Set("250", []byte("v1250"))

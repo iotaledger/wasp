@@ -22,13 +22,13 @@ type virtualState struct {
 	timestamp  int64
 	empty      bool
 	stateHash  hashing.HashValue
-	variables  buffered.BufferedKVStore
+	variables  *buffered.BufferedKVStore
 }
 
 func NewVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
 	ret := &virtualState{
 		db:        db,
-		variables: buffered.NewBufferedKVStore(subRealm(db, []byte{dbprovider.ObjectTypeStateVariable})),
+		variables: buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(subRealm(db, []byte{dbprovider.ObjectTypeStateVariable}))),
 		empty:     true,
 	}
 	if chainID != nil {
@@ -86,7 +86,7 @@ func (vs *virtualState) DangerouslyConvertToString() string {
 	)
 }
 
-func (vs *virtualState) Variables() buffered.BufferedKVStore {
+func (vs *virtualState) Variables() *buffered.BufferedKVStore {
 	return vs.variables
 }
 

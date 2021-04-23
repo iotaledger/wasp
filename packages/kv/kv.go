@@ -53,7 +53,7 @@ type KVStoreWriter interface {
 	// dictionaries and timestamped logs
 }
 
-func MustGet(kvs KVStore, key Key) []byte {
+func MustGet(kvs KVStoreReader, key Key) []byte {
 	v, err := kvs.Get(key)
 	if err != nil {
 		panic(err)
@@ -61,7 +61,7 @@ func MustGet(kvs KVStore, key Key) []byte {
 	return v
 }
 
-func MustHas(kvs KVStore, key Key) bool {
+func MustHas(kvs KVStoreReader, key Key) bool {
 	v, err := kvs.Has(key)
 	if err != nil {
 		panic(err)
@@ -69,28 +69,28 @@ func MustHas(kvs KVStore, key Key) bool {
 	return v
 }
 
-func MustIterate(kvs KVStore, prefix Key, f func(key Key, value []byte) bool) {
+func MustIterate(kvs KVStoreReader, prefix Key, f func(key Key, value []byte) bool) {
 	err := kvs.Iterate(prefix, f)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func MustIterateKeys(kvs KVStore, prefix Key, f func(key Key) bool) {
+func MustIterateKeys(kvs KVStoreReader, prefix Key, f func(key Key) bool) {
 	err := kvs.IterateKeys(prefix, f)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func MustIterateSorted(kvs KVStore, prefix Key, f func(key Key, value []byte) bool) {
+func MustIterateSorted(kvs KVStoreReader, prefix Key, f func(key Key, value []byte) bool) {
 	err := kvs.IterateSorted(prefix, f)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func MustIterateKeysSorted(kvs KVStore, prefix Key, f func(key Key) bool) {
+func MustIterateKeysSorted(kvs KVStoreReader, prefix Key, f func(key Key) bool) {
 	err := kvs.IterateKeysSorted(prefix, f)
 	if err != nil {
 		panic(err)

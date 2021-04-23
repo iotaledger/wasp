@@ -27,7 +27,7 @@ type VirtualState interface {
 	// state updates starting from the origin
 	Hash() hashing.HashValue
 	// the storage of variable/value pairs
-	Variables() buffered.BufferedKVStore
+	Variables() *buffered.BufferedKVStore
 	Clone() VirtualState
 	DangerouslyConvertToString() string
 }
