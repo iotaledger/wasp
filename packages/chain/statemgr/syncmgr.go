@@ -116,13 +116,11 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			return
 		}
 		if sm.syncingBlocks.getApprovedBlockCandidatesCount(i) > 0 {
-			if sm.tryToCommitCandidates(startSyncFromIndex, i, true) {
+			if sm.tryToCommitCandidates(startSyncFromIndex, i) {
 				return
 			}
 		}
 	}
-	// nothing is approved but all blocks are here
-	//sm.tryToCommitCandidates(startSyncFromIndex, sm.stateOutput.GetStateIndex(), false)
 }
 
 func (sm *stateManager) requestBlockIfNeeded(stateIndex uint32) {
@@ -144,17 +142,17 @@ func (sm *stateManager) requestBlockIfNeeded(stateIndex uint32) {
 	sm.syncingBlocks.setPullDeadline(stateIndex, time.Now().Add(periodBetweenSyncMessages))
 }
 
-func (sm *stateManager) tryToCommitCandidates(fromStateIndex uint32, toStateIndex uint32, lastStateApprovedOnly bool) bool {
-	sm.log.Infof("XXX tryToCommitCandidates: from %v to %v last approved %v", fromStateIndex, toStateIndex, lastStateApprovedOnly)
-	candidates, ok := sm.getCandidatesToCommit(make([]*candidateBlock, 0, toStateIndex-fromStateIndex+1), fromStateIndex, toStateIndex, lastStateApprovedOnly)
+func (sm *stateManager) tryToCommitCandidates(fromStateIndex uint32, toStateIndex uint32) bool {
+	sm.log.Infof("XXX tryToCommitCandidates: from %v to %v", fromStateIndex, toStateIndex)
+	candidates, ok := sm.getCandidatesToCommit(make([]*candidateBlock, 0, toStateIndex-fromStateIndex+1), fromStateIndex, toStateIndex)
 	if ok {
 		sm.commitCandidates(candidates)
 	}
 	return ok
 }
 
-func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex uint32, toStateIndex uint32, lastStateApprovedOnly bool) ([]*candidateBlock, bool) {
-	sm.log.Infof("XXX getCandidatesToCommit: from %v to %v last approved %v accumulator %v", fromStateIndex, toStateIndex, lastStateApprovedOnly, candidateAcc)
+func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex uint32, toStateIndex uint32) ([]*candidateBlock, bool) {
+	sm.log.Infof("XXX getCandidatesToCommit: from %v to %v accumulator %v", fromStateIndex, toStateIndex, candidateAcc)
 	if fromStateIndex > toStateIndex {
 		//Blocks gathered. Check if the correct result is received if they are applied
 		var tentativeState state.VirtualState
@@ -182,7 +180,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 		return candidateAcc, true
 	}
 	var stateCandidateBlocks []*candidateBlock
-	if fromStateIndex == toStateIndex && lastStateApprovedOnly {
+	if fromStateIndex == toStateIndex {
 		stateCandidateBlocks = sm.syncingBlocks.getApprovedBlockCandidates(fromStateIndex)
 	} else {
 		stateCandidateBlocks = sm.syncingBlocks.getBlockCandidates(fromStateIndex)
@@ -190,7 +188,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 	sm.log.Infof("XXX getCandidatesToCommit: stateCandidateBlocks %v", stateCandidateBlocks)
 	sort.Slice(stateCandidateBlocks, func(i, j int) bool { return stateCandidateBlocks[i].getVotes() > stateCandidateBlocks[j].getVotes() })
 	for _, stateCandidateBlock := range stateCandidateBlocks {
-		resultBlocks, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex, lastStateApprovedOnly)
+		resultBlocks, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex)
 		if ok {
 			return resultBlocks, true
 		}
