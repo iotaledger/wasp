@@ -23,9 +23,9 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 
 	vmctx.mustSetUpRequestContext(req)
 
-	// guard against replaying here to prevent replaying fee deduction
-	if vmctx.preventReplay() {
-		vmctx.log.Warn("RunTheRequest.replayPrevention: ", req.ID().String())
+	// guard against replaying off-ledger requests here to prevent replaying fee deduction
+	// also verifies that account for off-ledger request exists
+	if !vmctx.validRequest() {
 		return
 	}
 
@@ -144,15 +144,30 @@ func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
 	return ledgerstate.NewColoredBalances(transfers)
 }
 
-func (vmctx *VMContext) preventReplay() bool {
-	_, ok := vmctx.req.(*request.RequestOffLedger)
+func (vmctx *VMContext) validRequest() bool {
+	req, ok := vmctx.req.(*request.RequestOffLedger)
 	if !ok {
-		return false
+		// on-ledger request is always valid
+		return true
 	}
+
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return vmctx.req.Order() <= accounts.GetOrder(vmctx.State(), vmctx.req.SenderAddress())
+	// off-ledger account must exist
+	_, exists := accounts.GetAccountBalances(vmctx.State(), req.SenderAccount())
+	if !exists {
+		vmctx.lastError = fmt.Errorf("validRequest: unverified account for %s", req.ID().String())
+		return false
+	}
+
+	// order of requests must always increase
+	if vmctx.req.Order() <= accounts.GetOrder(vmctx.State(), req.SenderAddress()) {
+		vmctx.lastError = fmt.Errorf("validRequest: invalid order for %s", req.ID().String())
+		return false
+	}
+
+	return true
 }
 
 // mustHandleFees handles node fees. If not enough, takes as much as it can, the rest sends back
