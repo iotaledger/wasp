@@ -116,7 +116,10 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			return
 		}
 		if sm.syncingBlocks.getApprovedBlockCandidatesCount(i) > 0 {
-			if sm.tryToCommitCandidates(startSyncFromIndex, i) {
+			sm.log.Infof("XXX doSyncActionIfNeeded: tryToCommitCandidates from %v to %v", startSyncFromIndex, i)
+			candidates, ok := sm.getCandidatesToCommit(make([]*candidateBlock, 0, i-startSyncFromIndex+1), startSyncFromIndex, i)
+			if ok {
+				sm.commitCandidates(candidates)
 				return
 			}
 		}
@@ -140,15 +143,6 @@ func (sm *stateManager) requestBlockIfNeeded(stateIndex uint32) {
 	sm.peers.SendToAllUntilFirstError(chain.MsgGetBlock, data)
 	sm.syncingBlocks.startSyncingIfNeeded(stateIndex)
 	sm.syncingBlocks.setPullDeadline(stateIndex, time.Now().Add(periodBetweenSyncMessages))
-}
-
-func (sm *stateManager) tryToCommitCandidates(fromStateIndex uint32, toStateIndex uint32) bool {
-	sm.log.Infof("XXX tryToCommitCandidates: from %v to %v", fromStateIndex, toStateIndex)
-	candidates, ok := sm.getCandidatesToCommit(make([]*candidateBlock, 0, toStateIndex-fromStateIndex+1), fromStateIndex, toStateIndex)
-	if ok {
-		sm.commitCandidates(candidates)
-	}
-	return ok
 }
 
 func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex uint32, toStateIndex uint32) ([]*candidateBlock, bool) {
