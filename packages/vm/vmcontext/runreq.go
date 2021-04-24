@@ -155,8 +155,7 @@ func (vmctx *VMContext) validRequest() bool {
 	defer vmctx.popCallContext()
 
 	// off-ledger account must exist
-	_, exists := accounts.GetAccountBalances(vmctx.State(), req.SenderAccount())
-	if !exists {
+	if _, exists := accounts.GetAccountBalances(vmctx.State(), req.SenderAccount()); !exists {
 		vmctx.lastError = fmt.Errorf("validRequest: unverified account for %s", req.ID().String())
 		return false
 	}
