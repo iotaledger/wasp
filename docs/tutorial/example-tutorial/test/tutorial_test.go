@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
@@ -17,8 +18,8 @@ func TestTutorial1(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ex1")
 
-	chainID,chainOwnerID, coreContracts := chain.GetInfo()   // calls view root::GetInfo
-	require.EqualValues(t, 5, len(coreContracts)) // 4 core contracts deployed by default
+	chainID, chainOwnerID, coreContracts := chain.GetInfo()                // calls view root::GetInfo
+	require.EqualValues(t, len(core.AllCoreContracts), len(coreContracts)) // 4 core contracts deployed by default
 
 	t.Logf("chainID: %s", chainID.String())
 	t.Logf("chain owner ID: %s", chainOwnerID.String())

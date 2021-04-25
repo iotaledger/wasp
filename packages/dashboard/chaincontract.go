@@ -62,7 +62,7 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		records := collections.NewArrayReadOnly(r, eventlog.ParamRecords)
+		records := collections.NewArray16ReadOnly(r, eventlog.ParamRecords)
 		result.Log = make([]*collections.TimestampedLogRecord, records.MustLen())
 		for i := uint16(0); i < records.MustLen(); i++ {
 			b := records.MustGetAt(i)

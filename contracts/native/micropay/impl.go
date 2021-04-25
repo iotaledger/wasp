@@ -237,7 +237,7 @@ func getLastOrdKey(service ledgerstate.Address) []byte {
 }
 
 func decodePayments(state kv.KVStoreReader, a assert.Assert) []*Payment {
-	payments := collections.NewArrayReadOnly(state, ParamPayments)
+	payments := collections.NewArray16ReadOnly(state, ParamPayments)
 	n := payments.MustLen()
 	a.Require(n > 0, "no payments found")
 

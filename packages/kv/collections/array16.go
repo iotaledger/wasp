@@ -8,77 +8,77 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// Array represents a dynamic array stored in a kv.KVStore
-type Array struct {
-	*ImmutableArray
+// Array16 represents a dynamic array stored in a kv.KVStore
+type Array16 struct {
+	*ImmutableArray16
 	kvw kv.KVStoreWriter
 }
 
-// ImmutableArray provides read-only access to an Array in a kv.KVStoreReader.
-type ImmutableArray struct {
+// ImmutableArray16 provides read-only access to an Array16 in a kv.KVStoreReader.
+type ImmutableArray16 struct {
 	kvr  kv.KVStoreReader
 	name string
 }
 
-func NewArray(kv kv.KVStore, name string) *Array {
-	return &Array{
-		ImmutableArray: NewArrayReadOnly(kv, name),
-		kvw:            kv,
+func NewArray16(kv kv.KVStore, name string) *Array16 {
+	return &Array16{
+		ImmutableArray16: NewArray16ReadOnly(kv, name),
+		kvw:              kv,
 	}
 }
 
-func NewArrayReadOnly(kv kv.KVStoreReader, name string) *ImmutableArray {
-	return &ImmutableArray{
+func NewArray16ReadOnly(kv kv.KVStoreReader, name string) *ImmutableArray16 {
+	return &ImmutableArray16{
 		kvr:  kv,
 		name: name,
 	}
 }
 
 const (
-	arraySizeKeyCode = byte(0)
-	arrayElemKeyCode = byte(1)
+	array16SizeKeyCode = byte(0)
+	array16ElemKeyCode = byte(1)
 )
 
-func (a *Array) Immutable() *ImmutableArray {
-	return a.ImmutableArray
+func (a *Array16) Immutable() *ImmutableArray16 {
+	return a.ImmutableArray16
 }
 
-func (a *ImmutableArray) getSizeKey() kv.Key {
-	return ArraySizeKey(a.name)
+func (a *ImmutableArray16) getSizeKey() kv.Key {
+	return array16SizeKey(a.name)
 }
 
-func ArraySizeKey(name string) kv.Key {
+func array16SizeKey(name string) kv.Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(name))
-	buf.WriteByte(arraySizeKeyCode)
+	buf.WriteByte(array16SizeKeyCode)
 	return kv.Key(buf.Bytes())
 }
 
-func (a *ImmutableArray) getElemKey(idx uint16) kv.Key {
-	return ArrayElemKey(a.name, idx)
+func (a *ImmutableArray16) getArray16ElemKey(idx uint16) kv.Key {
+	return array16ElemKey(a.name, idx)
 }
 
-func ArrayElemKey(name string, idx uint16) kv.Key {
+func array16ElemKey(name string, idx uint16) kv.Key {
 	var buf bytes.Buffer
 	buf.Write([]byte(name))
-	buf.WriteByte(arrayElemKeyCode)
+	buf.WriteByte(array16ElemKeyCode)
 	_ = util.WriteUint16(&buf, idx)
 	return kv.Key(buf.Bytes())
 }
 
-// ArrayRangeKeys returns the KVStore keys for the items between [from, to) (`to` being not inclusive),
+// Array16RangeKeys returns the KVStore keys for the items between [from, to) (`to` being not inclusive),
 // assuming it has `length` elements.
-func ArrayRangeKeys(name string, length uint16, from uint16, to uint16) []kv.Key {
+func Array16RangeKeys(name string, length uint16, from uint16, to uint16) []kv.Key {
 	keys := make([]kv.Key, 0)
 	if to >= from {
 		for i := from; i < to && i < length; i++ {
-			keys = append(keys, ArrayElemKey(name, i))
+			keys = append(keys, array16ElemKey(name, i))
 		}
 	}
 	return keys
 }
 
-func (a *Array) setSize(n uint16) {
+func (a *Array16) setSize(n uint16) {
 	if n == 0 {
 		a.kvw.Del(a.getSizeKey())
 	} else {
@@ -86,7 +86,7 @@ func (a *Array) setSize(n uint16) {
 	}
 }
 
-func (a *Array) addToSize(amount int) (uint16, error) {
+func (a *Array16) addToSize(amount int) (uint16, error) {
 	prevSize, err := a.Len()
 	if err != nil {
 		return 0, err
@@ -96,7 +96,7 @@ func (a *Array) addToSize(amount int) (uint16, error) {
 }
 
 // Len == 0/empty/non-existent are equivalent
-func (a *ImmutableArray) Len() (uint16, error) {
+func (a *ImmutableArray16) Len() (uint16, error) {
 	v, err := a.kvr.Get(a.getSizeKey())
 	if err != nil {
 		return 0, err
@@ -107,7 +107,7 @@ func (a *ImmutableArray) Len() (uint16, error) {
 	return util.MustUint16From2Bytes(v), nil
 }
 
-func (a *ImmutableArray) MustLen() uint16 {
+func (a *ImmutableArray16) MustLen() uint16 {
 	n, err := a.Len()
 	if err != nil {
 		panic(err)
@@ -116,24 +116,24 @@ func (a *ImmutableArray) MustLen() uint16 {
 }
 
 // adds to the end of the list
-func (a *Array) Push(value []byte) error {
+func (a *Array16) Push(value []byte) error {
 	prevSize, err := a.addToSize(1)
 	if err != nil {
 		return err
 	}
-	k := a.getElemKey(prevSize)
+	k := a.getArray16ElemKey(prevSize)
 	a.kvw.Set(k, value)
 	return nil
 }
 
-func (a *Array) MustPush(value []byte) {
+func (a *Array16) MustPush(value []byte) {
 	err := a.Push(value)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (a *Array) Extend(other *ImmutableArray) error {
+func (a *Array16) Extend(other *ImmutableArray16) error {
 	otherLen, err := other.Len()
 	if err != nil {
 		return err
@@ -148,7 +148,7 @@ func (a *Array) Extend(other *ImmutableArray) error {
 	return nil
 }
 
-func (a *Array) MustExtend(other *ImmutableArray) {
+func (a *Array16) MustExtend(other *ImmutableArray16) {
 	err := a.Extend(other)
 	if err != nil {
 		panic(err)
@@ -156,26 +156,26 @@ func (a *Array) MustExtend(other *ImmutableArray) {
 }
 
 // TODO implement with DelPrefix
-func (a *Array) Erase() error {
+func (a *Array16) Erase() error {
 	n, err := a.Len()
 	if err != nil {
 		return err
 	}
 	for i := uint16(0); i < n; i++ {
-		a.kvw.Del(a.getElemKey(i))
+		a.kvw.Del(a.getArray16ElemKey(i))
 	}
 	a.setSize(0)
 	return nil
 }
 
-func (a *Array) MustErase() {
+func (a *Array16) MustErase() {
 	err := a.Erase()
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (a *ImmutableArray) GetAt(idx uint16) ([]byte, error) {
+func (a *ImmutableArray16) GetAt(idx uint16) ([]byte, error) {
 	n, err := a.Len()
 	if err != nil {
 		return nil, err
@@ -183,14 +183,14 @@ func (a *ImmutableArray) GetAt(idx uint16) ([]byte, error) {
 	if idx >= n {
 		return nil, fmt.Errorf("index %d out of range for array of len %d", idx, n)
 	}
-	ret, err := a.kvr.Get(a.getElemKey(idx))
+	ret, err := a.kvr.Get(a.getArray16ElemKey(idx))
 	if err != nil {
 		return nil, err
 	}
 	return ret, nil
 }
 
-func (a *ImmutableArray) MustGetAt(idx uint16) []byte {
+func (a *ImmutableArray16) MustGetAt(idx uint16) []byte {
 	ret, err := a.GetAt(idx)
 	if err != nil {
 		panic(err)
@@ -198,7 +198,7 @@ func (a *ImmutableArray) MustGetAt(idx uint16) []byte {
 	return ret
 }
 
-func (a *Array) SetAt(idx uint16, value []byte) error {
+func (a *Array16) SetAt(idx uint16, value []byte) error {
 	n, err := a.Len()
 	if err != nil {
 		return err
@@ -206,11 +206,11 @@ func (a *Array) SetAt(idx uint16, value []byte) error {
 	if idx >= n {
 		return fmt.Errorf("index %d out of range for array of len %d", idx, n)
 	}
-	a.kvw.Set(a.getElemKey(idx), value)
+	a.kvw.Set(a.getArray16ElemKey(idx), value)
 	return nil
 }
 
-func (a *Array) MustSetAt(idx uint16, value []byte) {
+func (a *Array16) MustSetAt(idx uint16, value []byte) {
 	err := a.SetAt(idx, value)
 	if err != nil {
 		panic(err)

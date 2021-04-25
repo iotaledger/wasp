@@ -67,7 +67,9 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 		return nil, fmt.Errorf("smart contract '%s' not found", scName)
 	}
 	record, err := root.DecodeContractRecord(retBin)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	if record.Name != scName {
 		return nil, fmt.Errorf("smart contract '%s' not found", scName)
 	}
@@ -387,7 +389,7 @@ func (ch *Chain) GetEventLogRecords(name string) ([]collections.TimestampedLogRe
 	if err != nil {
 		return nil, err
 	}
-	recs := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
+	recs := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
 	ret := make([]collections.TimestampedLogRecord, recs.MustLen())
 	for i := uint16(0); i < recs.MustLen(); i++ {
 		data := recs.MustGetAt(i)

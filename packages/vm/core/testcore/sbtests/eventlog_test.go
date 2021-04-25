@@ -34,7 +34,7 @@ func testEventlogGetLast3(t *testing.T, w bool) {
 	)
 	require.NoError(t, err)
 
-	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
+	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
 	require.EqualValues(t, 3, array.MustLen())
 }
 
@@ -62,7 +62,7 @@ func testEventlogGetBetweenTs(t *testing.T, w bool) {
 	)
 	require.NoError(t, err)
 
-	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
+	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
 	require.EqualValues(t, 2, array.MustLen())
 }
 
@@ -83,7 +83,7 @@ func testEventLogEventData(t *testing.T, w bool) {
 		eventlog.ParamContractHname, sbtestsc.Interface.Hname(),
 	)
 	require.NoError(t, err)
-	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
+	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
 
 	require.EqualValues(t, 3, array.MustLen())
 
@@ -125,7 +125,7 @@ func testEventLogDifferentCalls(t *testing.T, w bool) {
 		eventlog.ParamContractHname, sbtestsc.Interface.Hname(),
 	)
 	require.NoError(t, err)
-	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
+	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
 	require.EqualValues(t, 11, array.MustLen())
 
 	str, err := chain.GetEventLogRecordsString(sbtestsc.Interface.Name)
@@ -186,7 +186,7 @@ func testChainLogSandboxDeploy(t *testing.T, w bool) {
 		eventlog.ParamContractHname, root.Interface.Hname(),
 	)
 	require.NoError(t, err)
-	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
+	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
 
 	require.EqualValues(t, 4, array.MustLen())
 
@@ -221,7 +221,7 @@ func testChainLogMultiple(t *testing.T, w bool) {
 		eventlog.ParamContractHname, sbtestsc.Interface.Hname(),
 	)
 	require.NoError(t, err)
-	array := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
+	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
 	require.EqualValues(t, 5, array.MustLen())
 	//////////////////////////////////////
 
