@@ -2,6 +2,7 @@ package coretypes
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/util"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -11,6 +12,10 @@ import (
 
 // region RequestID ///////////////////////////////////////////////////////////////
 type RequestID ledgerstate.OutputID
+
+const RequestIDDigestLen = 6
+
+type RequestLookupDigest [RequestIDDigestLen + 2]byte
 
 func RequestIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestID, error) {
 	ret, err := ledgerstate.OutputIDFromMarshalUtil(mu)
@@ -33,6 +38,13 @@ func RequestIDFromBase58(b58 string) (ret RequestID, err error) {
 
 func (rid RequestID) OutputID() ledgerstate.OutputID {
 	return ledgerstate.OutputID(rid)
+}
+
+func (rid RequestID) LookupDigest() RequestLookupDigest {
+	ret := RequestLookupDigest{}
+	copy(ret[:RequestIDDigestLen], rid[:RequestIDDigestLen])
+	copy(ret[RequestIDDigestLen:RequestIDDigestLen+2], util.Uint16To2Bytes(rid.OutputID().OutputIndex()))
+	return ret
 }
 
 // Base58 returns a base58 encoded version of the request id.
