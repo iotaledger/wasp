@@ -1,13 +1,11 @@
 package tests
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core/_default"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -17,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
@@ -25,6 +22,7 @@ import (
 
 func checkRoots(t *testing.T, chain *cluster.Chain) {
 	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
+
 		require.EqualValues(t, []byte{0xFF}, state.MustGet(root.VarStateInitialized))
 
 		chid, _, _ := codec.DecodeChainID(state.MustGet(root.VarChainID))
@@ -38,74 +36,97 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 
 		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
 
-		crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
-		require.NotNil(t, crBytes)
-		rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
+		for _, rec := range core.AllCoreContracts {
+			crBytes := contractRegistry.MustGetAt(rec.Hname().Bytes())
+			require.NotNil(t, crBytes)
+			cr, err := root.DecodeContractRecord(crBytes)
+			check(err, t)
 
-		crBytes = contractRegistry.MustGetAt(blob.Interface.Hname().Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
+			require.EqualValues(t, rec.ProgramHash, cr.ProgramHash)
+			require.EqualValues(t, rec.Description, cr.Description)
+			require.EqualValues(t, 0, cr.OwnerFee)
+			require.EqualValues(t, rec.Name, cr.Name)
+		}
+		//
+		//crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
+		//require.NotNil(t, crBytes)
+		//rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
+		//require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
+		//
+		//crBytes = contractRegistry.MustGetAt(blob.Interface.Hname().Bytes())
+		//require.NotNil(t, crBytes)
+		//cr, err := root.DecodeContractRecord(crBytes)
+		//check(err, t)
+		//
+		//require.EqualValues(t, blob.Interface.ProgramHash, cr.ProgramHash)
+		//require.EqualValues(t, blob.Interface.Description, cr.Description)
+		//require.EqualValues(t, 0, cr.OwnerFee)
+		//require.EqualValues(t, blob.Interface.Name, cr.Name)
+		//
+		//crBytes = contractRegistry.MustGetAt(accounts.Interface.Hname().Bytes())
+		//require.NotNil(t, crBytes)
+		//cr, err = root.DecodeContractRecord(crBytes)
+		//check(err, t)
+		//
+		//require.EqualValues(t, accounts.Interface.ProgramHash, cr.ProgramHash)
+		//require.EqualValues(t, accounts.Interface.Description, cr.Description)
+		//require.EqualValues(t, 0, cr.OwnerFee)
+		//require.EqualValues(t, accounts.Interface.Name, cr.Name)
 
-		require.EqualValues(t, blob.Interface.ProgramHash, cr.ProgramHash)
-		require.EqualValues(t, blob.Interface.Description, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
-		require.EqualValues(t, blob.Interface.Name, cr.Name)
-
-		crBytes = contractRegistry.MustGetAt(accounts.Interface.Hname().Bytes())
-		require.NotNil(t, crBytes)
-		cr, err = root.DecodeContractRecord(crBytes)
-		check(err, t)
-
-		require.EqualValues(t, accounts.Interface.ProgramHash, cr.ProgramHash)
-		require.EqualValues(t, accounts.Interface.Description, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
-		require.EqualValues(t, accounts.Interface.Name, cr.Name)
 		return true
 	})
 }
 
 func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
-	recRoot, err := findContract(chain, root.Interface.Name)
-	check(err, t)
-	require.NotNil(t, recRoot)
-	require.EqualValues(t, root.Interface.Name, recRoot.Name)
-	require.EqualValues(t, root.Interface.ProgramHash, recRoot.ProgramHash)
-	require.EqualValues(t, root.Interface.Description, recRoot.Description)
-	require.True(t, recRoot.Creator.IsNil())
-
-	recBlob, err := findContract(chain, blob.Interface.Name)
-	check(err, t)
-	require.NotNil(t, recBlob)
-	require.EqualValues(t, blob.Interface.Name, recBlob.Name)
-	require.EqualValues(t, blob.Interface.ProgramHash, recBlob.ProgramHash)
-	require.EqualValues(t, blob.Interface.Description, recBlob.Description)
-	require.True(t, recBlob.Creator.IsNil())
-
-	recAccounts, err := findContract(chain, accounts.Interface.Name)
-	check(err, t)
-	require.NotNil(t, recAccounts)
-	require.EqualValues(t, accounts.Interface.Name, recAccounts.Name)
-	require.EqualValues(t, accounts.Interface.ProgramHash, recAccounts.ProgramHash)
-	require.EqualValues(t, accounts.Interface.Description, recAccounts.Description)
-	require.True(t, recAccounts.Creator.IsNil())
-
-	recEventlog, err := findContract(chain, eventlog.Interface.Name)
-	check(err, t)
-	require.NotNil(t, recEventlog)
-	require.EqualValues(t, eventlog.Interface.Name, recEventlog.Name)
-	require.EqualValues(t, eventlog.Interface.ProgramHash, recEventlog.ProgramHash)
-	require.EqualValues(t, eventlog.Interface.Description, recEventlog.Description)
-	require.True(t, recEventlog.Creator.IsNil())
-
-	recDefault, err := findContract(chain, _default.Interface.Name)
-	check(err, t)
-	require.NotNil(t, recDefault)
-	require.EqualValues(t, _default.Interface.Name, recDefault.Name)
-	require.EqualValues(t, _default.Interface.ProgramHash, recDefault.ProgramHash)
-	require.EqualValues(t, _default.Interface.Description, recDefault.Description)
-	require.True(t, recDefault.Creator.IsNil())
+	for _, rec := range core.AllCoreContracts {
+		recBack, err := findContract(chain, rec.Name)
+		check(err, t)
+		require.NotNil(t, recBack)
+		require.EqualValues(t, rec.Name, recBack.Name)
+		require.EqualValues(t, rec.ProgramHash, recBack.ProgramHash)
+		require.EqualValues(t, rec.Description, recBack.Description)
+		require.True(t, recBack.Creator.IsNil())
+	}
+	//
+	//recRoot, err := findContract(chain, root.Interface.Name)
+	//check(err, t)
+	//require.NotNil(t, recRoot)
+	//require.EqualValues(t, root.Interface.Name, recRoot.Name)
+	//require.EqualValues(t, root.Interface.ProgramHash, recRoot.ProgramHash)
+	//require.EqualValues(t, root.Interface.Description, recRoot.Description)
+	//require.True(t, recRoot.Creator.IsNil())
+	//
+	//recBlob, err := findContract(chain, blob.Interface.Name)
+	//check(err, t)
+	//require.NotNil(t, recBlob)
+	//require.EqualValues(t, blob.Interface.Name, recBlob.Name)
+	//require.EqualValues(t, blob.Interface.ProgramHash, recBlob.ProgramHash)
+	//require.EqualValues(t, blob.Interface.Description, recBlob.Description)
+	//require.True(t, recBlob.Creator.IsNil())
+	//
+	//recAccounts, err := findContract(chain, accounts.Interface.Name)
+	//check(err, t)
+	//require.NotNil(t, recAccounts)
+	//require.EqualValues(t, accounts.Interface.Name, recAccounts.Name)
+	//require.EqualValues(t, accounts.Interface.ProgramHash, recAccounts.ProgramHash)
+	//require.EqualValues(t, accounts.Interface.Description, recAccounts.Description)
+	//require.True(t, recAccounts.Creator.IsNil())
+	//
+	//recEventlog, err := findContract(chain, eventlog.Interface.Name)
+	//check(err, t)
+	//require.NotNil(t, recEventlog)
+	//require.EqualValues(t, eventlog.Interface.Name, recEventlog.Name)
+	//require.EqualValues(t, eventlog.Interface.ProgramHash, recEventlog.ProgramHash)
+	//require.EqualValues(t, eventlog.Interface.Description, recEventlog.Description)
+	//require.True(t, recEventlog.Creator.IsNil())
+	//
+	//recDefault, err := findContract(chain, _default.Interface.Name)
+	//check(err, t)
+	//require.NotNil(t, recDefault)
+	//require.EqualValues(t, _default.Interface.Name, recDefault.Name)
+	//require.EqualValues(t, _default.Interface.ProgramHash, recDefault.ProgramHash)
+	//require.EqualValues(t, _default.Interface.Description, recDefault.Description)
+	//require.True(t, recDefault.Creator.IsNil())
 }
 
 func requestFunds(wasps *cluster.Cluster, addr ledgerstate.Address, who string) error {
