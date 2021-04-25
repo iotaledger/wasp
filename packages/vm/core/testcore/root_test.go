@@ -4,6 +4,7 @@
 package testcore
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"testing"
 
@@ -42,7 +43,7 @@ func TestGetInfo(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, 5, len(contracts))
+	require.EqualValues(t, len(core.AllCoreContracts), len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -68,7 +69,7 @@ func TestDeployExample(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, 6, len(contracts))
+	require.EqualValues(t, len(core.AllCoreContracts)+1, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -106,7 +107,7 @@ func TestDeployDouble(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, 6, len(contracts))
+	require.EqualValues(t, len(core.AllCoreContracts)+1, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)

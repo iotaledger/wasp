@@ -2,12 +2,14 @@ package testcore
 
 import (
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func Test1(t *testing.T) {
+	core.PrintWellKnownHnames()
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 	chain.AssertTotalIotas(1)

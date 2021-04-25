@@ -5,6 +5,7 @@ package testcore
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"testing"
 
@@ -119,13 +120,13 @@ func TestDeployGrant(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, contacts := chain.GetInfo()
-	require.EqualValues(t, 6, len(contacts))
+	require.EqualValues(t, len(core.AllCoreContracts)+1, len(contacts))
 
 	err = chain.DeployWasmContract(user1, "testInccounter2", wasmFile)
 	require.NoError(t, err)
 
 	_, _, contacts = chain.GetInfo()
-	require.EqualValues(t, 7, len(contacts))
+	require.EqualValues(t, len(core.AllCoreContracts)+2, len(contacts))
 }
 
 func TestRevokeDeploy(t *testing.T) {
@@ -144,7 +145,7 @@ func TestRevokeDeploy(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, contacts := chain.GetInfo()
-	require.EqualValues(t, 6, len(contacts))
+	require.EqualValues(t, len(core.AllCoreContracts)+1, len(contacts))
 
 	req = solo.NewCallParams(root.Interface.Name, root.FuncRevokeDeploy,
 		root.ParamDeployer, user1AgentID,
@@ -156,7 +157,7 @@ func TestRevokeDeploy(t *testing.T) {
 	require.Error(t, err)
 
 	_, _, contacts = chain.GetInfo()
-	require.EqualValues(t, 6, len(contacts))
+	require.EqualValues(t, len(core.AllCoreContracts)+1, len(contacts))
 }
 
 func TestDeployGrantFail(t *testing.T) {

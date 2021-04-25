@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
@@ -22,6 +23,7 @@ var AllCoreContracts = map[hashing.HashValue]*coreutil.ContractInterface{
 	accounts.Interface.ProgramHash: accounts.Interface,
 	blob.Interface.ProgramHash:     blob.Interface,
 	eventlog.Interface.ProgramHash: eventlog.Interface,
+	blocklog.Interface.ProgramHash: blocklog.Interface,
 }
 
 func GetProcessor(programHash hashing.HashValue) (coretypes.VMProcessor, error) {
