@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
-	"golang.org/x/xerrors"
 	"io"
 	"time"
 )
@@ -35,8 +34,9 @@ func init() {
 
 const (
 	// state variables
-	BlockRegistry    = "b"
-	RequestLookupMap = "l"
+	StateVarBlockRegistry      = "b"
+	StateVarRequestLookupIndex = "l"
+	StateVarRequestRecords     = "r"
 	// functions
 	FuncGetBlockInfo       = "getBlockInfo"
 	FuncGetLatestBlockInfo = "getLatestBlockInfo"
@@ -118,96 +118,3 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 }
 
 // endregion //////////////////////////////////////////////////////////
-
-// region RequestBlockReference //////////////////////////////////////
-type RequestBlockReference struct {
-	BlockIndex   uint32
-	RequestIndex uint16
-}
-
-func (ref *RequestBlockReference) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, ref.BlockIndex); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, ref.RequestIndex); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (ref *RequestBlockReference) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &ref.BlockIndex); err != nil {
-		return err
-	}
-	if err := util.ReadUint16(r, &ref.RequestIndex); err != nil {
-		return err
-	}
-	return nil
-}
-
-// endregion
-
-// region RequestLookupList //////////////////////////////////////////////
-
-type RequestLookupList struct {
-	lst []RequestBlockReference
-}
-
-func NewRequestLookupList() *RequestLookupList {
-	return &RequestLookupList{
-		lst: make([]RequestBlockReference, 0),
-	}
-}
-
-func RequestLookupListFromBytes(data []byte) (*RequestLookupList, error) {
-	ret := NewRequestLookupList()
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
-func (ll *RequestLookupList) Bytes() []byte {
-	var buf bytes.Buffer
-	_ = ll.Write(&buf)
-	return buf.Bytes()
-}
-
-func (ll *RequestLookupList) List() []RequestBlockReference {
-	return ll.lst
-}
-
-func (ll *RequestLookupList) Append(ref ...RequestBlockReference) {
-	ll.lst = append(ll.lst, ref...)
-}
-
-func (ll *RequestLookupList) Write(w io.Writer) error {
-	if len(ll.lst) > util.MaxUint16 {
-		return xerrors.New("RequestLookupList::Write: too long")
-	}
-	if err := util.WriteUint16(w, uint16(len(ll.lst))); err != nil {
-		return err
-	}
-	for i := range ll.lst {
-		if err := ll.lst[i].Write(w); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (ll *RequestLookupList) Read(r io.Reader) error {
-	var size uint16
-	if err := util.ReadUint16(r, &size); err != nil {
-		return err
-	}
-	ll.lst = make([]RequestBlockReference, size)
-	for i := range ll.lst {
-		if err := ll.lst[i].Read(r); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// endregion /////////////////////////////////////////////////////////////

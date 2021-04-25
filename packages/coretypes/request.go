@@ -1,21 +1,49 @@
 package coretypes
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/util"
-	"time"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
+	"io"
+	"time"
 )
+
+// region Request //////////////////////////////////////////////////////
+// Request has two main implementations
+// - RequestOnLedger
+// - RequestOffLedger
+type Request interface {
+	// index == 0 for off ledger requests
+	ID() RequestID
+	// true or false for on-ledger requests, always true for off-ledger
+	IsFeePrepaid() bool
+	// number used for ordering requests in the mempool. Priority order is a descending order
+	Order() uint64
+	// ledgerstate.Output interface for on-ledger requests, nil for off-ledger requests
+	Output() ledgerstate.Output
+	// arguments of the call with the flag if they are ready. No arguments mean empty dictionary and true
+	Params() (dict.Dict, bool)
+	// account of the sender
+	SenderAccount() *AgentID
+	// address of the sender for all requests,
+	SenderAddress() ledgerstate.Address
+	// return true if solidified successfully
+	SolidifyArgs(reg BlobCache) (bool, error)
+	// returns contract/entry point pair
+	Target() (Hname, Hname)
+	// returns time lock time or zero time if no time lock
+	TimeLock() time.Time
+	// returns tokens to transfer
+	Tokens() *ledgerstate.ColoredBalances
+}
+
+// endregion ///////////////////////////////////////////////////////////
 
 // region RequestID ///////////////////////////////////////////////////////////////
 type RequestID ledgerstate.OutputID
-
-const RequestIDDigestLen = 6
-
-type RequestLookupDigest [RequestIDDigestLen + 2]byte
 
 func RequestIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestID, error) {
 	ret, err := ledgerstate.OutputIDFromMarshalUtil(mu)
@@ -71,30 +99,56 @@ func OID(o ledgerstate.OutputID) string {
 
 // endregion ////////////////////////////////////////////////////////////////////////////////////
 
-// Request has two main implementations
-// - sctransaction.RequestOnLedger
-// - sctransaction.RequestOffLedger
-type Request interface {
-	// index == 0 for off ledger requests
-	ID() RequestID
-	// true or false for on-ledger requests, always true for off-ledger
-	IsFeePrepaid() bool
-	// number used for ordering requests in the mempool. Priority order is a descending order
-	Order() uint64
-	// ledgerstate.Output interface for on-ledger requests, nil for off-ledger requests
-	Output() ledgerstate.Output
-	// arguments of the call with the flag if they are ready. No arguments mean empty dictionary and true
-	Params() (dict.Dict, bool)
-	// account of the sender
-	SenderAccount() *AgentID
-	// address of the sender for all requests,
-	SenderAddress() ledgerstate.Address
-	// return true if solidified successfully
-	SolidifyArgs(reg BlobCache) (bool, error)
-	// returns contract/entry point pair
-	Target() (Hname, Hname)
-	// returns time lock time or zero time if no time lock
-	TimeLock() time.Time
-	// returns tokens to transfer
-	Tokens() *ledgerstate.ColoredBalances
+// region RequestLookup //////////////////////////////////////
+
+const RequestIDDigestLen = 6
+
+// RequestLookupDigest is shortened version of the request id. It is guaranteed to be uniques
+// within one block, however it may collide globally. Used for quick checking for most requests
+// if it was never seen
+type RequestLookupDigest [RequestIDDigestLen + 2]byte
+
+// RequestLookupReference globally unique reference to the request: block index and index of the request within block
+type RequestLookupKey [6]byte
+
+func NewRequestLookupKey(blockIndex uint32, requestIndex uint16) RequestLookupKey {
+	ret := RequestLookupKey{}
+	copy(ret[:4], util.Uint32To4Bytes(blockIndex))
+	copy(ret[4:6], util.Uint16To2Bytes(requestIndex))
+	return ret
 }
+
+func RequestLookupKeyFromBytes(data []byte) (RequestLookupKey, error) {
+	var ret RequestLookupKey
+	if err := ret.Read(bytes.NewReader(data)); err != nil {
+		return [6]byte{}, err
+	}
+	return ret, nil
+}
+
+func (k RequestLookupKey) BlockIndex() uint32 {
+	return util.MustUint32From4Bytes(k[:4])
+}
+
+func (k RequestLookupKey) RequestIndex() uint16 {
+	return util.MustUint16From2Bytes(k[4:6])
+}
+
+func (k RequestLookupKey) Bytes() []byte {
+	return k[:]
+}
+
+func (k *RequestLookupKey) Write(w io.Writer) error {
+	_, err := w.Write(k[:])
+	return err
+}
+
+func (k *RequestLookupKey) Read(r io.Reader) error {
+	n, err := r.Read(k[:])
+	if err != nil || n != 6 {
+		return io.EOF
+	}
+	return nil
+}
+
+// endregion

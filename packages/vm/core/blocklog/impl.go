@@ -34,7 +34,7 @@ func getBlockInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 		return nil, xerrors.New("blocklog::getBlockInfo: incorrect block index")
 	}
 	blockIndex := uint32(blockIndex64)
-	data, err := collections.NewArray32ReadOnly(ctx.State(), BlockRegistry).GetAt(blockIndex)
+	data, err := collections.NewArray32ReadOnly(ctx.State(), StateVarBlockRegistry).GetAt(blockIndex)
 	if err != nil {
 		return nil, xerrors.Errorf("blocklog::getBlockInfo at index #%d: %w", blockIndex, err)
 	}
@@ -47,7 +47,7 @@ func getBlockInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 }
 
 func getLatestBlockInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
-	registry := collections.NewArray32ReadOnly(ctx.State(), BlockRegistry)
+	registry := collections.NewArray32ReadOnly(ctx.State(), StateVarBlockRegistry)
 	l := registry.MustLen()
 	if l == 0 {
 		return nil, xerrors.New("blocklog::getLatestBlockInfo: empty log")
