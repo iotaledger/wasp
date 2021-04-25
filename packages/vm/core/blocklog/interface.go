@@ -4,6 +4,7 @@ package blocklog
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
@@ -25,22 +26,33 @@ var (
 )
 
 func init() {
-	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{})
+	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
+		coreutil.ViewFunc(FuncGetBlockInfo, getBlockInfo),
+		coreutil.ViewFunc(FuncGetLatestBlockInfo, getLatestBlockInfo),
+	})
 }
 
 const (
+	// state variables
 	BlockRegistry = "b"
+	// functions
+	FuncGetBlockInfo       = "getBlockInfo"
+	FuncGetLatestBlockInfo = "getLatestBlockInfo"
+	// parameters
+	ParamBlockIndex = "n"
+	ParamBlockInfo  = "i"
 )
 
 type BlockInfo struct {
+	BlockIndex            uint32 // not persistent. Set from key
 	Timestamp             time.Time
 	TotalRequests         uint16
 	NumSuccessfulRequests uint16
 	NumOffLedgerRequests  uint16
 }
 
-func BlockInfoFromBytes(data []byte) (*BlockInfo, error) {
-	ret := &BlockInfo{}
+func BlockInfoFromBytes(blockIndex uint32, data []byte) (*BlockInfo, error) {
+	ret := &BlockInfo{BlockIndex: blockIndex}
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, err
 	}
@@ -51,6 +63,15 @@ func (bi *BlockInfo) Bytes() []byte {
 	var buf bytes.Buffer
 	_ = bi.Write(&buf)
 	return buf.Bytes()
+}
+
+func (bi *BlockInfo) String() string {
+	ret := fmt.Sprintf("Block index: %d\n", bi.BlockIndex)
+	ret += fmt.Sprintf("Timestamp: %v\n", bi.Timestamp)
+	ret += fmt.Sprintf("Total requests: %d\n", bi.TotalRequests)
+	ret += fmt.Sprintf("Number of succesfull requests: %d\n", bi.NumSuccessfulRequests)
+	ret += fmt.Sprintf("Number of off-ledger requests: %d\n", bi.NumOffLedgerRequests)
+	return ret
 }
 
 func (bi *BlockInfo) Write(w io.Writer) error {

@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"golang.org/x/xerrors"
 	"time"
@@ -48,13 +49,19 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 
 	// loop over the batch of requests and run each request on the VM.
 	// the result accumulates in the VMContext and in the list of stateUpdates
+	var numOffLedger, numSuccess uint16
 	for i, req := range task.Requests {
 		vmctx.RunTheRequest(req, i)
 		lastStateUpdate, lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
 
 		stateUpdates = append(stateUpdates, lastStateUpdate)
+		if req.Output() == nil {
+			numOffLedger++
+		}
+		if lastErr == nil {
+			numSuccess++
+		}
 	}
-
 	// create block from state updates.
 	task.ResultBlock, err = state.NewBlock(stateUpdates...)
 	if err != nil {
@@ -63,10 +70,21 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	}
 	task.ResultBlock.WithBlockIndex(task.VirtualState.BlockIndex() + 1)
 
+	// save the block info into the 'blocklog' contract
+	err = vmctx.StoreBlockInfo(task.ResultBlock.StateIndex(), &blocklog.BlockInfo{
+		Timestamp:             time.Unix(0, task.ResultBlock.Timestamp()),
+		TotalRequests:         uint16(len(task.Requests)),
+		NumSuccessfulRequests: numSuccess,
+		NumOffLedgerRequests:  numOffLedger,
+	})
+	if err != nil {
+		task.OnFinish(nil, nil, xerrors.Errorf("RunVM: %w", err))
+		return
+	}
 	// calculate resulting state hash
 	vsClone := task.VirtualState.Clone()
 	if err = vsClone.ApplyBlock(task.ResultBlock); err != nil {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.ApplyBlock: %v", err))
+		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.ApplyBlock: %w", err))
 		return
 	}
 

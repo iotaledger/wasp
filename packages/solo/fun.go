@@ -14,8 +14,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
@@ -428,4 +430,30 @@ func (ch *Chain) GetEventLogNumRecords(name string) int {
 
 func (ch *Chain) OwnersAccount() *coretypes.AgentID {
 	return coretypes.NewAgentID(ch.ChainID.AsAddress(), 0)
+}
+
+func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
+	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetLatestBlockInfo)
+	require.NoError(ch.Env.T, err)
+	resultDecoder := kvdecoder.New(ret, ch.Log)
+	blockIndex := uint32(resultDecoder.MustGetUint64(blocklog.ParamBlockIndex))
+	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
+
+	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, blockInfoBin)
+	require.NoError(ch.Env.T, err)
+	return blockInfo
+}
+
+func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
+	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetBlockInfo,
+		blocklog.ParamBlockIndex, blockIndex)
+	if err != nil {
+		return nil, err
+	}
+	resultDecoder := kvdecoder.New(ret, ch.Log)
+	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
+
+	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, blockInfoBin)
+	require.NoError(ch.Env.T, err)
+	return blockInfo, nil
 }

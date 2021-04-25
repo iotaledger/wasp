@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"runtime/debug"
 	"time"
 
@@ -47,7 +48,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 		defer func() {
 			if r := recover(); r != nil {
 				vmctx.lastResult = nil
-				vmctx.lastError = xerrors.Errorf("%s: recovered from panic in VM: %v", req, r)
+				vmctx.lastError = xerrors.Errorf("%s: recovered from panic in VM: %v", req.ID(), r)
 				vmctx.Debugf(string(debug.Stack()))
 				if dberr, ok := r.(*kv.DBError); ok {
 					// There was an error accessing the DB. The world stops
@@ -277,10 +278,9 @@ func (vmctx *VMContext) mustSaveRequestOrder() {
 		vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 		defer vmctx.popCallContext()
 
-		state := vmctx.State()
 		address := vmctx.req.SenderAddress()
 		order := vmctx.req.Order()
-		accounts.SetOrder(state, address, order)
+		accounts.SetOrder(vmctx.State(), address, order)
 	}
 }
 
@@ -326,6 +326,13 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 	return targetContract == root.Interface.Hname() && entryPoint == coretypes.EntryPointInit
 }
 
+func isRequestTimeLockedNow(req coretypes.Request, nowis time.Time) bool {
+	if req.TimeLock().IsZero() {
+		return false
+	}
+	return req.TimeLock().After(nowis)
+}
+
 func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) (*ledgerstate.TransactionEssence, error) {
 	if err := vmctx.txBuilder.AddAliasOutputAsRemainder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
 		return nil, xerrors.Errorf("finalizeRequestCall: %v", err)
@@ -337,9 +344,13 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 	return tx, nil
 }
 
-func isRequestTimeLockedNow(req coretypes.Request, nowis time.Time) bool {
-	if req.TimeLock().IsZero() {
-		return false
+func (vmctx *VMContext) StoreBlockInfo(blockIndex uint32, blockInfo *blocklog.BlockInfo) error {
+	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
+	if idx != blockIndex {
+		return xerrors.New("StoreBlockInfo: inconsistent block index")
 	}
-	return req.TimeLock().After(nowis)
+	return nil
 }
