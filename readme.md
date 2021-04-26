@@ -10,7 +10,7 @@ into ISCP.
 
 A _smart contract_ is a distributed software agent that stores its state in the
 [UTXO ledger](docs/intro/utxo.md), and evolves with each _request_ sent to
-the contrct. Since the UTXO ledger is immutable, by extension the smart
+the contract. Since the UTXO ledger is immutable, by extension the smart
 contract state is also immutable.
 
 A _committee_ of an arbitrary number of Wasp nodes runs a _chain_ of smart
