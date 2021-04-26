@@ -103,7 +103,7 @@ func RequestNotSeen(state kv.KVStoreReader, reqid *coretypes.RequestID) (bool, e
 
 func getRequestRecordDataByRef(state kv.KVStoreReader, blockIndex uint32, requestIndex uint16) ([]byte, bool) {
 	lookupKey := NewRequestLookupKey(blockIndex, requestIndex)
-	lookupTable := collections.NewMapReadOnly(state, StateVarRequestLookupIndex)
+	lookupTable := collections.NewMapReadOnly(state, StateVarRequestRecords)
 	recBin := lookupTable.MustGetAt(lookupKey[:])
 	if recBin == nil {
 		return nil, false

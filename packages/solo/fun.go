@@ -457,3 +457,47 @@ func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
 	require.NoError(ch.Env.T, err)
 	return blockInfo, nil
 }
+
+func (ch *Chain) IsRequestProcessed(reqID coretypes.RequestID) bool {
+	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncIsRequestProcessed,
+		blocklog.ParamRequestID, reqID)
+	require.NoError(ch.Env.T, err)
+	resultDecoder := kvdecoder.New(ret, ch.Log)
+	bin, err := resultDecoder.GetBytes(blocklog.ParamRequestProcessed)
+	require.NoError(ch.Env.T, err)
+	return bin != nil
+}
+
+func (ch *Chain) GetRequestLogRecord(reqID coretypes.RequestID) (*blocklog.RequestLogRecord, uint32, uint16, bool) {
+	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestLogRecord,
+		blocklog.ParamRequestID, reqID)
+	require.NoError(ch.Env.T, err)
+	resultDecoder := kvdecoder.New(ret, ch.Log)
+	binRec, err := resultDecoder.GetBytes(blocklog.ParamRequestRecord)
+	if err != nil || binRec == nil {
+		return nil, 0, 0, false
+	}
+	ret1, err := blocklog.RequestLogRecordFromBytes(binRec)
+	require.NoError(ch.Env.T, err)
+	blockIndex := uint32(resultDecoder.MustGetUint64(blocklog.ParamBlockIndex))
+	requestIndex := uint16(resultDecoder.MustGetUint64(blocklog.ParamRequestIndex))
+
+	return ret1, blockIndex, requestIndex, true
+}
+
+func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32) []*blocklog.RequestLogRecord {
+	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestLogRecordsForBlock,
+		blocklog.ParamBlockIndex, blockIndex)
+	if err != nil {
+		return nil
+	}
+	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestRecord)
+	ret := make([]*blocklog.RequestLogRecord, recs.MustLen())
+	for i := range ret {
+		data, err := recs.GetAt(uint16(i))
+		require.NoError(ch.Env.T, err)
+		ret[i], err = blocklog.RequestLogRecordFromBytes(data)
+		require.NoError(ch.Env.T, err)
+	}
+	return ret
+}

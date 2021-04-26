@@ -257,7 +257,7 @@ func (p *decoder) GetBytes(key kv.Key, def ...[]byte) ([]byte, error) {
 		return v, nil
 	}
 	if len(def) == 0 {
-		return nil, fmt.Errorf("MustGetBytes: mandatory parameter '%s' does not exist", key)
+		return nil, fmt.Errorf("GetBytes: mandatory parameter '%s' does not exist", key)
 	}
 	return def[0], nil
 }

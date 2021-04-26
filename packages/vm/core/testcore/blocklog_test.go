@@ -3,6 +3,7 @@ package testcore
 import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -82,4 +83,64 @@ func TestBlockInfoSeveral(t *testing.T) {
 		require.EqualValues(t, 0, bi1.NumOffLedgerRequests)
 		t.Logf("%s", bi1.String())
 	}
+}
+
+func TestRequestIsProcessed(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
+		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0).WithIotas(1)
+	tx, _, err := chain.PostRequestSyncTx(req, nil)
+	require.NoError(t, err)
+
+	reqs, err := env.RequestsForChain(tx, chain.ChainID)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, len(reqs))
+
+	require.True(t, chain.IsRequestProcessed(reqs[0].ID()))
+}
+
+func TestRequestLogRecord(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
+		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0).WithIotas(1)
+	tx, _, err := chain.PostRequestSyncTx(req, nil)
+	require.NoError(t, err)
+
+	reqs, err := env.RequestsForChain(tx, chain.ChainID)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, len(reqs))
+
+	require.True(t, chain.IsRequestProcessed(reqs[0].ID()))
+
+	rec, blockIndex, requestIndex, ok := chain.GetRequestLogRecord(reqs[0].ID())
+	require.True(t, ok)
+	require.EqualValues(t, reqs[0].ID(), rec.RequestID)
+	require.False(t, rec.OffLedger)
+	require.EqualValues(t, 0, len(rec.LogData))
+	require.EqualValues(t, 2, blockIndex)
+	require.EqualValues(t, 0, requestIndex)
+}
+
+func TestRequestLogRecordsForBlocks(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
+		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0).WithIotas(1)
+	tx, _, err := chain.PostRequestSyncTx(req, nil)
+	require.NoError(t, err)
+
+	reqs, err := env.RequestsForChain(tx, chain.ChainID)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, len(reqs))
+
+	require.True(t, chain.IsRequestProcessed(reqs[0].ID()))
+
+	recs := chain.GetRequestLogRecordsForBlock(2)
+	require.EqualValues(t, 1, len(recs))
+	require.EqualValues(t, reqs[0].ID(), reqs[0].ID())
 }

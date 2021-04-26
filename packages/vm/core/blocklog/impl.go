@@ -70,10 +70,10 @@ func getRequestLogRecord(ctx coretypes.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	requestID := params.MustGetRequestID(ParamRequestID)
 	recBin, blockIndex, requestIndex, found := getRequestRecordDataByRequestID(ctx, requestID)
-	if !found {
-		return nil, xerrors.New("not found")
-	}
 	ret := dict.New()
+	if !found {
+		return ret, nil
+	}
 	ret.Set(ParamRequestRecord, recBin)
 	ret.Set(ParamBlockIndex, codec.EncodeUint64(uint64(blockIndex)))
 	ret.Set(ParamRequestIndex, codec.EncodeUint64(uint64(requestIndex)))
@@ -84,7 +84,7 @@ func getRequestLogRecordsForBlock(ctx coretypes.SandboxView) (dict.Dict, error) 
 	params := kvdecoder.New(ctx.Params())
 	a := assert.NewAssert(ctx.Log())
 	blockIndex64 := params.MustGetUint64(ParamBlockIndex)
-	a.Require(int(blockIndex64) > util.MaxUint32, "wrong block index parameter")
+	a.Require(int(blockIndex64) <= util.MaxUint32, "wrong block index parameter")
 	blockIndex := uint32(blockIndex64)
 
 	blockInfo, found := getBlockInfoIntern(ctx, blockIndex)
