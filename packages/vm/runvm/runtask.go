@@ -51,7 +51,7 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	// the result accumulates in the VMContext and in the list of stateUpdates
 	var numOffLedger, numSuccess uint16
 	for i, req := range task.Requests {
-		vmctx.RunTheRequest(req, i)
+		vmctx.RunTheRequest(req, uint16(i))
 		lastStateUpdate, lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
 
 		stateUpdates = append(stateUpdates, lastStateUpdate)

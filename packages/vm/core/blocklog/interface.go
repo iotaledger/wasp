@@ -31,6 +31,9 @@ func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
 		coreutil.ViewFunc(FuncGetBlockInfo, getBlockInfo),
 		coreutil.ViewFunc(FuncGetLatestBlockInfo, getLatestBlockInfo),
+		coreutil.ViewFunc(FuncGetRequestLogRecord, getRequestLogRecord),
+		coreutil.ViewFunc(FuncGetRequestLogRecordsForBlock, getRequestLogRecordsForBlock),
+		coreutil.ViewFunc(FuncIsRequestProcessed, isRequestProcessed),
 	})
 }
 
@@ -40,11 +43,19 @@ const (
 	StateVarRequestLookupIndex = "l"
 	StateVarRequestRecords     = "r"
 	// functions
-	FuncGetBlockInfo       = "getBlockInfo"
-	FuncGetLatestBlockInfo = "getLatestBlockInfo"
+	FuncGetBlockInfo                 = "getBlockInfo"
+	FuncGetLatestBlockInfo           = "getLatestBlockInfo"
+	FuncGetRequestLogRecord          = "getRequestLogRecord"
+	FuncGetRequestLogRecordsForBlock = "getRequestLogRecordsForBlock"
+	FuncIsRequestProcessed           = "isRequestProcessed"
+
 	// parameters
-	ParamBlockIndex = "n"
-	ParamBlockInfo  = "i"
+	ParamBlockIndex       = "n"
+	ParamRequestIndex     = "r"
+	ParamBlockInfo        = "i"
+	ParamRequestRecord    = "d"
+	ParamRequestID        = "u"
+	ParamRequestProcessed = "p"
 )
 
 // region BlockInfo //////////////////////////////////////////////////////////////
@@ -131,14 +142,6 @@ func NewRequestLookupKey(blockIndex uint32, requestIndex uint16) RequestLookupKe
 	copy(ret[:4], util.Uint32To4Bytes(blockIndex))
 	copy(ret[4:6], util.Uint16To2Bytes(requestIndex))
 	return ret
-}
-
-func RequestLookupKeyFromBytes(data []byte) (RequestLookupKey, error) {
-	var ret RequestLookupKey
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return [6]byte{}, err
-	}
-	return ret, nil
 }
 
 func (k RequestLookupKey) BlockIndex() uint32 {

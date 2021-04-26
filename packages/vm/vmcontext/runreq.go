@@ -19,10 +19,10 @@ import (
 
 // RunTheRequest processes any request based on the Extended output, even if it
 // doesn't parse correctly as a SC request
-func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
+func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16) {
 	defer vmctx.finalizeRequestCall()
 
-	vmctx.mustSetUpRequestContext(req)
+	vmctx.mustSetUpRequestContext(req, requestIndex)
 
 	// guard against replaying off-ledger requests here to prevent replaying fee deduction
 	// also verifies that account for off-ledger request exists
@@ -72,11 +72,12 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 }
 
 // mustSetUpRequestContext sets up VMContext for request
-func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
+func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request, requestIndex uint16) {
 	if _, ok := req.Params(); !ok {
 		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: request args should had been solidified")
 	}
 	vmctx.req = req
+	vmctx.requestIndex = requestIndex
 	if req.Output() != nil {
 		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.Output().ID()); err != nil {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
@@ -287,7 +288,7 @@ func (vmctx *VMContext) mustSaveRequestOrder() {
 }
 
 func (vmctx *VMContext) finalizeRequestCall() {
-	vmctx.mustRequestToEventLog(vmctx.lastError)
+	vmctx.mustLogRequest(vmctx.lastError)
 	vmctx.lastTotalAssets = vmctx.totalAssets()
 	vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
 
@@ -298,10 +299,9 @@ func (vmctx *VMContext) finalizeRequestCall() {
 	)
 }
 
-func (vmctx *VMContext) mustRequestToEventLog(err error) {
-	if err != nil {
-		vmctx.log.Error(err)
-	}
+func (vmctx *VMContext) mustLogRequest(err error) {
+	vmctx.mustLogRequestToBlockLog(err)
+
 	e := "Ok"
 	if err != nil {
 		e = err.Error()
@@ -309,6 +309,11 @@ func (vmctx *VMContext) mustRequestToEventLog(err error) {
 	reqStr := coretypes.OID(vmctx.req.ID().OutputID())
 	msg := fmt.Sprintf("[req] %s: %s", reqStr, e)
 	vmctx.log.Infof("eventlog -> '%s'", msg)
+
+	vmctx.mustRequestToEventLog(msg)
+}
+
+func (vmctx *VMContext) mustRequestToEventLog(msg string) {
 	targetContract, _ := vmctx.req.Target()
 	vmctx.StoreToEventLog(targetContract, []byte(msg))
 }

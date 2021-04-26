@@ -26,20 +26,14 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 func getBlockInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
-	blockIndex64, err := params.GetUint64(ParamBlockIndex)
-	if err != nil {
-		return nil, err
-	}
+	blockIndex64 := params.MustGetUint64(ParamBlockIndex)
 	if blockIndex64 > uint64(util.MaxUint32) {
 		return nil, xerrors.New("blocklog::getBlockInfo: incorrect block index")
 	}
 	blockIndex := uint32(blockIndex64)
-	data, err := collections.NewArray32ReadOnly(ctx.State(), StateVarBlockRegistry).GetAt(blockIndex)
-	if err != nil {
-		return nil, xerrors.Errorf("blocklog::getBlockInfo at index #%d: %w", blockIndex, err)
-	}
-	if data == nil {
-		return nil, xerrors.Errorf("blocklog::getBlockInfo at index #%d: not found", blockIndex)
+	data, found := getBlockInfoDataIntern(ctx.State(), blockIndex)
+	if !found {
+		return nil, xerrors.New("not found")
 	}
 	ret := dict.New()
 	ret.Set(ParamBlockInfo, data)
@@ -56,5 +50,52 @@ func getLatestBlockInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 	ret.Set(ParamBlockIndex, codec.EncodeUint64(uint64(l-1)))
 	ret.Set(ParamBlockInfo, data)
+	return ret, nil
+}
+
+func isRequestProcessed(ctx coretypes.SandboxView) (dict.Dict, error) {
+	params := kvdecoder.New(ctx.Params())
+	requestID := params.MustGetRequestID(ParamRequestID)
+	a := assert.NewAssert(ctx.Log())
+	notSeen, err := RequestNotSeen(ctx.State(), &requestID)
+	a.RequireNoError(err)
+	ret := dict.New()
+	if !notSeen {
+		ret.Set(ParamRequestProcessed, codec.EncodeString("+"))
+	}
+	return ret, nil
+}
+
+func getRequestLogRecord(ctx coretypes.SandboxView) (dict.Dict, error) {
+	params := kvdecoder.New(ctx.Params())
+	requestID := params.MustGetRequestID(ParamRequestID)
+	recBin, blockIndex, requestIndex, found := getRequestRecordDataByRequestID(ctx, requestID)
+	if !found {
+		return nil, xerrors.New("not found")
+	}
+	ret := dict.New()
+	ret.Set(ParamRequestRecord, recBin)
+	ret.Set(ParamBlockIndex, codec.EncodeUint64(uint64(blockIndex)))
+	ret.Set(ParamRequestIndex, codec.EncodeUint64(uint64(requestIndex)))
+	return ret, nil
+}
+
+func getRequestLogRecordsForBlock(ctx coretypes.SandboxView) (dict.Dict, error) {
+	params := kvdecoder.New(ctx.Params())
+	a := assert.NewAssert(ctx.Log())
+	blockIndex64 := params.MustGetUint64(ParamBlockIndex)
+	a.Require(int(blockIndex64) > util.MaxUint32, "wrong block index parameter")
+	blockIndex := uint32(blockIndex64)
+
+	blockInfo, found := getBlockInfoIntern(ctx, blockIndex)
+	a.Require(found, "not found")
+
+	ret := dict.New()
+	arr := collections.NewArray16(ret, ParamRequestRecord)
+	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
+		data, found := getRequestRecordDataByRef(ctx.State(), blockIndex, reqIdx)
+		a.Require(found, "inconsistency: request record not found")
+		_ = arr.Push(data)
+	}
 	return ret, nil
 }

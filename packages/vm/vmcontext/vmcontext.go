@@ -26,6 +26,7 @@ type VMContext struct {
 	txBuilder          *utxoutil.Builder
 	virtualState       state.VirtualState
 	remainingAfterFees *ledgerstate.ColoredBalances
+	blockIndex         uint32
 	log                *logger.Logger
 	// fee related
 	validatorFeeTarget coretypes.AgentID // provided by validator
@@ -34,6 +35,7 @@ type VMContext struct {
 	validatorFee       uint64
 	// request context
 	req             coretypes.Request
+	requestIndex    uint16
 	entropy         hashing.HashValue // mutates with each request
 	contractRecord  *root.ContractRecord
 	timestamp       int64
@@ -62,6 +64,7 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error
 		chainID:      *chainID,
 		txBuilder:    txb,
 		virtualState: task.VirtualState.Clone(),
+		blockIndex:   task.VirtualState.BlockIndex() + 1,
 		processors:   task.Processors,
 		log:          task.Log,
 		entropy:      task.Entropy,
