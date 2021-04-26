@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -19,14 +20,11 @@ func (vmctx *VMContext) AccountID() *coretypes.AgentID {
 }
 
 func (vmctx *VMContext) adjustAccount(agentID *coretypes.AgentID) *coretypes.AgentID {
-	if !IsAdjustableAccount(vmctx.chainID, &vmctx.chainOwnerID, agentID) {
-		return agentID
-	}
-	return vmctx.commonAccount()
+	return commonaccount.Adjust(agentID, &vmctx.chainID, &vmctx.chainOwnerID)
 }
 
 func (vmctx *VMContext) commonAccount() *coretypes.AgentID {
-	return coretypes.NewAgentID(vmctx.chainID.AsAddress(), 0)
+	return commonaccount.Get(&vmctx.chainID)
 }
 
 func (vmctx *VMContext) GetBalance(col ledgerstate.Color) uint64 {

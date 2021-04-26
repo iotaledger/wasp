@@ -1,13 +1,11 @@
 package coretypes
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"io"
 	"time"
 )
 
@@ -44,6 +42,13 @@ type Request interface {
 
 // region RequestID ///////////////////////////////////////////////////////////////
 type RequestID ledgerstate.OutputID
+
+const RequestIDDigestLen = 6
+
+// RequestLookupDigest is shortened version of the request id. It is guaranteed to be uniques
+// within one block, however it may collide globally. Used for quick checking for most requests
+// if it was never seen
+type RequestLookupDigest [RequestIDDigestLen + 2]byte
 
 func RequestIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestID, error) {
 	ret, err := ledgerstate.OutputIDFromMarshalUtil(mu)
@@ -98,57 +103,3 @@ func OID(o ledgerstate.OutputID) string {
 }
 
 // endregion ////////////////////////////////////////////////////////////////////////////////////
-
-// region RequestLookup //////////////////////////////////////
-
-const RequestIDDigestLen = 6
-
-// RequestLookupDigest is shortened version of the request id. It is guaranteed to be uniques
-// within one block, however it may collide globally. Used for quick checking for most requests
-// if it was never seen
-type RequestLookupDigest [RequestIDDigestLen + 2]byte
-
-// RequestLookupReference globally unique reference to the request: block index and index of the request within block
-type RequestLookupKey [6]byte
-
-func NewRequestLookupKey(blockIndex uint32, requestIndex uint16) RequestLookupKey {
-	ret := RequestLookupKey{}
-	copy(ret[:4], util.Uint32To4Bytes(blockIndex))
-	copy(ret[4:6], util.Uint16To2Bytes(requestIndex))
-	return ret
-}
-
-func RequestLookupKeyFromBytes(data []byte) (RequestLookupKey, error) {
-	var ret RequestLookupKey
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return [6]byte{}, err
-	}
-	return ret, nil
-}
-
-func (k RequestLookupKey) BlockIndex() uint32 {
-	return util.MustUint32From4Bytes(k[:4])
-}
-
-func (k RequestLookupKey) RequestIndex() uint16 {
-	return util.MustUint16From2Bytes(k[4:6])
-}
-
-func (k RequestLookupKey) Bytes() []byte {
-	return k[:]
-}
-
-func (k *RequestLookupKey) Write(w io.Writer) error {
-	_, err := w.Write(k[:])
-	return err
-}
-
-func (k *RequestLookupKey) Read(r io.Reader) error {
-	n, err := r.Read(k[:])
-	if err != nil || n != 6 {
-		return io.EOF
-	}
-	return nil
-}
-
-// endregion

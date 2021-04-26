@@ -1,4 +1,4 @@
-package request
+package blocklog
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -21,5 +21,4 @@ func TestSerdeRequestLogRecord(t *testing.T) {
 	back, err := RequestLogRecordFromBytes(forward)
 	require.NoError(t, err)
 	require.EqualValues(t, forward, back.Bytes())
-
 }

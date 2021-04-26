@@ -5,6 +5,8 @@ package blocklog
 import (
 	"bytes"
 	"fmt"
+	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
@@ -118,3 +120,127 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 }
 
 // endregion //////////////////////////////////////////////////////////
+
+// region RequestLookupKey /////////////////////////////////////////////
+
+// RequestLookupReference globally unique reference to the request: block index and index of the request within block
+type RequestLookupKey [6]byte
+
+func NewRequestLookupKey(blockIndex uint32, requestIndex uint16) RequestLookupKey {
+	ret := RequestLookupKey{}
+	copy(ret[:4], util.Uint32To4Bytes(blockIndex))
+	copy(ret[4:6], util.Uint16To2Bytes(requestIndex))
+	return ret
+}
+
+func RequestLookupKeyFromBytes(data []byte) (RequestLookupKey, error) {
+	var ret RequestLookupKey
+	if err := ret.Read(bytes.NewReader(data)); err != nil {
+		return [6]byte{}, err
+	}
+	return ret, nil
+}
+
+func (k RequestLookupKey) BlockIndex() uint32 {
+	return util.MustUint32From4Bytes(k[:4])
+}
+
+func (k RequestLookupKey) RequestIndex() uint16 {
+	return util.MustUint16From2Bytes(k[4:6])
+}
+
+func (k RequestLookupKey) Bytes() []byte {
+	return k[:]
+}
+
+func (k *RequestLookupKey) Write(w io.Writer) error {
+	_, err := w.Write(k[:])
+	return err
+}
+
+func (k *RequestLookupKey) Read(r io.Reader) error {
+	n, err := r.Read(k[:])
+	if err != nil || n != 6 {
+		return io.EOF
+	}
+	return nil
+}
+
+// endregion ///////////////////////////////////////////////////////////
+
+// region RequestLookupKeyList //////////////////////////////////////////////
+
+// RequestLookupKeyList a list of RequestLookupReference of requests with colliding coretypes.RequestLookupDigest
+type RequestLookupKeyList []RequestLookupKey
+
+func RequestLookupKeyListFromBytes(data []byte) (RequestLookupKeyList, error) {
+	rdr := bytes.NewReader(data)
+	var size uint16
+	if err := util.ReadUint16(rdr, &size); err != nil {
+		return nil, err
+	}
+	ret := make(RequestLookupKeyList, size)
+	for i := uint16(0); i < size; i++ {
+		if err := ret[i].Read(rdr); err != nil {
+			return nil, err
+		}
+	}
+	return ret, nil
+}
+
+func (ll RequestLookupKeyList) Bytes() []byte {
+	if len(ll) > util.MaxUint16 {
+		panic("RequestLookupKeyList::Write: too long")
+	}
+	var buf bytes.Buffer
+	_ = util.WriteUint16(&buf, uint16(len(ll)))
+	for i := range ll {
+		_ = ll[i].Write(&buf)
+	}
+	return buf.Bytes()
+}
+
+// endregion /////////////////////////////////////////////////////////////
+
+// region RequestLogReqcord /////////////////////////////////////////////////////
+
+// RequestLogRecord represents log record of processed request on the chain
+type RequestLogRecord struct {
+	RequestID coretypes.RequestID
+	OffLedger bool
+	LogData   []byte
+}
+
+func RequestLogRecordFromBytes(data []byte) (*RequestLogRecord, error) {
+	return RequestLogRecordFromMarshalutil(marshalutil.New(data))
+}
+
+func RequestLogRecordFromMarshalutil(mu *marshalutil.MarshalUtil) (*RequestLogRecord, error) {
+	ret := &RequestLogRecord{}
+	var err error
+	if ret.RequestID, err = coretypes.RequestIDFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
+	if ret.OffLedger, err = mu.ReadBool(); err != nil {
+		return nil, err
+	}
+	var size uint16
+	if size, err = mu.ReadUint16(); err != nil {
+		return nil, err
+	}
+	if ret.LogData, err = mu.ReadBytes(int(size)); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func (r *RequestLogRecord) Bytes() []byte {
+	mu := marshalutil.New()
+	mu.Write(r.RequestID).
+		WriteBool(r.OffLedger).
+		WriteUint16(uint16(len(r.LogData))).
+		WriteBytes(r.LogData)
+	return mu.Bytes()
+}
+
+// endregion  /////////////////////////////////////////////////////////////

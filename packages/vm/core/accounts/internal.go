@@ -235,7 +235,7 @@ func DecodeBalances(balances dict.Dict) (map[ledgerstate.Color]uint64, error) {
 }
 
 func GetOrder(state kv.KVStore, address ledgerstate.Address) uint64 {
-	order,_,_ := codec.DecodeUint64(state.MustGet(kv.Key(address.Bytes()) + "ord"))
+	order, _, _ := codec.DecodeUint64(state.MustGet(kv.Key(address.Bytes()) + "ord"))
 	return order
 }
 

@@ -2,7 +2,6 @@ package blocklog
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"golang.org/x/xerrors"
@@ -14,16 +13,16 @@ func SaveNextBlockInfo(state kv.KVStore, blockInfo *BlockInfo) uint32 {
 	return registry.MustLen() - 1
 }
 
-func SaveRequestLookup(state kv.KVStore, reqid *coretypes.RequestID, key coretypes.RequestLookupKey) error {
+func SaveRequestLookup(state kv.KVStore, reqid *coretypes.RequestID, key RequestLookupKey) error {
 	lookupTable := collections.NewMap(state, StateVarRequestLookupIndex)
 	digest := reqid.LookupDigest()
 	bin, _ := lookupTable.GetAt(digest[:])
-	var lst request.RequestLookupKeyList
+	var lst RequestLookupKeyList
 	if bin == nil {
-		lst = make(request.RequestLookupKeyList, 0)
+		lst = make(RequestLookupKeyList, 0)
 	} else {
 		var err error
-		if lst, err = request.RequestLookupKeyListFromBytes(bin); err != nil {
+		if lst, err = RequestLookupKeyListFromBytes(bin); err != nil {
 			return xerrors.New("SaveRequestLookup: data conversion error")
 		}
 	}
@@ -37,7 +36,7 @@ func SaveRequestLookup(state kv.KVStore, reqid *coretypes.RequestID, key coretyp
 	return lookupTable.SetAt(digest[:], lst.Bytes())
 }
 
-func SaveRequestLogRecord(state kv.KVStore, rec *request.RequestLogRecord, key coretypes.RequestLookupKey) {
+func SaveRequestLogRecord(state kv.KVStore, rec *RequestLogRecord, key RequestLookupKey) {
 	_ = collections.NewMap(state, StateVarRequestRecords).SetAt(key.Bytes(), rec.Bytes())
 }
 
@@ -54,7 +53,7 @@ func RequestNotSeen(state kv.KVStore, reqid *coretypes.RequestID) (bool, error) 
 	}
 	// the lookup record is here, have to check is it is nto a collision of digests
 	bin := lookupTable.MustGetAt(digest[:])
-	lst, err := request.RequestLookupKeyListFromBytes(bin)
+	lst, err := RequestLookupKeyListFromBytes(bin)
 	if err != nil {
 		panic("RequestKnown: data conversion error")
 	}

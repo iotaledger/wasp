@@ -30,8 +30,10 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 		return
 	}
 
-	if !vmctx.isInitChainRequest() {
-		vmctx.mustGetBaseValues()
+	if vmctx.isInitChainRequest() {
+		vmctx.chainOwnerID = *vmctx.req.SenderAccount().Clone()
+	} else {
+		vmctx.mustGetBaseValuesFromState()
 		enoughFees := vmctx.mustHandleFees()
 		if !enoughFees {
 			return
@@ -311,8 +313,8 @@ func (vmctx *VMContext) mustRequestToEventLog(err error) {
 	vmctx.StoreToEventLog(targetContract, []byte(msg))
 }
 
-// mustGetBaseValues only makes sense if chain is already deployed
-func (vmctx *VMContext) mustGetBaseValues() {
+// mustGetBaseValuesFromState only makes sense if chain is already deployed
+func (vmctx *VMContext) mustGetBaseValuesFromState() {
 	info := vmctx.mustGetChainInfo()
 	if !info.ChainID.Equals(&vmctx.chainID) {
 		vmctx.log.Panicf("mustSetUpRequestContext: major inconsistency of chainID")

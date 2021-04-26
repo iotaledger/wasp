@@ -10,7 +10,7 @@ import (
 
 func Test1(t *testing.T) {
 	core.PrintWellKnownHnames()
-	env := solo.New(t, false, false)
+	env := solo.New(t, true, true)
 	chain := env.NewChain(nil, "chain1")
 	chain.AssertTotalIotas(1)
 	chain.AssertOwnersIotas(1)

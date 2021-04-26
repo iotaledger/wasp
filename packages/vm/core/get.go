@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -17,7 +18,7 @@ const (
 	VMType = "builtinvm"
 )
 
-var AllCoreContracts = map[hashing.HashValue]*coreutil.ContractInterface{
+var AllCoreContractsByHash = map[hashing.HashValue]*coreutil.ContractInterface{
 	_default.Interface.ProgramHash: _default.Interface,
 	root.Interface.ProgramHash:     root.Interface,
 	accounts.Interface.ProgramHash: accounts.Interface,
@@ -26,8 +27,14 @@ var AllCoreContracts = map[hashing.HashValue]*coreutil.ContractInterface{
 	blocklog.Interface.ProgramHash: blocklog.Interface,
 }
 
+func init() {
+	for _, rec := range AllCoreContractsByHash {
+		commonaccount.SetCoreHname(rec.Hname())
+	}
+}
+
 func GetProcessor(programHash hashing.HashValue) (coretypes.VMProcessor, error) {
-	ret, ok := AllCoreContracts[programHash]
+	ret, ok := AllCoreContractsByHash[programHash]
 	if !ok {
 		return nil, fmt.Errorf("can't find builtin processor with hash %s", programHash.String())
 	}

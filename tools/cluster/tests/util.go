@@ -36,7 +36,7 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 
 		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
 
-		for _, rec := range core.AllCoreContracts {
+		for _, rec := range core.AllCoreContractsByHash {
 			crBytes := contractRegistry.MustGetAt(rec.Hname().Bytes())
 			require.NotNil(t, crBytes)
 			cr, err := root.DecodeContractRecord(crBytes)
@@ -78,7 +78,7 @@ func checkRoots(t *testing.T, chain *cluster.Chain) {
 }
 
 func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
-	for _, rec := range core.AllCoreContracts {
+	for _, rec := range core.AllCoreContractsByHash {
 		recBack, err := findContract(chain, rec.Name)
 		check(err, t)
 		require.NotNil(t, recBack)

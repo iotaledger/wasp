@@ -12,11 +12,7 @@ import (
 )
 
 var (
-	ErrContractNotFound   = errors.New("contract not found")
-	ErrEntryPointNotFound = errors.New("entry point not found")
-	ErrProcessorNotFound  = errors.New("VM not found. Internal error")
-	ErrNotEnoughFees      = errors.New("not enough fees")
-	ErrWrongRequestToken  = errors.New("wrong request token")
+	ErrContractNotFound = errors.New("contract not found")
 )
 
 // Call

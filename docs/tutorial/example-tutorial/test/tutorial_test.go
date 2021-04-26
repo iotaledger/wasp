@@ -18,8 +18,8 @@ func TestTutorial1(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ex1")
 
-	chainID, chainOwnerID, coreContracts := chain.GetInfo()                // calls view root::GetInfo
-	require.EqualValues(t, len(core.AllCoreContracts), len(coreContracts)) // 4 core contracts deployed by default
+	chainID, chainOwnerID, coreContracts := chain.GetInfo()                      // calls view root::GetInfo
+	require.EqualValues(t, len(core.AllCoreContractsByHash), len(coreContracts)) // 4 core contracts deployed by default
 
 	t.Logf("chainID: %s", chainID.String())
 	t.Logf("chain owner ID: %s", chainOwnerID.String())
