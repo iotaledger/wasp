@@ -142,5 +142,25 @@ func TestRequestLogRecordsForBlocks(t *testing.T) {
 
 	recs := chain.GetRequestLogRecordsForBlock(2)
 	require.EqualValues(t, 1, len(recs))
-	require.EqualValues(t, reqs[0].ID(), reqs[0].ID())
+	require.EqualValues(t, reqs[0].ID(), recs[0].RequestID)
+}
+
+func TestRequestIDsForBlocks(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
+		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0).WithIotas(1)
+	tx, _, err := chain.PostRequestSyncTx(req, nil)
+	require.NoError(t, err)
+
+	reqs, err := env.RequestsForChain(tx, chain.ChainID)
+	require.NoError(t, err)
+	require.EqualValues(t, 1, len(reqs))
+
+	require.True(t, chain.IsRequestProcessed(reqs[0].ID()))
+
+	ids := chain.GetRequestIDsForBlock(2)
+	require.EqualValues(t, 1, len(ids))
+	require.EqualValues(t, reqs[0].ID(), ids[0])
 }

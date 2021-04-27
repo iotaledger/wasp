@@ -33,6 +33,7 @@ func init() {
 		coreutil.ViewFunc(FuncGetLatestBlockInfo, getLatestBlockInfo),
 		coreutil.ViewFunc(FuncGetRequestLogRecord, getRequestLogRecord),
 		coreutil.ViewFunc(FuncGetRequestLogRecordsForBlock, getRequestLogRecordsForBlock),
+		coreutil.ViewFunc(FuncGetRequestIDsForBlock, getRequestIDsForBlock),
 		coreutil.ViewFunc(FuncIsRequestProcessed, isRequestProcessed),
 	})
 }
@@ -47,6 +48,7 @@ const (
 	FuncGetLatestBlockInfo           = "getLatestBlockInfo"
 	FuncGetRequestLogRecord          = "getRequestLogRecord"
 	FuncGetRequestLogRecordsForBlock = "getRequestLogRecordsForBlock"
+	FuncGetRequestIDsForBlock        = "getRequestIDsForBlock"
 	FuncIsRequestProcessed           = "isRequestProcessed"
 
 	// parameters

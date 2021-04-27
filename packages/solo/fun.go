@@ -501,3 +501,21 @@ func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32) []*blocklog.Req
 	}
 	return ret
 }
+
+func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []coretypes.RequestID {
+	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestIDsForBlock,
+		blocklog.ParamBlockIndex, blockIndex)
+	if err != nil {
+		ch.Log.Warnf("GetRequestIDsForBlock: %v", err)
+		return nil
+	}
+	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestID)
+	ret := make([]coretypes.RequestID, recs.MustLen())
+	for i := range ret {
+		reqIDBin, err := recs.GetAt(uint16(i))
+		require.NoError(ch.Env.T, err)
+		ret[i], err = coretypes.RequestIDFromBytes(reqIDBin)
+		require.NoError(ch.Env.T, err)
+	}
+	return ret
+}

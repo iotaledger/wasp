@@ -99,3 +99,25 @@ func getRequestLogRecordsForBlock(ctx coretypes.SandboxView) (dict.Dict, error) 
 	}
 	return ret, nil
 }
+
+func getRequestIDsForBlock(ctx coretypes.SandboxView) (dict.Dict, error) {
+	params := kvdecoder.New(ctx.Params())
+	a := assert.NewAssert(ctx.Log())
+	blockIndex64 := params.MustGetUint64(ParamBlockIndex)
+	a.Require(int(blockIndex64) <= util.MaxUint32, "wrong block index parameter")
+	blockIndex := uint32(blockIndex64)
+
+	blockInfo, found := getBlockInfoIntern(ctx, blockIndex)
+	a.Require(found, "not found")
+
+	ret := dict.New()
+	arr := collections.NewArray16(ret, ParamRequestID)
+	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
+		recBin, found := getRequestRecordDataByRef(ctx.State(), blockIndex, reqIdx)
+		a.Require(found, "inconsistency: request record not found")
+		rec, err := RequestLogRecordFromBytes(recBin)
+		a.RequireNoError(err)
+		_ = arr.Push(rec.RequestID.Bytes())
+	}
+	return ret, nil
+}
