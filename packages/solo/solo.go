@@ -92,7 +92,8 @@ type Chain struct {
 	ValidatorFeeTarget coretypes.AgentID
 
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
-	State state.VirtualState
+	State       state.VirtualState
+	StateReader state.StateReader
 
 	// Log is the named logger of the chain
 	Log *logger.Logger
@@ -201,6 +202,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		OriginatorAgentID:      *originatorAgentID,
 		ValidatorFeeTarget:     *feeTarget,
 		State:                  state.NewZeroVirtualState(env.dbProvider.GetPartition(&chainID)),
+		StateReader:            state.NewReadOnlyState(env.dbProvider, &chainID),
 		proc:                   processors.MustNew(),
 		Log:                    chainlog,
 		mempool:                mempool.New(env.dbProvider.GetPartition(&chainID), env.blobCache, chainlog),

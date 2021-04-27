@@ -13,10 +13,6 @@ func New(kv kv.KVStore, prefix kv.Key) kv.KVStore {
 	return &subrealm{kv, prefix}
 }
 
-func NewReadOnly(kv kv.KVStore, prefix kv.Key) kv.KVStoreReader {
-	return &subrealm{kv, prefix}
-}
-
 func (s *subrealm) Set(key kv.Key, value []byte) {
 	s.kv.Set(s.prefix+key, value)
 }

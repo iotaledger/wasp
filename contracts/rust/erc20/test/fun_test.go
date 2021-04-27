@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -27,7 +28,7 @@ func deployErc20(t *testing.T) *solo.Chain {
 	)
 	require.NoError(t, err)
 	_, _, rec := chain.GetInfo()
-	require.EqualValues(t, 6, len(rec))
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
 
 	res, err := chain.CallView(ScName, ViewTotalSupply)
 	require.NoError(t, err)

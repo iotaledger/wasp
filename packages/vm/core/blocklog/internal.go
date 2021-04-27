@@ -102,8 +102,8 @@ func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint
 }
 
 func getBlockInfoDataIntern(partition kv.KVStoreReader, blockIndex uint32) ([]byte, bool) {
-	data := collections.NewArray32ReadOnly(partition, StateVarBlockRegistry).MustGetAt(blockIndex)
-	return data, data != nil
+	data, err := collections.NewArray32ReadOnly(partition, StateVarBlockRegistry).GetAt(blockIndex)
+	return data, err == nil
 }
 
 func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, requestIndex uint16) ([]byte, bool) {

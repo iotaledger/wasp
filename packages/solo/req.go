@@ -228,7 +228,7 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vctx := viewcontext.New(ch.ChainID, ch.State.KVStore(), ch.State.Timestamp(), ch.proc, ch.Log)
+	vctx := viewcontext.New(ch.ChainID, ch.StateReader, ch.proc, ch.Log)
 	a, ok, err := req.args.SolidifyRequestArguments(ch.Env.blobCache)
 	if err != nil || !ok {
 		return nil, fmt.Errorf("solo.internal error: can't solidify args")
@@ -247,7 +247,7 @@ func (ch *Chain) CallView(scName string, funName string, params ...interface{}) 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vctx := viewcontext.New(ch.ChainID, ch.State.KVStore(), ch.State.Timestamp(), ch.proc, ch.Log)
+	vctx := viewcontext.New(ch.ChainID, ch.StateReader, ch.proc, ch.Log)
 	return vctx.CallView(coretypes.Hn(scName), coretypes.Hn(funName), p)
 }
 
