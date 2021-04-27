@@ -1,29 +1,61 @@
 package state
 
 import (
-	"bytes"
 	"fmt"
-	"golang.org/x/xerrors"
-	"io"
-
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 )
 
+// region virtualState //////////////////////////////////////////////////////////////////////
+
 type virtualState struct {
-	chainID    coretypes.ChainID
-	db         kvstore.KVStore
+	chainID   coretypes.ChainID
+	db        kvstore.KVStore
+	stateData stateData
+	empty     bool
+	variables *buffered.BufferedKVStore
+}
+
+type stateData struct {
 	blockIndex uint32
 	timestamp  int64
-	empty      bool
 	stateHash  hashing.HashValue
-	variables  *buffered.BufferedKVStore
+}
+
+func stateDataFromBytes(data []byte) (*stateData, error) {
+	mu := marshalutil.New(data)
+	ret := &stateData{}
+	var err error
+	if ret.blockIndex, err = mu.ReadUint32(); err != nil {
+		return nil, err
+	}
+	if ret.timestamp, err = mu.ReadInt64(); err != nil {
+		return nil, err
+	}
+	if d, err := mu.ReadBytes(hashing.HashSize); err != nil {
+		return nil, err
+	} else {
+		if ret.stateHash, err = hashing.HashValueFromBytes(d); err != nil {
+			return nil, err
+		}
+	}
+	return ret, nil
+}
+
+func (s *stateData) Bytes() []byte {
+	mu := marshalutil.New()
+	mu.WriteUint32(s.blockIndex).
+		WriteInt64(s.timestamp).
+		WriteBytes(s.stateHash[:])
+	return mu.Bytes()
 }
 
 func NewVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
@@ -68,21 +100,19 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 
 func (vs *virtualState) Clone() VirtualState {
 	return &virtualState{
-		chainID:    vs.chainID,
-		db:         vs.db,
-		blockIndex: vs.blockIndex,
-		timestamp:  vs.timestamp,
-		empty:      vs.empty,
-		stateHash:  vs.stateHash,
-		variables:  vs.variables.Clone(),
+		chainID:   vs.chainID,
+		db:        vs.db,
+		stateData: vs.stateData,
+		empty:     vs.empty,
+		variables: vs.variables.Clone(),
 	}
 }
 
 func (vs *virtualState) DangerouslyConvertToString() string {
 	return fmt.Sprintf("#%d, ts: %d, hash, %s\n%s",
-		vs.blockIndex,
-		vs.timestamp,
-		vs.stateHash.String(),
+		vs.stateData.blockIndex,
+		vs.stateData.timestamp,
+		vs.stateData.stateHash.String(),
 		vs.KVStore().DangerouslyDumpToString(),
 	)
 }
@@ -91,27 +121,31 @@ func (vs *virtualState) KVStore() *buffered.BufferedKVStore {
 	return vs.variables
 }
 
+func (vs *virtualState) KVStoreReader() kv.KVStoreReader {
+	return vs.variables
+}
+
 func (vs *virtualState) BlockIndex() uint32 {
-	return vs.blockIndex
+	return vs.stateData.blockIndex
 }
 
 func (vs *virtualState) ApplyBlockIndex(blockIndex uint32) {
 	vh := vs.Hash()
-	vs.stateHash = hashing.HashData(vh[:], util.Uint32To4Bytes(blockIndex))
+	vs.stateData.stateHash = hashing.HashData(vh[:], util.Uint32To4Bytes(blockIndex))
 	vs.empty = false
-	vs.blockIndex = blockIndex
+	vs.stateData.blockIndex = blockIndex
 }
 
 func (vs *virtualState) Timestamp() int64 {
-	return vs.timestamp
+	return vs.stateData.timestamp
 }
 
 // applies block of state updates. Increases state index
 func (vs *virtualState) ApplyBlock(batch Block) error {
 	if !vs.empty {
-		if batch.StateIndex() != vs.blockIndex+1 {
+		if batch.StateIndex() != vs.stateData.blockIndex+1 {
 			return fmt.Errorf("ApplyBlock: block state index #%d can't be applied to the state #%d",
-				batch.StateIndex(), vs.blockIndex)
+				batch.StateIndex(), vs.stateData.blockIndex)
 		}
 	} else {
 		if batch.StateIndex() != 0 {
@@ -129,45 +163,15 @@ func (vs *virtualState) ApplyBlock(batch Block) error {
 // applies one state update. Doesn't change state index
 func (vs *virtualState) ApplyStateUpdate(stateUpd StateUpdate) {
 	stateUpd.Mutations().ApplyTo(vs.KVStore())
-	vs.timestamp = stateUpd.Timestamp()
+	vs.stateData.timestamp = stateUpd.Timestamp()
 	vh := vs.Hash()
 	sh := util.GetHashValue(stateUpd)
-	vs.stateHash = hashing.HashData(vh[:], sh[:], util.Uint64To8Bytes(uint64(vs.timestamp)))
+	vs.stateData.stateHash = hashing.HashData(vh[:], sh[:], util.Uint64To8Bytes(uint64(vs.stateData.timestamp)))
 	vs.empty = false
 }
 
 func (vs *virtualState) Hash() hashing.HashValue {
-	return vs.stateHash
-}
-
-func (vs *virtualState) Write(w io.Writer) error {
-	if _, err := w.Write(util.Uint32To4Bytes(vs.blockIndex)); err != nil {
-		return err
-	}
-	if err := util.WriteUint64(w, uint64(vs.timestamp)); err != nil {
-		return err
-	}
-	if _, err := w.Write(vs.stateHash[:]); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (vs *virtualState) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &vs.blockIndex); err != nil {
-		return err
-	}
-	var ts uint64
-	if err := util.ReadUint64(r, &ts); err != nil {
-		return err
-	}
-	vs.timestamp = int64(ts)
-	if _, err := r.Read(vs.stateHash[:]); err != nil {
-		return err
-	}
-	// after reading something, the state is not empty
-	vs.empty = false
-	return nil
+	return vs.stateData.stateHash
 }
 
 // saves variable state to db atomically with the block of state updates and records of processed requests
@@ -185,11 +189,8 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	}
 
 	{
-		varStateData, err := util.Bytes(vs)
-		if err != nil {
-			return err
-		}
-		if err = batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeSolidState), varStateData); err != nil {
+		varStateData := vs.stateData.Bytes()
+		if err := batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeSolidState), varStateData); err != nil {
 			return err
 		}
 	}
@@ -228,6 +229,8 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	return nil
 }
 
+// endregion ////////////////////////////////////////////////////////////////////
+
 func LoadSolidState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (VirtualState, bool, error) {
 	partition := dbp.GetPartition(chainID)
 	// determine if state exists
@@ -243,9 +246,11 @@ func LoadSolidState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (Vir
 	if err != nil {
 		return nil, false, err
 	}
-	if err = vs.Read(bytes.NewReader(v)); err != nil {
+	sd, err := stateDataFromBytes(v)
+	if err != nil {
 		return nil, false, xerrors.Errorf("loading solid state: %w", err)
 	}
+	vs.stateData = *sd
 	return vs, true, nil
 }
 
@@ -264,3 +269,60 @@ func IsRequestCompleted(chainState kvstore.KVStore, reqid coretypes.RequestID) (
 func StoreRequestCompleted(chainState kvstore.KVStore, reqID coretypes.RequestID) error {
 	return chainState.Set(dbkeyRequest(reqID), []byte{0})
 }
+
+// region ReadOnlyState /////////////////////////////////////////////////////////
+
+type readOnlyState struct {
+	chainPartition kvstore.KVStore
+	chainState     kv.KVStoreReader
+}
+
+func NewReadOnlyState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) *readOnlyState {
+	partition := dbp.GetPartition(chainID)
+	return &readOnlyState{
+		chainPartition: partition,
+		chainState:     kv.NewHiveKVStoreReader(subRealm(partition, []byte{dbprovider.ObjectTypeStateVariable})),
+	}
+}
+
+func (r *readOnlyState) BlockIndex() uint32 {
+	sdBin, err := r.chainPartition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeSolidState))
+	if err != nil {
+		panic(err)
+	}
+	stateData, err := stateDataFromBytes(sdBin)
+	if err != nil {
+		panic(err)
+	}
+	return stateData.blockIndex
+}
+
+func (r *readOnlyState) Timestamp() int64 {
+	sdBin, err := r.chainPartition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeSolidState))
+	if err != nil {
+		panic(err)
+	}
+	stateData, err := stateDataFromBytes(sdBin)
+	if err != nil {
+		panic(err)
+	}
+	return stateData.timestamp
+}
+
+func (r *readOnlyState) Hash() hashing.HashValue {
+	sdBin, err := r.chainPartition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeSolidState))
+	if err != nil {
+		panic(err)
+	}
+	stateData, err := stateDataFromBytes(sdBin)
+	if err != nil {
+		panic(err)
+	}
+	return stateData.stateHash
+}
+
+func (r *readOnlyState) KVStoreReader() kv.KVStoreReader {
+	return r.chainState
+}
+
+// endregion ///////////////////////////////////////////////////////////////////

@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/iotaledger/wasp/packages/kv"
 	"io"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -9,24 +10,20 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
 
+type StateReader interface {
+	BlockIndex() uint32
+	Timestamp() int64
+	Hash() hashing.HashValue
+	KVStoreReader() kv.KVStoreReader
+}
+
 // represents an interface to the mutable state of the smart contract
 type VirtualState interface {
-	// index of the current state. State index is incremented when state transition occurs
-	// index 0 means origin state
-	BlockIndex() uint32
+	StateReader
 	ApplyBlockIndex(uint32)
-	// timestamp
-	Timestamp() int64
-	// updates state without changing state index
 	ApplyStateUpdate(stateUpd StateUpdate)
-	// applies block of state updates, state index and timestamp
 	ApplyBlock(Block) error
-	// commit means saving virtual state to sc db, making it persistent (solid)
 	CommitToDb(block Block) error
-	// return hash of the variable state. It is a root of the Merkle chain of all
-	// state updates starting from the origin
-	Hash() hashing.HashValue
-	// the storage of variable/value pairs
 	KVStore() *buffered.BufferedKVStore
 	Clone() VirtualState
 	DangerouslyConvertToString() string
