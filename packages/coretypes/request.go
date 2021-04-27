@@ -38,6 +38,14 @@ type Request interface {
 	Tokens() *ledgerstate.ColoredBalances
 }
 
+func TakeRequestIDs(reqs ...Request) []RequestID {
+	ret := make([]RequestID, len(reqs))
+	for i := range reqs {
+		ret[i] = reqs[i].ID()
+	}
+	return ret
+}
+
 // endregion ///////////////////////////////////////////////////////////
 
 // region RequestID ///////////////////////////////////////////////////////////////

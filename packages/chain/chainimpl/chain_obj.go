@@ -5,6 +5,7 @@ package chainimpl
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"strconv"
 	"sync"
 
@@ -109,9 +110,6 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 	case *chain.StateTransitionMsg:
 		if c.consensus != nil {
 			c.consensus.EventStateTransitionMsg(msgt)
-		}
-		for _, reqID := range msgt.RequestIDs {
-			c.eventRequestProcessed.Trigger(reqID)
 		}
 	case chain.BlockCandidateMsg:
 		c.stateMgr.EventBlockCandidateMsg(msgt)
@@ -272,31 +270,34 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 
 func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 	chain.LogStateTransition(msg, c.log)
+
+	reqids := blocklog.MustGetRequestIDsForLastBlock(msg.VirtualState)
+	c.mempool.RemoveRequests(reqids...)
+
 	// send to consensus
 	c.ReceiveMessage(&chain.StateTransitionMsg{
 		VariableState: msg.VirtualState,
 		ChainOutput:   msg.ChainOutput,
 		Timestamp:     msg.Timestamp,
-		RequestIDs:    msg.RequestIDs,
 	})
 
 	// publish state transition
 	publisher.Publish("state",
 		c.ID().String(),
 		strconv.Itoa(int(msg.VirtualState.BlockIndex())),
-		strconv.Itoa(len(msg.RequestIDs)),
+		strconv.Itoa(len(reqids)),
 		coretypes.OID(msg.ChainOutput.ID()),
 		msg.VirtualState.Hash().String(),
 	)
 	// publish processed requests
-	for _, reqid := range msg.RequestIDs {
+	for _, reqid := range reqids {
 		c.eventRequestProcessed.Trigger(reqid)
 
 		publisher.Publish("request_out",
 			c.ID().String(),
 			reqid.String(),
 			strconv.Itoa(int(msg.VirtualState.BlockIndex())),
-			strconv.Itoa(len(msg.RequestIDs)),
+			strconv.Itoa(len(reqids)),
 		)
 	}
 }

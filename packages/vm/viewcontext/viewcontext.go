@@ -100,8 +100,8 @@ func (v *viewcontext) mustCallView(contractHname coretypes.Hname, epCode coretyp
 	return ep.Call(newSandboxView(v, contractHname, params))
 }
 
-func contractStateSubpartition(state kv.KVStore, contractHname coretypes.Hname) kv.KVStore {
-	return subrealm.New(state, kv.Key(contractHname.Bytes()))
+func contractStateSubpartition(state kv.KVStore, contractHname coretypes.Hname) kv.KVStoreReader {
+	return subrealm.NewReadOnly(state, kv.Key(contractHname.Bytes()))
 }
 
 func (v *viewcontext) Infof(format string, params ...interface{}) {

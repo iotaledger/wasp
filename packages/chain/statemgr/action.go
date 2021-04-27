@@ -69,7 +69,6 @@ func (sm *stateManager) checkStateApproval() {
 		BlockEssenceHash: candidate.block.EssenceHash(),
 		ChainOutput:      sm.stateOutput,
 		Timestamp:        sm.stateOutputTimestamp,
-		RequestIDs:       candidate.block.RequestIDs(),
 	})
 	go sm.chain.Events().StateSynced().Trigger(sm.stateOutput.ID(), sm.stateOutput.GetStateIndex())
 }

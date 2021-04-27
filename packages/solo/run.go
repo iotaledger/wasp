@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/stretchr/testify/require"
 	"strings"
@@ -79,13 +80,15 @@ func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.
 	err = newState.CommitToDb(block)
 	require.NoError(ch.Env.T, err)
 
-	ch.mempool.RemoveRequests(block.RequestIDs()...)
+	reqIDs := blocklog.MustGetRequestIDsForLastBlock(newState)
+
+	ch.mempool.RemoveRequests(reqIDs...)
 
 	ch.State = newState
 
 	ch.Log.Infof("state transition #%d --> #%d. Requests in the block: %d. Outputs: %d",
-		ch.State.BlockIndex()-1, ch.State.BlockIndex(), len(block.RequestIDs()), len(stateTx.Essence().Outputs()))
-	ch.Log.Debugf("Batch processed: %s", batchShortStr(block.RequestIDs()))
+		ch.State.BlockIndex()-1, ch.State.BlockIndex(), len(reqIDs), len(stateTx.Essence().Outputs()))
+	ch.Log.Debugf("Batch processed: %s", batchShortStr(reqIDs))
 
 	ch.Env.EnqueueRequests(stateTx)
 	ch.Env.ClockStep()

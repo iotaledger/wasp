@@ -29,12 +29,12 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.ViewFunc(FuncGetBlockInfo, getBlockInfo),
-		coreutil.ViewFunc(FuncGetLatestBlockInfo, getLatestBlockInfo),
-		coreutil.ViewFunc(FuncGetRequestLogRecord, getRequestLogRecord),
-		coreutil.ViewFunc(FuncGetRequestLogRecordsForBlock, getRequestLogRecordsForBlock),
-		coreutil.ViewFunc(FuncGetRequestIDsForBlock, getRequestIDsForBlock),
-		coreutil.ViewFunc(FuncIsRequestProcessed, isRequestProcessed),
+		coreutil.ViewFunc(FuncGetBlockInfo, viewGetBlockInfo),
+		coreutil.ViewFunc(FuncGetLatestBlockInfo, viewGetLatestBlockInfo),
+		coreutil.ViewFunc(FuncGetRequestLogRecord, viewGetRequestLogRecord),
+		coreutil.ViewFunc(FuncGetRequestLogRecordsForBlock, viewGetRequestLogRecordsForBlock),
+		coreutil.ViewFunc(FuncGetRequestIDsForBlock, viewGetRequestIDsForBlock),
+		coreutil.ViewFunc(FuncIsRequestProcessed, viewIsRequestProcessed),
 	})
 }
 
@@ -44,12 +44,12 @@ const (
 	StateVarRequestLookupIndex = "l"
 	StateVarRequestRecords     = "r"
 	// functions
-	FuncGetBlockInfo                 = "getBlockInfo"
-	FuncGetLatestBlockInfo           = "getLatestBlockInfo"
-	FuncGetRequestLogRecord          = "getRequestLogRecord"
-	FuncGetRequestLogRecordsForBlock = "getRequestLogRecordsForBlock"
-	FuncGetRequestIDsForBlock        = "getRequestIDsForBlock"
-	FuncIsRequestProcessed           = "isRequestProcessed"
+	FuncGetBlockInfo                 = "viewGetBlockInfo"
+	FuncGetLatestBlockInfo           = "viewGetLatestBlockInfo"
+	FuncGetRequestLogRecord          = "viewGetRequestLogRecord"
+	FuncGetRequestLogRecordsForBlock = "viewGetRequestLogRecordsForBlock"
+	FuncGetRequestIDsForBlock        = "viewGetRequestIDsForBlock"
+	FuncIsRequestProcessed           = "viewIsRequestProcessed"
 
 	// parameters
 	ParamBlockIndex       = "n"

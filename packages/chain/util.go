@@ -4,13 +4,15 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
 // LogStateTransition also used in testing
 func LogStateTransition(msg *StateTransitionEventData, log *logger.Logger) {
+	reqids := blocklog.MustGetRequestIDsForLastBlock(msg.VirtualState)
 	if msg.ChainOutput.GetStateIndex() > 0 {
 		log.Infof("STATE TRANSITION TO #%d. Chain output: %s, block size: %d",
-			msg.VirtualState.BlockIndex(), coretypes.OID(msg.ChainOutput.ID()), len(msg.RequestIDs))
+			msg.VirtualState.BlockIndex(), coretypes.OID(msg.ChainOutput.ID()), len(reqids))
 		log.Debugf("STATE TRANSITION. State hash: %s, block essence: %s",
 			msg.VirtualState.Hash().String(), msg.BlockEssenceHash.String())
 	} else {

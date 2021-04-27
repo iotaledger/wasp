@@ -21,11 +21,9 @@ func (op *operator) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	op.setNewSCState(msg)
 
 	vh := op.currentState.Hash()
-	op.log.Infof("STATE FOR CONSENSUS #%d, leader: %d, iAmTheLeader: %v, stateOutput: %s, state hash: %s reqs: %s",
+	op.log.Infof("STATE FOR CONSENSUS #%d, leader: %d, iAmTheLeader: %v, stateOutput: %s, state hash: %s",
 		op.mustStateIndex(), op.peerPermutation.Current(), op.iAmCurrentLeader(),
-		coretypes.OID(op.stateOutput.ID()), vh.String(), idsShortStr(msg.RequestIDs...))
-
-	op.mempool.RemoveRequests(msg.RequestIDs...)
+		coretypes.OID(op.stateOutput.ID()), vh.String())
 
 	if op.iAmCurrentLeader() {
 		op.setNextConsensusStage(consensusStageLeaderStarting)

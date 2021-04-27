@@ -45,7 +45,7 @@ func handleDumpSCState(c echo.Context) error {
 		return httperrors.NotFound(fmt.Sprintf("State not found for chainID %s", chainID.String()))
 	}
 
-	vars, err := dict.FromKVStore(subrealm.New(
+	vars, err := dict.FromKVStore(subrealm.NewReadOnly(
 		virtualState.Variables().DangerouslyDumpToDict(),
 		kv.Key(contractHname.Bytes()),
 	))
