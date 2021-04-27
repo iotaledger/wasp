@@ -146,15 +146,8 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-
-	vstate, ok, err := state.LoadSolidState(c.dbProvider, &c.chainID)
-	if err != nil {
-		c.log.Panicf("%v", err)
-	}
-	if !ok {
-		return chain.RequestProcessingStatusUnknown
-	}
-	if !blocklog.IsRequestProcessed(vstate.KVStore(), &reqID) {
+	stateReader := state.NewStateReader(c.dbProvider, &c.chainID)
+	if !blocklog.IsRequestProcessed(stateReader, &reqID) {
 		return chain.RequestProcessingStatusUnknown
 	}
 	return chain.RequestProcessingStatusCompleted

@@ -5,6 +5,7 @@ package chainimpl
 
 import (
 	"bytes"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"strconv"
 	"sync"
@@ -66,7 +67,7 @@ func NewChain(
 
 	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
 	ret := &chainObj{
-		mempool:      mempool.New(dbProvider.GetPartition(chr.ChainID), blobProvider, chainLog),
+		mempool:      mempool.New(state.NewStateReader(dbProvider, chr.ChainID), blobProvider, chainLog),
 		procset:      processors.MustNew(),
 		chMsg:        make(chan interface{}, 100),
 		chainID:      *chr.ChainID,
