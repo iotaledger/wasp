@@ -36,6 +36,7 @@ const (
 )
 
 const (
+	FieldGenesisAlloc    = "g"
 	FieldAddress         = "a"
 	FieldTransactionData = "t"
 	FieldBalance         = "b"

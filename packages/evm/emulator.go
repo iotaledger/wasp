@@ -46,12 +46,19 @@ func Signer() types.Signer {
 	return types.NewEIP155Signer(Config.ChainID)
 }
 
-func NewEVMEmulator(db ethdb.Database, alloc core.GenesisAlloc) *EVMEmulator {
-	// initialize the blockchain if needed
+func InitGenesis(db ethdb.Database, alloc core.GenesisAlloc) {
+	stored := rawdb.ReadCanonicalHash(db, 0)
+	if (stored != common.Hash{}) {
+		panic("genesis block already initialized")
+	}
+	genesis := core.Genesis{Config: Config, Alloc: alloc, GasLimit: GasLimit}
+	genesis.MustCommit(db)
+}
+
+func NewEVMEmulator(db ethdb.Database) *EVMEmulator {
 	stored := rawdb.ReadCanonicalHash(db, 0)
 	if (stored == common.Hash{}) {
-		genesis := core.Genesis{Config: Config, Alloc: alloc, GasLimit: GasLimit}
-		genesis.MustCommit(db)
+		panic("must initialize genesis block first")
 	}
 
 	blockchain, _ := core.NewBlockChain(db, nil, Config, ethash.NewFaker(), vm.Config{}, nil, nil)

@@ -46,7 +46,9 @@ func testBlockchain(t *testing.T, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	emu := NewEVMEmulator(db, genesisAlloc)
+	InitGenesis(db, genesisAlloc)
+
+	emu := NewEVMEmulator(db)
 	defer emu.Close()
 
 	genesis := emu.Blockchain().Genesis()
@@ -145,9 +147,11 @@ func testBlockchainPersistence(t *testing.T, db ethdb.Database) {
 	receiverAddress := crypto.PubkeyToAddress(receiver.PublicKey)
 	transferAmount := big.NewInt(1000)
 
+	InitGenesis(db, genesisAlloc)
+
 	// do a transfer using one instance of EVMEmulator
 	func() {
-		emu := NewEVMEmulator(db, genesisAlloc)
+		emu := NewEVMEmulator(db)
 		defer emu.Close()
 
 		{
@@ -169,7 +173,7 @@ func testBlockchainPersistence(t *testing.T, db ethdb.Database) {
 
 	// initialize a new EVMEmulator using the same DB and check the state
 	{
-		emu := NewEVMEmulator(db, genesisAlloc)
+		emu := NewEVMEmulator(db)
 		defer emu.Close()
 
 		state, err := emu.Blockchain().State()
@@ -203,7 +207,9 @@ func testContract(t *testing.T, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	emu := NewEVMEmulator(db, genesisAlloc)
+	InitGenesis(db, genesisAlloc)
+
+	emu := NewEVMEmulator(db)
 	defer emu.Close()
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))

@@ -4,14 +4,10 @@
 package evmchain
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/evm"
@@ -20,28 +16,19 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-var (
-	FaucetKey, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	FaucetAddress = crypto.PubkeyToAddress(FaucetKey.PublicKey)
-
-	FaucetSupply = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
-	genesisAlloc = map[common.Address]core.GenesisAccount{
-		FaucetAddress: {Balance: FaucetSupply},
-	}
-)
-
 func emulator(state kv.KVStore) *evm.EVMEmulator {
-	return evm.NewEVMEmulator(rawdb.NewDatabase(evm.NewKVAdapter(state)), genesisAlloc)
+	return evm.NewEVMEmulator(rawdb.NewDatabase(evm.NewKVAdapter(state)))
 }
 
 func emulatorR(state kv.KVStoreReader) *evm.EVMEmulator {
-	return evm.NewEVMEmulator(rawdb.NewDatabase(evm.NewKVAdapter(buffered.NewBufferedKVStore(state))), genesisAlloc)
+	return evm.NewEVMEmulator(rawdb.NewDatabase(evm.NewKVAdapter(buffered.NewBufferedKVStore(state))))
 }
 
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
-	// this commits the genesis block
-	emu := emulator(ctx.State())
-	defer emu.Close()
+	a := assert.NewAssert(ctx.Log())
+	genesisAlloc, err := DecodeGenesisAlloc(ctx.Params().MustGet(FieldGenesisAlloc))
+	a.RequireNoError(err)
+	evm.InitGenesis(rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())), genesisAlloc)
 	return nil, nil
 }
 

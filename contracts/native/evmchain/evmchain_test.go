@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/packages/evm"
@@ -15,32 +16,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDeploy(t *testing.T) {
+var (
+	faucetKey, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	faucetAddress = crypto.PubkeyToAddress(faucetKey.PublicKey)
+	faucetSupply  = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
+)
+
+func initEVMChain(t *testing.T) *solo.Chain {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ch1")
-	err := chain.DeployContract(nil, "evmchain", Interface.ProgramHash)
+	err := chain.DeployContract(nil, "evmchain", Interface.ProgramHash,
+		FieldGenesisAlloc, EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
+			faucetAddress: {Balance: faucetSupply},
+		}),
+	)
 	require.NoError(t, err)
+	return chain
+}
+
+func TestDeploy(t *testing.T) {
+	initEVMChain(t)
 }
 
 func TestFaucetBalance(t *testing.T) {
-	env := solo.New(t, false, false)
-	chain := env.NewChain(nil, "ch1")
-	err := chain.DeployContract(nil, "evmchain", Interface.ProgramHash)
-	require.NoError(t, err)
+	chain := initEVMChain(t)
 
-	ret, err := chain.CallView(Interface.Name, FuncGetBalance, FieldAddress, FaucetAddress.Bytes())
+	ret, err := chain.CallView(Interface.Name, FuncGetBalance, FieldAddress, faucetAddress.Bytes())
 	require.NoError(t, err)
 
 	bal := big.NewInt(0)
 	bal.SetBytes(ret.MustGet(FieldBalance))
-	require.Zero(t, FaucetSupply.Cmp(bal))
+	require.Zero(t, faucetSupply.Cmp(bal))
 }
 
 func TestContract(t *testing.T) {
-	env := solo.New(t, false, false)
-	chain := env.NewChain(nil, "ch1")
-	err := chain.DeployContract(nil, "evmchain", Interface.ProgramHash)
-	require.NoError(t, err)
+	chain := initEVMChain(t)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
@@ -65,7 +75,7 @@ func TestContract(t *testing.T) {
 		tx, err := types.SignTx(
 			types.NewContractCreation(nonce, txValue, gasLimit, gasPrice, data),
 			evm.Signer(),
-			FaucetKey,
+			faucetKey,
 		)
 		require.NoError(t, err)
 
@@ -79,7 +89,7 @@ func TestContract(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		contractAddress = crypto.CreateAddress(FaucetAddress, nonce)
+		contractAddress = crypto.CreateAddress(faucetAddress, nonce)
 	}
 
 	// call evmchain's FuncCallView to call EVM contract's `retrieve` view, get 42
@@ -111,7 +121,7 @@ func TestContract(t *testing.T) {
 		tx, err := types.SignTx(
 			types.NewTransaction(nonce, contractAddress, txValue, gasLimit, gasPrice, callArguments),
 			evm.Signer(),
-			FaucetKey,
+			faucetKey,
 		)
 		require.NoError(t, err)
 
