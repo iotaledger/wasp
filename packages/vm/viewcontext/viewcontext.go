@@ -34,7 +34,7 @@ func NewFromDB(dbp *dbprovider.DBProvider, chainID coretypes.ChainID, proc *proc
 	if !ok {
 		return nil, fmt.Errorf("solid state not found for chain %s", chainID.String())
 	}
-	return New(chainID, state_.Variables(), state_.Timestamp(), proc, nil), nil
+	return New(chainID, state_.KVStore(), state_.Timestamp(), proc, nil), nil
 }
 
 func New(chainID coretypes.ChainID, state kv.KVStore, ts int64, proc *processors.ProcessorCache, logSet *logger.Logger) *viewcontext {

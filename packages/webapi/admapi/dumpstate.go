@@ -46,7 +46,7 @@ func handleDumpSCState(c echo.Context) error {
 	}
 
 	vars, err := dict.FromKVStore(subrealm.NewReadOnly(
-		virtualState.Variables().DangerouslyDumpToDict(),
+		virtualState.KVStore().DangerouslyDumpToDict(),
 		kv.Key(contractHname.Bytes()),
 	))
 	if err != nil {

@@ -14,7 +14,7 @@ func MustGetRequestIDsForLastBlock(chainState state.VirtualState) []coretypes.Re
 	if chainState.BlockIndex() == 0 {
 		return nil
 	}
-	partition := subrealm.NewReadOnly(chainState.Variables(), kv.Key(Interface.Hname().Bytes()))
+	partition := subrealm.NewReadOnly(chainState.KVStore(), kv.Key(Interface.Hname().Bytes()))
 	a := assert.NewAssert()
 	recsBin, exist := getRequestLogRecordsForBlockBin(partition, chainState.BlockIndex(), a)
 	if !exist {

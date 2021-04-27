@@ -26,13 +26,13 @@ func TestVariableStateBasic(t *testing.T) {
 	require.EqualValues(t, h1, h2)
 	require.EqualValues(t, vs1.BlockIndex(), vs1.BlockIndex())
 
-	vs1.Variables().Set("num", codec.EncodeInt64(int64(123)))
-	vs1.Variables().Set("kuku", codec.EncodeString("A"))
-	vs1.Variables().Set("mumu", codec.EncodeString("B"))
+	vs1.KVStore().Set("num", codec.EncodeInt64(int64(123)))
+	vs1.KVStore().Set("kuku", codec.EncodeString("A"))
+	vs1.KVStore().Set("mumu", codec.EncodeString("B"))
 
-	vs2.Variables().Set("mumu", codec.EncodeString("B"))
-	vs2.Variables().Set("kuku", codec.EncodeString("A"))
-	vs2.Variables().Set("num", codec.EncodeInt64(int64(123)))
+	vs2.KVStore().Set("mumu", codec.EncodeString("B"))
+	vs2.KVStore().Set("kuku", codec.EncodeString("A"))
+	vs2.KVStore().Set("num", codec.EncodeInt64(int64(123)))
 
 	require.EqualValues(t, vs1.Hash(), vs2.Hash())
 
@@ -179,7 +179,7 @@ func TestCommit(t *testing.T) {
 	err = vs1.ApplyBlock(batch1)
 	require.NoError(t, err)
 
-	v, _ := vs1.Variables().Get("x")
+	v, _ := vs1.KVStore().Get("x")
 	require.Equal(t, []byte{1}, v)
 
 	v, _ = partition.Get(dbkeyStateVariable("x"))
@@ -188,7 +188,7 @@ func TestCommit(t *testing.T) {
 	err = vs1.CommitToDb(batch1)
 	require.NoError(t, err)
 
-	v, _ = vs1.Variables().Get("x")
+	v, _ = vs1.KVStore().Get("x")
 	require.Equal(t, []byte{1}, v)
 
 	v, _ = partition.Get(dbkeyStateVariable("x"))
@@ -200,7 +200,7 @@ func TestCommit(t *testing.T) {
 	require.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch1_2))
 	require.EqualValues(t, vs1.Hash(), vs1_2.Hash())
 
-	v, _ = vs1_2.Variables().Get(kv.Key("x"))
+	v, _ = vs1_2.KVStore().Get(kv.Key("x"))
 	require.Equal(t, []byte{1}, v)
 
 	txid2 := ledgerstate.TransactionID(hashing.HashStrings("test string 2"))
@@ -217,7 +217,7 @@ func TestCommit(t *testing.T) {
 	err = vs2.ApplyBlock(batch2)
 	require.NoError(t, err)
 
-	v, _ = vs2.Variables().Get(kv.Key("x"))
+	v, _ = vs2.KVStore().Get(kv.Key("x"))
 	require.Nil(t, v)
 
 	v, _ = partition.Get(dbkeyStateVariable(kv.Key("x")))

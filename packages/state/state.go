@@ -82,11 +82,11 @@ func (vs *virtualState) DangerouslyConvertToString() string {
 		vs.blockIndex,
 		vs.timestamp,
 		vs.stateHash.String(),
-		vs.Variables().DangerouslyDumpToString(),
+		vs.KVStore().DangerouslyDumpToString(),
 	)
 }
 
-func (vs *virtualState) Variables() *buffered.BufferedKVStore {
+func (vs *virtualState) KVStore() *buffered.BufferedKVStore {
 	return vs.variables
 }
 
@@ -127,7 +127,7 @@ func (vs *virtualState) ApplyBlock(batch Block) error {
 
 // applies one state update. Doesn't change state index
 func (vs *virtualState) ApplyStateUpdate(stateUpd StateUpdate) {
-	stateUpd.Mutations().ApplyTo(vs.Variables())
+	stateUpd.Mutations().ApplyTo(vs.KVStore())
 	vs.timestamp = stateUpd.Timestamp()
 	vh := vs.Hash()
 	sh := util.GetHashValue(stateUpd)

@@ -29,7 +29,7 @@ func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chain
 	require.True(c.t, chainOutput.GetStateAddress().Equals(ledgerstate.NewED25519Address(c.chainKey.PublicKey)))
 
 	nextVirtualState := virtualState.Clone()
-	counterBin, err := nextVirtualState.Variables().Get("counter")
+	counterBin, err := nextVirtualState.KVStore().Get("counter")
 	require.NoError(c.t, err)
 	counter, _, err := codec.DecodeUint64(counterBin)
 	require.NoError(c.t, err)
