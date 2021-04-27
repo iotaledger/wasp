@@ -47,6 +47,9 @@ func TestContract(t *testing.T) {
 
 	var contractAddress common.Address
 
+	gasPrice := big.NewInt(1)
+	gasLimit := evm.GasLimit
+
 	// deploy solidity contract
 	{
 		nonce := uint64(0) // TODO: add getNonce endpoint?
@@ -58,9 +61,6 @@ func TestContract(t *testing.T) {
 		require.NoError(t, err)
 
 		data := append(evmtest.StorageContractBytecode, constructorArguments...)
-
-		gasPrice := big.NewInt(1)
-		gasLimit := evm.GasLimit
 
 		tx, err := types.SignTx(
 			types.NewContractCreation(nonce, txValue, gasLimit, gasPrice, data),
@@ -82,11 +82,10 @@ func TestContract(t *testing.T) {
 		contractAddress = crypto.CreateAddress(FaucetAddress, nonce)
 	}
 
-	// call `retrieve` view, get 42
+	// call evmchain's FuncCallView to call EVM contract's `retrieve` view, get 42
 	{
 		callArguments, err := contractABI.Pack("retrieve")
 		require.NoError(t, err)
-		require.NotEmpty(t, callArguments)
 
 		ret, err := chain.CallView(Interface.Name, FuncCallView,
 			FieldAddress, contractAddress.Bytes(),
@@ -98,5 +97,49 @@ func TestContract(t *testing.T) {
 		err = contractABI.UnpackIntoInterface(&v, "retrieve", ret.MustGet(FieldResult))
 		require.NoError(t, err)
 		require.EqualValues(t, 42, v)
+	}
+
+	// call FuncSendTransaction with EVM tx that calls `store(43)`
+	{
+		nonce := uint64(1) // TODO: add getNonce endpoint?
+
+		callArguments, err := contractABI.Pack("store", uint32(43))
+		require.NoError(t, err)
+
+		txValue := big.NewInt(0)
+
+		tx, err := types.SignTx(
+			types.NewTransaction(nonce, contractAddress, txValue, gasLimit, gasPrice, callArguments),
+			evm.Signer(),
+			FaucetKey,
+		)
+		require.NoError(t, err)
+
+		txdata, err := tx.MarshalBinary()
+		require.NoError(t, err)
+
+		_, err = chain.PostRequestSync(
+			solo.NewCallParams(Interface.Name, FuncSendTransaction, FieldTransactionData, txdata).
+				WithIotas(1),
+			nil,
+		)
+		require.NoError(t, err)
+	}
+
+	// call `retrieve` view, get 43
+	{
+		callArguments, err := contractABI.Pack("retrieve")
+		require.NoError(t, err)
+
+		ret, err := chain.CallView(Interface.Name, FuncCallView,
+			FieldAddress, contractAddress.Bytes(),
+			FieldCallArguments, callArguments,
+		)
+		require.NoError(t, err)
+
+		var v uint32
+		err = contractABI.UnpackIntoInterface(&v, "retrieve", ret.MustGet(FieldResult))
+		require.NoError(t, err)
+		require.EqualValues(t, 43, v)
 	}
 }
