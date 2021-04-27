@@ -79,16 +79,12 @@ func NewZeroVirtualState(db kvstore.KVStore) *virtualState {
 	return ret
 }
 
-const OriginStateHashBase58 = "4oBFMdSF5zGatLxggeCAPmJcTMj8xNMmxwTwGbEdTLPC"
+const OriginStateHashBase58 = "FH1PadHHVLik9Sx5SQ7e2GWYjP7TnLiwDeJjKwxMHui5"
 
 // OriginStateHash is independent from db provider nor chainID
 func OriginStateHash() hashing.HashValue {
 	emptyVirtualState := NewZeroVirtualState(mapdb.NewMapDB())
 	return emptyVirtualState.Hash()
-}
-
-func getChainPartition(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) kvstore.KVStore {
-	return dbp.GetPartition(chainID)
 }
 
 func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
@@ -195,21 +191,6 @@ func (vs *virtualState) CommitToDb(b Block) error {
 		}
 	}
 
-	{
-		solidStateValue := util.Uint32To4Bytes(vs.BlockIndex())
-		if err := batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeSolidStateIndex), solidStateValue); err != nil {
-			return err
-		}
-	}
-
-	// store processed request IDs
-	// TODO store request IDs in the 'log' contract
-	for _, rid := range b.RequestIDs() {
-		if err := batch.Set(dbkeyRequest(rid), []byte{0}); err != nil {
-			return err
-		}
-	}
-
 	// store uncommitted mutations
 	for k, v := range vs.variables.Mutations().Sets {
 		if err := batch.Set(dbkeyStateVariable(k), v); err != nil {
@@ -233,19 +214,15 @@ func (vs *virtualState) CommitToDb(b Block) error {
 
 func LoadSolidState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (VirtualState, bool, error) {
 	partition := dbp.GetPartition(chainID)
-	// determine if state exists
-	exists, err := partition.Has(dbprovider.MakeKey(dbprovider.ObjectTypeSolidStateIndex))
-	if err != nil {
-		return nil, false, err
-	}
-	if !exists {
+	v, err := partition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeSolidState))
+	if err == kvstore.ErrKeyNotFound {
+		// state does not exist
 		return nil, false, nil
 	}
-	vs := NewVirtualState(partition, chainID)
-	v, err := partition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeSolidState))
 	if err != nil {
 		return nil, false, err
 	}
+	vs := NewVirtualState(partition, chainID)
 	sd, err := stateDataFromBytes(v)
 	if err != nil {
 		return nil, false, xerrors.Errorf("loading solid state: %w", err)
@@ -258,30 +235,22 @@ func dbkeyStateVariable(key kv.Key) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeStateVariable, []byte(key))
 }
 
-func dbkeyRequest(reqid coretypes.RequestID) []byte {
-	return dbprovider.MakeKey(dbprovider.ObjectTypeProcessedRequestId, reqid[:])
-}
+// region StateReader /////////////////////////////////////////////////////////
 
-func StoreRequestCompleted(chainState kvstore.KVStore, reqID coretypes.RequestID) error {
-	return chainState.Set(dbkeyRequest(reqID), []byte{0})
-}
-
-// region ReadOnlyState /////////////////////////////////////////////////////////
-
-type readOnlyState struct {
+type stateReader struct {
 	chainPartition kvstore.KVStore
 	chainState     kv.KVStoreReader
 }
 
-func NewStateReader(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) *readOnlyState {
+func NewStateReader(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) *stateReader {
 	partition := dbp.GetPartition(chainID)
-	return &readOnlyState{
+	return &stateReader{
 		chainPartition: partition,
 		chainState:     kv.NewHiveKVStoreReader(subRealm(partition, []byte{dbprovider.ObjectTypeStateVariable})),
 	}
 }
 
-func (r *readOnlyState) BlockIndex() uint32 {
+func (r *stateReader) BlockIndex() uint32 {
 	sdBin, err := r.chainPartition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeSolidState))
 	if err != nil {
 		panic(err)
@@ -293,7 +262,7 @@ func (r *readOnlyState) BlockIndex() uint32 {
 	return stateData.blockIndex
 }
 
-func (r *readOnlyState) Timestamp() int64 {
+func (r *stateReader) Timestamp() int64 {
 	sdBin, err := r.chainPartition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeSolidState))
 	if err != nil {
 		panic(err)
@@ -305,7 +274,7 @@ func (r *readOnlyState) Timestamp() int64 {
 	return stateData.timestamp
 }
 
-func (r *readOnlyState) Hash() hashing.HashValue {
+func (r *stateReader) Hash() hashing.HashValue {
 	sdBin, err := r.chainPartition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeSolidState))
 	if err != nil {
 		panic(err)
@@ -317,7 +286,7 @@ func (r *readOnlyState) Hash() hashing.HashValue {
 	return stateData.stateHash
 }
 
-func (r *readOnlyState) KVStoreReader() kv.KVStoreReader {
+func (r *stateReader) KVStoreReader() kv.KVStoreReader {
 	return r.chainState
 }
 

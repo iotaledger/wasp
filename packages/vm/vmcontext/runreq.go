@@ -87,7 +87,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request, requestIn
 	t := time.Unix(0, vmctx.timestamp)
 
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
-	vmctx.stateUpdate = state.NewStateUpdate(req.ID()).WithTimestamp(vmctx.timestamp)
+	vmctx.stateUpdate = state.NewStateUpdate().WithTimestamp(vmctx.timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 
 	if isRequestTimeLockedNow(req, t) {

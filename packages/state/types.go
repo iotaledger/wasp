@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
@@ -36,7 +35,6 @@ type VirtualState interface {
 // ResultBlock is completed when it contains one state update for each index
 type StateUpdate interface {
 	// request which resulted in this state update
-	RequestID() coretypes.RequestID
 	Timestamp() int64
 	WithTimestamp(int64) StateUpdate
 	// the payload of variables/values
@@ -56,7 +54,6 @@ type Block interface {
 	WithApprovingOutputID(ledgerstate.OutputID) Block
 	Timestamp() int64
 	Size() uint16
-	RequestIDs() []coretypes.RequestID
 	EssenceHash() hashing.HashValue // except state transaction id
 	IsApprovedBy(*ledgerstate.AliasOutput) bool
 	String() string

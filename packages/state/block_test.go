@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
@@ -12,17 +11,8 @@ import (
 )
 
 func TestBatches(t *testing.T) {
-	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 1"))
-	reqid1 := ledgerstate.NewOutputID(txid1, 5)
-	su1 := NewStateUpdate(coretypes.RequestID(reqid1))
-
-	assert.EqualValues(t, su1.RequestID(), reqid1)
-
-	txid2 := ledgerstate.TransactionID(hashing.HashStrings("test string 2"))
-	reqid2 := ledgerstate.NewOutputID(txid2, 2)
-	su2 := NewStateUpdate(coretypes.RequestID(reqid2))
-
-	assert.EqualValues(t, su2.RequestID(), reqid2)
+	su1 := NewStateUpdate()
+	su2 := NewStateUpdate()
 
 	_, err := NewBlock()
 	assert.Error(t, err)
@@ -39,6 +29,7 @@ func TestBatches(t *testing.T) {
 
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
 
+	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 1"))
 	outID := ledgerstate.NewOutputID(txid1, 0)
 	batch1.WithApprovingOutputID(outID)
 	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
@@ -50,15 +41,9 @@ func TestBatches(t *testing.T) {
 }
 
 func TestBatchMarshaling(t *testing.T) {
-	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 1"))
-	reqid1 := ledgerstate.NewOutputID(txid1, 0)
-	reqid2 := ledgerstate.NewOutputID(txid1, 2)
-	t.Logf("req1: %s", coretypes.RequestID(reqid1).String())
-	t.Logf("req2: %s", coretypes.RequestID(reqid2).String())
-
-	su1 := NewStateUpdate(coretypes.RequestID(reqid1))
+	su1 := NewStateUpdate()
 	su1.Mutations().Set("k", []byte{1})
-	su2 := NewStateUpdate(coretypes.RequestID(reqid2))
+	su2 := NewStateUpdate()
 	su2.Mutations().Set("k", []byte{2})
 	batch1, err := NewBlock(su1, su2)
 	assert.NoError(t, err)
