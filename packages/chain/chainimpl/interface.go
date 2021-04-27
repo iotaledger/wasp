@@ -145,6 +145,8 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
+
+	// TODO refactor reading the chain state directly
 	processed, err := state.IsRequestCompleted(c.dbProvider.GetPartition(c.ID()), reqID)
 	if err != nil {
 		panic(err)

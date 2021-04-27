@@ -57,7 +57,7 @@ func viewIsRequestProcessed(ctx coretypes.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	requestID := params.MustGetRequestID(ParamRequestID)
 	a := assert.NewAssert(ctx.Log())
-	seen, err := RequestIsProcessed(ctx.State(), &requestID)
+	seen, err := isRequestProcessedIntern(ctx.State(), &requestID)
 	a.RequireNoError(err)
 	ret := dict.New()
 	if seen {

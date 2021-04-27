@@ -28,3 +28,10 @@ func MustGetRequestIDsForLastBlock(chainState state.VirtualState) []coretypes.Re
 	}
 	return ret
 }
+
+func MustIsRequestProcessed(chainState kv.KVStore, reqid *coretypes.RequestID) bool {
+	partition := subrealm.NewReadOnly(chainState, kv.Key(Interface.Hname().Bytes()))
+	ret, err := isRequestProcessedIntern(partition, reqid)
+	assert.NewAssert().RequireNoError(err)
+	return ret
+}

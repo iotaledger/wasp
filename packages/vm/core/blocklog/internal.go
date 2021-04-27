@@ -55,8 +55,8 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestLogRecord, key Reque
 	return nil
 }
 
-// RequestIsProcessed does quick lookup to check if it wasn't seen yet
-func RequestIsProcessed(partition kv.KVStoreReader, reqid *coretypes.RequestID) (bool, error) {
+// isRequestProcessedIntern does quick lookup to check if it wasn't seen yet
+func isRequestProcessedIntern(partition kv.KVStoreReader, reqid *coretypes.RequestID) (bool, error) {
 	lookupTable := collections.NewMapReadOnly(partition, StateVarRequestLookupIndex)
 	digest := reqid.LookupDigest()
 	seen, err := lookupTable.HasAt(digest[:])
