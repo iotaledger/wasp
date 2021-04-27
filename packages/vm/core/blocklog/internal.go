@@ -71,8 +71,8 @@ func getBlockInfoDataIntern(state kv.KVStoreReader, blockIndex uint32) ([]byte, 
 	return data, data != nil
 }
 
-// RequestNotSeen does quick lookup to check if it wasn't seen yet
-func RequestNotSeen(state kv.KVStoreReader, reqid *coretypes.RequestID) (bool, error) {
+// RequestIsProcessed does quick lookup to check if it wasn't seen yet
+func RequestIsProcessed(state kv.KVStoreReader, reqid *coretypes.RequestID) (bool, error) {
 	lookupTable := collections.NewMapReadOnly(state, StateVarRequestLookupIndex)
 	digest := reqid.LookupDigest()
 	seen, err := lookupTable.HasAt(digest[:])
@@ -80,7 +80,7 @@ func RequestNotSeen(state kv.KVStoreReader, reqid *coretypes.RequestID) (bool, e
 		return false, err
 	}
 	if !seen {
-		return true, nil
+		return false, nil
 	}
 	// the lookup record is here, have to check is it is nto a collision of digests
 	bin := lookupTable.MustGetAt(digest[:])
@@ -95,10 +95,10 @@ func RequestNotSeen(state kv.KVStoreReader, reqid *coretypes.RequestID) (bool, e
 			return false, err
 		}
 		if seen {
-			return false, nil
+			return true, nil
 		}
 	}
-	return true, nil
+	return false, nil
 }
 
 func getRequestRecordDataByRef(state kv.KVStoreReader, blockIndex uint32, requestIndex uint16) ([]byte, bool) {
