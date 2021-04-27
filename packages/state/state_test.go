@@ -1,6 +1,8 @@
 package state
 
 import (
+	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -157,76 +159,24 @@ func TestApply3(t *testing.T) {
 	require.EqualValues(t, vs1.Hash(), vs2.Hash())
 }
 
-//func TestCommit(t *testing.T) {
-//	tmpdb, _ := database.NewMemDB()
-//	db := tmpdb.NewStore()
-//
-//	partition := db.WithRealm([]byte("2"))
-//
-//	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 2"))
-//	reqid1 := ledgerstate.NewOutputID(txid1, 5)
-//	su1 := NewStateUpdate(coretypes.RequestID(reqid1))
-//
-//	su1.Mutations().Set("x", []byte{1})
-//
-//	batch1, err := NewBlock(su1)
-//	require.NoError(t, err)
-//
-//	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
-//	vs1 := NewVirtualState(partition, chainID)
-//	err = vs1.ApplyBlock(batch1)
-//	require.NoError(t, err)
-//
-//	v, _ := vs1.KVStore().Get("x")
-//	require.Equal(t, []byte{1}, v)
-//
-//	v, _ = partition.Get(dbkeyStateVariable("x"))
-//	require.Nil(t, v)
-//
-//	err = vs1.CommitToDb(batch1)
-//	require.NoError(t, err)
-//
-//	v, _ = vs1.KVStore().Get("x")
-//	require.Equal(t, []byte{1}, v)
-//
-//	v, _ = partition.Get(dbkeyStateVariable("x"))
-//	require.Equal(t, []byte{1}, v)
-//
-//	vs1_2, batch1_2, _, err := loadSolidState(partition, chainID)
-//
-//	require.NoError(t, err)
-//	require.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch1_2))
-//	require.EqualValues(t, vs1.Hash(), vs1_2.Hash())
-//
-//	v, _ = vs1_2.KVStore().Get(kv.Key("x"))
-//	require.Equal(t, []byte{1}, v)
-//
-//	txid2 := ledgerstate.TransactionID(hashing.HashStrings("test string 2"))
-//	reqid2 := ledgerstate.NewOutputID(txid2, 6)
-//	su2 := NewStateUpdate(coretypes.RequestID(reqid2))
-//
-//	su2.Mutations().Del("x")
-//
-//	batch2, err := NewBlock(su2)
-//	require.NoError(t, err)
-//
-//	chainID = coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy2")))
-//	vs2 := NewVirtualState(partition, chainID)
-//	err = vs2.ApplyBlock(batch2)
-//	require.NoError(t, err)
-//
-//	v, _ = vs2.KVStore().Get(kv.Key("x"))
-//	require.Nil(t, v)
-//
-//	v, _ = partition.Get(dbkeyStateVariable(kv.Key("x")))
-//	require.Equal(t, []byte{1}, v)
-//
-//	err = vs2.CommitToDb(batch2)
-//	require.NoError(t, err)
-//
-//	v, _ = partition.Get(dbkeyStateVariable(kv.Key("x")))
-//	require.Nil(t, v)
-//}
+func TestStateReader(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	dbp := dbprovider.NewInMemoryDBProvider(log)
+	vs := NewVirtualState(dbp.GetPartition(nil), nil)
+	writer := vs.KVStore()
+	stateReader := NewStateReader(dbp, nil)
+	reader := stateReader.KVStoreReader()
+
+	writer.Set("key1", []byte("data1"))
+	writer.Set("key2", []byte("data2"))
+	err := vs.CommitToDb(MustNewOriginBlock())
+	require.NoError(t, err)
+
+	back1 := reader.MustGet("key1")
+	back2 := reader.MustGet("key2")
+	require.EqualValues(t, "data1", string(back1))
+	require.EqualValues(t, "data2", string(back2))
+}
 
 func TestOriginHash(t *testing.T) {
 	origBlock := MustNewOriginBlock()

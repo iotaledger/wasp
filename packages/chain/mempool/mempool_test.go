@@ -4,22 +4,27 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
 
 func TestMempool(t *testing.T) {
-	db := mapdb.NewMapDB()
-	m := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	log := testlogger.NewLogger(t)
+	dbp := dbprovider.NewInMemoryDBProvider(log)
+	db := state.NewStateReader(dbp, nil)
+	m := New(db, coretypes.NewInMemoryBlobCache(), log)
 	time.Sleep(2 * time.Second)
 	m.Close()
 	time.Sleep(1 * time.Second)
@@ -54,8 +59,10 @@ func getRequestsOnLedger(t *testing.T, amount int) []*request.RequestOnLedger {
 }
 
 func TestAddRequest(t *testing.T) {
-	db := mapdb.NewMapDB()
-	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	log := testlogger.NewLogger(t)
+	dbp := dbprovider.NewInMemoryDBProvider(log)
+	db := state.NewStateReader(dbp, nil)
+	pool := New(db, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 1)
 
@@ -64,8 +71,10 @@ func TestAddRequest(t *testing.T) {
 }
 
 func TestAddRequestTwice(t *testing.T) {
-	db := mapdb.NewMapDB()
-	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	log := testlogger.NewLogger(t)
+	dbp := dbprovider.NewInMemoryDBProvider(log)
+	db := state.NewStateReader(dbp, nil)
+	pool := New(db, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 1)
 
@@ -87,8 +96,14 @@ func TestAddRequestTwice(t *testing.T) {
 }
 
 func TestCompletedRequest(t *testing.T) {
-	db := mapdb.NewMapDB()
-	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	log := testlogger.NewLogger(t)
+	dbp := dbprovider.NewInMemoryDBProvider(log)
+
+	vs := state.NewVirtualState(dbp.GetPartition(nil), nil)
+	writer := vs.KVStore()
+	stateReader := state.NewStateReader(dbp, nil)
+
+	pool := New(stateReader, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 
 	total, withMsg, solid := pool.Stats()
@@ -98,7 +113,13 @@ func TestCompletedRequest(t *testing.T) {
 
 	requests := getRequestsOnLedger(t, 1)
 
-	err := state.StoreRequestCompleted(db, requests[0].ID())
+	blocklogPartition := subrealm.New(writer, kv.Key(blocklog.Interface.Hname().Bytes()))
+	rec := &blocklog.RequestLogRecord{
+		RequestID: requests[0].ID(),
+	}
+	err := blocklog.SaveRequestLogRecord(blocklogPartition, rec, [6]byte{})
+	require.NoError(t, err)
+	err = vs.CommitToDb(state.MustNewOriginBlock())
 	require.NoError(t, err)
 
 	pool.ReceiveRequest(requests[0])
@@ -111,8 +132,10 @@ func TestCompletedRequest(t *testing.T) {
 }
 
 func TestAddRemoveRequests(t *testing.T) {
-	db := mapdb.NewMapDB()
-	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	log := testlogger.NewLogger(t)
+	dbp := dbprovider.NewInMemoryDBProvider(log)
+	db := state.NewStateReader(dbp, nil)
+	pool := New(db, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 6)
 
@@ -142,7 +165,9 @@ func TestAddRemoveRequests(t *testing.T) {
 }
 
 func TestTakeAllReady(t *testing.T) {
-	db := mapdb.NewMapDB()
+	log := testlogger.NewLogger(t)
+	dbp := dbprovider.NewInMemoryDBProvider(log)
+	db := state.NewStateReader(dbp, nil)
 	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 5)
@@ -178,7 +203,9 @@ func TestTakeAllReady(t *testing.T) {
 //        Request3  +
 //        Request4
 func initSeenTest(t *testing.T) (chain.Mempool, []*request.RequestOnLedger) {
-	db := mapdb.NewMapDB()
+	log := testlogger.NewLogger(t)
+	dbp := dbprovider.NewInMemoryDBProvider(log)
+	db := state.NewStateReader(dbp, nil)
 	pool := New(db, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 5)
@@ -307,10 +334,11 @@ func TestGetReadyListFull(t *testing.T) {
 }
 
 func TestSolidification(t *testing.T) {
-	db := mapdb.NewMapDB()
-	logger := testlogger.NewLogger(t)
+	log := testlogger.NewLogger(t)
+	dbp := dbprovider.NewInMemoryDBProvider(log)
+	db := state.NewStateReader(dbp, nil)
 	blobCache := coretypes.NewInMemoryBlobCache()
-	pool := New(db, blobCache, logger) // Solidification initiated on pool creation
+	pool := New(db, blobCache, log) // Solidification initiated on pool creation
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 4)
 

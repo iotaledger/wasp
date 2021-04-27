@@ -202,11 +202,11 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		OriginatorAgentID:      *originatorAgentID,
 		ValidatorFeeTarget:     *feeTarget,
 		State:                  state.NewZeroVirtualState(env.dbProvider.GetPartition(&chainID)),
-		StateReader:            state.NewReadOnlyState(env.dbProvider, &chainID),
+		StateReader:            state.NewStateReader(env.dbProvider, &chainID),
 		proc:                   processors.MustNew(),
 		Log:                    chainlog,
-		mempool:                mempool.New(env.dbProvider.GetPartition(&chainID), env.blobCache, chainlog),
 	}
+	ret.mempool = mempool.New(ret.StateReader, env.blobCache, chainlog)
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 

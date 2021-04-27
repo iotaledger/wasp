@@ -10,13 +10,14 @@ import (
 
 // GetRequestIDsForLastBlock reads blocklog from chain state and returns request IDs settled in specific block
 // Can only panic on DB error of internal error
-func GetRequestIDsForLastBlock(chainState state.VirtualState) []coretypes.RequestID {
-	if chainState.BlockIndex() == 0 {
+func GetRequestIDsForLastBlock(stateReader state.StateReader) []coretypes.RequestID {
+	blockIndex := stateReader.BlockIndex()
+	if blockIndex == 0 {
 		return nil
 	}
-	partition := subrealm.NewReadOnly(chainState.KVStore(), kv.Key(Interface.Hname().Bytes()))
+	partition := subrealm.NewReadOnly(stateReader.KVStoreReader(), kv.Key(Interface.Hname().Bytes()))
 	a := assert.NewAssert()
-	recsBin, exist := getRequestLogRecordsForBlockBin(partition, chainState.BlockIndex(), a)
+	recsBin, exist := getRequestLogRecordsForBlockBin(partition, blockIndex, a)
 	if !exist {
 		return nil
 	}
@@ -30,8 +31,8 @@ func GetRequestIDsForLastBlock(chainState state.VirtualState) []coretypes.Reques
 }
 
 // IsRequestProcessed check if reqid is stored in the chain state as processed
-func IsRequestProcessed(chainState kv.KVStore, reqid *coretypes.RequestID) bool {
-	partition := subrealm.NewReadOnly(chainState, kv.Key(Interface.Hname().Bytes()))
+func IsRequestProcessed(stateReader state.StateReader, reqid *coretypes.RequestID) bool {
+	partition := subrealm.NewReadOnly(stateReader.KVStoreReader(), kv.Key(Interface.Hname().Bytes()))
 	ret, err := isRequestProcessedIntern(partition, reqid)
 	assert.NewAssert().RequireNoError(err)
 	return ret

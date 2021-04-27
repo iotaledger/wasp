@@ -262,10 +262,6 @@ func dbkeyRequest(reqid coretypes.RequestID) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeProcessedRequestId, reqid[:])
 }
 
-func IsRequestCompleted(chainState kvstore.KVStore, reqid coretypes.RequestID) (bool, error) {
-	return chainState.Has(dbkeyRequest(reqid))
-}
-
 func StoreRequestCompleted(chainState kvstore.KVStore, reqID coretypes.RequestID) error {
 	return chainState.Set(dbkeyRequest(reqID), []byte{0})
 }
@@ -277,7 +273,7 @@ type readOnlyState struct {
 	chainState     kv.KVStoreReader
 }
 
-func NewReadOnlyState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) *readOnlyState {
+func NewStateReader(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) *readOnlyState {
 	partition := dbp.GetPartition(chainID)
 	return &readOnlyState{
 		chainPartition: partition,
