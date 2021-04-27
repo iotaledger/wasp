@@ -103,10 +103,9 @@ func (sm *stateManager) Close() {
 // initial loading of the solid state
 func (sm *stateManager) initLoadState() {
 	var err error
-	var batch state.Block
 	var stateExists bool
 
-	sm.solidState, batch, stateExists, err = state.LoadSolidState(sm.dbp, sm.chain.ID())
+	sm.solidState, stateExists, err = state.LoadSolidState(sm.dbp, sm.chain.ID())
 	if err != nil {
 		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err)},
@@ -115,9 +114,8 @@ func (sm *stateManager) initLoadState() {
 	}
 	if stateExists {
 		h := sm.solidState.Hash()
-		txh := batch.ApprovingOutputID()
-		sm.log.Infof("solid state has been loaded. Block index: $%d, State hash: %s, ancor tx: %s",
-			sm.solidState.BlockIndex(), h.String(), txh.String())
+		sm.log.Infof("solid state has been loaded. Block index: $%d, State hash: %s",
+			sm.solidState.BlockIndex(), h.String())
 	} else {
 		sm.solidState = nil
 		sm.addBlockCandidate(nil)

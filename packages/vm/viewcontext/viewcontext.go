@@ -27,7 +27,7 @@ type viewcontext struct {
 }
 
 func NewFromDB(dbp *dbprovider.DBProvider, chainID coretypes.ChainID, proc *processors.ProcessorCache) (*viewcontext, error) {
-	state_, _, ok, err := state.LoadSolidState(dbp, &chainID)
+	state_, ok, err := state.LoadSolidState(dbp, &chainID)
 	if err != nil {
 		return nil, err
 	}

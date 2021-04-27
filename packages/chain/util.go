@@ -9,7 +9,7 @@ import (
 
 // LogStateTransition also used in testing
 func LogStateTransition(msg *StateTransitionEventData, log *logger.Logger) {
-	reqids := blocklog.MustGetRequestIDsForLastBlock(msg.VirtualState)
+	reqids := blocklog.GetRequestIDsForLastBlock(msg.VirtualState)
 	if msg.ChainOutput.GetStateIndex() > 0 {
 		log.Infof("STATE TRANSITION TO #%d. Chain output: %s, block size: %d",
 			msg.VirtualState.BlockIndex(), coretypes.OID(msg.ChainOutput.ID()), len(reqids))

@@ -46,8 +46,8 @@ func BlockFromBytes(data []byte) (Block, error) {
 	return ret, nil
 }
 
-func LoadBlock(chainState kvstore.KVStore, stateIndex uint32) (Block, error) {
-	data, err := chainState.Get(dbkeyBatch(stateIndex))
+func LoadBlock(partition kvstore.KVStore, stateIndex uint32) (Block, error) {
+	data, err := partition.Get(dbkeyBlock(stateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
 	}
@@ -191,7 +191,7 @@ func (b *block) readEssence(r io.Reader) error {
 	return nil
 }
 
-func dbkeyBatch(stateIndex uint32) []byte {
+func dbkeyBlock(stateIndex uint32) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeStateUpdateBatch, util.Uint32To4Bytes(stateIndex))
 }
 

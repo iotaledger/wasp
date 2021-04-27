@@ -80,7 +80,7 @@ func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.
 	err = newState.CommitToDb(block)
 	require.NoError(ch.Env.T, err)
 
-	reqIDs := blocklog.MustGetRequestIDsForLastBlock(newState)
+	reqIDs := blocklog.GetRequestIDsForLastBlock(newState)
 
 	ch.mempool.RemoveRequests(reqIDs...)
 

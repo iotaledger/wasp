@@ -37,7 +37,7 @@ func handleDumpSCState(c echo.Context) error {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid SC id: %s", c.Param("contractHname")))
 	}
 
-	virtualState, _, ok, err := state.LoadSolidState(chainID)
+	virtualState, ok, err := state.LoadSolidState(chainID)
 	if err != nil {
 		return err
 	}

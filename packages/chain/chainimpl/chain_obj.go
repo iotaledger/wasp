@@ -271,7 +271,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 	chain.LogStateTransition(msg, c.log)
 
-	reqids := blocklog.MustGetRequestIDsForLastBlock(msg.VirtualState)
+	reqids := blocklog.GetRequestIDsForLastBlock(msg.VirtualState)
 	c.mempool.RemoveRequests(reqids...)
 
 	// send to consensus

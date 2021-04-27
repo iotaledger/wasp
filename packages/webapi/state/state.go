@@ -39,7 +39,7 @@ func handleStateQuery(c echo.Context) error {
 	}
 
 	// TODO serialize access to solid state
-	state, batch, exist, err := state.LoadSolidState(&chainID)
+	state, exist, err := state.LoadSolidState(&chainID)
 	if err != nil {
 		return err
 	}

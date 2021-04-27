@@ -69,14 +69,19 @@ func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*registry.Cha
 }
 
 func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*dashboard.ChainState, error) {
-	virtualState, block, _, err := state.LoadSolidState(database.GetInstance(), chainID)
+	// TODO get rid of database.GetInstance(), pass dbprovider as parameter
+	virtualState, _, err := state.LoadSolidState(database.GetInstance(), chainID)
+	if err != nil {
+		return nil, err
+	}
+	block, err := state.LoadBlock(database.GetInstance().GetPartition(chainID), virtualState.BlockIndex())
 	if err != nil {
 		return nil, err
 	}
 	return &dashboard.ChainState{
-		Index:             block.StateIndex(),
+		Index:             virtualState.BlockIndex(),
 		Hash:              virtualState.Hash(),
-		Timestamp:         block.Timestamp(),
+		Timestamp:         virtualState.Timestamp(),
 		ApprovingOutputID: block.ApprovingOutputID(),
 	}, nil
 }

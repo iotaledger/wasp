@@ -3,6 +3,7 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"golang.org/x/xerrors"
 	"io"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -178,7 +179,7 @@ func (vs *virtualState) CommitToDb(b Block) error {
 		if err != nil {
 			return err
 		}
-		if err = batch.Set(dbkeyBatch(b.StateIndex()), blockData); err != nil {
+		if err = batch.Set(dbkeyBlock(b.StateIndex()), blockData); err != nil {
 			return err
 		}
 	}
@@ -227,40 +228,25 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	return nil
 }
 
-func LoadSolidState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
-	return loadSolidState(getChainPartition(dbp, chainID), chainID)
-}
-
-func loadSolidState(db kvstore.KVStore, chainID *coretypes.ChainID) (VirtualState, Block, bool, error) {
-	stateIndexBin, err := db.Get(dbprovider.MakeKey(dbprovider.ObjectTypeSolidStateIndex))
-	if err == kvstore.ErrKeyNotFound {
-		return nil, nil, false, nil
-	}
+func LoadSolidState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (VirtualState, bool, error) {
+	partition := dbp.GetPartition(chainID)
+	// determine if state exists
+	exists, err := partition.Has(dbprovider.MakeKey(dbprovider.ObjectTypeSolidStateIndex))
 	if err != nil {
-		return nil, nil, false, err
+		return nil, false, err
 	}
-
-	var v []byte
-
-	vs := NewVirtualState(db, chainID)
-	if v, err = db.Get(dbprovider.MakeKey(dbprovider.ObjectTypeSolidState)); err != nil {
-		return nil, nil, false, err
+	if !exists {
+		return nil, false, nil
+	}
+	vs := NewVirtualState(partition, chainID)
+	v, err := partition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeSolidState))
+	if err != nil {
+		return nil, false, err
 	}
 	if err = vs.Read(bytes.NewReader(v)); err != nil {
-		return nil, nil, false, fmt.Errorf("loading variable state: %v", err)
+		return nil, false, xerrors.Errorf("loading solid state: %w", err)
 	}
-
-	if v, err = db.Get(dbkeyBatch(util.MustUint32From4Bytes(stateIndexBin))); err != nil {
-		return nil, nil, false, err
-	}
-	batch, err := BlockFromBytes(v)
-	if err != nil {
-		return nil, nil, false, fmt.Errorf("loading block: %v", err)
-	}
-	if vs.BlockIndex() != batch.StateIndex() {
-		return nil, nil, false, fmt.Errorf("inconsistent solid state: state indices must be equal")
-	}
-	return vs, batch, true, nil
+	return vs, true, nil
 }
 
 func dbkeyStateVariable(key kv.Key) []byte {

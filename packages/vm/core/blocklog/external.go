@@ -8,9 +8,9 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-// MustGetRequestIDsForLastBlock reads blocklog from chain state and returns request IDs settled in specific block
+// GetRequestIDsForLastBlock reads blocklog from chain state and returns request IDs settled in specific block
 // Can only panic on DB error of internal error
-func MustGetRequestIDsForLastBlock(chainState state.VirtualState) []coretypes.RequestID {
+func GetRequestIDsForLastBlock(chainState state.VirtualState) []coretypes.RequestID {
 	if chainState.BlockIndex() == 0 {
 		return nil
 	}
@@ -29,7 +29,8 @@ func MustGetRequestIDsForLastBlock(chainState state.VirtualState) []coretypes.Re
 	return ret
 }
 
-func MustIsRequestProcessed(chainState kv.KVStore, reqid *coretypes.RequestID) bool {
+// IsRequestProcessed check if reqid is stored in the chain state as processed
+func IsRequestProcessed(chainState kv.KVStore, reqid *coretypes.RequestID) bool {
 	partition := subrealm.NewReadOnly(chainState, kv.Key(Interface.Hname().Bytes()))
 	ret, err := isRequestProcessedIntern(partition, reqid)
 	assert.NewAssert().RequireNoError(err)
