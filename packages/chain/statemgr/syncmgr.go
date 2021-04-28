@@ -139,7 +139,7 @@ func (sm *stateManager) requestBlockIfNeeded(stateIndex uint32) {
 	// send messages until first without error
 	// TODO optimize
 	sm.log.Infof("XXX requestBlockIfNeeded: sending to peers")
-	sm.peers.SendToAllUntilFirstError(chain.MsgGetBlock, data)
+	sm.peers.SendMsgToRandomNodes(numberOfNodesToRequestBlock, chain.MsgGetBlock, data)
 	sm.syncingBlocks.startSyncingIfNeeded(stateIndex)
 	sm.syncingBlocks.setPullDeadline(stateIndex, time.Now().Add(periodBetweenSyncMessages))
 }

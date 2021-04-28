@@ -162,10 +162,10 @@ func (env *MockedEnv) NewMockedNode(index uint16) *MockedNode {
 		Env:       env,
 		Db:        dbprovider.NewInMemoryDBProvider(log),
 		ChainCore: mock_chain.NewMockedChainCore(env.ChainID, log),
-		Peers:     mock_chain.NewMockedPeerGroup(),
+		Peers:     mock_chain.NewMockedPeerGroupProvider(),
 		Log:       log,
 	}
-	ret.StateManager = New(ret.Db, ret.ChainCore, ret.Peers, env.NodeConn, log)
+	ret.StateManager = New(ret.Db, ret.ChainCore, chain.NewPeerGroup(ret.Peers), env.NodeConn, log)
 	ret.StateTransition = mock_chain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(block state.Block, tx *ledgerstate.Transaction) {
 		go ret.StateManager.EventBlockCandidateMsg(chain.BlockCandidateMsg{Block: block})
@@ -219,9 +219,13 @@ func (env *MockedEnv) RemoveNode(index uint16) {
 
 // SetupPeerGroupSimple sets up simple communication between nodes
 func (nT *MockedNode) SetupPeerGroupSimple() {
-	nT.Peers.OnNumPeers(func() uint16 {
+	nT.Peers.OnLock(func() {
 		nT.Env.mutex.Lock()
-		defer nT.Env.mutex.Unlock()
+	})
+	nT.Peers.OnUnlock(func() {
+		nT.Env.mutex.Unlock()
+	})
+	nT.Peers.OnNumPeers(func() uint16 {
 		return uint16(len(nT.Env.Nodes))
 	})
 	nT.Peers.OnNumIsAlive(func(q uint16) bool {
@@ -258,19 +262,5 @@ func (nT *MockedNode) SetupPeerGroupSimple() {
 			nT.Log.Panicf("msg type %d not implemented in the simple mocked peer group")
 		}
 		return nil
-	})
-
-	nT.Peers.OnSendToAllUntilFirstError(func(msgType byte, msgData []byte) uint16 {
-		nT.Log.Infof("XXX MockedPeerGroup:OnSendToAllUntilFirstError")
-		nT.Env.mutex.Lock()
-		defer nT.Env.mutex.Unlock()
-		counter := uint16(0)
-		for idx := range nT.Env.Nodes {
-			if err := nT.Peers.SendMsg(idx, msgType, msgData); err != nil {
-				break
-			}
-			counter++
-		}
-		return counter
 	})
 }

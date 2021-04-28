@@ -88,7 +88,7 @@ func NewChain(
 	ret.eventStateTransition.Attach(events.NewClosure(ret.processStateTransition))
 	ret.eventSynced.Attach(events.NewClosure(ret.processSynced))
 
-	ret.stateMgr = statemgr.New(dbProvider, ret, newPeers(nil), nodeconnimpl.New(ret.nodeConn), ret.log)
+	ret.stateMgr = statemgr.New(dbProvider, ret, newCommiteePeerGroup(nil), nodeconnimpl.New(ret.nodeConn), ret.log)
 	go func() {
 		for msg := range ret.chMsg {
 			ret.dispatchMessage(msg)
@@ -266,7 +266,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 
 	c.log.Debugf("creating new consensus object..")
 	c.consensus = consensusimpl.New(c, c.mempool, c.committee, nodeconnimpl.New(c.nodeConn), c.log)
-	c.stateMgr.SetPeers(newPeers(c.committee))
+	c.stateMgr.SetPeers(newCommiteePeerGroup(c.committee))
 	c.stateMgr.EventStateMsg(msg)
 }
 

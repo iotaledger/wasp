@@ -22,7 +22,7 @@ type stateManager struct {
 	ready                *ready.Ready
 	dbp                  *dbprovider.DBProvider
 	chain                chain.ChainCore
-	peers                chain.PeerGroupProvider
+	peers                *chain.PeerGroup
 	nodeConn             chain.NodeConnection
 	pullStateRetryTime   time.Time
 	solidState           state.VirtualState
@@ -43,11 +43,12 @@ type stateManager struct {
 }
 
 const (
-	pullStateRetryConst       = 2 * time.Second
-	periodBetweenSyncMessages = 1 * time.Second
+	pullStateRetryConst         = 2 * time.Second
+	periodBetweenSyncMessages   = 1 * time.Second
+	numberOfNodesToRequestBlock = 5
 )
 
-func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers chain.PeerGroupProvider, nodeconn chain.NodeConnection, log *logger.Logger) chain.StateManager {
+func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers *chain.PeerGroup, nodeconn chain.NodeConnection, log *logger.Logger) chain.StateManager {
 	ret := &stateManager{
 		ready:                  ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
 		dbp:                    dbp,
@@ -70,7 +71,7 @@ func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers chain.PeerGroupPro
 	return ret
 }
 
-func (sm *stateManager) SetPeers(p chain.PeerGroupProvider) {
+func (sm *stateManager) SetPeers(p *chain.PeerGroup) {
 	n := uint16(0)
 	if p != nil {
 		n = p.NumPeers()
