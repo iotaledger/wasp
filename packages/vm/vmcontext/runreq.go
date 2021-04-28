@@ -50,7 +50,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 		defer func() {
 			if r := recover(); r != nil {
 				vmctx.lastResult = nil
-				vmctx.lastError = xerrors.Errorf("%s: recovered from panic in VM: %v", req.ID(), r)
+				vmctx.lastError = xerrors.Errorf("panic in VM: %v", r)
 				vmctx.Debugf(string(debug.Stack()))
 				if dberr, ok := r.(*kv.DBError); ok {
 					// There was an error accessing the DB. The world stops

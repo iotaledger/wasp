@@ -135,6 +135,15 @@ func testEventLogDifferentCalls(t *testing.T, w bool) {
 	require.EqualValues(t, 0, strings.Count(str, "[req]"))
 	require.EqualValues(t, 2, strings.Count(str, "[GenericData]"))
 	require.EqualValues(t, 3, strings.Count(str, "[Event]"))
+
+	recStr := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+	str = strings.Join(recStr, "\n")
+	t.Logf("\n%s", str)
+	extra := 0
+	if w {
+		extra = 1
+	}
+	require.EqualValues(t, 8+extra, strings.Count(str, "req/tx"))
 }
 
 func TestChainLogGetNumRecords(t *testing.T) { run2(t, testChainLogGetNumRecords) }
@@ -168,6 +177,15 @@ func testChainLogGetNumRecords(t *testing.T, w bool) {
 	require.EqualValues(t, 1, strings.Count(str, "[GenericData]"))
 	require.EqualValues(t, 0, strings.Count(str, "[Event]"))
 	require.EqualValues(t, 1, strings.Count(str, strconv.FormatUint(solo.Saldo, 10)))
+
+	recStr := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+	str = strings.Join(recStr, "\n")
+	t.Logf("\n%s", str)
+	extra := 0
+	if w {
+		extra = 1
+	}
+	require.EqualValues(t, 4+extra, strings.Count(str, "req/tx"))
 }
 
 func TestChainLogSandboxDeploy(t *testing.T) { run2(t, testChainLogSandboxDeploy) }
@@ -196,6 +214,15 @@ func testChainLogSandboxDeploy(t *testing.T, w bool) {
 
 	require.EqualValues(t, 2, strings.Count(str, "[deploy]"))
 	require.EqualValues(t, 0, strings.Count(str, "[req]"))
+
+	recStr := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+	str = strings.Join(recStr, "\n")
+	t.Logf("\n%s", str)
+	extra := 0
+	if w {
+		extra = 1
+	}
+	require.EqualValues(t, 4+extra, strings.Count(str, "req/tx"))
 }
 
 func TestChainLogMultiple(t *testing.T) { run2(t, testChainLogMultiple) }
@@ -238,4 +265,13 @@ func testChainLogMultiple(t *testing.T, w bool) {
 	require.EqualValues(t, 1, strings.Count(strTest, "[GenericData]"))
 	require.EqualValues(t, 1, strings.Count(strTest, "[Event]"))
 	require.EqualValues(t, 1, strings.Count(strTest, "33333"))
+
+	recStr := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+	str := strings.Join(recStr, "\n")
+	t.Logf("\n%s", str)
+	extra := 0
+	if w {
+		extra = 1
+	}
+	require.EqualValues(t, 5+extra, strings.Count(str, "req/tx"))
 }

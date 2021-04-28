@@ -271,7 +271,7 @@ func (r *RequestLogRecord) strPrefix() string {
 func (r *RequestLogRecord) String() string {
 	ret := fmt.Sprintf("%s %s", r.strPrefix(), r.RequestID.String())
 	if len(r.LogData) > 0 {
-		ret += ": " + string(r.LogData)
+		ret += ": '" + string(r.LogData) + "'"
 	}
 	return ret
 }
@@ -279,7 +279,7 @@ func (r *RequestLogRecord) String() string {
 func (r *RequestLogRecord) Short() string {
 	ret := fmt.Sprintf("%s %s", r.strPrefix(), r.RequestID.Short())
 	if len(r.LogData) > 0 {
-		ret += ": " + string(r.LogData)
+		ret += ": '" + string(r.LogData) + "'"
 	}
 	return ret
 }
