@@ -80,7 +80,6 @@ func (sm *stateManager) outputPushed(output *ledgerstate.AliasOutput, timestamp 
 	}
 	sm.stateOutput = output
 	sm.stateOutputTimestamp = timestamp
-	sm.pullStateDeadline = time.Now()
 	sm.syncingBlocks.approveBlockCandidates(output)
 }
 

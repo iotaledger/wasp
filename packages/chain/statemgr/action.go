@@ -26,16 +26,16 @@ func (sm *stateManager) takeAction() {
 func (sm *stateManager) pullStateIfNeeded() {
 	sm.log.Infof("XXX pullStateIfNeeded")
 	nowis := time.Now()
-	if sm.pullStateDeadline.After(nowis) {
-		sm.log.Infof("XXX pullStateIfNeeded: after deadline")
-		return
+	if nowis.After(sm.pullStateRetryTime) {
+		if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidatesNotOlderThan(sm.stateOutput.GetStateIndex()+1) {
+			sm.log.Infof("XXX pullStateIfNeeded: pull it")
+			sm.log.Debugf("pull state")
+			sm.nodeConn.PullState(sm.chain.ID().AsAliasAddress())
+			sm.pullStateRetryTime = nowis.Add(pullStateRetryConst)
+		}
+	} else {
+		sm.log.Infof("XXX pullStateIfNeeded: before retry time")
 	}
-	if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidatesNotOlderThan(sm.stateOutput.GetStateIndex()+1) {
-		sm.log.Infof("XXX pullStateIfNeeded: pull it")
-		sm.log.Debugf("pull state")
-		sm.nodeConn.PullState(sm.chain.ID().AsAliasAddress())
-	}
-	sm.pullStateDeadline = nowis.Add(pullStatePeriod)
 }
 
 /*func (sm *stateManager) checkStateApproval() {
@@ -109,7 +109,7 @@ func (sm *stateManager) addBlockFromSelf(block state.Block) {
 	}
 
 	sm.addBlockAndCheckStateOutput(block, &nextStateHash)
-	sm.pullStateDeadline = time.Now()
+	sm.pullStateRetryTime = time.Now()
 }
 
 func (sm *stateManager) addBlockFromPeer(block state.Block) {

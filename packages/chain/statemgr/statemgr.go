@@ -24,7 +24,7 @@ type stateManager struct {
 	chain                chain.ChainCore
 	peers                chain.PeerGroupProvider
 	nodeConn             chain.NodeConnection
-	pullStateDeadline    time.Time
+	pullStateRetryTime   time.Time
 	solidState           state.VirtualState
 	stateOutput          *ledgerstate.AliasOutput
 	stateOutputTimestamp time.Time
@@ -43,7 +43,7 @@ type stateManager struct {
 }
 
 const (
-	pullStatePeriod           = 2 * time.Second
+	pullStateRetryConst       = 2 * time.Second
 	periodBetweenSyncMessages = 1 * time.Second
 )
 
@@ -55,6 +55,7 @@ func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers chain.PeerGroupPro
 		nodeConn:               nodeconn,
 		syncingBlocks:          newSyncingBlocks(log),
 		log:                    log.Named("s"),
+		pullStateRetryTime:     time.Now(),
 		eventGetBlockMsgCh:     make(chan *chain.GetBlockMsg),
 		eventBlockMsgCh:        make(chan *chain.BlockMsg),
 		eventStateOutputMsgCh:  make(chan *chain.StateMsg),
