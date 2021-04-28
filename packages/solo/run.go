@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/stretchr/testify/require"
 	"strings"
@@ -80,15 +80,18 @@ func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.
 	err = newState.CommitToDb(block)
 	require.NoError(ch.Env.T, err)
 
-	reqIDs := blocklog.GetRequestIDsForLastBlock(newState)
-
-	ch.mempool.RemoveRequests(reqIDs...)
-
 	ch.State = newState
 
-	ch.Log.Infof("state transition #%d --> #%d. Requests in the block: %d. Outputs: %d",
-		ch.State.BlockIndex()-1, ch.State.BlockIndex(), len(reqIDs), len(stateTx.Essence().Outputs()))
+	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(stateTx)
+	require.NoError(ch.Env.T, err)
+
+	reqIDs := chain.PublishStateTransition(newState, stateOutput)
+
+	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
+		ch.State.BlockIndex(), len(reqIDs), len(stateTx.Essence().Outputs()))
 	ch.Log.Debugf("Batch processed: %s", batchShortStr(reqIDs))
+
+	ch.mempool.RemoveRequests(reqIDs...)
 
 	ch.Env.EnqueueRequests(stateTx)
 	ch.Env.ClockStep()

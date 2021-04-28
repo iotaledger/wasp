@@ -6,21 +6,17 @@ package chainimpl
 import (
 	"bytes"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"strconv"
 	"sync"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
-	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
-	"github.com/iotaledger/wasp/packages/publisher"
-
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
 	"github.com/iotaledger/wasp/packages/chain/consensusimpl"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
@@ -271,8 +267,10 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 
 func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 	chain.LogStateTransition(msg, c.log)
-
-	reqids := blocklog.GetRequestIDsForLastBlock(msg.VirtualState)
+	reqids := chain.PublishStateTransition(msg.VirtualState, msg.ChainOutput)
+	for _, reqid := range reqids {
+		c.eventRequestProcessed.Trigger(reqid)
+	}
 	c.mempool.RemoveRequests(reqids...)
 
 	// send to consensus
@@ -281,26 +279,6 @@ func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 		ChainOutput:   msg.ChainOutput,
 		Timestamp:     msg.Timestamp,
 	})
-
-	// publish state transition
-	publisher.Publish("state",
-		c.ID().String(),
-		strconv.Itoa(int(msg.VirtualState.BlockIndex())),
-		strconv.Itoa(len(reqids)),
-		coretypes.OID(msg.ChainOutput.ID()),
-		msg.VirtualState.Hash().String(),
-	)
-	// publish processed requests
-	for _, reqid := range reqids {
-		c.eventRequestProcessed.Trigger(reqid)
-
-		publisher.Publish("request_out",
-			c.ID().String(),
-			reqid.String(),
-			strconv.Itoa(int(msg.VirtualState.BlockIndex())),
-			strconv.Itoa(len(reqids)),
-		)
-	}
 }
 
 func (c *chainObj) processSynced(outputID ledgerstate.OutputID, blockIndex uint32) {
