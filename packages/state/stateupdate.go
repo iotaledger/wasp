@@ -2,21 +2,29 @@ package state
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"io"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/util"
 )
+
+//
 
 type stateUpdate struct {
 	timestamp int64
 	mutations *buffered.Mutations
 }
 
-func NewStateUpdate() StateUpdate {
-	return &stateUpdate{
+func NewStateUpdate(timestamp time.Time) StateUpdate {
+	ret := &stateUpdate{
 		mutations: buffered.NewMutations(),
 	}
+	ret.mutations.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(timestamp))
+	return ret
 }
 
 func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {

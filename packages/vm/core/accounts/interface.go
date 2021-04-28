@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	Name        = "accounts"
+	Name        = coreutil.CoreContractAccounts
 	description = "Chain account ledger contract"
 )
 

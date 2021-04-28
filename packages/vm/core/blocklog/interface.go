@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	Name        = "blocklog"
+	Name        = coreutil.CoreContractBlocklog
 	description = "Block log contract"
 )
 
@@ -40,6 +40,8 @@ func init() {
 
 const (
 	// state variables
+	StateVarTimestamp          = coreutil.StateVarTimestamp
+	StateVarBlockIndex         = coreutil.StateVarBlockIndex
 	StateVarBlockRegistry      = "b"
 	StateVarRequestLookupIndex = "l"
 	StateVarRequestRecords     = "r"
