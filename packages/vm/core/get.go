@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -15,22 +16,18 @@ const (
 	VMType = "builtinvm"
 )
 
+var AllCoreContracts = map[hashing.HashValue]*coreutil.ContractInterface{
+	_default.Interface.ProgramHash: _default.Interface,
+	root.Interface.ProgramHash:     root.Interface,
+	accounts.Interface.ProgramHash: accounts.Interface,
+	blob.Interface.ProgramHash:     blob.Interface,
+	eventlog.Interface.ProgramHash: eventlog.Interface,
+}
+
 func GetProcessor(programHash hashing.HashValue) (coretypes.VMProcessor, error) {
-	switch programHash {
-	case _default.Interface.ProgramHash:
-		return _default.Interface, nil
-
-	case root.Interface.ProgramHash:
-		return root.Interface, nil
-
-	case accounts.Interface.ProgramHash:
-		return accounts.Interface, nil
-
-	case blob.Interface.ProgramHash:
-		return blob.Interface, nil
-
-	case eventlog.Interface.ProgramHash:
-		return eventlog.Interface, nil
+	ret, ok := AllCoreContracts[programHash]
+	if !ok {
+		return nil, fmt.Errorf("can't find builtin processor with hash %s", programHash.String())
 	}
-	return nil, fmt.Errorf("can't find builtin processor with hash %s", programHash.String())
+	return ret, nil
 }

@@ -75,7 +75,7 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return
 	}
-	if err := checkTotalAssets(task.ResultTransaction, lastTotalAssets); err != nil {
+	if err = checkTotalAssets(task.ResultTransaction, lastTotalAssets); err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.checkTotalAssets: %v", err))
 		return
 	}
