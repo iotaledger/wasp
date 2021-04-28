@@ -30,7 +30,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 		sm.log.Infof("XXX pullStateIfNeeded: after deadline")
 		return
 	}
-	if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidates() { //TODO: hasBlockCandidatesLaterThan(stateOutput.StateIndex())
+	if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidatesNotOlderThan(sm.stateOutput.GetStateIndex()+1) {
 		sm.log.Infof("XXX pullStateIfNeeded: pull it")
 		sm.log.Debugf("pull state")
 		sm.nodeConn.PullState(sm.chain.ID().AsAliasAddress())

@@ -96,9 +96,15 @@ func (syncsT *syncingBlocks) getApprovedBlockCandidatesCount(stateIndex uint32) 
 }
 
 func (syncsT *syncingBlocks) hasBlockCandidates() bool {
-	for _, sync := range syncsT.blocks {
-		if len(sync.blockCandidates) > 0 {
-			return true
+	return syncsT.hasBlockCandidatesNotOlderThan(0)
+}
+
+func (syncsT *syncingBlocks) hasBlockCandidatesNotOlderThan(index uint32) bool {
+	for i, sync := range syncsT.blocks {
+		if i >= index {
+			if len(sync.blockCandidates) > 0 {
+				return true
+			}
 		}
 	}
 	return false
