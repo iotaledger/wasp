@@ -19,7 +19,8 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 		NumSuccessfulRequests: 1,
 		NumOffLedgerRequests:  0,
 	})
-	assert.NewAssert(ctx.Log()).Require(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
+	a := assert.NewAssert(ctx.Log())
+	a.Require(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
 	ctx.Log().Debugf("blocklog.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }

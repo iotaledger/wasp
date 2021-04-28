@@ -428,10 +428,12 @@ func (ch *Chain) GetEventLogNumRecords(name string) int {
 	return int(ret)
 }
 
+// OwnersAccount return the agentID of the common account (controlled by the owner)
 func (ch *Chain) OwnersAccount() *coretypes.AgentID {
 	return coretypes.NewAgentID(ch.ChainID.AsAddress(), 0)
 }
 
+// GetLatestBlockInfo return BlockInfo for the latest block in the chain
 func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetLatestBlockInfo)
 	require.NoError(ch.Env.T, err)
@@ -444,6 +446,7 @@ func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 	return blockInfo
 }
 
+// GetBlockInfo return BlockInfo for the particular block index in the chain
 func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
 	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetBlockInfo,
 		blocklog.ParamBlockIndex, blockIndex)
@@ -458,6 +461,7 @@ func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
 	return blockInfo, nil
 }
 
+// IsRequestProcessed checks if the request is booked on the chain as processed
 func (ch *Chain) IsRequestProcessed(reqID coretypes.RequestID) bool {
 	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncIsRequestProcessed,
 		blocklog.ParamRequestID, reqID)
@@ -468,6 +472,7 @@ func (ch *Chain) IsRequestProcessed(reqID coretypes.RequestID) bool {
 	return bin != nil
 }
 
+// GetRequestLogRecord gets the log records for a particular request, the block index and request index in the block
 func (ch *Chain) GetRequestLogRecord(reqID coretypes.RequestID) (*blocklog.RequestLogRecord, uint32, uint16, bool) {
 	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestLogRecord,
 		blocklog.ParamRequestID, reqID)
@@ -485,6 +490,7 @@ func (ch *Chain) GetRequestLogRecord(reqID coretypes.RequestID) (*blocklog.Reque
 	return ret1, blockIndex, requestIndex, true
 }
 
+// GetRequestLogRecordsForBlock returns all request log records for a particular block
 func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32) []*blocklog.RequestLogRecord {
 	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestLogRecordsForBlock,
 		blocklog.ParamBlockIndex, blockIndex)
@@ -498,10 +504,12 @@ func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32) []*blocklog.Req
 		require.NoError(ch.Env.T, err)
 		ret[i], err = blocklog.RequestLogRecordFromBytes(data)
 		require.NoError(ch.Env.T, err)
+		ret[i].WithBlockData(blockIndex, uint16(i))
 	}
 	return ret
 }
 
+// GetRequestIDsForBlock returns return the list of requestIDs settled in a particular block
 func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []coretypes.RequestID {
 	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestIDsForBlock,
 		blocklog.ParamBlockIndex, blockIndex)
@@ -516,6 +524,33 @@ func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []coretypes.RequestID 
 		require.NoError(ch.Env.T, err)
 		ret[i], err = coretypes.RequestIDFromBytes(reqIDBin)
 		require.NoError(ch.Env.T, err)
+	}
+	return ret
+}
+
+// GetLogRecordsForBlockRange returns all request log records for range of blocks, inclusively.
+// Upper bound is 'latest block' is set to 0
+func (ch *Chain) GetLogRecordsForBlockRange(fromBlockIndex, toBlockIndex uint32) []*blocklog.RequestLogRecord {
+	if toBlockIndex == 0 {
+		toBlockIndex = ch.GetLatestBlockInfo().BlockIndex
+	}
+	if fromBlockIndex > toBlockIndex {
+		return nil
+	}
+	ret := make([]*blocklog.RequestLogRecord, 0)
+	for i := fromBlockIndex; i <= toBlockIndex; i++ {
+		recs := ch.GetRequestLogRecordsForBlock(i)
+		require.True(ch.Env.T, i == 0 || len(recs) != 0)
+		ret = append(ret, recs...)
+	}
+	return ret
+}
+
+func (ch *Chain) GetLogRecordsForBlockRangeAsStrings(fromBlockIndex, toBlockIndex uint32) []string {
+	recs := ch.GetLogRecordsForBlockRange(fromBlockIndex, toBlockIndex)
+	ret := make([]string, len(recs))
+	for i := range ret {
+		ret[i] = recs[i].String()
 	}
 	return ret
 }

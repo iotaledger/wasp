@@ -37,6 +37,13 @@ func TestEventLogBasicEmpty(t *testing.T) {
 
 	num = chain.GetEventLogNumRecords(eventlog.Interface.Name)
 	require.EqualValues(t, 0, num)
+
+	reqRecs := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+	require.EqualValues(t, 1, len(reqRecs))
+
+	for _, s := range reqRecs {
+		t.Logf("%s", s)
+	}
 }
 
 func TestChainLogDeploy(t *testing.T) {
@@ -86,5 +93,11 @@ func TestChainLogDeploy(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, recs, 0)
 
+	reqRecs := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+
+	for _, s := range reqRecs {
+		t.Logf("%s", s)
+	}
+	require.EqualValues(t, 3, len(reqRecs))
 	env.WaitPublisher()
 }

@@ -214,6 +214,9 @@ type RequestLogRecord struct {
 	RequestID coretypes.RequestID
 	OffLedger bool
 	LogData   []byte
+	// not persistent
+	BlockIndex   uint32
+	RequestIndex uint16
 }
 
 func RequestLogRecordFromBytes(data []byte) (*RequestLogRecord, error) {
@@ -246,6 +249,39 @@ func (r *RequestLogRecord) Bytes() []byte {
 		WriteUint16(uint16(len(r.LogData))).
 		WriteBytes(r.LogData)
 	return mu.Bytes()
+}
+
+func (r *RequestLogRecord) WithBlockData(blockIndex uint32, requestIndex uint16) *RequestLogRecord {
+	r.BlockIndex = blockIndex
+	r.RequestIndex = requestIndex
+	return r
+}
+
+func (r *RequestLogRecord) strPrefix() string {
+	prefix := "req"
+	if !r.OffLedger {
+		prefix += "/tx"
+	}
+	if r.BlockIndex != 0 {
+		prefix += fmt.Sprintf("[%d/%d]", r.BlockIndex, r.RequestIndex)
+	}
+	return prefix
+}
+
+func (r *RequestLogRecord) String() string {
+	ret := fmt.Sprintf("%s %s", r.strPrefix(), r.RequestID.String())
+	if len(r.LogData) > 0 {
+		ret += ": " + string(r.LogData)
+	}
+	return ret
+}
+
+func (r *RequestLogRecord) Short() string {
+	ret := fmt.Sprintf("%s %s", r.strPrefix(), r.RequestID.Short())
+	if len(r.LogData) > 0 {
+		ret += ": " + string(r.LogData)
+	}
+	return ret
 }
 
 // endregion  /////////////////////////////////////////////////////////////
