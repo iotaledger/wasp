@@ -302,15 +302,15 @@ func (vmctx *VMContext) finalizeRequestCall() {
 func (vmctx *VMContext) mustLogRequest(err error) {
 	vmctx.mustLogRequestToBlockLog(err)
 
-	e := "Ok"
-	if err != nil {
-		e = err.Error()
-	}
-	reqStr := coretypes.OID(vmctx.req.ID().OutputID())
-	msg := fmt.Sprintf("[req] %s: %s", reqStr, e)
-	vmctx.log.Infof("eventlog -> '%s'", msg)
-
-	vmctx.mustRequestToEventLog(msg)
+	//e := "Ok"
+	//if err != nil {
+	//	e = err.Error()
+	//}
+	//reqStr := coretypes.OID(vmctx.req.ID().OutputID())
+	//msg := fmt.Sprintf("[req] %s: %s", reqStr, e)
+	//vmctx.log.Infof("eventlog -> '%s'", msg)
+	//
+	//vmctx.mustRequestToEventLog(msg)
 }
 
 func (vmctx *VMContext) mustRequestToEventLog(msg string) {
