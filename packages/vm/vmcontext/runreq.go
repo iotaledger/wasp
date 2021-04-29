@@ -288,7 +288,7 @@ func (vmctx *VMContext) mustSaveRequestOrder() {
 }
 
 func (vmctx *VMContext) finalizeRequestCall() {
-	vmctx.mustLogRequest(vmctx.lastError)
+	vmctx.mustLogRequestToBlockLog(vmctx.lastError)
 	vmctx.lastTotalAssets = vmctx.totalAssets()
 	vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
 
@@ -297,25 +297,6 @@ func (vmctx *VMContext) finalizeRequestCall() {
 		"reqId", vmctx.req.ID().Short(),
 		"entry point", ep.String(),
 	)
-}
-
-func (vmctx *VMContext) mustLogRequest(err error) {
-	vmctx.mustLogRequestToBlockLog(err)
-
-	//e := "Ok"
-	//if err != nil {
-	//	e = err.Error()
-	//}
-	//reqStr := coretypes.OID(vmctx.req.ID().OutputID())
-	//msg := fmt.Sprintf("[req] %s: %s", reqStr, e)
-	//vmctx.log.Infof("eventlog -> '%s'", msg)
-	//
-	//vmctx.mustRequestToEventLog(msg)
-}
-
-func (vmctx *VMContext) mustRequestToEventLog(msg string) {
-	targetContract, _ := vmctx.req.Target()
-	vmctx.StoreToEventLog(targetContract, []byte(msg))
 }
 
 // mustGetBaseValuesFromState only makes sense if chain is already deployed
