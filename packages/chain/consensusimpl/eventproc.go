@@ -114,7 +114,7 @@ func (op *operator) eventResultCalculated(ctx *chain.VMResultMsg) {
 
 	// check if result belongs to the context. In general, consensus may be already reached
 	// even before the node finished its calculations
-	if ctx.Task.ResultBlock.StateIndex() != op.mustStateIndex()+1 {
+	if ctx.Task.ResultBlock.BlockIndex() != op.mustStateIndex()+1 {
 		// out of context. ignore
 		return
 	}

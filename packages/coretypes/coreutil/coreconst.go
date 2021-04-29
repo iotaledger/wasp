@@ -2,6 +2,11 @@ package coreutil
 
 import "github.com/iotaledger/wasp/packages/coretypes"
 
+const (
+	OriginBlockEssenceHashBase58 = "6ctFtLGpRNT97JH9NKRu4vyb1atd1ruHmgAxjnf12XTQ"
+	OriginStateHashBase58        = "EQB6qXKm2aMHkXXUTL9oMatvWeryQ2Ho6dGc3JT6H3tD"
+)
+
 // names of core contracts
 const (
 	CoreContractDefault  = "_default"

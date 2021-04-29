@@ -3,6 +3,7 @@ package state
 import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"io"
+	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -11,7 +12,7 @@ import (
 
 type StateReader interface {
 	BlockIndex() uint32
-	Timestamp() int64
+	Timestamp() time.Time
 	Hash() hashing.HashValue
 	KVStoreReader() kv.KVStoreReader
 }
@@ -19,7 +20,6 @@ type StateReader interface {
 // represents an interface to the mutable state of the smart contract
 type VirtualState interface {
 	StateReader
-	ApplyBlockIndex(uint32)
 	ApplyStateUpdate(stateUpd StateUpdate)
 	ApplyBlock(Block) error
 	CommitToDb(block Block) error
@@ -28,16 +28,10 @@ type VirtualState interface {
 	DangerouslyConvertToString() string
 }
 
-// State update represents update to the variable state
-// it is calculated by the VM (in batches)
-// State updates comes in batches, all state updates within one block
-// has same state index, state tx id and block size. ResultBlock index is unique in block
-// ResultBlock is completed when it contains one state update for each index
+// StateUpdate is a set of mutations
 type StateUpdate interface {
-	// request which resulted in this state update
-	Timestamp() int64
-	WithTimestamp(int64) StateUpdate
-	// the payload of variables/values
+	Timestamp() time.Time
+	Hash() hashing.HashValue
 	String() string
 	Mutations() *buffered.Mutations
 	Clone() StateUpdate
@@ -48,11 +42,10 @@ type StateUpdate interface {
 // Block is a sequence of state updates applicable to the variable state
 type Block interface {
 	ForEach(func(uint16, StateUpdate) bool)
-	StateIndex() uint32
-	WithBlockIndex(uint32) Block
+	BlockIndex() uint32
 	ApprovingOutputID() ledgerstate.OutputID
 	WithApprovingOutputID(ledgerstate.OutputID) Block
-	Timestamp() int64
+	Timestamp() time.Time
 	Size() uint16
 	EssenceHash() hashing.HashValue // except state transaction id
 	IsApprovedBy(*ledgerstate.AliasOutput) bool

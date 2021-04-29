@@ -54,7 +54,7 @@ func (sm *stateManager) syncBlock(blockIndex uint32) (state.Block, bool) {
 }
 
 func (sm *stateManager) blockArrived(block state.Block) {
-	syncBlk, ok := sm.syncingBlocks[block.StateIndex()]
+	syncBlk, ok := sm.syncingBlocks[block.BlockIndex()]
 	if !ok {
 		// not asked
 		return
@@ -63,13 +63,13 @@ func (sm *stateManager) blockArrived(block state.Block) {
 		// already have block. Check consistency. If inconsistent, start from scratch
 		if syncBlk.block.ApprovingOutputID() != block.ApprovingOutputID() {
 			sm.log.Errorf("conflicting block arrived. Block index: %d, present approving outputID: %s, arrived approving outputID: %s",
-				block.StateIndex(), coretypes.OID(syncBlk.block.ApprovingOutputID()), coretypes.OID(block.ApprovingOutputID()))
+				block.BlockIndex(), coretypes.OID(syncBlk.block.ApprovingOutputID()), coretypes.OID(block.ApprovingOutputID()))
 			syncBlk.block = nil
 			return
 		}
 		if syncBlk.block.EssenceHash() != block.EssenceHash() {
 			sm.log.Errorf("conflicting block arrived. Block index: %d, present state hash: %s, arrived state hash: %s",
-				block.StateIndex(), syncBlk.block.EssenceHash().String(), block.EssenceHash().String())
+				block.BlockIndex(), syncBlk.block.EssenceHash().String(), block.EssenceHash().String())
 			syncBlk.block = nil
 			return
 		}
@@ -164,7 +164,7 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 	}
 	for _, block := range blocks {
 		if err := tentativeState.ApplyBlock(block); err != nil {
-			sm.log.Errorf("failed to apply synced block index #%d. Error: %v", block.StateIndex(), err)
+			sm.log.Errorf("failed to apply synced block index #%d. Error: %v", block.BlockIndex(), err)
 			return
 		}
 	}
@@ -180,7 +180,7 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 	}
 	stateIndex := uint32(0)
 	for _, block := range blocks {
-		stateIndex = block.StateIndex()
+		stateIndex = block.BlockIndex()
 		if err := sm.solidState.CommitToDb(block); err != nil {
 			sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
 			sm.syncingBlocks = make(map[uint32]*syncingBlock)

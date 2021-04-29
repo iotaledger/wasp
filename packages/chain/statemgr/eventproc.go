@@ -51,7 +51,7 @@ func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
 	}
 	sm.log.Debugw("EventBlockMsg",
 		"sender", msg.SenderIndex,
-		"block index", msg.Block.StateIndex(),
+		"block index", msg.Block.BlockIndex(),
 		"essence hash", msg.Block.EssenceHash().String(),
 		"approving output", coretypes.OID(msg.Block.ApprovingOutputID()),
 	)
@@ -111,7 +111,7 @@ func (sm *stateManager) eventBlockCandidateMsg(msg chain.BlockCandidateMsg) {
 		return
 	}
 	sm.log.Debugw("EventBlockCandidateMsg",
-		"state index", msg.Block.StateIndex(),
+		"state index", msg.Block.BlockIndex(),
 		"size", msg.Block.Size(),
 		"state output", coretypes.OID(msg.Block.ApprovingOutputID()),
 		"block essence", msg.Block.EssenceHash().String(),

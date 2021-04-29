@@ -1,57 +1,83 @@
 package state
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
-//
-
+// stateUpdate implement StateUpdate interface
 type stateUpdate struct {
-	timestamp int64
 	mutations *buffered.Mutations
 }
 
-func NewStateUpdate(timestamp time.Time) StateUpdate {
+// NewStateUpdate creates a state update with timestamp mutation, if provided
+func NewStateUpdate(timestamp ...time.Time) *stateUpdate {
 	ret := &stateUpdate{
 		mutations: buffered.NewMutations(),
 	}
-	ret.mutations.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(timestamp))
+	if len(timestamp) > 0 {
+		ret.setTimestampMutation(timestamp[0])
+	}
 	return ret
 }
 
-func NewStateUpdateRead(r io.Reader) (StateUpdate, error) {
-	ret := NewStateUpdate().(*stateUpdate)
+func newStateUpdateFromReader(r io.Reader) (*stateUpdate, error) {
+	ret := &stateUpdate{
+		mutations: buffered.NewMutations(),
+	}
 	return ret, ret.Read(r)
+}
+
+func (su *stateUpdate) setTimestampMutation(ts time.Time) {
+	su.mutations.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(ts))
+}
+
+func (su *stateUpdate) setBlockIndexMutation(blockIndex uint32) {
+	su.mutations.Set(kv.Key(coreutil.StatePrefixBlockIndex), util.Uint32To4Bytes(blockIndex))
 }
 
 // StateUpdate
 
 func (su *stateUpdate) Clone() StateUpdate {
-	ret := *su
-	ret.mutations = su.mutations.Clone()
-	return &ret
+	return &stateUpdate{
+		mutations: su.mutations.Clone(),
+	}
+}
+
+func (su *stateUpdate) Bytes() []byte {
+	var buf bytes.Buffer
+	_ = su.Write(&buf)
+	return buf.Bytes()
+}
+
+func (su *stateUpdate) Hash() hashing.HashValue {
+	return hashing.HashData(su.Bytes())
 }
 
 func (su *stateUpdate) String() string {
-	ret := fmt.Sprintf("StateUpdate:: ts: %d, muts: [%s]", su.Timestamp(), su.mutations)
+	ret := fmt.Sprintf("StateUpdate:: ts: %v, muts: [%s]", su.Timestamp(), su.mutations)
 	return ret
 }
 
-func (su *stateUpdate) Timestamp() int64 {
-	return su.timestamp
-}
-
-func (su *stateUpdate) WithTimestamp(ts int64) StateUpdate {
-	su.timestamp = ts
-	return su
+func (su *stateUpdate) Timestamp() time.Time {
+	timeBin, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixTimestamp))
+	if !ok {
+		return time.Time{}
+	}
+	ret, ok, err := codec.DecodeTime(timeBin)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
 
 func (su *stateUpdate) Mutations() *buffered.Mutations {
@@ -62,17 +88,12 @@ func (su *stateUpdate) Write(w io.Writer) error {
 	if err := su.mutations.Write(w); err != nil {
 		return err
 	}
-	return util.WriteUint64(w, uint64(su.timestamp))
+	return nil
 }
 
 func (su *stateUpdate) Read(r io.Reader) error {
 	if err := su.mutations.Read(r); err != nil {
 		return err
 	}
-	var ts uint64
-	if err := util.ReadUint64(r, &ts); err != nil {
-		return err
-	}
-	su.timestamp = int64(ts)
 	return nil
 }

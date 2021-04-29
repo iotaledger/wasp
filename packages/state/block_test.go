@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"testing"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -14,48 +15,28 @@ func TestBatches(t *testing.T) {
 	su1 := NewStateUpdate()
 	su2 := NewStateUpdate()
 
-	_, err := NewBlock()
-	assert.Error(t, err)
+	block1 := NewBlock(2, su1, su2)
+	assert.EqualValues(t, 3, block1.Size())
+	assert.EqualValues(t, 2, block1.BlockIndex())
 
-	batch1, err := NewBlock(su1, su2)
+	block1Bin := block1.Bytes()
+	block2, err := BlockFromBytes(block1Bin)
 	assert.NoError(t, err)
-	batch1.WithBlockIndex(2)
-	assert.Equal(t, uint16(2), batch1.Size())
-
-	batch2, err := NewBlock(su1, su2)
-	assert.NoError(t, err)
-	batch2.WithBlockIndex(2)
-	assert.Equal(t, uint16(2), batch2.Size())
-
-	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
+	assert.EqualValues(t, 3, block2.Size())
+	assert.EqualValues(t, 2, block2.BlockIndex())
+	assert.EqualValues(t, block1Bin, block2.Bytes())
+	assert.EqualValues(t, block1.EssenceHash(), block2.EssenceHash())
 
 	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 1"))
 	outID := ledgerstate.NewOutputID(txid1, 0)
-	batch1.WithApprovingOutputID(outID)
-	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
+	block1.WithApprovingOutputID(outID)
+	assert.EqualValues(t, block1.EssenceHash(), block2.EssenceHash())
 
-	batch2.WithApprovingOutputID(outID)
-	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
+	block2.WithApprovingOutputID(outID)
+	assert.EqualValues(t, block1.EssenceHash(), block2.EssenceHash())
+	assert.EqualValues(t, block1.Bytes(), block2.Bytes())
 
-	assert.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch2))
-}
-
-func TestBatchMarshaling(t *testing.T) {
-	su1 := NewStateUpdate()
-	su1.Mutations().Set("k", []byte{1})
-	su2 := NewStateUpdate()
-	su2.Mutations().Set("k", []byte{2})
-	batch1, err := NewBlock(su1, su2)
-	assert.NoError(t, err)
-	batch1.WithBlockIndex(2)
-
-	b, err := util.Bytes(batch1)
-	assert.NoError(t, err)
-
-	batch2, err := BlockFromBytes(b)
-	assert.NoError(t, err)
-
-	assert.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch2))
+	assert.EqualValues(t, util.GetHashValue(block1), util.GetHashValue(block2))
 }
 
 func TestOriginBlock(t *testing.T) {
@@ -64,7 +45,10 @@ func TestOriginBlock(t *testing.T) {
 	txid2 := ledgerstate.TransactionID(hashing.RandomHash(nil))
 	outID2 := ledgerstate.NewOutputID(txid1, 0)
 	require.NotEqualValues(t, txid1, txid2)
-	b1 := MustNewOriginBlock().WithApprovingOutputID(outID1).WithBlockIndex(100)
-	b2 := MustNewOriginBlock().WithApprovingOutputID(outID2).WithBlockIndex(100)
+	b := NewOriginBlock()
+	require.EqualValues(t, coreutil.OriginBlockEssenceHashBase58, b.EssenceHash().String())
+
+	b1 := NewOriginBlock().WithApprovingOutputID(outID1)
+	b2 := NewOriginBlock().WithApprovingOutputID(outID2)
 	require.EqualValues(t, b1.EssenceHash(), b2.EssenceHash())
 }

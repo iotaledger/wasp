@@ -71,8 +71,8 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	task.ResultBlock.WithBlockIndex(task.VirtualState.BlockIndex() + 1)
 
 	// save the block info into the 'blocklog' contract
-	err = vmctx.StoreBlockInfo(task.ResultBlock.StateIndex(), &blocklog.BlockInfo{
-		Timestamp:             time.Unix(0, task.ResultBlock.Timestamp()),
+	err = vmctx.StoreBlockInfo(task.ResultBlock.BlockIndex(), &blocklog.BlockInfo{
+		Timestamp:             task.ResultBlock.Timestamp(),
 		TotalRequests:         uint16(len(task.Requests)),
 		NumSuccessfulRequests: numSuccess,
 		NumOffLedgerRequests:  numOffLedger,
@@ -99,7 +99,7 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	}
 	task.Log.Debugw("runTask OUT",
 		"batch size", task.ResultBlock.Size(),
-		"block index", task.ResultBlock.StateIndex(),
+		"block index", task.ResultBlock.BlockIndex(),
 		"variable state hash", vsClone.Hash().Bytes(),
 		"tx essence hash", hashing.HashData(task.ResultTransaction.Bytes()).String(),
 		"tx finalTimestamp", task.ResultTransaction.Timestamp(),

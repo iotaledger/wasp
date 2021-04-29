@@ -1,9 +1,11 @@
 package state
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
+	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -43,48 +45,38 @@ func TestVariableStateBasic(t *testing.T) {
 }
 
 func TestApply(t *testing.T) {
-	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 1"))
 	su1 := NewStateUpdate()
 	su1.Mutations().Set("key1", []byte("data1"))
 
 	su2 := NewStateUpdate()
 
-	_, err := NewBlock()
-	require.Error(t, err)
+	block1 := NewBlock(1, su1, su2)
+	block2 := NewBlock(1, su1, su2)
+	block0 := NewBlock(0)
 
-	_, err = NewBlock(su1, su1)
-	require.NoError(t, err)
-
-	block1, err := NewBlock(su1, su2)
-	require.NoError(t, err)
-	require.Equal(t, uint16(2), block1.Size())
-
-	batch2, err := NewBlock(su1, su2)
-	require.NoError(t, err)
-	require.Equal(t, uint16(2), batch2.Size())
-
-	require.EqualValues(t, block1.EssenceHash(), batch2.EssenceHash())
-
-	outID1 := ledgerstate.NewOutputID(txid1, 0)
-
-	block1.WithApprovingOutputID(outID1)
-	require.EqualValues(t, block1.EssenceHash(), batch2.EssenceHash())
-
-	batch2.WithApprovingOutputID(outID1)
-	require.EqualValues(t, block1.EssenceHash(), batch2.EssenceHash())
-
-	require.EqualValues(t, util.GetHashValue(block1), util.GetHashValue(batch2))
+	require.EqualValues(t, util.GetHashValue(block1), util.GetHashValue(block2))
 
 	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
 	db := mapdb.NewMapDB()
 	vs1 := NewVirtualState(db, chainID)
 	vs2 := NewVirtualState(db, chainID)
 
+	err := vs1.ApplyBlock(block1)
+	require.Error(t, err)
+
+	err = vs1.ApplyBlock(block0)
+	require.NoError(t, err)
+
+	err = vs2.ApplyBlock(block0)
+	require.NoError(t, err)
+
 	err = vs1.ApplyBlock(block1)
 	require.NoError(t, err)
 
-	err = vs2.ApplyBlock(batch2)
+	err = vs2.ApplyBlock(block2)
 	require.NoError(t, err)
+
+	require.EqualValues(t, vs1.Hash(), vs2.Hash())
 }
 
 func TestApply2(t *testing.T) {
@@ -98,44 +90,44 @@ func TestApply2(t *testing.T) {
 	vs1 := NewVirtualState(db, chainID)
 	vs2 := NewVirtualState(db, chainID)
 
-	batch23, err := NewBlock(su2, su3)
-	require.NoError(t, err)
-	batch23.WithBlockIndex(1)
+	block23 := NewBlock(1, su2, su3)
 
-	batch3, err := NewBlock(su3)
-	require.NoError(t, err)
-	batch3.WithBlockIndex(1)
+	block3 := NewBlock(1, su3)
 
 	vs1.ApplyStateUpdate(su1)
-	err = vs1.ApplyBlock(batch23)
+	err := vs1.ApplyBlock(block23)
 	require.NoError(t, err)
 
 	vs2.ApplyStateUpdate(su1)
 	vs2.ApplyStateUpdate(su2)
-	err = vs2.ApplyBlock(batch3)
+	err = vs2.ApplyBlock(block3)
 	require.NoError(t, err)
 
 	require.EqualValues(t, vs1.BlockIndex(), vs2.BlockIndex())
-
 	require.EqualValues(t, vs1.Hash(), vs2.Hash())
 }
 
 func TestApply3(t *testing.T) {
-	su1 := NewStateUpdate()
-	su2 := NewStateUpdate()
+	nowis := time.Now()
+	su1 := NewStateUpdate(nowis)
+	su2 := NewStateUpdate(nowis.Add(1 * time.Second))
 
 	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
 	db := mapdb.NewMapDB()
 	vs1 := NewVirtualState(db, chainID)
 	vs2 := NewVirtualState(db, chainID)
 
+	err := vs1.ApplyBlock(NewBlock(0))
+	require.NoError(t, err)
+	err = vs2.ApplyBlock(NewBlock(0))
+	require.NoError(t, err)
+
 	vs1.ApplyStateUpdate(su1)
 	vs1.ApplyStateUpdate(su2)
 	vs1.ApplyBlockIndex(0)
 
-	batch, err := NewBlock(su1, su2)
-	require.NoError(t, err)
-	err = vs2.ApplyBlock(batch)
+	block := NewBlock(1, su1, su2)
+	err = vs2.ApplyBlock(block)
 	require.NoError(t, err)
 
 	require.EqualValues(t, vs1.Hash(), vs2.Hash())
@@ -151,7 +143,7 @@ func TestStateReader(t *testing.T) {
 
 	writer.Set("key1", []byte("data1"))
 	writer.Set("key2", []byte("data2"))
-	err := vs.CommitToDb(MustNewOriginBlock())
+	err := vs.CommitToDb(NewOriginBlock())
 	require.NoError(t, err)
 
 	back1 := reader.MustGet("key1")
@@ -161,12 +153,12 @@ func TestStateReader(t *testing.T) {
 }
 
 func TestOriginHash(t *testing.T) {
-	origBlock := MustNewOriginBlock()
+	origBlock := NewOriginBlock()
 	t.Logf("origin block hash = %s", origBlock.EssenceHash().String())
-	require.EqualValues(t, OriginBlockHashBase58, origBlock.EssenceHash().String())
+	require.EqualValues(t, coreutil.OriginBlockEssenceHashBase58, origBlock.EssenceHash().String())
 	t.Logf("origin state hash = %s", OriginStateHash().String())
 	t.Logf("zero state hash = %s", NewZeroVirtualState(mapdb.NewMapDB()).Hash().String())
-	require.EqualValues(t, OriginStateHashBase58, OriginStateHash().String())
+	require.EqualValues(t, coreutil.OriginStateHashBase58, OriginStateHash().String())
 
 	emptyState := NewVirtualState(mapdb.NewMapDB(), nil)
 	err := emptyState.ApplyBlock(origBlock)

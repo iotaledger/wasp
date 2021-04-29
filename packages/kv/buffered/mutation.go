@@ -1,6 +1,7 @@
 package buffered
 
 import (
+	"bytes"
 	"io"
 	"sort"
 
@@ -8,6 +9,8 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
+// Mutations is a set of mutations: one for each key
+// It provides a deterministic serialization
 type Mutations struct {
 	Sets map[kv.Key][]byte
 	Dels map[kv.Key]struct{}
@@ -18,6 +21,12 @@ func NewMutations() *Mutations {
 		Sets: make(map[kv.Key][]byte),
 		Dels: make(map[kv.Key]struct{}),
 	}
+}
+
+func (ms *Mutations) Bytes() []byte {
+	var buf bytes.Buffer
+	_ = ms.Write(&buf)
+	return buf.Bytes()
 }
 
 func (ms *Mutations) Write(w io.Writer) error {

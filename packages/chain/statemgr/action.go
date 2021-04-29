@@ -77,14 +77,14 @@ func (sm *stateManager) checkStateApproval() {
 func (sm *stateManager) addBlockCandidate(block state.Block) {
 	if block != nil {
 		sm.log.Debugw("addBlockCandidate",
-			"block index", block.StateIndex(),
+			"block index", block.BlockIndex(),
 			"timestamp", block.Timestamp(),
 			"size", block.Size(),
 			"approving output", coretypes.OID(block.ApprovingOutputID()),
 		)
 	} else {
 		sm.log.Debugf("addBlockCandidate: add origin candidate block")
-		block = state.MustNewOriginBlock()
+		block = state.NewOriginBlock()
 	}
 	var stateToApprove state.VirtualState
 	if sm.solidState == nil {
@@ -107,7 +107,7 @@ func (sm *stateManager) addBlockCandidate(block state.Block) {
 		nextState: stateToApprove,
 	}
 
-	sm.log.Infof("added new block candidate. State index: %d, state hash: %s", block.StateIndex(), vh.String())
+	sm.log.Infof("added new block candidate. State index: %d, state hash: %s", block.BlockIndex(), vh.String())
 	sm.pullStateDeadline = time.Now()
 }
 
