@@ -17,15 +17,15 @@ func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
 
 // SaveRequestLogRecord appends request record to the record log and creates records for fast lookup
 func SaveRequestLogRecord(partition kv.KVStore, rec *RequestLogRecord, key RequestLookupKey) error {
-	// save lookup record
+	// save lookup record for fast lookup
 	lookupTable := collections.NewMap(partition, StateVarRequestLookupIndex)
 	digest := rec.RequestID.LookupDigest()
 	var lst RequestLookupKeyList
-	digestExist, err := lookupTable.HasAt(digest[:])
+	digestExists, err := lookupTable.HasAt(digest[:])
 	if err != nil {
 		return xerrors.Errorf("SaveRequestLookup: %w", err)
 	}
-	if !digestExist {
+	if !digestExists {
 		// new digest, most common
 		lst = make(RequestLookupKeyList, 0, 1)
 	} else {

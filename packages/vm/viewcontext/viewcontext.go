@@ -31,7 +31,7 @@ func NewFromDB(dbp *dbprovider.DBProvider, chainID coretypes.ChainID, proc *proc
 		return nil, err
 	}
 	if !ok {
-		return nil, fmt.Errorf("solid stateReader not found for chain %s", chainID.String())
+		return nil, fmt.Errorf("solid state not found for the chain %s", chainID.String())
 	}
 	return New(chainID, state_, proc, nil), nil
 }

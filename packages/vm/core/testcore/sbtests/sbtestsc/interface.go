@@ -97,7 +97,7 @@ const (
 	FuncPassTypesFull = "passTypesFull"
 	FuncPassTypesView = "passTypesView"
 
-	//KVStore
+	// State variables
 	VarCounter              = "counter"
 	VarSandboxCall          = "sandboxCall"
 	VarContractNameDeployed = "exampleDeployTR"
