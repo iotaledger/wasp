@@ -10,7 +10,6 @@ const (
 	ObjectTypeSolidState
 	ObjectTypeStateUpdateBatch
 	ObjectTypeProcessedRequestId
-	ObjectTypeSolidStateIndex
 	ObjectTypeStateVariable
 	ObjectTypeNodeIdentity
 	ObjectTypeBlobCache

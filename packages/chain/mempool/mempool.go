@@ -1,12 +1,12 @@
 package mempool
 
 import (
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"sort"
 	"sync"
 	"time"
@@ -14,7 +14,7 @@ import (
 
 type mempool struct {
 	mutex       sync.RWMutex
-	chainState  kvstore.KVStore
+	stateReader state.StateReader
 	requestRefs map[coretypes.RequestID]*requestRef
 	chStop      chan bool
 	blobCache   coretypes.BlobCache
@@ -31,9 +31,9 @@ const constSolidificationLoopDelay = 200 * time.Millisecond
 
 var _ chain.Mempool = &mempool{}
 
-func New(chainState kvstore.KVStore, blobCache coretypes.BlobCache, log *logger.Logger) chain.Mempool {
+func New(stateReader state.StateReader, blobCache coretypes.BlobCache, log *logger.Logger) chain.Mempool {
 	ret := &mempool{
-		chainState:  chainState,
+		stateReader: stateReader,
 		requestRefs: make(map[coretypes.RequestID]*requestRef),
 		chStop:      make(chan bool),
 		blobCache:   blobCache,
@@ -54,13 +54,8 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 			return
 		}
 	}
-
-	isCompleted, err := state.IsRequestCompleted(m.chainState, req.ID())
-	if err != nil {
-		m.log.Errorf("ReceiveRequest.IsRequestCompleted: %s", err)
-		return
-	}
-	if isCompleted {
+	id := req.ID()
+	if blocklog.IsRequestProcessed(m.stateReader, &id) {
 		return
 	}
 	if _, ok := m.requestRefs[req.ID()]; ok {
@@ -70,7 +65,7 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	// attempt solidification for those requests that do not require blobs
 	// instead of having to wait for the solidification goroutine to kick in
 	// also weeds out requests with solidification errors
-	_, err = req.SolidifyArgs(m.blobCache)
+	_, err := req.SolidifyArgs(m.blobCache)
 	if err != nil {
 		m.log.Errorf("ReceiveRequest.SolidifyArgs: %s", err)
 		return

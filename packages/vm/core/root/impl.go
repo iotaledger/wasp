@@ -8,6 +8,7 @@ package root
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -74,6 +75,11 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	// deploy eventlog
 	rec = NewContractRecord(eventlog.Interface, &coretypes.AgentID{})
+	err = storeAndInitContract(ctx, rec, nil)
+	a.Require(err == nil, "root.init.fail: %v", err)
+
+	// deploy blocklog
+	rec = NewContractRecord(blocklog.Interface, &coretypes.AgentID{})
 	err = storeAndInitContract(ctx, rec, nil)
 	a.Require(err == nil, "root.init.fail: %v", err)
 

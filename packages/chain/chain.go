@@ -159,7 +159,6 @@ type StateTransitionEventData struct {
 	BlockEssenceHash hashing.HashValue
 	ChainOutput      *ledgerstate.AliasOutput
 	Timestamp        time.Time
-	RequestIDs       []coretypes.RequestID
 }
 
 func (p *PeerStatus) String() string {

@@ -2,6 +2,7 @@ package examples
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -13,8 +14,8 @@ func TestExample1(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ex1")
 
-	chainID, chainOwner, coreContracts := chain.GetInfo() // calls view root::GetInfo
-	require.EqualValues(t, 5, len(coreContracts))         // 5 core contracts deployed by default
+	chainID, chainOwner, coreContracts := chain.GetInfo()                        // calls view root::GetInfo
+	require.EqualValues(t, len(core.AllCoreContractsByHash), len(coreContracts)) // 5 core contracts deployed by default
 
 	t.Logf("chainID: %s", chainID.String())
 	t.Logf("chain owner ID: %s", chainOwner.String())

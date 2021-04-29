@@ -207,7 +207,7 @@ func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname 
 
 	case hname == eventlog.Interface.Hname() && fname == eventlog.FuncGetRecords:
 		ret := dict.New()
-		a := collections.NewArray(ret, eventlog.ParamRecords)
+		a := collections.NewArray16(ret, eventlog.ParamRecords)
 		a.MustPush([]byte("log entry"))
 		return ret, nil
 	}

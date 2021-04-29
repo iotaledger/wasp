@@ -28,7 +28,7 @@ func (ch *Chain) CheckChain() {
 	_, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
 	require.NoError(ch.Env.T, err)
 
-	for _, rec := range core.AllCoreContracts {
+	for _, rec := range core.AllCoreContractsByHash {
 		recFromState, err := ch.FindContract(rec.Name)
 		require.NoError(ch.Env.T, err)
 		require.EqualValues(ch.Env.T, rec.Name, recFromState.Name)

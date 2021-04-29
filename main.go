@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/logger"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
-	"github.com/iotaledger/wasp/plugins/publisher"
+	"github.com/iotaledger/wasp/plugins/publishernano"
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/plugins/webapi"
@@ -44,7 +44,7 @@ func main() {
 		dkg.Init(suite),
 		nodeconn.Init(),
 		chains.Init(),
-		publisher.Init(),
+		publishernano.Init(),
 		dashboard.Init(),
 		wasmtimevm.Init(),
 		globals.Init(),

@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"runtime/debug"
 	"time"
 
@@ -18,10 +19,10 @@ import (
 
 // RunTheRequest processes any request based on the Extended output, even if it
 // doesn't parse correctly as a SC request
-func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
+func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16) {
 	defer vmctx.finalizeRequestCall()
 
-	vmctx.mustSetUpRequestContext(req)
+	vmctx.mustSetUpRequestContext(req, requestIndex)
 
 	// guard against replaying off-ledger requests here to prevent replaying fee deduction
 	// also verifies that account for off-ledger request exists
@@ -29,8 +30,10 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 		return
 	}
 
-	if !vmctx.isInitChainRequest() {
-		vmctx.mustGetBaseValues()
+	if vmctx.isInitChainRequest() {
+		vmctx.chainOwnerID = *vmctx.req.SenderAccount().Clone()
+	} else {
+		vmctx.mustGetBaseValuesFromState()
 		enoughFees := vmctx.mustHandleFees()
 		if !enoughFees {
 			return
@@ -47,7 +50,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 		defer func() {
 			if r := recover(); r != nil {
 				vmctx.lastResult = nil
-				vmctx.lastError = xerrors.Errorf("%s: recovered from panic in VM: %v", req, r)
+				vmctx.lastError = xerrors.Errorf("panic in VM: %v", r)
 				vmctx.Debugf(string(debug.Stack()))
 				if dberr, ok := r.(*kv.DBError); ok {
 					// There was an error accessing the DB. The world stops
@@ -69,11 +72,12 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, inputIndex int) {
 }
 
 // mustSetUpRequestContext sets up VMContext for request
-func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
+func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request, requestIndex uint16) {
 	if _, ok := req.Params(); !ok {
 		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: request args should had been solidified")
 	}
 	vmctx.req = req
+	vmctx.requestIndex = requestIndex
 	if req.Output() != nil {
 		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.Output().ID()); err != nil {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
@@ -83,7 +87,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request) {
 	t := time.Unix(0, vmctx.timestamp)
 
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
-	vmctx.stateUpdate = state.NewStateUpdate(req.ID()).WithTimestamp(vmctx.timestamp)
+	vmctx.stateUpdate = state.NewStateUpdate().WithTimestamp(vmctx.timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 
 	if isRequestTimeLockedNow(req, t) {
@@ -277,15 +281,14 @@ func (vmctx *VMContext) mustSaveRequestOrder() {
 		vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 		defer vmctx.popCallContext()
 
-		state := vmctx.State()
 		address := vmctx.req.SenderAddress()
 		order := vmctx.req.Order()
-		accounts.SetOrder(state, address, order)
+		accounts.SetOrder(vmctx.State(), address, order)
 	}
 }
 
 func (vmctx *VMContext) finalizeRequestCall() {
-	vmctx.mustRequestToEventLog(vmctx.lastError)
+	vmctx.mustLogRequestToBlockLog(vmctx.lastError)
 	vmctx.lastTotalAssets = vmctx.totalAssets()
 	vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
 
@@ -296,23 +299,8 @@ func (vmctx *VMContext) finalizeRequestCall() {
 	)
 }
 
-func (vmctx *VMContext) mustRequestToEventLog(err error) {
-	if err != nil {
-		vmctx.log.Error(err)
-	}
-	e := "Ok"
-	if err != nil {
-		e = err.Error()
-	}
-	reqStr := coretypes.OID(vmctx.req.ID().OutputID())
-	msg := fmt.Sprintf("[req] %s: %s", reqStr, e)
-	vmctx.log.Infof("eventlog -> '%s'", msg)
-	targetContract, _ := vmctx.req.Target()
-	vmctx.StoreToEventLog(targetContract, []byte(msg))
-}
-
-// mustGetBaseValues only makes sense if chain is already deployed
-func (vmctx *VMContext) mustGetBaseValues() {
+// mustGetBaseValuesFromState only makes sense if chain is already deployed
+func (vmctx *VMContext) mustGetBaseValuesFromState() {
 	info := vmctx.mustGetChainInfo()
 	if !info.ChainID.Equals(&vmctx.chainID) {
 		vmctx.log.Panicf("mustSetUpRequestContext: major inconsistency of chainID")
@@ -326,6 +314,13 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 	return targetContract == root.Interface.Hname() && entryPoint == coretypes.EntryPointInit
 }
 
+func isRequestTimeLockedNow(req coretypes.Request, nowis time.Time) bool {
+	if req.TimeLock().IsZero() {
+		return false
+	}
+	return req.TimeLock().After(nowis)
+}
+
 func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) (*ledgerstate.TransactionEssence, error) {
 	if err := vmctx.txBuilder.AddAliasOutputAsRemainder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
 		return nil, xerrors.Errorf("finalizeRequestCall: %v", err)
@@ -337,9 +332,13 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 	return tx, nil
 }
 
-func isRequestTimeLockedNow(req coretypes.Request, nowis time.Time) bool {
-	if req.TimeLock().IsZero() {
-		return false
+func (vmctx *VMContext) StoreBlockInfo(blockIndex uint32, blockInfo *blocklog.BlockInfo) error {
+	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
+	if idx != blockIndex {
+		return xerrors.New("StoreBlockInfo: inconsistent block index")
 	}
-	return req.TimeLock().After(nowis)
+	return nil
 }

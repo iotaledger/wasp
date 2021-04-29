@@ -16,7 +16,7 @@ func TestSetThenGet(t *testing.T) {
 	chainID := coretypes.RandomChainID([]byte("mmm"))
 
 	virtualState := state.NewVirtualState(db, chainID)
-	stateUpdate := state.NewStateUpdate(coretypes.RequestID{})
+	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")
 
 	s := newStateWrapper(hname, virtualState, stateUpdate)
@@ -37,7 +37,7 @@ func TestSetThenGet(t *testing.T) {
 	assert.Equal(t, []byte{1}, stateUpdate.Mutations().Sets[subpartitionedKey])
 
 	// mutation is not committed to the virtual state
-	v, err = virtualState.Variables().Get(subpartitionedKey)
+	v, err = virtualState.KVStore().Get(subpartitionedKey)
 	assert.NoError(t, err)
 	assert.Nil(t, v)
 
@@ -72,7 +72,7 @@ func TestIterate(t *testing.T) {
 	chainID := coretypes.RandomChainID([]byte("mmm"))
 
 	virtualState := state.NewVirtualState(db, chainID)
-	stateUpdate := state.NewStateUpdate(coretypes.RequestID{})
+	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")
 
 	s := newStateWrapper(hname, virtualState, stateUpdate)

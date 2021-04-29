@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/require"
@@ -29,12 +28,12 @@ func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chain
 	require.True(c.t, chainOutput.GetStateAddress().Equals(ledgerstate.NewED25519Address(c.chainKey.PublicKey)))
 
 	nextVirtualState := virtualState.Clone()
-	counterBin, err := nextVirtualState.Variables().Get("counter")
+	counterBin, err := nextVirtualState.KVStore().Get("counter")
 	require.NoError(c.t, err)
 	counter, _, err := codec.DecodeUint64(counterBin)
 	require.NoError(c.t, err)
 
-	stateUpdate := state.NewStateUpdate(coretypes.RequestID{})
+	stateUpdate := state.NewStateUpdate()
 	stateUpdate.Mutations().Set("counter", codec.EncodeUint64(counter+1))
 	block, err := state.NewBlock(stateUpdate)
 	require.NoError(c.t, err)

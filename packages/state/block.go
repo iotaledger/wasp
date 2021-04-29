@@ -7,7 +7,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
@@ -19,19 +18,12 @@ type block struct {
 	stateUpdates  []StateUpdate
 }
 
-const OriginBlockHashBase58 = "4YdxXy76cShQsVbGvkoDCeMaHDrxEgZVWuA4puUBjU7H"
+const OriginBlockHashBase58 = "6dHpJfMrjZsMtLasN2zbQNfzxMvoP2hNbLA95Xv2JHAN"
 
 // validates, enumerates and creates a block from array of state updates
 func NewBlock(stateUpdates ...StateUpdate) (Block, error) {
 	if len(stateUpdates) == 0 {
 		return nil, fmt.Errorf("block can't be empty")
-	}
-	for i, su := range stateUpdates {
-		for j := i + 1; j < len(stateUpdates); j++ {
-			if su.RequestID() == stateUpdates[j].RequestID() {
-				return nil, fmt.Errorf("duplicate request id")
-			}
-		}
 	}
 	return &block{
 		stateUpdates: stateUpdates,
@@ -46,8 +38,8 @@ func BlockFromBytes(data []byte) (Block, error) {
 	return ret, nil
 }
 
-func LoadBlock(chainState kvstore.KVStore, stateIndex uint32) (Block, error) {
-	data, err := chainState.Get(dbkeyBatch(stateIndex))
+func LoadBlock(partition kvstore.KVStore, stateIndex uint32) (Block, error) {
+	data, err := partition.Get(dbkeyBlock(stateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
 	}
@@ -59,7 +51,7 @@ func LoadBlock(chainState kvstore.KVStore, stateIndex uint32) (Block, error) {
 
 // block with empty state update and nil state hash
 func MustNewOriginBlock() Block {
-	ret, err := NewBlock(NewStateUpdate(coretypes.RequestID{}))
+	ret, err := NewBlock(NewStateUpdate())
 	if err != nil {
 		log.Panic(err)
 	}
@@ -118,14 +110,6 @@ func (b *block) ForEach(fun func(uint16, StateUpdate) bool) {
 
 func (b *block) Size() uint16 {
 	return uint16(len(b.stateUpdates))
-}
-
-func (b *block) RequestIDs() []coretypes.RequestID {
-	ret := make([]coretypes.RequestID, b.Size())
-	for i, su := range b.stateUpdates {
-		ret[i] = su.RequestID()
-	}
-	return ret
 }
 
 // hash of all data except state transaction hash
@@ -191,7 +175,7 @@ func (b *block) readEssence(r io.Reader) error {
 	return nil
 }
 
-func dbkeyBatch(stateIndex uint32) []byte {
+func dbkeyBlock(stateIndex uint32) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeStateUpdateBatch, util.Uint32To4Bytes(stateIndex))
 }
 

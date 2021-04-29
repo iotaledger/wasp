@@ -97,7 +97,7 @@ const (
 	FuncPassTypesFull = "passTypesFull"
 	FuncPassTypesView = "passTypesView"
 
-	//Variables
+	// State variables
 	VarCounter              = "counter"
 	VarSandboxCall          = "sandboxCall"
 	VarContractNameDeployed = "exampleDeployTR"

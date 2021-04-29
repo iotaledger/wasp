@@ -160,6 +160,28 @@ func (p *decoder) MustGetAddress(key kv.Key, def ...ledgerstate.Address) ledgers
 	return ret
 }
 
+func (p *decoder) GetRequestID(key kv.Key, def ...coretypes.RequestID) (coretypes.RequestID, error) {
+	v, exists, err := codec.DecodeRequestID(p.kv.MustGet(key))
+	if err != nil {
+		return coretypes.RequestID{}, fmt.Errorf("GetRequestID: decoding parameter '%s': %v", key, err)
+	}
+	if exists {
+		return v, nil
+	}
+	if len(def) == 0 {
+		return coretypes.RequestID{}, fmt.Errorf("GetRequestID: mandatory parameter '%s' does not exist", key)
+	}
+	return def[0], nil
+}
+
+func (p *decoder) MustGetRequestID(key kv.Key, def ...coretypes.RequestID) coretypes.RequestID {
+	ret, err := p.GetRequestID(key, def...)
+	if err != nil {
+		p.panic(err)
+	}
+	return ret
+}
+
 func (p *decoder) GetAgentID(key kv.Key, def ...coretypes.AgentID) (*coretypes.AgentID, error) {
 	v, exists, err := codec.DecodeAgentID(p.kv.MustGet(key))
 	if err != nil {
@@ -235,7 +257,7 @@ func (p *decoder) GetBytes(key kv.Key, def ...[]byte) ([]byte, error) {
 		return v, nil
 	}
 	if len(def) == 0 {
-		return nil, fmt.Errorf("MustGetBytes: mandatory parameter '%s' does not exist", key)
+		return nil, fmt.Errorf("GetBytes: mandatory parameter '%s' does not exist", key)
 	}
 	return def[0], nil
 }

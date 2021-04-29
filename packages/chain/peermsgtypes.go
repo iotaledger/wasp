@@ -97,8 +97,6 @@ type StateTransitionMsg struct {
 	ChainOutput *ledgerstate.AliasOutput
 	//
 	Timestamp time.Time
-	// processed requests
-	RequestIDs []coretypes.RequestID
 }
 
 // message of complete batch. Is sent by consensus operator to the state manager as a VM result

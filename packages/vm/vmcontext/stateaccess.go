@@ -42,7 +42,7 @@ func (s stateWrapper) Has(name kv.Key) (bool, error) {
 	if ok {
 		return true, nil
 	}
-	return s.virtualState.Variables().Has(name)
+	return s.virtualState.KVStore().Has(name)
 }
 
 func (s stateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) error {
@@ -70,7 +70,7 @@ func (s stateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error 
 			}
 		}
 	}
-	return s.virtualState.Variables().IterateKeys(prefix, func(k kv.Key) bool {
+	return s.virtualState.KVStore().IterateKeys(prefix, func(k kv.Key) bool {
 		if !s.stateUpdate.Mutations().Contains(k) {
 			return f(k[len(s.contractSubPartitionPrefix):])
 		}
@@ -102,7 +102,7 @@ func (s stateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) 
 			keys = append(keys, k)
 		}
 	}
-	err := s.virtualState.Variables().IterateKeysSorted(prefix, func(k kv.Key) bool {
+	err := s.virtualState.KVStore().IterateKeysSorted(prefix, func(k kv.Key) bool {
 		if !s.stateUpdate.Mutations().Contains(k) {
 			keys = append(keys, k)
 		}
@@ -126,7 +126,7 @@ func (s stateWrapper) Get(name kv.Key) ([]byte, error) {
 	if ok {
 		return v, nil
 	}
-	return s.virtualState.Variables().Get(name)
+	return s.virtualState.KVStore().Get(name)
 }
 
 func (s stateWrapper) Del(name kv.Key) {

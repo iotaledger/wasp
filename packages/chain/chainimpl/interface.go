@@ -6,6 +6,7 @@ package chainimpl
 import (
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -145,11 +146,8 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	processed, err := state.IsRequestCompleted(c.dbProvider.GetPartition(c.ID()), reqID)
-	if err != nil {
-		panic(err)
-	}
-	if !processed {
+	stateReader := state.NewStateReader(c.dbProvider, &c.chainID)
+	if !blocklog.IsRequestProcessed(stateReader, &reqID) {
 		return chain.RequestProcessingStatusUnknown
 	}
 	return chain.RequestProcessingStatusCompleted

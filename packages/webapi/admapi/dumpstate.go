@@ -37,7 +37,7 @@ func handleDumpSCState(c echo.Context) error {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid SC id: %s", c.Param("contractHname")))
 	}
 
-	virtualState, _, ok, err := state.LoadSolidState(chainID)
+	virtualState, ok, err := state.LoadSolidState(chainID)
 	if err != nil {
 		return err
 	}
@@ -45,8 +45,8 @@ func handleDumpSCState(c echo.Context) error {
 		return httperrors.NotFound(fmt.Sprintf("State not found for chainID %s", chainID.String()))
 	}
 
-	vars, err := dict.FromKVStore(subrealm.New(
-		virtualState.Variables().DangerouslyDumpToDict(),
+	vars, err := dict.FromKVStore(subrealm.NewReadOnly(
+		virtualState.KVStore().DangerouslyDumpToDict(),
 		kv.Key(contractHname.Bytes()),
 	))
 	if err != nil {

@@ -7,15 +7,18 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
 	"math/rand"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -59,6 +62,9 @@ type Solo struct {
 	timeStep    time.Duration
 	chains      map[[33]byte]*Chain
 	doOnce      sync.Once
+	// publisher wait group
+	publisherWG      sync.WaitGroup
+	publisherEnabled atomic.Bool
 }
 
 // Chain represents state of individual chain.
@@ -92,7 +98,8 @@ type Chain struct {
 	ValidatorFeeTarget coretypes.AgentID
 
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
-	State state.VirtualState
+	State       state.VirtualState
+	StateReader state.StateReader
 
 	// Log is the named logger of the chain
 	Log *logger.Logger
@@ -201,12 +208,25 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		OriginatorAgentID:      *originatorAgentID,
 		ValidatorFeeTarget:     *feeTarget,
 		State:                  state.NewZeroVirtualState(env.dbProvider.GetPartition(&chainID)),
+		StateReader:            state.NewStateReader(env.dbProvider, &chainID),
 		proc:                   processors.MustNew(),
 		Log:                    chainlog,
-		mempool:                mempool.New(env.dbProvider.GetPartition(&chainID), env.blobCache, chainlog),
 	}
+	ret.mempool = mempool.New(ret.StateReader, env.blobCache, chainlog)
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
+
+	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
+		if !env.publisherEnabled.Load() {
+			return
+		}
+		msg := msgType + " " + strings.Join(parts, " ")
+		env.publisherWG.Add(1)
+		go func() {
+			chainlog.Infof("SOLO PUBLISHER (test %s):: '%s'", env.T.Name(), msg)
+			env.publisherWG.Done()
+		}()
+	}))
 
 	originBlock := state.MustNewOriginBlock().
 		WithApprovingOutputID(ledgerstate.NewOutputID(originTx.ID(), 0))
@@ -307,6 +327,16 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 			chain.mempool.ReceiveRequest(req)
 		}
 	}
+}
+
+// EnablePublisher enables Solo publisher
+func (env *Solo) EnablePublisher(enable bool) {
+	env.publisherEnabled.Store(enable)
+}
+
+// WaitPublisher waits until all messages are published
+func (env *Solo) WaitPublisher() {
+	env.publisherWG.Wait()
 }
 
 func (ch *Chain) GetChainOutput() *ledgerstate.AliasOutput {

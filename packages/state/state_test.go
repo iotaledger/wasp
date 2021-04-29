@@ -1,14 +1,14 @@
 package state
 
 import (
+	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
@@ -26,13 +26,13 @@ func TestVariableStateBasic(t *testing.T) {
 	require.EqualValues(t, h1, h2)
 	require.EqualValues(t, vs1.BlockIndex(), vs1.BlockIndex())
 
-	vs1.Variables().Set("num", codec.EncodeInt64(int64(123)))
-	vs1.Variables().Set("kuku", codec.EncodeString("A"))
-	vs1.Variables().Set("mumu", codec.EncodeString("B"))
+	vs1.KVStore().Set("num", codec.EncodeInt64(int64(123)))
+	vs1.KVStore().Set("kuku", codec.EncodeString("A"))
+	vs1.KVStore().Set("mumu", codec.EncodeString("B"))
 
-	vs2.Variables().Set("mumu", codec.EncodeString("B"))
-	vs2.Variables().Set("kuku", codec.EncodeString("A"))
-	vs2.Variables().Set("num", codec.EncodeInt64(int64(123)))
+	vs2.KVStore().Set("mumu", codec.EncodeString("B"))
+	vs2.KVStore().Set("kuku", codec.EncodeString("A"))
+	vs2.KVStore().Set("num", codec.EncodeInt64(int64(123)))
 
 	require.EqualValues(t, vs1.Hash(), vs2.Hash())
 
@@ -44,53 +44,43 @@ func TestVariableStateBasic(t *testing.T) {
 
 func TestApply(t *testing.T) {
 	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 1"))
-	reqid1 := ledgerstate.NewOutputID(txid1, 5)
-	su1 := NewStateUpdate(coretypes.RequestID(reqid1))
+	su1 := NewStateUpdate()
+	su1.Mutations().Set("key1", []byte("data1"))
 
-	require.EqualValues(t, su1.RequestID(), reqid1)
-
-	txid2 := ledgerstate.TransactionID(hashing.HashStrings("test string 2"))
-	reqid2 := ledgerstate.NewOutputID(txid2, 2)
-	su2 := NewStateUpdate(coretypes.RequestID(reqid2))
-	suwrong := NewStateUpdate(coretypes.RequestID(reqid2))
-
-	require.EqualValues(t, su2.RequestID(), reqid2)
+	su2 := NewStateUpdate()
 
 	_, err := NewBlock()
 	require.Error(t, err)
 
 	_, err = NewBlock(su1, su1)
-	require.Error(t, err)
-
-	_, err = NewBlock(su2, suwrong)
-	require.Error(t, err)
-
-	batch1, err := NewBlock(su1, su2)
 	require.NoError(t, err)
-	require.Equal(t, uint16(2), batch1.Size())
+
+	block1, err := NewBlock(su1, su2)
+	require.NoError(t, err)
+	require.Equal(t, uint16(2), block1.Size())
 
 	batch2, err := NewBlock(su1, su2)
 	require.NoError(t, err)
 	require.Equal(t, uint16(2), batch2.Size())
 
-	require.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
+	require.EqualValues(t, block1.EssenceHash(), batch2.EssenceHash())
 
 	outID1 := ledgerstate.NewOutputID(txid1, 0)
 
-	batch1.WithApprovingOutputID(outID1)
-	require.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
+	block1.WithApprovingOutputID(outID1)
+	require.EqualValues(t, block1.EssenceHash(), batch2.EssenceHash())
 
 	batch2.WithApprovingOutputID(outID1)
-	require.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
+	require.EqualValues(t, block1.EssenceHash(), batch2.EssenceHash())
 
-	require.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch2))
+	require.EqualValues(t, util.GetHashValue(block1), util.GetHashValue(batch2))
 
 	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
 	db := mapdb.NewMapDB()
 	vs1 := NewVirtualState(db, chainID)
 	vs2 := NewVirtualState(db, chainID)
 
-	err = vs1.ApplyBlock(batch1)
+	err = vs1.ApplyBlock(block1)
 	require.NoError(t, err)
 
 	err = vs2.ApplyBlock(batch2)
@@ -98,14 +88,10 @@ func TestApply(t *testing.T) {
 }
 
 func TestApply2(t *testing.T) {
-	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 2"))
-	reqid1 := ledgerstate.NewOutputID(txid1, 0)
-	reqid2 := ledgerstate.NewOutputID(txid1, 2)
-	reqid3 := ledgerstate.NewOutputID(txid1, 5)
 
-	su1 := NewStateUpdate(coretypes.RequestID(reqid1))
-	su2 := NewStateUpdate(coretypes.RequestID(reqid2))
-	su3 := NewStateUpdate(coretypes.RequestID(reqid3))
+	su1 := NewStateUpdate()
+	su2 := NewStateUpdate()
+	su3 := NewStateUpdate()
 
 	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
 	db := mapdb.NewMapDB()
@@ -135,12 +121,8 @@ func TestApply2(t *testing.T) {
 }
 
 func TestApply3(t *testing.T) {
-	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 2"))
-	reqid1 := ledgerstate.NewOutputID(txid1, 0)
-	reqid2 := ledgerstate.NewOutputID(txid1, 2)
-
-	su1 := NewStateUpdate(coretypes.RequestID(reqid1))
-	su2 := NewStateUpdate(coretypes.RequestID(reqid2))
+	su1 := NewStateUpdate()
+	su2 := NewStateUpdate()
 
 	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
 	db := mapdb.NewMapDB()
@@ -159,75 +141,23 @@ func TestApply3(t *testing.T) {
 	require.EqualValues(t, vs1.Hash(), vs2.Hash())
 }
 
-func TestCommit(t *testing.T) {
-	tmpdb, _ := database.NewMemDB()
-	db := tmpdb.NewStore()
+func TestStateReader(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	dbp := dbprovider.NewInMemoryDBProvider(log)
+	vs := NewVirtualState(dbp.GetPartition(nil), nil)
+	writer := vs.KVStore()
+	stateReader := NewStateReader(dbp, nil)
+	reader := stateReader.KVStoreReader()
 
-	partition := db.WithRealm([]byte("2"))
-
-	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 2"))
-	reqid1 := ledgerstate.NewOutputID(txid1, 5)
-	su1 := NewStateUpdate(coretypes.RequestID(reqid1))
-
-	su1.Mutations().Set("x", []byte{1})
-
-	batch1, err := NewBlock(su1)
+	writer.Set("key1", []byte("data1"))
+	writer.Set("key2", []byte("data2"))
+	err := vs.CommitToDb(MustNewOriginBlock())
 	require.NoError(t, err)
 
-	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
-	vs1 := NewVirtualState(partition, chainID)
-	err = vs1.ApplyBlock(batch1)
-	require.NoError(t, err)
-
-	v, _ := vs1.Variables().Get("x")
-	require.Equal(t, []byte{1}, v)
-
-	v, _ = partition.Get(dbkeyStateVariable("x"))
-	require.Nil(t, v)
-
-	err = vs1.CommitToDb(batch1)
-	require.NoError(t, err)
-
-	v, _ = vs1.Variables().Get("x")
-	require.Equal(t, []byte{1}, v)
-
-	v, _ = partition.Get(dbkeyStateVariable("x"))
-	require.Equal(t, []byte{1}, v)
-
-	vs1_2, batch1_2, _, err := loadSolidState(partition, chainID)
-
-	require.NoError(t, err)
-	require.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch1_2))
-	require.EqualValues(t, vs1.Hash(), vs1_2.Hash())
-
-	v, _ = vs1_2.Variables().Get(kv.Key("x"))
-	require.Equal(t, []byte{1}, v)
-
-	txid2 := ledgerstate.TransactionID(hashing.HashStrings("test string 2"))
-	reqid2 := ledgerstate.NewOutputID(txid2, 6)
-	su2 := NewStateUpdate(coretypes.RequestID(reqid2))
-
-	su2.Mutations().Del("x")
-
-	batch2, err := NewBlock(su2)
-	require.NoError(t, err)
-
-	chainID = coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy2")))
-	vs2 := NewVirtualState(partition, chainID)
-	err = vs2.ApplyBlock(batch2)
-	require.NoError(t, err)
-
-	v, _ = vs2.Variables().Get(kv.Key("x"))
-	require.Nil(t, v)
-
-	v, _ = partition.Get(dbkeyStateVariable(kv.Key("x")))
-	require.Equal(t, []byte{1}, v)
-
-	err = vs2.CommitToDb(batch2)
-	require.NoError(t, err)
-
-	v, _ = partition.Get(dbkeyStateVariable(kv.Key("x")))
-	require.Nil(t, v)
+	back1 := reader.MustGet("key1")
+	back2 := reader.MustGet("key2")
+	require.EqualValues(t, "data1", string(back1))
+	require.EqualValues(t, "data2", string(back2))
 }
 
 func TestOriginHash(t *testing.T) {
