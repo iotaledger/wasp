@@ -14,8 +14,10 @@ import (
 func TestBatches(t *testing.T) {
 	su1 := NewStateUpdate()
 	su2 := NewStateUpdate()
+	suBlock := NewStateUpdateWithBlockIndexMutation(2)
 
-	block1 := NewBlock(2, su1, su2)
+	block1, err := NewBlock(suBlock, su1, su2)
+	require.NoError(t, err)
 	assert.EqualValues(t, 3, block1.Size())
 	assert.EqualValues(t, 2, block1.BlockIndex())
 

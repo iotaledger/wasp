@@ -30,7 +30,8 @@ type VirtualState interface {
 
 // StateUpdate is a set of mutations
 type StateUpdate interface {
-	Timestamp() time.Time
+	TimestampMutation() (time.Time, bool)
+	StateIndexMutation() (uint32, bool)
 	Hash() hashing.HashValue
 	String() string
 	Mutations() *buffered.Mutations

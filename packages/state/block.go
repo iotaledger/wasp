@@ -3,8 +3,6 @@ package state
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/kv"
 	"golang.org/x/xerrors"
 	"io"
 	"time"
@@ -17,23 +15,25 @@ import (
 )
 
 type block struct {
-	blockIndex    uint32 // non-persistent
 	stateOutputID ledgerstate.OutputID
 	stateUpdates  []*stateUpdate
+	blockIndex    uint32 // not persistent
 }
 
 // validates, enumerates and creates a block from array of state updates
-func NewBlock(blockIndex uint32, stateUpdates ...StateUpdate) *block {
-	arr := make([]*stateUpdate, len(stateUpdates)+1)
-	for i := 0; i < len(arr)-1; i++ {
+func NewBlock(stateUpdates ...StateUpdate) (*block, error) {
+	arr := make([]*stateUpdate, len(stateUpdates))
+	for i := range arr {
 		arr[i] = stateUpdates[i].Clone().(*stateUpdate)
 	}
-	arr[len(arr)-1] = NewStateUpdate()
-	arr[len(arr)-1].setBlockIndexMutation(blockIndex)
-	return &block{
-		blockIndex:   blockIndex,
+	ret := &block{
 		stateUpdates: arr,
 	}
+	var err error
+	if ret.blockIndex, err = findBlockIndexMutation(arr); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func BlockFromBytes(data []byte) (*block, error) {
@@ -41,27 +41,26 @@ func BlockFromBytes(data []byte) (*block, error) {
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, xerrors.Errorf("BlockFromBytes: %w", err)
 	}
-	// check if the block index mutation is present in the last stateUpdate
-	if len(ret.stateUpdates) == 0 {
-		return nil, xerrors.New("BlockFromBytes: state updates not found")
-	}
-	last := ret.stateUpdates[len(ret.stateUpdates)-1]
-	blockIndexBin, exists := last.Mutations().Get(kv.Key(coreutil.StatePrefixBlockIndex))
-	if !exists {
-		return nil, xerrors.New("BlockFromBytes: block index mutation not found")
-	}
 	var err error
-	if ret.blockIndex, err = util.Uint32From4Bytes(blockIndexBin); err != nil {
-		return nil, xerrors.Errorf("BlockFromBytes: %w", err)
+	if ret.blockIndex, err = findBlockIndexMutation(ret.stateUpdates); err != nil {
+		return nil, err
 	}
 	return ret, nil
 }
 
-func LoadBlock(partition kvstore.KVStore, stateIndex uint32) (*block, error) {
+func LoadBlockBytes(partition kvstore.KVStore, stateIndex uint32) ([]byte, error) {
 	data, err := partition.Get(dbkeyBlock(stateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
 	}
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+func LoadBlock(partition kvstore.KVStore, stateIndex uint32) (*block, error) {
+	data, err := LoadBlockBytes(partition, stateIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +69,11 @@ func LoadBlock(partition kvstore.KVStore, stateIndex uint32) (*block, error) {
 
 // block with empty state update and nil state hash
 func NewOriginBlock() *block {
-	return NewBlock(0)
+	ret, err := NewBlock(NewStateUpdateWithBlockIndexMutation(0))
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
 
 func (b *block) Bytes() []byte {
@@ -102,7 +105,11 @@ func (b *block) BlockIndex() uint32 {
 
 // Timestamp of the last state update
 func (b *block) Timestamp() time.Time {
-	return b.stateUpdates[len(b.stateUpdates)-1].Timestamp()
+	ts, err := findTimestampMutation(b.stateUpdates)
+	if err != nil {
+		panic(err)
+	}
+	return ts
 }
 
 func (b *block) WithApprovingOutputID(vtxid ledgerstate.OutputID) Block {

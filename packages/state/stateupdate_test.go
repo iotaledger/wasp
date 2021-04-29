@@ -10,12 +10,15 @@ import (
 func TestStateUpdateBasic(t *testing.T) {
 	t.Run("default time", func(t *testing.T) {
 		su := NewStateUpdate()
-		require.True(t, su.Timestamp().IsZero())
+		_, ok := su.TimestampMutation()
+		require.False(t, ok)
 	})
 	t.Run("non zero time", func(t *testing.T) {
 		nowis := time.Now()
 		su := NewStateUpdate(nowis)
-		require.True(t, nowis.Equal(su.Timestamp()))
+		ts, ok := su.TimestampMutation()
+		require.True(t, ok)
+		require.True(t, nowis.Equal(ts))
 	})
 	t.Run("serialize zero time", func(t *testing.T) {
 		su := NewStateUpdate()
@@ -31,7 +34,9 @@ func TestStateUpdateBasic(t *testing.T) {
 		su1, err := newStateUpdateFromReader(bytes.NewReader(suBin))
 		require.NoError(t, err)
 		require.EqualValues(t, suBin, su1.Bytes())
-		require.True(t, nowis.Equal(su1.Timestamp()))
+		ts, ok := su1.TimestampMutation()
+		require.True(t, ok)
+		require.True(t, nowis.Equal(ts))
 	})
 	t.Run("just serialize", func(t *testing.T) {
 		nowis := time.Now()
@@ -41,7 +46,9 @@ func TestStateUpdateBasic(t *testing.T) {
 		su1, err := newStateUpdateFromReader(bytes.NewReader(suBin))
 		require.NoError(t, err)
 		require.EqualValues(t, suBin, su1.Bytes())
-		require.True(t, nowis.Equal(su1.Timestamp()))
+		ts, ok := su1.TimestampMutation()
+		require.True(t, ok)
+		require.True(t, nowis.Equal(ts))
 	})
 	t.Run("serialize del mutation", func(t *testing.T) {
 		nowis := time.Now()
@@ -51,5 +58,11 @@ func TestStateUpdateBasic(t *testing.T) {
 
 		su1 := NewStateUpdate(nowis)
 		require.NotEqualValues(t, su.Bytes(), su1.Bytes())
+	})
+	t.Run("state update with block index", func(t *testing.T) {
+		su := NewStateUpdateWithBlockIndexMutation(42)
+		si, ok := su.StateIndexMutation()
+		require.True(t, ok)
+		require.EqualValues(t, 42, si)
 	})
 }

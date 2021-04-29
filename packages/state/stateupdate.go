@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 	"io"
 	"time"
 
@@ -24,6 +25,17 @@ func NewStateUpdate(timestamp ...time.Time) *stateUpdate {
 	ret := &stateUpdate{
 		mutations: buffered.NewMutations(),
 	}
+	if len(timestamp) > 0 {
+		ret.setTimestampMutation(timestamp[0])
+	}
+	return ret
+}
+
+func NewStateUpdateWithBlockIndexMutation(blockIndex uint32, timestamp ...time.Time) *stateUpdate {
+	ret := &stateUpdate{
+		mutations: buffered.NewMutations(),
+	}
+	ret.setBlockIndexMutation(blockIndex)
 	if len(timestamp) > 0 {
 		ret.setTimestampMutation(timestamp[0])
 	}
@@ -64,20 +76,42 @@ func (su *stateUpdate) Hash() hashing.HashValue {
 }
 
 func (su *stateUpdate) String() string {
-	ret := fmt.Sprintf("StateUpdate:: ts: %v, muts: [%s]", su.Timestamp(), su.mutations)
+	ts := "(none)"
+	if t, ok := su.TimestampMutation(); ok {
+		ts = fmt.Sprintf("%v", t)
+	}
+	bi := "(none)"
+	if t, ok := su.StateIndexMutation(); ok {
+		bi = fmt.Sprintf("%d", t)
+	}
+
+	su.TimestampMutation()
+	ret := fmt.Sprintf("StateUpdate:: ts: %s, blockIndex: %s muts: [%s]", ts, bi, su.mutations)
 	return ret
 }
 
-func (su *stateUpdate) Timestamp() time.Time {
+func (su *stateUpdate) TimestampMutation() (time.Time, bool) {
 	timeBin, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixTimestamp))
 	if !ok {
-		return time.Time{}
+		return time.Time{}, false
 	}
 	ret, ok, err := codec.DecodeTime(timeBin)
 	if err != nil {
-		panic(err)
+		return time.Time{}, false
 	}
-	return ret
+	return ret, true
+}
+
+func (su *stateUpdate) StateIndexMutation() (uint32, bool) {
+	blockIndexBin, ok := su.mutations.Get(kv.Key(coreutil.StatePrefixBlockIndex))
+	if !ok {
+		return 0, false
+	}
+	ret, err := util.Uint32From4Bytes(blockIndexBin)
+	if err != nil {
+		return 0, false
+	}
+	return ret, true
 }
 
 func (su *stateUpdate) Mutations() *buffered.Mutations {
@@ -96,4 +130,42 @@ func (su *stateUpdate) Read(r io.Reader) error {
 		return err
 	}
 	return nil
+}
+
+// findBlockIndexMutation goes backward and searches for the 'set' mutation of the blockIndex
+func findBlockIndexMutation(stateUpdates []*stateUpdate) (uint32, error) {
+	if len(stateUpdates) == 0 {
+		return 0, xerrors.New("findBlockIndexMutation: no state updates were found")
+	}
+	for i := len(stateUpdates) - 1; i >= 0; i-- {
+		blockIndexBin, exists := stateUpdates[i].Mutations().Get(kv.Key(coreutil.StatePrefixBlockIndex))
+		if !exists || blockIndexBin == nil {
+			continue
+		}
+		blockIndex, err := util.Uint32From4Bytes(blockIndexBin)
+		if err != nil {
+			return 0, xerrors.Errorf("findBlockIndexMutation: %w", err)
+		}
+		return blockIndex, nil
+	}
+	return 0, xerrors.Errorf("findBlockIndexMutation: state index mutation wasn't found in the block")
+}
+
+// findBlockIndexMutation goes backward and searches for the 'set' mutation of the blockIndex
+func findTimestampMutation(stateUpdates []*stateUpdate) (time.Time, error) {
+	if len(stateUpdates) == 0 {
+		return time.Time{}, xerrors.New("findTimestampMutation: no state updates were found")
+	}
+	for i := len(stateUpdates) - 1; i >= 0; i-- {
+		timestampBin, exists := stateUpdates[i].Mutations().Get(kv.Key(coreutil.StatePrefixTimestamp))
+		if !exists || timestampBin == nil {
+			continue
+		}
+		ts, ok, err := codec.DecodeTime(timestampBin)
+		if !ok || err != nil {
+			return time.Time{}, err
+		}
+		return ts, nil
+	}
+	return time.Time{}, xerrors.Errorf("findTimestampMutation: state index mutation wasn't found in the block")
 }
