@@ -242,28 +242,17 @@ func NewStateReader(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) *sta
 }
 
 func (r *stateReader) BlockIndex() uint32 {
-	blockIndexBin, err := r.chainState.Get(kv.Key(coreutil.StatePrefixBlockIndex))
+	blockIndex, err := getBlockIndexFromState(r.chainState)
 	if err != nil {
-		panic(err)
-	}
-	blockIndex, err := util.Uint32From4Bytes(blockIndexBin)
-	if err != nil {
-		panic(err)
+		panic(xerrors.Errorf("stateReader.BlockIndex: %v", err))
 	}
 	return blockIndex
 }
 
 func (r *stateReader) Timestamp() time.Time {
-	tsBin, err := r.chainState.Get(kv.Key(coreutil.StatePrefixTimestamp))
+	ts, exist, err := getTimestampFromState(r.chainState)
 	if err != nil {
-		panic(err)
-	}
-	ts, ok, err := codec.DecodeTime(tsBin)
-	if err != nil {
-		panic(err)
-	}
-	if !ok {
-		panic(xerrors.New("stateReader: timestamp not found"))
+		panic(xerrors.Errorf("stateReader.Timestamp: %v", err))
 	}
 	return ts
 }
@@ -285,3 +274,43 @@ func (r *stateReader) KVStoreReader() kv.KVStoreReader {
 }
 
 // endregion ///////////////////////////////////////////////////////////////////
+
+// region util ///////////////////////////////////////////////////////////////////
+
+func getBlockIndexFromState(chainState kv.KVStoreReader) (uint32, bool, error) {
+	blockIndexBin, err := chainState.Get(kv.Key(coreutil.StatePrefixBlockIndex))
+	if err == kvstore.ErrKeyNotFound {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, err
+	}
+	if blockIndexBin == nil {
+		return 0, false, nil
+	}
+	blockIndex, err := util.Uint32From4Bytes(blockIndexBin)
+	if err != nil {
+		return 0, false, err
+	}
+	return blockIndex, true, nil
+}
+
+func getTimestampFromState(chainState kv.KVStoreReader) (time.Time, bool, error) {
+	tsBin, err := chainState.Get(kv.Key(coreutil.StatePrefixTimestamp))
+	if err == kvstore.ErrKeyNotFound {
+		return time.Time{}, false, nil
+	}
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	ts, ok, err := codec.DecodeTime(tsBin)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	if !ok {
+		return time.Time{}, false, xerrors.New("stateReader: timestamp not found")
+	}
+	return ts, true, nil
+}
+
+// endregion ////////////////////////////////////////////////////////////////////
