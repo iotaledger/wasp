@@ -199,6 +199,9 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	chainlog := env.logger.Named(name)
 	vs, err := state.CreateAndCommitOriginVirtualState(env.dbProvider.GetPartition(&chainID), &chainID)
 	require.NoError(env.T, err)
+	require.EqualValues(env.T, 0, vs.BlockIndex())
+	require.True(env.T, vs.Timestamp().IsZero())
+
 	srdr, err := state.NewStateReader(env.dbProvider, &chainID)
 	require.NoError(env.T, err)
 

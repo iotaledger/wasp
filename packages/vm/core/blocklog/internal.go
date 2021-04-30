@@ -1,6 +1,7 @@
 package blocklog
 
 import (
+	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -12,7 +13,9 @@ import (
 func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
 	registry := collections.NewArray32(partition, StateVarBlockRegistry)
 	registry.MustPush(blockInfo.Bytes())
-	return registry.MustLen() - 1
+	ret := registry.MustLen() - 1
+	fmt.Printf("++++++++++++++++++++ SaveNextBlockInfo: Block info saved at: %d\n", ret)
+	return ret
 }
 
 // SaveRequestLogRecord appends request record to the record log and creates records for fast lookup

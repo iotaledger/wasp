@@ -337,6 +337,8 @@ func (vmctx *VMContext) StoreBlockInfo(blockIndex uint32, blockInfo *blocklog.Bl
 	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
+	fmt.Printf("++++++++++++++++++++ StoreBlockInfo: block index: %d\n", blockIndex)
+
 	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
 	if idx != blockIndex {
 		return xerrors.New("StoreBlockInfo: inconsistent block index")
