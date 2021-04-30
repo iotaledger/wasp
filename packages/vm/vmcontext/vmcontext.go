@@ -59,6 +59,22 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error
 	if err != nil {
 		return nil, xerrors.Errorf("MustNewVMContext: %v", err)
 	}
+
+	{
+		// assert consistency
+		stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
+		if err != nil {
+			// chain input must always be present
+			return nil, xerrors.Errorf("MustNewVMContext: can't parse state hash %v", err)
+		}
+		if stateHash != task.VirtualState.Hash() {
+			return nil, xerrors.New("MustNewVMContext: state hash mismatch")
+		}
+		if task.VirtualState.BlockIndex() != task.ChainInput.GetStateIndex() {
+			return nil, xerrors.New("MustNewVMContext: state index is inconsistent")
+		}
+	}
+
 	vs := task.VirtualState.Clone()
 	blockUpdate := state.NewStateUpdateWithBlockIndexMutation(task.VirtualState.BlockIndex()+1, task.Timestamp)
 	vs.ApplyStateUpdate(blockUpdate)
@@ -73,17 +89,7 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error
 		callStack:    make([]*callContext, 0),
 	}
 	ret.stateUpdates = append(ret.stateUpdates, blockUpdate)
-	stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
-	if err != nil {
-		// chain input must always be present
-		return nil, xerrors.Errorf("MustNewVMContext: can't parse state hash %v", err)
-	}
-	if stateHash != ret.virtualState.Hash() {
-		return nil, xerrors.New("MustNewVMContext: state hash mismatch")
-	}
-	if ret.virtualState.BlockIndex() != task.ChainInput.GetStateIndex()+1 {
-		return nil, xerrors.New("MustNewVMContext: state index is inconsistent")
-	}
+
 	err = txb.ConsumeAliasInput(task.ChainInput.Address())
 	if err != nil {
 		// chain input must always be present
