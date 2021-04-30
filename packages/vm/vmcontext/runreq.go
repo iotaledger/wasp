@@ -333,14 +333,20 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 	return tx, nil
 }
 
-func (vmctx *VMContext) StoreBlockInfo(blockIndex uint32, blockInfo *blocklog.BlockInfo) error {
+func (vmctx *VMContext) StoreBlockInfo(numRequests, numSuccess, numOffLedger uint16) error {
 	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	fmt.Printf("++++++++++++++++++++ StoreBlockInfo: block index: %d\n", blockIndex)
+	blockInfo := &blocklog.BlockInfo{
+		BlockIndex:            vmctx.virtualState.BlockIndex(),
+		Timestamp:             vmctx.virtualState.Timestamp(),
+		TotalRequests:         numRequests,
+		NumSuccessfulRequests: numSuccess,
+		NumOffLedgerRequests:  numOffLedger,
+	}
 
 	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
-	if idx != blockIndex {
+	if idx != blockInfo.BlockIndex {
 		return xerrors.New("StoreBlockInfo: inconsistent block index")
 	}
 	return nil

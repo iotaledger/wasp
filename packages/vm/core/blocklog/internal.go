@@ -1,12 +1,13 @@
 package blocklog
 
 import (
-	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"golang.org/x/xerrors"
+	"time"
 )
 
 // SaveNextBlockInfo appends block info and returns its index
@@ -14,7 +15,6 @@ func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
 	registry := collections.NewArray32(partition, StateVarBlockRegistry)
 	registry.MustPush(blockInfo.Bytes())
 	ret := registry.MustLen() - 1
-	fmt.Printf("++++++++++++++++++++ SaveNextBlockInfo: Block info saved at: %d\n", ret)
 	return ret
 }
 
@@ -142,4 +142,15 @@ func getRequestRecordDataByRequestID(ctx coretypes.SandboxView, reqID coretypes.
 		}
 	}
 	return nil, 0, 0, false
+}
+
+func getBlockIndex(partition kv.KVStoreReader) uint32 {
+	deco := kvdecoder.New(partition)
+	ret := deco.MustGetUint64(StateVarBlockIndex)
+	return uint32(ret)
+}
+
+func getTimestamp(partition kv.KVStoreReader) time.Time {
+	deco := kvdecoder.New(partition)
+	return deco.MustGetTime(StateVarTimestamp)
 }

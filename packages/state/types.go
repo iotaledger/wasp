@@ -52,7 +52,7 @@ type Block interface {
 }
 
 const (
-	OriginStateHashBase58 = "44thgGqhRMSUzi84E3FP65RUUufi7VV1eyWfG5q7Jvsz"
+	OriginStateHashBase58 = "FUmawHNPxnLDEwqxVtQeRLVPrkuDVwNqR6E3ss6VArUU"
 )
 
 func OriginStateHash() hashing.HashValue {

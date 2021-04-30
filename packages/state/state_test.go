@@ -43,6 +43,7 @@ func TestVirtualStateBasic(t *testing.T) {
 
 func TestOriginHashes(t *testing.T) {
 	t.Run("origin state hash consistency ", func(t *testing.T) {
+		t.Logf("origin state has calculated: %s", calcOriginStateHash().String())
 		require.EqualValues(t, OriginStateHashBase58, OriginStateHash().String())
 		require.EqualValues(t, OriginStateHash(), calcOriginStateHash())
 	})

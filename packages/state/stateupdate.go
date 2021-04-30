@@ -83,11 +83,14 @@ func (su *stateUpdate) StateIndexMutation() (uint32, bool) {
 	if !ok {
 		return 0, false
 	}
-	ret, err := util.Uint32From4Bytes(blockIndexBin)
+	ret, err := util.Uint64From8Bytes(blockIndexBin)
 	if err != nil {
 		return 0, false
 	}
-	return ret, true
+	if int(ret) > util.MaxUint32 {
+		return 0, false
+	}
+	return uint32(ret), true
 }
 
 func (su *stateUpdate) Write(w io.Writer) error {
@@ -129,11 +132,14 @@ func findBlockIndexMutation(stateUpdates []*stateUpdate) (uint32, error) {
 		if !exists || blockIndexBin == nil {
 			continue
 		}
-		blockIndex, err := util.Uint32From4Bytes(blockIndexBin)
+		blockIndex, err := util.Uint64From8Bytes(blockIndexBin)
 		if err != nil {
 			return 0, xerrors.Errorf("findBlockIndexMutation: %w", err)
 		}
-		return blockIndex, nil
+		if int(blockIndex) > util.MaxUint32 {
+			return 0, xerrors.Errorf("findBlockIndexMutation: wrong block index value")
+		}
+		return uint32(blockIndex), nil
 	}
 	return 0, xerrors.Errorf("findBlockIndexMutation: state index mutation wasn't found in the block")
 }
@@ -163,5 +169,5 @@ func (su *stateUpdate) setTimestampMutation(ts time.Time) {
 }
 
 func (su *stateUpdate) setBlockIndexMutation(blockIndex uint32) {
-	su.mutations.Set(kv.Key(coreutil.StatePrefixBlockIndex), util.Uint32To4Bytes(blockIndex))
+	su.mutations.Set(kv.Key(coreutil.StatePrefixBlockIndex), util.Uint64To8Bytes(uint64(blockIndex)))
 }

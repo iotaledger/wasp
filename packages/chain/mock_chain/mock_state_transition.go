@@ -37,7 +37,6 @@ func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chain
 	stateUpdate.Mutations().Set("counter", codec.EncodeUint64(counter+1))
 	block, err := state.NewBlock(stateUpdate)
 	require.NoError(c.t, err)
-	block.WithBlockIndex(nextVirtualState.BlockIndex() + 1)
 
 	err = nextVirtualState.ApplyBlock(block)
 	require.NoError(c.t, err)

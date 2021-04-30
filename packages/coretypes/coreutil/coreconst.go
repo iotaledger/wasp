@@ -40,8 +40,8 @@ const (
 
 // used in 'state' package as key for timestamp and block index
 var (
-	StatePrefixTimestamp  = string(CoreContractBlobHname.Bytes()) + StateVarTimestamp
-	StatePrefixBlockIndex = string(CoreContractBlobHname.Bytes()) + StateVarBlockIndex
+	StatePrefixTimestamp  = string(CoreContractBlocklogHname.Bytes()) + StateVarTimestamp
+	StatePrefixBlockIndex = string(CoreContractBlocklogHname.Bytes()) + StateVarBlockIndex
 )
 
 func CoreHname(name string) coretypes.Hname {

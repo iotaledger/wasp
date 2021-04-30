@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"golang.org/x/xerrors"
 )
@@ -58,22 +57,17 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 			numSuccess++
 		}
 	}
+
+	// save the block info into the 'blocklog' contract
+	err = vmctx.StoreBlockInfo(uint16(len(task.Requests)), numSuccess, numOffLedger)
+	if err != nil {
+		task.OnFinish(nil, nil, xerrors.Errorf("RunVM: %w", err))
+		return
+	}
 	// create block from state updates.
 	task.ResultBlock, err = state.NewBlock(vmctx.GetStateUpdates()...)
 	if err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.NewBlock: %v", err))
-		return
-	}
-
-	// save the block info into the 'blocklog' contract
-	err = vmctx.StoreBlockInfo(task.ResultBlock.BlockIndex(), &blocklog.BlockInfo{
-		Timestamp:             task.ResultBlock.Timestamp(),
-		TotalRequests:         uint16(len(task.Requests)),
-		NumSuccessfulRequests: numSuccess,
-		NumOffLedgerRequests:  numOffLedger,
-	})
-	if err != nil {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM: %w", err))
 		return
 	}
 	// calculate resulting state hash

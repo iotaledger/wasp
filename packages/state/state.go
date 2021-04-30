@@ -313,11 +313,14 @@ func loadStateIndexFromState(chainState kv.KVStoreReader) (uint32, error) {
 	if blockIndexBin == nil {
 		return 0, xerrors.New("loadStateIndexFromState: not found")
 	}
-	blockIndex, err := util.Uint32From4Bytes(blockIndexBin)
+	blockIndex, err := util.Uint64From8Bytes(blockIndexBin)
 	if err != nil {
 		return 0, xerrors.Errorf("loadStateIndexFromState: %w", err)
 	}
-	return blockIndex, nil
+	if int(blockIndex) > util.MaxUint32 {
+		return 0, xerrors.Errorf("loadStateIndexFromState: wrong state index value")
+	}
+	return uint32(blockIndex), nil
 }
 
 func loadTimestampFromState(chainState kv.KVStoreReader) (time.Time, error) {
