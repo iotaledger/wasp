@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"runtime/debug"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"golang.org/x/xerrors"
@@ -83,23 +83,22 @@ func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request, requestIn
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
 		}
 	}
-	vmctx.timestamp += 1
-	t := time.Unix(0, vmctx.timestamp)
+	ts := vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond)
+	vmctx.stateUpdate = state.NewStateUpdate(ts)
 
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
-	vmctx.stateUpdate = state.NewStateUpdate(t)
 	vmctx.callStack = vmctx.callStack[:0]
 
-	if isRequestTimeLockedNow(req, t) {
-		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", t, req.ID().String())
+	if isRequestTimeLockedNow(req, ts) {
+		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", ts, req.ID().String())
 	}
 	if req.Output() != nil {
 		// on-ledger request
 		if input, ok := req.Output().(*ledgerstate.ExtendedLockedOutput); ok {
 			// it is an on-ledger request
-			if !input.UnlockAddressNow(t).Equals(vmctx.chainID.AsAddress()) {
+			if !input.UnlockAddressNow(ts).Equals(vmctx.chainID.AsAddress()) {
 				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
-					t, input.String(), vmctx.chainID.String())
+					ts, input.String(), vmctx.chainID.String())
 			}
 		} else {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: unexpected UTXO type")
@@ -290,6 +289,8 @@ func (vmctx *VMContext) mustSaveRequestOrder() {
 func (vmctx *VMContext) finalizeRequestCall() {
 	vmctx.mustLogRequestToBlockLog(vmctx.lastError)
 	vmctx.lastTotalAssets = vmctx.totalAssets()
+
+	vmctx.stateUpdates = append(vmctx.stateUpdates, vmctx.stateUpdate)
 	vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
 
 	_, ep := vmctx.req.Target()

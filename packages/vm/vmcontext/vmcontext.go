@@ -24,9 +24,9 @@ type VMContext struct {
 	chainOwnerID       coretypes.AgentID
 	processors         *processors.ProcessorCache
 	txBuilder          *utxoutil.Builder
+	stateUpdates       []state.StateUpdate
 	virtualState       state.VirtualState
 	remainingAfterFees *ledgerstate.ColoredBalances
-	blockIndex         uint32
 	log                *logger.Logger
 	// fee related
 	validatorFeeTarget coretypes.AgentID // provided by validator
@@ -38,7 +38,6 @@ type VMContext struct {
 	requestIndex    uint16
 	entropy         hashing.HashValue // mutates with each request
 	contractRecord  *root.ContractRecord
-	timestamp       int64
 	stateUpdate     state.StateUpdate
 	lastError       error     // mutated
 	lastResult      dict.Dict // mutated. Used only by 'solo'
@@ -60,17 +59,20 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error
 	if err != nil {
 		return nil, xerrors.Errorf("MustNewVMContext: %v", err)
 	}
+	vs := task.VirtualState.Clone()
+	blockUpdate := state.NewStateUpdateWithBlockIndexMutation(task.VirtualState.BlockIndex()+1, task.Timestamp)
+	vs.ApplyStateUpdate(blockUpdate)
 	ret := &VMContext{
 		chainID:      *chainID,
 		txBuilder:    txb,
-		virtualState: task.VirtualState.Clone(),
-		blockIndex:   task.VirtualState.BlockIndex() + 1,
+		stateUpdates: make([]state.StateUpdate, 0, len(task.Requests)+1),
+		virtualState: vs,
 		processors:   task.Processors,
 		log:          task.Log,
 		entropy:      task.Entropy,
-		timestamp:    task.Timestamp.UnixNano(),
 		callStack:    make([]*callContext, 0),
 	}
+	ret.stateUpdates = append(ret.stateUpdates, blockUpdate)
 	stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
 	if err != nil {
 		// chain input must always be present
@@ -79,17 +81,21 @@ func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error
 	if stateHash != ret.virtualState.Hash() {
 		return nil, xerrors.New("MustNewVMContext: state hash mismatch")
 	}
-	if ret.virtualState.BlockIndex() != task.ChainInput.GetStateIndex() {
+	if ret.virtualState.BlockIndex() != task.ChainInput.GetStateIndex()+1 {
 		return nil, xerrors.New("MustNewVMContext: state index is inconsistent")
 	}
 	err = txb.ConsumeAliasInput(task.ChainInput.Address())
 	if err != nil {
 		// chain input must always be present
-		return nil, xerrors.Errorf("MustNewVMContext: can't find chain input %v", err)
+		return nil, xerrors.Errorf("MustNewVMContext: can't find chain input %w", err)
 	}
 	return ret, nil
 }
 
-func (vmctx *VMContext) GetResult() (state.StateUpdate, dict.Dict, *ledgerstate.ColoredBalances, error) {
-	return vmctx.stateUpdate, vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError
+func (vmctx *VMContext) GetStateUpdates() []state.StateUpdate {
+	return vmctx.stateUpdates
+}
+
+func (vmctx *VMContext) GetResult() (dict.Dict, *ledgerstate.ColoredBalances, error) {
+	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError
 }

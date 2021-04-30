@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"golang.org/x/xerrors"
-	"time"
 )
 
 // MustRunVMTaskAsync runs computations for the batch of requests in the background
@@ -41,10 +40,8 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		task.Log.Panicf("runTask: %v", err)
 	}
 
-	stateUpdates := make([]state.StateUpdate, 0, len(task.Requests))
 	var lastResult dict.Dict
 	var lastErr error
-	var lastStateUpdate state.StateUpdate
 	var lastTotalAssets *ledgerstate.ColoredBalances
 
 	// loop over the batch of requests and run each request on the VM.
@@ -52,9 +49,8 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	var numOffLedger, numSuccess uint16
 	for i, req := range task.Requests {
 		vmctx.RunTheRequest(req, uint16(i))
-		lastStateUpdate, lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
+		lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
 
-		stateUpdates = append(stateUpdates, lastStateUpdate)
 		if req.Output() == nil {
 			numOffLedger++
 		}
@@ -63,12 +59,11 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		}
 	}
 	// create block from state updates.
-	task.ResultBlock, err = state.NewBlock(stateUpdates...)
+	task.ResultBlock, err = state.NewBlock(vmctx.GetStateUpdates()...)
 	if err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.NewBlock: %v", err))
 		return
 	}
-	task.ResultBlock.WithBlockIndex(task.VirtualState.BlockIndex() + 1)
 
 	// save the block info into the 'blocklog' contract
 	err = vmctx.StoreBlockInfo(task.ResultBlock.BlockIndex(), &blocklog.BlockInfo{
@@ -88,7 +83,7 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		return
 	}
 
-	task.ResultTransaction, err = vmctx.BuildTransactionEssence(vsClone.Hash(), time.Unix(0, vsClone.Timestamp()))
+	task.ResultTransaction, err = vmctx.BuildTransactionEssence(vsClone.Hash(), vsClone.Timestamp())
 	if err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return

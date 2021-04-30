@@ -114,7 +114,7 @@ func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col ledgerstate.Co
 }
 
 func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
-	return blocklog.NewRequestLookupKey(vmctx.blockIndex, vmctx.requestIndex)
+	return blocklog.NewRequestLookupKey(vmctx.virtualState.BlockIndex(), vmctx.requestIndex)
 }
 
 func (vmctx *VMContext) mustLogRequestToBlockLog(err error) {
@@ -140,5 +140,5 @@ func (vmctx *VMContext) StoreToEventLog(contract coretypes.Hname, data []byte) {
 	defer vmctx.popCallContext()
 
 	vmctx.log.Debugf("StoreToEventLog/%s: data: '%s'", contract.String(), string(data))
-	eventlog.AppendToLog(vmctx.State(), vmctx.timestamp, contract, data)
+	eventlog.AppendToLog(vmctx.State(), vmctx.virtualState.Timestamp().UnixNano(), contract, data)
 }

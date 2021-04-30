@@ -144,7 +144,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		timeStep:    DefaultTimeStep,
 		chains:      make(map[[33]byte]*Chain),
 	}
-	ret.logger.Infof("Solo environment created with initial logical time %v", initialTime)
+	ret.logger.Infof("Solo environment has been created with initial logical time %v", initialTime)
 	return ret
 }
 
@@ -197,6 +197,11 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Base58())
 
 	chainlog := env.logger.Named(name)
+	vs, err := state.CreateAndCommitOriginVirtualState(env.dbProvider.GetPartition(&chainID), &chainID)
+	require.NoError(env.T, err)
+	srdr, err := state.NewStateReader(env.dbProvider, &chainID)
+	require.NoError(env.T, err)
+
 	ret := &Chain{
 		Env:                    env,
 		Name:                   name,
@@ -207,8 +212,8 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      *originatorAgentID,
 		ValidatorFeeTarget:     *feeTarget,
-		State:                  state.CreateAndCommitOriginVirtualState(env.dbProvider.GetPartition(&chainID)),
-		StateReader:            state.NewStateReader(env.dbProvider, &chainID),
+		State:                  vs,
+		StateReader:            srdr,
 		proc:                   processors.MustNew(),
 		Log:                    chainlog,
 	}
