@@ -1,6 +1,7 @@
 package evm
 
 import (
+	"crypto/ecdsa"
 	"math/big"
 	"strings"
 	"testing"
@@ -184,19 +185,74 @@ func testBlockchainPersistence(t *testing.T, db ethdb.Database) {
 	}
 }
 
-func TestContract(t *testing.T) {
+func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) common.Address {
+	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
+
+	nonce, err := emu.PendingNonceAt(creatorAddress)
+	require.NoError(t, err)
+
+	txValue := big.NewInt(0)
+
+	// initialize number as 42
+	constructorArguments, err := contractABI.Pack("", args...)
+	require.NoError(t, err)
+	require.NotEmpty(t, constructorArguments)
+
+	data := append(contractBytecode, constructorArguments...)
+
+	gasPrice, err := emu.SuggestGasPrice()
+	require.NoError(t, err)
+
+	tx, err := types.SignTx(
+		types.NewContractCreation(nonce, txValue, GasLimit, gasPrice, data),
+		emu.Signer(),
+		creator,
+	)
+	require.NoError(t, err)
+
+	err = emu.SendTransaction(tx)
+	require.NoError(t, err)
+	emu.Commit()
+
+	contractAddress := crypto.CreateAddress(creatorAddress, nonce)
+
+	// assertions
+	{
+		require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
+		require.EqualValues(t, GasLimit, emu.Blockchain().CurrentBlock().Header().GasLimit)
+
+		// verify contract address
+		{
+			receipt, err := emu.TransactionReceipt(tx.Hash())
+			require.NoError(t, err)
+			require.EqualValues(t, contractAddress, receipt.ContractAddress)
+			require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+		}
+
+		// verify contract code
+		{
+			code, err := emu.CodeAt(contractAddress, nil)
+			require.NoError(t, err)
+			require.NotEmpty(t, code)
+		}
+	}
+
+	return contractAddress
+}
+
+func TestStorageContract(t *testing.T) {
 	db := rawdb.NewMemoryDatabase()
 	defer db.Close()
-	testContract(t, db)
+	testStorageContract(t, db)
 }
 
-func TestContractWithKVStoreBackend(t *testing.T) {
+func TestStorageContractWithKVStoreBackend(t *testing.T) {
 	db := rawdb.NewDatabase(NewKVAdapter(dict.New()))
 	defer db.Close()
-	testContract(t, db)
+	testStorageContract(t, db)
 }
 
-func testContract(t *testing.T, db ethdb.Database) {
+func testStorageContract(t *testing.T, db ethdb.Database) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
@@ -215,61 +271,14 @@ func testContract(t *testing.T, db ethdb.Database) {
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
 
-	var contractAddress common.Address
-
-	// contract creation tx
-	{
-		nonce, err := emu.PendingNonceAt(faucetAddress)
-		require.NoError(t, err)
-
-		txValue := big.NewInt(0)
-
-		// initialize number as 42
-		constructorArguments, err := contractABI.Pack("", uint32(42))
-		require.NoError(t, err)
-		require.NotEmpty(t, constructorArguments)
-
-		data := append(evmtest.StorageContractBytecode, constructorArguments...)
-
-		gasPrice, err := emu.SuggestGasPrice()
-		require.NoError(t, err)
-
-		gasLimit, err := emu.EstimateGas(ethereum.CallMsg{From: faucetAddress, To: nil, GasPrice: gasPrice, Value: txValue, Data: data})
-		require.NoError(t, err)
-
-		tx, err := types.SignTx(
-			types.NewContractCreation(nonce, txValue, gasLimit, gasPrice, data),
-			emu.Signer(),
-			faucet,
-		)
-		require.NoError(t, err)
-
-		err = emu.SendTransaction(tx)
-		require.NoError(t, err)
-		emu.Commit()
-
-		// assertions
-		{
-			require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
-			require.EqualValues(t, GasLimit, emu.Blockchain().CurrentBlock().Header().GasLimit)
-
-			contractAddress = crypto.CreateAddress(faucetAddress, nonce)
-
-			// verify contract address
-			{
-				receipt, err := emu.TransactionReceipt(tx.Hash())
-				require.NoError(t, err)
-				require.EqualValues(t, contractAddress, receipt.ContractAddress)
-			}
-
-			// verify contract code
-			{
-				code, err := emu.CodeAt(contractAddress, nil)
-				require.NoError(t, err)
-				require.NotEmpty(t, code)
-			}
-		}
-	}
+	contractAddress := deployEVMContract(
+		t,
+		emu,
+		faucet,
+		contractABI,
+		evmtest.StorageContractBytecode,
+		uint32(42),
+	)
 
 	// call `retrieve` view, get 42
 	{
@@ -306,11 +315,8 @@ func testContract(t *testing.T, db ethdb.Database) {
 		gasPrice, err := emu.SuggestGasPrice()
 		require.NoError(t, err)
 
-		gasLimit, err := emu.EstimateGas(ethereum.CallMsg{From: faucetAddress, To: &contractAddress, GasPrice: gasPrice, Value: txValue, Data: callArguments})
-		require.NoError(t, err)
-
 		tx, err := types.SignTx(
-			types.NewTransaction(nonce, contractAddress, txValue, gasLimit, gasPrice, callArguments),
+			types.NewTransaction(nonce, contractAddress, txValue, GasLimit, gasPrice, callArguments),
 			emu.Signer(),
 			faucet,
 		)
@@ -342,5 +348,63 @@ func testContract(t *testing.T, db ethdb.Database) {
 
 		// no state change
 		require.EqualValues(t, 2, emu.Blockchain().CurrentBlock().NumberU64())
+	}
+}
+
+func TestERC20Contract(t *testing.T) {
+	db := rawdb.NewMemoryDatabase()
+	defer db.Close()
+	testERC20Contract(t, db)
+}
+
+func TestERC20ContractWithKVStoreBackend(t *testing.T) {
+	db := rawdb.NewDatabase(NewKVAdapter(dict.New()))
+	defer db.Close()
+	testERC20Contract(t, db)
+}
+
+func testERC20Contract(t *testing.T, db ethdb.Database) {
+	// faucet address with initial supply
+	faucet, err := crypto.GenerateKey()
+	require.NoError(t, err)
+	faucetAddress := crypto.PubkeyToAddress(faucet.PublicKey)
+	faucetSupply := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
+
+	genesisAlloc := map[common.Address]core.GenesisAccount{
+		faucetAddress: {Balance: faucetSupply},
+	}
+
+	InitGenesis(db, genesisAlloc)
+
+	emu := NewEVMEmulator(db)
+	defer emu.Close()
+
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
+	require.NoError(t, err)
+
+	contractAddress := deployEVMContract(
+		t,
+		emu,
+		faucet,
+		contractABI,
+		evmtest.ERC20ContractBytecode,
+		"TestCoin",
+		"TEST",
+	)
+
+	// call `totalSupply` view
+	{
+		callArguments, err := contractABI.Pack("totalSupply")
+		require.NoError(t, err)
+
+		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
+		require.NoError(t, err)
+
+		v := new(big.Int)
+		err = contractABI.UnpackIntoInterface(&v, "totalSupply", res)
+		require.NoError(t, err)
+		// 100 * 10^18
+		expected := new(big.Int).Mul(big.NewInt(100), new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
+		require.Equal(t, expected.Bits(), v.Bits())
 	}
 }
