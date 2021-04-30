@@ -160,7 +160,7 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 	if sm.solidState != nil {
 		tentativeState = sm.solidState.Clone()
 	} else {
-		tentativeState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
+		tentativeState = state.CreateAndCommitOriginVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
 	}
 	for _, block := range blocks {
 		if err := tentativeState.ApplyBlock(block); err != nil {
@@ -176,7 +176,7 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 	}
 	// again applying blocks, this time seriously
 	if sm.solidState == nil {
-		sm.solidState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
+		sm.solidState = state.CreateAndCommitOriginVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
 	}
 	stateIndex := uint32(0)
 	for _, block := range blocks {

@@ -9,7 +9,7 @@ const (
 	ObjectTypeDistributedKeyData
 	ObjectTypeStateHash
 	ObjectTypeStateIndex
-	ObjectTypeStateUpdateBatch
+	ObjectTypeBlock
 	ObjectTypeStateVariable
 	ObjectTypeNodeIdentity
 	ObjectTypeBlobCache

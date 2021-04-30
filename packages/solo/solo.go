@@ -207,7 +207,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      *originatorAgentID,
 		ValidatorFeeTarget:     *feeTarget,
-		State:                  state.NewZeroVirtualState(env.dbProvider.GetPartition(&chainID)),
+		State:                  state.CreateAndCommitOriginVirtualState(env.dbProvider.GetPartition(&chainID)),
 		StateReader:            state.NewStateReader(env.dbProvider, &chainID),
 		proc:                   processors.MustNew(),
 		Log:                    chainlog,

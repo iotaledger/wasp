@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
@@ -49,12 +48,8 @@ func newStateUpdateFromReader(r io.Reader) (*stateUpdate, error) {
 	return ret, ret.Read(r)
 }
 
-func (su *stateUpdate) setTimestampMutation(ts time.Time) {
-	su.mutations.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(ts))
-}
-
-func (su *stateUpdate) setBlockIndexMutation(blockIndex uint32) {
-	su.mutations.Set(kv.Key(coreutil.StatePrefixBlockIndex), util.Uint32To4Bytes(blockIndex))
+func (su *stateUpdate) Mutations() *buffered.Mutations {
+	return su.mutations
 }
 
 // StateUpdate
@@ -69,25 +64,6 @@ func (su *stateUpdate) Bytes() []byte {
 	var buf bytes.Buffer
 	_ = su.Write(&buf)
 	return buf.Bytes()
-}
-
-func (su *stateUpdate) Hash() hashing.HashValue {
-	return hashing.HashData(su.Bytes())
-}
-
-func (su *stateUpdate) String() string {
-	ts := "(none)"
-	if t, ok := su.TimestampMutation(); ok {
-		ts = fmt.Sprintf("%v", t)
-	}
-	bi := "(none)"
-	if t, ok := su.StateIndexMutation(); ok {
-		bi = fmt.Sprintf("%d", t)
-	}
-
-	su.TimestampMutation()
-	ret := fmt.Sprintf("StateUpdate:: ts: %s, blockIndex: %s muts: [%s]", ts, bi, su.mutations)
-	return ret
 }
 
 func (su *stateUpdate) TimestampMutation() (time.Time, bool) {
@@ -114,10 +90,6 @@ func (su *stateUpdate) StateIndexMutation() (uint32, bool) {
 	return ret, true
 }
 
-func (su *stateUpdate) Mutations() *buffered.Mutations {
-	return su.mutations
-}
-
 func (su *stateUpdate) Write(w io.Writer) error {
 	if err := su.mutations.Write(w); err != nil {
 		return err
@@ -130,6 +102,21 @@ func (su *stateUpdate) Read(r io.Reader) error {
 		return err
 	}
 	return nil
+}
+
+func (su *stateUpdate) String() string {
+	ts := "(none)"
+	if t, ok := su.TimestampMutation(); ok {
+		ts = fmt.Sprintf("%v", t)
+	}
+	bi := "(none)"
+	if t, ok := su.StateIndexMutation(); ok {
+		bi = fmt.Sprintf("%d", t)
+	}
+
+	su.TimestampMutation()
+	ret := fmt.Sprintf("StateUpdate:: ts: %s, blockIndex: %s muts: [%s]", ts, bi, su.mutations)
+	return ret
 }
 
 // findBlockIndexMutation goes backward and searches for the 'set' mutation of the blockIndex
@@ -152,6 +139,7 @@ func findBlockIndexMutation(stateUpdates []*stateUpdate) (uint32, error) {
 }
 
 // findBlockIndexMutation goes backward and searches for the 'set' mutation of the blockIndex
+// Return zero time if not found
 func findTimestampMutation(stateUpdates []*stateUpdate) (time.Time, error) {
 	if len(stateUpdates) == 0 {
 		return time.Time{}, xerrors.New("findTimestampMutation: no state updates were found")
@@ -167,5 +155,13 @@ func findTimestampMutation(stateUpdates []*stateUpdate) (time.Time, error) {
 		}
 		return ts, nil
 	}
-	return time.Time{}, xerrors.Errorf("findTimestampMutation: state index mutation wasn't found in the block")
+	return time.Time{}, nil
+}
+
+func (su *stateUpdate) setTimestampMutation(ts time.Time) {
+	su.mutations.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.EncodeTime(ts))
+}
+
+func (su *stateUpdate) setBlockIndexMutation(blockIndex uint32) {
+	su.mutations.Set(kv.Key(coreutil.StatePrefixBlockIndex), util.Uint32To4Bytes(blockIndex))
 }

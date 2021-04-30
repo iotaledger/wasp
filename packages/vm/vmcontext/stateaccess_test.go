@@ -15,7 +15,7 @@ func TestSetThenGet(t *testing.T) {
 
 	chainID := coretypes.RandomChainID([]byte("mmm"))
 
-	virtualState := state.NewVirtualState(db, chainID)
+	virtualState := state.newVirtualState(db, chainID)
 	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")
 
@@ -71,7 +71,7 @@ func TestIterate(t *testing.T) {
 
 	chainID := coretypes.RandomChainID([]byte("mmm"))
 
-	virtualState := state.NewVirtualState(db, chainID)
+	virtualState := state.newVirtualState(db, chainID)
 	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")
 

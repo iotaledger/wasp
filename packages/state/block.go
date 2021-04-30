@@ -49,7 +49,7 @@ func BlockFromBytes(data []byte) (*block, error) {
 }
 
 func LoadBlockBytes(partition kvstore.KVStore, stateIndex uint32) ([]byte, error) {
-	data, err := partition.Get(dbkeyBlock(stateIndex))
+	data, err := partition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(stateIndex)))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
 	}
@@ -69,7 +69,7 @@ func LoadBlock(partition kvstore.KVStore, stateIndex uint32) (*block, error) {
 
 // block with empty state update and nil state hash
 func NewOriginBlock() *block {
-	ret, err := NewBlock(NewStateUpdateWithBlockIndexMutation(0))
+	ret, err := NewBlock(NewStateUpdateWithBlockIndexMutation(0, time.Time{}))
 	if err != nil {
 		panic(err)
 	}
@@ -184,10 +184,6 @@ func (b *block) readEssence(r io.Reader) error {
 		}
 	}
 	return nil
-}
-
-func dbkeyBlock(stateIndex uint32) []byte {
-	return dbprovider.MakeKey(dbprovider.ObjectTypeStateUpdateBatch, util.Uint32To4Bytes(stateIndex))
 }
 
 func (b *block) IsApprovedBy(chainOutput *ledgerstate.AliasOutput) bool {

@@ -16,18 +16,17 @@ import (
 	"time"
 )
 
-// region virtualState //////////////////////////////////////////////////////////////////////
-
 type virtualState struct {
-	chainID   coretypes.ChainID
-	db        kvstore.KVStore
-	empty     bool
-	kvs       *buffered.BufferedKVStore
-	stateHash hashing.HashValue
+	chainID         coretypes.ChainID
+	db              kvstore.KVStore
+	empty           bool
+	kvs             *buffered.BufferedKVStore
+	stateHash       hashing.HashValue
+	stateHashNotSet bool
 }
 
-// NewVirtualState creates VirtualState interface with the partition of KVStore
-func NewVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
+// newVirtualState creates VirtualState interface with the partition of KVStore
+func newVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
 	ret := &virtualState{
 		db:    db,
 		kvs:   buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(subRealm(db, []byte{dbprovider.ObjectTypeStateVariable}))),
@@ -39,19 +38,28 @@ func NewVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualSta
 	return ret
 }
 
-// NewZeroVirtualState creates zero state which is the minimal consistent state.
-// It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
-func NewZeroVirtualState(db kvstore.KVStore) *virtualState {
-	ret := NewVirtualState(db, nil)
-	if err := ret.ApplyBlock(NewOriginBlock()); err != nil {
+func newZeroVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, *block) {
+	ret := newVirtualState(db, chainID)
+	originBlock := NewOriginBlock()
+	if err := ret.ApplyBlock(originBlock); err != nil {
 		panic(err)
 	}
-	return ret
+	return ret, originBlock
 }
 
-// OriginStateHash is independent from db provider nor chainID
-func OriginStateHash() hashing.HashValue {
-	emptyVirtualState := NewZeroVirtualState(mapdb.NewMapDB())
+// CreateAndCommitOriginVirtualState creates zero state which is the minimal consistent state.
+// It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
+func CreateAndCommitOriginVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, error) {
+	vs, originBlock := newZeroVirtualState(db, chainID)
+	if err := vs.CommitToDb(originBlock); err != nil {
+		return nil, err
+	}
+	return vs, nil
+}
+
+// calcOriginStateHash is independent from db provider nor chainID. Used for testing
+func calcOriginStateHash() hashing.HashValue {
+	emptyVirtualState, _ := newZeroVirtualState(mapdb.NewMapDB(), nil)
 	return emptyVirtualState.Hash()
 }
 
@@ -105,51 +113,59 @@ func (vs *virtualState) Timestamp() time.Time {
 	return ts
 }
 
-// ApplyBlock applies block of state updates
+// ApplyBlock applies block of state updates. Checks consistency of the block and previous state. Updates state hash
 func (vs *virtualState) ApplyBlock(block Block) error {
 	if vs.empty && block.BlockIndex() != 0 {
 		return xerrors.Errorf("ApplyBlock: block state index #%d can't be applied to the empty state", block.BlockIndex())
 	}
-	if vs.BlockIndex()+1 != block.BlockIndex() {
+	if !vs.empty && vs.BlockIndex()+1 != block.BlockIndex() {
 		return xerrors.Errorf("ApplyBlock: block state index #%d can't be applied to the state with index #%d",
 			block.BlockIndex(), vs.BlockIndex())
+	}
+	if !vs.empty && vs.Timestamp().After(block.Timestamp()) {
+		return xerrors.New("ApplyBlock: inconsistent timestamps")
 	}
 	block.ForEach(func(_ uint16, stateUpd StateUpdate) bool {
 		vs.ApplyStateUpdate(stateUpd)
 		return true
 	})
+	vs.stateHash = hashing.HashData(block.Bytes(), vs.stateHash[:])
+	vs.stateHashNotSet = false
+	vs.empty = false
 	return nil
 }
 
-// applies one state update. Doesn't change state index
+// ApplyStateUpdate applies one state update. Doesn't change state hash: it can be changed bu Apply block
 func (vs *virtualState) ApplyStateUpdate(stateUpd StateUpdate) {
 	stateUpd.Mutations().ApplyTo(vs.KVStore())
-	vh := vs.Hash()
-	sh := stateUpd.Hash()
-	vs.stateHash = hashing.HashData(vh[:], sh[:])
-	vs.empty = false
+	vs.stateHashNotSet = true
 }
 
 // Hash return hash of the state
 // TODO implement Merkle hashing
 func (vs *virtualState) Hash() hashing.HashValue {
+	if vs.stateHashNotSet {
+		panic(xerrors.New("virtualState.Hash: state hash not set"))
+	}
 	return vs.stateHash
 }
 
-// saves variable state to db atomically with the block of state updates and records of processed requests
-func (vs *virtualState) CommitToDb(b Block) error {
+// CommitToDb saves virtual state and the blocks in one transaction
+// does not check consistency between state and blocks
+func (vs *virtualState) CommitToDb(blocks ...Block) error {
 	batch := vs.db.Batched()
 
-	{
-		if err := batch.Set(dbkeyBlock(b.BlockIndex()), b.Bytes()); err != nil {
-			return err
-		}
+	if err := batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
+		return err
 	}
-	{
-		if err := batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
-			return err
-		}
-		if err := batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateIndex), util.Uint32To4Bytes(vs.BlockIndex())); err != nil {
+	if err := batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateIndex), util.Uint32To4Bytes(vs.BlockIndex())); err != nil {
+		return err
+	}
+
+	for i := range blocks {
+		blockIndex := blocks[i].BlockIndex()
+		key := dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(blockIndex))
+		if err := batch.Set(key, blocks[i].Bytes()); err != nil {
 			return err
 		}
 	}
@@ -173,18 +189,19 @@ func (vs *virtualState) CommitToDb(b Block) error {
 	return nil
 }
 
-// endregion ////////////////////////////////////////////////////////////////////
-
 // LoadSolidState establishes VirtualState interface with the solid state in DB.
 // Checks consistency of DB
 func LoadSolidState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (VirtualState, bool, error) {
 	partition := dbp.GetPartition(chainID)
 
 	stateIndex, stateHash, exists, err := loadStateIndexAndHashFromDb(partition)
-	if err != nil || !exists {
+	if err != nil {
 		return nil, exists, xerrors.Errorf("LoadSolidState: %w", err)
 	}
-	vs := NewVirtualState(partition, chainID)
+	if !exists {
+		return nil, false, nil
+	}
+	vs := newVirtualState(partition, chainID)
 	stateIndex1, err := loadStateIndexFromState(vs.KVStoreReader())
 	if err != nil {
 		return nil, false, xerrors.Errorf("LoadSolidState: %w", err)
@@ -200,8 +217,6 @@ func dbkeyStateVariable(key kv.Key) []byte {
 	return dbprovider.MakeKey(dbprovider.ObjectTypeStateVariable, []byte(key))
 }
 
-// region stateReader /////////////////////////////////////////////////////////
-
 type stateReader struct {
 	chainPartition kvstore.KVStore
 	chainState     kv.KVStoreReader
@@ -211,8 +226,11 @@ func NewStateReader(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (*st
 	partition := dbp.GetPartition(chainID)
 
 	stateIndex, _, exists, err := loadStateIndexAndHashFromDb(partition)
-	if err != nil || !exists {
+	if err != nil {
 		return nil, xerrors.Errorf("NewStateReader: %w", err)
+	}
+	if !exists {
+		return nil, xerrors.Errorf("NewStateReader: state does not exist")
 	}
 	ret := &stateReader{
 		chainPartition: partition,
@@ -259,8 +277,6 @@ func (r *stateReader) Hash() hashing.HashValue {
 func (r *stateReader) KVStoreReader() kv.KVStoreReader {
 	return r.chainState
 }
-
-// endregion ///////////////////////////////////////////////////////////////////
 
 // region util ///////////////////////////////////////////////////////////////////
 func loadStateIndexAndHashFromDb(partition kvstore.KVStore) (uint32, hashing.HashValue, bool, error) {

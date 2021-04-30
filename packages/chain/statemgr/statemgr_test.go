@@ -75,7 +75,7 @@ func TestGetInitialState(t *testing.T) {
 	require.True(t, syncInfo.Synced)
 	require.True(t, originOut.Compare(manager.stateOutput) == 0)
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
-	require.EqualValues(t, manager.solidState.Hash(), state.OriginStateHash())
+	require.EqualValues(t, manager.solidState.Hash(), state.originStateHash())
 	require.EqualValues(t, 0, syncInfo.SyncedBlockIndex)
 	require.EqualValues(t, 0, syncInfo.StateOutputBlockIndex)
 }
@@ -100,7 +100,7 @@ func TestGetNextState(t *testing.T) {
 	require.True(t, si.Synced)
 	require.True(t, originOut.Compare(manager.stateOutput) == 0)
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
-	require.EqualValues(t, manager.solidState.Hash(), state.OriginStateHash())
+	require.EqualValues(t, manager.solidState.Hash(), state.originStateHash())
 
 	//-------------------------------------------------------------
 

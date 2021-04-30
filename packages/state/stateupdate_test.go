@@ -65,4 +65,17 @@ func TestStateUpdateBasic(t *testing.T) {
 		require.True(t, ok)
 		require.EqualValues(t, 42, si)
 	})
+	t.Run("serialize with block index", func(t *testing.T) {
+		su := NewStateUpdateWithBlockIndexMutation(42)
+		suBin := su.Bytes()
+		su1, err := newStateUpdateFromReader(bytes.NewReader(suBin))
+		require.NoError(t, err)
+		si, ok := su.StateIndexMutation()
+		require.True(t, ok)
+		require.EqualValues(t, 42, si)
+
+		si1, ok := su1.StateIndexMutation()
+		require.True(t, ok)
+		require.EqualValues(t, 42, si1)
+	})
 }

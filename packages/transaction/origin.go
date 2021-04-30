@@ -24,7 +24,7 @@ func NewChainOriginTransaction(
 	walletAddr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	txb := utxoutil.NewBuilder(allInputs...).WithTimestamp(timestamp)
 
-	stateHash := state.OriginStateHash()
+	stateHash := state.originStateHash()
 	if len(balance) == 0 {
 		balance = map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA}
 	}

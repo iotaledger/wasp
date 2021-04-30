@@ -89,7 +89,7 @@ func (sm *stateManager) addBlockCandidate(block state.Block) {
 	var stateToApprove state.VirtualState
 	if sm.solidState == nil {
 		// ignore parameter and assume original block if solidState == nil
-		stateToApprove = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
+		stateToApprove = state.CreateAndCommitOriginVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
 	} else {
 		stateToApprove = sm.solidState.Clone()
 		if err := stateToApprove.ApplyBlock(block); err != nil {

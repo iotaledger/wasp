@@ -22,7 +22,7 @@ type VirtualState interface {
 	StateReader
 	ApplyStateUpdate(stateUpd StateUpdate)
 	ApplyBlock(Block) error
-	CommitToDb(block Block) error
+	CommitToDb(blocks ...Block) error
 	KVStore() *buffered.BufferedKVStore
 	Clone() VirtualState
 	DangerouslyConvertToString() string
@@ -30,14 +30,9 @@ type VirtualState interface {
 
 // StateUpdate is a set of mutations
 type StateUpdate interface {
-	TimestampMutation() (time.Time, bool)
-	StateIndexMutation() (uint32, bool)
-	Hash() hashing.HashValue
-	String() string
 	Mutations() *buffered.Mutations
 	Clone() StateUpdate
-	Write(io.Writer) error
-	Read(io.Reader) error
+	String() string
 }
 
 // Block is a sequence of state updates applicable to the variable state
@@ -54,4 +49,16 @@ type Block interface {
 	Bytes() []byte
 	Write(io.Writer) error
 	Read(io.Reader) error
+}
+
+const (
+	OriginStateHashBase58 = "44thgGqhRMSUzi84E3FP65RUUufi7VV1eyWfG5q7Jvsz"
+)
+
+func OriginStateHash() hashing.HashValue {
+	ret, err := hashing.HashValueFromBase58(OriginStateHashBase58)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }
