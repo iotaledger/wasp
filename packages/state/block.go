@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -46,25 +44,6 @@ func BlockFromBytes(data []byte) (*block, error) {
 		return nil, err
 	}
 	return ret, nil
-}
-
-func LoadBlockBytes(partition kvstore.KVStore, stateIndex uint32) ([]byte, error) {
-	data, err := partition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(stateIndex)))
-	if err == kvstore.ErrKeyNotFound {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
-func LoadBlock(partition kvstore.KVStore, stateIndex uint32) (*block, error) {
-	data, err := LoadBlockBytes(partition, stateIndex)
-	if err != nil {
-		return nil, err
-	}
-	return BlockFromBytes(data)
 }
 
 // block with empty state update and nil state hash

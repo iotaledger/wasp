@@ -25,6 +25,16 @@ type virtualState struct {
 	uncommittedUpdates []StateUpdate
 }
 
+// CreateAndCommitOriginVirtualState creates zero state which is the minimal consistent state.
+// It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
+func CreateAndCommitOriginVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, error) {
+	vs := newZeroVirtualState(db, chainID)
+	if err := vs.Commit(); err != nil {
+		return nil, err
+	}
+	return vs, nil
+}
+
 // newVirtualState creates VirtualState interface with the partition of KVStore
 func newVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
 	ret := &virtualState{
@@ -46,16 +56,6 @@ func newZeroVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtua
 		panic(err)
 	}
 	return ret
-}
-
-// CreateAndCommitOriginVirtualState creates zero state which is the minimal consistent state.
-// It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
-func CreateAndCommitOriginVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, error) {
-	vs := newZeroVirtualState(db, chainID)
-	if err := vs.Commit(); err != nil {
-		return nil, err
-	}
-	return vs, nil
 }
 
 // calcOriginStateHash is independent from db provider nor chainID. Used for testing
@@ -155,85 +155,6 @@ func (vs *virtualState) Hash() hashing.HashValue {
 		panic(xerrors.Errorf("VirtualState.Hash: %v", err))
 	}
 	return hashing.HashData(vs.stateHash[:], block.Bytes())
-}
-
-// CommitToDb saves virtual state and the blocks in one transaction
-// does not check consistency between state and blocks
-func (vs *virtualState) Commit() error {
-	if len(vs.uncommittedUpdates) == 0 {
-		// nothing to commit
-		return nil
-	}
-	batch := vs.db.Batched()
-
-	if err := batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
-		return err
-	}
-	if err := batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateIndex), util.Uint32To4Bytes(vs.BlockIndex())); err != nil {
-		return err
-	}
-	block, err := NewBlock(vs.uncommittedUpdates...)
-	if err != nil {
-		return xerrors.Errorf("VirtualState:Commit: %w", err)
-	}
-	key := dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(vs.BlockIndex()))
-	blockBin := block.Bytes()
-	if err := batch.Set(key, blockBin); err != nil {
-		return err
-	}
-
-	// store mutations
-	for k, v := range vs.kvs.Mutations().Sets {
-		if err := batch.Set(dbkeyStateVariable(k), v); err != nil {
-			return err
-		}
-	}
-	for k := range vs.kvs.Mutations().Dels {
-		if err := batch.Delete(dbkeyStateVariable(k)); err != nil {
-			return err
-		}
-	}
-
-	if err := batch.Commit(); err != nil {
-		return err
-	}
-
-	vs.stateHash = hashing.HashData(vs.stateHash[:], blockBin)
-	vs.kvs.ClearMutations()
-	// please the GC
-	for i := range vs.uncommittedUpdates {
-		vs.uncommittedUpdates[i] = nil
-	}
-	vs.uncommittedUpdates = vs.uncommittedUpdates[:0]
-	return nil
-}
-
-// LoadSolidState establishes VirtualState interface with the solid state in DB.
-// Checks consistency of DB
-func LoadSolidState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (VirtualState, bool, error) {
-	partition := dbp.GetPartition(chainID)
-
-	stateIndex, stateHash, exists, err := loadStateIndexAndHashFromDb(partition)
-	if err != nil {
-		return nil, exists, xerrors.Errorf("LoadSolidState: %w", err)
-	}
-	if !exists {
-		return nil, false, nil
-	}
-	vs := newVirtualState(partition, chainID)
-	stateIndex1, err := loadStateIndexFromState(vs.KVStoreReader())
-	if err != nil {
-		return nil, false, xerrors.Errorf("LoadSolidState: %w", err)
-	}
-	if stateIndex != stateIndex1 {
-		return nil, false, xerrors.New("LoadSolidState: state index inconsistent with the state")
-	}
-	vs.stateHash = stateHash
-	return vs, true, nil
-}
-
-func dbkeyStateVariable(key kv.Key) []byte {
-	return dbprovider.MakeKey(dbprovider.ObjectTypeStateVariable, []byte(key))
 }
 
 type stateReader struct {
