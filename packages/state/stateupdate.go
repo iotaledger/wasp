@@ -55,6 +55,10 @@ func (su *stateUpdate) Mutations() *buffered.Mutations {
 // StateUpdate
 
 func (su *stateUpdate) Clone() StateUpdate {
+	return su.clone()
+}
+
+func (su *stateUpdate) clone() *stateUpdate {
 	return &stateUpdate{
 		mutations: su.mutations.Clone(),
 	}

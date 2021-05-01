@@ -17,20 +17,21 @@ import (
 )
 
 type virtualState struct {
-	chainID         coretypes.ChainID
-	db              kvstore.KVStore
-	empty           bool
-	kvs             *buffered.BufferedKVStore
-	stateHash       hashing.HashValue
-	stateHashNotSet bool
+	chainID            coretypes.ChainID
+	db                 kvstore.KVStore
+	empty              bool
+	kvs                *buffered.BufferedKVStore
+	stateHash          hashing.HashValue
+	uncommittedUpdates []StateUpdate
 }
 
 // newVirtualState creates VirtualState interface with the partition of KVStore
 func newVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
 	ret := &virtualState{
-		db:    db,
-		kvs:   buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(subRealm(db, []byte{dbprovider.ObjectTypeStateVariable}))),
-		empty: true,
+		db:                 db,
+		kvs:                buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(subRealm(db, []byte{dbprovider.ObjectTypeStateVariable}))),
+		empty:              true,
+		uncommittedUpdates: make([]StateUpdate, 0),
 	}
 	if chainID != nil {
 		ret.chainID = *chainID
@@ -38,20 +39,20 @@ func newVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualSta
 	return ret
 }
 
-func newZeroVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, *block) {
+func newZeroVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
 	ret := newVirtualState(db, chainID)
 	originBlock := NewOriginBlock()
 	if err := ret.ApplyBlock(originBlock); err != nil {
 		panic(err)
 	}
-	return ret, originBlock
+	return ret
 }
 
 // CreateAndCommitOriginVirtualState creates zero state which is the minimal consistent state.
 // It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
 func CreateAndCommitOriginVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, error) {
-	vs, originBlock := newZeroVirtualState(db, chainID)
-	if err := vs.CommitToDb(originBlock); err != nil {
+	vs := newZeroVirtualState(db, chainID)
+	if err := vs.Commit(); err != nil {
 		return nil, err
 	}
 	return vs, nil
@@ -59,7 +60,7 @@ func CreateAndCommitOriginVirtualState(db kvstore.KVStore, chainID *coretypes.Ch
 
 // calcOriginStateHash is independent from db provider nor chainID. Used for testing
 func calcOriginStateHash() hashing.HashValue {
-	emptyVirtualState, _ := newZeroVirtualState(mapdb.NewMapDB(), nil)
+	emptyVirtualState := newZeroVirtualState(mapdb.NewMapDB(), nil)
 	return emptyVirtualState.Hash()
 }
 
@@ -71,13 +72,18 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 }
 
 func (vs *virtualState) Clone() VirtualState {
-	return &virtualState{
-		chainID:   *vs.chainID.Clone(),
-		db:        vs.db,
-		stateHash: vs.stateHash,
-		empty:     vs.empty,
-		kvs:       vs.kvs.Clone(),
+	ret := &virtualState{
+		chainID:            *vs.chainID.Clone(),
+		db:                 vs.db,
+		stateHash:          vs.stateHash,
+		uncommittedUpdates: make([]StateUpdate, len(vs.uncommittedUpdates), cap(vs.uncommittedUpdates)),
+		empty:              vs.empty,
+		kvs:                vs.kvs.Clone(),
 	}
+	for i := range ret.uncommittedUpdates {
+		ret.uncommittedUpdates[i] = vs.uncommittedUpdates[i].Clone()
+	}
+	return ret
 }
 
 func (vs *virtualState) DangerouslyConvertToString() string {
@@ -114,23 +120,20 @@ func (vs *virtualState) Timestamp() time.Time {
 }
 
 // ApplyBlock applies block of state updates. Checks consistency of the block and previous state. Updates state hash
-func (vs *virtualState) ApplyBlock(block Block) error {
-	if vs.empty && block.BlockIndex() != 0 {
-		return xerrors.Errorf("ApplyBlock: block state index #%d can't be applied to the empty state", block.BlockIndex())
+func (vs *virtualState) ApplyBlock(b Block) error {
+	if vs.empty && b.BlockIndex() != 0 {
+		return xerrors.Errorf("ApplyBlock: b state index #%d can't be applied to the empty state", b.BlockIndex())
 	}
-	if !vs.empty && vs.BlockIndex()+1 != block.BlockIndex() {
-		return xerrors.Errorf("ApplyBlock: block state index #%d can't be applied to the state with index #%d",
-			block.BlockIndex(), vs.BlockIndex())
+	if !vs.empty && vs.BlockIndex()+1 != b.BlockIndex() {
+		return xerrors.Errorf("ApplyBlock: b state index #%d can't be applied to the state with index #%d",
+			b.BlockIndex(), vs.BlockIndex())
 	}
-	if !vs.empty && vs.Timestamp().After(block.Timestamp()) {
+	if !vs.empty && vs.Timestamp().After(b.Timestamp()) {
 		return xerrors.New("ApplyBlock: inconsistent timestamps")
 	}
-	block.ForEach(func(_ uint16, stateUpd StateUpdate) bool {
+	for _, stateUpd := range b.(*block).stateUpdates {
 		vs.ApplyStateUpdate(stateUpd)
-		return true
-	})
-	vs.stateHash = hashing.HashData(block.Bytes(), vs.stateHash[:])
-	vs.stateHashNotSet = false
+	}
 	vs.empty = false
 	return nil
 }
@@ -138,21 +141,29 @@ func (vs *virtualState) ApplyBlock(block Block) error {
 // ApplyStateUpdate applies one state update. Doesn't change state hash: it can be changed bu Apply block
 func (vs *virtualState) ApplyStateUpdate(stateUpd StateUpdate) {
 	stateUpd.Mutations().ApplyTo(vs.KVStore())
-	vs.stateHashNotSet = true
+	vs.uncommittedUpdates = append(vs.uncommittedUpdates, stateUpd.Clone())
 }
 
 // Hash return hash of the state
 // TODO implement Merkle hashing
 func (vs *virtualState) Hash() hashing.HashValue {
-	if vs.stateHashNotSet {
-		panic(xerrors.New("virtualState.Hash: state hash not set"))
+	if len(vs.uncommittedUpdates) == 0 {
+		return vs.stateHash
 	}
-	return vs.stateHash
+	block, err := NewBlock(vs.uncommittedUpdates...)
+	if err != nil {
+		panic(xerrors.Errorf("VirtualState.Hash: %v", err))
+	}
+	return hashing.HashData(vs.stateHash[:], block.Bytes())
 }
 
 // CommitToDb saves virtual state and the blocks in one transaction
 // does not check consistency between state and blocks
-func (vs *virtualState) CommitToDb(blocks ...Block) error {
+func (vs *virtualState) Commit() error {
+	if len(vs.uncommittedUpdates) == 0 {
+		// nothing to commit
+		return nil
+	}
 	batch := vs.db.Batched()
 
 	if err := batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
@@ -161,13 +172,14 @@ func (vs *virtualState) CommitToDb(blocks ...Block) error {
 	if err := batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateIndex), util.Uint32To4Bytes(vs.BlockIndex())); err != nil {
 		return err
 	}
-
-	for i := range blocks {
-		blockIndex := blocks[i].BlockIndex()
-		key := dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(blockIndex))
-		if err := batch.Set(key, blocks[i].Bytes()); err != nil {
-			return err
-		}
+	block, err := NewBlock(vs.uncommittedUpdates...)
+	if err != nil {
+		return xerrors.Errorf("VirtualState:Commit: %w", err)
+	}
+	key := dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(vs.BlockIndex()))
+	blockBin := block.Bytes()
+	if err := batch.Set(key, blockBin); err != nil {
+		return err
 	}
 
 	// store mutations
@@ -185,7 +197,14 @@ func (vs *virtualState) CommitToDb(blocks ...Block) error {
 	if err := batch.Commit(); err != nil {
 		return err
 	}
+
+	vs.stateHash = hashing.HashData(vs.stateHash[:], blockBin)
 	vs.kvs.ClearMutations()
+	// please the GC
+	for i := range vs.uncommittedUpdates {
+		vs.uncommittedUpdates[i] = nil
+	}
+	vs.uncommittedUpdates = vs.uncommittedUpdates[:0]
 	return nil
 }
 

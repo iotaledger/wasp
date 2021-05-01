@@ -112,17 +112,8 @@ func (b *block) Timestamp() time.Time {
 	return ts
 }
 
-func (b *block) WithApprovingOutputID(vtxid ledgerstate.OutputID) Block {
-	b.stateOutputID = vtxid
-	return b
-}
-
-func (b *block) ForEach(fun func(uint16, StateUpdate) bool) {
-	for i, su := range b.stateUpdates {
-		if !fun(uint16(i), su) {
-			return
-		}
-	}
+func (b *block) SetApprovingOutputID(oid ledgerstate.OutputID) {
+	b.stateOutputID = oid
 }
 
 func (b *block) Size() uint16 {
@@ -184,25 +175,4 @@ func (b *block) readEssence(r io.Reader) error {
 		}
 	}
 	return nil
-}
-
-func (b *block) IsApprovedBy(chainOutput *ledgerstate.AliasOutput) bool {
-	if chainOutput == nil {
-		return false
-	}
-	if b.BlockIndex() != chainOutput.GetStateIndex() {
-		return false
-	}
-	var nilOID ledgerstate.OutputID
-	if b.ApprovingOutputID() != nilOID && b.ApprovingOutputID() != chainOutput.ID() {
-		return false
-	}
-	sh, err := hashing.HashValueFromBytes(chainOutput.GetStateData())
-	if err != nil {
-		return false
-	}
-	if b.EssenceHash() != sh {
-		return false
-	}
-	return true
 }

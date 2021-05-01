@@ -67,10 +67,10 @@ func TestBatches(t *testing.T) {
 
 	txid1 := ledgerstate.TransactionID(hashing.HashStrings("test string 1"))
 	outID := ledgerstate.NewOutputID(txid1, 0)
-	block1.WithApprovingOutputID(outID)
+	block1.SetApprovingOutputID(outID)
 	assert.EqualValues(t, block1.EssenceHash(), block2.EssenceHash())
 
-	block2.WithApprovingOutputID(outID)
+	block2.SetApprovingOutputID(outID)
 	assert.EqualValues(t, block1.EssenceHash(), block2.EssenceHash())
 	assert.EqualValues(t, block1.Bytes(), block2.Bytes())
 
@@ -84,8 +84,10 @@ func TestOriginBlock(t *testing.T) {
 	outID2 := ledgerstate.NewOutputID(txid1, 0)
 	require.NotEqualValues(t, txid1, txid2)
 	b := NewOriginBlock()
-	b1 := NewOriginBlock().WithApprovingOutputID(outID1)
-	b2 := NewOriginBlock().WithApprovingOutputID(outID2)
+	b1 := NewOriginBlock()
+	b1.SetApprovingOutputID(outID1)
+	b2 := NewOriginBlock()
+	b2.SetApprovingOutputID(outID2)
 	require.EqualValues(t, b1.EssenceHash(), b2.EssenceHash())
 
 	require.EqualValues(t, 0, b.BlockIndex())

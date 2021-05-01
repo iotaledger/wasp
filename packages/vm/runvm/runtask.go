@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
@@ -34,9 +33,9 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		"block index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
 	)
-	vmctx, err := vmcontext.MustNewVMContext(task, txb)
+	vmctx, err := vmcontext.CreateVMContext(task, txb)
 	if err != nil {
-		task.Log.Panicf("runTask: %v", err)
+		task.Log.Panicf("runTask: CreateVMContext: %v", err)
 	}
 
 	var lastResult dict.Dict
@@ -59,25 +58,13 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	}
 
 	// save the block info into the 'blocklog' contract
-	err = vmctx.StoreBlockInfo(uint16(len(task.Requests)), numSuccess, numOffLedger)
+	err = vmctx.CloseVMContext(uint16(len(task.Requests)), numSuccess, numOffLedger)
 	if err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM: %w", err))
 		return
 	}
-	// create block from state updates.
-	task.ResultBlock, err = state.NewBlock(vmctx.GetStateUpdates()...)
-	if err != nil {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.NewBlock: %v", err))
-		return
-	}
-	// calculate resulting state hash
-	vsClone := task.VirtualState.Clone()
-	if err = vsClone.ApplyBlock(task.ResultBlock); err != nil {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.ApplyBlock: %w", err))
-		return
-	}
 
-	task.ResultTransaction, err = vmctx.BuildTransactionEssence(vsClone.Hash(), vsClone.Timestamp())
+	task.ResultTransaction, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
 	if err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return
@@ -87,9 +74,8 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		return
 	}
 	task.Log.Debugw("runTask OUT",
-		"batch size", task.ResultBlock.Size(),
-		"block index", task.ResultBlock.BlockIndex(),
-		"variable state hash", vsClone.Hash().Bytes(),
+		"block index", task.VirtualState.BlockIndex(),
+		"variable state hash", task.VirtualState.Hash().Bytes(),
 		"tx essence hash", hashing.HashData(task.ResultTransaction.Bytes()).String(),
 		"tx finalTimestamp", task.ResultTransaction.Timestamp(),
 	)

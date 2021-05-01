@@ -92,7 +92,7 @@ func (sm *stateManager) chainOutputArrived(chainOutput *ledgerstate.AliasOutput)
 		// no need yet or too late
 		return
 	}
-	if syncBlk.block.IsApprovedBy(chainOutput) {
+	if BlockIsApprovedByChainOutput(syncBlk.block, chainOutput) {
 		finalHash, err := hashing.HashValueFromBytes(chainOutput.GetStateData())
 		if err != nil {
 			return
@@ -101,6 +101,27 @@ func (sm *stateManager) chainOutputArrived(chainOutput *ledgerstate.AliasOutput)
 		syncBlk.approvingOutputID = chainOutput.ID()
 		syncBlk.approved = true
 	}
+}
+
+func BlockIsApprovedByChainOutput(b state.Block, chainOutput *ledgerstate.AliasOutput) bool {
+	if chainOutput == nil {
+		return false
+	}
+	if b.BlockIndex() != chainOutput.GetStateIndex() {
+		return false
+	}
+	var nilOID ledgerstate.OutputID
+	if b.ApprovingOutputID() != nilOID && b.ApprovingOutputID() != chainOutput.ID() {
+		return false
+	}
+	sh, err := hashing.HashValueFromBytes(chainOutput.GetStateData())
+	if err != nil {
+		return false
+	}
+	if b.EssenceHash() != sh {
+		return false
+	}
+	return true
 }
 
 func (sm *stateManager) doSyncActionIfNeeded() {
@@ -181,7 +202,7 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 	stateIndex := uint32(0)
 	for _, block := range blocks {
 		stateIndex = block.BlockIndex()
-		if err := sm.solidState.CommitToDb(block); err != nil {
+		if err := sm.solidState.Commit(block); err != nil {
 			sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
 			sm.syncingBlocks = make(map[uint32]*syncingBlock)
 			return

@@ -34,7 +34,7 @@ func TestVirtualStateBasic(t *testing.T) {
 	})
 	t.Run("zero state", func(t *testing.T) {
 		db := mapdb.NewMapDB()
-		vs1, _ := newZeroVirtualState(db, nil)
+		vs1 := newZeroVirtualState(db, nil)
 		h1 := vs1.Hash()
 		require.EqualValues(t, OriginStateHash(), h1)
 		require.EqualValues(t, 0, vs1.BlockIndex())
@@ -43,12 +43,12 @@ func TestVirtualStateBasic(t *testing.T) {
 
 func TestOriginHashes(t *testing.T) {
 	t.Run("origin state hash consistency ", func(t *testing.T) {
-		t.Logf("origin state has calculated: %s", calcOriginStateHash().String())
+		t.Logf("origin state hash calculated: %s", calcOriginStateHash().String())
 		require.EqualValues(t, OriginStateHashBase58, OriginStateHash().String())
-		require.EqualValues(t, OriginStateHash(), calcOriginStateHash())
+		require.EqualValues(t, OriginStateHash().String(), calcOriginStateHash().String())
 	})
 	t.Run("zero state hash == origin state hash", func(t *testing.T) {
-		z, _ := newZeroVirtualState(mapdb.NewMapDB(), nil)
+		z := newZeroVirtualState(mapdb.NewMapDB(), nil)
 		t.Logf("zero state hash = %s", z.Hash().String())
 		require.EqualValues(t, calcOriginStateHash(), z.Hash())
 	})
@@ -138,7 +138,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, nowis.Equal(vs1.Timestamp()))
 
-		err = vs1.CommitToDb(block1)
+		err = vs1.Commit()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, nowis.Equal(vs1.Timestamp()))
@@ -189,7 +189,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, nowis.Equal(vs1.Timestamp()))
 
-		err = vs1.CommitToDb(block1)
+		err = vs1.Commit()
 		require.NoError(t, err)
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, nowis.Equal(vs1.Timestamp()))
@@ -333,7 +333,7 @@ func TestVariableStateBasic(t *testing.T) {
 //
 //	writer.Set("key1", []byte("data1"))
 //	writer.Set("key2", []byte("data2"))
-//	err := vs.CommitToDb(NewOriginBlock())
+//	err := vs.Commit(NewOriginBlock())
 //	require.NoError(t, err)
 //
 //	back1 := reader.MustGet("key1")

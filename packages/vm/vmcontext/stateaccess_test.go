@@ -33,7 +33,7 @@ func TestSetThenGet(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte{1}, v)
 
-	// mutation is in stateUpdate, prefixed by the contract id
+	// mutation is in currentStateUpdate, prefixed by the contract id
 	assert.Equal(t, []byte{1}, stateUpdate.Mutations().Sets[subpartitionedKey])
 
 	// mutation is not committed to the virtual state

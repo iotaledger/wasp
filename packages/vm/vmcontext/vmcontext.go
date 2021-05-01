@@ -23,9 +23,8 @@ type VMContext struct {
 	chainID            coretypes.ChainID
 	chainOwnerID       coretypes.AgentID
 	processors         *processors.ProcessorCache
-	txBuilder          *utxoutil.Builder
-	stateUpdates       []state.StateUpdate
-	virtualState       state.VirtualState
+	txBuilder          *utxoutil.Builder  // mutated
+	virtualState       state.VirtualState // mutated
 	remainingAfterFees *ledgerstate.ColoredBalances
 	log                *logger.Logger
 	// fee related
@@ -34,15 +33,15 @@ type VMContext struct {
 	ownerFee           uint64
 	validatorFee       uint64
 	// request context
-	req             coretypes.Request
-	requestIndex    uint16
-	entropy         hashing.HashValue // mutates with each request
-	contractRecord  *root.ContractRecord
-	stateUpdate     state.StateUpdate
-	lastError       error     // mutated
-	lastResult      dict.Dict // mutated. Used only by 'solo'
-	lastTotalAssets *ledgerstate.ColoredBalances
-	callStack       []*callContext
+	req                coretypes.Request
+	requestIndex       uint16
+	currentStateUpdate state.StateUpdate
+	entropy            hashing.HashValue // mutates with each request
+	contractRecord     *root.ContractRecord
+	lastError          error     // mutated
+	lastResult         dict.Dict // mutated. Used only by 'solo'
+	lastTotalAssets    *ledgerstate.ColoredBalances
+	callStack          []*callContext
 }
 
 type callContext struct {
@@ -53,53 +52,45 @@ type callContext struct {
 	transfer         *ledgerstate.ColoredBalances // transfer passed
 }
 
-// MustNewVMContext a constructor
-func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
+// CreateVMContext a constructor
+func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
 	chainID, err := coretypes.ChainIDFromAddress(task.ChainInput.Address())
 	if err != nil {
-		return nil, xerrors.Errorf("MustNewVMContext: %v", err)
+		return nil, xerrors.Errorf("CreateVMContext: %v", err)
 	}
 
 	{
 		// assert consistency
 		stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
 		if err != nil {
-			// chain input must always be present
-			return nil, xerrors.Errorf("MustNewVMContext: can't parse state hash %v", err)
+			return nil, xerrors.Errorf("CreateVMContext: can't parse state hash from chain input %w", err)
 		}
 		if stateHash != task.VirtualState.Hash() {
-			return nil, xerrors.New("MustNewVMContext: state hash mismatch")
+			return nil, xerrors.New("CreateVMContext: state hash mismatch")
 		}
 		if task.VirtualState.BlockIndex() != task.ChainInput.GetStateIndex() {
-			return nil, xerrors.New("MustNewVMContext: state index is inconsistent")
+			return nil, xerrors.New("CreateVMContext: state index is inconsistent")
 		}
 	}
-
-	vs := task.VirtualState.Clone()
-	blockUpdate := state.NewStateUpdateWithBlockIndexMutation(task.VirtualState.BlockIndex()+1, task.Timestamp)
-	vs.ApplyStateUpdate(blockUpdate)
+	{
+		openingStateUpdate := state.NewStateUpdateWithBlockIndexMutation(task.VirtualState.BlockIndex()+1, task.Timestamp)
+		task.VirtualState.ApplyStateUpdate(openingStateUpdate)
+	}
 	ret := &VMContext{
 		chainID:      *chainID,
 		txBuilder:    txb,
-		stateUpdates: make([]state.StateUpdate, 0, len(task.Requests)+1),
-		virtualState: vs,
+		virtualState: task.VirtualState,
 		processors:   task.Processors,
 		log:          task.Log,
 		entropy:      task.Entropy,
 		callStack:    make([]*callContext, 0),
 	}
-	ret.stateUpdates = append(ret.stateUpdates, blockUpdate)
-
+	// consume chain input
 	err = txb.ConsumeAliasInput(task.ChainInput.Address())
 	if err != nil {
-		// chain input must always be present
-		return nil, xerrors.Errorf("MustNewVMContext: can't find chain input %w", err)
+		return nil, xerrors.Errorf("CreateVMContext: consume chain input %w", err)
 	}
 	return ret, nil
-}
-
-func (vmctx *VMContext) GetStateUpdates() []state.StateUpdate {
-	return vmctx.stateUpdates
 }
 
 func (vmctx *VMContext) GetResult() (dict.Dict, *ledgerstate.ColoredBalances, error) {

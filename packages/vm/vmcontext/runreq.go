@@ -42,7 +42,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 
 	// snapshot state baseline for rollback in case of panic
 	snapshotTxBuilder := vmctx.txBuilder.Clone()
-	snapshotStateUpdate := vmctx.stateUpdate.Clone()
+	snapshotStateUpdate := vmctx.currentStateUpdate.Clone()
 
 	vmctx.lastError = nil
 	func() {
@@ -65,7 +65,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 		// treating panic and error returned from request the same way
 		// restore the txbuilder and state back to the moment before calling VM plugin
 		vmctx.txBuilder = snapshotTxBuilder
-		vmctx.stateUpdate = snapshotStateUpdate
+		vmctx.currentStateUpdate = snapshotStateUpdate
 
 		vmctx.mustSendBack(vmctx.remainingAfterFees)
 	}
@@ -84,7 +84,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request, requestIn
 		}
 	}
 	ts := vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond)
-	vmctx.stateUpdate = state.NewStateUpdate(ts)
+	vmctx.currentStateUpdate = state.NewStateUpdate(ts)
 
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
 	vmctx.callStack = vmctx.callStack[:0]
@@ -290,8 +290,8 @@ func (vmctx *VMContext) finalizeRequestCall() {
 	vmctx.mustLogRequestToBlockLog(vmctx.lastError)
 	vmctx.lastTotalAssets = vmctx.totalAssets()
 
-	vmctx.stateUpdates = append(vmctx.stateUpdates, vmctx.stateUpdate)
-	vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
+	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
+	vmctx.currentStateUpdate = nil
 
 	_, ep := vmctx.req.Target()
 	vmctx.log.Debugw("runTheRequest OUT",
@@ -333,7 +333,10 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 	return tx, nil
 }
 
-func (vmctx *VMContext) StoreBlockInfo(numRequests, numSuccess, numOffLedger uint16) error {
+func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) error {
+	// block info will be stored in separate state update
+	vmctx.currentStateUpdate = state.NewStateUpdate()
+
 	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
@@ -347,7 +350,9 @@ func (vmctx *VMContext) StoreBlockInfo(numRequests, numSuccess, numOffLedger uin
 
 	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
 	if idx != blockInfo.BlockIndex {
-		return xerrors.New("StoreBlockInfo: inconsistent block index")
+		return xerrors.New("CloseVMContext: inconsistent block index")
 	}
+	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
+	vmctx.currentStateUpdate = nil
 	return nil
 }

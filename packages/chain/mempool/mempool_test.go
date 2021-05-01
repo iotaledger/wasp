@@ -124,7 +124,7 @@ func TestCompletedRequest(t *testing.T) {
 	}
 	err := blocklog.SaveRequestLogRecord(blocklogPartition, rec, [6]byte{})
 	require.NoError(t, err)
-	err = vs.CommitToDb(state.NewOriginBlock())
+	err = vs.Commit(state.NewOriginBlock())
 	require.NoError(t, err)
 
 	pool.ReceiveRequest(requests[0])

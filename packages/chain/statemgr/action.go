@@ -54,9 +54,9 @@ func (sm *stateManager) checkStateApproval() {
 
 	// found a candidate block which is approved by the stateOutput
 	// set the transaction id from output
-	candidate.block.WithApprovingOutputID(sm.stateOutput.ID())
+	candidate.block.SetApprovingOutputID(sm.stateOutput.ID())
 	// save state to db
-	if err := candidate.nextState.CommitToDb(candidate.block); err != nil {
+	if err := candidate.nextState.Commit(candidate.block); err != nil {
 		sm.log.Errorf("failed to save state at index #%d: %v", candidate.nextState.BlockIndex(), err)
 		return
 	}
@@ -79,7 +79,6 @@ func (sm *stateManager) addBlockCandidate(block state.Block) {
 		sm.log.Debugw("addBlockCandidate",
 			"block index", block.BlockIndex(),
 			"timestamp", block.Timestamp(),
-			"size", block.Size(),
 			"approving output", coretypes.OID(block.ApprovingOutputID()),
 		)
 	} else {

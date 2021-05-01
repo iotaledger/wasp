@@ -72,7 +72,7 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 
 	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
 	txBuilder := utxoutil.NewBuilder(outputs...)
-	err = txBuilder.AddNewAliasMint(bals, ret.OriginatorAddress, state.originStateHash().Bytes())
+	err = txBuilder.AddNewAliasMint(bals, ret.OriginatorAddress, state.OriginStateHash().Bytes())
 	require.NoError(t, err)
 	err = txBuilder.AddRemainderOutputIfNeeded(ret.OriginatorAddress, nil)
 	require.NoError(t, err)

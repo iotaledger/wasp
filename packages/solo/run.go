@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/stretchr/testify/require"
@@ -35,7 +34,7 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 		ChainInput:         ch.GetChainOutput(),
 		Requests:           batch,
 		Timestamp:          ch.Env.LogicalTime(),
-		VirtualState:       ch.State.Clone(),
+		VirtualState:       ch.State,
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Log:                ch.Log,
@@ -65,27 +64,22 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 	require.NoError(ch.Env.T, err)
 
 	tx := ledgerstate.NewTransaction(task.ResultTransaction, unlockBlocks)
-	ch.settleStateTransition(task.VirtualState, task.ResultBlock, tx)
+	ch.settleStateTransition(tx)
 
 	return callRes, callErr
 }
 
-func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *ledgerstate.Transaction) {
+func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction) {
 	err := ch.Env.AddToLedger(stateTx)
 	require.NoError(ch.Env.T, err)
 
-	err = newState.ApplyBlock(block)
+	err = ch.State.Commit()
 	require.NoError(ch.Env.T, err)
-
-	err = newState.CommitToDb(block)
-	require.NoError(ch.Env.T, err)
-
-	ch.State = newState
 
 	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(stateTx)
 	require.NoError(ch.Env.T, err)
 
-	reqIDs := chain.PublishStateTransition(newState, stateOutput)
+	reqIDs := chain.PublishStateTransition(ch.State, stateOutput)
 
 	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
 		ch.State.BlockIndex(), len(reqIDs), len(stateTx.Essence().Outputs()))
