@@ -147,3 +147,7 @@ func (ms *Mutations) Clone() *Mutations {
 	}
 	return clone
 }
+
+func (ms *Mutations) IsEmpty() bool {
+	return len(ms.Sets) == 0 && len(ms.Dels) == 0
+}

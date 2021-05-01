@@ -41,6 +41,12 @@ func NewStateUpdateWithBlockIndexMutation(blockIndex uint32, timestamp ...time.T
 	return ret
 }
 
+func newStateUpdateFromMutations(mutations *buffered.Mutations) *stateUpdate {
+	return &stateUpdate{
+		mutations: mutations.Clone(),
+	}
+}
+
 func newStateUpdateFromReader(r io.Reader) (*stateUpdate, error) {
 	ret := &stateUpdate{
 		mutations: buffered.NewMutations(),

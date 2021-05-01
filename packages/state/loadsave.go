@@ -10,25 +10,38 @@ import (
 )
 
 // Commit saves updates collected in the virtual state to DB together with the corresponding block in one transaction
+// Mutations must be non-empty otherwise it is NOP
+// It assumes uncommitted stateUpdates are either empty or consistent with mutations
+// If uncommitted stateUpdates are empty, it creates a state update and block from mutations (used in mocking in tests).
 func (vs *virtualState) Commit() error {
-	if len(vs.uncommittedUpdates) == 0 {
-		// nothing to commit
+	if vs.kvs.Mutations().IsEmpty() {
+		// nothing to commit.
 		return nil
 	}
+	var err error
 	batch := vs.db.Batched()
 
-	if err := batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
+	if err = batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
 		return err
 	}
-	if err := batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateIndex), util.Uint32To4Bytes(vs.BlockIndex())); err != nil {
+	if err = batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateIndex), util.Uint32To4Bytes(vs.BlockIndex())); err != nil {
 		return err
 	}
-	block, err := NewBlock(vs.uncommittedUpdates...)
+	var blockBin []byte
+	var blk *block
+
+	if len(vs.uncommittedUpdates) > 0 {
+		blk, err = NewBlock(vs.uncommittedUpdates...)
+	} else {
+		// create state update and block from mutations
+		blk, err = NewBlock(newStateUpdateFromMutations(vs.kvs.Mutations()))
+	}
 	if err != nil {
 		return xerrors.Errorf("VirtualState:Commit: %w", err)
 	}
+	blockBin = blk.Bytes()
+
 	key := dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(vs.BlockIndex()))
-	blockBin := block.Bytes()
 	if err := batch.Set(key, blockBin); err != nil {
 		return err
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/dbprovider"
@@ -118,13 +119,15 @@ func TestCompletedRequest(t *testing.T) {
 
 	requests := getRequestsOnLedger(t, 1)
 
-	blocklogPartition := subrealm.New(wrt, kv.Key(blocklog.Interface.Hname().Bytes()))
+	// artificially put request log record into the state
 	rec := &blocklog.RequestLogRecord{
 		RequestID: requests[0].ID(),
 	}
+	blocklogPartition := subrealm.New(wrt, kv.Key(blocklog.Interface.Hname().Bytes()))
 	err := blocklog.SaveRequestLogRecord(blocklogPartition, rec, [6]byte{})
 	require.NoError(t, err)
-	err = vs.Commit(state.NewOriginBlock())
+	blocklogPartition.Set(coreutil.StateVarBlockIndex, util.Uint64To8Bytes(1))
+	err = vs.Commit()
 	require.NoError(t, err)
 
 	pool.ReceiveRequest(requests[0])
