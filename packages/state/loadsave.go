@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -14,11 +13,14 @@ import (
 // It assumes uncommitted stateUpdates are either empty or consistent with mutations
 // If uncommitted stateUpdates are empty, it creates a state update and block from mutations (used in mocking in tests).
 func (vs *virtualState) Commit() error {
-	if vs.kvs.Mutations().IsEmpty() {
-		// nothing to commit.
+	blk, err := vs.UncommittedBlock()
+	if err != nil {
+		return err
+	}
+	if blk == nil {
+		// nothing to commit
 		return nil
 	}
-	var err error
 	batch := vs.db.Batched()
 
 	if err = batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
@@ -27,22 +29,9 @@ func (vs *virtualState) Commit() error {
 	if err = batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateIndex), util.Uint32To4Bytes(vs.BlockIndex())); err != nil {
 		return err
 	}
-	var blockBin []byte
-	var blk *block
-
-	if len(vs.uncommittedUpdates) > 0 {
-		blk, err = NewBlock(vs.uncommittedUpdates...)
-	} else {
-		// create state update and block from mutations
-		blk, err = NewBlock(newStateUpdateFromMutations(vs.kvs.Mutations()))
-	}
-	if err != nil {
-		return xerrors.Errorf("VirtualState:Commit: %w", err)
-	}
-	blockBin = blk.Bytes()
 
 	key := dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(vs.BlockIndex()))
-	if err := batch.Set(key, blockBin); err != nil {
+	if err := batch.Set(key, blk.Bytes()); err != nil {
 		return err
 	}
 
@@ -62,7 +51,6 @@ func (vs *virtualState) Commit() error {
 		return err
 	}
 
-	vs.stateHash = hashing.HashData(vs.stateHash[:], blockBin)
 	vs.kvs.ClearMutations()
 	// please the GC
 	for i := range vs.uncommittedUpdates {

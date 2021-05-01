@@ -18,8 +18,9 @@ func TestEnv(t *testing.T) {
 	node0 := env.NewMockedNode(0)
 	node0.StateManager.Ready().MustWait()
 
-	require.Nil(t, node0.StateManager.(*stateManager).solidState)
-	require.EqualValues(t, 1, len(node0.StateManager.(*stateManager).blockCandidates))
+	require.NotNil(t, node0.StateManager.(*stateManager).solidState)
+	require.EqualValues(t, state.OriginStateHash(), node0.StateManager.(*stateManager).solidState.Hash())
+	require.EqualValues(t, 0, len(node0.StateManager.(*stateManager).stateCandidates))
 	require.EqualValues(t, 0, env.Peers.NumPeers())
 	env.AddNode(node0)
 	require.EqualValues(t, 1, env.Peers.NumPeers())
@@ -40,8 +41,9 @@ func TestEnv(t *testing.T) {
 	require.EqualValues(t, 2, env.Peers.NumPeers())
 	node1.StateManager.Ready().MustWait()
 
-	require.Nil(t, node1.StateManager.(*stateManager).solidState)
-	require.EqualValues(t, 1, len(node1.StateManager.(*stateManager).blockCandidates))
+	require.NotNil(t, node1.StateManager.(*stateManager).solidState)
+	require.EqualValues(t, 0, len(node1.StateManager.(*stateManager).stateCandidates))
+	require.EqualValues(t, state.OriginStateHash(), node1.StateManager.(*stateManager).solidState.Hash())
 
 	node1.StartTimer()
 	si, err = node1.WaitSyncBlockIndex(0, 1*time.Second)
@@ -59,8 +61,9 @@ func TestGetInitialState(t *testing.T) {
 	env, originTx := NewMockedEnv(t, false)
 	node := env.NewMockedNode(0)
 	node.StateManager.Ready().MustWait()
-	require.Nil(t, node.StateManager.(*stateManager).solidState)
-	require.EqualValues(t, 1, len(node.StateManager.(*stateManager).blockCandidates))
+	require.NotNil(t, node.StateManager.(*stateManager).solidState)
+	require.EqualValues(t, 0, len(node.StateManager.(*stateManager).stateCandidates))
+	require.EqualValues(t, state.OriginStateHash(), node.StateManager.(*stateManager).solidState.Hash())
 
 	node.StartTimer()
 
@@ -75,7 +78,7 @@ func TestGetInitialState(t *testing.T) {
 	require.True(t, syncInfo.Synced)
 	require.True(t, originOut.Compare(manager.stateOutput) == 0)
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
-	require.EqualValues(t, manager.solidState.Hash(), state.originStateHash())
+	require.EqualValues(t, manager.solidState.Hash(), state.OriginStateHash())
 	require.EqualValues(t, 0, syncInfo.SyncedBlockIndex)
 	require.EqualValues(t, 0, syncInfo.StateOutputBlockIndex)
 }
@@ -84,8 +87,9 @@ func TestGetNextState(t *testing.T) {
 	env, originTx := NewMockedEnv(t, false)
 	node := env.NewMockedNode(0)
 	node.StateManager.Ready().MustWait()
-	require.Nil(t, node.StateManager.(*stateManager).solidState)
-	require.True(t, len(node.StateManager.(*stateManager).blockCandidates) == 1)
+	require.NotNil(t, node.StateManager.(*stateManager).solidState)
+	require.EqualValues(t, 0, len(node.StateManager.(*stateManager).stateCandidates))
+	require.EqualValues(t, state.OriginStateHash(), node.StateManager.(*stateManager).solidState.Hash())
 
 	node.StartTimer()
 
@@ -100,7 +104,7 @@ func TestGetNextState(t *testing.T) {
 	require.True(t, si.Synced)
 	require.True(t, originOut.Compare(manager.stateOutput) == 0)
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
-	require.EqualValues(t, manager.solidState.Hash(), state.originStateHash())
+	require.EqualValues(t, manager.solidState.Hash(), state.OriginStateHash())
 
 	//-------------------------------------------------------------
 
@@ -118,7 +122,7 @@ func TestGetNextState(t *testing.T) {
 
 	require.EqualValues(t, 1, manager.stateOutput.GetStateIndex())
 	require.EqualValues(t, manager.solidState.Hash().Bytes(), manager.stateOutput.GetStateData())
-	require.EqualValues(t, 0, len(manager.blockCandidates))
+	require.EqualValues(t, 0, len(manager.stateCandidates))
 }
 
 // optionally, mocked node connection pushes new transactions to state managers or not.

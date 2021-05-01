@@ -52,7 +52,6 @@ func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
 	sm.log.Debugw("EventBlockMsg",
 		"sender", msg.SenderIndex,
 		"block index", msg.Block.BlockIndex(),
-		"essence hash", msg.Block.EssenceHash().String(),
 		"approving output", coretypes.OID(msg.Block.ApprovingOutputID()),
 	)
 	sm.blockArrived(msg.Block)
@@ -103,22 +102,17 @@ func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 	sm.takeAction()
 }
 
-func (sm *stateManager) EventBlockCandidateMsg(msg chain.BlockCandidateMsg) {
+func (sm *stateManager) EventStateCandidateMsg(msg chain.StateCandidateMsg) {
 	sm.eventPendingBlockMsgCh <- msg
 }
-func (sm *stateManager) eventBlockCandidateMsg(msg chain.BlockCandidateMsg) {
+func (sm *stateManager) eventStateCandidateMsg(msg chain.StateCandidateMsg) {
 	if sm.stateOutput == nil {
 		return
 	}
-	sm.log.Debugw("EventBlockCandidateMsg",
-		"state index", msg.Block.BlockIndex(),
-		"size", msg.Block.Size(),
-		"state output", coretypes.OID(msg.Block.ApprovingOutputID()),
-		"block essence", msg.Block.EssenceHash().String(),
-		"ts", msg.Block.Timestamp(),
+	sm.log.Debugf("EventStateCandidateMsg: state index: %d timestamp: %v",
+		msg.State.BlockIndex(), msg.State.Timestamp(),
 	)
-	sm.addBlockCandidate(msg.Block)
-	//sm.checkStateApproval()
+	sm.addStateCandidate(msg.State)
 	sm.takeAction()
 }
 

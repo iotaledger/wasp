@@ -7,8 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 )
@@ -28,7 +26,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 	if sm.pullStateDeadline.After(nowis) {
 		return
 	}
-	if sm.stateOutput == nil || len(sm.blockCandidates) > 0 {
+	if sm.stateOutput == nil || len(sm.stateCandidates) > 0 {
 		sm.log.Debugf("pull state")
 		sm.nodeConn.PullState(sm.chain.ID().AsAliasAddress())
 	}
@@ -45,68 +43,36 @@ func (sm *stateManager) checkStateApproval() {
 	if err != nil {
 		sm.log.Panic(err)
 	}
-	candidate, ok := sm.blockCandidates[varStateHash]
+	candidate, ok := sm.stateCandidates[varStateHash]
 	if !ok {
 		// corresponding block wasn't found among candidate state updates
 		// transaction doesn't approve anything
 		return
 	}
+	candidate.SetApprovingOutputID(sm.stateOutput.ID())
 
-	// found a candidate block which is approved by the stateOutput
-	// set the transaction id from output
-	candidate.block.SetApprovingOutputID(sm.stateOutput.ID())
-	// save state to db
-	if err := candidate.nextState.Commit(candidate.block); err != nil {
-		sm.log.Errorf("failed to save state at index #%d: %v", candidate.nextState.BlockIndex(), err)
-		return
+	if err := candidate.Commit(); err != nil {
+		sm.log.Errorf("failed to save state at index #%d: %v", candidate.BlockIndex(), err)
 	}
-	sm.solidState = candidate.nextState
-	sm.blockCandidates = make(map[hashing.HashValue]*candidateBlock) // clear candidate batches
+
+	sm.solidState = candidate
+	sm.stateCandidates = make(map[hashing.HashValue]state.VirtualState) // clear candidate batches
 
 	cloneState := sm.solidState.Clone()
 	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
-		VirtualState:     cloneState,
-		BlockEssenceHash: candidate.block.EssenceHash(),
-		ChainOutput:      sm.stateOutput,
-		Timestamp:        sm.stateOutputTimestamp,
+		VirtualState:    cloneState,
+		ChainOutput:     sm.stateOutput,
+		OutputTimestamp: sm.stateOutputTimestamp,
 	})
 	go sm.chain.Events().StateSynced().Trigger(sm.stateOutput.ID(), sm.stateOutput.GetStateIndex())
 }
 
 // adding block of state updates to the 'pending' map
-func (sm *stateManager) addBlockCandidate(block state.Block) {
-	if block != nil {
-		sm.log.Debugw("addBlockCandidate",
-			"block index", block.BlockIndex(),
-			"timestamp", block.Timestamp(),
-			"approving output", coretypes.OID(block.ApprovingOutputID()),
-		)
-	} else {
-		sm.log.Debugf("addBlockCandidate: add origin candidate block")
-		block = state.NewOriginBlock()
-	}
-	var stateToApprove state.VirtualState
-	if sm.solidState == nil {
-		// ignore parameter and assume original block if solidState == nil
-		stateToApprove = state.CreateAndCommitOriginVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
-	} else {
-		stateToApprove = sm.solidState.Clone()
-		if err := stateToApprove.ApplyBlock(block); err != nil {
-			sm.log.Error("can't apply update to the current state: %v", err)
-			return
-		}
-	}
-	// include the batch to pending batches map
-	vh := stateToApprove.Hash()
-	if sm.solidState == nil && vh.String() != state.OriginStateHashBase58 {
-		sm.log.Panicf("major inconsistency: stateToApprove hash is %s, expected %s", vh.String(), state.OriginStateHashBase58)
-	}
-	sm.blockCandidates[vh] = &candidateBlock{
-		block:     block,
-		nextState: stateToApprove,
-	}
-
-	sm.log.Infof("added new block candidate. State index: %d, state hash: %s", block.BlockIndex(), vh.String())
+func (sm *stateManager) addStateCandidate(stateCandidate state.VirtualState) {
+	sm.log.Infof("added new candidate state. block index: %d, timestamp: %v",
+		stateCandidate.BlockIndex(), stateCandidate.Timestamp(),
+	)
+	sm.stateCandidates[stateCandidate.Hash()] = stateCandidate
 	sm.pullStateDeadline = time.Now()
 }
 
@@ -122,7 +88,7 @@ func (sm *stateManager) storeSyncingData() {
 		Synced:                sm.solidState.Hash() == outputStateHash,
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
 		SyncedStateHash:       sm.solidState.Hash(),
-		SyncedStateTimestamp:  time.Unix(0, sm.solidState.Timestamp()),
+		SyncedStateTimestamp:  sm.solidState.Timestamp(),
 		StateOutputBlockIndex: sm.stateOutput.GetStateIndex(),
 		StateOutputID:         sm.stateOutput.ID(),
 		StateOutputHash:       outputStateHash,

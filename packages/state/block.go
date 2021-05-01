@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -67,7 +66,6 @@ func (b *block) String() string {
 	ret += fmt.Sprintf("state txid: %s\n", b.ApprovingOutputID().String())
 	ret += fmt.Sprintf("timestamp: %v\n", b.Timestamp())
 	ret += fmt.Sprintf("size: %d\n", b.Size())
-	ret += fmt.Sprintf("essence: %s\n", b.EssenceHash().String())
 	for i, su := range b.stateUpdates {
 		ret += fmt.Sprintf("   #%d: %s\n", i, su.String())
 	}
@@ -100,12 +98,12 @@ func (b *block) Size() uint16 {
 }
 
 // hash of all data except state transaction hash
-func (b *block) EssenceHash() hashing.HashValue {
+func (b *block) EssenceBytes() []byte {
 	var buf bytes.Buffer
 	if err := b.writeEssence(&buf); err != nil {
-		panic("EssenceHash")
+		panic("EssenceBytes")
 	}
-	return hashing.HashData(buf.Bytes())
+	return buf.Bytes()
 }
 
 func (b *block) Write(w io.Writer) error {

@@ -67,9 +67,8 @@ func (sm *stateManager) blockArrived(block state.Block) {
 			syncBlk.block = nil
 			return
 		}
-		if syncBlk.block.EssenceHash() != block.EssenceHash() {
-			sm.log.Errorf("conflicting block arrived. Block index: %d, present state hash: %s, arrived state hash: %s",
-				block.BlockIndex(), syncBlk.block.EssenceHash().String(), block.EssenceHash().String())
+		if !bytes.Equal(syncBlk.block.EssenceBytes(), block.EssenceBytes()) {
+			sm.log.Errorf("conflicting block arrived. Block index: %d", block.BlockIndex())
 			syncBlk.block = nil
 			return
 		}
@@ -112,13 +111,6 @@ func BlockIsApprovedByChainOutput(b state.Block, chainOutput *ledgerstate.AliasO
 	}
 	var nilOID ledgerstate.OutputID
 	if b.ApprovingOutputID() != nilOID && b.ApprovingOutputID() != chainOutput.ID() {
-		return false
-	}
-	sh, err := hashing.HashValueFromBytes(chainOutput.GetStateData())
-	if err != nil {
-		return false
-	}
-	if b.EssenceHash() != sh {
 		return false
 	}
 	return true
@@ -177,12 +169,7 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 		// shouldn't be here
 		sm.log.Panicf("len(blocks) == 0")
 	}
-	var tentativeState state.VirtualState
-	if sm.solidState != nil {
-		tentativeState = sm.solidState.Clone()
-	} else {
-		tentativeState = state.CreateAndCommitOriginVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
-	}
+	tentativeState := sm.solidState.Clone()
 	for _, block := range blocks {
 		if err := tentativeState.ApplyBlock(block); err != nil {
 			sm.log.Errorf("failed to apply synced block index #%d. Error: %v", block.BlockIndex(), err)
@@ -195,14 +182,14 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 		sm.log.Errorf("state hashes mismatch: expected final hash: %s, tentative hash: %s", finalHash, tentativeHash)
 		return
 	}
-	// again applying blocks, this time seriously
-	if sm.solidState == nil {
-		sm.solidState = state.CreateAndCommitOriginVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
-	}
 	stateIndex := uint32(0)
 	for _, block := range blocks {
 		stateIndex = block.BlockIndex()
-		if err := sm.solidState.Commit(block); err != nil {
+		if err := sm.solidState.ApplyBlock(block); err != nil {
+			sm.log.Errorf("failed to apply synced block index #%d. Error: %v", stateIndex, err)
+			return
+		}
+		if err := sm.solidState.Commit(); err != nil {
 			sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
 			sm.syncingBlocks = make(map[uint32]*syncingBlock)
 			return

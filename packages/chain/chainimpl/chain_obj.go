@@ -108,8 +108,8 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		if c.consensus != nil {
 			c.consensus.EventStateTransitionMsg(msgt)
 		}
-	case chain.BlockCandidateMsg:
-		c.stateMgr.EventBlockCandidateMsg(msgt)
+	case chain.StateCandidateMsg:
+		c.stateMgr.EventStateCandidateMsg(msgt)
 	case *chain.InclusionStateMsg:
 		if c.consensus != nil {
 			c.consensus.EventTransactionInclusionStateMsg(msgt)
@@ -277,7 +277,7 @@ func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 	c.ReceiveMessage(&chain.StateTransitionMsg{
 		VariableState: msg.VirtualState,
 		ChainOutput:   msg.ChainOutput,
-		Timestamp:     msg.Timestamp,
+		Timestamp:     msg.OutputTimestamp,
 	})
 }
 

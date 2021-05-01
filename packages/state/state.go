@@ -2,6 +2,7 @@ package state
 
 import (
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -22,12 +23,13 @@ type virtualState struct {
 	empty              bool
 	kvs                *buffered.BufferedKVStore
 	stateHash          hashing.HashValue
+	approvingOutputID  ledgerstate.OutputID
 	uncommittedUpdates []StateUpdate
 }
 
-// CreateAndCommitOriginVirtualState creates zero state which is the minimal consistent state.
+// CreateOriginState creates zero state which is the minimal consistent state.
 // It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
-func CreateAndCommitOriginVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, error) {
+func CreateOriginState(db kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, error) {
 	vs := newZeroVirtualState(db, chainID)
 	if err := vs.Commit(); err != nil {
 		return nil, err
@@ -114,7 +116,7 @@ func (vs *virtualState) BlockIndex() uint32 {
 func (vs *virtualState) Timestamp() time.Time {
 	ts, err := loadTimestampFromState(vs.kvs)
 	if err != nil {
-		panic(xerrors.Errorf("state.Timestamp: %v", err))
+		panic(xerrors.Errorf("state.OutputTimestamp: %v", err))
 	}
 	return ts
 }
@@ -138,23 +140,42 @@ func (vs *virtualState) ApplyBlock(b Block) error {
 	return nil
 }
 
+// UncommittedBlock returns block to be committed or nil of it is empty
+// Assumes either uncommitted state updates are empty or are consistent with the mutations
+func (vs *virtualState) UncommittedBlock() (Block, error) {
+	if vs.kvs.Mutations().IsEmpty() {
+		return nil, nil
+	}
+	if len(vs.uncommittedUpdates) > 0 {
+		blk, err := NewBlock(vs.uncommittedUpdates...)
+		if err != nil {
+			return nil, err
+		}
+		return blk, nil
+	}
+	blk, err := NewBlock(newStateUpdateFromMutations(vs.kvs.Mutations()))
+	if err != nil {
+		return nil, err
+	}
+	blk.SetApprovingOutputID(vs.approvingOutputID)
+	return blk, nil
+}
+
 // ApplyStateUpdate applies one state update. Doesn't change state hash: it can be changed bu Apply block
 func (vs *virtualState) ApplyStateUpdate(stateUpd StateUpdate) {
 	stateUpd.Mutations().ApplyTo(vs.KVStore())
 	vs.uncommittedUpdates = append(vs.uncommittedUpdates, stateUpd.Clone())
+	vs.stateHash = hashing.HashData(vs.stateHash[:], stateUpd.Bytes())
+}
+
+func (vs *virtualState) SetApprovingOutputID(outputID ledgerstate.OutputID) {
+	vs.approvingOutputID = outputID
 }
 
 // Hash return hash of the state
 // TODO implement Merkle hashing
 func (vs *virtualState) Hash() hashing.HashValue {
-	if len(vs.uncommittedUpdates) == 0 {
-		return vs.stateHash
-	}
-	block, err := NewBlock(vs.uncommittedUpdates...)
-	if err != nil {
-		panic(xerrors.Errorf("VirtualState.Hash: %v", err))
-	}
-	return hashing.HashData(vs.stateHash[:], block.Bytes())
+	return vs.stateHash
 }
 
 type stateReader struct {
@@ -197,7 +218,7 @@ func (r *stateReader) BlockIndex() uint32 {
 func (r *stateReader) Timestamp() time.Time {
 	ts, err := loadTimestampFromState(r.chainState)
 	if err != nil {
-		panic(xerrors.Errorf("stateReader.Timestamp: %v", err))
+		panic(xerrors.Errorf("stateReader.OutputTimestamp: %v", err))
 	}
 	return ts
 }

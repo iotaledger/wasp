@@ -4,8 +4,10 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
@@ -79,7 +81,7 @@ func TestStateWithDB(t *testing.T) {
 		require.False(t, exists)
 
 		partition := dbp.GetPartition(chainID)
-		vs1, err := CreateAndCommitOriginVirtualState(partition, chainID)
+		vs1, err := CreateOriginState(partition, chainID)
 		require.NoError(t, err)
 		require.EqualValues(t, 0, vs1.BlockIndex())
 		require.True(t, vs1.Timestamp().IsZero())
@@ -105,7 +107,7 @@ func TestStateWithDB(t *testing.T) {
 		require.False(t, exists)
 
 		partition := dbp.GetPartition(chainID)
-		vs1, err := CreateAndCommitOriginVirtualState(partition, chainID)
+		vs1, err := CreateOriginState(partition, chainID)
 		require.NoError(t, err)
 		require.EqualValues(t, 0, vs1.BlockIndex())
 		require.True(t, vs1.Timestamp().IsZero())
@@ -123,7 +125,7 @@ func TestStateWithDB(t *testing.T) {
 		require.False(t, exists)
 
 		partition := dbp.GetPartition(chainID)
-		vs1, err := CreateAndCommitOriginVirtualState(partition, chainID)
+		vs1, err := CreateOriginState(partition, chainID)
 		require.NoError(t, err)
 
 		nowis := time.Now()
@@ -174,7 +176,7 @@ func TestStateWithDB(t *testing.T) {
 		require.False(t, exists)
 
 		partition := dbp.GetPartition(chainID)
-		vs1, err := CreateAndCommitOriginVirtualState(partition, chainID)
+		vs1, err := CreateOriginState(partition, chainID)
 		require.NoError(t, err)
 
 		nowis := time.Now()
@@ -203,25 +205,28 @@ func TestStateWithDB(t *testing.T) {
 
 		require.EqualValues(t, vs2.BlockIndex(), rdr.BlockIndex())
 		require.EqualValues(t, vs2.Timestamp(), rdr.Timestamp())
-		require.EqualValues(t, vs2.Hash(), rdr.Hash())
+		require.EqualValues(t, vs2.Hash().String(), rdr.Hash().String())
 		require.EqualValues(t, "value", string(rdr.KVStoreReader().MustGet("key")))
 	})
 }
 
 func TestVariableStateBasic(t *testing.T) {
 	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
-	vs1 := newVirtualState(mapdb.NewMapDB(), chainID)
+	vs1, err := CreateOriginState(mapdb.NewMapDB(), chainID)
+	require.NoError(t, err)
 	h1 := vs1.Hash()
-	require.EqualValues(t, hashing.NilHash, h1)
+	require.EqualValues(t, OriginStateHash(), h1)
 
 	vs2 := vs1.Clone()
 	h2 := vs2.Hash()
 	require.EqualValues(t, h1, h2)
 
+	vs1.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint64(1))
 	vs1.KVStore().Set("num", codec.EncodeInt64(int64(123)))
 	vs1.KVStore().Set("kuku", codec.EncodeString("A"))
 	vs1.KVStore().Set("mumu", codec.EncodeString("B"))
 
+	vs2.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint64(1))
 	vs2.KVStore().Set("mumu", codec.EncodeString("B"))
 	vs2.KVStore().Set("kuku", codec.EncodeString("A"))
 	vs2.KVStore().Set("num", codec.EncodeInt64(int64(123)))

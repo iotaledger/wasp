@@ -22,6 +22,8 @@ type VirtualState interface {
 	StateReader
 	ApplyStateUpdate(StateUpdate)
 	ApplyBlock(Block) error
+	UncommittedBlock() (Block, error)
+	SetApprovingOutputID(ledgerstate.OutputID)
 	Commit() error
 	KVStore() *buffered.BufferedKVStore
 	Clone() VirtualState
@@ -32,6 +34,7 @@ type VirtualState interface {
 type StateUpdate interface {
 	Mutations() *buffered.Mutations
 	Clone() StateUpdate
+	Bytes() []byte
 	String() string
 }
 
@@ -41,12 +44,12 @@ type Block interface {
 	ApprovingOutputID() ledgerstate.OutputID
 	SetApprovingOutputID(ledgerstate.OutputID)
 	Timestamp() time.Time
-	EssenceHash() hashing.HashValue // except state transaction id
+	EssenceBytes() []byte // except state transaction id
 	Bytes() []byte
 }
 
 const (
-	OriginStateHashBase58 = "9qye2CHsZYZEhJjDKC2xLSyGTwee7ZVLKnwBBwHNPsYj"
+	OriginStateHashBase58 = "4Rx7PFaQTyyYEeESYXhjbYQNpzhzbWQM6uwePRGw3U1V"
 )
 
 func OriginStateHash() hashing.HashValue {
