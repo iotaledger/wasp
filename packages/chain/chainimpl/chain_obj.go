@@ -62,8 +62,13 @@ func NewChain(
 	log.Debugf("creating chain object for %s", chr.ChainID.String())
 
 	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
+	stateReader, err := state.NewStateReader(dbProvider, chr.ChainID)
+	if err != nil {
+		log.Errorf("NewChain: %v", err)
+		return nil
+	}
 	ret := &chainObj{
-		mempool:      mempool.New(state.NewStateReader(dbProvider, chr.ChainID), blobProvider, chainLog),
+		mempool:      mempool.New(stateReader, blobProvider, chainLog),
 		procset:      processors.MustNew(),
 		chMsg:        make(chan interface{}, 100),
 		chainID:      *chr.ChainID,

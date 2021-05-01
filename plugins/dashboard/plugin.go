@@ -81,7 +81,7 @@ func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*dashboard.Cha
 	return &dashboard.ChainState{
 		Index:             virtualState.BlockIndex(),
 		Hash:              virtualState.Hash(),
-		Timestamp:         virtualState.Timestamp(),
+		Timestamp:         virtualState.Timestamp().UnixNano(),
 		ApprovingOutputID: block.ApprovingOutputID(),
 	}, nil
 }
