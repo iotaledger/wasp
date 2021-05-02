@@ -152,7 +152,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 //
 // If 'chainOriginator' is nil, new one is generated and solo.Saldo (=1337) iotas are loaded from the UTXODB faucet.
 // If 'validatorFeeTarget' is skipped, it is assumed equal to OriginatorAgentID
-// To deploy the chai instance the following steps are performed:
+// To deploy a chain instance the following steps are performed:
 //  - chain signature scheme (private key), chain address and chain ID are created
 //  - empty virtual state is initialized
 //  - origin transaction is created by the originator and added to the UTXODB
@@ -160,7 +160,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 //  - backlog processing threads (goroutines) are started
 //  - VM processor cache is initialized
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
-//    'blob', 'accountsc', 'chainlog'
+//    '_default', 'blocklog', 'blob', 'accounts' and 'eventlog',
 // Upon return, the chain is fully functional to process requests
 func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
 	env.logger.Debugf("deploying new chain '%s'", name)
@@ -275,14 +275,15 @@ func (env *Solo) AddToLedger(tx *ledgerstate.Transaction) error {
 	return env.utxoDB.AddTransaction(tx)
 }
 
-func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chid coretypes.ChainID) ([]coretypes.Request, error) {
+// RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
+func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID coretypes.ChainID) ([]coretypes.Request, error) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 
 	m := env.requestsByChain(tx)
-	ret, ok := m[chid.Array()]
+	ret, ok := m[chainID.Array()]
 	if !ok {
-		return nil, xerrors.Errorf("chain %s does not exist", chid.String())
+		return nil, xerrors.Errorf("chain %s does not exist", chainID.String())
 	}
 	return ret, nil
 }
@@ -310,7 +311,7 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]cor
 	return ret
 }
 
-// EnqueueRequests dispatches requests contained in the transaction among chains
+// EnqueueRequests adds requests contained in the transaction to mempools of respective target chains
 func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
