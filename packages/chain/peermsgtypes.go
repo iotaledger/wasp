@@ -79,7 +79,7 @@ type GetBlockMsg struct {
 
 type BlockMsg struct {
 	SenderIndex uint16
-	Block       state.Block
+	BlockBytes  []byte
 }
 
 // DismissChainMsg sent by component to the chain core in case of major setback

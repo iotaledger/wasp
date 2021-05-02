@@ -18,7 +18,7 @@ func (sm *stateManager) takeAction() {
 	sm.checkStateApproval()
 	sm.pullStateIfNeeded()
 	sm.doSyncActionIfNeeded()
-	sm.storeSyncingData()
+	sm.updateSyncingData()
 }
 
 func (sm *stateManager) pullStateIfNeeded() {
@@ -37,7 +37,7 @@ func (sm *stateManager) checkStateApproval() {
 	if sm.stateOutput == nil {
 		return
 	}
-	// among candidate state update batches we locate the one which
+	// among stateCandidate state update batches we locate the one which
 	// is approved by the state output
 	varStateHash, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())
 	if err != nil {
@@ -45,38 +45,51 @@ func (sm *stateManager) checkStateApproval() {
 	}
 	candidate, ok := sm.stateCandidates[varStateHash]
 	if !ok {
-		// corresponding block wasn't found among candidate state updates
+		// corresponding block wasn't found among stateCandidate state updates
 		// transaction doesn't approve anything
 		return
 	}
-	candidate.SetApprovingOutputID(sm.stateOutput.ID())
+	candidate.block.SetApprovingOutputID(sm.stateOutput.ID())
 
-	if err := candidate.Commit(); err != nil {
-		sm.log.Errorf("failed to save state at index #%d: %v", candidate.BlockIndex(), err)
+	if err := candidate.state.Commit(candidate.block); err != nil {
+		sm.log.Errorf("failed to save state at index #%d: %v", candidate.state.BlockIndex(), err)
+		return
 	}
 
-	sm.solidState = candidate
-	sm.stateCandidates = make(map[hashing.HashValue]state.VirtualState) // clear candidate batches
+	sm.solidState = candidate.state
+	sm.stateCandidates = make(map[hashing.HashValue]*stateCandidate) // clear
 
-	cloneState := sm.solidState.Clone()
 	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
-		VirtualState:    cloneState,
+		VirtualState:    sm.solidState.Clone(),
 		ChainOutput:     sm.stateOutput,
 		OutputTimestamp: sm.stateOutputTimestamp,
 	})
 	go sm.chain.Events().StateSynced().Trigger(sm.stateOutput.ID(), sm.stateOutput.GetStateIndex())
 }
 
-// adding block of state updates to the 'pending' map
-func (sm *stateManager) addStateCandidate(stateCandidate state.VirtualState) {
+// addStateCandidate adding state candidate of state updates to the 'pending' map. Assumes it contains the block in the log of updates
+func (sm *stateManager) addStateCandidate(candidate state.VirtualState) bool {
+	block, err := candidate.ExtractBlock()
+	if err != nil {
+		sm.log.Errorf("addStateCandidate: %v", err)
+		return false
+	}
+	if block == nil {
+		sm.log.Errorf("addStateCandidate: state candidate does not contain block")
+		return false
+	}
 	sm.log.Infof("added new candidate state. block index: %d, timestamp: %v",
-		stateCandidate.BlockIndex(), stateCandidate.Timestamp(),
+		candidate.BlockIndex(), candidate.Timestamp(),
 	)
-	sm.stateCandidates[stateCandidate.Hash()] = stateCandidate
+	sm.stateCandidates[candidate.Hash()] = &stateCandidate{
+		state: candidate,
+		block: block,
+	}
 	sm.pullStateDeadline = time.Now()
+	return true
 }
 
-func (sm *stateManager) storeSyncingData() {
+func (sm *stateManager) updateSyncingData() {
 	if sm.solidState == nil || sm.stateOutput == nil {
 		return
 	}

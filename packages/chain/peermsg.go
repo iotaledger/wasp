@@ -9,7 +9,6 @@ import (
 	"io"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -177,19 +176,15 @@ func (msg *GetBlockMsg) Read(r io.Reader) error {
 }
 
 func (msg *BlockMsg) Write(w io.Writer) error {
-	if err := util.WriteBytes32(w, msg.Block.Bytes()); err != nil {
+	if err := util.WriteBytes32(w, msg.BlockBytes); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (msg *BlockMsg) Read(r io.Reader) error {
-	data, err := util.ReadBytes32(r)
-	if err != nil {
-		return err
-	}
-	msg.Block, err = state.BlockFromBytes(data)
-	if err != nil {
+	var err error
+	if msg.BlockBytes, err = util.ReadBytes32(r); err != nil {
 		return err
 	}
 	return nil

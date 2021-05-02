@@ -13,7 +13,7 @@ import (
 )
 
 func (sm *stateManager) isSynced() bool {
-	if sm.stateOutput == nil || sm.solidState == nil {
+	if sm.stateOutput == nil {
 		return false
 	}
 	return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
@@ -120,19 +120,19 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	if sm.stateOutput == nil {
 		return
 	}
-	currentIndex := uint32(0)
-	if sm.solidState != nil {
-		currentIndex = sm.solidState.BlockIndex()
-	}
+	currentIndex := sm.solidState.BlockIndex()
+
 	switch {
 	case currentIndex == sm.stateOutput.GetStateIndex():
 		// synced
 		return
 	case currentIndex > sm.stateOutput.GetStateIndex():
-		sm.log.Panicf("inconsistency: solid state index is larger than state output index")
+		sm.log.Panicf("inconsistency: current (solid) state index %d is larger than state output index %d",
+			currentIndex, sm.stateOutput.GetStateIndex())
 	}
 	// not synced
 	if currentIndex+1 >= sm.stateOutput.GetStateIndex() {
+		// waiting for the state transition
 		return
 	}
 	for i := currentIndex + 1; i < sm.stateOutput.GetStateIndex(); i++ {
@@ -182,6 +182,9 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 		sm.log.Errorf("state hashes mismatch: expected final hash: %s, tentative hash: %s", finalHash, tentativeHash)
 		return
 	}
+	tentativeState = nil
+	// running it again, this time seriously
+	// the reason we are not committing all at once is to prevent too large DB transaction
 	stateIndex := uint32(0)
 	for _, block := range blocks {
 		stateIndex = block.BlockIndex()
@@ -189,7 +192,8 @@ func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing
 			sm.log.Errorf("failed to apply synced block index #%d. Error: %v", stateIndex, err)
 			return
 		}
-		if err := sm.solidState.Commit(); err != nil {
+		// one block at a time
+		if err := sm.solidState.Commit(block); err != nil {
 			sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
 			sm.syncingBlocks = make(map[uint32]*syncingBlock)
 			return

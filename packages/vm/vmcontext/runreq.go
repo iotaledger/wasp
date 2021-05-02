@@ -290,7 +290,7 @@ func (vmctx *VMContext) finalizeRequestCall() {
 	vmctx.mustLogRequestToBlockLog(vmctx.lastError)
 	vmctx.lastTotalAssets = vmctx.totalAssets()
 
-	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
+	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.currentStateUpdate = nil
 
 	_, ep := vmctx.req.Target()
@@ -352,7 +352,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	if idx != blockInfo.BlockIndex {
 		return xerrors.New("CloseVMContext: inconsistent block index")
 	}
-	vmctx.virtualState.ApplyStateUpdate(vmctx.currentStateUpdate)
+	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.currentStateUpdate = nil
 	return nil
 }

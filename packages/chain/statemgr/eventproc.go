@@ -23,18 +23,17 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 	}
 	sm.log.Debugw("EventGetBlockMsg",
 		"sender index", msg.SenderIndex,
-		"block index", msg.BlockIndex,
+		"blockBytes index", msg.BlockIndex,
 	)
-	block, err := state.LoadBlock(sm.dbp.GetPartition(sm.chain.ID()), msg.BlockIndex)
-	if err != nil || block == nil {
-		// can't load block, can't respond
+	blockBytes, err := state.LoadBlockBytes(sm.dbp, sm.chain.ID(), msg.BlockIndex)
+	if err != nil {
 		return
 	}
 
 	sm.log.Debugf("EventGetBlockMsg for state index #%d --> peer %d", msg.BlockIndex, msg.SenderIndex)
 
 	err = sm.peers.SendMsg(msg.SenderIndex, chain.MsgBlock, util.MustBytes(&chain.BlockMsg{
-		Block: block,
+		BlockBytes: blockBytes,
 	}))
 	if err != nil {
 		return
@@ -49,12 +48,17 @@ func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
 	if sm.stateOutput == nil {
 		return
 	}
+	block, err := state.BlockFromBytes(msg.BlockBytes)
+	if err != nil {
+		sm.log.Warnf("wrong blokc received from peer %d. Err: %v", msg.SenderIndex, err)
+		return
+	}
 	sm.log.Debugw("EventBlockMsg",
 		"sender", msg.SenderIndex,
-		"block index", msg.Block.BlockIndex(),
-		"approving output", coretypes.OID(msg.Block.ApprovingOutputID()),
+		"block index", block.BlockIndex(),
+		"approving output", coretypes.OID(block.ApprovingOutputID()),
 	)
-	sm.blockArrived(msg.Block)
+	sm.blockArrived(block)
 	sm.takeAction()
 }
 
@@ -112,7 +116,9 @@ func (sm *stateManager) eventStateCandidateMsg(msg chain.StateCandidateMsg) {
 	sm.log.Debugf("EventStateCandidateMsg: state index: %d timestamp: %v",
 		msg.State.BlockIndex(), msg.State.Timestamp(),
 	)
-	sm.addStateCandidate(msg.State)
+	if !sm.addStateCandidate(msg.State) {
+		return
+	}
 	sm.takeAction()
 }
 

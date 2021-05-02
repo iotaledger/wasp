@@ -287,12 +287,12 @@ func TestVariableStateBasic(t *testing.T) {
 //
 //	block3 := NewBlock(1, su3)
 //
-//	vs1.ApplyStateUpdate(su1)
+//	vs1.ApplyStateUpdates(su1)
 //	err := vs1.ApplyBlock(block23)
 //	require.NoError(t, err)
 //
-//	vs2.ApplyStateUpdate(su1)
-//	vs2.ApplyStateUpdate(su2)
+//	vs2.ApplyStateUpdates(su1)
+//	vs2.ApplyStateUpdates(su2)
 //	err = vs2.ApplyBlock(block3)
 //	require.NoError(t, err)
 //
@@ -315,8 +315,8 @@ func TestVariableStateBasic(t *testing.T) {
 //	err = vs2.ApplyBlock(NewBlock(0))
 //	require.NoError(t, err)
 //
-//	vs1.ApplyStateUpdate(su1)
-//	vs1.ApplyStateUpdate(su2)
+//	vs1.ApplyStateUpdates(su1)
+//	vs1.ApplyStateUpdates(su2)
 //	vs1.ApplyBlockIndex(0)
 //
 //	block := NewBlock(1, su1, su2)

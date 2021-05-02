@@ -26,8 +26,8 @@ type stateManager struct {
 	peers                chain.PeerGroupProvider
 	nodeConn             chain.NodeConnection
 	pullStateDeadline    time.Time
-	stateCandidates      map[hashing.HashValue]state.VirtualState
-	solidState           state.VirtualState
+	stateCandidates      map[hashing.HashValue]*stateCandidate
+	solidState           state.VirtualState // never nil
 	stateOutput          *ledgerstate.AliasOutput
 	stateOutputTimestamp time.Time
 	currentSyncData      atomic.Value
@@ -42,6 +42,11 @@ type stateManager struct {
 	eventPendingBlockMsgCh chan chain.StateCandidateMsg
 	eventTimerMsgCh        chan chain.TimerTick
 	closeCh                chan bool
+}
+
+type stateCandidate struct {
+	state state.VirtualState
+	block state.Block
 }
 
 const (
@@ -64,7 +69,7 @@ func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers chain.PeerGroupPro
 		chain:                  c,
 		nodeConn:               nodeconn,
 		syncingBlocks:          make(map[uint32]*syncingBlock),
-		stateCandidates:        make(map[hashing.HashValue]state.VirtualState),
+		stateCandidates:        make(map[hashing.HashValue]*stateCandidate),
 		log:                    log.Named("s"),
 		eventGetBlockMsgCh:     make(chan *chain.GetBlockMsg),
 		eventBlockMsgCh:        make(chan *chain.BlockMsg),
@@ -107,11 +112,11 @@ func (sm *stateManager) initLoadState() {
 	}
 	if stateExists {
 		h := sm.solidState.Hash()
-		sm.log.Infof("solid state has been loaded. Block index: $%d, State hash: %s",
+		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
 			sm.solidState.BlockIndex(), h.String())
 	} else {
 		// create origin state in DB
-		sm.solidState, err = state.CreateOriginState(sm.dbp.GetPartition(sm.chain.ID()), sm.chain.ID())
+		sm.solidState, err = state.CreateOriginState(sm.dbp, sm.chain.ID())
 		if err != nil {
 			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
 				Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err)},

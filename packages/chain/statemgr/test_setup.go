@@ -163,6 +163,7 @@ func (env *MockedEnv) NewMockedNode(index uint16) *MockedNode {
 	ret.StateManager = New(ret.Db, ret.ChainCore, env.Peers, env.NodeConn, log)
 	ret.StateTransition = mock_chain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualState, tx *ledgerstate.Transaction) {
+		ret.Log.Debugf("MockedEnv.OnNextState: state index %d", vstate.BlockIndex())
 		go ret.StateManager.EventStateCandidateMsg(chain.StateCandidateMsg{State: vstate})
 		go env.NodeConn.PostTransaction(tx, ret.ChainCore.ID().AsAddress(), 0)
 	})

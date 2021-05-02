@@ -20,7 +20,7 @@ type StateReader interface {
 // VirtualState virtualized access to the chain's state
 type VirtualState interface {
 	StateReader
-	ApplyStateUpdate(StateUpdate)
+	ApplyStateUpdates(...StateUpdate)
 	ApplyBlock(Block) error
 	ExtractBlock() (Block, error)
 	Commit(blocks ...Block) error

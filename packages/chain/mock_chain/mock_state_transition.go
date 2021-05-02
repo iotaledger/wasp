@@ -36,11 +36,7 @@ func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chain
 	su0 := state.NewStateUpdateWithBlockIndexMutation(virtualState.BlockIndex() + 1)
 	su1 := state.NewStateUpdate()
 	su1.Mutations().Set("counter", codec.EncodeUint64(counter+1))
-	block, err := state.NewBlock(su0, su1)
-	require.NoError(c.t, err)
-
-	err = nextVirtualState.ApplyBlock(block)
-	require.NoError(c.t, err)
+	nextVirtualState.ApplyStateUpdates(su0, su1)
 
 	nextStateHash := nextVirtualState.Hash()
 
@@ -50,8 +46,6 @@ func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chain
 	tx, err := txBuilder.BuildWithED25519(c.chainKey)
 	require.NoError(c.t, err)
 
-	err = nextVirtualState.Commit()
-	require.NoError(c.t, err)
 	c.onNextState(nextVirtualState, tx)
 }
 

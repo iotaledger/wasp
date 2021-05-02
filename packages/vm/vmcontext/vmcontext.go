@@ -74,7 +74,7 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 	}
 	{
 		openingStateUpdate := state.NewStateUpdateWithBlockIndexMutation(task.VirtualState.BlockIndex()+1, task.Timestamp)
-		task.VirtualState.ApplyStateUpdate(openingStateUpdate)
+		task.VirtualState.ApplyStateUpdates(openingStateUpdate)
 	}
 	ret := &VMContext{
 		chainID:      *chainID,

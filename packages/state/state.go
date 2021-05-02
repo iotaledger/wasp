@@ -122,18 +122,22 @@ func (vs *virtualState) ApplyBlock(b Block) error {
 	if !vs.empty && vs.Timestamp().After(b.Timestamp()) {
 		return xerrors.New("ApplyBlock: inconsistent timestamps")
 	}
-	for _, stateUpd := range b.(*block).stateUpdates {
-		vs.ApplyStateUpdate(stateUpd)
+	upds := make([]StateUpdate, len(b.(*block).stateUpdates))
+	for i := range upds {
+		upds[i] = b.(*block).stateUpdates[i]
 	}
+	vs.ApplyStateUpdates(upds...)
 	vs.empty = false
 	return nil
 }
 
 // ApplyStateUpdate applies one state update. Doesn't change state hash: it can be changed bu Apply block
-func (vs *virtualState) ApplyStateUpdate(stateUpd StateUpdate) {
-	stateUpd.Mutations().ApplyTo(vs.KVStore())
-	vs.updateLog = append(vs.updateLog, stateUpd) // do not clone
-	vs.stateHash = hashing.HashData(vs.stateHash[:], stateUpd.Bytes())
+func (vs *virtualState) ApplyStateUpdates(stateUpd ...StateUpdate) {
+	for _, upd := range stateUpd {
+		upd.Mutations().ApplyTo(vs.KVStore())
+		vs.stateHash = hashing.HashData(vs.stateHash[:], upd.Bytes())
+	}
+	vs.updateLog = append(vs.updateLog, stateUpd...) // do not clone
 }
 
 // ExtractBlock creates a block from update log and returns it or nil if log is empty. The log is cleared
@@ -144,6 +148,9 @@ func (vs *virtualState) ExtractBlock() (Block, error) {
 	ret, err := NewBlock(vs.updateLog...)
 	if err != nil {
 		return nil, err
+	}
+	if vs.BlockIndex() != ret.BlockIndex() {
+		return nil, xerrors.New("virtualState: internal inconsistency: index of the state is not equal to the index of the extracted block")
 	}
 	for i := range vs.updateLog {
 		vs.updateLog[i] = nil // for GC
