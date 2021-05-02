@@ -12,13 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (sm *stateManager) isSynced() bool {
-	if sm.stateOutput == nil {
-		return false
-	}
-	return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
-}
-
 // returns block if it is known and flag if it is approved by some output
 func (sm *stateManager) syncBlock(blockIndex uint32) (state.Block, bool) {
 	if _, already := sm.syncingBlocks[blockIndex]; !already {

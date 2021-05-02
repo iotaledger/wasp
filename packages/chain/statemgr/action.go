@@ -4,6 +4,8 @@
 package statemgr
 
 import (
+	"bytes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"time"
 
@@ -15,7 +17,8 @@ func (sm *stateManager) takeAction() {
 	if !sm.ready.IsReady() {
 		return
 	}
-	sm.checkStateApproval()
+	sm.checkStateTransition()
+	sm.notifyStateTransitionIfNeeded()
 	sm.pullStateIfNeeded()
 	sm.doSyncActionIfNeeded()
 	sm.updateSyncingData()
@@ -33,7 +36,10 @@ func (sm *stateManager) pullStateIfNeeded() {
 	sm.pullStateDeadline = nowis.Add(pullStatePeriod)
 }
 
-func (sm *stateManager) checkStateApproval() {
+func (sm *stateManager) checkStateTransition() {
+	if sm.isSynced() {
+		return
+	}
 	if sm.stateOutput == nil {
 		return
 	}
@@ -58,13 +64,39 @@ func (sm *stateManager) checkStateApproval() {
 
 	sm.solidState = candidate.state
 	sm.stateCandidates = make(map[hashing.HashValue]*stateCandidate) // clear
+}
 
+func (sm *stateManager) isSynced() bool {
+	if sm.stateOutput == nil {
+		return false
+	}
+	return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
+}
+
+func (sm *stateManager) notifyStateTransition() {
+	var stateIndex uint32
+	var outputID ledgerstate.OutputID
+	if sm.stateOutput != nil {
+		stateIndex = sm.stateOutput.GetStateIndex()
+		outputID = sm.stateOutput.ID()
+	}
+	sm.notifiedSyncedStateHash = sm.solidState.Hash()
 	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
 		VirtualState:    sm.solidState.Clone(),
 		ChainOutput:     sm.stateOutput,
 		OutputTimestamp: sm.stateOutputTimestamp,
 	})
-	go sm.chain.Events().StateSynced().Trigger(sm.stateOutput.ID(), sm.stateOutput.GetStateIndex())
+	go sm.chain.Events().StateSynced().Trigger(outputID, stateIndex)
+}
+
+func (sm *stateManager) notifyStateTransitionIfNeeded() {
+	if sm.notifiedSyncedStateHash == sm.solidState.Hash() {
+		return
+	}
+	if !sm.isSynced() {
+		return
+	}
+	sm.notifyStateTransition()
 }
 
 // addStateCandidate adding state candidate of state updates to the 'pending' map. Assumes it contains the block in the log of updates
@@ -90,15 +122,16 @@ func (sm *stateManager) addStateCandidate(candidate state.VirtualState) bool {
 }
 
 func (sm *stateManager) updateSyncingData() {
-	if sm.solidState == nil || sm.stateOutput == nil {
+	if sm.stateOutput == nil {
 		return
 	}
 	outputStateHash, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())
 	if err != nil {
+		// should not happen
 		return
 	}
 	sm.currentSyncData.Store(&chain.SyncInfo{
-		Synced:                sm.solidState.Hash() == outputStateHash,
+		Synced:                sm.isSynced(),
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
 		SyncedStateHash:       sm.solidState.Hash(),
 		SyncedStateTimestamp:  sm.solidState.Timestamp(),

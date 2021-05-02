@@ -20,19 +20,20 @@ import (
 )
 
 type stateManager struct {
-	ready                *ready.Ready
-	dbp                  *dbprovider.DBProvider
-	chain                chain.ChainCore
-	peers                chain.PeerGroupProvider
-	nodeConn             chain.NodeConnection
-	pullStateDeadline    time.Time
-	stateCandidates      map[hashing.HashValue]*stateCandidate
-	solidState           state.VirtualState // never nil
-	stateOutput          *ledgerstate.AliasOutput
-	stateOutputTimestamp time.Time
-	currentSyncData      atomic.Value
-	syncingBlocks        map[uint32]*syncingBlock
-	log                  *logger.Logger
+	ready                   *ready.Ready
+	dbp                     *dbprovider.DBProvider
+	chain                   chain.ChainCore
+	peers                   chain.PeerGroupProvider
+	nodeConn                chain.NodeConnection
+	pullStateDeadline       time.Time
+	stateCandidates         map[hashing.HashValue]*stateCandidate
+	solidState              state.VirtualState // never nil
+	stateOutput             *ledgerstate.AliasOutput
+	stateOutputTimestamp    time.Time
+	currentSyncData         atomic.Value
+	notifiedSyncedStateHash hashing.HashValue
+	syncingBlocks           map[uint32]*syncingBlock
+	log                     *logger.Logger
 
 	// Channels for accepting external events.
 	eventGetBlockMsgCh     chan *chain.GetBlockMsg
