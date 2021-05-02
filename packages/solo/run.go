@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -11,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/stretchr/testify/require"
@@ -73,11 +75,22 @@ func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction) {
 	err := ch.Env.AddToLedger(stateTx)
 	require.NoError(ch.Env.T, err)
 
-	err = ch.State.Commit()
-	require.NoError(ch.Env.T, err)
-
 	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(stateTx)
 	require.NoError(ch.Env.T, err)
+
+	// saving block just to check consistency. Otherwise, saved blocks are not used in Solo
+	block, err := ch.State.ExtractBlock()
+	require.NoError(ch.Env.T, err)
+	require.NotNil(ch.Env.T, block)
+	block.SetApprovingOutputID(stateOutput.ID())
+
+	err = ch.State.Commit(block)
+	require.NoError(ch.Env.T, err)
+
+	blockBack, err := state.LoadBlock(ch.Env.dbProvider, &ch.ChainID, ch.State.BlockIndex())
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
+	require.EqualValues(ch.Env.T, stateOutput.ID(), blockBack.ApprovingOutputID())
 
 	reqIDs := chain.PublishStateTransition(ch.State, stateOutput)
 

@@ -2,7 +2,6 @@ package state
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -18,32 +17,21 @@ import (
 )
 
 type virtualState struct {
-	chainID            coretypes.ChainID
-	db                 kvstore.KVStore
-	empty              bool
-	kvs                *buffered.BufferedKVStore
-	stateHash          hashing.HashValue
-	approvingOutputID  ledgerstate.OutputID
-	uncommittedUpdates []StateUpdate
-}
-
-// CreateOriginState creates zero state which is the minimal consistent state.
-// It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
-func CreateOriginState(db kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, error) {
-	vs := newZeroVirtualState(db, chainID)
-	if err := vs.Commit(); err != nil {
-		return nil, err
-	}
-	return vs, nil
+	chainID   coretypes.ChainID
+	db        kvstore.KVStore
+	empty     bool
+	kvs       *buffered.BufferedKVStore
+	stateHash hashing.HashValue
+	updateLog []StateUpdate
 }
 
 // newVirtualState creates VirtualState interface with the partition of KVStore
 func newVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
 	ret := &virtualState{
-		db:                 db,
-		kvs:                buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(subRealm(db, []byte{dbprovider.ObjectTypeStateVariable}))),
-		empty:              true,
-		uncommittedUpdates: make([]StateUpdate, 0),
+		db:        db,
+		kvs:       buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(subRealm(db, []byte{dbprovider.ObjectTypeStateVariable}))),
+		empty:     true,
+		updateLog: make([]StateUpdate, 0),
 	}
 	if chainID != nil {
 		ret.chainID = *chainID
@@ -51,18 +39,19 @@ func newVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualSta
 	return ret
 }
 
-func newZeroVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
+func newZeroVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, *block) {
 	ret := newVirtualState(db, chainID)
 	originBlock := NewOriginBlock()
 	if err := ret.ApplyBlock(originBlock); err != nil {
 		panic(err)
 	}
-	return ret
+	_, _ = ret.ExtractBlock() // clear the update log
+	return ret, originBlock
 }
 
 // calcOriginStateHash is independent from db provider nor chainID. Used for testing
 func calcOriginStateHash() hashing.HashValue {
-	emptyVirtualState := newZeroVirtualState(mapdb.NewMapDB(), nil)
+	emptyVirtualState, _ := newZeroVirtualState(mapdb.NewMapDB(), nil)
 	return emptyVirtualState.Hash()
 }
 
@@ -75,15 +64,15 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 
 func (vs *virtualState) Clone() VirtualState {
 	ret := &virtualState{
-		chainID:            *vs.chainID.Clone(),
-		db:                 vs.db,
-		stateHash:          vs.stateHash,
-		uncommittedUpdates: make([]StateUpdate, len(vs.uncommittedUpdates), cap(vs.uncommittedUpdates)),
-		empty:              vs.empty,
-		kvs:                vs.kvs.Clone(),
+		chainID:   *vs.chainID.Clone(),
+		db:        vs.db,
+		stateHash: vs.stateHash,
+		updateLog: make([]StateUpdate, len(vs.updateLog), cap(vs.updateLog)),
+		empty:     vs.empty,
+		kvs:       vs.kvs.Clone(),
 	}
-	for i := range ret.uncommittedUpdates {
-		ret.uncommittedUpdates[i] = vs.uncommittedUpdates[i].Clone()
+	for i := range ret.updateLog {
+		ret.updateLog[i] = vs.updateLog[i] // do not clone, just reference
 	}
 	return ret
 }
@@ -140,40 +129,32 @@ func (vs *virtualState) ApplyBlock(b Block) error {
 	return nil
 }
 
-// UncommittedBlock returns block to be committed or nil of it is empty
-// Assumes either uncommitted state updates are empty or are consistent with the mutations
-func (vs *virtualState) UncommittedBlock() (Block, error) {
-	if vs.kvs.Mutations().IsEmpty() {
-		return nil, nil
-	}
-	if len(vs.uncommittedUpdates) > 0 {
-		blk, err := NewBlock(vs.uncommittedUpdates...)
-		if err != nil {
-			return nil, err
-		}
-		return blk, nil
-	}
-	blk, err := NewBlock(newStateUpdateFromMutations(vs.kvs.Mutations()))
-	if err != nil {
-		return nil, err
-	}
-	blk.SetApprovingOutputID(vs.approvingOutputID)
-	return blk, nil
-}
-
 // ApplyStateUpdate applies one state update. Doesn't change state hash: it can be changed bu Apply block
 func (vs *virtualState) ApplyStateUpdate(stateUpd StateUpdate) {
 	stateUpd.Mutations().ApplyTo(vs.KVStore())
-	vs.uncommittedUpdates = append(vs.uncommittedUpdates, stateUpd.Clone())
+	vs.updateLog = append(vs.updateLog, stateUpd) // do not clone
 	vs.stateHash = hashing.HashData(vs.stateHash[:], stateUpd.Bytes())
 }
 
-func (vs *virtualState) SetApprovingOutputID(outputID ledgerstate.OutputID) {
-	vs.approvingOutputID = outputID
+// ExtractBlock creates a block from update log and returns it or nil if log is empty. The log is cleared
+func (vs *virtualState) ExtractBlock() (Block, error) {
+	if len(vs.updateLog) == 0 {
+		return nil, nil
+	}
+	ret, err := NewBlock(vs.updateLog...)
+	if err != nil {
+		return nil, err
+	}
+	for i := range vs.updateLog {
+		vs.updateLog[i] = nil // for GC
+	}
+	vs.updateLog = vs.updateLog[:0]
+	return ret, nil
 }
 
-// Hash return hash of the state
 // TODO implement Merkle hashing
+
+// Hash return hash of the state
 func (vs *virtualState) Hash() hashing.HashValue {
 	return vs.stateHash
 }
@@ -183,9 +164,9 @@ type stateReader struct {
 	chainState     kv.KVStoreReader
 }
 
+// NewStateReader creates new reader. Checks consistency
 func NewStateReader(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (*stateReader, error) {
 	partition := dbp.GetPartition(chainID)
-
 	stateIndex, _, exists, err := loadStateIndexAndHashFromDb(partition)
 	if err != nil {
 		return nil, xerrors.Errorf("NewStateReader: %w", err)
@@ -239,7 +220,6 @@ func (r *stateReader) KVStoreReader() kv.KVStoreReader {
 	return r.chainState
 }
 
-// region util ///////////////////////////////////////////////////////////////////
 func loadStateIndexAndHashFromDb(partition kvstore.KVStore) (uint32, hashing.HashValue, bool, error) {
 	v, err := partition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeStateHash))
 	if err == kvstore.ErrKeyNotFound {
@@ -298,5 +278,3 @@ func loadTimestampFromState(chainState kv.KVStoreReader) (time.Time, error) {
 	}
 	return ts, nil
 }
-
-// endregion ////////////////////////////////////////////////////////////////////

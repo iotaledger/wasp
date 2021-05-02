@@ -22,9 +22,8 @@ type VirtualState interface {
 	StateReader
 	ApplyStateUpdate(StateUpdate)
 	ApplyBlock(Block) error
-	UncommittedBlock() (Block, error)
-	SetApprovingOutputID(ledgerstate.OutputID)
-	Commit() error
+	ExtractBlock() (Block, error)
+	Commit(blocks ...Block) error
 	KVStore() *buffered.BufferedKVStore
 	Clone() VirtualState
 	DangerouslyConvertToString() string

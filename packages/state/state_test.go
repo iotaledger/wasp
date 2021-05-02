@@ -36,10 +36,11 @@ func TestVirtualStateBasic(t *testing.T) {
 	})
 	t.Run("zero state", func(t *testing.T) {
 		db := mapdb.NewMapDB()
-		vs1 := newZeroVirtualState(db, nil)
+		vs1, blk := newZeroVirtualState(db, nil)
 		h1 := vs1.Hash()
 		require.EqualValues(t, OriginStateHash(), h1)
 		require.EqualValues(t, 0, vs1.BlockIndex())
+		require.EqualValues(t, NewOriginBlock().Bytes(), blk.Bytes())
 	})
 }
 
@@ -50,7 +51,7 @@ func TestOriginHashes(t *testing.T) {
 		require.EqualValues(t, OriginStateHash().String(), calcOriginStateHash().String())
 	})
 	t.Run("zero state hash == origin state hash", func(t *testing.T) {
-		z := newZeroVirtualState(mapdb.NewMapDB(), nil)
+		z, _ := newZeroVirtualState(mapdb.NewMapDB(), nil)
 		t.Logf("zero state hash = %s", z.Hash().String())
 		require.EqualValues(t, calcOriginStateHash(), z.Hash())
 	})
@@ -80,8 +81,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, exists)
 
-		partition := dbp.GetPartition(chainID)
-		vs1, err := CreateOriginState(partition, chainID)
+		vs1, err := CreateOriginState(dbp, chainID)
 		require.NoError(t, err)
 		require.EqualValues(t, 0, vs1.BlockIndex())
 		require.True(t, vs1.Timestamp().IsZero())
@@ -106,13 +106,12 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, exists)
 
-		partition := dbp.GetPartition(chainID)
-		vs1, err := CreateOriginState(partition, chainID)
+		vs1, err := CreateOriginState(dbp, chainID)
 		require.NoError(t, err)
 		require.EqualValues(t, 0, vs1.BlockIndex())
 		require.True(t, vs1.Timestamp().IsZero())
 
-		data, err := LoadBlockBytes(partition, 0)
+		data, err := LoadBlockBytes(dbp, chainID, 0)
 		require.NoError(t, err)
 		require.EqualValues(t, NewOriginBlock().Bytes(), data)
 	})
@@ -124,8 +123,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, exists)
 
-		partition := dbp.GetPartition(chainID)
-		vs1, err := CreateOriginState(partition, chainID)
+		vs1, err := CreateOriginState(dbp, chainID)
 		require.NoError(t, err)
 
 		nowis := time.Now()
@@ -140,7 +138,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, nowis.Equal(vs1.Timestamp()))
 
-		err = vs1.Commit()
+		err = vs1.Commit(block1)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, nowis.Equal(vs1.Timestamp()))
@@ -154,11 +152,11 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, vs1.Timestamp(), vs2.Timestamp())
 		require.EqualValues(t, 1, vs2.BlockIndex())
 
-		data, err := LoadBlockBytes(partition, 0)
+		data, err := LoadBlockBytes(dbp, chainID, 0)
 		require.NoError(t, err)
 		require.EqualValues(t, NewOriginBlock().Bytes(), data)
 
-		data, err = LoadBlockBytes(partition, 1)
+		data, err = LoadBlockBytes(dbp, chainID, 1)
 		require.NoError(t, err)
 		require.EqualValues(t, block1.Bytes(), data)
 
@@ -175,8 +173,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, exists)
 
-		partition := dbp.GetPartition(chainID)
-		vs1, err := CreateOriginState(partition, chainID)
+		vs1, err := CreateOriginState(dbp, chainID)
 		require.NoError(t, err)
 
 		nowis := time.Now()
@@ -212,7 +209,8 @@ func TestStateWithDB(t *testing.T) {
 
 func TestVariableStateBasic(t *testing.T) {
 	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
-	vs1, err := CreateOriginState(mapdb.NewMapDB(), chainID)
+	dbp := dbprovider.NewInMemoryDBProvider(testlogger.NewLogger(t))
+	vs1, err := CreateOriginState(dbp, chainID)
 	require.NoError(t, err)
 	h1 := vs1.Hash()
 	require.EqualValues(t, OriginStateHash(), h1)

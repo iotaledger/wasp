@@ -127,8 +127,7 @@ func (su *stateUpdate) String() string {
 		bi = fmt.Sprintf("%d", t)
 	}
 
-	su.TimestampMutation()
-	ret := fmt.Sprintf("StateUpdate:: ts: %s, blockIndex: %s muts: [%s]", ts, bi, su.mutations)
+	ret := fmt.Sprintf("StateUpdate:: ts: %s, blockIndex: %s muts: [%+v]", ts, bi, su.mutations)
 	return ret
 }
 

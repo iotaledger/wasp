@@ -21,7 +21,7 @@ type block struct {
 func NewBlock(stateUpdates ...StateUpdate) (*block, error) {
 	arr := make([]*stateUpdate, len(stateUpdates))
 	for i := range arr {
-		arr[i] = stateUpdates[i].Clone().(*stateUpdate)
+		arr[i] = stateUpdates[i].(*stateUpdate) // do not clone
 	}
 	ret := &block{
 		stateUpdates: arr,

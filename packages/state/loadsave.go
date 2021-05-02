@@ -8,19 +8,15 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// Commit saves updates collected in the virtual state to DB together with the corresponding block in one transaction
+// Commit saves updates collected in the virtual state to DB together with the provided blocks in one transaction
 // Mutations must be non-empty otherwise it is NOP
-// It assumes uncommitted stateUpdates are either empty or consistent with mutations
-// If uncommitted stateUpdates are empty, it creates a state update and block from mutations (used in mocking in tests).
-func (vs *virtualState) Commit() error {
-	blk, err := vs.UncommittedBlock()
-	if err != nil {
-		return err
-	}
-	if blk == nil {
+// It the log of updates is not taken into account
+func (vs *virtualState) Commit(blocks ...Block) error {
+	if vs.kvs.Mutations().IsEmpty() {
 		// nothing to commit
 		return nil
 	}
+	var err error
 	batch := vs.db.Batched()
 
 	if err = batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
@@ -30,9 +26,11 @@ func (vs *virtualState) Commit() error {
 		return err
 	}
 
-	key := dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(vs.BlockIndex()))
-	if err := batch.Set(key, blk.Bytes()); err != nil {
-		return err
+	for _, blk := range blocks {
+		key := dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(vs.BlockIndex()))
+		if err := batch.Set(key, blk.Bytes()); err != nil {
+			return err
+		}
 	}
 
 	// store mutations
@@ -53,11 +51,21 @@ func (vs *virtualState) Commit() error {
 
 	vs.kvs.ClearMutations()
 	// please the GC
-	for i := range vs.uncommittedUpdates {
-		vs.uncommittedUpdates[i] = nil
+	for i := range vs.updateLog {
+		vs.updateLog[i] = nil
 	}
-	vs.uncommittedUpdates = vs.uncommittedUpdates[:0]
+	vs.updateLog = vs.updateLog[:0]
 	return nil
+}
+
+// CreateOriginState creates zero state which is the minimal consistent state.
+// It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
+func CreateOriginState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (*virtualState, error) {
+	originState, originBlock := newZeroVirtualState(dbp.GetPartition(chainID), chainID)
+	if err := originState.Commit(originBlock); err != nil {
+		return nil, err
+	}
+	return originState, nil
 }
 
 // LoadSolidState establishes VirtualState interface with the solid state in DB. Checks consistency of DB
@@ -84,8 +92,8 @@ func LoadSolidState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (Vir
 }
 
 // LoadBlockBytes loads block bytes of the specified block index from DB
-func LoadBlockBytes(partition kvstore.KVStore, stateIndex uint32) ([]byte, error) {
-	data, err := partition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(stateIndex)))
+func LoadBlockBytes(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID, stateIndex uint32) ([]byte, error) {
+	data, err := dbp.GetPartition(chainID).Get(dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(stateIndex)))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
 	}
@@ -96,8 +104,8 @@ func LoadBlockBytes(partition kvstore.KVStore, stateIndex uint32) ([]byte, error
 }
 
 // LoadBlock loads block from DB and decodes it
-func LoadBlock(partition kvstore.KVStore, stateIndex uint32) (*block, error) {
-	data, err := LoadBlockBytes(partition, stateIndex)
+func LoadBlock(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID, stateIndex uint32) (*block, error) {
+	data, err := LoadBlockBytes(dbp, chainID, stateIndex)
 	if err != nil {
 		return nil, err
 	}
