@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
 	"github.com/stretchr/testify/require"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -163,6 +164,23 @@ func TestLeb128(t *testing.T) {
 	for _, key := range keys {
 		fmt.Printf("%s: %v\n", key, res[kv.Key(key)])
 	}
+}
+
+func TestLoop(t *testing.T) {
+	chain := setupTest(t)
+
+	req := solo.NewCallParams(ScName, FuncLoop,
+	).WithIotas(1)
+	_, err := chain.PostRequestSync(req, nil)
+	require.Error(t, err)
+    errText := err.Error()
+    require.True(t, strings.Contains(errText, "interrupt"))
+	req = solo.NewCallParams(ScName, FuncIncrement,
+	).WithIotas(1)
+	_, err = chain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	checkStateCounter(t, chain, 1)
 }
 
 func checkStateCounter(t *testing.T, chain *solo.Chain, expected interface{}) {

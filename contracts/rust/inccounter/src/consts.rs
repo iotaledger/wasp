@@ -25,6 +25,7 @@ pub const FUNC_INIT: &str = "init";
 pub const FUNC_LOCAL_STATE_INTERNAL_CALL: &str = "localStateInternalCall";
 pub const FUNC_LOCAL_STATE_POST: &str = "localStatePost";
 pub const FUNC_LOCAL_STATE_SANDBOX_CALL: &str = "localStateSandboxCall";
+pub const FUNC_LOOP: &str = "loop";
 pub const FUNC_POST_INCREMENT: &str = "postIncrement";
 pub const FUNC_REPEAT_MANY: &str = "repeatMany";
 pub const FUNC_TEST_LEB128: &str = "testLeb128";
