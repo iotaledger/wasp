@@ -136,7 +136,7 @@ func (ms *Mutations) Del(k kv.Key) {
 	ms.Dels[k] = struct{}{}
 }
 
-func (ms *Mutations) ApplyTo(w kv.KVStoreWriter) {
+func (ms *Mutations) ApplyTo(w kv.KVWriter) {
 	for k, v := range ms.Sets {
 		w.Set(k, v)
 	}

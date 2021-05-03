@@ -11,7 +11,7 @@ import (
 // Array16 represents a dynamic array stored in a kv.KVStore
 type Array16 struct {
 	*ImmutableArray16
-	kvw kv.KVStoreWriter
+	kvw kv.KVWriter
 }
 
 // ImmutableArray16 provides read-only access to an Array16 in a kv.KVStoreReader.
