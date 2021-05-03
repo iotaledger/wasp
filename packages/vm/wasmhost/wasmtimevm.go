@@ -96,26 +96,23 @@ func (vm *WasmTimeVM) run(runner func() error) (err error) {
 		// no need to treat nested calls with timeout
 		return runner()
 	}
-
 	vm.running = true
-	ch := make(chan error, 2)
-	done := make(chan error, 2)
-	ready := false
+	done := make(chan bool, 2)
+
+	// start timeout handler
 	go func() {
-		errResult := runner()
-		ch <- errResult
-		done <- errResult
-		ready = true
-	}()
-	select {
-	case err = <-ch:
-	case <-time.After(5 * time.Second):
-		if !ready {
+		select {
+		case <-done: // runner was done before timeout
+		case <-time.After(5 * time.Second):
+			// timeout: interrupt Wasm
 			vm.interrupt.Interrupt()
-			// wait for runner to be done
-			err = <-done
+			// wait for runner to finish
+			<-done
 		}
-	}
+	}()
+
+	err = runner()
+	done <- true
 	vm.running = false
 	return
 }
