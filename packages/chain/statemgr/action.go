@@ -5,7 +5,6 @@ package statemgr
 
 import (
 	"bytes"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"time"
 
@@ -73,22 +72,6 @@ func (sm *stateManager) isSynced() bool {
 	return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
 }
 
-func (sm *stateManager) notifyStateTransition() {
-	var stateIndex uint32
-	var outputID ledgerstate.OutputID
-	if sm.stateOutput != nil {
-		stateIndex = sm.stateOutput.GetStateIndex()
-		outputID = sm.stateOutput.ID()
-	}
-	sm.notifiedSyncedStateHash = sm.solidState.Hash()
-	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
-		VirtualState:    sm.solidState.Clone(),
-		ChainOutput:     sm.stateOutput,
-		OutputTimestamp: sm.stateOutputTimestamp,
-	})
-	go sm.chain.Events().StateSynced().Trigger(outputID, stateIndex)
-}
-
 func (sm *stateManager) notifyStateTransitionIfNeeded() {
 	if sm.notifiedSyncedStateHash == sm.solidState.Hash() {
 		return
@@ -96,7 +79,13 @@ func (sm *stateManager) notifyStateTransitionIfNeeded() {
 	if !sm.isSynced() {
 		return
 	}
-	sm.notifyStateTransition()
+	sm.notifiedSyncedStateHash = sm.solidState.Hash()
+	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
+		VirtualState:    sm.solidState.Clone(),
+		ChainOutput:     sm.stateOutput,
+		OutputTimestamp: sm.stateOutputTimestamp,
+	})
+	go sm.chain.Events().StateSynced().Trigger(sm.stateOutput.ID(), sm.stateOutput.GetStateIndex())
 }
 
 // addStateCandidate adding state candidate of state updates to the 'pending' map. Assumes it contains the block in the log of updates
