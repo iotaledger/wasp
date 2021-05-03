@@ -118,7 +118,7 @@ func (sm *stateManager) eventBlockCandidateMsg(msg chain.BlockCandidateMsg) {
 		"block essence", msg.Block.EssenceHash().String(),
 		"ts", msg.Block.Timestamp(),
 	)
-	sm.addBlockFromSelf(msg.Block)
+	sm.addBlockFromCommitee(msg.Block)
 	sm.takeAction()
 }
 

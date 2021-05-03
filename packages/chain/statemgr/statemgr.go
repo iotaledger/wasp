@@ -44,6 +44,7 @@ type stateManager struct {
 
 const (
 	pullStateRetryConst         = 2 * time.Second
+	pullStateNewBlockDelayConst = 10 * time.Second
 	periodBetweenSyncMessages   = 1 * time.Second
 	numberOfNodesToRequestBlock = 5
 )

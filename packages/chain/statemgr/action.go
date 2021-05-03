@@ -77,6 +77,13 @@ func (sm *stateManager) pullStateIfNeeded() {
 	go sm.chain.Events().StateSynced().Trigger(sm.stateOutput.ID(), sm.stateOutput.GetStateIndex())
 }*/
 
+func (sm *stateManager) addBlockFromCommitee(block state.Block) {
+	sm.addBlockFromSelf(block)
+	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < block.StateIndex() {
+		sm.pullStateRetryTime = time.Now().Add(pullStateNewBlockDelayConst)
+	}
+}
+
 // adding block of state updates to the 'pending' map
 func (sm *stateManager) addBlockFromSelf(block state.Block) {
 	sm.log.Infow("XXX addBlockFromCommitee",
@@ -109,7 +116,6 @@ func (sm *stateManager) addBlockFromSelf(block state.Block) {
 	}
 
 	sm.addBlockAndCheckStateOutput(block, &nextStateHash)
-	sm.pullStateRetryTime = time.Now()
 }
 
 func (sm *stateManager) addBlockFromPeer(block state.Block) {
