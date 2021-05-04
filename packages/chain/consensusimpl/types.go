@@ -180,5 +180,6 @@ func (op *operator) mustStateIndex() uint32 {
 }
 
 func (op *operator) getFeeDestination() coretypes.AgentID {
-	return op.committee.FeeDestination()
+	// TODO temporary
+	return *coretypes.NewAgentID(op.chain.ID().AsAddress(), 0)
 }

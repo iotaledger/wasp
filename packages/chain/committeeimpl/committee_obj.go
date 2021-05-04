@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -16,7 +15,6 @@ import (
 )
 
 type committeeObj struct {
-	chainObj    chain.Chain
 	isReady     *atomic.Bool
 	netProvider peering.NetworkProvider
 	peers       peering.GroupProvider
@@ -29,7 +27,7 @@ type committeeObj struct {
 	log         *logger.Logger
 }
 
-func NewCommittee(chainObj chain.Chain, stateAddr ledgerstate.Address, netProvider peering.NetworkProvider, dksProvider tcrypto.RegistryProvider, log *logger.Logger) (chain.Committee, error) {
+func NewCommittee(stateAddr ledgerstate.Address, netProvider peering.NetworkProvider, dksProvider tcrypto.RegistryProvider, log *logger.Logger) (chain.Committee, error) {
 	cmtRec, err := registry.CommitteeRecordFromRegistry(stateAddr)
 	if err != nil || cmtRec == nil {
 		return nil, xerrors.Errorf(
@@ -60,10 +58,9 @@ func NewCommittee(chainObj chain.Chain, stateAddr ledgerstate.Address, netProvid
 	}
 
 	ret := &committeeObj{
-		chainObj:    chainObj,
 		isReady:     atomic.NewBool(false),
 		peers:       peers,
-		peeringID:   chainObj.ID().Array(), // TODO: Maybe we need to use different ID here.
+		peeringID:   stateAddr.Array(), // committee is made for specific state address
 		netProvider: netProvider,
 		size:        dkshare.N,
 		quorum:      dkshare.T,
@@ -179,14 +176,6 @@ func (c *committeeObj) Close() {
 	c.isReady.Store(false)
 	c.peers.Detach(c.attachID)
 	c.peers.Close()
-}
-
-func (c *committeeObj) FeeDestination() coretypes.AgentID {
-	return *coretypes.NewAgentID(c.chainObj.ID().AsAddress(), 0)
-}
-
-func (c *committeeObj) Chain() chain.Chain {
-	return c.chainObj
 }
 
 func (c *committeeObj) waitReady() {
