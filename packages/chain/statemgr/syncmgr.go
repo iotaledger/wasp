@@ -81,16 +81,12 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 		sm.log.Infof("XXX doSyncActionIfNeeded: output nil")
 		return
 	}
-	startSyncFromIndex := uint32(0)
-	if sm.solidState != nil {
-		startSyncFromIndex = sm.solidState.BlockIndex() + 1
-	}
 	switch {
-	case startSyncFromIndex == sm.stateOutput.GetStateIndex()+1:
+	case sm.solidState.BlockIndex() == sm.stateOutput.GetStateIndex():
 		// synced
 		sm.log.Infof("XXX doSyncActionIfNeeded: synced")
 		return
-	case startSyncFromIndex > sm.stateOutput.GetStateIndex():
+	case sm.solidState.BlockIndex() > sm.stateOutput.GetStateIndex():
 		sm.log.Panicf("inconsistency: solid state index is larger than state output index")
 	}
 	// not synced
@@ -98,6 +94,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	//if len(sm.blockCandidates) > 0 && currentIndex+1 >= sm.stateOutput.GetStateIndex() {
 	//	return
 	//}
+	startSyncFromIndex := sm.solidState.BlockIndex() + 1
 	sm.log.Infof("XXX doSyncActionIfNeeded: from %v to %v", startSyncFromIndex, sm.stateOutput.GetStateIndex())
 	for i := startSyncFromIndex; i <= sm.stateOutput.GetStateIndex(); i++ {
 		sm.log.Infof("XXX doSyncActionIfNeeded: syncing %v block candidates %v approved block candidates %v", i, sm.syncingBlocks.getBlockCandidatesCount(i), sm.syncingBlocks.getApprovedBlockCandidatesCount(i))
