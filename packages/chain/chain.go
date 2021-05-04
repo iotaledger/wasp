@@ -92,7 +92,7 @@ type StateManager interface {
 	EventBlockMsg(msg *BlockMsg)
 	EventStateMsg(msg *StateMsg)
 	EventOutputMsg(msg ledgerstate.Output)
-	EventBlockCandidateMsg(msg BlockCandidateMsg)
+	EventStateCandidateMsg(msg StateCandidateMsg)
 	EventTimerMsg(msg TimerTick)
 	GetSyncInfo() *SyncInfo
 	Close()
@@ -155,10 +155,9 @@ type PeerStatus struct {
 }
 
 type StateTransitionEventData struct {
-	VirtualState     state.VirtualState
-	BlockEssenceHash hashing.HashValue
-	ChainOutput      *ledgerstate.AliasOutput
-	Timestamp        time.Time
+	VirtualState    state.VirtualState
+	ChainOutput     *ledgerstate.AliasOutput
+	OutputTimestamp time.Time
 }
 
 func (p *PeerStatus) String() string {

@@ -2,62 +2,59 @@ package state
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
-	"io"
+	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
 
+// StateReader read-only access to the chain's state
 type StateReader interface {
 	BlockIndex() uint32
-	Timestamp() int64
+	Timestamp() time.Time
 	Hash() hashing.HashValue
 	KVStoreReader() kv.KVStoreReader
 }
 
-// represents an interface to the mutable state of the smart contract
+// VirtualState virtualized access to the chain's state
 type VirtualState interface {
 	StateReader
-	ApplyBlockIndex(uint32)
-	ApplyStateUpdate(stateUpd StateUpdate)
+	ApplyStateUpdates(...StateUpdate)
 	ApplyBlock(Block) error
-	CommitToDb(block Block) error
+	ExtractBlock() (Block, error)
+	Commit(blocks ...Block) error
 	KVStore() *buffered.BufferedKVStore
 	Clone() VirtualState
 	DangerouslyConvertToString() string
 }
 
-// State update represents update to the variable state
-// it is calculated by the VM (in batches)
-// State updates comes in batches, all state updates within one block
-// has same state index, state tx id and block size. ResultBlock index is unique in block
-// ResultBlock is completed when it contains one state update for each index
+// StateUpdate is a set of mutations
 type StateUpdate interface {
-	// request which resulted in this state update
-	Timestamp() int64
-	WithTimestamp(int64) StateUpdate
-	// the payload of variables/values
-	String() string
 	Mutations() *buffered.Mutations
 	Clone() StateUpdate
-	Write(io.Writer) error
-	Read(io.Reader) error
+	Bytes() []byte
+	String() string
 }
 
-// Block is a sequence of state updates applicable to the variable state
+// Block is a sequence of state updates applicable to the virtual state
 type Block interface {
-	ForEach(func(uint16, StateUpdate) bool)
-	StateIndex() uint32
-	WithBlockIndex(uint32) Block
+	BlockIndex() uint32
 	ApprovingOutputID() ledgerstate.OutputID
-	WithApprovingOutputID(ledgerstate.OutputID) Block
-	Timestamp() int64
-	Size() uint16
-	EssenceHash() hashing.HashValue // except state transaction id
-	IsApprovedBy(*ledgerstate.AliasOutput) bool
-	String() string
+	SetApprovingOutputID(ledgerstate.OutputID)
+	Timestamp() time.Time
+	EssenceBytes() []byte // except state transaction id
 	Bytes() []byte
-	Write(io.Writer) error
-	Read(io.Reader) error
+}
+
+const (
+	OriginStateHashBase58 = "4Rx7PFaQTyyYEeESYXhjbYQNpzhzbWQM6uwePRGw3U1V"
+)
+
+func OriginStateHash() hashing.HashValue {
+	ret, err := hashing.HashValueFromBase58(OriginStateHashBase58)
+	if err != nil {
+		panic(err)
+	}
+	return ret
 }

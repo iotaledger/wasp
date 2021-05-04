@@ -79,7 +79,7 @@ type GetBlockMsg struct {
 
 type BlockMsg struct {
 	SenderIndex uint16
-	Block       state.Block
+	BlockBytes  []byte
 }
 
 // DismissChainMsg sent by component to the chain core in case of major setback
@@ -101,8 +101,8 @@ type StateTransitionMsg struct {
 
 // message of complete batch. Is sent by consensus operator to the state manager as a VM result
 // - state manager to itself when batch is completed after syncing
-type BlockCandidateMsg struct {
-	Block state.Block
+type StateCandidateMsg struct {
+	State state.VirtualState
 }
 
 // VMResultMsg is the message sent by the async VM task to the chan object upon success full finish

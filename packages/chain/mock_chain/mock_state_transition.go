@@ -14,7 +14,7 @@ import (
 type MockedStateTransition struct {
 	t           *testing.T
 	chainKey    *ed25519.KeyPair
-	onNextState func(block state.Block, tx *ledgerstate.Transaction)
+	onNextState func(virtualState state.VirtualState, tx *ledgerstate.Transaction)
 }
 
 func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedStateTransition {
@@ -33,14 +33,10 @@ func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chain
 	counter, _, err := codec.DecodeUint64(counterBin)
 	require.NoError(c.t, err)
 
-	stateUpdate := state.NewStateUpdate()
-	stateUpdate.Mutations().Set("counter", codec.EncodeUint64(counter+1))
-	block, err := state.NewBlock(stateUpdate)
-	require.NoError(c.t, err)
-	block.WithBlockIndex(nextVirtualState.BlockIndex() + 1)
-
-	err = nextVirtualState.ApplyBlock(block)
-	require.NoError(c.t, err)
+	su0 := state.NewStateUpdateWithBlockIndexMutation(virtualState.BlockIndex() + 1)
+	su1 := state.NewStateUpdate()
+	su1.Mutations().Set("counter", codec.EncodeUint64(counter+1))
+	nextVirtualState.ApplyStateUpdates(su0, su1)
 
 	nextStateHash := nextVirtualState.Hash()
 
@@ -50,9 +46,9 @@ func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chain
 	tx, err := txBuilder.BuildWithED25519(c.chainKey)
 	require.NoError(c.t, err)
 
-	c.onNextState(block, tx)
+	c.onNextState(nextVirtualState, tx)
 }
 
-func (c *MockedStateTransition) OnNextState(f func(block state.Block, tx *ledgerstate.Transaction)) {
+func (c *MockedStateTransition) OnNextState(f func(virtualStats state.VirtualState, tx *ledgerstate.Transaction)) {
 	c.onNextState = f
 }

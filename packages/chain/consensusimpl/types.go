@@ -66,7 +66,7 @@ type operator struct {
 
 type leaderStatus struct {
 	reqs            []coretypes.Request
-	batch           state.Block
+	virtualState    state.VirtualState
 	batchHash       hashing.HashValue
 	timestamp       time.Time
 	resultTxEssence *ledgerstate.TransactionEssence

@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	Name        = "root"
+	Name        = coreutil.CoreContractRoot
 	description = "Root Contract"
 )
 

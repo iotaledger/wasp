@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"runtime/debug"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"golang.org/x/xerrors"
@@ -42,7 +42,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 
 	// snapshot state baseline for rollback in case of panic
 	snapshotTxBuilder := vmctx.txBuilder.Clone()
-	snapshotStateUpdate := vmctx.stateUpdate.Clone()
+	snapshotStateUpdate := vmctx.currentStateUpdate.Clone()
 
 	vmctx.lastError = nil
 	func() {
@@ -65,7 +65,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 		// treating panic and error returned from request the same way
 		// restore the txbuilder and state back to the moment before calling VM plugin
 		vmctx.txBuilder = snapshotTxBuilder
-		vmctx.stateUpdate = snapshotStateUpdate
+		vmctx.currentStateUpdate = snapshotStateUpdate
 
 		vmctx.mustSendBack(vmctx.remainingAfterFees)
 	}
@@ -83,23 +83,22 @@ func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request, requestIn
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
 		}
 	}
-	vmctx.timestamp += 1
-	t := time.Unix(0, vmctx.timestamp)
+	ts := vmctx.virtualState.Timestamp().Add(1 * time.Nanosecond)
+	vmctx.currentStateUpdate = state.NewStateUpdate(ts)
 
 	vmctx.entropy = hashing.HashData(vmctx.entropy[:])
-	vmctx.stateUpdate = state.NewStateUpdate().WithTimestamp(vmctx.timestamp)
 	vmctx.callStack = vmctx.callStack[:0]
 
-	if isRequestTimeLockedNow(req, t) {
-		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", t, req.ID().String())
+	if isRequestTimeLockedNow(req, ts) {
+		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", ts, req.ID().String())
 	}
 	if req.Output() != nil {
 		// on-ledger request
 		if input, ok := req.Output().(*ledgerstate.ExtendedLockedOutput); ok {
 			// it is an on-ledger request
-			if !input.UnlockAddressNow(t).Equals(vmctx.chainID.AsAddress()) {
+			if !input.UnlockAddressNow(ts).Equals(vmctx.chainID.AsAddress()) {
 				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
-					t, input.String(), vmctx.chainID.String())
+					ts, input.String(), vmctx.chainID.String())
 			}
 		} else {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: unexpected UTXO type")
@@ -290,7 +289,9 @@ func (vmctx *VMContext) mustSaveRequestOrder() {
 func (vmctx *VMContext) finalizeRequestCall() {
 	vmctx.mustLogRequestToBlockLog(vmctx.lastError)
 	vmctx.lastTotalAssets = vmctx.totalAssets()
-	vmctx.virtualState.ApplyStateUpdate(vmctx.stateUpdate)
+
+	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.currentStateUpdate = nil
 
 	_, ep := vmctx.req.Target()
 	vmctx.log.Debugw("runTheRequest OUT",
@@ -332,13 +333,26 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 	return tx, nil
 }
 
-func (vmctx *VMContext) StoreBlockInfo(blockIndex uint32, blockInfo *blocklog.BlockInfo) error {
+func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) error {
+	// block info will be stored in separate state update
+	vmctx.currentStateUpdate = state.NewStateUpdate()
+
 	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
-	if idx != blockIndex {
-		return xerrors.New("StoreBlockInfo: inconsistent block index")
+	blockInfo := &blocklog.BlockInfo{
+		BlockIndex:            vmctx.virtualState.BlockIndex(),
+		Timestamp:             vmctx.virtualState.Timestamp(),
+		TotalRequests:         numRequests,
+		NumSuccessfulRequests: numSuccess,
+		NumOffLedgerRequests:  numOffLedger,
 	}
+
+	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
+	if idx != blockInfo.BlockIndex {
+		return xerrors.New("CloseVMContext: inconsistent block index")
+	}
+	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.currentStateUpdate = nil
 	return nil
 }

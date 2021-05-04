@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	Name        = "blob"
+	Name        = coreutil.CoreContractBlob
 	description = "Blob Contract"
 )
 

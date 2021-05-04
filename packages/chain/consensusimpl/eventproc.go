@@ -114,19 +114,18 @@ func (op *operator) eventResultCalculated(ctx *chain.VMResultMsg) {
 
 	// check if result belongs to the context. In general, consensus may be already reached
 	// even before the node finished its calculations
-	if ctx.Task.ResultBlock.StateIndex() != op.mustStateIndex()+1 {
+	if ctx.Task.VirtualState.BlockIndex() != op.mustStateIndex()+1 {
 		// out of context. ignore
 		return
 	}
 	op.log.Debugw("eventResultCalculated",
-		"batch size", ctx.Task.ResultBlock.Size(),
 		"blockIndex", op.mustStateIndex(),
 	)
 	// inform own state manager about new result block. The state manager will start waiting
 	// from confirmation of it from the tangle
 	go func() {
-		op.chain.ReceiveMessage(chain.BlockCandidateMsg{
-			Block: ctx.Task.ResultBlock,
+		op.chain.ReceiveMessage(chain.StateCandidateMsg{
+			State: ctx.Task.VirtualState,
 		})
 	}()
 
