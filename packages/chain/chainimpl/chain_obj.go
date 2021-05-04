@@ -249,7 +249,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	}
 	c.committee, c.consensus = nil, nil
 	c.log.Debugf("creating new committee...")
-	if c.committee, err = committeeimpl.NewCommittee(c, msg.ChainOutput.GetStateAddress(), c.netProvider, c.dksProvider, c.log); err != nil {
+	if c.committee, err = committeeimpl.NewCommittee(msg.ChainOutput.GetStateAddress(), c.netProvider, c.dksProvider, c.log); err != nil {
 		c.committee = nil
 		c.log.Errorf("failed to create committee object for address %s: %v", msg.ChainOutput.GetStateAddress(), err)
 		return
