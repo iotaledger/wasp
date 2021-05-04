@@ -32,6 +32,7 @@ type stateManager struct {
 	currentSyncData         atomic.Value
 	notifiedSyncedStateHash hashing.HashValue
 	syncingBlocks           *syncingBlocks
+	timers                  Timers
 	log                     *logger.Logger
 
 	// Channels for accepting external events.
@@ -45,13 +46,11 @@ type stateManager struct {
 }
 
 const (
-	pullStateRetryConst         = 2 * time.Second
-	pullStateNewBlockDelayConst = 10 * time.Second
-	periodBetweenSyncMessages   = 1 * time.Second
-	numberOfNodesToRequestBlock = 5
+	periodBetweenSyncMessages            = 1 * time.Second
+	numberOfNodesToRequestBlockFromConst = 5
 )
 
-func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers *chain.PeerGroup, nodeconn chain.NodeConnection, log *logger.Logger) chain.StateManager {
+func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers *chain.PeerGroup, nodeconn chain.NodeConnection, log *logger.Logger, timers ...Timers) chain.StateManager {
 	ret := &stateManager{
 		ready:                  ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
 		dbp:                    dbp,
@@ -67,6 +66,11 @@ func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers *chain.PeerGroup, 
 		eventPendingBlockMsgCh: make(chan chain.StateCandidateMsg),
 		eventTimerMsgCh:        make(chan chain.TimerTick),
 		closeCh:                make(chan bool),
+	}
+	if len(timers) > 0 {
+		ret.timers = timers[0]
+	} else {
+		ret.timers = Timers{}
 	}
 	ret.SetPeers(peers)
 	go ret.initLoadState()

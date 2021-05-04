@@ -114,7 +114,7 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 	stateIndex := block.BlockIndex()
 	syncsT.startSyncingIfNeeded(stateIndex)
 	sync, _ := syncsT.blocks[stateIndex]
-	hash := nextState.Hash()
+	hash := hashing.HashData(block.EssenceBytes())
 	candidateExisting, ok := sync.blockCandidates[hash]
 	if ok {
 		// already have block. Check consistency. If inconsistent, start from scratch

@@ -32,7 +32,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 			sm.log.Infof("XXX pullStateIfNeeded: pull it")
 			sm.log.Debugf("pull state")
 			sm.nodeConn.PullState(sm.chain.ID().AsAliasAddress())
-			sm.pullStateRetryTime = nowis.Add(pullStateRetryConst)
+			sm.pullStateRetryTime = nowis.Add(sm.timers.getPullStateRetry())
 		}
 	} else {
 		sm.log.Infof("XXX pullStateIfNeeded: before retry time")
@@ -133,7 +133,7 @@ func (sm *stateManager) addBlockFromCommitee(nextState state.VirtualState) {
 	sm.addBlockAndCheckStateOutput(block, nextState)
 
 	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < block.BlockIndex() {
-		sm.pullStateRetryTime = time.Now().Add(pullStateNewBlockDelayConst)
+		sm.pullStateRetryTime = time.Now().Add(sm.timers.getPullStateNewBlockDelay())
 	}
 }
 

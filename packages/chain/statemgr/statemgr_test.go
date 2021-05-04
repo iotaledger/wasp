@@ -151,7 +151,7 @@ func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
 
 	env.AddNode(node)
 
-	const targetBlockIndex = 100
+	const targetBlockIndex = 30
 	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
 		fmt.Printf("XXX OnStateTransition %v %v", msg.ChainOutput.GetStateIndex(), targetBlockIndex)
 		chain.LogStateTransition(msg, node.Log)
