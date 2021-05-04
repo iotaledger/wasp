@@ -17,7 +17,6 @@ const DefaultHandler = "defaultHandler"
 // ContractInterface represents smart contract interface
 type ContractInterface struct {
 	Name        string
-	hname       coretypes.Hname
 	Description string
 	ProgramHash hashing.HashValue
 	Functions   map[coretypes.Hname]ContractFunctionInterface
@@ -127,13 +126,7 @@ func (i *ContractInterface) GetDescription() string {
 
 // Hname caches the value
 func (i *ContractInterface) Hname() coretypes.Hname {
-	if i.Name == "_default" {
-		return 0
-	}
-	if i.hname == 0 {
-		i.hname = coretypes.Hn(i.Name)
-	}
-	return i.hname
+	return CoreHname(i.Name)
 }
 
 func (f *ContractFunctionInterface) Hname() coretypes.Hname {

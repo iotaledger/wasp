@@ -46,10 +46,10 @@ type ChainEvents interface {
 	StateSynced() *events.Event
 }
 
+// Committee is ordered (indexed 0..size-1) list of peers which run the consensus and the whoel chain
 type Committee interface {
 	Size() uint16
 	Quorum() uint16
-	IsReady() bool
 	OwnPeerIndex() uint16
 	DKShare() *tcrypto.DKShare
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
@@ -58,8 +58,8 @@ type Committee interface {
 	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
 	OnPeerMessage(fun func(recv *peering.RecvEvent))
+	IsReady() bool
 	Close()
-	FeeDestination() coretypes.AgentID
 }
 
 // TODO temporary wrapper for Committee need replacement for all peers, not only committee.
@@ -92,7 +92,7 @@ type StateManager interface {
 	EventBlockMsg(msg *BlockMsg)
 	EventStateMsg(msg *StateMsg)
 	EventOutputMsg(msg ledgerstate.Output)
-	EventBlockCandidateMsg(msg BlockCandidateMsg)
+	EventStateCandidateMsg(msg StateCandidateMsg)
 	EventTimerMsg(msg TimerTick)
 	GetSyncInfo() *SyncInfo
 	Close()
@@ -155,10 +155,9 @@ type PeerStatus struct {
 }
 
 type StateTransitionEventData struct {
-	VirtualState     state.VirtualState
-	BlockEssenceHash hashing.HashValue
-	ChainOutput      *ledgerstate.AliasOutput
-	Timestamp        time.Time
+	VirtualState    state.VirtualState
+	ChainOutput     *ledgerstate.AliasOutput
+	OutputTimestamp time.Time
 }
 
 func (p *PeerStatus) String() string {

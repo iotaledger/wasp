@@ -74,14 +74,14 @@ func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*dashboard.Cha
 	if err != nil {
 		return nil, err
 	}
-	block, err := state.LoadBlock(database.GetInstance().GetPartition(chainID), virtualState.BlockIndex())
+	block, err := state.LoadBlock(database.GetInstance(), chainID, virtualState.BlockIndex())
 	if err != nil {
 		return nil, err
 	}
 	return &dashboard.ChainState{
 		Index:             virtualState.BlockIndex(),
 		Hash:              virtualState.Hash(),
-		Timestamp:         virtualState.Timestamp(),
+		Timestamp:         virtualState.Timestamp().UnixNano(),
 		ApprovingOutputID: block.ApprovingOutputID(),
 	}, nil
 }

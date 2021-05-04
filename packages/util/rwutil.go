@@ -88,6 +88,10 @@ func Uint64To8Bytes(val uint64) []byte {
 	return tmp8[:]
 }
 
+func Int64To8Bytes(val int64) []byte {
+	return Uint64To8Bytes(uint64(val))
+}
+
 func WriteUint16(w io.Writer, val uint16) error {
 	_, err := w.Write(Uint16To2Bytes(val))
 	return err

@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	Name        = "blocklog"
+	Name        = coreutil.CoreContractBlocklog
 	description = "Block log contract"
 )
 
@@ -40,6 +40,8 @@ func init() {
 
 const (
 	// state variables
+	StateVarTimestamp          = coreutil.StateVarTimestamp
+	StateVarBlockIndex         = coreutil.StateVarBlockIndex
 	StateVarBlockRegistry      = "b"
 	StateVarRequestLookupIndex = "l"
 	StateVarRequestRecords     = "r"
@@ -93,7 +95,7 @@ func (bi *BlockInfo) Bytes() []byte {
 
 func (bi *BlockInfo) String() string {
 	ret := fmt.Sprintf("Block index: %d\n", bi.BlockIndex)
-	ret += fmt.Sprintf("Timestamp: %v\n", bi.Timestamp)
+	ret += fmt.Sprintf("OutputTimestamp: %v\n", bi.Timestamp)
 	ret += fmt.Sprintf("Total requests: %d\n", bi.TotalRequests)
 	ret += fmt.Sprintf("Number of succesfull requests: %d\n", bi.NumSuccessfulRequests)
 	ret += fmt.Sprintf("Number of off-ledger requests: %d\n", bi.NumOffLedgerRequests)

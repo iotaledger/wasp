@@ -11,7 +11,7 @@ import (
 // Map represents a dynamic key-value collection in a kv.KVStore.
 type Map struct {
 	*ImmutableMap
-	kvw kv.KVStoreWriter
+	kvw kv.KVWriter
 }
 
 // ImmutableMap provides read-only access to a Map in a kv.KVStoreReader.

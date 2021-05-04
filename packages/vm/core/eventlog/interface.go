@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	Name        = "eventlog"
+	Name        = coreutil.CoreContractEventlog
 	description = "Event log Contract"
 )
 

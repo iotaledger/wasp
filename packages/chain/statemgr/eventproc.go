@@ -23,18 +23,17 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 	}
 	sm.log.Debugw("EventGetBlockMsg",
 		"sender index", msg.SenderIndex,
-		"block index", msg.BlockIndex,
+		"blockBytes index", msg.BlockIndex,
 	)
-	block, err := state.LoadBlock(sm.dbp.GetPartition(sm.chain.ID()), msg.BlockIndex)
-	if err != nil || block == nil {
-		// can't load block, can't respond
+	blockBytes, err := state.LoadBlockBytes(sm.dbp, sm.chain.ID(), msg.BlockIndex)
+	if err != nil {
 		return
 	}
 
 	sm.log.Debugf("EventGetBlockMsg for state index #%d --> peer %d", msg.BlockIndex, msg.SenderIndex)
 
 	err = sm.peers.SendMsg(msg.SenderIndex, chain.MsgBlock, util.MustBytes(&chain.BlockMsg{
-		Block: block,
+		BlockBytes: blockBytes,
 	}))
 	if err != nil {
 		return
@@ -49,13 +48,17 @@ func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
 	if sm.stateOutput == nil {
 		return
 	}
+	block, err := state.BlockFromBytes(msg.BlockBytes)
+	if err != nil {
+		sm.log.Warnf("wrong blokc received from peer %d. Err: %v", msg.SenderIndex, err)
+		return
+	}
 	sm.log.Debugw("EventBlockMsg",
 		"sender", msg.SenderIndex,
-		"block index", msg.Block.StateIndex(),
-		"essence hash", msg.Block.EssenceHash().String(),
-		"approving output", coretypes.OID(msg.Block.ApprovingOutputID()),
+		"block index", block.BlockIndex(),
+		"approving output", coretypes.OID(block.ApprovingOutputID()),
 	)
-	sm.blockArrived(msg.Block)
+	sm.blockArrived(block)
 	sm.takeAction()
 }
 
@@ -103,22 +106,19 @@ func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 	sm.takeAction()
 }
 
-func (sm *stateManager) EventBlockCandidateMsg(msg chain.BlockCandidateMsg) {
+func (sm *stateManager) EventStateCandidateMsg(msg chain.StateCandidateMsg) {
 	sm.eventPendingBlockMsgCh <- msg
 }
-func (sm *stateManager) eventBlockCandidateMsg(msg chain.BlockCandidateMsg) {
+func (sm *stateManager) eventStateCandidateMsg(msg chain.StateCandidateMsg) {
 	if sm.stateOutput == nil {
 		return
 	}
-	sm.log.Debugw("EventBlockCandidateMsg",
-		"state index", msg.Block.StateIndex(),
-		"size", msg.Block.Size(),
-		"state output", coretypes.OID(msg.Block.ApprovingOutputID()),
-		"block essence", msg.Block.EssenceHash().String(),
-		"ts", msg.Block.Timestamp(),
+	sm.log.Debugf("EventStateCandidateMsg: state index: %d timestamp: %v",
+		msg.State.BlockIndex(), msg.State.Timestamp(),
 	)
-	sm.addBlockCandidate(msg.Block)
-	//sm.checkStateApproval()
+	if !sm.addStateCandidate(msg.State) {
+		return
+	}
 	sm.takeAction()
 }
 

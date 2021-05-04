@@ -6,13 +6,10 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"golang.org/x/xerrors"
-	"time"
 )
 
 // MustRunVMTaskAsync runs computations for the batch of requests in the background
@@ -36,15 +33,13 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		"block index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
 	)
-	vmctx, err := vmcontext.MustNewVMContext(task, txb)
+	vmctx, err := vmcontext.CreateVMContext(task, txb)
 	if err != nil {
-		task.Log.Panicf("runTask: %v", err)
+		task.Log.Panicf("runTask: CreateVMContext: %v", err)
 	}
 
-	stateUpdates := make([]state.StateUpdate, 0, len(task.Requests))
 	var lastResult dict.Dict
 	var lastErr error
-	var lastStateUpdate state.StateUpdate
 	var lastTotalAssets *ledgerstate.ColoredBalances
 
 	// loop over the batch of requests and run each request on the VM.
@@ -52,9 +47,8 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	var numOffLedger, numSuccess uint16
 	for i, req := range task.Requests {
 		vmctx.RunTheRequest(req, uint16(i))
-		lastStateUpdate, lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
+		lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
 
-		stateUpdates = append(stateUpdates, lastStateUpdate)
 		if req.Output() == nil {
 			numOffLedger++
 		}
@@ -62,33 +56,15 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 			numSuccess++
 		}
 	}
-	// create block from state updates.
-	task.ResultBlock, err = state.NewBlock(stateUpdates...)
-	if err != nil {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.NewBlock: %v", err))
-		return
-	}
-	task.ResultBlock.WithBlockIndex(task.VirtualState.BlockIndex() + 1)
 
 	// save the block info into the 'blocklog' contract
-	err = vmctx.StoreBlockInfo(task.ResultBlock.StateIndex(), &blocklog.BlockInfo{
-		Timestamp:             time.Unix(0, task.ResultBlock.Timestamp()),
-		TotalRequests:         uint16(len(task.Requests)),
-		NumSuccessfulRequests: numSuccess,
-		NumOffLedgerRequests:  numOffLedger,
-	})
+	err = vmctx.CloseVMContext(uint16(len(task.Requests)), numSuccess, numOffLedger)
 	if err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM: %w", err))
 		return
 	}
-	// calculate resulting state hash
-	vsClone := task.VirtualState.Clone()
-	if err = vsClone.ApplyBlock(task.ResultBlock); err != nil {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.ApplyBlock: %w", err))
-		return
-	}
 
-	task.ResultTransaction, err = vmctx.BuildTransactionEssence(vsClone.Hash(), time.Unix(0, vsClone.Timestamp()))
+	task.ResultTransaction, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
 	if err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return
@@ -98,9 +74,8 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		return
 	}
 	task.Log.Debugw("runTask OUT",
-		"batch size", task.ResultBlock.Size(),
-		"block index", task.ResultBlock.StateIndex(),
-		"variable state hash", vsClone.Hash().Bytes(),
+		"block index", task.VirtualState.BlockIndex(),
+		"variable state hash", task.VirtualState.Hash().Bytes(),
 		"tx essence hash", hashing.HashData(task.ResultTransaction.Bytes()).String(),
 		"tx finalTimestamp", task.ResultTransaction.Timestamp(),
 	)

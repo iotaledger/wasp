@@ -1,6 +1,7 @@
 package buffered
 
 import (
+	"bytes"
 	"io"
 	"sort"
 
@@ -8,9 +9,12 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
+// Mutations is a set of mutations: one for each key
+// It provides a deterministic serialization
 type Mutations struct {
-	Sets map[kv.Key][]byte
-	Dels map[kv.Key]struct{}
+	Sets   map[kv.Key][]byte
+	Dels   map[kv.Key]struct{}
+	locked bool
 }
 
 func NewMutations() *Mutations {
@@ -18,6 +22,12 @@ func NewMutations() *Mutations {
 		Sets: make(map[kv.Key][]byte),
 		Dels: make(map[kv.Key]struct{}),
 	}
+}
+
+func (ms *Mutations) Bytes() []byte {
+	var buf bytes.Buffer
+	_ = ms.Write(&buf)
+	return buf.Bytes()
 }
 
 func (ms *Mutations) Write(w io.Writer) error {
@@ -40,6 +50,7 @@ func (ms *Mutations) Write(w io.Writer) error {
 			return err
 		}
 	}
+	ms.locked = true // should be immutable once serialized
 	return nil
 }
 
@@ -110,16 +121,22 @@ func (ms *Mutations) Get(k kv.Key) ([]byte, bool) {
 }
 
 func (ms *Mutations) Set(k kv.Key, v []byte) {
+	if ms.locked {
+		panic("mutations locked")
+	}
 	delete(ms.Dels, k)
 	ms.Sets[k] = v
 }
 
 func (ms *Mutations) Del(k kv.Key) {
+	if ms.locked {
+		panic("mutations locked")
+	}
 	delete(ms.Sets, k)
 	ms.Dels[k] = struct{}{}
 }
 
-func (ms *Mutations) ApplyTo(w kv.KVStoreWriter) {
+func (ms *Mutations) ApplyTo(w kv.KVWriter) {
 	for k, v := range ms.Sets {
 		w.Set(k, v)
 	}
@@ -136,5 +153,10 @@ func (ms *Mutations) Clone() *Mutations {
 	for k := range ms.Dels {
 		clone.Del(k)
 	}
+	// left unlocked intentionally
 	return clone
+}
+
+func (ms *Mutations) IsEmpty() bool {
+	return len(ms.Sets) == 0 && len(ms.Dels) == 0
 }

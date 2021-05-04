@@ -19,17 +19,14 @@ import (
 type VMTask struct {
 	Processors         *processors.ProcessorCache
 	ChainInput         *ledgerstate.AliasOutput
-	VirtualState       state.VirtualState
+	VirtualState       state.VirtualState // in/out  Return uncommitted updated virtual state
 	Requests           []coretypes.Request
 	Timestamp          time.Time
 	Entropy            hashing.HashValue
 	ValidatorFeeTarget coretypes.AgentID
 	Log                *logger.Logger
-	// call when finished
-	OnFinish func(callResult dict.Dict, callError error, vmError error)
-	// result
-	ResultTransaction *ledgerstate.TransactionEssence
-	ResultBlock       state.Block
+	OnFinish           func(callResult dict.Dict, callError error, vmError error)
+	ResultTransaction  *ledgerstate.TransactionEssence
 }
 
 // BatchHash is used to uniquely identify the VM task

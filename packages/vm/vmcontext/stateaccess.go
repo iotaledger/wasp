@@ -32,7 +32,7 @@ func (vmctx *VMContext) stateWrapper() stateWrapper {
 	return newStateWrapper(
 		vmctx.CurrentContractHname(),
 		vmctx.virtualState,
-		vmctx.stateUpdate,
+		vmctx.currentStateUpdate,
 	)
 }
 

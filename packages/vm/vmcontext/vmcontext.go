@@ -23,10 +23,9 @@ type VMContext struct {
 	chainID            coretypes.ChainID
 	chainOwnerID       coretypes.AgentID
 	processors         *processors.ProcessorCache
-	txBuilder          *utxoutil.Builder
-	virtualState       state.VirtualState
+	txBuilder          *utxoutil.Builder  // mutated
+	virtualState       state.VirtualState // mutated
 	remainingAfterFees *ledgerstate.ColoredBalances
-	blockIndex         uint32
 	log                *logger.Logger
 	// fee related
 	validatorFeeTarget coretypes.AgentID // provided by validator
@@ -34,16 +33,15 @@ type VMContext struct {
 	ownerFee           uint64
 	validatorFee       uint64
 	// request context
-	req             coretypes.Request
-	requestIndex    uint16
-	entropy         hashing.HashValue // mutates with each request
-	contractRecord  *root.ContractRecord
-	timestamp       int64
-	stateUpdate     state.StateUpdate
-	lastError       error     // mutated
-	lastResult      dict.Dict // mutated. Used only by 'solo'
-	lastTotalAssets *ledgerstate.ColoredBalances
-	callStack       []*callContext
+	req                coretypes.Request
+	requestIndex       uint16
+	currentStateUpdate state.StateUpdate
+	entropy            hashing.HashValue // mutates with each request
+	contractRecord     *root.ContractRecord
+	lastError          error     // mutated
+	lastResult         dict.Dict // mutated. Used only by 'solo'
+	lastTotalAssets    *ledgerstate.ColoredBalances
+	callStack          []*callContext
 }
 
 type callContext struct {
@@ -54,42 +52,47 @@ type callContext struct {
 	transfer         *ledgerstate.ColoredBalances // transfer passed
 }
 
-// MustNewVMContext a constructor
-func MustNewVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
+// CreateVMContext a constructor
+func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
 	chainID, err := coretypes.ChainIDFromAddress(task.ChainInput.Address())
 	if err != nil {
-		return nil, xerrors.Errorf("MustNewVMContext: %v", err)
+		return nil, xerrors.Errorf("CreateVMContext: %v", err)
+	}
+
+	{
+		// assert consistency
+		stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
+		if err != nil {
+			return nil, xerrors.Errorf("CreateVMContext: can't parse state hash from chain input %w", err)
+		}
+		if stateHash != task.VirtualState.Hash() {
+			return nil, xerrors.New("CreateVMContext: state hash mismatch")
+		}
+		if task.VirtualState.BlockIndex() != task.ChainInput.GetStateIndex() {
+			return nil, xerrors.New("CreateVMContext: state index is inconsistent")
+		}
+	}
+	{
+		openingStateUpdate := state.NewStateUpdateWithBlockIndexMutation(task.VirtualState.BlockIndex()+1, task.Timestamp)
+		task.VirtualState.ApplyStateUpdates(openingStateUpdate)
 	}
 	ret := &VMContext{
 		chainID:      *chainID,
 		txBuilder:    txb,
-		virtualState: task.VirtualState.Clone(),
-		blockIndex:   task.VirtualState.BlockIndex() + 1,
+		virtualState: task.VirtualState,
 		processors:   task.Processors,
 		log:          task.Log,
 		entropy:      task.Entropy,
-		timestamp:    task.Timestamp.UnixNano(),
 		callStack:    make([]*callContext, 0),
 	}
-	stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
-	if err != nil {
-		// chain input must always be present
-		return nil, xerrors.Errorf("MustNewVMContext: can't parse state hash %v", err)
-	}
-	if stateHash != ret.virtualState.Hash() {
-		return nil, xerrors.New("MustNewVMContext: state hash mismatch")
-	}
-	if ret.virtualState.BlockIndex() != task.ChainInput.GetStateIndex() {
-		return nil, xerrors.New("MustNewVMContext: state index is inconsistent")
-	}
+	// consume chain input
 	err = txb.ConsumeAliasInput(task.ChainInput.Address())
 	if err != nil {
-		// chain input must always be present
-		return nil, xerrors.Errorf("MustNewVMContext: can't find chain input %v", err)
+		return nil, xerrors.Errorf("CreateVMContext: consume chain input %w", err)
 	}
 	return ret, nil
 }
 
-func (vmctx *VMContext) GetResult() (state.StateUpdate, dict.Dict, *ledgerstate.ColoredBalances, error) {
-	return vmctx.stateUpdate, vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError
+func (vmctx *VMContext) GetResult() (dict.Dict, *ledgerstate.ColoredBalances, error) {
+	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError
 }

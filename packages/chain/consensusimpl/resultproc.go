@@ -38,7 +38,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 		ValidatorFeeTarget: par.accrueFeesTo,
 		Requests:           par.requests,
 		Timestamp:          par.timestamp,
-		VirtualState:       op.currentState,
+		VirtualState:       op.currentState.Clone(),
 		Log:                op.log,
 	}
 	task.OnFinish = func(_ dict.Dict, _ error, vmError error) {
@@ -122,9 +122,6 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 	if bh != op.leaderStatus.batchHash {
 		op.log.Panic("bh != op.leaderStatus.batchHash")
 	}
-	if len(result.Requests) != int(result.ResultBlock.Size()) {
-		op.log.Panic("len(result.RequestIDs) != int(result.ResultBlock.Size())")
-	}
 
 	essenceHash := hashing.HashData(result.ResultTransaction.Bytes())
 	op.log.Debugw("saveOwnResult",
@@ -134,7 +131,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 	)
 
 	op.leaderStatus.resultTxEssence = result.ResultTransaction
-	op.leaderStatus.batch = result.ResultBlock
+	op.leaderStatus.virtualState = result.VirtualState
 	op.leaderStatus.signedResults[op.committee.OwnPeerIndex()] = &signedResult{
 		essenceHash: essenceHash,
 		sigShare:    sigShare,

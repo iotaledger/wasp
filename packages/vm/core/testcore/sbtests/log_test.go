@@ -56,7 +56,7 @@ func testEventlogGetBetweenTs(t *testing.T, w bool) {
 
 	res, err := chain.CallView(eventlog.Interface.Name, eventlog.FuncGetRecords,
 		eventlog.ParamFromTs, 0,
-		eventlog.ParamToTs, chain.State.Timestamp()-int64(1500*time.Millisecond),
+		eventlog.ParamToTs, chain.State.Timestamp().UnixNano()-int64(1500*time.Millisecond),
 		eventlog.ParamMaxLastRecords, 2,
 		eventlog.ParamContractHname, sbtestsc.Interface.Hname(),
 	)

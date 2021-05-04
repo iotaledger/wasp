@@ -6,7 +6,7 @@ import (
 )
 
 // Wraps immutable view state into a mutable KVStore
-// with the KVStoreWriter functions implemented as panics
+// with the KVWriter functions implemented as panics
 // WaspLib already takes care of the immutability aspect,
 // so these panics should never trigger and we can avoid
 // a much more drastic refactoring for now
