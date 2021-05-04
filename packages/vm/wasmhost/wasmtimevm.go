@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+const defaultTimeout = 5 * time.Second
+
+// WasmTimeout set this to non-zero for a one-time override of the defaultTimeout
+var WasmTimeout = 0 * time.Second
+
 type WasmTimeVM struct {
 	WasmVmBase
 	instance  *wasmtime.Instance
@@ -18,12 +23,17 @@ type WasmTimeVM struct {
 	module    *wasmtime.Module
 	running   bool
 	store     *wasmtime.Store
+	timeout   time.Duration
 }
 
 var _ WasmVM = &WasmTimeVM{}
 
 func NewWasmTimeVM() *WasmTimeVM {
-	vm := &WasmTimeVM{}
+	vm := &WasmTimeVM{timeout: defaultTimeout}
+	if WasmTimeout != 0 {
+		vm.timeout = WasmTimeout
+		WasmTimeout = 0
+	}
 	config := wasmtime.NewConfig()
 	config.SetInterruptable(true)
 	vm.store = wasmtime.NewStore(wasmtime.NewEngineWithConfig(config))
@@ -103,7 +113,7 @@ func (vm *WasmTimeVM) run(runner func() error) (err error) {
 	go func() {
 		select {
 		case <-done: // runner was done before timeout
-		case <-time.After(5 * time.Second):
+		case <-time.After(vm.timeout):
 			// timeout: interrupt Wasm
 			vm.interrupt.Interrupt()
 			// wait for runner to finish
