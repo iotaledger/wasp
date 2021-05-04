@@ -22,8 +22,8 @@ type syncingBlocks struct {
 }
 
 type syncingBlock struct {
-	pullDeadline    time.Time
-	blockCandidates map[hashing.HashValue]*candidateBlock
+	requestBlockRetryTime time.Time
+	blockCandidates       map[hashing.HashValue]*candidateBlock
 }
 
 func newSyncingBlocks(log *logger.Logger) *syncingBlocks {
@@ -33,18 +33,18 @@ func newSyncingBlocks(log *logger.Logger) *syncingBlocks {
 	}
 }
 
-func (syncsT *syncingBlocks) getPullDeadline(stateIndex uint32) time.Time {
+func (syncsT *syncingBlocks) getRequestBlockRetryTime(stateIndex uint32) time.Time {
 	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {
 		return time.Time{}
 	}
-	return sync.pullDeadline
+	return sync.requestBlockRetryTime
 }
 
-func (syncsT *syncingBlocks) setPullDeadline(stateIndex uint32, pullDeadline time.Time) {
+func (syncsT *syncingBlocks) setRequestBlockRetryTime(stateIndex uint32, requestBlockRetryTime time.Time) {
 	sync, ok := syncsT.blocks[stateIndex]
 	if ok {
-		sync.pullDeadline = pullDeadline
+		sync.requestBlockRetryTime = requestBlockRetryTime
 	}
 }
 
@@ -130,7 +130,6 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 	}
 	candidate = newCandidateBlock(block, nextState)
 	sync.blockCandidates[hash] = candidate
-	sync.pullDeadline = time.Now().Add(periodBetweenSyncMessages * 2)
 	syncsT.log.Infof("added new block candidate. State index: %d, state hash: %s", stateIndex, hash.String())
 	return true, candidate, nil
 }
@@ -157,8 +156,8 @@ func (syncsT *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOut
 func (syncsT *syncingBlocks) startSyncingIfNeeded(stateIndex uint32) {
 	if !syncsT.isSyncing(stateIndex) {
 		syncsT.blocks[stateIndex] = &syncingBlock{
-			//pullDeadline      time.Time       // // TODO:
-			blockCandidates: make(map[hashing.HashValue]*candidateBlock),
+			requestBlockRetryTime: time.Now(),
+			blockCandidates:       make(map[hashing.HashValue]*candidateBlock),
 		}
 	}
 }

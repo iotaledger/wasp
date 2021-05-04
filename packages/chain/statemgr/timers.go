@@ -12,11 +12,13 @@ import (
 const (
 	defaultPullStateRetryConst         = 2 * time.Second
 	defaultPullStateNewBlockDelayConst = 10 * time.Second
+	defaultGetBlockRetryConst          = 3 * time.Second
 )
 
 type Timers struct {
 	PullStateRetry         *time.Duration
 	PullStateNewBlockDelay *time.Duration
+	GetBlockRetry          *time.Duration
 }
 
 func (tT Timers) setPullStateRetry(pullStateRetry time.Duration) Timers {
@@ -26,6 +28,11 @@ func (tT Timers) setPullStateRetry(pullStateRetry time.Duration) Timers {
 
 func (tT Timers) setPullStateNewBlockDelay(pullStateNewBlockDelay time.Duration) Timers {
 	tT.PullStateNewBlockDelay = &pullStateNewBlockDelay
+	return tT
+}
+
+func (tT Timers) setGetBlockRetry(getBlockRetry time.Duration) Timers {
+	tT.GetBlockRetry = &getBlockRetry
 	return tT
 }
 
@@ -41,4 +48,11 @@ func (tT Timers) getPullStateNewBlockDelay() time.Duration {
 		return defaultPullStateNewBlockDelayConst
 	}
 	return *tT.PullStateNewBlockDelay
+}
+
+func (tT Timers) getGetBlockRetry() time.Duration {
+	if tT.GetBlockRetry == nil {
+		return defaultGetBlockRetryConst
+	}
+	return *tT.GetBlockRetry
 }

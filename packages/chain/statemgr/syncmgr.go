@@ -119,21 +119,21 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 
 func (sm *stateManager) requestBlockIfNeeded(stateIndex uint32) {
 	sm.log.Infof("XXX requestBlockIfNeeded: %v", stateIndex)
-	if time.Now().Before(sm.syncingBlocks.getPullDeadline(stateIndex)) {
-		// still waiting
-		sm.log.Infof("XXX requestBlockIfNeeded: before deadline %v", sm.syncingBlocks.getPullDeadline(stateIndex))
-		return
+	nowis := time.Now()
+	if nowis.After(sm.syncingBlocks.getRequestBlockRetryTime(stateIndex)) {
+		// have to pull
+		data := util.MustBytes(&chain.GetBlockMsg{
+			BlockIndex: stateIndex,
+		})
+		// send messages until first without error
+		// TODO optimize
+		sm.log.Infof("XXX requestBlockIfNeeded: sending to peers")
+		sm.peers.SendMsgToRandomNodes(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
+		sm.syncingBlocks.startSyncingIfNeeded(stateIndex)
+		sm.syncingBlocks.setRequestBlockRetryTime(stateIndex, nowis.Add(sm.timers.getGetBlockRetry()))
+	} else {
+		sm.log.Infof("XXX requestBlockIfNeeded: before deadline %v", sm.syncingBlocks.getRequestBlockRetryTime(stateIndex))
 	}
-	// have to pull
-	data := util.MustBytes(&chain.GetBlockMsg{
-		BlockIndex: stateIndex,
-	})
-	// send messages until first without error
-	// TODO optimize
-	sm.log.Infof("XXX requestBlockIfNeeded: sending to peers")
-	sm.peers.SendMsgToRandomNodes(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
-	sm.syncingBlocks.startSyncingIfNeeded(stateIndex)
-	sm.syncingBlocks.setPullDeadline(stateIndex, time.Now().Add(periodBetweenSyncMessages))
 }
 
 func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex uint32, toStateIndex uint32) ([]*candidateBlock, bool) {

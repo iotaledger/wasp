@@ -46,7 +46,6 @@ type stateManager struct {
 }
 
 const (
-	periodBetweenSyncMessages            = 1 * time.Second
 	numberOfNodesToRequestBlockFromConst = 5
 )
 
