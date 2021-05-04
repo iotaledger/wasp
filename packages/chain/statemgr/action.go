@@ -77,52 +77,40 @@ func (sm *stateManager) pullStateIfNeeded() {
 	go sm.chain.Events().StateSynced().Trigger(sm.stateOutput.ID(), sm.stateOutput.GetStateIndex())
 }*/
 
-func (sm *stateManager) addBlockFromCommitee(block state.Block) {
-	sm.addBlockFromSelf(block)
-	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < block.StateIndex() {
+func (sm *stateManager) addBlockFromCommitee(nextState state.VirtualState) {
+	sm.log.Infow("XXX addBlockFromCommitee",
+		"block index", nextState.BlockIndex(),
+		"timestamp", nextState.Timestamp(),
+		"hash", nextState.Hash(),
+	)
+	sm.log.Debugw("addBlockCandidate",
+		"block index", nextState.BlockIndex(),
+		"timestamp", nextState.Timestamp(),
+		"hash", nextState.Hash(),
+	)
+
+	block, err := nextState.ExtractBlock()
+	if err != nil {
+		sm.log.Errorf("addBlockFromCommitee: %v", err)
+		return
+	}
+	if block == nil {
+		sm.log.Errorf("addBlockFromCommitee: state candidate does not contain block")
+		return
+	}
+
+	sm.addBlockAndCheckStateOutput(block, nextState)
+
+	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < block.BlockIndex() {
 		sm.pullStateRetryTime = time.Now().Add(pullStateNewBlockDelayConst)
 	}
 }
 
-// adding block of state updates to the 'pending' map
-func (sm *stateManager) addBlockFromSelf(block state.Block) {
-	sm.log.Infow("XXX addBlockFromCommitee",
-		"block index", block.StateIndex(),
-		"timestamp", block.Timestamp(),
-		"size", block.Size(),
-		"approving output", coretypes.OID(block.ApprovingOutputID()),
-	)
-	sm.log.Debugw("addBlockCandidate",
-		"block index", block.StateIndex(),
-		"timestamp", block.Timestamp(),
-		"size", block.Size(),
-		"approving output", coretypes.OID(block.ApprovingOutputID()),
-	)
-
-	var nextState state.VirtualState
-	if sm.solidState == nil {
-		nextState = state.NewVirtualState(sm.dbp.GetPartition(sm.chain.ID()), nil)
-	} else {
-		nextState = sm.solidState.Clone()
-	}
-	if err := nextState.ApplyBlock(block); err != nil {
-		sm.log.Error("can't apply update to the current state: %v", err)
-		return
-	}
-	// include the batch to pending batches map
-	nextStateHash := nextState.Hash()
-	if sm.solidState == nil && nextStateHash.String() != state.OriginStateHashBase58 {
-		sm.log.Panicf("major inconsistency: stateToApprove hash is %s, expected %s", nextStateHash.String(), state.OriginStateHashBase58)
-	}
-
-	sm.addBlockAndCheckStateOutput(block, &nextStateHash)
-}
-
 func (sm *stateManager) addBlockFromPeer(block state.Block) {
-	sm.log.Infof("XXX addBlockFromNode %v", block.StateIndex())
-	if !sm.syncingBlocks.isSyncing(block.StateIndex()) {
+	sm.log.Infof("XXX addBlockFromNode %v", block.BlockIndex())
+	if !sm.syncingBlocks.isSyncing(block.BlockIndex()) {
 		// not asked
-		sm.log.Infof("XXX addBlockFromNode %v: not asked", block.StateIndex())
+		sm.log.Infof("XXX addBlockFromNode %v: not asked", block.BlockIndex())
 		return
 	}
 	if sm.addBlockAndCheckStateOutput(block, nil) {
@@ -131,8 +119,8 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) {
 	}
 }
 
-func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, stateHash *hashing.HashValue) bool {
-	isBlockNew, candidate, err := sm.syncingBlocks.addBlockCandidate(block, stateHash)
+func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState state.VirtualState) bool {
+	isBlockNew, candidate, err := sm.syncingBlocks.addBlockCandidate(block, nextState)
 	if err != nil {
 		sm.log.Error(err)
 		return false
@@ -157,10 +145,10 @@ func (sm *stateManager) storeSyncingData() {
 	}
 	sm.log.Infof("XXX storeSyncingData: synced %v block index %v state hash %v state timestamp %v output index %v output id %v output hash %v output timestamp %v", sm.solidState.Hash() == outputStateHash, sm.solidState.BlockIndex(), sm.solidState.Hash(), time.Unix(0, sm.solidState.Timestamp()), sm.stateOutput.GetStateIndex(), sm.stateOutput.ID(), outputStateHash, sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
-		Synced:                sm.solidState.Hash() == outputStateHash,
+		Synced:                sm.isSynced(),
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
 		SyncedStateHash:       sm.solidState.Hash(),
-		SyncedStateTimestamp:  time.Unix(0, sm.solidState.Timestamp()),
+		SyncedStateTimestamp:  sm.solidState.Timestamp(),
 		StateOutputBlockIndex: sm.stateOutput.GetStateIndex(),
 		StateOutputID:         sm.stateOutput.ID(),
 		StateOutputHash:       outputStateHash,

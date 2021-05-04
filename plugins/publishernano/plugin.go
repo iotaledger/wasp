@@ -1,4 +1,4 @@
-package publisher
+package publishernano
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ import (
 )
 
 // PluginName is the name of the Publisher plugin.
-const PluginName = "Publisher"
+const PluginName = "PublisherNano"
 
 var (
 	log *logger.Logger
@@ -54,7 +54,7 @@ func run(_ *node.Plugin) {
 				}
 			case <-shutdownSignal:
 				if socket != nil {
-					socket.Close()
+					_ = socket.Close()
 					socket = nil
 				}
 				return

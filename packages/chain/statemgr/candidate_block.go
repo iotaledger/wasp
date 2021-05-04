@@ -13,29 +13,31 @@ import (
 
 type candidateBlock struct {
 	// block of state updates, not validated yet
-	block     state.Block
-	local     bool
-	votes     int
-	approved  bool
-	stateHash hashing.HashValue
+	block         state.Block
+	local         bool
+	votes         int
+	approved      bool
+	nextStateHash hashing.HashValue
+	nextState     state.VirtualState
 }
 
-func newCandidateBlock(block state.Block, stateHashIfProvided *hashing.HashValue) *candidateBlock {
+func newCandidateBlock(block state.Block, nextStateIfProvided state.VirtualState) *candidateBlock {
 	var local bool
 	var stateHash hashing.HashValue
-	if stateHashIfProvided == nil {
+	if nextStateIfProvided == nil {
 		local = false
 		stateHash = hashing.NilHash
 	} else {
 		local = true
-		stateHash = *stateHashIfProvided
+		stateHash = nextStateIfProvided.Hash()
 	}
 	return &candidateBlock{
-		block:     block,
-		local:     local,
-		votes:     1,
-		approved:  false,
-		stateHash: stateHash,
+		block:         block,
+		local:         local,
+		votes:         1,
+		approved:      false,
+		nextStateHash: stateHash,
+		nextState:     nextStateIfProvided,
 	}
 }
 
@@ -60,28 +62,37 @@ func (cT *candidateBlock) isApproved() bool {
 }
 
 func (cT *candidateBlock) approveIfRightOutput(output *ledgerstate.AliasOutput) {
-	if cT.block.StateIndex() == output.GetStateIndex() {
+	if cT.block.BlockIndex() == output.GetStateIndex() {
 		outputID := output.ID()
 		finalHash, err := hashing.HashValueFromBytes(output.GetStateData())
 		if err != nil {
 			return
 		}
 		if cT.isLocal() {
-			if cT.stateHash == finalHash {
+			if cT.nextStateHash == finalHash {
 				cT.approved = true
-				cT.block.WithApprovingOutputID(outputID)
+				cT.block.SetApprovingOutputID(outputID)
 			}
 		} else {
 			if cT.block.ApprovingOutputID() == outputID {
 				cT.approved = true
-				cT.stateHash = finalHash
+				cT.nextStateHash = finalHash
 			}
 		}
 	}
 }
 
-func (cT *candidateBlock) getStateHash() hashing.HashValue {
-	return cT.stateHash
+func (cT *candidateBlock) getNextStateHash() hashing.HashValue {
+	return cT.nextStateHash
+}
+
+func (ct *candidateBlock) getNextState(currentState state.VirtualState) (state.VirtualState, error) {
+	if ct.isLocal() {
+		return ct.nextState, nil
+	} else {
+		err := currentState.ApplyBlock(ct.block)
+		return currentState, err
+	}
 }
 
 func (cT *candidateBlock) getApprovingOutputID() ledgerstate.OutputID {

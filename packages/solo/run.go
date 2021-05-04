@@ -4,9 +4,11 @@
 package solo
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -34,7 +36,7 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 		ChainInput:         ch.GetChainOutput(),
 		Requests:           batch,
 		Timestamp:          ch.Env.LogicalTime(),
-		VirtualState:       ch.State.Clone(),
+		VirtualState:       ch.State,
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Log:                ch.Log,
@@ -64,28 +66,39 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 	require.NoError(ch.Env.T, err)
 
 	tx := ledgerstate.NewTransaction(task.ResultTransaction, unlockBlocks)
-	ch.settleStateTransition(task.VirtualState, task.ResultBlock, tx)
+	ch.settleStateTransition(tx)
 
 	return callRes, callErr
 }
 
-func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *ledgerstate.Transaction) {
+func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction) {
 	err := ch.Env.AddToLedger(stateTx)
 	require.NoError(ch.Env.T, err)
 
-	err = newState.ApplyBlock(block)
+	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(stateTx)
 	require.NoError(ch.Env.T, err)
 
-	err = newState.CommitToDb(block)
+	// saving block just to check consistency. Otherwise, saved blocks are not used in Solo
+	block, err := ch.State.ExtractBlock()
+	require.NoError(ch.Env.T, err)
+	require.NotNil(ch.Env.T, block)
+	block.SetApprovingOutputID(stateOutput.ID())
+
+	err = ch.State.Commit(block)
 	require.NoError(ch.Env.T, err)
 
-	ch.mempool.RemoveRequests(block.RequestIDs()...)
+	blockBack, err := state.LoadBlock(ch.Env.dbProvider, &ch.ChainID, ch.State.BlockIndex())
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
+	require.EqualValues(ch.Env.T, stateOutput.ID(), blockBack.ApprovingOutputID())
 
-	ch.State = newState
+	reqIDs := chain.PublishStateTransition(ch.State, stateOutput)
 
-	ch.Log.Infof("state transition #%d --> #%d. Requests in the block: %d. Outputs: %d",
-		ch.State.BlockIndex()-1, ch.State.BlockIndex(), len(block.RequestIDs()), len(stateTx.Essence().Outputs()))
-	ch.Log.Debugf("Batch processed: %s", batchShortStr(block.RequestIDs()))
+	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
+		ch.State.BlockIndex(), len(reqIDs), len(stateTx.Essence().Outputs()))
+	ch.Log.Debugf("Batch processed: %s", batchShortStr(reqIDs))
+
+	ch.mempool.RemoveRequests(reqIDs...)
 
 	ch.Env.EnqueueRequests(stateTx)
 	ch.Env.ClockStep()

@@ -39,7 +39,7 @@ func handleStateQuery(c echo.Context) error {
 	}
 
 	// TODO serialize access to solid state
-	state, batch, exist, err := state.LoadSolidState(&chainID)
+	state, exist, err := state.LoadSolidState(&chainID)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func handleStateQuery(c echo.Context) error {
 		Requests:   make([]coretypes.RequestID, len(batch.RequestIDs())),
 	}
 	copy(ret.Requests, batch.RequestIDs())
-	vars := state.Variables()
+	vars := state.KVStore()
 	for i, q := range req.KeyQueries {
 		result, err := q.Execute(vars)
 		if err != nil {

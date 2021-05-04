@@ -277,7 +277,7 @@ func TestPayment(t *testing.T) {
 	pay2 := NewPayment(last, 41, providerAddr, payer).Bytes()
 	par := dict.New()
 	par.Set(ParamPayerAddress, codec.EncodeAddress(payerAddr))
-	arr := collections.NewArray(par, ParamPayments)
+	arr := collections.NewArray16(par, ParamPayments)
 	_ = arr.Push(pay1)
 	_ = arr.Push(pay2)
 	req = solo.NewCallParamsFromDic("micropay", FuncSettle, par).WithIotas(1)

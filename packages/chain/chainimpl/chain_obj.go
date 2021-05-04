@@ -5,20 +5,18 @@ package chainimpl
 
 import (
 	"bytes"
-	"strconv"
+	"github.com/iotaledger/wasp/packages/state"
 	"sync"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
-	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
-	"github.com/iotaledger/wasp/packages/publisher"
-
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
 	"github.com/iotaledger/wasp/packages/chain/consensusimpl"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
@@ -64,8 +62,13 @@ func NewChain(
 	log.Debugf("creating chain object for %s", chr.ChainID.String())
 
 	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
+	stateReader, err := state.NewStateReader(dbProvider, chr.ChainID)
+	if err != nil {
+		log.Errorf("NewChain: %v", err)
+		return nil
+	}
 	ret := &chainObj{
-		mempool:      mempool.New(dbProvider.GetPartition(chr.ChainID), blobProvider, chainLog),
+		mempool:      mempool.New(stateReader, blobProvider, chainLog),
 		procset:      processors.MustNew(),
 		chMsg:        make(chan interface{}, 100),
 		chainID:      *chr.ChainID,
@@ -110,11 +113,8 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		if c.consensus != nil {
 			c.consensus.EventStateTransitionMsg(msgt)
 		}
-		for _, reqID := range msgt.RequestIDs {
-			c.eventRequestProcessed.Trigger(reqID)
-		}
-	case chain.BlockCandidateMsg:
-		c.stateMgr.EventBlockCandidateMsg(msgt)
+	case chain.StateCandidateMsg:
+		c.stateMgr.EventStateCandidateMsg(msgt)
 	case *chain.InclusionStateMsg:
 		if c.consensus != nil {
 			c.consensus.EventTransactionInclusionStateMsg(msgt)
@@ -272,33 +272,18 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 
 func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 	chain.LogStateTransition(msg, c.log)
+	reqids := chain.PublishStateTransition(msg.VirtualState, msg.ChainOutput)
+	for _, reqid := range reqids {
+		c.eventRequestProcessed.Trigger(reqid)
+	}
+	c.mempool.RemoveRequests(reqids...)
+
 	// send to consensus
 	c.ReceiveMessage(&chain.StateTransitionMsg{
 		VariableState: msg.VirtualState,
 		ChainOutput:   msg.ChainOutput,
-		Timestamp:     msg.Timestamp,
-		RequestIDs:    msg.RequestIDs,
+		Timestamp:     msg.OutputTimestamp,
 	})
-
-	// publish state transition
-	publisher.Publish("state",
-		c.ID().String(),
-		strconv.Itoa(int(msg.VirtualState.BlockIndex())),
-		strconv.Itoa(len(msg.RequestIDs)),
-		coretypes.OID(msg.ChainOutput.ID()),
-		msg.VirtualState.Hash().String(),
-	)
-	// publish processed requests
-	for _, reqid := range msg.RequestIDs {
-		c.eventRequestProcessed.Trigger(reqid)
-
-		publisher.Publish("request_out",
-			c.ID().String(),
-			reqid.String(),
-			strconv.Itoa(int(msg.VirtualState.BlockIndex())),
-			strconv.Itoa(len(msg.RequestIDs)),
-		)
-	}
 }
 
 func (c *chainObj) processSynced(outputID ledgerstate.OutputID, blockIndex uint32) {

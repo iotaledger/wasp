@@ -1,11 +1,13 @@
 package vmcontext
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -111,10 +113,32 @@ func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col ledgerstate.Co
 	return accounts.MoveBetweenAccounts(vmctx.State(), aid, &target, bals)
 }
 
+func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
+	return blocklog.NewRequestLookupKey(vmctx.virtualState.BlockIndex(), vmctx.requestIndex)
+}
+
+func (vmctx *VMContext) mustLogRequestToBlockLog(err error) {
+	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	var data []byte
+	if err != nil {
+		data = []byte(fmt.Sprintf("%v", err))
+	}
+	err1 := blocklog.SaveRequestLogRecord(vmctx.State(), &blocklog.RequestLogRecord{
+		RequestID: vmctx.req.ID(),
+		OffLedger: vmctx.req.Output() == nil,
+		LogData:   data,
+	}, vmctx.requestLookupKey())
+	if err1 != nil {
+		vmctx.Panicf("logRequestToBlockLog: %v", err)
+	}
+}
+
 func (vmctx *VMContext) StoreToEventLog(contract coretypes.Hname, data []byte) {
 	vmctx.pushCallContext(eventlog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	vmctx.log.Debugf("StoreToEventLog/%s: data: '%s'", contract.String(), string(data))
-	eventlog.AppendToLog(vmctx.State(), vmctx.timestamp, contract, data)
+	eventlog.AppendToLog(vmctx.State(), vmctx.virtualState.Timestamp().UnixNano(), contract, data)
 }

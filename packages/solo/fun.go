@@ -14,8 +14,10 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
@@ -67,7 +69,9 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 		return nil, fmt.Errorf("smart contract '%s' not found", scName)
 	}
 	record, err := root.DecodeContractRecord(retBin)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	if record.Name != scName {
 		return nil, fmt.Errorf("smart contract '%s' not found", scName)
 	}
@@ -387,7 +391,7 @@ func (ch *Chain) GetEventLogRecords(name string) ([]collections.TimestampedLogRe
 	if err != nil {
 		return nil, err
 	}
-	recs := collections.NewArrayReadOnly(res, eventlog.ParamRecords)
+	recs := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
 	ret := make([]collections.TimestampedLogRecord, recs.MustLen())
 	for i := uint16(0); i < recs.MustLen(); i++ {
 		data := recs.MustGetAt(i)
@@ -424,6 +428,129 @@ func (ch *Chain) GetEventLogNumRecords(name string) int {
 	return int(ret)
 }
 
+// OwnersAccount return the agentID of the common account (controlled by the owner)
 func (ch *Chain) OwnersAccount() *coretypes.AgentID {
 	return coretypes.NewAgentID(ch.ChainID.AsAddress(), 0)
+}
+
+// GetLatestBlockInfo return BlockInfo for the latest block in the chain
+func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
+	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetLatestBlockInfo)
+	require.NoError(ch.Env.T, err)
+	resultDecoder := kvdecoder.New(ret, ch.Log)
+	blockIndex := uint32(resultDecoder.MustGetUint64(blocklog.ParamBlockIndex))
+	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
+
+	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, blockInfoBin)
+	require.NoError(ch.Env.T, err)
+	return blockInfo
+}
+
+// GetBlockInfo return BlockInfo for the particular block index in the chain
+func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
+	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetBlockInfo,
+		blocklog.ParamBlockIndex, blockIndex)
+	if err != nil {
+		return nil, err
+	}
+	resultDecoder := kvdecoder.New(ret, ch.Log)
+	blockInfoBin := resultDecoder.MustGetBytes(blocklog.ParamBlockInfo)
+
+	blockInfo, err := blocklog.BlockInfoFromBytes(blockIndex, blockInfoBin)
+	require.NoError(ch.Env.T, err)
+	return blockInfo, nil
+}
+
+// IsRequestProcessed checks if the request is booked on the chain as processed
+func (ch *Chain) IsRequestProcessed(reqID coretypes.RequestID) bool {
+	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncIsRequestProcessed,
+		blocklog.ParamRequestID, reqID)
+	require.NoError(ch.Env.T, err)
+	resultDecoder := kvdecoder.New(ret, ch.Log)
+	bin, err := resultDecoder.GetBytes(blocklog.ParamRequestProcessed)
+	require.NoError(ch.Env.T, err)
+	return bin != nil
+}
+
+// GetRequestLogRecord gets the log records for a particular request, the block index and request index in the block
+func (ch *Chain) GetRequestLogRecord(reqID coretypes.RequestID) (*blocklog.RequestLogRecord, uint32, uint16, bool) {
+	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestLogRecord,
+		blocklog.ParamRequestID, reqID)
+	require.NoError(ch.Env.T, err)
+	resultDecoder := kvdecoder.New(ret, ch.Log)
+	binRec, err := resultDecoder.GetBytes(blocklog.ParamRequestRecord)
+	if err != nil || binRec == nil {
+		return nil, 0, 0, false
+	}
+	ret1, err := blocklog.RequestLogRecordFromBytes(binRec)
+	require.NoError(ch.Env.T, err)
+	blockIndex := uint32(resultDecoder.MustGetUint64(blocklog.ParamBlockIndex))
+	requestIndex := uint16(resultDecoder.MustGetUint64(blocklog.ParamRequestIndex))
+
+	return ret1, blockIndex, requestIndex, true
+}
+
+// GetRequestLogRecordsForBlock returns all request log records for a particular block
+func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32) []*blocklog.RequestLogRecord {
+	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestLogRecordsForBlock,
+		blocklog.ParamBlockIndex, blockIndex)
+	if err != nil {
+		return nil
+	}
+	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestRecord)
+	ret := make([]*blocklog.RequestLogRecord, recs.MustLen())
+	for i := range ret {
+		data, err := recs.GetAt(uint16(i))
+		require.NoError(ch.Env.T, err)
+		ret[i], err = blocklog.RequestLogRecordFromBytes(data)
+		require.NoError(ch.Env.T, err)
+		ret[i].WithBlockData(blockIndex, uint16(i))
+	}
+	return ret
+}
+
+// GetRequestIDsForBlock returns return the list of requestIDs settled in a particular block
+func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []coretypes.RequestID {
+	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestIDsForBlock,
+		blocklog.ParamBlockIndex, blockIndex)
+	if err != nil {
+		ch.Log.Warnf("GetRequestIDsForBlock: %v", err)
+		return nil
+	}
+	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestID)
+	ret := make([]coretypes.RequestID, recs.MustLen())
+	for i := range ret {
+		reqIDBin, err := recs.GetAt(uint16(i))
+		require.NoError(ch.Env.T, err)
+		ret[i], err = coretypes.RequestIDFromBytes(reqIDBin)
+		require.NoError(ch.Env.T, err)
+	}
+	return ret
+}
+
+// GetLogRecordsForBlockRange returns all request log records for range of blocks, inclusively.
+// Upper bound is 'latest block' is set to 0
+func (ch *Chain) GetLogRecordsForBlockRange(fromBlockIndex, toBlockIndex uint32) []*blocklog.RequestLogRecord {
+	if toBlockIndex == 0 {
+		toBlockIndex = ch.GetLatestBlockInfo().BlockIndex
+	}
+	if fromBlockIndex > toBlockIndex {
+		return nil
+	}
+	ret := make([]*blocklog.RequestLogRecord, 0)
+	for i := fromBlockIndex; i <= toBlockIndex; i++ {
+		recs := ch.GetRequestLogRecordsForBlock(i)
+		require.True(ch.Env.T, i == 0 || len(recs) != 0)
+		ret = append(ret, recs...)
+	}
+	return ret
+}
+
+func (ch *Chain) GetLogRecordsForBlockRangeAsStrings(fromBlockIndex, toBlockIndex uint32) []string {
+	recs := ch.GetLogRecordsForBlockRange(fromBlockIndex, toBlockIndex)
+	ret := make([]string, len(recs))
+	for i := range ret {
+		ret[i] = recs[i].String()
+	}
+	return ret
 }

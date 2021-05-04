@@ -301,7 +301,7 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		arr := collections.NewArray(vars, string(key))
+		arr := collections.NewArray16(vars, string(key))
 
 		size, err := arr.Len()
 		if err != nil {

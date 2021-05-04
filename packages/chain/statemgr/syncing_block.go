@@ -110,11 +110,11 @@ func (syncsT *syncingBlocks) hasBlockCandidatesNotOlderThan(index uint32) bool {
 	return false
 }
 
-func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, stateHash *hashing.HashValue) (isBlockNew bool, candidate *candidateBlock, err error) {
-	stateIndex := block.StateIndex()
+func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState state.VirtualState) (isBlockNew bool, candidate *candidateBlock, err error) {
+	stateIndex := block.BlockIndex()
 	syncsT.startSyncingIfNeeded(stateIndex)
 	sync, _ := syncsT.blocks[stateIndex]
-	hash := block.EssenceHash()
+	hash := nextState.Hash()
 	candidateExisting, ok := sync.blockCandidates[hash]
 	if ok {
 		// already have block. Check consistency. If inconsistent, start from scratch
@@ -128,7 +128,7 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, stateHash *has
 		syncsT.log.Infof("added existing block candidate. State index: %d, state hash: %s", stateIndex, hash.String())
 		return false, candidateExisting, nil
 	}
-	candidate = newCandidateBlock(block, stateHash)
+	candidate = newCandidateBlock(block, nextState)
 	sync.blockCandidates[hash] = candidate
 	sync.pullDeadline = time.Now().Add(periodBetweenSyncMessages * 2)
 	syncsT.log.Infof("added new block candidate. State index: %d, state hash: %s", stateIndex, hash.String())

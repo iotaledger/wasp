@@ -1,9 +1,10 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
@@ -11,12 +12,11 @@ import (
 )
 
 func TestSetThenGet(t *testing.T) {
-	db := mapdb.NewMapDB()
+	dbp := dbprovider.NewInMemoryDBProvider(testlogger.NewLogger(t))
+	chainID := coretypes.RandomChainID([]byte("hmm"))
+	virtualState, err := state.CreateOriginState(dbp, chainID)
 
-	chainID := coretypes.RandomChainID([]byte("mmm"))
-
-	virtualState := state.NewVirtualState(db, chainID)
-	stateUpdate := state.NewStateUpdate(coretypes.RequestID{})
+	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")
 
 	s := newStateWrapper(hname, virtualState, stateUpdate)
@@ -33,11 +33,11 @@ func TestSetThenGet(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, []byte{1}, v)
 
-	// mutation is in stateUpdate, prefixed by the contract id
+	// mutation is in currentStateUpdate, prefixed by the contract id
 	assert.Equal(t, []byte{1}, stateUpdate.Mutations().Sets[subpartitionedKey])
 
 	// mutation is not committed to the virtual state
-	v, err = virtualState.Variables().Get(subpartitionedKey)
+	v, err = virtualState.KVStore().Get(subpartitionedKey)
 	assert.NoError(t, err)
 	assert.Nil(t, v)
 
@@ -67,19 +67,18 @@ func TestSetThenGet(t *testing.T) {
 }
 
 func TestIterate(t *testing.T) {
-	db := mapdb.NewMapDB()
+	dbp := dbprovider.NewInMemoryDBProvider(testlogger.NewLogger(t))
+	chainID := coretypes.RandomChainID([]byte("hmm"))
+	virtualState, err := state.CreateOriginState(dbp, chainID)
 
-	chainID := coretypes.RandomChainID([]byte("mmm"))
-
-	virtualState := state.NewVirtualState(db, chainID)
-	stateUpdate := state.NewStateUpdate(coretypes.RequestID{})
+	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")
 
 	s := newStateWrapper(hname, virtualState, stateUpdate)
 
 	s.Set("xyz", []byte{1})
 
-	err := s.Iterate("x", func(k kv.Key, v []byte) bool {
+	err = s.Iterate("x", func(k kv.Key, v []byte) bool {
 		assert.EqualValues(t, "xyz", string(k))
 		return true
 	})

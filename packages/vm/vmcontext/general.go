@@ -51,7 +51,7 @@ func (vmctx *VMContext) Caller() *coretypes.AgentID {
 }
 
 func (vmctx *VMContext) Timestamp() int64 {
-	return vmctx.timestamp
+	return vmctx.virtualState.Timestamp().UnixNano()
 }
 
 func (vmctx *VMContext) Entropy() hashing.HashValue {

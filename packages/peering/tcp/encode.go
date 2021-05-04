@@ -14,7 +14,7 @@ import (
 )
 
 // structure of the encoded PeerMessage:
-// Timestamp   8 bytes
+// OutputTimestamp   8 bytes
 // MsgType type    1 byte
 //  -- if MsgType == 0 (heartbeat) --> the end of message
 //  -- if MsgType == 1 (handshake)

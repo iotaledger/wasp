@@ -21,8 +21,9 @@ func TestEnv(t *testing.T) {
 	node0.SetupPeerGroupSimple()
 	node0.StateManager.Ready().MustWait()
 
-	require.Nil(t, node0.StateManager.(*stateManager).solidState)
-	require.EqualValues(t, 1, node0.StateManager.(*stateManager).syncingBlocks.getBlockCandidatesCount(0))
+	require.NotNil(t, node0.StateManager.(*stateManager).solidState)
+	require.EqualValues(t, state.OriginStateHash(), node0.StateManager.(*stateManager).solidState.Hash())
+	require.False(t, node0.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
 	require.EqualValues(t, 0, node0.Peers.NumPeers())
 	env.AddNode(node0)
 	require.EqualValues(t, 1, node0.Peers.NumPeers())
@@ -45,8 +46,9 @@ func TestEnv(t *testing.T) {
 	require.EqualValues(t, 2, node1.Peers.NumPeers())
 	node1.StateManager.Ready().MustWait()
 
-	require.Nil(t, node1.StateManager.(*stateManager).solidState)
-	require.EqualValues(t, 1, node1.StateManager.(*stateManager).syncingBlocks.getBlockCandidatesCount(0))
+	require.NotNil(t, node1.StateManager.(*stateManager).solidState)
+	require.False(t, node1.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
+	require.EqualValues(t, state.OriginStateHash(), node1.StateManager.(*stateManager).solidState.Hash())
 
 	node1.StartTimer()
 	si, err = node1.WaitSyncBlockIndex(0, 1*time.Second)
@@ -65,8 +67,9 @@ func TestGetInitialState(t *testing.T) {
 	env, originTx := NewMockedEnv(t, false)
 	node := env.NewMockedNode(0)
 	node.StateManager.Ready().MustWait()
-	require.Nil(t, node.StateManager.(*stateManager).solidState)
-	require.EqualValues(t, 1, node.StateManager.(*stateManager).syncingBlocks.getBlockCandidatesCount(0))
+	require.NotNil(t, node.StateManager.(*stateManager).solidState)
+	require.False(t, node.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
+	require.EqualValues(t, state.OriginStateHash(), node.StateManager.(*stateManager).solidState.Hash())
 
 	node.StartTimer()
 
@@ -90,8 +93,9 @@ func TestGetNextState(t *testing.T) {
 	env, originTx := NewMockedEnv(t, false)
 	node := env.NewMockedNode(0)
 	node.StateManager.Ready().MustWait()
-	require.Nil(t, node.StateManager.(*stateManager).solidState)
-	require.True(t, node.StateManager.(*stateManager).syncingBlocks.getBlockCandidatesCount(0) == 1)
+	require.NotNil(t, node.StateManager.(*stateManager).solidState)
+	require.False(t, node.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
+	require.EqualValues(t, state.OriginStateHash(), node.StateManager.(*stateManager).solidState.Hash())
 
 	node.StartTimer()
 

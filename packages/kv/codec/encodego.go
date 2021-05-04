@@ -3,6 +3,7 @@ package codec
 import (
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -50,8 +51,12 @@ func Encode(v interface{}) []byte {
 		return EncodeAgentID(&vt)
 	case coretypes.RequestID:
 		return EncodeRequestID(vt)
+	case *coretypes.RequestID:
+		return EncodeRequestID(*vt)
 	case coretypes.Hname:
 		return vt.Bytes()
+	case time.Time:
+		return EncodeTime(vt)
 
 	default:
 		panic(fmt.Sprintf("Can't encode value %v", v))

@@ -67,7 +67,7 @@ func getRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 	first, last := tts.FromToIndicesCapped(uint32(maxLast))
 	data := theLog.MustLoadRecordsRaw(first, last, true) // descending
-	a := collections.NewArray(ret, ParamRecords)
+	a := collections.NewArray16(ret, ParamRecords)
 	for _, s := range data {
 		a.MustPush(s)
 	}

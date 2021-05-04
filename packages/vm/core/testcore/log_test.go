@@ -18,16 +18,16 @@ func printLogRecords(t *testing.T, recs []collections.TimestampedLogRecord, titl
 	}
 }
 
-func TestChainLogBasic1(t *testing.T) {
+func TestEventLogBasicEmpty(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
 	recs, err := chain.GetEventLogRecords(root.Interface.Name)
 	require.NoError(t, err)
-	require.Len(t, recs, 1) // 1 root::init request
+	require.Len(t, recs, 0)
 
 	num := chain.GetEventLogNumRecords(root.Interface.Name)
-	require.EqualValues(t, 1, num)
+	require.EqualValues(t, 0, num)
 
 	num = chain.GetEventLogNumRecords(accounts.Interface.Name)
 	require.EqualValues(t, 0, num)
@@ -37,16 +37,24 @@ func TestChainLogBasic1(t *testing.T) {
 
 	num = chain.GetEventLogNumRecords(eventlog.Interface.Name)
 	require.EqualValues(t, 0, num)
+
+	reqRecs := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+	require.EqualValues(t, 1, len(reqRecs))
+
+	for _, s := range reqRecs {
+		t.Logf("%s", s)
+	}
 }
 
 func TestChainLogDeploy(t *testing.T) {
 	env := solo.New(t, false, false)
+	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
 	hwasm, err := chain.UploadWasmFromFile(nil, wasmFile)
 	require.NoError(t, err)
 
 	num := chain.GetEventLogNumRecords(root.Interface.Name)
-	require.EqualValues(t, 1, num)
+	require.EqualValues(t, 0, num)
 
 	num = chain.GetEventLogNumRecords(accounts.Interface.Name)
 	require.EqualValues(t, 0, num)
@@ -55,11 +63,11 @@ func TestChainLogDeploy(t *testing.T) {
 	require.EqualValues(t, 0, num)
 
 	num = chain.GetEventLogNumRecords(blob.Interface.Name)
-	require.EqualValues(t, 2, num)
+	require.EqualValues(t, 1, num)
 
 	recs, err := chain.GetEventLogRecords(blob.Interface.Name)
 	require.NoError(t, err)
-	require.Len(t, recs, 2) // 1 root::init request
+	require.Len(t, recs, 1)
 	printLogRecords(t, recs, "blob")
 
 	name := "testInccounter"
@@ -67,7 +75,7 @@ func TestChainLogDeploy(t *testing.T) {
 	require.NoError(t, err)
 
 	num = chain.GetEventLogNumRecords(root.Interface.Name)
-	require.EqualValues(t, 3, num)
+	require.EqualValues(t, 1, num)
 
 	num = chain.GetEventLogNumRecords(accounts.Interface.Name)
 	require.EqualValues(t, 0, num)
@@ -76,7 +84,7 @@ func TestChainLogDeploy(t *testing.T) {
 	require.EqualValues(t, 0, num)
 
 	num = chain.GetEventLogNumRecords(blob.Interface.Name)
-	require.EqualValues(t, 2, num)
+	require.EqualValues(t, 1, num)
 
 	num = chain.GetEventLogNumRecords(name)
 	require.EqualValues(t, 0, num)
@@ -84,4 +92,12 @@ func TestChainLogDeploy(t *testing.T) {
 	recs, err = chain.GetEventLogRecords(name)
 	require.NoError(t, err)
 	require.Len(t, recs, 0)
+
+	reqRecs := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+
+	for _, s := range reqRecs {
+		t.Logf("%s", s)
+	}
+	require.EqualValues(t, 3, len(reqRecs))
+	env.WaitPublisher()
 }

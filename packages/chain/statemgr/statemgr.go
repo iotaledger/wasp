@@ -37,7 +37,7 @@ type stateManager struct {
 	eventBlockMsgCh        chan *chain.BlockMsg
 	eventStateOutputMsgCh  chan *chain.StateMsg
 	eventOutputMsgCh       chan ledgerstate.Output
-	eventPendingBlockMsgCh chan chain.BlockCandidateMsg
+	eventPendingBlockMsgCh chan chain.StateCandidateMsg
 	eventTimerMsgCh        chan chain.TimerTick
 	closeCh                chan bool
 }
@@ -62,7 +62,7 @@ func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers *chain.PeerGroup, 
 		eventBlockMsgCh:        make(chan *chain.BlockMsg),
 		eventStateOutputMsgCh:  make(chan *chain.StateMsg),
 		eventOutputMsgCh:       make(chan ledgerstate.Output),
-		eventPendingBlockMsgCh: make(chan chain.BlockCandidateMsg),
+		eventPendingBlockMsgCh: make(chan chain.StateCandidateMsg),
 		eventTimerMsgCh:        make(chan chain.TimerTick),
 		closeCh:                make(chan bool),
 	}
@@ -88,10 +88,9 @@ func (sm *stateManager) Close() {
 // initial loading of the solid state
 func (sm *stateManager) initLoadState() {
 	var err error
-	var batch state.Block
 	var stateExists bool
 
-	sm.solidState, batch, stateExists, err = state.LoadSolidState(sm.dbp, sm.chain.ID())
+	sm.solidState, stateExists, err = state.LoadSolidState(sm.dbp, sm.chain.ID())
 	if err != nil {
 		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err)},
@@ -100,13 +99,18 @@ func (sm *stateManager) initLoadState() {
 	}
 	if stateExists {
 		h := sm.solidState.Hash()
-		txh := batch.ApprovingOutputID()
-		sm.log.Infof("solid state has been loaded. Block index: $%d, State hash: %s, ancor tx: %s",
-			sm.solidState.BlockIndex(), h.String(), txh.String())
+		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
+			sm.solidState.BlockIndex(), h.String())
 	} else {
-		sm.solidState = nil
-		sm.addBlockFromSelf(state.MustNewOriginBlock())
-		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
+		// create origin state in DB
+		sm.solidState, err = state.CreateOriginState(sm.dbp, sm.chain.ID())
+		if err != nil {
+			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
+				Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err)},
+			)
+			return
+		}
+		sm.log.Infof("ORIGIN STATE has been created")
 	}
 	sm.recvLoop() // Start to process external events.
 }
@@ -145,7 +149,7 @@ func (sm *stateManager) recvLoop() {
 			}
 		case msg, ok := <-sm.eventPendingBlockMsgCh:
 			if ok {
-				sm.eventBlockCandidateMsg(msg)
+				sm.eventStateCandidateMsg(msg)
 			}
 		case msg, ok := <-sm.eventTimerMsgCh:
 			if ok {

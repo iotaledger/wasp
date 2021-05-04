@@ -8,16 +8,8 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
-
-/*func (sm *stateManager) isSynced() bool {
-	if sm.stateOutput == nil || sm.solidState == nil {
-		return false
-	}
-	return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
-}*/
 
 // returns block if it is known and flag if it is approved by some output
 /*func (sm *stateManager) syncBlock(blockIndex uint32) (state.Block, bool) {
@@ -148,24 +140,19 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 	sm.log.Infof("XXX getCandidatesToCommit: from %v to %v accumulator %v", fromStateIndex, toStateIndex, candidateAcc)
 	if fromStateIndex > toStateIndex {
 		//Blocks gathered. Check if the correct result is received if they are applied
-		var tentativeState state.VirtualState
-		if sm.solidState != nil {
-			tentativeState = sm.solidState.Clone()
-		} else {
-			//tentativeState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
-			tentativeState = state.NewVirtualState(sm.dbp.GetPartition(sm.chain.ID()), nil)
-		}
+		tentativeState := sm.solidState.Clone()
 		for i, candidate := range candidateAcc {
 			sm.log.Infof("XXX getCandidatesToCommit: candidate %v is null %v", i, candidate == nil)
-			block := candidate.getBlock()
-			if err := tentativeState.ApplyBlock(block); err != nil {
-				sm.log.Errorf("failed to apply synced block index #%d. Error: %v", block.StateIndex(), err)
+			var err error
+			tentativeState, err = candidate.getNextState(tentativeState)
+			if err != nil {
+				sm.log.Errorf("failed to apply synced block index #%d. Error: %v", candidate.getBlock().BlockIndex(), err)
 				return nil, false
 			}
 		}
 		// state hashes must be equal
 		tentativeHash := tentativeState.Hash()
-		finalHash := candidateAcc[len(candidateAcc)-1].getStateHash()
+		finalHash := candidateAcc[len(candidateAcc)-1].getNextStateHash()
 		if tentativeHash != finalHash {
 			sm.log.Errorf("state hashes mismatch: expected final hash: %s, tentative hash: %s", finalHash, tentativeHash)
 			return nil, false
@@ -190,26 +177,23 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 }
 
 func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
-	if sm.solidState == nil {
-		sm.solidState = state.NewVirtualState(sm.dbp.GetPartition(sm.chain.ID()), nil)
-	}
 	stateIndex := uint32(0)
 	for _, candidate := range candidates {
 		block := candidate.getBlock()
-		stateIndex = block.StateIndex()
-		sm.solidState.ApplyBlock(block)
-		if err := sm.solidState.CommitToDb(block); err != nil {
+		sm.solidState, _ = candidate.getNextState(sm.solidState)
+		stateIndex = block.BlockIndex()
+		//TODO: maybe commit in 10 block batches?
+		//TODO: maybe commit everything in one transaction and move StateTransition event notification? But solid state will have to be calculated after failed commit.
+		if err := sm.solidState.Commit(block); err != nil {
 			sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
 			sm.syncingBlocks.restartSyncing()
 			return
 		}
 		if candidate.isLocal() {
 			go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
-				VirtualState:     sm.solidState.Clone(),
-				BlockEssenceHash: candidate.block.EssenceHash(),
-				ChainOutput:      sm.stateOutput,
-				Timestamp:        sm.stateOutputTimestamp,
-				RequestIDs:       candidate.block.RequestIDs(),
+				VirtualState:    sm.solidState.Clone(),
+				ChainOutput:     sm.stateOutput,
+				OutputTimestamp: sm.stateOutputTimestamp,
 			})
 		}
 		sm.syncingBlocks.deleteSyncingBlock(stateIndex)
