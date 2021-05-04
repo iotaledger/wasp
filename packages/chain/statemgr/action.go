@@ -5,8 +5,9 @@ package statemgr
 
 import (
 	"bytes"
-	"github.com/iotaledger/wasp/packages/chain"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/chain"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
@@ -42,7 +43,7 @@ func (sm *stateManager) checkStateTransition() {
 	if sm.stateOutput == nil {
 		return
 	}
-	// among stateCandidate state update batches we locate the one which
+	// among candidate state updates we locate the one which
 	// is approved by the state output
 	varStateHash, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())
 	if err != nil {
