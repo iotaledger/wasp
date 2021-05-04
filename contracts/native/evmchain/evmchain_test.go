@@ -57,9 +57,6 @@ func TestContract(t *testing.T) {
 
 	var contractAddress common.Address
 
-	gasPrice := big.NewInt(1)
-	gasLimit := evm.GasLimit
-
 	// deploy solidity contract
 	{
 		nonce := uint64(0) // TODO: add getNonce endpoint?
@@ -73,7 +70,7 @@ func TestContract(t *testing.T) {
 		data := append(evmtest.StorageContractBytecode, constructorArguments...)
 
 		tx, err := types.SignTx(
-			types.NewContractCreation(nonce, txValue, gasLimit, gasPrice, data),
+			types.NewContractCreation(nonce, txValue, evm.GasLimit, evm.GasPrice, data),
 			evm.Signer(),
 			faucetKey,
 		)
@@ -119,7 +116,7 @@ func TestContract(t *testing.T) {
 		txValue := big.NewInt(0)
 
 		tx, err := types.SignTx(
-			types.NewTransaction(nonce, contractAddress, txValue, gasLimit, gasPrice, callArguments),
+			types.NewTransaction(nonce, contractAddress, txValue, evm.GasLimit, evm.GasPrice, callArguments),
 			evm.Signer(),
 			faucetKey,
 		)

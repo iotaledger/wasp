@@ -19,6 +19,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func sendTransaction(t *testing.T, emu *EVMEmulator, sender *ecdsa.PrivateKey, receiverAddress common.Address, amount *big.Int, data []byte) {
+	senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
+
+	nonce, err := emu.PendingNonceAt(senderAddress)
+	require.NoError(t, err)
+
+	tx, err := types.SignTx(
+		types.NewTransaction(nonce, receiverAddress, amount, GasLimit, GasPrice, data),
+		emu.Signer(),
+		sender,
+	)
+	require.NoError(t, err)
+
+	err = emu.SendTransaction(tx)
+	require.NoError(t, err)
+	emu.Commit()
+}
+
 func TestBlockchain(t *testing.T) {
 	db := rawdb.NewMemoryDatabase()
 	defer db.Close()
@@ -92,19 +110,7 @@ func testBlockchain(t *testing.T, db ethdb.Database) {
 
 	// send a transaction transferring 1000 ETH to receiverAddress
 	{
-		nonce, err := emu.PendingNonceAt(faucetAddress)
-		require.NoError(t, err)
-
-		tx, err := types.SignTx(
-			types.NewTransaction(nonce, receiverAddress, transferAmount, 1e6, nil, nil),
-			emu.Signer(),
-			faucet,
-		)
-		require.NoError(t, err)
-
-		err = emu.SendTransaction(tx)
-		require.NoError(t, err)
-		emu.Commit()
+		sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil)
 
 		require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
 		require.EqualValues(t, GasLimit, emu.Blockchain().CurrentBlock().Header().GasLimit)
@@ -155,21 +161,7 @@ func testBlockchainPersistence(t *testing.T, db ethdb.Database) {
 		emu := NewEVMEmulator(db)
 		defer emu.Close()
 
-		{
-			nonce, err := emu.PendingNonceAt(faucetAddress)
-			require.NoError(t, err)
-
-			tx, err := types.SignTx(
-				types.NewTransaction(nonce, receiverAddress, transferAmount, 1e6, nil, nil),
-				emu.Signer(),
-				faucet,
-			)
-			require.NoError(t, err)
-
-			err = emu.SendTransaction(tx)
-			require.NoError(t, err)
-			emu.Commit()
-		}
+		sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil)
 	}()
 
 	// initialize a new EVMEmulator using the same DB and check the state
@@ -200,11 +192,8 @@ func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey
 
 	data := append(contractBytecode, constructorArguments...)
 
-	gasPrice, err := emu.SuggestGasPrice()
-	require.NoError(t, err)
-
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, txValue, GasLimit, gasPrice, data),
+		types.NewContractCreation(nonce, txValue, GasLimit, GasPrice, data),
 		emu.Signer(),
 		creator,
 	)
@@ -304,27 +293,10 @@ func testStorageContract(t *testing.T, db ethdb.Database) {
 
 	// send tx that calls `store(43)`
 	{
-		nonce, err := emu.PendingNonceAt(faucetAddress)
-		require.NoError(t, err)
-
 		callArguments, err := contractABI.Pack("store", uint32(43))
 		require.NoError(t, err)
 
-		txValue := big.NewInt(0)
-
-		gasPrice, err := emu.SuggestGasPrice()
-		require.NoError(t, err)
-
-		tx, err := types.SignTx(
-			types.NewTransaction(nonce, contractAddress, txValue, GasLimit, gasPrice, callArguments),
-			emu.Signer(),
-			faucet,
-		)
-		require.NoError(t, err)
-
-		err = emu.SendTransaction(tx)
-		require.NoError(t, err)
-		emu.Commit()
+		sendTransaction(t, emu, faucet, contractAddress, big.NewInt(0), callArguments)
 
 		require.EqualValues(t, 2, emu.Blockchain().CurrentBlock().NumberU64())
 	}
@@ -382,10 +354,13 @@ func testERC20Contract(t *testing.T, db ethdb.Database) {
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
 	require.NoError(t, err)
 
+	erc20Owner, err := crypto.GenerateKey()
+	require.NoError(t, err)
+
 	contractAddress := deployEVMContract(
 		t,
 		emu,
-		faucet,
+		erc20Owner,
 		contractABI,
 		evmtest.ERC20ContractBytecode,
 		"TestCoin",
@@ -403,8 +378,38 @@ func testERC20Contract(t *testing.T, db ethdb.Database) {
 		v := new(big.Int)
 		err = contractABI.UnpackIntoInterface(&v, "totalSupply", res)
 		require.NoError(t, err)
+
 		// 100 * 10^18
 		expected := new(big.Int).Mul(big.NewInt(100), new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 		require.Equal(t, expected.Bits(), v.Bits())
+	}
+
+	recipient, err := crypto.GenerateKey()
+	require.NoError(t, err)
+	recipientAddress := crypto.PubkeyToAddress(recipient.PublicKey)
+
+	transferAmount := big.NewInt(1337)
+
+	// call `transfer` => send 1337 TestCoin to recipientAddress
+	{
+		callArguments, err := contractABI.Pack("transfer", recipientAddress, transferAmount)
+		require.NoError(t, err)
+
+		sendTransaction(t, emu, erc20Owner, contractAddress, big.NewInt(0), callArguments)
+	}
+
+	// call `balanceOf` view => check balance of recipient = 1337 TestCoin
+	{
+		callArguments, err := contractABI.Pack("balanceOf", recipientAddress)
+		require.NoError(t, err)
+
+		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
+		require.NoError(t, err)
+
+		v := new(big.Int)
+		err = contractABI.UnpackIntoInterface(&v, "balanceOf", res)
+		require.NoError(t, err)
+
+		require.Equal(t, transferAmount.Bits(), v.Bits())
 	}
 }

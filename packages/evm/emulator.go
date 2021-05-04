@@ -1,3 +1,10 @@
+// package evm provides tools to emulate Ethereum chains and contracts.
+//
+// Code adapted from go-ethereum/accounts/abi/bind/backends/simulated.go
+//
+// TODO: support events
+// TODO: get nonce
+// TODO: handle errors - eg: require
 package evm
 
 import (
@@ -22,8 +29,6 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-// code adapted from go-ethereum/accounts/abi/bind/backends/simulated.go
-
 var (
 	errBlockNumberUnsupported  = errors.New("EVMEmulator cannot access blocks other than the latest block")
 	errBlockDoesNotExist       = errors.New("block does not exist in blockchain")
@@ -38,7 +43,10 @@ type EVMEmulator struct {
 	pendingState *state.StateDB
 }
 
-var GasLimit = uint64(math.MaxUint64 / 2)
+var (
+	GasLimit = uint64(math.MaxUint64 / 2)
+	GasPrice = big.NewInt(0)
+)
 
 var Config = params.AllEthashProtocolChanges
 
@@ -335,7 +343,7 @@ func (e *EVMEmulator) PendingNonceAt(account common.Address) (uint64, error) {
 // SuggestGasPrice implements ContractTransactor.SuggestGasPrice. Since the simulated
 // chain doesn't have miners, we just return a gas price of 1 for any call.
 func (e *EVMEmulator) SuggestGasPrice() (*big.Int, error) {
-	return big.NewInt(1), nil
+	return GasPrice, nil
 }
 
 // EstimateGas executes the requested code against the currently pending block/state and
