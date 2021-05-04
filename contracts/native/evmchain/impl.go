@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -63,6 +64,22 @@ func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 	ret := dict.New()
 	ret.Set(FieldBalance, bal.Bytes())
+	return ret, nil
+}
+
+func getNonce(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+
+	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	nonce, err := emu.PendingNonceAt(addr)
+	a.RequireNoError(err)
+
+	ret := dict.New()
+	ret.Set(FieldResult, codec.EncodeUint64(nonce))
 	return ret, nil
 }
 

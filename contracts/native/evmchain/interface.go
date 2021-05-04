@@ -1,6 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// package evmchain provides the `evmchain` contract, which allows to emulate an
+// Ethereum chain on top of ISCP and run EVM contracts.
 package evmchain
 
 import (
@@ -25,6 +27,7 @@ func init() {
 		coreutil.Func(FuncSendTransaction, applyTransaction),
 		coreutil.ViewFunc(FuncGetBalance, getBalance),
 		coreutil.ViewFunc(FuncCallView, callView),
+		coreutil.ViewFunc(FuncGetNonce, getNonce),
 	})
 	native.AddProcessor(Interface)
 }
@@ -33,6 +36,7 @@ const (
 	FuncGetBalance      = "getBalance"
 	FuncSendTransaction = "sendTransaction"
 	FuncCallView        = "callView"
+	FuncGetNonce        = "getNonce"
 )
 
 const (

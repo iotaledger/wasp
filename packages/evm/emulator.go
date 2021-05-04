@@ -1,9 +1,11 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 // package evm provides tools to emulate Ethereum chains and contracts.
 //
 // Code adapted from go-ethereum/accounts/abi/bind/backends/simulated.go
 //
 // TODO: support events
-// TODO: get nonce
 // TODO: handle errors - eg: require
 package evm
 

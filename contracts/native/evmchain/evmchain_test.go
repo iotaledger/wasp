@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 )
@@ -49,6 +50,16 @@ func TestFaucetBalance(t *testing.T) {
 	require.Zero(t, faucetSupply.Cmp(bal))
 }
 
+func getNonceFor(t *testing.T, chain *solo.Chain, addr common.Address) uint64 {
+	ret, err := chain.CallView(Interface.Name, FuncGetNonce, FieldAddress, addr.Bytes())
+	require.NoError(t, err)
+
+	nonce, ok, err := codec.DecodeUint64(ret.MustGet(FieldResult))
+	require.NoError(t, err)
+	require.True(t, ok)
+	return nonce
+}
+
 func TestContract(t *testing.T) {
 	chain := initEVMChain(t)
 
@@ -59,7 +70,7 @@ func TestContract(t *testing.T) {
 
 	// deploy solidity contract
 	{
-		nonce := uint64(0) // TODO: add getNonce endpoint?
+		nonce := getNonceFor(t, chain, faucetAddress)
 
 		txValue := big.NewInt(0)
 
@@ -108,7 +119,7 @@ func TestContract(t *testing.T) {
 
 	// call FuncSendTransaction with EVM tx that calls `store(43)`
 	{
-		nonce := uint64(1) // TODO: add getNonce endpoint?
+		nonce := getNonceFor(t, chain, faucetAddress)
 
 		callArguments, err := contractABI.Pack("store", uint32(43))
 		require.NoError(t, err)
