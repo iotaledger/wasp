@@ -15,22 +15,24 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type stateManager struct {
-	ready                *ready.Ready
-	dbp                  *dbprovider.DBProvider
-	chain                chain.ChainCore
-	peers                *chain.PeerGroup
-	nodeConn             chain.NodeConnection
-	pullStateRetryTime   time.Time
-	solidState           state.VirtualState
-	stateOutput          *ledgerstate.AliasOutput
-	stateOutputTimestamp time.Time
-	currentSyncData      atomic.Value
-	syncingBlocks        *syncingBlocks
-	log                  *logger.Logger
+	ready                   *ready.Ready
+	dbp                     *dbprovider.DBProvider
+	chain                   chain.ChainCore
+	peers                   *chain.PeerGroup
+	nodeConn                chain.NodeConnection
+	pullStateRetryTime      time.Time
+	solidState              state.VirtualState
+	stateOutput             *ledgerstate.AliasOutput
+	stateOutputTimestamp    time.Time
+	currentSyncData         atomic.Value
+	notifiedSyncedStateHash hashing.HashValue
+	syncingBlocks           *syncingBlocks
+	log                     *logger.Logger
 
 	// Channels for accepting external events.
 	eventGetBlockMsgCh     chan *chain.GetBlockMsg

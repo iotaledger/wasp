@@ -4,8 +4,10 @@
 package statemgr
 
 import (
+	"bytes"
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
@@ -16,6 +18,7 @@ func (sm *stateManager) takeAction() {
 		return
 	}
 	//sm.checkStateApproval()
+	sm.notifyStateTransitionIfNeeded()
 	sm.pullStateIfNeeded()
 	sm.doSyncActionIfNeeded()
 	sm.storeSyncingData()
@@ -74,6 +77,36 @@ func (sm *stateManager) pullStateIfNeeded() {
 	})
 	go sm.chain.Events().StateSynced().Trigger(sm.stateOutput.ID(), sm.stateOutput.GetStateIndex())
 }*/
+
+func (sm *stateManager) isSynced() bool {
+	if sm.stateOutput == nil {
+		return false
+	}
+	return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
+}
+
+func (sm *stateManager) notifyStateTransitionIfNeeded() {
+	if sm.notifiedSyncedStateHash == sm.solidState.Hash() {
+		return
+	}
+	if !sm.isSynced() {
+		return
+	}
+
+	var stateIndex uint32
+	var outputID ledgerstate.OutputID
+	if sm.stateOutput != nil {
+		stateIndex = sm.stateOutput.GetStateIndex()
+		outputID = sm.stateOutput.ID()
+	}
+	sm.notifiedSyncedStateHash = sm.solidState.Hash()
+	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
+		VirtualState:    sm.solidState.Clone(),
+		ChainOutput:     sm.stateOutput,
+		OutputTimestamp: sm.stateOutputTimestamp,
+	})
+	go sm.chain.Events().StateSynced().Trigger(outputID, stateIndex)
+}
 
 func (sm *stateManager) addBlockFromCommitee(nextState state.VirtualState) {
 	sm.log.Infow("XXX addBlockFromCommitee",
@@ -143,7 +176,7 @@ func (sm *stateManager) storeSyncingData() {
 	}
 	sm.log.Infof("XXX storeSyncingData: synced %v block index %v state hash %v state timestamp %v output index %v output id %v output hash %v output timestamp %v", sm.solidState.Hash() == outputStateHash, sm.solidState.BlockIndex(), sm.solidState.Hash(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), sm.stateOutput.ID(), outputStateHash, sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
-		Synced:                sm.solidState.Hash() == outputStateHash,
+		Synced:                sm.isSynced(),
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
 		SyncedStateHash:       sm.solidState.Hash(),
 		SyncedStateTimestamp:  sm.solidState.Timestamp(),

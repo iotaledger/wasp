@@ -189,16 +189,8 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
 			sm.syncingBlocks.restartSyncing()
 			return
 		}
-		if candidate.isLocal() {
-			go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
-				VirtualState:    sm.solidState.Clone(),
-				ChainOutput:     sm.stateOutput,
-				OutputTimestamp: sm.stateOutputTimestamp,
-			})
-		}
 		sm.syncingBlocks.deleteSyncingBlock(stateIndex)
 	}
-	go sm.chain.Events().StateSynced().Trigger(candidates[len(candidates)-1].getApprovingOutputID(), stateIndex)
 }
 
 // assumes all synced already

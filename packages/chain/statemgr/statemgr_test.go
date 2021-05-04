@@ -1,16 +1,16 @@
 package statemgr
 
 import (
+	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/require"
 )
 
 //---------------------------------------------
@@ -153,6 +153,7 @@ func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
 
 	const targetBlockIndex = 100
 	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
+		fmt.Printf("XXX OnStateTransition %v %v", msg.ChainOutput.GetStateIndex(), targetBlockIndex)
 		chain.LogStateTransition(msg, node.Log)
 		if msg.ChainOutput.GetStateIndex() < targetBlockIndex {
 			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
