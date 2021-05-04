@@ -4,11 +4,9 @@
 package statemgr
 
 import (
-	"github.com/iotaledger/wasp/packages/chain"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 )
@@ -143,9 +141,9 @@ func (sm *stateManager) storeSyncingData() {
 	if err != nil {
 		return
 	}
-	sm.log.Infof("XXX storeSyncingData: synced %v block index %v state hash %v state timestamp %v output index %v output id %v output hash %v output timestamp %v", sm.solidState.Hash() == outputStateHash, sm.solidState.BlockIndex(), sm.solidState.Hash(), time.Unix(0, sm.solidState.Timestamp()), sm.stateOutput.GetStateIndex(), sm.stateOutput.ID(), outputStateHash, sm.stateOutputTimestamp)
+	sm.log.Infof("XXX storeSyncingData: synced %v block index %v state hash %v state timestamp %v output index %v output id %v output hash %v output timestamp %v", sm.solidState.Hash() == outputStateHash, sm.solidState.BlockIndex(), sm.solidState.Hash(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), sm.stateOutput.ID(), outputStateHash, sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
-		Synced:                sm.isSynced(),
+		Synced:                sm.solidState.Hash() == outputStateHash,
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
 		SyncedStateHash:       sm.solidState.Hash(),
 		SyncedStateTimestamp:  sm.solidState.Timestamp(),
