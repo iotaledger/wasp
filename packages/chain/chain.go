@@ -49,15 +49,15 @@ type ChainEvents interface {
 // Committee is ordered (indexed 0..size-1) list of peers which run the consensus and the whoel chain
 type Committee interface {
 	Size() uint16
-	Quorum() uint16
 	OwnPeerIndex() uint16
-	DKShare() *tcrypto.DKShare
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
 	SendMsgToPeers(msgType byte, msgData []byte, ts int64) uint16
 	IsAlivePeer(peerIndex uint16) bool
-	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
 	OnPeerMessage(fun func(recv *peering.RecvEvent))
+	Quorum() uint16
+	DKShare() *tcrypto.DKShare
+	QuorumIsAlive(quorum ...uint16) bool
 	IsReady() bool
 	Close()
 }
