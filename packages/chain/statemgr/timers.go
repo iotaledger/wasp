@@ -19,17 +19,17 @@ type Timers struct {
 	GetBlockRetry          *time.Duration
 }
 
-func (tT Timers) setPullStateRetry(pullStateRetry time.Duration) Timers {
+func (tT Timers) SetPullStateRetry(pullStateRetry time.Duration) Timers {
 	tT.PullStateRetry = &pullStateRetry
 	return tT
 }
 
-func (tT Timers) setPullStateNewBlockDelay(pullStateNewBlockDelay time.Duration) Timers {
+func (tT Timers) SetPullStateNewBlockDelay(pullStateNewBlockDelay time.Duration) Timers {
 	tT.PullStateNewBlockDelay = &pullStateNewBlockDelay
 	return tT
 }
 
-func (tT Timers) setGetBlockRetry(getBlockRetry time.Duration) Timers {
+func (tT Timers) SetGetBlockRetry(getBlockRetry time.Duration) Timers {
 	tT.GetBlockRetry = &getBlockRetry
 	return tT
 }

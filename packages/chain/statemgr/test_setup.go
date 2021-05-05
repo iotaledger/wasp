@@ -165,7 +165,7 @@ func (env *MockedEnv) NewMockedNode(index uint16) *MockedNode {
 		Peers:     mock_chain.NewMockedPeerGroupProvider(),
 		Log:       log,
 	}
-	ret.StateManager = New(ret.Db, ret.ChainCore, chain.NewPeerGroup(ret.Peers), env.NodeConn, log, Timers{}.setPullStateRetry(10*time.Millisecond).setPullStateNewBlockDelay(50*time.Millisecond))
+	ret.StateManager = New(ret.Db, ret.ChainCore, chain.NewPeerGroup(ret.Peers), env.NodeConn, log, Timers{}.SetPullStateRetry(10*time.Millisecond).SetPullStateNewBlockDelay(50*time.Millisecond))
 	ret.StateTransition = mock_chain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualState, tx *ledgerstate.Transaction) {
 		ret.Log.Debugf("MockedEnv.OnNextState: state index %d", vstate.BlockIndex())
