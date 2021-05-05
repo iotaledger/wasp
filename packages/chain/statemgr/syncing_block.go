@@ -1,8 +1,6 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// statemgr package implements object which is responsible for the smart contract
-// ledger state to be synchronized and validated
 package statemgr
 
 import (
@@ -145,8 +143,6 @@ func (syncsT *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOut
 	if ok {
 		syncsT.log.Infof("XXX approveBlockCandidates: sync block %v found", stateIndex)
 		for i, candidate := range sync.blockCandidates {
-			//syncsT.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v, block hash %v output hash %v, block id %v output id %v", i, candidate.isLocal(), candidate.isApproved(), candidate.getStateHash(), finalHash, candidate.getApprovingOutputID(), outputID)
-			//syncsT.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v, output hash %v, output id %v", i, candidate.isLocal(), candidate.isApproved(), finalHash, outputID)
 			syncsT.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v", i, candidate.isLocal(), candidate.isApproved())
 			candidate.approveIfRightOutput(output)
 		}

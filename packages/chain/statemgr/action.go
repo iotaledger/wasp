@@ -17,7 +17,6 @@ func (sm *stateManager) takeAction() {
 	if !sm.ready.IsReady() {
 		return
 	}
-	//sm.checkStateApproval()
 	sm.notifyStateTransitionIfNeeded()
 	sm.pullStateIfNeeded()
 	sm.doSyncActionIfNeeded()
@@ -38,45 +37,6 @@ func (sm *stateManager) pullStateIfNeeded() {
 		sm.log.Infof("XXX pullStateIfNeeded: before retry time")
 	}
 }
-
-/*func (sm *stateManager) checkStateApproval() {
-	if sm.stateOutput == nil {
-		return
-	}
-	// among candidate state update batches we locate the one which
-	// is approved by the state output
-	varStateHash, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())
-	if err != nil {
-		sm.log.Panic(err)
-	}
-	candidate, ok := sm.blockCandidates[varStateHash]
-	if !ok {
-		// corresponding block wasn't found among candidate state updates
-		// transaction doesn't approve anything
-		return
-	}
-
-	// found a candidate block which is approved by the stateOutput
-	// set the transaction id from output
-	candidate.block.WithApprovingOutputID(sm.stateOutput.ID())
-	// save state to db
-	if err := candidate.nextState.CommitToDb(candidate.block); err != nil {
-		sm.log.Errorf("failed to save state at index #%d: %v", candidate.nextState.BlockIndex(), err)
-		return
-	}
-	sm.solidState = candidate.nextState
-	sm.blockCandidates = make(map[hashing.HashValue]*candidateBlock) // clear candidate batches
-
-	cloneState := sm.solidState.Clone()
-	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
-		VirtualState:     cloneState,
-		BlockEssenceHash: candidate.block.EssenceHash(),
-		ChainOutput:      sm.stateOutput,
-		Timestamp:        sm.stateOutputTimestamp,
-		RequestIDs:       candidate.block.RequestIDs(),
-	})
-	go sm.chain.Events().StateSynced().Trigger(sm.stateOutput.ID(), sm.stateOutput.GetStateIndex())
-}*/
 
 func (sm *stateManager) isSynced() bool {
 	if sm.stateOutput == nil {

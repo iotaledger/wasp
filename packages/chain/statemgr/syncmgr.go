@@ -1,7 +1,6 @@
 package statemgr
 
 import (
-	//	"bytes"
 	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"sort"
@@ -12,41 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
-
-// returns block if it is known and flag if it is approved by some output
-/*func (sm *stateManager) syncBlock(blockIndex uint32) (state.Block, bool) {
-
-	if _, already := sm.syncingBlocks[blockIndex]; !already {
-		sm.log.Debugf("start syncing block $%d", blockIndex)
-		sm.syncingBlocks[blockIndex] = &syncingBlock{}
-	}
-	blk := sm.syncingBlocks[blockIndex]
-	if blk.approved {
-		return blk.block, true
-	}
-	if blk.block != nil {
-		if time.Now().After(blk.pullDeadline) {
-			// approval didnt come in time, probably does not exist (prunned)
-			return blk.block, false
-		}
-		// will wait for some time more for the approval
-		return nil, false
-	}
-	// blk.block == nil
-	if time.Now().Before(blk.pullDeadline) {
-		// still waiting
-		return nil, false
-	}
-	// have to pull
-	data := util.MustBytes(&chain.GetBlockMsg{
-		BlockIndex: blockIndex,
-	})
-	// send messages until first without error
-	// TODO optimize
-	sm.peers.SendToAllUntilFirstError(chain.MsgGetBlock, data)
-	blk.pullDeadline = time.Now().Add(periodBetweenSyncMessages)
-	return nil, false
-}*/
 
 func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) {
 	sm.log.Infof("XXX outputPulled %v", coretypes.OID(output.ID()))
@@ -92,10 +56,6 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 		sm.log.Panicf("inconsistency: solid state index is larger than state output index")
 	}
 	// not synced
-	//TODO: is it needed?
-	//if len(sm.blockCandidates) > 0 && currentIndex+1 >= sm.stateOutput.GetStateIndex() {
-	//	return
-	//}
 	startSyncFromIndex := sm.solidState.BlockIndex() + 1
 	sm.log.Infof("XXX doSyncActionIfNeeded: from %v to %v", startSyncFromIndex, sm.stateOutput.GetStateIndex())
 	for i := startSyncFromIndex; i <= sm.stateOutput.GetStateIndex(); i++ {
@@ -132,7 +92,6 @@ func (sm *stateManager) requestBlockIfNeeded(stateIndex uint32) {
 			BlockIndex: stateIndex,
 		})
 		// send messages until first without error
-		// TODO optimize
 		sm.log.Infof("XXX requestBlockIfNeeded: sending to peers")
 		sm.peers.SendMsgToRandomNodes(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
 		sm.syncingBlocks.startSyncingIfNeeded(stateIndex)
@@ -207,46 +166,3 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	}
 	sm.solidState = tentativeState
 }
-
-// assumes all synced already
-/*func (sm *stateManager) mustCommitSynced(blocks []state.Block, finalHash hashing.HashValue, outputID ledgerstate.OutputID) {
-	if len(blocks) == 0 {
-		// shouldn't be here
-		sm.log.Panicf("len(blocks) == 0")
-	}
-	var tentativeState state.VirtualState
-	if sm.solidState != nil {
-		tentativeState = sm.solidState.Clone()
-	} else {
-		tentativeState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
-	}
-	for _, block := range blocks {
-		if err := tentativeState.ApplyBlock(block); err != nil {
-			sm.log.Errorf("failed to apply synced block index #%d. Error: %v", block.StateIndex(), err)
-			return
-		}
-	}
-	// state hashes must be equal
-	tentativeHash := tentativeState.Hash()
-	if tentativeHash != finalHash {
-		sm.log.Errorf("state hashes mismatch: expected final hash: %s, tentative hash: %s", finalHash, tentativeHash)
-		return
-	}
-	// again applying blocks, this time seriously
-	if sm.solidState == nil {
-		sm.solidState = state.NewZeroVirtualState(sm.dbp.GetPartition(sm.chain.ID()))
-	}
-	stateIndex := uint32(0)
-	for _, block := range blocks {
-		stateIndex = block.StateIndex()
-		sm.solidState.ApplyBlock(block)
-		if err := sm.solidState.CommitToDb(block); err != nil {
-			sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
-			sm.syncingBlocks = make(map[uint32]*syncingBlock)
-			return
-		}
-		delete(sm.syncingBlocks, stateIndex)
-	}
-	sm.blockCandidates = make(map[hashing.HashValue]*candidateBlock) // clear candidate batches
-	go sm.chain.Events().StateSynced().Trigger(outputID, stateIndex)
-}*/
