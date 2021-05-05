@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func sendTransaction(t *testing.T, emu *EVMEmulator, sender *ecdsa.PrivateKey, receiverAddress common.Address, amount *big.Int, data []byte) {
+func sendTransaction(t *testing.T, emu *EVMEmulator, sender *ecdsa.PrivateKey, receiverAddress common.Address, amount *big.Int, data []byte) *types.Receipt {
 	senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
 	nonce, err := emu.PendingNonceAt(senderAddress)
@@ -35,6 +35,11 @@ func sendTransaction(t *testing.T, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	err = emu.SendTransaction(tx)
 	require.NoError(t, err)
 	emu.Commit()
+
+	receipt, err := emu.TransactionReceipt(tx.Hash())
+	require.NoError(t, err)
+
+	return receipt
 }
 
 func TestBlockchain(t *testing.T) {
@@ -177,7 +182,9 @@ func testBlockchainPersistence(t *testing.T, db ethdb.Database) {
 	}
 }
 
-func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, func(sender *ecdsa.PrivateKey, name string, args ...interface{})) {
+type contractFnCaller func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *types.Receipt
+
+func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCaller) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce, err := emu.PendingNonceAt(creatorAddress)
@@ -226,13 +233,25 @@ func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey
 		}
 	}
 
-	callFn := func(sender *ecdsa.PrivateKey, name string, args ...interface{}) {
+	callFn := func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *types.Receipt {
 		callArguments, err := contractABI.Pack(name, args...)
 		require.NoError(t, err)
-		sendTransaction(t, emu, sender, contractAddress, big.NewInt(0), callArguments)
+		receipt := sendTransaction(t, emu, sender, contractAddress, big.NewInt(0), callArguments)
+		t.Logf("callFn %s Status: %d", name, receipt.Status)
+		t.Logf("Logs:")
+		for _, log := range receipt.Logs {
+			t.Logf("  - %s %x", log.Address, log.Data)
+			ev, err := contractABI.EventByID(log.Topics[0])
+			if err != nil {
+				t.Logf("    - log is not an event: %+v", log.Topics)
+			} else {
+				t.Logf("    - %s %+v", ev, log.Topics[1:])
+			}
+		}
+		return receipt
 	}
 
-	return contractAddress, callFn
+	return contractAddress, contractFnCaller(callFn)
 }
 
 func TestStorageContract(t *testing.T) {
@@ -395,22 +414,30 @@ func testERC20Contract(t *testing.T, db ethdb.Database) {
 	transferAmount := big.NewInt(1337)
 
 	// call `transfer` => send 1337 TestCoin to recipientAddress
-	callFn(erc20Owner, "transfer", recipientAddress, transferAmount)
+	receipt := callFn(erc20Owner, "transfer", recipientAddress, transferAmount)
+	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+	require.Equal(t, 1, len(receipt.Logs))
 
 	// call `balanceOf` view => check balance of recipient = 1337 TestCoin
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(transferAmount))
 
 	// call `transferFrom` as recipient without allowance => get error
-	callFn(recipient, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
+	receipt = callFn(recipient, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
+	require.Equal(t, types.ReceiptStatusFailed, receipt.Status)
+	require.Equal(t, 0, len(receipt.Logs))
 
 	// call `balanceOf` view => check balance of recipient = 1337 TestCoin
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(transferAmount))
 
 	// call `approve` as erc20Owner
-	callFn(erc20Owner, "approve", recipientAddress, transferAmount)
+	receipt = callFn(erc20Owner, "approve", recipientAddress, transferAmount)
+	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+	require.Equal(t, 1, len(receipt.Logs))
 
 	// call `transferFrom` as recipient with allowance => ok
-	callFn(recipient, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
+	receipt = callFn(recipient, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
+	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+	require.Equal(t, 2, len(receipt.Logs))
 
 	// call `balanceOf` view => check balance of recipient = 2 * 1337 TestCoin
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(new(big.Int).Mul(transferAmount, big.NewInt(2))))
