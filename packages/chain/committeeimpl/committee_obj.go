@@ -2,9 +2,10 @@ package committeeimpl
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/hive.go/logger"
 	"go.uber.org/atomic"
-	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -27,6 +28,7 @@ type committeeObj struct {
 	log         *logger.Logger
 }
 
+// NewCommittee committee object is agnostic about chain. It only operates within state address
 func NewCommittee(stateAddr ledgerstate.Address, netProvider peering.NetworkProvider, dksProvider tcrypto.RegistryProvider, log *logger.Logger) (chain.Committee, error) {
 	cmtRec, err := registry.CommitteeRecordFromRegistry(stateAddr)
 	if err != nil || cmtRec == nil {
