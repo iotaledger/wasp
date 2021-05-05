@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
@@ -53,19 +52,13 @@ func (sm *stateManager) notifyStateTransitionIfNeeded() {
 		return
 	}
 
-	var stateIndex uint32
-	var outputID ledgerstate.OutputID
-	if sm.stateOutput != nil {
-		stateIndex = sm.stateOutput.GetStateIndex()
-		outputID = sm.stateOutput.ID()
-	}
 	sm.notifiedSyncedStateHash = sm.solidState.Hash()
 	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
 		VirtualState:    sm.solidState.Clone(),
 		ChainOutput:     sm.stateOutput,
 		OutputTimestamp: sm.stateOutputTimestamp,
 	})
-	go sm.chain.Events().StateSynced().Trigger(outputID, stateIndex)
+	go sm.chain.Events().StateSynced().Trigger(sm.stateOutput.ID(), sm.stateOutput.GetStateIndex())
 }
 
 func (sm *stateManager) addBlockFromCommitee(nextState state.VirtualState) {
