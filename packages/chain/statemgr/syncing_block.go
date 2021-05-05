@@ -133,17 +133,17 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 }
 
 func (syncsT *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOutput) {
-	syncsT.log.Infof("XXX approveBlockCandidates %v", coretypes.OID(output.ID()))
+	syncsT.log.Infof("WWW approveBlockCandidates %v", coretypes.OID(output.ID()))
 	if output == nil {
 		return
 	}
 	stateIndex := output.GetStateIndex()
 	sync, ok := syncsT.blocks[stateIndex]
-	syncsT.log.Infof("XXX approveBlockCandidates: candidates=%v", syncsT.hasBlockCandidates())
+	syncsT.log.Infof("WWW approveBlockCandidates: candidates=%v", syncsT.hasBlockCandidates())
 	if ok {
-		syncsT.log.Infof("XXX approveBlockCandidates: sync block %v found", stateIndex)
+		syncsT.log.Infof("WWW approveBlockCandidates: sync block %v found", stateIndex)
 		for i, candidate := range sync.blockCandidates {
-			syncsT.log.Infof("XXX approveBlockCandidates: candidate %v local %v, approved %v", i, candidate.isLocal(), candidate.isApproved())
+			syncsT.log.Infof("WWW approveBlockCandidates: candidate %v local %v, approved %v", i, candidate.isLocal(), candidate.isApproved())
 			candidate.approveIfRightOutput(output)
 		}
 	}

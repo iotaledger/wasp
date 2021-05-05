@@ -20,7 +20,7 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 	if sm.stateOutput == nil || sm.solidState == nil {
 		return
 	}
-	sm.log.Infow("XXX EventGetBlockMsg",
+	sm.log.Infow("WWW EventGetBlockMsg",
 		"sender index", msg.SenderIndex,
 		"block index", msg.BlockIndex,
 	)
@@ -33,14 +33,14 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 		return
 	}
 
-	sm.log.Infof("XXX EventGetBlockMsg for state index #%d --> peer %d", msg.BlockIndex, msg.SenderIndex)
+	sm.log.Infof("WWW EventGetBlockMsg for state index #%d --> peer %d", msg.BlockIndex, msg.SenderIndex)
 	sm.log.Debugf("EventGetBlockMsg for state index #%d --> peer %d", msg.BlockIndex, msg.SenderIndex)
 
 	err = sm.peers.SendMsg(msg.SenderIndex, chain.MsgBlock, util.MustBytes(&chain.BlockMsg{
 		BlockBytes: blockBytes,
 	}))
 	if err != nil {
-		sm.log.Infof("XXX EventGetBlockMsg: erro sending %v", err)
+		sm.log.Infof("WWW EventGetBlockMsg: erro sending %v", err)
 		return
 	}
 }
@@ -58,7 +58,7 @@ func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
 		sm.log.Warnf("wrong blokc received from peer %d. Err: %v", msg.SenderIndex, err)
 		return
 	}
-	sm.log.Infow("XXX EventBlockMsg",
+	sm.log.Infow("WWW EventBlockMsg",
 		"sender", msg.SenderIndex,
 		"block index", block.BlockIndex(),
 		"approving output", coretypes.OID(block.ApprovingOutputID()),

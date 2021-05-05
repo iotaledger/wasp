@@ -235,7 +235,7 @@ func (nT *MockedNode) SetupPeerGroupSimple() {
 		return q <= uint16(len(nT.Env.Nodes))
 	})
 	nT.Peers.OnSendMsg(func(targetPeerIndex uint16, msgType byte, msgData []byte) error {
-		nT.Log.Infof("XXX MockedPeerGroup:OnSendMsg peer %v", targetPeerIndex)
+		nT.Log.Infof("WWW MockedPeerGroup:OnSendMsg peer %v", targetPeerIndex)
 		node, ok := nT.Env.Nodes[targetPeerIndex]
 		if !ok {
 			return fmt.Errorf("wrong peer index %d", targetPeerIndex)
@@ -243,7 +243,7 @@ func (nT *MockedNode) SetupPeerGroupSimple() {
 		rdr := bytes.NewReader(msgData)
 		switch msgType {
 		case chain.MsgGetBlock:
-			nT.Log.Infof("XXX MockedPeerGroup:OnSendMsg MsgGetBlock")
+			nT.Log.Infof("WWW MockedPeerGroup:OnSendMsg MsgGetBlock")
 			msg := chain.GetBlockMsg{}
 			if err := msg.Read(rdr); err != nil {
 				return fmt.Errorf("error reading MsgGetBlock message: %v", err)
@@ -252,7 +252,7 @@ func (nT *MockedNode) SetupPeerGroupSimple() {
 			go node.StateManager.EventGetBlockMsg(&msg)
 
 		case chain.MsgBlock:
-			nT.Log.Infof("XXX MockedPeerGroup:OnSendMsg MsgBlock")
+			nT.Log.Infof("WWW MockedPeerGroup:OnSendMsg MsgBlock")
 			msg := chain.BlockMsg{}
 			if err := msg.Read(rdr); err != nil {
 				return fmt.Errorf("error reading MsgBlock message: %v", err)

@@ -21,12 +21,12 @@ func (pgT *PeerGroup) SendMsgToRandomNodes(number int, msgType byte, msgData []b
 	var rndBytes [32]byte
 	rand.Read(rndBytes[:])
 	permutation := util.NewPermutation16(pgT.NumPeers(), rndBytes[:]).GetArray()
-	fmt.Printf("XXX PERMUTATION %v\n", permutation)
+	fmt.Printf("WWW PERMUTATION %v\n", permutation)
 	sent := 0
 	for _, index := range permutation {
-		fmt.Printf("XXX SENDING to %v\n", index)
+		fmt.Printf("WWW SENDING to %v\n", index)
 		err := pgT.SendMsg(index, msgType, msgData)
-		fmt.Printf("XXX SENT to %v RESULT %v\n", index, err)
+		fmt.Printf("WWW SENT to %v RESULT %v\n", index, err)
 		if err == nil {
 			sent++
 			if sent == number {
@@ -34,6 +34,6 @@ func (pgT *PeerGroup) SendMsgToRandomNodes(number int, msgType byte, msgData []b
 			}
 		}
 	}
-	fmt.Printf("XXX SENDING too few %v\n", sent)
+	fmt.Printf("WWW SENDING too few %v\n", sent)
 	return fmt.Errorf("Sent to %v nodes only", sent)
 }

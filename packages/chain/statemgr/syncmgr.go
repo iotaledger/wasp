@@ -13,25 +13,25 @@ import (
 )
 
 func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) {
-	sm.log.Infof("XXX outputPulled %v", coretypes.OID(output.ID()))
+	sm.log.Infof("WWW outputPulled %v", coretypes.OID(output.ID()))
 	if !sm.syncingBlocks.isSyncing(output.GetStateIndex()) {
 		// not interested
-		sm.log.Infof("XXX outputReceived: not interested %v", output.GetStateIndex())
+		sm.log.Infof("WWW outputReceived: not interested %v", output.GetStateIndex())
 		return
 	}
 	sm.syncingBlocks.approveBlockCandidates(output)
 }
 
 func (sm *stateManager) outputPushed(output *ledgerstate.AliasOutput, timestamp time.Time) {
-	sm.log.Infof("XXX outputPushed %v %v %v", output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
+	sm.log.Infof("WWW outputPushed %v %v %v", output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
 	if sm.stateOutput != nil {
 		switch {
 		case sm.stateOutput.GetStateIndex() == output.GetStateIndex():
-			sm.log.Infof("XXX outputPushed sm.stateOutput.GetStateIndex() == output.GetStateIndex() == %v", sm.stateOutput.GetStateIndex())
+			sm.log.Infof("WWW outputPushed sm.stateOutput.GetStateIndex() == output.GetStateIndex() == %v", sm.stateOutput.GetStateIndex())
 			sm.log.Debug("EventStateMsg: repeated state output")
 			return
 		case sm.stateOutput.GetStateIndex() > output.GetStateIndex():
-			sm.log.Infof("XXX outputPushed sm.stateOutput.GetStateIndex() > output.GetStateIndex(): %v > %v", sm.stateOutput.GetStateIndex(), output.GetStateIndex())
+			sm.log.Infof("WWW outputPushed sm.stateOutput.GetStateIndex() > output.GetStateIndex(): %v > %v", sm.stateOutput.GetStateIndex(), output.GetStateIndex())
 			sm.log.Warn("EventStateMsg: out of order state output")
 			return
 		}
@@ -42,22 +42,22 @@ func (sm *stateManager) outputPushed(output *ledgerstate.AliasOutput, timestamp 
 }
 
 func (sm *stateManager) doSyncActionIfNeeded() {
-	sm.log.Infof("XXX doSyncActionIfNeeded")
+	sm.log.Infof("WWW doSyncActionIfNeeded")
 	if sm.stateOutput == nil {
-		sm.log.Infof("XXX doSyncActionIfNeeded: output nil")
+		sm.log.Infof("WWW doSyncActionIfNeeded: output nil")
 		return
 	}
 	switch {
 	case sm.solidState.BlockIndex() == sm.stateOutput.GetStateIndex():
 		// synced
-		sm.log.Infof("XXX doSyncActionIfNeeded: synced")
+		sm.log.Infof("WWW doSyncActionIfNeeded: synced")
 		return
 	case sm.solidState.BlockIndex() > sm.stateOutput.GetStateIndex():
 		sm.log.Panicf("inconsistency: solid state index is larger than state output index")
 	}
 	// not synced
 	startSyncFromIndex := sm.solidState.BlockIndex() + 1
-	sm.log.Infof("XXX doSyncActionIfNeeded: from %v to %v", startSyncFromIndex, sm.stateOutput.GetStateIndex())
+	sm.log.Infof("WWW doSyncActionIfNeeded: from %v to %v", startSyncFromIndex, sm.stateOutput.GetStateIndex())
 	for i := startSyncFromIndex; i <= sm.stateOutput.GetStateIndex(); i++ {
 		//TODO: temporar if. We need to find a solution to synchronise over large gaps. Making state snapshots may help.
 		if i > startSyncFromIndex+maxBlocksToCommitConst {
@@ -66,14 +66,14 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			)
 			return
 		}
-		sm.log.Infof("XXX doSyncActionIfNeeded: syncing %v block candidates %v approved block candidates %v", i, sm.syncingBlocks.getBlockCandidatesCount(i), sm.syncingBlocks.getApprovedBlockCandidatesCount(i))
+		sm.log.Infof("WWW doSyncActionIfNeeded: syncing %v block candidates %v approved block candidates %v", i, sm.syncingBlocks.getBlockCandidatesCount(i), sm.syncingBlocks.getApprovedBlockCandidatesCount(i))
 		if sm.syncingBlocks.getBlockCandidatesCount(i) == 0 {
 			// some block is still unknown. Can't sync
 			sm.requestBlockIfNeeded(i)
 			return
 		}
 		if sm.syncingBlocks.getApprovedBlockCandidatesCount(i) > 0 {
-			sm.log.Infof("XXX doSyncActionIfNeeded: tryToCommitCandidates from %v to %v", startSyncFromIndex, i)
+			sm.log.Infof("WWW doSyncActionIfNeeded: tryToCommitCandidates from %v to %v", startSyncFromIndex, i)
 			candidates, tentativeState, ok := sm.getCandidatesToCommit(make([]*candidateBlock, 0, i-startSyncFromIndex+1), startSyncFromIndex, i)
 			if ok {
 				sm.commitCandidates(candidates, tentativeState)
@@ -84,7 +84,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 }
 
 func (sm *stateManager) requestBlockIfNeeded(stateIndex uint32) {
-	sm.log.Infof("XXX requestBlockIfNeeded: %v", stateIndex)
+	sm.log.Infof("WWW requestBlockIfNeeded: %v", stateIndex)
 	nowis := time.Now()
 	if nowis.After(sm.syncingBlocks.getRequestBlockRetryTime(stateIndex)) {
 		// have to pull
@@ -92,22 +92,22 @@ func (sm *stateManager) requestBlockIfNeeded(stateIndex uint32) {
 			BlockIndex: stateIndex,
 		})
 		// send messages until first without error
-		sm.log.Infof("XXX requestBlockIfNeeded: sending to peers")
+		sm.log.Infof("WWW requestBlockIfNeeded: sending to peers")
 		sm.peers.SendMsgToRandomNodes(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
 		sm.syncingBlocks.startSyncingIfNeeded(stateIndex)
 		sm.syncingBlocks.setRequestBlockRetryTime(stateIndex, nowis.Add(sm.timers.getGetBlockRetry()))
 	} else {
-		sm.log.Infof("XXX requestBlockIfNeeded: before deadline %v", sm.syncingBlocks.getRequestBlockRetryTime(stateIndex))
+		sm.log.Infof("WWW requestBlockIfNeeded: before deadline %v", sm.syncingBlocks.getRequestBlockRetryTime(stateIndex))
 	}
 }
 
 func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex uint32, toStateIndex uint32) ([]*candidateBlock, state.VirtualState, bool) {
-	sm.log.Infof("XXX getCandidatesToCommit: from %v to %v accumulator %v", fromStateIndex, toStateIndex, candidateAcc)
+	sm.log.Infof("WWW getCandidatesToCommit: from %v to %v accumulator %v", fromStateIndex, toStateIndex, candidateAcc)
 	if fromStateIndex > toStateIndex {
 		//Blocks gathered. Check if the correct result is received if they are applied
 		tentativeState := sm.solidState.Clone()
 		for i, candidate := range candidateAcc {
-			sm.log.Infof("XXX getCandidatesToCommit: candidate %v is null %v", i, candidate == nil)
+			sm.log.Infof("WWW getCandidatesToCommit: candidate %v is null %v", i, candidate == nil)
 			var err error
 			tentativeState, err = candidate.getNextState(tentativeState)
 			if err != nil {
@@ -130,7 +130,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 	} else {
 		stateCandidateBlocks = sm.syncingBlocks.getBlockCandidates(fromStateIndex)
 	}
-	sm.log.Infof("XXX getCandidatesToCommit: stateCandidateBlocks %v", stateCandidateBlocks)
+	sm.log.Infof("WWW getCandidatesToCommit: stateCandidateBlocks %v", stateCandidateBlocks)
 	sort.Slice(stateCandidateBlocks, func(i, j int) bool { return stateCandidateBlocks[i].getVotes() > stateCandidateBlocks[j].getVotes() })
 	for _, stateCandidateBlock := range stateCandidateBlocks {
 		resultBlocks, tentativeState, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex)
@@ -147,7 +147,7 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 		block := candidate.getBlock()
 		blocks[i] = block
 		sm.syncingBlocks.deleteSyncingBlock(block.BlockIndex())
-		sm.log.Infof("XXX will be commiting block %v", block.BlockIndex())
+		sm.log.Infof("WWW will be commiting block %v", block.BlockIndex())
 	}
 	// TODO: very strange... You cannot commit blocks i+1, i+2, i+3,... on top of state i.
 	//       You need to apply block i+1 on top of state i to receive state i+1.
