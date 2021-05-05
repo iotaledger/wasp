@@ -2,12 +2,14 @@ package statemgr
 
 import (
 	//	"bytes"
+	"fmt"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"sort"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -97,6 +99,13 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	startSyncFromIndex := sm.solidState.BlockIndex() + 1
 	sm.log.Infof("XXX doSyncActionIfNeeded: from %v to %v", startSyncFromIndex, sm.stateOutput.GetStateIndex())
 	for i := startSyncFromIndex; i <= sm.stateOutput.GetStateIndex(); i++ {
+		//TODO: temporar if. We need to find a solution to synchronise over large gaps. Making state snapshots may help.
+		if i > startSyncFromIndex+maxBlocksToCommitConst {
+			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
+				Reason: fmt.Sprintf("StateManager.doSyncActionIfNeeded: too many blocks to catch up: %v", sm.stateOutput.GetStateIndex()-startSyncFromIndex+1)},
+			)
+			return
+		}
 		sm.log.Infof("XXX doSyncActionIfNeeded: syncing %v block candidates %v approved block candidates %v", i, sm.syncingBlocks.getBlockCandidatesCount(i), sm.syncingBlocks.getApprovedBlockCandidatesCount(i))
 		if sm.syncingBlocks.getBlockCandidatesCount(i) == 0 {
 			// some block is still unknown. Can't sync
@@ -105,9 +114,9 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 		}
 		if sm.syncingBlocks.getApprovedBlockCandidatesCount(i) > 0 {
 			sm.log.Infof("XXX doSyncActionIfNeeded: tryToCommitCandidates from %v to %v", startSyncFromIndex, i)
-			candidates, ok := sm.getCandidatesToCommit(make([]*candidateBlock, 0, i-startSyncFromIndex+1), startSyncFromIndex, i)
+			candidates, tentativeState, ok := sm.getCandidatesToCommit(make([]*candidateBlock, 0, i-startSyncFromIndex+1), startSyncFromIndex, i)
 			if ok {
-				sm.commitCandidates(candidates)
+				sm.commitCandidates(candidates, tentativeState)
 				return
 			}
 		}
@@ -133,7 +142,7 @@ func (sm *stateManager) requestBlockIfNeeded(stateIndex uint32) {
 	}
 }
 
-func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex uint32, toStateIndex uint32) ([]*candidateBlock, bool) {
+func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex uint32, toStateIndex uint32) ([]*candidateBlock, state.VirtualState, bool) {
 	sm.log.Infof("XXX getCandidatesToCommit: from %v to %v accumulator %v", fromStateIndex, toStateIndex, candidateAcc)
 	if fromStateIndex > toStateIndex {
 		//Blocks gathered. Check if the correct result is received if they are applied
@@ -144,7 +153,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 			tentativeState, err = candidate.getNextState(tentativeState)
 			if err != nil {
 				sm.log.Errorf("failed to apply synced block index #%d. Error: %v", candidate.getBlock().BlockIndex(), err)
-				return nil, false
+				return nil, nil, false
 			}
 		}
 		// state hashes must be equal
@@ -152,9 +161,9 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 		finalHash := candidateAcc[len(candidateAcc)-1].getNextStateHash()
 		if tentativeHash != finalHash {
 			sm.log.Errorf("state hashes mismatch: expected final hash: %s, tentative hash: %s", finalHash, tentativeHash)
-			return nil, false
+			return nil, nil, false
 		}
-		return candidateAcc, true
+		return candidateAcc, tentativeState, true
 	}
 	var stateCandidateBlocks []*candidateBlock
 	if fromStateIndex == toStateIndex {
@@ -165,29 +174,38 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 	sm.log.Infof("XXX getCandidatesToCommit: stateCandidateBlocks %v", stateCandidateBlocks)
 	sort.Slice(stateCandidateBlocks, func(i, j int) bool { return stateCandidateBlocks[i].getVotes() > stateCandidateBlocks[j].getVotes() })
 	for _, stateCandidateBlock := range stateCandidateBlocks {
-		resultBlocks, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex)
+		resultBlocks, tentativeState, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex)
 		if ok {
-			return resultBlocks, true
+			return resultBlocks, tentativeState, true
 		}
 	}
-	return nil, false
+	return nil, nil, false
 }
 
-func (sm *stateManager) commitCandidates(candidates []*candidateBlock) {
-	stateIndex := uint32(0)
-	for _, candidate := range candidates {
+func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentativeState state.VirtualState) {
+	blocks := make([]state.Block, len(candidates))
+	for i, candidate := range candidates {
 		block := candidate.getBlock()
-		sm.solidState, _ = candidate.getNextState(sm.solidState)
-		stateIndex = block.BlockIndex()
-		//TODO: maybe commit in 10 block batches?
-		//TODO: maybe commit everything in one transaction and move StateTransition event notification? But solid state will have to be calculated after failed commit.
-		if err := sm.solidState.Commit(block); err != nil {
-			sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
-			sm.syncingBlocks.restartSyncing()
-			return
-		}
-		sm.syncingBlocks.deleteSyncingBlock(stateIndex)
+		blocks[i] = block
+		sm.syncingBlocks.deleteSyncingBlock(block.BlockIndex())
+		sm.log.Infof("XXX will be commiting block %v", block.BlockIndex())
 	}
+	// TODO: very strange... You cannot commit blocks i+1, i+2, i+3,... on top of state i.
+	//       You need to apply block i+1 on top of state i to receive state i+1.
+	//       Only then you can commit blocks i+1, i+2, i+3,...
+	//       In fact, you can commit blocks i+1, i+2, i+3,... on top of state i,
+	//       but in such case a corrupted DB is received: block i+1 is commited as i+2
+	//       and probably the same happens for other blocks...
+	sm.solidState.ApplyBlock(blocks[0])
+	//TODO: maybe commit in 10 (or some const) block batches?
+	//      This would save from large commits and huge memory usage to store blocks
+	err := sm.solidState.Commit(blocks...)
+	if err != nil {
+		sm.log.Errorf("failed to commit synced changes into DB. Restart syncing")
+		sm.syncingBlocks.restartSyncing()
+		return
+	}
+	sm.solidState = tentativeState
 }
 
 // assumes all synced already

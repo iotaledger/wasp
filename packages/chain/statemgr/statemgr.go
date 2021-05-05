@@ -47,6 +47,7 @@ type stateManager struct {
 
 const (
 	numberOfNodesToRequestBlockFromConst = 5
+	maxBlocksToCommitConst               = 10000 //10k
 )
 
 func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers *chain.PeerGroup, nodeconn chain.NodeConnection, log *logger.Logger, timers ...Timers) chain.StateManager {
