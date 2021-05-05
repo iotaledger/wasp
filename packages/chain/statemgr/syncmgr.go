@@ -67,9 +67,17 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			return
 		}
 		sm.log.Infof("WWW doSyncActionIfNeeded: syncing %v block candidates %v approved block candidates %v", i, sm.syncingBlocks.getBlockCandidatesCount(i), sm.syncingBlocks.getApprovedBlockCandidatesCount(i))
-		if sm.syncingBlocks.getBlockCandidatesCount(i) == 0 {
-			// some block is still unknown. Can't sync
-			sm.requestBlockIfNeeded(i)
+		nowis := time.Now()
+		if sm.syncingBlocks.getBlockCandidatesCount(i) == 0 || nowis.After(sm.syncingBlocks.getRequestBlockRetryTime(i)) {
+			sm.log.Infof("WWW doSyncActionIfNeeded: requesting block %v", i)
+			// have to pull
+			data := util.MustBytes(&chain.GetBlockMsg{
+				BlockIndex: i,
+			})
+			// send messages until first without error
+			sm.peers.SendMsgToRandomNodes(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
+			sm.syncingBlocks.startSyncingIfNeeded(i)
+			sm.syncingBlocks.setRequestBlockRetryTime(i, nowis.Add(sm.timers.getGetBlockRetry()))
 			return
 		}
 		if sm.syncingBlocks.getApprovedBlockCandidatesCount(i) > 0 {
@@ -80,24 +88,6 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 				return
 			}
 		}
-	}
-}
-
-func (sm *stateManager) requestBlockIfNeeded(stateIndex uint32) {
-	sm.log.Infof("WWW requestBlockIfNeeded: %v", stateIndex)
-	nowis := time.Now()
-	if nowis.After(sm.syncingBlocks.getRequestBlockRetryTime(stateIndex)) {
-		// have to pull
-		data := util.MustBytes(&chain.GetBlockMsg{
-			BlockIndex: stateIndex,
-		})
-		// send messages until first without error
-		sm.log.Infof("WWW requestBlockIfNeeded: sending to peers")
-		sm.peers.SendMsgToRandomNodes(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
-		sm.syncingBlocks.startSyncingIfNeeded(stateIndex)
-		sm.syncingBlocks.setRequestBlockRetryTime(stateIndex, nowis.Add(sm.timers.getGetBlockRetry()))
-	} else {
-		sm.log.Infof("WWW requestBlockIfNeeded: before deadline %v", sm.syncingBlocks.getRequestBlockRetryTime(stateIndex))
 	}
 }
 
