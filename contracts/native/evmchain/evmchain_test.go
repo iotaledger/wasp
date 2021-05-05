@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -61,7 +62,7 @@ func getNonceFor(t *testing.T, chain *solo.Chain, addr common.Address) uint64 {
 	return nonce
 }
 
-type contractFnCaller func(sender *ecdsa.PrivateKey, name string, args ...interface{})
+type contractFnCaller func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *types.Receipt
 
 func deployContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCaller) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
@@ -95,7 +96,7 @@ func deployContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKey, 
 
 	contractAddress := crypto.CreateAddress(creatorAddress, nonce)
 
-	callFn := func(sender *ecdsa.PrivateKey, name string, args ...interface{}) {
+	callFn := func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *types.Receipt {
 		senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
 		nonce := getNonceFor(t, chain, senderAddress)
@@ -119,6 +120,18 @@ func deployContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKey, 
 			nil,
 		)
 		require.NoError(t, err)
+
+		var receipt *types.Receipt
+		{
+			ret, err := chain.CallView(Interface.Name, FuncGetReceipt,
+				FieldTransactionHash, tx.Hash().Bytes(),
+			)
+			require.NoError(t, err)
+
+			err = rlp.DecodeBytes(ret.MustGet(FieldResult), &receipt)
+			require.NoError(t, err)
+		}
+		return receipt
 	}
 
 	return contractAddress, callFn
@@ -166,7 +179,7 @@ func TestERC20Contract(t *testing.T) {
 	require.NoError(t, err)
 
 	// deploy solidity `erc20` contract
-	contractAddress, _ := deployContract(t, chain, faucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+	contractAddress, callFn := deployContract(t, chain, faucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
 
 	callIntViewFn := func(name string, args ...interface{}) *big.Int {
 		callArguments, err := contractABI.Pack(name, args...)
@@ -191,4 +204,18 @@ func TestERC20Contract(t *testing.T) {
 		expected := new(big.Int).Mul(big.NewInt(100), new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 		require.Zero(t, v.Cmp(expected))
 	}
+
+	recipient, err := crypto.GenerateKey()
+	require.NoError(t, err)
+	recipientAddress := crypto.PubkeyToAddress(recipient.PublicKey)
+
+	transferAmount := big.NewInt(1337)
+
+	// call `transfer` => send 1337 TestCoin to recipientAddress
+	receipt := callFn(faucetKey, "transfer", recipientAddress, transferAmount)
+	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+	require.Equal(t, 1, len(receipt.Logs))
+
+	// call `balanceOf` view => check balance of recipient = 1337 TestCoin
+	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(transferAmount))
 }

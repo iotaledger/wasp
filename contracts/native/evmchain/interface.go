@@ -28,6 +28,7 @@ func init() {
 		coreutil.ViewFunc(FuncGetBalance, getBalance),
 		coreutil.ViewFunc(FuncCallView, callView),
 		coreutil.ViewFunc(FuncGetNonce, getNonce),
+		coreutil.ViewFunc(FuncGetReceipt, getReceipt),
 	})
 	native.AddProcessor(Interface)
 }
@@ -37,11 +38,13 @@ const (
 	FuncSendTransaction = "sendTransaction"
 	FuncCallView        = "callView"
 	FuncGetNonce        = "getNonce"
+	FuncGetReceipt      = "getReceipt"
 )
 
 const (
 	FieldGenesisAlloc    = "g"
 	FieldAddress         = "a"
+	FieldTransactionHash = "h"
 	FieldTransactionData = "t"
 	FieldBalance         = "b"
 	FieldCallArguments   = "c"

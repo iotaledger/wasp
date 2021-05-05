@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/evm"
@@ -64,6 +65,25 @@ func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 	ret := dict.New()
 	ret.Set(FieldBalance, bal.Bytes())
+	return ret, nil
+}
+
+func getReceipt(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+
+	txHash := common.BytesToHash(ctx.Params().MustGet(FieldTransactionHash))
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	receipt, err := emu.TransactionReceipt(txHash)
+	a.RequireNoError(err)
+
+	receiptBytes, err := rlp.EncodeToBytes(receipt)
+	a.RequireNoError(err)
+
+	ret := dict.New()
+	ret.Set(FieldResult, receiptBytes)
 	return ret, nil
 }
 
