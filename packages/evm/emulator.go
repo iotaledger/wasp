@@ -4,10 +4,6 @@
 // package evm provides tools to emulate Ethereum chains and contracts.
 //
 // Code adapted from go-ethereum/accounts/abi/bind/backends/simulated.go
-//
-// TODO: support events
-// TODO: handle errors - eg: require
-// TODO: gas
 package evm
 
 import (

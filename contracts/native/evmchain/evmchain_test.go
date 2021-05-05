@@ -63,7 +63,7 @@ func getNonceFor(t *testing.T, chain *solo.Chain, addr common.Address) uint64 {
 
 type contractFnCaller func(sender *ecdsa.PrivateKey, name string, args ...interface{})
 
-func deployContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKey, contractABI abi.ABI, args ...interface{}) (common.Address, contractFnCaller) {
+func deployContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCaller) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce := getNonceFor(t, chain, creatorAddress)
@@ -72,7 +72,7 @@ func deployContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKey, 
 	constructorArguments, err := contractABI.Pack("", args...)
 	require.NoError(t, err)
 
-	data := append(evmtest.StorageContractBytecode, constructorArguments...)
+	data := append(contractBytecode, constructorArguments...)
 
 	tx, err := types.SignTx(
 		types.NewContractCreation(nonce, big.NewInt(0), evm.GasLimit, evm.GasPrice, data),
@@ -84,11 +84,13 @@ func deployContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKey, 
 	txdata, err := tx.MarshalBinary()
 	require.NoError(t, err)
 
-	_, err = chain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, FuncSendTransaction, FieldTransactionData, txdata).
-			WithIotas(1),
-		nil,
-	)
+	req, toUpload := solo.NewCallParamsOptimized(Interface.Name, FuncSendTransaction, 1024, FieldTransactionData, txdata)
+	req.WithIotas(1)
+	for _, v := range toUpload {
+		chain.Env.PutBlobDataIntoRegistry(v)
+	}
+
+	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	contractAddress := crypto.CreateAddress(creatorAddress, nonce)
@@ -129,7 +131,7 @@ func TestStorageContract(t *testing.T) {
 	require.NoError(t, err)
 
 	// deploy solidity `storage` contract
-	contractAddress, callFn := deployContract(t, chain, faucetKey, contractABI, uint32(42))
+	contractAddress, callFn := deployContract(t, chain, faucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
 
 	retrieve := func() uint32 {
 		callArguments, err := contractABI.Pack("retrieve")
@@ -155,4 +157,38 @@ func TestStorageContract(t *testing.T) {
 
 	// call `retrieve` view, get 43
 	require.EqualValues(t, 43, retrieve())
+}
+
+func TestERC20Contract(t *testing.T) {
+	chain := initEVMChain(t)
+
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
+	require.NoError(t, err)
+
+	// deploy solidity `erc20` contract
+	contractAddress, _ := deployContract(t, chain, faucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+
+	callIntViewFn := func(name string, args ...interface{}) *big.Int {
+		callArguments, err := contractABI.Pack(name, args...)
+		require.NoError(t, err)
+
+		ret, err := chain.CallView(Interface.Name, FuncCallView,
+			FieldAddress, contractAddress.Bytes(),
+			FieldCallArguments, callArguments,
+		)
+		require.NoError(t, err)
+
+		v := new(big.Int)
+		err = contractABI.UnpackIntoInterface(&v, name, ret.MustGet(FieldResult))
+		require.NoError(t, err)
+		return v
+	}
+
+	// call `totalSupply` view
+	{
+		v := callIntViewFn("totalSupply")
+		// 100 * 10^18
+		expected := new(big.Int).Mul(big.NewInt(100), new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
+		require.Zero(t, v.Cmp(expected))
+	}
 }
