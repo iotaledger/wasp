@@ -4,38 +4,38 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 )
 
-type commiteePeerGroupProvider struct {
+type committeePeerGroupProvider struct {
 	committee chain.Committee
 }
 
-var _ chain.PeerGroupProvider = &commiteePeerGroupProvider{}
+var _ chain.PeerGroupProvider = &committeePeerGroupProvider{}
 
-func newCommiteePeerGroupProvider(c chain.Committee) *commiteePeerGroupProvider {
-	return &commiteePeerGroupProvider{committee: c}
+func newCommitteePeerGroupProvider(c chain.Committee) *committeePeerGroupProvider {
+	return &committeePeerGroupProvider{committee: c}
 }
 
-func newCommiteePeerGroup(c chain.Committee) *chain.PeerGroup {
-	return chain.NewPeerGroup(newCommiteePeerGroupProvider(c))
+func newCommitteePeerGroup(c chain.Committee) *chain.PeerGroup {
+	return chain.NewPeerGroup(newCommitteePeerGroupProvider(c))
 }
 
-func (*commiteePeerGroupProvider) Lock()   {}
-func (*commiteePeerGroupProvider) Unlock() {}
+func (*committeePeerGroupProvider) Lock()   {}
+func (*committeePeerGroupProvider) Unlock() {}
 
-func (p *commiteePeerGroupProvider) NumPeers() uint16 {
+func (p *committeePeerGroupProvider) NumPeers() uint16 {
 	if p.committee == nil {
 		return 0
 	}
 	return p.committee.Size()
 }
 
-func (p *commiteePeerGroupProvider) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
+func (p *committeePeerGroupProvider) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
 	if p.committee == nil {
 		return nil
 	}
 	return p.committee.SendMsg(targetPeerIndex, msgType, msgData)
 }
 
-func (p *commiteePeerGroupProvider) NumIsAlive(quorum uint16) bool {
+func (p *committeePeerGroupProvider) NumIsAlive(quorum uint16) bool {
 	if p.committee == nil {
 		return false
 	}
