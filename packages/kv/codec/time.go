@@ -1,8 +1,9 @@
 package codec
 
 import (
-	"github.com/iotaledger/wasp/packages/util"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 var zeroUnixNano = time.Time{}.UnixNano()
