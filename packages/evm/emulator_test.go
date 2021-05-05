@@ -177,7 +177,7 @@ func testBlockchainPersistence(t *testing.T, db ethdb.Database) {
 	}
 }
 
-func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) common.Address {
+func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, func(sender *ecdsa.PrivateKey, name string, args ...interface{})) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce, err := emu.PendingNonceAt(creatorAddress)
@@ -226,7 +226,13 @@ func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey
 		}
 	}
 
-	return contractAddress
+	callFn := func(sender *ecdsa.PrivateKey, name string, args ...interface{}) {
+		callArguments, err := contractABI.Pack(name, args...)
+		require.NoError(t, err)
+		sendTransaction(t, emu, sender, contractAddress, big.NewInt(0), callArguments)
+	}
+
+	return contractAddress, callFn
 }
 
 func TestStorageContract(t *testing.T) {
@@ -260,7 +266,7 @@ func testStorageContract(t *testing.T, db ethdb.Database) {
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
 
-	contractAddress := deployEVMContract(
+	contractAddress, callFn := deployEVMContract(
 		t,
 		emu,
 		faucet,
@@ -275,10 +281,7 @@ func testStorageContract(t *testing.T, db ethdb.Database) {
 		require.NoError(t, err)
 		require.NotEmpty(t, callArguments)
 
-		res, err := emu.CallContract(ethereum.CallMsg{
-			To:   &contractAddress,
-			Data: callArguments,
-		}, nil)
+		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, res)
 
@@ -293,11 +296,7 @@ func testStorageContract(t *testing.T, db ethdb.Database) {
 
 	// send tx that calls `store(43)`
 	{
-		callArguments, err := contractABI.Pack("store", uint32(43))
-		require.NoError(t, err)
-
-		sendTransaction(t, emu, faucet, contractAddress, big.NewInt(0), callArguments)
-
+		callFn(faucet, "store", uint32(43))
 		require.EqualValues(t, 2, emu.Blockchain().CurrentBlock().NumberU64())
 	}
 
@@ -356,8 +355,9 @@ func testERC20Contract(t *testing.T, db ethdb.Database) {
 
 	erc20Owner, err := crypto.GenerateKey()
 	require.NoError(t, err)
+	erc20OwnerAddress := crypto.PubkeyToAddress(erc20Owner.PublicKey)
 
-	contractAddress := deployEVMContract(
+	contractAddress, callFn := deployEVMContract(
 		t,
 		emu,
 		erc20Owner,
@@ -367,21 +367,25 @@ func testERC20Contract(t *testing.T, db ethdb.Database) {
 		"TEST",
 	)
 
-	// call `totalSupply` view
-	{
-		callArguments, err := contractABI.Pack("totalSupply")
+	callIntViewFn := func(name string, args ...interface{}) *big.Int {
+		callArguments, err := contractABI.Pack(name, args...)
 		require.NoError(t, err)
 
 		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
 		require.NoError(t, err)
 
 		v := new(big.Int)
-		err = contractABI.UnpackIntoInterface(&v, "totalSupply", res)
+		err = contractABI.UnpackIntoInterface(&v, name, res)
 		require.NoError(t, err)
+		return v
+	}
 
+	// call `totalSupply` view
+	{
+		v := callIntViewFn("totalSupply")
 		// 100 * 10^18
 		expected := new(big.Int).Mul(big.NewInt(100), new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
-		require.Equal(t, expected.Bits(), v.Bits())
+		require.Zero(t, v.Cmp(expected))
 	}
 
 	recipient, err := crypto.GenerateKey()
@@ -391,25 +395,23 @@ func testERC20Contract(t *testing.T, db ethdb.Database) {
 	transferAmount := big.NewInt(1337)
 
 	// call `transfer` => send 1337 TestCoin to recipientAddress
-	{
-		callArguments, err := contractABI.Pack("transfer", recipientAddress, transferAmount)
-		require.NoError(t, err)
-
-		sendTransaction(t, emu, erc20Owner, contractAddress, big.NewInt(0), callArguments)
-	}
+	callFn(erc20Owner, "transfer", recipientAddress, transferAmount)
 
 	// call `balanceOf` view => check balance of recipient = 1337 TestCoin
-	{
-		callArguments, err := contractABI.Pack("balanceOf", recipientAddress)
-		require.NoError(t, err)
+	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(transferAmount))
 
-		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
-		require.NoError(t, err)
+	// call `transferFrom` as recipient without allowance => get error
+	callFn(recipient, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
 
-		v := new(big.Int)
-		err = contractABI.UnpackIntoInterface(&v, "balanceOf", res)
-		require.NoError(t, err)
+	// call `balanceOf` view => check balance of recipient = 1337 TestCoin
+	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(transferAmount))
 
-		require.Equal(t, transferAmount.Bits(), v.Bits())
-	}
+	// call `approve` as erc20Owner
+	callFn(erc20Owner, "approve", recipientAddress, transferAmount)
+
+	// call `transferFrom` as recipient with allowance => ok
+	callFn(recipient, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
+
+	// call `balanceOf` view => check balance of recipient = 2 * 1337 TestCoin
+	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(new(big.Int).Mul(transferAmount, big.NewInt(2))))
 }

@@ -7,6 +7,7 @@
 //
 // TODO: support events
 // TODO: handle errors - eg: require
+// TODO: gas
 package evm
 
 import (
