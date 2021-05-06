@@ -120,7 +120,7 @@ func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState
 
 func (sm *stateManager) storeSyncingData() {
 	sm.log.Infof("WWW storeSyncingData")
-	if sm.solidState == nil || sm.stateOutput == nil {
+	if sm.stateOutput == nil {
 		return
 	}
 	outputStateHash, err := hashing.HashValueFromBytes(sm.stateOutput.GetStateData())

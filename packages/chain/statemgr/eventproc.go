@@ -17,7 +17,7 @@ func (sm *stateManager) EventGetBlockMsg(msg *chain.GetBlockMsg) {
 	sm.eventGetBlockMsgCh <- msg
 }
 func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
-	if sm.stateOutput == nil || sm.solidState == nil {
+	if sm.stateOutput == nil {
 		return
 	}
 	sm.log.Infow("WWW EventGetBlockMsg",
