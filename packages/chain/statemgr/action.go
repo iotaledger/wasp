@@ -70,8 +70,8 @@ func (sm *stateManager) pullStateIfNeeded() {
 	}
 }
 
-func (sm *stateManager) addBlockFromCommitee(nextState state.VirtualState) {
-	sm.log.Debugw("addBlockFromCommitee: adding block for state ",
+func (sm *stateManager) addBlockFromConsensus(nextState state.VirtualState) {
+	sm.log.Debugw("addBlockFromConsensus: adding block for state ",
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
 		"hash", nextState.Hash(),
@@ -79,18 +79,18 @@ func (sm *stateManager) addBlockFromCommitee(nextState state.VirtualState) {
 
 	block, err := nextState.ExtractBlock()
 	if err != nil {
-		sm.log.Errorf("addBlockFromCommitee: error extracting block: %v", err)
+		sm.log.Errorf("addBlockFromConsensus: error extracting block: %v", err)
 		return
 	}
 	if block == nil {
-		sm.log.Errorf("addBlockFromCommitee: state candidate does not contain block")
+		sm.log.Errorf("addBlockFromConsensus: state candidate does not contain block")
 		return
 	}
 
 	sm.addBlockAndCheckStateOutput(block, nextState)
 
 	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < block.BlockIndex() {
-		sm.log.Debugf("addBlockFromCommitee: received new block from committee, delaying pullStateRetry")
+		sm.log.Debugf("addBlockFromConsensus: received new block from committee, delaying pullStateRetry")
 		sm.pullStateRetryTime = time.Now().Add(sm.timers.getPullStateNewBlockDelay())
 	}
 }

@@ -111,7 +111,7 @@ func (sm *stateManager) eventStateCandidateMsg(msg chain.StateCandidateMsg) {
 		sm.log.Debugf("EventStateCandidateMsg ignored: stateOutput is nil")
 		return
 	}
-	sm.addBlockFromCommitee(msg.State)
+	sm.addBlockFromConsensus(msg.State)
 	sm.takeAction()
 }
 
