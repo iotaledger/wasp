@@ -64,7 +64,7 @@ func getNonceFor(t *testing.T, chain *solo.Chain, addr common.Address) uint64 {
 
 type contractFnCaller func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *types.Receipt
 
-func deployContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCaller) {
+func deployEVMContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCaller) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce := getNonceFor(t, chain, creatorAddress)
@@ -85,13 +85,15 @@ func deployContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKey, 
 	txdata, err := tx.MarshalBinary()
 	require.NoError(t, err)
 
-	req, toUpload := solo.NewCallParamsOptimized(Interface.Name, FuncSendTransaction, 1024, FieldTransactionData, txdata)
-	req.WithIotas(1)
-	for _, v := range toUpload {
-		chain.Env.PutBlobDataIntoRegistry(v)
-	}
+	txDataBlobHash, err := chain.UploadBlobOptimized(1024, nil, FieldTransactionData, txdata)
+	require.NoError(t, err)
 
-	_, err = chain.PostRequestSync(req, nil)
+	_, err = chain.PostRequestSync(
+		solo.NewCallParams(Interface.Name, FuncSendTransaction,
+			FieldTransactionDataBlobHash, codec.EncodeHashValue(txDataBlobHash),
+		).WithIotas(1),
+		nil,
+	)
 	require.NoError(t, err)
 
 	contractAddress := crypto.CreateAddress(creatorAddress, nonce)
@@ -144,7 +146,7 @@ func TestStorageContract(t *testing.T) {
 	require.NoError(t, err)
 
 	// deploy solidity `storage` contract
-	contractAddress, callFn := deployContract(t, chain, faucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
+	contractAddress, callFn := deployEVMContract(t, chain, faucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
 
 	retrieve := func() uint32 {
 		callArguments, err := contractABI.Pack("retrieve")
@@ -179,7 +181,7 @@ func TestERC20Contract(t *testing.T) {
 	require.NoError(t, err)
 
 	// deploy solidity `erc20` contract
-	contractAddress, callFn := deployContract(t, chain, faucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+	contractAddress, callFn := deployEVMContract(t, chain, faucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
 
 	callIntViewFn := func(name string, args ...interface{}) *big.Int {
 		callArguments, err := contractABI.Pack(name, args...)

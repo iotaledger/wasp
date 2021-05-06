@@ -42,11 +42,12 @@ const (
 )
 
 const (
-	FieldGenesisAlloc    = "g"
-	FieldAddress         = "a"
-	FieldTransactionHash = "h"
-	FieldTransactionData = "t"
-	FieldBalance         = "b"
-	FieldCallArguments   = "c"
-	FieldResult          = "r"
+	FieldGenesisAlloc            = "g"
+	FieldAddress                 = "a"
+	FieldTransactionHash         = "h"
+	FieldTransactionData         = "t"
+	FieldTransactionDataBlobHash = "th"
+	FieldBalance                 = "b"
+	FieldCallArguments           = "c"
+	FieldResult                  = "r"
 )
