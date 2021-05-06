@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/peering/domain"
+
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -97,7 +99,7 @@ func (n *NetImpl) Self() peering.PeerSender {
 	return n
 }
 
-// Group implements peering.NetworkProvider.
+// Group creates peering.GroupProvider.
 func (n *NetImpl) Group(peerNetIDs []string) (peering.GroupProvider, error) {
 	var err error
 	groupPeers := make([]peering.PeerSender, len(peerNetIDs))
@@ -107,6 +109,22 @@ func (n *NetImpl) Group(peerNetIDs []string) (peering.GroupProvider, error) {
 		}
 	}
 	return group.NewPeeringGroupProvider(n, groupPeers, n.log), nil
+}
+
+// Domain creates peering.DomainProvider.
+func (n *NetImpl) Domain(peerNetIDs []string) (peering.DomainProvider, error) {
+	peers := make([]peering.PeerSender, 0, len(peerNetIDs))
+	for _, nid := range peerNetIDs {
+		if nid == n.Self().NetID() {
+			continue
+		}
+		p, err := n.usePeer(nid)
+		if err != nil {
+			return nil, err
+		}
+		peers = append(peers, p)
+	}
+	return domain.NewPeeringDomain(n, peers, n.log), nil
 }
 
 // Attach implements peering.NetworkProvider.

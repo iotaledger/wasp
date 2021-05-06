@@ -83,11 +83,18 @@ type NetworkProvider interface {
 	Run(stopCh <-chan struct{})
 	Self() PeerSender
 	Group(peerAddrs []string) (GroupProvider, error)
+	Domain(peerAddrs []string) (DomainProvider, error)
 	Attach(peeringID *PeeringID, callback func(recv *RecvEvent)) interface{}
 	Detach(attachID interface{})
 	PeerByNetID(peerNetID string) (PeerSender, error)
 	PeerByPubKey(peerPub kyber.Point) (PeerSender, error)
 	PeerStatus() []PeerStatusProvider
+}
+
+type PeerCollection interface {
+	Attach(peeringID *PeeringID, callback func(recv *RecvEvent)) interface{}
+	Detach(attachID interface{})
+	Close()
 }
 
 // GroupProvider stands for a subset of a peer-to-peer network
@@ -111,9 +118,18 @@ type GroupProvider interface {
 	) error
 	AllNodes() map[uint16]PeerSender   // Returns all the nodes in the group.
 	OtherNodes() map[uint16]PeerSender // Returns other nodes in the group (excluding Self).
-	Attach(peeringID *PeeringID, callback func(recv *RecvEvent)) interface{}
-	Detach(attachID interface{})
-	Close()
+	PeerCollection
+}
+
+// DomainProvider implements unordered set of peers which can dynamically change
+// All peers in the domain shares same peeringID. Each peer within domain is identified via its netID
+type DomainProvider interface {
+	SendMsgByNetID(netID string, msg *PeerMessage)
+	SendMsgToRandomPeers(upToNumPeers uint16, msg *PeerMessage)
+	AddPeer(netID string) error
+	RemovePeer(netID string)
+	ReshufflePeers(seedBytes ...[]byte)
+	PeerCollection
 }
 
 // PeerSender represents an interface to some remote peer.
@@ -170,6 +186,7 @@ type RecvEvent struct {
 type PeerMessage struct {
 	PeeringID   PeeringID
 	SenderIndex uint16 // TODO: Only meaningful in a group, and when calculated by the client.
+	SenderNetID string // TODO: Non persistent. Only used by PeeringDomain, filled by the receiver
 	Timestamp   int64
 	MsgType     byte
 	MsgData     []byte
