@@ -38,7 +38,7 @@ func (sm *stateManager) notifyStateTransitionIfNeeded() {
 	stateOutputID := sm.stateOutput.ID()
 	stateOutputIndex := sm.stateOutput.GetStateIndex()
 	sm.log.Debugf("notifyStateTransition: notifying about state %v approved by output %v index %v",
-		sm.notifiedSyncedStateHash.String(), stateOutputID.String(), stateOutputIndex)
+		sm.notifiedSyncedStateHash.String(), coretypes.OID(stateOutputID), stateOutputIndex)
 	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
 		VirtualState:    sm.solidState.Clone(),
 		ChainOutput:     sm.stateOutput,
@@ -59,7 +59,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 	if nowis.After(sm.pullStateRetryTime) {
 		if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidatesNotOlderThan(sm.stateOutput.GetStateIndex()+1) {
 			chainAliasAddress := sm.chain.ID().AsAliasAddress()
-			sm.log.Debugf("pullState: pulling state for address %v", chainAliasAddress.String())
+			sm.log.Debugf("pullState: pulling state for address %v", chainAliasAddress.Base58())
 			sm.nodeConn.PullState(chainAliasAddress)
 			sm.pullStateRetryTime = nowis.Add(sm.timers.getPullStateRetry())
 		} else {
@@ -139,7 +139,7 @@ func (sm *stateManager) storeSyncingData() {
 		return
 	}
 	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateHash %v, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputHash %v, StateOutputTimestamp %v",
-		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.Hash().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), sm.stateOutput.ID(), outputStateHash.String(), sm.stateOutputTimestamp)
+		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.Hash().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), coretypes.OID(sm.stateOutput.ID()), outputStateHash.String(), sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
 		Synced:                sm.isSynced(),
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
