@@ -119,7 +119,7 @@ both donated iotas and the feedback message in a single transaction.
 ## Balance of the smart contract account
 
 SC transactions are value transactions, i.e. they move tokens from addresses to addresses. 
-It is because ISCP is a protocol on top of the Goshimmer's Value Tangle, an UTXO ledger.
+It is because ISCP is a protocol on top of the Goshimmer's UTXO Ledger.
 Here you can find a [short introduction](../utxo.md) to main concepts of it.
 
 The smart contract account balance consists of all UTXOs contained in the smart contract address. 
@@ -131,7 +131,7 @@ ColorCode2: balance2
 ```
 
 The smart contract balance is an _on-tangle_ part of the smart contract’s state. 
-It means the Value Tangle takes care of the consistency and immutability of the smart contract balance.
+It means the UTXO Ledger takes care of the consistency and immutability of the smart contract balance.
 
 Tokens of the smart contract balances can be moved only by the smart contract instance, 
 which is the only entity which owns private keys. 
@@ -218,7 +218,7 @@ Let's look at it step-by-step:
 
 1. The `wasp-cli` command creates a value transaction containing the smart contract request. 
 It takes 42 iotas from the address of the wallet, signs the transaction with the private key of the wallet. 
-Then it posts it to the value tangle, i.e to Goshimmer node, running on the Pollen network. 
+Then it posts it to the UTXO Ledger, i.e to Goshimmer node, running on the Pollen network. 
 (there's a bit more of a token manipulation behind scenes but we skip it here)
 
 2. Pollen network confirms the transaction containing the request. 

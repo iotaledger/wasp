@@ -40,7 +40,7 @@ func setupDeployer(t *testing.T, chain *solo.Chain) (*ed25519.KeyPair, ledgersta
 	user, userAddr := chain.Env.NewKeyPairWithFunds()
 	chain.Env.AssertAddressIotas(userAddr, solo.Saldo)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
 		root.ParamDeployer, coretypes.NewAgentID(userAddr, 0),
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)

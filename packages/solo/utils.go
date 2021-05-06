@@ -12,7 +12,7 @@ func (ch *Chain) GrantDeployPermission(keyPair *ed25519.KeyPair, deployerAgentID
 		keyPair = ch.OriginatorKeyPair
 	}
 
-	req := NewCallParams(root.Interface.Name, root.FuncGrantDeploy, root.ParamDeployer, deployerAgentID)
+	req := NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission, root.ParamDeployer, deployerAgentID)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -23,7 +23,7 @@ func (ch *Chain) RevokeDeployPermission(keyPair *ed25519.KeyPair, deployerAgentI
 		keyPair = ch.OriginatorKeyPair
 	}
 
-	req := NewCallParams(root.Interface.Name, root.FuncRevokeDeploy, root.ParamDeployer, deployerAgentID)
+	req := NewCallParams(root.Interface.Name, root.FuncRevokeDeployPermission, root.ParamDeployer, deployerAgentID)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }

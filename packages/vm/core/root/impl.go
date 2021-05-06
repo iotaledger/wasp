@@ -333,7 +333,7 @@ func grantDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-// grantDeployPermission revokes permission to deploy contracts
+// revokeDeployPermission revokes permission to deploy contracts
 // Input:
 //  - ParamDeployer coretypes.AgentID
 func revokeDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
