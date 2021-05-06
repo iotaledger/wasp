@@ -104,9 +104,8 @@ func (sm *stateManager) initLoadState() {
 		return
 	}
 	if stateExists {
-		h := sm.solidState.Hash()
 		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
-			sm.solidState.BlockIndex(), h.String())
+			sm.solidState.BlockIndex(), sm.solidState.Hash().String())
 	} else {
 		// create origin state in DB
 		sm.solidState, err = state.CreateOriginState(sm.dbp, sm.chain.ID())

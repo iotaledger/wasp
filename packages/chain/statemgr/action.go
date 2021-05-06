@@ -22,28 +22,6 @@ func (sm *stateManager) takeAction() {
 	sm.storeSyncingData()
 }
 
-func (sm *stateManager) pullStateIfNeeded() {
-	sm.log.Infof("WWW pullStateIfNeeded")
-	nowis := time.Now()
-	if nowis.After(sm.pullStateRetryTime) {
-		if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidatesNotOlderThan(sm.stateOutput.GetStateIndex()+1) {
-			sm.log.Infof("WWW pullStateIfNeeded: pull it")
-			sm.log.Debugf("pull state")
-			sm.nodeConn.PullState(sm.chain.ID().AsAliasAddress())
-			sm.pullStateRetryTime = nowis.Add(sm.timers.getPullStateRetry())
-		}
-	} else {
-		sm.log.Infof("WWW pullStateIfNeeded: before retry time")
-	}
-}
-
-func (sm *stateManager) isSynced() bool {
-	if sm.stateOutput == nil {
-		return false
-	}
-	return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
-}
-
 func (sm *stateManager) notifyStateTransitionIfNeeded() {
 	if sm.notifiedSyncedStateHash == sm.solidState.Hash() {
 		return
@@ -59,6 +37,28 @@ func (sm *stateManager) notifyStateTransitionIfNeeded() {
 		OutputTimestamp: sm.stateOutputTimestamp,
 	})
 	go sm.chain.Events().StateSynced().Trigger(sm.stateOutput.ID(), sm.stateOutput.GetStateIndex())
+}
+
+func (sm *stateManager) isSynced() bool {
+	if sm.stateOutput == nil {
+		return false
+	}
+	return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
+}
+
+func (sm *stateManager) pullStateIfNeeded() {
+	sm.log.Infof("WWW pullStateIfNeeded")
+	nowis := time.Now()
+	if nowis.After(sm.pullStateRetryTime) {
+		if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidatesNotOlderThan(sm.stateOutput.GetStateIndex()+1) {
+			sm.log.Infof("WWW pullStateIfNeeded: pull it")
+			sm.log.Debugf("pull state")
+			sm.nodeConn.PullState(sm.chain.ID().AsAliasAddress())
+			sm.pullStateRetryTime = nowis.Add(sm.timers.getPullStateRetry())
+		}
+	} else {
+		sm.log.Infof("WWW pullStateIfNeeded: before retry time")
+	}
 }
 
 func (sm *stateManager) addBlockFromCommitee(nextState state.VirtualState) {
