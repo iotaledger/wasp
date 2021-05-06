@@ -4,7 +4,6 @@
 package statemgr
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -108,49 +107,53 @@ func (syncsT *syncingBlocks) hasBlockCandidatesNotOlderThan(index uint32) bool {
 	return false
 }
 
-func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState state.VirtualState) (isBlockNew bool, candidate *candidateBlock, err error) {
+func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState state.VirtualState) (isBlockNew bool, candidate *candidateBlock) {
 	stateIndex := block.BlockIndex()
+	hash := hashing.HashData(block.EssenceBytes())
+	syncsT.log.Debugf("addBlockCandidate: adding block candidate for index %v with essence hash %v; next state provided: %v", stateIndex, hash.String(), nextState != nil)
 	syncsT.startSyncingIfNeeded(stateIndex)
 	sync, _ := syncsT.blocks[stateIndex]
-	hash := hashing.HashData(block.EssenceBytes())
 	candidateExisting, ok := sync.blockCandidates[hash]
 	if ok {
 		// already have block. Check consistency. If inconsistent, start from scratch
 		if candidateExisting.getApprovingOutputID() != block.ApprovingOutputID() {
 			delete(sync.blockCandidates, hash)
-			return false, nil, fmt.Errorf("conflicting block arrived. Block index: %d, present approving outputID: %s, arrived approving outputID: %s",
-				stateIndex, coretypes.OID(candidateExisting.getApprovingOutputID()), coretypes.OID(block.ApprovingOutputID()))
-
+			syncsT.log.Debugf("addBlockCandidate: conflicting block index %v with hash %v arrived: prsent approvingOutputID %v, new block approvingOutputID: %v",
+				stateIndex, hash.String(), candidateExisting.getApprovingOutputID(), coretypes.OID(block.ApprovingOutputID()))
+			return false, nil
 		}
 		candidateExisting.addVote()
-		syncsT.log.Infof("added existing block candidate. State index: %d, state hash: %s", stateIndex, hash.String())
-		return false, candidateExisting, nil
+		syncsT.log.Debugf("addBlockCandidate: existing block index %v with hash %v arrived, votes increased.", stateIndex, hash.String())
+		return false, candidateExisting
 	}
 	candidate = newCandidateBlock(block, nextState)
 	sync.blockCandidates[hash] = candidate
-	syncsT.log.Infof("added new block candidate. State index: %d, state hash: %s", stateIndex, hash.String())
-	return true, candidate, nil
+	syncsT.log.Infof("addBlockCandidate: new block candidate created for block index: %d, hash: %s", stateIndex, hash.String())
+	return true, candidate
 }
 
 func (syncsT *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOutput) {
-	syncsT.log.Infof("WWW approveBlockCandidates %v", coretypes.OID(output.ID()))
 	if output == nil {
+		syncsT.log.Debugf("approveBlockCandidates failed, provided output is nil")
 		return
 	}
 	stateIndex := output.GetStateIndex()
+	syncsT.log.Debugf("approveBlockCandidates using output ID %v for state index %v", coretypes.OID(output.ID()), stateIndex)
 	sync, ok := syncsT.blocks[stateIndex]
-	syncsT.log.Infof("WWW approveBlockCandidates: candidates=%v", syncsT.hasBlockCandidates())
 	if ok {
-		syncsT.log.Infof("WWW approveBlockCandidates: sync block %v found", stateIndex)
-		for i, candidate := range sync.blockCandidates {
-			syncsT.log.Infof("WWW approveBlockCandidates: candidate %v local %v, approved %v", i, candidate.isLocal(), candidate.isApproved())
+		syncsT.log.Debugf("approveBlockCandidates: %v block candidates to check", len(sync.blockCandidates))
+		for blockHash, candidate := range sync.blockCandidates {
+			syncsT.log.Debugf("approveBlockCandidates: checking candidate %v: local %v, nextStateHash %v, approvingOutputID %v, already approved %v",
+				blockHash.String(), candidate.isLocal(), candidate.getNextStateHash().String(), coretypes.OID(candidate.getApprovingOutputID()), candidate.isApproved())
 			candidate.approveIfRightOutput(output)
+			syncsT.log.Debugf("approveBlockCandidates: candidate %v approved %v", blockHash.String(), candidate.isApproved())
 		}
 	}
 }
 
 func (syncsT *syncingBlocks) startSyncingIfNeeded(stateIndex uint32) {
 	if !syncsT.isSyncing(stateIndex) {
+		syncsT.log.Debugf("Starting syncing state index %v", stateIndex)
 		syncsT.blocks[stateIndex] = &syncingBlock{
 			requestBlockRetryTime: time.Now(),
 			blockCandidates:       make(map[hashing.HashValue]*candidateBlock),
