@@ -48,6 +48,7 @@ type ChainEvents interface {
 
 // Committee is ordered (indexed 0..size-1) list of peers which run the consensus and the whoel chain
 type Committee interface {
+	Address() ledgerstate.Address
 	Size() uint16
 	Quorum() uint16
 	OwnPeerIndex() uint16

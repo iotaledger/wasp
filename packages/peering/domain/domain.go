@@ -20,8 +20,8 @@ type domainImpl struct {
 	mutex       *sync.RWMutex
 }
 
-// NewPeeringDomain creates a collection. Ignores self
-func NewPeeringDomain(netProvider peering.NetworkProvider, initialNodes []peering.PeerSender, log *logger.Logger) *domainImpl {
+// NewPeerDomain creates a collection. Ignores self
+func NewPeerDomain(netProvider peering.NetworkProvider, initialNodes []peering.PeerSender, log *logger.Logger) *domainImpl {
 	ret := &domainImpl{
 		netProvider: netProvider,
 		nodes:       make(map[string]peering.PeerSender),

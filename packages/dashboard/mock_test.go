@@ -81,8 +81,8 @@ func (p *peeringNetworkProvider) Group(peerAddrs []string) (peering.GroupProvide
 	panic("not implemented")
 }
 
-// Domain creates peering.DomainProvider.
-func (n *peeringNetworkProvider) Domain(peerNetIDs []string) (peering.DomainProvider, error) {
+// Domain creates peering.PeerDomainProvider.
+func (n *peeringNetworkProvider) Domain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
 	panic("not implemented")
 }
 func (p *peeringNetworkProvider) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {
