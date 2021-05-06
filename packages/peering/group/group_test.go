@@ -22,9 +22,9 @@ func TestGroupProvider(t *testing.T) {
 	nodes[0], err0 = udp.NewNetworkProvider(netIDs[0], 9017, key.NewKeyPair(suite), suite, log.Named("node0"))
 	nodes[1], err1 = udp.NewNetworkProvider(netIDs[1], 9018, key.NewKeyPair(suite), suite, log.Named("node1"))
 	nodes[2], err2 = udp.NewNetworkProvider(netIDs[2], 9019, key.NewKeyPair(suite), suite, log.Named("node2"))
-	require.Nil(t, err0)
-	require.Nil(t, err1)
-	require.Nil(t, err2)
+	require.NoError(t, err0)
+	require.NoError(t, err1)
+	require.NoError(t, err2)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))
 	}

@@ -2,9 +2,10 @@ package committeeimpl
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/hive.go/logger"
 	"go.uber.org/atomic"
-	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -16,6 +17,7 @@ import (
 
 type committeeObj struct {
 	isReady     *atomic.Bool
+	address     ledgerstate.Address
 	netProvider peering.NetworkProvider
 	peers       peering.GroupProvider
 	peeringID   peering.PeeringID
@@ -59,6 +61,7 @@ func NewCommittee(stateAddr ledgerstate.Address, netProvider peering.NetworkProv
 
 	ret := &committeeObj{
 		isReady:     atomic.NewBool(false),
+		address:     stateAddr,
 		peers:       peers,
 		peeringID:   stateAddr.Array(), // committee is made for specific state address
 		netProvider: netProvider,
@@ -71,6 +74,10 @@ func NewCommittee(stateAddr ledgerstate.Address, netProvider peering.NetworkProv
 	go ret.waitReady()
 
 	return ret, nil
+}
+
+func (c *committeeObj) Address() ledgerstate.Address {
+	return c.address
 }
 
 func (c *committeeObj) Size() uint16 {

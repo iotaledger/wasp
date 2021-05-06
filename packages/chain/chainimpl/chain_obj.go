@@ -5,8 +5,9 @@ package chainimpl
 
 import (
 	"bytes"
-	"github.com/iotaledger/wasp/packages/state"
 	"sync"
+
+	"github.com/iotaledger/wasp/packages/state"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
@@ -240,7 +241,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 		"stateHash", sh.String(),
 		"stateAddr", msg.ChainOutput.GetStateAddress().Base58(),
 	)
-	if c.committee != nil && c.committee.DKShare().Address.Equals(msg.ChainOutput.GetStateAddress()) {
+	if c.committee != nil && c.committee.Address().Equals(msg.ChainOutput.GetStateAddress()) {
 		// nothing changed in the committee
 		c.stateMgr.EventStateMsg(msg)
 		return

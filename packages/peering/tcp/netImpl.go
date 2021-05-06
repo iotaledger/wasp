@@ -89,8 +89,8 @@ func (n *NetImpl) Group(peerNetIDs []string) (peering.GroupProvider, error) {
 	return group.NewPeeringGroupProvider(n, peers, n.log), nil
 }
 
-// Domain creates peering.DomainProvider.
-func (n *NetImpl) Domain(peerNetIDs []string) (peering.DomainProvider, error) {
+// Domain creates peering.PeerDomainProvider.
+func (n *NetImpl) Domain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
 	var err error
 	peers := make([]peering.PeerSender, len(peerNetIDs))
 	for i, nid := range peerNetIDs {
@@ -101,7 +101,7 @@ func (n *NetImpl) Domain(peerNetIDs []string) (peering.DomainProvider, error) {
 			return nil, err
 		}
 	}
-	return domain.NewPeeringDomain(n, peers, n.log), nil
+	return domain.NewPeerDomain(n, peers, n.log), nil
 }
 
 // Attach implements peering.NetworkProvider.

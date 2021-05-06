@@ -111,8 +111,8 @@ func (n *NetImpl) Group(peerNetIDs []string) (peering.GroupProvider, error) {
 	return group.NewPeeringGroupProvider(n, groupPeers, n.log), nil
 }
 
-// Domain creates peering.DomainProvider.
-func (n *NetImpl) Domain(peerNetIDs []string) (peering.DomainProvider, error) {
+// Domain creates peering.PeerDomainProvider.
+func (n *NetImpl) Domain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
 	peers := make([]peering.PeerSender, 0, len(peerNetIDs))
 	for _, nid := range peerNetIDs {
 		if nid == n.Self().NetID() {
@@ -124,7 +124,7 @@ func (n *NetImpl) Domain(peerNetIDs []string) (peering.DomainProvider, error) {
 		}
 		peers = append(peers, p)
 	}
-	return domain.NewPeeringDomain(n, peers, n.log), nil
+	return domain.NewPeerDomain(n, peers, n.log), nil
 }
 
 // Attach implements peering.NetworkProvider.
@@ -249,7 +249,7 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 	var err error
 	var buf = make([]byte, 2024)
 	for {
-		select { // Terminate the loop, if such reqyest has been made.
+		select { // Terminate the loop, if such request has been made.
 		case <-stopCh:
 			return
 		default:
@@ -327,16 +327,17 @@ func (n *NetImpl) receiveUserMsg(msg *peering.PeerMessage, peerUDPAddr *net.UDPA
 	}
 	remoteUDPAddrStr := peerUDPAddr.String()
 	n.peersLock.RLock()
+	defer n.peersLock.RUnlock()
+
 	if p, ok := n.peersByAddr[remoteUDPAddrStr]; ok {
-		n.peersLock.RUnlock()
 		p.noteReceived()
+		msg.SenderNetID = p.NetID()
 		n.recvQueue <- &peering.RecvEvent{
 			From: p,
 			Msg:  msg,
 		}
 		return
 	}
-	n.peersLock.RUnlock()
 	n.log.Warnf("Dropping received message from unknown peer=%v", remoteUDPAddrStr)
 }
 

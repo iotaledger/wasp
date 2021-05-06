@@ -83,7 +83,7 @@ type NetworkProvider interface {
 	Run(stopCh <-chan struct{})
 	Self() PeerSender
 	Group(peerAddrs []string) (GroupProvider, error)
-	Domain(peerAddrs []string) (DomainProvider, error)
+	Domain(peerAddrs []string) (PeerDomainProvider, error)
 	Attach(peeringID *PeeringID, callback func(recv *RecvEvent)) interface{}
 	Detach(attachID interface{})
 	PeerByNetID(peerNetID string) (PeerSender, error)
@@ -121,13 +121,11 @@ type GroupProvider interface {
 	PeerCollection
 }
 
-// DomainProvider implements unordered set of peers which can dynamically change
+// PeerDomainProvider implements unordered set of peers which can dynamically change
 // All peers in the domain shares same peeringID. Each peer within domain is identified via its netID
-type DomainProvider interface {
+type PeerDomainProvider interface {
 	SendMsgByNetID(netID string, msg *PeerMessage)
 	SendMsgToRandomPeers(upToNumPeers uint16, msg *PeerMessage)
-	AddPeer(netID string) error
-	RemovePeer(netID string)
 	ReshufflePeers(seedBytes ...[]byte)
 	PeerCollection
 }
