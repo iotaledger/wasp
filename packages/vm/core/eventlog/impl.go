@@ -16,7 +16,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-// getNumRecords gets the number of eventlog records for contarct
+// getNumRecords gets the number of eventlog records for contract
 // Parameters:
 //	- ParamContractHname Hname of the contract to view the logs
 func getNumRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
@@ -35,9 +35,9 @@ func getNumRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
 // In time descending order
 // Parameters:
 //	- ParamContractHname Filter param, Hname of the contract to view the logs
-//  - ParamFromTs From interval. Defaults to 0
-//  - ParamToTs To Interval. Defaults to now (if both are missing means all)
-//  - ParamMaxLastRecords Max amount of records that you want to return. Defaults to 50
+//  - ParamFromTs From timestamp. Defaults to 0
+//  - ParamToTs To timestamp. Defaults to now (if both are missing means all)
+//  - ParamMaxLastRecords Max amount of records that you want to return. Default is 50
 func getRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 

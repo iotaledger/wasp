@@ -110,7 +110,7 @@ func TestDeployGrant(t *testing.T) {
 	user1, addr1 := env.NewKeyPairWithFunds()
 	user1AgentID := coretypes.NewAgentID(addr1, 0)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
 		root.ParamDeployer, user1AgentID,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
@@ -135,7 +135,7 @@ func TestRevokeDeploy(t *testing.T) {
 	user1, addr1 := env.NewKeyPairWithFunds()
 	user1AgentID := coretypes.NewAgentID(addr1, 0)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
 		root.ParamDeployer, user1AgentID,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
@@ -147,7 +147,7 @@ func TestRevokeDeploy(t *testing.T) {
 	_, _, contacts := chain.GetInfo()
 	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contacts))
 
-	req = solo.NewCallParams(root.Interface.Name, root.FuncRevokeDeploy,
+	req = solo.NewCallParams(root.Interface.Name, root.FuncRevokeDeployPermission,
 		root.ParamDeployer, user1AgentID,
 	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
@@ -166,7 +166,7 @@ func TestDeployGrantFail(t *testing.T) {
 	user1, addr1 := env.NewKeyPairWithFunds()
 	user1AgentID := coretypes.NewAgentID(addr1, 0)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
 		root.ParamDeployer, user1AgentID,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, user1)

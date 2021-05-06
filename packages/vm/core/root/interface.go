@@ -28,16 +28,16 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.Func(FuncDeployContract, deployContract),
-		coreutil.ViewFunc(FuncFindContract, findContract),
 		coreutil.Func(FuncClaimChainOwnership, claimChainOwnership),
 		coreutil.Func(FuncDelegateChainOwnership, delegateChainOwnership),
+		coreutil.Func(FuncDeployContract, deployContract),
+		coreutil.Func(FuncGrantDeployPermission, grantDeployPermission),
+		coreutil.Func(FuncRevokeDeployPermission, revokeDeployPermission),
+		coreutil.Func(FuncSetContractFee, setContractFee),
+		coreutil.Func(FuncSetDefaultFee, setDefaultFee),
+		coreutil.ViewFunc(FuncFindContract, findContract),
 		coreutil.ViewFunc(FuncGetChainInfo, getChainInfo),
 		coreutil.ViewFunc(FuncGetFeeInfo, getFeeInfo),
-		coreutil.Func(FuncSetDefaultFee, setDefaultFee),
-		coreutil.Func(FuncSetContractFee, setContractFee),
-		coreutil.Func(FuncGrantDeploy, grantDeployPermission),
-		coreutil.Func(FuncRevokeDeploy, revokeDeployPermission),
 	})
 }
 
@@ -80,8 +80,8 @@ const (
 	FuncGetFeeInfo             = "getFeeInfo"
 	FuncSetDefaultFee          = "setDefaultFee"
 	FuncSetContractFee         = "setContractFee"
-	FuncGrantDeploy            = "grantDeployPermission"
-	FuncRevokeDeploy           = "revokeDeployPermission"
+	FuncGrantDeployPermission  = "grantDeployPermission"
+	FuncRevokeDeployPermission = "revokeDeployPermission"
 )
 
 // ContractRecord is a structure which contains metadata of the deployed contract instance
