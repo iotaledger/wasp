@@ -2,14 +2,17 @@ package mock_chain
 
 //---------------------------------------------
 type MockedPeerGroupProvider struct {
-	onNumPeers                 func() uint16
-	onNumIsAlive               func(uint16) bool
-	onSendMsg                  func(targetPeerIndex uint16, msgType byte, msgData []byte) error
-	onSendToAllUntilFirstError func(msgType byte, msgData []byte) uint16
+	onLock       func()
+	onUnlock     func()
+	onNumPeers   func() uint16
+	onNumIsAlive func(uint16) bool
+	onSendMsg    func(targetPeerIndex uint16, msgType byte, msgData []byte) error
 }
 
-func NewMockedPeerGroup() *MockedPeerGroupProvider {
+func NewMockedPeerGroupProvider() *MockedPeerGroupProvider {
 	return &MockedPeerGroupProvider{
+		onLock:   func() {},
+		onUnlock: func() {},
 		onNumPeers: func() uint16 {
 			return 0
 		},
@@ -19,10 +22,15 @@ func NewMockedPeerGroup() *MockedPeerGroupProvider {
 		onSendMsg: func(targetPeerIndex uint16, msgType byte, msgData []byte) error {
 			return nil
 		},
-		onSendToAllUntilFirstError: func(msgType byte, msgData []byte) uint16 {
-			return 0
-		},
 	}
+}
+
+func (m *MockedPeerGroupProvider) Lock() {
+	m.onLock()
+}
+
+func (m *MockedPeerGroupProvider) Unlock() {
+	m.onUnlock()
 }
 
 func (m *MockedPeerGroupProvider) NumPeers() uint16 {
@@ -37,8 +45,12 @@ func (m *MockedPeerGroupProvider) SendMsg(targetPeerIndex uint16, msgType byte, 
 	return m.onSendMsg(targetPeerIndex, msgType, msgData)
 }
 
-func (m *MockedPeerGroupProvider) SendToAllUntilFirstError(msgType byte, msgData []byte) uint16 {
-	return m.onSendToAllUntilFirstError(msgType, msgData)
+func (m *MockedPeerGroupProvider) OnLock(f func()) {
+	m.onLock = f
+}
+
+func (m *MockedPeerGroupProvider) OnUnlock(f func()) {
+	m.onUnlock = f
 }
 
 func (m *MockedPeerGroupProvider) OnNumPeers(f func() uint16) {
@@ -51,8 +63,4 @@ func (m *MockedPeerGroupProvider) OnNumIsAlive(f func(uint16) bool) {
 
 func (m *MockedPeerGroupProvider) OnSendMsg(f func(targetPeerIndex uint16, msgType byte, msgData []byte) error) {
 	m.onSendMsg = f
-}
-
-func (m *MockedPeerGroupProvider) OnSendToAllUntilFirstError(f func(msgType byte, msgData []byte) uint16) {
-	m.onSendToAllUntilFirstError = f
 }

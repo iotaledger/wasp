@@ -32,6 +32,7 @@ func NewWasmProcessor(vm wasmhost.WasmVM, logger *logger.Logger) (*wasmProcessor
 	host := &wasmProcessor{}
 	if GoWasmVM != nil {
 		vm = GoWasmVM
+		GoWasmVM = nil
 	}
 	err := host.InitVM(vm, false)
 	if err != nil {
@@ -41,6 +42,18 @@ func NewWasmProcessor(vm wasmhost.WasmVM, logger *logger.Logger) (*wasmProcessor
 	host.Init(NewNullObject(&host.KvStoreHost), host.scContext, logger)
 	host.SetExport(0x8fff, ViewCopyAllState)
 	return host, nil
+}
+
+func GetProcessor(binaryCode []byte, logger *logger.Logger) (coretypes.VMProcessor, error) {
+	vm, err := NewWasmProcessor(wasmhost.NewWasmTimeVM(), logger)
+	if err != nil {
+		return nil, err
+	}
+	err = vm.LoadWasm(binaryCode)
+	if err != nil {
+		return nil, err
+	}
+	return vm, nil
 }
 
 func (host *wasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.SandboxView) (dict.Dict, error) {
@@ -129,18 +142,6 @@ func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProc
 func (host *wasmProcessor) GetDefaultEntryPoint() coretypes.VMProcessorEntryPoint {
 	host.function = FuncDefault
 	return host
-}
-
-func GetProcessor(binaryCode []byte, logger *logger.Logger) (coretypes.VMProcessor, error) {
-	vm, err := NewWasmProcessor(wasmhost.NewWasmTimeVM(), logger)
-	if err != nil {
-		return nil, err
-	}
-	err = vm.LoadWasm(binaryCode)
-	if err != nil {
-		return nil, err
-	}
-	return vm, nil
 }
 
 func (host *wasmProcessor) IsView() bool {

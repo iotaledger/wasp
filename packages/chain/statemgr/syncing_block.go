@@ -1,0 +1,175 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+package statemgr
+
+import (
+	"time"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/state"
+)
+
+type syncingBlocks struct {
+	blocks map[uint32]*syncingBlock
+	log    *logger.Logger
+}
+
+type syncingBlock struct {
+	requestBlockRetryTime time.Time
+	blockCandidates       map[hashing.HashValue]*candidateBlock
+}
+
+func newSyncingBlocks(log *logger.Logger) *syncingBlocks {
+	return &syncingBlocks{
+		blocks: make(map[uint32]*syncingBlock),
+		log:    log,
+	}
+}
+
+func (syncsT *syncingBlocks) getRequestBlockRetryTime(stateIndex uint32) time.Time {
+	sync, ok := syncsT.blocks[stateIndex]
+	if !ok {
+		return time.Time{}
+	}
+	return sync.requestBlockRetryTime
+}
+
+func (syncsT *syncingBlocks) setRequestBlockRetryTime(stateIndex uint32, requestBlockRetryTime time.Time) {
+	sync, ok := syncsT.blocks[stateIndex]
+	if ok {
+		sync.requestBlockRetryTime = requestBlockRetryTime
+	}
+}
+
+func (syncsT *syncingBlocks) getBlockCandidates(stateIndex uint32) []*candidateBlock {
+	sync, ok := syncsT.blocks[stateIndex]
+	if !ok {
+		return make([]*candidateBlock, 0, 0)
+	}
+	result := make([]*candidateBlock, 0, len(sync.blockCandidates))
+	for _, candidate := range sync.blockCandidates {
+		result = append(result, candidate)
+	}
+	return result
+}
+
+func (syncsT *syncingBlocks) getApprovedBlockCandidates(stateIndex uint32) []*candidateBlock {
+	result := make([]*candidateBlock, 0, 1)
+	sync, ok := syncsT.blocks[stateIndex]
+	if ok {
+		for _, candidate := range sync.blockCandidates {
+			if candidate.isApproved() {
+				result = append(result, candidate)
+			}
+		}
+	}
+	return result
+}
+
+func (syncsT *syncingBlocks) getBlockCandidatesCount(stateIndex uint32) int {
+	sync, ok := syncsT.blocks[stateIndex]
+	if !ok {
+		return 0
+	}
+	return len(sync.blockCandidates)
+}
+
+func (syncsT *syncingBlocks) getApprovedBlockCandidatesCount(stateIndex uint32) int {
+	sync, ok := syncsT.blocks[stateIndex]
+	if !ok {
+		return 0
+	}
+	approvedCount := 0
+	for _, candidate := range sync.blockCandidates {
+		if candidate.isApproved() {
+			approvedCount++
+		}
+	}
+	return approvedCount
+}
+
+func (syncsT *syncingBlocks) hasBlockCandidates() bool {
+	return syncsT.hasBlockCandidatesNotOlderThan(0)
+}
+
+func (syncsT *syncingBlocks) hasBlockCandidatesNotOlderThan(index uint32) bool {
+	for i, sync := range syncsT.blocks {
+		if i >= index {
+			if len(sync.blockCandidates) > 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState state.VirtualState) (isBlockNew bool, candidate *candidateBlock) {
+	stateIndex := block.BlockIndex()
+	hash := hashing.HashData(block.EssenceBytes())
+	syncsT.log.Debugf("addBlockCandidate: adding block candidate for index %v with essence hash %v; next state provided: %v", stateIndex, hash.String(), nextState != nil)
+	syncsT.startSyncingIfNeeded(stateIndex)
+	sync, _ := syncsT.blocks[stateIndex]
+	candidateExisting, ok := sync.blockCandidates[hash]
+	if ok {
+		// already have block. Check consistency. If inconsistent, start from scratch
+		if candidateExisting.getApprovingOutputID() != block.ApprovingOutputID() {
+			delete(sync.blockCandidates, hash)
+			syncsT.log.Debugf("addBlockCandidate: conflicting block index %v with hash %v arrived: prsent approvingOutputID %v, new block approvingOutputID: %v",
+				stateIndex, hash.String(), candidateExisting.getApprovingOutputID(), coretypes.OID(block.ApprovingOutputID()))
+			return false, nil
+		}
+		candidateExisting.addVote()
+		syncsT.log.Debugf("addBlockCandidate: existing block index %v with hash %v arrived, votes increased.", stateIndex, hash.String())
+		return false, candidateExisting
+	}
+	candidate = newCandidateBlock(block, nextState)
+	sync.blockCandidates[hash] = candidate
+	syncsT.log.Infof("addBlockCandidate: new block candidate created for block index: %d, hash: %s", stateIndex, hash.String())
+	return true, candidate
+}
+
+func (syncsT *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOutput) {
+	if output == nil {
+		syncsT.log.Debugf("approveBlockCandidates failed, provided output is nil")
+		return
+	}
+	stateIndex := output.GetStateIndex()
+	syncsT.log.Debugf("approveBlockCandidates using output ID %v for state index %v", coretypes.OID(output.ID()), stateIndex)
+	sync, ok := syncsT.blocks[stateIndex]
+	if ok {
+		syncsT.log.Debugf("approveBlockCandidates: %v block candidates to check", len(sync.blockCandidates))
+		for blockHash, candidate := range sync.blockCandidates {
+			syncsT.log.Debugf("approveBlockCandidates: checking candidate %v: local %v, nextStateHash %v, approvingOutputID %v, already approved %v",
+				blockHash.String(), candidate.isLocal(), candidate.getNextStateHash().String(), coretypes.OID(candidate.getApprovingOutputID()), candidate.isApproved())
+			candidate.approveIfRightOutput(output)
+			syncsT.log.Debugf("approveBlockCandidates: candidate %v approved %v", blockHash.String(), candidate.isApproved())
+		}
+	}
+}
+
+func (syncsT *syncingBlocks) startSyncingIfNeeded(stateIndex uint32) {
+	if !syncsT.isSyncing(stateIndex) {
+		syncsT.log.Debugf("Starting syncing state index %v", stateIndex)
+		syncsT.blocks[stateIndex] = &syncingBlock{
+			requestBlockRetryTime: time.Now(),
+			blockCandidates:       make(map[hashing.HashValue]*candidateBlock),
+		}
+	}
+}
+
+func (syncsT *syncingBlocks) isSyncing(stateIndex uint32) bool {
+	_, ok := syncsT.blocks[stateIndex]
+	return ok
+}
+
+func (syncsT *syncingBlocks) restartSyncing() {
+	syncsT.blocks = make(map[uint32]*syncingBlock)
+}
+
+func (syncsT *syncingBlocks) deleteSyncingBlock(stateIndex uint32) {
+	delete(syncsT.blocks, stateIndex)
+}
