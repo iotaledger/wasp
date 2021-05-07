@@ -28,8 +28,8 @@ var (
 
 // Init is an entry point for this plugin.
 func Init(suite *pairing.SuiteBn256) *node.Plugin {
-	log = logger.NewLogger(pluginName)
 	configure := func(_ *node.Plugin) {
+		log = logger.NewLogger(pluginName)
 		var err error
 		var nodeKeyPair *key.Pair
 		if nodeKeyPair, err = registry.DefaultRegistry().GetNodeIdentity(); err != nil {

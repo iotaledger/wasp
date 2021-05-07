@@ -96,7 +96,7 @@ func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
 	}
 	// create new chain object
 	defaultRegistry := registry.DefaultRegistry()
-	c.allChains[chainArr] = chainimpl.NewChain(
+	newChain := chainimpl.NewChain(
 		chr,
 		c.log,
 		c.nodeConn,
@@ -106,6 +106,10 @@ func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
 		defaultRegistry,
 		defaultRegistry,
 	)
+	if newChain == nil {
+		return xerrors.New("Chains.Activate: failed to create chain object")
+	}
+	c.allChains[chainArr] = newChain
 	c.nodeConn.Subscribe(chr.ChainID.AliasAddress)
 	c.log.Infof("activated chain: %s", chr.ChainID.String())
 	return nil
