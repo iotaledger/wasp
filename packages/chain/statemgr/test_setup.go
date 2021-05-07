@@ -225,7 +225,8 @@ func (nT *MockedNode) SetupPeerGroupSimple() {
 		nT.Log.Infof("MockedPeerGroup:OnSendMsg to peer %s", target)
 		node, ok := nT.Env.Nodes[target]
 		if !ok {
-			nT.Env.Log.Errorf("wrong peer netID %s", target)
+			nT.Env.Log.Warnf("node %s: wrong target netID %s", nT.NetID, target)
+			return
 		}
 		rdr := bytes.NewReader(msg.MsgData)
 		switch msg.MsgType {

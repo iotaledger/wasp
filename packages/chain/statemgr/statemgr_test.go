@@ -164,7 +164,9 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	env, _ := NewMockedEnv(t, false)
 	env.SetPushStateToNodesOption(true)
 
-	node := env.NewMockedNode("node0", nil)
+	allPeers := []string{"node0", "node1"}
+
+	node := env.NewMockedNode("node0", allPeers)
 	node.SetupPeerGroupSimple()
 	node.StateManager.Ready().MustWait()
 	node.StartTimer()
@@ -201,7 +203,7 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, si.Synced)
 
-	node1 := env.NewMockedNode("node1", nil)
+	node1 := env.NewMockedNode("node1", allPeers)
 	node1.SetupPeerGroupSimple()
 	node1.StateManager.Ready().MustWait()
 	node1.StartTimer()

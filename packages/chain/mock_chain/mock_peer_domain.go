@@ -22,9 +22,6 @@ type MockedPeerDomainProvider struct {
 
 func NewMockedPeerDomain(ownNetID string, peerNetIDs []string, log *logger.Logger) *MockedPeerDomainProvider {
 	log = log.Named("mockedDomain")
-	if util.StringInList(ownNetID, peerNetIDs) {
-		log.Panic("own net iD can't be among neighbors")
-	}
 	if !util.AllDifferentStrings(peerNetIDs) {
 		log.Panic("duplicate net IDs")
 	}
