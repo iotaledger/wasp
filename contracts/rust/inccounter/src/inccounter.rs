@@ -66,6 +66,10 @@ pub fn func_local_state_post(ctx: &ScFuncContext) {
     // counter ends up as 0
 }
 
+pub fn func_loop(_ctx: &ScFuncContext) {
+    loop {}
+}
+
 fn local_state_post(ctx: &ScFuncContext, nr: i64) {
     let params = ScMutableMap::new();
     params.get_int64(VAR_INT1).set_value(nr);
