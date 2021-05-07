@@ -127,7 +127,9 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 	} else {
 		stateCandidateBlocks = sm.syncingBlocks.getBlockCandidates(fromStateIndex)
 	}
-	sort.Slice(stateCandidateBlocks, func(i, j int) bool { return stateCandidateBlocks[i].getVotes() > stateCandidateBlocks[j].getVotes() })
+	sort.Slice(stateCandidateBlocks, func(i, j int) bool {
+		return stateCandidateBlocks[i].getVotes() > stateCandidateBlocks[j].getVotes()
+	})
 	for i, stateCandidateBlock := range stateCandidateBlocks {
 		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i, len(stateCandidateBlocks))
 		resultBlocks, tentativeState, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex)
