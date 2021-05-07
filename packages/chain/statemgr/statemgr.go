@@ -7,9 +7,11 @@ package statemgr
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"go.uber.org/atomic"
-	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
@@ -23,7 +25,7 @@ type stateManager struct {
 	ready                   *ready.Ready
 	dbp                     *dbprovider.DBProvider
 	chain                   chain.ChainCore
-	peers                   *chain.PeerGroup
+	peers                   peering.PeerDomainProvider
 	nodeConn                chain.NodeConnection
 	pullStateRetryTime      time.Time
 	solidState              state.VirtualState
@@ -50,12 +52,13 @@ const (
 	maxBlocksToCommitConst               = 10000 //10k
 )
 
-func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers *chain.PeerGroup, nodeconn chain.NodeConnection, log *logger.Logger, timers ...Timers) chain.StateManager {
+func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, log *logger.Logger, timers ...Timers) chain.StateManager {
 	ret := &stateManager{
 		ready:                  ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
 		dbp:                    dbp,
 		chain:                  c,
 		nodeConn:               nodeconn,
+		peers:                  peers,
 		syncingBlocks:          newSyncingBlocks(log),
 		log:                    log.Named("s"),
 		pullStateRetryTime:     time.Now(),
@@ -72,19 +75,9 @@ func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers *chain.PeerGroup, 
 	} else {
 		ret.timers = Timers{}
 	}
-	ret.SetPeers(peers)
 	go ret.initLoadState()
 
 	return ret
-}
-
-func (sm *stateManager) SetPeers(p *chain.PeerGroup) {
-	n := uint16(0)
-	if p != nil {
-		n = p.NumPeers()
-		sm.log.Debugf("SetPeers: num = %d", n)
-	}
-	sm.peers = p
 }
 
 func (sm *stateManager) Close() {

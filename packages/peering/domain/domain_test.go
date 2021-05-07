@@ -16,15 +16,21 @@ func TestDomainProvider(t *testing.T) {
 	suite := pairing.NewSuiteBn256()
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
-	var err0, err1, err2 error
 	netIDs := []string{"localhost:9017", "localhost:9018", "localhost:9019"}
 	nodes := make([]peering.NetworkProvider, len(netIDs))
-	nodes[0], err0 = udp.NewNetworkProvider(netIDs[0], 9017, key.NewKeyPair(suite), suite, log.Named("node0"))
-	nodes[1], err1 = udp.NewNetworkProvider(netIDs[1], 9018, key.NewKeyPair(suite), suite, log.Named("node1"))
-	nodes[2], err2 = udp.NewNetworkProvider(netIDs[2], 9019, key.NewKeyPair(suite), suite, log.Named("node2"))
-	require.Nil(t, err0)
-	require.Nil(t, err1)
-	require.Nil(t, err2)
+
+	cfg0, err := peering.NewPeerNetworkConfig(netIDs[0], 9017, netIDs...)
+	require.NoError(t, err)
+	nodes[0], err = udp.NewNetworkProvider(cfg0, key.NewKeyPair(suite), suite, log.Named("node0"))
+	require.NoError(t, err)
+	cfg1, err := peering.NewPeerNetworkConfig(netIDs[1], 9018, netIDs...)
+	require.NoError(t, err)
+	nodes[1], err = udp.NewNetworkProvider(cfg1, key.NewKeyPair(suite), suite, log.Named("node1"))
+	require.NoError(t, err)
+	cfg2, err := peering.NewPeerNetworkConfig(netIDs[2], 9019, netIDs...)
+	require.NoError(t, err)
+	nodes[2], err = udp.NewNetworkProvider(cfg2, key.NewKeyPair(suite), suite, log.Named("node2"))
+	require.NoError(t, err)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))
 	}
@@ -49,8 +55,8 @@ func TestDomainProvider(t *testing.T) {
 	//
 	// Create a group on one of nodes.
 	var d peering.PeerDomainProvider
-	d, err1 = nodes[1].Domain(netIDs)
-	require.Nil(t, err1)
+	d, err = nodes[1].PeerDomain(netIDs)
+	require.Nil(t, err)
 	require.NotNil(t, d)
 
 	msg := &peering.PeerMessage{PeeringID: peering.RandomPeeringID(), MsgType: 125}
@@ -72,17 +78,19 @@ func TestRandom(t *testing.T) {
 	nodes := make([]peering.NetworkProvider, len(netIDs))
 	var err error
 	for i := range nodes {
-		nodes[i], err = udp.NewNetworkProvider(netIDs[i], 9000+i, key.NewKeyPair(suite), suite, log.Named("node0"))
+		cfg, err := peering.NewPeerNetworkConfig(netIDs[i], 9000+i, netIDs...)
+		require.NoError(t, err)
+		nodes[i], err = udp.NewNetworkProvider(cfg, key.NewKeyPair(suite), suite, log.Named("node0"))
 		require.NoError(t, err)
 		go nodes[i].Run(make(<-chan struct{}))
 	}
 
 	// Create a group on 2 of nodes.
-	d1, err := nodes[1].Domain(netIDs)
+	d1, err := nodes[1].PeerDomain(netIDs)
 	require.NoError(t, err)
 	require.NotNil(t, d1)
 
-	d2, err := nodes[2].Domain(netIDs)
+	d2, err := nodes[2].PeerDomain(netIDs)
 	require.NoError(t, err)
 	require.NotNil(t, d1)
 

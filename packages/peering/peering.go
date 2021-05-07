@@ -82,8 +82,8 @@ func (pid *PeeringID) Write(w io.Writer) error {
 type NetworkProvider interface {
 	Run(stopCh <-chan struct{})
 	Self() PeerSender
-	Group(peerAddrs []string) (GroupProvider, error)
-	Domain(peerAddrs []string) (PeerDomainProvider, error)
+	PeerGroup(peerAddrs []string) (GroupProvider, error)
+	PeerDomain(peerAddrs []string) (PeerDomainProvider, error)
 	Attach(peeringID *PeeringID, callback func(recv *RecvEvent)) interface{}
 	Detach(attachID interface{})
 	PeerByNetID(peerNetID string) (PeerSender, error)
@@ -126,6 +126,8 @@ type GroupProvider interface {
 type PeerDomainProvider interface {
 	SendMsgByNetID(netID string, msg *PeerMessage)
 	SendMsgToRandomPeers(upToNumPeers uint16, msg *PeerMessage)
+	SendSimple(netID string, msgType byte, msgData []byte)
+	SendMsgToRandomPeersSimple(upToNumPeers uint16, msgType byte, msgData []byte)
 	ReshufflePeers(seedBytes ...[]byte)
 	PeerCollection
 }

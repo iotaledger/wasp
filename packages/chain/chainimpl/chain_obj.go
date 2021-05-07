@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"sync"
 
+	"github.com/iotaledger/wasp/packages/chain/statemgr"
+
 	"github.com/iotaledger/wasp/packages/state"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -18,13 +20,11 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/consensusimpl"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
-	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
@@ -43,8 +43,9 @@ type chainObj struct {
 	log                   *logger.Logger
 	nodeConn              *txstream.Client
 	dbProvider            *dbprovider.DBProvider
+	peerNetworkConfig     coretypes.PeerNetworkConfigProvider
 	netProvider           peering.NetworkProvider
-	dksProvider           tcrypto.RegistryProvider
+	dksProvider           coretypes.DKShareRegistryProvider
 	blobProvider          coretypes.BlobCache
 	eventRequestProcessed *events.Event
 	eventStateTransition  *events.Event
@@ -55,9 +56,10 @@ func NewChain(
 	chr *registry.ChainRecord,
 	log *logger.Logger,
 	nodeConn *txstream.Client,
+	peerNetConfig coretypes.PeerNetworkConfigProvider,
 	dbProvider *dbprovider.DBProvider,
 	netProvider peering.NetworkProvider,
-	dksProvider tcrypto.RegistryProvider,
+	dksProvider coretypes.DKShareRegistryProvider,
 	blobProvider coretypes.BlobCache,
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chr.ChainID.String())
@@ -69,16 +71,17 @@ func NewChain(
 		return nil
 	}
 	ret := &chainObj{
-		mempool:      mempool.New(stateReader, blobProvider, chainLog),
-		procset:      processors.MustNew(),
-		chMsg:        make(chan interface{}, 100),
-		chainID:      *chr.ChainID,
-		log:          chainLog,
-		nodeConn:     nodeConn,
-		dbProvider:   dbProvider,
-		netProvider:  netProvider,
-		dksProvider:  dksProvider,
-		blobProvider: blobProvider,
+		mempool:           mempool.New(stateReader, blobProvider, chainLog),
+		procset:           processors.MustNew(),
+		chMsg:             make(chan interface{}, 100),
+		chainID:           *chr.ChainID,
+		log:               chainLog,
+		nodeConn:          nodeConn,
+		dbProvider:        dbProvider,
+		peerNetworkConfig: peerNetConfig,
+		netProvider:       netProvider,
+		dksProvider:       dksProvider,
+		blobProvider:      blobProvider,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
 		}),
@@ -92,7 +95,16 @@ func NewChain(
 	ret.eventStateTransition.Attach(events.NewClosure(ret.processStateTransition))
 	ret.eventSynced.Attach(events.NewClosure(ret.processSynced))
 
-	ret.stateMgr = statemgr.New(dbProvider, ret, newCommitteePeerGroup(nil), nodeconnimpl.New(ret.nodeConn), ret.log)
+	peers, err := netProvider.PeerDomain(peerNetConfig.DefaultNeighbors())
+	if err != nil {
+		log.Errorf("NewChain: %v", err)
+		return nil
+	}
+	ret.stateMgr = statemgr.New(dbProvider, ret, peers, nodeconnimpl.New(ret.nodeConn), ret.log)
+	var peeringID peering.PeeringID = ret.chainID.Array()
+	peers.Attach(&peeringID, func(recv *peering.RecvEvent) {
+		ret.ReceiveMessage(recv.Msg)
+	})
 	go func() {
 		for msg := range ret.chMsg {
 			ret.dispatchMessage(msg)
@@ -209,8 +221,7 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			return
 		}
 
-		msgt.SenderIndex = msg.SenderIndex
-
+		msgt.SenderNetID = msg.SenderNetID
 		c.stateMgr.EventGetBlockMsg(msgt)
 
 	case chain.MsgBlock:
@@ -220,7 +231,7 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			return
 		}
 
-		msgt.SenderIndex = msg.SenderIndex
+		msgt.SenderNetID = msg.SenderNetID
 		c.stateMgr.EventBlockMsg(msgt)
 
 	default:
@@ -267,7 +278,6 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 
 	c.log.Debugf("creating new consensus object..")
 	c.consensus = consensusimpl.New(c, c.mempool, c.committee, nodeconnimpl.New(c.nodeConn), c.log)
-	c.stateMgr.SetPeers(newCommitteePeerGroup(c.committee))
 	c.stateMgr.EventStateMsg(msg)
 }
 

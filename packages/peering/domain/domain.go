@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/util"
 
@@ -12,6 +13,7 @@ import (
 )
 
 type domainImpl struct {
+	attachedTo  peering.PeeringID
 	netProvider peering.NetworkProvider
 	nodes       map[string]peering.PeerSender
 	permutation *util.Permutation16
@@ -48,6 +50,15 @@ func (d *domainImpl) SendMsgByNetID(netID string, msg *peering.PeerMessage) {
 	peer.SendMsg(msg)
 }
 
+func (d *domainImpl) SendSimple(netID string, msgType byte, msgData []byte) {
+	d.SendMsgByNetID(netID, &peering.PeerMessage{
+		PeeringID: d.attachedTo,
+		Timestamp: time.Now().UnixNano(),
+		MsgType:   msgType,
+		MsgData:   msgData,
+	})
+}
+
 func (d *domainImpl) SendMsgToRandomPeers(upToNumPeers uint16, msg *peering.PeerMessage) {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
@@ -58,6 +69,15 @@ func (d *domainImpl) SendMsgToRandomPeers(upToNumPeers uint16, msg *peering.Peer
 	for i := uint16(0); i < upToNumPeers; i++ {
 		d.SendMsgByNetID(d.netIDs[d.permutation.Next()], msg)
 	}
+}
+
+func (d *domainImpl) SendMsgToRandomPeersSimple(upToNumPeers uint16, msgType byte, msgData []byte) {
+	d.SendMsgToRandomPeers(upToNumPeers, &peering.PeerMessage{
+		PeeringID: d.attachedTo,
+		Timestamp: time.Now().UnixNano(),
+		MsgType:   msgType,
+		MsgData:   msgData,
+	})
 }
 
 func (d *domainImpl) AddPeer(netID string) error {
@@ -110,6 +130,7 @@ func (d *domainImpl) reshufflePeers(seedBytes ...[]byte) {
 }
 
 func (d *domainImpl) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {
+	d.attachedTo = *peeringID
 	return d.netProvider.Attach(peeringID, func(recv *peering.RecvEvent) {
 		peer, ok := d.nodes[recv.From.NetID()]
 		if ok && peer.NetID() != d.netProvider.Self().NetID() {

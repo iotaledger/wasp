@@ -100,6 +100,7 @@ func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
 		chr,
 		c.log,
 		c.nodeConn,
+		peering.PeerNetworkConfig(),
 		defaultRegistry.DBProvider(),
 		peering.DefaultNetworkProvider(),
 		defaultRegistry,

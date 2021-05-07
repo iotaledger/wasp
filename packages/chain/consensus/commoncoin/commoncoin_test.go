@@ -6,10 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
 	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/require"
@@ -112,14 +113,14 @@ func setupCommonCoinNodes(
 	peeringID peering.PeeringID,
 	address ledgerstate.Address,
 	peerNetIDs []string,
-	nodeRegistries []tcrypto.RegistryProvider,
+	nodeRegistries []coretypes.DKShareRegistryProvider,
 	networkProviders []peering.NetworkProvider,
 	log *logger.Logger,
 ) []commoncoin.Provider {
 	var ccNodes []commoncoin.Provider = make([]commoncoin.Provider, len(peerNetIDs))
 	for i := range peerNetIDs {
 		peerDKShare, _ := nodeRegistries[i].LoadDKShare(address)
-		peerNetGroup, _ := networkProviders[i].Group(peerNetIDs)
+		peerNetGroup, _ := networkProviders[i].PeerGroup(peerNetIDs)
 		ccNodes[i] = commoncoin.NewCommonCoinNode(
 			nil, peerDKShare, peeringID, peerNetGroup,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
@@ -150,13 +151,13 @@ func setupDkg(
 	peerSecs []kyber.Scalar,
 	suite *pairing.SuiteBn256,
 	log *logger.Logger,
-) (ledgerstate.Address, []tcrypto.RegistryProvider) {
+) (ledgerstate.Address, []coretypes.DKShareRegistryProvider) {
 	timeout := 100 * time.Second
 	networkProviders := setupNet(t, peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(), log)
 	//
 	// Initialize the DKG subsystem in each node.
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
-	var registries []tcrypto.RegistryProvider = make([]tcrypto.RegistryProvider, len(peerNetIDs))
+	var registries []coretypes.DKShareRegistryProvider = make([]coretypes.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range peerNetIDs {
 		registries[i] = testutil.NewDkgRegistryProvider(suite)
 		dkgNodes[i] = dkg.NewNode(

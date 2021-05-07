@@ -26,8 +26,9 @@ const (
 
 	NodeAddress = "nodeconn.address"
 
-	PeeringMyNetId = "peering.netid"
-	PeeringPort    = "peering.port"
+	PeeringMyNetId   = "peering.netid"
+	PeeringPort      = "peering.port"
+	PeeringNeighbors = "peering.neighbors"
 
 	NanomsgPublisherPort = "nanomsg.port"
 
@@ -57,6 +58,7 @@ func InitFlags() {
 
 	flag.Int(PeeringPort, 4000, "port for Wasp committee connection/peering")
 	flag.String(PeeringMyNetId, "127.0.0.1:4000", "node host address as it is recognized by other peers")
+	flag.StringSlice(PeeringNeighbors, []string{"127.0.0.1:4000", "127.0.0.1:4001", "127.0.0.1:4002", "127.0.0.1:4003"}, "list of default peer netIDs")
 
 	flag.Int(NanomsgPublisherPort, 5550, "the port for nanomsg even publisher")
 

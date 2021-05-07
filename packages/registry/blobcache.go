@@ -31,7 +31,7 @@ func (r *Impl) PutBlob(data []byte, ttl ...time.Duration) (hashing.HashValue, er
 		return hashing.NilHash, err
 	}
 	nowis := time.Now()
-	cleanAfter := nowis.Add(coretypes.DefaultTTL).UnixNano()
+	cleanAfter := nowis.Add(coretypes.BlobCacheDefaultTTL).UnixNano()
 	if len(ttl) > 0 {
 		cleanAfter = nowis.Add(ttl[0]).UnixNano()
 	}

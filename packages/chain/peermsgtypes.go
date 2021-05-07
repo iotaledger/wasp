@@ -4,6 +4,8 @@
 package chain
 
 import (
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -11,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/vm"
-	"time"
 )
 
 // Message types for the committee communications.
@@ -73,12 +74,12 @@ type SignedHashMsg struct {
 
 // request block of updates from peer. Used in sync process
 type GetBlockMsg struct {
-	SenderIndex uint16
+	SenderNetID string
 	BlockIndex  uint32
 }
 
 type BlockMsg struct {
-	SenderIndex uint16
+	SenderNetID string
 	BlockBytes  []byte
 }
 

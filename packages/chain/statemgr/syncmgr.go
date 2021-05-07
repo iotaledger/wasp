@@ -2,9 +2,10 @@ package statemgr
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"sort"
 	"time"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -76,7 +77,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 				BlockIndex: i,
 			})
 			// send messages until first without error
-			sm.peers.SendMsgToRandomNodes(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
+			sm.peers.SendMsgToRandomPeersSimple(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
 			sm.syncingBlocks.startSyncingIfNeeded(i)
 			sm.syncingBlocks.setRequestBlockRetryTime(i, nowis.Add(sm.timers.getGetBlockRetry()))
 			return

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes"
+
 	"github.com/iotaledger/hive.go/logger"
 	"go.uber.org/atomic"
 
@@ -29,7 +31,7 @@ type committeeObj struct {
 	log         *logger.Logger
 }
 
-func NewCommittee(stateAddr ledgerstate.Address, netProvider peering.NetworkProvider, dksProvider tcrypto.RegistryProvider, log *logger.Logger) (chain.Committee, error) {
+func NewCommittee(stateAddr ledgerstate.Address, netProvider peering.NetworkProvider, dksProvider coretypes.DKShareRegistryProvider, log *logger.Logger) (chain.Committee, error) {
 	cmtRec, err := registry.CommitteeRecordFromRegistry(stateAddr)
 	if err != nil || cmtRec == nil {
 		return nil, xerrors.Errorf(
@@ -52,7 +54,7 @@ func NewCommittee(stateAddr ledgerstate.Address, netProvider peering.NetworkProv
 		)
 	}
 	var peers peering.GroupProvider
-	if peers, err = netProvider.Group(cmtRec.Nodes); err != nil {
+	if peers, err = netProvider.PeerGroup(cmtRec.Nodes); err != nil {
 		return nil, xerrors.Errorf(
 			"node %s failed to setup committee communication with %+v, reason=%+v",
 			netProvider.Self().NetID(), cmtRec.Nodes, err,

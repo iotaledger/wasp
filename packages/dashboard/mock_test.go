@@ -77,12 +77,12 @@ func (p *peeringNetworkProvider) Self() peering.PeerSender {
 	return &peeringNode{}
 }
 
-func (p *peeringNetworkProvider) Group(peerAddrs []string) (peering.GroupProvider, error) {
+func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupProvider, error) {
 	panic("not implemented")
 }
 
 // Domain creates peering.PeerDomainProvider.
-func (n *peeringNetworkProvider) Domain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
+func (n *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
 	panic("not implemented")
 }
 func (p *peeringNetworkProvider) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {

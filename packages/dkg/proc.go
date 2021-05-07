@@ -60,7 +60,7 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 	var err error
 
 	var netGroup peering.GroupProvider
-	if netGroup, err = node.netProvider.Group(msg.peerNetIDs); err != nil {
+	if netGroup, err = node.netProvider.PeerGroup(msg.peerNetIDs); err != nil {
 		return nil, err
 	}
 	var dkgImpl *rabin_dkg.DistKeyGenerator

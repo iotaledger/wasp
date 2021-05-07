@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes"
+
 	"github.com/iotaledger/wasp/packages/peering/domain"
 
 	"github.com/iotaledger/hive.go/events"
@@ -44,21 +46,16 @@ type NetImpl struct {
 
 // NewNetworkProvider is a constructor for the TCP based
 // peering network implementation.
-func NewNetworkProvider(myNetID string, port int, nodeKeyPair *key.Pair, suite Suite, log *logger.Logger) (*NetImpl, error) {
+func NewNetworkProvider(peerNetConfig coretypes.PeerNetworkConfigProvider, nodeKeyPair *key.Pair, suite Suite, log *logger.Logger) (*NetImpl, error) {
 	var err error
-	if err = peering.CheckMyNetID(myNetID, port); err != nil {
-		// can't continue because NetID parameter is not correct
-		log.Panicf("checkMyNetworkID: '%v'. || Check the 'netid' parameter in config.json", err)
-		return nil, err
-	}
 	var myUDPConn *net.UDPConn
-	if myUDPConn, err = net.ListenUDP("udp", &net.UDPAddr{Port: port}); err != nil {
+	if myUDPConn, err = net.ListenUDP("udp", &net.UDPAddr{Port: peerNetConfig.PeeringPort()}); err != nil {
 		return nil, err
 	}
 	n := NetImpl{
-		myNetID:     myNetID,
+		myNetID:     peerNetConfig.OwnNetID(),
 		myUDPConn:   myUDPConn,
-		port:        port,
+		port:        peerNetConfig.PeeringPort(),
 		peers:       make(map[string]*peer),
 		peersByAddr: make(map[string]*peer),
 		peersLock:   &sync.RWMutex{},
@@ -100,7 +97,7 @@ func (n *NetImpl) Self() peering.PeerSender {
 }
 
 // Group creates peering.GroupProvider.
-func (n *NetImpl) Group(peerNetIDs []string) (peering.GroupProvider, error) {
+func (n *NetImpl) PeerGroup(peerNetIDs []string) (peering.GroupProvider, error) {
 	var err error
 	groupPeers := make([]peering.PeerSender, len(peerNetIDs))
 	for i := range peerNetIDs {
@@ -112,7 +109,7 @@ func (n *NetImpl) Group(peerNetIDs []string) (peering.GroupProvider, error) {
 }
 
 // Domain creates peering.PeerDomainProvider.
-func (n *NetImpl) Domain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
+func (n *NetImpl) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
 	peers := make([]peering.PeerSender, 0, len(peerNetIDs))
 	for _, nid := range peerNetIDs {
 		if nid == n.Self().NetID() {

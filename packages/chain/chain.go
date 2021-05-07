@@ -63,16 +63,6 @@ type Committee interface {
 	Close()
 }
 
-// TODO temporary wrapper for Committee need replacement for all peers, not only committee.
-//  Must be close to GroupProvider but less functions
-type PeerGroupProvider interface {
-	Lock()
-	Unlock()
-	NumPeers() uint16
-	NumIsAlive(quorum uint16) bool
-	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
-}
-
 type ChainRequests interface {
 	GetRequestProcessingStatus(id coretypes.RequestID) RequestProcessingStatus
 	EventRequestProcessed() *events.Event
@@ -89,7 +79,6 @@ type NodeConnection interface {
 
 type StateManager interface {
 	Ready() *ready.Ready
-	SetPeers(*PeerGroup)
 	EventGetBlockMsg(msg *GetBlockMsg)
 	EventBlockMsg(msg *BlockMsg)
 	EventStateMsg(msg *StateMsg)
