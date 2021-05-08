@@ -8,23 +8,25 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
-type peerNetworkConfig struct {
+// staticPeerNetworkConfig in an implementation of coretypes.PeerNetworkConfigProvider. It does not change
+// Alternatively, the configuration of peers behind could change and be dependent on chain
+type staticPeerNetworkConfig struct {
 	ownNetID    string
 	peeringPort int
 	neighbors   []string
 }
 
-func NewPeerNetworkConfig(ownNetID string, peeringPort int, neighbors ...string) (*peerNetworkConfig, error) {
+// NewStaticPeerNetworkConfigProvider is a configuration of the peer environment which does not change
+func NewStaticPeerNetworkConfigProvider(ownNetID string, peeringPort int, neighbors ...string) (*staticPeerNetworkConfig, error) {
 	if err := CheckMyNetID(ownNetID, peeringPort); err != nil {
-		return nil, xerrors.Errorf("NewPeerNetworkConfig: %w", err)
+		return nil, xerrors.Errorf("NewStaticPeerNetworkConfigProvider: %w", err)
 	}
 	if !util.AllDifferentStrings(neighbors) {
-		return nil, xerrors.Errorf("NewPeerNetworkConfig: neighbors must all be different")
+		return nil, xerrors.Errorf("NewStaticPeerNetworkConfigProvider: neighbors must all be different")
 	}
 	neigh := make([]string, 0, len(neighbors))
 	// eliminate own id from the list
@@ -33,27 +35,27 @@ func NewPeerNetworkConfig(ownNetID string, peeringPort int, neighbors ...string)
 			neigh = append(neigh, n)
 		}
 	}
-	return &peerNetworkConfig{
+	return &staticPeerNetworkConfig{
 		ownNetID:    ownNetID,
 		peeringPort: peeringPort,
 		neighbors:   neigh,
 	}, nil
 }
 
-func (p *peerNetworkConfig) OwnNetID() string {
+func (p *staticPeerNetworkConfig) OwnNetID() string {
 	return p.ownNetID
 }
 
-func (p *peerNetworkConfig) PeeringPort() int {
+func (p *staticPeerNetworkConfig) PeeringPort() int {
 	return p.peeringPort
 }
 
-func (p *peerNetworkConfig) DefaultNeighbors() []string {
+func (p *staticPeerNetworkConfig) Neighbors() []string {
 	return p.neighbors
 }
 
-func (p *peerNetworkConfig) Neighbors(chainID *coretypes.ChainID) []string {
-	return p.DefaultNeighbors()
+func (p *staticPeerNetworkConfig) String() string {
+	return fmt.Sprintf("PeerConfig( ownNetID: %s, peeringPort: %d, neighbors: %+v )", p.OwnNetID(), p.PeeringPort(), p.Neighbors())
 }
 
 // CheckMyNetID checks if NetID from the committee list represents current node.

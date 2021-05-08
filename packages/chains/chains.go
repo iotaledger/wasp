@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	registry_pkg "github.com/iotaledger/wasp/packages/registry"
+	registry_pkg "github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
 )
@@ -100,9 +100,10 @@ func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
 		chr,
 		c.log,
 		c.nodeConn,
-		peering.PeerNetworkConfig(),
+		peering.DefaultPeerNetworkConfig(),
 		defaultRegistry.DBProvider(),
 		peering.DefaultNetworkProvider(),
+		defaultRegistry,
 		defaultRegistry,
 		defaultRegistry,
 	)

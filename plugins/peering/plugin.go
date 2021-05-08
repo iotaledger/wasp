@@ -35,7 +35,7 @@ func Init(suite *pairing.SuiteBn256) *node.Plugin {
 		if nodeKeyPair, err = registry.DefaultRegistry().GetNodeIdentity(); err != nil {
 			panic(err)
 		}
-		peerNetworkConfig, err = peering_pkg.NewPeerNetworkConfig(
+		peerNetworkConfig, err = peering_pkg.NewStaticPeerNetworkConfigProvider(
 			parameters.GetString(parameters.PeeringMyNetId),
 			parameters.GetInt(parameters.PeeringPort),
 			parameters.GetStringSlice(parameters.PeeringNeighbors)...,
@@ -43,6 +43,7 @@ func Init(suite *pairing.SuiteBn256) *node.Plugin {
 		if err != nil {
 			log.Panicf("Init.peering: %w", err)
 		}
+		log.Infof("default peering configuration: %s", peerNetworkConfig.String())
 		defaultNetworkProvider, err = peering_udp.NewNetworkProvider(
 			peerNetworkConfig,
 			nodeKeyPair,
@@ -72,6 +73,6 @@ func DefaultNetworkProvider() peering_pkg.NetworkProvider {
 	return defaultNetworkProvider
 }
 
-func PeerNetworkConfig() coretypes.PeerNetworkConfigProvider {
+func DefaultPeerNetworkConfig() coretypes.PeerNetworkConfigProvider {
 	return peerNetworkConfig
 }

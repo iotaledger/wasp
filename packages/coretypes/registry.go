@@ -6,6 +6,8 @@ package coretypes
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -30,6 +32,11 @@ type DKShareRegistryProvider interface {
 	LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error)
 }
 
+type CommitteeRegistryProvider interface {
+	GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error)
+	SaveCommitteeRecord(rec *committee_record.CommitteeRecord) error
+}
+
 // NodeIdentityProvider is a subset of the registry interface
 // providing access to the persistent node identity information.
 type NodeIdentityProvider interface {
@@ -41,6 +48,6 @@ type NodeIdentityProvider interface {
 type PeerNetworkConfigProvider interface {
 	OwnNetID() string
 	PeeringPort() int
-	DefaultNeighbors() []string
-	Neighbors(chainID *ChainID) []string
+	Neighbors() []string
+	String() string
 }

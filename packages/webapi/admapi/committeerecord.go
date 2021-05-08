@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iotaledger/wasp/plugins/registry"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -47,14 +48,15 @@ func handlePutCommitteeRecord(c echo.Context) error {
 
 	cr := req.Record()
 
-	bd2, err := registry.CommitteeRecordFromRegistry(cr.Address)
+	defaultRegistry := registry.DefaultRegistry()
+	bd2, err := defaultRegistry.GetCommitteeRecord(cr.Address)
 	if err != nil {
 		return err
 	}
 	if bd2 != nil {
 		return httperrors.Conflict(fmt.Sprintf("Record already exists: %s", cr.Address.Base58()))
 	}
-	if err = cr.SaveToRegistry(); err != nil {
+	if err = defaultRegistry.SaveCommitteeRecord(cr); err != nil {
 		return err
 	}
 
@@ -68,7 +70,7 @@ func handleGetCommitteeRecord(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
-	cr, err := registry.CommitteeRecordFromRegistry(address)
+	cr, err := registry.DefaultRegistry().GetCommitteeRecord(address)
 	if err != nil {
 		return err
 	}
@@ -91,7 +93,7 @@ func handleGetCommitteeForChain(c echo.Context) error {
 	if committeeInfo == nil {
 		return httperrors.NotFound(fmt.Sprintf("Committee info for chain %s is not available", chainID))
 	}
-	cr, err := registry.CommitteeRecordFromRegistry(committeeInfo.Address)
+	cr, err := registry.DefaultRegistry().GetCommitteeRecord(committeeInfo.Address)
 	if err != nil {
 		return err
 	}

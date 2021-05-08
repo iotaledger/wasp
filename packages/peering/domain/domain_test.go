@@ -19,15 +19,15 @@ func TestDomainProvider(t *testing.T) {
 	netIDs := []string{"localhost:9017", "localhost:9018", "localhost:9019"}
 	nodes := make([]peering.NetworkProvider, len(netIDs))
 
-	cfg0, err := peering.NewPeerNetworkConfig(netIDs[0], 9017, netIDs...)
+	cfg0, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[0], 9017, netIDs...)
 	require.NoError(t, err)
 	nodes[0], err = udp.NewNetworkProvider(cfg0, key.NewKeyPair(suite), suite, log.Named("node0"))
 	require.NoError(t, err)
-	cfg1, err := peering.NewPeerNetworkConfig(netIDs[1], 9018, netIDs...)
+	cfg1, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[1], 9018, netIDs...)
 	require.NoError(t, err)
 	nodes[1], err = udp.NewNetworkProvider(cfg1, key.NewKeyPair(suite), suite, log.Named("node1"))
 	require.NoError(t, err)
-	cfg2, err := peering.NewPeerNetworkConfig(netIDs[2], 9019, netIDs...)
+	cfg2, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[2], 9019, netIDs...)
 	require.NoError(t, err)
 	nodes[2], err = udp.NewNetworkProvider(cfg2, key.NewKeyPair(suite), suite, log.Named("node2"))
 	require.NoError(t, err)
@@ -78,7 +78,7 @@ func TestRandom(t *testing.T) {
 	nodes := make([]peering.NetworkProvider, len(netIDs))
 	var err error
 	for i := range nodes {
-		cfg, err := peering.NewPeerNetworkConfig(netIDs[i], 9000+i, netIDs...)
+		cfg, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[i], 9000+i, netIDs...)
 		require.NoError(t, err)
 		nodes[i], err = udp.NewNetworkProvider(cfg, key.NewKeyPair(suite), suite, log.Named("node0"))
 		require.NoError(t, err)

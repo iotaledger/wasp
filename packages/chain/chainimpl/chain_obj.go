@@ -24,7 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
@@ -46,6 +46,7 @@ type chainObj struct {
 	peerNetworkConfig     coretypes.PeerNetworkConfigProvider
 	netProvider           peering.NetworkProvider
 	dksProvider           coretypes.DKShareRegistryProvider
+	committeeRegistry     coretypes.CommitteeRegistryProvider
 	blobProvider          coretypes.BlobCache
 	eventRequestProcessed *events.Event
 	eventStateTransition  *events.Event
@@ -53,13 +54,14 @@ type chainObj struct {
 }
 
 func NewChain(
-	chr *registry.ChainRecord,
+	chr *registry_pkg.ChainRecord,
 	log *logger.Logger,
 	nodeConn *txstream.Client,
 	peerNetConfig coretypes.PeerNetworkConfigProvider,
 	dbProvider *dbprovider.DBProvider,
 	netProvider peering.NetworkProvider,
 	dksProvider coretypes.DKShareRegistryProvider,
+	committeeRegistry coretypes.CommitteeRegistryProvider,
 	blobProvider coretypes.BlobCache,
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chr.ChainID.String())
@@ -81,6 +83,7 @@ func NewChain(
 		peerNetworkConfig: peerNetConfig,
 		netProvider:       netProvider,
 		dksProvider:       dksProvider,
+		committeeRegistry: committeeRegistry,
 		blobProvider:      blobProvider,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
@@ -95,7 +98,7 @@ func NewChain(
 	ret.eventStateTransition.Attach(events.NewClosure(ret.processStateTransition))
 	ret.eventSynced.Attach(events.NewClosure(ret.processSynced))
 
-	peers, err := netProvider.PeerDomain(peerNetConfig.DefaultNeighbors())
+	peers, err := netProvider.PeerDomain(peerNetConfig.Neighbors())
 	if err != nil {
 		log.Errorf("NewChain: %v", err)
 		return nil
@@ -118,10 +121,8 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 	switch msgt := msg.(type) {
 	case *peering.PeerMessage:
 		c.processPeerMessage(msgt)
-
 	case *chain.DismissChainMsg:
 		c.Dismiss(msgt.Reason)
-
 	case *chain.StateTransitionMsg:
 		if c.consensus != nil {
 			c.consensus.EventStateTransitionMsg(msgt)
@@ -239,8 +240,8 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 	}
 }
 
-// processStateMessage processes chain output
-// If necessary, it creates/changes committee object and sends new peers to the stateManager
+// processStateMessage processes the only chain output which exists on the chain's address
+// If necessary, it creates/changes/rotates committee object
 func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	sh, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
 	if err != nil {
@@ -253,31 +254,40 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 		"stateAddr", msg.ChainOutput.GetStateAddress().Base58(),
 	)
 	if c.committee != nil && c.committee.Address().Equals(msg.ChainOutput.GetStateAddress()) {
-		// nothing changed in the committee
+		// nothing changed in the committee, just pass the message to state manager
 		c.stateMgr.EventStateMsg(msg)
 		return
 	}
 	// create or change committee object
 	if c.committee != nil {
+		// closes the current committee
 		c.committee.Close()
 	}
 	if c.consensus != nil {
+		// closes the current consensus object. All ongoing communications between current validators are interrupted
 		c.consensus.Close()
 	}
 	c.committee, c.consensus = nil, nil
 	c.log.Debugf("creating new committee...")
-	if c.committee, err = committeeimpl.NewCommittee(msg.ChainOutput.GetStateAddress(), c.netProvider, c.dksProvider, c.log); err != nil {
+
+	c.committee, err = committeeimpl.NewCommittee(
+		msg.ChainOutput.GetStateAddress(),
+		c.netProvider,
+		c.peerNetworkConfig,
+		c.dksProvider,
+		c.committeeRegistry,
+		c.log,
+	)
+	if err != nil {
 		c.committee = nil
-		c.log.Errorf("failed to create committee object for address %s: %v", msg.ChainOutput.GetStateAddress(), err)
+		c.log.Errorf("failed to create committee object for state address %s: %v", msg.ChainOutput.GetStateAddress().Base58(), err)
 		return
 	}
-	c.committee.OnPeerMessage(func(recv *peering.RecvEvent) {
-		c.ReceiveMessage(recv.Msg)
-	})
-	c.log.Debugf("created new committee for state address %s", msg.ChainOutput.GetStateAddress().Base58())
-
-	c.log.Debugf("creating new consensus object..")
+	c.committee.Attach(c)
+	c.log.Debugf("creating new consensus object...")
 	c.consensus = consensusimpl.New(c, c.mempool, c.committee, nodeconnimpl.New(c.nodeConn), c.log)
+
+	c.log.Infof("NEW COMMITTEE OF VALDATORS initialized for state address %s", msg.ChainOutput.GetStateAddress().Base58())
 	c.stateMgr.EventStateMsg(msg)
 }
 

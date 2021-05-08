@@ -9,21 +9,21 @@ import (
 func TestConfigBasic(t *testing.T) {
 	peers := []string{"localhost:4000", "localhost:4001", "localhost:4002", "localhost:4003"}
 	t.Run("happy path", func(t *testing.T) {
-		c, err := NewPeerNetworkConfig(peers[0], 4000, peers[1:]...)
+		c, err := NewStaticPeerNetworkConfigProvider(peers[0], 4000, peers[1:]...)
 		require.NoError(t, err)
 		require.EqualValues(t, peers[0], c.OwnNetID())
 	})
 	t.Run("eliminate own netid", func(t *testing.T) {
-		c, err := NewPeerNetworkConfig(peers[1], 4001, peers...)
+		c, err := NewStaticPeerNetworkConfigProvider(peers[1], 4001, peers...)
 		require.NoError(t, err)
-		require.EqualValues(t, len(peers)-1, len(c.DefaultNeighbors()))
+		require.EqualValues(t, len(peers)-1, len(c.Neighbors()))
 	})
 	t.Run("wrong port", func(t *testing.T) {
-		_, err := NewPeerNetworkConfig(peers[0], 4001, peers...)
+		_, err := NewStaticPeerNetworkConfigProvider(peers[0], 4001, peers...)
 		require.Error(t, err)
 	})
 	t.Run("duplicates", func(t *testing.T) {
-		_, err := NewPeerNetworkConfig(peers[0], 4000, peers[1], peers[2], peers[1])
+		_, err := NewStaticPeerNetworkConfigProvider(peers[0], 4000, peers[1], peers[2], peers[1])
 		require.Error(t, err)
 	})
 }
