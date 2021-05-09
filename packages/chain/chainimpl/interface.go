@@ -5,9 +5,10 @@ package chainimpl
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/transaction"

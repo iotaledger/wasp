@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"strings"
 
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -120,6 +121,14 @@ func (c *ClusterConfig) PeeringHosts(nodeIndexes ...[]int) []string {
 	return c.waspHosts(nodes, func(i int) string { return c.PeeringHost(i) })
 }
 
+func (c *ClusterConfig) NeighborsString() string {
+	ret := make([]string, c.Wasp.NumNodes)
+	for i := range ret {
+		ret[i] = "\"" + c.PeeringHost(i) + "\""
+	}
+	return strings.Join(ret, ",")
+}
+
 func (c *ClusterConfig) PeeringHost(nodeIndex int) string {
 	return fmt.Sprintf("127.0.0.1:%d", c.PeeringPort(nodeIndex))
 }
@@ -154,5 +163,6 @@ func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigPar
 		DashboardPort: c.DashboardPort(i),
 		PeeringPort:   c.PeeringPort(i),
 		NanomsgPort:   c.NanomsgPort(i),
+		Neighbors:     c.NeighborsString(),
 	}
 }

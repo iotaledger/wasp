@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
 	peering_udp "github.com/iotaledger/wasp/packages/peering/udp"
@@ -20,32 +21,39 @@ const (
 )
 
 var (
-	defaultNetworkProvider *peering_udp.NetImpl // A singleton instance.
+	log                    *logger.Logger
+	defaultNetworkProvider peering_pkg.NetworkProvider // A singleton instance.
+	peerNetworkConfig      coretypes.PeerNetworkConfigProvider
 )
 
 // Init is an entry point for this plugin.
 func Init(suite *pairing.SuiteBn256) *node.Plugin {
 	configure := func(_ *node.Plugin) {
+		log = logger.NewLogger(pluginName)
 		var err error
-		var log = logger.NewLogger(pluginName)
 		var nodeKeyPair *key.Pair
 		if nodeKeyPair, err = registry.DefaultRegistry().GetNodeIdentity(); err != nil {
 			panic(err)
 		}
-		defaultNetworkProvider, err = peering_udp.NewNetworkProvider(
+		peerNetworkConfig, err = peering_pkg.NewStaticPeerNetworkConfigProvider(
 			parameters.GetString(parameters.PeeringMyNetId),
 			parameters.GetInt(parameters.PeeringPort),
+			parameters.GetStringSlice(parameters.PeeringNeighbors)...,
+		)
+		if err != nil {
+			log.Panicf("Init.peering: %w", err)
+		}
+		log.Infof("default peering configuration: %s", peerNetworkConfig.String())
+		defaultNetworkProvider, err = peering_udp.NewNetworkProvider(
+			peerNetworkConfig,
 			nodeKeyPair,
 			suite,
 			log,
 		)
 		if err != nil {
-			panic(err)
+			log.Panicf("Init.peering: %w", err)
 		}
-		log.Infof(
-			"--------------------------------- NetID is %s -----------------------------------",
-			defaultNetworkProvider.Self().NetID(),
-		)
+		log.Infof("------------- NetID is %s ------------------", peerNetworkConfig.OwnNetID())
 	}
 	run := func(_ *node.Plugin) {
 		err := daemon.BackgroundWorker(
@@ -63,4 +71,8 @@ func Init(suite *pairing.SuiteBn256) *node.Plugin {
 // DefaultNetworkProvider returns the default network provider implementation.
 func DefaultNetworkProvider() peering_pkg.NetworkProvider {
 	return defaultNetworkProvider
+}
+
+func DefaultPeerNetworkConfig() coretypes.PeerNetworkConfigProvider {
+	return peerNetworkConfig
 }

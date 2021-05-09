@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -46,13 +46,13 @@ func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.Chain {
 	return &mockChain{}
 }
 
-func (w *waspServices) GetChainRecords() ([]*registry.ChainRecord, error) {
+func (w *waspServices) GetChainRecords() ([]*registry_pkg.ChainRecord, error) {
 	r, _ := w.GetChainRecord(coretypes.RandomChainID())
-	return []*registry.ChainRecord{r}, nil
+	return []*registry_pkg.ChainRecord{r}, nil
 }
 
-func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*registry.ChainRecord, error) {
-	return &registry.ChainRecord{
+func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*registry_pkg.ChainRecord, error) {
+	return &registry_pkg.ChainRecord{
 		ChainID: chainID,
 		Active:  true,
 	}, nil
@@ -77,10 +77,14 @@ func (p *peeringNetworkProvider) Self() peering.PeerSender {
 	return &peeringNode{}
 }
 
-func (p *peeringNetworkProvider) Group(peerAddrs []string) (peering.GroupProvider, error) {
+func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupProvider, error) {
 	panic("not implemented")
 }
 
+// Domain creates peering.PeerDomainProvider.
+func (n *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
+	panic("not implemented")
+}
 func (p *peeringNetworkProvider) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {
 	panic("not implemented")
 }

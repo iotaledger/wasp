@@ -18,7 +18,7 @@ func (sm *stateManager) EventGetBlockMsg(msg *chain.GetBlockMsg) {
 }
 func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 	sm.log.Debugw("EventGetBlockMsg received: ",
-		"sender index", msg.SenderIndex,
+		"sender", msg.SenderNetID,
 		"blockBytes index", msg.BlockIndex,
 	)
 	if sm.stateOutput == nil {
@@ -31,15 +31,11 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 		return
 	}
 
-	sm.log.Debugf("EventGetBlockMsg for state index #%d --> responding to peer %d", msg.BlockIndex, msg.SenderIndex)
+	sm.log.Debugf("EventGetBlockMsg for state index #%d --> responding to peer %s", msg.BlockIndex, msg.SenderNetID)
 
-	err = sm.peers.SendMsg(msg.SenderIndex, chain.MsgBlock, util.MustBytes(&chain.BlockMsg{
+	sm.peers.SendSimple(msg.SenderNetID, chain.MsgBlock, util.MustBytes(&chain.BlockMsg{
 		BlockBytes: blockBytes,
 	}))
-	if err != nil {
-		sm.log.Debugf("EventGetBlockMsg handling failed: error sending response %v", err)
-		return
-	}
 }
 
 // EventBlockMsg
@@ -47,18 +43,18 @@ func (sm *stateManager) EventBlockMsg(msg *chain.BlockMsg) {
 	sm.eventBlockMsgCh <- msg
 }
 func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
-	sm.log.Debugw("EventBlockMsg received from sender %v", msg.SenderIndex)
+	sm.log.Debugw("EventBlockMsg received from %v", msg.SenderNetID)
 	if sm.stateOutput == nil {
 		sm.log.Debugf("EventBlockMsg ignored: stateOutput is nil")
 		return
 	}
 	block, err := state.BlockFromBytes(msg.BlockBytes)
 	if err != nil {
-		sm.log.Warnf("EventBlockMsg ignored: wrong block received from peer %d. Err: %v", msg.SenderIndex, err)
+		sm.log.Warnf("EventBlockMsg ignored: wrong block received from peer %s. Err: %v", msg.SenderNetID, err)
 		return
 	}
 	sm.log.Debugw("EventBlockMsg from ",
-		"sender", msg.SenderIndex,
+		"sender", msg.SenderNetID,
 		"block index", block.BlockIndex(),
 		"approving output", coretypes.OID(block.ApprovingOutputID()),
 	)

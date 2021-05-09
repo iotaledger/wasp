@@ -1,4 +1,4 @@
-package registry
+package registry_pkg
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"

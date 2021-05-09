@@ -82,12 +82,19 @@ func (pid *PeeringID) Write(w io.Writer) error {
 type NetworkProvider interface {
 	Run(stopCh <-chan struct{})
 	Self() PeerSender
-	Group(peerAddrs []string) (GroupProvider, error)
+	PeerGroup(peerAddrs []string) (GroupProvider, error)
+	PeerDomain(peerAddrs []string) (PeerDomainProvider, error)
 	Attach(peeringID *PeeringID, callback func(recv *RecvEvent)) interface{}
 	Detach(attachID interface{})
 	PeerByNetID(peerNetID string) (PeerSender, error)
 	PeerByPubKey(peerPub kyber.Point) (PeerSender, error)
 	PeerStatus() []PeerStatusProvider
+}
+
+type PeerCollection interface {
+	Attach(peeringID *PeeringID, callback func(recv *RecvEvent)) interface{}
+	Detach(attachID interface{})
+	Close()
 }
 
 // GroupProvider stands for a subset of a peer-to-peer network
@@ -111,9 +118,18 @@ type GroupProvider interface {
 	) error
 	AllNodes() map[uint16]PeerSender   // Returns all the nodes in the group.
 	OtherNodes() map[uint16]PeerSender // Returns other nodes in the group (excluding Self).
-	Attach(peeringID *PeeringID, callback func(recv *RecvEvent)) interface{}
-	Detach(attachID interface{})
-	Close()
+	PeerCollection
+}
+
+// PeerDomainProvider implements unordered set of peers which can dynamically change
+// All peers in the domain shares same peeringID. Each peer within domain is identified via its netID
+type PeerDomainProvider interface {
+	SendMsgByNetID(netID string, msg *PeerMessage)
+	SendMsgToRandomPeers(upToNumPeers uint16, msg *PeerMessage)
+	SendSimple(netID string, msgType byte, msgData []byte)
+	SendMsgToRandomPeersSimple(upToNumPeers uint16, msgType byte, msgData []byte)
+	ReshufflePeers(seedBytes ...[]byte)
+	PeerCollection
 }
 
 // PeerSender represents an interface to some remote peer.
@@ -170,6 +186,7 @@ type RecvEvent struct {
 type PeerMessage struct {
 	PeeringID   PeeringID
 	SenderIndex uint16 // TODO: Only meaningful in a group, and when calculated by the client.
+	SenderNetID string // TODO: Non persistent. Only used by PeeringDomain, filled by the receiver
 	Timestamp   int64
 	MsgType     byte
 	MsgData     []byte

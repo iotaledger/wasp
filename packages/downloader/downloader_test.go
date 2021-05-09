@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
@@ -66,7 +66,7 @@ func TestIpfsDownload(t *testing.T) {
 
 	hash := hashing.HashData(constVarFile)
 	db := dbprovider.NewInMemoryDBProvider(log)
-	reg := registry.NewRegistry(nil, log, db)
+	reg := registry_pkg.NewRegistry(nil, log, db)
 	result, err := reg.HasBlob(hash)
 	chanDownloaded := make(chan bool)
 	require.NoError(t, err)

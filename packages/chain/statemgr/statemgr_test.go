@@ -1,6 +1,9 @@
 package statemgr
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/logger"
@@ -8,24 +11,20 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 //---------------------------------------------
 //Tests if state manager is started and initialised correctly
 func TestEnv(t *testing.T) {
 	env, _ := NewMockedEnv(t, false)
-	node0 := env.NewMockedNode(0)
+	node0 := env.NewMockedNode("node0", nil)
 	node0.SetupPeerGroupSimple()
 	node0.StateManager.Ready().MustWait()
 
 	require.NotNil(t, node0.StateManager.(*stateManager).solidState)
 	require.EqualValues(t, state.OriginStateHash(), node0.StateManager.(*stateManager).solidState.Hash())
 	require.False(t, node0.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
-	require.EqualValues(t, 0, node0.Peers.NumPeers())
 	env.AddNode(node0)
-	require.EqualValues(t, 1, node0.Peers.NumPeers())
 
 	node0.StartTimer()
 	si, err := node0.WaitSyncBlockIndex(0, 1*time.Second)
@@ -36,13 +35,11 @@ func TestEnv(t *testing.T) {
 		env.AddNode(node0)
 	})
 
-	node1 := env.NewMockedNode(1)
+	node1 := env.NewMockedNode("node1", nil)
 	node1.SetupPeerGroupSimple()
 	require.NotPanics(t, func() {
 		env.AddNode(node1)
 	})
-	require.EqualValues(t, 2, node0.Peers.NumPeers())
-	require.EqualValues(t, 2, node1.Peers.NumPeers())
 	node1.StateManager.Ready().MustWait()
 
 	require.NotNil(t, node1.StateManager.(*stateManager).solidState)
@@ -54,17 +51,16 @@ func TestEnv(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, si.Synced)
 
-	env.RemoveNode(0)
-	require.EqualValues(t, 1, node1.Peers.NumPeers())
+	env.RemoveNode("node0")
+	require.EqualValues(t, 1, len(env.Nodes))
 
 	env.AddNode(node0)
-	require.EqualValues(t, 2, node0.Peers.NumPeers())
-	require.EqualValues(t, 2, node1.Peers.NumPeers())
+	require.EqualValues(t, 2, len(env.Nodes))
 }
 
 func TestGetInitialState(t *testing.T) {
 	env, originTx := NewMockedEnv(t, false)
-	node := env.NewMockedNode(0)
+	node := env.NewMockedNode("node0", nil)
 	node.StateManager.Ready().MustWait()
 	require.NotNil(t, node.StateManager.(*stateManager).solidState)
 	require.False(t, node.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
@@ -90,7 +86,7 @@ func TestGetInitialState(t *testing.T) {
 
 func TestGetNextState(t *testing.T) {
 	env, originTx := NewMockedEnv(t, false)
-	node := env.NewMockedNode(0)
+	node := env.NewMockedNode("node0", nil)
 	node.StateManager.Ready().MustWait()
 	require.NotNil(t, node.StateManager.(*stateManager).solidState)
 	require.False(t, node.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
@@ -144,7 +140,7 @@ func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
 	env, _ := NewMockedEnv(t, false)
 	env.SetPushStateToNodesOption(pushStateToNodes)
 
-	node := env.NewMockedNode(0)
+	node := env.NewMockedNode("node0", nil)
 	node.StateManager.Ready().MustWait()
 	node.StartTimer()
 
@@ -168,7 +164,9 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	env, _ := NewMockedEnv(t, false)
 	env.SetPushStateToNodesOption(true)
 
-	node := env.NewMockedNode(0)
+	allPeers := []string{"node0", "node1"}
+
+	node := env.NewMockedNode("node0", allPeers)
 	node.SetupPeerGroupSimple()
 	node.StateManager.Ready().MustWait()
 	node.StartTimer()
@@ -205,7 +203,7 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, si.Synced)
 
-	node1 := env.NewMockedNode(1)
+	node1 := env.NewMockedNode("node1", allPeers)
 	node1.SetupPeerGroupSimple()
 	node1.StateManager.Ready().MustWait()
 	node1.StartTimer()

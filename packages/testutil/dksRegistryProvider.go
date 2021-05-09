@@ -5,12 +5,13 @@ package testutil
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
-// DkgRegistryProvider stands for a mock for dkg.RegistryProvider.
+// DkgRegistryProvider stands for a mock for dkg.DKShareRegistryProvider.
 type DkgRegistryProvider struct {
 	DB    map[string][]byte
 	Suite tcrypto.Suite
@@ -24,7 +25,7 @@ func NewDkgRegistryProvider(suite tcrypto.Suite) *DkgRegistryProvider {
 	}
 }
 
-// SaveDKShare implements dkg.RegistryProvider.
+// SaveDKShare implements dkg.DKShareRegistryProvider.
 func (p *DkgRegistryProvider) SaveDKShare(dkShare *tcrypto.DKShare) error {
 	var err error
 	var dkShareBytes []byte
@@ -35,7 +36,7 @@ func (p *DkgRegistryProvider) SaveDKShare(dkShare *tcrypto.DKShare) error {
 	return nil
 }
 
-// LoadDKShare implements dkg.RegistryProvider.
+// LoadDKShare implements dkg.DKShareRegistryProvider.
 func (p *DkgRegistryProvider) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error) {
 	var dkShareBytes = p.DB[sharedAddress.String()]
 	if dkShareBytes == nil {

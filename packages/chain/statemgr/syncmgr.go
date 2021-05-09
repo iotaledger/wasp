@@ -2,9 +2,10 @@ package statemgr
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"sort"
 	"time"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -76,7 +77,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 				BlockIndex: i,
 			})
 			// send messages until first without error
-			sm.peers.SendMsgToRandomNodes(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
+			sm.peers.SendMsgToRandomPeersSimple(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
 			sm.syncingBlocks.startSyncingIfNeeded(i)
 			sm.syncingBlocks.setRequestBlockRetryTime(i, nowis.Add(sm.timers.getGetBlockRetry()))
 			return
@@ -126,7 +127,9 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 	} else {
 		stateCandidateBlocks = sm.syncingBlocks.getBlockCandidates(fromStateIndex)
 	}
-	sort.Slice(stateCandidateBlocks, func(i, j int) bool { return stateCandidateBlocks[i].getVotes() > stateCandidateBlocks[j].getVotes() })
+	sort.Slice(stateCandidateBlocks, func(i, j int) bool {
+		return stateCandidateBlocks[i].getVotes() > stateCandidateBlocks[j].getVotes()
+	})
 	for i, stateCandidateBlock := range stateCandidateBlocks {
 		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i, len(stateCandidateBlocks))
 		resultBlocks, tentativeState, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex)

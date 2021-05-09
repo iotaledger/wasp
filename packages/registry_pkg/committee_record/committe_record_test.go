@@ -1,10 +1,11 @@
-package registry
+package committee_record
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestCommitteeRecord(t *testing.T) {

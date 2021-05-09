@@ -4,6 +4,12 @@
 package solo
 
 import (
+	"math/rand"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -17,11 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
-	"math/rand"
-	"strings"
-	"sync"
-	"testing"
-	"time"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"

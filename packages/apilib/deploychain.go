@@ -10,6 +10,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"golang.org/x/xerrors"
@@ -18,7 +20,7 @@ import (
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 )
@@ -75,7 +77,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	committee := multiclient.New(par.CommitteeApiHosts)
 
 	// ------------ put committee records to hosts
-	err = committee.PutCommitteeRecord(&registry.CommitteeRecord{
+	err = committee.PutCommitteeRecord(&committee_record.CommitteeRecord{
 		Address: stateControllerAddr,
 		Nodes:   par.CommitteePeeringHosts,
 	})
@@ -126,7 +128,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	}
 
 	// ------------ put chain records to hosts
-	err = committee.PutChainRecord(&registry.ChainRecord{
+	err = committee.PutChainRecord(&registry_pkg.ChainRecord{
 		ChainID: &chainID,
 	})
 

@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -22,14 +24,14 @@ import (
 type Node struct {
 	secKey      kyber.Scalar
 	pubKey      kyber.Point
-	suite       Suite                    // Cryptography to use.
-	netProvider peering.NetworkProvider  // Network to communicate through.
-	registry    tcrypto.RegistryProvider // Where to store the generated keys.
-	processes   map[string]*proc         // Only for introspection.
-	procLock    *sync.RWMutex            // To guard access to the process pool.
-	recvQueue   chan *peering.RecvEvent  // Incoming events processed async.
-	recvStopCh  chan bool                // To coordinate shutdown.
-	attachID    interface{}              // Peering attach ID
+	suite       Suite                             // Cryptography to use.
+	netProvider peering.NetworkProvider           // Network to communicate through.
+	registry    coretypes.DKShareRegistryProvider // Where to store the generated keys.
+	processes   map[string]*proc                  // Only for introspection.
+	procLock    *sync.RWMutex                     // To guard access to the process pool.
+	recvQueue   chan *peering.RecvEvent           // Incoming events processed async.
+	recvStopCh  chan bool                         // To coordinate shutdown.
+	attachID    interface{}                       // Peering attach ID
 	log         *logger.Logger
 }
 
@@ -40,7 +42,7 @@ func NewNode(
 	pubKey kyber.Point,
 	suite Suite,
 	netProvider peering.NetworkProvider,
-	registry tcrypto.RegistryProvider,
+	registry coretypes.DKShareRegistryProvider,
 	log *logger.Logger,
 ) *Node {
 	n := Node{
@@ -94,7 +96,7 @@ func (n *Node) GenerateDistributedKey(
 	//
 	// Setup network connections.
 	var netGroup peering.GroupProvider
-	if netGroup, err = n.netProvider.Group(peerNetIDs); err != nil {
+	if netGroup, err = n.netProvider.PeerGroup(peerNetIDs); err != nil {
 		return nil, err
 	}
 	defer netGroup.Close()
@@ -231,7 +233,7 @@ func (n *Node) GenerateDistributedKey(
 	return &dkShare, nil
 }
 
-// GroupSuite returns the cryptography Group used by this node.
+// GroupSuite returns the cryptography PeerGroup used by this node.
 func (n *Node) GroupSuite() kyber.Group {
 	return n.suite
 }
