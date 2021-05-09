@@ -20,12 +20,22 @@ type consensusImpl struct {
 	currentState               state.VirtualState
 	stateOutput                *ledgerstate.AliasOutput
 	stateTimestamp             time.Time
+	stage                      byte
+	stageStarted               time.Time
 	log                        *logger.Logger
 	eventStateTransitionMsgCh  chan *chain.StateTransitionMsg
 	eventResultCalculatedMsgCh chan *chain.VMResultMsg
 	eventTimerMsgCh            chan chain.TimerTick
 	closeCh                    chan struct{}
 }
+
+const (
+	stageUndef byte = iota
+	stageIdle
+	stageConsensus
+	stageVM
+	stageWaitConfirm
+)
 
 var _ chain.Consensus1 = &consensusImpl{}
 

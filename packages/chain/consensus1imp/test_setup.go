@@ -58,6 +58,8 @@ type MockedNode struct {
 	Log       *logger.Logger
 }
 
+type mockedConsensus struct{}
+
 func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledgerstate.Transaction) {
 	level := zapcore.InfoLevel
 	if debug {
@@ -169,4 +171,8 @@ func (env *MockedEnv) eventStateTransition() {
 			StateTimestamp: nowis,
 		})
 	}
+}
+
+func (m *mockedConsensus) run() {
+
 }

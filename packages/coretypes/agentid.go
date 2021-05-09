@@ -8,6 +8,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/iotaledger/hive.go/marshalutil"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
@@ -20,6 +22,8 @@ type AgentID struct {
 	a ledgerstate.Address
 	h Hname
 }
+
+const AgentIDLength = ledgerstate.AddressLength + HnameLength
 
 var NilAgentID AgentID
 
@@ -41,6 +45,14 @@ func NewAgentID(addr ledgerstate.Address, hname Hname) *AgentID {
 		a: addr.Clone(),
 		h: hname,
 	}
+}
+
+func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AgentID, error) {
+	data, err := mu.ReadBytes(AgentIDLength)
+	if err != nil {
+		return nil, err
+	}
+	return NewAgentIDFromBytes(data)
 }
 
 func NewAgentIDFromBytes(data []byte) (*AgentID, error) {
