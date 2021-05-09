@@ -4,12 +4,13 @@
 package consensusimpl
 
 import (
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"golang.org/x/xerrors"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/util"
@@ -256,9 +257,9 @@ func (op *operator) checkQuorum() {
 
 // sets new currentState transaction and initializes respective variables
 func (op *operator) setNewSCState(msg *chain.StateTransitionMsg) {
-	op.stateOutput = msg.ChainOutput
-	op.stateTimestamp = msg.Timestamp
-	op.currentState = msg.VariableState
+	op.stateOutput = msg.StateOutput
+	op.stateTimestamp = msg.StateTimestamp
+	op.currentState = msg.State
 	op.sentResultToLeader = nil
 	op.postedResultTxid = nilTxID
 	op.resetLeader(op.stateOutput.ID().Bytes())

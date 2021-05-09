@@ -164,9 +164,9 @@ func (env *MockedEnv) eventStateTransition() {
 	nowis := time.Now()
 	for _, node := range env.Nodes {
 		go node.Consensus.EventStateTransitionMsg(&chain.StateTransitionMsg{
-			VariableState: env.SolidState.Clone(),
-			ChainOutput:   env.StateOutput,
-			Timestamp:     nowis,
+			State:          env.SolidState.Clone(),
+			StateOutput:    env.StateOutput,
+			StateTimestamp: nowis,
 		})
 	}
 }
