@@ -21,6 +21,7 @@ type consensusImpl struct {
 	stateOutput                *ledgerstate.AliasOutput
 	stateTimestamp             time.Time
 	stage                      byte
+	consensusBatch             *batchProposal
 	stageStarted               time.Time
 	log                        *logger.Logger
 	eventStateTransitionMsgCh  chan *chain.StateTransitionMsg
@@ -33,6 +34,7 @@ const (
 	stageUndef byte = iota
 	stageIdle
 	stageConsensus
+	stageConsensusCompleted
 	stageVM
 	stageWaitConfirm
 )

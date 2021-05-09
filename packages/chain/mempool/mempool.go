@@ -158,6 +158,22 @@ func (m *mempool) GetReadyList(seenThreshold ...uint16) []coretypes.Request {
 	return ret
 }
 
+// GetRequestsByIDs returns slice with requests. Corresponding nil if not ready
+func (m *mempool) GetRequestsByIDs(nowis time.Time, reqids ...coretypes.RequestID) []coretypes.Request {
+	ret := make([]coretypes.Request, len(reqids))
+	for i := range ret {
+		reqref, ok := m.requestRefs[reqids[i]]
+		if !ok {
+			continue
+		}
+		if !isRequestReady(reqref, 0, nowis) {
+			continue
+		}
+		ret[i] = reqref.req
+	}
+	return ret
+}
+
 func (m *mempool) GetReadyListFull(seenThreshold ...uint16) []*chain.ReadyListRecord {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
