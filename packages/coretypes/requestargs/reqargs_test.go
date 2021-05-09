@@ -3,16 +3,17 @@ package requestargs
 import (
 	"bytes"
 	"fmt"
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestRequestArguments1(t *testing.T) {
@@ -83,7 +84,7 @@ func TestRequestArguments3(t *testing.T) {
 
 	log := testlogger.NewLogger(t)
 	db := dbprovider.NewInMemoryDBProvider(log)
-	reg := registry.NewRegistry(nil, log, db)
+	reg := registry_pkg.NewRegistry(nil, log, db)
 
 	d, ok, err := r.SolidifyRequestArguments(reg)
 	require.NoError(t, err)
@@ -119,7 +120,7 @@ func TestRequestArguments4(t *testing.T) {
 
 	log := testlogger.NewLogger(t)
 	db := dbprovider.NewInMemoryDBProvider(log)
-	reg := registry.NewRegistry(nil, log, db)
+	reg := registry_pkg.NewRegistry(nil, log, db)
 
 	_, ok, err := r.SolidifyRequestArguments(reg, downloader.New(log, "http://some.fake.address.lt"))
 	require.NoError(t, err)
@@ -142,13 +143,13 @@ func TestRequestArguments5(t *testing.T) {
 
 	log := testlogger.NewLogger(t)
 	db := dbprovider.NewInMemoryDBProvider(log)
-	reg := registry.NewRegistry(nil, log, db)
+	reg := registry_pkg.NewRegistry(nil, log, db)
 
 	// cannot solidify yet
 	back, ok, err := r.SolidifyRequestArguments(reg)
 	require.NoError(t, err)
 	require.False(t, ok)
-    require.Nil(t, back)
+	require.Nil(t, back)
 
 	// add missing data to blob cache
 	hback, err := reg.PutBlob(data)

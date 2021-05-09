@@ -2,6 +2,8 @@ package state
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -13,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
-	"time"
 )
 
 type virtualState struct {
@@ -178,13 +179,14 @@ func NewStateReader(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (*st
 	if err != nil {
 		return nil, xerrors.Errorf("NewStateReader: %w", err)
 	}
-	if !exists {
-		return nil, xerrors.Errorf("NewStateReader: state does not exist")
-	}
 	ret := &stateReader{
 		chainPartition: partition,
 		chainState:     kv.NewHiveKVStoreReader(subRealm(partition, []byte{dbprovider.ObjectTypeStateVariable})),
 	}
+	if !exists {
+		return ret, nil
+	}
+	// state exists, check consistency
 	stateIndex1, err := loadStateIndexFromState(ret.chainState)
 	if err != nil {
 		return nil, xerrors.Errorf("NewStateReader: %w", err)

@@ -1,23 +1,17 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package registry
+package registry_pkg
 
 import (
 	"bytes"
+
 	"github.com/iotaledger/wasp/packages/dbprovider"
 
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
 )
-
-// NodeIdentityProvider is a subset of the registry interface
-// providing access to the persistent node identity information.
-type NodeIdentityProvider interface {
-	GetNodeIdentity() (*key.Pair, error)
-	GetNodePublicKey() (kyber.Point, error)
-}
 
 // GetNodeIdentity implements NodeIdentityProvider.
 func (r *Impl) GetNodeIdentity() (*key.Pair, error) {

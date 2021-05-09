@@ -7,6 +7,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/peering/domain"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/group"
@@ -185,7 +187,7 @@ func (p *peeringNetworkProvider) Self() peering.PeerSender {
 }
 
 // Group implements peering.NetworkProvider.
-func (p *peeringNetworkProvider) Group(peerAddrs []string) (peering.GroupProvider, error) {
+func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupProvider, error) {
 	peers := make([]peering.PeerSender, len(peerAddrs))
 	for i := range peerAddrs {
 		n := p.network.nodeByNetID(peerAddrs[i])
@@ -195,6 +197,21 @@ func (p *peeringNetworkProvider) Group(peerAddrs []string) (peering.GroupProvide
 		peers[i] = p.senders[i]
 	}
 	return group.NewPeeringGroupProvider(p, peers, p.network.log), nil
+}
+
+// Domain creates peering.PeerDomainProvider.
+func (n *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
+	var err error
+	peers := make([]peering.PeerSender, len(peerNetIDs))
+	for i, nid := range peerNetIDs {
+		if nid == n.Self().NetID() {
+			continue
+		}
+		if peers[i], err = n.PeerByNetID(peerNetIDs[i]); err != nil {
+			return nil, err
+		}
+	}
+	return domain.NewPeerDomain(n, peers, n.network.log), nil
 }
 
 // Attach implements peering.NetworkProvider.
