@@ -212,7 +212,7 @@ func TestTakeAllReady(t *testing.T) {
 func initSeenTest(t *testing.T) (chain.Mempool, []*request.RequestOnLedger) {
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
-	pool := New(rdr, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 5)
 	request0ID := requests[0].ID()

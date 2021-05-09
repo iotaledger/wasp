@@ -1,12 +1,15 @@
 package consensus1imp
 
 import (
+	"time"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"time"
+	"go.uber.org/atomic"
 )
 
 type consensusImpl struct {
+	isReady                   atomic.Bool
 	chain                     chain.ChainCore
 	committee                 chain.Committee
 	mempool                   chain.Mempool
@@ -34,6 +37,10 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 	return ret
 }
 
+func (c *consensusImpl) IsReady() bool {
+	return c.isReady.Load()
+}
+
 func (c *consensusImpl) Close() {
 	close(c.closeCh)
 }
@@ -47,6 +54,8 @@ func (c *consensusImpl) recvLoop() {
 			return
 		}
 	}
+	c.log.Infof("consensus object is ready")
+	c.isReady.Store(true)
 	for {
 		select {
 		case msg, ok := <-c.eventStateTransitionMsgCh:

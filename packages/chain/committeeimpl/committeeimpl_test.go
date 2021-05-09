@@ -2,14 +2,14 @@ package committeeimpl
 
 import (
 	"testing"
+	"time"
 
-	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
+	"github.com/iotaledger/wasp/packages/chain/mock_chain"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/udp"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3/pairing"
@@ -22,7 +22,7 @@ func TestCommitteeBasic(t *testing.T) {
 	defer log.Sync()
 	netIDs := []string{"localhost:9017", "localhost:9018", "localhost:9019", "localhost:9020"}
 
-	reg := newMockedRegistry(4, 3, netIDs)
+	reg := mock_chain.NewMockedRegistry(4, 3, 0, netIDs)
 	cfg0, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[0], 9017, netIDs...)
 	require.NoError(t, err)
 	net0, err := udp.NewNetworkProvider(cfg0, key.NewKeyPair(suite), suite, log.Named("net0"))
@@ -36,40 +36,8 @@ func TestCommitteeBasic(t *testing.T) {
 	require.EqualValues(t, 4, c.Size())
 	require.EqualValues(t, 3, c.Quorum())
 
+	time.Sleep(100 * time.Millisecond)
+	require.True(t, c.IsReady())
 	c.Close()
 	require.False(t, c.IsReady())
-}
-
-type mockedRegistry struct {
-	validators []string
-	t, n       uint16
-}
-
-func newMockedRegistry(n, t uint16, validators []string) *mockedRegistry {
-	return &mockedRegistry{validators, t, n}
-}
-
-func (m *mockedRegistry) SaveDKShare(dkShare *tcrypto.DKShare) error {
-	panic("implement me")
-}
-
-func (m *mockedRegistry) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error) {
-	var idx uint16
-	return &tcrypto.DKShare{
-		Address: sharedAddress,
-		Index:   &idx,
-		N:       4,
-		T:       3,
-	}, nil
-}
-
-func (m *mockedRegistry) GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error) {
-	return &committee_record.CommitteeRecord{
-		Address: addr,
-		Nodes:   m.validators,
-	}, nil
-}
-
-func (m *mockedRegistry) SaveCommitteeRecord(rec *committee_record.CommitteeRecord) error {
-	panic("implement me")
 }

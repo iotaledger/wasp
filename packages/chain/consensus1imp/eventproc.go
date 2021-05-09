@@ -6,7 +6,7 @@ func (c *consensusImpl) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	c.eventStateTransitionMsgCh <- msg
 }
 func (c *consensusImpl) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
-
+	c.log.Debugf("eventStateTransitionMsg: state index: %d", msg.VariableState.BlockIndex())
 }
 
 func (c *consensusImpl) EventTimerMsg(msg chain.TimerTick) {
