@@ -1,15 +1,16 @@
 package mempool
 
 import (
+	"sort"
+	"sync"
+	"time"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"sort"
-	"sync"
-	"time"
 )
 
 type mempool struct {
@@ -136,14 +137,18 @@ func isRequestReady(ref *requestRef, seenThreshold uint16, nowis time.Time) bool
 	return true
 }
 
-func (m *mempool) GetReadyList(seenThreshold uint16) []coretypes.Request {
+func (m *mempool) GetReadyList(seenThreshold ...uint16) []coretypes.Request {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
+	var thr uint16
+	if len(seenThreshold) > 0 {
+		thr = seenThreshold[0]
+	}
 	ret := make([]coretypes.Request, 0, len(m.requestRefs))
 	nowis := time.Now()
 	for _, ref := range m.requestRefs {
-		if isRequestReady(ref, seenThreshold, nowis) {
+		if isRequestReady(ref, thr, nowis) {
 			ret = append(ret, ref.req)
 		}
 	}
@@ -153,14 +158,18 @@ func (m *mempool) GetReadyList(seenThreshold uint16) []coretypes.Request {
 	return ret
 }
 
-func (m *mempool) GetReadyListFull(seenThreshold uint16) []*chain.ReadyListRecord {
+func (m *mempool) GetReadyListFull(seenThreshold ...uint16) []*chain.ReadyListRecord {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
+	var thr uint16
+	if len(seenThreshold) > 0 {
+		thr = seenThreshold[0]
+	}
 	ret := make([]*chain.ReadyListRecord, 0, len(m.requestRefs))
 	nowis := time.Now()
 	for _, ref := range m.requestRefs {
-		if isRequestReady(ref, seenThreshold, nowis) {
+		if isRequestReady(ref, thr, nowis) {
 			rec := &chain.ReadyListRecord{
 				Request: ref.req,
 				Seen:    make(map[uint16]bool),

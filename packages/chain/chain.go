@@ -102,10 +102,13 @@ type Consensus interface {
 
 type Mempool interface {
 	ReceiveRequest(req coretypes.Request)
+	GetReadyList(seenThreshold ...uint16) []coretypes.Request
+	// Deprecated:
 	MarkSeenByCommitteePeer(reqid *coretypes.RequestID, peerIndex uint16)
+	// Deprecated:
 	ClearSeenMarks()
-	GetReadyList(seenThreshold uint16) []coretypes.Request
-	GetReadyListFull(seenThreshold uint16) []*ReadyListRecord
+	// Deprecated:
+	GetReadyListFull(seenThreshold ...uint16) []*ReadyListRecord
 	TakeAllReady(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
 	RemoveRequests(reqs ...coretypes.RequestID)
 	HasRequest(id coretypes.RequestID) bool
