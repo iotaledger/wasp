@@ -222,15 +222,15 @@ func (env *MockedEnv) RemoveNode(netID string) {
 
 // SetupPeerGroupSimple sets up simple communication between nodes
 func (nT *MockedNode) SetupPeerGroupSimple() {
-	nT.Peers.OnSend(func(target string, msg *peering.PeerMessage) {
+	nT.Peers.OnSend(func(target string, peerMsg *peering.PeerMessage) {
 		nT.Log.Debugf("MockedPeerGroup:OnSendMsg to peer %s", target)
 		node, ok := nT.Env.Nodes[target]
 		if !ok {
 			nT.Env.Log.Warnf("node %s: wrong target netID %s", nT.NetID, target)
 			return
 		}
-		rdr := bytes.NewReader(msg.MsgData)
-		switch msg.MsgType {
+		rdr := bytes.NewReader(peerMsg.MsgData)
+		switch peerMsg.MsgType {
 		case chain.MsgGetBlock:
 			nT.Log.Debugf("MockedPeerGroup:OnSend MsgGetBlock received")
 			msg := chain.GetBlockMsg{}
@@ -248,6 +248,7 @@ func (nT *MockedNode) SetupPeerGroupSimple() {
 				nT.Env.Log.Errorf("error reading MsgBlock message: %v", err)
 				return
 			}
+			msg.SenderNetID = peerMsg.SenderNetID
 			go node.StateManager.EventBlockMsg(&msg)
 
 		default:
