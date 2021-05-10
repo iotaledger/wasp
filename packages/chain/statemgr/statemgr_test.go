@@ -1,6 +1,7 @@
 package statemgr
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -214,16 +215,113 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	node1.StartTimer()
 	env.AddNode(node1)
 
-	// node2 := env.NewMockedNode(2)
-	// node2.StateManager.Ready().MustWait()
-	// node2.StartTimer()
-	// env.AddNode(node2)
+	si, err = node1.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
+	require.NoError(t, err)
+	require.True(t, si.Synced)
+}
+
+func TestManyStateTransitionsManyNodes(t *testing.T) {
+	env, _ := NewMockedEnv(t, true)
+	env.SetPushStateToNodesOption(true)
+
+	numberOfCatchingPeers := 10
+	allPeers := make([]string, numberOfCatchingPeers+1)
+	for i := 0; i < numberOfCatchingPeers; i++ {
+		allPeers[i] = "node" + strconv.Itoa(i+1)
+	}
+	allPeers[numberOfCatchingPeers] = "node"
+
+	node := env.NewMockedNode("node", allPeers, Timers{})
+	node.SetupPeerGroupSimple()
+	node.StateManager.Ready().MustWait()
+	node.StartTimer()
+
+	env.AddNode(node)
+
+	const targetBlockIndex = 10
+	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
+		chain.LogStateTransition(msg, node.Log)
+		if msg.ChainOutput.GetStateIndex() < targetBlockIndex {
+			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
+		}
+	})
+	env.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
+		env.Log.Debugf("MockedNodeConn.onPullConfirmedOutput %v", coretypes.OID(outputID))
+		env.mutex.Lock()
+		defer env.mutex.Unlock()
+		tx, foundTx := env.Ledger.GetTransaction(outputID.TransactionID())
+		require.True(t, foundTx)
+		outputIndex := outputID.OutputIndex()
+		outputs := tx.Essence().Outputs()
+		require.True(t, int(outputIndex) < len(outputs))
+		output := outputs[outputIndex].UpdateMintingColor()
+		require.NotNil(t, output)
+		//TODO: avoid broadcast
+		for _, node := range env.Nodes {
+			go func(manager chain.StateManager, log *logger.Logger) {
+				log.Debugf("MockedNodeConn.onPullConfirmedOutput: call EventOutputMsg")
+				manager.EventOutputMsg(output)
+			}(node.StateManager, node.Log)
+		}
+	})
+	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
+	require.NoError(t, err)
+	require.True(t, si.Synced)
+
+	nodes := make([]*MockedNode, numberOfCatchingPeers)
+	for i := 0; i < numberOfCatchingPeers; i++ {
+		nodes[i] = env.NewMockedNode(allPeers[i], allPeers, Timers{})
+		nodes[i].SetupPeerGroupSimple()
+		nodes[i].StateManager.Ready().MustWait()
+	}
+	for i := 0; i < numberOfCatchingPeers; i++ {
+		nodes[i].StartTimer()
+	}
+	for i := 0; i < numberOfCatchingPeers; i++ {
+		env.AddNode(nodes[i])
+	}
+	for i := 0; i < numberOfCatchingPeers; i++ {
+		si, err = nodes[i].WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
+		require.NoError(t, err)
+		require.True(t, si.Synced)
+	}
+}
+
+// Call to MsgGetConfirmetOutput does not return anything. Synchronisation must
+// be done using stateOutput only.
+func TestCatchUpNoConfirmedOutput(t *testing.T) {
+	env, _ := NewMockedEnv(t, true)
+	env.SetPushStateToNodesOption(true)
+
+	allPeers := []string{"node0", "node1"}
+
+	node := env.NewMockedNode("node0", allPeers, Timers{})
+	node.SetupPeerGroupSimple()
+	node.StateManager.Ready().MustWait()
+	node.StartTimer()
+
+	env.AddNode(node)
+
+	const targetBlockIndex = 10
+	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
+		chain.LogStateTransition(msg, node.Log)
+		if msg.ChainOutput.GetStateIndex() < targetBlockIndex {
+			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
+		}
+	})
+	env.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
+	})
+	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
+	require.NoError(t, err)
+	require.True(t, si.Synced)
+
+	node1 := env.NewMockedNode("node1", allPeers, Timers{})
+	node1.SetupPeerGroupSimple()
+	node1.StateManager.Ready().MustWait()
+	node1.StartTimer()
+	env.AddNode(node1)
 
 	si, err = node1.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
 	require.NoError(t, err)
 	require.True(t, si.Synced)
-
-	// si, err = node2.WaitSyncBlockIndex(targetBlockIndex, 1*time.Second)
-	// require.NoError(t, err)
-	// require.True(t, si.Synced)
 }
