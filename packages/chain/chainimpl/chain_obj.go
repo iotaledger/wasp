@@ -235,6 +235,19 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 		msgt.SenderNetID = msg.SenderNetID
 		c.stateMgr.EventBlockMsg(msgt)
 
+	case chain.MsgSignedResult:
+		msgt := &chain.SignedResultMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+
+		msgt.SenderIndex = msg.SenderIndex
+
+		//if c.consensus != nil {
+		//	c.consensus.EventS(msgt)
+		//}
+
 	default:
 		c.log.Errorf("processPeerMessage: wrong msg type")
 	}

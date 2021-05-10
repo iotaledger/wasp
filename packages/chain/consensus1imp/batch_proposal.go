@@ -20,46 +20,46 @@ type batchProposal struct {
 	FeeDestination      *coretypes.AgentID
 }
 
-func BatchOfRequestsFromBytes(data []byte) (*batchProposal, error) {
-	return BatchOfRequestsFromMarshalUtil(marshalutil.New(data))
+func BatchProposalFromBytes(data []byte) (*batchProposal, error) {
+	return BatchProposalFromMarshalUtil(marshalutil.New(data))
 }
 
-func BatchOfRequestsFromMarshalUtil(mu *marshalutil.MarshalUtil) (*batchProposal, error) {
+func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*batchProposal, error) {
 	ret := &batchProposal{}
 	var err error
 	ret.ValidatorIndex, err = mu.ReadUint16()
 	if err != nil {
-		return nil, xerrors.Errorf("BatchOfRequestsFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
 	}
 	ret.StateOutputID, err = ledgerstate.OutputIDFromMarshalUtil(mu)
 	if err != nil {
-		return nil, xerrors.Errorf("BatchOfRequestsFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
 	}
 	ret.AccessManaPledge, err = identity.IDFromMarshalUtil(mu)
 	if err != nil {
-		return nil, xerrors.Errorf("BatchOfRequestsFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
 	}
 	ret.ConsensusManaPledge, err = identity.IDFromMarshalUtil(mu)
 	if err != nil {
-		return nil, xerrors.Errorf("BatchOfRequestsFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
 	}
 	ret.FeeDestination, err = coretypes.AgentIDFromMarshalUtil(mu)
 	if err != nil {
-		return nil, xerrors.Errorf("BatchOfRequestsFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
 	}
 	ret.Timestamp, err = mu.ReadTime()
 	if err != nil {
-		return nil, xerrors.Errorf("BatchOfRequestsFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
 	}
 	size, err := mu.ReadUint16()
 	if err != nil {
-		return nil, xerrors.Errorf("BatchOfRequestsFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
 	}
 	ret.RequestIDs = make([]coretypes.RequestID, size)
 	for i := range ret.RequestIDs {
 		ret.RequestIDs[i], err = coretypes.RequestIDFromMarshalUtil(mu)
 		if err != nil {
-			return nil, xerrors.Errorf("BatchOfRequestsFromMarshalUtil: %w", err)
+			return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
 		}
 	}
 	return ret, nil

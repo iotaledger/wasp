@@ -120,16 +120,16 @@ func (op *operator) startCalculationsAsLeader() {
 		op.log.Info("timestamp was adjusted to %v", ts)
 	}
 
-	numSucc := op.committee.SendMsgToPeers(chain.MsgStartProcessingRequest, msgData, ts.UnixNano())
+	op.committee.SendMsgToPeers(chain.MsgStartProcessingRequest, msgData, ts.UnixNano())
 
-	op.log.Debugf("%d 'msgStartProcessingRequest' messages sent to peers", numSucc)
-
-	if numSucc < op.quorum()-1 {
-		// doesn't make sense to continue with own calculations when less than quorum sends succeeds
-		// should not happen normally
-		op.log.Errorf("only %d 'msgStartProcessingRequest' sends succeeded. Not continuing", numSucc)
-		return
-	}
+	op.log.Debugf("'msgStartProcessingRequest' messages sent to peers")
+	//
+	//if numSucc < op.quorum()-1 {
+	//	// doesn't make sense to continue with own calculations when less than quorum sends succeeds
+	//	// should not happen normally
+	//	op.log.Errorf("only %d 'msgStartProcessingRequest' sends succeeded. Not continuing", numSucc)
+	//	return
+	//}
 	// batchHash uniquely identifies inputs to calculations
 	batchHash := vm.BatchHash(reqIds, ts, op.peerIndex())
 	op.leaderStatus = &leaderStatus{
@@ -237,7 +237,7 @@ func (op *operator) checkQuorum() {
 		return
 	}
 
-	op.nodeConn.PostTransaction(finalTx, op.chain.ID().AsAddress(), op.committee.OwnPeerIndex())
+	op.nodeConn.PostTransaction(finalTx)
 	op.log.Debugf("result transaction has been posted to node. txid: %s", finalTx.ID().Base58())
 
 	// notify peers about finalization of the transaction
@@ -246,8 +246,8 @@ func (op *operator) checkQuorum() {
 		TxId:          finalTx.ID(),
 	})
 
-	numSent := op.committee.SendMsgToPeers(chain.MsgNotifyFinalResultPosted, msgData, time.Now().UnixNano())
-	op.log.Debugf("%d peers has been notified about finalized result", numSent)
+	op.committee.SendMsgToPeers(chain.MsgNotifyFinalResultPosted, msgData, time.Now().UnixNano())
+	op.log.Debugf("peers has been notified about finalized result")
 
 	op.setNextConsensusStage(consensusStageLeaderResultFinalized)
 	op.setFinalizedTransaction(finalTx.ID())

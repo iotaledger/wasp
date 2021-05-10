@@ -4,9 +4,10 @@
 package consensusimpl
 
 import (
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"golang.org/x/xerrors"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -62,7 +63,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask, leader uint16) {
 		return
 	}
 
-	sigShare, err := op.committee.DKShare().SignShare(result.ResultTransaction.Bytes())
+	sigShare, err := op.committee.DKShare().SignShare(result.ResultTransactionEssence.Bytes())
 	if err != nil {
 		op.log.Errorf("error while signing transaction %v", err)
 		return
@@ -73,7 +74,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask, leader uint16) {
 		reqids[i] = result.Requests[i].ID()
 	}
 
-	essenceHash := hashing.HashData(result.ResultTransaction.Bytes())
+	essenceHash := hashing.HashData(result.ResultTransactionEssence.Bytes())
 	batchHash := vm.BatchHash(reqids, result.Timestamp, leader)
 
 	op.log.Debugw("sendResultToTheLeader",
@@ -95,7 +96,7 @@ func (op *operator) sendResultToTheLeader(result *vm.VMTask, leader uint16) {
 		op.log.Error(err)
 		return
 	}
-	op.sentResultToLeader = result.ResultTransaction
+	op.sentResultToLeader = result.ResultTransactionEssence
 	op.sentResultToLeaderIndex = leader
 
 	op.setNextConsensusStage(consensusStageSubCalculationsFinished)
@@ -107,7 +108,7 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 			stages[consensusStageLeaderCalculationsStarted].name, stages[op.consensusStage].name)
 		return
 	}
-	sigShare, err := op.committee.DKShare().SignShare(result.ResultTransaction.Bytes())
+	sigShare, err := op.committee.DKShare().SignShare(result.ResultTransactionEssence.Bytes())
 	if err != nil {
 		op.log.Errorf("error while signing transaction %v", err)
 		return
@@ -123,14 +124,14 @@ func (op *operator) saveOwnResult(result *vm.VMTask) {
 		op.log.Panic("bh != op.leaderStatus.batchHash")
 	}
 
-	essenceHash := hashing.HashData(result.ResultTransaction.Bytes())
+	essenceHash := hashing.HashData(result.ResultTransactionEssence.Bytes())
 	op.log.Debugw("saveOwnResult",
 		"batchHash", bh.String(),
 		"ts", result.Timestamp,
 		"essenceHash", essenceHash.String(),
 	)
 
-	op.leaderStatus.resultTxEssence = result.ResultTransaction
+	op.leaderStatus.resultTxEssence = result.ResultTransactionEssence
 	op.leaderStatus.virtualState = result.VirtualState
 	op.leaderStatus.signedResults[op.committee.OwnPeerIndex()] = &signedResult{
 		essenceHash: essenceHash,

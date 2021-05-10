@@ -53,11 +53,11 @@ type MockedEnv struct {
 	NodeConn          *testchain.MockedNodeConn
 	ChainID           coretypes.ChainID
 	mutex             sync.Mutex
-	Nodes             []*MockedNode
+	Nodes             []*mockedNode
 	push              bool
 }
 
-type MockedNode struct {
+type mockedNode struct {
 	OwnIndex  uint16
 	Env       *MockedEnv
 	ChainCore *testchain.MockedChainCore
@@ -92,7 +92,7 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledg
 		Log:       log,
 		Ledger:    utxodb.New(),
 		NodeConn:  testchain.NewMockedNodeConnection(),
-		Nodes:     make([]*MockedNode, n),
+		Nodes:     make([]*mockedNode, n),
 	}
 
 	_, ret.PubKeys, ret.PrivKeys = testpeers.SetupKeys(n, ret.Suite)
@@ -127,7 +127,7 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledg
 	ret.StateReader, err = state.NewStateReader(ret.DB, &ret.ChainID)
 	require.NoError(t, err)
 
-	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction, _ ledgerstate.Address, _ uint16) {
+	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction) {
 		_, exists := ret.Ledger.GetTransaction(tx.ID())
 		if exists {
 			ret.Log.Debugf("posted repeating originTx: %s", tx.ID().Base58())
@@ -150,7 +150,7 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledg
 	return ret, originTx
 }
 
-func (env *MockedEnv) newNode(i uint16) *MockedNode {
+func (env *MockedEnv) newNode(i uint16) *mockedNode {
 	log := env.Log.Named(fmt.Sprintf("%d", i))
 	chainCore := testchain.NewMockedChainCore(env.ChainID, log)
 	mpool := mempool.New(env.StateReader, coretypes.NewInMemoryBlobCache(), log)
@@ -167,7 +167,7 @@ func (env *MockedEnv) newNode(i uint16) *MockedNode {
 	committee, err := committeeimpl.NewCommittee(env.StateAddress, netObj, cfg, env.DKSRegistries[i], mockCommitteeRegistry, log)
 	require.NoError(env.T, err)
 
-	ret := &MockedNode{
+	ret := &mockedNode{
 		OwnIndex:  i,
 		Env:       env,
 		ChainCore: chainCore,
@@ -175,6 +175,9 @@ func (env *MockedEnv) newNode(i uint16) *MockedNode {
 		Consensus: New(chainCore, mpool, committee, testchain.NewMockedNodeConnection(), log),
 		Log:       log,
 	}
+	ret.Consensus.mockedACS = testchain.NewMockedACS(env.Quorum, func(values [][]byte) {
+		// TODO
+	})
 	return ret
 }
 

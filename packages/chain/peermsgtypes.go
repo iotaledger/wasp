@@ -23,6 +23,7 @@ const (
 	MsgSignedHash              = 3 + peering.FirstUserMsgCode
 	MsgGetBlock                = 4 + peering.FirstUserMsgCode
 	MsgBlock                   = 5 + peering.FirstUserMsgCode
+	MsgSignedResult            = 6 + peering.FirstUserMsgCode
 )
 
 type TimerTick int
@@ -70,6 +71,12 @@ type SignedHashMsg struct {
 	OrigTimestamp int64
 	EssenceHash   hashing.HashValue
 	SigShare      tbdn.SigShare
+}
+
+type SignedResultMsg struct {
+	SenderIndex uint16
+	EssenceHash hashing.HashValue
+	SigShare    tbdn.SigShare
 }
 
 // GetBlockMsg StateManager queries specific block data from another peer (access node)

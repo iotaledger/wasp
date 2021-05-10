@@ -5,6 +5,16 @@ import (
 	"sort"
 	"time"
 
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/runvm"
+
 	"github.com/iotaledger/wasp/packages/util"
 
 	"github.com/iotaledger/hive.go/identity"
@@ -13,77 +23,20 @@ import (
 
 func (c *consensusImpl) takeAction() {
 	c.startConsensusIfNeeded()
+	c.runVMIfNeeded()
+	c.checkQuorum()
 }
 
 func (c *consensusImpl) startConsensusIfNeeded() {
-	if c.stage != stageIdle {
+	if c.stage != stageStateReceived {
 		return
 	}
 	reqs := c.mempool.GetReadyList()
 	if len(reqs) == 0 {
 		return
 	}
-	c.sendProposalForConsensus(c.prepareBatchProposal(reqs))
-}
-
-func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchProposal {
-	ts := time.Now()
-	if !ts.After(c.stateTimestamp) {
-		ts = c.stateTimestamp.Add(1 * time.Nanosecond)
-	}
-	consensusManaPledge := identity.ID{}
-	accessManaPledge := identity.ID{}
-	feeDestination := coretypes.NewAgentID(c.chain.ID().AsAddress(), 0)
-	ret := &batchProposal{
-		StateOutputID:       c.stateOutput.ID(),
-		RequestIDs:          make([]coretypes.RequestID, len(reqs)),
-		Timestamp:           ts,
-		ConsensusManaPledge: consensusManaPledge,
-		AccessManaPledge:    accessManaPledge,
-		FeeDestination:      feeDestination,
-	}
-	for i := range ret.RequestIDs {
-		ret.RequestIDs[i] = reqs[i].ID()
-	}
-	return ret
-}
-
-func (c *consensusImpl) sendProposalForConsensus(proposal *batchProposal) {
-	// TODO
-	c.stage = stageConsensus
-	c.stageStarted = time.Now()
-}
-
-func (c *consensusImpl) receiveBatchOptionsFromConsensus(opt []*batchProposal) {
-	for _, prop := range opt {
-		if prop.StateOutputID != c.stateOutput.ID() {
-			//
-			c.log.Warnf("receiveOptionsFromConsensus: consensus options out of context or consensus failure")
-			return
-		}
-		if prop.ValidatorIndex >= c.committee.Size() {
-			c.log.Warnf("wrong validtor index from consensus")
-			return
-		}
-	}
-	inBatchSet := calcIntersection(opt, c.committee.Size(), c.committee.Quorum())
-	if len(inBatchSet) == 0 {
-		c.log.Warnf("receiveOptionsFromConsensus: intersecection is empty. Consensus failure")
-		return
-	}
-	medianTs, accessPledge, consensusPledge, feeDestination := calcBatchParameters(opt)
-	c.consensusBatch = &batchProposal{
-		ValidatorIndex:      c.committee.OwnPeerIndex(),
-		StateOutputID:       c.stateOutput.ID(),
-		RequestIDs:          inBatchSet,
-		Timestamp:           medianTs,
-		ConsensusManaPledge: consensusPledge,
-		AccessManaPledge:    accessPledge,
-		FeeDestination:      feeDestination,
-	}
-	c.stage = stageConsensusCompleted
-	c.stageStarted = time.Now()
-	c.runVMIfNeeded()
+	proposal := c.prepareBatchProposal(reqs)
+	c.sendProposalForACS(proposal)
 }
 
 func (c *consensusImpl) runVMIfNeeded() {
@@ -112,106 +65,236 @@ func (c *consensusImpl) runVMIfNeeded() {
 		}
 	})
 
-	// TODO run VM async
+	task := &vm.VMTask{
+		Processors:         c.chain.Processors(),
+		ChainInput:         c.stateOutput,
+		Entropy:            hashing.HashData(c.stateOutput.ID().Bytes()),
+		ValidatorFeeTarget: *c.consensusBatch.FeeDestination,
+		Requests:           reqs,
+		Timestamp:          c.consensusBatch.Timestamp,
+		VirtualState:       c.currentState.Clone(),
+		Log:                c.log,
+	}
+	task.OnFinish = func(_ dict.Dict, _ error, vmError error) {
+		if vmError != nil {
+			c.log.Errorf("VM task failed: %v", vmError)
+			return
+		}
+		c.chain.ReceiveMessage(&chain.VMResultMsg{
+			Task: task,
+		})
+	}
 
+	c.stage = stageVM
+	c.stageStarted = time.Now()
+
+	runvm.MustRunVMTaskAsync(task)
 }
 
-func calcBatchParameters(opt []*batchProposal) (time.Time, identity.ID, identity.ID, *coretypes.AgentID) {
-	var retTS time.Time
-
-	ts := make([]time.Time, len(opt))
-	for i := range ts {
-		ts[i] = opt[i].Timestamp
+func (c *consensusImpl) checkQuorum() {
+	if c.resultSignatures[c.committee.OwnPeerIndex()] == nil {
+		// only can aggregate signatures if own result is calculated
+		return
 	}
-	sort.Slice(ts, func(i, j int) bool {
-		return ts[i].Before(ts[j])
-	})
-	retTS = ts[len(opt)/2]
-
-	indices := make([]uint16, len(opt))
-	for i := range indices {
-		indices[i] = opt[i].ValidatorIndex
+	ownHash := c.resultSignatures[c.committee.OwnPeerIndex()].EssenceHash
+	numSigs := uint16(0)
+	for _, sig := range c.resultSignatures {
+		if sig == nil {
+			continue
+		}
+		if sig.EssenceHash == ownHash {
+			numSigs++
+		}
 	}
-	selectedIndex := util.SelectRandomUint16(indices, retTS.UnixNano())
+	if numSigs < c.committee.Quorum() {
+		return
+	}
+	sigSharesToAggregate := make([][]byte, 0, numSigs)
+	for _, sig := range c.resultSignatures {
+		if sig == nil {
+			continue
+		}
+		if sig.EssenceHash == ownHash {
+			sigSharesToAggregate = append(sigSharesToAggregate, sig.SigShare)
+		}
+	}
+	tx, err := c.finalizeTransaction(sigSharesToAggregate)
+	if err != nil {
+		c.log.Errorf("checkQuorum: %v", err)
+		return
+	}
 
-	return retTS, opt[selectedIndex].AccessManaPledge, opt[selectedIndex].ConsensusManaPledge, opt[selectedIndex].FeeDestination
+	// TODO more intelligent posting
+
+	go c.chain.ReceiveMessage(&chain.StateCandidateMsg{State: c.resultState})
+	c.nodeConn.PostTransaction(tx)
+	c.stage = stageWaitNextState
+	c.stageStarted = time.Now()
+	c.log.Infof("POSTED TRANSACTION: %s", tx.ID().Base58())
 }
 
-// deterministically calculate intersection. It may not be optimal
-func calcIntersection(opt []*batchProposal, n, t uint16) []coretypes.RequestID {
-	matrix := make(map[coretypes.RequestID][]bool)
-	for _, b := range opt {
-		for _, reqid := range b.RequestIDs {
-			_, ok := matrix[reqid]
-			if !ok {
-				matrix[reqid] = make([]bool, n)
-			}
-			matrix[reqid][b.ValidatorIndex] = true
+func (c *consensusImpl) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, error) {
+	signatureWithPK, err := c.committee.DKShare().RecoverFullSignature(sigSharesToAggregate, c.resultTxEssence.Bytes())
+	if err != nil {
+		return nil, xerrors.Errorf("finalizeTransaction: %w", err)
+	}
+	sigUnlockBlock := ledgerstate.NewSignatureUnlockBlock(ledgerstate.NewBLSSignature(*signatureWithPK))
+	chainInput := ledgerstate.NewUTXOInput(c.stateOutput.ID())
+	var indexChainInput = -1
+	for i, inp := range c.resultTxEssence.Inputs() {
+		if inp.Compare(chainInput) == 0 {
+			indexChainInput = i
+			break
 		}
 	}
-	// collect those which are seen by more nodes than quorum. The rest is not interesting
-	seenByQuorum := make([]coretypes.RequestID, 0)
-	maxSeen := t
-	for reqid, seenVect := range matrix {
-		numSeen := countTrue(seenVect)
-		if numSeen >= t {
-			seenByQuorum = append(seenByQuorum, reqid)
-			if numSeen > maxSeen {
-				maxSeen = numSeen
-			}
+	if indexChainInput < 0 {
+		c.log.Panicf("RecoverFullSignature. major inconsistency")
+	}
+
+	blocks := make([]ledgerstate.UnlockBlock, len(c.resultTxEssence.Inputs()))
+	for i := range c.resultTxEssence.Inputs() {
+		if i == indexChainInput {
+			blocks[i] = sigUnlockBlock
+		} else {
+			blocks[i] = ledgerstate.NewAliasUnlockBlock(uint16(indexChainInput))
 		}
 	}
-	// seenByQuorum may be empty. sort for determinism
-	sort.Slice(seenByQuorum, func(i, j int) bool {
-		return bytes.Compare(seenByQuorum[i][:], seenByQuorum[j][:]) < 0
-	})
-	inBatchSet := make(map[coretypes.RequestID]struct{})
-	var inBatchIntersection []bool
-	for numSeen := maxSeen; numSeen >= t; numSeen-- {
-		for _, reqid := range seenByQuorum {
-			if _, ok := inBatchSet[reqid]; ok {
-				continue
-			}
-			if countTrue(matrix[reqid]) != numSeen {
-				continue
-			}
-			if inBatchIntersection == nil {
-				// starting from the largest number seen, so at least one is guaranteed in the batch
-				inBatchIntersection = matrix[reqid]
-				inBatchSet[reqid] = struct{}{}
-			} else {
-				sect := intersect(inBatchIntersection, matrix[reqid])
-				if countTrue(sect) >= t {
-					inBatchIntersection = sect
-					inBatchSet[reqid] = struct{}{}
-				}
-			}
-		}
+	return ledgerstate.NewTransaction(c.resultTxEssence, blocks), nil
+}
+
+func (c *consensusImpl) setNewState(msg *chain.StateTransitionMsg) {
+	c.stateOutput = msg.StateOutput
+	c.currentState = msg.State
+	c.stateTimestamp = msg.StateTimestamp
+	for i := range c.resultSignatures {
+		c.resultSignatures[i] = nil
 	}
-	ret := make([]coretypes.RequestID, 0, len(inBatchSet))
-	for reqid := range inBatchSet {
-		ret = append(ret, reqid)
+	c.resultState = nil
+	c.resultTxEssence = nil
+
+	c.stage = stageStateReceived
+	c.stageStarted = time.Now()
+}
+
+func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchProposal {
+	ts := time.Now()
+	if !ts.After(c.stateTimestamp) {
+		ts = c.stateTimestamp.Add(1 * time.Nanosecond)
+	}
+	consensusManaPledge := identity.ID{}
+	accessManaPledge := identity.ID{}
+	feeDestination := coretypes.NewAgentID(c.chain.ID().AsAddress(), 0)
+	ret := &batchProposal{
+		StateOutputID:       c.stateOutput.ID(),
+		RequestIDs:          make([]coretypes.RequestID, len(reqs)),
+		Timestamp:           ts,
+		ConsensusManaPledge: consensusManaPledge,
+		AccessManaPledge:    accessManaPledge,
+		FeeDestination:      feeDestination,
+	}
+	for i := range ret.RequestIDs {
+		ret.RequestIDs[i] = reqs[i].ID()
 	}
 	return ret
 }
 
-func countTrue(arr []bool) uint16 {
-	var ret uint16
-	for _, v := range arr {
-		if v {
-			ret++
-		}
-	}
-	return ret
+func (c *consensusImpl) sendProposalForACS(proposal *batchProposal) {
+	c.mockedACS.ProposeValue(proposal.Bytes(), c.stateOutput.ID().Bytes())
+	c.stage = stageConsensus
+	c.stageStarted = time.Now()
 }
 
-func intersect(arr1, arr2 []bool) []bool {
-	if len(arr1) != len(arr2) {
-		panic("len(arr1) != len(arr2)")
+func (c *consensusImpl) receiveACS(values [][]byte) {
+	if len(values) < int(c.committee.Quorum()) {
+		c.log.Errorf("receiveACS: ACS is shorter than equired quorum. Ignored")
+		return
 	}
-	ret := make([]bool, len(arr1))
-	for i := range ret {
-		ret[i] = arr1[i] && arr2[i]
+	acs := make([]*batchProposal, len(values))
+	for i, data := range values {
+		proposal, err := BatchProposalFromBytes(data)
+		if err != nil {
+			c.log.Errorf("receiveACS: wrong data received. Whole ACS ignored: %v", err)
+			return
+		}
+		acs[i] = proposal
 	}
-	return ret
+	for _, prop := range acs {
+		if prop.StateOutputID != c.stateOutput.ID() {
+			//
+			c.log.Warnf("receiveACS: ACS out of context or consensus failure")
+			return
+		}
+		if prop.ValidatorIndex >= c.committee.Size() {
+			c.log.Warnf("receiveACS: wrong validtor index in ACS")
+			return
+		}
+	}
+	inBatchSet := calcIntersection(acs, c.committee.Size(), c.committee.Quorum())
+	if len(inBatchSet) == 0 {
+		c.log.Warnf("receiveACS: intersecection is empty. Consensus failure")
+		return
+	}
+	medianTs, accessPledge, consensusPledge, feeDestination := calcBatchParameters(acs)
+	c.consensusBatch = &batchProposal{
+		ValidatorIndex:      c.committee.OwnPeerIndex(),
+		StateOutputID:       c.stateOutput.ID(),
+		RequestIDs:          inBatchSet,
+		Timestamp:           medianTs,
+		ConsensusManaPledge: consensusPledge,
+		AccessManaPledge:    accessPledge,
+		FeeDestination:      feeDestination,
+	}
+	c.stage = stageConsensusCompleted
+	c.stageStarted = time.Now()
+
+	c.runVMIfNeeded()
+}
+
+func (c *consensusImpl) processVMResult(result *vm.VMTask) {
+	c.log.Debugw("processVMResult")
+
+	essenceBytes := result.ResultTransactionEssence.Bytes()
+	essenceHash := hashing.HashData(essenceBytes)
+	sigShare, err := c.committee.DKShare().SignShare(essenceBytes)
+	if err != nil {
+		c.log.Panicf("processVMResult: error while signing transaction %v", err)
+	}
+	c.resultTxEssence = result.ResultTransactionEssence
+	c.resultState = result.VirtualState
+	c.resultSignatures[c.committee.OwnPeerIndex()] = &chain.SignedResultMsg{
+		SenderIndex: c.committee.OwnPeerIndex(),
+		EssenceHash: essenceHash,
+		SigShare:    sigShare,
+	}
+	msg := &chain.SignedResultMsg{
+		EssenceHash: essenceHash,
+		SigShare:    sigShare,
+	}
+	c.committee.SendMsgToPeers(chain.MsgSignedResult, util.MustBytes(msg), time.Now().UnixNano())
+
+	c.stage = stageWaitForSignatures
+	c.stageStarted = time.Now()
+
+	c.log.Debugf("processVMResult: signed and broadcasted: essence hash: %s", msg.EssenceHash.String())
+}
+
+func (c *consensusImpl) processSignedResult(msg *chain.SignedResultMsg) {
+	if c.resultSignatures[msg.SenderIndex] != nil {
+		if c.resultSignatures[msg.SenderIndex].EssenceHash != msg.EssenceHash ||
+			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare[:], msg.SigShare[:]) {
+			c.log.Errorf("conflicting signed result from peer #%d", msg.SenderIndex)
+		} else {
+			c.log.Errorf("duplicated signed result from peer #%d", msg.SenderIndex)
+		}
+		return
+	}
+	idx, err := msg.SigShare.Index()
+	if err != nil ||
+		uint16(idx) >= c.committee.Size() ||
+		uint16(idx) == c.committee.OwnPeerIndex() ||
+		uint16(idx) != msg.SenderIndex {
+		c.log.Errorf("wrong sig share from peer #%d", msg.SenderIndex)
+		return
+	}
+	c.resultSignatures[msg.SenderIndex] = msg
 }

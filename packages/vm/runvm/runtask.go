@@ -64,20 +64,20 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 		return
 	}
 
-	task.ResultTransaction, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
+	task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
 	if err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return
 	}
-	if err = checkTotalAssets(task.ResultTransaction, lastTotalAssets); err != nil {
+	if err = checkTotalAssets(task.ResultTransactionEssence, lastTotalAssets); err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.checkTotalAssets: %v", err))
 		return
 	}
 	task.Log.Debugw("runTask OUT",
 		"block index", task.VirtualState.BlockIndex(),
 		"variable state hash", task.VirtualState.Hash().Bytes(),
-		"tx essence hash", hashing.HashData(task.ResultTransaction.Bytes()).String(),
-		"tx finalTimestamp", task.ResultTransaction.Timestamp(),
+		"tx essence hash", hashing.HashData(task.ResultTransactionEssence.Bytes()).String(),
+		"tx finalTimestamp", task.ResultTransactionEssence.Timestamp(),
 	)
 	task.OnFinish(lastResult, lastErr, nil)
 }

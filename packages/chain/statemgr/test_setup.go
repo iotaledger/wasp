@@ -87,7 +87,7 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 
 	ret.ChainID = *coretypes.NewChainID(retOut.GetAliasAddress())
 
-	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction, _ ledgerstate.Address, _ uint16) {
+	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction) {
 		_, exists := ret.Ledger.GetTransaction(tx.ID())
 		if exists {
 			ret.Log.Debugf("posted repeating originTx: %s", tx.ID().Base58())
@@ -171,7 +171,7 @@ func (env *MockedEnv) NewMockedNode(netid string, allPeers []string) *MockedNode
 	ret.StateTransition.OnNextState(func(vstate state.VirtualState, tx *ledgerstate.Transaction) {
 		ret.Log.Debugf("MockedEnv.OnNextState: state index %d", vstate.BlockIndex())
 		go ret.StateManager.EventStateCandidateMsg(chain.StateCandidateMsg{State: vstate})
-		go env.NodeConn.PostTransaction(tx, ret.ChainCore.ID().AsAddress(), 0)
+		go env.NodeConn.PostTransaction(tx)
 	})
 	return ret
 }

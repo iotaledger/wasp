@@ -53,7 +53,7 @@ type Committee interface {
 	OwnPeerIndex() uint16
 	DKShare() *tcrypto.DKShare
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
-	SendMsgToPeers(msgType byte, msgData []byte, ts int64) uint16
+	SendMsgToPeers(msgType byte, msgData []byte, ts int64)
 	IsAlivePeer(peerIndex uint16) bool
 	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
@@ -73,7 +73,7 @@ type NodeConnection interface {
 	PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
-	PostTransaction(tx *ledgerstate.Transaction, fromSc ledgerstate.Address, fromLeader uint16)
+	PostTransaction(tx *ledgerstate.Transaction)
 }
 
 type StateManager interface {

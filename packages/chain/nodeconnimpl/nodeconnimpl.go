@@ -2,6 +2,7 @@ package nodeconnimpl
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 )
@@ -36,6 +37,6 @@ func (n *nodeConnImplementation) PullConfirmedOutput(addr ledgerstate.Address, o
 	n.client.RequestConfirmedOutput(addr, outputID)
 }
 
-func (n *nodeConnImplementation) PostTransaction(tx *ledgerstate.Transaction, from ledgerstate.Address, fromLeader uint16) {
-	n.client.PostTransaction(tx, from, fromLeader)
+func (n *nodeConnImplementation) PostTransaction(tx *ledgerstate.Transaction) {
+	n.client.PostTransaction(tx)
 }
