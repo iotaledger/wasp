@@ -1,4 +1,4 @@
-package mock_chain
+package testchain
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"

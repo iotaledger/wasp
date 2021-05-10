@@ -45,15 +45,15 @@ func NewCommittee(
 	// load committee record from the registry
 	cmtRec, err := committeeRegistry.GetCommitteeRecord(stateAddr)
 	if err != nil || cmtRec == nil {
-		return nil, xerrors.Errorf("NewCommittee: failed to lead committee record for address %s: %w", stateAddr, err)
+		return nil, xerrors.Errorf("NewCommittee: failed to lead committee record for address %s: %w", stateAddr.Base58(), err)
 	}
 	// load DKShare from the registry
 	dkshare, err := dksProvider.LoadDKShare(cmtRec.Address)
 	if err != nil {
-		return nil, xerrors.Errorf("NewCommittee: failed loading DKShare for address %s: %w", stateAddr, err)
+		return nil, xerrors.Errorf("NewCommittee: failed loading DKShare for address %s: %w", stateAddr.Base58(), err)
 	}
 	if dkshare.Index == nil {
-		return nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: %w", stateAddr, err)
+		return nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: %w", stateAddr.Base58(), err)
 	}
 	if err := checkValidatorNodeIDs(peerConfig, dkshare.N, *dkshare.Index, cmtRec.Nodes); err != nil {
 		return nil, xerrors.Errorf("NewCommittee: %w", err)

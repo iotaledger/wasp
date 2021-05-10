@@ -1,16 +1,16 @@
 package commoncoin_test
 
 import (
-	"fmt"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
-	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/require"
@@ -18,9 +18,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
 func TestBasic(t *testing.T) {
@@ -33,9 +31,9 @@ func TestBasic(t *testing.T) {
 	var threshold uint16 = 7
 	suite := pairing.NewSuiteBn256()
 	peeringID := peering.RandomPeeringID()
-	peerNetIDs, peerPubs, peerSecs := setupKeys(peerCount, suite)
-	address, nodeRegistries := setupDkg(t, threshold, peerNetIDs, peerPubs, peerSecs, suite, log)
-	networkProviders := setupNet(t, peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(), log)
+	peerNetIDs, peerPubs, peerSecs := testpeers.SetupKeys(peerCount, suite)
+	address, nodeRegistries := testpeers.SetupDkg(t, threshold, peerNetIDs, peerPubs, peerSecs, suite, log)
+	networkProviders := testpeers.SetupNet(peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(), log)
 	ccNodes := setupCommonCoinNodes(peeringID, address, peerNetIDs, nodeRegistries, networkProviders, log)
 	//
 	// Check, if the common coin algorithm works.
@@ -79,9 +77,9 @@ func TestUnreliableNet(t *testing.T) {
 		10*time.Millisecond, 1000*time.Millisecond, // Delays (from, till)
 		testlogger.WithLevel(log.Named("UnreliableNet"), logger.LevelDebug, false),
 	)
-	peerNetIDs, peerPubs, peerSecs := setupKeys(peerCount, suite)
-	address, nodeRegistries := setupDkg(t, threshold, peerNetIDs, peerPubs, peerSecs, suite, log)
-	networkProviders := setupNet(t, peerNetIDs, peerPubs, peerSecs, netBehavior, log)
+	peerNetIDs, peerPubs, peerSecs := testpeers.SetupKeys(peerCount, suite)
+	address, nodeRegistries := testpeers.SetupDkg(t, threshold, peerNetIDs, peerPubs, peerSecs, suite, log)
+	networkProviders := testpeers.SetupNet(peerNetIDs, peerPubs, peerSecs, netBehavior, log)
 	ccNodes := setupCommonCoinNodes(peeringID, address, peerNetIDs, nodeRegistries, networkProviders, log)
 	//
 	// Check, if the common coin algorithm works.
@@ -127,72 +125,4 @@ func setupCommonCoinNodes(
 		)
 	}
 	return ccNodes
-}
-
-func setupKeys(peerCount uint16, suite *pairing.SuiteBn256) ([]string, []kyber.Point, []kyber.Scalar) {
-	var peerNetIDs []string = make([]string, peerCount)
-	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
-	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
-	for i := range peerNetIDs {
-		peerPair := key.NewKeyPair(suite)
-		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
-		peerSecs[i] = peerPair.Private
-		peerPubs[i] = peerPair.Public
-	}
-	return peerNetIDs, peerPubs, peerSecs
-}
-
-// A helper for testcases.
-func setupDkg(
-	t *testing.T,
-	threshold uint16,
-	peerNetIDs []string,
-	peerPubs []kyber.Point,
-	peerSecs []kyber.Scalar,
-	suite *pairing.SuiteBn256,
-	log *logger.Logger,
-) (ledgerstate.Address, []coretypes.DKShareRegistryProvider) {
-	timeout := 100 * time.Second
-	networkProviders := setupNet(t, peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(), log)
-	//
-	// Initialize the DKG subsystem in each node.
-	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
-	var registries []coretypes.DKShareRegistryProvider = make([]coretypes.DKShareRegistryProvider, len(peerNetIDs))
-	for i := range peerNetIDs {
-		registries[i] = testutil.NewDkgRegistryProvider(suite)
-		dkgNodes[i] = dkg.NewNode(
-			peerSecs[i], peerPubs[i], suite, networkProviders[i], registries[i],
-			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelError, false),
-		)
-	}
-	//
-	// Initiate the key generation from some client node.
-	dkShare, err := dkgNodes[0].GenerateDistributedKey(
-		peerNetIDs,
-		peerPubs,
-		threshold,
-		1*time.Second,
-		2*time.Second,
-		timeout,
-	)
-	require.Nil(t, err)
-	require.NotNil(t, dkShare.Address)
-	require.NotNil(t, dkShare.SharedPublic)
-	return dkShare.Address, registries
-}
-
-// A helper for testcases.
-func setupNet(
-	t *testing.T,
-	peerNetIDs []string,
-	peerPubs []kyber.Point,
-	peerSecs []kyber.Scalar,
-	behavior testutil.PeeringNetBehavior,
-	log *logger.Logger,
-) []peering.NetworkProvider {
-	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
-		peerNetIDs, peerPubs, peerSecs, 10000, behavior,
-		testlogger.WithLevel(log, logger.LevelWarn, false),
-	)
-	return peeringNetwork.NetworkProviders()
 }

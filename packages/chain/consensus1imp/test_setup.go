@@ -6,6 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"go.dedis.ch/kyber/v3"
+
+	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -20,9 +24,9 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/chain/mock_chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
@@ -38,11 +42,15 @@ type MockedEnv struct {
 	Ledger            *utxodb.UtxoDB
 	OriginatorKeyPair *ed25519.KeyPair
 	OriginatorAddress ledgerstate.Address
+	StateAddress      ledgerstate.Address
+	PubKeys           []kyber.Point
+	PrivKeys          []kyber.Scalar
+	DKSRegistries     []coretypes.DKShareRegistryProvider
 	DB                *dbprovider.DBProvider
 	SolidState        state.VirtualState
 	StateReader       state.StateReader
 	StateOutput       *ledgerstate.AliasOutput
-	NodeConn          *mock_chain.MockedNodeConn
+	NodeConn          *testchain.MockedNodeConn
 	ChainID           coretypes.ChainID
 	mutex             sync.Mutex
 	Nodes             []*MockedNode
@@ -52,7 +60,7 @@ type MockedEnv struct {
 type MockedNode struct {
 	OwnIndex  uint16
 	Env       *MockedEnv
-	ChainCore *mock_chain.MockedChainCore
+	ChainCore *testchain.MockedChainCore
 	Mempool   chain.Mempool
 	Consensus *consensusImpl
 	Log       *logger.Logger
@@ -83,9 +91,13 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledg
 		Neighbors: neighbors,
 		Log:       log,
 		Ledger:    utxodb.New(),
-		NodeConn:  mock_chain.NewMockedNodeConnection(),
+		NodeConn:  testchain.NewMockedNodeConnection(),
 		Nodes:     make([]*MockedNode, n),
 	}
+
+	_, ret.PubKeys, ret.PrivKeys = testpeers.SetupKeys(n, ret.Suite)
+	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkg(t, quorum, neighbors, ret.PubKeys, ret.PrivKeys, ret.Suite, log.Named("dkg"))
+
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)
 	require.NoError(t, err)
@@ -95,7 +107,7 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledg
 
 	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
 	txBuilder := utxoutil.NewBuilder(outputs...)
-	err = txBuilder.AddNewAliasMint(bals, ret.OriginatorAddress, state.OriginStateHash().Bytes())
+	err = txBuilder.AddNewAliasMint(bals, ret.StateAddress, state.OriginStateHash().Bytes())
 	require.NoError(t, err)
 	err = txBuilder.AddRemainderOutputIfNeeded(ret.OriginatorAddress, nil)
 	require.NoError(t, err)
@@ -140,15 +152,19 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledg
 
 func (env *MockedEnv) newNode(i uint16) *MockedNode {
 	log := env.Log.Named(fmt.Sprintf("%d", i))
-	chainCore := mock_chain.NewMockedChainCore(env.ChainID, log)
+	chainCore := testchain.NewMockedChainCore(env.ChainID, log)
 	mpool := mempool.New(env.StateReader, coretypes.NewInMemoryBlobCache(), log)
-	mockRegistry := mock_chain.NewMockedRegistry(env.N, env.Quorum, i, env.Neighbors)
+	mockCommitteeRegistry := testchain.NewMockedCommitteeRegistry(env.Neighbors)
 	cfg, err := peering.NewStaticPeerNetworkConfigProvider(env.Neighbors[i], 4000+int(i), env.Neighbors...)
 	require.NoError(env.T, err)
-	netObj, err := udp.NewNetworkProvider(cfg, key.NewKeyPair(env.Suite), env.Suite, log)
+	keyPair := &key.Pair{
+		Public:  env.PubKeys[i],
+		Private: env.PrivKeys[i],
+	}
+	netObj, err := udp.NewNetworkProvider(cfg, keyPair, env.Suite, log)
 	require.NoError(env.T, err)
 
-	committee, err := committeeimpl.NewCommittee(env.OriginatorAddress, netObj, cfg, mockRegistry, mockRegistry, log)
+	committee, err := committeeimpl.NewCommittee(env.StateAddress, netObj, cfg, env.DKSRegistries[i], mockCommitteeRegistry, log)
 	require.NoError(env.T, err)
 
 	ret := &MockedNode{
@@ -156,7 +172,7 @@ func (env *MockedEnv) newNode(i uint16) *MockedNode {
 		Env:       env,
 		ChainCore: chainCore,
 		Mempool:   mpool,
-		Consensus: New(chainCore, mpool, committee, mock_chain.NewMockedNodeConnection(), log),
+		Consensus: New(chainCore, mpool, committee, testchain.NewMockedNodeConnection(), log),
 		Log:       log,
 	}
 	return ret

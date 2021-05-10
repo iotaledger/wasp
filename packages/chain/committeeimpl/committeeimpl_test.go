@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/chain/mock_chain"
+	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/testutil/testchain"
+
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/udp"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -22,15 +22,16 @@ func TestCommitteeBasic(t *testing.T) {
 	defer log.Sync()
 	netIDs := []string{"localhost:9017", "localhost:9018", "localhost:9019", "localhost:9020"}
 
-	reg := mock_chain.NewMockedRegistry(4, 3, 0, netIDs)
+	_, pubKeys, privKeys := testpeers.SetupKeys(uint16(len(netIDs)), suite)
+	stateAddr, dksRegistries := testpeers.SetupDkg(t, uint16((len(netIDs)*2)/3+1), netIDs, pubKeys, privKeys, suite, log.Named("dkg"))
+
+	reg := testchain.NewMockedCommitteeRegistry(netIDs)
 	cfg0, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[0], 9017, netIDs...)
 	require.NoError(t, err)
 	net0, err := udp.NewNetworkProvider(cfg0, key.NewKeyPair(suite), suite, log.Named("net0"))
 	require.NoError(t, err)
 
-	keyPair := ed25519.GenerateKeyPair()
-	stateAddr := ledgerstate.NewED25519Address(keyPair.PublicKey)
-	c, err := NewCommittee(stateAddr, net0, cfg0, reg, reg, log)
+	c, err := NewCommittee(stateAddr, net0, cfg0, dksRegistries[0], reg, log)
 	require.NoError(t, err)
 	require.True(t, c.Address().Equals(stateAddr))
 	require.EqualValues(t, 4, c.Size())
