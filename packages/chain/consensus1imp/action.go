@@ -5,6 +5,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/transaction"
+
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -25,6 +27,7 @@ func (c *consensusImpl) takeAction() {
 	c.startConsensusIfNeeded()
 	c.runVMIfNeeded()
 	c.checkQuorum()
+	c.postTransactionIfNeeded()
 }
 
 func (c *consensusImpl) startConsensusIfNeeded() {
@@ -91,6 +94,8 @@ func (c *consensusImpl) runVMIfNeeded() {
 	runvm.MustRunVMTaskAsync(task)
 }
 
+const postSeqStepSeconds = 1
+
 func (c *consensusImpl) checkQuorum() {
 	if c.resultSignatures[c.committee.OwnPeerIndex()] == nil {
 		// only can aggregate signatures if own result is calculated
@@ -118,25 +123,53 @@ func (c *consensusImpl) checkQuorum() {
 			sigSharesToAggregate = append(sigSharesToAggregate, sig.SigShare)
 		}
 	}
-	tx, err := c.finalizeTransaction(sigSharesToAggregate)
+	tx, approvingOutID, err := c.finalizeTransaction(sigSharesToAggregate)
 	if err != nil {
 		c.log.Errorf("checkQuorum: %v", err)
 		return
 	}
 
-	// TODO more intelligent posting
+	c.finalTx = tx
+	c.approvingOutputID = approvingOutID
 
-	go c.chain.ReceiveMessage(&chain.StateCandidateMsg{State: c.resultState})
-	c.nodeConn.PostTransaction(tx)
-	c.stage = stageWaitNextState
+	go c.chain.ReceiveMessage(&chain.StateCandidateMsg{
+		State:             c.resultState,
+		ApprovingOutputID: approvingOutID,
+	})
+
+	c.stage = stageTransactionFinalized
 	c.stageStarted = time.Now()
-	c.log.Infof("POSTED TRANSACTION: %s", tx.ID().Base58())
+
+	// TODO permute only those which contributed to ACS
+	permutation := util.NewPermutation16(c.committee.Size(), tx.ID().Bytes())
+	postSeqNumber := permutation.GetArray()[c.committee.OwnPeerIndex()]
+	c.postTxDeadline = c.stageStarted.Add(time.Duration(postSeqNumber*postSeqStepSeconds) * time.Second)
 }
 
-func (c *consensusImpl) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, error) {
+func (c *consensusImpl) postTransactionIfNeeded() {
+	if c.stage != stageTransactionFinalized {
+		return
+	}
+	if time.Now().Before(c.postTxDeadline) {
+		return
+	}
+	c.nodeConn.PostTransaction(c.finalTx)
+
+	c.committee.SendMsgToPeers(chain.MsgNotifyFinalResultPosted, util.MustBytes(&chain.NotifyFinalResultPostedMsg{
+		StateOutputID: c.approvingOutputID,
+		TxId:          c.finalTx.ID(),
+	}), time.Now().UnixNano())
+
+	c.stage = stageWaitNextState
+	c.stageStarted = time.Now()
+	c.log.Infof("POSTED TRANSACTION: %s", c.finalTx.ID().Base58())
+
+}
+
+func (c *consensusImpl) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, ledgerstate.OutputID, error) {
 	signatureWithPK, err := c.committee.DKShare().RecoverFullSignature(sigSharesToAggregate, c.resultTxEssence.Bytes())
 	if err != nil {
-		return nil, xerrors.Errorf("finalizeTransaction: %w", err)
+		return nil, ledgerstate.OutputID{}, xerrors.Errorf("finalizeTransaction: %w", err)
 	}
 	sigUnlockBlock := ledgerstate.NewSignatureUnlockBlock(ledgerstate.NewBLSSignature(*signatureWithPK))
 	chainInput := ledgerstate.NewUTXOInput(c.stateOutput.ID())
@@ -159,7 +192,9 @@ func (c *consensusImpl) finalizeTransaction(sigSharesToAggregate [][]byte) (*led
 			blocks[i] = ledgerstate.NewAliasUnlockBlock(uint16(indexChainInput))
 		}
 	}
-	return ledgerstate.NewTransaction(c.resultTxEssence, blocks), nil
+	tx := ledgerstate.NewTransaction(c.resultTxEssence, blocks)
+	approvingOutputID := transaction.GetAliasOutput(tx, c.chain.ID().AsAddress()).ID()
+	return tx, approvingOutputID, nil
 }
 
 func (c *consensusImpl) setNewState(msg *chain.StateTransitionMsg) {
@@ -171,6 +206,7 @@ func (c *consensusImpl) setNewState(msg *chain.StateTransitionMsg) {
 	}
 	c.resultState = nil
 	c.resultTxEssence = nil
+	c.finalTx = nil
 
 	c.stage = stageStateReceived
 	c.stageStarted = time.Now()

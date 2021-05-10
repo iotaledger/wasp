@@ -28,10 +28,14 @@ type consensusImpl struct {
 	resultTxEssence            *ledgerstate.TransactionEssence
 	resultState                state.VirtualState
 	resultSignatures           []*chain.SignedResultMsg
+	finalTx                    *ledgerstate.Transaction
+	approvingOutputID          ledgerstate.OutputID
+	postTxDeadline             time.Time
 	log                        *logger.Logger
 	eventStateTransitionMsgCh  chan *chain.StateTransitionMsg
 	eventResultCalculatedMsgCh chan *chain.VMResultMsg
 	eventSignedResultMsgCh     chan *chain.SignedResultMsg
+	eventNotifyTxPostedMsgCh   chan *chain.NotifyFinalResultPostedMsg
 	eventTimerMsgCh            chan chain.TimerTick
 	closeCh                    chan struct{}
 	mockedACS                  *testchain.MockedAsynchronousCommonSubset
@@ -44,6 +48,8 @@ const (
 	stageConsensusCompleted
 	stageVM
 	stageWaitForSignatures
+	stageTransactionFinalized
+	stageTransactionPosted
 	stageWaitNextState
 )
 

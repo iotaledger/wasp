@@ -108,7 +108,8 @@ type StateTransitionMsg struct {
 
 // StateCandidateMsg Consensus -> StateManager. Consensus sends the finalized next state to StateManager
 type StateCandidateMsg struct {
-	State state.VirtualState
+	State             state.VirtualState
+	ApprovingOutputID ledgerstate.OutputID
 }
 
 // VMResultMsg Consensus -> Consensus. VM sends result of async task started by Consensus to itself
