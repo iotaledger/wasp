@@ -43,7 +43,7 @@ func (sm *stateManager) EventBlockMsg(msg *chain.BlockMsg) {
 	sm.eventBlockMsgCh <- msg
 }
 func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
-	sm.log.Debugw("EventBlockMsg received from %v", msg.SenderNetID)
+	sm.log.Debugf("EventBlockMsg received from %v", msg.SenderNetID)
 	if sm.stateOutput == nil {
 		sm.log.Debugf("EventBlockMsg ignored: stateOutput is nil")
 		return

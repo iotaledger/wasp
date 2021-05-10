@@ -150,16 +150,9 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	from := blocks[0].BlockIndex()
 	to := blocks[len(blocks)-1].BlockIndex()
 	sm.log.Debugf("commitCandidates: syncing of state indexes from %v to %v is stopped", from, to)
-	// TODO: very strange... You cannot commit blocks i+1, i+2, i+3,... on top of state i.
-	//       You need to apply block i+1 on top of state i to receive state i+1.
-	//       Only then you can commit blocks i+1, i+2, i+3,...
-	//       In fact, you can commit blocks i+1, i+2, i+3,... on top of state i,
-	//       but in such case a corrupted DB is received: block i+1 is commited as i+2
-	//       and probably the same happens for other blocks...
-	sm.solidState.ApplyBlock(blocks[0])
 	//TODO: maybe commit in 10 (or some const) block batches?
 	//      This would save from large commits and huge memory usage to store blocks
-	err := sm.solidState.Commit(blocks...)
+	err := tentativeState.Commit(blocks...)
 	if err != nil {
 		sm.log.Errorf("commitCandidates: failed to commit synced changes into DB. Restart syncing")
 		sm.syncingBlocks.restartSyncing()
