@@ -88,13 +88,14 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 	ret.ChainID = *coretypes.NewChainID(retOut.GetAliasAddress())
 
 	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction, _ ledgerstate.Address, _ uint16) {
+		ret.Log.Debugf("MockedEnv.onPostTransaction: transaction %v posted", tx.ID().Base58())
 		_, exists := ret.Ledger.GetTransaction(tx.ID())
 		if exists {
-			ret.Log.Debugf("posted repeating originTx: %s", tx.ID().Base58())
+			ret.Log.Debugf("MockedEnv.onPostTransaction: posted repeating originTx: %s", tx.ID().Base58())
 			return
 		}
 		if err := ret.Ledger.AddTransaction(tx); err != nil {
-			ret.Log.Error(err)
+			ret.Log.Errorf("MockedEnv.onPostTransaction: error adding transaction: %v", err)
 			return
 		}
 		// Push transaction to nodes
@@ -105,7 +106,7 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 	var pullStateOutputCounter uint64 = 0
 	pullStateOutputClosure := func(addr *ledgerstate.AliasAddress) {
 		requestID := atomic.AddUint64(&pullStateOutputCounter, 1)
-		log.Infof("MockedNodeConn.OnPullBacklog request %d received for address %v", requestID, addr.Base58)
+		log.Debugf("MockedNodeConn.onPullState request %d received for address %v", requestID, addr.Base58)
 		outputs := ret.Ledger.GetAddressOutputs(addr)
 		require.EqualValues(t, 1, len(outputs))
 		outTx, ok := ret.Ledger.GetTransaction(outputs[0].ID().TransactionID())
@@ -119,7 +120,7 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 		// TODO: avoid broadcast
 		for _, node := range ret.Nodes {
 			go func(manager chain.StateManager, log *logger.Logger) {
-				log.Infof("MockedNodeConn.OnPullBacklog request %d: call EventStateMsg: chain output %s", requestID, coretypes.OID(stateOutput.ID()))
+				log.Debugf("MockedNodeConn.onPullState request %d: call EventStateMsg: chain output %s", requestID, coretypes.OID(stateOutput.ID()))
 				manager.EventStateMsg(&chain.StateMsg{
 					ChainOutput: stateOutput,
 					Timestamp:   outTx.Essence().Timestamp(),
@@ -169,7 +170,7 @@ func (env *MockedEnv) NewMockedNode(netid string, allPeers []string) *MockedNode
 	ret.StateManager = New(ret.Db, ret.ChainCore, ret.Peers, env.NodeConn, log, Timers{}.SetPullStateRetry(10*time.Millisecond).SetPullStateNewBlockDelay(50*time.Millisecond))
 	ret.StateTransition = mock_chain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualState, tx *ledgerstate.Transaction) {
-		ret.Log.Debugf("MockedEnv.OnNextState: state index %d", vstate.BlockIndex())
+		ret.Log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
 		go ret.StateManager.EventStateCandidateMsg(chain.StateCandidateMsg{State: vstate})
 		go env.NodeConn.PostTransaction(tx, ret.ChainCore.ID().AsAddress(), 0)
 	})
@@ -222,7 +223,7 @@ func (env *MockedEnv) RemoveNode(netID string) {
 // SetupPeerGroupSimple sets up simple communication between nodes
 func (nT *MockedNode) SetupPeerGroupSimple() {
 	nT.Peers.OnSend(func(target string, msg *peering.PeerMessage) {
-		nT.Log.Infof("MockedPeerGroup:OnSendMsg to peer %s", target)
+		nT.Log.Debugf("MockedPeerGroup:OnSendMsg to peer %s", target)
 		node, ok := nT.Env.Nodes[target]
 		if !ok {
 			nT.Env.Log.Warnf("node %s: wrong target netID %s", nT.NetID, target)

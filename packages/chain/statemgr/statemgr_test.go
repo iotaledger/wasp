@@ -181,7 +181,7 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 		}
 	})
 	env.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
-		env.Log.Infof("MockedNodeConn.PullConfirmedOutput %v", coretypes.OID(outputID))
+		env.Log.Debugf("MockedNodeConn.onPullConfirmedOutput %v", coretypes.OID(outputID))
 		env.mutex.Lock()
 		defer env.mutex.Unlock()
 		tx, foundTx := env.Ledger.GetTransaction(outputID.TransactionID())
@@ -194,7 +194,7 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 		//TODO: avoid broadcast
 		for _, node := range env.Nodes {
 			go func(manager chain.StateManager, log *logger.Logger) {
-				log.Infof("MockedNodeConn.PullConfirmedOutput: call EventOutputMsg")
+				log.Debugf("MockedNodeConn.onPullConfirmedOutput: call EventOutputMsg")
 				manager.EventOutputMsg(output)
 			}(node.StateManager, node.Log)
 		}

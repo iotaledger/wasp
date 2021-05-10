@@ -128,7 +128,7 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 	}
 	candidate = newCandidateBlock(block, nextState)
 	sync.blockCandidates[hash] = candidate
-	syncsT.log.Infof("addBlockCandidate: new block candidate created for block index: %d, hash: %s", stateIndex, hash.String())
+	syncsT.log.Debugf("addBlockCandidate: new block candidate created for block index: %d, hash: %s", stateIndex, hash.String())
 	return true, candidate
 }
 

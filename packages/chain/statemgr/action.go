@@ -37,8 +37,8 @@ func (sm *stateManager) notifyStateTransitionIfNeeded() {
 	sm.notifiedSyncedStateHash = sm.solidState.Hash()
 	stateOutputID := sm.stateOutput.ID()
 	stateOutputIndex := sm.stateOutput.GetStateIndex()
-	sm.log.Debugf("notifyStateTransition: notifying about state %v approved by output %v index %v",
-		sm.notifiedSyncedStateHash.String(), coretypes.OID(stateOutputID), stateOutputIndex)
+	sm.log.Infof("notifyStateTransition: state %v IS SYNCED to index %v and is approved by output %v",
+		sm.notifiedSyncedStateHash.String(), stateOutputIndex, coretypes.OID(stateOutputID))
 	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
 		VirtualState:    sm.solidState.Clone(),
 		ChainOutput:     sm.stateOutput,
