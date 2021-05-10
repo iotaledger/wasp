@@ -18,9 +18,9 @@ func (sm *stateManager) takeAction() {
 		sm.log.Debugf("takeAction skipped: state manager is not ready")
 		return
 	}
-	sm.notifyStateTransitionIfNeeded()
 	sm.pullStateIfNeeded()
 	sm.doSyncActionIfNeeded()
+	sm.notifyStateTransitionIfNeeded()
 	sm.storeSyncingData()
 }
 
@@ -63,7 +63,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 			sm.nodeConn.PullState(chainAliasAddress)
 			sm.pullStateRetryTime = nowis.Add(sm.timers.getPullStateRetry())
 		} else {
-			sm.log.Debugf("pullState not needed: retry time is %v", sm.pullStateRetryTime)
+			sm.log.Debugf("pullState not needed: no block candidates")
 		}
 	} else {
 		sm.log.Debugf("pullState not needed: retry time is %v", sm.pullStateRetryTime)

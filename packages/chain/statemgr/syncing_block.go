@@ -14,8 +14,9 @@ import (
 )
 
 type syncingBlocks struct {
-	blocks map[uint32]*syncingBlock
-	log    *logger.Logger
+	blocks            map[uint32]*syncingBlock
+	log               *logger.Logger
+	initialBlockRetry time.Duration
 }
 
 type syncingBlock struct {
@@ -23,10 +24,11 @@ type syncingBlock struct {
 	blockCandidates       map[hashing.HashValue]*candidateBlock
 }
 
-func newSyncingBlocks(log *logger.Logger) *syncingBlocks {
+func newSyncingBlocks(log *logger.Logger, initialBlockRetry time.Duration) *syncingBlocks {
 	return &syncingBlocks{
-		blocks: make(map[uint32]*syncingBlock),
-		log:    log,
+		blocks:            make(map[uint32]*syncingBlock),
+		log:               log,
+		initialBlockRetry: initialBlockRetry,
 	}
 }
 
@@ -155,7 +157,7 @@ func (syncsT *syncingBlocks) startSyncingIfNeeded(stateIndex uint32) {
 	if !syncsT.isSyncing(stateIndex) {
 		syncsT.log.Debugf("Starting syncing state index %v", stateIndex)
 		syncsT.blocks[stateIndex] = &syncingBlock{
-			requestBlockRetryTime: time.Now(),
+			requestBlockRetryTime: time.Now().Add(syncsT.initialBlockRetry),
 			blockCandidates:       make(map[hashing.HashValue]*candidateBlock),
 		}
 	}
