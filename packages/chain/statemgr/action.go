@@ -105,7 +105,7 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) {
 	if sm.addBlockAndCheckStateOutput(block, nil) {
 		// ask for approving output
 		chainAddress := sm.chain.ID().AsAddress()
-		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v for chain %v", block.ApprovingOutputID(), chainAddress.String())
+		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v for chain %v", coretypes.OID(block.ApprovingOutputID()), chainAddress.Base58())
 		sm.nodeConn.PullConfirmedOutput(chainAddress, block.ApprovingOutputID())
 	}
 }

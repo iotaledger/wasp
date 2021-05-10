@@ -76,11 +76,12 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			data := util.MustBytes(&chain.GetBlockMsg{
 				BlockIndex: i,
 			})
-			// send messages until first without error
 			sm.peers.SendMsgToRandomPeersSimple(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
 			sm.syncingBlocks.startSyncingIfNeeded(i)
 			sm.syncingBlocks.setRequestBlockRetryTime(i, nowis.Add(sm.timers.getGetBlockRetry()))
-			return
+			if blockCandidatesCount == 0 {
+				return
+			}
 		}
 		if approvedBlockCandidatesCount > 0 {
 			sm.log.Debugf("doSyncAction: trying to find candidates to commit from index %v to %v", startSyncFromIndex, i)
@@ -131,7 +132,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 		return stateCandidateBlocks[i].getVotes() > stateCandidateBlocks[j].getVotes()
 	})
 	for i, stateCandidateBlock := range stateCandidateBlocks {
-		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i, len(stateCandidateBlocks))
+		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i+1, len(stateCandidateBlocks))
 		resultBlocks, tentativeState, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex)
 		if ok {
 			return resultBlocks, tentativeState, true

@@ -157,7 +157,7 @@ func (env *MockedEnv) pushStateToNodesIfSet(tx *ledgerstate.Transaction) {
 	}
 }
 
-func (env *MockedEnv) NewMockedNode(netid string, allPeers []string) *MockedNode {
+func (env *MockedEnv) NewMockedNode(netid string, allPeers []string, timers Timers) *MockedNode {
 	log := env.Log.Named(netid)
 	ret := &MockedNode{
 		NetID:     netid,
@@ -167,7 +167,7 @@ func (env *MockedEnv) NewMockedNode(netid string, allPeers []string) *MockedNode
 		Peers:     mock_chain.NewMockedPeerDomain(netid, allPeers, log),
 		Log:       log,
 	}
-	ret.StateManager = New(ret.Db, ret.ChainCore, ret.Peers, env.NodeConn, log, Timers{}.SetPullStateRetry(10*time.Millisecond).SetPullStateNewBlockDelay(50*time.Millisecond))
+	ret.StateManager = New(ret.Db, ret.ChainCore, ret.Peers, env.NodeConn, log, timers)
 	ret.StateTransition = mock_chain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualState, tx *ledgerstate.Transaction) {
 		ret.Log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())

@@ -50,9 +50,10 @@ func (m *MockedPeerDomainProvider) SendMsgToRandomPeers(upToNumPeers uint16, msg
 
 func (m *MockedPeerDomainProvider) SendSimple(netID string, msgType byte, msgData []byte) {
 	m.SendMsgByNetID(netID, &peering.PeerMessage{
-		Timestamp: time.Now().UnixNano(),
-		MsgType:   msgType,
-		MsgData:   msgData,
+		SenderNetID: m.ownNetID,
+		Timestamp:   time.Now().UnixNano(),
+		MsgType:     msgType,
+		MsgData:     msgData,
 	})
 }
 

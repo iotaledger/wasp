@@ -17,7 +17,7 @@ import (
 //Tests if state manager is started and initialised correctly
 func TestEnv(t *testing.T) {
 	env, _ := NewMockedEnv(t, false)
-	node0 := env.NewMockedNode("node0", nil)
+	node0 := env.NewMockedNode("node0", nil, Timers{})
 	node0.SetupPeerGroupSimple()
 	node0.StateManager.Ready().MustWait()
 
@@ -35,7 +35,7 @@ func TestEnv(t *testing.T) {
 		env.AddNode(node0)
 	})
 
-	node1 := env.NewMockedNode("node1", nil)
+	node1 := env.NewMockedNode("node1", nil, Timers{})
 	node1.SetupPeerGroupSimple()
 	require.NotPanics(t, func() {
 		env.AddNode(node1)
@@ -60,7 +60,7 @@ func TestEnv(t *testing.T) {
 
 func TestGetInitialState(t *testing.T) {
 	env, originTx := NewMockedEnv(t, false)
-	node := env.NewMockedNode("node0", nil)
+	node := env.NewMockedNode("node0", nil, Timers{})
 	node.StateManager.Ready().MustWait()
 	require.NotNil(t, node.StateManager.(*stateManager).solidState)
 	require.False(t, node.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
@@ -86,7 +86,7 @@ func TestGetInitialState(t *testing.T) {
 
 func TestGetNextState(t *testing.T) {
 	env, originTx := NewMockedEnv(t, false)
-	node := env.NewMockedNode("node0", nil)
+	node := env.NewMockedNode("node0", nil, Timers{}.SetPullStateNewBlockDelay(50*time.Millisecond))
 	node.StateManager.Ready().MustWait()
 	require.NotNil(t, node.StateManager.(*stateManager).solidState)
 	require.False(t, node.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
@@ -140,7 +140,12 @@ func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
 	env, _ := NewMockedEnv(t, false)
 	env.SetPushStateToNodesOption(pushStateToNodes)
 
-	node := env.NewMockedNode("node0", nil)
+	timers := Timers{}
+	if !pushStateToNodes {
+		timers = timers.SetPullStateNewBlockDelay(50 * time.Millisecond)
+	}
+
+	node := env.NewMockedNode("node0", nil, timers)
 	node.StateManager.Ready().MustWait()
 	node.StartTimer()
 
@@ -161,12 +166,12 @@ func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
 // optionally, mocked node connection pushes new transactions to state managers or not.
 // If not, state manager has to retrieve it with pull
 func TestManyStateTransitionsSeveralNodes(t *testing.T) {
-	env, _ := NewMockedEnv(t, false)
+	env, _ := NewMockedEnv(t, true)
 	env.SetPushStateToNodesOption(true)
 
 	allPeers := []string{"node0", "node1"}
 
-	node := env.NewMockedNode("node0", allPeers)
+	node := env.NewMockedNode("node0", allPeers, Timers{})
 	node.SetupPeerGroupSimple()
 	node.StateManager.Ready().MustWait()
 	node.StartTimer()
@@ -203,7 +208,7 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, si.Synced)
 
-	node1 := env.NewMockedNode("node1", allPeers)
+	node1 := env.NewMockedNode("node1", allPeers, Timers{})
 	node1.SetupPeerGroupSimple()
 	node1.StateManager.Ready().MustWait()
 	node1.StartTimer()

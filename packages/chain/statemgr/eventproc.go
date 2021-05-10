@@ -26,6 +26,10 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 		return
 	}
 	blockBytes, err := state.LoadBlockBytes(sm.dbp, sm.chain.ID(), msg.BlockIndex)
+	if blockBytes == nil {
+		sm.log.Debugf("EventGetBlockMsg ignored: block not found")
+		return
+	}
 	if err != nil {
 		sm.log.Debugf("EventGetBlockMsg ignored: LoadBlockBytes error %v", err)
 		return
