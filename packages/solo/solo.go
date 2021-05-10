@@ -358,7 +358,7 @@ func (ch *Chain) collateBatch() []coretypes.Request {
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
 	ret := make([]coretypes.Request, 0)
-	ready := ch.mempool.GetReadyList(0)
+	ready := ch.mempool.GetReadyList()
 	batchSize := len(ready)
 	if batchSize > maxBatch {
 		batchSize = maxBatch

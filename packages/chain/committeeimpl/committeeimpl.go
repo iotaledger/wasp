@@ -38,20 +38,22 @@ func NewCommittee(
 	peerConfig coretypes.PeerNetworkConfigProvider,
 	dksProvider coretypes.DKShareRegistryProvider,
 	committeeRegistry coretypes.CommitteeRegistryProvider,
-	log *logger.Logger) (chain.Committee, error) {
+	log *logger.Logger,
+	waitReady ...bool,
+) (chain.Committee, error) {
 
 	// load committee record from the registry
 	cmtRec, err := committeeRegistry.GetCommitteeRecord(stateAddr)
 	if err != nil || cmtRec == nil {
-		return nil, xerrors.Errorf("NewCommittee: failed to lead committee record for address %s: %w", stateAddr, err)
+		return nil, xerrors.Errorf("NewCommittee: failed to lead committee record for address %s: %w", stateAddr.Base58(), err)
 	}
 	// load DKShare from the registry
 	dkshare, err := dksProvider.LoadDKShare(cmtRec.Address)
 	if err != nil {
-		return nil, xerrors.Errorf("NewCommittee: failed loading DKShare for address %s: %w", stateAddr, err)
+		return nil, xerrors.Errorf("NewCommittee: failed loading DKShare for address %s: %w", stateAddr.Base58(), err)
 	}
 	if dkshare.Index == nil {
-		return nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: %w", stateAddr, err)
+		return nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: %w", stateAddr.Base58(), err)
 	}
 	if err := checkValidatorNodeIDs(peerConfig, dkshare.N, *dkshare.Index, cmtRec.Nodes); err != nil {
 		return nil, xerrors.Errorf("NewCommittee: %w", err)
@@ -73,7 +75,11 @@ func NewCommittee(
 		dkshare:        dkshare,
 		log:            log,
 	}
-	go ret.waitReady()
+	waitReadyValue := false
+	if len(waitReady) > 0 {
+		waitReadyValue = waitReady[0]
+	}
+	go ret.waitReady(waitReadyValue)
 
 	return ret, nil
 }
@@ -192,10 +198,12 @@ func (c *committeeObj) Close() {
 	c.validatorNodes.Close()
 }
 
-func (c *committeeObj) waitReady() {
-	c.log.Infof("wait for at least quorum of comittee validatorNodes (%d) to connect before activating the committee", c.Quorum())
-	for !c.QuorumIsAlive() {
-		time.Sleep(500 * time.Millisecond)
+func (c *committeeObj) waitReady(waitReady bool) {
+	if waitReady {
+		c.log.Infof("wait for at least quorum of comittee validatorNodes (%d) to connect before activating the committee", c.Quorum())
+		for !c.QuorumIsAlive() {
+			time.Sleep(100 * time.Millisecond)
+		}
 	}
 	c.log.Infof("committee is ready for addr %s", c.dkshare.Address.Base58())
 	c.log.Debugf("peer status: %s", c.PeerStatus())

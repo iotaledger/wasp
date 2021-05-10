@@ -301,9 +301,9 @@ func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 
 	// send to consensus
 	c.ReceiveMessage(&chain.StateTransitionMsg{
-		VariableState: msg.VirtualState,
-		ChainOutput:   msg.ChainOutput,
-		Timestamp:     msg.OutputTimestamp,
+		State:          msg.VirtualState,
+		StateOutput:    msg.ChainOutput,
+		StateTimestamp: msg.OutputTimestamp,
 	})
 }
 

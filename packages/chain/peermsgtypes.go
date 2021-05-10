@@ -92,11 +92,11 @@ type DismissChainMsg struct {
 // StateTransitionMsg StateManager -> Consensus. Notifies consensus about changed state
 type StateTransitionMsg struct {
 	// new variable state
-	VariableState state.VirtualState
+	State state.VirtualState
 	// corresponding state transaction
-	ChainOutput *ledgerstate.AliasOutput
+	StateOutput *ledgerstate.AliasOutput
 	//
-	Timestamp time.Time
+	StateTimestamp time.Time
 }
 
 // StateCandidateMsg Consensus -> StateManager. Consensus sends the finalized next state to StateManager
