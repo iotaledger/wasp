@@ -19,4 +19,9 @@ var (
 	//go:embed erc20.bytecode.hex
 	erc20ContractBytecodeHex string
 	ERC20ContractBytecode    = common.FromHex(strings.TrimSpace(erc20ContractBytecodeHex))
+
+	//deployed bytecode and runtime bytecode are different, see: https://ethereum.stackexchange.com/questions/13086/whats-the-difference-between-solcs-bin-bytecode-versus-bin-runtime
+	//go:embed erc20.bytecode-runtime.hex
+	ERC20ContractRuntimeBytecodeHex string
+	ERC20ContractRuntimeBytecode    = common.FromHex(strings.TrimSpace(ERC20ContractRuntimeBytecodeHex))
 )
