@@ -2,6 +2,7 @@ package consensus1imp
 
 import (
 	"fmt"
+	"math/rand"
 	"sync"
 	"testing"
 	"time"
@@ -178,7 +179,10 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 		Consensus: New(chainCore, mpool, committee, testchain.NewMockedNodeConnection(), log),
 		Log:       log,
 	}
+
 	ret.Consensus.mockedACS = env.MockedACS
+	ret.Consensus.vmRunner = testchain.NewMockedVMRunner(env.T)
+
 	chainCore.OnReceiveMessage(func(msg interface{}) {
 		switch msg := msg.(type) {
 		case *chain.AsynchronousCommonSubsetMsg:
@@ -256,10 +260,13 @@ func (env *mockedEnv) eventStateTransition() {
 	}
 }
 
-func (env *mockedEnv) postDummyRequest() {
+func (env *mockedEnv) postDummyRequest(randomize ...bool) {
 	req := solo.NewCallParams("dummy", "dummy").
 		NewRequestOffLedger(env.OriginatorKeyPair)
 	for _, n := range env.Nodes {
+		if len(randomize) > 0 && randomize[0] {
+			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+		}
 		go n.Mempool.ReceiveRequest(req)
 	}
 }

@@ -24,7 +24,7 @@ func calcBatchParameters(opt []*batchProposal) (time.Time, identity.ID, identity
 
 	indices := make([]uint16, len(opt))
 	for i := range indices {
-		indices[i] = opt[i].ValidatorIndex
+		indices[i] = uint16(i)
 	}
 	selectedIndex := util.SelectRandomUint16(indices, retTS.UnixNano())
 

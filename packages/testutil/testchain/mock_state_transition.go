@@ -15,6 +15,7 @@ type MockedStateTransition struct {
 	t           *testing.T
 	chainKey    *ed25519.KeyPair
 	onNextState func(virtualState state.VirtualState, tx *ledgerstate.Transaction)
+	onVMResult  func(virtualState state.VirtualState, tx *ledgerstate.TransactionEssence)
 }
 
 func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedStateTransition {
@@ -25,7 +26,9 @@ func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedSt
 }
 
 func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chainOutput *ledgerstate.AliasOutput) {
-	require.True(c.t, chainOutput.GetStateAddress().Equals(ledgerstate.NewED25519Address(c.chainKey.PublicKey)))
+	if c.chainKey != nil {
+		require.True(c.t, chainOutput.GetStateAddress().Equals(ledgerstate.NewED25519Address(c.chainKey.PublicKey)))
+	}
 
 	nextVirtualState := virtualState.Clone()
 	counterBin, err := nextVirtualState.KVStore().Get("counter")
@@ -43,12 +46,22 @@ func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chain
 	txBuilder := utxoutil.NewBuilder(chainOutput)
 	err = txBuilder.AddAliasOutputAsRemainder(chainOutput.GetAliasAddress(), nextStateHash[:])
 	require.NoError(c.t, err)
-	tx, err := txBuilder.BuildWithED25519(c.chainKey)
-	require.NoError(c.t, err)
 
-	c.onNextState(nextVirtualState, tx)
+	if c.chainKey != nil {
+		tx, err := txBuilder.BuildWithED25519(c.chainKey)
+		require.NoError(c.t, err)
+		c.onNextState(nextVirtualState, tx)
+	} else {
+		tx, _, err := txBuilder.BuildEssence()
+		require.NoError(c.t, err)
+		c.onVMResult(nextVirtualState, tx)
+	}
 }
 
 func (c *MockedStateTransition) OnNextState(f func(virtualStats state.VirtualState, tx *ledgerstate.Transaction)) {
 	c.onNextState = f
+}
+
+func (c *MockedStateTransition) OnVMResult(f func(virtualStats state.VirtualState, tx *ledgerstate.TransactionEssence)) {
+	c.onVMResult = f
 }
