@@ -96,7 +96,7 @@ type DismissChainMsg struct {
 	Reason string
 }
 
-// StateTransitionMsg StateManager -> Consensus. Notifies consensus about changed state
+// StateTransitionMsg StateManager -> ConsensusOld. Notifies consensus about changed state
 type StateTransitionMsg struct {
 	// new variable state
 	State state.VirtualState
@@ -106,19 +106,19 @@ type StateTransitionMsg struct {
 	StateTimestamp time.Time
 }
 
-// StateCandidateMsg Consensus -> StateManager. Consensus sends the finalized next state to StateManager
+// StateCandidateMsg ConsensusOld -> StateManager. ConsensusOld sends the finalized next state to StateManager
 type StateCandidateMsg struct {
 	State             state.VirtualState
 	ApprovingOutputID ledgerstate.OutputID
 }
 
-// VMResultMsg Consensus -> Consensus. VM sends result of async task started by Consensus to itself
+// VMResultMsg ConsensusOld -> ConsensusOld. VM sends result of async task started by ConsensusOld to itself
 type VMResultMsg struct {
 	Task   *vm.VMTask
 	Leader uint16
 }
 
-// InclusionStateMsg nodeconn plugin sends inclusions state of the transaction to Consensus
+// InclusionStateMsg nodeconn plugin sends inclusions state of the transaction to ConsensusOld
 type InclusionStateMsg struct {
 	TxID  ledgerstate.TransactionID
 	State ledgerstate.InclusionState

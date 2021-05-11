@@ -28,6 +28,7 @@ func (c *consensusImpl) takeAction() {
 	c.runVMIfNeeded()
 	c.checkQuorum()
 	c.postTransactionIfNeeded()
+	c.pullInclusionStateIfNeeded()
 }
 
 func (c *consensusImpl) startConsensusIfNeeded() {
@@ -94,7 +95,7 @@ func (c *consensusImpl) runVMIfNeeded() {
 	runvm.MustRunVMTaskAsync(task)
 }
 
-const postSeqStepSeconds = 1
+const postSeqStepMilliseconds = 1000
 
 func (c *consensusImpl) checkQuorum() {
 	if c.resultSignatures[c.committee.OwnPeerIndex()] == nil {
@@ -140,14 +141,29 @@ func (c *consensusImpl) checkQuorum() {
 	c.stage = stageTransactionFinalized
 	c.stageStarted = time.Now()
 
-	// TODO permute only those which contributed to ACS
-	permutation := util.NewPermutation16(c.committee.Size(), tx.ID().Bytes())
-	postSeqNumber := permutation.GetArray()[c.committee.OwnPeerIndex()]
-	c.postTxDeadline = c.stageStarted.Add(time.Duration(postSeqNumber*postSeqStepSeconds) * time.Second)
+	// calculate deterministic pseudo-random postTxDeadline among contributors
+	if c.iAmContributor {
+		permutation := util.NewPermutation16(uint16(len(c.contributors)), tx.ID().Bytes())
+		postSeqNumber := permutation.GetArray()[c.myContributionSeqNumber]
+		c.postTxDeadline = c.stageStarted.Add(time.Duration(postSeqNumber*postSeqStepMilliseconds) * time.Millisecond)
+	}
+	c.transactionPosted = false
+	c.transactionSeen = false
+	c.pullInclusionStateDeadline = time.Now().Add(500 * time.Millisecond)
 }
 
 func (c *consensusImpl) postTransactionIfNeeded() {
 	if c.stage != stageTransactionFinalized {
+		return
+	}
+	if !c.iAmContributor {
+		// only contributors post transaction
+		return
+	}
+	if c.transactionPosted {
+		return
+	}
+	if c.transactionSeen {
 		return
 	}
 	if time.Now().Before(c.postTxDeadline) {
@@ -155,15 +171,40 @@ func (c *consensusImpl) postTransactionIfNeeded() {
 	}
 	c.nodeConn.PostTransaction(c.finalTx)
 
-	c.committee.SendMsgToPeers(chain.MsgNotifyFinalResultPosted, util.MustBytes(&chain.NotifyFinalResultPostedMsg{
-		StateOutputID: c.approvingOutputID,
-		TxId:          c.finalTx.ID(),
-	}), time.Now().UnixNano())
-
-	c.stage = stageWaitNextState
-	c.stageStarted = time.Now()
+	c.transactionPosted = true
 	c.log.Infof("POSTED TRANSACTION: %s", c.finalTx.ID().Base58())
+}
 
+const pullInclusionStatePeriod = 1 * time.Second
+
+func (c *consensusImpl) pullInclusionStateIfNeeded() {
+	if c.stage != stageTransactionFinalized {
+		return
+	}
+	if c.transactionSeen {
+		return
+	}
+	if time.Now().Before(c.pullInclusionStateDeadline) {
+		return
+	}
+	c.nodeConn.PullTransactionInclusionState(c.chain.ID().AsAddress(), c.finalTx.ID())
+	c.pullInclusionStateDeadline = time.Now().Add(pullInclusionStatePeriod)
+}
+
+func (c *consensusImpl) processInclusionState(msg *chain.InclusionStateMsg) {
+	if c.stage != stageTransactionFinalized {
+		return
+	}
+	if msg.TxID != c.finalTx.ID() {
+		return
+	}
+	c.transactionSeen = true
+	if msg.State == ledgerstate.Rejected {
+		// restart consensus
+		c.log.Infof("transaction %s rejected. Restart consensus")
+		c.resetState()
+		return
+	}
 }
 
 func (c *consensusImpl) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, ledgerstate.OutputID, error) {
@@ -201,12 +242,20 @@ func (c *consensusImpl) setNewState(msg *chain.StateTransitionMsg) {
 	c.stateOutput = msg.StateOutput
 	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp
+	c.resetState()
+}
+
+func (c *consensusImpl) resetState() {
 	for i := range c.resultSignatures {
 		c.resultSignatures[i] = nil
 	}
 	c.resultState = nil
 	c.resultTxEssence = nil
 	c.finalTx = nil
+	c.transactionPosted = false
+	c.transactionSeen = false
+	c.consensusBatch = nil
+	c.contributors = nil
 
 	c.stage = stageStateReceived
 	c.stageStarted = time.Now()
@@ -254,7 +303,11 @@ func (c *consensusImpl) receiveACS(values [][]byte) {
 		}
 		acs[i] = proposal
 	}
-	for _, prop := range acs {
+	iAmContributor := false
+	myContributionSeqNumber := uint16(0)
+	contributors := make([]uint16, 0, c.committee.Size())
+	contributorSet := make(map[uint16]struct{})
+	for i, prop := range acs {
 		if prop.StateOutputID != c.stateOutput.ID() {
 			//
 			c.log.Warnf("receiveACS: ACS out of context or consensus failure")
@@ -264,13 +317,24 @@ func (c *consensusImpl) receiveACS(values [][]byte) {
 			c.log.Warnf("receiveACS: wrong validtor index in ACS")
 			return
 		}
+		if prop.ValidatorIndex == c.committee.OwnPeerIndex() {
+			iAmContributor = true
+			myContributionSeqNumber = uint16(i)
+		}
+		contributors = append(contributors, prop.ValidatorIndex)
+		if _, already := contributorSet[prop.ValidatorIndex]; already {
+			c.log.Errorf("receiveACS: duplicate contributors in ACS")
+			return
+		}
+		contributorSet[prop.ValidatorIndex] = struct{}{}
 	}
 	inBatchSet := calcIntersection(acs, c.committee.Size(), c.committee.Quorum())
 	if len(inBatchSet) == 0 {
-		c.log.Warnf("receiveACS: intersecection is empty. Consensus failure")
+		c.log.Warnf("receiveACS: intersecection is empty. ConsensusOld failure")
 		return
 	}
 	medianTs, accessPledge, consensusPledge, feeDestination := calcBatchParameters(acs)
+
 	c.consensusBatch = &batchProposal{
 		ValidatorIndex:      c.committee.OwnPeerIndex(),
 		StateOutputID:       c.stateOutput.ID(),
@@ -280,6 +344,10 @@ func (c *consensusImpl) receiveACS(values [][]byte) {
 		AccessManaPledge:    accessPledge,
 		FeeDestination:      feeDestination,
 	}
+	c.iAmContributor = iAmContributor
+	c.myContributionSeqNumber = myContributionSeqNumber
+	c.contributors = contributors
+
 	c.stage = stageConsensusCompleted
 	c.stageStarted = time.Now()
 

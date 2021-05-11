@@ -1,8 +1,6 @@
 package consensus1imp
 
 import (
-	"time"
-
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
@@ -40,17 +38,12 @@ func (c *consensusImpl) eventSignedResult(msg *chain.SignedResultMsg) {
 	c.takeAction()
 }
 
-func (c *consensusImpl) EventNotifyTransactionPosted(msg *chain.NotifyFinalResultPostedMsg) {
-	c.eventNotifyTxPostedMsgCh <- msg
+func (c *consensusImpl) EventInclusionsStateMsg(msg *chain.InclusionStateMsg) {
+	c.eventInclusionStateMsgCh <- msg
 }
-func (c *consensusImpl) eventNotifyTransactionPosted(msg *chain.NotifyFinalResultPostedMsg) {
-	c.log.Debugf("eventNotifyTransactionPosted: from sender: %d", msg.SenderIndex)
+func (c *consensusImpl) eventInclusionState(msg *chain.InclusionStateMsg) {
+	c.log.Debugf("eventInclusionState: %s: '%s'", msg.TxID.Base58(), msg.State.String())
 
-	if c.stage == stageTransactionFinalized {
-		c.stage = stageTransactionPosted
-		c.stageStarted = time.Now()
-	}
-	// TODO query inclusion state
 	c.takeAction()
 }
 

@@ -88,7 +88,7 @@ type StateManager interface {
 	Close()
 }
 
-type Consensus interface {
+type ConsensusOld interface {
 	EventStateTransitionMsg(*StateTransitionMsg)
 	EventNotifyReqMsg(*NotifyReqMsg)
 	EventStartProcessingBatchMsg(*StartProcessingBatchMsg)
@@ -97,6 +97,15 @@ type Consensus interface {
 	EventNotifyFinalResultPostedMsg(*NotifyFinalResultPostedMsg)
 	EventTransactionInclusionStateMsg(msg *InclusionStateMsg)
 	EventTimerMsg(TimerTick)
+	Close()
+}
+
+type Consensus interface {
+	EventStateTransitionMsg(*StateTransitionMsg)
+	EventResultCalculated(msg *VMResultMsg)
+	EventSignedResultMsg(msg *SignedResultMsg)
+	EventTimerMsg(TimerTick)
+	IsReady() bool
 	Close()
 }
 

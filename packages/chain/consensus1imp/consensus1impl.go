@@ -25,17 +25,23 @@ type consensusImpl struct {
 	stage                      byte
 	stageStarted               time.Time
 	consensusBatch             *batchProposal
+	iAmContributor             bool
+	myContributionSeqNumber    uint16
+	contributors               []uint16
 	resultTxEssence            *ledgerstate.TransactionEssence
 	resultState                state.VirtualState
 	resultSignatures           []*chain.SignedResultMsg
 	finalTx                    *ledgerstate.Transaction
 	approvingOutputID          ledgerstate.OutputID
 	postTxDeadline             time.Time
+	transactionPosted          bool
+	transactionSeen            bool
+	pullInclusionStateDeadline time.Time
 	log                        *logger.Logger
 	eventStateTransitionMsgCh  chan *chain.StateTransitionMsg
 	eventResultCalculatedMsgCh chan *chain.VMResultMsg
 	eventSignedResultMsgCh     chan *chain.SignedResultMsg
-	eventNotifyTxPostedMsgCh   chan *chain.NotifyFinalResultPostedMsg
+	eventInclusionStateMsgCh   chan *chain.InclusionStateMsg
 	eventTimerMsgCh            chan chain.TimerTick
 	closeCh                    chan struct{}
 	mockedACS                  *testchain.MockedAsynchronousCommonSubset
@@ -49,11 +55,9 @@ const (
 	stageVM
 	stageWaitForSignatures
 	stageTransactionFinalized
-	stageTransactionPosted
-	stageWaitNextState
 )
 
-var _ chain.Consensus1 = &consensusImpl{}
+var _ chain.Consensus = &consensusImpl{}
 
 func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, log *logger.Logger) *consensusImpl {
 	ret := &consensusImpl{
@@ -66,6 +70,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		eventStateTransitionMsgCh:  make(chan *chain.StateTransitionMsg),
 		eventResultCalculatedMsgCh: make(chan *chain.VMResultMsg),
 		eventSignedResultMsgCh:     make(chan *chain.SignedResultMsg),
+		eventInclusionStateMsgCh:   make(chan *chain.InclusionStateMsg),
 		eventTimerMsgCh:            make(chan chain.TimerTick),
 		closeCh:                    make(chan struct{}),
 	}
@@ -101,6 +106,14 @@ func (c *consensusImpl) recvLoop() {
 		case msg, ok := <-c.eventResultCalculatedMsgCh:
 			if ok {
 				c.eventResultCalculated(msg)
+			}
+		case msg, ok := <-c.eventSignedResultMsgCh:
+			if ok {
+				c.eventSignedResult(msg)
+			}
+		case msg, ok := <-c.eventInclusionStateMsgCh:
+			if ok {
+				c.eventInclusionState(msg)
 			}
 		case msg, ok := <-c.eventTimerMsgCh:
 			if ok {

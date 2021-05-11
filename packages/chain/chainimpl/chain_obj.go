@@ -39,7 +39,7 @@ type chainObj struct {
 	procset               *processors.ProcessorCache
 	chMsg                 chan interface{}
 	stateMgr              chain.StateManager
-	consensus             chain.Consensus
+	consensus             chain.ConsensusOld
 	log                   *logger.Logger
 	nodeConn              *txstream.Client
 	dbProvider            *dbprovider.DBProvider
