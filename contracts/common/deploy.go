@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	Debug      = true
-	StackTrace = true
-	TraceHost  = true
+	Debug      = false
+	StackTrace = false
+	TraceHost  = false
 )
 
 func StartChainAndDeployWasmContractByName(t *testing.T, scName string) *solo.Chain {

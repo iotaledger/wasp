@@ -1,6 +1,9 @@
 package mempool
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -18,8 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func createStateReader(t *testing.T, log *logger.Logger) (state.StateReader, state.VirtualState) {
@@ -211,7 +212,7 @@ func TestTakeAllReady(t *testing.T) {
 func initSeenTest(t *testing.T) (chain.Mempool, []*request.RequestOnLedger) {
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
-	pool := New(rdr, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 	requests := getRequestsOnLedger(t, 5)
 	request0ID := requests[0].ID()

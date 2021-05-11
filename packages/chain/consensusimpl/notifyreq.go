@@ -21,7 +21,7 @@ func (op *operator) sendRequestNotificationsToLeader() {
 	if op.iAmCurrentLeader() {
 		return
 	}
-	readyRequests := op.mempool.GetReadyList(0)
+	readyRequests := op.mempool.GetReadyList()
 	if len(readyRequests) == 0 {
 		return
 	}

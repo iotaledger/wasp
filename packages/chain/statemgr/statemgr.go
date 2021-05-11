@@ -7,9 +7,11 @@ package statemgr
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"go.uber.org/atomic"
-	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
@@ -23,16 +25,16 @@ type stateManager struct {
 	ready                   *ready.Ready
 	dbp                     *dbprovider.DBProvider
 	chain                   chain.ChainCore
-	peers                   chain.PeerGroupProvider
+	peers                   peering.PeerDomainProvider
 	nodeConn                chain.NodeConnection
-	pullStateDeadline       time.Time
-	stateCandidates         map[hashing.HashValue]*stateCandidate
-	solidState              state.VirtualState // never nil
+	pullStateRetryTime      time.Time
+	solidState              state.VirtualState
 	stateOutput             *ledgerstate.AliasOutput
 	stateOutputTimestamp    time.Time
 	currentSyncData         atomic.Value
 	notifiedSyncedStateHash hashing.HashValue
-	syncingBlocks           map[uint32]*syncingBlock
+	syncingBlocks           *syncingBlocks
+	timers                  Timers
 	log                     *logger.Logger
 
 	// Channels for accepting external events.
@@ -45,33 +47,21 @@ type stateManager struct {
 	closeCh                chan bool
 }
 
-type stateCandidate struct {
-	state state.VirtualState
-	block state.Block
-}
-
 const (
-	pullStatePeriod           = 2 * time.Second
-	periodBetweenSyncMessages = 1 * time.Second
+	numberOfNodesToRequestBlockFromConst = 5
+	maxBlocksToCommitConst               = 10000 //10k
 )
 
-type syncingBlock struct {
-	pullDeadline      time.Time
-	block             state.Block
-	approved          bool
-	finalHash         hashing.HashValue
-	approvingOutputID ledgerstate.OutputID
-}
-
-func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers chain.PeerGroupProvider, nodeconn chain.NodeConnection, log *logger.Logger) chain.StateManager {
+func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, log *logger.Logger, timers ...Timers) chain.StateManager {
 	ret := &stateManager{
 		ready:                  ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
 		dbp:                    dbp,
 		chain:                  c,
 		nodeConn:               nodeconn,
-		syncingBlocks:          make(map[uint32]*syncingBlock),
-		stateCandidates:        make(map[hashing.HashValue]*stateCandidate),
+		peers:                  peers,
+		syncingBlocks:          newSyncingBlocks(log),
 		log:                    log.Named("s"),
+		pullStateRetryTime:     time.Now(),
 		eventGetBlockMsgCh:     make(chan *chain.GetBlockMsg),
 		eventBlockMsgCh:        make(chan *chain.BlockMsg),
 		eventStateOutputMsgCh:  make(chan *chain.StateMsg),
@@ -80,19 +70,14 @@ func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers chain.PeerGroupPro
 		eventTimerMsgCh:        make(chan chain.TimerTick),
 		closeCh:                make(chan bool),
 	}
-	ret.SetPeers(peers)
+	if len(timers) > 0 {
+		ret.timers = timers[0]
+	} else {
+		ret.timers = Timers{}
+	}
 	go ret.initLoadState()
 
 	return ret
-}
-
-func (sm *stateManager) SetPeers(p chain.PeerGroupProvider) {
-	n := uint16(0)
-	if p != nil {
-		n = p.NumPeers()
-		sm.log.Debugf("SetPeers: num = %d", n)
-	}
-	sm.peers = p
 }
 
 func (sm *stateManager) Close() {
@@ -112,9 +97,8 @@ func (sm *stateManager) initLoadState() {
 		return
 	}
 	if stateExists {
-		h := sm.solidState.Hash()
 		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
-			sm.solidState.BlockIndex(), h.String())
+			sm.solidState.BlockIndex(), sm.solidState.Hash().String())
 	} else {
 		// create origin state in DB
 		sm.solidState, err = state.CreateOriginState(sm.dbp, sm.chain.ID())

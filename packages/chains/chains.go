@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	registry_pkg "github.com/iotaledger/wasp/packages/registry"
+	registry_pkg "github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
 )
@@ -96,15 +96,21 @@ func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
 	}
 	// create new chain object
 	defaultRegistry := registry.DefaultRegistry()
-	c.allChains[chainArr] = chainimpl.NewChain(
+	newChain := chainimpl.NewChain(
 		chr,
 		c.log,
 		c.nodeConn,
+		peering.DefaultPeerNetworkConfig(),
 		defaultRegistry.DBProvider(),
 		peering.DefaultNetworkProvider(),
 		defaultRegistry,
 		defaultRegistry,
+		defaultRegistry,
 	)
+	if newChain == nil {
+		return xerrors.New("Chains.Activate: failed to create chain object")
+	}
+	c.allChains[chainArr] = newChain
 	c.nodeConn.Subscribe(chr.ChainID.AliasAddress)
 	c.log.Infof("activated chain: %s", chr.ChainID.String())
 	return nil

@@ -5,6 +5,8 @@ package solo
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -12,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
 	"golang.org/x/xerrors"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -195,7 +196,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair)
 	ch.reqCounter.Add(1)
 	ch.mempool.ReceiveRequest(request)
 
-	ready := ch.mempool.GetReadyList(0)
+	ready := ch.mempool.GetReadyList()
 	if len(ready) == 0 {
 		ch.Log.Infof("waiting for solidification")
 		return nil, nil

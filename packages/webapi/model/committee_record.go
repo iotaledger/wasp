@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
 )
 
 type CommitteeRecord struct {
@@ -9,15 +9,15 @@ type CommitteeRecord struct {
 	Nodes   []string `swagger:"desc(List of committee nodes (network IDs))"`
 }
 
-func NewCommitteeRecord(bd *registry.CommitteeRecord) *CommitteeRecord {
+func NewCommitteeRecord(bd *committee_record.CommitteeRecord) *CommitteeRecord {
 	return &CommitteeRecord{
 		Address: NewAddress(bd.Address),
 		Nodes:   bd.Nodes,
 	}
 }
 
-func (bd *CommitteeRecord) Record() *registry.CommitteeRecord {
-	return &registry.CommitteeRecord{
+func (bd *CommitteeRecord) Record() *committee_record.CommitteeRecord {
+	return &committee_record.CommitteeRecord{
 		Address: bd.Address.Address(),
 		Nodes:   bd.Nodes,
 	}

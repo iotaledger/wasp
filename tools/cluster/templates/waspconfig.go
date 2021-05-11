@@ -5,6 +5,7 @@ type WaspConfigParams struct {
 	DashboardPort int
 	PeeringPort   int
 	NanomsgPort   int
+	Neighbors     string
 }
 
 const WaspConfig = `
@@ -40,7 +41,8 @@ const WaspConfig = `
   },
   "peering":{
     "port": {{.PeeringPort}},
-    "netid": "127.0.0.1:{{.PeeringPort}}"
+    "netid": "127.0.0.1:{{.PeeringPort}}",
+	"neighbors": [{{.Neighbors}}]
   },
   "nodeconn": {
     "address": "127.0.0.1:5000"

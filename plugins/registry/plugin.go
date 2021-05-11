@@ -6,7 +6,7 @@ package registry
 import (
 	"github.com/iotaledger/hive.go/logger"
 	hive_node "github.com/iotaledger/hive.go/node"
-	registry_pkg "github.com/iotaledger/wasp/packages/registry"
+	registry_pkg "github.com/iotaledger/wasp/packages/registry_pkg"
 	tcrypto_pkg "github.com/iotaledger/wasp/packages/tcrypto"
 )
 

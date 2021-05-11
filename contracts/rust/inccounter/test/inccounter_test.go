@@ -9,10 +9,13 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
 	"github.com/stretchr/testify/require"
 	"sort"
+	"strings"
 	"testing"
+	"time"
 )
 
 func setupTest(t *testing.T) *solo.Chain {
@@ -163,6 +166,25 @@ func TestLeb128(t *testing.T) {
 	for _, key := range keys {
 		fmt.Printf("%s: %v\n", key, res[kv.Key(key)])
 	}
+}
+
+func TestLoop(t *testing.T) {
+	wasmhost.WasmTimeout = 1 * time.Second
+	chain := setupTest(t)
+
+	req := solo.NewCallParams(ScName, FuncLoop,
+	).WithIotas(1)
+	_, err := chain.PostRequestSync(req, nil)
+	require.Error(t, err)
+	errText := err.Error()
+	require.True(t, strings.Contains(errText, "interrupt"))
+
+	req = solo.NewCallParams(ScName, FuncIncrement,
+	).WithIotas(1)
+	_, err = chain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	checkStateCounter(t, chain, 1)
 }
 
 func checkStateCounter(t *testing.T, chain *solo.Chain, expected interface{}) {
