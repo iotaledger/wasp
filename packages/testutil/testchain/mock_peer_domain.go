@@ -42,7 +42,7 @@ func (m *MockedPeerDomainProvider) SendMsgByNetID(netID string, msg *peering.Pee
 }
 
 func (m *MockedPeerDomainProvider) SendMsgToRandomPeers(upToNumPeers uint16, msg *peering.PeerMessage) {
-	netIDs := getRnd(m.peerNetIDs, upToNumPeers)
+	netIDs := m.getRnd(m.peerNetIDs, upToNumPeers)
 	for _, nid := range netIDs {
 		m.SendMsgByNetID(nid, msg)
 	}
@@ -83,14 +83,14 @@ func (m *MockedPeerDomainProvider) OnSend(fun func(netID string, msg *peering.Pe
 	m.onSendMsgByNetID = fun
 }
 
-func getRnd(strs []string, n uint16) []string {
+func (m *MockedPeerDomainProvider) getRnd(strs []string, n uint16) []string {
 	if int(n) >= len(strs) {
 		return strs
 	}
 	ret := make([]string, 0, n)
 	for len(ret) < int(n) {
 		i := rand.Intn(len(strs))
-		if !util.StringInList(strs[i], ret) {
+		if !util.StringInList(strs[i], ret) && strs[i] != m.ownNetID {
 			ret = append(ret, strs[i])
 		}
 	}

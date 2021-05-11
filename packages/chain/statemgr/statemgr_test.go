@@ -7,9 +7,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/require"
 )
@@ -186,25 +184,6 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
 		}
 	})
-	env.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
-		env.Log.Debugf("MockedNodeConn.onPullConfirmedOutput %v", coretypes.OID(outputID))
-		env.mutex.Lock()
-		defer env.mutex.Unlock()
-		tx, foundTx := env.Ledger.GetTransaction(outputID.TransactionID())
-		require.True(t, foundTx)
-		outputIndex := outputID.OutputIndex()
-		outputs := tx.Essence().Outputs()
-		require.True(t, int(outputIndex) < len(outputs))
-		output := outputs[outputIndex].UpdateMintingColor()
-		require.NotNil(t, output)
-		//TODO: avoid broadcast
-		for _, node := range env.Nodes {
-			go func(manager chain.StateManager, log *logger.Logger) {
-				log.Debugf("MockedNodeConn.onPullConfirmedOutput: call EventOutputMsg")
-				manager.EventOutputMsg(output)
-			}(node.StateManager, node.Log)
-		}
-	})
 	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
 	require.NoError(t, err)
 	require.True(t, si.Synced)
@@ -238,30 +217,11 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 
 	env.AddNode(node)
 
-	const targetBlockIndex = 10
+	const targetBlockIndex = 5
 	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
 		chain.LogStateTransition(msg, node.Log)
 		if msg.ChainOutput.GetStateIndex() < targetBlockIndex {
 			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
-		}
-	})
-	env.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
-		env.Log.Debugf("MockedNodeConn.onPullConfirmedOutput %v", coretypes.OID(outputID))
-		env.mutex.Lock()
-		defer env.mutex.Unlock()
-		tx, foundTx := env.Ledger.GetTransaction(outputID.TransactionID())
-		require.True(t, foundTx)
-		outputIndex := outputID.OutputIndex()
-		outputs := tx.Essence().Outputs()
-		require.True(t, int(outputIndex) < len(outputs))
-		output := outputs[outputIndex].UpdateMintingColor()
-		require.NotNil(t, output)
-		//TODO: avoid broadcast
-		for _, node := range env.Nodes {
-			go func(manager chain.StateManager, log *logger.Logger) {
-				log.Debugf("MockedNodeConn.onPullConfirmedOutput: call EventOutputMsg")
-				manager.EventOutputMsg(output)
-			}(node.StateManager, node.Log)
 		}
 	})
 	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
@@ -270,7 +230,7 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 
 	nodes := make([]*MockedNode, numberOfCatchingPeers)
 	for i := 0; i < numberOfCatchingPeers; i++ {
-		nodes[i] = env.NewMockedNode(allPeers[i], allPeers, Timers{})
+		nodes[i] = env.NewMockedNode(allPeers[i], allPeers, Timers{}.SetGetBlockRetry(200*time.Millisecond))
 		nodes[i].SetupPeerGroupSimple()
 		nodes[i].StateManager.Ready().MustWait()
 	}
@@ -309,7 +269,7 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
 		}
 	})
-	env.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
+	node.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
 	})
 	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
 	require.NoError(t, err)
