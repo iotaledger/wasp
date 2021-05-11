@@ -20,6 +20,7 @@ type MockedPeerDomainProvider struct {
 	onSendMsgByNetID func(netID string, msg *peering.PeerMessage)
 }
 
+// Deprecated:
 func NewMockedPeerDomain(ownNetID string, peerNetIDs []string, log *logger.Logger) *MockedPeerDomainProvider {
 	log = log.Named("mockedDomain")
 	if !util.AllDifferentStrings(peerNetIDs) {

@@ -14,10 +14,8 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
-
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
 
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -92,7 +90,7 @@ func (c *consensusImpl) runVMIfNeeded() {
 	c.stage = stageVM
 	c.stageStarted = time.Now()
 
-	runvm.MustRunVMTaskAsync(task)
+	go c.vmRunner.Run(task)
 }
 
 const postSeqStepMilliseconds = 1000
@@ -271,6 +269,7 @@ func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchPro
 	accessManaPledge := identity.ID{}
 	feeDestination := coretypes.NewAgentID(c.chain.ID().AsAddress(), 0)
 	ret := &batchProposal{
+		ValidatorIndex:      c.committee.OwnPeerIndex(),
 		StateOutputID:       c.stateOutput.ID(),
 		RequestIDs:          make([]coretypes.RequestID, len(reqs)),
 		Timestamp:           ts,

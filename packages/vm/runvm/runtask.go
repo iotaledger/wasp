@@ -12,27 +12,30 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// MustRunVMTaskAsync runs computations for the batch of requests in the background
-// This is the main entry point to the VM
-// TODO timeout for VM. Gas limit
-func MustRunVMTaskAsync(ctx *vm.VMTask) {
-	if len(ctx.Requests) == 0 {
-		ctx.Log.Panicf("MustRunVMTaskAsync: must be at least 1 request")
-	}
-	outputs := outputsFromRequests(ctx.Requests...)
-	txb := utxoutil.NewBuilder(append(outputs, ctx.ChainInput)...)
+type vmRunner struct{}
 
-	go runTask(ctx, txb)
+func (r vmRunner) Run(task *vm.VMTask) {
+	runTask(task)
+}
+
+func NewVMRunner() vmRunner {
+	return vmRunner{}
 }
 
 // runTask runs batch of requests on VM
-func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
+func runTask(task *vm.VMTask) {
 	task.Log.Debugw("runTask IN",
 		"chainID", task.ChainInput.Address().Base58(),
 		"timestamp", task.Timestamp,
 		"block index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
 	)
+	if len(task.Requests) == 0 {
+		task.Log.Panicf("MustRunVMTaskAsync: must be at least 1 request")
+	}
+	outputs := outputsFromRequests(task.Requests...)
+	txb := utxoutil.NewBuilder(append(outputs, task.ChainInput)...)
+
 	vmctx, err := vmcontext.CreateVMContext(task, txb)
 	if err != nil {
 		task.Log.Panicf("runTask: CreateVMContext: %v", err)

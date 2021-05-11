@@ -3,6 +3,9 @@ package consensus1imp
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/runvm"
+
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -21,10 +24,11 @@ type consensusImpl struct {
 	committee                  chain.Committee
 	mempool                    chain.Mempool
 	nodeConn                   chain.NodeConnection
+	vmRunner                   vm.VMRunner
 	currentState               state.VirtualState
 	stateOutput                *ledgerstate.AliasOutput
 	stateTimestamp             time.Time
-	stage                      byte
+	stage                      consensusStage
 	stageStarted               time.Time
 	consensusBatch             *batchProposal
 	iAmContributor             bool
@@ -50,16 +54,6 @@ type consensusImpl struct {
 	mockedACS                  *testchain.MockedAsynchronousCommonSubset
 }
 
-const (
-	_ byte = iota
-	stageStateReceived
-	stageConsensus
-	stageConsensusCompleted
-	stageVM
-	stageWaitForSignatures
-	stageTransactionFinalized
-)
-
 var _ chain.Consensus = &consensusImpl{}
 
 func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, log *logger.Logger) *consensusImpl {
@@ -68,6 +62,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		committee:                  committee,
 		mempool:                    mempool,
 		nodeConn:                   nodeConn,
+		vmRunner:                   runvm.NewVMRunner(),
 		resultSignatures:           make([]*chain.SignedResultMsg, committee.Size()),
 		log:                        log.Named("c"),
 		eventStateTransitionMsgCh:  make(chan *chain.StateTransitionMsg),

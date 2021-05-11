@@ -33,7 +33,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type MockedEnv struct {
+type mockedEnv struct {
 	Suite             *pairing.SuiteBn256
 	T                 *testing.T
 	N                 uint16
@@ -62,14 +62,14 @@ type MockedEnv struct {
 
 type mockedNode struct {
 	OwnIndex  uint16
-	Env       *MockedEnv
+	Env       *mockedEnv
 	ChainCore *testchain.MockedChainCore
 	Mempool   chain.Mempool
 	Consensus *consensusImpl
 	Log       *logger.Logger
 }
 
-func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledgerstate.Transaction) {
+func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledgerstate.Transaction) {
 	level := zapcore.InfoLevel
 	if debug {
 		level = zapcore.DebugLevel
@@ -84,7 +84,7 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledg
 		neighbors[i] = fmt.Sprintf("localhost:%d", 4000+i)
 	}
 
-	ret := &MockedEnv{
+	ret := &mockedEnv{
 		Suite:     pairing.NewSuiteBn256(),
 		T:         t,
 		N:         n,
@@ -147,7 +147,7 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledg
 			return
 		}
 
-		ret.Log.Infof("MockedEnv: posted transaction to ledger: %s", tx.ID().Base58())
+		ret.Log.Infof("mockedEnv: posted transaction to ledger: %s", tx.ID().Base58())
 	})
 	pullBacklogOutputClosure := func(addr *ledgerstate.AliasAddress) {}
 	ret.NodeConn.OnPullBacklog(pullBacklogOutputClosure)
@@ -159,7 +159,7 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledg
 	return ret, originTx
 }
 
-func (env *MockedEnv) newNode(i uint16) *mockedNode {
+func (env *mockedEnv) newNode(i uint16) *mockedNode {
 	log := env.Log.Named(fmt.Sprintf("%d", i))
 	chainCore := testchain.NewMockedChainCore(env.ChainID, log)
 	mpool := mempool.New(env.StateReader, coretypes.NewInMemoryBlobCache(), log)
@@ -180,7 +180,6 @@ func (env *MockedEnv) newNode(i uint16) *mockedNode {
 	}
 	ret.Consensus.mockedACS = env.MockedACS
 	chainCore.OnReceiveMessage(func(msg interface{}) {
-		ret.Log.Infof("--------------- msg %T", msg)
 		switch msg := msg.(type) {
 		case *chain.AsynchronousCommonSubsetMsg:
 			ret.Consensus.EventAsynchronousCommonSubsetMsg(msg)
@@ -190,7 +189,7 @@ func (env *MockedEnv) newNode(i uint16) *mockedNode {
 	return ret
 }
 
-func (env *MockedEnv) StartTimers() {
+func (env *mockedEnv) StartTimers() {
 	for _, n := range env.Nodes {
 		n.StartTimer()
 	}
@@ -214,7 +213,7 @@ func (n *mockedNode) WaitTimerTick(until int) {
 	}
 }
 
-func (env *MockedEnv) WaitTimerTick(until int) {
+func (env *mockedEnv) WaitTimerTick(until int) {
 	var wg sync.WaitGroup
 	wg.Add(int(env.N))
 	for _, n := range env.Nodes {
@@ -233,7 +232,7 @@ func (n *mockedNode) WaitStateIndex(until uint32) {
 	}
 }
 
-func (env *MockedEnv) WaitStateIndex(until uint32) {
+func (env *mockedEnv) WaitStateIndex(until uint32) {
 	var wg sync.WaitGroup
 	wg.Add(int(env.N))
 	for _, n := range env.Nodes {
@@ -246,7 +245,7 @@ func (env *MockedEnv) WaitStateIndex(until uint32) {
 	env.Log.Infof("target state index #%d has been reached", until)
 }
 
-func (env *MockedEnv) eventStateTransition() {
+func (env *mockedEnv) eventStateTransition() {
 	nowis := time.Now()
 	for _, node := range env.Nodes {
 		go node.Consensus.EventStateTransitionMsg(&chain.StateTransitionMsg{
@@ -257,7 +256,7 @@ func (env *MockedEnv) eventStateTransition() {
 	}
 }
 
-func (env *MockedEnv) postDummyRequest() {
+func (env *mockedEnv) postDummyRequest() {
 	req := solo.NewCallParams("dummy", "dummy").
 		NewRequestOffLedger(env.OriginatorKeyPair)
 	for _, n := range env.Nodes {

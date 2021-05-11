@@ -10,6 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm"
+
+	"github.com/iotaledger/wasp/packages/vm/runvm"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -62,6 +66,7 @@ type Solo struct {
 	logicalTime time.Time
 	timeStep    time.Duration
 	chains      map[[33]byte]*Chain
+	vmRunner    vm.VMRunner
 	doOnce      sync.Once
 	// publisher wait group
 	publisherWG      sync.WaitGroup
@@ -144,6 +149,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		logicalTime: initialTime,
 		timeStep:    DefaultTimeStep,
 		chains:      make(map[[33]byte]*Chain),
+		vmRunner:    runvm.NewVMRunner(),
 	}
 	ret.logger.Infof("Solo environment has been created with initial logical time %v", initialTime)
 	return ret
