@@ -102,8 +102,9 @@ type ConsensusOld interface {
 
 type Consensus interface {
 	EventStateTransitionMsg(*StateTransitionMsg)
-	EventResultCalculated(msg *VMResultMsg)
-	EventSignedResultMsg(msg *SignedResultMsg)
+	EventResultCalculated(*VMResultMsg)
+	EventSignedResultMsg(*SignedResultMsg)
+	EventInclusionsStateMsg(*InclusionStateMsg)
 	EventTimerMsg(TimerTick)
 	IsReady() bool
 	Close()

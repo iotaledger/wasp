@@ -47,14 +47,32 @@ func (c *consensusImpl) eventInclusionState(msg *chain.InclusionStateMsg) {
 	c.takeAction()
 }
 
+func (c *consensusImpl) EventAsynchronousCommonSubsetMsg(msg *chain.AsynchronousCommonSubsetMsg) {
+	c.eventACSMsgCh <- msg
+}
+func (c *consensusImpl) eventAsynchronousCommonSubset(msg *chain.AsynchronousCommonSubsetMsg) {
+	c.log.Debugf("eventAsynchronousCommonSubset:")
+	c.receiveACS(msg.ProposedBatchesBin)
+
+	c.takeAction()
+}
+
 func (c *consensusImpl) EventTimerMsg(msg chain.TimerTick) {
 	c.eventTimerMsgCh <- msg
 }
 func (c *consensusImpl) eventTimerMsg(msg chain.TimerTick) {
 	if msg%40 == 0 {
-		c.log.Infow("timer tick",
-			"#", msg,
-		)
+		c.log.Infof("timer tick #%d", msg)
 	}
+	c.lastTimerTick.Store(int64(msg))
 	c.takeAction()
+}
+
+// for testing
+func (c *consensusImpl) getTimerTick() int {
+	return int(c.lastTimerTick.Load())
+}
+
+func (c *consensusImpl) getStateIndex() uint32 {
+	return c.stateIndex.Load()
 }

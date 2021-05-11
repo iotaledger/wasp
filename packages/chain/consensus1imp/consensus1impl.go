@@ -15,6 +15,8 @@ import (
 
 type consensusImpl struct {
 	isReady                    atomic.Bool
+	lastTimerTick              atomic.Int64
+	stateIndex                 atomic.Uint32
 	chain                      chain.ChainCore
 	committee                  chain.Committee
 	mempool                    chain.Mempool
@@ -42,6 +44,7 @@ type consensusImpl struct {
 	eventResultCalculatedMsgCh chan *chain.VMResultMsg
 	eventSignedResultMsgCh     chan *chain.SignedResultMsg
 	eventInclusionStateMsgCh   chan *chain.InclusionStateMsg
+	eventACSMsgCh              chan *chain.AsynchronousCommonSubsetMsg
 	eventTimerMsgCh            chan chain.TimerTick
 	closeCh                    chan struct{}
 	mockedACS                  *testchain.MockedAsynchronousCommonSubset
@@ -71,6 +74,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		eventResultCalculatedMsgCh: make(chan *chain.VMResultMsg),
 		eventSignedResultMsgCh:     make(chan *chain.SignedResultMsg),
 		eventInclusionStateMsgCh:   make(chan *chain.InclusionStateMsg),
+		eventACSMsgCh:              make(chan *chain.AsynchronousCommonSubsetMsg),
 		eventTimerMsgCh:            make(chan chain.TimerTick),
 		closeCh:                    make(chan struct{}),
 	}
@@ -114,6 +118,10 @@ func (c *consensusImpl) recvLoop() {
 		case msg, ok := <-c.eventInclusionStateMsgCh:
 			if ok {
 				c.eventInclusionState(msg)
+			}
+		case msg, ok := <-c.eventACSMsgCh:
+			if ok {
+				c.eventAsynchronousCommonSubset(msg)
 			}
 		case msg, ok := <-c.eventTimerMsgCh:
 			if ok {

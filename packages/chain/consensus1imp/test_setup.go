@@ -6,29 +6,28 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/testutil"
+
 	"go.dedis.ch/kyber/v3"
 
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-
-	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
-	"github.com/iotaledger/wasp/packages/dbprovider"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/peering/udp"
-	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/util/key"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/kyber/v3/pairing"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -45,12 +44,14 @@ type MockedEnv struct {
 	StateAddress      ledgerstate.Address
 	PubKeys           []kyber.Point
 	PrivKeys          []kyber.Scalar
+	NetworkProviders  []peering.NetworkProvider
 	DKSRegistries     []coretypes.DKShareRegistryProvider
 	DB                *dbprovider.DBProvider
 	SolidState        state.VirtualState
 	StateReader       state.StateReader
 	StateOutput       *ledgerstate.AliasOutput
 	NodeConn          *testchain.MockedNodeConn
+	MockedACS         *testchain.MockedAsynchronousCommonSubset
 	ChainID           coretypes.ChainID
 	mutex             sync.Mutex
 	Nodes             []*mockedNode
@@ -65,8 +66,6 @@ type mockedNode struct {
 	Consensus *consensusImpl
 	Log       *logger.Logger
 }
-
-type mockedConsensus struct{}
 
 func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledgerstate.Transaction) {
 	level := zapcore.InfoLevel
@@ -94,9 +93,17 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledg
 		NodeConn:  testchain.NewMockedNodeConnection(),
 		Nodes:     make([]*mockedNode, n),
 	}
+	ret.MockedACS = testchain.NewMockedACS(quorum, func(values [][]byte) {
+		for _, n := range ret.Nodes {
+			go n.ChainCore.ReceiveMessage(&chain.AsynchronousCommonSubsetMsg{
+				ProposedBatchesBin: values,
+			})
+		}
+	})
 
 	_, ret.PubKeys, ret.PrivKeys = testpeers.SetupKeys(n, ret.Suite)
 	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkg(t, quorum, neighbors, ret.PubKeys, ret.PrivKeys, ret.Suite, log.Named("dkg"))
+	ret.NetworkProviders = testpeers.SetupNet(neighbors, ret.PubKeys, ret.PrivKeys, testutil.NewPeeringNetReliable(), log)
 
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)
@@ -157,14 +164,8 @@ func (env *MockedEnv) newNode(i uint16) *mockedNode {
 	mockCommitteeRegistry := testchain.NewMockedCommitteeRegistry(env.Neighbors)
 	cfg, err := peering.NewStaticPeerNetworkConfigProvider(env.Neighbors[i], 4000+int(i), env.Neighbors...)
 	require.NoError(env.T, err)
-	keyPair := &key.Pair{
-		Public:  env.PubKeys[i],
-		Private: env.PrivKeys[i],
-	}
-	netObj, err := udp.NewNetworkProvider(cfg, keyPair, env.Suite, log)
-	require.NoError(env.T, err)
 
-	committee, err := committeeimpl.NewCommittee(env.StateAddress, netObj, cfg, env.DKSRegistries[i], mockCommitteeRegistry, log)
+	committee, err := committeeimpl.NewCommittee(env.StateAddress, env.NetworkProviders[i], cfg, env.DKSRegistries[i], mockCommitteeRegistry, log)
 	require.NoError(env.T, err)
 
 	ret := &mockedNode{
@@ -175,10 +176,64 @@ func (env *MockedEnv) newNode(i uint16) *mockedNode {
 		Consensus: New(chainCore, mpool, committee, testchain.NewMockedNodeConnection(), log),
 		Log:       log,
 	}
-	ret.Consensus.mockedACS = testchain.NewMockedACS(env.Quorum, func(values [][]byte) {
-		// TODO
-	})
+	ret.Consensus.mockedACS = env.MockedACS
 	return ret
+}
+
+func (env *MockedEnv) StartTimers() {
+	for _, n := range env.Nodes {
+		n.StartTimer()
+	}
+}
+
+func (n *mockedNode) StartTimer() {
+	n.Log.Infof("started timer..")
+	go func() {
+		counter := 0
+		for {
+			n.Consensus.EventTimerMsg(chain.TimerTick(counter))
+			counter++
+			time.Sleep(50 * time.Millisecond)
+		}
+	}()
+}
+
+func (n *mockedNode) WaitTimerTick(until int) {
+	for n.Consensus.getTimerTick() < until {
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func (env *MockedEnv) WaitTimerTick(until int) {
+	var wg sync.WaitGroup
+	wg.Add(int(env.N))
+	for _, n := range env.Nodes {
+		go func() {
+			n.WaitTimerTick(until)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	env.Log.Infof("target timer tick #%d has been reached", until)
+}
+
+func (n *mockedNode) WaitStateIndex(until uint32) {
+	for n.Consensus.getStateIndex() < until {
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func (env *MockedEnv) WaitStateIndex(until uint32) {
+	var wg sync.WaitGroup
+	wg.Add(int(env.N))
+	for _, n := range env.Nodes {
+		go func() {
+			n.WaitStateIndex(until)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	env.Log.Infof("target state index #%d has been reached", until)
 }
 
 func (env *MockedEnv) eventStateTransition() {
@@ -190,8 +245,4 @@ func (env *MockedEnv) eventStateTransition() {
 			StateTimestamp: nowis,
 		})
 	}
-}
-
-func (m *mockedConsensus) run() {
-
 }

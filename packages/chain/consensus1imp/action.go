@@ -242,6 +242,7 @@ func (c *consensusImpl) setNewState(msg *chain.StateTransitionMsg) {
 	c.stateOutput = msg.StateOutput
 	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp
+	c.stateIndex.Store(c.stateOutput.GetStateIndex())
 	c.resetState()
 }
 

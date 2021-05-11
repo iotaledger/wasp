@@ -118,6 +118,11 @@ type VMResultMsg struct {
 	Leader uint16
 }
 
+// AsynchronousCommonSubsetMsg
+type AsynchronousCommonSubsetMsg struct {
+	ProposedBatchesBin [][]byte
+}
+
 // InclusionStateMsg nodeconn plugin sends inclusions state of the transaction to ConsensusOld
 type InclusionStateMsg struct {
 	TxID  ledgerstate.TransactionID
