@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestConsensusEnv1(t *testing.T) {
+func TestConsensusEnv(t *testing.T) {
 	t.Run("wait index", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, 4, 3, true)
 		env.StartTimers()
@@ -17,4 +17,15 @@ func TestConsensusEnv1(t *testing.T) {
 		env.eventStateTransition()
 		env.WaitTimerTick(43)
 	})
+}
+
+func TestConsensusPostRequest(t *testing.T) {
+	t.Run("post 1", func(t *testing.T) {
+		env, _ := NewMockedEnv(t, 4, 3, true)
+		env.StartTimers()
+		env.eventStateTransition()
+		env.postDummyRequest()
+		env.WaitTimerTick(20)
+	})
+
 }

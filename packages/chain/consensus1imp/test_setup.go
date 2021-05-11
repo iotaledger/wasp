@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/solo"
+
 	"github.com/iotaledger/wasp/packages/testutil"
 
 	"go.dedis.ch/kyber/v3"
@@ -177,6 +179,14 @@ func (env *MockedEnv) newNode(i uint16) *mockedNode {
 		Log:       log,
 	}
 	ret.Consensus.mockedACS = env.MockedACS
+	chainCore.OnReceiveMessage(func(msg interface{}) {
+		ret.Log.Infof("--------------- msg %T", msg)
+		switch msg := msg.(type) {
+		case *chain.AsynchronousCommonSubsetMsg:
+			ret.Consensus.EventAsynchronousCommonSubsetMsg(msg)
+		}
+	})
+
 	return ret
 }
 
@@ -244,5 +254,13 @@ func (env *MockedEnv) eventStateTransition() {
 			StateOutput:    env.StateOutput,
 			StateTimestamp: nowis,
 		})
+	}
+}
+
+func (env *MockedEnv) postDummyRequest() {
+	req := solo.NewCallParams("dummy", "dummy").
+		NewRequestOffLedger(env.OriginatorKeyPair)
+	for _, n := range env.Nodes {
+		go n.Mempool.ReceiveRequest(req)
 	}
 }
