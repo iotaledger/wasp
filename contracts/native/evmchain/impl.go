@@ -117,6 +117,21 @@ func getNonce(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
+func getCode(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	code, err := emu.CodeAt(addr, nil)
+	a.RequireNoError(err)
+
+	ret := dict.New()
+	ret.Set(FieldResult, code)
+	return ret, nil
+}
+
 func callView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 

@@ -29,6 +29,7 @@ func init() {
 		coreutil.ViewFunc(FuncCallView, callView),
 		coreutil.ViewFunc(FuncGetNonce, getNonce),
 		coreutil.ViewFunc(FuncGetReceipt, getReceipt),
+		coreutil.ViewFunc(FuncGetCode, getCode),
 	})
 	native.AddProcessor(Interface)
 }
@@ -39,6 +40,7 @@ const (
 	FuncCallView        = "callView"
 	FuncGetNonce        = "getNonce"
 	FuncGetReceipt      = "getReceipt"
+	FuncGetCode         = "getCode"
 )
 
 const (

@@ -1,6 +1,7 @@
 package evmchain
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"math/big"
 	"strings"
@@ -220,4 +221,22 @@ func TestERC20Contract(t *testing.T) {
 
 	// call `balanceOf` view => check balance of recipient = 1337 TestCoin
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(transferAmount))
+}
+
+func TestGetCode(t *testing.T) {
+	chain := initEVMChain(t)
+
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
+	require.NoError(t, err)
+
+	// deploy solidity `erc20` contract
+	contractAddress, _ := deployEVMContract(t, chain, faucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+
+	// get contract bytecode from EVM emulator
+	ret, err := chain.CallView(Interface.Name, FuncGetCode, FieldAddress, contractAddress.Bytes())
+	require.NoError(t, err)
+	retrievedBytecode := ret.MustGet(FieldResult)
+
+	//ensure returned bytecode matches the expected runtime bytecode
+	require.True(t, bytes.Equal(retrievedBytecode, evmtest.ERC20ContractRuntimeBytecode), "bytecode retrieved from the chain must match the deployed bytecode")
 }
