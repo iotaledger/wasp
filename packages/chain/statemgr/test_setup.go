@@ -15,10 +15,10 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/mock_chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
@@ -31,7 +31,7 @@ type MockedEnv struct {
 	Ledger            *utxodb.UtxoDB
 	OriginatorKeyPair *ed25519.KeyPair
 	OriginatorAddress ledgerstate.Address
-	NodeConn          *mock_chain.MockedNodeConn
+	NodeConn          *testchain.MockedNodeConn
 	ChainID           coretypes.ChainID
 	mutex             sync.Mutex
 	Nodes             map[string]*MockedNode
@@ -42,10 +42,10 @@ type MockedNode struct {
 	NetID           string
 	Env             *MockedEnv
 	Db              *dbprovider.DBProvider
-	ChainCore       *mock_chain.MockedChainCore
-	Peers           *mock_chain.MockedPeerDomainProvider
+	ChainCore       *testchain.MockedChainCore
+	Peers           *testchain.MockedPeerDomainProvider
 	StateManager    chain.StateManager
-	StateTransition *mock_chain.MockedStateTransition
+	StateTransition *testchain.MockedStateTransition
 	Log             *logger.Logger
 }
 
@@ -61,7 +61,7 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 		Ledger:            utxodb.New(),
 		OriginatorKeyPair: nil,
 		OriginatorAddress: nil,
-		NodeConn:          mock_chain.NewMockedNodeConnection(),
+		NodeConn:          testchain.NewMockedNodeConnection(),
 		Nodes:             make(map[string]*MockedNode),
 	}
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
@@ -87,7 +87,7 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 
 	ret.ChainID = *coretypes.NewChainID(retOut.GetAliasAddress())
 
-	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction, _ ledgerstate.Address, _ uint16) {
+	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction) {
 		ret.Log.Debugf("MockedEnv.onPostTransaction: transaction %v posted", tx.ID().Base58())
 		_, exists := ret.Ledger.GetTransaction(tx.ID())
 		if exists {
@@ -163,16 +163,16 @@ func (env *MockedEnv) NewMockedNode(netid string, allPeers []string, timers Time
 		NetID:     netid,
 		Env:       env,
 		Db:        dbprovider.NewInMemoryDBProvider(log),
-		ChainCore: mock_chain.NewMockedChainCore(env.ChainID, log),
-		Peers:     mock_chain.NewMockedPeerDomain(netid, allPeers, log),
+		ChainCore: testchain.NewMockedChainCore(env.ChainID, log),
+		Peers:     testchain.NewMockedPeerDomain(netid, allPeers, log),
 		Log:       log,
 	}
 	ret.StateManager = New(ret.Db, ret.ChainCore, ret.Peers, env.NodeConn, log, timers)
-	ret.StateTransition = mock_chain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
+	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualState, tx *ledgerstate.Transaction) {
 		ret.Log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
 		go ret.StateManager.EventStateCandidateMsg(chain.StateCandidateMsg{State: vstate})
-		go env.NodeConn.PostTransaction(tx, ret.ChainCore.ID().AsAddress(), 0)
+		go env.NodeConn.PostTransaction(tx)
 	})
 	return ret
 }

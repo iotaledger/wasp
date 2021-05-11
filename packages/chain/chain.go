@@ -53,7 +53,7 @@ type Committee interface {
 	OwnPeerIndex() uint16
 	DKShare() *tcrypto.DKShare
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
-	SendMsgToPeers(msgType byte, msgData []byte, ts int64) uint16
+	SendMsgToPeers(msgType byte, msgData []byte, ts int64)
 	IsAlivePeer(peerIndex uint16) bool
 	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
@@ -73,7 +73,7 @@ type NodeConnection interface {
 	PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
-	PostTransaction(tx *ledgerstate.Transaction, fromSc ledgerstate.Address, fromLeader uint16)
+	PostTransaction(tx *ledgerstate.Transaction)
 }
 
 type StateManager interface {
@@ -88,7 +88,7 @@ type StateManager interface {
 	Close()
 }
 
-type Consensus interface {
+type ConsensusOld interface {
 	EventStateTransitionMsg(*StateTransitionMsg)
 	EventNotifyReqMsg(*NotifyReqMsg)
 	EventStartProcessingBatchMsg(*StartProcessingBatchMsg)
@@ -100,12 +100,26 @@ type Consensus interface {
 	Close()
 }
 
+type Consensus interface {
+	EventStateTransitionMsg(*StateTransitionMsg)
+	EventResultCalculated(*VMResultMsg)
+	EventSignedResultMsg(*SignedResultMsg)
+	EventInclusionsStateMsg(*InclusionStateMsg)
+	EventTimerMsg(TimerTick)
+	IsReady() bool
+	Close()
+}
+
 type Mempool interface {
 	ReceiveRequest(req coretypes.Request)
+	GetRequestsByIDs(nowis time.Time, reqids ...coretypes.RequestID) []coretypes.Request
+	GetReadyList(seenThreshold ...uint16) []coretypes.Request
+	// Deprecated:
 	MarkSeenByCommitteePeer(reqid *coretypes.RequestID, peerIndex uint16)
+	// Deprecated:
 	ClearSeenMarks()
-	GetReadyList(seenThreshold uint16) []coretypes.Request
-	GetReadyListFull(seenThreshold uint16) []*ReadyListRecord
+	// Deprecated:
+	GetReadyListFull(seenThreshold ...uint16) []*ReadyListRecord
 	TakeAllReady(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
 	RemoveRequests(reqs ...coretypes.RequestID)
 	HasRequest(id coretypes.RequestID) bool

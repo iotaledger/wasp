@@ -6,6 +6,10 @@ package solo
 import (
 	"bytes"
 	"fmt"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -16,9 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"sync"
-	"time"
 )
 
 func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, error) {
@@ -60,12 +61,12 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 
 	ch.Env.AdvanceClockBy(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 
-	inputs, err := ch.Env.utxoDB.CollectUnspentOutputsFromInputs(task.ResultTransaction)
+	inputs, err := ch.Env.utxoDB.CollectUnspentOutputsFromInputs(task.ResultTransactionEssence)
 	require.NoError(ch.Env.T, err)
-	unlockBlocks, err := utxoutil.UnlockInputsWithED25519KeyPairs(inputs, task.ResultTransaction, ch.StateControllerKeyPair)
+	unlockBlocks, err := utxoutil.UnlockInputsWithED25519KeyPairs(inputs, task.ResultTransactionEssence, ch.StateControllerKeyPair)
 	require.NoError(ch.Env.T, err)
 
-	tx := ledgerstate.NewTransaction(task.ResultTransaction, unlockBlocks)
+	tx := ledgerstate.NewTransaction(task.ResultTransactionEssence, unlockBlocks)
 	ch.settleStateTransition(tx)
 
 	return callRes, callErr

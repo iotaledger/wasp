@@ -1,4 +1,4 @@
-package mock_chain
+package testchain
 
 import (
 	"math/rand"

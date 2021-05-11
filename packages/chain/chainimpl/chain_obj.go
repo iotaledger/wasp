@@ -39,7 +39,7 @@ type chainObj struct {
 	procset               *processors.ProcessorCache
 	chMsg                 chan interface{}
 	stateMgr              chain.StateManager
-	consensus             chain.Consensus
+	consensus             chain.ConsensusOld
 	log                   *logger.Logger
 	nodeConn              *txstream.Client
 	dbProvider            *dbprovider.DBProvider
@@ -235,6 +235,19 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 		msgt.SenderNetID = msg.SenderNetID
 		c.stateMgr.EventBlockMsg(msgt)
 
+	case chain.MsgSignedResult:
+		msgt := &chain.SignedResultMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+
+		msgt.SenderIndex = msg.SenderIndex
+
+		//if c.consensus != nil {
+		//	c.consensus.EventS(msgt)
+		//}
+
 	default:
 		c.log.Errorf("processPeerMessage: wrong msg type")
 	}
@@ -301,9 +314,9 @@ func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 
 	// send to consensus
 	c.ReceiveMessage(&chain.StateTransitionMsg{
-		VariableState: msg.VirtualState,
-		ChainOutput:   msg.ChainOutput,
-		Timestamp:     msg.OutputTimestamp,
+		State:          msg.VirtualState,
+		StateOutput:    msg.ChainOutput,
+		StateTimestamp: msg.OutputTimestamp,
 	})
 }
 

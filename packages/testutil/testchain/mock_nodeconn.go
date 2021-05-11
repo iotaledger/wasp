@@ -1,4 +1,4 @@
-package mock_chain
+package testchain
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -10,7 +10,7 @@ type MockedNodeConn struct {
 	onPullConfirmedTransaction      func(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	onPullTransactionInclusionState func(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	onPullConfirmedOutput           func(addr ledgerstate.Address, outputID ledgerstate.OutputID)
-	onPostTransaction               func(tx *ledgerstate.Transaction, fromSc ledgerstate.Address, fromLeader uint16)
+	onPostTransaction               func(tx *ledgerstate.Transaction)
 }
 
 func NewMockedNodeConnection() *MockedNodeConn {
@@ -37,8 +37,8 @@ func (m *MockedNodeConn) PullConfirmedOutput(addr ledgerstate.Address, outputID 
 	m.onPullConfirmedOutput(addr, outputID)
 }
 
-func (m *MockedNodeConn) PostTransaction(tx *ledgerstate.Transaction, fromSc ledgerstate.Address, fromLeader uint16) {
-	m.onPostTransaction(tx, fromSc, fromLeader)
+func (m *MockedNodeConn) PostTransaction(tx *ledgerstate.Transaction) {
+	m.onPostTransaction(tx)
 }
 
 func (m *MockedNodeConn) OnPullBacklog(f func(addr *ledgerstate.AliasAddress)) {
@@ -61,6 +61,6 @@ func (m *MockedNodeConn) OnPullConfirmedOutput(f func(addr ledgerstate.Address, 
 	m.onPullConfirmedOutput = f
 }
 
-func (m *MockedNodeConn) OnPostTransaction(f func(tx *ledgerstate.Transaction, from ledgerstate.Address, fromLeader uint16)) {
+func (m *MockedNodeConn) OnPostTransaction(f func(tx *ledgerstate.Transaction)) {
 	m.onPostTransaction = f
 }
