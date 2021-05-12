@@ -30,26 +30,30 @@ func init() {
 		coreutil.ViewFunc(FuncGetNonce, getNonce),
 		coreutil.ViewFunc(FuncGetReceipt, getReceipt),
 		coreutil.ViewFunc(FuncGetCode, getCode),
+		coreutil.ViewFunc(FuncGetBlockNumber, getBlockNumber),
+		coreutil.ViewFunc(FuncGetBlockByNumber, getBlockByNumber),
 	})
 	native.AddProcessor(Interface)
 }
 
 const (
-	FuncGetBalance      = "getBalance"
-	FuncSendTransaction = "sendTransaction"
-	FuncCallView        = "callView"
-	FuncGetNonce        = "getNonce"
-	FuncGetReceipt      = "getReceipt"
-	FuncGetCode         = "getCode"
+	FuncGetBalance       = "getBalance"
+	FuncSendTransaction  = "sendTransaction"
+	FuncCallView         = "callView"
+	FuncGetNonce         = "getNonce"
+	FuncGetReceipt       = "getReceipt"
+	FuncGetCode          = "getCode"
+	FuncGetBlockNumber   = "getBlockNumber"
+	FuncGetBlockByNumber = "getBlockByNumber"
 )
 
 const (
-	FieldGenesisAlloc            = "g"
-	FieldAddress                 = "a"
-	FieldTransactionHash         = "h"
-	FieldTransactionData         = "t"
-	FieldTransactionDataBlobHash = "th"
-	FieldBalance                 = "b"
-	FieldCallArguments           = "c"
-	FieldResult                  = "r"
+	FieldGenesisAlloc    = "g"
+	FieldAddress         = "a"
+	FieldTransactionHash = "h"
+	FieldTransactionData = "t"
+	FieldBalance         = "b"
+	FieldCallArguments   = "c"
+	FieldResult          = "r"
+	FieldBlockNumber     = "bn"
 )

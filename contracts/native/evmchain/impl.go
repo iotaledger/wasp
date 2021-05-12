@@ -4,6 +4,8 @@
 package evmchain
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
@@ -59,12 +61,48 @@ func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
 	emu := emulatorR(ctx.State())
 	defer emu.Close()
 
-	state, err := emu.Blockchain().State()
+	var blockNumber *big.Int
+	if ctx.Params().MustHas(FieldBlockNumber) {
+		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
+	}
+
+	bal, err := emu.BalanceAt(addr, blockNumber)
 	a.RequireNoError(err)
-	bal := state.GetBalance(addr)
 
 	ret := dict.New()
 	ret.Set(FieldBalance, bal.Bytes())
+	return ret, nil
+}
+
+func getBlockNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	n := emu.Blockchain().CurrentBlock().Number()
+
+	ret := dict.New()
+	ret.Set(FieldResult, n.Bytes())
+	return ret, nil
+}
+
+func getBlockByNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	var blockNumber *big.Int
+	if ctx.Params().MustHas(FieldBlockNumber) {
+		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
+	}
+
+	block, err := emu.BlockByNumber(blockNumber)
+	a.RequireNoError(err)
+
+	ret := dict.New()
+	if block != nil {
+		ret.Set(FieldResult, EncodeBlock(block))
+	}
 	return ret, nil
 }
 

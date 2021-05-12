@@ -4,36 +4,35 @@
 package solo
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"go.uber.org/atomic"
-	"golang.org/x/xerrors"
-
-	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/atomic"
 	"go.uber.org/zap/zapcore"
+	"golang.org/x/xerrors"
 )
 
 // DefaultTimeStep is a default step for the logical clock for each PostRequestSync call.
@@ -51,7 +50,7 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T           *testing.T
+	T           TestingT
 	logger      *logger.Logger
 	dbProvider  *dbprovider.DBProvider
 	utxoDB      *utxodb.UtxoDB
@@ -62,10 +61,35 @@ type Solo struct {
 	logicalTime time.Time
 	timeStep    time.Duration
 	chains      map[[33]byte]*Chain
-	doOnce      sync.Once
 	// publisher wait group
 	publisherWG      sync.WaitGroup
 	publisherEnabled atomic.Bool
+}
+
+type TestingT interface {
+	Name() string
+	Errorf(format string, args ...interface{})
+	FailNow()
+}
+
+func NewFakeTestingT(name string) TestingT {
+	return &fakeTestingT{name}
+}
+
+type fakeTestingT struct {
+	name string
+}
+
+func (f *fakeTestingT) Name() string {
+	return f.name
+}
+
+func (f *fakeTestingT) Errorf(format string, args ...interface{}) {
+	fmt.Printf(format, args...)
+}
+
+func (f *fakeTestingT) FailNow() {
+	panic("FailNow() called")
 }
 
 // Chain represents state of individual chain.
@@ -122,9 +146,9 @@ var (
 // New creates an instance of the `solo` environment for the test instances.
 //   'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
 //   'printStackTrace' controls printing stack trace in case of errors
-func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
+func New(t TestingT, debug bool, printStackTrace bool) *Solo {
 	doOnce.Do(func() {
-		glbLogger = testlogger.NewLogger(t, "04:05.000")
+		glbLogger = testlogger.NewNamedLogger(t.Name(), "04:05.000")
 		if !debug {
 			glbLogger = testlogger.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
 		}

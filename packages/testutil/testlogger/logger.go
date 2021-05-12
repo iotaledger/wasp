@@ -6,23 +6,28 @@ package testlogger
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
-
 	"github.com/iotaledger/hive.go/logger"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // NewLogger produces a logger adjusted for test cases.
 func NewLogger(t *testing.T, timeLayout ...string) *logger.Logger {
+	return NewNamedLogger(t.Name())
+}
+
+// NewNamedLogger produces a logger adjusted for test cases.
+func NewNamedLogger(name string, timeLayout ...string) *logger.Logger {
 	// log, err := zap.NewDevelopment()
 	cfg := zap.NewDevelopmentConfig()
 	if len(timeLayout) > 0 {
 		cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(timeLayout[0])
 	}
 	log, err := cfg.Build()
-	require.NoError(t, err)
-	return log.Named(t.Name()).Sugar()
+	if err != nil {
+		panic(err)
+	}
+	return log.Named(name).Sugar()
 }
 
 // WithLevel returns a logger with a level increased.
