@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
 )
 
 func emulator(state kv.KVStore) *evm.EVMEmulator {
@@ -38,21 +37,8 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
-	var txData []byte
-	if ctx.Params().MustHas(FieldTransactionData) {
-		txData = ctx.Params().MustGet(FieldTransactionData)
-	} else {
-		getBlobFieldParams := dict.Dict(map[kv.Key][]byte{
-			blob.ParamHash:  ctx.Params().MustGet(FieldTransactionDataBlobHash),
-			blob.ParamField: []byte(FieldTransactionData),
-		})
-		r, err := ctx.Call(blob.Interface.Hname(), coretypes.Hn(blob.FuncGetBlobField), getBlobFieldParams, nil)
-		a.RequireNoError(err)
-		txData = r.MustGet(blob.ParamBytes)
-	}
-
 	tx := &types.Transaction{}
-	err := tx.UnmarshalBinary(txData)
+	err := tx.UnmarshalBinary(ctx.Params().MustGet(FieldTransactionData))
 	a.RequireNoError(err)
 
 	emu := emulator(ctx.State())

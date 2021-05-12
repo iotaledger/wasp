@@ -86,15 +86,15 @@ func deployEVMContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKe
 	txdata, err := tx.MarshalBinary()
 	require.NoError(t, err)
 
-	txDataBlobHash, err := chain.UploadBlobOptimized(1024, nil, FieldTransactionData, txdata)
-	require.NoError(t, err)
-
-	_, err = chain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, FuncSendTransaction,
-			FieldTransactionDataBlobHash, codec.EncodeHashValue(txDataBlobHash),
-		).WithIotas(1),
-		nil,
+	req, toUpload := solo.NewCallParamsOptimized(Interface.Name, FuncSendTransaction, 1024,
+		FieldTransactionData, txdata,
 	)
+	req.WithIotas(1)
+	for _, v := range toUpload {
+		chain.Env.PutBlobDataIntoRegistry(v)
+	}
+
+	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	contractAddress := crypto.CreateAddress(creatorAddress, nonce)
@@ -237,6 +237,6 @@ func TestGetCode(t *testing.T) {
 	require.NoError(t, err)
 	retrievedBytecode := ret.MustGet(FieldResult)
 
-	//ensure returned bytecode matches the expected runtime bytecode
+	// ensure returned bytecode matches the expected runtime bytecode
 	require.True(t, bytes.Equal(retrievedBytecode, evmtest.ERC20ContractRuntimeBytecode), "bytecode retrieved from the chain must match the deployed bytecode")
 }
