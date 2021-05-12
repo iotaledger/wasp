@@ -60,6 +60,7 @@ type Committee interface {
 	Attach(chain ChainCore)
 	IsReady() bool
 	Close()
+	AsynchronousCommonSubsetRunner
 }
 
 type ChainRequests interface {
@@ -105,6 +106,7 @@ type Consensus interface {
 	EventResultCalculated(*VMResultMsg)
 	EventSignedResultMsg(*SignedResultMsg)
 	EventInclusionsStateMsg(*InclusionStateMsg)
+	EventAsynchronousCommonSubsetMsg(msg *AsynchronousCommonSubsetMsg)
 	EventTimerMsg(TimerTick)
 	IsReady() bool
 	Close()
@@ -125,6 +127,10 @@ type Mempool interface {
 	HasRequest(id coretypes.RequestID) bool
 	Stats() (int, int, int)
 	Close()
+}
+
+type AsynchronousCommonSubsetRunner interface {
+	RunACSConsensus(value []byte, sessionID []byte, callback func(sessionID []byte, acs [][]byte))
 }
 
 type SyncInfo struct {

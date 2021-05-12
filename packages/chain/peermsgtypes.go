@@ -121,6 +121,7 @@ type VMResultMsg struct {
 // AsynchronousCommonSubsetMsg
 type AsynchronousCommonSubsetMsg struct {
 	ProposedBatchesBin [][]byte
+	SessionID          []byte
 }
 
 // InclusionStateMsg nodeconn plugin sends inclusions state of the transaction to ConsensusOld

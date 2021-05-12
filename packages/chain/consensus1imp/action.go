@@ -38,7 +38,7 @@ func (c *consensusImpl) startConsensusIfNeeded() {
 		return
 	}
 	proposal := c.prepareBatchProposal(reqs)
-	c.sendProposalForACS(proposal)
+	c.runACSConsensus(proposal)
 }
 
 func (c *consensusImpl) runVMIfNeeded() {
@@ -87,9 +87,7 @@ func (c *consensusImpl) runVMIfNeeded() {
 		})
 	}
 
-	c.stage = stageVM
-	c.stageStarted = time.Now()
-
+	c.setStage(stageVM)
 	go c.vmRunner.Run(task)
 }
 
@@ -136,8 +134,7 @@ func (c *consensusImpl) checkQuorum() {
 		ApprovingOutputID: approvingOutID,
 	})
 
-	c.stage = stageTransactionFinalized
-	c.stageStarted = time.Now()
+	c.setStage(stageTransactionFinalized)
 
 	// calculate deterministic pseudo-random postTxDeadline among contributors
 	if c.iAmContributor {
@@ -256,8 +253,7 @@ func (c *consensusImpl) resetState() {
 	c.consensusBatch = nil
 	c.contributors = nil
 
-	c.stage = stageStateReceived
-	c.stageStarted = time.Now()
+	c.setStage(stageStateReceived)
 }
 
 func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchProposal {
@@ -283,10 +279,15 @@ func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchPro
 	return ret
 }
 
-func (c *consensusImpl) sendProposalForACS(proposal *batchProposal) {
-	c.mockedACS.ProposeValue(proposal.Bytes(), c.stateOutput.ID().Bytes())
-	c.stage = stageConsensus
-	c.stageStarted = time.Now()
+func (c *consensusImpl) runACSConsensus(proposal *batchProposal) {
+	c.committee.RunACSConsensus(proposal.Bytes(), c.stateOutput.ID().Bytes(), func(sessionID []byte, acs [][]byte) {
+		c.log.Debugf("received ACS")
+		go c.chain.ReceiveMessage(&chain.AsynchronousCommonSubsetMsg{
+			ProposedBatchesBin: acs,
+			SessionID:          sessionID,
+		})
+	})
+	c.setStage(stageConsensus)
 }
 
 func (c *consensusImpl) receiveACS(values [][]byte) {
@@ -348,14 +349,13 @@ func (c *consensusImpl) receiveACS(values [][]byte) {
 	c.myContributionSeqNumber = myContributionSeqNumber
 	c.contributors = contributors
 
-	c.stage = stageConsensusCompleted
-	c.stageStarted = time.Now()
+	c.setStage(stageConsensusCompleted)
 
 	c.runVMIfNeeded()
 }
 
 func (c *consensusImpl) processVMResult(result *vm.VMTask) {
-	c.log.Debugw("processVMResult")
+	c.log.Debugf("processVMResult")
 
 	essenceBytes := result.ResultTransactionEssence.Bytes()
 	essenceHash := hashing.HashData(essenceBytes)
@@ -376,8 +376,7 @@ func (c *consensusImpl) processVMResult(result *vm.VMTask) {
 	}
 	c.committee.SendMsgToPeers(chain.MsgSignedResult, util.MustBytes(msg), time.Now().UnixNano())
 
-	c.stage = stageWaitForSignatures
-	c.stageStarted = time.Now()
+	c.setStage(stageWaitForSignatures)
 
 	c.log.Debugf("processVMResult: signed and broadcasted: essence hash: %s", msg.EssenceHash.String())
 }
@@ -401,4 +400,10 @@ func (c *consensusImpl) processSignedResult(msg *chain.SignedResultMsg) {
 		return
 	}
 	c.resultSignatures[msg.SenderIndex] = msg
+}
+
+func (c *consensusImpl) setStage(s consensusStage) {
+	c.log.Debugf("STAGE '%s' -> '%s'", c.stage, s)
+	c.stage = s
+	c.stageStarted = time.Now()
 }

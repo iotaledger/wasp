@@ -28,9 +28,8 @@ func TestConsensusPostRequest(t *testing.T) {
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequest()
-		env.WaitTimerTick(10)
+		env.WaitTimerTick(20)
 	})
-
 	t.Run("post 1 randomize", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, 4, 3, true)
 		env.StartTimers()

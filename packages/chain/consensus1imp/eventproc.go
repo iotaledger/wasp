@@ -57,6 +57,17 @@ func (c *consensusImpl) eventAsynchronousCommonSubset(msg *chain.AsynchronousCom
 	c.takeAction()
 }
 
+func (c *consensusImpl) EventVMResultMsg(msg *chain.VMResultMsg) {
+	c.eventVMResultMsgCh <- msg
+}
+func (c *consensusImpl) eventVMResultMsg(msg *chain.VMResultMsg) {
+	c.log.Debugf("eventVMResultMsg: stage: '%s' state index: %d state hash: %s",
+		c.stage, msg.Task.VirtualState.BlockIndex(), msg.Task.VirtualState.Hash())
+	c.processVMResult(msg.Task)
+
+	c.takeAction()
+}
+
 func (c *consensusImpl) EventTimerMsg(msg chain.TimerTick) {
 	c.eventTimerMsgCh <- msg
 }

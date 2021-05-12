@@ -6,8 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 
-	"github.com/iotaledger/wasp/packages/testutil/testchain"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/state"
 
@@ -49,9 +47,9 @@ type consensusImpl struct {
 	eventSignedResultMsgCh     chan *chain.SignedResultMsg
 	eventInclusionStateMsgCh   chan *chain.InclusionStateMsg
 	eventACSMsgCh              chan *chain.AsynchronousCommonSubsetMsg
+	eventVMResultMsgCh         chan *chain.VMResultMsg
 	eventTimerMsgCh            chan chain.TimerTick
 	closeCh                    chan struct{}
-	mockedACS                  *testchain.MockedAsynchronousCommonSubset
 }
 
 var _ chain.Consensus = &consensusImpl{}
@@ -70,6 +68,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		eventSignedResultMsgCh:     make(chan *chain.SignedResultMsg),
 		eventInclusionStateMsgCh:   make(chan *chain.InclusionStateMsg),
 		eventACSMsgCh:              make(chan *chain.AsynchronousCommonSubsetMsg),
+		eventVMResultMsgCh:         make(chan *chain.VMResultMsg),
 		eventTimerMsgCh:            make(chan chain.TimerTick),
 		closeCh:                    make(chan struct{}),
 	}
@@ -117,6 +116,10 @@ func (c *consensusImpl) recvLoop() {
 		case msg, ok := <-c.eventACSMsgCh:
 			if ok {
 				c.eventAsynchronousCommonSubset(msg)
+			}
+		case msg, ok := <-c.eventVMResultMsgCh:
+			if ok {
+				c.eventVMResultMsg(msg)
 			}
 		case msg, ok := <-c.eventTimerMsgCh:
 			if ok {

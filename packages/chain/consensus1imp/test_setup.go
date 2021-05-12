@@ -54,7 +54,7 @@ type mockedEnv struct {
 	StateReader       state.StateReader
 	StateOutput       *ledgerstate.AliasOutput
 	NodeConn          *testchain.MockedNodeConn
-	MockedACS         *testchain.MockedAsynchronousCommonSubset
+	MockedACS         chain.AsynchronousCommonSubsetRunner
 	ChainID           coretypes.ChainID
 	mutex             sync.Mutex
 	Nodes             []*mockedNode
@@ -96,13 +96,7 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledg
 		NodeConn:  testchain.NewMockedNodeConnection(),
 		Nodes:     make([]*mockedNode, n),
 	}
-	ret.MockedACS = testchain.NewMockedACS(quorum, func(values [][]byte) {
-		for _, n := range ret.Nodes {
-			go n.ChainCore.ReceiveMessage(&chain.AsynchronousCommonSubsetMsg{
-				ProposedBatchesBin: values,
-			})
-		}
-	})
+	ret.MockedACS = testchain.NewMockedACSRunner(quorum, log)
 
 	_, ret.PubKeys, ret.PrivKeys = testpeers.SetupKeys(n, ret.Suite)
 	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkg(t, quorum, neighbors, ret.PubKeys, ret.PrivKeys, ret.Suite, log.Named("dkg"))
@@ -168,7 +162,15 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 	cfg, err := peering.NewStaticPeerNetworkConfigProvider(env.Neighbors[i], 4000+int(i), env.Neighbors...)
 	require.NoError(env.T, err)
 
-	committee, err := committeeimpl.NewCommittee(env.StateAddress, env.NetworkProviders[i], cfg, env.DKSRegistries[i], mockCommitteeRegistry, log)
+	committee, err := committeeimpl.NewCommittee(
+		env.StateAddress,
+		env.NetworkProviders[i],
+		cfg,
+		env.DKSRegistries[i],
+		mockCommitteeRegistry,
+		log,
+		env.MockedACS,
+	)
 	require.NoError(env.T, err)
 
 	ret := &mockedNode{
@@ -180,13 +182,16 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 		Log:       log,
 	}
 
-	ret.Consensus.mockedACS = env.MockedACS
-	ret.Consensus.vmRunner = testchain.NewMockedVMRunner(env.T)
+	ret.Consensus.vmRunner = testchain.NewMockedVMRunner(env.T, log)
 
 	chainCore.OnReceiveMessage(func(msg interface{}) {
 		switch msg := msg.(type) {
 		case *chain.AsynchronousCommonSubsetMsg:
 			ret.Consensus.EventAsynchronousCommonSubsetMsg(msg)
+		case *chain.VMResultMsg:
+			ret.Consensus.EventVMResultMsg(msg)
+		default:
+			ret.Log.Errorf("chainCore: unexpected message type: %T", msg)
 		}
 	})
 
