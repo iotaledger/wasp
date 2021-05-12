@@ -1,7 +1,6 @@
 package statemgr
 
 import (
-	"strconv"
 	"testing"
 	"time"
 
@@ -15,9 +14,8 @@ import (
 //---------------------------------------------
 //Tests if state manager is started and initialised correctly
 func TestEnv(t *testing.T) {
-	env, _ := NewMockedEnv(t, false)
-	node0 := env.NewMockedNode("node0", nil, Timers{})
-	node0.SetupPeerGroupSimple()
+	env, _ := NewMockedEnv(2, t, false)
+	node0 := env.NewMockedNode(0, Timers{})
 	node0.StateManager.Ready().MustWait()
 
 	require.NotNil(t, node0.StateManager.(*stateManager).solidState)
@@ -34,8 +32,7 @@ func TestEnv(t *testing.T) {
 		env.AddNode(node0)
 	})
 
-	node1 := env.NewMockedNode("node1", nil, Timers{})
-	node1.SetupPeerGroupSimple()
+	node1 := env.NewMockedNode(1, Timers{})
 	require.NotPanics(t, func() {
 		env.AddNode(node1)
 	})
@@ -50,7 +47,7 @@ func TestEnv(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, si.Synced)
 
-	env.RemoveNode("node0")
+	env.RemoveNode(node0)
 	require.EqualValues(t, 1, len(env.Nodes))
 
 	env.AddNode(node0)
@@ -58,8 +55,8 @@ func TestEnv(t *testing.T) {
 }
 
 func TestGetInitialState(t *testing.T) {
-	env, originTx := NewMockedEnv(t, false)
-	node := env.NewMockedNode("node0", nil, Timers{})
+	env, originTx := NewMockedEnv(1, t, false)
+	node := env.NewMockedNode(0, Timers{})
 	node.StateManager.Ready().MustWait()
 	require.NotNil(t, node.StateManager.(*stateManager).solidState)
 	require.False(t, node.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
@@ -84,8 +81,8 @@ func TestGetInitialState(t *testing.T) {
 }
 
 func TestGetNextState(t *testing.T) {
-	env, originTx := NewMockedEnv(t, false)
-	node := env.NewMockedNode("node0", nil, Timers{}.SetPullStateNewBlockDelay(50*time.Millisecond))
+	env, originTx := NewMockedEnv(1, t, false)
+	node := env.NewMockedNode(0, Timers{}.SetPullStateNewBlockDelay(50*time.Millisecond))
 	node.StateManager.Ready().MustWait()
 	require.NotNil(t, node.StateManager.(*stateManager).solidState)
 	require.False(t, node.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
@@ -136,7 +133,7 @@ func TestManyStateTransitionsNoPush(t *testing.T) {
 // optionally, mocked node connection pushes new transactions to state managers or not.
 // If not, state manager has to retrieve it with pull
 func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
-	env, _ := NewMockedEnv(t, false)
+	env, _ := NewMockedEnv(1, t, false)
 	env.SetPushStateToNodesOption(pushStateToNodes)
 
 	timers := Timers{}
@@ -144,7 +141,7 @@ func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
 		timers = timers.SetPullStateNewBlockDelay(50 * time.Millisecond)
 	}
 
-	node := env.NewMockedNode("node0", nil, timers)
+	node := env.NewMockedNode(0, timers)
 	node.StateManager.Ready().MustWait()
 	node.StartTimer()
 
@@ -165,13 +162,10 @@ func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
 // optionally, mocked node connection pushes new transactions to state managers or not.
 // If not, state manager has to retrieve it with pull
 func TestManyStateTransitionsSeveralNodes(t *testing.T) {
-	env, _ := NewMockedEnv(t, true)
+	env, _ := NewMockedEnv(2, t, true)
 	env.SetPushStateToNodesOption(true)
 
-	allPeers := []string{"node0", "node1"}
-
-	node := env.NewMockedNode("node0", allPeers, Timers{})
-	node.SetupPeerGroupSimple()
+	node := env.NewMockedNode(0, Timers{})
 	node.StateManager.Ready().MustWait()
 	node.StartTimer()
 
@@ -188,8 +182,7 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, si.Synced)
 
-	node1 := env.NewMockedNode("node1", allPeers, Timers{})
-	node1.SetupPeerGroupSimple()
+	node1 := env.NewMockedNode(1, Timers{})
 	node1.StateManager.Ready().MustWait()
 	node1.StartTimer()
 	env.AddNode(node1)
@@ -200,18 +193,11 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 }
 
 func TestManyStateTransitionsManyNodes(t *testing.T) {
-	env, _ := NewMockedEnv(t, true)
+	numberOfCatchingPeers := 10
+	env, _ := NewMockedEnv(numberOfCatchingPeers+1, t, true)
 	env.SetPushStateToNodesOption(true)
 
-	numberOfCatchingPeers := 10
-	allPeers := make([]string, numberOfCatchingPeers+1)
-	for i := 0; i < numberOfCatchingPeers; i++ {
-		allPeers[i] = "node" + strconv.Itoa(i+1)
-	}
-	allPeers[numberOfCatchingPeers] = "node"
-
-	node := env.NewMockedNode("node", allPeers, Timers{})
-	node.SetupPeerGroupSimple()
+	node := env.NewMockedNode(0, Timers{})
 	node.StateManager.Ready().MustWait()
 	node.StartTimer()
 
@@ -228,20 +214,19 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, si.Synced)
 
-	nodes := make([]*MockedNode, numberOfCatchingPeers)
+	catchingNodes := make([]*MockedNode, numberOfCatchingPeers)
 	for i := 0; i < numberOfCatchingPeers; i++ {
-		nodes[i] = env.NewMockedNode(allPeers[i], allPeers, Timers{}.SetGetBlockRetry(200*time.Millisecond))
-		nodes[i].SetupPeerGroupSimple()
-		nodes[i].StateManager.Ready().MustWait()
+		catchingNodes[i] = env.NewMockedNode(i+1, Timers{}.SetGetBlockRetry(200*time.Millisecond))
+		catchingNodes[i].StateManager.Ready().MustWait()
 	}
 	for i := 0; i < numberOfCatchingPeers; i++ {
-		nodes[i].StartTimer()
+		catchingNodes[i].StartTimer()
 	}
 	for i := 0; i < numberOfCatchingPeers; i++ {
-		env.AddNode(nodes[i])
+		env.AddNode(catchingNodes[i])
 	}
 	for i := 0; i < numberOfCatchingPeers; i++ {
-		si, err = nodes[i].WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
+		si, err = catchingNodes[i].WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
 		require.NoError(t, err)
 		require.True(t, si.Synced)
 	}
@@ -250,13 +235,10 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 // Call to MsgGetConfirmetOutput does not return anything. Synchronisation must
 // be done using stateOutput only.
 func TestCatchUpNoConfirmedOutput(t *testing.T) {
-	env, _ := NewMockedEnv(t, true)
+	env, _ := NewMockedEnv(2, t, true)
 	env.SetPushStateToNodesOption(true)
 
-	allPeers := []string{"node0", "node1"}
-
-	node := env.NewMockedNode("node0", allPeers, Timers{})
-	node.SetupPeerGroupSimple()
+	node := env.NewMockedNode(0, Timers{})
 	node.StateManager.Ready().MustWait()
 	node.StartTimer()
 
@@ -275,8 +257,7 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, si.Synced)
 
-	node1 := env.NewMockedNode("node1", allPeers, Timers{})
-	node1.SetupPeerGroupSimple()
+	node1 := env.NewMockedNode(1, Timers{})
 	node1.StateManager.Ready().MustWait()
 	node1.StartTimer()
 	env.AddNode(node1)

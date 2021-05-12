@@ -201,17 +201,7 @@ func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupPro
 
 // Domain creates peering.PeerDomainProvider.
 func (n *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
-	var err error
-	peers := make([]peering.PeerSender, len(peerNetIDs))
-	for i, nid := range peerNetIDs {
-		if nid == n.Self().NetID() {
-			continue
-		}
-		if peers[i], err = n.PeerByNetID(peerNetIDs[i]); err != nil {
-			return nil, err
-		}
-	}
-	return domain.NewPeerDomain(n, peers, n.network.log), nil
+	return domain.NewPeerDomainByNetIDs(n, peerNetIDs, n.network.log)
 }
 
 // Attach implements peering.NetworkProvider.
