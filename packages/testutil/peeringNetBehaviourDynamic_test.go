@@ -24,12 +24,16 @@ func TestPeeringNetDynamicReliable(t *testing.T) {
 		doneCh <- true
 	}()
 	var someNode = peeringNode{netID: "src"}
+	//
+	// Run the test.
 	var behavior PeeringNetBehavior
 	behavior = NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 10; i++ {
-		inCh <- &peeringMsg{from: &someNode}
+		sendMessage(&someNode, inCh)
 	}
+	//
+	// Stop the test.
 	<-doneCh
 	behavior.Close()
 }
@@ -37,24 +41,12 @@ func TestPeeringNetDynamicReliable(t *testing.T) {
 func TestPeeringNetDynamicUnreliable(t *testing.T) {
 	inCh := make(chan *peeringMsg)
 	outCh := make(chan *peeringMsg)
-	//
-	// Receiver process.
 	stopCh := make(chan bool)
-	startTime := time.Now()
 	durations := make([]time.Duration, 0)
-	go func() {
-		for {
-			select {
-			case <-stopCh:
-				return
-			case <-outCh:
-				durations = append(durations, time.Since(startTime))
-			}
-		}
-	}()
+	go testRecvLoop(outCh, &durations, stopCh)
+	var someNode = peeringNode{netID: "src"}
 	//
 	// Run the test.
-	var someNode = peeringNode{netID: "src"}
 	var behavior PeeringNetBehavior
 	behavior = NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).
 		WithLosingChannel(nil, 50).
@@ -62,7 +54,7 @@ func TestPeeringNetDynamicUnreliable(t *testing.T) {
 		WithDelayingChannel(nil, 50*time.Millisecond, 100*time.Millisecond)
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 1000; i++ {
-		inCh <- &peeringMsg{from: &someNode}
+		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(500 * time.Millisecond)
 	//
@@ -72,62 +64,8 @@ func TestPeeringNetDynamicUnreliable(t *testing.T) {
 		require.Less(t, len(durations), 900)
 	}
 	{ // Average should be between the specified boundaries.
-		var avgDuration int64 = 0
-		for _, d := range durations {
-			avgDuration += d.Milliseconds()
-		}
-		avgDuration = avgDuration / int64(len(durations))
+		avgDuration := averageDuration(durations)
 		require.Greater(t, avgDuration, int64(50))
-		require.Less(t, avgDuration, int64(100))
-	}
-	//
-	// Stop the test.
-	stopCh <- true
-	behavior.Close()
-}
-
-func TestPeeringNetDynamicGoodQuality(t *testing.T) {
-	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg)
-	//
-	// Receiver process.
-	stopCh := make(chan bool)
-	startTime := time.Now()
-	durations := make([]time.Duration, 0)
-	go func() {
-		for {
-			select {
-			case <-stopCh:
-				return
-			case <-outCh:
-				durations = append(durations, time.Since(startTime))
-			}
-		}
-	}()
-	//
-	// Run the test.
-	var someNode = peeringNode{netID: "src"}
-	var behavior PeeringNetBehavior
-	behavior = NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).
-		WithLosingChannel(nil, 100).
-		WithRepeatingChannel(nil, 0).
-		WithDelayingChannel(nil, 0*time.Millisecond, 0*time.Millisecond)
-	behavior.AddLink(inCh, outCh, "dst")
-	for i := 0; i < 1000; i++ {
-		inCh <- &peeringMsg{from: &someNode}
-	}
-	time.Sleep(500 * time.Millisecond)
-	//
-	// Verify the results (with some tolerance for randomness).
-	{ // All messages should be delivered.
-		require.Equal(t, 1000, len(durations))
-	}
-	{ // Average should be small enough.
-		var avgDuration int64 = 0
-		for _, d := range durations {
-			avgDuration += d.Milliseconds()
-		}
-		avgDuration = avgDuration / int64(len(durations))
 		require.Less(t, avgDuration, int64(100))
 	}
 	//
@@ -139,83 +77,159 @@ func TestPeeringNetDynamicGoodQuality(t *testing.T) {
 func TestPeeringNetDynamicChanging(t *testing.T) {
 	inCh := make(chan *peeringMsg)
 	outCh := make(chan *peeringMsg)
-	//
-	// Receiver process.
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
-	go func() {
-		for {
-			select {
-			case <-stopCh:
-				return
-			case msg := <-outCh:
-				durations = append(durations, time.Since(time.Unix(0, msg.msg.Timestamp)))
-			}
-		}
-	}()
+	go testRecvLoop(outCh, &durations, stopCh)
 	var someNode = peeringNode{netID: "src"}
-	sendFun := func() {
-		inCh <- &peeringMsg{from: &someNode, msg: peering.PeerMessage{Timestamp: time.Now().UnixNano()}}
-	}
-	averageDurationFun := func() int64 {
-		var result int64 = 0
-		for _, d := range durations {
-			result += d.Milliseconds()
-		}
-		return result / int64(len(durations))
-	}
 	//
 	// Run the test.
 	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 100; i++ {
-		sendFun()
+		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(100 * time.Millisecond)
 	require.Equal(t, 100, len(durations))
-	require.Less(t, averageDurationFun(), int64(20))
+	require.Less(t, averageDuration(durations), int64(20))
 	durations = durations[:0]
 
 	deliver40Name := "Deliver40"
 	deliver70Name := "Deliver70"
 	behavior.WithLosingChannel(&deliver70Name, 70).WithLosingChannel(&deliver40Name, 40) // 70% * 40% = 28% delivery probability
 	for i := 0; i < 1000; i++ {
-		sendFun()
+		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(100 * time.Millisecond)
 	require.InDelta(t, 280, len(durations), 90)
-	require.Less(t, averageDurationFun(), int64(20))
+	require.Less(t, averageDuration(durations), int64(20))
 	durations = durations[:0]
 
 	delayName := "Delay"
 	behavior.WithDelayingChannel(&delayName, 20*time.Millisecond, 70*time.Millisecond) // 28% delivery probability and 20-70 ms delay
 	for i := 0; i < 1000; i++ {
-		sendFun()
+		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(150 * time.Millisecond)
 	require.InDelta(t, 280, len(durations), 90)
-	require.InDelta(t, 45, averageDurationFun(), 20)
+	require.InDelta(t, 45, averageDuration(durations), 20)
 	durations = durations[:0]
 
 	behavior.RemoveHandler(deliver40Name) // 70% delivery probability and 20-70 ms delay
 	for i := 0; i < 1000; i++ {
-		sendFun()
+		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(150 * time.Millisecond)
 	require.InDelta(t, 700, len(durations), 90)
-	require.InDelta(t, 45, averageDurationFun(), 20)
+	require.InDelta(t, 45, averageDuration(durations), 20)
 	durations = durations[:0]
 
 	behavior.RemoveHandler(delayName) // 70% delivery probability without a delay
 	for i := 0; i < 1000; i++ {
-		sendFun()
+		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(100 * time.Millisecond)
 	require.InDelta(t, 700, len(durations), 90)
-	require.Less(t, averageDurationFun(), int64(20))
+	require.Less(t, averageDuration(durations), int64(20))
 	durations = durations[:0]
 
 	// Stop the test.
 	stopCh <- true
 	behavior.Close()
+}
+
+func TestPeeringNetDynamicLosingChannel(t *testing.T) {
+	inCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg)
+	stopCh := make(chan bool)
+	durations := make([]time.Duration, 0)
+	go testRecvLoop(outCh, &durations, stopCh)
+	var someNode = peeringNode{netID: "src"}
+	//
+	// Run the test.
+	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).WithLosingChannel(nil, 50)
+	behavior.AddLink(inCh, outCh, "dst")
+	for i := 0; i < 1000; i++ {
+		sendMessage(&someNode, inCh)
+	}
+	time.Sleep(100 * time.Millisecond)
+	require.InDelta(t, 500, len(durations), 90)
+	require.Less(t, averageDuration(durations), int64(20))
+
+	// Stop the test.
+	stopCh <- true
+	behavior.Close()
+}
+
+func TestPeeringNetDynamicRepeatingChannel(t *testing.T) {
+	inCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg)
+	stopCh := make(chan bool)
+	durations := make([]time.Duration, 0)
+	go testRecvLoop(outCh, &durations, stopCh)
+	var someNode = peeringNode{netID: "src"}
+	//
+	// Run the test.
+	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).WithRepeatingChannel(nil, 150)
+	behavior.AddLink(inCh, outCh, "dst")
+	for i := 0; i < 1000; i++ {
+		sendMessage(&someNode, inCh)
+	}
+	time.Sleep(100 * time.Millisecond)
+	require.InDelta(t, 2500, len(durations), 90)
+	require.Less(t, averageDuration(durations), int64(20))
+
+	// Stop the test.
+	stopCh <- true
+	behavior.Close()
+}
+
+func TestPeeringNetDynamicDelayingChannel(t *testing.T) {
+	inCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg)
+	stopCh := make(chan bool)
+	durations := make([]time.Duration, 0)
+	go testRecvLoop(outCh, &durations, stopCh)
+	var someNode = peeringNode{netID: "src"}
+	//
+	// Run the test.
+	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).WithDelayingChannel(nil, 25*time.Millisecond, 75*time.Millisecond)
+	behavior.AddLink(inCh, outCh, "dst")
+	for i := 0; i < 100; i++ {
+		sendMessage(&someNode, inCh)
+	}
+	time.Sleep(100 * time.Millisecond)
+	require.Equal(t, 100, len(durations), 9)
+	require.InDelta(t, 50, averageDuration(durations), 20)
+
+	// Stop the test.
+	stopCh <- true
+	behavior.Close()
+}
+
+func testRecvLoop(outCh chan (*peeringMsg), durations *[]time.Duration, stopCh chan (bool)) {
+	for {
+		select {
+		case <-stopCh:
+			return
+		case msg := <-outCh:
+			*durations = append(*durations, time.Since(time.Unix(0, msg.msg.Timestamp)))
+		}
+	}
+}
+
+func averageDuration(durations []time.Duration) int64 {
+	var result int64 = 0
+	for _, d := range durations {
+		result += d.Milliseconds()
+	}
+	return result / int64(len(durations))
+}
+
+func sendMessage(from *peeringNode, inCh chan (*peeringMsg)) {
+	inCh <- &peeringMsg{
+		from: from,
+		msg: peering.PeerMessage{
+			Timestamp: time.Now().UnixNano(),
+		},
+	}
 }
