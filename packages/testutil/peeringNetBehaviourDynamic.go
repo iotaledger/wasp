@@ -166,6 +166,7 @@ func (rcT *peeringNetDynamicHandlerRepeatingChannel) handleSendMessage(
 	if rand.Intn(100) < rcT.probability%100 {
 		numRepeat++
 	}
+	log.Debugf("Network repeated message %v -%v-> %v %v times", msg.from.netID, msg.msg.MsgType, dstNetID, numRepeat)
 	for i := 0; i < numRepeat; i++ {
 		callHandlersAndSendFun(nextHandlers)
 	}
@@ -193,6 +194,7 @@ func (dcT *peeringNetDynamicHandlerDelayingChannel) handleSendMessage(
 			} else {
 				delay = time.Duration(fromMS) * time.Millisecond
 			}
+			log.Debugf("Network delayed message %v -%v-> %v for %v", msg.from.netID, msg.msg.MsgType, dstNetID, delay)
 			<-time.After(delay)
 		}
 		callHandlersAndSendFun(nextHandlers)
