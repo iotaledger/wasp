@@ -77,6 +77,16 @@ func (pndT *PeeringNetDynamic) WithDelayingChannel(id *string, delayFrom time.Du
 	return pndT
 }
 
+func (pndT *PeeringNetDynamic) WithPeerDisconnected(id *string, peerName string) *PeeringNetDynamic {
+	pndT.addHandlerEntry(peeringNetDynamicHandlerEntry{
+		id,
+		&peeringNetDynamicHandlerPeerDisconnected{
+			peerName: peerName,
+		},
+	})
+	return pndT
+}
+
 func (pndT *PeeringNetDynamic) addHandlerEntry(handler peeringNetDynamicHandlerEntry) {
 	pndT.handlers = append(pndT.handlers, handler)
 }
@@ -199,4 +209,26 @@ func (dcT *peeringNetDynamicHandlerDelayingChannel) handleSendMessage(
 		}
 		callHandlersAndSendFun(nextHandlers)
 	}()
+}
+
+type peeringNetDynamicHandlerPeerDisconnected struct {
+	peerName string
+}
+
+func (pdT *peeringNetDynamicHandlerPeerDisconnected) handleSendMessage(
+	msg *peeringMsg,
+	dstNetID string,
+	nextHandlers []peeringNetDynamicHandlerEntry,
+	callHandlersAndSendFun func(nextHandlers []peeringNetDynamicHandlerEntry),
+	log *logger.Logger,
+) {
+	if dstNetID == pdT.peerName {
+		log.Debugf("Network dropped message %v -%v-> %v, because destination is disconnected", msg.from.netID, msg.msg.MsgType, dstNetID)
+		return
+	}
+	if msg.from.netID == pdT.peerName {
+		log.Debugf("Network dropped message %v -%v-> %v, because source is disconnected", msg.from.netID, msg.msg.MsgType, dstNetID)
+		return
+	}
+	callHandlersAndSendFun(nextHandlers)
 }

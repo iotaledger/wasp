@@ -198,8 +198,40 @@ func TestPeeringNetDynamicDelayingChannel(t *testing.T) {
 		sendMessage(&someNode, inCh)
 	}
 	time.Sleep(100 * time.Millisecond)
-	require.Equal(t, 100, len(durations), 9)
+	require.Equal(t, 100, len(durations))
 	require.InDelta(t, 50, averageDuration(durations), 20)
+
+	// Stop the test.
+	stopCh <- true
+	behavior.Close()
+}
+
+func TestPeeringNetDynamicPeerDisconnected(t *testing.T) {
+	inCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg)
+	inChD := make(chan *peeringMsg)
+	outChD := make(chan *peeringMsg)
+	stopCh := make(chan bool)
+	durations := make([]time.Duration, 0)
+	durationsD := make([]time.Duration, 0)
+	go testRecvLoop(outCh, &durations, stopCh)
+	go testRecvLoop(outChD, &durationsD, stopCh)
+	var connectedNode = peeringNode{netID: "src"}
+	var disconnectedNode = peeringNode{netID: "disconnected"}
+	//
+	// Run the test.
+	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).WithPeerDisconnected(nil, "disconnected")
+	behavior.AddLink(inCh, outCh, "dst")
+	behavior.AddLink(inChD, outChD, "disconnected")
+	for i := 0; i < 100; i++ {
+		sendMessage(&connectedNode, inCh)    //Will be received
+		sendMessage(&connectedNode, inChD)   //Won't be received - destination is disconnected
+		sendMessage(&disconnectedNode, inCh) //Won't be received - source is disconnected
+	}
+	time.Sleep(100 * time.Millisecond)
+	require.Equal(t, 100, len(durations))
+	require.Less(t, averageDuration(durations), int64(20))
+	require.Equal(t, 0, len(durationsD))
 
 	// Stop the test.
 	stopCh <- true
