@@ -61,7 +61,7 @@ func NewMockedEnv(t *testing.T, debug bool) (*MockedEnv, *ledgerstate.Transactio
 		Ledger:            utxodb.New(),
 		OriginatorKeyPair: nil,
 		OriginatorAddress: nil,
-		NodeConn:          testchain.NewMockedNodeConnection(),
+		NodeConn:          testchain.NewMockedNodeConnection("(global)"),
 		Nodes:             make(map[string]*MockedNode),
 	}
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)

@@ -2,6 +2,7 @@ package testchain
 
 import (
 	"testing"
+	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -25,7 +26,11 @@ func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedSt
 	}
 }
 
-func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chainOutput *ledgerstate.AliasOutput) {
+func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chainOutput *ledgerstate.AliasOutput, ts ...time.Time) {
+	timestamp := time.Now()
+	if len(ts) > 0 {
+		timestamp = ts[0]
+	}
 	if c.chainKey != nil {
 		require.True(c.t, chainOutput.GetStateAddress().Equals(ledgerstate.NewED25519Address(c.chainKey.PublicKey)))
 	}
@@ -43,7 +48,7 @@ func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chain
 
 	nextStateHash := nextVirtualState.Hash()
 
-	txBuilder := utxoutil.NewBuilder(chainOutput)
+	txBuilder := utxoutil.NewBuilder(chainOutput).WithTimestamp(timestamp)
 	err = txBuilder.AddAliasOutputAsRemainder(chainOutput.GetAliasAddress(), nextStateHash[:])
 	require.NoError(c.t, err)
 

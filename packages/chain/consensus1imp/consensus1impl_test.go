@@ -2,6 +2,8 @@ package consensus1imp
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestConsensusEnv(t *testing.T) {
@@ -9,7 +11,8 @@ func TestConsensusEnv(t *testing.T) {
 		env, _ := NewMockedEnv(t, 4, 3, true)
 		env.StartTimers()
 		env.eventStateTransition()
-		env.WaitStateIndex(0)
+		err := env.WaitStateIndex(4, 0)
+		require.NoError(t, err)
 	})
 	t.Run("wait timer tick", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, 4, 3, true)
@@ -28,14 +31,16 @@ func TestConsensusPostRequest(t *testing.T) {
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequest()
-		env.WaitTimerTick(20)
+		err := env.WaitStateIndex(3, 1)
+		require.NoError(t, err)
 	})
 	t.Run("post 1 randomize", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, 4, 3, true)
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequest(true)
-		env.WaitTimerTick(100)
+		err := env.WaitStateIndex(3, 1)
+		require.NoError(t, err)
 	})
 
 }

@@ -35,13 +35,15 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *mockedVMRunner {
 }
 
 func (r *mockedVMRunner) Run(task *vm.VMTask) {
-	r.stateTransition.NextState(task.VirtualState, task.ChainInput)
+	r.log.Debugf("VM input: state hash: %s, chain input: %s", task.VirtualState.Hash(), coretypes.OID(task.ChainInput.ID()))
+	r.stateTransition.NextState(task.VirtualState, task.ChainInput, task.Timestamp)
 	task.ResultTransactionEssence = r.tx
 	task.VirtualState = r.nextState
 	newOut := transaction.GetAliasOutputFromEssence(task.ResultTransactionEssence, task.ChainInput.GetAliasAddress())
 	require.NotNil(r.t, newOut)
 	require.EqualValues(r.t, task.ChainInput.GetStateIndex()+1, newOut.GetStateIndex())
-	r.log.Debugf("mockedVMRunner: new state produced: stateIndex: #%d state hash: %s, stateOutput: %s",
-		r.nextState.BlockIndex(), r.nextState.Hash().String(), coretypes.OID(newOut.ID()))
+	//essenceHash := hashing.HashData(task.ResultTransactionEssence.Bytes())
+	//r.log.Debugf("mockedVMRunner: new state produced: stateIndex: #%d state hash: %s, essence hash: %s stateOutput: %s\n essence : %s",
+	//	r.nextState.BlockIndex(), r.nextState.Hash().String(), essenceHash.String(), coretypes.OID(newOut.ID()), task.ResultTransactionEssence.String())
 	task.OnFinish(nil, nil, nil)
 }

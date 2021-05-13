@@ -26,20 +26,17 @@ type consensusImpl struct {
 	currentState               state.VirtualState
 	stateOutput                *ledgerstate.AliasOutput
 	stateTimestamp             time.Time
-	stage                      consensusStage
-	stageStarted               time.Time
 	consensusBatch             *batchProposal
 	iAmContributor             bool
 	myContributionSeqNumber    uint16
 	contributors               []uint16
+	workflow                   workflowFlags
 	resultTxEssence            *ledgerstate.TransactionEssence
 	resultState                state.VirtualState
 	resultSignatures           []*chain.SignedResultMsg
 	finalTx                    *ledgerstate.Transaction
 	approvingOutputID          ledgerstate.OutputID
 	postTxDeadline             time.Time
-	transactionPosted          bool
-	transactionSeen            bool
 	pullInclusionStateDeadline time.Time
 	log                        *logger.Logger
 	eventStateTransitionMsgCh  chan *chain.StateTransitionMsg
@@ -50,6 +47,18 @@ type consensusImpl struct {
 	eventVMResultMsgCh         chan *chain.VMResultMsg
 	eventTimerMsgCh            chan chain.TimerTick
 	closeCh                    chan struct{}
+}
+
+type workflowFlags struct {
+	stateReceived                bool
+	batchProposalSent            bool
+	consensusBatchKnown          bool
+	vmStarted                    bool
+	vmResultSignedAndBroadcasted bool
+	transactionFinalized         bool
+	transactionPosted            bool
+	transactionSeen              bool
+	finished                     bool
 }
 
 var _ chain.Consensus = &consensusImpl{}
