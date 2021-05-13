@@ -116,7 +116,7 @@ func TestGetNextState(t *testing.T) {
 	currh := currentState.Hash()
 	require.EqualValues(t, currh[:], currentStateOutput.GetStateData())
 
-	node.StateTransition.NextState(currentState, currentStateOutput)
+	node.StateTransition.NextState(currentState, currentStateOutput, time.Now())
 	si, err = node.WaitSyncBlockIndex(1, 3*time.Second)
 	require.NoError(t, err)
 	require.True(t, si.Synced)
@@ -150,7 +150,7 @@ func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
 	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
 		chain.LogStateTransition(msg, node.Log)
 		if msg.ChainOutput.GetStateIndex() < targetBlockIndex {
-			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
+			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput, time.Now())
 		}
 	})
 	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 20*time.Second)
@@ -177,7 +177,7 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
 		chain.LogStateTransition(msg, node.Log)
 		if msg.ChainOutput.GetStateIndex() < targetBlockIndex {
-			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
+			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput, time.Now())
 		}
 	})
 	env.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {

@@ -4,6 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/kv"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -26,29 +29,40 @@ func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedSt
 	}
 }
 
-func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chainOutput *ledgerstate.AliasOutput, ts ...time.Time) {
-	timestamp := time.Now()
-	if len(ts) > 0 {
-		timestamp = ts[0]
-	}
+func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chainOutput *ledgerstate.AliasOutput, ts time.Time, reqs ...coretypes.Request) {
 	if c.chainKey != nil {
 		require.True(c.t, chainOutput.GetStateAddress().Equals(ledgerstate.NewED25519Address(c.chainKey.PublicKey)))
 	}
 
 	nextVirtualState := virtualState.Clone()
+	prevBlockIndex := virtualState.BlockIndex()
 	counterBin, err := nextVirtualState.KVStore().Get("counter")
 	require.NoError(c.t, err)
 	counter, _, err := codec.DecodeUint64(counterBin)
 	require.NoError(c.t, err)
 
-	su0 := state.NewStateUpdateWithBlockIndexMutation(virtualState.BlockIndex() + 1)
-	su1 := state.NewStateUpdate()
-	su1.Mutations().Set("counter", codec.EncodeUint64(counter+1))
-	nextVirtualState.ApplyStateUpdates(su0, su1)
+	sus := make([]state.StateUpdate, 0, len(reqs)+2)
+
+	suBlockIndex := state.NewStateUpdateWithBlockIndexMutation(prevBlockIndex + 1)
+	sus = append(sus, suBlockIndex)
+
+	suCounter := state.NewStateUpdate()
+	counterBin = codec.EncodeUint64(counter + 1)
+	suCounter.Mutations().Set("counter", counterBin)
+	sus = append(sus, suCounter)
+
+	for _, req := range reqs {
+		sureq := state.NewStateUpdate()
+		sureq.Mutations().Set(kv.Key(req.ID().Bytes()), counterBin)
+		sus = append(sus, sureq)
+	}
+
+	nextVirtualState.ApplyStateUpdates(sus...)
+	require.EqualValues(c.t, prevBlockIndex+1, nextVirtualState.BlockIndex())
 
 	nextStateHash := nextVirtualState.Hash()
 
-	txBuilder := utxoutil.NewBuilder(chainOutput).WithTimestamp(timestamp)
+	txBuilder := utxoutil.NewBuilder(chainOutput).WithTimestamp(ts)
 	err = txBuilder.AddAliasOutputAsRemainder(chainOutput.GetAliasAddress(), nextStateHash[:])
 	require.NoError(c.t, err)
 

@@ -36,7 +36,7 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *mockedVMRunner {
 
 func (r *mockedVMRunner) Run(task *vm.VMTask) {
 	r.log.Debugf("VM input: state hash: %s, chain input: %s", task.VirtualState.Hash(), coretypes.OID(task.ChainInput.ID()))
-	r.stateTransition.NextState(task.VirtualState, task.ChainInput, task.Timestamp)
+	r.stateTransition.NextState(task.VirtualState, task.ChainInput, task.Timestamp, task.Requests...)
 	task.ResultTransactionEssence = r.tx
 	task.VirtualState = r.nextState
 	newOut := transaction.GetAliasOutputFromEssence(task.ResultTransactionEssence, task.ChainInput.GetAliasAddress())
