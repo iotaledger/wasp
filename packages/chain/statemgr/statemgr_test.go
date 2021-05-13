@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/require"
 )
@@ -148,12 +147,7 @@ func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
 	env.AddNode(node)
 
 	const targetBlockIndex = 30
-	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
-		chain.LogStateTransition(msg, node.Log)
-		if msg.ChainOutput.GetStateIndex() < targetBlockIndex {
-			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
-		}
-	})
+	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
 	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 20*time.Second)
 	require.NoError(t, err)
 	require.True(t, si.Synced)
@@ -172,12 +166,7 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 	env.AddNode(node)
 
 	const targetBlockIndex = 10
-	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
-		chain.LogStateTransition(msg, node.Log)
-		if msg.ChainOutput.GetStateIndex() < targetBlockIndex {
-			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
-		}
-	})
+	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
 	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
 	require.NoError(t, err)
 	require.True(t, si.Synced)
@@ -204,12 +193,7 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 	env.AddNode(node)
 
 	const targetBlockIndex = 5
-	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
-		chain.LogStateTransition(msg, node.Log)
-		if msg.ChainOutput.GetStateIndex() < targetBlockIndex {
-			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
-		}
-	})
+	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
 	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
 	require.NoError(t, err)
 	require.True(t, si.Synced)
@@ -245,12 +229,7 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 	env.AddNode(node)
 
 	const targetBlockIndex = 10
-	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
-		chain.LogStateTransition(msg, node.Log)
-		if msg.ChainOutput.GetStateIndex() < targetBlockIndex {
-			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
-		}
-	})
+	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
 	node.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
 	})
 	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
@@ -265,4 +244,77 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 	si, err = node1.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
 	require.NoError(t, err)
 	require.True(t, si.Synced)
+}
+
+func TestNodeDisconnected(t *testing.T) {
+	numberOfConnectedPeers := 5
+	env, _ := NewMockedEnv(numberOfConnectedPeers+1, t, true)
+	env.SetPushStateToNodesOption(true)
+
+	checkResultFun := func(node *MockedNode, target uint32) {
+		si, err := node.WaitSyncBlockIndex(target, 10*time.Second)
+		require.NoError(t, err)
+		require.True(t, si.Synced)
+	}
+	createNodeFun := func(nodeIndex int) *MockedNode {
+		result := env.NewMockedNode(nodeIndex, Timers{})
+		result.StateManager.Ready().MustWait()
+		result.StartTimer()
+		env.AddNode(result)
+		checkResultFun(result, 0)
+		return result
+	}
+
+	connectedNodes := make([]*MockedNode, numberOfConnectedPeers)
+	for i := 0; i < numberOfConnectedPeers; i++ {
+		connectedNodes[i] = createNodeFun(i)
+	}
+	disconnectedNode := createNodeFun(numberOfConnectedPeers)
+
+	//Network is connected until state 3
+	const targetBlockIndex1 = 3
+	connectedNodes[0].OnStateTransitionMakeNewStateTransition(targetBlockIndex1)
+	connectedNodes[0].MakeNewStateTransition()
+	for i := 0; i < numberOfConnectedPeers; i++ {
+		checkResultFun(connectedNodes[i], targetBlockIndex1)
+	}
+	checkResultFun(disconnectedNode, targetBlockIndex1)
+
+	//Single node gets disconnected until state 6
+	handlerName := "DisconnectedPeer"
+	env.NetworkBehaviour.WithPeerDisconnected(&handlerName, disconnectedNode.NetID)
+	const targetBlockIndex2 = 6
+	connectedNodes[0].OnStateTransitionMakeNewStateTransition(targetBlockIndex2)
+	connectedNodes[0].MakeNewStateTransition()
+	for i := 0; i < numberOfConnectedPeers; i++ {
+		checkResultFun(connectedNodes[i], targetBlockIndex2)
+	}
+
+	//Network is reconnected until state 9, the node which was disconnected catches up
+	env.NetworkBehaviour.RemoveHandler(handlerName)
+	const targetBlockIndex3 = 9
+	connectedNodes[0].OnStateTransitionMakeNewStateTransition(targetBlockIndex3)
+	connectedNodes[0].MakeNewStateTransition()
+	for i := 0; i < numberOfConnectedPeers; i++ {
+		checkResultFun(connectedNodes[i], targetBlockIndex3)
+	}
+	checkResultFun(disconnectedNode, targetBlockIndex3)
+
+	//Node, producing transitions, gets disconnected until state 12
+	env.NetworkBehaviour.WithPeerDisconnected(&handlerName, disconnectedNode.NetID)
+	const targetBlockIndex4 = 12
+	connectedNodes[0].OnStateTransitionDoNothing()
+	disconnectedNode.OnStateTransitionMakeNewStateTransition(targetBlockIndex4)
+	disconnectedNode.MakeNewStateTransition()
+	checkResultFun(disconnectedNode, targetBlockIndex4)
+
+	//Network is reconnected until state 15, other nodes catch up
+	env.NetworkBehaviour.RemoveHandler(handlerName)
+	const targetBlockIndex5 = 15
+	disconnectedNode.OnStateTransitionMakeNewStateTransition(targetBlockIndex5)
+	disconnectedNode.MakeNewStateTransition()
+	for i := 0; i < numberOfConnectedPeers; i++ {
+		checkResultFun(connectedNodes[i], targetBlockIndex5)
+	}
+	checkResultFun(disconnectedNode, targetBlockIndex5)
 }

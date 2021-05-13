@@ -34,6 +34,7 @@ type MockedEnv struct {
 	OriginatorAddress ledgerstate.Address
 	NodeIDs           []string
 	NetworkProviders  []peering.NetworkProvider
+	NetworkBehaviour  *testutil.PeeringNetDynamic
 	ChainID           coretypes.ChainID
 	mutex             sync.Mutex
 	Nodes             map[string]*MockedNode
@@ -89,9 +90,11 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 
 	ret.ChainID = *coretypes.NewChainID(retOut.GetAliasAddress())
 
+	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
+
 	nodeIDs, pubKeys, privKeys := testpeers.SetupKeys(uint16(nodeCount), pairing.NewSuiteBn256())
 	ret.NodeIDs = nodeIDs
-	ret.NetworkProviders = testpeers.SetupNet(ret.NodeIDs, pubKeys, privKeys, testutil.NewPeeringNetReliable(), log)
+	ret.NetworkProviders = testpeers.SetupNet(ret.NodeIDs, pubKeys, privKeys, ret.NetworkBehaviour, log)
 
 	return ret, originTx
 }
@@ -263,6 +266,23 @@ func (node *MockedNode) WaitSyncBlockIndex(index uint32, timeout time.Duration) 
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+func (node *MockedNode) OnStateTransitionMakeNewStateTransition(limit uint32) {
+    node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
+        chain.LogStateTransition(msg, node.Log)
+        if msg.ChainOutput.GetStateIndex() < limit {
+            go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
+        }
+    })
+}
+
+func (node *MockedNode) OnStateTransitionDoNothing() {
+    node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {})
+}
+
+func (node *MockedNode) MakeNewStateTransition() {
+    node.StateTransition.NextState(node.StateManager.(*stateManager).solidState, node.StateManager.(*stateManager).stateOutput)
 }
 
 func (env *MockedEnv) AddNode(node *MockedNode) {
