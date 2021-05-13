@@ -30,6 +30,10 @@ func NewEthService(chain EVMChain) *EthService {
 	return &EthService{chain}
 }
 
+func (e *EthService) GetTransactionCount(address common.Address, blockNumber rpc.BlockNumber) uint64 {
+	return e.chain.TransactionCount(address, parseBlockNumber(blockNumber))
+}
+
 func (e *EthService) BlockNumber() *hexutil.Big {
 	return (*hexutil.Big)(e.chain.BlockNumber())
 }
