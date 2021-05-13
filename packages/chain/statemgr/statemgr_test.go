@@ -249,7 +249,7 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 func TestNodeDisconnected(t *testing.T) {
 	numberOfConnectedPeers := 5
 	env, _ := NewMockedEnv(numberOfConnectedPeers+1, t, true)
-	env.SetPushStateToNodesOption(true)
+	env.SetPushStateToNodesOption(false)
 
 	checkResultFun := func(node *MockedNode, target uint32) {
 		si, err := node.WaitSyncBlockIndex(target, 10*time.Second)
@@ -257,7 +257,11 @@ func TestNodeDisconnected(t *testing.T) {
 		require.True(t, si.Synced)
 	}
 	createNodeFun := func(nodeIndex int) *MockedNode {
-		result := env.NewMockedNode(nodeIndex, Timers{})
+		result := env.NewMockedNode(nodeIndex, Timers{}.
+			SetPullStateNewBlockDelay(150*time.Millisecond).
+			SetPullStateRetry(150*time.Millisecond).
+			SetGetBlockRetry(150*time.Millisecond),
+		)
 		result.StateManager.Ready().MustWait()
 		result.StartTimer()
 		env.AddNode(result)
