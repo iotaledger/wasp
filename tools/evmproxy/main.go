@@ -4,25 +4,37 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/big"
 	"net/http"
 
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/tools/evmproxy/service"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
+var (
+	faucetKey, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	faucetAddress = crypto.PubkeyToAddress(faucetKey.PublicKey)
+	faucetSupply  = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
+)
+
 func main() {
 	rpcsrv := rpc.NewServer()
 	defer rpcsrv.Stop()
 
-	soloEVMChain := service.NewSoloEVMChain()
+	soloEVMChain := service.NewSoloEVMChain(core.GenesisAlloc{
+		faucetAddress: {Balance: faucetSupply},
+	})
 	for _, srv := range []struct {
 		namespace string
 		service   interface{}
 	}{
 		{"eth", service.NewEthService(soloEVMChain)},
 		{"net", service.NewNetService(soloEVMChain)},
+		{"test", service.NewTestService(soloEVMChain, faucetKey)},
 	} {
 		err := rpcsrv.RegisterName(srv.namespace, srv.service)
 		if err != nil {

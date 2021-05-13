@@ -6,25 +6,17 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	faucetKey, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	faucetAddress = crypto.PubkeyToAddress(faucetKey.PublicKey)
-	faucetSupply  = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
-)
-
-func NewSoloEVMChain() EVMChain {
-	env := solo.New(solo.NewFakeTestingT("evmproxy"), false, false)
+func NewSoloEVMChain(alloc core.GenesisAlloc) EVMChain {
+	env := solo.New(solo.NewFakeTestingT("evmproxy"), true, false)
 	chain := env.NewChain(nil, "ch1")
 	err := chain.DeployContract(nil, "evmchain", evmchain.Interface.ProgramHash,
-		evmchain.FieldGenesisAlloc, evmchain.EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
-			faucetAddress: {Balance: faucetSupply},
-		}),
+		evmchain.FieldGenesisAlloc, evmchain.EncodeGenesisAlloc(alloc),
 	)
 	require.NoError(env.T, err)
 	return &soloEVMChain{env, chain}
@@ -33,6 +25,37 @@ func NewSoloEVMChain() EVMChain {
 type soloEVMChain struct {
 	env   *solo.Solo
 	chain *solo.Chain
+}
+
+func (s *soloEVMChain) SendTransaction(tx *types.Transaction) {
+	txdata, err := tx.MarshalBinary()
+	require.NoError(s.env.T, err)
+
+	req, toUpload := solo.NewCallParamsOptimized(evmchain.Interface.Name, evmchain.FuncSendTransaction, 1024,
+		evmchain.FieldTransactionData, txdata,
+	)
+	req.WithIotas(1)
+	for _, v := range toUpload {
+		s.chain.Env.PutBlobDataIntoRegistry(v)
+	}
+
+	_, err = s.chain.PostRequestSync(req, nil)
+	require.NoError(s.env.T, err)
+}
+
+func (s *soloEVMChain) TransactionCount(address common.Address, blockNumber *big.Int) uint64 {
+	params := []interface{}{
+		evmchain.FieldAddress, address.Bytes(),
+	}
+	if blockNumber != nil {
+		params = append(params, evmchain.FieldBlockNumber, blockNumber.Bytes())
+	}
+	ret, err := s.chain.CallView(evmchain.Interface.Name, evmchain.FuncGetNonce, params...)
+	require.NoError(s.env.T, err)
+
+	n, _, err := codec.DecodeUint64(ret.MustGet(evmchain.FieldResult))
+	require.NoError(s.env.T, err)
+	return n
 }
 
 func (s *soloEVMChain) BlockByNumber(blockNumber *big.Int) *types.Block {

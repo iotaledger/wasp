@@ -3,18 +3,23 @@
 package service
 
 import (
+	"crypto/ecdsa"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/iotaledger/wasp/packages/evm"
 )
 
 type EVMChain interface {
 	BlockNumber() *big.Int
+	SendTransaction(tx *types.Transaction)
 	Balance(address common.Address, blockNumber *big.Int) *big.Int
 	BlockByNumber(blockNumber *big.Int) *types.Block
+	TransactionCount(address common.Address, blockNumber *big.Int) uint64
 }
 
 type EthService struct {
@@ -51,4 +56,28 @@ func NewNetService(chain EVMChain) *NetService {
 
 func (e *NetService) Version() string {
 	return "1074" // IOTA -- get it?
+}
+
+type TestService struct {
+	chain     EVMChain
+	faucetKey *ecdsa.PrivateKey
+}
+
+func NewTestService(chain EVMChain, faucetKey *ecdsa.PrivateKey) *TestService {
+	return &TestService{chain, faucetKey}
+}
+
+func (e *TestService) RequestFunds(address common.Address) error {
+	nonce := e.chain.TransactionCount(crypto.PubkeyToAddress(e.faucetKey.PublicKey), nil)
+	amount := big.NewInt(1e18) // 1 ETH
+	tx, err := types.SignTx(
+		types.NewTransaction(nonce, address, amount, evm.GasLimit, evm.GasPrice, nil),
+		evm.Signer(),
+		e.faucetKey,
+	)
+	if err != nil {
+		return err
+	}
+	e.chain.SendTransaction(tx)
+	return nil
 }

@@ -58,13 +58,13 @@ func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
 
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
 	var blockNumber *big.Int
 	if ctx.Params().MustHas(FieldBlockNumber) {
 		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
 	}
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
 
 	bal, err := emu.BalanceAt(addr, blockNumber)
 	a.RequireNoError(err)
@@ -88,13 +88,13 @@ func getBlockNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
 func getBlockByNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
 	var blockNumber *big.Int
 	if ctx.Params().MustHas(FieldBlockNumber) {
 		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
 	}
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
 
 	block, err := emu.BlockByNumber(blockNumber)
 	a.RequireNoError(err)
@@ -130,10 +130,15 @@ func getNonce(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
 
+	var blockNumber *big.Int
+	if ctx.Params().MustHas(FieldBlockNumber) {
+		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
+	}
+
 	emu := emulatorR(ctx.State())
 	defer emu.Close()
 
-	nonce, err := emu.PendingNonceAt(addr)
+	nonce, err := emu.NonceAt(addr, blockNumber)
 	a.RequireNoError(err)
 
 	ret := dict.New()
