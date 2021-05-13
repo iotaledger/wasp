@@ -22,6 +22,8 @@ type PeeringNetDynamic struct {
 	log      *logger.Logger
 }
 
+var _ PeeringNetBehavior = &PeeringNetDynamic{}
+
 type peeringNetDynamicHandlerEntry struct {
 	id *string
 	peeringNetDynamicHandler
