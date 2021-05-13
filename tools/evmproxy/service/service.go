@@ -3,15 +3,13 @@
 package service
 
 import (
-	"crypto/ecdsa"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/packages/evm"
 )
 
 type EVMChain interface {
@@ -30,8 +28,8 @@ func NewEthService(chain EVMChain) *EthService {
 	return &EthService{chain}
 }
 
-func (e *EthService) GetTransactionCount(address common.Address, blockNumber rpc.BlockNumber) uint64 {
-	return e.chain.TransactionCount(address, parseBlockNumber(blockNumber))
+func (e *EthService) GetTransactionCount(address common.Address, blockNumber rpc.BlockNumber) hexutil.Uint64 {
+	return hexutil.Uint64(e.chain.TransactionCount(address, parseBlockNumber(blockNumber)))
 }
 
 func (e *EthService) BlockNumber() *hexutil.Big {
@@ -50,6 +48,15 @@ func (e *EthService) GetBalance(address common.Address, blockNumber rpc.BlockNum
 	return (*hexutil.Big)(e.chain.Balance(address, parseBlockNumber(blockNumber)))
 }
 
+func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, error) {
+	tx := new(types.Transaction)
+	if err := rlp.DecodeBytes(txBytes, tx); err != nil {
+		return common.Hash{}, err
+	}
+	e.chain.SendTransaction(tx)
+	return tx.Hash(), nil
+}
+
 type NetService struct {
 	chain EVMChain
 }
@@ -60,28 +67,4 @@ func NewNetService(chain EVMChain) *NetService {
 
 func (e *NetService) Version() string {
 	return "1074" // IOTA -- get it?
-}
-
-type TestService struct {
-	chain     EVMChain
-	faucetKey *ecdsa.PrivateKey
-}
-
-func NewTestService(chain EVMChain, faucetKey *ecdsa.PrivateKey) *TestService {
-	return &TestService{chain, faucetKey}
-}
-
-func (e *TestService) RequestFunds(address common.Address) error {
-	nonce := e.chain.TransactionCount(crypto.PubkeyToAddress(e.faucetKey.PublicKey), nil)
-	amount := big.NewInt(1e18) // 1 ETH
-	tx, err := types.SignTx(
-		types.NewTransaction(nonce, address, amount, evm.GasLimit, evm.GasPrice, nil),
-		evm.Signer(),
-		e.faucetKey,
-	)
-	if err != nil {
-		return err
-	}
-	e.chain.SendTransaction(tx)
-	return nil
 }

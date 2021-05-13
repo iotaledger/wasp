@@ -21,26 +21,30 @@ var (
 	faucetSupply  = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 )
 
-func main() {
+func NewRPCServer(chain service.EVMChain) *rpc.Server {
 	rpcsrv := rpc.NewServer()
-	defer rpcsrv.Stop()
-
-	soloEVMChain := service.NewSoloEVMChain(core.GenesisAlloc{
-		faucetAddress: {Balance: faucetSupply},
-	})
 	for _, srv := range []struct {
 		namespace string
 		service   interface{}
 	}{
-		{"eth", service.NewEthService(soloEVMChain)},
-		{"net", service.NewNetService(soloEVMChain)},
-		{"test", service.NewTestService(soloEVMChain, faucetKey)},
+		{"eth", service.NewEthService(chain)},
+		{"net", service.NewNetService(chain)},
 	} {
 		err := rpcsrv.RegisterName(srv.namespace, srv.service)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
 	}
+	return rpcsrv
+}
+
+func main() {
+	soloEVMChain := service.NewSoloEVMChain(core.GenesisAlloc{
+		faucetAddress: {Balance: faucetSupply},
+	})
+
+	rpcsrv := NewRPCServer(soloEVMChain)
+	defer rpcsrv.Stop()
 
 	e := echo.New()
 	e.HideBanner = true
