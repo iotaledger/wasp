@@ -317,8 +317,8 @@ func (c *consensusImpl) processInclusionState(msg *chain.InclusionStateMsg) {
 	case ledgerstate.Confirmed:
 		c.workflow.transactionSeen = true
 		c.workflow.finished = true
-		c.stateIndex.Store(c.resultState.BlockIndex())
-		c.log.Debugf("workflow finished. Tx confirmed: %s", msg.TxID.Base58())
+		c.refreshConsensusInfo()
+		c.log.Debugf("workflow finished. Tx confirmed: %s. In mempool left: %d", msg.TxID.Base58(), c.GetStatusSnapshot().StateIndex)
 	case ledgerstate.Rejected:
 		c.workflow.transactionSeen = true
 		c.log.Infof("transaction %s rejected. Restart consensus", msg.TxID.Base58())
@@ -361,7 +361,6 @@ func (c *consensusImpl) setNewState(msg *chain.StateTransitionMsg) {
 	c.stateOutput = msg.StateOutput
 	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp
-	c.stateIndex.Store(c.stateOutput.GetStateIndex())
 	c.resetWorkflow()
 }
 

@@ -195,7 +195,7 @@ func (node *MockedNode) WaitSyncBlockIndex(index uint32, timeout time.Duration) 
 		if time.Now().After(deadline) {
 			return nil, xerrors.Errorf("WaitSyncBlockIndex: target index %d, timeout %v reached", index, timeout)
 		}
-		syncInfo = node.StateManager.GetSyncInfo()
+		syncInfo = node.StateManager.GetStatusSnapshot()
 		if syncInfo != nil && syncInfo.SyncedBlockIndex >= index {
 			return syncInfo, nil
 		}

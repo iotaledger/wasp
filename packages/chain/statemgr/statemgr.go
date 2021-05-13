@@ -117,7 +117,7 @@ func (sm *stateManager) Ready() *ready.Ready {
 	return sm.ready
 }
 
-func (sm *stateManager) GetSyncInfo() *chain.SyncInfo {
+func (sm *stateManager) GetStatusSnapshot() *chain.SyncInfo {
 	v := sm.currentSyncData.Load()
 	if v == nil {
 		return nil

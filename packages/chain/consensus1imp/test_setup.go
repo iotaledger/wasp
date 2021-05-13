@@ -251,7 +251,14 @@ func (n *mockedNode) StartTimer() {
 }
 
 func (n *mockedNode) WaitTimerTick(until int) {
-	for n.Consensus.getTimerTick() < until {
+	for {
+		snap := n.Consensus.GetStatusSnapshot()
+		if snap == nil {
+			continue
+		}
+		if snap.TimerTick >= until {
+			return
+		}
 		time.Sleep(10 * time.Millisecond)
 	}
 }
@@ -275,7 +282,11 @@ func (n *mockedNode) WaitStateIndex(until uint32, timeout ...time.Duration) erro
 		deadline = time.Now().Add(timeout[0])
 	}
 	for {
-		if n.Consensus.getStateIndex() >= until {
+		snap := n.Consensus.GetStatusSnapshot()
+		if snap == nil {
+			continue
+		}
+		if snap.ConfirmedStateIndex >= until {
 			//n.Log.Debugf("reached index %d", until)
 			return nil
 		}
@@ -318,13 +329,15 @@ func (env *mockedEnv) eventStateTransition() {
 	}
 }
 
-func (env *mockedEnv) postDummyRequest(randomize ...bool) {
-	req := solo.NewCallParams("dummy", "dummy").
-		NewRequestOffLedger(env.OriginatorKeyPair)
-	for _, n := range env.Nodes {
-		if len(randomize) > 0 && randomize[0] {
-			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+func (env *mockedEnv) postDummyRequests(n int, randomize ...bool) {
+	for i := 0; i < n; i++ {
+		req := solo.NewCallParams("dummy", "dummy", "c", i).
+			NewRequestOffLedger(env.OriginatorKeyPair)
+		for _, n := range env.Nodes {
+			if len(randomize) > 0 && randomize[0] {
+				time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+			}
+			go n.Mempool.ReceiveRequest(req)
 		}
-		go n.Mempool.ReceiveRequest(req)
 	}
 }

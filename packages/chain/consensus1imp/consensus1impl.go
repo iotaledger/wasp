@@ -16,8 +16,6 @@ import (
 
 type consensusImpl struct {
 	isReady                    atomic.Bool
-	lastTimerTick              atomic.Int64
-	stateIndex                 atomic.Uint32
 	chain                      chain.ChainCore
 	committee                  chain.Committee
 	mempool                    chain.Mempool
@@ -38,6 +36,8 @@ type consensusImpl struct {
 	approvingOutputID          ledgerstate.OutputID
 	postTxDeadline             time.Time
 	pullInclusionStateDeadline time.Time
+	lastTimerTick              atomic.Int64
+	consensusInfoSnapshot      atomic.Value
 	log                        *logger.Logger
 	eventStateTransitionMsgCh  chan *chain.StateTransitionMsg
 	eventResultCalculatedMsgCh chan *chain.VMResultMsg
@@ -138,4 +138,31 @@ func (c *consensusImpl) recvLoop() {
 			return
 		}
 	}
+}
+
+func (c *consensusImpl) refreshConsensusInfo() {
+	if !c.workflow.stateReceived {
+		return
+	}
+	t, m, s := c.mempool.Stats()
+	confirmedState := c.currentState.BlockIndex()
+	if c.workflow.finished {
+		confirmedState = c.resultState.BlockIndex()
+	}
+	c.consensusInfoSnapshot.Store(&chain.ConsensusInfo{
+		StateIndex:          c.currentState.BlockIndex(),
+		ConfirmedStateIndex: confirmedState,
+		MempoolTotal:        t,
+		MempoolWithMessages: m,
+		MempoolSolid:        s,
+		TimerTick:           int(c.lastTimerTick.Load()),
+	})
+}
+
+func (c *consensusImpl) GetStatusSnapshot() *chain.ConsensusInfo {
+	ret := c.consensusInfoSnapshot.Load()
+	if ret == nil {
+		return nil
+	}
+	return ret.(*chain.ConsensusInfo)
 }

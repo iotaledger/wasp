@@ -75,18 +75,12 @@ func (c *consensusImpl) EventTimerMsg(msg chain.TimerTick) {
 	c.eventTimerMsgCh <- msg
 }
 func (c *consensusImpl) eventTimerMsg(msg chain.TimerTick) {
-	if msg%40 == 0 {
-		c.log.Infof("timer tick #%d", msg)
-	}
 	c.lastTimerTick.Store(int64(msg))
+	c.refreshConsensusInfo()
+	if msg%40 == 0 {
+		if snap := c.GetStatusSnapshot(); snap != nil {
+			c.log.Infof("timer tick #%d state index: %d (%d) mempool = %d", snap.TimerTick, snap.StateIndex, snap.ConfirmedStateIndex, snap.MempoolTotal)
+		}
+	}
 	c.takeAction()
-}
-
-// for testing
-func (c *consensusImpl) getTimerTick() int {
-	return int(c.lastTimerTick.Load())
-}
-
-func (c *consensusImpl) getStateIndex() uint32 {
-	return c.stateIndex.Load()
 }
