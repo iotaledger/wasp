@@ -83,6 +83,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		eventTimerMsgCh:            make(chan chain.TimerTick),
 		closeCh:                    make(chan struct{}),
 	}
+	ret.refreshConsensusInfo()
 	go ret.recvLoop()
 	return ret
 }
@@ -143,12 +144,13 @@ func (c *consensusImpl) recvLoop() {
 }
 
 func (c *consensusImpl) refreshConsensusInfo() {
-	if !c.workflow.stateReceived {
-		return
+	index := uint32(0)
+	if c.currentState != nil {
+		index = c.currentState.BlockIndex()
 	}
 	t, m, s := c.mempool.Stats()
 	c.consensusInfoSnapshot.Store(&chain.ConsensusInfo{
-		StateIndex:          c.currentState.BlockIndex(),
+		StateIndex:          index,
 		MempoolTotal:        t,
 		MempoolWithMessages: m,
 		MempoolSolid:        s,
