@@ -238,6 +238,6 @@ func TestGetCode(t *testing.T) {
 
 // TEST gas limits
 
-// tx with enough gas should be successful and the gas should be charged
+// TODO tx with enough gas should be successful and the gas should be charged
 
-// tx without enough gas must be rollbacked
+// TODO tx without enough gas must be rollbacked

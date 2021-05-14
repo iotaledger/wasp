@@ -67,10 +67,25 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 
 		// charge GAS fees
 		if vmctx.lastResult.MustHas(FieldGasUsed) {
-			gasUsed, _, _ := codec.DecodeUint64(vmctx.lastResult.MustGet(FieldGasUsed))
 			//charge gas fees at the rate: 1 gas = 1 iota, if the caller doesn't have enough iotas to pay, rollback the sc call (while keeping the fees charged)
-			if !vmctx.grabFee(vmctx.commonAccount(), gasUsed) {
+			gasUsed, _, _ := codec.DecodeUint64(vmctx.lastResult.MustGet(FieldGasUsed))
+			sender := vmctx.req.SenderAccount()
+			balance := accounts.GetBalance(vmctx.State(), sender, vmctx.feeColor)
+			enoughBalanceForFees := balance >= gasUsed
+			gasFeeAmount := gasUsed
+			if !enoughBalanceForFees {
+				gasFeeAmount = balance
 				vmctx.lastError = fmt.Errorf("not enough iotas to pay the gas fees. gas used: %d", gasUsed)
+				vmctx.lastResult = nil
+			}
+
+			transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
+				vmctx.feeColor: gasFeeAmount,
+			})
+			transferred := vmctx.moveBetweenAccounts(sender, vmctx.commonAccount(), transfer)
+
+			if !transferred {
+				vmctx.lastError = fmt.Errorf("unable to charge gasFees")
 				vmctx.lastResult = nil
 			}
 		}
@@ -213,6 +228,8 @@ func (vmctx *VMContext) mustHandleFees() bool {
 }
 
 // Return false if not enough fees
+// charges fees to the validator/chain owner and moves funds from on-ledger (tangle) request to the respective on-chain account
+// !!! must only be called once, before the request is processed.
 func (vmctx *VMContext) grabFee(account *coretypes.AgentID, amount uint64) bool {
 	if amount == 0 {
 		return true
