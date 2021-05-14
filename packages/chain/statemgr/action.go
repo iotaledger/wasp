@@ -57,14 +57,10 @@ func (sm *stateManager) isSynced() bool {
 func (sm *stateManager) pullStateIfNeeded() {
 	nowis := time.Now()
 	if nowis.After(sm.pullStateRetryTime) {
-		if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidatesNotOlderThan(sm.stateOutput.GetStateIndex()+1) {
-			chainAliasAddress := sm.chain.ID().AsAliasAddress()
-			sm.log.Debugf("pullState: pulling state for address %v", chainAliasAddress.Base58())
-			sm.nodeConn.PullState(chainAliasAddress)
-			sm.pullStateRetryTime = nowis.Add(sm.timers.getPullStateRetry())
-		} else {
-			sm.log.Debugf("pullState not needed: no block candidates")
-		}
+		chainAliasAddress := sm.chain.ID().AsAliasAddress()
+		sm.log.Debugf("pullState: pulling state for address %v", chainAliasAddress.Base58())
+		sm.nodeConn.PullState(chainAliasAddress)
+		sm.pullStateRetryTime = nowis.Add(sm.timers.getPullStateRetry())
 	} else {
 		sm.log.Debugf("pullState not needed: retry time is %v", sm.pullStateRetryTime)
 	}
