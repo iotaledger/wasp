@@ -64,31 +64,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 			}
 		}()
 		vmctx.mustCallFromRequest()
-
-		// charge GAS fees
-		if vmctx.lastResult.MustHas(FieldGasUsed) {
-			//charge gas fees at the rate: 1 gas = 1 iota, if the caller doesn't have enough iotas to pay, rollback the sc call (while keeping the fees charged)
-			gasUsed, _, _ := codec.DecodeUint64(vmctx.lastResult.MustGet(FieldGasUsed))
-			sender := vmctx.req.SenderAccount()
-			balance := accounts.GetBalance(vmctx.State(), sender, vmctx.feeColor)
-			enoughBalanceForFees := balance >= gasUsed
-			gasFeeAmount := gasUsed
-			if !enoughBalanceForFees {
-				gasFeeAmount = balance
-				vmctx.lastError = fmt.Errorf("not enough iotas to pay the gas fees. gas used: %d", gasUsed)
-				vmctx.lastResult = nil
-			}
-
-			transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
-				vmctx.feeColor: gasFeeAmount,
-			})
-			transferred := vmctx.moveBetweenAccounts(sender, vmctx.commonAccount(), transfer)
-
-			if !transferred {
-				vmctx.lastError = fmt.Errorf("unable to charge gasFees")
-				vmctx.lastResult = nil
-			}
-		}
+		vmctx.chargeGasFees()
 	}()
 
 	if vmctx.lastError != nil {
@@ -98,6 +74,32 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 		vmctx.currentStateUpdate = snapshotStateUpdate
 
 		vmctx.mustSendBack(vmctx.remainingAfterFees)
+	}
+}
+
+func (vmctx *VMContext) chargeGasFees() {
+	if vmctx.lastResult.MustHas(FieldGasUsed) {
+		//charge gas fees at the rate: 1 gas = 1 iota, if the caller doesn't have enough iotas to pay, rollback the sc call (while keeping the fees charged)
+		gasUsed, _, _ := codec.DecodeUint64(vmctx.lastResult.MustGet(FieldGasUsed))
+		sender := vmctx.req.SenderAccount()
+		balance := vmctx.getBalanceOfAccount(sender, vmctx.feeColor)
+		enoughBalanceForFees := balance >= gasUsed
+		gasFeeAmount := gasUsed
+		if !enoughBalanceForFees {
+			gasFeeAmount = balance
+			vmctx.lastError = fmt.Errorf("not enough iotas to pay the gas fees. gas used: %d", gasUsed)
+			vmctx.lastResult = nil
+		}
+
+		transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
+			vmctx.feeColor: gasFeeAmount,
+		})
+		transferred := vmctx.moveBetweenAccounts(sender, vmctx.commonAccount(), transfer)
+
+		if !transferred {
+			vmctx.lastError = fmt.Errorf("unable to charge gasFees")
+			vmctx.lastResult = nil
+		}
 	}
 }
 
