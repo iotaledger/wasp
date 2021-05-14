@@ -132,7 +132,7 @@ type Mempool interface {
 }
 
 type AsynchronousCommonSubsetRunner interface {
-	RunACSConsensus(value []byte, sessionID []byte, callback func(sessionID []byte, acs [][]byte))
+	RunACSConsensus(value []byte, sessionID uint64, callback func(sessionID uint64, acs [][]byte))
 }
 
 type SyncInfo struct {

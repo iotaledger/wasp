@@ -24,6 +24,7 @@ type consensusImpl struct {
 	currentState               state.VirtualState
 	stateOutput                *ledgerstate.AliasOutput
 	stateTimestamp             time.Time
+	acsSessionID               uint64
 	consensusBatch             *batchProposal
 	iAmContributor             bool
 	myContributionSeqNumber    uint16

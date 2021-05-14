@@ -43,8 +43,9 @@ func (c *consensusImpl) proposeBatchIfNeeded() {
 	if len(reqs) == 0 {
 		return
 	}
+	c.log.Debugf("proposeBatchIfNeeded: ready len = %d", len(reqs))
 	proposal := c.prepareBatchProposal(reqs)
-	c.committee.RunACSConsensus(proposal.Bytes(), c.stateOutput.ID().Bytes(), func(sessionID []byte, acs [][]byte) {
+	c.committee.RunACSConsensus(proposal.Bytes(), c.acsSessionID, func(sessionID uint64, acs [][]byte) {
 		c.log.Debugf("received ACS")
 		go c.chain.ReceiveMessage(&chain.AsynchronousCommonSubsetMsg{
 			ProposedBatchesBin: acs,
@@ -280,7 +281,7 @@ func (c *consensusImpl) receiveACS(values [][]byte) {
 	}
 	inBatchSet := calcIntersection(acs, c.committee.Size(), c.committee.Quorum())
 	if len(inBatchSet) == 0 {
-		c.log.Warnf("receiveACS: intersecection is empty. reset workflow")
+		c.log.Warnf("receiveACS: intersection is empty. reset workflow")
 		c.resetWorkflow()
 		return
 	}
@@ -361,13 +362,16 @@ func (c *consensusImpl) setNewState(msg *chain.StateTransitionMsg) {
 	c.stateOutput = msg.StateOutput
 	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp
+	c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(msg.StateOutput.ID().Bytes()).Bytes()[:8])
 	c.resetWorkflow()
+	c.log.Debugf("set state #%d", msg.StateOutput.GetStateIndex())
 }
 
 func (c *consensusImpl) resetWorkflow() {
 	for i := range c.resultSignatures {
 		c.resultSignatures[i] = nil
 	}
+	c.acsSessionID++
 	c.resultState = nil
 	c.resultTxEssence = nil
 	c.finalTx = nil

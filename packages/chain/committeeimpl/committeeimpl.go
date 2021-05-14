@@ -199,7 +199,7 @@ func (c *committeeObj) Close() {
 	c.validatorNodes.Close()
 }
 
-func (c *committeeObj) RunACSConsensus(value []byte, sessionID []byte, callback func(sessionID []byte, acs [][]byte)) {
+func (c *committeeObj) RunACSConsensus(value []byte, sessionID uint64, callback func(sessionID uint64, acs [][]byte)) {
 	if c.acsRunner != nil {
 		go c.acsRunner.RunACSConsensus(value, sessionID, callback)
 		return

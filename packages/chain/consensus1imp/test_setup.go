@@ -371,6 +371,26 @@ func (n *mockedNode) WaitStateIndex(until uint32, timeout ...time.Duration) erro
 	}
 }
 
+func (n *mockedNode) WaitEmptyMempool(timeout ...time.Duration) error {
+	deadline := time.Now().Add(10 * time.Second)
+	if len(timeout) > 0 {
+		deadline = time.Now().Add(timeout[0])
+	}
+	for {
+		snap := n.Consensus.GetStatusSnapshot()
+		if snap == nil {
+			continue
+		}
+		if snap.MempoolTotal == 0 {
+			return nil
+		}
+		time.Sleep(10 * time.Millisecond)
+		if time.Now().After(deadline) {
+			return fmt.Errorf("node %d: WaitEmptyMempool timeout", n.OwnIndex)
+		}
+	}
+}
+
 func (env *mockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...time.Duration) error {
 	ch := make(chan int)
 	for _, n := range env.Nodes {
@@ -390,6 +410,31 @@ func (env *mockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...t
 		}
 	}
 	return fmt.Errorf("WaitStateIndex: timeout")
+}
+
+func (env *mockedEnv) WaitEmptyMempool(quorum int, timeout ...time.Duration) error {
+	ch := make(chan int)
+	for _, n := range env.Nodes {
+		go func(node *mockedNode) {
+			if err := node.WaitEmptyMempool(timeout...); err != nil {
+				ch <- 0
+			} else {
+				ch <- 1
+			}
+		}(n)
+	}
+	var sum, total int
+	for n := range ch {
+		sum += n
+		total++
+		if sum >= quorum {
+			return nil
+		}
+		if total >= len(env.Nodes) {
+			break
+		}
+	}
+	return fmt.Errorf("WaitEmptyMempool: timeout")
 }
 
 func (env *mockedEnv) getReqIDsForLastState() []coretypes.RequestID {
