@@ -476,8 +476,8 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction) error {
 	}
 
 	block := e.newBlock(func(number int, block *core.BlockGen) {
-		for _, tx := range e.pendingBlock.Transactions() {
-			block.AddTxWithChain(e.blockchain, tx)
+		for _, pendingTx := range e.pendingBlock.Transactions() {
+			block.AddTxWithChain(e.blockchain, pendingTx)
 		}
 		block.AddTxWithChain(e.blockchain, tx)
 	})

@@ -58,11 +58,24 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	emu := emulator(ctx.State())
 	defer emu.Close()
 
-	err = emu.SendTransaction(tx)
+	err = emu.SendTransaction(tx) // TODO handle case where tx fails, but gas is spent anyway
 	a.RequireNoError(err)
+
+	//solidifies the pending block
 	emu.Commit()
 
-	return nil, nil
+	receipt, err := emu.TransactionReceipt(tx.Hash())
+	a.RequireNoError(err)
+
+	receiptBytes, err := rlp.EncodeToBytes(receipt)
+	a.RequireNoError(err)
+
+	ret := dict.New()
+	ret.Set(FieldResult, receiptBytes)
+	// ret.Set(FieldGasUsed, codec.EncodeUint64(receipt.GasUsed)) // TODO uncomment
+	ret.Set(FieldGasUsed, codec.EncodeUint64(10)) // TODO hardcoded value for testing purposes
+
+	return ret, nil
 }
 
 func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {

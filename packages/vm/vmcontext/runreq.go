@@ -2,10 +2,12 @@ package vmcontext
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"runtime/debug"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -16,6 +18,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"golang.org/x/xerrors"
 )
+
+// TODO not sure if there is a way to import this from contracts/native/evmchain/interface.go
+const FieldGasUsed = "gas"
 
 // RunTheRequest processes any request based on the Extended output, even if it
 // doesn't parse correctly as a SC request
@@ -59,6 +64,16 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 			}
 		}()
 		vmctx.mustCallFromRequest()
+
+		// charge GAS fees
+		if vmctx.lastResult.MustHas(FieldGasUsed) {
+			gasUsed, _, _ := codec.DecodeUint64(vmctx.lastResult.MustGet(FieldGasUsed))
+			//charge gas fees at the rate: 1 gas = 1 iota, if the caller doesn't have enough iotas to pay, rollback the sc call (while keeping the fees charged)
+			if !vmctx.grabFee(vmctx.commonAccount(), gasUsed) {
+				vmctx.lastError = fmt.Errorf("not enough iotas to pay the gas fees. gas used: %d", gasUsed)
+				vmctx.lastResult = nil
+			}
+		}
 	}()
 
 	if vmctx.lastError != nil {

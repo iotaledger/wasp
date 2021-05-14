@@ -92,7 +92,7 @@ func deployEVMContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKe
 	_, err = chain.PostRequestSync(
 		solo.NewCallParams(Interface.Name, FuncSendTransaction,
 			FieldTransactionDataBlobHash, codec.EncodeHashValue(txDataBlobHash),
-		).WithIotas(1),
+		).WithIotas(1000),
 		nil,
 	)
 	require.NoError(t, err)
@@ -117,7 +117,7 @@ func deployEVMContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKe
 		txdata, err := tx.MarshalBinary()
 		require.NoError(t, err)
 
-		_, err = chain.PostRequestSync(
+		result, err := chain.PostRequestSync(
 			solo.NewCallParams(Interface.Name, FuncSendTransaction, FieldTransactionData, txdata).
 				WithIotas(1),
 			nil,
@@ -125,15 +125,10 @@ func deployEVMContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKe
 		require.NoError(t, err)
 
 		var receipt *types.Receipt
-		{
-			ret, err := chain.CallView(Interface.Name, FuncGetReceipt,
-				FieldTransactionHash, tx.Hash().Bytes(),
-			)
-			require.NoError(t, err)
 
-			err = rlp.DecodeBytes(ret.MustGet(FieldResult), &receipt)
-			require.NoError(t, err)
-		}
+		err = rlp.DecodeBytes(result.MustGet(FieldResult), &receipt)
+		require.NoError(t, err)
+
 		return receipt
 	}
 
@@ -240,3 +235,9 @@ func TestGetCode(t *testing.T) {
 	//ensure returned bytecode matches the expected runtime bytecode
 	require.True(t, bytes.Equal(retrievedBytecode, evmtest.ERC20ContractRuntimeBytecode), "bytecode retrieved from the chain must match the deployed bytecode")
 }
+
+// TEST gas limits
+
+// tx with enough gas should be successful and the gas should be charged
+
+// tx without enough gas must be rollbacked

@@ -52,4 +52,5 @@ const (
 	FieldBalance                 = "b"
 	FieldCallArguments           = "c"
 	FieldResult                  = "r"
+	FieldGasUsed                 = "gas"
 )
