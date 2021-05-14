@@ -60,6 +60,7 @@ type Committee interface {
 	Attach(chain ChainCore)
 	IsReady() bool
 	Close()
+	AsynchronousCommonSubsetRunner
 }
 
 type ChainRequests interface {
@@ -84,7 +85,7 @@ type StateManager interface {
 	EventOutputMsg(msg ledgerstate.Output)
 	EventStateCandidateMsg(msg StateCandidateMsg)
 	EventTimerMsg(msg TimerTick)
-	GetSyncInfo() *SyncInfo
+	GetStatusSnapshot() *SyncInfo
 	Close()
 }
 
@@ -105,9 +106,11 @@ type Consensus interface {
 	EventResultCalculated(*VMResultMsg)
 	EventSignedResultMsg(*SignedResultMsg)
 	EventInclusionsStateMsg(*InclusionStateMsg)
+	EventAsynchronousCommonSubsetMsg(msg *AsynchronousCommonSubsetMsg)
 	EventTimerMsg(TimerTick)
 	IsReady() bool
 	Close()
+	GetStatusSnapshot() *ConsensusInfo
 }
 
 type Mempool interface {
@@ -123,8 +126,13 @@ type Mempool interface {
 	TakeAllReady(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
 	RemoveRequests(reqs ...coretypes.RequestID)
 	HasRequest(id coretypes.RequestID) bool
+	// Stats returns total number, number with messages, number solid
 	Stats() (int, int, int)
 	Close()
+}
+
+type AsynchronousCommonSubsetRunner interface {
+	RunACSConsensus(value []byte, sessionID []byte, callback func(sessionID []byte, acs [][]byte))
 }
 
 type SyncInfo struct {
@@ -136,6 +144,15 @@ type SyncInfo struct {
 	StateOutputID         ledgerstate.OutputID
 	StateOutputHash       hashing.HashValue
 	StateOutputTimestamp  time.Time
+}
+
+type ConsensusInfo struct {
+	StateIndex          uint32
+	ConfirmedStateIndex uint32 // set when tx is confirmed
+	MempoolTotal        int
+	MempoolWithMessages int
+	MempoolSolid        int
+	TimerTick           int
 }
 
 type ReadyListRecord struct {

@@ -23,6 +23,7 @@ type committeeObj struct {
 	address        ledgerstate.Address
 	peerConfig     coretypes.PeerNetworkConfigProvider
 	validatorNodes peering.GroupProvider
+	acsRunner      chain.AsynchronousCommonSubsetRunner
 	peeringID      peering.PeeringID
 	size           uint16
 	quorum         uint16
@@ -32,6 +33,8 @@ type committeeObj struct {
 	log            *logger.Logger
 }
 
+const waitReady = false
+
 func NewCommittee(
 	stateAddr ledgerstate.Address,
 	netProvider peering.NetworkProvider,
@@ -39,7 +42,7 @@ func NewCommittee(
 	dksProvider coretypes.DKShareRegistryProvider,
 	committeeRegistry coretypes.CommitteeRegistryProvider,
 	log *logger.Logger,
-	waitReady ...bool,
+	acsRunner ...chain.AsynchronousCommonSubsetRunner,
 ) (chain.Committee, error) {
 
 	// load committee record from the registry
@@ -75,11 +78,10 @@ func NewCommittee(
 		dkshare:        dkshare,
 		log:            log,
 	}
-	waitReadyValue := false
-	if len(waitReady) > 0 {
-		waitReadyValue = waitReady[0]
+	if len(acsRunner) > 0 {
+		ret.acsRunner = acsRunner[0]
 	}
-	go ret.waitReady(waitReadyValue)
+	go ret.waitReady(waitReady)
 
 	return ret, nil
 }
@@ -195,6 +197,14 @@ func (c *committeeObj) Close() {
 		c.validatorNodes.Detach(c.attachID)
 	}
 	c.validatorNodes.Close()
+}
+
+func (c *committeeObj) RunACSConsensus(value []byte, sessionID []byte, callback func(sessionID []byte, acs [][]byte)) {
+	if c.acsRunner != nil {
+		go c.acsRunner.RunACSConsensus(value, sessionID, callback)
+		return
+	}
+	c.log.Errorf("ACS consensus is not available")
 }
 
 func (c *committeeObj) waitReady(waitReady bool) {

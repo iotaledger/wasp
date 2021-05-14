@@ -5,8 +5,8 @@ go 1.16
 require (
 	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/bytecodealliance/wasmtime-go v0.21.0
-	github.com/iotaledger/goshimmer v0.5.7-0.20210510131956-fd5d267d41f4
-	github.com/iotaledger/hive.go v0.0.0-20210420114224-0b2c378f627f
+	github.com/iotaledger/goshimmer v0.5.9-0.20210513133546-951057218ff8
+	github.com/iotaledger/hive.go v0.0.0-20210427112115-75c7ebf4ebbb
 	github.com/knadh/koanf v0.15.0
 	github.com/labstack/echo/v4 v4.1.13
 	github.com/mr-tron/base58 v1.2.0

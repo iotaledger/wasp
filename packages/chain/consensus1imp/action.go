@@ -14,25 +14,29 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
-
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
 
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
 func (c *consensusImpl) takeAction() {
-	c.startConsensusIfNeeded()
+	if !c.workflow.stateReceived || c.workflow.finished {
+		return
+	}
+	c.proposeBatchIfNeeded()
 	c.runVMIfNeeded()
 	c.checkQuorum()
 	c.postTransactionIfNeeded()
 	c.pullInclusionStateIfNeeded()
 }
 
-func (c *consensusImpl) startConsensusIfNeeded() {
-	if c.stage != stageStateReceived {
+func (c *consensusImpl) proposeBatchIfNeeded() {
+	if c.workflow.batchProposalSent {
+		return
+	}
+	if c.workflow.consensusBatchKnown {
 		return
 	}
 	reqs := c.mempool.GetReadyList()
@@ -40,11 +44,23 @@ func (c *consensusImpl) startConsensusIfNeeded() {
 		return
 	}
 	proposal := c.prepareBatchProposal(reqs)
-	c.sendProposalForACS(proposal)
+	c.committee.RunACSConsensus(proposal.Bytes(), c.stateOutput.ID().Bytes(), func(sessionID []byte, acs [][]byte) {
+		c.log.Debugf("received ACS")
+		go c.chain.ReceiveMessage(&chain.AsynchronousCommonSubsetMsg{
+			ProposedBatchesBin: acs,
+			SessionID:          sessionID,
+		})
+	})
+
+	c.log.Debugf("proposed batch len = %d", len(reqs))
+	c.workflow.batchProposalSent = true
 }
 
 func (c *consensusImpl) runVMIfNeeded() {
-	if c.stage != stageConsensusCompleted {
+	if !c.workflow.consensusBatchKnown {
+		return
+	}
+	if c.workflow.vmStarted || c.workflow.vmResultSignedAndBroadcasted {
 		return
 	}
 	reqs := c.mempool.GetRequestsByIDs(c.consensusBatch.Timestamp, c.consensusBatch.RequestIDs...)
@@ -89,40 +105,40 @@ func (c *consensusImpl) runVMIfNeeded() {
 		})
 	}
 
-	c.stage = stageVM
-	c.stageStarted = time.Now()
-
-	runvm.MustRunVMTaskAsync(task)
+	c.workflow.vmStarted = true
+	go c.vmRunner.Run(task)
 }
 
 const postSeqStepMilliseconds = 1000
 
 func (c *consensusImpl) checkQuorum() {
-	if c.resultSignatures[c.committee.OwnPeerIndex()] == nil {
+	if c.workflow.transactionFinalized {
+		return
+	}
+	if !c.workflow.vmResultSignedAndBroadcasted {
 		// only can aggregate signatures if own result is calculated
 		return
 	}
+	// must be not nil
 	ownHash := c.resultSignatures[c.committee.OwnPeerIndex()].EssenceHash
-	numSigs := uint16(0)
-	for _, sig := range c.resultSignatures {
+	contributors := make([]uint16, 0, c.committee.Size())
+	for i, sig := range c.resultSignatures {
 		if sig == nil {
 			continue
 		}
 		if sig.EssenceHash == ownHash {
-			numSigs++
+			contributors = append(contributors, uint16(i))
+		} else {
+			c.log.Warnf("wrong essence hash: expected(own): %s, got: %s", ownHash, sig.EssenceHash)
 		}
 	}
-	if numSigs < c.committee.Quorum() {
+	c.log.Debugf("checkQuorum: %+v", contributors)
+	if len(contributors) < int(c.committee.Quorum()) {
 		return
 	}
-	sigSharesToAggregate := make([][]byte, 0, numSigs)
-	for _, sig := range c.resultSignatures {
-		if sig == nil {
-			continue
-		}
-		if sig.EssenceHash == ownHash {
-			sigSharesToAggregate = append(sigSharesToAggregate, sig.SigShare)
-		}
+	sigSharesToAggregate := make([][]byte, len(contributors))
+	for i, idx := range contributors {
+		sigSharesToAggregate[i] = c.resultSignatures[idx].SigShare
 	}
 	tx, approvingOutID, err := c.finalizeTransaction(sigSharesToAggregate)
 	if err != nil {
@@ -138,32 +154,30 @@ func (c *consensusImpl) checkQuorum() {
 		ApprovingOutputID: approvingOutID,
 	})
 
-	c.stage = stageTransactionFinalized
-	c.stageStarted = time.Now()
-
 	// calculate deterministic pseudo-random postTxDeadline among contributors
+	var postSeqNumber uint16
 	if c.iAmContributor {
 		permutation := util.NewPermutation16(uint16(len(c.contributors)), tx.ID().Bytes())
-		postSeqNumber := permutation.GetArray()[c.myContributionSeqNumber]
-		c.postTxDeadline = c.stageStarted.Add(time.Duration(postSeqNumber*postSeqStepMilliseconds) * time.Millisecond)
+		postSeqNumber = permutation.GetArray()[c.myContributionSeqNumber]
+		c.postTxDeadline = time.Now().Add(time.Duration(postSeqNumber*postSeqStepMilliseconds) * time.Millisecond)
 	}
-	c.transactionPosted = false
-	c.transactionSeen = false
-	c.pullInclusionStateDeadline = time.Now().Add(500 * time.Millisecond)
+	c.workflow.transactionFinalized = true
+	c.pullInclusionStateDeadline = time.Now()
+	c.log.Debugf("checkQuorum: finalized tx %s, iAmContributor: %v seqNum: %d", tx.ID().Base58(), c.iAmContributor, postSeqNumber)
 }
 
 func (c *consensusImpl) postTransactionIfNeeded() {
-	if c.stage != stageTransactionFinalized {
+	if !c.workflow.transactionFinalized {
 		return
 	}
 	if !c.iAmContributor {
 		// only contributors post transaction
 		return
 	}
-	if c.transactionPosted {
+	if c.workflow.transactionPosted {
 		return
 	}
-	if c.transactionSeen {
+	if c.workflow.transactionSeen {
 		return
 	}
 	if time.Now().Before(c.postTxDeadline) {
@@ -171,17 +185,17 @@ func (c *consensusImpl) postTransactionIfNeeded() {
 	}
 	c.nodeConn.PostTransaction(c.finalTx)
 
-	c.transactionPosted = true
+	c.workflow.transactionPosted = true
 	c.log.Infof("POSTED TRANSACTION: %s", c.finalTx.ID().Base58())
 }
 
 const pullInclusionStatePeriod = 1 * time.Second
 
 func (c *consensusImpl) pullInclusionStateIfNeeded() {
-	if c.stage != stageTransactionFinalized {
+	if !c.workflow.transactionFinalized {
 		return
 	}
-	if c.transactionSeen {
+	if c.workflow.transactionSeen {
 		return
 	}
 	if time.Now().Before(c.pullInclusionStateDeadline) {
@@ -191,19 +205,124 @@ func (c *consensusImpl) pullInclusionStateIfNeeded() {
 	c.pullInclusionStateDeadline = time.Now().Add(pullInclusionStatePeriod)
 }
 
+func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchProposal {
+	ts := time.Now()
+	if !ts.After(c.stateTimestamp) {
+		ts = c.stateTimestamp.Add(1 * time.Nanosecond)
+	}
+	consensusManaPledge := identity.ID{}
+	accessManaPledge := identity.ID{}
+	feeDestination := coretypes.NewAgentID(c.chain.ID().AsAddress(), 0)
+	ret := &batchProposal{
+		ValidatorIndex:      c.committee.OwnPeerIndex(),
+		StateOutputID:       c.stateOutput.ID(),
+		RequestIDs:          make([]coretypes.RequestID, len(reqs)),
+		Timestamp:           ts,
+		ConsensusManaPledge: consensusManaPledge,
+		AccessManaPledge:    accessManaPledge,
+		FeeDestination:      feeDestination,
+	}
+	for i := range ret.RequestIDs {
+		ret.RequestIDs[i] = reqs[i].ID()
+	}
+	return ret
+}
+
+func (c *consensusImpl) receiveACS(values [][]byte) {
+	if !c.workflow.stateReceived {
+		return
+	}
+	if c.workflow.consensusBatchKnown {
+		// should not happen
+		return
+	}
+	if len(values) < int(c.committee.Quorum()) {
+		c.log.Errorf("receiveACS: ACS is shorter than equired quorum. Ignored")
+		c.resetWorkflow()
+		return
+	}
+	acs := make([]*batchProposal, len(values))
+	for i, data := range values {
+		proposal, err := BatchProposalFromBytes(data)
+		if err != nil {
+			c.log.Errorf("receiveACS: wrong data received. Whole ACS ignored: %v", err)
+			c.resetWorkflow()
+			return
+		}
+		acs[i] = proposal
+	}
+	iAmContributor := false
+	myContributionSeqNumber := uint16(0)
+	contributors := make([]uint16, 0, c.committee.Size())
+	contributorSet := make(map[uint16]struct{})
+	for i, prop := range acs {
+		if prop.StateOutputID != c.stateOutput.ID() {
+			c.resetWorkflow()
+			c.log.Warnf("receiveACS: ACS out of context or consensus failure")
+			return
+		}
+		if prop.ValidatorIndex >= c.committee.Size() {
+			c.resetWorkflow()
+			c.log.Warnf("receiveACS: wrong validtor index in ACS")
+			return
+		}
+		if prop.ValidatorIndex == c.committee.OwnPeerIndex() {
+			iAmContributor = true
+			myContributionSeqNumber = uint16(i)
+		}
+		contributors = append(contributors, prop.ValidatorIndex)
+		if _, already := contributorSet[prop.ValidatorIndex]; already {
+			c.resetWorkflow()
+			c.log.Errorf("receiveACS: duplicate contributors in ACS")
+			return
+		}
+		contributorSet[prop.ValidatorIndex] = struct{}{}
+	}
+	inBatchSet := calcIntersection(acs, c.committee.Size(), c.committee.Quorum())
+	if len(inBatchSet) == 0 {
+		c.log.Warnf("receiveACS: intersecection is empty. reset workflow")
+		c.resetWorkflow()
+		return
+	}
+	medianTs, accessPledge, consensusPledge, feeDestination := calcBatchParameters(acs)
+
+	c.consensusBatch = &batchProposal{
+		ValidatorIndex:      c.committee.OwnPeerIndex(),
+		StateOutputID:       c.stateOutput.ID(),
+		RequestIDs:          inBatchSet,
+		Timestamp:           medianTs,
+		ConsensusManaPledge: consensusPledge,
+		AccessManaPledge:    accessPledge,
+		FeeDestination:      feeDestination,
+	}
+	c.iAmContributor = iAmContributor
+	c.myContributionSeqNumber = myContributionSeqNumber
+	c.contributors = contributors
+
+	c.workflow.consensusBatchKnown = true
+
+	c.runVMIfNeeded()
+}
+
 func (c *consensusImpl) processInclusionState(msg *chain.InclusionStateMsg) {
-	if c.stage != stageTransactionFinalized {
+	if !c.workflow.transactionFinalized {
 		return
 	}
 	if msg.TxID != c.finalTx.ID() {
 		return
 	}
-	c.transactionSeen = true
-	if msg.State == ledgerstate.Rejected {
-		// restart consensus
-		c.log.Infof("transaction %s rejected. Restart consensus")
-		c.resetState()
-		return
+	switch msg.State {
+	case ledgerstate.Pending:
+		c.workflow.transactionSeen = true
+	case ledgerstate.Confirmed:
+		c.workflow.transactionSeen = true
+		c.workflow.finished = true
+		c.refreshConsensusInfo()
+		c.log.Debugf("workflow finished. Tx confirmed: %s. In mempool left: %d", msg.TxID.Base58(), c.GetStatusSnapshot().StateIndex)
+	case ledgerstate.Rejected:
+		c.workflow.transactionSeen = true
+		c.log.Infof("transaction %s rejected. Restart consensus", msg.TxID.Base58())
+		c.resetWorkflow()
 	}
 }
 
@@ -242,121 +361,29 @@ func (c *consensusImpl) setNewState(msg *chain.StateTransitionMsg) {
 	c.stateOutput = msg.StateOutput
 	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp
-	c.stateIndex.Store(c.stateOutput.GetStateIndex())
-	c.resetState()
+	c.resetWorkflow()
 }
 
-func (c *consensusImpl) resetState() {
+func (c *consensusImpl) resetWorkflow() {
 	for i := range c.resultSignatures {
 		c.resultSignatures[i] = nil
 	}
 	c.resultState = nil
 	c.resultTxEssence = nil
 	c.finalTx = nil
-	c.transactionPosted = false
-	c.transactionSeen = false
 	c.consensusBatch = nil
 	c.contributors = nil
-
-	c.stage = stageStateReceived
-	c.stageStarted = time.Now()
-}
-
-func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchProposal {
-	ts := time.Now()
-	if !ts.After(c.stateTimestamp) {
-		ts = c.stateTimestamp.Add(1 * time.Nanosecond)
+	c.workflow = workflowFlags{
+		stateReceived: c.stateOutput != nil,
 	}
-	consensusManaPledge := identity.ID{}
-	accessManaPledge := identity.ID{}
-	feeDestination := coretypes.NewAgentID(c.chain.ID().AsAddress(), 0)
-	ret := &batchProposal{
-		StateOutputID:       c.stateOutput.ID(),
-		RequestIDs:          make([]coretypes.RequestID, len(reqs)),
-		Timestamp:           ts,
-		ConsensusManaPledge: consensusManaPledge,
-		AccessManaPledge:    accessManaPledge,
-		FeeDestination:      feeDestination,
-	}
-	for i := range ret.RequestIDs {
-		ret.RequestIDs[i] = reqs[i].ID()
-	}
-	return ret
-}
-
-func (c *consensusImpl) sendProposalForACS(proposal *batchProposal) {
-	c.mockedACS.ProposeValue(proposal.Bytes(), c.stateOutput.ID().Bytes())
-	c.stage = stageConsensus
-	c.stageStarted = time.Now()
-}
-
-func (c *consensusImpl) receiveACS(values [][]byte) {
-	if len(values) < int(c.committee.Quorum()) {
-		c.log.Errorf("receiveACS: ACS is shorter than equired quorum. Ignored")
-		return
-	}
-	acs := make([]*batchProposal, len(values))
-	for i, data := range values {
-		proposal, err := BatchProposalFromBytes(data)
-		if err != nil {
-			c.log.Errorf("receiveACS: wrong data received. Whole ACS ignored: %v", err)
-			return
-		}
-		acs[i] = proposal
-	}
-	iAmContributor := false
-	myContributionSeqNumber := uint16(0)
-	contributors := make([]uint16, 0, c.committee.Size())
-	contributorSet := make(map[uint16]struct{})
-	for i, prop := range acs {
-		if prop.StateOutputID != c.stateOutput.ID() {
-			//
-			c.log.Warnf("receiveACS: ACS out of context or consensus failure")
-			return
-		}
-		if prop.ValidatorIndex >= c.committee.Size() {
-			c.log.Warnf("receiveACS: wrong validtor index in ACS")
-			return
-		}
-		if prop.ValidatorIndex == c.committee.OwnPeerIndex() {
-			iAmContributor = true
-			myContributionSeqNumber = uint16(i)
-		}
-		contributors = append(contributors, prop.ValidatorIndex)
-		if _, already := contributorSet[prop.ValidatorIndex]; already {
-			c.log.Errorf("receiveACS: duplicate contributors in ACS")
-			return
-		}
-		contributorSet[prop.ValidatorIndex] = struct{}{}
-	}
-	inBatchSet := calcIntersection(acs, c.committee.Size(), c.committee.Quorum())
-	if len(inBatchSet) == 0 {
-		c.log.Warnf("receiveACS: intersecection is empty. ConsensusOld failure")
-		return
-	}
-	medianTs, accessPledge, consensusPledge, feeDestination := calcBatchParameters(acs)
-
-	c.consensusBatch = &batchProposal{
-		ValidatorIndex:      c.committee.OwnPeerIndex(),
-		StateOutputID:       c.stateOutput.ID(),
-		RequestIDs:          inBatchSet,
-		Timestamp:           medianTs,
-		ConsensusManaPledge: consensusPledge,
-		AccessManaPledge:    accessPledge,
-		FeeDestination:      feeDestination,
-	}
-	c.iAmContributor = iAmContributor
-	c.myContributionSeqNumber = myContributionSeqNumber
-	c.contributors = contributors
-
-	c.stage = stageConsensusCompleted
-	c.stageStarted = time.Now()
-
-	c.runVMIfNeeded()
 }
 
 func (c *consensusImpl) processVMResult(result *vm.VMTask) {
-	c.log.Debugw("processVMResult")
+	c.log.Debugf("processVMResult")
+	if !c.workflow.vmStarted || c.workflow.vmResultSignedAndBroadcasted {
+		// out of context
+		return
+	}
 
 	essenceBytes := result.ResultTransactionEssence.Bytes()
 	essenceHash := hashing.HashData(essenceBytes)
@@ -377,8 +404,7 @@ func (c *consensusImpl) processVMResult(result *vm.VMTask) {
 	}
 	c.committee.SendMsgToPeers(chain.MsgSignedResult, util.MustBytes(msg), time.Now().UnixNano())
 
-	c.stage = stageWaitForSignatures
-	c.stageStarted = time.Now()
+	c.workflow.vmResultSignedAndBroadcasted = true
 
 	c.log.Debugf("processVMResult: signed and broadcasted: essence hash: %s", msg.EssenceHash.String())
 }
@@ -402,4 +428,5 @@ func (c *consensusImpl) processSignedResult(msg *chain.SignedResultMsg) {
 		return
 	}
 	c.resultSignatures[msg.SenderIndex] = msg
+	c.log.Debugf("stored sig share from sender %d", msg.SenderIndex)
 }

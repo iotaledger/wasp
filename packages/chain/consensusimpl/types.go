@@ -4,9 +4,12 @@
 package consensusimpl
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/runvm"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -24,6 +27,7 @@ type operator struct {
 	committee chain.Committee
 	mempool   chain.Mempool
 	nodeConn  chain.NodeConnection
+	vmRunner  vm.VMRunner
 	//currentState
 	currentState   state.VirtualState
 	stateOutput    *ledgerstate.AliasOutput
@@ -85,6 +89,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		committee:                           committee,
 		mempool:                             mempool,
 		nodeConn:                            nodeConn,
+		vmRunner:                            runvm.NewVMRunner(),
 		requestIdsProtected:                 make(map[coretypes.RequestID]bool),
 		peerPermutation:                     util.NewPermutation16(committee.Size(), nil),
 		log:                                 log.Named("c"),

@@ -111,7 +111,7 @@ func TestGetNextState(t *testing.T) {
 	currh := currentState.Hash()
 	require.EqualValues(t, currh[:], currentStateOutput.GetStateData())
 
-	node.StateTransition.NextState(currentState, currentStateOutput)
+	node.StateTransition.NextState(currentState, currentStateOutput, time.Now())
 	si, err = node.WaitSyncBlockIndex(1, 3*time.Second)
 	require.NoError(t, err)
 	require.True(t, si.Synced)

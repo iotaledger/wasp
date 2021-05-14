@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -18,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/stretchr/testify/require"
 )
 
@@ -43,7 +41,6 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 		Log:                ch.Log,
 	}
 	var err error
-	var wg sync.WaitGroup
 	var callRes dict.Dict
 	var callErr error
 	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
@@ -51,13 +48,9 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 		callRes = callResult
 		callErr = callError
 		ch.reqCounter.Add(int32(-len(task.Requests)))
-		wg.Done()
 	}
 
-	wg.Add(1)
-	runvm.MustRunVMTaskAsync(task)
-	require.NoError(ch.Env.T, err)
-	wg.Wait()
+	ch.Env.vmRunner.Run(task)
 
 	ch.Env.AdvanceClockBy(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 

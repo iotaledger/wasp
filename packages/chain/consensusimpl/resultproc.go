@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
 )
 
 type runCalculationsParams struct {
@@ -52,7 +51,7 @@ func (op *operator) runCalculationsAsync(par runCalculationsParams) {
 			Leader: par.leaderPeerIndex,
 		})
 	}
-	runvm.MustRunVMTaskAsync(task)
+	go op.vmRunner.Run(task)
 }
 
 func (op *operator) sendResultToTheLeader(result *vm.VMTask, leader uint16) {

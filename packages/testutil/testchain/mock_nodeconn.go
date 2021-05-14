@@ -5,6 +5,7 @@ import (
 )
 
 type MockedNodeConn struct {
+	id                              string
 	onPullBacklog                   func(addr *ledgerstate.AliasAddress)
 	onPullState                     func(addr *ledgerstate.AliasAddress)
 	onPullConfirmedTransaction      func(addr ledgerstate.Address, txid ledgerstate.TransactionID)
@@ -13,8 +14,12 @@ type MockedNodeConn struct {
 	onPostTransaction               func(tx *ledgerstate.Transaction)
 }
 
-func NewMockedNodeConnection() *MockedNodeConn {
-	return &MockedNodeConn{}
+func NewMockedNodeConnection(id string) *MockedNodeConn {
+	return &MockedNodeConn{id: id}
+}
+
+func (m *MockedNodeConn) ID() string {
+	return m.id
 }
 
 func (m *MockedNodeConn) PullBacklog(addr *ledgerstate.AliasAddress) {

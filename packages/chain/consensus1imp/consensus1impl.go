@@ -3,7 +3,8 @@ package consensus1imp
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/testutil/testchain"
+	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/runvm"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/state"
@@ -15,50 +16,50 @@ import (
 
 type consensusImpl struct {
 	isReady                    atomic.Bool
-	lastTimerTick              atomic.Int64
-	stateIndex                 atomic.Uint32
 	chain                      chain.ChainCore
 	committee                  chain.Committee
 	mempool                    chain.Mempool
 	nodeConn                   chain.NodeConnection
+	vmRunner                   vm.VMRunner
 	currentState               state.VirtualState
 	stateOutput                *ledgerstate.AliasOutput
 	stateTimestamp             time.Time
-	stage                      byte
-	stageStarted               time.Time
 	consensusBatch             *batchProposal
 	iAmContributor             bool
 	myContributionSeqNumber    uint16
 	contributors               []uint16
+	workflow                   workflowFlags
 	resultTxEssence            *ledgerstate.TransactionEssence
 	resultState                state.VirtualState
 	resultSignatures           []*chain.SignedResultMsg
 	finalTx                    *ledgerstate.Transaction
 	approvingOutputID          ledgerstate.OutputID
 	postTxDeadline             time.Time
-	transactionPosted          bool
-	transactionSeen            bool
 	pullInclusionStateDeadline time.Time
+	lastTimerTick              atomic.Int64
+	consensusInfoSnapshot      atomic.Value
 	log                        *logger.Logger
 	eventStateTransitionMsgCh  chan *chain.StateTransitionMsg
 	eventResultCalculatedMsgCh chan *chain.VMResultMsg
 	eventSignedResultMsgCh     chan *chain.SignedResultMsg
 	eventInclusionStateMsgCh   chan *chain.InclusionStateMsg
 	eventACSMsgCh              chan *chain.AsynchronousCommonSubsetMsg
+	eventVMResultMsgCh         chan *chain.VMResultMsg
 	eventTimerMsgCh            chan chain.TimerTick
 	closeCh                    chan struct{}
-	mockedACS                  *testchain.MockedAsynchronousCommonSubset
 }
 
-const (
-	_ byte = iota
-	stageStateReceived
-	stageConsensus
-	stageConsensusCompleted
-	stageVM
-	stageWaitForSignatures
-	stageTransactionFinalized
-)
+type workflowFlags struct {
+	stateReceived                bool
+	batchProposalSent            bool
+	consensusBatchKnown          bool
+	vmStarted                    bool
+	vmResultSignedAndBroadcasted bool
+	transactionFinalized         bool
+	transactionPosted            bool
+	transactionSeen              bool
+	finished                     bool
+}
 
 var _ chain.Consensus = &consensusImpl{}
 
@@ -68,6 +69,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		committee:                  committee,
 		mempool:                    mempool,
 		nodeConn:                   nodeConn,
+		vmRunner:                   runvm.NewVMRunner(),
 		resultSignatures:           make([]*chain.SignedResultMsg, committee.Size()),
 		log:                        log.Named("c"),
 		eventStateTransitionMsgCh:  make(chan *chain.StateTransitionMsg),
@@ -75,6 +77,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		eventSignedResultMsgCh:     make(chan *chain.SignedResultMsg),
 		eventInclusionStateMsgCh:   make(chan *chain.InclusionStateMsg),
 		eventACSMsgCh:              make(chan *chain.AsynchronousCommonSubsetMsg),
+		eventVMResultMsgCh:         make(chan *chain.VMResultMsg),
 		eventTimerMsgCh:            make(chan chain.TimerTick),
 		closeCh:                    make(chan struct{}),
 	}
@@ -123,6 +126,10 @@ func (c *consensusImpl) recvLoop() {
 			if ok {
 				c.eventAsynchronousCommonSubset(msg)
 			}
+		case msg, ok := <-c.eventVMResultMsgCh:
+			if ok {
+				c.eventVMResultMsg(msg)
+			}
 		case msg, ok := <-c.eventTimerMsgCh:
 			if ok {
 				c.eventTimerMsg(msg)
@@ -131,4 +138,31 @@ func (c *consensusImpl) recvLoop() {
 			return
 		}
 	}
+}
+
+func (c *consensusImpl) refreshConsensusInfo() {
+	if !c.workflow.stateReceived {
+		return
+	}
+	t, m, s := c.mempool.Stats()
+	confirmedState := c.currentState.BlockIndex()
+	if c.workflow.finished {
+		confirmedState = c.resultState.BlockIndex()
+	}
+	c.consensusInfoSnapshot.Store(&chain.ConsensusInfo{
+		StateIndex:          c.currentState.BlockIndex(),
+		ConfirmedStateIndex: confirmedState,
+		MempoolTotal:        t,
+		MempoolWithMessages: m,
+		MempoolSolid:        s,
+		TimerTick:           int(c.lastTimerTick.Load()),
+	})
+}
+
+func (c *consensusImpl) GetStatusSnapshot() *chain.ConsensusInfo {
+	ret := c.consensusInfoSnapshot.Load()
+	if ret == nil {
+		return nil
+	}
+	return ret.(*chain.ConsensusInfo)
 }

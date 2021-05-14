@@ -3,6 +3,7 @@ package consensus1imp
 import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
 )
 
 func (c *consensusImpl) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
@@ -21,7 +22,7 @@ func (c *consensusImpl) EventResultCalculated(msg *chain.VMResultMsg) {
 func (c *consensusImpl) eventResultCalculated(msg *chain.VMResultMsg) {
 	c.log.Debugf("eventResultCalculated: block index: %d", msg.Task.VirtualState.BlockIndex())
 
-	if c.stage != stageVM || msg.Task.ChainInput.ID() != c.stateOutput.ID() {
+	if msg.Task.ChainInput.ID() != c.stateOutput.ID() {
 		c.log.Warnf("eventResultCalculated: VMResultMsg out of context")
 		return
 	}
@@ -42,7 +43,8 @@ func (c *consensusImpl) EventInclusionsStateMsg(msg *chain.InclusionStateMsg) {
 	c.eventInclusionStateMsgCh <- msg
 }
 func (c *consensusImpl) eventInclusionState(msg *chain.InclusionStateMsg) {
-	c.log.Debugf("eventInclusionState: %s: '%s'", msg.TxID.Base58(), msg.State.String())
+	c.log.Debugf("eventInclusionState:  %s: '%s'", msg.TxID.Base58(), msg.State.String())
+	c.processInclusionState(msg)
 
 	c.takeAction()
 }
@@ -51,8 +53,20 @@ func (c *consensusImpl) EventAsynchronousCommonSubsetMsg(msg *chain.Asynchronous
 	c.eventACSMsgCh <- msg
 }
 func (c *consensusImpl) eventAsynchronousCommonSubset(msg *chain.AsynchronousCommonSubsetMsg) {
-	c.log.Debugf("eventAsynchronousCommonSubset:")
+	c.log.Debugf("eventAsynchronousCommonSubset: len = %d", len(msg.ProposedBatchesBin))
 	c.receiveACS(msg.ProposedBatchesBin)
+
+	c.takeAction()
+}
+
+func (c *consensusImpl) EventVMResultMsg(msg *chain.VMResultMsg) {
+	c.eventVMResultMsgCh <- msg
+}
+func (c *consensusImpl) eventVMResultMsg(msg *chain.VMResultMsg) {
+	essenceHash := hashing.HashData(msg.Task.ResultTransactionEssence.Bytes())
+	c.log.Debugf("eventVMResultMsg: state index: %d state hash: %s essence hash: %s",
+		msg.Task.VirtualState.BlockIndex(), msg.Task.VirtualState.Hash(), essenceHash)
+	c.processVMResult(msg.Task)
 
 	c.takeAction()
 }
@@ -61,18 +75,12 @@ func (c *consensusImpl) EventTimerMsg(msg chain.TimerTick) {
 	c.eventTimerMsgCh <- msg
 }
 func (c *consensusImpl) eventTimerMsg(msg chain.TimerTick) {
-	if msg%40 == 0 {
-		c.log.Infof("timer tick #%d", msg)
-	}
 	c.lastTimerTick.Store(int64(msg))
+	c.refreshConsensusInfo()
+	if msg%40 == 0 {
+		if snap := c.GetStatusSnapshot(); snap != nil {
+			c.log.Infof("timer tick #%d state index: %d (%d) mempool = %d", snap.TimerTick, snap.StateIndex, snap.ConfirmedStateIndex, snap.MempoolTotal)
+		}
+	}
 	c.takeAction()
-}
-
-// for testing
-func (c *consensusImpl) getTimerTick() int {
-	return int(c.lastTimerTick.Load())
-}
-
-func (c *consensusImpl) getStateIndex() uint32 {
-	return c.stateIndex.Load()
 }

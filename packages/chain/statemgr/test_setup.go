@@ -177,7 +177,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers Timers) *MockedNode {
 	ret := &MockedNode{
 		NetID:     nodeID,
 		Env:       env,
-		NodeConn:  testchain.NewMockedNodeConnection(),
+		NodeConn:  testchain.NewMockedNodeConnection("Node_"+nodeID),
 		Db:        dbprovider.NewInMemoryDBProvider(log),
 		ChainCore: testchain.NewMockedChainCore(env.ChainID, log),
 		Peers:     peers,
@@ -260,7 +260,7 @@ func (node *MockedNode) WaitSyncBlockIndex(index uint32, timeout time.Duration) 
 		if time.Now().After(deadline) {
 			return nil, xerrors.Errorf("WaitSyncBlockIndex: target index %d, timeout %v reached", index, timeout)
 		}
-		syncInfo = node.StateManager.GetSyncInfo()
+		syncInfo = node.StateManager.GetStatusSnapshot()
 		if syncInfo != nil && syncInfo.SyncedBlockIndex >= index {
 			return syncInfo, nil
 		}
@@ -272,7 +272,7 @@ func (node *MockedNode) OnStateTransitionMakeNewStateTransition(limit uint32) {
     node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
         chain.LogStateTransition(msg, node.Log)
         if msg.ChainOutput.GetStateIndex() < limit {
-            go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput)
+            go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput, time.Now())
         }
     })
 }
@@ -282,7 +282,7 @@ func (node *MockedNode) OnStateTransitionDoNothing() {
 }
 
 func (node *MockedNode) MakeNewStateTransition() {
-    node.StateTransition.NextState(node.StateManager.(*stateManager).solidState, node.StateManager.(*stateManager).stateOutput)
+    node.StateTransition.NextState(node.StateManager.(*stateManager).solidState, node.StateManager.(*stateManager).stateOutput, time.Now())
 }
 
 func (env *MockedEnv) AddNode(node *MockedNode) {
@@ -300,4 +300,3 @@ func (env *MockedEnv) RemoveNode(node *MockedNode) {
 	defer env.mutex.Unlock()
 	delete(env.Nodes, node.NetID)
 }
-
