@@ -4,10 +4,17 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/util"
+
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/transaction"
+
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/solo"
 
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -101,23 +108,15 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledg
 
 	for i := range ret.NodeConn {
 		func(j int) {
-			n := testchain.NewMockedNodeConnection(fmt.Sprintf("nodecon-%d", j))
-			ret.NodeConn[j] = n
-			n.OnPostTransaction(func(tx *ledgerstate.Transaction) {
-				if _, already := ret.Ledger.GetTransaction(tx.ID()); !already {
-					if err := ret.Ledger.AddTransaction(tx); err != nil {
-						ret.Log.Error(err)
-						return
-					}
-					ret.Log.Infof("%s: posted transaction to ledger: %s", n.ID(), tx.ID().Base58())
-				} else {
-					ret.Log.Infof("%s: transaction already in the ledger: %s", n.ID(), tx.ID().Base58())
-				}
+			nconn := testchain.NewMockedNodeConnection(fmt.Sprintf("nodecon-%d", j))
+			ret.NodeConn[j] = nconn
+			nconn.OnPostTransaction(func(tx *ledgerstate.Transaction) {
+				ret.receiveNewTransaction(tx, uint16(j))
 			})
-			n.OnPullBacklog(func(addr *ledgerstate.AliasAddress) {
+			nconn.OnPullBacklog(func(addr *ledgerstate.AliasAddress) {
 				// TODO
 			})
-			n.OnPullTransactionInclusionState(func(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
+			nconn.OnPullTransactionInclusionState(func(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
 				if _, already := ret.Ledger.GetTransaction(txid); already {
 					go ret.Nodes[j].ChainCore.ReceiveMessage(&chain.InclusionStateMsg{
 						TxID:  txid,
@@ -206,6 +205,7 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 		case *chain.StateCandidateMsg:
 			ret.Log.Infof("chainCore.StateCandidateMsg: state hash: %s, approving output: %s",
 				msg.State.Hash(), coretypes.OID(msg.ApprovingOutputID))
+			ret.Env.receiveStateCandidate(msg.State, i)
 		case *chain.InclusionStateMsg:
 			ret.Consensus.EventInclusionsStateMsg(msg)
 		case *peering.PeerMessage:
@@ -215,6 +215,59 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 		}
 	})
 	return ret
+}
+
+func (env *mockedEnv) receiveStateCandidate(newState state.VirtualState, from uint16) {
+	env.mutex.Lock()
+	defer env.mutex.Unlock()
+
+	if env.SolidState != nil && env.SolidState.BlockIndex() == newState.BlockIndex() {
+		env.Log.Debugf("node #%d: new state already committed for index %d", from, newState.BlockIndex())
+		return
+	}
+	err := newState.Commit()
+	require.NoError(env.T, err)
+
+	env.SolidState = newState
+	env.Log.Debugf("node #%d: committed new state for index %d", from, newState.BlockIndex())
+
+	env.checkStateApproval(from)
+}
+
+func (env *mockedEnv) receiveNewTransaction(tx *ledgerstate.Transaction, from uint16) {
+	env.mutex.Lock()
+	defer env.mutex.Unlock()
+
+	if _, already := env.Ledger.GetTransaction(tx.ID()); !already {
+		if err := env.Ledger.AddTransaction(tx); err != nil {
+			env.Log.Error(err)
+			return
+		}
+		env.StateOutput = transaction.GetAliasOutput(tx, env.ChainID.AsAddress())
+		require.NotNil(env.T, env.StateOutput)
+
+		env.Log.Infof("node #%d: stored transaction to the ledger: %s", from, tx.ID().Base58())
+		env.checkStateApproval(from)
+	} else {
+		env.Log.Infof("node #%d: transaction already in the ledger: %s", from, tx.ID().Base58())
+	}
+}
+
+func (env *mockedEnv) checkStateApproval(from uint16) {
+	if env.SolidState == nil || env.StateOutput == nil {
+		return
+	}
+	if env.SolidState.BlockIndex() != env.StateOutput.GetStateIndex() {
+		return
+	}
+	stateHash, err := hashing.HashValueFromBytes(env.StateOutput.GetStateData())
+	require.NoError(env.T, err)
+	require.EqualValues(env.T, stateHash, env.SolidState.Hash())
+
+	env.Log.Infof("STATE APPROVED. Index: %d, State output: %s (from node #%d)",
+		env.SolidState.BlockIndex(), coretypes.OID(env.StateOutput.ID()), from)
+
+	env.eventStateTransition()
 }
 
 func (env *mockedNode) processPeerMessage(msg *peering.PeerMessage) {
@@ -229,6 +282,27 @@ func (env *mockedNode) processPeerMessage(msg *peering.PeerMessage) {
 	}
 	if err != nil {
 		env.Log.Errorf("unexpected peer message type = %d", msg.MsgType)
+	}
+}
+
+func (env *mockedEnv) eventStateTransition() {
+	nowis := time.Now()
+	solidState := env.SolidState.Clone()
+	stateOutput := env.StateOutput
+
+	for _, node := range env.Nodes {
+		go func(n *mockedNode) {
+			reqids := env.getReqIDsForLastState()
+			env.Log.Debugf("removing requests from mempool: [%s]",
+				strings.Join(coretypes.ShortRequestIDs(reqids), ","))
+			n.Mempool.RemoveRequests(reqids...)
+
+			n.Consensus.EventStateTransitionMsg(&chain.StateTransitionMsg{
+				State:          solidState.Clone(),
+				StateOutput:    stateOutput,
+				StateTimestamp: nowis,
+			})
+		}(node)
 	}
 }
 
@@ -286,7 +360,7 @@ func (n *mockedNode) WaitStateIndex(until uint32, timeout ...time.Duration) erro
 		if snap == nil {
 			continue
 		}
-		if snap.ConfirmedStateIndex >= until {
+		if snap.StateIndex >= until {
 			//n.Log.Debugf("reached index %d", until)
 			return nil
 		}
@@ -318,15 +392,20 @@ func (env *mockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...t
 	return fmt.Errorf("WaitStateIndex: timeout")
 }
 
-func (env *mockedEnv) eventStateTransition() {
-	nowis := time.Now()
-	for _, node := range env.Nodes {
-		go node.Consensus.EventStateTransitionMsg(&chain.StateTransitionMsg{
-			State:          env.SolidState.Clone(),
-			StateOutput:    env.StateOutput,
-			StateTimestamp: nowis,
-		})
-	}
+func (env *mockedEnv) getReqIDsForLastState() []coretypes.RequestID {
+	env.mutex.Lock()
+	defer env.mutex.Unlock()
+
+	ret := make([]coretypes.RequestID, 0)
+	prefix := kv.Key(util.Uint32To4Bytes(env.SolidState.BlockIndex()))
+	err := env.SolidState.KVStoreReader().Iterate(prefix, func(key kv.Key, value []byte) bool {
+		reqid, err := coretypes.RequestIDFromBytes(value)
+		require.NoError(env.T, err)
+		ret = append(ret, reqid)
+		return true
+	})
+	require.NoError(env.T, err)
+	return ret
 }
 
 func (env *mockedEnv) postDummyRequests(n int, randomize ...bool) {

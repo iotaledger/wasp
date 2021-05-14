@@ -4,8 +4,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
+
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -29,38 +33,37 @@ func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedSt
 	}
 }
 
-func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chainOutput *ledgerstate.AliasOutput, ts time.Time, reqs ...coretypes.Request) {
+func (c *MockedStateTransition) NextState(vs state.VirtualState, chainOutput *ledgerstate.AliasOutput, ts time.Time, reqs ...coretypes.Request) {
 	if c.chainKey != nil {
 		require.True(c.t, chainOutput.GetStateAddress().Equals(ledgerstate.NewED25519Address(c.chainKey.PublicKey)))
 	}
 
-	nextVirtualState := virtualState.Clone()
-	prevBlockIndex := virtualState.BlockIndex()
-	counterBin, err := nextVirtualState.KVStore().Get("counter")
+	nextvs := vs.Clone()
+	prevBlockIndex := vs.BlockIndex()
+	counterKey := kv.Key(coreutil.StateVarBlockIndex + "counter")
+
+	counterBin, err := nextvs.KVStore().Get(counterKey)
 	require.NoError(c.t, err)
+
 	counter, _, err := codec.DecodeUint64(counterBin)
 	require.NoError(c.t, err)
 
-	sus := make([]state.StateUpdate, 0, len(reqs)+2)
-
 	suBlockIndex := state.NewStateUpdateWithBlockIndexMutation(prevBlockIndex + 1)
-	sus = append(sus, suBlockIndex)
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)
-	suCounter.Mutations().Set("counter", counterBin)
-	sus = append(sus, suCounter)
+	suCounter.Mutations().Set(counterKey, counterBin)
 
-	for _, req := range reqs {
-		sureq := state.NewStateUpdate()
-		sureq.Mutations().Set(kv.Key(req.ID().Bytes()), counterBin)
-		sus = append(sus, sureq)
+	suReqs := state.NewStateUpdate()
+	for i, req := range reqs {
+		key := kv.Key(blocklog.NewRequestLookupKey(vs.BlockIndex()+1, uint16(i)).Bytes())
+		suReqs.Mutations().Set(key, req.ID().Bytes())
 	}
 
-	nextVirtualState.ApplyStateUpdates(sus...)
-	require.EqualValues(c.t, prevBlockIndex+1, nextVirtualState.BlockIndex())
+	nextvs.ApplyStateUpdates(suBlockIndex, suCounter, suReqs)
+	require.EqualValues(c.t, prevBlockIndex+1, nextvs.BlockIndex())
 
-	nextStateHash := nextVirtualState.Hash()
+	nextStateHash := nextvs.Hash()
 
 	txBuilder := utxoutil.NewBuilder(chainOutput).WithTimestamp(ts)
 	err = txBuilder.AddAliasOutputAsRemainder(chainOutput.GetAliasAddress(), nextStateHash[:])
@@ -69,11 +72,11 @@ func (c *MockedStateTransition) NextState(virtualState state.VirtualState, chain
 	if c.chainKey != nil {
 		tx, err := txBuilder.BuildWithED25519(c.chainKey)
 		require.NoError(c.t, err)
-		c.onNextState(nextVirtualState, tx)
+		c.onNextState(nextvs, tx)
 	} else {
 		tx, _, err := txBuilder.BuildEssence()
 		require.NoError(c.t, err)
-		c.onVMResult(nextVirtualState, tx)
+		c.onVMResult(nextvs, tx)
 	}
 }
 

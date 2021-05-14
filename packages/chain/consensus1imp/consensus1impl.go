@@ -145,13 +145,8 @@ func (c *consensusImpl) refreshConsensusInfo() {
 		return
 	}
 	t, m, s := c.mempool.Stats()
-	confirmedState := c.currentState.BlockIndex()
-	if c.workflow.finished {
-		confirmedState = c.resultState.BlockIndex()
-	}
 	c.consensusInfoSnapshot.Store(&chain.ConsensusInfo{
 		StateIndex:          c.currentState.BlockIndex(),
-		ConfirmedStateIndex: confirmedState,
 		MempoolTotal:        t,
 		MempoolWithMessages: m,
 		MempoolSolid:        s,

@@ -1,9 +1,15 @@
 package kv
 
+import "fmt"
+
 // Since map cannot have []byte as key, to avoid unnecessary conversions
 // between string and []byte, we use string as key data type, but it does
 // not necessarily have to be a valid UTF-8 string.
 type Key string
+
+func (k Key) Hex() string {
+	return fmt.Sprintf("kv.Key('%X')", k)
+}
 
 const EmptyPrefix = Key("")
 

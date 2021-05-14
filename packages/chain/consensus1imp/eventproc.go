@@ -79,7 +79,7 @@ func (c *consensusImpl) eventTimerMsg(msg chain.TimerTick) {
 	c.refreshConsensusInfo()
 	if msg%40 == 0 {
 		if snap := c.GetStatusSnapshot(); snap != nil {
-			c.log.Infof("timer tick #%d state index: %d (%d) mempool = %d", snap.TimerTick, snap.StateIndex, snap.ConfirmedStateIndex, snap.MempoolTotal)
+			c.log.Infof("timer tick #%d state index: %d mempool = %d", snap.TimerTick, snap.StateIndex, snap.MempoolTotal)
 		}
 	}
 	c.takeAction()

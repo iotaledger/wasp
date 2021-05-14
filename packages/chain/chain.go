@@ -148,7 +148,6 @@ type SyncInfo struct {
 
 type ConsensusInfo struct {
 	StateIndex          uint32
-	ConfirmedStateIndex uint32 // set when tx is confirmed
 	MempoolTotal        int
 	MempoolWithMessages int
 	MempoolSolid        int

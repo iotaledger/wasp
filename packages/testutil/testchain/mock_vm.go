@@ -1,6 +1,7 @@
 package testchain
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -35,7 +36,11 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *mockedVMRunner {
 }
 
 func (r *mockedVMRunner) Run(task *vm.VMTask) {
-	r.log.Debugf("VM input: state hash: %s, chain input: %s", task.VirtualState.Hash(), coretypes.OID(task.ChainInput.ID()))
+	reqstr := strings.Join(coretypes.ShortRequestIDs(coretypes.TakeRequestIDs(task.Requests...)), ",")
+
+	r.log.Debugf("VM input: state hash: %s, chain input: %s, requests: [%s]",
+		task.VirtualState.Hash(), coretypes.OID(task.ChainInput.ID()), reqstr)
+
 	r.stateTransition.NextState(task.VirtualState, task.ChainInput, task.Timestamp, task.Requests...)
 	task.ResultTransactionEssence = r.tx
 	task.VirtualState = r.nextState
