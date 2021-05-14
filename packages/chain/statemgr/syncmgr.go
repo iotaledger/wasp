@@ -13,32 +13,33 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) {
+func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) bool {
 	sm.log.Debugf("outputPulled: output index %v id %v", output.GetStateIndex(), coretypes.OID(output.ID()))
 	if !sm.syncingBlocks.isSyncing(output.GetStateIndex()) {
 		// not interested
 		sm.log.Debugf("outputPulled: not interested in output for state index %v", output.GetStateIndex())
-		return
+		return false
 	}
-	sm.syncingBlocks.approveBlockCandidates(output)
+	return sm.syncingBlocks.approveBlockCandidates(output)
 }
 
-func (sm *stateManager) outputPushed(output *ledgerstate.AliasOutput, timestamp time.Time) {
+func (sm *stateManager) outputPushed(output *ledgerstate.AliasOutput, timestamp time.Time) bool {
 	sm.log.Debugf("outputPushed: output index %v id %v timestampe %v", output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
 	if sm.stateOutput != nil {
 		switch {
 		case sm.stateOutput.GetStateIndex() == output.GetStateIndex():
 			sm.log.Debugf("outputPushed ignoring: repeated state output")
-			return
+			return false
 		case sm.stateOutput.GetStateIndex() > output.GetStateIndex():
 			sm.log.Warnf("outputPushed: out of order state output; stateOutput index is already larger: %v", sm.stateOutput.GetStateIndex())
-			return
+			return false
 		}
 	}
 	sm.stateOutput = output
 	sm.stateOutputTimestamp = timestamp
 	sm.log.Debugf("outputPushed: stateOutput set to index %v id %v timestampe %v", output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
 	sm.syncingBlocks.approveBlockCandidates(output)
+	return true
 }
 
 func (sm *stateManager) doSyncActionIfNeeded() {
@@ -70,7 +71,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			return
 		}
 		nowis := time.Now()
-		if blockCandidatesCount == 0 || nowis.After(requestBlockRetryTime) {
+		if nowis.After(requestBlockRetryTime) {
 			// have to pull
 			sm.log.Debugf("doSyncAction: requesting block index %v from %v random peers", i, numberOfNodesToRequestBlockFromConst)
 			data := util.MustBytes(&chain.GetBlockMsg{

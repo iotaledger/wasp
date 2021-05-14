@@ -1,6 +1,8 @@
 package statemgr
 
 import (
+	"math/rand"
+	"sync"
 	"testing"
 	"time"
 
@@ -321,4 +323,73 @@ func TestNodeDisconnected(t *testing.T) {
 		checkResultFun(connectedNodes[i], targetBlockIndex5)
 	}
 	checkResultFun(disconnectedNode, targetBlockIndex5)
+}
+
+func TestCruelWorld(t *testing.T) {
+	numberOfPeers := 10
+	env, _ := NewMockedEnv(numberOfPeers, t, true)
+	env.NetworkBehaviour.
+		WithLosingChannel(nil, 80).
+		WithRepeatingChannel(nil, 25).
+		WithDelayingChannel(nil, 0*time.Millisecond, 200*time.Millisecond)
+	env.SetPushStateToNodesOption(false)
+
+	randFromIntervalFun := func(from int, till int) time.Duration {
+		return time.Duration(from + rand.Intn(till-from))
+	}
+	nodes := make([]*MockedNode, numberOfPeers)
+	for i := 0; i < numberOfPeers; i++ {
+		nodes[i] = env.NewMockedNode(i, Timers{}.
+			SetPullStateNewBlockDelay(randFromIntervalFun(200, 500)*time.Millisecond).
+			SetPullStateRetry(randFromIntervalFun(50, 200)*time.Millisecond).
+			SetGetBlockRetry(randFromIntervalFun(50, 200)*time.Millisecond),
+		)
+		nodes[i].StateManager.Ready().MustWait()
+		nodes[i].StartTimer()
+		env.AddNode(nodes[i])
+	}
+
+	var disconnectedNodes []string
+	var mutex sync.Mutex
+	go func() { //Connection cutter
+		for {
+			time.Sleep(randFromIntervalFun(1000, 3000) * time.Millisecond)
+			mutex.Lock()
+			nodeName := nodes[rand.Intn(numberOfPeers)].NetID
+			env.NetworkBehaviour.WithPeerDisconnected(&nodeName, nodeName)
+			env.Log.Debugf("Connection to node %v lost", nodeName)
+			disconnectedNodes = append(disconnectedNodes, nodeName)
+			mutex.Unlock()
+		}
+	}()
+
+	go func() { //Connection restorer
+		for {
+			time.Sleep(randFromIntervalFun(500, 2000) * time.Millisecond)
+			mutex.Lock()
+			if len(disconnectedNodes) > 0 {
+				env.NetworkBehaviour.RemoveHandler(disconnectedNodes[0])
+				env.Log.Debugf("Connection to node %v restored", disconnectedNodes[0])
+				disconnectedNodes[0] = ""
+				disconnectedNodes = disconnectedNodes[1:]
+			}
+		}
+	}()
+
+	targetState := uint32(20)
+	for i := uint32(0); i < targetState; i++ {
+		randNode := nodes[rand.Intn(numberOfPeers)]
+		waitSyncBlockIndexAndCheck(t, randNode, i)
+		randNode.MakeNewStateTransition()
+	}
+
+	for i := 0; i < numberOfPeers; i++ {
+		waitSyncBlockIndexAndCheck(t, nodes[i], targetState)
+	}
+}
+
+func waitSyncBlockIndexAndCheck(t *testing.T, node *MockedNode, target uint32) {
+	si, err := node.WaitSyncBlockIndex(target, 10*time.Second)
+	require.NoError(t, err)
+	require.True(t, si.Synced)
 }

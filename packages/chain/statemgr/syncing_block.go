@@ -134,23 +134,31 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 	return true, candidate
 }
 
-func (syncsT *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOutput) {
+func (syncsT *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOutput) bool {
 	if output == nil {
 		syncsT.log.Debugf("approveBlockCandidates failed, provided output is nil")
-		return
+		return false
 	}
+	someApproved := false
 	stateIndex := output.GetStateIndex()
 	syncsT.log.Debugf("approveBlockCandidates using output ID %v for state index %v", coretypes.OID(output.ID()), stateIndex)
 	sync, ok := syncsT.blocks[stateIndex]
 	if ok {
 		syncsT.log.Debugf("approveBlockCandidates: %v block candidates to check", len(sync.blockCandidates))
 		for blockHash, candidate := range sync.blockCandidates {
+			alreadyApproved := candidate.isApproved()
 			syncsT.log.Debugf("approveBlockCandidates: checking candidate %v: local %v, nextStateHash %v, approvingOutputID %v, already approved %v",
-				blockHash.String(), candidate.isLocal(), candidate.getNextStateHash().String(), coretypes.OID(candidate.getApprovingOutputID()), candidate.isApproved())
-			candidate.approveIfRightOutput(output)
-			syncsT.log.Debugf("approveBlockCandidates: candidate %v approved %v", blockHash.String(), candidate.isApproved())
+				blockHash.String(), candidate.isLocal(), candidate.getNextStateHash().String(), coretypes.OID(candidate.getApprovingOutputID()), alreadyApproved)
+			if !alreadyApproved {
+				candidate.approveIfRightOutput(output)
+				if candidate.isApproved() {
+					syncsT.log.Debugf("approveBlockCandidates: candidate %v got approved", blockHash.String())
+					someApproved = true
+				}
+			}
 		}
 	}
+	return someApproved
 }
 
 func (syncsT *syncingBlocks) startSyncingIfNeeded(stateIndex uint32) {

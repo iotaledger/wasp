@@ -8,6 +8,7 @@ package testutil
 
 import (
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -19,6 +20,7 @@ import (
 type PeeringNetDynamic struct {
 	closeChs []chan bool
 	handlers []peeringNetDynamicHandlerEntry
+	mutex    sync.RWMutex
 	log      *logger.Logger
 }
 
@@ -90,13 +92,20 @@ func (pndT *PeeringNetDynamic) WithPeerDisconnected(id *string, peerName string)
 }
 
 func (pndT *PeeringNetDynamic) addHandlerEntry(handler peeringNetDynamicHandlerEntry) {
+	pndT.mutex.Lock()
+	defer pndT.mutex.Unlock()
+
 	pndT.handlers = append(pndT.handlers, handler)
 }
 
 func (pndT *PeeringNetDynamic) RemoveHandler(id string) bool {
+	pndT.mutex.Lock()
+	defer pndT.mutex.Unlock()
+
 	var i int
 	for i = 0; i < len(pndT.handlers); i++ {
-		if *(pndT.handlers[i].getID()) == id {
+		currentHandlerID := pndT.handlers[i].getID()
+		if (currentHandlerID != nil) && (*currentHandlerID == id) {
 			pndT.handlers = append(pndT.handlers[:i], pndT.handlers[i+1:]...)
 			return true
 		}
@@ -136,7 +145,11 @@ func (pndT *PeeringNetDynamic) recvLoop(inCh, outCh chan *peeringMsg, closeCh ch
 					outCh <- recv
 				}
 			}
-			callHandlersAndSendFun(pndT.handlers)
+			pndT.mutex.RLock()
+			handlers := make([]peeringNetDynamicHandlerEntry, len(pndT.handlers))
+			copy(handlers, pndT.handlers)
+			pndT.mutex.RUnlock()
+			callHandlersAndSendFun(handlers)
 		}
 	}
 }
