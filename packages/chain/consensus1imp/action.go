@@ -39,6 +39,9 @@ func (c *consensusImpl) proposeBatchIfNeeded() {
 	if c.workflow.consensusBatchKnown {
 		return
 	}
+	if time.Now().Before(c.delayBatchProposalUntil) {
+		return
+	}
 	reqs := c.mempool.GetReadyList()
 	if len(reqs) == 0 {
 		return
@@ -229,6 +232,8 @@ func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchPro
 	return ret
 }
 
+const delayRepeatBatchProposalFor = 500 * time.Millisecond
+
 func (c *consensusImpl) receiveACS(values [][]byte) {
 	if !c.workflow.stateReceived {
 		return
@@ -283,6 +288,7 @@ func (c *consensusImpl) receiveACS(values [][]byte) {
 	if len(inBatchSet) == 0 {
 		c.log.Warnf("receiveACS: intersection is empty. reset workflow")
 		c.resetWorkflow()
+		c.delayBatchProposalUntil = time.Now().Add(delayRepeatBatchProposalFor)
 		return
 	}
 	medianTs, accessPledge, consensusPledge, feeDestination := calcBatchParameters(acs)

@@ -30,6 +30,7 @@ type consensusImpl struct {
 	myContributionSeqNumber    uint16
 	contributors               []uint16
 	workflow                   workflowFlags
+	delayBatchProposalUntil    time.Time
 	resultTxEssence            *ledgerstate.TransactionEssence
 	resultState                state.VirtualState
 	resultSignatures           []*chain.SignedResultMsg

@@ -15,6 +15,8 @@ import (
 
 type mempool struct {
 	mutex       sync.RWMutex
+	incounter   uint32
+	outcounter  uint32
 	stateReader state.StateReader
 	requestRefs map[coretypes.RequestID]*requestRef
 	chStop      chan bool
@@ -72,11 +74,12 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 		return
 	}
 
+	m.incounter++
 	tl := req.TimeLock()
 	if tl.IsZero() {
-		m.log.Infof("IN MEMPOOL %s", req.ID())
+		m.log.Infof("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.incounter, m.outcounter)
 	} else {
-		m.log.Infof("IN MEMPOOL %s timelocked for %v", req.ID(), tl.Sub(time.Now()))
+		m.log.Infof("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.incounter, m.outcounter, tl.Sub(time.Now()))
 	}
 	m.requestRefs[req.ID()] = &requestRef{
 		req:             req,
@@ -111,8 +114,11 @@ func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 	defer m.mutex.Unlock()
 
 	for _, rid := range reqs {
+		if _, ok := m.requestRefs[rid]; ok {
+			m.outcounter++
+		}
 		delete(m.requestRefs, rid)
-		m.log.Infof("OUT MEMPOOL %s", rid)
+		m.log.Infof("OUT MEMPOOL %s (+%d / -%d)", rid, m.incounter, m.outcounter)
 	}
 }
 

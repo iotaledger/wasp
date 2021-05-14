@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"math/rand"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -61,6 +60,7 @@ type mockedEnv struct {
 	SolidState        state.VirtualState
 	StateReader       state.StateReader
 	StateOutput       *ledgerstate.AliasOutput
+	RequestIDsLast    []coretypes.RequestID
 	NodeConn          []*testchain.MockedNodeConn
 	MockedACS         chain.AsynchronousCommonSubsetRunner
 	ChainID           coretypes.ChainID
@@ -264,8 +264,10 @@ func (env *mockedEnv) checkStateApproval(from uint16) {
 	require.NoError(env.T, err)
 	require.EqualValues(env.T, stateHash, env.SolidState.Hash())
 
-	env.Log.Infof("STATE APPROVED. Index: %d, State output: %s (from node #%d)",
-		env.SolidState.BlockIndex(), coretypes.OID(env.StateOutput.ID()), from)
+	env.RequestIDsLast = env.getReqIDsForLastState()
+
+	env.Log.Infof("STATE APPROVED (%d reqs). Index: %d, State output: %s (from node #%d)",
+		len(env.RequestIDsLast), env.SolidState.BlockIndex(), coretypes.OID(env.StateOutput.ID()), from)
 
 	env.eventStateTransition()
 }
@@ -292,10 +294,7 @@ func (env *mockedEnv) eventStateTransition() {
 
 	for _, node := range env.Nodes {
 		go func(n *mockedNode) {
-			reqids := env.getReqIDsForLastState()
-			env.Log.Debugf("removing requests from mempool: [%s]",
-				strings.Join(coretypes.ShortRequestIDs(reqids), ","))
-			n.Mempool.RemoveRequests(reqids...)
+			n.Mempool.RemoveRequests(env.RequestIDsLast...)
 
 			n.Consensus.EventStateTransitionMsg(&chain.StateTransitionMsg{
 				State:          solidState.Clone(),
