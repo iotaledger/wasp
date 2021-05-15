@@ -113,7 +113,8 @@ type Consensus interface {
 	GetStatusSnapshot() *ConsensusInfo
 }
 
-type Mempool interface {
+// Deprecated: use Mempool
+type MempoolOld interface {
 	ReceiveRequest(req coretypes.Request)
 	GetRequestsByIDs(nowis time.Time, reqids ...coretypes.RequestID) []coretypes.Request
 	GetReadyList(seenThreshold ...uint16) []coretypes.Request
@@ -129,20 +130,45 @@ type Mempool interface {
 	// Stats returns total number, number with messages, number solid
 	// Deprecated: use stats instead
 	StatsOld() (int, int, int)
+	Stats() MempoolStatsOld
+	Close()
+}
+
+type Mempool interface {
+	ReceiveRequests(reqs ...coretypes.Request)
+	RemoveRequests(reqs ...coretypes.RequestID)
+	ReadyNow() []coretypes.Request
+	ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
+	HasRequest(id coretypes.RequestID) bool
+	SetUntilReadyDelay(d time.Duration)
 	Stats() MempoolStats
 	Close()
+}
+
+type RequestStatus struct {
+	Request  coretypes.Request // nil if not available
+	TooEarly bool
+	TooLate  bool
 }
 
 type AsynchronousCommonSubsetRunner interface {
 	RunACSConsensus(value []byte, sessionID uint64, callback func(sessionID uint64, acs [][]byte))
 }
 
-type MempoolStats struct {
+// Deprecated: use MempoolStats
+type MempoolStatsOld struct {
 	Total        int
 	WithMessages int
 	Solid        int
 	InCounter    int
 	OutCounter   int
+}
+
+type MempoolStats struct {
+	Total      int
+	Ready      int
+	InCounter  int
+	OutCounter int
 }
 
 type SyncInfo struct {
@@ -154,6 +180,13 @@ type SyncInfo struct {
 	StateOutputID         ledgerstate.OutputID
 	StateOutputHash       hashing.HashValue
 	StateOutputTimestamp  time.Time
+}
+
+// Deprecated:
+type ConsensusInfoOld struct {
+	StateIndex uint32
+	Mempool    MempoolStatsOld
+	TimerTick  int
 }
 
 type ConsensusInfo struct {

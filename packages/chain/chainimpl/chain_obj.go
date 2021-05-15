@@ -18,7 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
 	"github.com/iotaledger/wasp/packages/chain/consensusimpl"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/chain/mempool_old"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
@@ -32,7 +32,7 @@ import (
 
 type chainObj struct {
 	committee             chain.Committee
-	mempool               chain.Mempool
+	mempool               chain.MempoolOld
 	dismissed             atomic.Bool
 	dismissOnce           sync.Once
 	chainID               coretypes.ChainID
@@ -73,7 +73,7 @@ func NewChain(
 		return nil
 	}
 	ret := &chainObj{
-		mempool:           mempool.New(stateReader, blobProvider, chainLog),
+		mempool:           mempool_old.New(stateReader, blobProvider, chainLog),
 		procset:           processors.MustNew(),
 		chMsg:             make(chan interface{}, 100),
 		chainID:           *chr.ChainID,

@@ -75,6 +75,17 @@ func TestConsensusPostRequest(t *testing.T) {
 		err := env.WaitMempool(100, 3, 5*time.Second)
 		require.NoError(t, err)
 	})
+	t.Run("post 10 requests post randomized with delay", func(t *testing.T) {
+		env, _ := NewMockedEnv(t, 4, 3, false)
+		for _, n := range env.Nodes {
+			n.Mempool.SetUntilReadyDelay(1 * time.Second)
+		}
+		env.StartTimers()
+		env.eventStateTransition()
+		env.postDummyRequests(10, true)
+		err := env.WaitMempool(10, 3, 5*time.Second)
+		require.NoError(t, err)
+	})
 }
 
 func TestConsensusMoreNodes(t *testing.T) {
@@ -110,6 +121,17 @@ func TestConsensusMoreNodes(t *testing.T) {
 	})
 	t.Run("post 10 requests post randomized", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, numNodes, quorum, false)
+		env.StartTimers()
+		env.eventStateTransition()
+		env.postDummyRequests(10, true)
+		err := env.WaitMempool(10, 3, 5*time.Second)
+		require.NoError(t, err)
+	})
+	t.Run("post 10 requests post randomized with delay", func(t *testing.T) {
+		env, _ := NewMockedEnv(t, numNodes, quorum, false)
+		for _, n := range env.Nodes {
+			n.Mempool.SetUntilReadyDelay(1 * time.Second)
+		}
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(10, true)

@@ -25,7 +25,7 @@ const pullBacklogPeriod = 3 * time.Second
 type operator struct {
 	chain     chain.ChainCore
 	committee chain.Committee
-	mempool   chain.Mempool
+	mempool   chain.MempoolOld
 	nodeConn  chain.NodeConnection
 	vmRunner  vm.VMRunner
 	//currentState
@@ -83,7 +83,7 @@ type signedResult struct {
 	sigShare    tbdn.SigShare
 }
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, log *logger.Logger) *operator {
+func New(chainCore chain.ChainCore, mempool chain.MempoolOld, committee chain.Committee, nodeConn chain.NodeConnection, log *logger.Logger) *operator {
 	ret := &operator{
 		chain:                               chainCore,
 		committee:                           committee,

@@ -182,6 +182,6 @@ func (c *chainObj) Events() chain.ChainEvents {
 	return c
 }
 
-func (c *chainObj) Mempool() chain.Mempool {
+func (c *chainObj) Mempool() chain.MempoolOld {
 	return c.mempool
 }

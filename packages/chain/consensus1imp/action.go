@@ -42,7 +42,7 @@ func (c *consensusImpl) proposeBatchIfNeeded() {
 	if time.Now().Before(c.delayBatchProposalUntil) {
 		return
 	}
-	reqs := c.mempool.GetReadyList()
+	reqs := c.mempool.ReadyNow()
 	if len(reqs) == 0 {
 		return
 	}
@@ -72,23 +72,20 @@ func (c *consensusImpl) runVMIfNeeded() {
 	if time.Now().Before(c.delayRunVMUntil) {
 		return
 	}
-	reqs := c.mempool.GetRequestsByIDs(c.consensusBatch.Timestamp, c.consensusBatch.RequestIDs...)
-	// check if all ready
-	notReady := 0
-	for _, req := range reqs {
-		if req == nil {
-			notReady++
-		}
-	}
-	if notReady != 0 {
+	reqs, allArrived := c.mempool.ReadyFromIDs(c.consensusBatch.Timestamp, c.consensusBatch.RequestIDs...)
+	if !allArrived {
 		// some requests are not ready, so skip VM call this time. Maybe next time will be more luck
 		c.delayRunVMUntil = time.Now().Add(waitReadyRequestsDelay)
-		c.log.Infof("runVMIfNeeded: %d out of %d requests are not ready for processing", notReady, len(reqs))
+		c.log.Infof("runVMIfNeeded: some requests didn't arrive yet")
 		return
 	}
-
-	// sort for determinism and for the reason to arrange off-ledger requests
-	// equal Order() request are ordered by ID
+	if len(reqs) == 0 {
+		// due to change in time, all requests became non processable ACS must be run again
+		c.resetWorkflow()
+		c.log.Debugf("empty list of processable requests. Reset workflow")
+		return
+	}
+	// here reqs as as set is deterministic. Must be sorted to have fully deterministic list
 	sort.Slice(reqs, func(i, j int) bool {
 		switch {
 		case reqs[i].Order() < reqs[j].Order():

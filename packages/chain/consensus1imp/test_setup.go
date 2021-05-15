@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chain/mempool"
+
 	"github.com/iotaledger/wasp/packages/util"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -29,7 +31,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -454,14 +455,22 @@ func (env *mockedEnv) getReqIDsForLastState() []coretypes.RequestID {
 }
 
 func (env *mockedEnv) postDummyRequests(n int, randomize ...bool) {
+	reqs := make([]coretypes.Request, n)
 	for i := 0; i < n; i++ {
-		req := solo.NewCallParams("dummy", "dummy", "c", i).
+		reqs[i] = solo.NewCallParams("dummy", "dummy", "c", i).
 			NewRequestOffLedger(env.OriginatorKeyPair)
-		for _, n := range env.Nodes {
-			if len(randomize) > 0 && randomize[0] {
-				time.Sleep(time.Duration(rand.Intn(50)) * time.Millisecond)
+	}
+	rnd := len(randomize) > 0 && randomize[0]
+	for _, n := range env.Nodes {
+		if rnd {
+			for _, req := range reqs {
+				go func(node *mockedNode, r coretypes.Request) {
+					time.Sleep(time.Duration(rand.Intn(50)) * time.Millisecond)
+					node.Mempool.ReceiveRequests(r)
+				}(n, req)
 			}
-			go n.Mempool.ReceiveRequest(req)
+		} else {
+			n.Mempool.ReceiveRequests(reqs...)
 		}
 	}
 }
