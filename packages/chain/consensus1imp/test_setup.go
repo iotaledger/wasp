@@ -127,6 +127,7 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledg
 		}(i)
 	}
 
+	log.Infof("running DKG and setting up mocked network..")
 	_, ret.PubKeys, ret.PrivKeys = testpeers.SetupKeys(n, ret.Suite)
 	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkg(t, quorum, neighbors, ret.PubKeys, ret.PrivKeys, ret.Suite, log.Named("dkg"))
 	ret.NetworkProviders = testpeers.SetupNet(neighbors, ret.PubKeys, ret.PrivKeys, testutil.NewPeeringNetReliable(), log)
@@ -458,7 +459,7 @@ func (env *mockedEnv) postDummyRequests(n int, randomize ...bool) {
 			NewRequestOffLedger(env.OriginatorKeyPair)
 		for _, n := range env.Nodes {
 			if len(randomize) > 0 && randomize[0] {
-				time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+				time.Sleep(time.Duration(rand.Intn(50)) * time.Millisecond)
 			}
 			go n.Mempool.ReceiveRequest(req)
 		}

@@ -54,7 +54,7 @@ func (c *consensusImpl) EventAsynchronousCommonSubsetMsg(msg *chain.Asynchronous
 }
 func (c *consensusImpl) eventAsynchronousCommonSubset(msg *chain.AsynchronousCommonSubsetMsg) {
 	c.log.Debugf("eventAsynchronousCommonSubset: len = %d", len(msg.ProposedBatchesBin))
-	c.receiveACS(msg.ProposedBatchesBin)
+	c.receiveACS(msg.ProposedBatchesBin, msg.SessionID)
 
 	c.takeAction()
 }

@@ -56,7 +56,7 @@ func (c *consensusImpl) proposeBatchIfNeeded() {
 		})
 	})
 
-	c.log.Debugf("proposed batch len = %d", len(reqs))
+	c.log.Infof("proposed batch len = %d, ACS session ID: %d", len(reqs), c.acsSessionID)
 	c.workflow.batchProposalSent = true
 }
 
@@ -133,7 +133,7 @@ func (c *consensusImpl) checkQuorum() {
 		if sig.EssenceHash == ownHash {
 			contributors = append(contributors, uint16(i))
 		} else {
-			c.log.Warnf("wrong essence hash: expected(own): %s, got: %s", ownHash, sig.EssenceHash)
+			c.log.Warnf("wrong essence hash: expected(own): %s, got (from %d): %s", ownHash, i, sig.EssenceHash)
 		}
 	}
 	c.log.Debugf("checkQuorum: %+v", contributors)
@@ -234,8 +234,8 @@ func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchPro
 
 const delayRepeatBatchProposalFor = 500 * time.Millisecond
 
-func (c *consensusImpl) receiveACS(values [][]byte) {
-	if !c.workflow.stateReceived {
+func (c *consensusImpl) receiveACS(values [][]byte, sessionID uint64) {
+	if c.acsSessionID != sessionID {
 		return
 	}
 	if c.workflow.consensusBatchKnown {
@@ -243,7 +243,7 @@ func (c *consensusImpl) receiveACS(values [][]byte) {
 		return
 	}
 	if len(values) < int(c.committee.Quorum()) {
-		c.log.Errorf("receiveACS: ACS is shorter than equired quorum. Ignored")
+		c.log.Errorf("receiveACS: ACS is shorter than required quorum. Ignored")
 		c.resetWorkflow()
 		return
 	}
@@ -286,7 +286,8 @@ func (c *consensusImpl) receiveACS(values [][]byte) {
 	}
 	inBatchSet := calcIntersection(acs, c.committee.Size(), c.committee.Quorum())
 	if len(inBatchSet) == 0 {
-		c.log.Warnf("receiveACS: intersection is empty. reset workflow")
+		c.log.Warnf("receiveACS: ACS intersection is empty. reset workflow. State index: %d, ACS sessionID %d",
+			c.stateOutput.GetStateIndex(), sessionID)
 		c.resetWorkflow()
 		c.delayBatchProposalUntil = time.Now().Add(delayRepeatBatchProposalFor)
 		return
@@ -370,7 +371,8 @@ func (c *consensusImpl) setNewState(msg *chain.StateTransitionMsg) {
 	c.stateTimestamp = msg.StateTimestamp
 	c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(msg.StateOutput.ID().Bytes()).Bytes()[:8])
 	c.resetWorkflow()
-	c.log.Debugf("set state #%d", msg.StateOutput.GetStateIndex())
+	c.log.Infof("SET STATE #%d, output: %s, hash: %s",
+		msg.StateOutput.GetStateIndex(), coretypes.OID(msg.StateOutput.ID()), msg.State.Hash().String())
 }
 
 func (c *consensusImpl) resetWorkflow() {
