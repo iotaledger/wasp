@@ -35,7 +35,7 @@ func (c *consensusImpl) EventSignedResultMsg(msg *chain.SignedResultMsg) {
 }
 func (c *consensusImpl) eventSignedResult(msg *chain.SignedResultMsg) {
 	c.log.Debugf("eventSignedResult: from sender: %d", msg.SenderIndex)
-	c.processSignedResult(msg)
+	c.receiveSignedResult(msg)
 	c.takeAction()
 }
 

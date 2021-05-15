@@ -31,6 +31,7 @@ type consensusImpl struct {
 	contributors               []uint16
 	workflow                   workflowFlags
 	delayBatchProposalUntil    time.Time
+	delayRunVMUntil            time.Time
 	resultTxEssence            *ledgerstate.TransactionEssence
 	resultState                state.VirtualState
 	resultSignatures           []*chain.SignedResultMsg

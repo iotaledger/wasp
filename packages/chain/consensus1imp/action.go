@@ -60,6 +60,8 @@ func (c *consensusImpl) proposeBatchIfNeeded() {
 	c.workflow.batchProposalSent = true
 }
 
+const waitReadyRequestsDelay = 500 * time.Millisecond
+
 func (c *consensusImpl) runVMIfNeeded() {
 	if !c.workflow.consensusBatchKnown {
 		return
@@ -67,15 +69,24 @@ func (c *consensusImpl) runVMIfNeeded() {
 	if c.workflow.vmStarted || c.workflow.vmResultSignedAndBroadcasted {
 		return
 	}
+	if time.Now().Before(c.delayRunVMUntil) {
+		return
+	}
 	reqs := c.mempool.GetRequestsByIDs(c.consensusBatch.Timestamp, c.consensusBatch.RequestIDs...)
 	// check if all ready
+	notReady := 0
 	for _, req := range reqs {
 		if req == nil {
-			// some requests are not ready, so skip VM call this time. Maybe next time will be luckier
-			c.log.Debugf("runVMIfNeeded: not all requests ready for processing")
-			return
+			notReady++
 		}
 	}
+	if notReady != 0 {
+		// some requests are not ready, so skip VM call this time. Maybe next time will be more luck
+		c.delayRunVMUntil = time.Now().Add(waitReadyRequestsDelay)
+		c.log.Infof("runVMIfNeeded: %d out of %d requests are not ready for processing", notReady, len(reqs))
+		return
+	}
+
 	// sort for determinism and for the reason to arrange off-ledger requests
 	// equal Order() request are ordered by ID
 	sort.Slice(reqs, func(i, j int) bool {
@@ -90,6 +101,7 @@ func (c *consensusImpl) runVMIfNeeded() {
 	})
 
 	task := &vm.VMTask{
+		ACSSessionID:       c.acsSessionID,
 		Processors:         c.chain.Processors(),
 		ChainInput:         c.stateOutput,
 		Entropy:            hashing.HashData(c.stateOutput.ID().Bytes()),
@@ -136,8 +148,9 @@ func (c *consensusImpl) checkQuorum() {
 			c.log.Warnf("wrong essence hash: expected(own): %s, got (from %d): %s", ownHash, i, sig.EssenceHash)
 		}
 	}
-	c.log.Debugf("checkQuorum: %+v", contributors)
-	if len(contributors) < int(c.committee.Quorum()) {
+	quorumReached := len(contributors) < int(c.committee.Quorum())
+	c.log.Debugf("checkQuorum: %+v, quorum = %v", contributors, quorumReached)
+	if quorumReached {
 		return
 	}
 	sigSharesToAggregate := make([][]byte, len(contributors))
@@ -284,9 +297,9 @@ func (c *consensusImpl) receiveACS(values [][]byte, sessionID uint64) {
 		}
 		contributorSet[prop.ValidatorIndex] = struct{}{}
 	}
-	inBatchSet := calcIntersection(acs, c.committee.Size(), c.committee.Quorum())
+	inBatchSet := calcIntersectionLight(acs, c.committee.Size())
 	if len(inBatchSet) == 0 {
-		c.log.Warnf("receiveACS: ACS intersection is empty. reset workflow. State index: %d, ACS sessionID %d",
+		c.log.Warnf("receiveACS: ACS intersection (light) is empty. reset workflow. State index: %d, ACS sessionID %d",
 			c.stateOutput.GetStateIndex(), sessionID)
 		c.resetWorkflow()
 		c.delayBatchProposalUntil = time.Now().Add(delayRepeatBatchProposalFor)
@@ -392,13 +405,15 @@ func (c *consensusImpl) resetWorkflow() {
 
 func (c *consensusImpl) processVMResult(result *vm.VMTask) {
 	c.log.Debugf("processVMResult")
-	if !c.workflow.vmStarted || c.workflow.vmResultSignedAndBroadcasted {
+	if !c.workflow.vmStarted ||
+		c.workflow.vmResultSignedAndBroadcasted ||
+		c.acsSessionID != result.ACSSessionID {
 		// out of context
 		return
 	}
-
 	essenceBytes := result.ResultTransactionEssence.Bytes()
 	essenceHash := hashing.HashData(essenceBytes)
+	c.log.Infof("VM result: essence hash: %s", essenceHash)
 	sigShare, err := c.committee.DKShare().SignShare(essenceBytes)
 	if err != nil {
 		c.log.Panicf("processVMResult: error while signing transaction %v", err)
@@ -421,7 +436,7 @@ func (c *consensusImpl) processVMResult(result *vm.VMTask) {
 	c.log.Debugf("processVMResult: signed and broadcasted: essence hash: %s", msg.EssenceHash.String())
 }
 
-func (c *consensusImpl) processSignedResult(msg *chain.SignedResultMsg) {
+func (c *consensusImpl) receiveSignedResult(msg *chain.SignedResultMsg) {
 	if c.resultSignatures[msg.SenderIndex] != nil {
 		if c.resultSignatures[msg.SenderIndex].EssenceHash != msg.EssenceHash ||
 			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare[:], msg.SigShare[:]) {

@@ -22,6 +22,7 @@ type VMRunner interface {
 // It is assumed that all requests/inputs are unlock-able by alaisAddress of provided ChainInput
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
+	ACSSessionID             uint64
 	Processors               *processors.ProcessorCache
 	ChainInput               *ledgerstate.AliasOutput
 	VirtualState             state.VirtualState // in/out  Return uncommitted updated virtual state
