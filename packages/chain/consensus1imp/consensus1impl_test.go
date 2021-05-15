@@ -48,7 +48,7 @@ func TestConsensusPostRequest(t *testing.T) {
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(10)
-		err := env.WaitEmptyMempool(3, 10*time.Second)
+		err := env.WaitMempool(10, 3, 5*time.Second)
 		require.NoError(t, err)
 	})
 	t.Run("post 10 requests randomized", func(t *testing.T) {
@@ -56,7 +56,7 @@ func TestConsensusPostRequest(t *testing.T) {
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(10, true)
-		err := env.WaitEmptyMempool(3, 5*time.Second)
+		err := env.WaitMempool(10, 3, 5*time.Second)
 		require.NoError(t, err)
 	})
 

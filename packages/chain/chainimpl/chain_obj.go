@@ -150,7 +150,7 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 			}
 		}
 		if msgt%40 == 0 {
-			total, withMsg, solid := c.mempool.Stats()
+			total, withMsg, solid := c.mempool.StatsOld()
 			c.log.Debugf("mempool total = %d, withMsg = %d solid = %d", total, withMsg, solid)
 		}
 	}

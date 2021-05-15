@@ -91,7 +91,7 @@ func TestAddRequestTwice(t *testing.T) {
 	pool.ReceiveRequest(requests[0])
 	require.True(t, pool.HasRequest(requests[0].ID()))
 
-	total, withMsg, solid := pool.Stats()
+	total, withMsg, solid := pool.StatsOld()
 	require.EqualValues(t, 1, total)
 	require.EqualValues(t, 1, withMsg)
 	require.EqualValues(t, 1, solid)
@@ -99,7 +99,7 @@ func TestAddRequestTwice(t *testing.T) {
 	pool.ReceiveRequest(requests[0])
 	require.True(t, pool.HasRequest(requests[0].ID()))
 
-	total, withMsg, solid = pool.Stats()
+	total, withMsg, solid = pool.StatsOld()
 	require.EqualValues(t, 1, total)
 	require.EqualValues(t, 1, withMsg)
 	require.EqualValues(t, 1, solid)
@@ -113,7 +113,7 @@ func TestCompletedRequest(t *testing.T) {
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 
-	total, withMsg, solid := pool.Stats()
+	total, withMsg, solid := pool.StatsOld()
 	require.EqualValues(t, 0, total)
 	require.EqualValues(t, 0, withMsg)
 	require.EqualValues(t, 0, solid)
@@ -134,7 +134,7 @@ func TestCompletedRequest(t *testing.T) {
 	pool.ReceiveRequest(requests[0])
 	require.False(t, pool.HasRequest(requests[0].ID()))
 
-	total, withMsg, solid = pool.Stats()
+	total, withMsg, solid = pool.StatsOld()
 	require.EqualValues(t, 0, total)
 	require.EqualValues(t, 0, withMsg)
 	require.EqualValues(t, 0, solid)

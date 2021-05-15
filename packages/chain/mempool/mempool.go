@@ -15,8 +15,8 @@ import (
 
 type mempool struct {
 	mutex       sync.RWMutex
-	incounter   uint32
-	outcounter  uint32
+	incounter   int
+	outcounter  int
 	stateReader state.StateReader
 	requestRefs map[coretypes.RequestID]*requestRef
 	chStop      chan bool
@@ -77,9 +77,9 @@ func (m *mempool) ReceiveRequest(req coretypes.Request) {
 	m.incounter++
 	tl := req.TimeLock()
 	if tl.IsZero() {
-		m.log.Infof("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.incounter, m.outcounter)
+		m.log.Debugf("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.incounter, m.outcounter)
 	} else {
-		m.log.Infof("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.incounter, m.outcounter, tl.Sub(time.Now()))
+		m.log.Debugf("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.incounter, m.outcounter, tl.Sub(time.Now()))
 	}
 	m.requestRefs[req.ID()] = &requestRef{
 		req:             req,
@@ -118,7 +118,7 @@ func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 			m.outcounter++
 		}
 		delete(m.requestRefs, rid)
-		m.log.Infof("OUT MEMPOOL %s (+%d / -%d)", rid, m.incounter, m.outcounter)
+		m.log.Debugf("OUT MEMPOOL %s (+%d / -%d)", rid, m.incounter, m.outcounter)
 	}
 }
 
@@ -235,7 +235,7 @@ func (m *mempool) HasRequest(id coretypes.RequestID) bool {
 }
 
 // Stats return total number, number with messages, number solid
-func (m *mempool) Stats() (int, int, int) {
+func (m *mempool) StatsOld() (int, int, int) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -250,6 +250,29 @@ func (m *mempool) Stats() (int, int, int) {
 		}
 	}
 	return total, withMsg, solid
+}
+
+func (m *mempool) Stats() chain.MempoolStats {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	total := len(m.requestRefs)
+	withMsg, solid := 0, 0
+	for _, ref := range m.requestRefs {
+		if ref.req != nil {
+			withMsg++
+			if isSolid, _ := ref.req.SolidifyArgs(m.blobCache); isSolid {
+				solid++
+			}
+		}
+	}
+	return chain.MempoolStats{
+		Total:        total,
+		WithMessages: withMsg,
+		Solid:        solid,
+		InCounter:    m.incounter,
+		OutCounter:   m.outcounter,
+	}
 }
 
 func (m *mempool) Close() {

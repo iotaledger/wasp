@@ -127,12 +127,22 @@ type Mempool interface {
 	RemoveRequests(reqs ...coretypes.RequestID)
 	HasRequest(id coretypes.RequestID) bool
 	// Stats returns total number, number with messages, number solid
-	Stats() (int, int, int)
+	// Deprecated: use stats instead
+	StatsOld() (int, int, int)
+	Stats() MempoolStats
 	Close()
 }
 
 type AsynchronousCommonSubsetRunner interface {
 	RunACSConsensus(value []byte, sessionID uint64, callback func(sessionID uint64, acs [][]byte))
+}
+
+type MempoolStats struct {
+	Total        int
+	WithMessages int
+	Solid        int
+	InCounter    int
+	OutCounter   int
 }
 
 type SyncInfo struct {
@@ -147,11 +157,9 @@ type SyncInfo struct {
 }
 
 type ConsensusInfo struct {
-	StateIndex          uint32
-	MempoolTotal        int
-	MempoolWithMessages int
-	MempoolSolid        int
-	TimerTick           int
+	StateIndex uint32
+	Mempool    MempoolStats
+	TimerTick  int
 }
 
 type ReadyListRecord struct {

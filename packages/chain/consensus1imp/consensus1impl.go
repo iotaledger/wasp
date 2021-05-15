@@ -105,7 +105,7 @@ func (c *consensusImpl) recvLoop() {
 			return
 		}
 	}
-	c.log.Infof("consensus object is ready")
+	c.log.Debugf("consensus object is ready")
 	c.isReady.Store(true)
 	for {
 		select {
@@ -148,13 +148,10 @@ func (c *consensusImpl) refreshConsensusInfo() {
 	if c.currentState != nil {
 		index = c.currentState.BlockIndex()
 	}
-	t, m, s := c.mempool.Stats()
 	c.consensusInfoSnapshot.Store(&chain.ConsensusInfo{
-		StateIndex:          index,
-		MempoolTotal:        t,
-		MempoolWithMessages: m,
-		MempoolSolid:        s,
-		TimerTick:           int(c.lastTimerTick.Load()),
+		StateIndex: index,
+		Mempool:    c.mempool.Stats(),
+		TimerTick:  int(c.lastTimerTick.Load()),
 	})
 }
 
