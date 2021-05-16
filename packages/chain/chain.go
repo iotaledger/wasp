@@ -107,6 +107,7 @@ type Consensus interface {
 	EventSignedResultMsg(*SignedResultMsg)
 	EventInclusionsStateMsg(*InclusionStateMsg)
 	EventAsynchronousCommonSubsetMsg(msg *AsynchronousCommonSubsetMsg)
+	EventVMResultMsg(msg *VMResultMsg)
 	EventTimerMsg(TimerTick)
 	IsReady() bool
 	Close()
@@ -140,7 +141,6 @@ type Mempool interface {
 	ReadyNow() []coretypes.Request
 	ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
 	HasRequest(id coretypes.RequestID) bool
-	SetUntilReadyDelay(d time.Duration)
 	Stats() MempoolStats
 	Close()
 }

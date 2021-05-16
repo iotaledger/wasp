@@ -24,27 +24,27 @@ func TestConsensusEnv(t *testing.T) {
 }
 
 func TestConsensusPostRequest(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
 	t.Run("post 1", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, 4, 3, true)
+		defer env.Log.Sync()
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(1)
-		err := env.WaitStateIndex(3, 1, 5*time.Second)
+		err := env.WaitMempool(1, 3, 5*time.Second)
 		require.NoError(t, err)
 	})
 	t.Run("post 1 randomize", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, 4, 3, true)
+		defer env.Log.Sync()
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(1, true)
-		err := env.WaitStateIndex(3, 1)
+		err := env.WaitMempool(1, 3, 5*time.Second)
 		require.NoError(t, err)
 	})
 	t.Run("post 10 requests", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, 4, 3, false)
+		defer env.Log.Sync()
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(10)
@@ -53,6 +53,7 @@ func TestConsensusPostRequest(t *testing.T) {
 	})
 	t.Run("post 10 requests post randomized", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, 4, 3, false)
+		defer env.Log.Sync()
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(10, true)
@@ -61,29 +62,22 @@ func TestConsensusPostRequest(t *testing.T) {
 	})
 	t.Run("post 100 requests", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, 4, 3, false)
+		defer env.Log.Sync()
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(100)
+		time.Sleep(500 * time.Millisecond)
 		err := env.WaitMempool(100, 3, 5*time.Second)
 		require.NoError(t, err)
 	})
 	t.Run("post 100 requests randomized", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, 4, 3, false)
+		defer env.Log.Sync()
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(100, true)
+		time.Sleep(500 * time.Millisecond)
 		err := env.WaitMempool(100, 3, 5*time.Second)
-		require.NoError(t, err)
-	})
-	t.Run("post 10 requests post randomized with delay", func(t *testing.T) {
-		env, _ := NewMockedEnv(t, 4, 3, false)
-		for _, n := range env.Nodes {
-			n.Mempool.SetUntilReadyDelay(1 * time.Second)
-		}
-		env.StartTimers()
-		env.eventStateTransition()
-		env.postDummyRequests(10, true)
-		err := env.WaitMempool(10, 3, 5*time.Second)
 		require.NoError(t, err)
 	})
 }
@@ -97,46 +91,43 @@ func TestConsensusMoreNodes(t *testing.T) {
 
 	t.Run("post 1", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, numNodes, quorum, true)
+		defer env.Log.Sync()
+
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(1)
-		err := env.WaitStateIndex(3, 1, 5*time.Second)
+		err := env.WaitMempool(1, quorum, 5*time.Second)
 		require.NoError(t, err)
 	})
 	t.Run("post 1 randomize", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, numNodes, quorum, true)
+		defer env.Log.Sync()
+
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(1, true)
-		err := env.WaitStateIndex(3, 1)
+		time.Sleep(500 * time.Millisecond)
+		err := env.WaitStateIndex(quorum, 1)
 		require.NoError(t, err)
 	})
 	t.Run("post 10 requests", func(t *testing.T) {
 		env, _ := NewMockedEnv(t, numNodes, quorum, false)
+		defer env.Log.Sync()
+
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(10)
-		err := env.WaitMempool(10, 3, 5*time.Second)
+		err := env.WaitMempool(10, quorum, 5*time.Second)
 		require.NoError(t, err)
 	})
-	t.Run("post 10 requests post randomized", func(t *testing.T) {
-		env, _ := NewMockedEnv(t, numNodes, quorum, false)
-		env.StartTimers()
-		env.eventStateTransition()
-		env.postDummyRequests(10, true)
-		err := env.WaitMempool(10, 3, 5*time.Second)
-		require.NoError(t, err)
-	})
-	t.Run("post 10 requests post randomized with delay", func(t *testing.T) {
-		env, _ := NewMockedEnv(t, numNodes, quorum, false)
-		for _, n := range env.Nodes {
-			n.Mempool.SetUntilReadyDelay(1 * time.Second)
-		}
-		env.StartTimers()
-		env.eventStateTransition()
-		env.postDummyRequests(10, true)
-		err := env.WaitMempool(10, 3, 5*time.Second)
-		require.NoError(t, err)
-	})
+	t.Run("post 10 requests randomized", func(t *testing.T) {
+		env, _ := NewMockedEnv(t, numNodes, quorum, true)
+		defer env.Log.Sync()
 
+		env.StartTimers()
+		env.eventStateTransition()
+		env.postDummyRequests(10, true)
+		err := env.WaitMempool(10, quorum, 5*time.Second)
+		require.NoError(t, err)
+	})
 }

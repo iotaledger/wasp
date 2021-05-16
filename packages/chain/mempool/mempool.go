@@ -4,8 +4,6 @@ import (
 	"sync"
 	"time"
 
-	"go.uber.org/atomic"
-
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -15,15 +13,14 @@ import (
 )
 
 type mempool struct {
-	mutex           sync.RWMutex
-	incounter       int
-	outcounter      int
-	stateReader     state.StateReader
-	requestRefs     map[coretypes.RequestID]*requestRef
-	untilReadyDelay atomic.Duration
-	chStop          chan struct{}
-	blobCache       coretypes.BlobCache
-	log             *logger.Logger
+	mutex       sync.RWMutex
+	incounter   int
+	outcounter  int
+	stateReader state.StateReader
+	requestRefs map[coretypes.RequestID]*requestRef
+	chStop      chan struct{}
+	blobCache   coretypes.BlobCache
+	log         *logger.Logger
 }
 
 type requestRef struct {
@@ -31,7 +28,7 @@ type requestRef struct {
 	whenReceived time.Time
 }
 
-const constSolidificationLoopDelay = 200 * time.Millisecond
+const solidificationLoopDelay = 200 * time.Millisecond
 
 var _ chain.Mempool = &mempool{}
 
@@ -45,10 +42,6 @@ func New(stateReader state.StateReader, blobCache coretypes.BlobCache, log *logg
 	}
 	go ret.solidificationLoop()
 	return ret
-}
-
-func (m *mempool) SetUntilReadyDelay(d time.Duration) {
-	m.untilReadyDelay.Store(d)
 }
 
 func (m *mempool) ReceiveRequests(reqs ...coretypes.Request) {
@@ -111,13 +104,10 @@ func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 // isRequestReady for requests with paramsReady, the result is strictly deterministic
 func (m *mempool) isRequestReady(ref *requestRef, nowis time.Time) bool {
 	// TODO fallback options
-	if nowis.Before(ref.whenReceived.Add(m.untilReadyDelay.Load())) {
-		return false
-	}
 	if _, paramsReady := ref.req.Params(); !paramsReady {
 		return false
 	}
-	return ref.req.TimeLock().IsZero() || ref.req.TimeLock().After(nowis)
+	return ref.req.TimeLock().IsZero() || ref.req.TimeLock().Before(nowis)
 }
 
 // ReadyNow returns preliminary batch for consensus.
@@ -191,7 +181,7 @@ func (m *mempool) solidificationLoop() {
 		select {
 		case <-m.chStop:
 			return
-		case <-time.After(constSolidificationLoopDelay):
+		case <-time.After(solidificationLoopDelay):
 			m.doSolidifyRequests()
 		}
 	}

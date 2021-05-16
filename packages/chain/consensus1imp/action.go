@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
+// takeAction triggers actions whenever relevant
 func (c *consensusImpl) takeAction() {
 	if !c.workflow.stateReceived || c.workflow.finished {
 		return
@@ -32,6 +33,8 @@ func (c *consensusImpl) takeAction() {
 	c.pullInclusionStateIfNeeded()
 }
 
+// proposeBatchIfNeeded when non empty ready batch is available is in mempool propose it as a candidate
+// for the ACS agreement
 func (c *consensusImpl) proposeBatchIfNeeded() {
 	if c.workflow.batchProposalSent {
 		return
@@ -48,6 +51,7 @@ func (c *consensusImpl) proposeBatchIfNeeded() {
 	}
 	c.log.Debugf("proposeBatchIfNeeded: ready len = %d", len(reqs))
 	proposal := c.prepareBatchProposal(reqs)
+	// call the ACS consensus. The call should spawn goroutine itself
 	c.committee.RunACSConsensus(proposal.Bytes(), c.acsSessionID, func(sessionID uint64, acs [][]byte) {
 		c.log.Debugf("received ACS")
 		go c.chain.ReceiveMessage(&chain.AsynchronousCommonSubsetMsg{
@@ -62,6 +66,8 @@ func (c *consensusImpl) proposeBatchIfNeeded() {
 
 const waitReadyRequestsDelay = 500 * time.Millisecond
 
+// runVMIfNeeded attempts to extract deterministic batch of requests from ACS.
+// If it succeeds (i.e. all requests are available) and the extracted batch is nonempty, it runs the request
 func (c *consensusImpl) runVMIfNeeded() {
 	if !c.workflow.consensusBatchKnown {
 		return
@@ -97,6 +103,7 @@ func (c *consensusImpl) runVMIfNeeded() {
 		}
 	})
 
+	c.log.Debugf("run VM with batch len = %d", len(reqs))
 	task := &vm.VMTask{
 		ACSSessionID:       c.acsSessionID,
 		Processors:         c.chain.Processors(),
@@ -124,6 +131,11 @@ func (c *consensusImpl) runVMIfNeeded() {
 
 const postSeqStepMilliseconds = 1000
 
+// checkQuorum when relevant check if quorum of signatures to the own calculated result is available
+// If so, it aggregates signatures and finalizes the transaction.
+// Then it deterministically calculates a priority sequence among contributing nodes for posting
+// the transaction to L1. The deadline por posting is set proportionally to the sequence number (deterministic)
+// If the node sees the transaction of the L1 before its deadline, it cancels its posting
 func (c *consensusImpl) checkQuorum() {
 	if c.workflow.transactionFinalized {
 		return
@@ -145,9 +157,9 @@ func (c *consensusImpl) checkQuorum() {
 			c.log.Warnf("wrong essence hash: expected(own): %s, got (from %d): %s", ownHash, i, sig.EssenceHash)
 		}
 	}
-	quorumReached := len(contributors) < int(c.committee.Quorum())
+	quorumReached := len(contributors) >= int(c.committee.Quorum())
 	c.log.Debugf("checkQuorum: %+v, quorum = %v", contributors, quorumReached)
-	if quorumReached {
+	if !quorumReached {
 		return
 	}
 	sigSharesToAggregate := make([][]byte, len(contributors))
@@ -168,7 +180,7 @@ func (c *consensusImpl) checkQuorum() {
 		ApprovingOutputID: approvingOutID,
 	})
 
-	// calculate deterministic pseudo-random postTxDeadline among contributors
+	// calculate deterministic and pseudo-random order and postTxDeadline among contributors
 	var postSeqNumber uint16
 	if c.iAmContributor {
 		permutation := util.NewPermutation16(uint16(len(c.contributors)), tx.ID().Bytes())
@@ -180,6 +192,7 @@ func (c *consensusImpl) checkQuorum() {
 	c.log.Debugf("checkQuorum: finalized tx %s, iAmContributor: %v seqNum: %d", tx.ID().Base58(), c.iAmContributor, postSeqNumber)
 }
 
+// postTransactionIfNeeded posts a finalized transaction upon deadline unless it was evidenced on L1 before the deadline.
 func (c *consensusImpl) postTransactionIfNeeded() {
 	if !c.workflow.transactionFinalized {
 		return
@@ -205,6 +218,8 @@ func (c *consensusImpl) postTransactionIfNeeded() {
 
 const pullInclusionStatePeriod = 1 * time.Second
 
+// pullInclusionStateIfNeeded periodic pull to know the inclusions state of the transaction. Note that pulling
+// starts immediately after finalization of the transaction, not after posting it
 func (c *consensusImpl) pullInclusionStateIfNeeded() {
 	if !c.workflow.transactionFinalized {
 		return
@@ -219,6 +234,7 @@ func (c *consensusImpl) pullInclusionStateIfNeeded() {
 	c.pullInclusionStateDeadline = time.Now().Add(pullInclusionStatePeriod)
 }
 
+// prepareBatchProposal creates a batch proposal structure out of requests
 func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchProposal {
 	ts := time.Now()
 	if !ts.After(c.stateTimestamp) {
@@ -244,6 +260,7 @@ func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchPro
 
 const delayRepeatBatchProposalFor = 500 * time.Millisecond
 
+// receiveACS processed new ACS received from ACS consensus
 func (c *consensusImpl) receiveACS(values [][]byte, sessionID uint64) {
 	if c.acsSessionID != sessionID {
 		return
@@ -271,6 +288,7 @@ func (c *consensusImpl) receiveACS(values [][]byte, sessionID uint64) {
 	myContributionSeqNumber := uint16(0)
 	contributors := make([]uint16, 0, c.committee.Size())
 	contributorSet := make(map[uint16]struct{})
+	// validate ACS
 	for i, prop := range acs {
 		if prop.StateOutputID != c.stateOutput.ID() {
 			c.resetWorkflow()

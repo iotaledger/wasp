@@ -214,7 +214,7 @@ func (c *committeeObj) waitReady(waitReady bool) {
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
-	c.log.Infof("committee is ready for addr %s", c.dkshare.Address.Base58())
+	c.log.Infof("committee started for address %s", c.dkshare.Address.Base58())
 	c.log.Debugf("peer status: %s", c.PeerStatus())
 	c.isReady.Store(true)
 }
