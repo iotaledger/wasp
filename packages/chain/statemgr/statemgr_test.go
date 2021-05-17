@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/require"
 )
@@ -25,9 +26,7 @@ func TestEnv(t *testing.T) {
 	env.AddNode(node0)
 
 	node0.StartTimer()
-	si, err := node0.WaitSyncBlockIndex(0, 1*time.Second)
-	require.NoError(t, err)
-	require.True(t, si.Synced)
+	waitSyncBlockIndexAndCheck(1*time.Second, t, node0, 0)
 
 	require.Panics(t, func() {
 		env.AddNode(node0)
@@ -44,9 +43,7 @@ func TestEnv(t *testing.T) {
 	require.EqualValues(t, state.OriginStateHash(), node1.StateManager.(*stateManager).solidState.Hash())
 
 	node1.StartTimer()
-	si, err = node1.WaitSyncBlockIndex(0, 1*time.Second)
-	require.NoError(t, err)
-	require.True(t, si.Synced)
+	waitSyncBlockIndexAndCheck(1*time.Second, t, node1, 0)
 
 	env.RemoveNode(node0)
 	require.EqualValues(t, 1, len(env.Nodes))
@@ -71,9 +68,7 @@ func TestGetInitialState(t *testing.T) {
 	env.AddNode(node)
 	manager := node.StateManager.(*stateManager)
 
-	syncInfo, err := node.WaitSyncBlockIndex(0, 3*time.Second)
-	require.NoError(t, err)
-	require.True(t, syncInfo.Synced)
+	syncInfo := waitSyncBlockIndexAndCheck(3*time.Second, t, node, 0)
 	require.True(t, originOut.Compare(manager.stateOutput) == 0)
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
 	require.EqualValues(t, manager.solidState.Hash(), state.OriginStateHash())
@@ -97,9 +92,7 @@ func TestGetNextState(t *testing.T) {
 	env.AddNode(node)
 	manager := node.StateManager.(*stateManager)
 
-	si, err := node.WaitSyncBlockIndex(0, 1*time.Second)
-	require.NoError(t, err)
-	require.True(t, si.Synced)
+	waitSyncBlockIndexAndCheck(1*time.Second, t, node, 0)
 	require.True(t, originOut.Compare(manager.stateOutput) == 0)
 	require.True(t, manager.stateOutput.GetStateIndex() == 0)
 	require.EqualValues(t, manager.solidState.Hash(), state.OriginStateHash())
@@ -114,9 +107,7 @@ func TestGetNextState(t *testing.T) {
 	require.EqualValues(t, currh[:], currentStateOutput.GetStateData())
 
 	node.StateTransition.NextState(currentState, currentStateOutput, time.Now())
-	si, err = node.WaitSyncBlockIndex(1, 3*time.Second)
-	require.NoError(t, err)
-	require.True(t, si.Synced)
+	waitSyncBlockIndexAndCheck(3*time.Second, t, node, 1)
 
 	require.EqualValues(t, 1, manager.stateOutput.GetStateIndex())
 	require.EqualValues(t, manager.solidState.Hash().Bytes(), manager.stateOutput.GetStateData())
@@ -150,9 +141,7 @@ func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
 
 	const targetBlockIndex = 30
 	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
-	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 20*time.Second)
-	require.NoError(t, err)
-	require.True(t, si.Synced)
+	waitSyncBlockIndexAndCheck(20*time.Second, t, node, targetBlockIndex)
 }
 
 // optionally, mocked node connection pushes new transactions to state managers or not.
@@ -169,18 +158,14 @@ func TestManyStateTransitionsSeveralNodes(t *testing.T) {
 
 	const targetBlockIndex = 10
 	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
-	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
-	require.NoError(t, err)
-	require.True(t, si.Synced)
+	waitSyncBlockIndexAndCheck(10*time.Second, t, node, targetBlockIndex)
 
 	node1 := env.NewMockedNode(1, Timers{})
 	node1.StateManager.Ready().MustWait()
 	node1.StartTimer()
 	env.AddNode(node1)
 
-	si, err = node1.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
-	require.NoError(t, err)
-	require.True(t, si.Synced)
+	waitSyncBlockIndexAndCheck(10*time.Second, t, node1, targetBlockIndex)
 }
 
 func TestManyStateTransitionsManyNodes(t *testing.T) {
@@ -196,9 +181,7 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 
 	const targetBlockIndex = 5
 	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
-	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
-	require.NoError(t, err)
-	require.True(t, si.Synced)
+	waitSyncBlockIndexAndCheck(10*time.Second, t, node, targetBlockIndex)
 
 	catchingNodes := make([]*MockedNode, numberOfCatchingPeers)
 	for i := 0; i < numberOfCatchingPeers; i++ {
@@ -212,9 +195,7 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 		env.AddNode(catchingNodes[i])
 	}
 	for i := 0; i < numberOfCatchingPeers; i++ {
-		si, err = catchingNodes[i].WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
-		require.NoError(t, err)
-		require.True(t, si.Synced)
+		waitSyncBlockIndexAndCheck(10*time.Second, t, catchingNodes[i], targetBlockIndex)
 	}
 }
 
@@ -234,18 +215,14 @@ func TestCatchUpNoConfirmedOutput(t *testing.T) {
 	node.OnStateTransitionMakeNewStateTransition(targetBlockIndex)
 	node.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
 	})
-	si, err := node.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
-	require.NoError(t, err)
-	require.True(t, si.Synced)
+	waitSyncBlockIndexAndCheck(10*time.Second, t, node, targetBlockIndex)
 
 	node1 := env.NewMockedNode(1, Timers{})
 	node1.StateManager.Ready().MustWait()
 	node1.StartTimer()
 	env.AddNode(node1)
 
-	si, err = node1.WaitSyncBlockIndex(targetBlockIndex, 10*time.Second)
-	require.NoError(t, err)
-	require.True(t, si.Synced)
+	waitSyncBlockIndexAndCheck(10*time.Second, t, node1, targetBlockIndex)
 }
 
 func TestNodeDisconnected(t *testing.T) {
@@ -253,11 +230,6 @@ func TestNodeDisconnected(t *testing.T) {
 	env, _ := NewMockedEnv(numberOfConnectedPeers+1, t, true)
 	env.SetPushStateToNodesOption(false)
 
-	checkResultFun := func(node *MockedNode, target uint32) {
-		si, err := node.WaitSyncBlockIndex(target, 10*time.Second)
-		require.NoError(t, err)
-		require.True(t, si.Synced)
-	}
 	createNodeFun := func(nodeIndex int) *MockedNode {
 		result := env.NewMockedNode(nodeIndex, Timers{}.
 			SetPullStateNewBlockDelay(150*time.Millisecond).
@@ -267,7 +239,7 @@ func TestNodeDisconnected(t *testing.T) {
 		result.StateManager.Ready().MustWait()
 		result.StartTimer()
 		env.AddNode(result)
-		checkResultFun(result, 0)
+		waitSyncBlockIndexAndCheck(10*time.Second, t, result, 0)
 		return result
 	}
 
@@ -282,9 +254,9 @@ func TestNodeDisconnected(t *testing.T) {
 	connectedNodes[0].OnStateTransitionMakeNewStateTransition(targetBlockIndex1)
 	connectedNodes[0].MakeNewStateTransition()
 	for i := 0; i < numberOfConnectedPeers; i++ {
-		checkResultFun(connectedNodes[i], targetBlockIndex1)
+		waitSyncBlockIndexAndCheck(10*time.Second, t, connectedNodes[i], targetBlockIndex1)
 	}
-	checkResultFun(disconnectedNode, targetBlockIndex1)
+	waitSyncBlockIndexAndCheck(10*time.Second, t, disconnectedNode, targetBlockIndex1)
 
 	//Single node gets disconnected until state 6
 	handlerName := "DisconnectedPeer"
@@ -293,7 +265,7 @@ func TestNodeDisconnected(t *testing.T) {
 	connectedNodes[0].OnStateTransitionMakeNewStateTransition(targetBlockIndex2)
 	connectedNodes[0].MakeNewStateTransition()
 	for i := 0; i < numberOfConnectedPeers; i++ {
-		checkResultFun(connectedNodes[i], targetBlockIndex2)
+		waitSyncBlockIndexAndCheck(10*time.Second, t, connectedNodes[i], targetBlockIndex2)
 	}
 
 	//Network is reconnected until state 9, the node which was disconnected catches up
@@ -302,9 +274,9 @@ func TestNodeDisconnected(t *testing.T) {
 	connectedNodes[0].OnStateTransitionMakeNewStateTransition(targetBlockIndex3)
 	connectedNodes[0].MakeNewStateTransition()
 	for i := 0; i < numberOfConnectedPeers; i++ {
-		checkResultFun(connectedNodes[i], targetBlockIndex3)
+		waitSyncBlockIndexAndCheck(10*time.Second, t, connectedNodes[i], targetBlockIndex3)
 	}
-	checkResultFun(disconnectedNode, targetBlockIndex3)
+	waitSyncBlockIndexAndCheck(10*time.Second, t, disconnectedNode, targetBlockIndex3)
 
 	//Node, producing transitions, gets disconnected until state 12
 	env.NetworkBehaviour.WithPeerDisconnected(&handlerName, disconnectedNode.NetID)
@@ -312,7 +284,7 @@ func TestNodeDisconnected(t *testing.T) {
 	connectedNodes[0].OnStateTransitionDoNothing()
 	disconnectedNode.OnStateTransitionMakeNewStateTransition(targetBlockIndex4)
 	disconnectedNode.MakeNewStateTransition()
-	checkResultFun(disconnectedNode, targetBlockIndex4)
+	waitSyncBlockIndexAndCheck(10*time.Second, t, disconnectedNode, targetBlockIndex4)
 
 	//Network is reconnected until state 15, other nodes catch up
 	env.NetworkBehaviour.RemoveHandler(handlerName)
@@ -320,9 +292,9 @@ func TestNodeDisconnected(t *testing.T) {
 	disconnectedNode.OnStateTransitionMakeNewStateTransition(targetBlockIndex5)
 	disconnectedNode.MakeNewStateTransition()
 	for i := 0; i < numberOfConnectedPeers; i++ {
-		checkResultFun(connectedNodes[i], targetBlockIndex5)
+		waitSyncBlockIndexAndCheck(10*time.Second, t, connectedNodes[i], targetBlockIndex5)
 	}
-	checkResultFun(disconnectedNode, targetBlockIndex5)
+	waitSyncBlockIndexAndCheck(10*time.Second, t, disconnectedNode, targetBlockIndex5)
 }
 
 func TestCruelWorld(t *testing.T) {
@@ -379,17 +351,18 @@ func TestCruelWorld(t *testing.T) {
 	targetState := uint32(20)
 	for i := uint32(0); i < targetState; i++ {
 		randNode := nodes[rand.Intn(numberOfPeers)]
-		waitSyncBlockIndexAndCheck(t, randNode, i)
+		waitSyncBlockIndexAndCheck(10*time.Second, t, randNode, i)
 		randNode.MakeNewStateTransition()
 	}
 
 	for i := 0; i < numberOfPeers; i++ {
-		waitSyncBlockIndexAndCheck(t, nodes[i], targetState)
+		waitSyncBlockIndexAndCheck(10*time.Second, t, nodes[i], targetState)
 	}
 }
 
-func waitSyncBlockIndexAndCheck(t *testing.T, node *MockedNode, target uint32) {
-	si, err := node.WaitSyncBlockIndex(target, 10*time.Second)
+func waitSyncBlockIndexAndCheck(duration time.Duration, t *testing.T, node *MockedNode, target uint32) *chain.SyncInfo {
+	si, err := node.WaitSyncBlockIndex(target, duration)
 	require.NoError(t, err)
 	require.True(t, si.Synced)
+	return si
 }
