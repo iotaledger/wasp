@@ -297,6 +297,10 @@ func TestNodeDisconnected(t *testing.T) {
 	waitSyncBlockIndexAndCheck(10*time.Second, t, disconnectedNode, targetBlockIndex5)
 }
 
+// 10 peers work in paralel. In every iteration random node is picked to produce
+// a new state. Unreliable network is used, which delivers only 80% of messages,
+// 25% o messages get delivered twice and messages are delayed up to 200 ms.
+// Moreover, every 1-3s some random node gets disconnnected and later reconnected.
 func TestCruelWorld(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
