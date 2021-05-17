@@ -19,9 +19,6 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// TODO not sure if there is a way to import this from contracts/native/evmchain/interface.go
-const FieldGasUsed = "gas"
-
 // RunTheRequest processes any request based on the Extended output, even if it
 // doesn't parse correctly as a SC request
 func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16) {
@@ -64,7 +61,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 			}
 		}()
 		vmctx.mustCallFromRequest()
-		vmctx.chargeGasFees()
+		vmctx.refundUnspentGas()
 	}()
 
 	if vmctx.lastError != nil {
@@ -77,30 +74,20 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 	}
 }
 
-func (vmctx *VMContext) chargeGasFees() {
-	if vmctx.lastResult.MustHas(FieldGasUsed) {
-		//charge gas fees at the rate: 1 gas = 1 iota, if the caller doesn't have enough iotas to pay, rollback the sc call (while keeping the fees charged)
-		gasUsed, _, _ := codec.DecodeUint64(vmctx.lastResult.MustGet(FieldGasUsed))
-		sender := vmctx.req.SenderAccount()
-		balance := vmctx.getBalanceOfAccount(sender, vmctx.feeColor)
-		enoughBalanceForFees := balance >= gasUsed
-		gasFeeAmount := gasUsed
-		if !enoughBalanceForFees {
-			gasFeeAmount = balance
-			vmctx.lastError = fmt.Errorf("not enough iotas to pay the gas fees. gas used: %d", gasUsed)
-			vmctx.lastResult = nil
-		}
+//can't be imported from evmchain interface because it would cause an import cycle
+const FieldGasRefunded = "gasrefund"
 
-		transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
-			vmctx.feeColor: gasFeeAmount,
-		})
-		transferred := vmctx.moveBetweenAccounts(sender, vmctx.commonAccount(), transfer)
-
-		if !transferred {
-			vmctx.lastError = fmt.Errorf("unable to charge gasFees")
-			vmctx.lastResult = nil
-		}
+func (vmctx *VMContext) refundUnspentGas() {
+	if !vmctx.lastResult.MustHas(FieldGasRefunded) {
+		return
 	}
+	refund, _, _ := codec.DecodeUint64(vmctx.lastResult.MustGet(FieldGasRefunded))
+
+	contractHname, _ := vmctx.req.Target()
+	evmContractAgentID := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), contractHname)
+	evmContractAgentID = vmctx.adjustAccount(evmContractAgentID)
+
+	vmctx.moveBetweenAccounts(evmContractAgentID, vmctx.req.SenderAccount(), coretypes.NewTransferIotas(refund))
 }
 
 // mustSetUpRequestContext sets up VMContext for request

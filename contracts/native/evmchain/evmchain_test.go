@@ -13,6 +13,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -26,7 +28,7 @@ var (
 	faucetSupply  = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 )
 
-func initEVMChain(t *testing.T) *solo.Chain {
+func initEVMChain(t *testing.T) (*solo.Chain, *solo.Solo) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ch1")
 	err := chain.DeployContract(nil, "evmchain", Interface.ProgramHash,
@@ -35,7 +37,7 @@ func initEVMChain(t *testing.T) *solo.Chain {
 		}),
 	)
 	require.NoError(t, err)
-	return chain
+	return chain, env
 }
 
 func TestDeploy(t *testing.T) {
@@ -43,7 +45,7 @@ func TestDeploy(t *testing.T) {
 }
 
 func TestFaucetBalance(t *testing.T) {
-	chain := initEVMChain(t)
+	chain, _ := initEVMChain(t)
 
 	ret, err := chain.CallView(Interface.Name, FuncGetBalance, FieldAddress, faucetAddress.Bytes())
 	require.NoError(t, err)
@@ -63,9 +65,10 @@ func getNonceFor(t *testing.T, chain *solo.Chain, addr common.Address) uint64 {
 	return nonce
 }
 
-type contractFnCaller func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *types.Receipt
+type contractFnCallerGenerator func(sender *ecdsa.PrivateKey, name string, args ...interface{}) contractFnCaller
+type contractFnCaller func(userWallet *ed25519.KeyPair, iotas uint64) (*types.Receipt, uint64, error)
 
-func deployEVMContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCaller) {
+func deployEVMContract(t *testing.T, chain *solo.Chain, env *solo.Solo, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCallerGenerator) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce := getNonceFor(t, chain, creatorAddress)
@@ -92,14 +95,14 @@ func deployEVMContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKe
 	_, err = chain.PostRequestSync(
 		solo.NewCallParams(Interface.Name, FuncSendTransaction,
 			FieldTransactionDataBlobHash, codec.EncodeHashValue(txDataBlobHash),
-		).WithIotas(1000),
+		).WithIotas(100000),
 		nil,
 	)
 	require.NoError(t, err)
 
 	contractAddress := crypto.CreateAddress(creatorAddress, nonce)
 
-	callFn := func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *types.Receipt {
+	callFn := func(sender *ecdsa.PrivateKey, name string, args ...interface{}) contractFnCaller {
 		senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
 		nonce := getNonceFor(t, chain, senderAddress)
@@ -117,34 +120,39 @@ func deployEVMContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKe
 		txdata, err := tx.MarshalBinary()
 		require.NoError(t, err)
 
-		result, err := chain.PostRequestSync(
-			solo.NewCallParams(Interface.Name, FuncSendTransaction, FieldTransactionData, txdata).
-				WithIotas(1),
-			nil,
-		)
-		require.NoError(t, err)
+		return func(userWallet *ed25519.KeyPair, iotas uint64) (*types.Receipt, uint64, error) {
+			if userWallet == nil {
+				//create new user account
+				userWallet, _ = env.NewKeyPairWithFunds()
+			}
+			result, err := chain.PostRequestSync(
+				solo.NewCallParams(Interface.Name, FuncSendTransaction, FieldTransactionData, txdata).
+					WithIotas(iotas),
+				userWallet,
+			)
 
-		var receipt *types.Receipt
+			if err != nil {
+				return nil, 0, err
+			}
 
-		err = rlp.DecodeBytes(result.MustGet(FieldResult), &receipt)
-		require.NoError(t, err)
+			var receipt *types.Receipt
+			err = rlp.DecodeBytes(result.MustGet(FieldResult), &receipt)
+			require.NoError(t, err)
 
-		return receipt
+			gasFee, _, err := codec.DecodeUint64(result.MustGet(FieldGasFee))
+			require.NoError(t, err)
+
+			return receipt, gasFee, nil
+		}
+
 	}
 
 	return contractAddress, callFn
 }
 
-func TestStorageContract(t *testing.T) {
-	chain := initEVMChain(t)
-
-	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
-	require.NoError(t, err)
-
-	// deploy solidity `storage` contract
-	contractAddress, callFn := deployEVMContract(t, chain, faucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
-
-	retrieve := func() uint32 {
+// helper to reuse code to call the `retrieve` view in the storage contract
+func getCallRetrieveView(t *testing.T, chain *solo.Chain, contractAddress common.Address, contractABI abi.ABI) func() uint32 {
+	return func() uint32 {
 		callArguments, err := contractABI.Pack("retrieve")
 		require.NoError(t, err)
 
@@ -159,25 +167,38 @@ func TestStorageContract(t *testing.T) {
 		require.NoError(t, err)
 		return v
 	}
+}
+
+func TestStorageContract(t *testing.T) {
+	chain, env := initEVMChain(t)
+
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(t, err)
+
+	// deploy solidity `storage` contract
+	contractAddress, callFn := deployEVMContract(t, chain, env, faucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
+
+	retrieve := getCallRetrieveView(t, chain, contractAddress, contractABI)
 
 	// call evmchain's FuncCallView to call EVM contract's `retrieve` view, get 42
 	require.EqualValues(t, 42, retrieve())
 
 	// call FuncSendTransaction with EVM tx that calls `store(43)`
-	callFn(faucetKey, "store", uint32(43))
+	_, _, err = callFn(faucetKey, "store", uint32(43))(nil, 100000)
+	require.NoError(t, err)
 
 	// call `retrieve` view, get 43
 	require.EqualValues(t, 43, retrieve())
 }
 
 func TestERC20Contract(t *testing.T) {
-	chain := initEVMChain(t)
+	chain, env := initEVMChain(t)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
 	require.NoError(t, err)
 
 	// deploy solidity `erc20` contract
-	contractAddress, callFn := deployEVMContract(t, chain, faucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+	contractAddress, callFn := deployEVMContract(t, chain, env, faucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
 
 	callIntViewFn := func(name string, args ...interface{}) *big.Int {
 		callArguments, err := contractABI.Pack(name, args...)
@@ -210,7 +231,8 @@ func TestERC20Contract(t *testing.T) {
 	transferAmount := big.NewInt(1337)
 
 	// call `transfer` => send 1337 TestCoin to recipientAddress
-	receipt := callFn(faucetKey, "transfer", recipientAddress, transferAmount)
+	receipt, _, err := callFn(faucetKey, "transfer", recipientAddress, transferAmount)(nil, 100000)
+	require.NoError(t, err)
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 	require.Equal(t, 1, len(receipt.Logs))
 
@@ -219,13 +241,13 @@ func TestERC20Contract(t *testing.T) {
 }
 
 func TestGetCode(t *testing.T) {
-	chain := initEVMChain(t)
+	chain, env := initEVMChain(t)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
 	require.NoError(t, err)
 
 	// deploy solidity `erc20` contract
-	contractAddress, _ := deployEVMContract(t, chain, faucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+	contractAddress, _ := deployEVMContract(t, chain, env, faucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
 
 	// get contract bytecode from EVM emulator
 	ret, err := chain.CallView(Interface.Name, FuncGetCode, FieldAddress, contractAddress.Bytes())
@@ -236,8 +258,51 @@ func TestGetCode(t *testing.T) {
 	require.True(t, bytes.Equal(retrievedBytecode, evmtest.ERC20ContractRuntimeBytecode), "bytecode retrieved from the chain must match the deployed bytecode")
 }
 
-// TEST gas limits
+func TestGasCharged(t *testing.T) {
+	chain, env := initEVMChain(t)
 
-// TODO tx with enough gas should be successful and the gas should be charged
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(t, err)
 
-// TODO tx without enough gas must be rollbacked
+	// deploy solidity `storage` contract
+	contractAddress, callFn := deployEVMContract(t, chain, env, faucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
+
+	retrieve := getCallRetrieveView(t, chain, contractAddress, contractABI)
+
+	// call evmchain's FuncCallView to call EVM contract's `retrieve` view, get 42
+	require.EqualValues(t, 42, retrieve())
+
+	userWallet, userAddress := env.NewKeyPairWithFunds()
+	var initialBalance uint64 = env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA)
+
+	// call `store(999)` with enough gas
+	receipt, gasFee, err := callFn(faucetKey, "store", uint32(999))(userWallet, initialBalance)
+	require.NoError(t, err)
+	require.Greater(t, gasFee, uint64(0))
+
+	println(receipt) // TODO CHECK IF RECEIPT IS OKAY ????????!!!
+
+	// call `retrieve` view, get 999
+	require.EqualValues(t, 999, retrieve())
+
+	// user on-chain account is credited with excess iotas (iotasSent - gasUsed)
+	expectedUserBalance := initialBalance - gasFee
+
+	var newBalance uint64 = env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA)
+	println(newBalance) // ????????????????????????????????????????????????????????????????????/
+
+	env.AssertAddressIotas(userAddress, expectedUserBalance)
+
+	// call `store(123)` without enough gas
+	_, gasFee, err = callFn(faucetKey, "store", uint32(123))(userWallet, 1)
+	require.Greater(t, gasFee, 0)
+	require.Error(t, err)
+
+	// call `retrieve` view, get 999 - which means store(123) failed and the previous state is kept
+	require.EqualValues(t, 999, retrieve())
+
+	// verify user on-chain account still has the same balance
+	env.AssertAddressIotas(userAddress, expectedUserBalance)
+}
+
+// TODO check infinite loop gets stopped by gas used

@@ -4,11 +4,15 @@
 package evmchain
 
 import (
+	"fmt"
+	"math"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/evm"
@@ -35,6 +39,11 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
+///////// TODO contract owner - FieldEvmOwner
+///////// TODO withdrawal
+
+const gasPerIota int64 = 1000 ///////// TODO gas per iota - FieldGasPerIota
+
 func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
@@ -58,7 +67,7 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	emu := emulator(ctx.State())
 	defer emu.Close()
 
-	err = emu.SendTransaction(tx) // TODO handle case where tx fails, but gas is spent anyway
+	err = emu.SendTransaction(tx)
 	a.RequireNoError(err)
 
 	//solidifies the pending block
@@ -70,10 +79,19 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	receiptBytes, err := rlp.EncodeToBytes(receipt)
 	a.RequireNoError(err)
 
+	transferedIotas, _ := ctx.IncomingTransfer().Get(ledgerstate.ColorIOTA) // TODO figure out if there is a nice way to get FeeColor from sandbox
+
+	iotasGasFee := uint64(math.Ceil(float64(receipt.GasUsed) / float64(gasPerIota)))
+
+	if transferedIotas < iotasGasFee {
+		//not enough gas
+		return nil, fmt.Errorf("not enough iotas to pay the gas fees. spent: %d", transferedIotas)
+	}
+
 	ret := dict.New()
 	ret.Set(FieldResult, receiptBytes)
-	// ret.Set(FieldGasUsed, codec.EncodeUint64(receipt.GasUsed)) // TODO uncomment
-	ret.Set(FieldGasUsed, codec.EncodeUint64(10)) // TODO hardcoded value for testing purposes
+	// ret.Set(FieldGasRefunded, codec.EncodeUint64(transferedIotas-iotasGasFee))
+	// ret.Set(FieldGasFee, codec.EncodeUint64(iotasGasFee))
 
 	return ret, nil
 }

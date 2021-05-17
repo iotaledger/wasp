@@ -52,5 +52,8 @@ const (
 	FieldBalance                 = "b"
 	FieldCallArguments           = "c"
 	FieldResult                  = "r"
-	FieldGasUsed                 = "gas"
+	FieldEvmOwner                = "o"
+	FieldGasPerIota              = "p"
+	FieldGasRefunded             = "gasrefund"
+	FieldGasFee                  = "gasFee"
 )
