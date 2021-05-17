@@ -84,6 +84,10 @@ func (b *batchProposal) Bytes() []byte {
 	return mu.Bytes()
 }
 
+// calcBatchParameters from a given ACS deterministically calculates timestamp, access and consensus
+// mana pledges and fee destination
+// Timestamp is calculated by taking closest value from above to the median.
+// TODO final version of pladeges and fee destination
 func calcBatchParameters(opt []*batchProposal) (time.Time, identity.ID, identity.ID, *coretypes.AgentID) {
 	var retTS time.Time
 
@@ -100,12 +104,14 @@ func calcBatchParameters(opt []*batchProposal) (time.Time, identity.ID, identity
 	for i := range indices {
 		indices[i] = uint16(i)
 	}
-	selectedIndex := util.SelectRandomUint16(indices, retTS.UnixNano())
+	// selects pseudo-random based on seed, the calculated timestamp
+	selectedIndex := util.SelectDeterministicRandomUint16(indices, retTS.UnixNano())
 
 	return retTS, opt[selectedIndex].AccessManaPledge, opt[selectedIndex].ConsensusManaPledge, opt[selectedIndex].FeeDestination
 }
 
 // deterministically calculate intersection. It may not be optimal
+// Deprecated: too complex algorithm and too often ends up in a local suboptimal minimums
 func calcIntersectionHeavy(opt []*batchProposal, n, t uint16) []coretypes.RequestID {
 	matrix := make(map[coretypes.RequestID][]bool)
 	for _, b := range opt {
@@ -163,6 +169,9 @@ func calcIntersectionHeavy(opt []*batchProposal, n, t uint16) []coretypes.Reques
 	return ret
 }
 
+// calcIntersectionLight a simple algorithm to calculate acceptable intersection. It simply takes all requests
+// seen by 1/3+1 node. The assumptions is there can be at max 1/3 of bizantine nodes, so if something is reported
+// by more that 1/3 of nodes it means it is correct
 func calcIntersectionLight(acs []*batchProposal, n uint16) []coretypes.RequestID {
 	minNumberMentioned := n/3 + 1
 	numMentioned := make(map[coretypes.RequestID]uint16)

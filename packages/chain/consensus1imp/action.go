@@ -270,10 +270,12 @@ func (c *consensusImpl) receiveACS(values [][]byte, sessionID uint64) {
 		return
 	}
 	if len(values) < int(c.committee.Quorum()) {
+		// should not happen. Something wrong with the ACS layer
 		c.log.Errorf("receiveACS: ACS is shorter than required quorum. Ignored")
 		c.resetWorkflow()
 		return
 	}
+	// decode ACS
 	acs := make([]*batchProposal, len(values))
 	for i, data := range values {
 		proposal, err := BatchProposalFromBytes(data)
@@ -288,7 +290,7 @@ func (c *consensusImpl) receiveACS(values [][]byte, sessionID uint64) {
 	myContributionSeqNumber := uint16(0)
 	contributors := make([]uint16, 0, c.committee.Size())
 	contributorSet := make(map[uint16]struct{})
-	// validate ACS
+	// validate ACS. Dismiss ACS if inconsistent. Should not happen
 	for i, prop := range acs {
 		if prop.StateOutputID != c.stateOutput.ID() {
 			c.resetWorkflow()
@@ -312,14 +314,18 @@ func (c *consensusImpl) receiveACS(values [][]byte, sessionID uint64) {
 		}
 		contributorSet[prop.ValidatorIndex] = struct{}{}
 	}
+	// calculate intersection of proposals
 	inBatchSet := calcIntersectionLight(acs, c.committee.Size())
 	if len(inBatchSet) == 0 {
+		// if intersection is empty, reset workflow and retry after some time. It means not all requests
+		// reached nodes and we have give it a time. Should not happen often
 		c.log.Warnf("receiveACS: ACS intersection (light) is empty. reset workflow. State index: %d, ACS sessionID %d",
 			c.stateOutput.GetStateIndex(), sessionID)
 		c.resetWorkflow()
 		c.delayBatchProposalUntil = time.Now().Add(delayRepeatBatchProposalFor)
 		return
 	}
+	// calculate other batch parameters in a deterministic way
 	medianTs, accessPledge, consensusPledge, feeDestination := calcBatchParameters(acs)
 
 	c.consensusBatch = &batchProposal{

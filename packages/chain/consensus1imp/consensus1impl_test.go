@@ -9,14 +9,14 @@ import (
 
 func TestConsensusEnv(t *testing.T) {
 	t.Run("wait index", func(t *testing.T) {
-		env, _ := NewMockedEnv(t, 4, 3, true)
+		env, _ := NewMockedEnv(t, 4, 3, false)
 		env.StartTimers()
 		env.eventStateTransition()
 		err := env.WaitStateIndex(4, 0)
 		require.NoError(t, err)
 	})
 	t.Run("wait timer tick", func(t *testing.T) {
-		env, _ := NewMockedEnv(t, 4, 3, true)
+		env, _ := NewMockedEnv(t, 4, 3, false)
 		env.StartTimers()
 		env.eventStateTransition()
 		env.WaitTimerTick(43)
@@ -25,7 +25,7 @@ func TestConsensusEnv(t *testing.T) {
 
 func TestConsensusPostRequest(t *testing.T) {
 	t.Run("post 1", func(t *testing.T) {
-		env, _ := NewMockedEnv(t, 4, 3, true)
+		env, _ := NewMockedEnv(t, 4, 3, false)
 		defer env.Log.Sync()
 		env.StartTimers()
 		env.eventStateTransition()
@@ -34,7 +34,7 @@ func TestConsensusPostRequest(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("post 1 randomize", func(t *testing.T) {
-		env, _ := NewMockedEnv(t, 4, 3, true)
+		env, _ := NewMockedEnv(t, 4, 3, false)
 		defer env.Log.Sync()
 		env.StartTimers()
 		env.eventStateTransition()
@@ -90,7 +90,7 @@ func TestConsensusMoreNodes(t *testing.T) {
 	const quorum = (numNodes*2)/3 + 1
 
 	t.Run("post 1", func(t *testing.T) {
-		env, _ := NewMockedEnv(t, numNodes, quorum, true)
+		env, _ := NewMockedEnv(t, numNodes, quorum, false)
 		defer env.Log.Sync()
 
 		env.StartTimers()
@@ -100,7 +100,7 @@ func TestConsensusMoreNodes(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("post 1 randomize", func(t *testing.T) {
-		env, _ := NewMockedEnv(t, numNodes, quorum, true)
+		env, _ := NewMockedEnv(t, numNodes, quorum, false)
 		defer env.Log.Sync()
 
 		env.StartTimers()
@@ -121,7 +121,7 @@ func TestConsensusMoreNodes(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("post 10 requests randomized", func(t *testing.T) {
-		env, _ := NewMockedEnv(t, numNodes, quorum, true)
+		env, _ := NewMockedEnv(t, numNodes, quorum, false)
 		defer env.Log.Sync()
 
 		env.StartTimers()
