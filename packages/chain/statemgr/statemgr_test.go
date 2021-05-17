@@ -298,6 +298,10 @@ func TestNodeDisconnected(t *testing.T) {
 }
 
 func TestCruelWorld(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	numberOfPeers := 10
 	env, _ := NewMockedEnv(numberOfPeers, t, true)
 	env.NetworkBehaviour.
