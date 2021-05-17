@@ -315,7 +315,7 @@ func (c *consensusImpl) receiveACS(values [][]byte, sessionID uint64) {
 		contributorSet[prop.ValidatorIndex] = struct{}{}
 	}
 	// calculate intersection of proposals
-	inBatchSet := calcIntersectionLight(acs, c.committee.Size())
+	inBatchSet := calcIntersection(acs, c.committee.Size())
 	if len(inBatchSet) == 0 {
 		// if intersection is empty, reset workflow and retry after some time. It means not all requests
 		// reached nodes and we have give it a time. Should not happen often
