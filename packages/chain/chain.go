@@ -145,12 +145,6 @@ type Mempool interface {
 	Close()
 }
 
-type RequestStatus struct {
-	Request  coretypes.Request // nil if not available
-	TooEarly bool
-	TooLate  bool
-}
-
 type AsynchronousCommonSubsetRunner interface {
 	RunACSConsensus(value []byte, sessionID uint64, callback func(sessionID uint64, acs [][]byte))
 }
