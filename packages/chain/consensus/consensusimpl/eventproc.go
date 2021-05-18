@@ -16,7 +16,7 @@ func (c *consensusImpl) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	c.takeAction()
 }
 
-func (c *consensusImpl) EventResultCalculated(msg *chain.VMResultMsg) {
+func (c *consensusImpl) EventVMResultCalculated(msg *chain.VMResultMsg) {
 	c.eventResultCalculatedMsgCh <- msg
 }
 func (c *consensusImpl) eventResultCalculated(msg *chain.VMResultMsg) {

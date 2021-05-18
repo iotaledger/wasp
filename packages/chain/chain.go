@@ -103,7 +103,7 @@ type ConsensusOld interface {
 
 type Consensus interface {
 	EventStateTransitionMsg(*StateTransitionMsg)
-	EventResultCalculated(*VMResultMsg)
+	EventVMResultCalculated(*VMResultMsg)
 	EventSignedResultMsg(*SignedResultMsg)
 	EventInclusionsStateMsg(*InclusionStateMsg)
 	EventAsynchronousCommonSubsetMsg(msg *AsynchronousCommonSubsetMsg)

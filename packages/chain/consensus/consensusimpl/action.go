@@ -163,8 +163,23 @@ func (c *consensusImpl) checkQuorum() {
 		return
 	}
 	sigSharesToAggregate := make([][]byte, len(contributors))
+	invalidSignatures := false
 	for i, idx := range contributors {
-		sigSharesToAggregate[i] = c.resultSignatures[idx].SigShare
+		err := c.committee.DKShare().VerifySigShare(c.resultTxEssence.Bytes(), c.resultSignatures[idx].SigShare)
+		if err != nil {
+			// TODO here we are ignoring wrong signatures. In general, it means it is an attack
+			//  In the future when each message will be signed by the peer's identity, the invalidity
+			//  of the BLS signature means the node is misbehaving and should be punished.
+			c.log.Warnf("WRONG SIGNATURE from peer #%d: %v", i, err)
+			invalidSignatures = true
+		} else {
+			sigSharesToAggregate[i] = c.resultSignatures[idx].SigShare
+		}
+	}
+	if invalidSignatures {
+		c.log.Errorf("some signatures were invalid. Reset workflow")
+		c.resetWorkflow()
+		return
 	}
 	tx, approvingOutID, err := c.finalizeTransaction(sigSharesToAggregate)
 	if err != nil {
