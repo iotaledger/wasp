@@ -10,9 +10,11 @@ package commoncoin
 
 import (
 	"bytes"
+	"encoding/binary"
 	"io"
 	"time"
 
+	"github.com/anthdm/hbbft"
 	"github.com/iotaledger/hive.go/crypto/bls"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -23,7 +25,7 @@ import (
 )
 
 const (
-	commonCoinShareMsgType = 50 + peering.FirstUserMsgCode
+	commonCoinShareMsgType = 51 + peering.FirstUserMsgCode
 	retryTimeout           = 1 * time.Second
 	giveUpTimeout          = 1 * time.Hour
 )
@@ -31,6 +33,7 @@ const (
 // Type CommonCoinProvider is used decouple implementation of the coin from the
 // implementation of the consensus algorithm using it.
 type Provider interface {
+	hbbft.CommonCoin
 	GetCoin(sid []byte) ([]byte, error)
 	io.Closer
 }
@@ -99,6 +102,45 @@ func (ccn *commonCoinNode) GetCoin(sid []byte) ([]byte, error) {
 		return coin, nil
 	}
 	return nil, xerrors.New("timeout waiting for a common coin")
+}
+
+// FlipCoin implements the hbbft.CommonCoin interface.
+// It doesn't expect any errors, so we will retry in that case.
+//
+// Here we use the approach, that not all the coin flips must be
+// random. It is beneficial to have first two flips as true, so
+// we will generate [true, true, false, false, <random>, ...].
+func (ccn *commonCoinNode) FlipCoin(epoch uint32) bool {
+	return ccn.flipCoin(epoch, nil)
+}
+func (ccn *commonCoinNode) flipCoin(epoch uint32, prefix []byte) bool {
+	mod5 := epoch % 5
+	if mod5 < 2 {
+		return true
+	}
+	if mod5 < 4 {
+		return false
+	}
+	sid := make([]byte, 4)
+	binary.BigEndian.PutUint32(sid[:], epoch)
+	if prefix != nil {
+		sid = append(prefix, sid...)
+	}
+	var coin []byte
+	var err error
+	for {
+		if coin, err = ccn.GetCoin(sid); err == nil {
+			return coin[len(coin)-1]%2 == 1
+		}
+		ccn.log.Errorf("Failed to flip a coin, will retry. Reason=%v", err)
+		<-time.After(100 * time.Microsecond)
+	}
+}
+
+// WithPrefix returns a facade to the common coin provider which
+// appends the specified prefix to all the seeds before creating a CC.
+func (ccn *commonCoinNode) WithPrefix(prefix []byte) Provider {
+	return newPrefixedCommonCoin(ccn, prefix)
 }
 
 // Close terminates the CommonCoin peer.
@@ -405,6 +447,50 @@ func (m *commonCoinMsg) Bytes() []byte {
 	var buf bytes.Buffer
 	_ = m.Write(&buf)
 	return buf.Bytes()
+}
+
+// endregion ///////////////////////////////////////////////////////////////////
+
+// region prefixedCommonCoin ///////////////////////////////////////////////////
+
+// prefixedCommonCoin is used to create common coins out of Prefix + Seed
+// instead of just Seed. This way we can pass them to all the ACS instances,
+// just with different prefixes.
+type prefixedCommonCoin struct {
+	ccn    *commonCoinNode
+	prefix []byte
+}
+
+func newPrefixedCommonCoin(
+	ccn *commonCoinNode,
+	prefix []byte,
+) *prefixedCommonCoin {
+	return &prefixedCommonCoin{
+		ccn:    ccn,
+		prefix: prefix,
+	}
+}
+
+// GetCoin returns an instance of a common coin.
+// It can block for some time, if other peers are lagging.
+func (pcc *prefixedCommonCoin) GetCoin(sid []byte) ([]byte, error) {
+	return pcc.ccn.GetCoin(pcc.makeSeed(sid))
+}
+
+// FlipCoin implements the hbbft.CommonCoin interface.
+// It doesn't expect any errors, so we will retry in that case.
+func (pcc *prefixedCommonCoin) FlipCoin(epoch uint32) bool {
+	return pcc.ccn.flipCoin(epoch, pcc.prefix)
+}
+
+// Close terminates the CommonCoin peer.
+// This one will be ignored here, as this object is just a delegator.
+func (pcc *prefixedCommonCoin) Close() error {
+	return nil
+}
+
+func (pcc *prefixedCommonCoin) makeSeed(sid []byte) []byte {
+	return append(pcc.prefix, sid...)
 }
 
 // endregion ///////////////////////////////////////////////////////////////////
