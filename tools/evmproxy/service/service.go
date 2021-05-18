@@ -45,6 +45,17 @@ func (e *EthService) GetBlockByNumber(blockNumber rpc.BlockNumber, full bool) (m
 	return RPCMarshalBlock(block, true, full)
 }
 
+func (e *EthService) GetBlockByHash(hash common.Hash, full bool) (map[string]interface{}, error) {
+	block, err := e.evmChain.BlockByHash(hash)
+	if err != nil {
+		return nil, err
+	}
+	if block == nil {
+		return nil, nil
+	}
+	return RPCMarshalBlock(block, true, full)
+}
+
 func (e *EthService) GetBalance(address common.Address, blockNumber rpc.BlockNumber) (*hexutil.Big, error) {
 	bal, err := e.evmChain.Balance(address, parseBlockNumber(blockNumber))
 	if err != nil {

@@ -32,6 +32,7 @@ func init() {
 		coreutil.ViewFunc(FuncGetCode, getCode),
 		coreutil.ViewFunc(FuncGetBlockNumber, getBlockNumber),
 		coreutil.ViewFunc(FuncGetBlockByNumber, getBlockByNumber),
+		coreutil.ViewFunc(FuncGetBlockByHash, getBlockByHash),
 	})
 	native.AddProcessor(Interface)
 }
@@ -45,6 +46,7 @@ const (
 	FuncGetCode          = "getCode"
 	FuncGetBlockNumber   = "getBlockNumber"
 	FuncGetBlockByNumber = "getBlockByNumber"
+	FuncGetBlockByHash   = "getBlockByHash"
 )
 
 const (
@@ -56,4 +58,5 @@ const (
 	FieldCallArguments   = "c"
 	FieldResult          = "r"
 	FieldBlockNumber     = "bn"
+	FieldBlockHash       = "bh"
 )

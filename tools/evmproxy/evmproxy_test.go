@@ -77,6 +77,12 @@ func (e *env) blockByNumber(number *big.Int) *types.Block {
 	return block
 }
 
+func (e *env) blockByHash(hash common.Hash) *types.Block {
+	block, err := e.client.BlockByHash(context.Background(), hash)
+	require.NoError(e.t, err)
+	return block
+}
+
 func (e *env) balance(address common.Address) *big.Int {
 	bal, err := e.client.BalanceAt(context.Background(), address, nil)
 	require.NoError(e.t, err)
@@ -113,4 +119,12 @@ func TestRPCGetBlockByNumber(t *testing.T) {
 	require.EqualValues(t, 0, env.blockByNumber(big.NewInt(0)).Number().Uint64())
 	env.requestFunds(receiverAddress)
 	require.EqualValues(t, 1, env.blockByNumber(big.NewInt(1)).Number().Uint64())
+}
+
+func TestRPCGetBlockByHash(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	require.EqualValues(t, 0, env.blockByHash(env.blockByNumber(big.NewInt(0)).Hash()).Number().Uint64())
+	env.requestFunds(receiverAddress)
+	require.EqualValues(t, 1, env.blockByHash(env.blockByNumber(big.NewInt(1)).Hash()).Number().Uint64())
 }

@@ -106,6 +106,24 @@ func getBlockByNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
+func getBlockByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+
+	hash := common.BytesToHash(ctx.Params().MustGet(FieldBlockHash))
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	block, err := emu.BlockByHash(hash)
+	a.RequireNoError(err)
+
+	ret := dict.New()
+	if block != nil {
+		ret.Set(FieldResult, EncodeBlock(block))
+	}
+	return ret, nil
+}
+
 func getReceipt(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
