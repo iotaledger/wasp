@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
-	"github.com/iotaledger/wasp/packages/chain/consensusimpl"
+	"github.com/iotaledger/wasp/packages/chain/consensusimpl_old"
 	"github.com/iotaledger/wasp/packages/chain/mempool_old"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -299,7 +299,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	}
 	c.committee.Attach(c)
 	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensusimpl.New(c, c.mempool, c.committee, nodeconnimpl.New(c.nodeConn), c.log)
+	c.consensus = consensusimpl_old.New(c, c.mempool, c.committee, nodeconnimpl.New(c.nodeConn), c.log)
 
 	c.log.Infof("NEW COMMITTEE OF VALDATORS initialized for state address %s", msg.ChainOutput.GetStateAddress().Base58())
 	c.stateMgr.EventStateMsg(msg)

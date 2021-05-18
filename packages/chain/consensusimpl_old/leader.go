@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package consensusimpl
+package consensusimpl_old
 
 func (op *operator) currentLeader() (uint16, bool) {
 	_, ok := op.blockIndex()

@@ -1,11 +1,12 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package consensusimpl
+package consensusimpl_old
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"time"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 )
 
 const (

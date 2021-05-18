@@ -1,11 +1,12 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package consensusimpl
+package consensusimpl_old
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/vm"
