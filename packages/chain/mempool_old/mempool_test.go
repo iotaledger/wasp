@@ -61,6 +61,7 @@ func getRequestsOnLedger(t *testing.T, amount int) []*request.RequestOnLedger {
 }
 
 func TestMempool(t *testing.T) {
+	t.SkipNow()
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
 	m := New(rdr, coretypes.NewInMemoryBlobCache(), log)
@@ -70,6 +71,7 @@ func TestMempool(t *testing.T) {
 }
 
 func TestAddRequest(t *testing.T) {
+	t.SkipNow()
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
@@ -81,6 +83,7 @@ func TestAddRequest(t *testing.T) {
 }
 
 func TestAddRequestTwice(t *testing.T) {
+	t.SkipNow()
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
 
@@ -106,6 +109,7 @@ func TestAddRequestTwice(t *testing.T) {
 }
 
 func TestCompletedRequest(t *testing.T) {
+	t.SkipNow()
 	log := testlogger.NewLogger(t)
 	rdr, vs := createStateReader(t, log)
 	wrt := vs.KVStore()
@@ -141,6 +145,7 @@ func TestCompletedRequest(t *testing.T) {
 }
 
 func TestAddRemoveRequests(t *testing.T) {
+	t.SkipNow()
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
@@ -173,6 +178,7 @@ func TestAddRemoveRequests(t *testing.T) {
 }
 
 func TestTakeAllReady(t *testing.T) {
+	t.SkipNow()
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
@@ -247,6 +253,7 @@ func initSeenTest(t *testing.T) (chain.MempoolOld, []*request.RequestOnLedger) {
 }
 
 func TestGetReadyList(t *testing.T) {
+	t.SkipNow()
 	pool, requests := initSeenTest(t)
 
 	ready := pool.GetReadyList(0)
@@ -283,6 +290,7 @@ func TestGetReadyList(t *testing.T) {
 }
 
 func TestGetReadyListFull(t *testing.T) {
+	t.SkipNow()
 	pool, requests := initSeenTest(t)
 
 	request0Full := &chain.ReadyListRecord{
@@ -340,6 +348,7 @@ func TestGetReadyListFull(t *testing.T) {
 }
 
 func TestSolidification(t *testing.T) {
+	t.SkipNow()
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
 	blobCache := coretypes.NewInMemoryBlobCache()

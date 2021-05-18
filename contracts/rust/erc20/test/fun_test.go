@@ -1,6 +1,8 @@
 package test
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -8,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 var (
@@ -119,7 +120,7 @@ func TestTransferNotEnoughFunds1(t *testing.T) {
 
 	_, userAddr := chain.Env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentID(userAddr, 0)
-	amount := int64(1338)
+	amount := int64(solo.Saldo + 1)
 
 	checkErc20Balance(chain, creatorAgentID, solo.Saldo)
 	checkErc20Balance(chain, userAgentID, 0)

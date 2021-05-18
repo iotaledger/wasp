@@ -46,7 +46,7 @@ const DefaultTimeStep = 1 * time.Millisecond
 // Saldo is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewKeyPairWithFunds() and such
 const (
-	Saldo              = uint64(1337)
+	Saldo              = utxodb.RequestFundsAmount
 	DustThresholdIotas = uint64(1)
 	ChainDustThreshold = uint64(100)
 	MaxRequestsInBlock = 100
