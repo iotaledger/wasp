@@ -21,7 +21,7 @@ var (
 	faucetSupply  = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 )
 
-func NewRPCServer(chain service.EVMChain) *rpc.Server {
+func NewRPCServer(chain *service.EVMChain) *rpc.Server {
 	rpcsrv := rpc.NewServer()
 	for _, srv := range []struct {
 		namespace string
@@ -39,9 +39,9 @@ func NewRPCServer(chain service.EVMChain) *rpc.Server {
 }
 
 func main() {
-	soloEVMChain := service.NewSoloEVMChain(core.GenesisAlloc{
+	soloEVMChain := service.NewEVMChain(service.NewSoloBackend(core.GenesisAlloc{
 		faucetAddress: {Balance: faucetSupply},
-	})
+	}))
 
 	rpcsrv := NewRPCServer(soloEVMChain)
 	defer rpcsrv.Stop()

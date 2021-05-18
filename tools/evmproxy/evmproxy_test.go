@@ -23,9 +23,9 @@ type env struct {
 }
 
 func newEnv(t *testing.T) *env {
-	soloEVMChain := service.NewSoloEVMChain(core.GenesisAlloc{
+	soloEVMChain := service.NewEVMChain(service.NewSoloBackend(core.GenesisAlloc{
 		faucetAddress: {Balance: faucetSupply},
-	})
+	}))
 
 	rpcsrv := NewRPCServer(soloEVMChain)
 	t.Cleanup(rpcsrv.Stop)

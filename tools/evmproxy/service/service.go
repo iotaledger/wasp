@@ -3,8 +3,6 @@
 package service
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -12,40 +10,47 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-type EVMChain interface {
-	BlockNumber() *big.Int
-	SendTransaction(tx *types.Transaction)
-	Balance(address common.Address, blockNumber *big.Int) *big.Int
-	BlockByNumber(blockNumber *big.Int) *types.Block
-	TransactionCount(address common.Address, blockNumber *big.Int) uint64
-}
-
 type EthService struct {
-	chain EVMChain
+	evmChain *EVMChain
 }
 
-func NewEthService(chain EVMChain) *EthService {
-	return &EthService{chain}
+func NewEthService(evmChain *EVMChain) *EthService {
+	return &EthService{evmChain}
 }
 
-func (e *EthService) GetTransactionCount(address common.Address, blockNumber rpc.BlockNumber) hexutil.Uint64 {
-	return hexutil.Uint64(e.chain.TransactionCount(address, parseBlockNumber(blockNumber)))
+func (e *EthService) GetTransactionCount(address common.Address, blockNumber rpc.BlockNumber) (hexutil.Uint64, error) {
+	n, err := e.evmChain.TransactionCount(address, parseBlockNumber(blockNumber))
+	if err != nil {
+		return 0, err
+	}
+	return hexutil.Uint64(n), nil
 }
 
-func (e *EthService) BlockNumber() *hexutil.Big {
-	return (*hexutil.Big)(e.chain.BlockNumber())
+func (e *EthService) BlockNumber() (*hexutil.Big, error) {
+	n, err := e.evmChain.BlockNumber()
+	if err != nil {
+		return nil, err
+	}
+	return (*hexutil.Big)(n), nil
 }
 
 func (e *EthService) GetBlockByNumber(blockNumber rpc.BlockNumber, full bool) (map[string]interface{}, error) {
-	block := e.chain.BlockByNumber(parseBlockNumber(blockNumber))
+	block, err := e.evmChain.BlockByNumber(parseBlockNumber(blockNumber))
+	if err != nil {
+		return nil, err
+	}
 	if block == nil {
 		return nil, nil
 	}
 	return RPCMarshalBlock(block, true, full)
 }
 
-func (e *EthService) GetBalance(address common.Address, blockNumber rpc.BlockNumber) *hexutil.Big {
-	return (*hexutil.Big)(e.chain.Balance(address, parseBlockNumber(blockNumber)))
+func (e *EthService) GetBalance(address common.Address, blockNumber rpc.BlockNumber) (*hexutil.Big, error) {
+	bal, err := e.evmChain.Balance(address, parseBlockNumber(blockNumber))
+	if err != nil {
+		return nil, err
+	}
+	return (*hexutil.Big)(bal), nil
 }
 
 func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, error) {
@@ -53,16 +58,18 @@ func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, err
 	if err := rlp.DecodeBytes(txBytes, tx); err != nil {
 		return common.Hash{}, err
 	}
-	e.chain.SendTransaction(tx)
+	if err := e.evmChain.SendTransaction(tx); err != nil {
+		return common.Hash{}, err
+	}
 	return tx.Hash(), nil
 }
 
 type NetService struct {
-	chain EVMChain
+	evmChain *EVMChain
 }
 
-func NewNetService(chain EVMChain) *NetService {
-	return &NetService{chain}
+func NewNetService(evmChain *EVMChain) *NetService {
+	return &NetService{evmChain}
 }
 
 func (e *NetService) Version() string {
