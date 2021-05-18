@@ -18,9 +18,9 @@ func (sm *stateManager) takeAction() {
 		sm.log.Debugf("takeAction skipped: state manager is not ready")
 		return
 	}
-	sm.notifyStateTransitionIfNeeded()
 	sm.pullStateIfNeeded()
 	sm.doSyncActionIfNeeded()
+	sm.notifyStateTransitionIfNeeded()
 	sm.storeSyncingData()
 }
 
@@ -37,8 +37,8 @@ func (sm *stateManager) notifyStateTransitionIfNeeded() {
 	sm.notifiedSyncedStateHash = sm.solidState.Hash()
 	stateOutputID := sm.stateOutput.ID()
 	stateOutputIndex := sm.stateOutput.GetStateIndex()
-	sm.log.Debugf("notifyStateTransition: notifying about state %v approved by output %v index %v",
-		sm.notifiedSyncedStateHash.String(), coretypes.OID(stateOutputID), stateOutputIndex)
+	sm.log.Infof("notifyStateTransition: state %v IS SYNCED to index %v and is approved by output %v",
+		sm.notifiedSyncedStateHash.String(), stateOutputIndex, coretypes.OID(stateOutputID))
 	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
 		VirtualState:    sm.solidState.Clone(),
 		ChainOutput:     sm.stateOutput,
@@ -57,20 +57,16 @@ func (sm *stateManager) isSynced() bool {
 func (sm *stateManager) pullStateIfNeeded() {
 	nowis := time.Now()
 	if nowis.After(sm.pullStateRetryTime) {
-		if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidatesNotOlderThan(sm.stateOutput.GetStateIndex()+1) {
-			chainAliasAddress := sm.chain.ID().AsAliasAddress()
-			sm.log.Debugf("pullState: pulling state for address %v", chainAliasAddress.Base58())
-			sm.nodeConn.PullState(chainAliasAddress)
-			sm.pullStateRetryTime = nowis.Add(sm.timers.getPullStateRetry())
-		} else {
-			sm.log.Debugf("pullState not needed: retry time is %v", sm.pullStateRetryTime)
-		}
+		chainAliasAddress := sm.chain.ID().AsAliasAddress()
+		sm.log.Debugf("pullState: pulling state for address %v", chainAliasAddress.Base58())
+		sm.nodeConn.PullState(chainAliasAddress)
+		sm.pullStateRetryTime = nowis.Add(sm.timers.getPullStateRetry())
 	} else {
 		sm.log.Debugf("pullState not needed: retry time is %v", sm.pullStateRetryTime)
 	}
 }
 
-func (sm *stateManager) addBlockFromConsensus(nextState state.VirtualState) {
+func (sm *stateManager) addBlockFromConsensus(nextState state.VirtualState) bool {
 	sm.log.Debugw("addBlockFromConsensus: adding block for state ",
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
@@ -80,11 +76,11 @@ func (sm *stateManager) addBlockFromConsensus(nextState state.VirtualState) {
 	block, err := nextState.ExtractBlock()
 	if err != nil {
 		sm.log.Errorf("addBlockFromConsensus: error extracting block: %v", err)
-		return
+		return false
 	}
 	if block == nil {
 		sm.log.Errorf("addBlockFromConsensus: state candidate does not contain block")
-		return
+		return false
 	}
 
 	sm.addBlockAndCheckStateOutput(block, nextState)
@@ -93,21 +89,24 @@ func (sm *stateManager) addBlockFromConsensus(nextState state.VirtualState) {
 		sm.log.Debugf("addBlockFromConsensus: received new block from committee, delaying pullStateRetry")
 		sm.pullStateRetryTime = time.Now().Add(sm.timers.getPullStateNewBlockDelay())
 	}
+
+	return true
 }
 
-func (sm *stateManager) addBlockFromPeer(block state.Block) {
+func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	sm.log.Debugf("addBlockFromPeer: adding block index %v", block.BlockIndex())
 	if !sm.syncingBlocks.isSyncing(block.BlockIndex()) {
 		// not asked
 		sm.log.Debugf("addBlockFromPeer failed: not asked for block index %v", block.BlockIndex())
-		return
+		return false
 	}
 	if sm.addBlockAndCheckStateOutput(block, nil) {
 		// ask for approving output
 		chainAddress := sm.chain.ID().AsAddress()
-		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v for chain %v", block.ApprovingOutputID(), chainAddress.String())
+		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v for chain %v", coretypes.OID(block.ApprovingOutputID()), chainAddress.Base58())
 		sm.nodeConn.PullConfirmedOutput(chainAddress, block.ApprovingOutputID())
 	}
+	return true
 }
 
 //addBlockAndCheckStateOutput function adds block to candidate list and returns true iff the block is new and is not yet approved by current stateOutput

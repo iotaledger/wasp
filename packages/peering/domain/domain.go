@@ -39,6 +39,21 @@ func NewPeerDomain(netProvider peering.NetworkProvider, initialNodes []peering.P
 	return ret
 }
 
+func NewPeerDomainByNetIDs(netProvider peering.NetworkProvider, peerNetIDs []string, log *logger.Logger) (*domainImpl, error) {
+	peers := make([]peering.PeerSender, 0, len(peerNetIDs))
+	for _, nid := range peerNetIDs {
+		if nid == netProvider.Self().NetID() {
+			continue
+		}
+		peer, err := netProvider.PeerByNetID(nid)
+		if err != nil {
+			return nil, err
+		}
+		peers = append(peers, peer)
+	}
+	return NewPeerDomain(netProvider, peers, log), nil
+}
+
 func (d *domainImpl) SendMsgByNetID(netID string, msg *peering.PeerMessage) {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()

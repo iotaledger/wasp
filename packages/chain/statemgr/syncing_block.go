@@ -14,8 +14,9 @@ import (
 )
 
 type syncingBlocks struct {
-	blocks map[uint32]*syncingBlock
-	log    *logger.Logger
+	blocks            map[uint32]*syncingBlock
+	log               *logger.Logger
+	initialBlockRetry time.Duration
 }
 
 type syncingBlock struct {
@@ -23,10 +24,11 @@ type syncingBlock struct {
 	blockCandidates       map[hashing.HashValue]*candidateBlock
 }
 
-func newSyncingBlocks(log *logger.Logger) *syncingBlocks {
+func newSyncingBlocks(log *logger.Logger, initialBlockRetry time.Duration) *syncingBlocks {
 	return &syncingBlocks{
-		blocks: make(map[uint32]*syncingBlock),
-		log:    log,
+		blocks:            make(map[uint32]*syncingBlock),
+		log:               log,
+		initialBlockRetry: initialBlockRetry,
 	}
 }
 
@@ -128,34 +130,42 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 	}
 	candidate = newCandidateBlock(block, nextState)
 	sync.blockCandidates[hash] = candidate
-	syncsT.log.Infof("addBlockCandidate: new block candidate created for block index: %d, hash: %s", stateIndex, hash.String())
+	syncsT.log.Debugf("addBlockCandidate: new block candidate created for block index: %d, hash: %s", stateIndex, hash.String())
 	return true, candidate
 }
 
-func (syncsT *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOutput) {
+func (syncsT *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOutput) bool {
 	if output == nil {
 		syncsT.log.Debugf("approveBlockCandidates failed, provided output is nil")
-		return
+		return false
 	}
+	someApproved := false
 	stateIndex := output.GetStateIndex()
 	syncsT.log.Debugf("approveBlockCandidates using output ID %v for state index %v", coretypes.OID(output.ID()), stateIndex)
 	sync, ok := syncsT.blocks[stateIndex]
 	if ok {
 		syncsT.log.Debugf("approveBlockCandidates: %v block candidates to check", len(sync.blockCandidates))
 		for blockHash, candidate := range sync.blockCandidates {
+			alreadyApproved := candidate.isApproved()
 			syncsT.log.Debugf("approveBlockCandidates: checking candidate %v: local %v, nextStateHash %v, approvingOutputID %v, already approved %v",
-				blockHash.String(), candidate.isLocal(), candidate.getNextStateHash().String(), coretypes.OID(candidate.getApprovingOutputID()), candidate.isApproved())
-			candidate.approveIfRightOutput(output)
-			syncsT.log.Debugf("approveBlockCandidates: candidate %v approved %v", blockHash.String(), candidate.isApproved())
+				blockHash.String(), candidate.isLocal(), candidate.getNextStateHash().String(), coretypes.OID(candidate.getApprovingOutputID()), alreadyApproved)
+			if !alreadyApproved {
+				candidate.approveIfRightOutput(output)
+				if candidate.isApproved() {
+					syncsT.log.Debugf("approveBlockCandidates: candidate %v got approved", blockHash.String())
+					someApproved = true
+				}
+			}
 		}
 	}
+	return someApproved
 }
 
 func (syncsT *syncingBlocks) startSyncingIfNeeded(stateIndex uint32) {
 	if !syncsT.isSyncing(stateIndex) {
 		syncsT.log.Debugf("Starting syncing state index %v", stateIndex)
 		syncsT.blocks[stateIndex] = &syncingBlock{
-			requestBlockRetryTime: time.Now(),
+			requestBlockRetryTime: time.Now().Add(syncsT.initialBlockRetry),
 			blockCandidates:       make(map[hashing.HashValue]*candidateBlock),
 		}
 	}
