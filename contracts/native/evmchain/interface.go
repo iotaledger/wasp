@@ -54,6 +54,5 @@ const (
 	FieldResult                  = "r"
 	FieldEvmOwner                = "o"
 	FieldGasPerIota              = "p"
-	FieldGasRefunded             = "gasrefund"
 	FieldGasFee                  = "gasFee"
 )

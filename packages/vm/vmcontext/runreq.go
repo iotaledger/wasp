@@ -5,7 +5,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
@@ -61,7 +60,6 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 			}
 		}()
 		vmctx.mustCallFromRequest()
-		vmctx.refundUnspentGas()
 	}()
 
 	if vmctx.lastError != nil {
@@ -72,22 +70,6 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 
 		vmctx.mustSendBack(vmctx.remainingAfterFees)
 	}
-}
-
-//can't be imported from evmchain interface because it would cause an import cycle
-const FieldGasRefunded = "gasrefund"
-
-func (vmctx *VMContext) refundUnspentGas() {
-	if !vmctx.lastResult.MustHas(FieldGasRefunded) {
-		return
-	}
-	refund, _, _ := codec.DecodeUint64(vmctx.lastResult.MustGet(FieldGasRefunded))
-
-	contractHname, _ := vmctx.req.Target()
-	evmContractAgentID := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), contractHname)
-	evmContractAgentID = vmctx.adjustAccount(evmContractAgentID)
-
-	vmctx.moveBetweenAccounts(evmContractAgentID, vmctx.req.SenderAccount(), coretypes.NewTransferIotas(refund))
 }
 
 // mustSetUpRequestContext sets up VMContext for request

@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 )
 
@@ -85,13 +86,20 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	if transferedIotas < iotasGasFee {
 		//not enough gas
-		return nil, fmt.Errorf("not enough iotas to pay the gas fees. spent: %d", transferedIotas)
+		return nil, fmt.Errorf("not enough iotas to pay the gas fees. spent: %d iotas", transferedIotas)
 	}
+
+	// refund unspend gas to the senders on-chain account
+	iotasGasRefund := transferedIotas - iotasGasFee
+	params := codec.MakeDict(map[string]interface{}{
+		accounts.ParamAgentID: ctx.Caller(),
+	})
+	_, err = ctx.Call(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), params, coretypes.NewTransferIotas(iotasGasRefund))
+	a.RequireNoError(err)
 
 	ret := dict.New()
 	ret.Set(FieldResult, receiptBytes)
-	// ret.Set(FieldGasRefunded, codec.EncodeUint64(transferedIotas-iotasGasFee))
-	// ret.Set(FieldGasFee, codec.EncodeUint64(iotasGasFee))
+	ret.Set(FieldGasFee, codec.EncodeUint64(iotasGasFee))
 
 	return ret, nil
 }
