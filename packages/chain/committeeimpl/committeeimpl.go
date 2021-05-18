@@ -37,6 +37,7 @@ const waitReady = false
 
 func NewCommittee(
 	stateAddr ledgerstate.Address,
+	chainID *coretypes.ChainID,
 	netProvider peering.NetworkProvider,
 	peerConfig coretypes.PeerNetworkConfigProvider,
 	dksProvider coretypes.DKShareRegistryProvider,
@@ -66,11 +67,21 @@ func NewCommittee(
 		return nil, xerrors.Errorf("NewCommittee: failed to create peer group for committee: %+v: %w", cmtRec.Nodes, err)
 	}
 
+	// peerGroupID is calculated by XORing chainID and stateAddr.
+	// It allows to use same statAddr for different chains
+	peerGroupID := stateAddr.Array()
+	var chainArr [33]byte
+	if chainID != nil {
+		chainArr = chainID.Array()
+	}
+	for i := range peerGroupID {
+		peerGroupID[i] = peerGroupID[i] ^ chainArr[i]
+	}
 	ret := &committeeObj{
 		isReady:        atomic.NewBool(false),
 		address:        stateAddr,
 		validatorNodes: peers,
-		peeringID:      stateAddr.Array(), // committee is made for specific state address
+		peeringID:      peerGroupID,
 		peerConfig:     peerConfig,
 		size:           dkshare.N,
 		quorum:         dkshare.T,

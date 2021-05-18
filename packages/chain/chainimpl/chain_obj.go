@@ -285,6 +285,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 
 	c.committee, err = committeeimpl.NewCommittee(
 		msg.ChainOutput.GetStateAddress(),
+		&c.chainID,
 		c.netProvider,
 		c.peerNetworkConfig,
 		c.dksProvider,

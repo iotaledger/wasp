@@ -31,7 +31,7 @@ func TestCommitteeBasic(t *testing.T) {
 	net0, err := udp.NewNetworkProvider(cfg0, key.NewKeyPair(suite), suite, log.Named("net0"))
 	require.NoError(t, err)
 
-	c, err := NewCommittee(stateAddr, net0, cfg0, dksRegistries[0], reg, log)
+	c, err := NewCommittee(stateAddr, nil, net0, cfg0, dksRegistries[0], reg, log)
 	require.NoError(t, err)
 	require.True(t, c.Address().Equals(stateAddr))
 	require.EqualValues(t, 4, c.Size())

@@ -178,6 +178,7 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 
 	committee, err := committeeimpl.NewCommittee(
 		env.StateAddress,
+		&env.ChainID,
 		env.NetworkProviders[i],
 		cfg,
 		env.DKSRegistries[i],
