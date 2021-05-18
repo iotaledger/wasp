@@ -46,7 +46,7 @@ func TestBasic(t *testing.T) {
 		})
 	}
 	for a := range acsPeers {
-		group, err := networkProviders[a].Group(peerNetIDs)
+		group, err := networkProviders[a].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
 		acsPeers[a], err = commonsubset.NewCommonSubset(peeringID, networkProviders[a], group, threshold, newFakeCoin(), nil, log)
 		require.Nil(t, err)
@@ -94,7 +94,7 @@ func TestRandomized(t *testing.T) {
 		})
 	}
 	for a := range acsPeers {
-		group, err := networkProviders[a].Group(peerNetIDs)
+		group, err := networkProviders[a].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
 		acsPeers[a], err = commonsubset.NewCommonSubset(peeringID, networkProviders[a], group, threshold, newFakeCoin(), nil, log)
 		require.Nil(t, err)

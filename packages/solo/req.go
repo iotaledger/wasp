@@ -5,14 +5,15 @@ package solo
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"golang.org/x/xerrors"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -98,6 +99,16 @@ func (r *CallParams) WithMint(targetAddress ledgerstate.Address, amount uint64) 
 	return r
 }
 
+// NewRequestOffLedger creates off-ledger request from parameters
+func (r *CallParams) NewRequestOffLedger(keyPair *ed25519.KeyPair) *request.RequestOffLedger {
+	ret := request.NewRequestOffLedger(r.target, r.entryPoint, r.args)
+	if r.transfer != nil {
+		ret.Transfer(r.transfer)
+	}
+	ret.Sign(keyPair)
+	return ret
+}
+
 // makes map without hashing
 func toMap(params ...interface{}) map[string]interface{} {
 	par := make(map[string]interface{})
@@ -134,13 +145,13 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 	addr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	allOuts := ch.Env.utxoDB.GetAddressOutputs(addr)
 
-	metadata := sctransaction.NewRequestMetadata().
+	metadata := request.NewRequestMetadata().
 		WithTarget(req.target).
 		WithEntryPoint(req.entryPoint).
 		WithArgs(req.args)
 
 	data := metadata.Bytes()
-	mdataBack := sctransaction.RequestMetadataFromBytes(data)
+	mdataBack := request.RequestMetadataFromBytes(data)
 	require.True(ch.Env.T, mdataBack.ParsedOk())
 
 	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.LogicalTime())
@@ -152,7 +163,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 		require.NoError(ch.Env.T, err)
 	}
 
-	err = txb.AddReminderOutputIfNeeded(addr, nil, true)
+	err = txb.AddRemainderOutputIfNeeded(addr, nil, true)
 	require.NoError(ch.Env.T, err)
 
 	tx, err := txb.BuildWithED25519(keyPair)
@@ -183,6 +194,23 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *ed25519.KeyPair) (dic
 	return ret, err
 }
 
+func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair) (dict.Dict, error) {
+	if keyPair == nil {
+		keyPair = ch.OriginatorKeyPair
+	}
+	r := req.NewRequestOffLedger(keyPair)
+
+	ch.reqCounter.Add(1)
+	ch.mempool.ReceiveRequest(r)
+
+	ready := ch.mempool.GetReadyList()
+	if len(ready) == 0 {
+		ch.Log.Infof("waiting for solidification")
+		return nil, nil
+	}
+	return ch.runBatch(ready, "off-ledger")
+}
+
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, dict.Dict, error) {
 	tx, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {
@@ -208,7 +236,7 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vctx := viewcontext.New(ch.ChainID, ch.State.Variables(), ch.State.Timestamp(), ch.proc, ch.Log)
+	vctx := viewcontext.New(ch.ChainID, ch.StateReader, ch.proc, ch.Log)
 	a, ok, err := req.args.SolidifyRequestArguments(ch.Env.blobCache)
 	if err != nil || !ok {
 		return nil, fmt.Errorf("solo.internal error: can't solidify args")
@@ -227,7 +255,7 @@ func (ch *Chain) CallView(scName string, funName string, params ...interface{}) 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	vctx := viewcontext.New(ch.ChainID, ch.State.Variables(), ch.State.Timestamp(), ch.proc, ch.Log)
+	vctx := viewcontext.New(ch.ChainID, ch.StateReader, ch.proc, ch.Log)
 	return vctx.CallView(coretypes.Hn(scName), coretypes.Hn(funName), p)
 }
 

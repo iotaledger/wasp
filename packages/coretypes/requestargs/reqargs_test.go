@@ -3,16 +3,17 @@ package requestargs
 import (
 	"bytes"
 	"fmt"
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestRequestArguments1(t *testing.T) {
@@ -83,7 +84,7 @@ func TestRequestArguments3(t *testing.T) {
 
 	log := testlogger.NewLogger(t)
 	db := dbprovider.NewInMemoryDBProvider(log)
-	reg := registry.NewRegistry(nil, log, db)
+	reg := registry_pkg.NewRegistry(nil, log, db)
 
 	d, ok, err := r.SolidifyRequestArguments(reg)
 	require.NoError(t, err)
@@ -119,7 +120,7 @@ func TestRequestArguments4(t *testing.T) {
 
 	log := testlogger.NewLogger(t)
 	db := dbprovider.NewInMemoryDBProvider(log)
-	reg := registry.NewRegistry(nil, log, db)
+	reg := registry_pkg.NewRegistry(nil, log, db)
 
 	_, ok, err := r.SolidifyRequestArguments(reg, downloader.New(log, "http://some.fake.address.lt"))
 	require.NoError(t, err)
@@ -132,24 +133,31 @@ func TestRequestArguments5(t *testing.T) {
 	r.AddEncodeSimple("arg2", []byte("data2"))
 	r.AddEncodeSimple("arg3", []byte("data3"))
 	data := []byte("data4-data4-data4-data4-data4-data4-data4")
-	r.AddAsBlobRef("arg4", data)
-	h := hashing.HashData(data)
+	hash := r.AddAsBlobRef("arg4", data)
 
 	require.Len(t, r, 4)
 	require.EqualValues(t, r["-arg1"], "data1")
 	require.EqualValues(t, r["-arg2"], "data2")
 	require.EqualValues(t, r["-arg3"], "data3")
-	require.EqualValues(t, r["*arg4"], h[:])
+	require.EqualValues(t, r["*arg4"], hash[:])
 
 	log := testlogger.NewLogger(t)
 	db := dbprovider.NewInMemoryDBProvider(log)
-	reg := registry.NewRegistry(nil, log, db)
+	reg := registry_pkg.NewRegistry(nil, log, db)
 
+	// cannot solidify yet
+	back, ok, err := r.SolidifyRequestArguments(reg)
+	require.NoError(t, err)
+	require.False(t, ok)
+	require.Nil(t, back)
+
+	// add missing data to blob cache
 	hback, err := reg.PutBlob(data)
 	require.NoError(t, err)
-	require.EqualValues(t, h, hback)
+	require.EqualValues(t, hash, hback)
 
-	back, ok, err := r.SolidifyRequestArguments(reg)
+	// now we can solidify
+	back, ok, err = r.SolidifyRequestArguments(reg)
 	require.NoError(t, err)
 	require.True(t, ok)
 
@@ -175,19 +183,22 @@ func TestRequestArgumentsDeterminism(t *testing.T) {
 		darr2[i] = darr1[perm[i]]
 	}
 
+	// add some args
 	r1 := New(nil)
 	for i, s := range darr1 {
 		r1.AddEncodeSimple(kv.Key(s), []byte(darr2[i]))
 	}
 	r1.AddAsBlobRef("---", data)
 
+	// add same args in different order
 	r2 := New(nil)
-	r1.AddAsBlobRef("---", data)
+	r2.AddAsBlobRef("---", data)
 	for i := range darr1 {
 		r2.AddEncodeSimple(kv.Key(darr1[perm[i]]), []byte(darr2[perm[i]]))
 	}
 
+	// hash should be deterministic; independent of order
 	h1 := hashing.HashData(util.MustBytes(r1))
-	h2 := hashing.HashData(util.MustBytes(r1))
+	h2 := hashing.HashData(util.MustBytes(r2))
 	require.EqualValues(t, h1, h2)
 }

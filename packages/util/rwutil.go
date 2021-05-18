@@ -3,10 +3,10 @@ package util
 import (
 	"encoding"
 	"encoding/binary"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"io"
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
 )
@@ -37,7 +37,6 @@ func MustUint16From2Bytes(b []byte) uint16 {
 		panic("len(b) != 2")
 	}
 	return binary.LittleEndian.Uint16(b[:])
-
 }
 
 func Uint32To4Bytes(val uint32) []byte {
@@ -87,6 +86,10 @@ func Uint64To8Bytes(val uint64) []byte {
 	var tmp8 [8]byte
 	binary.LittleEndian.PutUint64(tmp8[:], val)
 	return tmp8[:]
+}
+
+func Int64To8Bytes(val int64) []byte {
+	return Uint64To8Bytes(uint64(val))
 }
 
 func WriteUint16(w io.Writer, val uint16) error {
@@ -183,7 +186,12 @@ func ReadBytes16(r io.Reader) ([]byte, error) {
 	return ret, nil
 }
 
+const MaxUint32 = int(^uint32(0))
+
 func WriteBytes32(w io.Writer, data []byte) error {
+	if len(data) > MaxUint32 {
+		panic("WriteBytes32: too long data")
+	}
 	err := WriteUint32(w, uint32(len(data)))
 	if err != nil {
 		return err

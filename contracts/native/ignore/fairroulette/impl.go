@@ -152,7 +152,7 @@ func placeBet(ctx coretypes.Sandbox) error {
 	// entropy saved this way is derived (hashed) from the locking transaction hash
 	// we do this trick to be able to deterministically check if smart contract is really fair.
 	// The played color is a deterministic function of the hash of transaction which locked the bets
-	if collections.NewArray(state, StateVarLockedBets).MustLen() > 0 {
+	if collections.NewArray16(state, StateVarLockedBets).MustLen() > 0 {
 		ok := state.MustHas(StateVarEntropyFromLocking)
 		if !ok {
 			entropy := codec.EncodeHashValue(ctx.GetEntropy())
@@ -176,7 +176,7 @@ func placeBet(ctx coretypes.Sandbox) error {
 	if !ok {
 		return fmt.Errorf("wrong request, no Color specified")
 	}
-	firstBet := collections.NewArray(state, StateVarBets).MustLen() == 0
+	firstBet := collections.NewArray16(state, StateVarBets).MustLen() == 0
 
 	reqid := ctx.RequestID()
 	betInfo := &BetInfo{
@@ -187,7 +187,7 @@ func placeBet(ctx coretypes.Sandbox) error {
 	}
 
 	// save the bet info in the array
-	collections.NewArray(state, StateVarBets).MustPush(encodeBetInfo(betInfo))
+	collections.NewArray16(state, StateVarBets).MustPush(encodeBetInfo(betInfo))
 
 	ctx.Event(fmt.Sprintf("Place bet: player: %s sum: %d color: %d req: %s", sender.String(), sum, col, reqid.Short()))
 
@@ -261,9 +261,9 @@ func lockBets(ctx coretypes.Sandbox) error {
 	}
 	state := ctx.State()
 	// append all current bets to the locked bets array
-	lockedBets := collections.NewArray(state, StateVarLockedBets)
-	lockedBets.MustExtend(collections.NewArrayReadOnly(state, StateVarBets))
-	collections.NewArray(state, StateVarBets).MustErase()
+	lockedBets := collections.NewArray16(state, StateVarLockedBets)
+	lockedBets.MustExtend(collections.NewArray16ReadOnly(state, StateVarBets))
+	collections.NewArray16(state, StateVarBets).MustErase()
 
 	numLockedBets := lockedBets.MustLen()
 	ctx.Event(fmt.Sprintf("lockBets: num = %d", numLockedBets))
@@ -292,7 +292,7 @@ func playAndDistribute(ctx coretypes.Sandbox) error {
 	}
 	state := ctx.State()
 
-	lockedBetsArray := collections.NewArray(state, StateVarLockedBets)
+	lockedBetsArray := collections.NewArray16(state, StateVarLockedBets)
 	numLockedBets := lockedBetsArray.MustLen()
 	if numLockedBets == 0 {
 		// nothing to play. Should not happen
@@ -380,7 +380,7 @@ func playAndDistribute(ctx coretypes.Sandbox) error {
 }
 
 func addToWinsPerColor(ctx coretypes.Sandbox, winningColor byte) {
-	winsPerColorArray := collections.NewArray(ctx.State(), StateArrayWinsPerColor)
+	winsPerColorArray := collections.NewArray16(ctx.State(), StateArrayWinsPerColor)
 
 	// first time? Initialize counters
 	if winsPerColorArray.MustLen() == 0 {

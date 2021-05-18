@@ -2,11 +2,12 @@ package admapi
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"net/http"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/plugins/chains"
@@ -33,12 +34,12 @@ func handleActivateChain(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	bd, err := registry.ActivateChainRecord(chainID)
+	bd, err := registry_pkg.ActivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}
 
-	log.Debugw("calling Nodes.Activate", "chainID", bd.ChainID.String())
+	log.Debugw("calling Chains.Activate", "chainID", bd.ChainID.String())
 	if err := chains.AllChains().Activate(bd); err != nil {
 		return err
 	}
@@ -55,7 +56,7 @@ func handleDeactivateChain(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	bd, err := registry.DeactivateChainRecord(chainID)
+	bd, err := registry_pkg.DeactivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}

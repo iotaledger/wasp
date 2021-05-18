@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
-func (c *Chains) dispatchMsgTransaction(msg *txstream.MsgTransaction) {
+func (c *Chains) dispatchTransactionMsg(msg *txstream.MsgTransaction) {
 	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
 	if !ok {
 		c.log.Warnf("chains: cannot dispatch transaction message to non-alias address")
@@ -25,7 +25,7 @@ func (c *Chains) dispatchMsgTransaction(msg *txstream.MsgTransaction) {
 	chain.ReceiveTransaction(msg.Tx)
 }
 
-func (c *Chains) dispatchMsgInclusionState(msg *txstream.MsgTxInclusionState) {
+func (c *Chains) dispatchInclusionStateMsg(msg *txstream.MsgTxInclusionState) {
 	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
 	if !ok {
 		c.log.Warnf("chains: cannot dispatch inclusion state message to non-alias address")
@@ -54,7 +54,7 @@ func (c *Chains) dispatchOutputMsg(msg *txstream.MsgOutput) {
 	chainID := coretypes.NewChainID(aliasAddr)
 	chain := c.Get(chainID)
 	if chain == nil {
-		// not interested in this chainID
+		// not interested in this message
 		return
 	}
 	c.log.Debugw("dispatch output",
@@ -62,4 +62,18 @@ func (c *Chains) dispatchOutputMsg(msg *txstream.MsgOutput) {
 		"chainid", chainID.String(),
 	)
 	chain.ReceiveOutput(msg.Output)
+}
+
+func (c *Chains) dispatchUnspentAliasOutputMsg(msg *txstream.MsgUnspentAliasOutput) {
+	chainID := coretypes.NewChainID(msg.AliasAddress)
+	chain := c.Get(chainID)
+	if chain == nil {
+		// not interested in this message
+		return
+	}
+	c.log.Debugw("dispatch state",
+		"outputID", coretypes.OID(msg.AliasOutput.ID()),
+		"chainid", chainID.String(),
+	)
+	chain.ReceiveState(msg.AliasOutput, msg.Timestamp)
 }

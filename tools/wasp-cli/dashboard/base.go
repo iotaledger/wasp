@@ -109,7 +109,7 @@ const TplSCInfo = `
     <p>
 	  <ul>
 		<li>Index: <code>{{.Status.BlockIndex}}</code></li>
-		<li>Timestamp: <code>{{.Status.Timestamp}}</code></li>
+		<li>Timestamp: <code>{{.Status.OutputTimestamp}}</code></li>
 		<li>Anchor transaction: <code>{{.Status.StateTxId}}</code></li>
 		<li>State hash: <code>{{.Status.StateHash}}</code></li>
 		<li>Batched requests:</li>

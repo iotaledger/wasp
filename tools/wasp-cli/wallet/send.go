@@ -34,7 +34,7 @@ var sendFundsCmd = &cobra.Command{
 			txb := utxoutil.NewBuilder(outs...)
 			err := txb.AddSigLockedColoredOutput(targetAddress, map[ledgerstate.Color]uint64{color: uint64(amount)})
 			log.Check(err)
-			err = txb.AddReminderOutputIfNeeded(sourceAddress, nil, true)
+			err = txb.AddRemainderOutputIfNeeded(sourceAddress, nil, true)
 			log.Check(err)
 			return txb.BuildWithED25519(wallet.KeyPair())
 		})

@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
-	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 	"github.com/mr-tron/base58"
 )
@@ -23,7 +22,7 @@ func (d *Dashboard) initChainBlob(e *echo.Echo, r renderer) {
 	route.Name = "chainBlob"
 	r[route.Path] = d.makeTemplate(e, tplChainBlob, tplWs)
 
-	route = e.GET("/chain/:chainid/blob/:hash/raw/:field", handleChainBlobDownload)
+	route = e.GET("/chain/:chainid/blob/:hash/raw/:field", d.handleChainBlobDownload)
 	route.Name = "chainBlobDownload"
 }
 
@@ -48,9 +47,9 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 		Hash:    hash,
 	}
 
-	chain := chains.AllChains().Get(chainID)
+	chain := d.wasp.GetChain(chainID)
 	if chain != nil {
-		fields, err := callView(chain, blob.Interface.Hname(), blob.FuncGetBlobInfo, codec.MakeDict(map[string]interface{}{
+		fields, err := d.wasp.CallView(chain, blob.Interface.Hname(), blob.FuncGetBlobInfo, codec.MakeDict(map[string]interface{}{
 			blob.ParamHash: hash,
 		}))
 		if err != nil {
@@ -59,7 +58,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 		result.Blob = []BlobField{}
 		for field := range fields {
 			field := []byte(field)
-			value, err := callView(chain, blob.Interface.Hname(), blob.FuncGetBlobField, codec.MakeDict(map[string]interface{}{
+			value, err := d.wasp.CallView(chain, blob.Interface.Hname(), blob.FuncGetBlobField, codec.MakeDict(map[string]interface{}{
 				blob.ParamHash:  hash,
 				blob.ParamField: field,
 			}))
@@ -76,7 +75,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), result)
 }
 
-func handleChainBlobDownload(c echo.Context) error {
+func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
 	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
@@ -92,12 +91,12 @@ func handleChainBlobDownload(c echo.Context) error {
 		return err
 	}
 
-	chain := chains.AllChains().Get(chainID)
+	chain := d.wasp.GetChain(chainID)
 	if chain == nil {
 		return httperrors.NotFound("Not found")
 	}
 
-	value, err := callView(chain, blob.Interface.Hname(), blob.FuncGetBlobField, codec.MakeDict(map[string]interface{}{
+	value, err := d.wasp.CallView(chain, blob.Interface.Hname(), blob.FuncGetBlobField, codec.MakeDict(map[string]interface{}{
 		blob.ParamHash:  hash,
 		blob.ParamField: field,
 	}))

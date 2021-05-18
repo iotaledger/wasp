@@ -8,6 +8,8 @@ package root
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
@@ -76,6 +78,11 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	err = storeAndInitContract(ctx, rec, nil)
 	a.Require(err == nil, "root.init.fail: %v", err)
 
+	// deploy blocklog
+	rec = NewContractRecord(blocklog.Interface, &coretypes.AgentID{})
+	err = storeAndInitContract(ctx, rec, nil)
+	a.Require(err == nil, "root.init.fail: %v", err)
+
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.Set(VarChainID, codec.EncodeChainID(*chainID))
 	state.Set(VarChainOwnerID, codec.EncodeAgentID(ctx.Caller())) // chain owner is whoever sends init request
@@ -129,7 +136,7 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 		ProgramHash: progHash,
 		Description: description,
 		Name:        name,
-		Creator:     *ctx.Caller(),
+		Creator:     ctx.Caller(),
 	}, initParams)
 	a.Require(err == nil, "root.deployContract.fail: %v", err)
 
@@ -326,7 +333,7 @@ func grantDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-// grantDeployPermission revokes permission to deploy contracts
+// revokeDeployPermission revokes permission to deploy contracts
 // Input:
 //  - ParamDeployer coretypes.AgentID
 func revokeDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {

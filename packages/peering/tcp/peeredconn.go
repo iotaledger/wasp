@@ -4,8 +4,9 @@
 package tcp
 
 import (
-	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
 	"net"
+
+	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
 
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/hive.go/events"
@@ -71,6 +72,7 @@ func (c *peeredConnection) receiveData(data []byte) {
 		// it is peered but maybe not handshaked yet (can only be outbound)
 		if c.peer.handshakeOk {
 			// it is handshake-ed
+			msg.SenderNetID = c.peer.NetID()
 			c.net.events.Trigger(&peering.RecvEvent{
 				From: c.peer,
 				Msg:  msg,

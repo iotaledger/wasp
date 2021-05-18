@@ -86,6 +86,10 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 	chain.AssertOwnersIotas(2)
 
 	// withdraw owner's iotas
+	_, ownerFromChain, _ := chain.GetInfo()
+	require.True(t, chain.OriginatorAgentID.Equals(&ownerFromChain))
+	t.Logf("origintor/owner: %s", chain.OriginatorAgentID.String())
+
 	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdraw).WithIotas(1)
 	_, err = chain.PostRequestSync(req, chain.OriginatorKeyPair)
 	require.NoError(t, err)

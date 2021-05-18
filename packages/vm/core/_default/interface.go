@@ -4,14 +4,11 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 )
 
-const (
-	Name        = "_default"
-	description = "Default Contract"
-)
+const description = "Default core contract"
 
 var (
 	Interface = &coreutil.ContractInterface{
-		Name:        Name,
+		Name:        coreutil.CoreContractDefault,
 		Description: description,
 	}
 )

@@ -4,20 +4,29 @@
 package solo
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
-	"github.com/iotaledger/wasp/packages/dbprovider"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"go.uber.org/atomic"
-	"golang.org/x/xerrors"
 	"math/rand"
+	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/vm"
+
+	"github.com/iotaledger/wasp/packages/vm/runvm"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/mempool_old"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
+	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"go.uber.org/atomic"
+	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
@@ -37,7 +46,7 @@ const DefaultTimeStep = 1 * time.Millisecond
 // Saldo is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewKeyPairWithFunds() and such
 const (
-	Saldo              = uint64(1337)
+	Saldo              = utxodb.RequestFundsAmount
 	DustThresholdIotas = uint64(1)
 	ChainDustThreshold = uint64(100)
 	MaxRequestsInBlock = 100
@@ -57,7 +66,11 @@ type Solo struct {
 	logicalTime time.Time
 	timeStep    time.Duration
 	chains      map[[33]byte]*Chain
+	vmRunner    vm.VMRunner
 	doOnce      sync.Once
+	// publisher wait group
+	publisherWG      sync.WaitGroup
+	publisherEnabled atomic.Bool
 }
 
 // Chain represents state of individual chain.
@@ -91,7 +104,8 @@ type Chain struct {
 	ValidatorFeeTarget coretypes.AgentID
 
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
-	State state.VirtualState
+	State       state.VirtualState
+	StateReader state.StateReader
 
 	// Log is the named logger of the chain
 	Log *logger.Logger
@@ -102,7 +116,7 @@ type Chain struct {
 	// related to asynchronous backlog processing
 	runVMMutex sync.Mutex
 	reqCounter atomic.Int32
-	mempool    chain.Mempool
+	mempool    chain.MempoolOld
 }
 
 var (
@@ -135,8 +149,9 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		logicalTime: initialTime,
 		timeStep:    DefaultTimeStep,
 		chains:      make(map[[33]byte]*Chain),
+		vmRunner:    runvm.NewVMRunner(),
 	}
-	ret.logger.Infof("Solo environment created with initial logical time %v", initialTime)
+	ret.logger.Infof("Solo environment has been created with initial logical time %v", initialTime)
 	return ret
 }
 
@@ -144,7 +159,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 //
 // If 'chainOriginator' is nil, new one is generated and solo.Saldo (=1337) iotas are loaded from the UTXODB faucet.
 // If 'validatorFeeTarget' is skipped, it is assumed equal to OriginatorAgentID
-// To deploy the chai instance the following steps are performed:
+// To deploy a chain instance the following steps are performed:
 //  - chain signature scheme (private key), chain address and chain ID are created
 //  - empty virtual state is initialized
 //  - origin transaction is created by the originator and added to the UTXODB
@@ -152,7 +167,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 //  - backlog processing threads (goroutines) are started
 //  - VM processor cache is initialized
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
-//    'blob', 'accountsc', 'chainlog'
+//    '_default', 'blocklog', 'blob', 'accounts' and 'eventlog',
 // Upon return, the chain is fully functional to process requests
 func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
 	env.logger.Debugf("deploying new chain '%s'", name)
@@ -177,7 +192,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 
 	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
 	inputs := env.utxoDB.GetAddressOutputs(originatorAddr)
-	originTx, chainID, err := sctransaction.NewChainOriginTransaction(chainOriginator, stateAddr, bals, env.LogicalTime(), inputs...)
+	originTx, chainID, err := transaction.NewChainOriginTransaction(chainOriginator, stateAddr, bals, env.LogicalTime(), inputs...)
 	require.NoError(env.T, err)
 	err = env.utxoDB.AddTransaction(originTx)
 	require.NoError(env.T, err)
@@ -189,6 +204,14 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Base58())
 
 	chainlog := env.logger.Named(name)
+	vs, err := state.CreateOriginState(env.dbProvider, &chainID)
+	require.NoError(env.T, err)
+	require.EqualValues(env.T, 0, vs.BlockIndex())
+	require.True(env.T, vs.Timestamp().IsZero())
+
+	srdr, err := state.NewStateReader(env.dbProvider, &chainID)
+	require.NoError(env.T, err)
+
 	ret := &Chain{
 		Env:                    env,
 		Name:                   name,
@@ -199,20 +222,28 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		OriginatorAddress:      originatorAddr,
 		OriginatorAgentID:      *originatorAgentID,
 		ValidatorFeeTarget:     *feeTarget,
-		State:                  state.NewZeroVirtualState(env.dbProvider.GetPartition(&chainID)),
+		State:                  vs,
+		StateReader:            srdr,
 		proc:                   processors.MustNew(),
 		Log:                    chainlog,
-		mempool:                mempool.New(env.dbProvider.GetPartition(&chainID), env.blobCache, chainlog),
 	}
+	ret.mempool = mempool_old.New(ret.StateReader, env.blobCache, chainlog)
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
-	originBlock := state.MustNewOriginBlock().
-		WithApprovingOutputID(ledgerstate.NewOutputID(originTx.ID(), 0))
-	err = ret.State.CommitToDb(originBlock)
-	require.NoError(env.T, err)
+	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
+		if !env.publisherEnabled.Load() {
+			return
+		}
+		msg := msgType + " " + strings.Join(parts, " ")
+		env.publisherWG.Add(1)
+		go func() {
+			chainlog.Infof("SOLO PUBLISHER (test %s):: '%s'", env.T.Name(), msg)
+			env.publisherWG.Done()
+		}()
+	}))
 
-	initTx, err := sctransaction.NewRootInitRequestTransaction(
+	initTx, err := transaction.NewRootInitRequestTransaction(
 		ret.OriginatorKeyPair,
 		chainID,
 		"'solo' testing chain",
@@ -251,14 +282,15 @@ func (env *Solo) AddToLedger(tx *ledgerstate.Transaction) error {
 	return env.utxoDB.AddTransaction(tx)
 }
 
-func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chid coretypes.ChainID) ([]coretypes.Request, error) {
+// RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
+func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID coretypes.ChainID) ([]coretypes.Request, error) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 
 	m := env.requestsByChain(tx)
-	ret, ok := m[chid.Array()]
+	ret, ok := m[chainID.Array()]
 	if !ok {
-		return nil, xerrors.Errorf("chain %s does not exist", chid.String())
+		return nil, xerrors.Errorf("chain %s does not exist", chainID.String())
 	}
 	return ret, nil
 }
@@ -281,12 +313,12 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]cor
 		if !ok {
 			lst = make([]coretypes.Request, 0)
 		}
-		ret[arr] = append(lst, sctransaction.RequestOnLedgerFromOutput(o, tx.Essence().Timestamp(), sender, utxoutil.GetMintedAmounts(tx)))
+		ret[arr] = append(lst, request.RequestOnLedgerFromOutput(o, tx.Essence().Timestamp(), sender, utxoutil.GetMintedAmounts(tx)))
 	}
 	return ret
 }
 
-// EnqueueRequests dispatches requests contained in the transaction among chains
+// EnqueueRequests adds requests contained in the transaction to mempools of respective target chains
 func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
@@ -308,6 +340,16 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 	}
 }
 
+// EnablePublisher enables Solo publisher
+func (env *Solo) EnablePublisher(enable bool) {
+	env.publisherEnabled.Store(enable)
+}
+
+// WaitPublisher waits until all messages are published
+func (env *Solo) WaitPublisher() {
+	env.publisherWG.Wait()
+}
+
 func (ch *Chain) GetChainOutput() *ledgerstate.AliasOutput {
 	outs := ch.Env.utxoDB.GetAliasOutputs(ch.ChainID.AsAddress())
 	require.EqualValues(ch.Env.T, 1, len(outs))
@@ -322,7 +364,7 @@ func (ch *Chain) collateBatch() []coretypes.Request {
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
 	ret := make([]coretypes.Request, 0)
-	ready := ch.mempool.GetReadyList(0)
+	ready := ch.mempool.GetReadyList()
 	batchSize := len(ready)
 	if batchSize > maxBatch {
 		batchSize = maxBatch
@@ -330,7 +372,7 @@ func (ch *Chain) collateBatch() []coretypes.Request {
 	ready = ready[:batchSize]
 	for _, req := range ready {
 		// using logical clock
-		if onLegderRequest, ok := req.(*sctransaction.RequestOnLedger); ok {
+		if onLegderRequest, ok := req.(*request.RequestOnLedger); ok {
 			if onLegderRequest.TimeLock().Before(ch.Env.LogicalTime()) {
 				if !onLegderRequest.TimeLock().IsZero() {
 					ch.Log.Infof("unlocked time-locked request %s", req.ID())
@@ -365,10 +407,8 @@ func (ch *Chain) backlogLen() int {
 }
 
 // solidifies request arguments without mempool (only for solo)
-func (ch *Chain) solidifyRequest(r coretypes.Request) {
-	onLedgerRequest, ok := r.(*sctransaction.RequestOnLedger)
-	require.True(ch.Env.T, ok)
-	ok, err := onLedgerRequest.SolidifyArgs(ch.Env.blobCache)
+func (ch *Chain) solidifyRequest(req coretypes.Request) {
+	ok, err := req.SolidifyArgs(ch.Env.blobCache)
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 }

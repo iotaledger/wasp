@@ -4,18 +4,18 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 // PutChainRecord sends a request to write a Record
-func (c *WaspClient) PutChainRecord(rec *registry.ChainRecord) error {
+func (c *WaspClient) PutChainRecord(rec *registry_pkg.ChainRecord) error {
 	return c.do(http.MethodPost, routes.PutChainRecord(), model.NewChainRecord(rec), nil)
 }
 
 // GetChainRecord fetches a Record by address
-func (c *WaspClient) GetChainRecord(chainid coretypes.ChainID) (*registry.ChainRecord, error) {
+func (c *WaspClient) GetChainRecord(chainid coretypes.ChainID) (*registry_pkg.ChainRecord, error) {
 	res := &model.ChainRecord{}
 	if err := c.do(http.MethodGet, routes.GetChainRecord(chainid.Base58()), nil, res); err != nil {
 		return nil, err
@@ -24,12 +24,12 @@ func (c *WaspClient) GetChainRecord(chainid coretypes.ChainID) (*registry.ChainR
 }
 
 // GetChainRecordList fetches the list of all chains in the node
-func (c *WaspClient) GetChainRecordList() ([]*registry.ChainRecord, error) {
+func (c *WaspClient) GetChainRecordList() ([]*registry_pkg.ChainRecord, error) {
 	var res []*model.ChainRecord
 	if err := c.do(http.MethodGet, routes.ListChainRecords(), nil, &res); err != nil {
 		return nil, err
 	}
-	list := make([]*registry.ChainRecord, len(res))
+	list := make([]*registry_pkg.ChainRecord, len(res))
 	for i, bd := range res {
 		list[i] = bd.Record()
 	}

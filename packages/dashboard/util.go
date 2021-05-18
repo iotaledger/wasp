@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
@@ -37,8 +38,8 @@ func formatTimestamp(ts interface{}) string {
 	return t.UTC().Format(time.RFC3339)
 }
 
-func exploreAddressUrl(baseUrl string) func(address fmt.Stringer) string {
-	return func(address fmt.Stringer) string {
-		return baseUrl + "/" + address.String()
+func exploreAddressUrl(baseUrl string) func(address ledgerstate.Address) string {
+	return func(address ledgerstate.Address) string {
+		return baseUrl + "/" + address.Base58()
 	}
 }

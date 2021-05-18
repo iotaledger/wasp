@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 // Client allows to send webapi requests to a specific chain in the node
@@ -49,9 +49,9 @@ func (c *Client) PostRequest(
 		par = params[0]
 	}
 
-	return c.GoshimmerClient.PostRequestTransaction(sctransaction.NewRequestTransactionParams{
+	return c.GoshimmerClient.PostRequestTransaction(transaction.NewRequestTransactionParams{
 		SenderKeyPair: c.KeyPair,
-		Requests: []sctransaction.RequestParams{{
+		Requests: []transaction.RequestParams{{
 			ChainID:    c.ChainID,
 			Contract:   contractHname,
 			EntryPoint: entryPoint,

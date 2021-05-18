@@ -4,10 +4,14 @@
 package chainimpl
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/request"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/transaction"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -90,7 +94,7 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 	c.log.Debugf("ReceiveTransaction: %s", tx.ID().Base58())
-	reqs, err := sctransaction.RequestsOnLedgerFromTransaction(tx, c.chainID.AsAddress())
+	reqs, err := request.RequestsOnLedgerFromTransaction(tx, c.chainID.AsAddress())
 	if err != nil {
 		c.log.Warnf("failed to parse transaction %s: %v", tx.ID().Base58(), err)
 		return
@@ -98,7 +102,7 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 	for _, req := range reqs {
 		c.ReceiveRequest(req)
 	}
-	if chainOut := sctransaction.GetAliasOutput(tx, c.chainID.AsAddress()); chainOut != nil {
+	if chainOut := transaction.GetAliasOutput(tx, c.chainID.AsAddress()); chainOut != nil {
 		c.ReceiveState(chainOut, tx.Essence().Timestamp())
 	}
 }
@@ -109,6 +113,8 @@ func (c *chainObj) ReceiveRequest(req coretypes.Request) {
 }
 
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
+	fmt.Printf("++++++++++++ receive state %s\n", stateOutput.Address().Base58())
+
 	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
 		stateOutput.GetStateIndex(), coretypes.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
 	c.ReceiveMessage(&chain.StateMsg{
@@ -141,11 +147,12 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	processed, err := state.IsRequestCompleted(c.dbProvider.GetPartition(c.ID()), reqID)
+	stateReader, err := state.NewStateReader(c.dbProvider, &c.chainID)
 	if err != nil {
-		panic(err)
+		c.log.Errorf("GetRequestProcessingStatus: %v", err)
+		return chain.RequestProcessingStatusUnknown
 	}
-	if !processed {
+	if !blocklog.IsRequestProcessed(stateReader, &reqID) {
 		return chain.RequestProcessingStatusUnknown
 	}
 	return chain.RequestProcessingStatusCompleted
@@ -175,6 +182,6 @@ func (c *chainObj) Events() chain.ChainEvents {
 	return c
 }
 
-func (c *chainObj) Mempool() chain.Mempool {
+func (c *chainObj) Mempool() chain.MempoolOld {
 	return c.mempool
 }

@@ -12,12 +12,12 @@ import (
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 )
 
-const PluginName = "Nodes"
+const PluginName = "Chains"
 
 var (
 	log         *logger.Logger
 	allChains   *chains.Chains
-	initialized = ready.New("Nodes")
+	initialized = ready.New(PluginName)
 )
 
 func Init() *node.Plugin {

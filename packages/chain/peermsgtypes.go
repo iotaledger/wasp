@@ -4,6 +4,8 @@
 package chain
 
 import (
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -11,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/vm"
-	"time"
 )
 
 // Message types for the committee communications.
@@ -22,6 +23,7 @@ const (
 	MsgSignedHash              = 3 + peering.FirstUserMsgCode
 	MsgGetBlock                = 4 + peering.FirstUserMsgCode
 	MsgBlock                   = 5 + peering.FirstUserMsgCode
+	MsgSignedResult            = 6 + peering.FirstUserMsgCode
 )
 
 type TimerTick int
@@ -71,15 +73,22 @@ type SignedHashMsg struct {
 	SigShare      tbdn.SigShare
 }
 
-// request block of updates from peer. Used in sync process
-type GetBlockMsg struct {
+type SignedResultMsg struct {
 	SenderIndex uint16
+	EssenceHash hashing.HashValue
+	SigShare    tbdn.SigShare
+}
+
+// GetBlockMsg StateManager queries specific block data from another peer (access node)
+type GetBlockMsg struct {
+	SenderNetID string
 	BlockIndex  uint32
 }
 
+// BlockMsg StateManager in response to GetBlockMsg sends block data to the querying node's StateManager
 type BlockMsg struct {
-	SenderIndex uint16
-	Block       state.Block
+	SenderNetID string
+	BlockBytes  []byte
 }
 
 // DismissChainMsg sent by component to the chain core in case of major setback
@@ -87,37 +96,41 @@ type DismissChainMsg struct {
 	Reason string
 }
 
-// state manager notifies consensus about changed state
-// only sent internally within committee
-// state transition is always from state N to state N+1
+// StateTransitionMsg StateManager -> ConsensusOld. Notifies consensus about changed state
 type StateTransitionMsg struct {
 	// new variable state
-	VariableState state.VirtualState
+	State state.VirtualState
 	// corresponding state transaction
-	ChainOutput *ledgerstate.AliasOutput
+	StateOutput *ledgerstate.AliasOutput
 	//
-	Timestamp time.Time
-	// processed requests
-	RequestIDs []coretypes.RequestID
+	StateTimestamp time.Time
 }
 
-// message of complete batch. Is sent by consensus operator to the state manager as a VM result
-// - state manager to itself when batch is completed after syncing
-type BlockCandidateMsg struct {
-	Block state.Block
+// StateCandidateMsg ConsensusOld -> StateManager. ConsensusOld sends the finalized next state to StateManager
+type StateCandidateMsg struct {
+	State             state.VirtualState
+	ApprovingOutputID ledgerstate.OutputID
 }
 
-// VMResultMsg is the message sent by the async VM task to the chan object upon success full finish
+// VMResultMsg ConsensusOld -> ConsensusOld. VM sends result of async task started by ConsensusOld to itself
 type VMResultMsg struct {
 	Task   *vm.VMTask
 	Leader uint16
 }
 
+// AsynchronousCommonSubsetMsg
+type AsynchronousCommonSubsetMsg struct {
+	ProposedBatchesBin [][]byte
+	SessionID          uint64
+}
+
+// InclusionStateMsg nodeconn plugin sends inclusions state of the transaction to ConsensusOld
 type InclusionStateMsg struct {
 	TxID  ledgerstate.TransactionID
 	State ledgerstate.InclusionState
 }
 
+// StateMsg nodeconn plugin sends the only existing AliasOutput in the chain's address to StateManager
 type StateMsg struct {
 	ChainOutput *ledgerstate.AliasOutput
 	Timestamp   time.Time

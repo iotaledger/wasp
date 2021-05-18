@@ -7,9 +7,11 @@ package statemgr
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"go.uber.org/atomic"
-	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
@@ -20,80 +22,64 @@ import (
 )
 
 type stateManager struct {
-	ready                *ready.Ready
-	dbp                  *dbprovider.DBProvider
-	chain                chain.ChainCore
-	peers                chain.PeerGroupProvider
-	nodeConn             chain.NodeConnection
-	pullStateDeadline    time.Time
-	blockCandidates      map[hashing.HashValue]*candidateBlock
-	solidState           state.VirtualState
-	stateOutput          *ledgerstate.AliasOutput
-	stateOutputTimestamp time.Time
-	currentSyncData      atomic.Value
-	syncingBlocks        map[uint32]*syncingBlock
-	log                  *logger.Logger
+	ready                   *ready.Ready
+	dbp                     *dbprovider.DBProvider
+	chain                   chain.ChainCore
+	peers                   peering.PeerDomainProvider
+	nodeConn                chain.NodeConnection
+	pullStateRetryTime      time.Time
+	solidState              state.VirtualState
+	stateOutput             *ledgerstate.AliasOutput
+	stateOutputTimestamp    time.Time
+	currentSyncData         atomic.Value
+	notifiedSyncedStateHash hashing.HashValue
+	syncingBlocks           *syncingBlocks
+	timers                  Timers
+	log                     *logger.Logger
 
 	// Channels for accepting external events.
 	eventGetBlockMsgCh     chan *chain.GetBlockMsg
 	eventBlockMsgCh        chan *chain.BlockMsg
 	eventStateOutputMsgCh  chan *chain.StateMsg
 	eventOutputMsgCh       chan ledgerstate.Output
-	eventPendingBlockMsgCh chan chain.BlockCandidateMsg
+	eventPendingBlockMsgCh chan chain.StateCandidateMsg
 	eventTimerMsgCh        chan chain.TimerTick
 	closeCh                chan bool
 }
 
 const (
-	pullStatePeriod           = 2 * time.Second
-	periodBetweenSyncMessages = 1 * time.Second
+	numberOfNodesToRequestBlockFromConst = 5
+	maxBlocksToCommitConst               = 10000 //10k
 )
 
-type syncingBlock struct {
-	pullDeadline      time.Time
-	block             state.Block
-	approved          bool
-	finalHash         hashing.HashValue
-	approvingOutputID ledgerstate.OutputID
-}
-
-type candidateBlock struct {
-	// block of state updates, not validated yet
-	block state.Block
-	// resulting variable state after applied the block to the solidState
-	nextState state.VirtualState
-}
-
-func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers chain.PeerGroupProvider, nodeconn chain.NodeConnection, log *logger.Logger) chain.StateManager {
+func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, log *logger.Logger, timersOpt ...Timers) chain.StateManager {
+	var timers Timers
+	if len(timersOpt) > 0 {
+		timers = timersOpt[0]
+	} else {
+		timers = Timers{}
+	}
 	ret := &stateManager{
 		ready:                  ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
 		dbp:                    dbp,
 		chain:                  c,
 		nodeConn:               nodeconn,
-		syncingBlocks:          make(map[uint32]*syncingBlock),
-		blockCandidates:        make(map[hashing.HashValue]*candidateBlock),
+		peers:                  peers,
+		syncingBlocks:          newSyncingBlocks(log, timers.getGetBlockRetry()),
+		timers:                 timers,
 		log:                    log.Named("s"),
+		pullStateRetryTime:     time.Now(),
 		eventGetBlockMsgCh:     make(chan *chain.GetBlockMsg),
 		eventBlockMsgCh:        make(chan *chain.BlockMsg),
 		eventStateOutputMsgCh:  make(chan *chain.StateMsg),
 		eventOutputMsgCh:       make(chan ledgerstate.Output),
-		eventPendingBlockMsgCh: make(chan chain.BlockCandidateMsg),
+		eventPendingBlockMsgCh: make(chan chain.StateCandidateMsg),
 		eventTimerMsgCh:        make(chan chain.TimerTick),
 		closeCh:                make(chan bool),
 	}
-	ret.SetPeers(peers)
 	go ret.initLoadState()
 
 	return ret
-}
-
-func (sm *stateManager) SetPeers(p chain.PeerGroupProvider) {
-	n := uint16(0)
-	if p != nil {
-		n = p.NumPeers()
-		sm.log.Debugf("SetPeers: num = %d", n)
-	}
-	sm.peers = p
 }
 
 func (sm *stateManager) Close() {
@@ -103,10 +89,9 @@ func (sm *stateManager) Close() {
 // initial loading of the solid state
 func (sm *stateManager) initLoadState() {
 	var err error
-	var batch state.Block
 	var stateExists bool
 
-	sm.solidState, batch, stateExists, err = state.LoadSolidState(sm.dbp, sm.chain.ID())
+	sm.solidState, stateExists, err = state.LoadSolidState(sm.dbp, sm.chain.ID())
 	if err != nil {
 		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err)},
@@ -114,14 +99,18 @@ func (sm *stateManager) initLoadState() {
 		return
 	}
 	if stateExists {
-		h := sm.solidState.Hash()
-		txh := batch.ApprovingOutputID()
-		sm.log.Infof("solid state has been loaded. Block index: $%d, State hash: %s, ancor tx: %s",
-			sm.solidState.BlockIndex(), h.String(), txh.String())
+		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
+			sm.solidState.BlockIndex(), sm.solidState.Hash().String())
 	} else {
-		sm.solidState = nil
-		sm.addBlockCandidate(nil)
-		sm.log.Info("solid state does not exist: WAITING FOR THE ORIGIN TRANSACTION")
+		// create origin state in DB
+		sm.solidState, err = state.CreateOriginState(sm.dbp, sm.chain.ID())
+		if err != nil {
+			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
+				Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err)},
+			)
+			return
+		}
+		sm.log.Infof("ORIGIN STATE has been created")
 	}
 	sm.recvLoop() // Start to process external events.
 }
@@ -130,7 +119,7 @@ func (sm *stateManager) Ready() *ready.Ready {
 	return sm.ready
 }
 
-func (sm *stateManager) GetSyncInfo() *chain.SyncInfo {
+func (sm *stateManager) GetStatusSnapshot() *chain.SyncInfo {
 	v := sm.currentSyncData.Load()
 	if v == nil {
 		return nil
@@ -160,7 +149,7 @@ func (sm *stateManager) recvLoop() {
 			}
 		case msg, ok := <-sm.eventPendingBlockMsgCh:
 			if ok {
-				sm.eventBlockCandidateMsg(msg)
+				sm.eventStateCandidateMsg(msg)
 			}
 		case msg, ok := <-sm.eventTimerMsgCh:
 			if ok {

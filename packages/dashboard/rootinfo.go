@@ -13,10 +13,9 @@ import (
 )
 
 type RootInfo struct {
-	ChainID      coretypes.ChainID
-	StateAddress ledgerstate.Address
+	ChainID coretypes.ChainID
 
-	OwnerID          coretypes.AgentID
+	OwnerID          *coretypes.AgentID
 	OwnerIDDelegated *coretypes.AgentID
 
 	Description string
@@ -27,8 +26,8 @@ type RootInfo struct {
 	DefaultValidatorFee uint64
 }
 
-func fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
-	info, err := callView(chain, root.Interface.Hname(), root.FuncGetChainInfo, nil)
+func (d *Dashboard) fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
+	info, err := d.wasp.CallView(chain, root.Interface.Hname(), root.FuncGetChainInfo, nil)
 	if err != nil {
 		err = fmt.Errorf("root view call failed: %v", err)
 		return
@@ -40,10 +39,11 @@ func fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
 		return
 	}
 
-	ret.OwnerID, _, err = codec.DecodeAgentID(info.MustGet(root.VarChainOwnerID))
+	ownerID, _, err := codec.DecodeAgentID(info.MustGet(root.VarChainOwnerID))
 	if err != nil {
 		return
 	}
+	ret.OwnerID = &ownerID
 	delegated, ok, err := codec.DecodeAgentID(info.MustGet(root.VarChainOwnerIDDelegated))
 	if err != nil {
 		return

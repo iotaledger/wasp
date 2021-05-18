@@ -7,10 +7,9 @@ const (
 	ObjectTypeChainRecord
 	ObjectTypeCommitteeRecord
 	ObjectTypeDistributedKeyData
-	ObjectTypeSolidState
-	ObjectTypeStateUpdateBatch
-	ObjectTypeProcessedRequestId
-	ObjectTypeSolidStateIndex
+	ObjectTypeStateHash
+	ObjectTypeStateIndex
+	ObjectTypeBlock
 	ObjectTypeStateVariable
 	ObjectTypeNodeIdentity
 	ObjectTypeBlobCache

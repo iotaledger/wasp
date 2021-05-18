@@ -2,6 +2,8 @@ package kvdecoder
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -66,6 +68,28 @@ func (p *decoder) GetUint64(key kv.Key, def ...uint64) (uint64, error) {
 
 func (p *decoder) MustGetUint64(key kv.Key, def ...uint64) uint64 {
 	ret, err := p.GetUint64(key, def...)
+	if err != nil {
+		p.panic(err)
+	}
+	return ret
+}
+
+func (p *decoder) GetTime(key kv.Key, def ...time.Time) (time.Time, error) {
+	v, exists, err := codec.DecodeTime(p.kv.MustGet(key))
+	if err != nil {
+		return time.Time{}, fmt.Errorf("GetTime: decoding parameter '%s': %v", key, err)
+	}
+	if exists {
+		return v, nil
+	}
+	if len(def) == 0 {
+		return time.Time{}, fmt.Errorf("GetUint32: mandatory parameter '%s' does not exist", key)
+	}
+	return def[0], nil
+}
+
+func (p *decoder) MustGetTime(key kv.Key, def ...time.Time) time.Time {
+	ret, err := p.GetTime(key, def...)
 	if err != nil {
 		p.panic(err)
 	}
@@ -160,6 +184,28 @@ func (p *decoder) MustGetAddress(key kv.Key, def ...ledgerstate.Address) ledgers
 	return ret
 }
 
+func (p *decoder) GetRequestID(key kv.Key, def ...coretypes.RequestID) (coretypes.RequestID, error) {
+	v, exists, err := codec.DecodeRequestID(p.kv.MustGet(key))
+	if err != nil {
+		return coretypes.RequestID{}, fmt.Errorf("GetRequestID: decoding parameter '%s': %v", key, err)
+	}
+	if exists {
+		return v, nil
+	}
+	if len(def) == 0 {
+		return coretypes.RequestID{}, fmt.Errorf("GetRequestID: mandatory parameter '%s' does not exist", key)
+	}
+	return def[0], nil
+}
+
+func (p *decoder) MustGetRequestID(key kv.Key, def ...coretypes.RequestID) coretypes.RequestID {
+	ret, err := p.GetRequestID(key, def...)
+	if err != nil {
+		p.panic(err)
+	}
+	return ret
+}
+
 func (p *decoder) GetAgentID(key kv.Key, def ...coretypes.AgentID) (*coretypes.AgentID, error) {
 	v, exists, err := codec.DecodeAgentID(p.kv.MustGet(key))
 	if err != nil {
@@ -235,7 +281,7 @@ func (p *decoder) GetBytes(key kv.Key, def ...[]byte) ([]byte, error) {
 		return v, nil
 	}
 	if len(def) == 0 {
-		return nil, fmt.Errorf("MustGetBytes: mandatory parameter '%s' does not exist", key)
+		return nil, fmt.Errorf("GetBytes: mandatory parameter '%s' does not exist", key)
 	}
 	return def[0], nil
 }

@@ -3,6 +3,7 @@ package inccounter
 import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -28,7 +29,7 @@ func TestDeployInc(t *testing.T) {
 	require.NoError(t, err)
 	chain.CheckChain()
 	_, _, contracts := chain.GetInfo()
-	require.EqualValues(t, 6, len(contracts))
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
 	checkCounter(chain, 0)
 	chain.CheckAccountLedger()
 }

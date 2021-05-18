@@ -18,6 +18,7 @@ fn on_load() {
     exports.add_func(FUNC_LOCAL_STATE_INTERNAL_CALL, func_local_state_internal_call);
     exports.add_func(FUNC_LOCAL_STATE_POST, func_local_state_post);
     exports.add_func(FUNC_LOCAL_STATE_SANDBOX_CALL, func_local_state_sandbox_call);
+    exports.add_func(FUNC_LOOP, func_loop);
     exports.add_func(FUNC_POST_INCREMENT, func_post_increment);
     exports.add_func(FUNC_REPEAT_MANY, func_repeat_many);
     exports.add_func(FUNC_TEST_LEB128, func_test_leb128);

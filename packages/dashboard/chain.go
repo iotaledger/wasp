@@ -11,12 +11,9 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/plugins/chains"
-	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/labstack/echo/v4"
 )
 
@@ -47,46 +44,40 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 
 	result := &ChainTemplateParams{
 		BaseTemplateParams: d.BaseParams(c, tab),
-		ChainID:            *chainid,
+		ChainID:            chainid,
 	}
 
-	result.ChainRecord, err = registry.ChainRecordFromRegistry(chainid)
+	result.Record, err = d.wasp.GetChainRecord(chainid)
 	if err != nil {
 		return err
 	}
 
-	if result.ChainRecord != nil && result.ChainRecord.Active {
-		result.VirtualState, result.Block, _, err = state.LoadSolidState(database.GetInstance(), chainid)
+	if result.Record != nil && result.Record.Active {
+		result.State, err = d.wasp.GetChainState(chainid)
 		if err != nil {
 			return err
 		}
 
-		theChain := chains.AllChains().Get(chainid)
+		theChain := d.wasp.GetChain(chainid)
 
-		committeeInfo := theChain.GetCommitteeInfo()
-		if committeeInfo != nil {
-			result.Committee.Size = committeeInfo.Size
-			result.Committee.Quorum = committeeInfo.Quorum
-			//result.Committee.NumPeers = theChain.Committee().NumPeers()
-			result.Committee.HasQuorum = committeeInfo.QuorumIsAlive
-			result.Committee.PeerStatus = committeeInfo.PeerStatus
-		}
-		result.RootInfo, err = fetchRootInfo(theChain)
+		result.Committee = theChain.GetCommitteeInfo()
+
+		result.RootInfo, err = d.fetchRootInfo(theChain)
 		if err != nil {
 			return err
 		}
 
-		result.Accounts, err = fetchAccounts(theChain)
+		result.Accounts, err = d.fetchAccounts(theChain)
 		if err != nil {
 			return err
 		}
 
-		result.TotalAssets, err = fetchTotalAssets(theChain)
+		result.TotalAssets, err = d.fetchTotalAssets(theChain)
 		if err != nil {
 			return err
 		}
 
-		result.Blobs, err = fetchBlobs(theChain)
+		result.Blobs, err = d.fetchBlobs(theChain)
 		if err != nil {
 			return err
 		}
@@ -95,56 +86,56 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), result)
 }
 
-func fetchAccounts(chain chain.Chain) ([]coretypes.AgentID, error) {
-	accounts, err := callView(chain, accounts.Interface.Hname(), accounts.FuncAccounts, nil)
+func (d *Dashboard) fetchAccounts(chain chain.Chain) ([]*coretypes.AgentID, error) {
+	accounts, err := d.wasp.CallView(chain, accounts.Interface.Hname(), accounts.FuncAccounts, nil)
 	if err != nil {
 		return nil, fmt.Errorf("accountsc view call failed: %v", err)
 	}
 
-	ret := make([]coretypes.AgentID, 0)
+	ret := make([]*coretypes.AgentID, 0)
 	for k := range accounts {
 		agentid, _, err := codec.DecodeAgentID([]byte(k))
 		if err != nil {
 			return nil, err
 		}
-		ret = append(ret, agentid)
+		ret = append(ret, &agentid)
 	}
 	return ret, nil
 }
 
-func fetchTotalAssets(chain chain.Chain) (map[ledgerstate.Color]uint64, error) {
-	bal, err := callView(chain, accounts.Interface.Hname(), accounts.FuncTotalAssets, nil)
+func (d *Dashboard) fetchTotalAssets(chain chain.Chain) (map[ledgerstate.Color]uint64, error) {
+	bal, err := d.wasp.CallView(chain, accounts.Interface.Hname(), accounts.FuncTotalAssets, nil)
 	if err != nil {
 		return nil, err
 	}
 	return accounts.DecodeBalances(bal)
 }
 
-func fetchBlobs(chain chain.Chain) (map[hashing.HashValue]uint32, error) {
-	ret, err := callView(chain, blob.Interface.Hname(), blob.FuncListBlobs, nil)
+func (d *Dashboard) fetchBlobs(chain chain.Chain) (map[hashing.HashValue]uint32, error) {
+	ret, err := d.wasp.CallView(chain, blob.Interface.Hname(), blob.FuncListBlobs, nil)
 	if err != nil {
 		return nil, err
 	}
 	return blob.DecodeDirectory(ret)
 }
 
+type ChainState struct {
+	Index             uint32
+	Hash              hashing.HashValue
+	Timestamp         int64
+	ApprovingOutputID ledgerstate.OutputID
+}
+
 type ChainTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID coretypes.ChainID
+	ChainID *coretypes.ChainID
 
-	ChainRecord  *registry.ChainRecord
-	Block        state.Block
-	VirtualState state.VirtualState
-	RootInfo     RootInfo
-	Accounts     []coretypes.AgentID
-	TotalAssets  map[ledgerstate.Color]uint64
-	Blobs        map[hashing.HashValue]uint32
-	Committee    struct {
-		Size       uint16
-		Quorum     uint16
-		NumPeers   uint16
-		HasQuorum  bool
-		PeerStatus []*chain.PeerStatus
-	}
+	Record      *registry_pkg.ChainRecord
+	State       *ChainState
+	RootInfo    RootInfo
+	Accounts    []*coretypes.AgentID
+	TotalAssets map[ledgerstate.Color]uint64
+	Blobs       map[hashing.HashValue]uint32
+	Committee   *chain.CommitteeInfo
 }

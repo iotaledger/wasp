@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	registry_pkg "github.com/iotaledger/wasp/packages/registry"
+	registry_pkg "github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
 )
@@ -45,12 +45,13 @@ func (c *Chains) Dismiss() {
 
 func (c *Chains) Attach(nodeConn *txstream.Client) {
 	if c.nodeConn != nil {
-		c.log.Panicf("Nodes: already attached")
+		c.log.Panicf("Chains: already attached")
 	}
 	c.nodeConn = nodeConn
-	c.nodeConn.Events.TransactionReceived.Attach(events.NewClosure(c.dispatchMsgTransaction))
-	c.nodeConn.Events.InclusionStateReceived.Attach(events.NewClosure(c.dispatchMsgInclusionState))
+	c.nodeConn.Events.TransactionReceived.Attach(events.NewClosure(c.dispatchTransactionMsg))
+	c.nodeConn.Events.InclusionStateReceived.Attach(events.NewClosure(c.dispatchInclusionStateMsg))
 	c.nodeConn.Events.OutputReceived.Attach(events.NewClosure(c.dispatchOutputMsg))
+	c.nodeConn.Events.UnspentAliasOutputReceived.Attach(events.NewClosure(c.dispatchUnspentAliasOutputMsg))
 	// TODO attach to off-ledger request module
 }
 
@@ -95,15 +96,21 @@ func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
 	}
 	// create new chain object
 	defaultRegistry := registry.DefaultRegistry()
-	c.allChains[chainArr] = chainimpl.NewChain(
+	newChain := chainimpl.NewChain(
 		chr,
 		c.log,
 		c.nodeConn,
+		peering.DefaultPeerNetworkConfig(),
 		defaultRegistry.DBProvider(),
 		peering.DefaultNetworkProvider(),
 		defaultRegistry,
 		defaultRegistry,
+		defaultRegistry,
 	)
+	if newChain == nil {
+		return xerrors.New("Chains.Activate: failed to create chain object")
+	}
+	c.allChains[chainArr] = newChain
 	c.nodeConn.Subscribe(chr.ChainID.AliasAddress)
 	c.log.Infof("activated chain: %s", chr.ChainID.String())
 	return nil

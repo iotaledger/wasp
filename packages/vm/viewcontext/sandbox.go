@@ -16,9 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 )
 
-var (
-	logDefault *logger.Logger
-)
+var logDefault *logger.Logger
 
 func InitLogger() {
 	logDefault = logger.NewLogger("view")
@@ -41,7 +39,7 @@ func newSandboxView(vctx *viewcontext, contractHname coretypes.Hname, params dic
 		vctx:          vctx,
 		contractHname: contractHname,
 		params:        params,
-		state:         contractStateSubpartition(vctx.state, contractHname),
+		state:         contractStateSubpartition(vctx.stateReader.KVStoreReader(), contractHname),
 		events:        vm.NewContractEventPublisher(&vctx.chainID, contractHname, vctx.log),
 	}
 }
@@ -80,15 +78,15 @@ func (s *sandboxview) Contract() coretypes.Hname {
 }
 
 func (s *sandboxview) ContractCreator() *coretypes.AgentID {
-	contractRecord, err := root.FindContract(contractStateSubpartition(s.vctx.state, root.Interface.Hname()), s.contractHname)
+	contractRecord, err := root.FindContract(contractStateSubpartition(s.vctx.stateReader.KVStoreReader(), root.Interface.Hname()), s.contractHname)
 	if err != nil {
 		s.Log().Panicf("failed to find contract %s: %v", s.contractHname, err)
 	}
-	return &contractRecord.Creator
+	return contractRecord.Creator
 }
 
 func (s *sandboxview) GetTimestamp() int64 {
-	return s.vctx.timestamp
+	return s.vctx.stateReader.Timestamp().UnixNano()
 }
 
 func (s *sandboxview) Log() coretypes.LogInterface {

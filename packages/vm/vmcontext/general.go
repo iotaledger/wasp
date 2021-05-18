@@ -3,10 +3,10 @@ package vmcontext
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
@@ -23,8 +23,7 @@ func (vmctx *VMContext) ContractCreator() *coretypes.AgentID {
 	if !ok {
 		vmctx.log.Panicf("can't find current contract")
 	}
-	ret := rec.Creator
-	return &ret
+	return rec.Creator
 }
 
 func (vmctx *VMContext) CurrentContractHname() coretypes.Hname {
@@ -36,7 +35,7 @@ func (vmctx *VMContext) MyAgentID() *coretypes.AgentID {
 }
 
 func (vmctx *VMContext) Minted() map[ledgerstate.Color]uint64 {
-	if req, ok := vmctx.req.(*sctransaction.RequestOnLedger); ok {
+	if req, ok := vmctx.req.(*request.RequestOnLedger); ok {
 		return req.MintedAmounts()
 	}
 	return nil
@@ -52,7 +51,7 @@ func (vmctx *VMContext) Caller() *coretypes.AgentID {
 }
 
 func (vmctx *VMContext) Timestamp() int64 {
-	return vmctx.timestamp
+	return vmctx.virtualState.Timestamp().UnixNano()
 }
 
 func (vmctx *VMContext) Entropy() hashing.HashValue {
@@ -115,7 +114,7 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens *ledgerstate.Col
 		vmctx.log.Errorf("Send: transfer can't be empty")
 		return false
 	}
-	data := sctransaction.NewRequestMetadata().
+	data := request.NewRequestMetadata().
 		WithSender(vmctx.CurrentContractHname())
 	if metadata != nil {
 		var args requestargs.RequestArgs

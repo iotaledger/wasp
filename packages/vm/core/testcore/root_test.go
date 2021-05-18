@@ -4,6 +4,7 @@
 package testcore
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"testing"
 
@@ -42,7 +43,7 @@ func TestGetInfo(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, 5, len(contracts))
+	require.EqualValues(t, len(core.AllCoreContractsByHash), len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -68,7 +69,7 @@ func TestDeployExample(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, 6, len(contracts))
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -83,7 +84,7 @@ func TestDeployExample(t *testing.T) {
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
 	require.EqualValues(t, 0, rec.OwnerFee)
-	require.EqualValues(t, chain.OriginatorAgentID, rec.Creator)
+	require.True(t, chain.OriginatorAgentID.Equals(rec.Creator))
 	require.EqualValues(t, sbtestsc.Interface.ProgramHash, rec.ProgramHash)
 
 	recFind, err := chain.FindContract(name)
@@ -106,7 +107,7 @@ func TestDeployDouble(t *testing.T) {
 
 	require.EqualValues(t, chain.ChainID, chainID)
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
-	require.EqualValues(t, 6, len(contracts))
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -121,7 +122,7 @@ func TestDeployDouble(t *testing.T) {
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
 	require.EqualValues(t, 0, rec.OwnerFee)
-	require.EqualValues(t, chain.OriginatorAgentID, rec.Creator)
+	require.True(t, chain.OriginatorAgentID.Equals(rec.Creator))
 	require.EqualValues(t, sbtestsc.Interface.ProgramHash, rec.ProgramHash)
 }
 

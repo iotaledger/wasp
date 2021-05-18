@@ -6,85 +6,81 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"golang.org/x/xerrors"
-	"time"
 )
 
-// MustRunVMTaskAsync runs computations for the batch of requests in the background
-// This is the main entry point to the VM
-// TODO timeout for VM. Gas limit
-func MustRunVMTaskAsync(ctx *vm.VMTask) {
-	if len(ctx.Requests) == 0 {
-		ctx.Log.Panicf("MustRunVMTaskAsync: must be at least 1 request")
-	}
-	outputs := outputsFromRequests(ctx.Requests...)
-	txb := utxoutil.NewBuilder(append(outputs, ctx.ChainInput)...)
+type vmRunner struct{}
 
-	go runTask(ctx, txb)
+func (r vmRunner) Run(task *vm.VMTask) {
+	runTask(task)
+}
+
+func NewVMRunner() vmRunner {
+	return vmRunner{}
 }
 
 // runTask runs batch of requests on VM
-func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
+func runTask(task *vm.VMTask) {
 	task.Log.Debugw("runTask IN",
 		"chainID", task.ChainInput.Address().Base58(),
 		"timestamp", task.Timestamp,
 		"block index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
 	)
-	vmctx, err := vmcontext.MustNewVMContext(task, txb)
+	if len(task.Requests) == 0 {
+		task.Log.Panicf("MustRunVMTaskAsync: must be at least 1 request")
+	}
+	outputs := outputsFromRequests(task.Requests...)
+	txb := utxoutil.NewBuilder(append(outputs, task.ChainInput)...)
+
+	vmctx, err := vmcontext.CreateVMContext(task, txb)
 	if err != nil {
-		task.Log.Panicf("runTask: %v", err)
+		task.Log.Panicf("runTask: CreateVMContext: %v", err)
 	}
 
-	stateUpdates := make([]state.StateUpdate, 0, len(task.Requests))
 	var lastResult dict.Dict
 	var lastErr error
-	var lastStateUpdate state.StateUpdate
 	var lastTotalAssets *ledgerstate.ColoredBalances
 
 	// loop over the batch of requests and run each request on the VM.
 	// the result accumulates in the VMContext and in the list of stateUpdates
+	var numOffLedger, numSuccess uint16
 	for i, req := range task.Requests {
-		vmctx.RunTheRequest(req, i)
-		lastStateUpdate, lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
+		vmctx.RunTheRequest(req, uint16(i))
+		lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
 
-		stateUpdates = append(stateUpdates, lastStateUpdate)
+		if req.Output() == nil {
+			numOffLedger++
+		}
+		if lastErr == nil {
+			numSuccess++
+		}
 	}
 
-	// create block from state updates.
-	task.ResultBlock, err = state.NewBlock(stateUpdates...)
+	// save the block info into the 'blocklog' contract
+	err = vmctx.CloseVMContext(uint16(len(task.Requests)), numSuccess, numOffLedger)
 	if err != nil {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.NewBlock: %v", err))
-		return
-	}
-	task.ResultBlock.WithBlockIndex(task.VirtualState.BlockIndex() + 1)
-
-	// calculate resulting state hash
-	vsClone := task.VirtualState.Clone()
-	if err = vsClone.ApplyBlock(task.ResultBlock); err != nil {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.ApplyBlock: %v", err))
+		task.OnFinish(nil, nil, xerrors.Errorf("RunVM: %w", err))
 		return
 	}
 
-	task.ResultTransaction, err = vmctx.BuildTransactionEssence(vsClone.Hash(), time.Unix(0, vsClone.Timestamp()))
+	task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
 	if err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return
 	}
-	if err := checkTotalAssets(task.ResultTransaction, lastTotalAssets); err != nil {
+	if err = checkTotalAssets(task.ResultTransactionEssence, lastTotalAssets); err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.checkTotalAssets: %v", err))
 		return
 	}
 	task.Log.Debugw("runTask OUT",
-		"batch size", task.ResultBlock.Size(),
-		"block index", task.ResultBlock.StateIndex(),
-		"variable state hash", vsClone.Hash().Bytes(),
-		"tx essence hash", hashing.HashData(task.ResultTransaction.Bytes()).String(),
-		"tx finalTimestamp", task.ResultTransaction.Timestamp(),
+		"block index", task.VirtualState.BlockIndex(),
+		"variable state hash", task.VirtualState.Hash().Bytes(),
+		"tx essence hash", hashing.HashData(task.ResultTransactionEssence.Bytes()).String(),
+		"tx finalTimestamp", task.ResultTransactionEssence.Timestamp(),
 	)
 	task.OnFinish(lastResult, lastErr, nil)
 }

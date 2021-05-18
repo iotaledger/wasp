@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -43,7 +43,7 @@ func handlePutChainRecord(c echo.Context) error {
 
 	bd := req.Record()
 
-	bd2, err := registry.ChainRecordFromRegistry(&bd.ChainID)
+	bd2, err := registry_pkg.ChainRecordFromRegistry(bd.ChainID)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func handleGetChainRecord(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
-	bd, err := registry.ChainRecordFromRegistry(chainID)
+	bd, err := registry_pkg.ChainRecordFromRegistry(chainID)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func handleGetChainRecord(c echo.Context) error {
 }
 
 func handleGetChainRecordList(c echo.Context) error {
-	lst, err := registry.GetChainRecords()
+	lst, err := registry_pkg.GetChainRecords()
 	if err != nil {
 		return err
 	}

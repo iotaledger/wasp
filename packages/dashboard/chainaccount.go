@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 )
 
@@ -45,9 +44,9 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 		AgentID: *agentID,
 	}
 
-	theChain := chains.AllChains().Get(chainID)
+	theChain := d.wasp.GetChain(chainID)
 	if theChain != nil {
-		bal, err := callView(theChain, accounts.Interface.Hname(), accounts.FuncBalance, codec.MakeDict(map[string]interface{}{
+		bal, err := d.wasp.CallView(theChain, accounts.Interface.Hname(), accounts.FuncBalance, codec.MakeDict(map[string]interface{}{
 			accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 		}))
 		if err != nil {
@@ -57,6 +56,7 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		result.Ok = true
 	}
 
 	return c.Render(http.StatusOK, c.Path(), result)
@@ -68,5 +68,6 @@ type ChainAccountTemplateParams struct {
 	ChainID coretypes.ChainID
 	AgentID coretypes.AgentID
 
+	Ok       bool
 	Balances map[ledgerstate.Color]uint64
 }

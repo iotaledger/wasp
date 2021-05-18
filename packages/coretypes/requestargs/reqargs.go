@@ -144,19 +144,18 @@ func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache, downloade
 			ok = false
 			return false
 		}
-		if !ok {
-			var downloaderObj *downloader.Downloader
-			if len(downloaderOpt) > 0 {
-				downloaderObj = downloaderOpt[0]
-			} else {
-				downloaderObj = downloader.GetDefaultDownloader()
-			}
-			downloaderObj.DownloadAndStore(h, string(value[hashing.HashSize:]), reg)
-			ok = false
-			return false
+		if ok {
+			ret.Set(kv.Key(d[1:]), data)
+			return true
 		}
-		ret.Set(kv.Key(d[1:]), data)
-		return true
+		downloaderObj := downloader.GetDefaultDownloader()
+		if len(downloaderOpt) > 0 {
+			downloaderObj = downloaderOpt[0]
+		}
+		if downloaderObj != nil {
+			err = downloaderObj.DownloadAndStore(h, string(value[hashing.HashSize:]), reg)
+		}
+		return false
 	})
 	if err != nil || !ok {
 		ret = nil

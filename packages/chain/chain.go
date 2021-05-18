@@ -5,16 +5,15 @@ package chain
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/ready"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -46,29 +45,22 @@ type ChainEvents interface {
 	StateSynced() *events.Event
 }
 
+// Committee is ordered (indexed 0..size-1) list of peers which run the consensus and the whoel chain
 type Committee interface {
+	Address() ledgerstate.Address
 	Size() uint16
 	Quorum() uint16
-	IsReady() bool
 	OwnPeerIndex() uint16
 	DKShare() *tcrypto.DKShare
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
-	SendMsgToPeers(msgType byte, msgData []byte, ts int64) uint16
+	SendMsgToPeers(msgType byte, msgData []byte, ts int64)
 	IsAlivePeer(peerIndex uint16) bool
 	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
-	OnPeerMessage(fun func(recv *peering.RecvEvent))
+	Attach(chain ChainCore)
+	IsReady() bool
 	Close()
-	FeeDestination() coretypes.AgentID
-}
-
-// TODO temporary wrapper for Committee need replacement for all peers, not only committee.
-//  Must be close to GroupProvider but less functions
-type PeerGroupProvider interface {
-	NumPeers() uint16
-	NumIsAlive(quorum uint16) bool
-	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
-	SendToAllUntilFirstError(msgType byte, msgData []byte) uint16
+	AsynchronousCommonSubsetRunner
 }
 
 type ChainRequests interface {
@@ -77,27 +69,27 @@ type ChainRequests interface {
 }
 
 type NodeConnection interface {
-	PullBacklog(addr ledgerstate.Address)
+	PullBacklog(addr *ledgerstate.AliasAddress)
+	PullState(addr *ledgerstate.AliasAddress)
 	PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
-	PostTransaction(tx *ledgerstate.Transaction, fromSc ledgerstate.Address, fromLeader uint16)
+	PostTransaction(tx *ledgerstate.Transaction)
 }
 
 type StateManager interface {
 	Ready() *ready.Ready
-	SetPeers(PeerGroupProvider)
 	EventGetBlockMsg(msg *GetBlockMsg)
 	EventBlockMsg(msg *BlockMsg)
 	EventStateMsg(msg *StateMsg)
 	EventOutputMsg(msg ledgerstate.Output)
-	EventBlockCandidateMsg(msg BlockCandidateMsg)
+	EventStateCandidateMsg(msg StateCandidateMsg)
 	EventTimerMsg(msg TimerTick)
-	GetSyncInfo() *SyncInfo
+	GetStatusSnapshot() *SyncInfo
 	Close()
 }
 
-type Consensus interface {
+type ConsensusOld interface {
 	EventStateTransitionMsg(*StateTransitionMsg)
 	EventNotifyReqMsg(*NotifyReqMsg)
 	EventStartProcessingBatchMsg(*StartProcessingBatchMsg)
@@ -109,17 +101,68 @@ type Consensus interface {
 	Close()
 }
 
-type Mempool interface {
+type Consensus interface {
+	EventStateTransitionMsg(*StateTransitionMsg)
+	EventVMResultCalculated(*VMResultMsg)
+	EventSignedResultMsg(*SignedResultMsg)
+	EventInclusionsStateMsg(*InclusionStateMsg)
+	EventAsynchronousCommonSubsetMsg(msg *AsynchronousCommonSubsetMsg)
+	EventVMResultMsg(msg *VMResultMsg)
+	EventTimerMsg(TimerTick)
+	IsReady() bool
+	Close()
+	GetStatusSnapshot() *ConsensusInfo
+}
+
+// Deprecated: use Mempool
+type MempoolOld interface {
 	ReceiveRequest(req coretypes.Request)
+	GetRequestsByIDs(nowis time.Time, reqids ...coretypes.RequestID) []coretypes.Request
+	GetReadyList(seenThreshold ...uint16) []coretypes.Request
+	// Deprecated:
 	MarkSeenByCommitteePeer(reqid *coretypes.RequestID, peerIndex uint16)
+	// Deprecated:
 	ClearSeenMarks()
-	GetReadyList(seenThreshold uint16) []coretypes.Request
-	GetReadyListFull(seenThreshold uint16) []*ReadyListRecord
+	// Deprecated:
+	GetReadyListFull(seenThreshold ...uint16) []*ReadyListRecord
 	TakeAllReady(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
 	RemoveRequests(reqs ...coretypes.RequestID)
 	HasRequest(id coretypes.RequestID) bool
-	Stats() (int, int, int)
+	// Stats returns total number, number with messages, number solid
+	// Deprecated: use stats instead
+	StatsOld() (int, int, int)
+	Stats() MempoolStatsOld
 	Close()
+}
+
+type Mempool interface {
+	ReceiveRequests(reqs ...coretypes.Request)
+	RemoveRequests(reqs ...coretypes.RequestID)
+	ReadyNow() []coretypes.Request
+	ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
+	HasRequest(id coretypes.RequestID) bool
+	Stats() MempoolStats
+	Close()
+}
+
+type AsynchronousCommonSubsetRunner interface {
+	RunACSConsensus(value []byte, sessionID uint64, callback func(sessionID uint64, acs [][]byte))
+}
+
+// Deprecated: use MempoolStats
+type MempoolStatsOld struct {
+	Total        int
+	WithMessages int
+	Solid        int
+	InCounter    int
+	OutCounter   int
+}
+
+type MempoolStats struct {
+	Total      int
+	Ready      int
+	InCounter  int
+	OutCounter int
 }
 
 type SyncInfo struct {
@@ -131,6 +174,19 @@ type SyncInfo struct {
 	StateOutputID         ledgerstate.OutputID
 	StateOutputHash       hashing.HashValue
 	StateOutputTimestamp  time.Time
+}
+
+// Deprecated:
+type ConsensusInfoOld struct {
+	StateIndex uint32
+	Mempool    MempoolStatsOld
+	TimerTick  int
+}
+
+type ConsensusInfo struct {
+	StateIndex uint32
+	Mempool    MempoolStats
+	TimerTick  int
 }
 
 type ReadyListRecord struct {
@@ -154,11 +210,9 @@ type PeerStatus struct {
 }
 
 type StateTransitionEventData struct {
-	VirtualState     state.VirtualState
-	BlockEssenceHash hashing.HashValue
-	ChainOutput      *ledgerstate.AliasOutput
-	Timestamp        time.Time
-	RequestIDs       []coretypes.RequestID
+	VirtualState    state.VirtualState
+	ChainOutput     *ledgerstate.AliasOutput
+	OutputTimestamp time.Time
 }
 
 func (p *PeerStatus) String() string {

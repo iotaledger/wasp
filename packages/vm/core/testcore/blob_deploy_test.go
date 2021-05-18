@@ -5,6 +5,7 @@ package testcore
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"testing"
 
@@ -109,7 +110,7 @@ func TestDeployGrant(t *testing.T) {
 	user1, addr1 := env.NewKeyPairWithFunds()
 	user1AgentID := coretypes.NewAgentID(addr1, 0)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
 		root.ParamDeployer, user1AgentID,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
@@ -119,13 +120,13 @@ func TestDeployGrant(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, contacts := chain.GetInfo()
-	require.EqualValues(t, 6, len(contacts))
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contacts))
 
 	err = chain.DeployWasmContract(user1, "testInccounter2", wasmFile)
 	require.NoError(t, err)
 
 	_, _, contacts = chain.GetInfo()
-	require.EqualValues(t, 7, len(contacts))
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+2, len(contacts))
 }
 
 func TestRevokeDeploy(t *testing.T) {
@@ -134,7 +135,7 @@ func TestRevokeDeploy(t *testing.T) {
 	user1, addr1 := env.NewKeyPairWithFunds()
 	user1AgentID := coretypes.NewAgentID(addr1, 0)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
 		root.ParamDeployer, user1AgentID,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
@@ -144,9 +145,9 @@ func TestRevokeDeploy(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, contacts := chain.GetInfo()
-	require.EqualValues(t, 6, len(contacts))
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contacts))
 
-	req = solo.NewCallParams(root.Interface.Name, root.FuncRevokeDeploy,
+	req = solo.NewCallParams(root.Interface.Name, root.FuncRevokeDeployPermission,
 		root.ParamDeployer, user1AgentID,
 	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
@@ -156,7 +157,7 @@ func TestRevokeDeploy(t *testing.T) {
 	require.Error(t, err)
 
 	_, _, contacts = chain.GetInfo()
-	require.EqualValues(t, 6, len(contacts))
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contacts))
 }
 
 func TestDeployGrantFail(t *testing.T) {
@@ -165,7 +166,7 @@ func TestDeployGrantFail(t *testing.T) {
 	user1, addr1 := env.NewKeyPairWithFunds()
 	user1AgentID := coretypes.NewAgentID(addr1, 0)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
 		root.ParamDeployer, user1AgentID,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, user1)

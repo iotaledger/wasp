@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -55,7 +56,7 @@ func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
 	caller := ctx.Caller()
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetAgentID := params.MustGetAgentID(ParamAgentID, *caller)
-	targetAgentID = adjustAccount(ctx, targetAgentID)
+	targetAgentID = commonaccount.Adjust(targetAgentID, ctx.ChainID(), ctx.ChainOwnerID())
 	// funds currently are in the owners account, they must be moved to the target
 	ownersAccount := coretypes.NewAgentID(ctx.ChainID().AsAddress(), 0)
 	succ := MoveBetweenAccounts(state, ownersAccount, targetAgentID, ctx.IncomingTransfer())
@@ -78,17 +79,17 @@ func withdraw(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a.Require(!ctx.Caller().Address().Equals(ctx.ChainID().AsAddress()), "caller can't be from the same chain")
 
 	account := ctx.Caller()
-	account = adjustAccount(ctx, account)
+	account = commonaccount.Adjust(account, ctx.ChainID(), ctx.ChainOwnerID())
 	bals, ok := GetAccountBalances(state, account)
 	if !ok {
 		// empty balance, nothing to withdraw
 		return nil, nil
 	}
-	// sending beck to default entry point
+	// sending back to default entry point
 	sendTokens := ledgerstate.NewColoredBalances(bals)
 
-	// bring balances to the current account  (owner's account)
-	a.Require(MoveBetweenAccounts(state, account, ownersAccount(ctx), sendTokens),
+	// bring balances to the current account (owner's account)
+	a.Require(MoveBetweenAccounts(state, account, commonaccount.Get(ctx.ChainID()), sendTokens),
 		"accounts.withdraw.inconsistency. failed to move tokens to owner's account")
 
 	a.Require(ctx.Send(ctx.Caller().Address(), sendTokens, &coretypes.SendMetadata{
@@ -97,22 +98,4 @@ func withdraw(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", sendTokens.String())
 	return nil, nil
-}
-
-func adjustAccount(ctx coretypes.Sandbox, agentID *coretypes.AgentID) *coretypes.AgentID {
-	if agentID.Equals(ctx.ChainOwnerID()) {
-		return ownersAccount(ctx)
-	}
-	if !agentID.Address().Equals(ctx.ChainID().AsAddress()) {
-		return agentID
-	}
-	switch agentID.Hname() {
-	case coretypes.HnameRoot, coretypes.HnameAccounts, coretypes.HnameBlob, coretypes.HnameEventlog:
-		return ownersAccount(ctx)
-	}
-	return agentID
-}
-
-func ownersAccount(ctx coretypes.Sandbox) *coretypes.AgentID {
-	return coretypes.NewAgentID(ctx.ChainID().AsAddress(), 0)
 }

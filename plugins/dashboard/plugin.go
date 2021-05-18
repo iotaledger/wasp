@@ -6,6 +6,7 @@ package dashboard
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -13,11 +14,19 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dashboard"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry_pkg"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/auth"
+	"github.com/iotaledger/wasp/packages/vm/viewcontext"
+	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/config"
+	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -49,6 +58,49 @@ func (w *waspServices) ExploreAddressBaseURL() string {
 		return baseUrl
 	}
 	return exploreAddressUrlFromGoshimmerUri(parameters.GetString(parameters.NodeAddress))
+}
+
+func (w *waspServices) GetChainRecords() ([]*registry_pkg.ChainRecord, error) {
+	return registry_pkg.GetChainRecords()
+}
+
+func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*registry_pkg.ChainRecord, error) {
+	return registry_pkg.ChainRecordFromRegistry(chainID)
+}
+
+func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*dashboard.ChainState, error) {
+	// TODO get rid of database.GetInstance(), pass dbprovider as parameter
+	virtualState, _, err := state.LoadSolidState(database.GetInstance(), chainID)
+	if err != nil {
+		return nil, err
+	}
+	block, err := state.LoadBlock(database.GetInstance(), chainID, virtualState.BlockIndex())
+	if err != nil {
+		return nil, err
+	}
+	return &dashboard.ChainState{
+		Index:             virtualState.BlockIndex(),
+		Hash:              virtualState.Hash(),
+		Timestamp:         virtualState.Timestamp().UnixNano(),
+		ApprovingOutputID: block.ApprovingOutputID(),
+	}, nil
+}
+
+func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.Chain {
+	return chains.AllChains().Get(chainID)
+}
+
+func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
+	vctx, err := viewcontext.NewFromDB(database.GetInstance(), *chain.ID(), chain.Processors())
+	if err != nil {
+		return nil, fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
+	}
+
+	ret, err := vctx.CallView(hname, coretypes.Hn(fname), params)
+	if err != nil {
+		return nil, fmt.Errorf("root view call failed: %v", err)
+	}
+	return ret, nil
 }
 
 func exploreAddressUrlFromGoshimmerUri(uri string) string {

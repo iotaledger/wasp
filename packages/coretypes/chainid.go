@@ -4,10 +4,11 @@
 package coretypes
 
 import (
+	"io"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"golang.org/x/xerrors"
-	"io"
 )
 
 // ChainID represents the global identifier of the chain
@@ -63,9 +64,8 @@ func (chid *ChainID) Equals(chid1 *ChainID) bool {
 	return chid.AliasAddress.Equals(chid1.AliasAddress)
 }
 
-func (chid *ChainID) Clone() (ret ChainID) {
-	ret.AliasAddress = chid.AliasAddress.Clone().(*ledgerstate.AliasAddress)
-	return
+func (chid *ChainID) Clone() (ret *ChainID) {
+	return &ChainID{chid.AliasAddress.Clone().(*ledgerstate.AliasAddress)}
 }
 
 func (chid *ChainID) Base58() string {
@@ -77,8 +77,11 @@ func (chid *ChainID) String() string {
 	return "$/" + chid.Base58()
 }
 
-// AsAddress Temporary
 func (chid *ChainID) AsAddress() ledgerstate.Address {
+	return chid.AliasAddress
+}
+
+func (chid *ChainID) AsAliasAddress() *ledgerstate.AliasAddress {
 	return chid.AliasAddress
 }
 
