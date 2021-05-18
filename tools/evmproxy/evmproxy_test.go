@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"math/big"
 	"testing"
 
@@ -36,6 +37,13 @@ func newEnv(t *testing.T) *env {
 	return &env{t, rpcsrv, client}
 }
 
+func generateKey(t *testing.T) (*ecdsa.PrivateKey, common.Address) {
+	key, err := crypto.GenerateKey()
+	require.NoError(t, err)
+	addr := crypto.PubkeyToAddress(key.PublicKey)
+	return key, addr
+}
+
 var requestFundsAmount = big.NewInt(1e18) // 1 ETH
 
 func (e *env) requestFunds(target common.Address) {
@@ -63,26 +71,46 @@ func (e *env) blockNumber() uint64 {
 	return blockNumber
 }
 
+func (e *env) blockByNumber(number *big.Int) *types.Block {
+	block, err := e.client.BlockByNumber(context.Background(), number)
+	require.NoError(e.t, err)
+	return block
+}
+
 func (e *env) balance(address common.Address) *big.Int {
 	bal, err := e.client.BalanceAt(context.Background(), address, nil)
 	require.NoError(e.t, err)
 	return bal
 }
 
-func TestRPCRequestFunds(t *testing.T) {
+func TestRPCGetBalance(t *testing.T) {
 	env := newEnv(t)
-
-	receiver, err := crypto.GenerateKey()
-	require.NoError(t, err)
-	receiverAddress := crypto.PubkeyToAddress(receiver.PublicKey)
-
-	require.EqualValues(t, 0, env.blockNumber())
-	require.EqualValues(t, 0, env.nonceAt(faucetAddress))
+	_, receiverAddress := generateKey(t)
 	require.Zero(t, big.NewInt(0).Cmp(env.balance(receiverAddress)))
-
 	env.requestFunds(receiverAddress)
-
-	require.EqualValues(t, 1, env.blockNumber())
-	require.EqualValues(t, 1, env.nonceAt(faucetAddress))
 	require.Zero(t, big.NewInt(1e18).Cmp(env.balance(receiverAddress)))
+}
+
+func TestRPCBlockNumber(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	require.EqualValues(t, 0, env.blockNumber())
+	env.requestFunds(receiverAddress)
+	require.EqualValues(t, 1, env.blockNumber())
+}
+
+func TestRPCGetTransactionCount(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	require.EqualValues(t, 0, env.nonceAt(faucetAddress))
+	env.requestFunds(receiverAddress)
+	require.EqualValues(t, 1, env.nonceAt(faucetAddress))
+}
+
+func TestRPCGetBlockByNumber(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	require.EqualValues(t, 0, env.blockByNumber(big.NewInt(0)).Number().Uint64())
+	env.requestFunds(receiverAddress)
+	require.EqualValues(t, 1, env.blockByNumber(big.NewInt(1)).Number().Uint64())
 }
