@@ -113,3 +113,11 @@ func (s *sandbox) State() kv.KVStore {
 func (s *sandbox) Utils() coretypes.Utils {
 	return sandbox_utils.NewUtils()
 }
+
+func (s *sandbox) GetBlockContext() (interface{}, bool) {
+	return s.vmctx.GetBlockContext()
+}
+
+func (s *sandbox) CreateBlockContext(obj interface{}, onClose ...func()) {
+	s.vmctx.CreateBlockContext(obj, onClose...)
+}

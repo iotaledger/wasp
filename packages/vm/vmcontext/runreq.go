@@ -5,14 +5,12 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"golang.org/x/xerrors"
@@ -323,39 +321,4 @@ func isRequestTimeLockedNow(req coretypes.Request, nowis time.Time) bool {
 		return false
 	}
 	return req.TimeLock().After(nowis)
-}
-
-func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) (*ledgerstate.TransactionEssence, error) {
-	if err := vmctx.txBuilder.AddAliasOutputAsRemainder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
-		return nil, xerrors.Errorf("finalizeRequestCall: %v", err)
-	}
-	tx, _, err := vmctx.txBuilder.WithTimestamp(timestamp).BuildEssence()
-	if err != nil {
-		return nil, err
-	}
-	return tx, nil
-}
-
-func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) error {
-	// block info will be stored in separate state update
-	vmctx.currentStateUpdate = state.NewStateUpdate()
-
-	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:            vmctx.virtualState.BlockIndex(),
-		Timestamp:             vmctx.virtualState.Timestamp(),
-		TotalRequests:         numRequests,
-		NumSuccessfulRequests: numSuccess,
-		NumOffLedgerRequests:  numOffLedger,
-	}
-
-	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
-	if idx != blockInfo.BlockIndex {
-		return xerrors.New("CloseVMContext: inconsistent block index")
-	}
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
-	vmctx.currentStateUpdate = nil
-	return nil
 }
