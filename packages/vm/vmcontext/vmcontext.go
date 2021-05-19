@@ -3,6 +3,8 @@ package vmcontext
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/logger"
@@ -11,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"golang.org/x/xerrors"
@@ -59,7 +60,7 @@ type callContext struct {
 
 type blockContext struct {
 	obj     interface{}
-	onClose func()
+	onClose func(interface{})
 }
 
 // CreateVMContext a constructor
@@ -120,11 +121,15 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 	return tx, nil
 }
 
-// CloseVMContext should never panic
-func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) error {
-	// block info will be stored in separate state update
-	vmctx.currentStateUpdate = state.NewStateUpdate()
+// CloseVMContext does the closing actions on the block
+func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) {
+	vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
+	vmctx.closeBlockContexts()
+}
 
+func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) {
+	// block info will be stored into the separate state update
+	vmctx.currentStateUpdate = state.NewStateUpdate()
 	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
@@ -138,18 +143,19 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 
 	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
 	if idx != blockInfo.BlockIndex {
-		return xerrors.New("CloseVMContext: inconsistent block index")
+		vmctx.log.Panicf("CloseVMContext: inconsistent block index")
 	}
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.currentStateUpdate = nil // invalidate
+}
 
-	// closing block contexts in deterministic FIFO sequence
-	// closing state update
+// closeBlockContexts closing block contexts in deterministic FIFO sequence
+func (vmctx *VMContext) closeBlockContexts() {
 	vmctx.currentStateUpdate = state.NewStateUpdate()
 	for _, hname := range vmctx.blockContextCloseSeq {
 		b := vmctx.blockContext[hname]
-		b.onClose()
+		b.onClose(b.obj)
 	}
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.currentStateUpdate = nil
-	return nil
 }

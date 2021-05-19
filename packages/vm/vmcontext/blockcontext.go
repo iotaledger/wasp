@@ -1,24 +1,21 @@
 package vmcontext
 
-// getBlockContext returns object of the block context or nil if it was not created
-func (vmctx *VMContext) GetBlockContext() (interface{}, bool) {
-	ret, ok := vmctx.blockContext[vmctx.CurrentContractHname()]
-	return ret, ok
-}
+import "github.com/iotaledger/wasp/packages/coretypes"
 
-func (vmctx *VMContext) CreateBlockContext(obj interface{}, onClose ...func()) {
+func (vmctx *VMContext) BlockContext(ctx coretypes.Sandbox, construct func(ctx coretypes.Sandbox) interface{}, onClose func(interface{})) interface{} {
 	hname := vmctx.CurrentContractHname()
-	if _, alreadyExists := vmctx.blockContext[hname]; alreadyExists {
-		vmctx.log.Panicf("attempt to create block context twice")
+	if bctx, alreadyExists := vmctx.blockContext[hname]; alreadyExists {
+		return bctx
 	}
-	fun := func() {}
-	if len(onClose) > 0 {
-		fun = onClose[0]
+	if onClose == nil {
+		onClose = func(interface{}) {}
 	}
-	vmctx.blockContext[hname] = &blockContext{
-		obj:     obj,
-		onClose: fun,
+	ret := &blockContext{
+		obj:     construct(ctx),
+		onClose: onClose,
 	}
+	vmctx.blockContext[hname] = ret
 	// storing sequence to have deterministic order of closing
 	vmctx.blockContextCloseSeq = append(vmctx.blockContextCloseSeq, hname)
+	return ret.obj
 }

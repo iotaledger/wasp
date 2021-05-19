@@ -59,9 +59,8 @@ type Sandbox interface {
 	Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *SendMetadata, options ...SendOptions) bool
 	// Utils provides access to common necessary functionality
 	Utils() Utils
-	// Internal use in native hardcoded contracts
-	CreateBlockContext(obj interface{}, onClose ...func())
-	GetBlockContext() (interface{}, bool)
+	// Internal for use in native hardcoded contracts
+	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 }
 
 type SendOptions struct {

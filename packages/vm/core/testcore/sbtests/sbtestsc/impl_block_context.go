@@ -9,42 +9,51 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
-type blockCtx struct {
+type blockCtx1 struct {
 	numcalls int
 }
 
-func testBlockContext1(ctx coretypes.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	bctxi, exists := ctx.GetBlockContext()
-	if !exists {
-		bctx := &blockCtx{1}
-		ctx.CreateBlockContext(bctx, func() {
-			ctx.Log().Infof("closing block context with numcalls = %d", bctx.numcalls)
-		})
-		return nil, nil
+func getBlockContext1(ctx coretypes.Sandbox) *blockCtx1 {
+	construct := func(ctx coretypes.Sandbox) interface{} {
+		return &blockCtx1{1}
 	}
-	bctx, exists := bctxi.(*blockCtx)
-	a.Require(exists, "unexpected block context type")
+	log := ctx.Log()
+	onClose := func(obj interface{}) {
+		log.Infof("closing block context with numcalls = %d", obj.(*blockCtx1).numcalls)
+	}
+	bctxi := ctx.BlockContext(construct, onClose)
+	bctx, ok := bctxi.(*blockCtx1)
+	assert.NewAssert(ctx.Log()).Require(ok, "unexpected block context type")
+	return bctx
+}
+
+func testBlockContext1(ctx coretypes.Sandbox) (dict.Dict, error) {
+	bctx := getBlockContext1(ctx)
 	bctx.numcalls++
 
 	return nil, nil
 }
 
-func testBlockContext2(ctx coretypes.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	bctxi, exists := ctx.GetBlockContext()
-	if !exists {
-		bctx := ctx.State()
-		ctx.CreateBlockContext(bctx, func() {
-			bctx.Set("atTheEndKey", []byte("atTheEndValue"))
-			ctx.Log().Infof("closing block context")
-		})
-		return nil, nil
-	}
-	bctx, exists := bctxi.(*blockCtx)
-	a.Require(exists, "unexpected block context type")
-	bctx.numcalls++
+type blockCtx2 struct {
+	state kv.KVStore
+	log   coretypes.LogInterface
+}
 
+func construct2(ctx coretypes.Sandbox) interface{} {
+	return &blockCtx2{
+		state: ctx.State(),
+		log:   ctx.Log(),
+	}
+}
+
+func onClose2(obj interface{}) {
+	bctx := obj.(*blockCtx2)
+	bctx.state.Set("atTheEndKey", []byte("atTheEndValue"))
+	bctx.log.Infof("closing block context...")
+}
+
+func testBlockContext2(ctx coretypes.Sandbox) (dict.Dict, error) {
+	ctx.BlockContext(construct2, onClose2) // just creating context, doing nothing, checking side effect
 	return nil, nil
 }
 
