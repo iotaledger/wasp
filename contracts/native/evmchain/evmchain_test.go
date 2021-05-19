@@ -12,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -124,14 +123,14 @@ func deployEVMContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKe
 		)
 		require.NoError(t, err)
 
-		var receipt *types.Receipt
+		var receipt *evmchain.Receipt
 		{
 			ret, err := chain.CallView(Interface.Name, FuncGetReceipt,
 				FieldTransactionHash, tx.Hash().Bytes(),
 			)
 			require.NoError(t, err)
 
-			err = rlp.DecodeBytes(ret.MustGet(FieldResult), &receipt)
+			err = evmchain.DecodeReceipt(ret.MustGet(FieldResult), &receipt)
 			require.NoError(t, err)
 		}
 		return receipt

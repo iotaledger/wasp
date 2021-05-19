@@ -4,13 +4,10 @@
 package evmchain
 
 import (
-	"bytes"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/iotaledger/hive.go/marshalutil"
 )
 
@@ -102,19 +99,4 @@ func readBytes(m *marshalutil.MarshalUtil) (b []byte, err error) {
 func writeBytes(m *marshalutil.MarshalUtil, b []byte) {
 	m.WriteUint32(uint32(len(b)))
 	m.WriteBytes(b)
-}
-
-func EncodeBlock(block *types.Block) []byte {
-	var b bytes.Buffer
-	err := block.EncodeRLP(&b)
-	if err != nil {
-		panic(err)
-	}
-	return b.Bytes()
-}
-
-func DecodeBlock(b []byte) (*types.Block, error) {
-	block := new(types.Block)
-	err := block.DecodeRLP(rlp.NewStream(bytes.NewReader(b), 0))
-	return block, err
 }

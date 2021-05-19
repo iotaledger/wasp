@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/evm"
@@ -135,8 +134,23 @@ func getReceipt(ctx coretypes.SandboxView) (dict.Dict, error) {
 	receipt, err := emu.TransactionReceipt(txHash)
 	a.RequireNoError(err)
 
-	receiptBytes, err := rlp.EncodeToBytes(receipt)
-	a.RequireNoError(err)
+	block := emu.Blockchain().GetBlockByHash(receipt.BlockHash)
+	if block == nil {
+		ctx.Log().Panicf("block for receipt not found")
+	}
+
+	if receipt.TransactionIndex >= uint(len(block.Transactions())) {
+		ctx.Log().Panicf("cannot find transaction in block")
+	}
+	tx := block.Transactions()[receipt.TransactionIndex]
+
+	var signer types.Signer = types.FrontierSigner{}
+	if tx.Protected() {
+		signer = types.NewEIP155Signer(tx.ChainId())
+	}
+	from, _ := types.Sender(signer, tx)
+
+	receiptBytes := NewReceipt(receipt, from, tx.To()).Bytes()
 
 	ret := dict.New()
 	ret.Set(FieldResult, receiptBytes)

@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/iotaledger/wasp/contracts/native/evmchain"
 )
 
 // RPCTransaction represents a transaction that will serialize to the RPC representation of a transaction
@@ -141,4 +142,43 @@ func parseBlockNumber(bn rpc.BlockNumber) *big.Int {
 		return big.NewInt(0)
 	}
 	return nil
+}
+
+func RPCMarshalReceipt(r *evmchain.Receipt) map[string]interface{} {
+	return map[string]interface{}{
+		"transactionHash":   r.TxHash,
+		"transactionIndex":  hexutil.Uint64(r.TransactionIndex),
+		"blockHash":         r.BlockHash,
+		"blockNumber":       (*hexutil.Big)(r.BlockNumber),
+		"from":              r.From,
+		"to":                r.To,
+		"cumulativeGasUsed": hexutil.Uint64(r.CumulativeGasUsed),
+		"gasUsed":           hexutil.Uint64(r.GasUsed),
+		"contractAddress":   r.ContractAddress,
+		"logs":              RPCMarshalLogs(r),
+		"logsBloom":         r.Bloom,
+		"status":            hexutil.Uint64(r.Status),
+	}
+}
+
+func RPCMarshalLogs(r *evmchain.Receipt) []interface{} {
+	ret := make([]interface{}, len(r.Logs))
+	for i := range r.Logs {
+		ret[i] = RPCMarshalLog(r, uint(i))
+	}
+	return ret
+}
+
+func RPCMarshalLog(r *evmchain.Receipt, logIndex uint) map[string]interface{} {
+	log := r.Logs[logIndex]
+	return map[string]interface{}{
+		"logIndex":         hexutil.Uint64(logIndex),
+		"blockNumber":      (*hexutil.Big)(r.BlockNumber),
+		"blockHash":        r.BlockHash,
+		"transactionHash":  r.TxHash,
+		"transactionIndex": hexutil.Uint64(r.TransactionIndex),
+		"address":          log.Address,
+		"data":             log.Data,
+		"topics":           log.Topics,
+	}
 }

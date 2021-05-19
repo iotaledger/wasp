@@ -46,7 +46,7 @@ func generateKey(t *testing.T) (*ecdsa.PrivateKey, common.Address) {
 
 var requestFundsAmount = big.NewInt(1e18) // 1 ETH
 
-func (e *env) requestFunds(target common.Address) {
+func (e *env) requestFunds(target common.Address) *types.Transaction {
 	nonce, err := e.client.NonceAt(context.Background(), faucetAddress, nil)
 	require.NoError(e.t, err)
 	tx, err := types.SignTx(
@@ -57,6 +57,7 @@ func (e *env) requestFunds(target common.Address) {
 	require.NoError(e.t, err)
 	err = e.client.SendTransaction(context.Background(), tx)
 	require.NoError(e.t, err)
+	return tx
 }
 
 func (e *env) nonceAt(address common.Address) uint64 {
@@ -87,6 +88,12 @@ func (e *env) balance(address common.Address) *big.Int {
 	bal, err := e.client.BalanceAt(context.Background(), address, nil)
 	require.NoError(e.t, err)
 	return bal
+}
+
+func (e *env) txReceipt(hash common.Hash) *types.Receipt {
+	r, err := e.client.TransactionReceipt(context.Background(), hash)
+	require.NoError(e.t, err)
+	return r
 }
 
 func TestRPCGetBalance(t *testing.T) {
@@ -127,4 +134,27 @@ func TestRPCGetBlockByHash(t *testing.T) {
 	require.EqualValues(t, 0, env.blockByHash(env.blockByNumber(big.NewInt(0)).Hash()).Number().Uint64())
 	env.requestFunds(receiverAddress)
 	require.EqualValues(t, 1, env.blockByHash(env.blockByNumber(big.NewInt(1)).Hash()).Number().Uint64())
+}
+
+func TestRPCGetTxReceipt(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	tx := env.requestFunds(receiverAddress)
+
+	// TODO: test the receipt of a contract call
+
+	receipt := env.txReceipt(tx.Hash())
+	require.EqualValues(t, types.LegacyTxType, receipt.Type)
+	require.EqualValues(t, types.ReceiptStatusSuccessful, receipt.Status)
+	require.NotZero(t, receipt.CumulativeGasUsed)
+	require.EqualValues(t, types.Bloom{}, receipt.Bloom)
+	require.EqualValues(t, 0, len(receipt.Logs))
+
+	require.EqualValues(t, tx.Hash(), receipt.TxHash)
+	require.EqualValues(t, common.Address{}, receipt.ContractAddress)
+	require.NotZero(t, receipt.GasUsed)
+
+	require.EqualValues(t, env.blockByNumber(big.NewInt(1)).Hash(), receipt.BlockHash)
+	require.EqualValues(t, big.NewInt(1), receipt.BlockNumber)
+	require.EqualValues(t, 0, receipt.TransactionIndex)
 }

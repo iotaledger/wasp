@@ -95,6 +95,25 @@ func (e *EVMChain) BlockByHash(hash common.Hash) (*types.Block, error) {
 	return block, nil
 }
 
+func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*evmchain.Receipt, error) {
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetReceipt,
+		evmchain.FieldTransactionHash, txHash.Bytes(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if !ret.MustHas(evmchain.FieldResult) {
+		return nil, nil
+	}
+
+	receipt, err := evmchain.DecodeReceipt(ret.MustGet(evmchain.FieldResult))
+	if err != nil {
+		return nil, err
+	}
+	return receipt, nil
+}
+
 func (e *EVMChain) TransactionCount(address common.Address, blockNumber *big.Int) (uint64, error) {
 	params := []interface{}{
 		evmchain.FieldAddress, address.Bytes(),
