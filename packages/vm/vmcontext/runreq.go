@@ -2,10 +2,11 @@ package vmcontext
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"runtime/debug"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -42,7 +43,9 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 
 	// snapshot state baseline for rollback in case of panic
 	snapshotTxBuilder := vmctx.txBuilder.Clone()
-	snapshotStateUpdate := vmctx.currentStateUpdate.Clone()
+	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	// request run updates will be collected to the new state update
+	vmctx.currentStateUpdate = state.NewStateUpdate()
 
 	vmctx.lastError = nil
 	func() {
@@ -63,9 +66,9 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 
 	if vmctx.lastError != nil {
 		// treating panic and error returned from request the same way
-		// restore the txbuilder and state back to the moment before calling VM plugin
+		// restore the txbuilder and dispose mutations in the last state update
 		vmctx.txBuilder = snapshotTxBuilder
-		vmctx.currentStateUpdate = snapshotStateUpdate
+		vmctx.currentStateUpdate = state.NewStateUpdate()
 
 		vmctx.mustSendBack(vmctx.remainingAfterFees)
 	}
