@@ -37,13 +37,18 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	genesisAlloc, err := DecodeGenesisAlloc(ctx.Params().MustGet(FieldGenesisAlloc))
 	a.RequireNoError(err)
 	evm.InitGenesis(rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())), genesisAlloc)
+	ctx.State().Set(FieldGasPerIota, codec.EncodeInt64(DefaultGasPerIota))     // sets the default GasPerIota value
+	ctx.State().Set(FieldEvmOwner, codec.EncodeAgentID(ctx.ContractCreator())) // sets the default contract owner
 	return nil, nil
 }
 
-///////// TODO contract owner - FieldEvmOwner
-///////// TODO withdrawal
+// func overrideEthereumTxGas(tx *types.Transaction, gas uint64) *types.Transaction {
 
-const gasPerIota int64 = 1000 ///////// TODO gas per iota - FieldGasPerIota
+// 	rs := reflect.ValueOf(&s).Elem() // s, but writable
+// 	rf := rs.Field(0)                // s.foo
+// 	ri := reflect.ValueOf(&i).Elem() // i, but writeable
+
+// }
 
 func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
@@ -65,6 +70,12 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	err := tx.UnmarshalBinary(txData)
 	a.RequireNoError(err)
 
+	transferedIotas, _ := ctx.IncomingTransfer().Get(ledgerstate.ColorIOTA) // TODO figure out if the feeColor must come from somewhere else
+	gasPerIota, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasPerIota))
+	a.RequireNoError(err)
+
+	// tx = overrideEthereumTxGas(tx, transferedIotas*gasPerIota)
+
 	emu := emulator(ctx.State())
 	defer emu.Close()
 
@@ -80,14 +91,16 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	receiptBytes, err := rlp.EncodeToBytes(receipt)
 	a.RequireNoError(err)
 
-	transferedIotas, _ := ctx.IncomingTransfer().Get(ledgerstate.ColorIOTA) // TODO figure out if there is a nice way to get FeeColor from sandbox
-
 	iotasGasFee := uint64(math.Ceil(float64(receipt.GasUsed) / float64(gasPerIota)))
 
 	if transferedIotas < iotasGasFee {
 		//not enough gas
 		return nil, fmt.Errorf("not enough iotas to pay the gas fees. spent: %d iotas", transferedIotas)
 	}
+
+	gasFeesCollected, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasFeesCollected))
+	a.RequireNoError(err)
+	ctx.State().Set(FieldGasFeesCollected, codec.EncodeUint64(gasFeesCollected+uint64(iotasGasFee)))
 
 	// refund unspend gas to the senders on-chain account
 	iotasGasRefund := transferedIotas - iotasGasFee
@@ -189,4 +202,76 @@ func callView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 	ret.Set(FieldResult, res)
 	return ret, nil
+}
+
+// EVM chain management functions ///////////////////////////////////////////////////////////////////////////////////////
+
+func requireOwner(ctx coretypes.Sandbox, a assert.Assert) {
+	contractOwner, _, err := codec.DecodeAgentID(ctx.State().MustGet(FieldEvmOwner))
+	a.RequireNoError(err)
+	a.Require(contractOwner.Equals(ctx.Caller()), "Can only be called by the contract owner")
+}
+
+func setOwner(ctx coretypes.Sandbox) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	requireOwner(ctx, a)
+	ctx.State().Set(FieldEvmOwner, ctx.Params().MustGet(FieldEvmOwner))
+	return nil, nil
+}
+
+func getOwner(ctx coretypes.SandboxView) (dict.Dict, error) {
+	ret := dict.New()
+	ret.Set(FieldResult, ctx.State().MustGet(FieldEvmOwner))
+	return ret, nil
+}
+
+func setGasPerIota(ctx coretypes.Sandbox) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	requireOwner(ctx, a)
+	ctx.State().Set(FieldGasPerIota, ctx.Params().MustGet(FieldGasPerIota))
+	return nil, nil
+}
+
+func getGasPerIota(ctx coretypes.SandboxView) (dict.Dict, error) {
+	ret := dict.New()
+	ret.Set(FieldResult, ctx.State().MustGet(FieldGasPerIota))
+	return ret, nil
+}
+
+func withdrawGasFees(ctx coretypes.Sandbox) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	requireOwner(ctx, a)
+
+	targetAgentId := *ctx.Caller()
+
+	if ctx.Params().MustHas(FieldAgentId) {
+		paramsAgentId, _, err := codec.DecodeAgentID(ctx.Params().MustGet(FieldAgentId))
+		a.RequireNoError(err)
+		targetAgentId = paramsAgentId
+	}
+
+	isOnChain := targetAgentId.Address().Equals(ctx.ChainID().AsAddress())
+
+	gasFeesCollected, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasFeesCollected))
+	a.RequireNoError(err)
+	if gasFeesCollected == 0 {
+		return nil, nil
+	}
+
+	if isOnChain {
+		params := codec.MakeDict(map[string]interface{}{
+			accounts.ParamAgentID: targetAgentId,
+		})
+		_, err := ctx.Call(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), params, coretypes.NewTransferIotas(gasFeesCollected))
+		a.RequireNoError(err)
+		return nil, nil
+	}
+
+	a.Require(ctx.Send(targetAgentId.Address(), coretypes.NewTransferIotas(gasFeesCollected), &coretypes.SendMetadata{
+		TargetContract: targetAgentId.Hname(),
+	}), "withdraw.inconsistency: failed sending tokens ")
+
+	ctx.State().Set(FieldGasFeesCollected, codec.EncodeUint64(0))
+
+	return nil, nil
 }
