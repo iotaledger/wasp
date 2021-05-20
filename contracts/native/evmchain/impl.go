@@ -42,14 +42,6 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-// func overrideEthereumTxGas(tx *types.Transaction, gas uint64) *types.Transaction {
-
-// 	rs := reflect.ValueOf(&s).Elem() // s, but writable
-// 	rf := rs.Field(0)                // s.foo
-// 	ri := reflect.ValueOf(&i).Elem() // i, but writeable
-
-// }
-
 func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
@@ -73,8 +65,6 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	transferedIotas, _ := ctx.IncomingTransfer().Get(ledgerstate.ColorIOTA) // TODO figure out if the feeColor must come from somewhere else
 	gasPerIota, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasPerIota))
 	a.RequireNoError(err)
-
-	// tx = overrideEthereumTxGas(tx, transferedIotas*gasPerIota)
 
 	emu := emulator(ctx.State())
 	defer emu.Close()

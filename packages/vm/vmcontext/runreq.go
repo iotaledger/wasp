@@ -200,7 +200,7 @@ func (vmctx *VMContext) mustHandleFees() bool {
 
 // Return false if not enough fees
 // charges fees to the validator/chain owner and moves funds from on-ledger (tangle) request to the respective on-chain account
-// !!! must only be called once, before the request is processed.
+// !!! must only be called before the request is processed.
 func (vmctx *VMContext) grabFee(account *coretypes.AgentID, amount uint64) bool {
 	if amount == 0 {
 		return true

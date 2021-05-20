@@ -19,9 +19,9 @@ import (
 )
 
 var (
-	FaucetKey, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	FaucetAddress = crypto.PubkeyToAddress(FaucetKey.PublicKey)
-	FaucetSupply  = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
+	TestFaucetKey, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	TestFaucetAddress = crypto.PubkeyToAddress(TestFaucetKey.PublicKey)
+	TestFaucetSupply  = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 )
 
 func InitEVMChain(t *testing.T) (*solo.Chain, *solo.Solo) {
@@ -29,7 +29,7 @@ func InitEVMChain(t *testing.T) (*solo.Chain, *solo.Solo) {
 	chain := env.NewChain(nil, "ch1")
 	err := chain.DeployContract(nil, "evmchain", Interface.ProgramHash,
 		FieldGenesisAlloc, EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
-			FaucetAddress: {Balance: FaucetSupply},
+			TestFaucetAddress: {Balance: TestFaucetSupply},
 		}),
 	)
 	require.NoError(t, err)
@@ -63,7 +63,7 @@ func DeployEVMContract(t *testing.T, chain *solo.Chain, env *solo.Solo, creator 
 	tx, err := types.SignTx(
 		types.NewContractCreation(nonce, big.NewInt(0), evm.GasLimit, evm.GasPrice, data),
 		evm.Signer(),
-		FaucetKey,
+		TestFaucetKey,
 	)
 	require.NoError(t, err)
 
@@ -91,10 +91,12 @@ func DeployEVMContract(t *testing.T, chain *solo.Chain, env *solo.Solo, creator 
 		callArguments, err := contractABI.Pack(name, args...)
 		require.NoError(t, err)
 
+		unsignedTx := types.NewTransaction(nonce, contractAddress, big.NewInt(0), evm.GasLimit, evm.GasPrice, callArguments)
+
 		tx, err := types.SignTx(
-			types.NewTransaction(nonce, contractAddress, big.NewInt(0), evm.GasLimit, evm.GasPrice, callArguments),
+			unsignedTx,
 			evm.Signer(),
-			FaucetKey,
+			TestFaucetKey,
 		)
 		require.NoError(t, err)
 

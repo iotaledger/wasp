@@ -26,12 +26,12 @@ func TestDeploy(t *testing.T) {
 func TestFaucetBalance(t *testing.T) {
 	chain, _ := InitEVMChain(t)
 
-	ret, err := chain.CallView(Interface.Name, FuncGetBalance, FieldAddress, FaucetAddress.Bytes())
+	ret, err := chain.CallView(Interface.Name, FuncGetBalance, FieldAddress, TestFaucetAddress.Bytes())
 	require.NoError(t, err)
 
 	bal := big.NewInt(0)
 	bal.SetBytes(ret.MustGet(FieldBalance))
-	require.Zero(t, FaucetSupply.Cmp(bal))
+	require.Zero(t, TestFaucetSupply.Cmp(bal))
 }
 
 func TestStorageContract(t *testing.T) {
@@ -41,7 +41,7 @@ func TestStorageContract(t *testing.T) {
 	require.NoError(t, err)
 
 	// deploy solidity `storage` contract
-	contractAddress, callFn := DeployEVMContract(t, chain, env, FaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
+	contractAddress, callFn := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
 
 	retrieve := GetCallRetrieveView(t, chain, contractAddress, contractABI)
 
@@ -49,7 +49,7 @@ func TestStorageContract(t *testing.T) {
 	require.EqualValues(t, 42, retrieve())
 
 	// call FuncSendTransaction with EVM tx that calls `store(43)`
-	_, _, err = callFn(FaucetKey, "store", uint32(43))(nil, 100000)
+	_, _, err = callFn(TestFaucetKey, "store", uint32(43))(nil, 100000)
 	require.NoError(t, err)
 
 	// call `retrieve` view, get 43
@@ -63,7 +63,7 @@ func TestERC20Contract(t *testing.T) {
 	require.NoError(t, err)
 
 	// deploy solidity `erc20` contract
-	contractAddress, callFn := DeployEVMContract(t, chain, env, FaucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+	contractAddress, callFn := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
 
 	callIntViewFn := func(name string, args ...interface{}) *big.Int {
 		callArguments, err := contractABI.Pack(name, args...)
@@ -96,7 +96,7 @@ func TestERC20Contract(t *testing.T) {
 	transferAmount := big.NewInt(1337)
 
 	// call `transfer` => send 1337 TestCoin to recipientAddress
-	receipt, _, err := callFn(FaucetKey, "transfer", recipientAddress, transferAmount)(nil, 100000)
+	receipt, _, err := callFn(TestFaucetKey, "transfer", recipientAddress, transferAmount)(nil, 100000)
 	require.NoError(t, err)
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 	require.Equal(t, 1, len(receipt.Logs))
@@ -112,7 +112,7 @@ func TestGetCode(t *testing.T) {
 	require.NoError(t, err)
 
 	// deploy solidity `erc20` contract
-	contractAddress, _ := DeployEVMContract(t, chain, env, FaucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+	contractAddress, _ := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
 
 	// get contract bytecode from EVM emulator
 	ret, err := chain.CallView(Interface.Name, FuncGetCode, FieldAddress, contractAddress.Bytes())
@@ -130,7 +130,7 @@ func TestGasCharged(t *testing.T) {
 	require.NoError(t, err)
 
 	// deploy solidity `storage` contract
-	contractAddress, callFn := DeployEVMContract(t, chain, env, FaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
+	contractAddress, callFn := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
 
 	retrieve := GetCallRetrieveView(t, chain, contractAddress, contractABI)
 
@@ -144,7 +144,7 @@ func TestGasCharged(t *testing.T) {
 	var iotasSent uint64 = initialBalance - 1
 
 	// call `store(999)` with enough gas
-	receipt, gasFee, err := callFn(FaucetKey, "store", uint32(42))(userWallet, iotasSent)
+	receipt, gasFee, err := callFn(TestFaucetKey, "store", uint32(42))(userWallet, iotasSent)
 	require.NoError(t, err)
 	require.Greater(t, gasFee, uint64(0))
 
@@ -159,7 +159,7 @@ func TestGasCharged(t *testing.T) {
 	chain.AssertIotas(userAgentID, expectedUserBalance)
 
 	// call `store(123)` without enough gas
-	_, _, err = callFn(FaucetKey, "store", uint32(123))(userWallet, 1)
+	_, _, err = callFn(TestFaucetKey, "store", uint32(123))(userWallet, 1)
 	require.Error(t, err)
 
 	// call `retrieve` view, get 999 - which means store(123) failed and the previous state is kept
@@ -224,13 +224,13 @@ func TestGasPerIotas(t *testing.T) {
 	//deploy storage contract to test the gas pricing
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
-	_, callFn := DeployEVMContract(t, chain, env, FaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
+	_, callFn := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
 
 	// the default value is correct
 	gasPerIotas := getGasPerIotas(t, chain)
 	require.Equal(t, gasPerIotas, DefaultGasPerIota)
 
-	_, gasFee, err := callFn(FaucetKey, "store", uint32(43))(nil, 100000)
+	_, gasFee, err := callFn(TestFaucetKey, "store", uint32(43))(nil, 100000)
 	require.NoError(t, err)
 	initialGasFee := gasFee
 
@@ -260,7 +260,7 @@ func TestGasPerIotas(t *testing.T) {
 	require.Equal(t, gasPerIotas, newGasPerIota)
 
 	// run an equivalent request and compare the gas fees
-	_, gasFee, err = callFn(FaucetKey, "store", uint32(44))(nil, 100000)
+	_, gasFee, err = callFn(TestFaucetKey, "store", uint32(44))(nil, 100000)
 	require.NoError(t, err)
 	require.Less(t, gasFee, initialGasFee)
 }
@@ -279,7 +279,7 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 	//deploy storage contract to test gas fees collected
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
-	_, callFn := DeployEVMContract(t, chain, env, FaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
+	_, callFn := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
 
 	// only the owner can call withdrawal
 	user1Wallet, user1Address := env.NewKeyPairWithFunds()
@@ -307,7 +307,7 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 
 	// collect fees from a SC call, check that the collected fees matches the fees charged
 	user1Balance2 := env.GetAddressBalance(user1Address, ledgerstate.ColorIOTA)
-	_, chargedGasFee, err := callFn(FaucetKey, "store", uint32(43))(nil, 100000)
+	_, chargedGasFee, err := callFn(TestFaucetKey, "store", uint32(43))(nil, 100000)
 	require.NoError(t, err)
 
 	_, err = postWithdrawalFeesReq(t, chain, user1Wallet)
@@ -323,7 +323,7 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 	require.Equal(t, user1Balance3-1, user1Balance4)
 
 	//try to withdrawal fees to another actor using using the FieldAgentId param
-	_, chargedGasFee, err = callFn(FaucetKey, "store", uint32(44))(nil, 100000)
+	_, chargedGasFee, err = callFn(TestFaucetKey, "store", uint32(44))(nil, 100000)
 	require.NoError(t, err)
 
 	_, user2Address := env.NewKeyPairWithFunds()
@@ -338,7 +338,6 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 	require.Equal(t, user2Balance1, user2Balance0+chargedGasFee)
 }
 
-func TestGasLimit(t *testing.T) {
+func TestGasLimitScaling(t *testing.T) {
 	// TODO test that the gas used scales correctly with the amount of iotas sent
-
 }

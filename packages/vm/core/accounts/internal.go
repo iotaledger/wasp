@@ -139,8 +139,7 @@ func touchAccount(state kv.KVStore, account *collections.Map) {
 }
 
 func GetBalance(state kv.KVStoreReader, agentID *coretypes.AgentID, color ledgerstate.Color) uint64 {
-	asd := getAccountR(state, agentID)
-	b := asd.MustGetAt(color[:])
+	b := getAccountR(state, agentID).MustGetAt(color[:])
 	if b == nil {
 		return 0
 	}
