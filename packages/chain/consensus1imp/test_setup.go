@@ -190,5 +190,4 @@ func (env *MockedEnv) eventStateTransition() {
 }
 
 func (m *mockedConsensus) run() {
-
 }

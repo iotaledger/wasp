@@ -70,15 +70,16 @@ func DeployEVMContract(t *testing.T, chain *solo.Chain, env *solo.Solo, creator 
 	txdata, err := tx.MarshalBinary()
 	require.NoError(t, err)
 
-	txDataBlobHash, err := chain.UploadBlobOptimized(1024, nil, FieldTransactionData, txdata)
-	require.NoError(t, err)
-
-	_, err = chain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, FuncSendTransaction,
-			FieldTransactionDataBlobHash, codec.EncodeHashValue(txDataBlobHash),
-		).WithIotas(100000),
-		nil,
+	req, toUpload := solo.NewCallParamsOptimized(Interface.Name, FuncSendTransaction, 1024,
+		FieldTransactionData, txdata,
 	)
+	req.WithIotas(100000)
+	for _, v := range toUpload {
+		chain.Env.PutBlobDataIntoRegistry(v)
+	}
+
+	_, err = chain.PostRequestSync(req, nil)
+
 	require.NoError(t, err)
 
 	contractAddress := crypto.CreateAddress(creatorAddress, nonce)
@@ -123,6 +124,8 @@ func DeployEVMContract(t *testing.T, chain *solo.Chain, env *solo.Solo, creator 
 
 			var receipt *types.Receipt
 			err = rlp.DecodeBytes(result.MustGet(FieldResult), &receipt)
+			// TODO update to new Receipt decoding
+			// receipt, err := DecodeReceipt(result.MustGet(FieldResult))
 			require.NoError(t, err)
 
 			return receipt, gasFee, nil

@@ -32,6 +32,7 @@ func TestFaucetBalance(t *testing.T) {
 	bal := big.NewInt(0)
 	bal.SetBytes(ret.MustGet(FieldBalance))
 	require.Zero(t, TestFaucetSupply.Cmp(bal))
+
 }
 
 func TestStorageContract(t *testing.T) {
@@ -119,7 +120,7 @@ func TestGetCode(t *testing.T) {
 	require.NoError(t, err)
 	retrievedBytecode := ret.MustGet(FieldResult)
 
-	//ensure returned bytecode matches the expected runtime bytecode
+	// ensure returned bytecode matches the expected runtime bytecode
 	require.True(t, bytes.Equal(retrievedBytecode, evmtest.ERC20ContractRuntimeBytecode), "bytecode retrieved from the chain must match the deployed bytecode")
 }
 

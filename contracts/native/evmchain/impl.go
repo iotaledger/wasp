@@ -6,6 +6,7 @@ package evmchain
 import (
 	"fmt"
 	"math"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -21,7 +22,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
 )
 
 func emulator(state kv.KVStore) *evm.EVMEmulator {
@@ -45,21 +45,8 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
-	var txData []byte
-	if ctx.Params().MustHas(FieldTransactionData) {
-		txData = ctx.Params().MustGet(FieldTransactionData)
-	} else {
-		getBlobFieldParams := dict.Dict(map[kv.Key][]byte{
-			blob.ParamHash:  ctx.Params().MustGet(FieldTransactionDataBlobHash),
-			blob.ParamField: []byte(FieldTransactionData),
-		})
-		r, err := ctx.Call(blob.Interface.Hname(), coretypes.Hn(blob.FuncGetBlobField), getBlobFieldParams, nil)
-		a.RequireNoError(err)
-		txData = r.MustGet(blob.ParamBytes)
-	}
-
 	tx := &types.Transaction{}
-	err := tx.UnmarshalBinary(txData)
+	err := tx.UnmarshalBinary(ctx.Params().MustGet(FieldTransactionData))
 	a.RequireNoError(err)
 
 	transferedIotas, _ := ctx.IncomingTransfer().Get(ledgerstate.ColorIOTA) // TODO figure out if the feeColor must come from somewhere else
@@ -112,15 +99,69 @@ func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
 
+	var blockNumber *big.Int
+	if ctx.Params().MustHas(FieldBlockNumber) {
+		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
+	}
+
 	emu := emulatorR(ctx.State())
 	defer emu.Close()
 
-	state, err := emu.Blockchain().State()
+	bal, err := emu.BalanceAt(addr, blockNumber)
 	a.RequireNoError(err)
-	bal := state.GetBalance(addr)
 
 	ret := dict.New()
 	ret.Set(FieldBalance, bal.Bytes())
+	return ret, nil
+}
+
+func getBlockNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	n := emu.Blockchain().CurrentBlock().Number()
+
+	ret := dict.New()
+	ret.Set(FieldResult, n.Bytes())
+	return ret, nil
+}
+
+func getBlockByNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+
+	var blockNumber *big.Int
+	if ctx.Params().MustHas(FieldBlockNumber) {
+		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
+	}
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	block, err := emu.BlockByNumber(blockNumber)
+	a.RequireNoError(err)
+
+	ret := dict.New()
+	if block != nil {
+		ret.Set(FieldResult, EncodeBlock(block))
+	}
+	return ret, nil
+}
+
+func getBlockByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+
+	hash := common.BytesToHash(ctx.Params().MustGet(FieldBlockHash))
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	block, err := emu.BlockByHash(hash)
+	a.RequireNoError(err)
+
+	ret := dict.New()
+	if block != nil {
+		ret.Set(FieldResult, EncodeBlock(block))
+	}
 	return ret, nil
 }
 
@@ -135,8 +176,23 @@ func getReceipt(ctx coretypes.SandboxView) (dict.Dict, error) {
 	receipt, err := emu.TransactionReceipt(txHash)
 	a.RequireNoError(err)
 
-	receiptBytes, err := rlp.EncodeToBytes(receipt)
-	a.RequireNoError(err)
+	block := emu.Blockchain().GetBlockByHash(receipt.BlockHash)
+	if block == nil {
+		ctx.Log().Panicf("block for receipt not found")
+	}
+
+	if receipt.TransactionIndex >= uint(len(block.Transactions())) {
+		ctx.Log().Panicf("cannot find transaction in block")
+	}
+	tx := block.Transactions()[receipt.TransactionIndex]
+
+	var signer types.Signer = types.FrontierSigner{}
+	if tx.Protected() {
+		signer = types.NewEIP155Signer(tx.ChainId())
+	}
+	from, _ := types.Sender(signer, tx)
+
+	receiptBytes := NewReceipt(receipt, from, tx.To()).Bytes()
 
 	ret := dict.New()
 	ret.Set(FieldResult, receiptBytes)
@@ -148,10 +204,15 @@ func getNonce(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
 
+	var blockNumber *big.Int
+	if ctx.Params().MustHas(FieldBlockNumber) {
+		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
+	}
+
 	emu := emulatorR(ctx.State())
 	defer emu.Close()
 
-	nonce, err := emu.PendingNonceAt(addr)
+	nonce, err := emu.NonceAt(addr, blockNumber)
 	a.RequireNoError(err)
 
 	ret := dict.New()

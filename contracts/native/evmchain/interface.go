@@ -31,6 +31,9 @@ func init() {
 		coreutil.ViewFunc(FuncGetNonce, getNonce),
 		coreutil.ViewFunc(FuncGetReceipt, getReceipt),
 		coreutil.ViewFunc(FuncGetCode, getCode),
+		coreutil.ViewFunc(FuncGetBlockNumber, getBlockNumber),
+		coreutil.ViewFunc(FuncGetBlockByNumber, getBlockByNumber),
+		coreutil.ViewFunc(FuncGetBlockByHash, getBlockByHash),
 
 		// EVMchain SC management
 		coreutil.Func(FuncSetOwner, setOwner),
@@ -44,12 +47,15 @@ func init() {
 
 const (
 	// Ethereum blockchain
-	FuncGetBalance      = "getBalance"
-	FuncSendTransaction = "sendTransaction"
-	FuncCallView        = "callView"
-	FuncGetNonce        = "getNonce"
-	FuncGetReceipt      = "getReceipt"
-	FuncGetCode         = "getCode"
+	FuncGetBalance       = "getBalance"
+	FuncSendTransaction  = "sendTransaction"
+	FuncCallView         = "callView"
+	FuncGetNonce         = "getNonce"
+	FuncGetReceipt       = "getReceipt"
+	FuncGetCode          = "getCode"
+	FuncGetBlockNumber   = "getBlockNumber"
+	FuncGetBlockByNumber = "getBlockByNumber"
+	FuncGetBlockByHash   = "getBlockByHash"
 
 	// EVMchain SC management
 	FuncSetOwner        = "setOwner"
@@ -69,6 +75,8 @@ const (
 	FieldBalance                 = "b"
 	FieldCallArguments           = "c"
 	FieldResult                  = "r"
+	FieldBlockNumber             = "bn"
+	FieldBlockHash               = "bh"
 	FieldEvmOwner                = "evmOwner"
 	FieldGasPerIota              = "gasPerIota"
 	FieldGasFee                  = "gasFee"
