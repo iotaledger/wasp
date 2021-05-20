@@ -62,7 +62,7 @@ func getNonceFor(t *testing.T, chain *solo.Chain, addr common.Address) uint64 {
 	return nonce
 }
 
-type contractFnCaller func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *types.Receipt
+type contractFnCaller func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *Receipt
 
 func deployEVMContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCaller) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
@@ -98,7 +98,7 @@ func deployEVMContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKe
 
 	contractAddress := crypto.CreateAddress(creatorAddress, nonce)
 
-	callFn := func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *types.Receipt {
+	callFn := func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *Receipt {
 		senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
 		nonce := getNonceFor(t, chain, senderAddress)
@@ -123,16 +123,13 @@ func deployEVMContract(t *testing.T, chain *solo.Chain, creator *ecdsa.PrivateKe
 		)
 		require.NoError(t, err)
 
-		var receipt *evmchain.Receipt
-		{
-			ret, err := chain.CallView(Interface.Name, FuncGetReceipt,
-				FieldTransactionHash, tx.Hash().Bytes(),
-			)
-			require.NoError(t, err)
+		ret, err := chain.CallView(Interface.Name, FuncGetReceipt,
+			FieldTransactionHash, tx.Hash().Bytes(),
+		)
+		require.NoError(t, err)
 
-			err = evmchain.DecodeReceipt(ret.MustGet(FieldResult), &receipt)
-			require.NoError(t, err)
-		}
+		receipt, err := DecodeReceipt(ret.MustGet(FieldResult))
+		require.NoError(t, err)
 		return receipt
 	}
 
