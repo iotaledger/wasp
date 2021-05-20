@@ -32,7 +32,6 @@ func TestFaucetBalance(t *testing.T) {
 	bal := big.NewInt(0)
 	bal.SetBytes(ret.MustGet(FieldBalance))
 	require.Zero(t, TestFaucetSupply.Cmp(bal))
-
 }
 
 func TestStorageContract(t *testing.T) {
@@ -145,11 +144,9 @@ func TestGasCharged(t *testing.T) {
 	var iotasSent uint64 = initialBalance - 1
 
 	// call `store(999)` with enough gas
-	receipt, gasFee, err := callFn(TestFaucetKey, "store", uint32(42))(userWallet, iotasSent)
+	_, gasFee, err := callFn(TestFaucetKey, "store", uint32(42))(userWallet, iotasSent)
 	require.NoError(t, err)
 	require.Greater(t, gasFee, uint64(0))
-
-	println(receipt) // TODO CHECK Why RECEIPT IS BROKEN
 
 	// call `retrieve` view, get 42
 	require.EqualValues(t, 42, retrieve())

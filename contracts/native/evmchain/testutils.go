@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -47,7 +46,7 @@ func getNonceFor(t *testing.T, chain *solo.Chain, addr common.Address) uint64 {
 }
 
 type contractFnCallerGenerator func(sender *ecdsa.PrivateKey, name string, args ...interface{}) contractFnCaller
-type contractFnCaller func(userWallet *ed25519.KeyPair, iotas uint64) (*types.Receipt, uint64, error)
+type contractFnCaller func(userWallet *ed25519.KeyPair, iotas uint64) (*Receipt, uint64, error)
 
 func DeployEVMContract(t *testing.T, chain *solo.Chain, env *solo.Solo, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCallerGenerator) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
@@ -104,7 +103,7 @@ func DeployEVMContract(t *testing.T, chain *solo.Chain, env *solo.Solo, creator 
 		txdata, err := tx.MarshalBinary()
 		require.NoError(t, err)
 
-		return func(userWallet *ed25519.KeyPair, iotas uint64) (*types.Receipt, uint64, error) {
+		return func(userWallet *ed25519.KeyPair, iotas uint64) (*Receipt, uint64, error) {
 			if userWallet == nil {
 				//create new user account
 				userWallet, _ = env.NewKeyPairWithFunds()
@@ -122,10 +121,7 @@ func DeployEVMContract(t *testing.T, chain *solo.Chain, env *solo.Solo, creator 
 			gasFee, _, err := codec.DecodeUint64(result.MustGet(FieldGasFee))
 			require.NoError(t, err)
 
-			var receipt *types.Receipt
-			err = rlp.DecodeBytes(result.MustGet(FieldResult), &receipt)
-			// TODO update to new Receipt decoding
-			// receipt, err := DecodeReceipt(result.MustGet(FieldResult))
+			receipt, err := DecodeReceipt(result.MustGet(FieldResult))
 			require.NoError(t, err)
 
 			return receipt, gasFee, nil

@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
@@ -65,8 +64,13 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	receipt, err := emu.TransactionReceipt(tx.Hash())
 	a.RequireNoError(err)
 
-	receiptBytes, err := rlp.EncodeToBytes(receipt)
-	a.RequireNoError(err)
+	var signer types.Signer = types.FrontierSigner{}
+	if tx.Protected() {
+		signer = types.NewEIP155Signer(tx.ChainId())
+	}
+	from, _ := types.Sender(signer, tx)
+
+	receiptBytes := NewReceipt(receipt, from, tx.To()).Bytes()
 
 	iotasGasFee := uint64(math.Ceil(float64(receipt.GasUsed) / float64(gasPerIota)))
 
