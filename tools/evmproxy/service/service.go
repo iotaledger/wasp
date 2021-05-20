@@ -64,6 +64,14 @@ func (e *EthService) GetBalance(address common.Address, blockNumber rpc.BlockNum
 	return (*hexutil.Big)(bal), nil
 }
 
+func (e *EthService) GetCode(address common.Address, blockNumber rpc.BlockNumber) (hexutil.Bytes, error) {
+	code, err := e.evmChain.Code(address, parseBlockNumber(blockNumber))
+	if err != nil {
+		return nil, err
+	}
+	return hexutil.Bytes(code), nil
+}
+
 func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]interface{}, error) {
 	r, err := e.evmChain.TransactionReceipt(txHash)
 	if err != nil {

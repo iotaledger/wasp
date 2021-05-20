@@ -90,6 +90,12 @@ func (e *env) balance(address common.Address) *big.Int {
 	return bal
 }
 
+func (e *env) code(address common.Address) []byte {
+	bal, err := e.client.CodeAt(context.Background(), address, nil)
+	require.NoError(e.t, err)
+	return bal
+}
+
 func (e *env) txReceipt(hash common.Hash) *types.Receipt {
 	r, err := e.client.TransactionReceipt(context.Background(), hash)
 	require.NoError(e.t, err)
@@ -102,6 +108,14 @@ func TestRPCGetBalance(t *testing.T) {
 	require.Zero(t, big.NewInt(0).Cmp(env.balance(receiverAddress)))
 	env.requestFunds(receiverAddress)
 	require.Zero(t, big.NewInt(1e18).Cmp(env.balance(receiverAddress)))
+}
+
+func TestRPCGetCode(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	env.requestFunds(receiverAddress)
+	// TODO: test a non-empty code
+	require.Empty(t, env.code(receiverAddress))
 }
 
 func TestRPCBlockNumber(t *testing.T) {
