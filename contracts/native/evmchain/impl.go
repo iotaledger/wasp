@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"golang.org/x/xerrors"
@@ -302,13 +303,9 @@ func withdrawGasFees(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	requireOwner(ctx, a)
 
-	targetAgentId := *ctx.Caller()
-
-	if ctx.Params().MustHas(FieldAgentId) {
-		paramsAgentId, _, err := codec.DecodeAgentID(ctx.Params().MustGet(FieldAgentId))
-		a.RequireNoError(err)
-		targetAgentId = paramsAgentId
-	}
+	paramsDecoder := kvdecoder.New(ctx.Params(), ctx.Log())
+	targetAgentId, err := paramsDecoder.GetAgentID(FieldAgentId, *ctx.Caller())
+	a.RequireNoError(err)
 
 	isOnChain := targetAgentId.Address().Equals(ctx.ChainID().AsAddress())
 
