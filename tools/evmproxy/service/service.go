@@ -91,6 +91,43 @@ func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, err
 	return tx.Hash(), nil
 }
 
+func (s *EthService) ProtocolVersion()                     { panic("not implemented") }
+func (s *EthService) Syncing()                             { panic("not implemented") }
+func (s *EthService) Coinbase()                            { panic("not implemented") }
+func (s *EthService) Mining()                              { panic("not implemented") }
+func (s *EthService) Hashrate()                            { panic("not implemented") }
+func (s *EthService) GasPrice()                            { panic("not implemented") }
+func (s *EthService) Accounts()                            { panic("not implemented") }
+func (s *EthService) GetStorageAt()                        { panic("not implemented") }
+func (s *EthService) GetBlockTransactionCountByHash()      { panic("not implemented") }
+func (s *EthService) GetBlockTransactionCountByNumber()    { panic("not implemented") }
+func (s *EthService) GetUncleCountByBlockHash()            { panic("not implemented") }
+func (s *EthService) GetUncleCountByBlockNumber()          { panic("not implemented") }
+func (s *EthService) Sign()                                { panic("not implemented") }
+func (s *EthService) SignTransaction()                     { panic("not implemented") }
+func (s *EthService) SendTransaction()                     { panic("not implemented") }
+func (s *EthService) Call()                                { panic("not implemented") }
+func (s *EthService) EstimateGas()                         { panic("not implemented") }
+func (s *EthService) GetTransactionByHash()                { panic("not implemented") }
+func (s *EthService) GetTransactionByBlockHashAndIndex()   { panic("not implemented") }
+func (s *EthService) GetTransactionByBlockNumberAndIndex() { panic("not implemented") }
+func (s *EthService) GetUncleByBlockHashAndIndex()         { panic("not implemented") }
+func (s *EthService) GetUncleByBlockNumberAndIndex()       { panic("not implemented") }
+func (s *EthService) GetCompilers()                        { panic("not implemented") }
+func (s *EthService) CompileLLL()                          { panic("not implemented") }
+func (s *EthService) CompileSolidity()                     { panic("not implemented") }
+func (s *EthService) CompileSerpent()                      { panic("not implemented") }
+func (s *EthService) NewFilter()                           { panic("not implemented") }
+func (s *EthService) NewBlockFilter()                      { panic("not implemented") }
+func (s *EthService) NewPendingTransactionFilter()         { panic("not implemented") }
+func (s *EthService) UninstallFilter()                     { panic("not implemented") }
+func (s *EthService) GetFilterChanges()                    { panic("not implemented") }
+func (s *EthService) GetFilterLogs()                       { panic("not implemented") }
+func (s *EthService) GetLogs()                             { panic("not implemented") }
+func (s *EthService) GetWork()                             { panic("not implemented") }
+func (s *EthService) SubmitWork()                          { panic("not implemented") }
+func (s *EthService) SubmitHashrate()                      { panic("not implemented") }
+
 type NetService struct {
 	evmChain *EVMChain
 }
@@ -102,3 +139,49 @@ func NewNetService(evmChain *EVMChain) *NetService {
 func (e *NetService) Version() string {
 	return "1074" // IOTA -- get it?
 }
+
+func (s *NetService) PeerCount() { panic("not implemented") }
+func (s *NetService) Listening() { panic("not implemented") }
+
+type Web3Service struct {
+	evmChain *EVMChain
+}
+
+func NewWeb3Service(evmChain *EVMChain) *Web3Service {
+	return &Web3Service{evmChain}
+}
+
+func (s *Web3Service) ClientVersion() { panic("not implemented") }
+func (s *Web3Service) Sha3()          { panic("not implemented") }
+
+type DBService struct {
+	evmChain *EVMChain
+}
+
+func NewDBService(evmChain *EVMChain) *DBService {
+	return &DBService{evmChain}
+}
+
+func (s *DBService) PutString() { panic("not implemented") }
+func (s *DBService) GetString() { panic("not implemented") }
+func (s *DBService) PutHex()    { panic("not implemented") }
+func (s *DBService) GetHex()    { panic("not implemented") }
+
+type ShhService struct {
+	evmChain *EVMChain
+}
+
+func NewShhService(evmChain *EVMChain) *ShhService {
+	return &ShhService{evmChain}
+}
+
+func (s *ShhService) Post()             { panic("not implemented") }
+func (s *ShhService) Version()          { panic("not implemented") }
+func (s *ShhService) NewIdentity()      { panic("not implemented") }
+func (s *ShhService) HasIdentity()      { panic("not implemented") }
+func (s *ShhService) NewGroup()         { panic("not implemented") }
+func (s *ShhService) AddToGroup()       { panic("not implemented") }
+func (s *ShhService) NewFilter()        { panic("not implemented") }
+func (s *ShhService) UninstallFilter()  { panic("not implemented") }
+func (s *ShhService) GetFilterChanges() { panic("not implemented") }
+func (s *ShhService) GetMessages()      { panic("not implemented") }
