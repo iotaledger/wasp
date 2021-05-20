@@ -7,12 +7,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	ethlog "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -27,6 +29,13 @@ type env struct {
 }
 
 func newEnv(t *testing.T) *env {
+	ethlog.Root().SetHandler(ethlog.FuncHandler(func(r *ethlog.Record) error {
+		if r.Lvl <= ethlog.LvlWarn {
+			t.Logf("[%s] %s", r.Lvl.AlignedString(), r.Msg)
+		}
+		return nil
+	}))
+
 	soloEVMChain := service.NewEVMChain(service.NewSoloBackend(core.GenesisAlloc{
 		faucetAddress: {Balance: faucetSupply},
 	}))
@@ -231,4 +240,27 @@ func TestRPCGetTxReceipt(t *testing.T) {
 		require.EqualValues(t, env.blockByNumber(big.NewInt(2)).Hash(), receipt.BlockHash)
 		require.EqualValues(t, 0, receipt.TransactionIndex)
 	}
+}
+
+func TestRPCCall(t *testing.T) {
+	env := newEnv(t)
+	creator, creatorAddress := generateKey(t)
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(t, err)
+	_, contractAddress := env.deployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(42))
+
+	callArguments, err := contractABI.Pack("retrieve")
+	require.NoError(t, err)
+
+	ret, err := env.client.CallContract(context.Background(), ethereum.CallMsg{
+		From: creatorAddress,
+		To:   &contractAddress,
+		Data: callArguments,
+	}, nil)
+	require.NoError(t, err)
+
+	var v uint32
+	err = contractABI.UnpackIntoInterface(&v, "retrieve", ret)
+	require.NoError(t, err)
+	require.Equal(t, uint32(42), v)
 }

@@ -3,6 +3,7 @@ package service
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
@@ -136,4 +137,12 @@ func (e *EVMChain) TransactionCount(address common.Address, blockNumber *big.Int
 		return 0, err
 	}
 	return n, nil
+}
+
+func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncCallContract, evmchain.FieldCallMsg, evmchain.EncodeCallMsg(args))
+	if err != nil {
+		return nil, err
+	}
+	return ret.MustGet(evmchain.FieldResult), nil
 }

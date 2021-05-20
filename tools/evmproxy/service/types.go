@@ -3,6 +3,7 @@ package service
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -181,4 +182,25 @@ func RPCMarshalLog(r *evmchain.Receipt, logIndex uint) map[string]interface{} {
 		"data":             log.Data,
 		"topics":           log.Topics,
 	}
+}
+
+type RPCCallArgs struct {
+	From     common.Address  `json:"from"`
+	To       *common.Address `json:"to"`
+	Gas      *hexutil.Uint64 `json:"gas"`
+	GasPrice *hexutil.Big    `json:"gasPrice"`
+	Value    *hexutil.Big    `json:"value"`
+	Data     hexutil.Bytes   `json:"data"`
+}
+
+func (c *RPCCallArgs) parse() (ret ethereum.CallMsg) {
+	ret.From = c.From
+	ret.To = c.To
+	if c.Gas != nil {
+		ret.Gas = uint64(*c.Gas)
+	}
+	ret.GasPrice = (*big.Int)(c.GasPrice)
+	ret.Value = (*big.Int)(c.Value)
+	ret.Data = []byte(c.Data)
+	return
 }

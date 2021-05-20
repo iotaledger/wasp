@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -148,10 +149,11 @@ func TestStorageContract(t *testing.T) {
 		callArguments, err := contractABI.Pack("retrieve")
 		require.NoError(t, err)
 
-		ret, err := chain.CallView(Interface.Name, FuncCallView,
-			FieldAddress, contractAddress.Bytes(),
-			FieldCallArguments, callArguments,
-		)
+		ret, err := chain.CallView(Interface.Name, FuncCallContract, FieldCallMsg, EncodeCallMsg(ethereum.CallMsg{
+			From: faucetAddress,
+			To:   &contractAddress,
+			Data: callArguments,
+		}))
 		require.NoError(t, err)
 
 		var v uint32
@@ -160,7 +162,7 @@ func TestStorageContract(t *testing.T) {
 		return v
 	}
 
-	// call evmchain's FuncCallView to call EVM contract's `retrieve` view, get 42
+	// call evmchain's FuncCallContract to call EVM contract's `retrieve` view, get 42
 	require.EqualValues(t, 42, retrieve())
 
 	// call FuncSendTransaction with EVM tx that calls `store(43)`
@@ -183,10 +185,11 @@ func TestERC20Contract(t *testing.T) {
 		callArguments, err := contractABI.Pack(name, args...)
 		require.NoError(t, err)
 
-		ret, err := chain.CallView(Interface.Name, FuncCallView,
-			FieldAddress, contractAddress.Bytes(),
-			FieldCallArguments, callArguments,
-		)
+		ret, err := chain.CallView(Interface.Name, FuncCallContract, FieldCallMsg, EncodeCallMsg(ethereum.CallMsg{
+			From: faucetAddress,
+			To:   &contractAddress,
+			Data: callArguments,
+		}))
 		require.NoError(t, err)
 
 		v := new(big.Int)

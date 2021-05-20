@@ -26,7 +26,7 @@ func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
 		coreutil.Func(FuncSendTransaction, applyTransaction),
 		coreutil.ViewFunc(FuncGetBalance, getBalance),
-		coreutil.ViewFunc(FuncCallView, callView),
+		coreutil.ViewFunc(FuncCallContract, callContract),
 		coreutil.ViewFunc(FuncGetNonce, getNonce),
 		coreutil.ViewFunc(FuncGetReceipt, getReceipt),
 		coreutil.ViewFunc(FuncGetCode, getCode),
@@ -40,7 +40,7 @@ func init() {
 const (
 	FuncGetBalance       = "getBalance"
 	FuncSendTransaction  = "sendTransaction"
-	FuncCallView         = "callView"
+	FuncCallContract     = "callContract"
 	FuncGetNonce         = "getNonce"
 	FuncGetReceipt       = "getReceipt"
 	FuncGetCode          = "getCode"
@@ -55,7 +55,7 @@ const (
 	FieldTransactionHash = "h"
 	FieldTransactionData = "t"
 	FieldBalance         = "b"
-	FieldCallArguments   = "c"
+	FieldCallMsg         = "c"
 	FieldResult          = "r"
 	FieldBlockNumber     = "bn"
 	FieldBlockHash       = "bh"
