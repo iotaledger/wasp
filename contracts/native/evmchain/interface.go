@@ -77,10 +77,9 @@ const (
 	FieldResult                  = "r"
 	FieldBlockNumber             = "bn"
 	FieldBlockHash               = "bh"
-	FieldEvmOwner                = "evmOwner"
-	FieldGasPerIota              = "gasPerIota"
-	FieldGasFee                  = "gasFee"
-	FieldGasFeesCollected        = "gasFeeCollected"
+	FieldEvmOwner                = "o"
+	FieldGasPerIota              = "w"
+	FieldGasFee                  = "f"
 )
 
 const DefaultGasPerIota int64 = 1000

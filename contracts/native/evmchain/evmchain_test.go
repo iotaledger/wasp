@@ -315,13 +315,13 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 	user1Balance3 := env.GetAddressBalance(user1Address, ledgerstate.ColorIOTA)
 
 	require.NoError(t, err)
-	require.Equal(t, user1Balance3, user1Balance2+chargedGasFee-1) // -1 because we sent 1 iota when requesting the funds withdrawal
+	require.Equal(t, user1Balance3, user1Balance2+chargedGasFee)
 
 	//try to withdrawal a second time, it should succeed, but owner balance shouldnt not change (there are no fees to withdraw)
 	_, err = postWithdrawalFeesReq(t, chain, user1Wallet)
 	require.NoError(t, err)
 	user1Balance4 := env.GetAddressBalance(user1Address, ledgerstate.ColorIOTA)
-	require.Equal(t, user1Balance3-1, user1Balance4)
+	require.Equal(t, user1Balance3, user1Balance4)
 
 	//try to withdrawal fees to another actor using using the FieldAgentId param
 	_, chargedGasFee, err = callFn(TestFaucetKey, "store", uint32(44))(nil, 100000)
@@ -336,7 +336,7 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 	)
 	require.NoError(t, err)
 	user2Balance1 := env.GetAddressBalance(user2Address, ledgerstate.ColorIOTA)
-	require.Equal(t, user2Balance1, user2Balance0+chargedGasFee)
+	require.Equal(t, user2Balance1, user2Balance0+chargedGasFee+1) // 1 extra iota from the withdrawal request
 }
 
 func TestGasLimitScaling(t *testing.T) {

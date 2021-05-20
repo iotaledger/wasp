@@ -4,7 +4,6 @@
 package evmchain
 
 import (
-	"fmt"
 	"math"
 	"math/big"
 
@@ -22,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"golang.org/x/xerrors"
 )
 
 func emulator(state kv.KVStore) *evm.EVMEmulator {
@@ -72,12 +72,8 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	if transferedIotas < iotasGasFee {
 		//not enough gas
-		return nil, fmt.Errorf("not enough iotas to pay the gas fees. spent: %d iotas", transferedIotas)
+		return nil, xerrors.Errorf("not enough iotas to pay the gas fees. spent: %d iotas", transferedIotas)
 	}
-
-	gasFeesCollected, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasFeesCollected))
-	a.RequireNoError(err)
-	ctx.State().Set(FieldGasFeesCollected, codec.EncodeUint64(gasFeesCollected+uint64(iotasGasFee)))
 
 	// refund unspend gas to the senders on-chain account
 	iotasGasRefund := transferedIotas - iotasGasFee
@@ -303,26 +299,18 @@ func withdrawGasFees(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	isOnChain := targetAgentId.Address().Equals(ctx.ChainID().AsAddress())
 
-	gasFeesCollected, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasFeesCollected))
-	a.RequireNoError(err)
-	if gasFeesCollected == 0 {
-		return nil, nil
-	}
-
 	if isOnChain {
 		params := codec.MakeDict(map[string]interface{}{
 			accounts.ParamAgentID: targetAgentId,
 		})
-		_, err := ctx.Call(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), params, coretypes.NewTransferIotas(gasFeesCollected))
+		_, err := ctx.Call(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), params, ctx.Balances())
 		a.RequireNoError(err)
 		return nil, nil
 	}
 
-	a.Require(ctx.Send(targetAgentId.Address(), coretypes.NewTransferIotas(gasFeesCollected), &coretypes.SendMetadata{
+	a.Require(ctx.Send(targetAgentId.Address(), ctx.Balances(), &coretypes.SendMetadata{
 		TargetContract: targetAgentId.Hname(),
 	}), "withdraw.inconsistency: failed sending tokens ")
-
-	ctx.State().Set(FieldGasFeesCollected, codec.EncodeUint64(0))
 
 	return nil, nil
 }
