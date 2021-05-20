@@ -187,6 +187,9 @@ func getCode(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 	code, err := emu.CodeAt(addr, nil)
 	a.RequireNoError(err)
+	if code == nil {
+		code = []byte{}
+	}
 
 	ret := dict.New()
 	ret.Set(FieldResult, code)

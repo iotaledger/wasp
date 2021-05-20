@@ -59,7 +59,7 @@ func (e *EVMChain) Balance(address common.Address, blockNumber *big.Int) (*big.I
 }
 
 func (e *EVMChain) Code(address common.Address, blockNumber *big.Int) ([]byte, error) {
-	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetBalance, paramsWithOptionalBlockNumber(blockNumber,
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetCode, paramsWithOptionalBlockNumber(blockNumber,
 		evmchain.FieldAddress, address.Bytes(),
 	)...)
 	if err != nil {

@@ -138,10 +138,20 @@ func TestRPCGetBalance(t *testing.T) {
 
 func TestRPCGetCode(t *testing.T) {
 	env := newEnv(t)
-	_, receiverAddress := generateKey(t)
-	env.requestFunds(receiverAddress)
-	// TODO: test a non-empty code
-	require.Empty(t, env.code(receiverAddress))
+	creator, creatorAddress := generateKey(t)
+
+	// account address
+	{
+		env.requestFunds(creatorAddress)
+		require.Empty(t, env.code(creatorAddress))
+	}
+	// contract address
+	{
+		contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+		require.NoError(t, err)
+		_, contractAddress := env.deployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(42))
+		require.NotEmpty(t, env.code(contractAddress))
+	}
 }
 
 func TestRPCBlockNumber(t *testing.T) {
