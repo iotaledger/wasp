@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"math/big"
+	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -13,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/tools/evmproxy/service"
 	"github.com/stretchr/testify/require"
 )
@@ -58,6 +61,29 @@ func (e *env) requestFunds(target common.Address) *types.Transaction {
 	err = e.client.SendTransaction(context.Background(), tx)
 	require.NoError(e.t, err)
 	return tx
+}
+
+func (e *env) deployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (*types.Transaction, common.Address) {
+	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
+
+	nonce := e.nonceAt(creatorAddress)
+
+	constructorArguments, err := contractABI.Pack("", args...)
+	require.NoError(e.t, err)
+
+	data := append(contractBytecode, constructorArguments...)
+
+	tx, err := types.SignTx(
+		types.NewContractCreation(nonce, big.NewInt(0), evm.GasLimit, evm.GasPrice, data),
+		evm.Signer(),
+		creator,
+	)
+	require.NoError(e.t, err)
+
+	err = e.client.SendTransaction(context.Background(), tx)
+	require.NoError(e.t, err)
+
+	return tx, crypto.CreateAddress(creatorAddress, nonce)
 }
 
 func (e *env) nonceAt(address common.Address) uint64 {
@@ -152,23 +178,47 @@ func TestRPCGetBlockByHash(t *testing.T) {
 
 func TestRPCGetTxReceipt(t *testing.T) {
 	env := newEnv(t)
-	_, receiverAddress := generateKey(t)
-	tx := env.requestFunds(receiverAddress)
+	creator, creatorAddr := generateKey(t)
 
-	// TODO: test the receipt of a contract call
+	// regular transaction
+	{
+		tx := env.requestFunds(creatorAddr)
+		receipt := env.txReceipt(tx.Hash())
 
-	receipt := env.txReceipt(tx.Hash())
-	require.EqualValues(t, types.LegacyTxType, receipt.Type)
-	require.EqualValues(t, types.ReceiptStatusSuccessful, receipt.Status)
-	require.NotZero(t, receipt.CumulativeGasUsed)
-	require.EqualValues(t, types.Bloom{}, receipt.Bloom)
-	require.EqualValues(t, 0, len(receipt.Logs))
+		require.EqualValues(t, types.LegacyTxType, receipt.Type)
+		require.EqualValues(t, types.ReceiptStatusSuccessful, receipt.Status)
+		require.NotZero(t, receipt.CumulativeGasUsed)
+		require.EqualValues(t, types.Bloom{}, receipt.Bloom)
+		require.EqualValues(t, 0, len(receipt.Logs))
 
-	require.EqualValues(t, tx.Hash(), receipt.TxHash)
-	require.EqualValues(t, common.Address{}, receipt.ContractAddress)
-	require.NotZero(t, receipt.GasUsed)
+		require.EqualValues(t, tx.Hash(), receipt.TxHash)
+		require.EqualValues(t, common.Address{}, receipt.ContractAddress)
+		require.NotZero(t, receipt.GasUsed)
 
-	require.EqualValues(t, env.blockByNumber(big.NewInt(1)).Hash(), receipt.BlockHash)
-	require.EqualValues(t, big.NewInt(1), receipt.BlockNumber)
-	require.EqualValues(t, 0, receipt.TransactionIndex)
+		require.EqualValues(t, big.NewInt(1), receipt.BlockNumber)
+		require.EqualValues(t, env.blockByNumber(big.NewInt(1)).Hash(), receipt.BlockHash)
+		require.EqualValues(t, 0, receipt.TransactionIndex)
+	}
+
+	// contract creation
+	{
+		contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+		require.NoError(t, err)
+		tx, contractAddress := env.deployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(42))
+		receipt := env.txReceipt(tx.Hash())
+
+		require.EqualValues(t, types.LegacyTxType, receipt.Type)
+		require.EqualValues(t, types.ReceiptStatusSuccessful, receipt.Status)
+		require.NotZero(t, receipt.CumulativeGasUsed)
+		require.EqualValues(t, types.Bloom{}, receipt.Bloom)
+		require.EqualValues(t, 0, len(receipt.Logs))
+
+		require.EqualValues(t, tx.Hash(), receipt.TxHash)
+		require.EqualValues(t, contractAddress, receipt.ContractAddress)
+		require.NotZero(t, receipt.GasUsed)
+
+		require.EqualValues(t, big.NewInt(2), receipt.BlockNumber)
+		require.EqualValues(t, env.blockByNumber(big.NewInt(2)).Hash(), receipt.BlockHash)
+		require.EqualValues(t, 0, receipt.TransactionIndex)
+	}
 }

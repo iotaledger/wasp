@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 )
@@ -91,7 +92,10 @@ func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, err
 	return tx.Hash(), nil
 }
 
-func (s *EthService) ProtocolVersion()                     { panic("not implemented") }
+func (s *EthService) ProtocolVersion() hexutil.Uint {
+	return hexutil.Uint(eth.ETH65)
+}
+
 func (s *EthService) Syncing()                             { panic("not implemented") }
 func (s *EthService) Coinbase()                            { panic("not implemented") }
 func (s *EthService) Mining()                              { panic("not implemented") }
