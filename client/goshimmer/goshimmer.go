@@ -26,7 +26,7 @@ func (c *Client) RequestFunds(targetAddress ledgerstate.Address) error {
 	if err != nil {
 		return fmt.Errorf("balanceIOTA: %s", err)
 	}
-	_, err = c.api.SendFaucetRequest(targetAddress.Base58())
+	_, err = c.api.SendFaucetRequest(targetAddress.Base58(), -1)
 	if err != nil {
 		return fmt.Errorf("SendFaucetRequest: %s", err)
 	}

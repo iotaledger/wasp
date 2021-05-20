@@ -7,8 +7,8 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
@@ -32,7 +32,7 @@ func createStateReader(t *testing.T, log *logger.Logger) (state.StateReader, sta
 	return ret, vs
 }
 
-func getRequestsOnLedger(t *testing.T, amount int) []*request.RequestOnLedger {
+func getRequestsOnLedger(t *testing.T, amount int) ([]*request.RequestOnLedger, *ed25519.KeyPair) {
 	utxo := utxodb.New()
 	keyPair, addr := utxo.NewKeyPairByIndex(0)
 	_, err := utxo.RequestFunds(addr)
@@ -57,55 +57,108 @@ func getRequestsOnLedger(t *testing.T, amount int) []*request.RequestOnLedger {
 	requests, err := request.RequestsOnLedgerFromTransaction(tx, targetAddr)
 	require.NoError(t, err)
 	require.True(t, amount == len(requests))
-	return requests
+	return requests, keyPair
 }
 
+//Test if mempool is created
 func TestMempool(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
-	m := New(rdr, coretypes.NewInMemoryBlobCache(), log)
+	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
+	require.NotNil(t, pool)
 	time.Sleep(2 * time.Second)
-	m.Close()
+	stats := pool.Stats()
+	require.EqualValues(t, 0, stats.InCounter)
+	require.EqualValues(t, 0, stats.OutCounter)
+	require.EqualValues(t, 0, stats.Total)
+	require.EqualValues(t, 0, stats.Ready)
+	pool.Close()
 	time.Sleep(1 * time.Second)
 }
 
+//Test if single on ledger request is added to mempool
 func TestAddRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
-	requests := getRequestsOnLedger(t, 1)
+	requests, _ := getRequestsOnLedger(t, 1)
 
-	pool.ReceiveRequest(requests[0])
+	pool.ReceiveRequests(requests[0])
 	require.True(t, pool.HasRequest(requests[0].ID()))
+	stats := pool.Stats()
+	require.EqualValues(t, 1, stats.InCounter)
+	require.EqualValues(t, 0, stats.OutCounter)
+	require.EqualValues(t, 1, stats.Total)
+	require.EqualValues(t, 1, stats.Ready)
 }
 
+//Test if adding the same on ledger request more than once to the same mempool
+//is handled correctly
 func TestAddRequestTwice(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
 
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
-	requests := getRequestsOnLedger(t, 1)
+	requests, _ := getRequestsOnLedger(t, 1)
 
-	pool.ReceiveRequest(requests[0])
+	pool.ReceiveRequests(requests[0])
 	require.True(t, pool.HasRequest(requests[0].ID()))
 
-	total, withMsg, solid := pool.StatsOld()
-	require.EqualValues(t, 1, total)
-	require.EqualValues(t, 1, withMsg)
-	require.EqualValues(t, 1, solid)
+	stats := pool.Stats()
+	require.EqualValues(t, 1, stats.InCounter)
+	require.EqualValues(t, 0, stats.OutCounter)
+	require.EqualValues(t, 1, stats.Total)
+	require.EqualValues(t, 1, stats.Ready)
 
-	pool.ReceiveRequest(requests[0])
+	pool.ReceiveRequests(requests[0])
 	require.True(t, pool.HasRequest(requests[0].ID()))
 
-	total, withMsg, solid = pool.StatsOld()
-	require.EqualValues(t, 1, total)
-	require.EqualValues(t, 1, withMsg)
-	require.EqualValues(t, 1, solid)
+	stats = pool.Stats()
+	require.EqualValues(t, 1, stats.InCounter)
+	require.EqualValues(t, 0, stats.OutCounter)
+	require.EqualValues(t, 1, stats.Total)
+	require.EqualValues(t, 1, stats.Ready)
 }
 
-func TestCompletedRequest(t *testing.T) {
+//Test if adding off ledger requests works as expected: correctly signed ones
+//are added, others are ignored
+func TestAddOffLedgerRequest(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	rdr, _ := createStateReader(t, log)
+	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
+	require.NotNil(t, pool)
+	onLedgerRequests, keyPair := getRequestsOnLedger(t, 2)
+
+	offFromOnLedgerFun := func(onLedger *request.RequestOnLedger) *request.RequestOffLedger {
+		contract, emptyPoint := onLedger.Target()
+		return request.NewRequestOffLedger(contract, emptyPoint, onLedger.GetMetadata().Args())
+	}
+	offLedgerRequestUnsigned := offFromOnLedgerFun(onLedgerRequests[0])
+	offLedgerRequestSigned := offFromOnLedgerFun(onLedgerRequests[1])
+	offLedgerRequestSigned.Sign(keyPair)
+	require.NotEqual(t, offLedgerRequestUnsigned.ID(), offLedgerRequestSigned.ID())
+
+	pool.ReceiveRequests(offLedgerRequestUnsigned)
+	require.False(t, pool.HasRequest(offLedgerRequestUnsigned.ID()))
+	stats := pool.Stats()
+	require.EqualValues(t, 0, stats.InCounter)
+	require.EqualValues(t, 0, stats.OutCounter)
+	require.EqualValues(t, 0, stats.Total)
+	require.EqualValues(t, 0, stats.Ready)
+
+	pool.ReceiveRequests(offLedgerRequestSigned)
+	require.True(t, pool.HasRequest(offLedgerRequestSigned.ID()))
+	stats = pool.Stats()
+	require.EqualValues(t, 1, stats.InCounter)
+	require.EqualValues(t, 0, stats.OutCounter)
+	require.EqualValues(t, 1, stats.Total)
+	require.EqualValues(t, 1, stats.Ready)
+}
+
+//Test if processed request cannot be added to mempool
+func TestProcessedRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	rdr, vs := createStateReader(t, log)
 	wrt := vs.KVStore()
@@ -113,12 +166,13 @@ func TestCompletedRequest(t *testing.T) {
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 
-	total, withMsg, solid := pool.StatsOld()
-	require.EqualValues(t, 0, total)
-	require.EqualValues(t, 0, withMsg)
-	require.EqualValues(t, 0, solid)
+	stats := pool.Stats()
+	require.EqualValues(t, 0, stats.InCounter)
+	require.EqualValues(t, 0, stats.OutCounter)
+	require.EqualValues(t, 0, stats.Total)
+	require.EqualValues(t, 0, stats.Ready)
 
-	requests := getRequestsOnLedger(t, 1)
+	requests, _ := getRequestsOnLedger(t, 1)
 
 	// artificially put request log record into the state
 	rec := &blocklog.RequestLogRecord{
@@ -131,62 +185,183 @@ func TestCompletedRequest(t *testing.T) {
 	err = vs.Commit()
 	require.NoError(t, err)
 
-	pool.ReceiveRequest(requests[0])
+	pool.ReceiveRequests(requests[0])
 	require.False(t, pool.HasRequest(requests[0].ID()))
 
-	total, withMsg, solid = pool.StatsOld()
-	require.EqualValues(t, 0, total)
-	require.EqualValues(t, 0, withMsg)
-	require.EqualValues(t, 0, solid)
+	stats = pool.Stats()
+	require.EqualValues(t, 0, stats.InCounter)
+	require.EqualValues(t, 0, stats.OutCounter)
+	require.EqualValues(t, 0, stats.Total)
+	require.EqualValues(t, 0, stats.Ready)
 }
 
+//Test if adding and removing requests is handled correctly
 func TestAddRemoveRequests(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
-	requests := getRequestsOnLedger(t, 6)
+	requests, _ := getRequestsOnLedger(t, 6)
 
-	pool.ReceiveRequest(requests[0])
-	pool.ReceiveRequest(requests[1])
-	pool.ReceiveRequest(requests[2])
-	pool.ReceiveRequest(requests[3])
-	pool.ReceiveRequest(requests[4])
-	pool.ReceiveRequest(requests[5])
+	pool.ReceiveRequests(
+		requests[0],
+		requests[1],
+		requests[2],
+		requests[3],
+		requests[4],
+		requests[5],
+	)
 	require.True(t, pool.HasRequest(requests[0].ID()))
 	require.True(t, pool.HasRequest(requests[1].ID()))
 	require.True(t, pool.HasRequest(requests[2].ID()))
 	require.True(t, pool.HasRequest(requests[3].ID()))
 	require.True(t, pool.HasRequest(requests[4].ID()))
 	require.True(t, pool.HasRequest(requests[5].ID()))
+	stats := pool.Stats()
+	require.EqualValues(t, 6, stats.InCounter)
+	require.EqualValues(t, 0, stats.OutCounter)
+	require.EqualValues(t, 6, stats.Total)
+	require.EqualValues(t, 6, stats.Ready)
+
 	pool.RemoveRequests(
 		requests[3].ID(),
 		requests[0].ID(),
+		requests[1].ID(),
 		requests[5].ID(),
 	)
 	require.False(t, pool.HasRequest(requests[0].ID()))
-	require.True(t, pool.HasRequest(requests[1].ID()))
+	require.False(t, pool.HasRequest(requests[1].ID()))
 	require.True(t, pool.HasRequest(requests[2].ID()))
 	require.False(t, pool.HasRequest(requests[3].ID()))
 	require.True(t, pool.HasRequest(requests[4].ID()))
 	require.False(t, pool.HasRequest(requests[5].ID()))
+	stats = pool.Stats()
+	require.EqualValues(t, 6, stats.InCounter)
+	require.EqualValues(t, 4, stats.OutCounter)
+	require.EqualValues(t, 2, stats.Total)
+	require.EqualValues(t, 2, stats.Ready)
 }
 
-func TestTakeAllReady(t *testing.T) {
+//Test if ReadyNow and ReadyFromIDs functions respect the time lock of the request
+func TestTimeLock(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
-	requests := getRequestsOnLedger(t, 5)
+	requests, _ := getRequestsOnLedger(t, 6)
 
-	pool.ReceiveRequest(requests[0])
-	pool.ReceiveRequest(requests[1])
-	pool.ReceiveRequest(requests[2])
-	pool.ReceiveRequest(requests[3])
-	pool.ReceiveRequest(requests[4])
-	pool.(*mempool).doSolidifyRequests()
+	now := time.Now()
+	requests[1].Output().(*ledgerstate.ExtendedLockedOutput).WithTimeLock(now.Add(-2 * time.Hour))
+	requests[2].Output().(*ledgerstate.ExtendedLockedOutput).WithTimeLock(now)
+	requests[3].Output().(*ledgerstate.ExtendedLockedOutput).WithTimeLock(now.Add(2 * time.Hour))
 
-	ready, result := pool.TakeAllReady(time.Now(),
+	testStatsFun := func() { // Stats does not change after requests are added to the mempool
+		stats := pool.Stats()
+		require.EqualValues(t, 4, stats.InCounter)
+		require.EqualValues(t, 0, stats.OutCounter)
+		require.EqualValues(t, 4, stats.Total)
+		require.EqualValues(t, 3, stats.Ready)
+	}
+	pool.ReceiveRequests(
+		requests[0], // + No time lock
+		requests[1], // + Time lock before now
+		requests[2], // + Time lock slightly before now due to time.Now() in ReadyNow being called later than in this test
+		requests[3], // - Time lock after now
+	)
+	testStatsFun()
+
+	ready := pool.ReadyNow()
+	require.True(t, len(ready) == 3)
+	require.Contains(t, ready, requests[0])
+	require.Contains(t, ready, requests[1])
+	require.Contains(t, ready, requests[2])
+	testStatsFun()
+
+	ready, result := pool.ReadyFromIDs(now.Add(-3*time.Hour),
+		requests[0].ID(), // + No time lock
+		requests[1].ID(), // - Time lock less than three hours before now
+		requests[2].ID(), // - Time lock at exactly the same time as now
+		requests[3].ID(), // - Time lock after now
+	)
+	require.True(t, result)
+	require.True(t, len(ready) == 1)
+	require.Contains(t, ready, requests[0])
+	testStatsFun()
+
+	ready, result = pool.ReadyFromIDs(now.Add(-1*time.Hour),
+		requests[0].ID(), // + No time lock
+		requests[1].ID(), // + Time lock more than one hour before now
+		requests[2].ID(), // - Time lock at exactly the same time as now
+		requests[3].ID(), // - Time lock after now
+	)
+	require.True(t, result)
+	require.True(t, len(ready) == 2)
+	require.Contains(t, ready, requests[0])
+	require.Contains(t, ready, requests[1])
+	testStatsFun()
+
+	ready, result = pool.ReadyFromIDs(now,
+		requests[0].ID(), // + No time lock
+		requests[1].ID(), // + Time lock before now
+		requests[2].ID(), // - Time lock at exactly the same time as now
+		requests[3].ID(), // - Time lock after now
+	)
+	require.True(t, result)
+	require.True(t, len(ready) == 2)
+	require.Contains(t, ready, requests[0])
+	require.Contains(t, ready, requests[1])
+	testStatsFun()
+
+	ready, result = pool.ReadyFromIDs(now.Add(1*time.Hour),
+		requests[0].ID(), // + No time lock
+		requests[1].ID(), // + Time lock before now
+		requests[2].ID(), // + Time lock at exactly the same time as now
+		requests[3].ID(), // - Time lock more than one hour after now
+	)
+	require.True(t, result)
+	require.True(t, len(ready) == 3)
+	require.Contains(t, ready, requests[0])
+	require.Contains(t, ready, requests[1])
+	require.Contains(t, ready, requests[2])
+	testStatsFun()
+
+	ready, result = pool.ReadyFromIDs(now.Add(3*time.Hour),
+		requests[0].ID(), // + No time lock
+		requests[1].ID(), // + Time lock before now
+		requests[2].ID(), // + Time lock at exactly the same time as now
+		requests[3].ID(), // + Time lock less than three hours after now
+	)
+	require.True(t, result)
+	require.True(t, len(ready) == 4)
+	require.Contains(t, ready, requests[0])
+	require.Contains(t, ready, requests[1])
+	require.Contains(t, ready, requests[2])
+	require.Contains(t, ready, requests[3])
+	testStatsFun()
+}
+
+//Test if ReadyFromIDs function correctly handle non-existing or removed IDs
+func TestReadyFromIDs(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	rdr, _ := createStateReader(t, log)
+	pool := New(rdr, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	require.NotNil(t, pool)
+	requests, _ := getRequestsOnLedger(t, 6)
+
+	pool.ReceiveRequests(
+		requests[0],
+		requests[1],
+		requests[2],
+		requests[3],
+		requests[4],
+	)
+	stats := pool.Stats()
+	require.EqualValues(t, 5, stats.InCounter)
+	require.EqualValues(t, 0, stats.OutCounter)
+	require.EqualValues(t, 5, stats.Total)
+	require.EqualValues(t, 5, stats.Ready)
+
+	ready, result := pool.ReadyFromIDs(time.Now(),
 		requests[0].ID(),
 		requests[1].ID(),
 		requests[2].ID(),
@@ -200,152 +375,53 @@ func TestTakeAllReady(t *testing.T) {
 	require.Contains(t, ready, requests[2])
 	require.Contains(t, ready, requests[3])
 	require.Contains(t, ready, requests[4])
-}
+	stats = pool.Stats()
+	require.EqualValues(t, 5, stats.InCounter)
+	require.EqualValues(t, 0, stats.OutCounter)
+	require.EqualValues(t, 5, stats.Total)
+	require.EqualValues(t, 5, stats.Ready)
 
-// Initialises the following situation
-// CommiteePeer ->  0   1   2   3
-//        Request0  +   +   +   +
-//        Request1      +   +
-//        Request2  +       +   +
-//        Request3  +
-//        Request4
-func initSeenTest(t *testing.T) (chain.MempoolOld, []*request.RequestOnLedger) {
-	log := testlogger.NewLogger(t)
-	rdr, _ := createStateReader(t, log)
-	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
-	require.NotNil(t, pool)
-	requests := getRequestsOnLedger(t, 5)
-	request0ID := requests[0].ID()
-	request1ID := requests[1].ID()
-	request2ID := requests[2].ID()
-	request3ID := requests[3].ID()
-
-	pool.ReceiveRequest(requests[0])
-	pool.MarkSeenByCommitteePeer(&request0ID, 0)
-
-	pool.ReceiveRequest(requests[1])
-	pool.MarkSeenByCommitteePeer(&request0ID, 0)
-	pool.MarkSeenByCommitteePeer(&request0ID, 1)
-	pool.MarkSeenByCommitteePeer(&request1ID, 1)
-
-	pool.ReceiveRequest(requests[2])
-	pool.MarkSeenByCommitteePeer(&request2ID, 0)
-	pool.MarkSeenByCommitteePeer(&request2ID, 2)
-	pool.MarkSeenByCommitteePeer(&request2ID, 3)
-
-	pool.ReceiveRequest(requests[3])
-	pool.MarkSeenByCommitteePeer(&request0ID, 2)
-	pool.MarkSeenByCommitteePeer(&request0ID, 3)
-	pool.MarkSeenByCommitteePeer(&request1ID, 2)
-	pool.MarkSeenByCommitteePeer(&request3ID, 0)
-
-	pool.ReceiveRequest(requests[4])
-
-	pool.(*mempool).doSolidifyRequests()
-
-	return pool, requests
-}
-
-func TestGetReadyList(t *testing.T) {
-	pool, requests := initSeenTest(t)
-
-	ready := pool.GetReadyList(0)
-	require.True(t, len(ready) == 5)
+	pool.RemoveRequests(requests[3].ID())
+	_, result = pool.ReadyFromIDs(time.Now(),
+		requests[0].ID(),
+		requests[1].ID(),
+		requests[2].ID(),
+		requests[3].ID(), // Request was removed from mempool
+	)
+	require.False(t, result)
+	_, result = pool.ReadyFromIDs(time.Now(),
+		requests[5].ID(), // Request hasn't been received by mempool
+		requests[4].ID(),
+		requests[2].ID(),
+	)
+	require.False(t, result)
+	ready, result = pool.ReadyFromIDs(time.Now(),
+		requests[0].ID(),
+		requests[1].ID(),
+		requests[2].ID(),
+		requests[4].ID(),
+	)
+	require.True(t, result)
+	require.True(t, len(ready) == 4)
 	require.Contains(t, ready, requests[0])
 	require.Contains(t, ready, requests[1])
 	require.Contains(t, ready, requests[2])
-	require.Contains(t, ready, requests[3])
 	require.Contains(t, ready, requests[4])
-	ready = pool.GetReadyList(1)
-	require.True(t, len(ready) == 4)
-	require.Contains(t, ready, requests[0])
-	require.Contains(t, ready, requests[1])
-	require.Contains(t, ready, requests[2])
-	require.Contains(t, ready, requests[3])
-	ready = pool.GetReadyList(2)
-	require.True(t, len(ready) == 3)
-	require.Contains(t, ready, requests[0])
-	require.Contains(t, ready, requests[1])
-	require.Contains(t, ready, requests[2])
-	ready = pool.GetReadyList(3)
-	require.True(t, len(ready) == 2)
-	require.Contains(t, ready, requests[0])
-	require.Contains(t, ready, requests[2])
-	ready = pool.GetReadyList(4)
-	require.True(t, len(ready) == 1)
-	require.Contains(t, ready, requests[0])
-	ready = pool.GetReadyList(5)
-	require.True(t, len(ready) == 0)
-
-	pool.ClearSeenMarks()
-	ready = pool.GetReadyList(1)
-	require.True(t, len(ready) == 0)
+	stats = pool.Stats()
+	require.EqualValues(t, 5, stats.InCounter)
+	require.EqualValues(t, 1, stats.OutCounter)
+	require.EqualValues(t, 4, stats.Total)
+	require.EqualValues(t, 4, stats.Ready)
 }
 
-func TestGetReadyListFull(t *testing.T) {
-	pool, requests := initSeenTest(t)
-
-	request0Full := &chain.ReadyListRecord{
-		Request: requests[0],
-		Seen:    map[uint16]bool{0: true, 1: true, 2: true, 3: true},
-	}
-	request1Full := &chain.ReadyListRecord{
-		Request: requests[1],
-		Seen:    map[uint16]bool{1: true, 2: true},
-	}
-	request2Full := &chain.ReadyListRecord{
-		Request: requests[2],
-		Seen:    map[uint16]bool{0: true, 2: true, 3: true},
-	}
-	request3Full := &chain.ReadyListRecord{
-		Request: requests[3],
-		Seen:    map[uint16]bool{0: true},
-	}
-	request4Full := &chain.ReadyListRecord{
-		Request: requests[4],
-		Seen:    map[uint16]bool{},
-	}
-
-	ready := pool.GetReadyListFull(0)
-	require.True(t, len(ready) == 5)
-	require.Contains(t, ready, request0Full)
-	require.Contains(t, ready, request1Full)
-	require.Contains(t, ready, request2Full)
-	require.Contains(t, ready, request3Full)
-	require.Contains(t, ready, request4Full)
-	ready = pool.GetReadyListFull(1)
-	require.True(t, len(ready) == 4)
-	require.Contains(t, ready, request0Full)
-	require.Contains(t, ready, request1Full)
-	require.Contains(t, ready, request2Full)
-	require.Contains(t, ready, request3Full)
-	ready = pool.GetReadyListFull(2)
-	require.True(t, len(ready) == 3)
-	require.Contains(t, ready, request0Full)
-	require.Contains(t, ready, request1Full)
-	require.Contains(t, ready, request2Full)
-	ready = pool.GetReadyListFull(3)
-	require.True(t, len(ready) == 2)
-	require.Contains(t, ready, request0Full)
-	require.Contains(t, ready, request2Full)
-	ready = pool.GetReadyListFull(4)
-	require.True(t, len(ready) == 1)
-	require.Contains(t, ready, request0Full)
-	ready = pool.GetReadyListFull(5)
-	require.True(t, len(ready) == 0)
-
-	pool.ClearSeenMarks()
-	ready = pool.GetReadyListFull(1)
-	require.True(t, len(ready) == 0)
-}
-
+//Test if solidification works as expected
 func TestSolidification(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	rdr, _ := createStateReader(t, log)
 	blobCache := coretypes.NewInMemoryBlobCache()
-	pool := New(rdr, blobCache, log) // Solidification initiated on pool creation
+	pool := New(rdr, blobCache, log, 20*time.Millisecond) // Solidification initiated on pool creation
 	require.NotNil(t, pool)
-	requests := getRequestsOnLedger(t, 4)
+	requests, _ := getRequestsOnLedger(t, 4)
 
 	// we need a request that actually requires solidification
 	// because ReceiveRequest will already attempt to solidify
@@ -354,11 +430,12 @@ func TestSolidification(t *testing.T) {
 	hash := args.AddAsBlobRef("blob", blobData)
 	meta := request.NewRequestMetadata().WithArgs(args)
 	requests[0].SetMetadata(meta)
-	pool.ReceiveRequest(requests[0])
 
 	// no solidification yet => request is not ready
-	ready, result := pool.TakeAllReady(time.Now(), requests[0].ID())
-	require.False(t, result)
+	pool.ReceiveRequests(requests[0])
+	require.True(t, pool.HasRequest(requests[0].ID()))
+	ready, result := pool.ReadyFromIDs(time.Now(), requests[0].ID())
+	require.True(t, result)
 	require.True(t, len(ready) == 0)
 
 	// provide the blob data in the blob cache
@@ -366,25 +443,13 @@ func TestSolidification(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, blob, hash)
 
-	// force another solidification attempt
-	solid, err := requests[0].SolidifyArgs(blobCache)
-	require.NoError(t, err)
-	require.True(t, solid)
+	// wait for solidification loop to initiate solidification
+	time.Sleep(50 * time.Millisecond)
 
 	// now that solidification happened => request is ready
-	ready, result = pool.TakeAllReady(time.Now(), requests[0].ID())
+	require.True(t, pool.HasRequest(requests[0].ID()))
+	ready, result = pool.ReadyFromIDs(time.Now(), requests[0].ID())
 	require.True(t, result)
 	require.True(t, len(ready) == 1)
 	require.Contains(t, ready, requests[0])
-
-	// solidifiable requests
-	pool.ReceiveRequest(requests[1])
-	pool.ReceiveRequest(requests[2])
-	pool.ReceiveRequest(requests[3])
-	ready, result = pool.TakeAllReady(time.Now(), requests[1].ID(), requests[2].ID(), requests[3].ID())
-	require.True(t, result)
-	require.True(t, len(ready) == 3)
-	require.Contains(t, ready, requests[1])
-	require.Contains(t, ready, requests[2])
-	require.Contains(t, ready, requests[3])
 }
