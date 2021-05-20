@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/evm"
@@ -20,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"golang.org/x/xerrors"
 )
 
@@ -48,7 +48,16 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	err := tx.UnmarshalBinary(ctx.Params().MustGet(FieldTransactionData))
 	a.RequireNoError(err)
 
-	transferedIotas, _ := ctx.IncomingTransfer().Get(ledgerstate.ColorIOTA) // TODO figure out if the feeColor must come from somewhere else
+	// call root contract view to get the feecolor
+	params := codec.MakeDict(map[string]interface{}{
+		root.ParamHname: coretypes.Hn(Name),
+	})
+	feeInfo, err := ctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncGetFeeInfo), params, nil)
+	a.RequireNoError(err)
+	feeColor, _, err := codec.DecodeColor(feeInfo.MustGet(root.ParamFeeColor))
+	a.RequireNoError(err)
+
+	transferedIotas, _ := ctx.IncomingTransfer().Get(feeColor)
 	gasPerIota, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasPerIota))
 	a.RequireNoError(err)
 
@@ -81,7 +90,7 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	// refund unspend gas to the senders on-chain account
 	iotasGasRefund := transferedIotas - iotasGasFee
-	params := codec.MakeDict(map[string]interface{}{
+	params = codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: ctx.Caller(),
 	})
 	_, err = ctx.Call(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), params, coretypes.NewTransferIotas(iotasGasRefund))
