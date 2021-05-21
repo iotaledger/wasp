@@ -42,7 +42,7 @@ func TestMintFail(t *testing.T) {
 	env.AssertAddressBalance(walletAddr, ledgerstate.ColorIOTA, solo.Saldo-1000)
 	env.AssertAddressBalance(walletAddr, color1, 1000)
 
-	_, err = env.MintTokens(wallet, 500)
+	_, err = env.MintTokens(wallet, solo.Saldo)
 	require.Error(t, err)
 	env.AssertAddressBalance(walletAddr, ledgerstate.ColorIOTA, solo.Saldo-1000)
 	env.AssertAddressBalance(walletAddr, color1, 1000)

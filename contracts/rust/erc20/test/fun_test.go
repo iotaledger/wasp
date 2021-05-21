@@ -119,7 +119,7 @@ func TestTransferNotEnoughFunds1(t *testing.T) {
 
 	_, userAddr := chain.Env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentID(userAddr, 0)
-	amount := int64(1338)
+	amount := int64(solo.Saldo + 1)
 
 	checkErc20Balance(chain, creatorAgentID, solo.Saldo)
 	checkErc20Balance(chain, userAgentID, 0)

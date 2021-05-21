@@ -42,7 +42,7 @@ const DefaultTimeStep = 1 * time.Millisecond
 // Saldo is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewKeyPairWithFunds() and such
 const (
-	Saldo              = uint64(1337)
+	Saldo              = uint64(1000000)
 	DustThresholdIotas = uint64(1)
 	ChainDustThreshold = uint64(100)
 	MaxRequestsInBlock = 100
@@ -151,7 +151,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 
 // NewChain deploys new chain instance.
 //
-// If 'chainOriginator' is nil, new one is generated and solo.Saldo (=1337) iotas are loaded from the UTXODB faucet.
+// If 'chainOriginator' is nil, new one is generated and solo.Saldo (=1000000) iotas are loaded from the UTXODB faucet.
 // If 'validatorFeeTarget' is skipped, it is assumed equal to OriginatorAgentID
 // To deploy a chain instance the following steps are performed:
 //  - chain signature scheme (private key), chain address and chain ID are created

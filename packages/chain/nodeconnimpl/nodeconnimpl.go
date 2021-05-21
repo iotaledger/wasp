@@ -37,5 +37,6 @@ func (n *nodeConnImplementation) PullConfirmedOutput(addr ledgerstate.Address, o
 }
 
 func (n *nodeConnImplementation) PostTransaction(tx *ledgerstate.Transaction, from ledgerstate.Address, fromLeader uint16) {
-	n.client.PostTransaction(tx, from, fromLeader)
+	//TODO what about from and fromLeader params?
+	n.client.PostTransaction(tx)
 }

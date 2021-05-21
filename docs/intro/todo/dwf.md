@@ -193,9 +193,9 @@ It will display something like:
 ```
   Address: YyVP3g9B7YfvHCEzLaeD4M3iqKSawyuf8NsXxggghFhP
   Balance:
-    IOTA: 1337
+    IOTA: 1000000
     ------
-    Total: 1337
+    Total: 1000000
 ``` 
 
 Now let the wallet know the specific address of our demo _DonateWithFeedback_ 
