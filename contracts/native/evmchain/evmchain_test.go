@@ -208,14 +208,6 @@ func TestOwner(t *testing.T) {
 	require.True(t, owner.Equals(newUserAgentId))
 }
 
-func getGasPerIotas(t *testing.T, chain *solo.Chain) int64 {
-	ret, err := chain.CallView(Interface.Name, FuncGetGasPerIota)
-	require.NoError(t, err)
-	gasPerIotas, _, err := codec.DecodeInt64(ret.MustGet(FieldResult))
-	require.NoError(t, err)
-	return gasPerIotas
-}
-
 func TestGasPerIotas(t *testing.T) {
 	chain, env := InitEVMChain(t)
 
@@ -225,7 +217,7 @@ func TestGasPerIotas(t *testing.T) {
 	_, callFn := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
 
 	// the default value is correct
-	gasPerIotas := getGasPerIotas(t, chain)
+	gasPerIotas := GetGasPerIotas(t, chain)
 	require.Equal(t, gasPerIotas, DefaultGasPerIota)
 
 	_, gasFee, err := callFn(TestFaucetKey, "store", uint32(43))(nil, 100000)
@@ -243,7 +235,7 @@ func TestGasPerIotas(t *testing.T) {
 	require.Error(t, err)
 
 	// ensure gasPerIotas didn't change after a failed call
-	gasPerIotas = getGasPerIotas(t, chain)
+	gasPerIotas = GetGasPerIotas(t, chain)
 	require.Equal(t, gasPerIotas, DefaultGasPerIota)
 
 	// current owner is able to set a new gasPerIotas
@@ -254,7 +246,7 @@ func TestGasPerIotas(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	gasPerIotas = getGasPerIotas(t, chain)
+	gasPerIotas = GetGasPerIotas(t, chain)
 	require.Equal(t, gasPerIotas, newGasPerIota)
 
 	// run an equivalent request and compare the gas fees
@@ -336,6 +328,27 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 	require.Equal(t, user2Balance1, user2Balance0+chargedGasFee+1) // 1 extra iota from the withdrawal request
 }
 
-func TestGasLimitScaling(t *testing.T) {
-	// TODO test that the gas used scales correctly with the amount of iotas sent
+// tests that the gas limits are correctly enforced based on the iotas sent
+func TestGasLimit(t *testing.T) {
+	chain, env := InitEVMChain(t)
+
+	//deploy storage contract to test gas limits
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(t, err)
+	contractAddress, _ := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
+
+	gasPerIotas := GetGasPerIotas(t, chain)
+
+	callWithGasLimit := createCallFnWithGasLimit(t, chain, env, contractABI, contractAddress, TestFaucetKey, "store", uint32(123))
+
+	iotasForGas := uint64(10000)
+	gaslimit := iotasForGas * uint64(gasPerIotas)
+	// expect request to fail if we don't send enough iotas to match the gas limit specified
+	_, _, err = callWithGasLimit(nil, iotasForGas-1, gaslimit)
+	require.Error(t, err)
+
+	_, _, err = callWithGasLimit(nil, iotasForGas, gaslimit)
+	require.NoError(t, err)
 }
+
+// TODO test sending less gas halts the execution sooner

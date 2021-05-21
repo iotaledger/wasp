@@ -4,7 +4,6 @@
 package evmchain
 
 import (
-	"math"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -58,9 +57,13 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	feeColor, _, err := codec.DecodeColor(feeInfo.MustGet(root.ParamFeeColor))
 	a.RequireNoError(err)
 
-	transferedIotas, _ := ctx.IncomingTransfer().Get(feeColor)
+	transferredIotas, _ := ctx.IncomingTransfer().Get(feeColor)
 	gasPerIota, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasPerIota))
 	a.RequireNoError(err)
+
+	if transferredIotas < tx.Gas()/gasPerIota {
+		panic("not enough iotas to cover the gas limit set in the transaction")
+	}
 
 	emu := emulator(ctx.State())
 	defer emu.Close()
@@ -82,15 +85,15 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	receiptBytes := NewReceipt(receipt, from, tx.To()).Bytes()
 
-	iotasGasFee := uint64(math.Ceil(float64(receipt.GasUsed) / float64(gasPerIota)))
+	iotasGasFee := receipt.GasUsed / gasPerIota
 
-	if transferedIotas < iotasGasFee {
+	if transferredIotas < iotasGasFee {
 		//not enough gas
-		return nil, xerrors.Errorf("not enough iotas to pay the gas fees. spent: %d iotas", transferedIotas)
+		return nil, xerrors.Errorf("not enough iotas to pay the gas fees. spent: %d iotas", transferredIotas)
 	}
 
 	// refund unspend gas to the senders on-chain account
-	iotasGasRefund := transferedIotas - iotasGasFee
+	iotasGasRefund := transferredIotas - iotasGasFee
 	params = codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: ctx.Caller(),
 	})
