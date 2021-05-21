@@ -69,7 +69,6 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
-	chain.WaitForEmptyBacklog()
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
