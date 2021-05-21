@@ -6,9 +6,17 @@ package wasmhost
 import (
 	"encoding/binary"
 	"fmt"
+	"time"
 )
 
+const defaultTimeout = 5 * time.Second
+const disableWasmTimeout = false
+
+// WasmTimeout set this to non-zero for a one-time override of the defaultTimeout
+var WasmTimeout = 0 * time.Second
+
 type WasmVM interface {
+	Interrupt()
 	LinkHost(impl WasmVM, host *WasmHost) error
 	LoadWasm(wasmData []byte) error
 	RunFunction(functionName string, args ...interface{}) error
@@ -20,14 +28,20 @@ type WasmVM interface {
 }
 
 type WasmVmBase struct {
-	impl          WasmVM
-	host          *WasmHost
-	memoryCopy    []byte
-	memoryDirty   bool
-	memoryNonZero int
+	impl           WasmVM
+	host           *WasmHost
+	memoryCopy     []byte
+	memoryDirty    bool
+	memoryNonZero  int
+	timeoutStarted bool
 }
 
 func (vm *WasmVmBase) LinkHost(impl WasmVM, host *WasmHost) error {
+
+	// trick vm into thinking it doesn't have to start the timeout timer
+	// useful when debugging to prevent timing out on breakpoints
+	vm.timeoutStarted = disableWasmTimeout
+
 	vm.impl = impl
 	vm.host = host
 	host.vm = impl
@@ -108,6 +122,39 @@ func (vm *WasmVmBase) PreCall() []byte {
 func (vm *WasmVmBase) PostCall(frame []byte) {
 	ptr := vm.impl.UnsafeMemory()
 	copy(ptr, frame)
+}
+
+func (vm *WasmVmBase) Run(runner func() error) (err error) {
+	if vm.timeoutStarted {
+		// no need to wrap nested calls in timeout code
+		return runner()
+	}
+
+	timeout := defaultTimeout
+	if WasmTimeout != 0 {
+		timeout = WasmTimeout
+		WasmTimeout = 0
+	}
+
+	done := make(chan bool, 2)
+
+	// start timeout handler
+	go func() {
+		select {
+		case <-done: // runner was done before timeout
+		case <-time.After(timeout):
+			// timeout: interrupt Wasm
+			vm.impl.Interrupt()
+			// wait for runner to finish
+			<-done
+		}
+	}()
+
+	vm.timeoutStarted = true
+	err = runner()
+	done <- true
+	vm.timeoutStarted = false
+	return
 }
 
 func (vm *WasmVmBase) SaveMemory() {
