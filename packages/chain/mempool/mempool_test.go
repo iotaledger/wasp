@@ -268,6 +268,7 @@ func TestTimeLock(t *testing.T) {
 		requests[2], // + Time lock slightly before now due to time.Now() in ReadyNow being called later than in this test
 		requests[3], // - Time lock after now
 	)
+	time.Sleep(10 * time.Millisecond) // To ensure that Stats() is called later than now
 	testStatsFun()
 
 	ready := pool.ReadyNow()
