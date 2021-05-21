@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"golang.org/x/xerrors"
 )
 
 func emulator(state kv.KVStore) *evm.EVMEmulator {
@@ -60,9 +59,7 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	gasPerIota, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasPerIota))
 	a.RequireNoError(err)
 
-	if transferredIotas < tx.Gas()/gasPerIota {
-		panic("not enough iotas to cover the gas limit set in the transaction")
-	}
+	a.Require(transferredIotas >= tx.Gas()/gasPerIota, "not enough iotas to cover the gas limit set in the transaction")
 
 	emu := emulator(ctx.State())
 	defer emu.Close()
@@ -90,7 +87,7 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	if transferredIotas < iotasGasFee {
 		//not enough gas
-		return nil, xerrors.Errorf("not enough iotas to pay the gas fees. spent: %d iotas", transferredIotas)
+		ctx.Log().Panicf("inconsistency: not enough iotas to pay the consumed gas fees. spent: %d iotas", transferredIotas)
 	}
 
 	// refund unspend gas to the senders on-chain account
@@ -271,16 +268,18 @@ func callContract(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 // EVM chain management functions ///////////////////////////////////////////////////////////////////////////////////////
 
-func requireOwner(ctx coretypes.Sandbox, a assert.Assert) {
+func requireOwner(ctx coretypes.Sandbox) {
 	contractOwner, _, err := codec.DecodeAgentID(ctx.State().MustGet(FieldEvmOwner))
+	a := assert.NewAssert(ctx.Log())
 	a.RequireNoError(err)
-	a.Require(contractOwner.Equals(ctx.Caller()), "Can only be called by the contract owner")
+	a.Require(contractOwner.Equals(ctx.Caller()), "can only be called by the contract owner")
 }
 
 func setNextOwner(ctx coretypes.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	requireOwner(ctx, a)
-	ctx.State().Set(FieldNextEvmOwner, ctx.Params().MustGet(FieldNextEvmOwner))
+	requireOwner(ctx)
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	//ctx.State().Set(FieldNextEvmOwner, ctx.Params().MustGet(FieldNextEvmOwner))
+	ctx.State().Set(FieldNextEvmOwner, codec.EncodeAgentID(par.MustGetAgentID(FieldNextEvmOwner)))
 	return nil, nil
 }
 
@@ -302,9 +301,14 @@ func getOwner(ctx coretypes.SandboxView) (dict.Dict, error) {
 }
 
 func setGasPerIota(ctx coretypes.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	requireOwner(ctx, a)
-	ctx.State().Set(FieldGasPerIota, ctx.Params().MustGet(FieldGasPerIota))
+	requireOwner(ctx)
+	par := kvdecoder.New(ctx.Params())
+	gasPerIotaBin := codec.EncodeUint64(par.MustGetUint64(FieldGasPerIota))
+	ctx.State().Set(FieldGasPerIota, gasPerIotaBin)
+
+	//a := assert.NewAssert(ctx.Log())
+	//requireOwner(ctx, a)
+	//ctx.State().Set(FieldGasPerIota, )
 	return nil, nil
 }
 
@@ -316,11 +320,10 @@ func getGasPerIota(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 func withdrawGasFees(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	requireOwner(ctx, a)
+	requireOwner(ctx)
 
 	paramsDecoder := kvdecoder.New(ctx.Params(), ctx.Log())
-	targetAgentId, err := paramsDecoder.GetAgentID(FieldAgentId, *ctx.Caller())
-	a.RequireNoError(err)
+	targetAgentId := paramsDecoder.MustGetAgentID(FieldAgentId, *ctx.Caller())
 
 	isOnChain := targetAgentId.Address().Equals(ctx.ChainID().AsAddress())
 
