@@ -1,1 +1,1 @@
-go get -buildmode=exe github.com/iotaledger/goshimmer@feat/alias1
+go get -buildmode=exe github.com/iotaledger/goshimmer@develop

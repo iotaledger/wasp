@@ -58,11 +58,7 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	}
 
 	// save the block info into the 'blocklog' contract
-	err = vmctx.CloseVMContext(uint16(len(task.Requests)), numSuccess, numOffLedger)
-	if err != nil {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM: %w", err))
-		return
-	}
+	vmctx.CloseVMContext(uint16(len(task.Requests)), numSuccess, numOffLedger)
 
 	task.ResultTransaction, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
 	if err != nil {
