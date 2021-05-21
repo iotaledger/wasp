@@ -67,8 +67,10 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	emu := emulator(ctx.State())
 	defer emu.Close()
 
-	err = emu.SendTransaction(tx)
-	a.RequireNoError(err)
+	err = emu.SendTransaction(tx, ctx)
+	if err != nil {
+		return nil, nil
+	}
 
 	//solidifies the pending block
 	emu.Commit()

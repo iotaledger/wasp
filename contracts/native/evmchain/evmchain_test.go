@@ -161,7 +161,7 @@ func TestGasCharged(t *testing.T) {
 	// call `retrieve` view, get 999 - which means store(123) failed and the previous state is kept
 	require.EqualValues(t, 42, callStorageRetrieve(t, chain, contractAddress))
 
-	// verify user on-chain account still has the same balance
+	// verify user on-chain account still has the same balance (no refund happened)
 	chain.AssertIotas(userAgentID, expectedUserBalance)
 }
 
@@ -386,14 +386,23 @@ func TestLoop(t *testing.T) {
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.LoopContractABI))
 	require.NoError(t, err)
 	_, callFn := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.LoopContractBytecode)
+	userWallet, userAddress := env.NewKeyPairWithFunds()
+	userAgentID := coretypes.NewAgentID(userAddress, 0)
 
-	receipt, chargedGasFee, err := callFn(TestFaucetKey, "loop")(nil, 100)
+	initialBalance := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA)
+	iotasSpent1 := uint64(100)
+	receipt, chargedGasFee, err := callFn(TestFaucetKey, "loop")(userWallet, 100)
 	require.NoError(t, err)
-	require.Equal(t, chargedGasFee, uint64(100))
+	require.Equal(t, chargedGasFee, uint64(iotasSpent1))
 	gasUsed := receipt.GasUsed
 
-	receipt, chargedGasFee, err = callFn(TestFaucetKey, "loop")(nil, 100000)
+	receipt, chargedGasFee, err = callFn(TestFaucetKey, "loop")(userWallet, 100000)
+	iotasSpent2 := uint64(100000)
 	require.NoError(t, err)
-	require.Equal(t, chargedGasFee, uint64(100000))
+	require.Equal(t, chargedGasFee, uint64(iotasSpent2))
 	require.Greater(t, receipt.GasUsed, gasUsed)
+
+	// ensure iotas sent are kept by the evmchain SC
+	require.Equal(t, env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA), initialBalance-iotasSpent1-iotasSpent2)
+	chain.AssertIotas(userAgentID, 0)
 }
