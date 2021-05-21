@@ -252,7 +252,7 @@ func TestGasPerIotas(t *testing.T) {
 	newUserWallet, _ := env.NewKeyPairWithFunds()
 	_, err = chain.PostRequestSync(
 		solo.NewCallParams(Interface.Name, FuncSetGasPerIota, FieldGasPerIota, newGasPerIota).
-			WithIotas(100000),
+			WithIotas(1),
 		newUserWallet,
 	)
 	require.Error(t, err)
