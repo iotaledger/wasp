@@ -276,10 +276,21 @@ func requireOwner(ctx coretypes.Sandbox, a assert.Assert) {
 	a.Require(contractOwner.Equals(ctx.Caller()), "Can only be called by the contract owner")
 }
 
-func setOwner(ctx coretypes.Sandbox) (dict.Dict, error) {
+func setNextOwner(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	requireOwner(ctx, a)
-	ctx.State().Set(FieldEvmOwner, ctx.Params().MustGet(FieldEvmOwner))
+	ctx.State().Set(FieldNextEvmOwner, ctx.Params().MustGet(FieldNextEvmOwner))
+	return nil, nil
+}
+
+func claimOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+
+	nextOwner, _, err := codec.DecodeAgentID(ctx.State().MustGet(FieldNextEvmOwner))
+	a.RequireNoError(err)
+	a.Require(nextOwner.Equals(ctx.Caller()), "Can only be called by the contract owner")
+
+	ctx.State().Set(FieldEvmOwner, codec.EncodeAgentID(&nextOwner))
 	return nil, nil
 }
 

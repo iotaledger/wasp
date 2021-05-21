@@ -36,7 +36,8 @@ func init() {
 		coreutil.ViewFunc(FuncGetBlockByHash, getBlockByHash),
 
 		// EVMchain SC management
-		coreutil.Func(FuncSetOwner, setOwner),
+		coreutil.Func(FuncSetNextOwner, setNextOwner),
+		coreutil.Func(FuncClaimOwnership, claimOwnership),
 		coreutil.Func(FuncSetGasPerIota, setGasPerIota),
 		coreutil.Func(FuncWithdrawGasFees, withdrawGasFees),
 		coreutil.ViewFunc(FuncGetOwner, getOwner),
@@ -58,7 +59,8 @@ const (
 	FuncGetBlockByHash   = "getBlockByHash"
 
 	// EVMchain SC management
-	FuncSetOwner        = "setOwner"
+	FuncSetNextOwner    = "setNextOwner"
+	FuncClaimOwnership  = "claimOwnership"
 	FuncGetOwner        = "getOwner"
 	FuncSetGasPerIota   = "setGasPerIota"
 	FuncGetGasPerIota   = "getGasPerIota"
@@ -78,6 +80,7 @@ const (
 	FieldBlockNumber             = "bn"
 	FieldBlockHash               = "bh"
 	FieldEvmOwner                = "o"
+	FieldNextEvmOwner            = "n"
 	FieldGasPerIota              = "w"
 	FieldGasFee                  = "f"
 )

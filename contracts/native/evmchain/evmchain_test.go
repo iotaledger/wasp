@@ -179,12 +179,12 @@ func TestOwner(t *testing.T) {
 	require.True(t, owner.Equals(&chain.OriginatorAgentID))
 
 	// only the owner can call the setOwner endpoint
-	newUserWallet, newUserAddress := env.NewKeyPairWithFunds()
-	newUserAgentId := coretypes.NewAgentID(newUserAddress, 0)
+	user1Wallet, user1Address := env.NewKeyPairWithFunds()
+	user1AgentId := coretypes.NewAgentID(user1Address, 0)
 	_, err := chain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, FuncSetOwner, FieldEvmOwner, newUserAgentId).
+		solo.NewCallParams(Interface.Name, FuncSetNextOwner, FieldNextEvmOwner, user1AgentId).
 			WithIotas(100000),
-		newUserWallet,
+		user1Wallet,
 	)
 	require.Error(t, err)
 
@@ -192,16 +192,41 @@ func TestOwner(t *testing.T) {
 	owner = getEvmOwner(t, chain)
 	require.True(t, owner.Equals(&chain.OriginatorAgentID))
 
-	// current owner is able to set a new owner
+	// current owner is able to set a new "next owner"
 	_, err = chain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, FuncSetOwner, FieldEvmOwner, newUserAgentId).
+		solo.NewCallParams(Interface.Name, FuncSetNextOwner, FieldNextEvmOwner, user1AgentId).
 			WithIotas(100000),
 		chain.OriginatorKeyPair,
 	)
 	require.NoError(t, err)
 
+	// check that the owner didn't change yet (new owner needs to claim ownership)
 	owner = getEvmOwner(t, chain)
-	require.True(t, owner.Equals(newUserAgentId))
+	require.True(t, owner.Equals(&chain.OriginatorAgentID))
+
+	//check no other user can claim ownership
+	user2Wallet, _ := env.NewKeyPairWithFunds()
+
+	_, err = chain.PostRequestSync(
+		solo.NewCallParams(Interface.Name, FuncClaimOwnership).
+			WithIotas(100000),
+		user2Wallet,
+	)
+	require.Error(t, err)
+
+	// owner still the same
+	owner = getEvmOwner(t, chain)
+	require.True(t, owner.Equals(&chain.OriginatorAgentID))
+
+	//claim ownership successfully
+	_, err = chain.PostRequestSync(
+		solo.NewCallParams(Interface.Name, FuncClaimOwnership).
+			WithIotas(100000),
+		user1Wallet,
+	)
+	require.NoError(t, err)
+	owner = getEvmOwner(t, chain)
+	require.True(t, owner.Equals(user1AgentId))
 }
 
 func TestGasPerIotas(t *testing.T) {
@@ -276,9 +301,15 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 
 	// change owner to user1
 	_, err = chain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, FuncSetOwner, FieldEvmOwner, user1AgentID).
+		solo.NewCallParams(Interface.Name, FuncSetNextOwner, FieldNextEvmOwner, user1AgentID).
 			WithIotas(1),
 		chain.OriginatorKeyPair,
+	)
+	require.NoError(t, err)
+	_, err = chain.PostRequestSync(
+		solo.NewCallParams(Interface.Name, FuncClaimOwnership).
+			WithIotas(1),
+		user1Wallet,
 	)
 	require.NoError(t, err)
 
