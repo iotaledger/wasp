@@ -351,4 +351,20 @@ func TestGasLimit(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// TODO test sending less gas halts the execution sooner
+// ensure the amount of iotas sent impacts the amount of loop iterators (gas used)
+func TestLoop(t *testing.T) {
+	chain, env := InitEVMChain(t)
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.LoopContractABI))
+	require.NoError(t, err)
+	_, callFn := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.LoopContractBytecode)
+
+	receipt, chargedGasFee, err := callFn(TestFaucetKey, "loop")(nil, 100)
+	require.NoError(t, err)
+	require.Equal(t, chargedGasFee, uint64(100))
+	gasUsed := receipt.GasUsed
+
+	receipt, chargedGasFee, err = callFn(TestFaucetKey, "loop")(nil, 100000)
+	require.NoError(t, err)
+	require.Equal(t, chargedGasFee, uint64(100000))
+	require.Greater(t, receipt.GasUsed, gasUsed)
+}

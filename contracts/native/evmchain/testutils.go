@@ -55,7 +55,6 @@ func DeployEVMContract(t *testing.T, chain *solo.Chain, env *solo.Solo, creator 
 
 	nonce := getNonceFor(t, chain, creatorAddress)
 
-	// initialize number as 42
 	constructorArguments, err := contractABI.Pack("", args...)
 	require.NoError(t, err)
 
