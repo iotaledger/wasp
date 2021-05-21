@@ -3,6 +3,7 @@ package evmchain
 import (
 	"crypto/ecdsa"
 	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -13,6 +14,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
@@ -145,23 +147,22 @@ func createCallFnWithGasLimit(t *testing.T, chain *solo.Chain, env *solo.Solo, c
 	}
 }
 
-// helper to reuse code to call the `retrieve` view in the storage contract
-func GetCallRetrieveView(t *testing.T, chain *solo.Chain, contractAddress common.Address, contractABI abi.ABI) func() uint32 {
-	return func() uint32 {
-		callArguments, err := contractABI.Pack("retrieve")
-		require.NoError(t, err)
+func callStorageRetrieve(t *testing.T, chain *solo.Chain, contractAddress common.Address) uint32 {
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(t, err)
+	callArguments, err := contractABI.Pack("retrieve")
+	require.NoError(t, err)
 
-		ret, err := chain.CallView(Interface.Name, FuncCallView,
-			FieldAddress, contractAddress.Bytes(),
-			FieldCallArguments, callArguments,
-		)
-		require.NoError(t, err)
+	ret, err := chain.CallView(Interface.Name, FuncCallView,
+		FieldAddress, contractAddress.Bytes(),
+		FieldCallArguments, callArguments,
+	)
+	require.NoError(t, err)
 
-		var v uint32
-		err = contractABI.UnpackIntoInterface(&v, "retrieve", ret.MustGet(FieldResult))
-		require.NoError(t, err)
-		return v
-	}
+	var v uint32
+	err = contractABI.UnpackIntoInterface(&v, "retrieve", ret.MustGet(FieldResult))
+	require.NoError(t, err)
+	return v
 }
 
 func GetGasPerIotas(t *testing.T, chain *solo.Chain) int64 {

@@ -43,17 +43,15 @@ func TestStorageContract(t *testing.T) {
 	// deploy solidity `storage` contract
 	contractAddress, callFn := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
 
-	retrieve := GetCallRetrieveView(t, chain, contractAddress, contractABI)
-
 	// call evmchain's FuncCallView to call EVM contract's `retrieve` view, get 42
-	require.EqualValues(t, 42, retrieve())
+	require.EqualValues(t, 42, callStorageRetrieve(t, chain, contractAddress))
 
 	// call FuncSendTransaction with EVM tx that calls `store(43)`
 	_, _, err = callFn(TestFaucetKey, "store", uint32(43))(nil, 100000)
 	require.NoError(t, err)
 
 	// call `retrieve` view, get 43
-	require.EqualValues(t, 43, retrieve())
+	require.EqualValues(t, 43, callStorageRetrieve(t, chain, contractAddress))
 }
 
 func TestERC20Contract(t *testing.T) {
@@ -132,10 +130,8 @@ func TestGasCharged(t *testing.T) {
 	// deploy solidity `storage` contract
 	contractAddress, callFn := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
 
-	retrieve := GetCallRetrieveView(t, chain, contractAddress, contractABI)
-
 	// call evmchain's FuncCallView to call EVM contract's `retrieve` view, get 42
-	require.EqualValues(t, 42, retrieve())
+	require.EqualValues(t, 42, callStorageRetrieve(t, chain, contractAddress))
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentID(userAddress, 0)
@@ -149,7 +145,7 @@ func TestGasCharged(t *testing.T) {
 	require.Greater(t, gasFee, uint64(0))
 
 	// call `retrieve` view, get 42
-	require.EqualValues(t, 42, retrieve())
+	require.EqualValues(t, 42, callStorageRetrieve(t, chain, contractAddress))
 
 	// user on-chain account is credited with excess iotas (iotasSent - gasUsed)
 	expectedUserBalance := iotasSent - gasFee
@@ -161,7 +157,7 @@ func TestGasCharged(t *testing.T) {
 	require.Error(t, err)
 
 	// call `retrieve` view, get 999 - which means store(123) failed and the previous state is kept
-	require.EqualValues(t, 42, retrieve())
+	require.EqualValues(t, 42, callStorageRetrieve(t, chain, contractAddress))
 
 	// verify user on-chain account still has the same balance
 	chain.AssertIotas(userAgentID, expectedUserBalance)
