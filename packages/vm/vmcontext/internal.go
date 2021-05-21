@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -85,12 +86,15 @@ func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte
 	return blob.LocateProgram(vmctx.State(), programHash)
 }
 
-func (vmctx *VMContext) getBalance(col ledgerstate.Color) uint64 {
+func (vmctx *VMContext) getBalanceOfAccount(agentId *coretypes.AgentID, col ledgerstate.Color) uint64 {
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	aid := vmctx.MyAgentID()
-	return accounts.GetBalance(vmctx.State(), aid, col)
+	return accounts.GetBalance(vmctx.State(), agentId, col)
+}
+
+func (vmctx *VMContext) getBalance(col ledgerstate.Color) uint64 {
+	return vmctx.getBalanceOfAccount(vmctx.MyAgentID(), col)
 }
 
 func (vmctx *VMContext) getMyBalances() *ledgerstate.ColoredBalances {

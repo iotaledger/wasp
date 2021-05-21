@@ -24,6 +24,7 @@ var Interface = &coreutil.ContractInterface{
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
+		// Ethereum blockchain
 		coreutil.Func(FuncSendTransaction, applyTransaction),
 		coreutil.ViewFunc(FuncGetBalance, getBalance),
 		coreutil.ViewFunc(FuncCallContract, callContract),
@@ -33,11 +34,20 @@ func init() {
 		coreutil.ViewFunc(FuncGetBlockNumber, getBlockNumber),
 		coreutil.ViewFunc(FuncGetBlockByNumber, getBlockByNumber),
 		coreutil.ViewFunc(FuncGetBlockByHash, getBlockByHash),
+
+		// EVMchain SC management
+		coreutil.Func(FuncSetNextOwner, setNextOwner),
+		coreutil.Func(FuncClaimOwnership, claimOwnership),
+		coreutil.Func(FuncSetGasPerIota, setGasPerIota),
+		coreutil.Func(FuncWithdrawGasFees, withdrawGasFees),
+		coreutil.ViewFunc(FuncGetOwner, getOwner),
+		coreutil.ViewFunc(FuncGetGasPerIota, getGasPerIota),
 	})
 	native.AddProcessor(Interface)
 }
 
 const (
+	// Ethereum blockchain
 	FuncGetBalance       = "getBalance"
 	FuncSendTransaction  = "sendTransaction"
 	FuncCallContract     = "callContract"
@@ -47,16 +57,33 @@ const (
 	FuncGetBlockNumber   = "getBlockNumber"
 	FuncGetBlockByNumber = "getBlockByNumber"
 	FuncGetBlockByHash   = "getBlockByHash"
+
+	// EVMchain SC management
+	FuncSetNextOwner    = "setNextOwner"
+	FuncClaimOwnership  = "claimOwnership"
+	FuncGetOwner        = "getOwner"
+	FuncSetGasPerIota   = "setGasPerIota"
+	FuncGetGasPerIota   = "getGasPerIota"
+	FuncWithdrawGasFees = "withdrawGasFees"
 )
 
 const (
-	FieldGenesisAlloc    = "g"
-	FieldAddress         = "a"
-	FieldTransactionHash = "h"
-	FieldTransactionData = "t"
-	FieldBalance         = "b"
-	FieldCallMsg         = "c"
-	FieldResult          = "r"
-	FieldBlockNumber     = "bn"
-	FieldBlockHash       = "bh"
+	FieldGenesisAlloc            = "g"
+	FieldAddress                 = "a"
+	FieldAgentId                 = "i"
+	FieldTransactionHash         = "h"
+	FieldTransactionData         = "t"
+	FieldTransactionDataBlobHash = "th"
+	FieldBalance                 = "b"
+	FieldCallArguments           = "c"
+	FieldResult                  = "r"
+	FieldBlockNumber             = "bn"
+	FieldBlockHash               = "bh"
+	FieldCallMsg                 = "c"
+	FieldEvmOwner                = "o"
+	FieldNextEvmOwner            = "n"
+	FieldGasPerIota              = "w"
+	FieldGasFee                  = "f"
 )
+
+const DefaultGasPerIota int64 = 1000

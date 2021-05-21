@@ -2,10 +2,11 @@ package vmcontext
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"runtime/debug"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -198,6 +199,8 @@ func (vmctx *VMContext) mustHandleFees() bool {
 }
 
 // Return false if not enough fees
+// charges fees to the validator/chain owner and moves funds from on-ledger (tangle) request to the respective on-chain account
+// !!! must only be called before the request is processed.
 func (vmctx *VMContext) grabFee(account *coretypes.AgentID, amount uint64) bool {
 	if amount == 0 {
 		return true
