@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -67,10 +68,11 @@ func TestERC20Contract(t *testing.T) {
 		callArguments, err := contractABI.Pack(name, args...)
 		require.NoError(t, err)
 
-		ret, err := chain.CallView(Interface.Name, FuncCallView,
-			FieldAddress, contractAddress.Bytes(),
-			FieldCallArguments, callArguments,
-		)
+		ret, err := chain.CallView(Interface.Name, FuncCallContract, FieldCallMsg, EncodeCallMsg(ethereum.CallMsg{
+			From: TestFaucetAddress,
+			To:   &contractAddress,
+			Data: callArguments,
+		}))
 		require.NoError(t, err)
 
 		v := new(big.Int)

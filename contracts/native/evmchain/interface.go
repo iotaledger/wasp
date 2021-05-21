@@ -27,7 +27,7 @@ func init() {
 		// Ethereum blockchain
 		coreutil.Func(FuncSendTransaction, applyTransaction),
 		coreutil.ViewFunc(FuncGetBalance, getBalance),
-		coreutil.ViewFunc(FuncCallView, callView),
+		coreutil.ViewFunc(FuncCallContract, callContract),
 		coreutil.ViewFunc(FuncGetNonce, getNonce),
 		coreutil.ViewFunc(FuncGetReceipt, getReceipt),
 		coreutil.ViewFunc(FuncGetCode, getCode),
@@ -50,7 +50,7 @@ const (
 	// Ethereum blockchain
 	FuncGetBalance       = "getBalance"
 	FuncSendTransaction  = "sendTransaction"
-	FuncCallView         = "callView"
+	FuncCallContract     = "callContract"
 	FuncGetNonce         = "getNonce"
 	FuncGetReceipt       = "getReceipt"
 	FuncGetCode          = "getCode"
@@ -79,6 +79,7 @@ const (
 	FieldResult                  = "r"
 	FieldBlockNumber             = "bn"
 	FieldBlockHash               = "bh"
+	FieldCallMsg                 = "c"
 	FieldEvmOwner                = "o"
 	FieldNextEvmOwner            = "n"
 	FieldGasPerIota              = "w"

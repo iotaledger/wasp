@@ -6,7 +6,6 @@ package evmchain
 import (
 	"math/big"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -242,25 +241,25 @@ func getCode(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 	code, err := emu.CodeAt(addr, nil)
 	a.RequireNoError(err)
+	if code == nil {
+		code = []byte{}
+	}
 
 	ret := dict.New()
 	ret.Set(FieldResult, code)
 	return ret, nil
 }
 
-func callView(ctx coretypes.SandboxView) (dict.Dict, error) {
+func callContract(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
-	contractAddress := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
-	callArguments := ctx.Params().MustGet(FieldCallArguments)
+	callMsg, err := DecodeCallMsg(ctx.Params().MustGet(FieldCallMsg))
+	a.RequireNoError(err)
 
 	emu := emulatorR(ctx.State())
 	defer emu.Close()
 
-	res, err := emu.CallContract(ethereum.CallMsg{
-		To:   &contractAddress,
-		Data: callArguments,
-	}, nil)
+	res, err := emu.CallContract(callMsg, nil)
 	a.RequireNoError(err)
 
 	ret := dict.New()

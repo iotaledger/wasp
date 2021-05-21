@@ -3,6 +3,7 @@ package service
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
@@ -38,14 +39,17 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	)
 }
 
-func (e *EVMChain) Balance(address common.Address, blockNumber *big.Int) (*big.Int, error) {
-	params := []interface{}{
-		evmchain.FieldAddress, address.Bytes(),
-	}
+func paramsWithOptionalBlockNumber(blockNumber *big.Int, params ...interface{}) []interface{} {
 	if blockNumber != nil {
-		params = append(params, evmchain.FieldBlockNumber, blockNumber.Bytes())
+		return append(params, evmchain.FieldBlockNumber, blockNumber.Bytes())
 	}
-	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetBalance, params...)
+	return params
+}
+
+func (e *EVMChain) Balance(address common.Address, blockNumber *big.Int) (*big.Int, error) {
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetBalance, paramsWithOptionalBlockNumber(blockNumber,
+		evmchain.FieldAddress, address.Bytes(),
+	)...)
 	if err != nil {
 		return nil, err
 	}
@@ -55,12 +59,18 @@ func (e *EVMChain) Balance(address common.Address, blockNumber *big.Int) (*big.I
 	return bal, nil
 }
 
-func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
-	params := []interface{}{}
-	if blockNumber != nil {
-		params = append(params, evmchain.FieldBlockNumber, blockNumber.Bytes())
+func (e *EVMChain) Code(address common.Address, blockNumber *big.Int) ([]byte, error) {
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetCode, paramsWithOptionalBlockNumber(blockNumber,
+		evmchain.FieldAddress, address.Bytes(),
+	)...)
+	if err != nil {
+		return nil, err
 	}
-	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetBlockByNumber, params...)
+	return ret.MustGet(evmchain.FieldResult), nil
+}
+
+func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetBlockByNumber, paramsWithOptionalBlockNumber(blockNumber)...)
 	if err != nil {
 		return nil, err
 	}
@@ -115,13 +125,9 @@ func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*evmchain.Receipt, er
 }
 
 func (e *EVMChain) TransactionCount(address common.Address, blockNumber *big.Int) (uint64, error) {
-	params := []interface{}{
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetNonce, paramsWithOptionalBlockNumber(blockNumber,
 		evmchain.FieldAddress, address.Bytes(),
-	}
-	if blockNumber != nil {
-		params = append(params, evmchain.FieldBlockNumber, blockNumber.Bytes())
-	}
-	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetNonce, params...)
+	)...)
 	if err != nil {
 		return 0, err
 	}
@@ -131,4 +137,12 @@ func (e *EVMChain) TransactionCount(address common.Address, blockNumber *big.Int
 		return 0, err
 	}
 	return n, nil
+}
+
+func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncCallContract, evmchain.FieldCallMsg, evmchain.EncodeCallMsg(args))
+	if err != nil {
+		return nil, err
+	}
+	return ret.MustGet(evmchain.FieldResult), nil
 }

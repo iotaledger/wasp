@@ -4,15 +4,20 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"math/big"
+	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	ethlog "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/tools/evmproxy/service"
 	"github.com/stretchr/testify/require"
 )
@@ -24,6 +29,13 @@ type env struct {
 }
 
 func newEnv(t *testing.T) *env {
+	ethlog.Root().SetHandler(ethlog.FuncHandler(func(r *ethlog.Record) error {
+		if r.Lvl <= ethlog.LvlWarn {
+			t.Logf("[%s] %s", r.Lvl.AlignedString(), r.Msg)
+		}
+		return nil
+	}))
+
 	soloEVMChain := service.NewEVMChain(service.NewSoloBackend(core.GenesisAlloc{
 		faucetAddress: {Balance: faucetSupply},
 	}))
@@ -60,6 +72,29 @@ func (e *env) requestFunds(target common.Address) *types.Transaction {
 	return tx
 }
 
+func (e *env) deployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (*types.Transaction, common.Address) {
+	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
+
+	nonce := e.nonceAt(creatorAddress)
+
+	constructorArguments, err := contractABI.Pack("", args...)
+	require.NoError(e.t, err)
+
+	data := append(contractBytecode, constructorArguments...)
+
+	tx, err := types.SignTx(
+		types.NewContractCreation(nonce, big.NewInt(0), evm.GasLimit, evm.GasPrice, data),
+		evm.Signer(),
+		creator,
+	)
+	require.NoError(e.t, err)
+
+	err = e.client.SendTransaction(context.Background(), tx)
+	require.NoError(e.t, err)
+
+	return tx, crypto.CreateAddress(creatorAddress, nonce)
+}
+
 func (e *env) nonceAt(address common.Address) uint64 {
 	nonce, err := e.client.NonceAt(context.Background(), address, nil)
 	require.NoError(e.t, err)
@@ -90,6 +125,12 @@ func (e *env) balance(address common.Address) *big.Int {
 	return bal
 }
 
+func (e *env) code(address common.Address) []byte {
+	bal, err := e.client.CodeAt(context.Background(), address, nil)
+	require.NoError(e.t, err)
+	return bal
+}
+
 func (e *env) txReceipt(hash common.Hash) *types.Receipt {
 	r, err := e.client.TransactionReceipt(context.Background(), hash)
 	require.NoError(e.t, err)
@@ -102,6 +143,24 @@ func TestRPCGetBalance(t *testing.T) {
 	require.Zero(t, big.NewInt(0).Cmp(env.balance(receiverAddress)))
 	env.requestFunds(receiverAddress)
 	require.Zero(t, big.NewInt(1e18).Cmp(env.balance(receiverAddress)))
+}
+
+func TestRPCGetCode(t *testing.T) {
+	env := newEnv(t)
+	creator, creatorAddress := generateKey(t)
+
+	// account address
+	{
+		env.requestFunds(creatorAddress)
+		require.Empty(t, env.code(creatorAddress))
+	}
+	// contract address
+	{
+		contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+		require.NoError(t, err)
+		_, contractAddress := env.deployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(42))
+		require.NotEmpty(t, env.code(contractAddress))
+	}
 }
 
 func TestRPCBlockNumber(t *testing.T) {
@@ -138,23 +197,70 @@ func TestRPCGetBlockByHash(t *testing.T) {
 
 func TestRPCGetTxReceipt(t *testing.T) {
 	env := newEnv(t)
-	_, receiverAddress := generateKey(t)
-	tx := env.requestFunds(receiverAddress)
+	creator, creatorAddr := generateKey(t)
 
-	// TODO: test the receipt of a contract call
+	// regular transaction
+	{
+		tx := env.requestFunds(creatorAddr)
+		receipt := env.txReceipt(tx.Hash())
 
-	receipt := env.txReceipt(tx.Hash())
-	require.EqualValues(t, types.LegacyTxType, receipt.Type)
-	require.EqualValues(t, types.ReceiptStatusSuccessful, receipt.Status)
-	require.NotZero(t, receipt.CumulativeGasUsed)
-	require.EqualValues(t, types.Bloom{}, receipt.Bloom)
-	require.EqualValues(t, 0, len(receipt.Logs))
+		require.EqualValues(t, types.LegacyTxType, receipt.Type)
+		require.EqualValues(t, types.ReceiptStatusSuccessful, receipt.Status)
+		require.NotZero(t, receipt.CumulativeGasUsed)
+		require.EqualValues(t, types.Bloom{}, receipt.Bloom)
+		require.EqualValues(t, 0, len(receipt.Logs))
 
-	require.EqualValues(t, tx.Hash(), receipt.TxHash)
-	require.EqualValues(t, common.Address{}, receipt.ContractAddress)
-	require.NotZero(t, receipt.GasUsed)
+		require.EqualValues(t, tx.Hash(), receipt.TxHash)
+		require.EqualValues(t, common.Address{}, receipt.ContractAddress)
+		require.NotZero(t, receipt.GasUsed)
 
-	require.EqualValues(t, env.blockByNumber(big.NewInt(1)).Hash(), receipt.BlockHash)
-	require.EqualValues(t, big.NewInt(1), receipt.BlockNumber)
-	require.EqualValues(t, 0, receipt.TransactionIndex)
+		require.EqualValues(t, big.NewInt(1), receipt.BlockNumber)
+		require.EqualValues(t, env.blockByNumber(big.NewInt(1)).Hash(), receipt.BlockHash)
+		require.EqualValues(t, 0, receipt.TransactionIndex)
+	}
+
+	// contract creation
+	{
+		contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+		require.NoError(t, err)
+		tx, contractAddress := env.deployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(42))
+		receipt := env.txReceipt(tx.Hash())
+
+		require.EqualValues(t, types.LegacyTxType, receipt.Type)
+		require.EqualValues(t, types.ReceiptStatusSuccessful, receipt.Status)
+		require.NotZero(t, receipt.CumulativeGasUsed)
+		require.EqualValues(t, types.Bloom{}, receipt.Bloom)
+		require.EqualValues(t, 0, len(receipt.Logs))
+
+		require.EqualValues(t, tx.Hash(), receipt.TxHash)
+		require.EqualValues(t, contractAddress, receipt.ContractAddress)
+		require.NotZero(t, receipt.GasUsed)
+
+		require.EqualValues(t, big.NewInt(2), receipt.BlockNumber)
+		require.EqualValues(t, env.blockByNumber(big.NewInt(2)).Hash(), receipt.BlockHash)
+		require.EqualValues(t, 0, receipt.TransactionIndex)
+	}
+}
+
+func TestRPCCall(t *testing.T) {
+	env := newEnv(t)
+	creator, creatorAddress := generateKey(t)
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(t, err)
+	_, contractAddress := env.deployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(42))
+
+	callArguments, err := contractABI.Pack("retrieve")
+	require.NoError(t, err)
+
+	ret, err := env.client.CallContract(context.Background(), ethereum.CallMsg{
+		From: creatorAddress,
+		To:   &contractAddress,
+		Data: callArguments,
+	}, nil)
+	require.NoError(t, err)
+
+	var v uint32
+	err = contractABI.UnpackIntoInterface(&v, "retrieve", ret)
+	require.NoError(t, err)
+	require.Equal(t, uint32(42), v)
 }

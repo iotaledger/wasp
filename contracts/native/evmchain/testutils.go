@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -153,10 +154,11 @@ func callStorageRetrieve(t *testing.T, chain *solo.Chain, contractAddress common
 	callArguments, err := contractABI.Pack("retrieve")
 	require.NoError(t, err)
 
-	ret, err := chain.CallView(Interface.Name, FuncCallView,
-		FieldAddress, contractAddress.Bytes(),
-		FieldCallArguments, callArguments,
-	)
+	ret, err := chain.CallView(Interface.Name, FuncCallContract, FieldCallMsg, EncodeCallMsg(ethereum.CallMsg{
+		From: TestFaucetAddress,
+		To:   &contractAddress,
+		Data: callArguments,
+	}))
 	require.NoError(t, err)
 
 	var v uint32
