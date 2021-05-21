@@ -88,6 +88,7 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if transferredIotas < iotasGasFee {
 		//not enough gas
 		ctx.Log().Panicf("inconsistency: not enough iotas to pay the consumed gas fees. spent: %d iotas", transferredIotas)
+		return nil, nil
 	}
 
 	// refund unspend gas to the senders on-chain account
@@ -278,7 +279,6 @@ func requireOwner(ctx coretypes.Sandbox) {
 func setNextOwner(ctx coretypes.Sandbox) (dict.Dict, error) {
 	requireOwner(ctx)
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	//ctx.State().Set(FieldNextEvmOwner, ctx.Params().MustGet(FieldNextEvmOwner))
 	ctx.State().Set(FieldNextEvmOwner, codec.EncodeAgentID(par.MustGetAgentID(FieldNextEvmOwner)))
 	return nil, nil
 }
@@ -305,10 +305,6 @@ func setGasPerIota(ctx coretypes.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params())
 	gasPerIotaBin := codec.EncodeUint64(par.MustGetUint64(FieldGasPerIota))
 	ctx.State().Set(FieldGasPerIota, gasPerIotaBin)
-
-	//a := assert.NewAssert(ctx.Log())
-	//requireOwner(ctx, a)
-	//ctx.State().Set(FieldGasPerIota, )
 	return nil, nil
 }
 
