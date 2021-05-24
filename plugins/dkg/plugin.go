@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
 	"go.dedis.ch/kyber/v3/util/key"
+	"go.uber.org/zap"
 )
 
 const pluginName = "DKG"
@@ -21,7 +22,7 @@ var (
 // Init is an entry point for the plugin.
 func Init(suite dkg_pkg.Suite) *hive_node.Plugin {
 	configure := func(_ *hive_node.Plugin) {
-		logger := logger.NewLogger(pluginName)
+		log := logger.NewLogger(pluginName)
 		registry := registry.DefaultRegistry()
 		peeringProvider := peering.DefaultNetworkProvider()
 		var err error
@@ -35,7 +36,7 @@ func Init(suite dkg_pkg.Suite) *hive_node.Plugin {
 			suite,
 			peeringProvider,
 			registry,
-			logger,
+			log.Desugar().WithOptions(zap.IncreaseLevel(logger.LevelWarn)).Sugar(),
 		)
 	}
 	run := func(_ *hive_node.Plugin) {
