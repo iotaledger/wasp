@@ -118,12 +118,15 @@ func (m *mempool) isRequestReady(ref *requestRef, nowis time.Time) bool {
 
 // ReadyNow returns preliminary batch for consensus.
 // Note that later status of request may change due to time constraints
-func (m *mempool) ReadyNow() []coretypes.Request {
+func (m *mempool) ReadyNow(now ...time.Time) []coretypes.Request {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	ret := make([]coretypes.Request, 0, len(m.requestRefs))
 	nowis := time.Now()
+	if len(now) > 0 {
+		nowis = now[0]
+	}
+	ret := make([]coretypes.Request, 0, len(m.requestRefs))
 	for _, ref := range m.requestRefs {
 		if m.isRequestReady(ref, nowis) {
 			ret = append(ret, ref.req)

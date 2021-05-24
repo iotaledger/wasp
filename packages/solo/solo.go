@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chain/mempool"
+
 	"github.com/iotaledger/wasp/packages/vm"
 
 	"github.com/iotaledger/wasp/packages/vm/runvm"
@@ -19,7 +21,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/mempool_old"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -116,7 +117,7 @@ type Chain struct {
 	// related to asynchronous backlog processing
 	runVMMutex sync.Mutex
 	reqCounter atomic.Int32
-	mempool    chain.MempoolOld
+	mempool    chain.Mempool
 }
 
 var (
@@ -227,7 +228,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		proc:                   processors.MustNew(),
 		Log:                    chainlog,
 	}
-	ret.mempool = mempool_old.New(ret.StateReader, env.blobCache, chainlog)
+	ret.mempool = mempool.New(ret.StateReader, env.blobCache, chainlog)
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 
@@ -335,7 +336,7 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 		}
 		chain.reqCounter.Add(int32(len(reqs)))
 		for _, req := range reqs {
-			chain.mempool.ReceiveRequest(req)
+			chain.mempool.ReceiveRequests(req)
 		}
 	}
 }
@@ -364,7 +365,7 @@ func (ch *Chain) collateBatch() []coretypes.Request {
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
 	ret := make([]coretypes.Request, 0)
-	ready := ch.mempool.GetReadyList()
+	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
 	batchSize := len(ready)
 	if batchSize > maxBatch {
 		batchSize = maxBatch

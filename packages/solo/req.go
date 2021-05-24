@@ -201,9 +201,9 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair)
 	r := req.NewRequestOffLedger(keyPair)
 
 	ch.reqCounter.Add(1)
-	ch.mempool.ReceiveRequest(r)
+	ch.mempool.ReceiveRequests(r)
 
-	ready := ch.mempool.GetReadyList()
+	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
 	if len(ready) == 0 {
 		ch.Log.Infof("waiting for solidification")
 		return nil, nil
