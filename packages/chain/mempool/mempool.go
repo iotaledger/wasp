@@ -13,14 +13,15 @@ import (
 )
 
 type mempool struct {
-	mutex       sync.RWMutex
-	incounter   int
-	outcounter  int
-	stateReader state.StateReader
-	requestRefs map[coretypes.RequestID]*requestRef
-	chStop      chan struct{}
-	blobCache   coretypes.BlobCache
-	log         *logger.Logger
+	mutex                   sync.RWMutex
+	incounter               int
+	outcounter              int
+	stateReader             state.StateReader
+	requestRefs             map[coretypes.RequestID]*requestRef
+	chStop                  chan struct{}
+	blobCache               coretypes.BlobCache
+	solidificationLoopDelay time.Duration
+	log                     *logger.Logger
 }
 
 type requestRef struct {
@@ -28,17 +29,22 @@ type requestRef struct {
 	whenReceived time.Time
 }
 
-const solidificationLoopDelay = 200 * time.Millisecond
+const defaultSolidificationLoopDelay = 200 * time.Millisecond
 
 var _ chain.Mempool = &mempool{}
 
-func New(stateReader state.StateReader, blobCache coretypes.BlobCache, log *logger.Logger) *mempool {
+func New(stateReader state.StateReader, blobCache coretypes.BlobCache, log *logger.Logger, solidificationLoopDelay ...time.Duration) *mempool {
 	ret := &mempool{
 		stateReader: stateReader,
 		requestRefs: make(map[coretypes.RequestID]*requestRef),
 		chStop:      make(chan struct{}),
 		blobCache:   blobCache,
 		log:         log.Named("m"),
+	}
+	if len(solidificationLoopDelay) > 0 {
+		ret.solidificationLoopDelay = solidificationLoopDelay[0]
+	} else {
+		ret.solidificationLoopDelay = defaultSolidificationLoopDelay
 	}
 	go ret.solidificationLoop()
 	return ret
@@ -181,7 +187,7 @@ func (m *mempool) solidificationLoop() {
 		select {
 		case <-m.chStop:
 			return
-		case <-time.After(solidificationLoopDelay):
+		case <-time.After(m.solidificationLoopDelay):
 			m.doSolidifyRequests()
 		}
 	}

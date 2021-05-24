@@ -4,6 +4,10 @@ import (
 	"sort"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/hashing"
+
+	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
+
 	"github.com/iotaledger/wasp/packages/util"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -14,55 +18,73 @@ import (
 )
 
 type batchProposal struct {
-	ValidatorIndex      uint16
-	StateOutputID       ledgerstate.OutputID
-	RequestIDs          []coretypes.RequestID
-	Timestamp           time.Time
-	ConsensusManaPledge identity.ID
-	AccessManaPledge    identity.ID
-	FeeDestination      *coretypes.AgentID
+	ValidatorIndex          uint16
+	StateOutputID           ledgerstate.OutputID
+	RequestIDs              []coretypes.RequestID
+	Timestamp               time.Time
+	ConsensusManaPledge     identity.ID
+	AccessManaPledge        identity.ID
+	FeeDestination          *coretypes.AgentID
+	SigShareOfStateOutputID tbdn.SigShare
+}
+
+type consensusBatchParams struct {
+	medianTs        time.Time
+	accessPledge    identity.ID
+	consensusPledge identity.ID
+	feeDestination  *coretypes.AgentID
+	entropy         hashing.HashValue
 }
 
 func BatchProposalFromBytes(data []byte) (*batchProposal, error) {
 	return BatchProposalFromMarshalUtil(marshalutil.New(data))
 }
 
+const errFmt = "BatchProposalFromMarshalUtil: %w"
+
 func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*batchProposal, error) {
 	ret := &batchProposal{}
 	var err error
 	ret.ValidatorIndex, err = mu.ReadUint16()
 	if err != nil {
-		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf(errFmt, err)
 	}
 	ret.StateOutputID, err = ledgerstate.OutputIDFromMarshalUtil(mu)
 	if err != nil {
-		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf(errFmt, err)
 	}
 	ret.AccessManaPledge, err = identity.IDFromMarshalUtil(mu)
 	if err != nil {
-		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf(errFmt, err)
 	}
 	ret.ConsensusManaPledge, err = identity.IDFromMarshalUtil(mu)
 	if err != nil {
-		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf(errFmt, err)
 	}
 	ret.FeeDestination, err = coretypes.AgentIDFromMarshalUtil(mu)
 	if err != nil {
-		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf(errFmt, err)
 	}
 	ret.Timestamp, err = mu.ReadTime()
 	if err != nil {
-		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf(errFmt, err)
 	}
 	size, err := mu.ReadUint16()
 	if err != nil {
-		return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf(errFmt, err)
+	}
+	var sigShareSize byte
+	if sigShareSize, err = mu.ReadByte(); err != nil {
+		return nil, xerrors.Errorf(errFmt, err)
+	}
+	if ret.SigShareOfStateOutputID, err = mu.ReadBytes(int(sigShareSize)); err != nil {
+		return nil, xerrors.Errorf(errFmt, err)
 	}
 	ret.RequestIDs = make([]coretypes.RequestID, size)
 	for i := range ret.RequestIDs {
 		ret.RequestIDs[i], err = coretypes.RequestIDFromMarshalUtil(mu)
 		if err != nil {
-			return nil, xerrors.Errorf("BatchProposalFromMarshalUtil: %w", err)
+			return nil, xerrors.Errorf(errFmt, err)
 		}
 	}
 	return ret, nil
@@ -76,7 +98,9 @@ func (b *batchProposal) Bytes() []byte {
 		Write(b.ConsensusManaPledge).
 		Write(b.FeeDestination).
 		WriteTime(b.Timestamp).
-		WriteUint16(uint16(len(b.RequestIDs)))
+		WriteUint16(uint16(len(b.RequestIDs))).
+		WriteByte(byte(len(b.SigShareOfStateOutputID))).
+		WriteBytes(b.SigShareOfStateOutputID)
 	for i := range b.RequestIDs {
 		mu.Write(b.RequestIDs[i])
 	}
@@ -87,26 +111,46 @@ func (b *batchProposal) Bytes() []byte {
 // mana pledges and fee destination
 // Timestamp is calculated by taking closest value from above to the median.
 // TODO final version of pladeges and fee destination
-func calcBatchParameters(opt []*batchProposal) (time.Time, identity.ID, identity.ID, *coretypes.AgentID) {
+func (c *consensusImpl) calcBatchParameters(props []*batchProposal) (*consensusBatchParams, error) {
 	var retTS time.Time
 
-	ts := make([]time.Time, len(opt))
+	ts := make([]time.Time, len(props))
 	for i := range ts {
-		ts[i] = opt[i].Timestamp
+		ts[i] = props[i].Timestamp
 	}
 	sort.Slice(ts, func(i, j int) bool {
 		return ts[i].Before(ts[j])
 	})
-	retTS = ts[len(opt)/2]
+	retTS = ts[len(props)/2]
 
-	indices := make([]uint16, len(opt))
+	indices := make([]uint16, len(props))
 	for i := range indices {
 		indices[i] = uint16(i)
 	}
+	// verify signatures calculate entropy
+	sigSharesToAggregate := make([][]byte, len(props))
+	for i, prop := range props {
+		err := c.committee.DKShare().VerifySigShare(c.stateOutput.ID().Bytes(), prop.SigShareOfStateOutputID)
+		if err != nil {
+			return nil, xerrors.Errorf("INVALID SIGNATURE in ACS from peer #%d: %v", prop.ValidatorIndex, err)
+		}
+		sigSharesToAggregate[i] = prop.SigShareOfStateOutputID
+	}
+	// aggregate signatures for use as unpredictable entropy
+	signatureWithPK, err := c.committee.DKShare().RecoverFullSignature(sigSharesToAggregate, c.stateOutput.ID().Bytes())
+	if err != nil {
+		return nil, xerrors.Errorf("recovering signature from ACS: %v", err)
+	}
+
 	// selects pseudo-random based on seed, the calculated timestamp
 	selectedIndex := util.SelectDeterministicRandomUint16(indices, retTS.UnixNano())
-
-	return retTS, opt[selectedIndex].AccessManaPledge, opt[selectedIndex].ConsensusManaPledge, opt[selectedIndex].FeeDestination
+	return &consensusBatchParams{
+		medianTs:        retTS,
+		accessPledge:    props[selectedIndex].AccessManaPledge,
+		consensusPledge: props[selectedIndex].ConsensusManaPledge,
+		feeDestination:  props[selectedIndex].FeeDestination,
+		entropy:         hashing.HashData(signatureWithPK.Bytes()),
+	}, nil
 }
 
 // calcIntersection a simple algorithm to calculate acceptable intersection. It simply takes all requests

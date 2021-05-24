@@ -3,13 +3,13 @@ package group_test
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/peering/udp"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
 func TestGroupProvider(t *testing.T) {
@@ -17,21 +17,9 @@ func TestGroupProvider(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
-	netIDs := []string{"localhost:9017", "localhost:9018", "localhost:9019"}
-	nodes := make([]peering.NetworkProvider, len(netIDs))
-
-	cfg0, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[0], 9017, netIDs...)
-	require.NoError(t, err)
-	nodes[0], err = udp.NewNetworkProvider(cfg0, key.NewKeyPair(suite), suite, log.Named("node0"))
-	require.NoError(t, err)
-	cfg1, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[1], 9018, netIDs...)
-	require.NoError(t, err)
-	nodes[1], err = udp.NewNetworkProvider(cfg1, key.NewKeyPair(suite), suite, log.Named("node1"))
-	require.NoError(t, err)
-	cfg2, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[2], 9019, netIDs...)
-	require.NoError(t, err)
-	nodes[2], err = udp.NewNetworkProvider(cfg2, key.NewKeyPair(suite), suite, log.Named("node2"))
-	require.NoError(t, err)
+	nodeCount := 3
+	netIDs, pubKeys, privKeys := testpeers.SetupKeys(uint16(nodeCount), suite)
+	nodes := testpeers.SetupNet(netIDs, pubKeys, privKeys, testutil.NewPeeringNetReliable(), log)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))
 	}
@@ -53,7 +41,7 @@ func TestGroupProvider(t *testing.T) {
 	//
 	// Create a group on one of nodes.
 	var g peering.GroupProvider
-	g, err = nodes[1].PeerGroup(netIDs)
+	g, err := nodes[1].PeerGroup(netIDs)
 	require.Nil(t, err)
 	//
 	// Broadcast a message and wait until it will be received on all the nodes.

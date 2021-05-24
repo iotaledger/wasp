@@ -108,7 +108,7 @@ func (c *consensusImpl) runVMIfNeeded() {
 		ACSSessionID:       c.acsSessionID,
 		Processors:         c.chain.Processors(),
 		ChainInput:         c.stateOutput,
-		Entropy:            hashing.HashData(c.stateOutput.ID().Bytes()),
+		Entropy:            c.consensusEntropy,
 		ValidatorFeeTarget: *c.consensusBatch.FeeDestination,
 		Requests:           reqs,
 		Timestamp:          c.consensusBatch.Timestamp,
@@ -170,7 +170,7 @@ func (c *consensusImpl) checkQuorum() {
 			// TODO here we are ignoring wrong signatures. In general, it means it is an attack
 			//  In the future when each message will be signed by the peer's identity, the invalidity
 			//  of the BLS signature means the node is misbehaving and should be punished.
-			c.log.Warnf("WRONG SIGNATURE from peer #%d: %v", i, err)
+			c.log.Warnf("INVALID SIGNATURE from peer #%d: %v", i, err)
 			invalidSignatures = true
 		} else {
 			sigSharesToAggregate[i] = c.resultSignatures[idx].SigShare
@@ -258,14 +258,20 @@ func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchPro
 	consensusManaPledge := identity.ID{}
 	accessManaPledge := identity.ID{}
 	feeDestination := coretypes.NewAgentID(c.chain.ID().AsAddress(), 0)
+	// sign state output ID. It will be used to produce unpredictable entropy in consensus
+	sigShare, err := c.committee.DKShare().SignShare(c.stateOutput.ID().Bytes())
+	if err != nil {
+		c.log.Panicf("prepareBatchProposal: signing output ID: %v", err)
+	}
 	ret := &batchProposal{
-		ValidatorIndex:      c.committee.OwnPeerIndex(),
-		StateOutputID:       c.stateOutput.ID(),
-		RequestIDs:          make([]coretypes.RequestID, len(reqs)),
-		Timestamp:           ts,
-		ConsensusManaPledge: consensusManaPledge,
-		AccessManaPledge:    accessManaPledge,
-		FeeDestination:      feeDestination,
+		ValidatorIndex:          c.committee.OwnPeerIndex(),
+		StateOutputID:           c.stateOutput.ID(),
+		RequestIDs:              make([]coretypes.RequestID, len(reqs)),
+		Timestamp:               ts,
+		ConsensusManaPledge:     consensusManaPledge,
+		AccessManaPledge:        accessManaPledge,
+		FeeDestination:          feeDestination,
+		SigShareOfStateOutputID: sigShare,
 	}
 	for i := range ret.RequestIDs {
 		ret.RequestIDs[i] = reqs[i].ID()
@@ -341,17 +347,26 @@ func (c *consensusImpl) receiveACS(values [][]byte, sessionID uint64) {
 		return
 	}
 	// calculate other batch parameters in a deterministic way
-	medianTs, accessPledge, consensusPledge, feeDestination := calcBatchParameters(acs)
+	par, err := c.calcBatchParameters(acs)
+	if err != nil {
+		// should not happen, unless insider attack
+		c.log.Errorf("receiveACS: inconsistent ACS. Reset workflow. State index: %d, ACS sessionID %d, reason: %v",
+			c.stateOutput.GetStateIndex(), sessionID, err)
+		c.resetWorkflow()
+		c.delayBatchProposalUntil = time.Now().Add(delayRepeatBatchProposalFor)
 
+	}
 	c.consensusBatch = &batchProposal{
 		ValidatorIndex:      c.committee.OwnPeerIndex(),
 		StateOutputID:       c.stateOutput.ID(),
 		RequestIDs:          inBatchSet,
-		Timestamp:           medianTs,
-		ConsensusManaPledge: consensusPledge,
-		AccessManaPledge:    accessPledge,
-		FeeDestination:      feeDestination,
+		Timestamp:           par.medianTs,
+		ConsensusManaPledge: par.consensusPledge,
+		AccessManaPledge:    par.accessPledge,
+		FeeDestination:      par.feeDestination,
 	}
+	c.consensusEntropy = par.entropy
+
 	c.iAmContributor = iAmContributor
 	c.myContributionSeqNumber = myContributionSeqNumber
 	c.contributors = contributors

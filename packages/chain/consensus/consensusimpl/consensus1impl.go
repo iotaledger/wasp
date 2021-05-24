@@ -3,6 +3,8 @@ package consensusimpl
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/hashing"
+
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 
@@ -26,6 +28,7 @@ type consensusImpl struct {
 	stateTimestamp             time.Time
 	acsSessionID               uint64
 	consensusBatch             *batchProposal
+	consensusEntropy           hashing.HashValue
 	iAmContributor             bool
 	myContributionSeqNumber    uint16
 	contributors               []uint16
