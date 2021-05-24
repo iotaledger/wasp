@@ -406,3 +406,28 @@ func TestLoop(t *testing.T) {
 	require.Equal(t, env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA), initialBalance-iotasSpent1-iotasSpent2)
 	chain.AssertIotas(userAgentID, 0)
 }
+
+func TestNonFaucetUsers(t *testing.T) {
+	chain, env := InitEVMChain(t)
+
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(t, err)
+
+	// deploy solidity `storage` contract
+	contractAddress, _ := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
+
+	newWallet, _ := crypto.HexToECDSA("44d0f3819c4153a23f42263034d450c3038a305038285a04f4e068b56ebe5393")
+
+	// call EVM contract with a new key (that doesn't own ether on the EVM chain)
+	callWithGasLimit := createCallFnWithGasLimit(t, chain, env, contractABI, contractAddress, newWallet, "store", uint32(123))
+
+	gasPerIotas := GetGasPerIotas(t, chain)
+	iotas := uint64(10000)
+	// this should be successful because gasPrice is 0
+	_, gasFees, err := callWithGasLimit(nil, iotas, iotas*uint64(gasPerIotas))
+	require.NoError(t, err)
+	require.Greater(t, gasFees, 0)
+
+	// call evmchain's FuncCallView to call EVM contract's `retrieve` view, get 123
+	require.EqualValues(t, 123, callStorageRetrieve(t, chain, contractAddress))
+}
