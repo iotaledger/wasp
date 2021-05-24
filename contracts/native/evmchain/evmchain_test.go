@@ -426,7 +426,7 @@ func TestNonFaucetUsers(t *testing.T) {
 	// this should be successful because gasPrice is 0
 	_, gasFees, err := callWithGasLimit(nil, iotas, iotas*uint64(gasPerIotas))
 	require.NoError(t, err)
-	require.Greater(t, gasFees, 0)
+	require.Greater(t, gasFees, uint64(0))
 
 	// call evmchain's FuncCallView to call EVM contract's `retrieve` view, get 123
 	require.EqualValues(t, 123, callStorageRetrieve(t, chain, contractAddress))
