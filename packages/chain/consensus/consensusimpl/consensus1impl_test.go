@@ -96,7 +96,7 @@ func TestConsensusMoreNodes(t *testing.T) {
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(1)
-		err := env.WaitMempool(1, quorum, 5*time.Second)
+		err := env.WaitMempool(1, quorum, 15*time.Second)
 		require.NoError(t, err)
 	})
 	t.Run("post 1 randomize", func(t *testing.T) {
@@ -117,7 +117,7 @@ func TestConsensusMoreNodes(t *testing.T) {
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(10)
-		err := env.WaitMempool(10, quorum, 5*time.Second)
+		err := env.WaitMempool(10, quorum, 15*time.Second)
 		require.NoError(t, err)
 	})
 	t.Run("post 10 requests randomized", func(t *testing.T) {
@@ -127,7 +127,7 @@ func TestConsensusMoreNodes(t *testing.T) {
 		env.StartTimers()
 		env.eventStateTransition()
 		env.postDummyRequests(10, true)
-		err := env.WaitMempool(10, quorum, 5*time.Second)
+		err := env.WaitMempool(10, quorum, 15*time.Second)
 		require.NoError(t, err)
 	})
 }

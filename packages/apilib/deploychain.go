@@ -50,7 +50,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "creating new chain. Owner address is %s. Parameters N = %d, T = %d\n",
-		originatorAddr.String(), par.N, par.T)
+		originatorAddr.Base58(), par.N, par.T)
 	// check if SC is hardcoded. If not, require consistent metadata in all nodes
 	fmt.Fprint(textout, par.Prefix)
 

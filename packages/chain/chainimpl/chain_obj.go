@@ -7,6 +7,9 @@ import (
 	"bytes"
 	"sync"
 
+	"github.com/iotaledger/wasp/packages/chain/consensus/consensusimpl"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
+
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 
 	"github.com/iotaledger/wasp/packages/state"
@@ -17,8 +20,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
-	"github.com/iotaledger/wasp/packages/chain/consensusimpl_old"
-	"github.com/iotaledger/wasp/packages/chain/mempool_old"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
@@ -32,14 +33,14 @@ import (
 
 type chainObj struct {
 	committee             chain.Committee
-	mempool               chain.MempoolOld
+	mempool               chain.Mempool
 	dismissed             atomic.Bool
 	dismissOnce           sync.Once
 	chainID               coretypes.ChainID
 	procset               *processors.ProcessorCache
 	chMsg                 chan interface{}
 	stateMgr              chain.StateManager
-	consensus             chain.ConsensusOld
+	consensus             chain.Consensus
 	log                   *logger.Logger
 	nodeConn              *txstream.Client
 	dbProvider            *dbprovider.DBProvider
@@ -73,7 +74,7 @@ func NewChain(
 		return nil
 	}
 	ret := &chainObj{
-		mempool:           mempool_old.New(stateReader, blobProvider, chainLog),
+		mempool:           mempool.New(stateReader, blobProvider, chainLog),
 		procset:           processors.MustNew(),
 		chMsg:             make(chan interface{}, 100),
 		chainID:           *chr.ChainID,
@@ -131,14 +132,14 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		c.stateMgr.EventStateCandidateMsg(msgt)
 	case *chain.InclusionStateMsg:
 		if c.consensus != nil {
-			c.consensus.EventTransactionInclusionStateMsg(msgt)
+			c.consensus.EventInclusionsStateMsg(msgt)
 		}
 	case *chain.StateMsg:
 		c.processStateMessage(msgt)
 	case *chain.VMResultMsg:
 		// VM finished working
 		if c.consensus != nil {
-			c.consensus.EventResultCalculated(msgt)
+			c.consensus.EventVMResultMsg(msgt)
 		}
 
 	case chain.TimerTick:
@@ -150,8 +151,8 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 			}
 		}
 		if msgt%40 == 0 {
-			total, withMsg, solid := c.mempool.StatsOld()
-			c.log.Debugf("mempool total = %d, withMsg = %d solid = %d", total, withMsg, solid)
+			stats := c.mempool.Stats()
+			c.log.Debugf("mempool total = %d, ready = %d, in = %d, out = %d", stats.Total, stats.Ready, stats.InCounter, stats.OutCounter)
 		}
 	}
 }
@@ -161,67 +162,12 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 
 	switch msg.MsgType {
 
-	case chain.MsgNotifyRequests:
-		msgt := &chain.NotifyReqMsg{}
-		if err := msgt.Read(rdr); err != nil {
-			c.log.Error(err)
-			return
-		}
-
-		msgt.SenderIndex = msg.SenderIndex
-
-		if c.consensus != nil {
-			c.consensus.EventNotifyReqMsg(msgt)
-		}
-
-	case chain.MsgNotifyFinalResultPosted:
-		msgt := &chain.NotifyFinalResultPostedMsg{}
-		if err := msgt.Read(rdr); err != nil {
-			c.log.Error(err)
-			return
-		}
-
-		msgt.SenderIndex = msg.SenderIndex
-
-		if c.consensus != nil {
-			c.consensus.EventNotifyFinalResultPostedMsg(msgt)
-		}
-
-	case chain.MsgStartProcessingRequest:
-		msgt := &chain.StartProcessingBatchMsg{}
-		if err := msgt.Read(rdr); err != nil {
-			c.log.Error(err)
-			return
-		}
-
-		msgt.SenderIndex = msg.SenderIndex
-		msgt.Timestamp = msg.Timestamp
-
-		if c.consensus != nil {
-			c.consensus.EventStartProcessingBatchMsg(msgt)
-		}
-
-	case chain.MsgSignedHash:
-		msgt := &chain.SignedHashMsg{}
-		if err := msgt.Read(rdr); err != nil {
-			c.log.Error(err)
-			return
-		}
-
-		msgt.SenderIndex = msg.SenderIndex
-		msgt.Timestamp = msg.Timestamp
-
-		if c.consensus != nil {
-			c.consensus.EventSignedHashMsg(msgt)
-		}
-
 	case chain.MsgGetBlock:
 		msgt := &chain.GetBlockMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
 		}
-
 		msgt.SenderNetID = msg.SenderNetID
 		c.stateMgr.EventGetBlockMsg(msgt)
 
@@ -231,7 +177,6 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-
 		msgt.SenderNetID = msg.SenderNetID
 		c.stateMgr.EventBlockMsg(msgt)
 
@@ -241,12 +186,10 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-
 		msgt.SenderIndex = msg.SenderIndex
-
-		//if c.consensus != nil {
-		//	c.consensus.EventS(msgt)
-		//}
+		if c.consensus != nil {
+			c.consensus.EventSignedResultMsg(msgt)
+		}
 
 	default:
 		c.log.Errorf("processPeerMessage: wrong msg type")
@@ -299,7 +242,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	}
 	c.committee.Attach(c)
 	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensusimpl_old.New(c, c.mempool, c.committee, nodeconnimpl.New(c.nodeConn), c.log)
+	c.consensus = consensusimpl.New(c, c.mempool, c.committee, nodeconnimpl.New(c.nodeConn), c.log)
 
 	c.log.Infof("NEW COMMITTEE OF VALDATORS initialized for state address %s", msg.ChainOutput.GetStateAddress().Base58())
 	c.stateMgr.EventStateMsg(msg)

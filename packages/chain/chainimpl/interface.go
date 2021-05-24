@@ -109,7 +109,7 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 
 func (c *chainObj) ReceiveRequest(req coretypes.Request) {
 	c.log.Debugf("ReceiveRequest: %s", req.ID())
-	c.mempool.ReceiveRequest(req)
+	c.mempool.ReceiveRequests(req)
 }
 
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
@@ -180,8 +180,4 @@ func (c *chainObj) StateSynced() *events.Event {
 
 func (c *chainObj) Events() chain.ChainEvents {
 	return c
-}
-
-func (c *chainObj) Mempool() chain.MempoolOld {
-	return c.mempool
 }
