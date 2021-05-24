@@ -1,4 +1,4 @@
-package committeeimpl
+package committee
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ func TestCommitteeBasic(t *testing.T) {
 		neighbors: netIDs,
 	}
 
-	c, err := NewCommittee(stateAddr, nil, net0, cfg0, dksRegistries[0], reg, log)
+	c, err := New(stateAddr, nil, net0, cfg0, dksRegistries[0], reg, log)
 	require.NoError(t, err)
 	require.True(t, c.Address().Equals(stateAddr))
 	require.EqualValues(t, 4, c.Size())

@@ -1,4 +1,4 @@
-package consensusimpl
+package consensus
 
 import (
 	"bytes"
@@ -22,7 +22,7 @@ import (
 )
 
 // takeAction triggers actions whenever relevant
-func (c *consensusImpl) takeAction() {
+func (c *consensus) takeAction() {
 	if !c.workflow.stateReceived || c.workflow.finished {
 		return
 	}
@@ -35,7 +35,7 @@ func (c *consensusImpl) takeAction() {
 
 // proposeBatchIfNeeded when non empty ready batch is available is in mempool propose it as a candidate
 // for the ACS agreement
-func (c *consensusImpl) proposeBatchIfNeeded() {
+func (c *consensus) proposeBatchIfNeeded() {
 	if c.workflow.batchProposalSent {
 		return
 	}
@@ -68,7 +68,7 @@ const waitReadyRequestsDelay = 500 * time.Millisecond
 
 // runVMIfNeeded attempts to extract deterministic batch of requests from ACS.
 // If it succeeds (i.e. all requests are available) and the extracted batch is nonempty, it runs the request
-func (c *consensusImpl) runVMIfNeeded() {
+func (c *consensus) runVMIfNeeded() {
 	if !c.workflow.consensusBatchKnown {
 		return
 	}
@@ -136,7 +136,7 @@ const postSeqStepMilliseconds = 1000
 // Then it deterministically calculates a priority sequence among contributing nodes for posting
 // the transaction to L1. The deadline por posting is set proportionally to the sequence number (deterministic)
 // If the node sees the transaction of the L1 before its deadline, it cancels its posting
-func (c *consensusImpl) checkQuorum() {
+func (c *consensus) checkQuorum() {
 	if c.workflow.transactionFinalized {
 		return
 	}
@@ -208,7 +208,7 @@ func (c *consensusImpl) checkQuorum() {
 }
 
 // postTransactionIfNeeded posts a finalized transaction upon deadline unless it was evidenced on L1 before the deadline.
-func (c *consensusImpl) postTransactionIfNeeded() {
+func (c *consensus) postTransactionIfNeeded() {
 	if !c.workflow.transactionFinalized {
 		return
 	}
@@ -235,7 +235,7 @@ const pullInclusionStatePeriod = 1 * time.Second
 
 // pullInclusionStateIfNeeded periodic pull to know the inclusions state of the transaction. Note that pulling
 // starts immediately after finalization of the transaction, not after posting it
-func (c *consensusImpl) pullInclusionStateIfNeeded() {
+func (c *consensus) pullInclusionStateIfNeeded() {
 	if !c.workflow.transactionFinalized {
 		return
 	}
@@ -250,7 +250,7 @@ func (c *consensusImpl) pullInclusionStateIfNeeded() {
 }
 
 // prepareBatchProposal creates a batch proposal structure out of requests
-func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchProposal {
+func (c *consensus) prepareBatchProposal(reqs []coretypes.Request) *batchProposal {
 	ts := time.Now()
 	if !ts.After(c.stateTimestamp) {
 		ts = c.stateTimestamp.Add(1 * time.Nanosecond)
@@ -282,7 +282,7 @@ func (c *consensusImpl) prepareBatchProposal(reqs []coretypes.Request) *batchPro
 const delayRepeatBatchProposalFor = 500 * time.Millisecond
 
 // receiveACS processed new ACS received from ACS consensus
-func (c *consensusImpl) receiveACS(values [][]byte, sessionID uint64) {
+func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 	if c.acsSessionID != sessionID {
 		return
 	}
@@ -376,7 +376,7 @@ func (c *consensusImpl) receiveACS(values [][]byte, sessionID uint64) {
 	c.runVMIfNeeded()
 }
 
-func (c *consensusImpl) processInclusionState(msg *chain.InclusionStateMsg) {
+func (c *consensus) processInclusionState(msg *chain.InclusionStateMsg) {
 	if !c.workflow.transactionFinalized {
 		return
 	}
@@ -398,7 +398,7 @@ func (c *consensusImpl) processInclusionState(msg *chain.InclusionStateMsg) {
 	}
 }
 
-func (c *consensusImpl) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, ledgerstate.OutputID, error) {
+func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, ledgerstate.OutputID, error) {
 	signatureWithPK, err := c.committee.DKShare().RecoverFullSignature(sigSharesToAggregate, c.resultTxEssence.Bytes())
 	if err != nil {
 		return nil, ledgerstate.OutputID{}, xerrors.Errorf("finalizeTransaction: %w", err)
@@ -429,7 +429,7 @@ func (c *consensusImpl) finalizeTransaction(sigSharesToAggregate [][]byte) (*led
 	return tx, approvingOutputID, nil
 }
 
-func (c *consensusImpl) setNewState(msg *chain.StateTransitionMsg) {
+func (c *consensus) setNewState(msg *chain.StateTransitionMsg) {
 	c.stateOutput = msg.StateOutput
 	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp
@@ -439,7 +439,7 @@ func (c *consensusImpl) setNewState(msg *chain.StateTransitionMsg) {
 		msg.StateOutput.GetStateIndex(), coretypes.OID(msg.StateOutput.ID()), msg.State.Hash().String())
 }
 
-func (c *consensusImpl) resetWorkflow() {
+func (c *consensus) resetWorkflow() {
 	for i := range c.resultSignatures {
 		c.resultSignatures[i] = nil
 	}
@@ -454,7 +454,7 @@ func (c *consensusImpl) resetWorkflow() {
 	}
 }
 
-func (c *consensusImpl) processVMResult(result *vm.VMTask) {
+func (c *consensus) processVMResult(result *vm.VMTask) {
 	c.log.Debugf("processVMResult")
 	if !c.workflow.vmStarted ||
 		c.workflow.vmResultSignedAndBroadcasted ||
@@ -487,7 +487,7 @@ func (c *consensusImpl) processVMResult(result *vm.VMTask) {
 	c.log.Debugf("processVMResult: signed and broadcasted: essence hash: %s", msg.EssenceHash.String())
 }
 
-func (c *consensusImpl) receiveSignedResult(msg *chain.SignedResultMsg) {
+func (c *consensus) receiveSignedResult(msg *chain.SignedResultMsg) {
 	if c.resultSignatures[msg.SenderIndex] != nil {
 		if c.resultSignatures[msg.SenderIndex].EssenceHash != msg.EssenceHash ||
 			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare[:], msg.SigShare[:]) {

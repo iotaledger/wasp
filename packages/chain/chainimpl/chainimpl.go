@@ -7,7 +7,8 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/iotaledger/wasp/packages/chain/consensus/consensusimpl"
+	"github.com/iotaledger/wasp/packages/chain/consensus"
+
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
@@ -19,7 +20,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
+	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
@@ -226,7 +227,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	c.committee, c.consensus = nil, nil
 	c.log.Debugf("creating new committee...")
 
-	c.committee, err = committeeimpl.NewCommittee(
+	c.committee, err = committee.New(
 		msg.ChainOutput.GetStateAddress(),
 		&c.chainID,
 		c.netProvider,
@@ -242,7 +243,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	}
 	c.committee.Attach(c)
 	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensusimpl.New(c, c.mempool, c.committee, nodeconnimpl.New(c.nodeConn), c.log)
+	c.consensus = consensus.New(c, c.mempool, c.committee, nodeconnimpl.New(c.nodeConn), c.log)
 
 	c.log.Infof("NEW COMMITTEE OF VALDATORS initialized for state address %s", msg.ChainOutput.GetStateAddress().Base58())
 	c.stateMgr.EventStateMsg(msg)

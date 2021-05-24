@@ -1,4 +1,4 @@
-package consensusimpl
+package consensus
 
 import (
 	"testing"
