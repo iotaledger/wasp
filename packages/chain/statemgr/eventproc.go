@@ -19,19 +19,23 @@ func (sm *stateManager) EventGetBlockMsg(msg *chain.GetBlockMsg) {
 func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 	sm.log.Debugw("EventGetBlockMsg received: ",
 		"sender", msg.SenderNetID,
-		"blockBytes index", msg.BlockIndex,
+		"block index", msg.BlockIndex,
 	)
 	if sm.stateOutput == nil {
 		sm.log.Debugf("EventGetBlockMsg ignored: stateOutput is nil")
 		return
 	}
-	blockBytes, err := state.LoadBlockBytes(sm.dbp, sm.chain.ID(), msg.BlockIndex)
-	if blockBytes == nil {
-		sm.log.Debugf("EventGetBlockMsg ignored: block not found")
+	if msg.BlockIndex > sm.stateOutput.GetStateIndex() {
+		sm.log.Debugf("EventGetBlockMsg ignored: block #%d not found", msg.BlockIndex)
 		return
 	}
+	blockBytes, err := state.LoadBlockBytes(sm.dbp, sm.chain.ID(), msg.BlockIndex)
 	if err != nil {
-		sm.log.Debugf("EventGetBlockMsg ignored: LoadBlockBytes error %v", err)
+		sm.log.Errorf("EventGetBlockMsg: LoadBlockBytes: %v", err)
+		return
+	}
+	if blockBytes == nil {
+		sm.log.Errorf("EventGetBlockMsg ignored: block #%d expected in DB but not found", msg.BlockIndex)
 		return
 	}
 

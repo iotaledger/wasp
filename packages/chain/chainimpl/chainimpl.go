@@ -43,7 +43,7 @@ type chainObj struct {
 	stateMgr              chain.StateManager
 	consensus             chain.Consensus
 	log                   *logger.Logger
-	nodeConn              *txstream.Client
+	nodeConn              chain.NodeConnection
 	dbProvider            *dbprovider.DBProvider
 	peerNetworkConfig     coretypes.PeerNetworkConfigProvider
 	netProvider           peering.NetworkProvider
@@ -58,7 +58,7 @@ type chainObj struct {
 func NewChain(
 	chr *registry_pkg.ChainRecord,
 	log *logger.Logger,
-	nodeConn *txstream.Client,
+	txstream *txstream.Client,
 	peerNetConfig coretypes.PeerNetworkConfigProvider,
 	dbProvider *dbprovider.DBProvider,
 	netProvider peering.NetworkProvider,
@@ -80,7 +80,7 @@ func NewChain(
 		chMsg:             make(chan interface{}, 100),
 		chainID:           *chr.ChainID,
 		log:               chainLog,
-		nodeConn:          nodeConn,
+		nodeConn:          nodeconnimpl.New(txstream, chainLog),
 		dbProvider:        dbProvider,
 		peerNetworkConfig: peerNetConfig,
 		netProvider:       netProvider,
@@ -105,7 +105,7 @@ func NewChain(
 		log.Errorf("NewChain: %v", err)
 		return nil
 	}
-	ret.stateMgr = statemgr.New(dbProvider, ret, peers, nodeconnimpl.New(ret.nodeConn), ret.log)
+	ret.stateMgr = statemgr.New(dbProvider, ret, peers, ret.nodeConn, ret.log)
 	var peeringID peering.PeeringID = ret.chainID.Array()
 	peers.Attach(&peeringID, func(recv *peering.RecvEvent) {
 		ret.ReceiveMessage(recv.Msg)
@@ -142,7 +142,10 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		if c.consensus != nil {
 			c.consensus.EventVMResultMsg(msgt)
 		}
-
+	case *chain.AsynchronousCommonSubsetMsg:
+		if c.consensus != nil {
+			c.consensus.EventAsynchronousCommonSubsetMsg(msgt)
+		}
 	case chain.TimerTick:
 		if msgt%2 == 0 {
 			c.stateMgr.EventTimerMsg(msgt / 2)
@@ -243,7 +246,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	}
 	c.committee.Attach(c)
 	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, c.committee, nodeconnimpl.New(c.nodeConn), c.log)
+	c.consensus = consensus.New(c, c.mempool, c.committee, c.nodeConn, c.log)
 
 	c.log.Infof("NEW COMMITTEE OF VALDATORS initialized for state address %s", msg.ChainOutput.GetStateAddress().Base58())
 	c.stateMgr.EventStateMsg(msg)
