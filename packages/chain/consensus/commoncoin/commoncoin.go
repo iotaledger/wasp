@@ -35,6 +35,7 @@ const (
 type Provider interface {
 	hbbft.CommonCoin
 	GetCoin(sid []byte) ([]byte, error)
+	TryHandleMessage(recv *peering.RecvEvent) bool
 	io.Closer
 }
 
@@ -152,6 +153,15 @@ func (ccn *commonCoinNode) Close() error {
 	close(ccn.coinCh)
 	close(ccn.stopCh)
 	return nil
+}
+
+// TryHandleMessage accepts messages if they are of proper type.
+func (ccn *commonCoinNode) TryHandleMessage(recv *peering.RecvEvent) bool {
+	if recv.Msg.MsgType == commonCoinShareMsgType {
+		ccn.recvCh <- recv
+		return true
+	}
+	return false
 }
 
 func (ccn *commonCoinNode) recvLoop() {
@@ -487,6 +497,11 @@ func (pcc *prefixedCommonCoin) FlipCoin(epoch uint32) bool {
 // This one will be ignored here, as this object is just a delegator.
 func (pcc *prefixedCommonCoin) Close() error {
 	return nil
+}
+
+// TryHandleMessage accepts messages if they are of proper type.
+func (pcc *prefixedCommonCoin) TryHandleMessage(recv *peering.RecvEvent) bool {
+	return pcc.ccn.TryHandleMessage(recv)
 }
 
 func (pcc *prefixedCommonCoin) makeSeed(sid []byte) []byte {

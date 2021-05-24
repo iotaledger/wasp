@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
+	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
 	"github.com/iotaledger/wasp/packages/util"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -23,6 +25,8 @@ type committeeObj struct {
 	address        ledgerstate.Address
 	peerConfig     coretypes.PeerNetworkConfigProvider
 	validatorNodes peering.GroupProvider
+	ccProvider     commoncoin.Provider     // Just to close it afterwards.
+	ccRecvCh       chan *peering.RecvEvent // To pass messages to CC.
 	acsRunner      chain.AsynchronousCommonSubsetRunner
 	peeringID      peering.PeeringID
 	size           uint16
@@ -43,7 +47,7 @@ func NewCommittee(
 	dksProvider coretypes.DKShareRegistryProvider,
 	committeeRegistry coretypes.CommitteeRegistryProvider,
 	log *logger.Logger,
-	acsRunner ...chain.AsynchronousCommonSubsetRunner,
+	acsRunner ...chain.AsynchronousCommonSubsetRunner, // Only for mocking.
 ) (chain.Committee, error) {
 
 	// load committee record from the registry
@@ -91,6 +95,25 @@ func NewCommittee(
 	}
 	if len(acsRunner) > 0 {
 		ret.acsRunner = acsRunner[0]
+	} else {
+		// That's the default implementation of the ACS.
+		// We use it, of the mocked variant was not passed.
+		ret.ccRecvCh = make(chan *peering.RecvEvent)
+		ret.ccProvider = commoncoin.NewCommonCoinNode(
+			ret.ccRecvCh, // TODO: KP: Refactor the CC part to avoid passing the channels. Use TryHandleMessage instead.
+			dkshare,
+			peerGroupID,
+			peers,
+			log,
+		)
+		ret.acsRunner = commonsubset.NewCommonSubsetCoordinator(
+			peerGroupID,
+			netProvider,
+			peers,
+			dkshare.T,
+			ret.ccProvider,
+			log,
+		)
 	}
 	go ret.waitReady(waitReady)
 
@@ -198,11 +221,21 @@ func (c *committeeObj) PeerStatus() []*chain.PeerStatus {
 
 func (c *committeeObj) Attach(chain chain.ChainCore) {
 	c.attachID = c.validatorNodes.Attach(&c.peeringID, func(recv *peering.RecvEvent) {
+		if c.ccProvider != nil && c.ccProvider.TryHandleMessage(recv) {
+			return
+		}
+		if c.acsRunner.TryHandleMessage(recv) {
+			return
+		}
 		chain.ReceiveMessage(recv.Msg)
 	})
 }
 
 func (c *committeeObj) Close() {
+	c.acsRunner.Close()
+	if c.ccProvider != nil {
+		c.ccProvider.Close()
+	}
 	c.isReady.Store(false)
 	if c.attachID != nil {
 		c.validatorNodes.Detach(c.attachID)
@@ -211,11 +244,7 @@ func (c *committeeObj) Close() {
 }
 
 func (c *committeeObj) RunACSConsensus(value []byte, sessionID uint64, callback func(sessionID uint64, acs [][]byte)) {
-	if c.acsRunner != nil {
-		go c.acsRunner.RunACSConsensus(value, sessionID, callback)
-		return
-	}
-	c.log.Errorf("ACS consensus is not available")
+	c.acsRunner.RunACSConsensus(value, sessionID, callback)
 }
 
 func (c *committeeObj) waitReady(waitReady bool) {

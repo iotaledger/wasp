@@ -60,6 +60,7 @@ type CommonSubset struct {
 	recvMsgBatches []map[uint32]uint32  // [PeerId]ReceivedMbID -> AckedInMb (0 -- unacked). It remains 0, if acked in non-data message.
 	sentMsgBatches map[uint32]*msgBatch // BatchID -> MsgBatch
 
+	sessionID   uint64                  // Unique identifier for this consensus instance. Used to route messages.
 	peeringID   peering.PeeringID       // ID for the communication group.
 	net         peering.NetworkProvider // Access to the transport layer.
 	netGroup    peering.GroupProvider   // Group of nodes we are communicating with.
@@ -76,6 +77,7 @@ type CommonSubset struct {
 }
 
 func NewCommonSubset(
+	sessionID uint64,
 	peeringID peering.PeeringID,
 	net peering.NetworkProvider,
 	netGroup peering.GroupProvider,
@@ -115,6 +117,7 @@ func NewCommonSubset(
 		pendingAcks:    make([][]uint32, nodeCount),
 		recvMsgBatches: make([]map[uint32]uint32, nodeCount),
 		sentMsgBatches: make(map[uint32]*msgBatch),
+		sessionID:      sessionID,
 		peeringID:      peeringID,
 		net:            net,
 		netGroup:       netGroup,
@@ -156,7 +159,7 @@ func (cs *CommonSubset) TryHandleMessage(recv *peering.RecvEvent) bool {
 		return true
 	}
 	cs.closedLock.RLock()
-	cs.closedLock.RUnlock()
+	defer cs.closedLock.RUnlock()
 	if !cs.closed {
 		// Just to avoid panics on writing to a closed channel.
 		cs.recvCh <- &mb
@@ -329,11 +332,12 @@ func (cs *CommonSubset) makeBatches(msgs []hbbft.MessageTuple) ([]*msgBatch, err
 		}
 		cs.batchCounter++
 		batches = append(batches, &msgBatch{
-			id:   cs.batchCounter,
-			src:  uint16(cs.impl.ID),
-			dst:  uint16(i),
-			msgs: batchMsgs[i],
-			acks: make([]uint32, 0), // Filled later.
+			sessionID: cs.sessionID,
+			id:        cs.batchCounter,
+			src:       uint16(cs.impl.ID),
+			dst:       uint16(i),
+			msgs:      batchMsgs[i],
+			acks:      make([]uint32, 0), // Filled later.
 		})
 	}
 	return batches, nil
@@ -352,11 +356,12 @@ func (cs *CommonSubset) makeAckOnlyBatch(peerID uint16, ackMB uint32) *msgBatch 
 		return nil
 	}
 	return &msgBatch{
-		id:   0, // Do not require an acknowledgement.
-		src:  uint16(cs.impl.ID),
-		dst:  peerID,
-		msgs: []*hbbft.ACSMessage{},
-		acks: acks,
+		sessionID: cs.sessionID,
+		id:        0, // Do not require an acknowledgement.
+		src:       uint16(cs.impl.ID),
+		dst:       peerID,
+		msgs:      []*hbbft.ACSMessage{},
+		acks:      acks,
 	}
 }
 
@@ -381,11 +386,12 @@ func (cs *CommonSubset) send(msgBatch *msgBatch) {
 
 /** msgBatch groups messages generated at one step in the protocol for a single recipient. */
 type msgBatch struct {
-	id   uint32              // ID of the batch for the acks, ID=0 => Acks are not needed.
-	src  uint16              // Sender of the batch.
-	dst  uint16              // Recipient of the batch.
-	msgs []*hbbft.ACSMessage // New messages to send.
-	acks []uint32            // Acknowledgements.
+	sessionID uint64
+	id        uint32              // ID of the batch for the acks, ID=0 => Acks are not needed.
+	src       uint16              // Sender of the batch.
+	dst       uint16              // Recipient of the batch.
+	msgs      []*hbbft.ACSMessage // New messages to send.
+	acks      []uint32            // Acknowledgements.
 	// TODO: Add a signature.
 }
 
@@ -404,6 +410,9 @@ func (b *msgBatch) NeedsAck() bool {
 
 func (b *msgBatch) Write(w io.Writer) error {
 	var err error
+	if err = util.WriteUint64(w, b.sessionID); err != nil {
+		return xerrors.Errorf("failed to write msgBatch.sessionID: %w", err)
+	}
 	if err = util.WriteUint32(w, b.id); err != nil {
 		return xerrors.Errorf("failed to write msgBatch.id: %w", err)
 	}
@@ -521,6 +530,9 @@ func (b *msgBatch) Write(w io.Writer) error {
 
 func (b *msgBatch) Read(r io.Reader) error {
 	var err error
+	if err = util.ReadUint64(r, &b.sessionID); err != nil {
+		return xerrors.Errorf("failed to read msgBatch.sessionID: %w", err)
+	}
 	if err = util.ReadUint32(r, &b.id); err != nil {
 		return xerrors.Errorf("failed to read msgBatch.id: %w", err)
 	}
@@ -671,6 +683,21 @@ func (b *msgBatch) Bytes() []byte {
 	var buf bytes.Buffer
 	_ = b.Write(&buf)
 	return buf.Bytes()
+}
+
+// A helper to extract a session ID from a serialized message (msgBatch) without reading
+// the entire message. That's needed to have it for routing.
+//
+// TODO: Consider refactoring it to avoid such partial parsings.
+//
+func sessionIDFromMsgBytes(buf []byte) (uint64, error) {
+	var err error
+	var sessionID uint64
+	r := bytes.NewReader(buf)
+	if err = util.ReadUint64(r, &sessionID); err != nil {
+		return 0, xerrors.Errorf("failed to read msgBatch.sessionID: %w", err)
+	}
+	return sessionID, nil
 }
 
 // endregion ///////////////////////////////////////////////////////////////////

@@ -105,7 +105,7 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledg
 		NodeConn:  make([]*testchain.MockedNodeConn, n),
 		Nodes:     make([]*mockedNode, n),
 	}
-	ret.MockedACS = testchain.NewMockedACSRunner(quorum, log)
+	ret.MockedACS = nil // testchain.NewMockedACSRunner(quorum, log)
 
 	for i := range ret.NodeConn {
 		func(j int) {
@@ -175,7 +175,12 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 	mockCommitteeRegistry := testchain.NewMockedCommitteeRegistry(env.Neighbors)
 	cfg, err := peering.NewStaticPeerNetworkConfigProvider(env.Neighbors[i], 4000+int(i), env.Neighbors...)
 	require.NoError(env.T, err)
-
+	//
+	// Pass the ACS mock, if it was set in env.MockedACS.
+	acs := make([]chain.AsynchronousCommonSubsetRunner, 0)
+	if env.MockedACS != nil {
+		acs = append(acs, env.MockedACS)
+	}
 	committee, err := committeeimpl.NewCommittee(
 		env.StateAddress,
 		&env.ChainID,
@@ -184,7 +189,7 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 		env.DKSRegistries[i],
 		mockCommitteeRegistry,
 		log,
-		env.MockedACS,
+		acs...,
 	)
 	require.NoError(env.T, err)
 
