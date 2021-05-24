@@ -107,9 +107,6 @@ func createCallFnWithGasLimit(t *testing.T, chain *solo.Chain, env *solo.Solo, c
 	senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
 	nonce := getNonceFor(t, chain, senderAddress)
-	if nonce == 0 {
-		nonce = 1
-	}
 
 	callArguments, err := contractABI.Pack(name, args...)
 	require.NoError(t, err)
@@ -121,7 +118,7 @@ func createCallFnWithGasLimit(t *testing.T, chain *solo.Chain, env *solo.Solo, c
 		tx, err := types.SignTx(
 			unsignedTx,
 			evm.Signer(),
-			TestFaucetKey,
+			sender,
 		)
 		require.NoError(t, err)
 
