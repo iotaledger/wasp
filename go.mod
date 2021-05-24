@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/PuerkitoBio/goquery v1.6.1
+	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/bytecodealliance/wasmtime-go v0.21.0
 	github.com/iotaledger/goshimmer v0.6.1-0.20210521123024-bed7256c12bd
 	github.com/iotaledger/hive.go v0.0.0-20210427112115-75c7ebf4ebbb
@@ -24,3 +25,5 @@ require (
 	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 )
+
+replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210517200904-c897be85c569

@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/ready"
@@ -60,7 +61,7 @@ type Committee interface {
 	Attach(chain ChainCore)
 	IsReady() bool
 	Close()
-	AsynchronousCommonSubsetRunner
+	RunACSConsensus(value []byte, sessionID uint64, callback func(sessionID uint64, acs [][]byte))
 }
 
 type ChainRequests interface {
@@ -147,6 +148,8 @@ type Mempool interface {
 
 type AsynchronousCommonSubsetRunner interface {
 	RunACSConsensus(value []byte, sessionID uint64, callback func(sessionID uint64, acs [][]byte))
+	TryHandleMessage(recv *peering.RecvEvent) bool
+	Close()
 }
 
 // Deprecated: use MempoolStats
