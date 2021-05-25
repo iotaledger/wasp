@@ -11,6 +11,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
+	"golang.org/x/xerrors"
 )
 
 const NotInGroup uint16 = 0xFFFF
@@ -22,24 +23,39 @@ type groupImpl struct {
 	netProvider peering.NetworkProvider
 	nodes       []peering.PeerSender
 	other       map[uint16]peering.PeerSender
+	selfIndex   uint16
 	log         *logger.Logger
 }
 
 // NewPeeringGroupProvider creates a generic peering group.
 // That should be used as a helper for peering implementations.
-func NewPeeringGroupProvider(netProvider peering.NetworkProvider, nodes []peering.PeerSender, log *logger.Logger) peering.GroupProvider {
+func NewPeeringGroupProvider(netProvider peering.NetworkProvider, nodes []peering.PeerSender, log *logger.Logger) (peering.GroupProvider, error) {
 	other := make(map[uint16]peering.PeerSender)
+	selfFound := false
+	selfIndex := uint16(0)
 	for i := range nodes {
-		if nodes[i].NetID() != netProvider.Self().NetID() {
+		if nodes[i].NetID() == netProvider.Self().NetID() {
+			selfIndex = uint16(i)
+			selfFound = true
+		} else {
 			other[uint16(i)] = nodes[i]
 		}
+	}
+	if !selfFound {
+		return nil, xerrors.Errorf("group must involve the current node")
 	}
 	return &groupImpl{
 		netProvider: netProvider,
 		nodes:       nodes,
 		other:       other,
+		selfIndex:   selfIndex,
 		log:         log,
-	}
+	}, nil
+}
+
+// PeerIndex implements peering.GroupProvider.
+func (g *groupImpl) SelfIndex() uint16 {
+	return g.selfIndex
 }
 
 // PeerIndex implements peering.GroupProvider.

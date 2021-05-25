@@ -196,7 +196,7 @@ func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupPro
 		}
 		peers[i] = p.senders[i]
 	}
-	return group.NewPeeringGroupProvider(p, peers, p.network.log), nil
+	return group.NewPeeringGroupProvider(p, peers, p.network.log)
 }
 
 // Domain creates peering.PeerDomainProvider.

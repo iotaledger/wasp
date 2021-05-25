@@ -52,7 +52,7 @@ func (c *consensus) proposeBatchIfNeeded() {
 	c.log.Debugf("proposeBatchIfNeeded: ready len = %d", len(reqs))
 	proposal := c.prepareBatchProposal(reqs)
 	// call the ACS consensus. The call should spawn goroutine itself
-	c.committee.RunACSConsensus(proposal.Bytes(), c.acsSessionID, func(sessionID uint64, acs [][]byte) {
+	c.committee.RunACSConsensus(proposal.Bytes(), c.acsSessionID, c.stateOutput.GetStateIndex(), func(sessionID uint64, acs [][]byte) {
 		c.log.Debugf("received ACS")
 		go c.chain.ReceiveMessage(&chain.AsynchronousCommonSubsetMsg{
 			ProposedBatchesBin: acs,
