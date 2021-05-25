@@ -129,7 +129,7 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		if c.consensus != nil {
 			c.consensus.EventStateTransitionMsg(msgt)
 		}
-	case chain.StateCandidateMsg:
+	case *chain.StateCandidateMsg:
 		c.stateMgr.EventStateCandidateMsg(msgt)
 	case *chain.InclusionStateMsg:
 		if c.consensus != nil {

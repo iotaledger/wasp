@@ -107,10 +107,10 @@ func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 	}
 }
 
-func (sm *stateManager) EventStateCandidateMsg(msg chain.StateCandidateMsg) {
+func (sm *stateManager) EventStateCandidateMsg(msg *chain.StateCandidateMsg) {
 	sm.eventPendingBlockMsgCh <- msg
 }
-func (sm *stateManager) eventStateCandidateMsg(msg chain.StateCandidateMsg) {
+func (sm *stateManager) eventStateCandidateMsg(msg *chain.StateCandidateMsg) {
 	sm.log.Debugf("EventStateCandidateMsg received: state index: %d, timestamp: %v",
 		msg.State.BlockIndex(), msg.State.Timestamp(),
 	)

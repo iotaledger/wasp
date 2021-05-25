@@ -84,7 +84,7 @@ type StateManager interface {
 	EventBlockMsg(msg *BlockMsg)
 	EventStateMsg(msg *StateMsg)
 	EventOutputMsg(msg ledgerstate.Output)
-	EventStateCandidateMsg(msg StateCandidateMsg)
+	EventStateCandidateMsg(msg *StateCandidateMsg)
 	EventTimerMsg(msg TimerTick)
 	GetStatusSnapshot() *SyncInfo
 	Close()

@@ -27,7 +27,6 @@ func (n *nodeConnImplementation) PullBacklog(addr *ledgerstate.AliasAddress) {
 }
 
 func (n *nodeConnImplementation) PullState(addr *ledgerstate.AliasAddress) {
-	n.log.Debugf("++++++++++++ pulling state %s", addr.Base58())
 	n.client.RequestUnspentAliasOutput(addr)
 }
 

@@ -9,7 +9,7 @@ require (
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/bytecodealliance/wasmtime-go v0.21.0
 	github.com/google/go-cmp v0.5.2 // indirect
-	github.com/iotaledger/goshimmer v0.6.1
+	github.com/iotaledger/goshimmer v0.6.2-0.20210525071503-a54182e95c7a
 	github.com/iotaledger/hive.go v0.0.0-20210523190624-62dd208e10b0
 	github.com/knadh/koanf v0.15.0
 	github.com/labstack/echo/v4 v4.1.13
@@ -21,6 +21,8 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.7.0
+	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
+	github.com/xdg/stringprep v1.0.0 // indirect
 	go.dedis.ch/kyber/v3 v3.0.13
 	go.nanomsg.org/mangos/v3 v3.0.1
 	go.uber.org/atomic v1.7.0
