@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/client"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,5 +37,5 @@ func TestMockNode(t *testing.T) {
 	require.Equal(t, addr.Base58(), out.Address().Base58())
 	require.Equal(t, 1, out.Balances().Size())
 	b, _ := out.Balances().Get(ledgerstate.ColorIOTA)
-	require.EqualValues(t, 1337, b)
+	require.EqualValues(t, utxodb.RequestFundsAmount, b)
 }

@@ -72,22 +72,22 @@ func (c *Client) GetConfirmedOutputs(address ledgerstate.Address) ([]ledgerstate
 	return ret, nil
 }
 
-func (c *Client) sendTx(tx *ledgerstate.Transaction) error {
+func (c *Client) postTx(tx *ledgerstate.Transaction) error {
 	data := tx.Bytes()
 	if len(data) > parameters.MaxSerializedTransactionToGoshimmer {
 		return fmt.Errorf("size of serialized transation %d bytes > max of %d bytes: %s",
 			len(data), parameters.MaxSerializedTransactionToGoshimmer, tx.ID())
 	}
-	_, err := c.api.SendTransaction(data)
+	_, err := c.api.PostTransaction(data)
 	return err
 }
 
 func (c *Client) PostTransaction(tx *ledgerstate.Transaction) error {
-	return c.sendTx(tx)
+	return c.postTx(tx)
 }
 
 func (c *Client) PostAndWaitForConfirmation(tx *ledgerstate.Transaction) error {
-	if err := c.sendTx(tx); err != nil {
+	if err := c.postTx(tx); err != nil {
 		return err
 	}
 	return c.WaitForConfirmation(tx.ID())
@@ -96,11 +96,11 @@ func (c *Client) PostAndWaitForConfirmation(tx *ledgerstate.Transaction) error {
 func (c *Client) WaitForConfirmation(txid ledgerstate.TransactionID) error {
 	for {
 		time.Sleep(1 * time.Second)
-		tx, err := c.api.GetTransactionByID(txid.Base58())
+		state, err := c.api.GetTransactionInclusionState(txid.Base58())
 		if err != nil {
 			return err
 		}
-		if tx.InclusionState.Confirmed {
+		if state.Confirmed {
 			break
 		}
 	}
