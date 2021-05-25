@@ -12,7 +12,10 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// TODO: Handle outdated instances in some way.
+const (
+	futureInstances = 5 // How many future instances to accept.
+	pastInstances   = 2 // How many past instance to keep not closed.
+)
 
 // CommonSubsetCoordinator is responsible for maintaining a series of ACS
 // instances and to implement the AsynchronousCommonSubsetRunner interface.
@@ -22,13 +25,29 @@ import (
 //   - Terminate outdated CommonSubset instances.
 //   - Dispatch incoming messages to appropriate instances.
 //
+// NOTE: On the termination of the ACS instances. The instances are initiated either
+// by the current node or by a message from other node.
+//
+//  * If we have a newer StateOutput, older ACS are irrelevant, because the state
+//    is already in the Ledger and is confirmed.
+//
+//  * It is safe to drop messages for some future ACS instances, because if they
+//    are correct ones, they will redeliver the messages until we wil catch up
+//    to their StateIndex. So the handling of the future ACS instance is only a
+//    performance optimization.
+//
+// What to do in the case of reset? Set the current state index as the last one
+// this node has provided. Some future ACS instances will be left for some time,
+// until they will be discarded because of the growing StateIndex in the new branch.
+//
 type CommonSubsetCoordinator struct {
-	csInsts map[uint64]*CommonSubset // The actual instances can be created on request or on peer message.
-	csAsked map[uint64]bool          // Indicates, which instances are already asked by this nodes.
-	lock    sync.RWMutex
+	csInsts           map[uint64]*CommonSubset // The actual instances can be created on request or on peer message.
+	csAsked           map[uint64]bool          // Indicates, which instances are already asked by this nodes.
+	currentStateIndex uint32                   // Last state index passed by this node.
+	lock              sync.RWMutex
 
 	peeringID  peering.PeeringID
-	net        peering.NetworkProvider
+	net        peering.NetworkProvider // Avoid using it here.
 	netGroup   peering.GroupProvider
 	threshold  uint16
 	commonCoin commoncoin.Provider
@@ -67,13 +86,14 @@ func (csc *CommonSubsetCoordinator) Close() {
 // It is possible that the instacne is already created because of the messages
 // from other nodes. In such case we will just provide our input and register the callback.
 func (csc *CommonSubsetCoordinator) RunACSConsensus(
-	value []byte,
-	sessionID uint64,
+	value []byte, // Our proposal.
+	sessionID uint64, // Consensus to participate in.
+	stateIndex uint32, // Monotonic sequence, used to clear old ACS instances.
 	callback func(sessionID uint64, acs [][]byte),
 ) {
 	var err error
 	var cs *CommonSubset
-	if cs, err = csc.getOrCreateCS(sessionID, callback); err != nil {
+	if cs, err = csc.getOrCreateCS(sessionID, stateIndex, callback); err != nil {
 		csc.log.Errorf("Unable to get a CommonSubset instance for sessionID=%v, reason=%v", sessionID, err)
 		return
 	}
@@ -87,31 +107,52 @@ func (csc *CommonSubsetCoordinator) TryHandleMessage(recv *peering.RecvEvent) bo
 		return false
 	}
 	var sessionID uint64
+	var stateIndex uint32
 	var err error
-	if sessionID, err = sessionIDFromMsgBytes(recv.Msg.MsgData); err != nil {
+	if sessionID, stateIndex, err = sessionIDFromMsgBytes(recv.Msg.MsgData); err != nil {
 		csc.log.Warnf("Unable to extract a sessionID from the message, err=%v", err)
 		return true
 	}
 	var cs *CommonSubset
-	if cs, err = csc.getOrCreateCS(sessionID, nil); err != nil {
+	if cs, err = csc.getOrCreateCS(sessionID, stateIndex, nil); err != nil {
 		csc.log.Errorf("Unable to get a CommonSubset instance for sessionID=%v, reason=%v", sessionID, err)
 		return true
 	}
 	return cs.TryHandleMessage(recv)
 }
 
-func (csc *CommonSubsetCoordinator) getOrCreateCS(sessionID uint64, callback func(sessionID uint64, acs [][]byte)) (*CommonSubset, error) {
+func (csc *CommonSubsetCoordinator) getOrCreateCS(
+	sessionID uint64,
+	stateIndex uint32,
+	callback func(sessionID uint64, acs [][]byte),
+) (*CommonSubset, error) {
 	csc.lock.Lock()
 	defer csc.lock.Unlock()
+	ownCall := callback != nil
 	//
 	// Reject duplicate calls from this node.
-	if _, ok := csc.csAsked[sessionID]; ok && callback != nil {
+	if _, ok := csc.csAsked[sessionID]; ok && ownCall {
 		return nil, xerrors.Errorf("duplicate acs request")
+	}
+	//
+	// Record the current state index and drop the outdated instances.
+	if ownCall && csc.currentStateIndex != stateIndex {
+		csc.currentStateIndex = stateIndex
+		for i := range csc.csInsts {
+			if csc.csInsts[i].stateIndex < csc.currentStateIndex && !csc.inRange(csc.csInsts[i].stateIndex) {
+				// We close only the past instances, because they are not needed anymore.
+				// The future instances cannot be deleted in this way (e.g. in case of chain reset)
+				// because some of the messages are probably already received and acknowledged, thus
+				// will not be resent in the future, if we would recreate them.
+				csc.csInsts[i].Close()
+				delete(csc.csInsts, i)
+			}
+		}
 	}
 	//
 	// Return the existing instance, if any. Register the callback if passed.
 	if cs, ok := csc.csInsts[sessionID]; ok {
-		if callback != nil {
+		if ownCall {
 			csc.csAsked[sessionID] = true
 			go csc.callbackOnEvent(sessionID, cs.OutputCh(), callback)
 		}
@@ -119,18 +160,21 @@ func (csc *CommonSubsetCoordinator) getOrCreateCS(sessionID uint64, callback fun
 	}
 	//
 	// Otherwise create new instance, and register the callback if passed.
-	var err error
-	var newCS *CommonSubset
-	var outCh chan map[uint16][]byte = make(chan map[uint16][]byte)
-	if newCS, err = NewCommonSubset(sessionID, csc.peeringID, csc.net, csc.netGroup, csc.threshold, csc.commonCoin, outCh, csc.log); err != nil {
-		return nil, err
+	if ownCall || csc.inRange(stateIndex) {
+		var err error
+		var newCS *CommonSubset
+		var outCh chan map[uint16][]byte = make(chan map[uint16][]byte)
+		if newCS, err = NewCommonSubset(sessionID, stateIndex, csc.peeringID, csc.net, csc.netGroup, csc.threshold, csc.commonCoin, outCh, csc.log); err != nil {
+			return nil, err
+		}
+		csc.csInsts[sessionID] = newCS
+		if ownCall {
+			csc.csAsked[sessionID] = true
+			go csc.callbackOnEvent(sessionID, newCS.OutputCh(), callback)
+		}
+		return newCS, nil
 	}
-	csc.csInsts[sessionID] = newCS
-	if callback != nil {
-		csc.csAsked[sessionID] = true
-		go csc.callbackOnEvent(sessionID, newCS.OutputCh(), callback)
-	}
-	return newCS, nil
+	return nil, xerrors.Errorf("stateIndex out of range")
 }
 
 // This should be run in a separate thread.
@@ -150,4 +194,8 @@ func (csc *CommonSubsetCoordinator) callbackOnEvent(
 		values = append(values, out[i])
 	}
 	callback(sessionID, values)
+}
+
+func (csc *CommonSubsetCoordinator) inRange(stateIndex uint32) bool {
+	return csc.currentStateIndex-pastInstances <= stateIndex && stateIndex <= csc.currentStateIndex+futureInstances
 }

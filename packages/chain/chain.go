@@ -61,7 +61,7 @@ type Committee interface {
 	Attach(chain ChainCore)
 	IsReady() bool
 	Close()
-	RunACSConsensus(value []byte, sessionID uint64, callback func(sessionID uint64, acs [][]byte))
+	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
 }
 
 type ChainRequests interface {
@@ -147,7 +147,7 @@ type Mempool interface {
 }
 
 type AsynchronousCommonSubsetRunner interface {
-	RunACSConsensus(value []byte, sessionID uint64, callback func(sessionID uint64, acs [][]byte))
+	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
 	TryHandleMessage(recv *peering.RecvEvent) bool
 	Close()
 }

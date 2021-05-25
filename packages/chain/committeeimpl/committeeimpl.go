@@ -243,13 +243,13 @@ func (c *committeeObj) Close() {
 	c.validatorNodes.Close()
 }
 
-func (c *committeeObj) RunACSConsensus(value []byte, sessionID uint64, callback func(sessionID uint64, acs [][]byte)) {
-	c.acsRunner.RunACSConsensus(value, sessionID, callback)
+func (c *committeeObj) RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte)) {
+	c.acsRunner.RunACSConsensus(value, sessionID, stateIndex, callback)
 }
 
 func (c *committeeObj) waitReady(waitReady bool) {
 	if waitReady {
-		c.log.Infof("wait for at least quorum of comittee validatorNodes (%d) to connect before activating the committee", c.Quorum())
+		c.log.Infof("wait for at least quorum of committee validatorNodes (%d) to connect before activating the committee", c.Quorum())
 		for !c.QuorumIsAlive() {
 			time.Sleep(100 * time.Millisecond)
 		}

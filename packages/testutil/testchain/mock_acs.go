@@ -28,7 +28,7 @@ func NewMockedACSRunner(quorum uint16, log *logger.Logger) *mockedACSRunner {
 	}
 }
 
-func (acs *mockedACSRunner) RunACSConsensus(value []byte, sessionID uint64, callback func(sessionID uint64, acs [][]byte)) {
+func (acs *mockedACSRunner) RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte)) {
 	acs.mutex.Lock()
 	defer acs.mutex.Unlock()
 

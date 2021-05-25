@@ -61,6 +61,7 @@ type CommonSubset struct {
 	sentMsgBatches map[uint32]*msgBatch // BatchID -> MsgBatch
 
 	sessionID   uint64                  // Unique identifier for this consensus instance. Used to route messages.
+	stateIndex  uint32                  // Sequence number of the CS transaction we are agreeing on.
 	peeringID   peering.PeeringID       // ID for the communication group.
 	net         peering.NetworkProvider // Access to the transport layer.
 	netGroup    peering.GroupProvider   // Group of nodes we are communicating with.
@@ -78,6 +79,7 @@ type CommonSubset struct {
 
 func NewCommonSubset(
 	sessionID uint64,
+	stateIndex uint32,
 	peeringID peering.PeeringID,
 	net peering.NetworkProvider,
 	netGroup peering.GroupProvider,
@@ -118,6 +120,7 @@ func NewCommonSubset(
 		recvMsgBatches: make([]map[uint32]uint32, nodeCount),
 		sentMsgBatches: make(map[uint32]*msgBatch),
 		sessionID:      sessionID,
+		stateIndex:     stateIndex,
 		peeringID:      peeringID,
 		net:            net,
 		netGroup:       netGroup,
@@ -332,12 +335,13 @@ func (cs *CommonSubset) makeBatches(msgs []hbbft.MessageTuple) ([]*msgBatch, err
 		}
 		cs.batchCounter++
 		batches = append(batches, &msgBatch{
-			sessionID: cs.sessionID,
-			id:        cs.batchCounter,
-			src:       uint16(cs.impl.ID),
-			dst:       uint16(i),
-			msgs:      batchMsgs[i],
-			acks:      make([]uint32, 0), // Filled later.
+			sessionID:  cs.sessionID,
+			stateIndex: cs.stateIndex,
+			id:         cs.batchCounter,
+			src:        uint16(cs.impl.ID),
+			dst:        uint16(i),
+			msgs:       batchMsgs[i],
+			acks:       make([]uint32, 0), // Filled later.
 		})
 	}
 	return batches, nil
@@ -356,12 +360,13 @@ func (cs *CommonSubset) makeAckOnlyBatch(peerID uint16, ackMB uint32) *msgBatch 
 		return nil
 	}
 	return &msgBatch{
-		sessionID: cs.sessionID,
-		id:        0, // Do not require an acknowledgement.
-		src:       uint16(cs.impl.ID),
-		dst:       peerID,
-		msgs:      []*hbbft.ACSMessage{},
-		acks:      acks,
+		sessionID:  cs.sessionID,
+		stateIndex: cs.stateIndex,
+		id:         0, // Do not require an acknowledgement.
+		src:        uint16(cs.impl.ID),
+		dst:        peerID,
+		msgs:       []*hbbft.ACSMessage{},
+		acks:       acks,
 	}
 }
 
@@ -386,12 +391,13 @@ func (cs *CommonSubset) send(msgBatch *msgBatch) {
 
 /** msgBatch groups messages generated at one step in the protocol for a single recipient. */
 type msgBatch struct {
-	sessionID uint64
-	id        uint32              // ID of the batch for the acks, ID=0 => Acks are not needed.
-	src       uint16              // Sender of the batch.
-	dst       uint16              // Recipient of the batch.
-	msgs      []*hbbft.ACSMessage // New messages to send.
-	acks      []uint32            // Acknowledgements.
+	sessionID  uint64
+	stateIndex uint32
+	id         uint32              // ID of the batch for the acks, ID=0 => Acks are not needed.
+	src        uint16              // Sender of the batch.
+	dst        uint16              // Recipient of the batch.
+	msgs       []*hbbft.ACSMessage // New messages to send.
+	acks       []uint32            // Acknowledgements.
 	// TODO: Add a signature.
 }
 
@@ -412,6 +418,9 @@ func (b *msgBatch) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteUint64(w, b.sessionID); err != nil {
 		return xerrors.Errorf("failed to write msgBatch.sessionID: %w", err)
+	}
+	if err = util.WriteUint32(w, b.stateIndex); err != nil {
+		return xerrors.Errorf("failed to write msgBatch.stateIndex: %w", err)
 	}
 	if err = util.WriteUint32(w, b.id); err != nil {
 		return xerrors.Errorf("failed to write msgBatch.id: %w", err)
@@ -532,6 +541,9 @@ func (b *msgBatch) Read(r io.Reader) error {
 	var err error
 	if err = util.ReadUint64(r, &b.sessionID); err != nil {
 		return xerrors.Errorf("failed to read msgBatch.sessionID: %w", err)
+	}
+	if err = util.ReadUint32(r, &b.stateIndex); err != nil {
+		return xerrors.Errorf("failed to read msgBatch.stateIndex: %w", err)
 	}
 	if err = util.ReadUint32(r, &b.id); err != nil {
 		return xerrors.Errorf("failed to read msgBatch.id: %w", err)
@@ -690,14 +702,18 @@ func (b *msgBatch) Bytes() []byte {
 //
 // TODO: Consider refactoring it to avoid such partial parsings.
 //
-func sessionIDFromMsgBytes(buf []byte) (uint64, error) {
+func sessionIDFromMsgBytes(buf []byte) (uint64, uint32, error) {
 	var err error
 	var sessionID uint64
+	var stateIndex uint32
 	r := bytes.NewReader(buf)
 	if err = util.ReadUint64(r, &sessionID); err != nil {
-		return 0, xerrors.Errorf("failed to read msgBatch.sessionID: %w", err)
+		return 0, 0, xerrors.Errorf("failed to read msgBatch.sessionID: %w", err)
 	}
-	return sessionID, nil
+	if err = util.ReadUint32(r, &stateIndex); err != nil {
+		return 0, 0, xerrors.Errorf("failed to read msgBatch.stateIndex: %w", err)
+	}
+	return sessionID, stateIndex, nil
 }
 
 // endregion ///////////////////////////////////////////////////////////////////
