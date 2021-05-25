@@ -51,3 +51,8 @@ type PeerNetworkConfigProvider interface {
 	Neighbors() []string
 	String() string
 }
+
+type ChainRecordRegistryProvider interface {
+	SaveChainRecord(chainRecord *ChainRecord) error
+	LoadChainRecord(ChainId *ChainID) (*ChainRecord, error)
+}

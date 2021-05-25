@@ -1,14 +1,13 @@
-package registry_pkg
+package coretypes
 
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/stretchr/testify/require"
 )
 
 func TestChainRecord(t *testing.T) {
-	chainID := coretypes.RandomChainID()
+	chainID := RandomChainID()
 
 	rec := NewChainRecord(chainID)
 	require.False(t, rec.Active)

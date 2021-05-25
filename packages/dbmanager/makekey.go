@@ -1,4 +1,4 @@
-package dbprovider
+package dbmanager
 
 import "bytes"
 

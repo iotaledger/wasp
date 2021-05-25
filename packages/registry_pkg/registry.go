@@ -28,7 +28,7 @@ func NewRegistry(suite tcrypto.Suite, log *logger.Logger, dbp ...*dbprovider.DBP
 		log:   log.Named("registry"),
 	}
 	if len(dbp) == 0 {
-		ret.dbProvider = database.GetInstance()
+		ret.dbProvider = database.GetInstance(nil)
 	} else {
 		ret.dbProvider = dbp[0]
 	}
@@ -56,4 +56,14 @@ func (r *Impl) GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.C
 
 func (r *Impl) SaveCommitteeRecord(rec *committee_record.CommitteeRecord) error {
 	return r.dbProvider.GetRegistryPartition().Set(dbKeyCommitteeRecord(rec.Address), rec.Bytes())
+}
+
+///  implement here GET / SAVE chain record
+
+func (r *Impl) SaveChainRecord(chainRecord *ChainRecord) error {
+
+}
+
+func (r *Impl) LoadChainRecord(ChainId *ChainID) (*ChainRecord, error) {
+
 }

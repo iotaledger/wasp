@@ -12,6 +12,7 @@ require (
 	github.com/iotaledger/hive.go v0.0.0-20210523190624-62dd208e10b0
 	github.com/knadh/koanf v0.15.0
 	github.com/labstack/echo/v4 v4.1.13
+	github.com/labstack/gommon v0.3.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/pangpanglabs/echoswagger/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
