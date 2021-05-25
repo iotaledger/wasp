@@ -80,6 +80,14 @@ type mockedNode struct {
 }
 
 func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledgerstate.Transaction) {
+	return newMockedEnv(t, n, quorum, debug, false)
+}
+
+func NewMockedEnvWithMockedACS(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledgerstate.Transaction) {
+	return newMockedEnv(t, n, quorum, debug, true)
+}
+
+func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mockedEnv, *ledgerstate.Transaction) {
 	level := zapcore.InfoLevel
 	if debug {
 		level = zapcore.DebugLevel
@@ -105,7 +113,12 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledg
 		NodeConn:  make([]*testchain.MockedNodeConn, n),
 		Nodes:     make([]*mockedNode, n),
 	}
-	ret.MockedACS = nil // testchain.NewMockedACSRunner(quorum, log)
+	if mockACS {
+		ret.MockedACS = testchain.NewMockedACSRunner(quorum, log)
+		log.Infof("running MOCKED ACS consensus")
+	} else {
+		log.Infof("running REAL ACS consensus")
+	}
 
 	for i := range ret.NodeConn {
 		func(j int) {
