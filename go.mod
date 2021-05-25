@@ -8,12 +8,10 @@ require (
 	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/bytecodealliance/wasmtime-go v0.21.0
-	github.com/google/go-cmp v0.5.2 // indirect
 	github.com/iotaledger/goshimmer v0.6.2-0.20210525071503-a54182e95c7a
 	github.com/iotaledger/hive.go v0.0.0-20210523190624-62dd208e10b0
 	github.com/knadh/koanf v0.15.0
 	github.com/labstack/echo/v4 v4.1.13
-	github.com/linxGnu/grocksdb v1.6.35 // indirect
 	github.com/mr-tron/base58 v1.2.0
 	github.com/pangpanglabs/echoswagger/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
@@ -21,16 +19,12 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.7.0
-	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c // indirect
-	github.com/xdg/stringprep v1.0.0 // indirect
 	go.dedis.ch/kyber/v3 v3.0.13
 	go.nanomsg.org/mangos/v3 v3.0.1
 	go.uber.org/atomic v1.7.0
-	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
-	golang.org/x/text v0.3.5 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 )
 

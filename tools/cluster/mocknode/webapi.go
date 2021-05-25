@@ -11,9 +11,9 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/goshimmer/plugins/webapi/jsonmodels"
-	"github.com/iotaledger/goshimmer/plugins/webapi/jsonmodels/value"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"golang.org/x/xerrors"
 )
 
 func (m *MockNode) startWebAPI(bindAddress string) error {
@@ -58,8 +58,8 @@ func (m *MockNode) addEndpoints(e *echo.Echo) {
 	// so they should work with the official Goshimmer client.
 
 	e.GET("ledgerstate/addresses/:address/unspentOutputs", m.unspentOutputsHandler)
-	e.GET("value/transactionByID", m.getTransactionByIDHandler)
-	e.POST("value/sendTransaction", m.sendTransactionHandler)
+	e.GET("ledgerstate/transactions/:transactionID/inclusionState", m.getTransactionInclusionStateHandler)
+	e.POST("ledgerstate/transactions", m.sendTransactionHandler)
 	e.POST("faucet", m.requestFundsHandler)
 }
 
@@ -77,58 +77,43 @@ func (m *MockNode) unspentOutputsHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, jsonmodels.NewGetAddressResponse(address, outputs))
 }
 
-func (m *MockNode) getTransactionByIDHandler(c echo.Context) error {
-	txID, err := ledgerstate.TransactionIDFromBase58(c.QueryParam("txnID"))
+func (m *MockNode) getTransactionInclusionStateHandler(c echo.Context) error {
+	txID, err := ledgerstate.TransactionIDFromBase58(c.Param("transactionID"))
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, value.GetTransactionByIDResponse{Error: err.Error()})
+		return c.JSON(http.StatusBadRequest, jsonmodels.NewErrorResponse(err))
 	}
 
-	var txn value.Transaction
-	found := m.Ledger.GetConfirmedTransaction(txID, func(tx *ledgerstate.Transaction) {
-		txn = value.ParseTransaction(tx)
-	})
+	found := m.Ledger.GetConfirmedTransaction(txID, func(tx *ledgerstate.Transaction) {})
 	if !found {
-		return c.JSON(http.StatusNotFound, value.GetTransactionByIDResponse{Error: "Transaction not found"})
+		return c.JSON(http.StatusNotFound, jsonmodels.NewErrorResponse(xerrors.Errorf("failed to load Transaction with %s", txID)))
 	}
-
-	return c.JSON(http.StatusOK, value.GetTransactionByIDResponse{
-		TransactionMetadata: value.TransactionMetadata{
-			BranchID:   ledgerstate.MasterBranchID.String(),
-			Solid:      true,
-			Finalized:  true,
-			LazyBooked: false,
-		},
-		Transaction: txn,
-		InclusionState: value.InclusionState{
-			Confirmed:   true,
-			Conflicting: false,
-			Liked:       true,
-			Solid:       true,
-			Rejected:    false,
-			Finalized:   true,
-			Preferred:   false,
-		},
+	return c.JSON(http.StatusOK, &jsonmodels.TransactionInclusionState{
+		TransactionID: txID.Base58(),
+		Pending:       false,
+		Confirmed:     true,
+		Rejected:      false,
+		Conflicting:   false,
 	})
 }
 
 func (m *MockNode) sendTransactionHandler(c echo.Context) error {
-	var request value.SendTransactionRequest
+	var request jsonmodels.PostTransactionRequest
 	if err := c.Bind(&request); err != nil {
-		return c.JSON(http.StatusBadRequest, value.SendTransactionResponse{Error: err.Error()})
+		return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{Error: err.Error()})
 	}
 
 	// parse tx
 	tx, _, err := ledgerstate.TransactionFromBytes(request.TransactionBytes)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, value.SendTransactionResponse{Error: err.Error()})
+		return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{Error: err.Error()})
 	}
 
 	err = m.Ledger.PostTransaction(tx)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, value.SendTransactionResponse{Error: err.Error()})
+		return c.JSON(http.StatusBadRequest, &jsonmodels.PostTransactionResponse{Error: err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, value.SendTransactionResponse{TransactionID: tx.ID().Base58()})
+	return c.JSON(http.StatusOK, &jsonmodels.PostTransactionResponse{TransactionID: tx.ID().Base58()})
 }
 
 func (m *MockNode) requestFundsHandler(c echo.Context) error {
