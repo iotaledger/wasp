@@ -197,14 +197,19 @@ func (c *consensus) checkQuorum() {
 
 	// calculate deterministic and pseudo-random order and postTxDeadline among contributors
 	var postSeqNumber uint16
+	var permutation *util.Permutation16
 	if c.iAmContributor {
-		permutation := util.NewPermutation16(uint16(len(c.contributors)), tx.ID().Bytes())
+		permutation = util.NewPermutation16(uint16(len(c.contributors)), tx.ID().Bytes())
 		postSeqNumber = permutation.GetArray()[c.myContributionSeqNumber]
 		c.postTxDeadline = time.Now().Add(time.Duration(postSeqNumber*postSeqStepMilliseconds) * time.Millisecond)
+
+		c.log.Debugf("checkQuorum: finalized tx %s, iAmContributor: true, postSeqNum: %d, permutation: %+v",
+			tx.ID().Base58(), postSeqNumber, permutation.GetArray())
+	} else {
+		c.log.Debugf("checkQuorum: finalized tx %s, iAmContributor: false", tx.ID().Base58())
 	}
 	c.workflow.transactionFinalized = true
 	c.pullInclusionStateDeadline = time.Now()
-	c.log.Debugf("checkQuorum: finalized tx %s, iAmContributor: %v seqNum: %d", tx.ID().Base58(), c.iAmContributor, postSeqNumber)
 }
 
 // postTransactionIfNeeded posts a finalized transaction upon deadline unless it was evidenced on L1 before the deadline.
@@ -307,12 +312,10 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 		}
 		acs[i] = proposal
 	}
-	iAmContributor := false
-	myContributionSeqNumber := uint16(0)
 	contributors := make([]uint16, 0, c.committee.Size())
 	contributorSet := make(map[uint16]struct{})
 	// validate ACS. Dismiss ACS if inconsistent. Should not happen
-	for i, prop := range acs {
+	for _, prop := range acs {
 		if prop.StateOutputID != c.stateOutput.ID() {
 			c.resetWorkflow()
 			c.log.Warnf("receiveACS: ACS out of context or consensus failure")
@@ -323,10 +326,6 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 			c.log.Warnf("receiveACS: wrong validtor index in ACS")
 			return
 		}
-		if prop.ValidatorIndex == c.committee.OwnPeerIndex() {
-			iAmContributor = true
-			myContributionSeqNumber = uint16(i)
-		}
 		contributors = append(contributors, prop.ValidatorIndex)
 		if _, already := contributorSet[prop.ValidatorIndex]; already {
 			c.resetWorkflow()
@@ -335,6 +334,20 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 		}
 		contributorSet[prop.ValidatorIndex] = struct{}{}
 	}
+
+	// sort contributors for determinism because ACS returns sets ordered randomly
+	sort.Slice(contributors, func(i, j int) bool {
+		return contributors[i] < contributors[j]
+	})
+	iAmContributor := false
+	myContributionSeqNumber := uint16(0)
+	for i, contr := range contributors {
+		if contr == c.committee.OwnPeerIndex() {
+			iAmContributor = true
+			myContributionSeqNumber = uint16(i)
+		}
+	}
+
 	// calculate intersection of proposals
 	inBatchSet := calcIntersection(acs, c.committee.Size())
 	if len(inBatchSet) == 0 {
@@ -372,6 +385,14 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 	c.contributors = contributors
 
 	c.workflow.consensusBatchKnown = true
+
+	if c.iAmContributor {
+		c.log.Debugf("ACS received. Contributors to ACS: %+v, iAmContributor: true, seqnr: %d, reqs: %+v",
+			c.contributors, c.myContributionSeqNumber, coretypes.ShortRequestIDs(c.consensusBatch.RequestIDs))
+	} else {
+		c.log.Debugf("ACS received. Contributors to ACS: %+v, iAmContributor: false, reqs: %+v",
+			c.contributors, coretypes.ShortRequestIDs(c.consensusBatch.RequestIDs))
+	}
 
 	c.runVMIfNeeded()
 }
