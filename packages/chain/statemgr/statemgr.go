@@ -42,7 +42,7 @@ type stateManager struct {
 	eventBlockMsgCh        chan *chain.BlockMsg
 	eventStateOutputMsgCh  chan *chain.StateMsg
 	eventOutputMsgCh       chan ledgerstate.Output
-	eventPendingBlockMsgCh chan chain.StateCandidateMsg
+	eventPendingBlockMsgCh chan *chain.StateCandidateMsg
 	eventTimerMsgCh        chan chain.TimerTick
 	closeCh                chan bool
 }
@@ -73,7 +73,7 @@ func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers peering.PeerDomain
 		eventBlockMsgCh:        make(chan *chain.BlockMsg),
 		eventStateOutputMsgCh:  make(chan *chain.StateMsg),
 		eventOutputMsgCh:       make(chan ledgerstate.Output),
-		eventPendingBlockMsgCh: make(chan chain.StateCandidateMsg),
+		eventPendingBlockMsgCh: make(chan *chain.StateCandidateMsg),
 		eventTimerMsgCh:        make(chan chain.TimerTick),
 		closeCh:                make(chan bool),
 	}

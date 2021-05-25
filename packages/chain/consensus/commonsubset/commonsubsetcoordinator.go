@@ -4,6 +4,7 @@
 package commonsubset
 
 import (
+	"sort"
 	"sync"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -189,9 +190,14 @@ func (csc *CommonSubsetCoordinator) callbackOnEvent(
 		// We will not invoke the callback in this case.
 		return
 	}
-	values := make([][]byte, 0)
+	keys := make([]int, 0)
 	for i := range out {
-		values = append(values, out[i])
+		keys = append(keys, int(i))
+	}
+	sort.Ints(keys)
+	values := make([][]byte, 0)
+	for _, i := range keys {
+		values = append(values, out[uint16(i)])
 	}
 	callback(sessionID, values)
 }

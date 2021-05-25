@@ -1,4 +1,4 @@
-package consensusimpl
+package consensus
 
 import (
 	"time"
@@ -16,7 +16,7 @@ import (
 	"go.uber.org/atomic"
 )
 
-type consensusImpl struct {
+type consensus struct {
 	isReady                    atomic.Bool
 	chain                      chain.ChainCore
 	committee                  chain.Committee
@@ -67,10 +67,10 @@ type workflowFlags struct {
 	finished                     bool
 }
 
-var _ chain.Consensus = &consensusImpl{}
+var _ chain.Consensus = &consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, log *logger.Logger) *consensusImpl {
-	ret := &consensusImpl{
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, log *logger.Logger) *consensus {
+	ret := &consensus{
 		chain:                      chainCore,
 		committee:                  committee,
 		mempool:                    mempool,
@@ -92,15 +92,15 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 	return ret
 }
 
-func (c *consensusImpl) IsReady() bool {
+func (c *consensus) IsReady() bool {
 	return c.isReady.Load()
 }
 
-func (c *consensusImpl) Close() {
+func (c *consensus) Close() {
 	close(c.closeCh)
 }
 
-func (c *consensusImpl) recvLoop() {
+func (c *consensus) recvLoop() {
 	// wait at startup
 	for !c.committee.IsReady() {
 		select {
@@ -147,7 +147,7 @@ func (c *consensusImpl) recvLoop() {
 	}
 }
 
-func (c *consensusImpl) refreshConsensusInfo() {
+func (c *consensus) refreshConsensusInfo() {
 	index := uint32(0)
 	if c.currentState != nil {
 		index = c.currentState.BlockIndex()
@@ -159,7 +159,7 @@ func (c *consensusImpl) refreshConsensusInfo() {
 	})
 }
 
-func (c *consensusImpl) GetStatusSnapshot() *chain.ConsensusInfo {
+func (c *consensus) GetStatusSnapshot() *chain.ConsensusInfo {
 	ret := c.consensusInfoSnapshot.Load()
 	if ret == nil {
 		return nil

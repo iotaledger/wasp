@@ -1,4 +1,4 @@
-package consensusimpl
+package consensus
 
 import (
 	"bytes"
@@ -30,7 +30,7 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/committeeimpl"
+	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -75,11 +75,19 @@ type mockedNode struct {
 	Env       *mockedEnv
 	ChainCore *testchain.MockedChainCore
 	Mempool   chain.Mempool
-	Consensus *consensusImpl
+	Consensus *consensus
 	Log       *logger.Logger
 }
 
 func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledgerstate.Transaction) {
+	return newMockedEnv(t, n, quorum, debug, false)
+}
+
+func NewMockedEnvWithMockedACS(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledgerstate.Transaction) {
+	return newMockedEnv(t, n, quorum, debug, true)
+}
+
+func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mockedEnv, *ledgerstate.Transaction) {
 	level := zapcore.InfoLevel
 	if debug {
 		level = zapcore.DebugLevel
@@ -105,7 +113,12 @@ func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledg
 		NodeConn:  make([]*testchain.MockedNodeConn, n),
 		Nodes:     make([]*mockedNode, n),
 	}
-	ret.MockedACS = nil // testchain.NewMockedACSRunner(quorum, log)
+	if mockACS {
+		ret.MockedACS = testchain.NewMockedACSRunner(quorum, log)
+		log.Infof("running MOCKED ACS consensus")
+	} else {
+		log.Infof("running REAL ACS consensus")
+	}
 
 	for i := range ret.NodeConn {
 		func(j int) {
@@ -181,7 +194,7 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 	if env.MockedACS != nil {
 		acs = append(acs, env.MockedACS)
 	}
-	committee, err := committeeimpl.NewCommittee(
+	committee, err := committee.New(
 		env.StateAddress,
 		&env.ChainID,
 		env.NetworkProviders[i],

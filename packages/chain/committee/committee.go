@@ -1,4 +1,4 @@
-package committeeimpl
+package committee
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type committeeObj struct {
+type committee struct {
 	isReady        *atomic.Bool
 	address        ledgerstate.Address
 	peerConfig     coretypes.PeerNetworkConfigProvider
@@ -39,7 +39,7 @@ type committeeObj struct {
 
 const waitReady = false
 
-func NewCommittee(
+func New(
 	stateAddr ledgerstate.Address,
 	chainID *coretypes.ChainID,
 	netProvider peering.NetworkProvider,
@@ -70,7 +70,7 @@ func NewCommittee(
 	if peers, err = netProvider.PeerGroup(cmtRec.Nodes); err != nil {
 		return nil, xerrors.Errorf("NewCommittee: failed to create peer group for committee: %+v: %w", cmtRec.Nodes, err)
 	}
-
+	log.Debugf("NewCommittee: peer group: %+v", cmtRec.Nodes)
 	// peerGroupID is calculated by XORing chainID and stateAddr.
 	// It allows to use same statAddr for different chains
 	peerGroupID := stateAddr.Array()
@@ -81,7 +81,7 @@ func NewCommittee(
 	for i := range peerGroupID {
 		peerGroupID[i] = peerGroupID[i] ^ chainArr[i]
 	}
-	ret := &committeeObj{
+	ret := &committee{
 		isReady:        atomic.NewBool(false),
 		address:        stateAddr,
 		validatorNodes: peers,
@@ -120,31 +120,31 @@ func NewCommittee(
 	return ret, nil
 }
 
-func (c *committeeObj) Address() ledgerstate.Address {
+func (c *committee) Address() ledgerstate.Address {
 	return c.address
 }
 
-func (c *committeeObj) Size() uint16 {
+func (c *committee) Size() uint16 {
 	return c.size
 }
 
-func (c *committeeObj) Quorum() uint16 {
+func (c *committee) Quorum() uint16 {
 	return c.quorum
 }
 
-func (c *committeeObj) IsReady() bool {
+func (c *committee) IsReady() bool {
 	return c.isReady.Load()
 }
 
-func (c *committeeObj) OwnPeerIndex() uint16 {
+func (c *committee) OwnPeerIndex() uint16 {
 	return c.ownIndex
 }
 
-func (c *committeeObj) DKShare() *tcrypto.DKShare {
+func (c *committee) DKShare() *tcrypto.DKShare {
 	return c.dkshare
 }
 
-func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
+func (c *committee) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
 	if peer, ok := c.validatorNodes.OtherNodes()[targetPeerIndex]; ok {
 		peer.SendMsg(&peering.PeerMessage{
 			PeeringID:   c.peeringID,
@@ -157,7 +157,7 @@ func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []b
 	return fmt.Errorf("SendMsg: wrong peer index")
 }
 
-func (c *committeeObj) SendMsgToPeers(msgType byte, msgData []byte, ts int64) {
+func (c *committee) SendMsgToPeers(msgType byte, msgData []byte, ts int64) {
 	msg := &peering.PeerMessage{
 		PeeringID:   c.peeringID,
 		SenderIndex: c.ownIndex,
@@ -168,7 +168,7 @@ func (c *committeeObj) SendMsgToPeers(msgType byte, msgData []byte, ts int64) {
 	c.validatorNodes.Broadcast(msg, false)
 }
 
-func (c *committeeObj) IsAlivePeer(peerIndex uint16) bool {
+func (c *committee) IsAlivePeer(peerIndex uint16) bool {
 	allNodes := c.validatorNodes.AllNodes()
 	if int(peerIndex) >= len(allNodes) {
 		return false
@@ -182,7 +182,7 @@ func (c *committeeObj) IsAlivePeer(peerIndex uint16) bool {
 	return allNodes[peerIndex].IsAlive()
 }
 
-func (c *committeeObj) QuorumIsAlive(quorum ...uint16) bool {
+func (c *committee) QuorumIsAlive(quorum ...uint16) bool {
 	q := c.quorum
 	if len(quorum) > 0 {
 		q = quorum[0]
@@ -199,7 +199,7 @@ func (c *committeeObj) QuorumIsAlive(quorum ...uint16) bool {
 	return false
 }
 
-func (c *committeeObj) PeerStatus() []*chain.PeerStatus {
+func (c *committee) PeerStatus() []*chain.PeerStatus {
 	ret := make([]*chain.PeerStatus, 0)
 	for i, peer := range c.validatorNodes.AllNodes() {
 		isSelf := peer == nil || peer.NetID() == c.peerConfig.OwnNetID()
@@ -219,7 +219,7 @@ func (c *committeeObj) PeerStatus() []*chain.PeerStatus {
 	return ret
 }
 
-func (c *committeeObj) Attach(chain chain.ChainCore) {
+func (c *committee) Attach(chain chain.ChainCore) {
 	c.attachID = c.validatorNodes.Attach(&c.peeringID, func(recv *peering.RecvEvent) {
 		if c.ccProvider != nil && c.ccProvider.TryHandleMessage(recv) {
 			return
@@ -231,7 +231,7 @@ func (c *committeeObj) Attach(chain chain.ChainCore) {
 	})
 }
 
-func (c *committeeObj) Close() {
+func (c *committee) Close() {
 	c.acsRunner.Close()
 	if c.ccProvider != nil {
 		c.ccProvider.Close()
@@ -243,11 +243,11 @@ func (c *committeeObj) Close() {
 	c.validatorNodes.Close()
 }
 
-func (c *committeeObj) RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte)) {
+func (c *committee) RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte)) {
 	c.acsRunner.RunACSConsensus(value, sessionID, stateIndex, callback)
 }
 
-func (c *committeeObj) waitReady(waitReady bool) {
+func (c *committee) waitReady(waitReady bool) {
 	if waitReady {
 		c.log.Infof("wait for at least quorum of committee validatorNodes (%d) to connect before activating the committee", c.Quorum())
 		for !c.QuorumIsAlive() {

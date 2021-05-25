@@ -1,4 +1,4 @@
-package consensusimpl
+package consensus
 
 import (
 	"github.com/iotaledger/wasp/packages/chain"
@@ -6,20 +6,20 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
-func (c *consensusImpl) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
+func (c *consensus) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	c.eventStateTransitionMsgCh <- msg
 }
-func (c *consensusImpl) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
+func (c *consensus) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	c.log.Debugf("eventStateTransitionMsg: state index: %d, state output: %s, timestamp: %v",
 		msg.State.BlockIndex(), coretypes.OID(msg.StateOutput.ID()), msg.StateTimestamp)
 	c.setNewState(msg)
 	c.takeAction()
 }
 
-func (c *consensusImpl) EventVMResultCalculated(msg *chain.VMResultMsg) {
+func (c *consensus) EventVMResultCalculated(msg *chain.VMResultMsg) {
 	c.eventResultCalculatedMsgCh <- msg
 }
-func (c *consensusImpl) eventResultCalculated(msg *chain.VMResultMsg) {
+func (c *consensus) eventResultCalculated(msg *chain.VMResultMsg) {
 	c.log.Debugf("eventResultCalculated: block index: %d", msg.Task.VirtualState.BlockIndex())
 
 	if msg.Task.ChainInput.ID() != c.stateOutput.ID() {
@@ -30,39 +30,39 @@ func (c *consensusImpl) eventResultCalculated(msg *chain.VMResultMsg) {
 	c.takeAction()
 }
 
-func (c *consensusImpl) EventSignedResultMsg(msg *chain.SignedResultMsg) {
+func (c *consensus) EventSignedResultMsg(msg *chain.SignedResultMsg) {
 	c.eventSignedResultMsgCh <- msg
 }
-func (c *consensusImpl) eventSignedResult(msg *chain.SignedResultMsg) {
+func (c *consensus) eventSignedResult(msg *chain.SignedResultMsg) {
 	c.log.Debugf("eventSignedResult: from sender: %d", msg.SenderIndex)
 	c.receiveSignedResult(msg)
 	c.takeAction()
 }
 
-func (c *consensusImpl) EventInclusionsStateMsg(msg *chain.InclusionStateMsg) {
+func (c *consensus) EventInclusionsStateMsg(msg *chain.InclusionStateMsg) {
 	c.eventInclusionStateMsgCh <- msg
 }
-func (c *consensusImpl) eventInclusionState(msg *chain.InclusionStateMsg) {
+func (c *consensus) eventInclusionState(msg *chain.InclusionStateMsg) {
 	c.log.Debugf("eventInclusionState:  %s: '%s'", msg.TxID.Base58(), msg.State.String())
 	c.processInclusionState(msg)
 
 	c.takeAction()
 }
 
-func (c *consensusImpl) EventAsynchronousCommonSubsetMsg(msg *chain.AsynchronousCommonSubsetMsg) {
+func (c *consensus) EventAsynchronousCommonSubsetMsg(msg *chain.AsynchronousCommonSubsetMsg) {
 	c.eventACSMsgCh <- msg
 }
-func (c *consensusImpl) eventAsynchronousCommonSubset(msg *chain.AsynchronousCommonSubsetMsg) {
+func (c *consensus) eventAsynchronousCommonSubset(msg *chain.AsynchronousCommonSubsetMsg) {
 	c.log.Debugf("eventAsynchronousCommonSubset: len = %d", len(msg.ProposedBatchesBin))
 	c.receiveACS(msg.ProposedBatchesBin, msg.SessionID)
 
 	c.takeAction()
 }
 
-func (c *consensusImpl) EventVMResultMsg(msg *chain.VMResultMsg) {
+func (c *consensus) EventVMResultMsg(msg *chain.VMResultMsg) {
 	c.eventVMResultMsgCh <- msg
 }
-func (c *consensusImpl) eventVMResultMsg(msg *chain.VMResultMsg) {
+func (c *consensus) eventVMResultMsg(msg *chain.VMResultMsg) {
 	essenceHash := hashing.HashData(msg.Task.ResultTransactionEssence.Bytes())
 	c.log.Debugf("eventVMResultMsg: state index: %d state hash: %s essence hash: %s",
 		msg.Task.VirtualState.BlockIndex(), msg.Task.VirtualState.Hash(), essenceHash)
@@ -71,10 +71,10 @@ func (c *consensusImpl) eventVMResultMsg(msg *chain.VMResultMsg) {
 	c.takeAction()
 }
 
-func (c *consensusImpl) EventTimerMsg(msg chain.TimerTick) {
+func (c *consensus) EventTimerMsg(msg chain.TimerTick) {
 	c.eventTimerMsgCh <- msg
 }
-func (c *consensusImpl) eventTimerMsg(msg chain.TimerTick) {
+func (c *consensus) eventTimerMsg(msg chain.TimerTick) {
 	c.lastTimerTick.Store(int64(msg))
 	c.refreshConsensusInfo()
 	if msg%40 == 0 {

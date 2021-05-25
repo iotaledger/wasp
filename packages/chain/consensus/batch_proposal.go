@@ -1,4 +1,4 @@
-package consensusimpl
+package consensus
 
 import (
 	"sort"
@@ -111,7 +111,7 @@ func (b *batchProposal) Bytes() []byte {
 // mana pledges and fee destination
 // Timestamp is calculated by taking closest value from above to the median.
 // TODO final version of pladeges and fee destination
-func (c *consensusImpl) calcBatchParameters(props []*batchProposal) (*consensusBatchParams, error) {
+func (c *consensus) calcBatchParameters(props []*batchProposal) (*consensusBatchParams, error) {
 	var retTS time.Time
 
 	ts := make([]time.Time, len(props))

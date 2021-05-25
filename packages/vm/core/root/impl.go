@@ -8,6 +8,7 @@ package root
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -95,6 +96,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", blob.Interface.Name, blob.Interface.Hname())
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", accounts.Interface.Name, accounts.Interface.Hname())
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", eventlog.Interface.Name, eventlog.Interface.Hname())
+	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", blocklog.Interface.Name, blocklog.Interface.Hname())
 	ctx.Log().Debugf("root.initialize.success")
 	return nil, nil
 }
