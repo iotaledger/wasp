@@ -2,6 +2,8 @@ package service
 
 import (
 	"github.com/ethereum/go-ethereum/core"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -23,13 +25,13 @@ func NewSoloBackend(alloc core.GenesisAlloc) *SoloBackend {
 	return &SoloBackend{env, chain}
 }
 
-func (s *SoloBackend) PostRequest(scName string, funName string, optSize int, params ...interface{}) error {
+func (s *SoloBackend) PostRequest(keyPair *ed25519.KeyPair, transfer map[ledgerstate.Color]uint64, scName string, funName string, optSize int, params ...interface{}) error {
 	req, toUpload := solo.NewCallParamsOptimized(scName, funName, optSize, params...)
-	req.WithIotas(1)
+	req.WithTransfers(transfer)
 	for _, v := range toUpload {
 		s.Chain.Env.PutBlobDataIntoRegistry(v)
 	}
-	_, err := s.Chain.PostRequestSync(req, nil)
+	_, err := s.Chain.PostRequestSync(req, keyPair)
 	return err
 }
 

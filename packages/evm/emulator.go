@@ -45,8 +45,9 @@ type EVMEmulator struct {
 }
 
 var (
-	GasLimit = uint64(math.MaxUint64 / 2)
-	GasPrice = big.NewInt(0)
+	TxGas       = uint64(21000) // gas cost of simple transfer (not contract creation / call)
+	MaxGasLimit = uint64(math.MaxUint64 / 2)
+	GasPrice    = big.NewInt(0)
 )
 
 var Config = params.AllEthashProtocolChanges
@@ -60,7 +61,7 @@ func InitGenesis(db ethdb.Database, alloc core.GenesisAlloc) {
 	if (stored != common.Hash{}) {
 		panic("genesis block already initialized")
 	}
-	genesis := core.Genesis{Config: Config, Alloc: alloc, GasLimit: GasLimit}
+	genesis := core.Genesis{Config: Config, Alloc: alloc, GasLimit: MaxGasLimit}
 	genesis.MustCommit(db)
 }
 

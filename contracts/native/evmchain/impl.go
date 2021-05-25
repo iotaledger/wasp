@@ -34,7 +34,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	genesisAlloc, err := DecodeGenesisAlloc(ctx.Params().MustGet(FieldGenesisAlloc))
 	a.RequireNoError(err)
 	evm.InitGenesis(rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())), genesisAlloc)
-	ctx.State().Set(FieldGasPerIota, codec.EncodeInt64(DefaultGasPerIota))     // sets the default GasPerIota value
+	ctx.State().Set(FieldGasPerIota, codec.EncodeUint64(DefaultGasPerIota))    // sets the default GasPerIota value
 	ctx.State().Set(FieldEvmOwner, codec.EncodeAgentID(ctx.ContractCreator())) // sets the default contract owner
 	return nil, nil
 }
@@ -59,7 +59,10 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	gasPerIota, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasPerIota))
 	a.RequireNoError(err)
 
-	a.Require(transferredIotas >= tx.Gas()/gasPerIota, "not enough iotas to cover the gas limit set in the transaction")
+	a.Require(
+		transferredIotas >= tx.Gas()/gasPerIota,
+		"transferred tokens (%d) not enough to cover the gas limit set in the transaction (%d at %d gas per iota token)", transferredIotas, tx.Gas(), gasPerIota,
+	)
 
 	emu := emulator(ctx.State())
 	defer emu.Close()
@@ -69,7 +72,7 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 		return nil, nil
 	}
 
-	//solidifies the pending block
+	// solidifies the pending block
 	emu.Commit()
 
 	receipt, err := emu.TransactionReceipt(tx.Hash())
@@ -86,7 +89,7 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	iotasGasFee := receipt.GasUsed / gasPerIota
 
 	if transferredIotas < iotasGasFee {
-		//not enough gas
+		// not enough gas
 		ctx.Log().Panicf("inconsistency: not enough iotas to pay the consumed gas fees. spent: %d iotas", transferredIotas)
 		return nil, nil
 	}
@@ -236,10 +239,15 @@ func getCode(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
 
+	var blockNumber *big.Int
+	if ctx.Params().MustHas(FieldBlockNumber) {
+		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
+	}
+
 	emu := emulatorR(ctx.State())
 	defer emu.Close()
 
-	code, err := emu.CodeAt(addr, nil)
+	code, err := emu.CodeAt(addr, blockNumber)
 	a.RequireNoError(err)
 	if code == nil {
 		code = []byte{}
@@ -250,7 +258,54 @@ func getCode(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
+func getStorage(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
+
+	key := common.BytesToHash(ctx.Params().MustGet(FieldKey))
+
+	var blockNumber *big.Int
+	if ctx.Params().MustHas(FieldBlockNumber) {
+		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
+	}
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	data, err := emu.StorageAt(addr, key, blockNumber)
+	a.RequireNoError(err)
+	if data == nil {
+		data = []byte{}
+	}
+
+	ret := dict.New()
+	ret.Set(FieldResult, data)
+	return ret, nil
+}
+
 func callContract(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+
+	callMsg, err := DecodeCallMsg(ctx.Params().MustGet(FieldCallMsg))
+	a.RequireNoError(err)
+
+	var blockNumber *big.Int
+	if ctx.Params().MustHas(FieldBlockNumber) {
+		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
+	}
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	res, err := emu.CallContract(callMsg, blockNumber)
+	a.RequireNoError(err)
+
+	ret := dict.New()
+	ret.Set(FieldResult, res)
+	return ret, nil
+}
+
+func estimateGas(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
 	callMsg, err := DecodeCallMsg(ctx.Params().MustGet(FieldCallMsg))
@@ -259,11 +314,11 @@ func callContract(ctx coretypes.SandboxView) (dict.Dict, error) {
 	emu := emulatorR(ctx.State())
 	defer emu.Close()
 
-	res, err := emu.CallContract(callMsg, nil)
+	gas, err := emu.EstimateGas(callMsg)
 	a.RequireNoError(err)
 
 	ret := dict.New()
-	ret.Set(FieldResult, res)
+	ret.Set(FieldResult, codec.EncodeUint64(gas))
 	return ret, nil
 }
 

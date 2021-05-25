@@ -36,11 +36,12 @@ func newEnv(t *testing.T) *env {
 		return nil
 	}))
 
-	soloEVMChain := service.NewEVMChain(service.NewSoloBackend(core.GenesisAlloc{
+	solo := service.NewSoloBackend(core.GenesisAlloc{
 		faucetAddress: {Balance: faucetSupply},
-	}))
+	})
+	soloEVMChain := service.NewEVMChain(solo)
 
-	rpcsrv := NewRPCServer(soloEVMChain)
+	rpcsrv := NewRPCServer(soloEVMChain, solo.Chain.OriginatorKeyPair)
 	t.Cleanup(rpcsrv.Stop)
 
 	client := ethclient.NewClient(rpc.DialInProc(rpcsrv))
@@ -62,7 +63,7 @@ func (e *env) requestFunds(target common.Address) *types.Transaction {
 	nonce, err := e.client.NonceAt(context.Background(), faucetAddress, nil)
 	require.NoError(e.t, err)
 	tx, err := types.SignTx(
-		types.NewTransaction(nonce, target, requestFundsAmount, evm.GasLimit, evm.GasPrice, nil),
+		types.NewTransaction(nonce, target, requestFundsAmount, evm.TxGas, evm.GasPrice, nil),
 		evm.Signer(),
 		faucetKey,
 	)
@@ -82,8 +83,19 @@ func (e *env) deployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, 
 
 	data := append(contractBytecode, constructorArguments...)
 
+	value := big.NewInt(0)
+
+	gasLimit := e.estimateGas(ethereum.CallMsg{
+		From:     creatorAddress,
+		To:       nil, // contract creation
+		Gas:      evm.MaxGasLimit,
+		GasPrice: evm.GasPrice,
+		Value:    value,
+		Data:     data,
+	})
+
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, big.NewInt(0), evm.GasLimit, evm.GasPrice, data),
+		types.NewContractCreation(nonce, value, gasLimit, evm.GasPrice, data),
 		evm.Signer(),
 		creator,
 	)
@@ -93,6 +105,12 @@ func (e *env) deployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, 
 	require.NoError(e.t, err)
 
 	return tx, crypto.CreateAddress(creatorAddress, nonce)
+}
+
+func (e *env) estimateGas(msg ethereum.CallMsg) uint64 {
+	gas, err := e.client.EstimateGas(context.Background(), msg)
+	require.NoError(e.t, err)
+	return gas
 }
 
 func (e *env) nonceAt(address common.Address) uint64 {
@@ -126,9 +144,15 @@ func (e *env) balance(address common.Address) *big.Int {
 }
 
 func (e *env) code(address common.Address) []byte {
-	bal, err := e.client.CodeAt(context.Background(), address, nil)
+	code, err := e.client.CodeAt(context.Background(), address, nil)
 	require.NoError(e.t, err)
-	return bal
+	return code
+}
+
+func (e *env) storage(address common.Address, key common.Hash) []byte {
+	data, err := e.client.StorageAt(context.Background(), address, key, nil)
+	require.NoError(e.t, err)
+	return data
 }
 
 func (e *env) txReceipt(hash common.Hash) *types.Receipt {
@@ -161,6 +185,27 @@ func TestRPCGetCode(t *testing.T) {
 		_, contractAddress := env.deployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(42))
 		require.NotEmpty(t, env.code(contractAddress))
 	}
+}
+
+func TestRPCGetStorage(t *testing.T) {
+	env := newEnv(t)
+	creator, creatorAddress := generateKey(t)
+
+	env.requestFunds(creatorAddress)
+
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(t, err)
+	_, contractAddress := env.deployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(42))
+
+	// first static variable in contract (uint32 n) has slot 0. See:
+	// https://docs.soliditylang.org/en/v0.6.6/miscellaneous.html#layout-of-state-variables-in-storage
+	slot := common.Hash{}
+	ret := env.storage(contractAddress, slot)
+
+	var v uint32
+	err = contractABI.UnpackIntoInterface(&v, "retrieve", ret)
+	require.NoError(t, err)
+	require.Equal(t, uint32(42), v)
 }
 
 func TestRPCBlockNumber(t *testing.T) {

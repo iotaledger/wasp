@@ -9,14 +9,16 @@ import (
 	"github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 )
 
 type EthService struct {
 	evmChain *EVMChain
+	signer   *ed25519.KeyPair
 }
 
-func NewEthService(evmChain *EVMChain) *EthService {
-	return &EthService{evmChain}
+func NewEthService(evmChain *EVMChain, signer *ed25519.KeyPair) *EthService {
+	return &EthService{evmChain, signer}
 }
 
 func (e *EthService) GetTransactionCount(address common.Address, blockNumber rpc.BlockNumber) (hexutil.Uint64, error) {
@@ -86,7 +88,7 @@ func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, err
 	if err := rlp.DecodeBytes(txBytes, tx); err != nil {
 		return common.Hash{}, err
 	}
-	if err := e.evmChain.SendTransaction(tx); err != nil {
+	if err := e.evmChain.SendTransaction(e.signer, tx); err != nil {
 		return common.Hash{}, err
 	}
 	return tx.Hash(), nil
@@ -94,6 +96,16 @@ func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, err
 
 func (s *EthService) Call(args *RPCCallArgs, blockNumber rpc.BlockNumber) (hexutil.Bytes, error) {
 	ret, err := s.evmChain.CallContract(args.parse(), parseBlockNumber(blockNumber))
+	return hexutil.Bytes(ret), err
+}
+
+func (s *EthService) EstimateGas(args *RPCCallArgs) (hexutil.Uint64, error) {
+	gas, err := s.evmChain.EstimateGas(args.parse())
+	return hexutil.Uint64(gas), err
+}
+
+func (s *EthService) GetStorageAt(address common.Address, key common.Hash, blockNumber rpc.BlockNumber) (hexutil.Bytes, error) {
+	ret, err := s.evmChain.StorageAt(address, key, parseBlockNumber(blockNumber))
 	return hexutil.Bytes(ret), err
 }
 
@@ -108,7 +120,6 @@ func (s *EthService) Mining()                              { panic("not implemen
 func (s *EthService) Hashrate()                            { panic("not implemented") }
 func (s *EthService) GasPrice()                            { panic("not implemented") }
 func (s *EthService) Accounts()                            { panic("not implemented") }
-func (s *EthService) GetStorageAt()                        { panic("not implemented") }
 func (s *EthService) GetBlockTransactionCountByHash()      { panic("not implemented") }
 func (s *EthService) GetBlockTransactionCountByNumber()    { panic("not implemented") }
 func (s *EthService) GetUncleCountByBlockHash()            { panic("not implemented") }
@@ -116,7 +127,6 @@ func (s *EthService) GetUncleCountByBlockNumber()          { panic("not implemen
 func (s *EthService) Sign()                                { panic("not implemented") }
 func (s *EthService) SignTransaction()                     { panic("not implemented") }
 func (s *EthService) SendTransaction()                     { panic("not implemented") }
-func (s *EthService) EstimateGas()                         { panic("not implemented") }
 func (s *EthService) GetTransactionByHash()                { panic("not implemented") }
 func (s *EthService) GetTransactionByBlockHashAndIndex()   { panic("not implemented") }
 func (s *EthService) GetTransactionByBlockNumberAndIndex() { panic("not implemented") }

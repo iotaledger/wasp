@@ -49,9 +49,11 @@ func getNonceFor(t *testing.T, chain *solo.Chain, addr common.Address) uint64 {
 	return nonce
 }
 
-type contractFnCallerGenerator func(sender *ecdsa.PrivateKey, name string, args ...interface{}) contractFnCaller
-type contractFnCaller func(userWallet *ed25519.KeyPair, iotas uint64) (*Receipt, uint64, error)
-type contractFnCallerWithGasLimit func(userWallet *ed25519.KeyPair, iotas uint64, gasLimit uint64) (*Receipt, uint64, error)
+type (
+	contractFnCallerGenerator    func(sender *ecdsa.PrivateKey, name string, args ...interface{}) contractFnCaller
+	contractFnCaller             func(userWallet *ed25519.KeyPair, iotas uint64) (*Receipt, uint64, error)
+	contractFnCallerWithGasLimit func(userWallet *ed25519.KeyPair, iotas uint64, gasLimit uint64) (*Receipt, uint64, error)
+)
 
 func DeployEVMContract(t *testing.T, chain *solo.Chain, env *solo.Solo, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCallerGenerator) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
@@ -63,7 +65,7 @@ func DeployEVMContract(t *testing.T, chain *solo.Chain, env *solo.Solo, creator 
 
 	data := append(contractBytecode, constructorArguments...)
 
-	gaslimit := uint64(GetGasPerIotas(t, chain)) * uint64(utxodb.RequestFundsAmount)
+	gaslimit := GetGasPerIotas(t, chain) * uint64(utxodb.RequestFundsAmount)
 
 	tx, err := types.SignTx(
 		types.NewContractCreation(nonce, big.NewInt(0), gaslimit, evm.GasPrice, data),
@@ -112,7 +114,6 @@ func createCallFnWithGasLimit(t *testing.T, chain *solo.Chain, env *solo.Solo, c
 	require.NoError(t, err)
 
 	return func(userWallet *ed25519.KeyPair, iotas uint64, gaslimit uint64) (*Receipt, uint64, error) {
-
 		unsignedTx := types.NewTransaction(nonce, contractAddress, big.NewInt(0), gaslimit, evm.GasPrice, callArguments)
 
 		tx, err := types.SignTx(
@@ -125,7 +126,7 @@ func createCallFnWithGasLimit(t *testing.T, chain *solo.Chain, env *solo.Solo, c
 		txdata, err := tx.MarshalBinary()
 		require.NoError(t, err)
 		if userWallet == nil {
-			//create new user account
+			// create new user account
 			userWallet, _ = env.NewKeyPairWithFunds()
 		}
 		result, err := chain.PostRequestSync(
@@ -133,7 +134,6 @@ func createCallFnWithGasLimit(t *testing.T, chain *solo.Chain, env *solo.Solo, c
 				WithIotas(iotas),
 			userWallet,
 		)
-
 		if err != nil {
 			return nil, 0, err
 		}
@@ -167,10 +167,10 @@ func callStorageRetrieve(t *testing.T, chain *solo.Chain, contractAddress common
 	return v
 }
 
-func GetGasPerIotas(t *testing.T, chain *solo.Chain) int64 {
+func GetGasPerIotas(t *testing.T, chain *solo.Chain) uint64 {
 	ret, err := chain.CallView(Interface.Name, FuncGetGasPerIota)
 	require.NoError(t, err)
 	gasPerIotas, _, err := codec.DecodeInt64(ret.MustGet(FieldResult))
 	require.NoError(t, err)
-	return gasPerIotas
+	return uint64(gasPerIotas)
 }

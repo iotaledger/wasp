@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/tools/evmproxy/service"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -21,13 +22,13 @@ var (
 	faucetSupply  = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 )
 
-func NewRPCServer(chain *service.EVMChain) *rpc.Server {
+func NewRPCServer(chain *service.EVMChain, signer *ed25519.KeyPair) *rpc.Server {
 	rpcsrv := rpc.NewServer()
 	for _, srv := range []struct {
 		namespace string
 		service   interface{}
 	}{
-		{"eth", service.NewEthService(chain)},
+		{"eth", service.NewEthService(chain, signer)},
 		{"net", service.NewNetService(chain)},
 	} {
 		err := rpcsrv.RegisterName(srv.namespace, srv.service)
@@ -39,11 +40,12 @@ func NewRPCServer(chain *service.EVMChain) *rpc.Server {
 }
 
 func main() {
-	soloEVMChain := service.NewEVMChain(service.NewSoloBackend(core.GenesisAlloc{
+	solo := service.NewSoloBackend(core.GenesisAlloc{
 		faucetAddress: {Balance: faucetSupply},
-	}))
+	})
+	soloEVMChain := service.NewEVMChain(solo)
 
-	rpcsrv := NewRPCServer(soloEVMChain)
+	rpcsrv := NewRPCServer(soloEVMChain, solo.Chain.OriginatorKeyPair)
 	defer rpcsrv.Stop()
 
 	e := echo.New()

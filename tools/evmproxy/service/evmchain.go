@@ -6,8 +6,11 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 type EVMChain struct {
@@ -16,6 +19,15 @@ type EVMChain struct {
 
 func NewEVMChain(backend ChainBackend) *EVMChain {
 	return &EVMChain{backend}
+}
+
+func (e *EVMChain) GasPerIota() (uint64, error) {
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetGasPerIota)
+	if err != nil {
+		return 0, err
+	}
+	gpi, _, err := codec.DecodeUint64(ret.MustGet(evmchain.FieldResult))
+	return gpi, err
 }
 
 func (e *EVMChain) BlockNumber() (*big.Int, error) {
@@ -29,12 +41,39 @@ func (e *EVMChain) BlockNumber() (*big.Int, error) {
 	return bal, nil
 }
 
-func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
+func (e *EVMChain) FeeColor() (ledgerstate.Color, error) {
+	feeInfo, err := e.backend.CallView(root.Interface.Name, root.FuncGetFeeInfo,
+		root.ParamHname, evmchain.Interface.Hname(),
+	)
+	if err != nil {
+		return ledgerstate.Color{}, err
+	}
+	feeColor, _, err := codec.DecodeColor(feeInfo.MustGet(root.ParamFeeColor))
+	return feeColor, err
+}
+
+func (e *EVMChain) GasLimitFee(tx *types.Transaction) (map[ledgerstate.Color]uint64, error) {
+	gpi, err := e.GasPerIota()
+	if err != nil {
+		return nil, err
+	}
+	feeColor, err := e.FeeColor()
+	if err != nil {
+		return nil, err
+	}
+	return map[ledgerstate.Color]uint64{feeColor: tx.Gas() / gpi}, nil
+}
+
+func (e *EVMChain) SendTransaction(keyPair *ed25519.KeyPair, tx *types.Transaction) error {
+	transfer, err := e.GasLimitFee(tx)
+	if err != nil {
+		return err
+	}
 	txdata, err := tx.MarshalBinary()
 	if err != nil {
 		return err
 	}
-	return e.backend.PostRequest(evmchain.Interface.Name, evmchain.FuncSendTransaction, 1024,
+	return e.backend.PostRequest(keyPair, transfer, evmchain.Interface.Name, evmchain.FuncSendTransaction, 1024,
 		evmchain.FieldTransactionData, txdata,
 	)
 }
@@ -140,7 +179,31 @@ func (e *EVMChain) TransactionCount(address common.Address, blockNumber *big.Int
 }
 
 func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncCallContract, evmchain.FieldCallMsg, evmchain.EncodeCallMsg(args))
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncCallContract, paramsWithOptionalBlockNumber(blockNumber,
+		evmchain.FieldCallMsg, evmchain.EncodeCallMsg(args),
+	)...)
+	if err != nil {
+		return nil, err
+	}
+	return ret.MustGet(evmchain.FieldResult), nil
+}
+
+func (e *EVMChain) EstimateGas(args ethereum.CallMsg) (uint64, error) {
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncEstimateGas,
+		evmchain.FieldCallMsg, evmchain.EncodeCallMsg(args),
+	)
+	if err != nil {
+		return 0, err
+	}
+	gas, _, err := codec.DecodeUint64(ret.MustGet(evmchain.FieldResult))
+	return gas, err
+}
+
+func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetStorage, paramsWithOptionalBlockNumber(blockNumber,
+		evmchain.FieldAddress, address.Bytes(),
+		evmchain.FieldKey, key.Bytes(),
+	)...)
 	if err != nil {
 		return nil, err
 	}

@@ -28,12 +28,14 @@ func init() {
 		coreutil.Func(FuncSendTransaction, applyTransaction),
 		coreutil.ViewFunc(FuncGetBalance, getBalance),
 		coreutil.ViewFunc(FuncCallContract, callContract),
+		coreutil.ViewFunc(FuncEstimateGas, estimateGas),
 		coreutil.ViewFunc(FuncGetNonce, getNonce),
 		coreutil.ViewFunc(FuncGetReceipt, getReceipt),
 		coreutil.ViewFunc(FuncGetCode, getCode),
 		coreutil.ViewFunc(FuncGetBlockNumber, getBlockNumber),
 		coreutil.ViewFunc(FuncGetBlockByNumber, getBlockByNumber),
 		coreutil.ViewFunc(FuncGetBlockByHash, getBlockByHash),
+		coreutil.ViewFunc(FuncGetStorage, getStorage),
 
 		// EVMchain SC management
 		coreutil.Func(FuncSetNextOwner, setNextOwner),
@@ -51,12 +53,14 @@ const (
 	FuncGetBalance       = "getBalance"
 	FuncSendTransaction  = "sendTransaction"
 	FuncCallContract     = "callContract"
+	FuncEstimateGas      = "estimateGas"
 	FuncGetNonce         = "getNonce"
 	FuncGetReceipt       = "getReceipt"
 	FuncGetCode          = "getCode"
 	FuncGetBlockNumber   = "getBlockNumber"
 	FuncGetBlockByNumber = "getBlockByNumber"
 	FuncGetBlockByHash   = "getBlockByHash"
+	FuncGetStorage       = "getStorage"
 
 	// EVMchain SC management
 	FuncSetNextOwner    = "setNextOwner"
@@ -70,6 +74,7 @@ const (
 const (
 	FieldGenesisAlloc            = "g"
 	FieldAddress                 = "a"
+	FieldKey                     = "k"
 	FieldAgentId                 = "i"
 	FieldTransactionHash         = "h"
 	FieldTransactionData         = "t"
@@ -86,4 +91,4 @@ const (
 	FieldGasFee                  = "f"
 )
 
-const DefaultGasPerIota int64 = 1000
+const DefaultGasPerIota uint64 = 1000
