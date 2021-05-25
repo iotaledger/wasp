@@ -60,12 +60,11 @@ type CommonSubset struct {
 	recvMsgBatches []map[uint32]uint32  // [PeerId]ReceivedMbID -> AckedInMb (0 -- unacked). It remains 0, if acked in non-data message.
 	sentMsgBatches map[uint32]*msgBatch // BatchID -> MsgBatch
 
-	sessionID   uint64                  // Unique identifier for this consensus instance. Used to route messages.
-	stateIndex  uint32                  // Sequence number of the CS transaction we are agreeing on.
-	peeringID   peering.PeeringID       // ID for the communication group.
-	net         peering.NetworkProvider // Access to the transport layer.
-	netGroup    peering.GroupProvider   // Group of nodes we are communicating with.
-	netOwnIndex uint16                  // Our index in the group.
+	sessionID   uint64                // Unique identifier for this consensus instance. Used to route messages.
+	stateIndex  uint32                // Sequence number of the CS transaction we are agreeing on.
+	peeringID   peering.PeeringID     // ID for the communication group.
+	netGroup    peering.GroupProvider // Group of nodes we are communicating with.
+	netOwnIndex uint16                // Our index in the group.
 
 	inputCh    chan []byte            // For our input to the consensus.
 	recvCh     chan *msgBatch         // For incoming messages.
@@ -81,18 +80,13 @@ func NewCommonSubset(
 	sessionID uint64,
 	stateIndex uint32,
 	peeringID peering.PeeringID,
-	net peering.NetworkProvider,
 	netGroup peering.GroupProvider,
 	threshold uint16,
 	commonCoin commoncoin.Provider,
 	outputCh chan map[uint16][]byte,
 	log *logger.Logger,
 ) (*CommonSubset, error) {
-	var ownIndex uint16
-	var err error
-	if ownIndex, err = netGroup.PeerIndex(net.Self()); err != nil {
-		return nil, xerrors.Errorf("Unable to resolve ownIndex: %w", err)
-	}
+	ownIndex := netGroup.SelfIndex()
 	allNodes := netGroup.AllNodes()
 	nodeCount := len(allNodes)
 	nodes := make([]uint64, nodeCount)
@@ -122,7 +116,6 @@ func NewCommonSubset(
 		sessionID:      sessionID,
 		stateIndex:     stateIndex,
 		peeringID:      peeringID,
-		net:            net,
 		netGroup:       netGroup,
 		netOwnIndex:    ownIndex,
 		inputCh:        make(chan []byte),

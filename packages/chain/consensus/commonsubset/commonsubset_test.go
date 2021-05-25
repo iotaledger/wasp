@@ -48,7 +48,7 @@ func TestBasic(t *testing.T) {
 	for a := range acsPeers {
 		group, err := networkProviders[a].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
-		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, networkProviders[a], group, threshold, newFakeCoin(), nil, log)
+		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, group, threshold, newFakeCoin(), nil, log)
 		require.Nil(t, err)
 	}
 	t.Logf("ACS Nodes created.")
@@ -96,7 +96,7 @@ func TestRandomized(t *testing.T) {
 	for a := range acsPeers {
 		group, err := networkProviders[a].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
-		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, networkProviders[a], group, threshold, newFakeCoin(), nil, log)
+		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, group, threshold, newFakeCoin(), nil, log)
 		require.Nil(t, err)
 	}
 	t.Logf("ACS Nodes created.")

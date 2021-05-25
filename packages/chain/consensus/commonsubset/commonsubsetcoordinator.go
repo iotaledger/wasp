@@ -48,7 +48,6 @@ type CommonSubsetCoordinator struct {
 	lock              sync.RWMutex
 
 	peeringID  peering.PeeringID
-	net        peering.NetworkProvider // Avoid using it here.
 	netGroup   peering.GroupProvider
 	threshold  uint16
 	commonCoin commoncoin.Provider
@@ -68,7 +67,6 @@ func NewCommonSubsetCoordinator(
 		csAsked:    make(map[uint64]bool),
 		lock:       sync.RWMutex{},
 		peeringID:  peeringID,
-		net:        net, // TODO: Avoid using it here.
 		netGroup:   netGroup,
 		threshold:  threshold,
 		commonCoin: commonCoin,
@@ -165,7 +163,7 @@ func (csc *CommonSubsetCoordinator) getOrCreateCS(
 		var err error
 		var newCS *CommonSubset
 		var outCh chan map[uint16][]byte = make(chan map[uint16][]byte)
-		if newCS, err = NewCommonSubset(sessionID, stateIndex, csc.peeringID, csc.net, csc.netGroup, csc.threshold, csc.commonCoin, outCh, csc.log); err != nil {
+		if newCS, err = NewCommonSubset(sessionID, stateIndex, csc.peeringID, csc.netGroup, csc.threshold, csc.commonCoin, outCh, csc.log); err != nil {
 			return nil, err
 		}
 		csc.csInsts[sessionID] = newCS
@@ -175,7 +173,7 @@ func (csc *CommonSubsetCoordinator) getOrCreateCS(
 		}
 		return newCS, nil
 	}
-	return nil, xerrors.Errorf("stateIndex out of range")
+	return nil, xerrors.Errorf("stateIndex %v out of range (current=%v)", stateIndex, csc.currentStateIndex)
 }
 
 // This should be run in a separate thread.
@@ -203,5 +201,9 @@ func (csc *CommonSubsetCoordinator) callbackOnEvent(
 }
 
 func (csc *CommonSubsetCoordinator) inRange(stateIndex uint32) bool {
-	return csc.currentStateIndex-pastInstances <= stateIndex && stateIndex <= csc.currentStateIndex+futureInstances
+	minRange := uint32(0)
+	if csc.currentStateIndex > pastInstances {
+		minRange = csc.currentStateIndex - pastInstances
+	}
+	return minRange <= stateIndex && stateIndex <= csc.currentStateIndex+futureInstances
 }

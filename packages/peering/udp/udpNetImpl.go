@@ -105,7 +105,7 @@ func (n *NetImpl) PeerGroup(peerNetIDs []string) (peering.GroupProvider, error) 
 			return nil, err
 		}
 	}
-	return group.NewPeeringGroupProvider(n, groupPeers, n.log), nil
+	return group.NewPeeringGroupProvider(n, groupPeers, n.log)
 }
 
 // Domain creates peering.PeerDomainProvider.
