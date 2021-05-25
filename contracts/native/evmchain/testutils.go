@@ -118,7 +118,7 @@ func createCallFnWithGasLimit(t *testing.T, chain *solo.Chain, env *solo.Solo, c
 		tx, err := types.SignTx(
 			unsignedTx,
 			evm.Signer(),
-			TestFaucetKey,
+			sender,
 		)
 		require.NoError(t, err)
 
