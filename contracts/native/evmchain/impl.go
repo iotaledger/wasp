@@ -150,7 +150,9 @@ func getBlockByNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
 	defer emu.Close()
 
 	block, err := emu.BlockByNumber(blockNumber)
-	a.RequireNoError(err)
+	if err != evm.ErrBlockDoesNotExist {
+		a.RequireNoError(err)
+	}
 
 	ret := dict.New()
 	if block != nil {
@@ -187,6 +189,28 @@ func getBlockTransactionCountByHash(ctx coretypes.SandboxView) (dict.Dict, error
 	defer emu.Close()
 
 	block, err := emu.BlockByHash(hash)
+	if err != evm.ErrBlockDoesNotExist {
+		a.RequireNoError(err)
+	}
+
+	if block == nil {
+		return dict.Dict{}, nil
+	}
+	return dict.Dict{FieldResult: codec.EncodeUint64(uint64(len(block.Transactions())))}, nil
+}
+
+func getBlockTransactionCountByNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+
+	var blockNumber *big.Int
+	if ctx.Params().MustHas(FieldBlockNumber) {
+		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
+	}
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	block, err := emu.BlockByNumber(blockNumber)
 	if err != evm.ErrBlockDoesNotExist {
 		a.RequireNoError(err)
 	}

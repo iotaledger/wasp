@@ -148,6 +148,13 @@ func (e *env) blockTransactionCountByHash(hash common.Hash) uint {
 	return n
 }
 
+func (e *env) blockTransactionCountByNumber() uint {
+	// the client only supports calling this method with "pending"
+	n, err := e.client.PendingTransactionCount(context.Background())
+	require.NoError(e.t, err)
+	return n
+}
+
 func (e *env) balance(address common.Address) *big.Int {
 	bal, err := e.client.BalanceAt(context.Background(), address, nil)
 	require.NoError(e.t, err)
@@ -260,6 +267,15 @@ func TestRPCGetTransactionCountByHash(t *testing.T) {
 	require.Positive(t, len(block1.Transactions()))
 	require.EqualValues(t, len(block1.Transactions()), env.blockTransactionCountByHash(block1.Hash()))
 	require.EqualValues(t, 0, env.blockTransactionCountByHash(common.Hash{}))
+}
+
+func TestRPCGetTransactionCountByNumber(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	env.requestFunds(receiverAddress)
+	block1 := env.blockByNumber(big.NewInt(1))
+	require.Positive(t, len(block1.Transactions()))
+	require.EqualValues(t, len(block1.Transactions()), env.blockTransactionCountByNumber())
 }
 
 func TestRPCGetTxReceipt(t *testing.T) {

@@ -139,10 +139,12 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 }
 
 func parseBlockNumber(bn rpc.BlockNumber) *big.Int {
-	if bn == rpc.EarliestBlockNumber {
-		return big.NewInt(0)
+	n := bn.Int64()
+	if n < 0 {
+		// for our uses there is no "pending" block, so always assume "latest"
+		return nil
 	}
-	return nil
+	return big.NewInt(n)
 }
 
 func RPCMarshalReceipt(r *evmchain.Receipt) map[string]interface{} {
