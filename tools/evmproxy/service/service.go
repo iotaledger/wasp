@@ -118,6 +118,11 @@ func (s *EthService) GetBlockTransactionCountByHash(blockHash common.Hash) (hexu
 	return hexutil.Uint(ret), err
 }
 
+func (s *EthService) GetUncleCountByBlockHash(blockHash common.Hash) (hexutil.Uint, error) {
+	ret, err := s.evmChain.UncleCountByBlockHash(blockHash)
+	return hexutil.Uint(ret), err
+}
+
 func (s *EthService) GetBlockTransactionCountByNumber(blockNumber rpc.BlockNumber) (hexutil.Uint, error) {
 	ret, err := s.evmChain.BlockTransactionCountByNumber(parseBlockNumber(blockNumber))
 	return hexutil.Uint(ret), err

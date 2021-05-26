@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -23,9 +24,10 @@ import (
 )
 
 type env struct {
-	t      *testing.T
-	server *rpc.Server
-	client *ethclient.Client
+	t         *testing.T
+	server    *rpc.Server
+	rawClient *rpc.Client
+	client    *ethclient.Client
 }
 
 func newEnv(t *testing.T) *env {
@@ -46,10 +48,11 @@ func newEnv(t *testing.T) *env {
 	rpcsrv := NewRPCServer(soloEVMChain, signer)
 	t.Cleanup(rpcsrv.Stop)
 
-	client := ethclient.NewClient(rpc.DialInProc(rpcsrv))
+	rawClient := rpc.DialInProc(rpcsrv)
+	client := ethclient.NewClient(rawClient)
 	t.Cleanup(client.Close)
 
-	return &env{t, rpcsrv, client}
+	return &env{t, rpcsrv, rawClient, client}
 }
 
 func generateKey(t *testing.T) (*ecdsa.PrivateKey, common.Address) {
@@ -146,6 +149,13 @@ func (e *env) blockTransactionCountByHash(hash common.Hash) uint {
 	n, err := e.client.TransactionCount(context.Background(), hash)
 	require.NoError(e.t, err)
 	return n
+}
+
+func (e *env) uncleCountByBlockHash(hash common.Hash) uint {
+	var res hexutil.Uint
+	err := e.rawClient.Call(&res, "eth_getUncleCountByBlockHash", hash)
+	require.NoError(e.t, err)
+	return uint(res)
 }
 
 func (e *env) blockTransactionCountByNumber() uint {
@@ -267,6 +277,16 @@ func TestRPCGetTransactionCountByHash(t *testing.T) {
 	require.Positive(t, len(block1.Transactions()))
 	require.EqualValues(t, len(block1.Transactions()), env.blockTransactionCountByHash(block1.Hash()))
 	require.EqualValues(t, 0, env.blockTransactionCountByHash(common.Hash{}))
+}
+
+func TestRPCGetUncleCountByBlockHash(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	env.requestFunds(receiverAddress)
+	block1 := env.blockByNumber(big.NewInt(1))
+	require.Zero(t, len(block1.Uncles()))
+	require.EqualValues(t, len(block1.Uncles()), env.uncleCountByBlockHash(block1.Hash()))
+	require.EqualValues(t, 0, env.uncleCountByBlockHash(common.Hash{}))
 }
 
 func TestRPCGetTransactionCountByNumber(t *testing.T) {

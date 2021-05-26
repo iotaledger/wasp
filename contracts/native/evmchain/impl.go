@@ -199,6 +199,25 @@ func getBlockTransactionCountByHash(ctx coretypes.SandboxView) (dict.Dict, error
 	return dict.Dict{FieldResult: codec.EncodeUint64(uint64(len(block.Transactions())))}, nil
 }
 
+func getUncleCountByBlockHash(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+
+	hash := common.BytesToHash(ctx.Params().MustGet(FieldBlockHash))
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	block, err := emu.BlockByHash(hash)
+	if err != evm.ErrBlockDoesNotExist {
+		a.RequireNoError(err)
+	}
+
+	if block == nil {
+		return dict.Dict{}, nil
+	}
+	return dict.Dict{FieldResult: codec.EncodeUint64(uint64(len(block.Uncles())))}, nil
+}
+
 func getBlockTransactionCountByNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 

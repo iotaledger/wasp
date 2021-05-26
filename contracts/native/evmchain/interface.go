@@ -36,6 +36,7 @@ func init() {
 		coreutil.ViewFunc(FuncGetBlockByNumber, getBlockByNumber),
 		coreutil.ViewFunc(FuncGetBlockByHash, getBlockByHash),
 		coreutil.ViewFunc(FuncGetBlockTransactionCountByHash, getBlockTransactionCountByHash),
+		coreutil.ViewFunc(FuncGetUncleCountByBlockHash, getUncleCountByBlockHash),
 		coreutil.ViewFunc(FuncGetBlockTransactionCountByNumber, getBlockTransactionCountByNumber),
 		coreutil.ViewFunc(FuncGetStorage, getStorage),
 
@@ -63,6 +64,7 @@ const (
 	FuncGetBlockByNumber                 = "getBlockByNumber"
 	FuncGetBlockByHash                   = "getBlockByHash"
 	FuncGetBlockTransactionCountByHash   = "getBlockTransactionCountByHash"
+	FuncGetUncleCountByBlockHash         = "getUncleCountByBlockHash"
 	FuncGetBlockTransactionCountByNumber = "getBlockTransactionCountByNumber"
 	FuncGetStorage                       = "getStorage"
 
