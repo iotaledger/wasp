@@ -4,30 +4,18 @@
 package evmchain
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/evm"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
-
-func emulator(state kv.KVStore) *evm.EVMEmulator {
-	return evm.NewEVMEmulator(rawdb.NewDatabase(evm.NewKVAdapter(state)))
-}
-
-func emulatorR(state kv.KVStoreReader) *evm.EVMEmulator {
-	return evm.NewEVMEmulator(rawdb.NewDatabase(evm.NewKVAdapter(buffered.NewBufferedKVStore(state))))
-}
 
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
@@ -64,13 +52,14 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 		"transferred tokens (%d) not enough to cover the gas limit set in the transaction (%d at %d gas per iota token)", transferredIotas, tx.Gas(), gasPerIota,
 	)
 
+	// TODO: use block context
 	emu := emulator(ctx.State())
 	defer emu.Close()
 
 	err = emu.SendTransaction(tx, ctx)
 	a.RequireNoError(err)
 
-	// solidifies the pending block
+	// TODO: commit the pending ethereum block when closing the ISCP block
 	emu.Commit()
 
 	receipt, err := emu.TransactionReceipt(tx.Hash())
@@ -108,300 +97,164 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
+	blockNumber := paramBlockNumber(ctx)
 
-	var blockNumber *big.Int
-	if ctx.Params().MustHas(FieldBlockNumber) {
-		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
-	}
-
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
-	bal, err := emu.BalanceAt(addr, blockNumber)
-	a.RequireNoError(err)
-
-	ret := dict.New()
-	ret.Set(FieldBalance, bal.Bytes())
-	return ret, nil
+	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		bal, err := emu.BalanceAt(addr, blockNumber)
+		a.RequireNoError(err)
+		return result(bal.Bytes())
+	})
 }
 
 func getBlockNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
-	n := emu.Blockchain().CurrentBlock().Number()
-
-	ret := dict.New()
-	ret.Set(FieldResult, n.Bytes())
-	return ret, nil
+	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		return result(emu.Blockchain().CurrentBlock().Number().Bytes())
+	})
 }
 
 func getBlockByNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-
-	var blockNumber *big.Int
-	if ctx.Params().MustHas(FieldBlockNumber) {
-		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
-	}
-
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
-	block, err := emu.BlockByNumber(blockNumber)
-	if err != evm.ErrBlockDoesNotExist {
-		a.RequireNoError(err)
-	}
-
-	ret := dict.New()
-	if block != nil {
-		ret.Set(FieldResult, EncodeBlock(block))
-	}
-	return ret, nil
+	return withBlockByNumber(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
+		if block == nil {
+			return nil
+		}
+		return result(EncodeBlock(block))
+	})
 }
 
 func getBlockByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-
-	hash := common.BytesToHash(ctx.Params().MustGet(FieldBlockHash))
-
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
-	block, err := emu.BlockByHash(hash)
-	if err != evm.ErrBlockDoesNotExist {
-		a.RequireNoError(err)
-	}
-
-	if block == nil {
-		return dict.Dict{}, nil
-	}
-	return dict.Dict{FieldResult: EncodeBlock(block)}, nil
+	return withBlockByHash(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
+		if block == nil {
+			return nil
+		}
+		return result(EncodeBlock(block))
+	})
 }
 
 func getBlockTransactionCountByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-
-	hash := common.BytesToHash(ctx.Params().MustGet(FieldBlockHash))
-
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
-	block, err := emu.BlockByHash(hash)
-	if err != evm.ErrBlockDoesNotExist {
-		a.RequireNoError(err)
-	}
-
-	if block == nil {
-		return dict.Dict{}, nil
-	}
-	return dict.Dict{FieldResult: codec.EncodeUint64(uint64(len(block.Transactions())))}, nil
+	return withBlockByHash(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
+		if block == nil {
+			return nil
+		}
+		return result(codec.EncodeUint64(uint64(len(block.Transactions()))))
+	})
 }
 
 func getUncleCountByBlockHash(ctx coretypes.SandboxView) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-
-	hash := common.BytesToHash(ctx.Params().MustGet(FieldBlockHash))
-
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
-	block, err := emu.BlockByHash(hash)
-	if err != evm.ErrBlockDoesNotExist {
-		a.RequireNoError(err)
-	}
-
-	if block == nil {
-		return dict.Dict{}, nil
-	}
-	return dict.Dict{FieldResult: codec.EncodeUint64(uint64(len(block.Uncles())))}, nil
+	return withBlockByHash(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
+		if block == nil {
+			return nil
+		}
+		return result(codec.EncodeUint64(uint64(len(block.Uncles()))))
+	})
 }
 
 func getBlockTransactionCountByNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-
-	var blockNumber *big.Int
-	if ctx.Params().MustHas(FieldBlockNumber) {
-		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
-	}
-
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
-	block, err := emu.BlockByNumber(blockNumber)
-	if err != evm.ErrBlockDoesNotExist {
-		a.RequireNoError(err)
-	}
-
-	if block == nil {
-		return dict.Dict{}, nil
-	}
-	return dict.Dict{FieldResult: codec.EncodeUint64(uint64(len(block.Transactions())))}, nil
+	return withBlockByNumber(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
+		if block == nil {
+			return nil
+		}
+		return result(codec.EncodeUint64(uint64(len(block.Transactions()))))
+	})
 }
 
 func getUncleCountByBlockNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-
-	var blockNumber *big.Int
-	if ctx.Params().MustHas(FieldBlockNumber) {
-		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
-	}
-
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
-	block, err := emu.BlockByNumber(blockNumber)
-	if err != evm.ErrBlockDoesNotExist {
-		a.RequireNoError(err)
-	}
-
-	if block == nil {
-		return dict.Dict{}, nil
-	}
-	return dict.Dict{FieldResult: codec.EncodeUint64(uint64(len(block.Uncles())))}, nil
+	return withBlockByNumber(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
+		if block == nil {
+			return nil
+		}
+		return result(codec.EncodeUint64(uint64(len(block.Uncles()))))
+	})
 }
 
 func getReceipt(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-
 	txHash := common.BytesToHash(ctx.Params().MustGet(FieldTransactionHash))
 
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
+	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		receipt, err := emu.TransactionReceipt(txHash)
+		a.RequireNoError(err)
 
-	receipt, err := emu.TransactionReceipt(txHash)
-	a.RequireNoError(err)
+		block := emu.Blockchain().GetBlockByHash(receipt.BlockHash)
+		if block == nil {
+			ctx.Log().Panicf("block for receipt not found")
+		}
 
-	block := emu.Blockchain().GetBlockByHash(receipt.BlockHash)
-	if block == nil {
-		ctx.Log().Panicf("block for receipt not found")
-	}
+		if receipt.TransactionIndex >= uint(len(block.Transactions())) {
+			ctx.Log().Panicf("cannot find transaction in block")
+		}
+		tx := block.Transactions()[receipt.TransactionIndex]
 
-	if receipt.TransactionIndex >= uint(len(block.Transactions())) {
-		ctx.Log().Panicf("cannot find transaction in block")
-	}
-	tx := block.Transactions()[receipt.TransactionIndex]
+		var signer types.Signer = types.FrontierSigner{}
+		if tx.Protected() {
+			signer = types.NewEIP155Signer(tx.ChainId())
+		}
+		from, _ := types.Sender(signer, tx)
 
-	var signer types.Signer = types.FrontierSigner{}
-	if tx.Protected() {
-		signer = types.NewEIP155Signer(tx.ChainId())
-	}
-	from, _ := types.Sender(signer, tx)
-
-	receiptBytes := NewReceipt(receipt, from, tx.To()).Bytes()
-
-	ret := dict.New()
-	ret.Set(FieldResult, receiptBytes)
-	return ret, nil
+		return result(NewReceipt(receipt, from, tx.To()).Bytes())
+	})
 }
 
 func getNonce(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
+	blockNumber := paramBlockNumber(ctx)
 
-	var blockNumber *big.Int
-	if ctx.Params().MustHas(FieldBlockNumber) {
-		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
-	}
-
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
-	nonce, err := emu.NonceAt(addr, blockNumber)
-	a.RequireNoError(err)
-
-	ret := dict.New()
-	ret.Set(FieldResult, codec.EncodeUint64(nonce))
-	return ret, nil
+	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		nonce, err := emu.NonceAt(addr, blockNumber)
+		a.RequireNoError(err)
+		return result(codec.EncodeUint64(nonce))
+	})
 }
 
 func getCode(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
+	blockNumber := paramBlockNumber(ctx)
 
-	var blockNumber *big.Int
-	if ctx.Params().MustHas(FieldBlockNumber) {
-		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
-	}
-
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
-	code, err := emu.CodeAt(addr, blockNumber)
-	a.RequireNoError(err)
-	if code == nil {
-		code = []byte{}
-	}
-
-	ret := dict.New()
-	ret.Set(FieldResult, code)
-	return ret, nil
+	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		code, err := emu.CodeAt(addr, blockNumber)
+		a.RequireNoError(err)
+		return result(code)
+	})
 }
 
 func getStorage(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
-
 	key := common.BytesToHash(ctx.Params().MustGet(FieldKey))
+	blockNumber := paramBlockNumber(ctx)
 
-	var blockNumber *big.Int
-	if ctx.Params().MustHas(FieldBlockNumber) {
-		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
-	}
-
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
-	data, err := emu.StorageAt(addr, key, blockNumber)
-	a.RequireNoError(err)
-	if data == nil {
-		data = []byte{}
-	}
-
-	ret := dict.New()
-	ret.Set(FieldResult, data)
-	return ret, nil
+	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		data, err := emu.StorageAt(addr, key, blockNumber)
+		a.RequireNoError(err)
+		return result(data)
+	})
 }
 
 func callContract(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-
 	callMsg, err := DecodeCallMsg(ctx.Params().MustGet(FieldCallMsg))
 	a.RequireNoError(err)
+	blockNumber := paramBlockNumber(ctx)
 
-	var blockNumber *big.Int
-	if ctx.Params().MustHas(FieldBlockNumber) {
-		blockNumber = new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
-	}
-
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
-	res, err := emu.CallContract(callMsg, blockNumber)
-	a.RequireNoError(err)
-
-	ret := dict.New()
-	ret.Set(FieldResult, res)
-	return ret, nil
+	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		res, err := emu.CallContract(callMsg, blockNumber)
+		a.RequireNoError(err)
+		return result(res)
+	})
 }
 
 func estimateGas(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-
 	callMsg, err := DecodeCallMsg(ctx.Params().MustGet(FieldCallMsg))
 	a.RequireNoError(err)
 
-	emu := emulatorR(ctx.State())
-	defer emu.Close()
-
-	gas, err := emu.EstimateGas(callMsg)
-	a.RequireNoError(err)
-
-	ret := dict.New()
-	ret.Set(FieldResult, codec.EncodeUint64(gas))
-	return ret, nil
+	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		gas, err := emu.EstimateGas(callMsg)
+		a.RequireNoError(err)
+		return result(codec.EncodeUint64(gas))
+	})
 }
 
 // EVM chain management functions ///////////////////////////////////////////////////////////////////////////////////////
@@ -432,9 +285,7 @@ func claimOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 }
 
 func getOwner(ctx coretypes.SandboxView) (dict.Dict, error) {
-	ret := dict.New()
-	ret.Set(FieldResult, ctx.State().MustGet(FieldEvmOwner))
-	return ret, nil
+	return result(ctx.State().MustGet(FieldEvmOwner)), nil
 }
 
 func setGasPerIota(ctx coretypes.Sandbox) (dict.Dict, error) {
@@ -446,9 +297,7 @@ func setGasPerIota(ctx coretypes.Sandbox) (dict.Dict, error) {
 }
 
 func getGasPerIota(ctx coretypes.SandboxView) (dict.Dict, error) {
-	ret := dict.New()
-	ret.Set(FieldResult, ctx.State().MustGet(FieldGasPerIota))
-	return ret, nil
+	return result(ctx.State().MustGet(FieldGasPerIota)), nil
 }
 
 func withdrawGasFees(ctx coretypes.Sandbox) (dict.Dict, error) {

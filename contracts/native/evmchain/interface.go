@@ -87,7 +87,6 @@ const (
 	FieldTransactionHash         = "h"
 	FieldTransactionData         = "t"
 	FieldTransactionDataBlobHash = "th"
-	FieldBalance                 = "b"
 	FieldCallArguments           = "c"
 	FieldResult                  = "r"
 	FieldBlockNumber             = "bn"

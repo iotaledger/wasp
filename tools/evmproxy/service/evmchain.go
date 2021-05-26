@@ -94,7 +94,7 @@ func (e *EVMChain) Balance(address common.Address, blockNumber *big.Int) (*big.I
 	}
 
 	bal := big.NewInt(0)
-	bal.SetBytes(ret.MustGet(evmchain.FieldBalance))
+	bal.SetBytes(ret.MustGet(evmchain.FieldResult))
 	return bal, nil
 }
 
