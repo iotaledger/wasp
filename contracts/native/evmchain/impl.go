@@ -68,9 +68,7 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	defer emu.Close()
 
 	err = emu.SendTransaction(tx, ctx)
-	if err != nil {
-		return nil, nil
-	}
+	a.RequireNoError(err)
 
 	// solidifies the pending block
 	emu.Commit()
@@ -88,13 +86,12 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	iotasGasFee := receipt.GasUsed / gasPerIota
 
-	if transferredIotas < iotasGasFee {
-		// not enough gas
-		ctx.Log().Panicf("inconsistency: not enough iotas to pay the consumed gas fees. spent: %d iotas", transferredIotas)
-		return nil, nil
-	}
+	a.Require(
+		transferredIotas >= iotasGasFee,
+		"transferred tokens (%d) not enough to pay the consumed gas fees (%d)", transferredIotas, iotasGasFee,
+	)
 
-	// refund unspend gas to the senders on-chain account
+	// refund unspent gas fee to the sender's on-chain account
 	iotasGasRefund := transferredIotas - iotasGasFee
 	params = codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: ctx.Caller(),
@@ -171,13 +168,33 @@ func getBlockByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
 	defer emu.Close()
 
 	block, err := emu.BlockByHash(hash)
-	a.RequireNoError(err)
-
-	ret := dict.New()
-	if block != nil {
-		ret.Set(FieldResult, EncodeBlock(block))
+	if err != evm.ErrBlockDoesNotExist {
+		a.RequireNoError(err)
 	}
-	return ret, nil
+
+	if block == nil {
+		return dict.Dict{}, nil
+	}
+	return dict.Dict{FieldResult: EncodeBlock(block)}, nil
+}
+
+func getBlockTransactionCountByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+
+	hash := common.BytesToHash(ctx.Params().MustGet(FieldBlockHash))
+
+	emu := emulatorR(ctx.State())
+	defer emu.Close()
+
+	block, err := emu.BlockByHash(hash)
+	if err != evm.ErrBlockDoesNotExist {
+		a.RequireNoError(err)
+	}
+
+	if block == nil {
+		return dict.Dict{}, nil
+	}
+	return dict.Dict{FieldResult: codec.EncodeUint64(uint64(len(block.Transactions())))}, nil
 }
 
 func getReceipt(ctx coretypes.SandboxView) (dict.Dict, error) {

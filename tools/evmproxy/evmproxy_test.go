@@ -41,7 +41,9 @@ func newEnv(t *testing.T) *env {
 	})
 	soloEVMChain := service.NewEVMChain(solo)
 
-	rpcsrv := NewRPCServer(soloEVMChain, solo.Chain.OriginatorKeyPair)
+	signer, _ := solo.Env.NewKeyPairWithFunds()
+
+	rpcsrv := NewRPCServer(soloEVMChain, signer)
 	t.Cleanup(rpcsrv.Stop)
 
 	client := ethclient.NewClient(rpc.DialInProc(rpcsrv))
@@ -133,8 +135,17 @@ func (e *env) blockByNumber(number *big.Int) *types.Block {
 
 func (e *env) blockByHash(hash common.Hash) *types.Block {
 	block, err := e.client.BlockByHash(context.Background(), hash)
+	if err == ethereum.NotFound {
+		return nil
+	}
 	require.NoError(e.t, err)
 	return block
+}
+
+func (e *env) blockTransactionCountByHash(hash common.Hash) uint {
+	n, err := e.client.TransactionCount(context.Background(), hash)
+	require.NoError(e.t, err)
+	return n
 }
 
 func (e *env) balance(address common.Address) *big.Int {
@@ -235,9 +246,20 @@ func TestRPCGetBlockByNumber(t *testing.T) {
 func TestRPCGetBlockByHash(t *testing.T) {
 	env := newEnv(t)
 	_, receiverAddress := generateKey(t)
+	require.Nil(t, env.blockByHash(common.Hash{}))
 	require.EqualValues(t, 0, env.blockByHash(env.blockByNumber(big.NewInt(0)).Hash()).Number().Uint64())
 	env.requestFunds(receiverAddress)
 	require.EqualValues(t, 1, env.blockByHash(env.blockByNumber(big.NewInt(1)).Hash()).Number().Uint64())
+}
+
+func TestRPCGetTransactionCountByHash(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	env.requestFunds(receiverAddress)
+	block1 := env.blockByNumber(big.NewInt(1))
+	require.Positive(t, len(block1.Transactions()))
+	require.EqualValues(t, len(block1.Transactions()), env.blockTransactionCountByHash(block1.Hash()))
+	require.EqualValues(t, 0, env.blockTransactionCountByHash(common.Hash{}))
 }
 
 func TestRPCGetTxReceipt(t *testing.T) {

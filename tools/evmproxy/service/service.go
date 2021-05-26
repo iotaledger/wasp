@@ -21,6 +21,10 @@ func NewEthService(evmChain *EVMChain, signer *ed25519.KeyPair) *EthService {
 	return &EthService{evmChain, signer}
 }
 
+func (s *EthService) ProtocolVersion() hexutil.Uint {
+	return hexutil.Uint(eth.ETH65)
+}
+
 func (e *EthService) GetTransactionCount(address common.Address, blockNumber rpc.BlockNumber) (hexutil.Uint64, error) {
 	n, err := e.evmChain.TransactionCount(address, parseBlockNumber(blockNumber))
 	if err != nil {
@@ -109,8 +113,9 @@ func (s *EthService) GetStorageAt(address common.Address, key common.Hash, block
 	return hexutil.Bytes(ret), err
 }
 
-func (s *EthService) ProtocolVersion() hexutil.Uint {
-	return hexutil.Uint(eth.ETH65)
+func (s *EthService) GetBlockTransactionCountByHash(blockHash common.Hash) (hexutil.Uint, error) {
+	ret, err := s.evmChain.BlockTransactionCountByHash(blockHash)
+	return hexutil.Uint(ret), err
 }
 
 /*
@@ -120,7 +125,6 @@ func (s *EthService) Mining()                              { panic("not implemen
 func (s *EthService) Hashrate()                            { panic("not implemented") }
 func (s *EthService) GasPrice()                            { panic("not implemented") }
 func (s *EthService) Accounts()                            { panic("not implemented") }
-func (s *EthService) GetBlockTransactionCountByHash()      { panic("not implemented") }
 func (s *EthService) GetBlockTransactionCountByNumber()    { panic("not implemented") }
 func (s *EthService) GetUncleCountByBlockHash()            { panic("not implemented") }
 func (s *EthService) GetUncleCountByBlockNumber()          { panic("not implemented") }

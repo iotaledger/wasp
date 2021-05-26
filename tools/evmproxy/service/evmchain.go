@@ -209,3 +209,14 @@ func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumbe
 	}
 	return ret.MustGet(evmchain.FieldResult), nil
 }
+
+func (e *EVMChain) BlockTransactionCountByHash(blockHash common.Hash) (uint64, error) {
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetBlockTransactionCountByHash,
+		evmchain.FieldBlockHash, blockHash.Bytes(),
+	)
+	if err != nil {
+		return 0, err
+	}
+	n, _, err := codec.DecodeUint64(ret.MustGet(evmchain.FieldResult))
+	return n, err
+}

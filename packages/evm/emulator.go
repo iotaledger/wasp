@@ -32,8 +32,8 @@ import (
 
 var (
 	errBlockNumberUnsupported  = errors.New("EVMEmulator cannot access blocks other than the latest block")
-	errBlockDoesNotExist       = errors.New("block does not exist in blockchain")
-	errTransactionDoesNotExist = errors.New("transaction does not exist")
+	ErrBlockDoesNotExist       = errors.New("block does not exist in blockchain")
+	ErrTransactionDoesNotExist = errors.New("transaction does not exist")
 )
 
 type EVMEmulator struct {
@@ -187,7 +187,7 @@ func (e *EVMEmulator) BlockByHash(hash common.Hash) (*types.Block, error) {
 	if block != nil {
 		return block, nil
 	}
-	return nil, errBlockDoesNotExist
+	return nil, ErrBlockDoesNotExist
 }
 
 // BlockByNumber retrieves a block from the database by number, caching it
@@ -204,7 +204,7 @@ func (e *EVMEmulator) blockByNumberNoLock(number *big.Int) (*types.Block, error)
 	}
 	block := e.blockchain.GetBlockByNumber(uint64(number.Int64()))
 	if block == nil {
-		return nil, errBlockDoesNotExist
+		return nil, ErrBlockDoesNotExist
 	}
 	return block, nil
 }
@@ -216,7 +216,7 @@ func (e *EVMEmulator) HeaderByHash(hash common.Hash) (*types.Header, error) {
 	}
 	header := e.blockchain.GetHeaderByHash(hash)
 	if header == nil {
-		return nil, errBlockDoesNotExist
+		return nil, ErrBlockDoesNotExist
 	}
 	return header, nil
 }
@@ -237,7 +237,7 @@ func (e *EVMEmulator) TransactionCount(blockHash common.Hash) (uint, error) {
 	}
 	block := e.blockchain.GetBlockByHash(blockHash)
 	if block == nil {
-		return uint(0), errBlockDoesNotExist
+		return uint(0), ErrBlockDoesNotExist
 	}
 	return uint(block.Transactions().Len()), nil
 }
@@ -247,7 +247,7 @@ func (e *EVMEmulator) TransactionInBlock(blockHash common.Hash, index uint) (*ty
 	if blockHash == e.pendingBlock.Hash() {
 		transactions := e.pendingBlock.Transactions()
 		if uint(len(transactions)) < index+1 {
-			return nil, errTransactionDoesNotExist
+			return nil, ErrTransactionDoesNotExist
 		}
 
 		return transactions[index], nil
@@ -255,12 +255,12 @@ func (e *EVMEmulator) TransactionInBlock(blockHash common.Hash, index uint) (*ty
 
 	block := e.blockchain.GetBlockByHash(blockHash)
 	if block == nil {
-		return nil, errBlockDoesNotExist
+		return nil, ErrBlockDoesNotExist
 	}
 
 	transactions := block.Transactions()
 	if uint(len(transactions)) < index+1 {
-		return nil, errTransactionDoesNotExist
+		return nil, ErrTransactionDoesNotExist
 	}
 
 	return transactions[index], nil

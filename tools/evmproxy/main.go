@@ -40,12 +40,16 @@ func NewRPCServer(chain *service.EVMChain, signer *ed25519.KeyPair) *rpc.Server 
 }
 
 func main() {
+	// TODO: use wasp backend
 	solo := service.NewSoloBackend(core.GenesisAlloc{
 		faucetAddress: {Balance: faucetSupply},
 	})
 	soloEVMChain := service.NewEVMChain(solo)
 
-	rpcsrv := NewRPCServer(soloEVMChain, solo.Chain.OriginatorKeyPair)
+	// TODO: signer key should come from configuration
+	signer, _ := solo.Env.NewKeyPairWithFunds()
+
+	rpcsrv := NewRPCServer(soloEVMChain, signer)
 	defer rpcsrv.Stop()
 
 	e := echo.New()

@@ -35,6 +35,7 @@ func init() {
 		coreutil.ViewFunc(FuncGetBlockNumber, getBlockNumber),
 		coreutil.ViewFunc(FuncGetBlockByNumber, getBlockByNumber),
 		coreutil.ViewFunc(FuncGetBlockByHash, getBlockByHash),
+		coreutil.ViewFunc(FuncGetBlockTransactionCountByHash, getBlockTransactionCountByHash),
 		coreutil.ViewFunc(FuncGetStorage, getStorage),
 
 		// EVMchain SC management
@@ -50,17 +51,18 @@ func init() {
 
 const (
 	// Ethereum blockchain
-	FuncGetBalance       = "getBalance"
-	FuncSendTransaction  = "sendTransaction"
-	FuncCallContract     = "callContract"
-	FuncEstimateGas      = "estimateGas"
-	FuncGetNonce         = "getNonce"
-	FuncGetReceipt       = "getReceipt"
-	FuncGetCode          = "getCode"
-	FuncGetBlockNumber   = "getBlockNumber"
-	FuncGetBlockByNumber = "getBlockByNumber"
-	FuncGetBlockByHash   = "getBlockByHash"
-	FuncGetStorage       = "getStorage"
+	FuncGetBalance                     = "getBalance"
+	FuncSendTransaction                = "sendTransaction"
+	FuncCallContract                   = "callContract"
+	FuncEstimateGas                    = "estimateGas"
+	FuncGetNonce                       = "getNonce"
+	FuncGetReceipt                     = "getReceipt"
+	FuncGetCode                        = "getCode"
+	FuncGetBlockNumber                 = "getBlockNumber"
+	FuncGetBlockByNumber               = "getBlockByNumber"
+	FuncGetBlockByHash                 = "getBlockByHash"
+	FuncGetBlockTransactionCountByHash = "getBlockTransactionCountByHash"
+	FuncGetStorage                     = "getStorage"
 
 	// EVMchain SC management
 	FuncSetNextOwner    = "setNextOwner"
