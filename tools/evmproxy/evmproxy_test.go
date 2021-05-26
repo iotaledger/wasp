@@ -165,6 +165,13 @@ func (e *env) blockTransactionCountByNumber() uint {
 	return n
 }
 
+func (e *env) uncleCountByBlockNumber(blockNumber *big.Int) uint {
+	var res hexutil.Uint
+	err := e.rawClient.Call(&res, "eth_getUncleCountByBlockNumber", (*hexutil.Big)(blockNumber))
+	require.NoError(e.t, err)
+	return uint(res)
+}
+
 func (e *env) balance(address common.Address) *big.Int {
 	bal, err := e.client.BalanceAt(context.Background(), address, nil)
 	require.NoError(e.t, err)
@@ -293,9 +300,18 @@ func TestRPCGetTransactionCountByNumber(t *testing.T) {
 	env := newEnv(t)
 	_, receiverAddress := generateKey(t)
 	env.requestFunds(receiverAddress)
-	block1 := env.blockByNumber(big.NewInt(1))
+	block1 := env.blockByNumber(nil)
 	require.Positive(t, len(block1.Transactions()))
 	require.EqualValues(t, len(block1.Transactions()), env.blockTransactionCountByNumber())
+}
+
+func TestRPCGetUncleCountByBlockNumber(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	env.requestFunds(receiverAddress)
+	block1 := env.blockByNumber(big.NewInt(1))
+	require.Zero(t, len(block1.Uncles()))
+	require.EqualValues(t, len(block1.Uncles()), env.uncleCountByBlockNumber(big.NewInt(1)))
 }
 
 func TestRPCGetTxReceipt(t *testing.T) {

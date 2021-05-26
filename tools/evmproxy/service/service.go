@@ -128,6 +128,11 @@ func (s *EthService) GetBlockTransactionCountByNumber(blockNumber rpc.BlockNumbe
 	return hexutil.Uint(ret), err
 }
 
+func (s *EthService) GetUncleCountByBlockNumber(blockNumber rpc.BlockNumber) (hexutil.Uint, error) {
+	ret, err := s.evmChain.UncleCountByBlockNumber(parseBlockNumber(blockNumber))
+	return hexutil.Uint(ret), err
+}
+
 /*
 func (s *EthService) Syncing()                             { panic("not implemented") }
 func (s *EthService) Coinbase()                            { panic("not implemented") }
