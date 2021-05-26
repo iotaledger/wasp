@@ -23,21 +23,22 @@ func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) bool {
 	return sm.syncingBlocks.approveBlockCandidates(output)
 }
 
-func (sm *stateManager) outputPushed(output *ledgerstate.AliasOutput, timestamp time.Time) bool {
-	sm.log.Debugf("outputPushed: output index %v id %v timestampe %v", output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
+func (sm *stateManager) stateOutputReceived(output *ledgerstate.AliasOutput, timestamp time.Time) bool {
+	sm.log.Debugf("stateOutputReceived: received output index: %v, id: %v, timestamp: %v",
+		output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
 	if sm.stateOutput != nil {
 		switch {
 		case sm.stateOutput.GetStateIndex() == output.GetStateIndex():
-			sm.log.Debugf("outputPushed ignoring: repeated state output")
+			sm.log.Debugf("stateOutputReceived ignoring: repeated state output")
 			return false
 		case sm.stateOutput.GetStateIndex() > output.GetStateIndex():
-			sm.log.Warnf("outputPushed: out of order state output; stateOutput index is already larger: %v", sm.stateOutput.GetStateIndex())
+			sm.log.Warnf("stateOutputReceived: out of order state output; stateOutput index is already larger: %v", sm.stateOutput.GetStateIndex())
 			return false
 		}
 	}
 	sm.stateOutput = output
 	sm.stateOutputTimestamp = timestamp
-	sm.log.Debugf("outputPushed: stateOutput set to index %v id %v timestampe %v", output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
+	sm.log.Debugf("stateOutputReceived: stateOutput set to index %v id %v timestampe %v", output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
 	sm.syncingBlocks.approveBlockCandidates(output)
 	return true
 }
@@ -49,7 +50,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	}
 	switch {
 	case sm.solidState.BlockIndex() == sm.stateOutput.GetStateIndex():
-		sm.log.Debugf("doSyncAction not needed: state is already synced")
+		sm.log.Debugf("doSyncAction not needed: state is already synced at index #%d", sm.stateOutput.GetStateIndex())
 		return
 	case sm.solidState.BlockIndex() > sm.stateOutput.GetStateIndex():
 		sm.log.Panicf("doSyncAction inconsistency: solid state index is larger than state output index")

@@ -8,9 +8,11 @@ import (
 )
 
 const (
-	defaultPullStateRetryConst         = 2 * time.Second
-	defaultPullStateNewBlockDelayConst = 10 * time.Second
-	defaultGetBlockRetryConst          = 3 * time.Second
+	// period of state pull retry
+	defaultPullStateRetryConst = 1 * time.Second
+	// how long delay state pull after state candidate received
+	defaultPullStateAfterStateCandidateDelayConst = 1 * time.Second
+	defaultGetBlockRetryConst                     = 3 * time.Second
 )
 
 type Timers struct {
@@ -43,7 +45,7 @@ func (tT Timers) getPullStateRetry() time.Duration {
 
 func (tT Timers) getPullStateNewBlockDelay() time.Duration {
 	if tT.PullStateNewBlockDelay == nil {
-		return defaultPullStateNewBlockDelayConst
+		return defaultPullStateAfterStateCandidateDelayConst
 	}
 	return *tT.PullStateNewBlockDelay
 }

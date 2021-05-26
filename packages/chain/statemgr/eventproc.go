@@ -102,7 +102,7 @@ func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 		return
 	}
 	sm.log.Debugf("EventStateMsg state hash is %v", stateHash.String())
-	if sm.outputPushed(msg.ChainOutput, msg.Timestamp) {
+	if sm.stateOutputReceived(msg.ChainOutput, msg.Timestamp) {
 		sm.takeAction()
 	}
 }
@@ -118,7 +118,7 @@ func (sm *stateManager) eventStateCandidateMsg(msg *chain.StateCandidateMsg) {
 		sm.log.Debugf("EventStateCandidateMsg ignored: stateOutput is nil")
 		return
 	}
-	if sm.addBlockFromConsensus(msg.State) {
+	if sm.addStateCandidateFromConsensus(msg.State, msg.ApprovingOutputID) {
 		sm.takeAction()
 	}
 }

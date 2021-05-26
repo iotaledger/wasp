@@ -26,7 +26,7 @@ func Start(txStreamBindAddress string, webapiBindAddress string) *MockNode {
 	}
 	m := &MockNode{
 		log:            log,
-		Ledger:         utxodbledger.New(),
+		Ledger:         utxodbledger.New(log),
 		shutdownSignal: make(chan struct{}),
 	}
 

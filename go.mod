@@ -8,7 +8,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/bytecodealliance/wasmtime-go v0.21.0
-	github.com/iotaledger/goshimmer v0.6.2-0.20210525071503-a54182e95c7a
+	github.com/iotaledger/goshimmer v0.6.3-0.20210526052232-111174ccc5d6
 	github.com/iotaledger/hive.go v0.0.0-20210523190624-62dd208e10b0
 	github.com/knadh/koanf v0.15.0
 	github.com/labstack/echo/v4 v4.1.13
