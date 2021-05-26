@@ -105,19 +105,19 @@ func (csc *CommonSubsetCoordinator) TryHandleMessage(recv *peering.RecvEvent) bo
 	if recv.Msg.MsgType != acsMsgType {
 		return false
 	}
-	var sessionID uint64
-	var stateIndex uint32
+	mb := msgBatch{}
+	if err := mb.FromBytes(recv.Msg.MsgData); err != nil {
+		csc.log.Errorf("Cannot decode message: %v", err)
+		return true
+	}
 	var err error
-	if sessionID, stateIndex, err = sessionIDFromMsgBytes(recv.Msg.MsgData); err != nil {
-		csc.log.Warnf("Unable to extract a sessionID from the message, err=%v", err)
-		return true
-	}
 	var cs *CommonSubset
-	if cs, err = csc.getOrCreateCS(sessionID, stateIndex, nil); err != nil {
-		csc.log.Errorf("Unable to get a CommonSubset instance for sessionID=%v, reason=%v", sessionID, err)
+	if cs, err = csc.getOrCreateCS(mb.sessionID, mb.stateIndex, nil); err != nil {
+		csc.log.Errorf("Unable to get a CommonSubset instance for sessionID=%v, reason=%v", mb.sessionID, err)
 		return true
 	}
-	return cs.TryHandleMessage(recv)
+	cs.HandleMsgBatch(&mb)
+	return true
 }
 
 func (csc *CommonSubsetCoordinator) getOrCreateCS(

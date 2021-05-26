@@ -141,10 +141,14 @@ func (cs *CommonSubset) OutputCh() chan map[uint16][]byte {
 	return cs.outputCh
 }
 
+// Input accepts the current node's proposal for the consensus.
 func (cs *CommonSubset) Input(input []byte) {
 	cs.inputCh <- input
 }
 
+// TryHandleMessage checks, if the RecvEvent is of suitable type and
+// processed the message as an input from a peer if the type matches.
+// This one is called from the ACS tests.
 func (cs *CommonSubset) TryHandleMessage(recv *peering.RecvEvent) bool {
 	if recv.Msg.MsgType != acsMsgType {
 		return false
@@ -154,13 +158,20 @@ func (cs *CommonSubset) TryHandleMessage(recv *peering.RecvEvent) bool {
 		cs.log.Errorf("Cannot decode message: %v", err)
 		return true
 	}
+	cs.HandleMsgBatch(&mb)
+	return true
+}
+
+// HandleMsgBatch accepts a parsed msgBatch as an input from other node.
+// This function is used in the CommonSubsetCoordinator to avoid parsing
+// the received message multiple times.
+func (cs *CommonSubset) HandleMsgBatch(mb *msgBatch) {
 	cs.closedLock.RLock()
 	defer cs.closedLock.RUnlock()
 	if !cs.closed {
 		// Just to avoid panics on writing to a closed channel.
-		cs.recvCh <- &mb
+		cs.recvCh <- mb
 	}
-	return true
 }
 
 func (cs *CommonSubset) Close() {
@@ -688,25 +699,6 @@ func (b *msgBatch) Bytes() []byte {
 	var buf bytes.Buffer
 	_ = b.Write(&buf)
 	return buf.Bytes()
-}
-
-// A helper to extract a session ID from a serialized message (msgBatch) without reading
-// the entire message. That's needed to have it for routing.
-//
-// TODO: Consider refactoring it to avoid such partial parsings.
-//
-func sessionIDFromMsgBytes(buf []byte) (uint64, uint32, error) {
-	var err error
-	var sessionID uint64
-	var stateIndex uint32
-	r := bytes.NewReader(buf)
-	if err = util.ReadUint64(r, &sessionID); err != nil {
-		return 0, 0, xerrors.Errorf("failed to read msgBatch.sessionID: %w", err)
-	}
-	if err = util.ReadUint32(r, &stateIndex); err != nil {
-		return 0, 0, xerrors.Errorf("failed to read msgBatch.stateIndex: %w", err)
-	}
-	return sessionID, stateIndex, nil
 }
 
 // endregion ///////////////////////////////////////////////////////////////////
