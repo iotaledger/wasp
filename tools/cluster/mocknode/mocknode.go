@@ -18,7 +18,7 @@ type MockNode struct {
 const debug = true
 
 func Start(txStreamBindAddress string, webapiBindAddress string) *MockNode {
-	log := testlogger.NewSimple(debug)
+	log := testlogger.NewSimple(debug).Named("txstream")
 	if debug {
 		log.Debugf("starting mocked goshimmer node...")
 	} else {
@@ -31,7 +31,7 @@ func Start(txStreamBindAddress string, webapiBindAddress string) *MockNode {
 	}
 
 	// start the txstream server
-	err := server.Listen(m.Ledger, txStreamBindAddress, m.log.Named("txstream"), m.shutdownSignal)
+	err := server.Listen(m.Ledger, txStreamBindAddress, m.log, m.shutdownSignal)
 	if err != nil {
 		panic(err)
 	}
