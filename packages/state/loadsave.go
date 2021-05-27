@@ -3,7 +3,7 @@ package state
 import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -19,15 +19,15 @@ func (vs *virtualState) Commit(blocks ...Block) error {
 	var err error
 	batch := vs.db.Batched()
 
-	if err = batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
+	if err = batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
 		return err
 	}
-	if err = batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateIndex), util.Uint32To4Bytes(vs.BlockIndex())); err != nil {
+	if err = batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateIndex), util.Uint32To4Bytes(vs.BlockIndex())); err != nil {
 		return err
 	}
 
 	for _, blk := range blocks {
-		key := dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(vs.BlockIndex()))
+		key := dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(vs.BlockIndex()))
 		if err := batch.Set(key, blk.Bytes()); err != nil {
 			return err
 		}
@@ -35,12 +35,12 @@ func (vs *virtualState) Commit(blocks ...Block) error {
 
 	// store mutations
 	for k, v := range vs.kvs.Mutations().Sets {
-		if err := batch.Set(dbprovider.MakeKey(dbprovider.ObjectTypeStateVariable, []byte(k)), v); err != nil {
+		if err := batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateVariable, []byte(k)), v); err != nil {
 			return err
 		}
 	}
 	for k := range vs.kvs.Mutations().Dels {
-		if err := batch.Delete(dbprovider.MakeKey(dbprovider.ObjectTypeStateVariable, []byte(k))); err != nil {
+		if err := batch.Delete(dbkeys.MakeKey(dbkeys.ObjectTypeStateVariable, []byte(k))); err != nil {
 			return err
 		}
 	}
@@ -60,8 +60,8 @@ func (vs *virtualState) Commit(blocks ...Block) error {
 
 // CreateOriginState creates zero state which is the minimal consistent state.
 // It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
-func CreateOriginState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (*virtualState, error) {
-	originState, originBlock := newZeroVirtualState(dbp.GetPartition(chainID), chainID)
+func CreateOriginState(store kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, error) {
+	originState, originBlock := newZeroVirtualState(store, chainID)
 	if err := originState.Commit(originBlock); err != nil {
 		return nil, err
 	}
@@ -69,17 +69,15 @@ func CreateOriginState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (
 }
 
 // LoadSolidState establishes VirtualState interface with the solid state in DB. Checks consistency of DB
-func LoadSolidState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (VirtualState, bool, error) {
-	partition := dbp.GetPartition(chainID)
-
-	stateIndex, stateHash, exists, err := loadStateIndexAndHashFromDb(partition)
+func LoadSolidState(store kvstore.KVStore, chainID *coretypes.ChainID) (VirtualState, bool, error) {
+	stateIndex, stateHash, exists, err := loadStateIndexAndHashFromDb(store)
 	if err != nil {
 		return nil, exists, xerrors.Errorf("LoadSolidState: %w", err)
 	}
 	if !exists {
 		return nil, false, nil
 	}
-	vs := newVirtualState(partition, chainID)
+	vs := newVirtualState(store, chainID)
 	stateIndex1, err := loadStateIndexFromState(vs.KVStoreReader())
 	if err != nil {
 		return nil, false, xerrors.Errorf("LoadSolidState: %w", err)
@@ -92,8 +90,8 @@ func LoadSolidState(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (Vir
 }
 
 // LoadBlockBytes loads block bytes of the specified block index from DB
-func LoadBlockBytes(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID, stateIndex uint32) ([]byte, error) {
-	data, err := dbp.GetPartition(chainID).Get(dbprovider.MakeKey(dbprovider.ObjectTypeBlock, util.Uint32To4Bytes(stateIndex)))
+func LoadBlockBytes(store kvstore.KVStore, stateIndex uint32) ([]byte, error) {
+	data, err := store.Get(dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(stateIndex)))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
 	}
@@ -104,8 +102,8 @@ func LoadBlockBytes(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID, stat
 }
 
 // LoadBlock loads block from DB and decodes it
-func LoadBlock(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID, stateIndex uint32) (*block, error) {
-	data, err := LoadBlockBytes(dbp, chainID, stateIndex)
+func LoadBlock(store kvstore.KVStore, stateIndex uint32) (*block, error) {
+	data, err := LoadBlockBytes(store, stateIndex)
 	if err != nil {
 		return nil, err
 	}

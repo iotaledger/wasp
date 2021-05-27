@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
@@ -39,10 +38,10 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 	var err error
 	var missing bool
 	fmt.Fprintf(out, prefix+"loading chainrecord record from hosts %+v\n", apiHosts)
-	var first *registry_pkg.ChainRecord
+	var first *coretypes.ChainRecord
 	var firstHost string
 
-	bdRecords := make([]*registry_pkg.ChainRecord, len(apiHosts))
+	bdRecords := make([]*coretypes.ChainRecord, len(apiHosts))
 	for i, host := range apiHosts {
 		bdRecords[i], err = client.NewWaspClient(host).GetChainRecord(chainID)
 		if err != nil {

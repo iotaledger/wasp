@@ -4,7 +4,8 @@ import (
 	_ "embed"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/registry_pkg"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
 	"github.com/labstack/echo/v4"
 )
 
@@ -42,7 +43,7 @@ func (d *Dashboard) fetchChains() ([]*ChainOverview, error) {
 	}
 	r := make([]*ChainOverview, len(crs))
 	for i, cr := range crs {
-		info, err := d.fetchRootInfo(d.wasp.GetChain(cr.ChainID))
+		info, err := d.fetchRootInfo(d.wasp.GetChain(coretypes.NewChainID(cr.ChainIdAliasAddress)))
 		r[i] = &ChainOverview{
 			ChainRecord: cr,
 			RootInfo:    info,
@@ -58,7 +59,7 @@ type ChainListTemplateParams struct {
 }
 
 type ChainOverview struct {
-	ChainRecord *registry_pkg.ChainRecord
+	ChainRecord *chain_record.ChainRecord
 	RootInfo    RootInfo
 	Error       error
 }

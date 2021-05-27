@@ -14,16 +14,16 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type stateManager struct {
 	ready                   *ready.Ready
-	dbp                     *dbprovider.DBProvider
+	store                   kvstore.KVStore
 	chain                   chain.ChainCore
 	peers                   peering.PeerDomainProvider
 	nodeConn                chain.NodeConnection
@@ -52,7 +52,7 @@ const (
 	maxBlocksToCommitConst               = 10000 //10k
 )
 
-func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, log *logger.Logger, timersOpt ...Timers) chain.StateManager {
+func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, log *logger.Logger, timersOpt ...Timers) chain.StateManager {
 	var timers Timers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -61,7 +61,7 @@ func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers peering.PeerDomain
 	}
 	ret := &stateManager{
 		ready:                  ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
-		dbp:                    dbp,
+		store:                  store,
 		chain:                  c,
 		nodeConn:               nodeconn,
 		peers:                  peers,
@@ -91,7 +91,7 @@ func (sm *stateManager) initLoadState() {
 	var err error
 	var stateExists bool
 
-	sm.solidState, stateExists, err = state.LoadSolidState(sm.dbp, sm.chain.ID())
+	sm.solidState, stateExists, err = state.LoadSolidState(sm.store, sm.chain.ID())
 	if err != nil {
 		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err)},
@@ -103,7 +103,7 @@ func (sm *stateManager) initLoadState() {
 			sm.solidState.BlockIndex(), sm.solidState.Hash().String())
 	} else {
 		// create origin state in DB
-		sm.solidState, err = state.CreateOriginState(sm.dbp, sm.chain.ID())
+		sm.solidState, err = state.CreateOriginState(sm.store, sm.chain.ID())
 		if err != nil {
 			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
 				Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err)},

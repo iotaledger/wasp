@@ -1,6 +1,8 @@
-package dbmanager
+package dbkeys
 
-import "bytes"
+import (
+	"bytes"
+)
 
 const (
 	ObjectTypeDBSchemaVersion byte = iota

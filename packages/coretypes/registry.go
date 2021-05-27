@@ -6,6 +6,7 @@ package coretypes
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
 	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -14,8 +15,6 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
 )
-
-const BlobCacheDefaultTTL = 1 * time.Hour
 
 // BlobCache is an access to the cache of big binary objects
 type BlobCache interface {
@@ -52,7 +51,13 @@ type PeerNetworkConfigProvider interface {
 	String() string
 }
 
+// ChainRecordRegistryProvider stands for a partial registry interface, needed for this package.
+// It should be implemented by in the chain_record package
 type ChainRecordRegistryProvider interface {
-	SaveChainRecord(chainRecord *ChainRecord) error
-	LoadChainRecord(ChainId *ChainID) (*ChainRecord, error)
+	GetChainRecordByChainID(chainID *ledgerstate.AliasAddress) (*chain_record.ChainRecord, error)
+	GetChainRecords() ([]*chain_record.ChainRecord, error)
+	UpdateChainRecord(chainID *ledgerstate.AliasAddress, f func(*chain_record.ChainRecord) bool) (*chain_record.ChainRecord, error)
+	ActivateChainRecord(chainID *ledgerstate.AliasAddress) (*chain_record.ChainRecord, error)
+	DeactivateChainRecord(chainID *ledgerstate.AliasAddress) (*chain_record.ChainRecord, error)
+	SaveChainRecord(rec *chain_record.ChainRecord) error
 }

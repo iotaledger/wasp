@@ -13,8 +13,8 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/spf13/viper"
@@ -25,7 +25,7 @@ type Config struct {
 	Name        string
 	ProgramHash string
 
-	chainRecord *registry_pkg.ChainRecord
+	chainRecord *coretypes.ChainRecord
 }
 
 func (c *Config) MakeClient(sigScheme *ed25519.KeyPair) *chainclient.Client {
@@ -195,7 +195,7 @@ func (p *DeployParams) progHash() hashing.HashValue {
 	return hash
 }
 
-func (c *Config) ChainRecord() *registry_pkg.ChainRecord {
+func (c *Config) ChainRecord() *coretypes.ChainRecord {
 	if c.chainRecord != nil {
 		return c.chainRecord
 	}

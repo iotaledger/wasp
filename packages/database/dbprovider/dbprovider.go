@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/timeutil"
-	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
 type DBProvider struct {
@@ -47,7 +46,7 @@ func NewPersistentDBProvider(dbDir string, log *logger.Logger) *DBProvider {
 }
 
 // GetPartition returns a Partition, which is a KVStore prefixed with the chain ID.
-func (dbp *DBProvider) GetPartition(chainID *coretypes.ChainID) kvstore.KVStore {
+func (dbp *DBProvider) GetPartition(chainID *ledgerstate.AliasAddress) kvstore.KVStore {
 	var chainIDArr [ledgerstate.AddressLength]byte
 	if chainID != nil {
 		chainIDArr = chainID.Array()

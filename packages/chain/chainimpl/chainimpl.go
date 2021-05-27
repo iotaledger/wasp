@@ -12,21 +12,21 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
+	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
 
 	"github.com/iotaledger/wasp/packages/state"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
@@ -44,7 +44,7 @@ type chainObj struct {
 	consensus             chain.Consensus
 	log                   *logger.Logger
 	nodeConn              chain.NodeConnection
-	dbProvider            *dbprovider.DBProvider
+	store                 kvstore.KVStore
 	peerNetworkConfig     coretypes.PeerNetworkConfigProvider
 	netProvider           peering.NetworkProvider
 	dksProvider           coretypes.DKShareRegistryProvider
@@ -56,20 +56,20 @@ type chainObj struct {
 }
 
 func NewChain(
-	chr *registry_pkg.ChainRecord,
+	chr *chain_record.ChainRecord,
 	log *logger.Logger,
 	txstream *txstream.Client,
 	peerNetConfig coretypes.PeerNetworkConfigProvider,
-	dbProvider *dbprovider.DBProvider,
+	store kvstore.KVStore,
 	netProvider peering.NetworkProvider,
 	dksProvider coretypes.DKShareRegistryProvider,
 	committeeRegistry coretypes.CommitteeRegistryProvider,
 	blobProvider coretypes.BlobCache,
 ) chain.Chain {
-	log.Debugf("creating chain object for %s", chr.ChainID.String())
+	log.Debugf("creating chain object for %s", chr.ChainIdAliasAddress.String())
 
-	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
-	stateReader, err := state.NewStateReader(dbProvider, chr.ChainID)
+	chainLog := log.Named(chr.ChainIdAliasAddress.Base58()[:6] + ".")
+	stateReader, err := state.NewStateReader(store, coretypes.NewChainID(chr.ChainIdAliasAddress))
 	if err != nil {
 		log.Errorf("NewChain: %v", err)
 		return nil
@@ -78,10 +78,10 @@ func NewChain(
 		mempool:           mempool.New(stateReader, blobProvider, chainLog),
 		procset:           processors.MustNew(),
 		chMsg:             make(chan interface{}, 100),
-		chainID:           *chr.ChainID,
+		chainID:           *coretypes.NewChainID(chr.ChainIdAliasAddress),
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstream, chainLog),
-		dbProvider:        dbProvider,
+		store:             store,
 		peerNetworkConfig: peerNetConfig,
 		netProvider:       netProvider,
 		dksProvider:       dksProvider,
@@ -105,7 +105,7 @@ func NewChain(
 		log.Errorf("NewChain: %v", err)
 		return nil
 	}
-	ret.stateMgr = statemgr.New(dbProvider, ret, peers, ret.nodeConn, ret.log)
+	ret.stateMgr = statemgr.New(store, ret, peers, ret.nodeConn, ret.log)
 	var peeringID peering.PeeringID = ret.chainID.Array()
 	peers.Attach(&peeringID, func(recv *peering.RecvEvent) {
 		ret.ReceiveMessage(recv.Msg)

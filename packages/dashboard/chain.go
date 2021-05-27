@@ -6,12 +6,11 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/registry_pkg"
+	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/labstack/echo/v4"
@@ -131,7 +130,7 @@ type ChainTemplateParams struct {
 
 	ChainID *coretypes.ChainID
 
-	Record      *registry_pkg.ChainRecord
+	Record      *chain_record.ChainRecord
 	State       *ChainState
 	RootInfo    RootInfo
 	Accounts    []*coretypes.AgentID
