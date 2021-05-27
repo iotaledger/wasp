@@ -13,12 +13,16 @@ import (
 // Client is a wrapper for the official Goshimmer client, providing a cleaner interface
 // for commonly used Goshimmer webapi endpoints in wasp.
 type Client struct {
-	api *client.GoShimmerAPI
+	api             *client.GoShimmerAPI
+	faucetPowTarget int
 }
 
 // NewClient returns a new Goshimmer client
-func NewClient(goshimmerHost string) *Client {
-	return &Client{client.NewGoShimmerAPI("http://" + goshimmerHost)}
+func NewClient(goshimmerHost string, faucetPowTarget int) *Client {
+	return &Client{
+		api:             client.NewGoShimmerAPI("http://" + goshimmerHost),
+		faucetPowTarget: faucetPowTarget,
+	}
 }
 
 func (c *Client) RequestFunds(targetAddress ledgerstate.Address) error {
@@ -26,7 +30,7 @@ func (c *Client) RequestFunds(targetAddress ledgerstate.Address) error {
 	if err != nil {
 		return fmt.Errorf("balanceIOTA: %s", err)
 	}
-	_, err = c.api.SendFaucetRequest(targetAddress.Base58(), -1)
+	_, err = c.api.SendFaucetRequest(targetAddress.Base58(), c.faucetPowTarget)
 	if err != nil {
 		return fmt.Errorf("SendFaucetRequest: %s", err)
 	}
