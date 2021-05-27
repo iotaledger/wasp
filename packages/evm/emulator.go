@@ -26,7 +26,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"golang.org/x/xerrors"
 )
 
@@ -468,15 +467,13 @@ func (e *EVMEmulator) callContract(call ethereum.CallMsg, block *types.Block, st
 
 // SendTransaction updates the pending block to include the given transaction.
 // It returns an error if the transaction is invalid.
-func (e *EVMEmulator) SendTransaction(tx *types.Transaction, ctx coretypes.Sandbox) error {
+func (e *EVMEmulator) SendTransaction(tx *types.Transaction) error {
 	sender, err := types.Sender(types.NewEIP155Signer(e.blockchain.Config().ChainID), tx)
 	if err != nil {
-		ctx.Log().Infof("invalid transaction: %v", err)
-		return xerrors.Errorf("invalid transaction: %v", err)
+		return xerrors.Errorf("invalid transaction: %w", err)
 	}
 	nonce := e.pendingState.GetNonce(sender)
 	if tx.Nonce() != nonce {
-		ctx.Log().Infof("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 		return xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 

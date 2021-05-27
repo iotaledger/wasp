@@ -56,7 +56,10 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	emu := emulator(ctx.State())
 	defer emu.Close()
 
-	err = emu.SendTransaction(tx, ctx)
+	err = emu.SendTransaction(tx)
+	if err != nil {
+		ctx.Log().Infof(err.Error())
+	}
 	a.RequireNoError(err)
 
 	// TODO: commit the pending ethereum block when closing the ISCP block

@@ -26,7 +26,7 @@ func sendTransaction(t *testing.T, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	require.NoError(t, err)
 
 	tx, err := types.SignTx(
-		types.NewTransaction(nonce, receiverAddress, amount, GasLimit, GasPrice, data),
+		types.NewTransaction(nonce, receiverAddress, amount, MaxGasLimit, GasPrice, data),
 		emu.Signer(),
 		sender,
 	)
@@ -91,7 +91,7 @@ func testBlockchain(t *testing.T, db ethdb.Database) {
 			// assert that current block is genesis
 			block := emu.Blockchain().CurrentBlock()
 			require.NotNil(t, block)
-			require.EqualValues(t, GasLimit, block.Header().GasLimit)
+			require.EqualValues(t, MaxGasLimit, block.Header().GasLimit)
 			genesisHash = block.Hash()
 		}
 
@@ -118,7 +118,7 @@ func testBlockchain(t *testing.T, db ethdb.Database) {
 		sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil)
 
 		require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
-		require.EqualValues(t, GasLimit, emu.Blockchain().CurrentBlock().Header().GasLimit)
+		require.EqualValues(t, MaxGasLimit, emu.Blockchain().CurrentBlock().Header().GasLimit)
 	}
 
 	{
@@ -200,7 +200,7 @@ func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	data := append(contractBytecode, constructorArguments...)
 
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, txValue, GasLimit, GasPrice, data),
+		types.NewContractCreation(nonce, txValue, MaxGasLimit, GasPrice, data),
 		emu.Signer(),
 		creator,
 	)
@@ -215,7 +215,7 @@ func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	// assertions
 	{
 		require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
-		require.EqualValues(t, GasLimit, emu.Blockchain().CurrentBlock().Header().GasLimit)
+		require.EqualValues(t, MaxGasLimit, emu.Blockchain().CurrentBlock().Header().GasLimit)
 
 		// verify contract address
 		{

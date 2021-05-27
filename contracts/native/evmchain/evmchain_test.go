@@ -31,7 +31,7 @@ func TestFaucetBalance(t *testing.T) {
 	require.NoError(t, err)
 
 	bal := big.NewInt(0)
-	bal.SetBytes(ret.MustGet(FieldBalance))
+	bal.SetBytes(ret.MustGet(FieldResult))
 	require.Zero(t, TestFaucetSupply.Cmp(bal))
 }
 
@@ -206,7 +206,7 @@ func TestOwner(t *testing.T) {
 	owner = getEvmOwner(t, chain)
 	require.True(t, owner.Equals(&chain.OriginatorAgentID))
 
-	//check no other user can claim ownership
+	// check no other user can claim ownership
 	user2Wallet, _ := env.NewKeyPairWithFunds()
 
 	_, err = chain.PostRequestSync(
@@ -220,7 +220,7 @@ func TestOwner(t *testing.T) {
 	owner = getEvmOwner(t, chain)
 	require.True(t, owner.Equals(&chain.OriginatorAgentID))
 
-	//claim ownership successfully
+	// claim ownership successfully
 	_, err = chain.PostRequestSync(
 		solo.NewCallParams(Interface.Name, FuncClaimOwnership).
 			WithIotas(100000),
@@ -234,7 +234,7 @@ func TestOwner(t *testing.T) {
 func TestGasPerIotas(t *testing.T) {
 	chain, env := InitEVMChain(t)
 
-	//deploy storage contract to test the gas pricing
+	// deploy storage contract to test the gas pricing
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
 	_, callFn := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
@@ -289,7 +289,7 @@ func postWithdrawalFeesReq(t *testing.T, chain *solo.Chain, wallet *ed25519.KeyP
 func TestWithdrawalOwnerFees(t *testing.T) {
 	chain, env := InitEVMChain(t)
 
-	//deploy storage contract to test gas fees collected
+	// deploy storage contract to test gas fees collected
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
 	_, callFn := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
@@ -335,13 +335,13 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, user1Balance3, user1Balance2+chargedGasFee)
 
-	//try to withdrawal a second time, it should succeed, but owner balance shouldnt not change (there are no fees to withdraw)
+	// try to withdrawal a second time, it should succeed, but owner balance shouldnt not change (there are no fees to withdraw)
 	_, err = postWithdrawalFeesReq(t, chain, user1Wallet)
 	require.NoError(t, err)
 	user1Balance4 := env.GetAddressBalance(user1Address, ledgerstate.ColorIOTA)
 	require.Equal(t, user1Balance3, user1Balance4)
 
-	//try to withdrawal fees to another actor using using the FieldAgentId param
+	// try to withdrawal fees to another actor using using the FieldAgentId param
 	_, chargedGasFee, err = callFn(TestFaucetKey, "store", uint32(44))(nil, 100000)
 	require.NoError(t, err)
 
@@ -361,7 +361,7 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 func TestGasLimit(t *testing.T) {
 	chain, env := InitEVMChain(t)
 
-	//deploy storage contract to test gas limits
+	// deploy storage contract to test gas limits
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
 	contractAddress, _ := DeployEVMContract(t, chain, env, TestFaucetKey, contractABI, evmtest.StorageContractBytecode, uint32(42))
