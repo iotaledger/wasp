@@ -58,9 +58,9 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	err = emu.SendTransaction(tx)
 	if err != nil {
-		ctx.Log().Infof(err.Error())
+		ctx.Log().Infof("transaction failed: %s", err.Error())
+		return nil, nil
 	}
-	a.RequireNoError(err)
 
 	// TODO: commit the pending ethereum block when closing the ISCP block
 	emu.Commit()
