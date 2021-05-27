@@ -457,7 +457,7 @@ func (c *consensus) setNewState(msg *chain.StateTransitionMsg) {
 	c.stateTimestamp = msg.StateTimestamp
 	c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(msg.StateOutput.ID().Bytes()).Bytes()[:8])
 	c.resetWorkflow()
-	c.log.Infof("SET STATE #%d, output: %s, hash: %s",
+	c.log.Debugf("SET STATE #%d, output: %s, hash: %s",
 		msg.StateOutput.GetStateIndex(), coretypes.OID(msg.StateOutput.ID()), msg.State.Hash().String())
 }
 
@@ -486,7 +486,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	}
 	essenceBytes := result.ResultTransactionEssence.Bytes()
 	essenceHash := hashing.HashData(essenceBytes)
-	c.log.Infof("VM result: essence hash: %s", essenceHash)
+	c.log.Debugf("VM result: essence hash: %s", essenceHash)
 	sigShare, err := c.committee.DKShare().SignShare(essenceBytes)
 	if err != nil {
 		c.log.Panicf("processVMResult: error while signing transaction %v", err)

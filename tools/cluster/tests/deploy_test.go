@@ -175,7 +175,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	dscrNew := "spawned contract it is"
 	hnameNew := coretypes.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
-	tx, err := chain.OriginatorClient().PostRequest(hname, coretypes.Hn(inccounter.FuncSpawn), chainclient.PostRequestParams{
+	tx, err := chain.OriginatorClient().Post1Request(hname, coretypes.Hn(inccounter.FuncSpawn), chainclient.PostRequestParams{
 		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
 			inccounter.VarName:        nameNew,
 			inccounter.VarDescription: dscrNew,

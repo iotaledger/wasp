@@ -22,12 +22,9 @@ import (
 func TestBasicAccounts(t *testing.T) {
 	setup(t, "test_cluster")
 	counter, err := clu.StartMessageCounter(map[string]int{
-		"chainrec":            2,
-		"active_committee":    1,
-		"dismissed_committee": 0,
-		"state":               2,
-		"request_in":          1,
-		"request_out":         2,
+		"state":       2,
+		"request_in":  0,
+		"request_out": 1,
 	})
 	check(err, t)
 	defer counter.Close()
@@ -40,12 +37,9 @@ func TestBasicAccountsN1(t *testing.T) {
 	setup(t, "test_cluster")
 	chainNodes := []int{0}
 	counter, err := cluster.NewMessageCounter(clu, chainNodes, map[string]int{
-		"chainrec":            2,
-		"active_committee":    1,
-		"dismissed_committee": 0,
-		"state":               2,
-		"request_in":          1,
-		"request_out":         2,
+		"state":       2,
+		"request_in":  1,
+		"request_out": 2,
 	})
 	check(err, t)
 	defer counter.Close()
@@ -99,8 +93,8 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 		return true
 	})
 
-	if !clu.VerifyAddressBalances(chain.Address, 3, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: 2,
+	if !clu.VerifyAddressBalances(chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA + 2,
 	}, "chain after deployment") {
 		t.Fail()
 	}
@@ -110,12 +104,12 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 
 	transferIotas := uint64(42)
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, scOwner)
-	reqTx, err := chClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
+	reqTx, err := chClient.Post1Request(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
 		Transfer: coretypes.NewTransferIotas(transferIotas),
 	})
 	check(err, t)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 10*time.Second)
 	check(err, t)
 
 	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
@@ -123,40 +117,29 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 		require.EqualValues(t, 43, counterValue)
 		return true
 	})
-	if !clu.VerifyAddressBalances(scOwnerAddr, solo.Saldo-1-transferIotas, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - 1 - transferIotas,
+	if !clu.VerifyAddressBalances(scOwnerAddr, solo.Saldo-transferIotas, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - transferIotas,
 	}, "owner after") {
 		t.Fail()
 	}
 
-	if !clu.VerifyAddressBalances(chain.Address, 4+transferIotas, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: 3 + transferIotas,
+	if !clu.VerifyAddressBalances(chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+transferIotas+2, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA + transferIotas + 2,
 	}, "chain after") {
 		t.Fail()
 	}
 	agentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), hname)
-	actual := getAgentBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
+	actual := getBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
 	require.EqualValues(t, 42, actual)
-
-	agentID = coretypes.NewAgentID(scOwnerAddr, 0)
-	actual = getAgentBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
-	require.EqualValues(t, 1, actual) // 1 request sent
-
-	agentID = coretypes.NewAgentID(chain.OriginatorAddress(), 0)
-	actual = getAgentBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
-	require.EqualValues(t, 2, actual) // 1 request sent
 }
 
 func TestBasic2Accounts(t *testing.T) {
 	setup(t, "test_cluster")
 
 	counter, err := clu.StartMessageCounter(map[string]int{
-		"chainrec":            2,
-		"active_committee":    1,
-		"dismissed_committee": 0,
-		"state":               2,
-		"request_in":          1,
-		"request_out":         2,
+		"state":       2,
+		"request_in":  0,
+		"request_out": 1,
 	})
 	check(err, t)
 	defer counter.Close()
@@ -209,8 +192,8 @@ func TestBasic2Accounts(t *testing.T) {
 		return true
 	})
 
-	if !clu.VerifyAddressBalances(chain.Address, 3, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: 2,
+	if !clu.VerifyAddressBalances(chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA + 2,
 	}, "chain after deployment") {
 		t.Fail()
 	}
@@ -218,8 +201,8 @@ func TestBasic2Accounts(t *testing.T) {
 	originatorSigScheme := chain.OriginatorKeyPair()
 	originatorAddress := chain.OriginatorAddress()
 
-	if !clu.VerifyAddressBalances(originatorAddress, solo.Saldo-3, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - 3, // 1 for chain, 1 init, 1 inccounter
+	if !clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - ledgerstate.DustThresholdAliasOutputIOTA - 2, //
 	}, "originator after deployment") {
 		t.Fail()
 	}
@@ -233,7 +216,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 	transferIotas := uint64(42)
 	myWalletClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, myWallet)
-	reqTx, err := myWalletClient.PostRequest(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
+	reqTx, err := myWalletClient.Post1Request(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
 		Transfer: coretypes.NewTransferIotas(transferIotas),
 	})
 	check(err, t)
@@ -247,18 +230,18 @@ func TestBasic2Accounts(t *testing.T) {
 		require.EqualValues(t, 43, counterValue)
 		return true
 	})
-	if !clu.VerifyAddressBalances(originatorAddress, solo.Saldo-3, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - 3, // 1 for chain, 1 init, 1 inccounter
+	if !clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - ledgerstate.DustThresholdAliasOutputIOTA - 2, // 1 for chain, 1 init, 1 inccounter
 	}, "originator after") {
 		t.Fail()
 	}
-	if !clu.VerifyAddressBalances(myWalletAddr, solo.Saldo-1-transferIotas, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - 1 - transferIotas,
+	if !clu.VerifyAddressBalances(myWalletAddr, solo.Saldo-transferIotas, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - transferIotas,
 	}, "myWalletAddr after") {
 		t.Fail()
 	}
-	if !clu.VerifyAddressBalances(chain.Address, 4+transferIotas, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: 3 + transferIotas,
+	if !clu.VerifyAddressBalances(chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2+transferIotas, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA + 2 + transferIotas,
 	}, "chain after") {
 		t.Fail()
 	}
@@ -266,25 +249,15 @@ func TestBasic2Accounts(t *testing.T) {
 	s := "\n"
 	agentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), hname)
 	s += fmt.Sprintf("contract: %s\n", agentID.String())
-	actual := getAgentBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
+	actual := getBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
 	require.EqualValues(t, 42, actual)
-
-	agentID = coretypes.NewAgentID(myWalletAddr, 0)
-	s += fmt.Sprintf("scOwner: %s\n", agentID.String())
-	actual = getAgentBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
-	require.EqualValues(t, 1, actual) // 1 request sent, 1 iota from request
-
-	agentID = coretypes.NewAgentID(originatorAddress, 0)
-	s += fmt.Sprintf("originator: %s\n\n", agentID.String())
-	actual = getAgentBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
-	require.EqualValues(t, 2, actual) // 1 request + 1 chain
 
 	printAccounts(t, chain, "withdraw before")
 
 	// withdraw back 2 iotas to originator address
 	fmt.Printf("\norig addres from sigsheme: %s\n", originatorAddress.Base58())
 	originatorClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, originatorSigScheme)
-	reqTx2, err := originatorClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
+	reqTx2, err := originatorClient.Post1Request(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx2, 30*time.Second)
@@ -296,11 +269,11 @@ func TestBasic2Accounts(t *testing.T) {
 
 	// must remain 0 on chain
 	agentID = coretypes.NewAgentID(originatorAddress, 0)
-	actual = getAgentBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
+	actual = getBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
 	require.EqualValues(t, 0, actual)
 
-	if !clu.VerifyAddressBalances(originatorAddress, solo.Saldo-1, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - 1,
+	if !clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - ledgerstate.DustThresholdAliasOutputIOTA,
 	}, "originator after withdraw: "+originatorAddress.String()) {
 		t.Fail()
 	}

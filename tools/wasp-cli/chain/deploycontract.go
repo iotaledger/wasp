@@ -47,7 +47,7 @@ var deployContractCmd = &cobra.Command{
 		}
 
 		util.WithSCTransaction(GetCurrentChainID(), func() (*ledgerstate.Transaction, error) {
-			return Client().PostRequest(
+			return Client().Post1Request(
 				root.Interface.Hname(),
 				coretypes.Hn(root.FuncDeployContract),
 				chainclient.PostRequestParams{

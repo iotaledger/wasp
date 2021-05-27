@@ -1,10 +1,11 @@
 package tests
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/solo"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/solo"
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -49,7 +50,7 @@ func TestDepositWithdraw(t *testing.T) {
 	// deposit some iotas to the chain
 	depositIotas := uint64(42)
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, testOwner)
-	reqTx, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
+	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
 		Transfer: coretypes.NewTransferIotas(depositIotas),
 	})
 	check(err, t)
@@ -66,7 +67,7 @@ func TestDepositWithdraw(t *testing.T) {
 	}
 
 	// withdraw iotas back
-	reqTx3, err := chClient.PostRequest(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
+	reqTx3, err := chClient.Post1Request(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx3, 30*time.Second)
 	check(err, t)

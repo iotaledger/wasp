@@ -3,10 +3,11 @@ package tests
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/solo"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/solo"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -84,7 +85,7 @@ func testNothing(t *testing.T, numRequests int) {
 
 	entryPoint := coretypes.Hn("nothing")
 	for i := 0; i < numRequests; i++ {
-		tx, err := client.PostRequest(incHname, entryPoint)
+		tx, err := client.Post1Request(incHname, entryPoint)
 		check(err, t)
 		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 		check(err, t)
@@ -141,7 +142,7 @@ func testIncrement(t *testing.T, numRequests int) {
 
 	entryPoint := coretypes.Hn("increment")
 	for i := 0; i < numRequests; i++ {
-		tx, err := client.PostRequest(incHname, entryPoint)
+		tx, err := client.Post1Request(incHname, entryPoint)
 		check(err, t)
 		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 		check(err, t)
@@ -190,22 +191,18 @@ func TestIncrementWithTransfer(t *testing.T) {
 	entryPoint := coretypes.Hn("increment")
 	postRequest(t, incHname, entryPoint, 42, nil)
 
-	if !clu.VerifyAddressBalances(scOwnerAddr, solo.Saldo-1-42, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - 1 - 42,
+	if !clu.VerifyAddressBalances(scOwnerAddr, solo.Saldo-42, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - 42,
 	}, "owner after") {
 		t.Fail()
 	}
 	agentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), incHname)
-	actual := getAgentBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
+	actual := getBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
 	require.EqualValues(t, 42, actual)
 
 	agentID = coretypes.NewAgentID(scOwnerAddr, 0)
-	actual = getAgentBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
-	require.EqualValues(t, 0, actual) // 1 request sent
-
-	agentID = coretypes.NewAgentID(chain.OriginatorAddress(), 0)
-	actual = getAgentBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
-	require.EqualValues(t, 3, actual) // 2 requests sent
+	actual = getBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
+	require.EqualValues(t, 0, actual)
 
 	checkCounter(t, 1)
 }

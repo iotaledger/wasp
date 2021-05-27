@@ -162,5 +162,5 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 		return
 	}
 	sm.solidState = tentativeState
-	sm.log.Infof("commitCandidates: committing of block indices from %v to %v was successful", from, to)
+	sm.log.Debugf("commitCandidates: committing of block indices from %v to %v was successful", from, to)
 }

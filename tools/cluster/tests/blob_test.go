@@ -98,7 +98,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	t.Logf("expected hash: %s", expectedHash.String())
 
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, testOwner)
-	reqTx, err := chClient.PostRequest(
+	reqTx, err := chClient.Post1Request(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
@@ -182,7 +182,7 @@ func TestBlobRefConsensus(t *testing.T) {
 
 	// sending storeBlob request (data is not uploaded yet)
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, testOwner)
-	reqTx, err := chClient.PostRequest(
+	reqTx, err := chClient.Post1Request(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
