@@ -46,7 +46,7 @@ func postRequestCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringSliceVarP(&transfer, "transfer", "", []string{},
+	cmd.Flags().StringSliceVarP(&transfer, "transfer", "", []string{"IOTA:1"},
 		"include a funds transfer as part of the transaction. Format: <color>:<amount>,<color>:amount...",
 	)
 
