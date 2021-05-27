@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -123,6 +124,35 @@ func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
 		return nil, err
 	}
 	return block, nil
+}
+
+func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64, err error) {
+	var ret dict.Dict
+	ret, err = e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetTransactionByHash,
+		evmchain.FieldTransactionHash, hash.Bytes(),
+	)
+	if err != nil {
+		return
+	}
+
+	if !ret.MustHas(evmchain.FieldTransaction) {
+		return
+	}
+
+	tx, err = evmchain.DecodeTransaction(ret.MustGet(evmchain.FieldTransaction))
+	if err != nil {
+		return
+	}
+	blockHash = common.BytesToHash(ret.MustGet(evmchain.FieldBlockHash))
+	blockNumber, _, err = codec.DecodeUint64(ret.MustGet(evmchain.FieldBlockNumber))
+	if err != nil {
+		return
+	}
+	index, _, err = codec.DecodeUint64(ret.MustGet(evmchain.FieldTransactionIndex))
+	if err != nil {
+		return
+	}
+	return
 }
 
 func (e *EVMChain) BlockByHash(hash common.Hash) (*types.Block, error) {

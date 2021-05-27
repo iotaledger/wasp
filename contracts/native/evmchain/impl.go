@@ -134,6 +134,23 @@ func getBlockByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
 	})
 }
 
+func getTransactionByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	return withTransactionByHash(ctx, func(emu *evm.EVMEmulator, tx *types.Transaction) dict.Dict {
+		if tx == nil {
+			return nil
+		}
+		receipt, err := emu.TransactionReceipt(tx.Hash())
+		a.RequireNoError(err)
+		return dict.Dict{
+			FieldTransaction:      EncodeTransaction(tx),
+			FieldBlockHash:        receipt.BlockHash.Bytes(),
+			FieldBlockNumber:      codec.EncodeUint64(receipt.BlockNumber.Uint64()),
+			FieldTransactionIndex: codec.EncodeUint64(uint64(receipt.TransactionIndex)),
+		}
+	})
+}
+
 func getBlockTransactionCountByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return withBlockByHash(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
 		if block == nil {
@@ -172,21 +189,12 @@ func getUncleCountByBlockNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 func getReceipt(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	txHash := common.BytesToHash(ctx.Params().MustGet(FieldTransactionHash))
-
-	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
-		receipt, err := emu.TransactionReceipt(txHash)
+	return withTransactionByHash(ctx, func(emu *evm.EVMEmulator, tx *types.Transaction) dict.Dict {
+		if tx == nil {
+			return nil
+		}
+		receipt, err := emu.TransactionReceipt(tx.Hash())
 		a.RequireNoError(err)
-
-		block := emu.Blockchain().GetBlockByHash(receipt.BlockHash)
-		if block == nil {
-			ctx.Log().Panicf("block for receipt not found")
-		}
-
-		if receipt.TransactionIndex >= uint(len(block.Transactions())) {
-			ctx.Log().Panicf("cannot find transaction in block")
-		}
-		tx := block.Transactions()[receipt.TransactionIndex]
 
 		var signer types.Signer = types.FrontierSigner{}
 		if tx.Protected() {

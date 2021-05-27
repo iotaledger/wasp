@@ -145,6 +145,16 @@ func (e *env) blockByHash(hash common.Hash) *types.Block {
 	return block
 }
 
+func (e *env) transactionByHash(hash common.Hash) *types.Transaction {
+	tx, isPending, err := e.client.TransactionByHash(context.Background(), hash)
+	if err == ethereum.NotFound {
+		return nil
+	}
+	require.NoError(e.t, err)
+	require.False(e.t, isPending)
+	return tx
+}
+
 func (e *env) blockTransactionCountByHash(hash common.Hash) uint {
 	n, err := e.client.TransactionCount(context.Background(), hash)
 	require.NoError(e.t, err)
@@ -274,6 +284,17 @@ func TestRPCGetBlockByHash(t *testing.T) {
 	require.EqualValues(t, 0, env.blockByHash(env.blockByNumber(big.NewInt(0)).Hash()).Number().Uint64())
 	env.requestFunds(receiverAddress)
 	require.EqualValues(t, 1, env.blockByHash(env.blockByNumber(big.NewInt(1)).Hash()).Number().Uint64())
+}
+
+func TestRPCGetTransactionByHash(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	require.Nil(t, env.transactionByHash(common.Hash{}))
+	env.requestFunds(receiverAddress)
+	block1 := env.blockByNumber(big.NewInt(1))
+	require.Positive(t, len(block1.Transactions()))
+	tx := env.transactionByHash(block1.Transactions()[0].Hash())
+	require.Equal(t, block1.Transactions()[0].Hash(), tx.Hash())
 }
 
 func TestRPCGetTransactionCountByHash(t *testing.T) {

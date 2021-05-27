@@ -6,6 +6,7 @@ package evmchain
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -57,8 +58,21 @@ func withBlockByHash(ctx coretypes.SandboxView, f func(*evm.EVMEmulator, *types.
 		if err != evm.ErrBlockDoesNotExist {
 			a.RequireNoError(err)
 		}
-
 		return f(emu, block)
+	})
+}
+
+func withTransactionByHash(ctx coretypes.SandboxView, f func(*evm.EVMEmulator, *types.Transaction) dict.Dict) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	txHash := common.BytesToHash(ctx.Params().MustGet(FieldTransactionHash))
+
+	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		tx, pending, err := emu.TransactionByHash(txHash)
+		a.Require(!pending, "unexpected pending transaction")
+		if err != ethereum.NotFound {
+			a.RequireNoError(err)
+		}
+		return f(emu, tx)
 	})
 }
 

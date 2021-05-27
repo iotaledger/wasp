@@ -63,6 +63,17 @@ func (e *EthService) GetBlockByHash(hash common.Hash, full bool) (map[string]int
 	return RPCMarshalBlock(block, true, full)
 }
 
+func (s *EthService) GetTransactionByHash(hash common.Hash) (*RPCTransaction, error) {
+	tx, blockHash, blockNumber, index, err := s.evmChain.TransactionByHash(hash)
+	if err != nil {
+		return nil, err
+	}
+	if tx == nil {
+		return nil, nil
+	}
+	return newRPCTransaction(tx, blockHash, blockNumber, index), err
+}
+
 func (e *EthService) GetBalance(address common.Address, blockNumber rpc.BlockNumber) (*hexutil.Big, error) {
 	bal, err := e.evmChain.Balance(address, parseBlockNumber(blockNumber))
 	if err != nil {
@@ -146,7 +157,6 @@ func (s *EthService) GetUncleCountByBlockNumber()          { panic("not implemen
 func (s *EthService) Sign()                                { panic("not implemented") }
 func (s *EthService) SignTransaction()                     { panic("not implemented") }
 func (s *EthService) SendTransaction()                     { panic("not implemented") }
-func (s *EthService) GetTransactionByHash()                { panic("not implemented") }
 func (s *EthService) GetTransactionByBlockHashAndIndex()   { panic("not implemented") }
 func (s *EthService) GetTransactionByBlockNumberAndIndex() { panic("not implemented") }
 func (s *EthService) GetUncleByBlockHashAndIndex()         { panic("not implemented") }

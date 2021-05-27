@@ -35,6 +35,7 @@ func init() {
 		coreutil.ViewFunc(FuncGetBlockNumber, getBlockNumber),
 		coreutil.ViewFunc(FuncGetBlockByNumber, getBlockByNumber),
 		coreutil.ViewFunc(FuncGetBlockByHash, getBlockByHash),
+		coreutil.ViewFunc(FuncGetTransactionByHash, getTransactionByHash),
 		coreutil.ViewFunc(FuncGetBlockTransactionCountByHash, getBlockTransactionCountByHash),
 		coreutil.ViewFunc(FuncGetUncleCountByBlockHash, getUncleCountByBlockHash),
 		coreutil.ViewFunc(FuncGetBlockTransactionCountByNumber, getBlockTransactionCountByNumber),
@@ -64,6 +65,7 @@ const (
 	FuncGetBlockNumber                   = "getBlockNumber"
 	FuncGetBlockByNumber                 = "getBlockByNumber"
 	FuncGetBlockByHash                   = "getBlockByHash"
+	FuncGetTransactionByHash             = "getTransactionByHash"
 	FuncGetBlockTransactionCountByHash   = "getBlockTransactionCountByHash"
 	FuncGetUncleCountByBlockHash         = "getUncleCountByBlockHash"
 	FuncGetBlockTransactionCountByNumber = "getBlockTransactionCountByNumber"
@@ -84,6 +86,8 @@ const (
 	FieldAddress                 = "a"
 	FieldKey                     = "k"
 	FieldAgentId                 = "i"
+	FieldTransaction             = "tx"
+	FieldTransactionIndex        = "ti"
 	FieldTransactionHash         = "h"
 	FieldTransactionData         = "t"
 	FieldTransactionDataBlobHash = "th"
