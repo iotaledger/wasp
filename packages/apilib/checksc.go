@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
@@ -38,10 +39,10 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 	var err error
 	var missing bool
 	fmt.Fprintf(out, prefix+"loading chainrecord record from hosts %+v\n", apiHosts)
-	var first *coretypes.ChainRecord
+	var first *chain_record.ChainRecord
 	var firstHost string
 
-	bdRecords := make([]*coretypes.ChainRecord, len(apiHosts))
+	bdRecords := make([]*chain_record.ChainRecord, len(apiHosts))
 	for i, host := range apiHosts {
 		bdRecords[i], err = client.NewWaspClient(host).GetChainRecord(chainID)
 		if err != nil {
@@ -56,9 +57,9 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 			missing = true
 			continue
 		}
-		if !bdRecords[i].ChainID.Equals(&chainID) {
+		if !bdRecords[i].ChainIdAliasAddress.Equals(chainID.AliasAddress) {
 			fmt.Fprintf(out, prefix+"%2d: %s -> internal error: wrong address in the chainrecord. Expected %s, got %s\n",
-				i, host, chainID.String(), bdRecords[i].ChainID.String())
+				i, host, chainID.String(), bdRecords[i].ChainIdAliasAddress.String())
 			ret = false
 			missing = true
 			continue

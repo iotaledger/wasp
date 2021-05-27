@@ -1,13 +1,14 @@
 package state
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestBlockBasic(t *testing.T) {
@@ -47,6 +48,7 @@ func TestBlockBasic(t *testing.T) {
 }
 
 func TestBatches(t *testing.T) {
+	println("wat")
 	suBlock := NewStateUpdateWithBlockIndexMutation(2)
 	su1 := NewStateUpdate()
 	su2 := NewStateUpdate()

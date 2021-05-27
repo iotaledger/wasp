@@ -22,13 +22,13 @@ type Client struct {
 func New(
 	goshimmerClient *goshimmer.Client,
 	waspClient *client.WaspClient,
-	chainID coretypes.ChainID,
+	chainID *coretypes.ChainID,
 	keyPair *ed25519.KeyPair,
 ) *Client {
 	return &Client{
 		GoshimmerClient: goshimmerClient,
 		WaspClient:      waspClient,
-		ChainID:         chainID,
+		ChainID:         *chainID,
 		KeyPair:         keyPair,
 	}
 }

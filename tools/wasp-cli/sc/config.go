@@ -13,8 +13,8 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/spf13/viper"
@@ -25,11 +25,10 @@ type Config struct {
 	Name        string
 	ProgramHash string
 
-	chainRecord *coretypes.ChainRecord
+	chainRecord *chain_record.ChainRecord
 }
 
 func (c *Config) MakeClient(sigScheme *ed25519.KeyPair) *chainclient.Client {
-	var timeout time.Duration
 	client := chainclient.New(
 		config.GoshimmerClient(),
 		client.NewWaspClient(config.WaspApi()),
@@ -195,7 +194,7 @@ func (p *DeployParams) progHash() hashing.HashValue {
 	return hash
 }
 
-func (c *Config) ChainRecord() *coretypes.ChainRecord {
+func (c *Config) ChainRecord() *chain_record.ChainRecord {
 	if c.chainRecord != nil {
 		return c.chainRecord
 	}

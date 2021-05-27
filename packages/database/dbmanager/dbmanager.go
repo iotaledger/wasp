@@ -22,7 +22,7 @@ type DBManager struct {
 var Instance *DBManager
 
 func init() {
-	Instance = NewDBManager(false)
+	Instance = NewDBManager(parameters.GetBool(parameters.DatabaseInMemory))
 }
 
 func NewDBManager(inMemory bool) *DBManager {

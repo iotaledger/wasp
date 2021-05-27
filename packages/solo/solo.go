@@ -205,12 +205,12 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Base58())
 
 	chainlog := env.logger.Named(name)
-	vs, err := state.CreateOriginState(env.dbProvider, &chainID)
+	vs, err := state.CreateOriginState(env.dbProvider.GetPartition(nil), &chainID)
 	require.NoError(env.T, err)
 	require.EqualValues(env.T, 0, vs.BlockIndex())
 	require.True(env.T, vs.Timestamp().IsZero())
 
-	srdr, err := state.NewStateReader(env.dbProvider, &chainID)
+	srdr, err := state.NewStateReader(env.dbProvider.GetPartition(nil), &chainID)
 	require.NoError(env.T, err)
 
 	ret := &Chain{

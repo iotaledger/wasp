@@ -25,9 +25,9 @@ import (
 
 func createStateReader(t *testing.T, log *logger.Logger) (state.StateReader, state.VirtualState) {
 	dbp := dbprovider.NewInMemoryDBProvider(log)
-	vs, err := state.CreateOriginState(dbp, nil)
+	vs, err := state.CreateOriginState(dbp.GetPartition(nil), nil)
 	require.NoError(t, err)
-	ret, err := state.NewStateReader(dbp, nil)
+	ret, err := state.NewStateReader(dbp.GetPartition(nil), nil)
 	require.NoError(t, err)
 	return ret, vs
 }

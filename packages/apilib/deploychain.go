@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
 	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -128,7 +129,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 	}
 
 	// ------------ put chain records to hosts
-	err = committee.PutChainRecord(&coretypes.ChainRecord{
+	err = committee.PutChainRecord(&chain_record.ChainRecord{
 		ChainID: &chainID,
 	})
 
