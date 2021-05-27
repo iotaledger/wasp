@@ -173,6 +173,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 		return nil, nil, xerrors.Errorf("NewRootInitRequestTransaction: %w", err)
 	}
 	fmt.Fprintf(textout, "creating root init request.. OK\n")
+	fmt.Fprintf(textout, "root init txid: %s, reqidBase58: %s\n", reqTx.ID().Base58(), reqTx.Essence().Outputs()[0].ID().Base58())
 
 	// ---------- post root init request transaction and wait for confirmation
 	err = par.Node.PostAndWaitForConfirmation(reqTx)

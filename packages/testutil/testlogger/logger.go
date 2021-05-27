@@ -21,12 +21,11 @@ func NewSimple(debug bool) *logger.Logger {
 	if err != nil {
 		panic(err)
 	}
+	lvl := zapcore.InfoLevel
 	if debug {
-		log.WithOptions(zap.IncreaseLevel(zapcore.DebugLevel))
-	} else {
-		log.WithOptions(zap.IncreaseLevel(zapcore.InfoLevel))
+		lvl = zapcore.DebugLevel
 	}
-	log.WithOptions(zap.AddStacktrace(zapcore.FatalLevel))
+	log.WithOptions(zap.IncreaseLevel(lvl), zap.AddStacktrace(zapcore.FatalLevel))
 	return log.Sugar()
 }
 

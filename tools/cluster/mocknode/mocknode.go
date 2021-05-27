@@ -15,14 +15,14 @@ type MockNode struct {
 	log            *logger.Logger
 }
 
-const debug = true
+const debug = false
 
 func Start(txStreamBindAddress string, webapiBindAddress string) *MockNode {
 	log := testlogger.NewSimple(debug).Named("txstream")
 	if debug {
-		log.Debugf("starting mocked goshimmer node...")
+		log.Debugf("starting mocked goshimmer node. Log level debug...")
 	} else {
-		log.Infof("starting mocked goshimmer node...")
+		log.Infof("starting mocked goshimmer node. Log level info...")
 	}
 	m := &MockNode{
 		log:            log,
