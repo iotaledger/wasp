@@ -39,6 +39,7 @@ type CreateChainParams struct {
 
 // DeployChain performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
+// TODO: [ED] decouple DKG from chain deployment into separate call
 // noinspection ALL
 func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address, error) {
 	var err error
