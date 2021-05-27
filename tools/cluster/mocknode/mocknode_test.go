@@ -23,7 +23,7 @@ func TestMockNode(t *testing.T) {
 	_, addr := m.Ledger.NewKeyPairByIndex(2)
 
 	cl := client.NewGoShimmerAPI("http://127.0.0.1:8080")
-	_, err := cl.SendFaucetRequest(addr.Base58(), -1)
+	_, err := cl.SendFaucetRequest(addr.Base58(), 0)
 	require.NoError(t, err)
 
 	time.Sleep(1 * time.Second)
