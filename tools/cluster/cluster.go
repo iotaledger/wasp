@@ -44,7 +44,7 @@ func New(name string, config *ClusterConfig) *Cluster {
 }
 
 func (clu *Cluster) GoshimmerClient() *goshimmer.Client {
-	return goshimmer.NewClient(clu.Config.goshimmerApiHost())
+	return goshimmer.NewClient(clu.Config.goshimmerApiHost(), clu.Config.FaucetPoWTarget)
 }
 
 func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
