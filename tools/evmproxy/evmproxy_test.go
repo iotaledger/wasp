@@ -19,7 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
-	"github.com/iotaledger/wasp/tools/evmproxy/service"
+	"github.com/iotaledger/wasp/tools/evmproxy/jsonrpc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -38,14 +38,14 @@ func newEnv(t *testing.T) *env {
 		return nil
 	}))
 
-	solo := service.NewSoloBackend(core.GenesisAlloc{
+	solo := jsonrpc.NewSoloBackend(core.GenesisAlloc{
 		faucetAddress: {Balance: faucetSupply},
 	})
-	soloEVMChain := service.NewEVMChain(solo)
+	soloEVMChain := jsonrpc.NewEVMChain(solo)
 
 	signer, _ := solo.Env.NewKeyPairWithFunds()
 
-	rpcsrv := NewRPCServer(soloEVMChain, signer)
+	rpcsrv := jsonrpc.NewServer(soloEVMChain, signer)
 	t.Cleanup(rpcsrv.Stop)
 
 	rawClient := rpc.DialInProc(rpcsrv)

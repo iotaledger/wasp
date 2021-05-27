@@ -1,4 +1,4 @@
-package service
+package jsonrpc
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"

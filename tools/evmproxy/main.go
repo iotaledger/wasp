@@ -3,15 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 	"net/http"
 
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/tools/evmproxy/service"
+	"github.com/iotaledger/wasp/tools/evmproxy/jsonrpc"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -22,36 +20,23 @@ var (
 	faucetSupply  = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 )
 
-func NewRPCServer(chain *service.EVMChain, signer *ed25519.KeyPair) *rpc.Server {
-	rpcsrv := rpc.NewServer()
-	for _, srv := range []struct {
-		namespace string
-		service   interface{}
-	}{
-		{"eth", service.NewEthService(chain, signer)},
-		{"net", service.NewNetService(chain)},
-	} {
-		err := rpcsrv.RegisterName(srv.namespace, srv.service)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	}
-	return rpcsrv
-}
-
 func main() {
 	// TODO: use wasp backend
-	solo := service.NewSoloBackend(core.GenesisAlloc{
+	solo := jsonrpc.NewSoloBackend(core.GenesisAlloc{
 		faucetAddress: {Balance: faucetSupply},
 	})
-	soloEVMChain := service.NewEVMChain(solo)
+	soloEVMChain := jsonrpc.NewEVMChain(solo)
 
 	// TODO: signer key should come from configuration
 	signer, _ := solo.Env.NewKeyPairWithFunds()
 
-	rpcsrv := NewRPCServer(soloEVMChain, signer)
+	rpcsrv := jsonrpc.NewServer(soloEVMChain, signer)
 	defer rpcsrv.Stop()
 
+	serveHTTP(rpcsrv)
+}
+
+func serveHTTP(rpcsrv *rpc.Server) {
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true

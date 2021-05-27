@@ -1,6 +1,6 @@
-// package service implements JSON-RPC endpoints according to
+// package jsonrpc implements JSON-RPC endpoints according to
 // https://eth.wiki/json-rpc/API
-package service
+package jsonrpc
 
 import (
 	"github.com/ethereum/go-ethereum/common"

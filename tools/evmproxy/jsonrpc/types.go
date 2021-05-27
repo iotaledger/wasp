@@ -1,4 +1,4 @@
-package service
+package jsonrpc
 
 import (
 	"math/big"
