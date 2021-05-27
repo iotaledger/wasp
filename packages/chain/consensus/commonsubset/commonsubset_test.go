@@ -23,10 +23,13 @@ import (
 )
 
 func TestBasic(t *testing.T) {
+	t.Run("N=4/T=3", func(tt *testing.T) { testBasic(tt, 4, 3) })
+	t.Run("N=7/T=5", func(tt *testing.T) { testBasic(tt, 7, 5) })
+	t.Run("N=10/T=7", func(tt *testing.T) { testBasic(tt, 10, 7) })
+}
+func testBasic(t *testing.T, peerCount uint16, threshold uint16) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
-	var peerCount uint16 = 4 // 10
-	var threshold uint16 = 3 // 7
 	var suite = pairing.NewSuiteBn256()
 	var peeringID = peering.RandomPeeringID()
 	peerNetIDs, peerPubs, peerSecs := setupKeys(peerCount, suite)
@@ -141,6 +144,63 @@ func TestRandomized(t *testing.T) {
 			require.Equal(t, 0, bytes.Compare(output[0][i], output[a][i]))
 		}
 	}
+}
+
+func TestCoordinator(t *testing.T) {
+	t.Run("N=1/T=1", func(tt *testing.T) { testCoordinator(tt, 1, 1) })
+	t.Run("N=4/T=3", func(tt *testing.T) { testCoordinator(tt, 4, 3) })
+	t.Run("N=7/T=5", func(tt *testing.T) { testCoordinator(tt, 7, 5) })
+	t.Run("N=10/T=7", func(tt *testing.T) { testCoordinator(tt, 10, 7) })
+}
+func testCoordinator(t *testing.T, peerCount uint16, threshold uint16) {
+	log := testlogger.NewLogger(t)
+	defer log.Sync()
+	var suite = pairing.NewSuiteBn256()
+	var peeringID = peering.RandomPeeringID()
+	peerNetIDs, peerPubs, peerSecs := setupKeys(peerCount, suite)
+	networkProviders := setupNet(
+		t, peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(),
+		testlogger.WithLevel(log.Named("Network"), logger.LevelDebug, false),
+	)
+	t.Logf("Network created.")
+
+	acsCoords := make([]*commonsubset.CommonSubsetCoordinator, peerCount)
+	for i := range acsCoords {
+		ii := i // Use a local copy in the callback.
+		group, err := networkProviders[i].PeerGroup(peerNetIDs)
+		require.Nil(t, err)
+		acsCoords[i] = commonsubset.NewCommonSubsetCoordinator(peeringID, networkProviders[i], group, threshold, newFakeCoin(), log)
+		networkProviders[ii].Attach(&peeringID, func(recv *peering.RecvEvent) {
+			if acsCoords[ii] != nil {
+				require.True(t, acsCoords[ii].TryHandleMessage(recv))
+			}
+		})
+	}
+	t.Logf("ACS Nodes created.")
+
+	sessionID := uint64(21695645984168)
+	results := make([][][]byte, peerCount)
+	resultsWG := &sync.WaitGroup{}
+	resultsWG.Add(int(peerCount))
+	for i := range acsCoords {
+		ii := i
+		input := []byte(peerNetIDs[i])
+		acsCoords[i].RunACSConsensus(input, sessionID, 1, func(sid uint64, res [][]byte) {
+			results[ii] = res
+			resultsWG.Done()
+		})
+	}
+	resultsWG.Wait()
+	t.Logf("ACS Nodes all decided.")
+	for i := range results {
+		for j := range results[i] {
+			require.True(t, bytes.Equal(results[i][j], results[0][j]))
+		}
+	}
+	for i := range acsCoords {
+		acsCoords[i].Close()
+	}
+	t.Logf("ACS Nodes closed.")
 }
 
 func setupKeys(peerCount uint16, suite *pairing.SuiteBn256) ([]string, []kyber.Point, []kyber.Scalar) {

@@ -92,6 +92,12 @@ func (csc *CommonSubsetCoordinator) RunACSConsensus(
 ) {
 	var err error
 	var cs *CommonSubset
+	if len(csc.netGroup.AllNodes()) == 1 {
+		// There is no point to do a consensus for a single node.
+		// Moreover, the erasure coding fails for the case of single node.
+		go callback(sessionID, [][]byte{value})
+		return
+	}
 	if cs, err = csc.getOrCreateCS(sessionID, stateIndex, callback); err != nil {
 		csc.log.Errorf("Unable to get a CommonSubset instance for sessionID=%v, reason=%v", sessionID, err)
 		return
