@@ -6,11 +6,10 @@ package testlogger
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
-
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // NewLogger produces a logger adjusted for test cases.
@@ -25,7 +24,7 @@ func NewSimple(debug bool) *logger.Logger {
 	if debug {
 		lvl = zapcore.DebugLevel
 	}
-	log.WithOptions(zap.IncreaseLevel(lvl), zap.AddStacktrace(zapcore.FatalLevel))
+	log = log.WithOptions(zap.IncreaseLevel(lvl), zap.AddStacktrace(zapcore.FatalLevel))
 	return log.Sugar()
 }
 

@@ -19,11 +19,7 @@ const debug = false
 
 func Start(txStreamBindAddress string, webapiBindAddress string) *MockNode {
 	log := testlogger.NewSimple(debug).Named("txstream")
-	if debug {
-		log.Debugf("starting mocked goshimmer node. Log level debug...")
-	} else {
-		log.Infof("starting mocked goshimmer node. Log level info...")
-	}
+	log.Infof("starting mocked goshimmer node...")
 	m := &MockNode{
 		log:            log,
 		Ledger:         utxodbledger.New(log),
