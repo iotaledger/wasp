@@ -23,7 +23,6 @@ func checkCounter(e *solo.Chain, expected int64) {
 func TestDeployInc(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash)
 	require.NoError(t, err)
@@ -37,7 +36,6 @@ func TestDeployInc(t *testing.T) {
 func TestDeployIncInitParams(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -48,7 +46,6 @@ func TestDeployIncInitParams(t *testing.T) {
 func TestIncDefaultParam(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
@@ -64,7 +61,6 @@ func TestIncDefaultParam(t *testing.T) {
 func TestIncParam(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
