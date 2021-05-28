@@ -13,6 +13,7 @@ import (
 
 var TestMode = false
 
+//TODO remove state by having KvStoreHost.SetBytes return a value
 type ScUtility struct {
 	ScSandboxObject
 	address       ledgerstate.Address

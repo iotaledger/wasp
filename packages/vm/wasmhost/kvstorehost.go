@@ -54,18 +54,15 @@ type KvStoreHost struct {
 	useBase58Keys bool
 }
 
-func (host *KvStoreHost) Init(null HostObject, root HostObject, log *logger.Logger) {
-	host.log = log.Named("wasmtrace")
+func (host *KvStoreHost) Init(log *logger.Logger) {
 	host.log = log
-	host.objIdToObj = nil
+	host.objIdToObj = make([]HostObject, 0, 16)
 	host.keyIdToKey = [][]byte{[]byte("<null>")}
 	host.keyToKeyId = make(map[string]int32)
 	host.keyIdToKeyMap = make([][]byte, len(keyMap)+1)
 	for k, v := range keyMap {
 		host.keyIdToKeyMap[-v] = []byte(k)
 	}
-	host.TrackObject(null)
-	host.TrackObject(root)
 }
 
 func (host *KvStoreHost) Exists(objId int32, keyId int32, typeId int32) bool {
@@ -196,7 +193,7 @@ func (host *KvStoreHost) PushFrame() []HostObject {
 	// create a fresh slice to allow garbage collection
 	// it's up to the caller to save and/or restore the old frame
 	pushed := host.objIdToObj
-	host.objIdToObj = make([]HostObject, 2)
+	host.objIdToObj = make([]HostObject, 2, 16)
 	copy(host.objIdToObj, pushed[:2])
 	return pushed
 }
