@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -117,20 +118,20 @@ func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
 	return blocklog.NewRequestLookupKey(vmctx.virtualState.BlockIndex(), vmctx.requestIndex)
 }
 
-func (vmctx *VMContext) mustLogRequestToBlockLog(err error) {
+func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	var data []byte
-	if err != nil {
-		data = []byte(fmt.Sprintf("%v", err))
+	if errProvided != nil {
+		data = []byte(fmt.Sprintf("%v", errProvided))
 	}
-	err1 := blocklog.SaveRequestLogRecord(vmctx.State(), &blocklog.RequestLogRecord{
+	err := blocklog.SaveRequestLogRecord(vmctx.State(), &blocklog.RequestLogRecord{
 		RequestID: vmctx.req.ID(),
 		OffLedger: vmctx.req.Output() == nil,
 		LogData:   data,
 	}, vmctx.requestLookupKey())
-	if err1 != nil {
+	if err != nil {
 		vmctx.Panicf("logRequestToBlockLog: %v", err)
 	}
 }

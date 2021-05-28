@@ -159,7 +159,7 @@ func getBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.Ag
 
 func checkBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.AgentID, color ledgerstate.Color, expected uint64) {
 	actual := getBalanceOnChain(t, chain, agentID, color)
-	require.EqualValues(t, expected, actual)
+	require.EqualValues(t, int64(expected), int64(actual))
 }
 
 func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []*coretypes.AgentID {

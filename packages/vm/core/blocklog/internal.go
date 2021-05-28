@@ -1,13 +1,14 @@
 package blocklog
 
 import (
+	"time"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"golang.org/x/xerrors"
-	"time"
 )
 
 // SaveNextBlockInfo appends block info and returns its index
@@ -26,7 +27,7 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestLogRecord, key Reque
 	var lst RequestLookupKeyList
 	digestExists, err := lookupTable.HasAt(digest[:])
 	if err != nil {
-		return xerrors.Errorf("SaveRequestLookup: %w", err)
+		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
 	}
 	if !digestExists {
 		// new digest, most common
@@ -35,25 +36,25 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestLogRecord, key Reque
 		// existing digest (should happen not often)
 		bin, err := lookupTable.GetAt(digest[:])
 		if err != nil {
-			return xerrors.Errorf("SaveRequestLookup: %w", err)
+			return xerrors.Errorf("SaveRequestLogRecord: %w", err)
 		}
 		if lst, err = RequestLookupKeyListFromBytes(bin); err != nil {
-			return xerrors.Errorf("SaveRequestLookup: %w", err)
+			return xerrors.Errorf("SaveRequestLogRecord: %w", err)
 		}
 	}
 	for i := range lst {
 		if lst[i] == key {
 			// already in list. Not normal
-			return xerrors.New("SaveRequestLookup: inconsistency: duplicate lookup key")
+			return xerrors.New("SaveRequestLogRecord: inconsistency: duplicate lookup key")
 		}
 	}
 	lst = append(lst, key)
 	if err := lookupTable.SetAt(digest[:], lst.Bytes()); err != nil {
-		return xerrors.Errorf("SaveRequestLookup: %w", err)
+		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
 	}
 	// save the record. Key is a LookupKey
 	if err = collections.NewMap(partition, StateVarRequestRecords).SetAt(key.Bytes(), rec.Bytes()); err != nil {
-		return xerrors.Errorf("SaveRequestLookup: %w", err)
+		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
 	}
 	return nil
 }

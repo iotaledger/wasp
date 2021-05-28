@@ -37,9 +37,7 @@ func TestBasicAccountsN1(t *testing.T) {
 	setup(t, "test_cluster")
 	chainNodes := []int{0}
 	counter, err := cluster.NewMessageCounter(clu, chainNodes, map[string]int{
-		"state":       2,
-		"request_in":  1,
-		"request_out": 2,
+		"state": 3,
 	})
 	check(err, t)
 	defer counter.Close()

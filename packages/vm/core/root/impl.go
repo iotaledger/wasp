@@ -131,7 +131,7 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}
 	// calls to loads VM from binary to check if it loads successfully
 	err := ctx.DeployContract(progHash, "", "", nil)
-	a.Require(err == nil, "root.deployContract.fail: %v", err)
+	a.Require(err == nil, "root.deployContract.fail 1: %v", err)
 
 	// VM loaded successfully. Storing contract in the registry and calling constructor
 	err = storeAndInitContract(ctx, &ContractRecord{
@@ -140,7 +140,7 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 		Name:        name,
 		Creator:     ctx.Caller(),
 	}, initParams)
-	a.Require(err == nil, "root.deployContract.fail: %v", err)
+	a.Require(err == nil, "root.deployContract.fail 2: %v", err)
 
 	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",
 		name, coretypes.Hn(name), progHash.String(), description))

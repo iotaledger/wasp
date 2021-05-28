@@ -28,13 +28,13 @@ func TestDepositWithdraw(t *testing.T) {
 	}, "myAddress begin") {
 		t.Fail()
 	}
-	if !clu.VerifyAddressBalances(chain.OriginatorAddress(), solo.Saldo-2, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - 2,
+	if !clu.VerifyAddressBalances(chain.OriginatorAddress(), solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-1, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - ledgerstate.DustThresholdAliasOutputIOTA - 1,
 	}, "originatorAddress begin") {
 		t.Fail()
 	}
-	if !clu.VerifyAddressBalances(chain.ChainAddress(), 2, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: 1,
+	if !clu.VerifyAddressBalances(chain.ChainAddress(), ledgerstate.DustThresholdAliasOutputIOTA+1, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA + 1,
 	}, "chainAddress begin") {
 		t.Fail()
 	}
@@ -43,7 +43,7 @@ func TestDepositWithdraw(t *testing.T) {
 	myAgentID := coretypes.NewAgentID(myAddress, 0)
 	origAgentId := coretypes.NewAgentID(chain.OriginatorAddress(), 0)
 
-	checkBalanceOnChain(t, chain, origAgentId, ledgerstate.ColorIOTA, 1)
+	checkBalanceOnChain(t, chain, origAgentId, ledgerstate.ColorIOTA, 0)
 	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 0)
 	checkLedger(t, chain)
 
@@ -57,11 +57,11 @@ func TestDepositWithdraw(t *testing.T) {
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
 	check(err, t)
 	checkLedger(t, chain)
-	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, depositIotas+1) // 1 iota from request
-	checkBalanceOnChain(t, chain, origAgentId, ledgerstate.ColorIOTA, 1)
+	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, depositIotas)
+	checkBalanceOnChain(t, chain, origAgentId, ledgerstate.ColorIOTA, 0)
 
-	if !clu.VerifyAddressBalances(myAddress, solo.Saldo-depositIotas-1, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - depositIotas - 1,
+	if !clu.VerifyAddressBalances(myAddress, solo.Saldo-depositIotas, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - depositIotas,
 	}, "myAddress after deposit") {
 		t.Fail()
 	}
@@ -76,8 +76,8 @@ func TestDepositWithdraw(t *testing.T) {
 	checkLedger(t, chain)
 	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 0)
 
-	if !clu.VerifyAddressBalances(myAddress, solo.Saldo, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo,
+	if !clu.VerifyAddressBalances(myAddress, solo.Saldo-1, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - 1,
 	}, "myAddress after withdraw") {
 		t.Fail()
 	}
