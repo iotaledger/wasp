@@ -104,6 +104,7 @@ type PeerCollection interface {
 // Indexes are only meaningful in the groups, not in the
 // network or a particular peers.
 type GroupProvider interface {
+	SelfIndex() uint16
 	PeerIndex(peer PeerSender) (uint16, error)
 	PeerIndexByNetID(peerNetID string) (uint16, error)
 	SendMsgByIndex(peerIdx uint16, msg *PeerMessage)

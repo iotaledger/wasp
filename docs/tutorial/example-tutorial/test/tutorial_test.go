@@ -1,6 +1,8 @@
 package test
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -9,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 //TODO update comments to reflect new way of token handling
@@ -30,11 +31,11 @@ func TestTutorial1(t *testing.T) {
 
 func TestTutorial2(t *testing.T) {
 	env := solo.New(t, false, false)
-	_, userAddress := env.NewKeyPairWithFunds() // create new wallet with solo.Saldo iotas
+	_, userAddress := env.NewKeyPairWithFunds()
 	t.Logf("Address of the userWallet is: %s", userAddress)
 	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA) // how many iotas the address contains
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo) // assert the address has solo.Saldo iotas
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 }
 
 func TestTutorial3(t *testing.T) {
@@ -77,14 +78,14 @@ func TestTutorial5(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ex5")
 
-	// create a wallet with solo.Saldo iotas.
+	// create a wallet with 1337 iotas.
 	// the wallet has address and it is globally identified
 	// through a universal identifier: the agent ID
 	userWallet, userAddress := env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentID(userAddress, 0)
 
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo) // solo.Saldo on address
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)  // empty on-chain
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
 
 	t.Logf("Address of the userWallet is: %s", userAddress)
 	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA)
@@ -173,7 +174,7 @@ func TestTutorial8(t *testing.T) {
 	// deploy new chain
 	chain := env.NewChain(nil, "ex8")
 
-	// create a user's wallet (private key) and request solo.Saldo iotas from the faucet.
+	// create a user's wallet (private key) and request 1337 iotas from the faucet.
 	// It corresponds to L1 address
 	userWallet, userAddress := env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentID(userAddress, 0)

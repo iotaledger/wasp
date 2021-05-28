@@ -19,15 +19,23 @@ func (sm *stateManager) EventGetBlockMsg(msg *chain.GetBlockMsg) {
 func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 	sm.log.Debugw("EventGetBlockMsg received: ",
 		"sender", msg.SenderNetID,
-		"blockBytes index", msg.BlockIndex,
+		"block index", msg.BlockIndex,
 	)
 	if sm.stateOutput == nil {
 		sm.log.Debugf("EventGetBlockMsg ignored: stateOutput is nil")
 		return
 	}
+	if msg.BlockIndex > sm.stateOutput.GetStateIndex() {
+		sm.log.Debugf("EventGetBlockMsg ignored: block #%d not found", msg.BlockIndex)
+		return
+	}
 	blockBytes, err := state.LoadBlockBytes(sm.dbp, sm.chain.ID(), msg.BlockIndex)
 	if err != nil {
-		sm.log.Debugf("EventGetBlockMsg ignored: LoadBlockBytes error %v", err)
+		sm.log.Errorf("EventGetBlockMsg: LoadBlockBytes: %v", err)
+		return
+	}
+	if blockBytes == nil {
+		sm.log.Errorf("EventGetBlockMsg ignored: block #%d expected in DB but not found", msg.BlockIndex)
 		return
 	}
 
@@ -43,7 +51,7 @@ func (sm *stateManager) EventBlockMsg(msg *chain.BlockMsg) {
 	sm.eventBlockMsgCh <- msg
 }
 func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
-	sm.log.Debugw("EventBlockMsg received from %v", msg.SenderNetID)
+	sm.log.Debugf("EventBlockMsg received from %v", msg.SenderNetID)
 	if sm.stateOutput == nil {
 		sm.log.Debugf("EventBlockMsg ignored: stateOutput is nil")
 		return
@@ -58,8 +66,9 @@ func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
 		"block index", block.BlockIndex(),
 		"approving output", coretypes.OID(block.ApprovingOutputID()),
 	)
-	sm.addBlockFromPeer(block)
-	sm.takeAction()
+	if sm.addBlockFromPeer(block) {
+		sm.takeAction()
+	}
 }
 
 func (sm *stateManager) EventOutputMsg(msg ledgerstate.Output) {
@@ -72,8 +81,9 @@ func (sm *stateManager) eventOutputMsg(msg ledgerstate.Output) {
 		sm.log.Debugf("EventOutputMsg ignored: output is of type %t, expecting *ledgerstate.AliasOutput", msg)
 		return
 	}
-	sm.outputPulled(chainOutput)
-	sm.takeAction()
+	if sm.outputPulled(chainOutput) {
+		sm.takeAction()
+	}
 }
 
 // EventStateTransactionMsg triggered whenever new state transaction arrives
@@ -92,14 +102,15 @@ func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 		return
 	}
 	sm.log.Debugf("EventStateMsg state hash is %v", stateHash.String())
-	sm.outputPushed(msg.ChainOutput, msg.Timestamp)
-	sm.takeAction()
+	if sm.stateOutputReceived(msg.ChainOutput, msg.Timestamp) {
+		sm.takeAction()
+	}
 }
 
-func (sm *stateManager) EventStateCandidateMsg(msg chain.StateCandidateMsg) {
+func (sm *stateManager) EventStateCandidateMsg(msg *chain.StateCandidateMsg) {
 	sm.eventPendingBlockMsgCh <- msg
 }
-func (sm *stateManager) eventStateCandidateMsg(msg chain.StateCandidateMsg) {
+func (sm *stateManager) eventStateCandidateMsg(msg *chain.StateCandidateMsg) {
 	sm.log.Debugf("EventStateCandidateMsg received: state index: %d, timestamp: %v",
 		msg.State.BlockIndex(), msg.State.Timestamp(),
 	)
@@ -107,8 +118,9 @@ func (sm *stateManager) eventStateCandidateMsg(msg chain.StateCandidateMsg) {
 		sm.log.Debugf("EventStateCandidateMsg ignored: stateOutput is nil")
 		return
 	}
-	sm.addBlockFromConsensus(msg.State)
-	sm.takeAction()
+	if sm.addStateCandidateFromConsensus(msg.State, msg.ApprovingOutputID) {
+		sm.takeAction()
+	}
 }
 
 func (sm *stateManager) EventTimerMsg(msg chain.TimerTick) {

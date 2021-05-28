@@ -3,10 +3,11 @@ package tests
 import (
 	"errors"
 	"fmt"
+	"testing"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
-	"testing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -142,7 +143,7 @@ func requestFunds(wasps *cluster.Cluster, addr ledgerstate.Address, who string) 
 	return nil
 }
 
-func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.AgentID, color ledgerstate.Color) uint64 {
+func getBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.AgentID, color ledgerstate.Color) uint64 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ChainID, accounts.Interface.Hname(), accounts.FuncBalance,
 		dict.Dict{
@@ -157,8 +158,8 @@ func getAgentBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretyp
 }
 
 func checkBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.AgentID, color ledgerstate.Color, expected uint64) {
-	actual := getAgentBalanceOnChain(t, chain, agentID, color)
-	require.EqualValues(t, expected, actual)
+	actual := getBalanceOnChain(t, chain, agentID, color)
+	require.EqualValues(t, int64(expected), int64(actual))
 }
 
 func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []*coretypes.AgentID {

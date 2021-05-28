@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/client"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +23,7 @@ func TestMockNode(t *testing.T) {
 	_, addr := m.Ledger.NewKeyPairByIndex(2)
 
 	cl := client.NewGoShimmerAPI("http://127.0.0.1:8080")
-	_, err := cl.SendFaucetRequest(addr.Base58(), -1)
+	_, err := cl.SendFaucetRequest(addr.Base58(), 0)
 	require.NoError(t, err)
 
 	time.Sleep(1 * time.Second)
@@ -36,5 +37,5 @@ func TestMockNode(t *testing.T) {
 	require.Equal(t, addr.Base58(), out.Address().Base58())
 	require.Equal(t, 1, out.Balances().Size())
 	b, _ := out.Balances().Get(ledgerstate.ColorIOTA)
-	require.EqualValues(t, 1000000, b)
+	require.EqualValues(t, utxodb.RequestFundsAmount, b)
 }

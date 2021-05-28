@@ -99,6 +99,16 @@ func (r *CallParams) WithMint(targetAddress ledgerstate.Address, amount uint64) 
 	return r
 }
 
+// NewRequestOffLedger creates off-ledger request from parameters
+func (r *CallParams) NewRequestOffLedger(keyPair *ed25519.KeyPair) *request.RequestOffLedger {
+	ret := request.NewRequestOffLedger(r.target, r.entryPoint, r.args)
+	if r.transfer != nil {
+		ret.Transfer(r.transfer)
+	}
+	ret.Sign(keyPair)
+	return ret
+}
+
 // makes map without hashing
 func toMap(params ...interface{}) map[string]interface{} {
 	par := make(map[string]interface{})
@@ -185,18 +195,15 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *ed25519.KeyPair) (dic
 }
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair) (dict.Dict, error) {
-	request := request.NewRequestOffLedger(req.target, req.entryPoint, req.args)
 	if keyPair == nil {
 		keyPair = ch.OriginatorKeyPair
 	}
-	if req.transfer != nil {
-		request.Transfer(req.transfer)
-	}
-	request.Sign(keyPair)
-	ch.reqCounter.Add(1)
-	ch.mempool.ReceiveRequest(request)
+	r := req.NewRequestOffLedger(keyPair)
 
-	ready := ch.mempool.GetReadyList()
+	ch.reqCounter.Add(1)
+	ch.mempool.ReceiveRequests(r)
+
+	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
 	if len(ready) == 0 {
 		ch.Log.Infof("waiting for solidification")
 		return nil, nil

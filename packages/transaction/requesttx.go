@@ -13,6 +13,7 @@ type RequestParams struct {
 	ChainID    coretypes.ChainID
 	Contract   coretypes.Hname
 	EntryPoint coretypes.Hname
+	Transfer   *ledgerstate.ColoredBalances
 	Args       requestargs.RequestArgs
 }
 
@@ -21,6 +22,8 @@ type NewRequestTransactionParams struct {
 	UnspentOutputs []ledgerstate.Output
 	Requests       []RequestParams
 }
+
+var oneIota = map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 1}
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
 func NewRequestTransaction(par NewRequestTransactionParams) (*ledgerstate.Transaction, error) {
@@ -31,9 +34,11 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*ledgerstate.Transa
 			WithEntryPoint(req.EntryPoint).
 			WithArgs(req.Args).
 			Bytes()
-		err := txb.AddExtendedOutputConsume(req.ChainID.AsAddress(), metadata, map[ledgerstate.Color]uint64{
-			ledgerstate.ColorIOTA: 1,
-		})
+		transfer := oneIota
+		if req.Transfer != nil {
+			transfer = req.Transfer.Map()
+		}
+		err := txb.AddExtendedOutputConsume(req.ChainID.AsAddress(), metadata, transfer)
 		if err != nil {
 			return nil, err
 		}

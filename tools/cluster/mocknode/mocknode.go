@@ -4,8 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/txstream/server"
 	"github.com/iotaledger/goshimmer/packages/txstream/utxodbledger"
 	"github.com/iotaledger/hive.go/logger"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
 // MockNode provides the bare minimum to emulate a Goshimmer node in a wasp-cluster
@@ -16,15 +15,19 @@ type MockNode struct {
 	log            *logger.Logger
 }
 
+const debug = false
+
 func Start(txStreamBindAddress string, webapiBindAddress string) *MockNode {
+	log := testlogger.NewSimple(debug).Named("txstream")
+	log.Infof("starting mocked goshimmer node...")
 	m := &MockNode{
-		log:            initLog(),
-		Ledger:         utxodbledger.New(),
+		log:            log,
+		Ledger:         utxodbledger.New(log),
 		shutdownSignal: make(chan struct{}),
 	}
 
 	// start the txstream server
-	err := server.Listen(m.Ledger, txStreamBindAddress, m.log.Named("txstream"), m.shutdownSignal)
+	err := server.Listen(m.Ledger, txStreamBindAddress, m.log, m.shutdownSignal)
 	if err != nil {
 		panic(err)
 	}
@@ -40,13 +43,4 @@ func Start(txStreamBindAddress string, webapiBindAddress string) *MockNode {
 
 func (m *MockNode) Stop() {
 	close(m.shutdownSignal)
-}
-
-func initLog() *logger.Logger {
-	log, err := zap.NewDevelopment()
-	if err != nil {
-		panic(err)
-	}
-	log = log.WithOptions(zap.AddStacktrace(zapcore.PanicLevel))
-	return log.Sugar()
 }

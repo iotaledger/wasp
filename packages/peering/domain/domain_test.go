@@ -5,32 +5,21 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/peering/udp"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
 func TestDomainProvider(t *testing.T) {
 	suite := pairing.NewSuiteBn256()
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
-	netIDs := []string{"localhost:9017", "localhost:9018", "localhost:9019"}
-	nodes := make([]peering.NetworkProvider, len(netIDs))
 
-	cfg0, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[0], 9017, netIDs...)
-	require.NoError(t, err)
-	nodes[0], err = udp.NewNetworkProvider(cfg0, key.NewKeyPair(suite), suite, log.Named("node0"))
-	require.NoError(t, err)
-	cfg1, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[1], 9018, netIDs...)
-	require.NoError(t, err)
-	nodes[1], err = udp.NewNetworkProvider(cfg1, key.NewKeyPair(suite), suite, log.Named("node1"))
-	require.NoError(t, err)
-	cfg2, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[2], 9019, netIDs...)
-	require.NoError(t, err)
-	nodes[2], err = udp.NewNetworkProvider(cfg2, key.NewKeyPair(suite), suite, log.Named("node2"))
-	require.NoError(t, err)
+	nodeCount := 3
+	netIDs, pubKeys, privKeys := testpeers.SetupKeys(uint16(nodeCount), suite)
+	nodes := testpeers.SetupNet(netIDs, pubKeys, privKeys, testutil.NewPeeringNetReliable(), log)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))
 	}
@@ -55,7 +44,7 @@ func TestDomainProvider(t *testing.T) {
 	//
 	// Create a group on one of nodes.
 	var d peering.PeerDomainProvider
-	d, err = nodes[1].PeerDomain(netIDs)
+	d, err := nodes[1].PeerDomain(netIDs)
 	require.Nil(t, err)
 	require.NotNil(t, d)
 
@@ -74,14 +63,10 @@ func TestRandom(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
-	netIDs := []string{"localhost:9000", "localhost:9001", "localhost:9002", "localhost:9003", "localhost:9004"}
-	nodes := make([]peering.NetworkProvider, len(netIDs))
-	var err error
+	nodeCount := 5
+	netIDs, pubKeys, privKeys := testpeers.SetupKeys(uint16(nodeCount), suite)
+	nodes := testpeers.SetupNet(netIDs, pubKeys, privKeys, testutil.NewPeeringNetReliable(), log)
 	for i := range nodes {
-		cfg, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[i], 9000+i, netIDs...)
-		require.NoError(t, err)
-		nodes[i], err = udp.NewNetworkProvider(cfg, key.NewKeyPair(suite), suite, log.Named("node0"))
-		require.NoError(t, err)
 		go nodes[i].Run(make(<-chan struct{}))
 	}
 

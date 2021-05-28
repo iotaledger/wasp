@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/ready"
@@ -53,13 +54,14 @@ type Committee interface {
 	OwnPeerIndex() uint16
 	DKShare() *tcrypto.DKShare
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
-	SendMsgToPeers(msgType byte, msgData []byte, ts int64) uint16
+	SendMsgToPeers(msgType byte, msgData []byte, ts int64)
 	IsAlivePeer(peerIndex uint16) bool
 	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
 	Attach(chain ChainCore)
 	IsReady() bool
 	Close()
+	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
 }
 
 type ChainRequests interface {
@@ -73,7 +75,7 @@ type NodeConnection interface {
 	PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullTransactionInclusionState(addr ledgerstate.Address, txid ledgerstate.TransactionID)
 	PullConfirmedOutput(addr ledgerstate.Address, outputID ledgerstate.OutputID)
-	PostTransaction(tx *ledgerstate.Transaction, fromSc ledgerstate.Address, fromLeader uint16)
+	PostTransaction(tx *ledgerstate.Transaction)
 }
 
 type StateManager interface {
@@ -82,39 +84,46 @@ type StateManager interface {
 	EventBlockMsg(msg *BlockMsg)
 	EventStateMsg(msg *StateMsg)
 	EventOutputMsg(msg ledgerstate.Output)
-	EventStateCandidateMsg(msg StateCandidateMsg)
+	EventStateCandidateMsg(msg *StateCandidateMsg)
 	EventTimerMsg(msg TimerTick)
-	GetSyncInfo() *SyncInfo
+	GetStatusSnapshot() *SyncInfo
 	Close()
 }
 
 type Consensus interface {
 	EventStateTransitionMsg(*StateTransitionMsg)
-	EventNotifyReqMsg(*NotifyReqMsg)
-	EventStartProcessingBatchMsg(*StartProcessingBatchMsg)
-	EventResultCalculated(msg *VMResultMsg)
-	EventSignedHashMsg(*SignedHashMsg)
-	EventNotifyFinalResultPostedMsg(*NotifyFinalResultPostedMsg)
-	EventTransactionInclusionStateMsg(msg *InclusionStateMsg)
+	EventVMResultCalculated(*VMResultMsg)
+	EventSignedResultMsg(*SignedResultMsg)
+	EventInclusionsStateMsg(*InclusionStateMsg)
+	EventAsynchronousCommonSubsetMsg(msg *AsynchronousCommonSubsetMsg)
+	EventVMResultMsg(msg *VMResultMsg)
 	EventTimerMsg(TimerTick)
+	IsReady() bool
 	Close()
+	GetStatusSnapshot() *ConsensusInfo
 }
 
 type Mempool interface {
-	ReceiveRequest(req coretypes.Request)
-	GetRequestsByIDs(nowis time.Time, reqids ...coretypes.RequestID) []coretypes.Request
-	GetReadyList(seenThreshold ...uint16) []coretypes.Request
-	// Deprecated:
-	MarkSeenByCommitteePeer(reqid *coretypes.RequestID, peerIndex uint16)
-	// Deprecated:
-	ClearSeenMarks()
-	// Deprecated:
-	GetReadyListFull(seenThreshold ...uint16) []*ReadyListRecord
-	TakeAllReady(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
+	ReceiveRequests(reqs ...coretypes.Request)
 	RemoveRequests(reqs ...coretypes.RequestID)
+	ReadyNow(nowis ...time.Time) []coretypes.Request
+	ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
 	HasRequest(id coretypes.RequestID) bool
-	Stats() (int, int, int)
+	Stats() MempoolStats
 	Close()
+}
+
+type AsynchronousCommonSubsetRunner interface {
+	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
+	TryHandleMessage(recv *peering.RecvEvent) bool
+	Close()
+}
+
+type MempoolStats struct {
+	Total      int
+	Ready      int
+	InCounter  int
+	OutCounter int
 }
 
 type SyncInfo struct {
@@ -126,6 +135,12 @@ type SyncInfo struct {
 	StateOutputID         ledgerstate.OutputID
 	StateOutputHash       hashing.HashValue
 	StateOutputTimestamp  time.Time
+}
+
+type ConsensusInfo struct {
+	StateIndex uint32
+	Mempool    MempoolStats
+	TimerTick  int
 }
 
 type ReadyListRecord struct {

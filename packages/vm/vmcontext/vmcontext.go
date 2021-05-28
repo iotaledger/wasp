@@ -112,7 +112,7 @@ func (vmctx *VMContext) GetResult() (dict.Dict, *ledgerstate.ColoredBalances, er
 
 func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) (*ledgerstate.TransactionEssence, error) {
 	if err := vmctx.txBuilder.AddAliasOutputAsRemainder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
-		return nil, xerrors.Errorf("finalizeRequestCall: %v", err)
+		return nil, xerrors.Errorf("mustFinalizeRequestCall: %v", err)
 	}
 	tx, _, err := vmctx.txBuilder.WithTimestamp(timestamp).BuildEssence()
 	if err != nil {

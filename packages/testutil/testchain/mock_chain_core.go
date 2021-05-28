@@ -11,6 +11,7 @@ import (
 
 type MockedChainCore struct {
 	chainID                 coretypes.ChainID
+	processors              *processors.ProcessorCache
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
 	eventStateSynced        *events.Event
@@ -24,8 +25,9 @@ type MockedChainCore struct {
 
 func NewMockedChainCore(chainID coretypes.ChainID, log *logger.Logger) *MockedChainCore {
 	ret := &MockedChainCore{
-		chainID: chainID,
-		log:     log,
+		chainID:    chainID,
+		processors: processors.MustNew(),
+		log:        log,
 		eventStateTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.StateTransitionEventData))(params[0].(*chain.StateTransitionEventData))
 		}),
@@ -74,7 +76,7 @@ func (m *MockedChainCore) Events() chain.ChainEvents {
 }
 
 func (m *MockedChainCore) Processors() *processors.ProcessorCache {
-	panic("implement me")
+	return m.processors
 }
 
 func (m *MockedChainCore) RequestProcessed() *events.Event {

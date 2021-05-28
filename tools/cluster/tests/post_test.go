@@ -1,11 +1,12 @@
 package tests
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/solo"
-	"testing"
-	"time"
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -183,7 +184,7 @@ func TestPost5Requests(t *testing.T) {
 	}
 
 	expectCounter(t, contractID.Hname(), 42+5)
-	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 5)
+	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 0)
 
 	if !clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: solo.Saldo - 5,
@@ -225,7 +226,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 	}
 
 	expectCounter(t, contractID.Hname(), 42+5)
-	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 5)
+	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 0)
 
 	if !clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: solo.Saldo - 5,

@@ -8,6 +8,7 @@ package root
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -95,6 +96,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", blob.Interface.Name, blob.Interface.Hname())
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", accounts.Interface.Name, accounts.Interface.Hname())
 	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", eventlog.Interface.Name, eventlog.Interface.Hname())
+	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", blocklog.Interface.Name, blocklog.Interface.Hname())
 	ctx.Log().Debugf("root.initialize.success")
 	return nil, nil
 }
@@ -129,7 +131,7 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}
 	// calls to loads VM from binary to check if it loads successfully
 	err := ctx.DeployContract(progHash, "", "", nil)
-	a.Require(err == nil, "root.deployContract.fail: %v", err)
+	a.Require(err == nil, "root.deployContract.fail 1: %v", err)
 
 	// VM loaded successfully. Storing contract in the registry and calling constructor
 	err = storeAndInitContract(ctx, &ContractRecord{
@@ -138,7 +140,7 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 		Name:        name,
 		Creator:     ctx.Caller(),
 	}, initParams)
-	a.Require(err == nil, "root.deployContract.fail: %v", err)
+	a.Require(err == nil, "root.deployContract.fail 2: %v", err)
 
 	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",
 		name, coretypes.Hn(name), progHash.String(), description))

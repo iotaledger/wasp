@@ -65,9 +65,17 @@ func GoshimmerApi() string {
 	return "127.0.0.1:8080"
 }
 
+func GoshimmerFaucetPoWTarget() int {
+	key := "goshimmer.faucetPoWTarget"
+	if !viper.IsSet(key) {
+		return 0 // by default assume utxodb is on the other side
+	}
+	return viper.GetInt(key)
+}
+
 func GoshimmerClient() *goshimmer.Client {
-	log.Verbose("using Goshimmer host %s\n", GoshimmerApi())
-	return goshimmer.NewClient(GoshimmerApi())
+	log.Verbose("using Goshimmer host %s, faucet pow target %d\n", GoshimmerApi(), GoshimmerFaucetPoWTarget())
+	return goshimmer.NewClient(GoshimmerApi(), GoshimmerFaucetPoWTarget())
 }
 
 func WaspClient() *client.WaspClient {

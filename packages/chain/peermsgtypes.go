@@ -23,6 +23,7 @@ const (
 	MsgSignedHash              = 3 + peering.FirstUserMsgCode
 	MsgGetBlock                = 4 + peering.FirstUserMsgCode
 	MsgBlock                   = 5 + peering.FirstUserMsgCode
+	MsgSignedResult            = 6 + peering.FirstUserMsgCode
 )
 
 type TimerTick int
@@ -72,6 +73,12 @@ type SignedHashMsg struct {
 	SigShare      tbdn.SigShare
 }
 
+type SignedResultMsg struct {
+	SenderIndex uint16
+	EssenceHash hashing.HashValue
+	SigShare    tbdn.SigShare
+}
+
 // GetBlockMsg StateManager queries specific block data from another peer (access node)
 type GetBlockMsg struct {
 	SenderNetID string
@@ -89,7 +96,7 @@ type DismissChainMsg struct {
 	Reason string
 }
 
-// StateTransitionMsg StateManager -> Consensus. Notifies consensus about changed state
+// StateTransitionMsg StateManager -> ConsensusOld. Notifies consensus about changed state
 type StateTransitionMsg struct {
 	// new variable state
 	State state.VirtualState
@@ -99,18 +106,25 @@ type StateTransitionMsg struct {
 	StateTimestamp time.Time
 }
 
-// StateCandidateMsg Consensus -> StateManager. Consensus sends the finalized next state to StateManager
+// StateCandidateMsg ConsensusOld -> StateManager. ConsensusOld sends the finalized next state to StateManager
 type StateCandidateMsg struct {
-	State state.VirtualState
+	State             state.VirtualState
+	ApprovingOutputID ledgerstate.OutputID
 }
 
-// VMResultMsg Consensus -> Consensus. VM sends result of async task started by Consensus to itself
+// VMResultMsg ConsensusOld -> ConsensusOld. VM sends result of async task started by ConsensusOld to itself
 type VMResultMsg struct {
 	Task   *vm.VMTask
 	Leader uint16
 }
 
-// InclusionStateMsg nodeconn plugin sends inclusions state of the transaction to Consensus
+// AsynchronousCommonSubsetMsg
+type AsynchronousCommonSubsetMsg struct {
+	ProposedBatchesBin [][]byte
+	SessionID          uint64
+}
+
+// InclusionStateMsg nodeconn plugin sends inclusions state of the transaction to ConsensusOld
 type InclusionStateMsg struct {
 	TxID  ledgerstate.TransactionID
 	State ledgerstate.InclusionState

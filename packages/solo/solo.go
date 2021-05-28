@@ -10,12 +10,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chain/mempool"
+
+	"github.com/iotaledger/wasp/packages/vm"
+
+	"github.com/iotaledger/wasp/packages/vm/runvm"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -42,7 +47,7 @@ const DefaultTimeStep = 1 * time.Millisecond
 // Saldo is the default amount of tokens returned by the UTXODB faucet
 // which is therefore the amount returned by NewKeyPairWithFunds() and such
 const (
-	Saldo              = uint64(1000000)
+	Saldo              = utxodb.RequestFundsAmount
 	DustThresholdIotas = uint64(1)
 	ChainDustThreshold = uint64(100)
 	MaxRequestsInBlock = 100
@@ -62,6 +67,7 @@ type Solo struct {
 	logicalTime time.Time
 	timeStep    time.Duration
 	chains      map[[33]byte]*Chain
+	vmRunner    vm.VMRunner
 	doOnce      sync.Once
 	// publisher wait group
 	publisherWG      sync.WaitGroup
@@ -144,6 +150,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 		logicalTime: initialTime,
 		timeStep:    DefaultTimeStep,
 		chains:      make(map[[33]byte]*Chain),
+		vmRunner:    runvm.NewVMRunner(),
 	}
 	ret.logger.Infof("Solo environment has been created with initial logical time %v", initialTime)
 	return ret
@@ -151,7 +158,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 
 // NewChain deploys new chain instance.
 //
-// If 'chainOriginator' is nil, new one is generated and solo.Saldo (=1000000) iotas are loaded from the UTXODB faucet.
+// If 'chainOriginator' is nil, new one is generated and solo.Saldo (=1337) iotas are loaded from the UTXODB faucet.
 // If 'validatorFeeTarget' is skipped, it is assumed equal to OriginatorAgentID
 // To deploy a chain instance the following steps are performed:
 //  - chain signature scheme (private key), chain address and chain ID are created
@@ -329,7 +336,7 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 		}
 		chain.reqCounter.Add(int32(len(reqs)))
 		for _, req := range reqs {
-			chain.mempool.ReceiveRequest(req)
+			chain.mempool.ReceiveRequests(req)
 		}
 	}
 }
@@ -358,7 +365,7 @@ func (ch *Chain) collateBatch() []coretypes.Request {
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
 	ret := make([]coretypes.Request, 0)
-	ready := ch.mempool.GetReadyList()
+	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
 	batchSize := len(ready)
 	if batchSize > maxBatch {
 		batchSize = maxBatch

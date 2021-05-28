@@ -7,5 +7,5 @@ import (
 )
 
 func (c *SCClient) PostRequest(fname string, params ...chainclient.PostRequestParams) (*ledgerstate.Transaction, error) {
-	return c.ChainClient.PostRequest(c.ContractHname, coretypes.Hn(fname), params...)
+	return c.ChainClient.Post1Request(c.ContractHname, coretypes.Hn(fname), params...)
 }

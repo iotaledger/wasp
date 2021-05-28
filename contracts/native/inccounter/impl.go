@@ -2,6 +2,7 @@ package inccounter
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/contracts/native"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -76,7 +77,8 @@ func incCounter(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}
 	state := ctx.State()
 	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
-	ctx.Log().Debugf("incCounter: increasing counter value %d by %d", val, inc)
+	ctx.Log().Infof("incCounter: increasing counter value %d by %d", val, inc)
+	ctx.Log().Infof("incCounter: incoming transfer: %s", ctx.IncomingTransfer().String())
 	state.Set(VarCounter, codec.EncodeInt64(val+inc))
 	return nil, nil
 }

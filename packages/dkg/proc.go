@@ -70,15 +70,11 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 			return nil, err
 		}
 	}
-	var nodeIndex uint16
-	if nodeIndex, err = netGroup.PeerIndex(node.netProvider.Self()); err != nil {
-		return nil, err
-	}
 	p := proc{
 		dkgRef:       msg.dkgRef,
 		dkgID:        dkgID,
 		node:         node,
-		nodeIndex:    nodeIndex,
+		nodeIndex:    netGroup.SelfIndex(),
 		initiatorPub: msg.initiatorPub,
 		threshold:    msg.threshold,
 		roundRetry:   msg.roundRetry,
