@@ -89,9 +89,9 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 			ret = false
 			continue
 		}
-		if !bd.ChainID.Equals(&chainID) {
+		if !bd.ChainIdAliasAddress.Equals(chainID.AliasAddress) {
 			fmt.Fprintf(out, prefix+"%2d: %s -> internal error, unexpected address %s in the chain record\n",
-				i, host, bd.ChainID.String())
+				i, host, bd.ChainIdAliasAddress.String())
 			ret = false
 			continue
 		}

@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -17,10 +18,10 @@ var infoCmd = &cobra.Command{
 		chain, err := config.WaspClient().GetChainRecord(*GetCurrentChainID())
 		log.Check(err)
 
-		committee, err := config.WaspClient().GetCommitteeForChain(*chain.ChainID)
+		committee, err := config.WaspClient().GetCommitteeForChain(*coretypes.NewChainID(chain.ChainIdAliasAddress))
 		log.Check(err)
 
-		log.Printf("Chain ID: %s\n", chain.ChainID.Base58())
+		log.Printf("Chain ID: %s\n", chain.ChainIdAliasAddress.Base58())
 		log.Printf("Committee nodes: %+v\n", committee.Nodes)
 		log.Printf("Active: %v\n", chain.Active)
 

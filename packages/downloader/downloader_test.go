@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/database/dbprovider"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -65,8 +65,7 @@ func TestIpfsDownload(t *testing.T) {
 	defer stopMockServer(server)
 
 	hash := hashing.HashData(constVarFile)
-	db := dbprovider.NewInMemoryDBProvider(log)
-	reg := registry_pkg.NewRegistry(nil, log, db)
+	reg := registry_pkg.NewRegistry(nil, log, mapdb.NewMapDB())
 	result, err := reg.HasBlob(hash)
 	chanDownloaded := make(chan bool)
 	require.NoError(t, err)

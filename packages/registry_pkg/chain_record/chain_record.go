@@ -15,14 +15,11 @@ type ChainRecord struct {
 	DedicatedDbInstance bool // whether the chain data is stored as a separate db instance/file
 }
 
-func NewChainRecord(chainID *ledgerstate.AliasAddress, active ...bool) *ChainRecord {
-	act := false
-	if len(active) > 0 {
-		act = active[0]
-	}
+func NewChainRecord(chainID *ledgerstate.AliasAddress, active bool, dedicatedDbInstance bool) *ChainRecord {
 	return &ChainRecord{
 		ChainIdAliasAddress: ledgerstate.NewAliasAddress(chainID.Bytes()),
-		Active:              act,
+		Active:              active,
+		DedicatedDbInstance: dedicatedDbInstance,
 	}
 }
 

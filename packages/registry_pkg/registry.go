@@ -22,12 +22,15 @@ type Impl struct {
 }
 
 // New creates new instance of the registry implementation.
-func NewRegistry(suite tcrypto.Suite, log *logger.Logger) *Impl {
+func NewRegistry(suite tcrypto.Suite, log *logger.Logger, store kvstore.KVStore) *Impl {
+	if store == nil {
+		store = database.GetRegistryKVStore()
+	}
 	ret := &Impl{
 		suite: suite,
 		log:   log.Named("registry"),
+		store: store,
 	}
-	ret.store = database.GetRegistryKVStore()
 
 	return ret
 }

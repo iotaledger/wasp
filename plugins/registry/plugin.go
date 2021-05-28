@@ -24,7 +24,7 @@ func DefaultRegistry() *registry_pkg.Impl {
 // Init is an entry point for the plugin.
 func Init(suite tcrypto_pkg.Suite) *hive_node.Plugin {
 	configure := func(_ *hive_node.Plugin) {
-		defaultRegistry = registry_pkg.NewRegistry(suite, logger.NewLogger(pluginName))
+		defaultRegistry = registry_pkg.NewRegistry(suite, logger.NewLogger(pluginName), nil)
 	}
 	run := func(_ *hive_node.Plugin) {
 		// Nothing to run here.
