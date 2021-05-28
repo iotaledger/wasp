@@ -27,8 +27,9 @@ type WaspConfig struct {
 }
 
 type ClusterConfig struct {
-	Wasp      WaspConfig
-	Goshimmer GoshimmerConfig
+	Wasp            WaspConfig
+	Goshimmer       GoshimmerConfig
+	FaucetPoWTarget int
 }
 
 func DefaultConfig() *ClusterConfig {
@@ -45,6 +46,7 @@ func DefaultConfig() *ClusterConfig {
 			ApiPort:      8080,
 			Provided:     false,
 		},
+		FaucetPoWTarget: 0,
 	}
 }
 

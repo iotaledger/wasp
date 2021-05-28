@@ -1,10 +1,11 @@
 package testcore
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestMintOk(t *testing.T) {
@@ -42,7 +43,7 @@ func TestMintFail(t *testing.T) {
 	env.AssertAddressBalance(walletAddr, ledgerstate.ColorIOTA, solo.Saldo-1000)
 	env.AssertAddressBalance(walletAddr, color1, 1000)
 
-	_, err = env.MintTokens(wallet, solo.Saldo)
+	_, err = env.MintTokens(wallet, solo.Saldo-500)
 	require.Error(t, err)
 	env.AssertAddressBalance(walletAddr, ledgerstate.ColorIOTA, solo.Saldo-1000)
 	env.AssertAddressBalance(walletAddr, color1, 1000)

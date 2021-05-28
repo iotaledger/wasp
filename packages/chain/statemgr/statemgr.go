@@ -42,7 +42,7 @@ type stateManager struct {
 	eventBlockMsgCh        chan *chain.BlockMsg
 	eventStateOutputMsgCh  chan *chain.StateMsg
 	eventOutputMsgCh       chan ledgerstate.Output
-	eventPendingBlockMsgCh chan chain.StateCandidateMsg
+	eventPendingBlockMsgCh chan *chain.StateCandidateMsg
 	eventTimerMsgCh        chan chain.TimerTick
 	closeCh                chan bool
 }
@@ -52,28 +52,30 @@ const (
 	maxBlocksToCommitConst               = 10000 //10k
 )
 
-func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, log *logger.Logger, timers ...Timers) chain.StateManager {
+func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, log *logger.Logger, timersOpt ...Timers) chain.StateManager {
+	var timers Timers
+	if len(timersOpt) > 0 {
+		timers = timersOpt[0]
+	} else {
+		timers = Timers{}
+	}
 	ret := &stateManager{
 		ready:                  ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
 		dbp:                    dbp,
 		chain:                  c,
 		nodeConn:               nodeconn,
 		peers:                  peers,
-		syncingBlocks:          newSyncingBlocks(log),
+		syncingBlocks:          newSyncingBlocks(log, timers.getGetBlockRetry()),
+		timers:                 timers,
 		log:                    log.Named("s"),
 		pullStateRetryTime:     time.Now(),
 		eventGetBlockMsgCh:     make(chan *chain.GetBlockMsg),
 		eventBlockMsgCh:        make(chan *chain.BlockMsg),
 		eventStateOutputMsgCh:  make(chan *chain.StateMsg),
 		eventOutputMsgCh:       make(chan ledgerstate.Output),
-		eventPendingBlockMsgCh: make(chan chain.StateCandidateMsg),
+		eventPendingBlockMsgCh: make(chan *chain.StateCandidateMsg),
 		eventTimerMsgCh:        make(chan chain.TimerTick),
 		closeCh:                make(chan bool),
-	}
-	if len(timers) > 0 {
-		ret.timers = timers[0]
-	} else {
-		ret.timers = Timers{}
 	}
 	go ret.initLoadState()
 
@@ -117,7 +119,7 @@ func (sm *stateManager) Ready() *ready.Ready {
 	return sm.ready
 }
 
-func (sm *stateManager) GetSyncInfo() *chain.SyncInfo {
+func (sm *stateManager) GetStatusSnapshot() *chain.SyncInfo {
 	v := sm.currentSyncData.Load()
 	if v == nil {
 		return nil

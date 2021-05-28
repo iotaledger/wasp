@@ -19,7 +19,7 @@ import (
 // RunTheRequest processes any request based on the Extended output, even if it
 // doesn't parse correctly as a SC request
 func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16) {
-	defer vmctx.finalizeRequestCall()
+	defer vmctx.mustFinalizeRequestCall()
 
 	vmctx.mustSetUpRequestContext(req, requestIndex)
 
@@ -287,8 +287,8 @@ func (vmctx *VMContext) mustSaveRequestOrder() {
 	}
 }
 
-func (vmctx *VMContext) finalizeRequestCall() {
-	vmctx.mustLogRequestToBlockLog(vmctx.lastError)
+func (vmctx *VMContext) mustFinalizeRequestCall() {
+	vmctx.mustLogRequestToBlockLog(vmctx.lastError) // panic not caught
 	vmctx.lastTotalAssets = vmctx.totalAssets()
 
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)

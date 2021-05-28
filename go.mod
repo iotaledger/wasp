@@ -3,10 +3,13 @@ module github.com/iotaledger/wasp
 go 1.16
 
 require (
+	github.com/NebulousLabs/errors v0.0.0-20181203160057-9f787ce8f69e // indirect
+	github.com/NebulousLabs/fastrand v0.0.0-20181203155948-6fb6489aac4e // indirect
 	github.com/PuerkitoBio/goquery v1.6.1
+	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/bytecodealliance/wasmtime-go v0.21.0
-	github.com/iotaledger/goshimmer v0.6.1-0.20210519100657-ac18937f3f27
-	github.com/iotaledger/hive.go v0.0.0-20210427112115-75c7ebf4ebbb
+	github.com/iotaledger/goshimmer v0.6.3-0.20210528085156-e440f132d8c7
+	github.com/iotaledger/hive.go v0.0.0-20210523190624-62dd208e10b0
 	github.com/knadh/koanf v0.15.0
 	github.com/labstack/echo/v4 v4.1.13
 	github.com/mr-tron/base58 v1.2.0
@@ -21,6 +24,8 @@ require (
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83
-	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
+	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 )
+
+replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210517200904-c897be85c569

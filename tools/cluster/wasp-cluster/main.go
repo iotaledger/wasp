@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/spf13/pflag"
 )
@@ -42,6 +42,7 @@ func main() {
 	commonFlags.IntVarP(&config.Wasp.FirstDashboardPort, "first-dashboard-port", "h", config.Wasp.FirstDashboardPort, "First wasp dashboard port")
 	commonFlags.IntVarP(&config.Goshimmer.ApiPort, "goshimmer-api-port", "w", config.Goshimmer.ApiPort, "Goshimmer API port")
 	commonFlags.BoolVarP(&config.Goshimmer.Provided, "goshimmer-provided", "g", config.Goshimmer.Provided, "If true, Goshimmer node will not be spawn")
+	commonFlags.IntVarP(&config.FaucetPoWTarget, "goshimmer-faucet-pow", "pow", config.FaucetPoWTarget, "Faucet PoW target")
 
 	if len(os.Args) < 2 {
 		usage(commonFlags)

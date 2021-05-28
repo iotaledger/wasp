@@ -39,6 +39,7 @@ type CreateChainParams struct {
 
 // DeployChain performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
+// TODO: [ED] decouple DKG from chain deployment into separate call
 // noinspection ALL
 func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address, error) {
 	var err error
@@ -50,7 +51,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "creating new chain. Owner address is %s. Parameters N = %d, T = %d\n",
-		originatorAddr.String(), par.N, par.T)
+		originatorAddr.Base58(), par.N, par.T)
 	// check if SC is hardcoded. If not, require consistent metadata in all nodes
 	fmt.Fprint(textout, par.Prefix)
 
@@ -173,6 +174,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 		return nil, nil, xerrors.Errorf("NewRootInitRequestTransaction: %w", err)
 	}
 	fmt.Fprintf(textout, "creating root init request.. OK\n")
+	fmt.Fprintf(textout, "root init txid: %s, reqidBase58: %s\n", reqTx.ID().Base58(), reqTx.Essence().Outputs()[0].ID().Base58())
 
 	// ---------- post root init request transaction and wait for confirmation
 	err = par.Node.PostAndWaitForConfirmation(reqTx)
