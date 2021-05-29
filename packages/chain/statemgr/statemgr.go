@@ -88,10 +88,7 @@ func (sm *stateManager) Close() {
 
 // initial loading of the solid state
 func (sm *stateManager) initLoadState() {
-	var err error
-	var stateExists bool
-
-	sm.solidState, stateExists, err = state.LoadSolidState(sm.dbp, sm.chain.ID())
+	solidState, stateExists, err := state.LoadSolidState(sm.dbp, sm.chain.ID())
 	if err != nil {
 		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err)},
@@ -100,10 +97,10 @@ func (sm *stateManager) initLoadState() {
 	}
 	if stateExists {
 		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
-			sm.solidState.BlockIndex(), sm.solidState.Hash().String())
+			solidState.BlockIndex(), solidState.Hash().String())
 	} else {
 		// create origin state in DB
-		sm.solidState, err = state.CreateOriginState(sm.dbp, sm.chain.ID())
+		solidState, err = state.CreateOriginState(sm.dbp, sm.chain.ID())
 		if err != nil {
 			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
 				Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err)},
@@ -112,7 +109,13 @@ func (sm *stateManager) initLoadState() {
 		}
 		sm.log.Infof("ORIGIN STATE has been created")
 	}
+	sm.setSolidState(solidState)
 	sm.recvLoop() // Start to process external events.
+}
+
+func (sm *stateManager) setSolidState(vs state.VirtualState) {
+	sm.solidState = vs
+	sm.chain.GlobalSolidIndex().Store(vs.BlockIndex())
 }
 
 func (sm *stateManager) Ready() *ready.Ready {

@@ -7,10 +7,12 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"go.uber.org/atomic"
 )
 
 type MockedChainCore struct {
 	chainID                 coretypes.ChainID
+	solidStateIndex         atomic.Uint32
 	processors              *processors.ProcessorCache
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
@@ -61,6 +63,10 @@ func NewMockedChainCore(chainID coretypes.ChainID, log *logger.Logger) *MockedCh
 
 func (m *MockedChainCore) ID() *coretypes.ChainID {
 	return &m.chainID
+}
+
+func (c *MockedChainCore) GlobalSolidIndex() *atomic.Uint32 {
+	return &c.solidStateIndex
 }
 
 func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {

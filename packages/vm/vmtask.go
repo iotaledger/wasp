@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"bytes"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -10,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -26,6 +24,7 @@ type VMTask struct {
 	Processors               *processors.ProcessorCache
 	ChainInput               *ledgerstate.AliasOutput
 	VirtualState             state.VirtualState // in/out  Return uncommitted updated virtual state
+	SolidStateInvalid        func() bool        // solid state invalidity predicate. Must be thread-safe
 	Requests                 []coretypes.Request
 	Timestamp                time.Time
 	Entropy                  hashing.HashValue
@@ -33,16 +32,4 @@ type VMTask struct {
 	Log                      *logger.Logger
 	OnFinish                 func(callResult dict.Dict, callError error, vmError error)
 	ResultTransactionEssence *ledgerstate.TransactionEssence
-}
-
-// BatchHash is used to uniquely identify the VM task
-func BatchHash(reqids []coretypes.RequestID, ts time.Time, leaderIndex uint16) hashing.HashValue {
-	var buf bytes.Buffer
-	for i := range reqids {
-		buf.Write(reqids[i][:])
-	}
-	_ = util.WriteInt64(&buf, ts.UnixNano())
-	_ = util.WriteUint16(&buf, leaderIndex)
-
-	return hashing.HashData(buf.Bytes())
 }

@@ -19,6 +19,9 @@ func (vmctx *VMContext) chainState() chainStateWrapper {
 }
 
 func (s chainStateWrapper) Has(name kv.Key) (bool, error) {
+	if s.vmctx.isInvalidatedState() {
+		panic(errStateHasBeenInvalidated)
+	}
 	_, ok := s.vmctx.currentStateUpdate.Mutations().Sets[name]
 	if ok {
 		return true, nil
@@ -27,6 +30,9 @@ func (s chainStateWrapper) Has(name kv.Key) (bool, error) {
 }
 
 func (s chainStateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) error {
+	if s.vmctx.isInvalidatedState() {
+		panic(errStateHasBeenInvalidated)
+	}
 	var err error
 	err2 := s.IterateKeys(prefix, func(k kv.Key) bool {
 		var v []byte
@@ -43,6 +49,9 @@ func (s chainStateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) e
 }
 
 func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+	if s.vmctx.isInvalidatedState() {
+		panic(errStateHasBeenInvalidated)
+	}
 	for k := range s.vmctx.currentStateUpdate.Mutations().Sets {
 		if k.HasPrefix(prefix) {
 			if !f(k) {
@@ -59,6 +68,9 @@ func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) e
 }
 
 func (s chainStateWrapper) IterateSorted(prefix kv.Key, f func(kv.Key, []byte) bool) error {
+	if s.vmctx.isInvalidatedState() {
+		panic(errStateHasBeenInvalidated)
+	}
 	var err error
 	err2 := s.IterateKeysSorted(prefix, func(k kv.Key) bool {
 		var v []byte
@@ -75,6 +87,9 @@ func (s chainStateWrapper) IterateSorted(prefix kv.Key, f func(kv.Key, []byte) b
 }
 
 func (s chainStateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
+	if s.vmctx.isInvalidatedState() {
+		panic(errStateHasBeenInvalidated)
+	}
 	var keys []kv.Key
 	for k := range s.vmctx.currentStateUpdate.Mutations().Sets {
 		if k.HasPrefix(prefix) {
@@ -100,6 +115,9 @@ func (s chainStateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) b
 }
 
 func (s chainStateWrapper) Get(name kv.Key) ([]byte, error) {
+	if s.vmctx.isInvalidatedState() {
+		panic(errStateHasBeenInvalidated)
+	}
 	v, ok := s.vmctx.currentStateUpdate.Mutations().Sets[name]
 	if ok {
 		return v, nil
@@ -108,14 +126,23 @@ func (s chainStateWrapper) Get(name kv.Key) ([]byte, error) {
 }
 
 func (s chainStateWrapper) Del(name kv.Key) {
+	if s.vmctx.isInvalidatedState() {
+		panic(errStateHasBeenInvalidated)
+	}
 	s.vmctx.currentStateUpdate.Mutations().Del(name)
 }
 
 func (s chainStateWrapper) Set(name kv.Key, value []byte) {
+	if s.vmctx.isInvalidatedState() {
+		panic(errStateHasBeenInvalidated)
+	}
 	s.vmctx.currentStateUpdate.Mutations().Set(name, value)
 }
 
 func (vmctx *VMContext) State() kv.KVStore {
+	if vmctx.isInvalidatedState() {
+		panic(errStateHasBeenInvalidated)
+	}
 	return subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
 }
 

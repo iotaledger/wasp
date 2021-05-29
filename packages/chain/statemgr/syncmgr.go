@@ -161,6 +161,6 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 		sm.syncingBlocks.restartSyncing()
 		return
 	}
-	sm.solidState = tentativeState
+	sm.setSolidState(tentativeState)
 	sm.log.Debugf("commitCandidates: committing of block indices from %v to %v was successful", from, to)
 }
