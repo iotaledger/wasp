@@ -64,8 +64,6 @@ type blockContext struct {
 	onClose func(interface{})
 }
 
-var errStateHasBeenInvalidated = xerrors.New("virtual state has been invalidated")
-
 // CreateVMContext a constructor
 func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
 	chainID, err := coretypes.ChainIDFromAddress(task.ChainInput.Address())
