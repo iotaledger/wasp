@@ -100,7 +100,8 @@ func (sm *stateManager) initLoadState() {
 			solidState.BlockIndex(), solidState.Hash().String())
 	} else {
 		// create origin state in DB
-		solidState, err = state.CreateOriginState(sm.dbp, sm.chain.ID())
+		sm.chain.GlobalSolidIndex().Store(0)
+		sm.solidState, err = state.CreateOriginState(sm.dbp, sm.chain.ID())
 		if err != nil {
 			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
 				Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err)},
@@ -109,13 +110,7 @@ func (sm *stateManager) initLoadState() {
 		}
 		sm.log.Infof("ORIGIN STATE has been created")
 	}
-	sm.setSolidState(solidState)
 	sm.recvLoop() // Start to process external events.
-}
-
-func (sm *stateManager) setSolidState(vs state.VirtualState) {
-	sm.solidState = vs
-	sm.chain.GlobalSolidIndex().Store(vs.BlockIndex())
 }
 
 func (sm *stateManager) Ready() *ready.Ready {

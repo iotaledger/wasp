@@ -153,6 +153,11 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	from := blocks[0].BlockIndex()
 	to := blocks[len(blocks)-1].BlockIndex()
 	sm.log.Debugf("commitCandidates: syncing of state indexes from %v to %v is stopped", from, to)
+
+	// set the global solid state index to the one which is about to be committed
+	// if any VM task is running with the assumption of the previous state, it is obsolete and will self-cancel
+	sm.chain.GlobalSolidIndex().Store(tentativeState.BlockIndex())
+
 	//TODO: maybe commit in 10 (or some const) block batches?
 	//      This would save from large commits and huge memory usage to store blocks
 	err := tentativeState.Commit(blocks...)
@@ -161,6 +166,6 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 		sm.syncingBlocks.restartSyncing()
 		return
 	}
-	sm.setSolidState(tentativeState)
+	sm.solidState = tentativeState
 	sm.log.Debugf("commitCandidates: committing of block indices from %v to %v was successful", from, to)
 }
