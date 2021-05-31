@@ -16,12 +16,12 @@ var log *logger.Logger
 
 // Init is an entry point for the plugin.
 func Init() *node.Plugin {
-	dbmanager.CreateInstance(logger.NewLogger("dbmanager"), parameters.GetBool(parameters.DatabaseInMemory))
 	return node.NewPlugin(pluginName, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {
 	log = logger.NewLogger(pluginName)
+	dbmanager.CreateInstance(logger.NewLogger("dbmanager"), parameters.GetBool(parameters.DatabaseInMemory))
 
 	// we open the database in the configure, so we must also make sure it's closed here
 	err := daemon.BackgroundWorker(pluginName, func(shutdownSignal <-chan struct{}) {
