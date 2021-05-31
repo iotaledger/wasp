@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"go.uber.org/atomic"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
@@ -220,6 +222,10 @@ func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname 
 }
 
 type mockChain struct{}
+
+func (m *mockChain) GlobalSolidIndex() *atomic.Uint32 {
+	panic("implement me")
+}
 
 func (m *mockChain) ID() *coretypes.ChainID {
 	return coretypes.RandomChainID()

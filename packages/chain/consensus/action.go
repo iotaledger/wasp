@@ -116,6 +116,12 @@ func (c *consensus) runVMIfNeeded() {
 		VirtualState:       c.currentState.Clone(),
 		Log:                c.log,
 	}
+	stateIndex := c.stateOutput.GetStateIndex()
+	atomicStateIndex := c.chain.GlobalSolidIndex()
+	task.SolidStateInvalid = func() bool {
+		// VM will abandon calculation if solid state change
+		return atomicStateIndex.Load() != stateIndex
+	}
 	task.OnFinish = func(_ dict.Dict, _ error, vmError error) {
 		if vmError != nil {
 			c.log.Errorf("VM task failed: %v", vmError)
@@ -452,6 +458,12 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 }
 
 func (c *consensus) setNewState(msg *chain.StateTransitionMsg) {
+	glbIndex := c.chain.GlobalSolidIndex().Load()
+	if glbIndex != msg.State.BlockIndex() || glbIndex != msg.StateOutput.GetStateIndex() {
+		c.log.Warnf("setNewState: inconsistent state index: stateIndex: %d, output index: %d, global: %d",
+			msg.State.BlockIndex(), msg.StateOutput.GetStateIndex(), glbIndex)
+		return
+	}
 	c.stateOutput = msg.StateOutput
 	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp

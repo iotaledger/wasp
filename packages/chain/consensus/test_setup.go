@@ -317,6 +317,7 @@ func (env *mockedEnv) eventStateTransition() {
 	for _, node := range env.Nodes {
 		go func(n *mockedNode) {
 			n.Mempool.RemoveRequests(env.RequestIDsLast...)
+			n.ChainCore.GlobalSolidIndex().Store(solidState.BlockIndex())
 
 			n.Consensus.EventStateTransitionMsg(&chain.StateTransitionMsg{
 				State:          solidState.Clone(),

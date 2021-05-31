@@ -88,10 +88,7 @@ func (sm *stateManager) Close() {
 
 // initial loading of the solid state
 func (sm *stateManager) initLoadState() {
-	var err error
-	var stateExists bool
-
-	sm.solidState, stateExists, err = state.LoadSolidState(sm.dbp, sm.chain.ID())
+	solidState, stateExists, err := state.LoadSolidState(sm.dbp, sm.chain.ID())
 	if err != nil {
 		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err)},
@@ -100,9 +97,10 @@ func (sm *stateManager) initLoadState() {
 	}
 	if stateExists {
 		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
-			sm.solidState.BlockIndex(), sm.solidState.Hash().String())
+			solidState.BlockIndex(), solidState.Hash().String())
 	} else {
 		// create origin state in DB
+		sm.chain.GlobalSolidIndex().Store(0)
 		sm.solidState, err = state.CreateOriginState(sm.dbp, sm.chain.ID())
 		if err != nil {
 			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
