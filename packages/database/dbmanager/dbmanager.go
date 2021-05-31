@@ -18,18 +18,10 @@ type DBManager struct {
 	inMemory    bool
 }
 
-var dbmanager *DBManager
+var Instance *DBManager
 
-// used to set the instance for testing purposes // TODO check if there is a better method
-func SetInstance(dbm *DBManager) {
-	dbmanager = dbm
-}
-
-func Instance() *DBManager {
-	if dbmanager == nil {
-		dbmanager = NewDBManager(logger.NewLogger("dbmanager"), parameters.GetBool(parameters.DatabaseInMemory))
-	}
-	return dbmanager
+func CreateInstance(logger *logger.Logger, inMemory bool) {
+	Instance = NewDBManager(logger, inMemory)
 }
 
 func NewDBManager(logger *logger.Logger, inMemory bool) *DBManager {

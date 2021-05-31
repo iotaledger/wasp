@@ -7,13 +7,13 @@ import (
 )
 
 func GetRegistryKVStore() kvstore.KVStore {
-	return dbmanager.Instance().GetRegistryKVStore()
+	return dbmanager.Instance.GetRegistryKVStore()
 }
 
 func GetOrCreateKVStore(chainID *ledgerstate.AliasAddress, dedicatedDbInstance bool) kvstore.KVStore {
-	return dbmanager.Instance().GetOrCreateKVStore(chainID, dedicatedDbInstance)
+	return dbmanager.Instance.GetOrCreateKVStore(chainID, dedicatedDbInstance)
 }
 
 func GetKVStore(chainID *ledgerstate.AliasAddress) kvstore.KVStore {
-	return dbmanager.Instance().GetKVStore(chainID)
+	return dbmanager.Instance.GetKVStore(chainID)
 }

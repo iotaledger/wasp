@@ -11,7 +11,7 @@ import (
 
 func TestBlobPutGet(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	dbmanager.SetInstance(dbmanager.NewDBManager(log, true))
+	dbmanager.CreateInstance(log, true)
 	reg := NewRegistry(nil, log, nil)
 
 	data := []byte("data-data-data-data-data-data-data-data-data")
