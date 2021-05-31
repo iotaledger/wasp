@@ -3,13 +3,16 @@ package registry_pkg
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBlobPutGet(t *testing.T) {
-	reg := NewRegistry(nil, testlogger.NewLogger(t), nil)
+	log := testlogger.NewLogger(t)
+	dbmanager.SetInstance(dbmanager.NewDBManager(log, true))
+	reg := NewRegistry(nil, log, nil)
 
 	data := []byte("data-data-data-data-data-data-data-data-data")
 	h := hashing.HashData(data)

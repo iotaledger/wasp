@@ -48,7 +48,6 @@ func TestBlockBasic(t *testing.T) {
 }
 
 func TestBatches(t *testing.T) {
-	println("wat")
 	suBlock := NewStateUpdateWithBlockIndexMutation(2)
 	su1 := NewStateUpdate()
 	su2 := NewStateUpdate()

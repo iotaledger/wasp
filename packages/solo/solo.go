@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/database/dbprovider"
 
 	"github.com/iotaledger/wasp/packages/vm"
 
@@ -22,7 +23,6 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/database/dbprovider"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -205,12 +205,13 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Base58())
 
 	chainlog := env.logger.Named(name)
-	vs, err := state.CreateOriginState(env.dbProvider.GetPartition(nil), &chainID)
+	store := env.dbProvider.GetPartition(chainID.AliasAddress)
+	vs, err := state.CreateOriginState(store, &chainID)
 	require.NoError(env.T, err)
 	require.EqualValues(env.T, 0, vs.BlockIndex())
 	require.True(env.T, vs.Timestamp().IsZero())
 
-	srdr, err := state.NewStateReader(env.dbProvider.GetPartition(nil), &chainID)
+	srdr, err := state.NewStateReader(store, &chainID)
 	require.NoError(env.T, err)
 
 	ret := &Chain{

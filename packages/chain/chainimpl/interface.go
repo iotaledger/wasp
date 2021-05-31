@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -145,7 +144,7 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	stateReader, err := state.NewStateReader(database.GetKVStore(c.chainID.AliasAddress), &c.chainID)
+	stateReader, err := state.NewStateReader(c.store, &c.chainID)
 	if err != nil {
 		c.log.Errorf("GetRequestProcessingStatus: %v", err)
 		return chain.RequestProcessingStatusUnknown

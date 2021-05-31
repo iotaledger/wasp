@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/database/dbprovider"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/labstack/gommon/log"
 )
 
 type DBManager struct {
@@ -19,15 +18,23 @@ type DBManager struct {
 	inMemory    bool
 }
 
-var Instance *DBManager
+var dbmanager *DBManager
 
-func init() {
-	Instance = NewDBManager(parameters.GetBool(parameters.DatabaseInMemory))
+// used to set the instance for testing purposes // TODO check if there is a better method
+func SetInstance(dbm *DBManager) {
+	dbmanager = dbm
 }
 
-func NewDBManager(inMemory bool) *DBManager {
+func Instance() *DBManager {
+	if dbmanager == nil {
+		dbmanager = NewDBManager(logger.NewLogger("dbmanager"), parameters.GetBool(parameters.DatabaseInMemory))
+	}
+	return dbmanager
+}
+
+func NewDBManager(logger *logger.Logger, inMemory bool) *DBManager {
 	return &DBManager{
-		log:         logger.NewLogger("dbmanager"),
+		log:         logger,
 		dbInstances: make(map[[ledgerstate.AddressLength]byte]*dbprovider.DBProvider),
 		mutex:       &sync.RWMutex{},
 		inMemory:    inMemory,
@@ -43,7 +50,7 @@ func (m *DBManager) Close() {
 func (m *DBManager) createDedicatedDbInstance(chainID *ledgerstate.AliasAddress) *dbprovider.DBProvider {
 	// create new db instance
 	if m.inMemory {
-		log.Infof("IN MEMORY DATABASE")
+		m.log.Infof("IN MEMORY DATABASE")
 		instance := dbprovider.NewInMemoryDBProvider(m.log)
 		m.dbInstances[chainID.Array()] = instance
 		return instance

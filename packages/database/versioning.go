@@ -28,7 +28,7 @@ var (
 // version is stored in niladdr partition.
 // it consists of one byte of version and the hash (checksum) of that one byte
 func checkDatabaseVersion() error {
-	db := dbmanager.Instance.GetRegistryKVStore()
+	db := dbmanager.Instance().GetRegistryKVStore()
 	ver, err := db.Get(dbkeys.MakeKey(dbkeys.ObjectTypeDBSchemaVersion))
 
 	var versiondata [1 + hashing.HashSize]byte

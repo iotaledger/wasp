@@ -26,7 +26,7 @@ func configure(_ *node.Plugin) {
 	err := daemon.BackgroundWorker(pluginName, func(shutdownSignal <-chan struct{}) {
 		<-shutdownSignal
 		log.Infof("syncing database to disk...")
-		dbmanager.Instance.Close()
+		dbmanager.Instance().Close()
 		log.Infof("syncing database to disk... done")
 	}, parameters.PriorityDatabase)
 	if err != nil {
@@ -35,7 +35,7 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	err := daemon.BackgroundWorker(pluginName+"[GC]", dbmanager.Instance.RunGC, parameters.PriorityBadgerGarbageCollection)
+	err := daemon.BackgroundWorker(pluginName+"[GC]", dbmanager.Instance().RunGC, parameters.PriorityBadgerGarbageCollection)
 	if err != nil {
 		log.Errorf("failed to start as daemon: %s", err)
 	}
