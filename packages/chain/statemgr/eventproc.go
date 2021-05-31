@@ -26,7 +26,8 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 		return
 	}
 	if msg.BlockIndex > sm.stateOutput.GetStateIndex() {
-		sm.log.Debugf("EventGetBlockMsg ignored: block #%d not found", msg.BlockIndex)
+		sm.log.Debugf("EventGetBlockMsg ignored 1: block #%d not found. Current state index: #%d",
+			msg.BlockIndex, sm.stateOutput.GetStateIndex())
 		return
 	}
 	blockBytes, err := state.LoadBlockBytes(sm.store, msg.BlockIndex)
@@ -35,7 +36,8 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 		return
 	}
 	if blockBytes == nil {
-		sm.log.Errorf("EventGetBlockMsg ignored: block #%d expected in DB but not found", msg.BlockIndex)
+		sm.log.Debugf("EventGetBlockMsg ignored 2: block #%d not found. Current state index: #%d",
+			msg.BlockIndex, sm.stateOutput.GetStateIndex())
 		return
 	}
 

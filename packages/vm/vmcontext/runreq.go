@@ -5,15 +5,18 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm"
+
+	"github.com/iotaledger/wasp/packages/kv"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"golang.org/x/xerrors"
 )
 
 // RunTheRequest processes any request based on the Extended output, even if it
@@ -49,14 +52,19 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 	func() {
 		// panic catcher for the whole call from request to the VM
 		defer func() {
-			if r := recover(); r != nil {
+			r := recover()
+			if r == nil {
+				return
+			}
+			switch err := r.(type) {
+			case *kv.DBError:
+				panic(err)
+			case *vm.ErrorStateInvalidated:
+				panic(err)
+			default:
 				vmctx.lastResult = nil
 				vmctx.lastError = xerrors.Errorf("panic in VM: %v", r)
 				vmctx.Debugf(string(debug.Stack()))
-				if dberr, ok := r.(*kv.DBError); ok {
-					// There was an error accessing the DB. The world stops
-					vmctx.Panicf("DB error: %v", dberr)
-				}
 			}
 		}()
 		vmctx.mustCallFromRequest()

@@ -15,6 +15,21 @@ import (
 type vmRunner struct{}
 
 func (r vmRunner) Run(task *vm.VMTask) {
+	// panic catcher for the whole VM task
+	// ir returns gracefully if the panic was about invalidated state
+	// otherwise it panics again
+	// The smart contract panics are processed inside and do not reach this point
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+		if _, ok := r.(*vm.ErrorStateInvalidated); ok {
+			task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
+			return
+		}
+		panic(r)
+	}()
 	runTask(task)
 }
 

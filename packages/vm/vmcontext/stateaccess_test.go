@@ -24,7 +24,10 @@ func TestSetThenGet(t *testing.T) {
 	vmctx := &VMContext{
 		virtualState:       virtualState,
 		currentStateUpdate: stateUpdate,
-		callStack:          []*callContext{{contract: hname}},
+		isInvalidatedState: func() bool {
+			return false
+		},
+		callStack: []*callContext{{contract: hname}},
 	}
 	s := vmctx.State()
 
@@ -83,7 +86,10 @@ func TestIterate(t *testing.T) {
 	vmctx := &VMContext{
 		virtualState:       virtualState,
 		currentStateUpdate: stateUpdate,
-		callStack:          []*callContext{{contract: hname}},
+		isInvalidatedState: func() bool {
+			return false
+		},
+		callStack: []*callContext{{contract: hname}},
 	}
 	s := vmctx.State()
 	s.Set("xy1", []byte{42})
