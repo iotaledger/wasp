@@ -14,13 +14,16 @@ import (
 type DBManager struct {
 	log         *logger.Logger
 	dbInstances map[[ledgerstate.AddressLength]byte]*dbprovider.DBProvider
-	mutex       *sync.RWMutex
+	mutex       sync.RWMutex
 	inMemory    bool
 }
 
 var Instance *DBManager
 
 func CreateInstance(logger *logger.Logger, inMemory bool) {
+	if Instance != nil {
+		panic("CreateInstance called twice")
+	}
 	Instance = NewDBManager(logger, inMemory)
 }
 
@@ -28,7 +31,7 @@ func NewDBManager(logger *logger.Logger, inMemory bool) *DBManager {
 	return &DBManager{
 		log:         logger,
 		dbInstances: make(map[[ledgerstate.AddressLength]byte]*dbprovider.DBProvider),
-		mutex:       &sync.RWMutex{},
+		mutex:       sync.RWMutex{},
 		inMemory:    inMemory,
 	}
 }
@@ -42,7 +45,7 @@ func (m *DBManager) Close() {
 func (m *DBManager) createDedicatedDbInstance(chainID *ledgerstate.AliasAddress) *dbprovider.DBProvider {
 	// create new db instance
 	if m.inMemory {
-		m.log.Infof("IN MEMORY DATABASE")
+		m.log.Infof("IN MEMORY DATABASE, ChainID: %s", chainID.Base58())
 		instance := dbprovider.NewInMemoryDBProvider(m.log)
 		m.dbInstances[chainID.Array()] = instance
 		return instance
@@ -63,7 +66,7 @@ func (m *DBManager) createInstance(chainID *ledgerstate.AliasAddress, dedicatedD
 	if dedicatedDbInstance {
 		instance = m.createDedicatedDbInstance(chainID)
 	} else {
-		instance = m.GetRegistryDbInstance()
+		instance = m.GetRegistryDBInstance()
 	}
 
 	m.dbInstances[chainID.Array()] = instance
@@ -86,7 +89,7 @@ func (m *DBManager) GetDBInstance(chainID *ledgerstate.AliasAddress) *dbprovider
 	return m.dbInstances[chainID.Array()]
 }
 
-func (m *DBManager) GetRegistryDbInstance() *dbprovider.DBProvider {
+func (m *DBManager) GetRegistryDBInstance() *dbprovider.DBProvider {
 	zeroAddress := ledgerstate.AliasAddress{}
 	instance := m.dbInstances[zeroAddress.Array()]
 	if instance == nil {
@@ -97,7 +100,7 @@ func (m *DBManager) GetRegistryDbInstance() *dbprovider.DBProvider {
 }
 
 func (m *DBManager) GetRegistryKVStore() kvstore.KVStore {
-	return m.GetRegistryDbInstance().GetPartition(nil)
+	return m.GetRegistryDBInstance().GetPartition(nil)
 }
 
 func (m *DBManager) GetOrCreateKVStore(chainID *ledgerstate.AliasAddress, dedicatedDbInstance bool) kvstore.KVStore {
