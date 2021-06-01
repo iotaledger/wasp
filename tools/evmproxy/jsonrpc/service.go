@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -177,32 +178,34 @@ func (s *EthService) SubmitWork()                          { panic("not implemen
 func (s *EthService) SubmitHashrate()                      { panic("not implemented") }
 */
 
-type NetService struct {
-	evmChain *EVMChain
-}
+type NetService struct{}
 
-func NewNetService(evmChain *EVMChain) *NetService {
-	return &NetService{evmChain}
+func NewNetService() *NetService {
+	return &NetService{}
 }
 
 func (e *NetService) Version() string {
 	return "1074" // IOTA -- get it?
 }
 
-/*
-func (s *NetService) PeerCount() { panic("not implemented") }
-func (s *NetService) Listening() { panic("not implemented") }
-*/
-
-type Web3Service struct {
-	evmChain *EVMChain
+func (s *NetService) Listening() bool {
+	return true
 }
 
-func NewWeb3Service(evmChain *EVMChain) *Web3Service {
-	return &Web3Service{evmChain}
+func (s *NetService) PeerCount() hexutil.Uint {
+	return 0
 }
 
-/*
-func (s *Web3Service) ClientVersion() { panic("not implemented") }
-func (s *Web3Service) Sha3()          { panic("not implemented") }
-*/
+type Web3Service struct{}
+
+func NewWeb3Service() *Web3Service {
+	return &Web3Service{}
+}
+
+func (s *Web3Service) ClientVersion() string {
+	return "evmproxy"
+}
+
+func (s *Web3Service) Sha3(input hexutil.Bytes) hexutil.Bytes {
+	return crypto.Keccak256(input)
+}

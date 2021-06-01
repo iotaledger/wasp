@@ -11,8 +11,9 @@ func NewServer(chain *EVMChain, signer *ed25519.KeyPair) *rpc.Server {
 		namespace string
 		service   interface{}
 	}{
+		{"web3", NewWeb3Service()},
+		{"net", NewNetService()},
 		{"eth", NewEthService(chain, signer)},
-		{"net", NewNetService(chain)},
 	} {
 		err := rpcsrv.RegisterName(srv.namespace, srv.service)
 		if err != nil {
