@@ -3,7 +3,7 @@ package registry_pkg
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/database/dbmanager"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
@@ -11,8 +11,7 @@ import (
 
 func TestBlobPutGet(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	dbmanager.CreateInstance(log, true)
-	reg := NewRegistry(nil, log, nil)
+	reg := NewRegistry(nil, log, mapdb.NewMapDB())
 
 	data := []byte("data-data-data-data-data-data-data-data-data")
 	h := hashing.HashData(data)
