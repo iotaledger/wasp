@@ -78,6 +78,6 @@ func (r *Impl) DeactivateChainRecord(chainID *ledgerstate.AliasAddress) (*chain_
 }
 
 func (r *Impl) SaveChainRecord(rec *chain_record.ChainRecord) error {
-	key := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, rec.ChainIdAliasAddress.Bytes())
+	key := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, rec.ChainAddr.Bytes())
 	return r.store.Set(key, rec.Bytes())
 }

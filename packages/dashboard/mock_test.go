@@ -55,8 +55,8 @@ func (w *waspServices) GetChainRecords() ([]*chain_record.ChainRecord, error) {
 
 func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*chain_record.ChainRecord, error) {
 	return &chain_record.ChainRecord{
-		ChainIdAliasAddress: chainID.AliasAddress,
-		Active:              true,
+		ChainAddr: chainID.AliasAddress,
+		Active:    true,
 	}, nil
 }
 

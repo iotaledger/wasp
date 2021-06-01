@@ -39,7 +39,7 @@ func handleActivateChain(c echo.Context) error {
 		return err
 	}
 
-	log.Debugw("calling Chains.Activate", "chainID", bd.ChainIdAliasAddress.String())
+	log.Debugw("calling Chains.Activate", "chainID", bd.ChainAddr.String())
 	if err := chains.AllChains().Activate(bd); err != nil {
 		return err
 	}

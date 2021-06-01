@@ -13,7 +13,7 @@ type ChainRecord struct {
 
 func NewChainRecord(rec *chain_record.ChainRecord) *ChainRecord {
 	return &ChainRecord{
-		ChainID:             NewChainID(coretypes.NewChainID(rec.ChainIdAliasAddress)),
+		ChainID:             NewChainID(coretypes.NewChainID(rec.ChainAddr)),
 		Active:              rec.Active,
 		DedicatedDbInstance: rec.DedicatedDbInstance,
 	}
@@ -21,7 +21,7 @@ func NewChainRecord(rec *chain_record.ChainRecord) *ChainRecord {
 
 func (bd *ChainRecord) Record() *chain_record.ChainRecord {
 	return &chain_record.ChainRecord{
-		ChainIdAliasAddress: bd.ChainID.ChainID().AliasAddress,
-		Active:              bd.Active,
+		ChainAddr: bd.ChainID.ChainID().AliasAddress,
+		Active:    bd.Active,
 	}
 }

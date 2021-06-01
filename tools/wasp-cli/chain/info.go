@@ -18,10 +18,10 @@ var infoCmd = &cobra.Command{
 		chain, err := config.WaspClient().GetChainRecord(*GetCurrentChainID())
 		log.Check(err)
 
-		committee, err := config.WaspClient().GetCommitteeForChain(*coretypes.NewChainID(chain.ChainIdAliasAddress))
+		committee, err := config.WaspClient().GetCommitteeForChain(*coretypes.NewChainID(chain.ChainAddr))
 		log.Check(err)
 
-		log.Printf("Chain ID: %s\n", chain.ChainIdAliasAddress.Base58())
+		log.Printf("Chain ID: %s\n", chain.ChainAddr.Base58())
 		log.Printf("Committee nodes: %+v\n", committee.Nodes)
 		log.Printf("Active: %v\n", chain.Active)
 

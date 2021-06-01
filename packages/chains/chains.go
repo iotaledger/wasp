@@ -64,14 +64,14 @@ func (c *Chains) ActivateAllFromRegistry(chainRecordProvider coretypes.ChainReco
 
 	astr := make([]string, len(chainRecords))
 	for i := range astr {
-		astr[i] = coretypes.NewChainID(chainRecords[i].ChainIdAliasAddress).String()[:10] + ".."
+		astr[i] = coretypes.NewChainID(chainRecords[i].ChainAddr).String()[:10] + ".."
 	}
 	c.log.Debugf("loaded %d chain record(s) from registry: %+v", len(chainRecords), astr)
 
 	for _, chr := range chainRecords {
 		if chr.Active {
 			if err := c.Activate(chr); err != nil {
-				c.log.Errorf("cannot activate chain %s: %v", chr.ChainIdAliasAddress, err)
+				c.log.Errorf("cannot activate chain %s: %v", chr.ChainAddr, err)
 			}
 		}
 	}
@@ -89,15 +89,15 @@ func (c *Chains) Activate(chr *chain_record.ChainRecord) error {
 	if !chr.Active {
 		return xerrors.Errorf("cannot activate chain for deactivated chain record")
 	}
-	chainArr := chr.ChainIdAliasAddress.Array()
+	chainArr := chr.ChainAddr.Array()
 	_, ok := c.allChains[chainArr]
 	if ok {
-		c.log.Debugf("chain is already active: %s", chr.ChainIdAliasAddress.String())
+		c.log.Debugf("chain is already active: %s", chr.ChainAddr.String())
 		return nil
 	}
 	// create new chain object
 	defaultRegistry := registry.DefaultRegistry()
-	chainKVStore := database.GetOrCreateKVStore(chr.ChainIdAliasAddress, chr.DedicatedDbInstance)
+	chainKVStore := database.GetOrCreateKVStore(chr.ChainAddr, chr.DedicatedDbInstance)
 	newChain := chainimpl.NewChain(
 		chr,
 		c.log,
@@ -113,8 +113,8 @@ func (c *Chains) Activate(chr *chain_record.ChainRecord) error {
 		return xerrors.New("Chains.Activate: failed to create chain object")
 	}
 	c.allChains[chainArr] = newChain
-	c.nodeConn.Subscribe(chr.ChainIdAliasAddress)
-	c.log.Infof("activated chain: %s", chr.ChainIdAliasAddress.String())
+	c.nodeConn.Subscribe(chr.ChainAddr)
+	c.log.Infof("activated chain: %s", chr.ChainAddr.String())
 	return nil
 }
 
@@ -123,14 +123,14 @@ func (c *Chains) Deactivate(chr *chain_record.ChainRecord) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	ch, ok := c.allChains[chr.ChainIdAliasAddress.Array()]
+	ch, ok := c.allChains[chr.ChainAddr.Array()]
 	if !ok || ch.IsDismissed() {
-		c.log.Debugf("chain is not active: %s", chr.ChainIdAliasAddress.String())
+		c.log.Debugf("chain is not active: %s", chr.ChainAddr.String())
 		return nil
 	}
 	ch.Dismiss("deactivate")
-	c.nodeConn.Unsubscribe(chr.ChainIdAliasAddress)
-	c.log.Debugf("chain has been deactivated: %s", chr.ChainIdAliasAddress.String())
+	c.nodeConn.Unsubscribe(chr.ChainAddr)
+	c.log.Debugf("chain has been deactivated: %s", chr.ChainAddr.String())
 	return nil
 }
 

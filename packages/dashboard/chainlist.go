@@ -43,7 +43,7 @@ func (d *Dashboard) fetchChains() ([]*ChainOverview, error) {
 	}
 	r := make([]*ChainOverview, len(crs))
 	for i, cr := range crs {
-		info, err := d.fetchRootInfo(d.wasp.GetChain(coretypes.NewChainID(cr.ChainIdAliasAddress)))
+		info, err := d.fetchRootInfo(d.wasp.GetChain(coretypes.NewChainID(cr.ChainAddr)))
 		r[i] = &ChainOverview{
 			ChainRecord: cr,
 			RootInfo:    info,

@@ -10,14 +10,14 @@ import (
 // ChainRecord represents chain the node is participating in
 // TODO optimize, no need for a persistent structure, simple activity tag is enough
 type ChainRecord struct {
-	ChainIdAliasAddress *ledgerstate.AliasAddress
+	ChainAddr           *ledgerstate.AliasAddress
 	Active              bool
 	DedicatedDbInstance bool // whether the chain data is stored as a separate db instance/file
 }
 
 func NewChainRecord(chainID *ledgerstate.AliasAddress, active bool, dedicatedDbInstance bool) *ChainRecord {
 	return &ChainRecord{
-		ChainIdAliasAddress: ledgerstate.NewAliasAddress(chainID.Bytes()),
+		ChainAddr:           ledgerstate.NewAliasAddress(chainID.Bytes()),
 		Active:              active,
 		DedicatedDbInstance: dedicatedDbInstance,
 	}
@@ -29,7 +29,7 @@ func ChainRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, erro
 	if err != nil {
 		return nil, err
 	}
-	ret.ChainIdAliasAddress = aliasAddr
+	ret.ChainAddr = aliasAddr
 
 	ret.Active, err = mu.ReadBool()
 	if err != nil {
@@ -51,14 +51,14 @@ func ChainRecordFromBytes(data []byte) (*ChainRecord, error) {
 
 func (rec *ChainRecord) Bytes() []byte {
 	return marshalutil.New().
-		WriteBytes(rec.ChainIdAliasAddress.Bytes()).
+		WriteBytes(rec.ChainAddr.Bytes()).
 		WriteBool(rec.Active).
 		WriteBool(rec.DedicatedDbInstance).
 		Bytes()
 }
 
 func (rec *ChainRecord) String() string {
-	ret := "ChainID: " + rec.ChainIdAliasAddress.String() + "\n"
+	ret := "ChainID: " + rec.ChainAddr.String() + "\n"
 	ret += fmt.Sprintf("      Active: %v\n", rec.Active)
 	return ret
 }

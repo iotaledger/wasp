@@ -67,10 +67,10 @@ func NewChain(
 	committeeRegistry coretypes.CommitteeRegistryProvider,
 	blobProvider coretypes.BlobCache,
 ) chain.Chain {
-	log.Debugf("creating chain object for %s", chr.ChainIdAliasAddress.String())
+	log.Debugf("creating chain object for %s", chr.ChainAddr.String())
 
-	chainLog := log.Named(chr.ChainIdAliasAddress.Base58()[:6] + ".")
-	stateReader, err := state.NewStateReader(store, coretypes.NewChainID(chr.ChainIdAliasAddress))
+	chainLog := log.Named(chr.ChainAddr.Base58()[:6] + ".")
+	stateReader, err := state.NewStateReader(store, coretypes.NewChainID(chr.ChainAddr))
 	if err != nil {
 		log.Errorf("NewChain: %v", err)
 		return nil
@@ -79,7 +79,7 @@ func NewChain(
 		mempool:           mempool.New(stateReader, blobProvider, chainLog),
 		procset:           processors.MustNew(),
 		chMsg:             make(chan interface{}, 100),
-		chainID:           *coretypes.NewChainID(chr.ChainIdAliasAddress),
+		chainID:           *coretypes.NewChainID(chr.ChainAddr),
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstream, chainLog),
 		store:             store,

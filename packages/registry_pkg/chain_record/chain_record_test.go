@@ -16,7 +16,7 @@ func TestChainRecord(t *testing.T) {
 	require.False(t, rec.Active)
 	recBack, err := ChainRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)
-	require.True(t, rec.ChainIdAliasAddress.Equals(recBack.ChainIdAliasAddress))
+	require.True(t, rec.ChainAddr.Equals(recBack.ChainAddr))
 	require.EqualValues(t, rec.Active, recBack.Active)
 
 	t.Logf("\n%s", rec)
@@ -25,6 +25,6 @@ func TestChainRecord(t *testing.T) {
 	require.True(t, rec.Active)
 	recBack, err = ChainRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)
-	require.True(t, rec.ChainIdAliasAddress.Equals(recBack.ChainIdAliasAddress))
+	require.True(t, rec.ChainAddr.Equals(recBack.ChainAddr))
 	require.EqualValues(t, rec.Active, recBack.Active)
 }
