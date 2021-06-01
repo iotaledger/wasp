@@ -37,6 +37,7 @@ func init() {
 		coreutil.ViewFunc(FuncGetBlockByHash, getBlockByHash),
 		coreutil.ViewFunc(FuncGetTransactionByHash, getTransactionByHash),
 		coreutil.ViewFunc(FuncGetTransactionByBlockHashAndIndex, getTransactionByBlockHashAndIndex),
+		coreutil.ViewFunc(FuncGetTransactionByBlockNumberAndIndex, getTransactionByBlockNumberAndIndex),
 		coreutil.ViewFunc(FuncGetBlockTransactionCountByHash, getBlockTransactionCountByHash),
 		coreutil.ViewFunc(FuncGetUncleCountByBlockHash, getUncleCountByBlockHash),
 		coreutil.ViewFunc(FuncGetBlockTransactionCountByNumber, getBlockTransactionCountByNumber),
@@ -56,23 +57,24 @@ func init() {
 
 const (
 	// Ethereum blockchain
-	FuncGetBalance                        = "getBalance"
-	FuncSendTransaction                   = "sendTransaction"
-	FuncCallContract                      = "callContract"
-	FuncEstimateGas                       = "estimateGas"
-	FuncGetNonce                          = "getNonce"
-	FuncGetReceipt                        = "getReceipt"
-	FuncGetCode                           = "getCode"
-	FuncGetBlockNumber                    = "getBlockNumber"
-	FuncGetBlockByNumber                  = "getBlockByNumber"
-	FuncGetBlockByHash                    = "getBlockByHash"
-	FuncGetTransactionByHash              = "getTransactionByHash"
-	FuncGetTransactionByBlockHashAndIndex = "getTransactionByBlockHashAndIndex"
-	FuncGetBlockTransactionCountByHash    = "getBlockTransactionCountByHash"
-	FuncGetUncleCountByBlockHash          = "getUncleCountByBlockHash"
-	FuncGetBlockTransactionCountByNumber  = "getBlockTransactionCountByNumber"
-	FuncGetUncleCountByBlockNumber        = "getUncleCountByBlockNumber"
-	FuncGetStorage                        = "getStorage"
+	FuncGetBalance                          = "getBalance"
+	FuncSendTransaction                     = "sendTransaction"
+	FuncCallContract                        = "callContract"
+	FuncEstimateGas                         = "estimateGas"
+	FuncGetNonce                            = "getNonce"
+	FuncGetReceipt                          = "getReceipt"
+	FuncGetCode                             = "getCode"
+	FuncGetBlockNumber                      = "getBlockNumber"
+	FuncGetBlockByNumber                    = "getBlockByNumber"
+	FuncGetBlockByHash                      = "getBlockByHash"
+	FuncGetTransactionByHash                = "getTransactionByHash"
+	FuncGetTransactionByBlockHashAndIndex   = "getTransactionByBlockHashAndIndex"
+	FuncGetTransactionByBlockNumberAndIndex = "getTransactionByBlockNumberAndIndex"
+	FuncGetBlockTransactionCountByHash      = "getBlockTransactionCountByHash"
+	FuncGetUncleCountByBlockHash            = "getUncleCountByBlockHash"
+	FuncGetBlockTransactionCountByNumber    = "getBlockTransactionCountByNumber"
+	FuncGetUncleCountByBlockNumber          = "getUncleCountByBlockNumber"
+	FuncGetStorage                          = "getStorage"
 
 	// EVMchain SC management
 	FuncSetNextOwner    = "setNextOwner"

@@ -135,34 +135,20 @@ func getBlockByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
 }
 
 func getTransactionByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
 	return withTransactionByHash(ctx, func(emu *evm.EVMEmulator, tx *types.Transaction) dict.Dict {
-		if tx == nil {
-			return nil
-		}
-		receipt, err := emu.TransactionReceipt(tx.Hash())
-		a.RequireNoError(err)
-		return dict.Dict{
-			FieldTransaction:      EncodeTransaction(tx),
-			FieldBlockHash:        receipt.BlockHash.Bytes(),
-			FieldBlockNumber:      codec.EncodeUint64(receipt.BlockNumber.Uint64()),
-			FieldTransactionIndex: codec.EncodeUint64(uint64(receipt.TransactionIndex)),
-		}
+		return txResult(ctx, emu, tx)
 	})
 }
 
 func getTransactionByBlockHashAndIndex(ctx coretypes.SandboxView) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
 	return withTransactionByBlockHashAndIndex(ctx, func(emu *evm.EVMEmulator, tx *types.Transaction) dict.Dict {
-		if tx == nil {
-			return nil
-		}
-		receipt, err := emu.TransactionReceipt(tx.Hash())
-		a.RequireNoError(err)
-		return dict.Dict{
-			FieldTransaction: EncodeTransaction(tx),
-			FieldBlockNumber: codec.EncodeUint64(receipt.BlockNumber.Uint64()),
-		}
+		return txResult(ctx, emu, tx)
+	})
+}
+
+func getTransactionByBlockNumberAndIndex(ctx coretypes.SandboxView) (dict.Dict, error) {
+	return withTransactionByBlockNumberAndIndex(ctx, func(emu *evm.EVMEmulator, tx *types.Transaction) dict.Dict {
+		return txResult(ctx, emu, tx)
 	})
 }
 

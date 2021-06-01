@@ -164,6 +164,13 @@ func (e *env) transactionByBlockHashAndIndex(blockHash common.Hash, index uint) 
 	return tx
 }
 
+func (e *env) transactionByBlockNumberAndIndex(blockNumber *big.Int, index uint) *jsonrpc.RPCTransaction {
+	var tx *jsonrpc.RPCTransaction
+	err := e.rawClient.Call(&tx, "eth_getTransactionByBlockNumberAndIndex", (*hexutil.Big)(blockNumber), hexutil.Uint(index))
+	require.NoError(e.t, err)
+	return tx
+}
+
 func (e *env) blockTransactionCountByHash(hash common.Hash) uint {
 	n, err := e.client.TransactionCount(context.Background(), hash)
 	require.NoError(e.t, err)
@@ -313,6 +320,17 @@ func TestRPCGetTransactionByBlockHashAndIndex(t *testing.T) {
 	block1 := env.blockByNumber(big.NewInt(1))
 	tx := env.transactionByBlockHashAndIndex(block1.Hash(), 0)
 	require.Equal(t, block1.Transactions()[0].Hash(), tx.Hash())
+}
+
+func TestRPCGetTransactionByBlockNumberAndIndex(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	require.Nil(t, env.transactionByBlockNumberAndIndex(big.NewInt(3), 0))
+	env.requestFunds(receiverAddress)
+	block1 := env.blockByNumber(big.NewInt(1))
+	tx := env.transactionByBlockNumberAndIndex(block1.Number(), 0)
+	require.EqualValues(t, block1.Hash(), *tx.BlockHash)
+	require.EqualValues(t, 0, *tx.TransactionIndex)
 }
 
 func TestRPCGetTransactionCountByHash(t *testing.T) {

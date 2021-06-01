@@ -126,11 +126,9 @@ func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
 	return block, nil
 }
 
-func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64, err error) {
+func (e *EVMChain) getTransaction(funcName string, args ...interface{}) (tx *types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64, err error) {
 	var ret dict.Dict
-	ret, err = e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetTransactionByHash,
-		evmchain.FieldTransactionHash, hash.Bytes(),
-	)
+	ret, err = e.backend.CallView(evmchain.Interface.Name, funcName, args...)
 	if err != nil {
 		return
 	}
@@ -155,29 +153,23 @@ func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, b
 	return
 }
 
-func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64) (tx *types.Transaction, blockNumber uint64, err error) {
-	var ret dict.Dict
-	ret, err = e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetTransactionByBlockHashAndIndex,
+func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64, err error) {
+	return e.getTransaction(evmchain.FuncGetTransactionByHash,
+		evmchain.FieldTransactionHash, hash.Bytes(),
+	)
+}
+
+func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumber uint64, index_ uint64, err error) {
+	return e.getTransaction(evmchain.FuncGetTransactionByBlockHashAndIndex,
 		evmchain.FieldBlockHash, hash.Bytes(),
 		evmchain.FieldTransactionIndex, codec.EncodeUint64(index),
 	)
-	if err != nil {
-		return
-	}
+}
 
-	if !ret.MustHas(evmchain.FieldTransaction) {
-		return
-	}
-
-	tx, err = evmchain.DecodeTransaction(ret.MustGet(evmchain.FieldTransaction))
-	if err != nil {
-		return
-	}
-	blockNumber, _, err = codec.DecodeUint64(ret.MustGet(evmchain.FieldBlockNumber))
-	if err != nil {
-		return
-	}
-	return
+func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumber_ uint64, index_ uint64, err error) {
+	return e.getTransaction(evmchain.FuncGetTransactionByBlockNumberAndIndex, paramsWithOptionalBlockNumber(blockNumber,
+		evmchain.FieldTransactionIndex, codec.EncodeUint64(index),
+	)...)
 }
 
 func (e *EVMChain) BlockByHash(hash common.Hash) (*types.Block, error) {
