@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
-	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/hive.go/kvstore"
@@ -28,7 +27,7 @@ var (
 // version is stored in niladdr partition.
 // it consists of one byte of version and the hash (checksum) of that one byte
 func checkDatabaseVersion() error {
-	db := dbmanager.Instance.GetRegistryKVStore()
+	db := GetRegistryKVStore()
 	ver, err := db.Get(dbkeys.MakeKey(dbkeys.ObjectTypeDBSchemaVersion))
 
 	var versiondata [1 + hashing.HashSize]byte

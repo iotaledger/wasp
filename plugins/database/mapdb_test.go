@@ -1,4 +1,4 @@
-package databaseplugin
+package database
 
 import (
 	"testing"

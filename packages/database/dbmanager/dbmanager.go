@@ -18,15 +18,6 @@ type DBManager struct {
 	inMemory    bool
 }
 
-var Instance *DBManager
-
-func CreateInstance(logger *logger.Logger, inMemory bool) {
-	if Instance != nil {
-		panic("CreateInstance called twice")
-	}
-	Instance = NewDBManager(logger, inMemory)
-}
-
 func NewDBManager(logger *logger.Logger, inMemory bool) *DBManager {
 	return &DBManager{
 		log:         logger,

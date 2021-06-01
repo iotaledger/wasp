@@ -1,4 +1,4 @@
-package databaseplugin
+package database
 
 // disabled due to RocksDB related issues [ED]
 

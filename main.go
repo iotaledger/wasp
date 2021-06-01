@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/cli"
 	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/iotaledger/wasp/plugins/dashboard"
-	databaseplugin "github.com/iotaledger/wasp/plugins/database"
+	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/dkg"
 	"github.com/iotaledger/wasp/plugins/downloader"
 	"github.com/iotaledger/wasp/plugins/globals"
@@ -38,7 +38,7 @@ func main() {
 		webapi.Init(),
 		downloader.Init(),
 		cli.Init(),
-		databaseplugin.Init(),
+		database.Init(),
 		registry.Init(suite),
 		peering.Init(suite),
 		dkg.Init(suite),
