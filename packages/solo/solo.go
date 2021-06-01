@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
-	"github.com/iotaledger/wasp/packages/database/dbprovider"
+	"github.com/iotaledger/wasp/packages/database/dbmanager"
 
 	"github.com/iotaledger/wasp/packages/vm"
 
@@ -58,7 +58,7 @@ type Solo struct {
 	// instance of the test
 	T           *testing.T
 	logger      *logger.Logger
-	dbProvider  *dbprovider.DBProvider
+	dbmanager   *dbmanager.DBManager
 	utxoDB      *utxodb.UtxoDB
 	blobCache   coretypes.BlobCache
 	glbMutex    sync.RWMutex
@@ -144,7 +144,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 	ret := &Solo{
 		T:           t,
 		logger:      glbLogger,
-		dbProvider:  dbprovider.NewInMemoryDBProvider(glbLogger.Named("db")),
+		dbmanager:   dbmanager.NewDBManager(glbLogger.Named("db"), true),
 		utxoDB:      utxodb.NewWithTimestamp(initialTime),
 		blobCache:   coretypes.NewInMemoryBlobCache(),
 		logicalTime: initialTime,
@@ -205,7 +205,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Base58())
 
 	chainlog := env.logger.Named(name)
-	store := env.dbProvider.GetPartition(&chainID)
+	store := env.dbmanager.GetOrCreateKVStore(&chainID)
 	vs, err := state.CreateOriginState(store, &chainID)
 	require.NoError(env.T, err)
 	require.EqualValues(env.T, 0, vs.BlockIndex())

@@ -85,7 +85,7 @@ func TestRequestArguments3(t *testing.T) {
 
 	log := testlogger.NewLogger(t)
 	db := dbprovider.NewInMemoryDBProvider(log)
-	reg := registry.NewRegistry(nil, log, db.GetPartition(nil))
+	reg := registry.NewRegistry(nil, log, db.GetKVStore())
 
 	d, ok, err := r.SolidifyRequestArguments(reg)
 	require.NoError(t, err)
@@ -121,7 +121,7 @@ func TestRequestArguments4(t *testing.T) {
 
 	log := testlogger.NewLogger(t)
 	db := dbprovider.NewInMemoryDBProvider(log)
-	reg := registry.NewRegistry(nil, log, db.GetPartition(nil))
+	reg := registry.NewRegistry(nil, log, db.GetKVStore())
 
 	_, ok, err := r.SolidifyRequestArguments(reg, downloader.New(log, "http://some.fake.address.lt"))
 	require.NoError(t, err)

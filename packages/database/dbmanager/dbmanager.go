@@ -14,89 +14,74 @@ import (
 
 type DBManager struct {
 	log         *logger.Logger
+	registryDB  *dbprovider.DBProvider
 	dbInstances map[[ledgerstate.AddressLength]byte]*dbprovider.DBProvider
 	mutex       sync.RWMutex
 	inMemory    bool
 }
 
 func NewDBManager(logger *logger.Logger, inMemory bool) *DBManager {
-	return &DBManager{
+	dbm := DBManager{
 		log:         logger,
 		dbInstances: make(map[[ledgerstate.AddressLength]byte]*dbprovider.DBProvider),
 		mutex:       sync.RWMutex{},
 		inMemory:    inMemory,
 	}
+	//registry db is created with an empty chainID
+	dbm.registryDB = dbm.createDBInstance(&coretypes.ChainID{
+		AliasAddress: &ledgerstate.AliasAddress{},
+	})
+	return &dbm
+}
+
+func (m *DBManager) createDBInstance(chainID *coretypes.ChainID) (instance *dbprovider.DBProvider) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	if m.inMemory {
+		m.log.Infof("creating new In-Memory database, ChainID: %s", chainID.Base58())
+		instance = dbprovider.NewInMemoryDBProvider(m.log)
+	} else {
+		dbDir := parameters.GetString(parameters.DatabaseDir)
+		instanceDir := fmt.Sprintf("%s/%s", dbDir, chainID.Base58())
+		m.log.Infof("creating new persistent database, ChainID: %s, dir: %s", chainID.Base58(), instanceDir)
+		instance = dbprovider.NewPersistentDBProvider(instanceDir, m.log)
+	}
+
+	m.dbInstances[chainID.Array()] = instance
+	return instance
+}
+
+func (m *DBManager) getDBInstance(chainID *coretypes.ChainID) *dbprovider.DBProvider {
+	return m.dbInstances[chainID.Array()]
+}
+
+func (m *DBManager) GetRegistryKVStore() kvstore.KVStore {
+	return m.registryDB.GetKVStore()
+}
+
+func (m *DBManager) GetOrCreateKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
+	instance := m.getDBInstance(chainID)
+	if instance != nil {
+		return instance.GetKVStore()
+	}
+	// create a new instance
+	return m.createDBInstance(chainID).GetKVStore()
+}
+
+func (m *DBManager) GetKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
+	return m.getDBInstance(chainID).GetKVStore()
 }
 
 func (m *DBManager) Close() {
+	m.registryDB.Close()
 	for _, instance := range m.dbInstances {
 		instance.Close()
 	}
 }
 
-func (m *DBManager) createInstance(chainID *coretypes.ChainID) *dbprovider.DBProvider {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	// create new db instance
-	if m.inMemory {
-		m.log.Infof("IN MEMORY DATABASE, ChainID: %s", chainID.Base58())
-		instance := dbprovider.NewInMemoryDBProvider(m.log)
-		m.dbInstances[chainID.Array()] = instance
-		return instance
-	}
-
-	dbDir := parameters.GetString(parameters.DatabaseDir)
-	instanceDir := fmt.Sprintf("%s/%s", dbDir, chainID.Base58())
-	instance := dbprovider.NewPersistentDBProvider(instanceDir, m.log)
-	m.dbInstances[chainID.Array()] = instance
-	return instance
-}
-
-func (m *DBManager) GetOrCreateDBInstance(chainID *coretypes.ChainID) *dbprovider.DBProvider {
-	if chainID == nil {
-		// chain records registry
-		return m.GetOrCreateDBInstance(&coretypes.ChainID{})
-	}
-	instance := m.dbInstances[chainID.Array()]
-	if instance == nil {
-		instance = m.createInstance(chainID)
-	}
-	return instance
-}
-
-func (m *DBManager) GetDBInstance(chainID *coretypes.ChainID) *dbprovider.DBProvider {
-	return m.dbInstances[chainID.Array()]
-}
-
-func (m *DBManager) GetRegistryDBInstance() *dbprovider.DBProvider {
-	zeroAddress := coretypes.ChainID{}
-	instance := m.dbInstances[zeroAddress.Array()]
-	if instance == nil {
-		// first call, registry instance does not exist yet
-		instance = m.GetOrCreateDBInstance(nil)
-	}
-	return instance
-}
-
-func (m *DBManager) GetRegistryKVStore() kvstore.KVStore {
-	return m.GetRegistryDBInstance().GetPartition(nil)
-}
-
-func (m *DBManager) GetOrCreateKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
-	instance := m.GetDBInstance(chainID)
-	if instance != nil {
-		return instance.GetPartition(chainID)
-	}
-	// create a new instance
-	return m.GetOrCreateDBInstance(chainID).GetPartition(chainID)
-}
-
-func (m *DBManager) GetKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
-	return m.GetDBInstance(chainID).GetPartition(chainID)
-}
-
 func (m *DBManager) RunGC(shutdownSignal <-chan struct{}) {
+	m.registryDB.RunGC(shutdownSignal)
 	for _, instance := range m.dbInstances {
 		instance.RunGC(shutdownSignal)
 	}

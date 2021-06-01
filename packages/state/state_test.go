@@ -68,7 +68,7 @@ func TestOriginHashes(t *testing.T) {
 func TestStateWithDB(t *testing.T) {
 	t.Run("state not found", func(t *testing.T) {
 		log := testlogger.NewLogger(t)
-		store := dbprovider.NewInMemoryDBProvider(log).GetPartition((nil))
+		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
 		chainID := coretypes.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
@@ -76,7 +76,7 @@ func TestStateWithDB(t *testing.T) {
 	})
 	t.Run("save zero state", func(t *testing.T) {
 		log := testlogger.NewLogger(t)
-		store := dbprovider.NewInMemoryDBProvider(log).GetPartition((nil))
+		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
 		chainID := coretypes.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestStateWithDB(t *testing.T) {
 	})
 	t.Run("load 0 block", func(t *testing.T) {
 		log := testlogger.NewLogger(t)
-		store := dbprovider.NewInMemoryDBProvider(log).GetPartition((nil))
+		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
 		chainID := coretypes.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
@@ -118,7 +118,7 @@ func TestStateWithDB(t *testing.T) {
 	})
 	t.Run("apply, save and load block 1", func(t *testing.T) {
 		log := testlogger.NewLogger(t)
-		store := dbprovider.NewInMemoryDBProvider(log).GetPartition((nil))
+		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
 		chainID := coretypes.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
@@ -168,7 +168,7 @@ func TestStateWithDB(t *testing.T) {
 	})
 	t.Run("state reader", func(t *testing.T) {
 		log := testlogger.NewLogger(t)
-		store := dbprovider.NewInMemoryDBProvider(log).GetPartition((nil))
+		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
 		chainID := coretypes.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
@@ -210,7 +210,7 @@ func TestStateWithDB(t *testing.T) {
 
 func TestVariableStateBasic(t *testing.T) {
 	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
-	store := dbprovider.NewInMemoryDBProvider(testlogger.NewLogger(t)).GetPartition((nil))
+	store := dbprovider.NewInMemoryDBProvider(testlogger.NewLogger(t)).GetKVStore()
 	vs1, err := CreateOriginState(store, chainID)
 	require.NoError(t, err)
 	h1 := vs1.Hash()
@@ -241,7 +241,7 @@ func TestVariableStateBasic(t *testing.T) {
 func TestStateReader(t *testing.T) {
 	t.Run("state not found", func(t *testing.T) {
 		log := testlogger.NewLogger(t)
-		store := dbprovider.NewInMemoryDBProvider(log).GetPartition((nil))
+		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
 		chainID := coretypes.RandomChainID([]byte("1"))
 		st, err := NewStateReader(store, chainID)
 		require.NoError(t, err)
