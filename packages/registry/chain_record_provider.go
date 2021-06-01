@@ -1,4 +1,4 @@
-package registry_pkg
+package registry
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
-	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/mr-tron/base58"
 )
 
@@ -15,7 +15,7 @@ func MakeChainRecordDbKey(chainID *ledgerstate.AliasAddress) []byte {
 	return dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, chainID.Bytes())
 }
 
-func (r *Impl) GetChainRecordByChainID(chainID *ledgerstate.AliasAddress) (*chain_record.ChainRecord, error) {
+func (r *Impl) GetChainRecordByChainID(chainID *ledgerstate.AliasAddress) (*chainrecord.ChainRecord, error) {
 	data, err := r.store.Get(MakeChainRecordDbKey(chainID))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
@@ -23,14 +23,14 @@ func (r *Impl) GetChainRecordByChainID(chainID *ledgerstate.AliasAddress) (*chai
 	if err != nil {
 		return nil, err
 	}
-	return chain_record.ChainRecordFromBytes(data)
+	return chainrecord.ChainRecordFromBytes(data)
 }
 
-func (r *Impl) GetChainRecords() ([]*chain_record.ChainRecord, error) {
-	ret := make([]*chain_record.ChainRecord, 0)
+func (r *Impl) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
+	ret := make([]*chainrecord.ChainRecord, 0)
 
 	err := r.store.Iterate([]byte{dbkeys.ObjectTypeChainRecord}, func(key kvstore.Key, value kvstore.Value) bool {
-		if rec, err1 := chain_record.ChainRecordFromBytes(value); err1 == nil {
+		if rec, err1 := chainrecord.ChainRecordFromBytes(value); err1 == nil {
 			ret = append(ret, rec)
 		} else {
 			log.Warnf("corrupted chain record with key %s", base58.Encode(key))
@@ -40,7 +40,7 @@ func (r *Impl) GetChainRecords() ([]*chain_record.ChainRecord, error) {
 	return ret, err
 }
 
-func (r *Impl) UpdateChainRecord(chainID *ledgerstate.AliasAddress, f func(*chain_record.ChainRecord) bool) (*chain_record.ChainRecord, error) {
+func (r *Impl) UpdateChainRecord(chainID *ledgerstate.AliasAddress, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error) {
 	rec, err := r.GetChainRecordByChainID(chainID)
 	if err != nil {
 		return nil, err
@@ -57,8 +57,8 @@ func (r *Impl) UpdateChainRecord(chainID *ledgerstate.AliasAddress, f func(*chai
 	return rec, nil
 }
 
-func (r *Impl) ActivateChainRecord(chainID *ledgerstate.AliasAddress) (*chain_record.ChainRecord, error) {
-	return r.UpdateChainRecord(chainID, func(bd *chain_record.ChainRecord) bool {
+func (r *Impl) ActivateChainRecord(chainID *ledgerstate.AliasAddress) (*chainrecord.ChainRecord, error) {
+	return r.UpdateChainRecord(chainID, func(bd *chainrecord.ChainRecord) bool {
 		if bd.Active {
 			return false
 		}
@@ -67,8 +67,8 @@ func (r *Impl) ActivateChainRecord(chainID *ledgerstate.AliasAddress) (*chain_re
 	})
 }
 
-func (r *Impl) DeactivateChainRecord(chainID *ledgerstate.AliasAddress) (*chain_record.ChainRecord, error) {
-	return r.UpdateChainRecord(chainID, func(bd *chain_record.ChainRecord) bool {
+func (r *Impl) DeactivateChainRecord(chainID *ledgerstate.AliasAddress) (*chainrecord.ChainRecord, error) {
+	return r.UpdateChainRecord(chainID, func(bd *chainrecord.ChainRecord) bool {
 		if !bd.Active {
 			return false
 		}
@@ -77,7 +77,7 @@ func (r *Impl) DeactivateChainRecord(chainID *ledgerstate.AliasAddress) (*chain_
 	})
 }
 
-func (r *Impl) SaveChainRecord(rec *chain_record.ChainRecord) error {
+func (r *Impl) SaveChainRecord(rec *chainrecord.ChainRecord) error {
 	key := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, rec.ChainAddr.Bytes())
 	return r.store.Set(key, rec.Bytes())
 }

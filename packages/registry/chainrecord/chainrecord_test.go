@@ -1,4 +1,4 @@
-package chain_record
+package chainrecord
 
 import (
 	"testing"

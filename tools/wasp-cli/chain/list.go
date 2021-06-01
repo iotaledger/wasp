@@ -3,7 +3,7 @@ package chain
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -23,7 +23,7 @@ var listCmd = &cobra.Command{
 	},
 }
 
-func showChainList(chains []*chain_record.ChainRecord) {
+func showChainList(chains []*chainrecord.ChainRecord) {
 	header := []string{"chainid", "active"}
 	rows := make([][]string, len(chains))
 	for i, chain := range chains {

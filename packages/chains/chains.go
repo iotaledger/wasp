@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/database"
-	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
 )
@@ -82,7 +82,7 @@ func (c *Chains) ActivateAllFromRegistry(chainRecordProvider coretypes.ChainReco
 // - creates chain object
 // - insert it into the runtime registry
 // - subscribes for related transactions in he IOTA node
-func (c *Chains) Activate(chr *chain_record.ChainRecord) error {
+func (c *Chains) Activate(chr *chainrecord.ChainRecord) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -119,7 +119,7 @@ func (c *Chains) Activate(chr *chain_record.ChainRecord) error {
 }
 
 // Deactivate deactivates chain in the node
-func (c *Chains) Deactivate(chr *chain_record.ChainRecord) error {
+func (c *Chains) Deactivate(chr *chainrecord.ChainRecord) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 

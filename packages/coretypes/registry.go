@@ -6,8 +6,8 @@ package coretypes
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
-	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -52,12 +52,12 @@ type PeerNetworkConfigProvider interface {
 }
 
 // ChainRecordRegistryProvider stands for a partial registry interface, needed for this package.
-// It should be implemented by in the chain_record package
+// It should be implemented by in the chainrecord package
 type ChainRecordRegistryProvider interface {
-	GetChainRecordByChainID(chainID *ledgerstate.AliasAddress) (*chain_record.ChainRecord, error)
-	GetChainRecords() ([]*chain_record.ChainRecord, error)
-	UpdateChainRecord(chainID *ledgerstate.AliasAddress, f func(*chain_record.ChainRecord) bool) (*chain_record.ChainRecord, error)
-	ActivateChainRecord(chainID *ledgerstate.AliasAddress) (*chain_record.ChainRecord, error)
-	DeactivateChainRecord(chainID *ledgerstate.AliasAddress) (*chain_record.ChainRecord, error)
-	SaveChainRecord(rec *chain_record.ChainRecord) error
+	GetChainRecordByChainID(chainID *ledgerstate.AliasAddress) (*chainrecord.ChainRecord, error)
+	GetChainRecords() ([]*chainrecord.ChainRecord, error)
+	UpdateChainRecord(chainID *ledgerstate.AliasAddress, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error)
+	ActivateChainRecord(chainID *ledgerstate.AliasAddress) (*chainrecord.ChainRecord, error)
+	DeactivateChainRecord(chainID *ledgerstate.AliasAddress) (*chainrecord.ChainRecord, error)
+	SaveChainRecord(rec *chainrecord.ChainRecord) error
 }

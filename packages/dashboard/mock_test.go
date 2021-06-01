@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -48,13 +48,13 @@ func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.Chain {
 	return &mockChain{}
 }
 
-func (w *waspServices) GetChainRecords() ([]*chain_record.ChainRecord, error) {
+func (w *waspServices) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
 	r, _ := w.GetChainRecord(coretypes.RandomChainID())
-	return []*chain_record.ChainRecord{r}, nil
+	return []*chainrecord.ChainRecord{r}, nil
 }
 
-func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*chain_record.ChainRecord, error) {
-	return &chain_record.ChainRecord{
+func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error) {
+	return &chainrecord.ChainRecord{
 		ChainAddr: chainID.AliasAddress,
 		Active:    true,
 	}, nil

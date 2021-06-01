@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 )
 
 type ChainRecord struct {
@@ -11,7 +11,7 @@ type ChainRecord struct {
 	DedicatedDbInstance bool    `swagger:"desc(Whether or not the chain data is stored in a separate db instance)"`
 }
 
-func NewChainRecord(rec *chain_record.ChainRecord) *ChainRecord {
+func NewChainRecord(rec *chainrecord.ChainRecord) *ChainRecord {
 	return &ChainRecord{
 		ChainID:             NewChainID(coretypes.NewChainID(rec.ChainAddr)),
 		Active:              rec.Active,
@@ -19,8 +19,8 @@ func NewChainRecord(rec *chain_record.ChainRecord) *ChainRecord {
 	}
 }
 
-func (bd *ChainRecord) Record() *chain_record.ChainRecord {
-	return &chain_record.ChainRecord{
+func (bd *ChainRecord) Record() *chainrecord.ChainRecord {
+	return &chainrecord.ChainRecord{
 		ChainAddr: bd.ChainID.ChainID().AliasAddress,
 		Active:    bd.Active,
 	}

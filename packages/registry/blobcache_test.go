@@ -1,4 +1,4 @@
-package registry_pkg
+package registry
 
 import (
 	"testing"

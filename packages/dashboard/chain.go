@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/labstack/echo/v4"
@@ -130,7 +130,7 @@ type ChainTemplateParams struct {
 
 	ChainID *coretypes.ChainID
 
-	Record      *chain_record.ChainRecord
+	Record      *chainrecord.ChainRecord
 	State       *ChainState
 	RootInfo    RootInfo
 	Accounts    []*coretypes.AgentID

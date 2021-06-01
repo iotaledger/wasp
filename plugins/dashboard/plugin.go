@@ -21,7 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
@@ -61,11 +61,11 @@ func (w *waspServices) ExploreAddressBaseURL() string {
 	return exploreAddressUrlFromGoshimmerUri(parameters.GetString(parameters.NodeAddress))
 }
 
-func (w *waspServices) GetChainRecords() ([]*chain_record.ChainRecord, error) {
+func (w *waspServices) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
 	return registry.DefaultRegistry().GetChainRecords()
 }
 
-func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*chain_record.ChainRecord, error) {
+func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error) {
 	return registry.DefaultRegistry().GetChainRecordByChainID(chainID.AliasAddress)
 }
 

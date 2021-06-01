@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
-	"github.com/iotaledger/wasp/packages/registry_pkg/chain_record"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 
 	"github.com/iotaledger/wasp/packages/state"
 
@@ -57,7 +57,7 @@ type chainObj struct {
 }
 
 func NewChain(
-	chr *chain_record.ChainRecord,
+	chr *chainrecord.ChainRecord,
 	log *logger.Logger,
 	txstream *txstream.Client,
 	peerNetConfig coretypes.PeerNetworkConfigProvider,
