@@ -33,7 +33,10 @@ func (m *DBManager) Close() {
 	}
 }
 
-func (m *DBManager) createDedicatedDbInstance(chainID *ledgerstate.AliasAddress) *dbprovider.DBProvider {
+func (m *DBManager) createInstance(chainID *ledgerstate.AliasAddress) *dbprovider.DBProvider {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
 	// create new db instance
 	if m.inMemory {
 		m.log.Infof("IN MEMORY DATABASE, ChainID: %s", chainID.Base58())
@@ -49,29 +52,14 @@ func (m *DBManager) createDedicatedDbInstance(chainID *ledgerstate.AliasAddress)
 	return instance
 }
 
-func (m *DBManager) createInstance(chainID *ledgerstate.AliasAddress, dedicatedDbInstance bool) *dbprovider.DBProvider {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	var instance *dbprovider.DBProvider
-	if dedicatedDbInstance {
-		instance = m.createDedicatedDbInstance(chainID)
-	} else {
-		instance = m.GetRegistryDBInstance()
-	}
-
-	m.dbInstances[chainID.Array()] = instance
-	return instance
-}
-
-func (m *DBManager) GetOrCreateDBInstance(chainID *ledgerstate.AliasAddress, dedicatedDbInstance bool) *dbprovider.DBProvider {
+func (m *DBManager) GetOrCreateDBInstance(chainID *ledgerstate.AliasAddress) *dbprovider.DBProvider {
 	if chainID == nil {
 		// chain records registry
-		return m.GetOrCreateDBInstance(&ledgerstate.AliasAddress{}, true)
+		return m.GetOrCreateDBInstance(&ledgerstate.AliasAddress{})
 	}
 	instance := m.dbInstances[chainID.Array()]
 	if instance == nil {
-		instance = m.createInstance(chainID, dedicatedDbInstance)
+		instance = m.createInstance(chainID)
 	}
 	return instance
 }
@@ -85,7 +73,7 @@ func (m *DBManager) GetRegistryDBInstance() *dbprovider.DBProvider {
 	instance := m.dbInstances[zeroAddress.Array()]
 	if instance == nil {
 		// first call, registry instance does not exist yet
-		instance = m.GetOrCreateDBInstance(nil, true)
+		instance = m.GetOrCreateDBInstance(nil)
 	}
 	return instance
 }
@@ -94,13 +82,13 @@ func (m *DBManager) GetRegistryKVStore() kvstore.KVStore {
 	return m.GetRegistryDBInstance().GetPartition(nil)
 }
 
-func (m *DBManager) GetOrCreateKVStore(chainID *ledgerstate.AliasAddress, dedicatedDbInstance bool) kvstore.KVStore {
+func (m *DBManager) GetOrCreateKVStore(chainID *ledgerstate.AliasAddress) kvstore.KVStore {
 	instance := m.GetDBInstance(chainID)
 	if instance != nil {
 		return instance.GetPartition(chainID)
 	}
 	// create a new instance
-	return m.GetOrCreateDBInstance(chainID, dedicatedDbInstance).GetPartition(chainID)
+	return m.GetOrCreateDBInstance(chainID).GetPartition(chainID)
 }
 
 func (m *DBManager) GetKVStore(chainID *ledgerstate.AliasAddress) kvstore.KVStore {

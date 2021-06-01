@@ -97,7 +97,7 @@ func (c *Chains) Activate(chr *chainrecord.ChainRecord) error {
 	}
 	// create new chain object
 	defaultRegistry := registry.DefaultRegistry()
-	chainKVStore := database.GetOrCreateKVStore(chr.ChainAddr, chr.DedicatedDbInstance)
+	chainKVStore := database.GetOrCreateKVStore(chr.ChainAddr)
 	newChain := chainimpl.NewChain(
 		chr,
 		c.log,

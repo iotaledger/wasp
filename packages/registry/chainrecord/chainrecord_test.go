@@ -12,7 +12,7 @@ func TestChainRecord(t *testing.T) {
 	randombytes := hashing.RandomHash(nil)
 	AliasAddress := ledgerstate.NewAliasAddress(randombytes[:])
 
-	rec := NewChainRecord(AliasAddress, false, false)
+	rec := NewChainRecord(AliasAddress, false)
 	require.False(t, rec.Active)
 	recBack, err := ChainRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)
@@ -21,7 +21,7 @@ func TestChainRecord(t *testing.T) {
 
 	t.Logf("\n%s", rec)
 
-	rec = NewChainRecord(AliasAddress, true, false)
+	rec = NewChainRecord(AliasAddress, true)
 	require.True(t, rec.Active)
 	recBack, err = ChainRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)

@@ -50,8 +50,8 @@ func GetRegistryKVStore() kvstore.KVStore {
 	return dbm.GetRegistryKVStore()
 }
 
-func GetOrCreateKVStore(chainID *ledgerstate.AliasAddress, dedicatedDbInstance bool) kvstore.KVStore {
-	return dbm.GetOrCreateKVStore(chainID, dedicatedDbInstance)
+func GetOrCreateKVStore(chainID *ledgerstate.AliasAddress) kvstore.KVStore {
+	return dbm.GetOrCreateKVStore(chainID)
 }
 
 func GetKVStore(chainID *ledgerstate.AliasAddress) kvstore.KVStore {

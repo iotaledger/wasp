@@ -6,16 +6,14 @@ import (
 )
 
 type ChainRecord struct {
-	ChainID             ChainID `swagger:"desc(ChainID (base58-encoded))"`
-	Active              bool    `swagger:"desc(Whether or not the chain is active)"`
-	DedicatedDbInstance bool    `swagger:"desc(Whether or not the chain data is stored in a separate db instance)"`
+	ChainID ChainID `swagger:"desc(ChainID (base58-encoded))"`
+	Active  bool    `swagger:"desc(Whether or not the chain is active)"`
 }
 
 func NewChainRecord(rec *chainrecord.ChainRecord) *ChainRecord {
 	return &ChainRecord{
-		ChainID:             NewChainID(coretypes.NewChainID(rec.ChainAddr)),
-		Active:              rec.Active,
-		DedicatedDbInstance: rec.DedicatedDbInstance,
+		ChainID: NewChainID(coretypes.NewChainID(rec.ChainAddr)),
+		Active:  rec.Active,
 	}
 }
 
