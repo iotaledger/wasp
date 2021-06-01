@@ -28,7 +28,7 @@ func showChainList(chains []*chainrecord.ChainRecord) {
 	rows := make([][]string, len(chains))
 	for i, chain := range chains {
 		rows[i] = []string{
-			chain.ChainAddr.Base58(),
+			chain.ChainID.Base58(),
 			fmt.Sprintf("%v", chain.Active),
 		}
 	}

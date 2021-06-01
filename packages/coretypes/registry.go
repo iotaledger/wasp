@@ -6,12 +6,7 @@ package coretypes
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
 )
@@ -24,20 +19,6 @@ type BlobCache interface {
 	PutBlob(data []byte, ttl ...time.Duration) (hashing.HashValue, error)
 }
 
-// DKShareRegistryProvider stands for a partial registry interface, needed for this package.
-// It should be implemented by registry.impl
-type DKShareRegistryProvider interface {
-	SaveDKShare(dkShare *tcrypto.DKShare) error
-	LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error)
-}
-
-type CommitteeRegistryProvider interface {
-	GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error)
-	SaveCommitteeRecord(rec *committee_record.CommitteeRecord) error
-}
-
-// NodeIdentityProvider is a subset of the registry interface
-// providing access to the persistent node identity information.
 type NodeIdentityProvider interface {
 	GetNodeIdentity() (*key.Pair, error)
 	GetNodePublicKey() (kyber.Point, error)
@@ -49,15 +30,4 @@ type PeerNetworkConfigProvider interface {
 	PeeringPort() int
 	Neighbors() []string
 	String() string
-}
-
-// ChainRecordRegistryProvider stands for a partial registry interface, needed for this package.
-// It should be implemented by in the chainrecord package
-type ChainRecordRegistryProvider interface {
-	GetChainRecordByChainID(chainID *ledgerstate.AliasAddress) (*chainrecord.ChainRecord, error)
-	GetChainRecords() ([]*chainrecord.ChainRecord, error)
-	UpdateChainRecord(chainID *ledgerstate.AliasAddress, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error)
-	ActivateChainRecord(chainID *ledgerstate.AliasAddress) (*chainrecord.ChainRecord, error)
-	DeactivateChainRecord(chainID *ledgerstate.AliasAddress) (*chainrecord.ChainRecord, error)
-	SaveChainRecord(rec *chainrecord.ChainRecord) error
 }

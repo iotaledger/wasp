@@ -5,19 +5,20 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
 // ChainRecord represents chain the node is participating in
 // TODO optimize, no need for a persistent structure, simple activity tag is enough
 type ChainRecord struct {
-	ChainAddr *ledgerstate.AliasAddress
-	Active    bool
+	ChainID *coretypes.ChainID
+	Active  bool
 }
 
-func NewChainRecord(chainID *ledgerstate.AliasAddress, active bool) *ChainRecord {
+func NewChainRecord(chainID *coretypes.ChainID, active bool) *ChainRecord {
 	return &ChainRecord{
-		ChainAddr: ledgerstate.NewAliasAddress(chainID.Bytes()),
-		Active:    active,
+		ChainID: chainID,
+		Active:  active,
 	}
 }
 
@@ -27,7 +28,7 @@ func ChainRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, erro
 	if err != nil {
 		return nil, err
 	}
-	ret.ChainAddr = aliasAddr
+	ret.ChainID = coretypes.NewChainID(aliasAddr)
 
 	ret.Active, err = mu.ReadBool()
 	if err != nil {
@@ -44,13 +45,13 @@ func ChainRecordFromBytes(data []byte) (*ChainRecord, error) {
 
 func (rec *ChainRecord) Bytes() []byte {
 	return marshalutil.New().
-		WriteBytes(rec.ChainAddr.Bytes()).
+		WriteBytes(rec.ChainID.Bytes()).
 		WriteBool(rec.Active).
 		Bytes()
 }
 
 func (rec *ChainRecord) String() string {
-	ret := "ChainID: " + rec.ChainAddr.String() + "\n"
+	ret := "ChainID: " + rec.ChainID.String() + "\n"
 	ret += fmt.Sprintf("      Active: %v\n", rec.Active)
 	return ret
 }

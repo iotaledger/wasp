@@ -130,7 +130,7 @@ func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address
 
 	// ------------ put chain records to hosts
 	err = committee.PutChainRecord(&chainrecord.ChainRecord{
-		ChainAddr: chainID.AliasAddress,
+		ChainID: &chainID,
 	})
 
 	fmt.Fprint(textout, par.Prefix)

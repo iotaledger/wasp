@@ -44,19 +44,19 @@ func handlePutChainRecord(c echo.Context) error {
 	registry := registry.DefaultRegistry()
 	bd := req.Record()
 
-	bd2, err := registry.GetChainRecordByChainID(bd.ChainAddr)
+	bd2, err := registry.GetChainRecordByChainID(bd.ChainID)
 
 	if err != nil {
 		return err
 	}
 	if bd2 != nil {
-		return httperrors.Conflict(fmt.Sprintf("Record already exists: %s", bd.ChainAddr.String()))
+		return httperrors.Conflict(fmt.Sprintf("Record already exists: %s", bd.ChainID.String()))
 	}
 	if err = registry.SaveChainRecord(bd); err != nil {
 		return err
 	}
 
-	log.Infof("Chain record saved. ChainID: %s", bd.ChainAddr.String())
+	log.Infof("Chain record saved. ChainID: %s", bd.ChainID.String())
 
 	return c.NoContent(http.StatusCreated)
 }
@@ -66,7 +66,7 @@ func handleGetChainRecord(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
-	bd, err := registry.DefaultRegistry().GetChainRecordByChainID(chainID.AliasAddress)
+	bd, err := registry.DefaultRegistry().GetChainRecordByChainID(chainID)
 	if err != nil {
 		return err
 	}

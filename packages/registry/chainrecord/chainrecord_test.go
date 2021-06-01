@@ -3,28 +3,26 @@ package chainrecord
 import (
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/stretchr/testify/require"
 )
 
 func TestChainRecord(t *testing.T) {
-	randombytes := hashing.RandomHash(nil)
-	AliasAddress := ledgerstate.NewAliasAddress(randombytes[:])
+	chainID := coretypes.RandomChainID()
 
-	rec := NewChainRecord(AliasAddress, false)
+	rec := NewChainRecord(chainID, false)
 	require.False(t, rec.Active)
 	recBack, err := ChainRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)
-	require.True(t, rec.ChainAddr.Equals(recBack.ChainAddr))
+	require.True(t, rec.ChainID.Equals(recBack.ChainID))
 	require.EqualValues(t, rec.Active, recBack.Active)
 
 	t.Logf("\n%s", rec)
 
-	rec = NewChainRecord(AliasAddress, true)
+	rec = NewChainRecord(chainID, true)
 	require.True(t, rec.Active)
 	recBack, err = ChainRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)
-	require.True(t, rec.ChainAddr.Equals(recBack.ChainAddr))
+	require.True(t, rec.ChainID.Equals(recBack.ChainID))
 	require.EqualValues(t, rec.Active, recBack.Active)
 }

@@ -56,7 +56,7 @@ func handleCallView(c echo.Context) error {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
 
-	vctx, err := viewcontext.NewFromDB(database.GetKVStore(theChain.ID().AliasAddress), *theChain.ID(), theChain.Processors())
+	vctx, err := viewcontext.NewFromDB(database.GetKVStore(theChain.ID()), *theChain.ID(), theChain.Processors())
 	if err != nil {
 		return fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
 	}

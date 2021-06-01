@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/registry"
 
 	"github.com/iotaledger/wasp/packages/util"
 
@@ -57,7 +58,7 @@ type mockedEnv struct {
 	PubKeys           []kyber.Point
 	PrivKeys          []kyber.Scalar
 	NetworkProviders  []peering.NetworkProvider
-	DKSRegistries     []coretypes.DKShareRegistryProvider
+	DKSRegistries     []registry.DKShareRegistryProvider
 	store             kvstore.KVStore
 	SolidState        state.VirtualState
 	StateReader       state.StateReader

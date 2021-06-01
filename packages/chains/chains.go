@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	registry_pkg "github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/peering"
@@ -56,7 +57,7 @@ func (c *Chains) Attach(nodeConn *txstream.Client) {
 	// TODO attach to off-ledger request module
 }
 
-func (c *Chains) ActivateAllFromRegistry(chainRecordProvider coretypes.ChainRecordRegistryProvider) error {
+func (c *Chains) ActivateAllFromRegistry(chainRecordProvider registry_pkg.ChainRecordRegistryProvider) error {
 	chainRecords, err := chainRecordProvider.GetChainRecords()
 	if err != nil {
 		return err
@@ -64,14 +65,14 @@ func (c *Chains) ActivateAllFromRegistry(chainRecordProvider coretypes.ChainReco
 
 	astr := make([]string, len(chainRecords))
 	for i := range astr {
-		astr[i] = coretypes.NewChainID(chainRecords[i].ChainAddr).String()[:10] + ".."
+		astr[i] = chainRecords[i].ChainID.String()[:10] + ".."
 	}
 	c.log.Debugf("loaded %d chain record(s) from registry: %+v", len(chainRecords), astr)
 
 	for _, chr := range chainRecords {
 		if chr.Active {
 			if err := c.Activate(chr); err != nil {
-				c.log.Errorf("cannot activate chain %s: %v", chr.ChainAddr, err)
+				c.log.Errorf("cannot activate chain %s: %v", chr.ChainID, err)
 			}
 		}
 	}
@@ -89,15 +90,15 @@ func (c *Chains) Activate(chr *chainrecord.ChainRecord) error {
 	if !chr.Active {
 		return xerrors.Errorf("cannot activate chain for deactivated chain record")
 	}
-	chainArr := chr.ChainAddr.Array()
+	chainArr := chr.ChainID.Array()
 	_, ok := c.allChains[chainArr]
 	if ok {
-		c.log.Debugf("chain is already active: %s", chr.ChainAddr.String())
+		c.log.Debugf("chain is already active: %s", chr.ChainID.String())
 		return nil
 	}
 	// create new chain object
 	defaultRegistry := registry.DefaultRegistry()
-	chainKVStore := database.GetOrCreateKVStore(chr.ChainAddr)
+	chainKVStore := database.GetOrCreateKVStore(chr.ChainID)
 	newChain := chainimpl.NewChain(
 		chr,
 		c.log,
@@ -113,8 +114,8 @@ func (c *Chains) Activate(chr *chainrecord.ChainRecord) error {
 		return xerrors.New("Chains.Activate: failed to create chain object")
 	}
 	c.allChains[chainArr] = newChain
-	c.nodeConn.Subscribe(chr.ChainAddr)
-	c.log.Infof("activated chain: %s", chr.ChainAddr.String())
+	c.nodeConn.Subscribe(chr.ChainID.AliasAddress)
+	c.log.Infof("activated chain: %s", chr.ChainID.String())
 	return nil
 }
 
@@ -123,14 +124,14 @@ func (c *Chains) Deactivate(chr *chainrecord.ChainRecord) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	ch, ok := c.allChains[chr.ChainAddr.Array()]
+	ch, ok := c.allChains[chr.ChainID.Array()]
 	if !ok || ch.IsDismissed() {
-		c.log.Debugf("chain is not active: %s", chr.ChainAddr.String())
+		c.log.Debugf("chain is not active: %s", chr.ChainID.String())
 		return nil
 	}
 	ch.Dismiss("deactivate")
-	c.nodeConn.Unsubscribe(chr.ChainAddr)
-	c.log.Debugf("chain has been deactivated: %s", chr.ChainAddr.String())
+	c.nodeConn.Unsubscribe(chr.ChainID.AliasAddress)
+	c.log.Debugf("chain has been deactivated: %s", chr.ChainID.String())
 	return nil
 }
 

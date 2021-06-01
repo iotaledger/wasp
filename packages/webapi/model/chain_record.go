@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 )
 
@@ -12,14 +11,14 @@ type ChainRecord struct {
 
 func NewChainRecord(rec *chainrecord.ChainRecord) *ChainRecord {
 	return &ChainRecord{
-		ChainID: NewChainID(coretypes.NewChainID(rec.ChainAddr)),
+		ChainID: NewChainID(rec.ChainID),
 		Active:  rec.Active,
 	}
 }
 
 func (bd *ChainRecord) Record() *chainrecord.ChainRecord {
 	return &chainrecord.ChainRecord{
-		ChainAddr: bd.ChainID.ChainID().AliasAddress,
-		Active:    bd.Active,
+		ChainID: bd.ChainID.ChainID(),
+		Active:  bd.Active,
 	}
 }

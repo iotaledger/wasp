@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/database/dbprovider"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
@@ -33,7 +34,7 @@ func (m *DBManager) Close() {
 	}
 }
 
-func (m *DBManager) createInstance(chainID *ledgerstate.AliasAddress) *dbprovider.DBProvider {
+func (m *DBManager) createInstance(chainID *coretypes.ChainID) *dbprovider.DBProvider {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -52,10 +53,10 @@ func (m *DBManager) createInstance(chainID *ledgerstate.AliasAddress) *dbprovide
 	return instance
 }
 
-func (m *DBManager) GetOrCreateDBInstance(chainID *ledgerstate.AliasAddress) *dbprovider.DBProvider {
+func (m *DBManager) GetOrCreateDBInstance(chainID *coretypes.ChainID) *dbprovider.DBProvider {
 	if chainID == nil {
 		// chain records registry
-		return m.GetOrCreateDBInstance(&ledgerstate.AliasAddress{})
+		return m.GetOrCreateDBInstance(&coretypes.ChainID{})
 	}
 	instance := m.dbInstances[chainID.Array()]
 	if instance == nil {
@@ -64,12 +65,12 @@ func (m *DBManager) GetOrCreateDBInstance(chainID *ledgerstate.AliasAddress) *db
 	return instance
 }
 
-func (m *DBManager) GetDBInstance(chainID *ledgerstate.AliasAddress) *dbprovider.DBProvider {
+func (m *DBManager) GetDBInstance(chainID *coretypes.ChainID) *dbprovider.DBProvider {
 	return m.dbInstances[chainID.Array()]
 }
 
 func (m *DBManager) GetRegistryDBInstance() *dbprovider.DBProvider {
-	zeroAddress := ledgerstate.AliasAddress{}
+	zeroAddress := coretypes.ChainID{}
 	instance := m.dbInstances[zeroAddress.Array()]
 	if instance == nil {
 		// first call, registry instance does not exist yet
@@ -82,7 +83,7 @@ func (m *DBManager) GetRegistryKVStore() kvstore.KVStore {
 	return m.GetRegistryDBInstance().GetPartition(nil)
 }
 
-func (m *DBManager) GetOrCreateKVStore(chainID *ledgerstate.AliasAddress) kvstore.KVStore {
+func (m *DBManager) GetOrCreateKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
 	instance := m.GetDBInstance(chainID)
 	if instance != nil {
 		return instance.GetPartition(chainID)
@@ -91,7 +92,7 @@ func (m *DBManager) GetOrCreateKVStore(chainID *ledgerstate.AliasAddress) kvstor
 	return m.GetOrCreateDBInstance(chainID).GetPartition(chainID)
 }
 
-func (m *DBManager) GetKVStore(chainID *ledgerstate.AliasAddress) kvstore.KVStore {
+func (m *DBManager) GetKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
 	return m.GetDBInstance(chainID).GetPartition(chainID)
 }
 

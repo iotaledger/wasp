@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/iotaledger/wasp/packages/chain/consensus"
+	"github.com/iotaledger/wasp/packages/registry"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 
@@ -48,8 +49,8 @@ type chainObj struct {
 	store                 kvstore.KVStore
 	peerNetworkConfig     coretypes.PeerNetworkConfigProvider
 	netProvider           peering.NetworkProvider
-	dksProvider           coretypes.DKShareRegistryProvider
-	committeeRegistry     coretypes.CommitteeRegistryProvider
+	dksProvider           registry.DKShareRegistryProvider
+	committeeRegistry     registry.CommitteeRegistryProvider
 	blobProvider          coretypes.BlobCache
 	eventRequestProcessed *events.Event
 	eventStateTransition  *events.Event
@@ -63,14 +64,14 @@ func NewChain(
 	peerNetConfig coretypes.PeerNetworkConfigProvider,
 	store kvstore.KVStore,
 	netProvider peering.NetworkProvider,
-	dksProvider coretypes.DKShareRegistryProvider,
-	committeeRegistry coretypes.CommitteeRegistryProvider,
+	dksProvider registry.DKShareRegistryProvider,
+	committeeRegistry registry.CommitteeRegistryProvider,
 	blobProvider coretypes.BlobCache,
 ) chain.Chain {
-	log.Debugf("creating chain object for %s", chr.ChainAddr.String())
+	log.Debugf("creating chain object for %s", chr.ChainID.String())
 
-	chainLog := log.Named(chr.ChainAddr.Base58()[:6] + ".")
-	stateReader, err := state.NewStateReader(store, coretypes.NewChainID(chr.ChainAddr))
+	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
+	stateReader, err := state.NewStateReader(store, chr.ChainID)
 	if err != nil {
 		log.Errorf("NewChain: %v", err)
 		return nil
@@ -79,7 +80,7 @@ func NewChain(
 		mempool:           mempool.New(stateReader, blobProvider, chainLog),
 		procset:           processors.MustNew(),
 		chMsg:             make(chan interface{}, 100),
-		chainID:           *coretypes.NewChainID(chr.ChainAddr),
+		chainID:           *chr.ChainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstream, chainLog),
 		store:             store,

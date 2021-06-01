@@ -85,7 +85,7 @@ func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction) {
 	err = ch.State.Commit(block)
 	require.NoError(ch.Env.T, err)
 
-	blockBack, err := state.LoadBlock(ch.Env.dbProvider.GetPartition(ch.ChainID.AliasAddress), ch.State.BlockIndex())
+	blockBack, err := state.LoadBlock(ch.Env.dbProvider.GetPartition(&ch.ChainID), ch.State.BlockIndex())
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
 	require.EqualValues(ch.Env.T, stateOutput.ID(), blockBack.ApprovingOutputID())

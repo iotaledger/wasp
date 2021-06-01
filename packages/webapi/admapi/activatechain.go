@@ -34,12 +34,12 @@ func handleActivateChain(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	bd, err := registry.DefaultRegistry().ActivateChainRecord(chainID.AliasAddress)
+	bd, err := registry.DefaultRegistry().ActivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}
 
-	log.Debugw("calling Chains.Activate", "chainID", bd.ChainAddr.String())
+	log.Debugw("calling Chains.Activate", "chainID", bd.ChainID.String())
 	if err := chains.AllChains().Activate(bd); err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func handleDeactivateChain(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	bd, err := registry.DefaultRegistry().DeactivateChainRecord(chainID.AliasAddress)
+	bd, err := registry.DefaultRegistry().DeactivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}

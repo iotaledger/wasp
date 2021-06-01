@@ -66,11 +66,11 @@ func (w *waspServices) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
 }
 
 func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error) {
-	return registry.DefaultRegistry().GetChainRecordByChainID(chainID.AliasAddress)
+	return registry.DefaultRegistry().GetChainRecordByChainID(chainID)
 }
 
 func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*dashboard.ChainState, error) {
-	chainStore := database.GetKVStore(chainID.AliasAddress)
+	chainStore := database.GetKVStore(chainID)
 	virtualState, _, err := state.LoadSolidState(chainStore, chainID)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.Chain {
 }
 
 func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
-	chainStore := database.GetKVStore(chain.ID().AliasAddress)
+	chainStore := database.GetKVStore(chain.ID())
 	vctx, err := viewcontext.NewFromDB(chainStore, *chain.ID(), chain.Processors())
 	if err != nil {
 		return nil, fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
