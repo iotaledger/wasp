@@ -155,6 +155,31 @@ func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, b
 	return
 }
 
+func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64) (tx *types.Transaction, blockNumber uint64, err error) {
+	var ret dict.Dict
+	ret, err = e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetTransactionByBlockHashAndIndex,
+		evmchain.FieldBlockHash, hash.Bytes(),
+		evmchain.FieldTransactionIndex, codec.EncodeUint64(index),
+	)
+	if err != nil {
+		return
+	}
+
+	if !ret.MustHas(evmchain.FieldTransaction) {
+		return
+	}
+
+	tx, err = evmchain.DecodeTransaction(ret.MustGet(evmchain.FieldTransaction))
+	if err != nil {
+		return
+	}
+	blockNumber, _, err = codec.DecodeUint64(ret.MustGet(evmchain.FieldBlockNumber))
+	if err != nil {
+		return
+	}
+	return
+}
+
 func (e *EVMChain) BlockByHash(hash common.Hash) (*types.Block, error) {
 	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetBlockByHash,
 		evmchain.FieldBlockHash, hash.Bytes(),

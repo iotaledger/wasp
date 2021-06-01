@@ -151,6 +151,21 @@ func getTransactionByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
 	})
 }
 
+func getTransactionByBlockHashAndIndex(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	return withTransactionByBlockHashAndIndex(ctx, func(emu *evm.EVMEmulator, tx *types.Transaction) dict.Dict {
+		if tx == nil {
+			return nil
+		}
+		receipt, err := emu.TransactionReceipt(tx.Hash())
+		a.RequireNoError(err)
+		return dict.Dict{
+			FieldTransaction: EncodeTransaction(tx),
+			FieldBlockNumber: codec.EncodeUint64(receipt.BlockNumber.Uint64()),
+		}
+	})
+}
+
 func getBlockTransactionCountByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return withBlockByHash(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
 		if block == nil {

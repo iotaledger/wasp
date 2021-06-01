@@ -155,6 +155,15 @@ func (e *env) transactionByHash(hash common.Hash) *types.Transaction {
 	return tx
 }
 
+func (e *env) transactionByBlockHashAndIndex(blockHash common.Hash, index uint) *types.Transaction {
+	tx, err := e.client.TransactionInBlock(context.Background(), blockHash, uint(index))
+	if err == ethereum.NotFound {
+		return nil
+	}
+	require.NoError(e.t, err)
+	return tx
+}
+
 func (e *env) blockTransactionCountByHash(hash common.Hash) uint {
 	n, err := e.client.TransactionCount(context.Background(), hash)
 	require.NoError(e.t, err)
@@ -292,8 +301,17 @@ func TestRPCGetTransactionByHash(t *testing.T) {
 	require.Nil(t, env.transactionByHash(common.Hash{}))
 	env.requestFunds(receiverAddress)
 	block1 := env.blockByNumber(big.NewInt(1))
-	require.Positive(t, len(block1.Transactions()))
 	tx := env.transactionByHash(block1.Transactions()[0].Hash())
+	require.Equal(t, block1.Transactions()[0].Hash(), tx.Hash())
+}
+
+func TestRPCGetTransactionByBlockHashAndIndex(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	require.Nil(t, env.transactionByBlockHashAndIndex(common.Hash{}, 0))
+	env.requestFunds(receiverAddress)
+	block1 := env.blockByNumber(big.NewInt(1))
+	tx := env.transactionByBlockHashAndIndex(block1.Hash(), 0)
 	require.Equal(t, block1.Transactions()[0].Hash(), tx.Hash())
 }
 

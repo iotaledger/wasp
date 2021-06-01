@@ -75,6 +75,17 @@ func (s *EthService) GetTransactionByHash(hash common.Hash) (*RPCTransaction, er
 	return newRPCTransaction(tx, blockHash, blockNumber, index), err
 }
 
+func (s *EthService) GetTransactionByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) (*RPCTransaction, error) {
+	tx, blockNumber, err := s.evmChain.TransactionByBlockHashAndIndex(blockHash, uint64(index))
+	if err != nil {
+		return nil, err
+	}
+	if tx == nil {
+		return nil, nil
+	}
+	return newRPCTransaction(tx, blockHash, blockNumber, uint64(index)), err
+}
+
 func (e *EthService) GetBalance(address common.Address, blockNumber rpc.BlockNumber) (*hexutil.Big, error) {
 	bal, err := e.evmChain.Balance(address, parseBlockNumber(blockNumber))
 	if err != nil {
@@ -152,13 +163,9 @@ func (s *EthService) Mining()                              { panic("not implemen
 func (s *EthService) Hashrate()                            { panic("not implemented") }
 func (s *EthService) GasPrice()                            { panic("not implemented") }
 func (s *EthService) Accounts()                            { panic("not implemented") }
-func (s *EthService) GetBlockTransactionCountByNumber()    { panic("not implemented") }
-func (s *EthService) GetUncleCountByBlockHash()            { panic("not implemented") }
-func (s *EthService) GetUncleCountByBlockNumber()          { panic("not implemented") }
 func (s *EthService) Sign()                                { panic("not implemented") }
 func (s *EthService) SignTransaction()                     { panic("not implemented") }
 func (s *EthService) SendTransaction()                     { panic("not implemented") }
-func (s *EthService) GetTransactionByBlockHashAndIndex()   { panic("not implemented") }
 func (s *EthService) GetTransactionByBlockNumberAndIndex() { panic("not implemented") }
 func (s *EthService) GetUncleByBlockHashAndIndex()         { panic("not implemented") }
 func (s *EthService) GetUncleByBlockNumberAndIndex()       { panic("not implemented") }
