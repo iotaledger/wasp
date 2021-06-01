@@ -54,6 +54,10 @@ func init() {
 		coreutil.Func(FuncCheckContextFromFullEP, testCheckContextFromFullEP),
 		coreutil.ViewFunc(FuncCheckContextFromViewEP, testCheckContextFromViewEP),
 
+		coreutil.Func(FuncTestBlockContext1, testBlockContext1),
+		coreutil.Func(FuncTestBlockContext2, testBlockContext2),
+		coreutil.ViewFunc(FuncGetStringValue, getStringValue),
+
 		coreutil.ViewFunc(FuncJustView, testJustView),
 	})
 	native.AddProcessor(Interface)
@@ -79,6 +83,10 @@ const (
 	FuncCallPanicFullEP         = "testCallPanicFullEP"
 	FuncCallPanicViewEPFromFull = "testCallPanicViewEPFromFull"
 	FuncCallPanicViewEPFromView = "testCallPanicViewEPFromView"
+
+	FuncTestBlockContext1 = "testBlockContext1"
+	FuncTestBlockContext2 = "testBlockContext2"
+	FuncGetStringValue    = "getStringValue"
 
 	FuncWithdrawToChain = "withdrawToChain"
 
@@ -116,6 +124,7 @@ const (
 	ParamIntParamValue   = "intParamValue"
 	ParamHnameContract   = "hnameContract"
 	ParamHnameEP         = "hnameEP"
+	ParamVarName         = "paramVar"
 
 	// error fragments for testing
 	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="

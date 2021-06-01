@@ -1,7 +1,6 @@
 package mempool
 
 import (
-	"sort"
 	"sync"
 	"time"
 
@@ -14,95 +13,83 @@ import (
 )
 
 type mempool struct {
-	mutex       sync.RWMutex
-	stateReader state.StateReader
-	requestRefs map[coretypes.RequestID]*requestRef
-	chStop      chan bool
-	blobCache   coretypes.BlobCache
-	log         *logger.Logger
+	mutex                   sync.RWMutex
+	incounter               int
+	outcounter              int
+	stateReader             state.StateReader
+	requestRefs             map[coretypes.RequestID]*requestRef
+	chStop                  chan struct{}
+	blobCache               coretypes.BlobCache
+	solidificationLoopDelay time.Duration
+	log                     *logger.Logger
 }
 
 type requestRef struct {
-	req             coretypes.Request
-	whenMsgReceived time.Time
-	seen            map[uint16]bool
+	req          coretypes.Request
+	whenReceived time.Time
 }
 
-const constSolidificationLoopDelay = 200 * time.Millisecond
+const defaultSolidificationLoopDelay = 200 * time.Millisecond
 
 var _ chain.Mempool = &mempool{}
 
-func New(stateReader state.StateReader, blobCache coretypes.BlobCache, log *logger.Logger) chain.Mempool {
+func New(stateReader state.StateReader, blobCache coretypes.BlobCache, log *logger.Logger, solidificationLoopDelay ...time.Duration) *mempool {
 	ret := &mempool{
 		stateReader: stateReader,
 		requestRefs: make(map[coretypes.RequestID]*requestRef),
-		chStop:      make(chan bool),
+		chStop:      make(chan struct{}),
 		blobCache:   blobCache,
 		log:         log.Named("m"),
+	}
+	if len(solidificationLoopDelay) > 0 {
+		ret.solidificationLoopDelay = solidificationLoopDelay[0]
+	} else {
+		ret.solidificationLoopDelay = defaultSolidificationLoopDelay
 	}
 	go ret.solidificationLoop()
 	return ret
 }
 
-func (m *mempool) ReceiveRequest(req coretypes.Request) {
+func (m *mempool) ReceiveRequests(reqs ...coretypes.Request) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	// only allow off-ledger requests with valid signature
-	if offLedgerReq, ok := req.(*request.RequestOffLedger); ok {
-		if !offLedgerReq.VerifySignature() {
-			m.log.Errorf("ReceiveRequest.VerifySignature: invalid signature")
+	for _, req := range reqs {
+		// only allow off-ledger requests with valid signature
+		if offLedgerReq, ok := req.(*request.RequestOffLedger); ok {
+			if !offLedgerReq.VerifySignature() {
+				m.log.Errorf("ReceiveRequest.VerifySignature: invalid signature")
+				continue
+			}
+		}
+		id := req.ID()
+		if blocklog.IsRequestProcessed(m.stateReader, &id) {
 			return
 		}
-	}
-	id := req.ID()
-	if blocklog.IsRequestProcessed(m.stateReader, &id) {
-		return
-	}
-	if _, ok := m.requestRefs[req.ID()]; ok {
-		return
-	}
-
-	// attempt solidification for those requests that do not require blobs
-	// instead of having to wait for the solidification goroutine to kick in
-	// also weeds out requests with solidification errors
-	_, err := req.SolidifyArgs(m.blobCache)
-	if err != nil {
-		m.log.Errorf("ReceiveRequest.SolidifyArgs: %s", err)
-		return
-	}
-
-	tl := req.TimeLock()
-	if tl.IsZero() {
-		m.log.Infof("IN MEMPOOL %s", req.ID())
-	} else {
-		m.log.Infof("IN MEMPOOL %s timelocked for %v", req.ID(), tl.Sub(time.Now()))
-	}
-	m.requestRefs[req.ID()] = &requestRef{
-		req:             req,
-		whenMsgReceived: time.Now(),
-		seen:            make(map[uint16]bool),
-	}
-}
-
-func (m *mempool) MarkSeenByCommitteePeer(reqid *coretypes.RequestID, peerIndex uint16) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	if _, ok := m.requestRefs[*reqid]; !ok {
-		m.requestRefs[*reqid] = &requestRef{
-			seen: make(map[uint16]bool),
+		if _, ok := m.requestRefs[req.ID()]; ok {
+			continue
 		}
-	}
-	m.requestRefs[*reqid].seen[peerIndex] = true
-}
 
-func (m *mempool) ClearSeenMarks() {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	for _, rec := range m.requestRefs {
-		rec.seen = make(map[uint16]bool)
+		// attempt solidification for those requests that do not require blobs
+		// instead of having to wait for the solidification goroutine to kick in
+		// also weeds out requests with solidification errors
+		_, err := req.SolidifyArgs(m.blobCache)
+		if err != nil {
+			m.log.Errorf("ReceiveRequest.SolidifyArgs: %s", err)
+			continue
+		}
+		nowis := time.Now()
+		m.incounter++
+		tl := req.TimeLock()
+		if tl.IsZero() {
+			m.log.Debugf("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.incounter, m.outcounter)
+		} else {
+			m.log.Debugf("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.incounter, m.outcounter, tl.Sub(time.Now()))
+		}
+		m.requestRefs[req.ID()] = &requestRef{
+			req:          req,
+			whenReceived: nowis,
+		}
 	}
 }
 
@@ -111,111 +98,59 @@ func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 	defer m.mutex.Unlock()
 
 	for _, rid := range reqs {
+		if _, ok := m.requestRefs[rid]; !ok {
+			continue
+		}
+		m.outcounter++
 		delete(m.requestRefs, rid)
-		m.log.Infof("OUT MEMPOOL %s", rid)
+		m.log.Debugf("OUT MEMPOOL %s (+%d / -%d)", rid, m.incounter, m.outcounter)
 	}
 }
 
-const timeAheadTolerance = 1000 * time.Nanosecond
-
-func isRequestReady(ref *requestRef, seenThreshold uint16, nowis time.Time) bool {
-	if ref.req == nil {
-		return false
-	}
-	if len(ref.seen) < int(seenThreshold) {
-		return false
-	}
+// isRequestReady for requests with paramsReady, the result is strictly deterministic
+func (m *mempool) isRequestReady(ref *requestRef, nowis time.Time) bool {
+	// TODO fallback options
 	if _, paramsReady := ref.req.Params(); !paramsReady {
 		return false
 	}
-	if !ref.req.TimeLock().IsZero() {
-		timeBaseline := nowis.Add(timeAheadTolerance)
-		if ref.req.TimeLock().After(timeBaseline) {
-			return false
-		}
-	}
-	return true
+	return ref.req.TimeLock().IsZero() || ref.req.TimeLock().Before(nowis)
 }
 
-func (m *mempool) GetReadyList(seenThreshold ...uint16) []coretypes.Request {
+// ReadyNow returns preliminary batch for consensus.
+// Note that later status of request may change due to time constraints
+func (m *mempool) ReadyNow(now ...time.Time) []coretypes.Request {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	var thr uint16
-	if len(seenThreshold) > 0 {
-		thr = seenThreshold[0]
+	nowis := time.Now()
+	if len(now) > 0 {
+		nowis = now[0]
 	}
 	ret := make([]coretypes.Request, 0, len(m.requestRefs))
-	nowis := time.Now()
 	for _, ref := range m.requestRefs {
-		if isRequestReady(ref, thr, nowis) {
+		if m.isRequestReady(ref, nowis) {
 			ret = append(ret, ref.req)
 		}
 	}
-	sort.Slice(ret, func(i, j int) bool {
-		return ret[i].Order() < ret[j].Order()
-	})
 	return ret
 }
 
-// GetRequestsByIDs returns slice with requests. Corresponding nil if not ready
-func (m *mempool) GetRequestsByIDs(nowis time.Time, reqids ...coretypes.RequestID) []coretypes.Request {
-	ret := make([]coretypes.Request, len(reqids))
-	for i := range ret {
-		reqref, ok := m.requestRefs[reqids[i]]
+// ReadyFromIDs if successful, function returns a deterministic list of requests for running on the VM
+// - nil, false if some all requests not arrived to the mempool yet. For retry later
+// - (a list of processable requests), true if the list can be deterministically calculated
+// Note that (a list of processable requests) can be empty if none satisfies nowis time constraint (timelock, fallback)
+// For requests which are known and solidified result is deterministic
+func (m *mempool) ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool) {
+	ret := make([]coretypes.Request, 0, len(reqids))
+	for _, reqid := range reqids {
+		reqref, ok := m.requestRefs[reqid]
 		if !ok {
-			continue
-		}
-		if !isRequestReady(reqref, 0, nowis) {
-			continue
-		}
-		ret[i] = reqref.req
-	}
-	return ret
-}
-
-func (m *mempool) GetReadyListFull(seenThreshold ...uint16) []*chain.ReadyListRecord {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
-
-	var thr uint16
-	if len(seenThreshold) > 0 {
-		thr = seenThreshold[0]
-	}
-	ret := make([]*chain.ReadyListRecord, 0, len(m.requestRefs))
-	nowis := time.Now()
-	for _, ref := range m.requestRefs {
-		if isRequestReady(ref, thr, nowis) {
-			rec := &chain.ReadyListRecord{
-				Request: ref.req,
-				Seen:    make(map[uint16]bool),
-			}
-			for p := range ref.seen {
-				rec.Seen[p] = true
-			}
-			ret = append(ret, rec)
-		}
-	}
-	sort.Slice(ret, func(i, j int) bool {
-		return ret[i].Request.Order() < ret[j].Request.Order()
-	})
-	return ret
-}
-
-func (m *mempool) TakeAllReady(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool) {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
-
-	ret := make([]coretypes.Request, len(reqids))
-	for i := range reqids {
-		ref, ok := m.requestRefs[reqids[i]]
-		if !ok {
+			// retry later
 			return nil, false
 		}
-		if !isRequestReady(ref, 0, nowis) {
-			return nil, false
+		if m.isRequestReady(reqref, nowis) {
+			ret = append(ret, reqref.req)
 		}
-		ret[i] = ref.req
 	}
 	return ret, true
 }
@@ -228,22 +163,22 @@ func (m *mempool) HasRequest(id coretypes.RequestID) bool {
 	return ok && rec.req != nil
 }
 
-// Stats return total number, number with messages, number solid
-func (m *mempool) Stats() (int, int, int) {
+func (m *mempool) Stats() chain.MempoolStats {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	total := len(m.requestRefs)
-	withMsg, solid := 0, 0
+	ret := chain.MempoolStats{
+		InCounter:  m.incounter,
+		OutCounter: m.outcounter,
+		Total:      len(m.requestRefs),
+	}
+	nowis := time.Now()
 	for _, ref := range m.requestRefs {
-		if ref.req != nil {
-			withMsg++
-			if isSolid, _ := ref.req.SolidifyArgs(m.blobCache); isSolid {
-				solid++
-			}
+		if m.isRequestReady(ref, nowis) {
+			ret.Ready++
 		}
 	}
-	return total, withMsg, solid
+	return ret
 }
 
 func (m *mempool) Close() {
@@ -255,10 +190,9 @@ func (m *mempool) solidificationLoop() {
 		select {
 		case <-m.chStop:
 			return
-		default:
+		case <-time.After(m.solidificationLoopDelay):
 			m.doSolidifyRequests()
 		}
-		time.Sleep(constSolidificationLoopDelay)
 	}
 }
 

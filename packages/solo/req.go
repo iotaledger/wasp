@@ -99,6 +99,16 @@ func (r *CallParams) WithMint(targetAddress ledgerstate.Address, amount uint64) 
 	return r
 }
 
+// NewRequestOffLedger creates off-ledger request from parameters
+func (r *CallParams) NewRequestOffLedger(keyPair *ed25519.KeyPair) *request.RequestOffLedger {
+	ret := request.NewRequestOffLedger(r.target, r.entryPoint, r.args)
+	if r.transfer != nil {
+		ret.Transfer(r.transfer)
+	}
+	ret.Sign(keyPair)
+	return ret
+}
+
 // makes map without hashing
 func toMap(params ...interface{}) map[string]interface{} {
 	par := make(map[string]interface{})
@@ -185,18 +195,15 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *ed25519.KeyPair) (dic
 }
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair) (dict.Dict, error) {
-	request := request.NewRequestOffLedger(req.target, req.entryPoint, req.args)
 	if keyPair == nil {
 		keyPair = ch.OriginatorKeyPair
 	}
-	if req.transfer != nil {
-		request.Transfer(req.transfer)
-	}
-	request.Sign(keyPair)
-	ch.reqCounter.Add(1)
-	ch.mempool.ReceiveRequest(request)
+	r := req.NewRequestOffLedger(keyPair)
 
-	ready := ch.mempool.GetReadyList()
+	ch.reqCounter.Add(1)
+	ch.mempool.ReceiveRequests(r)
+
+	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
 	if len(ready) == 0 {
 		ch.Log.Infof("waiting for solidification")
 		return nil, nil
@@ -256,10 +263,12 @@ func (ch *Chain) CallView(scName string, funName string, params ...interface{}) 
 // It is useful when smart contract(s) in the test are posting asynchronous requests
 // between chains.
 //
-// The call is needed in order to prevent finishing the test before all
+// The call is only needed in order to prevent finishing the test before all
 // asynchronous request between chains are processed.
 // Otherwise waiting is not necessary because all PostRequestSync calls by the test itself
 // are synchronous and are processed immediately
+//
+// NOTE: to wait for timed requests to be processed first move the clock forward
 func (ch *Chain) WaitForEmptyBacklog(maxWait ...time.Duration) {
 	maxw := 5 * time.Second
 	var deadline time.Time
@@ -268,29 +277,15 @@ func (ch *Chain) WaitForEmptyBacklog(maxWait ...time.Duration) {
 	}
 	deadline = time.Now().Add(maxw)
 	counter := 0
-	for {
-		if counter%40 == 0 {
+	for ch.backlogLen() > 0 {
+		if counter%50 == 0 {
 			ch.Log.Infof("backlog length = %d", ch.backlogLen())
 		}
 		counter++
-		time.Sleep(200 * time.Millisecond)
-		if ch.backlogLen() > 0 {
-			if time.Now().After(deadline) {
-				ch.Log.Warnf("exit due to timeout of max wait for %v", maxw)
-				return
-			}
-		} else {
-			emptyCounter := 0
-			for i := 0; i < 3; i++ {
-				time.Sleep(100 * time.Millisecond)
-				if ch.backlogLen() != 0 {
-					break
-				}
-				emptyCounter++
-			}
-			if emptyCounter >= 3 {
-				return
-			}
+		if time.Now().After(deadline) {
+			ch.Log.Warnf("exit due to timeout of max wait for %v", maxw)
+			return
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 }

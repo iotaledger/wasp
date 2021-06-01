@@ -3,49 +3,38 @@ package vmcontext
 import (
 	"sort"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/vm"
+
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
+
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/state"
 )
 
-type stateWrapper struct {
-	contractHname              coretypes.Hname
-	contractSubPartitionPrefix kv.Key
-	virtualState               state.VirtualState
-	stateUpdate                state.StateUpdate
+type chainStateWrapper struct {
+	vmctx *VMContext
 }
 
-func newStateWrapper(contractHname coretypes.Hname, virtualState state.VirtualState, stateUpdate state.StateUpdate) stateWrapper {
-	return stateWrapper{
-		contractHname:              contractHname,
-		contractSubPartitionPrefix: kv.Key(contractHname.Bytes()),
-		virtualState:               virtualState,
-		stateUpdate:                stateUpdate,
+// chainState is a KVStore to access the whole state of the chain. To access the partition of the contract
+// use subrealm or methid (vmctx *VMContext) State() kv.KVStore
+func (vmctx *VMContext) chainState() chainStateWrapper {
+	return chainStateWrapper{vmctx}
+}
+
+func (s chainStateWrapper) Has(name kv.Key) (bool, error) {
+	if s.vmctx.isInvalidatedState() {
+		panic(vm.ErrStateHasBeenInvalidated)
 	}
-}
-
-func (s *stateWrapper) addContractSubPartition(key kv.Key) kv.Key {
-	return s.contractSubPartitionPrefix + key
-}
-
-func (vmctx *VMContext) stateWrapper() stateWrapper {
-	return newStateWrapper(
-		vmctx.CurrentContractHname(),
-		vmctx.virtualState,
-		vmctx.currentStateUpdate,
-	)
-}
-
-func (s stateWrapper) Has(name kv.Key) (bool, error) {
-	name = s.addContractSubPartition(name)
-	_, ok := s.stateUpdate.Mutations().Sets[name]
+	_, ok := s.vmctx.currentStateUpdate.Mutations().Sets[name]
 	if ok {
 		return true, nil
 	}
-	return s.virtualState.KVStore().Has(name)
+	return s.vmctx.virtualState.KVStore().Has(name)
 }
 
-func (s stateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) error {
+func (s chainStateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) error {
+	if s.vmctx.isInvalidatedState() {
+		panic(vm.ErrStateHasBeenInvalidated)
+	}
 	var err error
 	err2 := s.IterateKeys(prefix, func(k kv.Key) bool {
 		var v []byte
@@ -61,24 +50,29 @@ func (s stateWrapper) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) error 
 	return err
 }
 
-func (s stateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
-	prefix = s.addContractSubPartition(prefix)
-	for k := range s.stateUpdate.Mutations().Sets {
+func (s chainStateWrapper) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+	if s.vmctx.isInvalidatedState() {
+		panic(vm.ErrStateHasBeenInvalidated)
+	}
+	for k := range s.vmctx.currentStateUpdate.Mutations().Sets {
 		if k.HasPrefix(prefix) {
-			if !f(k[len(s.contractSubPartitionPrefix):]) {
+			if !f(k) {
 				return nil
 			}
 		}
 	}
-	return s.virtualState.KVStore().IterateKeys(prefix, func(k kv.Key) bool {
-		if !s.stateUpdate.Mutations().Contains(k) {
-			return f(k[len(s.contractSubPartitionPrefix):])
+	return s.vmctx.virtualState.KVStore().IterateKeys(prefix, func(k kv.Key) bool {
+		if !s.vmctx.currentStateUpdate.Mutations().Contains(k) {
+			return f(k)
 		}
 		return true
 	})
 }
 
-func (s stateWrapper) IterateSorted(prefix kv.Key, f func(kv.Key, []byte) bool) error {
+func (s chainStateWrapper) IterateSorted(prefix kv.Key, f func(kv.Key, []byte) bool) error {
+	if s.vmctx.isInvalidatedState() {
+		panic(vm.ErrStateHasBeenInvalidated)
+	}
 	var err error
 	err2 := s.IterateKeysSorted(prefix, func(k kv.Key) bool {
 		var v []byte
@@ -94,16 +88,18 @@ func (s stateWrapper) IterateSorted(prefix kv.Key, f func(kv.Key, []byte) bool) 
 	return err
 }
 
-func (s stateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
-	prefix = s.addContractSubPartition(prefix)
+func (s chainStateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
+	if s.vmctx.isInvalidatedState() {
+		panic(vm.ErrStateHasBeenInvalidated)
+	}
 	var keys []kv.Key
-	for k := range s.stateUpdate.Mutations().Sets {
+	for k := range s.vmctx.currentStateUpdate.Mutations().Sets {
 		if k.HasPrefix(prefix) {
 			keys = append(keys, k)
 		}
 	}
-	err := s.virtualState.KVStore().IterateKeysSorted(prefix, func(k kv.Key) bool {
-		if !s.stateUpdate.Mutations().Contains(k) {
+	err := s.vmctx.virtualState.KVStore().IterateKeysSorted(prefix, func(k kv.Key) bool {
+		if !s.vmctx.currentStateUpdate.Mutations().Contains(k) {
 			keys = append(keys, k)
 		}
 		return true
@@ -113,58 +109,65 @@ func (s stateWrapper) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) 
 	}
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
 	for _, k := range keys {
-		if !f(k[len(s.contractSubPartitionPrefix):]) {
+		if !f(k) {
 			break
 		}
 	}
 	return nil
 }
 
-func (s stateWrapper) Get(name kv.Key) ([]byte, error) {
-	name = s.addContractSubPartition(name)
-	v, ok := s.stateUpdate.Mutations().Sets[name]
+func (s chainStateWrapper) Get(name kv.Key) ([]byte, error) {
+	if s.vmctx.isInvalidatedState() {
+		panic(vm.ErrStateHasBeenInvalidated)
+	}
+	v, ok := s.vmctx.currentStateUpdate.Mutations().Sets[name]
 	if ok {
 		return v, nil
 	}
-	return s.virtualState.KVStore().Get(name)
+	return s.vmctx.virtualState.KVStore().Get(name)
 }
 
-func (s stateWrapper) Del(name kv.Key) {
-	name = s.addContractSubPartition(name)
-	s.stateUpdate.Mutations().Del(name)
+func (s chainStateWrapper) Del(name kv.Key) {
+	if s.vmctx.isInvalidatedState() {
+		panic(vm.ErrStateHasBeenInvalidated)
+	}
+	s.vmctx.currentStateUpdate.Mutations().Del(name)
 }
 
-func (s stateWrapper) Set(name kv.Key, value []byte) {
-	name = s.addContractSubPartition(name)
-	s.stateUpdate.Mutations().Set(name, value)
+func (s chainStateWrapper) Set(name kv.Key, value []byte) {
+	if s.vmctx.isInvalidatedState() {
+		panic(vm.ErrStateHasBeenInvalidated)
+	}
+	s.vmctx.currentStateUpdate.Mutations().Set(name, value)
 }
 
 func (vmctx *VMContext) State() kv.KVStore {
-	w := vmctx.stateWrapper()
-	// vmctx.log.Debugf("state wrapper: %s", w.contractHname.String())
-	return w
+	if vmctx.isInvalidatedState() {
+		panic(vm.ErrStateHasBeenInvalidated)
+	}
+	return subrealm.New(vmctx.chainState(), kv.Key(vmctx.CurrentContractHname().Bytes()))
 }
 
-func (s stateWrapper) MustGet(key kv.Key) []byte {
+func (s chainStateWrapper) MustGet(key kv.Key) []byte {
 	return kv.MustGet(s, key)
 }
 
-func (s stateWrapper) MustHas(key kv.Key) bool {
+func (s chainStateWrapper) MustHas(key kv.Key) bool {
 	return kv.MustHas(s, key)
 }
 
-func (s stateWrapper) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+func (s chainStateWrapper) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
 	kv.MustIterate(s, prefix, f)
 }
 
-func (s stateWrapper) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
+func (s chainStateWrapper) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 	kv.MustIterateKeys(s, prefix, f)
 }
 
-func (s stateWrapper) MustIterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+func (s chainStateWrapper) MustIterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
 	kv.MustIterateSorted(s, prefix, f)
 }
 
-func (s stateWrapper) MustIterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
+func (s chainStateWrapper) MustIterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
 	kv.MustIterateKeysSorted(s, prefix, f)
 }

@@ -1,9 +1,10 @@
 package tests
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -22,7 +23,7 @@ func TestDeployChain(t *testing.T) {
 	counter, err := clu.StartMessageCounter(map[string]int{
 		"dismissed_chain": 0,
 		"state":           2,
-		"request_out":     2,
+		"request_out":     1,
 	})
 	check(err, t)
 	defer counter.Close()
@@ -55,7 +56,7 @@ func TestDeployContractOnly(t *testing.T) {
 	counter, err := clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
-		"request_out":         2,
+		"request_out":         1,
 	})
 	check(err, t)
 	defer counter.Close()
@@ -123,7 +124,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	counter, err := clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
-		"request_out":         2,
+		"request_out":         1,
 	})
 	check(err, t)
 	defer counter.Close()
@@ -174,7 +175,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	dscrNew := "spawned contract it is"
 	hnameNew := coretypes.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
-	tx, err := chain.OriginatorClient().PostRequest(hname, coretypes.Hn(inccounter.FuncSpawn), chainclient.PostRequestParams{
+	tx, err := chain.OriginatorClient().Post1Request(hname, coretypes.Hn(inccounter.FuncSpawn), chainclient.PostRequestParams{
 		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
 			inccounter.VarName:        nameNew,
 			inccounter.VarDescription: dscrNew,

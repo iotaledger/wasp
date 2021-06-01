@@ -169,9 +169,9 @@ func TestLeb128(t *testing.T) {
 }
 
 func TestLoop(t *testing.T) {
-	wasmhost.WasmTimeout = 1 * time.Second
 	chain := setupTest(t)
 
+	wasmhost.WasmTimeout = 1 * time.Second
 	req := solo.NewCallParams(ScName, FuncLoop,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)

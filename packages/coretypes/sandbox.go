@@ -55,10 +55,12 @@ type Sandbox interface {
 	// Note that the minted tokens can be sent to any addresses, not necessarily the chain address
 	Minted() map[ledgerstate.Color]uint64
 	// Send one generic method for sending assets with ledgerstate.ExtendedLockedOutput
-	// replaces TransferToAddress and PostRequest
+	// replaces TransferToAddress and Post1Request
 	Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *SendMetadata, options ...SendOptions) bool
 	// Utils provides access to common necessary functionality
 	Utils() Utils
+	// Internal for use in native hardcoded contracts
+	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
 }
 
 type SendOptions struct {

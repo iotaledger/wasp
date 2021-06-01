@@ -38,8 +38,8 @@ type PostRequestParams struct {
 	Args     requestargs.RequestArgs
 }
 
-// PostRequest sends a request transaction to the chain
-func (c *Client) PostRequest(
+// Post1Request sends one request transaction with one request on it to the chain
+func (c *Client) Post1Request(
 	contractHname coretypes.Hname,
 	entryPoint coretypes.Hname,
 	params ...PostRequestParams,
@@ -55,6 +55,7 @@ func (c *Client) PostRequest(
 			ChainID:    c.ChainID,
 			Contract:   contractHname,
 			EntryPoint: entryPoint,
+			Transfer:   par.Transfer,
 			Args:       par.Args,
 		}},
 	})

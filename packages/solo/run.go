@@ -6,6 +6,9 @@ package solo
 import (
 	"bytes"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -14,11 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"sync"
-	"time"
 )
 
 func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, error) {
@@ -42,30 +41,29 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 		Log:                ch.Log,
 	}
 	var err error
-	var wg sync.WaitGroup
 	var callRes dict.Dict
 	var callErr error
+	task.SolidStateInvalid = func() bool {
+		// in Solo solid state is always valid for the VM
+		return false
+	}
 	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
 		require.NoError(ch.Env.T, err)
 		callRes = callResult
 		callErr = callError
 		ch.reqCounter.Add(int32(-len(task.Requests)))
-		wg.Done()
 	}
 
-	wg.Add(1)
-	runvm.MustRunVMTaskAsync(task)
-	require.NoError(ch.Env.T, err)
-	wg.Wait()
+	ch.Env.vmRunner.Run(task)
 
 	ch.Env.AdvanceClockBy(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 
-	inputs, err := ch.Env.utxoDB.CollectUnspentOutputsFromInputs(task.ResultTransaction)
+	inputs, err := ch.Env.utxoDB.CollectUnspentOutputsFromInputs(task.ResultTransactionEssence)
 	require.NoError(ch.Env.T, err)
-	unlockBlocks, err := utxoutil.UnlockInputsWithED25519KeyPairs(inputs, task.ResultTransaction, ch.StateControllerKeyPair)
+	unlockBlocks, err := utxoutil.UnlockInputsWithED25519KeyPairs(inputs, task.ResultTransactionEssence, ch.StateControllerKeyPair)
 	require.NoError(ch.Env.T, err)
 
-	tx := ledgerstate.NewTransaction(task.ResultTransaction, unlockBlocks)
+	tx := ledgerstate.NewTransaction(task.ResultTransactionEssence, unlockBlocks)
 	ch.settleStateTransition(tx)
 
 	return callRes, callErr

@@ -12,27 +12,45 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// MustRunVMTaskAsync runs computations for the batch of requests in the background
-// This is the main entry point to the VM
-// TODO timeout for VM. Gas limit
-func MustRunVMTaskAsync(ctx *vm.VMTask) {
-	if len(ctx.Requests) == 0 {
-		ctx.Log.Panicf("MustRunVMTaskAsync: must be at least 1 request")
-	}
-	outputs := outputsFromRequests(ctx.Requests...)
-	txb := utxoutil.NewBuilder(append(outputs, ctx.ChainInput)...)
+type vmRunner struct{}
 
-	go runTask(ctx, txb)
+func (r vmRunner) Run(task *vm.VMTask) {
+	// panic catcher for the whole VM task
+	// ir returns gracefully if the panic was about invalidated state
+	// otherwise it panics again
+	// The smart contract panics are processed inside and do not reach this point
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+		if _, ok := r.(*vm.ErrorStateInvalidated); ok {
+			task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
+			return
+		}
+		panic(r)
+	}()
+	runTask(task)
+}
+
+func NewVMRunner() vmRunner {
+	return vmRunner{}
 }
 
 // runTask runs batch of requests on VM
-func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
+func runTask(task *vm.VMTask) {
 	task.Log.Debugw("runTask IN",
 		"chainID", task.ChainInput.Address().Base58(),
 		"timestamp", task.Timestamp,
 		"block index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
 	)
+	if len(task.Requests) == 0 {
+		task.Log.Panicf("MustRunVMTaskAsync: must be at least 1 request")
+	}
+	outputs := outputsFromRequests(task.Requests...)
+	txb := utxoutil.NewBuilder(append(outputs, task.ChainInput)...)
+
 	vmctx, err := vmcontext.CreateVMContext(task, txb)
 	if err != nil {
 		task.Log.Panicf("runTask: CreateVMContext: %v", err)
@@ -58,26 +76,22 @@ func runTask(task *vm.VMTask, txb *utxoutil.Builder) {
 	}
 
 	// save the block info into the 'blocklog' contract
-	err = vmctx.CloseVMContext(uint16(len(task.Requests)), numSuccess, numOffLedger)
-	if err != nil {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM: %w", err))
-		return
-	}
+	vmctx.CloseVMContext(uint16(len(task.Requests)), numSuccess, numOffLedger)
 
-	task.ResultTransaction, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
+	task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
 	if err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return
 	}
-	if err = checkTotalAssets(task.ResultTransaction, lastTotalAssets); err != nil {
+	if err = checkTotalAssets(task.ResultTransactionEssence, lastTotalAssets); err != nil {
 		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.checkTotalAssets: %v", err))
 		return
 	}
 	task.Log.Debugw("runTask OUT",
 		"block index", task.VirtualState.BlockIndex(),
 		"variable state hash", task.VirtualState.Hash().Bytes(),
-		"tx essence hash", hashing.HashData(task.ResultTransaction.Bytes()).String(),
-		"tx finalTimestamp", task.ResultTransaction.Timestamp(),
+		"tx essence hash", hashing.HashData(task.ResultTransactionEssence.Bytes()).String(),
+		"tx finalTimestamp", task.ResultTransactionEssence.Timestamp(),
 	)
 	task.OnFinish(lastResult, lastErr, nil)
 }

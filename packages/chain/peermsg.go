@@ -4,9 +4,10 @@
 package chain
 
 import (
+	"io"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"golang.org/x/xerrors"
-	"io"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
@@ -185,6 +186,27 @@ func (msg *BlockMsg) Write(w io.Writer) error {
 func (msg *BlockMsg) Read(r io.Reader) error {
 	var err error
 	if msg.BlockBytes, err = util.ReadBytes32(r); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (msg *SignedResultMsg) Write(w io.Writer) error {
+	if _, err := w.Write(msg.EssenceHash[:]); err != nil {
+		return err
+	}
+	if err := util.WriteBytes16(w, msg.SigShare); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (msg *SignedResultMsg) Read(r io.Reader) error {
+	if err := util.ReadHashValue(r, &msg.EssenceHash); err != nil {
+		return err
+	}
+	var err error
+	if msg.SigShare, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
 	return nil

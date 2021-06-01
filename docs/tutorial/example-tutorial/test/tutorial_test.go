@@ -1,6 +1,8 @@
 package test
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -9,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 //TODO update comments to reflect new way of token handling
@@ -30,11 +31,11 @@ func TestTutorial1(t *testing.T) {
 
 func TestTutorial2(t *testing.T) {
 	env := solo.New(t, false, false)
-	_, userAddress := env.NewKeyPairWithFunds() // create new wallet with 1337 iotas
+	_, userAddress := env.NewKeyPairWithFunds()
 	t.Logf("Address of the userWallet is: %s", userAddress)
 	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA) // how many iotas the address contains
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 1337) // assert the address has 1337 iotas
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 }
 
 func TestTutorial3(t *testing.T) {
@@ -83,13 +84,13 @@ func TestTutorial5(t *testing.T) {
 	userWallet, userAddress := env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentID(userAddress, 0)
 
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 1337) // 1337 on address
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)  // empty on-chain
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
 
 	t.Logf("Address of the userWallet is: %s", userAddress)
 	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 1337)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 
 	// send 42 iotas from wallet to own account on-chain, controlled by the same wallet
 	req := solo.NewCallParams(accounts.Name, accounts.FuncDeposit)
@@ -98,7 +99,7 @@ func TestTutorial5(t *testing.T) {
 	require.NoError(t, err)
 
 	// check address balance: must be 42 iotas less
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 1337-42)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-42)
 	// check the on-chain account. Must contain 42 iotas
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 42)
 
@@ -109,7 +110,7 @@ func TestTutorial5(t *testing.T) {
 	require.NoError(t, err)
 
 	// we are back to initial situation: IOTA is fee-less!
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 1337-1)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-1)
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0) // empty
 }
 
@@ -125,7 +126,7 @@ func TestTutorial6(t *testing.T) {
 	userWallet, userAddress := env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentID(userAddress, 0)
 
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 1337)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)     // empty on-chain
 
@@ -136,7 +137,7 @@ func TestTutorial6(t *testing.T) {
 
 	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 42)
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 1337-42)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-42)
 }
 
 func TestTutorial7(t *testing.T) {
@@ -151,7 +152,7 @@ func TestTutorial7(t *testing.T) {
 	userWallet, userAddress := env.NewKeyPairWithFunds()
 	userAgentID := coretypes.NewAgentID(userAddress, 0)
 
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 1337)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)     // empty on-chain
 
@@ -163,7 +164,7 @@ func TestTutorial7(t *testing.T) {
 
 	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0)
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 1337)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 }
 
 // test withdrawIota method
@@ -179,7 +180,7 @@ func TestTutorial8(t *testing.T) {
 	userAgentID := coretypes.NewAgentID(userAddress, 0)
 	t.Logf("userAgentID: %s", userAgentID)
 
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 1337)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
 
 	// the chain owner (default) send a request to the root contract to grant right to deploy
@@ -201,7 +202,7 @@ func TestTutorial8(t *testing.T) {
 	// - to deploy contract from the blob
 	// Two tokens were taken from the user account to form requests and then were
 	// deposited to the user's account on the chain
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 1337-2)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-2)
 	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
 
@@ -215,7 +216,7 @@ func TestTutorial8(t *testing.T) {
 
 	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 42)
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 1337-44)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-44)
 
 	// user withdraws all iotas from the smart contract back
 	// Out of 42 iotas 41 iota is coming back to the user's address, 1 iotas
@@ -227,5 +228,5 @@ func TestTutorial8(t *testing.T) {
 
 	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0)
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 1337-44+42)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-44+42)
 }

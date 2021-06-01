@@ -1,9 +1,13 @@
 package vmcontext
 
 import (
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"testing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -19,24 +23,32 @@ func TestSetThenGet(t *testing.T) {
 	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")
 
-	s := newStateWrapper(hname, virtualState, stateUpdate)
+	vmctx := &VMContext{
+		virtualState:       virtualState,
+		currentStateUpdate: stateUpdate,
+		isInvalidatedState: func() bool {
+			return false
+		},
+		callStack: []*callContext{{contract: hname}},
+	}
+	s := vmctx.State()
 
 	subpartitionedKey := kv.Key(hname.Bytes()) + "x"
 
 	// contract sets variable x
-	s.Set("x", []byte{1})
-	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: []byte{1}}, stateUpdate.Mutations().Sets)
+	s.Set("x", []byte{42})
+	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: []byte{42}}, stateUpdate.Mutations().Sets)
 	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations().Dels)
 
 	// contract gets variable x
 	v, err := s.Get("x")
 	assert.NoError(t, err)
-	assert.Equal(t, []byte{1}, v)
+	assert.Equal(t, []byte{42}, v)
 
 	// mutation is in currentStateUpdate, prefixed by the contract id
-	assert.Equal(t, []byte{1}, stateUpdate.Mutations().Sets[subpartitionedKey])
+	assert.Equal(t, []byte{42}, stateUpdate.Mutations().Sets[subpartitionedKey])
 
-	// mutation is not committed to the virtual state
+	// mutation is in the not committed to the virtual state yet
 	v, err = virtualState.KVStore().Get(subpartitionedKey)
 	assert.NoError(t, err)
 	assert.Nil(t, v)
@@ -52,18 +64,18 @@ func TestSetThenGet(t *testing.T) {
 	assert.Nil(t, v)
 
 	// contract makes several writes to same variable, gets the latest value
-	s.Set("x", []byte{2})
-	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: []byte{2}}, stateUpdate.Mutations().Sets)
+	s.Set("x", []byte{2 * 42})
+	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: []byte{2 * 42}}, stateUpdate.Mutations().Sets)
 	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations().Dels)
 
-	s.Set("x", []byte{3})
-	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: []byte{3}}, stateUpdate.Mutations().Sets)
+	s.Set("x", []byte{3 * 42})
+	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: []byte{3 * 42}}, stateUpdate.Mutations().Sets)
 	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations().Dels)
 
 	v, err = s.Get("x")
 
 	assert.NoError(t, err)
-	assert.Equal(t, []byte{3}, v)
+	assert.Equal(t, []byte{3 * 42}, v)
 }
 
 func TestIterate(t *testing.T) {
@@ -74,13 +86,26 @@ func TestIterate(t *testing.T) {
 	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")
 
-	s := newStateWrapper(hname, virtualState, stateUpdate)
+	vmctx := &VMContext{
+		virtualState:       virtualState,
+		currentStateUpdate: stateUpdate,
+		isInvalidatedState: func() bool {
+			return false
+		},
+		callStack: []*callContext{{contract: hname}},
+	}
+	s := vmctx.State()
+	s.Set("xy1", []byte{42})
+	s.Set("xy2", []byte{42 * 2})
 
-	s.Set("xyz", []byte{1})
-
-	err = s.Iterate("x", func(k kv.Key, v []byte) bool {
-		assert.EqualValues(t, "xyz", string(k))
+	arr := make([][]byte, 0)
+	err = s.IterateSorted("xy", func(k kv.Key, v []byte) bool {
+		assert.True(t, strings.HasPrefix(string(k), "xy"))
+		arr = append(arr, v)
 		return true
 	})
+	require.EqualValues(t, 2, len(arr))
+	require.Equal(t, []byte{42}, arr[0])
+	require.Equal(t, []byte{42 * 2}, arr[1])
 	assert.NoError(t, err)
 }

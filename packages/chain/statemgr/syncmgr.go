@@ -13,32 +13,34 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) {
+func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) bool {
 	sm.log.Debugf("outputPulled: output index %v id %v", output.GetStateIndex(), coretypes.OID(output.ID()))
 	if !sm.syncingBlocks.isSyncing(output.GetStateIndex()) {
 		// not interested
 		sm.log.Debugf("outputPulled: not interested in output for state index %v", output.GetStateIndex())
-		return
+		return false
 	}
-	sm.syncingBlocks.approveBlockCandidates(output)
+	return sm.syncingBlocks.approveBlockCandidates(output)
 }
 
-func (sm *stateManager) outputPushed(output *ledgerstate.AliasOutput, timestamp time.Time) {
-	sm.log.Debugf("outputPushed: output index %v id %v timestampe %v", output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
+func (sm *stateManager) stateOutputReceived(output *ledgerstate.AliasOutput, timestamp time.Time) bool {
+	sm.log.Debugf("stateOutputReceived: received output index: %v, id: %v, timestamp: %v",
+		output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
 	if sm.stateOutput != nil {
 		switch {
 		case sm.stateOutput.GetStateIndex() == output.GetStateIndex():
-			sm.log.Debugf("outputPushed ignoring: repeated state output")
-			return
+			sm.log.Debugf("stateOutputReceived ignoring: repeated state output")
+			return false
 		case sm.stateOutput.GetStateIndex() > output.GetStateIndex():
-			sm.log.Warnf("outputPushed: out of order state output; stateOutput index is already larger: %v", sm.stateOutput.GetStateIndex())
-			return
+			sm.log.Warnf("stateOutputReceived: out of order state output; stateOutput index is already larger: %v", sm.stateOutput.GetStateIndex())
+			return false
 		}
 	}
 	sm.stateOutput = output
 	sm.stateOutputTimestamp = timestamp
-	sm.log.Debugf("outputPushed: stateOutput set to index %v id %v timestampe %v", output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
+	sm.log.Debugf("stateOutputReceived: stateOutput set to index %v id %v timestampe %v", output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
 	sm.syncingBlocks.approveBlockCandidates(output)
+	return true
 }
 
 func (sm *stateManager) doSyncActionIfNeeded() {
@@ -48,7 +50,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	}
 	switch {
 	case sm.solidState.BlockIndex() == sm.stateOutput.GetStateIndex():
-		sm.log.Debugf("doSyncAction not needed: state is already synced")
+		sm.log.Debugf("doSyncAction not needed: state is already synced at index #%d", sm.stateOutput.GetStateIndex())
 		return
 	case sm.solidState.BlockIndex() > sm.stateOutput.GetStateIndex():
 		sm.log.Panicf("doSyncAction inconsistency: solid state index is larger than state output index")
@@ -70,17 +72,18 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			return
 		}
 		nowis := time.Now()
-		if blockCandidatesCount == 0 || nowis.After(requestBlockRetryTime) {
+		if nowis.After(requestBlockRetryTime) {
 			// have to pull
 			sm.log.Debugf("doSyncAction: requesting block index %v from %v random peers", i, numberOfNodesToRequestBlockFromConst)
 			data := util.MustBytes(&chain.GetBlockMsg{
 				BlockIndex: i,
 			})
-			// send messages until first without error
 			sm.peers.SendMsgToRandomPeersSimple(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
 			sm.syncingBlocks.startSyncingIfNeeded(i)
 			sm.syncingBlocks.setRequestBlockRetryTime(i, nowis.Add(sm.timers.getGetBlockRetry()))
-			return
+			if blockCandidatesCount == 0 {
+				return
+			}
 		}
 		if approvedBlockCandidatesCount > 0 {
 			sm.log.Debugf("doSyncAction: trying to find candidates to commit from index %v to %v", startSyncFromIndex, i)
@@ -131,7 +134,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 		return stateCandidateBlocks[i].getVotes() > stateCandidateBlocks[j].getVotes()
 	})
 	for i, stateCandidateBlock := range stateCandidateBlocks {
-		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i, len(stateCandidateBlocks))
+		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i+1, len(stateCandidateBlocks))
 		resultBlocks, tentativeState, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex)
 		if ok {
 			return resultBlocks, tentativeState, true
@@ -150,21 +153,19 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	from := blocks[0].BlockIndex()
 	to := blocks[len(blocks)-1].BlockIndex()
 	sm.log.Debugf("commitCandidates: syncing of state indexes from %v to %v is stopped", from, to)
-	// TODO: very strange... You cannot commit blocks i+1, i+2, i+3,... on top of state i.
-	//       You need to apply block i+1 on top of state i to receive state i+1.
-	//       Only then you can commit blocks i+1, i+2, i+3,...
-	//       In fact, you can commit blocks i+1, i+2, i+3,... on top of state i,
-	//       but in such case a corrupted DB is received: block i+1 is commited as i+2
-	//       and probably the same happens for other blocks...
-	sm.solidState.ApplyBlock(blocks[0])
+
+	// set the global solid state index to the one which is about to be committed
+	// if any VM task is running with the assumption of the previous state, it is obsolete and will self-cancel
+	sm.chain.GlobalSolidIndex().Store(tentativeState.BlockIndex())
+
 	//TODO: maybe commit in 10 (or some const) block batches?
 	//      This would save from large commits and huge memory usage to store blocks
-	err := sm.solidState.Commit(blocks...)
+	err := tentativeState.Commit(blocks...)
 	if err != nil {
 		sm.log.Errorf("commitCandidates: failed to commit synced changes into DB. Restart syncing")
 		sm.syncingBlocks.restartSyncing()
 		return
 	}
 	sm.solidState = tentativeState
-	sm.log.Debugf("commitCandidates: committing of blocks indexes from %v to %v was successful", from, to)
+	sm.log.Debugf("commitCandidates: committing of block indices from %v to %v was successful", from, to)
 }

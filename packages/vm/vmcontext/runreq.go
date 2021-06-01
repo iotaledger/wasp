@@ -5,23 +5,24 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm"
+
+	"github.com/iotaledger/wasp/packages/kv"
+	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"golang.org/x/xerrors"
 )
 
 // RunTheRequest processes any request based on the Extended output, even if it
 // doesn't parse correctly as a SC request
 func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16) {
-	defer vmctx.finalizeRequestCall()
+	defer vmctx.mustFinalizeRequestCall()
 
 	vmctx.mustSetUpRequestContext(req, requestIndex)
 
@@ -43,20 +44,27 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 
 	// snapshot state baseline for rollback in case of panic
 	snapshotTxBuilder := vmctx.txBuilder.Clone()
-	snapshotStateUpdate := vmctx.currentStateUpdate.Clone()
+	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	// request run updates will be collected to the new state update
+	vmctx.currentStateUpdate = state.NewStateUpdate()
 
 	vmctx.lastError = nil
 	func() {
 		// panic catcher for the whole call from request to the VM
 		defer func() {
-			if r := recover(); r != nil {
+			r := recover()
+			if r == nil {
+				return
+			}
+			switch err := r.(type) {
+			case *kv.DBError:
+				panic(err)
+			case *vm.ErrorStateInvalidated:
+				panic(err)
+			default:
 				vmctx.lastResult = nil
 				vmctx.lastError = xerrors.Errorf("panic in VM: %v", r)
 				vmctx.Debugf(string(debug.Stack()))
-				if dberr, ok := r.(*kv.DBError); ok {
-					// There was an error accessing the DB. The world stops
-					vmctx.Panicf("DB error: %v", dberr)
-				}
 			}
 		}()
 		vmctx.mustCallFromRequest()
@@ -64,9 +72,9 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 
 	if vmctx.lastError != nil {
 		// treating panic and error returned from request the same way
-		// restore the txbuilder and state back to the moment before calling VM plugin
+		// restore the txbuilder and dispose mutations in the last state update
 		vmctx.txBuilder = snapshotTxBuilder
-		vmctx.currentStateUpdate = snapshotStateUpdate
+		vmctx.currentStateUpdate = state.NewStateUpdate()
 
 		vmctx.mustSendBack(vmctx.remainingAfterFees)
 	}
@@ -199,8 +207,6 @@ func (vmctx *VMContext) mustHandleFees() bool {
 }
 
 // Return false if not enough fees
-// charges fees to the validator/chain owner and moves funds from on-ledger (tangle) request to the respective on-chain account
-// !!! must only be called before the request is processed.
 func (vmctx *VMContext) grabFee(account *coretypes.AgentID, amount uint64) bool {
 	if amount == 0 {
 		return true
@@ -289,8 +295,8 @@ func (vmctx *VMContext) mustSaveRequestOrder() {
 	}
 }
 
-func (vmctx *VMContext) finalizeRequestCall() {
-	vmctx.mustLogRequestToBlockLog(vmctx.lastError)
+func (vmctx *VMContext) mustFinalizeRequestCall() {
+	vmctx.mustLogRequestToBlockLog(vmctx.lastError) // panic not caught
 	vmctx.lastTotalAssets = vmctx.totalAssets()
 
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
@@ -323,39 +329,4 @@ func isRequestTimeLockedNow(req coretypes.Request, nowis time.Time) bool {
 		return false
 	}
 	return req.TimeLock().After(nowis)
-}
-
-func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) (*ledgerstate.TransactionEssence, error) {
-	if err := vmctx.txBuilder.AddAliasOutputAsRemainder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
-		return nil, xerrors.Errorf("finalizeRequestCall: %v", err)
-	}
-	tx, _, err := vmctx.txBuilder.WithTimestamp(timestamp).BuildEssence()
-	if err != nil {
-		return nil, err
-	}
-	return tx, nil
-}
-
-func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) error {
-	// block info will be stored in separate state update
-	vmctx.currentStateUpdate = state.NewStateUpdate()
-
-	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
-	defer vmctx.popCallContext()
-
-	blockInfo := &blocklog.BlockInfo{
-		BlockIndex:            vmctx.virtualState.BlockIndex(),
-		Timestamp:             vmctx.virtualState.Timestamp(),
-		TotalRequests:         numRequests,
-		NumSuccessfulRequests: numSuccess,
-		NumOffLedgerRequests:  numOffLedger,
-	}
-
-	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
-	if idx != blockInfo.BlockIndex {
-		return xerrors.New("CloseVMContext: inconsistent block index")
-	}
-	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
-	vmctx.currentStateUpdate = nil
-	return nil
 }

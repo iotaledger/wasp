@@ -13,12 +13,16 @@ import (
 // Client is a wrapper for the official Goshimmer client, providing a cleaner interface
 // for commonly used Goshimmer webapi endpoints in wasp.
 type Client struct {
-	api *client.GoShimmerAPI
+	api             *client.GoShimmerAPI
+	faucetPowTarget int
 }
 
 // NewClient returns a new Goshimmer client
-func NewClient(goshimmerHost string) *Client {
-	return &Client{client.NewGoShimmerAPI("http://" + goshimmerHost)}
+func NewClient(goshimmerHost string, faucetPowTarget int) *Client {
+	return &Client{
+		api:             client.NewGoShimmerAPI("http://" + goshimmerHost),
+		faucetPowTarget: faucetPowTarget,
+	}
 }
 
 func (c *Client) RequestFunds(targetAddress ledgerstate.Address) error {
@@ -26,7 +30,7 @@ func (c *Client) RequestFunds(targetAddress ledgerstate.Address) error {
 	if err != nil {
 		return fmt.Errorf("balanceIOTA: %s", err)
 	}
-	_, err = c.api.SendFaucetRequest(targetAddress.Base58())
+	_, err = c.api.SendFaucetRequest(targetAddress.Base58(), c.faucetPowTarget)
 	if err != nil {
 		return fmt.Errorf("SendFaucetRequest: %s", err)
 	}
@@ -72,22 +76,22 @@ func (c *Client) GetConfirmedOutputs(address ledgerstate.Address) ([]ledgerstate
 	return ret, nil
 }
 
-func (c *Client) sendTx(tx *ledgerstate.Transaction) error {
+func (c *Client) postTx(tx *ledgerstate.Transaction) error {
 	data := tx.Bytes()
 	if len(data) > parameters.MaxSerializedTransactionToGoshimmer {
 		return fmt.Errorf("size of serialized transation %d bytes > max of %d bytes: %s",
 			len(data), parameters.MaxSerializedTransactionToGoshimmer, tx.ID())
 	}
-	_, err := c.api.SendTransaction(data)
+	_, err := c.api.PostTransaction(data)
 	return err
 }
 
 func (c *Client) PostTransaction(tx *ledgerstate.Transaction) error {
-	return c.sendTx(tx)
+	return c.postTx(tx)
 }
 
 func (c *Client) PostAndWaitForConfirmation(tx *ledgerstate.Transaction) error {
-	if err := c.sendTx(tx); err != nil {
+	if err := c.postTx(tx); err != nil {
 		return err
 	}
 	return c.WaitForConfirmation(tx.ID())
@@ -96,11 +100,11 @@ func (c *Client) PostAndWaitForConfirmation(tx *ledgerstate.Transaction) error {
 func (c *Client) WaitForConfirmation(txid ledgerstate.TransactionID) error {
 	for {
 		time.Sleep(1 * time.Second)
-		tx, err := c.api.GetTransactionByID(txid.Base58())
+		state, err := c.api.GetTransactionInclusionState(txid.Base58())
 		if err != nil {
 			return err
 		}
-		if tx.InclusionState.Confirmed {
+		if state.Confirmed {
 			break
 		}
 	}

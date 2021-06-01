@@ -42,7 +42,7 @@ type stateManager struct {
 	eventBlockMsgCh        chan *chain.BlockMsg
 	eventStateOutputMsgCh  chan *chain.StateMsg
 	eventOutputMsgCh       chan ledgerstate.Output
-	eventPendingBlockMsgCh chan chain.StateCandidateMsg
+	eventPendingBlockMsgCh chan *chain.StateCandidateMsg
 	eventTimerMsgCh        chan chain.TimerTick
 	closeCh                chan bool
 }
@@ -52,28 +52,30 @@ const (
 	maxBlocksToCommitConst               = 10000 //10k
 )
 
-func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, log *logger.Logger, timers ...Timers) chain.StateManager {
+func New(dbp *dbprovider.DBProvider, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, log *logger.Logger, timersOpt ...Timers) chain.StateManager {
+	var timers Timers
+	if len(timersOpt) > 0 {
+		timers = timersOpt[0]
+	} else {
+		timers = Timers{}
+	}
 	ret := &stateManager{
 		ready:                  ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
 		dbp:                    dbp,
 		chain:                  c,
 		nodeConn:               nodeconn,
 		peers:                  peers,
-		syncingBlocks:          newSyncingBlocks(log),
+		syncingBlocks:          newSyncingBlocks(log, timers.getGetBlockRetry()),
+		timers:                 timers,
 		log:                    log.Named("s"),
 		pullStateRetryTime:     time.Now(),
 		eventGetBlockMsgCh:     make(chan *chain.GetBlockMsg),
 		eventBlockMsgCh:        make(chan *chain.BlockMsg),
 		eventStateOutputMsgCh:  make(chan *chain.StateMsg),
 		eventOutputMsgCh:       make(chan ledgerstate.Output),
-		eventPendingBlockMsgCh: make(chan chain.StateCandidateMsg),
+		eventPendingBlockMsgCh: make(chan *chain.StateCandidateMsg),
 		eventTimerMsgCh:        make(chan chain.TimerTick),
 		closeCh:                make(chan bool),
-	}
-	if len(timers) > 0 {
-		ret.timers = timers[0]
-	} else {
-		ret.timers = Timers{}
 	}
 	go ret.initLoadState()
 
@@ -86,10 +88,7 @@ func (sm *stateManager) Close() {
 
 // initial loading of the solid state
 func (sm *stateManager) initLoadState() {
-	var err error
-	var stateExists bool
-
-	sm.solidState, stateExists, err = state.LoadSolidState(sm.dbp, sm.chain.ID())
+	solidState, stateExists, err := state.LoadSolidState(sm.dbp, sm.chain.ID())
 	if err != nil {
 		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err)},
@@ -98,9 +97,10 @@ func (sm *stateManager) initLoadState() {
 	}
 	if stateExists {
 		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
-			sm.solidState.BlockIndex(), sm.solidState.Hash().String())
+			solidState.BlockIndex(), solidState.Hash().String())
 	} else {
 		// create origin state in DB
+		sm.chain.GlobalSolidIndex().Store(0)
 		sm.solidState, err = state.CreateOriginState(sm.dbp, sm.chain.ID())
 		if err != nil {
 			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
@@ -117,7 +117,7 @@ func (sm *stateManager) Ready() *ready.Ready {
 	return sm.ready
 }
 
-func (sm *stateManager) GetSyncInfo() *chain.SyncInfo {
+func (sm *stateManager) GetStatusSnapshot() *chain.SyncInfo {
 	v := sm.currentSyncData.Load()
 	if v == nil {
 		return nil

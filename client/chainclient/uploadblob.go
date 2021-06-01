@@ -37,7 +37,7 @@ func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, op
 	}
 	blobHash := blob.MustGetBlobHash(fields)
 
-	reqTx, err := c.PostRequest(
+	reqTx, err := c.Post1Request(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
 		PostRequestParams{

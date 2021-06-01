@@ -2,11 +2,12 @@ package coretypes
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
-	"time"
 )
 
 // region Request //////////////////////////////////////////////////////
@@ -108,6 +109,14 @@ func (rid RequestID) Short() string {
 
 func OID(o ledgerstate.OutputID) string {
 	return fmt.Sprintf("[%d]%s", o.OutputIndex(), o.TransactionID().Base58())
+}
+
+func ShortRequestIDs(ids []RequestID) []string {
+	ret := make([]string, len(ids))
+	for i := range ret {
+		ret[i] = ids[i].Short()
+	}
+	return ret
 }
 
 // endregion ////////////////////////////////////////////////////////////////////////////////////

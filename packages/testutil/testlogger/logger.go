@@ -12,6 +12,22 @@ import (
 )
 
 // NewLogger produces a logger adjusted for test cases.
+func NewSimple(debug bool) *logger.Logger {
+	cfg := zap.NewDevelopmentConfig()
+	cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("04:05.000")
+	log, err := cfg.Build()
+	if err != nil {
+		panic(err)
+	}
+	lvl := zapcore.InfoLevel
+	if debug {
+		lvl = zapcore.DebugLevel
+	}
+	log = log.WithOptions(zap.IncreaseLevel(lvl), zap.AddStacktrace(zapcore.FatalLevel))
+	return log.Sugar()
+}
+
+// NewLogger produces a logger adjusted for test cases.
 func NewLogger(t *testing.T, timeLayout ...string) *logger.Logger {
 	return NewNamedLogger(t.Name())
 }

@@ -28,7 +28,7 @@ var (
 )
 
 func InitEVMChain(t *testing.T) (*solo.Chain, *solo.Solo) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, true, false)
 	chain := env.NewChain(nil, "ch1")
 	err := chain.DeployContract(nil, "evmchain", Interface.ProgramHash,
 		FieldGenesisAlloc, EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{

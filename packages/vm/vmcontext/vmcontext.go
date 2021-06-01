@@ -1,6 +1,10 @@
 package vmcontext
 
 import (
+	"time"
+
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/logger"
@@ -20,13 +24,16 @@ import (
 // chain address contained in the statetxbuilder.Builder
 type VMContext struct {
 	// same for the block
-	chainID            coretypes.ChainID
-	chainOwnerID       coretypes.AgentID
-	processors         *processors.ProcessorCache
-	txBuilder          *utxoutil.Builder  // mutated
-	virtualState       state.VirtualState // mutated
-	remainingAfterFees *ledgerstate.ColoredBalances
-	log                *logger.Logger
+	chainID              coretypes.ChainID
+	chainOwnerID         coretypes.AgentID
+	processors           *processors.ProcessorCache
+	txBuilder            *utxoutil.Builder
+	virtualState         state.VirtualState
+	isInvalidatedState   func() bool
+	remainingAfterFees   *ledgerstate.ColoredBalances
+	blockContext         map[coretypes.Hname]*blockContext
+	blockContextCloseSeq []coretypes.Hname
+	log                  *logger.Logger
 	// fee related
 	validatorFeeTarget coretypes.AgentID // provided by validator
 	feeColor           ledgerstate.Color
@@ -52,13 +59,17 @@ type callContext struct {
 	transfer         *ledgerstate.ColoredBalances // transfer passed
 }
 
+type blockContext struct {
+	obj     interface{}
+	onClose func(interface{})
+}
+
 // CreateVMContext a constructor
 func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
 	chainID, err := coretypes.ChainIDFromAddress(task.ChainInput.Address())
 	if err != nil {
-		return nil, xerrors.Errorf("CreateVMContext: %v", err)
+		task.Log.Panicf("CreateVMContext: %v", err)
 	}
-
 	{
 		// assert consistency
 		stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
@@ -77,13 +88,16 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 		task.VirtualState.ApplyStateUpdates(openingStateUpdate)
 	}
 	ret := &VMContext{
-		chainID:      *chainID,
-		txBuilder:    txb,
-		virtualState: task.VirtualState,
-		processors:   task.Processors,
-		log:          task.Log,
-		entropy:      task.Entropy,
-		callStack:    make([]*callContext, 0),
+		chainID:              *chainID,
+		txBuilder:            txb,
+		virtualState:         task.VirtualState,
+		isInvalidatedState:   task.SolidStateInvalid,
+		processors:           task.Processors,
+		blockContext:         make(map[coretypes.Hname]*blockContext),
+		blockContextCloseSeq: make([]coretypes.Hname, 0),
+		log:                  task.Log,
+		entropy:              task.Entropy,
+		callStack:            make([]*callContext, 0),
 	}
 	// consume chain input
 	err = txb.ConsumeAliasInput(task.ChainInput.Address())
@@ -95,4 +109,54 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 
 func (vmctx *VMContext) GetResult() (dict.Dict, *ledgerstate.ColoredBalances, error) {
 	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError
+}
+
+func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) (*ledgerstate.TransactionEssence, error) {
+	if err := vmctx.txBuilder.AddAliasOutputAsRemainder(vmctx.chainID.AsAddress(), stateHash[:]); err != nil {
+		return nil, xerrors.Errorf("mustFinalizeRequestCall: %v", err)
+	}
+	tx, _, err := vmctx.txBuilder.WithTimestamp(timestamp).BuildEssence()
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
+}
+
+// CloseVMContext does the closing actions on the block
+func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) {
+	vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
+	vmctx.closeBlockContexts()
+}
+
+func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) {
+	// block info will be stored into the separate state update
+	vmctx.currentStateUpdate = state.NewStateUpdate()
+	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	blockInfo := &blocklog.BlockInfo{
+		BlockIndex:            vmctx.virtualState.BlockIndex(),
+		Timestamp:             vmctx.virtualState.Timestamp(),
+		TotalRequests:         numRequests,
+		NumSuccessfulRequests: numSuccess,
+		NumOffLedgerRequests:  numOffLedger,
+	}
+
+	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
+	if idx != blockInfo.BlockIndex {
+		vmctx.log.Panicf("CloseVMContext: inconsistent block index")
+	}
+	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.currentStateUpdate = nil // invalidate
+}
+
+// closeBlockContexts closing block contexts in deterministic FIFO sequence
+func (vmctx *VMContext) closeBlockContexts() {
+	vmctx.currentStateUpdate = state.NewStateUpdate()
+	for _, hname := range vmctx.blockContextCloseSeq {
+		b := vmctx.blockContext[hname]
+		b.onClose(b.obj)
+	}
+	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
+	vmctx.currentStateUpdate = nil
 }

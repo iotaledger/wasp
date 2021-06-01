@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -18,27 +20,28 @@ func (sm *stateManager) takeAction() {
 		sm.log.Debugf("takeAction skipped: state manager is not ready")
 		return
 	}
-	sm.notifyStateTransitionIfNeeded()
 	sm.pullStateIfNeeded()
 	sm.doSyncActionIfNeeded()
+	sm.notifyStateTransitionIfNeeded()
 	sm.storeSyncingData()
 }
 
 func (sm *stateManager) notifyStateTransitionIfNeeded() {
 	if sm.notifiedSyncedStateHash == sm.solidState.Hash() {
-		sm.log.Debugf("notifyStateTransition not needed: already notified about state %v", sm.notifiedSyncedStateHash.String())
+		sm.log.Debugf("notifyStateTransition not needed: already notified about state %v at index #%d",
+			sm.notifiedSyncedStateHash.String(), sm.solidState.BlockIndex())
 		return
 	}
 	if !sm.isSynced() {
-		sm.log.Debugf("notifyStateTransition not needed: state manager is not synced")
+		sm.log.Debugf("notifyStateTransition not needed: state manager is not synced at index #%d", sm.solidState.BlockIndex())
 		return
 	}
 
 	sm.notifiedSyncedStateHash = sm.solidState.Hash()
 	stateOutputID := sm.stateOutput.ID()
 	stateOutputIndex := sm.stateOutput.GetStateIndex()
-	sm.log.Debugf("notifyStateTransition: notifying about state %v approved by output %v index %v",
-		sm.notifiedSyncedStateHash.String(), coretypes.OID(stateOutputID), stateOutputIndex)
+	sm.log.Debugf("notifyStateTransition: state %v IS SYNCED to index %v and is approved by output %v",
+		sm.notifiedSyncedStateHash.String(), stateOutputIndex, coretypes.OID(stateOutputID))
 	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
 		VirtualState:    sm.solidState.Clone(),
 		ChainOutput:     sm.stateOutput,
@@ -57,57 +60,63 @@ func (sm *stateManager) isSynced() bool {
 func (sm *stateManager) pullStateIfNeeded() {
 	nowis := time.Now()
 	if nowis.After(sm.pullStateRetryTime) {
-		if sm.stateOutput == nil || sm.syncingBlocks.hasBlockCandidatesNotOlderThan(sm.stateOutput.GetStateIndex()+1) {
-			chainAliasAddress := sm.chain.ID().AsAliasAddress()
-			sm.log.Debugf("pullState: pulling state for address %v", chainAliasAddress.Base58())
-			sm.nodeConn.PullState(chainAliasAddress)
-			sm.pullStateRetryTime = nowis.Add(sm.timers.getPullStateRetry())
-		} else {
-			sm.log.Debugf("pullState not needed: retry time is %v", sm.pullStateRetryTime)
-		}
+		chainAliasAddress := sm.chain.ID().AsAliasAddress()
+		sm.nodeConn.PullState(chainAliasAddress)
+		sm.pullStateRetryTime = nowis.Add(sm.timers.getPullStateRetry())
+		sm.log.Debugf("pullState: pulling state for address %v. Next pull in: %v",
+			chainAliasAddress.Base58(), sm.pullStateRetryTime.Sub(nowis))
 	} else {
-		sm.log.Debugf("pullState not needed: retry time is %v", sm.pullStateRetryTime)
+		if sm.stateOutput == nil {
+			sm.log.Debugf("pullState not needed: retry in %v", sm.pullStateRetryTime.Sub(nowis))
+		} else {
+			sm.log.Debugf("pullState not needed at index #%d: retry in %v",
+				sm.stateOutput.GetStateIndex(), sm.pullStateRetryTime.Sub(nowis))
+		}
 	}
 }
 
-func (sm *stateManager) addBlockFromConsensus(nextState state.VirtualState) {
-	sm.log.Debugw("addBlockFromConsensus: adding block for state ",
+func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualState, approvingOutput ledgerstate.OutputID) bool {
+	sm.log.Debugw("addStateCandidateFromConsensus: adding state candidate",
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
 		"hash", nextState.Hash(),
+		"output", coretypes.OID(approvingOutput),
 	)
 
 	block, err := nextState.ExtractBlock()
 	if err != nil {
-		sm.log.Errorf("addBlockFromConsensus: error extracting block: %v", err)
-		return
+		sm.log.Errorf("addStateCandidateFromConsensus: error extracting block: %v", err)
+		return false
 	}
 	if block == nil {
-		sm.log.Errorf("addBlockFromConsensus: state candidate does not contain block")
-		return
+		sm.log.Errorf("addStateCandidateFromConsensus: state candidate does not contain block")
+		return false
 	}
-
+	block.SetApprovingOutputID(approvingOutput)
 	sm.addBlockAndCheckStateOutput(block, nextState)
 
 	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < block.BlockIndex() {
-		sm.log.Debugf("addBlockFromConsensus: received new block from committee, delaying pullStateRetry")
+		sm.log.Debugf("addStateCandidateFromConsensus: delaying pullStateRetry")
 		sm.pullStateRetryTime = time.Now().Add(sm.timers.getPullStateNewBlockDelay())
 	}
+
+	return true
 }
 
-func (sm *stateManager) addBlockFromPeer(block state.Block) {
+func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	sm.log.Debugf("addBlockFromPeer: adding block index %v", block.BlockIndex())
 	if !sm.syncingBlocks.isSyncing(block.BlockIndex()) {
 		// not asked
 		sm.log.Debugf("addBlockFromPeer failed: not asked for block index %v", block.BlockIndex())
-		return
+		return false
 	}
 	if sm.addBlockAndCheckStateOutput(block, nil) {
 		// ask for approving output
 		chainAddress := sm.chain.ID().AsAddress()
-		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v for chain %v", block.ApprovingOutputID(), chainAddress.String())
+		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v for chain %v", coretypes.OID(block.ApprovingOutputID()), chainAddress.Base58())
 		sm.nodeConn.PullConfirmedOutput(chainAddress, block.ApprovingOutputID())
 	}
+	return true
 }
 
 //addBlockAndCheckStateOutput function adds block to candidate list and returns true iff the block is new and is not yet approved by current stateOutput

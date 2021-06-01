@@ -4,8 +4,9 @@
 package chainimpl
 
 import (
-	"fmt"
 	"time"
+
+	"go.uber.org/atomic"
 
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -23,6 +24,10 @@ import (
 
 func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
+}
+
+func (c *chainObj) GlobalSolidIndex() *atomic.Uint32 {
+	return &c.globalSolidIndex
 }
 
 func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {
@@ -109,12 +114,10 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 
 func (c *chainObj) ReceiveRequest(req coretypes.Request) {
 	c.log.Debugf("ReceiveRequest: %s", req.ID())
-	c.mempool.ReceiveRequest(req)
+	c.mempool.ReceiveRequests(req)
 }
 
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
-	fmt.Printf("++++++++++++ receive state %s\n", stateOutput.Address().Base58())
-
 	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
 		stateOutput.GetStateIndex(), coretypes.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
 	c.ReceiveMessage(&chain.StateMsg{
@@ -180,8 +183,4 @@ func (c *chainObj) StateSynced() *events.Event {
 
 func (c *chainObj) Events() chain.ChainEvents {
 	return c
-}
-
-func (c *chainObj) Mempool() chain.Mempool {
-	return c.mempool
 }

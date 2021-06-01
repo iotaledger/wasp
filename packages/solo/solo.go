@@ -25,7 +25,9 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/runvm"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
@@ -61,6 +63,8 @@ type Solo struct {
 	logicalTime time.Time
 	timeStep    time.Duration
 	chains      map[[33]byte]*Chain
+	vmRunner    vm.VMRunner
+	doOnce      sync.Once
 	// publisher wait group
 	publisherWG      sync.WaitGroup
 	publisherEnabled atomic.Bool
@@ -168,6 +172,7 @@ func New(t TestingT, debug bool, printStackTrace bool) *Solo {
 		logicalTime: initialTime,
 		timeStep:    DefaultTimeStep,
 		chains:      make(map[[33]byte]*Chain),
+		vmRunner:    runvm.NewVMRunner(),
 	}
 	ret.logger.Infof("Solo environment has been created with initial logical time %v", initialTime)
 	return ret
@@ -353,7 +358,7 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 		}
 		chain.reqCounter.Add(int32(len(reqs)))
 		for _, req := range reqs {
-			chain.mempool.ReceiveRequest(req)
+			chain.mempool.ReceiveRequests(req)
 		}
 	}
 }
@@ -382,7 +387,7 @@ func (ch *Chain) collateBatch() []coretypes.Request {
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
 	ret := make([]coretypes.Request, 0)
-	ready := ch.mempool.GetReadyList()
+	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
 	batchSize := len(ready)
 	if batchSize > maxBatch {
 		batchSize = maxBatch

@@ -97,8 +97,12 @@ func postRequest(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hn
 }
 
 func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, transfer map[ledgerstate.Color]uint64, params map[string]interface{}) {
-	tx, err := client.PostRequest(contract, entryPoint, chainclient.PostRequestParams{
-		Transfer: ledgerstate.NewColoredBalances(transfer),
+	var b *ledgerstate.ColoredBalances
+	if transfer != nil {
+		b = ledgerstate.NewColoredBalances(transfer)
+	}
+	tx, err := client.Post1Request(contract, entryPoint, chainclient.PostRequestParams{
+		Transfer: b,
 		Args:     requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
 	})
 	check(err, t)

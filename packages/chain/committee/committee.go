@@ -1,9 +1,11 @@
-package committeeimpl
+package committee
 
 import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
+	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
 	"github.com/iotaledger/wasp/packages/util"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -18,11 +20,14 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type committeeObj struct {
+type committee struct {
 	isReady        *atomic.Bool
 	address        ledgerstate.Address
 	peerConfig     coretypes.PeerNetworkConfigProvider
 	validatorNodes peering.GroupProvider
+	ccProvider     commoncoin.Provider     // Just to close it afterwards.
+	ccRecvCh       chan *peering.RecvEvent // To pass messages to CC.
+	acsRunner      chain.AsynchronousCommonSubsetRunner
 	peeringID      peering.PeeringID
 	size           uint16
 	quorum         uint16
@@ -32,14 +37,17 @@ type committeeObj struct {
 	log            *logger.Logger
 }
 
-func NewCommittee(
+const waitReady = false
+
+func New(
 	stateAddr ledgerstate.Address,
+	chainID *coretypes.ChainID,
 	netProvider peering.NetworkProvider,
 	peerConfig coretypes.PeerNetworkConfigProvider,
 	dksProvider coretypes.DKShareRegistryProvider,
 	committeeRegistry coretypes.CommitteeRegistryProvider,
 	log *logger.Logger,
-	waitReady ...bool,
+	acsRunner ...chain.AsynchronousCommonSubsetRunner, // Only for mocking.
 ) (chain.Committee, error) {
 
 	// load committee record from the registry
@@ -62,12 +70,22 @@ func NewCommittee(
 	if peers, err = netProvider.PeerGroup(cmtRec.Nodes); err != nil {
 		return nil, xerrors.Errorf("NewCommittee: failed to create peer group for committee: %+v: %w", cmtRec.Nodes, err)
 	}
-
-	ret := &committeeObj{
+	log.Debugf("NewCommittee: peer group: %+v", cmtRec.Nodes)
+	// peerGroupID is calculated by XORing chainID and stateAddr.
+	// It allows to use same statAddr for different chains
+	peerGroupID := stateAddr.Array()
+	var chainArr [33]byte
+	if chainID != nil {
+		chainArr = chainID.Array()
+	}
+	for i := range peerGroupID {
+		peerGroupID[i] = peerGroupID[i] ^ chainArr[i]
+	}
+	ret := &committee{
 		isReady:        atomic.NewBool(false),
 		address:        stateAddr,
 		validatorNodes: peers,
-		peeringID:      stateAddr.Array(), // committee is made for specific state address
+		peeringID:      peerGroupID,
 		peerConfig:     peerConfig,
 		size:           dkshare.N,
 		quorum:         dkshare.T,
@@ -75,40 +93,58 @@ func NewCommittee(
 		dkshare:        dkshare,
 		log:            log,
 	}
-	waitReadyValue := false
-	if len(waitReady) > 0 {
-		waitReadyValue = waitReady[0]
+	if len(acsRunner) > 0 {
+		ret.acsRunner = acsRunner[0]
+	} else {
+		// That's the default implementation of the ACS.
+		// We use it, of the mocked variant was not passed.
+		ret.ccRecvCh = make(chan *peering.RecvEvent)
+		ret.ccProvider = commoncoin.NewCommonCoinNode(
+			ret.ccRecvCh, // TODO: KP: Refactor the CC part to avoid passing the channels. Use TryHandleMessage instead.
+			dkshare,
+			peerGroupID,
+			peers,
+			log,
+		)
+		ret.acsRunner = commonsubset.NewCommonSubsetCoordinator(
+			peerGroupID,
+			netProvider,
+			peers,
+			dkshare.T,
+			ret.ccProvider,
+			log,
+		)
 	}
-	go ret.waitReady(waitReadyValue)
+	go ret.waitReady(waitReady)
 
 	return ret, nil
 }
 
-func (c *committeeObj) Address() ledgerstate.Address {
+func (c *committee) Address() ledgerstate.Address {
 	return c.address
 }
 
-func (c *committeeObj) Size() uint16 {
+func (c *committee) Size() uint16 {
 	return c.size
 }
 
-func (c *committeeObj) Quorum() uint16 {
+func (c *committee) Quorum() uint16 {
 	return c.quorum
 }
 
-func (c *committeeObj) IsReady() bool {
+func (c *committee) IsReady() bool {
 	return c.isReady.Load()
 }
 
-func (c *committeeObj) OwnPeerIndex() uint16 {
+func (c *committee) OwnPeerIndex() uint16 {
 	return c.ownIndex
 }
 
-func (c *committeeObj) DKShare() *tcrypto.DKShare {
+func (c *committee) DKShare() *tcrypto.DKShare {
 	return c.dkshare
 }
 
-func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
+func (c *committee) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
 	if peer, ok := c.validatorNodes.OtherNodes()[targetPeerIndex]; ok {
 		peer.SendMsg(&peering.PeerMessage{
 			PeeringID:   c.peeringID,
@@ -121,7 +157,7 @@ func (c *committeeObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []b
 	return fmt.Errorf("SendMsg: wrong peer index")
 }
 
-func (c *committeeObj) SendMsgToPeers(msgType byte, msgData []byte, ts int64) uint16 {
+func (c *committee) SendMsgToPeers(msgType byte, msgData []byte, ts int64) {
 	msg := &peering.PeerMessage{
 		PeeringID:   c.peeringID,
 		SenderIndex: c.ownIndex,
@@ -130,10 +166,9 @@ func (c *committeeObj) SendMsgToPeers(msgType byte, msgData []byte, ts int64) ui
 		MsgData:     msgData,
 	}
 	c.validatorNodes.Broadcast(msg, false)
-	return uint16(len(c.validatorNodes.OtherNodes())) // TODO: [KP] Reconsider this, we cannot guaranty if they are actually sent.
 }
 
-func (c *committeeObj) IsAlivePeer(peerIndex uint16) bool {
+func (c *committee) IsAlivePeer(peerIndex uint16) bool {
 	allNodes := c.validatorNodes.AllNodes()
 	if int(peerIndex) >= len(allNodes) {
 		return false
@@ -147,7 +182,7 @@ func (c *committeeObj) IsAlivePeer(peerIndex uint16) bool {
 	return allNodes[peerIndex].IsAlive()
 }
 
-func (c *committeeObj) QuorumIsAlive(quorum ...uint16) bool {
+func (c *committee) QuorumIsAlive(quorum ...uint16) bool {
 	q := c.quorum
 	if len(quorum) > 0 {
 		q = quorum[0]
@@ -164,7 +199,7 @@ func (c *committeeObj) QuorumIsAlive(quorum ...uint16) bool {
 	return false
 }
 
-func (c *committeeObj) PeerStatus() []*chain.PeerStatus {
+func (c *committee) PeerStatus() []*chain.PeerStatus {
 	ret := make([]*chain.PeerStatus, 0)
 	for i, peer := range c.validatorNodes.AllNodes() {
 		isSelf := peer == nil || peer.NetID() == c.peerConfig.OwnNetID()
@@ -184,13 +219,23 @@ func (c *committeeObj) PeerStatus() []*chain.PeerStatus {
 	return ret
 }
 
-func (c *committeeObj) Attach(chain chain.ChainCore) {
+func (c *committee) Attach(chain chain.ChainCore) {
 	c.attachID = c.validatorNodes.Attach(&c.peeringID, func(recv *peering.RecvEvent) {
+		if c.ccProvider != nil && c.ccProvider.TryHandleMessage(recv) {
+			return
+		}
+		if c.acsRunner.TryHandleMessage(recv) {
+			return
+		}
 		chain.ReceiveMessage(recv.Msg)
 	})
 }
 
-func (c *committeeObj) Close() {
+func (c *committee) Close() {
+	c.acsRunner.Close()
+	if c.ccProvider != nil {
+		c.ccProvider.Close()
+	}
 	c.isReady.Store(false)
 	if c.attachID != nil {
 		c.validatorNodes.Detach(c.attachID)
@@ -198,14 +243,18 @@ func (c *committeeObj) Close() {
 	c.validatorNodes.Close()
 }
 
-func (c *committeeObj) waitReady(waitReady bool) {
+func (c *committee) RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte)) {
+	c.acsRunner.RunACSConsensus(value, sessionID, stateIndex, callback)
+}
+
+func (c *committee) waitReady(waitReady bool) {
 	if waitReady {
-		c.log.Infof("wait for at least quorum of comittee validatorNodes (%d) to connect before activating the committee", c.Quorum())
+		c.log.Infof("wait for at least quorum of committee validatorNodes (%d) to connect before activating the committee", c.Quorum())
 		for !c.QuorumIsAlive() {
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
-	c.log.Infof("committee is ready for addr %s", c.dkshare.Address.Base58())
+	c.log.Infof("committee started for address %s", c.dkshare.Address.Base58())
 	c.log.Debugf("peer status: %s", c.PeerStatus())
 	c.isReady.Store(true)
 }

@@ -7,10 +7,13 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"go.uber.org/atomic"
 )
 
 type MockedChainCore struct {
 	chainID                 coretypes.ChainID
+	solidStateIndex         atomic.Uint32
+	processors              *processors.ProcessorCache
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
 	eventStateSynced        *events.Event
@@ -24,8 +27,9 @@ type MockedChainCore struct {
 
 func NewMockedChainCore(chainID coretypes.ChainID, log *logger.Logger) *MockedChainCore {
 	ret := &MockedChainCore{
-		chainID: chainID,
-		log:     log,
+		chainID:    chainID,
+		processors: processors.MustNew(),
+		log:        log,
 		eventStateTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.StateTransitionEventData))(params[0].(*chain.StateTransitionEventData))
 		}),
@@ -61,6 +65,10 @@ func (m *MockedChainCore) ID() *coretypes.ChainID {
 	return &m.chainID
 }
 
+func (c *MockedChainCore) GlobalSolidIndex() *atomic.Uint32 {
+	return &c.solidStateIndex
+}
+
 func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {
 	panic("implement me")
 }
@@ -74,7 +82,7 @@ func (m *MockedChainCore) Events() chain.ChainEvents {
 }
 
 func (m *MockedChainCore) Processors() *processors.ProcessorCache {
-	panic("implement me")
+	return m.processors
 }
 
 func (m *MockedChainCore) RequestProcessed() *events.Event {

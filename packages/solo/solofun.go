@@ -11,7 +11,7 @@ import (
 
 // NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme
 // and requests some tokens from the UTXODB faucet.
-// The amount of tokens is equal to solo.Saldo (=1337) iotas
+// The amount of tokens is equal to solo.Saldo (=1000000) iotas
 // Returns signature scheme interface and public key in binary form
 func (env *Solo) NewKeyPairWithFunds() (*ed25519.KeyPair, ledgerstate.Address) {
 	keyPair, addr := env.NewKeyPair()

@@ -58,9 +58,9 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 	return vmctx.entropy
 }
 
-// PostRequest creates a request section in the transaction with specified parameters
+// Post1Request creates a request section in the transaction with specified parameters
 // The transfer not include 1 iota for the request token but includes node fee, if eny
-//func (vmctx *VMContext) PostRequest(par coretypes.PostRequestParams) bool {
+//func (vmctx *VMContext) Post1Request(par coretypes.PostRequestParams) bool {
 //	vmctx.log.Debugw("-- PostRequestSync",
 //		"target", par.TargetContractID.String(),
 //		"ep", par.VMProcessorEntryPoint.String(),
@@ -81,7 +81,7 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 //}
 //
 //func (vmctx *VMContext) PostRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
-//	return vmctx.PostRequest(coretypes.PostRequestParams{
+//	return vmctx.Post1Request(coretypes.PostRequestParams{
 //		TargetContractID: vmctx.CurrentContractID(),
 //		VMProcessorEntryPoint:       reqCode,
 //		Params:           params,
@@ -91,7 +91,7 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 //func (vmctx *VMContext) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
 //	timelock := util.NanoSecToUnixSec(vmctx.timestamp) + delaySec
 //
-//	return vmctx.PostRequest(coretypes.PostRequestParams{
+//	return vmctx.Post1Request(coretypes.PostRequestParams{
 //		TargetContractID: vmctx.CurrentContractID(),
 //		VMProcessorEntryPoint:       entryPoint,
 //		Params:           args,
