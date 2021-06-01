@@ -25,8 +25,15 @@ func TestRequestGasFees(t *testing.T) {
 	// change owner to evnchainmanagement SC
 	managerAgentId := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn(Interface.Name))
 	_, err = chain.PostRequestSync(
-		solo.NewCallParams(evmchain.Interface.Name, evmchain.FuncSetOwner, evmchain.FieldEvmOwner, managerAgentId).
+		solo.NewCallParams(evmchain.Interface.Name, evmchain.FuncSetNextOwner, evmchain.FieldNextEvmOwner, managerAgentId).
 			WithIotas(1),
+		chain.OriginatorKeyPair,
+	)
+	require.NoError(t, err)
+
+	//claim ownership
+	_, err = chain.PostRequestSync(
+		solo.NewCallParams(Interface.Name, FuncClaimOwnership).WithIotas(1),
 		chain.OriginatorKeyPair,
 	)
 	require.NoError(t, err)

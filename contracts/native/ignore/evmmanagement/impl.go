@@ -29,12 +29,14 @@ var Interface = &coreutil.ContractInterface{
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
 		coreutil.Func(FuncRequestGasFees, requestGasFees),
+		coreutil.Func(FuncClaimOwnership, claimOwnership),
 	})
 	native.AddProcessor(Interface)
 }
 
 const (
 	FuncRequestGasFees = "requestGasFee"
+	FuncClaimOwnership = "claimOwnership"
 )
 
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
@@ -46,6 +48,13 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 func requestGasFees(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	_, err := ctx.Call(evmchain.Interface.Hname(), coretypes.Hn(evmchain.FuncWithdrawGasFees), nil, nil)
+	a.RequireNoError(err)
+	return nil, nil
+}
+
+func claimOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	_, err := ctx.Call(evmchain.Interface.Hname(), coretypes.Hn(evmchain.FuncClaimOwnership), nil, nil)
 	a.RequireNoError(err)
 	return nil, nil
 }
