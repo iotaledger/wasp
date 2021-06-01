@@ -11,7 +11,7 @@
 			<h2 class="section">{{if $desc}}{{$desc}}{{else}}Chain <tt>{{$chainid}}</tt>{{end}}</h2>
 
 			<dl>
-				<dt>ChainID</dt><dd><tt>{{.Record.ChainIdAliasAddress}}</tt></dd>
+				<dt>ChainID</dt><dd><tt>{{.Record.ChainIdAliasAddress.Base58}}</tt></dd>
 				<dt>Active</dt><dd><tt>{{.Record.Active}}</tt></dd>
 				{{if .Record.Active}}
 					<dt>Owner ID</dt><dd>{{template "agentid" (args .ChainID $rootinfo.OwnerID)}}</dd>

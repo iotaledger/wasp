@@ -44,7 +44,7 @@ func TestDashboardChainView(t *testing.T) {
 
 	// make sure we are using .Base58()
 	require.NotContains(t, html.Text(), "OutputID {")
-	// require.NotContains(t, html.Text(), "Address {")  // TODO check with Diego, not sure of the reason for this check
+	require.NotContains(t, html.Text(), "Address {")
 }
 
 func TestDashboardChainAccount(t *testing.T) {
