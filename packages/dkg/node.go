@@ -9,10 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/bdn"
@@ -24,14 +23,14 @@ import (
 type Node struct {
 	secKey      kyber.Scalar
 	pubKey      kyber.Point
-	suite       Suite                             // Cryptography to use.
-	netProvider peering.NetworkProvider           // Network to communicate through.
-	registry    coretypes.DKShareRegistryProvider // Where to store the generated keys.
-	processes   map[string]*proc                  // Only for introspection.
-	procLock    *sync.RWMutex                     // To guard access to the process pool.
-	recvQueue   chan *peering.RecvEvent           // Incoming events processed async.
-	recvStopCh  chan bool                         // To coordinate shutdown.
-	attachID    interface{}                       // Peering attach ID
+	suite       Suite                            // Cryptography to use.
+	netProvider peering.NetworkProvider          // Network to communicate through.
+	registry    registry.DKShareRegistryProvider // Where to store the generated keys.
+	processes   map[string]*proc                 // Only for introspection.
+	procLock    *sync.RWMutex                    // To guard access to the process pool.
+	recvQueue   chan *peering.RecvEvent          // Incoming events processed async.
+	recvStopCh  chan bool                        // To coordinate shutdown.
+	attachID    interface{}                      // Peering attach ID
 	log         *logger.Logger
 }
 
@@ -42,7 +41,7 @@ func NewNode(
 	pubKey kyber.Point,
 	suite Suite,
 	netProvider peering.NetworkProvider,
-	registry coretypes.DKShareRegistryProvider,
+	registry registry.DKShareRegistryProvider,
 	log *logger.Logger,
 ) *Node {
 	n := Node{
