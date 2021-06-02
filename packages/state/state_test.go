@@ -198,7 +198,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, exists)
 
-		rdr, err := NewStateReader(store, chainID)
+		rdr, err := NewStateReader(store)
 		require.NoError(t, err)
 
 		require.EqualValues(t, vs2.BlockIndex(), rdr.BlockIndex())
@@ -242,8 +242,7 @@ func TestStateReader(t *testing.T) {
 	t.Run("state not found", func(t *testing.T) {
 		log := testlogger.NewLogger(t)
 		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
-		chainID := coretypes.RandomChainID([]byte("1"))
-		st, err := NewStateReader(store, chainID)
+		st, err := NewStateReader(store)
 		require.NoError(t, err)
 		ok, err := st.KVStoreReader().Has("kuku")
 		require.NoError(t, err)

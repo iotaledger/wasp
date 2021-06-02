@@ -27,7 +27,7 @@ func createStateReader(t *testing.T, log *logger.Logger) (state.StateReader, sta
 	dbp := dbprovider.NewInMemoryDBProvider(log)
 	vs, err := state.CreateOriginState(dbp.GetKVStore(), nil)
 	require.NoError(t, err)
-	ret, err := state.NewStateReader(dbp.GetKVStore(), nil)
+	ret, err := state.NewStateReader(dbp.GetKVStore())
 	require.NoError(t, err)
 	return ret, vs
 }
