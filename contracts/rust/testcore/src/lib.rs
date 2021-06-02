@@ -24,7 +24,6 @@ fn on_load() {
     exports.add_func(FUNC_TEST_CALL_PANIC_FULL_EP, func_test_call_panic_full_ep);
     exports.add_func(FUNC_TEST_CALL_PANIC_VIEW_EP_FROM_FULL, func_test_call_panic_view_ep_from_full);
     exports.add_func(FUNC_TEST_CHAIN_OWNER_ID_FULL, func_test_chain_owner_id_full);
-    exports.add_func(FUNC_TEST_CONTRACT_ID_FULL, func_test_contract_id_full);
     exports.add_func(FUNC_TEST_EVENT_LOG_DEPLOY, func_test_event_log_deploy);
     exports.add_func(FUNC_TEST_EVENT_LOG_EVENT_DATA, func_test_event_log_event_data);
     exports.add_func(FUNC_TEST_EVENT_LOG_GENERIC_DATA, func_test_event_log_generic_data);
@@ -38,7 +37,6 @@ fn on_load() {
     exports.add_view(VIEW_PASS_TYPES_VIEW, view_pass_types_view);
     exports.add_view(VIEW_TEST_CALL_PANIC_VIEW_EP_FROM_VIEW, view_test_call_panic_view_ep_from_view);
     exports.add_view(VIEW_TEST_CHAIN_OWNER_ID_VIEW, view_test_chain_owner_id_view);
-    exports.add_view(VIEW_TEST_CONTRACT_ID_VIEW, view_test_contract_id_view);
     exports.add_view(VIEW_TEST_PANIC_VIEW_EP, view_test_panic_view_ep);
     exports.add_view(VIEW_TEST_SANDBOX_CALL, view_test_sandbox_call);
 }

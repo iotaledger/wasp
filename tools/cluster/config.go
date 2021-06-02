@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"strings"
 
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 type GoshimmerConfig struct {
-	ApiPort  int
-	Provided bool
+	TxStreamPort int
+	ApiPort      int
+	Provided     bool
 }
 
 type WaspConfig struct {
@@ -25,8 +27,9 @@ type WaspConfig struct {
 }
 
 type ClusterConfig struct {
-	Wasp      WaspConfig
-	Goshimmer GoshimmerConfig
+	Wasp            WaspConfig
+	Goshimmer       GoshimmerConfig
+	FaucetPoWTarget int
 }
 
 func DefaultConfig() *ClusterConfig {
@@ -39,9 +42,11 @@ func DefaultConfig() *ClusterConfig {
 			FirstDashboardPort: 7000,
 		},
 		Goshimmer: GoshimmerConfig{
-			ApiPort:  8080,
-			Provided: false,
+			TxStreamPort: 5000,
+			ApiPort:      8080,
+			Provided:     false,
 		},
+		FaucetPoWTarget: 0,
 	}
 }
 
@@ -118,6 +123,14 @@ func (c *ClusterConfig) PeeringHosts(nodeIndexes ...[]int) []string {
 	return c.waspHosts(nodes, func(i int) string { return c.PeeringHost(i) })
 }
 
+func (c *ClusterConfig) NeighborsString() string {
+	ret := make([]string, c.Wasp.NumNodes)
+	for i := range ret {
+		ret[i] = "\"" + c.PeeringHost(i) + "\""
+	}
+	return strings.Join(ret, ",")
+}
+
 func (c *ClusterConfig) PeeringHost(nodeIndex int) string {
 	return fmt.Sprintf("127.0.0.1:%d", c.PeeringPort(nodeIndex))
 }
@@ -146,20 +159,12 @@ func (c *ClusterConfig) DashboardPort(nodeIndex int) int {
 	return c.Wasp.FirstDashboardPort + nodeIndex
 }
 
-func (c *ClusterConfig) GoshimmerConfigTemplateParams() *templates.GoshimmerConfigParams {
-	if c.Goshimmer.Provided {
-		panic("should not reach here")
-	}
-	return &templates.GoshimmerConfigParams{
-		ApiPort: c.Goshimmer.ApiPort,
-	}
-}
-
 func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigParams {
 	return &templates.WaspConfigParams{
 		ApiPort:       c.ApiPort(i),
 		DashboardPort: c.DashboardPort(i),
 		PeeringPort:   c.PeeringPort(i),
 		NanomsgPort:   c.NanomsgPort(i),
+		Neighbors:     c.NeighborsString(),
 	}
 }

@@ -16,22 +16,30 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
+type reqstatusWebAPI struct {
+	getChain func(chainID *coretypes.ChainID) chain.ChainRequests
+}
+
 func AddEndpoints(server echoswagger.ApiRouter) {
-	server.GET(routes.RequestStatus(":chainID", ":reqID"), handleRequestStatus).
+	r := &reqstatusWebAPI{func(chainID *coretypes.ChainID) chain.ChainRequests {
+		return chains.AllChains().Get(chainID)
+	}}
+
+	server.GET(routes.RequestStatus(":chainID", ":reqID"), r.handleRequestStatus).
 		SetSummary("Get the processing status of a given request in the node").
 		AddParamPath("", "chainID", "ChainID (base58)").
 		AddParamPath("", "reqID", "Request ID (base58)").
 		AddResponse(http.StatusOK, "Request status", model.RequestStatusResponse{}, nil)
 
-	server.GET(routes.WaitRequestProcessed(":chainID", ":reqID"), handleWaitRequestProcessed).
+	server.GET(routes.WaitRequestProcessed(":chainID", ":reqID"), r.handleWaitRequestProcessed).
 		SetSummary("Wait until the given request has been processed by the node").
 		AddParamPath("", "chainID", "ChainID (base58)").
 		AddParamPath("", "reqID", "Request ID (base58)").
 		AddParamBody(model.WaitRequestProcessedParams{}, "Params", "Optional parameters", false)
 }
 
-func handleRequestStatus(c echo.Context) error {
-	ch, reqID, err := parseParams(c)
+func (r *reqstatusWebAPI) handleRequestStatus(c echo.Context) error {
+	ch, reqID, err := r.parseParams(c)
 	if err != nil {
 		return err
 	}
@@ -47,8 +55,8 @@ func handleRequestStatus(c echo.Context) error {
 	})
 }
 
-func handleWaitRequestProcessed(c echo.Context) error {
-	ch, reqID, err := parseParams(c)
+func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
+	ch, reqID, err := r.parseParams(c)
 	if err != nil {
 		return err
 	}
@@ -70,7 +78,7 @@ func handleWaitRequestProcessed(c echo.Context) error {
 	// subscribe to event
 	requestProcessed := make(chan bool)
 	handler := events.NewClosure(func(rid coretypes.RequestID) {
-		if rid == *reqID {
+		if rid == reqID {
 			requestProcessed <- true
 		}
 	})
@@ -89,18 +97,18 @@ func handleWaitRequestProcessed(c echo.Context) error {
 	}
 }
 
-func parseParams(c echo.Context) (chain.Chain, *coretypes.RequestID, error) {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainID"))
+func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, coretypes.RequestID, error) {
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
-		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid chain ID %+v: %s", c.Param("chainID"), err.Error()))
+		return nil, coretypes.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}
-	chain := chains.GetChain(chainID)
-	if chain == nil {
-		return nil, nil, httperrors.NotFound(fmt.Sprintf("Chain not found: %+v", chainID.String()))
+	theChain := r.getChain(chainID)
+	if theChain == nil {
+		return nil, coretypes.RequestID{}, httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID.String()))
 	}
-	reqID, err := coretypes.NewRequestIDFromBase58(c.Param("reqID"))
+	reqID, err := coretypes.RequestIDFromBase58(c.Param("reqID"))
 	if err != nil {
-		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid request id %+v: %s", c.Param("reqID"), err.Error()))
+		return nil, coretypes.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid request id %+v: %s", c.Param("reqID"), err.Error()))
 	}
-	return chain, &reqID, nil
+	return theChain, reqID, nil
 }

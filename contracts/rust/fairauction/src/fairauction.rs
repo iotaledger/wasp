@@ -17,7 +17,7 @@ const OWNER_MARGIN_MAX: i64 = 100;
 pub fn func_finalize_auction(ctx: &ScFuncContext) {
     ctx.log("fairauction.finalize");
     // only SC itself can invoke this function
-    ctx.require(ctx.caller() == ctx.contract_id().as_agent_id(), "no permission");
+    ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
     let p = ctx.params();
     let param_color = p.get_color(PARAM_COLOR);
@@ -223,7 +223,8 @@ pub fn func_start_auction(ctx: &ScFuncContext) {
 
     let finalize_params = ScMutableMap::new();
     finalize_params.get_color(VAR_COLOR).set_value(&auction.color);
-    ctx.post_self(HFUNC_FINALIZE_AUCTION, Some(finalize_params), None, duration * 60);
+    let transfer = ScTransfers::iotas(1);
+    ctx.post_self(HFUNC_FINALIZE_AUCTION, Some(finalize_params), transfer, duration * 60);
     ctx.log("fairauction.startAuction ok");
 }
 

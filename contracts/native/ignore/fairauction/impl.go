@@ -10,9 +10,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -24,7 +22,7 @@ import (
 const ProgramHash = "4NbQFgvnsfgE3n9ZhtJ3p9hWZzfYUEDHfKU93wp8UowB"
 const Description = "FairAuction, a PoC smart contract"
 
-// implement Processor and EntryPoint interfaces
+// implement VMProcessor and VMProcessorEntryPoint interfaces
 
 type fairAuctionProcessor map[coretypes.Hname]fairAuctionEntryPoint
 
@@ -86,7 +84,7 @@ func init() {
 }
 
 // statical link point to the Wasp node
-func GetProcessor() coretypes.Processor {
+func GetProcessor() coretypes.VMProcessor {
 	return entryPoints
 }
 
@@ -94,7 +92,7 @@ func (v fairAuctionProcessor) GetDescription() string {
 	return "FairAuction hard coded smart contract program"
 }
 
-func (v fairAuctionProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
+func (v fairAuctionProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }
@@ -121,7 +119,7 @@ func (ep fairAuctionEntryPoint) CallView(ctx coretypes.SandboxView) (dict.Dict, 
 type AuctionInfo struct {
 	// color of the tokens for sale. Max one auction per color at same time is allowed
 	// all tokens are being sold as one lot
-	Color balance.Color
+	Color ledgerstate.Color
 	// number of tokens for sale
 	NumTokens int64
 	// minimum bid. Set by the auction initiator
@@ -205,12 +203,12 @@ func startAuction(ctx coretypes.Sandbox) error {
 	sender := ctx.Caller()
 
 	// check how many iotas the request contains
-	totalDeposit := ctx.IncomingTransfer().Balance(balance.ColorIOTA)
+	totalDeposit := ctx.IncomingTransfer().Balance(ledgerstate.ColorIOTA)
 	if totalDeposit < 1 {
 		// it is expected at least 1 iota in deposit
 		// this 1 iota is needed as a "operating capital for the time locked request to itself"
 		// refund iotas
-		refundFromRequest(ctx, &balance.ColorIOTA, 1)
+		refundFromRequest(ctx, &ledgerstate.ColorIOTA, 1)
 
 		return fmt.Errorf("startAuction: exit 0: must be at least 1i in deposit")
 	}
@@ -223,7 +221,7 @@ func startAuction(ctx coretypes.Sandbox) error {
 	if err != nil || !ok {
 		// incorrect request arguments, colore for sale is not determined
 		// refund half of the deposit in iotas
-		refundFromRequest(ctx, &balance.ColorIOTA, totalDeposit/2)
+		refundFromRequest(ctx, &ledgerstate.ColorIOTA, totalDeposit/2)
 
 		return fmt.Errorf("startAuction: exit 1")
 	}
@@ -235,10 +233,10 @@ func startAuction(ctx coretypes.Sandbox) error {
 	if err != nil {
 		return fmt.Errorf("startAuction: exit 1.2")
 	}
-	if colorForSale == balance.ColorIOTA || colorForSale == balance.ColorNew {
+	if colorForSale == ledgerstate.ColorIOTA || colorForSale == balance.ColorNew {
 		// reserved color code are not allowed
 		// refund half
-		refundFromRequest(ctx, &balance.ColorIOTA, totalDeposit/2)
+		refundFromRequest(ctx, &ledgerstate.ColorIOTA, totalDeposit/2)
 
 		return fmt.Errorf("startAuction: exit 2")
 	}
@@ -247,7 +245,7 @@ func startAuction(ctx coretypes.Sandbox) error {
 	tokensForSale := ctx.IncomingTransfer().Balance(colorForSale)
 	if tokensForSale == 0 {
 		// no tokens transferred. Refund half of deposit
-		refundFromRequest(ctx, &balance.ColorIOTA, totalDeposit/2)
+		refundFromRequest(ctx, &ledgerstate.ColorIOTA, totalDeposit/2)
 
 		return fmt.Errorf("startAuction exit 3: no tokens for sale")
 	}
@@ -274,7 +272,7 @@ func startAuction(ctx coretypes.Sandbox) error {
 		if harvest < 1 {
 			harvest = 1
 		}
-		refundFromRequest(ctx, &balance.ColorIOTA, harvest)
+		refundFromRequest(ctx, &ledgerstate.ColorIOTA, harvest)
 		refundFromRequest(ctx, &colorForSale, 0)
 
 		return fmt.Errorf("startAuction: not enough iotas for the fee. Expected %d, got %d", expectedDeposit, totalDeposit)
@@ -311,7 +309,7 @@ func startAuction(ctx coretypes.Sandbox) error {
 	if b := auctions.MustGetAt(colorForSale.Bytes()); b != nil {
 		// auction already exists. Ignore sale auction.
 		// refund iotas less fee
-		refundFromRequest(ctx, &balance.ColorIOTA, expectedDeposit/2)
+		refundFromRequest(ctx, &ledgerstate.ColorIOTA, expectedDeposit/2)
 		// return all tokens for sale
 		refundFromRequest(ctx, &colorForSale, 0)
 
@@ -337,9 +335,9 @@ func startAuction(ctx coretypes.Sandbox) error {
 
 	// prepare and send request FinalizeAuction to self time-locked for the duration
 	// the FinalizeAuction request will be time locked for the duration and then auction will be run
-	args := dict.FromGoMap(map[kv.Key][]byte{
+	args := dict.Dict{
 		VarReqAuctionColor: codec.EncodeString(colorForSale.String()),
-	})
+	}
 	ctx.PostRequest(coretypes.PostRequestParams{
 		TargetContractID: ctx.ContractID(),
 		EntryPoint:       RequestFinalizeAuction,
@@ -367,7 +365,7 @@ func placeBid(ctx coretypes.Sandbox) error {
 	params := ctx.Params()
 	// all iotas in the request transaction are considered a bid/rise sum
 	// it also means several bids can't be placed in the same transaction <-- TODO generic solution for it
-	bidAmount := ctx.IncomingTransfer().Balance(balance.ColorIOTA)
+	bidAmount := ctx.IncomingTransfer().Balance(ledgerstate.ColorIOTA)
 	if bidAmount == 0 {
 		// no iotas sent
 		return fmt.Errorf("placeBid: exit 0")
@@ -381,7 +379,7 @@ func placeBid(ctx coretypes.Sandbox) error {
 	}
 	if !ok {
 		// missing argument
-		refundFromRequest(ctx, &balance.ColorIOTA, 0)
+		refundFromRequest(ctx, &ledgerstate.ColorIOTA, 0)
 		return fmt.Errorf("placeBid: exit 2")
 	}
 
@@ -393,9 +391,9 @@ func placeBid(ctx coretypes.Sandbox) error {
 	if err != nil {
 		return fmt.Errorf("startAuction: exit 1.2")
 	}
-	if col == balance.ColorIOTA || col == balance.ColorNew {
+	if col == ledgerstate.ColorIOTA || col == balance.ColorNew {
 		// reserved color not allowed. Incorrect arguments
-		refundFromRequest(ctx, &balance.ColorIOTA, 0)
+		refundFromRequest(ctx, &ledgerstate.ColorIOTA, 0)
 		return fmt.Errorf("placeBid: exit 3")
 	}
 
@@ -404,7 +402,7 @@ func placeBid(ctx coretypes.Sandbox) error {
 	data := auctions.MustGetAt(col.Bytes())
 	if data == nil {
 		// no such auction. refund everything
-		refundFromRequest(ctx, &balance.ColorIOTA, 0)
+		refundFromRequest(ctx, &ledgerstate.ColorIOTA, 0)
 		return fmt.Errorf("placeBid: exit 4")
 	}
 	// unmarshal auction data
@@ -478,7 +476,7 @@ func finalizeAuction(ctx coretypes.Sandbox) error {
 	if err != nil {
 		return fmt.Errorf("startAuction: exit 1.2")
 	}
-	if col == balance.ColorIOTA || col == balance.ColorNew {
+	if col == ledgerstate.ColorIOTA || col == balance.ColorNew {
 		// inconsistency
 		return fmt.Errorf("finalizeAuction: exit 2")
 	}
@@ -552,12 +550,12 @@ func finalizeAuction(ctx coretypes.Sandbox) error {
 		//
 		//ctx.MoveTokens(ai.Bids[winnerIndex].Bidder, ai.Color, ai.NumTokens)
 		//// send winning amount and return deposit sum less fees to the owner of the auction
-		//ctx.MoveTokens(ai.AuctionOwner, balance.ColorIOTA, winningAmount+ai.TotalDeposit-ownerFee)
+		//ctx.MoveTokens(ai.AuctionOwner, ledgerstate.ColorIOTA, winningAmount+ai.TotalDeposit-ownerFee)
 		//
 		//for i, bi := range ai.Bids {
 		//	if i != winnerIndex {
 		//		// return staked sum to the non-winner
-		//		ctx.MoveTokens(bi.Bidder, balance.ColorIOTA, bi.Total)
+		//		ctx.MoveTokens(bi.Bidder, ledgerstate.ColorIOTA, bi.Total)
 		//	}
 		//}
 		//logToSC(ctx, fmt.Sprintf("close auction. Color: %s. Winning bid: %di", col.String(), winner.Total))
@@ -571,16 +569,16 @@ func finalizeAuction(ctx coretypes.Sandbox) error {
 		//}
 		//
 		//// return deposit less fees less 1 iota
-		//if ctx.MoveTokens(ai.AuctionOwner, balance.ColorIOTA, ai.TotalDeposit-ownerFee) {
+		//if ctx.MoveTokens(ai.AuctionOwner, ledgerstate.ColorIOTA, ai.TotalDeposit-ownerFee) {
 		//	ctx.Event(fmt.Sprintf("returned deposit less fees: %d", ai.TotalDeposit-ownerFee))
 		//}
 
 		// return bids to bidders
 		//for _, bi := range ai.Bids {
-		//	if ctx.MoveTokens(bi.Bidder, balance.ColorIOTA, bi.Total) {
+		//	if ctx.MoveTokens(bi.Bidder, ledgerstate.ColorIOTA, bi.Total) {
 		//		ctx.Event(fmt.Sprintf("returned bid to bidder: %d -> %s", bi.Total, bi.Bidder.String()))
 		//	} else {
-		//		avail := ctx.Balance(balance.ColorIOTA)
+		//		avail := ctx.Balance(ledgerstate.ColorIOTA)
 		//		ctx.Event(fmt.Sprintf("failed to return bid to bidder: %d -> %s. Available: %d", bi.Total, bi.Bidder.String(), avail))
 		//	}
 		//}
@@ -624,7 +622,7 @@ func setOwnerMargin(ctx coretypes.Sandbox) error {
 
 // TODO implement universal 'refund' function to be used in rollback situations
 // refundFromRequest returns all tokens of the given color to the sender minus sunkFee
-func refundFromRequest(ctx coretypes.Sandbox, color *balance.Color, harvest int64) {
+func refundFromRequest(ctx coretypes.Sandbox, color ledgerstate.Color, harvest int64) {
 	// TODO
 	//account := ctx.AccessSCAccount()
 	//ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)

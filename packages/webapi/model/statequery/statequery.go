@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -31,7 +30,7 @@ type Results struct {
 	Timestamp  time.Time
 	StateHash  *hashing.HashValue
 	StateTxId  model.ValueTxID
-	Requests   []*coretypes.RequestID
+	Requests   []coretypes.RequestID
 }
 
 type KeyQuery struct {
@@ -211,7 +210,7 @@ func (r *QueryResult) MustString() (string, bool) {
 	return s, ok
 }
 
-func (r *QueryResult) MustAddress() address.Address {
+func (r *QueryResult) MustAddress() ledgerstate.Address {
 	v, _, err := codec.DecodeAddress(r.MustBytes())
 	if err != nil {
 		panic(err)
@@ -302,7 +301,7 @@ func (q *KeyQuery) Execute(vars buffered.BufferedKVStore) (*QueryResult, error) 
 			return nil, err
 		}
 
-		arr := collections.NewArray(vars, string(key))
+		arr := collections.NewArray16(vars, string(key))
 
 		size, err := arr.Len()
 		if err != nil {

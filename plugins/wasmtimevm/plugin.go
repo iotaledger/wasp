@@ -26,7 +26,9 @@ func configure(_ *node.Plugin) {
 	log = logger.NewLogger(VMType)
 
 	// register VM type(s)
-	err := processors.RegisterVMType(VMType, func(binary []byte) (coretypes.Processor, error) {
+	err := processors.RegisterVMType(VMType, func(binary []byte) (coretypes.VMProcessor, error) {
+		//TODO (via config?) pass non-default timeout for WasmTime processor like this:
+		// WasmTimeout = 3 * time.Second
 		return wasmproc.GetProcessor(binary, log)
 	})
 	if err != nil {

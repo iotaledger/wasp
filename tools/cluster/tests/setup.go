@@ -3,30 +3,29 @@ package tests
 import (
 	"flag"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"io/ioutil"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/tools/cluster"
 	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
+	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	useGo       = flag.Bool("go", false, "use Go instead of Rust")
 	useWasp     = flag.Bool("wasp", false, "use Wasp built-in instead of Rust")
-	seed        = "C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr"
-	wallet      = testutil.NewWallet(seed)
-	scOwner     = wallet.WithIndex(0)
-	scOwnerAddr = scOwner.Address()
+	wallet      = initSeed()
+	scOwner     = wallet.KeyPair(0)
+	scOwnerAddr = ledgerstate.NewED25519Address(scOwner.PublicKey)
 	chain       *cluster.Chain
 	clu         *cluster.Cluster
 	client      *chainclient.Client
@@ -34,6 +33,14 @@ var (
 	programHash hashing.HashValue
 	err         error
 )
+
+func initSeed() *seed.Seed {
+	b, err := base58.Decode("C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr")
+	if err != nil {
+		panic(err)
+	}
+	return seed.NewSeed(b)
+}
 
 // TODO detached example code
 //var builtinProgramHash = map[string]string{
@@ -80,22 +87,26 @@ func deployContract(wasmName string, scDescription string, initParams map[string
 }
 
 func postRequest(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, tokens int, params map[string]interface{}) {
-	var transfer map[balance.Color]int64
+	var transfer map[ledgerstate.Color]uint64
 	if tokens != 0 {
-		transfer = map[balance.Color]int64{
-			balance.ColorIOTA: int64(tokens),
+		transfer = map[ledgerstate.Color]uint64{
+			ledgerstate.ColorIOTA: uint64(tokens),
 		}
 	}
 	postRequestFull(t, contract, entryPoint, transfer, params)
 }
 
-func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, transfer map[balance.Color]int64, params map[string]interface{}) {
-	tx, err := client.PostRequest(contract, entryPoint, chainclient.PostRequestParams{
-		Transfer: cbalances.NewFromMap(transfer),
+func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, transfer map[ledgerstate.Color]uint64, params map[string]interface{}) {
+	var b *ledgerstate.ColoredBalances
+	if transfer != nil {
+		b = ledgerstate.NewColoredBalances(transfer)
+	}
+	tx, err := client.Post1Request(contract, entryPoint, chainclient.PostRequestParams{
+		Transfer: b,
 		Args:     requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
 	})
 	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(client.ChainID, tx, 30*time.Second)
 	check(err, t)
 	if !counter.WaitUntilExpectationsMet() {
 		t.Fail()
@@ -110,12 +121,9 @@ func setupAndLoad(t *testing.T, name string, description string, nrOfRequests in
 	setup(t, "test_cluster")
 
 	expectations := map[string]int{
-		"chainrec":            2,
-		"active_committee":    1,
 		"dismissed_committee": 0,
 		//"state":               3 + nrOfRequests,
-		"request_in": 2 + nrOfRequests,
-		//"request_out": 3 + nrOfRequests,    // not always coming from all nodes, but from quorum only
+		//"request_out":         3 + nrOfRequests,    // not always coming from all nodes, but from quorum only
 	}
 	if nrOfRequests == 1 {
 		expectations["state"] = 4
@@ -138,5 +146,5 @@ func setupAndLoad(t *testing.T, name string, description string, nrOfRequests in
 	err = requestFunds(clu, scOwnerAddr, "client")
 	check(err, t)
 
-	client = chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, scOwner.SigScheme())
+	client = chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, scOwner)
 }

@@ -1,64 +1,62 @@
 package chainclient
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
-
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/level1"
-	"github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 // Client allows to send webapi requests to a specific chain in the node
 type Client struct {
-	Level1Client level1.Level1Client
-	WaspClient   *client.WaspClient
-	ChainID      coretypes.ChainID
-	SigScheme    signaturescheme.SignatureScheme
+	GoshimmerClient *goshimmer.Client
+	WaspClient      *client.WaspClient
+	ChainID         coretypes.ChainID
+	KeyPair         *ed25519.KeyPair
 }
 
 // New creates a new chainclient.Client
 func New(
-	level1Client level1.Level1Client,
+	goshimmerClient *goshimmer.Client,
 	waspClient *client.WaspClient,
 	chainID coretypes.ChainID,
-	sigScheme signaturescheme.SignatureScheme,
+	keyPair *ed25519.KeyPair,
 ) *Client {
 	return &Client{
-		Level1Client: level1Client,
-		WaspClient:   waspClient,
-		ChainID:      chainID,
-		SigScheme:    sigScheme,
+		GoshimmerClient: goshimmerClient,
+		WaspClient:      waspClient,
+		ChainID:         chainID,
+		KeyPair:         keyPair,
 	}
 }
 
 type PostRequestParams struct {
-	Transfer coretypes.ColoredBalances
+	Transfer *ledgerstate.ColoredBalances
 	Args     requestargs.RequestArgs
 }
 
-// PostRequest sends a request transaction to the chain
-func (c *Client) PostRequest(
+// Post1Request sends one request transaction with one request on it to the chain
+func (c *Client) Post1Request(
 	contractHname coretypes.Hname,
 	entryPoint coretypes.Hname,
 	params ...PostRequestParams,
-) (*sctransaction.Transaction, error) {
+) (*ledgerstate.Transaction, error) {
 	par := PostRequestParams{}
 	if len(params) > 0 {
 		par = params[0]
 	}
 
-	return apilib.CreateRequestTransaction(apilib.CreateRequestTransactionParams{
-		Level1Client:    c.Level1Client,
-		SenderSigScheme: c.SigScheme,
-		RequestSectionParams: []apilib.RequestSectionParams{{
-			TargetContractID: coretypes.NewContractID(c.ChainID, contractHname),
-			EntryPointCode:   entryPoint,
-			Transfer:         par.Transfer,
-			Args:             par.Args,
+	return c.GoshimmerClient.PostRequestTransaction(transaction.NewRequestTransactionParams{
+		SenderKeyPair: c.KeyPair,
+		Requests: []transaction.RequestParams{{
+			ChainID:    c.ChainID,
+			Contract:   contractHname,
+			EntryPoint: entryPoint,
+			Transfer:   par.Transfer,
+			Args:       par.Args,
 		}},
-		Post: true,
 	})
 }

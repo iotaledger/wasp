@@ -1,38 +1,41 @@
 package test
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"testing"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
+
+//TODO update comments to reflect new way of token handling
 
 func TestTutorial1(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ex1")
 
-	chainInfo, coreContracts := chain.GetInfo()   // calls view root::GetInfo
-	require.EqualValues(t, 4, len(coreContracts)) // 4 core contracts deployed by default
+	chainID, chainOwnerID, coreContracts := chain.GetInfo()                      // calls view root::GetChainInfo
+	require.EqualValues(t, len(core.AllCoreContractsByHash), len(coreContracts)) // all core contracts deployed by default
 
-	t.Logf("chainID: %s", chainInfo.ChainID)
-	t.Logf("chain owner ID: %s", chainInfo.ChainOwnerID)
+	t.Logf("chain ID: %s", chainID.String())
+	t.Logf("chain owner ID: %s", chainOwnerID.String())
 	for hname, rec := range coreContracts {
-		t.Logf("    Core contract '%s': %s", rec.Name, coretypes.NewContractID(chain.ChainID, hname))
+		t.Logf("    Core contract '%s': %s", rec.Name, coretypes.NewAgentID(chainID.AsAddress(), hname))
 	}
 }
 
 func TestTutorial2(t *testing.T) {
 	env := solo.New(t, false, false)
-	userWallet := env.NewSignatureSchemeWithFunds() // create new wallet with 1337 iotas
-	userAddress := userWallet.Address()
+	_, userAddress := env.NewKeyPairWithFunds()
 	t.Logf("Address of the userWallet is: %s", userAddress)
-	numIotas := env.GetAddressBalance(userAddress, balance.ColorIOTA) // how many iotas contains the address
+	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA) // how many iotas the address contains
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337) // assert the address has 1337 iotas
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 }
 
 func TestTutorial3(t *testing.T) {
@@ -44,6 +47,7 @@ func TestTutorial3(t *testing.T) {
 
 	// call contract to store string
 	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!")
+	req.WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -63,8 +67,9 @@ func TestTutorial4(t *testing.T) {
 	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
-	// call contract incorrectly
+	// call contract incorrectly (omit 'paramString')
 	req := solo.NewCallParams("example1", "storeString")
+	req.WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
@@ -73,40 +78,40 @@ func TestTutorial5(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "ex5")
 
-	// create wallet with 1337 iotas.
-	// wallet has address and it is globally identified through
-	// universal identifier: the agent ID
-	userWallet := env.NewSignatureSchemeWithFunds()
-	userAddress := userWallet.Address()
-	userAgentID := coretypes.NewAgentIDFromAddress(userAddress)
+	// create a wallet with 1337 iotas.
+	// the wallet has address and it is globally identified
+	// through a universal identifier: the agent ID
+	userWallet, userAddress := env.NewKeyPairWithFunds()
+	userAgentID := coretypes.NewAgentID(userAddress, 0)
 
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337) // 1337 on address
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0)  // empty on-chain
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
 
 	t.Logf("Address of the userWallet is: %s", userAddress)
-	numIotas := env.GetAddressBalance(userAddress, balance.ColorIOTA)
+	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 
 	// send 42 iotas from wallet to own account on-chain, controlled by the same wallet
-	req := solo.NewCallParams(accounts.Name, accounts.FuncDeposit).
-		WithTransfer(balance.ColorIOTA, 42)
+	req := solo.NewCallParams(accounts.Name, accounts.FuncDeposit)
+	req.WithIotas(42)
 	_, err := chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	// check address balance: must be 43 (!) iotas less
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337-43)
-	// check the on-chain account. Must contain 43 (!) iotas
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 43)
+	// check address balance: must be 42 iotas less
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-42)
+	// check the on-chain account. Must contain 42 iotas
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 42)
 
-	// withdraw back all iotas
-	req = solo.NewCallParams(accounts.Name, accounts.FuncWithdrawToAddress)
+	// withdraw all iotas
+	req = solo.NewCallParams(accounts.Name, accounts.FuncWithdraw)
+	req.WithIotas(1)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	// we are back to initial situation: IOTA is fee-less!
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0) // empty
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-1)
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0) // empty
 }
 
 func TestTutorial6(t *testing.T) {
@@ -116,27 +121,23 @@ func TestTutorial6(t *testing.T) {
 	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
-	// global ID of the deployed contract
-	contractID := coretypes.NewContractID(chain.ChainID, coretypes.Hn("example1"))
-	// contract id in the form of the agent ID
-	contractAgentID := coretypes.NewAgentIDFromContractID(contractID)
+	contractAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("example1"))
 
-	userWallet := env.NewSignatureSchemeWithFunds()
-	userAddress := userWallet.Address()
-	userAgentID := coretypes.NewAgentIDFromAddress(userWallet.Address())
+	userWallet, userAddress := env.NewKeyPairWithFunds()
+	userAgentID := coretypes.NewAgentID(userAddress, 0)
 
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
-	chain.AssertAccountBalance(contractAgentID, balance.ColorIOTA, 0) // empty on-chain
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0)     // empty on-chain
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
+	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)     // empty on-chain
 
-	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").
-		WithTransfer(balance.ColorIOTA, 42)
+	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!")
+	req.WithIotas(42)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(contractAgentID, balance.ColorIOTA, 42)
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337-43)
+	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 42)
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-42)
 }
 
 func TestTutorial7(t *testing.T) {
@@ -146,28 +147,24 @@ func TestTutorial7(t *testing.T) {
 	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
-	// global ID of the deployed contract
-	contractID := coretypes.NewContractID(chain.ChainID, coretypes.Hn("example1"))
-	// contract id in the form of the agent ID
-	contractAgentID := coretypes.NewAgentIDFromContractID(contractID)
+	contractAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("example1"))
 
-	userWallet := env.NewSignatureSchemeWithFunds()
-	userAddress := userWallet.Address()
-	userAgentID := coretypes.NewAgentIDFromAddress(userWallet.Address())
+	userWallet, userAddress := env.NewKeyPairWithFunds()
+	userAgentID := coretypes.NewAgentID(userAddress, 0)
 
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
-	chain.AssertAccountBalance(contractAgentID, balance.ColorIOTA, 0) // empty on-chain
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0)     // empty on-chain
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
+	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)     // empty on-chain
 
 	// missing parameter, will panic
-	req := solo.NewCallParams("example1", "storeString").
-		WithTransfer(balance.ColorIOTA, 42)
+	req := solo.NewCallParams("example1", "storeString")
+	req.WithIotas(42)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.Error(t, err)
 
-	chain.AssertAccountBalance(contractAgentID, balance.ColorIOTA, 0)
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337-1)
+	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0)
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 }
 
 // test withdrawIota method
@@ -179,17 +176,17 @@ func TestTutorial8(t *testing.T) {
 
 	// create a user's wallet (private key) and request 1337 iotas from the faucet.
 	// It corresponds to L1 address
-	userWallet := env.NewSignatureSchemeWithFunds()
-	userAddress := userWallet.Address()
-	userAgentID := coretypes.NewAgentIDFromAddress(userWallet.Address())
+	userWallet, userAddress := env.NewKeyPairWithFunds()
+	userAgentID := coretypes.NewAgentID(userAddress, 0)
 	t.Logf("userAgentID: %s", userAgentID)
 
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337)
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 0) // empty on-chain
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
 
 	// the chain owner (default) send a request to the root contract to grant right to deploy
 	// contract on the chain to the use
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy, root.ParamDeployer, userAgentID)
+	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission, root.ParamDeployer, userAgentID)
+	req.WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -198,40 +195,38 @@ func TestTutorial8(t *testing.T) {
 	err = chain.DeployWasmContract(userWallet, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
-	// global ID of the deployed contract
-	contractID := coretypes.NewContractID(chain.ChainID, coretypes.Hn("example1"))
-	// contract id in the form of the agent ID
-	contractAgentID := coretypes.NewAgentIDFromContractID(contractID)
+	contractAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("example1"))
 
 	// the deployment of the smart contract required 1 requests to the root contract:
 	// - to submit binary to the on-chain "blob" registry
 	// - to deploy contract from the blob
 	// Two tokens were taken from the user account to form requests and then were
 	// deposited to the user's account on the chain
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337-2)
-	chain.AssertAccountBalance(contractAgentID, balance.ColorIOTA, 0) // empty on-chain
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 2)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-2)
+	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
 
 	// user send a "storeString" request to the smart contract. It attaches 42 iotas to the request
 	// It also takes 1 iota for the request token
 	// Result is 42 iotas moved to the smart contract's account
 	req = solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").
-		WithTransfer(balance.ColorIOTA, 42)
+		WithIotas(42)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(contractAgentID, balance.ColorIOTA, 42)
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 3)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337-45)
+	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 42)
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-44)
 
 	// user withdraws all iotas from the smart contract back
 	// Out of 42 iotas 41 iota is coming back to the user's address, 1 iotas
 	// is accrued to the user on chain
 	req = solo.NewCallParams("example1", "withdrawIota")
+	req.WithIotas(1)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(contractAgentID, balance.ColorIOTA, 0)
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 3+1)
-	env.AssertAddressBalance(userAddress, balance.ColorIOTA, 1337-45+41)
+	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0)
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-44+42)
 }

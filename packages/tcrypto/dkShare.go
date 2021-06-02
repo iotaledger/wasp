@@ -5,10 +5,10 @@ package tcrypto
 
 import (
 	"bytes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/bls"
 	"io"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
@@ -19,7 +19,7 @@ import (
 // DKShare stands for the information stored on
 // a node as a result of the DKG procedure.
 type DKShare struct {
-	Address       *address.Address
+	Address       ledgerstate.Address
 	Index         *uint16 // nil, if the current node is not a member of a group sharing the key.
 	N             uint16
 	T             uint16
@@ -47,11 +47,11 @@ func NewDKShare(
 	if pubBytes, err = sharedPublic.MarshalBinary(); err != nil {
 		return nil, err
 	}
-	var sharedAddress = address.FromBLSPubKey(pubBytes)
+	var sharedAddress = ledgerstate.NewBLSAddress(pubBytes)
 	//
 	// Construct the DKShare.
 	dkShare := DKShare{
-		Address:       &sharedAddress,
+		Address:       sharedAddress,
 		Index:         &index,
 		N:             n,
 		T:             t,
@@ -84,7 +84,7 @@ func (s *DKShare) Bytes() ([]byte, error) {
 // Write returns byte representation of this struct.
 func (s *DKShare) Write(w io.Writer) error {
 	var err error
-	if err = util.WriteBytes16(w, s.Address.Bytes()); err != nil {
+	if _, err = w.Write(s.Address.Bytes()); err != nil {
 		return err
 	}
 	if err = util.WriteUint16(w, *s.Index); err != nil { // It must be not nil here.
@@ -123,16 +123,14 @@ func (s *DKShare) Write(w io.Writer) error {
 
 func (s *DKShare) Read(r io.Reader) error {
 	var err error
-	var addr address.Address
-	var addrBytes []byte
+	var addrBytes [ledgerstate.AddressLength]byte
 	var arrLen uint16
-	if addrBytes, err = util.ReadBytes16(r); err != nil {
+	if n, err := r.Read(addrBytes[:]); err != nil || n != ledgerstate.AddressLength {
 		return err
 	}
-	if addr, _, err = address.FromBytes(addrBytes); err != nil {
+	if s.Address, _, err = ledgerstate.AddressFromBytes(addrBytes[:]); err != nil {
 		return err
 	}
-	s.Address = &addr
 	var index uint16
 	if err = util.ReadUint16(r, &index); err != nil {
 		return err
@@ -218,27 +216,23 @@ func (s *DKShare) VerifyMasterSignature(data []byte, signature []byte) error {
 
 // RecoverFullSignature generates (recovers) master signature from partial sigshares.
 // returns signature as defined in the value Tangle
-func (s *DKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (signaturescheme.Signature, error) {
+func (s *DKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (*bls.SignatureWithPublicKey, error) {
 	var err error
-	var recoveredSignature []byte
+	var recoveredSignatureBin []byte
 	if s.N > 1 {
 		pubPoly := share.NewPubPoly(s.suite, nil, s.PublicCommits)
-		recoveredSignature, err = tbdn.Recover(s.suite, pubPoly, data, sigShares, int(s.T), int(s.N))
+		recoveredSignatureBin, err = tbdn.Recover(s.suite, pubPoly, data, sigShares, int(s.T), int(s.N))
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		singleSigShare := tbdn.SigShare(sigShares[0])
-		recoveredSignature = singleSigShare.Value()
+		recoveredSignatureBin = singleSigShare.Value()
 	}
-	pubKeyBin, err := s.SharedPublic.MarshalBinary()
+	sig, _, err := bls.SignatureFromBytes(recoveredSignatureBin)
 	if err != nil {
 		return nil, err
 	}
-	finalSignature := signaturescheme.NewBLSSignature(pubKeyBin, recoveredSignature)
-
-	if finalSignature.Address().String() != s.Address.String() {
-		panic("finalSignature.ChainID() != op.dkShare.ChainID")
-	}
-	return finalSignature, nil
+	ret := bls.NewSignatureWithPublicKey(bls.PublicKey{Point: s.SharedPublic}, sig)
+	return &ret, nil
 }

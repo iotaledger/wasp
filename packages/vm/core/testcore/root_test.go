@@ -4,6 +4,7 @@
 package testcore
 
 import (
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"testing"
 
@@ -18,7 +19,6 @@ import (
 func TestRootBasic(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	chain.CheckChain()
 	chain.Log.Infof("\n%s\n", chain.String())
@@ -27,7 +27,6 @@ func TestRootBasic(t *testing.T) {
 func TestRootRepeatInit(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	chain.CheckChain()
 
@@ -39,15 +38,12 @@ func TestRootRepeatInit(t *testing.T) {
 func TestGetInfo(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
-	info, contracts := chain.GetInfo()
+	chainID, ownerAgentID, contracts := chain.GetInfo()
 
-	require.EqualValues(t, chain.ChainID, info.ChainID)
-	require.EqualValues(t, chain.ChainColor, info.ChainColor)
-	require.EqualValues(t, chain.ChainAddress, info.ChainAddress)
-	require.EqualValues(t, chain.OriginatorAgentID, info.ChainOwnerID)
-	require.EqualValues(t, 4, len(contracts))
+	require.EqualValues(t, chain.ChainID, chainID)
+	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
+	require.EqualValues(t, len(core.AllCoreContractsByHash), len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -64,17 +60,16 @@ func TestGetInfo(t *testing.T) {
 func TestDeployExample(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	name := "testInc"
 	err := chain.DeployContract(nil, name, sbtestsc.Interface.ProgramHash)
 	require.NoError(t, err)
 
-	info, contracts := chain.GetInfo()
+	chainID, ownerAgentID, contracts := chain.GetInfo()
 
-	require.EqualValues(t, chain.ChainID, info.ChainID)
-	require.EqualValues(t, chain.OriginatorAgentID, info.ChainOwnerID)
-	require.EqualValues(t, 5, len(contracts))
+	require.EqualValues(t, chain.ChainID, chainID)
+	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -89,7 +84,7 @@ func TestDeployExample(t *testing.T) {
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
 	require.EqualValues(t, 0, rec.OwnerFee)
-	require.EqualValues(t, chain.OriginatorAgentID, rec.Creator)
+	require.True(t, chain.OriginatorAgentID.Equals(rec.Creator))
 	require.EqualValues(t, sbtestsc.Interface.ProgramHash, rec.ProgramHash)
 
 	recFind, err := chain.FindContract(name)
@@ -100,7 +95,6 @@ func TestDeployExample(t *testing.T) {
 func TestDeployDouble(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
 	name := "testInc"
 	err := chain.DeployContract(nil, name, sbtestsc.Interface.ProgramHash)
@@ -109,11 +103,11 @@ func TestDeployDouble(t *testing.T) {
 	err = chain.DeployContract(nil, name, sbtestsc.Interface.ProgramHash)
 	require.Error(t, err)
 
-	info, contracts := chain.GetInfo()
+	chainID, ownerAgentID, contracts := chain.GetInfo()
 
-	require.EqualValues(t, chain.ChainID, info.ChainID)
-	require.EqualValues(t, chain.OriginatorAgentID, info.ChainOwnerID)
-	require.EqualValues(t, 5, len(contracts))
+	require.EqualValues(t, chain.ChainID, chainID)
+	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
+	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
 
 	_, ok := contracts[root.Interface.Hname()]
 	require.True(t, ok)
@@ -128,43 +122,42 @@ func TestDeployDouble(t *testing.T) {
 	require.EqualValues(t, name, rec.Name)
 	require.EqualValues(t, "N/A", rec.Description)
 	require.EqualValues(t, 0, rec.OwnerFee)
-	require.EqualValues(t, chain.OriginatorAgentID, rec.Creator)
+	require.True(t, chain.OriginatorAgentID.Equals(rec.Creator))
 	require.EqualValues(t, sbtestsc.Interface.ProgramHash, rec.ProgramHash)
 }
 
 func TestChangeOwnerAuthorized(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
-	newOwner := env.NewSignatureSchemeWithFunds()
-	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
+	newOwner, ownerAddr := env.NewKeyPairWithFunds()
+	newOwnerAgentID := coretypes.NewAgentID(ownerAddr, 0)
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	req.WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	info, _ := chain.GetInfo()
-	require.EqualValues(t, chain.OriginatorAgentID, info.ChainOwnerID)
+	_, ownerAgentID, _ := chain.GetInfo()
+	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
 
-	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership)
+	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership).WithIotas(1)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
-	info, _ = chain.GetInfo()
-	require.EqualValues(t, newOwnerAgentID, info.ChainOwnerID)
+	_, ownerAgentID, _ = chain.GetInfo()
+	require.True(t, newOwnerAgentID.Equals(&ownerAgentID))
 }
 
 func TestChangeOwnerUnauthorized(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	defer chain.WaitForEmptyBacklog()
 
-	newOwner := env.NewSignatureSchemeWithFunds()
-	newOwnerAgentID := coretypes.NewAgentIDFromAddress(newOwner.Address())
+	newOwner, ownerAddr := env.NewKeyPairWithFunds()
+	newOwnerAgentID := coretypes.NewAgentID(ownerAddr, 0)
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.Error(t, err)
 
-	info, _ := chain.GetInfo()
-	require.EqualValues(t, chain.OriginatorAgentID, info.ChainOwnerID)
+	_, ownerAgentID, _ := chain.GetInfo()
+	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
 }

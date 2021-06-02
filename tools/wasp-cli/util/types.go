@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -17,13 +17,13 @@ import (
 func ValueFromString(vtype string, s string) []byte {
 	switch vtype {
 	case "color":
-		col, err := util.ColorFromString(s)
+		col, err := ledgerstate.ColorFromBase58EncodedString(s)
 		log.Check(err)
 		return col.Bytes()
 	case "agentid":
 		agentid, err := coretypes.NewAgentIDFromString(s)
 		log.Check(err)
-		return agentid[:]
+		return agentid.Bytes()
 	case "file":
 		return ReadFile(s)
 	case "string":
@@ -40,7 +40,7 @@ func ValueFromString(vtype string, s string) []byte {
 func ValueToString(vtype string, v []byte) string {
 	switch vtype {
 	case "color":
-		col, _, err := balance.ColorFromBytes(v)
+		col, _, err := ledgerstate.ColorFromBytes(v)
 		log.Check(err)
 		return col.String()
 	case "int":

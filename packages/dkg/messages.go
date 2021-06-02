@@ -14,8 +14,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
@@ -29,7 +29,7 @@ const (
 	// Initiator <-> Peer node communication.
 	//
 	// NOTE: initiatorInitMsgType must be unique across all the uses of peering package,
-	// because it is used to start new chain, thus chainID is not used for message recognition.
+	// because it is used to start new chain, thus peeringID is not used for message recognition.
 	initiatorInitMsgType byte = peering.FirstUserMsgCode + 184 // Initiator -> Peer: init new DKG, reply with initiatorStatusMsgType.
 	//
 	// Initiator <-> Peer proc communication.
@@ -109,10 +109,10 @@ type msgByteCoder interface {
 	Read(io.Reader) error
 }
 
-func makePeerMessage(chainID *coretypes.ChainID, step byte, msg msgByteCoder) *peering.PeerMessage {
+func makePeerMessage(peeringID peering.PeeringID, step byte, msg msgByteCoder) *peering.PeerMessage {
 	msg.SetStep(step)
 	return &peering.PeerMessage{
-		ChainID:     *chainID,
+		PeeringID:   peeringID,
 		SenderIndex: 0, // This is resolved on the receiving side.
 		Timestamp:   0, // We do not use it in the DKG.
 		MsgType:     msg.MsgType(),
@@ -399,7 +399,7 @@ func (m *initiatorDoneMsg) IsResponse() bool {
 //
 type initiatorPubShareMsg struct {
 	step          byte
-	sharedAddress *address.Address
+	sharedAddress ledgerstate.Address
 	sharedPublic  kyber.Point
 	publicShare   kyber.Point
 	signature     []byte
@@ -440,14 +440,14 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 		return err
 	}
 	var sharedAddressBin []byte
-	var sharedAddress address.Address
+	var sharedAddress ledgerstate.Address
 	if sharedAddressBin, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if sharedAddress, _, err = address.FromBytes(sharedAddressBin); err != nil {
+	if sharedAddress, _, err = ledgerstate.AddressFromBytes(sharedAddressBin); err != nil {
 		return err
 	}
-	m.sharedAddress = &sharedAddress
+	m.sharedAddress = sharedAddress
 	m.sharedPublic = m.suite.Point()
 	if err = util.ReadMarshaled(r, m.sharedPublic); err != nil {
 		return err

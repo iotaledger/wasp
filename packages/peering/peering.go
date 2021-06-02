@@ -14,10 +14,15 @@ import (
 	"bytes"
 	"errors"
 	"hash/crc32"
+	"io"
+	"math/rand"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
+	"github.com/mr-tron/base58"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
 )
@@ -43,17 +48,53 @@ func init() {
 	crc32q = crc32.MakeTable(0xD5828281)
 }
 
+// PeeringID is relates peers in different nodes for a particular
+// communication group. E.g. PeeringID identifies a committee in
+// the consensus, etc.
+type PeeringID [ledgerstate.AddressLength]byte
+
+func RandomPeeringID(seed ...[]byte) PeeringID {
+	var pid PeeringID
+	_, _ = rand.Read(pid[:])
+	return pid
+}
+
+func (pid *PeeringID) String() string {
+	return base58.Encode(pid[:])
+}
+
+func (pid *PeeringID) Read(r io.Reader) error {
+	if n, err := r.Read(pid[:]); err != nil || n != ledgerstate.AddressLength {
+		return xerrors.Errorf("error while parsing PeeringID (err=%v)", err)
+	}
+	return nil
+}
+
+func (pid *PeeringID) Write(w io.Writer) error {
+	if n, err := w.Write(pid[:]); err != nil || n != ledgerstate.AddressLength {
+		return xerrors.Errorf("error while serializing PeeringID (err=%v)", err)
+	}
+	return nil
+}
+
 // NetworkProvider stands for the peer-to-peer network, as seen
 // from the viewpoint of a single participant.
 type NetworkProvider interface {
 	Run(stopCh <-chan struct{})
 	Self() PeerSender
-	Group(peerAddrs []string) (GroupProvider, error)
-	Attach(chainID *coretypes.ChainID, callback func(recv *RecvEvent)) interface{}
+	PeerGroup(peerAddrs []string) (GroupProvider, error)
+	PeerDomain(peerAddrs []string) (PeerDomainProvider, error)
+	Attach(peeringID *PeeringID, callback func(recv *RecvEvent)) interface{}
 	Detach(attachID interface{})
 	PeerByNetID(peerNetID string) (PeerSender, error)
 	PeerByPubKey(peerPub kyber.Point) (PeerSender, error)
 	PeerStatus() []PeerStatusProvider
+}
+
+type PeerCollection interface {
+	Attach(peeringID *PeeringID, callback func(recv *RecvEvent)) interface{}
+	Detach(attachID interface{})
+	Close()
 }
 
 // GroupProvider stands for a subset of a peer-to-peer network
@@ -63,6 +104,7 @@ type NetworkProvider interface {
 // Indexes are only meaningful in the groups, not in the
 // network or a particular peers.
 type GroupProvider interface {
+	SelfIndex() uint16
 	PeerIndex(peer PeerSender) (uint16, error)
 	PeerIndexByNetID(peerNetID string) (uint16, error)
 	SendMsgByIndex(peerIdx uint16, msg *PeerMessage)
@@ -77,9 +119,18 @@ type GroupProvider interface {
 	) error
 	AllNodes() map[uint16]PeerSender   // Returns all the nodes in the group.
 	OtherNodes() map[uint16]PeerSender // Returns other nodes in the group (excluding Self).
-	Attach(chainID *coretypes.ChainID, callback func(recv *RecvEvent)) interface{}
-	Detach(attachID interface{})
-	Close()
+	PeerCollection
+}
+
+// PeerDomainProvider implements unordered set of peers which can dynamically change
+// All peers in the domain shares same peeringID. Each peer within domain is identified via its netID
+type PeerDomainProvider interface {
+	SendMsgByNetID(netID string, msg *PeerMessage)
+	SendMsgToRandomPeers(upToNumPeers uint16, msg *PeerMessage)
+	SendSimple(netID string, msgType byte, msgData []byte)
+	SendMsgToRandomPeersSimple(upToNumPeers uint16, msgType byte, msgData []byte)
+	ReshufflePeers(seedBytes ...[]byte)
+	PeerCollection
 }
 
 // PeerSender represents an interface to some remote peer.
@@ -134,8 +185,9 @@ type RecvEvent struct {
 // PeerMessage is an envelope for all the messages exchanged via
 // the peering module.
 type PeerMessage struct {
-	ChainID     coretypes.ChainID
+	PeeringID   PeeringID
 	SenderIndex uint16 // TODO: Only meaningful in a group, and when calculated by the client.
+	SenderNetID string // TODO: Non persistent. Only used by PeeringDomain, filled by the receiver
 	Timestamp   int64
 	MsgType     byte
 	MsgData     []byte
@@ -162,8 +214,7 @@ func NewPeerMessageFromBytes(buf []byte) (*PeerMessage, error) {
 			return nil, err
 		}
 	default:
-		m.ChainID = coretypes.NilChainID
-		if err = m.ChainID.Read(r); err != nil {
+		if err = m.PeeringID.Read(r); err != nil {
 			return nil, err
 		}
 		if err = util.ReadUint16(r, &m.SenderIndex); err != nil {
@@ -218,7 +269,7 @@ func (m *PeerMessage) Bytes() ([]byte, error) {
 			return nil, err
 		}
 	default:
-		if err = m.ChainID.Write(&buf); err != nil {
+		if err = m.PeeringID.Write(&buf); err != nil {
 			return nil, err
 		}
 		if err = util.WriteUint16(&buf, m.SenderIndex); err != nil {

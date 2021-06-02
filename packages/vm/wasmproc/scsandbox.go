@@ -10,7 +10,7 @@ type ScSandboxObject struct {
 }
 
 func (o *ScSandboxObject) invalidKey(keyId int32) {
-	o.Panic("Invalid key: %d", keyId)
+	o.Panic("invalid key: %d", keyId)
 }
 
 func (o *ScSandboxObject) GetBytes(keyId int32, typeId int32) []byte {

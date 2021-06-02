@@ -17,7 +17,7 @@ func TestPutBlobData(t *testing.T) {
 	h1 := p.AddAsBlobRef("dataName", data)
 	require.EqualValues(env.T, h, h1)
 
-	sargs, ok, err := p.SolidifyRequestArguments(env.registry)
+	sargs, ok, err := p.SolidifyRequestArguments(env.blobCache)
 	require.NoError(env.T, err)
 	require.True(env.T, ok)
 	require.Len(env.T, sargs, 1)

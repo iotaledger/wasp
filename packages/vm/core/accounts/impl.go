@@ -2,10 +2,11 @@ package accounts
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
@@ -46,97 +47,55 @@ func getAccounts(ctx coretypes.SandboxView) (dict.Dict, error) {
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit on own account
 //   in case ParamAgentID. == ctx.Caller() and it is an on-chain call, it means NOP
 func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.deposit.begin -- %s", cbalances.Str(ctx.IncomingTransfer()))
+	ctx.Log().Debugf("accounts.deposit.begin -- %s", ctx.IncomingTransfer())
 
 	state := ctx.State()
 	mustCheckLedger(state, "accounts.deposit.begin")
 	defer mustCheckLedger(state, "accounts.deposit.exit")
 
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	targetAgentID := params.MustGetAgentID(ParamAgentID, ctx.Caller())
-
-	// funds currently are at the disposition of accounts, they are moved to the target
-	succ := MoveBetweenAccounts(state, coretypes.NewAgentIDFromContractID(ctx.ContractID()), targetAgentID, ctx.IncomingTransfer())
-	assert.NewAssert(ctx.Log()).Require(succ, "internal error: failed to deposit to %s", ctx.Caller().String())
-
-	ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s", targetAgentID, ctx.IncomingTransfer().String())
-	return nil, nil
-}
-
-// withdrawToAddress sends caller's funds to the caller, the address on L1.
-// caller must be an address
-func withdrawToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
-	state := ctx.State()
-	mustCheckLedger(state, "accounts.withdrawToAddress.begin")
-	defer mustCheckLedger(state, "accounts.withdrawToAddress.exit")
-
-	a := assert.NewAssert(ctx.Log())
-
-	a.Require(ctx.Caller().IsAddress(), "caller must be an address")
-
-	bals, ok := GetAccountBalances(state, ctx.Caller())
-	if !ok {
-		// empty balance, nothing to withdraw
-		return nil, nil
-	}
-	cid := ctx.ContractID()
-	ctx.Log().Debugf("accounts.withdrawToAddress.begin: caller agentID: %s myContractId: %s",
-		ctx.Caller().String(), cid.String())
-
-	sendTokens := cbalances.NewFromMap(bals)
-	addr := ctx.Caller().MustAddress()
-
-	// remove tokens from the chain ledger
-	a.Require(DebitFromAccount(state, ctx.Caller(), sendTokens),
-		"accounts.withdrawToAddress.inconsistency. failed to remove tokens from the chain")
-	// send tokens to address
-	a.Require(ctx.TransferToAddress(addr, sendTokens),
-		"accounts.withdrawToAddress.inconsistency: failed to transfer tokens to address")
-
-	ctx.Log().Debugf("accounts.withdrawToAddress.success. Sent to address %s -- %s",
-		addr.String(), sendTokens.String())
-	return nil, nil
-}
-
-// withdrawToChain sends caller's funds to the caller via account::deposit.
-func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
-	state := ctx.State()
-	mustCheckLedger(state, "accounts.withdrawToChain.begin")
-	defer mustCheckLedger(state, "accounts.withdrawToChain.exit")
-
-	a := assert.NewAssert(ctx.Log())
-
 	caller := ctx.Caller()
-	cid := ctx.ContractID()
-	ctx.Log().Debugf("accounts.withdrawToChain.begin: caller agentID: %s myContractId: %s",
-		caller.String(), cid.String())
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	targetAgentID := params.MustGetAgentID(ParamAgentID, *caller)
+	targetAgentID = commonaccount.Adjust(targetAgentID, ctx.ChainID(), ctx.ChainOwnerID())
+	// funds currently are in the owners account, they must be moved to the target
+	ownersAccount := coretypes.NewAgentID(ctx.ChainID().AsAddress(), 0)
+	succ := MoveBetweenAccounts(state, ownersAccount, targetAgentID, ctx.IncomingTransfer())
+	assert.NewAssert(ctx.Log()).Require(succ, "internal error: failed to deposit to %s", caller.String())
 
-	a.Require(!caller.IsAddress(), "caller must be a smart contract")
+	incoming := ctx.IncomingTransfer()
+	ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s", targetAgentID, incoming.String())
+	return nil, nil
+}
 
-	bals, ok := GetAccountBalances(state, caller)
+// withdraw sends caller's funds to the caller, the address on L1.
+// caller must be an address
+func withdraw(ctx coretypes.Sandbox) (dict.Dict, error) {
+	state := ctx.State()
+	mustCheckLedger(state, "accounts.withdraw.begin")
+	defer mustCheckLedger(state, "accounts.withdraw.exit")
+
+	a := assert.NewAssert(ctx.Log())
+
+	a.Require(!ctx.Caller().Address().Equals(ctx.ChainID().AsAddress()), "caller can't be from the same chain")
+
+	account := ctx.Caller()
+	account = commonaccount.Adjust(account, ctx.ChainID(), ctx.ChainOwnerID())
+	bals, ok := GetAccountBalances(state, account)
 	if !ok {
 		// empty balance, nothing to withdraw
 		return nil, nil
 	}
-	toWithdraw := cbalances.NewFromMap(bals)
-	callerContract := caller.MustContractID()
-	if callerContract.ChainID() == ctx.ContractID().ChainID() {
-		// no need to move anything on the same chain
-		return nil, nil
-	}
+	// sending back to default entry point
+	sendTokens := ledgerstate.NewColoredBalances(bals)
 
-	// take to tokens here to 'accounts' from the caller
-	succ := MoveBetweenAccounts(ctx.State(), caller, coretypes.NewAgentIDFromContractID(ctx.ContractID()), toWithdraw)
-	a.Require(succ, "accounts.withdrawToChain.inconsistency to move tokens between accounts")
+	// bring balances to the current account (owner's account)
+	a.Require(MoveBetweenAccounts(state, account, commonaccount.Get(ctx.ChainID()), sendTokens),
+		"accounts.withdraw.inconsistency. failed to move tokens to owner's account")
 
-	succ = ctx.PostRequest(coretypes.PostRequestParams{
-		TargetContractID: Interface.ContractID(callerContract.ChainID()),
-		EntryPoint:       coretypes.Hn(FuncDeposit),
-		Params: codec.MakeDict(map[string]interface{}{
-			ParamAgentID: caller,
-		}),
-		Transfer: toWithdraw,
-	})
-	a.Require(succ, "accounts.withdrawToChain.inconsistency: failed to post 'deposit' request")
+	a.Require(ctx.Send(ctx.Caller().Address(), sendTokens, &coretypes.SendMetadata{
+		TargetContract: ctx.Caller().Hname(),
+	}), "accounts.withdraw.inconsistency: failed sending tokens ")
+
+	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", sendTokens.String())
 	return nil, nil
 }

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
+
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/stretchr/testify/require"
 )
@@ -16,7 +16,7 @@ func TestPeerMessageCodec(t *testing.T) {
 	var err error
 	var src, dst *peering.PeerMessage
 	src = &peering.PeerMessage{
-		ChainID:     coretypes.NewRandomChainID(),
+		PeeringID:   peering.RandomPeeringID(),
 		SenderIndex: uint16(123),
 		Timestamp:   time.Now().UnixNano(),
 		MsgType:     peering.FirstUserMsgCode + 17,
@@ -29,7 +29,7 @@ func TestPeerMessageCodec(t *testing.T) {
 	dst, err = peering.NewPeerMessageFromBytes(bin)
 	require.Nil(t, err)
 	require.NotNil(t, dst)
-	require.EqualValues(t, src.ChainID, dst.ChainID)
+	require.EqualValues(t, src.PeeringID, dst.PeeringID)
 	require.Equal(t, src.SenderIndex, dst.SenderIndex)
 	require.Equal(t, src.Timestamp, dst.Timestamp)
 	require.Equal(t, src.MsgType, dst.MsgType)
@@ -46,7 +46,7 @@ func TestPeerMessageChunks(t *testing.T) {
 		data[i] = byte(rand.Intn(255))
 	}
 	src = &peering.PeerMessage{
-		ChainID:     coretypes.NewRandomChainID(),
+		PeeringID:   peering.RandomPeeringID(),
 		SenderIndex: uint16(123),
 		Timestamp:   time.Now().UnixNano(),
 		MsgType:     peering.FirstUserMsgCode + 17,
@@ -70,7 +70,7 @@ func TestPeerMessageChunks(t *testing.T) {
 			require.Nil(t, dst)
 		}
 	}
-	require.EqualValues(t, src.ChainID, dst.ChainID)
+	require.EqualValues(t, src.PeeringID, dst.PeeringID)
 	require.Equal(t, src.SenderIndex, dst.SenderIndex)
 	require.Equal(t, src.Timestamp, dst.Timestamp)
 	require.Equal(t, src.MsgType, dst.MsgType)

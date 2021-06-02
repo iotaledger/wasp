@@ -2,12 +2,12 @@ package wallet
 
 import (
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/mr-tron/base58"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -19,13 +19,21 @@ type Wallet struct {
 	seed *seed.Seed
 }
 
-func initCmd(args []string) {
-	seed := base58.Encode(seed.NewSeed().Bytes())
-	viper.Set("wallet.seed", seed)
-	log.Check(viper.WriteConfig())
+var initCmd = &cobra.Command{
+	Use:   "init",
+	Short: "Initialize a new wallet",
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		seed := base58.Encode(seed.NewSeed().Bytes())
+		viper.Set("wallet.seed", seed)
+		log.Check(viper.WriteConfig())
 
-	log.Printf("Initialized wallet seed in %s\n", config.ConfigPath)
-	log.Verbose("Seed: %s\n", seed)
+		log.Printf("Initialized wallet seed in %s\n", config.ConfigPath)
+		log.Printf("\nIMPORTANT: wasp-cli is alpha phase. The seed is currently being stored " +
+			"in a plain text file which is NOT secure. Do not use this seed to store funds " +
+			"in the mainnet!\n")
+		log.Verbose("\nSeed: %s\n", seed)
+	},
 }
 
 func Load() *Wallet {
@@ -44,10 +52,6 @@ func (w *Wallet) KeyPair() *ed25519.KeyPair {
 	return w.seed.KeyPair(uint64(addressIndex))
 }
 
-func (w *Wallet) Address() address.Address {
-	return w.seed.Address(uint64(addressIndex)).Address
-}
-
-func (w *Wallet) SignatureScheme() signaturescheme.SignatureScheme {
-	return signaturescheme.ED25519(*w.KeyPair())
+func (w *Wallet) Address() ledgerstate.Address {
+	return w.seed.Address(uint64(addressIndex)).Address()
 }

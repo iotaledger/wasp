@@ -2,11 +2,11 @@ package sbtests
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
@@ -29,22 +29,23 @@ var (
 	SandboxSCName    = "test_sandbox"
 )
 
-func setupChain(t *testing.T, sigSchemeChain signaturescheme.SignatureScheme) (*solo.Solo, *solo.Chain) {
+func setupChain(t *testing.T, keyPairOriginator *ed25519.KeyPair) (*solo.Solo, *solo.Chain) {
+	core.PrintWellKnownHnames()
 	env := solo.New(t, DEBUG, false)
-	chain := env.NewChain(sigSchemeChain, "ch1")
+	chain := env.NewChain(keyPairOriginator, "ch1")
 	return env, chain
 }
 
-func setupDeployer(t *testing.T, chain *solo.Chain) signaturescheme.SignatureScheme {
-	user := chain.Env.NewSignatureSchemeWithFunds()
-	chain.Env.AssertAddressBalance(user.Address(), balance.ColorIOTA, testutil.RequestFundsAmount)
+func setupDeployer(t *testing.T, chain *solo.Chain) (*ed25519.KeyPair, ledgerstate.Address, *coretypes.AgentID) {
+	user, userAddr := chain.Env.NewKeyPairWithFunds()
+	chain.Env.AssertAddressIotas(userAddr, solo.Saldo)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeploy,
-		root.ParamDeployer, coretypes.NewAgentIDFromAddress(user.Address()),
-	)
+	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
+		root.ParamDeployer, coretypes.NewAgentID(userAddr, 0),
+	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
-	return user
+	return user, userAddr, coretypes.NewAgentID(userAddr, 0)
 }
 
 func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
@@ -60,9 +61,9 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 	}
 }
 
-func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme, runWasm bool) (coretypes.ContractID, int64) {
+func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, runWasm bool) (*coretypes.AgentID, uint64) {
 	var err error
-	var extraToken int64
+	var extraToken uint64
 	if runWasm {
 		err = chain.DeployWasmContract(user, SandboxSCName, WasmFileTestcore)
 		extraToken = 1
@@ -72,25 +73,26 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user signaturescheme.Si
 	}
 	require.NoError(t, err)
 
-	deployed := coretypes.NewContractID(chain.ChainID, coretypes.Hn(sbtestsc.Interface.Name))
-	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing)
+	deployed := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn(sbtestsc.Interface.Name))
+	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing).WithIotas(1)
 	_, err = chain.PostRequestSync(req, user)
 	require.NoError(t, err)
 	t.Logf("deployed test_sandbox'%s': %s", SandboxSCName, coretypes.Hn(SandboxSCName))
 	return deployed, extraToken
 }
 
-func setupERC20(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureScheme, runWasm bool) coretypes.ContractID {
+func setupERC20(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, runWasm bool) *coretypes.AgentID {
 	var err error
 	if !runWasm {
 		t.Logf("skipped %s. Only for Wasm tests, always loads %s", t.Name(), WasmFileErc20)
-		return coretypes.ContractID{}
+		return nil
 	}
-	var userAgentID coretypes.AgentID
+	userAddr := ledgerstate.NewED25519Address(user.PublicKey)
+	var userAgentID *coretypes.AgentID
 	if user == nil {
-		userAgentID = chain.OriginatorAgentID
+		userAgentID = &chain.OriginatorAgentID
 	} else {
-		userAgentID = coretypes.NewAgentIDFromAddress(user.Address())
+		userAgentID = coretypes.NewAgentID(userAddr, 0)
 	}
 	err = chain.DeployWasmContract(user, ERC20_NAME, WasmFileErc20,
 		PARAM_SUPPLY, 1000000,
@@ -98,7 +100,7 @@ func setupERC20(t *testing.T, chain *solo.Chain, user signaturescheme.SignatureS
 	)
 	require.NoError(t, err)
 
-	deployed := coretypes.NewContractID(chain.ChainID, coretypes.Hn(sbtestsc.Interface.Name))
+	deployed := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn(sbtestsc.Interface.Name))
 	t.Logf("deployed erc20'%s': %s --  %s", ERC20_NAME, coretypes.Hn(ERC20_NAME), deployed)
 	return deployed
 }
@@ -112,14 +114,14 @@ func testSetup1(t *testing.T, w bool) {
 func TestSetup2(t *testing.T) { run2(t, testSetup2) }
 func testSetup2(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
-	user := setupDeployer(t, chain)
+	user, _, _ := setupDeployer(t, chain)
 	setupTestSandboxSC(t, chain, user, w)
 }
 
 func TestSetup3(t *testing.T) { run2(t, testSetup3) }
 func testSetup3(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
-	user := setupDeployer(t, chain)
+	user, _, _ := setupDeployer(t, chain)
 	setupTestSandboxSC(t, chain, user, w)
 	//setupERC20(t, chain, user, w)
 }

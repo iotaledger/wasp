@@ -1,7 +1,6 @@
 package micropay
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -25,13 +24,13 @@ func TestSubmitPk(t *testing.T) {
 	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
 	require.NoError(t, err)
 
-	payer, payerPubKey := env.NewSignatureSchemeWithFundsAndPubKey()
-	payerAddr := payer.Address()
-	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo)
+	payer, payerAddr := env.NewKeyPairWithFunds()
+	pubKey := payer.PublicKey.Bytes()
+	env.AssertAddressIotas(payerAddr, solo.Saldo)
 
 	req := solo.NewCallParams("micropay", FuncPublicKey,
-		ParamPublicKey, payerPubKey,
-	)
+		ParamPublicKey, pubKey,
+	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 }
@@ -42,24 +41,19 @@ func TestOpenChannelFail(t *testing.T) {
 	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
 	require.NoError(t, err)
 
-	payer := env.NewSignatureSchemeWithFunds()
-	payerAddr := payer.Address()
-	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo)
+	payer, payerAddr := env.NewKeyPairWithFunds()
+	env.AssertAddressIotas(payerAddr, solo.Saldo)
 
-	provider := env.NewSignatureSchemeWithFunds()
-	providerAddr := provider.Address()
-	env.AssertAddressBalance(providerAddr, balance.ColorIOTA, solo.Saldo)
+	_, providerAddr := env.NewKeyPairWithFunds()
+	env.AssertAddressIotas(providerAddr, solo.Saldo)
 
-	req := solo.NewCallParams("micropay", FuncAddWarrant,
-		ParamServiceAddress, providerAddr).
-		WithTransfer(balance.ColorIOTA, 600)
+	req := solo.NewCallParams("micropay", FuncAddWarrant, ParamServiceAddress, providerAddr).WithIotas(600)
 	_, err = chain.PostRequestSync(req, payer)
 	require.Error(t, err)
 
-	cID := coretypes.NewContractID(chain.ChainID, coretypes.Hn("micropay"))
-	cAgentID := coretypes.NewAgentIDFromContractID(cID)
-	chain.AssertAccountBalance(cAgentID, balance.ColorIOTA, 0)
-	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo-1)
+	cAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("micropay"))
+	chain.AssertIotas(cAgentID, 0)
+	env.AssertAddressIotas(payerAddr, solo.Saldo)
 }
 
 func TestOpenChannelOk(t *testing.T) {
@@ -68,30 +62,26 @@ func TestOpenChannelOk(t *testing.T) {
 	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
 	require.NoError(t, err)
 
-	payer, payerPubKey := env.NewSignatureSchemeWithFundsAndPubKey()
-	payerAddr := payer.Address()
-	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo)
+	payer, payerAddr := env.NewKeyPairWithFunds()
+	payerPubKey := payer.PublicKey.Bytes()
+	env.AssertAddressIotas(payerAddr, solo.Saldo)
 
 	req := solo.NewCallParams("micropay", FuncPublicKey,
 		ParamPublicKey, payerPubKey,
-	)
+	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	provider := env.NewSignatureSchemeWithFunds()
-	providerAddr := provider.Address()
-	env.AssertAddressBalance(providerAddr, balance.ColorIOTA, solo.Saldo)
+	_, providerAddr := env.NewKeyPairWithFunds()
+	env.AssertAddressIotas(providerAddr, solo.Saldo)
 
-	req = solo.NewCallParams("micropay", FuncAddWarrant,
-		ParamServiceAddress, providerAddr).
-		WithTransfer(balance.ColorIOTA, 600)
+	req = solo.NewCallParams("micropay", FuncAddWarrant, ParamServiceAddress, providerAddr).WithIotas(600)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	cID := coretypes.NewContractID(chain.ChainID, coretypes.Hn("micropay"))
-	cAgentID := coretypes.NewAgentIDFromContractID(cID)
-	chain.AssertAccountBalance(cAgentID, balance.ColorIOTA, 600)
-	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo-600-2)
+	cAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("micropay"))
+	chain.AssertIotas(cAgentID, 600+1)
+	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
 }
 
 func TestOpenChannelTwice(t *testing.T) {
@@ -100,53 +90,50 @@ func TestOpenChannelTwice(t *testing.T) {
 	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
 	require.NoError(t, err)
 
-	payer, payerPubKey := env.NewSignatureSchemeWithFundsAndPubKey()
-	payerAddr := payer.Address()
-	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo)
+	payer, payerAddr := env.NewKeyPairWithFunds()
+	payerPubKey := payer.PublicKey.Bytes()
+	env.AssertAddressIotas(payerAddr, solo.Saldo)
 
 	req := solo.NewCallParams("micropay", FuncPublicKey,
 		ParamPublicKey, payerPubKey,
-	)
+	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	provider := env.NewSignatureSchemeWithFunds()
-	providerAddr := provider.Address()
-	env.AssertAddressBalance(providerAddr, balance.ColorIOTA, solo.Saldo)
-
-	cID := coretypes.NewContractID(chain.ChainID, coretypes.Hn("micropay"))
-	cAgentID := coretypes.NewAgentIDFromContractID(cID)
+	_, providerAddr := env.NewKeyPairWithFunds()
+	env.AssertAddressIotas(providerAddr, solo.Saldo)
 
 	req = solo.NewCallParams("micropay", FuncAddWarrant,
 		ParamServiceAddress, providerAddr).
-		WithTransfer(balance.ColorIOTA, 600)
+		WithIotas(600)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(cAgentID, balance.ColorIOTA, 600)
-	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo-600-2)
+	cAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("micropay"))
+	chain.AssertIotas(cAgentID, 600+1)
+	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
 
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(cAgentID, balance.ColorIOTA, 600+600)
-	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo-600-600-3)
+	chain.AssertIotas(cAgentID, 600+600+1)
+	env.AssertAddressIotas(payerAddr, solo.Saldo-600-600-1)
 
 	ret, err := chain.CallView("micropay", FuncGetChannelInfo,
 		ParamPayerAddress, payerAddr,
 		ParamServiceAddress, providerAddr,
 	)
 	require.NoError(t, err)
-	warrant, exists, err := codec.DecodeInt64(ret.MustGet(ParamWarrant))
+	warrant, exists, err := codec.DecodeUint64(ret.MustGet(ParamWarrant))
 	require.NoError(t, err)
 	require.True(t, exists)
-	require.EqualValues(t, 600+600, warrant)
+	require.EqualValues(t, 600+600, int(warrant))
 
-	_, exists, err = codec.DecodeInt64(ret.MustGet(ParamRevoked))
+	_, exists, err = codec.DecodeUint64(ret.MustGet(ParamRevoked))
 	require.NoError(t, err)
 	require.False(t, exists)
 
-	_, exists, err = codec.DecodeInt64(ret.MustGet(ParamLastOrd))
+	_, exists, err = codec.DecodeUint64(ret.MustGet(ParamLastOrd))
 	require.NoError(t, err)
 	require.False(t, exists)
 }
@@ -157,49 +144,47 @@ func TestRevokeWarrant(t *testing.T) {
 	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
 	require.NoError(t, err)
 
-	payer, payerPubKey := env.NewSignatureSchemeWithFundsAndPubKey()
-	payerAddr := payer.Address()
-	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo)
+	payer, payerAddr := env.NewKeyPairWithFunds()
+	payerPubKey := payer.PublicKey.Bytes()
+	env.AssertAddressIotas(payerAddr, solo.Saldo)
 
 	req := solo.NewCallParams("micropay", FuncPublicKey,
 		ParamPublicKey, payerPubKey,
-	)
+	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	provider := env.NewSignatureSchemeWithFunds()
-	providerAddr := provider.Address()
-	env.AssertAddressBalance(providerAddr, balance.ColorIOTA, solo.Saldo)
+	_, providerAddr := env.NewKeyPairWithFunds()
+	env.AssertAddressIotas(providerAddr, solo.Saldo)
 
-	cID := coretypes.NewContractID(chain.ChainID, coretypes.Hn("micropay"))
-	cAgentID := coretypes.NewAgentIDFromContractID(cID)
+	cAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("micropay"))
 
 	req = solo.NewCallParams("micropay", FuncAddWarrant,
 		ParamServiceAddress, providerAddr).
-		WithTransfer(balance.ColorIOTA, 600)
+		WithIotas(600)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(cAgentID, balance.ColorIOTA, 600)
-	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo-600-2)
+	chain.AssertIotas(cAgentID, 600+1)
+	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
 
 	ret, err := chain.CallView("micropay", FuncGetChannelInfo,
 		ParamPayerAddress, payerAddr,
 		ParamServiceAddress, providerAddr,
 	)
 	require.NoError(t, err)
-	warrant, exists, err := codec.DecodeInt64(ret.MustGet(ParamWarrant))
+	warrant, exists, err := codec.DecodeUint64(ret.MustGet(ParamWarrant))
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.EqualValues(t, 600, warrant)
 
-	_, exists, err = codec.DecodeInt64(ret.MustGet(ParamRevoked))
+	_, exists, err = codec.DecodeUint64(ret.MustGet(ParamRevoked))
 	require.NoError(t, err)
 	require.False(t, exists)
 
 	req = solo.NewCallParams("micropay", FuncRevokeWarrant,
 		ParamServiceAddress, providerAddr,
-	)
+	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
@@ -210,7 +195,7 @@ func TestRevokeWarrant(t *testing.T) {
 		ParamServiceAddress, providerAddr,
 	)
 	require.NoError(t, err)
-	warrant, exists, err = codec.DecodeInt64(ret.MustGet(ParamWarrant))
+	warrant, exists, err = codec.DecodeUint64(ret.MustGet(ParamWarrant))
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.EqualValues(t, 600, warrant)
@@ -246,44 +231,43 @@ func TestPayment(t *testing.T) {
 	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
 	require.NoError(t, err)
 
-	payer, payerPubKey := env.NewSignatureSchemeWithFundsAndPubKey()
-	payerAddr := payer.Address()
-	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo)
+	payer, payerAddr := env.NewKeyPairWithFunds()
+	payerPubKey := payer.PublicKey.Bytes()
+	env.AssertAddressIotas(payerAddr, solo.Saldo)
 
 	req := solo.NewCallParams("micropay", FuncPublicKey,
 		ParamPublicKey, payerPubKey,
-	)
+	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	provider := env.NewSignatureSchemeWithFunds()
-	providerAddr := provider.Address()
-	env.AssertAddressBalance(providerAddr, balance.ColorIOTA, solo.Saldo)
+	provider, providerAddr := env.NewKeyPairWithFunds()
+	env.AssertAddressIotas(providerAddr, solo.Saldo)
+
+	cAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("micropay"))
 
 	req = solo.NewCallParams("micropay", FuncAddWarrant,
 		ParamServiceAddress, providerAddr).
-		WithTransfer(balance.ColorIOTA, 600)
+		WithIotas(600)
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	cID := coretypes.NewContractID(chain.ChainID, coretypes.Hn("micropay"))
-	cAgentID := coretypes.NewAgentIDFromContractID(cID)
-	chain.AssertAccountBalance(cAgentID, balance.ColorIOTA, 600)
-	env.AssertAddressBalance(payerAddr, balance.ColorIOTA, solo.Saldo-600-2)
+	chain.AssertIotas(cAgentID, 600+1)
+	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
 
 	res, err := chain.CallView("micropay", FuncGetChannelInfo,
 		ParamPayerAddress, payerAddr,
 		ParamServiceAddress, providerAddr,
 	)
 	var ok bool
-	var w int64
+	var w uint64
 	require.NoError(t, err)
-	w, ok, err = codec.DecodeInt64(res.MustGet(ParamWarrant))
+	w, ok, err = codec.DecodeUint64(res.MustGet(ParamWarrant))
 	require.NoError(t, err)
 	require.True(t, ok)
 	require.EqualValues(t, 600, w)
 
-	_, ok, err = codec.DecodeInt64(res.MustGet(ParamRevoked))
+	_, ok, err = codec.DecodeUint64(res.MustGet(ParamRevoked))
 	require.NoError(t, err)
 	require.False(t, ok)
 
@@ -293,14 +277,14 @@ func TestPayment(t *testing.T) {
 	pay2 := NewPayment(last, 41, providerAddr, payer).Bytes()
 	par := dict.New()
 	par.Set(ParamPayerAddress, codec.EncodeAddress(payerAddr))
-	arr := collections.NewArray(par, ParamPayments)
+	arr := collections.NewArray16(par, ParamPayments)
 	_ = arr.Push(pay1)
 	_ = arr.Push(pay2)
-	req = solo.NewCallParamsFromDic("micropay", FuncSettle, par)
+	req = solo.NewCallParamsFromDic("micropay", FuncSettle, par).WithIotas(1)
 	_, err = chain.PostRequestSync(req, provider)
 	require.NoError(t, err)
 
-	env.AssertAddressBalance(providerAddr, balance.ColorIOTA, solo.Saldo+42+41-1)
+	env.AssertAddressIotas(providerAddr, solo.Saldo+42+41-1)
 
 	res, err = chain.CallView("micropay", FuncGetChannelInfo,
 		ParamPayerAddress, payerAddr,

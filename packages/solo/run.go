@@ -4,105 +4,105 @@
 package solo
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
+	"strings"
+	"time"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"sync"
 )
 
-func (ch *Chain) validateBatch(batch []vm.RequestRefWithFreeTokens) {
-	for _, reqRef := range batch {
-		_, err := reqRef.Tx.Properties()
-		require.NoError(ch.Env.T, err)
-	}
-}
-
-func (ch *Chain) runBatch(batch []vm.RequestRefWithFreeTokens, trace string) (dict.Dict, error) {
+func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, error) {
 	ch.Log.Debugf("runBatch ('%s')", trace)
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	ch.validateBatch(batch)
-
-	// solidify arguments
-	for _, reqRef := range batch {
-		if ok, err := reqRef.RequestSection().SolidifyArgs(ch.Env.registry); err != nil || !ok {
-			return nil, fmt.Errorf("solo inconsistency: failed to solidify request args")
-		}
+	for _, r := range batch {
+		_, solidArgs := r.Params()
+		require.True(ch.Env.T, solidArgs)
 	}
-
 	task := &vm.VMTask{
 		Processors:         ch.proc,
-		ChainID:            ch.ChainID,
-		Color:              ch.ChainColor,
+		ChainInput:         ch.GetChainOutput(),
+		Requests:           batch,
+		Timestamp:          ch.Env.LogicalTime(),
+		VirtualState:       ch.State,
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
-		Balances:           waspconn.OutputsToBalances(ch.Env.utxoDB.GetAddressOutputs(ch.ChainAddress)),
-		Requests:           batch,
-		Timestamp:          ch.Env.LogicalTime().UnixNano(),
-		VirtualState:       ch.State.Clone(),
 		Log:                ch.Log,
 	}
 	var err error
-	var wg sync.WaitGroup
 	var callRes dict.Dict
 	var callErr error
+	task.SolidStateInvalid = func() bool {
+		// in Solo solid state is always valid for the VM
+		return false
+	}
 	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
 		require.NoError(ch.Env.T, err)
 		callRes = callResult
 		callErr = callError
 		ch.reqCounter.Add(int32(-len(task.Requests)))
-		wg.Done()
 	}
 
-	wg.Add(1)
-	err = runvm.RunComputationsAsync(task)
+	ch.Env.vmRunner.Run(task)
+
+	ch.Env.AdvanceClockBy(time.Duration(len(task.Requests)+1) * time.Nanosecond)
+
+	inputs, err := ch.Env.utxoDB.CollectUnspentOutputsFromInputs(task.ResultTransactionEssence)
+	require.NoError(ch.Env.T, err)
+	unlockBlocks, err := utxoutil.UnlockInputsWithED25519KeyPairs(inputs, task.ResultTransactionEssence, ch.StateControllerKeyPair)
 	require.NoError(ch.Env.T, err)
 
-	wg.Wait()
-	task.ResultTransaction.Sign(ch.ChainSigScheme)
+	tx := ledgerstate.NewTransaction(task.ResultTransactionEssence, unlockBlocks)
+	ch.settleStateTransition(tx)
 
-	// check semantic validity of the transaction
-	_, err = task.ResultTransaction.Properties()
-	require.NoError(ch.Env.T, err)
-
-	ch.settleStateTransition(task.VirtualState, task.ResultBlock, task.ResultTransaction)
 	return callRes, callErr
 }
 
-func (ch *Chain) settleStateTransition(newState state.VirtualState, block state.Block, stateTx *sctransaction.Transaction) {
+func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction) {
 	err := ch.Env.AddToLedger(stateTx)
 	require.NoError(ch.Env.T, err)
 
-	err = newState.ApplyBlock(block)
+	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(stateTx)
 	require.NoError(ch.Env.T, err)
 
-	err = newState.CommitToDb(block)
+	// saving block just to check consistency. Otherwise, saved blocks are not used in Solo
+	block, err := ch.State.ExtractBlock()
+	require.NoError(ch.Env.T, err)
+	require.NotNil(ch.Env.T, block)
+	block.SetApprovingOutputID(stateOutput.ID())
+
+	err = ch.State.Commit(block)
 	require.NoError(ch.Env.T, err)
 
-	prevBlockIndex := ch.StateTx.MustState().BlockIndex()
+	blockBack, err := state.LoadBlock(ch.Env.dbmanager.GetKVStore(&ch.ChainID), ch.State.BlockIndex())
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
+	require.EqualValues(ch.Env.T, stateOutput.ID(), blockBack.ApprovingOutputID())
 
-	ch.StateTx = stateTx
-	ch.State = newState
+	reqIDs := chain.PublishStateTransition(ch.State, stateOutput)
 
-	ch.Log.Infof("state transition #%d --> #%d. Requests in the block: %d. Posted: %d",
-		prevBlockIndex, ch.State.BlockIndex(), len(block.RequestIDs()), len(ch.StateTx.Requests()))
-	ch.Log.Debugf("Batch processed: %s", batchShortStr(block.RequestIDs()))
+	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
+		ch.State.BlockIndex(), len(reqIDs), len(stateTx.Essence().Outputs()))
+	ch.Log.Debugf("Batch processed: %s", batchShortStr(reqIDs))
 
-	ch.Env.EnqueueRequests(ch.StateTx)
+	ch.mempool.RemoveRequests(reqIDs...)
+
+	ch.Env.EnqueueRequests(stateTx)
 	ch.Env.ClockStep()
 }
 
-func batchShortStr(reqIds []*coretypes.RequestID) string {
+func batchShortStr(reqIds []coretypes.RequestID) string {
 	ret := make([]string, len(reqIds))
 	for i, r := range reqIds {
 		ret[i] = r.Short()

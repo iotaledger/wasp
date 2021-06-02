@@ -5,7 +5,7 @@ package sandbox_utils
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 )
 
@@ -24,10 +24,10 @@ func (u ed25519Util) ValidSignature(data []byte, pubKey []byte, signature []byte
 	return pk.VerifySignature(data, sig)
 }
 
-func (u ed25519Util) AddressFromPublicKey(pubKey []byte) (address.Address, error) {
+func (u ed25519Util) AddressFromPublicKey(pubKey []byte) (ledgerstate.Address, error) {
 	pk, _, err := ed25519.PublicKeyFromBytes(pubKey)
 	if err != nil {
-		return address.Address{}, fmt.Errorf("ED255519Util: wrong public key bytes")
+		return nil, fmt.Errorf("ED255519Util: wrong public key bytes. Err: %v", err)
 	}
-	return address.FromED25519PubKey(pk), nil
+	return ledgerstate.NewED25519Address(pk), nil
 }

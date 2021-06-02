@@ -4,7 +4,7 @@
 package wasmproc
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -15,7 +15,7 @@ var TestMode = false
 
 type ScUtility struct {
 	ScSandboxObject
-	address       address.Address
+	address       ledgerstate.Address
 	aggregatedBls []byte
 	base58Decoded []byte
 	base58Encoded string

@@ -2,21 +2,20 @@ package tests
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/client/multiclient"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"io/ioutil"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -24,9 +23,8 @@ import (
 )
 
 var (
-	testOwner   = wallet.WithIndex(1)
-	mySigScheme = testOwner.SigScheme()
-	myAddress   = testOwner.Address()
+	testOwner = wallet.KeyPair(1)
+	myAddress = ledgerstate.NewED25519Address(testOwner.PublicKey)
 )
 
 func setupBlobTest(t *testing.T) *cluster.Chain {
@@ -46,8 +44,8 @@ func setupBlobTest(t *testing.T) *cluster.Chain {
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	if !clu.VerifyAddressBalances(myAddress, testutil.RequestFundsAmount, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount,
+	if !clu.VerifyAddressBalances(myAddress, solo.Saldo, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo,
 	}, "myAddress after request funds") {
 		t.Fail()
 	}
@@ -56,12 +54,10 @@ func setupBlobTest(t *testing.T) *cluster.Chain {
 
 func getBlobInfo(t *testing.T, chain *cluster.Chain, hash hashing.HashValue) map[string]uint32 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(blob.Interface.Hname()),
-		blob.FuncGetBlobInfo,
-		dict.FromGoMap(map[kv.Key][]byte{
+		chain.ChainID, blob.Interface.Hname(), blob.FuncGetBlobInfo,
+		dict.Dict{
 			blob.ParamHash: hash[:],
-		}),
-	)
+		})
 	check(err, t)
 	decoded, err := blob.DecodeSizesMap(ret)
 	check(err, t)
@@ -70,13 +66,11 @@ func getBlobInfo(t *testing.T, chain *cluster.Chain, hash hashing.HashValue) map
 
 func getBlobFieldValue(t *testing.T, chain *cluster.Chain, blobHash hashing.HashValue, field string) []byte {
 	v, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(blob.Interface.Hname()),
-		blob.FuncGetBlobField,
-		dict.FromGoMap(map[kv.Key][]byte{
+		chain.ChainID, blob.Interface.Hname(), blob.FuncGetBlobField,
+		dict.Dict{
 			blob.ParamHash:  blobHash[:],
 			blob.ParamField: []byte(field),
-		}),
-	)
+		})
 	check(err, t)
 	if v.IsEmpty() {
 		return nil
@@ -103,8 +97,8 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	expectedHash := blob.MustGetBlobHash(fv)
 	t.Logf("expected hash: %s", expectedHash.String())
 
-	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, mySigScheme)
-	reqTx, err := chClient.PostRequest(
+	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, testOwner)
+	reqTx, err := chClient.Post1Request(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
@@ -112,7 +106,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 		},
 	)
 	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
 	check(err, t)
 
 	sizes := getBlobInfo(t, chain, expectedHash)
@@ -144,10 +138,10 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 	t.Logf("================= total size: %d. Files: %+v", totalSize, fileNames)
 
 	fv := codec.MakeDict(blobFieldValues)
-	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, mySigScheme)
+	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, testOwner)
 	expectedHash, tx, err := chClient.UploadBlob(fv, clu.Config.ApiHosts(clu.Config.AllNodes()), int(chain.Quorum))
 	require.NoError(t, err)
-	err = chClient.WaspClient.WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	err = chClient.WaspClient.WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 	t.Logf("expected hash: %s", expectedHash.String())
 
@@ -187,8 +181,8 @@ func TestBlobRefConsensus(t *testing.T) {
 	argsEncoded, optimizedBlobs := requestargs.NewOptimizedRequestArgs(fv)
 
 	// sending storeBlob request (data is not uploaded yet)
-	chClient := chainclient.New(clu.Level1Client(), clu.WaspClient(0), chain.ChainID, mySigScheme)
-	reqTx, err := chClient.PostRequest(
+	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, testOwner)
+	reqTx, err := chClient.Post1Request(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
@@ -208,7 +202,7 @@ func TestBlobRefConsensus(t *testing.T) {
 	require.NoError(t, err)
 
 	// now waiting
-	err = chClient.WaspClient.WaitUntilAllRequestsProcessed(reqTx, 30*time.Second)
+	err = chClient.WaspClient.WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
 	sizes := getBlobInfo(t, chain, expectedHash)

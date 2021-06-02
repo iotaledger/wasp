@@ -4,16 +4,16 @@
 package apilib
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
@@ -39,10 +39,10 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 	var err error
 	var missing bool
 	fmt.Fprintf(out, prefix+"loading chainrecord record from hosts %+v\n", apiHosts)
-	var first *registry.ChainRecord
+	var first *chainrecord.ChainRecord
 	var firstHost string
 
-	bdRecords := make([]*registry.ChainRecord, len(apiHosts))
+	bdRecords := make([]*chainrecord.ChainRecord, len(apiHosts))
 	for i, host := range apiHosts {
 		bdRecords[i], err = client.NewWaspClient(host).GetChainRecord(chainID)
 		if err != nil {
@@ -57,7 +57,7 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 			missing = true
 			continue
 		}
-		if bdRecords[i].ChainID != chainID {
+		if !bdRecords[i].ChainID.Equals(&chainID) {
 			fmt.Fprintf(out, prefix+"%2d: %s -> internal error: wrong address in the chainrecord. Expected %s, got %s\n",
 				i, host, chainID.String(), bdRecords[i].ChainID.String())
 			ret = false
@@ -89,16 +89,16 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 			ret = false
 			continue
 		}
-		if bd.ChainID != chainID {
+		if !bd.ChainID.Equals(&chainID) {
 			fmt.Fprintf(out, prefix+"%2d: %s -> internal error, unexpected address %s in the chain record\n",
 				i, host, bd.ChainID.String())
 			ret = false
 			continue
 		}
-		if consistentChainRecords(first, bdRecords[i]) {
+		if bytes.Equal(first.Bytes(), bdRecords[i].Bytes()) {
 			fmt.Fprintf(out, prefix+"%2d: %s -> chainrecord OK\n", i, host)
 		} else {
-			fmt.Fprintf(out, prefix+"%2d: %s -> chainrecord is WRONG. Expected equal to example, got %s\n",
+			fmt.Fprintf(out, prefix+"%2d: %s -> chainrecord is wrong. Expected equal to example, got %s\n",
 				i, host, bdRecords[i].String())
 			ret = false
 		}
@@ -106,8 +106,8 @@ func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io
 
 	fmt.Fprintf(out, prefix+"checking distributed keys..\n")
 
-	chainAddr := address.Address(chainID)
-	dkShares, err := multiclient.New(apiHosts).DKSharesGet(&chainAddr)
+	chainAddr := chainID.AsAddress()
+	dkShares, err := multiclient.New(apiHosts).DKSharesGet(chainAddr)
 	if err != nil {
 		fmt.Fprintf(out, prefix+"%s\n", err.Error())
 		return false
@@ -165,23 +165,4 @@ func publicKeyInfoToString(pki *model.DKSharesInfo) string {
 	ret += fmt.Sprintf("    T: %d\n", pki.Threshold)
 	ret += fmt.Sprintf("    Public keys: %+v\n", pki.PubKeyShares)
 	return ret
-}
-
-func consistentChainRecords(bd1, bd2 *registry.ChainRecord) bool {
-	if bd1.ChainID != bd2.ChainID {
-		return false
-	}
-	if bd1.Color != bd2.Color {
-		return false
-	}
-	if len(bd1.CommitteeNodes) != len(bd2.CommitteeNodes) {
-		return false
-	}
-	for i := range bd1.CommitteeNodes {
-		if bd1.CommitteeNodes[i] != bd2.CommitteeNodes[i] {
-			return false
-		}
-	}
-	// access nodes can be any, do not check
-	return true
 }

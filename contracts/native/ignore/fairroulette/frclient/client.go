@@ -6,12 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
@@ -44,7 +41,7 @@ type Status struct {
 
 	NextPlayTimestamp time.Time
 
-	PlayerStats map[address.Address]*fairroulette.PlayerStats
+	PlayerStats map[ledgerstate.Address]*fairroulette.PlayerStats
 
 	WinsPerColor []uint32
 }
@@ -135,8 +132,8 @@ func decodeWinsPerColor(result *statequery.ArrayResult) ([]uint32, error) {
 	return ret, nil
 }
 
-func decodePlayerStats(result *statequery.MapResult) (map[address.Address]*fairroulette.PlayerStats, error) {
-	playerStats := make(map[address.Address]*fairroulette.PlayerStats)
+func decodePlayerStats(result *statequery.MapResult) (map[ledgerstate.Address]*fairroulette.PlayerStats, error) {
+	playerStats := make(map[ledgerstate.Address]*fairroulette.PlayerStats)
 	for _, e := range result.Entries {
 		if len(e.Key) != address.Length {
 			return nil, fmt.Errorf("not an address: %v", e.Key)
@@ -154,18 +151,18 @@ func decodePlayerStats(result *statequery.MapResult) (map[address.Address]*fairr
 	return playerStats, nil
 }
 
-func (frc *FairRouletteClient) Bet(color int, amount int) (*sctransaction.Transaction, error) {
+func (frc *FairRouletteClient) Bet(color int, amount int) (*ledgerstate.Transaction, error) {
 	return frc.PostRequest(
 		frc.contractHname,
 		fairroulette.RequestPlaceBet,
 		chainclient.PostRequestParams{
-			Transfer: map[balance.Color]int64{balance.ColorIOTA: int64(amount)},
+			Transfer: map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: int64(amount)},
 			ArgsRaw:  codec.MakeDict(map[string]interface{}{fairroulette.ReqVarColor: int64(color)}),
 		},
 	)
 }
 
-func (frc *FairRouletteClient) SetPeriod(seconds int) (*sctransaction.Transaction, error) {
+func (frc *FairRouletteClient) SetPeriod(seconds int) (*ledgerstate.Transaction, error) {
 	return frc.PostRequest(
 		frc.contractHname,
 		fairroulette.RequestSetPlayPeriod,

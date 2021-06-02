@@ -102,7 +102,8 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
         // amount of seconds. This will lock in the playing period, during which more bets can
         // be placed. Once the 'lockBets' function gets triggered by the ISCP it will gather all
         // bets up to that moment as the ones to consider for determining the winner.
-        ctx.post_self(HFUNC_LOCK_BETS, None, None, play_period);
+        let transfer = ScTransfers::iotas(1);
+        ctx.post_self(HFUNC_LOCK_BETS, None, transfer, play_period);
     }
 
     // Finally, we log the fact that we have successfully completed execution
@@ -126,7 +127,7 @@ pub fn func_lock_bets(ctx: &ScFuncContext) {
     // We don't want anyone to be able to initiate this function through a request except for the
     // smart contract itself, so we require that the caller of the function is the smart contract
     // agent id. Any other caller will panic out with an error message.
-    ctx.require(ctx.caller() == ctx.contract_id().as_agent_id(), "no permission");
+    ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
     // Create an ScMutableMap proxy to the state storage map on the host.
     let state: ScMutableMap = ctx.state();
@@ -158,7 +159,8 @@ pub fn func_lock_bets(ctx: &ScFuncContext) {
 
     // Next we trigger an immediate request to the 'payWinners' function
     // See more explanation of the why below.
-    ctx.post_self(HFUNC_PAY_WINNERS, None, None, 0);
+    let transfer = ScTransfers::iotas(1);
+    ctx.post_self(HFUNC_PAY_WINNERS, None, transfer, 0);
 
     // Finally, we log the fact that we have successfully completed execution
     // of the 'lockBets' Func in the log on the host.
@@ -183,7 +185,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     // Again, we don't want anyone to be able to initiate this function through a request except
     // for the smart contract itself, so we require that the caller of the function is the smart
     // contract agent id. Any other caller will panic out with an error message.
-    ctx.require(ctx.caller() == ctx.contract_id().as_agent_id(), "no permission");
+    ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
     // Use the built-in random number generator which has been automatically initialized by
     // using the transaction hash as initial entropy data. Note that the pseudo-random number
@@ -271,7 +273,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
             // in a simpler to use interface. The constructor we use here creates and initializes
             // a single token color transfer in a single statement. The actual color and amount
             // values passed in will be stored in a new map on the host.
-            let transfers: ScTransfers = ScTransfers::new(&ScColor::IOTA, payout);
+            let transfers: ScTransfers = ScTransfers::iotas(payout);
 
             // Perform the actual transfer of tokens from the smart contract to the better
             // address. The transfer_to_address() method receives the address value and
@@ -290,7 +292,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     let remainder: i64 = total_bet_amount - total_payout;
     if remainder != 0 {
         // We have a remainder First create a transfer for the remainder.
-        let transfers: ScTransfers = ScTransfers::new(&ScColor::IOTA, remainder);
+        let transfers: ScTransfers = ScTransfers::iotas(remainder);
 
         // Send the remainder to the contract creator.
         ctx.transfer_to_address(&ctx.contract_creator().address(), transfers);

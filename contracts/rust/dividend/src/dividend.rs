@@ -37,7 +37,7 @@ pub fn func_init(ctx: &ScFuncContext) {
     // Then we create an ScImmutableAgentId proxy to the 'owner' parameter.
     let param_owner: ScImmutableAgentId = p.get_agent_id(PARAM_OWNER);
 
-    // Now we check if the 'owner' parameter is present in the params map.
+    // Now we check if the optional 'owner' parameter is present in the params map.
     if param_owner.exists() {
         // Yes, it was present, so now we overwrite the default owner with
         // the one specified by the 'owner' parameter.
@@ -262,7 +262,7 @@ pub fn func_divide(ctx: &ScFuncContext) {
             // interface. The constructor we use here creates and initializes a
             // single token color transfer in a single statement. The actual color
             // and amount values passed in will be stored in a new map on the host.
-            let transfers: ScTransfers = ScTransfers::new(&ScColor::IOTA, share);
+            let transfers: ScTransfers = ScTransfers::iotas(share);
 
             // Perform the actual transfer of tokens from the smart contract to the
             // member address. The transfer_to_address() method receives the address

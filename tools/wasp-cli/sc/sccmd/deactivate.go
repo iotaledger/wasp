@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 )
@@ -16,7 +15,7 @@ func deactivateCmd(args []string) {
 		deactivateUsage()
 	}
 
-	scAddress, err := address.FromBase58(args[0])
+	scAddress, err := ledgerstate.AddressFromBase58EncodedString(args[0])
 	log.Check(err)
 	committee := parseIntList(args[1])
 

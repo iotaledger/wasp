@@ -2,6 +2,7 @@ package inccounter
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/contracts/native"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -53,7 +54,7 @@ func init() {
 }
 
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("inccounter.init in %s", ctx.ContractID().Hname().String())
+	ctx.Log().Debugf("inccounter.init in %s", ctx.Contract().String())
 	params := ctx.Params()
 	val, _, err := codec.DecodeInt64(params.MustGet(VarCounter))
 	if err != nil {
@@ -65,7 +66,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 }
 
 func incCounter(ctx coretypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.ContractID().Hname().String())
+	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.Contract().String())
 	params := ctx.Params()
 	inc, ok, err := codec.DecodeInt64(params.MustGet(VarCounter))
 	if err != nil {
@@ -76,7 +77,8 @@ func incCounter(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}
 	state := ctx.State()
 	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
-	ctx.Log().Debugf("incCounter: increasing counter value %d by %d", val, inc)
+	ctx.Log().Infof("incCounter: increasing counter value %d by %d", val, inc)
+	ctx.Log().Infof("incCounter: incoming transfer: %s", ctx.IncomingTransfer().String())
 	state.Set(VarCounter, codec.EncodeInt64(val+inc))
 	return nil, nil
 }
@@ -88,10 +90,11 @@ func incCounterAndRepeatOnce(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
-	if !ctx.PostRequest(coretypes.PostRequestParams{
-		TargetContractID: ctx.ContractID(),
-		EntryPoint:       coretypes.Hn(FuncIncCounter),
-		TimeLock:         5 * 60,
+	if !ctx.Send(ctx.ChainID().AsAddress(), coretypes.NewTransferIotas(1), &coretypes.SendMetadata{
+		TargetContract: ctx.Contract(),
+		EntryPoint:     coretypes.Hn(FuncIncCounter),
+	}, coretypes.SendOptions{
+		TimeLock: 5 * 60,
 	}) {
 		return nil, fmt.Errorf("incCounterAndRepeatOnce: not enough funds")
 	}
@@ -125,14 +128,15 @@ func incCounterAndRepeatMany(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	state.Set(VarNumRepeats, codec.EncodeInt64(numRepeats-1))
 
-	if ctx.PostRequest(coretypes.PostRequestParams{
-		TargetContractID: ctx.ContractID(),
-		EntryPoint:       coretypes.Hn(FuncIncAndRepeatMany),
-		TimeLock:         1 * 60,
+	if !ctx.Send(ctx.ChainID().AsAddress(), coretypes.NewTransferIotas(1), &coretypes.SendMetadata{
+		TargetContract: ctx.Contract(),
+		EntryPoint:     coretypes.Hn(FuncIncAndRepeatMany),
+	}, coretypes.SendOptions{
+		TimeLock: 1 * 60,
 	}) {
-		ctx.Log().Debugf("PostRequestToSelfWithDelay. remaining repeats = %d", numRepeats-1)
+		ctx.Log().Debugf("incCounterAndRepeatMany. remaining repeats = %d", numRepeats-1)
 	} else {
-		ctx.Log().Debugf("PostRequestToSelfWithDelay FAILED. remaining repeats = %d", numRepeats-1)
+		ctx.Log().Debugf("incCounterAndRepeatMany FAILED. remaining repeats = %d", numRepeats-1)
 	}
 	return nil, nil
 }

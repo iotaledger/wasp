@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/bdn"
@@ -23,14 +23,14 @@ import (
 type Node struct {
 	secKey      kyber.Scalar
 	pubKey      kyber.Point
-	suite       Suite                    // Cryptography to use.
-	netProvider peering.NetworkProvider  // Network to communicate through.
-	registry    tcrypto.RegistryProvider // Where to store the generated keys.
-	processes   map[string]*proc         // Only for introspection.
-	procLock    *sync.RWMutex            // To guard access to the process pool.
-	recvQueue   chan *peering.RecvEvent  // Incoming events processed async.
-	recvStopCh  chan bool                // To coordinate shutdown.
-	attachID    interface{}              // Peering attach ID
+	suite       Suite                            // Cryptography to use.
+	netProvider peering.NetworkProvider          // Network to communicate through.
+	registry    registry.DKShareRegistryProvider // Where to store the generated keys.
+	processes   map[string]*proc                 // Only for introspection.
+	procLock    *sync.RWMutex                    // To guard access to the process pool.
+	recvQueue   chan *peering.RecvEvent          // Incoming events processed async.
+	recvStopCh  chan bool                        // To coordinate shutdown.
+	attachID    interface{}                      // Peering attach ID
 	log         *logger.Logger
 }
 
@@ -41,7 +41,7 @@ func NewNode(
 	pubKey kyber.Point,
 	suite Suite,
 	netProvider peering.NetworkProvider,
-	registry tcrypto.RegistryProvider,
+	registry registry.DKShareRegistryProvider,
 	log *logger.Logger,
 ) *Node {
 	n := Node{
@@ -95,11 +95,11 @@ func (n *Node) GenerateDistributedKey(
 	//
 	// Setup network connections.
 	var netGroup peering.GroupProvider
-	if netGroup, err = n.netProvider.Group(peerNetIDs); err != nil {
+	if netGroup, err = n.netProvider.PeerGroup(peerNetIDs); err != nil {
 		return nil, err
 	}
 	defer netGroup.Close()
-	dkgID := coretypes.NewRandomChainID()
+	dkgID := peering.RandomPeeringID()
 	recvCh := make(chan *peering.RecvEvent, peerCount*2)
 	attachID := n.netProvider.Attach(&dkgID, func(recv *peering.RecvEvent) {
 		recvCh <- recv
@@ -124,7 +124,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep0Initialize,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep0Initialize, peer.NetID())
-			peer.SendMsg(makePeerMessage(&dkgID, rabinStep0Initialize, &initiatorInitMsg{
+			peer.SendMsg(makePeerMessage(dkgID, rabinStep0Initialize, &initiatorInitMsg{
 				dkgRef:       dkgID.String(), // It could be some other identifier.
 				peerNetIDs:   peerNetIDs,
 				peerPubs:     peerPubs,
@@ -141,19 +141,19 @@ func (n *Node) GenerateDistributedKey(
 	// Perform the DKG steps, each step in parallel, all steps sequentially.
 	// Step numbering (R) is according to <https://github.com/dedis/kyber/blob/master/share/dkg/rabin/dkg.go>.
 	if peerCount > 1 {
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep1R21SendDeals); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep1R21SendDeals); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep2R22SendResponses); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep2R22SendResponses); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep3R23SendJustifications); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep3R23SendJustifications); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep4R4SendSecretCommits); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep4R4SendSecretCommits); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep5R5SendComplaintCommits); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep5R5SendComplaintCommits); err != nil {
 			return nil, err
 		}
 	}
@@ -164,7 +164,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorMsgs(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep6R6SendReconstructCommits,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep6R6SendReconstructCommits, peer.NetID())
-			peer.SendMsg(makePeerMessage(&dkgID, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
+			peer.SendMsg(makePeerMessage(dkgID, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
 		},
 		func(recv *peering.RecvEvent, initMsg initiatorMsg) (bool, error) {
 			switch msg := initMsg.(type) {
@@ -183,7 +183,7 @@ func (n *Node) GenerateDistributedKey(
 	sharedPublic := pubShareResponses[0].sharedPublic
 	publicShares := make([]kyber.Point, peerCount)
 	for i := range pubShareResponses {
-		if *sharedAddress != *pubShareResponses[i].sharedAddress {
+		if !sharedAddress.Equals(pubShareResponses[i].sharedAddress) {
 			return nil, fmt.Errorf("nodes generated different addresses")
 		}
 		if !sharedPublic.Equal(pubShareResponses[i].sharedPublic) {
@@ -212,7 +212,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.NetID())
-			peer.SendMsg(makePeerMessage(&dkgID, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
+			peer.SendMsg(makePeerMessage(dkgID, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
 				pubShares: publicShares,
 			}))
 		},
@@ -232,7 +232,7 @@ func (n *Node) GenerateDistributedKey(
 	return &dkShare, nil
 }
 
-// GroupSuite returns the cryptography Group used by this node.
+// GroupSuite returns the cryptography PeerGroup used by this node.
 func (n *Node) GroupSuite() kyber.Group {
 	return n.suite
 }
@@ -267,7 +267,7 @@ func (n *Node) onInitMsg(recv *peering.RecvEvent) {
 		// To have idempotence for retries, we need to consider duplicate
 		// messages as success, if process is already created.
 		n.procLock.RUnlock()
-		recv.From.SendMsg(makePeerMessage(&recv.Msg.ChainID, req.step, &initiatorStatusMsg{
+		recv.From.SendMsg(makePeerMessage(recv.Msg.PeeringID, req.step, &initiatorStatusMsg{
 			error: nil,
 		}))
 		return
@@ -277,11 +277,11 @@ func (n *Node) onInitMsg(recv *peering.RecvEvent) {
 		// This part should be executed async, because it accesses the network again, and can
 		// be locked because of the naive implementation of `events.Event`. It locks on all the callbacks.
 		n.procLock.Lock()
-		if p, err = onInitiatorInit(&recv.Msg.ChainID, &req, n); err == nil {
+		if p, err = onInitiatorInit(recv.Msg.PeeringID, &req, n); err == nil {
 			n.processes[p.dkgRef] = p
 		}
 		n.procLock.Unlock()
-		recv.From.SendMsg(makePeerMessage(&recv.Msg.ChainID, req.step, &initiatorStatusMsg{
+		recv.From.SendMsg(makePeerMessage(recv.Msg.PeeringID, req.step, &initiatorStatusMsg{
 			error: err,
 		}))
 	}()
@@ -304,7 +304,7 @@ func (n *Node) exchangeInitiatorStep(
 	recvCh chan *peering.RecvEvent,
 	retryTimeout time.Duration,
 	giveUpTimeout time.Duration,
-	dkgID *coretypes.ChainID,
+	dkgID peering.PeeringID,
 	step byte,
 ) error {
 	sendCB := func(peerIdx uint16, peer peering.PeerSender) {

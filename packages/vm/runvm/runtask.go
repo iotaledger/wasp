@@ -1,106 +1,125 @@
 package runvm
 
 import (
-	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/statetxbuilder"
-	"github.com/iotaledger/wasp/packages/vm/vmcontext"
-	"time"
-
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
+	"golang.org/x/xerrors"
 )
 
-// RunComputationsAsync runs computations for the batch of requests in the background
-// This is the main entry point to the VM
-func RunComputationsAsync(ctx *vm.VMTask) error {
-	if len(ctx.Requests) == 0 {
-		return fmt.Errorf("RunComputationsAsync: must be at least 1 request")
-	}
+type vmRunner struct{}
 
-	txb, err := statetxbuilder.New(address.Address(ctx.ChainID), ctx.Color, ctx.Balances)
-	if err != nil {
-		ctx.Log.Debugf("statetxbuilder.New: %v", err)
-		return err
-	}
+func (r vmRunner) Run(task *vm.VMTask) {
+	// panic catcher for the whole VM task
+	// ir returns gracefully if the panic was about invalidated state
+	// otherwise it panics again
+	// The smart contract panics are processed inside and do not reach this point
+	defer func() {
+		r := recover()
+		if r == nil {
+			return
+		}
+		if _, ok := r.(*vm.ErrorStateInvalidated); ok {
+			task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
+			return
+		}
+		panic(r)
+	}()
+	runTask(task)
+}
 
-	// TODO 1 graceful shutdown of the running VM task (with daemon)
-	// TODO 2 timeout for VM. Gas limit
-
-	go runTask(ctx, txb)
-	return nil
+func NewVMRunner() vmRunner {
+	return vmRunner{}
 }
 
 // runTask runs batch of requests on VM
-func runTask(task *vm.VMTask, txb *statetxbuilder.Builder) {
+func runTask(task *vm.VMTask) {
 	task.Log.Debugw("runTask IN",
-		"chainID", task.ChainID.String(),
+		"chainID", task.ChainInput.Address().Base58(),
 		"timestamp", task.Timestamp,
-		"state index", task.VirtualState.BlockIndex(),
+		"block index", task.VirtualState.BlockIndex(),
 		"num req", len(task.Requests),
 	)
-	vmctx, err := vmcontext.NewVMContext(task, txb)
+	if len(task.Requests) == 0 {
+		task.Log.Panicf("MustRunVMTaskAsync: must be at least 1 request")
+	}
+	outputs := outputsFromRequests(task.Requests...)
+	txb := utxoutil.NewBuilder(append(outputs, task.ChainInput)...)
+
+	vmctx, err := vmcontext.CreateVMContext(task, txb)
 	if err != nil {
-		task.OnFinish(nil, nil, fmt.Errorf("runTask.createVMContext: %v", err))
-		return
+		task.Log.Panicf("runTask: CreateVMContext: %v", err)
 	}
 
-	stateUpdates := make([]state.StateUpdate, 0, len(task.Requests))
 	var lastResult dict.Dict
 	var lastErr error
-	var lastStateUpdate state.StateUpdate
+	var lastTotalAssets *ledgerstate.ColoredBalances
 
 	// loop over the batch of requests and run each request on the VM.
 	// the result accumulates in the VMContext and in the list of stateUpdates
-	timestamp := task.Timestamp
-	for _, reqRef := range task.Requests {
-		if reqRef.RequestSection().SolidArgs() == nil {
-			task.Log.Panicf("inconsistency: request args have not been solidified")
-		}
-		vmctx.RunTheRequest(reqRef, timestamp)
-		lastStateUpdate, lastResult, lastErr = vmctx.GetResult()
+	var numOffLedger, numSuccess uint16
+	for i, req := range task.Requests {
+		vmctx.RunTheRequest(req, uint16(i))
+		lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
 
-		stateUpdates = append(stateUpdates, lastStateUpdate)
-		if timestamp != 0 {
-			// increasing (nonempty) timestamp for 1 nanosecond for each request in the batch
-			// the reason is to provide a different timestamp for each VM call and remain deterministic
-			timestamp += 1
+		if req.Output() == nil {
+			numOffLedger++
+		}
+		if lastErr == nil {
+			numSuccess++
 		}
 	}
 
-	// create block from state updates.
-	task.ResultBlock, err = state.NewBlock(stateUpdates)
-	if err != nil {
-		task.OnFinish(nil, nil, fmt.Errorf("RunVM.NewBlock: %v", err))
-		return
-	}
-	task.ResultBlock.WithBlockIndex(task.VirtualState.BlockIndex() + 1)
+	// save the block info into the 'blocklog' contract
+	vmctx.CloseVMContext(uint16(len(task.Requests)), numSuccess, numOffLedger)
 
-	// calculate resulting state hash
-	vsClone := task.VirtualState.Clone()
-	if err = vsClone.ApplyBlock(task.ResultBlock); err != nil {
-		task.OnFinish(nil, nil, fmt.Errorf("RunVM.ApplyBlock: %v", err))
-		return
-	}
-	stateHash := vsClone.Hash()
-	task.ResultTransaction, err = vmctx.FinalizeTransactionEssence(
-		task.VirtualState.BlockIndex()+1,
-		stateHash,
-		vsClone.Timestamp(),
-	)
+	task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
 	if err != nil {
-		task.OnFinish(nil, nil, fmt.Errorf("RunVM.FinalizeTransactionEssence: %v", err))
+		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
 		return
 	}
-	// Note: can't take tx ID!!
+	if err = checkTotalAssets(task.ResultTransactionEssence, lastTotalAssets); err != nil {
+		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.checkTotalAssets: %v", err))
+		return
+	}
 	task.Log.Debugw("runTask OUT",
-		"batch size", task.ResultBlock.Size(),
-		"block index", task.ResultBlock.StateIndex(),
-		"variable state hash", stateHash.String(),
-		"tx essence hash", hashing.HashData(task.ResultTransaction.EssenceBytes()).String(),
-		"tx finalTimestamp", time.Unix(0, task.ResultTransaction.MustState().Timestamp()),
+		"block index", task.VirtualState.BlockIndex(),
+		"variable state hash", task.VirtualState.Hash().Bytes(),
+		"tx essence hash", hashing.HashData(task.ResultTransactionEssence.Bytes()).String(),
+		"tx finalTimestamp", task.ResultTransactionEssence.Timestamp(),
 	)
 	task.OnFinish(lastResult, lastErr, nil)
+}
+
+// outputsFromRequests collect all outputs from requests which are on-ledger
+func outputsFromRequests(requests ...coretypes.Request) []ledgerstate.Output {
+	ret := make([]ledgerstate.Output, 0)
+	for _, req := range requests {
+		if out := req.Output(); out != nil {
+			ret = append(ret, out)
+		}
+	}
+	return ret
+}
+
+func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalAssets *ledgerstate.ColoredBalances) error {
+	var chainOutput *ledgerstate.AliasOutput
+	for _, o := range essence.Outputs() {
+		if out, ok := o.(*ledgerstate.AliasOutput); ok {
+			chainOutput = out
+		}
+	}
+	if chainOutput == nil {
+		return xerrors.New("inconsistency: chain output not found")
+	}
+	diffAssets := util.DiffColoredBalances(chainOutput.Balances(), lastTotalAssets)
+	if iotas, ok := diffAssets[ledgerstate.ColorIOTA]; !ok || iotas != ledgerstate.DustThresholdAliasOutputIOTA {
+		return xerrors.Errorf("RunVM.BuildTransactionEssence: inconsistency between L1 and L2 ledgers")
+	}
+	return nil
 }

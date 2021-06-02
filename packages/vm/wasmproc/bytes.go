@@ -14,7 +14,7 @@ func NewBytesDecoder(data []byte) *BytesDecoder {
 func (d *BytesDecoder) Bytes() []byte {
 	size := d.Int64()
 	if len(d.data) < int(size) {
-		panic("Cannot decode bytes")
+		panic("insufficient bytes")
 	}
 	value := d.data[:size]
 	d.data = d.data[size:]
@@ -26,12 +26,15 @@ func (d *BytesDecoder) Int64() int64 {
 	val := int64(0)
 	s := 0
 	for {
+		if len(d.data) == 0 {
+			panic("insufficient bytes")
+		}
 		b := int8(d.data[0])
 		d.data = d.data[1:]
 		val |= int64(b&0x7f) << s
 		if b >= 0 {
 			if int8(val>>s)&0x7f != b&0x7f {
-				panic("Integer too large")
+				panic("integer too large")
 			}
 			// extend int7 sign to int8
 			if (b & 0x40) != 0 {

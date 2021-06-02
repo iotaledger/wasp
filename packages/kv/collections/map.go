@@ -3,7 +3,7 @@ package collections
 import (
 	"bytes"
 	"errors"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -11,7 +11,7 @@ import (
 // Map represents a dynamic key-value collection in a kv.KVStore.
 type Map struct {
 	*ImmutableMap
-	kvw kv.KVStoreWriter
+	kvw kv.KVWriter
 }
 
 // ImmutableMap provides read-only access to a Map in a kv.KVStoreReader.
@@ -208,10 +208,10 @@ func (m *ImmutableMap) MustIterateKeys(f func(elemKey []byte) bool) {
 	}
 }
 
-func (m *ImmutableMap) IterateBalances(f func(color balance.Color, bal int64) bool) error {
+func (m *ImmutableMap) IterateBalances(f func(color ledgerstate.Color, bal uint64) bool) error {
 	var err error
 	m.MustIterate(func(elemKey []byte, value []byte) bool {
-		col, _, err := balance.ColorFromBytes(elemKey)
+		col, _, err := ledgerstate.ColorFromBytes(elemKey)
 		if err != nil {
 			return false
 		}
@@ -219,8 +219,7 @@ func (m *ImmutableMap) IterateBalances(f func(color balance.Color, bal int64) bo
 		if err != nil {
 			return false
 		}
-		bal := int64(v)
-		return f(col, bal)
+		return f(col, v)
 	})
 	return err
 }

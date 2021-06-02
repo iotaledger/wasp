@@ -10,7 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
+	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
@@ -142,8 +143,9 @@ func (p *peer) sendHandshake(respond bool) {
 
 func (p *peer) noteReceived() {
 	p.accessLock.Lock()
+	defer p.accessLock.Unlock()
+
 	p.lastMsgRecv = time.Now()
-	p.accessLock.Unlock()
 }
 
 // Send pings, if needed. Other periodic actions can be added here.

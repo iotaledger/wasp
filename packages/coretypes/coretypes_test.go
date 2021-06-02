@@ -4,105 +4,68 @@
 package coretypes
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"testing"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
-func TestBase(t *testing.T) {
-	chid := (ChainID)(address.Random())
+func TestChainID(t *testing.T) {
+	chid := RandomChainID()
 
-	chid58 := chid.String()
+	chid58 := chid.Base58()
 	t.Logf("chid58 = %s", chid58)
 
-	chidback, err := NewChainIDFromBytes(chid[:])
+	chidString := chid.String()
+	t.Logf("chidString = %s", chidString)
+
+	chidback, err := ChainIDFromBytes(chid.Bytes())
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
 
-	chidback, err = NewChainIDFromBase58(chid58)
+	chidback, err = ChainIDFromBase58(chid58)
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
-
-	name := "test contract name"
-	hname := Hn(name)
-	scid := NewContractID(chid, hname)
-	scid58 := scid.Base58()
-	t.Logf("scname = '%s' schname = %s scid58 = %s", name, hname, scid58)
-	scidstr := scid.String()
-	t.Logf("scidstr = %s", scidstr)
-
-	t.Logf("scid short = %s", scid.Short())
-
-	scidBack, err := NewContractIDFromBytes(scid[:])
-	assert.NoError(t, err)
-	assert.EqualValues(t, scidBack, scid)
-
-	scidBack, err = NewContractIDFromBase58(scid58)
-	assert.NoError(t, err)
-	assert.EqualValues(t, scidBack, scid)
-
-	ep := Hn("dummyFunction")
-	epbytes := ep.Bytes()
-	epstr := ep.String()
-
-	t.Logf("epstr = %s", epstr)
-
-	epback, err := NewHnameFromBytes(epbytes)
-	assert.NoError(t, err)
-	assert.EqualValues(t, ep, epback)
-}
-
-func TestRequestID(t *testing.T) {
-	txid := (valuetransaction.ID)(hashing.RandomHash(nil))
-	reqid := NewRequestID(txid, 3)
-
-	t.Logf("txid = %s", txid.String())
-	t.Logf("reqid = %s", reqid.String())
-	t.Logf("reqidShort = %s", reqid.Short())
-
-	reqidback, err := NewRequestIDFromBytes(reqid[:])
-	assert.NoError(t, err)
-	assert.EqualValues(t, reqid, reqidback)
-
-	reqid58 := reqid.Base58()
-	t.Logf("reqid58 = %s", reqid58)
-	reqidback, err = NewRequestIDFromBase58(reqid58)
-	assert.NoError(t, err)
-	assert.EqualValues(t, reqid, reqidback)
 }
 
 func TestAgentID(t *testing.T) {
-	chid := (ChainID)(address.Random())
+	aid := NewRandomAgentID()
 
-	chid58 := chid.String()
-	t.Logf("chid58 = %s", chid58)
+	t.Logf("random AgentID = %s", aid.String())
 
-	addr := address.Random()
-	t.Logf("addr = %s", addr.String())
+	kp := ed25519.GenerateKeyPair()
+	addr := ledgerstate.NewED25519Address(kp.PublicKey)
 
-	aid := NewAgentIDFromAddress(addr)
-	require.True(t, aid.IsAddress())
+	hname := Hn("dummy")
+	aid = NewAgentID(addr, hname)
 
-	contrId := NewContractID(chid, Hn("22"))
-	aid1 := NewAgentIDFromContractID(contrId)
-	require.True(t, !aid1.IsAddress())
+	t.Logf("agent ID string: %s", aid.String())
+	t.Logf("agent ID base58: %s", aid.Base58())
 
-	contrIdBack := aid1.MustContractID()
-	require.EqualValues(t, contrId, contrIdBack)
+	aidBack, err := NewAgentIDFromBytes(aid.Bytes())
+	require.NoError(t, err)
+	require.True(t, aid.Equals(aidBack))
 
-	t.Logf("addr agent ID = %s", aid.String())
-	t.Logf("contract agent ID = %s", aid1.String())
+	aid = NewAgentID(addr, hname)
+	require.True(t, addr.Equals(aid.Address()))
+	require.EqualValues(t, aid.Hname(), hname)
 
+	aidBack, err = NewAgentIDFromBase58EncodedString(aid.Base58())
+	require.NoError(t, err)
+	require.True(t, aid.Equals(aidBack))
+
+	aidBack, err = NewAgentIDFromString(aid.String())
+	require.NoError(t, err)
+	require.True(t, aid.Equals(aidBack))
 }
 
 func TestHname(t *testing.T) {
 	hn1 := Hn("first")
 
 	hn1bytes := hn1.Bytes()
-	hn1back, err := NewHnameFromBytes(hn1bytes)
+	hn1back, err := HnameFromBytes(hn1bytes)
 	require.NoError(t, err)
 	require.EqualValues(t, hn1, hn1back)
 

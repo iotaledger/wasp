@@ -14,13 +14,13 @@ import (
 const VMType = "examplevm"
 
 var (
-	allExamples      = make(map[hashing.HashValue]coretypes.Processor)
+	allExamples      = make(map[hashing.HashValue]coretypes.VMProcessor)
 	allExamplesMutex = &sync.Mutex{}
 )
 
 // AddProcessor adds new processor to the runtime registry of example processors.
 // The 'proc' represents executable of the specific smart contract.
-// It must implement coretypes.Processor
+// It must implement coretypes.VMProcessor
 func AddProcessor(c *coreutil.ContractInterface) {
 	allExamplesMutex.Lock()
 	defer allExamplesMutex.Unlock()
@@ -30,7 +30,7 @@ func AddProcessor(c *coreutil.ContractInterface) {
 }
 
 // GetProcessor retrieves smart contract processor (VM) by the hash (with existence flag)
-func GetProcessor(progHash hashing.HashValue) (coretypes.Processor, bool) {
+func GetProcessor(progHash hashing.HashValue) (coretypes.VMProcessor, bool) {
 	ret, ok := allExamples[progHash]
 	if !ok {
 		return nil, false

@@ -50,7 +50,7 @@ fn withdraw_iota(ctx: &ScFuncContext) {
     let creator = ctx.contract_creator();
     let caller = ctx.caller();
 
-    ctx.require(creator ==caller, "not authorised");
+    ctx.require(creator == caller, "not authorised");
     ctx.require(caller.is_address(), "caller must be an address");
 
     let bal = ctx.balances().balance(&ScColor::IOTA);

@@ -4,8 +4,7 @@
 package wasmproc
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -14,25 +13,35 @@ import (
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-func NewScBalances(vm *wasmProcessor, incoming bool) *ScDict {
+func NewScBalances(vm *wasmProcessor, keyId int32) *ScDict {
 	o := NewScDict(vm)
-	if incoming {
+	switch keyId {
+	case wasmhost.KeyIncoming:
 		if vm.ctx == nil {
-			o.Panic("No incoming transfers on views")
+			o.Panic("no incoming() on views")
 		}
 		return loadBalances(o, vm.ctx.IncomingTransfer())
+	case wasmhost.KeyMinted:
+		if vm.ctx == nil {
+			o.Panic("no minted() on views")
+		}
+		return loadBalances(o, ledgerstate.NewColoredBalances(vm.ctx.Minted()))
+
+	case wasmhost.KeyBalances:
+		if vm.ctx != nil {
+			return loadBalances(o, vm.ctx.Balances())
+		}
+		return loadBalances(o, vm.ctxView.Balances())
 	}
-	if vm.ctx != nil {
-		return loadBalances(o, vm.ctx.Balances())
-	}
-	return loadBalances(o, vm.ctxView.Balances())
+	o.Panic("unknown balances: %s", vm.GetKeyStringFromId(keyId))
+	return nil
 }
 
-func loadBalances(o *ScDict, balances coretypes.ColoredBalances) *ScDict {
+func loadBalances(o *ScDict, balances *ledgerstate.ColoredBalances) *ScDict {
 	index := 0
 	key := o.host.GetKeyStringFromId(wasmhost.KeyColor)
-	balances.IterateDeterministic(func(color balance.Color, balance int64) bool {
-		o.kvStore.Set(kv.Key(color[:]), codec.EncodeInt64(balance))
+	balances.ForEach(func(color ledgerstate.Color, balance uint64) bool {
+		o.kvStore.Set(kv.Key(color[:]), codec.EncodeUint64(balance))
 		o.kvStore.Set(kv.Key(key+"."+strconv.Itoa(index)), color[:])
 		index++
 		return true

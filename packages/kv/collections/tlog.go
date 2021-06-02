@@ -15,7 +15,7 @@ import (
 // i.e. non-decreasing
 type TimestampedLog struct {
 	*ImmutableTimestampedLog
-	kvw kv.KVStoreWriter
+	kvw kv.KVWriter
 }
 
 // ImmutableTimestampedLog provides read-only access to a TimestampedLog in a kv.KVStoreReader.

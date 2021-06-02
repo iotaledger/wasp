@@ -6,12 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/solo"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
@@ -53,8 +54,8 @@ func TestIncDeployment(t *testing.T) {
 		//--
 		crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
-		rec := root.NewContractRecord(root.Interface, coretypes.AgentID{})
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(&rec)))
+		rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
 		//--
 		crBytes = contractRegistry.MustGetAt(incHname.Bytes())
 		require.NotNil(t, crBytes)
@@ -84,9 +85,9 @@ func testNothing(t *testing.T, numRequests int) {
 
 	entryPoint := coretypes.Hn("nothing")
 	for i := 0; i < numRequests; i++ {
-		tx, err := client.PostRequest(incHname, entryPoint)
+		tx, err := client.Post1Request(incHname, entryPoint)
 		check(err, t)
-		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 		check(err, t)
 	}
 
@@ -111,8 +112,8 @@ func testNothing(t *testing.T, numRequests int) {
 		//--
 		crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
-		rec := root.NewContractRecord(root.Interface, coretypes.AgentID{})
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(&rec)))
+		rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
 		//--
 		crBytes = contractRegistry.MustGetAt(incHname.Bytes())
 		require.NotNil(t, crBytes)
@@ -141,9 +142,9 @@ func testIncrement(t *testing.T, numRequests int) {
 
 	entryPoint := coretypes.Hn("increment")
 	for i := 0; i < numRequests; i++ {
-		tx, err := client.PostRequest(incHname, entryPoint)
+		tx, err := client.Post1Request(incHname, entryPoint)
 		check(err, t)
-		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 		check(err, t)
 	}
 
@@ -168,8 +169,8 @@ func testIncrement(t *testing.T, numRequests int) {
 		//--
 		crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
 		require.NotNil(t, crBytes)
-		rec := root.NewContractRecord(root.Interface, coretypes.AgentID{})
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(&rec)))
+		rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
 		//--
 		crBytes = contractRegistry.MustGetAt(incHname.Bytes())
 		require.NotNil(t, crBytes)
@@ -187,38 +188,21 @@ func testIncrement(t *testing.T, numRequests int) {
 func TestIncrementWithTransfer(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
 
-	if !clu.VerifyAddressBalances(&chain.Address, 4, map[balance.Color]int64{
-		balance.ColorIOTA: 3,
-		chain.Color:       1,
-	}, "chain after deployment") {
-		t.Fail()
-	}
-
 	entryPoint := coretypes.Hn("increment")
 	postRequest(t, incHname, entryPoint, 42, nil)
 
-	if !clu.VerifyAddressBalances(scOwnerAddr, testutil.RequestFundsAmount-1-42, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 1 - 42,
+	if !clu.VerifyAddressBalances(scOwnerAddr, solo.Saldo-42, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - 42,
 	}, "owner after") {
 		t.Fail()
 	}
-	if !clu.VerifyAddressBalances(&chain.Address, 5+42, map[balance.Color]int64{
-		balance.ColorIOTA: 4 + 42,
-		chain.Color:       1,
-	}, "chain after") {
-		t.Fail()
-	}
-	agentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(chain.ChainID, incHname))
-	actual := getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
+	agentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), incHname)
+	actual := getBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
 	require.EqualValues(t, 42, actual)
 
-	agentID = coretypes.NewAgentIDFromAddress(*scOwnerAddr)
-	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
-	require.EqualValues(t, 1, actual) // 1 request sent
-
-	agentID = coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress())
-	actual = getAgentBalanceOnChain(t, chain, agentID, balance.ColorIOTA)
-	require.EqualValues(t, 3, actual) // 2 requests sent
+	agentID = coretypes.NewAgentID(scOwnerAddr, 0)
+	actual = getBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
+	require.EqualValues(t, 0, actual)
 
 	checkCounter(t, 1)
 }
@@ -295,9 +279,7 @@ func TestIncViewCounter(t *testing.T) {
 	postRequest(t, incHname, entryPoint, 0, nil)
 	checkCounter(t, 1)
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(incHname),
-		"getCounter",
-		nil,
+		chain.ChainID, incHname, "getCounter",
 	)
 	check(err, t)
 

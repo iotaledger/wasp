@@ -13,13 +13,13 @@ import (
 // ProcessorCache is an object maintained by each chain
 type ProcessorCache struct {
 	*sync.Mutex
-	processors map[hashing.HashValue]coretypes.Processor
+	processors map[hashing.HashValue]coretypes.VMProcessor
 }
 
 func MustNew() *ProcessorCache {
 	ret := &ProcessorCache{
 		Mutex:      &sync.Mutex{},
-		processors: make(map[hashing.HashValue]coretypes.Processor),
+		processors: make(map[hashing.HashValue]coretypes.VMProcessor),
 	}
 	// default builtin processor has root contract hash
 	err := ret.NewProcessor(root.Interface.ProgramHash, nil, core.VMType)
@@ -38,7 +38,7 @@ func (cps *ProcessorCache) NewProcessor(programHash hashing.HashValue, programCo
 }
 
 func (cps *ProcessorCache) newProcessor(programHash hashing.HashValue, programCode []byte, vmtype string) error {
-	var proc coretypes.Processor
+	var proc coretypes.VMProcessor
 	var ok bool
 	var err error
 
@@ -72,11 +72,11 @@ func (cps *ProcessorCache) ExistsProcessor(h hashing.HashValue) bool {
 	return ok
 }
 
-func (cps *ProcessorCache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(hashing.HashValue) (string, []byte, error)) (coretypes.Processor, error) {
+func (cps *ProcessorCache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(hashing.HashValue) (string, []byte, error)) (coretypes.VMProcessor, error) {
 	return cps.GetOrCreateProcessorByProgramHash(rec.ProgramHash, getBinary)
 }
 
-func (cps *ProcessorCache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary func(hashing.HashValue) (string, []byte, error)) (coretypes.Processor, error) {
+func (cps *ProcessorCache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary func(hashing.HashValue) (string, []byte, error)) (coretypes.VMProcessor, error) {
 	cps.Lock()
 	defer cps.Unlock()
 

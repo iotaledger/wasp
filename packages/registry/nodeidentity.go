@@ -5,19 +5,12 @@ package registry
 
 import (
 	"bytes"
-	"github.com/iotaledger/wasp/packages/dbprovider"
 
+	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
 )
-
-// NodeIdentityProvider is a subset of the registry interface
-// providing access to the persistent node identity information.
-type NodeIdentityProvider interface {
-	GetNodeIdentity() (*key.Pair, error)
-	GetNodePublicKey() (kyber.Point, error)
-}
 
 // GetNodeIdentity implements NodeIdentityProvider.
 func (r *Impl) GetNodeIdentity() (*key.Pair, error) {
@@ -26,18 +19,17 @@ func (r *Impl) GetNodeIdentity() (*key.Pair, error) {
 	dbKey := dbKeyForNodeIdentity()
 	var exists bool
 	var data []byte
-	partition := r.dbProvider.GetRegistryPartition()
-	exists, err = partition.Has(dbKey)
+	exists, err = r.store.Has(dbKey)
 	if !exists {
 		pair = key.NewKeyPair(r.suite)
 		if data, err = keyPairToBytes(pair); err != nil {
 			return nil, err
 		}
-		partition.Set(dbKey, data)
+		r.store.Set(dbKey, data)
 		r.log.Info("Node identity key pair generated.")
 		return pair, nil
 	}
-	if data, err = partition.Get(dbKey); err != nil {
+	if data, err = r.store.Get(dbKey); err != nil {
 		return nil, err
 	}
 	if pair, err = keyPairFromBytes(data, r.suite); err != nil {
@@ -57,7 +49,7 @@ func (r *Impl) GetNodePublicKey() (kyber.Point, error) {
 }
 
 func dbKeyForNodeIdentity() []byte {
-	return dbprovider.MakeKey(dbprovider.ObjectTypeNodeIdentity)
+	return dbkeys.MakeKey(dbkeys.ObjectTypeNodeIdentity)
 }
 
 func keyPairToBytes(pair *key.Pair) ([]byte, error) {

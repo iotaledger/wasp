@@ -4,8 +4,8 @@ func Info() string {
 	return "/info"
 }
 
-func CallView(contractID string, hname string) string {
-	return "/contract/" + contractID + "/callview/" + hname
+func CallView(chainID string, contractHname string, functionName string) string {
+	return "chain/" + chainID + "/contract/" + contractHname + "/callview/" + functionName
 }
 
 func RequestStatus(chainID string, reqID string) string {
@@ -52,6 +52,18 @@ func GetChainRecord(chainID string) string {
 	return "/adm/chainrecord/" + chainID
 }
 
+func PutCommitteeRecord() string {
+	return "/adm/committeerecord"
+}
+
+func GetCommitteeRecord(addr string) string {
+	return "/adm/committeerecord/" + addr
+}
+
+func GetCommitteeForChain(chainID string) string {
+	return "/adm/chain/" + chainID + "/committeerecord"
+}
+
 func DKSharesPost() string {
 	return "/adm/dks"
 }
@@ -60,8 +72,8 @@ func DKSharesGet(sharedAddress string) string {
 	return "/adm/dks/" + sharedAddress
 }
 
-func DumpState(contractID string) string {
-	return "/adm/contract/" + contractID + "/dumpstate"
+func DumpState(chainID string, contractHname string) string {
+	return "/adm/chain/" + chainID + "/contract/" + contractHname + "/dumpstate"
 }
 
 func Shutdown() string {

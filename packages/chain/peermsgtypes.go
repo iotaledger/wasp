@@ -4,12 +4,12 @@
 package chain
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	valuetransaction "github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
+	"time"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -17,40 +17,24 @@ import (
 
 // Message types for the committee communications.
 const (
-	MsgStateIndexPingPong      = 0 + peering.FirstUserMsgCode
-	MsgNotifyRequests          = 1 + peering.FirstUserMsgCode
-	MsgNotifyFinalResultPosted = 2 + peering.FirstUserMsgCode
-	MsgStartProcessingRequest  = 3 + peering.FirstUserMsgCode
-	MsgSignedHash              = 4 + peering.FirstUserMsgCode
-	MsgGetBatch                = 5 + peering.FirstUserMsgCode
-	MsgStateUpdate             = 6 + peering.FirstUserMsgCode
-	MsgBatchHeader             = 7 + peering.FirstUserMsgCode
-	MsgTestTrace               = 8 + peering.FirstUserMsgCode
+	MsgNotifyRequests          = 0 + peering.FirstUserMsgCode
+	MsgNotifyFinalResultPosted = 1 + peering.FirstUserMsgCode
+	MsgStartProcessingRequest  = 2 + peering.FirstUserMsgCode
+	MsgSignedHash              = 3 + peering.FirstUserMsgCode
+	MsgGetBlock                = 4 + peering.FirstUserMsgCode
+	MsgBlock                   = 5 + peering.FirstUserMsgCode
+	MsgSignedResult            = 6 + peering.FirstUserMsgCode
 )
 
 type TimerTick int
-
-// all peer messages have this
-type PeerMsgHeader struct {
-	// is set upon receive the message
-	SenderIndex uint16
-	// state index in the context of which the message is sent
-	BlockIndex uint32
-}
-
-// Ping is sent to receive Pong
-type StateIndexPingPongMsg struct {
-	PeerMsgHeader
-	RSVP bool
-}
 
 // message is sent to the leader of the state processing
 // it is sent upon state change or upon arrival of the new request
 // the receiving operator will ignore repeating messages
 type NotifyReqMsg struct {
-	PeerMsgHeader
-	// list of request ids ordered by the time of arrival
-	RequestIDs []coretypes.RequestID
+	SenderIndex   uint16
+	StateOutputID ledgerstate.OutputID
+	RequestIDs    []coretypes.RequestID
 }
 
 // message is sent by the leader to all peers immediately after the final transaction is posted
@@ -58,101 +42,96 @@ type NotifyReqMsg struct {
 // in long confirmation times
 // Final signature is sent to prevent possibility for a leader node to lie (is it necessary)
 type NotifyFinalResultPostedMsg struct {
-	PeerMsgHeader
-	TxId valuetransaction.ID
+	SenderIndex   uint16
+	StateOutputID ledgerstate.OutputID
+	TxId          ledgerstate.TransactionID
 }
 
 // message is sent by the leader to other peers to initiate request processing
 // other peers are expected to check is timestamp is acceptable then
 // process request batch and sign the result hash with the timestamp proposed by the leader
 type StartProcessingBatchMsg struct {
-	PeerMsgHeader
+	SenderIndex   uint16
+	StateOutputID ledgerstate.OutputID
 	// timestamp of the message. Field is set upon receive the message to sender's timestamp
 	Timestamp int64
 	// batch of request ids
-	RequestIds []coretypes.RequestID
+	RequestIDs []coretypes.RequestID
 	// reward address
 	FeeDestination coretypes.AgentID
-	// balances/outputs
-	Balances map[valuetransaction.ID][]*balance.Balance
 }
 
 // after calculations the result peer responds to the start processing msg
 // with SignedHashMsg, which contains result hash and signatures
 type SignedHashMsg struct {
-	PeerMsgHeader
-	// timestamp of this message. Field is set upon receive the message to sender's timestamp
-	Timestamp int64
-	// returns hash of all req ids
-	BatchHash hashing.HashValue
-	// original timestamp, the parameter for calculations, which is signed as part of the essence
+	SenderIndex   uint16
+	StateOutputID ledgerstate.OutputID
+	Timestamp     int64
+	BatchHash     hashing.HashValue
 	OrigTimestamp int64
-	// hash of the signed data (essence)
+	EssenceHash   hashing.HashValue
+	SigShare      tbdn.SigShare
+}
+
+type SignedResultMsg struct {
+	SenderIndex uint16
 	EssenceHash hashing.HashValue
-	// signature
-	SigShare tbdn.SigShare
+	SigShare    tbdn.SigShare
 }
 
-// request block of updates from peer. Used in syn process
+// GetBlockMsg StateManager queries specific block data from another peer (access node)
 type GetBlockMsg struct {
-	PeerMsgHeader
+	SenderNetID string
+	BlockIndex  uint32
 }
 
-// the header of the block message sent by peers in the process of syncing
-// it is sent as a first message while syncing a batch
-type BlockHeaderMsg struct {
-	PeerMsgHeader
-	Size                uint16
-	AnchorTransactionID valuetransaction.ID
+// BlockMsg StateManager in response to GetBlockMsg sends block data to the querying node's StateManager
+type BlockMsg struct {
+	SenderNetID string
+	BlockBytes  []byte
 }
 
-// state update sent to peer. Used in sync process, as part of batch
-type StateUpdateMsg struct {
-	PeerMsgHeader
-	// state update
-	StateUpdate state.StateUpdate
-	// position in a batch
-	IndexInTheBlock uint16
+// DismissChainMsg sent by component to the chain core in case of major setback
+type DismissChainMsg struct {
+	Reason string
 }
 
-// used for testing of the communications
-type TestTraceMsg struct {
-	PeerMsgHeader
-	InitTime      int64
-	InitPeerIndex uint16
-	Sequence      []uint16
-	NumHops       uint16
-}
-
-// state manager notifies consensus operator about changed state
-// only sent internally within committee
-// state transition is always from state N to state N+1
+// StateTransitionMsg StateManager -> ConsensusOld. Notifies consensus about changed state
 type StateTransitionMsg struct {
 	// new variable state
-	VariableState state.VirtualState
+	State state.VirtualState
 	// corresponding state transaction
-	AnchorTransaction *sctransaction.Transaction
-	// processed requests
-	RequestIDs []*coretypes.RequestID
-	// is the state index last seen
-	Synchronized bool
+	StateOutput *ledgerstate.AliasOutput
+	//
+	StateTimestamp time.Time
 }
 
-// message of complete batch. Is sent by consensus operator to the state manager as a VM result
-// - state manager to itself when batch is completed after syncing
-type PendingBlockMsg struct {
-	Block state.Block
+// StateCandidateMsg ConsensusOld -> StateManager. ConsensusOld sends the finalized next state to StateManager
+type StateCandidateMsg struct {
+	State             state.VirtualState
+	ApprovingOutputID ledgerstate.OutputID
 }
 
-// message is sent to the consensus manager after it receives state transaction
-// which is valid but not confirmed yet.
-type StateTransactionEvidenced struct {
-	TxId      valuetransaction.ID
-	StateHash hashing.HashValue
-}
-
-// VMResultMsg is the message sent by the async VM task to the chan object upon success full finish
+// VMResultMsg ConsensusOld -> ConsensusOld. VM sends result of async task started by ConsensusOld to itself
 type VMResultMsg struct {
 	Task   *vm.VMTask
 	Leader uint16
+}
+
+// AsynchronousCommonSubsetMsg
+type AsynchronousCommonSubsetMsg struct {
+	ProposedBatchesBin [][]byte
+	SessionID          uint64
+}
+
+// InclusionStateMsg nodeconn plugin sends inclusions state of the transaction to ConsensusOld
+type InclusionStateMsg struct {
+	TxID  ledgerstate.TransactionID
+	State ledgerstate.InclusionState
+}
+
+// StateMsg nodeconn plugin sends the only existing AliasOutput in the chain's address to StateManager
+type StateMsg struct {
+	ChainOutput *ledgerstate.AliasOutput
+	Timestamp   time.Time
 }

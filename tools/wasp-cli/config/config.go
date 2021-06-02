@@ -4,18 +4,36 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/level1"
-	"github.com/iotaledger/wasp/client/level1/goshimmer"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/spf13/pflag"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var ConfigPath string
-var WaitForCompletion bool
+var (
+	ConfigPath        string
+	WaitForCompletion bool
+)
+
+var configSetCmd = &cobra.Command{
+	Use:   "set <key> <value>",
+	Short: "Set a configuration value",
+	Args:  cobra.ExactArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
+		v := args[1]
+		switch v {
+		case "true":
+			Set(args[0], true)
+		case "false":
+			Set(args[0], true)
+		default:
+			Set(args[0], v)
+		}
+	},
+}
 
 const (
 	HostKindApi     = "api"
@@ -23,28 +41,11 @@ const (
 	HostKindNanomsg = "nanomsg"
 )
 
-func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
-	commands["set"] = setCmd
+func Init(rootCmd *cobra.Command) {
+	rootCmd.PersistentFlags().StringVarP(&ConfigPath, "config", "c", "wasp-cli.json", "path to wasp-cli.json")
+	rootCmd.PersistentFlags().BoolVarP(&WaitForCompletion, "wait", "w", true, "wait for request completion")
 
-	fs := pflag.NewFlagSet("config", pflag.ExitOnError)
-	fs.StringVarP(&ConfigPath, "config", "c", "wasp-cli.json", "path to wasp-cli.json")
-	fs.BoolVarP(&WaitForCompletion, "wait", "w", true, "wait for request completion")
-	flags.AddFlagSet(fs)
-}
-
-func setCmd(args []string) {
-	if len(args) != 2 {
-		log.Usage("%s set <key> <value>\n", os.Args[0])
-	}
-	v := args[1]
-	switch v {
-	case "true":
-		Set(args[0], true)
-	case "false":
-		Set(args[0], true)
-	default:
-		Set(args[0], v)
-	}
+	rootCmd.AddCommand(configSetCmd)
 }
 
 func Read() {
@@ -64,17 +65,17 @@ func GoshimmerApi() string {
 	return "127.0.0.1:8080"
 }
 
-func Utxodb() bool {
-	return viper.GetBool("utxodb")
+func GoshimmerFaucetPoWTarget() int {
+	key := "goshimmer.faucetPoWTarget"
+	if !viper.IsSet(key) {
+		return 0 // by default assume utxodb is on the other side
+	}
+	return viper.GetInt(key)
 }
 
-func GoshimmerClient() level1.Level1Client {
-	log.Verbose("using Goshimmer host %s\n", GoshimmerApi())
-	if Utxodb() {
-		log.Verbose("using utxodb\n")
-		return testutil.NewGoshimmerUtxodbClient(GoshimmerApi())
-	}
-	return goshimmer.NewGoshimmerClient(GoshimmerApi())
+func GoshimmerClient() *goshimmer.Client {
+	log.Verbose("using Goshimmer host %s, faucet pow target %d\n", GoshimmerApi(), GoshimmerFaucetPoWTarget())
+	return goshimmer.NewClient(GoshimmerApi(), GoshimmerFaucetPoWTarget())
 }
 
 func WaspClient() *client.WaspClient {
@@ -171,17 +172,17 @@ func Set(key string, value interface{}) {
 	log.Check(viper.WriteConfig())
 }
 
-func TrySCAddress(scAlias string) *address.Address {
+func TrySCAddress(scAlias string) ledgerstate.Address {
 	b58 := viper.GetString("sc." + scAlias + ".address")
 	if len(b58) == 0 {
 		return nil
 	}
-	address, err := address.FromBase58(b58)
+	address, err := ledgerstate.AddressFromBase58EncodedString(b58)
 	log.Check(err)
-	return &address
+	return address
 }
 
-func GetSCAddress(scAlias string) *address.Address {
+func GetSCAddress(scAlias string) ledgerstate.Address {
 	address := TrySCAddress(scAlias)
 	if address == nil {
 		log.Fatal("call `%s set sc.%s.address` or deploy a contract first", os.Args[0], scAlias)

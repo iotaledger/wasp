@@ -7,8 +7,9 @@ import (
 	"errors"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/peering/domain"
+
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/group"
 	"go.dedis.ch/kyber/v3"
@@ -104,9 +105,9 @@ type peeringMsg struct {
 	msg  peering.PeerMessage
 }
 type peeringCb struct {
-	callback func(recv *peering.RecvEvent) // Receive callback.
-	destNP   *peeringNetworkProvider       // Destination node.
-	chainID  *coretypes.ChainID            // Only listen for specific chain msgs.
+	callback  func(recv *peering.RecvEvent) // Receive callback.
+	destNP    *peeringNetworkProvider       // Destination node.
+	peeringID *peering.PeeringID            // Only listen for specific chain msgs.
 }
 
 func newPeeringNode(netID string, pubKey kyber.Point, secKey kyber.Scalar, network *PeeringNetwork) *peeringNode {
@@ -128,12 +129,12 @@ func newPeeringNode(netID string, pubKey kyber.Point, secKey kyber.Scalar, netwo
 		for {
 			var pm *peeringMsg = <-recvCh
 			node.log.Debugf(
-				"received msgType=%v from=%v, chainID=%v",
-				pm.msg.MsgType, pm.from.netID, pm.msg.ChainID,
+				"received msgType=%v from=%v, peeringID=%v",
+				pm.msg.MsgType, pm.from.netID, pm.msg.PeeringID,
 			)
-			msgChainID := pm.msg.ChainID.String()
+			msgPeeringID := pm.msg.PeeringID.String()
 			for _, cb := range node.recvCbs {
-				if cb.chainID == nil || cb.chainID.String() == msgChainID {
+				if cb.peeringID == nil || cb.peeringID.String() == msgPeeringID {
 					cb.callback(&peering.RecvEvent{
 						From: cb.destNP.senderByNetID(pm.from.netID),
 						Msg:  &pm.msg,
@@ -186,7 +187,7 @@ func (p *peeringNetworkProvider) Self() peering.PeerSender {
 }
 
 // Group implements peering.NetworkProvider.
-func (p *peeringNetworkProvider) Group(peerAddrs []string) (peering.GroupProvider, error) {
+func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupProvider, error) {
 	peers := make([]peering.PeerSender, len(peerAddrs))
 	for i := range peerAddrs {
 		n := p.network.nodeByNetID(peerAddrs[i])
@@ -195,18 +196,23 @@ func (p *peeringNetworkProvider) Group(peerAddrs []string) (peering.GroupProvide
 		}
 		peers[i] = p.senders[i]
 	}
-	return group.NewPeeringGroupProvider(p, peers, p.network.log), nil
+	return group.NewPeeringGroupProvider(p, peers, p.network.log)
+}
+
+// Domain creates peering.PeerDomainProvider.
+func (n *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
+	return domain.NewPeerDomainByNetIDs(n, peerNetIDs, n.network.log)
 }
 
 // Attach implements peering.NetworkProvider.
 func (p *peeringNetworkProvider) Attach(
-	chainID *coretypes.ChainID,
+	peeringID *peering.PeeringID,
 	callback func(recv *peering.RecvEvent),
 ) interface{} {
 	p.self.recvCbs = append(p.self.recvCbs, &peeringCb{
-		callback: callback,
-		destNP:   p,
-		chainID:  chainID,
+		callback:  callback,
+		destNP:    p,
+		peeringID: peeringID,
 	})
 	return nil // We don't care on the attachIDs for now.
 }

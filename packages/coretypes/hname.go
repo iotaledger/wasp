@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"golang.org/x/xerrors"
 	"io"
 	"strconv"
 
@@ -23,16 +24,23 @@ const HnameLength = 4
 // FuncInit is a name of the init function for any smart contract
 const FuncInit = "init"
 
-// EntryPointInit is a hashed name of the init function
-var EntryPointInit = Hn(FuncInit)
+// well known hnames
+var (
+	EntryPointInit = Hn(FuncInit)
+	HnameRoot      = Hn("root")
+	HnameAccounts  = Hn("accounts")
+	HnameBlob      = Hn("blob")
+	HnameEventlog  = Hn("eventlog")
+	HnameDefault   = Hname(0)
+)
 
-// NewHnameFromBytes constructor, unmarshalling
-func NewHnameFromBytes(data []byte) (ret Hname, err error) {
+// HnameFromBytes constructor, unmarshalling
+func HnameFromBytes(data []byte) (ret Hname, err error) {
 	err = ret.Read(bytes.NewReader(data))
 	return
 }
 
-// Hn created hname from arbitrary string.
+// Hn create hname from arbitrary string.
 func Hn(funname string) (ret Hname) {
 	h := hashing.HashStrings(funname)
 	_ = ret.Read(bytes.NewReader(h[:HnameLength]))
@@ -47,6 +55,10 @@ func (hn Hname) Bytes() []byte {
 	ret := make([]byte, HnameLength)
 	binary.LittleEndian.PutUint32(ret, (uint32)(hn))
 	return ret
+}
+
+func (hn Hname) Clone() Hname {
+	return hn
 }
 
 func (hn Hname) String() string {
@@ -73,7 +85,7 @@ func (hn *Hname) Read(r io.Reader) error {
 		return err
 	}
 	if n != HnameLength {
-		return ErrWrongDataLength
+		return xerrors.New("wrong data length")
 	}
 	t := binary.LittleEndian.Uint32(b[:])
 	*hn = (Hname)(t)

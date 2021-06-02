@@ -7,11 +7,10 @@ Here we describe step by step instructions how to run Wasp nodes on the Pollen n
 You will need the `wasp`, `wasp-cli` and `goshimmer` commands installed in
 the system.
 
-The `goshimmer` command must be compiled from the Goshimmer repository,
-branch `master+wasp` (which includes the `waspconn` plugin):
+The `goshimmer` command must be compiled from the Goshimmer repository:
 
 ```
-$ git clone -b master+wasp https://github.com/iotaledger/goshimmer.git
+$ git clone https://github.com/iotaledger/goshimmer.git
 $ cd goshimmer
 $ go install
 ```
@@ -31,7 +30,7 @@ Create an empty working directory for Goshimmer, and download the `snapshot.bin`
 ```
 $ mkdir goshimmer-pollen
 $ cd goshimmer-pollen
-$ curl 'https://github.com/iotaledger/goshimmer/raw/master%2Bwasp/snapshot.bin' -O
+$ curl 'https://raw.githubusercontent.com/iotaledger/goshimmer/master/snapshot.bin' -O
 ```
 
 Start the Goshimmer node:
@@ -50,7 +49,7 @@ $ goshimmer \
         --prometheus.bindAddress=0.0.0.0:9311 \
         --autopeering.entryNodes=2PV5487xMw5rasGBXXWeqSi4hLz7r19YBt8Y1TGAsQbj@ressims.iota.cafe:15626,5EDH4uY78EA6wrBkHHAVBWBMDt7EcksRq6pjzipoW15B@entryshimmer.tanglebay.com:14646 \
         --node.disablePlugins= \
-        --node.enablePlugins=remotelog,networkdelay,spammer,prometheus,faucet,waspconn \
+        --node.enablePlugins=remotelog,networkdelay,spammer,prometheus,faucet,txstream \
         --faucet.seed=7R1itJx5hVuo9w9hjg5cwKFmek4HMSoBDgJZN8hKGxih \
         --logger.level=info \
         --logger.disableEvents=false \
@@ -66,8 +65,8 @@ $ goshimmer \
 Note: argument values are adapted from [these instructions](https://github.com/iotaledger/goshimmer/wiki/Setup-up-a-GoShimmer-node-%28Joining-the-pollen-testnet%29).
 We do not provide Docker images yet.
 
-Note: by default the WaspConn plugin will be listening for Wasp connections on port `5000`.
-To change this setting you can add the argument `--waspconn.port: 12345`.
+Note: by default the TXStream plugin will be listening for Wasp connections on port `5000`.
+To change this setting you can add the argument `--txstream.port: 12345`.
 
 ## Run Wasp
 
@@ -125,7 +124,7 @@ committee must have a unique `netid`.
 
 #### Goshimmer connection settings
 
-`nodeconn.address` specifies the Goshimmer host and port (exposed by the `WaspConn` plugin) to
+`nodeconn.address` specifies the Goshimmer host and port (exposed by the TXStream plugin) to
 connect to.
 
 #### Publisher

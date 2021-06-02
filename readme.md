@@ -10,7 +10,7 @@ into ISCP.
 
 A _smart contract_ is a distributed software agent that stores its state in the
 [UTXO ledger](docs/intro/utxo.md), and evolves with each _request_ sent to
-the contrct. Since the UTXO ledger is immutable, by extension the smart
+the contract. Since the UTXO ledger is immutable, by extension the smart
 contract state is also immutable.
 
 A _committee_ of an arbitrary number of Wasp nodes runs a _chain_ of smart
@@ -29,25 +29,21 @@ commercial settings or whenever processing of critical data is involved._
 ## Prerequisites
 
 - Go 1.15
-- The `goshimmer` command, compiled from [Goshimmer `master+wasp` branch](https://github.com/iotaledger/goshimmer/tree/master+wasp)
+- Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node for
+  production operation
 
-```
-$ git clone -b master+wasp https://github.com/iotaledger/goshimmer.git
-$ cd goshimmer
-$ go install
-```
+Note: The Wasp node requires the Goshimmer node to have the
+[TXStream](https://github.com/iotaledger/goshimmer/tree/master/plugins/txstream)
+plugin enabled. Being an experimental plugin, it is currently disabled by default and can
+be enabled via configuration.
 
-Note: The only difference between standard Goshimmer (`master` branch) and the
-`master+wasp` branch is the
-[WaspConn](https://github.com/iotaledger/goshimmer/tree/master+wasp/dapps/waspconn)
-plugin, which accepts connections from Wasp nodes.
-
-###Microsoft Windows installation errors:
+### Microsoft Windows installation errors:
 
 If the go install command is telling you it cannot find gcc you will need to
 install [MinGW-w64](https://sourceforge.net/projects/mingw-w64/). When you do
 make sure to select *x86_64* architecture instead of the preselected *i686*
 architecture. After installation make sure to add this folder to your PATH variable:
+
 ```
 C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
 ```
@@ -66,7 +62,7 @@ On Windows you will need to use `go install -buildmode=exe ./...` instead
 - Run all tests (including integration tests which may take several minutes): `go test -timeout 20m ./...`
 - Run only unit tests: `go test -short ./...`
 
-Note: integration tests require the `goshimmer`, `wasp` and `wasp-cli` commands
+Note: integration tests require the `wasp` and `wasp-cli` commands
 in the system path (i.e. you need to run `go install ./...` before running
 tests).
 
@@ -88,3 +84,9 @@ tests).
 - [`wasp-cli`](tools/wasp-cli/README.md): A CLI client for the Wasp node.
 - [`wasp-cluster`](tools/cluster/wasp-cluster/README.md): allows to easily run
   a network of Wasp nodes, for testing.
+
+## Contributing
+
+We are accepting pull requests! Please create your branch based on `develop`.
+You can also join our [Discord server](https://discord.iota.org/) and ping us
+in `#smartcontracts-dev`.

@@ -8,9 +8,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/peering/domain"
+
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/group"
 	"go.dedis.ch/kyber/v3"
@@ -77,7 +78,7 @@ func (n *NetImpl) Self() peering.PeerSender {
 }
 
 // Group implements peering.NetworkProvider.
-func (n *NetImpl) Group(peerNetIDs []string) (peering.GroupProvider, error) {
+func (n *NetImpl) PeerGroup(peerNetIDs []string) (peering.GroupProvider, error) {
 	var err error
 	peers := make([]peering.PeerSender, len(peerNetIDs))
 	for i := range peerNetIDs {
@@ -85,13 +86,18 @@ func (n *NetImpl) Group(peerNetIDs []string) (peering.GroupProvider, error) {
 			return nil, err
 		}
 	}
-	return group.NewPeeringGroupProvider(n, peers, n.log), nil
+	return group.NewPeeringGroupProvider(n, peers, n.log)
+}
+
+// Domain creates peering.PeerDomainProvider.
+func (n *NetImpl) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
+	return domain.NewPeerDomainByNetIDs(n, peerNetIDs, n.log)
 }
 
 // Attach implements peering.NetworkProvider.
-func (n *NetImpl) Attach(chainID *coretypes.ChainID, callback func(recv *peering.RecvEvent)) interface{} {
+func (n *NetImpl) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {
 	closure := events.NewClosure(func(recv *peering.RecvEvent) {
-		if chainID == nil || *chainID == recv.Msg.ChainID {
+		if peeringID == nil || *peeringID == recv.Msg.PeeringID {
 			callback(recv)
 		}
 	})

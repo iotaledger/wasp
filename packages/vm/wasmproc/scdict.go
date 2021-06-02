@@ -6,6 +6,7 @@ package wasmproc
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -27,10 +28,10 @@ type WaspObject interface {
 
 func GetArrayObjectId(arrayObj WaspObject, index int32, typeId int32, factory ObjFactory) int32 {
 	if !arrayObj.Exists(index, typeId) {
-		arrayObj.Panic("GetArrayObjectId: Invalid index")
+		arrayObj.Panic("GetArrayObjectId: invalid index")
 	}
 	if typeId != arrayObj.GetTypeId(index) {
-		arrayObj.Panic("GetArrayObjectId: Invalid type")
+		arrayObj.Panic("GetArrayObjectId: invalid type")
 	}
 	return arrayObj.FindOrMakeObjectId(index, factory)
 }
@@ -38,10 +39,10 @@ func GetArrayObjectId(arrayObj WaspObject, index int32, typeId int32, factory Ob
 func GetMapObjectId(mapObj WaspObject, keyId int32, typeId int32, factories ObjFactories) int32 {
 	factory, ok := factories[keyId]
 	if !ok {
-		mapObj.Panic("GetMapObjectId: Invalid key")
+		mapObj.Panic("GetMapObjectId: invalid key")
 	}
 	if typeId != mapObj.GetTypeId(keyId) {
-		mapObj.Panic("GetMapObjectId: Invalid type")
+		mapObj.Panic("GetMapObjectId: invalid type")
 	}
 	return mapObj.FindOrMakeObjectId(keyId, factory)
 }
@@ -62,6 +63,9 @@ type ScDict struct {
 	typeId    int32
 	types     map[int32]int32
 }
+var _ WaspObject = &ScDict{}
+
+var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 8, 0, 34, 0}
 
 func NewScDict(vm *wasmProcessor) *ScDict {
 	return NewScDictFromKvStore(&vm.KvStoreHost, dict.New())
@@ -146,13 +150,15 @@ func (o *ScDict) GetBytes(keyId int32, typeId int32) []byte {
 	if keyId == wasmhost.KeyLength && (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 {
 		return o.Int64Bytes(int64(o.length))
 	}
-	return o.kvStore.MustGet(o.key(keyId, typeId))
+	bytes := o.kvStore.MustGet(o.key(keyId, typeId))
+	o.typeCheck(typeId, bytes)
+	return bytes
 }
 
 func (o *ScDict) GetObjectId(keyId int32, typeId int32) int32 {
 	o.validate(keyId, typeId)
 	if (typeId&wasmhost.OBJTYPE_ARRAY) == 0 && typeId != wasmhost.OBJTYPE_MAP {
-		o.Panic("GetObjectId: Invalid type")
+		o.Panic("GetObjectId: invalid type")
 	}
 	return GetMapObjectId(o, keyId, typeId, ObjFactories{
 		keyId: func() WaspObject { return &ScDict{} },
@@ -230,7 +236,10 @@ func (o *ScDict) SetBytes(keyId int32, typeId int32, bytes []byte) {
 		o.length = 0
 		return
 	}
-	o.kvStore.Set(o.key(keyId, typeId), bytes)
+
+	key := o.key(keyId, typeId)
+	o.typeCheck(typeId, bytes)
+	o.kvStore.Set(key, bytes)
 }
 
 func (o *ScDict) Suffix(keyId int32) string {
@@ -243,6 +252,35 @@ func (o *ScDict) Suffix(keyId int32) string {
 
 func (o *ScDict) Trace(format string, a ...interface{}) {
 	o.host.Trace(format, a...)
+}
+
+func (o *ScDict) typeCheck(typeId int32, bytes []byte) {
+	typeSize := typeSizes[typeId]
+	if typeSize != 0 && typeSize != len(bytes) {
+		o.Panic("typeCheck: invalid type size")
+	}
+	switch typeId {
+	case wasmhost.OBJTYPE_ADDRESS:
+		// address bytes must start with valid address type
+		if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
+			o.Panic("typeCheck: invalid address type")
+		}
+	case wasmhost.OBJTYPE_AGENT_ID:
+		// address bytes in agent id must start with valid address type
+		if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
+			o.Panic("typeCheck: invalid agent id address type")
+		}
+	case wasmhost.OBJTYPE_CHAIN_ID:
+		// chain id must be alias address
+		if ledgerstate.AddressType(bytes[0]) != ledgerstate.AliasAddressType {
+			o.Panic("typeCheck: invalid chain id address type")
+		}
+	case wasmhost.OBJTYPE_REQUEST_ID:
+		outputIndex := binary.LittleEndian.Uint16(bytes[ledgerstate.TransactionIDLength:])
+		if outputIndex > ledgerstate.MaxOutputCount {
+			o.Panic("typeCheck: invalid request id output index")
+		}
+	}
 }
 
 func (o *ScDict) validate(keyId int32, typeId int32) {

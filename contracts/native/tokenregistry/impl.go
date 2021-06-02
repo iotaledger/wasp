@@ -9,7 +9,6 @@ package tokenregistry
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -38,7 +37,7 @@ const (
 	VarReqUserDefinedMetadata = "ud"
 )
 
-// implement Processor and EntryPoint interfaces
+// implement VMProcessor and VMProcessorEntryPoint interfaces
 
 type tokenRegistryProcessor map[coretypes.Hname]tokenRegistryEntryPoint
 
@@ -63,11 +62,11 @@ type TokenMetadata struct {
 }
 
 // Point to link statically with the Wasp
-func GetProcessor() coretypes.Processor {
+func GetProcessor() coretypes.VMProcessor {
 	return entryPoints
 }
 
-func (v tokenRegistryProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
+func (v tokenRegistryProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }
@@ -103,7 +102,7 @@ func mintSupply(ctx coretypes.Sandbox) error {
 	params := ctx.Params()
 
 	reqId := ctx.RequestID()
-	colorOfTheSupply := (balance.Color)(*reqId.TransactionID())
+	colorOfTheSupply := (ledgerstate.Color)(*reqId.TransactionID())
 
 	registry := collections.NewMap(ctx.State(), VarStateTheRegistry)
 	// check for duplicated colors

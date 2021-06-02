@@ -6,15 +6,17 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/spf13/pflag"
+	"github.com/spf13/cobra"
 )
 
-var VerboseFlag bool
-var DebugFlag bool
+var (
+	VerboseFlag bool
+	DebugFlag   bool
+)
 
-func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
-	flags.BoolVarP(&VerboseFlag, "verbose", "v", false, "verbose")
-	flags.BoolVarP(&DebugFlag, "debug", "d", false, "debug")
+func Init(rootCmd *cobra.Command) {
+	rootCmd.PersistentFlags().BoolVarP(&VerboseFlag, "verbose", "", false, "verbose")
+	rootCmd.PersistentFlags().BoolVarP(&DebugFlag, "debug", "d", false, "debug")
 }
 
 func Printf(format string, args ...interface{}) {
@@ -32,11 +34,6 @@ func addNL(s string) string {
 		return s + "\n"
 	}
 	return s
-}
-
-func Usage(format string, args ...interface{}) {
-	Printf("Usage: "+addNL(format), args...)
-	os.Exit(1)
 }
 
 func Fatal(format string, args ...interface{}) {
