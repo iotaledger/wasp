@@ -161,30 +161,12 @@ func getBlockTransactionCountByHash(ctx coretypes.SandboxView) (dict.Dict, error
 	})
 }
 
-func getUncleCountByBlockHash(ctx coretypes.SandboxView) (dict.Dict, error) {
-	return withBlockByHash(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
-		if block == nil {
-			return nil
-		}
-		return result(codec.EncodeUint64(uint64(len(block.Uncles()))))
-	})
-}
-
 func getBlockTransactionCountByNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return withBlockByNumber(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
 		if block == nil {
 			return nil
 		}
 		return result(codec.EncodeUint64(uint64(len(block.Transactions()))))
-	})
-}
-
-func getUncleCountByBlockNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
-	return withBlockByNumber(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
-		if block == nil {
-			return nil
-		}
-		return result(codec.EncodeUint64(uint64(len(block.Uncles()))))
 	})
 }
 

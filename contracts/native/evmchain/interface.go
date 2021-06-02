@@ -39,9 +39,7 @@ func init() {
 		coreutil.ViewFunc(FuncGetTransactionByBlockHashAndIndex, getTransactionByBlockHashAndIndex),
 		coreutil.ViewFunc(FuncGetTransactionByBlockNumberAndIndex, getTransactionByBlockNumberAndIndex),
 		coreutil.ViewFunc(FuncGetBlockTransactionCountByHash, getBlockTransactionCountByHash),
-		coreutil.ViewFunc(FuncGetUncleCountByBlockHash, getUncleCountByBlockHash),
 		coreutil.ViewFunc(FuncGetBlockTransactionCountByNumber, getBlockTransactionCountByNumber),
-		coreutil.ViewFunc(FuncGetUncleCountByBlockNumber, getUncleCountByBlockNumber),
 		coreutil.ViewFunc(FuncGetStorage, getStorage),
 
 		// EVMchain SC management
@@ -71,9 +69,7 @@ const (
 	FuncGetTransactionByBlockHashAndIndex   = "getTransactionByBlockHashAndIndex"
 	FuncGetTransactionByBlockNumberAndIndex = "getTransactionByBlockNumberAndIndex"
 	FuncGetBlockTransactionCountByHash      = "getBlockTransactionCountByHash"
-	FuncGetUncleCountByBlockHash            = "getUncleCountByBlockHash"
 	FuncGetBlockTransactionCountByNumber    = "getBlockTransactionCountByNumber"
-	FuncGetUncleCountByBlockNumber          = "getUncleCountByBlockNumber"
 	FuncGetStorage                          = "getStorage"
 
 	// EVMchain SC management

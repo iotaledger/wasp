@@ -268,28 +268,8 @@ func (e *EVMChain) BlockTransactionCountByHash(blockHash common.Hash) (uint64, e
 	return n, err
 }
 
-func (e *EVMChain) UncleCountByBlockHash(blockHash common.Hash) (uint64, error) {
-	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetUncleCountByBlockHash,
-		evmchain.FieldBlockHash, blockHash.Bytes(),
-	)
-	if err != nil {
-		return 0, err
-	}
-	n, _, err := codec.DecodeUint64(ret.MustGet(evmchain.FieldResult))
-	return n, err
-}
-
 func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, error) {
 	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetBlockTransactionCountByNumber, paramsWithOptionalBlockNumber(blockNumber)...)
-	if err != nil {
-		return 0, err
-	}
-	n, _, err := codec.DecodeUint64(ret.MustGet(evmchain.FieldResult))
-	return n, err
-}
-
-func (e *EVMChain) UncleCountByBlockNumber(blockNumber *big.Int) (uint64, error) {
-	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetUncleCountByBlockNumber, paramsWithOptionalBlockNumber(blockNumber)...)
 	if err != nil {
 		return 0, err
 	}

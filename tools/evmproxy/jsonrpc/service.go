@@ -3,6 +3,8 @@
 package jsonrpc
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -152,47 +154,55 @@ func (s *EthService) GetBlockTransactionCountByHash(blockHash common.Hash) (hexu
 	return hexutil.Uint(ret), err
 }
 
-func (s *EthService) GetUncleCountByBlockHash(blockHash common.Hash) (hexutil.Uint, error) {
-	ret, err := s.evmChain.UncleCountByBlockHash(blockHash)
-	return hexutil.Uint(ret), err
-}
-
 func (s *EthService) GetBlockTransactionCountByNumber(blockNumber rpc.BlockNumber) (hexutil.Uint, error) {
 	ret, err := s.evmChain.BlockTransactionCountByNumber(parseBlockNumber(blockNumber))
 	return hexutil.Uint(ret), err
 }
 
-func (s *EthService) GetUncleCountByBlockNumber(blockNumber rpc.BlockNumber) (hexutil.Uint, error) {
-	ret, err := s.evmChain.UncleCountByBlockNumber(parseBlockNumber(blockNumber))
-	return hexutil.Uint(ret), err
+func (s *EthService) GetUncleCountByBlockHash(blockHash common.Hash) hexutil.Uint {
+	return hexutil.Uint(0) // no uncles are ever generated in evmchain contract
 }
 
+func (s *EthService) GetUncleCountByBlockNumber(blockNumber rpc.BlockNumber) hexutil.Uint {
+	return hexutil.Uint(0) // no uncles are ever generated in evmchain contract
+}
+
+func (s *EthService) GetUncleByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) map[string]interface{} {
+	return nil // no uncles are ever generated in evmchain contract
+}
+
+func (s *EthService) GetUncleByBlockNumberAndIndex(blockNumberOrTag rpc.BlockNumber, index hexutil.Uint) map[string]interface{} {
+	return nil // no uncles are ever generated in evmchain contract
+}
+
+func (s *EthService) GasPrice() *hexutil.Big     { return (*hexutil.Big)(big.NewInt(0)) }
+func (s *EthService) Mining() bool               { return false }
+func (s *EthService) Hashrate() float64          { return 0 }
+func (s *EthService) Coinbase() common.Address   { return common.Address{} }
+func (s *EthService) Syncing() bool              { return false }
+func (s *EthService) Accounts() []common.Address { return []common.Address{} }
+func (s *EthService) GetCompilers() []string     { return []string{} }
+
 /*
-func (s *EthService) Syncing()                             { panic("not implemented") }
-func (s *EthService) Coinbase()                            { panic("not implemented") }
-func (s *EthService) Mining()                              { panic("not implemented") }
-func (s *EthService) Hashrate()                            { panic("not implemented") }
-func (s *EthService) GasPrice()                            { panic("not implemented") }
-func (s *EthService) Accounts()                            { panic("not implemented") }
-func (s *EthService) Sign()                                { panic("not implemented") }
-func (s *EthService) SignTransaction()                     { panic("not implemented") }
-func (s *EthService) SendTransaction()                     { panic("not implemented") }
-func (s *EthService) GetUncleByBlockHashAndIndex()         { panic("not implemented") }
-func (s *EthService) GetUncleByBlockNumberAndIndex()       { panic("not implemented") }
-func (s *EthService) GetCompilers()                        { panic("not implemented") }
-func (s *EthService) CompileLLL()                          { panic("not implemented") }
-func (s *EthService) CompileSolidity()                     { panic("not implemented") }
-func (s *EthService) CompileSerpent()                      { panic("not implemented") }
-func (s *EthService) NewFilter()                           { panic("not implemented") }
-func (s *EthService) NewBlockFilter()                      { panic("not implemented") }
-func (s *EthService) NewPendingTransactionFilter()         { panic("not implemented") }
-func (s *EthService) UninstallFilter()                     { panic("not implemented") }
-func (s *EthService) GetFilterChanges()                    { panic("not implemented") }
-func (s *EthService) GetFilterLogs()                       { panic("not implemented") }
-func (s *EthService) GetLogs()                             { panic("not implemented") }
-func (s *EthService) GetWork()                             { panic("not implemented") }
-func (s *EthService) SubmitWork()                          { panic("not implemented") }
-func (s *EthService) SubmitHashrate()                      { panic("not implemented") }
+func (s *EthService) GetUncleByBlockNumberAndIndex()
+func (s *EthService) NewFilter()
+func (s *EthService) NewBlockFilter()
+func (s *EthService) NewPendingTransactionFilter()
+func (s *EthService) UninstallFilter()
+func (s *EthService) GetFilterChanges()
+func (s *EthService) GetFilterLogs()
+func (s *EthService) GetLogs()
+func (s *EthService) GetWork()
+
+Intentionally left unimplemented
+func (s *EthService) Sign()
+func (s *EthService) SignTransaction()
+func (s *EthService) SendTransaction()
+func (s *EthService) SubmitWork()
+func (s *EthService) SubmitHashrate()
+func (s *EthService) CompileLLL()
+func (s *EthService) CompileSolidity()
+func (s *EthService) CompileSerpent()
 */
 
 type NetService struct{}
@@ -205,13 +215,8 @@ func (e *NetService) Version() string {
 	return "1074" // IOTA -- get it?
 }
 
-func (s *NetService) Listening() bool {
-	return true
-}
-
-func (s *NetService) PeerCount() hexutil.Uint {
-	return 0
-}
+func (s *NetService) Listening() bool         { return true }
+func (s *NetService) PeerCount() hexutil.Uint { return 0 }
 
 type Web3Service struct{}
 

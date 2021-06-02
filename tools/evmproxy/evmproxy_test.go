@@ -164,11 +164,25 @@ func (e *env) transactionByBlockHashAndIndex(blockHash common.Hash, index uint) 
 	return tx
 }
 
+func (e *env) uncleByBlockHashAndIndex(blockHash common.Hash, index uint) map[string]interface{} {
+	var uncle map[string]interface{}
+	err := e.rawClient.Call(&uncle, "eth_getUncleByBlockHashAndIndex", blockHash, hexutil.Uint(index))
+	require.NoError(e.t, err)
+	return uncle
+}
+
 func (e *env) transactionByBlockNumberAndIndex(blockNumber *big.Int, index uint) *jsonrpc.RPCTransaction {
 	var tx *jsonrpc.RPCTransaction
 	err := e.rawClient.Call(&tx, "eth_getTransactionByBlockNumberAndIndex", (*hexutil.Big)(blockNumber), hexutil.Uint(index))
 	require.NoError(e.t, err)
 	return tx
+}
+
+func (e *env) uncleByBlockNumberAndIndex(blockNumber *big.Int, index uint) map[string]interface{} {
+	var uncle map[string]interface{}
+	err := e.rawClient.Call(&uncle, "eth_getUncleByBlockNumberAndIndex", (*hexutil.Big)(blockNumber), hexutil.Uint(index))
+	require.NoError(e.t, err)
+	return uncle
 }
 
 func (e *env) blockTransactionCountByHash(hash common.Hash) uint {
@@ -322,6 +336,15 @@ func TestRPCGetTransactionByBlockHashAndIndex(t *testing.T) {
 	require.Equal(t, block1.Transactions()[0].Hash(), tx.Hash())
 }
 
+func TestRPCGetUncleByBlockHashAndIndex(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	require.Nil(t, env.uncleByBlockHashAndIndex(common.Hash{}, 0))
+	env.requestFunds(receiverAddress)
+	block1 := env.blockByNumber(big.NewInt(1))
+	require.Nil(t, env.uncleByBlockHashAndIndex(block1.Hash(), 0))
+}
+
 func TestRPCGetTransactionByBlockNumberAndIndex(t *testing.T) {
 	env := newEnv(t)
 	_, receiverAddress := generateKey(t)
@@ -331,6 +354,15 @@ func TestRPCGetTransactionByBlockNumberAndIndex(t *testing.T) {
 	tx := env.transactionByBlockNumberAndIndex(block1.Number(), 0)
 	require.EqualValues(t, block1.Hash(), *tx.BlockHash)
 	require.EqualValues(t, 0, *tx.TransactionIndex)
+}
+
+func TestRPCGetUncleByBlockNumberAndIndex(t *testing.T) {
+	env := newEnv(t)
+	_, receiverAddress := generateKey(t)
+	require.Nil(t, env.uncleByBlockNumberAndIndex(big.NewInt(3), 0))
+	env.requestFunds(receiverAddress)
+	block1 := env.blockByNumber(big.NewInt(1))
+	require.Nil(t, env.uncleByBlockNumberAndIndex(block1.Number(), 0))
 }
 
 func TestRPCGetTransactionCountByHash(t *testing.T) {
