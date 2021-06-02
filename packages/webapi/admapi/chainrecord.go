@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
+	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
@@ -41,16 +41,18 @@ func handlePutChainRecord(c echo.Context) error {
 		return httperrors.BadRequest("Invalid request body")
 	}
 
+	registry := registry.DefaultRegistry()
 	bd := req.Record()
 
-	bd2, err := registry_pkg.ChainRecordFromRegistry(bd.ChainID)
+	bd2, err := registry.GetChainRecordByChainID(bd.ChainID)
+
 	if err != nil {
 		return err
 	}
 	if bd2 != nil {
 		return httperrors.Conflict(fmt.Sprintf("Record already exists: %s", bd.ChainID.String()))
 	}
-	if err = bd.SaveToRegistry(); err != nil {
+	if err = registry.SaveChainRecord(bd); err != nil {
 		return err
 	}
 
@@ -64,7 +66,7 @@ func handleGetChainRecord(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
-	bd, err := registry_pkg.ChainRecordFromRegistry(chainID)
+	bd, err := registry.DefaultRegistry().GetChainRecordByChainID(chainID)
 	if err != nil {
 		return err
 	}
@@ -75,7 +77,7 @@ func handleGetChainRecord(c echo.Context) error {
 }
 
 func handleGetChainRecordList(c echo.Context) error {
-	lst, err := registry_pkg.GetChainRecords()
+	lst, err := registry.DefaultRegistry().GetChainRecords()
 	if err != nil {
 		return err
 	}

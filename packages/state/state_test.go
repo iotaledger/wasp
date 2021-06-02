@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/database/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -68,26 +68,26 @@ func TestOriginHashes(t *testing.T) {
 func TestStateWithDB(t *testing.T) {
 	t.Run("state not found", func(t *testing.T) {
 		log := testlogger.NewLogger(t)
-		dbp := dbprovider.NewInMemoryDBProvider(log)
+		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
 		chainID := coretypes.RandomChainID([]byte("1"))
-		_, exists, err := LoadSolidState(dbp, chainID)
+		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
 	})
 	t.Run("save zero state", func(t *testing.T) {
 		log := testlogger.NewLogger(t)
-		dbp := dbprovider.NewInMemoryDBProvider(log)
+		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
 		chainID := coretypes.RandomChainID([]byte("1"))
-		_, exists, err := LoadSolidState(dbp, chainID)
+		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
 
-		vs1, err := CreateOriginState(dbp, chainID)
+		vs1, err := CreateOriginState(store, chainID)
 		require.NoError(t, err)
 		require.EqualValues(t, 0, vs1.BlockIndex())
 		require.True(t, vs1.Timestamp().IsZero())
 
-		vs2, exists, err := LoadSolidState(dbp, chainID)
+		vs2, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.True(t, exists)
 
@@ -101,30 +101,30 @@ func TestStateWithDB(t *testing.T) {
 	})
 	t.Run("load 0 block", func(t *testing.T) {
 		log := testlogger.NewLogger(t)
-		dbp := dbprovider.NewInMemoryDBProvider(log)
+		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
 		chainID := coretypes.RandomChainID([]byte("1"))
-		_, exists, err := LoadSolidState(dbp, chainID)
+		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
 
-		vs1, err := CreateOriginState(dbp, chainID)
+		vs1, err := CreateOriginState(store, chainID)
 		require.NoError(t, err)
 		require.EqualValues(t, 0, vs1.BlockIndex())
 		require.True(t, vs1.Timestamp().IsZero())
 
-		data, err := LoadBlockBytes(dbp, chainID, 0)
+		data, err := LoadBlockBytes(store, 0)
 		require.NoError(t, err)
 		require.EqualValues(t, NewOriginBlock().Bytes(), data)
 	})
 	t.Run("apply, save and load block 1", func(t *testing.T) {
 		log := testlogger.NewLogger(t)
-		dbp := dbprovider.NewInMemoryDBProvider(log)
+		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
 		chainID := coretypes.RandomChainID([]byte("1"))
-		_, exists, err := LoadSolidState(dbp, chainID)
+		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
 
-		vs1, err := CreateOriginState(dbp, chainID)
+		vs1, err := CreateOriginState(store, chainID)
 		require.NoError(t, err)
 
 		nowis := time.Now()
@@ -144,7 +144,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, nowis.Equal(vs1.Timestamp()))
 
-		vs2, exists, err := LoadSolidState(dbp, chainID)
+		vs2, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.True(t, exists)
 
@@ -153,11 +153,11 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, vs1.Timestamp(), vs2.Timestamp())
 		require.EqualValues(t, 1, vs2.BlockIndex())
 
-		data, err := LoadBlockBytes(dbp, chainID, 0)
+		data, err := LoadBlockBytes(store, 0)
 		require.NoError(t, err)
 		require.EqualValues(t, NewOriginBlock().Bytes(), data)
 
-		data, err = LoadBlockBytes(dbp, chainID, 1)
+		data, err = LoadBlockBytes(store, 1)
 		require.NoError(t, err)
 		require.EqualValues(t, block1.Bytes(), data)
 
@@ -168,13 +168,13 @@ func TestStateWithDB(t *testing.T) {
 	})
 	t.Run("state reader", func(t *testing.T) {
 		log := testlogger.NewLogger(t)
-		dbp := dbprovider.NewInMemoryDBProvider(log)
+		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
 		chainID := coretypes.RandomChainID([]byte("1"))
-		_, exists, err := LoadSolidState(dbp, chainID)
+		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
 
-		vs1, err := CreateOriginState(dbp, chainID)
+		vs1, err := CreateOriginState(store, chainID)
 		require.NoError(t, err)
 
 		nowis := time.Now()
@@ -194,11 +194,11 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 1, vs1.BlockIndex())
 		require.True(t, nowis.Equal(vs1.Timestamp()))
 
-		vs2, exists, err := LoadSolidState(dbp, chainID)
+		vs2, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.True(t, exists)
 
-		rdr, err := NewStateReader(dbp, chainID)
+		rdr, err := NewStateReader(store, chainID)
 		require.NoError(t, err)
 
 		require.EqualValues(t, vs2.BlockIndex(), rdr.BlockIndex())
@@ -210,8 +210,8 @@ func TestStateWithDB(t *testing.T) {
 
 func TestVariableStateBasic(t *testing.T) {
 	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
-	dbp := dbprovider.NewInMemoryDBProvider(testlogger.NewLogger(t))
-	vs1, err := CreateOriginState(dbp, chainID)
+	store := dbprovider.NewInMemoryDBProvider(testlogger.NewLogger(t)).GetKVStore()
+	vs1, err := CreateOriginState(store, chainID)
 	require.NoError(t, err)
 	h1 := vs1.Hash()
 	require.EqualValues(t, OriginStateHash(), h1)
@@ -241,9 +241,9 @@ func TestVariableStateBasic(t *testing.T) {
 func TestStateReader(t *testing.T) {
 	t.Run("state not found", func(t *testing.T) {
 		log := testlogger.NewLogger(t)
-		dbp := dbprovider.NewInMemoryDBProvider(log)
+		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
 		chainID := coretypes.RandomChainID([]byte("1"))
-		st, err := NewStateReader(dbp, chainID)
+		st, err := NewStateReader(store, chainID)
 		require.NoError(t, err)
 		ok, err := st.KVStoreReader().Has("kuku")
 		require.NoError(t, err)

@@ -6,8 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/dbprovider"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -16,9 +15,8 @@ import (
 )
 
 func TestSetThenGet(t *testing.T) {
-	dbp := dbprovider.NewInMemoryDBProvider(testlogger.NewLogger(t))
 	chainID := coretypes.RandomChainID([]byte("hmm"))
-	virtualState, err := state.CreateOriginState(dbp, chainID)
+	virtualState, err := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")
@@ -79,9 +77,8 @@ func TestSetThenGet(t *testing.T) {
 }
 
 func TestIterate(t *testing.T) {
-	dbp := dbprovider.NewInMemoryDBProvider(testlogger.NewLogger(t))
 	chainID := coretypes.RandomChainID([]byte("hmm"))
-	virtualState, err := state.CreateOriginState(dbp, chainID)
+	virtualState, err := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")

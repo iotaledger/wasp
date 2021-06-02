@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -25,8 +25,8 @@ type viewcontext struct {
 	log         *logger.Logger
 }
 
-func NewFromDB(dbp *dbprovider.DBProvider, chainID coretypes.ChainID, proc *processors.ProcessorCache) (*viewcontext, error) {
-	state_, ok, err := state.LoadSolidState(dbp, &chainID)
+func NewFromDB(store kvstore.KVStore, chainID coretypes.ChainID, proc *processors.ProcessorCache) (*viewcontext, error) {
+	state_, ok, err := state.LoadSolidState(store, &chainID)
 	if err != nil {
 		return nil, err
 	}

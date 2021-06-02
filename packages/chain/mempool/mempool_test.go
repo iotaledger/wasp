@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
-	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/database/dbprovider"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
@@ -25,9 +25,9 @@ import (
 
 func createStateReader(t *testing.T, log *logger.Logger) (state.StateReader, state.VirtualState) {
 	dbp := dbprovider.NewInMemoryDBProvider(log)
-	vs, err := state.CreateOriginState(dbp, nil)
+	vs, err := state.CreateOriginState(dbp.GetKVStore(), nil)
 	require.NoError(t, err)
-	ret, err := state.NewStateReader(dbp, nil)
+	ret, err := state.NewStateReader(dbp.GetKVStore(), nil)
 	require.NoError(t, err)
 	return ret, vs
 }

@@ -30,7 +30,7 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 			msg.BlockIndex, sm.stateOutput.GetStateIndex())
 		return
 	}
-	blockBytes, err := state.LoadBlockBytes(sm.dbp, sm.chain.ID(), msg.BlockIndex)
+	blockBytes, err := state.LoadBlockBytes(sm.store, msg.BlockIndex)
 	if err != nil {
 		sm.log.Errorf("EventGetBlockMsg: LoadBlockBytes: %v", err)
 		return

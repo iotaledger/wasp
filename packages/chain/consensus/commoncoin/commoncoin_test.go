@@ -9,9 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-
-	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
@@ -111,7 +110,7 @@ func setupCommonCoinNodes(
 	peeringID peering.PeeringID,
 	address ledgerstate.Address,
 	peerNetIDs []string,
-	nodeRegistries []coretypes.DKShareRegistryProvider,
+	nodeRegistries []registry.DKShareRegistryProvider,
 	networkProviders []peering.NetworkProvider,
 	log *logger.Logger,
 ) []commoncoin.Provider {

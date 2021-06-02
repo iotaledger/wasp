@@ -10,9 +10,9 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -44,13 +44,13 @@ func SetupDkg(
 	peerSecs []kyber.Scalar,
 	suite *pairing.SuiteBn256,
 	log *logger.Logger,
-) (ledgerstate.Address, []coretypes.DKShareRegistryProvider) {
+) (ledgerstate.Address, []registry.DKShareRegistryProvider) {
 	timeout := 1000 * time.Second
 	networkProviders := SetupNet(peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(), log)
 	//
 	// Initialize the DKG subsystem in each node.
 	dkgNodes := make([]*dkg.Node, len(peerNetIDs))
-	registries := make([]coretypes.DKShareRegistryProvider, len(peerNetIDs))
+	registries := make([]registry.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range peerNetIDs {
 		registries[i] = testutil.NewDkgRegistryProvider(suite)
 		dkgNodes[i] = dkg.NewNode(
@@ -79,7 +79,7 @@ func SetupDkgPregenerated(
 	threshold uint16,
 	peerNetIDs []string,
 	suite *pairing.SuiteBn256,
-) (ledgerstate.Address, []coretypes.DKShareRegistryProvider) {
+) (ledgerstate.Address, []registry.DKShareRegistryProvider) {
 	var err error
 	var serializedDks []string
 	switch len(peerNetIDs) {
@@ -103,7 +103,7 @@ func SetupDkgPregenerated(
 		t.Fatalf("have no keys pregenerated for N=%v", len(peerNetIDs))
 	}
 	dks := make([]*tcrypto.DKShare, len(serializedDks))
-	registries := make([]coretypes.DKShareRegistryProvider, len(peerNetIDs))
+	registries := make([]registry.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range dks {
 		var dksBytes []byte
 		dksBytes, err = base58.Decode(serializedDks[i])
