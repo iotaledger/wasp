@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry_pkg"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/labstack/echo/v4"
 	"github.com/mr-tron/base58"
 )
@@ -38,8 +38,8 @@ type WaspServices interface {
 	ConfigDump() map[string]interface{}
 	ExploreAddressBaseURL() string
 	NetworkProvider() peering.NetworkProvider
-	GetChainRecords() ([]*registry_pkg.ChainRecord, error)
-	GetChainRecord(chainID *coretypes.ChainID) (*registry_pkg.ChainRecord, error)
+	GetChainRecords() ([]*chainrecord.ChainRecord, error)
+	GetChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error)
 	GetChainState(chainID *coretypes.ChainID) (*ChainState, error)
 	GetChain(chainID *coretypes.ChainID) chain.Chain
 	CallView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error)

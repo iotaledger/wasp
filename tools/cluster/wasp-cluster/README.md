@@ -70,9 +70,8 @@ for quick tests, but is far from how the ledger works in a production
 environment.
 
 To connect the Wasp cluster to a more realistic environment (e.g. to be able to
-persist changes in the ledger), you can use the `docker-network` tool available in the
-Goshimmer repository (`develop+wasp` branch) in order to start a cluster of
-Goshimmer nodes.
+persist the ledger), you can use the `docker-network` tool available
+in the Goshimmer repository in order to start a cluster of Goshimmer nodes.
 
 Example steps:
 

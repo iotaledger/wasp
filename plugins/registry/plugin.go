@@ -6,25 +6,25 @@ package registry
 import (
 	"github.com/iotaledger/hive.go/logger"
 	hive_node "github.com/iotaledger/hive.go/node"
-	registry_pkg "github.com/iotaledger/wasp/packages/registry_pkg"
+	registry "github.com/iotaledger/wasp/packages/registry"
 	tcrypto_pkg "github.com/iotaledger/wasp/packages/tcrypto"
 )
 
 const pluginName = "Registry"
 
 var (
-	defaultRegistry *registry_pkg.Impl // A singleton.
+	defaultRegistry *registry.Impl // A singleton.
 )
 
 // DefaultRegistry returns an initialized default registry.
-func DefaultRegistry() *registry_pkg.Impl {
+func DefaultRegistry() *registry.Impl {
 	return defaultRegistry
 }
 
 // Init is an entry point for the plugin.
 func Init(suite tcrypto_pkg.Suite) *hive_node.Plugin {
 	configure := func(_ *hive_node.Plugin) {
-		defaultRegistry = registry_pkg.NewRegistry(suite, logger.NewLogger(pluginName))
+		defaultRegistry = registry.NewRegistry(suite, logger.NewLogger(pluginName), nil)
 	}
 	run := func(_ *hive_node.Plugin) {
 		// Nothing to run here.
@@ -34,5 +34,5 @@ func Init(suite tcrypto_pkg.Suite) *hive_node.Plugin {
 
 // InitFlags configures the relevant CLI flags.
 func InitFlags() {
-	registry_pkg.InitFlags()
+	registry.InitFlags()
 }

@@ -7,10 +7,10 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/plugins/chains"
+	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
@@ -34,7 +34,7 @@ func handleActivateChain(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	bd, err := registry_pkg.ActivateChainRecord(chainID)
+	bd, err := registry.DefaultRegistry().ActivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func handleDeactivateChain(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	bd, err := registry_pkg.DeactivateChainRecord(chainID)
+	bd, err := registry.DefaultRegistry().DeactivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}

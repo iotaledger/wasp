@@ -10,10 +10,11 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -44,7 +45,7 @@ type MockedEnv struct {
 type MockedNode struct {
 	NetID           string
 	Env             *MockedEnv
-	Db              *dbprovider.DBProvider
+	store           kvstore.KVStore
 	NodeConn        *testchain.MockedNodeConn
 	ChainCore       *testchain.MockedChainCore
 	Peers           peering.PeerDomainProvider
@@ -178,12 +179,12 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers Timers) *MockedNode {
 		NetID:     nodeID,
 		Env:       env,
 		NodeConn:  testchain.NewMockedNodeConnection("Node_" + nodeID),
-		Db:        dbprovider.NewInMemoryDBProvider(log),
+		store:     mapdb.NewMapDB(),
 		ChainCore: testchain.NewMockedChainCore(env.ChainID, log),
 		Peers:     peers,
 		Log:       log,
 	}
-	ret.StateManager = New(ret.Db, ret.ChainCore, ret.Peers, ret.NodeConn, log, timers)
+	ret.StateManager = New(ret.store, ret.ChainCore, ret.Peers, ret.NodeConn, log, timers)
 	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualState, tx *ledgerstate.Transaction) {
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
