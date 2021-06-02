@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"go.uber.org/atomic"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
@@ -26,7 +26,7 @@ type ChainCore interface {
 	ReceiveMessage(interface{})
 	Events() ChainEvents
 	Processors() *processors.ProcessorCache
-	GlobalSolidIndex() *atomic.Uint32
+	GlobalStateReadCheckpoint() coreutil.OptimisticReadCheckpoint
 }
 
 type Chain interface {

@@ -6,7 +6,7 @@ package chainimpl
 import (
 	"time"
 
-	"go.uber.org/atomic"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -26,8 +26,8 @@ func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
 }
 
-func (c *chainObj) GlobalSolidIndex() *atomic.Uint32 {
-	return &c.globalSolidIndex
+func (c *chainObj) GlobalStateReadCheckpoint() coreutil.OptimisticReadCheckpoint {
+	return c.globalStateCheckpoint
 }
 
 func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {

@@ -117,7 +117,7 @@ func (c *consensus) runVMIfNeeded() {
 		Log:                c.log,
 	}
 	stateIndex := c.stateOutput.GetStateIndex()
-	atomicStateIndex := c.chain.GlobalSolidIndex()
+	atomicStateIndex := c.chain.GlobalStateReadCheckpoint()
 	task.SolidStateInvalid = func() bool {
 		// VM will abandon calculation if solid state change
 		return atomicStateIndex.Load() != stateIndex
@@ -458,7 +458,7 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 }
 
 func (c *consensus) setNewState(msg *chain.StateTransitionMsg) {
-	glbIndex := c.chain.GlobalSolidIndex().Load()
+	glbIndex := c.chain.GlobalStateReadCheckpoint().Load()
 	if glbIndex != msg.State.BlockIndex() || glbIndex != msg.StateOutput.GetStateIndex() {
 		c.log.Warnf("setNewState: inconsistent state index: stateIndex: %d, output index: %d, global: %d",
 			msg.State.BlockIndex(), msg.StateOutput.GetStateIndex(), glbIndex)

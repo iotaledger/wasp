@@ -100,7 +100,7 @@ func (sm *stateManager) initLoadState() {
 			solidState.BlockIndex(), solidState.Hash().String())
 	} else {
 		// create origin state in DB
-		sm.chain.GlobalSolidIndex().Store(0)
+		sm.chain.GlobalStateReadCheckpoint().Store(0)
 		sm.solidState, err = state.CreateOriginState(sm.store, sm.chain.ID())
 		if err != nil {
 			go sm.chain.ReceiveMessage(chain.DismissChainMsg{

@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 )
@@ -65,7 +66,7 @@ func (m *MockedChainCore) ID() *coretypes.ChainID {
 	return &m.chainID
 }
 
-func (c *MockedChainCore) GlobalSolidIndex() *atomic.Uint32 {
+func (c *MockedChainCore) GlobalStateReadCheckpoint() coreutil.OptimisticReadCheckpoint {
 	return &c.solidStateIndex
 }
 
