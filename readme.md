@@ -29,18 +29,13 @@ commercial settings or whenever processing of critical data is involved._
 ## Prerequisites
 
 - Go 1.15
-- The `goshimmer` command, compiled from [Goshimmer `develop+wasp` branch](https://github.com/iotaledger/goshimmer/tree/develop+wasp)
+- Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node for
+  production operation
 
-```
-$ git clone -b develop+wasp https://github.com/iotaledger/goshimmer.git
-$ cd goshimmer
-$ go install
-```
-
-Note: The only difference between standard Goshimmer (`master` branch) and the
-`develop+wasp` branch is the
-[WaspConn](https://github.com/iotaledger/goshimmer/tree/develop+wasp/dapps/waspconn)
-plugin, which accepts connections from Wasp nodes.
+Note: The Wasp node requires the Goshimmer node to have the
+[TXStream](https://github.com/iotaledger/goshimmer/tree/master/plugins/txstream)
+plugin enabled. Being an experimental plugin, it is currently disabled by default and can
+be enabled via configuration.
 
 ### Microsoft Windows installation errors:
 
