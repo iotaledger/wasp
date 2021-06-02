@@ -1,14 +1,14 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package registry_pkg
+package registry
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/dbprovider"
-	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
+	"github.com/iotaledger/wasp/packages/database/dbkeys"
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/plugins/database"
 )
@@ -16,35 +16,31 @@ import (
 // Impl is just a placeholder to implement all interfaces needed by different components.
 // Each of the interfaces are implemented in the corresponding file in this package.
 type Impl struct {
-	suite      tcrypto.Suite
-	log        *logger.Logger
-	dbProvider *dbprovider.DBProvider
+	suite tcrypto.Suite
+	log   *logger.Logger
+	store kvstore.KVStore
 }
 
 // New creates new instance of the registry implementation.
-func NewRegistry(suite tcrypto.Suite, log *logger.Logger, dbp ...*dbprovider.DBProvider) *Impl {
+func NewRegistry(suite tcrypto.Suite, log *logger.Logger, store kvstore.KVStore) *Impl {
+	if store == nil {
+		store = database.GetRegistryKVStore()
+	}
 	ret := &Impl{
 		suite: suite,
 		log:   log.Named("registry"),
+		store: store,
 	}
-	if len(dbp) == 0 {
-		ret.dbProvider = database.GetInstance()
-	} else {
-		ret.dbProvider = dbp[0]
-	}
+
 	return ret
 }
 
-func (i *Impl) DBProvider() *dbprovider.DBProvider {
-	return i.dbProvider
-}
-
 func dbKeyCommitteeRecord(addr ledgerstate.Address) []byte {
-	return dbprovider.MakeKey(dbprovider.ObjectTypeCommitteeRecord, addr.Bytes())
+	return dbkeys.MakeKey(dbkeys.ObjectTypeCommitteeRecord, addr.Bytes())
 }
 
 func (r *Impl) GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error) {
-	data, err := r.dbProvider.GetRegistryPartition().Get(dbKeyCommitteeRecord(addr))
+	data, err := r.store.Get(dbKeyCommitteeRecord(addr))
 	if err == kvstore.ErrKeyNotFound {
 		return nil, nil
 	}
@@ -55,5 +51,5 @@ func (r *Impl) GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.C
 }
 
 func (r *Impl) SaveCommitteeRecord(rec *committee_record.CommitteeRecord) error {
-	return r.dbProvider.GetRegistryPartition().Set(dbKeyCommitteeRecord(rec.Address), rec.Bytes())
+	return r.store.Set(dbKeyCommitteeRecord(rec.Address), rec.Bytes())
 }

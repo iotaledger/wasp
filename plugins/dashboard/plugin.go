@@ -20,7 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry_pkg"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
@@ -28,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -60,21 +61,21 @@ func (w *waspServices) ExploreAddressBaseURL() string {
 	return exploreAddressUrlFromGoshimmerUri(parameters.GetString(parameters.NodeAddress))
 }
 
-func (w *waspServices) GetChainRecords() ([]*registry_pkg.ChainRecord, error) {
-	return registry_pkg.GetChainRecords()
+func (w *waspServices) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
+	return registry.DefaultRegistry().GetChainRecords()
 }
 
-func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*registry_pkg.ChainRecord, error) {
-	return registry_pkg.ChainRecordFromRegistry(chainID)
+func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error) {
+	return registry.DefaultRegistry().GetChainRecordByChainID(chainID)
 }
 
 func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*dashboard.ChainState, error) {
-	// TODO get rid of database.GetInstance(), pass dbprovider as parameter
-	virtualState, _, err := state.LoadSolidState(database.GetInstance(), chainID)
+	chainStore := database.GetKVStore(chainID)
+	virtualState, _, err := state.LoadSolidState(chainStore, chainID)
 	if err != nil {
 		return nil, err
 	}
-	block, err := state.LoadBlock(database.GetInstance(), chainID, virtualState.BlockIndex())
+	block, err := state.LoadBlock(chainStore, virtualState.BlockIndex())
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +92,8 @@ func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.Chain {
 }
 
 func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
-	vctx, err := viewcontext.NewFromDB(database.GetInstance(), *chain.ID(), chain.Processors())
+	chainStore := database.GetKVStore(chain.ID())
+	vctx, err := viewcontext.NewFromDB(chainStore, *chain.ID(), chain.Processors())
 	if err != nil {
 		return nil, fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
 	}

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/registry"
 
 	"github.com/iotaledger/wasp/packages/util"
 
@@ -28,11 +29,12 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
@@ -56,8 +58,8 @@ type mockedEnv struct {
 	PubKeys           []kyber.Point
 	PrivKeys          []kyber.Scalar
 	NetworkProviders  []peering.NetworkProvider
-	DKSRegistries     []coretypes.DKShareRegistryProvider
-	DB                *dbprovider.DBProvider
+	DKSRegistries     []registry.DKShareRegistryProvider
+	store             kvstore.KVStore
 	SolidState        state.VirtualState
 	StateReader       state.StateReader
 	StateOutput       *ledgerstate.AliasOutput
@@ -169,10 +171,10 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 
 	ret.ChainID = *coretypes.NewChainID(ret.StateOutput.GetAliasAddress())
 
-	ret.DB = dbprovider.NewInMemoryDBProvider(log)
-	ret.SolidState, err = state.CreateOriginState(ret.DB, &ret.ChainID)
+	ret.store = mapdb.NewMapDB()
+	ret.SolidState, err = state.CreateOriginState(ret.store, &ret.ChainID)
 	require.NoError(t, err)
-	ret.StateReader, err = state.NewStateReader(ret.DB, &ret.ChainID)
+	ret.StateReader, err = state.NewStateReader(ret.store, &ret.ChainID)
 	require.NoError(t, err)
 
 	for i := range ret.Nodes {
@@ -317,6 +319,7 @@ func (env *mockedEnv) eventStateTransition() {
 	for _, node := range env.Nodes {
 		go func(n *mockedNode) {
 			n.Mempool.RemoveRequests(env.RequestIDsLast...)
+			n.ChainCore.GlobalSolidIndex().Store(solidState.BlockIndex())
 
 			n.Consensus.EventStateTransitionMsg(&chain.StateTransitionMsg{
 				State:          solidState.Clone(),

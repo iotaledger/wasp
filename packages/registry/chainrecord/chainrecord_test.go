@@ -1,4 +1,4 @@
-package registry_pkg
+package chainrecord
 
 import (
 	"testing"
@@ -10,7 +10,7 @@ import (
 func TestChainRecord(t *testing.T) {
 	chainID := coretypes.RandomChainID()
 
-	rec := NewChainRecord(chainID)
+	rec := NewChainRecord(chainID, false)
 	require.False(t, rec.Active)
 	recBack, err := ChainRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)

@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/dbprovider"
+	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -30,7 +30,7 @@ type virtualState struct {
 func newVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
 	ret := &virtualState{
 		db:        db,
-		kvs:       buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(subRealm(db, []byte{dbprovider.ObjectTypeStateVariable}))),
+		kvs:       buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeStateVariable}))),
 		empty:     true,
 		updateLog: make([]StateUpdate, 0),
 	}
@@ -173,15 +173,14 @@ type stateReader struct {
 }
 
 // NewStateReader creates new reader. Checks consistency
-func NewStateReader(dbp *dbprovider.DBProvider, chainID *coretypes.ChainID) (*stateReader, error) {
-	partition := dbp.GetPartition(chainID)
-	stateIndex, _, exists, err := loadStateIndexAndHashFromDb(partition)
+func NewStateReader(store kvstore.KVStore, chainID *coretypes.ChainID) (*stateReader, error) {
+	stateIndex, _, exists, err := loadStateIndexAndHashFromDb(store)
 	if err != nil {
 		return nil, xerrors.Errorf("NewStateReader: %w", err)
 	}
 	ret := &stateReader{
-		chainPartition: partition,
-		chainState:     kv.NewHiveKVStoreReader(subRealm(partition, []byte{dbprovider.ObjectTypeStateVariable})),
+		chainPartition: store,
+		chainState:     kv.NewHiveKVStoreReader(subRealm(store, []byte{dbkeys.ObjectTypeStateVariable})),
 	}
 	if !exists {
 		return ret, nil
@@ -214,7 +213,7 @@ func (r *stateReader) Timestamp() time.Time {
 }
 
 func (r *stateReader) Hash() hashing.HashValue {
-	hashBIn, err := r.chainPartition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeStateHash))
+	hashBIn, err := r.chainPartition.Get(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash))
 	if err != nil {
 		panic(err)
 	}
@@ -230,7 +229,7 @@ func (r *stateReader) KVStoreReader() kv.KVStoreReader {
 }
 
 func loadStateIndexAndHashFromDb(partition kvstore.KVStore) (uint32, hashing.HashValue, bool, error) {
-	v, err := partition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeStateHash))
+	v, err := partition.Get(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash))
 	if err == kvstore.ErrKeyNotFound {
 		return 0, hashing.HashValue{}, false, nil
 	}
@@ -241,7 +240,7 @@ func loadStateIndexAndHashFromDb(partition kvstore.KVStore) (uint32, hashing.Has
 	if err != nil {
 		return 0, hashing.HashValue{}, false, err
 	}
-	v, err = partition.Get(dbprovider.MakeKey(dbprovider.ObjectTypeStateIndex))
+	v, err = partition.Get(dbkeys.MakeKey(dbkeys.ObjectTypeStateIndex))
 	if err == kvstore.ErrKeyNotFound {
 		return 0, hashing.HashValue{}, false, nil
 	}

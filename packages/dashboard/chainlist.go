@@ -4,7 +4,7 @@ import (
 	_ "embed"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/registry_pkg"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/labstack/echo/v4"
 )
 
@@ -58,7 +58,7 @@ type ChainListTemplateParams struct {
 }
 
 type ChainOverview struct {
-	ChainRecord *registry_pkg.ChainRecord
+	ChainRecord *chainrecord.ChainRecord
 	RootInfo    RootInfo
 	Error       error
 }

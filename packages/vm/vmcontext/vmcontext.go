@@ -27,8 +27,9 @@ type VMContext struct {
 	chainID              coretypes.ChainID
 	chainOwnerID         coretypes.AgentID
 	processors           *processors.ProcessorCache
-	txBuilder            *utxoutil.Builder  // mutated
-	virtualState         state.VirtualState // mutated
+	txBuilder            *utxoutil.Builder
+	virtualState         state.VirtualState
+	isInvalidatedState   func() bool
 	remainingAfterFees   *ledgerstate.ColoredBalances
 	blockContext         map[coretypes.Hname]*blockContext
 	blockContextCloseSeq []coretypes.Hname
@@ -67,9 +68,8 @@ type blockContext struct {
 func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
 	chainID, err := coretypes.ChainIDFromAddress(task.ChainInput.Address())
 	if err != nil {
-		return nil, xerrors.Errorf("CreateVMContext: %v", err)
+		task.Log.Panicf("CreateVMContext: %v", err)
 	}
-
 	{
 		// assert consistency
 		stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
@@ -91,6 +91,7 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 		chainID:              *chainID,
 		txBuilder:            txb,
 		virtualState:         task.VirtualState,
+		isInvalidatedState:   task.SolidStateInvalid,
 		processors:           task.Processors,
 		blockContext:         make(map[coretypes.Hname]*blockContext),
 		blockContextCloseSeq: make([]coretypes.Hname, 0),

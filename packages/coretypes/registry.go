@@ -6,16 +6,10 @@ package coretypes
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
 )
-
-const BlobCacheDefaultTTL = 1 * time.Hour
 
 // BlobCache is an access to the cache of big binary objects
 type BlobCache interface {
@@ -25,20 +19,6 @@ type BlobCache interface {
 	PutBlob(data []byte, ttl ...time.Duration) (hashing.HashValue, error)
 }
 
-// DKShareRegistryProvider stands for a partial registry interface, needed for this package.
-// It should be implemented by registry.impl
-type DKShareRegistryProvider interface {
-	SaveDKShare(dkShare *tcrypto.DKShare) error
-	LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error)
-}
-
-type CommitteeRegistryProvider interface {
-	GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error)
-	SaveCommitteeRecord(rec *committee_record.CommitteeRecord) error
-}
-
-// NodeIdentityProvider is a subset of the registry interface
-// providing access to the persistent node identity information.
 type NodeIdentityProvider interface {
 	GetNodeIdentity() (*key.Pair, error)
 	GetNodePublicKey() (kyber.Point, error)

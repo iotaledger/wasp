@@ -13,7 +13,9 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	registry_pkg "github.com/iotaledger/wasp/packages/registry_pkg"
+	registry_pkg "github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
 )
@@ -55,8 +57,8 @@ func (c *Chains) Attach(nodeConn *txstream.Client) {
 	// TODO attach to off-ledger request module
 }
 
-func (c *Chains) ActivateAllFromRegistry() error {
-	chainRecords, err := registry_pkg.GetChainRecords()
+func (c *Chains) ActivateAllFromRegistry(chainRecordProvider registry_pkg.ChainRecordRegistryProvider) error {
+	chainRecords, err := chainRecordProvider.GetChainRecords()
 	if err != nil {
 		return err
 	}
@@ -81,7 +83,7 @@ func (c *Chains) ActivateAllFromRegistry() error {
 // - creates chain object
 // - insert it into the runtime registry
 // - subscribes for related transactions in he IOTA node
-func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
+func (c *Chains) Activate(chr *chainrecord.ChainRecord) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -96,12 +98,13 @@ func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
 	}
 	// create new chain object
 	defaultRegistry := registry.DefaultRegistry()
+	chainKVStore := database.GetOrCreateKVStore(chr.ChainID)
 	newChain := chainimpl.NewChain(
 		chr,
 		c.log,
 		c.nodeConn,
 		peering.DefaultPeerNetworkConfig(),
-		defaultRegistry.DBProvider(),
+		chainKVStore,
 		peering.DefaultNetworkProvider(),
 		defaultRegistry,
 		defaultRegistry,
@@ -117,7 +120,7 @@ func (c *Chains) Activate(chr *registry_pkg.ChainRecord) error {
 }
 
 // Deactivate deactivates chain in the node
-func (c *Chains) Deactivate(chr *registry_pkg.ChainRecord) error {
+func (c *Chains) Deactivate(chr *chainrecord.ChainRecord) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 

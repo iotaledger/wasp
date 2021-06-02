@@ -8,25 +8,26 @@ import (
 	"sync"
 
 	"github.com/iotaledger/wasp/packages/chain/consensus"
+	"github.com/iotaledger/wasp/packages/registry"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 
 	"github.com/iotaledger/wasp/packages/state"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
@@ -38,17 +39,18 @@ type chainObj struct {
 	dismissed             atomic.Bool
 	dismissOnce           sync.Once
 	chainID               coretypes.ChainID
+	globalSolidIndex      atomic.Uint32
 	procset               *processors.ProcessorCache
 	chMsg                 chan interface{}
 	stateMgr              chain.StateManager
 	consensus             chain.Consensus
 	log                   *logger.Logger
 	nodeConn              chain.NodeConnection
-	dbProvider            *dbprovider.DBProvider
+	store                 kvstore.KVStore
 	peerNetworkConfig     coretypes.PeerNetworkConfigProvider
 	netProvider           peering.NetworkProvider
-	dksProvider           coretypes.DKShareRegistryProvider
-	committeeRegistry     coretypes.CommitteeRegistryProvider
+	dksProvider           registry.DKShareRegistryProvider
+	committeeRegistry     registry.CommitteeRegistryProvider
 	blobProvider          coretypes.BlobCache
 	eventRequestProcessed *events.Event
 	eventStateTransition  *events.Event
@@ -56,20 +58,20 @@ type chainObj struct {
 }
 
 func NewChain(
-	chr *registry_pkg.ChainRecord,
+	chr *chainrecord.ChainRecord,
 	log *logger.Logger,
 	txstream *txstream.Client,
 	peerNetConfig coretypes.PeerNetworkConfigProvider,
-	dbProvider *dbprovider.DBProvider,
+	store kvstore.KVStore,
 	netProvider peering.NetworkProvider,
-	dksProvider coretypes.DKShareRegistryProvider,
-	committeeRegistry coretypes.CommitteeRegistryProvider,
+	dksProvider registry.DKShareRegistryProvider,
+	committeeRegistry registry.CommitteeRegistryProvider,
 	blobProvider coretypes.BlobCache,
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chr.ChainID.String())
 
 	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
-	stateReader, err := state.NewStateReader(dbProvider, chr.ChainID)
+	stateReader, err := state.NewStateReader(store, chr.ChainID)
 	if err != nil {
 		log.Errorf("NewChain: %v", err)
 		return nil
@@ -81,7 +83,7 @@ func NewChain(
 		chainID:           *chr.ChainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstream, chainLog),
-		dbProvider:        dbProvider,
+		store:             store,
 		peerNetworkConfig: peerNetConfig,
 		netProvider:       netProvider,
 		dksProvider:       dksProvider,
@@ -97,6 +99,7 @@ func NewChain(
 			handler.(func(outputID ledgerstate.OutputID, blockIndex uint32))(params[0].(ledgerstate.OutputID), params[1].(uint32))
 		}),
 	}
+	ret.globalSolidIndex.Store(^uint32(0))
 	ret.eventStateTransition.Attach(events.NewClosure(ret.processStateTransition))
 	ret.eventSynced.Attach(events.NewClosure(ret.processSynced))
 
@@ -105,7 +108,7 @@ func NewChain(
 		log.Errorf("NewChain: %v", err)
 		return nil
 	}
-	ret.stateMgr = statemgr.New(dbProvider, ret, peers, ret.nodeConn, ret.log)
+	ret.stateMgr = statemgr.New(store, ret, peers, ret.nodeConn, ret.log)
 	var peeringID peering.PeeringID = ret.chainID.Array()
 	peers.Attach(&peeringID, func(recv *peering.RecvEvent) {
 		ret.ReceiveMessage(recv.Msg)

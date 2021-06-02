@@ -6,6 +6,8 @@ package chainimpl
 import (
 	"time"
 
+	"go.uber.org/atomic"
+
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
@@ -22,6 +24,10 @@ import (
 
 func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
+}
+
+func (c *chainObj) GlobalSolidIndex() *atomic.Uint32 {
+	return &c.globalSolidIndex
 }
 
 func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {
@@ -144,7 +150,7 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	stateReader, err := state.NewStateReader(c.dbProvider, &c.chainID)
+	stateReader, err := state.NewStateReader(c.store, &c.chainID)
 	if err != nil {
 		c.log.Errorf("GetRequestProcessingStatus: %v", err)
 		return chain.RequestProcessingStatusUnknown
