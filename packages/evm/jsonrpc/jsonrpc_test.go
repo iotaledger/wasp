@@ -1,4 +1,4 @@
-package main
+package jsonrpc
 
 import (
 	"context"
@@ -19,8 +19,13 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
-	"github.com/iotaledger/wasp/tools/evmproxy/jsonrpc"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	faucetKey, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	faucetAddress = crypto.PubkeyToAddress(faucetKey.PublicKey)
+	faucetSupply  = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
 )
 
 type env struct {
@@ -38,14 +43,14 @@ func newEnv(t *testing.T) *env {
 		return nil
 	}))
 
-	solo := jsonrpc.NewSoloBackend(core.GenesisAlloc{
+	solo := NewSoloBackend(core.GenesisAlloc{
 		faucetAddress: {Balance: faucetSupply},
 	})
-	soloEVMChain := jsonrpc.NewEVMChain(solo)
+	soloEVMChain := NewEVMChain(solo)
 
 	signer, _ := solo.Env.NewKeyPairWithFunds()
 
-	rpcsrv := jsonrpc.NewServer(soloEVMChain, signer)
+	rpcsrv := NewServer(soloEVMChain, signer)
 	t.Cleanup(rpcsrv.Stop)
 
 	rawClient := rpc.DialInProc(rpcsrv)
@@ -171,8 +176,8 @@ func (e *env) uncleByBlockHashAndIndex(blockHash common.Hash, index uint) map[st
 	return uncle
 }
 
-func (e *env) transactionByBlockNumberAndIndex(blockNumber *big.Int, index uint) *jsonrpc.RPCTransaction {
-	var tx *jsonrpc.RPCTransaction
+func (e *env) transactionByBlockNumberAndIndex(blockNumber *big.Int, index uint) *RPCTransaction {
+	var tx *RPCTransaction
 	err := e.rawClient.Call(&tx, "eth_getTransactionByBlockNumberAndIndex", (*hexutil.Big)(blockNumber), hexutil.Uint(index))
 	require.NoError(e.t, err)
 	return tx

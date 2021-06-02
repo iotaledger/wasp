@@ -184,7 +184,6 @@ func (s *EthService) Accounts() []common.Address { return []common.Address{} }
 func (s *EthService) GetCompilers() []string     { return []string{} }
 
 /*
-func (s *EthService) GetUncleByBlockNumberAndIndex()
 func (s *EthService) NewFilter()
 func (s *EthService) NewBlockFilter()
 func (s *EthService) NewPendingTransactionFilter()
@@ -192,13 +191,13 @@ func (s *EthService) UninstallFilter()
 func (s *EthService) GetFilterChanges()
 func (s *EthService) GetFilterLogs()
 func (s *EthService) GetLogs()
-func (s *EthService) GetWork()
 
-Intentionally left unimplemented
+Intentionally left unimplemented:
 func (s *EthService) Sign()
 func (s *EthService) SignTransaction()
 func (s *EthService) SendTransaction()
 func (s *EthService) SubmitWork()
+func (s *EthService) GetWork()
 func (s *EthService) SubmitHashrate()
 func (s *EthService) CompileLLL()
 func (s *EthService) CompileSolidity()

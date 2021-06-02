@@ -9,18 +9,16 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/tools/evmproxy/jsonrpc"
+	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
-var (
-	faucetKey, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	faucetAddress = crypto.PubkeyToAddress(faucetKey.PublicKey)
-	faucetSupply  = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
-)
-
 func main() {
+	faucetKey, _ := crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	faucetAddress := crypto.PubkeyToAddress(faucetKey.PublicKey)
+	faucetSupply := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
+
 	// TODO: use wasp backend
 	solo := jsonrpc.NewSoloBackend(core.GenesisAlloc{
 		faucetAddress: {Balance: faucetSupply},
