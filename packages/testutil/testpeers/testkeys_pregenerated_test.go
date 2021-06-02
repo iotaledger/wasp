@@ -20,6 +20,8 @@ func TestPregenerateDKS(t *testing.T) {
 	t.Run("N=1/F=0", func(t *testing.T) { testPregenerateDKS(t, 1) })
 	t.Run("N=4/F=1", func(t *testing.T) { testPregenerateDKS(t, 4) })
 	t.Run("N=10/F=3", func(t *testing.T) { testPregenerateDKS(t, 10) })
+	t.Run("N=22/F=7", func(t *testing.T) { testPregenerateDKS(t, 22) })
+	t.Run("N=31/F=10", func(t *testing.T) { testPregenerateDKS(t, 31) })
 	t.Run("N=40/F=13", func(t *testing.T) { testPregenerateDKS(t, 40) })
 	t.Run("N=70/F=23", func(t *testing.T) { testPregenerateDKS(t, 70) })
 	t.Run("N=100/F=33", func(t *testing.T) { testPregenerateDKS(t, 100) })

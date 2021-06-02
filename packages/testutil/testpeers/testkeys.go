@@ -89,6 +89,10 @@ func SetupDkgPregenerated(
 		serializedDks = pregeneratedDks4()
 	case 10:
 		serializedDks = pregeneratedDks10()
+	case 22:
+		serializedDks = pregeneratedDks22()
+	case 31:
+		serializedDks = pregeneratedDks31()
 	case 40:
 		serializedDks = pregeneratedDks40()
 	case 70:
