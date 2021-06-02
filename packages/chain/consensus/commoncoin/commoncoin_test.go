@@ -54,7 +54,7 @@ func testCC(t *testing.T, netBehavior testutil.PeeringNetBehavior, log *logger.L
 	suite := pairing.NewSuiteBn256()
 	peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerPubs, peerSecs := testpeers.SetupKeys(peerCount, suite)
-	address, nodeRegistries := testpeers.SetupDkg(t, threshold, peerNetIDs, peerPubs, peerSecs, suite, log)
+	address, nodeRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, suite)
 	networkProviders := testpeers.SetupNet(peerNetIDs, peerPubs, peerSecs, netBehavior, log)
 	ccNodes := setupCommonCoinNodes(peeringID, address, peerNetIDs, nodeRegistries, networkProviders, log)
 	//

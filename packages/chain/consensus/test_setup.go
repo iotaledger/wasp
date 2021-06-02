@@ -143,7 +143,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 
 	log.Infof("running DKG and setting up mocked network..")
 	_, ret.PubKeys, ret.PrivKeys = testpeers.SetupKeys(n, ret.Suite)
-	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkg(t, quorum, neighbors, ret.PubKeys, ret.PrivKeys, ret.Suite, log.Named("dkg"))
+	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, neighbors, ret.Suite)
 	ret.NetworkProviders = testpeers.SetupNet(neighbors, ret.PubKeys, ret.PrivKeys, testutil.NewPeeringNetReliable(), log)
 
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)

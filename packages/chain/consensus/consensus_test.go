@@ -86,7 +86,7 @@ func TestConsensusMoreNodesMockedACS(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
-	const numNodes = 30
+	const numNodes = 40
 	const quorum = (numNodes*2)/3 + 1
 
 	t.Run("post 1 mocked ACS", func(t *testing.T) {
@@ -213,7 +213,7 @@ func TestConsensusMoreNodes(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
-	const numNodes = 30
+	const numNodes = 40
 	const quorum = (numNodes*2)/3 + 1
 
 	t.Run("post 1", func(t *testing.T) {
