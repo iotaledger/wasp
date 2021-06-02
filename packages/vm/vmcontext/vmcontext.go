@@ -3,6 +3,8 @@ package vmcontext
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -29,7 +31,7 @@ type VMContext struct {
 	processors           *processors.ProcessorCache
 	txBuilder            *utxoutil.Builder
 	virtualState         state.VirtualState
-	isInvalidatedState   func() bool
+	readStateCheckpoint  *coreutil.StateIndexBaseline
 	remainingAfterFees   *ledgerstate.ColoredBalances
 	blockContext         map[coretypes.Hname]*blockContext
 	blockContextCloseSeq []coretypes.Hname
@@ -91,7 +93,7 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 		chainID:              *chainID,
 		txBuilder:            txb,
 		virtualState:         task.VirtualState,
-		isInvalidatedState:   task.SolidStateInvalid,
+		readStateCheckpoint:  task.GlobalStateCheckpoint,
 		processors:           task.Processors,
 		blockContext:         make(map[coretypes.Hname]*blockContext),
 		blockContextCloseSeq: make([]coretypes.Hname, 0),

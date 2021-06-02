@@ -26,8 +26,12 @@ func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
 }
 
-func (c *chainObj) GlobalStateReadCheckpoint() coreutil.OptimisticReadCheckpoint {
-	return c.globalStateCheckpoint
+func (c *chainObj) SetGlobalSolidIndex(idx uint32) {
+	c.globalSolidIndex.Store(idx)
+}
+
+func (c *chainObj) GetSolidStateBaseline() *coreutil.StateIndexBaseline {
+	return coreutil.NewStateIndexBaseline(&c.globalSolidIndex)
 }
 
 func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {

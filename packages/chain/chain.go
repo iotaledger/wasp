@@ -26,7 +26,8 @@ type ChainCore interface {
 	ReceiveMessage(interface{})
 	Events() ChainEvents
 	Processors() *processors.ProcessorCache
-	GlobalStateReadCheckpoint() coreutil.OptimisticReadCheckpoint
+	SetGlobalSolidIndex(idx uint32) // for use in state manager
+	GetSolidStateBaseline() *coreutil.StateIndexBaseline
 }
 
 type Chain interface {

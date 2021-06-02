@@ -66,8 +66,12 @@ func (m *MockedChainCore) ID() *coretypes.ChainID {
 	return &m.chainID
 }
 
-func (c *MockedChainCore) GlobalStateReadCheckpoint() coreutil.OptimisticReadCheckpoint {
-	return &c.solidStateIndex
+func (c *MockedChainCore) GetSolidStateBaseline() *coreutil.StateIndexBaseline {
+	return coreutil.NewStateIndexBaseline(&c.solidStateIndex)
+}
+
+func (c *MockedChainCore) SetGlobalSolidIndex(idx uint32) {
+	c.solidStateIndex.Store(idx)
 }
 
 func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {

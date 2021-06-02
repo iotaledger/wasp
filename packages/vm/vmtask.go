@@ -3,6 +3,8 @@ package vm
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -26,7 +28,7 @@ type VMTask struct {
 	Processors               *processors.ProcessorCache
 	ChainInput               *ledgerstate.AliasOutput
 	VirtualState             state.VirtualState // in/out  Return uncommitted updated virtual state
-	SolidStateInvalid        func() bool        // solid state invalidity predicate. Must be thread-safe
+	GlobalStateCheckpoint    *coreutil.StateIndexBaseline
 	Requests                 []coretypes.Request
 	Timestamp                time.Time
 	Entropy                  hashing.HashValue

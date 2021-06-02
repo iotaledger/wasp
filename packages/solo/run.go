@@ -9,6 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"go.uber.org/atomic"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -43,10 +46,7 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 	var err error
 	var callRes dict.Dict
 	var callErr error
-	task.SolidStateInvalid = func() bool {
-		// in Solo solid state is always valid for the VM
-		return false
-	}
+	task.GlobalStateCheckpoint = coreutil.NewStateIndexBaseline(atomic.NewUint32(0))
 	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
 		require.NoError(ch.Env.T, err)
 		callRes = callResult

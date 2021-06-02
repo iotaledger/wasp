@@ -100,7 +100,7 @@ const tplFairAuction = `
 			<p>See instructions in <a href="/tr">TokenRegistry</a>.</p>
 		</details>
 		<details>
-			<summary>4. Start an auction</summary>
+			<summary>4. Check an auction</summary>
 			<p><code>{{waspClientCmd}} fa start-auction <i>description</i> <i>color</i> <i>amount-tokens</i> <i>minimum-bid</i> <i>duration-in-minutes</i></code>
 			<br/>(e.g.: <code>{{waspClientCmd}} fa start-auction "My awesome token" gHw2r... 1 100 10</code>)</p>
 		</details>

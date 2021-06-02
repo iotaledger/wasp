@@ -9,10 +9,10 @@ import (
 func TestCheckpointBasic(t *testing.T) {
 	chp := NewGlobalReadCheckpoint()
 	require.False(t, chp.IsValid())
-	chp.Start()
+	chp.Check()
 	require.True(t, chp.IsValid())
 	chp.SetGlobalStateIndex(3)
 	require.False(t, chp.IsValid())
-	chp.Start()
+	chp.Check()
 	require.True(t, chp.IsValid())
 }
