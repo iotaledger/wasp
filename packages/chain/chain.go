@@ -26,13 +26,7 @@ type ChainCore interface {
 	ReceiveMessage(interface{})
 	Events() ChainEvents
 	Processors() *processors.ProcessorCache
-	GlobalSolidIndex() GlobalSolidIndex
-}
-
-type GlobalSolidIndex interface {
-	GetBaseline() *coreutil.SolidStateBaseline
-	Set(idx uint32) // for use in state manager
-	Invalidate()    // only for state manager
+	GlobalSync() coreutil.GlobalSync
 }
 
 type Chain interface {
@@ -174,6 +168,7 @@ type PeerStatus struct {
 
 type StateTransitionEventData struct {
 	VirtualState    state.VirtualState
+	RequestIDs      []coretypes.RequestID
 	ChainOutput     *ledgerstate.AliasOutput
 	OutputTimestamp time.Time
 }

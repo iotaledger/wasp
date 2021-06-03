@@ -7,15 +7,15 @@ import (
 )
 
 func TestCheckpointBasic(t *testing.T) {
-	glb := NewGlobalSolidIndex()
-	base := glb.GetBaseline()
+	glb := NewGlobalSync()
+	base := glb.GetSolidIndexBaseline()
 	require.False(t, base.IsValid())
 	base.SetBaseline()
 	require.False(t, base.IsValid())
 	glb.Set(2)
 	base.SetBaseline()
 	require.True(t, base.IsValid())
-	glb.Invalidate()
+	glb.InvalidateSolidIndex()
 	require.False(t, base.IsValid())
 	glb.Set(3)
 	require.False(t, base.IsValid())

@@ -1,29 +1,47 @@
 package coreutil
 
-import "go.uber.org/atomic"
+import (
+	"sync"
 
-// region GlobalSolidIndex  ////////////////////////////////
+	"go.uber.org/atomic"
+)
 
-type globalSolidIndex struct {
-	v atomic.Uint64
+// GlobalSync implements optimistic read baselines and global locks
+type GlobalSync interface {
+	GetSolidIndexBaseline() *SolidStateBaseline
+	SetSolidIndex(idx uint32) // for use in state manager
+	InvalidateSolidIndex()    // only for state manager
+	Mutex() *sync.RWMutex
 }
 
-func NewGlobalSolidIndex() *globalSolidIndex {
-	ret := &globalSolidIndex{}
-	ret.v.Store(^uint64(0))
+// region GlobalSync  ////////////////////////////////
+
+type globalSync struct {
+	solidIndex  atomic.Uint64
+	globalMutex *sync.RWMutex
+}
+
+func NewGlobalSync() *globalSync {
+	ret := &globalSync{
+		globalMutex: &sync.RWMutex{},
+	}
+	ret.solidIndex.Store(^uint64(0))
 	return ret
 }
-
-func (g *globalSolidIndex) Set(idx uint32) {
-	g.v.Store(uint64(idx))
+func (g *globalSync) SetSolidIndex(idx uint32) {
+	g.solidIndex.Store(uint64(idx))
 }
 
-func (g *globalSolidIndex) GetBaseline() *SolidStateBaseline {
-	return NewStateIndexBaseline(&g.v)
+func (g *globalSync) GetSolidIndexBaseline() *SolidStateBaseline {
+	return NewStateIndexBaseline(&g.solidIndex)
 }
 
-func (g *globalSolidIndex) Invalidate() {
-	g.v.Store(^uint64(0))
+func (g *globalSync) InvalidateSolidIndex() {
+	g.solidIndex.Store(^uint64(0))
+}
+
+func (g *globalSync) Mutex() *sync.RWMutex {
+	return g.globalMutex
 }
 
 // endregion  ///////////////////////////////////////////////////

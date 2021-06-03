@@ -5,8 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -37,9 +35,3 @@ type VMTask struct {
 	OnFinish                 func(callResult dict.Dict, callError error, vmError error)
 	ResultTransactionEssence *ledgerstate.TransactionEssence
 }
-
-type ErrorStateInvalidated struct {
-	error
-}
-
-var ErrStateHasBeenInvalidated = &ErrorStateInvalidated{xerrors.New("virtual state has been invalidated")}

@@ -4,6 +4,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -14,6 +16,7 @@ import (
 
 type mempool struct {
 	mutex                   sync.RWMutex
+	globalSync              coreutil.GlobalSync
 	incounter               int
 	outcounter              int
 	stateReader             state.StateReader
@@ -33,9 +36,10 @@ const defaultSolidificationLoopDelay = 200 * time.Millisecond
 
 var _ chain.Mempool = &mempool{}
 
-func New(stateReader state.StateReader, blobCache coretypes.BlobCache, log *logger.Logger, solidificationLoopDelay ...time.Duration) *mempool {
+func New(stateReader state.StateReader, glb coreutil.GlobalSync, blobCache coretypes.BlobCache, log *logger.Logger, solidificationLoopDelay ...time.Duration) *mempool {
 	ret := &mempool{
 		stateReader: stateReader,
+		globalSync:  glb,
 		requestRefs: make(map[coretypes.RequestID]*requestRef),
 		chStop:      make(chan struct{}),
 		blobCache:   blobCache,
@@ -50,7 +54,27 @@ func New(stateReader state.StateReader, blobCache coretypes.BlobCache, log *logg
 	return ret
 }
 
+func (m *mempool) filterProcessedRequests(reqs []coretypes.Request) []coretypes.Request {
+	ret := make([]coretypes.Request, 0)
+	for _, r := range reqs {
+		if m.isRequestProcessed(r.ID()) {
+			continue
+		}
+		ret = append(ret, r)
+	}
+	return ret
+}
+
+func (m *mempool) isRequestProcessed(reqid coretypes.RequestID) bool {
+	m.globalSync.Mutex().RLock()
+	defer m.globalSync.Mutex().RUnlock()
+
+	return blocklog.IsRequestProcessed(m.stateReader, &reqid)
+}
+
 func (m *mempool) ReceiveRequests(reqs ...coretypes.Request) {
+	reqs = m.filterProcessedRequests(reqs)
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -61,10 +85,6 @@ func (m *mempool) ReceiveRequests(reqs ...coretypes.Request) {
 				m.log.Errorf("ReceiveRequest.VerifySignature: invalid signature")
 				continue
 			}
-		}
-		id := req.ID()
-		if blocklog.IsRequestProcessed(m.stateReader, &id) {
-			return
 		}
 		if _, ok := m.requestRefs[req.ID()]; ok {
 			continue

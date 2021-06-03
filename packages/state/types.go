@@ -1,25 +1,21 @@
 package state
 
 import (
-	"github.com/iotaledger/wasp/packages/kv"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/kv"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
 
-// StateReader read-only access to the chain's state
-type StateReader interface {
+// VirtualState virtualized access to the chain's database
+type VirtualState interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
 	Hash() hashing.HashValue
 	KVStoreReader() kv.KVStoreReader
-}
-
-// VirtualState virtualized access to the chain's state
-type VirtualState interface {
-	StateReader
 	ApplyStateUpdates(...StateUpdate)
 	ApplyBlock(Block) error
 	ExtractBlock() (Block, error)
@@ -27,6 +23,18 @@ type VirtualState interface {
 	KVStore() *buffered.BufferedKVStore
 	Clone() VirtualState
 	DangerouslyConvertToString() string
+}
+
+type StateReader interface {
+	BlockIndex() (uint32, error)
+	Timestamp() (time.Time, error)
+	Hash() (hashing.HashValue, error)
+	KVStoreReader() kv.KVStoreReader
+}
+
+type OptimisticStateReader interface {
+	StateReader
+	SetBaseline()
 }
 
 // StateUpdate is a set of mutations

@@ -20,7 +20,7 @@ import (
 
 type viewcontext struct {
 	processors  *processors.ProcessorCache
-	stateReader state.StateReader
+	stateReader state.OptimisticStateReader
 	chainID     coretypes.ChainID
 	log         *logger.Logger
 }
@@ -36,7 +36,7 @@ func NewFromDB(store kvstore.KVStore, chainID coretypes.ChainID, proc *processor
 	return New(chainID, state_, proc, nil), nil
 }
 
-func New(chainID coretypes.ChainID, stateReader state.StateReader, proc *processors.ProcessorCache, logSet *logger.Logger) *viewcontext {
+func New(chainID coretypes.ChainID, stateReader state.OptimisticStateReader, proc *processors.ProcessorCache, logSet *logger.Logger) *viewcontext {
 	if logSet == nil {
 		logSet = logDefault
 	} else {

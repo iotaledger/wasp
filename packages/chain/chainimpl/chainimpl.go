@@ -41,14 +41,14 @@ type chainObj struct {
 	dismissed             atomic.Bool
 	dismissOnce           sync.Once
 	chainID               coretypes.ChainID
-	globalSolidIndex      chain.GlobalSolidIndex
+	globalSync            coreutil.GlobalSync
 	procset               *processors.ProcessorCache
 	chMsg                 chan interface{}
 	stateMgr              chain.StateManager
 	consensus             chain.Consensus
 	log                   *logger.Logger
 	nodeConn              chain.NodeConnection
-	store                 kvstore.KVStore
+	db                    kvstore.KVStore
 	peerNetworkConfig     coretypes.PeerNetworkConfigProvider
 	netProvider           peering.NetworkProvider
 	dksProvider           registry.DKShareRegistryProvider
@@ -64,7 +64,7 @@ func NewChain(
 	log *logger.Logger,
 	txstream *txstream.Client,
 	peerNetConfig coretypes.PeerNetworkConfigProvider,
-	store kvstore.KVStore,
+	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
 	dksProvider registry.DKShareRegistryProvider,
 	committeeRegistry registry.CommitteeRegistryProvider,
@@ -73,7 +73,8 @@ func NewChain(
 	log.Debugf("creating chain object for %s", chr.ChainID.String())
 
 	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
-	stateReader, err := state.NewStateReader(store)
+	globalSync := coreutil.NewGlobalSync()
+	stateReader, err := state.NewStateReader(db)
 	if err != nil {
 		log.Errorf("NewChain: %v", err)
 		return nil
@@ -85,8 +86,8 @@ func NewChain(
 		chainID:           *chr.ChainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstream, chainLog),
-		store:             store,
-		globalSolidIndex:  coreutil.NewGlobalSolidIndex(),
+		db:                db,
+		globalSync:        globalSync,
 		peerNetworkConfig: peerNetConfig,
 		netProvider:       netProvider,
 		dksProvider:       dksProvider,
@@ -110,7 +111,7 @@ func NewChain(
 		log.Errorf("NewChain: %v", err)
 		return nil
 	}
-	ret.stateMgr = statemgr.New(store, ret, peers, ret.nodeConn, ret.log)
+	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn, ret.log)
 	var peeringID peering.PeeringID = ret.chainID.Array()
 	peers.Attach(&peeringID, func(recv *peering.RecvEvent) {
 		ret.ReceiveMessage(recv.Msg)
@@ -259,7 +260,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 
 func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 	chain.LogStateTransition(msg, c.log)
-	reqids := chain.PublishStateTransition(msg.VirtualState, msg.ChainOutput)
+	reqids := chain.PublishStateTransition(msg.VirtualState, msg.ChainOutput, msg.RequestIDs)
 	for _, reqid := range reqids {
 		c.eventRequestProcessed.Trigger(reqid)
 	}

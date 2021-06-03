@@ -1,6 +1,8 @@
 package blocklog
 
 import (
+	"time"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -9,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
-	"time"
 )
 
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
@@ -32,7 +33,10 @@ func viewGetBlockInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 		return nil, xerrors.New("blocklog::viewGetBlockInfo: incorrect block index")
 	}
 	blockIndex := uint32(blockIndex64)
-	data, found := getBlockInfoDataIntern(ctx.State(), blockIndex)
+	data, found, err := getBlockInfoDataIntern(ctx.State(), blockIndex)
+	if err != nil {
+		return nil, err
+	}
 	if !found {
 		return nil, xerrors.New("not found")
 	}
@@ -88,7 +92,8 @@ func viewGetRequestIDsForBlock(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a.Require(int(blockIndex64) <= util.MaxUint32, "wrong block index parameter")
 	blockIndex := uint32(blockIndex64)
 
-	dataArr, found := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex, a)
+	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex, a)
+	a.RequireNoError(err)
 	a.Require(found, "not found")
 
 	ret := dict.New()
@@ -108,7 +113,8 @@ func viewGetRequestLogRecordsForBlock(ctx coretypes.SandboxView) (dict.Dict, err
 	a.Require(int(blockIndex64) <= util.MaxUint32, "wrong block index parameter")
 	blockIndex := uint32(blockIndex64)
 
-	dataArr, found := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex, a)
+	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex, a)
+	a.RequireNoError(err)
 	a.Require(found, "not found")
 
 	ret := dict.New()

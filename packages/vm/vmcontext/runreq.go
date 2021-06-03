@@ -5,7 +5,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"golang.org/x/xerrors"
@@ -59,7 +59,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 			switch err := r.(type) {
 			case *kv.DBError:
 				panic(err)
-			case *vm.ErrorStateInvalidated:
+			case *optimism.ErrorStateInvalidated:
 				panic(err)
 			default:
 				vmctx.lastResult = nil

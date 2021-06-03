@@ -6,6 +6,8 @@ package chainimpl
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
@@ -24,8 +26,8 @@ func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
 }
 
-func (c *chainObj) GlobalSolidIndex() chain.GlobalSolidIndex {
-	return c.globalSolidIndex
+func (c *chainObj) GlobalSync() coreutil.GlobalSync {
+	return c.globalSync
 }
 
 func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {
@@ -148,7 +150,7 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	stateReader, err := state.NewStateReader(c.store)
+	stateReader, err := state.NewOptimisticStateReader(c.db)
 	if err != nil {
 		c.log.Errorf("GetRequestProcessingStatus: %v", err)
 		return chain.RequestProcessingStatusUnknown
@@ -181,4 +183,8 @@ func (c *chainObj) StateSynced() *events.Event {
 
 func (c *chainObj) Events() chain.ChainEvents {
 	return c
+}
+
+func (c *chainObj) GetStateReader() state.OptimisticStateReader {
+
 }

@@ -61,7 +61,7 @@ type mockedEnv struct {
 	DKSRegistries     []registry.DKShareRegistryProvider
 	store             kvstore.KVStore
 	SolidState        state.VirtualState
-	StateReader       state.StateReader
+	StateReader       state.OptimisticStateReader
 	StateOutput       *ledgerstate.AliasOutput
 	RequestIDsLast    []coretypes.RequestID
 	NodeConn          []*testchain.MockedNodeConn
@@ -174,7 +174,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 	ret.store = mapdb.NewMapDB()
 	ret.SolidState, err = state.CreateOriginState(ret.store, &ret.ChainID)
 	require.NoError(t, err)
-	ret.StateReader, err = state.NewStateReader(ret.store)
+	ret.StateReader, err = state.NewOptimisticStateReader(ret.store)
 	require.NoError(t, err)
 
 	for i := range ret.Nodes {
@@ -319,7 +319,7 @@ func (env *mockedEnv) eventStateTransition() {
 	for _, node := range env.Nodes {
 		go func(n *mockedNode) {
 			n.Mempool.RemoveRequests(env.RequestIDsLast...)
-			n.ChainCore.GlobalSolidIndex().Set(solidState.BlockIndex())
+			n.ChainCore.GlobalSync().Set(solidState.BlockIndex())
 
 			n.Consensus.EventStateTransitionMsg(&chain.StateTransitionMsg{
 				State:          solidState.Clone(),

@@ -22,11 +22,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createStateReader(t *testing.T) (state.StateReader, state.VirtualState) {
+func createStateReader(t *testing.T) (state.OptimisticStateReader, state.VirtualState) {
 	store := mapdb.NewMapDB()
 	vs, err := state.CreateOriginState(store, nil)
 	require.NoError(t, err)
-	ret, err := state.NewStateReader(store)
+	ret, err := state.NewOptimisticStateReader(store)
 	require.NoError(t, err)
 	return ret, vs
 }

@@ -1,13 +1,10 @@
 package blocklog
 
 import (
-	"time"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"golang.org/x/xerrors"
 )
 
@@ -89,28 +86,33 @@ func isRequestProcessedIntern(partition kv.KVStoreReader, reqid *coretypes.Reque
 	return false, nil
 }
 
-func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint32, a assert.Assert) ([][]byte, bool) {
+func getRequestLogRecordsForBlockBin(state kv.KVStoreReader, blockIndex uint32, a assert.Assert) ([][]byte, bool, error) {
 	if blockIndex == 0 {
-		return nil, true
+		return nil, true, nil
 	}
-	blockInfoBin, found := getBlockInfoDataIntern(partition, blockIndex)
+	blockInfoBin, found, err := getBlockInfoDataIntern(state, blockIndex)
+	if err != nil {
+		return nil, false, err
+	}
 	if !found {
-		return nil, false
+		return nil, false, nil
 	}
 	blockInfo, err := BlockInfoFromBytes(blockIndex, blockInfoBin)
-	a.RequireNoError(err)
+	if err != nil {
+		return nil, false, err
+	}
 
 	ret := make([][]byte, blockInfo.TotalRequests)
 	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
-		ret[reqIdx], found = getRequestRecordDataByRef(partition, blockIndex, reqIdx)
+		ret[reqIdx], found = getRequestRecordDataByRef(state, blockIndex, reqIdx)
 		a.Require(found, "getRequestLogRecordsForBlockBin: inconsistency: request record not found")
 	}
-	return ret, true
+	return ret, true, nil
 }
 
-func getBlockInfoDataIntern(partition kv.KVStoreReader, blockIndex uint32) ([]byte, bool) {
+func getBlockInfoDataIntern(partition kv.KVStoreReader, blockIndex uint32) ([]byte, bool, error) {
 	data, err := collections.NewArray32ReadOnly(partition, StateVarBlockRegistry).GetAt(blockIndex)
-	return data, err == nil
+	return data, err == nil, err
 }
 
 func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, requestIndex uint16) ([]byte, bool) {
@@ -143,15 +145,4 @@ func getRequestRecordDataByRequestID(ctx coretypes.SandboxView, reqID coretypes.
 		}
 	}
 	return nil, 0, 0, false
-}
-
-func getBlockIndex(partition kv.KVStoreReader) uint32 {
-	deco := kvdecoder.New(partition)
-	ret := deco.MustGetUint64(StateVarBlockIndex)
-	return uint32(ret)
-}
-
-func getTimestamp(partition kv.KVStoreReader) time.Time {
-	deco := kvdecoder.New(partition)
-	return deco.MustGetTime(StateVarTimestamp)
 }

@@ -109,7 +109,7 @@ func (c *consensus) runVMIfNeeded() {
 		ACSSessionID:       c.acsSessionID,
 		Processors:         c.chain.Processors(),
 		ChainInput:         c.stateOutput,
-		SolidStateBaseline: c.chain.GlobalSolidIndex().GetBaseline(),
+		SolidStateBaseline: c.chain.GlobalSync().GetSolidIndexBaseline(),
 		Entropy:            c.consensusEntropy,
 		ValidatorFeeTarget: *c.consensusBatch.FeeDestination,
 		Requests:           reqs,

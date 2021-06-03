@@ -12,7 +12,7 @@ import (
 
 type MockedChainCore struct {
 	chainID                 coretypes.ChainID
-	globalSolidIndex        chain.GlobalSolidIndex
+	globalSolidIndex        chain.GlobalSync
 	processors              *processors.ProcessorCache
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
@@ -29,7 +29,7 @@ func NewMockedChainCore(chainID coretypes.ChainID, log *logger.Logger) *MockedCh
 	ret := &MockedChainCore{
 		chainID:          chainID,
 		processors:       processors.MustNew(),
-		globalSolidIndex: coreutil.NewGlobalSolidIndex(),
+		globalSolidIndex: coreutil.NewGlobalSync(),
 		log:              log,
 		eventStateTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.StateTransitionEventData))(params[0].(*chain.StateTransitionEventData))
@@ -50,7 +50,7 @@ func NewMockedChainCore(chainID coretypes.ChainID, log *logger.Logger) *MockedCh
 			chain.LogSyncedEvent(outputID, blockIndex, log)
 		},
 	}
-	ret.GlobalSolidIndex().Set(0) // always valid
+	ret.GlobalSync().Set(0) // always valid
 	ret.eventStateTransition.Attach(events.NewClosure(func(data *chain.StateTransitionEventData) {
 		ret.onEventStateTransition(data)
 	}))
@@ -67,7 +67,7 @@ func (m *MockedChainCore) ID() *coretypes.ChainID {
 	return &m.chainID
 }
 
-func (c *MockedChainCore) GlobalSolidIndex() chain.GlobalSolidIndex {
+func (c *MockedChainCore) GlobalSync() chain.GlobalSync {
 	return c.globalSolidIndex
 }
 

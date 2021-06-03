@@ -106,7 +106,7 @@ type Chain struct {
 
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
 	State       state.VirtualState
-	StateReader state.StateReader
+	StateReader state.OptimisticStateReader
 
 	// Log is the named logger of the chain
 	Log *logger.Logger
@@ -211,7 +211,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	require.EqualValues(env.T, 0, vs.BlockIndex())
 	require.True(env.T, vs.Timestamp().IsZero())
 
-	srdr, err := state.NewStateReader(store)
+	srdr, err := state.NewOptimisticStateReader(store)
 	require.NoError(env.T, err)
 
 	ret := &Chain{
