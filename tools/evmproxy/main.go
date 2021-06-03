@@ -46,6 +46,11 @@ func serveHTTP(rpcsrv *rpc.Server) {
 		fmt.Printf("REQUEST:  %s\n", string(reqBody))
 		fmt.Printf("RESPONSE: %s\n", string(resBody))
 	}))
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"}, // TODO make configurable
+		AllowMethods: []string{http.MethodPost, http.MethodGet},
+		AllowHeaders: []string{"*"},
+	}))
 	e.Any("/", echo.WrapHandler(rpcsrv))
 
 	listenAddr := ":8545"
