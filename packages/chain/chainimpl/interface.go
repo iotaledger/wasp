@@ -154,7 +154,7 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	stateReader, err := state.NewStateReader(c.store, &c.chainID)
+	stateReader, err := state.NewStateReader(c.store)
 	if err != nil {
 		c.log.Errorf("GetRequestProcessingStatus: %v", err)
 		return chain.RequestProcessingStatusUnknown

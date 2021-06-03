@@ -417,10 +417,10 @@ github.com/imkira/go-interpol v1.1.0/go.mod h1:z0h2/2T3XF8kyEPpRgJ3kmNv+C43p+I/C
 github.com/inconshreveable/mousetrap v1.0.0 h1:Z8tu5sraLXCXIcARxBp/8cbvlwVa7Z1NHg9XEKhtSvM=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d/go.mod h1:qj24IKcXYK6Iy9ceXlo3Tc+vtHo9lIhSX5JddghvEPo=
-github.com/iotaledger/goshimmer v0.6.4-0.20210601153701-5eb7b11e36ed h1:PPog98qo9XAc1usrzx4BoBIeFqvFRrNf9HZqQjA+sps=
-github.com/iotaledger/goshimmer v0.6.4-0.20210601153701-5eb7b11e36ed/go.mod h1:H2jZCsMIQtDoywaa1m417mdog5E5pdFQTx+ScVGiFVI=
 github.com/iotaledger/goshimmer v0.6.5-0.20210602080014-b1478a89a03a h1:WauEthciO9h++n5vdiEp3M+eV/X/5MIIgS/Q+VbyxPw=
 github.com/iotaledger/goshimmer v0.6.5-0.20210602080014-b1478a89a03a/go.mod h1:H2jZCsMIQtDoywaa1m417mdog5E5pdFQTx+ScVGiFVI=
+github.com/iotaledger/goshimmer v0.6.5-0.20210602124054-53b8a246e815 h1:oxzLaHoR2BmUHJfiseoSzo7emFe6xaL4tnYcQOjv+bw=
+github.com/iotaledger/goshimmer v0.6.5-0.20210602124054-53b8a246e815/go.mod h1:H2jZCsMIQtDoywaa1m417mdog5E5pdFQTx+ScVGiFVI=
 github.com/iotaledger/hive.go v0.0.0-20210528180853-73ecfbb76bd7 h1:fidetnahXOAJdKzwBDeSaNe3/6y3C0r51KsTHVxJWy8=
 github.com/iotaledger/hive.go v0.0.0-20210528180853-73ecfbb76bd7/go.mod h1:NyBg/Ny7FFAdDs59zdwTVoysU2ZbJVQnRwyLIDFKJYA=
 github.com/ipfs/go-cid v0.0.1/go.mod h1:GHWU/WuQdMPmIosc4Yn1bcCT7dSeX4lBafM7iqUPQvM=
