@@ -32,7 +32,7 @@ func TestOptimismBasic(t *testing.T) {
 	require.Error(t, err)
 	require.EqualValues(t, err, ErrStateHasBeenInvalidated)
 
-	base.SetBaseline()
+	r.SetBaseline()
 	b, err = r.Get("a")
 	require.NoError(t, err)
 	require.EqualValues(t, "b", string(b))

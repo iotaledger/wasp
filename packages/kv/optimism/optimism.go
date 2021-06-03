@@ -18,10 +18,12 @@ type ErrorStateInvalidated struct {
 var ErrStateHasBeenInvalidated = &ErrorStateInvalidated{xerrors.New("virtual state has been invalidated")}
 
 func NewOptimisticKVStoreReader(store kv.KVStoreReader, baseline *coreutil.SolidStateBaseline) *OptimisticKVStoreReader {
-	return &OptimisticKVStoreReader{
+	ret := &OptimisticKVStoreReader{
 		kvstore:  store,
 		baseline: baseline,
 	}
+	ret.SetBaseline()
+	return ret
 }
 
 func (o *OptimisticKVStoreReader) SetBaseline() {
