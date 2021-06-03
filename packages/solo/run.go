@@ -46,7 +46,8 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 	var err error
 	var callRes dict.Dict
 	var callErr error
-	task.GlobalStateCheckpoint = coreutil.NewStateIndexBaseline(atomic.NewUint32(0))
+	// state baseline always valid in Solo
+	task.SolidStateBaseline = coreutil.NewStateIndexBaseline(atomic.NewUint64(0))
 	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
 		require.NoError(ch.Env.T, err)
 		callRes = callResult

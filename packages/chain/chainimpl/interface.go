@@ -6,8 +6,6 @@ package chainimpl
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
@@ -26,12 +24,8 @@ func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
 }
 
-func (c *chainObj) SetGlobalSolidIndex(idx uint32) {
-	c.globalSolidIndex.Store(idx)
-}
-
-func (c *chainObj) GetSolidStateBaseline() *coreutil.StateIndexBaseline {
-	return coreutil.NewStateIndexBaseline(&c.globalSolidIndex)
+func (c *chainObj) GlobalSolidIndex() chain.GlobalSolidIndex {
+	return c.globalSolidIndex
 }
 
 func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {

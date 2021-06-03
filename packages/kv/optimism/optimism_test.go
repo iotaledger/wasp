@@ -6,24 +6,38 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/atomic"
 )
 
 func TestOptimismBasic(t *testing.T) {
 	d := dict.New()
 	d.Set("a", []byte("b"))
 	d.Set("c", []byte("d"))
-	at := atomic.NewUint32(0)
-	base := coreutil.NewStateIndexBaseline(at)
-	r := NewOptimisticKVStoreReader(d, base)
+	glb := coreutil.NewGlobalSolidIndex()
+	base := glb.GetBaseline()
+	require.False(t, base.IsValid())
+	glb.Set(2)
+	require.False(t, base.IsValid())
+	base.SetBaseline()
 	require.True(t, base.IsValid())
+
+	r := NewOptimisticKVStoreReader(d, base)
 
 	b, err := r.Get("a")
 	require.NoError(t, err)
 	require.EqualValues(t, "b", string(b))
 
-	at.Store(2)
+	glb.Set(3)
 	require.False(t, base.IsValid())
+	_, err = r.Get("a")
+	require.Error(t, err)
+	require.EqualValues(t, err, ErrStateHasBeenInvalidated)
+
+	base.SetBaseline()
+	b, err = r.Get("a")
+	require.NoError(t, err)
+	require.EqualValues(t, "b", string(b))
+
+	glb.Invalidate()
 	_, err = r.Get("a")
 	require.Error(t, err)
 	require.EqualValues(t, err, ErrStateHasBeenInvalidated)

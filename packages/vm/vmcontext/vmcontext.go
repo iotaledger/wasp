@@ -31,7 +31,7 @@ type VMContext struct {
 	processors           *processors.ProcessorCache
 	txBuilder            *utxoutil.Builder
 	virtualState         state.VirtualState
-	readStateCheckpoint  *coreutil.StateIndexBaseline
+	solidStateBaseline   *coreutil.SolidStateBaseline
 	remainingAfterFees   *ledgerstate.ColoredBalances
 	blockContext         map[coretypes.Hname]*blockContext
 	blockContextCloseSeq []coretypes.Hname
@@ -93,7 +93,7 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 		chainID:              *chainID,
 		txBuilder:            txb,
 		virtualState:         task.VirtualState,
-		readStateCheckpoint:  task.GlobalStateCheckpoint,
+		solidStateBaseline:   task.SolidStateBaseline,
 		processors:           task.Processors,
 		blockContext:         make(map[coretypes.Hname]*blockContext),
 		blockContextCloseSeq: make([]coretypes.Hname, 0),

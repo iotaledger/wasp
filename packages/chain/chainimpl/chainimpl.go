@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"sync"
 
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+
 	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/registry"
 
@@ -39,7 +41,7 @@ type chainObj struct {
 	dismissed             atomic.Bool
 	dismissOnce           sync.Once
 	chainID               coretypes.ChainID
-	globalSolidIndex      atomic.Uint32
+	globalSolidIndex      chain.GlobalSolidIndex
 	procset               *processors.ProcessorCache
 	chMsg                 chan interface{}
 	stateMgr              chain.StateManager
@@ -84,6 +86,7 @@ func NewChain(
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstream, chainLog),
 		store:             store,
+		globalSolidIndex:  coreutil.NewGlobalSolidIndex(),
 		peerNetworkConfig: peerNetConfig,
 		netProvider:       netProvider,
 		dksProvider:       dksProvider,
@@ -99,7 +102,6 @@ func NewChain(
 			handler.(func(outputID ledgerstate.OutputID, blockIndex uint32))(params[0].(ledgerstate.OutputID), params[1].(uint32))
 		}),
 	}
-	ret.globalSolidIndex.Store(^uint32(0))
 	ret.eventStateTransition.Attach(events.NewClosure(ret.processStateTransition))
 	ret.eventSynced.Attach(events.NewClosure(ret.processSynced))
 

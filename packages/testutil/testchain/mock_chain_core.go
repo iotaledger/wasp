@@ -8,12 +8,11 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"go.uber.org/atomic"
 )
 
 type MockedChainCore struct {
 	chainID                 coretypes.ChainID
-	solidStateIndex         atomic.Uint32
+	globalSolidIndex        chain.GlobalSolidIndex
 	processors              *processors.ProcessorCache
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
@@ -28,9 +27,10 @@ type MockedChainCore struct {
 
 func NewMockedChainCore(chainID coretypes.ChainID, log *logger.Logger) *MockedChainCore {
 	ret := &MockedChainCore{
-		chainID:    chainID,
-		processors: processors.MustNew(),
-		log:        log,
+		chainID:          chainID,
+		processors:       processors.MustNew(),
+		globalSolidIndex: coreutil.NewGlobalSolidIndex(),
+		log:              log,
 		eventStateTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.StateTransitionEventData))(params[0].(*chain.StateTransitionEventData))
 		}),
@@ -50,6 +50,7 @@ func NewMockedChainCore(chainID coretypes.ChainID, log *logger.Logger) *MockedCh
 			chain.LogSyncedEvent(outputID, blockIndex, log)
 		},
 	}
+	ret.GlobalSolidIndex().Set(0) // always valid
 	ret.eventStateTransition.Attach(events.NewClosure(func(data *chain.StateTransitionEventData) {
 		ret.onEventStateTransition(data)
 	}))
@@ -66,12 +67,8 @@ func (m *MockedChainCore) ID() *coretypes.ChainID {
 	return &m.chainID
 }
 
-func (c *MockedChainCore) GetSolidStateBaseline() *coreutil.StateIndexBaseline {
-	return coreutil.NewStateIndexBaseline(&c.solidStateIndex)
-}
-
-func (c *MockedChainCore) SetGlobalSolidIndex(idx uint32) {
-	c.solidStateIndex.Store(idx)
+func (c *MockedChainCore) GlobalSolidIndex() chain.GlobalSolidIndex {
+	return c.globalSolidIndex
 }
 
 func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {

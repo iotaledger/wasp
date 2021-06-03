@@ -89,7 +89,7 @@ func (c *consensus) runVMIfNeeded() {
 	if len(reqs) == 0 {
 		// due to change in time, all requests became non processable ACS must be run again
 		c.resetWorkflow()
-		c.log.Debugf("empty list of processable requests. Reset workflow")
+		c.log.Debugf("\"runVMIfNeeded: empty list of processable requests. Reset workflow")
 		return
 	}
 	// here reqs as as set is deterministic. Must be sorted to have fully deterministic list
@@ -104,11 +104,12 @@ func (c *consensus) runVMIfNeeded() {
 		}
 	})
 
-	c.log.Debugf("run VM with batch len = %d", len(reqs))
+	c.log.Debugf("runVMIfNeeded: run VM with batch len = %d", len(reqs))
 	task := &vm.VMTask{
 		ACSSessionID:       c.acsSessionID,
 		Processors:         c.chain.Processors(),
 		ChainInput:         c.stateOutput,
+		SolidStateBaseline: c.chain.GlobalSolidIndex().GetBaseline(),
 		Entropy:            c.consensusEntropy,
 		ValidatorFeeTarget: *c.consensusBatch.FeeDestination,
 		Requests:           reqs,
@@ -116,7 +117,10 @@ func (c *consensus) runVMIfNeeded() {
 		VirtualState:       c.currentState.Clone(),
 		Log:                c.log,
 	}
-	task.GlobalStateCheckpoint = c.chain.GetSolidStateBaseline()
+	if !task.SolidStateBaseline.IsValid() {
+		c.log.Debugf("runVMIfNeeded: solid state baseline is invalid. Not even start VM")
+		return
+	}
 	task.OnFinish = func(_ dict.Dict, _ error, vmError error) {
 		if vmError != nil {
 			c.log.Errorf("VM task failed: %v", vmError)

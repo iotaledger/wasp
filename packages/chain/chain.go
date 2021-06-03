@@ -26,8 +26,13 @@ type ChainCore interface {
 	ReceiveMessage(interface{})
 	Events() ChainEvents
 	Processors() *processors.ProcessorCache
-	SetGlobalSolidIndex(idx uint32) // for use in state manager
-	GetSolidStateBaseline() *coreutil.StateIndexBaseline
+	GlobalSolidIndex() GlobalSolidIndex
+}
+
+type GlobalSolidIndex interface {
+	GetBaseline() *coreutil.SolidStateBaseline
+	Set(idx uint32) // for use in state manager
+	Invalidate()    // only for state manager
 }
 
 type Chain interface {

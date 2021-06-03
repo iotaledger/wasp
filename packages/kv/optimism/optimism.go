@@ -8,7 +8,7 @@ import (
 
 type OptimisticKVStoreReader struct {
 	kvstore  kv.KVStoreReader
-	baseline *coreutil.StateIndexBaseline
+	baseline *coreutil.SolidStateBaseline
 }
 
 type ErrorStateInvalidated struct {
@@ -17,7 +17,7 @@ type ErrorStateInvalidated struct {
 
 var ErrStateHasBeenInvalidated = &ErrorStateInvalidated{xerrors.New("virtual state has been invalidated")}
 
-func NewOptimisticKVStoreReader(store kv.KVStoreReader, baseline *coreutil.StateIndexBaseline) *OptimisticKVStoreReader {
+func NewOptimisticKVStoreReader(store kv.KVStoreReader, baseline *coreutil.SolidStateBaseline) *OptimisticKVStoreReader {
 	return &OptimisticKVStoreReader{
 		kvstore:  store,
 		baseline: baseline,
