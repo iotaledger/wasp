@@ -18,10 +18,11 @@ import (
 type EthService struct {
 	evmChain *EVMChain
 	signer   *ed25519.KeyPair
+	accounts *AccountManager
 }
 
-func NewEthService(evmChain *EVMChain, signer *ed25519.KeyPair) *EthService {
-	return &EthService{evmChain, signer}
+func NewEthService(evmChain *EVMChain, signer *ed25519.KeyPair, accounts *AccountManager) *EthService {
+	return &EthService{evmChain, signer, accounts}
 }
 
 func (s *EthService) ProtocolVersion() hexutil.Uint {
@@ -175,13 +176,16 @@ func (s *EthService) GetUncleByBlockNumberAndIndex(blockNumberOrTag rpc.BlockNum
 	return nil // no uncles are ever generated in evmchain contract
 }
 
-func (s *EthService) GasPrice() *hexutil.Big     { return (*hexutil.Big)(big.NewInt(0)) }
-func (s *EthService) Mining() bool               { return false }
-func (s *EthService) Hashrate() float64          { return 0 }
-func (s *EthService) Coinbase() common.Address   { return common.Address{} }
-func (s *EthService) Syncing() bool              { return false }
-func (s *EthService) Accounts() []common.Address { return []common.Address{} }
-func (s *EthService) GetCompilers() []string     { return []string{} }
+func (s *EthService) Accounts() []common.Address {
+	return s.accounts.Addresses()
+}
+
+func (s *EthService) GasPrice() *hexutil.Big   { return (*hexutil.Big)(big.NewInt(0)) }
+func (s *EthService) Mining() bool             { return false }
+func (s *EthService) Hashrate() float64        { return 0 }
+func (s *EthService) Coinbase() common.Address { return common.Address{} }
+func (s *EthService) Syncing() bool            { return false }
+func (s *EthService) GetCompilers() []string   { return []string{} }
 
 /*
 func (s *EthService) NewFilter()

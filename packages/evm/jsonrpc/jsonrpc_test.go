@@ -22,12 +22,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	faucetKey, _  = crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	faucetAddress = crypto.PubkeyToAddress(faucetKey.PublicKey)
-	faucetSupply  = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
-)
-
 type env struct {
 	t         *testing.T
 	server    *rpc.Server
@@ -44,13 +38,15 @@ func newEnv(t *testing.T) *env {
 	}))
 
 	solo := NewSoloBackend(core.GenesisAlloc{
-		faucetAddress: {Balance: faucetSupply},
+		evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 	})
 	soloEVMChain := NewEVMChain(solo)
 
 	signer, _ := solo.Env.NewKeyPairWithFunds()
 
-	rpcsrv := NewServer(soloEVMChain, signer)
+	accountManager := NewAccountManager(evmtest.Accounts)
+
+	rpcsrv := NewServer(soloEVMChain, signer, accountManager)
 	t.Cleanup(rpcsrv.Stop)
 
 	rawClient := rpc.DialInProc(rpcsrv)
@@ -70,12 +66,12 @@ func generateKey(t *testing.T) (*ecdsa.PrivateKey, common.Address) {
 var requestFundsAmount = big.NewInt(1e18) // 1 ETH
 
 func (e *env) requestFunds(target common.Address) *types.Transaction {
-	nonce, err := e.client.NonceAt(context.Background(), faucetAddress, nil)
+	nonce, err := e.client.NonceAt(context.Background(), evmtest.FaucetAddress, nil)
 	require.NoError(e.t, err)
 	tx, err := types.SignTx(
 		types.NewTransaction(nonce, target, requestFundsAmount, evm.TxGas, evm.GasPrice, nil),
 		evm.Signer(),
-		faucetKey,
+		evmtest.FaucetKey,
 	)
 	require.NoError(e.t, err)
 	err = e.client.SendTransaction(context.Background(), tx)
@@ -299,9 +295,9 @@ func TestRPCBlockNumber(t *testing.T) {
 func TestRPCGetTransactionCount(t *testing.T) {
 	env := newEnv(t)
 	_, receiverAddress := generateKey(t)
-	require.EqualValues(t, 0, env.nonceAt(faucetAddress))
+	require.EqualValues(t, 0, env.nonceAt(evmtest.FaucetAddress))
 	env.requestFunds(receiverAddress)
-	require.EqualValues(t, 1, env.nonceAt(faucetAddress))
+	require.EqualValues(t, 1, env.nonceAt(evmtest.FaucetAddress))
 }
 
 func TestRPCGetBlockByNumber(t *testing.T) {

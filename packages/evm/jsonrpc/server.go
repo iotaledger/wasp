@@ -5,7 +5,7 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 )
 
-func NewServer(chain *EVMChain, signer *ed25519.KeyPair) *rpc.Server {
+func NewServer(chain *EVMChain, signer *ed25519.KeyPair, accountManager *AccountManager) *rpc.Server {
 	rpcsrv := rpc.NewServer()
 	for _, srv := range []struct {
 		namespace string
@@ -13,7 +13,7 @@ func NewServer(chain *EVMChain, signer *ed25519.KeyPair) *rpc.Server {
 	}{
 		{"web3", NewWeb3Service()},
 		{"net", NewNetService()},
-		{"eth", NewEthService(chain, signer)},
+		{"eth", NewEthService(chain, signer, accountManager)},
 	} {
 		err := rpcsrv.RegisterName(srv.namespace, srv.service)
 		if err != nil {

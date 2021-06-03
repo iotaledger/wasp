@@ -3,32 +3,31 @@ package main
 import (
 	"errors"
 	"fmt"
-	"math/big"
 	"net/http"
 
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
-	faucetKey, _ := crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
-	faucetAddress := crypto.PubkeyToAddress(faucetKey.PublicKey)
-	faucetSupply := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
-
 	// TODO: use wasp backend
+	// TODO: make genesis configurable
 	solo := jsonrpc.NewSoloBackend(core.GenesisAlloc{
-		faucetAddress: {Balance: faucetSupply},
+		evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 	})
 	soloEVMChain := jsonrpc.NewEVMChain(solo)
 
-	// TODO: signer key should come from configuration
+	// TODO: make signer key configurable
 	signer, _ := solo.Env.NewKeyPairWithFunds()
 
-	rpcsrv := jsonrpc.NewServer(soloEVMChain, signer)
+	// TODO: make accounts configurable
+	accountManager := jsonrpc.NewAccountManager(evmtest.Accounts)
+
+	rpcsrv := jsonrpc.NewServer(soloEVMChain, signer, accountManager)
 	defer rpcsrv.Stop()
 
 	serveHTTP(rpcsrv)
@@ -47,7 +46,7 @@ func serveHTTP(rpcsrv *rpc.Server) {
 		fmt.Printf("RESPONSE: %s\n", string(resBody))
 	}))
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"}, // TODO make configurable
+		AllowOrigins: []string{"*"}, // TODO make CORS configurable
 		AllowMethods: []string{http.MethodPost, http.MethodGet},
 		AllowHeaders: []string{"*"},
 	}))
