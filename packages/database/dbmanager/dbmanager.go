@@ -56,7 +56,7 @@ func (m *DBManager) createDB(chainID *coretypes.ChainID) database.DB {
 	dbDir := parameters.GetString(parameters.DatabaseDir)
 	instanceDir := fmt.Sprintf("%s/%s", dbDir, chainID.Base58())
 	m.log.Infof("creating new persistent database, ChainID: %s, dir: %s", chainID.Base58(), instanceDir)
-	db, err := database.NewDB(dbDir)
+	db, err := database.NewDB(instanceDir)
 	if err != nil {
 		m.log.Fatal(err)
 	}
