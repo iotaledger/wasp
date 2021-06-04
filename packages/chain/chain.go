@@ -27,6 +27,7 @@ type ChainCore interface {
 	Events() ChainEvents
 	Processors() *processors.ProcessorCache
 	GlobalSync() coreutil.GlobalSync
+	GetStateReader() state.OptimisticStateReader
 }
 
 type Chain interface {
@@ -113,6 +114,7 @@ type Mempool interface {
 	ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
 	HasRequest(id coretypes.RequestID) bool
 	Stats() MempoolStats
+	WaitRequestIn(reqid coretypes.RequestID, timeout ...time.Duration) bool // for testing
 	Close()
 }
 

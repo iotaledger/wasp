@@ -150,12 +150,9 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	stateReader, err := state.NewOptimisticStateReader(c.db)
-	if err != nil {
-		c.log.Errorf("GetRequestProcessingStatus: %v", err)
-		return chain.RequestProcessingStatusUnknown
-	}
-	if !blocklog.IsRequestProcessed(stateReader, &reqID) {
+	c.stateReader.SetBaseline()
+	processed, err := blocklog.IsRequestProcessed(c.stateReader.KVStoreReader(), &reqID)
+	if err != nil || !processed {
 		return chain.RequestProcessingStatusUnknown
 	}
 	return chain.RequestProcessingStatusCompleted
@@ -186,5 +183,5 @@ func (c *chainObj) Events() chain.ChainEvents {
 }
 
 func (c *chainObj) GetStateReader() state.OptimisticStateReader {
-
+	return state.NewOptimisticStateReader(c.db, c.globalSync)
 }

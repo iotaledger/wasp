@@ -239,20 +239,13 @@ type optimisticStateReader struct {
 }
 
 // NewOptimisticStateReader creates new reader. Checks consistency
-func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.GlobalSync) (*optimisticStateReader, error) {
+func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.GlobalSync) *optimisticStateReader {
 	sub := subRealm(db, []byte{dbkeys.ObjectTypeStateVariable})
 	chainState := kv.NewHiveKVStoreReader(sub)
-	_, exists, err := loadStateHashFromDb(db)
-	if err != nil {
-		return nil, xerrors.Errorf("NewOptimisticStateReader: %w", err)
-	}
-	if !exists {
-		return nil, nil
-	}
 	return &optimisticStateReader{
 		db:         db,
 		chainState: optimism.NewOptimisticKVStoreReader(chainState, glb.GetSolidIndexBaseline()),
-	}, nil
+	}
 }
 
 func (r *optimisticStateReader) BlockIndex() (uint32, error) {

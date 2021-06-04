@@ -195,8 +195,7 @@ func TestStateWithDB(t *testing.T) {
 
 		glb := coreutil.NewGlobalSync()
 		glb.SetSolidIndex(0)
-		rdr, err := NewOptimisticStateReader(store, glb)
-		require.NoError(t, err)
+		rdr := NewOptimisticStateReader(store, glb)
 
 		bi, err := rdr.BlockIndex()
 		require.NoError(t, err)
@@ -256,8 +255,7 @@ func TestStateReader(t *testing.T) {
 
 		glb := coreutil.NewGlobalSync()
 		glb.SetSolidIndex(0)
-		st, err := NewOptimisticStateReader(store, glb)
-		require.NoError(t, err)
+		st := NewOptimisticStateReader(store, glb)
 		ok, err := st.KVStoreReader().Has("kuku")
 		require.NoError(t, err)
 		require.False(t, ok)

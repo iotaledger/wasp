@@ -42,6 +42,7 @@ type chainObj struct {
 	dismissOnce           sync.Once
 	chainID               coretypes.ChainID
 	globalSync            coreutil.GlobalSync
+	stateReader           state.OptimisticStateReader
 	procset               *processors.ProcessorCache
 	chMsg                 chan interface{}
 	stateMgr              chain.StateManager
@@ -74,13 +75,8 @@ func NewChain(
 
 	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
 	globalSync := coreutil.NewGlobalSync()
-	stateReader, err := state.NewStateReader(db)
-	if err != nil {
-		log.Errorf("NewChain: %v", err)
-		return nil
-	}
 	ret := &chainObj{
-		mempool:           mempool.New(stateReader, blobProvider, chainLog),
+		mempool:           mempool.New(state.NewOptimisticStateReader(db, globalSync), blobProvider, chainLog),
 		procset:           processors.MustNew(),
 		chMsg:             make(chan interface{}, 100),
 		chainID:           *chr.ChainID,
@@ -88,6 +84,7 @@ func NewChain(
 		nodeConn:          nodeconnimpl.New(txstream, chainLog),
 		db:                db,
 		globalSync:        globalSync,
+		stateReader:       state.NewOptimisticStateReader(db, globalSync),
 		peerNetworkConfig: peerNetConfig,
 		netProvider:       netProvider,
 		dksProvider:       dksProvider,

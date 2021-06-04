@@ -9,8 +9,8 @@ import (
 // GlobalSync implements optimistic read baselines and global locks
 type GlobalSync interface {
 	GetSolidIndexBaseline() *SolidStateBaseline
-	SetSolidIndex(idx uint32) // for use in state manager
-	InvalidateSolidIndex()    // only for state manager
+	SetSolidIndex(idx uint32) GlobalSync // for use in state manager
+	InvalidateSolidIndex() GlobalSync    // only for state manager
 	Mutex() *sync.RWMutex
 }
 
@@ -28,16 +28,18 @@ func NewGlobalSync() *globalSync {
 	ret.solidIndex.Store(^uint64(0))
 	return ret
 }
-func (g *globalSync) SetSolidIndex(idx uint32) {
+func (g *globalSync) SetSolidIndex(idx uint32) GlobalSync {
 	g.solidIndex.Store(uint64(idx))
+	return g
 }
 
 func (g *globalSync) GetSolidIndexBaseline() *SolidStateBaseline {
 	return NewStateIndexBaseline(&g.solidIndex)
 }
 
-func (g *globalSync) InvalidateSolidIndex() {
+func (g *globalSync) InvalidateSolidIndex() GlobalSync {
 	g.solidIndex.Store(^uint64(0))
+	return g
 }
 
 func (g *globalSync) Mutex() *sync.RWMutex {

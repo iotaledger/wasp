@@ -37,9 +37,7 @@ func GetRequestIDsForLastBlock(stateReader state.OptimisticStateReader) ([]coret
 }
 
 // IsRequestProcessed check if reqid is stored in the chain state as processed
-func IsRequestProcessed(stateReader state.StateReader, reqid *coretypes.RequestID) bool {
-	partition := subrealm.NewReadOnly(stateReader.KVStoreReader(), kv.Key(Interface.Hname().Bytes()))
-	ret, err := isRequestProcessedIntern(partition, reqid)
-	assert.NewAssert().RequireNoError(err)
-	return ret
+func IsRequestProcessed(stateReader kv.KVStoreReader, reqid *coretypes.RequestID) (bool, error) {
+	partition := subrealm.NewReadOnly(stateReader, kv.Key(Interface.Hname().Bytes()))
+	return isRequestProcessedIntern(partition, reqid)
 }

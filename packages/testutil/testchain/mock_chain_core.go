@@ -7,12 +7,13 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
 type MockedChainCore struct {
 	chainID                 coretypes.ChainID
-	globalSolidIndex        chain.GlobalSync
+	globalSolidIndex        coreutil.GlobalSync
 	processors              *processors.ProcessorCache
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
@@ -50,7 +51,7 @@ func NewMockedChainCore(chainID coretypes.ChainID, log *logger.Logger) *MockedCh
 			chain.LogSyncedEvent(outputID, blockIndex, log)
 		},
 	}
-	ret.GlobalSync().Set(0) // always valid
+	ret.GlobalSync().SetSolidIndex(0) // always valid
 	ret.eventStateTransition.Attach(events.NewClosure(func(data *chain.StateTransitionEventData) {
 		ret.onEventStateTransition(data)
 	}))
@@ -67,8 +68,12 @@ func (m *MockedChainCore) ID() *coretypes.ChainID {
 	return &m.chainID
 }
 
-func (c *MockedChainCore) GlobalSync() chain.GlobalSync {
+func (c *MockedChainCore) GlobalSync() coreutil.GlobalSync {
 	return c.globalSolidIndex
+}
+
+func (m *MockedChainCore) GetStateReader() state.OptimisticStateReader {
+	panic("implement me")
 }
 
 func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {
