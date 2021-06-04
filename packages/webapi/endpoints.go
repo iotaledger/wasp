@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/admapi"
 	"github.com/iotaledger/wasp/packages/webapi/blob"
 	"github.com/iotaledger/wasp/packages/webapi/info"
+	"github.com/iotaledger/wasp/packages/webapi/reqstatus"
 	"github.com/iotaledger/wasp/packages/webapi/request"
 	"github.com/iotaledger/wasp/packages/webapi/state"
 	"github.com/labstack/echo/v4"
@@ -24,6 +25,7 @@ func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP) {
 	pub := server.Group("public", "").SetDescription("Public endpoints")
 	blob.AddEndpoints(pub)
 	info.AddEndpoints(pub)
+	reqstatus.AddEndpoints(pub)
 	request.AddEndpoints(pub)
 	state.AddEndpoints(pub)
 

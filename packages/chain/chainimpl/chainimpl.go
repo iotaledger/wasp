@@ -7,8 +7,10 @@ import (
 	"bytes"
 	"sync"
 
+	"github.com/iotaledger/wasp/packages/offledger"
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/plugins/gossip"
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 
@@ -59,6 +61,7 @@ type chainObj struct {
 	eventRequestProcessed *events.Event
 	eventChainTransition  *events.Event
 	eventSynced           *events.Event
+	peers                 *peering.PeerDomainProvider
 }
 
 func NewChain(
@@ -110,6 +113,7 @@ func NewChain(
 		return nil
 	}
 	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn)
+	ret.peers = &peers
 	var peeringID peering.PeeringID = ret.chainID.Array()
 	peers.Attach(&peeringID, func(recv *peering.RecvEvent) {
 		ret.ReceiveMessage(recv.Msg)
@@ -198,6 +202,14 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 		if c.consensus != nil {
 			c.consensus.EventSignedResultMsg(msgt)
 		}
+	case chain.MsgOffLedgerRequest:
+		msgt, err := offledger.OffLedgerRequestMsgFromBytes(msg.MsgData)
+		if err != nil {
+			c.log.Error(err)
+			return
+		}
+		gossip.Gossip().ProcessOffLedgerRequest(msgt.ChainID, msgt.Req)
+		return
 
 	default:
 		c.log.Errorf("processPeerMessage: wrong msg type")

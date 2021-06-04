@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/coretypes/request"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -101,6 +102,10 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 			}()
 		}
 	}
+}
+
+func (c *chainObj) ReceiveOffLedgerRequests(reqs ...coretypes.Request) {
+	c.mempool.ReceiveRequests(reqs...)
 }
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
@@ -195,4 +200,12 @@ func (c *chainObj) GetStateReader() state.OptimisticStateReader {
 
 func (c *chainObj) Log() *logger.Logger {
 	return c.log
+}
+
+func (c *chainObj) Committee() *chain.Committee {
+	return &c.committee
+}
+
+func (c *chainObj) Peers() *peering.PeerDomainProvider {
+	return c.peers
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 
 	"github.com/iotaledger/hive.go/logger"
+	"go.uber.org/atomic"
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
@@ -33,6 +34,9 @@ type ChainCore interface {
 	GlobalStateSync() coreutil.ChainStateSync
 	GetStateReader() state.OptimisticStateReader
 	Log() *logger.Logger
+	GlobalSolidIndex() *atomic.Uint32
+	Committee() *Committee
+	Peers() *peering.PeerDomainProvider
 }
 
 // ChainEntry interface to access chain from the chain registry side
@@ -46,10 +50,11 @@ type ChainEntry interface {
 	IsDismissed() bool
 }
 
-// ChainRequests is an interface to query status of the reqest
+// ChainRequests is an interface to query status of the request
 type ChainRequests interface {
 	GetRequestProcessingStatus(id coretypes.RequestID) RequestProcessingStatus
 	EventRequestProcessed() *events.Event
+	ReceiveOffLedgerRequests(reqs ...coretypes.Request)
 }
 
 type ChainEvents interface {

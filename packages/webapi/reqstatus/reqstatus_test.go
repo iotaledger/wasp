@@ -1,4 +1,4 @@
-package request
+package reqstatus
 
 import (
 	"net/http"
