@@ -1,12 +1,13 @@
 package inccounter
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 const incName = "incTest"

@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/plugins/chains"
-	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
@@ -50,17 +49,11 @@ func handleCallView(c echo.Context) error {
 			return httperrors.BadRequest("Invalid request body")
 		}
 	}
-
 	theChain := chains.AllChains().Get(chainID)
 	if theChain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
-
-	vctx, err := viewcontext.NewFromDB(database.GetKVStore(theChain.ID()), *theChain.ID(), theChain.Processors())
-	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
-	}
-
+	vctx := viewcontext.NewFromChain(theChain)
 	ret, err := vctx.CallView(contractHname, coretypes.Hn(fname), params)
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("View call failed: %v", err))

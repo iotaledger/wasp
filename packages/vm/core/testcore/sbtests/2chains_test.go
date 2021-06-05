@@ -1,13 +1,15 @@
 package sbtests
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test2Chains(t *testing.T) { run2(t, test2Chains) }
@@ -29,13 +31,13 @@ func test2Chains(t *testing.T, w bool) {
 
 	chain1.AssertIotas(contractAgentID1, 1)
 	chain1.AssertIotas(contractAgentID2, 0)
-	chain1.AssertOwnersIotas(2+extraToken1)
-	chain1.AssertTotalIotas(3+extraToken1)
+	chain1.AssertOwnersIotas(2 + extraToken1)
+	chain1.AssertTotalIotas(3 + extraToken1)
 
 	chain2.AssertIotas(contractAgentID1, 0)
 	chain2.AssertIotas(contractAgentID2, 1)
-	chain2.AssertOwnersIotas(2+extraToken2)
-	chain2.AssertTotalIotas(3+extraToken2)
+	chain2.AssertOwnersIotas(2 + extraToken2)
+	chain2.AssertTotalIotas(3 + extraToken2)
 
 	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit,
 		accounts.ParamAgentID, contractAgentID2,
@@ -48,14 +50,14 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.AssertIotas(userAgentID, 0)
 	chain1.AssertIotas(contractAgentID1, 1)
 	chain1.AssertIotas(contractAgentID2, 42)
-	chain1.AssertOwnersIotas(2+extraToken1)
-	chain1.AssertTotalIotas(45+extraToken1)
+	chain1.AssertOwnersIotas(2 + extraToken1)
+	chain1.AssertTotalIotas(45 + extraToken1)
 
 	chain2.AssertIotas(userAgentID, 0)
 	chain2.AssertIotas(contractAgentID1, 0)
 	chain2.AssertIotas(contractAgentID2, 1)
-	chain2.AssertOwnersIotas(2+extraToken2)
-	chain2.AssertTotalIotas(3+extraToken2)
+	chain2.AssertOwnersIotas(2 + extraToken2)
+	chain2.AssertTotalIotas(3 + extraToken2)
 
 	req = solo.NewCallParams(sbtestsc.Name, sbtestsc.FuncWithdrawToChain,
 		sbtestsc.ParamChainID, chain1.ChainID,
@@ -64,6 +66,7 @@ func test2Chains(t *testing.T, w bool) {
 	_, err = chain2.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
+	time.Sleep(500 * time.Millisecond)
 	chain1.WaitForEmptyBacklog()
 	chain2.WaitForEmptyBacklog()
 
@@ -72,12 +75,12 @@ func test2Chains(t *testing.T, w bool) {
 	chain1.AssertIotas(userAgentID, 0)
 	chain1.AssertIotas(contractAgentID1, 1)
 	chain1.AssertIotas(contractAgentID2, 0)
-	chain1.AssertOwnersIotas(3+extraToken1)
-	chain1.AssertTotalIotas(4+extraToken1)
+	chain1.AssertOwnersIotas(3 + extraToken1)
+	chain1.AssertTotalIotas(4 + extraToken1)
 
 	chain2.AssertIotas(userAgentID, 0)
 	chain2.AssertIotas(contractAgentID1, 0)
 	chain2.AssertIotas(contractAgentID2, 43)
-	chain2.AssertOwnersIotas(2+extraToken2)
-	chain2.AssertTotalIotas(45+extraToken2)
+	chain2.AssertOwnersIotas(2 + extraToken2)
+	chain2.AssertTotalIotas(45 + extraToken2)
 }

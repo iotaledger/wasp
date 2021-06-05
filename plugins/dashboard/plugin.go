@@ -91,14 +91,9 @@ func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.Chain {
 	return chains.AllChains().Get(chainID)
 }
 
-func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
-	chainStore := database.GetKVStore(chain.ID())
-	vctx, err := viewcontext.NewFromDB(chainStore, *chain.ID(), chain.Processors())
-	if err != nil {
-		return nil, fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
-	}
-
-	ret, err := vctx.CallView(hname, coretypes.Hn(fname), params)
+func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, funName string, params dict.Dict) (dict.Dict, error) {
+	vctx := viewcontext.NewFromChain(chain)
+	ret, err := vctx.CallView(hname, coretypes.Hn(funName), params)
 	if err != nil {
 		return nil, fmt.Errorf("root view call failed: %v", err)
 	}

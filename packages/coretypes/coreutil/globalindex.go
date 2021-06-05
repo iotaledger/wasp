@@ -14,7 +14,7 @@ type GlobalSync interface {
 	Mutex() *sync.RWMutex
 }
 
-// region GlobalSync  ////////////////////////////////
+// region GlobalStateSync  ////////////////////////////////
 
 type globalSync struct {
 	solidIndex  atomic.Uint64
@@ -55,10 +55,10 @@ type SolidStateBaseline struct {
 	baseline         uint32
 }
 
-func NewStateIndexBaseline(global *atomic.Uint64) *SolidStateBaseline {
+func NewStateIndexBaseline(globalStateIndex *atomic.Uint64) *SolidStateBaseline {
 	return &SolidStateBaseline{
-		globalStateIndex: global,
-		baseline:         uint32(global.Load()),
+		globalStateIndex: globalStateIndex,
+		baseline:         uint32(globalStateIndex.Load()),
 	}
 }
 

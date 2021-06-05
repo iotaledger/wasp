@@ -26,7 +26,7 @@ func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
 }
 
-func (c *chainObj) GlobalSync() coreutil.GlobalSync {
+func (c *chainObj) GlobalStateSync() coreutil.GlobalSync {
 	return c.globalSync
 }
 
@@ -182,6 +182,7 @@ func (c *chainObj) Events() chain.ChainEvents {
 	return c
 }
 
+// GetStateReader returns a new copy of the optimistic state reader, with own baseline
 func (c *chainObj) GetStateReader() state.OptimisticStateReader {
 	return state.NewOptimisticStateReader(c.db, c.globalSync)
 }

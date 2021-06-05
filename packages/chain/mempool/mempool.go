@@ -14,7 +14,7 @@ import (
 
 type mempool struct {
 	inBuffer                map[coretypes.RequestID]coretypes.Request
-	inMutex                 sync.Mutex
+	inMutex                 sync.RWMutex
 	poolMutex               sync.RWMutex
 	incounter               int
 	outcounter              int
@@ -76,11 +76,10 @@ func (m *mempool) removeFromInBuffer(req coretypes.Request) {
 }
 
 // fills up the buffer with requests in the in buffer
-// It is the only reader from the inBuffer so RWMutex does not makes sense
 func (m *mempool) takeInBuffer(buf []coretypes.Request) []coretypes.Request {
 	buf = buf[:0]
-	m.inMutex.Lock()
-	defer m.inMutex.Unlock()
+	m.inMutex.RLock()
+	defer m.inMutex.RUnlock()
 
 	for _, req := range m.inBuffer {
 		buf = append(buf, req)
@@ -120,12 +119,9 @@ func (m *mempool) addToPool(req coretypes.Request) bool {
 	// put the request to the pool
 	nowis := time.Now()
 	m.incounter++
-	tl := req.TimeLock()
-	if tl.IsZero() {
-		m.log.Debugf("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.incounter, m.outcounter)
-	} else {
-		m.log.Debugf("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.incounter, m.outcounter, tl.Sub(time.Now()))
-	}
+
+	m.traceIn(req)
+
 	m.pool[reqid] = &requestRef{
 		req:          req,
 		whenReceived: nowis,
@@ -153,7 +149,35 @@ func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 		}
 		m.outcounter++
 		delete(m.pool, rid)
-		m.log.Debugf("OUT MEMPOOL %s (+%d / -%d)", rid, m.incounter, m.outcounter)
+
+		m.traceOut(rid)
+	}
+}
+
+const traceInOut = true
+
+func (m *mempool) traceIn(req coretypes.Request) {
+	tl := req.TimeLock()
+	if traceInOut {
+		if tl.IsZero() {
+			m.log.Infof("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.incounter, m.outcounter)
+		} else {
+			m.log.Infof("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.incounter, m.outcounter, tl.Sub(time.Now()))
+		}
+	} else {
+		if tl.IsZero() {
+			m.log.Debugf("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.incounter, m.outcounter)
+		} else {
+			m.log.Debugf("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.incounter, m.outcounter, tl.Sub(time.Now()))
+		}
+	}
+}
+
+func (m *mempool) traceOut(reqid coretypes.RequestID) {
+	if traceInOut {
+		m.log.Infof("OUT MEMPOOL %s (+%d / -%d)", reqid, m.incounter, m.outcounter)
+	} else {
+		m.log.Debugf("OUT MEMPOOL %s (+%d / -%d)", reqid, m.incounter, m.outcounter)
 	}
 }
 
@@ -221,6 +245,31 @@ func (m *mempool) WaitRequestIn(reqid coretypes.RequestID, timeout ...time.Durat
 	}
 	for {
 		if m.HasRequest(reqid) {
+			return true
+		}
+		time.Sleep(10 * time.Millisecond)
+		if time.Now().After(deadline) {
+			return false
+		}
+	}
+}
+
+func (m *mempool) inBufferLen() int {
+	m.inMutex.RLock()
+	defer m.inMutex.RUnlock()
+	return len(m.inBuffer)
+}
+
+// WaitAllRequestsIn waits until in buffer becomes empty. Used in synchronous situations when the caller
+// want to be sure all requests were fed into the pool
+func (m *mempool) WaitAllRequestsIn(timeout ...time.Duration) bool {
+	nowis := time.Now()
+	deadline := nowis.Add(5 * time.Second)
+	if len(timeout) > 0 {
+		deadline = nowis.Add(timeout[0])
+	}
+	for {
+		if m.inBufferLen() == 0 {
 			return true
 		}
 		time.Sleep(10 * time.Millisecond)

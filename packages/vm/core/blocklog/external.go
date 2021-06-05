@@ -2,7 +2,6 @@ package blocklog
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
@@ -19,8 +18,7 @@ func GetRequestIDsForLastBlock(stateReader state.OptimisticStateReader) ([]coret
 		return nil, nil
 	}
 	partition := subrealm.NewReadOnly(stateReader.KVStoreReader(), kv.Key(Interface.Hname().Bytes()))
-	a := assert.NewAssert()
-	recsBin, exist, err := getRequestLogRecordsForBlockBin(partition, blockIndex, a)
+	recsBin, exist, err := getRequestLogRecordsForBlockBin(partition, blockIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +28,9 @@ func GetRequestIDsForLastBlock(stateReader state.OptimisticStateReader) ([]coret
 	ret := make([]coretypes.RequestID, len(recsBin))
 	for i, d := range recsBin {
 		rec, err := RequestLogRecordFromBytes(d)
-		a.RequireNoError(err)
+		if err != nil {
+			panic(err)
+		}
 		ret[i] = rec.RequestID
 	}
 	return ret, nil

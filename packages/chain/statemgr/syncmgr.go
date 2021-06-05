@@ -160,9 +160,9 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	// invalidate solid state
 	// if any VM task is running with the assumption of the previous state,
 	// it is obsolete and will self-cancel
-	sm.chain.GlobalSync().InvalidateSolidIndex()
-	sm.chain.GlobalSync().Mutex().Lock()
-	defer sm.chain.GlobalSync().Mutex().Unlock()
+	sm.chain.GlobalStateSync().InvalidateSolidIndex()
+	sm.chain.GlobalStateSync().Mutex().Lock()
+	defer sm.chain.GlobalStateSync().Mutex().Unlock()
 
 	err := tentativeState.Commit(blocks...)
 	if err != nil {
@@ -172,7 +172,7 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	}
 	sm.solidState = tentativeState
 	// set the solid state valid
-	sm.chain.GlobalSync().SetSolidIndex(tentativeState.BlockIndex())
+	sm.chain.GlobalStateSync().SetSolidIndex(tentativeState.BlockIndex())
 
 	sm.log.Debugf("commitCandidates: committing of block indices from %v to %v was successful", from, to)
 }

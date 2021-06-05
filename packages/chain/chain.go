@@ -26,7 +26,7 @@ type ChainCore interface {
 	ReceiveMessage(interface{})
 	Events() ChainEvents
 	Processors() *processors.ProcessorCache
-	GlobalSync() coreutil.GlobalSync
+	GlobalStateSync() coreutil.GlobalSync
 	GetStateReader() state.OptimisticStateReader
 }
 
@@ -115,6 +115,7 @@ type Mempool interface {
 	HasRequest(id coretypes.RequestID) bool
 	Stats() MempoolStats
 	WaitRequestIn(reqid coretypes.RequestID, timeout ...time.Duration) bool // for testing
+	WaitAllRequestsIn(timeout ...time.Duration) bool                        // for testing
 	Close()
 }
 
@@ -170,7 +171,6 @@ type PeerStatus struct {
 
 type StateTransitionEventData struct {
 	VirtualState    state.VirtualState
-	RequestIDs      []coretypes.RequestID
 	ChainOutput     *ledgerstate.AliasOutput
 	OutputTimestamp time.Time
 }

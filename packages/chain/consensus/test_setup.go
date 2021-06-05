@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/registry"
 
@@ -61,7 +63,7 @@ type mockedEnv struct {
 	DKSRegistries     []registry.DKShareRegistryProvider
 	store             kvstore.KVStore
 	SolidState        state.VirtualState
-	StateReader       state.OptimisticStateReader
+	GlobalSync        coreutil.GlobalSync
 	StateOutput       *ledgerstate.AliasOutput
 	RequestIDsLast    []coretypes.RequestID
 	NodeConn          []*testchain.MockedNodeConn
@@ -105,15 +107,16 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 	}
 
 	ret := &mockedEnv{
-		Suite:     pairing.NewSuiteBn256(),
-		T:         t,
-		N:         n,
-		Quorum:    quorum,
-		Neighbors: neighbors,
-		Log:       log,
-		Ledger:    utxodb.New(),
-		NodeConn:  make([]*testchain.MockedNodeConn, n),
-		Nodes:     make([]*mockedNode, n),
+		Suite:      pairing.NewSuiteBn256(),
+		T:          t,
+		N:          n,
+		Quorum:     quorum,
+		Neighbors:  neighbors,
+		Log:        log,
+		Ledger:     utxodb.New(),
+		NodeConn:   make([]*testchain.MockedNodeConn, n),
+		Nodes:      make([]*mockedNode, n),
+		GlobalSync: coreutil.NewGlobalSync(),
 	}
 	if mockACS {
 		ret.MockedACS = testchain.NewMockedACSRunner(quorum, log)
@@ -173,8 +176,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 
 	ret.store = mapdb.NewMapDB()
 	ret.SolidState, err = state.CreateOriginState(ret.store, &ret.ChainID)
-	require.NoError(t, err)
-	ret.StateReader, err = state.NewOptimisticStateReader(ret.store)
+	ret.GlobalSync.SetSolidIndex(0)
 	require.NoError(t, err)
 
 	for i := range ret.Nodes {
@@ -185,8 +187,14 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 
 func (env *mockedEnv) newNode(i uint16) *mockedNode {
 	log := env.Log.Named(fmt.Sprintf("%d", i))
-	chainCore := testchain.NewMockedChainCore(env.ChainID, log)
-	mpool := mempool.New(env.StateReader, coretypes.NewInMemoryBlobCache(), log)
+	chainCore := testchain.NewMockedChainCore(env.T, env.ChainID, log)
+	chainCore.OnGlobalStateSync(func() coreutil.GlobalSync {
+		return env.GlobalSync
+	})
+	chainCore.OnGetStateReader(func() state.OptimisticStateReader {
+		return state.NewOptimisticStateReader(env.store, env.GlobalSync)
+	})
+	mpool := mempool.New(chainCore.GetStateReader(), coretypes.NewInMemoryBlobCache(), log)
 	mockCommitteeRegistry := testchain.NewMockedCommitteeRegistry(env.Neighbors)
 	cfg, err := peering.NewStaticPeerNetworkConfigProvider(env.Neighbors[i], 4000+int(i), env.Neighbors...)
 	require.NoError(env.T, err)
@@ -319,7 +327,7 @@ func (env *mockedEnv) eventStateTransition() {
 	for _, node := range env.Nodes {
 		go func(n *mockedNode) {
 			n.Mempool.RemoveRequests(env.RequestIDsLast...)
-			n.ChainCore.GlobalSync().Set(solidState.BlockIndex())
+			n.ChainCore.GlobalStateSync().SetSolidIndex(solidState.BlockIndex())
 
 			n.Consensus.EventStateTransitionMsg(&chain.StateTransitionMsg{
 				State:          solidState.Clone(),

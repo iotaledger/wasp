@@ -9,9 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"go.uber.org/atomic"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -23,20 +20,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, error) {
-	ch.Log.Debugf("runBatch ('%s')", trace)
-
+func (ch *Chain) runRequestsSync(reqs []coretypes.Request, trace string) (dict.Dict, error) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	for _, r := range batch {
+	ch.reqCounter.Add(int32(len(reqs)))
+	ch.mempool.ReceiveRequests(reqs...)
+	ch.mempool.WaitAllRequestsIn()
+
+	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
+	require.EqualValues(ch.Env.T, len(reqs), len(ready))
+	return ch.runRequestsNolock(reqs, trace)
+}
+
+func (ch *Chain) runRequestsNolock(reqs []coretypes.Request, trace string) (dict.Dict, error) {
+	ch.Log.Debugf("runRequestsSync ('%s')", trace)
+
+	for _, r := range reqs {
 		_, solidArgs := r.Params()
 		require.True(ch.Env.T, solidArgs)
 	}
 	task := &vm.VMTask{
 		Processors:         ch.proc,
 		ChainInput:         ch.GetChainOutput(),
-		Requests:           batch,
+		Requests:           reqs,
 		Timestamp:          ch.Env.LogicalTime(),
 		VirtualState:       ch.State,
 		Entropy:            hashing.RandomHash(nil),
@@ -47,7 +54,7 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 	var callRes dict.Dict
 	var callErr error
 	// state baseline always valid in Solo
-	task.SolidStateBaseline = coreutil.NewStateIndexBaseline(atomic.NewUint64(0))
+	task.SolidStateBaseline = ch.GlobalSync.GetSolidIndexBaseline()
 	task.OnFinish = func(callResult dict.Dict, callError error, err error) {
 		require.NoError(ch.Env.T, err)
 		callRes = callResult
@@ -65,12 +72,12 @@ func (ch *Chain) runBatch(batch []coretypes.Request, trace string) (dict.Dict, e
 	require.NoError(ch.Env.T, err)
 
 	tx := ledgerstate.NewTransaction(task.ResultTransactionEssence, unlockBlocks)
-	ch.settleStateTransition(tx)
+	ch.settleStateTransition(tx, coretypes.TakeRequestIDs(reqs...))
 
 	return callRes, callErr
 }
 
-func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction) {
+func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction, reqids []coretypes.RequestID) {
 	err := ch.Env.AddToLedger(stateTx)
 	require.NoError(ch.Env.T, err)
 
@@ -91,15 +98,15 @@ func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction) {
 	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
 	require.EqualValues(ch.Env.T, stateOutput.ID(), blockBack.ApprovingOutputID())
 
-	reqIDs := chain.PublishStateTransition(ch.State, stateOutput)
+	chain.PublishStateTransition(ch.State, stateOutput, reqids)
 
 	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
-		ch.State.BlockIndex(), len(reqIDs), len(stateTx.Essence().Outputs()))
-	ch.Log.Debugf("Batch processed: %s", batchShortStr(reqIDs))
+		ch.State.BlockIndex(), len(reqids), len(stateTx.Essence().Outputs()))
+	ch.Log.Debugf("Batch processed: %s", batchShortStr(reqids))
 
-	ch.mempool.RemoveRequests(reqIDs...)
+	ch.mempool.RemoveRequests(reqids...)
 
-	ch.Env.EnqueueRequests(stateTx)
+	go ch.Env.EnqueueRequests(stateTx)
 	ch.Env.ClockStep()
 }
 

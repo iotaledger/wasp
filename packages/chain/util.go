@@ -11,10 +11,10 @@ import (
 )
 
 // LogStateTransition also used in testing
-func LogStateTransition(msg *StateTransitionEventData, log *logger.Logger) {
+func LogStateTransition(msg *StateTransitionEventData, reqids []coretypes.RequestID, log *logger.Logger) {
 	if msg.ChainOutput.GetStateIndex() > 0 {
 		log.Infof("STATE TRANSITION TO #%d. Chain output: %s, block size: %d",
-			msg.VirtualState.BlockIndex(), coretypes.OID(msg.ChainOutput.ID()), len(msg.RequestIDs))
+			msg.VirtualState.BlockIndex(), coretypes.OID(msg.ChainOutput.ID()), len(reqids))
 		log.Debugf("STATE TRANSITION. State hash: %s",
 			msg.VirtualState.Hash().String())
 	} else {
@@ -28,7 +28,7 @@ func LogSyncedEvent(outputID ledgerstate.OutputID, blockIndex uint32, log *logge
 	log.Infof("EVENT: state was synced to block index #%d, approving output: %s", blockIndex, coretypes.OID(outputID))
 }
 
-func PublishStateTransition(newState state.VirtualState, stateOutput *ledgerstate.AliasOutput, reqids []coretypes.RequestID) []coretypes.RequestID {
+func PublishStateTransition(newState state.VirtualState, stateOutput *ledgerstate.AliasOutput, reqids []coretypes.RequestID) {
 	chainID := coretypes.NewChainID(stateOutput.GetAliasAddress())
 
 	publisher.Publish("state",
@@ -46,5 +46,4 @@ func PublishStateTransition(newState state.VirtualState, stateOutput *ledgerstat
 			strconv.Itoa(len(reqids)),
 		)
 	}
-	return reqids
 }

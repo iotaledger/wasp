@@ -111,10 +111,10 @@ func (sm *stateManager) initLoadState() {
 }
 
 func (sm *stateManager) createOriginState() error {
-	sm.chain.GlobalSync().InvalidateSolidIndex()
+	sm.chain.GlobalStateSync().InvalidateSolidIndex()
 
-	sm.chain.GlobalSync().Mutex().Lock()
-	defer sm.chain.GlobalSync().Mutex().Unlock()
+	sm.chain.GlobalStateSync().Mutex().Lock()
+	defer sm.chain.GlobalStateSync().Mutex().Unlock()
 
 	var err error
 	sm.solidState, err = state.CreateOriginState(sm.store, sm.chain.ID())
@@ -124,7 +124,7 @@ func (sm *stateManager) createOriginState() error {
 		)
 		return err
 	}
-	sm.chain.GlobalSync().SetSolidIndex(0)
+	sm.chain.GlobalStateSync().SetSolidIndex(0)
 	sm.log.Infof("ORIGIN STATE has been created")
 	return nil
 }

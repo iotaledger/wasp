@@ -86,7 +86,7 @@ func isRequestProcessedIntern(partition kv.KVStoreReader, reqid *coretypes.Reque
 	return false, nil
 }
 
-func getRequestLogRecordsForBlockBin(state kv.KVStoreReader, blockIndex uint32, a assert.Assert) ([][]byte, bool, error) {
+func getRequestLogRecordsForBlockBin(state kv.KVStoreReader, blockIndex uint32) ([][]byte, bool, error) {
 	if blockIndex == 0 {
 		return nil, true, nil
 	}
@@ -105,7 +105,9 @@ func getRequestLogRecordsForBlockBin(state kv.KVStoreReader, blockIndex uint32, 
 	ret := make([][]byte, blockInfo.TotalRequests)
 	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
 		ret[reqIdx], found = getRequestRecordDataByRef(state, blockIndex, reqIdx)
-		a.Require(found, "getRequestLogRecordsForBlockBin: inconsistency: request record not found")
+		if !found {
+			panic("getRequestLogRecordsForBlockBin: inconsistency: request record not found")
+		}
 	}
 	return ret, true, nil
 }

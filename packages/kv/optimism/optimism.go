@@ -17,6 +17,10 @@ type ErrorStateInvalidated struct {
 
 var ErrStateHasBeenInvalidated = &ErrorStateInvalidated{xerrors.New("virtual state has been invalidated")}
 
+// NewOptimisticKVStoreReader creates an instance of the optimistic reader on top of the KV store reader
+// Each instance contain own read baseline. It is guaranteed that from the moment of calling SetBaseline
+// to the last operation without errors returned the state wasn't modified
+// If state is modified, the KV store operation will return ErrStateHasBeenInvalidated
 func NewOptimisticKVStoreReader(store kv.KVStoreReader, baseline *coreutil.SolidStateBaseline) *OptimisticKVStoreReader {
 	ret := &OptimisticKVStoreReader{
 		kvstore:  store,

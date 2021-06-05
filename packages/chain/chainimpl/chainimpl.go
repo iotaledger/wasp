@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"sync"
 
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/chain/consensus"
@@ -256,12 +258,22 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 }
 
 func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
-	chain.LogStateTransition(msg, c.log)
-	reqids := chain.PublishStateTransition(msg.VirtualState, msg.ChainOutput, msg.RequestIDs)
+	c.stateReader.SetBaseline()
+	reqids, err := blocklog.GetRequestIDsForLastBlock(c.stateReader)
+	if err != nil {
+		// the only error can occur here is database error. The optimistic read failure can't occur here
+		// because the state transition message is only sent only after state is committed and before consensus
+		// start new round
+		c.log.Panicf("processStateTransition. unexpected error: %v", err)
+	}
+	c.log.Infof("=============== processStateTransition: %+v", coretypes.ShortRequestIDs(reqids))
+	c.mempool.RemoveRequests(reqids...)
+
+	chain.LogStateTransition(msg, reqids, c.log)
+	chain.PublishStateTransition(msg.VirtualState, msg.ChainOutput, reqids)
 	for _, reqid := range reqids {
 		c.eventRequestProcessed.Trigger(reqid)
 	}
-	c.mempool.RemoveRequests(reqids...)
 
 	// send to consensus
 	c.ReceiveMessage(&chain.StateTransitionMsg{

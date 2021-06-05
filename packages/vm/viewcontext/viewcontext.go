@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"runtime/debug"
 
-	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/packages/chain"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -25,15 +26,8 @@ type viewcontext struct {
 	log         *logger.Logger
 }
 
-func NewFromDB(store kvstore.KVStore, chainID coretypes.ChainID, proc *processors.ProcessorCache) (*viewcontext, error) {
-	state_, ok, err := state.LoadSolidState(store, &chainID)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, fmt.Errorf("solid state not found for the chain %s", chainID.String())
-	}
-	return New(chainID, state_, proc, nil), nil
+func NewFromChain(chain chain.Chain) *viewcontext {
+	return New(*chain.ID(), chain.GetStateReader(), chain.Processors(), nil)
 }
 
 func New(chainID coretypes.ChainID, stateReader state.OptimisticStateReader, proc *processors.ProcessorCache, logSet *logger.Logger) *viewcontext {

@@ -92,7 +92,7 @@ func viewGetRequestIDsForBlock(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a.Require(int(blockIndex64) <= util.MaxUint32, "wrong block index parameter")
 	blockIndex := uint32(blockIndex64)
 
-	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex, a)
+	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
 	a.RequireNoError(err)
 	a.Require(found, "not found")
 
@@ -113,7 +113,7 @@ func viewGetRequestLogRecordsForBlock(ctx coretypes.SandboxView) (dict.Dict, err
 	a.Require(int(blockIndex64) <= util.MaxUint32, "wrong block index parameter")
 	blockIndex := uint32(blockIndex64)
 
-	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex, a)
+	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
 	a.RequireNoError(err)
 	a.Require(found, "not found")
 

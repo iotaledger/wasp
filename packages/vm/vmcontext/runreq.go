@@ -144,7 +144,12 @@ func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
 		tokens.ForEach(func(color ledgerstate.Color, balance uint64) bool {
 			available := accounts.GetBalance(vmctx.State(), sender, color)
 			if balance > available {
-				vmctx.log.Warn("adjusting transfer from ", balance, " to ", available)
+				vmctx.log.Warn(
+					"adjusting transfer from ", balance,
+					" to available ", available,
+					" for ", sender.String(),
+					" req ", vmctx.RequestID().String(),
+				)
 				balance = available
 			}
 			if balance > 0 {
@@ -168,7 +173,7 @@ func (vmctx *VMContext) validRequest() bool {
 
 	// off-ledger account must exist
 	if _, exists := accounts.GetAccountBalances(vmctx.State(), req.SenderAccount()); !exists {
-		vmctx.lastError = fmt.Errorf("validRequest: unverified account for %s", req.ID().String())
+		vmctx.lastError = fmt.Errorf("validRequest: unverified account %s for %s", req.SenderAccount(), req.ID().String())
 		return false
 	}
 

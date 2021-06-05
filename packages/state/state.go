@@ -238,10 +238,9 @@ type optimisticStateReader struct {
 	chainState *optimism.OptimisticKVStoreReader
 }
 
-// NewOptimisticStateReader creates new reader. Checks consistency
+// NewOptimisticStateReader creates new optimistic read-only access to the database. It contains own read baseline
 func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.GlobalSync) *optimisticStateReader {
-	sub := subRealm(db, []byte{dbkeys.ObjectTypeStateVariable})
-	chainState := kv.NewHiveKVStoreReader(sub)
+	chainState := kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeStateVariable}))
 	return &optimisticStateReader{
 		db:         db,
 		chainState: optimism.NewOptimisticKVStoreReader(chainState, glb.GetSolidIndexBaseline()),
