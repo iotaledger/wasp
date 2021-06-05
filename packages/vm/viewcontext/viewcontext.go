@@ -2,15 +2,14 @@ package viewcontext
 
 import (
 	"fmt"
-	"runtime/debug"
-
-	"github.com/iotaledger/wasp/packages/chain"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -50,14 +49,18 @@ func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.H
 	var err error
 	func() {
 		defer func() {
-			if r := recover(); r != nil {
-				ret = nil
+			r := recover()
+			if r == nil {
+				return
+			}
+			ret = nil
+			switch err1 := r.(type) {
+			case *kv.DBError:
+				v.log.Panicf("DB error: %v", err1)
+			case *optimism.ErrorStateInvalidated:
+				err = err1
+			default:
 				err = xerrors.Errorf("recovered from panic in VM: %v", r)
-				v.log.Debugf(string(debug.Stack()))
-				if dberr, ok := r.(*kv.DBError); ok {
-					// There was an error accessing DB. The world stops
-					v.log.Panicf("DB error: %v", dberr)
-				}
 			}
 		}()
 		ret, err = v.mustCallView(contractHname, epCode, params)

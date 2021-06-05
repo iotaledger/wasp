@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv/optimism"
+
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -93,7 +95,12 @@ func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.Chain {
 
 func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, funName string, params dict.Dict) (dict.Dict, error) {
 	vctx := viewcontext.NewFromChain(chain)
-	ret, err := vctx.CallView(hname, coretypes.Hn(funName), params)
+	var err error
+	var ret dict.Dict
+	_ = optimism.RepeatIfUnlucky(func() error {
+		ret, err = vctx.CallView(hname, coretypes.Hn(funName), params)
+		return err
+	})
 	if err != nil {
 		return nil, fmt.Errorf("root view call failed: %v", err)
 	}

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/kv/optimism"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -43,7 +45,6 @@ func handleCallView(c echo.Context) error {
 	fname := c.Param("fname")
 
 	var params dict.Dict
-	// for some reason c.Bind(&params) doesn't work
 	if c.Request().Body != nil {
 		if err := json.NewDecoder(c.Request().Body).Decode(&params); err != nil {
 			return httperrors.BadRequest("Invalid request body")
@@ -54,7 +55,11 @@ func handleCallView(c echo.Context) error {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
 	vctx := viewcontext.NewFromChain(theChain)
-	ret, err := vctx.CallView(contractHname, coretypes.Hn(fname), params)
+	var ret dict.Dict
+	_ = optimism.RepeatIfUnlucky(func() error {
+		ret, err = vctx.CallView(contractHname, coretypes.Hn(fname), params)
+		return err
+	})
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("View call failed: %v", err))
 	}

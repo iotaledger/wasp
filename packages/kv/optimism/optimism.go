@@ -1,6 +1,8 @@
 package optimism
 
 import (
+	"time"
+
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"golang.org/x/xerrors"
@@ -180,9 +182,16 @@ func (o *OptimisticKVStoreReader) MustIterateKeysSorted(prefix kv.Key, f func(ke
 	}
 }
 
-func RepeatIfUnlucky(f func() error) error {
+const repeatAfterDefault = 1 * time.Second
+
+func RepeatIfUnlucky(f func() error, repeatAfter ...time.Duration) error {
+	waitOnError := repeatAfterDefault
+	if len(repeatAfter) > 0 {
+		waitOnError = repeatAfter[0]
+	}
 	err := f()
 	if err == ErrStateHasBeenInvalidated {
+		time.Sleep(waitOnError)
 		err = f()
 	}
 	return err
