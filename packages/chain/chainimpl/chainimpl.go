@@ -71,7 +71,7 @@ func NewChain(
 	log.Debugf("creating chain object for %s", chr.ChainID.String())
 
 	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
-	stateReader, err := state.NewStateReader(store, chr.ChainID)
+	stateReader, err := state.NewStateReader(store)
 	if err != nil {
 		log.Errorf("NewChain: %v", err)
 		return nil

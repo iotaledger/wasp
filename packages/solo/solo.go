@@ -211,7 +211,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	require.EqualValues(env.T, 0, vs.BlockIndex())
 	require.True(env.T, vs.Timestamp().IsZero())
 
-	srdr, err := state.NewStateReader(store, &chainID)
+	srdr, err := state.NewStateReader(store)
 	require.NoError(env.T, err)
 
 	ret := &Chain{

@@ -3,86 +3,111 @@ package dbmanager
 import (
 	"fmt"
 	"sync"
+	"time"
 
+	"github.com/iotaledger/goshimmer/packages/database"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/timeutil"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/database/dbprovider"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type DBManager struct {
-	log         *logger.Logger
-	registryDB  *dbprovider.DBProvider
-	dbInstances map[[ledgerstate.AddressLength]byte]*dbprovider.DBProvider
-	mutex       sync.RWMutex
-	inMemory    bool
+	log           *logger.Logger
+	registryDB    database.DB
+	registryStore kvstore.KVStore
+	databases     map[[ledgerstate.AddressLength]byte]database.DB
+	stores        map[[ledgerstate.AddressLength]byte]kvstore.KVStore
+	mutex         sync.RWMutex
+	inMemory      bool
 }
 
-func NewDBManager(logger *logger.Logger, inMemory bool) *DBManager {
+func NewDBManager(log *logger.Logger, inMemory bool) *DBManager {
 	dbm := DBManager{
-		log:         logger,
-		dbInstances: make(map[[ledgerstate.AddressLength]byte]*dbprovider.DBProvider),
-		mutex:       sync.RWMutex{},
-		inMemory:    inMemory,
+		log:       log,
+		databases: make(map[[ledgerstate.AddressLength]byte]database.DB),
+		stores:    make(map[[ledgerstate.AddressLength]byte]kvstore.KVStore),
+		mutex:     sync.RWMutex{},
+		inMemory:  inMemory,
 	}
-	//registry db is created with an empty chainID
-	dbm.registryDB = dbm.createDBInstance(&coretypes.ChainID{
+	// registry db is created with an empty chainID
+	dbm.registryDB = dbm.createDB(&coretypes.ChainID{
 		AliasAddress: &ledgerstate.AliasAddress{},
 	})
+	dbm.registryStore = dbm.registryDB.NewStore()
 	return &dbm
 }
 
-func (m *DBManager) createDBInstance(chainID *coretypes.ChainID) (instance *dbprovider.DBProvider) {
+func (m *DBManager) createDB(chainID *coretypes.ChainID) database.DB {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	if m.inMemory {
 		m.log.Infof("creating new In-Memory database, ChainID: %s", chainID.Base58())
-		instance = dbprovider.NewInMemoryDBProvider(m.log)
-	} else {
-		dbDir := parameters.GetString(parameters.DatabaseDir)
-		instanceDir := fmt.Sprintf("%s/%s", dbDir, chainID.Base58())
-		m.log.Infof("creating new persistent database, ChainID: %s, dir: %s", chainID.Base58(), instanceDir)
-		instance = dbprovider.NewPersistentDBProvider(instanceDir, m.log)
+		db, err := database.NewMemDB()
+		if err != nil {
+			m.log.Fatal(err)
+		}
+		return db
 	}
 
-	m.dbInstances[chainID.Array()] = instance
-	return instance
-}
-
-func (m *DBManager) getDBInstance(chainID *coretypes.ChainID) *dbprovider.DBProvider {
-	return m.dbInstances[chainID.Array()]
+	dbDir := parameters.GetString(parameters.DatabaseDir)
+	instanceDir := fmt.Sprintf("%s/%s", dbDir, chainID.Base58())
+	m.log.Infof("creating new persistent database, ChainID: %s, dir: %s", chainID.Base58(), instanceDir)
+	db, err := database.NewDB(instanceDir)
+	if err != nil {
+		m.log.Fatal(err)
+	}
+	return db
 }
 
 func (m *DBManager) GetRegistryKVStore() kvstore.KVStore {
-	return m.registryDB.GetKVStore()
+	return m.registryStore
 }
 
 func (m *DBManager) GetOrCreateKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
-	instance := m.getDBInstance(chainID)
-	if instance != nil {
-		return instance.GetKVStore()
+	store := m.GetKVStore(chainID)
+	if store != nil {
+		return store
 	}
-	// create a new instance
-	return m.createDBInstance(chainID).GetKVStore()
+
+	// create a new database / store
+	db := m.createDB(chainID)
+	store = db.NewStore()
+	m.databases[chainID.Array()] = db
+	m.stores[chainID.Array()] = db.NewStore()
+	return store
 }
 
 func (m *DBManager) GetKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
-	return m.getDBInstance(chainID).GetKVStore()
+	return m.stores[chainID.Array()]
 }
 
 func (m *DBManager) Close() {
 	m.registryDB.Close()
-	for _, instance := range m.dbInstances {
+	for _, instance := range m.databases {
 		instance.Close()
 	}
 }
 
 func (m *DBManager) RunGC(shutdownSignal <-chan struct{}) {
-	m.registryDB.RunGC(shutdownSignal)
-	for _, instance := range m.dbInstances {
-		instance.RunGC(shutdownSignal)
+	m.gc(m.registryDB, shutdownSignal)
+	for _, db := range m.databases {
+		m.gc(db, shutdownSignal)
 	}
+}
+
+func (m *DBManager) gc(db database.DB, shutdownSignal <-chan struct{}) {
+	if !db.RequiresGC() {
+		return
+	}
+	// run the garbage collection with the given interval
+	gcTimeInterval := 5 * time.Minute
+	timeutil.NewTicker(func() {
+		if err := db.GC(); err != nil {
+			m.log.Warnf("Garbage collection failed: %s", err)
+		}
+	}, gcTimeInterval, shutdownSignal)
 }

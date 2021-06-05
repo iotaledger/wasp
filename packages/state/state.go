@@ -173,7 +173,7 @@ type stateReader struct {
 }
 
 // NewStateReader creates new reader. Checks consistency
-func NewStateReader(store kvstore.KVStore, chainID *coretypes.ChainID) (*stateReader, error) {
+func NewStateReader(store kvstore.KVStore) (*stateReader, error) {
 	stateIndex, _, exists, err := loadStateIndexAndHashFromDb(store)
 	if err != nil {
 		return nil, xerrors.Errorf("NewStateReader: %w", err)
