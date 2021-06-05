@@ -28,8 +28,8 @@ func (ch *Chain) runRequestsSync(reqs []coretypes.Request, trace string) (dict.D
 	ch.mempool.ReceiveRequests(reqs...)
 	ch.mempool.WaitAllRequestsIn()
 
-	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
-	require.EqualValues(ch.Env.T, len(reqs), len(ready))
+	//ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
+	//require.EqualValues(ch.Env.T, len(reqs), len(ready))
 	return ch.runRequestsNolock(reqs, trace)
 }
 

@@ -15,7 +15,7 @@ func TestOptimismBasic(t *testing.T) {
 	glb := coreutil.NewGlobalSync()
 	base := glb.GetSolidIndexBaseline()
 	require.False(t, base.IsValid())
-	glb.Set(2)
+	glb.SetSolidIndex(2)
 	require.False(t, base.IsValid())
 	base.SetBaseline()
 	require.True(t, base.IsValid())
@@ -26,7 +26,7 @@ func TestOptimismBasic(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, "b", string(b))
 
-	glb.Set(3)
+	glb.SetSolidIndex(3)
 	require.False(t, base.IsValid())
 	_, err = r.Get("a")
 	require.Error(t, err)

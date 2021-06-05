@@ -24,7 +24,7 @@ func (vs *virtualState) Commit(blocks ...Block) error {
 	}
 
 	for _, blk := range blocks {
-		key := dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(vs.BlockIndex()))
+		key := dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(blk.BlockIndex()))
 		if err := batch.Set(key, blk.Bytes()); err != nil {
 			return err
 		}

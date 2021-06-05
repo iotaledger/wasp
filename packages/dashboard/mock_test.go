@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/state"
+
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -223,7 +225,11 @@ func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname 
 
 type mockChain struct{}
 
-func (m *mockChain) GlobalStateReadCheckpoint() coreutil.OptimisticReadCheckpoint {
+func (m *mockChain) GlobalStateSync() coreutil.GlobalSync {
+	panic("implement me")
+}
+
+func (m *mockChain) GetStateReader() state.OptimisticStateReader {
 	panic("implement me")
 }
 
