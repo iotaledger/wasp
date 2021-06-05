@@ -67,6 +67,10 @@ func NewMockedChainCore(t *testing.T, chainID coretypes.ChainID, log *logger.Log
 	return ret
 }
 
+func (m *MockedChainCore) Log() *logger.Logger {
+	return m.log
+}
+
 func (m *MockedChainCore) ID() *coretypes.ChainID {
 	return &m.chainID
 }

@@ -52,7 +52,7 @@ const (
 	maxBlocksToCommitConst               = 10000 //10k
 )
 
-func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, log *logger.Logger, timersOpt ...Timers) chain.StateManager {
+func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, timersOpt ...Timers) chain.StateManager {
 	var timers Timers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -65,9 +65,9 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		chain:                  c,
 		nodeConn:               nodeconn,
 		peers:                  peers,
-		syncingBlocks:          newSyncingBlocks(log, timers.getGetBlockRetry()),
+		syncingBlocks:          newSyncingBlocks(c.Log(), timers.getGetBlockRetry()),
 		timers:                 timers,
-		log:                    log.Named("s"),
+		log:                    c.Log().Named("s"),
 		pullStateRetryTime:     time.Now(),
 		eventGetBlockMsgCh:     make(chan *chain.GetBlockMsg),
 		eventBlockMsgCh:        make(chan *chain.BlockMsg),

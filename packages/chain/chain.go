@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -28,6 +30,7 @@ type ChainCore interface {
 	Processors() *processors.ProcessorCache
 	GlobalStateSync() coreutil.GlobalSync
 	GetStateReader() state.OptimisticStateReader
+	Log() *logger.Logger
 }
 
 type Chain interface {

@@ -194,7 +194,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers Timers) *MockedNode {
 	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
 		return state.NewOptimisticStateReader(ret.store, ret.stateSync)
 	})
-	ret.StateManager = New(ret.store, ret.ChainCore, ret.Peers, ret.NodeConn, log, timers)
+	ret.StateManager = New(ret.store, ret.ChainCore, ret.Peers, ret.NodeConn, timers)
 	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualState, tx *ledgerstate.Transaction) {
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())

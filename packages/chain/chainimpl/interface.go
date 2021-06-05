@@ -6,6 +6,8 @@ package chainimpl
 import (
 	"time"
 
+	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/coretypes/request"
@@ -185,4 +187,8 @@ func (c *chainObj) Events() chain.ChainEvents {
 // GetStateReader returns a new copy of the optimistic state reader, with own baseline
 func (c *chainObj) GetStateReader() state.OptimisticStateReader {
 	return state.NewOptimisticStateReader(c.db, c.globalSync)
+}
+
+func (c *chainObj) Log() *logger.Logger {
+	return c.log
 }

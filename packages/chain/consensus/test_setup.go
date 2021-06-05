@@ -222,7 +222,7 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 		Env:       env,
 		ChainCore: chainCore,
 		Mempool:   mpool,
-		Consensus: New(chainCore, mpool, committee, env.NodeConn[i], log),
+		Consensus: New(chainCore, mpool, committee, env.NodeConn[i]),
 		Log:       log,
 	}
 

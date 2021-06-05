@@ -26,15 +26,10 @@ type viewcontext struct {
 }
 
 func NewFromChain(chain chain.Chain) *viewcontext {
-	return New(*chain.ID(), chain.GetStateReader(), chain.Processors(), nil)
+	return New(*chain.ID(), chain.GetStateReader(), chain.Processors(), chain.Log().Named("view"))
 }
 
 func New(chainID coretypes.ChainID, stateReader state.OptimisticStateReader, proc *processors.ProcessorCache, logSet *logger.Logger) *viewcontext {
-	if logSet == nil {
-		logSet = logDefault
-	} else {
-		logSet = logSet.Named("view")
-	}
 	return &viewcontext{
 		processors:  proc,
 		stateReader: stateReader,

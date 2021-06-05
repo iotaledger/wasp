@@ -110,7 +110,7 @@ func NewChain(
 		log.Errorf("NewChain: %v", err)
 		return nil
 	}
-	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn, ret.log)
+	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn)
 	var peeringID peering.PeeringID = ret.chainID.Array()
 	peers.Attach(&peeringID, func(recv *peering.RecvEvent) {
 		ret.ReceiveMessage(recv.Msg)
@@ -251,7 +251,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	}
 	c.committee.Attach(c)
 	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, c.committee, c.nodeConn, c.log)
+	c.consensus = consensus.New(c, c.mempool, c.committee, c.nodeConn)
 
 	c.log.Infof("NEW COMMITTEE OF VALDATORS initialized for state address %s", msg.ChainOutput.GetStateAddress().Base58())
 	c.stateMgr.EventStateMsg(msg)
