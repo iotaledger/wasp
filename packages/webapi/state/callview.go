@@ -56,7 +56,7 @@ func handleCallView(c echo.Context) error {
 	}
 	vctx := viewcontext.NewFromChain(theChain)
 	var ret dict.Dict
-	_ = optimism.RepeatIfUnlucky(func() error {
+	_ = optimism.RepeatOnceIfUnlucky(func() error {
 		ret, err = vctx.CallView(contractHname, coretypes.Hn(fname), params)
 		return err
 	})

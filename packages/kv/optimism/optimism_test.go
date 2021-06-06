@@ -17,7 +17,7 @@ func TestOptimismBasic(t *testing.T) {
 	require.False(t, base.IsValid())
 	glb.SetSolidIndex(2)
 	require.False(t, base.IsValid())
-	base.SetBaseline()
+	base.Set()
 	require.True(t, base.IsValid())
 
 	r := NewOptimisticKVStoreReader(d, base)

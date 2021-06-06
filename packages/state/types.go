@@ -25,15 +25,11 @@ type VirtualState interface {
 	DangerouslyConvertToString() string
 }
 
-type StateReader interface {
+type OptimisticStateReader interface {
 	BlockIndex() (uint32, error)
 	Timestamp() (time.Time, error)
 	Hash() (hashing.HashValue, error)
 	KVStoreReader() kv.KVStoreReader
-}
-
-type OptimisticStateReader interface {
-	StateReader
 	SetBaseline()
 }
 

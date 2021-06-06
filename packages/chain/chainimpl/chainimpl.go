@@ -161,7 +161,7 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		}
 		if msgt%40 == 0 {
 			stats := c.mempool.Stats()
-			c.log.Debugf("mempool total = %d, ready = %d, in = %d, out = %d", stats.Total, stats.Ready, stats.InCounter, stats.OutCounter)
+			c.log.Debugf("mempool total = %d, ready = %d, in = %d, out = %d", stats.TotalPool, stats.Ready, stats.InPoolCounter, stats.OutPoolCounter)
 		}
 	}
 }
@@ -261,12 +261,13 @@ func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 	c.stateReader.SetBaseline()
 	reqids, err := blocklog.GetRequestIDsForLastBlock(c.stateReader)
 	if err != nil {
-		// the only error can occur here is database error. The optimistic read failure can't occur here
+		// The error means a database error. The optimistic state read failure can't occur here
 		// because the state transition message is only sent only after state is committed and before consensus
 		// start new round
 		c.log.Panicf("processStateTransition. unexpected error: %v", err)
 	}
-	c.log.Infof("=============== processStateTransition: %+v", coretypes.ShortRequestIDs(reqids))
+	c.log.Debugf("processStateTransition: state index: %d, state hash: %s, requests: %+v",
+		msg.VirtualState.BlockIndex(), msg.VirtualState.Hash().String(), coretypes.ShortRequestIDs(reqids))
 	c.mempool.RemoveRequests(reqids...)
 
 	chain.LogStateTransition(msg, reqids, c.log)

@@ -26,7 +26,7 @@ type VMTask struct {
 	Processors               *processors.ProcessorCache
 	ChainInput               *ledgerstate.AliasOutput
 	VirtualState             state.VirtualState // in/out  Return uncommitted updated virtual state
-	SolidStateBaseline       *coreutil.SolidStateBaseline
+	SolidStateBaseline       coreutil.StateBaseline
 	Requests                 []coretypes.Request
 	Timestamp                time.Time
 	Entropy                  hashing.HashValue

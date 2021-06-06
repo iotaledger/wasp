@@ -26,7 +26,7 @@ func (ch *Chain) runRequestsSync(reqs []coretypes.Request, trace string) (dict.D
 
 	ch.reqCounter.Add(int32(len(reqs)))
 	ch.mempool.ReceiveRequests(reqs...)
-	ch.mempool.WaitAllRequestsIn()
+	ch.mempool.WaitInBufferEmpty()
 
 	//ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
 	//require.EqualValues(ch.Env.T, len(reqs), len(ready))

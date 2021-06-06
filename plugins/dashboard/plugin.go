@@ -97,7 +97,7 @@ func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, funNam
 	vctx := viewcontext.NewFromChain(chain)
 	var err error
 	var ret dict.Dict
-	_ = optimism.RepeatIfUnlucky(func() error {
+	_ = optimism.RepeatOnceIfUnlucky(func() error {
 		ret, err = vctx.CallView(hname, coretypes.Hn(funName), params)
 		return err
 	})

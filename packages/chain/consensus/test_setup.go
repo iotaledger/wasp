@@ -411,7 +411,7 @@ func (n *mockedNode) WaitMempool(numRequests int, timeout time.Duration) error {
 			time.Sleep(10 * time.Millisecond)
 			continue
 		}
-		if snap.Mempool.InCounter >= numRequests && snap.Mempool.OutCounter >= numRequests {
+		if snap.Mempool.InPoolCounter >= numRequests && snap.Mempool.OutPoolCounter >= numRequests {
 			return nil
 		}
 		if time.Now().After(deadline) {

@@ -25,16 +25,16 @@ type viewcontext struct {
 	log         *logger.Logger
 }
 
-func NewFromChain(chain chain.Chain) *viewcontext {
+func NewFromChain(chain chain.ChainCore) *viewcontext {
 	return New(*chain.ID(), chain.GetStateReader(), chain.Processors(), chain.Log().Named("view"))
 }
 
-func New(chainID coretypes.ChainID, stateReader state.OptimisticStateReader, proc *processors.ProcessorCache, logSet *logger.Logger) *viewcontext {
+func New(chainID coretypes.ChainID, stateReader state.OptimisticStateReader, proc *processors.ProcessorCache, log *logger.Logger) *viewcontext {
 	return &viewcontext{
 		processors:  proc,
 		stateReader: stateReader,
 		chainID:     chainID,
-		log:         logSet,
+		log:         log,
 	}
 }
 
@@ -55,15 +55,17 @@ func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.H
 			case *optimism.ErrorStateInvalidated:
 				err = err1
 			default:
-				err = xerrors.Errorf("recovered from panic in VM: %v", r)
+				err = xerrors.Errorf("viewcontext: panic in VM: %w", err1)
 			}
 		}()
-		ret, err = v.mustCallView(contractHname, epCode, params)
+		ret, err = v.callView(contractHname, epCode, params)
 	}()
 	return ret, err
 }
 
-func (v *viewcontext) mustCallView(contractHname coretypes.Hname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
+func (v *viewcontext) callView(contractHname coretypes.Hname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
+	v.stateReader.SetBaseline()
+
 	var err error
 	contractRecord, err := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Interface.Hname()), contractHname)
 	if err != nil {

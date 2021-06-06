@@ -117,8 +117,8 @@ type Mempool interface {
 	ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
 	HasRequest(id coretypes.RequestID) bool
 	Stats() MempoolStats
-	WaitRequestIn(reqid coretypes.RequestID, timeout ...time.Duration) bool // for testing
-	WaitAllRequestsIn(timeout ...time.Duration) bool                        // for testing
+	WaitRequestInPool(reqid coretypes.RequestID, timeout ...time.Duration) bool // for testing
+	WaitInBufferEmpty(timeout ...time.Duration) bool                            // for testing
 	Close()
 }
 
@@ -129,10 +129,12 @@ type AsynchronousCommonSubsetRunner interface {
 }
 
 type MempoolStats struct {
-	Total      int
-	Ready      int
-	InCounter  int
-	OutCounter int
+	TotalPool      int
+	Ready          int
+	InBufCounter   int
+	OutBufCounter  int
+	InPoolCounter  int
+	OutPoolCounter int
 }
 
 type SyncInfo struct {

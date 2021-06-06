@@ -31,7 +31,7 @@ type VMContext struct {
 	processors           *processors.ProcessorCache
 	txBuilder            *utxoutil.Builder
 	virtualState         state.VirtualState
-	solidStateBaseline   *coreutil.SolidStateBaseline
+	solidStateBaseline   coreutil.StateBaseline
 	remainingAfterFees   *ledgerstate.ColoredBalances
 	blockContext         map[coretypes.Hname]*blockContext
 	blockContextCloseSeq []coretypes.Hname

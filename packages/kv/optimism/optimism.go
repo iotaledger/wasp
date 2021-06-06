@@ -1,3 +1,4 @@
+// optimism package implements primitives needed for te optimistic read of the chain's state
 package optimism
 
 import (
@@ -8,9 +9,16 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// OptimisticKVStoreReader implements KVReader interfaces. It wraps any kv.KVStoreReader together with the baseline
+// of the state index, which, in turn, is linked to the global state index object.
+// The user of the OptimisticKVStoreReader announces it starts reading the state with SetBaseline. Then the user reads
+// the state with Get's. If sequense of Get's is finished without error, it means state wasn't invalidated from
+// the baseline until the last read.
+// If returned error is ErrStateHasBeenInvalidated ir means state was invalidated since SetBaseline.
+// In this case read can be repeated. Any other error is a database error
 type OptimisticKVStoreReader struct {
 	kvstore  kv.KVStoreReader
-	baseline *coreutil.SolidStateBaseline
+	baseline coreutil.StateBaseline
 }
 
 type ErrorStateInvalidated struct {
@@ -19,11 +27,8 @@ type ErrorStateInvalidated struct {
 
 var ErrStateHasBeenInvalidated = &ErrorStateInvalidated{xerrors.New("virtual state has been invalidated")}
 
-// NewOptimisticKVStoreReader creates an instance of the optimistic reader on top of the KV store reader
-// Each instance contain own read baseline. It is guaranteed that from the moment of calling SetBaseline
-// to the last operation without errors returned the state wasn't modified
-// If state is modified, the KV store operation will return ErrStateHasBeenInvalidated
-func NewOptimisticKVStoreReader(store kv.KVStoreReader, baseline *coreutil.SolidStateBaseline) *OptimisticKVStoreReader {
+// NewOptimisticKVStoreReader creates an instance of the optimistic reader
+func NewOptimisticKVStoreReader(store kv.KVStoreReader, baseline coreutil.StateBaseline) *OptimisticKVStoreReader {
 	ret := &OptimisticKVStoreReader{
 		kvstore:  store,
 		baseline: baseline,
@@ -32,10 +37,13 @@ func NewOptimisticKVStoreReader(store kv.KVStoreReader, baseline *coreutil.Solid
 	return ret
 }
 
+// SetBaseline sets the baseline for the read.
+// Each and check if it wasn't invalidated by the global variable (the state manager)
 func (o *OptimisticKVStoreReader) SetBaseline() {
-	o.baseline.SetBaseline()
+	o.baseline.Set()
 }
 
+// IsStateValid check the validity of the baseline
 func (o *OptimisticKVStoreReader) IsStateValid() bool {
 	return o.baseline.IsValid()
 }
@@ -184,13 +192,14 @@ func (o *OptimisticKVStoreReader) MustIterateKeysSorted(prefix kv.Key, f func(ke
 
 const repeatAfterDefault = 1 * time.Second
 
-func RepeatIfUnlucky(f func() error, repeatAfter ...time.Duration) error {
+// RepeatOnceIfUnlucky the closure must take care of setting the optimistic read baseline itself
+func RepeatOnceIfUnlucky(f func() error, repeatAfter ...time.Duration) error {
 	waitOnError := repeatAfterDefault
 	if len(repeatAfter) > 0 {
 		waitOnError = repeatAfter[0]
 	}
 	err := f()
-	if err == ErrStateHasBeenInvalidated {
+	if _, ok := err.(*ErrorStateInvalidated); ok {
 		time.Sleep(waitOnError)
 		err = f()
 	}

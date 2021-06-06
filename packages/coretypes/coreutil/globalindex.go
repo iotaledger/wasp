@@ -6,15 +6,15 @@ import (
 	"go.uber.org/atomic"
 )
 
+// region GlobalStateSync  ////////////////////////////////
+
 // GlobalSync implements optimistic read baselines and global locks
 type GlobalSync interface {
-	GetSolidIndexBaseline() *SolidStateBaseline
+	GetSolidIndexBaseline() StateBaseline
 	SetSolidIndex(idx uint32) GlobalSync // for use in state manager
 	InvalidateSolidIndex() GlobalSync    // only for state manager
 	Mutex() *sync.RWMutex
 }
-
-// region GlobalStateSync  ////////////////////////////////
 
 type globalSync struct {
 	solidIndex  atomic.Uint64
@@ -33,7 +33,7 @@ func (g *globalSync) SetSolidIndex(idx uint32) GlobalSync {
 	return g
 }
 
-func (g *globalSync) GetSolidIndexBaseline() *SolidStateBaseline {
+func (g *globalSync) GetSolidIndexBaseline() StateBaseline {
 	return NewStateIndexBaseline(&g.solidIndex)
 }
 
@@ -48,25 +48,30 @@ func (g *globalSync) Mutex() *sync.RWMutex {
 
 // endregion  ///////////////////////////////////////////////////
 
-// region SolidStateBaseline //////////////////////////////////////////////
+// region StateBaseline //////////////////////////////////////////////
 
-type SolidStateBaseline struct {
+type StateBaseline interface {
+	Set()
+	IsValid() bool
+}
+
+type stateBaseline struct {
 	globalStateIndex *atomic.Uint64
 	baseline         uint32
 }
 
-func NewStateIndexBaseline(globalStateIndex *atomic.Uint64) *SolidStateBaseline {
-	return &SolidStateBaseline{
+func NewStateIndexBaseline(globalStateIndex *atomic.Uint64) *stateBaseline {
+	return &stateBaseline{
 		globalStateIndex: globalStateIndex,
 		baseline:         uint32(globalStateIndex.Load()),
 	}
 }
 
-func (g *SolidStateBaseline) SetBaseline() {
+func (g *stateBaseline) Set() {
 	g.baseline = uint32(g.globalStateIndex.Load())
 }
 
-func (g *SolidStateBaseline) IsValid() bool {
+func (g *stateBaseline) IsValid() bool {
 	f := g.globalStateIndex.Load()
 	if f>>32 != 0 {
 		return false

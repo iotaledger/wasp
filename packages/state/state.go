@@ -174,62 +174,6 @@ func (vs *virtualState) Hash() hashing.HashValue {
 
 // endregion ////////////////////////////////////////////////////////////
 
-// region StateReader ///////////////////////////////////////////////////
-
-type stateReader struct {
-	db         kvstore.KVStore
-	chainState kv.KVStoreReader
-}
-
-// NewOptimisticStateReader creates new reader. Checks consistency
-func NewStateReader(db kvstore.KVStore) (*stateReader, error) {
-	_, exists, err := loadStateHashFromDb(db)
-	if err != nil {
-		return nil, xerrors.Errorf("NewOptimisticStateReader: %w", err)
-	}
-	if !exists {
-		return nil, nil
-	}
-	return &stateReader{
-		db:         db,
-		chainState: kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeStateVariable})),
-	}, nil
-}
-
-func (r *stateReader) BlockIndex() (uint32, error) {
-	blockIndex, err := loadStateIndexFromState(r.chainState)
-	if err != nil {
-		return 0, err
-	}
-	return blockIndex, nil
-}
-
-func (r *stateReader) Timestamp() (time.Time, error) {
-	ts, err := loadTimestampFromState(r.chainState)
-	if err != nil {
-		return time.Time{}, err
-	}
-	return ts, nil
-}
-
-func (r *stateReader) Hash() (hashing.HashValue, error) {
-	hashBIn, err := r.db.Get(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash))
-	if err != nil {
-		return [32]byte{}, err
-	}
-	ret, err := hashing.HashValueFromBytes(hashBIn)
-	if err != nil {
-		return [32]byte{}, err
-	}
-	return ret, nil
-}
-
-func (r *stateReader) KVStoreReader() kv.KVStoreReader {
-	return r.chainState
-}
-
-// endregion ////////////////////////////////////////////////////////////
-
 // region OptimisticStateReader ///////////////////////////////////////////////////
 
 // state reader reads the chain state from db and validates it
