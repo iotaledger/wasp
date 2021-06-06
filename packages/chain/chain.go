@@ -44,16 +44,22 @@ type ChainEntry interface {
 	IsDismissed() bool
 }
 
-type Chain interface {
-	ChainCore
-	ChainRequests
-	ChainEntry
+// ChainRequests is an interface to query status of the reqest
+type ChainRequests interface {
+	GetRequestProcessingStatus(id coretypes.RequestID) RequestProcessingStatus
+	EventRequestProcessed() *events.Event
 }
 
 type ChainEvents interface {
 	RequestProcessed() *events.Event
 	StateTransition() *events.Event
 	StateSynced() *events.Event
+}
+
+type Chain interface {
+	ChainCore
+	ChainRequests
+	ChainEntry
 }
 
 // Committee is ordered (indexed 0..size-1) list of peers which run the consensus and the whoel chain
@@ -72,11 +78,6 @@ type Committee interface {
 	IsReady() bool
 	Close()
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
-}
-
-type ChainRequests interface {
-	GetRequestProcessingStatus(id coretypes.RequestID) RequestProcessingStatus
-	EventRequestProcessed() *events.Event
 }
 
 type NodeConnection interface {
