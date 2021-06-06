@@ -85,7 +85,7 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), result)
 }
 
-func (d *Dashboard) fetchAccounts(chain chain.Chain) ([]*coretypes.AgentID, error) {
+func (d *Dashboard) fetchAccounts(chain chain.ChainCore) ([]*coretypes.AgentID, error) {
 	accounts, err := d.wasp.CallView(chain, accounts.Interface.Hname(), accounts.FuncAccounts, nil)
 	if err != nil {
 		return nil, fmt.Errorf("accountsc view call failed: %v", err)
@@ -102,7 +102,7 @@ func (d *Dashboard) fetchAccounts(chain chain.Chain) ([]*coretypes.AgentID, erro
 	return ret, nil
 }
 
-func (d *Dashboard) fetchTotalAssets(chain chain.Chain) (map[ledgerstate.Color]uint64, error) {
+func (d *Dashboard) fetchTotalAssets(chain chain.ChainCore) (map[ledgerstate.Color]uint64, error) {
 	bal, err := d.wasp.CallView(chain, accounts.Interface.Hname(), accounts.FuncTotalAssets, nil)
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (d *Dashboard) fetchTotalAssets(chain chain.Chain) (map[ledgerstate.Color]u
 	return accounts.DecodeBalances(bal)
 }
 
-func (d *Dashboard) fetchBlobs(chain chain.Chain) (map[hashing.HashValue]uint32, error) {
+func (d *Dashboard) fetchBlobs(chain chain.ChainCore) (map[hashing.HashValue]uint32, error) {
 	ret, err := d.wasp.CallView(chain, blob.Interface.Hname(), blob.FuncListBlobs, nil)
 	if err != nil {
 		return nil, err

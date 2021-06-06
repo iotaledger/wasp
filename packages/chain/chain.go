@@ -33,9 +33,8 @@ type ChainCore interface {
 	Log() *logger.Logger
 }
 
-type Chain interface {
-	ChainCore
-
+// ChainEntry interface to access chain from the chain registry side
+type ChainEntry interface {
 	ReceiveTransaction(*ledgerstate.Transaction)
 	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
@@ -43,8 +42,12 @@ type Chain interface {
 
 	Dismiss(reason string)
 	IsDismissed() bool
+}
 
+type Chain interface {
+	ChainCore
 	ChainRequests
+	ChainEntry
 }
 
 type ChainEvents interface {

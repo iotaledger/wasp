@@ -89,11 +89,11 @@ func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*dashboard.Cha
 	}, nil
 }
 
-func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.Chain {
+func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.ChainCore {
 	return chains.AllChains().Get(chainID)
 }
 
-func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, funName string, params dict.Dict) (dict.Dict, error) {
+func (w *waspServices) CallView(chain chain.ChainCore, hname coretypes.Hname, funName string, params dict.Dict) (dict.Dict, error) {
 	vctx := viewcontext.NewFromChain(chain)
 	var err error
 	var ret dict.Dict
