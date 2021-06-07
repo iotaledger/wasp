@@ -12,6 +12,7 @@ import (
 // all type id values should exactly match their counterpart values on the client!
 const (
 	OBJTYPE_ARRAY int32 = 0x20
+	OBJTYPE_CALL  int32 = 0x40
 
 	OBJTYPE_ADDRESS    int32 = 1
 	OBJTYPE_AGENT_ID   int32 = 2
@@ -34,6 +35,7 @@ var HostTracing = false
 var ExtendedHostTracing = false
 
 type HostObject interface {
+	CallFunc(keyId int32, params []byte) []byte
 	Exists(keyId int32, typeId int32) bool
 	GetBytes(keyId int32, typeId int32) []byte
 	GetObjectId(keyId int32, typeId int32) int32
@@ -62,6 +64,10 @@ func (host *KvStoreHost) Init(log *logger.Logger) {
 	for k, v := range keyMap {
 		host.keyIdToKeyMap[-v] = []byte(k)
 	}
+}
+
+func (host *KvStoreHost) CallFunc(objId int32, keyId int32, params []byte) []byte {
+	return host.FindObject(objId).CallFunc(keyId, params)
 }
 
 func (host *KvStoreHost) Exists(objId int32, keyId int32, typeId int32) bool {

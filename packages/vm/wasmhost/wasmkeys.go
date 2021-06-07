@@ -7,8 +7,8 @@ const (
 	KeyAccountId       = int32(-1)
 	KeyAddress         = int32(-2)
 	KeyBalances        = int32(-3)
-	KeyBase58Bytes     = int32(-4)
-	KeyBase58String    = int32(-5)
+	KeyBase58Decode    = int32(-4)
+	KeyBase58Encode    = int32(-5)
 	KeyBlsAddress      = int32(-6)
 	KeyBlsAggregate    = int32(-7)
 	KeyBlsValid        = int32(-8)
@@ -58,8 +58,8 @@ var keyMap = map[string]int32{
 	"$accountId":       KeyAccountId,
 	"$address":         KeyAddress,
 	"$balances":        KeyBalances,
-	"$base58Bytes":     KeyBase58Bytes,
-	"$base58String":    KeyBase58String,
+	"$base58Bytes":     KeyBase58Decode,
+	"$base58String":    KeyBase58Encode,
 	"$blsAddress":      KeyBlsAddress,
 	"$blsAggregate":    KeyBlsAggregate,
 	"$blsValid":        KeyBlsValid,
