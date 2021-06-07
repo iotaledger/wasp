@@ -314,6 +314,7 @@ func TestCruelWorld(t *testing.T) {
 		WithDelayingChannel(nil, 0*time.Millisecond, 200*time.Millisecond)
 	env.SetPushStateToNodesOption(false)
 
+	rand.Seed(time.Now().UnixNano())
 	randFromIntervalFun := func(from int, till int) time.Duration {
 		return time.Duration(from + rand.Intn(till-from))
 	}
