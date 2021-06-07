@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
 )
 
 type ChainRecord struct {

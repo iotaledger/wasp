@@ -1,12 +1,12 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package registry
+package registry_pkg
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
+	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/tcrypto"

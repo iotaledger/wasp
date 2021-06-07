@@ -5,7 +5,7 @@ package testutil
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
 )
 
 // Mock implementation of a ChainRecordRegistryProvider for testing purposes

@@ -22,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"

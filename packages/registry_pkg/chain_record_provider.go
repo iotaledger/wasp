@@ -1,4 +1,4 @@
-package registry
+package registry_pkg
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
 	"github.com/mr-tron/base58"
 )
 

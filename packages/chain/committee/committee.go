@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/util"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -45,8 +45,8 @@ func New(
 	chainID *coretypes.ChainID,
 	netProvider peering.NetworkProvider,
 	peerConfig coretypes.PeerNetworkConfigProvider,
-	dksProvider registry.DKShareRegistryProvider,
-	committeeRegistry registry.CommitteeRegistryProvider,
+	dksProvider registry_pkg.DKShareRegistryProvider,
+	committeeRegistry registry_pkg.CommitteeRegistryProvider,
 	log *logger.Logger,
 	acsRunner ...chain.AsynchronousCommonSubsetRunner, // Only for mocking.
 ) (chain.Committee, error) {

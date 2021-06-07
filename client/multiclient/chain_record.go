@@ -2,7 +2,7 @@ package multiclient
 
 import (
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
 )
 
 // PutChainRecord calls PutChainRecord in all wasp nodes

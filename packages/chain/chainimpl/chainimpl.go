@@ -12,12 +12,12 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/chain/consensus"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry_pkg"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
 
 	"github.com/iotaledger/wasp/packages/state"
 
@@ -54,8 +54,8 @@ type chainObj struct {
 	db                    kvstore.KVStore
 	peerNetworkConfig     coretypes.PeerNetworkConfigProvider
 	netProvider           peering.NetworkProvider
-	dksProvider           registry.DKShareRegistryProvider
-	committeeRegistry     registry.CommitteeRegistryProvider
+	dksProvider           registry_pkg.DKShareRegistryProvider
+	committeeRegistry     registry_pkg.CommitteeRegistryProvider
 	blobProvider          coretypes.BlobCache
 	eventRequestProcessed *events.Event
 	eventStateTransition  *events.Event
@@ -69,8 +69,8 @@ func NewChain(
 	peerNetConfig coretypes.PeerNetworkConfigProvider,
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
-	dksProvider registry.DKShareRegistryProvider,
-	committeeRegistry registry.CommitteeRegistryProvider,
+	dksProvider registry_pkg.DKShareRegistryProvider,
+	committeeRegistry registry_pkg.CommitteeRegistryProvider,
 	blobProvider coretypes.BlobCache,
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chr.ChainID.String())
