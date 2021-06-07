@@ -22,8 +22,8 @@ func (host *WasmHost) InitVM(vm WasmVM, useBase58Keys bool) error {
 	return vm.LinkHost(vm, host)
 }
 
-func (host *WasmHost) Init(null HostObject, root HostObject, log *logger.Logger) {
-	host.KvStoreHost.Init(null, root, log)
+func (host *WasmHost) Init(log *logger.Logger) {
+	host.KvStoreHost.Init(log)
 	host.codeToFunc = make(map[uint32]string)
 	host.funcToCode = make(map[string]uint32)
 	host.funcToIndex = make(map[string]int32)
