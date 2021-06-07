@@ -63,6 +63,7 @@ type ScDict struct {
 	typeId    int32
 	types     map[int32]int32
 }
+
 var _ WaspObject = &ScDict{}
 
 var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 8, 0, 34, 0}
@@ -119,6 +120,11 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 	o.Trace("InitObj %s", o.name)
 	o.objects = make(map[int32]int32)
 	o.types = make(map[int32]int32)
+}
+
+func (o *ScDict) CallFunc(keyId int32, params []byte) []byte {
+	o.Panic("CallFunc: invalid call")
+	return nil
 }
 
 func (o *ScDict) Exists(keyId int32, typeId int32) bool {
