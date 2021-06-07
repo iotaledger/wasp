@@ -205,58 +205,8 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 	}
 }
 
-// processStateMessage processes the only chain output which exists on the chain's address
+// processStateMessage processes the unique chain output which exists on the chain's address
 // If necessary, it creates/changes/rotates committee object
-func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
-	sh, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
-	if err != nil {
-		c.log.Error(xerrors.Errorf("parsing state hash: %w", err))
-		return
-	}
-	c.log.Debugw("processStateMessage",
-		"stateIndex", msg.ChainOutput.GetStateIndex(),
-		"stateHash", sh.String(),
-		"stateAddr", msg.ChainOutput.GetStateAddress().Base58(),
-	)
-	if c.committee != nil && c.committee.Address().Equals(msg.ChainOutput.GetStateAddress()) {
-		// nothing changed in the committee, just pass the message to state manager
-		c.stateMgr.EventStateMsg(msg)
-		return
-	}
-	// create or change committee object
-	if c.committee != nil {
-		// closes the current committee
-		c.committee.Close()
-	}
-	if c.consensus != nil {
-		// closes the current consensus object. All ongoing communications between current validators are interrupted
-		c.consensus.Close()
-	}
-	c.committee, c.consensus = nil, nil
-	c.log.Debugf("creating new committee...")
-
-	c.committee, err = committee.New(
-		msg.ChainOutput.GetStateAddress(),
-		&c.chainID,
-		c.netProvider,
-		c.peerNetworkConfig,
-		c.dksProvider,
-		c.committeeRegistry,
-		c.log,
-	)
-	if err != nil {
-		c.committee = nil
-		c.log.Errorf("failed to create committee object for state address %s: %v", msg.ChainOutput.GetStateAddress().Base58(), err)
-		return
-	}
-	c.committee.Attach(c)
-	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, c.committee, c.nodeConn)
-
-	c.log.Infof("NEW COMMITTEE OF VALDATORS initialized for state address %s", msg.ChainOutput.GetStateAddress().Base58())
-	c.stateMgr.EventStateMsg(msg)
-}
-
 func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 	c.stateReader.SetBaseline()
 	reqids, err := blocklog.GetRequestIDsForLastBlock(c.stateReader)
@@ -286,4 +236,66 @@ func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
 
 func (c *chainObj) processSynced(outputID ledgerstate.OutputID, blockIndex uint32) {
 	chain.LogSyncedEvent(outputID, blockIndex, c.log)
+}
+
+// processStateMessage processes the only chain output which exists on the chain's address
+// If necessary, it creates/changes/rotates committee object
+func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
+	sh, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
+	if err != nil {
+		c.log.Error(xerrors.Errorf("parsing state hash: %w", err))
+		return
+	}
+	c.log.Debugf("processStateMessage. stateIndex: %d, stateHash: %d, stateAddr: %d, state transition: %v",
+		msg.ChainOutput.GetStateIndex(), sh.String(),
+		msg.ChainOutput.GetStateAddress().Base58(), !msg.ChainOutput.GetIsGovernanceUpdated(),
+	)
+	createCommittee := false
+	if c.committee != nil {
+		// committee already exists
+		if msg.ChainOutput.GetIsGovernanceUpdated() &&
+			!c.committee.Address().Equals(msg.ChainOutput.GetStateAddress()) {
+			// governance transition. Committee needs to be rotated
+			// close current committee and consensus
+			c.committee.Close()
+			c.consensus.Close()
+			c.committee = nil
+			c.consensus = nil
+			createCommittee = true
+		}
+	} else {
+		// committee does not exist yet. Must be created
+		createCommittee = true
+	}
+	if createCommittee {
+		if err := c.createNewCommitteeAndConsensus(msg.ChainOutput.GetStateAddress()); err != nil {
+			c.log.Errorf("processStateMessage: %v", err)
+			return
+		}
+	}
+	c.stateMgr.EventStateMsg(msg)
+}
+
+func (c *chainObj) createNewCommitteeAndConsensus(addr ledgerstate.Address) error {
+	c.log.Debugf("creating new committee...")
+	var err error
+	c.committee, err = committee.New(
+		addr,
+		&c.chainID,
+		c.netProvider,
+		c.peerNetworkConfig,
+		c.dksProvider,
+		c.committeeRegistry,
+		c.log,
+	)
+	if err != nil {
+		c.committee = nil
+		return xerrors.Errorf("failed to create committee object for state address %s: %w", addr.Base58(), err)
+	}
+	c.committee.Attach(c)
+	c.log.Debugf("creating new consensus object...")
+	c.consensus = consensus.New(c, c.mempool, c.committee, c.nodeConn)
+
+	c.log.Infof("NEW COMMITTEE OF VALiDATORS has been initialized for the state address %s", addr.Base58())
+	return nil
 }
