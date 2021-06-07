@@ -12,8 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/chain/consensus"
-	"github.com/iotaledger/wasp/packages/registry_pkg"
-
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
@@ -54,8 +52,8 @@ type chainObj struct {
 	db                    kvstore.KVStore
 	peerNetworkConfig     coretypes.PeerNetworkConfigProvider
 	netProvider           peering.NetworkProvider
-	dksProvider           registry_pkg.DKShareRegistryProvider
-	committeeRegistry     registry_pkg.CommitteeRegistryProvider
+	dksProvider           coretypes.DKShareRegistryProvider
+	committeeRegistry     coretypes.CommitteeRegistryProvider
 	blobProvider          coretypes.BlobCache
 	eventRequestProcessed *events.Event
 	eventStateTransition  *events.Event
@@ -69,8 +67,8 @@ func NewChain(
 	peerNetConfig coretypes.PeerNetworkConfigProvider,
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
-	dksProvider registry_pkg.DKShareRegistryProvider,
-	committeeRegistry registry_pkg.CommitteeRegistryProvider,
+	dksProvider coretypes.DKShareRegistryProvider,
+	committeeRegistry coretypes.CommitteeRegistryProvider,
 	blobProvider coretypes.BlobCache,
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chr.ChainID.String())

@@ -6,6 +6,10 @@ package coretypes
 import (
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
+	"github.com/iotaledger/wasp/packages/tcrypto"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/util/key"
@@ -30,4 +34,16 @@ type PeerNetworkConfigProvider interface {
 	PeeringPort() int
 	Neighbors() []string
 	String() string
+}
+
+// DKShareRegistryProvider stands for a partial registry interface, needed for this package.
+// It should be implemented by registry.impl
+type DKShareRegistryProvider interface {
+	SaveDKShare(dkShare *tcrypto.DKShare) error
+	LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error)
+}
+
+type CommitteeRegistryProvider interface {
+	GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error)
+	SaveCommitteeRecord(rec *committee_record.CommitteeRecord) error
 }

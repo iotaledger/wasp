@@ -5,11 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry_pkg"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
@@ -39,13 +40,13 @@ func SetupDkg(
 	peerSecs []kyber.Scalar,
 	suite *pairing.SuiteBn256,
 	log *logger.Logger,
-) (ledgerstate.Address, []registry_pkg.DKShareRegistryProvider) {
+) (ledgerstate.Address, []coretypes.DKShareRegistryProvider) {
 	timeout := 100 * time.Second
 	networkProviders := SetupNet(peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(), log)
 	//
 	// Initialize the DKG subsystem in each node.
 	dkgNodes := make([]*dkg.Node, len(peerNetIDs))
-	registries := make([]registry_pkg.DKShareRegistryProvider, len(peerNetIDs))
+	registries := make([]coretypes.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range peerNetIDs {
 		registries[i] = testutil.NewDkgRegistryProvider(suite)
 		dkgNodes[i] = dkg.NewNode(

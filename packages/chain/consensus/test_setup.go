@@ -11,8 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
-	"github.com/iotaledger/wasp/packages/registry_pkg"
-
 	"github.com/iotaledger/wasp/packages/util"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -60,7 +58,7 @@ type mockedEnv struct {
 	PubKeys           []kyber.Point
 	PrivKeys          []kyber.Scalar
 	NetworkProviders  []peering.NetworkProvider
-	DKSRegistries     []registry_pkg.DKShareRegistryProvider
+	DKSRegistries     []coretypes.DKShareRegistryProvider
 	store             kvstore.KVStore
 	SolidState        state.VirtualState
 	GlobalSync        coreutil.GlobalSync
