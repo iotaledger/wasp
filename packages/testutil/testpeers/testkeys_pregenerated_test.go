@@ -4,13 +4,15 @@
 package testpeers_test
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/mr-tron/base58"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
@@ -35,8 +37,8 @@ func testPregenerateDKS(t *testing.T, N uint16) {
 	defer log.Sync()
 	netIDs, pubKeys, privKeys := testpeers.SetupKeys(N, suite)
 	dksAddr, dksRegistries := testpeers.SetupDkg(t, uint16((len(netIDs)*2)/3+1), netIDs, pubKeys, privKeys, suite, log.Named("dkg"))
-	fmt.Printf("func pregeneratedDks%v() []string {\n", N)
-	fmt.Printf("\tdks := make([]string, %v)\n", N)
+	var buf bytes.Buffer
+	util.WriteUint16(&buf, uint16(len(dksRegistries)))
 	for i := range dksRegistries {
 		var dki *tcrypto.DKShare
 		var dkb []byte
@@ -49,26 +51,8 @@ func testPregenerateDKS(t *testing.T, N uint16) {
 			dki.PublicShares = make([]kyber.Point, 0)
 		}
 		dkb, err = dki.Bytes()
-		require.Nil(t, err)
-		fmt.Printf("\tdks[%v] = ", i)
-		printWrappedText(base58.Encode(dkb))
+		require.Nil(t, util.WriteBytes16(&buf, dkb))
 	}
-	fmt.Printf("\treturn dks\n")
-	fmt.Printf("}\n\n")
-}
-
-func printWrappedText(s string) {
-	fmt.Printf("\"\" +\n")
-	for {
-		if len(s) == 0 {
-			break
-		}
-		if len(s) > 80 {
-			fmt.Printf("\t\t\"%v\" +\n", s[:80])
-			s = s[80:]
-			continue
-		}
-		fmt.Printf("\t\t\"%v\"\n", s)
-		break
-	}
+	err = ioutil.WriteFile(fmt.Sprintf("testkeys_pregenerated-%v.bin", N), buf.Bytes(), 0644)
+	require.Nil(t, err)
 }

@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
@@ -81,34 +80,11 @@ func SetupDkgPregenerated(
 	suite *pairing.SuiteBn256,
 ) (ledgerstate.Address, []registry.DKShareRegistryProvider) {
 	var err error
-	var serializedDks []string
-	switch len(peerNetIDs) {
-	case 1:
-		serializedDks = pregeneratedDks1()
-	case 4:
-		serializedDks = pregeneratedDks4()
-	case 10:
-		serializedDks = pregeneratedDks10()
-	case 22:
-		serializedDks = pregeneratedDks22()
-	case 31:
-		serializedDks = pregeneratedDks31()
-	case 40:
-		serializedDks = pregeneratedDks40()
-	case 70:
-		serializedDks = pregeneratedDks70()
-	case 100:
-		serializedDks = pregeneratedDks100()
-	default:
-		t.Fatalf("have no keys pregenerated for N=%v", len(peerNetIDs))
-	}
+	var serializedDks [][]byte = pregeneratedDksRead(uint16(len(peerNetIDs)))
 	dks := make([]*tcrypto.DKShare, len(serializedDks))
 	registries := make([]registry.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range dks {
-		var dksBytes []byte
-		dksBytes, err = base58.Decode(serializedDks[i])
-		require.Nil(t, err)
-		dks[i], err = tcrypto.DKShareFromBytes(dksBytes, suite)
+		dks[i], err = tcrypto.DKShareFromBytes(serializedDks[i], suite)
 		if i > 0 {
 			// It was removed to decrease the serialized size.
 			dks[i].PublicCommits = dks[0].PublicCommits
