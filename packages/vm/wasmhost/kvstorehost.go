@@ -12,6 +12,7 @@ import (
 // all type id values should exactly match their counterpart values on the client!
 const (
 	OBJTYPE_ARRAY int32 = 0x20
+	OBJTYPE_CALL  int32 = 0x40
 
 	OBJTYPE_ADDRESS    int32 = 1
 	OBJTYPE_AGENT_ID   int32 = 2
@@ -26,15 +27,15 @@ const (
 	OBJTYPE_STRING     int32 = 11
 )
 
-// flag to indicate that this key id originally comes from a string key
-// note that this includes the predefined key ids as they are all negative
+// flag to indicate that this key id originally comes from a bytes key
 // this allows us to display better readable tracing information
-const KeyFromString int32 = 0x4000
+const KeyFromBytes int32 = 0x4000
 
 var HostTracing = false
 var ExtendedHostTracing = false
 
 type HostObject interface {
+	CallFunc(keyId int32, params []byte) []byte
 	Exists(keyId int32, typeId int32) bool
 	GetBytes(keyId int32, typeId int32) []byte
 	GetObjectId(keyId int32, typeId int32) int32
@@ -54,18 +55,19 @@ type KvStoreHost struct {
 	useBase58Keys bool
 }
 
-func (host *KvStoreHost) Init(null HostObject, root HostObject, log *logger.Logger) {
-	host.log = log.Named("wasmtrace")
+func (host *KvStoreHost) Init(log *logger.Logger) {
 	host.log = log
-	host.objIdToObj = nil
+	host.objIdToObj = make([]HostObject, 0, 16)
 	host.keyIdToKey = [][]byte{[]byte("<null>")}
 	host.keyToKeyId = make(map[string]int32)
 	host.keyIdToKeyMap = make([][]byte, len(keyMap)+1)
 	for k, v := range keyMap {
 		host.keyIdToKeyMap[-v] = []byte(k)
 	}
-	host.TrackObject(null)
-	host.TrackObject(root)
+}
+
+func (host *KvStoreHost) CallFunc(objId int32, keyId int32, params []byte) []byte {
+	return host.FindObject(objId).CallFunc(keyId, params)
 }
 
 func (host *KvStoreHost) Exists(objId int32, keyId int32, typeId int32) bool {
@@ -113,13 +115,13 @@ func (host *KvStoreHost) getKeyFromId(keyId int32) []byte {
 	}
 
 	// find user-defined key
-	return host.keyIdToKey[keyId & ^KeyFromString]
+	return host.keyIdToKey[keyId & ^KeyFromBytes]
 }
 
 func (host *KvStoreHost) GetKeyFromId(keyId int32) []byte {
 	host.TraceAll("GetKeyFromId(k%d)", keyId)
 	key := host.getKeyFromId(keyId)
-	if (keyId & KeyFromString) == 0 {
+	if (keyId & (KeyFromBytes | -0x80000000)) == KeyFromBytes {
 		// originally a byte slice key
 		host.Trace("GetKeyFromId k%d='%s'", keyId, base58.Encode(key))
 		return key
@@ -129,28 +131,20 @@ func (host *KvStoreHost) GetKeyFromId(keyId int32) []byte {
 	return key
 }
 
-func (host *KvStoreHost) getKeyId(key []byte, fromString bool) int32 {
+func (host *KvStoreHost) getKeyId(key []byte, fromBytes bool) int32 {
 	// cannot use []byte as key in maps
 	// so we will convert to (non-utf8) string
 	// most will have started out as string anyway
 	keyString := string(key)
-
-	// first check predefined key map
-	keyId, ok := keyMap[keyString]
-	if ok {
-		return keyId
-	}
-
-	// check additional user-defined keys
-	keyId, ok = host.keyToKeyId[keyString]
+	keyId, ok := host.keyToKeyId[keyString]
 	if ok {
 		return keyId
 	}
 
 	// unknown key, add it to user-defined key map
 	keyId = int32(len(host.keyIdToKey))
-	if fromString {
-		keyId |= KeyFromString
+	if fromBytes {
+		keyId |= KeyFromBytes
 	}
 	host.keyToKeyId[keyString] = keyId
 	host.keyIdToKey = append(host.keyIdToKey, key)
@@ -165,13 +159,13 @@ func (host *KvStoreHost) GetKeyIdFromBytes(bytes []byte) int32 {
 		bytes = []byte(encoded)
 	}
 
-	keyId := host.getKeyId(bytes, false)
+	keyId := host.getKeyId(bytes, true)
 	host.Trace("GetKeyIdFromBytes '%s'=k%d", encoded, keyId)
 	return keyId
 }
 
 func (host *KvStoreHost) GetKeyIdFromString(key string) int32 {
-	keyId := host.getKeyId([]byte(key), true)
+	keyId := host.getKeyId([]byte(key), false)
 	host.Trace("GetKeyIdFromString '%s'=k%d", key, keyId)
 	return keyId
 }
@@ -196,7 +190,7 @@ func (host *KvStoreHost) PushFrame() []HostObject {
 	// create a fresh slice to allow garbage collection
 	// it's up to the caller to save and/or restore the old frame
 	pushed := host.objIdToObj
-	host.objIdToObj = make([]HostObject, 2)
+	host.objIdToObj = make([]HostObject, 2, 16)
 	copy(host.objIdToObj, pushed[:2])
 	return pushed
 }
