@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
 )
 
@@ -41,6 +42,12 @@ func testPregenerateDKS(t *testing.T, N uint16) {
 		var dkb []byte
 		dki, err = dksRegistries[i].LoadDKShare(dksAddr)
 		require.Nil(t, err)
+		if i > 0 {
+			// Remove it here to make serialized object smaller.
+			// Will restore it from dks[0].
+			dki.PublicCommits = make([]kyber.Point, 0)
+			dki.PublicShares = make([]kyber.Point, 0)
+		}
 		dkb, err = dki.Bytes()
 		require.Nil(t, err)
 		fmt.Printf("\tdks[%v] = ", i)

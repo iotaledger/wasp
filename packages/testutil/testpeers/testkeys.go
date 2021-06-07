@@ -109,6 +109,11 @@ func SetupDkgPregenerated(
 		dksBytes, err = base58.Decode(serializedDks[i])
 		require.Nil(t, err)
 		dks[i], err = tcrypto.DKShareFromBytes(dksBytes, suite)
+		if i > 0 {
+			// It was removed to decrease the serialized size.
+			dks[i].PublicCommits = dks[0].PublicCommits
+			dks[i].PublicShares = dks[0].PublicShares
+		}
 		require.Nil(t, err)
 		registries[i] = testutil.NewDkgRegistryProvider(suite)
 		require.Nil(t, registries[i].SaveDKShare(dks[i]))
