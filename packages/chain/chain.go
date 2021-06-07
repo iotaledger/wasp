@@ -62,7 +62,7 @@ type Chain interface {
 	ChainEntry
 }
 
-// Committee is ordered (indexed 0..size-1) list of peers which run the consensus and the whoel chain
+// Committee is ordered (indexed 0..size-1) list of peers which run the consensus
 type Committee interface {
 	Address() ledgerstate.Address
 	Size() uint16
