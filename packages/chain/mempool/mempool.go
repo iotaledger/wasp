@@ -84,7 +84,7 @@ func (m *mempool) removeFromInBuffer(req coretypes.Request) {
 	}
 }
 
-// fills up the buffer with requests in the in buffer
+// fills up the buffer with requests from the in-buffer
 func (m *mempool) takeInBuffer(buf []coretypes.Request) []coretypes.Request {
 	buf = buf[:0]
 	m.inMutex.RLock()
