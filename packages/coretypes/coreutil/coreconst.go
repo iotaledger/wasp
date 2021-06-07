@@ -6,29 +6,34 @@ import (
 
 // names of core contracts
 const (
-	CoreContractDefault  = "_default"
-	CoreContractRoot     = "root"
-	CoreContractAccounts = "accounts"
-	CoreContractBlob     = "blob"
-	CoreContractEventlog = "eventlog"
-	CoreContractBlocklog = "blocklog"
+	CoreContractDefault    = "_default"
+	CoreContractRoot       = "root"
+	CoreContractAccounts   = "accounts"
+	CoreContractBlob       = "blob"
+	CoreContractEventlog   = "eventlog"
+	CoreContractBlocklog   = "blocklog"
+	CoreContractGovernance = "governance"
+	CoreEPRotateCommittee  = "rotateCommittee"
 )
 
 var (
-	CoreContractDefaultHname  = coretypes.Hname(0)
-	CoreContractRootHname     = coretypes.Hn(CoreContractRoot)
-	CoreContractAccountsHname = coretypes.Hn(CoreContractAccounts)
-	CoreContractBlobHname     = coretypes.Hn(CoreContractBlob)
-	CoreContractEventlogHname = coretypes.Hn(CoreContractEventlog)
-	CoreContractBlocklogHname = coretypes.Hn(CoreContractBlocklog)
+	CoreContractDefaultHname    = coretypes.Hname(0)
+	CoreContractRootHname       = coretypes.Hn(CoreContractRoot)
+	CoreContractAccountsHname   = coretypes.Hn(CoreContractAccounts)
+	CoreContractBlobHname       = coretypes.Hn(CoreContractBlob)
+	CoreContractEventlogHname   = coretypes.Hn(CoreContractEventlog)
+	CoreContractBlocklogHname   = coretypes.Hn(CoreContractBlocklog)
+	CoreContractGovernanceHname = coretypes.Hn(CoreContractGovernance)
+	CoreEPRotateCommitteeHname  = coretypes.Hn(CoreEPRotateCommittee)
 
 	hnames = map[string]coretypes.Hname{
-		CoreContractDefault:  CoreContractDefaultHname,
-		CoreContractRoot:     CoreContractRootHname,
-		CoreContractAccounts: CoreContractAccountsHname,
-		CoreContractBlob:     CoreContractBlobHname,
-		CoreContractEventlog: CoreContractEventlogHname,
-		CoreContractBlocklog: CoreContractBlocklogHname,
+		CoreContractDefault:    CoreContractDefaultHname,
+		CoreContractRoot:       CoreContractRootHname,
+		CoreContractAccounts:   CoreContractAccountsHname,
+		CoreContractBlob:       CoreContractBlobHname,
+		CoreContractEventlog:   CoreContractEventlogHname,
+		CoreContractBlocklog:   CoreContractBlocklogHname,
+		CoreContractGovernance: CoreContractGovernanceHname,
 	}
 )
 
@@ -36,6 +41,7 @@ var (
 const (
 	StateVarTimestamp  = "T"
 	StateVarBlockIndex = "I"
+	ParamStateAddress  = "S"
 )
 
 // used in 'state' package as key for timestamp and block index
