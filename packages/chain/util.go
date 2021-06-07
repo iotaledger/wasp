@@ -3,6 +3,8 @@ package chain
 import (
 	"strconv"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -29,7 +31,7 @@ func LogSyncedEvent(outputID ledgerstate.OutputID, blockIndex uint32, log *logge
 }
 
 func PublishStateTransition(newState state.VirtualState, stateOutput *ledgerstate.AliasOutput, reqids []coretypes.RequestID) {
-	chainID := coretypes.NewChainID(stateOutput.GetAliasAddress())
+	chainID := chainid.NewChainID(stateOutput.GetAliasAddress())
 
 	publisher.Publish("state",
 		chainID.String(),

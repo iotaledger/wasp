@@ -6,8 +6,13 @@ package coretypes
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
+
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -46,4 +51,15 @@ type DKShareRegistryProvider interface {
 type CommitteeRegistryProvider interface {
 	GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error)
 	SaveCommitteeRecord(rec *committee_record.CommitteeRecord) error
+}
+
+// ChainRecordRegistryProvider stands for a partial registry interface, needed for this package.
+// It should be implemented by in the chainrecord package
+type ChainRecordRegistryProvider interface {
+	GetChainRecordByChainID(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error)
+	GetChainRecords() ([]*chainrecord.ChainRecord, error)
+	UpdateChainRecord(chainID *chainid.ChainID, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error)
+	ActivateChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error)
+	DeactivateChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error)
+	SaveChainRecord(rec *chainrecord.ChainRecord) error
 }

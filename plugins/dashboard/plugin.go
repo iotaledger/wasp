@@ -11,6 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
+
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -22,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
@@ -67,11 +70,11 @@ func (w *waspServices) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
 	return registry.DefaultRegistry().GetChainRecords()
 }
 
-func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error) {
+func (w *waspServices) GetChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error) {
 	return registry.DefaultRegistry().GetChainRecordByChainID(chainID)
 }
 
-func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*dashboard.ChainState, error) {
+func (w *waspServices) GetChainState(chainID *chainid.ChainID) (*dashboard.ChainState, error) {
 	chainStore := database.GetKVStore(chainID)
 	virtualState, _, err := state.LoadSolidState(chainStore, chainID)
 	if err != nil {
@@ -89,7 +92,7 @@ func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*dashboard.Cha
 	}, nil
 }
 
-func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.ChainCore {
+func (w *waspServices) GetChain(chainID *chainid.ChainID) chain.ChainCore {
 	return chains.AllChains().Get(chainID)
 }
 

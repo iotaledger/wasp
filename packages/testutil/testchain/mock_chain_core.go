@@ -3,6 +3,8 @@ package testchain
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -15,7 +17,7 @@ import (
 
 type MockedChainCore struct {
 	T                       *testing.T
-	chainID                 coretypes.ChainID
+	chainID                 chainid.ChainID
 	processors              *processors.ProcessorCache
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
@@ -30,7 +32,7 @@ type MockedChainCore struct {
 	log                     *logger.Logger
 }
 
-func NewMockedChainCore(t *testing.T, chainID coretypes.ChainID, log *logger.Logger) *MockedChainCore {
+func NewMockedChainCore(t *testing.T, chainID chainid.ChainID, log *logger.Logger) *MockedChainCore {
 	ret := &MockedChainCore{
 		T:          t,
 		chainID:    chainID,
@@ -71,7 +73,7 @@ func (m *MockedChainCore) Log() *logger.Logger {
 	return m.log
 }
 
-func (m *MockedChainCore) ID() *coretypes.ChainID {
+func (m *MockedChainCore) ID() *chainid.ChainID {
 	return &m.chainID
 }
 

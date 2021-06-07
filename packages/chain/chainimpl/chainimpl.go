@@ -7,6 +7,10 @@ import (
 	"bytes"
 	"sync"
 
+	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
+
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -15,8 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
-	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
-
 	"github.com/iotaledger/wasp/packages/state"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -40,7 +42,7 @@ type chainObj struct {
 	mempool               chain.Mempool
 	dismissed             atomic.Bool
 	dismissOnce           sync.Once
-	chainID               coretypes.ChainID
+	chainID               chainid.ChainID
 	globalSync            coreutil.GlobalSync
 	stateReader           state.OptimisticStateReader
 	procset               *processors.ProcessorCache

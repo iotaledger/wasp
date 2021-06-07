@@ -3,6 +3,12 @@ package chains
 import (
 	"sync"
 
+	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
+
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 
 	"golang.org/x/xerrors"
@@ -12,9 +18,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	registry_pkg "github.com/iotaledger/wasp/packages/registry_pkg"
-	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
@@ -57,7 +60,7 @@ func (c *Chains) Attach(nodeConn *txstream.Client) {
 	// TODO attach to off-ledger request module
 }
 
-func (c *Chains) ActivateAllFromRegistry(chainRecordProvider registry_pkg.ChainRecordRegistryProvider) error {
+func (c *Chains) ActivateAllFromRegistry(chainRecordProvider coretypes.ChainRecordRegistryProvider) error {
 	chainRecords, err := chainRecordProvider.GetChainRecords()
 	if err != nil {
 		return err
@@ -137,7 +140,7 @@ func (c *Chains) Deactivate(chr *chainrecord.ChainRecord) error {
 
 // Get returns active chain object or nil if it doesn't exist
 // lazy unsubscribing
-func (c *Chains) Get(chainID *coretypes.ChainID) chain.Chain {
+func (c *Chains) Get(chainID *chainid.ChainID) chain.Chain {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 

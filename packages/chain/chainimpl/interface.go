@@ -6,6 +6,8 @@ package chainimpl
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -24,7 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
-func (c *chainObj) ID() *coretypes.ChainID {
+func (c *chainObj) ID() *chainid.ChainID {
 	return &c.chainID
 }
 

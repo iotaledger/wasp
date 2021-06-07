@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
@@ -39,7 +41,7 @@ func TestDashboardChainList(t *testing.T) {
 func TestDashboardChainView(t *testing.T) {
 	e, d := mockDashboard()
 	html := testutil.CallHTMLRequestHandler(t, e, d.handleChain, "/chain/:chainid", map[string]string{
-		"chainid": coretypes.RandomChainID().Base58(),
+		"chainid": chainid.RandomChainID().Base58(),
 	})
 
 	// make sure we are using .Base58()
@@ -50,7 +52,7 @@ func TestDashboardChainView(t *testing.T) {
 func TestDashboardChainAccount(t *testing.T) {
 	e, d := mockDashboard()
 	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainAccount, "/chain/:chainid/account/:agentid", map[string]string{
-		"chainid": coretypes.RandomChainID().Base58(),
+		"chainid": chainid.RandomChainID().Base58(),
 		"agentid": strings.Replace(coretypes.NewRandomAgentID().String(), "/", ":", 1),
 	})
 
@@ -62,7 +64,7 @@ func TestDashboardChainAccount(t *testing.T) {
 func TestDashboardChainBlob(t *testing.T) {
 	e, d := mockDashboard()
 	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainBlob, "/chain/:chainid/blob/:hash", map[string]string{
-		"chainid": coretypes.RandomChainID().Base58(),
+		"chainid": chainid.RandomChainID().Base58(),
 		"hash":    hashing.RandomHash(nil).Base58(),
 	})
 
@@ -74,7 +76,7 @@ func TestDashboardChainBlob(t *testing.T) {
 func TestDashboardChainContract(t *testing.T) {
 	e, d := mockDashboard()
 	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainContract, "/chain/:chainid/contract/:hname", map[string]string{
-		"chainid": coretypes.RandomChainID().Base58(),
+		"chainid": chainid.RandomChainID().Base58(),
 		"hname":   coretypes.Hname(0).String(),
 	})
 

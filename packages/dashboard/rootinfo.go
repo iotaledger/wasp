@@ -3,6 +3,8 @@ package dashboard
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -13,7 +15,7 @@ import (
 )
 
 type RootInfo struct {
-	ChainID coretypes.ChainID
+	ChainID chainid.ChainID
 
 	OwnerID          *coretypes.AgentID
 	OwnerIDDelegated *coretypes.AgentID

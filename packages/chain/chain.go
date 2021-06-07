@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -23,7 +25,7 @@ import (
 )
 
 type ChainCore interface {
-	ID() *coretypes.ChainID
+	ID() *chainid.ChainID
 	GetCommitteeInfo() *CommitteeInfo
 	ReceiveMessage(interface{})
 	Events() ChainEvents

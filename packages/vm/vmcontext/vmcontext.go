@@ -3,6 +3,8 @@ package vmcontext
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -26,7 +28,7 @@ import (
 // chain address contained in the statetxbuilder.Builder
 type VMContext struct {
 	// same for the block
-	chainID              coretypes.ChainID
+	chainID              chainid.ChainID
 	chainOwnerID         coretypes.AgentID
 	processors           *processors.ProcessorCache
 	txBuilder            *utxoutil.Builder
@@ -68,7 +70,7 @@ type blockContext struct {
 
 // CreateVMContext a constructor
 func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
-	chainID, err := coretypes.ChainIDFromAddress(task.ChainInput.Address())
+	chainID, err := chainid.ChainIDFromAddress(task.ChainInput.Address())
 	if err != nil {
 		task.Log.Panicf("CreateVMContext: %v", err)
 	}

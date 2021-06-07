@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -95,7 +97,7 @@ type Chain struct {
 	OriginatorKeyPair *ed25519.KeyPair
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
-	ChainID coretypes.ChainID
+	ChainID chainid.ChainID
 
 	// OriginatorAddress is the alias for OriginatorKeyPair.Address()
 	OriginatorAddress ledgerstate.Address
@@ -288,7 +290,7 @@ func (env *Solo) AddToLedger(tx *ledgerstate.Transaction) error {
 }
 
 // RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
-func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID coretypes.ChainID) ([]coretypes.Request, error) {
+func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID chainid.ChainID) ([]coretypes.Request, error) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 
@@ -331,7 +333,7 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 	requests := env.requestsByChain(tx)
 
 	for chidArr, reqs := range requests {
-		chid, err := coretypes.ChainIDFromBytes(chidArr[:])
+		chid, err := chainid.ChainIDFromBytes(chidArr[:])
 		require.NoError(env.T, err)
 		ch, ok := env.chains[chidArr]
 		if !ok {

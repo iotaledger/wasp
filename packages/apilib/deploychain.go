@@ -11,6 +11,9 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
+
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -20,7 +23,6 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 )
@@ -41,7 +43,7 @@ type CreateChainParams struct {
 // TODO: [KP] Shouldn't that be in the client packages?
 // TODO: [ED] decouple DKG from chain deployment into separate call
 // noinspection ALL
-func DeployChain(par CreateChainParams) (*coretypes.ChainID, ledgerstate.Address, error) {
+func DeployChain(par CreateChainParams) (*chainid.ChainID, ledgerstate.Address, error) {
 	var err error
 	textout := ioutil.Discard
 	if par.Textout != nil {

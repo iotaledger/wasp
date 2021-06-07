@@ -3,6 +3,7 @@ package vmcontext
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -10,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
-func (vmctx *VMContext) ChainID() *coretypes.ChainID {
+func (vmctx *VMContext) ChainID() *chainid.ChainID {
 	return &vmctx.chainID
 }
 

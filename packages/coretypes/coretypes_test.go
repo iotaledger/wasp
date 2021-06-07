@@ -6,6 +6,8 @@ package coretypes
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/stretchr/testify/assert"
@@ -13,7 +15,7 @@ import (
 )
 
 func TestChainID(t *testing.T) {
-	chid := RandomChainID()
+	chid := chainid.RandomChainID()
 
 	chid58 := chid.Base58()
 	t.Logf("chid58 = %s", chid58)
@@ -21,11 +23,11 @@ func TestChainID(t *testing.T) {
 	chidString := chid.String()
 	t.Logf("chidString = %s", chidString)
 
-	chidback, err := ChainIDFromBytes(chid.Bytes())
+	chidback, err := chainid.ChainIDFromBytes(chid.Bytes())
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
 
-	chidback, err = ChainIDFromBase58(chid58)
+	chidback, err = chainid.ChainIDFromBase58(chid58)
 	assert.NoError(t, err)
 	assert.EqualValues(t, chidback, chid)
 }

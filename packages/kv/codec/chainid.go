@@ -1,20 +1,20 @@
 package codec
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 )
 
-func DecodeChainID(b []byte) (coretypes.ChainID, bool, error) {
+func DecodeChainID(b []byte) (chainid.ChainID, bool, error) {
 	if b == nil {
-		return coretypes.ChainID{}, false, nil
+		return chainid.ChainID{}, false, nil
 	}
-	ret, err := coretypes.ChainIDFromBytes(b)
+	ret, err := chainid.ChainIDFromBytes(b)
 	if err != nil {
-		return coretypes.ChainID{}, false, err
+		return chainid.ChainID{}, false, err
 	}
 	return *ret, true, nil
 }
 
-func EncodeChainID(value coretypes.ChainID) []byte {
+func EncodeChainID(value chainid.ChainID) []byte {
 	return value.Bytes()
 }
