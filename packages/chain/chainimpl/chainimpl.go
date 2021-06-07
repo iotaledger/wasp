@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
 )
@@ -249,7 +250,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	}
 	c.committee.Attach(c)
 	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, c.committee, c.nodeConn, c.log)
+	c.consensus = consensus.New(c, c.mempool, c.committee, c.nodeConn, runvm.NewVMRunner(), c.log)
 
 	c.log.Infof("NEW COMMITTEE OF VALDATORS initialized for state address %s", msg.ChainOutput.GetStateAddress().Base58())
 	c.stateMgr.EventStateMsg(msg)
