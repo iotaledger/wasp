@@ -47,7 +47,7 @@ func TestBasicAccountsN1(t *testing.T) {
 }
 
 func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.MessageCounter) {
-	name := "inncounter1"
+	name := "incounter1"
 	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
 	programHash := inccounter.Interface.ProgramHash
