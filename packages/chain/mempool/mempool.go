@@ -5,15 +5,19 @@
 package mempool
 
 import (
+	"bytes"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
 type mempool struct {
@@ -26,6 +30,7 @@ type mempool struct {
 	outPoolCounter          int
 	stateReader             state.OptimisticStateReader
 	pool                    map[coretypes.RequestID]*requestRef
+	poolRotate              map[coretypes.RequestID]*requestRef
 	chStop                  chan struct{}
 	blobCache               coretypes.BlobCache
 	solidificationLoopDelay time.Duration
@@ -49,6 +54,7 @@ func New(stateReader state.OptimisticStateReader, blobCache coretypes.BlobCache,
 		inBuffer:    make(map[coretypes.RequestID]coretypes.Request),
 		stateReader: stateReader,
 		pool:        make(map[coretypes.RequestID]*requestRef),
+		poolRotate:  make(map[coretypes.RequestID]*requestRef),
 		chStop:      make(chan struct{}),
 		blobCache:   blobCache,
 		log:         log.Named("m"),
@@ -107,38 +113,54 @@ func (m *mempool) addToPool(req coretypes.Request) bool {
 		}
 	}
 	reqid := req.ID()
-	m.stateReader.SetBaseline()
-	alreadyProcessed, err := blocklog.IsRequestProcessed(m.stateReader.KVStoreReader(), &reqid)
-	if err != nil {
-		// may be invalid state. Do not remove from in buffer yet
-		return false
-	}
-	if alreadyProcessed {
-		// remove from buffer but not include into the pool
-		return true
+	rotateRequest := coreutil.IsRotateCommitteeRequest(req)
+	// if it is a rotate committee request, it s not recorded in the state
+	if !rotateRequest {
+		m.stateReader.SetBaseline()
+		alreadyProcessed, err := blocklog.IsRequestProcessed(m.stateReader.KVStoreReader(), &reqid)
+		if err != nil {
+			// may be invalidated state. Do not remove from in-buffer yet
+			return false
+		}
+		if alreadyProcessed {
+			// remove from the in-buffer but not include into the pool
+			return true
+		}
 	}
 
 	m.poolMutex.Lock()
 	defer m.poolMutex.Unlock()
 
 	if _, inPool := m.pool[reqid]; inPool {
-		// already there, remove from in buffer
+		// already there, remove from the in-buffer
 		return true
 	}
+	if _, inPool := m.poolRotate[reqid]; inPool {
+		// already there, remove from the in-buffer
+		return true
+	}
+
 	// put the request to the pool
 	nowis := time.Now()
 	m.inPoolCounter++
 
 	m.traceIn(req)
 
-	m.pool[reqid] = &requestRef{
-		req:          req,
-		whenReceived: nowis,
+	if !rotateRequest {
+		m.pool[reqid] = &requestRef{
+			req:          req,
+			whenReceived: nowis,
+		}
+	} else {
+		m.poolRotate[reqid] = &requestRef{
+			req:          req,
+			whenReceived: nowis,
+		}
 	}
 	if _, err := req.SolidifyArgs(m.blobCache); err != nil {
 		m.log.Errorf("ReceiveRequest.SolidifyArgs: %s", err)
 	}
-	// remove from in buffer
+	// return true to remove from the in-buffer
 	return true
 }
 
@@ -155,11 +177,14 @@ func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 	defer m.poolMutex.Unlock()
 
 	for _, rid := range reqs {
-		if _, ok := m.pool[rid]; !ok {
-			continue
+		if _, ok := m.pool[rid]; ok {
+			m.outPoolCounter++
+			delete(m.pool, rid)
 		}
-		m.outPoolCounter++
-		delete(m.pool, rid)
+		if _, ok := m.poolRotate[rid]; ok {
+			m.outPoolCounter++
+			delete(m.poolRotate, rid)
+		}
 
 		m.traceOut(rid)
 	}
@@ -203,10 +228,16 @@ func isRequestReady(ref *requestRef, nowis time.Time) bool {
 
 // ReadyNow returns preliminary batch of requests for consensus.
 // Note that later status of request may change due to time change and time constraints
+// If there's at least one committee rotation request in the mempool, the ReadyNow returns
+// batch with only one request, the oldest committee rotation request
 func (m *mempool) ReadyNow(now ...time.Time) []coretypes.Request {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
+	rotation := m.committeeRotationRequest()
+	if rotation != nil {
+		return []coretypes.Request{rotation}
+	}
 	nowis := time.Now()
 	if len(now) > 0 {
 		nowis = now[0]
@@ -220,12 +251,35 @@ func (m *mempool) ReadyNow(now ...time.Time) []coretypes.Request {
 	return ret
 }
 
+// return the oldest of rotation requests
+func (m *mempool) committeeRotationRequest() coretypes.Request {
+	if len(m.poolRotate) == 0 {
+		return nil
+	}
+	var when time.Time
+	var ret coretypes.Request
+	for _, req := range m.poolRotate {
+		if req.whenReceived.Before(when) ||
+			(req.whenReceived.Equal(when) && ret != nil && bytes.Compare(ret.ID().Bytes(), req.req.ID().Bytes()) < 0) {
+			ret = req.req
+			when = req.whenReceived
+		}
+	}
+	return ret
+}
+
 // ReadyFromIDs if successful, function returns a deterministic list of requests for running on the VM
 // - nil, false if some requests not arrived to the mempool yet. For retry later
 // - (a list of processable requests), true if the list can be deterministically calculated
 // Note that (a list of processable requests) can be empty if none satisfies nowis time constraint (timelock, fallback)
 // For requests which are known and solidified, the result is deterministic
 func (m *mempool) ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool) {
+	if len(reqids) == 1 {
+		if ret, ok := m.poolRotate[reqids[0]]; ok {
+			// it is a rotation request. It must be always ready
+			return []coretypes.Request{ret.req}, true
+		}
+	}
 	ret := make([]coretypes.Request, 0, len(reqids))
 	for _, reqid := range reqids {
 		reqref, ok := m.pool[reqid]

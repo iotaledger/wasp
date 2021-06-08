@@ -2,6 +2,9 @@ package request
 
 import (
 	"bytes"
+	"io"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -11,8 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/crypto/blake2b"
-	"io"
-	"time"
 )
 
 // region RequestMetadata  ///////////////////////////////////////////////////////
@@ -201,7 +202,7 @@ func (req *RequestOnLedger) IsFeePrepaid() bool {
 	return false
 }
 
-func (req *RequestOnLedger) Order() uint64 {
+func (req *RequestOnLedger) Nonce() uint64 {
 	return uint64(req.timestamp.UnixNano())
 }
 
@@ -407,7 +408,7 @@ func (req *RequestOffLedger) IsFeePrepaid() bool {
 }
 
 // Order number used for ordering requests in the mempool. Priority order is a descending order
-func (req *RequestOffLedger) Order() uint64 {
+func (req *RequestOffLedger) Nonce() uint64 {
 	return uint64(req.timestamp.UnixNano())
 }
 

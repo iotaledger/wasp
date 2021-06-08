@@ -95,9 +95,9 @@ func (c *consensus) runVMIfNeeded() {
 	// here reqs as as set is deterministic. Must be sorted to have fully deterministic list
 	sort.Slice(reqs, func(i, j int) bool {
 		switch {
-		case reqs[i].Order() < reqs[j].Order():
+		case reqs[i].Nonce() < reqs[j].Nonce():
 			return true
-		case reqs[i].Order() > reqs[j].Order():
+		case reqs[i].Nonce() > reqs[j].Nonce():
 			return false
 		default:
 			return bytes.Compare(reqs[i].ID().Bytes(), reqs[j].ID().Bytes()) < 0
