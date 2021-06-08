@@ -237,6 +237,13 @@ func (e *env) txReceipt(hash common.Hash) *types.Receipt {
 	return r
 }
 
+func (e *env) accounts() []common.Address {
+	var res []common.Address
+	err := e.rawClient.Call(&res, "eth_accounts")
+	require.NoError(e.t, err)
+	return res
+}
+
 func TestRPCGetBalance(t *testing.T) {
 	env := newEnv(t)
 	_, receiverAddress := generateKey(t)
@@ -402,6 +409,12 @@ func TestRPCGetUncleCountByBlockNumber(t *testing.T) {
 	block1 := env.blockByNumber(big.NewInt(1))
 	require.Zero(t, len(block1.Uncles()))
 	require.EqualValues(t, len(block1.Uncles()), env.uncleCountByBlockNumber(big.NewInt(1)))
+}
+
+func TestRPCAccounts(t *testing.T) {
+	env := newEnv(t)
+	accounts := env.accounts()
+	require.Equal(t, len(evmtest.Accounts), len(accounts))
 }
 
 func TestRPCGetTxReceipt(t *testing.T) {

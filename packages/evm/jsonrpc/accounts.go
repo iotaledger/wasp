@@ -32,7 +32,7 @@ func (a *AccountManager) Add(keyPair *ecdsa.PrivateKey) {
 func (a *AccountManager) Addresses() []common.Address {
 	ret := make([]common.Address, len(a.accounts))
 	i := 0
-	for addr, _ := range a.accounts {
+	for addr := range a.accounts {
 		ret[i] = addr
 		i++
 	}
