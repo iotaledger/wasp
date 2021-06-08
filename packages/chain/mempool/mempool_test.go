@@ -499,7 +499,7 @@ func TestSolidification(t *testing.T) {
 }
 
 func TestRotateRequest(t *testing.T) {
-	glb := coreutil.NewGlobalSync().SetSolidIndex(0)
+	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
