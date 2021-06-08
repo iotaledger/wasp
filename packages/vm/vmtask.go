@@ -3,7 +3,7 @@ package vm
 import (
 	"time"
 
-	"golang.org/x/xerrors"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
@@ -26,7 +26,7 @@ type VMTask struct {
 	Processors               *processors.ProcessorCache
 	ChainInput               *ledgerstate.AliasOutput
 	VirtualState             state.VirtualState // in/out  Return uncommitted updated virtual state
-	SolidStateInvalid        func() bool        // solid state invalidity predicate. Must be thread-safe
+	SolidStateBaseline       coreutil.StateBaseline
 	Requests                 []coretypes.Request
 	Timestamp                time.Time
 	Entropy                  hashing.HashValue
@@ -35,9 +35,3 @@ type VMTask struct {
 	OnFinish                 func(callResult dict.Dict, callError error, vmError error)
 	ResultTransactionEssence *ledgerstate.TransactionEssence
 }
-
-type ErrorStateInvalidated struct {
-	error
-}
-
-var ErrStateHasBeenInvalidated = &ErrorStateInvalidated{xerrors.New("virtual state has been invalidated")}

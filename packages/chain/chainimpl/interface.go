@@ -6,7 +6,9 @@ package chainimpl
 import (
 	"time"
 
-	"go.uber.org/atomic"
+	"github.com/iotaledger/hive.go/logger"
+
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -26,8 +28,8 @@ func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
 }
 
-func (c *chainObj) GlobalSolidIndex() *atomic.Uint32 {
-	return &c.globalSolidIndex
+func (c *chainObj) GlobalStateSync() coreutil.ChainStateSync {
+	return c.globalSync
 }
 
 func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {
@@ -150,12 +152,9 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	stateReader, err := state.NewStateReader(c.store)
-	if err != nil {
-		c.log.Errorf("GetRequestProcessingStatus: %v", err)
-		return chain.RequestProcessingStatusUnknown
-	}
-	if !blocklog.IsRequestProcessed(stateReader, &reqID) {
+	c.stateReader.SetBaseline()
+	processed, err := blocklog.IsRequestProcessed(c.stateReader.KVStoreReader(), &reqID)
+	if err != nil || !processed {
 		return chain.RequestProcessingStatusUnknown
 	}
 	return chain.RequestProcessingStatusCompleted
@@ -183,4 +182,13 @@ func (c *chainObj) StateSynced() *events.Event {
 
 func (c *chainObj) Events() chain.ChainEvents {
 	return c
+}
+
+// GetStateReader returns a new copy of the optimistic state reader, with own baseline
+func (c *chainObj) GetStateReader() state.OptimisticStateReader {
+	return state.NewOptimisticStateReader(c.db, c.globalSync)
+}
+
+func (c *chainObj) Log() *logger.Logger {
+	return c.log
 }

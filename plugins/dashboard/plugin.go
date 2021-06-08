@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv/optimism"
+
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -87,18 +89,18 @@ func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*dashboard.Cha
 	}, nil
 }
 
-func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.Chain {
+func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.ChainCore {
 	return chains.AllChains().Get(chainID)
 }
 
-func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
-	chainStore := database.GetKVStore(chain.ID())
-	vctx, err := viewcontext.NewFromDB(chainStore, *chain.ID(), chain.Processors())
-	if err != nil {
-		return nil, fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
-	}
-
-	ret, err := vctx.CallView(hname, coretypes.Hn(fname), params)
+func (w *waspServices) CallView(chain chain.ChainCore, hname coretypes.Hname, funName string, params dict.Dict) (dict.Dict, error) {
+	vctx := viewcontext.NewFromChain(chain)
+	var err error
+	var ret dict.Dict
+	_ = optimism.RepeatOnceIfUnlucky(func() error {
+		ret, err = vctx.CallView(hname, coretypes.Hn(funName), params)
+		return err
+	})
 	if err != nil {
 		return nil, fmt.Errorf("root view call failed: %v", err)
 	}

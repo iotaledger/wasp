@@ -22,9 +22,6 @@ func (vs *virtualState) Commit(blocks ...Block) error {
 	if err = batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
 		return err
 	}
-	if err = batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateIndex), util.Uint32To4Bytes(vs.BlockIndex())); err != nil {
-		return err
-	}
 
 	for _, blk := range blocks {
 		key := dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(blk.BlockIndex()))
@@ -70,7 +67,7 @@ func CreateOriginState(store kvstore.KVStore, chainID *coretypes.ChainID) (*virt
 
 // LoadSolidState establishes VirtualState interface with the solid state in DB. Checks consistency of DB
 func LoadSolidState(store kvstore.KVStore, chainID *coretypes.ChainID) (VirtualState, bool, error) {
-	stateIndex, stateHash, exists, err := loadStateIndexAndHashFromDb(store)
+	stateHash, exists, err := loadStateHashFromDb(store)
 	if err != nil {
 		return nil, exists, xerrors.Errorf("LoadSolidState: %w", err)
 	}
@@ -78,13 +75,6 @@ func LoadSolidState(store kvstore.KVStore, chainID *coretypes.ChainID) (VirtualS
 		return nil, false, nil
 	}
 	vs := newVirtualState(store, chainID)
-	stateIndex1, err := loadStateIndexFromState(vs.KVStoreReader())
-	if err != nil {
-		return nil, false, xerrors.Errorf("LoadSolidState: %w", err)
-	}
-	if stateIndex != stateIndex1 {
-		return nil, false, xerrors.New("LoadSolidState: state index inconsistent with the state")
-	}
 	vs.stateHash = stateHash
 	return vs, true, nil
 }

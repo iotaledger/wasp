@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"go.uber.org/atomic"
+	"github.com/iotaledger/hive.go/logger"
+
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
@@ -26,12 +28,13 @@ type ChainCore interface {
 	ReceiveMessage(interface{})
 	Events() ChainEvents
 	Processors() *processors.ProcessorCache
-	GlobalSolidIndex() *atomic.Uint32
+	GlobalStateSync() coreutil.ChainStateSync
+	GetStateReader() state.OptimisticStateReader
+	Log() *logger.Logger
 }
 
-type Chain interface {
-	ChainCore
-
+// ChainEntry interface to access chain from the chain registry side
+type ChainEntry interface {
 	ReceiveTransaction(*ledgerstate.Transaction)
 	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
@@ -39,8 +42,12 @@ type Chain interface {
 
 	Dismiss(reason string)
 	IsDismissed() bool
+}
 
-	ChainRequests
+// ChainRequests is an interface to query status of the reqest
+type ChainRequests interface {
+	GetRequestProcessingStatus(id coretypes.RequestID) RequestProcessingStatus
+	EventRequestProcessed() *events.Event
 }
 
 type ChainEvents interface {
@@ -49,7 +56,13 @@ type ChainEvents interface {
 	StateSynced() *events.Event
 }
 
-// Committee is ordered (indexed 0..size-1) list of peers which run the consensus and the whoel chain
+type Chain interface {
+	ChainCore
+	ChainRequests
+	ChainEntry
+}
+
+// Committee is ordered (indexed 0..size-1) list of peers which run the consensus
 type Committee interface {
 	Address() ledgerstate.Address
 	Size() uint16
@@ -65,11 +78,6 @@ type Committee interface {
 	IsReady() bool
 	Close()
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
-}
-
-type ChainRequests interface {
-	GetRequestProcessingStatus(id coretypes.RequestID) RequestProcessingStatus
-	EventRequestProcessed() *events.Event
 }
 
 type NodeConnection interface {
@@ -113,6 +121,8 @@ type Mempool interface {
 	ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
 	HasRequest(id coretypes.RequestID) bool
 	Stats() MempoolStats
+	WaitRequestInPool(reqid coretypes.RequestID, timeout ...time.Duration) bool // for testing
+	WaitInBufferEmpty(timeout ...time.Duration) bool                            // for testing
 	Close()
 }
 
@@ -123,10 +133,12 @@ type AsynchronousCommonSubsetRunner interface {
 }
 
 type MempoolStats struct {
-	Total      int
-	Ready      int
-	InCounter  int
-	OutCounter int
+	TotalPool      int
+	Ready          int
+	InBufCounter   int
+	OutBufCounter  int
+	InPoolCounter  int
+	OutPoolCounter int
 }
 
 type SyncInfo struct {

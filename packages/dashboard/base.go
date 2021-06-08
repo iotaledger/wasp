@@ -41,8 +41,8 @@ type WaspServices interface {
 	GetChainRecords() ([]*chainrecord.ChainRecord, error)
 	GetChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error)
 	GetChainState(chainID *coretypes.ChainID) (*ChainState, error)
-	GetChain(chainID *coretypes.ChainID) chain.Chain
-	CallView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error)
+	GetChain(chainID *coretypes.ChainID) chain.ChainCore
+	CallView(chain chain.ChainCore, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error)
 }
 
 type Dashboard struct {

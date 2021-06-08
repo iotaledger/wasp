@@ -1,18 +1,17 @@
 package chain
 
 import (
+	"strconv"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"strconv"
 )
 
 // LogStateTransition also used in testing
-func LogStateTransition(msg *StateTransitionEventData, log *logger.Logger) {
-	reqids := blocklog.GetRequestIDsForLastBlock(msg.VirtualState)
+func LogStateTransition(msg *StateTransitionEventData, reqids []coretypes.RequestID, log *logger.Logger) {
 	if msg.ChainOutput.GetStateIndex() > 0 {
 		log.Infof("STATE TRANSITION TO #%d. Chain output: %s, block size: %d",
 			msg.VirtualState.BlockIndex(), coretypes.OID(msg.ChainOutput.ID()), len(reqids))
@@ -29,8 +28,7 @@ func LogSyncedEvent(outputID ledgerstate.OutputID, blockIndex uint32, log *logge
 	log.Infof("EVENT: state was synced to block index #%d, approving output: %s", blockIndex, coretypes.OID(outputID))
 }
 
-func PublishStateTransition(newState state.VirtualState, stateOutput *ledgerstate.AliasOutput) []coretypes.RequestID {
-	reqids := blocklog.GetRequestIDsForLastBlock(newState)
+func PublishStateTransition(newState state.VirtualState, stateOutput *ledgerstate.AliasOutput, reqids []coretypes.RequestID) {
 	chainID := coretypes.NewChainID(stateOutput.GetAliasAddress())
 
 	publisher.Publish("state",
@@ -48,5 +46,4 @@ func PublishStateTransition(newState state.VirtualState, stateOutput *ledgerstat
 			strconv.Itoa(len(reqids)),
 		)
 	}
-	return reqids
 }

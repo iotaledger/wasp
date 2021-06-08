@@ -199,16 +199,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair)
 		keyPair = ch.OriginatorKeyPair
 	}
 	r := req.NewRequestOffLedger(keyPair)
-
-	ch.reqCounter.Add(1)
-	ch.mempool.ReceiveRequests(r)
-
-	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
-	if len(ready) == 0 {
-		ch.Log.Infof("waiting for solidification")
-		return nil, nil
-	}
-	return ch.runBatch(ready, "off-ledger")
+	return ch.runRequestsSync([]coretypes.Request{r}, "off-ledger")
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, dict.Dict, error) {
@@ -216,13 +207,9 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*
 	if err != nil {
 		return nil, nil, err
 	}
-	initReq, err := ch.Env.RequestsForChain(tx, ch.ChainID)
+	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
-
-	ch.solidifyRequest(initReq[0])
-
-	ch.reqCounter.Add(1)
-	res, err := ch.runBatch(initReq, "post")
+	res, err := ch.runRequestsSync(reqs, "post")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -256,6 +243,7 @@ func (ch *Chain) CallView(scName string, funName string, params ...interface{}) 
 	defer ch.runVMMutex.Unlock()
 
 	vctx := viewcontext.New(ch.ChainID, ch.StateReader, ch.proc, ch.Log)
+	ch.StateReader.SetBaseline()
 	return vctx.CallView(coretypes.Hn(scName), coretypes.Hn(funName), p)
 }
 
