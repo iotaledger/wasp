@@ -29,7 +29,7 @@ func NewEthService(evmChain *EVMChain, tangleSigner *ed25519.KeyPair, accounts *
 	return &EthService{evmChain, tangleSigner, accounts}
 }
 
-func (s *EthService) ProtocolVersion() hexutil.Uint {
+func (e *EthService) ProtocolVersion() hexutil.Uint {
 	return hexutil.Uint(eth.ETH65)
 }
 
@@ -71,8 +71,8 @@ func (e *EthService) GetBlockByHash(hash common.Hash, full bool) (map[string]int
 	return RPCMarshalBlock(block, true, full)
 }
 
-func (s *EthService) GetTransactionByHash(hash common.Hash) (*RPCTransaction, error) {
-	tx, blockHash, blockNumber, index, err := s.evmChain.TransactionByHash(hash)
+func (e *EthService) GetTransactionByHash(hash common.Hash) (*RPCTransaction, error) {
+	tx, blockHash, blockNumber, index, err := e.evmChain.TransactionByHash(hash)
 	if err != nil {
 		return nil, err
 	}
@@ -82,8 +82,8 @@ func (s *EthService) GetTransactionByHash(hash common.Hash) (*RPCTransaction, er
 	return newRPCTransaction(tx, blockHash, blockNumber, index), err
 }
 
-func (s *EthService) GetTransactionByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) (*RPCTransaction, error) {
-	tx, _, blockNumber, _, err := s.evmChain.TransactionByBlockHashAndIndex(blockHash, uint64(index))
+func (e *EthService) GetTransactionByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) (*RPCTransaction, error) {
+	tx, _, blockNumber, _, err := e.evmChain.TransactionByBlockHashAndIndex(blockHash, uint64(index))
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +93,8 @@ func (s *EthService) GetTransactionByBlockHashAndIndex(blockHash common.Hash, in
 	return newRPCTransaction(tx, blockHash, blockNumber, uint64(index)), err
 }
 
-func (s *EthService) GetTransactionByBlockNumberAndIndex(blockNumberOrTag rpc.BlockNumber, index hexutil.Uint) (*RPCTransaction, error) {
-	tx, blockHash, blockNumber, _, err := s.evmChain.TransactionByBlockNumberAndIndex(parseBlockNumber(blockNumberOrTag), uint64(index))
+func (e *EthService) GetTransactionByBlockNumberAndIndex(blockNumberOrTag rpc.BlockNumber, index hexutil.Uint) (*RPCTransaction, error) {
+	tx, blockHash, blockNumber, _, err := e.evmChain.TransactionByBlockNumberAndIndex(parseBlockNumber(blockNumberOrTag), uint64(index))
 	if err != nil {
 		return nil, err
 	}
@@ -139,77 +139,77 @@ func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, err
 	return tx.Hash(), nil
 }
 
-func (s *EthService) Call(args *RPCCallArgs, blockNumber rpc.BlockNumber) (hexutil.Bytes, error) {
-	ret, err := s.evmChain.CallContract(args.parse(), parseBlockNumber(blockNumber))
+func (e *EthService) Call(args *RPCCallArgs, blockNumber rpc.BlockNumber) (hexutil.Bytes, error) {
+	ret, err := e.evmChain.CallContract(args.parse(), parseBlockNumber(blockNumber))
 	return hexutil.Bytes(ret), err
 }
 
-func (s *EthService) EstimateGas(args *RPCCallArgs) (hexutil.Uint64, error) {
-	gas, err := s.evmChain.EstimateGas(args.parse())
+func (e *EthService) EstimateGas(args *RPCCallArgs) (hexutil.Uint64, error) {
+	gas, err := e.evmChain.EstimateGas(args.parse())
 	return hexutil.Uint64(gas), err
 }
 
-func (s *EthService) GetStorageAt(address common.Address, key common.Hash, blockNumber rpc.BlockNumber) (hexutil.Bytes, error) {
-	ret, err := s.evmChain.StorageAt(address, key, parseBlockNumber(blockNumber))
+func (e *EthService) GetStorageAt(address common.Address, key common.Hash, blockNumber rpc.BlockNumber) (hexutil.Bytes, error) {
+	ret, err := e.evmChain.StorageAt(address, key, parseBlockNumber(blockNumber))
 	return hexutil.Bytes(ret), err
 }
 
-func (s *EthService) GetBlockTransactionCountByHash(blockHash common.Hash) (hexutil.Uint, error) {
-	ret, err := s.evmChain.BlockTransactionCountByHash(blockHash)
+func (e *EthService) GetBlockTransactionCountByHash(blockHash common.Hash) (hexutil.Uint, error) {
+	ret, err := e.evmChain.BlockTransactionCountByHash(blockHash)
 	return hexutil.Uint(ret), err
 }
 
-func (s *EthService) GetBlockTransactionCountByNumber(blockNumber rpc.BlockNumber) (hexutil.Uint, error) {
-	ret, err := s.evmChain.BlockTransactionCountByNumber(parseBlockNumber(blockNumber))
+func (e *EthService) GetBlockTransactionCountByNumber(blockNumber rpc.BlockNumber) (hexutil.Uint, error) {
+	ret, err := e.evmChain.BlockTransactionCountByNumber(parseBlockNumber(blockNumber))
 	return hexutil.Uint(ret), err
 }
 
-func (s *EthService) GetUncleCountByBlockHash(blockHash common.Hash) hexutil.Uint {
+func (e *EthService) GetUncleCountByBlockHash(blockHash common.Hash) hexutil.Uint {
 	return hexutil.Uint(0) // no uncles are ever generated in evmchain contract
 }
 
-func (s *EthService) GetUncleCountByBlockNumber(blockNumber rpc.BlockNumber) hexutil.Uint {
+func (e *EthService) GetUncleCountByBlockNumber(blockNumber rpc.BlockNumber) hexutil.Uint {
 	return hexutil.Uint(0) // no uncles are ever generated in evmchain contract
 }
 
-func (s *EthService) GetUncleByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) map[string]interface{} {
+func (e *EthService) GetUncleByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) map[string]interface{} {
 	return nil // no uncles are ever generated in evmchain contract
 }
 
-func (s *EthService) GetUncleByBlockNumberAndIndex(blockNumberOrTag rpc.BlockNumber, index hexutil.Uint) map[string]interface{} {
+func (e *EthService) GetUncleByBlockNumberAndIndex(blockNumberOrTag rpc.BlockNumber, index hexutil.Uint) map[string]interface{} {
 	return nil // no uncles are ever generated in evmchain contract
 }
 
-func (s *EthService) Accounts() []common.Address {
-	return s.accounts.Addresses()
+func (e *EthService) Accounts() []common.Address {
+	return e.accounts.Addresses()
 }
 
-func (s *EthService) GasPrice() *hexutil.Big {
+func (e *EthService) GasPrice() *hexutil.Big {
 	return (*hexutil.Big)(big.NewInt(0))
 }
 
-func (s *EthService) Mining() bool {
+func (e *EthService) Mining() bool {
 	return false
 }
 
-func (s *EthService) Hashrate() float64 {
+func (e *EthService) Hashrate() float64 {
 	return 0
 }
 
-func (s *EthService) Coinbase() common.Address {
+func (e *EthService) Coinbase() common.Address {
 	return common.Address{}
 }
 
-func (s *EthService) Syncing() bool {
+func (e *EthService) Syncing() bool {
 	return false
 }
 
-func (s *EthService) GetCompilers() []string {
+func (e *EthService) GetCompilers() []string {
 	return []string{}
 }
 
-func (s *EthService) Sign(addr common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
-	account := s.accounts.Get(addr)
+func (e *EthService) Sign(addr common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
+	account := e.accounts.Get(addr)
 	if account == nil {
 		return nil, xerrors.New("Account is not unlocked")
 	}
@@ -226,15 +226,8 @@ func (s *EthService) Sign(addr common.Address, data hexutil.Bytes) (hexutil.Byte
 	return signed, err
 }
 
-func (s *EthService) SignTransaction(args *SendTxArgs) (hexutil.Bytes, error) {
-	account := s.accounts.Get(args.From)
-	if account == nil {
-		return nil, xerrors.New("Account is not unlocked")
-	}
-	if err := args.setDefaults(s); err != nil {
-		return nil, err
-	}
-	tx, err := types.SignTx(args.toTransaction(), evm.Signer(), account)
+func (e *EthService) SignTransaction(args *SendTxArgs) (hexutil.Bytes, error) {
+	tx, err := e.parseTxArgs(args)
 	if err != nil {
 		return nil, err
 	}
@@ -245,25 +238,45 @@ func (s *EthService) SignTransaction(args *SendTxArgs) (hexutil.Bytes, error) {
 	return hexutil.Bytes(data), nil
 }
 
-/*
-func (s *EthService) SendTransaction()
+func (e *EthService) SendTransaction(args *SendTxArgs) (common.Hash, error) {
+	tx, err := e.parseTxArgs(args)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	if err := e.evmChain.SendTransaction(e.tangleSigner, tx); err != nil {
+		return common.Hash{}, err
+	}
+	return tx.Hash(), nil
+}
 
+func (e *EthService) parseTxArgs(args *SendTxArgs) (*types.Transaction, error) {
+	account := e.accounts.Get(args.From)
+	if account == nil {
+		return nil, xerrors.New("Account is not unlocked")
+	}
+	if err := args.setDefaults(e); err != nil {
+		return nil, err
+	}
+	return types.SignTx(args.toTransaction(), evm.Signer(), account)
+}
+
+/*
 Filters:
-func (s *EthService) NewFilter()
-func (s *EthService) NewBlockFilter()
-func (s *EthService) NewPendingTransactionFilter()
-func (s *EthService) UninstallFilter()
-func (s *EthService) GetFilterChanges()
-func (s *EthService) GetFilterLogs()
-func (s *EthService) GetLogs()
+func (e *EthService) NewFilter()
+func (e *EthService) NewBlockFilter()
+func (e *EthService) NewPendingTransactionFilter()
+func (e *EthService) UninstallFilter()
+func (e *EthService) GetFilterChanges()
+func (e *EthService) GetFilterLogs()
+func (e *EthService) GetLogs()
 
 Not implemented:
-func (s *EthService) SubmitWork()
-func (s *EthService) GetWork()
-func (s *EthService) SubmitHashrate()
-func (s *EthService) CompileLLL()
-func (s *EthService) CompileSolidity()
-func (s *EthService) CompileSerpent()
+func (e *EthService) SubmitWork()
+func (e *EthService) GetWork()
+func (e *EthService) SubmitHashrate()
+func (e *EthService) CompileLLL()
+func (e *EthService) CompileSolidity()
+func (e *EthService) CompileSerpent()
 */
 
 type NetService struct{}

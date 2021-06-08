@@ -258,6 +258,13 @@ func (e *env) signTransaction(args *SendTxArgs) []byte {
 	return res
 }
 
+func (e *env) sendTransaction(args *SendTxArgs) common.Hash {
+	var res common.Hash
+	err := e.rawClient.Call(&res, "eth_sendTransaction", args)
+	require.NoError(e.t, err)
+	return res
+}
+
 func TestRPCGetBalance(t *testing.T) {
 	env := newEnv(t)
 	_, receiverAddress := generateKey(t)
@@ -458,6 +465,26 @@ func TestRPCSignTransaction(t *testing.T) {
 	env.requestFunds(from)
 	err := env.rawClient.Call(nil, "eth_sendRawTransaction", hexutil.Encode(signed))
 	require.NoError(t, err)
+}
+
+func TestRPCSendTransaction(t *testing.T) {
+	env := newEnv(t)
+
+	from := evmtest.AccountAddress(0)
+	env.requestFunds(from)
+
+	to := evmtest.AccountAddress(1)
+	gas := hexutil.Uint64(evm.TxGas)
+	nonce := hexutil.Uint64(env.nonceAt(from))
+	txHash := env.sendTransaction(&SendTxArgs{
+		From:     from,
+		To:       &to,
+		Gas:      &gas,
+		GasPrice: (*hexutil.Big)(evm.GasPrice),
+		Value:    (*hexutil.Big)(requestFundsAmount),
+		Nonce:    &nonce,
+	})
+	require.NotEqualValues(t, common.Hash{}, txHash)
 }
 
 func TestRPCGetTxReceipt(t *testing.T) {
