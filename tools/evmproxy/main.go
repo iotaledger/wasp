@@ -25,7 +25,7 @@ func main() {
 	signer, _ := solo.Env.NewKeyPairWithFunds()
 
 	// TODO: make accounts configurable
-	accountManager := jsonrpc.NewAccountManager(evmtest.Accounts)
+	accountManager := jsonrpc.NewAccountManager(nil)
 
 	rpcsrv := jsonrpc.NewServer(soloEVMChain, signer, accountManager)
 	defer rpcsrv.Stop()
