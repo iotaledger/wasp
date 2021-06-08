@@ -171,7 +171,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 	ret.store = mapdb.NewMapDB()
 	ret.SolidState, err = state.CreateOriginState(ret.store, &ret.ChainID)
 	require.NoError(t, err)
-	ret.StateReader, err = state.NewStateReader(ret.store, &ret.ChainID)
+	ret.StateReader, err = state.NewStateReader(ret.store)
 	require.NoError(t, err)
 
 	for i := range ret.Nodes {

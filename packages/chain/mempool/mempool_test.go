@@ -8,12 +8,11 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
-	"github.com/iotaledger/wasp/packages/database/dbprovider"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
@@ -23,11 +22,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createStateReader(t *testing.T, log *logger.Logger) (state.StateReader, state.VirtualState) {
-	dbp := dbprovider.NewInMemoryDBProvider(log)
-	vs, err := state.CreateOriginState(dbp.GetKVStore(), nil)
+func createStateReader(t *testing.T) (state.StateReader, state.VirtualState) {
+	store := mapdb.NewMapDB()
+	vs, err := state.CreateOriginState(store, nil)
 	require.NoError(t, err)
-	ret, err := state.NewStateReader(dbp.GetKVStore(), nil)
+	ret, err := state.NewStateReader(store)
 	require.NoError(t, err)
 	return ret, vs
 }
@@ -63,7 +62,7 @@ func getRequestsOnLedger(t *testing.T, amount int) ([]*request.RequestOnLedger, 
 //Test if mempool is created
 func TestMempool(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	rdr, _ := createStateReader(t, log)
+	rdr, _ := createStateReader(t)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 	time.Sleep(2 * time.Second)
@@ -79,7 +78,7 @@ func TestMempool(t *testing.T) {
 //Test if single on ledger request is added to mempool
 func TestAddRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	rdr, _ := createStateReader(t, log)
+	rdr, _ := createStateReader(t)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 1)
@@ -97,7 +96,7 @@ func TestAddRequest(t *testing.T) {
 //is handled correctly
 func TestAddRequestTwice(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	rdr, _ := createStateReader(t, log)
+	rdr, _ := createStateReader(t)
 
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
@@ -126,7 +125,7 @@ func TestAddRequestTwice(t *testing.T) {
 //are added, others are ignored
 func TestAddOffLedgerRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	rdr, _ := createStateReader(t, log)
+	rdr, _ := createStateReader(t)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 	onLedgerRequests, keyPair := getRequestsOnLedger(t, 2)
@@ -160,7 +159,7 @@ func TestAddOffLedgerRequest(t *testing.T) {
 //Test if processed request cannot be added to mempool
 func TestProcessedRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	rdr, vs := createStateReader(t, log)
+	rdr, vs := createStateReader(t)
 	wrt := vs.KVStore()
 
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
@@ -198,7 +197,7 @@ func TestProcessedRequest(t *testing.T) {
 //Test if adding and removing requests is handled correctly
 func TestAddRemoveRequests(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	rdr, _ := createStateReader(t, log)
+	rdr, _ := createStateReader(t)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
@@ -244,8 +243,7 @@ func TestAddRemoveRequests(t *testing.T) {
 
 //Test if ReadyNow and ReadyFromIDs functions respect the time lock of the request
 func TestTimeLock(t *testing.T) {
-	log := testlogger.NewLogger(t)
-	rdr, _ := createStateReader(t, log)
+	rdr, _ := createStateReader(t)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
@@ -343,8 +341,7 @@ func TestTimeLock(t *testing.T) {
 
 //Test if ReadyFromIDs function correctly handle non-existing or removed IDs
 func TestReadyFromIDs(t *testing.T) {
-	log := testlogger.NewLogger(t)
-	rdr, _ := createStateReader(t, log)
+	rdr, _ := createStateReader(t)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
@@ -418,7 +415,7 @@ func TestReadyFromIDs(t *testing.T) {
 //Test if solidification works as expected
 func TestSolidification(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	rdr, _ := createStateReader(t, log)
+	rdr, _ := createStateReader(t)
 	blobCache := coretypes.NewInMemoryBlobCache()
 	pool := New(rdr, blobCache, log, 20*time.Millisecond) // Solidification initiated on pool creation
 	require.NotNil(t, pool)
