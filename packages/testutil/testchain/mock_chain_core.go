@@ -22,7 +22,7 @@ type MockedChainCore struct {
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
 	eventStateSynced        *events.Event
-	onGlobalStateSync       func() coreutil.GlobalSync
+	onGlobalStateSync       func() coreutil.ChainStateSync
 	onGetStateReader        func() state.OptimisticStateReader
 	onEventStateTransition  func(data *chain.StateTransitionEventData)
 	onEventRequestProcessed func(id coretypes.RequestID)
@@ -77,7 +77,7 @@ func (m *MockedChainCore) ID() *chainid.ChainID {
 	return &m.chainID
 }
 
-func (c *MockedChainCore) GlobalStateSync() coreutil.GlobalSync {
+func (c *MockedChainCore) GlobalStateSync() coreutil.ChainStateSync {
 	return c.onGlobalStateSync()
 }
 
@@ -133,6 +133,6 @@ func (m *MockedChainCore) OnGetStateReader(f func() state.OptimisticStateReader)
 	m.onGetStateReader = f
 }
 
-func (m *MockedChainCore) OnGlobalStateSync(f func() coreutil.GlobalSync) {
+func (m *MockedChainCore) OnGlobalStateSync(f func() coreutil.ChainStateSync) {
 	m.onGlobalStateSync = f
 }

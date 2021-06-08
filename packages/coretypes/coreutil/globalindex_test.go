@@ -7,7 +7,7 @@ import (
 )
 
 func TestCheckpointBasic(t *testing.T) {
-	glb := NewGlobalSync()
+	glb := NewChainStateSync()
 	base := glb.GetSolidIndexBaseline()
 	require.False(t, base.IsValid())
 	base.Set()

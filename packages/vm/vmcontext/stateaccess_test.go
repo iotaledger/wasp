@@ -28,7 +28,7 @@ func TestSetThenGet(t *testing.T) {
 	vmctx := &VMContext{
 		virtualState:       virtualState,
 		currentStateUpdate: stateUpdate,
-		solidStateBaseline: coreutil.NewGlobalSync().SetSolidIndex(0).GetSolidIndexBaseline(),
+		solidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline(),
 		callStack:          []*callContext{{contract: hname}},
 	}
 	s := vmctx.State()
@@ -87,7 +87,7 @@ func TestIterate(t *testing.T) {
 
 	vmctx := &VMContext{
 		virtualState:       virtualState,
-		solidStateBaseline: coreutil.NewGlobalSync().SetSolidIndex(0).GetSolidIndexBaseline(),
+		solidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline(),
 		currentStateUpdate: stateUpdate,
 		callStack:          []*callContext{{contract: hname}},
 	}

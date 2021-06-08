@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func createStateReader(t *testing.T, glb coreutil.GlobalSync) (state.OptimisticStateReader, state.VirtualState) {
+func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.OptimisticStateReader, state.VirtualState) {
 	store := mapdb.NewMapDB()
 	vs, err := state.CreateOriginState(store, nil)
 	require.NoError(t, err)
@@ -64,7 +64,7 @@ func getRequestsOnLedger(t *testing.T, amount int) ([]*request.RequestOnLedger, 
 //Test if mempool is created
 func TestMempool(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	glb := coreutil.NewGlobalSync()
+	glb := coreutil.NewChainStateSync()
 	rdr, _ := createStateReader(t, glb)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
@@ -81,7 +81,7 @@ func TestMempool(t *testing.T) {
 //Test if single on ledger request is added to mempool
 func TestAddRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	glb := coreutil.NewGlobalSync().SetSolidIndex(0)
+	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
@@ -98,7 +98,7 @@ func TestAddRequest(t *testing.T) {
 
 func TestAddRequestInvalidState(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	glb := coreutil.NewGlobalSync()
+	glb := coreutil.NewChainStateSync()
 	glb.InvalidateSolidIndex()
 	rdr, _ := createStateReader(t, glb)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
@@ -126,7 +126,7 @@ func TestAddRequestInvalidState(t *testing.T) {
 //is handled correctly
 func TestAddRequestTwice(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	glb := coreutil.NewGlobalSync().SetSolidIndex(0)
+	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
@@ -157,7 +157,7 @@ func TestAddRequestTwice(t *testing.T) {
 func TestAddOffLedgerRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	testlogger.WithLevel(log, zapcore.InfoLevel, false)
-	glb := coreutil.NewGlobalSync().SetSolidIndex(0)
+	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
@@ -192,7 +192,7 @@ func TestAddOffLedgerRequest(t *testing.T) {
 //Test if processed request cannot be added to mempool
 func TestProcessedRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	glb := coreutil.NewGlobalSync().SetSolidIndex(0)
+	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, vs := createStateReader(t, glb)
 	wrt := vs.KVStore()
 
@@ -231,7 +231,7 @@ func TestProcessedRequest(t *testing.T) {
 //Test if adding and removing requests is handled correctly
 func TestAddRemoveRequests(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	glb := coreutil.NewGlobalSync().SetSolidIndex(0)
+	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
@@ -278,7 +278,7 @@ func TestAddRemoveRequests(t *testing.T) {
 
 //Test if ReadyNow and ReadyFromIDs functions respect the time lock of the request
 func TestTimeLock(t *testing.T) {
-	glb := coreutil.NewGlobalSync().SetSolidIndex(0)
+	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
@@ -380,7 +380,7 @@ func TestTimeLock(t *testing.T) {
 
 //Test if ReadyFromIDs function correctly handle non-existing or removed IDs
 func TestReadyFromIDs(t *testing.T) {
-	glb := coreutil.NewGlobalSync().SetSolidIndex(0)
+	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
 	require.NotNil(t, pool)
@@ -460,7 +460,7 @@ func TestReadyFromIDs(t *testing.T) {
 //Test if solidification works as expected
 func TestSolidification(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	glb := coreutil.NewGlobalSync().SetSolidIndex(0)
+	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 	blobCache := coretypes.NewInMemoryBlobCache()
 	pool := New(rdr, blobCache, log, 20*time.Millisecond) // Solidification initiated on pool creation

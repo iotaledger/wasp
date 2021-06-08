@@ -234,7 +234,7 @@ func (m *mockChain) Log() *logger.Logger {
 	panic("implement me")
 }
 
-func (m *mockChain) GlobalStateSync() coreutil.GlobalSync {
+func (m *mockChain) GlobalStateSync() coreutil.ChainStateSync {
 	panic("implement me")
 }
 

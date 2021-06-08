@@ -30,7 +30,7 @@ type ChainCore interface {
 	ReceiveMessage(interface{})
 	Events() ChainEvents
 	Processors() *processors.ProcessorCache
-	GlobalStateSync() coreutil.GlobalSync
+	GlobalStateSync() coreutil.ChainStateSync
 	GetStateReader() state.OptimisticStateReader
 	Log() *logger.Logger
 }

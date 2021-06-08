@@ -110,7 +110,7 @@ type Chain struct {
 
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
 	State       state.VirtualState
-	GlobalSync  coreutil.GlobalSync
+	GlobalSync  coreutil.ChainStateSync
 	StateReader state.OptimisticStateReader
 
 	// Log is the named logger of the chain
@@ -216,7 +216,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	require.EqualValues(env.T, 0, vs.BlockIndex())
 	require.True(env.T, vs.Timestamp().IsZero())
 
-	glbSync := coreutil.NewGlobalSync().SetSolidIndex(0)
+	glbSync := coreutil.NewChainStateSync().SetSolidIndex(0)
 	srdr := state.NewOptimisticStateReader(store, glbSync)
 
 	ret := &Chain{
