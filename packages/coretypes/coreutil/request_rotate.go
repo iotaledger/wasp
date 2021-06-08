@@ -1,7 +1,12 @@
 package coreutil
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
@@ -23,4 +28,12 @@ func IsRotateCommitteeRequest(req coretypes.Request) bool {
 		return false
 	}
 	return true
+}
+
+func NewRotateRequestOffLedger(newStateAddress ledgerstate.Address, keyPair *ed25519.KeyPair) coretypes.Request {
+	args := requestargs.New(nil)
+	args.AddEncodeSimple(ParamStateAddress, codec.EncodeAddress(newStateAddress))
+	ret := request.NewRequestOffLedger(CoreContractGovernanceHname, CoreEPRotateCommitteeHname, args)
+	ret.Sign(keyPair)
+	return ret
 }

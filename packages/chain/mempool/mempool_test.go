@@ -497,3 +497,81 @@ func TestSolidification(t *testing.T) {
 	require.True(t, len(ready) == 1)
 	require.Contains(t, ready, requests[0])
 }
+
+func TestRotateRequest(t *testing.T) {
+	glb := coreutil.NewGlobalSync().SetSolidIndex(0)
+	rdr, _ := createStateReader(t, glb)
+	pool := New(rdr, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	require.NotNil(t, pool)
+	requests, _ := getRequestsOnLedger(t, 6)
+
+	pool.ReceiveRequests(
+		requests[0],
+		requests[1],
+		requests[2],
+		requests[3],
+		requests[4],
+	)
+	require.True(t, pool.WaitRequestInPool(requests[0].ID()))
+	require.True(t, pool.WaitRequestInPool(requests[1].ID()))
+	require.True(t, pool.WaitRequestInPool(requests[2].ID()))
+	require.True(t, pool.WaitRequestInPool(requests[3].ID()))
+	require.True(t, pool.WaitRequestInPool(requests[4].ID()))
+	stats := pool.Stats()
+	require.EqualValues(t, 5, stats.InPoolCounter)
+	require.EqualValues(t, 0, stats.OutPoolCounter)
+	require.EqualValues(t, 5, stats.TotalPool)
+	require.EqualValues(t, 5, stats.Ready)
+
+	ready, result := pool.ReadyFromIDs(time.Now(),
+		requests[0].ID(),
+		requests[1].ID(),
+		requests[2].ID(),
+		requests[3].ID(),
+		requests[4].ID(),
+	)
+	require.True(t, result)
+	require.True(t, len(ready) == 5)
+	require.Contains(t, ready, requests[0])
+	require.Contains(t, ready, requests[1])
+	require.Contains(t, ready, requests[2])
+	require.Contains(t, ready, requests[3])
+	require.Contains(t, ready, requests[4])
+	stats = pool.Stats()
+	require.EqualValues(t, 5, stats.InPoolCounter)
+	require.EqualValues(t, 0, stats.OutPoolCounter)
+	require.EqualValues(t, 5, stats.TotalPool)
+	require.EqualValues(t, 5, stats.Ready)
+
+	pool.RemoveRequests(requests[3].ID())
+	_, result = pool.ReadyFromIDs(time.Now(),
+		requests[0].ID(),
+		requests[1].ID(),
+		requests[2].ID(),
+		requests[3].ID(), // Request was removed from mempool
+	)
+	require.False(t, result)
+	_, result = pool.ReadyFromIDs(time.Now(),
+		requests[5].ID(), // Request hasn't been received by mempool
+		requests[4].ID(),
+		requests[2].ID(),
+	)
+	require.False(t, result)
+	ready, result = pool.ReadyFromIDs(time.Now(),
+		requests[0].ID(),
+		requests[1].ID(),
+		requests[2].ID(),
+		requests[4].ID(),
+	)
+	require.True(t, result)
+	require.True(t, len(ready) == 4)
+	require.Contains(t, ready, requests[0])
+	require.Contains(t, ready, requests[1])
+	require.Contains(t, ready, requests[2])
+	require.Contains(t, ready, requests[4])
+	stats = pool.Stats()
+	require.EqualValues(t, 5, stats.InPoolCounter)
+	require.EqualValues(t, 1, stats.OutPoolCounter)
+	require.EqualValues(t, 4, stats.TotalPool)
+	require.EqualValues(t, 4, stats.Ready)
+}
