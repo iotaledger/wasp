@@ -3,6 +3,7 @@
 package jsonrpc
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -13,16 +14,19 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/evm"
+	"golang.org/x/crypto/sha3"
+	"golang.org/x/xerrors"
 )
 
 type EthService struct {
-	evmChain *EVMChain
-	signer   *ed25519.KeyPair
-	accounts *AccountManager
+	evmChain     *EVMChain
+	tangleSigner *ed25519.KeyPair
+	accounts     *AccountManager
 }
 
-func NewEthService(evmChain *EVMChain, signer *ed25519.KeyPair, accounts *AccountManager) *EthService {
-	return &EthService{evmChain, signer, accounts}
+func NewEthService(evmChain *EVMChain, tangleSigner *ed25519.KeyPair, accounts *AccountManager) *EthService {
+	return &EthService{evmChain, tangleSigner, accounts}
 }
 
 func (s *EthService) ProtocolVersion() hexutil.Uint {
@@ -129,7 +133,7 @@ func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, err
 	if err := rlp.DecodeBytes(txBytes, tx); err != nil {
 		return common.Hash{}, err
 	}
-	if err := e.evmChain.SendTransaction(e.signer, tx); err != nil {
+	if err := e.evmChain.SendTransaction(e.tangleSigner, tx); err != nil {
 		return common.Hash{}, err
 	}
 	return tx.Hash(), nil
@@ -180,14 +184,71 @@ func (s *EthService) Accounts() []common.Address {
 	return s.accounts.Addresses()
 }
 
-func (s *EthService) GasPrice() *hexutil.Big   { return (*hexutil.Big)(big.NewInt(0)) }
-func (s *EthService) Mining() bool             { return false }
-func (s *EthService) Hashrate() float64        { return 0 }
-func (s *EthService) Coinbase() common.Address { return common.Address{} }
-func (s *EthService) Syncing() bool            { return false }
-func (s *EthService) GetCompilers() []string   { return []string{} }
+func (s *EthService) GasPrice() *hexutil.Big {
+	return (*hexutil.Big)(big.NewInt(0))
+}
+
+func (s *EthService) Mining() bool {
+	return false
+}
+
+func (s *EthService) Hashrate() float64 {
+	return 0
+}
+
+func (s *EthService) Coinbase() common.Address {
+	return common.Address{}
+}
+
+func (s *EthService) Syncing() bool {
+	return false
+}
+
+func (s *EthService) GetCompilers() []string {
+	return []string{}
+}
+
+func (s *EthService) Sign(addr common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
+	account := s.accounts.Get(addr)
+	if account == nil {
+		return nil, xerrors.New("Account is not unlocked")
+	}
+
+	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), string(data))
+	hasher := sha3.NewLegacyKeccak256()
+	hasher.Write([]byte(msg))
+	hash := hasher.Sum(nil)
+
+	signed, err := crypto.Sign(hash, account)
+	if err == nil {
+		signed[64] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
+	}
+	return signed, err
+}
+
+func (s *EthService) SignTransaction(args *SendTxArgs) (hexutil.Bytes, error) {
+	account := s.accounts.Get(args.From)
+	if account == nil {
+		return nil, xerrors.New("Account is not unlocked")
+	}
+	if err := args.setDefaults(s); err != nil {
+		return nil, err
+	}
+	tx, err := types.SignTx(args.toTransaction(), evm.Signer(), account)
+	if err != nil {
+		return nil, err
+	}
+	data, err := tx.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	return hexutil.Bytes(data), nil
+}
 
 /*
+func (s *EthService) SendTransaction()
+
+Filters:
 func (s *EthService) NewFilter()
 func (s *EthService) NewBlockFilter()
 func (s *EthService) NewPendingTransactionFilter()
@@ -196,10 +257,7 @@ func (s *EthService) GetFilterChanges()
 func (s *EthService) GetFilterLogs()
 func (s *EthService) GetLogs()
 
-Intentionally left unimplemented:
-func (s *EthService) Sign()
-func (s *EthService) SignTransaction()
-func (s *EthService) SendTransaction()
+Not implemented:
 func (s *EthService) SubmitWork()
 func (s *EthService) GetWork()
 func (s *EthService) SubmitHashrate()

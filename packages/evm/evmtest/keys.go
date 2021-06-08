@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -25,4 +26,8 @@ func init() {
 		}
 		Accounts = append(Accounts, privateKey)
 	}
+}
+
+func AccountAddress(i int) common.Address {
+	return crypto.PubkeyToAddress(Accounts[i].PublicKey)
 }

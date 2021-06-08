@@ -244,6 +244,20 @@ func (e *env) accounts() []common.Address {
 	return res
 }
 
+func (e *env) sign(address common.Address, data []byte) []byte {
+	var res hexutil.Bytes
+	err := e.rawClient.Call(&res, "eth_sign", address, hexutil.Bytes(data))
+	require.NoError(e.t, err)
+	return res
+}
+
+func (e *env) signTransaction(args *SendTxArgs) []byte {
+	var res hexutil.Bytes
+	err := e.rawClient.Call(&res, "eth_signTransaction", args)
+	require.NoError(e.t, err)
+	return res
+}
+
 func TestRPCGetBalance(t *testing.T) {
 	env := newEnv(t)
 	_, receiverAddress := generateKey(t)
@@ -415,6 +429,35 @@ func TestRPCAccounts(t *testing.T) {
 	env := newEnv(t)
 	accounts := env.accounts()
 	require.Equal(t, len(evmtest.Accounts), len(accounts))
+}
+
+func TestRPCSign(t *testing.T) {
+	env := newEnv(t)
+	signed := env.sign(evmtest.AccountAddress(0), []byte("hello"))
+	require.NotEmpty(t, signed)
+}
+
+func TestRPCSignTransaction(t *testing.T) {
+	env := newEnv(t)
+
+	from := evmtest.AccountAddress(0)
+	to := evmtest.AccountAddress(1)
+	gas := hexutil.Uint64(evm.TxGas)
+	nonce := hexutil.Uint64(env.nonceAt(from))
+	signed := env.signTransaction(&SendTxArgs{
+		From:     from,
+		To:       &to,
+		Gas:      &gas,
+		GasPrice: (*hexutil.Big)(evm.GasPrice),
+		Value:    (*hexutil.Big)(requestFundsAmount),
+		Nonce:    &nonce,
+	})
+	require.NotEmpty(t, signed)
+
+	// test that the signed tx can be sent
+	env.requestFunds(from)
+	err := env.rawClient.Call(nil, "eth_sendRawTransaction", hexutil.Encode(signed))
+	require.NoError(t, err)
 }
 
 func TestRPCGetTxReceipt(t *testing.T) {

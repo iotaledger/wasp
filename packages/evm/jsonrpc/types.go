@@ -1,6 +1,8 @@
 package jsonrpc
 
 import (
+	"bytes"
+	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -9,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
+	"github.com/iotaledger/wasp/packages/evm"
 )
 
 // RPCTransaction represents a transaction that will serialize to the RPC representation of a transaction
@@ -205,4 +208,89 @@ func (c *RPCCallArgs) parse() (ret ethereum.CallMsg) {
 	ret.Value = (*big.Int)(c.Value)
 	ret.Data = []byte(c.Data)
 	return
+}
+
+// SendTxArgs represents the arguments to sumbit a new transaction into the transaction pool.
+type SendTxArgs struct {
+	From     common.Address  `json:"from"`
+	To       *common.Address `json:"to"`
+	Gas      *hexutil.Uint64 `json:"gas"`
+	GasPrice *hexutil.Big    `json:"gasPrice"`
+	Value    *hexutil.Big    `json:"value"`
+	Nonce    *hexutil.Uint64 `json:"nonce"`
+	// We accept "data" and "input" for backwards-compatibility reasons. "input" is the
+	// newer name and should be preferred by clients.
+	Data  *hexutil.Bytes `json:"data"`
+	Input *hexutil.Bytes `json:"input"`
+}
+
+// setDefaults is a helper function that fills in default values for unspecified tx fields.
+func (args *SendTxArgs) setDefaults(e *EthService) error {
+	if args.GasPrice == nil {
+		args.GasPrice = (*hexutil.Big)(evm.GasPrice)
+	}
+	if args.Value == nil {
+		args.Value = new(hexutil.Big)
+	}
+	if args.Nonce == nil {
+		nonce, err := e.evmChain.TransactionCount(args.From, nil)
+		if err != nil {
+			return err
+		}
+		args.Nonce = (*hexutil.Uint64)(&nonce)
+	}
+	if args.Data != nil && args.Input != nil && !bytes.Equal(*args.Data, *args.Input) {
+		return errors.New(`both "data" and "input" are set and not equal. Please use "input" to pass transaction call data`)
+	}
+	if args.To == nil {
+		// Contract creation
+		var input []byte
+		if args.Data != nil {
+			input = *args.Data
+		} else if args.Input != nil {
+			input = *args.Input
+		}
+		if len(input) == 0 {
+			return errors.New(`contract creation without any data provided`)
+		}
+	}
+	// Estimate the gas usage if necessary.
+	if args.Gas == nil {
+		// For backwards-compatibility reason, we try both input and data
+		// but input is preferred.
+		input := args.Input
+		if input == nil {
+			input = args.Data
+		}
+		var data []byte
+		if input != nil {
+			data = ([]byte)(*input)
+		}
+		callArgs := ethereum.CallMsg{
+			From:     args.From, // From shouldn't be nil
+			To:       args.To,
+			GasPrice: (*big.Int)(args.GasPrice),
+			Value:    (*big.Int)(args.Value),
+			Data:     data,
+		}
+		estimated, err := e.evmChain.EstimateGas(callArgs)
+		if err != nil {
+			return err
+		}
+		args.Gas = (*hexutil.Uint64)(&estimated)
+	}
+	return nil
+}
+
+func (args *SendTxArgs) toTransaction() *types.Transaction {
+	var input []byte
+	if args.Input != nil {
+		input = *args.Input
+	} else if args.Data != nil {
+		input = *args.Data
+	}
+	if args.To == nil {
+		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input)
+	}
+	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input)
 }

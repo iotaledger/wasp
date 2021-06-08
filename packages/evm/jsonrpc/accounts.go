@@ -29,6 +29,10 @@ func (a *AccountManager) Add(keyPair *ecdsa.PrivateKey) {
 	a.accounts[addr] = keyPair
 }
 
+func (a *AccountManager) Get(addr common.Address) *ecdsa.PrivateKey {
+	return a.accounts[addr]
+}
+
 func (a *AccountManager) Addresses() []common.Address {
 	ret := make([]common.Address, len(a.accounts))
 	i := 0
