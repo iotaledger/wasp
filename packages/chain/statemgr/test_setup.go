@@ -50,7 +50,7 @@ type MockedNode struct {
 	store           kvstore.KVStore
 	NodeConn        *testchain.MockedNodeConn
 	ChainCore       *testchain.MockedChainCore
-	stateSync       coreutil.GlobalSync
+	stateSync       coreutil.ChainStateSync
 	Peers           peering.PeerDomainProvider
 	StateManager    chain.StateManager
 	StateTransition *testchain.MockedStateTransition
@@ -183,12 +183,12 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers Timers) *MockedNode {
 		Env:       env,
 		NodeConn:  testchain.NewMockedNodeConnection("Node_" + nodeID),
 		store:     mapdb.NewMapDB(),
-		stateSync: coreutil.NewGlobalSync(),
+		stateSync: coreutil.NewChainStateSync(),
 		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, log),
 		Peers:     peers,
 		Log:       log,
 	}
-	ret.ChainCore.OnGlobalStateSync(func() coreutil.GlobalSync {
+	ret.ChainCore.OnGlobalStateSync(func() coreutil.ChainStateSync {
 		return ret.stateSync
 	})
 	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {

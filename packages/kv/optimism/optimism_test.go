@@ -12,7 +12,7 @@ func TestOptimismBasic(t *testing.T) {
 	d := dict.New()
 	d.Set("a", []byte("b"))
 	d.Set("c", []byte("d"))
-	glb := coreutil.NewGlobalSync()
+	glb := coreutil.NewChainStateSync()
 	base := glb.GetSolidIndexBaseline()
 	require.False(t, base.IsValid())
 	glb.SetSolidIndex(2)

@@ -63,7 +63,7 @@ type mockedEnv struct {
 	DKSRegistries     []registry.DKShareRegistryProvider
 	store             kvstore.KVStore
 	SolidState        state.VirtualState
-	GlobalSync        coreutil.GlobalSync
+	GlobalSync        coreutil.ChainStateSync
 	StateOutput       *ledgerstate.AliasOutput
 	RequestIDsLast    []coretypes.RequestID
 	NodeConn          []*testchain.MockedNodeConn
@@ -116,7 +116,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 		Ledger:     utxodb.New(),
 		NodeConn:   make([]*testchain.MockedNodeConn, n),
 		Nodes:      make([]*mockedNode, n),
-		GlobalSync: coreutil.NewGlobalSync(),
+		GlobalSync: coreutil.NewChainStateSync(),
 	}
 	if mockACS {
 		ret.MockedACS = testchain.NewMockedACSRunner(quorum, log)
@@ -188,7 +188,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 func (env *mockedEnv) newNode(i uint16) *mockedNode {
 	log := env.Log.Named(fmt.Sprintf("%d", i))
 	chainCore := testchain.NewMockedChainCore(env.T, env.ChainID, log)
-	chainCore.OnGlobalStateSync(func() coreutil.GlobalSync {
+	chainCore.OnGlobalStateSync(func() coreutil.ChainStateSync {
 		return env.GlobalSync
 	})
 	chainCore.OnGetStateReader(func() state.OptimisticStateReader {

@@ -183,7 +183,7 @@ type optimisticStateReader struct {
 }
 
 // NewOptimisticStateReader creates new optimistic read-only access to the database. It contains own read baseline
-func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.GlobalSync) *optimisticStateReader {
+func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.ChainStateSync) *optimisticStateReader {
 	chainState := kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeStateVariable}))
 	return &optimisticStateReader{
 		db:         db,

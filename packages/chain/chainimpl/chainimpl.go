@@ -43,7 +43,7 @@ type chainObj struct {
 	dismissed             atomic.Bool
 	dismissOnce           sync.Once
 	chainID               coretypes.ChainID
-	globalSync            coreutil.GlobalSync
+	globalSync            coreutil.ChainStateSync
 	stateReader           state.OptimisticStateReader
 	procset               *processors.ProcessorCache
 	chMsg                 chan interface{}
@@ -76,7 +76,7 @@ func NewChain(
 	log.Debugf("creating chain object for %s", chr.ChainID.String())
 
 	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
-	globalSync := coreutil.NewGlobalSync()
+	globalSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, globalSync), blobProvider, chainLog),
 		procset:           processors.MustNew(),

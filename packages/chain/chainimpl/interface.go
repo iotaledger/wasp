@@ -28,7 +28,7 @@ func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
 }
 
-func (c *chainObj) GlobalStateSync() coreutil.GlobalSync {
+func (c *chainObj) GlobalStateSync() coreutil.ChainStateSync {
 	return c.globalSync
 }
 

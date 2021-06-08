@@ -193,7 +193,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, exists)
 
-		glb := coreutil.NewGlobalSync()
+		glb := coreutil.NewChainStateSync()
 		glb.SetSolidIndex(0)
 		rdr := NewOptimisticStateReader(store, glb)
 
@@ -253,7 +253,7 @@ func TestStateReader(t *testing.T) {
 		_, err := CreateOriginState(store, chainID)
 		require.NoError(t, err)
 
-		glb := coreutil.NewGlobalSync()
+		glb := coreutil.NewChainStateSync()
 		glb.SetSolidIndex(0)
 		st := NewOptimisticStateReader(store, glb)
 		ok, err := st.KVStoreReader().Has("kuku")
