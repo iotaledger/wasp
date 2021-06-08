@@ -2,7 +2,6 @@ package blocklog
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
@@ -10,30 +9,35 @@ import (
 
 // GetRequestIDsForLastBlock reads blocklog from chain state and returns request IDs settled in specific block
 // Can only panic on DB error of internal error
-func GetRequestIDsForLastBlock(stateReader state.StateReader) []coretypes.RequestID {
-	blockIndex := stateReader.BlockIndex()
+func GetRequestIDsForLastBlock(stateReader state.OptimisticStateReader) ([]coretypes.RequestID, error) {
+	blockIndex, err := stateReader.BlockIndex()
+	if err != nil {
+		return nil, err
+	}
 	if blockIndex == 0 {
-		return nil
+		return nil, nil
 	}
 	partition := subrealm.NewReadOnly(stateReader.KVStoreReader(), kv.Key(Interface.Hname().Bytes()))
-	a := assert.NewAssert()
-	recsBin, exist := getRequestLogRecordsForBlockBin(partition, blockIndex, a)
+	recsBin, exist, err := getRequestLogRecordsForBlockBin(partition, blockIndex)
+	if err != nil {
+		return nil, err
+	}
 	if !exist {
-		return nil
+		return nil, nil
 	}
 	ret := make([]coretypes.RequestID, len(recsBin))
 	for i, d := range recsBin {
 		rec, err := RequestLogRecordFromBytes(d)
-		a.RequireNoError(err)
+		if err != nil {
+			panic(err)
+		}
 		ret[i] = rec.RequestID
 	}
-	return ret
+	return ret, nil
 }
 
 // IsRequestProcessed check if reqid is stored in the chain state as processed
-func IsRequestProcessed(stateReader state.StateReader, reqid *coretypes.RequestID) bool {
-	partition := subrealm.NewReadOnly(stateReader.KVStoreReader(), kv.Key(Interface.Hname().Bytes()))
-	ret, err := isRequestProcessedIntern(partition, reqid)
-	assert.NewAssert().RequireNoError(err)
-	return ret
+func IsRequestProcessed(stateReader kv.KVStoreReader, reqid *coretypes.RequestID) (bool, error) {
+	partition := subrealm.NewReadOnly(stateReader, kv.Key(Interface.Hname().Bytes()))
+	return isRequestProcessedIntern(partition, reqid)
 }

@@ -234,7 +234,7 @@ func TestConsensusMoreNodes(t *testing.T) {
 		env.eventStateTransition()
 		env.postDummyRequests(1, true)
 		time.Sleep(500 * time.Millisecond)
-		err := env.WaitStateIndex(quorum, 1)
+		err := env.WaitMempool(1, quorum, 15*time.Second)
 		require.NoError(t, err)
 	})
 	t.Run("post 10 requests", func(t *testing.T) {

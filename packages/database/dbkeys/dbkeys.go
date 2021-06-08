@@ -10,7 +10,6 @@ const (
 	ObjectTypeCommitteeRecord
 	ObjectTypeDistributedKeyData
 	ObjectTypeStateHash
-	ObjectTypeStateIndex
 	ObjectTypeBlock
 	ObjectTypeStateVariable
 	ObjectTypeNodeIdentity

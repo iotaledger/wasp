@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -128,7 +129,8 @@ type Chain struct {
 
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
 	State       state.VirtualState
-	StateReader state.StateReader
+	GlobalSync  coreutil.ChainStateSync
+	StateReader state.OptimisticStateReader
 
 	// Log is the named logger of the chain
 	Log *logger.Logger
@@ -233,8 +235,8 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	require.EqualValues(env.T, 0, vs.BlockIndex())
 	require.True(env.T, vs.Timestamp().IsZero())
 
-	srdr, err := state.NewStateReader(store, &chainID)
-	require.NoError(env.T, err)
+	glbSync := coreutil.NewChainStateSync().SetSolidIndex(0)
+	srdr := state.NewOptimisticStateReader(store, glbSync)
 
 	ret := &Chain{
 		Env:                    env,
@@ -248,6 +250,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		ValidatorFeeTarget:     *feeTarget,
 		State:                  vs,
 		StateReader:            srdr,
+		GlobalSync:             glbSync,
 		proc:                   processors.MustNew(),
 		Log:                    chainlog,
 	}
@@ -292,8 +295,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	// put to mempool and take back to solidify
 	ret.solidifyRequest(initReq[0])
 
-	ret.reqCounter.Add(1)
-	_, err = ret.runBatch(initReq, "new")
+	_, err = ret.runRequestsSync(initReq, "new")
 	require.NoError(env.T, err)
 
 	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
@@ -352,15 +354,17 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 	for chidArr, reqs := range requests {
 		chid, err := coretypes.ChainIDFromBytes(chidArr[:])
 		require.NoError(env.T, err)
-		chain, ok := env.chains[chidArr]
+		ch, ok := env.chains[chidArr]
 		if !ok {
 			env.logger.Infof("dispatching requests. Unknown chain: %s", chid.String())
 			continue
 		}
-		chain.reqCounter.Add(int32(len(reqs)))
-		for _, req := range reqs {
-			chain.mempool.ReceiveRequests(req)
-		}
+		ch.runVMMutex.Lock()
+
+		ch.reqCounter.Add(int32(len(reqs)))
+		ch.mempool.ReceiveRequests(reqs...)
+
+		ch.runVMMutex.Unlock()
 	}
 }
 
@@ -410,19 +414,28 @@ func (ch *Chain) collateBatch() []coretypes.Request {
 	return ret
 }
 
-// batchLoop mimics leader's behavior in the Wasp committee
+// batchLoop mimics behavior Wasp consensus
 func (ch *Chain) batchLoop() {
 	for {
-		batch := ch.collateBatch()
-		if len(batch) > 0 {
-			_, err := ch.runBatch(batch, "batchLoop")
-			if err != nil {
-				ch.Log.Errorf("runBatch: %v", err)
-			}
-			continue
+		if !ch.collateAndRunBatch() {
+			time.Sleep(50 * time.Millisecond)
 		}
-		time.Sleep(50 * time.Millisecond)
 	}
+}
+
+func (ch *Chain) collateAndRunBatch() bool {
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	batch := ch.collateBatch()
+	if len(batch) > 0 {
+		_, err := ch.runRequestsNolock(batch, "batchLoop")
+		if err != nil {
+			ch.Log.Errorf("runRequestsSync: %v", err)
+		}
+		return true
+	}
+	return false
 }
 
 // backlogLen is a thread-safe function to return size of the current backlog

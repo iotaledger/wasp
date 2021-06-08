@@ -1,6 +1,9 @@
 package sbtests
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -8,8 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestCounter(t *testing.T) { run2(t, testCounter) }
@@ -39,7 +40,7 @@ func testConcurrency(t *testing.T, w bool) {
 
 	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncIncCounter).WithIotas(1)
 
-	repeats := []int{300, 100, 100, 100, 100, 100, 100, 100, 100, 100}
+	repeats := []int{300, 100, 100, 100, 200, 100, 100}
 	sum := 0
 	for _, i := range repeats {
 		sum += i
@@ -58,7 +59,7 @@ func testConcurrency(t *testing.T, w bool) {
 		}(r, n)
 	}
 	time.Sleep(1 * time.Second)
-	chain.WaitForEmptyBacklog(10 * time.Second)
+	chain.WaitForEmptyBacklog(60 * time.Second)
 
 	ret, err := chain.CallView(SandboxSCName, sbtestsc.FuncGetCounter)
 	require.NoError(t, err)
@@ -85,7 +86,7 @@ func testConcurrency2(t *testing.T, w bool) {
 
 	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncIncCounter).WithIotas(1)
 
-	repeats := []int{300, 100, 100, 100, 100, 100, 100, 100, 100, 100}
+	repeats := []int{300, 100, 100, 100, 200, 100, 100}
 	users := make([]*ed25519.KeyPair, len(repeats))
 	userAddr := make([]ledgerstate.Address, len(repeats))
 	sum := 0
@@ -103,7 +104,7 @@ func testConcurrency2(t *testing.T, w bool) {
 		}(r, n)
 	}
 	time.Sleep(1 * time.Second)
-	chain.WaitForEmptyBacklog(10 * time.Second)
+	chain.WaitForEmptyBacklog(60 * time.Second)
 
 	ret, err := chain.CallView(SandboxSCName, sbtestsc.FuncGetCounter)
 	require.NoError(t, err)

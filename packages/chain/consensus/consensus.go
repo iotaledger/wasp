@@ -69,7 +69,7 @@ type workflowFlags struct {
 
 var _ chain.Consensus = &consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, log *logger.Logger) *consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection) *consensus {
 	ret := &consensus{
 		chain:                      chainCore,
 		committee:                  committee,
@@ -77,7 +77,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		nodeConn:                   nodeConn,
 		vmRunner:                   runvm.NewVMRunner(),
 		resultSignatures:           make([]*chain.SignedResultMsg, committee.Size()),
-		log:                        log.Named("c"),
+		log:                        chainCore.Log().Named("c"),
 		eventStateTransitionMsgCh:  make(chan *chain.StateTransitionMsg),
 		eventResultCalculatedMsgCh: make(chan *chain.VMResultMsg),
 		eventSignedResultMsgCh:     make(chan *chain.SignedResultMsg),

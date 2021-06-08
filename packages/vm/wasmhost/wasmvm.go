@@ -33,6 +33,8 @@ type WasmVmBase struct {
 	memoryCopy     []byte
 	memoryDirty    bool
 	memoryNonZero  int
+	result         []byte
+	resultKeyId    int32
 	timeoutStarted bool
 }
 
@@ -63,7 +65,7 @@ func (vm *WasmVmBase) HostGetBytes(objId int32, keyId int32, typeId int32, strin
 	host := vm.host
 	host.TraceAll("HostGetBytes(o%d,k%d,t%d,r%d,s%d)", objId, keyId, typeId, stringRef, size)
 
-	// negative size means only check for existence
+	// only check for existence ?
 	if size < 0 {
 		if host.Exists(objId, keyId, typeId) {
 			return 0
@@ -72,11 +74,37 @@ func (vm *WasmVmBase) HostGetBytes(objId int32, keyId int32, typeId int32, strin
 		return -1
 	}
 
-	bytes := host.GetBytes(objId, keyId, typeId)
-	if bytes == nil {
-		return -1
+	// actual GetBytes request ?
+	if (typeId & OBJTYPE_CALL) == 0 {
+		bytes := host.GetBytes(objId, keyId, typeId)
+		if bytes == nil {
+			return -1
+		}
+		return vm.impl.VmSetBytes(stringRef, size, bytes)
 	}
-	return vm.impl.VmSetBytes(stringRef, size, bytes)
+
+	// func call request
+	switch typeId {
+	case OBJTYPE_CALL:
+		// func call with params, returns result length
+		vm.resultKeyId = keyId
+		params := vm.impl.VmGetBytes(stringRef, size)
+		vm.result = host.CallFunc(objId, keyId, params)
+		return int32(len(vm.result))
+
+	case OBJTYPE_CALL + 1:
+		// retrieve previous func call result
+		if vm.resultKeyId == keyId {
+			result := vm.result
+			vm.result = nil
+			vm.resultKeyId = 0
+			if result == nil {
+				return -1
+			}
+			return vm.impl.VmSetBytes(stringRef, int32(len(result)), result)
+		}
+	}
+	panic("HostGetBytes: Invalid func call state")
 }
 
 func (vm *WasmVmBase) HostGetKeyId(keyRef int32, size int32) int32 {

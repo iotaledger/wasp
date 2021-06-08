@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -24,10 +26,8 @@ func TestSetThenGet(t *testing.T) {
 	vmctx := &VMContext{
 		virtualState:       virtualState,
 		currentStateUpdate: stateUpdate,
-		isInvalidatedState: func() bool {
-			return false
-		},
-		callStack: []*callContext{{contract: hname}},
+		solidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline(),
+		callStack:          []*callContext{{contract: hname}},
 	}
 	s := vmctx.State()
 
@@ -85,11 +85,9 @@ func TestIterate(t *testing.T) {
 
 	vmctx := &VMContext{
 		virtualState:       virtualState,
+		solidStateBaseline: coreutil.NewChainStateSync().SetSolidIndex(0).GetSolidIndexBaseline(),
 		currentStateUpdate: stateUpdate,
-		isInvalidatedState: func() bool {
-			return false
-		},
-		callStack: []*callContext{{contract: hname}},
+		callStack:          []*callContext{{contract: hname}},
 	}
 	s := vmctx.State()
 	s.Set("xy1", []byte{42})

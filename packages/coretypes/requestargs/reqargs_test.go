@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/database/dbprovider"
 	"github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -84,8 +83,7 @@ func TestRequestArguments3(t *testing.T) {
 	require.EqualValues(t, r["-arg3"], "data3")
 
 	log := testlogger.NewLogger(t)
-	db := dbprovider.NewInMemoryDBProvider(log)
-	reg := registry.NewRegistry(nil, log, db.GetKVStore())
+	reg := registry.NewRegistry(nil, log, mapdb.NewMapDB())
 
 	d, ok, err := r.SolidifyRequestArguments(reg)
 	require.NoError(t, err)
@@ -120,8 +118,7 @@ func TestRequestArguments4(t *testing.T) {
 	require.EqualValues(t, r["*arg4"], h[:])
 
 	log := testlogger.NewLogger(t)
-	db := dbprovider.NewInMemoryDBProvider(log)
-	reg := registry.NewRegistry(nil, log, db.GetKVStore())
+	reg := registry.NewRegistry(nil, log, mapdb.NewMapDB())
 
 	_, ok, err := r.SolidifyRequestArguments(reg, downloader.New(log, "http://some.fake.address.lt"))
 	require.NoError(t, err)

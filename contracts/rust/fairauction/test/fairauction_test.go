@@ -4,6 +4,9 @@
 package test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/contracts/common"
@@ -13,19 +16,17 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 var auctioneer *ed25519.KeyPair
-var auctioneerAddr  ledgerstate.Address
+var auctioneerAddr ledgerstate.Address
 var tokenColor ledgerstate.Color
 
 func setupTest(t *testing.T) *solo.Chain {
 	chain := common.StartChainAndDeployWasmContractByName(t, ScName)
 
 	// set up auctioneer account and mint some tokens to auction off
-	auctioneer,auctioneerAddr = chain.Env.NewKeyPairWithFunds()
+	auctioneer, auctioneerAddr = chain.Env.NewKeyPairWithFunds()
 	newColor, err := chain.Env.MintTokens(auctioneer, 10)
 	require.NoError(t, err)
 	chain.Env.AssertAddressBalance(auctioneerAddr, ledgerstate.ColorIOTA, solo.Saldo-10)
@@ -39,7 +40,7 @@ func setupTest(t *testing.T) *solo.Chain {
 		ParamDescription, "Cool tokens for sale!",
 	).WithTransfers(map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 25, // deposit, must be >=minimum*margin
-		tokenColor:        10, // the tokens to auction
+		tokenColor:            10, // the tokens to auction
 	})
 	_, err = chain.PostRequestSync(req, auctioneer)
 	require.NoError(t, err)
@@ -113,6 +114,8 @@ func TestFaOneBidTooLow(t *testing.T) {
 
 	// wait for finalize_auction
 	chain.Env.AdvanceClockBy(61 * time.Minute)
+
+	time.Sleep(1 * time.Second)
 	chain.WaitForEmptyBacklog()
 
 	res, err := chain.CallView(
@@ -136,6 +139,8 @@ func TestFaOneBid(t *testing.T) {
 
 	// wait for finalize_auction
 	chain.Env.AdvanceClockBy(61 * time.Minute)
+
+	time.Sleep(1 * time.Second)
 	chain.WaitForEmptyBacklog()
 
 	res, err := chain.CallView(

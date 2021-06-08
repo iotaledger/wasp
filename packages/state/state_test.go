@@ -4,15 +4,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv/optimism"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/database/dbprovider"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 )
 
@@ -67,16 +67,14 @@ func TestOriginHashes(t *testing.T) {
 
 func TestStateWithDB(t *testing.T) {
 	t.Run("state not found", func(t *testing.T) {
-		log := testlogger.NewLogger(t)
-		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
+		store := mapdb.NewMapDB()
 		chainID := coretypes.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
 	})
 	t.Run("save zero state", func(t *testing.T) {
-		log := testlogger.NewLogger(t)
-		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
+		store := mapdb.NewMapDB()
 		chainID := coretypes.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
@@ -100,8 +98,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, vs1.Clone().Hash(), vs2.Clone().Hash())
 	})
 	t.Run("load 0 block", func(t *testing.T) {
-		log := testlogger.NewLogger(t)
-		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
+		store := mapdb.NewMapDB()
 		chainID := coretypes.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
@@ -117,8 +114,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, NewOriginBlock().Bytes(), data)
 	})
 	t.Run("apply, save and load block 1", func(t *testing.T) {
-		log := testlogger.NewLogger(t)
-		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
+		store := mapdb.NewMapDB()
 		chainID := coretypes.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
@@ -167,8 +163,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, vs1.Hash(), vs2.Hash())
 	})
 	t.Run("state reader", func(t *testing.T) {
-		log := testlogger.NewLogger(t)
-		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
+		store := mapdb.NewMapDB()
 		chainID := coretypes.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
@@ -198,20 +193,33 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, exists)
 
-		rdr, err := NewStateReader(store, chainID)
-		require.NoError(t, err)
+		glb := coreutil.NewChainStateSync()
+		glb.SetSolidIndex(0)
+		rdr := NewOptimisticStateReader(store, glb)
 
-		require.EqualValues(t, vs2.BlockIndex(), rdr.BlockIndex())
-		require.EqualValues(t, vs2.Timestamp(), rdr.Timestamp())
-		require.EqualValues(t, vs2.Hash().String(), rdr.Hash().String())
+		bi, err := rdr.BlockIndex()
+		require.NoError(t, err)
+		require.EqualValues(t, vs2.BlockIndex(), bi)
+
+		ts, err := rdr.Timestamp()
+		require.NoError(t, err)
+		require.EqualValues(t, vs2.Timestamp(), ts)
+
+		h, err := rdr.Hash()
+		require.NoError(t, err)
+		require.EqualValues(t, vs2.Hash(), h)
 		require.EqualValues(t, "value", string(rdr.KVStoreReader().MustGet("key")))
+
+		glb.InvalidateSolidIndex()
+		h, err = rdr.Hash()
+		require.Error(t, err)
+		require.EqualValues(t, err, optimism.ErrStateHasBeenInvalidated)
 	})
 }
 
 func TestVariableStateBasic(t *testing.T) {
 	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
-	store := dbprovider.NewInMemoryDBProvider(testlogger.NewLogger(t)).GetKVStore()
-	vs1, err := CreateOriginState(store, chainID)
+	vs1, err := CreateOriginState(mapdb.NewMapDB(), chainID)
 	require.NoError(t, err)
 	h1 := vs1.Hash()
 	require.EqualValues(t, OriginStateHash(), h1)
@@ -240,11 +248,14 @@ func TestVariableStateBasic(t *testing.T) {
 
 func TestStateReader(t *testing.T) {
 	t.Run("state not found", func(t *testing.T) {
-		log := testlogger.NewLogger(t)
-		store := dbprovider.NewInMemoryDBProvider(log).GetKVStore()
+		store := mapdb.NewMapDB()
 		chainID := coretypes.RandomChainID([]byte("1"))
-		st, err := NewStateReader(store, chainID)
+		_, err := CreateOriginState(store, chainID)
 		require.NoError(t, err)
+
+		glb := coreutil.NewChainStateSync()
+		glb.SetSolidIndex(0)
+		st := NewOptimisticStateReader(store, glb)
 		ok, err := st.KVStoreReader().Has("kuku")
 		require.NoError(t, err)
 		require.False(t, ok)

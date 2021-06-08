@@ -1,3 +1,7 @@
+// mempool implements a buffer of requests sent to the ISCP chain, essentially a backlog of requests
+// It contains both on-ledger and off-ledger requests. The mempool consists of 2 parts: the in-buffer and the pool
+// All incoming requests are stored into the in-buffer first. Then they are asynchronously validated
+// and moved to the pool itself.
 package mempool
 
 import (
@@ -13,11 +17,15 @@ import (
 )
 
 type mempool struct {
-	mutex                   sync.RWMutex
-	incounter               int
-	outcounter              int
-	stateReader             state.StateReader
-	requestRefs             map[coretypes.RequestID]*requestRef
+	inBuffer                map[coretypes.RequestID]coretypes.Request
+	inMutex                 sync.RWMutex
+	poolMutex               sync.RWMutex
+	inBufCounter            int
+	outBufCounter           int
+	inPoolCounter           int
+	outPoolCounter          int
+	stateReader             state.OptimisticStateReader
+	pool                    map[coretypes.RequestID]*requestRef
 	chStop                  chan struct{}
 	blobCache               coretypes.BlobCache
 	solidificationLoopDelay time.Duration
@@ -29,14 +37,18 @@ type requestRef struct {
 	whenReceived time.Time
 }
 
-const defaultSolidificationLoopDelay = 200 * time.Millisecond
+const (
+	defaultSolidificationLoopDelay = 200 * time.Millisecond
+	moveToPoolLoopDelay            = 20 * time.Millisecond
+)
 
 var _ chain.Mempool = &mempool{}
 
-func New(stateReader state.StateReader, blobCache coretypes.BlobCache, log *logger.Logger, solidificationLoopDelay ...time.Duration) *mempool {
+func New(stateReader state.OptimisticStateReader, blobCache coretypes.BlobCache, log *logger.Logger, solidificationLoopDelay ...time.Duration) *mempool {
 	ret := &mempool{
+		inBuffer:    make(map[coretypes.RequestID]coretypes.Request),
 		stateReader: stateReader,
-		requestRefs: make(map[coretypes.RequestID]*requestRef),
+		pool:        make(map[coretypes.RequestID]*requestRef),
 		chStop:      make(chan struct{}),
 		blobCache:   blobCache,
 		log:         log.Named("m"),
@@ -46,69 +58,142 @@ func New(stateReader state.StateReader, blobCache coretypes.BlobCache, log *logg
 	} else {
 		ret.solidificationLoopDelay = defaultSolidificationLoopDelay
 	}
+	go ret.moveToPoolLoop()
 	go ret.solidificationLoop()
 	return ret
 }
 
+func (m *mempool) addToInBuffer(req coretypes.Request) {
+	// just check if it is already in the pool
+	if m.HasRequest(req.ID()) {
+		return
+	}
+	m.inMutex.Lock()
+	defer m.inMutex.Unlock()
+	// may be repeating but does not matter
+	m.inBuffer[req.ID()] = req
+	m.inBufCounter++
+}
+
+func (m *mempool) removeFromInBuffer(req coretypes.Request) {
+	m.inMutex.Lock()
+	defer m.inMutex.Unlock()
+	if _, ok := m.inBuffer[req.ID()]; ok {
+		delete(m.inBuffer, req.ID())
+		m.outBufCounter++
+	}
+}
+
+// fills up the buffer with requests from the in-buffer
+func (m *mempool) takeInBuffer(buf []coretypes.Request) []coretypes.Request {
+	buf = buf[:0]
+	m.inMutex.RLock()
+	defer m.inMutex.RUnlock()
+
+	for _, req := range m.inBuffer {
+		buf = append(buf, req)
+	}
+	return buf
+}
+
+// addToPool adds request to the pool. It may fail
+// returns true if it must be removed from the input buffer
+func (m *mempool) addToPool(req coretypes.Request) bool {
+	if offLedgerReq, ok := req.(*request.RequestOffLedger); ok {
+		if !offLedgerReq.VerifySignature() {
+			// wrong signature, must be removed from in buffer
+			m.log.Warnf("ReceiveRequest.VerifySignature: invalid signature")
+			return true
+		}
+	}
+	reqid := req.ID()
+	m.stateReader.SetBaseline()
+	alreadyProcessed, err := blocklog.IsRequestProcessed(m.stateReader.KVStoreReader(), &reqid)
+	if err != nil {
+		// may be invalid state. Do not remove from in buffer yet
+		return false
+	}
+	if alreadyProcessed {
+		// remove from buffer but not include into the pool
+		return true
+	}
+
+	m.poolMutex.Lock()
+	defer m.poolMutex.Unlock()
+
+	if _, inPool := m.pool[reqid]; inPool {
+		// already there, remove from in buffer
+		return true
+	}
+	// put the request to the pool
+	nowis := time.Now()
+	m.inPoolCounter++
+
+	m.traceIn(req)
+
+	m.pool[reqid] = &requestRef{
+		req:          req,
+		whenReceived: nowis,
+	}
+	if _, err := req.SolidifyArgs(m.blobCache); err != nil {
+		m.log.Errorf("ReceiveRequest.SolidifyArgs: %s", err)
+	}
+	// remove from in buffer
+	return true
+}
+
+// ReceiveRequests places requests into the inBuffer. InBuffer is unordered and non-deterministic
 func (m *mempool) ReceiveRequests(reqs ...coretypes.Request) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
 	for _, req := range reqs {
-		// only allow off-ledger requests with valid signature
-		if offLedgerReq, ok := req.(*request.RequestOffLedger); ok {
-			if !offLedgerReq.VerifySignature() {
-				m.log.Errorf("ReceiveRequest.VerifySignature: invalid signature")
-				continue
-			}
-		}
-		id := req.ID()
-		if blocklog.IsRequestProcessed(m.stateReader, &id) {
-			return
-		}
-		if _, ok := m.requestRefs[req.ID()]; ok {
-			continue
-		}
+		m.addToInBuffer(req)
+	}
+}
 
-		// attempt solidification for those requests that do not require blobs
-		// instead of having to wait for the solidification goroutine to kick in
-		// also weeds out requests with solidification errors
-		_, err := req.SolidifyArgs(m.blobCache)
-		if err != nil {
-			m.log.Errorf("ReceiveRequest.SolidifyArgs: %s", err)
+// RemoveRequests removes requests from the pool
+func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
+	m.poolMutex.Lock()
+	defer m.poolMutex.Unlock()
+
+	for _, rid := range reqs {
+		if _, ok := m.pool[rid]; !ok {
 			continue
 		}
-		nowis := time.Now()
-		m.incounter++
-		tl := req.TimeLock()
+		m.outPoolCounter++
+		delete(m.pool, rid)
+
+		m.traceOut(rid)
+	}
+}
+
+const traceInOut = false
+
+func (m *mempool) traceIn(req coretypes.Request) {
+	tl := req.TimeLock()
+	if traceInOut {
 		if tl.IsZero() {
-			m.log.Debugf("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.incounter, m.outcounter)
+			m.log.Infof("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.inPoolCounter, m.outPoolCounter)
 		} else {
-			m.log.Debugf("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.incounter, m.outcounter, tl.Sub(time.Now()))
+			m.log.Infof("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.inPoolCounter, m.outPoolCounter, tl.Sub(time.Now()))
 		}
-		m.requestRefs[req.ID()] = &requestRef{
-			req:          req,
-			whenReceived: nowis,
+	} else {
+		if tl.IsZero() {
+			m.log.Debugf("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.inPoolCounter, m.outPoolCounter)
+		} else {
+			m.log.Debugf("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.inPoolCounter, m.outPoolCounter, tl.Sub(time.Now()))
 		}
 	}
 }
 
-func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
-	for _, rid := range reqs {
-		if _, ok := m.requestRefs[rid]; !ok {
-			continue
-		}
-		m.outcounter++
-		delete(m.requestRefs, rid)
-		m.log.Debugf("OUT MEMPOOL %s (+%d / -%d)", rid, m.incounter, m.outcounter)
+func (m *mempool) traceOut(reqid coretypes.RequestID) {
+	if traceInOut {
+		m.log.Infof("OUT MEMPOOL %s (+%d / -%d)", reqid, m.inPoolCounter, m.outPoolCounter)
+	} else {
+		m.log.Debugf("OUT MEMPOOL %s (+%d / -%d)", reqid, m.inPoolCounter, m.outPoolCounter)
 	}
 }
 
 // isRequestReady for requests with paramsReady, the result is strictly deterministic
-func (m *mempool) isRequestReady(ref *requestRef, nowis time.Time) bool {
+func isRequestReady(ref *requestRef, nowis time.Time) bool {
 	// TODO fallback options
 	if _, paramsReady := ref.req.Params(); !paramsReady {
 		return false
@@ -116,19 +201,19 @@ func (m *mempool) isRequestReady(ref *requestRef, nowis time.Time) bool {
 	return ref.req.TimeLock().IsZero() || ref.req.TimeLock().Before(nowis)
 }
 
-// ReadyNow returns preliminary batch for consensus.
-// Note that later status of request may change due to time constraints
+// ReadyNow returns preliminary batch of requests for consensus.
+// Note that later status of request may change due to time change and time constraints
 func (m *mempool) ReadyNow(now ...time.Time) []coretypes.Request {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+	m.poolMutex.RLock()
+	defer m.poolMutex.RUnlock()
 
 	nowis := time.Now()
 	if len(now) > 0 {
 		nowis = now[0]
 	}
-	ret := make([]coretypes.Request, 0, len(m.requestRefs))
-	for _, ref := range m.requestRefs {
-		if m.isRequestReady(ref, nowis) {
+	ret := make([]coretypes.Request, 0, len(m.pool))
+	for _, ref := range m.pool {
+		if isRequestReady(ref, nowis) {
 			ret = append(ret, ref.req)
 		}
 	}
@@ -136,45 +221,96 @@ func (m *mempool) ReadyNow(now ...time.Time) []coretypes.Request {
 }
 
 // ReadyFromIDs if successful, function returns a deterministic list of requests for running on the VM
-// - nil, false if some all requests not arrived to the mempool yet. For retry later
+// - nil, false if some requests not arrived to the mempool yet. For retry later
 // - (a list of processable requests), true if the list can be deterministically calculated
 // Note that (a list of processable requests) can be empty if none satisfies nowis time constraint (timelock, fallback)
-// For requests which are known and solidified result is deterministic
+// For requests which are known and solidified, the result is deterministic
 func (m *mempool) ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool) {
 	ret := make([]coretypes.Request, 0, len(reqids))
 	for _, reqid := range reqids {
-		reqref, ok := m.requestRefs[reqid]
+		reqref, ok := m.pool[reqid]
 		if !ok {
 			// retry later
 			return nil, false
 		}
-		if m.isRequestReady(reqref, nowis) {
+		if isRequestReady(reqref, nowis) {
 			ret = append(ret, reqref.req)
 		}
 	}
 	return ret, true
 }
 
+// HasRequest checks if the request is in the pool
 func (m *mempool) HasRequest(id coretypes.RequestID) bool {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+	m.poolMutex.RLock()
+	defer m.poolMutex.RUnlock()
 
-	rec, ok := m.requestRefs[id]
-	return ok && rec.req != nil
+	_, ok := m.pool[id]
+	return ok
 }
 
+const waitRequestInPoolTimeoutDefault = 2 * time.Second
+
+// WaitRequestInPool waits until the request appears in the pool but no longer than timeout
+func (m *mempool) WaitRequestInPool(reqid coretypes.RequestID, timeout ...time.Duration) bool {
+	nowis := time.Now()
+	deadline := nowis.Add(waitRequestInPoolTimeoutDefault)
+	if len(timeout) > 0 {
+		deadline = nowis.Add(timeout[0])
+	}
+	for {
+		if m.HasRequest(reqid) {
+			return true
+		}
+		time.Sleep(10 * time.Millisecond)
+		if time.Now().After(deadline) {
+			return false
+		}
+	}
+}
+
+func (m *mempool) inBufferLen() int {
+	m.inMutex.RLock()
+	defer m.inMutex.RUnlock()
+	return len(m.inBuffer)
+}
+
+const waitInBufferEmptyTimeoutDefault = 5 * time.Second
+
+// WaitAllRequestsIn waits until in buffer becomes empty. Used in synchronous situations when the caller
+// want to be sure all requests were fed into the pool. May create nondeterminism when used from goroutines
+func (m *mempool) WaitInBufferEmpty(timeout ...time.Duration) bool {
+	nowis := time.Now()
+	deadline := nowis.Add(waitInBufferEmptyTimeoutDefault)
+	if len(timeout) > 0 {
+		deadline = nowis.Add(timeout[0])
+	}
+	for {
+		if m.inBufferLen() == 0 {
+			return true
+		}
+		time.Sleep(10 * time.Millisecond)
+		if time.Now().After(deadline) {
+			return false
+		}
+	}
+}
+
+// Stats collects mempool stats
 func (m *mempool) Stats() chain.MempoolStats {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+	m.poolMutex.RLock()
+	defer m.poolMutex.RUnlock()
 
 	ret := chain.MempoolStats{
-		InCounter:  m.incounter,
-		OutCounter: m.outcounter,
-		Total:      len(m.requestRefs),
+		InPoolCounter:  m.inPoolCounter,
+		OutPoolCounter: m.outPoolCounter,
+		InBufCounter:   m.inBufCounter,
+		OutBufCounter:  m.outBufCounter,
+		TotalPool:      len(m.pool),
 	}
 	nowis := time.Now()
-	for _, ref := range m.requestRefs {
-		if m.isRequestReady(ref, nowis) {
+	for _, ref := range m.pool {
+		if isRequestReady(ref, nowis) {
 			ret.Ready++
 		}
 	}
@@ -185,6 +321,29 @@ func (m *mempool) Close() {
 	close(m.chStop)
 }
 
+// the loop validates and moves request from inBuffer to the pool
+func (m *mempool) moveToPoolLoop() {
+	buf := make([]coretypes.Request, 0, 100)
+	for {
+		select {
+		case <-m.chStop:
+			return
+		case <-time.After(moveToPoolLoopDelay):
+			buf = m.takeInBuffer(buf)
+			if len(buf) == 0 {
+				continue
+			}
+			for i, req := range buf {
+				if m.addToPool(req) {
+					m.removeFromInBuffer(req)
+				}
+				buf[i] = nil // to please GC
+			}
+		}
+	}
+}
+
+// the loop solidifies requests
 func (m *mempool) solidificationLoop() {
 	for {
 		select {
@@ -197,10 +356,10 @@ func (m *mempool) solidificationLoop() {
 }
 
 func (m *mempool) doSolidifyRequests() {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
+	m.poolMutex.Lock()
+	defer m.poolMutex.Unlock()
 
-	for _, ref := range m.requestRefs {
+	for _, ref := range m.pool {
 		if ref.req != nil {
 			_, _ = ref.req.SolidifyArgs(m.blobCache)
 		}

@@ -52,7 +52,7 @@ const (
 	maxBlocksToCommitConst               = 10000 //10k
 )
 
-func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, log *logger.Logger, timersOpt ...Timers) chain.StateManager {
+func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, timersOpt ...Timers) chain.StateManager {
 	var timers Timers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -65,9 +65,9 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		chain:                  c,
 		nodeConn:               nodeconn,
 		peers:                  peers,
-		syncingBlocks:          newSyncingBlocks(log, timers.getGetBlockRetry()),
+		syncingBlocks:          newSyncingBlocks(c.Log(), timers.getGetBlockRetry()),
 		timers:                 timers,
-		log:                    log.Named("s"),
+		log:                    c.Log().Named("s"),
 		pullStateRetryTime:     time.Now(),
 		eventGetBlockMsgCh:     make(chan *chain.GetBlockMsg),
 		eventBlockMsgCh:        make(chan *chain.BlockMsg),
@@ -100,17 +100,33 @@ func (sm *stateManager) initLoadState() {
 			solidState.BlockIndex(), solidState.Hash().String())
 	} else {
 		// create origin state in DB
-		sm.chain.GlobalSolidIndex().Store(0)
-		sm.solidState, err = state.CreateOriginState(sm.store, sm.chain.ID())
-		if err != nil {
+		if err := sm.createOriginState(); err != nil {
 			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
 				Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err)},
 			)
 			return
 		}
-		sm.log.Infof("ORIGIN STATE has been created")
 	}
-	sm.recvLoop() // Start to process external events.
+	sm.recvLoop() // Check to process external events.
+}
+
+func (sm *stateManager) createOriginState() error {
+	sm.chain.GlobalStateSync().InvalidateSolidIndex()
+
+	sm.chain.GlobalStateSync().Mutex().Lock()
+	defer sm.chain.GlobalStateSync().Mutex().Unlock()
+
+	var err error
+	sm.solidState, err = state.CreateOriginState(sm.store, sm.chain.ID())
+	if err != nil {
+		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
+			Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err)},
+		)
+		return err
+	}
+	sm.chain.GlobalStateSync().SetSolidIndex(0)
+	sm.log.Infof("ORIGIN STATE has been created")
+	return nil
 }
 
 func (sm *stateManager) Ready() *ready.Ready {

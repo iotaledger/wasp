@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
@@ -24,7 +25,7 @@ func (r vmRunner) Run(task *vm.VMTask) {
 		if r == nil {
 			return
 		}
-		if _, ok := r.(*vm.ErrorStateInvalidated); ok {
+		if _, ok := r.(*optimism.ErrorStateInvalidated); ok {
 			task.Log.Warnf("VM task has been abandoned due to invalidated state. ACS session id: %d", task.ACSSessionID)
 			return
 		}

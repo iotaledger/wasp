@@ -727,7 +727,7 @@ func (s *procStep) run() {
 			if isDkgInitProcRecvMsg(recv.Msg.MsgType) {
 				s.onceSent.Do(func() {
 					s.initRecv = recv
-					s.retryCh = time.After(s.proc.roundRetry) // Start the retries.
+					s.retryCh = time.After(s.proc.roundRetry) // Check the retries.
 					if s.sentMsgs, err = s.makeSent(s.step, s.initRecv, s.prevMsgs); err != nil {
 						s.log.Errorf("Step failed to make round messages, reason=%v", err)
 						s.sentMsgs = make(map[uint16]*peering.PeerMessage) // No messages will be sent on error.
