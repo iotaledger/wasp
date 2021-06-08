@@ -64,8 +64,6 @@ func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.H
 }
 
 func (v *viewcontext) callView(contractHname coretypes.Hname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
-	v.stateReader.SetBaseline()
-
 	var err error
 	contractRecord, err := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Interface.Hname()), contractHname)
 	if err != nil {

@@ -48,7 +48,7 @@ func (g *globalSync) GetSolidIndexBaseline() StateBaseline {
 }
 
 // InvalidateSolidIndex invalidates state index and, globally, all baselines
-//.All vaselines remain invalid until SetSolidIndex is called globalle
+//.All vaselines remain invalid until SetSolidIndex is called globally
 // and Set for each baseline individually
 func (g *globalSync) InvalidateSolidIndex() GlobalSync {
 	g.solidIndex.Store(^uint64(0))
