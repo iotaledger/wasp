@@ -5,13 +5,15 @@ package blocklog
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"time"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
-	"io"
-	"time"
 )
 
 const (
@@ -35,6 +37,7 @@ func init() {
 		coreutil.ViewFunc(FuncGetRequestLogRecordsForBlock, viewGetRequestLogRecordsForBlock),
 		coreutil.ViewFunc(FuncGetRequestIDsForBlock, viewGetRequestIDsForBlock),
 		coreutil.ViewFunc(FuncIsRequestProcessed, viewIsRequestProcessed),
+		coreutil.ViewFunc(FuncControlAddresses, viewControlAddresses),
 	})
 }
 
@@ -45,6 +48,7 @@ const (
 	StateVarBlockRegistry      = "b"
 	StateVarRequestLookupIndex = "l"
 	StateVarRequestRecords     = "r"
+	StateVarControlAddresses   = "c"
 	// functions
 	FuncGetBlockInfo                 = "viewGetBlockInfo"
 	FuncGetLatestBlockInfo           = "viewGetLatestBlockInfo"
@@ -52,6 +56,7 @@ const (
 	FuncGetRequestLogRecordsForBlock = "viewGetRequestLogRecordsForBlock"
 	FuncGetRequestIDsForBlock        = "viewGetRequestIDsForBlock"
 	FuncIsRequestProcessed           = "viewIsRequestProcessed"
+	FuncControlAddresses             = "viewControlAddresses"
 
 	// parameters
 	ParamBlockIndex       = "n"
@@ -60,6 +65,8 @@ const (
 	ParamRequestRecord    = "d"
 	ParamRequestID        = "u"
 	ParamRequestProcessed = "p"
+	ParamStateAddress     = "s"
+	ParamGoverningAddress = "g"
 )
 
 // region BlockInfo //////////////////////////////////////////////////////////////
@@ -287,3 +294,51 @@ func (r *RequestLogRecord) Short() string {
 }
 
 // endregion  /////////////////////////////////////////////////////////////
+
+// region ControlAddresses ///////////////////////////////////////////////
+
+type ControlAddresses struct {
+	StateAddress     ledgerstate.Address
+	GoverningAddress ledgerstate.Address
+	SinceBlockIndex  uint32
+}
+
+func ControlAddressesFromBytes(data []byte) (*ControlAddresses, error) {
+	return ControlAddressesFromMarshalUtil(marshalutil.New(data))
+}
+
+func ControlAddressesFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ControlAddresses, error) {
+	ret := &ControlAddresses{}
+	var err error
+	if ret.StateAddress, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
+	if ret.GoverningAddress, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
+	if ret.SinceBlockIndex, err = mu.ReadUint32(); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func (ca *ControlAddresses) Bytes() []byte {
+	mu := marshalutil.New()
+	mu.Write(ca.StateAddress).
+		Write(ca.GoverningAddress).
+		WriteUint32(ca.SinceBlockIndex)
+	return mu.Bytes()
+}
+
+func (ca *ControlAddresses) String() string {
+	var ret string
+	if ca.StateAddress.Equals(ca.GoverningAddress) {
+		ret = fmt.Sprintf("ControlAddresses(%s), block: %d", ca.StateAddress.Base58(), ca.SinceBlockIndex)
+	} else {
+		ret = fmt.Sprintf("ControlAddresses(%s, %s), block: %d",
+			ca.StateAddress.Base58(), ca.GoverningAddress.Base58(), ca.SinceBlockIndex)
+	}
+	return ret
+}
+
+// endregion /////////////////////////////////////////////////////////////

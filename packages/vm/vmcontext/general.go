@@ -143,3 +143,11 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens *ledgerstate.Col
 	}
 	return true
 }
+
+func (vmctx *VMContext) StateAddress() ledgerstate.Address {
+	return vmctx.chainInput.GetStateAddress()
+}
+
+func (vmctx *VMContext) GoverningAddress() ledgerstate.Address {
+	return vmctx.chainInput.GetGoverningAddress()
+}

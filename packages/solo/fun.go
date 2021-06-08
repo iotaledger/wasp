@@ -556,3 +556,15 @@ func (ch *Chain) GetLogRecordsForBlockRangeAsStrings(fromBlockIndex, toBlockInde
 	}
 	return ret
 }
+
+func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
+	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncControlAddresses)
+	require.NoError(ch.Env.T, err)
+	par := kvdecoder.New(res, ch.Log)
+	ret := &blocklog.ControlAddresses{
+		StateAddress:     par.MustGetAddress(blocklog.ParamStateAddress),
+		GoverningAddress: par.MustGetAddress(blocklog.ParamGoverningAddress),
+		SinceBlockIndex:  uint32(par.MustGetUint64(blocklog.ParamBlockIndex)),
+	}
+	return ret
+}

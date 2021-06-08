@@ -30,6 +30,7 @@ type VMContext struct {
 	// same for the block
 	chainID              chainid.ChainID
 	chainOwnerID         coretypes.AgentID
+	chainInput           *ledgerstate.AliasOutput
 	processors           *processors.ProcessorCache
 	txBuilder            *utxoutil.Builder
 	virtualState         state.VirtualState
@@ -93,6 +94,7 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 	}
 	ret := &VMContext{
 		chainID:              *chainID,
+		chainInput:           task.ChainInput,
 		txBuilder:            txb,
 		virtualState:         task.VirtualState,
 		solidStateBaseline:   task.SolidStateBaseline,
@@ -132,6 +134,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	vmctx.closeBlockContexts()
 }
 
+// mustSaveBlockInfo is in the blocklog poartition context
 func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) {
 	// block info will be stored into the separate state update
 	vmctx.currentStateUpdate = state.NewStateUpdate()
@@ -150,6 +153,13 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 	if idx != blockInfo.BlockIndex {
 		vmctx.log.Panicf("CloseVMContext: inconsistent block index")
 	}
+
+	blocklog.SaveControlAddressesIfNecessary(
+		vmctx.State(),
+		vmctx.StateAddress(),
+		vmctx.GoverningAddress(),
+		vmctx.chainInput.GetStateIndex(),
+	)
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.currentStateUpdate = nil // invalidate
 }

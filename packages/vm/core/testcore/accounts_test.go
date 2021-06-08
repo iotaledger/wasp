@@ -4,8 +4,9 @@
 package testcore
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"testing"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
