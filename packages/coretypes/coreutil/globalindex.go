@@ -19,8 +19,7 @@ type ChainStateSync interface {
 }
 
 type chainStateSync struct {
-	solidIndex atomic.Uint32
-	// may be used for exclusive global access (not used atm)
+	solidIndex  atomic.Uint32
 	globalMutex *sync.RWMutex
 }
 
