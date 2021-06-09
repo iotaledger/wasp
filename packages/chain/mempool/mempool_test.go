@@ -537,13 +537,37 @@ func TestRotateRequest(t *testing.T) {
 
 	kp, addr := testkey.GenKeyAddr()
 	rotateReq := coreutil.NewRotateRequestOffLedger(addr, kp)
+	require.True(t, coreutil.IsRotateCommitteeRequest(rotateReq))
 
 	pool.ReceiveRequests(rotateReq)
 	require.True(t, pool.WaitRequestInPool(rotateReq.ID()))
 	require.True(t, pool.HasRequest(rotateReq.ID()))
 
-	//ready = pool.ReadyNow(time.Now())
-	//require.EqualValues(t, 1, len(ready))
-	//require.EqualValues(t, rotateReq.ID(), ready[0].ID())
-	//require.True(t, coreutil.IsSolidRotateCommitteeRequest(ready[0]))
+	stats = pool.Stats()
+	require.EqualValues(t, 6, stats.TotalPool)
+
+	ready = pool.ReadyNow(time.Now())
+	require.EqualValues(t, 1, len(ready))
+	require.EqualValues(t, rotateReq.ID(), ready[0].ID())
+
+	ready, ok := pool.ReadyFromIDs(time.Now(), rotateReq.ID())
+	require.True(t, ok)
+	require.EqualValues(t, 1, len(ready))
+	require.EqualValues(t, rotateReq.ID(), ready[0].ID())
+
+	pool.RemoveRequests(rotateReq.ID())
+	require.False(t, pool.HasRequest(rotateReq.ID()))
+
+	ready = pool.ReadyNow(time.Now())
+	require.EqualValues(t, 5, len(ready))
+
+	ready, result = pool.ReadyFromIDs(time.Now(),
+		requests[0].ID(),
+		requests[1].ID(),
+		requests[2].ID(),
+		requests[3].ID(),
+		requests[4].ID(),
+	)
+	require.True(t, result)
+	require.True(t, len(ready) == 5)
 }

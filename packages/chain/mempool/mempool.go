@@ -113,7 +113,7 @@ func (m *mempool) addToPool(req coretypes.Request) bool {
 		}
 	}
 	reqid := req.ID()
-	rotateRequest := coreutil.IsSolidRotateCommitteeRequest(req)
+	rotateRequest := coreutil.IsRotateCommitteeRequest(req)
 	// if it is a rotate committee request, it s not recorded in the state
 	if !rotateRequest {
 		m.stateReader.SetBaseline()
@@ -190,21 +190,25 @@ func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 	}
 }
 
-const traceInOut = true
+const traceInOut = false
 
 func (m *mempool) traceIn(req coretypes.Request) {
+	rotate := ""
+	if coreutil.IsRotateCommitteeRequest(req) {
+		rotate = "(rotate) "
+	}
 	tl := req.TimeLock()
 	if traceInOut {
 		if tl.IsZero() {
-			m.log.Infof("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.inPoolCounter, m.outPoolCounter)
+			m.log.Infof("IN MEMPOOL %s%s (+%d / -%d)", rotate, req.ID(), m.inPoolCounter, m.outPoolCounter)
 		} else {
-			m.log.Infof("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.inPoolCounter, m.outPoolCounter, tl.Sub(time.Now()))
+			m.log.Infof("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotate, req.ID(), m.inPoolCounter, m.outPoolCounter, tl.Sub(time.Now()))
 		}
 	} else {
 		if tl.IsZero() {
-			m.log.Debugf("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.inPoolCounter, m.outPoolCounter)
+			m.log.Debugf("IN MEMPOOL %s%s (+%d / -%d)", rotate, req.ID(), m.inPoolCounter, m.outPoolCounter)
 		} else {
-			m.log.Debugf("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.inPoolCounter, m.outPoolCounter, tl.Sub(time.Now()))
+			m.log.Debugf("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotate, req.ID(), m.inPoolCounter, m.outPoolCounter, tl.Sub(time.Now()))
 		}
 	}
 }
@@ -259,6 +263,9 @@ func (m *mempool) committeeRotationRequest() coretypes.Request {
 	var when time.Time
 	var ret coretypes.Request
 	for _, req := range m.poolRotate {
+		if ret == nil {
+			ret = req.req
+		}
 		if req.whenReceived.Before(when) ||
 			(req.whenReceived.Equal(when) && ret != nil && bytes.Compare(ret.ID().Bytes(), req.req.ID().Bytes()) < 0) {
 			ret = req.req
@@ -299,7 +306,10 @@ func (m *mempool) HasRequest(id coretypes.RequestID) bool {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
-	_, ok := m.pool[id]
+	if _, ok := m.pool[id]; ok {
+		return true
+	}
+	_, ok := m.poolRotate[id]
 	return ok
 }
 
@@ -360,7 +370,8 @@ func (m *mempool) Stats() chain.MempoolStats {
 		OutPoolCounter: m.outPoolCounter,
 		InBufCounter:   m.inBufCounter,
 		OutBufCounter:  m.outBufCounter,
-		TotalPool:      len(m.pool),
+		TotalPool:      len(m.pool) + len(m.poolRotate),
+		Ready:          len(m.poolRotate),
 	}
 	nowis := time.Now()
 	for _, ref := range m.pool {
