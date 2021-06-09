@@ -23,8 +23,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/testutil"
 
-	"go.dedis.ch/kyber/v3"
-
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -47,19 +45,16 @@ import (
 )
 
 type mockedEnv struct {
-	Suite             *pairing.SuiteBn256
 	T                 *testing.T
-	N                 uint16
 	Quorum            uint16
-	Neighbors         []string
 	Log               *logger.Logger
 	Ledger            *utxodb.UtxoDB
+	StateAddress      ledgerstate.Address
 	OriginatorKeyPair *ed25519.KeyPair
 	OriginatorAddress ledgerstate.Address
-	StateAddress      ledgerstate.Address
-	PubKeys           []kyber.Point
-	PrivKeys          []kyber.Scalar
+	NodeIDs           []string
 	NetworkProviders  []peering.NetworkProvider
+	NetworkBehaviour  *testutil.PeeringNetDynamic
 	DKSRegistries     []registry.DKShareRegistryProvider
 	store             kvstore.KVStore
 	SolidState        state.VirtualState
@@ -101,17 +96,9 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 
 	log.Infof("creating test environment with N = %d, T = %d", n, quorum)
 
-	neighbors := make([]string, n)
-	for i := range neighbors {
-		neighbors[i] = fmt.Sprintf("localhost:%d", 4000+i)
-	}
-
 	ret := &mockedEnv{
-		Suite:      pairing.NewSuiteBn256(),
 		T:          t,
-		N:          n,
 		Quorum:     quorum,
-		Neighbors:  neighbors,
 		Log:        log,
 		Ledger:     utxodb.New(),
 		NodeConn:   make([]*testchain.MockedNodeConn, n),
@@ -146,10 +133,14 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 		}(i)
 	}
 
+	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
+
 	log.Infof("running DKG and setting up mocked network..")
-	_, ret.PubKeys, ret.PrivKeys = testpeers.SetupKeys(n, ret.Suite)
-	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkg(t, quorum, neighbors, ret.PubKeys, ret.PrivKeys, ret.Suite, log.Named("dkg"))
-	ret.NetworkProviders = testpeers.SetupNet(neighbors, ret.PubKeys, ret.PrivKeys, testutil.NewPeeringNetReliable(), log)
+	suite := pairing.NewSuiteBn256()
+	nodeIDs, pubKeys, privKeys := testpeers.SetupKeys(n, suite)
+	ret.NodeIDs = nodeIDs
+	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkg(t, quorum, ret.NodeIDs, pubKeys, privKeys, suite, log.Named("dkg"))
+	ret.NetworkProviders = testpeers.SetupNet(ret.NodeIDs, pubKeys, privKeys, ret.NetworkBehaviour, log)
 
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)
@@ -195,9 +186,11 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 		return state.NewOptimisticStateReader(env.store, env.GlobalSync)
 	})
 	mpool := mempool.New(chainCore.GetStateReader(), coretypes.NewInMemoryBlobCache(), log)
-	mockCommitteeRegistry := testchain.NewMockedCommitteeRegistry(env.Neighbors)
-	cfg, err := peering.NewStaticPeerNetworkConfigProvider(env.Neighbors[i], 4000+int(i), env.Neighbors...)
-	require.NoError(env.T, err)
+	mockCommitteeRegistry := testchain.NewMockedCommitteeRegistry(env.NodeIDs)
+	cfg := &consensusTestConfigProvider{
+		ownNetID:  env.NodeIDs[i],
+		neighbors: env.NodeIDs,
+	}
 	//
 	// Pass the ACS mock, if it was set in env.MockedACS.
 	acs := make([]chain.AsynchronousCommonSubsetRunner, 0)
@@ -246,6 +239,10 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 		}
 	})
 	return ret
+}
+
+func (env *mockedEnv) nodeCount() int {
+	return len(env.NodeIDs)
 }
 
 func (env *mockedEnv) receiveStateCandidate(newState state.VirtualState, from uint16) {
@@ -371,7 +368,7 @@ func (n *mockedNode) WaitTimerTick(until int) {
 
 func (env *mockedEnv) WaitTimerTick(until int) {
 	var wg sync.WaitGroup
-	wg.Add(int(env.N))
+	wg.Add(env.nodeCount())
 	for _, n := range env.Nodes {
 		go func() {
 			n.WaitTimerTick(until)
@@ -503,4 +500,28 @@ func (env *mockedEnv) postDummyRequests(n int, randomize ...bool) {
 			n.Mempool.ReceiveRequests(reqs...)
 		}
 	}
+}
+
+// TODO: should this object be obtained from peering.NetworkProvider?
+// Or should coretypes.PeerNetworkConfigProvider methods methods be part of
+// peering.NetworkProvider interface
+type consensusTestConfigProvider struct {
+	ownNetID  string
+	neighbors []string
+}
+
+func (p *consensusTestConfigProvider) OwnNetID() string {
+	return p.ownNetID
+}
+
+func (p *consensusTestConfigProvider) PeeringPort() int {
+	return 0 // Anything
+}
+
+func (p *consensusTestConfigProvider) Neighbors() []string {
+	return p.neighbors
+}
+
+func (p *consensusTestConfigProvider) String() string {
+	return fmt.Sprintf("consensusTestConfigProvider( ownNetID: %s, neighbors: %+v )", p.OwnNetID(), p.Neighbors())
 }
