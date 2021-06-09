@@ -5,6 +5,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+
 	"github.com/iotaledger/wasp/packages/transaction"
 
 	"golang.org/x/xerrors"
@@ -92,6 +94,19 @@ func (c *consensus) runVMIfNeeded() {
 		c.log.Debugf("\"runVMIfNeeded: empty list of processable requests. Reset workflow")
 		return
 	}
+	var vmTask *vm.VMTask
+	if len(reqs) == 1 && coreutil.IsRotateCommitteeRequest(reqs[0]) {
+		vmTask = c.prepareRotateTask(reqs[0])
+	} else {
+		vmTask = c.prepareBatchTask(reqs)
+	}
+	if vmTask != nil {
+		c.workflow.vmStarted = true
+		go c.vmRunner.Run(vmTask)
+	}
+}
+
+func (c *consensus) prepareBatchTask(reqs []coretypes.Request) *vm.VMTask {
 	// here reqs as as set is deterministic. Must be sorted to have fully deterministic list
 	sort.Slice(reqs, func(i, j int) bool {
 		switch {
@@ -118,8 +133,8 @@ func (c *consensus) runVMIfNeeded() {
 		Log:                c.log,
 	}
 	if !task.SolidStateBaseline.IsValid() {
-		c.log.Debugf("runVMIfNeeded: solid state baseline is invalid. Not even start VM")
-		return
+		c.log.Debugf("runVMIfNeeded: solid state baseline is invalid. Do not even start the VM")
+		return nil
 	}
 	task.OnFinish = func(_ dict.Dict, _ error, vmError error) {
 		if vmError != nil {
@@ -130,9 +145,11 @@ func (c *consensus) runVMIfNeeded() {
 			Task: task,
 		})
 	}
+	return task
+}
 
-	c.workflow.vmStarted = true
-	go c.vmRunner.Run(task)
+func (c *consensus) prepareRotateTask(req coretypes.Request) *vm.VMTask {
+	return nil
 }
 
 const postSeqStepMilliseconds = 1000
