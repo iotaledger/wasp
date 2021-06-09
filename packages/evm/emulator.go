@@ -95,14 +95,14 @@ func (e *EVMEmulator) Commit() {
 	e.Rollback()
 }
 
-func (e *EVMEmulator) newBlock(f func(int, *core.BlockGen)) *types.Block {
-	blocks, _ := core.GenerateChain(e.blockchain.Config(), e.blockchain.CurrentBlock(), ethash.NewFaker(), e.database, 1, f)
-	return blocks[0]
+func (e *EVMEmulator) newBlock(f func(int, *core.BlockGen)) (*types.Block, []*types.Receipt) {
+	blocks, receipts := core.GenerateChain(e.blockchain.Config(), e.blockchain.CurrentBlock(), ethash.NewFaker(), e.database, 1, f)
+	return blocks[0], receipts[0]
 }
 
 // Rollback aborts all pending transactions, reverting to the last committed state.
 func (e *EVMEmulator) Rollback() {
-	e.pendingBlock = e.newBlock(func(int, *core.BlockGen) {})
+	e.pendingBlock, _ = e.newBlock(func(int, *core.BlockGen) {})
 	e.pendingState, _ = state.New(e.pendingBlock.Root(), e.blockchain.StateCache(), nil)
 }
 
@@ -467,17 +467,17 @@ func (e *EVMEmulator) callContract(call ethereum.CallMsg, block *types.Block, st
 
 // SendTransaction updates the pending block to include the given transaction.
 // It returns an error if the transaction is invalid.
-func (e *EVMEmulator) SendTransaction(tx *types.Transaction) error {
+func (e *EVMEmulator) SendTransaction(tx *types.Transaction) (uint64, error) {
 	sender, err := types.Sender(types.NewEIP155Signer(e.blockchain.Config().ChainID), tx)
 	if err != nil {
-		return xerrors.Errorf("invalid transaction: %w", err)
+		return 0, xerrors.Errorf("invalid transaction: %w", err)
 	}
 	nonce := e.pendingState.GetNonce(sender)
 	if tx.Nonce() != nonce {
-		return xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
+		return 0, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
-	block := e.newBlock(func(number int, block *core.BlockGen) {
+	block, receipts := e.newBlock(func(number int, block *core.BlockGen) {
 		for _, pendingTx := range e.pendingBlock.Transactions() {
 			block.AddTxWithChain(e.blockchain, pendingTx)
 		}
@@ -488,7 +488,7 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction) error {
 	e.pendingBlock = block
 	e.pendingState, _ = state.New(e.pendingBlock.Root(), stateDB.Database(), nil)
 
-	return nil
+	return receipts[len(receipts)-1].GasUsed, nil
 }
 
 // AdjustTime adds a time shift to the simulated clock.
@@ -498,7 +498,7 @@ func (e *EVMEmulator) AdjustTime(adjustment time.Duration) error {
 		return errors.New("Could not adjust time on non-empty block")
 	}
 
-	block := e.newBlock(func(number int, block *core.BlockGen) {
+	block, _ := e.newBlock(func(number int, block *core.BlockGen) {
 		block.OffsetTime(int64(adjustment.Seconds()))
 	})
 	stateDB, _ := e.blockchain.State()

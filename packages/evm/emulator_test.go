@@ -32,7 +32,7 @@ func sendTransaction(t *testing.T, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	)
 	require.NoError(t, err)
 
-	err = emu.SendTransaction(tx)
+	_, err = emu.SendTransaction(tx)
 	require.NoError(t, err)
 	emu.Commit()
 
@@ -206,7 +206,7 @@ func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	)
 	require.NoError(t, err)
 
-	err = emu.SendTransaction(tx)
+	_, err = emu.SendTransaction(tx)
 	require.NoError(t, err)
 	emu.Commit()
 

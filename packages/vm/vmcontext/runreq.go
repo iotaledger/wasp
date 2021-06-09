@@ -64,6 +64,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 			default:
 				vmctx.lastResult = nil
 				vmctx.lastError = xerrors.Errorf("panic in VM: %v", r)
+				vmctx.Debugf("%v", vmctx.lastError)
 				vmctx.Debugf(string(debug.Stack()))
 			}
 		}()

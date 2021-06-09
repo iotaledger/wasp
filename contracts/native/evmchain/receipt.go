@@ -28,14 +28,14 @@ type Receipt struct {
 	Status            uint64
 }
 
-func NewReceipt(r *types.Receipt, from common.Address, to *common.Address) *Receipt {
+func NewReceipt(r *types.Receipt, tx *types.Transaction) *Receipt {
 	ret := &Receipt{
 		TxHash:            r.TxHash,
 		TransactionIndex:  uint32(r.TransactionIndex),
 		BlockHash:         r.BlockHash,
 		BlockNumber:       r.BlockNumber,
-		From:              from,
-		To:                to,
+		From:              getSender(tx),
+		To:                tx.To(),
 		CumulativeGasUsed: r.CumulativeGasUsed,
 		GasUsed:           r.GasUsed,
 		Logs:              r.Logs,

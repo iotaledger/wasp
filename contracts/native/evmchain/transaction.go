@@ -6,8 +6,10 @@ package evmchain
 import (
 	"bytes"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/iotaledger/wasp/packages/evm"
 )
 
 func EncodeTransaction(tx *types.Transaction) []byte {
@@ -23,4 +25,9 @@ func DecodeTransaction(b []byte) (*types.Transaction, error) {
 	tx := new(types.Transaction)
 	err := tx.DecodeRLP(rlp.NewStream(bytes.NewReader(b), 0))
 	return tx, err
+}
+
+func getSender(tx *types.Transaction) common.Address {
+	sender, _ := types.Sender(evm.Signer(), tx)
+	return sender
 }

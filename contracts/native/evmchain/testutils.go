@@ -108,12 +108,12 @@ func DeployEVMContract(t *testing.T, chain *solo.Chain, env *solo.Solo, creator 
 func createCallFnWithGasLimit(t *testing.T, chain *solo.Chain, env *solo.Solo, contractABI abi.ABI, contractAddress common.Address, sender *ecdsa.PrivateKey, name string, args ...interface{}) contractFnCallerWithGasLimit {
 	senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
-	nonce := getNonceFor(t, chain, senderAddress)
-
 	callArguments, err := contractABI.Pack(name, args...)
 	require.NoError(t, err)
 
 	return func(userWallet *ed25519.KeyPair, iotas uint64, gaslimit uint64) (*Receipt, uint64, error) {
+		nonce := getNonceFor(t, chain, senderAddress)
+
 		unsignedTx := types.NewTransaction(nonce, contractAddress, big.NewInt(0), gaslimit, evm.GasPrice, callArguments)
 
 		tx, err := types.SignTx(
@@ -141,8 +141,16 @@ func createCallFnWithGasLimit(t *testing.T, chain *solo.Chain, env *solo.Solo, c
 		gasFee, _, err := codec.DecodeUint64(result.MustGet(FieldGasFee))
 		require.NoError(t, err)
 
-		receipt, err := DecodeReceipt(result.MustGet(FieldResult))
+		gasUsed, _, err := codec.DecodeUint64(result.MustGet(FieldGasUsed))
 		require.NoError(t, err)
+
+		receiptResult, err := chain.CallView(Interface.Name, FuncGetReceipt, FieldTransactionHash, tx.Hash().Bytes())
+		require.NoError(t, err)
+
+		receipt, err := DecodeReceipt(receiptResult.MustGet(FieldResult))
+		require.NoError(t, err)
+
+		require.LessOrEqual(t, receipt.GasUsed, gasUsed)
 
 		return receipt, gasFee, nil
 	}

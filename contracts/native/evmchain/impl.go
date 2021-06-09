@@ -28,6 +28,20 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 }
 
 func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
+	bctx := ctx.BlockContext(
+		func(sandbox coretypes.Sandbox) interface{} {
+			// This is the first request in the ISCP block => initialize the EVM emulator
+			return emulator(ctx.State())
+		},
+		func(bctx interface{}) {
+			// This is the last request in the ISCP block => close the EVM emulator and
+			// commit the Ethereum block
+			emu := bctx.(*evm.EVMEmulator)
+			emu.Commit()
+			emu.Close()
+		},
+	)
+
 	a := assert.NewAssert(ctx.Log())
 
 	tx := &types.Transaction{}
@@ -52,32 +66,17 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 		"transferred tokens (%d) not enough to cover the gas limit set in the transaction (%d at %d gas per iota token)", transferredIotas, tx.Gas(), gasPerIota,
 	)
 
-	// TODO: use block context
-	emu := emulator(ctx.State())
-	defer emu.Close()
+	emu := bctx.(*evm.EVMEmulator)
 
-	err = emu.SendTransaction(tx)
+	usedGas, err := emu.SendTransaction(tx)
 	if err != nil {
 		ctx.Log().Infof("transaction failed: %s", err.Error())
 		return nil, nil
 	}
 
-	// TODO: commit the pending ethereum block when closing the ISCP block
-	emu.Commit()
+	iotasGasFee := usedGas / gasPerIota
 
-	receipt, err := emu.TransactionReceipt(tx.Hash())
-	a.RequireNoError(err)
-
-	var signer types.Signer = types.FrontierSigner{}
-	if tx.Protected() {
-		signer = types.NewEIP155Signer(tx.ChainId())
-	}
-	from, _ := types.Sender(signer, tx)
-
-	receiptBytes := NewReceipt(receipt, from, tx.To()).Bytes()
-
-	iotasGasFee := receipt.GasUsed / gasPerIota
-
+	// should not happen because usedGas <= tx.Gas() (gas limit)
 	a.Require(
 		transferredIotas >= iotasGasFee,
 		"transferred tokens (%d) not enough to pay the consumed gas fees (%d)", transferredIotas, iotasGasFee,
@@ -91,11 +90,10 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	_, err = ctx.Call(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), params, coretypes.NewTransferIotas(iotasGasRefund))
 	a.RequireNoError(err)
 
-	ret := dict.New()
-	ret.Set(FieldResult, receiptBytes)
-	ret.Set(FieldGasFee, codec.EncodeUint64(iotasGasFee))
-
-	return ret, nil
+	return dict.Dict{
+		FieldGasFee:  codec.EncodeUint64(iotasGasFee),
+		FieldGasUsed: codec.EncodeUint64(usedGas),
+	}, nil
 }
 
 func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
@@ -179,13 +177,7 @@ func getReceipt(ctx coretypes.SandboxView) (dict.Dict, error) {
 		receipt, err := emu.TransactionReceipt(tx.Hash())
 		a.RequireNoError(err)
 
-		var signer types.Signer = types.FrontierSigner{}
-		if tx.Protected() {
-			signer = types.NewEIP155Signer(tx.ChainId())
-		}
-		from, _ := types.Sender(signer, tx)
-
-		return result(NewReceipt(receipt, from, tx.To()).Bytes())
+		return result(NewReceipt(receipt, tx).Bytes())
 	})
 }
 

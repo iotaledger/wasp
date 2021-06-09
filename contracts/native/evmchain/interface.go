@@ -100,6 +100,7 @@ const (
 	FieldNextEvmOwner            = "n"
 	FieldGasPerIota              = "w"
 	FieldGasFee                  = "f"
+	FieldGasUsed                 = "gu"
 )
 
 const DefaultGasPerIota uint64 = 1000
