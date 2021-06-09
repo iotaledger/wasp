@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	Name        = "test_sandbox"
-	description = "Test Sandbox functions"
+	Name        = "testcore"
+	description = "Test Core Sandbox functions"
 )
 
 var (

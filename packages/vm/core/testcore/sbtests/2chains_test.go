@@ -59,16 +59,22 @@ func test2Chains(t *testing.T, w bool) {
 	chain2.AssertOwnersIotas(2 + extraToken2)
 	chain2.AssertTotalIotas(3 + extraToken2)
 
-	req = solo.NewCallParams(sbtestsc.Name, sbtestsc.FuncWithdrawToChain,
+	req = solo.NewCallParams(ScName, sbtestsc.FuncWithdrawToChain,
 		sbtestsc.ParamChainID, chain1.ChainID,
 	).WithIotas(1)
 
 	_, err = chain2.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	time.Sleep(500 * time.Millisecond)
-	chain1.WaitForEmptyBacklog()
-	chain2.WaitForEmptyBacklog()
+	//time.Sleep(1 * time.Second)
+	//chain1.WaitForEmptyBacklog()
+	//chain2.WaitForEmptyBacklog()
+	extra := 0
+	if w {
+		extra = 1
+	}
+	require.True(t, chain1.WaitForRequestsThrough(5+extra, 10*time.Second))
+	require.True(t, chain2.WaitForRequestsThrough(5+extra, 10*time.Second))
 
 	env.AssertAddressIotas(userAddress, solo.Saldo-42-1)
 

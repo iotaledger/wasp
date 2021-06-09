@@ -190,7 +190,7 @@ func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 	}
 }
 
-const traceInOut = false
+const traceInOut = true
 
 func (m *mempool) traceIn(req coretypes.Request) {
 	tl := req.TimeLock()

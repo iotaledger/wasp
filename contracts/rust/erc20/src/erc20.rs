@@ -157,7 +157,7 @@ pub fn view_allowance(ctx: &ScViewContext) {
     // all allowances of the address 'owner' are stored in the map of the same name
     let allowances = ctx.state().get_map(&param_account.value());
     let allow = allowances.get_int64(&param_delegation.value()).value();
-    ctx.results().get_int64(PARAM_AMOUNT).set_value(allow);
+    ctx.results().get_int64(RESULT_AMOUNT).set_value(allow);
     ctx.trace("erc20.allowance ok");
 }
 
@@ -172,7 +172,7 @@ pub fn view_balance_of(ctx: &ScViewContext) {
 
     let balances = ctx.state().get_map(VAR_BALANCES);
     let balance = balances.get_int64(&param_account.value()).value();
-    ctx.results().get_int64(PARAM_AMOUNT).set_value(balance);
+    ctx.results().get_int64(RESULT_AMOUNT).set_value(balance);
     ctx.trace("erc20.balanceOf ok");
 }
 
@@ -182,6 +182,6 @@ pub fn view_balance_of(ctx: &ScViewContext) {
 pub fn view_total_supply(ctx: &ScViewContext) {
     ctx.trace("erc20.totalSupply");
     let supply = ctx.state().get_int64(VAR_SUPPLY).value();
-    ctx.results().get_int64(PARAM_SUPPLY).set_value(supply);
+    ctx.results().get_int64(RESULT_SUPPLY).set_value(supply);
     ctx.trace("erc20.totalSupply ok");
 }

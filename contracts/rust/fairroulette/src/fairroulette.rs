@@ -361,7 +361,7 @@ pub fn view_last_winning_number(ctx: &ScViewContext) {
 
     // Set the value associated with the 'lastWinningNumber' key to the value
     // we got from state storage
-    results.get_int64(VAR_LAST_WINNING_NUMBER).set_value(last_winning_number);
+    results.get_int64(RESULT_LAST_WINNING_NUMBER).set_value(last_winning_number);
 
     // Finally, we log the fact that we have successfully completed execution
     // of the 'lastWinningNumber' View in the log on the host.
