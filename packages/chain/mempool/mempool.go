@@ -113,7 +113,7 @@ func (m *mempool) addToPool(req coretypes.Request) bool {
 		}
 	}
 	reqid := req.ID()
-	rotateRequest := coreutil.IsRotateCommitteeRequest(req)
+	rotateRequest := coreutil.IsSolidRotateCommitteeRequest(req)
 	// if it is a rotate committee request, it s not recorded in the state
 	if !rotateRequest {
 		m.stateReader.SetBaseline()

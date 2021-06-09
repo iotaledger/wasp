@@ -10,8 +10,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
-// IsRotateCommitteeRequest determines if request may be a committee rotation request
-func IsRotateCommitteeRequest(req coretypes.Request) bool {
+// IsSolidRotateCommitteeRequest determines if request may be a committee rotation request
+func IsSolidRotateCommitteeRequest(req coretypes.Request) bool {
 	targetContract, targetEP := req.Target()
 	if targetContract != CoreContractGovernanceHname {
 		return false

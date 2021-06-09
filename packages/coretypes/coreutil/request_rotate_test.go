@@ -14,5 +14,5 @@ func TestBasicRotateRequest(t *testing.T) {
 	kp, addr := testkey.GenKeyAddr()
 	req := NewRotateRequestOffLedger(addr, kp)
 	_, _ = req.SolidifyArgs(coretypes.NewInMemoryBlobCache())
-	require.True(t, IsRotateCommitteeRequest(req))
+	require.True(t, IsSolidRotateCommitteeRequest(req))
 }

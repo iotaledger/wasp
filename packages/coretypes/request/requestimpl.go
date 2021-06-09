@@ -5,6 +5,8 @@ import (
 	"io"
 	"time"
 
+	"go.uber.org/atomic"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -152,7 +154,7 @@ type RequestOnLedger struct {
 	outputObj       *ledgerstate.ExtendedLockedOutput
 	requestMetadata *RequestMetadata
 	senderAddress   ledgerstate.Address
-	solidArgs       dict.Dict
+	params          atomic.Value // this part is mutable
 }
 
 // implements coretypes.Request interface
@@ -212,7 +214,11 @@ func (req *RequestOnLedger) Output() ledgerstate.Output {
 
 // Params returns solid args if decoded already or nil otherwise
 func (req *RequestOnLedger) Params() (dict.Dict, bool) {
-	return req.solidArgs, req.solidArgs != nil
+	par := req.params.Load()
+	if par == nil {
+		return nil, false
+	}
+	return par.(dict.Dict), true
 }
 
 func (req *RequestOnLedger) SenderAccount() *coretypes.AgentID {
@@ -225,17 +231,18 @@ func (req *RequestOnLedger) SenderAddress() ledgerstate.Address {
 
 // SolidifyArgs return true if solidified successfully
 func (req *RequestOnLedger) SolidifyArgs(reg coretypes.BlobCache) (bool, error) {
-	if req.solidArgs != nil {
+	par := req.params.Load()
+	if par != nil {
 		return true, nil
 	}
 	solid, ok, err := req.requestMetadata.Args().SolidifyRequestArguments(reg)
 	if err != nil || !ok {
 		return ok, err
 	}
-	req.solidArgs = solid
-	if req.solidArgs == nil {
-		panic("req.solidArgs == nil")
+	if solid == nil {
+		panic("solid == nil")
 	}
+	req.params.Store(solid)
 	return true, nil
 }
 
@@ -285,7 +292,7 @@ type RequestOffLedger struct {
 	args       requestargs.RequestArgs
 	contract   coretypes.Hname
 	entryPoint coretypes.Hname
-	params     dict.Dict
+	params     atomic.Value // mutable
 	publicKey  ed25519.PublicKey
 	sender     ledgerstate.Address
 	signature  ed25519.Signature
@@ -418,7 +425,11 @@ func (req *RequestOffLedger) Output() ledgerstate.Output {
 }
 
 func (req *RequestOffLedger) Params() (dict.Dict, bool) {
-	return req.params, req.params != nil
+	par := req.params.Load()
+	if par == nil {
+		return nil, false
+	}
+	return par.(dict.Dict), true
 }
 
 func (req *RequestOffLedger) SenderAccount() *coretypes.AgentID {
@@ -434,17 +445,18 @@ func (req *RequestOffLedger) SenderAddress() ledgerstate.Address {
 
 // SolidifyArgs return true if solidified successfully
 func (req *RequestOffLedger) SolidifyArgs(reg coretypes.BlobCache) (bool, error) {
-	if req.params != nil {
+	par := req.params.Load()
+	if par != nil {
 		return true, nil
 	}
 	solid, ok, err := req.args.SolidifyRequestArguments(reg)
 	if err != nil || !ok {
 		return ok, err
 	}
-	req.params = solid
-	if req.params == nil {
-		panic("req.solidArgs == nil")
+	if solid == nil {
+		panic("solid == nil")
 	}
+	req.params.Store(solid)
 	return true, nil
 }
 
