@@ -1,13 +1,15 @@
 package sbtests
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func Test2Chains(t *testing.T) { run2(t, test2Chains) }
@@ -64,6 +66,7 @@ func test2Chains(t *testing.T, w bool) {
 	_, err = chain2.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
+	time.Sleep(500 * time.Millisecond)
 	chain1.WaitForEmptyBacklog()
 	chain2.WaitForEmptyBacklog()
 
