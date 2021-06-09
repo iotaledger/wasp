@@ -7,9 +7,10 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
@@ -74,11 +75,11 @@ func SetupDkgPregenerated(
 	threshold uint16,
 	peerNetIDs []string,
 	suite *pairing.SuiteBn256,
-) (ledgerstate.Address, []registry.DKShareRegistryProvider) {
+) (ledgerstate.Address, []coretypes.DKShareRegistryProvider) {
 	var err error
 	var serializedDks [][]byte = pregeneratedDksRead(uint16(len(peerNetIDs)))
 	dks := make([]*tcrypto.DKShare, len(serializedDks))
-	registries := make([]registry.DKShareRegistryProvider, len(peerNetIDs))
+	registries := make([]coretypes.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range dks {
 		dks[i], err = tcrypto.DKShareFromBytes(serializedDks[i], suite)
 		if i > 0 {

@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
-	"github.com/iotaledger/wasp/packages/registry"
 
 	"github.com/iotaledger/wasp/packages/util"
 
@@ -228,7 +228,6 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 		Log:       log,
 	}
 
-	ret.Consensus.vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	chainCore.OnReceiveMessage(func(msg interface{}) {
 		switch msg := msg.(type) {
 		case *chain.AsynchronousCommonSubsetMsg:
