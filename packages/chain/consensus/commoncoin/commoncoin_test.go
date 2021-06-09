@@ -4,6 +4,7 @@
 package commoncoin_test
 
 import (
+	"bytes"
 	"sync"
 	"testing"
 	"time"
@@ -14,7 +15,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -24,73 +24,51 @@ import (
 )
 
 func TestBasic(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	defer log.Sync()
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
-	log := testlogger.NewLogger(t)
-	defer log.Sync()
-	var peerCount uint16 = 10
-	var threshold uint16 = 7
-	suite := pairing.NewSuiteBn256()
-	peeringID := peering.RandomPeeringID()
-	peerNetIDs, peerPubs, peerSecs := testpeers.SetupKeys(peerCount, suite)
-	address, nodeRegistries := testpeers.SetupDkg(t, threshold, peerNetIDs, peerPubs, peerSecs, suite, log)
-	networkProviders := testpeers.SetupNet(peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(), log)
-	ccNodes := setupCommonCoinNodes(peeringID, address, peerNetIDs, nodeRegistries, networkProviders, log)
-	//
-	// Check, if the common coin algorithm works.
-	wg := sync.WaitGroup{}
-	wg.Add(len(peerNetIDs))
-	for i := range peerNetIDs {
-		ii := i
-		go func() {
-			log.Infof("CC[0,%v], Asking for a common coin.", ii)
-			var ccErr error
-			cc := make([]byte, 0)
-			for attempt := 0; attempt < 10; attempt++ {
-				start := time.Now()
-				cc, ccErr = ccNodes[ii].GetCoin(cc)
-				require.Nil(t, ccErr)
-				require.NotNil(t, cc)
-				log.Infof("CC[%v,%v]: %+v in %v", attempt, ii, base58.Encode(cc), time.Since(start))
-			}
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-	for i := range peerNetIDs {
-		require.Nil(t, ccNodes[i].Close())
-	}
+	testCC(t, testutil.NewPeeringNetReliable(), log)
 }
 
 func TestUnreliableNet(t *testing.T) {
+	log := testlogger.NewLogger(t)
+	defer log.Sync()
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
-	log := testlogger.NewLogger(t)
-	defer log.Sync()
-	var peerCount uint16 = 10
-	var threshold uint16 = 7
-	suite := pairing.NewSuiteBn256()
-	peeringID := peering.RandomPeeringID()
 	netBehavior := testutil.NewPeeringNetUnreliable( // NOTE: Network parameters.
 		80,                                         // Delivered %
 		20,                                         // Duplicated %
 		10*time.Millisecond, 1000*time.Millisecond, // Delays (from, till)
-		testlogger.WithLevel(log.Named("UnreliableNet"), logger.LevelDebug, false),
+		testlogger.WithLevel(log.Named("UnreliableNet"), logger.LevelWarn, false),
 	)
+	testCC(t, netBehavior, log)
+}
+
+func testCC(t *testing.T, netBehavior testutil.PeeringNetBehavior, log *logger.Logger) {
+	var peerCount uint16 = 10
+	var threshold uint16 = 7
+	suite := pairing.NewSuiteBn256()
+	peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerPubs, peerSecs := testpeers.SetupKeys(peerCount, suite)
-	address, nodeRegistries := testpeers.SetupDkg(t, threshold, peerNetIDs, peerPubs, peerSecs, suite, log)
+	address, nodeRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, suite)
 	networkProviders := testpeers.SetupNet(peerNetIDs, peerPubs, peerSecs, netBehavior, log)
 	ccNodes := setupCommonCoinNodes(peeringID, address, peerNetIDs, nodeRegistries, networkProviders, log)
 	//
 	// Check, if the common coin algorithm works.
 	wg := sync.WaitGroup{}
 	wg.Add(len(peerNetIDs))
+	ccResults := make([][][]byte, 10) // [attempt][node]Coin
+	for attempt := range ccResults {
+		ccResults[attempt] = make([][]byte, len(peerNetIDs))
+	}
+	ccDLock := &sync.RWMutex{}
+	ccDuration := make([]time.Duration, 0)
 	for i := range peerNetIDs {
 		ii := i
 		go func() {
-			log.Infof("CC[0,%v], Asking for a common coin.", ii)
 			var ccErr error
 			cc := make([]byte, 0)
 			for attempt := 0; attempt < 10; attempt++ {
@@ -98,12 +76,31 @@ func TestUnreliableNet(t *testing.T) {
 				cc, ccErr = ccNodes[ii].GetCoin(cc)
 				require.Nil(t, ccErr)
 				require.NotNil(t, cc)
-				log.Infof("CC[%v,%v]: %+v in %v", attempt, ii, base58.Encode(cc), time.Since(start))
+				ccResults[attempt][ii] = cc
+				ccDLock.Lock()
+				ccDuration = append(ccDuration, time.Since(start))
+				ccDLock.Unlock()
 			}
 			wg.Done()
 		}()
 	}
 	wg.Wait()
+	//
+	// Print duration.
+	ccDAwg := 0 * time.Millisecond
+	for i := range ccDuration {
+		ccDAwg = ccDAwg + ccDuration[i]
+	}
+	ccDAwg = time.Duration((int64(ccDAwg/time.Nanosecond) / int64(len(ccDuration)))) * time.Nanosecond
+	t.Logf("Average duration: %v", ccDAwg)
+	//
+	// Validate results.
+	for attempt := range ccResults {
+		for ii := range peerNetIDs {
+			require.NotNil(t, ccResults[attempt][ii])
+			require.True(t, bytes.Equal(ccResults[attempt][0], ccResults[attempt][ii]))
+		}
+	}
 	for i := range peerNetIDs {
 		require.Nil(t, ccNodes[i].Close())
 	}
