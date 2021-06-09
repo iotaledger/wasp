@@ -86,7 +86,11 @@ func (s *sandboxview) ContractCreator() *coretypes.AgentID {
 }
 
 func (s *sandboxview) GetTimestamp() int64 {
-	return s.vctx.stateReader.Timestamp().UnixNano()
+	ret, err := s.vctx.stateReader.Timestamp()
+	if err != nil {
+		s.Log().Panicf("%v", err)
+	}
+	return ret.UnixNano()
 }
 
 func (s *sandboxview) Log() coretypes.LogInterface {

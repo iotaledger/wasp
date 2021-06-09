@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/kv/optimism"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -191,13 +193,27 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, exists)
 
-		rdr, err := NewStateReader(store)
-		require.NoError(t, err)
+		glb := coreutil.NewChainStateSync()
+		glb.SetSolidIndex(0)
+		rdr := NewOptimisticStateReader(store, glb)
 
-		require.EqualValues(t, vs2.BlockIndex(), rdr.BlockIndex())
-		require.EqualValues(t, vs2.Timestamp(), rdr.Timestamp())
-		require.EqualValues(t, vs2.Hash().String(), rdr.Hash().String())
+		bi, err := rdr.BlockIndex()
+		require.NoError(t, err)
+		require.EqualValues(t, vs2.BlockIndex(), bi)
+
+		ts, err := rdr.Timestamp()
+		require.NoError(t, err)
+		require.EqualValues(t, vs2.Timestamp(), ts)
+
+		h, err := rdr.Hash()
+		require.NoError(t, err)
+		require.EqualValues(t, vs2.Hash(), h)
 		require.EqualValues(t, "value", string(rdr.KVStoreReader().MustGet("key")))
+
+		glb.InvalidateSolidIndex()
+		h, err = rdr.Hash()
+		require.Error(t, err)
+		require.EqualValues(t, err, optimism.ErrStateHasBeenInvalidated)
 	})
 }
 
@@ -233,8 +249,13 @@ func TestVariableStateBasic(t *testing.T) {
 func TestStateReader(t *testing.T) {
 	t.Run("state not found", func(t *testing.T) {
 		store := mapdb.NewMapDB()
-		st, err := NewStateReader(store)
+		chainID := coretypes.RandomChainID([]byte("1"))
+		_, err := CreateOriginState(store, chainID)
 		require.NoError(t, err)
+
+		glb := coreutil.NewChainStateSync()
+		glb.SetSolidIndex(0)
+		st := NewOptimisticStateReader(store, glb)
 		ok, err := st.KVStoreReader().Has("kuku")
 		require.NoError(t, err)
 		require.False(t, ok)

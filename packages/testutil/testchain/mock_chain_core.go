@@ -1,22 +1,27 @@
 package testchain
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"go.uber.org/atomic"
 )
 
 type MockedChainCore struct {
+	T                       *testing.T
 	chainID                 coretypes.ChainID
-	solidStateIndex         atomic.Uint32
 	processors              *processors.ProcessorCache
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
 	eventStateSynced        *events.Event
+	onGlobalStateSync       func() coreutil.ChainStateSync
+	onGetStateReader        func() state.OptimisticStateReader
 	onEventStateTransition  func(data *chain.StateTransitionEventData)
 	onEventRequestProcessed func(id coretypes.RequestID)
 	onEventStateSynced      func(id ledgerstate.OutputID, blockIndex uint32)
@@ -25,8 +30,9 @@ type MockedChainCore struct {
 	log                     *logger.Logger
 }
 
-func NewMockedChainCore(chainID coretypes.ChainID, log *logger.Logger) *MockedChainCore {
+func NewMockedChainCore(t *testing.T, chainID coretypes.ChainID, log *logger.Logger) *MockedChainCore {
 	ret := &MockedChainCore{
+		T:          t,
 		chainID:    chainID,
 		processors: processors.MustNew(),
 		log:        log,
@@ -39,15 +45,15 @@ func NewMockedChainCore(chainID coretypes.ChainID, log *logger.Logger) *MockedCh
 		eventStateSynced: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(outputID ledgerstate.OutputID, blockIndex uint32))(params[0].(ledgerstate.OutputID), params[1].(uint32))
 		}),
-		onEventStateTransition: func(msg *chain.StateTransitionEventData) {
-			chain.LogStateTransition(msg, log)
-		},
 		onEventRequestProcessed: func(id coretypes.RequestID) {
 			log.Infof("onEventRequestProcessed: %s", id)
 		},
 		onEventStateSynced: func(outputID ledgerstate.OutputID, blockIndex uint32) {
 			chain.LogSyncedEvent(outputID, blockIndex, log)
 		},
+	}
+	ret.onEventStateTransition = func(msg *chain.StateTransitionEventData) {
+		chain.LogStateTransition(msg, nil, log)
 	}
 	ret.eventStateTransition.Attach(events.NewClosure(func(data *chain.StateTransitionEventData) {
 		ret.onEventStateTransition(data)
@@ -61,12 +67,20 @@ func NewMockedChainCore(chainID coretypes.ChainID, log *logger.Logger) *MockedCh
 	return ret
 }
 
+func (m *MockedChainCore) Log() *logger.Logger {
+	return m.log
+}
+
 func (m *MockedChainCore) ID() *coretypes.ChainID {
 	return &m.chainID
 }
 
-func (c *MockedChainCore) GlobalSolidIndex() *atomic.Uint32 {
-	return &c.solidStateIndex
+func (c *MockedChainCore) GlobalStateSync() coreutil.ChainStateSync {
+	return c.onGlobalStateSync()
+}
+
+func (m *MockedChainCore) GetStateReader() state.OptimisticStateReader {
+	return m.onGetStateReader()
 }
 
 func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {
@@ -111,4 +125,12 @@ func (m *MockedChainCore) OnReceiveMessage(f func(i interface{})) {
 
 func (m *MockedChainCore) OnStateSynced(f func(out ledgerstate.OutputID, blockIndex uint32)) {
 	m.onEventStateSynced = f
+}
+
+func (m *MockedChainCore) OnGetStateReader(f func() state.OptimisticStateReader) {
+	m.onGetStateReader = f
+}
+
+func (m *MockedChainCore) OnGlobalStateSync(f func() coreutil.ChainStateSync) {
+	m.onGlobalStateSync = f
 }

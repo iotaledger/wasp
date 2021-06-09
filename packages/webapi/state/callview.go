@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/kv/optimism"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -12,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/plugins/chains"
-	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
@@ -44,24 +45,21 @@ func handleCallView(c echo.Context) error {
 	fname := c.Param("fname")
 
 	var params dict.Dict
-	// for some reason c.Bind(&params) doesn't work
 	if c.Request().Body != nil {
 		if err := json.NewDecoder(c.Request().Body).Decode(&params); err != nil {
 			return httperrors.BadRequest("Invalid request body")
 		}
 	}
-
 	theChain := chains.AllChains().Get(chainID)
 	if theChain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
-
-	vctx, err := viewcontext.NewFromDB(database.GetKVStore(theChain.ID()), *theChain.ID(), theChain.Processors())
-	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
-	}
-
-	ret, err := vctx.CallView(contractHname, coretypes.Hn(fname), params)
+	vctx := viewcontext.NewFromChain(theChain)
+	var ret dict.Dict
+	_ = optimism.RepeatOnceIfUnlucky(func() error {
+		ret, err = vctx.CallView(contractHname, coretypes.Hn(fname), params)
+		return err
+	})
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("View call failed: %v", err))
 	}

@@ -1,7 +1,4 @@
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
-
-package consensus_test
+package consensus
 
 import (
 	"bytes"
@@ -10,6 +7,23 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/registry"
+
+	"github.com/iotaledger/wasp/packages/util"
+
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/transaction"
+
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/solo"
+
+	"github.com/iotaledger/wasp/packages/testutil"
+
+	"go.dedis.ch/kyber/v3"
+
+	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
@@ -20,23 +34,12 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
-	"github.com/iotaledger/wasp/packages/chain/consensus"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.uber.org/zap/zapcore"
 )
@@ -58,7 +61,7 @@ type mockedEnv struct {
 	DKSRegistries     []registry.DKShareRegistryProvider
 	store             kvstore.KVStore
 	SolidState        state.VirtualState
-	StateReader       state.StateReader
+	GlobalSync        coreutil.ChainStateSync
 	StateOutput       *ledgerstate.AliasOutput
 	RequestIDsLast    []coretypes.RequestID
 	NodeConn          []*testchain.MockedNodeConn
@@ -102,15 +105,16 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 	}
 
 	ret := &mockedEnv{
-		Suite:     pairing.NewSuiteBn256(),
-		T:         t,
-		N:         n,
-		Quorum:    quorum,
-		Neighbors: neighbors,
-		Log:       log,
-		Ledger:    utxodb.New(),
-		NodeConn:  make([]*testchain.MockedNodeConn, n),
-		Nodes:     make([]*mockedNode, n),
+		Suite:      pairing.NewSuiteBn256(),
+		T:          t,
+		N:          n,
+		Quorum:     quorum,
+		Neighbors:  neighbors,
+		Log:        log,
+		Ledger:     utxodb.New(),
+		NodeConn:   make([]*testchain.MockedNodeConn, n),
+		Nodes:      make([]*mockedNode, n),
+		GlobalSync: coreutil.NewChainStateSync(),
 	}
 	if mockACS {
 		ret.MockedACS = testchain.NewMockedACSRunner(quorum, log)
@@ -170,8 +174,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 
 	ret.store = mapdb.NewMapDB()
 	ret.SolidState, err = state.CreateOriginState(ret.store, &ret.ChainID)
-	require.NoError(t, err)
-	ret.StateReader, err = state.NewStateReader(ret.store)
+	ret.GlobalSync.SetSolidIndex(0)
 	require.NoError(t, err)
 
 	for i := range ret.Nodes {
@@ -182,8 +185,14 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 
 func (env *mockedEnv) newNode(i uint16) *mockedNode {
 	log := env.Log.Named(fmt.Sprintf("%d", i))
-	chainCore := testchain.NewMockedChainCore(env.ChainID, log)
-	mpool := mempool.New(env.StateReader, coretypes.NewInMemoryBlobCache(), log)
+	chainCore := testchain.NewMockedChainCore(env.T, env.ChainID, log)
+	chainCore.OnGlobalStateSync(func() coreutil.ChainStateSync {
+		return env.GlobalSync
+	})
+	chainCore.OnGetStateReader(func() state.OptimisticStateReader {
+		return state.NewOptimisticStateReader(env.store, env.GlobalSync)
+	})
+	mpool := mempool.New(chainCore.GetStateReader(), coretypes.NewInMemoryBlobCache(), log)
 	mockCommitteeRegistry := testchain.NewMockedCommitteeRegistry(env.Neighbors)
 	cfg, err := peering.NewStaticPeerNetworkConfigProvider(env.Neighbors[i], 4000+int(i), env.Neighbors...)
 	require.NoError(env.T, err)
@@ -315,7 +324,7 @@ func (env *mockedEnv) eventStateTransition() {
 	for _, node := range env.Nodes {
 		go func(n *mockedNode) {
 			n.Mempool.RemoveRequests(env.RequestIDsLast...)
-			n.ChainCore.GlobalSolidIndex().Store(solidState.BlockIndex())
+			n.ChainCore.GlobalStateSync().SetSolidIndex(solidState.BlockIndex())
 
 			n.Consensus.EventStateTransitionMsg(&chain.StateTransitionMsg{
 				State:          solidState.Clone(),
@@ -400,7 +409,7 @@ func (n *mockedNode) WaitMempool(numRequests int, timeout time.Duration) error {
 			time.Sleep(10 * time.Millisecond)
 			continue
 		}
-		if snap.Mempool.InCounter >= numRequests && snap.Mempool.OutCounter >= numRequests {
+		if snap.Mempool.InPoolCounter >= numRequests && snap.Mempool.OutPoolCounter >= numRequests {
 			return nil
 		}
 		if time.Now().After(deadline) {

@@ -1,14 +1,15 @@
 package micropay
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestBasics(t *testing.T) {
@@ -205,6 +206,7 @@ func TestRevokeWarrant(t *testing.T) {
 	require.True(t, exists)
 
 	env.AdvanceClockBy(31 * time.Minute)
+	time.Sleep(1 * time.Second)
 	chain.WaitForEmptyBacklog()
 
 	ret, err = chain.CallView("micropay", FuncGetChannelInfo,

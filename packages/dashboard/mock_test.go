@@ -4,7 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"go.uber.org/atomic"
+	"github.com/iotaledger/hive.go/logger"
+
+	"github.com/iotaledger/wasp/packages/state"
+
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -44,7 +48,7 @@ func (w *waspServices) NetworkProvider() peering.NetworkProvider {
 	return &peeringNetworkProvider{}
 }
 
-func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.Chain {
+func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.ChainCore {
 	return &mockChain{}
 }
 
@@ -148,7 +152,7 @@ func (p *peeringNode) Close() {
 	panic("not implemented")
 }
 
-func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
+func (w *waspServices) CallView(chain chain.ChainCore, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
 	chainID := chain.ID()
 
 	contract := &root.ContractRecord{
@@ -223,7 +227,15 @@ func (w *waspServices) CallView(chain chain.Chain, hname coretypes.Hname, fname 
 
 type mockChain struct{}
 
-func (m *mockChain) GlobalSolidIndex() *atomic.Uint32 {
+func (m *mockChain) Log() *logger.Logger {
+	panic("implement me")
+}
+
+func (m *mockChain) GlobalStateSync() coreutil.ChainStateSync {
+	panic("implement me")
+}
+
+func (m *mockChain) GetStateReader() state.OptimisticStateReader {
 	panic("implement me")
 }
 

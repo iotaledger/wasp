@@ -1,12 +1,13 @@
 package inccounter
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 const incName = "incTest"
@@ -88,6 +89,7 @@ func TestIncWith1Post(t *testing.T) {
 	// advance logical clock to unlock that timelocked request
 	env.AdvanceClockBy(6 * time.Second)
 
+	time.Sleep(1 * time.Second)
 	chain.WaitForEmptyBacklog()
 	checkCounter(chain, 19)
 

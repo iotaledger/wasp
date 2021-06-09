@@ -26,7 +26,7 @@ type RootInfo struct {
 	DefaultValidatorFee uint64
 }
 
-func (d *Dashboard) fetchRootInfo(chain chain.Chain) (ret RootInfo, err error) {
+func (d *Dashboard) fetchRootInfo(chain chain.ChainCore) (ret RootInfo, err error) {
 	info, err := d.wasp.CallView(chain, root.Interface.Hname(), root.FuncGetChainInfo, nil)
 	if err != nil {
 		err = fmt.Errorf("root view call failed: %v", err)

@@ -5,6 +5,11 @@ package test
 
 import (
 	"fmt"
+	"sort"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/iotaledger/wasp/contracts/common"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -12,10 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
 	"github.com/stretchr/testify/require"
-	"sort"
-	"strings"
-	"testing"
-	"time"
 )
 
 func setupTest(t *testing.T) *solo.Chain {
@@ -37,8 +38,7 @@ func TestStateAfterDeploy(t *testing.T) {
 func TestIncrementOnce(t *testing.T) {
 	chain := setupTest(t)
 
-	req := solo.NewCallParams(ScName, FuncIncrement,
-	).WithIotas(1)
+	req := solo.NewCallParams(ScName, FuncIncrement).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -48,13 +48,11 @@ func TestIncrementOnce(t *testing.T) {
 func TestIncrementTwice(t *testing.T) {
 	chain := setupTest(t)
 
-	req := solo.NewCallParams(ScName, FuncIncrement,
-	).WithIotas(1)
+	req := solo.NewCallParams(ScName, FuncIncrement).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	req = solo.NewCallParams(ScName, FuncIncrement,
-	).WithIotas(1)
+	req = solo.NewCallParams(ScName, FuncIncrement).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -70,6 +68,7 @@ func TestIncrementRepeatThrice(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
+	time.Sleep(1 * time.Second)
 	chain.WaitForEmptyBacklog()
 
 	checkStateCounter(t, chain, 4)
@@ -78,8 +77,7 @@ func TestIncrementRepeatThrice(t *testing.T) {
 func TestIncrementCallIncrement(t *testing.T) {
 	chain := setupTest(t)
 
-	req := solo.NewCallParams(ScName, FuncCallIncrement,
-	).WithIotas(1)
+	req := solo.NewCallParams(ScName, FuncCallIncrement).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -89,8 +87,7 @@ func TestIncrementCallIncrement(t *testing.T) {
 func TestIncrementCallIncrementRecurse5x(t *testing.T) {
 	chain := setupTest(t)
 
-	req := solo.NewCallParams(ScName, FuncCallIncrementRecurse5x,
-	).WithIotas(1)
+	req := solo.NewCallParams(ScName, FuncCallIncrementRecurse5x).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -100,11 +97,11 @@ func TestIncrementCallIncrementRecurse5x(t *testing.T) {
 func TestIncrementPostIncrement(t *testing.T) {
 	chain := setupTest(t)
 
-	req := solo.NewCallParams(ScName, FuncPostIncrement,
-	).WithIotas(1)
+	req := solo.NewCallParams(ScName, FuncPostIncrement).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
+	time.Sleep(1 * time.Second)
 	chain.WaitForEmptyBacklog()
 
 	checkStateCounter(t, chain, 2)
@@ -113,8 +110,7 @@ func TestIncrementPostIncrement(t *testing.T) {
 func TestIncrementLocalStateInternalCall(t *testing.T) {
 	chain := setupTest(t)
 
-	req := solo.NewCallParams(ScName, FuncLocalStateInternalCall,
-	).WithIotas(1)
+	req := solo.NewCallParams(ScName, FuncLocalStateInternalCall).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -124,8 +120,7 @@ func TestIncrementLocalStateInternalCall(t *testing.T) {
 func TestIncrementLocalStateSandboxCall(t *testing.T) {
 	chain := setupTest(t)
 
-	req := solo.NewCallParams(ScName, FuncLocalStateSandboxCall,
-	).WithIotas(1)
+	req := solo.NewCallParams(ScName, FuncLocalStateSandboxCall).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -136,8 +131,7 @@ func TestIncrementLocalStateSandboxCall(t *testing.T) {
 func TestIncrementLocalStatePost(t *testing.T) {
 	chain := setupTest(t)
 
-	req := solo.NewCallParams(ScName, FuncLocalStatePost,
-	).WithIotas(3)
+	req := solo.NewCallParams(ScName, FuncLocalStatePost).WithIotas(3)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -150,8 +144,7 @@ func TestIncrementLocalStatePost(t *testing.T) {
 func TestLeb128(t *testing.T) {
 	chain := setupTest(t)
 
-	req := solo.NewCallParams(ScName, FuncTestLeb128,
-	).WithIotas(1)
+	req := solo.NewCallParams(ScName, FuncTestLeb128).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	res, err := chain.CallView(
@@ -172,15 +165,13 @@ func TestLoop(t *testing.T) {
 	chain := setupTest(t)
 
 	wasmhost.WasmTimeout = 1 * time.Second
-	req := solo.NewCallParams(ScName, FuncLoop,
-	).WithIotas(1)
+	req := solo.NewCallParams(ScName, FuncLoop).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 	errText := err.Error()
 	require.True(t, strings.Contains(errText, "interrupt"))
 
-	req = solo.NewCallParams(ScName, FuncIncrement,
-	).WithIotas(1)
+	req = solo.NewCallParams(ScName, FuncIncrement).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 

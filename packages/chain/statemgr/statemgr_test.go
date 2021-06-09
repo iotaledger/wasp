@@ -198,7 +198,7 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 		env.AddNode(catchingNodes[i])
 	}
 	for i := 0; i < numberOfCatchingPeers; i++ {
-		waitSyncBlockIndexAndCheck(20*time.Second, t, catchingNodes[i], targetBlockIndex)
+		waitSyncBlockIndexAndCheck(30*time.Second, t, catchingNodes[i], targetBlockIndex)
 	}
 }
 

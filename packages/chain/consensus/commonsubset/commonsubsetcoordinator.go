@@ -22,7 +22,7 @@ const (
 // instances and to implement the AsynchronousCommonSubsetRunner interface.
 //
 // The main functions:
-//   - Start new CommonSubset instances.
+//   - Check new CommonSubset instances.
 //   - Terminate outdated CommonSubset instances.
 //   - Dispatch incoming messages to appropriate instances.
 //

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -51,6 +53,7 @@ type MockedNode struct {
 	store           kvstore.KVStore
 	NodeConn        *testchain.MockedNodeConn
 	ChainCore       *testchain.MockedChainCore
+	stateSync       coreutil.ChainStateSync
 	Peers           peering.PeerDomainProvider
 	StateManager    chain.StateManager
 	StateTransition *testchain.MockedStateTransition
@@ -183,11 +186,18 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers Timers) *MockedNode {
 		Env:       env,
 		NodeConn:  testchain.NewMockedNodeConnection("Node_" + nodeID),
 		store:     mapdb.NewMapDB(),
-		ChainCore: testchain.NewMockedChainCore(env.ChainID, log),
+		stateSync: coreutil.NewChainStateSync(),
+		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, log),
 		Peers:     peers,
 		Log:       log,
 	}
-	ret.StateManager = New(ret.store, ret.ChainCore, ret.Peers, ret.NodeConn, log, timers)
+	ret.ChainCore.OnGlobalStateSync(func() coreutil.ChainStateSync {
+		return ret.stateSync
+	})
+	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
+		return state.NewOptimisticStateReader(ret.store, ret.stateSync)
+	})
+	ret.StateManager = New(ret.store, ret.ChainCore, ret.Peers, ret.NodeConn, timers)
 	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualState, tx *ledgerstate.Transaction) {
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
@@ -274,7 +284,7 @@ func (node *MockedNode) WaitSyncBlockIndex(index uint32, timeout time.Duration) 
 
 func (node *MockedNode) OnStateTransitionMakeNewStateTransition(limit uint32) {
 	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
-		chain.LogStateTransition(msg, node.Log)
+		chain.LogStateTransition(msg, nil, node.Log)
 		if msg.ChainOutput.GetStateIndex() < limit {
 			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput, time.Now())
 		}
