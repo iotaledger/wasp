@@ -89,7 +89,7 @@ func TestIncWith1Post(t *testing.T) {
 
 	// advance logical clock to unlock that timelocked request
 	env.AdvanceClockBy(6 * time.Second)
-	chain.WaitForEmptyBacklog()
+	require.True(t, chain.WaitForRequestsThrough(4))
 
 	checkCounter(chain, 19)
 	chain.CheckAccountLedger()
