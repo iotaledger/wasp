@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/registry"
 
 	"github.com/iotaledger/wasp/packages/util"
@@ -202,7 +203,7 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 	if env.MockedACS != nil {
 		acs = append(acs, env.MockedACS)
 	}
-	committee, err := committee.New(
+	cmt, err := committee.New(
 		env.StateAddress,
 		&env.ChainID,
 		env.NetworkProviders[i],
@@ -214,13 +215,15 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 	)
 	require.NoError(env.T, err)
 
-	committee.Attach(chainCore)
+	cmt.Attach(chainCore)
+	cons := New(chainCore, mpool, cmt, env.NodeConn[i])
+	cons.vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret := &mockedNode{
 		OwnIndex:  i,
 		Env:       env,
 		ChainCore: chainCore,
 		Mempool:   mpool,
-		Consensus: consensus.New(chainCore, mpool, committee, env.NodeConn[i], testchain.NewMockedVMRunner(env.T, log), log),
+		Consensus: cons,
 		Log:       log,
 	}
 
@@ -297,7 +300,7 @@ func (env *mockedEnv) checkStateApproval(from uint16) {
 	env.Log.Infof("STATE APPROVED (%d reqs). Index: %d, State output: %s (from node #%d)",
 		len(env.RequestIDsLast), env.SolidState.BlockIndex(), coretypes.OID(env.StateOutput.ID()), from)
 
-	env.eventStateTransition()
+	env.EventStateTransition()
 }
 
 func (env *mockedNode) processPeerMessage(msg *peering.PeerMessage) {
@@ -315,8 +318,8 @@ func (env *mockedNode) processPeerMessage(msg *peering.PeerMessage) {
 	}
 }
 
-func (env *mockedEnv) eventStateTransition() {
-	env.Log.Debugf("eventStateTransition")
+func (env *mockedEnv) EventStateTransition() {
+	env.Log.Debugf("EventStateTransition")
 	nowis := time.Now()
 	solidState := env.SolidState.Clone()
 	stateOutput := env.StateOutput
@@ -482,7 +485,7 @@ func (env *mockedEnv) getReqIDsForLastState() []coretypes.RequestID {
 	return ret
 }
 
-func (env *mockedEnv) postDummyRequests(n int, randomize ...bool) {
+func (env *mockedEnv) PostDummyRequests(n int, randomize ...bool) {
 	reqs := make([]coretypes.Request, n)
 	for i := 0; i < n; i++ {
 		reqs[i] = solo.NewCallParams("dummy", "dummy", "c", i).
