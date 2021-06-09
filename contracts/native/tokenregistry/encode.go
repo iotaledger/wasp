@@ -3,9 +3,10 @@
 package tokenregistry
 
 import (
+	"io"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
-	"io"
 )
 
 func (tm *TokenMetadata) Read(r io.Reader) error {

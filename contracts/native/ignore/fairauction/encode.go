@@ -3,9 +3,10 @@
 package fairauction
 
 import (
+	"io"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/util"
-	"io"
 )
 
 // serde of FairAction binary data

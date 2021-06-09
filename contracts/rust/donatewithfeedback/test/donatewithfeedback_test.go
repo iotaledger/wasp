@@ -4,13 +4,14 @@
 package test
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/common"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func setupTest(t *testing.T) *solo.Chain {

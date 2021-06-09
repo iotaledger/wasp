@@ -5,6 +5,7 @@ package wasmhost
 
 import (
 	"errors"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 )

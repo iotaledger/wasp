@@ -5,6 +5,7 @@ package wasmhost
 
 import (
 	"errors"
+
 	"github.com/bytecodealliance/wasmtime-go"
 )
 
