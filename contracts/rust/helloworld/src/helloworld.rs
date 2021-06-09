@@ -11,5 +11,5 @@ pub fn func_hello_world(ctx: &ScFuncContext) {
 
 pub fn view_get_hello_world(ctx: &ScViewContext) {
     ctx.log("Get 'Hello, world!'");
-    ctx.results().get_string(VAR_HELLO_WORLD).set_value("Hello, world!");
+    ctx.results().get_string(RESULT_HELLO_WORLD).set_value("Hello, world!");
 }

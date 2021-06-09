@@ -24,8 +24,7 @@ func TestDeploy(t *testing.T) {
 func TestFuncHelloWorld(t *testing.T) {
 	chain := setupTest(t)
 
-	req := solo.NewCallParams(ScName, FuncHelloWorld,
-	).WithIotas(1)
+	req := solo.NewCallParams(ScName, FuncHelloWorld).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 }
@@ -37,7 +36,7 @@ func TestViewGetHelloWorld(t *testing.T) {
 		ScName, ViewGetHelloWorld,
 	)
 	require.NoError(t, err)
-	hw, _, err := codec.DecodeString(res[VarHelloWorld])
+	hw, _, err := codec.DecodeString(res[ResultHelloWorld])
 	require.NoError(t, err)
 	require.EqualValues(t, "Hello, world!", hw)
 }
