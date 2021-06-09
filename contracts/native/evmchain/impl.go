@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
@@ -30,12 +29,11 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	bctx := ctx.BlockContext(
 		func(sandbox coretypes.Sandbox) interface{} {
-			// This is the first request in the ISCP block => initialize the EVM emulator
+			// This is the first call to applyTransaction in the ISCP block => initialize the EVM emulator
 			return emulator(ctx.State())
 		},
 		func(bctx interface{}) {
-			// This is the last request in the ISCP block => close the EVM emulator and
-			// commit the Ethereum block
+			// ISCP block is about to be closed => commit the Ethereum block
 			emu := bctx.(*evm.EVMEmulator)
 			emu.Commit()
 			emu.Close()
@@ -48,16 +46,7 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	err := tx.UnmarshalBinary(ctx.Params().MustGet(FieldTransactionData))
 	a.RequireNoError(err)
 
-	// call root contract view to get the feecolor
-	params := codec.MakeDict(map[string]interface{}{
-		root.ParamHname: coretypes.Hn(Name),
-	})
-	feeInfo, err := ctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncGetFeeInfo), params, nil)
-	a.RequireNoError(err)
-	feeColor, _, err := codec.DecodeColor(feeInfo.MustGet(root.ParamFeeColor))
-	a.RequireNoError(err)
-
-	transferredIotas, _ := ctx.IncomingTransfer().Get(feeColor)
+	transferredIotas, _ := ctx.IncomingTransfer().Get(getFeeColor(ctx))
 	gasPerIota, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasPerIota))
 	a.RequireNoError(err)
 
@@ -76,19 +65,17 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	iotasGasFee := usedGas / gasPerIota
 
-	// should not happen because usedGas <= tx.Gas() (gas limit)
-	a.Require(
-		transferredIotas >= iotasGasFee,
-		"transferred tokens (%d) not enough to pay the consumed gas fees (%d)", transferredIotas, iotasGasFee,
-	)
-
-	// refund unspent gas fee to the sender's on-chain account
-	iotasGasRefund := transferredIotas - iotasGasFee
-	params = codec.MakeDict(map[string]interface{}{
-		accounts.ParamAgentID: ctx.Caller(),
-	})
-	_, err = ctx.Call(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), params, coretypes.NewTransferIotas(iotasGasRefund))
-	a.RequireNoError(err)
+	if transferredIotas > iotasGasFee {
+		// refund unspent gas fee to the sender's on-chain account
+		iotasGasRefund := transferredIotas - iotasGasFee
+		_, err = ctx.Call(
+			accounts.Interface.Hname(),
+			coretypes.Hn(accounts.FuncDeposit),
+			dict.Dict{accounts.ParamAgentID: codec.EncodeAgentID(ctx.Caller())},
+			coretypes.NewTransferIotas(iotasGasRefund),
+		)
+		a.RequireNoError(err)
+	}
 
 	return dict.Dict{
 		FieldGasFee:  codec.EncodeUint64(iotasGasFee),

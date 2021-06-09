@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/evm"
@@ -17,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 func isNotFound(err error) bool {
@@ -136,4 +138,20 @@ func paramBlockNumber(ctx coretypes.SandboxView) *big.Int {
 		return new(big.Int).SetBytes(ctx.Params().MustGet(FieldBlockNumber))
 	}
 	return nil
+}
+
+func getFeeColor(ctx coretypes.Sandbox) ledgerstate.Color {
+	a := assert.NewAssert(ctx.Log())
+
+	// call root contract view to get the feecolor
+	feeInfo, err := ctx.Call(
+		root.Interface.Hname(),
+		coretypes.Hn(root.FuncGetFeeInfo),
+		dict.Dict{root.ParamHname: coretypes.Hn(Name).Bytes()},
+		nil,
+	)
+	a.RequireNoError(err)
+	feeColor, _, err := codec.DecodeColor(feeInfo.MustGet(root.ParamFeeColor))
+	a.RequireNoError(err)
+	return feeColor
 }
