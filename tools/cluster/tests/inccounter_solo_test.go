@@ -1,13 +1,11 @@
 package tests
 
 import (
-	"testing"
-	"time"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 var incFile = "wasm/inccounter_bg.wasm"
@@ -45,7 +43,6 @@ func TestIncSoloRepeatMany(t *testing.T) {
 		WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
-	time.Sleep(1 * time.Second)
 	chain.WaitForEmptyBacklog()
 	ret, err := chain.CallView(incName, "getCounter")
 	require.NoError(t, err)

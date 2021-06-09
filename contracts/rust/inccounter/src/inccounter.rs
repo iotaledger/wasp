@@ -43,12 +43,12 @@ pub fn func_local_state_internal_call(ctx: &ScFuncContext) {
     unsafe {
         LOCAL_STATE_MUST_INCREMENT = false;
     }
-    func_when_must_increment(ctx);
+    func_when_must_increment_state(ctx);
     unsafe {
         LOCAL_STATE_MUST_INCREMENT = true;
     }
-    func_when_must_increment(ctx);
-    func_when_must_increment(ctx);
+    func_when_must_increment_state(ctx);
+    func_when_must_increment_state(ctx);
     // counter ends up as 2
 }
 
@@ -66,13 +66,10 @@ pub fn func_local_state_post(ctx: &ScFuncContext) {
     // counter ends up as 0
 }
 
-pub fn func_loop(_ctx: &ScFuncContext) {
-    loop {}
-}
-
 fn local_state_post(ctx: &ScFuncContext, nr: i64) {
+    //note: we add a dummy parameter here to prevent "duplicate outputs not allowed" error
     let params = ScMutableMap::new();
-    params.get_int64(VAR_INT1).set_value(nr);
+    params.get_int64(VAR_COUNTER).set_value(nr);
     let transfer = ScTransfers::iotas(1);
     ctx.post_self(HFUNC_WHEN_MUST_INCREMENT, Some(params), transfer, 0);
 }
@@ -88,6 +85,10 @@ pub fn func_local_state_sandbox_call(ctx: &ScFuncContext) {
     ctx.call_self(HFUNC_WHEN_MUST_INCREMENT, None, None);
     ctx.call_self(HFUNC_WHEN_MUST_INCREMENT, None, None);
     // counter ends up as 0
+}
+
+pub fn func_loop(_ctx: &ScFuncContext) {
+    loop {}
 }
 
 pub fn func_post_increment(ctx: &ScFuncContext) {
@@ -121,6 +122,10 @@ pub fn func_repeat_many(ctx: &ScFuncContext) {
 }
 
 pub fn func_when_must_increment(ctx: &ScFuncContext) {
+    func_when_must_increment_state(ctx);
+}
+
+pub fn func_when_must_increment_state(ctx: &ScFuncContext) {
     ctx.log("when_must_increment called");
     unsafe {
         if !LOCAL_STATE_MUST_INCREMENT {
@@ -136,7 +141,7 @@ pub fn func_when_must_increment(ctx: &ScFuncContext) {
 pub fn view_get_counter(ctx: &ScViewContext) {
     let counter = ctx.state().get_int64(VAR_COUNTER);
     if counter.exists() {
-        ctx.results().get_int64(VAR_COUNTER).set_value(counter.value());
+        ctx.results().get_int64(RESULT_COUNTER).set_value(counter.value());
     }
 }
 

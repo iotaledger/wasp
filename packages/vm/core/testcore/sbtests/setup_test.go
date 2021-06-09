@@ -26,7 +26,6 @@ const (
 var (
 	WasmFileTestcore = "sbtestsc/testcore_bg.wasm"
 	WasmFileErc20    = "sbtestsc/erc20_bg.wasm"
-	SandboxSCName    = "test_sandbox"
 )
 
 func setupChain(t *testing.T, keyPairOriginator *ed25519.KeyPair) (*solo.Solo, *solo.Chain) {
@@ -65,19 +64,19 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, 
 	var err error
 	var extraToken uint64
 	if runWasm {
-		err = chain.DeployWasmContract(user, SandboxSCName, WasmFileTestcore)
+		err = chain.DeployWasmContract(user, ScName, WasmFileTestcore)
 		extraToken = 1
 	} else {
-		err = chain.DeployContract(user, SandboxSCName, sbtestsc.Interface.ProgramHash)
+		err = chain.DeployContract(user, ScName, sbtestsc.Interface.ProgramHash)
 		extraToken = 0
 	}
 	require.NoError(t, err)
 
-	deployed := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn(sbtestsc.Interface.Name))
-	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncDoNothing).WithIotas(1)
+	deployed := coretypes.NewAgentID(chain.ChainID.AsAddress(), HScName)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing).WithIotas(1)
 	_, err = chain.PostRequestSync(req, user)
 	require.NoError(t, err)
-	t.Logf("deployed test_sandbox'%s': %s", SandboxSCName, coretypes.Hn(SandboxSCName))
+	t.Logf("deployed test_sandbox'%s': %s", ScName, HScName)
 	return deployed, extraToken
 }
 
@@ -100,7 +99,7 @@ func setupERC20(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, runWasm 
 	)
 	require.NoError(t, err)
 
-	deployed := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn(sbtestsc.Interface.Name))
+	deployed := coretypes.NewAgentID(chain.ChainID.AsAddress(), HScName)
 	t.Logf("deployed erc20'%s': %s --  %s", ERC20_NAME, coretypes.Hn(ERC20_NAME), deployed)
 	return deployed
 }

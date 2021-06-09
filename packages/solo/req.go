@@ -264,6 +264,10 @@ func (ch *Chain) WaitForEmptyBacklog(maxWait ...time.Duration) {
 		maxw = maxWait[0]
 	}
 	deadline = time.Now().Add(maxw)
+	if ch.backlogLen() == 0 {
+		// we called this because we expect the backlog to be not empty
+		time.Sleep(50 * time.Millisecond)
+	}
 	counter := 0
 	for ch.backlogLen() > 0 {
 		if counter%50 == 0 {
@@ -274,6 +278,6 @@ func (ch *Chain) WaitForEmptyBacklog(maxWait ...time.Duration) {
 			ch.Log.Warnf("exit due to timeout of max wait for %v", maxw)
 			return
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 	}
 }

@@ -5,11 +5,6 @@ package test
 
 import (
 	"fmt"
-	"sort"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/iotaledger/wasp/contracts/common"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -17,6 +12,10 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
 	"github.com/stretchr/testify/require"
+	"sort"
+	"strings"
+	"testing"
+	"time"
 )
 
 func setupTest(t *testing.T) *solo.Chain {
@@ -68,7 +67,6 @@ func TestIncrementRepeatThrice(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	time.Sleep(1 * time.Second)
 	chain.WaitForEmptyBacklog()
 
 	checkStateCounter(t, chain, 4)
@@ -101,7 +99,6 @@ func TestIncrementPostIncrement(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	time.Sleep(1 * time.Second)
 	chain.WaitForEmptyBacklog()
 
 	checkStateCounter(t, chain, 2)

@@ -86,12 +86,11 @@ func TestIncWith1Post(t *testing.T) {
 	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter5s).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
+
 	// advance logical clock to unlock that timelocked request
 	env.AdvanceClockBy(6 * time.Second)
-
-	time.Sleep(1 * time.Second)
 	chain.WaitForEmptyBacklog()
-	checkCounter(chain, 19)
 
+	checkCounter(chain, 19)
 	chain.CheckAccountLedger()
 }

@@ -206,7 +206,6 @@ func TestRevokeWarrant(t *testing.T) {
 	require.True(t, exists)
 
 	env.AdvanceClockBy(31 * time.Minute)
-	time.Sleep(1 * time.Second)
 	chain.WaitForEmptyBacklog()
 
 	ret, err = chain.CallView("micropay", FuncGetChannelInfo,
