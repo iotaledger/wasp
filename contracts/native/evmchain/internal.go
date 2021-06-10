@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/evm"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -33,8 +32,24 @@ func isNotFound(err error) bool {
 	return false
 }
 
-func emulator(state kv.KVStore) *evm.EVMEmulator {
-	return evm.NewEVMEmulator(rawdb.NewDatabase(evm.NewKVAdapter(state)))
+// getOrCreateEmulator creates a new emulator instance if this is the first call to applyTransaction
+// in the ISCP block; otherwise it returns the previously created instance. The purpose is to
+// create a single Ethereum block for each ISCP block.
+func getOrCreateEmulator(ctx coretypes.Sandbox) *evm.EVMEmulator {
+	bctx := ctx.BlockContext(createEmulator, commitEthereumBlock)
+	return bctx.(*evm.EVMEmulator)
+}
+
+func createEmulator(ctx coretypes.Sandbox) interface{} {
+	return evm.NewEVMEmulator(rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())))
+}
+
+func commitEthereumBlock(blockContext interface{}) {
+	emu := blockContext.(*evm.EVMEmulator)
+	if emu.HasPendingBlock() {
+		emu.Commit()
+	}
+	emu.Close()
 }
 
 func withEmulatorR(ctx coretypes.SandboxView, f func(*evm.EVMEmulator) dict.Dict) (dict.Dict, error) {

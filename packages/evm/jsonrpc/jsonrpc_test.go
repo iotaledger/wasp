@@ -94,7 +94,6 @@ func (e *env) deployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, 
 	gasLimit := e.estimateGas(ethereum.CallMsg{
 		From:     creatorAddress,
 		To:       nil, // contract creation
-		Gas:      evm.MaxGasLimit,
 		GasPrice: evm.GasPrice,
 		Value:    value,
 		Data:     data,

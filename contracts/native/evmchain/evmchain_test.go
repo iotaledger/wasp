@@ -33,8 +33,9 @@ func TestStorageContract(t *testing.T) {
 	require.EqualValues(t, 42, storage.retrieve())
 
 	// call FuncSendTransaction with EVM tx that calls `store(43)`
-	_, _, _, err := storage.store(43)
+	_, receipt, _, err := storage.store(43)
 	require.NoError(t, err)
+	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 
 	// call `retrieve` view, get 43
 	require.EqualValues(t, 43, storage.retrieve())
@@ -256,7 +257,7 @@ func TestGasLimit(t *testing.T) {
 	gasPerIotas := evmChain.getGasPerIotas()
 
 	iotasForGas := uint64(10000)
-	gaslimit := iotasForGas * uint64(gasPerIotas)
+	gaslimit := iotasForGas * gasPerIotas
 
 	_, _, _, err := storage.store(123, ethCallOptions{gasLimit: gaslimit, iota: iotaCallOptions{transfer: iotasForGas - 1}})
 	require.Contains(t, err.Error(), "transferred tokens (9999) not enough")
@@ -269,18 +270,26 @@ func TestGasLimit(t *testing.T) {
 func TestLoop(t *testing.T) {
 	evmChain := initEVMChain(t)
 	loop := evmChain.deployLoopContract(evmChain.faucetKey)
+	gasPerIotas := evmChain.getGasPerIotas()
+
 	iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
 	iotaAgentID := coretypes.NewAgentID(iotaAddress, 0)
 
 	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, ledgerstate.ColorIOTA)
 	iotasSpent1 := uint64(100)
-	_, receipt, chargedGasFee, err := loop.loop(ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent1}})
+	_, receipt, chargedGasFee, err := loop.loop(ethCallOptions{
+		gasLimit: iotasSpent1 * gasPerIotas,
+		iota:     iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent1},
+	})
 	require.NoError(t, err)
 	require.Equal(t, chargedGasFee, uint64(iotasSpent1))
 	gasUsed := receipt.GasUsed
 
-	iotasSpent2 := uint64(100000)
-	_, receipt, chargedGasFee, err = loop.loop(ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent2}})
+	iotasSpent2 := uint64(1000)
+	_, receipt, chargedGasFee, err = loop.loop(ethCallOptions{
+		gasLimit: iotasSpent2 * gasPerIotas,
+		iota:     iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent2},
+	})
 	require.NoError(t, err)
 	require.Equal(t, chargedGasFee, uint64(iotasSpent2))
 	require.Greater(t, receipt.GasUsed, gasUsed)

@@ -20,26 +20,13 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	genesisAlloc, err := DecodeGenesisAlloc(ctx.Params().MustGet(FieldGenesisAlloc))
 	a.RequireNoError(err)
-	evm.InitGenesis(rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())), genesisAlloc)
-	ctx.State().Set(FieldGasPerIota, codec.EncodeUint64(DefaultGasPerIota))    // sets the default GasPerIota value
-	ctx.State().Set(FieldEvmOwner, codec.EncodeAgentID(ctx.ContractCreator())) // sets the default contract owner
+	evm.InitGenesis(rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())), genesisAlloc, evm.GasLimitDefault)
+	ctx.State().Set(FieldGasPerIota, codec.EncodeUint64(DefaultGasPerIota))
+	ctx.State().Set(FieldEvmOwner, codec.EncodeAgentID(ctx.ContractCreator()))
 	return nil, nil
 }
 
 func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
-	bctx := ctx.BlockContext(
-		func(sandbox coretypes.Sandbox) interface{} {
-			// This is the first call to applyTransaction in the ISCP block => initialize the EVM emulator
-			return emulator(ctx.State())
-		},
-		func(bctx interface{}) {
-			// ISCP block is about to be closed => commit the Ethereum block
-			emu := bctx.(*evm.EVMEmulator)
-			emu.Commit()
-			emu.Close()
-		},
-	)
-
 	a := assert.NewAssert(ctx.Log())
 
 	tx := &types.Transaction{}
@@ -55,16 +42,11 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 		"transferred tokens (%d) not enough to cover the gas limit set in the transaction (%d at %d gas per iota token)", transferredIotas, tx.Gas(), gasPerIota,
 	)
 
-	emu := bctx.(*evm.EVMEmulator)
-
+	emu := getOrCreateEmulator(ctx)
 	usedGas, err := emu.SendTransaction(tx)
-	if err != nil {
-		ctx.Log().Infof("transaction failed: %s", err.Error())
-		return nil, nil
-	}
+	a.RequireNoError(err)
 
 	iotasGasFee := usedGas / gasPerIota
-
 	if transferredIotas > iotasGasFee {
 		// refund unspent gas fee to the sender's on-chain account
 		iotasGasRefund := transferredIotas - iotasGasFee

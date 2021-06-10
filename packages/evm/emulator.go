@@ -44,9 +44,10 @@ type EVMEmulator struct {
 }
 
 var (
-	TxGas       = uint64(21000) // gas cost of simple transfer (not contract creation / call)
-	MaxGasLimit = uint64(math.MaxUint64 / 2)
-	GasPrice    = big.NewInt(0)
+	TxGas           = uint64(21000) // gas cost of simple transfer (not contract creation / call)
+	GasLimitMax     = uint64(math.MaxUint64 / 2)
+	GasLimitDefault = uint64(15000000)
+	GasPrice        = big.NewInt(0)
 )
 
 var Config = params.AllEthashProtocolChanges
@@ -55,12 +56,12 @@ func Signer() types.Signer {
 	return types.NewEIP155Signer(Config.ChainID)
 }
 
-func InitGenesis(db ethdb.Database, alloc core.GenesisAlloc) {
+func InitGenesis(db ethdb.Database, alloc core.GenesisAlloc, gasLimit uint64) {
 	stored := rawdb.ReadCanonicalHash(db, 0)
 	if (stored != common.Hash{}) {
 		panic("genesis block already initialized")
 	}
-	genesis := core.Genesis{Config: Config, Alloc: alloc, GasLimit: MaxGasLimit}
+	genesis := core.Genesis{Config: Config, Alloc: alloc, GasLimit: gasLimit}
 	genesis.MustCommit(db)
 }
 
@@ -84,6 +85,10 @@ func NewEVMEmulator(db ethdb.Database) *EVMEmulator {
 func (e *EVMEmulator) Close() error {
 	e.blockchain.Stop()
 	return nil
+}
+
+func (e *EVMEmulator) HasPendingBlock() bool {
+	return len(e.pendingBlock.Transactions()) > 0
 }
 
 // Commit imports all the pending transactions as a single block and starts a

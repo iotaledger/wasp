@@ -19,14 +19,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func estimateGas(t *testing.T, emu *EVMEmulator, from common.Address, to *common.Address, value *big.Int, data []byte) uint64 {
+	gas, err := emu.EstimateGas(ethereum.CallMsg{
+		From:  from,
+		To:    to,
+		Value: value,
+		Data:  data,
+	})
+	if err != nil {
+		t.Logf("%v", err)
+		return GasLimitDefault - 1
+	}
+	return gas
+}
+
 func sendTransaction(t *testing.T, emu *EVMEmulator, sender *ecdsa.PrivateKey, receiverAddress common.Address, amount *big.Int, data []byte) *types.Receipt {
 	senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
 	nonce, err := emu.PendingNonceAt(senderAddress)
 	require.NoError(t, err)
+	gas := estimateGas(t, emu, senderAddress, &receiverAddress, amount, data)
 
 	tx, err := types.SignTx(
-		types.NewTransaction(nonce, receiverAddress, amount, MaxGasLimit, GasPrice, data),
+		types.NewTransaction(nonce, receiverAddress, amount, gas, GasPrice, data),
 		emu.Signer(),
 		sender,
 	)
@@ -70,7 +85,7 @@ func testBlockchain(t *testing.T, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(db, genesisAlloc)
+	InitGenesis(db, genesisAlloc, GasLimitDefault)
 
 	emu := NewEVMEmulator(db)
 	defer emu.Close()
@@ -91,7 +106,7 @@ func testBlockchain(t *testing.T, db ethdb.Database) {
 			// assert that current block is genesis
 			block := emu.Blockchain().CurrentBlock()
 			require.NotNil(t, block)
-			require.EqualValues(t, MaxGasLimit, block.Header().GasLimit)
+			require.EqualValues(t, GasLimitDefault, block.Header().GasLimit)
 			genesisHash = block.Hash()
 		}
 
@@ -118,7 +133,7 @@ func testBlockchain(t *testing.T, db ethdb.Database) {
 		sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil)
 
 		require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
-		require.EqualValues(t, MaxGasLimit, emu.Blockchain().CurrentBlock().Header().GasLimit)
+		require.EqualValues(t, GasLimitDefault, emu.Blockchain().CurrentBlock().Header().GasLimit)
 	}
 
 	{
@@ -159,7 +174,7 @@ func testBlockchainPersistence(t *testing.T, db ethdb.Database) {
 	receiverAddress := crypto.PubkeyToAddress(receiver.PublicKey)
 	transferAmount := big.NewInt(1000)
 
-	InitGenesis(db, genesisAlloc)
+	InitGenesis(db, genesisAlloc, GasLimitDefault)
 
 	// do a transfer using one instance of EVMEmulator
 	func() {
@@ -198,9 +213,11 @@ func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	require.NotEmpty(t, constructorArguments)
 
 	data := append(contractBytecode, constructorArguments...)
+	gas := estimateGas(t, emu, creatorAddress, nil, txValue, data)
+	require.NoError(t, err)
 
 	tx, err := types.SignTx(
-		types.NewContractCreation(nonce, txValue, MaxGasLimit, GasPrice, data),
+		types.NewContractCreation(nonce, txValue, gas, GasPrice, data),
 		emu.Signer(),
 		creator,
 	)
@@ -215,7 +232,7 @@ func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	// assertions
 	{
 		require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
-		require.EqualValues(t, MaxGasLimit, emu.Blockchain().CurrentBlock().Header().GasLimit)
+		require.EqualValues(t, GasLimitDefault, emu.Blockchain().CurrentBlock().Header().GasLimit)
 
 		// verify contract address
 		{
@@ -277,7 +294,7 @@ func testStorageContract(t *testing.T, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(db, genesisAlloc)
+	InitGenesis(db, genesisAlloc, GasLimitDefault)
 
 	emu := NewEVMEmulator(db)
 	defer emu.Close()
@@ -364,7 +381,7 @@ func testERC20Contract(t *testing.T, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(db, genesisAlloc)
+	InitGenesis(db, genesisAlloc, GasLimitDefault)
 
 	emu := NewEVMEmulator(db)
 	defer emu.Close()
