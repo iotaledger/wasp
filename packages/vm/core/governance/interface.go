@@ -1,6 +1,6 @@
 // in the blocklog core contract the VM keeps indices of blocks and requests in an optimized way
 // for fast checking and timestamp access.
-package blocklog
+package governance
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -22,6 +22,7 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
+		coreutil.Func(coreutil.CoreEPRotateCommittee, checkRotateCommitteeRequest),
 		coreutil.Func(FuncAddAllowedCommitteeAddress, addAllowedCommitteeAddress),
 		coreutil.Func(FuncRemoveAllowedCommitteeAddress, removeAllowedCommitteeAddress),
 		coreutil.ViewFunc(FuncIsAllowedCommitteeAddress, isAllowedCommitteeAddress),

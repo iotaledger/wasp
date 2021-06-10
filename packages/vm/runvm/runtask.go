@@ -76,6 +76,7 @@ func runTask(task *vm.VMTask) {
 		}
 	}
 
+	// TODO take over committee rotation
 	// save the block info into the 'blocklog' contract
 	vmctx.CloseVMContext(uint16(len(task.Requests)), numSuccess, numOffLedger)
 

@@ -1,4 +1,4 @@
-package blocklog
+package governance
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -9,6 +9,20 @@ import (
 )
 
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
+	return nil, nil
+}
+
+// checkRotateCommitteeRequest the entry point is called when committee is about to be rotated to the new address
+// If it fails, nothing happens and the state has trace of the failure in the state
+// If it is successful VM takes over and replaces resulting transaction with
+// governance transition. The state of the chain remains unchanged
+func checkRotateCommitteeRequest(ctx coretypes.Sandbox) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	a.RequireChainOwner(ctx, "checkRotateCommitteeRequest")
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	addr := par.MustGetAddress(ParamStateAddress)
+	amap := collections.NewMap(ctx.State(), StateVarAllowedCommitteeAddresses)
+	a.Require(amap.MustHasAt(addr.Bytes()), "checkRotateCommitteeRequest: address is not allowed as next state address: %s", addr.Base58())
 	return nil, nil
 }
 
@@ -35,10 +49,9 @@ func removeAllowedCommitteeAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 func isAllowedCommitteeAddress(ctx coretypes.SandboxView) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	addr := par.MustGetAddress(ParamStateAddress)
-	amap := collections.NewMapReadOnly(ctx.State(), StateVarAllowedCommitteeAddresses)
-	exists := amap.MustHasAt(addr.Bytes())
+	allowed := MustIsAllowedCommitteeAddress(ctx.State(), addr)
 	ret := dict.New()
-	if exists {
+	if allowed {
 		ret.Set(ParamIsAllowedAddress, []byte{0xFF})
 	}
 	return ret, nil

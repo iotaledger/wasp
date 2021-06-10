@@ -2,6 +2,7 @@ package root
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -50,6 +51,11 @@ func MustGetChainInfo(state kv.KVStoreReader) ChainInfo {
 		DefaultValidatorFee: d.MustGetInt64(VarDefaultValidatorFee, 0),
 	}
 	return ret
+}
+
+func MustGetChainOwnerID(state kv.KVStoreReader) *coretypes.AgentID {
+	d := kvdecoder.New(state)
+	return d.MustGetAgentID(VarChainOwnerID)
 }
 
 // GetFeeInfo is an internal utility function which returns fee info for the contract
