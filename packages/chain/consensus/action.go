@@ -128,13 +128,14 @@ func (c *consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
 		c.log.Debugf("runVMIfNeeded: solid state baseline is invalid. Do not even start the VM")
 		return nil
 	}
-	task.OnFinish = func(_ dict.Dict, _ error, vmError error) {
+	task.OnFinish = func(_ dict.Dict, err error, vmError error) {
 		if vmError != nil {
 			c.log.Errorf("VM task failed: %v", vmError)
 			return
 		}
 		c.chain.ReceiveMessage(&chain.VMResultMsg{
-			Task: task,
+			Task:    task,
+			NoError: err == nil,
 		})
 	}
 	return task
@@ -487,16 +488,17 @@ func (c *consensus) resetWorkflow() {
 }
 
 func (c *consensus) processVMResult(result *vm.VMTask) {
-	c.log.Debugf("processVMResult")
+	essenceBytes := result.ResultTransactionEssence.Bytes()
+	essenceHash := hashing.HashData(essenceBytes)
+	c.log.Debugf("processVMResult: state index: %d, state hash: %s, essence hash: %s",
+		result.VirtualState.BlockIndex(), result.VirtualState.Hash(), essenceHash)
+
 	if !c.workflow.vmStarted ||
 		c.workflow.vmResultSignedAndBroadcasted ||
 		c.acsSessionID != result.ACSSessionID {
 		// out of context
 		return
 	}
-	essenceBytes := result.ResultTransactionEssence.Bytes()
-	essenceHash := hashing.HashData(essenceBytes)
-	c.log.Debugf("VM result: essence hash: %s", essenceHash)
 	sigShare, err := c.committee.DKShare().SignShare(essenceBytes)
 	if err != nil {
 		c.log.Panicf("processVMResult: error while signing transaction %v", err)
@@ -517,6 +519,10 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	c.workflow.vmResultSignedAndBroadcasted = true
 
 	c.log.Debugf("processVMResult: signed and broadcasted: essence hash: %s", msg.EssenceHash.String())
+}
+
+func (c *consensus) processRotateCommitteeRequest(req coretypes.Request, chainInput *ledgerstate.AliasOutput) {
+	c.log.Infof("ROTATE committee request")
 }
 
 func (c *consensus) receiveSignedResult(msg *chain.SignedResultMsg) {

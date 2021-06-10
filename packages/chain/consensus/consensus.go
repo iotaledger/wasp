@@ -46,7 +46,6 @@ type consensus struct {
 	consensusInfoSnapshot      atomic.Value
 	log                        *logger.Logger
 	eventStateTransitionMsgCh  chan *chain.StateTransitionMsg
-	eventResultCalculatedMsgCh chan *chain.VMResultMsg
 	eventSignedResultMsgCh     chan *chain.SignedResultMsg
 	eventInclusionStateMsgCh   chan *chain.InclusionStateMsg
 	eventACSMsgCh              chan *chain.AsynchronousCommonSubsetMsg
@@ -71,21 +70,20 @@ var _ chain.Consensus = &consensus{}
 
 func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection) *consensus {
 	ret := &consensus{
-		chain:                      chainCore,
-		committee:                  committee,
-		mempool:                    mempool,
-		nodeConn:                   nodeConn,
-		vmRunner:                   runvm.NewVMRunner(),
-		resultSignatures:           make([]*chain.SignedResultMsg, committee.Size()),
-		log:                        chainCore.Log().Named("c"),
-		eventStateTransitionMsgCh:  make(chan *chain.StateTransitionMsg),
-		eventResultCalculatedMsgCh: make(chan *chain.VMResultMsg),
-		eventSignedResultMsgCh:     make(chan *chain.SignedResultMsg),
-		eventInclusionStateMsgCh:   make(chan *chain.InclusionStateMsg),
-		eventACSMsgCh:              make(chan *chain.AsynchronousCommonSubsetMsg),
-		eventVMResultMsgCh:         make(chan *chain.VMResultMsg),
-		eventTimerMsgCh:            make(chan chain.TimerTick),
-		closeCh:                    make(chan struct{}),
+		chain:                     chainCore,
+		committee:                 committee,
+		mempool:                   mempool,
+		nodeConn:                  nodeConn,
+		vmRunner:                  runvm.NewVMRunner(),
+		resultSignatures:          make([]*chain.SignedResultMsg, committee.Size()),
+		log:                       chainCore.Log().Named("c"),
+		eventStateTransitionMsgCh: make(chan *chain.StateTransitionMsg),
+		eventSignedResultMsgCh:    make(chan *chain.SignedResultMsg),
+		eventInclusionStateMsgCh:  make(chan *chain.InclusionStateMsg),
+		eventACSMsgCh:             make(chan *chain.AsynchronousCommonSubsetMsg),
+		eventVMResultMsgCh:        make(chan *chain.VMResultMsg),
+		eventTimerMsgCh:           make(chan chain.TimerTick),
+		closeCh:                   make(chan struct{}),
 	}
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()
@@ -116,10 +114,6 @@ func (c *consensus) recvLoop() {
 		case msg, ok := <-c.eventStateTransitionMsgCh:
 			if ok {
 				c.eventStateTransitionMsg(msg)
-			}
-		case msg, ok := <-c.eventResultCalculatedMsgCh:
-			if ok {
-				c.eventResultCalculated(msg)
 			}
 		case msg, ok := <-c.eventSignedResultMsgCh:
 			if ok {
