@@ -5,6 +5,11 @@ import (
 	"sort"
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+
 	"github.com/iotaledger/wasp/packages/transaction"
 
 	"golang.org/x/xerrors"
@@ -193,19 +198,21 @@ func (c *consensus) checkQuorum() {
 		c.resetWorkflow()
 		return
 	}
-	tx, approvingOutID, err := c.finalizeTransaction(sigSharesToAggregate)
+	tx, chainOutput, err := c.finalizeTransaction(sigSharesToAggregate)
 	if err != nil {
 		c.log.Errorf("checkQuorum: %v", err)
 		return
 	}
 
 	c.finalTx = tx
-	c.approvingOutputID = approvingOutID
 
-	go c.chain.ReceiveMessage(&chain.StateCandidateMsg{
-		State:             c.resultState,
-		ApprovingOutputID: approvingOutID,
-	})
+	if !chainOutput.GetIsGovernanceUpdated() {
+		// if it is not committee rotation, sending message to state manager
+		go c.chain.ReceiveMessage(&chain.StateCandidateMsg{
+			State:             c.resultState,
+			ApprovingOutputID: chainOutput.ID(),
+		})
+	}
 
 	// calculate deterministic and pseudo-random order and postTxDeadline among contributors
 	var postSeqNumber uint16
@@ -431,12 +438,14 @@ func (c *consensus) processInclusionState(msg *chain.InclusionStateMsg) {
 	}
 }
 
-func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, ledgerstate.OutputID, error) {
+func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, *ledgerstate.AliasOutput, error) {
 	signatureWithPK, err := c.committee.DKShare().RecoverFullSignature(sigSharesToAggregate, c.resultTxEssence.Bytes())
 	if err != nil {
-		return nil, ledgerstate.OutputID{}, xerrors.Errorf("finalizeTransaction: %w", err)
+		return nil, nil, xerrors.Errorf("finalizeTransaction: %w", err)
 	}
 	sigUnlockBlock := ledgerstate.NewSignatureUnlockBlock(ledgerstate.NewBLSSignature(*signatureWithPK))
+
+	// check consistency ---------------- check if chain inouts was consumed
 	chainInput := ledgerstate.NewUTXOInput(c.stateOutput.ID())
 	var indexChainInput = -1
 	for i, inp := range c.resultTxEssence.Inputs() {
@@ -448,6 +457,7 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 	if indexChainInput < 0 {
 		c.log.Panicf("RecoverFullSignature. major inconsistency")
 	}
+	// check consistency ---------------- end
 
 	blocks := make([]ledgerstate.UnlockBlock, len(c.resultTxEssence.Inputs()))
 	for i := range c.resultTxEssence.Inputs() {
@@ -458,8 +468,8 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 		}
 	}
 	tx := ledgerstate.NewTransaction(c.resultTxEssence, blocks)
-	approvingOutputID := transaction.GetAliasOutput(tx, c.chain.ID().AsAddress()).ID()
-	return tx, approvingOutputID, nil
+	chained := transaction.GetAliasOutput(tx, c.chain.ID().AsAddress())
+	return tx, chained, nil
 }
 
 func (c *consensus) setNewState(msg *chain.StateTransitionMsg) {
@@ -487,24 +497,30 @@ func (c *consensus) resetWorkflow() {
 	}
 }
 
-func (c *consensus) processVMResult(result *vm.VMTask) {
-	essenceBytes := result.ResultTransactionEssence.Bytes()
-	essenceHash := hashing.HashData(essenceBytes)
-	c.log.Debugf("processVMResult: state index: %d, state hash: %s, essence hash: %s",
-		result.VirtualState.BlockIndex(), result.VirtualState.Hash(), essenceHash)
-
+func (c *consensus) processVMResult(result *vm.VMTask, isRotateRequest bool) {
 	if !c.workflow.vmStarted ||
 		c.workflow.vmResultSignedAndBroadcasted ||
 		c.acsSessionID != result.ACSSessionID {
 		// out of context
 		return
 	}
+	essence := result.ResultTransactionEssence
+	if isRotateRequest {
+		essence = c.makeRotateCommitteeTransaction(result)
+	}
+	essenceBytes := essence.Bytes()
+	essenceHash := hashing.HashData(essenceBytes)
+	c.log.Debugf("processVMResult: essence hash: %s. rotate committee: %v", essenceHash, isRotateRequest)
+
 	sigShare, err := c.committee.DKShare().SignShare(essenceBytes)
 	if err != nil {
 		c.log.Panicf("processVMResult: error while signing transaction %v", err)
 	}
-	c.resultTxEssence = result.ResultTransactionEssence
-	c.resultState = result.VirtualState
+	c.resultTxEssence = essence
+	c.resultState = nil
+	if !isRotateRequest {
+		c.resultState = result.VirtualState
+	}
 	c.resultSignatures[c.committee.OwnPeerIndex()] = &chain.SignedResultMsg{
 		SenderIndex: c.committee.OwnPeerIndex(),
 		EssenceHash: essenceHash,
@@ -521,8 +537,33 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	c.log.Debugf("processVMResult: signed and broadcasted: essence hash: %s", msg.EssenceHash.String())
 }
 
-func (c *consensus) processRotateCommitteeRequest(req coretypes.Request, chainInput *ledgerstate.AliasOutput) {
-	c.log.Infof("ROTATE committee request")
+func (c *consensus) makeRotateCommitteeTransaction(task *vm.VMTask) *ledgerstate.TransactionEssence {
+	req := task.Requests[0]
+	par, _ := req.Params()
+	deco := kvdecoder.New(par, c.log)
+	nextAddr := deco.MustGetAddress(coreutil.ParamStateAddress)
+	c.log.Infof("ROTATE committee to address %s", nextAddr.Base58())
+
+	inputs := []ledgerstate.Output{task.ChainInput}
+	if req.Output() != nil {
+		inputs = append(inputs, req.Output())
+	}
+	txb := utxoutil.NewBuilder(inputs...)
+	chained := task.ChainInput.NewAliasOutputNext(true)
+	if err := chained.SetStateAddress(nextAddr); err != nil {
+		c.log.Panicf("processRotateCommitteeRequest 1: %v", err)
+	}
+	if err := txb.ConsumeAliasInput(task.ChainInput.Address()); err != nil {
+		c.log.Panicf("processRotateCommitteeRequest 2: %v", err)
+	}
+	if err := txb.AddOutputAndSpendUnspent(chained); err != nil {
+		c.log.Panicf("processRotateCommitteeRequest 3: %v", err)
+	}
+	essence, _, err := txb.BuildEssence()
+	if err != nil {
+		c.log.Panicf("processRotateCommitteeRequest 4: %v", err)
+	}
+	return essence
 }
 
 func (c *consensus) receiveSignedResult(msg *chain.SignedResultMsg) {

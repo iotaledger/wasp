@@ -39,7 +39,6 @@ type consensus struct {
 	resultState                state.VirtualState
 	resultSignatures           []*chain.SignedResultMsg
 	finalTx                    *ledgerstate.Transaction
-	approvingOutputID          ledgerstate.OutputID
 	postTxDeadline             time.Time
 	pullInclusionStateDeadline time.Time
 	lastTimerTick              atomic.Int64

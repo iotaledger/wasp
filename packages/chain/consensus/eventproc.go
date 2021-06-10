@@ -50,11 +50,7 @@ func (c *consensus) EventVMResultMsg(msg *chain.VMResultMsg) {
 }
 func (c *consensus) eventVMResultMsg(msg *chain.VMResultMsg) {
 	isRotateRequest := msg.NoError && len(msg.Task.Requests) == 1 && coreutil.IsRotateCommitteeRequest(msg.Task.Requests[0])
-	if isRotateRequest {
-		c.processRotateCommitteeRequest(msg.Task.Requests[0], msg.Task.ChainInput)
-	} else {
-		c.processVMResult(msg.Task)
-	}
+	c.processVMResult(msg.Task, isRotateRequest)
 	c.takeAction()
 }
 
