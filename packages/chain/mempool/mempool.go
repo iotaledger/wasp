@@ -238,7 +238,7 @@ func (m *mempool) ReadyNow(now ...time.Time) []coretypes.Request {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
-	rotation := m.committeeRotationRequest()
+	rotation := m.committeeRotationRequestReady()
 	if rotation != nil {
 		return []coretypes.Request{rotation}
 	}
@@ -256,13 +256,17 @@ func (m *mempool) ReadyNow(now ...time.Time) []coretypes.Request {
 }
 
 // return the oldest of rotation requests
-func (m *mempool) committeeRotationRequest() coretypes.Request {
+func (m *mempool) committeeRotationRequestReady() coretypes.Request {
 	if len(m.poolRotate) == 0 {
 		return nil
 	}
 	var when time.Time
 	var ret coretypes.Request
+	nowis := time.Now()
 	for _, req := range m.poolRotate {
+		if !isRequestReady(req, nowis) {
+			continue
+		}
 		if ret == nil {
 			ret = req.req
 		}
@@ -283,8 +287,11 @@ func (m *mempool) committeeRotationRequest() coretypes.Request {
 func (m *mempool) ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool) {
 	if len(reqids) == 1 {
 		if ret, ok := m.poolRotate[reqids[0]]; ok {
-			// it is a rotation request. It must be always ready
-			return []coretypes.Request{ret.req}, true
+			if isRequestReady(ret, nowis) {
+				return []coretypes.Request{ret.req}, true
+			}
+			// if rotate request is not ready, it means it will never be ready
+			return nil, true
 		}
 	}
 	ret := make([]coretypes.Request, 0, len(reqids))
