@@ -38,7 +38,7 @@ import (
 )
 
 type chainObj struct {
-	committee             chain.Committee
+	committee             atomic.Value
 	mempool               chain.Mempool
 	dismissed             atomic.Bool
 	dismissOnce           sync.Once
@@ -251,15 +251,16 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 		msg.ChainOutput.GetStateAddress().Base58(), !msg.ChainOutput.GetIsGovernanceUpdated(),
 	)
 	createCommittee := false
-	if c.committee != nil {
+	cmt := c.getCommittee()
+	if cmt != nil {
 		// committee already exists
 		if msg.ChainOutput.GetIsGovernanceUpdated() &&
-			!c.committee.Address().Equals(msg.ChainOutput.GetStateAddress()) {
+			!cmt.Address().Equals(msg.ChainOutput.GetStateAddress()) {
 			// governance transition. Committee needs to be rotated
 			// close current committee and consensus
-			c.committee.Close()
+			cmt.Close()
 			c.consensus.Close()
-			c.committee = nil
+			c.setCommittee(nil)
 			c.consensus = nil
 			createCommittee = true
 		}
@@ -278,8 +279,7 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 
 func (c *chainObj) createNewCommitteeAndConsensus(addr ledgerstate.Address) error {
 	c.log.Debugf("creating new committee...")
-	var err error
-	c.committee, err = committee.New(
+	cmt, err := committee.New(
 		addr,
 		&c.chainID,
 		c.netProvider,
@@ -289,13 +289,26 @@ func (c *chainObj) createNewCommitteeAndConsensus(addr ledgerstate.Address) erro
 		c.log,
 	)
 	if err != nil {
-		c.committee = nil
+		c.setCommittee(nil)
 		return xerrors.Errorf("failed to create committee object for state address %s: %w", addr.Base58(), err)
 	}
-	c.committee.Attach(c)
+	cmt.Attach(c)
 	c.log.Debugf("creating new consensus object...")
-	c.consensus = consensus.New(c, c.mempool, c.committee, c.nodeConn)
+	c.consensus = consensus.New(c, c.mempool, cmt, c.nodeConn)
+	c.setCommittee(cmt)
 
 	c.log.Infof("NEW COMMITTEE OF VALiDATORS has been initialized for the state address %s", addr.Base58())
 	return nil
+}
+
+func (c *chainObj) getCommittee() chain.Committee {
+	ret := c.committee.Load()
+	if ret == nil {
+		return nil
+	}
+	return ret.(chain.Committee)
+}
+
+func (c *chainObj) setCommittee(cmt chain.Committee) {
+	c.committee.Store(cmt)
 }

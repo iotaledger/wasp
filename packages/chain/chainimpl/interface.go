@@ -35,15 +35,16 @@ func (c *chainObj) GlobalStateSync() coreutil.ChainStateSync {
 }
 
 func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {
-	if c.committee == nil {
+	cmt := c.getCommittee()
+	if cmt == nil {
 		return nil
 	}
 	return &chain.CommitteeInfo{
-		Address:       c.committee.DKShare().Address,
-		Size:          c.committee.Size(),
-		Quorum:        c.committee.Quorum(),
-		QuorumIsAlive: c.committee.QuorumIsAlive(),
-		PeerStatus:    c.committee.PeerStatus(),
+		Address:       cmt.DKShare().Address,
+		Size:          cmt.Size(),
+		Quorum:        cmt.Quorum(),
+		QuorumIsAlive: cmt.QuorumIsAlive(),
+		PeerStatus:    cmt.PeerStatus(),
 	}
 }
 
@@ -69,8 +70,9 @@ func (c *chainObj) Dismiss(reason string) {
 
 		c.mempool.Close()
 		c.stateMgr.Close()
-		if c.committee != nil {
-			c.committee.Close()
+		cmt := c.getCommittee()
+		if cmt != nil {
+			cmt.Close()
 		}
 		if c.consensus != nil {
 			c.consensus.Close()
