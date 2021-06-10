@@ -197,3 +197,11 @@ const (
 	RequestProcessingStatusBacklog
 	RequestProcessingStatusCompleted
 )
+
+const (
+	// time tick for consensus and state manager objects
+	TimerTickPeriod = 100 * time.Millisecond
+
+	// retry delay for congested input channel for the consensus and state manager objects.channel.
+	ReceiveMsgChannelRetryDelay = 500 * time.Millisecond
+)
