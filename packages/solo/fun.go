@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -567,4 +570,51 @@ func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
 		SinceBlockIndex:  uint32(par.MustGetUint64(blocklog.ParamBlockIndex)),
 	}
 	return ret
+}
+
+// AddAllowedStateController adds the address to the allowed state controlled address list
+func (ch *Chain) AddAllowedStateController(addr ledgerstate.Address, keyPair *ed25519.KeyPair) error {
+	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedCommitteeAddress,
+		governance.ParamStateAddress, addr,
+	).WithIotas(1)
+	_, err := ch.PostRequestSync(req, keyPair)
+	return err
+}
+
+// AddAllowedStateController adds the address to the allowed state controlled address list
+func (ch *Chain) RemoveAllowedStateController(addr ledgerstate.Address, keyPair *ed25519.KeyPair) error {
+	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedCommitteeAddress,
+		governance.ParamStateAddress, addr,
+	).WithIotas(1)
+	_, err := ch.PostRequestSync(req, keyPair)
+	return err
+}
+
+// AddAllowedStateController adds the address to the allowed state controlled address list
+func (ch *Chain) GetAllowedStateControllerAddresses() []ledgerstate.Address {
+	res, err := ch.CallView(coreutil.CoreContractGovernance, governance.FuncGetAllowedCommitteeAddresses)
+	require.NoError(ch.Env.T, err)
+	if len(res) == 0 {
+		return nil
+	}
+	ret := make([]ledgerstate.Address, 0)
+	arr := collections.NewArray16ReadOnly(res, governance.ParamAllowedAddresses)
+	for i := uint16(0); i < arr.MustLen(); i++ {
+		a, ok, err := codec.DecodeAddress(arr.MustGetAt(i))
+		require.NoError(ch.Env.T, err)
+		require.True(ch.Env.T, ok)
+		ret = append(ret, a)
+	}
+	return ret
+}
+
+// RotateStateController rotates the chain to the new controller address.
+// We assume self-governed chain here.
+// Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
+func (ch *Chain) RotateStateController(addr ledgerstate.Address, keyPair *ed25519.KeyPair) error {
+	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateCommittee,
+		coreutil.ParamStateAddress, addr,
+	).WithIotas(1)
+	_, err := ch.PostRequestSync(req, nil)
+	return err
 }

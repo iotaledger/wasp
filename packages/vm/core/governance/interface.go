@@ -40,6 +40,6 @@ const (
 	StateVarFakeBlockMarker           = "m"
 
 	// params
-	ParamStateAddress     = "s"
+	ParamStateAddress     = coreutil.ParamStateAddress
 	ParamAllowedAddresses = "a"
 )
