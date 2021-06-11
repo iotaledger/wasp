@@ -24,7 +24,6 @@ func (ch *Chain) runRequestsSync(reqs []coretypes.Request, trace string) (dict.D
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	ch.reqCounter.Add(int32(len(reqs)))
 	ch.mempool.ReceiveRequests(reqs...)
 	ch.mempool.WaitInBufferEmpty()
 
@@ -57,7 +56,6 @@ func (ch *Chain) runRequestsNolock(reqs []coretypes.Request, trace string) (dict
 		require.NoError(ch.Env.T, err)
 		callRes = callResult
 		callErr = callError
-		ch.reqCounter.Add(int32(-len(task.Requests)))
 	}
 
 	ch.Env.vmRunner.Run(task)

@@ -2,7 +2,6 @@ package tests
 
 import (
 	"testing"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -45,8 +44,8 @@ func TestIncSoloRepeatMany(t *testing.T) {
 		WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
-	time.Sleep(1 * time.Second)
-	chain.WaitForEmptyBacklog()
+	require.True(t, chain.WaitForRequestsThrough(6))
+	//chain.WaitForEmptyBacklog()
 	ret, err := chain.CallView(incName, "getCounter")
 	require.NoError(t, err)
 	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))

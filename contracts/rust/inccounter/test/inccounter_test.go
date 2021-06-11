@@ -68,8 +68,7 @@ func TestIncrementRepeatThrice(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	time.Sleep(1 * time.Second)
-	chain.WaitForEmptyBacklog()
+	require.True(t, chain.WaitForRequestsThrough(7))
 
 	checkStateCounter(t, chain, 4)
 }
@@ -101,8 +100,7 @@ func TestIncrementPostIncrement(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	time.Sleep(1 * time.Second)
-	chain.WaitForEmptyBacklog()
+	require.True(t, chain.WaitForRequestsThrough(5))
 
 	checkStateCounter(t, chain, 2)
 }
@@ -135,7 +133,7 @@ func TestIncrementLocalStatePost(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.WaitForEmptyBacklog()
+	require.True(t, chain.WaitForRequestsThrough(7))
 
 	// global var in wasm execution has no effect
 	checkStateCounter(t, chain, nil)

@@ -247,33 +247,25 @@ func (ch *Chain) CallView(scName string, funName string, params ...interface{}) 
 	return vctx.CallView(coretypes.Hn(scName), coretypes.Hn(funName), p)
 }
 
-// WaitForEmptyBacklog waits until the backlog queue of the chain becomes empty.
-// It is useful when smart contract(s) in the test are posting asynchronous requests
-// between chains.
-//
-// The call is only needed in order to prevent finishing the test before all
-// asynchronous request between chains are processed.
-// Otherwise waiting is not necessary because all PostRequestSync calls by the test itself
-// are synchronous and are processed immediately
-//
-// NOTE: to wait for timed requests to be processed first move the clock forward
-func (ch *Chain) WaitForEmptyBacklog(maxWait ...time.Duration) {
+// WaitForRequestsThrough waits for the moment when counters for incoming requests and removed
+// requests in the mempool of the chain both become equal to the specified number
+func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bool {
 	maxw := 5 * time.Second
 	var deadline time.Time
 	if len(maxWait) > 0 {
 		maxw = maxWait[0]
 	}
 	deadline = time.Now().Add(maxw)
-	counter := 0
-	for ch.backlogLen() > 0 {
-		if counter%50 == 0 {
-			ch.Log.Infof("backlog length = %d", ch.backlogLen())
+	for {
+		mstats := ch.mempool.Stats()
+		if mstats.InBufCounter == numReq && mstats.OutPoolCounter == numReq {
+			return true
 		}
-		counter++
 		if time.Now().After(deadline) {
-			ch.Log.Warnf("exit due to timeout of max wait for %v", maxw)
-			return
+			ch.Log.Errorf("WaitForRequestsThrough. failed waiting max %v for %d requests through . Current IN: %d, OUT: %d",
+				maxw, numReq, mstats.InBufCounter, mstats.OutPoolCounter)
+			return false
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
 }

@@ -1,15 +1,15 @@
 package test
 
 import (
-	"testing"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/contracts/common"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 var (
@@ -19,11 +19,10 @@ var (
 )
 
 func deployErc20(t *testing.T) *solo.Chain {
-	env := solo.New(t, false, false)
-	chain := env.NewChain(nil, "chain1")
-	creator, creatorAddr = env.NewKeyPairWithFunds()
+	chain := common.StartChain(t, ScName)
+	creator, creatorAddr = chain.Env.NewKeyPairWithFunds()
 	creatorAgentID = coretypes.NewAgentID(creatorAddr, 0)
-	err := chain.DeployWasmContract(nil, ScName, erc20file,
+	err := common.DeployWasmContractByName(chain, ScName,
 		ParamSupply, solo.Saldo,
 		ParamCreator, creatorAgentID,
 	)

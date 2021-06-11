@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package testpeers
 
 import (
@@ -10,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
@@ -40,7 +44,7 @@ func SetupDkg(
 	suite *pairing.SuiteBn256,
 	log *logger.Logger,
 ) (ledgerstate.Address, []registry.DKShareRegistryProvider) {
-	timeout := 100 * time.Second
+	timeout := 1000 * time.Second
 	networkProviders := SetupNet(peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(), log)
 	//
 	// Initialize the DKG subsystem in each node.
@@ -59,14 +63,39 @@ func SetupDkg(
 		peerNetIDs,
 		peerPubs,
 		threshold,
-		1*time.Second,
-		2*time.Second,
+		100*time.Second,
+		200*time.Second,
 		timeout,
 	)
 	require.Nil(t, err)
 	require.NotNil(t, dkShare.Address)
 	require.NotNil(t, dkShare.SharedPublic)
 	return dkShare.Address, registries
+}
+
+func SetupDkgPregenerated(
+	t *testing.T,
+	threshold uint16,
+	peerNetIDs []string,
+	suite *pairing.SuiteBn256,
+) (ledgerstate.Address, []registry.DKShareRegistryProvider) {
+	var err error
+	var serializedDks [][]byte = pregeneratedDksRead(uint16(len(peerNetIDs)))
+	dks := make([]*tcrypto.DKShare, len(serializedDks))
+	registries := make([]registry.DKShareRegistryProvider, len(peerNetIDs))
+	for i := range dks {
+		dks[i], err = tcrypto.DKShareFromBytes(serializedDks[i], suite)
+		if i > 0 {
+			// It was removed to decrease the serialized size.
+			dks[i].PublicCommits = dks[0].PublicCommits
+			dks[i].PublicShares = dks[0].PublicShares
+		}
+		require.Nil(t, err)
+		registries[i] = testutil.NewDkgRegistryProvider(suite)
+		require.Nil(t, registries[i].SaveDKShare(dks[i]))
+	}
+	require.Equal(t, dks[0].T, threshold, "dks was pregenerated for different threshold (T=%v)", dks[0].T)
+	return dks[0].Address, registries
 }
 
 func SetupNet(
