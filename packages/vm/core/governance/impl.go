@@ -21,8 +21,11 @@ func checkRotateCommitteeRequest(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a.RequireChainOwner(ctx, "checkRotateCommitteeRequest")
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	addr := par.MustGetAddress(ParamStateAddress)
-	amap := collections.NewMap(ctx.State(), StateVarAllowedCommitteeAddresses)
+	// check is address is allowed
+	amap := collections.NewMapReadOnly(ctx.State(), StateVarAllowedCommitteeAddresses)
 	a.Require(amap.MustHasAt(addr.Bytes()), "checkRotateCommitteeRequest: address is not allowed as next state address: %s", addr.Base58())
+	// if check is successful, the block will be market as fake because this block will not be committed
+	ctx.State().Set(StateVarFakeBlockMarker, []byte{0xFF})
 	return nil, nil
 }
 
@@ -43,21 +46,5 @@ func removeAllowedCommitteeAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 	addr := par.MustGetAddress(ParamStateAddress)
 	amap := collections.NewMap(ctx.State(), StateVarAllowedCommitteeAddresses)
 	amap.MustDelAt(addr.Bytes())
-	return nil, nil
-}
-
-func isAllowedCommitteeAddress(ctx coretypes.SandboxView) (dict.Dict, error) {
-	par := kvdecoder.New(ctx.Params(), ctx.Log())
-	addr := par.MustGetAddress(ParamStateAddress)
-	allowed := MustIsAllowedCommitteeAddress(ctx.State(), addr)
-	ret := dict.New()
-	if allowed {
-		ret.Set(ParamIsAllowedAddress, []byte{0xFF})
-	}
-	return ret, nil
-}
-
-func moveToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Panicf("moveToAddress: not implemented")
 	return nil, nil
 }

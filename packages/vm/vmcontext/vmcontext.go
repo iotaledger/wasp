@@ -3,6 +3,8 @@ package vmcontext
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -134,10 +136,23 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 	vmctx.closeBlockContexts()
 }
 
-// mustSaveBlockInfo is in the blocklog poartition context
+func (vmctx *VMContext) isFakeBlock() bool {
+	vmctx.pushCallContext(governance.Interface.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	return governance.IsBlockMarkedFake(vmctx.State())
+}
+
+// mustSaveBlockInfo is in the blocklog partition context
 func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) {
-	// block info will be stored into the separate state update
 	vmctx.currentStateUpdate = state.NewStateUpdate()
+	if vmctx.isFakeBlock() {
+		// block was marked fake by the governance contract because it is a committee rotation.
+		// There was only on request in the block
+		// We skip saving block information in order to avoid inconsistencies
+		return
+	}
+	// block info will be stored into the separate state update
 	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
