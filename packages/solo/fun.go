@@ -611,10 +611,14 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []ledgerstate.Address {
 // RotateStateController rotates the chain to the new controller address.
 // We assume self-governed chain here.
 // Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
-func (ch *Chain) RotateStateController(addr ledgerstate.Address, keyPair *ed25519.KeyPair) error {
+func (ch *Chain) RotateStateController(newStateAddr ledgerstate.Address, newStateKeyPair *ed25519.KeyPair, ownerKeyPair *ed25519.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
-		coreutil.ParamStateControllerAddress, addr,
+		coreutil.ParamStateControllerAddress, newStateAddr,
 	).WithIotas(1)
-	_, err := ch.PostRequestSync(req, keyPair)
+	_, err := ch.PostRequestSync(req, ownerKeyPair)
+	if err == nil {
+		ch.StateControllerAddress = newStateAddr
+		ch.StateControllerKeyPair = newStateKeyPair
+	}
 	return err
 }

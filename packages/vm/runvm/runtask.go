@@ -49,6 +49,7 @@ func runTask(task *vm.VMTask) {
 	if len(task.Requests) == 0 {
 		task.Log.Panicf("MustRunVMTaskAsync: must be at least 1 request")
 	}
+	// TODO access and consensus pledge
 	outputs := outputsFromRequests(task.Requests...)
 	txb := utxoutil.NewBuilder(append(outputs, task.ChainInput)...)
 

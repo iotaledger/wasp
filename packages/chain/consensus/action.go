@@ -5,7 +5,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -506,7 +505,7 @@ func (c *consensus) processVMResult(result *vm.VMTask, isRotateRequest bool) {
 	}
 	essence := result.ResultTransactionEssence
 	if isRotateRequest {
-		essence = c.makeRotateCommitteeTransaction(result)
+		essence = c.makeRotateStateControllerTransaction(result)
 	}
 	essenceBytes := essence.Bytes()
 	essenceHash := hashing.HashData(essenceBytes)
@@ -537,31 +536,24 @@ func (c *consensus) processVMResult(result *vm.VMTask, isRotateRequest bool) {
 	c.log.Debugf("processVMResult: signed and broadcasted: essence hash: %s", msg.EssenceHash.String())
 }
 
-func (c *consensus) makeRotateCommitteeTransaction(task *vm.VMTask) *ledgerstate.TransactionEssence {
+func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledgerstate.TransactionEssence {
 	req := task.Requests[0]
 	par, _ := req.Params()
 	deco := kvdecoder.New(par, c.log)
 	nextAddr := deco.MustGetAddress(coreutil.ParamStateControllerAddress)
 	c.log.Infof("ROTATE committee to address %s", nextAddr.Base58())
 
-	inputs := []ledgerstate.Output{task.ChainInput}
-	if req.Output() != nil {
-		inputs = append(inputs, req.Output())
-	}
-	txb := utxoutil.NewBuilder(inputs...)
-	chained := task.ChainInput.NewAliasOutputNext(true)
-	if err := chained.SetStateAddress(nextAddr); err != nil {
-		c.log.Panicf("processRotateCommitteeRequest 1: %v", err)
-	}
-	if err := txb.ConsumeAliasInput(task.ChainInput.Address()); err != nil {
-		c.log.Panicf("processRotateCommitteeRequest 2: %v", err)
-	}
-	if err := txb.AddOutputAndSpendUnspent(chained); err != nil {
-		c.log.Panicf("processRotateCommitteeRequest 3: %v", err)
-	}
-	essence, _, err := txb.BuildEssence()
+	// TODO access and consensus pledge
+	essence, err := coreutil.MakeRotateStateControllerTransaction(
+		nextAddr,
+		task.ChainInput,
+		req.Output(),
+		task.Timestamp,
+		identity.ID{},
+		identity.ID{},
+	)
 	if err != nil {
-		c.log.Panicf("processRotateCommitteeRequest 4: %v", err)
+		c.log.Panicf("processRotateCommitteeRequest: %v", err)
 	}
 	return essence
 }

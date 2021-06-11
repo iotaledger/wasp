@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/vm/core/_default"
+
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/stretchr/testify/require"
@@ -65,8 +67,8 @@ func TestRotate(t *testing.T) {
 		chain := env.NewChain(nil, "chain1")
 		defer chain.Log.Sync()
 
-		_, addr := env.NewKeyPair()
-		err := chain.RotateStateController(addr, nil)
+		kp, addr := env.NewKeyPair()
+		err := chain.RotateStateController(addr, kp, nil)
 		require.Error(t, err)
 		strings.Contains(err.Error(), "checkRotateCommitteeRequest: address is not allowed as next state address")
 	})
@@ -76,23 +78,34 @@ func TestRotate(t *testing.T) {
 		defer chain.Log.Sync()
 
 		kp, addr := env.NewKeyPairWithFunds()
-		err := chain.RotateStateController(addr, kp)
+		err := chain.RotateStateController(addr, kp, kp)
 		require.Error(t, err)
 		strings.Contains(err.Error(), "checkRotateStateControllerRequest: unauthorized access")
 	})
-	t.Run("happy path", func(t *testing.T) {
+	t.Run("rotate success", func(t *testing.T) {
 		env := solo.New(t, false, false)
 		chain := env.NewChain(nil, "chain1")
 		defer chain.Log.Sync()
 
-		_, addr := env.NewKeyPair()
-		err := chain.AddAllowedStateController(addr, nil)
+		newKP, newAddr := env.NewKeyPair()
+		err := chain.AddAllowedStateController(newAddr, nil)
 		require.NoError(t, err)
 
-		err = chain.RotateStateController(addr, nil)
+		prevStateController := chain.StateControllerAddress
+
+		err = chain.RotateStateController(newAddr, newKP, nil)
 		require.NoError(t, err)
 
+		// state does not have new state address yet
 		ca := chain.GetControlAddresses()
-		require.True(t, ca.StateAddress.Equals(addr))
+		require.EqualValues(t, ca.StateAddress.Base58(), prevStateController.Base58())
+
+		// dummy call to refresh state address in the state
+		req := solo.NewCallParams(_default.Interface.Name, "dummy").WithIotas(1)
+		_, err = chain.PostRequestSync(req, nil)
+		require.NoError(t, err)
+
+		ca = chain.GetControlAddresses()
+		require.EqualValues(t, ca.StateAddress.Base58(), newAddr.Base58())
 	})
 }
