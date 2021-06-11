@@ -14,6 +14,7 @@ func Test1(t *testing.T) {
 	env := solo.New(t, false, false)
 	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
+	defer chain.Log.Sync()
 	chain.CheckControlAddresses()
 	chain.AssertTotalIotas(1)
 	chain.AssertOwnersIotas(1)

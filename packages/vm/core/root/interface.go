@@ -72,6 +72,8 @@ const (
 	ParamDeployer     = "$$deployer$$"
 )
 
+// TODO move ownership and fee -related methods to the governance contract
+
 // function names
 const (
 	FuncDeployContract         = "deployContract"

@@ -5,10 +5,11 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/_default"
 )
@@ -143,21 +144,23 @@ func CheckAuthorizationByChainOwner(state kv.KVStore, agentID *coretypes.AgentID
 	return currentOwner.Equals(agentID)
 }
 
-// storeAndInitContract internal utility function
-func storeAndInitContract(ctx coretypes.Sandbox, rec *ContractRecord, initParams dict.Dict) error {
+func mustStoreContract(ctx coretypes.Sandbox, i *coreutil.ContractInterface, a assert.Assert) {
+	rec := NewContractRecord(i, &coretypes.AgentID{})
+	ctx.Log().Debugf("mustStoreAndInitCoreContract: '%s', hname = %s", i.Name, i.Hname())
+	mustStoreContractRecord(ctx, rec, a)
+}
+
+func mustStoreAndInitCoreContract(ctx coretypes.Sandbox, i *coreutil.ContractInterface, a assert.Assert) {
+	mustStoreContract(ctx, i, a)
+	_, err := ctx.Call(coretypes.Hn(i.Name), coretypes.EntryPointInit, nil, nil)
+	a.RequireNoError(err)
+}
+
+func mustStoreContractRecord(ctx coretypes.Sandbox, rec *ContractRecord, a assert.Assert) {
 	hname := coretypes.Hn(rec.Name)
 	contractRegistry := collections.NewMap(ctx.State(), VarContractRegistry)
-	if contractRegistry.MustHasAt(hname.Bytes()) {
-		return fmt.Errorf("contract '%s'/%s already exist", rec.Name, hname.String())
-	}
+	a.Require(!contractRegistry.MustHasAt(hname.Bytes()), "contract '%s'/%s already exist", rec.Name, hname.String())
 	contractRegistry.MustSetAt(hname.Bytes(), EncodeContractRecord(rec))
-	_, err := ctx.Call(coretypes.Hn(rec.Name), coretypes.EntryPointInit, initParams, nil)
-	if err != nil {
-		// call to 'init' failed: delete record
-		contractRegistry.MustDelAt(hname.Bytes())
-		err = fmt.Errorf("contract '%s'/%s: calling 'init': %v", rec.Name, hname.String(), err)
-	}
-	return err
 }
 
 // isAuthorizedToDeploy checks if caller is authorized to deploy smart contract
