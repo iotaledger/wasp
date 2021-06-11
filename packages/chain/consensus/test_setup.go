@@ -65,18 +65,18 @@ type mockedEnv struct {
 }
 
 type mockedNode struct {
-	NodeID         string
-	Env            *mockedEnv
-	NodeConn       *testchain.MockedNodeConn  // GoShimmer mock
-	ChainCore      *testchain.MockedChainCore // Chain mock
-	stateSync      coreutil.ChainStateSync    // Chain mock
-	Mempool        chain.Mempool              // Consensus needs
-	Consensus      *consensus                 // Consensus needs
-	store          kvstore.KVStore            // State manager mock
-	SolidState     state.VirtualState         // State manager mock
-	StateOutput    *ledgerstate.AliasOutput   // State manager mock
-	Log            *logger.Logger
-	mutex          sync.Mutex
+	NodeID      string
+	Env         *mockedEnv
+	NodeConn    *testchain.MockedNodeConn  // GoShimmer mock
+	ChainCore   *testchain.MockedChainCore // Chain mock
+	stateSync   coreutil.ChainStateSync    // Chain mock
+	Mempool     chain.Mempool              // Consensus needs
+	Consensus   *consensus                 // Consensus needs
+	store       kvstore.KVStore            // State manager mock
+	SolidState  state.VirtualState         // State manager mock
+	StateOutput *ledgerstate.AliasOutput   // State manager mock
+	Log         *logger.Logger
+	mutex       sync.Mutex
 }
 
 func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledgerstate.Transaction) {
@@ -318,7 +318,7 @@ func (n *mockedNode) checkStateApproval() {
 	n.Mempool.RemoveRequests(reqIDsForLastState...)
 
 	n.Log.Infof("STATE APPROVED (%d reqs). Index: %d, State output: %s",
-		len(n.RequestIDsLast), n.SolidState.BlockIndex(), coretypes.OID(n.StateOutput.ID()))
+		len(reqIDsForLastState), n.SolidState.BlockIndex(), coretypes.OID(n.StateOutput.ID()))
 
 	n.eventStateTransition()
 }
