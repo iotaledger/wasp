@@ -6,14 +6,14 @@ import (
 
 // names of core contracts
 const (
-	CoreContractDefault    = "_default"
-	CoreContractRoot       = "root"
-	CoreContractAccounts   = "accounts"
-	CoreContractBlob       = "blob"
-	CoreContractEventlog   = "eventlog"
-	CoreContractBlocklog   = "blocklog"
-	CoreContractGovernance = "governance"
-	CoreEPRotateCommittee  = "rotateCommittee"
+	CoreContractDefault         = "_default"
+	CoreContractRoot            = "root"
+	CoreContractAccounts        = "accounts"
+	CoreContractBlob            = "blob"
+	CoreContractEventlog        = "eventlog"
+	CoreContractBlocklog        = "blocklog"
+	CoreContractGovernance      = "governance"
+	CoreEPRotateStateController = "rotateStateController"
 )
 
 var (
@@ -24,7 +24,7 @@ var (
 	CoreContractEventlogHname   = coretypes.Hn(CoreContractEventlog)
 	CoreContractBlocklogHname   = coretypes.Hn(CoreContractBlocklog)
 	CoreContractGovernanceHname = coretypes.Hn(CoreContractGovernance)
-	CoreEPRotateCommitteeHname  = coretypes.Hn(CoreEPRotateCommittee)
+	CoreEPRotateCommitteeHname  = coretypes.Hn(CoreEPRotateStateController)
 
 	hnames = map[string]coretypes.Hname{
 		CoreContractDefault:    CoreContractDefaultHname,
@@ -39,9 +39,9 @@ var (
 
 // the global names used in 'blocklog' contract and in 'state' package
 const (
-	StateVarTimestamp  = "T"
-	StateVarBlockIndex = "I"
-	ParamStateAddress  = "S"
+	StateVarTimestamp           = "T"
+	StateVarBlockIndex          = "I"
+	ParamStateControllerAddress = "S"
 )
 
 // used in 'state' package as key for timestamp and block index

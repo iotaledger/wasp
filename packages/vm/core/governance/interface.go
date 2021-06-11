@@ -22,24 +22,24 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.Func(coreutil.CoreEPRotateCommittee, checkRotateCommitteeRequest),
-		coreutil.Func(FuncAddAllowedCommitteeAddress, addAllowedCommitteeAddress),
-		coreutil.Func(FuncRemoveAllowedCommitteeAddress, removeAllowedCommitteeAddress),
-		coreutil.ViewFunc(FuncGetAllowedCommitteeAddresses, getAllowedCommitteeAddresses),
+		coreutil.Func(coreutil.CoreEPRotateStateController, checkRotateStateControllerRequest),
+		coreutil.Func(FuncAddAllowedStateControllerAddress, addAllowedStateControllerAddress),
+		coreutil.Func(FuncRemoveAllowedStateControllerAddress, removeAllowedCommitteeAddress),
+		coreutil.ViewFunc(FuncGetAllowedStateControllerAddresses, getAllowedStateControllerAddresses),
 	})
 }
 
 const (
 	// functions
-	FuncAddAllowedCommitteeAddress    = "addAllowedCommitteeAddress"
-	FuncRemoveAllowedCommitteeAddress = "removeAllowedCommitteeAddress"
-	FuncGetAllowedCommitteeAddresses  = "getAllowedCommitteeAddresses"
+	FuncAddAllowedStateControllerAddress    = "addAllowedStateControllerAddress"
+	FuncRemoveAllowedStateControllerAddress = "removeAllowedStateControllerAddress"
+	FuncGetAllowedStateControllerAddresses  = "getAllowedStateControllerAddresses"
 
 	// state variables
-	StateVarAllowedCommitteeAddresses = "a"
-	StateVarFakeBlockMarker           = "m"
+	StateVarAllowedStateControllerAddresses = "a"
+	StateVarFakeBlockMarker                 = "m"
 
 	// params
-	ParamStateAddress     = coreutil.ParamStateAddress
-	ParamAllowedAddresses = "a"
+	ParamStateControllerAddress          = coreutil.ParamStateControllerAddress
+	ParamAllowedStateControllerAddresses = "a"
 )

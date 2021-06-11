@@ -541,7 +541,7 @@ func (c *consensus) makeRotateCommitteeTransaction(task *vm.VMTask) *ledgerstate
 	req := task.Requests[0]
 	par, _ := req.Params()
 	deco := kvdecoder.New(par, c.log)
-	nextAddr := deco.MustGetAddress(coreutil.ParamStateAddress)
+	nextAddr := deco.MustGetAddress(coreutil.ParamStateControllerAddress)
 	c.log.Infof("ROTATE committee to address %s", nextAddr.Base58())
 
 	inputs := []ledgerstate.Output{task.ChainInput}

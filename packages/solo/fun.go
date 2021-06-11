@@ -574,8 +574,8 @@ func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
 func (ch *Chain) AddAllowedStateController(addr ledgerstate.Address, keyPair *ed25519.KeyPair) error {
-	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedCommitteeAddress,
-		governance.ParamStateAddress, addr,
+	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedStateControllerAddress,
+		governance.ParamStateControllerAddress, addr,
 	).WithIotas(1)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
@@ -583,8 +583,8 @@ func (ch *Chain) AddAllowedStateController(addr ledgerstate.Address, keyPair *ed
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
 func (ch *Chain) RemoveAllowedStateController(addr ledgerstate.Address, keyPair *ed25519.KeyPair) error {
-	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedCommitteeAddress,
-		governance.ParamStateAddress, addr,
+	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedStateControllerAddress,
+		governance.ParamStateControllerAddress, addr,
 	).WithIotas(1)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
@@ -592,13 +592,13 @@ func (ch *Chain) RemoveAllowedStateController(addr ledgerstate.Address, keyPair 
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
 func (ch *Chain) GetAllowedStateControllerAddresses() []ledgerstate.Address {
-	res, err := ch.CallView(coreutil.CoreContractGovernance, governance.FuncGetAllowedCommitteeAddresses)
+	res, err := ch.CallView(coreutil.CoreContractGovernance, governance.FuncGetAllowedStateControllerAddresses)
 	require.NoError(ch.Env.T, err)
 	if len(res) == 0 {
 		return nil
 	}
 	ret := make([]ledgerstate.Address, 0)
-	arr := collections.NewArray16ReadOnly(res, governance.ParamAllowedAddresses)
+	arr := collections.NewArray16ReadOnly(res, governance.ParamAllowedStateControllerAddresses)
 	for i := uint16(0); i < arr.MustLen(); i++ {
 		a, ok, err := codec.DecodeAddress(arr.MustGetAt(i))
 		require.NoError(ch.Env.T, err)
@@ -612,8 +612,8 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []ledgerstate.Address {
 // We assume self-governed chain here.
 // Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
 func (ch *Chain) RotateStateController(addr ledgerstate.Address, keyPair *ed25519.KeyPair) error {
-	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateCommittee,
-		coreutil.ParamStateAddress, addr,
+	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
+		coreutil.ParamStateControllerAddress, addr,
 	).WithIotas(1)
 	_, err := ch.PostRequestSync(req, nil)
 	return err

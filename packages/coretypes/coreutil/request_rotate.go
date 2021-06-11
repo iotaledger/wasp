@@ -17,7 +17,7 @@ func IsRotateCommitteeRequest(req coretypes.Request) bool {
 
 func NewRotateRequestOffLedger(newStateAddress ledgerstate.Address, keyPair *ed25519.KeyPair) coretypes.Request {
 	args := requestargs.New(nil)
-	args.AddEncodeSimple(ParamStateAddress, codec.EncodeAddress(newStateAddress))
+	args.AddEncodeSimple(ParamStateControllerAddress, codec.EncodeAddress(newStateAddress))
 	ret := request.NewRequestOffLedger(CoreContractGovernanceHname, CoreEPRotateCommitteeHname, args)
 	ret.Sign(keyPair)
 	return ret
