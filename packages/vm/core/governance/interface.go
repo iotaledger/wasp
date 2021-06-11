@@ -25,6 +25,7 @@ func init() {
 		coreutil.Func(coreutil.CoreEPRotateCommittee, checkRotateCommitteeRequest),
 		coreutil.Func(FuncAddAllowedCommitteeAddress, addAllowedCommitteeAddress),
 		coreutil.Func(FuncRemoveAllowedCommitteeAddress, removeAllowedCommitteeAddress),
+		coreutil.ViewFunc(FuncGetAllowedCommitteeAddresses, getAllowedCommitteeAddresses),
 	})
 }
 
@@ -32,6 +33,7 @@ const (
 	// functions
 	FuncAddAllowedCommitteeAddress    = "addAllowedCommitteeAddress"
 	FuncRemoveAllowedCommitteeAddress = "removeAllowedCommitteeAddress"
+	FuncGetAllowedCommitteeAddresses  = "getAllowedCommitteeAddresses"
 
 	// state variables
 	StateVarAllowedCommitteeAddresses = "a"
@@ -39,5 +41,5 @@ const (
 
 	// params
 	ParamStateAddress     = "s"
-	ParamIsAllowedAddress = "i"
+	ParamAllowedAddresses = "a"
 )

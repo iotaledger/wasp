@@ -48,3 +48,17 @@ func removeAllowedCommitteeAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 	amap.MustDelAt(addr.Bytes())
 	return nil, nil
 }
+
+func getAllowedCommitteeAddresses(ctx coretypes.SandboxView) (dict.Dict, error) {
+	amap := collections.NewMapReadOnly(ctx.State(), StateVarAllowedCommitteeAddresses)
+	if amap.MustLen() == 0 {
+		return nil, nil
+	}
+	ret := dict.New()
+	retArr := collections.NewArray16(ret, ParamAllowedAddresses)
+	amap.MustIterateKeys(func(elemKey []byte) bool {
+		retArr.MustPush(elemKey)
+		return true
+	})
+	return ret, nil
+}
