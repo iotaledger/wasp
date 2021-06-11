@@ -615,6 +615,6 @@ func (ch *Chain) RotateStateController(addr ledgerstate.Address, keyPair *ed2551
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, addr,
 	).WithIotas(1)
-	_, err := ch.PostRequestSync(req, nil)
+	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }

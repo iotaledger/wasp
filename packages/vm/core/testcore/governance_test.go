@@ -65,9 +65,34 @@ func TestRotate(t *testing.T) {
 		chain := env.NewChain(nil, "chain1")
 		defer chain.Log.Sync()
 
-		_, addr1 := env.NewKeyPair()
-		err := chain.RotateStateController(addr1, nil)
+		_, addr := env.NewKeyPair()
+		err := chain.RotateStateController(addr, nil)
 		require.Error(t, err)
 		strings.Contains(err.Error(), "checkRotateCommitteeRequest: address is not allowed as next state address")
+	})
+	t.Run("unauthorised", func(t *testing.T) {
+		env := solo.New(t, false, false)
+		chain := env.NewChain(nil, "chain1")
+		defer chain.Log.Sync()
+
+		kp, addr := env.NewKeyPairWithFunds()
+		err := chain.RotateStateController(addr, kp)
+		require.Error(t, err)
+		strings.Contains(err.Error(), "checkRotateStateControllerRequest: unauthorized access")
+	})
+	t.Run("happy path", func(t *testing.T) {
+		env := solo.New(t, false, false)
+		chain := env.NewChain(nil, "chain1")
+		defer chain.Log.Sync()
+
+		_, addr := env.NewKeyPair()
+		err := chain.AddAllowedStateController(addr, nil)
+		require.NoError(t, err)
+
+		err = chain.RotateStateController(addr, nil)
+		require.NoError(t, err)
+
+		//ca := chain.GetControlAddresses()
+		//require.True(t, ca.StateAddress.Equals(addr))
 	})
 }
