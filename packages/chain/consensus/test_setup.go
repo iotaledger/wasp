@@ -353,105 +353,61 @@ func (n *mockedNode) StartTimer() {
 	}()
 }
 
-func (n *mockedNode) WaitTimerTick(until int) {
-	for {
-		snap := n.Consensus.GetStatusSnapshot()
-		if snap == nil {
-			continue
+func (env *mockedEnv) WaitTimerTick(until int) error {
+	checkTimerTickFun := func(node *mockedNode) bool {
+		snap := node.Consensus.GetStatusSnapshot()
+		if snap != nil && snap.TimerTick >= until {
+			return true
 		}
-		if snap.TimerTick >= until {
-			return
-		}
-		time.Sleep(10 * time.Millisecond)
+		return false
 	}
-}
+	return env.WaitForEventFromNodes("TimerTick", checkTimerTickFun)
 
-func (env *mockedEnv) WaitTimerTick(until int) {
-	var wg sync.WaitGroup
-	wg.Add(env.nodeCount())
-	for _, n := range env.Nodes {
-		go func() {
-			n.WaitTimerTick(until)
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-	env.Log.Infof("target timer tick #%d has been reached", until)
-}
-
-func (n *mockedNode) WaitStateIndex(until uint32, timeout ...time.Duration) error {
-	deadline := time.Now().Add(10 * time.Second)
-	if len(timeout) > 0 {
-		deadline = time.Now().Add(timeout[0])
-	}
-	for {
-		snap := n.Consensus.GetStatusSnapshot()
-		if snap == nil {
-			continue
-		}
-		if snap.StateIndex >= until {
-			//n.Log.Debugf("reached index %d", until)
-			return nil
-		}
-		time.Sleep(10 * time.Millisecond)
-		if time.Now().After(deadline) {
-			return fmt.Errorf("node %s: WaitStateIndex timeout", n.NodeID)
-		}
-	}
-}
-
-func (n *mockedNode) WaitMempool(numRequests int, timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
-	for {
-		snap := n.Consensus.GetStatusSnapshot()
-		if snap == nil {
-			time.Sleep(10 * time.Millisecond)
-			continue
-		}
-		if snap.Mempool.InPoolCounter >= numRequests && snap.Mempool.OutPoolCounter >= numRequests {
-			return nil
-		}
-		if time.Now().After(deadline) {
-			return fmt.Errorf("node %s: WaitMempool timeout", n.NodeID)
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
 }
 
 func (env *mockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...time.Duration) error {
-	ch := make(chan int)
-	for _, n := range env.Nodes {
-		go func(n *mockedNode) {
-			if err := n.WaitStateIndex(stateIndex, timeout...); err != nil {
-				ch <- 0
-			} else {
-				ch <- 1
-			}
-		}(n)
-	}
-	var sum int
-	for n := range ch {
-		sum += n
-		if sum >= quorum {
-			return nil
+	checkStateIndexFun := func(node *mockedNode) bool {
+		snap := node.Consensus.GetStatusSnapshot()
+		if snap != nil && snap.StateIndex >= stateIndex {
+			return true
 		}
+		return false
 	}
-	return fmt.Errorf("WaitStateIndex: timeout")
+	return env.WaitForEventFromNodesQuorum("stateIndex", quorum, checkStateIndexFun)
 }
 
 func (env *mockedEnv) WaitMempool(numRequests int, quorum int, timeout ...time.Duration) error {
+	checkMempoolFun := func(node *mockedNode) bool {
+		snap := node.Consensus.GetStatusSnapshot()
+		if snap != nil && snap.Mempool.InPoolCounter >= numRequests && snap.Mempool.OutPoolCounter >= numRequests {
+			return true
+		}
+		return false
+	}
+	return env.WaitForEventFromNodesQuorum("mempool", quorum, checkMempoolFun)
+}
+
+func (env *mockedEnv) WaitForEventFromNodes(waitName string, nodeConditionFun func(node *mockedNode) bool, timeout ...time.Duration) error {
+	return env.WaitForEventFromNodesQuorum(waitName, env.nodeCount(), nodeConditionFun)
+}
+
+func (env *mockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, isEventOccuredFun func(node *mockedNode) bool, timeout ...time.Duration) error {
 	to := 10 * time.Second
 	if len(timeout) > 0 {
 		to = timeout[0]
 	}
 	ch := make(chan int)
+	nodeCount := env.nodeCount()
+	deadline := time.Now().Add(to)
 	for _, n := range env.Nodes {
 		go func(node *mockedNode) {
-			if err := node.WaitMempool(numRequests, to); err != nil {
-				ch <- 0
-			} else {
-				ch <- 1
+			for time.Now().Before(deadline) {
+				if isEventOccuredFun(node) {
+					ch <- 1
+				}
+				time.Sleep(10 * time.Millisecond)
 			}
+			ch <- 0
 		}(n)
 	}
 	var sum, total int
@@ -461,11 +417,12 @@ func (env *mockedEnv) WaitMempool(numRequests int, quorum int, timeout ...time.D
 		if sum >= quorum {
 			return nil
 		}
-		if total >= len(env.Nodes) {
-			break
+		if total > nodeCount {
+			return fmt.Errorf("Wait for %s: too many nodes responded: %v (total nodes %v)", waitName, total, nodeCount)
 		}
 	}
-	return fmt.Errorf("WaitMempool: timeout expired %v", to)
+	return fmt.Errorf("Wait for %s: timeout expired %v; %v of %v nodes reached condition, %v responded, quorum needed %v",
+		waitName, to, sum, nodeCount, total, quorum)
 }
 
 func (env *mockedEnv) postDummyRequests(n int, randomize ...bool) {

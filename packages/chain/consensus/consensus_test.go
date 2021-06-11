@@ -19,7 +19,8 @@ func TestConsensusEnvMockedACS(t *testing.T) {
 		env, _ := NewMockedEnv(t, 4, 3, false)
 		env.StartTimers()
 		env.setInitialConsensusState()
-		env.WaitTimerTick(43)
+		err := env.WaitTimerTick(43)
+		require.NoError(t, err)
 	})
 }
 
@@ -146,7 +147,8 @@ func TestConsensusEnv(t *testing.T) {
 		env, _ := NewMockedEnv(t, 4, 3, false)
 		env.StartTimers()
 		env.setInitialConsensusState()
-		env.WaitTimerTick(43)
+		err := env.WaitTimerTick(43)
+		require.NoError(t, err)
 	})
 }
 
