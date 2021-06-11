@@ -16,7 +16,7 @@ import (
 func TestGovernance1(t *testing.T) {
 	core.PrintWellKnownHnames()
 
-	t.Run("empty list allowed rotation addresses", func(t *testing.T) {
+	t.Run("empty list of allowed rotation addresses", func(t *testing.T) {
 		env := solo.New(t, false, false)
 		chain := env.NewChain(nil, "chain1")
 		defer chain.Log.Sync()
@@ -73,5 +73,24 @@ func TestGovernance1(t *testing.T) {
 		require.EqualValues(t, 1, retArr.MustLen())
 
 		require.EqualValues(t, addr2.Bytes(), retArr.MustGetAt(0))
+
+		req = solo.NewCallParams(governance.Name, governance.FuncRemoveAllowedCommitteeAddress,
+			governance.ParamStateAddress, addr1).WithIotas(1)
+		_, err = chain.PostRequestSync(req, nil)
+		require.NoError(t, err)
+
+		res, err = chain.CallView(governance.Name, governance.FuncGetAllowedCommitteeAddresses)
+		require.NoError(t, err)
+		retArr = collections.NewArray16ReadOnly(res, governance.ParamAllowedAddresses)
+		require.EqualValues(t, 1, retArr.MustLen())
+
+		req = solo.NewCallParams(governance.Name, governance.FuncRemoveAllowedCommitteeAddress,
+			governance.ParamStateAddress, addr2).WithIotas(1)
+		_, err = chain.PostRequestSync(req, nil)
+		require.NoError(t, err)
+
+		res, err = chain.CallView(governance.Name, governance.FuncGetAllowedCommitteeAddresses)
+		require.NoError(t, err)
+		require.EqualValues(t, 0, len(res))
 	})
 }
