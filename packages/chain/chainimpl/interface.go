@@ -31,7 +31,7 @@ func (c *chainObj) ID() *chainid.ChainID {
 }
 
 func (c *chainObj) GlobalStateSync() coreutil.ChainStateSync {
-	return c.globalSync
+	return c.chainStateSync
 }
 
 func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {
@@ -190,7 +190,7 @@ func (c *chainObj) Events() chain.ChainEvents {
 
 // GetStateReader returns a new copy of the optimistic state reader, with own baseline
 func (c *chainObj) GetStateReader() state.OptimisticStateReader {
-	return state.NewOptimisticStateReader(c.db, c.globalSync)
+	return state.NewOptimisticStateReader(c.db, c.chainStateSync)
 }
 
 func (c *chainObj) Log() *logger.Logger {

@@ -92,7 +92,7 @@ func TestRotate(t *testing.T) {
 		err = chain.RotateStateController(addr, nil)
 		require.NoError(t, err)
 
-		//ca := chain.GetControlAddresses()
-		//require.True(t, ca.StateAddress.Equals(addr))
+		ca := chain.GetControlAddresses()
+		require.True(t, ca.StateAddress.Equals(addr))
 	})
 }
