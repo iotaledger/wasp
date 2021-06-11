@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -135,14 +134,4 @@ func (m *MockedChainCore) OnGetStateReader(f func() state.OptimisticStateReader)
 
 func (m *MockedChainCore) OnGlobalStateSync(f func() coreutil.ChainStateSync) {
 	m.onGlobalStateSync = f
-}
-
-func (m *MockedChainCore) Committee() *chain.Committee {
-	// TODO
-	return nil
-}
-
-func (m *MockedChainCore) Peers() *peering.PeerDomainProvider {
-	// TODO
-	return nil
 }

@@ -13,6 +13,7 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
@@ -35,8 +36,7 @@ type ChainCore interface {
 	GetStateReader() state.OptimisticStateReader
 	Log() *logger.Logger
 	GlobalSolidIndex() *atomic.Uint32
-	Committee() *Committee
-	Peers() *peering.PeerDomainProvider
+	ReceiveOffLedgerRequest(req *request.RequestOffLedger)
 }
 
 // ChainEntry interface to access chain from the chain registry side
@@ -54,7 +54,6 @@ type ChainEntry interface {
 type ChainRequests interface {
 	GetRequestProcessingStatus(id coretypes.RequestID) RequestProcessingStatus
 	EventRequestProcessed() *events.Event
-	ReceiveOffLedgerRequests(reqs ...coretypes.Request)
 }
 
 type ChainEvents interface {
@@ -122,6 +121,7 @@ type Consensus interface {
 
 type Mempool interface {
 	ReceiveRequests(reqs ...coretypes.Request)
+	ReceiveRequest(req coretypes.Request) bool
 	RemoveRequests(reqs ...coretypes.RequestID)
 	ReadyNow(nowis ...time.Time) []coretypes.Request
 	ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)

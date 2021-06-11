@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/reqstatus"
 	"github.com/iotaledger/wasp/packages/webapi/request"
 	"github.com/iotaledger/wasp/packages/webapi/state"
+	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
@@ -26,7 +27,7 @@ func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP) {
 	blob.AddEndpoints(pub)
 	info.AddEndpoints(pub)
 	reqstatus.AddEndpoints(pub)
-	request.AddEndpoints(pub)
+	request.AddEndpoints(pub, chains.AllChains().Get)
 	state.AddEndpoints(pub)
 
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")

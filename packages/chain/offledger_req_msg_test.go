@@ -1,4 +1,4 @@
-package offledger
+package chain
 
 import (
 	"bytes"
@@ -33,6 +33,6 @@ func TestMarshalling(t *testing.T) {
 	unmarshalledMsg, err := OffLedgerRequestMsgFromBytes(msgBytes)
 	require.NoError(t, err)
 
-	require.True(t, unmarshalledMsg.chainID.AliasAddress.Equals(msg.chainID.AliasAddress))
-	require.True(t, bytes.Equal(unmarshalledMsg.req.Bytes(), msg.req.Bytes()))
+	require.True(t, unmarshalledMsg.ChainID.AliasAddress.Equals(msg.ChainID.AliasAddress))
+	require.True(t, bytes.Equal(unmarshalledMsg.Req.Bytes(), msg.Req.Bytes()))
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -104,8 +103,19 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 	}
 }
 
-func (c *chainObj) ReceiveOffLedgerRequests(reqs ...coretypes.Request) {
-	c.mempool.ReceiveRequests(reqs...)
+const gossipUpToNPeers = 10
+
+func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
+	if !c.mempool.ReceiveRequest(req) {
+		return
+	}
+
+	msgData := chain.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
+	if c.committee != nil {
+		c.committee.SendMsgToPeers(chain.MsgOffLedgerRequest, msgData, time.Now().UnixNano())
+		return
+	}
+	(*c.peers).SendMsgToRandomPeersSimple(gossipUpToNPeers, chain.MsgOffLedgerRequest, msgData)
 }
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
@@ -200,12 +210,4 @@ func (c *chainObj) GetStateReader() state.OptimisticStateReader {
 
 func (c *chainObj) Log() *logger.Logger {
 	return c.log
-}
-
-func (c *chainObj) Committee() *chain.Committee {
-	return &c.committee
-}
-
-func (c *chainObj) Peers() *peering.PeerDomainProvider {
-	return c.peers
 }

@@ -7,10 +7,8 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/iotaledger/wasp/packages/offledger"
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/plugins/gossip"
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 
@@ -203,12 +201,13 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.consensus.EventSignedResultMsg(msgt)
 		}
 	case chain.MsgOffLedgerRequest:
-		msgt, err := offledger.OffLedgerRequestMsgFromBytes(msg.MsgData)
+		msg, err := chain.OffLedgerRequestMsgFromBytes(msg.MsgData)
 		if err != nil {
 			c.log.Error(err)
 			return
 		}
-		gossip.Gossip().ProcessOffLedgerRequest(msgt.ChainID, msgt.Req)
+		// TODO check if msg.ChainID matches the current chain? - not sure if needed
+		c.ReceiveOffLedgerRequest(msg.Req)
 		return
 
 	default:
