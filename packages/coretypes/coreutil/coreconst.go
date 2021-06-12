@@ -17,14 +17,14 @@ const (
 )
 
 var (
-	CoreContractDefaultHname    = coretypes.Hname(0)
-	CoreContractRootHname       = coretypes.Hn(CoreContractRoot)
-	CoreContractAccountsHname   = coretypes.Hn(CoreContractAccounts)
-	CoreContractBlobHname       = coretypes.Hn(CoreContractBlob)
-	CoreContractEventlogHname   = coretypes.Hn(CoreContractEventlog)
-	CoreContractBlocklogHname   = coretypes.Hn(CoreContractBlocklog)
-	CoreContractGovernanceHname = coretypes.Hn(CoreContractGovernance)
-	CoreEPRotateCommitteeHname  = coretypes.Hn(CoreEPRotateStateController)
+	CoreContractDefaultHname         = coretypes.Hname(0)
+	CoreContractRootHname            = coretypes.Hn(CoreContractRoot)
+	CoreContractAccountsHname        = coretypes.Hn(CoreContractAccounts)
+	CoreContractBlobHname            = coretypes.Hn(CoreContractBlob)
+	CoreContractEventlogHname        = coretypes.Hn(CoreContractEventlog)
+	CoreContractBlocklogHname        = coretypes.Hn(CoreContractBlocklog)
+	CoreContractGovernanceHname      = coretypes.Hn(CoreContractGovernance)
+	CoreEPRotateStateControllerHname = coretypes.Hn(CoreEPRotateStateController)
 
 	hnames = map[string]coretypes.Hname{
 		CoreContractDefault:    CoreContractDefaultHname,

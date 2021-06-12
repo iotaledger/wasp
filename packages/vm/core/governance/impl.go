@@ -39,9 +39,9 @@ func addAllowedStateControllerAddress(ctx coretypes.Sandbox) (dict.Dict, error) 
 	return nil, nil
 }
 
-func removeAllowedCommitteeAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
+func removeAllowedStateControllerAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	a.RequireChainOwner(ctx, "removeAllowedCommitteeAddress")
+	a.RequireChainOwner(ctx, "removeAllowedStateControllerAddress")
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	addr := par.MustGetAddress(ParamStateControllerAddress)
 	amap := collections.NewMap(ctx.State(), StateVarAllowedStateControllerAddresses)

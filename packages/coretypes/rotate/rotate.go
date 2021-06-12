@@ -1,7 +1,9 @@
-package coreutil
+package rotate
 
 import (
 	"time"
+
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -13,16 +15,16 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
-// IsRotateCommitteeRequest determines if request may be a committee rotation request
-func IsRotateCommitteeRequest(req coretypes.Request) bool {
+// IsRotateStateControllerRequest determines if request may be a committee rotation request
+func IsRotateStateControllerRequest(req coretypes.Request) bool {
 	targetContract, targetEP := req.Target()
-	return targetContract == CoreContractGovernanceHname && targetEP == CoreEPRotateCommitteeHname
+	return targetContract == coreutil.CoreContractGovernanceHname && targetEP == coreutil.CoreEPRotateStateControllerHname
 }
 
 func NewRotateRequestOffLedger(newStateAddress ledgerstate.Address, keyPair *ed25519.KeyPair) coretypes.Request {
 	args := requestargs.New(nil)
-	args.AddEncodeSimple(ParamStateControllerAddress, codec.EncodeAddress(newStateAddress))
-	ret := request.NewRequestOffLedger(CoreContractGovernanceHname, CoreEPRotateCommitteeHname, args)
+	args.AddEncodeSimple(coreutil.ParamStateControllerAddress, codec.EncodeAddress(newStateAddress))
+	ret := request.NewRequestOffLedger(coreutil.CoreContractGovernanceHname, coreutil.CoreEPRotateStateControllerHname, args)
 	ret.Sign(keyPair)
 	return ret
 }
@@ -59,3 +61,23 @@ func MakeRotateStateControllerTransaction(
 	}
 	return essence, nil
 }
+
+//
+//func MakeStartRotateRequestTransaction(chainID *chainid.ChainID, newStateAddress ledgerstate.Address, inputs []ledgerstate.Output, senderKeyPair *ed25519.KeyPair) (*ledgerstate.Transaction, error) {
+//	args := requestargs.New(nil)
+//	args.AddEncodeSimple(coreutil.ParamStateControllerAddress, codec.EncodeAddress(newStateAddress))
+//	req := transaction.RequestParams{
+//		ChainID:    *chainID,
+//		Contract:   coreutil.CoreContractGovernanceHname,
+//		EntryPoint: coreutil.CoreEPStartRotateStateControllerHname,
+//		Transfer: ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
+//			ledgerstate.ColorIOTA: 1,
+//		}),
+//		Args: args,
+//	}
+//	return transaction.NewRequestTransaction(transaction.NewRequestTransactionParams{
+//		SenderKeyPair:  senderKeyPair,
+//		UnspentOutputs: inputs,
+//		Requests:       []transaction.RequestParams{req},
+//	})
+//}

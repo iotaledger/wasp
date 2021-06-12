@@ -5,6 +5,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/rotate"
+
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -544,7 +546,7 @@ func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledge
 	c.log.Infof("ROTATE committee to address %s", nextAddr.Base58())
 
 	// TODO access and consensus pledge
-	essence, err := coreutil.MakeRotateStateControllerTransaction(
+	essence, err := rotate.MakeRotateStateControllerTransaction(
 		nextAddr,
 		task.ChainInput,
 		req.Output(),

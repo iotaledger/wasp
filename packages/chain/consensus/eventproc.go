@@ -3,7 +3,7 @@ package consensus
 import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/coretypes/rotate"
 )
 
 func (c *consensus) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
@@ -49,7 +49,7 @@ func (c *consensus) EventVMResultMsg(msg *chain.VMResultMsg) {
 	c.eventVMResultMsgCh <- msg
 }
 func (c *consensus) eventVMResultMsg(msg *chain.VMResultMsg) {
-	isRotateRequest := msg.NoError && len(msg.Task.Requests) == 1 && coreutil.IsRotateCommitteeRequest(msg.Task.Requests[0])
+	isRotateRequest := msg.NoError && len(msg.Task.Requests) == 1 && rotate.IsRotateStateControllerRequest(msg.Task.Requests[0])
 	c.processVMResult(msg.Task, isRotateRequest)
 	c.takeAction()
 }

@@ -1,4 +1,4 @@
-package coreutil
+package rotate
 
 import (
 	"testing"
@@ -11,5 +11,5 @@ import (
 func TestBasicRotateRequest(t *testing.T) {
 	kp, addr := testkey.GenKeyAddr()
 	req := NewRotateRequestOffLedger(addr, kp)
-	require.True(t, IsRotateCommitteeRequest(req))
+	require.True(t, IsRotateStateControllerRequest(req))
 }

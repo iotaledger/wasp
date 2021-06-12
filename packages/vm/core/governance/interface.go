@@ -24,7 +24,7 @@ func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
 		coreutil.Func(coreutil.CoreEPRotateStateController, checkRotateStateControllerRequest),
 		coreutil.Func(FuncAddAllowedStateControllerAddress, addAllowedStateControllerAddress),
-		coreutil.Func(FuncRemoveAllowedStateControllerAddress, removeAllowedCommitteeAddress),
+		coreutil.Func(FuncRemoveAllowedStateControllerAddress, removeAllowedStateControllerAddress),
 		coreutil.ViewFunc(FuncGetAllowedStateControllerAddresses, getAllowedStateControllerAddresses),
 	})
 }

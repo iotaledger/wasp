@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/rotate"
+
 	"github.com/iotaledger/hive.go/identity"
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -68,7 +70,7 @@ func (ch *Chain) runRequestsNolock(reqs []coretypes.Request, trace string) (dict
 	ch.Env.AdvanceClockBy(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 
 	var essence *ledgerstate.TransactionEssence
-	isRotateRequest := callErr == nil && len(task.Requests) == 1 && coreutil.IsRotateCommitteeRequest(task.Requests[0])
+	isRotateRequest := callErr == nil && len(task.Requests) == 1 && rotate.IsRotateStateControllerRequest(task.Requests[0])
 
 	ts := task.ResultTransactionEssence.Timestamp()
 
@@ -80,7 +82,7 @@ func (ch *Chain) runRequestsNolock(reqs []coretypes.Request, trace string) (dict
 		deco := kvdecoder.New(par, ch.Log)
 		nextAddr := deco.MustGetAddress(coreutil.ParamStateControllerAddress)
 
-		essence, err = coreutil.MakeRotateStateControllerTransaction(
+		essence, err = rotate.MakeRotateStateControllerTransaction(
 			nextAddr,
 			task.ChainInput,
 			task.Requests[0].Output(),

@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/rotate"
+
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 
 	"go.uber.org/zap/zapcore"
@@ -536,8 +538,8 @@ func TestRotateRequest(t *testing.T) {
 	require.True(t, len(ready) == 5)
 
 	kp, addr := testkey.GenKeyAddr()
-	rotateReq := coreutil.NewRotateRequestOffLedger(addr, kp)
-	require.True(t, coreutil.IsRotateCommitteeRequest(rotateReq))
+	rotateReq := rotate.NewRotateRequestOffLedger(addr, kp)
+	require.True(t, rotate.IsRotateStateControllerRequest(rotateReq))
 
 	pool.ReceiveRequests(rotateReq)
 	require.True(t, pool.WaitRequestInPool(rotateReq.ID()))
