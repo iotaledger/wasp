@@ -32,16 +32,11 @@ func NewRotateRequestOffLedger(newStateAddress ledgerstate.Address, keyPair *ed2
 func MakeRotateStateControllerTransaction(
 	nextAddr ledgerstate.Address,
 	chainInput *ledgerstate.AliasOutput,
-	req ledgerstate.Output,
 	ts time.Time,
 	accessPledge, consensusPledge identity.ID,
 ) (*ledgerstate.TransactionEssence, error) {
 
-	inputs := []ledgerstate.Output{chainInput}
-	if req != nil {
-		inputs = append(inputs, req)
-	}
-	txb := utxoutil.NewBuilder(inputs...).
+	txb := utxoutil.NewBuilder(chainInput).
 		WithTimestamp(ts).
 		WithAccessPledge(accessPledge).
 		WithConsensusPledge(consensusPledge)

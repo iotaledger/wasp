@@ -133,7 +133,7 @@ func viewControlAddresses(ctx coretypes.SandboxView) (dict.Dict, error) {
 	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
 	a.RequireNoError(err)
 	ret := dict.New()
-	ret.Set(ParamStateAddress, codec.EncodeAddress(rec.StateAddress))
+	ret.Set(ParamStateControllerAddress, codec.EncodeAddress(rec.StateAddress))
 	ret.Set(ParamGoverningAddress, codec.EncodeAddress(rec.GoverningAddress))
 	ret.Set(ParamBlockIndex, codec.EncodeUint64(uint64(rec.SinceBlockIndex)))
 	return ret, nil

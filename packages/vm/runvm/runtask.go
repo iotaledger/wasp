@@ -77,25 +77,31 @@ func runTask(task *vm.VMTask) {
 		}
 	}
 
-	// TODO take over committee rotation
 	// save the block info into the 'blocklog' contract
-	vmctx.CloseVMContext(uint16(len(task.Requests)), numSuccess, numOffLedger)
+	// if rotationAddr != nil ir means the block is a rotation block
+	rotationAddr := vmctx.CloseVMContext(uint16(len(task.Requests)), numSuccess, numOffLedger)
 
-	task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
-	if err != nil {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
-		return
+	if rotationAddr == nil {
+		task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
+		if err != nil {
+			task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
+			return
+		}
+		if err = checkTotalAssets(task.ResultTransactionEssence, lastTotalAssets); err != nil {
+			task.OnFinish(nil, nil, xerrors.Errorf("RunVM.checkTotalAssets: %v", err))
+			return
+		}
+		task.Log.Debug("runTask OUT. ",
+			"block index: ", task.VirtualState.BlockIndex(),
+			" variable state hash: ", task.VirtualState.Hash().String(),
+			" tx essence hash: ", hashing.HashData(task.ResultTransactionEssence.Bytes()).String(),
+			" tx finalTimestamp: ", task.ResultTransactionEssence.Timestamp(),
+		)
+	} else {
+		task.RotationAddress = rotationAddr
+		task.ResultTransactionEssence = nil
+		task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.Base58())
 	}
-	if err = checkTotalAssets(task.ResultTransactionEssence, lastTotalAssets); err != nil {
-		task.OnFinish(nil, nil, xerrors.Errorf("RunVM.checkTotalAssets: %v", err))
-		return
-	}
-	task.Log.Debugw("runTask OUT",
-		"block index", task.VirtualState.BlockIndex(),
-		"variable state hash", task.VirtualState.Hash().Bytes(),
-		"tx essence hash", hashing.HashData(task.ResultTransactionEssence.Bytes()).String(),
-		"tx finalTimestamp", task.ResultTransactionEssence.Timestamp(),
-	)
 	task.OnFinish(lastResult, lastErr, nil)
 }
 

@@ -565,7 +565,7 @@ func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
 	require.NoError(ch.Env.T, err)
 	par := kvdecoder.New(res, ch.Log)
 	ret := &blocklog.ControlAddresses{
-		StateAddress:     par.MustGetAddress(blocklog.ParamStateAddress),
+		StateAddress:     par.MustGetAddress(blocklog.ParamStateControllerAddress),
 		GoverningAddress: par.MustGetAddress(blocklog.ParamGoverningAddress),
 		SinceBlockIndex:  uint32(par.MustGetUint64(blocklog.ParamBlockIndex)),
 	}

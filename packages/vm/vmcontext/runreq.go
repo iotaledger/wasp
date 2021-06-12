@@ -308,9 +308,9 @@ func (vmctx *VMContext) mustFinalizeRequestCall() {
 	vmctx.currentStateUpdate = nil
 
 	_, ep := vmctx.req.Target()
-	vmctx.log.Debugw("runTheRequest OUT",
-		"reqId", vmctx.req.ID().Short(),
-		"entry point", ep.String(),
+	vmctx.log.Debug("runTheRequest OUT. ",
+		"reqId: ", vmctx.req.ID().Short(),
+		" entry point: ", ep.String(),
 	)
 }
 

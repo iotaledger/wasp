@@ -22,7 +22,7 @@ var (
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.Func(coreutil.CoreEPRotateStateController, checkRotateStateControllerRequest),
+		coreutil.Func(coreutil.CoreEPRotateStateController, rotateStateController),
 		coreutil.Func(FuncAddAllowedStateControllerAddress, addAllowedStateControllerAddress),
 		coreutil.Func(FuncRemoveAllowedStateControllerAddress, removeAllowedStateControllerAddress),
 		coreutil.ViewFunc(FuncGetAllowedStateControllerAddresses, getAllowedStateControllerAddresses),
@@ -37,7 +37,7 @@ const (
 
 	// state variables
 	StateVarAllowedStateControllerAddresses = "a"
-	StateVarFakeBlockMarker                 = "m"
+	StateVarRotateToAddress                 = "r"
 
 	// params
 	ParamStateControllerAddress          = coreutil.ParamStateControllerAddress

@@ -59,14 +59,14 @@ const (
 	FuncControlAddresses             = "viewControlAddresses"
 
 	// parameters
-	ParamBlockIndex       = "n"
-	ParamRequestIndex     = "r"
-	ParamBlockInfo        = "i"
-	ParamRequestRecord    = "d"
-	ParamRequestID        = "u"
-	ParamRequestProcessed = "p"
-	ParamStateAddress     = "s"
-	ParamGoverningAddress = "g"
+	ParamBlockIndex             = "n"
+	ParamRequestIndex           = "r"
+	ParamBlockInfo              = "i"
+	ParamRequestRecord          = "d"
+	ParamRequestID              = "u"
+	ParamRequestProcessed       = "p"
+	ParamStateControllerAddress = "s"
+	ParamGoverningAddress       = "g"
 )
 
 // region BlockInfo //////////////////////////////////////////////////////////////

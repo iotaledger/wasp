@@ -144,10 +144,25 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens *ledgerstate.Col
 	return true
 }
 
+// - anchor properties
 func (vmctx *VMContext) StateAddress() ledgerstate.Address {
 	return vmctx.chainInput.GetStateAddress()
 }
 
 func (vmctx *VMContext) GoverningAddress() ledgerstate.Address {
 	return vmctx.chainInput.GetGoverningAddress()
+}
+
+func (vmctx *VMContext) StateIndex() uint32 {
+	return vmctx.chainInput.GetStateIndex()
+}
+
+func (vmctx *VMContext) StateHash() hashing.HashValue {
+	var h hashing.HashValue
+	h, _ = hashing.HashValueFromBytes(vmctx.chainInput.GetStateData())
+	return h
+}
+
+func (vmctx *VMContext) OutputID() ledgerstate.OutputID {
+	return vmctx.chainInput.ID()
 }

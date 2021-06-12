@@ -131,26 +131,30 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 }
 
 // CloseVMContext does the closing actions on the block
-func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) {
-	vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
+// return nil for normal block and rotation address for rotation block
+func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) ledgerstate.Address {
+	rotationAddr := vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()
+	return rotationAddr
 }
 
-func (vmctx *VMContext) isFakeBlock() bool {
+func (vmctx *VMContext) checkRotationAddress() ledgerstate.Address {
 	vmctx.pushCallContext(governance.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return governance.IsBlockMarkedFake(vmctx.State())
+	return governance.GetRotationAddress(vmctx.State())
 }
 
 // mustSaveBlockInfo is in the blocklog partition context
-func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) {
-	vmctx.currentStateUpdate = state.NewStateUpdate()
-	if vmctx.isFakeBlock() {
+// returns rotation address if this block is a rotation block
+func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) ledgerstate.Address {
+	vmctx.currentStateUpdate = state.NewStateUpdate() // need ths before to make state valid
+
+	if rotationAddress := vmctx.checkRotationAddress(); rotationAddress != nil {
 		// block was marked fake by the governance contract because it is a committee rotation.
 		// There was only on request in the block
 		// We skip saving block information in order to avoid inconsistencies
-		return
+		return rotationAddress
 	}
 	// block info will be stored into the separate state update
 	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
@@ -177,6 +181,7 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 	)
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.currentStateUpdate = nil // invalidate
+	return nil
 }
 
 // closeBlockContexts closing block contexts in deterministic FIFO sequence

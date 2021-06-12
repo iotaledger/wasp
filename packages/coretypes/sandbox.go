@@ -62,6 +62,17 @@ type Sandbox interface {
 	Utils() Utils
 	// Internal for use in native hardcoded contracts
 	BlockContext(construct func(sandbox Sandbox) interface{}, onClose func(interface{})) interface{}
+	// properties of the anchor output
+	StateAnchor() StateAnchor
+}
+
+// properties of the anchor output/transaction in the current context
+type StateAnchor interface {
+	StateAddress() ledgerstate.Address
+	GoverningAddress() ledgerstate.Address
+	StateIndex() uint32
+	StateHash() hashing.HashValue
+	OutputID() ledgerstate.OutputID
 }
 
 type SendOptions struct {

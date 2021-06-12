@@ -13,9 +13,6 @@ import (
 
 	"github.com/iotaledger/hive.go/identity"
 
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -70,23 +67,14 @@ func (ch *Chain) runRequestsNolock(reqs []coretypes.Request, trace string) (dict
 	ch.Env.AdvanceClockBy(time.Duration(len(task.Requests)+1) * time.Nanosecond)
 
 	var essence *ledgerstate.TransactionEssence
-	isRotateRequest := callErr == nil && len(task.Requests) == 1 && rotate.IsRotateStateControllerRequest(task.Requests[0])
 
-	ts := task.ResultTransactionEssence.Timestamp()
-
-	if !isRotateRequest {
+	if task.RotationAddress == nil {
 		essence = task.ResultTransactionEssence
 	} else {
-		req := task.Requests[0]
-		par, _ := req.Params()
-		deco := kvdecoder.New(par, ch.Log)
-		nextAddr := deco.MustGetAddress(coreutil.ParamStateControllerAddress)
-
 		essence, err = rotate.MakeRotateStateControllerTransaction(
-			nextAddr,
+			task.RotationAddress,
 			task.ChainInput,
-			task.Requests[0].Output(),
-			ts,
+			task.Timestamp.Add(2*time.Nanosecond),
 			identity.ID{},
 			identity.ID{},
 		)
@@ -105,13 +93,12 @@ func (ch *Chain) runRequestsNolock(reqs []coretypes.Request, trace string) (dict
 	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(tx)
 	require.NoError(ch.Env.T, err)
 
-	if !isRotateRequest {
+	if task.RotationAddress == nil {
+		// normal state transition
 		ch.State = task.VirtualState
 		ch.settleStateTransition(tx, stateOutput, coretypes.TakeRequestIDs(reqs...))
 	} else {
-		ch.Log.Infof("ROTATED STATE CONTROLLER to %s from prev %s",
-			stateOutput.GetStateAddress().Base58(), ch.StateControllerAddress.Base58())
-		ch.mempool.RemoveRequests(task.Requests[0].ID())
+		ch.Log.Infof("ROTATED STATE CONTROLLER to %s", stateOutput.GetStateAddress().Base58())
 	}
 
 	return callRes, callErr

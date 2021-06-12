@@ -118,3 +118,7 @@ func (s *sandbox) Utils() coretypes.Utils {
 func (s *sandbox) BlockContext(construct func(ctx coretypes.Sandbox) interface{}, onClose func(interface{})) interface{} {
 	return s.vmctx.BlockContext(s, construct, onClose)
 }
+
+func (s *sandbox) StateAnchor() coretypes.StateAnchor {
+	return s.vmctx
+}

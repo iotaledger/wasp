@@ -7,10 +7,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coretypes/rotate"
 
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-
 	"github.com/iotaledger/wasp/packages/transaction"
 
 	"golang.org/x/xerrors"
@@ -498,7 +494,7 @@ func (c *consensus) resetWorkflow() {
 	}
 }
 
-func (c *consensus) processVMResult(result *vm.VMTask, isRotateRequest bool) {
+func (c *consensus) processVMResult(result *vm.VMTask) {
 	if !c.workflow.vmStarted ||
 		c.workflow.vmResultSignedAndBroadcasted ||
 		c.acsSessionID != result.ACSSessionID {
@@ -506,12 +502,12 @@ func (c *consensus) processVMResult(result *vm.VMTask, isRotateRequest bool) {
 		return
 	}
 	essence := result.ResultTransactionEssence
-	if isRotateRequest {
+	if result.RotationAddress != nil {
 		essence = c.makeRotateStateControllerTransaction(result)
 	}
 	essenceBytes := essence.Bytes()
 	essenceHash := hashing.HashData(essenceBytes)
-	c.log.Debugf("processVMResult: essence hash: %s. rotate committee: %v", essenceHash, isRotateRequest)
+	c.log.Debugf("processVMResult: essence hash: %s. rotate committee: %v", essenceHash, result.RotationAddress != nil)
 
 	sigShare, err := c.committee.DKShare().SignShare(essenceBytes)
 	if err != nil {
@@ -519,7 +515,7 @@ func (c *consensus) processVMResult(result *vm.VMTask, isRotateRequest bool) {
 	}
 	c.resultTxEssence = essence
 	c.resultState = nil
-	if !isRotateRequest {
+	if result.RotationAddress == nil {
 		c.resultState = result.VirtualState
 	}
 	c.resultSignatures[c.committee.OwnPeerIndex()] = &chain.SignedResultMsg{
@@ -539,17 +535,12 @@ func (c *consensus) processVMResult(result *vm.VMTask, isRotateRequest bool) {
 }
 
 func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledgerstate.TransactionEssence {
-	req := task.Requests[0]
-	par, _ := req.Params()
-	deco := kvdecoder.New(par, c.log)
-	nextAddr := deco.MustGetAddress(coreutil.ParamStateControllerAddress)
-	c.log.Infof("ROTATE committee to address %s", nextAddr.Base58())
+	c.log.Infof("ROTATE committee to address %s", task.RotationAddress.Base58())
 
 	// TODO access and consensus pledge
 	essence, err := rotate.MakeRotateStateControllerTransaction(
-		nextAddr,
+		task.RotationAddress,
 		task.ChainInput,
-		req.Output(),
 		task.Timestamp,
 		identity.ID{},
 		identity.ID{},

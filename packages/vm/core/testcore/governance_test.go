@@ -4,8 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/vm/core/_default"
-
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/stretchr/testify/require"
@@ -62,6 +60,8 @@ func TestGovernance1(t *testing.T) {
 }
 
 func TestRotate(t *testing.T) {
+	core.PrintWellKnownHnames()
+
 	t.Run("not allowed address", func(t *testing.T) {
 		env := solo.New(t, false, false)
 		chain := env.NewChain(nil, "chain1")
@@ -91,21 +91,18 @@ func TestRotate(t *testing.T) {
 		err := chain.AddAllowedStateController(newAddr, nil)
 		require.NoError(t, err)
 
-		prevStateController := chain.StateControllerAddress
-
 		err = chain.RotateStateController(newAddr, newKP, nil)
 		require.NoError(t, err)
 
-		// state does not have new state address yet
-		ca := chain.GetControlAddresses()
-		require.EqualValues(t, ca.StateAddress.Base58(), prevStateController.Base58())
+		require.True(t, chain.WaitForRequestsThrough(3))
 
-		// dummy call to refresh state address in the state
-		req := solo.NewCallParams(_default.Interface.Name, "dummy").WithIotas(1)
+		ca := chain.GetControlAddresses()
+		require.EqualValues(t, ca.StateAddress.Base58(), newAddr.Base58())
+
+		req := solo.NewCallParams("dummy", "dummy").WithIotas(1)
 		_, err = chain.PostRequestSync(req, nil)
 		require.NoError(t, err)
 
-		ca = chain.GetControlAddresses()
-		require.EqualValues(t, ca.StateAddress.Base58(), newAddr.Base58())
+		require.True(t, chain.WaitForRequestsThrough(4))
 	})
 }
