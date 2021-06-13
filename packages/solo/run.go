@@ -122,7 +122,7 @@ func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction, stateOu
 	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
 	require.EqualValues(ch.Env.T, stateOutput.ID(), blockBack.ApprovingOutputID())
 
-	chain.PublishStateTransition(ch.State, stateOutput, reqids)
+	chain.PublishStateTransition(stateOutput, reqids)
 
 	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
 		ch.State.BlockIndex(), len(reqids), len(stateTx.Essence().Outputs()))

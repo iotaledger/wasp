@@ -8,10 +8,9 @@ import (
 	"sync"
 
 	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
@@ -58,7 +57,7 @@ type chainObj struct {
 	committeeRegistry     coretypes.CommitteeRegistryProvider
 	blobProvider          coretypes.BlobCache
 	eventRequestProcessed *events.Event
-	eventStateTransition  *events.Event
+	eventChainTransition  *events.Event
 	eventSynced           *events.Event
 }
 
@@ -95,14 +94,14 @@ func NewChain(
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
 		}),
-		eventStateTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(_ *chain.StateTransitionEventData))(params[0].(*chain.StateTransitionEventData))
+		eventChainTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
+			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
 		}),
 		eventSynced: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(outputID ledgerstate.OutputID, blockIndex uint32))(params[0].(ledgerstate.OutputID), params[1].(uint32))
 		}),
 	}
-	ret.eventStateTransition.Attach(events.NewClosure(ret.processStateTransition))
+	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
 	ret.eventSynced.Attach(events.NewClosure(ret.processSynced))
 
 	peers, err := netProvider.PeerDomain(peerNetConfig.Neighbors())
@@ -207,25 +206,35 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 
 // processStateMessage processes the unique chain output which exists on the chain's address
 // If necessary, it creates/changes/rotates committee object
-func (c *chainObj) processStateTransition(msg *chain.StateTransitionEventData) {
-	c.stateReader.SetBaseline()
-	reqids, err := blocklog.GetRequestIDsForLastBlock(c.stateReader)
-	if err != nil {
-		// The error means a database error. The optimistic state read failure can't occur here
-		// because the state transition message is only sent only after state is committed and before consensus
-		// start new round
-		c.log.Panicf("processStateTransition. unexpected error: %v", err)
-	}
-	c.log.Debugf("processStateTransition: state index: %d, state hash: %s, requests: %+v",
-		msg.VirtualState.BlockIndex(), msg.VirtualState.Hash().String(), coretypes.ShortRequestIDs(reqids))
-	c.mempool.RemoveRequests(reqids...)
+func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
+	if !msg.ChainOutput.GetIsGovernanceUpdated() {
+		// normal state update:
+		c.stateReader.SetBaseline()
+		reqids, err := blocklog.GetRequestIDsForLastBlock(c.stateReader)
+		if err != nil {
+			// The error means a database error. The optimistic state read failure can't occur here
+			// because the state transition message is only sent only after state is committed and before consensus
+			// start new round
+			c.log.Panicf("processChainTransition. unexpected error: %v", err)
+		}
+		// remove processed requests from the mempool
+		c.mempool.RemoveRequests(reqids...)
+		// publish events
+		chain.LogStateTransition(msg, reqids, c.log)
+		chain.PublishStateTransition(msg.ChainOutput, reqids)
+		for _, reqid := range reqids {
+			c.eventRequestProcessed.Trigger(reqid)
+		}
 
-	chain.LogStateTransition(msg, reqids, c.log)
-	chain.PublishStateTransition(msg.VirtualState, msg.ChainOutput, reqids)
-	for _, reqid := range reqids {
-		c.eventRequestProcessed.Trigger(reqid)
-	}
+		c.log.Debugf("processChainTransition (state): state index: %d, state hash: %s, requests: %+v",
+			msg.VirtualState.BlockIndex(), msg.VirtualState.Hash().String(), coretypes.ShortRequestIDs(reqids))
+	} else {
+		chain.LogGovernanceTransition(msg, c.log)
+		chain.PublishGovernanceTransition(msg.ChainOutput)
 
+		c.log.Debugf("processChainTransition (rotate): state index: %d, state hash: %s",
+			msg.VirtualState.BlockIndex(), msg.VirtualState.Hash().String())
+	}
 	// send to consensus
 	c.ReceiveMessage(&chain.StateTransitionMsg{
 		State:          msg.VirtualState,

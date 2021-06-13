@@ -22,11 +22,11 @@ func (sm *stateManager) takeAction() {
 	}
 	sm.pullStateIfNeeded()
 	sm.doSyncActionIfNeeded()
-	sm.notifyStateTransitionIfNeeded()
+	sm.notifyChainTransitionIfNeeded()
 	sm.storeSyncingData()
 }
 
-func (sm *stateManager) notifyStateTransitionIfNeeded() {
+func (sm *stateManager) notifyChainTransitionIfNeeded() {
 	if sm.stateOutput == nil {
 		return
 	}
@@ -49,7 +49,7 @@ func (sm *stateManager) notifyStateTransitionIfNeeded() {
 	}
 	sm.log.Debugf("notifyStateTransition: %sstate IS SYNCED to index %d and is approved by output %v",
 		gu, stateOutputIndex, coretypes.OID(stateOutputID))
-	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
+	go sm.chain.Events().ChainTransition().Trigger(&chain.ChainTransitionEventData{
 		VirtualState:    sm.solidState.Clone(),
 		ChainOutput:     sm.stateOutput,
 		OutputTimestamp: sm.stateOutputTimestamp,

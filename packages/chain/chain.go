@@ -54,7 +54,7 @@ type ChainRequests interface {
 
 type ChainEvents interface {
 	RequestProcessed() *events.Event
-	StateTransition() *events.Event
+	ChainTransition() *events.Event
 	StateSynced() *events.Event
 }
 
@@ -179,7 +179,7 @@ type PeerStatus struct {
 	Connected bool
 }
 
-type StateTransitionEventData struct {
+type ChainTransitionEventData struct {
 	VirtualState    state.VirtualState
 	ChainOutput     *ledgerstate.AliasOutput
 	OutputTimestamp time.Time

@@ -24,7 +24,7 @@ type MockedChainCore struct {
 	eventStateSynced        *events.Event
 	onGlobalStateSync       func() coreutil.ChainStateSync
 	onGetStateReader        func() state.OptimisticStateReader
-	onEventStateTransition  func(data *chain.StateTransitionEventData)
+	onEventStateTransition  func(data *chain.ChainTransitionEventData)
 	onEventRequestProcessed func(id coretypes.RequestID)
 	onEventStateSynced      func(id ledgerstate.OutputID, blockIndex uint32)
 	onReceiveMessage        func(i interface{})
@@ -39,7 +39,7 @@ func NewMockedChainCore(t *testing.T, chainID chainid.ChainID, log *logger.Logge
 		processors: processors.MustNew(),
 		log:        log,
 		eventStateTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(_ *chain.StateTransitionEventData))(params[0].(*chain.StateTransitionEventData))
+			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
 		}),
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
@@ -54,10 +54,10 @@ func NewMockedChainCore(t *testing.T, chainID chainid.ChainID, log *logger.Logge
 			chain.LogSyncedEvent(outputID, blockIndex, log)
 		},
 	}
-	ret.onEventStateTransition = func(msg *chain.StateTransitionEventData) {
+	ret.onEventStateTransition = func(msg *chain.ChainTransitionEventData) {
 		chain.LogStateTransition(msg, nil, log)
 	}
-	ret.eventStateTransition.Attach(events.NewClosure(func(data *chain.StateTransitionEventData) {
+	ret.eventStateTransition.Attach(events.NewClosure(func(data *chain.ChainTransitionEventData) {
 		ret.onEventStateTransition(data)
 	}))
 	ret.eventRequestProcessed.Attach(events.NewClosure(func(id coretypes.RequestID) {
@@ -105,7 +105,7 @@ func (m *MockedChainCore) RequestProcessed() *events.Event {
 	return m.eventRequestProcessed
 }
 
-func (m *MockedChainCore) StateTransition() *events.Event {
+func (m *MockedChainCore) ChainTransition() *events.Event {
 	return m.eventStateTransition
 }
 
@@ -113,7 +113,7 @@ func (m *MockedChainCore) StateSynced() *events.Event {
 	return m.eventStateSynced
 }
 
-func (m *MockedChainCore) OnStateTransition(f func(data *chain.StateTransitionEventData)) {
+func (m *MockedChainCore) OnStateTransition(f func(data *chain.ChainTransitionEventData)) {
 	m.onEventStateTransition = f
 }
 

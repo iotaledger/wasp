@@ -78,7 +78,7 @@ func (c *chainObj) Dismiss(reason string) {
 			c.consensus.Close()
 		}
 		c.eventRequestProcessed.DetachAll()
-		c.eventStateTransition.DetachAll()
+		c.eventChainTransition.DetachAll()
 		c.eventSynced.DetachAll()
 	})
 
@@ -176,8 +176,8 @@ func (c *chainObj) RequestProcessed() *events.Event {
 	return c.eventRequestProcessed
 }
 
-func (c *chainObj) StateTransition() *events.Event {
-	return c.eventStateTransition
+func (c *chainObj) ChainTransition() *events.Event {
+	return c.eventChainTransition
 }
 
 func (c *chainObj) StateSynced() *events.Event {
