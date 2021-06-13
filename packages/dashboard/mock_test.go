@@ -182,7 +182,7 @@ func (w *waspServices) CallView(chain chain.ChainCore, hname coretypes.Hname, fn
 
 	case hname == root.Interface.Hname() && fname == root.FuncFindContract:
 		ret := dict.New()
-		ret.Set(root.ParamData, root.EncodeContractRecord(contract))
+		ret.Set(root.VarData, root.EncodeContractRecord(contract))
 		return ret, nil
 
 	case hname == accounts.Interface.Hname() && fname == accounts.FuncAccounts:

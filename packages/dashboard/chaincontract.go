@@ -51,7 +51,7 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		result.ContractRecord, err = root.DecodeContractRecord(r[root.ParamData])
+		result.ContractRecord, err = root.DecodeContractRecord(r[root.VarData])
 		if err != nil {
 			return err
 		}

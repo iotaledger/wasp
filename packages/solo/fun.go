@@ -6,6 +6,8 @@ package solo
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -22,7 +24,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
 )
 
 // String is string representation for main parameters of the chain
@@ -61,7 +62,7 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 	if err != nil {
 		return nil, err
 	}
-	retBin, err := retDict.Get(root.ParamData)
+	retBin, err := retDict.Get(root.VarData)
 	if err != nil {
 		return nil, err
 	}
@@ -362,17 +363,17 @@ func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint
 	require.NoError(ch.Env.T, err)
 	require.NotEqualValues(ch.Env.T, 0, len(ret))
 
-	feeColor, ok, err := codec.DecodeColor(ret.MustGet(root.ParamFeeColor))
+	feeColor, ok, err := codec.DecodeColor(ret.MustGet(root.VarFeeColor))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 	require.NotNil(ch.Env.T, feeColor)
 
-	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(root.ParamValidatorFee))
+	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(root.VarValidatorFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 	require.True(ch.Env.T, validatorFee >= 0)
 
-	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(root.ParamOwnerFee))
+	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(root.VarOwnerFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 	require.True(ch.Env.T, ownerFee >= 0)
