@@ -204,7 +204,8 @@ func (c *consensus) checkQuorum() {
 	c.finalTx = tx
 
 	if !chainOutput.GetIsGovernanceUpdated() {
-		// if it is not committee rotation, sending message to state manager
+		// if it is not state controller rotation, sending message to state manager
+		// Otherwise state manager is not notified
 		go c.chain.ReceiveMessage(&chain.StateCandidateMsg{
 			State:             c.resultState,
 			ApprovingOutputID: chainOutput.ID(),
@@ -472,8 +473,12 @@ func (c *consensus) setNewState(msg *chain.StateTransitionMsg) {
 	c.stateTimestamp = msg.StateTimestamp
 	c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(msg.StateOutput.ID().Bytes()).Bytes()[:8])
 	c.resetWorkflow()
-	c.log.Debugf("SET STATE #%d, output: %s, hash: %s",
-		msg.StateOutput.GetStateIndex(), coretypes.OID(msg.StateOutput.ID()), msg.State.Hash().String())
+	r := ""
+	if c.stateOutput.GetIsGovernanceUpdated() {
+		r = " (rotate) "
+	}
+	c.log.Debugf("SET STATE #%d%s, output: %s, hash: %s",
+		msg.StateOutput.GetStateIndex(), r, coretypes.OID(msg.StateOutput.ID()), msg.State.Hash().String())
 }
 
 func (c *consensus) resetWorkflow() {
