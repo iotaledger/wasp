@@ -281,9 +281,8 @@ func (c *consensus) prepareBatchProposal(reqs []coretypes.Request) *batchProposa
 	feeDestination := coretypes.NewAgentID(c.chain.ID().AsAddress(), 0)
 	// sign state output ID. It will be used to produce unpredictable entropy in consensus
 	sigShare, err := c.committee.DKShare().SignShare(c.stateOutput.ID().Bytes())
-	if err != nil {
-		c.log.Panicf("prepareBatchProposal: signing output ID: %v", err)
-	}
+	c.assert.RequireNoError(err, "prepareBatchProposal: signing output ID: ")
+
 	ret := &batchProposal{
 		ValidatorIndex:          c.committee.OwnPeerIndex(),
 		StateOutputID:           c.stateOutput.ID(),
@@ -442,7 +441,7 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 	}
 	sigUnlockBlock := ledgerstate.NewSignatureUnlockBlock(ledgerstate.NewBLSSignature(*signatureWithPK))
 
-	// check consistency ---------------- check if chain inouts was consumed
+	// check consistency ---------------- check if chain inputs were consumed
 	chainInput := ledgerstate.NewUTXOInput(c.stateOutput.ID())
 	var indexChainInput = -1
 	for i, inp := range c.resultTxEssence.Inputs() {
@@ -451,9 +450,7 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 			break
 		}
 	}
-	if indexChainInput < 0 {
-		c.log.Panicf("RecoverFullSignature. major inconsistency")
-	}
+	c.assert.Require(indexChainInput >= 0, "RecoverFullSignature. major inconsistency")
 	// check consistency ---------------- end
 
 	blocks := make([]ledgerstate.UnlockBlock, len(c.resultTxEssence.Inputs()))
@@ -501,23 +498,26 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 		// out of context
 		return
 	}
-	essence := result.ResultTransactionEssence
-	if result.RotationAddress != nil {
-		essence = c.makeRotateStateControllerTransaction(result)
-	}
-	essenceBytes := essence.Bytes()
-	essenceHash := hashing.HashData(essenceBytes)
-	c.log.Debugf("processVMResult: essence hash: %s. rotate committee: %v", essenceHash, result.RotationAddress != nil)
-
-	sigShare, err := c.committee.DKShare().SignShare(essenceBytes)
-	if err != nil {
-		c.log.Panicf("processVMResult: error while signing transaction %v", err)
-	}
-	c.resultTxEssence = essence
-	c.resultState = nil
-	if result.RotationAddress == nil {
+	rotation := result.RotationAddress != nil
+	if rotation {
+		// if VM returned rotation, we ignore the updated virtual state and produce governance state controller
+		// rotation transaction. It does not change state
+		c.resultTxEssence = c.makeRotateStateControllerTransaction(result)
+		c.resultState = nil
+	} else {
+		// It is and ordinary state transition
+		c.assert.Require(result.ResultTransactionEssence != nil, "processVMResult: result.ResultTransactionEssence != nil")
+		c.resultTxEssence = result.ResultTransactionEssence
 		c.resultState = result.VirtualState
 	}
+
+	essenceBytes := c.resultTxEssence.Bytes()
+	essenceHash := hashing.HashData(essenceBytes)
+	c.log.Debugf("processVMResult: essence hash: %s. rotate state controller: %v", essenceHash, rotation)
+
+	sigShare, err := c.committee.DKShare().SignShare(essenceBytes)
+	c.assert.RequireNoError(err, "processVMResult: ")
+
 	c.resultSignatures[c.committee.OwnPeerIndex()] = &chain.SignedResultMsg{
 		SenderIndex: c.committee.OwnPeerIndex(),
 		EssenceHash: essenceHash,
@@ -535,7 +535,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 }
 
 func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledgerstate.TransactionEssence {
-	c.log.Infof("ROTATE committee to address %s", task.RotationAddress.Base58())
+	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Base58())
 
 	// TODO access and consensus pledge
 	essence, err := rotate.MakeRotateStateControllerTransaction(
@@ -545,9 +545,7 @@ func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledge
 		identity.ID{},
 		identity.ID{},
 	)
-	if err != nil {
-		c.log.Panicf("processRotateCommitteeRequest: %v", err)
-	}
+	c.assert.RequireNoError(err, "makeRotateStateControllerTransaction: ")
 	return essence
 }
 

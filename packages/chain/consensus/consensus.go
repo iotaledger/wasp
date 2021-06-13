@@ -3,6 +3,8 @@ package consensus
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/assert"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/wasp/packages/vm"
@@ -51,6 +53,7 @@ type consensus struct {
 	eventVMResultMsgCh         chan *chain.VMResultMsg
 	eventTimerMsgCh            chan chain.TimerTick
 	closeCh                    chan struct{}
+	assert                     assert.Assert
 }
 
 type workflowFlags struct {
@@ -68,6 +71,7 @@ type workflowFlags struct {
 var _ chain.Consensus = &consensus{}
 
 func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection) *consensus {
+	log := chainCore.Log().Named("c")
 	ret := &consensus{
 		chain:                     chainCore,
 		committee:                 committee,
@@ -75,7 +79,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		nodeConn:                  nodeConn,
 		vmRunner:                  runvm.NewVMRunner(),
 		resultSignatures:          make([]*chain.SignedResultMsg, committee.Size()),
-		log:                       chainCore.Log().Named("c"),
+		log:                       log,
 		eventStateTransitionMsgCh: make(chan *chain.StateTransitionMsg),
 		eventSignedResultMsgCh:    make(chan *chain.SignedResultMsg),
 		eventInclusionStateMsgCh:  make(chan *chain.InclusionStateMsg),
@@ -83,6 +87,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		eventVMResultMsgCh:        make(chan *chain.VMResultMsg),
 		eventTimerMsgCh:           make(chan chain.TimerTick),
 		closeCh:                   make(chan struct{}),
+		assert:                    assert.NewAssert(log),
 	}
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()

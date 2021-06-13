@@ -2,6 +2,7 @@ package assert
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
@@ -27,8 +28,8 @@ func (a Assert) Require(cond bool, format string, args ...interface{}) {
 	a.log.Panicf(format, args...)
 }
 
-func (a Assert) RequireNoError(err error) {
-	a.Require(err == nil, fmt.Sprintf("%v", err))
+func (a Assert) RequireNoError(err error, str ...string) {
+	a.Require(err == nil, fmt.Sprintf("%s %v", strings.Join(str, " "), err))
 }
 
 func (a Assert) RequireChainOwner(ctx coretypes.Sandbox, name ...string) {
