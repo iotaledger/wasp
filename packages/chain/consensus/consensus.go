@@ -152,11 +152,20 @@ func (c *consensus) refreshConsensusInfo() {
 	if c.currentState != nil {
 		index = c.currentState.BlockIndex()
 	}
-	c.consensusInfoSnapshot.Store(&chain.ConsensusInfo{
+	consensusInfo := &chain.ConsensusInfo{
 		StateIndex: index,
 		Mempool:    c.mempool.Stats(),
 		TimerTick:  int(c.lastTimerTick.Load()),
-	})
+	}
+	c.log.Debugf("Refreshing consensus info: index=%v, timerTick=%v, "+
+		"totalPool=%v, mempoolReady=%v, inBufCounter=%v, outBufCounter=%v"+
+		"inPoolCounter=%v, outPoolCounter=%v",
+		consensusInfo.StateIndex, consensusInfo.TimerTick,
+		consensusInfo.Mempool.TotalPool, consensusInfo.Mempool.Ready,
+		consensusInfo.Mempool.InBufCounter, consensusInfo.Mempool.OutBufCounter,
+		consensusInfo.Mempool.InPoolCounter, consensusInfo.Mempool.OutPoolCounter,
+	)
+	c.consensusInfoSnapshot.Store(consensusInfo)
 }
 
 func (c *consensus) GetStatusSnapshot() *chain.ConsensusInfo {
