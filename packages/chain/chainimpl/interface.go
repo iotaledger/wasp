@@ -106,6 +106,7 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 const gossipUpToNPeers = 10
 
 func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
+	c.log.Infof("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW")
 	if !c.mempool.ReceiveRequest(req) {
 		return
 	}

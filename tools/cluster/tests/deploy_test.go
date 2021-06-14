@@ -51,7 +51,6 @@ func TestDeployChain(t *testing.T) {
 }
 
 func TestDeployContractOnly(t *testing.T) {
-
 	setup(t, "test_cluster")
 
 	counter, err := clu.StartMessageCounter(map[string]int{

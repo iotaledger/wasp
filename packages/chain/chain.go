@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 
 	"github.com/iotaledger/hive.go/logger"
-	"go.uber.org/atomic"
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
@@ -35,7 +34,6 @@ type ChainCore interface {
 	GlobalStateSync() coreutil.ChainStateSync
 	GetStateReader() state.OptimisticStateReader
 	Log() *logger.Logger
-	GlobalSolidIndex() *atomic.Uint32
 	ReceiveOffLedgerRequest(req *request.RequestOffLedger)
 }
 

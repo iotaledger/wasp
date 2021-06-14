@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
-	"github.com/stretchr/testify/require"
 )
 
 func createMockedGetChain(t *testing.T) getChainFn {
@@ -38,17 +37,14 @@ func TestNewRequest(t *testing.T) {
 		getChain: createMockedGetChain(t),
 	}
 
-	var res error
-
 	testutil.CallWebAPIRequestHandler(
 		t,
 		instance.handleNewRequest,
 		http.MethodPost,
 		routes.NewRequest(":chainID"),
 		map[string]string{"chainID": coretypes.RandomChainID().Base58()},
-		map[string]string{"request": dummyOffledgerRequest().Base64()},
+		OffLedgerRequestBody{Request: dummyOffledgerRequest().Base64()},
 		nil,
 		http.StatusAccepted,
 	)
-	require.NoError(t, res)
 }
