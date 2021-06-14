@@ -16,6 +16,7 @@ func TestOffledgerRequests(t *testing.T) {
 	check(err, t)
 	defer counter.Close()
 
+	// TODO 4 + 1 nodes
 	nodes := clu.Config.AllNodes()
 	committeeNodes := nodes[0:3]
 	accessNodes := nodes[3:len(nodes)]

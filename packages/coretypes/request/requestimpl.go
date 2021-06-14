@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+	"encoding/base64"
 	"io"
 	"time"
 
@@ -471,6 +472,18 @@ func (req *RequestOffLedger) TimeLock() time.Time {
 
 func (req *RequestOffLedger) Tokens() *ledgerstate.ColoredBalances {
 	return req.transfer
+}
+
+func (req *RequestOffLedger) Base64() string {
+	return base64.StdEncoding.EncodeToString(req.Bytes())
+}
+
+func NewRequestOffLedgerFromBase64(str string) (*RequestOffLedger, error) {
+	data, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return nil, err
+	}
+	return NewRequestOffLedgerFromBytes(data)
 }
 
 // endregion /////////////////////////////////////////////////////////////////

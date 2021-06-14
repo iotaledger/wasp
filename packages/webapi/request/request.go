@@ -2,7 +2,6 @@ package request
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/chain"
@@ -15,7 +14,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type getChainFn func(chainID *coretypes.ChainID) chain.Chain
+type getChainFn func(chainID *coretypes.ChainID) chain.ChainCore
 
 func AddEndpoints(server echoswagger.ApiRouter, getChain getChainFn) {
 	instance := &offLedgerReqAPI{
@@ -23,7 +22,7 @@ func AddEndpoints(server echoswagger.ApiRouter, getChain getChainFn) {
 	}
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
 		SetSummary("New off-ledger request").
-		AddParamPath("", "request", "binary data").
+		AddParamPath("", "request", "request in base64").
 		AddResponse(http.StatusOK, "Request submitted", nil, nil)
 }
 
@@ -43,8 +42,8 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	}
 	ch.ReceiveOffLedgerRequest(offLedgerReq)
 
-	// TODO look into calling a view to verify the request has been processed
-	return nil
+	// TODO think bout calling a view to verify the request has been processed
+	return c.NoContent(http.StatusAccepted)
 }
 
 func parseParams(c echo.Context) (chainID *coretypes.ChainID, req *request.RequestOffLedger, err error) {
@@ -52,13 +51,10 @@ func parseParams(c echo.Context) (chainID *coretypes.ChainID, req *request.Reque
 	if err != nil {
 		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}
-	data, err := ioutil.ReadAll(c.Request().Body)
+	reqBase64 := c.FormValue("request")
+	req, err = request.NewRequestOffLedgerFromBase64(reqBase64)
 	if err != nil {
-		return nil, nil, httperrors.BadRequest("Error reading request body")
-	}
-	req, err = request.NewRequestOffLedgerFromBytes(data)
-	if err != nil {
-		return nil, nil, httperrors.BadRequest("Error constructing off-ledger request from binary data")
+		return nil, nil, httperrors.BadRequest("Error constructing off-ledger request from base64 string")
 	}
 	return chainID, req, err
 }

@@ -46,6 +46,7 @@ func TestRequestStatus(t *testing.T) {
 		},
 		nil,
 		&res,
+		http.StatusOK,
 	)
 
 	require.True(t, res.IsProcessed)
