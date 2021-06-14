@@ -119,7 +119,6 @@ type Chain struct {
 
 	// related to asynchronous backlog processing
 	runVMMutex sync.Mutex
-	reqCounter atomic.Int32
 	mempool    chain.Mempool
 }
 
@@ -340,7 +339,6 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 		}
 		ch.runVMMutex.Lock()
 
-		ch.reqCounter.Add(int32(len(reqs)))
 		ch.mempool.ReceiveRequests(reqs...)
 
 		ch.runVMMutex.Unlock()
@@ -419,7 +417,8 @@ func (ch *Chain) collateAndRunBatch() bool {
 
 // backlogLen is a thread-safe function to return size of the current backlog
 func (ch *Chain) backlogLen() int {
-	return int(ch.reqCounter.Load())
+	mstats := ch.mempool.Stats()
+	return mstats.InBufCounter - mstats.OutPoolCounter
 }
 
 // solidifies request arguments without mempool (only for solo)

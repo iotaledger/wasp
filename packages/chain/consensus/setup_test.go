@@ -8,9 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/registry"
 
 	"github.com/iotaledger/wasp/packages/util"
@@ -71,7 +70,7 @@ type mockedNode struct {
 	ChainCore   *testchain.MockedChainCore // Chain mock
 	stateSync   coreutil.ChainStateSync    // Chain mock
 	Mempool     chain.Mempool              // Consensus needs
-	Consensus   *consensus                 // Consensus needs
+	Consensus   chain.Consensus            // Consensus needs
 	store       kvstore.KVStore            // State manager mock
 	SolidState  state.VirtualState         // State manager mock
 	StateOutput *ledgerstate.AliasOutput   // State manager mock
@@ -117,7 +116,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 	suite := pairing.NewSuiteBn256()
 	nodeIDs, pubKeys, privKeys := testpeers.SetupKeys(n, suite)
 	ret.NodeIDs = nodeIDs
-	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkg(t, quorum, ret.NodeIDs, pubKeys, privKeys, suite, log.Named("dkg"))
+	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, ret.NodeIDs, suite)
 	ret.NetworkProviders = testpeers.SetupNet(ret.NodeIDs, pubKeys, privKeys, ret.NetworkBehaviour, log)
 
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
@@ -212,7 +211,7 @@ func (env *mockedEnv) newNode(nodeIndex uint16) *mockedNode {
 	if env.MockedACS != nil {
 		acs = append(acs, env.MockedACS)
 	}
-	committee, err := committee.New(
+	cmt, err := committee.New(
 		env.StateAddress,
 		&env.ChainID,
 		env.NetworkProviders[nodeIndex],
@@ -223,15 +222,16 @@ func (env *mockedEnv) newNode(nodeIndex uint16) *mockedNode {
 		acs...,
 	)
 	require.NoError(env.T, err)
-	committee.Attach(ret.ChainCore)
+	cmt.Attach(ret.ChainCore)
 
 	ret.StateOutput = env.InitStateOutput
 	ret.SolidState, err = state.CreateOriginState(ret.store, &env.ChainID)
 	ret.stateSync.SetSolidIndex(0)
 	require.NoError(env.T, err)
 
-	ret.Consensus = New(ret.ChainCore, ret.Mempool, committee, ret.NodeConn)
-	ret.Consensus.vmRunner = testchain.NewMockedVMRunner(env.T, log)
+	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn)
+	cons.vmRunner = testchain.NewMockedVMRunner(env.T, log)
+	ret.Consensus = cons
 
 	ret.ChainCore.OnReceiveAsynchronousCommonSubsetMsg(func(msg *chain.AsynchronousCommonSubsetMsg) {
 		ret.Consensus.EventAsynchronousCommonSubsetMsg(msg)
@@ -282,14 +282,14 @@ func (env *mockedEnv) nodeCount() int {
 	return len(env.NodeIDs)
 }
 
-func (env *mockedEnv) setInitialConsensusState() {
+func (env *mockedEnv) SetInitialConsensusState() {
 	env.mutex.Lock()
 	defer env.mutex.Unlock()
 
 	for _, node := range env.Nodes {
 		go func(n *mockedNode) {
 			if n.SolidState != nil && n.SolidState.BlockIndex() == 0 {
-				n.eventStateTransition()
+				n.EventStateTransition()
 			}
 		}(node)
 	}
@@ -320,11 +320,11 @@ func (n *mockedNode) checkStateApproval() {
 	n.Log.Infof("STATE APPROVED (%d reqs). Index: %d, State output: %s",
 		len(reqIDsForLastState), n.SolidState.BlockIndex(), coretypes.OID(n.StateOutput.ID()))
 
-	n.eventStateTransition()
+	n.EventStateTransition()
 }
 
-func (n *mockedNode) eventStateTransition() {
-	n.Log.Debugf("eventStateTransition")
+func (n *mockedNode) EventStateTransition() {
+	n.Log.Debugf("EventStateTransition")
 
 	n.ChainCore.GlobalStateSync().SetSolidIndex(n.SolidState.BlockIndex())
 
@@ -362,7 +362,6 @@ func (env *mockedEnv) WaitTimerTick(until int) error {
 		return false
 	}
 	return env.WaitForEventFromNodes("TimerTick", checkTimerTickFun)
-
 }
 
 func (env *mockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...time.Duration) error {
@@ -425,7 +424,7 @@ func (env *mockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, i
 		waitName, to, sum, nodeCount, total, quorum)
 }
 
-func (env *mockedEnv) postDummyRequests(n int, randomize ...bool) {
+func (env *mockedEnv) PostDummyRequests(n int, randomize ...bool) {
 	reqs := make([]coretypes.Request, n)
 	for i := 0; i < n; i++ {
 		reqs[i] = solo.NewCallParams("dummy", "dummy", "c", i).

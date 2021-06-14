@@ -43,7 +43,7 @@ pub fn func_call_on_chain(ctx: &ScFuncContext) {
     let ret = ctx.call(target_contract, target_ep, Some(parms), None);
 
     let ret_val = ret.get_int64(PARAM_INT_VALUE);
-    ctx.results().get_int64(PARAM_INT_VALUE).set_value(ret_val.value());
+    ctx.results().get_int64(RESULT_INT_VALUE).set_value(ret_val.value());
     ctx.log("testcore.callOnChain ok");
 }
 
@@ -77,8 +77,8 @@ pub fn func_get_minted_supply(ctx: &ScFuncContext) {
     ctx.require(minted_colors.length() == 1, "test only supports one minted color");
     let color = minted_colors.get_color(0).value();
     let amount = minted.balance(&color);
-    ctx.results().get_int64(VAR_MINTED_SUPPLY).set_value(amount);
-    ctx.results().get_color(VAR_MINTED_COLOR).set_value(&color);
+    ctx.results().get_int64(RESULT_MINTED_SUPPLY).set_value(amount);
+    ctx.results().get_color(RESULT_MINTED_COLOR).set_value(&color);
     ctx.log("testcore.setInt ok");
 }
 
@@ -142,7 +142,7 @@ pub fn func_run_recursion(ctx: &ScFuncContext) {
     parms.get_hname(PARAM_HNAME_EP).set_value(HFUNC_RUN_RECURSION);
     ctx.call_self(HFUNC_CALL_ON_CHAIN, Some(parms), None);
     // TODO how would I return result of the call ???
-    ctx.results().get_int64(PARAM_INT_VALUE).set_value(depth - 1);
+    ctx.results().get_int64(RESULT_INT_VALUE).set_value(depth - 1);
     ctx.log("testcore.runRecursion ok");
 }
 
@@ -189,14 +189,14 @@ pub fn func_test_call_panic_view_ep_from_full(ctx: &ScFuncContext) {
 
 pub fn func_test_chain_owner_id_full(ctx: &ScFuncContext) {
     ctx.log("testcore.testChainOwnerIDFull");
-    ctx.results().get_agent_id(PARAM_CHAIN_OWNER_ID).set_value(&ctx.chain_owner_id());
+    ctx.results().get_agent_id(RESULT_CHAIN_OWNER_ID).set_value(&ctx.chain_owner_id());
     ctx.log("testcore.testChainOwnerIDFull ok");
 }
 
 pub fn func_test_event_log_deploy(ctx: &ScFuncContext) {
     ctx.log("testcore.testEventLogDeploy");
     //Deploy the same contract with another name
-    let program_hash = ctx.utility().hash_blake2b("test_sandbox".as_bytes());
+    let program_hash = ctx.utility().hash_blake2b("testcore".as_bytes());
     ctx.deploy(&program_hash, CONTRACT_NAME_DEPLOYED, "test contract deploy log", None);
     ctx.log("testcore.testEventLogDeploy ok");
 }
@@ -265,27 +265,27 @@ pub fn view_fibonacci(ctx: &ScViewContext) {
 
     let n = param_int_value.value();
     if n == 0 || n == 1 {
-        ctx.results().get_int64(PARAM_INT_VALUE).set_value(n);
+        ctx.results().get_int64(RESULT_INT_VALUE).set_value(n);
         return;
     }
     let parms1 = ScMutableMap::new();
     parms1.get_int64(PARAM_INT_VALUE).set_value(n - 1);
     let results1 = ctx.call_self(HVIEW_FIBONACCI, Some(parms1));
-    let n1 = results1.get_int64(PARAM_INT_VALUE).value();
+    let n1 = results1.get_int64(RESULT_INT_VALUE).value();
 
     let parms2 = ScMutableMap::new();
     parms2.get_int64(PARAM_INT_VALUE).set_value(n - 2);
     let results2 = ctx.call_self(HVIEW_FIBONACCI, Some(parms2));
-    let n2 = results2.get_int64(PARAM_INT_VALUE).value();
+    let n2 = results2.get_int64(RESULT_INT_VALUE).value();
 
-    ctx.results().get_int64(PARAM_INT_VALUE).set_value(n1 + n2);
+    ctx.results().get_int64(RESULT_INT_VALUE).set_value(n1 + n2);
     ctx.log("testcore.fibonacci ok");
 }
 
 pub fn view_get_counter(ctx: &ScViewContext) {
     ctx.log("testcore.getCounter");
     let counter = ctx.state().get_int64(VAR_COUNTER);
-    ctx.results().get_int64(VAR_COUNTER).set_value(counter.value());
+    ctx.results().get_int64(RESULT_COUNTER).set_value(counter.value());
     ctx.log("testcore.getCounter ok");
 }
 
@@ -348,7 +348,7 @@ pub fn view_test_call_panic_view_ep_from_view(ctx: &ScViewContext) {
 
 pub fn view_test_chain_owner_id_view(ctx: &ScViewContext) {
     ctx.log("testcore.testChainOwnerIDView");
-    ctx.results().get_agent_id(PARAM_CHAIN_OWNER_ID).set_value(&ctx.chain_owner_id());
+    ctx.results().get_agent_id(RESULT_CHAIN_OWNER_ID).set_value(&ctx.chain_owner_id());
     ctx.log("testcore.testChainOwnerIDView ok");
 }
 
@@ -362,6 +362,6 @@ pub fn view_test_sandbox_call(ctx: &ScViewContext) {
     ctx.log("testcore.testSandboxCall");
     let ret = ctx.call(CORE_ROOT, CORE_ROOT_VIEW_GET_CHAIN_INFO, None);
     let desc = ret.get_string("d").value();
-    ctx.results().get_string("sandboxCall").set_value(&desc);
+    ctx.results().get_string(RESULT_SANDBOX_CALL).set_value(&desc);
     ctx.log("testcore.testSandboxCall ok");
 }

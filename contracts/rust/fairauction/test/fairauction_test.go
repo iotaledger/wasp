@@ -68,7 +68,7 @@ func TestFaStartAuction(t *testing.T) {
 
 	// remove delayed finalize_auction from backlog
 	chain.Env.AdvanceClockBy(61 * time.Minute)
-	chain.WaitForEmptyBacklog()
+	require.True(t, chain.WaitForRequestsThrough(5))
 }
 
 func TestFaAuctionInfo(t *testing.T) {
@@ -80,12 +80,12 @@ func TestFaAuctionInfo(t *testing.T) {
 	)
 	require.NoError(t, err)
 	account := coretypes.NewAgentID(auctioneerAddr, 0)
-	requireAgent(t, res, VarCreator, *account)
-	requireInt64(t, res, VarBidders, 0)
+	requireAgent(t, res, ResultCreator, *account)
+	requireInt64(t, res, ResultBidders, 0)
 
 	// remove delayed finalize_auction from backlog
 	chain.Env.AdvanceClockBy(61 * time.Minute)
-	chain.WaitForEmptyBacklog()
+	require.True(t, chain.WaitForRequestsThrough(5))
 }
 
 func TestFaNoBids(t *testing.T) {
@@ -93,14 +93,14 @@ func TestFaNoBids(t *testing.T) {
 
 	// wait for finalize_auction
 	chain.Env.AdvanceClockBy(61 * time.Minute)
-	chain.WaitForEmptyBacklog()
+	require.True(t, chain.WaitForRequestsThrough(5))
 
 	res, err := chain.CallView(
 		ScName, ViewGetInfo,
 		ParamColor, tokenColor,
 	)
 	require.NoError(t, err)
-	requireInt64(t, res, VarBidders, 0)
+	requireInt64(t, res, ResultBidders, 0)
 }
 
 func TestFaOneBidTooLow(t *testing.T) {
@@ -114,17 +114,15 @@ func TestFaOneBidTooLow(t *testing.T) {
 
 	// wait for finalize_auction
 	chain.Env.AdvanceClockBy(61 * time.Minute)
-
-	time.Sleep(1 * time.Second)
-	chain.WaitForEmptyBacklog()
+	require.True(t, chain.WaitForRequestsThrough(6))
 
 	res, err := chain.CallView(
 		ScName, ViewGetInfo,
 		ParamColor, tokenColor,
 	)
 	require.NoError(t, err)
-	requireInt64(t, res, VarHighestBid, -1)
-	requireInt64(t, res, VarBidders, 0)
+	requireInt64(t, res, ResultHighestBid, -1)
+	requireInt64(t, res, ResultBidders, 0)
 }
 
 func TestFaOneBid(t *testing.T) {
@@ -139,18 +137,16 @@ func TestFaOneBid(t *testing.T) {
 
 	// wait for finalize_auction
 	chain.Env.AdvanceClockBy(61 * time.Minute)
-
-	time.Sleep(1 * time.Second)
-	chain.WaitForEmptyBacklog()
+	require.True(t, chain.WaitForRequestsThrough(6))
 
 	res, err := chain.CallView(
 		ScName, ViewGetInfo,
 		ParamColor, tokenColor,
 	)
 	require.NoError(t, err)
-	requireInt64(t, res, VarBidders, 1)
-	requireInt64(t, res, VarHighestBid, 500)
-	requireAgent(t, res, VarHighestBidder, *coretypes.NewAgentID(bidderAddr, 0))
+	requireInt64(t, res, ResultBidders, 1)
+	requireInt64(t, res, ResultHighestBid, 500)
+	requireAgent(t, res, ResultHighestBidder, *coretypes.NewAgentID(bidderAddr, 0))
 }
 
 func requireAgent(t *testing.T, res dict.Dict, key string, expected coretypes.AgentID) {

@@ -350,7 +350,7 @@ pub fn view_get_factor(ctx: &ScViewContext) {
 
     // Set the value associated with the 'factor' key to the factor we got from
     // the members map through an ScMutableInt64 proxy to the results map.
-    results.get_int64(VAR_FACTOR).set_value(factor);
+    results.get_int64(RESULT_FACTOR).set_value(factor);
 
     // Log successful completion of the 'getFactor' View in the host log.
     ctx.log("dividend.getFactor ok");
