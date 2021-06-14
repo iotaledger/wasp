@@ -31,7 +31,7 @@ type Chain struct {
 
 	CommitteeNodes []int
 	Quorum         uint16
-	Address        ledgerstate.Address
+	StateAddress   ledgerstate.Address
 
 	ChainID chainid.ChainID
 

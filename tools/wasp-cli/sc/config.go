@@ -147,7 +147,7 @@ type DeployParams struct {
 }
 
 func Deploy(params *DeployParams) (ledgerstate.Address, error) {
-	scAddress, _, err := waspapi.DeployChain(waspapi.CreateChainParams{
+	scAddress, _, err := waspapi.DeployChainWithDKG(waspapi.CreateChainParams{
 		Node:                  config.GoshimmerClient(),
 		CommitteeApiHosts:     config.CommitteeApi(params.Committee),
 		CommitteePeeringHosts: config.CommitteePeering(params.Committee),
