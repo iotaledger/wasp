@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 
-	"github.com/iotaledger/wasp/packages/registry_pkg/committee_record"
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 

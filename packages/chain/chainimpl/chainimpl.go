@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/iotaledger/wasp/packages/registry_pkg/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
@@ -204,7 +204,7 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 	}
 }
 
-// processStateMessage processes the unique chain output which exists on the chain's address
+// processChainTransition processes the unique chain output which exists on the chain's address
 // If necessary, it creates/changes/rotates committee object
 func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	if !msg.ChainOutput.GetIsGovernanceUpdated() {
@@ -259,7 +259,6 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 		msg.ChainOutput.GetStateIndex(), sh.String(),
 		msg.ChainOutput.GetStateAddress().Base58(), !msg.ChainOutput.GetIsGovernanceUpdated(),
 	)
-	createCommittee := false
 	cmt := c.getCommittee()
 	if cmt != nil {
 		// committee already exists
@@ -271,17 +270,15 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 			c.consensus.Close()
 			c.setCommittee(nil)
 			c.consensus = nil
-			createCommittee = true
+			err = c.createNewCommitteeAndConsensus(msg.ChainOutput.GetStateAddress())
 		}
 	} else {
 		// committee does not exist yet. Must be created
-		createCommittee = true
+		err = c.createNewCommitteeAndConsensus(msg.ChainOutput.GetStateAddress())
 	}
-	if createCommittee {
-		if err := c.createNewCommitteeAndConsensus(msg.ChainOutput.GetStateAddress()); err != nil {
-			c.log.Errorf("processStateMessage: %v", err)
-			return
-		}
+	if err != nil {
+		c.log.Errorf("processStateMessage: %v", err)
+		return
 	}
 	c.stateMgr.EventStateMsg(msg)
 }

@@ -136,8 +136,7 @@ func (c *consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
 			return
 		}
 		c.chain.ReceiveMessage(&chain.VMResultMsg{
-			Task:    task,
-			NoError: err == nil,
+			Task: task,
 		})
 	}
 	return task

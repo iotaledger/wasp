@@ -8,14 +8,19 @@ import (
 )
 
 type Assert struct {
-	log coretypes.LogInterface
+	log    coretypes.LogInterface
+	prefix string
 }
 
-func NewAssert(log ...coretypes.LogInterface) Assert {
-	if len(log) == 0 {
-		return Assert{}
+func NewAssert(log coretypes.LogInterface, name ...string) Assert {
+	p := "assertion failed: "
+	if len(name) > 0 {
+		p = fmt.Sprintf("assertion failed (%s): ", name[0])
 	}
-	return Assert{log: log[0]}
+	return Assert{
+		log:    log,
+		prefix: p,
+	}
 }
 
 func (a Assert) Require(cond bool, format string, args ...interface{}) {
@@ -23,21 +28,21 @@ func (a Assert) Require(cond bool, format string, args ...interface{}) {
 		return
 	}
 	if a.log == nil {
-		panic(fmt.Sprintf(format, args...))
+		panic(fmt.Sprintf(a.prefix+format, args...))
 	}
-	a.log.Panicf(format, args...)
+	a.log.Panicf(a.prefix+format, args...)
 }
 
 func (a Assert) RequireNoError(err error, str ...string) {
-	a.Require(err == nil, fmt.Sprintf("%s %v", strings.Join(str, " "), err))
+	a.Require(err == nil, fmt.Sprintf(a.prefix+"%s %v", strings.Join(str, " "), err))
 }
 
 func (a Assert) RequireChainOwner(ctx coretypes.Sandbox, name ...string) {
 	if !ctx.ChainOwnerID().Equals(ctx.Caller()) {
 		if len(name) > 0 {
-			a.log.Panicf("%s: unauthorized access", name[0])
+			a.log.Panicf(a.prefix+"unauthorized access: %s", name[0])
 		} else {
-			a.log.Panicf("unauthorized access")
+			a.log.Panicf(a.prefix + "unauthorized access")
 		}
 	}
 }

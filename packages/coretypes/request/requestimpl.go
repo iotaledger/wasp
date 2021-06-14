@@ -5,8 +5,6 @@ import (
 	"io"
 	"time"
 
-	"go.uber.org/atomic"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -15,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"go.uber.org/atomic"
 	"golang.org/x/crypto/blake2b"
 )
 

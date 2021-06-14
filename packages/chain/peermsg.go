@@ -67,8 +67,7 @@ type StateCandidateMsg struct {
 
 // VMResultMsg Consensus -> Consensus. VM sends result of async task started by Consensus to itself
 type VMResultMsg struct {
-	Task    *vm.VMTask
-	NoError bool
+	Task *vm.VMTask
 }
 
 // AsynchronousCommonSubsetMsg
