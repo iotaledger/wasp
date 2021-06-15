@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/plugins/registry"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -18,7 +19,7 @@ import (
 )
 
 func addCommitteeRecordEndpoints(adm echoswagger.ApiGroup) {
-	rnd1 := coretypes.RandomChainID()
+	rnd1 := chainid.RandomChainID()
 	example := model.CommitteeRecord{
 		Address: model.NewAddress(rnd1.AsAddress()),
 		Nodes:   []string{"wasp1.example.org:4000", "wasp2.example.org:4000", "wasp3.example.org:4000"},
@@ -81,7 +82,7 @@ func handleGetCommitteeRecord(c echo.Context) error {
 }
 
 func handleGetCommitteeForChain(c echo.Context) error {
-	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}

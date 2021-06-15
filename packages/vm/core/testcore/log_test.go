@@ -1,6 +1,8 @@
 package testcore
 
 import (
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -8,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func printLogRecords(t *testing.T, recs []collections.TimestampedLogRecord, title string) {

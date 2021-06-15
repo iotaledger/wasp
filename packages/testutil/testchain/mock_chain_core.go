@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -15,14 +16,14 @@ import (
 
 type MockedChainCore struct {
 	T                       *testing.T
-	chainID                 coretypes.ChainID
+	chainID                 chainid.ChainID
 	processors              *processors.ProcessorCache
 	eventStateTransition    *events.Event
 	eventRequestProcessed   *events.Event
 	eventStateSynced        *events.Event
 	onGlobalStateSync       func() coreutil.ChainStateSync
 	onGetStateReader        func() state.OptimisticStateReader
-	onEventStateTransition  func(data *chain.StateTransitionEventData)
+	onEventStateTransition  func(data *chain.ChainTransitionEventData)
 	onEventRequestProcessed func(id coretypes.RequestID)
 	onEventStateSynced      func(id ledgerstate.OutputID, blockIndex uint32)
 	onReceiveMessage        func(i interface{})
@@ -30,14 +31,14 @@ type MockedChainCore struct {
 	log                     *logger.Logger
 }
 
-func NewMockedChainCore(t *testing.T, chainID coretypes.ChainID, log *logger.Logger) *MockedChainCore {
+func NewMockedChainCore(t *testing.T, chainID chainid.ChainID, log *logger.Logger) *MockedChainCore {
 	ret := &MockedChainCore{
 		T:          t,
 		chainID:    chainID,
 		processors: processors.MustNew(),
 		log:        log,
 		eventStateTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(_ *chain.StateTransitionEventData))(params[0].(*chain.StateTransitionEventData))
+			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
 		}),
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
@@ -52,10 +53,10 @@ func NewMockedChainCore(t *testing.T, chainID coretypes.ChainID, log *logger.Log
 			chain.LogSyncedEvent(outputID, blockIndex, log)
 		},
 	}
-	ret.onEventStateTransition = func(msg *chain.StateTransitionEventData) {
+	ret.onEventStateTransition = func(msg *chain.ChainTransitionEventData) {
 		chain.LogStateTransition(msg, nil, log)
 	}
-	ret.eventStateTransition.Attach(events.NewClosure(func(data *chain.StateTransitionEventData) {
+	ret.eventStateTransition.Attach(events.NewClosure(func(data *chain.ChainTransitionEventData) {
 		ret.onEventStateTransition(data)
 	}))
 	ret.eventRequestProcessed.Attach(events.NewClosure(func(id coretypes.RequestID) {
@@ -71,7 +72,7 @@ func (m *MockedChainCore) Log() *logger.Logger {
 	return m.log
 }
 
-func (m *MockedChainCore) ID() *coretypes.ChainID {
+func (m *MockedChainCore) ID() *chainid.ChainID {
 	return &m.chainID
 }
 
@@ -103,7 +104,7 @@ func (m *MockedChainCore) RequestProcessed() *events.Event {
 	return m.eventRequestProcessed
 }
 
-func (m *MockedChainCore) StateTransition() *events.Event {
+func (m *MockedChainCore) ChainTransition() *events.Event {
 	return m.eventStateTransition
 }
 
@@ -111,7 +112,7 @@ func (m *MockedChainCore) StateSynced() *events.Event {
 	return m.eventStateSynced
 }
 
-func (m *MockedChainCore) OnStateTransition(f func(data *chain.StateTransitionEventData)) {
+func (m *MockedChainCore) OnStateTransition(f func(data *chain.ChainTransitionEventData)) {
 	m.onEventStateTransition = f
 }
 

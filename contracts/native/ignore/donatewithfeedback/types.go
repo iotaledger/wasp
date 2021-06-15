@@ -6,10 +6,11 @@ package donatewithfeedback
 
 import (
 	"bytes"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/util"
 	"io"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 // main external constants

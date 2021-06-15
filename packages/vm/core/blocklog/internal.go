@@ -1,6 +1,9 @@
 package blocklog
 
 import (
+	"fmt"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -14,6 +17,28 @@ func SaveNextBlockInfo(partition kv.KVStore, blockInfo *BlockInfo) uint32 {
 	registry.MustPush(blockInfo.Bytes())
 	ret := registry.MustLen() - 1
 	return ret
+}
+
+// SaveControlAddressesIfNecessary saves new information about state address in the blocklog partition
+// If state address does not change, it does nothing
+func SaveControlAddressesIfNecessary(partition kv.KVStore, stateAddress, governingAddress ledgerstate.Address, blockIndex uint32) {
+	registry := collections.NewArray32(partition, StateVarControlAddresses)
+	l := registry.MustLen()
+	if l != 0 {
+		addrs, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
+		if err != nil {
+			panic(fmt.Sprintf("SaveControlAddressesIfNecessary: %v", err))
+		}
+		if addrs.StateAddress.Equals(stateAddress) && addrs.GoverningAddress.Equals(governingAddress) {
+			return
+		}
+	}
+	rec := &ControlAddresses{
+		StateAddress:     stateAddress,
+		GoverningAddress: governingAddress,
+		SinceBlockIndex:  blockIndex,
+	}
+	registry.MustPush(rec.Bytes())
 }
 
 // SaveRequestLogRecord appends request record to the record log and creates records for fast lookup

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -23,7 +25,7 @@ import (
 )
 
 type ChainCore interface {
-	ID() *coretypes.ChainID
+	ID() *chainid.ChainID
 	GetCommitteeInfo() *CommitteeInfo
 	ReceiveMessage(interface{})
 	Events() ChainEvents
@@ -52,7 +54,7 @@ type ChainRequests interface {
 
 type ChainEvents interface {
 	RequestProcessed() *events.Event
-	StateTransition() *events.Event
+	ChainTransition() *events.Event
 	StateSynced() *events.Event
 }
 
@@ -103,7 +105,6 @@ type StateManager interface {
 
 type Consensus interface {
 	EventStateTransitionMsg(*StateTransitionMsg)
-	EventVMResultCalculated(*VMResultMsg)
 	EventSignedResultMsg(*SignedResultMsg)
 	EventInclusionsStateMsg(*InclusionStateMsg)
 	EventAsynchronousCommonSubsetMsg(msg *AsynchronousCommonSubsetMsg)
@@ -178,7 +179,7 @@ type PeerStatus struct {
 	Connected bool
 }
 
-type StateTransitionEventData struct {
+type ChainTransitionEventData struct {
 	VirtualState    state.VirtualState
 	ChainOutput     *ledgerstate.AliasOutput
 	OutputTimestamp time.Time
@@ -194,4 +195,12 @@ const (
 	RequestProcessingStatusUnknown = RequestProcessingStatus(iota)
 	RequestProcessingStatusBacklog
 	RequestProcessingStatusCompleted
+)
+
+const (
+	// time tick for consensus and state manager objects
+	TimerTickPeriod = 100 * time.Millisecond
+
+	// retry delay for congested input channel for the consensus and state manager objects.channel.
+	ReceiveMsgChannelRetryDelay = 500 * time.Millisecond
 )

@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -28,7 +30,7 @@ func addStateQueryEndpoint(server echoswagger.ApiRouter) {
 }
 
 func handleStateQuery(c echo.Context) error {
-	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}

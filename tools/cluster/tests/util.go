@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
@@ -242,7 +244,7 @@ func checkLedger(t *testing.T, chain *cluster.Chain) {
 	require.EqualValues(t, sum, total.Map())
 }
 
-func getChainInfo(t *testing.T, chain *cluster.Chain) (coretypes.ChainID, coretypes.AgentID) {
+func getChainInfo(t *testing.T, chain *cluster.Chain) (chainid.ChainID, coretypes.AgentID) {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ChainID, root.Interface.Hname(), root.FuncGetChainInfo,
 	)
@@ -268,7 +270,7 @@ func findContract(chain *cluster.Chain, name string) (*root.ContractRecord, erro
 	if err != nil {
 		return nil, err
 	}
-	recBin, err := ret.Get(root.ParamData)
+	recBin, err := ret.Get(root.VarData)
 	if err != nil {
 		return nil, err
 	}
