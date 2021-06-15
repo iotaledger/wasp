@@ -4,6 +4,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/rotate"
+
+	"github.com/iotaledger/wasp/packages/testutil/testkey"
+
 	"go.uber.org/zap/zapcore"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -496,4 +500,76 @@ func TestSolidification(t *testing.T) {
 	require.True(t, result)
 	require.True(t, len(ready) == 1)
 	require.Contains(t, ready, requests[0])
+}
+
+func TestRotateRequest(t *testing.T) {
+	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
+	rdr, _ := createStateReader(t, glb)
+	pool := New(rdr, coretypes.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	require.NotNil(t, pool)
+	requests, _ := getRequestsOnLedger(t, 6)
+
+	pool.ReceiveRequests(
+		requests[0],
+		requests[1],
+		requests[2],
+		requests[3],
+		requests[4],
+	)
+	require.True(t, pool.WaitRequestInPool(requests[0].ID()))
+	require.True(t, pool.WaitRequestInPool(requests[1].ID()))
+	require.True(t, pool.WaitRequestInPool(requests[2].ID()))
+	require.True(t, pool.WaitRequestInPool(requests[3].ID()))
+	require.True(t, pool.WaitRequestInPool(requests[4].ID()))
+	stats := pool.Stats()
+	require.EqualValues(t, 5, stats.InPoolCounter)
+	require.EqualValues(t, 0, stats.OutPoolCounter)
+	require.EqualValues(t, 5, stats.TotalPool)
+	require.EqualValues(t, 5, stats.Ready)
+
+	ready, result := pool.ReadyFromIDs(time.Now(),
+		requests[0].ID(),
+		requests[1].ID(),
+		requests[2].ID(),
+		requests[3].ID(),
+		requests[4].ID(),
+	)
+	require.True(t, result)
+	require.True(t, len(ready) == 5)
+
+	kp, addr := testkey.GenKeyAddr()
+	rotateReq := rotate.NewRotateRequestOffLedger(addr, kp)
+	require.True(t, rotate.IsRotateStateControllerRequest(rotateReq))
+
+	pool.ReceiveRequests(rotateReq)
+	require.True(t, pool.WaitRequestInPool(rotateReq.ID()))
+	require.True(t, pool.HasRequest(rotateReq.ID()))
+
+	stats = pool.Stats()
+	require.EqualValues(t, 6, stats.TotalPool)
+
+	ready = pool.ReadyNow(time.Now())
+	require.EqualValues(t, 1, len(ready))
+	require.EqualValues(t, rotateReq.ID(), ready[0].ID())
+
+	ready, ok := pool.ReadyFromIDs(time.Now(), rotateReq.ID())
+	require.True(t, ok)
+	require.EqualValues(t, 1, len(ready))
+	require.EqualValues(t, rotateReq.ID(), ready[0].ID())
+
+	pool.RemoveRequests(rotateReq.ID())
+	require.False(t, pool.HasRequest(rotateReq.ID()))
+
+	ready = pool.ReadyNow(time.Now())
+	require.EqualValues(t, 5, len(ready))
+
+	ready, result = pool.ReadyFromIDs(time.Now(),
+		requests[0].ID(),
+		requests[1].ID(),
+		requests[2].ID(),
+		requests[3].ID(),
+		requests[4].ID(),
+	)
+	require.True(t, result)
+	require.True(t, len(ready) == 5)
 }

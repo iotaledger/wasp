@@ -3,7 +3,6 @@ package consensus
 import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/hashing"
 )
 
 func (c *consensus) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
@@ -13,20 +12,6 @@ func (c *consensus) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	c.log.Debugf("eventStateTransitionMsg: state index: %d, state output: %s, timestamp: %v",
 		msg.State.BlockIndex(), coretypes.OID(msg.StateOutput.ID()), msg.StateTimestamp)
 	c.setNewState(msg)
-	c.takeAction()
-}
-
-func (c *consensus) EventVMResultCalculated(msg *chain.VMResultMsg) {
-	c.eventResultCalculatedMsgCh <- msg
-}
-func (c *consensus) eventResultCalculated(msg *chain.VMResultMsg) {
-	c.log.Debugf("eventResultCalculated: block index: %d", msg.Task.VirtualState.BlockIndex())
-
-	if msg.Task.ChainInput.ID() != c.stateOutput.ID() {
-		c.log.Warnf("eventResultCalculated: VMResultMsg out of context")
-		return
-	}
-	c.processVMResult(msg.Task)
 	c.takeAction()
 }
 
@@ -63,11 +48,7 @@ func (c *consensus) EventVMResultMsg(msg *chain.VMResultMsg) {
 	c.eventVMResultMsgCh <- msg
 }
 func (c *consensus) eventVMResultMsg(msg *chain.VMResultMsg) {
-	essenceHash := hashing.HashData(msg.Task.ResultTransactionEssence.Bytes())
-	c.log.Debugf("eventVMResultMsg: state index: %d state hash: %s essence hash: %s",
-		msg.Task.VirtualState.BlockIndex(), msg.Task.VirtualState.Hash(), essenceHash)
 	c.processVMResult(msg.Task)
-
 	c.takeAction()
 }
 

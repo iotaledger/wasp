@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -25,11 +27,11 @@ func (m *mockChain) EventRequestProcessed() *events.Event {
 }
 
 func TestRequestStatus(t *testing.T) {
-	r := &reqstatusWebAPI{func(chainID *coretypes.ChainID) chain.ChainRequests {
+	r := &reqstatusWebAPI{func(chainID *chainid.ChainID) chain.ChainRequests {
 		return &mockChain{}
 	}}
 
-	chainID := coretypes.RandomChainID()
+	chainID := chainid.RandomChainID()
 	reqID := coretypes.RequestID(ledgerstate.OutputID{})
 
 	var res model.RequestStatusResponse

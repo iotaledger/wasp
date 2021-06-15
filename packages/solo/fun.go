@@ -8,9 +8,12 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -259,7 +262,7 @@ func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name string, fname
 //  - chainID
 //  - agentID of the chain owner
 //  - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
-func (ch *Chain) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.Hname]*root.ContractRecord) {
+func (ch *Chain) GetInfo() (chainid.ChainID, coretypes.AgentID, map[coretypes.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
 	require.NoError(ch.Env.T, err)
 
@@ -554,4 +557,67 @@ func (ch *Chain) GetLogRecordsForBlockRangeAsStrings(fromBlockIndex, toBlockInde
 		ret[i] = recs[i].String()
 	}
 	return ret
+}
+
+func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
+	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncControlAddresses)
+	require.NoError(ch.Env.T, err)
+	par := kvdecoder.New(res, ch.Log)
+	ret := &blocklog.ControlAddresses{
+		StateAddress:     par.MustGetAddress(blocklog.ParamStateControllerAddress),
+		GoverningAddress: par.MustGetAddress(blocklog.ParamGoverningAddress),
+		SinceBlockIndex:  uint32(par.MustGetUint64(blocklog.ParamBlockIndex)),
+	}
+	return ret
+}
+
+// AddAllowedStateController adds the address to the allowed state controlled address list
+func (ch *Chain) AddAllowedStateController(addr ledgerstate.Address, keyPair *ed25519.KeyPair) error {
+	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedStateControllerAddress,
+		governance.ParamStateControllerAddress, addr,
+	).WithIotas(1)
+	_, err := ch.PostRequestSync(req, keyPair)
+	return err
+}
+
+// AddAllowedStateController adds the address to the allowed state controlled address list
+func (ch *Chain) RemoveAllowedStateController(addr ledgerstate.Address, keyPair *ed25519.KeyPair) error {
+	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedStateControllerAddress,
+		governance.ParamStateControllerAddress, addr,
+	).WithIotas(1)
+	_, err := ch.PostRequestSync(req, keyPair)
+	return err
+}
+
+// AddAllowedStateController adds the address to the allowed state controlled address list
+func (ch *Chain) GetAllowedStateControllerAddresses() []ledgerstate.Address {
+	res, err := ch.CallView(coreutil.CoreContractGovernance, governance.FuncGetAllowedStateControllerAddresses)
+	require.NoError(ch.Env.T, err)
+	if len(res) == 0 {
+		return nil
+	}
+	ret := make([]ledgerstate.Address, 0)
+	arr := collections.NewArray16ReadOnly(res, governance.ParamAllowedStateControllerAddresses)
+	for i := uint16(0); i < arr.MustLen(); i++ {
+		a, ok, err := codec.DecodeAddress(arr.MustGetAt(i))
+		require.NoError(ch.Env.T, err)
+		require.True(ch.Env.T, ok)
+		ret = append(ret, a)
+	}
+	return ret
+}
+
+// RotateStateController rotates the chain to the new controller address.
+// We assume self-governed chain here.
+// Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
+func (ch *Chain) RotateStateController(newStateAddr ledgerstate.Address, newStateKeyPair *ed25519.KeyPair, ownerKeyPair *ed25519.KeyPair) error {
+	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
+		coreutil.ParamStateControllerAddress, newStateAddr,
+	).WithIotas(1)
+	_, err := ch.PostRequestSync(req, ownerKeyPair)
+	if err == nil {
+		ch.StateControllerAddress = newStateAddr
+		ch.StateControllerKeyPair = newStateKeyPair
+	}
+	return err
 }

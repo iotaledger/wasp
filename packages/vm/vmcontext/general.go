@@ -3,6 +3,7 @@ package vmcontext
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -10,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
-func (vmctx *VMContext) ChainID() *coretypes.ChainID {
+func (vmctx *VMContext) ChainID() *chainid.ChainID {
 	return &vmctx.chainID
 }
 
@@ -141,4 +142,27 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens *ledgerstate.Col
 		return false
 	}
 	return true
+}
+
+// - anchor properties
+func (vmctx *VMContext) StateAddress() ledgerstate.Address {
+	return vmctx.chainInput.GetStateAddress()
+}
+
+func (vmctx *VMContext) GoverningAddress() ledgerstate.Address {
+	return vmctx.chainInput.GetGoverningAddress()
+}
+
+func (vmctx *VMContext) StateIndex() uint32 {
+	return vmctx.chainInput.GetStateIndex()
+}
+
+func (vmctx *VMContext) StateHash() hashing.HashValue {
+	var h hashing.HashValue
+	h, _ = hashing.HashValueFromBytes(vmctx.chainInput.GetStateData())
+	return h
+}
+
+func (vmctx *VMContext) OutputID() ledgerstate.OutputID {
+	return vmctx.chainInput.ID()
 }

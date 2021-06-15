@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
@@ -29,10 +30,7 @@ func (env *Solo) NewKeyPairWithFunds() (*ed25519.KeyPair, ledgerstate.Address) {
 // NewSignatureSchemeAndPubKey generates new ed25519 signature scheme
 // Returns signature scheme interface and public key in binary form
 func (env *Solo) NewKeyPair() (*ed25519.KeyPair, ledgerstate.Address) {
-	keyPair := ed25519.GenerateKeyPair()
-	addr := ledgerstate.NewED25519Address(keyPair.PublicKey)
-	env.AssertAddressBalance(addr, ledgerstate.ColorIOTA, 0)
-	return &keyPair, ledgerstate.NewED25519Address(keyPair.PublicKey)
+	return testkey.GenKeyAddr()
 }
 
 // MintTokens mints specified amount of new colored tokens in the given wallet (signature scheme)

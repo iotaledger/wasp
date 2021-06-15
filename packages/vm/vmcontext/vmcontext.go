@@ -3,6 +3,10 @@ package vmcontext
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -26,8 +30,9 @@ import (
 // chain address contained in the statetxbuilder.Builder
 type VMContext struct {
 	// same for the block
-	chainID              coretypes.ChainID
+	chainID              chainid.ChainID
 	chainOwnerID         coretypes.AgentID
+	chainInput           *ledgerstate.AliasOutput
 	processors           *processors.ProcessorCache
 	txBuilder            *utxoutil.Builder
 	virtualState         state.VirtualState
@@ -68,7 +73,7 @@ type blockContext struct {
 
 // CreateVMContext a constructor
 func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
-	chainID, err := coretypes.ChainIDFromAddress(task.ChainInput.Address())
+	chainID, err := chainid.ChainIDFromAddress(task.ChainInput.Address())
 	if err != nil {
 		task.Log.Panicf("CreateVMContext: %v", err)
 	}
@@ -91,6 +96,7 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 	}
 	ret := &VMContext{
 		chainID:              *chainID,
+		chainInput:           task.ChainInput,
 		txBuilder:            txb,
 		virtualState:         task.VirtualState,
 		solidStateBaseline:   task.SolidStateBaseline,
@@ -125,14 +131,32 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 }
 
 // CloseVMContext does the closing actions on the block
-func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) {
-	vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
+// return nil for normal block and rotation address for rotation block
+func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) ledgerstate.Address {
+	rotationAddr := vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
 	vmctx.closeBlockContexts()
+	return rotationAddr
 }
 
-func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) {
+func (vmctx *VMContext) checkRotationAddress() ledgerstate.Address {
+	vmctx.pushCallContext(governance.Interface.Hname(), nil, nil)
+	defer vmctx.popCallContext()
+
+	return governance.GetRotationAddress(vmctx.State())
+}
+
+// mustSaveBlockInfo is in the blocklog partition context
+// returns rotation address if this block is a rotation block
+func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) ledgerstate.Address {
+	vmctx.currentStateUpdate = state.NewStateUpdate() // need ths before to make state valid
+
+	if rotationAddress := vmctx.checkRotationAddress(); rotationAddress != nil {
+		// block was marked fake by the governance contract because it is a committee rotation.
+		// There was only on request in the block
+		// We skip saving block information in order to avoid inconsistencies
+		return rotationAddress
+	}
 	// block info will be stored into the separate state update
-	vmctx.currentStateUpdate = state.NewStateUpdate()
 	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
@@ -148,8 +172,16 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 	if idx != blockInfo.BlockIndex {
 		vmctx.log.Panicf("CloseVMContext: inconsistent block index")
 	}
+
+	blocklog.SaveControlAddressesIfNecessary(
+		vmctx.State(),
+		vmctx.StateAddress(),
+		vmctx.GoverningAddress(),
+		vmctx.chainInput.GetStateIndex(),
+	)
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.currentStateUpdate = nil // invalidate
+	return nil
 }
 
 // closeBlockContexts closing block contexts in deterministic FIFO sequence

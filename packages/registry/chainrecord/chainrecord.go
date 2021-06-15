@@ -3,19 +3,20 @@ package chainrecord
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
 // ChainRecord represents chain the node is participating in
 // TODO optimize, no need for a persistent structure, simple activity tag is enough
 type ChainRecord struct {
-	ChainID *coretypes.ChainID
+	ChainID *chainid.ChainID
 	Active  bool
 }
 
-func NewChainRecord(chainID *coretypes.ChainID, active bool) *ChainRecord {
+func NewChainRecord(chainID *chainid.ChainID, active bool) *ChainRecord {
 	return &ChainRecord{
 		ChainID: chainID,
 		Active:  active,
@@ -28,7 +29,7 @@ func ChainRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, erro
 	if err != nil {
 		return nil, err
 	}
-	ret.ChainID = coretypes.NewChainID(aliasAddr)
+	ret.ChainID = chainid.NewChainID(aliasAddr)
 
 	ret.Active, err = mu.ReadBool()
 	if err != nil {

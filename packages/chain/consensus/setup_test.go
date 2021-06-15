@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/registry"
+
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 
 	"github.com/iotaledger/wasp/packages/util"
 
@@ -59,7 +60,7 @@ type mockedEnv struct {
 	PubKeys           []kyber.Point
 	PrivKeys          []kyber.Scalar
 	NetworkProviders  []peering.NetworkProvider
-	DKSRegistries     []registry.DKShareRegistryProvider
+	DKSRegistries     []coretypes.DKShareRegistryProvider
 	store             kvstore.KVStore
 	SolidState        state.VirtualState
 	GlobalSync        coreutil.ChainStateSync
@@ -67,7 +68,7 @@ type mockedEnv struct {
 	RequestIDsLast    []coretypes.RequestID
 	NodeConn          []*testchain.MockedNodeConn
 	MockedACS         chain.AsynchronousCommonSubsetRunner
-	ChainID           coretypes.ChainID
+	ChainID           chainid.ChainID
 	mutex             sync.Mutex
 	Nodes             []*mockedNode
 	push              bool
@@ -171,7 +172,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 	ret.StateOutput, err = utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
-	ret.ChainID = *coretypes.NewChainID(ret.StateOutput.GetAliasAddress())
+	ret.ChainID = *chainid.NewChainID(ret.StateOutput.GetAliasAddress())
 
 	ret.store = mapdb.NewMapDB()
 	ret.SolidState, err = state.CreateOriginState(ret.store, &ret.ChainID)
