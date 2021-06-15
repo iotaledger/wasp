@@ -111,7 +111,7 @@ func TestDeployContractOnly(t *testing.T) {
 			root.ParamHname: hname.Bytes(),
 		})
 	check(err, t)
-	recb, err := ret.Get(root.ParamData)
+	recb, err := ret.Get(root.VarData)
 	check(err, t)
 	rec, err := root.DecodeContractRecord(recb)
 	check(err, t)
