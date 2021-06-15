@@ -5,6 +5,7 @@ package faclient
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -107,7 +108,7 @@ func (fc *FairAuctionClient) StartAuction(
 		chainclient.PostRequestParams{
 			Transfer: map[ledgerstate.Color]uint64{
 				ledgerstate.ColorIOTA: fee,
-				*color:            tokensForSale,
+				*color:                tokensForSale,
 			},
 			ArgsRaw: codec.MakeDict(map[string]interface{}{
 				fairauction.VarReqAuctionColor:                color.String(),

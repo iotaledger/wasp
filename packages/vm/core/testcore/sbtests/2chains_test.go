@@ -66,9 +66,6 @@ func test2Chains(t *testing.T, w bool) {
 	_, err = chain2.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	//time.Sleep(1 * time.Second)
-	//chain1.WaitForEmptyBacklog()
-	//chain2.WaitForEmptyBacklog()
 	extra := 0
 	if w {
 		extra = 1

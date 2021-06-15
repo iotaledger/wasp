@@ -4,10 +4,11 @@
 package test
 
 import (
+	"testing"
+
 	"github.com/iotaledger/wasp/contracts/common"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func setupTest(t *testing.T) *solo.Chain {

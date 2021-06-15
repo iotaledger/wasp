@@ -3,10 +3,11 @@ package micropay
 import (
 	"bytes"
 	"fmt"
+	"io"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/util"
-	"io"
 )
 
 type Payment struct {
