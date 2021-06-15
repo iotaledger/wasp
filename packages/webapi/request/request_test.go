@@ -33,7 +33,7 @@ func dummyOffledgerRequest() *request.RequestOffLedger {
 	return request.NewRequestOffLedger(contract, entrypoint, args)
 }
 
-func TestNewRequest(t *testing.T) {
+func TestNewRequestBase64(t *testing.T) {
 	instance := &offLedgerReqAPI{
 		getChain: createMockedGetChain(t),
 	}
@@ -45,6 +45,23 @@ func TestNewRequest(t *testing.T) {
 		routes.NewRequest(":chainID"),
 		map[string]string{"chainID": chainid.RandomChainID().Base58()},
 		OffLedgerRequestBody{Request: dummyOffledgerRequest().Base64()},
+		nil,
+		http.StatusAccepted,
+	)
+}
+
+func TestNewRequestBinary(t *testing.T) {
+	instance := &offLedgerReqAPI{
+		getChain: createMockedGetChain(t),
+	}
+
+	testutil.CallWebAPIRequestHandler(
+		t,
+		instance.handleNewRequest,
+		http.MethodPost,
+		routes.NewRequest(":chainID"),
+		map[string]string{"chainID": chainid.RandomChainID().Base58()},
+		dummyOffledgerRequest().Bytes(),
 		nil,
 		http.StatusAccepted,
 	)

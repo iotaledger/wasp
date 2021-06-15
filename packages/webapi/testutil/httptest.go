@@ -19,6 +19,12 @@ func buildRequest(t *testing.T, method string, body interface{}) *http.Request {
 		httptest.NewRequest(method, "/", nil)
 	}
 
+	if bodybytes, ok := body.([]byte); ok {
+		req := httptest.NewRequest(method, "/", bytes.NewReader(bodybytes))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEOctetStream)
+		return req
+	}
+
 	if bodymap, ok := body.(map[string]string); ok {
 		f := make(url.Values)
 		for k, v := range bodymap {
