@@ -68,15 +68,19 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 }
 
 func (o *ScTransferInfo) SetBytes(keyId int32, typeId int32, bytes []byte) {
-	var err error
 	switch keyId {
 	case wasmhost.KeyAddress:
+		var err error
 		o.address, _, err = ledgerstate.AddressFromBytes(bytes)
 		if err != nil {
 			o.Panic("SetBytes: invalid address: " + err.Error())
 		}
 	case wasmhost.KeyBalances:
-		o.Invoke(int32(o.MustInt64(bytes)))
+		balanceMapId, _, err := codec.DecodeInt32(bytes)
+		if err != nil {
+			o.Panic("SetBytes: invalid balance map id: " + err.Error())
+		}
+		o.Invoke(balanceMapId)
 	default:
 		o.invalidKey(keyId)
 	}

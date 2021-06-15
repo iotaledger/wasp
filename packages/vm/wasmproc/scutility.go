@@ -56,7 +56,8 @@ func (o *ScUtility) CallFunc(keyId int32, bytes []byte) []byte {
 		return o.aggregateBLSSignatures(bytes)
 	case wasmhost.KeyBlsValid:
 		if o.validBLSSignature(bytes) {
-			return make([]byte, 1)
+			var flag [1]byte
+			return flag[:]
 		}
 		return nil
 	case wasmhost.KeyEd25519Address:
@@ -67,7 +68,8 @@ func (o *ScUtility) CallFunc(keyId int32, bytes []byte) []byte {
 		return address.Bytes()
 	case wasmhost.KeyEd25519Valid:
 		if o.validED25519Signature(bytes) {
-			return make([]byte, 1)
+			var flag [1]byte
+			return flag[:]
 		}
 		return nil
 	case wasmhost.KeyHashBlake2b:
@@ -111,12 +113,12 @@ func (o *ScUtility) GetTypeId(keyId int32) int32 {
 
 func (o *ScUtility) aggregateBLSSignatures(bytes []byte) []byte {
 	decode := NewBytesDecoder(bytes)
-	count := int(decode.Int64())
+	count := int(decode.Int32())
 	pubKeysBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
 		pubKeysBin[i] = decode.Bytes()
 	}
-	count = int(decode.Int64())
+	count = int(decode.Int32())
 	sigsBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
 		sigsBin[i] = decode.Bytes()

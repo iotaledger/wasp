@@ -9,7 +9,7 @@ pub struct Auction {
     pub creator:        ScAgentId, // issuer of start_auction transaction
     pub deposit:        i64,       // deposit by auction owner to cover the SC fees
     pub description:    String,    // auction description
-    pub duration:       i64,       // auction duration in minutes
+    pub duration:       i32,       // auction duration in minutes
     pub highest_bid:    i64,       // the current highest bid amount
     pub highest_bidder: ScAgentId, // the current highest bidder
     pub minimum_bid:    i64,       // minimum bid amount
@@ -27,7 +27,7 @@ impl Auction {
             creator: decode.agent_id(),
             deposit: decode.int64(),
             description: decode.string(),
-            duration: decode.int64(),
+            duration: decode.int32(),
             highest_bid: decode.int64(),
             highest_bidder: decode.agent_id(),
             minimum_bid: decode.int64(),
@@ -43,7 +43,7 @@ impl Auction {
         encode.agent_id(&self.creator);
         encode.int64(self.deposit);
         encode.string(&self.description);
-        encode.int64(self.duration);
+        encode.int32(self.duration);
         encode.int64(self.highest_bid);
         encode.agent_id(&self.highest_bidder);
         encode.int64(self.minimum_bid);
@@ -57,7 +57,7 @@ impl Auction {
 //@formatter:off
 pub struct Bid {
     pub amount:    i64, // cumulative amount of bids from same bidder
-    pub index:     i64, // index of bidder in bidder list
+    pub index:     i32, // index of bidder in bidder list
     pub timestamp: i64, // timestamp of most recent bid
 }
 //@formatter:on
@@ -67,7 +67,7 @@ impl Bid {
         let mut decode = BytesDecoder::new(bytes);
         Bid {
             amount: decode.int64(),
-            index: decode.int64(),
+            index: decode.int32(),
             timestamp: decode.int64(),
         }
     }
@@ -75,7 +75,7 @@ impl Bid {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut encode = BytesEncoder::new();
         encode.int64(self.amount);
-        encode.int64(self.index);
+        encode.int32(self.index);
         encode.int64(self.timestamp);
         return encode.data();
     }

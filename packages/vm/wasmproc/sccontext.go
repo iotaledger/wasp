@@ -146,8 +146,8 @@ func (o *ScContext) processCall(bytes []byte) {
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	params := o.getParams(int32(decode.Int64()))
-	transfer := o.getTransfer(int32(decode.Int64()))
+	params := o.getParams(decode.Int32())
+	transfer := o.getTransfer(decode.Int32())
 
 	o.Trace("CALL c'%s' f'%s'", contract.String(), function.String())
 	var results dict.Dict
@@ -171,7 +171,7 @@ func (o *ScContext) processDeploy(bytes []byte) {
 	}
 	name := string(decode.Bytes())
 	description := string(decode.Bytes())
-	params := o.getParams(int32(decode.Int64()))
+	params := o.getParams(decode.Int32())
 	o.Trace("DEPLOY c'%s' f'%s'", name, description)
 	err = o.vm.ctx.DeployContract(programHash, name, description, params)
 	if err != nil {
@@ -195,14 +195,14 @@ func (o *ScContext) processPost(bytes []byte) {
 		o.Panic(err.Error())
 	}
 	o.Trace("POST c'%s' f'%s'", contract.String(), function.String())
-	params := o.getParams(int32(decode.Int64()))
-	transfer := o.getTransfer(int32(decode.Int64()))
+	params := o.getParams(decode.Int32())
+	transfer := o.getTransfer(decode.Int32())
 	metadata := &coretypes.SendMetadata{
 		TargetContract: contract,
 		EntryPoint:     function,
 		Args:           params,
 	}
-	delay := decode.Int64()
+	delay := decode.Int32()
 	if delay == 0 {
 		if !o.vm.ctx.Send(chainId.AsAddress(), transfer, metadata) {
 			o.Panic("failed to send to %s", chainId.AsAddress().String())

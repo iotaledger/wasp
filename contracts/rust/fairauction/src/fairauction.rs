@@ -6,9 +6,9 @@ use wasmlib::*;
 use crate::*;
 use crate::types::*;
 
-const DURATION_DEFAULT: i64 = 60;
-const DURATION_MIN: i64 = 1;
-const DURATION_MAX: i64 = 120;
+const DURATION_DEFAULT: i32 = 60;
+const DURATION_MIN: i32 = 1;
+const DURATION_MAX: i32 = 120;
 const MAX_DESCRIPTION_LENGTH: usize = 150;
 const OWNER_MARGIN_DEFAULT: i64 = 50;
 const OWNER_MARGIN_MIN: i64 = 5;
@@ -97,7 +97,7 @@ pub fn func_place_bid(ctx: &ScFuncContext) {
         let index = bidder_list.length();
         bidder_list.get_agent_id(index).set_value(&caller);
         let bid = Bid {
-            index: index as i64,
+            index: index,
             amount: bid_amount,
             timestamp: ctx.timestamp(),
         };
@@ -138,7 +138,7 @@ pub fn func_start_auction(ctx: &ScFuncContext) {
     let p = ctx.params();
     let param_color = p.get_color(PARAM_COLOR);
     let param_description = p.get_string(PARAM_DESCRIPTION);
-    let param_duration = p.get_int64(PARAM_DURATION);
+    let param_duration = p.get_int32(PARAM_DURATION);
     let param_minimum_bid = p.get_int64(PARAM_MINIMUM_BID);
 
     ctx.require(param_color.exists(), "missing mandatory color");
@@ -236,7 +236,7 @@ pub fn view_get_info(ctx: &ScViewContext) {
     results.get_agent_id(RESULT_CREATOR).set_value(&auction.creator);
     results.get_int64(RESULT_DEPOSIT).set_value(auction.deposit);
     results.get_string(RESULT_DESCRIPTION).set_value(&auction.description);
-    results.get_int64(RESULT_DURATION).set_value(auction.duration);
+    results.get_int32(RESULT_DURATION).set_value(auction.duration);
     results.get_int64(RESULT_HIGHEST_BID).set_value(auction.highest_bid);
     results.get_agent_id(RESULT_HIGHEST_BIDDER).set_value(&auction.highest_bidder);
     results.get_int64(RESULT_MINIMUM_BID).set_value(auction.minimum_bid);

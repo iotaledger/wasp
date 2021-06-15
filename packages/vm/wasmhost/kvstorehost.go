@@ -21,10 +21,12 @@ const (
 	OBJTYPE_COLOR      int32 = 5
 	OBJTYPE_HASH       int32 = 6
 	OBJTYPE_HNAME      int32 = 7
-	OBJTYPE_INT64      int32 = 8
-	OBJTYPE_MAP        int32 = 9
-	OBJTYPE_REQUEST_ID int32 = 10
-	OBJTYPE_STRING     int32 = 11
+	OBJTYPE_INT16      int32 = 8
+	OBJTYPE_INT32      int32 = 9
+	OBJTYPE_INT64      int32 = 10
+	OBJTYPE_MAP        int32 = 11
+	OBJTYPE_REQUEST_ID int32 = 12
+	OBJTYPE_STRING     int32 = 13
 )
 
 // flag to indicate that this key id originally comes from a bytes key
@@ -97,9 +99,24 @@ func (host *KvStoreHost) GetBytes(objId int32, keyId int32, typeId int32) []byte
 	}
 	bytes := obj.GetBytes(keyId, typeId)
 	switch typeId {
+	case OBJTYPE_INT16:
+		val16, _, err := codec.DecodeInt16(bytes)
+		if err != nil {
+			panic("GetBytes: invalid int16")
+		}
+		host.Trace("GetBytes o%d k%d = %ds", objId, keyId, val16)
+	case OBJTYPE_INT32:
+		val32, _, err := codec.DecodeInt32(bytes)
+		if err != nil {
+			panic("GetBytes: invalid int32")
+		}
+		host.Trace("GetBytes o%d k%d = %di", objId, keyId, val32)
 	case OBJTYPE_INT64:
-		val, _, _ := codec.DecodeInt64(bytes)
-		host.Trace("GetBytes o%d k%d = %d", objId, keyId, val)
+		val64, _, err := codec.DecodeInt64(bytes)
+		if err != nil {
+			panic("GetBytes: invalid int64")
+		}
+		host.Trace("GetBytes o%d k%d = %dl", objId, keyId, val64)
 	case OBJTYPE_STRING:
 		host.Trace("GetBytes o%d k%d = '%s'", objId, keyId, string(bytes))
 	default:
@@ -198,9 +215,24 @@ func (host *KvStoreHost) PushFrame() []HostObject {
 func (host *KvStoreHost) SetBytes(objId int32, keyId int32, typeId int32, bytes []byte) {
 	host.FindObject(objId).SetBytes(keyId, typeId, bytes)
 	switch typeId {
+	case OBJTYPE_INT16:
+		val16, _, err := codec.DecodeInt16(bytes)
+		if err != nil {
+			panic("SetBytes: invalid int16")
+		}
+		host.Trace("SetBytes o%d k%d v=%ds", objId, keyId, val16)
+	case OBJTYPE_INT32:
+		val32, _, err := codec.DecodeInt32(bytes)
+		if err != nil {
+			panic("SetBytes: invalid int32")
+		}
+		host.Trace("SetBytes o%d k%d v=%di", objId, keyId, val32)
 	case OBJTYPE_INT64:
-		val, _, _ := codec.DecodeInt64(bytes)
-		host.Trace("SetBytes o%d k%d v=%d", objId, keyId, val)
+		val64, _, err := codec.DecodeInt64(bytes)
+		if err != nil {
+			panic("SetBytes: invalid int64")
+		}
+		host.Trace("SetBytes o%d k%d v=%dl", objId, keyId, val64)
 	case OBJTYPE_STRING:
 		host.Trace("SetBytes o%d k%d v='%s'", objId, keyId, string(bytes))
 	default:

@@ -67,7 +67,7 @@ type ScDict struct {
 
 var _ WaspObject = &ScDict{}
 
-var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 8, 0, 34, 0}
+var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 2, 4, 8, 0, 34, 0}
 
 func NewScDict(vm *wasmProcessor) *ScDict {
 	return NewScDictFromKvStore(&vm.KvStoreHost, dict.New())
@@ -112,11 +112,12 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 	}
 	if (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 && o.kvStore != nil {
 		key := o.NestedKey()[1:]
-		length, _, err := codec.DecodeInt64(o.kvStore.MustGet(kv.Key(key)))
+		var err error
+		bytes := o.kvStore.MustGet(kv.Key(key))
+		o.length, _, err = codec.DecodeInt32(bytes)
 		if err != nil {
 			o.Panic("InitObj: %v", err)
 		}
-		o.length = int32(length)
 	}
 	o.Trace("InitObj %s", o.name)
 	o.objects = make(map[int32]int32)
@@ -155,7 +156,7 @@ func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 
 func (o *ScDict) GetBytes(keyId int32, typeId int32) []byte {
 	if keyId == wasmhost.KeyLength && (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 {
-		return o.Int64Bytes(int64(o.length))
+		return codec.EncodeInt32(o.length)
 	}
 	bytes := o.kvStore.MustGet(o.key(keyId, typeId))
 	o.typeCheck(typeId, bytes)
@@ -184,12 +185,6 @@ func (o *ScDict) GetTypeId(keyId int32) int32 {
 	return 0
 }
 
-func (o *ScDict) Int64Bytes(value int64) []byte {
-	bytes := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bytes, uint64(value))
-	return bytes
-}
-
 func (o *ScDict) key(keyId int32, typeId int32) kv.Key {
 	o.validate(keyId, typeId)
 	suffix := o.Suffix(keyId)
@@ -197,13 +192,6 @@ func (o *ScDict) key(keyId int32, typeId int32) kv.Key {
 	o.Trace("fld: %s%s", o.name, suffix)
 	o.Trace("key: %s", key[1:])
 	return kv.Key(key[1:])
-}
-
-func (o *ScDict) MustInt64(bytes []byte) int64 {
-	if len(bytes) != 8 {
-		o.Panic("invalid int64 length")
-	}
-	return int64(binary.LittleEndian.Uint64(bytes))
 }
 
 func (o *ScDict) NestedKey() string {
@@ -317,7 +305,7 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 			o.length++
 			if o.kvStore != nil {
 				key := o.NestedKey()[1:]
-				o.kvStore.Set(kv.Key(key), codec.EncodeInt64(int64(o.length)))
+				o.kvStore.Set(kv.Key(key), codec.EncodeInt32(o.length))
 			}
 			return
 		}
