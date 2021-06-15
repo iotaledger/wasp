@@ -7,10 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math/rand"
 	"time"
-
-	"github.com/iotaledger/wasp/packages/util"
 
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 
@@ -22,11 +19,9 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"golang.org/x/xerrors"
 
-	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
 type CreateChainParams struct {
@@ -39,33 +34,6 @@ type CreateChainParams struct {
 	Description           string
 	Textout               io.Writer
 	Prefix                string
-}
-
-// RunDKG runs DKG procedure on specifiec Wasp hosts. In case of success, generated address is returned
-func RunDKG(apiHosts []string, peeringHosts []string, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
-	// TODO temporary. Correct type of timeout.
-	to := uint16(60 * 1000)
-	if len(timeout) > 0 {
-		n := timeout[0].Milliseconds()
-		if n < int64(util.MaxUint16) {
-			to = uint16(n)
-		}
-	}
-	dkgInitiatorIndex := rand.Intn(len(apiHosts))
-	dkShares, err := client.NewWaspClient(apiHosts[dkgInitiatorIndex]).DKSharesPost(&model.DKSharesPostRequest{
-		PeerNetIDs:  peeringHosts,
-		PeerPubKeys: nil,
-		Threshold:   threshold,
-		TimeoutMS:   to, // 1 min
-	})
-	if err != nil {
-		return nil, err
-	}
-	var ret ledgerstate.Address
-	if ret, err = ledgerstate.AddressFromBase58EncodedString(dkShares.Address); err != nil {
-		return nil, xerrors.Errorf("invalid address from DKG: %w", err)
-	}
-	return ret, nil
 }
 
 // DeployChainWithDKG performs all actions needed to deploy the chain
