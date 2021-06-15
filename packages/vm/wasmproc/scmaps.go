@@ -16,7 +16,7 @@ func NewScMaps(vm *wasmProcessor) *ScMaps {
 }
 
 func (a *ScMaps) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
+	return GetArrayObjectID(a, keyId, typeId, func() WaspObject {
 		return NewScDict(a.vm)
 	})
 }

@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 2 {
+	if len(os.Args) != 2 { //nolint:gomnd
 		fmt.Printf("Usage: submsg <pub host>\n")
 		os.Exit(1)
 	}
@@ -38,7 +38,7 @@ func main() {
 	}()
 
 	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM) //nolint:govet // TODO check: sigchanyzer: misuse of unbuffered os.Signal channel as argument to signal.Notify
 
 	go func() {
 		<-c

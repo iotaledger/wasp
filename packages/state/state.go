@@ -1,6 +1,7 @@
 package state
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -46,7 +47,7 @@ func newVirtualState(db kvstore.KVStore, chainID *chainid.ChainID) *virtualState
 
 func newZeroVirtualState(db kvstore.KVStore, chainID *chainid.ChainID) (*virtualState, *block) {
 	ret := newVirtualState(db, chainID)
-	originBlock := NewOriginBlock()
+	originBlock := newOriginBlock()
 	if err := ret.ApplyBlock(originBlock); err != nil {
 		panic(err)
 	}
@@ -150,7 +151,7 @@ func (vs *virtualState) ExtractBlock() (Block, error) {
 	if len(vs.updateLog) == 0 {
 		return nil, nil
 	}
-	ret, err := NewBlock(vs.updateLog...)
+	ret, err := newBlock(vs.updateLog...)
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +239,7 @@ func (r *optimisticStateReader) SetBaseline() {
 
 func loadStateHashFromDb(state kvstore.KVStore) (hashing.HashValue, bool, error) {
 	v, err := state.Get(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash))
-	if err == kvstore.ErrKeyNotFound {
+	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return hashing.HashValue{}, false, nil
 	}
 	if err != nil {

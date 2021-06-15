@@ -13,15 +13,15 @@ import (
 
 type block struct {
 	stateOutputID ledgerstate.OutputID
-	stateUpdates  []*stateUpdate
+	stateUpdates  []*StateUpdateImpl
 	blockIndex    uint32 // not persistent
 }
 
 // validates, enumerates and creates a block from array of state updates
-func NewBlock(stateUpdates ...StateUpdate) (*block, error) {
-	arr := make([]*stateUpdate, len(stateUpdates))
+func newBlock(stateUpdates ...StateUpdate) (*block, error) {
+	arr := make([]*StateUpdateImpl, len(stateUpdates))
 	for i := range arr {
-		arr[i] = stateUpdates[i].(*stateUpdate) // do not clone
+		arr[i] = stateUpdates[i].(*StateUpdateImpl) // do not clone
 	}
 	ret := &block{
 		stateUpdates: arr,
@@ -46,8 +46,8 @@ func BlockFromBytes(data []byte) (*block, error) {
 }
 
 // block with empty state update and nil state hash
-func NewOriginBlock() *block {
-	ret, err := NewBlock(NewStateUpdateWithBlockIndexMutation(0, time.Time{}))
+func newOriginBlock() *block {
+	ret, err := newBlock(NewStateUpdateWithBlockIndexMutation(0, time.Time{}))
 	if err != nil {
 		panic(err)
 	}
@@ -143,7 +143,7 @@ func (b *block) readEssence(r io.Reader) error {
 	if err := util.ReadUint16(r, &size); err != nil {
 		return err
 	}
-	b.stateUpdates = make([]*stateUpdate, size)
+	b.stateUpdates = make([]*StateUpdateImpl, size)
 	var err error
 	for i := range b.stateUpdates {
 		b.stateUpdates[i], err = newStateUpdateFromReader(r)

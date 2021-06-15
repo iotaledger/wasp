@@ -40,7 +40,7 @@ func TestVirtualStateBasic(t *testing.T) {
 		h1 := vs1.Hash()
 		require.EqualValues(t, OriginStateHash(), h1)
 		require.EqualValues(t, 0, vs1.BlockIndex())
-		require.EqualValues(t, NewOriginBlock().Bytes(), blk.Bytes())
+		require.EqualValues(t, newOriginBlock().Bytes(), blk.Bytes())
 	})
 }
 
@@ -56,7 +56,7 @@ func TestOriginHashes(t *testing.T) {
 		require.EqualValues(t, calcOriginStateHash(), z.Hash())
 	})
 	t.Run("origin state construct", func(t *testing.T) {
-		origBlock := NewOriginBlock()
+		origBlock := newOriginBlock()
 		emptyState := newVirtualState(mapdb.NewMapDB(), nil)
 		err := emptyState.ApplyBlock(origBlock)
 		require.NoError(t, err)
@@ -110,7 +110,7 @@ func TestStateWithDB(t *testing.T) {
 
 		data, err := LoadBlockBytes(store, 0)
 		require.NoError(t, err)
-		require.EqualValues(t, NewOriginBlock().Bytes(), data)
+		require.EqualValues(t, newOriginBlock().Bytes(), data)
 	})
 	t.Run("apply, save and load block 1", func(t *testing.T) {
 		store := mapdb.NewMapDB()
@@ -126,7 +126,7 @@ func TestStateWithDB(t *testing.T) {
 		su := NewStateUpdateWithBlockIndexMutation(1)
 		su1 := NewStateUpdate(nowis)
 		su1.Mutations().Set("key", []byte("value"))
-		block1, err := NewBlock(su, su1)
+		block1, err := newBlock(su, su1)
 		require.NoError(t, err)
 
 		err = vs1.ApplyBlock(block1)
@@ -150,7 +150,7 @@ func TestStateWithDB(t *testing.T) {
 
 		data, err := LoadBlockBytes(store, 0)
 		require.NoError(t, err)
-		require.EqualValues(t, NewOriginBlock().Bytes(), data)
+		require.EqualValues(t, newOriginBlock().Bytes(), data)
 
 		data, err = LoadBlockBytes(store, 1)
 		require.NoError(t, err)
@@ -175,7 +175,7 @@ func TestStateWithDB(t *testing.T) {
 		su := NewStateUpdateWithBlockIndexMutation(1)
 		su1 := NewStateUpdate(nowis)
 		su1.Mutations().Set("key", []byte("value"))
-		block1, err := NewBlock(su, su1)
+		block1, err := newBlock(su, su1)
 		require.NoError(t, err)
 
 		err = vs1.ApplyBlock(block1)
@@ -210,7 +210,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, "value", string(rdr.KVStoreReader().MustGet("key")))
 
 		glb.InvalidateSolidIndex()
-		h, err = rdr.Hash()
+		_, err = rdr.Hash()
 		require.Error(t, err)
 		require.EqualValues(t, err, optimism.ErrStateHasBeenInvalidated)
 	})

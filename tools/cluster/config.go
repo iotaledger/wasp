@@ -161,7 +161,7 @@ func (c *ClusterConfig) DashboardPort(nodeIndex int) int {
 
 func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigParams {
 	return &templates.WaspConfigParams{
-		ApiPort:       c.ApiPort(i),
+		APIPort:       c.ApiPort(i),
 		DashboardPort: c.DashboardPort(i),
 		PeeringPort:   c.PeeringPort(i),
 		NanomsgPort:   c.NanomsgPort(i),

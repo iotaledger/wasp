@@ -65,7 +65,7 @@ type chainObj struct {
 func NewChain(
 	chr *chainrecord.ChainRecord,
 	log *logger.Logger,
-	txstream *txstream.Client,
+	txstreamClient *txstream.Client,
 	peerNetConfig coretypes.PeerNetworkConfigProvider,
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
@@ -80,10 +80,10 @@ func NewChain(
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog),
 		procset:           processors.MustNew(),
-		chMsg:             make(chan interface{}, 100),
+		chMsg:             make(chan interface{}, 100), //nolint:gomnd
 		chainID:           *chr.ChainID,
 		log:               chainLog,
-		nodeConn:          nodeconnimpl.New(txstream, chainLog),
+		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
 		db:                db,
 		chainStateSync:    chainStateSync,
 		stateReader:       state.NewOptimisticStateReader(db, chainStateSync),
@@ -154,11 +154,9 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		}
 	case chain.TimerTick:
 		if msgt%2 == 0 {
-			c.stateMgr.EventTimerMsg(msgt / 2)
-		} else {
-			if c.consensus != nil {
-				c.consensus.EventTimerMsg(msgt / 2)
-			}
+			c.stateMgr.EventTimerMsg(msgt / 2) //nolint:gomnd
+		} else if c.consensus != nil {
+			c.consensus.EventTimerMsg(msgt / 2) //nolint:gomnd
 		}
 		if msgt%40 == 0 {
 			stats := c.mempool.Stats()

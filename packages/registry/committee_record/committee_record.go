@@ -1,4 +1,4 @@
-package committee_record
+package committee_record //nolint:revive //TODO remove `_` from packagename
 
 import (
 	"fmt"

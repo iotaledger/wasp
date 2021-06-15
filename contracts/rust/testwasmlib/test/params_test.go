@@ -16,13 +16,13 @@ import (
 var (
 	allParams = []string{
 		ParamAddress,
-		ParamAgentId,
-		ParamChainId,
+		ParamAgentID,
+		ParamChainID,
 		ParamColor,
 		ParamHash,
 		ParamHname,
 		ParamInt64,
-		ParamRequestId,
+		ParamRequestID,
 	}
 	allLengths = []int{33, 37, 33, 32, 32, 4, 8, 34}
 )
@@ -60,14 +60,14 @@ func TestValidParams(t *testing.T) {
 	require.NoError(t, err)
 	req := solo.NewCallParams(ScName, FuncParamTypes,
 		ParamAddress, address,
-		ParamAgentId, agentId,
+		ParamAgentID, agentId,
 		ParamBytes, []byte("these are bytes"),
-		ParamChainId, chainId,
+		ParamChainID, chainId,
 		ParamColor, color,
 		ParamHash, hash,
 		ParamHname, hname,
 		ParamInt64, int64(1234567890123456789),
-		ParamRequestId, requestId,
+		ParamRequestID, requestId,
 		ParamString, "this is a string",
 	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
@@ -83,7 +83,7 @@ func TestValidSizeParams(t *testing.T) {
 			).WithIotas(1)
 			_, err := chain.PostRequestSync(req, nil)
 			require.Error(t, err)
-			if param == ParamChainId {
+			if param == ParamChainID {
 				require.True(t, strings.Contains(err.Error(), "invalid "))
 			} else {
 				require.True(t, strings.Contains(err.Error(), "mismatch: "))
@@ -129,14 +129,14 @@ var (
 			append([]byte{4}, zeroHash...),
 			append([]byte{255}, zeroHash...),
 		},
-		ParamChainId: {
+		ParamChainID: {
 			append([]byte{0}, zeroHash...),
 			append([]byte{1}, zeroHash...),
 			append([]byte{3}, zeroHash...),
 			append([]byte{4}, zeroHash...),
 			append([]byte{255}, zeroHash...),
 		},
-		ParamRequestId: {
+		ParamRequestID: {
 			append(zeroHash, []byte{128, 0}...),
 			append(zeroHash, []byte{127, 1}...),
 			append(zeroHash, []byte{0, 1}...),

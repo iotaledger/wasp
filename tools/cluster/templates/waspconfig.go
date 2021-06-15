@@ -1,7 +1,7 @@
 package templates
 
 type WaspConfigParams struct {
-	ApiPort       int
+	APIPort       int
 	DashboardPort int
 	PeeringPort   int
 	NanomsgPort   int

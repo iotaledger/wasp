@@ -7,19 +7,51 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/solo"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
-func checkCounter(t *testing.T, expected int) bool {
-	return chain.WithSCState(incHname, func(host string, blockIndex uint32, state dict.Dict) bool {
+func checkSC(t *testing.T, numRequests int) func(host string, blockIndex uint32, state dict.Dict) bool {
+	return func(host string, blockIndex uint32, state dict.Dict) bool {
+		require.EqualValues(t, numRequests+3, blockIndex)
+
+		chid, _, _ := codec.DecodeChainID(state.MustGet(root.VarChainID))
+		require.EqualValues(t, chain.ChainID, chid)
+
+		aid, _, _ := codec.DecodeAgentID(state.MustGet(root.VarChainOwnerID))
+		require.EqualValues(t, *chain.OriginatorID(), aid)
+
+		desc, _, _ := codec.DecodeString(state.MustGet(root.VarDescription))
+		require.EqualValues(t, chain.Description, desc)
+
+		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
+		require.EqualValues(t, 5, contractRegistry.MustLen())
+		//--
+		crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
+		require.NotNil(t, crBytes)
+		rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
+		require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
+		//--
+		crBytes = contractRegistry.MustGetAt(incHname.Bytes())
+		require.NotNil(t, crBytes)
+		cr, err := root.DecodeContractRecord(crBytes)
+		check(err, t)
+		require.EqualValues(t, programHash, cr.ProgramHash)
+		require.EqualValues(t, incName, cr.Name)
+		require.EqualValues(t, incDescription, cr.Description)
+		require.EqualValues(t, 0, cr.OwnerFee)
+		return true
+	}
+}
+
+func checkCounter(t *testing.T, expected int) {
+	chain.WithSCState(incHname, func(host string, blockIndex uint32, state dict.Dict) bool {
 		for k, v := range state {
 			fmt.Printf("%s: %v\n", string(k), v)
 		}
@@ -95,36 +127,7 @@ func testNothing(t *testing.T, numRequests int) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
-		require.EqualValues(t, numRequests+3, blockIndex)
-
-		chid, _, _ := codec.DecodeChainID(state.MustGet(root.VarChainID))
-		require.EqualValues(t, chain.ChainID, chid)
-
-		aid, _, _ := codec.DecodeAgentID(state.MustGet(root.VarChainOwnerID))
-		require.EqualValues(t, *chain.OriginatorID(), aid)
-
-		desc, _, _ := codec.DecodeString(state.MustGet(root.VarDescription))
-		require.EqualValues(t, chain.Description, desc)
-
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		require.EqualValues(t, 5, contractRegistry.MustLen())
-		//--
-		crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
-		require.NotNil(t, crBytes)
-		rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
-		//--
-		crBytes = contractRegistry.MustGetAt(incHname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
-		require.EqualValues(t, programHash, cr.ProgramHash)
-		require.EqualValues(t, incName, cr.Name)
-		require.EqualValues(t, incDescription, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
-		return true
-	})
+	chain.WithSCState(root.Interface.Hname(), checkSC(t, numRequests))
 	checkCounter(t, 0)
 }
 
@@ -152,36 +155,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
-		require.EqualValues(t, numRequests+3, blockIndex)
-
-		chid, _, _ := codec.DecodeChainID(state.MustGet(root.VarChainID))
-		require.EqualValues(t, chain.ChainID, chid)
-
-		aid, _, _ := codec.DecodeAgentID(state.MustGet(root.VarChainOwnerID))
-		require.EqualValues(t, *chain.OriginatorID(), aid)
-
-		desc, _, _ := codec.DecodeString(state.MustGet(root.VarDescription))
-		require.EqualValues(t, chain.Description, desc)
-
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		require.EqualValues(t, 5, contractRegistry.MustLen())
-		//--
-		crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
-		require.NotNil(t, crBytes)
-		rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
-		//--
-		crBytes = contractRegistry.MustGetAt(incHname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
-		require.EqualValues(t, programHash, cr.ProgramHash)
-		require.EqualValues(t, incName, cr.Name)
-		require.EqualValues(t, incDescription, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
-		return true
-	})
+	chain.WithSCState(root.Interface.Hname(), checkSC(t, numRequests))
 	checkCounter(t, numRequests)
 }
 

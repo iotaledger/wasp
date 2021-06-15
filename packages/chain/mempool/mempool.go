@@ -195,13 +195,13 @@ func (m *mempool) traceIn(req coretypes.Request) {
 		if tl.IsZero() {
 			m.log.Infof("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
 		} else {
-			m.log.Infof("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, tl.Sub(time.Now()))
+			m.log.Infof("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(tl))
 		}
 	} else {
 		if tl.IsZero() {
 			m.log.Debugf("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
 		} else {
-			m.log.Debugf("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, tl.Sub(time.Now()))
+			m.log.Debugf("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(tl))
 		}
 	}
 }
@@ -313,7 +313,7 @@ func (m *mempool) WaitRequestInPool(reqid coretypes.RequestID, timeout ...time.D
 		if m.HasRequest(reqid) {
 			return true
 		}
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond) //nolint:gomnd
 		if time.Now().After(deadline) {
 			return false
 		}
@@ -340,7 +340,7 @@ func (m *mempool) WaitInBufferEmpty(timeout ...time.Duration) bool {
 		if m.inBufferLen() == 0 {
 			return true
 		}
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(10 * time.Millisecond) //nolint:gomnd
 		if time.Now().After(deadline) {
 			return false
 		}

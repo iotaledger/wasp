@@ -233,7 +233,7 @@ func checkLedger(t *testing.T, chain *cluster.Chain) {
 	sum := make(map[ledgerstate.Color]uint64)
 	for _, bal := range balances {
 		for col, b := range bal {
-			s, _ := sum[col]
+			s := sum[col]
 			sum[col] = s + b
 		}
 	}

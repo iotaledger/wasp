@@ -18,7 +18,7 @@ import (
 	"go.uber.org/atomic"
 )
 
-type consensus struct {
+type Consensus struct {
 	isReady                    atomic.Bool
 	chain                      chain.ChainCore
 	committee                  chain.Committee
@@ -29,7 +29,7 @@ type consensus struct {
 	stateOutput                *ledgerstate.AliasOutput
 	stateTimestamp             time.Time
 	acsSessionID               uint64
-	consensusBatch             *batchProposal
+	consensusBatch             *BatchProposal
 	consensusEntropy           hashing.HashValue
 	iAmContributor             bool
 	myContributionSeqNumber    uint16
@@ -68,11 +68,11 @@ type workflowFlags struct {
 	finished                     bool
 }
 
-var _ chain.Consensus = &consensus{}
+var _ chain.Consensus = &Consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection) *consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection) *Consensus {
 	log := chainCore.Log().Named("c")
-	ret := &consensus{
+	ret := &Consensus{
 		chain:                     chainCore,
 		committee:                 committee,
 		mempool:                   mempool,
@@ -94,19 +94,19 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 	return ret
 }
 
-func (c *consensus) IsReady() bool {
+func (c *Consensus) IsReady() bool {
 	return c.isReady.Load()
 }
 
-func (c *consensus) Close() {
+func (c *Consensus) Close() {
 	close(c.closeCh)
 }
 
-func (c *consensus) recvLoop() {
+func (c *Consensus) recvLoop() {
 	// wait at startup
 	for !c.committee.IsReady() {
 		select {
-		case <-time.After(100 * time.Millisecond):
+		case <-time.After(100 * time.Millisecond): //nolint:gomnd
 		case <-c.closeCh:
 			return
 		}
@@ -145,7 +145,7 @@ func (c *consensus) recvLoop() {
 	}
 }
 
-func (c *consensus) refreshConsensusInfo() {
+func (c *Consensus) refreshConsensusInfo() {
 	index := uint32(0)
 	if c.currentState != nil {
 		index = c.currentState.BlockIndex()
@@ -157,7 +157,7 @@ func (c *consensus) refreshConsensusInfo() {
 	})
 }
 
-func (c *consensus) GetStatusSnapshot() *chain.ConsensusInfo {
+func (c *Consensus) GetStatusSnapshot() *chain.ConsensusInfo {
 	ret := c.consensusInfoSnapshot.Load()
 	if ret == nil {
 		return nil

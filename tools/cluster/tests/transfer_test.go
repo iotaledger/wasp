@@ -41,9 +41,9 @@ func TestDepositWithdraw(t *testing.T) {
 	checkLedger(t, chain)
 
 	myAgentID := coretypes.NewAgentID(myAddress, 0)
-	origAgentId := coretypes.NewAgentID(chain.OriginatorAddress(), 0)
+	origAgentID := coretypes.NewAgentID(chain.OriginatorAddress(), 0)
 
-	checkBalanceOnChain(t, chain, origAgentId, ledgerstate.ColorIOTA, 0)
+	checkBalanceOnChain(t, chain, origAgentID, ledgerstate.ColorIOTA, 0)
 	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 0)
 	checkLedger(t, chain)
 
@@ -58,7 +58,7 @@ func TestDepositWithdraw(t *testing.T) {
 	check(err, t)
 	checkLedger(t, chain)
 	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, depositIotas)
-	checkBalanceOnChain(t, chain, origAgentId, ledgerstate.ColorIOTA, 0)
+	checkBalanceOnChain(t, chain, origAgentID, ledgerstate.ColorIOTA, 0)
 
 	if !clu.VerifyAddressBalances(myAddress, solo.Saldo-depositIotas, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: solo.Saldo - depositIotas,

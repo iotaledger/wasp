@@ -66,7 +66,6 @@ type Solo struct {
 	timeStep    time.Duration
 	chains      map[[33]byte]*Chain
 	vmRunner    vm.VMRunner
-	doOnce      sync.Once
 	// publisher wait group
 	publisherWG      sync.WaitGroup
 	publisherEnabled atomic.Bool
@@ -195,7 +194,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	require.NoError(env.T, err)
 	err = env.utxoDB.AddTransaction(originTx)
 	require.NoError(env.T, err)
-	env.AssertAddressBalance(originatorAddr, ledgerstate.ColorIOTA, Saldo-100)
+	env.AssertAddressBalance(originatorAddr, ledgerstate.ColorIOTA, Saldo-100) //nolint:gomnd
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateAddr.Base58())
@@ -362,7 +361,7 @@ func (ch *Chain) GetChainOutput() *ledgerstate.AliasOutput {
 // returns batch and and 'remains unprocessed' flag
 func (ch *Chain) collateBatch() []coretypes.Request {
 	// emulating variable sized blocks
-	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
+	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3) //nolint:gomnd
 
 	ret := make([]coretypes.Request, 0)
 	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
@@ -391,7 +390,7 @@ func (ch *Chain) collateBatch() []coretypes.Request {
 func (ch *Chain) batchLoop() {
 	for {
 		if !ch.collateAndRunBatch() {
-			time.Sleep(50 * time.Millisecond)
+			time.Sleep(50 * time.Millisecond) //nolint:gomnd
 		}
 	}
 }
@@ -412,7 +411,7 @@ func (ch *Chain) collateAndRunBatch() bool {
 }
 
 // backlogLen is a thread-safe function to return size of the current backlog
-func (ch *Chain) backlogLen() int {
+func (ch *Chain) backlogLen() int { //nolint:unused
 	mstats := ch.mempool.Stats()
 	return mstats.InBufCounter - mstats.OutPoolCounter
 }

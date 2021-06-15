@@ -247,13 +247,15 @@ func (r *Impl) GetNodeIdentity() (*key.Pair, error) {
 	dbKey := dbKeyForNodeIdentity()
 	var exists bool
 	var data []byte
-	exists, err = r.store.Has(dbKey)
+	exists, _ = r.store.Has(dbKey)
 	if !exists {
 		pair = key.NewKeyPair(r.suite)
 		if data, err = keyPairToBytes(pair); err != nil {
 			return nil, err
 		}
-		r.store.Set(dbKey, data)
+		if err := r.store.Set(dbKey, data); err != nil {
+			return nil, err
+		}
 		r.log.Info("Node identity key pair generated.")
 		return pair, nil
 	}
@@ -281,12 +283,11 @@ func dbKeyForNodeIdentity() []byte {
 }
 
 func keyPairToBytes(pair *key.Pair) ([]byte, error) {
-	var err error
 	var w bytes.Buffer
-	if err = util.WriteMarshaled(&w, pair.Private); err != nil {
+	if err := util.WriteMarshaled(&w, pair.Private); err != nil {
 		return nil, err
 	}
-	if err = util.WriteMarshaled(&w, pair.Public); err != nil {
+	if err := util.WriteMarshaled(&w, pair.Public); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil

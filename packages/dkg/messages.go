@@ -57,12 +57,12 @@ const (
 )
 
 // Checks if that's a Initiator -> PeerNode message.
-func isDkgInitNodeMsg(msgType byte) bool {
+func isDkgInitNodeMsg(msgType byte) bool { //nolint:unused,deadcode
 	return msgType == initiatorInitMsgType
 }
 
 // Checks if that's a Initiator <-> PeerProc message.
-func isDkgInitProcMsg(msgType byte) bool {
+func isDkgInitProcMsg(msgType byte) bool { //nolint:unused,deadcode
 	return initiatorMsgBase <= msgType && msgType < initiatorMsgFree
 }
 
@@ -91,7 +91,7 @@ func makeDkgRoundEchoMsg(msgType byte) (byte, error) {
 	return msgType, errors.New("round_msg_type_expected")
 }
 
-func makeDkgRoundMsg(msgType byte) (byte, error) {
+func makeDkgRoundMsg(msgType byte) (byte, error) { //nolint:unused,deadcode
 	if isDkgRabinRoundMsg(msgType) {
 		return msgType, nil
 	}
@@ -200,6 +200,7 @@ func (m *initiatorInitMsg) SetStep(step byte) {
 	m.step = step
 }
 
+//nolint:gocritic
 func (m *initiatorInitMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -228,12 +229,10 @@ func (m *initiatorInitMsg) Write(w io.Writer) error {
 	if err = util.WriteInt64(w, m.timeout.Milliseconds()); err != nil {
 		return err
 	}
-	if err = util.WriteInt64(w, m.roundRetry.Milliseconds()); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteInt64(w, m.roundRetry.Milliseconds())
 }
 
+//nolint:gocritic
 func (m *initiatorInitMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -314,11 +313,7 @@ func (m *initiatorStepMsg) SetStep(step byte) {
 }
 
 func (m *initiatorStepMsg) Write(w io.Writer) error {
-	var err error
-	if err = util.WriteByte(w, m.step); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteByte(w, m.step)
 }
 
 func (m *initiatorStepMsg) Read(r io.Reader) error {
@@ -329,7 +324,7 @@ func (m *initiatorStepMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (m *initiatorStepMsg) fromBytes(buf []byte, group kyber.Group) error {
+func (m *initiatorStepMsg) fromBytes(buf []byte, group kyber.Group) error { //nolint:unparam
 	r := bytes.NewReader(buf)
 	return m.Read(r)
 }
@@ -363,6 +358,7 @@ func (m *initiatorDoneMsg) SetStep(step byte) {
 	m.step = step
 }
 
+//nolint:gocritic
 func (m *initiatorDoneMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -379,6 +375,7 @@ func (m *initiatorDoneMsg) Write(w io.Writer) error {
 	return nil
 }
 
+//nolint:gocritic
 func (m *initiatorDoneMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -440,6 +437,7 @@ func (m *initiatorPubShareMsg) SetStep(step byte) {
 	m.step = step
 }
 
+//nolint:gocritic
 func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -454,12 +452,10 @@ func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	if err = util.WriteMarshaled(w, m.publicShare); err != nil {
 		return err
 	}
-	if err = util.WriteBytes16(w, m.signature); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteBytes16(w, m.signature)
 }
 
+//nolint:gocritic
 func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -523,18 +519,14 @@ func (m *initiatorStatusMsg) SetStep(step byte) {
 }
 
 func (m *initiatorStatusMsg) Write(w io.Writer) error {
-	var err error
-	if err = util.WriteByte(w, m.step); err != nil {
+	if err := util.WriteByte(w, m.step); err != nil {
 		return err
 	}
 	var errMsg string
 	if m.error != nil {
 		errMsg = m.error.Error()
 	}
-	if err = util.WriteString16(w, errMsg); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteString16(w, errMsg)
 }
 
 func (m *initiatorStatusMsg) Read(r io.Reader) error {
@@ -554,7 +546,7 @@ func (m *initiatorStatusMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (m *initiatorStatusMsg) fromBytes(buf []byte, group kyber.Group) error {
+func (m *initiatorStatusMsg) fromBytes(buf []byte, group kyber.Group) error { //nolint:unparam
 	r := bytes.NewReader(buf)
 	return m.Read(r)
 }
@@ -587,6 +579,7 @@ func (m *rabinDealMsg) SetStep(step byte) {
 	m.step = step
 }
 
+//nolint:gocritic
 func (m *rabinDealMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -604,12 +597,10 @@ func (m *rabinDealMsg) Write(w io.Writer) error {
 	if err = util.WriteBytes16(w, m.deal.Deal.Nonce); err != nil {
 		return err
 	}
-	if err = util.WriteBytes16(w, m.deal.Deal.Cipher); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteBytes16(w, m.deal.Deal.Cipher)
 }
 
+//nolint:gocritic
 func (m *rabinDealMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -663,6 +654,7 @@ func (m *rabinResponseMsg) SetStep(step byte) {
 	m.step = step
 }
 
+//nolint:gocritic
 func (m *rabinResponseMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -692,6 +684,7 @@ func (m *rabinResponseMsg) Write(w io.Writer) error {
 	return nil
 }
 
+//nolint:gocritic
 func (m *rabinResponseMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -752,6 +745,7 @@ func (m *rabinJustificationMsg) SetStep(step byte) {
 	m.step = step
 }
 
+//nolint:gocritic
 func (m *rabinJustificationMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -781,6 +775,7 @@ func (m *rabinJustificationMsg) Write(w io.Writer) error {
 	return nil
 }
 
+//nolint:gocritic
 func (m *rabinJustificationMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -842,6 +837,7 @@ func (m *rabinSecretCommitsMsg) SetStep(step byte) {
 	m.step = step
 }
 
+//nolint:gocritic
 func (m *rabinSecretCommitsMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -867,12 +863,10 @@ func (m *rabinSecretCommitsMsg) Write(w io.Writer) error {
 	if err = util.WriteBytes16(w, m.secretCommits.SessionID); err != nil {
 		return err
 	}
-	if err = util.WriteBytes16(w, m.secretCommits.Signature); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteBytes16(w, m.secretCommits.Signature)
 }
 
+//nolint:gocritic
 func (m *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -937,6 +931,7 @@ func (m *rabinComplaintCommitsMsg) SetStep(step byte) {
 	m.step = step
 }
 
+//nolint:gocritic
 func (m *rabinComplaintCommitsMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -962,6 +957,7 @@ func (m *rabinComplaintCommitsMsg) Write(w io.Writer) error {
 	return nil
 }
 
+//nolint:gocritic
 func (m *rabinComplaintCommitsMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -1017,6 +1013,7 @@ func (m *rabinReconstructCommitsMsg) SetStep(step byte) {
 	m.step = step
 }
 
+//nolint:gocritic
 func (m *rabinReconstructCommitsMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -1045,6 +1042,7 @@ func (m *rabinReconstructCommitsMsg) Write(w io.Writer) error {
 	return nil
 }
 
+//nolint:gocritic
 func (m *rabinReconstructCommitsMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -1088,6 +1086,7 @@ func (m *rabinReconstructCommitsMsg) fromBytes(buf []byte, group kyber.Group) er
 // 	V kyber.Scalar // Value of the private share
 // }
 //
+//nolint:gocritic
 func writePriShare(w io.Writer, val *share.PriShare) error {
 	var err error
 	if err = util.WriteBoolByte(w, val == nil); err != nil {
@@ -1099,12 +1098,10 @@ func writePriShare(w io.Writer, val *share.PriShare) error {
 	if err = util.WriteUint32(w, uint32(val.I)); err != nil {
 		return err
 	}
-	if err = util.WriteMarshaled(w, val.V); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteMarshaled(w, val.V)
 }
 
+//nolint:gocritic
 func readPriShare(r io.Reader, val **share.PriShare) error {
 	var err error
 	var valNil bool
@@ -1119,10 +1116,7 @@ func readPriShare(r io.Reader, val **share.PriShare) error {
 		return err
 	}
 	(*val).I = int(i)
-	if err = util.ReadMarshaled(r, (*val).V); err != nil {
-		return err
-	}
-	return nil
+	return util.ReadMarshaled(r, (*val).V)
 }
 
 //
@@ -1134,6 +1128,7 @@ func readPriShare(r io.Reader, val **share.PriShare) error {
 // 	Commitments []kyber.Point	// Commitments are the coefficients used to verify the shares against
 // }
 //
+//nolint:gocritic
 func writeVssDeal(w io.Writer, d *rabin_vss.Deal) error {
 	var err error
 	if err = util.WriteBytes16(w, d.SessionID); err != nil {
@@ -1159,6 +1154,7 @@ func writeVssDeal(w io.Writer, d *rabin_vss.Deal) error {
 	return nil
 }
 
+//nolint:gocritic
 func readVssDeal(r io.Reader, d **rabin_vss.Deal, group kyber.Group) error {
 	var err error
 	dd := rabin_vss.Deal{}

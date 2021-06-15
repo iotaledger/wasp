@@ -75,9 +75,8 @@ func CheckDeployment(apiHosts []string, chainID chainid.ChainID, textout ...io.W
 		if first == nil {
 			fmt.Fprintf(out, prefix+"failed to load chainrecord. Exit\n")
 			return false
-		} else {
-			fmt.Fprintf(out, prefix+"some chain records failed to load\n")
 		}
+		fmt.Fprintf(out, prefix+"some chain records failed to load\n")
 	} else {
 		fmt.Fprintf(out, prefix+"chain records have been loaded from %d nodes\n", len(apiHosts))
 	}

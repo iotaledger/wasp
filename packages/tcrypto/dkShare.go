@@ -9,7 +9,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/bls"
-
 	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
@@ -78,11 +77,12 @@ func DKShareFromBytes(buf []byte, suite Suite) (*DKShare, error) {
 // Bytes returns byte representation of the share.
 func (s *DKShare) Bytes() ([]byte, error) {
 	var buf bytes.Buffer
-	s.Write(&buf)
+	s.Write(&buf) //nolint:errcheck
 	return buf.Bytes(), nil
 }
 
 // Write returns byte representation of this struct.
+//nolint:gocritic
 func (s *DKShare) Write(w io.Writer) error {
 	var err error
 	if _, err = w.Write(s.Address.Bytes()); err != nil {
@@ -116,12 +116,10 @@ func (s *DKShare) Write(w io.Writer) error {
 			return err
 		}
 	}
-	if err = util.WriteMarshaled(w, s.PrivateShare); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteMarshaled(w, s.PrivateShare)
 }
 
+//nolint:gocritic
 func (s *DKShare) Read(r io.Reader) error {
 	var err error
 	var addrBytes [ledgerstate.AddressLength]byte
@@ -174,10 +172,7 @@ func (s *DKShare) Read(r io.Reader) error {
 	//
 	// Private share.
 	s.PrivateShare = s.suite.Scalar()
-	if err = util.ReadMarshaled(r, s.PrivateShare); err != nil {
-		return err
-	}
-	return nil
+	return util.ReadMarshaled(r, s.PrivateShare)
 }
 
 // SignShare signs the data with the own key share.
@@ -211,7 +206,7 @@ func (s *DKShare) VerifyOwnSigShare(data []byte, sigshare tbdn.SigShare) error {
 
 // VerifyMasterSignature checks signature against master public key
 // NOTE: Not used.
-func (s *DKShare) VerifyMasterSignature(data []byte, signature []byte) error {
+func (s *DKShare) VerifyMasterSignature(data, signature []byte) error {
 	return bdn.Verify(s.suite, s.SharedPublic, data, signature) // TODO: [KP] Why not `tbdn`.
 }
 

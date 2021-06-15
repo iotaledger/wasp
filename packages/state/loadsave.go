@@ -1,6 +1,8 @@
 package state
 
 import (
+	"errors"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
@@ -82,7 +84,7 @@ func LoadSolidState(store kvstore.KVStore, chainID *chainid.ChainID) (VirtualSta
 // LoadBlockBytes loads block bytes of the specified block index from DB
 func LoadBlockBytes(store kvstore.KVStore, stateIndex uint32) ([]byte, error) {
 	data, err := store.Get(dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(stateIndex)))
-	if err == kvstore.ErrKeyNotFound {
+	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
 	}
 	if err != nil {

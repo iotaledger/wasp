@@ -26,7 +26,7 @@ import (
 
 type CreateChainParams struct {
 	Node                  *goshimmer.Client
-	CommitteeApiHosts     []string
+	CommitteeAPIHosts     []string
 	CommitteePeeringHosts []string
 	N                     uint16
 	T                     uint16
@@ -39,19 +39,20 @@ type CreateChainParams struct {
 // DeployChainWithDKG performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
 func DeployChainWithDKG(par CreateChainParams) (*chainid.ChainID, ledgerstate.Address, error) {
-	stateControllerAddr, err := RunDKG(par.CommitteeApiHosts, par.CommitteePeeringHosts, par.T)
+	stateControllerAddr, err := RunDKG(par.CommitteeAPIHosts, par.CommitteePeeringHosts, par.T)
 	if err != nil {
 		return nil, nil, err
 	}
-	chainId, err := DeployChain(par, stateControllerAddr)
+	chainID, err := DeployChain(par, stateControllerAddr)
 	if err != nil {
 		return nil, nil, err
 	}
-	return chainId, stateControllerAddr, nil
+	return chainID, stateControllerAddr, nil
 }
 
 // DeployChain creates a new chain on specified committee address
 // noinspection ALL
+//nolint:funlen
 func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address) (*chainid.ChainID, error) {
 	var err error
 	textout := ioutil.Discard
@@ -66,7 +67,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 	// check if SC is hardcoded. If not, require consistent metadata in all nodes
 	fmt.Fprint(textout, par.Prefix)
 
-	committee := multiclient.New(par.CommitteeApiHosts)
+	committee := multiclient.New(par.CommitteeAPIHosts)
 
 	// ------------ put committee records to hosts
 	err = committee.PutCommitteeRecord(&committee_record.CommitteeRecord{
@@ -77,9 +78,8 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 	if err != nil {
 		fmt.Fprintf(textout, "sending committee record to nodes.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("PutCommitteeRecord: %w", err)
-	} else {
-		fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
 	}
+	fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
 
 	// ----------- request owner address' outputs from the ledger
 	allOuts, err := par.Node.GetConfirmedOutputs(originatorAddr)
@@ -105,9 +105,8 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 	if err != nil {
 		fmt.Fprintf(textout, "creating origin transaction.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("NewChainOriginTransaction: %w", err)
-	} else {
-		fmt.Fprintf(textout, "creating origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 	}
+	fmt.Fprintf(textout, "creating origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 
 	// ------------- post origin transaction and wait for confirmation
 	err = par.Node.PostAndWaitForConfirmation(originTx)
@@ -173,12 +172,11 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 	if err != nil {
 		fmt.Fprintf(textout, "posting root init request transaction.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("posting root init request: %w", err)
-	} else {
-		fmt.Fprintf(textout, "posting root init request.. OK. txid: %s\n", reqTx.ID().Base58())
 	}
+	fmt.Fprintf(textout, "posting root init request.. OK. txid: %s\n", reqTx.ID().Base58())
 
 	// ---------- wait until the request is processed in all committee nodes
-	if err = committee.WaitUntilAllRequestsProcessed(chainID, reqTx, 30*time.Second); err != nil {
+	if err = committee.WaitUntilAllRequestsProcessed(chainID, reqTx, 30*time.Second); err != nil { //nolint:gomnd
 		fmt.Fprintf(textout, "waiting root init request transaction.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("WaitUntilAllRequestsProcessed: %w", err)
 	}

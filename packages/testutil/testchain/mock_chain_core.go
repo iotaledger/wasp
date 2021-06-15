@@ -29,7 +29,7 @@ type MockedChainCore struct {
 	onEventRequestProcessed func(id coretypes.RequestID)
 	onEventStateSynced      func(id ledgerstate.OutputID, blockIndex uint32)
 	onReceiveMessage        func(i interface{})
-	onSync                  func(out ledgerstate.OutputID, blockIndex uint32)
+	onSync                  func(out ledgerstate.OutputID, blockIndex uint32) //nolint:structcheck,unused
 	log                     *logger.Logger
 }
 

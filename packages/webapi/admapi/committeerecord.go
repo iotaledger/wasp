@@ -57,7 +57,7 @@ func handlePutCommitteeRecord(c echo.Context) error {
 	if bd2 != nil {
 		return httperrors.Conflict(fmt.Sprintf("Record already exists: %s", cr.Address.Base58()))
 	}
-	if err = defaultRegistry.SaveCommitteeRecord(cr); err != nil {
+	if err := defaultRegistry.SaveCommitteeRecord(cr); err != nil {
 		return err
 	}
 

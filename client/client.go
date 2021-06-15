@@ -54,7 +54,7 @@ func processResponse(res *http.Response, decodeTo interface{}) error {
 	return errRes
 }
 
-func (c *WaspClient) do(method string, route string, reqObj interface{}, resObj interface{}) error {
+func (c *WaspClient) do(method, route string, reqObj, resObj interface{}) error {
 	// marshal request object
 	var data []byte
 	if reqObj != nil {
@@ -67,7 +67,7 @@ func (c *WaspClient) do(method string, route string, reqObj interface{}, resObj 
 
 	// construct request
 	url := fmt.Sprintf("%s/%s", strings.TrimRight(c.baseURL, "/"), strings.TrimLeft(route, "/"))
-	req, err := http.NewRequest(method, url, func() io.Reader {
+	req, err := http.NewRequest(method, url, func() io.Reader { //nolint:noctx
 		if data == nil {
 			return nil
 		}

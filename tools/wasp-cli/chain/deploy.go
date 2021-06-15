@@ -26,7 +26,7 @@ func deployCmd() *cobra.Command {
 
 			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
 				Node:                  config.GoshimmerClient(),
-				CommitteeApiHosts:     config.CommitteeApi(committee),
+				CommitteeAPIHosts:     config.CommitteeApi(committee),
 				CommitteePeeringHosts: config.CommitteePeering(committee),
 				N:                     uint16(len(committee)),
 				T:                     uint16(quorum),

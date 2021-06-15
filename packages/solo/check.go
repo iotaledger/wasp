@@ -48,7 +48,7 @@ func (ch *Chain) CheckAccountLedger() {
 	for _, acc := range accs {
 		bals := ch.GetAccountBalance(&acc)
 		bals.ForEach(func(col ledgerstate.Color, bal uint64) bool {
-			s, _ := sum[col]
+			s := sum[col]
 			sum[col] = s + bal
 			return true
 		})

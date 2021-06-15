@@ -75,14 +75,14 @@ func NewAgentIDFromBase58EncodedString(s string) (*AgentID, error) {
 
 // NewAgentIDFromString parses the human-readable string representation
 func NewAgentIDFromString(s string) (*AgentID, error) {
-	if len(s) < 2 {
+	if len(s) < 2 { //nolint:gomnd
 		return nil, xerrors.New("NewAgentIDFromString: invalid length")
 	}
 	if s[:2] != "A/" {
 		return nil, xerrors.New("NewAgentIDFromString: wrong prefix")
 	}
 	parts := strings.Split(s[2:], "::")
-	if len(parts) != 2 {
+	if len(parts) != 2 { //nolint:gomnd
 		return nil, xerrors.New("NewAgentIDFromString: wrong format")
 	}
 	addr, err := ledgerstate.AddressFromBase58EncodedString(parts[0])
@@ -154,10 +154,7 @@ func (a *AgentID) Write(w io.Writer) error {
 			return err
 		}
 	}
-	if err := a.h.Write(w); err != nil {
-		return err
-	}
-	return nil
+	return a.h.Write(w)
 }
 
 func (a *AgentID) Read(r io.Reader) error {
@@ -167,13 +164,10 @@ func (a *AgentID) Read(r io.Reader) error {
 	}
 	if t, _, err := ledgerstate.AddressFromBytes(buf[:]); err != nil {
 		return err
-	} else {
+	} else { //nolint:revive
 		a.a = t
 	}
-	if err := a.h.Read(r); err != nil {
-		return err
-	}
-	return nil
+	return a.h.Read(r)
 }
 
 func (a *AgentID) IsNil() bool {

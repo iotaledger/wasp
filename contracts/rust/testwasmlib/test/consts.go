@@ -17,14 +17,14 @@ const (
 
 const (
 	ParamAddress   = "address"
-	ParamAgentId   = "agentId"
+	ParamAgentID   = "agentId"
 	ParamBytes     = "bytes"
-	ParamChainId   = "chainId"
+	ParamChainID   = "chainId"
 	ParamColor     = "color"
 	ParamHash      = "hash"
 	ParamHname     = "hname"
 	ParamInt64     = "int64"
-	ParamRequestId = "requestId"
+	ParamRequestID = "requestId"
 	ParamString    = "string"
 )
 

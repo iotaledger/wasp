@@ -24,17 +24,17 @@ func TestOffledgerRequests(t *testing.T) {
 	check(err, t)
 	defer counter.Close()
 
-	chain, err := clu.DeployDefaultChain()
+	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
 	scHname := coretypes.Hn("inncounter1")
-	deployIncCounterSC(t, chain, counter)
+	deployIncCounterSC(t, chain1, counter)
 
 	userWallet := wallet.KeyPair(1)
 	userAddress := ledgerstate.NewED25519Address(userWallet.PublicKey)
 	userAgentID := coretypes.NewAgentID(myAddress, 0)
 
-	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, userWallet)
+	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, userWallet)
 
 	// deposit funds before sending the off-ledger requestargs
 	err = requestFunds(clu, userAddress, "userWallet")
@@ -43,19 +43,19 @@ func TestOffledgerRequests(t *testing.T) {
 		Transfer: coretypes.NewTransferIotas(100),
 	})
 	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
+	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, reqTx, 30*time.Second)
 	check(err, t)
-	checkBalanceOnChain(t, chain, userAgentID, ledgerstate.ColorIOTA, 100)
+	checkBalanceOnChain(t, chain1, userAgentID, ledgerstate.ColorIOTA, 100)
 
 	// send off-ledger request via Web API
 	offledgerReq, err := chClient.PostOffLedgerRequest(scHname, coretypes.Hn(inccounter.FuncIncCounter))
 	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilRequestProcessed(&chain.ChainID, offledgerReq.ID(), 30*time.Second)
+	err = chain1.CommitteeMultiClient().WaitUntilRequestProcessed(&chain1.ChainID, offledgerReq.ID(), 30*time.Second)
 	check(err, t)
 
 	// check off-ledger request was successfully processed
-	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, scHname, inccounter.FuncGetCounter,
+	ret, err := chain1.Cluster.WaspClient(0).CallView(
+		chain1.ChainID, scHname, inccounter.FuncGetCounter,
 	)
 	check(err, t)
 	result, _ := ret.Get(inccounter.VarCounter)

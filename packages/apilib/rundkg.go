@@ -12,9 +12,9 @@ import (
 )
 
 // RunDKG runs DKG procedure on specifiec Wasp hosts. In case of success, generated address is returned
-func RunDKG(apiHosts []string, peeringHosts []string, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
+func RunDKG(apiHosts, peeringHosts []string, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
 	// TODO temporary. Correct type of timeout.
-	to := uint16(60 * 1000)
+	to := uint16(60 * 1000) //nolint:gomnd
 	if len(timeout) > 0 {
 		n := timeout[0].Milliseconds()
 		if n < int64(util.MaxUint16) {

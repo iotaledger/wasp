@@ -74,13 +74,13 @@ func GoshimmerFaucetPoWTarget() int {
 }
 
 func GoshimmerClient() *goshimmer.Client {
-	log.Verbose("using Goshimmer host %s, faucet pow target %d\n", GoshimmerApi(), GoshimmerFaucetPoWTarget())
+	log.Verbosef("using Goshimmer host %s, faucet pow target %d\n", GoshimmerApi(), GoshimmerFaucetPoWTarget())
 	return goshimmer.NewClient(GoshimmerApi(), GoshimmerFaucetPoWTarget())
 }
 
 func WaspClient() *client.WaspClient {
 	// TODO: add authentication for /adm
-	log.Verbose("using Wasp host %s\n", WaspApi())
+	log.Verbosef("using Wasp host %s\n", WaspApi())
 	return client.NewWaspClient(WaspApi())
 }
 
@@ -106,7 +106,7 @@ func FindNodeBy(kind string, v string) int {
 			return i
 		}
 	}
-	log.Fatal("Cannot find node with %q = %q in configuration", kind, v)
+	log.Fatalf("Cannot find node with %q = %q in configuration", kind, v)
 	return 0
 }
 
@@ -185,7 +185,7 @@ func TrySCAddress(scAlias string) ledgerstate.Address {
 func GetSCAddress(scAlias string) ledgerstate.Address {
 	address := TrySCAddress(scAlias)
 	if address == nil {
-		log.Fatal("call `%s set sc.%s.address` or deploy a contract first", os.Args[0], scAlias)
+		log.Fatalf("call `%s set sc.%s.address` or deploy a contract first", os.Args[0], scAlias)
 	}
 	return address
 }

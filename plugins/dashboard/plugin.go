@@ -59,9 +59,9 @@ func (w *waspServices) ConfigDump() map[string]interface{} {
 }
 
 func (w *waspServices) ExploreAddressBaseURL() string {
-	baseUrl := parameters.GetString(parameters.DashboardExploreAddressUrl)
-	if baseUrl != "" {
-		return baseUrl
+	baseURL := parameters.GetString(parameters.DashboardExploreAddressURL)
+	if baseURL != "" {
+		return baseURL
 	}
 	return exploreAddressUrlFromGoshimmerUri(parameters.GetString(parameters.NodeAddress))
 }

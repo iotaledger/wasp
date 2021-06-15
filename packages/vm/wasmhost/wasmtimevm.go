@@ -10,7 +10,7 @@ import (
 )
 
 type WasmTimeVM struct {
-	WasmVmBase
+	WasmVMBase
 	instance  *wasmtime.Instance
 	interrupt *wasmtime.InterruptHandle
 	linker    *wasmtime.Linker
@@ -36,7 +36,7 @@ func (vm *WasmTimeVM) Interrupt() {
 }
 
 func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
-	_ = vm.WasmVmBase.LinkHost(impl, host)
+	_ = vm.WasmVMBase.LinkHost(impl, host)
 
 	err := vm.linker.DefineFunc("WasmLib", "hostGetBytes",
 		func(objId int32, keyId int32, typeId int32, stringRef int32, size int32) int32 {

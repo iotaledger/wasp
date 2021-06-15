@@ -51,7 +51,7 @@ func (m *MessageCounter) CollectMessages(duration time.Duration) {
 		case msg := <-m.subscription.HostMessages:
 			m.countMessage(msg)
 
-		case <-time.After(500 * time.Millisecond):
+		case <-time.After(500 * time.Millisecond): //nolint:gomnd
 		}
 		if time.Now().After(deadline) {
 			break
@@ -75,14 +75,14 @@ func (m *MessageCounter) WaitUntilExpectationsMet() bool {
 		select {
 		case msg := <-m.subscription.HostMessages:
 			m.countMessage(msg)
-		case <-time.After(90 * time.Second):
+		case <-time.After(90 * time.Second): //nolint:gomnd
 			return m.Report()
 		}
 	}
 }
 
 func (m *MessageCounter) countMessage(msg *subscribe.HostMessage) {
-	m.counters[msg.Sender][msg.Message[0]] += 1
+	m.counters[msg.Sender][msg.Message[0]]++
 }
 
 func (m *MessageCounter) Report() bool {

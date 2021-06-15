@@ -19,7 +19,7 @@ func Subscribe(host string, messages chan<- []string, done <-chan bool, keepTryi
 		err = socket.Dial("tcp://" + host)
 		if err != nil {
 			if keepTrying {
-				time.Sleep(200 * time.Millisecond)
+				time.Sleep(200 * time.Millisecond) //nolint:gomnd
 				continue
 			} else {
 				return fmt.Errorf("can't dial on sub socket %s: %s", host, err.Error())
@@ -157,7 +157,7 @@ func (subs *Subscription) WaitForPatterns(patterns [][]string, timeout time.Dura
 				return true
 			}
 
-		case <-time.After(100 * time.Millisecond):
+		case <-time.After(100 * time.Millisecond): //nolint:gomnd
 			if time.Now().After(deadline) {
 				return false
 			}

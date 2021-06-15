@@ -16,8 +16,8 @@ var addressCmd = &cobra.Command{
 		wallet := Load()
 		kp := wallet.KeyPair()
 		log.Printf("Address index %d\n", addressIndex)
-		log.Verbose("  Private key: %s\n", kp.PrivateKey)
-		log.Verbose("  Public key:  %s\n", kp.PublicKey)
+		log.Verbosef("  Private key: %s\n", kp.PrivateKey)
+		log.Verbosef("  Public key:  %s\n", kp.PublicKey)
 		log.Printf("  Address:     %s\n", wallet.Address().Base58())
 	},
 }

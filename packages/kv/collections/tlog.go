@@ -100,7 +100,7 @@ func (l *ImmutableTimestampedLog) Len() (uint32, error) {
 	if v == nil {
 		return 0, nil
 	}
-	if len(v) != 4 {
+	if len(v) != 4 { //nolint:gomnd
 		return 0, errors.New("corrupted data")
 	}
 	return util.MustUint32From4Bytes(v), nil
@@ -170,7 +170,7 @@ func (l *ImmutableTimestampedLog) latest() (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	if len(data) < 8 {
+	if len(data) < 8 { //nolint:gomnd
 		return 0, errors.New("TimestampedLog: corrupted data")
 	}
 	return int64(util.MustUint64From8Bytes(data[:8])), nil
@@ -227,7 +227,7 @@ func (l *ImmutableTimestampedLog) getRecordAtIndex(idx uint32) (*TimestampedLogR
 }
 
 func ParseRawLogRecord(raw []byte) (*TimestampedLogRecord, error) {
-	if len(raw) < 8 {
+	if len(raw) < 8 { //nolint:gomnd
 		return nil, fmt.Errorf("ParseRawLogRecord: wrong bytes")
 	}
 	return &TimestampedLogRecord{

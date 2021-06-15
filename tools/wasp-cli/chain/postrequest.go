@@ -20,13 +20,13 @@ func postRequestCmd() *cobra.Command {
 		Use:   "post-request <name> <funcname> [params]",
 		Short: "Post a request to a contract",
 		Long:  "Post a request to contract <name>, function <funcname> with given params.",
-		Args:  cobra.MinimumNArgs(2),
+		Args:  cobra.MinimumNArgs(2), //nolint:gomnd
 		Run: func(cmd *cobra.Command, args []string) {
 			cb := make(map[ledgerstate.Color]uint64)
 			for _, tr := range transfer {
 				parts := strings.Split(tr, ":")
-				if len(parts) != 2 {
-					log.Fatal("Syntax for --transfer: <color>:<amount>,<color:amount>...\nExample: IOTA:100")
+				if len(parts) != 2 { //nolint:gomnd
+					log.Fatalf("Syntax for --transfer: <color>:<amount>,<color:amount>...\nExample: IOTA:100")
 				}
 				color := colorFromString(parts[0])
 				amount, err := strconv.Atoi(parts[1])

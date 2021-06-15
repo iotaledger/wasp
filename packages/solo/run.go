@@ -72,7 +72,7 @@ func (ch *Chain) runRequestsNolock(reqs []coretypes.Request, trace string) (dict
 		essence, err = rotate.MakeRotateStateControllerTransaction(
 			task.RotationAddress,
 			task.ChainInput,
-			task.Timestamp.Add(2*time.Nanosecond),
+			task.Timestamp.Add(2*time.Nanosecond), //nolint:gomnd
 			identity.ID{},
 			identity.ID{},
 		)
@@ -102,6 +102,7 @@ func (ch *Chain) runRequestsNolock(reqs []coretypes.Request, trace string) (dict
 	return callRes, callErr
 }
 
+//nolint // TODO check this function, the `stateOutput` param is unused, and its re-assigned on the first line
 func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction, stateOutput *ledgerstate.AliasOutput, reqids []coretypes.RequestID) {
 	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(stateTx)
 	require.NoError(ch.Env.T, err)

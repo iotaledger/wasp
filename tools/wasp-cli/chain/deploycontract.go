@@ -19,7 +19,7 @@ import (
 var deployContractCmd = &cobra.Command{
 	Use:   "deploy-contract <vmtype> <name> <description> <filename|program-hash>",
 	Short: "Deploy a contract in the chain",
-	Args:  cobra.ExactArgs(4),
+	Args:  cobra.ExactArgs(4), //nolint:gomnd
 	Run: func(cmd *cobra.Command, args []string) {
 		vmtype := args[0]
 		name := args[1]
@@ -29,7 +29,7 @@ var deployContractCmd = &cobra.Command{
 
 		switch vmtype {
 		case core.VMType:
-			log.Fatal("cannot manually deploy core contracts")
+			log.Fatalf("cannot manually deploy core contracts")
 
 		case native.VMType:
 			var err error

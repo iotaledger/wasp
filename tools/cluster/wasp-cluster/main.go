@@ -23,6 +23,7 @@ func usage(flags *pflag.FlagSet) {
 	os.Exit(1)
 }
 
+//noling:funlen
 func main() {
 	commonFlags := pflag.NewFlagSet("common flags", pflag.ExitOnError)
 
@@ -38,7 +39,7 @@ func main() {
 	commonFlags.BoolVarP(&config.Goshimmer.Provided, "goshimmer-provided", "g", config.Goshimmer.Provided, "If true, Goshimmer node will not be spawn")
 	commonFlags.IntVarP(&config.FaucetPoWTarget, "goshimmer-faucet-pow", "w", config.FaucetPoWTarget, "Faucet PoW target")
 
-	if len(os.Args) < 2 {
+	if len(os.Args) < 2 { //nolint:gomnd
 		usage(commonFlags)
 	}
 

@@ -93,7 +93,7 @@ func (m *ImmutableMap) MustGetAt(key []byte) []byte {
 	return ret
 }
 
-func (m *Map) SetAt(key []byte, value []byte) error {
+func (m *Map) SetAt(key, value []byte) error {
 	ok, err := m.HasAt(key)
 	if err != nil {
 		return err
@@ -108,7 +108,7 @@ func (m *Map) SetAt(key []byte, value []byte) error {
 	return nil
 }
 
-func (m *Map) MustSetAt(key []byte, value []byte) {
+func (m *Map) MustSetAt(key, value []byte) {
 	err := m.SetAt(key, value)
 	if err != nil {
 		panic(err)
@@ -165,7 +165,7 @@ func (m *ImmutableMap) Len() (uint32, error) {
 	if v == nil {
 		return 0, nil
 	}
-	if len(v) != 4 {
+	if len(v) != 4 { //nolint:gomnd
 		return 0, errors.New("corrupted data")
 	}
 	return util.MustUint32From4Bytes(v), nil

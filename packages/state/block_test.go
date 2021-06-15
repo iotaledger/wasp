@@ -13,17 +13,17 @@ import (
 
 func TestBlockBasic(t *testing.T) {
 	t.Run("fail no arguments", func(t *testing.T) {
-		_, err := NewBlock()
+		_, err := newBlock()
 		require.Error(t, err)
 	})
 	t.Run("fail no state index", func(t *testing.T) {
 		su := NewStateUpdate()
-		_, err := NewBlock(su)
+		_, err := newBlock(su)
 		require.Error(t, err)
 	})
 	t.Run("ok block index", func(t *testing.T) {
 		su := NewStateUpdateWithBlockIndexMutation(42)
-		b1, err := NewBlock(su)
+		b1, err := newBlock(su)
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
 		require.True(t, b1.Timestamp().IsZero())
@@ -31,7 +31,7 @@ func TestBlockBasic(t *testing.T) {
 	t.Run("with timestamp", func(t *testing.T) {
 		nowis := time.Now()
 		su := NewStateUpdateWithBlockIndexMutation(42, nowis)
-		b1, err := NewBlock(su)
+		b1, err := newBlock(su)
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
 		require.True(t, nowis.Equal(b1.Timestamp()))
@@ -40,7 +40,7 @@ func TestBlockBasic(t *testing.T) {
 		nowis := time.Now()
 		su1 := NewStateUpdateWithBlockIndexMutation(42, nowis)
 		su2 := NewStateUpdateWithBlockIndexMutation(10)
-		b1, err := NewBlock(su1, su2)
+		b1, err := newBlock(su1, su2)
 		require.NoError(t, err)
 		require.EqualValues(t, 10, b1.BlockIndex())
 		require.True(t, nowis.Equal(b1.Timestamp()))
@@ -52,7 +52,7 @@ func TestBatches(t *testing.T) {
 	su1 := NewStateUpdate()
 	su2 := NewStateUpdate()
 
-	block1, err := NewBlock(suBlock, su1, su2)
+	block1, err := newBlock(suBlock, su1, su2)
 	require.NoError(t, err)
 	assert.EqualValues(t, 3, block1.Size())
 	assert.EqualValues(t, 2, block1.BlockIndex())
@@ -84,10 +84,10 @@ func TestOriginBlock(t *testing.T) {
 	txid2 := ledgerstate.TransactionID(hashing.RandomHash(nil))
 	outID2 := ledgerstate.NewOutputID(txid1, 0)
 	require.NotEqualValues(t, txid1, txid2)
-	b := NewOriginBlock()
-	b1 := NewOriginBlock()
+	b := newOriginBlock()
+	b1 := newOriginBlock()
 	b1.SetApprovingOutputID(outID1)
-	b2 := NewOriginBlock()
+	b2 := newOriginBlock()
 	b2.SetApprovingOutputID(outID2)
 	require.EqualValues(t, b1.EssenceBytes(), b2.EssenceBytes())
 

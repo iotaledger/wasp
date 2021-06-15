@@ -22,14 +22,14 @@ type (
 
 type WaspObject interface {
 	wasmhost.HostObject
-	InitObj(id int32, keyId int32, owner *ScDict)
+	InitObj(id int32, keyID int32, owner *ScDict)
 	Panic(format string, args ...interface{})
-	FindOrMakeObjectId(keyId int32, factory ObjFactory) int32
+	FindOrMakeObjectId(keyID int32, factory ObjFactory) int32
 	NestedKey() string
-	Suffix(keyId int32) string
+	Suffix(keyID int32) string
 }
 
-func GetArrayObjectId(arrayObj WaspObject, index int32, typeId int32, factory ObjFactory) int32 {
+func GetArrayObjectID(arrayObj WaspObject, index, typeId int32, factory ObjFactory) int32 {
 	if !arrayObj.Exists(index, typeId) {
 		arrayObj.Panic("GetArrayObjectId: invalid index")
 	}
@@ -39,7 +39,7 @@ func GetArrayObjectId(arrayObj WaspObject, index int32, typeId int32, factory Ob
 	return arrayObj.FindOrMakeObjectId(index, factory)
 }
 
-func GetMapObjectId(mapObj WaspObject, keyId int32, typeId int32, factories ObjFactories) int32 {
+func GetMapObjectId(mapObj WaspObject, keyId, typeId int32, factories ObjFactories) int32 {
 	factory, ok := factories[keyId]
 	if !ok {
 		mapObj.Panic("GetMapObjectId: invalid key")
@@ -192,7 +192,7 @@ func (o *ScDict) Int64Bytes(value int64) []byte {
 	return bytes
 }
 
-func (o *ScDict) key(keyId int32, typeId int32) kv.Key {
+func (o *ScDict) key(keyId, typeId int32) kv.Key {
 	o.validate(keyId, typeId)
 	suffix := o.Suffix(keyId)
 	key := o.NestedKey() + suffix
@@ -202,7 +202,7 @@ func (o *ScDict) key(keyId int32, typeId int32) kv.Key {
 }
 
 func (o *ScDict) MustInt64(bytes []byte) int64 {
-	if len(bytes) != 8 {
+	if len(bytes) != 8 { //nolint:gomnd
 		o.Panic("invalid int64 length")
 	}
 	return int64(binary.LittleEndian.Uint64(bytes))
