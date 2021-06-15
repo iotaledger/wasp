@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-// Client allows to send on-ledger or off-ledger requests to a specific chain in the node
+// Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
 type Client struct {
 	GoshimmerClient *goshimmer.Client
 	WaspClient      *client.WaspClient
