@@ -270,7 +270,7 @@ func findContract(chain *cluster.Chain, name string) (*root.ContractRecord, erro
 	if err != nil {
 		return nil, err
 	}
-	recBin, err := ret.Get(root.ParamData)
+	recBin, err := ret.Get(root.VarData)
 	if err != nil {
 		return nil, err
 	}

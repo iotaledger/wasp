@@ -5,6 +5,7 @@ package wasmhost
 
 import (
 	"errors"
+
 	"github.com/bytecodealliance/wasmtime-go"
 )
 
@@ -66,11 +67,15 @@ func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
 		return err
 	}
 
-	// TinyGo Wasm implementation uses this one to write panic message to console
-	return vm.linker.DefineFunc("wasi_unstable", "fd_write",
-		func(fd int32, iovs int32, size int32, written int32) int32 {
-			return vm.HostFdWrite(fd, iovs, size, written)
-		})
+	// TinyGo Wasm versions uses this one to write panic message to console
+	fdWrite := func(fd int32, iovs int32, size int32, written int32) int32 {
+		return vm.HostFdWrite(fd, iovs, size, written)
+	}
+	err = vm.linker.DefineFunc("wasi_unstable", "fd_write", fdWrite)
+	if err != nil {
+		return err
+	}
+	return vm.linker.DefineFunc("wasi_snapshot_preview1", "fd_write", fdWrite)
 }
 
 func (vm *WasmTimeVM) LoadWasm(wasmData []byte) error {

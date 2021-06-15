@@ -42,7 +42,7 @@ pub fn func_call_on_chain(ctx: &ScFuncContext) {
     parms.get_int64(PARAM_INT_VALUE).set_value(param_int);
     let ret = ctx.call(target_contract, target_ep, Some(parms), None);
 
-    let ret_val = ret.get_int64(PARAM_INT_VALUE);
+    let ret_val = ret.get_int64(RESULT_INT_VALUE);
     ctx.results().get_int64(RESULT_INT_VALUE).set_value(ret_val.value());
     ctx.log("testcore.callOnChain ok");
 }
