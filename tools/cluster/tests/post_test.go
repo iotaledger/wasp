@@ -60,7 +60,7 @@ func deployInccounter42(t *testing.T, name string, counter int64) *coretypes.Age
 			root.ParamHname: hname.Bytes(),
 		})
 	check(err, t)
-	recb, err := ret.Get(root.ParamData)
+	recb, err := ret.Get(root.VarData)
 	check(err, t)
 	rec, err := root.DecodeContractRecord(recb)
 	check(err, t)

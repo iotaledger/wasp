@@ -4,10 +4,11 @@
 package micropay
 
 import (
+	"time"
+
 	"github.com/iotaledger/wasp/contracts/native"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"time"
 )
 
 const (

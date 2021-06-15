@@ -43,45 +43,48 @@ func init() {
 
 // state variables
 const (
-	VarStateInitialized      = "i"
 	VarChainID               = "c"
 	VarChainOwnerID          = "o"
-	VarFeeColor              = "f"
-	VarDefaultOwnerFee       = "do"
-	VarDefaultValidatorFee   = "dv"
 	VarChainOwnerIDDelegated = "n"
 	VarContractRegistry      = "r"
-	VarDescription           = "d"
+	VarData                  = "dt"
+	VarDefaultOwnerFee       = "do"
+	VarDefaultValidatorFee   = "dv"
 	VarDeployPermissions     = "dep"
+	VarDescription           = "d"
+	VarFeeColor              = "f"
+	VarOwnerFee              = "of"
+	VarStateInitialized      = "i"
+	VarValidatorFee          = "vf"
 )
 
 // param variables
 const (
 	ParamChainID      = "$$chainid$$"
 	ParamChainOwner   = "$$owner$$"
-	ParamProgramHash  = "$$proghash$$"
+	ParamData         = "$$data$$"
+	ParamDeployer     = "$$deployer$$"
 	ParamDescription  = "$$description$$"
+	ParamFeeColor     = "$$feecolor$$"
 	ParamHname        = "$$hname$$"
 	ParamName         = "$$name$$"
-	ParamData         = "$$data$$"
-	ParamFeeColor     = "$$feecolor$$"
 	ParamOwnerFee     = "$$ownerfee$$"
+	ParamProgramHash  = "$$proghash$$"
 	ParamValidatorFee = "$$validatorfee$$"
-	ParamDeployer     = "$$deployer$$"
 )
 
 // function names
 const (
+	FuncClaimChainOwnership    = "claimChainOwnership"
+	FuncDelegateChainOwnership = "delegateChainOwnership"
 	FuncDeployContract         = "deployContract"
 	FuncFindContract           = "findContract"
 	FuncGetChainInfo           = "getChainInfo"
-	FuncDelegateChainOwnership = "delegateChainOwnership"
-	FuncClaimChainOwnership    = "claimChainOwnership"
 	FuncGetFeeInfo             = "getFeeInfo"
-	FuncSetDefaultFee          = "setDefaultFee"
-	FuncSetContractFee         = "setContractFee"
 	FuncGrantDeployPermission  = "grantDeployPermission"
 	FuncRevokeDeployPermission = "revokeDeployPermission"
+	FuncSetContractFee         = "setContractFee"
+	FuncSetDefaultFee          = "setDefaultFee"
 )
 
 // ContractRecord is a structure which contains metadata of the deployed contract instance

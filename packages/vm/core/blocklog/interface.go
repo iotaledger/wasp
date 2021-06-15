@@ -5,13 +5,14 @@ package blocklog
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"time"
+
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
-	"io"
-	"time"
 )
 
 const (
@@ -40,26 +41,27 @@ func init() {
 
 const (
 	// state variables
-	StateVarTimestamp          = coreutil.StateVarTimestamp
 	StateVarBlockIndex         = coreutil.StateVarBlockIndex
 	StateVarBlockRegistry      = "b"
 	StateVarRequestLookupIndex = "l"
 	StateVarRequestRecords     = "r"
+	StateVarTimestamp          = coreutil.StateVarTimestamp
+
 	// functions
-	FuncGetBlockInfo                 = "viewGetBlockInfo"
-	FuncGetLatestBlockInfo           = "viewGetLatestBlockInfo"
-	FuncGetRequestLogRecord          = "viewGetRequestLogRecord"
-	FuncGetRequestLogRecordsForBlock = "viewGetRequestLogRecordsForBlock"
-	FuncGetRequestIDsForBlock        = "viewGetRequestIDsForBlock"
-	FuncIsRequestProcessed           = "viewIsRequestProcessed"
+	FuncGetBlockInfo                 = "getBlockInfo"
+	FuncGetLatestBlockInfo           = "getLatestBlockInfo"
+	FuncGetRequestIDsForBlock        = "getRequestIDsForBlock"
+	FuncGetRequestLogRecord          = "getRequestLogRecord"
+	FuncGetRequestLogRecordsForBlock = "getRequestLogRecordsForBlock"
+	FuncIsRequestProcessed           = "isRequestProcessed"
 
 	// parameters
 	ParamBlockIndex       = "n"
-	ParamRequestIndex     = "r"
 	ParamBlockInfo        = "i"
-	ParamRequestRecord    = "d"
 	ParamRequestID        = "u"
+	ParamRequestIndex     = "r"
 	ParamRequestProcessed = "p"
+	ParamRequestRecord    = "d"
 )
 
 // region BlockInfo //////////////////////////////////////////////////////////////
