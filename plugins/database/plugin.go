@@ -2,7 +2,7 @@
 package database
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/parameters"
 
@@ -50,10 +50,10 @@ func GetRegistryKVStore() kvstore.KVStore {
 	return dbm.GetRegistryKVStore()
 }
 
-func GetOrCreateKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
+func GetOrCreateKVStore(chainID *chainid.ChainID) kvstore.KVStore {
 	return dbm.GetOrCreateKVStore(chainID)
 }
 
-func GetKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
+func GetKVStore(chainID *chainid.ChainID) kvstore.KVStore {
 	return dbm.GetKVStore(chainID)
 }

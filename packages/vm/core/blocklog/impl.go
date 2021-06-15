@@ -124,3 +124,17 @@ func viewGetRequestLogRecordsForBlock(ctx coretypes.SandboxView) (dict.Dict, err
 	}
 	return ret, nil
 }
+
+func viewControlAddresses(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	registry := collections.NewArray32ReadOnly(ctx.State(), StateVarControlAddresses)
+	l := registry.MustLen()
+	a.Require(l > 0, "inconsistency: unknown control addresses")
+	rec, err := ControlAddressesFromBytes(registry.MustGetAt(l - 1))
+	a.RequireNoError(err)
+	ret := dict.New()
+	ret.Set(ParamStateControllerAddress, codec.EncodeAddress(rec.StateAddress))
+	ret.Set(ParamGoverningAddress, codec.EncodeAddress(rec.GoverningAddress))
+	ret.Set(ParamBlockIndex, codec.EncodeUint64(uint64(rec.SinceBlockIndex)))
+	return ret, nil
+}

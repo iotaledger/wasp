@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -70,6 +72,8 @@ const (
 	ParamDeployer     = "$$deployer$$"
 )
 
+// TODO move ownership and fee-related methods to the governance contract
+
 // function names
 const (
 	FuncDeployContract         = "deployContract"
@@ -109,7 +113,7 @@ type ContractRecord struct {
 
 // ChainInfo is an API structure which contains main properties of the chain in on place
 type ChainInfo struct {
-	ChainID             coretypes.ChainID
+	ChainID             chainid.ChainID
 	ChainOwnerID        coretypes.AgentID
 	Description         string
 	FeeColor            ledgerstate.Color

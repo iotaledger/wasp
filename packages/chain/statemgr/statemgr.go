@@ -17,25 +17,24 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type stateManager struct {
-	ready                   *ready.Ready
-	store                   kvstore.KVStore
-	chain                   chain.ChainCore
-	peers                   peering.PeerDomainProvider
-	nodeConn                chain.NodeConnection
-	pullStateRetryTime      time.Time
-	solidState              state.VirtualState
-	stateOutput             *ledgerstate.AliasOutput
-	stateOutputTimestamp    time.Time
-	currentSyncData         atomic.Value
-	notifiedSyncedStateHash hashing.HashValue
-	syncingBlocks           *syncingBlocks
-	timers                  Timers
-	log                     *logger.Logger
+	ready                  *ready.Ready
+	store                  kvstore.KVStore
+	chain                  chain.ChainCore
+	peers                  peering.PeerDomainProvider
+	nodeConn               chain.NodeConnection
+	pullStateRetryTime     time.Time
+	solidState             state.VirtualState
+	stateOutput            *ledgerstate.AliasOutput
+	stateOutputTimestamp   time.Time
+	currentSyncData        atomic.Value
+	notifiedAnchorOutputID ledgerstate.OutputID
+	syncingBlocks          *syncingBlocks
+	timers                 Timers
+	log                    *logger.Logger
 
 	// Channels for accepting external events.
 	eventGetBlockMsgCh     chan *chain.GetBlockMsg

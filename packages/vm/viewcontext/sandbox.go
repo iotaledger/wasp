@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -61,7 +62,7 @@ func (s *sandboxview) Call(contractHname coretypes.Hname, entryPoint coretypes.H
 	return s.vctx.CallView(contractHname, entryPoint, params)
 }
 
-func (s *sandboxview) ChainID() *coretypes.ChainID {
+func (s *sandboxview) ChainID() *chainid.ChainID {
 	return &s.vctx.chainID
 }
 

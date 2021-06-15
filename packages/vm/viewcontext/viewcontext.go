@@ -3,6 +3,8 @@ package viewcontext
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -21,7 +23,7 @@ import (
 type viewcontext struct {
 	processors  *processors.ProcessorCache
 	stateReader state.OptimisticStateReader
-	chainID     coretypes.ChainID
+	chainID     chainid.ChainID
 	log         *logger.Logger
 }
 
@@ -29,7 +31,7 @@ func NewFromChain(chain chain.ChainCore) *viewcontext {
 	return New(*chain.ID(), chain.GetStateReader(), chain.Processors(), chain.Log().Named("view"))
 }
 
-func New(chainID coretypes.ChainID, stateReader state.OptimisticStateReader, proc *processors.ProcessorCache, log *logger.Logger) *viewcontext {
+func New(chainID chainid.ChainID, stateReader state.OptimisticStateReader, proc *processors.ProcessorCache, log *logger.Logger) *viewcontext {
 	return &viewcontext{
 		processors:  proc,
 		stateReader: stateReader,

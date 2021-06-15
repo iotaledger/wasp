@@ -7,9 +7,12 @@ package coreutil
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
 const DefaultHandler = "defaultHandler"
@@ -149,4 +152,8 @@ func (f *ContractFunctionInterface) Call(ctx interface{}) (dict.Dict, error) {
 
 func (f *ContractFunctionInterface) IsView() bool {
 	return f.ViewHandler != nil
+}
+
+func (i *ContractInterface) GetStateReadOnly(chainState kv.KVStoreReader) kv.KVStoreReader {
+	return subrealm.NewReadOnly(chainState, kv.Key(i.Hname().Bytes()))
 }

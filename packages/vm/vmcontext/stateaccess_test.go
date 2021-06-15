@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/stretchr/testify/require"
@@ -17,7 +19,7 @@ import (
 )
 
 func TestSetThenGet(t *testing.T) {
-	chainID := coretypes.RandomChainID([]byte("hmm"))
+	chainID := chainid.RandomChainID([]byte("hmm"))
 	virtualState, err := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()
@@ -77,7 +79,7 @@ func TestSetThenGet(t *testing.T) {
 }
 
 func TestIterate(t *testing.T) {
-	chainID := coretypes.RandomChainID([]byte("hmm"))
+	chainID := chainid.RandomChainID([]byte("hmm"))
 	virtualState, err := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()

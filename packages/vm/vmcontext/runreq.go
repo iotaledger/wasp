@@ -178,7 +178,7 @@ func (vmctx *VMContext) validRequest() bool {
 	}
 
 	// order of requests must always increase
-	if vmctx.req.Order() <= accounts.GetOrder(vmctx.State(), req.SenderAddress()) {
+	if vmctx.req.Nonce() <= accounts.GetOrder(vmctx.State(), req.SenderAddress()) {
 		vmctx.lastError = fmt.Errorf("validRequest: invalid order for %s", req.ID().String())
 		return false
 	}
@@ -295,7 +295,7 @@ func (vmctx *VMContext) mustSaveRequestOrder() {
 		defer vmctx.popCallContext()
 
 		address := vmctx.req.SenderAddress()
-		order := vmctx.req.Order()
+		order := vmctx.req.Nonce()
 		accounts.SetOrder(vmctx.State(), address, order)
 	}
 }
@@ -308,9 +308,9 @@ func (vmctx *VMContext) mustFinalizeRequestCall() {
 	vmctx.currentStateUpdate = nil
 
 	_, ep := vmctx.req.Target()
-	vmctx.log.Debugw("runTheRequest OUT",
-		"reqId", vmctx.req.ID().Short(),
-		"entry point", ep.String(),
+	vmctx.log.Debug("runTheRequest OUT. ",
+		"reqId: ", vmctx.req.ID().Short(),
+		" entry point: ", ep.String(),
 	)
 }
 
