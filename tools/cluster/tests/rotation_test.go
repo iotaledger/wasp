@@ -69,7 +69,7 @@ func TestRotation(t *testing.T) {
 	require.True(t, waitCounter(t, chain, 0, 3, 5*time.Second))
 	//require.True(t, waitCounter(t, chain, 5, 3, 5*time.Second))
 
-	// TODO not finished
+	// TODO not finished with node config
 }
 
 func waitCounter(t *testing.T, chain *cluster.Chain, nodeIndex, counter int, timeout time.Duration) bool {
