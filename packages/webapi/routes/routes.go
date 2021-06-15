@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package routes
 
 func Info() string {
@@ -74,6 +77,22 @@ func DKSharesGet(sharedAddress string) string {
 
 func DumpState(chainID string, contractHname string) string {
 	return "/adm/chain/" + chainID + "/contract/" + contractHname + "/dumpstate"
+}
+
+func PeeringTrustedList() string {
+	return "/adm/peering/trusted"
+}
+func PeeringTrustedGet(pubKey string) string {
+	return "/adm/peering/trusted/" + pubKey
+}
+func PeeringTrustedPost() string {
+	return PeeringTrustedList()
+}
+func PeeringTrustedPut(pubKey string) string {
+	return PeeringTrustedGet(pubKey)
+}
+func PeeringTrustedDelete(pubKey string) string {
+	return PeeringTrustedGet(pubKey)
 }
 
 func Shutdown() string {

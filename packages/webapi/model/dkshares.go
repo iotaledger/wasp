@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package model
 
 // DKSharesPostRequest is a POST request for creating new DKShare.
@@ -5,7 +8,7 @@ type DKSharesPostRequest struct {
 	PeerNetIDs  []string `json:"peerNetIDs" swagger:"desc(NetIDs of the nodes sharing the key.)"`
 	PeerPubKeys []string `json:"peerPubKeys" swagger:"desc(Optional, base64 encoded public keys of the peers generating the DKS.)"`
 	Threshold   uint16   `json:"threshold" swagger:"desc(Should be =< len(PeerPubKeys))"`
-	TimeoutMS   uint16   `json:"timeoutMS" swagger:"desc(Timeout in milliseconds.)"`
+	TimeoutMS   uint32   `json:"timeoutMS" swagger:"desc(Timeout in milliseconds.)"`
 }
 
 // DKSharesInfo stands for the DKShare representation, returned by the GET and POST methods.

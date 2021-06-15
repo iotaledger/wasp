@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package admapi
 
 import (
@@ -25,6 +28,7 @@ func AddEndpoints(adm echoswagger.ApiGroup, adminWhitelist []net.IP) {
 	addCommitteeRecordEndpoints(adm)
 	addChainEndpoints(adm)
 	addDKSharesEndpoints(adm)
+	addPeeringEndpoints(adm)
 }
 
 // allow only if the remote address is private or in whitelist
