@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -33,7 +35,7 @@ func AddEndpoints(server echoswagger.ApiRouter) {
 }
 
 func handleCallView(c echo.Context) error {
-	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid theChain ID: %+v", c.Param("chainID")))
 	}

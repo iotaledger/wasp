@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/packages/state"
@@ -21,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -48,23 +51,23 @@ func (w *waspServices) NetworkProvider() peering.NetworkProvider {
 	return &peeringNetworkProvider{}
 }
 
-func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.ChainCore {
+func (w *waspServices) GetChain(chainID *chainid.ChainID) chain.ChainCore {
 	return &mockChain{}
 }
 
 func (w *waspServices) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
-	r, _ := w.GetChainRecord(coretypes.RandomChainID())
+	r, _ := w.GetChainRecord(chainid.RandomChainID())
 	return []*chainrecord.ChainRecord{r}, nil
 }
 
-func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error) {
+func (w *waspServices) GetChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error) {
 	return &chainrecord.ChainRecord{
 		ChainID: chainID,
 		Active:  true,
 	}, nil
 }
 
-func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*ChainState, error) {
+func (w *waspServices) GetChainState(chainID *chainid.ChainID) (*ChainState, error) {
 	return &ChainState{
 		Index:             1,
 		Hash:              hashing.RandomHash(nil),
@@ -239,8 +242,8 @@ func (m *mockChain) GetStateReader() state.OptimisticStateReader {
 	panic("implement me")
 }
 
-func (m *mockChain) ID() *coretypes.ChainID {
-	return coretypes.RandomChainID()
+func (m *mockChain) ID() *chainid.ChainID {
+	return chainid.RandomChainID()
 }
 
 func (m *mockChain) GetCommitteeInfo() *chain.CommitteeInfo {

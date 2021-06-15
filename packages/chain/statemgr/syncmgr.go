@@ -29,8 +29,16 @@ func (sm *stateManager) stateOutputReceived(output *ledgerstate.AliasOutput, tim
 	if sm.stateOutput != nil {
 		switch {
 		case sm.stateOutput.GetStateIndex() == output.GetStateIndex():
-			sm.log.Debugf("stateOutputReceived ignoring: repeated state output")
-			return false
+			if sm.stateOutput.ID() == output.ID() {
+				// it is just a duplicate
+				sm.log.Debugf("stateOutputReceived ignoring: repeated state output")
+				return false
+			}
+			if !output.GetIsGovernanceUpdated() {
+				sm.log.Panicf("L1 inconsistency: governance transition expected in %s", coretypes.OID(output.ID()))
+			}
+			// it is a state controller address rotation
+
 		case sm.stateOutput.GetStateIndex() > output.GetStateIndex():
 			sm.log.Warnf("stateOutputReceived: out of order state output; stateOutput index is already larger: %v", sm.stateOutput.GetStateIndex())
 			return false

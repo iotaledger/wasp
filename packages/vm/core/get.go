@@ -2,6 +2,9 @@ package core
 
 import (
 	"fmt"
+
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -19,12 +22,13 @@ const (
 )
 
 var AllCoreContractsByHash = map[hashing.HashValue]*coreutil.ContractInterface{
-	_default.Interface.ProgramHash: _default.Interface,
-	root.Interface.ProgramHash:     root.Interface,
-	accounts.Interface.ProgramHash: accounts.Interface,
-	blob.Interface.ProgramHash:     blob.Interface,
-	eventlog.Interface.ProgramHash: eventlog.Interface,
-	blocklog.Interface.ProgramHash: blocklog.Interface,
+	_default.Interface.ProgramHash:   _default.Interface,
+	root.Interface.ProgramHash:       root.Interface,
+	accounts.Interface.ProgramHash:   accounts.Interface,
+	blob.Interface.ProgramHash:       blob.Interface,
+	eventlog.Interface.ProgramHash:   eventlog.Interface,
+	blocklog.Interface.ProgramHash:   blocklog.Interface,
+	governance.Interface.ProgramHash: governance.Interface,
 }
 
 func init() {

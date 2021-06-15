@@ -54,10 +54,25 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	if quorum < minQuorum {
 		quorum = minQuorum
 	}
-	return clu.DeployChain("Default chain", committee, uint16(quorum))
+	return clu.DeployChainWithDKG("Default chain", committee, uint16(quorum))
 }
 
-func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum uint16) (*Chain, error) {
+func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
+	apiHosts := clu.Config.ApiHosts(committeeNodes)
+	peeringHosts := clu.Config.PeeringHosts(committeeNodes)
+	return apilib.RunDKG(apiHosts, peeringHosts, threshold, timeout...)
+}
+
+func (clu *Cluster) DeployChainWithDKG(description string, committeeNodes []int, quorum uint16) (*Chain, error) {
+	stateAddr, err := clu.RunDKG(committeeNodes, quorum)
+	if err != nil {
+		return nil, err
+	}
+
+	return clu.DeployChain(description, committeeNodes, quorum, stateAddr)
+}
+
+func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum uint16, stateAddr ledgerstate.Address) (*Chain, error) {
 	ownerSeed := seed.NewSeed()
 
 	chain := &Chain{
@@ -67,13 +82,12 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 		Quorum:         quorum,
 		Cluster:        clu,
 	}
-
 	err := clu.GoshimmerClient().RequestFunds(chain.OriginatorAddress())
 	if err != nil {
-		return nil, xerrors.Errorf("RequestFunds: %w", err)
+		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
 
-	chainid, addr, err := apilib.DeployChain(apilib.CreateChainParams{
+	chainid, err := apilib.DeployChain(apilib.CreateChainParams{
 		Node:                  clu.GoshimmerClient(),
 		CommitteeApiHosts:     chain.ApiHosts(),
 		CommitteePeeringHosts: chain.PeeringHosts(),
@@ -83,12 +97,12 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 		Description:           description,
 		Textout:               os.Stdout,
 		Prefix:                "[cluster] ",
-	})
+	}, stateAddr)
 	if err != nil {
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
 
-	chain.Address = addr
+	chain.StateAddress = stateAddr
 	chain.ChainID = *chainid
 
 	return chain, nil

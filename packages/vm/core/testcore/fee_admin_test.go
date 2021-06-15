@@ -4,6 +4,8 @@
 package testcore
 
 import (
+	"testing"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -11,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func checkFees(chain *solo.Chain, contract string, expectedOf, expectedVf uint64) {

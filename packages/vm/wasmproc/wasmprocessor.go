@@ -6,6 +6,7 @@ package wasmproc
 import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -164,7 +165,7 @@ func (host *wasmProcessor) contract() coretypes.Hname {
 	return host.ctxView.Contract()
 }
 
-func (host *wasmProcessor) chainID() *coretypes.ChainID {
+func (host *wasmProcessor) chainID() *chainid.ChainID {
 	if host.ctx != nil {
 		return host.ctx.ChainID()
 	}

@@ -3,9 +3,10 @@ package core
 import (
 	"bytes"
 	"fmt"
+	"sort"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"sort"
 )
 
 func init() {

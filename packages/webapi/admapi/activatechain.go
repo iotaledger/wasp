@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/plugins/chains"
@@ -30,17 +31,17 @@ func handleActivateChain(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid alias address: %s", c.Param("chainID")))
 	}
-	chainID, err := coretypes.ChainIDFromAddress(aliasAddress)
+	chainID, err := chainid.ChainIDFromAddress(aliasAddress)
 	if err != nil {
 		return err
 	}
-	bd, err := registry.DefaultRegistry().ActivateChainRecord(chainID)
+	rec, err := registry.DefaultRegistry().ActivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}
 
-	log.Debugw("calling Chains.Activate", "chainID", bd.ChainID.String())
-	if err := chains.AllChains().Activate(bd); err != nil {
+	log.Debugw("calling Chains.Activate", "chainID", rec.ChainID.String())
+	if err := chains.AllChains().Activate(rec); err != nil {
 		return err
 	}
 
@@ -52,7 +53,7 @@ func handleDeactivateChain(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain id: %s", c.Param("chainID")))
 	}
-	chainID, err := coretypes.ChainIDFromAddress(scAddress)
+	chainID, err := chainid.ChainIDFromAddress(scAddress)
 	if err != nil {
 		return err
 	}

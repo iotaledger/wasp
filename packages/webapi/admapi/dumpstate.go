@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -28,7 +30,7 @@ func addStateEndpoints(adm echoswagger.ApiGroup) {
 }
 
 func handleDumpSCState(c echo.Context) error {
-	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid SC id: %s", c.Param("chainID")))
 	}

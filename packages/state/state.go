@@ -4,17 +4,16 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/kv/optimism"
-
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -22,7 +21,7 @@ import (
 // region VirtualState /////////////////////////////////////////////////
 
 type virtualState struct {
-	chainID   coretypes.ChainID
+	chainID   chainid.ChainID
 	db        kvstore.KVStore
 	empty     bool
 	kvs       *buffered.BufferedKVStore
@@ -31,7 +30,7 @@ type virtualState struct {
 }
 
 // newVirtualState creates VirtualState interface with the partition of KVStore
-func newVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
+func newVirtualState(db kvstore.KVStore, chainID *chainid.ChainID) *virtualState {
 	sub := subRealm(db, []byte{dbkeys.ObjectTypeStateVariable})
 	ret := &virtualState{
 		db:        db,
@@ -45,7 +44,7 @@ func newVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualSta
 	return ret
 }
 
-func newZeroVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, *block) {
+func newZeroVirtualState(db kvstore.KVStore, chainID *chainid.ChainID) (*virtualState, *block) {
 	ret := newVirtualState(db, chainID)
 	originBlock := NewOriginBlock()
 	if err := ret.ApplyBlock(originBlock); err != nil {

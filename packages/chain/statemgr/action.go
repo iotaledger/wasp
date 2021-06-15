@@ -22,14 +22,17 @@ func (sm *stateManager) takeAction() {
 	}
 	sm.pullStateIfNeeded()
 	sm.doSyncActionIfNeeded()
-	sm.notifyStateTransitionIfNeeded()
+	sm.notifyChainTransitionIfNeeded()
 	sm.storeSyncingData()
 }
 
-func (sm *stateManager) notifyStateTransitionIfNeeded() {
-	if sm.notifiedSyncedStateHash == sm.solidState.Hash() {
+func (sm *stateManager) notifyChainTransitionIfNeeded() {
+	if sm.stateOutput == nil {
+		return
+	}
+	if sm.notifiedAnchorOutputID == sm.stateOutput.ID() {
 		sm.log.Debugf("notifyStateTransition not needed: already notified about state %v at index #%d",
-			sm.notifiedSyncedStateHash.String(), sm.solidState.BlockIndex())
+			coretypes.OID(sm.notifiedAnchorOutputID), sm.solidState.BlockIndex())
 		return
 	}
 	if !sm.isSynced() {
@@ -37,12 +40,16 @@ func (sm *stateManager) notifyStateTransitionIfNeeded() {
 		return
 	}
 
-	sm.notifiedSyncedStateHash = sm.solidState.Hash()
+	sm.notifiedAnchorOutputID = sm.stateOutput.ID()
 	stateOutputID := sm.stateOutput.ID()
 	stateOutputIndex := sm.stateOutput.GetStateIndex()
-	sm.log.Debugf("notifyStateTransition: state %v IS SYNCED to index %v and is approved by output %v",
-		sm.notifiedSyncedStateHash.String(), stateOutputIndex, coretypes.OID(stateOutputID))
-	go sm.chain.Events().StateTransition().Trigger(&chain.StateTransitionEventData{
+	gu := ""
+	if sm.stateOutput.GetIsGovernanceUpdated() {
+		gu = " (rotation) "
+	}
+	sm.log.Debugf("notifyStateTransition: %sstate IS SYNCED to index %d and is approved by output %v",
+		gu, stateOutputIndex, coretypes.OID(stateOutputID))
+	go sm.chain.Events().ChainTransition().Trigger(&chain.ChainTransitionEventData{
 		VirtualState:    sm.solidState.Clone(),
 		ChainOutput:     sm.stateOutput,
 		OutputTimestamp: sm.stateOutputTimestamp,

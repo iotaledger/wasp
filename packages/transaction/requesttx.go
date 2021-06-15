@@ -5,12 +5,13 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 )
 
 type RequestParams struct {
-	ChainID    coretypes.ChainID
+	ChainID    chainid.ChainID
 	Contract   coretypes.Hname
 	EntryPoint coretypes.Hname
 	Transfer   *ledgerstate.ColoredBalances

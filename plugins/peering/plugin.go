@@ -53,7 +53,6 @@ func Init(suite *pairing.SuiteBn256) *node.Plugin {
 		if err != nil {
 			log.Panicf("Init.peering: %w", err)
 		}
-		log.Infof("------------- NetID is %s ------------------", peerNetworkConfig.OwnNetID())
 	}
 	run := func(_ *node.Plugin) {
 		err := daemon.BackgroundWorker(
