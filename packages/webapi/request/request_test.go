@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -16,7 +17,7 @@ import (
 )
 
 func createMockedGetChain(t *testing.T) getChainFn {
-	return func(chainID *coretypes.ChainID) chain.ChainCore {
+	return func(chainID *chainid.ChainID) chain.ChainCore {
 		return testchain.NewMockedChainCore(t, *chainID, testlogger.NewLogger(t))
 	}
 }

@@ -4,24 +4,21 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/gommon/log"
 	"github.com/pangpanglabs/echoswagger/v2"
 	"golang.org/x/xerrors"
 )
 
-type getChainFn func(chainID *coretypes.ChainID) chain.ChainCore
+type getChainFn func(chainID *chainid.ChainID) chain.ChainCore
 
-func AddEndpoints(server echoswagger.ApiRouter, getChain getChainFn, log *logger.Logger) {
+func AddEndpoints(server echoswagger.ApiRouter, getChain getChainFn) {
 	instance := &offLedgerReqAPI{
 		getChain: getChain,
-		log:      log,
 	}
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
 		SetSummary("New off-ledger request").
@@ -31,7 +28,6 @@ func AddEndpoints(server echoswagger.ApiRouter, getChain getChainFn, log *logger
 
 type offLedgerReqAPI struct {
 	getChain getChainFn
-	log      *logger.Logger
 }
 
 func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
@@ -45,7 +41,6 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 		return xerrors.Errorf("Unknown chain: %s", chainID.Base58())
 	}
 	ch.ReceiveOffLedgerRequest(offLedgerReq)
-	log.Infof("HMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM")
 
 	// TODO consider about calling a view to verify the request has been processed
 	return c.NoContent(http.StatusAccepted)
@@ -55,8 +50,8 @@ type OffLedgerRequestBody struct {
 	Request string `json:"request"`
 }
 
-func parseParams(c echo.Context) (chainID *coretypes.ChainID, req *request.RequestOffLedger, err error) {
-	chainID, err = coretypes.ChainIDFromBase58(c.Param("chainID"))
+func parseParams(c echo.Context) (chainID *chainid.ChainID, req *request.RequestOffLedger, err error) {
+	chainID, err = chainid.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}

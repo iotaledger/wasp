@@ -106,14 +106,14 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 const gossipUpToNPeers = 10
 
 func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
-	c.log.Infof("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW")
 	if !c.mempool.ReceiveRequest(req) {
 		return
 	}
 
 	msgData := chain.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
-	if c.committee != nil {
-		c.committee.SendMsgToPeers(chain.MsgOffLedgerRequest, msgData, time.Now().UnixNano())
+	committee := c.getCommittee()
+	if committee != nil {
+		committee.SendMsgToPeers(chain.MsgOffLedgerRequest, msgData, time.Now().UnixNano())
 		return
 	}
 	(*c.peers).SendMsgToRandomPeersSimple(gossipUpToNPeers, chain.MsgOffLedgerRequest, msgData)
