@@ -206,7 +206,6 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.log.Error(err)
 			return
 		}
-		// TODO check if msg.ChainID matches the current chain? - not sure if needed
 		c.ReceiveOffLedgerRequest(msg.Req)
 		return
 

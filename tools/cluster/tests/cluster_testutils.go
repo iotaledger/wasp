@@ -14,7 +14,6 @@ import (
 )
 
 func deployIncCounterSC(t *testing.T, chain *cluster.Chain, counter *cluster.MessageCounter) {
-
 	name := "inncounter1"
 	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"

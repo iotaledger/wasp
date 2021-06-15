@@ -55,8 +55,6 @@ func parseParams(c echo.Context) (chainID *chainid.ChainID, req *request.Request
 	if err != nil {
 		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}
-	// reqBase64 := c.FormValue("request")
-	// req, err = request.NewRequestOffLedgerFromBase64(reqBase64)
 
 	r := new(OffLedgerRequestBody)
 	if err = c.Bind(r); err != nil {

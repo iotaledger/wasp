@@ -155,9 +155,13 @@ func (m *mempool) ReceiveRequests(reqs ...coretypes.Request) {
 	}
 }
 
+// ReceiveRequest used to receive off-ledger request
 func (m *mempool) ReceiveRequest(req coretypes.Request) bool {
 	// could be worth it to check if the request was already processed in the blocklog.
 	// Not adding this check now to avoid overhead, but should be looked into in case re-gossiping happens a lot
+	if _, exists := m.inBuffer[req.ID()]; exists {
+		return false
+	}
 	return m.addToInBuffer(req)
 }
 
