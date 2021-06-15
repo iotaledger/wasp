@@ -107,17 +107,14 @@ const gossipUpToNPeers = 10
 
 func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
 	if !c.mempool.ReceiveRequest(req) {
-		c.log.Infof("!!! - already in mempool")
 		return
 	}
 	msgData := chain.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
 	committee := c.getCommittee()
 	if committee != nil {
-		c.log.Infof("!!! - I'm part of the committee, sending to the other committee nodes")
 		committee.SendMsgToPeers(chain.MsgOffLedgerRequest, msgData, time.Now().UnixNano())
 		return
 	}
-	c.log.Infof("!!! - no committee, sending to peers")
 	(*c.peers).SendMsgToRandomPeersSimple(gossipUpToNPeers, chain.MsgOffLedgerRequest, msgData)
 }
 
