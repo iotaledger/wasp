@@ -41,13 +41,13 @@ func TestBasicAccountsN1(t *testing.T) {
 	})
 	check(err, t)
 	defer counter.Close()
-	chain, err := clu.DeployChain("single_node_chain", chainNodes, 1)
+	chain, err := clu.DeployChainWithDKG("single_node_chain", chainNodes, 1)
 	check(err, t)
 	testBasicAccounts(t, chain, counter)
 }
 
 func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.MessageCounter) {
-	name := "inncounter1"
+	name := "inccounter1"
 	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
 	programHash := inccounter.Interface.ProgramHash

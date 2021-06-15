@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/registry"
+
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 
 	"github.com/iotaledger/wasp/packages/util"
 
@@ -54,8 +55,8 @@ type mockedEnv struct {
 	NodeIDs           []string
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
-	DKSRegistries     []registry.DKShareRegistryProvider
-	ChainID           coretypes.ChainID
+	DKSRegistries     []coretypes.DKShareRegistryProvider
+	ChainID           chainid.ChainID
 	MockedACS         chain.AsynchronousCommonSubsetRunner
 	InitStateOutput   *ledgerstate.AliasOutput
 	mutex             sync.Mutex
@@ -140,7 +141,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 	ret.InitStateOutput, err = utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
-	ret.ChainID = *coretypes.NewChainID(ret.InitStateOutput.GetAliasAddress())
+	ret.ChainID = *chainid.NewChainID(ret.InitStateOutput.GetAliasAddress())
 
 	for i := range ret.Nodes {
 		ret.Nodes[i] = ret.newNode(uint16(i))

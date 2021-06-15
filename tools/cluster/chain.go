@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -29,9 +31,9 @@ type Chain struct {
 
 	CommitteeNodes []int
 	Quorum         uint16
-	Address        ledgerstate.Address
+	StateAddress   ledgerstate.Address
 
-	ChainID coretypes.ChainID
+	ChainID chainid.ChainID
 
 	Cluster *Cluster
 }

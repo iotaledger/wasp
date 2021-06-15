@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -41,7 +43,7 @@ type MockedEnv struct {
 	NodeIDs           []string
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
-	ChainID           coretypes.ChainID
+	ChainID           chainid.ChainID
 	mutex             sync.Mutex
 	Nodes             map[string]*MockedNode
 	push              bool
@@ -95,7 +97,7 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 	retOut, err := utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
-	ret.ChainID = *coretypes.NewChainID(retOut.GetAliasAddress())
+	ret.ChainID = *chainid.NewChainID(retOut.GetAliasAddress())
 
 	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 
@@ -283,7 +285,7 @@ func (node *MockedNode) WaitSyncBlockIndex(index uint32, timeout time.Duration) 
 }
 
 func (node *MockedNode) OnStateTransitionMakeNewStateTransition(limit uint32) {
-	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {
+	node.ChainCore.OnStateTransition(func(msg *chain.ChainTransitionEventData) {
 		chain.LogStateTransition(msg, nil, node.Log)
 		if msg.ChainOutput.GetStateIndex() < limit {
 			go node.StateTransition.NextState(msg.VirtualState, msg.ChainOutput, time.Now())
@@ -292,7 +294,7 @@ func (node *MockedNode) OnStateTransitionMakeNewStateTransition(limit uint32) {
 }
 
 func (node *MockedNode) OnStateTransitionDoNothing() {
-	node.ChainCore.OnStateTransition(func(msg *chain.StateTransitionEventData) {})
+	node.ChainCore.OnStateTransition(func(msg *chain.ChainTransitionEventData) {})
 }
 
 func (node *MockedNode) MakeNewStateTransition() {

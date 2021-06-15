@@ -9,8 +9,6 @@ package root
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
@@ -21,7 +19,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 // initialize handles constructor, the "init" request. This is the first call to the chain
@@ -56,33 +56,13 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	contractRegistry := collections.NewMap(state, VarContractRegistry)
 	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
 
-	// install empty default contract at hname == 0
-	rec := NewContractRecord(_default.Interface, &coretypes.AgentID{})
-	contractRegistry.MustSetAt(_default.Interface.Hname().Bytes(), EncodeContractRecord(rec))
-
-	// install root contract itself
-	rec = NewContractRecord(Interface, &coretypes.AgentID{})
-	contractRegistry.MustSetAt(Interface.Hname().Bytes(), EncodeContractRecord(rec))
-
-	// deploy blob contract
-	rec = NewContractRecord(blob.Interface, &coretypes.AgentID{})
-	err := storeAndInitContract(ctx, rec, nil)
-	a.Require(err == nil, "root.init.fail: %v", err)
-
-	// deploy accounts
-	rec = NewContractRecord(accounts.Interface, &coretypes.AgentID{})
-	err = storeAndInitContract(ctx, rec, nil)
-	a.Require(err == nil, "root.init.fail: %v", err)
-
-	// deploy eventlog
-	rec = NewContractRecord(eventlog.Interface, &coretypes.AgentID{})
-	err = storeAndInitContract(ctx, rec, nil)
-	a.Require(err == nil, "root.init.fail: %v", err)
-
-	// deploy blocklog
-	rec = NewContractRecord(blocklog.Interface, &coretypes.AgentID{})
-	err = storeAndInitContract(ctx, rec, nil)
-	a.Require(err == nil, "root.init.fail: %v", err)
+	mustStoreContract(ctx, _default.Interface, a)
+	mustStoreContract(ctx, Interface, a)
+	mustStoreAndInitCoreContract(ctx, blob.Interface, a)
+	mustStoreAndInitCoreContract(ctx, accounts.Interface, a)
+	mustStoreAndInitCoreContract(ctx, eventlog.Interface, a)
+	mustStoreAndInitCoreContract(ctx, blocklog.Interface, a)
+	mustStoreAndInitCoreContract(ctx, governance.Interface, a)
 
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.Set(VarChainID, codec.EncodeChainID(*chainID))
@@ -91,12 +71,6 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if feeColorSet {
 		state.Set(VarFeeColor, codec.EncodeColor(feeColor))
 	}
-	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", _default.Interface.Name, _default.Interface.Hname())
-	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", Interface.Name, Interface.Hname())
-	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", blob.Interface.Name, blob.Interface.Hname())
-	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", accounts.Interface.Name, accounts.Interface.Hname())
-	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", eventlog.Interface.Name, eventlog.Interface.Hname())
-	ctx.Log().Debugf("root.initialize.deployed: '%s', hname = %s", blocklog.Interface.Name, blocklog.Interface.Hname())
 	ctx.Log().Debugf("root.initialize.success")
 	return nil, nil
 }
@@ -134,13 +108,14 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a.Require(err == nil, "root.deployContract.fail 1: %v", err)
 
 	// VM loaded successfully. Storing contract in the registry and calling constructor
-	err = storeAndInitContract(ctx, &ContractRecord{
+	mustStoreContractRecord(ctx, &ContractRecord{
 		ProgramHash: progHash,
 		Description: description,
 		Name:        name,
 		Creator:     ctx.Caller(),
-	}, initParams)
-	a.Require(err == nil, "root.deployContract.fail 2: %v", err)
+	}, a)
+	_, err = ctx.Call(coretypes.Hn(name), coretypes.EntryPointInit, initParams, nil)
+	a.RequireNoError(err)
 
 	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",
 		name, coretypes.Hn(name), progHash.String(), description))

@@ -2,8 +2,11 @@ package consensus
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/coretypes/rotate"
 
 	"github.com/iotaledger/wasp/packages/transaction"
 
@@ -101,12 +104,20 @@ func (c *consensus) runVMIfNeeded() {
 		c.resetWorkflow()
 		return
 	}
+	if vmTask := c.prepareVMTask(reqs); vmTask != nil {
+		c.workflow.vmStarted = true
+		go c.vmRunner.Run(vmTask)
+		c.log.Debugf("runVM: VM started")
+	}
+}
+
+func (c *consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
 	// here reqs as as set is deterministic. Must be sorted to have fully deterministic list
 	sort.Slice(reqs, func(i, j int) bool {
 		switch {
-		case reqs[i].Order() < reqs[j].Order():
+		case reqs[i].Nonce() < reqs[j].Nonce():
 			return true
-		case reqs[i].Order() > reqs[j].Order():
+		case reqs[i].Nonce() > reqs[j].Nonce():
 			return false
 		default:
 			return bytes.Compare(reqs[i].ID().Bytes(), reqs[j].ID().Bytes()) < 0
@@ -127,10 +138,10 @@ func (c *consensus) runVMIfNeeded() {
 		Log:                c.log,
 	}
 	if !task.SolidStateBaseline.IsValid() {
-		c.log.Debugf("runVM: solid state baseline is invalid. Not even start VM")
-		return
+		c.log.Debugf("runVM: solid state baseline is invalid. Do not even start the VM")
+		return nil
 	}
-	task.OnFinish = func(_ dict.Dict, _ error, vmError error) {
+	task.OnFinish = func(_ dict.Dict, err error, vmError error) {
 		if vmError != nil {
 			c.log.Errorf("runVM OnFinish callback: VM task failed: %v", vmError)
 			return
@@ -141,10 +152,7 @@ func (c *consensus) runVMIfNeeded() {
 			Task: task,
 		})
 	}
-
-	c.workflow.vmStarted = true
-	go c.vmRunner.Run(task)
-	c.log.Debugf("runVM: VM started")
+	return task
 }
 
 const postSeqStepMilliseconds = 1000
@@ -203,21 +211,25 @@ func (c *consensus) checkQuorum() {
 		return
 	}
 	c.log.Debugf("checkQuorum: all signatures are valid")
-	tx, approvingOutID, err := c.finalizeTransaction(sigSharesToAggregate)
+	tx, chainOutput, err := c.finalizeTransaction(sigSharesToAggregate)
 	if err != nil {
 		c.log.Errorf("checkQuorum finalizeTransaction fail: %v", err)
 		return
 	}
 
 	c.finalTx = tx
-	c.approvingOutputID = approvingOutID
 
-	go c.chain.ReceiveMessage(&chain.StateCandidateMsg{
-		State:             c.resultState,
-		ApprovingOutputID: approvingOutID,
-	})
-	c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v",
-		c.resultState.BlockIndex(), coretypes.OID(approvingOutID))
+	if !chainOutput.GetIsGovernanceUpdated() {
+		// if it is not state controller rotation, sending message to state manager
+		// Otherwise state manager is not notified
+		chainOutputID := chainOutput.ID()
+		go c.chain.ReceiveMessage(&chain.StateCandidateMsg{
+			State:             c.resultState,
+			ApprovingOutputID: chainOutputID,
+		})
+		c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v",
+			c.resultState.BlockIndex(), coretypes.OID(chainOutputID))
+	}
 
 	// calculate deterministic and pseudo-random order and postTxDeadline among contributors
 	var postSeqNumber uint16
@@ -298,9 +310,8 @@ func (c *consensus) prepareBatchProposal(reqs []coretypes.Request) *batchProposa
 	feeDestination := coretypes.NewAgentID(c.chain.ID().AsAddress(), 0)
 	// sign state output ID. It will be used to produce unpredictable entropy in consensus
 	sigShare, err := c.committee.DKShare().SignShare(c.stateOutput.ID().Bytes())
-	if err != nil {
-		c.log.Panicf("prepareBatchProposal: signing output ID %v failed: %v", coretypes.OID(c.stateOutput.ID()), err)
-	}
+	c.assert.RequireNoError(err, fmt.Sprintf("prepareBatchProposal: signing output ID %v failed", coretypes.OID(c.stateOutput.ID())))
+
 	ret := &batchProposal{
 		ValidatorIndex:          c.committee.OwnPeerIndex(),
 		StateOutputID:           c.stateOutput.ID(),
@@ -460,12 +471,14 @@ func (c *consensus) processInclusionState(msg *chain.InclusionStateMsg) {
 	}
 }
 
-func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, ledgerstate.OutputID, error) {
+func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, *ledgerstate.AliasOutput, error) {
 	signatureWithPK, err := c.committee.DKShare().RecoverFullSignature(sigSharesToAggregate, c.resultTxEssence.Bytes())
 	if err != nil {
-		return nil, ledgerstate.OutputID{}, xerrors.Errorf("finalizeTransaction RecoverFullSignature fail: %w", err)
+		return nil, nil, xerrors.Errorf("finalizeTransaction RecoverFullSignature fail: %w", err)
 	}
 	sigUnlockBlock := ledgerstate.NewSignatureUnlockBlock(ledgerstate.NewBLSSignature(*signatureWithPK))
+
+	// check consistency ---------------- check if chain inputs were consumed
 	chainInput := ledgerstate.NewUTXOInput(c.stateOutput.ID())
 	var indexChainInput = -1
 	for i, inp := range c.resultTxEssence.Inputs() {
@@ -474,9 +487,8 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 			break
 		}
 	}
-	if indexChainInput < 0 {
-		c.log.Panicf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", coretypes.OID(c.stateOutput.ID()))
-	}
+	c.assert.Require(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", coretypes.OID(c.stateOutput.ID())))
+	// check consistency ---------------- end
 
 	blocks := make([]ledgerstate.UnlockBlock, len(c.resultTxEssence.Inputs()))
 	for i := range c.resultTxEssence.Inputs() {
@@ -487,9 +499,9 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 		}
 	}
 	tx := ledgerstate.NewTransaction(c.resultTxEssence, blocks)
-	approvingOutputID := transaction.GetAliasOutput(tx, c.chain.ID().AsAddress()).ID()
-	c.log.Debugf("finalizeTransaction: transaction %v finalised; approving output ID: %v", tx.ID().Base58(), coretypes.OID(approvingOutputID))
-	return tx, approvingOutputID, nil
+	chained := transaction.GetAliasOutput(tx, c.chain.ID().AsAddress())
+	c.log.Debugf("finalizeTransaction: transaction %v finalised; approving output ID: %v", tx.ID().Base58(), coretypes.OID(chained.ID()))
+	return tx, chained, nil
 }
 
 func (c *consensus) setNewState(msg *chain.StateTransitionMsg) {
@@ -497,8 +509,12 @@ func (c *consensus) setNewState(msg *chain.StateTransitionMsg) {
 	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp
 	c.acsSessionID = util.MustUint64From8Bytes(hashing.HashData(msg.StateOutput.ID().Bytes()).Bytes()[:8])
-	c.log.Debugf("SET NEW STATE #%d, output: %s, hash: %s, sessionID: %v",
-		c.stateOutput.GetStateIndex(), coretypes.OID(c.stateOutput.ID()), c.currentState.Hash().String(), c.acsSessionID)
+	r := ""
+	if c.stateOutput.GetIsGovernanceUpdated() {
+		r = " (rotate) "
+	}
+	c.log.Debugf("SET NEW STATE #%d%s, output: %s, hash: %s",
+		msg.StateOutput.GetStateIndex(), r, coretypes.OID(msg.StateOutput.ID()), msg.State.Hash().String())
 	c.resetWorkflow()
 }
 
@@ -519,7 +535,6 @@ func (c *consensus) resetWorkflow() {
 }
 
 func (c *consensus) processVMResult(result *vm.VMTask) {
-	c.log.Debugf("processVMResult")
 	if !c.workflow.vmStarted ||
 		c.workflow.vmResultSignedAndBroadcasted ||
 		c.acsSessionID != result.ACSSessionID {
@@ -528,15 +543,26 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 			c.workflow.vmStarted, c.workflow.vmResultSignedAndBroadcasted, c.acsSessionID, result.ACSSessionID)
 		return
 	}
-	essenceBytes := result.ResultTransactionEssence.Bytes()
-	essenceHash := hashing.HashData(essenceBytes)
-	c.log.Debugf("processVMResult: VM result: essence hash: %s", essenceHash)
-	sigShare, err := c.committee.DKShare().SignShare(essenceBytes)
-	if err != nil {
-		c.log.Panicf("processVMResult: error while signing transaction %v", err)
+	rotation := result.RotationAddress != nil
+	if rotation {
+		// if VM returned rotation, we ignore the updated virtual state and produce governance state controller
+		// rotation transaction. It does not change state
+		c.resultTxEssence = c.makeRotateStateControllerTransaction(result)
+		c.resultState = nil
+	} else {
+		// It is and ordinary state transition
+		c.assert.Require(result.ResultTransactionEssence != nil, "processVMResult: result.ResultTransactionEssence != nil")
+		c.resultTxEssence = result.ResultTransactionEssence
+		c.resultState = result.VirtualState
 	}
-	c.resultTxEssence = result.ResultTransactionEssence
-	c.resultState = result.VirtualState
+
+	essenceBytes := c.resultTxEssence.Bytes()
+	essenceHash := hashing.HashData(essenceBytes)
+	c.log.Debugf("processVMResult: essence hash: %s. rotate state controller: %v", essenceHash, rotation)
+
+	sigShare, err := c.committee.DKShare().SignShare(essenceBytes)
+	c.assert.RequireNoError(err, "processVMResult: ")
+
 	c.resultSignatures[c.committee.OwnPeerIndex()] = &chain.SignedResultMsg{
 		SenderIndex: c.committee.OwnPeerIndex(),
 		EssenceHash: essenceHash,
@@ -551,6 +577,21 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	c.workflow.vmResultSignedAndBroadcasted = true
 
 	c.log.Debugf("processVMResult: signed and broadcasted: essence hash: %s", msg.EssenceHash.String())
+}
+
+func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledgerstate.TransactionEssence {
+	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Base58())
+
+	// TODO access and consensus pledge
+	essence, err := rotate.MakeRotateStateControllerTransaction(
+		task.RotationAddress,
+		task.ChainInput,
+		task.Timestamp,
+		identity.ID{},
+		identity.ID{},
+	)
+	c.assert.RequireNoError(err, "makeRotateStateControllerTransaction: ")
+	return essence
 }
 
 func (c *consensus) receiveSignedResult(msg *chain.SignedResultMsg) {

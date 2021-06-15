@@ -6,6 +6,8 @@ package chainimpl
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -24,24 +26,25 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
-func (c *chainObj) ID() *coretypes.ChainID {
+func (c *chainObj) ID() *chainid.ChainID {
 	return &c.chainID
 }
 
 func (c *chainObj) GlobalStateSync() coreutil.ChainStateSync {
-	return c.globalSync
+	return c.chainStateSync
 }
 
 func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {
-	if c.committee == nil {
+	cmt := c.getCommittee()
+	if cmt == nil {
 		return nil
 	}
 	return &chain.CommitteeInfo{
-		Address:       c.committee.DKShare().Address,
-		Size:          c.committee.Size(),
-		Quorum:        c.committee.Quorum(),
-		QuorumIsAlive: c.committee.QuorumIsAlive(),
-		PeerStatus:    c.committee.PeerStatus(),
+		Address:       cmt.DKShare().Address,
+		Size:          cmt.Size(),
+		Quorum:        cmt.Quorum(),
+		QuorumIsAlive: cmt.QuorumIsAlive(),
+		PeerStatus:    cmt.PeerStatus(),
 	}
 }
 
@@ -67,14 +70,15 @@ func (c *chainObj) Dismiss(reason string) {
 
 		c.mempool.Close()
 		c.stateMgr.Close()
-		if c.committee != nil {
-			c.committee.Close()
+		cmt := c.getCommittee()
+		if cmt != nil {
+			cmt.Close()
 		}
 		if c.consensus != nil {
 			c.consensus.Close()
 		}
 		c.eventRequestProcessed.DetachAll()
-		c.eventStateTransition.DetachAll()
+		c.eventChainTransition.DetachAll()
 		c.eventSynced.DetachAll()
 	})
 
@@ -172,8 +176,8 @@ func (c *chainObj) RequestProcessed() *events.Event {
 	return c.eventRequestProcessed
 }
 
-func (c *chainObj) StateTransition() *events.Event {
-	return c.eventStateTransition
+func (c *chainObj) ChainTransition() *events.Event {
+	return c.eventChainTransition
 }
 
 func (c *chainObj) StateSynced() *events.Event {
@@ -186,7 +190,7 @@ func (c *chainObj) Events() chain.ChainEvents {
 
 // GetStateReader returns a new copy of the optimistic state reader, with own baseline
 func (c *chainObj) GetStateReader() state.OptimisticStateReader {
-	return state.NewOptimisticStateReader(c.db, c.globalSync)
+	return state.NewOptimisticStateReader(c.db, c.chainStateSync)
 }
 
 func (c *chainObj) Log() *logger.Logger {

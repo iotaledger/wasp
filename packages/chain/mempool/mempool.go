@@ -5,15 +5,18 @@
 package mempool
 
 import (
+	"bytes"
 	"sync"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
+	"github.com/iotaledger/wasp/packages/coretypes/rotate"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
 type mempool struct {
@@ -107,24 +110,26 @@ func (m *mempool) addToPool(req coretypes.Request) bool {
 		}
 	}
 	reqid := req.ID()
+
+	// checking in the state if request is processed. Reading may fail
 	m.stateReader.SetBaseline()
 	alreadyProcessed, err := blocklog.IsRequestProcessed(m.stateReader.KVStoreReader(), &reqid)
 	if err != nil {
-		// may be invalid state. Do not remove from in buffer yet
+		// may be invalidated state. Do not remove from in-buffer yet
 		return false
 	}
 	if alreadyProcessed {
-		// remove from buffer but not include into the pool
+		// remove from the in-buffer but not include into the pool
 		return true
 	}
-
 	m.poolMutex.Lock()
 	defer m.poolMutex.Unlock()
 
 	if _, inPool := m.pool[reqid]; inPool {
-		// already there, remove from in buffer
+		// already there, remove from the in-buffer
 		return true
 	}
+
 	// put the request to the pool
 	nowis := time.Now()
 	m.inPoolCounter++
@@ -138,7 +143,7 @@ func (m *mempool) addToPool(req coretypes.Request) bool {
 	if _, err := req.SolidifyArgs(m.blobCache); err != nil {
 		m.log.Errorf("ReceiveRequest.SolidifyArgs: %s", err)
 	}
-	// remove from in buffer
+	// return true to remove from the in-buffer
 	return true
 }
 
@@ -160,26 +165,29 @@ func (m *mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 		}
 		m.outPoolCounter++
 		delete(m.pool, rid)
-
 		m.traceOut(rid)
 	}
 }
 
-const traceInOut = true
+const traceInOut = false
 
 func (m *mempool) traceIn(req coretypes.Request) {
+	rotateStr := ""
+	if rotate.IsRotateStateControllerRequest(req) {
+		rotateStr = "(rotate) "
+	}
 	tl := req.TimeLock()
 	if traceInOut {
 		if tl.IsZero() {
-			m.log.Infof("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.inPoolCounter, m.outPoolCounter)
+			m.log.Infof("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
 		} else {
-			m.log.Infof("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.inPoolCounter, m.outPoolCounter, tl.Sub(time.Now()))
+			m.log.Infof("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, tl.Sub(time.Now()))
 		}
 	} else {
 		if tl.IsZero() {
-			m.log.Debugf("IN MEMPOOL %s (+%d / -%d)", req.ID(), m.inPoolCounter, m.outPoolCounter)
+			m.log.Debugf("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
 		} else {
-			m.log.Debugf("IN MEMPOOL %s (+%d / -%d) timelocked for %v", req.ID(), m.inPoolCounter, m.outPoolCounter, tl.Sub(time.Now()))
+			m.log.Debugf("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, tl.Sub(time.Now()))
 		}
 	}
 }
@@ -202,7 +210,9 @@ func isRequestReady(ref *requestRef, nowis time.Time) bool {
 }
 
 // ReadyNow returns preliminary batch of requests for consensus.
-// Note that later status of request may change due to time change and time constraints
+// Note that later status of request may change due to the time change and time constraints
+// If there's at least one committee rotation request in the mempool, the ReadyNow returns
+// batch with only one request, the oldest committee rotation request
 func (m *mempool) ReadyNow(now ...time.Time) []coretypes.Request {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
@@ -211,11 +221,38 @@ func (m *mempool) ReadyNow(now ...time.Time) []coretypes.Request {
 	if len(now) > 0 {
 		nowis = now[0]
 	}
+	var oldestRotate coretypes.Request
+	var oldestRotateTime time.Time
+
 	ret := make([]coretypes.Request, 0, len(m.pool))
 	for _, ref := range m.pool {
-		if isRequestReady(ref, nowis) {
-			ret = append(ret, ref.req)
+		if !isRequestReady(ref, nowis) {
+			continue
 		}
+		ret = append(ret, ref.req)
+		if !rotate.IsRotateStateControllerRequest(ref.req) {
+			continue
+		}
+		// selecting oldest rotate request
+		if oldestRotate == nil {
+			oldestRotate = ref.req
+			oldestRotateTime = ref.whenReceived
+		} else {
+			switch {
+			case ref.whenReceived.Before(oldestRotateTime):
+				oldestRotate = ref.req
+				oldestRotateTime = ref.whenReceived
+			case ref.whenReceived.Equal(oldestRotateTime):
+				// for full determinism we take inti account not only time but also the request id
+				if bytes.Compare(ref.req.ID().Bytes(), oldestRotate.ID().Bytes()) < 0 {
+					oldestRotate = ref.req
+					oldestRotateTime = ref.whenReceived
+				}
+			}
+		}
+	}
+	if oldestRotate != nil {
+		return []coretypes.Request{oldestRotate}
 	}
 	return ret
 }

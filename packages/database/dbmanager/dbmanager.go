@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/timeutil"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
@@ -33,14 +33,14 @@ func NewDBManager(log *logger.Logger, inMemory bool) *DBManager {
 		inMemory:  inMemory,
 	}
 	// registry db is created with an empty chainID
-	dbm.registryDB = dbm.createDB(&coretypes.ChainID{
+	dbm.registryDB = dbm.createDB(&chainid.ChainID{
 		AliasAddress: &ledgerstate.AliasAddress{},
 	})
 	dbm.registryStore = dbm.registryDB.NewStore()
 	return &dbm
 }
 
-func (m *DBManager) createDB(chainID *coretypes.ChainID) database.DB {
+func (m *DBManager) createDB(chainID *chainid.ChainID) database.DB {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -67,7 +67,7 @@ func (m *DBManager) GetRegistryKVStore() kvstore.KVStore {
 	return m.registryStore
 }
 
-func (m *DBManager) GetOrCreateKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
+func (m *DBManager) GetOrCreateKVStore(chainID *chainid.ChainID) kvstore.KVStore {
 	store := m.GetKVStore(chainID)
 	if store != nil {
 		return store
@@ -81,7 +81,7 @@ func (m *DBManager) GetOrCreateKVStore(chainID *coretypes.ChainID) kvstore.KVSto
 	return store
 }
 
-func (m *DBManager) GetKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
+func (m *DBManager) GetKVStore(chainID *chainid.ChainID) kvstore.KVStore {
 	return m.stores[chainID.Array()]
 }
 

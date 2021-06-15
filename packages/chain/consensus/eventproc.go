@@ -16,20 +16,6 @@ func (c *consensus) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 	c.takeAction()
 }
 
-func (c *consensus) EventVMResultCalculated(msg *chain.VMResultMsg) {
-	c.eventResultCalculatedMsgCh <- msg
-}
-func (c *consensus) eventResultCalculated(msg *chain.VMResultMsg) {
-	c.log.Debugf("VMResultMsg received (deprecated): block index: %d", msg.Task.VirtualState.BlockIndex())
-
-	if msg.Task.ChainInput.ID() != c.stateOutput.ID() {
-		c.log.Warnf("eventResultCalculated: VMResultMsg out of context")
-		return
-	}
-	c.processVMResult(msg.Task)
-	c.takeAction()
-}
-
 func (c *consensus) EventSignedResultMsg(msg *chain.SignedResultMsg) {
 	c.eventSignedResultMsgCh <- msg
 }
@@ -67,7 +53,6 @@ func (c *consensus) eventVMResultMsg(msg *chain.VMResultMsg) {
 	c.log.Debugf("VMResultMsg received: state index: %d state hash: %s essence hash: %s",
 		msg.Task.VirtualState.BlockIndex(), msg.Task.VirtualState.Hash(), essenceHash)
 	c.processVMResult(msg.Task)
-
 	c.takeAction()
 }
 

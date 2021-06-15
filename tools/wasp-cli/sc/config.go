@@ -8,13 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/spf13/viper"
@@ -146,7 +147,7 @@ type DeployParams struct {
 }
 
 func Deploy(params *DeployParams) (ledgerstate.Address, error) {
-	scAddress, _, err := waspapi.DeployChain(waspapi.CreateChainParams{
+	scAddress, _, err := waspapi.DeployChainWithDKG(waspapi.CreateChainParams{
 		Node:                  config.GoshimmerClient(),
 		CommitteeApiHosts:     config.CommitteeApi(params.Committee),
 		CommitteePeeringHosts: config.CommitteePeering(params.Committee),

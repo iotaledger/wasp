@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/transaction"
 )
@@ -14,7 +15,7 @@ import (
 type Client struct {
 	GoshimmerClient *goshimmer.Client
 	WaspClient      *client.WaspClient
-	ChainID         coretypes.ChainID
+	ChainID         chainid.ChainID
 	KeyPair         *ed25519.KeyPair
 }
 
@@ -22,7 +23,7 @@ type Client struct {
 func New(
 	goshimmerClient *goshimmer.Client,
 	waspClient *client.WaspClient,
-	chainID coretypes.ChainID,
+	chainID chainid.ChainID,
 	keyPair *ed25519.KeyPair,
 ) *Client {
 	return &Client{
