@@ -33,9 +33,7 @@ func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP) {
 	blob.AddEndpoints(pub)
 	info.AddEndpoints(pub)
 	reqstatus.AddEndpoints(pub)
-	// getChain is a workaround for testing (to use MockedChainCore), maybe there is a cleaner way
 	request.AddEndpoints(pub, getChain)
-	// request.AddEndpoints(pub, chains.AllChains().Get)
 	state.AddEndpoints(pub)
 
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")

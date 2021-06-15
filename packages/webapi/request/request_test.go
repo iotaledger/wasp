@@ -43,7 +43,7 @@ func TestNewRequest(t *testing.T) {
 		instance.handleNewRequest,
 		http.MethodPost,
 		routes.NewRequest(":chainID"),
-		map[string]string{"chainID": coretypes.RandomChainID().Base58()},
+		map[string]string{"chainID": chainid.RandomChainID().Base58()},
 		OffLedgerRequestBody{Request: dummyOffledgerRequest().Base64()},
 		nil,
 		http.StatusAccepted,
