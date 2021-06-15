@@ -6,12 +6,13 @@ package wasmproc
 import (
 	"encoding/binary"
 	"fmt"
+	"strings"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
-	"strings"
 )
 
 type ObjFactory func() WaspObject
