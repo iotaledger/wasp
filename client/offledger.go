@@ -8,6 +8,8 @@ import (
 )
 
 func (c *WaspClient) PostOffLedgerRequest(chainID *chainid.ChainID, req *request.RequestOffLedger) error {
-	data := model.OffLedgerRequestBody{Request: req.Bytes()}
+	data := model.OffLedgerRequestBody{
+		Request: model.NewBytes(req.Bytes()),
+	}
 	return c.do("POST", routes.NewRequest(chainID.Base58()), data, nil)
 }

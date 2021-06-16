@@ -25,7 +25,11 @@ func AddEndpoints(server echoswagger.ApiRouter, getChain getChainFn) {
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
 		SetSummary("New off-ledger request").
 		AddParamPath("", "chainID", "chainID represented in base58").
-		AddParamForm("", "request", "request in base64, or raw binary. specify mime-type accordingly", true).
+		AddParamBody(
+			model.OffLedgerRequestBody{Request: "base64 string"},
+			"Request",
+			"Offledger Request encoded in base64. Optinally, the body can be the binary representation of the offledger request, but mime-type must be specified to \"application/octet-stream\"",
+			false).
 		AddResponse(http.StatusAccepted, "Request submitted", nil, nil)
 }
 
@@ -60,7 +64,7 @@ func parseParams(c echo.Context) (chainID *chainid.ChainID, req *request.Request
 		if err = c.Bind(r); err != nil {
 			return nil, nil, httperrors.BadRequest("Error parsing request from payload")
 		}
-		req, err = request.NewRequestOffLedgerFromBytes(r.Request)
+		req, err = request.NewRequestOffLedgerFromBytes(r.Request.Bytes())
 		if err != nil {
 			return nil, nil, httperrors.BadRequest(fmt.Sprintf("Error constructing off-ledger request from base64 string: \"%s\"", r.Request))
 		}

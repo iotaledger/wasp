@@ -45,7 +45,7 @@ func TestNewRequestBase64(t *testing.T) {
 		http.MethodPost,
 		routes.NewRequest(":chainID"),
 		map[string]string{"chainID": chainid.RandomChainID().Base58()},
-		model.OffLedgerRequestBody{Request: dummyOffledgerRequest().Bytes()},
+		model.OffLedgerRequestBody{Request: model.NewBytes(dummyOffledgerRequest().Bytes())},
 		nil,
 		http.StatusAccepted,
 	)

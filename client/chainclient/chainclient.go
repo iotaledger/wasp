@@ -71,5 +71,5 @@ func (c *Client) PostOffLedgerRequest(
 ) (*request.RequestOffLedger, error) {
 	offledgerReq := request.NewRequestOffLedger(contractHname, entrypoint, args)
 	offledgerReq.Sign(c.KeyPair)
-	return c.WaspClient.PostOffLedgerRequest(&c.ChainID, offledgerReq)
+	return offledgerReq, c.WaspClient.PostOffLedgerRequest(&c.ChainID, offledgerReq)
 }
