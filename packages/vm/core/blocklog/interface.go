@@ -43,29 +43,29 @@ func init() {
 
 const (
 	// state variables
-	StateVarBlockIndex         = coreutil.StateVarBlockIndex
 	StateVarBlockRegistry      = "b"
+	StateVarControlAddresses   = "c"
 	StateVarRequestLookupIndex = "l"
 	StateVarRequestRecords     = "r"
-	StateVarControlAddresses   = "c"
+
 	// functions
-	FuncGetBlockInfo                 = "viewGetBlockInfo"
-	FuncGetLatestBlockInfo           = "viewGetLatestBlockInfo"
-	FuncGetRequestLogRecord          = "viewGetRequestLogRecord"
-	FuncGetRequestLogRecordsForBlock = "viewGetRequestLogRecordsForBlock"
-	FuncGetRequestIDsForBlock        = "viewGetRequestIDsForBlock"
-	FuncIsRequestProcessed           = "viewIsRequestProcessed"
-	FuncControlAddresses             = "viewControlAddresses"
+	FuncControlAddresses             = "controlAddresses"
+	FuncGetBlockInfo                 = "getBlockInfo"
+	FuncGetLatestBlockInfo           = "getLatestBlockInfo"
+	FuncGetRequestIDsForBlock        = "getRequestIDsForBlock"
+	FuncGetRequestLogRecord          = "getRequestLogRecord"
+	FuncGetRequestLogRecordsForBlock = "getRequestLogRecordsForBlock"
+	FuncIsRequestProcessed           = "isRequestProcessed"
 
 	// parameters
 	ParamBlockIndex             = "n"
-	ParamRequestIndex           = "r"
 	ParamBlockInfo              = "i"
-	ParamRequestRecord          = "d"
-	ParamRequestID              = "u"
-	ParamRequestProcessed       = "p"
-	ParamStateControllerAddress = "s"
 	ParamGoverningAddress       = "g"
+	ParamRequestID              = "u"
+	ParamRequestIndex           = "r"
+	ParamRequestProcessed       = "p"
+	ParamRequestRecord          = "d"
+	ParamStateControllerAddress = "s"
 )
 
 // region BlockInfo //////////////////////////////////////////////////////////////

@@ -64,7 +64,6 @@ const (
 const (
 	ParamChainID      = "$$chainid$$"
 	ParamChainOwner   = "$$owner$$"
-	ParamData         = "$$data$$"
 	ParamDeployer     = "$$deployer$$"
 	ParamDescription  = "$$description$$"
 	ParamFeeColor     = "$$feecolor$$"
