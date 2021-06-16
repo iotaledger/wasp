@@ -9,9 +9,5 @@ import (
 
 func (c *WaspClient) PostOffLedgerRequest(chainID *chainid.ChainID, req *request.RequestOffLedger) error {
 	data := model.OffLedgerRequestBody{Request: req.Bytes()}
-	err := c.do("POST", routes.NewRequest(chainID.Base58()), data, nil)
-	if err != nil {
-		return err
-	}
-	return nil
+	return c.do("POST", routes.NewRequest(chainID.Base58()), data, nil)
 }
