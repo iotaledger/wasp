@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -260,17 +261,18 @@ func (e *EthService) parseTxArgs(args *SendTxArgs) (*types.Transaction, error) {
 	return types.SignTx(args.toTransaction(), evm.Signer(), account)
 }
 
+func (e *EthService) GetLogs(q *RPCFilterQuery) ([]*types.Log, error) {
+	return e.evmChain.Logs((*ethereum.FilterQuery)(q))
+}
+
 /*
-Filters:
+Not implemented:
 func (e *EthService) NewFilter()
 func (e *EthService) NewBlockFilter()
 func (e *EthService) NewPendingTransactionFilter()
 func (e *EthService) UninstallFilter()
 func (e *EthService) GetFilterChanges()
 func (e *EthService) GetFilterLogs()
-func (e *EthService) GetLogs()
-
-Not implemented:
 func (e *EthService) SubmitWork()
 func (e *EthService) GetWork()
 func (e *EthService) SubmitHashrate()

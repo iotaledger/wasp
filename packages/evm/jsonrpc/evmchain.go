@@ -276,3 +276,13 @@ func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, 
 	n, _, err := codec.DecodeUint64(ret.MustGet(evmchain.FieldResult))
 	return n, err
 }
+
+func (e *EVMChain) Logs(q *ethereum.FilterQuery) ([]*types.Log, error) {
+	ret, err := e.backend.CallView(evmchain.Interface.Name, evmchain.FuncGetLogs,
+		evmchain.FieldFilterQuery, evmchain.EncodeFilterQuery(q),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return evmchain.DecodeLogs(ret.MustGet(evmchain.FieldResult))
+}

@@ -41,6 +41,7 @@ func init() {
 		coreutil.ViewFunc(FuncGetBlockTransactionCountByHash, getBlockTransactionCountByHash),
 		coreutil.ViewFunc(FuncGetBlockTransactionCountByNumber, getBlockTransactionCountByNumber),
 		coreutil.ViewFunc(FuncGetStorage, getStorage),
+		coreutil.ViewFunc(FuncGetLogs, getLogs),
 
 		// EVMchain SC management
 		coreutil.Func(FuncSetNextOwner, setNextOwner),
@@ -71,6 +72,7 @@ const (
 	FuncGetBlockTransactionCountByHash      = "getBlockTransactionCountByHash"
 	FuncGetBlockTransactionCountByNumber    = "getBlockTransactionCountByNumber"
 	FuncGetStorage                          = "getStorage"
+	FuncGetLogs                             = "getLogs"
 
 	// EVMchain SC management
 	FuncSetNextOwner    = "setNextOwner"
@@ -101,6 +103,7 @@ const (
 	FieldGasPerIota              = "w"
 	FieldGasFee                  = "f"
 	FieldGasUsed                 = "gu"
+	FieldFilterQuery             = "fq"
 )
 
 const DefaultGasPerIota uint64 = 1000

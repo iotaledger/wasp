@@ -4,12 +4,10 @@
 package evmchain
 
 import (
-	"bytes"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/iotaledger/hive.go/marshalutil"
 )
 
@@ -68,7 +66,7 @@ func (r *Receipt) Bytes() []byte {
 	}
 	m.WriteUint32(uint32(len(r.Logs)))
 	for _, log := range r.Logs {
-		writeBytes(m, EncodeLog(log))
+		writeBytes(m, EncodeLog(log, false))
 	}
 	m.WriteBytes(r.Bloom.Bytes())
 	m.WriteUint64(r.Status)
@@ -149,9 +147,14 @@ func DecodeReceipt(receiptBytes []byte) (*Receipt, error) {
 				return nil, err
 			}
 			var log *types.Log
-			if log, err = DecodeLog(r, uint(i), b); err != nil {
+			if log, err = DecodeLog(b, false); err != nil {
 				return nil, err
 			}
+			log.BlockNumber = r.BlockNumber.Uint64()
+			log.TxHash = r.TxHash
+			log.TxIndex = uint(r.TransactionIndex)
+			log.BlockHash = r.BlockHash
+			log.Index = uint(i)
 			r.Logs = append(r.Logs, log)
 		}
 	}
@@ -165,24 +168,4 @@ func DecodeReceipt(receiptBytes []byte) (*Receipt, error) {
 		return nil, err
 	}
 	return r, nil
-}
-
-func EncodeLog(log *types.Log) []byte {
-	var b bytes.Buffer
-	err := log.EncodeRLP(&b)
-	if err != nil {
-		panic(err)
-	}
-	return b.Bytes()
-}
-
-func DecodeLog(r *Receipt, index uint, b []byte) (*types.Log, error) {
-	log := new(types.Log)
-	err := log.DecodeRLP(rlp.NewStream(bytes.NewReader(b), 0))
-	log.BlockNumber = r.BlockNumber.Uint64()
-	log.TxHash = r.TxHash
-	log.TxIndex = uint(r.TransactionIndex)
-	log.BlockHash = r.BlockHash
-	log.Index = index
-	return log, err
 }

@@ -187,6 +187,18 @@ func getStorage(ctx coretypes.SandboxView) (dict.Dict, error) {
 	})
 }
 
+func getLogs(ctx coretypes.SandboxView) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	q, err := DecodeFilterQuery(ctx.Params().MustGet(FieldFilterQuery))
+	a.RequireNoError(err)
+
+	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
+		logs, err := emu.FilterLogs(q)
+		a.RequireNoError(err)
+		return result(EncodeLogs(logs))
+	})
+}
+
 func callContract(ctx coretypes.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	callMsg, err := DecodeCallMsg(ctx.Params().MustGet(FieldCallMsg))

@@ -7,10 +7,10 @@
 package evm
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -19,13 +19,17 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/bloombits"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rpc"
 	"golang.org/x/xerrors"
 )
 
@@ -496,22 +500,27 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction) (uint64, error) {
 	return receipts[len(receipts)-1].GasUsed, nil
 }
 
-// AdjustTime adds a time shift to the simulated clock.
-// It can only be called on empty blocks.
-func (e *EVMEmulator) AdjustTime(adjustment time.Duration) error {
-	if len(e.pendingBlock.Transactions()) != 0 {
-		return errors.New("Could not adjust time on non-empty block")
+// FilterLogs executes a log filter operation, blocking during execution and
+// returning all the results in one batch.
+func (e *EVMEmulator) FilterLogs(query *ethereum.FilterQuery) ([]*types.Log, error) {
+	var filter *filters.Filter
+	if query.BlockHash != nil {
+		// Block filter requested, construct a single-shot filter
+		filter = filters.NewBlockFilter(&filterBackend{e.database, e.blockchain}, *query.BlockHash, query.Addresses, query.Topics)
+	} else {
+		// Initialize unset filter boundaries to run from genesis to chain head
+		from := int64(0)
+		if query.FromBlock != nil {
+			from = query.FromBlock.Int64()
+		}
+		to := int64(-1)
+		if query.ToBlock != nil {
+			to = query.ToBlock.Int64()
+		}
+		// Construct the range filter
+		filter = filters.NewRangeFilter(&filterBackend{e.database, e.blockchain}, from, to, query.Addresses, query.Topics)
 	}
-
-	block, _ := e.newBlock(func(number int, block *core.BlockGen) {
-		block.OffsetTime(int64(adjustment.Seconds()))
-	})
-	stateDB, _ := e.blockchain.State()
-
-	e.pendingBlock = block
-	e.pendingState, _ = state.New(e.pendingBlock.Root(), stateDB.Database(), nil)
-
-	return nil
+	return filter.Logs(context.Background())
 }
 
 // Blockchain returns the underlying blockchain.
@@ -537,3 +546,83 @@ func (m callMsg) Gas() uint64                  { return m.CallMsg.Gas }
 func (m callMsg) Value() *big.Int              { return m.CallMsg.Value }
 func (m callMsg) Data() []byte                 { return m.CallMsg.Data }
 func (m callMsg) AccessList() types.AccessList { return m.CallMsg.AccessList }
+
+// filterBackend implements filters.Backend.
+// TODO: take bloom-bits acceleration structures into account
+type filterBackend struct {
+	db ethdb.Database
+	bc *core.BlockChain
+}
+
+var _ filters.Backend = &filterBackend{}
+
+func (fb *filterBackend) ChainDb() ethdb.Database  { return fb.db }
+func (fb *filterBackend) EventMux() *event.TypeMux { panic("not supported") }
+
+func (fb *filterBackend) HeaderByNumber(ctx context.Context, block rpc.BlockNumber) (*types.Header, error) {
+	if block == rpc.LatestBlockNumber {
+		return fb.bc.CurrentHeader(), nil
+	}
+	return fb.bc.GetHeaderByNumber(uint64(block.Int64())), nil
+}
+
+func (fb *filterBackend) HeaderByHash(ctx context.Context, hash common.Hash) (*types.Header, error) {
+	return fb.bc.GetHeaderByHash(hash), nil
+}
+
+func (fb *filterBackend) GetReceipts(ctx context.Context, hash common.Hash) (types.Receipts, error) {
+	number := rawdb.ReadHeaderNumber(fb.db, hash)
+	if number == nil {
+		return nil, nil
+	}
+	return rawdb.ReadReceipts(fb.db, hash, *number, fb.bc.Config()), nil
+}
+
+func (fb *filterBackend) GetLogs(ctx context.Context, hash common.Hash) ([][]*types.Log, error) {
+	number := rawdb.ReadHeaderNumber(fb.db, hash)
+	if number == nil {
+		return nil, nil
+	}
+	receipts := rawdb.ReadReceipts(fb.db, hash, *number, fb.bc.Config())
+	if receipts == nil {
+		return nil, nil
+	}
+	logs := make([][]*types.Log, len(receipts))
+	for i, receipt := range receipts {
+		logs[i] = receipt.Logs
+	}
+	return logs, nil
+}
+
+func (fb *filterBackend) SubscribeNewTxsEvent(ch chan<- core.NewTxsEvent) event.Subscription {
+	return nullSubscription()
+}
+
+func (fb *filterBackend) SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription {
+	return fb.bc.SubscribeChainEvent(ch)
+}
+
+func (fb *filterBackend) SubscribeRemovedLogsEvent(ch chan<- core.RemovedLogsEvent) event.Subscription {
+	return fb.bc.SubscribeRemovedLogsEvent(ch)
+}
+
+func (fb *filterBackend) SubscribeLogsEvent(ch chan<- []*types.Log) event.Subscription {
+	return fb.bc.SubscribeLogsEvent(ch)
+}
+
+func (fb *filterBackend) SubscribePendingLogsEvent(ch chan<- []*types.Log) event.Subscription {
+	return nullSubscription()
+}
+
+func (fb *filterBackend) BloomStatus() (uint64, uint64) { return 4096, 0 }
+
+func (fb *filterBackend) ServiceFilter(ctx context.Context, ms *bloombits.MatcherSession) {
+	panic("not supported")
+}
+
+func nullSubscription() event.Subscription {
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		<-quit
+		return nil
+	})
+}

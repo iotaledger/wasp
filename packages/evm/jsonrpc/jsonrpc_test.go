@@ -264,6 +264,12 @@ func (e *env) sendTransaction(args *SendTxArgs) common.Hash {
 	return res
 }
 
+func (e *env) getLogs(q ethereum.FilterQuery) []types.Log {
+	logs, err := e.client.FilterLogs(context.Background(), q)
+	require.NoError(e.t, err)
+	return logs
+}
+
 func TestRPCGetBalance(t *testing.T) {
 	env := newEnv(t)
 	_, receiverAddress := generateKey(t)
@@ -554,4 +560,45 @@ func TestRPCCall(t *testing.T) {
 	err = contractABI.UnpackIntoInterface(&v, "retrieve", ret)
 	require.NoError(t, err)
 	require.Equal(t, uint32(42), v)
+}
+
+func TestRPCGetLogs(t *testing.T) {
+	env := newEnv(t)
+	creator, creatorAddress := evmtest.Accounts[0], evmtest.AccountAddress(0)
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
+	require.NoError(t, err)
+	contractAddress := crypto.CreateAddress(creatorAddress, env.nonceAt(creatorAddress))
+
+	filterQuery := ethereum.FilterQuery{
+		Addresses: []common.Address{contractAddress},
+	}
+
+	require.Empty(t, env.getLogs(filterQuery))
+
+	env.deployEVMContract(creator, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+
+	require.Equal(t, 1, len(env.getLogs(filterQuery)))
+
+	recipientAddress := evmtest.AccountAddress(1)
+	nonce := hexutil.Uint64(env.nonceAt(creatorAddress))
+	callArguments, err := contractABI.Pack("transfer", recipientAddress, big.NewInt(1337))
+	value := big.NewInt(0)
+	gas := hexutil.Uint64(env.estimateGas(ethereum.CallMsg{
+		From:  creatorAddress,
+		To:    &contractAddress,
+		Value: value,
+		Data:  callArguments,
+	}))
+	require.NoError(t, err)
+	env.sendTransaction(&SendTxArgs{
+		From:     creatorAddress,
+		To:       &contractAddress,
+		Gas:      &gas,
+		GasPrice: (*hexutil.Big)(evm.GasPrice),
+		Value:    (*hexutil.Big)(value),
+		Nonce:    &nonce,
+		Data:     (*hexutil.Bytes)(&callArguments),
+	})
+
+	require.Equal(t, 2, len(env.getLogs(filterQuery)))
 }
