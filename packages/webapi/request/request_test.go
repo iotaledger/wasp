@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
 )
@@ -44,7 +45,7 @@ func TestNewRequestBase64(t *testing.T) {
 		http.MethodPost,
 		routes.NewRequest(":chainID"),
 		map[string]string{"chainID": chainid.RandomChainID().Base58()},
-		OffLedgerRequestBody{Request: dummyOffledgerRequest().Base64()},
+		model.OffLedgerRequestBody{Request: dummyOffledgerRequest().Bytes()},
 		nil,
 		http.StatusAccepted,
 	)

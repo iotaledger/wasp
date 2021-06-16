@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -47,10 +48,6 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	return c.NoContent(http.StatusAccepted)
 }
 
-type OffLedgerRequestBody struct {
-	Request string `json:"request"`
-}
-
 func parseParams(c echo.Context) (chainID *chainid.ChainID, req *request.RequestOffLedger, err error) {
 	chainID, err = chainid.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
@@ -59,11 +56,11 @@ func parseParams(c echo.Context) (chainID *chainid.ChainID, req *request.Request
 
 	contentType := c.Request().Header.Get("Content-Type")
 	if strings.Contains(strings.ToLower(contentType), "json") {
-		r := new(OffLedgerRequestBody)
+		r := new(model.OffLedgerRequestBody)
 		if err = c.Bind(r); err != nil {
 			return nil, nil, httperrors.BadRequest("Error parsing request from payload")
 		}
-		req, err = request.NewRequestOffLedgerFromBase64(r.Request)
+		req, err = request.NewRequestOffLedgerFromBytes(r.Request)
 		if err != nil {
 			return nil, nil, httperrors.BadRequest(fmt.Sprintf("Error constructing off-ledger request from base64 string: \"%s\"", r.Request))
 		}

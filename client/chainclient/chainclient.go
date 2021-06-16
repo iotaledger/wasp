@@ -1,6 +1,7 @@
 package chainclient
 
 import (
+	"encoding/base64"
 	"net/http"
 	"strings"
 
@@ -77,7 +78,7 @@ func (c *Client) PostOffLedgerRequest(
 	offledgerReq.Sign(c.KeyPair)
 
 	httpclient := &http.Client{}
-	body := "{\"request\": \"" + offledgerReq.Base64() + "\"}"
+	body := "{\"request\": \"" + base64.StdEncoding.EncodeToString(offledgerReq.Bytes()) + "\"}"
 	apiEndpointURL := c.WaspClient.BaseURL() + routes.NewRequest(c.ChainID.Base58())
 	httpReq, err := http.NewRequest("POST", apiEndpointURL, strings.NewReader(body))
 	if err != nil {
