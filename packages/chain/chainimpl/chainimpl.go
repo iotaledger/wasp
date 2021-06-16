@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
@@ -61,8 +60,13 @@ type chainObj struct {
 	eventSynced           *events.Event
 }
 
+type committeeStruct struct {
+	valid bool
+	cmt   chain.Committee
+}
+
 func NewChain(
-	chr *chainrecord.ChainRecord,
+	chainID *chainid.ChainID,
 	log *logger.Logger,
 	txstream *txstream.Client,
 	peerNetConfig coretypes.PeerNetworkConfigProvider,
@@ -72,15 +76,15 @@ func NewChain(
 	committeeRegistry coretypes.CommitteeRegistryProvider,
 	blobProvider coretypes.BlobCache,
 ) chain.Chain {
-	log.Debugf("creating chain object for %s", chr.ChainID.String())
+	log.Debugf("creating chain object for %s", chainID.String())
 
-	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
+	chainLog := log.Named(chainID.Base58()[:6] + ".")
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog),
 		procset:           processors.MustNew(),
 		chMsg:             make(chan interface{}, 100),
-		chainID:           *chr.ChainID,
+		chainID:           *chainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstream, chainLog),
 		db:                db,
@@ -101,6 +105,7 @@ func NewChain(
 			handler.(func(outputID ledgerstate.OutputID, blockIndex uint32))(params[0].(ledgerstate.OutputID), params[1].(uint32))
 		}),
 	}
+	ret.committee.Store(&committeeStruct{})
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
 	ret.eventSynced.Attach(events.NewClosure(ret.processSynced))
 
@@ -308,13 +313,20 @@ func (c *chainObj) createNewCommitteeAndConsensus(addr ledgerstate.Address) erro
 }
 
 func (c *chainObj) getCommittee() chain.Committee {
-	ret := c.committee.Load()
-	if ret == nil {
+	ret := c.committee.Load().(*committeeStruct)
+	if !ret.valid {
 		return nil
 	}
-	return ret.(chain.Committee)
+	return ret.cmt
 }
 
 func (c *chainObj) setCommittee(cmt chain.Committee) {
-	c.committee.Store(cmt)
+	if cmt == nil {
+		c.committee.Store(&committeeStruct{})
+	} else {
+		c.committee.Store(&committeeStruct{
+			valid: true,
+			cmt:   cmt,
+		})
+	}
 }

@@ -61,7 +61,7 @@ func handlePutCommitteeRecord(c echo.Context) error {
 		return err
 	}
 
-	log.Infof("Committee record saved. Address: %s", cr.Address.Base58())
+	log.Infof("Committee record saved. Address: %s", cr.String())
 
 	return c.NoContent(http.StatusCreated)
 }

@@ -90,7 +90,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 		fmt.Fprint(textout, "creating chain origin and init transaction.. OK\n")
 	}
 
-	err = ActivateChainOnAccessNodes(allPeers, chainID)
+	err = ActivateChainOnAccessNodes(allPeers, par.CommitteePeeringHosts, chainID)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "activating chain.. FAILED: %v\n", err)
@@ -169,17 +169,18 @@ func CreateChainOrigin(node *goshimmer.Client, originator *ed25519.KeyPair, stat
 
 // ActivateChainOnAccessNodes puts chain records into nodes and activates its
 // TODO needs refactoring and optimization
-func ActivateChainOnAccessNodes(apiHosts []string, chainID *chainid.ChainID) error {
-	peers := multiclient.New(apiHosts)
+func ActivateChainOnAccessNodes(apiHosts, peers []string, chainID *chainid.ChainID) error {
+	nodes := multiclient.New(apiHosts)
 	// ------------ put chain records to hosts
-	err := peers.PutChainRecord(&chainrecord.ChainRecord{
+	err := nodes.PutChainRecord(&chainrecord.ChainRecord{
 		ChainID: chainID,
+		Peers:   peers,
 	})
 	if err != nil {
 		return xerrors.Errorf("ActivateChainOnAccessNodes: %w")
 	}
 	// ------------- activate chain
-	err = peers.ActivateChain(*chainID)
+	err = nodes.ActivateChain(*chainID)
 	if err != nil {
 		return xerrors.Errorf("ActivateChainOnAccessNodes: %w")
 	}

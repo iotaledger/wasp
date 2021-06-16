@@ -275,18 +275,11 @@ func checkValidatorNodeIDs(cfg coretypes.PeerNetworkConfigProvider, n, ownIndex 
 		return xerrors.New("checkValidatorNodeIDs: own netID is expected at own validator index")
 	}
 	// check if all validator node IDs are among known validatorNodes
-	allPeers := cfg.Neighbors()
-	notNeigbors := make([]string, 0)
-	for _, nid := range validatorNetIDs {
-		if nid == cfg.OwnNetID() {
-			continue
-		}
-		if !util.StringInList(nid, allPeers) {
-			notNeigbors = append(notNeigbors, nid)
-		}
-	}
-	if len(notNeigbors) > 0 {
-		return xerrors.Errorf("not all validator nodes are among known neighbors: %+v", notNeigbors)
+	allPeers := []string{cfg.OwnNetID()}
+	allPeers = append(allPeers, cfg.Neighbors()...)
+	if !util.IsSubset(validatorNetIDs, allPeers) {
+		return xerrors.Errorf("not all validator nodes are among known neighbors: all peers: %+v, committee: %+v",
+			allPeers, validatorNetIDs)
 	}
 	return nil
 }

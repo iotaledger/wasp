@@ -3,6 +3,9 @@ package chains
 import (
 	"sync"
 
+	"github.com/iotaledger/wasp/packages/parameters"
+	peering_pkg "github.com/iotaledger/wasp/packages/peering"
+
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -100,13 +103,23 @@ func (c *Chains) Activate(chr *chainrecord.ChainRecord) error {
 		return nil
 	}
 	// create new chain object
+	peerNetworkConfig, err := peering_pkg.NewStaticPeerNetworkConfigProvider(
+		parameters.GetString(parameters.PeeringMyNetId),
+		parameters.GetInt(parameters.PeeringPort),
+		chr.Peers...,
+	)
+	if err != nil {
+		return xerrors.Errorf("cannot create peer network config provider")
+	}
+	//c.log.Infof("created network config provider: %s", peerNetworkConfig.String())
+
 	defaultRegistry := registry.DefaultRegistry()
 	chainKVStore := database.GetOrCreateKVStore(chr.ChainID)
 	newChain := chainimpl.NewChain(
-		chr,
+		chr.ChainID,
 		c.log,
 		c.nodeConn,
-		peering.DefaultPeerNetworkConfig(),
+		peerNetworkConfig,
 		chainKVStore,
 		peering.DefaultNetworkProvider(),
 		defaultRegistry,
