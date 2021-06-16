@@ -20,18 +20,19 @@ func AddEndpoints(server echoswagger.ApiRouter) {
 	b := &blobWebAPI{func() coretypes.BlobCache { return registry.DefaultRegistry() }}
 
 	server.POST(routes.PutBlob(), b.handlePutBlob).
-		SetSummary("Upload a blob to the registry").
+		SetSummary("Upload a blob to the blob cache").
+		AddParamBody(model.BlobData{Data: "base64 string"}, "Blob data", "Blob data", true).
 		AddResponse(http.StatusOK, "Blob properties", example, nil)
 
 	server.GET(routes.GetBlob(":hash"), b.handleGetBlob).
 		AddParamPath("", "hash", "Blob hash (base64)").
-		SetSummary("Fetch a blob by its hash").
+		SetSummary("Fetch a blob from the blob cache").
 		AddResponse(http.StatusOK, "Blob data", model.NewBlobData([]byte("blob content")), nil).
 		AddResponse(http.StatusNotFound, "Not found", httperrors.NotFound("Not found"), nil)
 
 	server.GET(routes.HasBlob(":hash"), b.handleHasBlob).
 		AddParamPath("", "hash", "Blob hash (base64)").
-		SetSummary("Find out if a blob exists in the registry").
+		SetSummary("Find out if a blob exists in the blob cache").
 		AddResponse(http.StatusOK, "Blob properties", example, nil)
 }
 

@@ -59,6 +59,7 @@ type chainObj struct {
 	eventRequestProcessed *events.Event
 	eventChainTransition  *events.Event
 	eventSynced           *events.Event
+	peers                 *peering.PeerDomainProvider
 }
 
 func NewChain(
@@ -110,6 +111,7 @@ func NewChain(
 		return nil
 	}
 	ret.stateMgr = statemgr.New(db, ret, peers, ret.nodeConn)
+	ret.peers = &peers
 	var peeringID peering.PeeringID = ret.chainID.Array()
 	peers.Attach(&peeringID, func(recv *peering.RecvEvent) {
 		ret.ReceiveMessage(recv.Msg)
@@ -198,6 +200,14 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 		if c.consensus != nil {
 			c.consensus.EventSignedResultMsg(msgt)
 		}
+	case chain.MsgOffLedgerRequest:
+		msg, err := chain.OffLedgerRequestMsgFromBytes(msg.MsgData)
+		if err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.ReceiveOffLedgerRequest(msg.Req)
+		return
 
 	default:
 		c.log.Errorf("processPeerMessage: wrong msg type")

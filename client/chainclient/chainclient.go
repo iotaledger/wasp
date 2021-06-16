@@ -7,11 +7,12 @@ import (
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/transaction"
 )
 
-// Client allows to send webapi requests to a specific chain in the node
+// Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
 type Client struct {
 	GoshimmerClient *goshimmer.Client
 	WaspClient      *client.WaspClient
@@ -39,7 +40,7 @@ type PostRequestParams struct {
 	Args     requestargs.RequestArgs
 }
 
-// Post1Request sends one request transaction with one request on it to the chain
+// Post1Request sends an on-ledger transaction with one request on it to the chain
 func (c *Client) Post1Request(
 	contractHname coretypes.Hname,
 	entryPoint coretypes.Hname,
@@ -60,4 +61,15 @@ func (c *Client) Post1Request(
 			Args:       par.Args,
 		}},
 	})
+}
+
+// PostOffLedgerRequest sends an off-ledger tx via the wasp node web api
+func (c *Client) PostOffLedgerRequest(
+	contractHname coretypes.Hname,
+	entrypoint coretypes.Hname,
+	args requestargs.RequestArgs,
+) (*request.RequestOffLedger, error) {
+	offledgerReq := request.NewRequestOffLedger(contractHname, entrypoint, args)
+	offledgerReq.Sign(c.KeyPair)
+	return offledgerReq, c.WaspClient.PostOffLedgerRequest(&c.ChainID, offledgerReq)
 }
