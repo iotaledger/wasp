@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path"
@@ -60,7 +61,8 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
 	apiHosts := clu.Config.ApiHosts(committeeNodes)
 	peeringHosts := clu.Config.PeeringHosts(committeeNodes)
-	return apilib.RunDKG(apiHosts, peeringHosts, threshold, timeout...)
+	dkgInitiatorIndex := uint16(rand.Intn(len(apiHosts)))
+	return apilib.RunDKG(apiHosts, peeringHosts, threshold, dkgInitiatorIndex, timeout...)
 }
 
 func (clu *Cluster) DeployChainWithDKG(description string, committeeNodes []int, quorum uint16) (*Chain, error) {
