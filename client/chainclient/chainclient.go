@@ -1,10 +1,6 @@
 package chainclient
 
 import (
-	"encoding/base64"
-	"net/http"
-	"strings"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
@@ -14,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
@@ -76,19 +71,9 @@ func (c *Client) PostOffLedgerRequest(
 ) (*request.RequestOffLedger, error) {
 	offledgerReq := request.NewRequestOffLedger(contractHname, entrypoint, args)
 	offledgerReq.Sign(c.KeyPair)
-
-	httpclient := &http.Client{}
-	body := "{\"request\": \"" + base64.StdEncoding.EncodeToString(offledgerReq.Bytes()) + "\"}"
-	apiEndpointURL := c.WaspClient.BaseURL() + routes.NewRequest(c.ChainID.Base58())
-	httpReq, err := http.NewRequest("POST", apiEndpointURL, strings.NewReader(body))
+	err := c.WaspClient.PostOffLedgerRequest(&c.ChainID, offledgerReq)
 	if err != nil {
 		return nil, err
 	}
-	httpReq.Header.Add("Content-type", `application/json"`)
-	resp, err := httpclient.Do(httpReq)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
 	return offledgerReq, nil
 }
