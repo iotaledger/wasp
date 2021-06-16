@@ -7,9 +7,9 @@ package client
 // The Golang API in this file tries to follow the REST conventions.
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"net/http"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )

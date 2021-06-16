@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/parameters"
 
 	"github.com/iotaledger/hive.go/logger"
 
@@ -101,6 +102,20 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 			}()
 		}
 	}
+}
+
+func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
+	if !c.mempool.ReceiveRequest(req) {
+		return
+	}
+	msgData := chain.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
+	committee := c.getCommittee()
+	if committee != nil {
+		committee.SendMsgToPeers(chain.MsgOffLedgerRequest, msgData, time.Now().UnixNano())
+		return
+	}
+	gossipUpToNPeers := parameters.GetInt(parameters.OffledgerGossipUpToNPeers)
+	(*c.peers).SendMsgToRandomPeersSimple(uint16(gossipUpToNPeers), chain.MsgOffLedgerRequest, msgData)
 }
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {

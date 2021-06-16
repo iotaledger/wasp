@@ -33,6 +33,8 @@ const (
 	NanomsgPublisherPort = "nanomsg.port"
 
 	IpfsGatewayAddress = "ipfs.gatewayAddress"
+
+	OffledgerGossipUpToNPeers = "offledger.gossipUpToNPeers"
 )
 
 func InitFlags() {
@@ -63,6 +65,8 @@ func InitFlags() {
 	flag.Int(NanomsgPublisherPort, 5550, "the port for nanomsg even publisher")
 
 	flag.String(IpfsGatewayAddress, "https://ipfs.io/", "the address of HTTP(s) gateway to which download from ipfs requests will be forwarded")
+
+	flag.Int(OffledgerGossipUpToNPeers, 10, "number of peers an offledger request is gossiped to")
 }
 
 func GetBool(name string) bool {

@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 )
 
-// ChainID is the base58 representation of coretypes.ChainID
+// ChainID is the base58 representation of chainid.ChainID
 type ChainID string
 
 func NewChainID(chainID *chainid.ChainID) ChainID {

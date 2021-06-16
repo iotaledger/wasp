@@ -38,7 +38,7 @@ func processResponse(res *http.Response, decodeTo interface{}) error {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode == http.StatusOK || res.StatusCode == http.StatusCreated {
+	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		if decodeTo != nil {
 			return json.Unmarshal(resBody, decodeTo)
 		} else {
