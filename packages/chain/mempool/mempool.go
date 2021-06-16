@@ -159,9 +159,12 @@ func (m *mempool) ReceiveRequests(reqs ...coretypes.Request) {
 func (m *mempool) ReceiveRequest(req coretypes.Request) bool {
 	// could be worth it to check if the request was already processed in the blocklog.
 	// Not adding this check now to avoid overhead, but should be looked into in case re-gossiping happens a lot
+	m.inMutex.RLock()
 	if _, exists := m.inBuffer[req.ID()]; exists {
+		m.inMutex.RUnlock()
 		return false
 	}
+	m.inMutex.RUnlock()
 	return m.addToInBuffer(req)
 }
 
