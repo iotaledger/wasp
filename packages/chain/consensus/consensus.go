@@ -46,6 +46,7 @@ type consensus struct {
 	pullInclusionStateDeadline time.Time
 	lastTimerTick              atomic.Int64
 	consensusInfoSnapshot      atomic.Value
+	timers                     TimerParams
 	log                        *logger.Logger
 	eventStateTransitionMsgCh  chan *chain.StateTransitionMsg
 	eventSignedResultMsgCh     chan *chain.SignedResultMsg
@@ -71,7 +72,13 @@ type workflowFlags struct {
 
 var _ chain.Consensus = &consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection) *consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, timersOpt ...TimerParams) *consensus {
+	var timers TimerParams
+	if len(timersOpt) > 0 {
+		timers = timersOpt[0]
+	} else {
+		timers = NewConsensusTimers()
+	}
 	log := chainCore.Log().Named("c")
 	ret := &consensus{
 		chain:                     chainCore,
@@ -80,6 +87,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		nodeConn:                  nodeConn,
 		vmRunner:                  runvm.NewVMRunner(),
 		resultSignatures:          make([]*chain.SignedResultMsg, committee.Size()),
+		timers:                    timers,
 		log:                       log,
 		eventStateTransitionMsgCh: make(chan *chain.StateTransitionMsg),
 		eventSignedResultMsgCh:    make(chan *chain.SignedResultMsg),

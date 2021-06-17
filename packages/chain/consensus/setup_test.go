@@ -143,13 +143,16 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 
 	ret.ChainID = *chainid.NewChainID(ret.InitStateOutput.GetAliasAddress())
 
-	for i := range ret.Nodes {
-		ret.Nodes[i] = ret.newNode(uint16(i))
-	}
 	return ret, originTx
 }
 
-func (env *mockedEnv) newNode(nodeIndex uint16) *mockedNode {
+func (env *mockedEnv) CreateNodes(timers TimerParams) {
+	for i := range env.Nodes {
+		env.Nodes[i] = env.NewNode(uint16(i), timers)
+	}
+}
+
+func (env *mockedEnv) NewNode(nodeIndex uint16, timers TimerParams) *mockedNode {
 	nodeID := env.NodeIDs[nodeIndex]
 	log := env.Log.Named(nodeID)
 	ret := &mockedNode{
@@ -230,7 +233,7 @@ func (env *mockedEnv) newNode(nodeIndex uint16) *mockedNode {
 	ret.stateSync.SetSolidIndex(0)
 	require.NoError(env.T, err)
 
-	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn)
+	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn, timers)
 	cons.vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret.Consensus = cons
 
