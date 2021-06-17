@@ -32,6 +32,7 @@ func (c *consensus) takeAction() {
 	}
 	c.proposeBatchIfNeeded()
 	c.runVMIfNeeded()
+	c.broadcastSignedResultIfNeeded()
 	c.checkQuorum()
 	c.postTransactionIfNeeded()
 	c.pullInclusionStateIfNeeded()
@@ -82,9 +83,9 @@ func (c *consensus) runVMIfNeeded() {
 		c.log.Debugf("runVM not needed: consensus batch is not known")
 		return
 	}
-	if c.workflow.vmStarted || c.workflow.vmResultSignedAndBroadcasted {
-		c.log.Debugf("runVM not needed: vmStarted %v, vmResultSignedAndBroadcasted %v",
-			c.workflow.vmStarted, c.workflow.vmResultSignedAndBroadcasted)
+	if c.workflow.vmStarted || c.workflow.vmResultSigned {
+		c.log.Debugf("runVM not needed: vmStarted %v, vmResultSigned %v",
+			c.workflow.vmStarted, c.workflow.vmResultSigned)
 		return
 	}
 	if time.Now().Before(c.delayRunVMUntil) {
@@ -155,6 +156,30 @@ func (c *consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
 	return task
 }
 
+const broadcastSignedResultRetry = 1 * time.Second
+
+func (c *consensus) broadcastSignedResultIfNeeded() {
+	if !c.workflow.vmResultSigned {
+		c.log.Debugf("broadcastSignedResult not needed: vm result is not signed")
+		return
+	}
+	if time.Now().After(c.delaySendingSignedResult) {
+		signedResult := c.resultSignatures[c.committee.OwnPeerIndex()]
+		msg := &chain.SignedResultMsg{
+			ChainInputID: c.stateOutput.ID(),
+			EssenceHash:  signedResult.EssenceHash,
+			SigShare:     signedResult.SigShare,
+		}
+		c.committee.SendMsgToPeers(chain.MsgSignedResult, util.MustBytes(msg), time.Now().UnixNano())
+		c.delaySendingSignedResult = time.Now().Add(broadcastSignedResultRetry)
+
+		c.log.Debugf("broadcastSignedResult: broadcasted: essence hash: %s, chain input %s",
+			msg.EssenceHash.String(), coretypes.OID(msg.ChainInputID))
+	} else {
+		c.log.Debugf("broadcastSignedResult not needed: delayed till %v", c.delaySendingSignedResult)
+	}
+}
+
 const postSeqStepMilliseconds = 1000
 
 // checkQuorum when relevant check if quorum of signatures to the own calculated result is available
@@ -167,7 +192,7 @@ func (c *consensus) checkQuorum() {
 		c.log.Debugf("checkQuorum not needed: transaction already finalized")
 		return
 	}
-	if !c.workflow.vmResultSignedAndBroadcasted {
+	if !c.workflow.vmResultSigned {
 		// only can aggregate signatures if own result is calculated
 		c.log.Debugf("checkQuorum not needed: vm result is not signed and broadcasted")
 		return
@@ -182,7 +207,7 @@ func (c *consensus) checkQuorum() {
 		if sig.EssenceHash == ownHash {
 			contributors = append(contributors, uint16(i))
 		} else {
-			c.log.Warnf("wrong essence hash: expected(own): %s, got (from %d): %s", ownHash, i, sig.EssenceHash)
+			c.log.Warnf("checkQuorum: wrong essence hash: expected(own): %s, got (from %d): %s", ownHash, i, sig.EssenceHash)
 		}
 	}
 	quorumReached := len(contributors) >= int(c.committee.Quorum())
@@ -536,11 +561,11 @@ func (c *consensus) resetWorkflow() {
 
 func (c *consensus) processVMResult(result *vm.VMTask) {
 	if !c.workflow.vmStarted ||
-		c.workflow.vmResultSignedAndBroadcasted ||
+		c.workflow.vmResultSigned ||
 		c.acsSessionID != result.ACSSessionID {
 		// out of context
 		c.log.Debugf("processVMResult: out of context vmStarted %v, vmResultSignedAndBroadcasted %v, expected ACS session ID %v, returned ACS session ID %v",
-			c.workflow.vmStarted, c.workflow.vmResultSignedAndBroadcasted, c.acsSessionID, result.ACSSessionID)
+			c.workflow.vmStarted, c.workflow.vmResultSigned, c.acsSessionID, result.ACSSessionID)
 		return
 	}
 	rotation := result.RotationAddress != nil
@@ -564,19 +589,15 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	c.assert.RequireNoError(err, "processVMResult: ")
 
 	c.resultSignatures[c.committee.OwnPeerIndex()] = &chain.SignedResultMsg{
-		SenderIndex: c.committee.OwnPeerIndex(),
-		EssenceHash: essenceHash,
-		SigShare:    sigShare,
+		SenderIndex:  c.committee.OwnPeerIndex(),
+		ChainInputID: result.ChainInput.ID(),
+		EssenceHash:  essenceHash,
+		SigShare:     sigShare,
 	}
-	msg := &chain.SignedResultMsg{
-		EssenceHash: essenceHash,
-		SigShare:    sigShare,
-	}
-	c.committee.SendMsgToPeers(chain.MsgSignedResult, util.MustBytes(msg), time.Now().UnixNano())
 
-	c.workflow.vmResultSignedAndBroadcasted = true
+	c.workflow.vmResultSigned = true
 
-	c.log.Debugf("processVMResult: signed and broadcasted: essence hash: %s", msg.EssenceHash.String())
+	c.log.Debugf("processVMResult signed: essence hash: %s", essenceHash.String())
 }
 
 func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledgerstate.TransactionEssence {
@@ -602,6 +623,11 @@ func (c *consensus) receiveSignedResult(msg *chain.SignedResultMsg) {
 		} else {
 			c.log.Errorf("receiveSignedResult: duplicated signed result from peer #%d", msg.SenderIndex)
 		}
+		return
+	}
+	if msg.ChainInputID != c.stateOutput.ID() {
+		c.log.Warnf("receiveSignedResult: wrong chain input ID: expected %v, received %v",
+			coretypes.OID(c.stateOutput.ID()), coretypes.OID(msg.ChainInputID))
 		return
 	}
 	idx, err := msg.SigShare.Index()

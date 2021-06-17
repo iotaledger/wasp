@@ -37,6 +37,7 @@ type consensus struct {
 	workflow                   workflowFlags
 	delayBatchProposalUntil    time.Time
 	delayRunVMUntil            time.Time
+	delaySendingSignedResult   time.Time
 	resultTxEssence            *ledgerstate.TransactionEssence
 	resultState                state.VirtualState
 	resultSignatures           []*chain.SignedResultMsg
@@ -57,15 +58,15 @@ type consensus struct {
 }
 
 type workflowFlags struct {
-	stateReceived                bool
-	batchProposalSent            bool
-	consensusBatchKnown          bool
-	vmStarted                    bool
-	vmResultSignedAndBroadcasted bool
-	transactionFinalized         bool
-	transactionPosted            bool
-	transactionSeen              bool
-	finished                     bool
+	stateReceived        bool
+	batchProposalSent    bool
+	consensusBatchKnown  bool
+	vmStarted            bool
+	vmResultSigned       bool
+	transactionFinalized bool
+	transactionPosted    bool
+	transactionSeen      bool
+	finished             bool
 }
 
 var _ chain.Consensus = &consensus{}
@@ -156,7 +157,7 @@ func (c *consensus) refreshConsensusInfo() {
 		TimerTick:  int(c.lastTimerTick.Load()),
 	}
 	c.log.Debugf("Refreshing consensus info: index=%v, timerTick=%v, "+
-		"totalPool=%v, mempoolReady=%v, inBufCounter=%v, outBufCounter=%v"+
+		"totalPool=%v, mempoolReady=%v, inBufCounter=%v, outBufCounter=%v, "+
 		"inPoolCounter=%v, outPoolCounter=%v",
 		consensusInfo.StateIndex, consensusInfo.TimerTick,
 		consensusInfo.Mempool.TotalPool, consensusInfo.Mempool.Ready,

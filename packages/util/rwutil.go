@@ -3,6 +3,7 @@ package util
 import (
 	"encoding"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"time"
 
@@ -313,6 +314,18 @@ func ReadHashValue(r io.Reader, h *hashing.HashValue) error {
 	}
 	if n != hashing.HashSize {
 		return errors.New("error while reading hash")
+	}
+	return nil
+}
+
+func ReadOutputID(r io.Reader, oid *ledgerstate.OutputID) error {
+	n, err := r.Read(oid[:])
+	if err != nil {
+		return err
+	}
+	if n != ledgerstate.OutputIDLength {
+		return errors.New(fmt.Sprintf("error while reading output ID: read %v bytes, expected %v bytes",
+			n, ledgerstate.OutputIDLength))
 	}
 	return nil
 }

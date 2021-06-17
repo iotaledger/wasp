@@ -20,7 +20,8 @@ func (c *consensus) EventSignedResultMsg(msg *chain.SignedResultMsg) {
 	c.eventSignedResultMsgCh <- msg
 }
 func (c *consensus) eventSignedResult(msg *chain.SignedResultMsg) {
-	c.log.Debugf("SignedResultMsg received: from sender %d, hash=%s", msg.SenderIndex, msg.EssenceHash)
+	c.log.Debugf("SignedResultMsg received: from sender %d, hash=%s, chain input id=%v",
+		msg.SenderIndex, msg.EssenceHash, coretypes.OID(msg.ChainInputID))
 	c.receiveSignedResult(msg)
 	c.takeAction()
 }

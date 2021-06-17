@@ -27,9 +27,10 @@ const (
 type TimerTick int
 
 type SignedResultMsg struct {
-	SenderIndex uint16
-	EssenceHash hashing.HashValue
-	SigShare    tbdn.SigShare
+	SenderIndex  uint16
+	ChainInputID ledgerstate.OutputID
+	EssenceHash  hashing.HashValue
+	SigShare     tbdn.SigShare
 }
 
 // GetBlockMsg StateManager queries specific block data from another peer (access node)
@@ -124,6 +125,9 @@ func (msg *SignedResultMsg) Write(w io.Writer) error {
 	if err := util.WriteBytes16(w, msg.SigShare); err != nil {
 		return err
 	}
+	if _, err := w.Write(msg.ChainInputID[:]); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -133,6 +137,9 @@ func (msg *SignedResultMsg) Read(r io.Reader) error {
 	}
 	var err error
 	if msg.SigShare, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	if err = util.ReadOutputID(r, &msg.ChainInputID); err != nil {
 		return err
 	}
 	return nil
