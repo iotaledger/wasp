@@ -33,6 +33,92 @@ func (p *decoder) panic(err error) {
 	p.log.Panicf("%v", err)
 }
 
+func (p *decoder) GetInt16(key kv.Key, def ...int16) (int16, error) {
+	v, exists, err := codec.DecodeInt16(p.kv.MustGet(key))
+	if err != nil {
+		return 0, fmt.Errorf("GetInt16: decoding parameter '%s': %v", key, err)
+	}
+	if exists {
+		return v, nil
+	}
+	if len(def) == 0 {
+		return 0, fmt.Errorf("GetInt16: mandatory parameter '%s' does not exist", key)
+	}
+	return def[0], nil
+}
+func (p *decoder) MustGetInt16(key kv.Key, def ...int16) int16 {
+	ret, err := p.GetInt16(key, def...)
+	if err != nil {
+		p.panic(err)
+	}
+	return ret
+}
+
+func (p *decoder) GetUint16(key kv.Key, def ...uint16) (uint16, error) {
+	v, exists, err := codec.DecodeUint16(p.kv.MustGet(key))
+	if err != nil {
+		return 0, fmt.Errorf("GetUint16: decoding parameter '%s': %v", key, err)
+	}
+	if exists {
+		return v, nil
+	}
+	if len(def) == 0 {
+		return 0, fmt.Errorf("GetUint16: mandatory parameter '%s' does not exist", key)
+	}
+	return def[0], nil
+}
+
+func (p *decoder) MustGetUint16(key kv.Key, def ...uint16) uint16 {
+	ret, err := p.GetUint16(key, def...)
+	if err != nil {
+		p.panic(err)
+	}
+	return ret
+}
+
+func (p *decoder) GetInt32(key kv.Key, def ...int32) (int32, error) {
+	v, exists, err := codec.DecodeInt32(p.kv.MustGet(key))
+	if err != nil {
+		return 0, fmt.Errorf("GetInt32: decoding parameter '%s': %v", key, err)
+	}
+	if exists {
+		return v, nil
+	}
+	if len(def) == 0 {
+		return 0, fmt.Errorf("GetInt32: mandatory parameter '%s' does not exist", key)
+	}
+	return def[0], nil
+}
+func (p *decoder) MustGetInt32(key kv.Key, def ...int32) int32 {
+	ret, err := p.GetInt32(key, def...)
+	if err != nil {
+		p.panic(err)
+	}
+	return ret
+}
+
+func (p *decoder) GetUint32(key kv.Key, def ...uint32) (uint32, error) {
+	v, exists, err := codec.DecodeUint32(p.kv.MustGet(key))
+	if err != nil {
+		return 0, fmt.Errorf("GetUint32: decoding parameter '%s': %v", key, err)
+	}
+	if exists {
+		return v, nil
+	}
+	if len(def) == 0 {
+		return 0, fmt.Errorf("GetUint32: mandatory parameter '%s' does not exist", key)
+	}
+	return def[0], nil
+}
+
+func (p *decoder) MustGetUint32(key kv.Key, def ...uint32) uint32 {
+	ret, err := p.GetUint32(key, def...)
+	if err != nil {
+		p.panic(err)
+	}
+	return ret
+}
+
 func (p *decoder) GetInt64(key kv.Key, def ...int64) (int64, error) {
 	v, exists, err := codec.DecodeInt64(p.kv.MustGet(key))
 	if err != nil {

@@ -12,22 +12,22 @@ import (
 
 func Encode(v interface{}) []byte {
 	switch vt := v.(type) {
-	case int:
+	case int: // default to int64
 		return EncodeInt64(int64(vt))
 	case byte:
 		return EncodeInt64(int64(vt))
 	case int16:
-		return EncodeInt64(int64(vt))
+		return EncodeInt16(vt)
 	case int32:
-		return EncodeInt64(int64(vt))
+		return EncodeInt32(vt)
 	case int64:
-		return EncodeInt64(int64(vt))
+		return EncodeInt64(vt)
 	case uint16:
-		return EncodeInt64(int64(vt))
+		return EncodeUint16(vt)
 	case uint32:
-		return EncodeInt64(int64(vt))
+		return EncodeUint32(vt)
 	case uint64:
-		return EncodeInt64(int64(vt))
+		return EncodeUint64(vt)
 	case string:
 		return EncodeString(vt)
 	case []byte:

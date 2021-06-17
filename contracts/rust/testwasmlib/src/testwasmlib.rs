@@ -30,6 +30,12 @@ pub fn func_param_types(ctx: &ScFuncContext, params: &FuncParamTypesParams) {
     if params.hname.exists() {
         ctx.require(params.hname.value() == ctx.account_id().hname(), "mismatch: Hname");
     }
+    if params.int16.exists() {
+        ctx.require(params.int16.value() == 12345, "mismatch: Int16");
+    }
+    if params.int32.exists() {
+        ctx.require(params.int32.value() == 1234567890, "mismatch: Int32");
+    }
     if params.int64.exists() {
         ctx.require(params.int64.value() == 1234567890123456789, "mismatch: Int64");
     }
