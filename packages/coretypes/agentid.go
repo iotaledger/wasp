@@ -94,7 +94,6 @@ func NewAgentIDFromString(s string) (*AgentID, error) {
 		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
 	}
 	return NewAgentID(addr, hname), nil
-
 }
 
 // NewRandomAgentID creates random AgentID

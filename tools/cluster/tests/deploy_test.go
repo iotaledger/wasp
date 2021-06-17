@@ -150,5 +150,4 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		require.EqualValues(t, 44, counterValue)
 		return true
 	})
-
 }

@@ -6,14 +6,14 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
-//inMemoryBlobCache is supposed to be used as BlobCache in tests through
-//factory method NewInMemoryBlobCache
-//NOTE: Implements coretypes.BlobCache
+// inMemoryBlobCache is supposed to be used as BlobCache in tests through
+// factory method NewInMemoryBlobCache
+// NOTE: Implements coretypes.BlobCache
 type inMemoryBlobCache struct {
 	b map[hashing.HashValue][]byte
 }
 
-//NewInMemoryBlobCache is a factory method for inMemoryBlobCache
+// NewInMemoryBlobCache is a factory method for inMemoryBlobCache
 func NewInMemoryBlobCache() *inMemoryBlobCache {
 	return &inMemoryBlobCache{make(map[hashing.HashValue][]byte)}
 }

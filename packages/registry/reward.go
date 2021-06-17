@@ -17,7 +17,7 @@ func InitFlags() {
 }
 
 func GetFeeDestination(chainID *chainid.ChainID) ledgerstate.Address {
-	//TODO
+	// TODO
 	ret, err := ledgerstate.AddressFromBase58EncodedString(parameters.GetString(CfgRewardAddress))
 	if err != nil {
 		return nil

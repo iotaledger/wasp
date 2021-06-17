@@ -8,8 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
-type utilImpl struct {
-}
+type utilImpl struct{}
 
 func NewUtils() coretypes.Utils {
 	return utilImpl{}

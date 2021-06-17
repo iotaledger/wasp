@@ -2,6 +2,7 @@ package vmcontext
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"

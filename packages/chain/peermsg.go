@@ -19,7 +19,7 @@ import (
 
 // Message types for the committee communications.
 const (
-	MsgGetBlock         = 1 + peering.FirstUserMsgCode + iota
+	MsgGetBlock = 1 + peering.FirstUserMsgCode + iota
 	MsgBlock
 	MsgSignedResult
 	MsgOffLedgerRequest

@@ -23,8 +23,10 @@ type wasmProcessor struct {
 
 var _ coretypes.VMProcessor = &wasmProcessor{}
 
-const FuncDefault = "_default"
-const ViewCopyAllState = "copy_all_state"
+const (
+	FuncDefault      = "_default"
+	ViewCopyAllState = "copy_all_state"
+)
 
 var GoWasmVM wasmhost.WasmVM
 
@@ -66,7 +68,7 @@ func (host *wasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.Sandbox
 	}
 
 	if host.function == FuncDefault {
-		//TODO default function, do nothing for now
+		// TODO default function, do nothing for now
 		return nil, nil
 	}
 

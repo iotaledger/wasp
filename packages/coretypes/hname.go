@@ -7,12 +7,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"golang.org/x/xerrors"
 	"io"
 	"strconv"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
+	"golang.org/x/xerrors"
 )
 
 // Hname is 4 bytes of blake2b hash of any string interpreted as little-endian uint32.

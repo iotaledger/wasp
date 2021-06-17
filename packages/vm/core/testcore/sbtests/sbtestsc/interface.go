@@ -12,13 +12,11 @@ const (
 	description = "Test Core Sandbox functions"
 )
 
-var (
-	Interface = &coreutil.ContractInterface{
-		Name:        Name,
-		Description: description,
-		ProgramHash: hashing.HashStrings(Name),
-	}
-)
+var Interface = &coreutil.ContractInterface{
+	Name:        Name,
+	Description: description,
+	ProgramHash: hashing.HashStrings(Name),
+}
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
@@ -69,7 +67,7 @@ const (
 	FuncEventLogEventData   = "testEventLogEventData"
 	FuncEventLogDeploy      = "testEventLogDeploy"
 
-	//Function sandbox test
+	// Function sandbox test
 	FuncChainOwnerIDView = "testChainOwnerIDView"
 	FuncChainOwnerIDFull = "testChainOwnerIDFull"
 

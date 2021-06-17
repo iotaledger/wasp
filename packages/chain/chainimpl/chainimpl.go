@@ -171,7 +171,6 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 	rdr := bytes.NewReader(msg.MsgData)
 
 	switch msg.MsgType {
-
 	case chain.MsgGetBlock:
 		msgt := &chain.GetBlockMsg{}
 		if err := msgt.Read(rdr); err != nil {

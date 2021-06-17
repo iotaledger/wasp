@@ -31,7 +31,7 @@ func (m *handshakeMsg) bytes(secKey kyber.Scalar, suite Suite) ([]byte, error) {
 	if err = util.WriteBoolByte(&payloadBuf, m.respond); err != nil {
 		return nil, err
 	}
-	var payload = payloadBuf.Bytes()
+	payload := payloadBuf.Bytes()
 	var signature []byte
 	if signature, err = bls.Sign(suite, secKey, payload); err != nil {
 		return nil, err

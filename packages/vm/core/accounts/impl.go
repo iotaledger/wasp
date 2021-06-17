@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"

@@ -382,7 +382,6 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 			c.stateOutput.GetStateIndex(), sessionID, err)
 		c.resetWorkflow()
 		c.delayBatchProposalUntil = time.Now().Add(delayRepeatBatchProposalFor)
-
 	}
 	c.consensusBatch = &batchProposal{
 		ValidatorIndex:      c.committee.OwnPeerIndex(),
@@ -443,7 +442,7 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 
 	// check consistency ---------------- check if chain inputs were consumed
 	chainInput := ledgerstate.NewUTXOInput(c.stateOutput.ID())
-	var indexChainInput = -1
+	indexChainInput := -1
 	for i, inp := range c.resultTxEssence.Inputs() {
 		if inp.Compare(chainInput) == 0 {
 			indexChainInput = i

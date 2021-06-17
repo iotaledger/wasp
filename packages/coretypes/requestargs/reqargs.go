@@ -2,12 +2,13 @@ package requestargs
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"io"
 )
 
 // TODO: extend '*' option in RequestArgs with download options (web, IPFS)

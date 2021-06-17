@@ -1,9 +1,10 @@
 package testlogger
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
-	"testing"
 )
 
 func TestLoggerBasic(t *testing.T) {

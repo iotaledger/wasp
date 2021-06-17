@@ -15,9 +15,7 @@ import (
 
 const pluginName = "DKG"
 
-var (
-	defaultNode *dkg_pkg.Node // A singleton.
-)
+var defaultNode *dkg_pkg.Node // A singleton.
 
 // Init is an entry point for the plugin.
 func Init(suite dkg_pkg.Suite) *hive_node.Plugin {
