@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/core"
-
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/tools/cluster"
 
@@ -25,11 +23,11 @@ var (
 )
 
 func TestAccessNode(t *testing.T) {
-	core.PrintWellKnownHnames()
-	t.Logf("contract: name = %s, hname = %s", contractName, contractHname.String())
-	clu := clutest.NewCluster(t, 6)
+	//core.PrintWellKnownHnames()
+	//t.Logf("contract: name = %s, hname = %s", contractName, contractHname.String())
+	clu := clutest.NewCluster(t, 10)
 
-	numRequests := 3
+	numRequests := 8
 	cmt1 := []int{0, 1, 2, 3}
 
 	addr1, err := clu.RunDKG(cmt1, 3)
@@ -66,7 +64,13 @@ func TestAccessNode(t *testing.T) {
 	//err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 	//require.NoError(t, err)
 
+	require.True(t, waitCounter(t, chain, 7, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 8, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 9, numRequests, 5*time.Second))
 	require.True(t, waitCounter(t, chain, 4, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 5, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 6, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 1, numRequests, 5*time.Second))
 }
 
 func TestRotation(t *testing.T) {

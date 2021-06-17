@@ -111,7 +111,6 @@ func (c *Chains) Activate(chr *chainrecord.ChainRecord) error {
 	if err != nil {
 		return xerrors.Errorf("cannot create peer network config provider")
 	}
-	//c.log.Infof("created network config provider: %s", peerNetworkConfig.String())
 
 	defaultRegistry := registry.DefaultRegistry()
 	chainKVStore := database.GetOrCreateKVStore(chr.ChainID)
