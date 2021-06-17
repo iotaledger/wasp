@@ -66,7 +66,7 @@ func testSandboxCall(ctx coretypes.SandboxView) (dict.Dict, error) {
 }
 
 func testEventLogDeploy(ctx coretypes.Sandbox) (dict.Dict, error) {
-	//Deploy the same contract with another name
+	// Deploy the same contract with another name
 	err := ctx.DeployContract(Interface.ProgramHash,
 		VarContractNameDeployed, "test contract deploy log", nil)
 	if err != nil {

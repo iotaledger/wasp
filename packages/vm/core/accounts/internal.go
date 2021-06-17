@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -207,7 +206,7 @@ func mustCheckLedger(state kv.KVStore, checkpoint string) {
 
 func getAccountBalanceDict(ctx coretypes.SandboxView, account *collections.ImmutableMap, tag string) dict.Dict {
 	balances := getAccountBalances(account)
-	//ctx.Log().Debugf("%s. balance = %s\n", tag, balances.String())
+	// ctx.Log().Debugf("%s. balance = %s\n", tag, balances.String())
 	return EncodeBalances(balances)
 }
 

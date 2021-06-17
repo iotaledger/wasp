@@ -260,7 +260,7 @@ func (cs *CommonSubset) handleMsgBatch(recvBatch *msgBatch) {
 		return
 	}
 	//
-	// If we have completed with the decision, we just acknowledgeing other's messages.
+	// If we have completed with the decision, we just acknowledging other's messages.
 	// That is needed to help other members to decide on termination.
 	if cs.done {
 		if recvBatch.NeedsAck() {
@@ -290,7 +290,7 @@ func (cs *CommonSubset) handleMsgBatch(recvBatch *msgBatch) {
 	// Check, maybe we are done.
 	if cs.impl.Done() {
 		var output map[uint64][]byte = cs.impl.Output()
-		var out16 = make(map[uint16][]byte)
+		out16 := make(map[uint16][]byte)
 		for index, share := range output {
 			out16[uint16(index)] = share
 		}
@@ -500,7 +500,7 @@ func (b *msgBatch) Write(w io.Writer) error {
 		case *hbbft.AgreementMessage:
 			switch abaMsgPayload := acsMsgPayload.Message.(type) {
 			case *hbbft.BvalRequest:
-				var encoded = acsMsgTypeAbaBvalRequest
+				encoded := acsMsgTypeAbaBvalRequest
 				if abaMsgPayload.Value {
 					encoded |= 1
 				}
@@ -508,7 +508,7 @@ func (b *msgBatch) Write(w io.Writer) error {
 					return xerrors.Errorf("failed to write msgBatch.msgs[%v].value: %w", i, err)
 				}
 			case *hbbft.AuxRequest:
-				var encoded = acsMsgTypeAbaAuxRequest
+				encoded := acsMsgTypeAbaAuxRequest
 				if abaMsgPayload.Value {
 					encoded |= 1
 				}
@@ -516,7 +516,7 @@ func (b *msgBatch) Write(w io.Writer) error {
 					return xerrors.Errorf("failed to write msgBatch.msgs[%v].value: %w", i, err)
 				}
 			case *hbbft.DoneRequest:
-				var encoded = acsMsgTypeAbaDoneRequest
+				encoded := acsMsgTypeAbaDoneRequest
 				if err = util.WriteByte(w, encoded); err != nil {
 					return xerrors.Errorf("failed to write msgBatch.msgs[%v].type: %w", i, err)
 				}

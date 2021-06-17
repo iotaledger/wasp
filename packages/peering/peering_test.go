@@ -39,7 +39,7 @@ func TestPeerMessageCodec(t *testing.T) {
 func TestPeerMessageChunks(t *testing.T) {
 	var err error
 	var src, dst *peering.PeerMessage
-	var chunkSize = 100
+	chunkSize := 100
 	chp := chopper.NewChopper()
 	data := make([]byte, 2013)
 	for i := range data {

@@ -95,6 +95,7 @@ func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupPro
 func (n *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
 	panic("not implemented")
 }
+
 func (p *peeringNetworkProvider) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {
 	panic("not implemented")
 }
@@ -254,13 +255,13 @@ func (m *mockChain) GetCommitteeInfo() *chain.CommitteeInfo {
 		Quorum:        1,
 		QuorumIsAlive: true,
 		PeerStatus: []*chain.PeerStatus{
-			&chain.PeerStatus{
+			{
 				Index:     0,
 				PeeringID: "0",
 				IsSelf:    true,
 				Connected: true,
 			},
-			&chain.PeerStatus{
+			{
 				Index:     1,
 				PeeringID: "1",
 				IsSelf:    false,

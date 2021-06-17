@@ -3,13 +3,14 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"time"
+
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
-	"io"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )

@@ -1,8 +1,10 @@
 package collections
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/assert"

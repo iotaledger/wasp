@@ -46,7 +46,6 @@ func handlePutChainRecord(c echo.Context) error {
 	bd := req.Record()
 
 	bd2, err := registry.GetChainRecordByChainID(bd.ChainID)
-
 	if err != nil {
 		return err
 	}

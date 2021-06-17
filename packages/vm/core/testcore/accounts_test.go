@@ -96,7 +96,6 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 	require.NoError(t, err)
 	chain.AssertTotalIotas(0)
 	chain.AssertOwnersIotas(0)
-
 }
 
 func TestAccountsDepositWithdrawToChainFail(t *testing.T) {

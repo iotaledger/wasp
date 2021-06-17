@@ -35,7 +35,6 @@ func MakeRotateStateControllerTransaction(
 	ts time.Time,
 	accessPledge, consensusPledge identity.ID,
 ) (*ledgerstate.TransactionEssence, error) {
-
 	txb := utxoutil.NewBuilder(chainInput).
 		WithTimestamp(ts).
 		WithAccessPledge(accessPledge).

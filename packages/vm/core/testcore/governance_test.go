@@ -72,7 +72,7 @@ func TestRotate(t *testing.T) {
 		require.Error(t, err)
 		strings.Contains(err.Error(), "checkRotateCommitteeRequest: address is not allowed as next state address")
 	})
-	t.Run("unauthorised", func(t *testing.T) {
+	t.Run("unauthorized", func(t *testing.T) {
 		env := solo.New(t, false, false)
 		chain := env.NewChain(nil, "chain1")
 		defer chain.Log.Sync()
