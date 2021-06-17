@@ -20,7 +20,7 @@ var Interface = &coreutil.ContractInterface{
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.Func(coreutil.CoreEPRotateStateController, rotateStateController),
+		coreutil.Func(FuncRotateStateController, rotateStateController),
 		coreutil.Func(FuncAddAllowedStateControllerAddress, addAllowedStateControllerAddress),
 		coreutil.Func(FuncRemoveAllowedStateControllerAddress, removeAllowedStateControllerAddress),
 		coreutil.ViewFunc(FuncGetAllowedStateControllerAddresses, getAllowedStateControllerAddresses),
@@ -29,6 +29,7 @@ func init() {
 
 const (
 	// functions
+	FuncRotateStateController               = coreutil.CoreEPRotateStateController
 	FuncAddAllowedStateControllerAddress    = "addAllowedStateControllerAddress"
 	FuncRemoveAllowedStateControllerAddress = "removeAllowedStateControllerAddress"
 	FuncGetAllowedStateControllerAddresses  = "getAllowedStateControllerAddresses"
