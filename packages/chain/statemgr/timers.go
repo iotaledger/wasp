@@ -15,7 +15,9 @@ const TimerGetBlockRetryConstNameConst = "GetBlockRetry"
 
 func NewStateManagerTimers() util.TimerParams {
 	return util.NewTimerParams(
+		// period of state pull retry
 		util.NewTimerParam(TimerPullStateRetryNameConst, 1*time.Second),
+		// how long delay state pull after state candidate received
 		util.NewTimerParam(TimerPullStateAfterStateCandidateDelayNameConst, 1*time.Second),
 		util.NewTimerParam(TimerGetBlockRetryConstNameConst, 3*time.Second),
 	)
