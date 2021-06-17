@@ -47,14 +47,14 @@ func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
 	}
 	err = vm.linker.DefineFunc("WasmLib", "hostGetKeyId",
 		func(keyRef int32, size int32) int32 {
-			return vm.HostGetKeyId(keyRef, size)
+			return vm.HostGetKeyID(keyRef, size)
 		})
 	if err != nil {
 		return err
 	}
-	err = vm.linker.DefineFunc("WasmLib", "hostGetObjectId",
-		func(objId int32, keyId int32, typeId int32) int32 {
-			return vm.HostGetObjectId(objId, keyId, typeId)
+	err = vm.linker.DefineFunc("WasmLib", "hostGetObjectID",
+		func(objID, keyID, typeID int32) int32 {
+			return vm.hostGetObjectID(objID, keyID, typeID)
 		})
 	if err != nil {
 		return err

@@ -34,7 +34,7 @@ const WaspConfig = `
     "enablePlugins": []
   },
   "webapi": {
-    "bindAddress": "0.0.0.0:{{.ApiPort}}"
+    "bindAddress": "0.0.0.0:{{.APIPort}}"
   },
   "dashboard": {
     "bindAddress": "0.0.0.0:{{.DashboardPort}}"

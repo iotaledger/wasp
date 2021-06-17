@@ -84,7 +84,7 @@ func (o *ScUtility) CallFunc(keyId int32, bytes []byte) []byte {
 }
 
 func (o *ScUtility) Exists(keyId int32, typeId int32) bool {
-	return o.GetTypeId(keyId) > 0
+	return o.GetTypeID(keyId) > 0
 }
 
 func (o *ScUtility) getRandom8Bytes() []byte {
@@ -105,7 +105,7 @@ func (o *ScUtility) getRandom8Bytes() []byte {
 	return o.random[i : i+8]
 }
 
-func (o *ScUtility) GetTypeId(keyId int32) int32 {
+func (o *ScUtility) GetTypeID(keyId int32) int32 {
 	return wasmhost.OBJTYPE_BYTES
 }
 

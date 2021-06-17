@@ -23,7 +23,7 @@ type Downloader struct {
 
 var defaultDownloader *Downloader
 
-// Init initialises default downloader
+// Init initializes default downloader
 func Init(log *logger.Logger, ipfsGateway string) {
 	defaultDownloader = New(log, ipfsGateway)
 }
@@ -112,14 +112,15 @@ func (d *Downloader) notifyCompletedIfNeeded(success *bool, completedChanOpt ...
 	}
 }
 
+//nolint:gomnd //magic number 2
 func (d *Downloader) download(uri string) ([]byte, error) {
-	var split []string = strings.SplitN(uri, "://", 2)
+	split := strings.SplitN(uri, "://", 2)
 	if len(split) != 2 {
 		return nil, fmt.Errorf("file uri %s is invalid", uri)
 	}
 
-	var protocol string = split[0]
-	var path string = split[1]
+	protocol := split[0]
+	path := split[1]
 	switch protocol {
 	case "ipfs":
 		return d.donwloadFromHTTP(d.ipfsGateway + "/ipfs/" + path)
@@ -133,7 +134,7 @@ func (d *Downloader) download(uri string) ([]byte, error) {
 }
 
 func (*Downloader) donwloadFromHTTP(url string) ([]byte, error) {
-	response, err := http.Get(url)
+	response, err := http.Get(url) //nolint:gosec,noctx // TODO http request to an arbitrary URL could be a potential security hole
 	if err != nil {
 		return nil, err
 	}

@@ -22,7 +22,7 @@ func NewScTransfers(vm *wasmProcessor) *ScTransfers {
 	return a
 }
 
-func (a *ScTransfers) GetObjectId(keyId, typeId int32) int32 {
+func (a *ScTransfers) GetObjectID(keyId, typeId int32) int32 {
 	return GetArrayObjectID(a, keyId, typeId, func() WaspObject {
 		return NewScTransferInfo(a.vm)
 	})

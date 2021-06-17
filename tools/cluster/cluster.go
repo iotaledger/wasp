@@ -230,7 +230,7 @@ func (clu *Cluster) start(dataPath string) error {
 	if !clu.Config.Goshimmer.Provided {
 		clu.goshimmer = mocknode.Start(
 			fmt.Sprintf(":%d", clu.Config.Goshimmer.TxStreamPort),
-			fmt.Sprintf(":%d", clu.Config.Goshimmer.ApiPort),
+			fmt.Sprintf(":%d", clu.Config.Goshimmer.APIPort),
 		)
 		fmt.Printf("[cluster] started goshimmer node\n")
 	}

@@ -64,7 +64,7 @@ func (o *ScContext) Exists(keyId int32, typeId int32) bool {
 	if keyId == wasmhost.KeyExports {
 		return o.vm.ctx == nil && o.vm.ctxView == nil
 	}
-	return o.GetTypeId(keyId) > 0
+	return o.GetTypeID(keyId) > 0
 }
 
 func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
@@ -90,19 +90,19 @@ func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
 	return nil
 }
 
-func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
-	if keyId == wasmhost.KeyExports && (o.vm.ctx != nil || o.vm.ctxView != nil) {
+func (o *ScContext) GetObjectID(keyID, typeID int32) int32 {
+	if keyID == wasmhost.KeyExports && (o.vm.ctx != nil || o.vm.ctxView != nil) {
 		// once map has entries (after on_load) this cannot be called any more
-		o.invalidKey(keyId)
+		o.invalidKey(keyID)
 		return 0
 	}
 
-	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		wasmhost.KeyBalances:  func() WaspObject { return NewScBalances(o.vm, keyId) },
+	return GetMapObjectId(o, keyID, typeID, ObjFactories{
+		wasmhost.KeyBalances:  func() WaspObject { return NewScBalances(o.vm, keyID) },
 		wasmhost.KeyExports:   func() WaspObject { return NewScExports(o.vm) },
-		wasmhost.KeyIncoming:  func() WaspObject { return NewScBalances(o.vm, keyId) },
+		wasmhost.KeyIncoming:  func() WaspObject { return NewScBalances(o.vm, keyID) },
 		wasmhost.KeyMaps:      func() WaspObject { return NewScMaps(o.vm) },
-		wasmhost.KeyMinted:    func() WaspObject { return NewScBalances(o.vm, keyId) },
+		wasmhost.KeyMinted:    func() WaspObject { return NewScBalances(o.vm, keyID) },
 		wasmhost.KeyParams:    func() WaspObject { return NewScDictFromKvStore(&o.vm.KvStoreHost, o.vm.params()) },
 		wasmhost.KeyResults:   func() WaspObject { return NewScDict(o.vm) },
 		wasmhost.KeyReturn:    func() WaspObject { return NewScDict(o.vm) },
@@ -112,7 +112,7 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
-func (o *ScContext) GetTypeId(keyId int32) int32 {
+func (o *ScContext) GetTypeID(keyId int32) int32 {
 	return typeIds[keyId]
 }
 
@@ -160,8 +160,8 @@ func (o *ScContext) processCall(bytes []byte) {
 	if err != nil {
 		o.Panic("failed to invoke call: %v", err)
 	}
-	resultsId := o.GetObjectId(wasmhost.KeyReturn, wasmhost.OBJTYPE_MAP)
-	o.host.FindObject(resultsId).(*ScDict).kvStore = results
+	resultsID := o.GetObjectID(wasmhost.KeyReturn, wasmhost.OBJTYPE_MAP)
+	o.host.FindObject(resultsID).(*ScDict).kvStore = results
 }
 
 func (o *ScContext) processDeploy(bytes []byte) {

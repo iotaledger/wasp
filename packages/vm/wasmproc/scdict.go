@@ -29,22 +29,22 @@ type WaspObject interface {
 	Suffix(keyID int32) string
 }
 
-func GetArrayObjectID(arrayObj WaspObject, index, typeId int32, factory ObjFactory) int32 {
-	if !arrayObj.Exists(index, typeId) {
+func GetArrayObjectID(arrayObj WaspObject, index, typeID int32, factory ObjFactory) int32 {
+	if !arrayObj.Exists(index, typeID) {
 		arrayObj.Panic("GetArrayObjectId: invalid index")
 	}
-	if typeId != arrayObj.GetTypeId(index) {
+	if typeID != arrayObj.GetTypeID(index) {
 		arrayObj.Panic("GetArrayObjectId: invalid type")
 	}
 	return arrayObj.FindOrMakeObjectId(index, factory)
 }
 
-func GetMapObjectId(mapObj WaspObject, keyId, typeId int32, factories ObjFactories) int32 {
+func GetMapObjectId(mapObj WaspObject, keyId, typeID int32, factories ObjFactories) int32 {
 	factory, ok := factories[keyId]
 	if !ok {
 		mapObj.Panic("GetMapObjectId: invalid key")
 	}
-	if typeId != mapObj.GetTypeId(keyId) {
+	if typeID != mapObj.GetTypeID(keyId) {
 		mapObj.Panic("GetMapObjectId: invalid type")
 	}
 	return mapObj.FindOrMakeObjectId(keyId, factory)
@@ -53,18 +53,17 @@ func GetMapObjectId(mapObj WaspObject, keyId, typeId int32, factories ObjFactori
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScDict struct {
-	host      *wasmhost.KvStoreHost
-	id        int32
-	isMutable bool
-	isRoot    bool
-	keyId     int32
-	kvStore   kv.KVStore
-	length    int32
-	name      string
-	objects   map[int32]int32
-	ownerId   int32
-	typeId    int32
-	types     map[int32]int32
+	host    *wasmhost.KvStoreHost
+	id      int32
+	isRoot  bool
+	keyID   int32
+	kvStore kv.KVStore
+	length  int32
+	name    string
+	objects map[int32]int32
+	ownerID int32
+	typeID  int32
+	types   map[int32]int32
 }
 
 var _ WaspObject = &ScDict{}
@@ -90,29 +89,25 @@ func NewNullObject(host *wasmhost.KvStoreHost) WaspObject {
 	return o
 }
 
-func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
+func (o *ScDict) InitObj(id int32, keyID int32, owner *ScDict) {
 	o.id = id
-	o.keyId = keyId
-	o.ownerId = owner.id
+	o.keyID = keyID
+	o.ownerID = owner.id
 	o.host = owner.host
 	o.isRoot = o.kvStore != nil
 	if !o.isRoot {
 		o.kvStore = owner.kvStore
 	}
 	ownerObj := o.Owner()
-	o.typeId = ownerObj.GetTypeId(keyId)
-	o.name = owner.name + ownerObj.Suffix(keyId)
-	if o.ownerId == 1 {
-		if strings.HasPrefix(o.name, "root.") {
-			// strip off "root." prefix
-			o.name = o.name[len("root."):]
-		}
-		if strings.HasPrefix(o.name, ".") {
-			// strip off "." prefix
-			o.name = o.name[1:]
-		}
+	o.typeID = ownerObj.GetTypeID(keyID)
+	o.name = owner.name + ownerObj.Suffix(keyID)
+	if o.ownerID == 1 {
+		// strip off "root." prefix
+		o.name = strings.TrimPrefix(o.name, "root.")
+		// strip off "." prefix
+		o.name = strings.TrimPrefix(o.name, ".")
 	}
-	if (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 && o.kvStore != nil {
+	if (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 && o.kvStore != nil {
 		key := o.NestedKey()[1:]
 		length, _, err := codec.DecodeInt64(o.kvStore.MustGet(kv.Key(key)))
 		if err != nil {
@@ -131,10 +126,10 @@ func (o *ScDict) CallFunc(keyId int32, params []byte) []byte {
 }
 
 func (o *ScDict) Exists(keyId int32, typeId int32) bool {
-	if keyId == wasmhost.KeyLength && (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 {
+	if keyId == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
 		return true
 	}
-	if o.typeId == (wasmhost.OBJTYPE_ARRAY | wasmhost.OBJTYPE_MAP) {
+	if o.typeID == (wasmhost.OBJTYPE_ARRAY | wasmhost.OBJTYPE_MAP) {
 		return uint32(keyId) <= uint32(len(o.objects))
 	}
 	return o.kvStore.MustHas(o.key(keyId, typeId))
@@ -149,14 +144,14 @@ func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
 	objId = o.host.TrackObject(newObject)
 	newObject.InitObj(objId, keyId, o)
 	o.objects[keyId] = objId
-	if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
+	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
 		o.length++
 	}
 	return objId
 }
 
 func (o *ScDict) GetBytes(keyId int32, typeId int32) []byte {
-	if keyId == wasmhost.KeyLength && (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 {
+	if keyId == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
 		return o.Int64Bytes(int64(o.length))
 	}
 	bytes := o.kvStore.MustGet(o.key(keyId, typeId))
@@ -164,7 +159,7 @@ func (o *ScDict) GetBytes(keyId int32, typeId int32) []byte {
 	return bytes
 }
 
-func (o *ScDict) GetObjectId(keyId int32, typeId int32) int32 {
+func (o *ScDict) GetObjectID(keyId int32, typeId int32) int32 {
 	o.validate(keyId, typeId)
 	if (typeId&wasmhost.OBJTYPE_ARRAY) == 0 && typeId != wasmhost.OBJTYPE_MAP {
 		o.Panic("GetObjectId: invalid type")
@@ -174,9 +169,9 @@ func (o *ScDict) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
-func (o *ScDict) GetTypeId(keyId int32) int32 {
-	if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
-		return o.typeId &^ wasmhost.OBJTYPE_ARRAY
+func (o *ScDict) GetTypeID(keyId int32) int32 {
+	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
+		return o.typeID &^ wasmhost.OBJTYPE_ARRAY
 	}
 	// TODO incomplete, currently only contains used field types
 	typeId, ok := o.types[keyId]
@@ -213,11 +208,11 @@ func (o *ScDict) NestedKey() string {
 		return ""
 	}
 	ownerObj := o.Owner()
-	return ownerObj.NestedKey() + ownerObj.Suffix(o.keyId)
+	return ownerObj.NestedKey() + ownerObj.Suffix(o.keyID)
 }
 
 func (o *ScDict) Owner() WaspObject {
-	return o.host.FindObject(o.ownerId).(WaspObject)
+	return o.host.FindObject(o.ownerID).(WaspObject)
 }
 
 func (o *ScDict) Panic(format string, args ...interface{}) {
@@ -252,7 +247,7 @@ func (o *ScDict) SetBytes(keyId int32, typeId int32, bytes []byte) {
 }
 
 func (o *ScDict) Suffix(keyId int32) string {
-	if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
+	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
 		return fmt.Sprintf(".%d", keyId)
 	}
 	key := o.host.GetKeyFromId(keyId)
@@ -299,9 +294,9 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 	if typeId == -1 {
 		return
 	}
-	if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
+	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
 		// actually array
-		arrayTypeId := o.typeId &^ wasmhost.OBJTYPE_ARRAY
+		arrayTypeId := o.typeID &^ wasmhost.OBJTYPE_ARRAY
 		if typeId == wasmhost.OBJTYPE_BYTES {
 			switch arrayTypeId {
 			case wasmhost.OBJTYPE_ADDRESS:

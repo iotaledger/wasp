@@ -12,7 +12,7 @@ import (
 
 type GoshimmerConfig struct {
 	TxStreamPort int
-	ApiPort      int
+	APIPort      int
 	Provided     bool
 }
 
@@ -20,7 +20,7 @@ type WaspConfig struct {
 	NumNodes int
 
 	// node ports are calculated as these values + node index
-	FirstApiPort       int
+	FirstAPIPort       int
 	FirstPeeringPort   int
 	FirstNanomsgPort   int
 	FirstDashboardPort int
@@ -36,14 +36,14 @@ func DefaultConfig() *ClusterConfig {
 	return &ClusterConfig{
 		Wasp: WaspConfig{
 			NumNodes:           4,
-			FirstApiPort:       9090,
+			FirstAPIPort:       9090,
 			FirstPeeringPort:   4000,
 			FirstNanomsgPort:   5550,
 			FirstDashboardPort: 7000,
 		},
 		Goshimmer: GoshimmerConfig{
 			TxStreamPort: 5000,
-			ApiPort:      8080,
+			APIPort:      8080,
 			Provided:     false,
 		},
 		FaucetPoWTarget: 0,
@@ -77,7 +77,7 @@ func configPath(dataPath string) string {
 }
 
 func (c *ClusterConfig) goshimmerApiHost() string {
-	return fmt.Sprintf("127.0.0.1:%d", c.Goshimmer.ApiPort)
+	return fmt.Sprintf("127.0.0.1:%d", c.Goshimmer.APIPort)
 }
 
 func (c *ClusterConfig) waspHosts(nodeIndexes []int, getHost func(i int) string) []string {
@@ -108,11 +108,11 @@ func (c *ClusterConfig) ApiHosts(nodeIndexes ...[]int) []string {
 }
 
 func (c *ClusterConfig) ApiHost(nodeIndex int) string {
-	return fmt.Sprintf("127.0.0.1:%d", c.ApiPort(nodeIndex))
+	return fmt.Sprintf("127.0.0.1:%d", c.APIPort(nodeIndex))
 }
 
-func (c *ClusterConfig) ApiPort(nodeIndex int) int {
-	return c.Wasp.FirstApiPort + nodeIndex
+func (c *ClusterConfig) APIPort(nodeIndex int) int {
+	return c.Wasp.FirstAPIPort + nodeIndex
 }
 
 func (c *ClusterConfig) PeeringHosts(nodeIndexes ...[]int) []string {
@@ -161,7 +161,7 @@ func (c *ClusterConfig) DashboardPort(nodeIndex int) int {
 
 func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigParams {
 	return &templates.WaspConfigParams{
-		APIPort:       c.ApiPort(i),
+		APIPort:       c.APIPort(i),
 		DashboardPort: c.DashboardPort(i),
 		PeeringPort:   c.PeeringPort(i),
 		NanomsgPort:   c.NanomsgPort(i),

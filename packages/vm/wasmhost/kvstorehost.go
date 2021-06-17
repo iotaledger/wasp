@@ -40,8 +40,8 @@ type HostObject interface {
 	CallFunc(keyId int32, params []byte) []byte
 	Exists(keyId int32, typeId int32) bool
 	GetBytes(keyId int32, typeId int32) []byte
-	GetObjectId(keyId int32, typeId int32) int32
-	GetTypeId(keyId int32) int32
+	GetObjectID(keyId int32, typeId int32) int32
+	GetTypeID(keyId int32) int32
 	SetBytes(keyId int32, typeId int32, bytes []byte)
 }
 
@@ -88,7 +88,7 @@ func (host *KvStoreHost) FindSubObject(obj HostObject, keyId int32, typeId int32
 		// use root object
 		obj = host.FindObject(1)
 	}
-	return host.FindObject(obj.GetObjectId(keyId, typeId))
+	return host.FindObject(obj.GetObjectID(keyId, typeId))
 }
 
 func (host *KvStoreHost) GetBytes(objId int32, keyId int32, typeId int32) []byte {
@@ -133,7 +133,7 @@ func (host *KvStoreHost) GetKeyFromId(keyId int32) []byte {
 	return key
 }
 
-func (host *KvStoreHost) getKeyId(key []byte, fromBytes bool) int32 {
+func (host *KvStoreHost) getKeyID(key []byte, fromBytes bool) int32 {
 	// cannot use []byte as key in maps
 	// so we will convert to (non-utf8) string
 	// most will have started out as string anyway
@@ -161,26 +161,26 @@ func (host *KvStoreHost) GetKeyIdFromBytes(bytes []byte) int32 {
 		bytes = []byte(encoded)
 	}
 
-	keyId := host.getKeyId(bytes, true)
-	host.Trace("GetKeyIdFromBytes '%s'=k%d", encoded, keyId)
-	return keyId
+	keyID := host.getKeyID(bytes, true)
+	host.Trace("GetKeyIdFromBytes '%s'=k%d", encoded, keyID)
+	return keyID
 }
 
-func (host *KvStoreHost) GetKeyIdFromString(key string) int32 {
-	keyId := host.getKeyId([]byte(key), false)
-	host.Trace("GetKeyIdFromString '%s'=k%d", key, keyId)
-	return keyId
+func (host *KvStoreHost) GetKeyIDFromString(key string) int32 {
+	keyID := host.getKeyID([]byte(key), false)
+	host.Trace("GetKeyIdFromString '%s'=k%d", key, keyID)
+	return keyID
 }
 
-func (host *KvStoreHost) GetKeyStringFromId(keyId int32) string {
-	return string(host.GetKeyFromId(keyId))
+func (host *KvStoreHost) GetKeyStringFromID(keyID int32) string {
+	return string(host.GetKeyFromId(keyID))
 }
 
-func (host *KvStoreHost) GetObjectId(objId int32, keyId int32, typeId int32) int32 {
-	host.TraceAll("GetObjectId(o%d,k%d,t%d)", objId, keyId, typeId)
-	subId := host.FindObject(objId).GetObjectId(keyId, typeId)
-	host.Trace("GetObjectId o%d k%d t%d = o%d", objId, keyId, typeId, subId)
-	return subId
+func (host *KvStoreHost) GetObjectID(objID, keyID, typeID int32) int32 {
+	host.TraceAll("GetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
+	subID := host.FindObject(objID).GetObjectID(keyID, typeID)
+	host.Trace("GetObjectID o%d k%d t%d = o%d", objID, keyID, typeID, subID)
+	return subID
 }
 
 func (host *KvStoreHost) PopFrame(frame []HostObject) {

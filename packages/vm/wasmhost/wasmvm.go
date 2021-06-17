@@ -36,7 +36,7 @@ type WasmVMBase struct {
 	memoryDirty    bool
 	memoryNonZero  int
 	result         []byte
-	resultKeyId    int32
+	resultKeyID    int32
 	timeoutStarted bool
 }
 
@@ -62,13 +62,13 @@ func (vm *WasmVMBase) HostFdWrite(fd, iovs, size, written int32) int32 {
 	return int32(siz)
 }
 
-func (vm *WasmVMBase) HostGetBytes(objId, keyId, typeId, stringRef, size int32) int32 {
+func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) int32 {
 	host := vm.host
-	host.TraceAll("HostGetBytes(o%d,k%d,t%d,r%d,s%d)", objId, keyId, typeId, stringRef, size)
+	host.TraceAll("HostGetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
 
 	// only check for existence ?
 	if size < 0 {
-		if host.Exists(objId, keyId, typeId) {
+		if host.Exists(objID, keyID, typeID) {
 			return 0
 		}
 		// missing key is indicated by -1
@@ -76,8 +76,8 @@ func (vm *WasmVMBase) HostGetBytes(objId, keyId, typeId, stringRef, size int32) 
 	}
 
 	// actual GetBytes request ?
-	if (typeId & OBJTYPE_CALL) == 0 {
-		bytes := host.GetBytes(objId, keyId, typeId)
+	if (typeID & OBJTYPE_CALL) == 0 {
+		bytes := host.GetBytes(objID, keyID, typeID)
 		if bytes == nil {
 			return -1
 		}
@@ -85,20 +85,20 @@ func (vm *WasmVMBase) HostGetBytes(objId, keyId, typeId, stringRef, size int32) 
 	}
 
 	// func call request
-	switch typeId {
+	switch typeID {
 	case OBJTYPE_CALL:
 		// func call with params, returns result length
-		vm.resultKeyId = keyId
+		vm.resultKeyID = keyID
 		params := vm.impl.VMGetBytes(stringRef, size)
-		vm.result = host.CallFunc(objId, keyId, params)
+		vm.result = host.CallFunc(objID, keyID, params)
 		return int32(len(vm.result))
 
 	case OBJTYPE_CALL + 1:
 		// retrieve previous func call result
-		if vm.resultKeyId == keyId {
+		if vm.resultKeyID == keyID {
 			result := vm.result
 			vm.result = nil
-			vm.resultKeyId = 0
+			vm.resultKeyID = 0
 			if result == nil {
 				return -1
 			}
@@ -108,13 +108,13 @@ func (vm *WasmVMBase) HostGetBytes(objId, keyId, typeId, stringRef, size int32) 
 	panic("HostGetBytes: Invalid func call state")
 }
 
-func (vm *WasmVMBase) HostGetKeyId(keyRef int32, size int32) int32 {
+func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
 	host := vm.host
 	host.TraceAll("HostGetKeyId(r%d,s%d)", keyRef, size)
 	// non-negative size means original key was a string
 	if size >= 0 {
 		bytes := vm.impl.VMGetBytes(keyRef, size)
-		return host.GetKeyIdFromString(string(bytes))
+		return host.GetKeyIDFromString(string(bytes))
 	}
 
 	// negative size means original key was a byte slice
@@ -122,17 +122,17 @@ func (vm *WasmVMBase) HostGetKeyId(keyRef int32, size int32) int32 {
 	return host.GetKeyIdFromBytes(bytes)
 }
 
-func (vm *WasmVMBase) HostGetObjectId(objId int32, keyId int32, typeId int32) int32 {
+func (vm *WasmVMBase) hostGetObjectID(objID, keyID, typeID int32) int32 {
 	host := vm.host
-	host.TraceAll("HostGetObjectId(o%d,k%d,t%d)", objId, keyId, typeId)
-	return host.GetObjectId(objId, keyId, typeId)
+	host.TraceAll("hostGetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
+	return host.GetObjectID(objID, keyID, typeID)
 }
 
-func (vm *WasmVMBase) HostSetBytes(objId int32, keyId int32, typeId int32, stringRef int32, size int32) {
+func (vm *WasmVMBase) HostSetBytes(objID, keyID, typeID, stringRef, size int32) {
 	host := vm.host
-	host.TraceAll("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objId, keyId, typeId, stringRef, size)
+	host.TraceAll("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
 	bytes := vm.impl.VMGetBytes(stringRef, size)
-	host.SetBytes(objId, keyId, typeId, bytes)
+	host.SetBytes(objID, keyID, typeID, bytes)
 }
 
 func (vm *WasmVMBase) PreCall() []byte {
