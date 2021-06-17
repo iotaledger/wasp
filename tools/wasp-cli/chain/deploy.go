@@ -10,13 +10,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	committee   []int
-	quorum      int
-	description string
-)
-
 func deployCmd() *cobra.Command {
+	var (
+		committee   []int
+		quorum      int
+		description string
+	)
+
 	cmd := &cobra.Command{
 		Use:   "deploy",
 		Short: "Deploy a new chain",
@@ -26,6 +26,8 @@ func deployCmd() *cobra.Command {
 
 			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
 				Node:                  config.GoshimmerClient(),
+				AllApiHosts:           config.CommitteeApi(committee),
+				AllPeeringHosts:       config.CommitteePeering(committee),
 				CommitteeApiHosts:     config.CommitteeApi(committee),
 				CommitteePeeringHosts: config.CommitteePeering(committee),
 				N:                     uint16(len(committee)),
@@ -33,7 +35,6 @@ func deployCmd() *cobra.Command {
 				OriginatorKeyPair:     wallet.Load().KeyPair(),
 				Description:           description,
 				Textout:               os.Stdout,
-				Prefix:                "",
 			})
 			log.Check(err)
 

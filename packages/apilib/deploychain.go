@@ -42,7 +42,7 @@ type CreateChainParams struct {
 func DeployChainWithDKG(par CreateChainParams) (*chainid.ChainID, ledgerstate.Address, error) {
 	if len(par.AllPeeringHosts) > 0 {
 		// all committee nodes most also be among allPeers
-		if !util.IsSubset(par.CommitteeApiHosts, par.AllPeeringHosts) {
+		if !util.IsSubset(par.CommitteePeeringHosts, par.AllPeeringHosts) {
 			return nil, nil, xerrors.Errorf("DeployChainWithDKG: committee nodes must all be among peers")
 		}
 	}
