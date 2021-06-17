@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
@@ -49,7 +48,7 @@ func TestOffledgerRequests(t *testing.T) {
 	checkBalanceOnChain(t, chain, userAgentID, ledgerstate.ColorIOTA, 100)
 
 	// send off-ledger request via Web API
-	offledgerReq, err := chClient.PostOffLedgerRequest(scHname, coretypes.Hn(inccounter.FuncIncCounter), requestargs.RequestArgs{})
+	offledgerReq, err := chClient.PostOffLedgerRequest(scHname, coretypes.Hn(inccounter.FuncIncCounter))
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilRequestProcessed(&chain.ChainID, offledgerReq.ID(), 30*time.Second)
 	check(err, t)
