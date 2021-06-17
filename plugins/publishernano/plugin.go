@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pub"
-	_ "go.nanomsg.org/mangos/v3/transport/all"
 )
 
 // PluginName is the name of the Publisher plugin.
@@ -80,7 +79,7 @@ func openSocket(port int) (mangos.Socket, error) {
 	}
 
 	url := fmt.Sprintf("tcp://:%d", port)
-	if err = socket.Listen(url); err != nil {
+	if err := socket.Listen(url); err != nil {
 		return nil, err
 	}
 	return socket, nil

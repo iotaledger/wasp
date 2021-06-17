@@ -43,7 +43,7 @@ func New(name string, config *ClusterConfig) *Cluster {
 }
 
 func (clu *Cluster) GoshimmerClient() *goshimmer.Client {
-	return goshimmer.NewClient(clu.Config.goshimmerApiHost(), clu.Config.FaucetPoWTarget)
+	return goshimmer.NewClient(clu.Config.goshimmerAPIHost(), clu.Config.FaucetPoWTarget)
 }
 
 func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
@@ -57,7 +57,7 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 }
 
 func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
-	apiHosts := clu.Config.ApiHosts(committeeNodes)
+	apiHosts := clu.Config.APIHosts(committeeNodes)
 	peeringHosts := clu.Config.PeeringHosts(committeeNodes)
 	return apilib.RunDKG(apiHosts, peeringHosts, threshold, timeout...)
 }
@@ -116,11 +116,11 @@ func (clu *Cluster) IsNodeUp(i int) bool {
 }
 
 func (clu *Cluster) MultiClient() *multiclient.MultiClient {
-	return multiclient.New(clu.Config.ApiHosts())
+	return multiclient.New(clu.Config.APIHosts())
 }
 
 func (clu *Cluster) WaspClient(nodeIndex int) *client.WaspClient {
-	return client.NewWaspClient(clu.Config.ApiHost(nodeIndex))
+	return client.NewWaspClient(clu.Config.APIHost(nodeIndex))
 }
 
 func waspNodeDataPath(dataPath string, i int) string {

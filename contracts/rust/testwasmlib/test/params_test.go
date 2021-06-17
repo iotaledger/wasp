@@ -48,26 +48,26 @@ func TestNoParams(t *testing.T) {
 func TestValidParams(t *testing.T) {
 	chain := setupTest(t)
 
-	chainId := chain.ChainID
-	address := chainId.AsAddress()
+	chainID := chain.ChainID
+	address := chainID.AsAddress()
 	hname := HScName
-	agentId := coretypes.NewAgentID(address, hname)
+	agentID := coretypes.NewAgentID(address, hname)
 	color, _, err := ledgerstate.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhite"))
 	require.NoError(t, err)
 	hash, err := hashing.HashValueFromBytes([]byte("0123456789abcdeffedcba9876543210"))
 	require.NoError(t, err)
-	requestId, err := coretypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))
+	requestID, err := coretypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))
 	require.NoError(t, err)
 	req := solo.NewCallParams(ScName, FuncParamTypes,
 		ParamAddress, address,
-		ParamAgentID, agentId,
+		ParamAgentID, agentID,
 		ParamBytes, []byte("these are bytes"),
-		ParamChainID, chainId,
+		ParamChainID, chainID,
 		ParamColor, color,
 		ParamHash, hash,
 		ParamHname, hname,
 		ParamInt64, int64(1234567890123456789),
-		ParamRequestID, requestId,
+		ParamRequestID, requestID,
 		ParamString, "this is a string",
 	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)

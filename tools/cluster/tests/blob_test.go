@@ -139,7 +139,7 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 
 	fv := codec.MakeDict(blobFieldValues)
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, testOwner)
-	expectedHash, tx, err := chClient.UploadBlob(fv, clu.Config.ApiHosts(clu.Config.AllNodes()), int(chain1.Quorum))
+	expectedHash, tx, err := chClient.UploadBlob(fv, clu.Config.APIHosts(clu.Config.AllNodes()), int(chain1.Quorum))
 	require.NoError(t, err)
 	err = chClient.WaspClient.WaitUntilAllRequestsProcessed(chain1.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
@@ -197,7 +197,7 @@ func TestBlobRefConsensus(t *testing.T) {
 	for _, v := range optimizedBlobs {
 		fieldValues = append(fieldValues, v)
 	}
-	nodesMultiAPI := multiclient.New(clu.Config.ApiHosts(clu.Config.AllNodes()))
+	nodesMultiAPI := multiclient.New(clu.Config.APIHosts(clu.Config.AllNodes()))
 	err = nodesMultiAPI.UploadData(fieldValues, int(chain1.Quorum))
 	require.NoError(t, err)
 

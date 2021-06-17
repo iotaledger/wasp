@@ -26,7 +26,7 @@ func deployCmd() *cobra.Command {
 
 			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
 				Node:                  config.GoshimmerClient(),
-				CommitteeAPIHosts:     config.CommitteeApi(committee),
+				CommitteeAPIHosts:     config.CommitteeAPI(committee),
 				CommitteePeeringHosts: config.CommitteePeering(committee),
 				N:                     uint16(len(committee)),
 				T:                     uint16(quorum),
@@ -41,7 +41,7 @@ func deployCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().IntSliceVarP(&committee, "committee", "", []int{0, 1, 2, 3}, "committee indices")
-	cmd.Flags().IntVarP(&quorum, "quorum", "", 3, "quorum")
+	cmd.Flags().IntVarP(&quorum, "quorum", "", 3, "quorum") //nolint:gomnd
 	cmd.Flags().StringVarP(&description, "description", "", "", "description")
 	return cmd
 }

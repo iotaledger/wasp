@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var numNodes = flag.Int("num-nodes", 4, "amount of wasp nodes")
+var numNodes = flag.Int("num-nodes", 4, "amount of wasp nodes") //nolint:gomnd
 
 func NewCluster(t *testing.T, nNodes ...int) *cluster.Cluster {
 	if testing.Short() {

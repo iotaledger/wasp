@@ -42,7 +42,7 @@ func (ch *Chain) ChainAddress() ledgerstate.Address {
 }
 
 func (ch *Chain) APIHosts() []string {
-	return ch.Cluster.Config.ApiHosts(ch.CommitteeNodes)
+	return ch.Cluster.Config.APIHosts(ch.CommitteeNodes)
 }
 
 func (ch *Chain) PeeringHosts() []string {
@@ -145,7 +145,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 	})
 
 	quorum := (2*len(ch.APIHosts()))/3 + 1
-	programHash, tx, err := ch.OriginatorClient().UploadBlob(blobFieldValues, ch.APIHosts(), quorum, 256)
+	programHash, tx, err := ch.OriginatorClient().UploadBlob(blobFieldValues, ch.APIHosts(), quorum, 256) //nolint:gomnd
 	if err != nil {
 		return nil, hashing.NilHash, err
 	}

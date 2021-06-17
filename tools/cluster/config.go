@@ -69,14 +69,14 @@ func (c *ClusterConfig) Save(dataPath string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(configPath(dataPath), b, 0644)
+	return ioutil.WriteFile(configPath(dataPath), b, 0600) //nolint:gomnd
 }
 
 func configPath(dataPath string) string {
 	return path.Join(dataPath, "cluster.json")
 }
 
-func (c *ClusterConfig) goshimmerApiHost() string {
+func (c *ClusterConfig) goshimmerAPIHost() string {
 	return fmt.Sprintf("127.0.0.1:%d", c.Goshimmer.APIPort)
 }
 
@@ -99,15 +99,15 @@ func (c *ClusterConfig) AllNodes() []int {
 	return nodes
 }
 
-func (c *ClusterConfig) ApiHosts(nodeIndexes ...[]int) []string {
+func (c *ClusterConfig) APIHosts(nodeIndexes ...[]int) []string {
 	nodes := c.AllNodes()
 	if len(nodeIndexes) == 1 {
 		nodes = nodeIndexes[0]
 	}
-	return c.waspHosts(nodes, func(i int) string { return c.ApiHost(i) })
+	return c.waspHosts(nodes, func(i int) string { return c.APIHost(i) })
 }
 
-func (c *ClusterConfig) ApiHost(nodeIndex int) string {
+func (c *ClusterConfig) APIHost(nodeIndex int) string {
 	return fmt.Sprintf("127.0.0.1:%d", c.APIPort(nodeIndex))
 }
 

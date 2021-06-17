@@ -38,7 +38,7 @@ var initCmd = &cobra.Command{
 
 func Load() *Wallet {
 	seedb58 := viper.GetString("wallet.seed")
-	if len(seedb58) == 0 {
+	if seedb58 == "" {
 		log.Fatalf("call `init` first")
 	}
 	seedBytes, err := base58.Decode(seedb58)

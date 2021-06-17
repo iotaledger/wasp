@@ -14,7 +14,7 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-func ValueFromString(vtype string, s string) []byte {
+func ValueFromString(vtype, s string) []byte {
 	switch vtype {
 	case "color":
 		col, err := ledgerstate.ColorFromBase58EncodedString(s)
@@ -71,7 +71,7 @@ func EncodeParams(params []string) dict.Dict {
 	return d
 }
 
-func PrintDictAsJson(d dict.Dict) {
+func PrintDictAsJSON(d dict.Dict) {
 	log.Check(json.NewEncoder(os.Stdout).Encode(d))
 }
 

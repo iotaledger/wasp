@@ -91,7 +91,7 @@ func main() {
 			exists, err := cluster.ConfigExists(dataPath)
 			check(err)
 			if !exists {
-				check(fmt.Errorf("%s/cluster.json not found. Call `%s init` first.", dataPath, os.Args[0]))
+				check(fmt.Errorf("%s/cluster.json not found. Call `%s init` first", dataPath, os.Args[0]))
 			}
 
 			config, err = cluster.LoadConfig(dataPath)

@@ -38,7 +38,7 @@ var balanceCmd = &cobra.Command{
 		log.Printf("  Balance:\n")
 		var total uint64
 		if log.VerboseFlag {
-			total = byOutputId(outs)
+			total = byOutputID(outs)
 		} else {
 			total = byColor(outs)
 		}
@@ -55,7 +55,7 @@ func byColor(outs []ledgerstate.Output) uint64 {
 	return total
 }
 
-func byOutputId(outs []ledgerstate.Output) uint64 {
+func byOutputID(outs []ledgerstate.Output) uint64 {
 	var total uint64
 	for _, out := range outs {
 		log.Printf("    output ID %s:\n", out.ID())

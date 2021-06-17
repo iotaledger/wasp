@@ -11,21 +11,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/wasp/packages/kv/optimism"
-
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/dashboard"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
@@ -63,7 +60,7 @@ func (w *waspServices) ExploreAddressBaseURL() string {
 	if baseURL != "" {
 		return baseURL
 	}
-	return exploreAddressUrlFromGoshimmerUri(parameters.GetString(parameters.NodeAddress))
+	return exploreAddressURLFromGoshimmerURI(parameters.GetString(parameters.NodeAddress))
 }
 
 func (w *waspServices) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
@@ -96,8 +93,8 @@ func (w *waspServices) GetChain(chainID *chainid.ChainID) chain.ChainCore {
 	return chains.AllChains().Get(chainID)
 }
 
-func (w *waspServices) CallView(chain chain.ChainCore, hname coretypes.Hname, funName string, params dict.Dict) (dict.Dict, error) {
-	vctx := viewcontext.NewFromChain(chain)
+func (w *waspServices) CallView(ch chain.ChainCore, hname coretypes.Hname, funName string, params dict.Dict) (dict.Dict, error) {
+	vctx := viewcontext.NewFromChain(ch)
 	var err error
 	var ret dict.Dict
 	_ = optimism.RepeatOnceIfUnlucky(func() error {
@@ -110,7 +107,7 @@ func (w *waspServices) CallView(chain chain.ChainCore, hname coretypes.Hname, fu
 	return ret, nil
 }
 
-func exploreAddressUrlFromGoshimmerUri(uri string) string {
+func exploreAddressURLFromGoshimmerURI(uri string) string {
 	url := strings.Split(uri, ":")[0] + ":8081/explorer/address"
 	if !strings.HasPrefix(url, "http") {
 		return "http://" + url

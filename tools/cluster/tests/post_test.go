@@ -5,18 +5,19 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
-	"github.com/iotaledger/wasp/packages/solo"
-
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
+
+const name = "inc"
 
 func deployInccounter42(t *testing.T, name string, counter int64) *coretypes.AgentID {
 	hname := coretypes.Hn(name)
@@ -93,7 +94,6 @@ func TestPostDeployInccounter(t *testing.T) {
 	chain, err = clu.DeployDefaultChain()
 	check(err, t)
 
-	name := "inc"
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 }
@@ -104,7 +104,6 @@ func TestPost1Request(t *testing.T) {
 	chain, err = clu.DeployDefaultChain()
 	check(err, t)
 
-	name := "inc"
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 
@@ -130,7 +129,6 @@ func TestPost3Recursive(t *testing.T) {
 	chain, err = clu.DeployDefaultChain()
 	check(err, t)
 
-	name := "inc"
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 
@@ -164,7 +162,6 @@ func TestPost5Requests(t *testing.T) {
 	chain, err = clu.DeployDefaultChain()
 	check(err, t)
 
-	name := "inc"
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 
@@ -200,7 +197,6 @@ func TestPost5AsyncRequests(t *testing.T) {
 	chain, err = clu.DeployDefaultChain()
 	check(err, t)
 
-	name := "inc"
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 
