@@ -12,6 +12,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -46,7 +47,7 @@ type consensus struct {
 	pullInclusionStateDeadline time.Time
 	lastTimerTick              atomic.Int64
 	consensusInfoSnapshot      atomic.Value
-	timers                     TimerParams
+	timers                     util.TimerParams
 	log                        *logger.Logger
 	eventStateTransitionMsgCh  chan *chain.StateTransitionMsg
 	eventSignedResultMsgCh     chan *chain.SignedResultMsg
@@ -72,8 +73,8 @@ type workflowFlags struct {
 
 var _ chain.Consensus = &consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, timersOpt ...TimerParams) *consensus {
-	var timers TimerParams
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, timersOpt ...util.TimerParams) *consensus {
+	var timers util.TimerParams
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
 	} else {

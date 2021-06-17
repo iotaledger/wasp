@@ -5,71 +5,9 @@ package consensus
 
 import (
 	"time"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
-
-type TimerParam struct {
-	name         string
-	defaultValue time.Duration
-	value        *time.Duration
-}
-
-func NewTimerParam(n string, dv time.Duration) *TimerParam {
-	return &TimerParam{
-		name:         n,
-		defaultValue: dv,
-		value:        nil,
-	}
-}
-
-func (tpT *TimerParam) GetName() string {
-	return tpT.name
-}
-
-func (tpT *TimerParam) GetDefault() time.Duration {
-	return tpT.defaultValue
-}
-
-func (tpT *TimerParam) getValue() time.Duration {
-	if tpT.value == nil {
-		return tpT.GetDefault()
-	}
-	return *(tpT.value)
-}
-
-func (tpT *TimerParam) setValue(v time.Duration) {
-	tpT.value = &v
-}
-
-func (tpT *TimerParam) clearValue() {
-	tpT.value = nil
-}
-
-type TimerParams map[string]*TimerParam
-
-func NewTimerParams(params ...*TimerParam) TimerParams {
-	result := make(map[string]*TimerParam)
-	for _, param := range params {
-		result[param.GetName()] = param
-	}
-	return result
-}
-
-func (tpT TimerParams) Get(name string) time.Duration {
-	return tpT[name].getValue()
-}
-
-func (tpT TimerParams) Set(name string, value time.Duration) {
-	tpT[name].setValue(value)
-}
-
-func (tpT TimerParams) With(name string, value time.Duration) TimerParams {
-	tpT.Set(name, value)
-	return tpT
-}
-
-func (tpT TimerParams) Clear(name string) {
-	tpT[name].clearValue()
-}
 
 const TimerVMRunRetryToWaitForReadyRequestsNameConst = "VMRunRetryToWaitForReadyRequests"
 const TimerBroadcastSignedResultRetryNameConst = "BroadcastSignedResultRetry"
@@ -77,12 +15,12 @@ const TimerPostTxSequenceStepNameConst = "PostTxSequenceStep"
 const TimerPullInclusionStateRetryNameConst = "PullInclusionStateRetry"
 const TimerProposeBatchRetryNameConst = "ProposeBatchRetry"
 
-func NewConsensusTimers() TimerParams {
-	return NewTimerParams(
-		NewTimerParam(TimerVMRunRetryToWaitForReadyRequestsNameConst, 500*time.Millisecond),
-		NewTimerParam(TimerBroadcastSignedResultRetryNameConst, 1*time.Second),
-		NewTimerParam(TimerPostTxSequenceStepNameConst, 1*time.Second),
-		NewTimerParam(TimerPullInclusionStateRetryNameConst, 1*time.Second),
-		NewTimerParam(TimerProposeBatchRetryNameConst, 500*time.Millisecond),
+func NewConsensusTimers() util.TimerParams {
+	return util.NewTimerParams(
+		util.NewTimerParam(TimerVMRunRetryToWaitForReadyRequestsNameConst, 500*time.Millisecond),
+		util.NewTimerParam(TimerBroadcastSignedResultRetryNameConst, 1*time.Second),
+		util.NewTimerParam(TimerPostTxSequenceStepNameConst, 1*time.Second),
+		util.NewTimerParam(TimerPullInclusionStateRetryNameConst, 1*time.Second),
+		util.NewTimerParam(TimerProposeBatchRetryNameConst, 500*time.Millisecond),
 	)
 }

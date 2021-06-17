@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"go.uber.org/atomic"
 
@@ -33,7 +34,7 @@ type stateManager struct {
 	currentSyncData        atomic.Value
 	notifiedAnchorOutputID ledgerstate.OutputID
 	syncingBlocks          *syncingBlocks
-	timers                 Timers
+	timers                 util.TimerParams
 	log                    *logger.Logger
 
 	// Channels for accepting external events.
@@ -51,12 +52,12 @@ const (
 	maxBlocksToCommitConst               = 10000 //10k
 )
 
-func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, timersOpt ...Timers) chain.StateManager {
-	var timers Timers
+func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, timersOpt ...util.TimerParams) chain.StateManager {
+	var timers util.TimerParams
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
 	} else {
-		timers = Timers{}
+		timers = NewStateManagerTimers()
 	}
 	ret := &stateManager{
 		ready:                  ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
@@ -64,7 +65,7 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		chain:                  c,
 		nodeConn:               nodeconn,
 		peers:                  peers,
-		syncingBlocks:          newSyncingBlocks(c.Log(), timers.getGetBlockRetry()),
+		syncingBlocks:          newSyncingBlocks(c.Log(), timers.Get(TimerGetBlockRetryConstNameConst)),
 		timers:                 timers,
 		log:                    c.Log().Named("s"),
 		pullStateRetryTime:     time.Now(),

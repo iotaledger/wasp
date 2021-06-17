@@ -13,6 +13,8 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
+	"github.com/iotaledger/wasp/packages/util"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -178,7 +180,7 @@ func (env *MockedEnv) PullConfirmedOutputFromLedger(addr ledgerstate.Address, ou
 	return output
 }
 
-func (env *MockedEnv) NewMockedNode(nodeIndex int, timers Timers) *MockedNode {
+func (env *MockedEnv) NewMockedNode(nodeIndex int, timers util.TimerParams) *MockedNode {
 	nodeID := env.NodeIDs[nodeIndex]
 	log := env.Log.Named(nodeID)
 	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.NodeIDs)
