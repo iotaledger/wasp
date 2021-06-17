@@ -106,7 +106,7 @@ func (c *Consensus) recvLoop() {
 	// wait at startup
 	for !c.committee.IsReady() {
 		select {
-		case <-time.After(100 * time.Millisecond): //nolint:gomnd
+		case <-time.After(100 * time.Millisecond):
 		case <-c.closeCh:
 			return
 		}

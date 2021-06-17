@@ -165,7 +165,7 @@ func (m *ImmutableMap) Len() (uint32, error) {
 	if v == nil {
 		return 0, nil
 	}
-	if len(v) != 4 { //nolint:gomnd
+	if len(v) != 4 {
 		return 0, errors.New("corrupted data")
 	}
 	return util.MustUint32From4Bytes(v), nil

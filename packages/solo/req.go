@@ -271,6 +271,6 @@ func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bo
 				maxw, numReq, mstats.InBufCounter, mstats.OutPoolCounter)
 			return false
 		}
-		time.Sleep(10 * time.Millisecond) //nolint:gomnd
+		time.Sleep(10 * time.Millisecond)
 	}
 }

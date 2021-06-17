@@ -252,7 +252,7 @@ func (c *committee) waitReady(waitReady bool) {
 	if waitReady {
 		c.log.Infof("wait for at least quorum of committee validatorNodes (%d) to connect before activating the committee", c.Quorum())
 		for !c.QuorumIsAlive() {
-			time.Sleep(100 * time.Millisecond) //nolint:gomnd
+			time.Sleep(100 * time.Millisecond)
 		}
 	}
 	c.log.Infof("committee started for address %s", c.dkshare.Address.Base58())

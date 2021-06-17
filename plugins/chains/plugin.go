@@ -54,6 +54,6 @@ func run(_ *node.Plugin) {
 }
 
 func AllChains() *chains.Chains {
-	initialized.MustWait(5 * time.Second) //nolint:gomnd
+	initialized.MustWait(5 * time.Second)
 	return allChains
 }

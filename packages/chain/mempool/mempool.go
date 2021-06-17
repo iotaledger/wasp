@@ -313,7 +313,7 @@ func (m *mempool) WaitRequestInPool(reqid coretypes.RequestID, timeout ...time.D
 		if m.HasRequest(reqid) {
 			return true
 		}
-		time.Sleep(10 * time.Millisecond) //nolint:gomnd
+		time.Sleep(10 * time.Millisecond)
 		if time.Now().After(deadline) {
 			return false
 		}
@@ -340,7 +340,7 @@ func (m *mempool) WaitInBufferEmpty(timeout ...time.Duration) bool {
 		if m.inBufferLen() == 0 {
 			return true
 		}
-		time.Sleep(10 * time.Millisecond) //nolint:gomnd
+		time.Sleep(10 * time.Millisecond)
 		if time.Now().After(deadline) {
 			return false
 		}

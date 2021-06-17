@@ -43,7 +43,7 @@ const (
 var crc32q *crc32.Table
 
 func init() {
-	crc32q = crc32.MakeTable(0xD5828281) //nolint:gomnd
+	crc32q = crc32.MakeTable(0xD5828281)
 }
 
 // PeeringID is relates peers in different nodes for a particular

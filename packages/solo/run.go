@@ -72,7 +72,7 @@ func (ch *Chain) runRequestsNolock(reqs []coretypes.Request, trace string) (dict
 		essence, err = rotate.MakeRotateStateControllerTransaction(
 			task.RotationAddress,
 			task.ChainInput,
-			task.Timestamp.Add(2*time.Nanosecond), //nolint:gomnd
+			task.Timestamp.Add(2*time.Nanosecond),
 			identity.ID{},
 			identity.ID{},
 		)

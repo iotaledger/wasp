@@ -75,14 +75,14 @@ func NewAgentIDFromBase58EncodedString(s string) (*AgentID, error) {
 
 // NewAgentIDFromString parses the human-readable string representation
 func NewAgentIDFromString(s string) (*AgentID, error) {
-	if len(s) < 2 { //nolint:gomnd
+	if len(s) < 2 {
 		return nil, xerrors.New("NewAgentIDFromString: invalid length")
 	}
 	if s[:2] != "A/" {
 		return nil, xerrors.New("NewAgentIDFromString: wrong prefix")
 	}
 	parts := strings.Split(s[2:], "::")
-	if len(parts) != 2 { //nolint:gomnd
+	if len(parts) != 2 {
 		return nil, xerrors.New("NewAgentIDFromString: wrong format")
 	}
 	addr, err := ledgerstate.AddressFromBase58EncodedString(parts[0])

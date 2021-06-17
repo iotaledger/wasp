@@ -11,7 +11,7 @@ var callViewCmd = &cobra.Command{
 	Use:   "call-view <name> <funcname> [params]",
 	Short: "Call a contract view function",
 	Long:  "Call contract <name>, view function <funcname> with given params.",
-	Args:  cobra.MinimumNArgs(2), //nolint:gomnd
+	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		r, err := SCClient(coretypes.Hn(args[0])).CallView(args[1], util.EncodeParams(args[2:]))
 		log.Check(err)

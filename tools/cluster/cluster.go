@@ -248,7 +248,7 @@ func (clu *Cluster) start(dataPath string) error {
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
 		select {
 		case <-initOk:
-		case <-time.After(10 * time.Second): //nolint:gomnd
+		case <-time.After(10 * time.Second):
 			return fmt.Errorf("Timeout starting wasp nodes\n") //nolint:revive
 		}
 	}

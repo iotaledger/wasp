@@ -30,7 +30,7 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	messages := make(chan []byte, 100) //nolint:gomnd
+	messages := make(chan []byte, 100)
 
 	port := parameters.GetInt(parameters.NanomsgPublisherPort)
 	socket, err := openSocket(port)

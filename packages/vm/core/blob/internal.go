@@ -24,7 +24,7 @@ func sizesKey(blobHash hashing.HashValue) string {
 func mustGetBlobHash(fields dict.Dict) (hashing.HashValue, []kv.Key, [][]byte) {
 	sorted := fields.KeysSorted() // mind determinism
 	values := make([][]byte, 0, len(sorted))
-	all := make([][]byte, 0, 2*len(sorted)) //nolint:gomnd
+	all := make([][]byte, 0, 2*len(sorted))
 	for _, k := range sorted {
 		v := fields.MustGet(k)
 		values = append(values, v)

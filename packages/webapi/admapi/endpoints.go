@@ -44,7 +44,7 @@ func protected(whitelist []net.IP) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			parts := strings.Split(c.Request().RemoteAddr, ":")
-			if len(parts) == 2 { //nolint:gomnd
+			if len(parts) == 2 {
 				ip := net.ParseIP(parts[0])
 				if ip != nil && isAllowed(ip) {
 					return next(c)

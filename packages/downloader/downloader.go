@@ -112,7 +112,7 @@ func (d *Downloader) notifyCompletedIfNeeded(success *bool, completedChanOpt ...
 	}
 }
 
-//nolint:gomnd //magic number 2
+//magic number 2
 func (d *Downloader) download(uri string) ([]byte, error) {
 	split := strings.SplitN(uri, "://", 2)
 	if len(split) != 2 {

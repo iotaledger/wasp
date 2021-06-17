@@ -165,7 +165,7 @@ func (vm *WasmVMBase) Run(runner func() error) (err error) {
 		WasmTimeout = 0
 	}
 
-	done := make(chan bool, 2) //nolint:gomnd
+	done := make(chan bool, 2)
 
 	// start timeout handler
 	go func() {

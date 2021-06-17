@@ -197,7 +197,7 @@ func (o *ScDict) key(keyId, typeId int32) kv.Key {
 }
 
 func (o *ScDict) MustInt64(bytes []byte) int64 {
-	if len(bytes) != 8 { //nolint:gomnd
+	if len(bytes) != 8 {
 		o.Panic("invalid int64 length")
 	}
 	return int64(binary.LittleEndian.Uint64(bytes))

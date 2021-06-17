@@ -14,11 +14,11 @@ func Init(rootCmd *cobra.Command) {
 var decodeCmd = &cobra.Command{
 	Use:   "decode <type> <key> <type> ...",
 	Short: "Decode the output of a contract function call",
-	Args:  cobra.MinimumNArgs(2), //nolint:gomnd
+	Args:  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		d := util.UnmarshalDict()
 
-		if len(args) == 2 { //nolint:gomnd
+		if len(args) == 2 {
 			ktype := args[0]
 			vtype := args[1]
 

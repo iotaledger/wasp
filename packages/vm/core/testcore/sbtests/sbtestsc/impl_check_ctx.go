@@ -45,10 +45,10 @@ func passTypesFull(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	i64, exists, err := codec.DecodeInt64(ctx.Params().MustGet("int64"))
 	checkFull(ctx, exists, err)
-	if i64 != 42 { //nolint:gomnd
+	if i64 != 42 {
 		ctx.Log().Panicf("wrong int64")
 	}
-	ret.Set("string", codec.EncodeInt64(42)) //nolint:gomnd
+	ret.Set("string", codec.EncodeInt64(42))
 
 	i64_0, exists, err := codec.DecodeInt64(ctx.Params().MustGet("int64-0"))
 	checkFull(ctx, exists, err)

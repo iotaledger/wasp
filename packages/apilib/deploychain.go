@@ -176,7 +176,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 	fmt.Fprintf(textout, "posting root init request.. OK. txid: %s\n", reqTx.ID().Base58())
 
 	// ---------- wait until the request is processed in all committee nodes
-	if err = committee.WaitUntilAllRequestsProcessed(chainID, reqTx, 30*time.Second); err != nil { //nolint:gomnd
+	if err = committee.WaitUntilAllRequestsProcessed(chainID, reqTx, 30*time.Second); err != nil {
 		fmt.Fprintf(textout, "waiting root init request transaction.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("WaitUntilAllRequestsProcessed: %w", err)
 	}

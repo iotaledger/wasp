@@ -63,8 +63,8 @@ func SetupDkg(
 		peerNetIDs,
 		peerPubs,
 		threshold,
-		100*time.Second, //nolint:gomnd
-		200*time.Second, //nolint:gomnd
+		100*time.Second,
+		200*time.Second,
 		timeout,
 	)
 	require.Nil(t, err)

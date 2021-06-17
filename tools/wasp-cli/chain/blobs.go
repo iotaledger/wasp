@@ -23,7 +23,7 @@ func initUploadFlags(chainCmd *cobra.Command) {
 var storeBlobCmd = &cobra.Command{
 	Use:   "store-blob <type> <field> <type> <value> ...",
 	Short: "Store a blob in the chain",
-	Args:  cobra.MinimumNArgs(4), //nolint:gomnd
+	Args:  cobra.MinimumNArgs(4),
 	Run: func(cmd *cobra.Command, args []string) {
 		uploadBlob(util.EncodeParams(args), false)
 	},

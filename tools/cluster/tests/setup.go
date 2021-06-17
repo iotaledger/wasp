@@ -106,7 +106,7 @@ func postRequestFull(t *testing.T, contract, entryPoint coretypes.Hname, transfe
 		Args:     requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
 	})
 	check(err, t)
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(client.ChainID, tx, 30*time.Second) //nolint:gomnd
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(client.ChainID, tx, 30*time.Second)
 	check(err, t)
 	if !counter.WaitUntilExpectationsMet() {
 		t.Fail()

@@ -130,7 +130,7 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 	if err != nil {
 		return nil, err
 	}
-	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second) //nolint:gomnd
+	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 	if err != nil {
 		return nil, hashing.NilHash, err
 	}
-	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second) //nolint:gomnd
+	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
 	if err != nil {
 		return nil, hashing.NilHash, err
 	}
@@ -182,7 +182,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 	if err != nil {
 		return nil, hashing.NilHash, err
 	}
-	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second) //nolint:gomnd
+	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
 	if err != nil {
 		return nil, hashing.NilHash, err
 	}
@@ -206,7 +206,7 @@ func (ch *Chain) DeployWasmContractOld(name, description string, progBinary []by
 			Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(blobFieldValues)),
 		},
 	)
-	err := ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, reqTx, 30*time.Second) //nolint:gomnd
+	err := ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, reqTx, 30*time.Second)
 	if err != nil {
 		return nil, hashing.NilHash, err
 	}
@@ -238,7 +238,7 @@ func (ch *Chain) DeployWasmContractOld(name, description string, progBinary []by
 		return nil, hashing.NilHash, err
 	}
 
-	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second) //nolint:gomnd
+	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
 	if err != nil {
 		return nil, hashing.NilHash, err
 	}

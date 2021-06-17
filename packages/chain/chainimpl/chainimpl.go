@@ -80,7 +80,7 @@ func NewChain(
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog),
 		procset:           processors.MustNew(),
-		chMsg:             make(chan interface{}, 100), //nolint:gomnd
+		chMsg:             make(chan interface{}, 100),
 		chainID:           *chr.ChainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
@@ -154,9 +154,9 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 		}
 	case chain.TimerTick:
 		if msgt%2 == 0 {
-			c.stateMgr.EventTimerMsg(msgt / 2) //nolint:gomnd
+			c.stateMgr.EventTimerMsg(msgt / 2)
 		} else if c.consensus != nil {
-			c.consensus.EventTimerMsg(msgt / 2) //nolint:gomnd
+			c.consensus.EventTimerMsg(msgt / 2)
 		}
 		if msgt%40 == 0 {
 			stats := c.mempool.Stats()

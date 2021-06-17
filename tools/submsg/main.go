@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 2 { //nolint:gomnd
+	if len(os.Args) != 2 {
 		fmt.Printf("Usage: submsg <pub host>\n")
 		os.Exit(1)
 	}

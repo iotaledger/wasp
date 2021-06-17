@@ -51,7 +51,7 @@ func (m *MessageCounter) CollectMessages(duration time.Duration) {
 		case msg := <-m.subscription.HostMessages:
 			m.countMessage(msg)
 
-		case <-time.After(500 * time.Millisecond): //nolint:gomnd
+		case <-time.After(500 * time.Millisecond):
 		}
 		if time.Now().After(deadline) {
 			break
@@ -75,7 +75,7 @@ func (m *MessageCounter) WaitUntilExpectationsMet() bool {
 		select {
 		case msg := <-m.subscription.HostMessages:
 			m.countMessage(msg)
-		case <-time.After(90 * time.Second): //nolint:gomnd
+		case <-time.After(90 * time.Second):
 			return m.Report()
 		}
 	}
