@@ -6,7 +6,7 @@ import (
 
 type ScSandboxObject struct {
 	ScDict
-	vm *wasmProcessor
+	vm *WasmProcessor //nolint:structcheck
 }
 
 func (o *ScSandboxObject) invalidKey(keyID int32) {

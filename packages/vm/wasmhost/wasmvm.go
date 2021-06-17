@@ -52,7 +52,7 @@ func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
 }
 
 func (vm *WasmVMBase) HostFdWrite(fd, iovs, size, written int32) int32 {
-	vm.host.TraceAll("HostFdWrite(...)")
+	vm.host.TraceAllf("HostFdWrite(...)")
 	// very basic implementation that expects fd to be stdout and iovs to be only one element
 	ptr := vm.impl.UnsafeMemory()
 	txt := binary.LittleEndian.Uint32(ptr[iovs : iovs+4])
@@ -64,7 +64,7 @@ func (vm *WasmVMBase) HostFdWrite(fd, iovs, size, written int32) int32 {
 
 func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) int32 {
 	host := vm.host
-	host.TraceAll("HostGetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
+	host.TraceAllf("HostGetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
 
 	// only check for existence ?
 	if size < 0 {
@@ -110,7 +110,7 @@ func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) 
 
 func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
 	host := vm.host
-	host.TraceAll("HostGetKeyId(r%d,s%d)", keyRef, size)
+	host.TraceAllf("HostGetKeyId(r%d,s%d)", keyRef, size)
 	// non-negative size means original key was a string
 	if size >= 0 {
 		bytes := vm.impl.VMGetBytes(keyRef, size)
@@ -119,18 +119,18 @@ func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
 
 	// negative size means original key was a byte slice
 	bytes := vm.impl.VMGetBytes(keyRef, -size-1)
-	return host.GetKeyIdFromBytes(bytes)
+	return host.GetKeyIDFromBytes(bytes)
 }
 
 func (vm *WasmVMBase) hostGetObjectID(objID, keyID, typeID int32) int32 {
 	host := vm.host
-	host.TraceAll("hostGetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
+	host.TraceAllf("hostGetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
 	return host.GetObjectID(objID, keyID, typeID)
 }
 
 func (vm *WasmVMBase) HostSetBytes(objID, keyID, typeID, stringRef, size int32) {
 	host := vm.host
-	host.TraceAll("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
+	host.TraceAllf("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
 	bytes := vm.impl.VMGetBytes(stringRef, size)
 	host.SetBytes(objID, keyID, typeID, bytes)
 }

@@ -16,7 +16,7 @@ type ScTransfers struct {
 	ScSandboxObject
 }
 
-func NewScTransfers(vm *wasmProcessor) *ScTransfers {
+func NewScTransfers(vm *WasmProcessor) *ScTransfers {
 	a := &ScTransfers{}
 	a.vm = vm
 	return a
@@ -35,7 +35,7 @@ type ScTransferInfo struct {
 	address ledgerstate.Address
 }
 
-func NewScTransferInfo(vm *wasmProcessor) *ScTransferInfo {
+func NewScTransferInfo(vm *WasmProcessor) *ScTransferInfo {
 	o := &ScTransferInfo{}
 	o.vm = vm
 	return o
@@ -57,7 +57,7 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.Base58())
+		o.Tracef("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.Base58())
 		balancesMap[color] = amount
 		return true
 	})

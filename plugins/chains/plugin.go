@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	_ "github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/iotaledger/wasp/plugins/nodeconn"

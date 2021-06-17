@@ -65,7 +65,7 @@ func (s *sandbox) ContractCreator() *coretypes.AgentID {
 
 // DeployContract deploys contract by the binary hash
 // and calls "init" endpoint (constructor) with provided parameters
-func (s *sandbox) DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error {
+func (s *sandbox) DeployContract(programHash hashing.HashValue, name, description string, initParams dict.Dict) error {
 	return s.vmctx.DeployContract(programHash, name, description, initParams)
 }
 

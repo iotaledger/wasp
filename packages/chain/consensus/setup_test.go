@@ -8,25 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-
-	"github.com/iotaledger/wasp/packages/chain/mempool"
-
-	"github.com/iotaledger/wasp/packages/util"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/transaction"
-
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/solo"
-
-	"github.com/iotaledger/wasp/packages/testutil"
-
-	"go.dedis.ch/kyber/v3"
-
-	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -36,12 +17,23 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.uber.org/zap/zapcore"
 )
@@ -443,7 +435,7 @@ func (env *MockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...t
 	return fmt.Errorf("WaitStateIndex: timeout")
 }
 
-func (env *MockedEnv) WaitMempool(numRequests int, quorum int, timeout ...time.Duration) error {
+func (env *MockedEnv) WaitMempool(numRequests, quorum int, timeout ...time.Duration) error {
 	to := 10 * time.Second
 	if len(timeout) > 0 {
 		to = timeout[0]

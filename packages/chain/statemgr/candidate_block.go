@@ -38,60 +38,59 @@ func newCandidateBlock(block state.Block, nextStateIfProvided state.VirtualState
 	}
 }
 
-func (cT *candidateBlock) getBlock() state.Block {
-	return cT.block
+func (ct *candidateBlock) getBlock() state.Block {
+	return ct.block
 }
 
-func (cT *candidateBlock) addVote() {
-	cT.votes++
+func (ct *candidateBlock) addVote() {
+	ct.votes++
 }
 
-func (cT *candidateBlock) getVotes() int {
-	return cT.votes
+func (ct *candidateBlock) getVotes() int {
+	return ct.votes
 }
 
-func (cT *candidateBlock) isLocal() bool {
-	return cT.local
+func (ct *candidateBlock) isLocal() bool {
+	return ct.local
 }
 
-func (cT *candidateBlock) isApproved() bool {
-	return cT.approved
+func (ct *candidateBlock) isApproved() bool {
+	return ct.approved
 }
 
-func (cT *candidateBlock) approveIfRightOutput(output *ledgerstate.AliasOutput) {
-	if cT.block.BlockIndex() == output.GetStateIndex() {
+func (ct *candidateBlock) approveIfRightOutput(output *ledgerstate.AliasOutput) {
+	if ct.block.BlockIndex() == output.GetStateIndex() {
 		outputID := output.ID()
 		finalHash, err := hashing.HashValueFromBytes(output.GetStateData())
 		if err != nil {
 			return
 		}
-		if cT.isLocal() {
-			if cT.nextStateHash == finalHash {
-				cT.approved = true
-				cT.block.SetApprovingOutputID(outputID)
+		if ct.isLocal() {
+			if ct.nextStateHash == finalHash {
+				ct.approved = true
+				ct.block.SetApprovingOutputID(outputID)
 			}
 		} else {
-			if cT.block.ApprovingOutputID() == outputID {
-				cT.approved = true
-				cT.nextStateHash = finalHash
+			if ct.block.ApprovingOutputID() == outputID {
+				ct.approved = true
+				ct.nextStateHash = finalHash
 			}
 		}
 	}
 }
 
-func (cT *candidateBlock) getNextStateHash() hashing.HashValue {
-	return cT.nextStateHash
+func (ct *candidateBlock) getNextStateHash() hashing.HashValue {
+	return ct.nextStateHash
 }
 
 func (ct *candidateBlock) getNextState(currentState state.VirtualState) (state.VirtualState, error) {
 	if ct.isLocal() {
 		return ct.nextState, nil
-	} else {
-		err := currentState.ApplyBlock(ct.block)
-		return currentState, err
 	}
+	err := currentState.ApplyBlock(ct.block)
+	return currentState, err
 }
 
-func (cT *candidateBlock) getApprovingOutputID() ledgerstate.OutputID {
-	return cT.block.ApprovingOutputID()
+func (ct *candidateBlock) getApprovingOutputID() ledgerstate.OutputID {
+	return ct.block.ApprovingOutputID()
 }

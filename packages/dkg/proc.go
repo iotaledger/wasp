@@ -399,7 +399,7 @@ func (p *proc) rabinStep5R5SendComplaintCommitsMakeSent(step byte, initRecv *pee
 	recvSecretCommits := make(map[uint16]*rabinSecretCommitsMsg)
 	for i := range prevMsgs {
 		peerSecretCommitsMsg := rabinSecretCommitsMsg{}
-		if err = peerSecretCommitsMsg.fromBytes(prevMsgs[i].MsgData, p.node.suite); err != nil {
+		if err := peerSecretCommitsMsg.fromBytes(prevMsgs[i].MsgData, p.node.suite); err != nil {
 			return nil, err
 		}
 		recvSecretCommits[i] = &peerSecretCommitsMsg
@@ -459,7 +459,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, initRecv *p
 	recvComplaintCommits := make(map[uint16]*rabinComplaintCommitsMsg)
 	for i := range prevMsgs {
 		peerComplaintCommitsMsg := rabinComplaintCommitsMsg{}
-		if err = peerComplaintCommitsMsg.fromBytes(prevMsgs[i].MsgData, p.node.suite); err != nil {
+		if err := peerComplaintCommitsMsg.fromBytes(prevMsgs[i].MsgData, p.node.suite); err != nil {
 			return nil, err
 		}
 		recvComplaintCommits[i] = &peerComplaintCommitsMsg
@@ -522,7 +522,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(step byte, initRecv *p
 		// Process the received reconstruct commits.
 		for i := range recvMsgs {
 			peerReconstructCommitsMsg := rabinReconstructCommitsMsg{}
-			if err = peerReconstructCommitsMsg.fromBytes(recvMsgs[i].MsgData, p.node.suite); err != nil {
+			if err := peerReconstructCommitsMsg.fromBytes(recvMsgs[i].MsgData, p.node.suite); err != nil {
 				return nil, err
 			}
 			p.dkgLock.Lock()
@@ -591,7 +591,7 @@ func (p *proc) rabinStep7CommitAndTerminateMakeSent(step byte, initRecv *peering
 		return nil, errors.New("there is no dkShare to commit")
 	}
 	p.dkShare.PublicShares = doneMsg.pubShares // Store public shares of all the other peers.
-	if err = p.node.registry.SaveDKShare(p.dkShare); err != nil {
+	if err := p.node.registry.SaveDKShare(p.dkShare); err != nil {
 		return nil, err
 	}
 	return make(map[uint16]*peering.PeerMessage), nil

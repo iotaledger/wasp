@@ -7,7 +7,7 @@ type ScExports struct {
 	ScSandboxObject
 }
 
-func NewScExports(vm *wasmProcessor) *ScExports {
+func NewScExports(vm *WasmProcessor) *ScExports {
 	o := &ScExports{}
 	o.vm = vm
 	return o

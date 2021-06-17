@@ -302,6 +302,7 @@ func (c *Consensus) prepareBatchProposal(reqs []coretypes.Request) *BatchProposa
 const delayRepeatBatchProposalFor = 500 * time.Millisecond
 
 // receiveACS processed new ACS received from ACS consensus
+//nolint:funlen
 func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 	if c.acsSessionID != sessionID {
 		return

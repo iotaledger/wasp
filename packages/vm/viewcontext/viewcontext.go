@@ -27,8 +27,8 @@ type Viewcontext struct {
 	log         *logger.Logger
 }
 
-func NewFromChain(chain chain.ChainCore) *Viewcontext {
-	return New(*chain.ID(), chain.GetStateReader(), chain.Processors(), chain.Log().Named("view"))
+func NewFromChain(ch chain.ChainCore) *Viewcontext {
+	return New(*ch.ID(), ch.GetStateReader(), ch.Processors(), ch.Log().Named("view"))
 }
 
 func New(chainID chainid.ChainID, stateReader state.OptimisticStateReader, proc *processors.ProcessorCache, log *logger.Logger) *Viewcontext {
@@ -41,7 +41,7 @@ func New(chainID chainid.ChainID, stateReader state.OptimisticStateReader, proc 
 }
 
 // CallView in viewcontext implements own panic catcher.
-func (v *Viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
+func (v *Viewcontext) CallView(contractHname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
 	var ret dict.Dict
 	var err error
 	func() {
@@ -65,7 +65,7 @@ func (v *Viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.H
 	return ret, err
 }
 
-func (v *Viewcontext) callView(contractHname coretypes.Hname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
+func (v *Viewcontext) callView(contractHname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
 	var err error
 	contractRecord, err := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Interface.Hname()), contractHname)
 	if err != nil {
@@ -92,8 +92,8 @@ func (v *Viewcontext) callView(contractHname coretypes.Hname, epCode coretypes.H
 	return ep.Call(newSandboxView(v, contractHname, params))
 }
 
-func contractStateSubpartition(state kv.KVStoreReader, contractHname coretypes.Hname) kv.KVStoreReader {
-	return subrealm.NewReadOnly(state, kv.Key(contractHname.Bytes()))
+func contractStateSubpartition(stateKvReader kv.KVStoreReader, contractHname coretypes.Hname) kv.KVStoreReader {
+	return subrealm.NewReadOnly(stateKvReader, kv.Key(contractHname.Bytes()))
 }
 
 func (v *Viewcontext) Infof(format string, params ...interface{}) {

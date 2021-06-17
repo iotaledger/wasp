@@ -39,15 +39,15 @@ func GetArrayObjectID(arrayObj WaspObject, index, typeID int32, factory ObjFacto
 	return arrayObj.FindOrMakeObjectId(index, factory)
 }
 
-func GetMapObjectId(mapObj WaspObject, keyId, typeID int32, factories ObjFactories) int32 {
-	factory, ok := factories[keyId]
+func GetMapObjectID(mapObj WaspObject, keyID, typeID int32, factories ObjFactories) int32 {
+	factory, ok := factories[keyID]
 	if !ok {
 		mapObj.Panic("GetMapObjectId: invalid key")
 	}
-	if typeID != mapObj.GetTypeID(keyId) {
+	if typeID != mapObj.GetTypeID(keyID) {
 		mapObj.Panic("GetMapObjectId: invalid type")
 	}
-	return mapObj.FindOrMakeObjectId(keyId, factory)
+	return mapObj.FindOrMakeObjectId(keyID, factory)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -70,7 +70,7 @@ var _ WaspObject = &ScDict{}
 
 var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 8, 0, 34, 0}
 
-func NewScDict(vm *wasmProcessor) *ScDict {
+func NewScDict(vm *WasmProcessor) *ScDict {
 	return NewScDictFromKvStore(&vm.KvStoreHost, dict.New())
 }
 
@@ -115,84 +115,84 @@ func (o *ScDict) InitObj(id int32, keyID int32, owner *ScDict) {
 		}
 		o.length = int32(length)
 	}
-	o.Trace("InitObj %s", o.name)
+	o.Tracef("InitObj %s", o.name)
 	o.objects = make(map[int32]int32)
 	o.types = make(map[int32]int32)
 }
 
-func (o *ScDict) CallFunc(keyId int32, params []byte) []byte {
+func (o *ScDict) CallFunc(keyID int32, params []byte) []byte {
 	o.Panic("CallFunc: invalid call")
 	return nil
 }
 
-func (o *ScDict) Exists(keyId int32, typeId int32) bool {
-	if keyId == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
+func (o *ScDict) Exists(keyID, typeID int32) bool {
+	if keyID == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
 		return true
 	}
 	if o.typeID == (wasmhost.OBJTYPE_ARRAY | wasmhost.OBJTYPE_MAP) {
-		return uint32(keyId) <= uint32(len(o.objects))
+		return uint32(keyID) <= uint32(len(o.objects))
 	}
-	return o.kvStore.MustHas(o.key(keyId, typeId))
+	return o.kvStore.MustHas(o.key(keyID, typeID))
 }
 
-func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
-	objId, ok := o.objects[keyId]
+func (o *ScDict) FindOrMakeObjectId(keyID int32, factory ObjFactory) int32 {
+	objID, ok := o.objects[keyID]
 	if ok {
-		return objId
+		return objID
 	}
 	newObject := factory()
-	objId = o.host.TrackObject(newObject)
-	newObject.InitObj(objId, keyId, o)
-	o.objects[keyId] = objId
+	objID = o.host.TrackObject(newObject)
+	newObject.InitObj(objID, keyID, o)
+	o.objects[keyID] = objID
 	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
 		o.length++
 	}
-	return objId
+	return objID
 }
 
-func (o *ScDict) GetBytes(keyId int32, typeId int32) []byte {
-	if keyId == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
+func (o *ScDict) GetBytes(keyID, typeID int32) []byte {
+	if keyID == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
 		return o.Int64Bytes(int64(o.length))
 	}
-	bytes := o.kvStore.MustGet(o.key(keyId, typeId))
-	o.typeCheck(typeId, bytes)
+	bytes := o.kvStore.MustGet(o.key(keyID, typeID))
+	o.typeCheck(typeID, bytes)
 	return bytes
 }
 
-func (o *ScDict) GetObjectID(keyId int32, typeId int32) int32 {
-	o.validate(keyId, typeId)
-	if (typeId&wasmhost.OBJTYPE_ARRAY) == 0 && typeId != wasmhost.OBJTYPE_MAP {
+func (o *ScDict) GetObjectID(keyID, typeID int32) int32 {
+	o.validate(keyID, typeID)
+	if (typeID&wasmhost.OBJTYPE_ARRAY) == 0 && typeID != wasmhost.OBJTYPE_MAP {
 		o.Panic("GetObjectId: invalid type")
 	}
-	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		keyId: func() WaspObject { return &ScDict{} },
+	return GetMapObjectID(o, keyID, typeID, ObjFactories{
+		keyID: func() WaspObject { return &ScDict{} },
 	})
 }
 
-func (o *ScDict) GetTypeID(keyId int32) int32 {
+func (o *ScDict) GetTypeID(keyID int32) int32 {
 	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
 		return o.typeID &^ wasmhost.OBJTYPE_ARRAY
 	}
 	// TODO incomplete, currently only contains used field types
-	typeId, ok := o.types[keyId]
+	typeID, ok := o.types[keyID]
 	if ok {
-		return typeId
+		return typeID
 	}
 	return 0
 }
 
 func (o *ScDict) Int64Bytes(value int64) []byte {
-	bytes := make([]byte, 8)
+	bytes := make([]byte, 8) //nolint:gomnd
 	binary.LittleEndian.PutUint64(bytes, uint64(value))
 	return bytes
 }
 
-func (o *ScDict) key(keyId, typeId int32) kv.Key {
-	o.validate(keyId, typeId)
-	suffix := o.Suffix(keyId)
+func (o *ScDict) key(keyID, typeID int32) kv.Key {
+	o.validate(keyID, typeID)
+	suffix := o.Suffix(keyID)
 	key := o.NestedKey() + suffix
-	o.Trace("fld: %s%s", o.name, suffix)
-	o.Trace("key: %s", key[1:])
+	o.Tracef("fld: %s%s", o.name, suffix)
+	o.Tracef("key: %s", key[1:])
 	return kv.Key(key[1:])
 }
 
@@ -215,19 +215,20 @@ func (o *ScDict) Owner() WaspObject {
 	return o.host.FindObject(o.ownerID).(WaspObject)
 }
 
+//nolint:goprintffuncname
 func (o *ScDict) Panic(format string, args ...interface{}) {
 	err := o.name + "." + fmt.Sprintf(format, args...)
-	o.Trace(err)
+	o.Tracef(err)
 	panic(err)
 }
 
-func (o *ScDict) SetBytes(keyId int32, typeId int32, bytes []byte) {
+func (o *ScDict) SetBytes(keyID, typeID int32, bytes []byte) {
 	//TODO
 	//if !o.isMutable {
 	//	o.Panic("validate: Immutable field: %s key %d", o.name, keyId)
 	//}
 
-	if keyId == wasmhost.KeyLength {
+	if keyID == wasmhost.KeyLength {
 		if o.kvStore != nil {
 			// TODO this goes wrong for state, should clear map tree instead
 			o.kvStore = dict.New()
@@ -241,8 +242,8 @@ func (o *ScDict) SetBytes(keyId int32, typeId int32, bytes []byte) {
 		return
 	}
 
-	key := o.key(keyId, typeId)
-	o.typeCheck(typeId, bytes)
+	key := o.key(keyID, typeID)
+	o.typeCheck(typeID, bytes)
 	o.kvStore.Set(key, bytes)
 }
 
@@ -250,12 +251,12 @@ func (o *ScDict) Suffix(keyId int32) string {
 	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
 		return fmt.Sprintf(".%d", keyId)
 	}
-	key := o.host.GetKeyFromId(keyId)
+	key := o.host.GetKeyFromID(keyId)
 	return "." + string(key)
 }
 
-func (o *ScDict) Trace(format string, a ...interface{}) {
-	o.host.Trace(format, a...)
+func (o *ScDict) Tracef(format string, a ...interface{}) {
+	o.host.Tracef(format, a...)
 }
 
 func (o *ScDict) typeCheck(typeId int32, bytes []byte) {

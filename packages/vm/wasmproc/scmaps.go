@@ -9,7 +9,7 @@ type ScMaps struct {
 	ScSandboxObject
 }
 
-func NewScMaps(vm *wasmProcessor) *ScMaps {
+func NewScMaps(vm *WasmProcessor) *ScMaps {
 	a := &ScMaps{}
 	a.vm = vm
 	return a

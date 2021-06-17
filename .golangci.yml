@@ -19,6 +19,7 @@ issues:
         - 'should have comment .*or be unexported' # revive
         - 'exported: comment on exported' # revive
         - 'package-comments: package comment should be of the form' # revive
+        - 'blank-imports' # revive
         - 'shadow: declaration of "err"' # govet
 
     exclude-rules:
@@ -137,7 +138,6 @@ linters:
     # paralleltest: paralleltest detects missing usage of t.Parallel() method in your Go test [fast: true, auto-fix: false]
     # prealloc: Finds slice declarations that could potentially be preallocated [fast: true, auto-fix: false]
     # predeclared: find code that shadows one of Go's predeclared identifiers [fast: true, auto-fix: false]
-    # revive: Fast, configurable, extensible, flexible, and beautiful linter for Go. Drop-in replacement of golint. [fast: true, auto-fix: false]
     # rowserrcheck: checks whether Err of rows is checked successfully [fast: true, auto-fix: false]
     # scopelint: Scopelint checks for unpinned variables in go programs [fast: true, auto-fix: false]
     # sqlclosecheck: Checks that sql.Rows and sql.Stmt are closed. [fast: true, auto-fix: false]

@@ -23,6 +23,7 @@ func NewAssert(log coretypes.LogInterface, name ...string) Assert {
 	}
 }
 
+//nolint:goprintffuncname
 func (a Assert) Require(cond bool, format string, args ...interface{}) {
 	if cond {
 		return

@@ -17,27 +17,27 @@ type ScUtility struct {
 	random     []byte
 }
 
-func NewScUtility(vm *wasmProcessor) *ScUtility {
+func NewScUtility(vm *WasmProcessor) *ScUtility {
 	o := &ScUtility{}
 	o.vm = vm
 	return o
 }
 
-func (o *ScUtility) InitObj(id int32, keyId int32, owner *ScDict) {
-	o.ScSandboxObject.InitObj(id, keyId, owner)
+func (o *ScUtility) InitObj(id, keyID int32, owner *ScDict) {
+	o.ScSandboxObject.InitObj(id, keyID, owner)
 	if TestMode {
 		// preset randomizer to generate sequence 1..8 before
 		// continuing with proper hashed values
-		o.random = make([]byte, 8*8)
+		o.random = make([]byte, 8*8) //nolint:gomnd
 		for i := 0; i < len(o.random); i += 8 {
 			o.random[i] = byte(i + 1)
 		}
 	}
 }
 
-func (o *ScUtility) CallFunc(keyId int32, bytes []byte) []byte {
+func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {
 	utils := o.vm.utils()
-	switch keyId {
+	switch keyID {
 	case wasmhost.KeyBase58Decode:
 		base58Decoded, err := utils.Base58().Decode(string(bytes))
 		if err != nil {
@@ -79,12 +79,12 @@ func (o *ScUtility) CallFunc(keyId int32, bytes []byte) []byte {
 	case wasmhost.KeyRandom:
 		return o.getRandom8Bytes()
 	}
-	o.invalidKey(keyId)
+	o.invalidKey(keyID)
 	return nil
 }
 
-func (o *ScUtility) Exists(keyId int32, typeId int32) bool {
-	return o.GetTypeID(keyId) > 0
+func (o *ScUtility) Exists(keyID, typeID int32) bool {
+	return o.GetTypeID(keyID) > 0
 }
 
 func (o *ScUtility) getRandom8Bytes() []byte {
@@ -105,7 +105,7 @@ func (o *ScUtility) getRandom8Bytes() []byte {
 	return o.random[i : i+8]
 }
 
-func (o *ScUtility) GetTypeID(keyId int32) int32 {
+func (o *ScUtility) GetTypeID(keyID int32) int32 {
 	return wasmhost.OBJTYPE_BYTES
 }
 

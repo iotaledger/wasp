@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/pub"
+	_ "go.nanomsg.org/mangos/v3/transport/all"
 )
 
 // PluginName is the name of the Publisher plugin.
