@@ -376,7 +376,7 @@ func (env *mockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...t
 		}
 		return false
 	}
-	return env.WaitForEventFromNodesQuorum("stateIndex", quorum, checkStateIndexFun)
+	return env.WaitForEventFromNodesQuorum("stateIndex", quorum, checkStateIndexFun, timeout...)
 }
 
 func (env *mockedEnv) WaitMempool(numRequests int, quorum int, timeout ...time.Duration) error {
@@ -387,11 +387,11 @@ func (env *mockedEnv) WaitMempool(numRequests int, quorum int, timeout ...time.D
 		}
 		return false
 	}
-	return env.WaitForEventFromNodesQuorum("mempool", quorum, checkMempoolFun)
+	return env.WaitForEventFromNodesQuorum("mempool", quorum, checkMempoolFun, timeout...)
 }
 
 func (env *mockedEnv) WaitForEventFromNodes(waitName string, nodeConditionFun func(node *mockedNode) bool, timeout ...time.Duration) error {
-	return env.WaitForEventFromNodesQuorum(waitName, env.nodeCount(), nodeConditionFun)
+	return env.WaitForEventFromNodesQuorum(waitName, env.nodeCount(), nodeConditionFun, timeout...)
 }
 
 func (env *mockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, isEventOccuredFun func(node *mockedNode) bool, timeout ...time.Duration) error {
@@ -420,8 +420,8 @@ func (env *mockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, i
 		if sum >= quorum {
 			return nil
 		}
-		if total > nodeCount {
-			return fmt.Errorf("Wait for %s: too many nodes responded: %v (total nodes %v)", waitName, total, nodeCount)
+		if total >= nodeCount {
+			return fmt.Errorf("Wait for %s: test timeouted", waitName)
 		}
 	}
 	return fmt.Errorf("Wait for %s: timeout expired %v; %v of %v nodes reached condition, %v responded, quorum needed %v",
