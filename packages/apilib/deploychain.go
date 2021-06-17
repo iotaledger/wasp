@@ -10,19 +10,15 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/util"
-
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
+	"golang.org/x/xerrors"
 )
 
 // TODO DeployChain on peering domain, not on committee
