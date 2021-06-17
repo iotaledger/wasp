@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 
 	"github.com/iotaledger/hive.go/logger"
 
@@ -310,6 +311,10 @@ func (m *mockChain) GetRequestProcessingStatus(id coretypes.RequestID) chain.Req
 }
 
 func (m *mockChain) EventRequestProcessed() *events.Event {
+	panic("not implemented")
+}
+
+func (m *mockChain) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
 	panic("not implemented")
 }
 
