@@ -29,7 +29,8 @@ import (
 
 type CreateChainParams struct {
 	Node                  *goshimmer.Client
-	AllPeers              []string
+	AllApiHosts           []string
+	AllPeerIngHosts       []string
 	CommitteeApiHosts     []string
 	CommitteePeeringHosts []string
 	N                     uint16
@@ -43,9 +44,9 @@ type CreateChainParams struct {
 // DeployChainWithDKG performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
 func DeployChainWithDKG(par CreateChainParams) (*chainid.ChainID, ledgerstate.Address, error) {
-	if len(par.AllPeers) > 0 {
+	if len(par.AllPeerIngHosts) > 0 {
 		// all committee nodes most also be among allPeers
-		if !util.IsSubset(par.CommitteeApiHosts, par.AllPeers) {
+		if !util.IsSubset(par.CommitteeApiHosts, par.AllPeerIngHosts) {
 			return nil, nil, xerrors.Errorf("DeployChainWithDKG: committee nodes must all be among peers")
 		}
 	}
@@ -65,10 +66,6 @@ func DeployChainWithDKG(par CreateChainParams) (*chainid.ChainID, ledgerstate.Ad
 // DeployChain creates a new chain on specified committee address
 // noinspection ALL
 func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address) (*chainid.ChainID, error) {
-	allPeers := par.CommitteeApiHosts
-	if len(par.AllPeers) > 0 {
-		allPeers = par.AllPeers
-	}
 	var err error
 	textout := ioutil.Discard
 	if par.Textout != nil {
@@ -77,7 +74,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 	originatorAddr := ledgerstate.NewED25519Address(par.OriginatorKeyPair.PublicKey)
 
 	fmt.Fprint(textout, par.Prefix)
-	fmt.Fprintf(textout, "creating new chain. Owner address: %s. State controlled: %s, N = %d, T = %d\n",
+	fmt.Fprintf(textout, "creating new chain. Owner address: %s. State controller: %s, N = %d, T = %d\n",
 		originatorAddr.Base58(), stateControllerAddr.Base58(), par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
@@ -90,13 +87,13 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 		fmt.Fprint(textout, "creating chain origin and init transaction.. OK\n")
 	}
 
-	err = ActivateChainOnAccessNodes(allPeers, par.CommitteePeeringHosts, chainID)
+	err = ActivateChainOnAccessNodes(par.AllApiHosts, par.CommitteePeeringHosts, chainID)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
-		fmt.Fprintf(textout, "activating chain.. FAILED: %v\n", err)
+		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.Base58(), err)
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
-	fmt.Fprint(textout, "activating chain.. OK.\n")
+	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.Base58())
 
 	peers := multiclient.New(par.CommitteeApiHosts)
 
@@ -177,7 +174,7 @@ func ActivateChainOnAccessNodes(apiHosts, peers []string, chainID *chainid.Chain
 		Peers:   peers,
 	})
 	if err != nil {
-		return xerrors.Errorf("ActivateChainOnAccessNodes: %w")
+		return xerrors.Errorf("ActivateChainOnAccessNodes: %w", err)
 	}
 	// ------------- activate chain
 	err = nodes.ActivateChain(*chainID)

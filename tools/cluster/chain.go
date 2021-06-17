@@ -29,6 +29,7 @@ type Chain struct {
 
 	OriginatorSeed *seed.Seed
 
+	AllPeers       []int
 	CommitteeNodes []int
 	Quorum         uint16
 	StateAddress   ledgerstate.Address
@@ -42,12 +43,20 @@ func (ch *Chain) ChainAddress() ledgerstate.Address {
 	return ch.ChainID.AsAddress()
 }
 
-func (ch *Chain) ApiHosts() []string {
+func (ch *Chain) CommitteeApiHosts() []string {
 	return ch.Cluster.Config.ApiHosts(ch.CommitteeNodes)
 }
 
-func (ch *Chain) PeeringHosts() []string {
+func (ch *Chain) CommitteePeeringHosts() []string {
 	return ch.Cluster.Config.PeeringHosts(ch.CommitteeNodes)
+}
+
+func (ch *Chain) AllPeeringHosts() []string {
+	return ch.Cluster.Config.PeeringHosts(ch.AllPeers)
+}
+
+func (ch *Chain) AllApiHosts() []string {
+	return ch.Cluster.Config.ApiHosts(ch.AllPeers)
 }
 
 func (ch *Chain) OriginatorAddress() ledgerstate.Address {
@@ -82,12 +91,12 @@ func (ch *Chain) SCClient(contractHname coretypes.Hname, sigScheme *ed25519.KeyP
 }
 
 func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
-	return multiclient.New(ch.ApiHosts())
+	return multiclient.New(ch.CommitteeApiHosts())
 }
 
 func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockIndex uint32, state dict.Dict) bool) bool {
 	pass := true
-	for i, host := range ch.ApiHosts() {
+	for i, host := range ch.CommitteeApiHosts() {
 		if !ch.Cluster.IsNodeUp(i) {
 			continue
 		}
@@ -145,8 +154,8 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 		blob.VarFieldProgramDescription: description,
 	})
 
-	quorum := (2*len(ch.ApiHosts()))/3 + 1
-	programHash, tx, err := ch.OriginatorClient().UploadBlob(blobFieldValues, ch.ApiHosts(), quorum, 256)
+	quorum := (2*len(ch.CommitteeApiHosts()))/3 + 1
+	programHash, tx, err := ch.OriginatorClient().UploadBlob(blobFieldValues, ch.CommitteeApiHosts(), quorum, 256)
 	if err != nil {
 		return nil, hashing.NilHash, err
 	}

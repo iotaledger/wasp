@@ -41,7 +41,7 @@ func TestBasicAccountsN1(t *testing.T) {
 	})
 	check(err, t)
 	defer counter.Close()
-	chain, err := clu.DeployChainWithDKG("single_node_chain", chainNodes, 1)
+	chain, err := clu.DeployChainWithDKG("single_node_chain", chainNodes, chainNodes, 1)
 	check(err, t)
 	testBasicAccounts(t, chain, counter)
 }
