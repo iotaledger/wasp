@@ -17,10 +17,8 @@ const (
 	DBVersion = 0
 )
 
-var (
-	// ErrDBVersionIncompatible is returned when the database has an unexpected version.
-	ErrDBVersionIncompatible = errors.New("database version is not compatible. please delete your database folder and restart")
-)
+// ErrDBVersionIncompatible is returned when the database has an unexpected version.
+var ErrDBVersionIncompatible = errors.New("database version is not compatible. please delete your database folder and restart")
 
 // checks whether the database is compatible with the current schema version.
 // also automatically sets the version if the database if new.

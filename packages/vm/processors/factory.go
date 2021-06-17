@@ -2,8 +2,9 @@ package processors
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"sync"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
 )
 
 type VMConstructor func(binaryCode []byte) (coretypes.VMProcessor, error)

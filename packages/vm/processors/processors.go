@@ -2,12 +2,13 @@ package processors
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/iotaledger/wasp/contracts/native"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"sync"
 )
 
 // ProcessorCache is an object maintained by each chain

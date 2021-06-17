@@ -19,8 +19,10 @@ const PluginName = "Graceful Shutdown"
 // After that the process is killed.
 const WaitToKillTimeInSeconds = 60
 
-var log *logger.Logger
-var gracefulStop chan os.Signal
+var (
+	log          *logger.Logger
+	gracefulStop chan os.Signal
+)
 
 func Init() *node.Plugin {
 	return node.NewPlugin(PluginName, node.Enabled, configure)

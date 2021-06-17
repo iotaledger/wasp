@@ -2,9 +2,10 @@ package state
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestStateUpdateBasic(t *testing.T) {

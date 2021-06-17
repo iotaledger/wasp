@@ -123,6 +123,7 @@ func (m *handshakeMsg) bytes() ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
+
 func handshakeMsgFromBytes(buf []byte, suite kyber.Group) (*handshakeMsg, error) {
 	var err error
 	r := bytes.NewReader(buf)

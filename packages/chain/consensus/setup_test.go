@@ -399,7 +399,7 @@ func (n *mockedNode) WaitStateIndex(until uint32, timeout ...time.Duration) erro
 			continue
 		}
 		if snap.StateIndex >= until {
-			//n.Log.Debugf("reached index %d", until)
+			// n.Log.Debugf("reached index %d", until)
 			return nil
 		}
 		time.Sleep(10 * time.Millisecond)

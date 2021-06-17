@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//TODO update comments to reflect new way of token handling
+// TODO update comments to reflect new way of token handling
 
 func TestTutorial1(t *testing.T) {
 	env := solo.New(t, false, false)

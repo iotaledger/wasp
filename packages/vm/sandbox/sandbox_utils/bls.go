@@ -5,14 +5,14 @@ package sandbox_utils
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/bls"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/sign/bdn"
 )
 
-type blsUtil struct {
-}
+type blsUtil struct{}
 
 var suite = bn256.NewSuite()
 

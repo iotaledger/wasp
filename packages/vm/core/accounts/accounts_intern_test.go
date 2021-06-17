@@ -1,9 +1,9 @@
 package accounts
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"testing"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"

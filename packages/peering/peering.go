@@ -40,9 +40,7 @@ const (
 	chunkMessageOverhead = 8 + 1
 )
 
-var (
-	crc32q *crc32.Table
-)
+var crc32q *crc32.Table
 
 func init() {
 	crc32q = crc32.MakeTable(0xD5828281)

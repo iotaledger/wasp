@@ -114,11 +114,11 @@ func TestRotation(t *testing.T) {
 	_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 	require.NoError(t, err)
 
-	//err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
-	//require.NoError(t, err)
+	// err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
+	// require.NoError(t, err)
 
 	require.True(t, waitCounter(t, chain, 0, 3, 5*time.Second))
-	//require.True(t, waitCounter(t, chain, 5, 3, 5*time.Second))
+	// require.True(t, waitCounter(t, chain, 5, 3, 5*time.Second))
 
 	// TODO not finished with node config
 }

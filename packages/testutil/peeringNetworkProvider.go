@@ -29,7 +29,7 @@ type PeeringNetwork struct {
 
 // NewPeeringNetworkForLocs creates a test network with new keys, etc.
 func NewPeeringNetworkForLocs(peerNetIDs []string, bufSize int, log *logger.Logger) *PeeringNetwork {
-	var suite = edwards25519.NewBlakeSHA256Ed25519() //bn256.NewSuite()
+	suite := edwards25519.NewBlakeSHA256Ed25519() // bn256.NewSuite()
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
 	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
 	for i := range peerNetIDs {
@@ -51,7 +51,7 @@ func NewPeeringNetwork(
 ) *PeeringNetwork {
 	nodes := make([]*peeringNode, len(locations))
 	providers := make([]*peeringNetworkProvider, len(locations))
-	var network = PeeringNetwork{
+	network := PeeringNetwork{
 		nodes:     nodes,
 		providers: providers,
 		bufSize:   bufSize,
@@ -100,10 +100,12 @@ type peeringNode struct {
 	network *PeeringNetwork
 	log     *logger.Logger
 }
+
 type peeringMsg struct {
 	from *peeringNode
 	msg  peering.PeerMessage
 }
+
 type peeringCb struct {
 	callback  func(recv *peering.RecvEvent) // Receive callback.
 	destNP    *peeringNetworkProvider       // Destination node.

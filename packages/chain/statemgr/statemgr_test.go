@@ -17,7 +17,7 @@ import (
 )
 
 //---------------------------------------------
-//Tests if state manager is started and initialised correctly
+//Tests if state manager is started and initialized correctly
 func TestEnv(t *testing.T) {
 	env, _ := NewMockedEnv(2, t, false)
 	node0 := env.NewMockedNode(0, Timers{})
@@ -202,7 +202,7 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 	}
 }
 
-// Call to MsgGetConfirmetOutput does not return anything. Synchronisation must
+// Call to MsgGetConfirmetOutput does not return anything. Synchronization must
 // be done using stateOutput only.
 func TestCatchUpNoConfirmedOutput(t *testing.T) {
 	env, _ := NewMockedEnv(2, t, true)
@@ -252,7 +252,7 @@ func TestNodeDisconnected(t *testing.T) {
 	}
 	disconnectedNode := createNodeFun(numberOfConnectedPeers)
 
-	//Network is connected until state 3
+	// Network is connected until state 3
 	const targetBlockIndex1 = 3
 	connectedNodes[0].OnStateTransitionMakeNewStateTransition(targetBlockIndex1)
 	connectedNodes[0].MakeNewStateTransition()
@@ -261,7 +261,7 @@ func TestNodeDisconnected(t *testing.T) {
 	}
 	waitSyncBlockIndexAndCheck(10*time.Second, t, disconnectedNode, targetBlockIndex1)
 
-	//Single node gets disconnected until state 6
+	// Single node gets disconnected until state 6
 	handlerName := "DisconnectedPeer"
 	env.NetworkBehaviour.WithPeerDisconnected(&handlerName, disconnectedNode.NetID)
 	const targetBlockIndex2 = 6
@@ -271,7 +271,7 @@ func TestNodeDisconnected(t *testing.T) {
 		waitSyncBlockIndexAndCheck(10*time.Second, t, connectedNodes[i], targetBlockIndex2)
 	}
 
-	//Network is reconnected until state 9, the node which was disconnected catches up
+	// Network is reconnected until state 9, the node which was disconnected catches up
 	env.NetworkBehaviour.RemoveHandler(handlerName)
 	const targetBlockIndex3 = 9
 	connectedNodes[0].OnStateTransitionMakeNewStateTransition(targetBlockIndex3)
@@ -281,7 +281,7 @@ func TestNodeDisconnected(t *testing.T) {
 	}
 	waitSyncBlockIndexAndCheck(10*time.Second, t, disconnectedNode, targetBlockIndex3)
 
-	//Node, producing transitions, gets disconnected until state 12
+	// Node, producing transitions, gets disconnected until state 12
 	env.NetworkBehaviour.WithPeerDisconnected(&handlerName, disconnectedNode.NetID)
 	const targetBlockIndex4 = 12
 	connectedNodes[0].OnStateTransitionDoNothing()
@@ -289,7 +289,7 @@ func TestNodeDisconnected(t *testing.T) {
 	disconnectedNode.MakeNewStateTransition()
 	waitSyncBlockIndexAndCheck(10*time.Second, t, disconnectedNode, targetBlockIndex4)
 
-	//Network is reconnected until state 15, other nodes catch up
+	// Network is reconnected until state 15, other nodes catch up
 	env.NetworkBehaviour.RemoveHandler(handlerName)
 	const targetBlockIndex5 = 15
 	disconnectedNode.OnStateTransitionMakeNewStateTransition(targetBlockIndex5)
@@ -300,7 +300,7 @@ func TestNodeDisconnected(t *testing.T) {
 	waitSyncBlockIndexAndCheck(10*time.Second, t, disconnectedNode, targetBlockIndex5)
 }
 
-// 10 peers work in paralel. In every iteration random node is picked to produce
+// 10 peers work in parallel. In every iteration random node is picked to produce
 // a new state. Unreliable network is used, which delivers only 80% of messages,
 // 25% o messages get delivered twice and messages are delayed up to 200 ms.
 // Moreover, every 1-3s some random node gets disconnnected and later reconnected.
@@ -335,7 +335,7 @@ func TestCruelWorld(t *testing.T) {
 
 	var disconnectedNodes []string
 	var mutex sync.Mutex
-	go func() { //Connection cutter
+	go func() { // Connection cutter
 		for {
 			time.Sleep(randFromIntervalFun(1000, 3000) * time.Millisecond)
 			mutex.Lock()
@@ -347,7 +347,7 @@ func TestCruelWorld(t *testing.T) {
 		}
 	}()
 
-	go func() { //Connection restorer
+	go func() { // Connection restorer
 		for {
 			time.Sleep(randFromIntervalFun(500, 2000) * time.Millisecond)
 			mutex.Lock()
