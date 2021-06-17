@@ -30,7 +30,7 @@ import (
 type CreateChainParams struct {
 	Node                  *goshimmer.Client
 	AllApiHosts           []string
-	AllPeerIngHosts       []string
+	AllPeeringHosts       []string
 	CommitteeApiHosts     []string
 	CommitteePeeringHosts []string
 	N                     uint16
@@ -44,9 +44,9 @@ type CreateChainParams struct {
 // DeployChainWithDKG performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
 func DeployChainWithDKG(par CreateChainParams) (*chainid.ChainID, ledgerstate.Address, error) {
-	if len(par.AllPeerIngHosts) > 0 {
+	if len(par.AllPeeringHosts) > 0 {
 		// all committee nodes most also be among allPeers
-		if !util.IsSubset(par.CommitteeApiHosts, par.AllPeerIngHosts) {
+		if !util.IsSubset(par.CommitteeApiHosts, par.AllPeeringHosts) {
 			return nil, nil, xerrors.Errorf("DeployChainWithDKG: committee nodes must all be among peers")
 		}
 	}
@@ -87,7 +87,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 		fmt.Fprint(textout, "creating chain origin and init transaction.. OK\n")
 	}
 
-	err = ActivateChainOnAccessNodes(par.AllApiHosts, par.AllPeerIngHosts, chainID)
+	err = ActivateChainOnAccessNodes(par.AllApiHosts, par.AllPeeringHosts, chainID)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.Base58(), err)
