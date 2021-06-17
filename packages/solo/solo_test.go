@@ -1,10 +1,11 @@
 package solo
 
 import (
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestPutBlobData(t *testing.T) {

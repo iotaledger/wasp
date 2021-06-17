@@ -29,7 +29,7 @@ func pubToBytes(pub kyber.Point) ([]byte, error) {
 }
 
 func pubsToBytes(pubs []kyber.Point) ([][]byte, error) {
-	var bytes = make([][]byte, len(pubs))
+	bytes := make([][]byte, len(pubs))
 	for i := range pubs {
 		if b, err := pubToBytes(pubs[i]); err == nil {
 			bytes[i] = b
@@ -49,7 +49,7 @@ func pubFromBytes(bytes []byte, suite kyber.Group) (kyber.Point, error) {
 }
 
 func pubsFromBytes(bytes [][]byte, suite kyber.Group) ([]kyber.Point, error) {
-	var pubs = make([]kyber.Point, len(bytes))
+	pubs := make([]kyber.Point, len(bytes))
 	for i := range pubs {
 		if b, err := pubFromBytes(bytes[i], suite); err == nil {
 			pubs[i] = b

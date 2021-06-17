@@ -27,11 +27,12 @@ func TestBasic(t *testing.T) {
 	t.Run("N=7/T=5", func(tt *testing.T) { testBasic(tt, 7, 5) })
 	t.Run("N=10/T=7", func(tt *testing.T) { testBasic(tt, 10, 7) })
 }
+
 func testBasic(t *testing.T, peerCount uint16, threshold uint16) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
-	var suite = pairing.NewSuiteBn256()
-	var peeringID = peering.RandomPeeringID()
+	suite := pairing.NewSuiteBn256()
+	peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerPubs, peerSecs := setupKeys(peerCount, suite)
 	networkProviders := setupNet(
 		t, peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(),
@@ -64,7 +65,6 @@ func testBasic(t *testing.T, peerCount uint16, threshold uint16) {
 	for a := range acsPeers {
 		out := <-acsPeers[a].OutputCh()
 		t.Logf("ACS[%v] Output received: %+v", a, out)
-
 	}
 	t.Logf("ACS Nodes all decided.")
 
@@ -79,8 +79,8 @@ func TestRandomized(t *testing.T) {
 	defer log.Sync()
 	var peerCount uint16 = 10
 	var threshold uint16 = 7
-	var suite = pairing.NewSuiteBn256()
-	var peeringID = peering.RandomPeeringID()
+	suite := pairing.NewSuiteBn256()
+	peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerPubs, peerSecs := setupKeys(peerCount, suite)
 	netLogger := testlogger.WithLevel(log.Named("Network"), logger.LevelInfo, false)
 	netBehavior := testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 100*time.Millisecond, netLogger)
@@ -112,7 +112,7 @@ func TestRandomized(t *testing.T) {
 	//
 	// Async wait here is for debugging only.
 	var output []map[uint16][]byte = make([]map[uint16][]byte, peerCount)
-	var outputWG = &sync.WaitGroup{}
+	outputWG := &sync.WaitGroup{}
 	outputWG.Add(int(peerCount))
 	for a := range acsPeers {
 		aa := a
@@ -152,11 +152,12 @@ func TestCoordinator(t *testing.T) {
 	t.Run("N=7/T=5", func(tt *testing.T) { testCoordinator(tt, 7, 5) })
 	t.Run("N=10/T=7", func(tt *testing.T) { testCoordinator(tt, 10, 7) })
 }
+
 func testCoordinator(t *testing.T, peerCount uint16, threshold uint16) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
-	var suite = pairing.NewSuiteBn256()
-	var peeringID = peering.RandomPeeringID()
+	suite := pairing.NewSuiteBn256()
+	peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerPubs, peerSecs := setupKeys(peerCount, suite)
 	networkProviders := setupNet(
 		t, peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(),
@@ -243,12 +244,15 @@ func newFakeCoin() commoncoin.Provider {
 func (fc *fakeCoin) GetCoin(seed []byte) ([]byte, error) {
 	return seed, nil
 }
+
 func (fc *fakeCoin) FlipCoin(epoch uint32) bool {
 	return (epoch/2)%2 == 0
 }
+
 func (fc *fakeCoin) Close() error {
 	return nil
 }
+
 func (fc *fakeCoin) TryHandleMessage(recv *peering.RecvEvent) bool {
 	return false
 }

@@ -9,22 +9,32 @@ package test
 
 import "github.com/iotaledger/wasp/packages/coretypes"
 
-const ScName = "tokenregistry"
-const HScName = coretypes.Hname(0xe1ba0c78)
+const (
+	ScName  = "tokenregistry"
+	HScName = coretypes.Hname(0xe1ba0c78)
+)
 
-const ParamColor = "color"
-const ParamDescription = "description"
-const ParamUserDefined = "userDefined"
+const (
+	ParamColor       = "color"
+	ParamDescription = "description"
+	ParamUserDefined = "userDefined"
+)
 
-const VarColorList = "colorList"
-const VarRegistry = "registry"
+const (
+	VarColorList = "colorList"
+	VarRegistry  = "registry"
+)
 
-const FuncMintSupply = "mintSupply"
-const FuncTransferOwnership = "transferOwnership"
-const FuncUpdateMetadata = "updateMetadata"
-const ViewGetInfo = "getInfo"
+const (
+	FuncMintSupply        = "mintSupply"
+	FuncTransferOwnership = "transferOwnership"
+	FuncUpdateMetadata    = "updateMetadata"
+	ViewGetInfo           = "getInfo"
+)
 
-const HFuncMintSupply = coretypes.Hname(0x564349a7)
-const HFuncTransferOwnership = coretypes.Hname(0xbb9eb5af)
-const HFuncUpdateMetadata = coretypes.Hname(0xa26b23b6)
-const HViewGetInfo = coretypes.Hname(0xcfedba5f)
+const (
+	HFuncMintSupply        = coretypes.Hname(0x564349a7)
+	HFuncTransferOwnership = coretypes.Hname(0xbb9eb5af)
+	HFuncUpdateMetadata    = coretypes.Hname(0xa26b23b6)
+	HViewGetInfo           = coretypes.Hname(0xcfedba5f)
+)

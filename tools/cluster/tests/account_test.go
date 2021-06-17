@@ -253,7 +253,7 @@ func TestBasic2Accounts(t *testing.T) {
 	printAccounts(t, chain, "withdraw before")
 
 	// withdraw back 2 iotas to originator address
-	fmt.Printf("\norig addres from sigsheme: %s\n", originatorAddress.Base58())
+	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Base58())
 	originatorClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, originatorSigScheme)
 	reqTx2, err := originatorClient.Post1Request(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
 	check(err, t)

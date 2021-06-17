@@ -9,6 +9,7 @@ package tbdn
 import (
 	"bytes"
 	"encoding/binary"
+
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"

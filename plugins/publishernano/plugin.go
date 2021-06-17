@@ -19,9 +19,7 @@ import (
 // PluginName is the name of the Publisher plugin.
 const PluginName = "PublisherNano"
 
-var (
-	log *logger.Logger
-)
+var log *logger.Logger
 
 func Init() *node.Plugin {
 	return node.NewPlugin(PluginName, node.Enabled, configure, run)

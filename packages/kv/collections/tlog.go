@@ -430,7 +430,6 @@ func (l *ImmutableTimestampedLog) findUpperIdx(ts int64, fromIdx, toIdx uint32) 
 		return toIdx, true, nil
 	case fromIdx == toIdx:
 		return 0, false, nil
-
 	}
 	if !(ts < upperTs && fromIdx < toIdx) {
 		panic(fmt.Errorf("TimestampedLog.findUpperIdx: assertion failed: ts < upperTs && fromIdx < toIdx: args: %d, %d, %d", ts, fromIdx, toIdx))

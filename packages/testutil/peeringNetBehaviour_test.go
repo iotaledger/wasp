@@ -4,11 +4,11 @@
 package testutil // not `..._test` because it uses peeringMsg.
 
 import (
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +22,7 @@ func TestPeeringNetReliable(t *testing.T) {
 		}
 		doneCh <- true
 	}()
-	var someNode = peeringNode{netID: "src"}
+	someNode := peeringNode{netID: "src"}
 	var behavior PeeringNetBehavior
 	behavior = NewPeeringNetReliable()
 	behavior.AddLink(inCh, outCh, "dst")
@@ -55,7 +55,7 @@ func TestPeeringNetUnreliable(t *testing.T) {
 	}()
 	//
 	// Run the test.
-	var someNode = peeringNode{netID: "src"}
+	someNode := peeringNode{netID: "src"}
 	var behavior PeeringNetBehavior
 	behavior = NewPeeringNetUnreliable(50, 50, 50*time.Millisecond, 100*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
 	behavior.AddLink(inCh, outCh, "dst")
@@ -104,7 +104,7 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 	}()
 	//
 	// Run the test.
-	var someNode = peeringNode{netID: "src"}
+	someNode := peeringNode{netID: "src"}
 	var behavior PeeringNetBehavior
 	behavior = NewPeeringNetUnreliable(100, 0, 0*time.Microsecond, 0*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)) // NOTE: No drops, duplicates, delays.
 	behavior.AddLink(inCh, outCh, "dst")

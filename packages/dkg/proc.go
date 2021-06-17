@@ -209,6 +209,7 @@ func (p *proc) rabinStep1R21SendDealsMakeSent(step byte, initRecv *peering.RecvE
 	}
 	return sentMsgs, nil
 }
+
 func (p *proc) rabinStep1R21SendDealsMakeResp(step byte, initRecv *peering.RecvEvent, recvMsgs map[uint16]*peering.PeerMessage) (*peering.PeerMessage, error) {
 	return makePeerMessage(p.dkgID, step, &initiatorStatusMsg{error: nil}), nil
 }
@@ -256,6 +257,7 @@ func (p *proc) rabinStep2R22SendResponsesMakeSent(step byte, initRecv *peering.R
 	}
 	return sentMsgs, nil
 }
+
 func (p *proc) rabinStep2R22SendResponsesMakeResp(step byte, initRecv *peering.RecvEvent, recvMsgs map[uint16]*peering.PeerMessage) (*peering.PeerMessage, error) {
 	return makePeerMessage(p.dkgID, step, &initiatorStatusMsg{error: nil}), nil
 }
@@ -269,7 +271,7 @@ func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, initRecv *peer
 		return nil, errors.New("unexpected step for n=1")
 	}
 	//
-	// Decode the received responces.
+	// Decode the received response.
 	recvResponses := make(map[uint16]*rabinResponseMsg)
 	for i := range prevMsgs {
 		peerResponseMsg := rabinResponseMsg{}
@@ -308,6 +310,7 @@ func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, initRecv *peer
 	}
 	return sentMsgs, nil
 }
+
 func (p *proc) rabinStep3R23SendJustificationsMakeResp(step byte, initRecv *peering.RecvEvent, recvMsgs map[uint16]*peering.PeerMessage) (*peering.PeerMessage, error) {
 	return makePeerMessage(p.dkgID, step, &initiatorStatusMsg{error: nil}), nil
 }
@@ -378,6 +381,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, initRecv *peerin
 	}
 	return sentMsgs, nil
 }
+
 func (p *proc) rabinStep4R4SendSecretCommitsMakeResp(step byte, initRecv *peering.RecvEvent, recvMsgs map[uint16]*peering.PeerMessage) (*peering.PeerMessage, error) {
 	return makePeerMessage(p.dkgID, step, &initiatorStatusMsg{error: nil}), nil
 }
@@ -436,6 +440,7 @@ func (p *proc) rabinStep5R5SendComplaintCommitsMakeSent(step byte, initRecv *pee
 	}
 	return sentMsgs, nil
 }
+
 func (p *proc) rabinStep5R5SendComplaintCommitsMakeResp(step byte, initRecv *peering.RecvEvent, recvMsgs map[uint16]*peering.PeerMessage) (*peering.PeerMessage, error) {
 	return makePeerMessage(p.dkgID, step, &initiatorStatusMsg{error: nil}), nil
 }
@@ -494,6 +499,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, initRecv *p
 	}
 	return sentMsgs, nil
 }
+
 func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(step byte, initRecv *peering.RecvEvent, recvMsgs map[uint16]*peering.PeerMessage) (*peering.PeerMessage, error) {
 	var err error
 	if p.dkgImpl == nil {
@@ -576,7 +582,7 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(step byte, initRecv *p
 //
 func (p *proc) rabinStep7CommitAndTerminateMakeSent(step byte, initRecv *peering.RecvEvent, prevMsgs map[uint16]*peering.PeerMessage) (map[uint16]*peering.PeerMessage, error) {
 	var err error
-	var doneMsg = initiatorDoneMsg{}
+	doneMsg := initiatorDoneMsg{}
 	if err = doneMsg.fromBytes(initRecv.Msg.MsgData, p.node.suite); err != nil {
 		p.log.Warnf("Dropping message, failed to decode: %v", initRecv)
 		return nil, err
@@ -590,6 +596,7 @@ func (p *proc) rabinStep7CommitAndTerminateMakeSent(step byte, initRecv *peering
 	}
 	return make(map[uint16]*peering.PeerMessage), nil
 }
+
 func (p *proc) rabinStep7CommitAndTerminateMakeResp(step byte, initRecv *peering.RecvEvent, recvMsgs map[uint16]*peering.PeerMessage) (*peering.PeerMessage, error) {
 	return makePeerMessage(p.dkgID, step, &initiatorStatusMsg{error: nil}), nil
 }
@@ -676,12 +683,15 @@ func newProcStep(
 	go s.run()
 	return &s
 }
+
 func (s *procStep) close() {
 	close(s.closeCh)
 }
+
 func (s *procStep) recv(msg *peering.RecvEvent) {
 	s.recvCh <- msg
 }
+
 func (s *procStep) run() {
 	var err error
 	for {
@@ -777,6 +787,7 @@ func (s *procStep) run() {
 		}
 	}
 }
+
 func (s *procStep) sendEcho(recv *peering.RecvEvent) {
 	var err error
 	if sentMsg, sentMsgOK := s.sentMsgs[recv.Msg.SenderIndex]; sentMsgOK {
@@ -791,6 +802,7 @@ func (s *procStep) sendEcho(recv *peering.RecvEvent) {
 	}
 	s.log.Warnf("[%v -%v-> %v] Unable to send echo message, is was not produced yet.", s.proc.myNetID, recv.Msg.MsgType, recv.From.NetID())
 }
+
 func (s *procStep) haveAll() bool {
 	for i := range s.sentMsgs {
 		if s.recvMsgs[i] == nil {
@@ -799,6 +811,7 @@ func (s *procStep) haveAll() bool {
 	}
 	return true
 }
+
 func (s *procStep) makeDone() {
 	var err error
 	s.onceResp.Do(func() {
@@ -810,8 +823,8 @@ func (s *procStep) makeDone() {
 			s.markDone(initResp)
 		}
 	})
-
 }
+
 func (s *procStep) markDone(initResp *peering.PeerMessage) {
 	s.doneCh <- s.recvMsgs // Activate the next step.
 	s.initResp = initResp  // Store the response for later resends.

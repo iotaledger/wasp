@@ -143,5 +143,4 @@ func (m *MockedChainCore) GlobalSolidIndex() *atomic.Uint32 {
 }
 
 func (m *MockedChainCore) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
-
 }

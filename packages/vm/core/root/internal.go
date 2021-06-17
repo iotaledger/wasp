@@ -63,7 +63,7 @@ func MustGetChainOwnerID(state kv.KVStoreReader) *coretypes.AgentID {
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
 // It is not exposed to the sandbox
 func GetFeeInfo(state kv.KVStoreReader, hname coretypes.Hname) (ledgerstate.Color, uint64, uint64) {
-	//returns nil of contract not found
+	// returns nil of contract not found
 	rec, err := FindContract(state, hname)
 	if err != nil {
 		if err != ErrContractNotFound {

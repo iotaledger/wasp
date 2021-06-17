@@ -9,8 +9,10 @@ import (
 	"time"
 )
 
-const defaultTimeout = 5 * time.Second
-const disableWasmTimeout = false
+const (
+	defaultTimeout     = 5 * time.Second
+	disableWasmTimeout = false
+)
 
 // WasmTimeout set this to non-zero for a one-time override of the defaultTimeout
 var WasmTimeout = 0 * time.Second
@@ -39,7 +41,6 @@ type WasmVmBase struct {
 }
 
 func (vm *WasmVmBase) LinkHost(impl WasmVM, host *WasmHost) error {
-
 	// trick vm into thinking it doesn't have to start the timeout timer
 	// useful when debugging to prevent timing out on breakpoints
 	vm.timeoutStarted = disableWasmTimeout

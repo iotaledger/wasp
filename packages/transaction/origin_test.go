@@ -1,11 +1,12 @@
 package transaction
 
 import (
+	"testing"
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestCreateOrigin(t *testing.T) {

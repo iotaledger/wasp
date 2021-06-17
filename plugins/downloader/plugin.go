@@ -10,7 +10,7 @@ import (
 // PluginName is the name of the downloader plugin.
 const PluginName = "Downloader"
 
-//Init inits the plugin.
+// Init inits the plugin.
 func Init() *node.Plugin {
 	configure := func(*node.Plugin) {
 		log := logger.NewLogger(PluginName)

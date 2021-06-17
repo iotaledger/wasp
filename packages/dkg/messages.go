@@ -90,6 +90,7 @@ func makeDkgRoundEchoMsg(msgType byte) (byte, error) {
 	}
 	return msgType, errors.New("round_msg_type_expected")
 }
+
 func makeDkgRoundMsg(msgType byte) (byte, error) {
 	if isDkgRabinRoundMsg(msgType) {
 		return msgType, nil
@@ -190,12 +191,15 @@ type initiatorInitMsg struct {
 func (m *initiatorInitMsg) MsgType() byte {
 	return initiatorInitMsgType
 }
+
 func (m *initiatorInitMsg) Step() byte {
 	return m.step
 }
+
 func (m *initiatorInitMsg) SetStep(step byte) {
 	m.step = step
 }
+
 func (m *initiatorInitMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -229,6 +233,7 @@ func (m *initiatorInitMsg) Write(w io.Writer) error {
 	}
 	return nil
 }
+
 func (m *initiatorInitMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -270,14 +275,17 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 	m.roundRetry = time.Duration(roundRetryMS) * time.Millisecond
 	return nil
 }
+
 func (m *initiatorInitMsg) fromBytes(buf []byte, group kyber.Group) error {
 	r := bytes.NewReader(buf)
 	m.suite = group
 	return m.Read(r)
 }
+
 func (m *initiatorInitMsg) Error() error {
 	return nil
 }
+
 func (m *initiatorInitMsg) IsResponse() bool {
 	return false
 }
@@ -296,12 +304,15 @@ type initiatorStepMsg struct {
 func (m *initiatorStepMsg) MsgType() byte {
 	return initiatorStepMsgType
 }
+
 func (m *initiatorStepMsg) Step() byte {
 	return m.step
 }
+
 func (m *initiatorStepMsg) SetStep(step byte) {
 	m.step = step
 }
+
 func (m *initiatorStepMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -309,6 +320,7 @@ func (m *initiatorStepMsg) Write(w io.Writer) error {
 	}
 	return nil
 }
+
 func (m *initiatorStepMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -316,13 +328,16 @@ func (m *initiatorStepMsg) Read(r io.Reader) error {
 	}
 	return nil
 }
+
 func (m *initiatorStepMsg) fromBytes(buf []byte, group kyber.Group) error {
 	r := bytes.NewReader(buf)
 	return m.Read(r)
 }
+
 func (m *initiatorStepMsg) Error() error {
 	return nil
 }
+
 func (m *initiatorStepMsg) IsResponse() bool {
 	return false
 }
@@ -339,12 +354,15 @@ type initiatorDoneMsg struct {
 func (m *initiatorDoneMsg) MsgType() byte {
 	return initiatorDoneMsgType
 }
+
 func (m *initiatorDoneMsg) Step() byte {
 	return m.step
 }
+
 func (m *initiatorDoneMsg) SetStep(step byte) {
 	m.step = step
 }
+
 func (m *initiatorDoneMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -360,6 +378,7 @@ func (m *initiatorDoneMsg) Write(w io.Writer) error {
 	}
 	return nil
 }
+
 func (m *initiatorDoneMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -378,14 +397,17 @@ func (m *initiatorDoneMsg) Read(r io.Reader) error {
 	}
 	return nil
 }
+
 func (m *initiatorDoneMsg) fromBytes(buf []byte, suite kyber.Group) error {
 	r := bytes.NewReader(buf)
 	m.suite = suite
 	return m.Read(r)
 }
+
 func (m *initiatorDoneMsg) Error() error {
 	return nil
 }
+
 func (m *initiatorDoneMsg) IsResponse() bool {
 	return false
 }
@@ -409,12 +431,15 @@ type initiatorPubShareMsg struct {
 func (m *initiatorPubShareMsg) MsgType() byte {
 	return initiatorPubShareMsgType
 }
+
 func (m *initiatorPubShareMsg) Step() byte {
 	return m.step
 }
+
 func (m *initiatorPubShareMsg) SetStep(step byte) {
 	m.step = step
 }
+
 func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -434,6 +459,7 @@ func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	}
 	return nil
 }
+
 func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -461,14 +487,17 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	}
 	return nil
 }
+
 func (m *initiatorPubShareMsg) fromBytes(buf []byte, suite kyber.Group) error {
 	r := bytes.NewReader(buf)
 	m.suite = suite
 	return m.Read(r)
 }
+
 func (m *initiatorPubShareMsg) Error() error {
 	return nil
 }
+
 func (m *initiatorPubShareMsg) IsResponse() bool {
 	return true
 }
@@ -484,12 +513,15 @@ type initiatorStatusMsg struct {
 func (m *initiatorStatusMsg) MsgType() byte {
 	return initiatorStatusMsgType
 }
+
 func (m *initiatorStatusMsg) Step() byte {
 	return m.step
 }
+
 func (m *initiatorStatusMsg) SetStep(step byte) {
 	m.step = step
 }
+
 func (m *initiatorStatusMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -504,6 +536,7 @@ func (m *initiatorStatusMsg) Write(w io.Writer) error {
 	}
 	return nil
 }
+
 func (m *initiatorStatusMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -520,13 +553,16 @@ func (m *initiatorStatusMsg) Read(r io.Reader) error {
 	}
 	return nil
 }
+
 func (m *initiatorStatusMsg) fromBytes(buf []byte, group kyber.Group) error {
 	r := bytes.NewReader(buf)
 	return m.Read(r)
 }
+
 func (m *initiatorStatusMsg) Error() error {
 	return m.error
 }
+
 func (m *initiatorStatusMsg) IsResponse() bool {
 	return true
 }
@@ -542,12 +578,15 @@ type rabinDealMsg struct {
 func (m *rabinDealMsg) MsgType() byte {
 	return rabinDealMsgType
 }
+
 func (m *rabinDealMsg) Step() byte {
 	return m.step
 }
+
 func (m *rabinDealMsg) SetStep(step byte) {
 	m.step = step
 }
+
 func (m *rabinDealMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -570,6 +609,7 @@ func (m *rabinDealMsg) Write(w io.Writer) error {
 	}
 	return nil
 }
+
 func (m *rabinDealMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -592,6 +632,7 @@ func (m *rabinDealMsg) Read(r io.Reader) error {
 	}
 	return nil
 }
+
 func (m *rabinDealMsg) fromBytes(buf []byte, group kyber.Group) error {
 	m.deal = &rabin_dkg.Deal{
 		Deal: &rabin_vss.EncryptedDeal{
@@ -613,12 +654,15 @@ type rabinResponseMsg struct {
 func (m *rabinResponseMsg) MsgType() byte {
 	return rabinResponseMsgType
 }
+
 func (m *rabinResponseMsg) Step() byte {
 	return m.step
 }
+
 func (m *rabinResponseMsg) SetStep(step byte) {
 	m.step = step
 }
+
 func (m *rabinResponseMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -647,6 +691,7 @@ func (m *rabinResponseMsg) Write(w io.Writer) error {
 	}
 	return nil
 }
+
 func (m *rabinResponseMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -680,6 +725,7 @@ func (m *rabinResponseMsg) Read(r io.Reader) error {
 	}
 	return nil
 }
+
 func (m *rabinResponseMsg) fromBytes(buf []byte) error {
 	rdr := bytes.NewReader(buf)
 	return m.Read(rdr)
@@ -697,12 +743,15 @@ type rabinJustificationMsg struct {
 func (m *rabinJustificationMsg) MsgType() byte {
 	return rabinJustificationMsgType
 }
+
 func (m *rabinJustificationMsg) Step() byte {
 	return m.step
 }
+
 func (m *rabinJustificationMsg) SetStep(step byte) {
 	m.step = step
 }
+
 func (m *rabinJustificationMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -731,6 +780,7 @@ func (m *rabinJustificationMsg) Write(w io.Writer) error {
 	}
 	return nil
 }
+
 func (m *rabinJustificationMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -764,6 +814,7 @@ func (m *rabinJustificationMsg) Read(r io.Reader) error {
 	}
 	return nil
 }
+
 func (m *rabinJustificationMsg) fromBytes(buf []byte, group kyber.Group) error {
 	m.group = group
 	rdr := bytes.NewReader(buf)
@@ -782,12 +833,15 @@ type rabinSecretCommitsMsg struct {
 func (m *rabinSecretCommitsMsg) MsgType() byte {
 	return rabinSecretCommitsMsgType
 }
+
 func (m *rabinSecretCommitsMsg) Step() byte {
 	return m.step
 }
+
 func (m *rabinSecretCommitsMsg) SetStep(step byte) {
 	m.step = step
 }
+
 func (m *rabinSecretCommitsMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -818,6 +872,7 @@ func (m *rabinSecretCommitsMsg) Write(w io.Writer) error {
 	}
 	return nil
 }
+
 func (m *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -854,6 +909,7 @@ func (m *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	}
 	return nil
 }
+
 func (m *rabinSecretCommitsMsg) fromBytes(buf []byte, group kyber.Group) error {
 	m.group = group
 	rdr := bytes.NewReader(buf)
@@ -872,12 +928,15 @@ type rabinComplaintCommitsMsg struct {
 func (m *rabinComplaintCommitsMsg) MsgType() byte {
 	return rabinComplaintCommitsMsgType
 }
+
 func (m *rabinComplaintCommitsMsg) Step() byte {
 	return m.step
 }
+
 func (m *rabinComplaintCommitsMsg) SetStep(step byte) {
 	m.step = step
 }
+
 func (m *rabinComplaintCommitsMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -902,6 +961,7 @@ func (m *rabinComplaintCommitsMsg) Write(w io.Writer) error {
 	}
 	return nil
 }
+
 func (m *rabinComplaintCommitsMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -929,6 +989,7 @@ func (m *rabinComplaintCommitsMsg) Read(r io.Reader) error {
 	}
 	return nil
 }
+
 func (m *rabinComplaintCommitsMsg) fromBytes(buf []byte, group kyber.Group) error {
 	m.group = group
 	rdr := bytes.NewReader(buf)
@@ -947,12 +1008,15 @@ type rabinReconstructCommitsMsg struct {
 func (m *rabinReconstructCommitsMsg) MsgType() byte {
 	return rabinReconstructCommitsMsgType
 }
+
 func (m *rabinReconstructCommitsMsg) Step() byte {
 	return m.step
 }
+
 func (m *rabinReconstructCommitsMsg) SetStep(step byte) {
 	m.step = step
 }
+
 func (m *rabinReconstructCommitsMsg) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteByte(w, m.step); err != nil {
@@ -980,6 +1044,7 @@ func (m *rabinReconstructCommitsMsg) Write(w io.Writer) error {
 	}
 	return nil
 }
+
 func (m *rabinReconstructCommitsMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -1010,6 +1075,7 @@ func (m *rabinReconstructCommitsMsg) Read(r io.Reader) error {
 	}
 	return nil
 }
+
 func (m *rabinReconstructCommitsMsg) fromBytes(buf []byte, group kyber.Group) error {
 	m.group = group
 	rdr := bytes.NewReader(buf)
@@ -1038,6 +1104,7 @@ func writePriShare(w io.Writer, val *share.PriShare) error {
 	}
 	return nil
 }
+
 func readPriShare(r io.Reader, val **share.PriShare) error {
 	var err error
 	var valNil bool
@@ -1091,6 +1158,7 @@ func writeVssDeal(w io.Writer, d *rabin_vss.Deal) error {
 	}
 	return nil
 }
+
 func readVssDeal(r io.Reader, d **rabin_vss.Deal, group kyber.Group) error {
 	var err error
 	dd := rabin_vss.Deal{}

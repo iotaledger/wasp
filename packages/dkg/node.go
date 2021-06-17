@@ -82,7 +82,7 @@ func (n *Node) GenerateDistributedKey(
 ) (*tcrypto.DKShare, error) {
 	n.log.Infof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().NetID(), peerNetIDs)
 	var err error
-	var peerCount = uint16(len(peerNetIDs))
+	peerCount := uint16(len(peerNetIDs))
 	//
 	// Some validationfor the parameters.
 	if peerCount < 1 || threshold < 1 || threshold > peerCount {
@@ -352,7 +352,6 @@ func (n *Node) exchangeInitiatorMsgs(
 		if err != nil {
 			n.log.Warnf("Failed to read message from %v: %v", recv.From.NetID(), recv.Msg)
 			return false, err
-
 		}
 		if !initMsg.IsResponse() {
 			return false, nil
