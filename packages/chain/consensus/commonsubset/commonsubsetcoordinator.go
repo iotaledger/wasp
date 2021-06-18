@@ -168,7 +168,7 @@ func (csc *CommonSubsetCoordinator) getOrCreateCS(
 	if ownCall || csc.inRange(stateIndex) {
 		var err error
 		var newCS *CommonSubset
-		var outCh chan map[uint16][]byte = make(chan map[uint16][]byte)
+		outCh := make(chan map[uint16][]byte)
 		if newCS, err = NewCommonSubset(sessionID, stateIndex, csc.peeringID, csc.netGroup, csc.threshold, csc.commonCoin, outCh, csc.log); err != nil {
 			return nil, err
 		}

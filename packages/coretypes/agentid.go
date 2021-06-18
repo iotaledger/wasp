@@ -149,10 +149,8 @@ func (a *AgentID) Write(w io.Writer) error {
 		if _, err := w.Write(t[:]); err != nil {
 			return err
 		}
-	} else {
-		if _, err := w.Write(a.a.Bytes()); err != nil {
-			return err
-		}
+	} else if _, err := w.Write(a.a.Bytes()); err != nil {
+		return err
 	}
 	return a.h.Write(w)
 }

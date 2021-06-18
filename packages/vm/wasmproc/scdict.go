@@ -24,7 +24,7 @@ type WaspObject interface {
 	wasmhost.HostObject
 	InitObj(id int32, keyID int32, owner *ScDict)
 	Panic(format string, args ...interface{})
-	FindOrMakeObjectId(keyID int32, factory ObjFactory) int32
+	FindOrMakeObjectID(keyID int32, factory ObjFactory) int32
 	NestedKey() string
 	Suffix(keyID int32) string
 }
@@ -36,7 +36,7 @@ func GetArrayObjectID(arrayObj WaspObject, index, typeID int32, factory ObjFacto
 	if typeID != arrayObj.GetTypeID(index) {
 		arrayObj.Panic("GetArrayObjectId: invalid type")
 	}
-	return arrayObj.FindOrMakeObjectId(index, factory)
+	return arrayObj.FindOrMakeObjectID(index, factory)
 }
 
 func GetMapObjectID(mapObj WaspObject, keyID, typeID int32, factories ObjFactories) int32 {
@@ -47,7 +47,7 @@ func GetMapObjectID(mapObj WaspObject, keyID, typeID int32, factories ObjFactori
 	if typeID != mapObj.GetTypeID(keyID) {
 		mapObj.Panic("GetMapObjectId: invalid type")
 	}
-	return mapObj.FindOrMakeObjectId(keyID, factory)
+	return mapObj.FindOrMakeObjectID(keyID, factory)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -135,7 +135,7 @@ func (o *ScDict) Exists(keyID, typeID int32) bool {
 	return o.kvStore.MustHas(o.key(keyID, typeID))
 }
 
-func (o *ScDict) FindOrMakeObjectId(keyID int32, factory ObjFactory) int32 {
+func (o *ScDict) FindOrMakeObjectID(keyID int32, factory ObjFactory) int32 {
 	objID, ok := o.objects[keyID]
 	if ok {
 		return objID
@@ -247,11 +247,11 @@ func (o *ScDict) SetBytes(keyID, typeID int32, bytes []byte) {
 	o.kvStore.Set(key, bytes)
 }
 
-func (o *ScDict) Suffix(keyId int32) string {
+func (o *ScDict) Suffix(keyID int32) string {
 	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
-		return fmt.Sprintf(".%d", keyId)
+		return fmt.Sprintf(".%d", keyID)
 	}
-	key := o.host.GetKeyFromID(keyId)
+	key := o.host.GetKeyFromID(keyID)
 	return "." + string(key)
 }
 

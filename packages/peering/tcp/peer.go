@@ -43,7 +43,7 @@ type peer struct {
 	log       *logger.Logger
 }
 
-func newPeer(remoteNetID string, net *NetImpl) *peer {
+func newPeer(remoteNetID string, netw *NetImpl) *peer {
 	var waitReady sync.WaitGroup
 	waitReady.Add(1)
 	return &peer{
@@ -52,8 +52,8 @@ func newPeer(remoteNetID string, net *NetImpl) *peer {
 		startOnce:   &sync.Once{},
 		waitReady:   &waitReady,
 		numUsers:    1,
-		net:         net,
-		log:         net.log,
+		net:         netw,
+		log:         netw.log,
 	}
 }
 
@@ -114,6 +114,7 @@ func (p *peer) peeringID() string {
 	return p.net.peeringID(p.remoteNetID)
 }
 
+//nolint:unused
 func (p *peer) connStatus() (bool, bool) {
 	p.RLock()
 	defer p.RUnlock()

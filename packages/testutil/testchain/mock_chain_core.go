@@ -78,8 +78,8 @@ func (m *MockedChainCore) ID() *chainid.ChainID {
 	return &m.chainID
 }
 
-func (c *MockedChainCore) GlobalStateSync() coreutil.ChainStateSync {
-	return c.onGlobalStateSync()
+func (m *MockedChainCore) GlobalStateSync() coreutil.ChainStateSync {
+	return m.onGlobalStateSync()
 }
 
 func (m *MockedChainCore) GetStateReader() state.OptimisticStateReader {

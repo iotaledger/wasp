@@ -16,7 +16,7 @@ type blsUtil struct{}
 
 var suite = bn256.NewSuite()
 
-func (u blsUtil) ValidSignature(data []byte, pubKeyBin []byte, signature []byte) bool {
+func (u blsUtil) ValidSignature(data, pubKeyBin, signature []byte) bool {
 	pubKey := suite.G2().Point()
 	var err error
 	if err = pubKey.UnmarshalBinary(pubKeyBin); err != nil {
@@ -36,7 +36,7 @@ func (u blsUtil) AddressFromPublicKey(pubKeyBin []byte) (ledgerstate.Address, er
 // AggregateBLSSignatures
 // TODO: optimize redundant binary manipulation.
 //   Implement more flexible access to parts of SignatureShort
-func (u blsUtil) AggregateBLSSignatures(pubKeysBin [][]byte, sigsBin [][]byte) ([]byte, []byte, error) {
+func (u blsUtil) AggregateBLSSignatures(pubKeysBin, sigsBin [][]byte) ([]byte, []byte, error) {
 	if len(sigsBin) == 0 || len(pubKeysBin) != len(sigsBin) {
 		return nil, nil, fmt.Errorf("BLSUtil: number of public keys must be equal to the number of signatures and not empty")
 	}

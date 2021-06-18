@@ -13,6 +13,6 @@ func NewScExports(vm *WasmProcessor) *ScExports {
 	return o
 }
 
-func (o *ScExports) SetBytes(keyId int32, typeId int32, bytes []byte) {
-	o.vm.SetExport(keyId, string(bytes))
+func (o *ScExports) SetBytes(keyID, typeID int32, bytes []byte) {
+	o.vm.SetExport(keyID, string(bytes))
 }

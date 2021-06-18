@@ -127,7 +127,7 @@ func (c *Client) PostRequestTransaction(par transaction.NewRequestTransactionPar
 		return nil, err
 	}
 
-	if err = c.PostTransaction(tx); err != nil {
+	if err := c.PostTransaction(tx); err != nil {
 		return nil, err
 	}
 	return tx, nil

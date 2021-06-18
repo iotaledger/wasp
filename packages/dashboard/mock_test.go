@@ -152,8 +152,8 @@ func (p *peeringNode) Close() {
 	panic("not implemented")
 }
 
-func (w *waspServices) CallView(chain chain.ChainCore, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
-	chainID := chain.ID()
+func (w *waspServices) CallView(ch chain.ChainCore, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
+	chainID := ch.ID()
 
 	contract := &root.ContractRecord{
 		ProgramHash:  hashing.RandomHash(nil),

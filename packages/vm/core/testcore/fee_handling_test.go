@@ -50,6 +50,7 @@ func TestBase(t *testing.T) {
 	checkFees(chain, blob.Interface.Name, 5, 0)
 }
 
+//nolint:dupl
 func TestFeeIsEnough1(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")

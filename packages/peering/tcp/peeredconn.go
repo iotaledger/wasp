@@ -22,7 +22,7 @@ type peeredConnection struct {
 	peer        *peer
 	net         *NetImpl
 	msgChopper  *chopper.Chopper
-	handshakeOk bool //nolint:unused
+	handshakeOk bool //nolint:structcheck,unused
 }
 
 // creates new peered connection and attach event handlers for received data and closing

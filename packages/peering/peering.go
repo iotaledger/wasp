@@ -191,6 +191,7 @@ type PeerMessage struct {
 	MsgData     []byte
 }
 
+//nolint:gocritic
 func NewPeerMessageFromBytes(buf []byte) (*PeerMessage, error) {
 	var err error
 	r := bytes.NewBuffer(buf)

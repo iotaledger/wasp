@@ -79,7 +79,7 @@ func Recover(suite pairing.Suite, public *share.PubPoly, msg []byte, sigs [][]by
 		if err != nil {
 			return nil, err
 		}
-		if err = bdn.Verify(suite, public.Eval(i).V, msg, s.Value()); err != nil {
+		if err := bdn.Verify(suite, public.Eval(i).V, msg, s.Value()); err != nil {
 			return nil, err
 		}
 		point := suite.G1().Point()

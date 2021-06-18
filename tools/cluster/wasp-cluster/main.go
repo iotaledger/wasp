@@ -23,7 +23,7 @@ func usage(flags *pflag.FlagSet) {
 	os.Exit(1)
 }
 
-//noling:funlen
+//nolint:funlen
 func main() {
 	commonFlags := pflag.NewFlagSet("common flags", pflag.ExitOnError)
 

@@ -80,7 +80,7 @@ func New(
 		chainArr = chainID.Array()
 	}
 	for i := range peerGroupID {
-		peerGroupID[i] = peerGroupID[i] ^ chainArr[i]
+		peerGroupID[i] ^= chainArr[i]
 	}
 	ret := &committee{
 		isReady:        atomic.NewBool(false),

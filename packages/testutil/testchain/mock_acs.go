@@ -7,7 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 )
 
-type mockedACSRunner struct {
+type MockedACSRunner struct {
 	quorum   uint16
 	sessions map[uint64]*acsSession
 	log      *logger.Logger
@@ -20,15 +20,15 @@ type acsSession struct {
 	closed    bool
 }
 
-func NewMockedACSRunner(quorum uint16, log *logger.Logger) *mockedACSRunner {
-	return &mockedACSRunner{
+func NewMockedACSRunner(quorum uint16, log *logger.Logger) *MockedACSRunner {
+	return &MockedACSRunner{
 		quorum:   quorum,
 		sessions: make(map[uint64]*acsSession),
 		log:      log.Named("acs"),
 	}
 }
 
-func (acs *mockedACSRunner) RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte)) {
+func (acs *MockedACSRunner) RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte)) {
 	acs.mutex.Lock()
 	defer acs.mutex.Unlock()
 
@@ -55,10 +55,10 @@ func (acs *mockedACSRunner) RunACSConsensus(value []byte, sessionID uint64, stat
 	}
 }
 
-func (acs *mockedACSRunner) TryHandleMessage(recv *peering.RecvEvent) bool {
+func (acs *MockedACSRunner) TryHandleMessage(recv *peering.RecvEvent) bool {
 	return false
 }
 
-func (acs *mockedACSRunner) Close() {
+func (acs *MockedACSRunner) Close() {
 	// Nothing.
 }

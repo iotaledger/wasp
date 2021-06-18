@@ -22,8 +22,8 @@ func NewScTransfers(vm *WasmProcessor) *ScTransfers {
 	return a
 }
 
-func (a *ScTransfers) GetObjectID(keyId, typeId int32) int32 {
-	return GetArrayObjectID(a, keyId, typeId, func() WaspObject {
+func (a *ScTransfers) GetObjectID(keyID, typeID int32) int32 {
+	return GetArrayObjectID(a, keyID, typeID, func() WaspObject {
 		return NewScTransferInfo(a.vm)
 	})
 }
@@ -67,9 +67,9 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 	}
 }
 
-func (o *ScTransferInfo) SetBytes(keyId int32, typeId int32, bytes []byte) {
+func (o *ScTransferInfo) SetBytes(keyID, typeID int32, bytes []byte) {
 	var err error
-	switch keyId {
+	switch keyID {
 	case wasmhost.KeyAddress:
 		o.address, _, err = ledgerstate.AddressFromBytes(bytes)
 		if err != nil {
@@ -78,6 +78,6 @@ func (o *ScTransferInfo) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	case wasmhost.KeyBalances:
 		o.Invoke(int32(o.MustInt64(bytes)))
 	default:
-		o.invalidKey(keyId)
+		o.invalidKey(keyID)
 	}
 }

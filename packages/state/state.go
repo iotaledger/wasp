@@ -177,21 +177,21 @@ func (vs *virtualState) Hash() hashing.HashValue {
 // region OptimisticStateReader ///////////////////////////////////////////////////
 
 // state reader reads the chain state from db and validates it
-type optimisticStateReader struct {
+type OptimisticStateReaderImpl struct {
 	db         kvstore.KVStore
 	chainState *optimism.OptimisticKVStoreReader
 }
 
 // NewOptimisticStateReader creates new optimistic read-only access to the database. It contains own read baseline
-func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.ChainStateSync) *optimisticStateReader {
+func NewOptimisticStateReader(db kvstore.KVStore, glb coreutil.ChainStateSync) *OptimisticStateReaderImpl {
 	chainState := kv.NewHiveKVStoreReader(subRealm(db, []byte{dbkeys.ObjectTypeStateVariable}))
-	return &optimisticStateReader{
+	return &OptimisticStateReaderImpl{
 		db:         db,
 		chainState: optimism.NewOptimisticKVStoreReader(chainState, glb.GetSolidIndexBaseline()),
 	}
 }
 
-func (r *optimisticStateReader) BlockIndex() (uint32, error) {
+func (r *OptimisticStateReaderImpl) BlockIndex() (uint32, error) {
 	blockIndex, err := loadStateIndexFromState(r.chainState)
 	if err != nil {
 		return 0, err
@@ -199,7 +199,7 @@ func (r *optimisticStateReader) BlockIndex() (uint32, error) {
 	return blockIndex, nil
 }
 
-func (r *optimisticStateReader) Timestamp() (time.Time, error) {
+func (r *OptimisticStateReaderImpl) Timestamp() (time.Time, error) {
 	ts, err := loadTimestampFromState(r.chainState)
 	if err != nil {
 		return time.Time{}, err
@@ -207,7 +207,7 @@ func (r *optimisticStateReader) Timestamp() (time.Time, error) {
 	return ts, nil
 }
 
-func (r *optimisticStateReader) Hash() (hashing.HashValue, error) {
+func (r *OptimisticStateReaderImpl) Hash() (hashing.HashValue, error) {
 	if !r.chainState.IsStateValid() {
 		return [32]byte{}, optimism.ErrStateHasBeenInvalidated
 	}
@@ -225,11 +225,11 @@ func (r *optimisticStateReader) Hash() (hashing.HashValue, error) {
 	return ret, nil
 }
 
-func (r *optimisticStateReader) KVStoreReader() kv.KVStoreReader {
+func (r *OptimisticStateReaderImpl) KVStoreReader() kv.KVStoreReader {
 	return r.chainState
 }
 
-func (r *optimisticStateReader) SetBaseline() {
+func (r *OptimisticStateReaderImpl) SetBaseline() {
 	r.chainState.SetBaseline()
 }
 

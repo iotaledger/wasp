@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/sign/bls"
+	"go.dedis.ch/kyber/v3/sign/bls" //nolint:staticcheck // TODO IMPORTANT: this lib is deprecated and a potential security issue, needs to be updated
 )
 
 type handshakeMsg struct {

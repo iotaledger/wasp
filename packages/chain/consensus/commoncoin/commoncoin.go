@@ -124,7 +124,7 @@ func (ccn *commonCoinNode) flipCoin(epoch uint32, prefix []byte) bool {
 		return false
 	}
 	sid := make([]byte, 4)
-	binary.BigEndian.PutUint32(sid[:], epoch)
+	binary.BigEndian.PutUint32(sid, epoch)
 	if prefix != nil {
 		sid = append(prefix, sid...)
 	}

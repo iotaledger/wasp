@@ -41,9 +41,8 @@ func processResponse(res *http.Response, decodeTo interface{}) error {
 	if res.StatusCode >= 200 && res.StatusCode < 300 {
 		if decodeTo != nil {
 			return json.Unmarshal(resBody, decodeTo)
-		} else {
-			return nil
 		}
+		return nil
 	}
 
 	errRes := &model.HTTPError{}

@@ -25,6 +25,7 @@ const prefix = "[checkSC] "
 // it loads the chainrecord from the first node in the list and uses CommitteeNodes from that
 // chainrecord to check the whole committee
 //goland:noinspection ALL
+//nolint:funlen
 func CheckDeployment(apiHosts []string, chainID chainid.ChainID, textout ...io.Writer) bool {
 	ret := true
 	var out io.Writer

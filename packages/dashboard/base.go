@@ -90,7 +90,7 @@ func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateP
 func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Template {
 	t := template.New("").Funcs(template.FuncMap{
 		"formatTimestamp":   formatTimestamp,
-		"exploreAddressUrl": exploreAddressUrl(d.wasp.ExploreAddressBaseURL()),
+		"exploreAddressUrl": exploreAddressURL(d.wasp.ExploreAddressBaseURL()),
 		"args":              args,
 		"hashref":           hashref,
 		"trim":              trim,

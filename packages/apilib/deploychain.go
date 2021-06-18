@@ -88,9 +88,8 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 	if err != nil {
 		fmt.Fprintf(textout, "requesting UTXOs from node.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("GetConfirmedOutputs: %w", err)
-	} else {
-		fmt.Fprint(textout, "requesting owner address' UTXOs from node.. OK\n")
 	}
+	fmt.Fprint(textout, "requesting owner address' UTXOs from node.. OK\n")
 
 	// ----------- create origin transaction
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
@@ -114,9 +113,8 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 	if err != nil {
 		fmt.Fprintf(textout, "posting origin transaction.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("posting origin transaction: %w", err)
-	} else {
-		fmt.Fprintf(textout, "posting origin transaction.. OK. txid: %s\n", originTx.ID().Base58())
 	}
+	fmt.Fprintf(textout, "posting origin transaction.. OK. txid: %s\n", originTx.ID().Base58())
 
 	// ------------ put chain records to hosts
 	err = committee.PutChainRecord(&chainrecord.ChainRecord{
