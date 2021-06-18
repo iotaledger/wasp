@@ -58,7 +58,6 @@ func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
 	return NewCallParamsFromDic(scName, funName, parseParams(params))
 }
 
-//nolint:ineffassign,gomnd // TODO revisit: optsize seems obsolete, its unused after assignment
 func NewCallParamsOptimized(scName, funName string, optSize int, params ...interface{}) (*CallParams, map[kv.Key][]byte) {
 	if optSize <= 32 {
 		optSize = 32
