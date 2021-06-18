@@ -4,28 +4,23 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-
-	"github.com/iotaledger/hive.go/logger"
-
-	"github.com/iotaledger/wasp/packages/state"
-
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -92,7 +87,7 @@ func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupPro
 }
 
 // Domain creates peering.PeerDomainProvider.
-func (n *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
+func (p *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
 	panic("not implemented")
 }
 

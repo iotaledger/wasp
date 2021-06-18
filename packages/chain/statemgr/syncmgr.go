@@ -106,7 +106,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	}
 }
 
-func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex uint32, toStateIndex uint32) ([]*candidateBlock, state.VirtualState, bool) {
+func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex, toStateIndex uint32) ([]*candidateBlock, state.VirtualState, bool) {
 	sm.log.Debugf("getCandidatesToCommit from %v to %v", fromStateIndex, toStateIndex)
 	if fromStateIndex > toStateIndex {
 		// Blocks gathered. Check if the correct result is received if they are applied

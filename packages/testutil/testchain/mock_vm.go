@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
-type mockedVMRunner struct {
+type MockedVMRunner struct {
 	stateTransition *MockedStateTransition
 	nextState       state.VirtualState
 	tx              *ledgerstate.TransactionEssence
@@ -22,8 +22,8 @@ type mockedVMRunner struct {
 	t               *testing.T
 }
 
-func NewMockedVMRunner(t *testing.T, log *logger.Logger) *mockedVMRunner {
-	ret := &mockedVMRunner{
+func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
+	ret := &MockedVMRunner{
 		stateTransition: NewMockedStateTransition(t, nil),
 		log:             log,
 		t:               t,
@@ -35,7 +35,7 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *mockedVMRunner {
 	return ret
 }
 
-func (r *mockedVMRunner) Run(task *vm.VMTask) {
+func (r *MockedVMRunner) Run(task *vm.VMTask) {
 	reqstr := strings.Join(coretypes.ShortRequestIDs(coretypes.TakeRequestIDs(task.Requests...)), ",")
 
 	r.log.Debugf("VM input: state hash: %s, chain input: %s, requests: [%s]",

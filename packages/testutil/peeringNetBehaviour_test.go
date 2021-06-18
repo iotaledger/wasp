@@ -23,8 +23,7 @@ func TestPeeringNetReliable(t *testing.T) {
 		doneCh <- true
 	}()
 	someNode := peeringNode{netID: "src"}
-	var behavior PeeringNetBehavior
-	behavior = NewPeeringNetReliable()
+	behavior := NewPeeringNetReliable()
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 10; i++ {
 		inCh <- &peeringMsg{from: &someNode}
@@ -56,8 +55,7 @@ func TestPeeringNetUnreliable(t *testing.T) {
 	//
 	// Run the test.
 	someNode := peeringNode{netID: "src"}
-	var behavior PeeringNetBehavior
-	behavior = NewPeeringNetUnreliable(50, 50, 50*time.Millisecond, 100*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
+	behavior := NewPeeringNetUnreliable(50, 50, 50*time.Millisecond, 100*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 1000; i++ {
 		inCh <- &peeringMsg{from: &someNode}
@@ -74,7 +72,7 @@ func TestPeeringNetUnreliable(t *testing.T) {
 		for _, d := range durations {
 			avgDuration += d.Milliseconds()
 		}
-		avgDuration = avgDuration / int64(len(durations))
+		avgDuration /= int64(len(durations))
 		require.Greater(t, avgDuration, int64(50))
 		require.Less(t, avgDuration, int64(100))
 	}
@@ -105,8 +103,7 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 	//
 	// Run the test.
 	someNode := peeringNode{netID: "src"}
-	var behavior PeeringNetBehavior
-	behavior = NewPeeringNetUnreliable(100, 0, 0*time.Microsecond, 0*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)) // NOTE: No drops, duplicates, delays.
+	behavior := NewPeeringNetUnreliable(100, 0, 0*time.Microsecond, 0*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)) // NOTE: No drops, duplicates, delays.
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 1000; i++ {
 		inCh <- &peeringMsg{from: &someNode}
@@ -122,7 +119,7 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 		for _, d := range durations {
 			avgDuration += d.Milliseconds()
 		}
-		avgDuration = avgDuration / int64(len(durations))
+		avgDuration /= int64(len(durations))
 		require.Less(t, avgDuration, int64(100))
 	}
 	//

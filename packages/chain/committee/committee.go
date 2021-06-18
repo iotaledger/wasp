@@ -220,7 +220,7 @@ func (c *committee) PeerStatus() []*chain.PeerStatus {
 	return ret
 }
 
-func (c *committee) Attach(chain chain.ChainCore) {
+func (c *committee) Attach(ch chain.ChainCore) {
 	c.attachID = c.validatorNodes.Attach(&c.peeringID, func(recv *peering.RecvEvent) {
 		if c.ccProvider != nil && c.ccProvider.TryHandleMessage(recv) {
 			return
@@ -228,7 +228,7 @@ func (c *committee) Attach(chain chain.ChainCore) {
 		if c.acsRunner.TryHandleMessage(recv) {
 			return
 		}
-		chain.ReceiveMessage(recv.Msg)
+		ch.ReceiveMessage(recv.Msg)
 	})
 }
 

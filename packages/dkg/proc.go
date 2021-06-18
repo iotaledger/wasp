@@ -227,7 +227,7 @@ func (p *proc) rabinStep2R22SendResponsesMakeSent(step byte, initRecv *peering.R
 	recvDeals := make(map[uint16]*rabinDealMsg, len(prevMsgs))
 	for i := range prevMsgs {
 		peerDealMsg := rabinDealMsg{}
-		if err = peerDealMsg.fromBytes(prevMsgs[i].MsgData, p.node.suite); err != nil {
+		if err := peerDealMsg.fromBytes(prevMsgs[i].MsgData, p.node.suite); err != nil {
 			return nil, err
 		}
 		recvDeals[i] = &peerDealMsg

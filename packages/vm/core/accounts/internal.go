@@ -204,6 +204,7 @@ func mustCheckLedger(state kv.KVStore, checkpoint string) {
 	}
 }
 
+//nolint:unparam
 func getAccountBalanceDict(ctx coretypes.SandboxView, account *collections.ImmutableMap, tag string) dict.Dict {
 	balances := getAccountBalances(account)
 	// ctx.Log().Debugf("%s. balance = %s\n", tag, balances.String())

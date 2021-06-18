@@ -5,15 +5,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/labstack/echo/v4"
@@ -37,30 +35,30 @@ func (d *Dashboard) initChain(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChain(c echo.Context) error {
-	chainid, err := chainid.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := chainid.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
 
-	tab := chainBreadcrumb(c.Echo(), *chainid)
+	tab := chainBreadcrumb(c.Echo(), *chainID)
 
 	result := &ChainTemplateParams{
 		BaseTemplateParams: d.BaseParams(c, tab),
-		ChainID:            chainid,
+		ChainID:            chainID,
 	}
 
-	result.Record, err = d.wasp.GetChainRecord(chainid)
+	result.Record, err = d.wasp.GetChainRecord(chainID)
 	if err != nil {
 		return err
 	}
 
 	if result.Record != nil && result.Record.Active {
-		result.State, err = d.wasp.GetChainState(chainid)
+		result.State, err = d.wasp.GetChainState(chainID)
 		if err != nil {
 			return err
 		}
 
-		theChain := d.wasp.GetChain(chainid)
+		theChain := d.wasp.GetChain(chainID)
 
 		result.Committee = theChain.GetCommitteeInfo()
 
@@ -88,14 +86,14 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), result)
 }
 
-func (d *Dashboard) fetchAccounts(chain chain.ChainCore) ([]*coretypes.AgentID, error) {
-	accounts, err := d.wasp.CallView(chain, accounts.Interface.Hname(), accounts.FuncAccounts, nil)
+func (d *Dashboard) fetchAccounts(ch chain.ChainCore) ([]*coretypes.AgentID, error) {
+	accs, err := d.wasp.CallView(ch, accounts.Interface.Hname(), accounts.FuncAccounts, nil)
 	if err != nil {
 		return nil, fmt.Errorf("accountsc view call failed: %v", err)
 	}
 
 	ret := make([]*coretypes.AgentID, 0)
-	for k := range accounts {
+	for k := range accs {
 		agentid, _, err := codec.DecodeAgentID([]byte(k))
 		if err != nil {
 			return nil, err
@@ -105,16 +103,16 @@ func (d *Dashboard) fetchAccounts(chain chain.ChainCore) ([]*coretypes.AgentID, 
 	return ret, nil
 }
 
-func (d *Dashboard) fetchTotalAssets(chain chain.ChainCore) (map[ledgerstate.Color]uint64, error) {
-	bal, err := d.wasp.CallView(chain, accounts.Interface.Hname(), accounts.FuncTotalAssets, nil)
+func (d *Dashboard) fetchTotalAssets(ch chain.ChainCore) (map[ledgerstate.Color]uint64, error) {
+	bal, err := d.wasp.CallView(ch, accounts.Interface.Hname(), accounts.FuncTotalAssets, nil)
 	if err != nil {
 		return nil, err
 	}
 	return accounts.DecodeBalances(bal)
 }
 
-func (d *Dashboard) fetchBlobs(chain chain.ChainCore) (map[hashing.HashValue]uint32, error) {
-	ret, err := d.wasp.CallView(chain, blob.Interface.Hname(), blob.FuncListBlobs, nil)
+func (d *Dashboard) fetchBlobs(ch chain.ChainCore) (map[hashing.HashValue]uint32, error) {
+	ret, err := d.wasp.CallView(ch, blob.Interface.Hname(), blob.FuncListBlobs, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -26,16 +26,16 @@ const (
 	mapElemKeyCode = byte(1)
 )
 
-func NewMap(kv kv.KVStore, name string) *Map {
+func NewMap(kvStore kv.KVStore, name string) *Map {
 	return &Map{
-		ImmutableMap: NewMapReadOnly(kv, name),
-		kvw:          kv,
+		ImmutableMap: NewMapReadOnly(kvStore, name),
+		kvw:          kvStore,
 	}
 }
 
-func NewMapReadOnly(kv kv.KVStoreReader, name string) *ImmutableMap {
+func NewMapReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableMap {
 	return &ImmutableMap{
-		kvr:  kv,
+		kvr:  kvReader,
 		name: name,
 	}
 }

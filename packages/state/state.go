@@ -45,7 +45,7 @@ func newVirtualState(db kvstore.KVStore, chainID *chainid.ChainID) *virtualState
 	return ret
 }
 
-func newZeroVirtualState(db kvstore.KVStore, chainID *chainid.ChainID) (*virtualState, *block) {
+func newZeroVirtualState(db kvstore.KVStore, chainID *chainid.ChainID) (*virtualState, *BlockImpl) {
 	ret := newVirtualState(db, chainID)
 	originBlock := newOriginBlock()
 	if err := ret.ApplyBlock(originBlock); err != nil {
@@ -128,9 +128,9 @@ func (vs *virtualState) ApplyBlock(b Block) error {
 	if !vs.empty && vs.Timestamp().After(b.Timestamp()) {
 		return xerrors.New("ApplyBlock: inconsistent timestamps")
 	}
-	upds := make([]StateUpdate, len(b.(*block).stateUpdates))
+	upds := make([]StateUpdate, len(b.(*BlockImpl).stateUpdates))
 	for i := range upds {
-		upds[i] = b.(*block).stateUpdates[i]
+		upds[i] = b.(*BlockImpl).stateUpdates[i]
 	}
 	vs.ApplyStateUpdates(upds...)
 	vs.empty = false

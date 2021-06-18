@@ -55,7 +55,7 @@ func (c *Client) balanceIOTA(targetAddress ledgerstate.Address) (uint64, error) 
 	total := uint64(0)
 	for _, out := range outs {
 		bal, _ := out.Balances().Get(ledgerstate.ColorIOTA)
-		total += uint64(bal)
+		total += bal
 	}
 	return total, nil
 }

@@ -17,12 +17,12 @@ import (
 )
 
 var typeIds = map[int32]int32{
-	wasmhost.KeyAccountId:       wasmhost.OBJTYPE_AGENT_ID,
+	wasmhost.KeyAccountID:       wasmhost.OBJTYPE_AGENT_ID,
 	wasmhost.KeyBalances:        wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyCall:            wasmhost.OBJTYPE_BYTES,
 	wasmhost.KeyCaller:          wasmhost.OBJTYPE_AGENT_ID,
-	wasmhost.KeyChainId:         wasmhost.OBJTYPE_CHAIN_ID,
-	wasmhost.KeyChainOwnerId:    wasmhost.OBJTYPE_AGENT_ID,
+	wasmhost.KeyChainID:         wasmhost.OBJTYPE_CHAIN_ID,
+	wasmhost.KeyChainOwnerID:    wasmhost.OBJTYPE_AGENT_ID,
 	wasmhost.KeyContract:        wasmhost.OBJTYPE_HNAME,
 	wasmhost.KeyContractCreator: wasmhost.OBJTYPE_AGENT_ID,
 	wasmhost.KeyDeploy:          wasmhost.OBJTYPE_BYTES,
@@ -35,7 +35,7 @@ var typeIds = map[int32]int32{
 	wasmhost.KeyPanic:           wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyParams:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyPost:            wasmhost.OBJTYPE_BYTES,
-	wasmhost.KeyRequestId:       wasmhost.OBJTYPE_REQUEST_ID,
+	wasmhost.KeyRequestID:       wasmhost.OBJTYPE_REQUEST_ID,
 	wasmhost.KeyResults:         wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyReturn:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyState:           wasmhost.OBJTYPE_MAP,
@@ -69,19 +69,19 @@ func (o *ScContext) Exists(keyID, typeID int32) bool {
 
 func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
 	switch keyID {
-	case wasmhost.KeyAccountId:
+	case wasmhost.KeyAccountID:
 		return o.vm.accountID().Bytes()
 	case wasmhost.KeyCaller:
 		return o.vm.ctx.Caller().Bytes()
-	case wasmhost.KeyChainId:
+	case wasmhost.KeyChainID:
 		return o.vm.chainID().Bytes()
-	case wasmhost.KeyChainOwnerId:
+	case wasmhost.KeyChainOwnerID:
 		return o.vm.chainOwnerID().Bytes()
 	case wasmhost.KeyContract:
 		return o.vm.contract().Bytes()
 	case wasmhost.KeyContractCreator:
 		return o.vm.contractCreator().Bytes()
-	case wasmhost.KeyRequestId:
+	case wasmhost.KeyRequestID:
 		return o.vm.ctx.RequestID().Bytes()
 	case wasmhost.KeyTimestamp:
 		return codec.EncodeInt64(o.vm.ctx.GetTimestamp())

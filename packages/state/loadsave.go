@@ -93,7 +93,7 @@ func LoadBlockBytes(store kvstore.KVStore, stateIndex uint32) ([]byte, error) {
 }
 
 // LoadBlock loads block from DB and decodes it
-func LoadBlock(store kvstore.KVStore, stateIndex uint32) (*block, error) {
+func LoadBlock(store kvstore.KVStore, stateIndex uint32) (*BlockImpl, error) {
 	data, err := LoadBlockBytes(store, stateIndex)
 	if err != nil {
 		return nil, err

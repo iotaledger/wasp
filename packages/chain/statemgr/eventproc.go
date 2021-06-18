@@ -136,8 +136,7 @@ func (sm *stateManager) EventTimerMsg(msg chain.TimerTick) {
 	}
 }
 
-//nolint:unparam // TODO should `msg` be used?
-func (sm *stateManager) eventTimerMsg(msg chain.TimerTick) {
+func (sm *stateManager) eventTimerMsg() {
 	sm.log.Debugf("EventTimerMsg received")
 	sm.takeAction()
 }

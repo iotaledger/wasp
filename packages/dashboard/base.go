@@ -8,14 +8,12 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/labstack/echo/v4"
 	"github.com/mr-tron/base58"
 )
@@ -34,7 +32,7 @@ type BaseTemplateParams struct {
 	NavPages    []Tab
 	Breadcrumbs []Tab
 	Path        string
-	MyNetworkId string
+	MyNetworkID string
 }
 
 type WaspServices interface {
@@ -85,7 +83,7 @@ func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateP
 		NavPages:    d.navPages,
 		Breadcrumbs: breadcrumbs,
 		Path:        c.Path(),
-		MyNetworkId: d.wasp.NetworkProvider().Self().NetID(),
+		MyNetworkID: d.wasp.NetworkProvider().Self().NetID(),
 	}
 }
 

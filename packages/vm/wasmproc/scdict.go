@@ -89,7 +89,7 @@ func NewNullObject(host *wasmhost.KvStoreHost) WaspObject {
 	return o
 }
 
-func (o *ScDict) InitObj(id int32, keyID int32, owner *ScDict) {
+func (o *ScDict) InitObj(id, keyID int32, owner *ScDict) {
 	o.id = id
 	o.keyID = keyID
 	o.ownerID = owner.id
@@ -259,12 +259,12 @@ func (o *ScDict) Tracef(format string, a ...interface{}) {
 	o.host.Tracef(format, a...)
 }
 
-func (o *ScDict) typeCheck(typeId int32, bytes []byte) {
-	typeSize := typeSizes[typeId]
+func (o *ScDict) typeCheck(typeID int32, bytes []byte) {
+	typeSize := typeSizes[typeID]
 	if typeSize != 0 && typeSize != len(bytes) {
 		o.Panic("typeCheck: invalid type size")
 	}
-	switch typeId {
+	switch typeID {
 	case wasmhost.OBJTYPE_ADDRESS:
 		// address bytes must start with valid address type
 		if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
@@ -288,18 +288,18 @@ func (o *ScDict) typeCheck(typeId int32, bytes []byte) {
 	}
 }
 
-func (o *ScDict) validate(keyId int32, typeId int32) {
+func (o *ScDict) validate(keyID, typeID int32) {
 	if o.kvStore == nil {
 		o.Panic("validate: Missing kvstore")
 	}
-	if typeId == -1 {
+	if typeID == -1 {
 		return
 	}
 	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
 		// actually array
-		arrayTypeId := o.typeID &^ wasmhost.OBJTYPE_ARRAY
-		if typeId == wasmhost.OBJTYPE_BYTES {
-			switch arrayTypeId {
+		arrayTypeID := o.typeID &^ wasmhost.OBJTYPE_ARRAY
+		if typeID == wasmhost.OBJTYPE_BYTES {
+			switch arrayTypeID {
 			case wasmhost.OBJTYPE_ADDRESS:
 			case wasmhost.OBJTYPE_AGENT_ID:
 			case wasmhost.OBJTYPE_BYTES:
@@ -308,10 +308,10 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 			default:
 				o.Panic("validate: Invalid byte type")
 			}
-		} else if arrayTypeId != typeId {
+		} else if arrayTypeID != typeID {
 			o.Panic("validate: Invalid type")
 		}
-		if /*o.isMutable && */ keyId == o.length {
+		if /*o.isMutable && */ keyID == o.length {
 			o.length++
 			if o.kvStore != nil {
 				key := o.NestedKey()[1:]
@@ -319,19 +319,19 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 			}
 			return
 		}
-		if keyId < 0 || keyId >= o.length {
+		if keyID < 0 || keyID >= o.length {
 			o.Panic("validate: Invalid index")
 		}
 		return
 	}
-	fieldType, ok := o.types[keyId]
+	fieldType, ok := o.types[keyID]
 	if !ok {
 		// first encounter of this key id, register type to make
 		// sure that future usages are all using that same type
-		o.types[keyId] = typeId
+		o.types[keyID] = typeID
 		return
 	}
-	if fieldType != typeId {
+	if fieldType != typeID {
 		o.Panic("validate: Invalid access")
 	}
 }

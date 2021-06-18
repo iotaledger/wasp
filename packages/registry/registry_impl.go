@@ -9,24 +9,20 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/util"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/util/key"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/database"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/key"
 )
 
 // region Registry /////////////////////////////////////////////////////////
@@ -69,14 +65,14 @@ func (r *Impl) GetChainRecordByChainID(chainID *chainid.ChainID) (*chainrecord.C
 	if err != nil {
 		return nil, err
 	}
-	return chainrecord.ChainRecordFromBytes(data)
+	return chainrecord.FromBytes(data)
 }
 
 func (r *Impl) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
 	ret := make([]*chainrecord.ChainRecord, 0)
 
 	err := r.store.Iterate([]byte{dbkeys.ObjectTypeChainRecord}, func(key kvstore.Key, value kvstore.Value) bool {
-		if rec, err1 := chainrecord.ChainRecordFromBytes(value); err1 == nil {
+		if rec, err1 := chainrecord.FromBytes(value); err1 == nil {
 			ret = append(ret, rec)
 		}
 		return true

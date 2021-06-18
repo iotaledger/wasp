@@ -99,7 +99,7 @@ func DecodeSizesMap(sizes dict.Dict) (map[string]uint32, error) {
 		if err != nil {
 			return nil, err
 		}
-		ret[string(field)] = uint32(v)
+		ret[string(field)] = v
 	}
 	return ret, nil
 }
