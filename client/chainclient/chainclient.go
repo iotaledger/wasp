@@ -50,7 +50,6 @@ func (c *Client) Post1Request(
 	if len(params) > 0 {
 		par = params[0]
 	}
-
 	return c.GoshimmerClient.PostRequestTransaction(transaction.NewRequestTransactionParams{
 		SenderKeyPair: c.KeyPair,
 		Requests: []transaction.RequestParams{{
@@ -67,9 +66,13 @@ func (c *Client) Post1Request(
 func (c *Client) PostOffLedgerRequest(
 	contractHname coretypes.Hname,
 	entrypoint coretypes.Hname,
-	args requestargs.RequestArgs,
+	params ...PostRequestParams,
 ) (*request.RequestOffLedger, error) {
-	offledgerReq := request.NewRequestOffLedger(contractHname, entrypoint, args)
+	par := PostRequestParams{}
+	if len(params) > 0 {
+		par = params[0]
+	}
+	offledgerReq := request.NewRequestOffLedger(contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
 	offledgerReq.Sign(c.KeyPair)
 	return offledgerReq, c.WaspClient.PostOffLedgerRequest(&c.ChainID, offledgerReq)
 }
