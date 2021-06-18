@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -246,7 +248,10 @@ func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, req
 		args,
 	)
 	if err != nil {
-		return "", err
+		return "", xerrors.New("not found")
+	}
+	if len(res) == 0 {
+		return "", nil
 	}
 	recBin := res.MustGet(blocklog.ParamRequestRecord)
 	rec, err := blocklog.RequestLogRecordFromBytes(recBin)
