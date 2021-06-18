@@ -69,8 +69,8 @@ func (c *consensus) proposeBatchIfNeeded() {
 		})
 	})
 
-	c.log.Infof("proposeBatch: proposed batch len = %d, ACS session ID: %d, state index: %d",
-		len(reqs), c.acsSessionID, c.stateOutput.GetStateIndex())
+	c.log.Infof("proposeBatch: proposed batch len = %d, ACS session ID: %d, state index: %d, proposal: %+v",
+		len(reqs), c.acsSessionID, c.stateOutput.GetStateIndex(), coretypes.ShortRequestIDs(proposal.RequestIDs))
 	c.workflow.batchProposalSent = true
 }
 
@@ -103,10 +103,13 @@ func (c *consensus) runVMIfNeeded() {
 		c.resetWorkflow()
 		return
 	}
+	c.log.Debugf("runVM needed: run VM with batch len = %d", len(reqs))
 	if vmTask := c.prepareVMTask(reqs); vmTask != nil {
 		c.workflow.vmStarted = true
 		go c.vmRunner.Run(vmTask)
 		c.log.Debugf("runVM: VM started")
+	} else {
+		c.log.Errorf("runVM: error preparing VM task")
 	}
 }
 
@@ -123,7 +126,6 @@ func (c *consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
 		}
 	})
 
-	c.log.Debugf("runVM needed: run VM with batch len = %d", len(reqs))
 	task := &vm.VMTask{
 		ACSSessionID:       c.acsSessionID,
 		Processors:         c.chain.Processors(),
@@ -137,7 +139,7 @@ func (c *consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
 		Log:                c.log,
 	}
 	if !task.SolidStateBaseline.IsValid() {
-		c.log.Debugf("runVM: solid state baseline is invalid. Do not even start the VM")
+		c.log.Debugf("prepareVMTask: solid state baseline is invalid. Do not even start the VM")
 		return nil
 	}
 	task.OnFinish = func(_ dict.Dict, err error, vmError error) {
@@ -151,6 +153,7 @@ func (c *consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
 			Task: task,
 		})
 	}
+	c.log.Debugf("prepareVMTask: VM task prepared")
 	return task
 }
 
@@ -188,7 +191,7 @@ func (c *consensus) checkQuorum() {
 	}
 	if !c.workflow.vmResultSigned {
 		// only can aggregate signatures if own result is calculated
-		c.log.Debugf("checkQuorum not needed: vm result is not signed and broadcasted")
+		c.log.Debugf("checkQuorum not needed: vm result is not signed")
 		return
 	}
 	// must be not nil
@@ -205,7 +208,7 @@ func (c *consensus) checkQuorum() {
 		}
 	}
 	quorumReached := len(contributors) >= int(c.committee.Quorum())
-	c.log.Debugf("checkQuorum for essence hash %v:  contributors %+v, quorum %v reachecd: %v",
+	c.log.Debugf("checkQuorum for essence hash %v:  contributors %+v, quorum %v reached: %v",
 		ownHash.String(), contributors, c.committee.Quorum(), quorumReached)
 	if !quorumReached {
 		return
@@ -342,6 +345,8 @@ func (c *consensus) prepareBatchProposal(reqs []coretypes.Request) *batchProposa
 	for i := range ret.RequestIDs {
 		ret.RequestIDs[i] = reqs[i].ID()
 	}
+
+	c.log.Debugf("prepareBatchProposal: proposal prepared")
 	return ret
 }
 
