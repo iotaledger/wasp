@@ -389,9 +389,15 @@ func (req *RequestOffLedger) Sign(keyPair *ed25519.KeyPair) {
 	req.signature = keyPair.PrivateKey.Sign(req.Essence())
 }
 
-// Transfer returns transfers passed to request
-func (req *RequestOffLedger) Transfer(transfer *ledgerstate.ColoredBalances) {
+// Transfer returns the transfers passed to the request
+func (req *RequestOffLedger) Transfer() *ledgerstate.ColoredBalances {
+	return req.transfer
+}
+
+// Transfer sets the transfers passed to the request
+func (req *RequestOffLedger) WithTransfer(transfer *ledgerstate.ColoredBalances) *RequestOffLedger {
 	req.transfer = transfer
+	return req
 }
 
 // VerifySignature verifies essence signature
