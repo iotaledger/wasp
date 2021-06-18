@@ -259,5 +259,4 @@ func TestStateReader(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, ok)
 	})
-
 }

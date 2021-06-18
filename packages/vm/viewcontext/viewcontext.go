@@ -3,6 +3,8 @@ package viewcontext
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/vm/core/_default"
+
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -69,7 +71,11 @@ func (v *viewcontext) callView(contractHname coretypes.Hname, epCode coretypes.H
 	var err error
 	contractRecord, err := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Interface.Hname()), contractHname)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find contract %s: %v", contractHname, err)
+		return nil, fmt.Errorf("inconsistency while searching for contract %s: %v", contractHname, err)
+	}
+	if contractHname != _default.Interface.Hname() && contractRecord.Hname() == _default.Interface.Hname() {
+		// in the view call we do not run default contract
+		return nil, fmt.Errorf("can't find contract '%s'", contractHname)
 	}
 	proc, err := v.processors.GetOrCreateProcessor(contractRecord, func(programHash hashing.HashValue) (string, []byte, error) {
 		if vmtype, ok := processors.GetBuiltinProcessorType(programHash); ok {
@@ -83,7 +89,7 @@ func (v *viewcontext) callView(contractHname coretypes.Hname, epCode coretypes.H
 
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		return nil, fmt.Errorf("%s: can't find entry point '%s'", proc.GetDescription(), epCode.String())
+		return nil, fmt.Errorf("trying to call contract '%s': can't find entry point '%s'", proc.GetDescription(), epCode.String())
 	}
 
 	if !ep.IsView() {

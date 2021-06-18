@@ -31,7 +31,7 @@ import (
 // - creates record in the registry for the 'root' itself
 // - deploys other core contracts: 'accounts', 'blob', 'eventlog' by creating records in the registry and calling constructors
 // Input:
-// - ParamChainID coretypes.ChainID. ID of the chain. Cannot be changed
+// - ParamChainID chainid.ChainID. ID of the chain. Cannot be changed
 // - ParamChainColor ledgerstate.Color
 // - ParamChainAddress ledgerstate.Address
 // - ParamDescription string defaults to "N/A"
@@ -139,7 +139,7 @@ func findContract(ctx coretypes.SandboxView) (dict.Dict, error) {
 	}
 	retBin := EncodeContractRecord(rec)
 	ret := dict.New()
-	ret.Set(ParamData, retBin)
+	ret.Set(VarData, retBin)
 	return ret, nil
 }
 
@@ -222,9 +222,9 @@ func getFeeInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	}
 	feeColor, ownerFee, validatorFee := GetFeeInfo(ctx.State(), hname)
 	ret := dict.New()
-	ret.Set(ParamFeeColor, codec.EncodeColor(feeColor))
-	ret.Set(ParamOwnerFee, codec.EncodeUint64(ownerFee))
-	ret.Set(ParamValidatorFee, codec.EncodeUint64(validatorFee))
+	ret.Set(VarFeeColor, codec.EncodeColor(feeColor))
+	ret.Set(VarOwnerFee, codec.EncodeUint64(ownerFee))
+	ret.Set(VarValidatorFee, codec.EncodeUint64(validatorFee))
 	return ret, nil
 }
 

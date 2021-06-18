@@ -15,8 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const constMockServerPort string = ":9999"
-const constFileCID string = "someunrealistichash12345"
+const (
+	constMockServerPort string = ":9999"
+	constFileCID        string = "someunrealistichash12345"
+)
 
 var constVarFile []byte = []byte("some file for testing")
 

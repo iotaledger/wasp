@@ -9,27 +9,37 @@ package test
 
 import "github.com/iotaledger/wasp/packages/coretypes"
 
-const ScName = "fairroulette"
-const HScName = coretypes.Hname(0xdf79d138)
+const (
+	ScName  = "fairroulette"
+	HScName = coretypes.Hname(0xdf79d138)
+)
 
-const ParamNumber = "number"
-const ParamPlayPeriod = "playPeriod"
+const (
+	ParamNumber     = "number"
+	ParamPlayPeriod = "playPeriod"
+)
 
 const ResultLastWinningNumber = "lastWinningNumber"
 
-const VarBets = "bets"
-const VarLastWinningNumber = "lastWinningNumber"
-const VarLockedBets = "lockedBets"
-const VarPlayPeriod = "playPeriod"
+const (
+	VarBets              = "bets"
+	VarLastWinningNumber = "lastWinningNumber"
+	VarLockedBets        = "lockedBets"
+	VarPlayPeriod        = "playPeriod"
+)
 
-const FuncLockBets = "lockBets"
-const FuncPayWinners = "payWinners"
-const FuncPlaceBet = "placeBet"
-const FuncPlayPeriod = "playPeriod"
-const ViewLastWinningNumber = "lastWinningNumber"
+const (
+	FuncLockBets          = "lockBets"
+	FuncPayWinners        = "payWinners"
+	FuncPlaceBet          = "placeBet"
+	FuncPlayPeriod        = "playPeriod"
+	ViewLastWinningNumber = "lastWinningNumber"
+)
 
-const HFuncLockBets = coretypes.Hname(0xe163b43c)
-const HFuncPayWinners = coretypes.Hname(0xfb2b0144)
-const HFuncPlaceBet = coretypes.Hname(0xdfba7d1b)
-const HFuncPlayPeriod = coretypes.Hname(0xcb94b293)
-const HViewLastWinningNumber = coretypes.Hname(0x2f5f09fe)
+const (
+	HFuncLockBets          = coretypes.Hname(0xe163b43c)
+	HFuncPayWinners        = coretypes.Hname(0xfb2b0144)
+	HFuncPlaceBet          = coretypes.Hname(0xdfba7d1b)
+	HFuncPlayPeriod        = coretypes.Hname(0xcb94b293)
+	HViewLastWinningNumber = coretypes.Hname(0x2f5f09fe)
+)

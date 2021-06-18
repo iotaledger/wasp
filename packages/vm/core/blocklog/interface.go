@@ -21,13 +21,11 @@ const (
 	description = "Block log contract"
 )
 
-var (
-	Interface = &coreutil.ContractInterface{
-		Name:        Name,
-		Description: description,
-		ProgramHash: hashing.HashStrings(Name),
-	}
-)
+var Interface = &coreutil.ContractInterface{
+	Name:        Name,
+	Description: description,
+	ProgramHash: hashing.HashStrings(Name),
+}
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
@@ -43,7 +41,6 @@ func init() {
 
 const (
 	// state variables
-	StateVarTimestamp          = coreutil.StateVarTimestamp
 	StateVarBlockIndex         = coreutil.StateVarBlockIndex
 	StateVarBlockRegistry      = "b"
 	StateVarRequestLookupIndex = "l"

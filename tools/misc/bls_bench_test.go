@@ -1,9 +1,10 @@
 package misc
 
 import (
-	"github.com/iotaledger/hive.go/crypto/bls"
 	"strconv"
 	"testing"
+
+	"github.com/iotaledger/hive.go/crypto/bls"
 )
 
 var dataToSign = "Hello BLS Benchmark!"

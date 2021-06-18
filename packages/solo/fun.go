@@ -8,13 +8,11 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -25,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
@@ -66,7 +65,7 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 	if err != nil {
 		return nil, err
 	}
-	retBin, err := retDict.Get(root.ParamData)
+	retBin, err := retDict.Get(root.VarData)
 	if err != nil {
 		return nil, err
 	}
@@ -100,10 +99,9 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 // data to the chain. It returns hash of the blob, the unique identified of it.
 // Takes request token and necessary fees from the 'sigScheme' address (or OriginatorAddress if nil).
 //
-// The parameters must be in the form of sequence of pairs 'fieldName': 'fieldValue'
+// The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
 func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
-	par := toMap(params...)
-	expectedHash := blob.MustGetBlobHash(codec.MakeDict(par))
+	expectedHash := blob.MustGetBlobHash(parseParams(params))
 	if _, ok := ch.GetBlobInfo(expectedHash); ok {
 		// blob exists, return hash of existing
 		return expectedHash, nil
@@ -141,8 +139,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 // Before running the request in VM, the hash references contained in the request transaction are resolved with
 // the real data, previously uploaded directly.
 func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
-	par := toMap(params...)
-	expectedHash := blob.MustGetBlobHash(codec.MakeDict(par))
+	expectedHash := blob.MustGetBlobHash(parseParams(params))
 	if _, ok := ch.GetBlobInfo(expectedHash); ok {
 		// blob exists, return hash of existing
 		return expectedHash, nil
@@ -367,17 +364,17 @@ func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint
 	require.NoError(ch.Env.T, err)
 	require.NotEqualValues(ch.Env.T, 0, len(ret))
 
-	feeColor, ok, err := codec.DecodeColor(ret.MustGet(root.ParamFeeColor))
+	feeColor, ok, err := codec.DecodeColor(ret.MustGet(root.VarFeeColor))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 	require.NotNil(ch.Env.T, feeColor)
 
-	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(root.ParamValidatorFee))
+	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(root.VarValidatorFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 	require.True(ch.Env.T, validatorFee >= 0)
 
-	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(root.ParamOwnerFee))
+	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(root.VarOwnerFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 	require.True(ch.Env.T, ownerFee >= 0)

@@ -5,10 +5,11 @@ package native
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"sync"
 )
 
 const VMType = "examplevm"

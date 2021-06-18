@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
+
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 
@@ -215,13 +217,16 @@ func (env *mockedEnv) NewNode(nodeIndex uint16, timers util.TimerParams) *mocked
 	if env.MockedACS != nil {
 		acs = append(acs, env.MockedACS)
 	}
+	cmtRec := &committee_record.CommitteeRecord{
+		Address: env.StateAddress,
+		Nodes:   env.NodeIDs,
+	}
 	cmt, err := committee.New(
-		env.StateAddress,
+		cmtRec,
 		&env.ChainID,
 		env.NetworkProviders[nodeIndex],
 		cfg,
 		env.DKSRegistries[nodeIndex],
-		testchain.NewMockedCommitteeRegistry(env.NodeIDs),
 		log,
 		acs...,
 	)

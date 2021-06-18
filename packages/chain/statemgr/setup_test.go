@@ -230,7 +230,6 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers util.TimerParams) *Moc
 		rdr := bytes.NewReader(recvEvent.Msg.MsgData)
 
 		switch recvEvent.Msg.MsgType {
-
 		case chain.MsgGetBlock:
 			msgt := &chain.GetBlockMsg{}
 			if err := msgt.Read(rdr); err != nil {

@@ -19,9 +19,10 @@ import (
 
 // Message types for the committee communications.
 const (
-	MsgGetBlock     = 1 + peering.FirstUserMsgCode
-	MsgBlock        = 2 + peering.FirstUserMsgCode
-	MsgSignedResult = 3 + peering.FirstUserMsgCode
+	MsgGetBlock = 1 + peering.FirstUserMsgCode + iota
+	MsgBlock
+	MsgSignedResult
+	MsgOffLedgerRequest
 )
 
 type TimerTick int

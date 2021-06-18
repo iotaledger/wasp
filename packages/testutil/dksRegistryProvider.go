@@ -38,7 +38,7 @@ func (p *DkgRegistryProvider) SaveDKShare(dkShare *tcrypto.DKShare) error {
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.
 func (p *DkgRegistryProvider) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error) {
-	var dkShareBytes = p.DB[sharedAddress.String()]
+	dkShareBytes := p.DB[sharedAddress.String()]
 	if dkShareBytes == nil {
 		return nil, fmt.Errorf("DKShare not found for %v", sharedAddress.Base58())
 	}

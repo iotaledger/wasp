@@ -28,6 +28,7 @@ func TestPutBlob(t *testing.T) {
 		nil,
 		model.NewBlobData(data),
 		&res,
+		http.StatusOK,
 	)
 	require.EqualValues(t, hash, res.Hash.HashValue())
 
@@ -53,6 +54,7 @@ func TestGetBlob(t *testing.T) {
 		map[string]string{"hash": hash.Base58()},
 		nil,
 		&res,
+		http.StatusOK,
 	)
 	require.EqualValues(t, data, res.Data.Bytes())
 }
@@ -75,6 +77,7 @@ func TestHasBlob(t *testing.T) {
 		map[string]string{"hash": hash.Base58()},
 		nil,
 		&res,
+		http.StatusOK,
 	)
 	require.EqualValues(t, hashing.HashData(data), res.Hash.HashValue())
 }

@@ -1,11 +1,12 @@
 package common
 
 import (
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
@@ -15,8 +16,8 @@ const (
 )
 
 func DeployWasmContractByName(chain *solo.Chain, scName string, params ...interface{}) error {
-	//wasmproc.GoWasmVM = NewWasmTimeJavaVM()
-	//wasmproc.GoWasmVM = NewWartVM()
+	// wasmproc.GoWasmVM = NewWasmTimeJavaVM()
+	// wasmproc.GoWasmVM = NewWartVM()
 	wasmFile := scName + "_bg.wasm"
 	exists, _ := util.ExistsFilePath("../pkg/" + wasmFile)
 	if exists {

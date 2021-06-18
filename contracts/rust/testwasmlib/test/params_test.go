@@ -1,15 +1,16 @@
 package test
 
 import (
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/common"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 var (
@@ -120,28 +121,30 @@ func TestInvalidSizeParams(t *testing.T) {
 	}
 }
 
-var zeroHash = make([]byte, 32)
-var invalidValues = map[string][][]byte{
-	ParamAddress: {
-		append([]byte{3}, zeroHash...),
-		append([]byte{4}, zeroHash...),
-		append([]byte{255}, zeroHash...),
-	},
-	ParamChainId: {
-		append([]byte{0}, zeroHash...),
-		append([]byte{1}, zeroHash...),
-		append([]byte{3}, zeroHash...),
-		append([]byte{4}, zeroHash...),
-		append([]byte{255}, zeroHash...),
-	},
-	ParamRequestId: {
-		append(zeroHash, []byte{128, 0}...),
-		append(zeroHash, []byte{127, 1}...),
-		append(zeroHash, []byte{0, 1}...),
-		append(zeroHash, []byte{255, 255}...),
-		append(zeroHash, []byte{4, 4}...),
-	},
-}
+var (
+	zeroHash      = make([]byte, 32)
+	invalidValues = map[string][][]byte{
+		ParamAddress: {
+			append([]byte{3}, zeroHash...),
+			append([]byte{4}, zeroHash...),
+			append([]byte{255}, zeroHash...),
+		},
+		ParamChainId: {
+			append([]byte{0}, zeroHash...),
+			append([]byte{1}, zeroHash...),
+			append([]byte{3}, zeroHash...),
+			append([]byte{4}, zeroHash...),
+			append([]byte{255}, zeroHash...),
+		},
+		ParamRequestId: {
+			append(zeroHash, []byte{128, 0}...),
+			append(zeroHash, []byte{127, 1}...),
+			append(zeroHash, []byte{0, 1}...),
+			append(zeroHash, []byte{255, 255}...),
+			append(zeroHash, []byte{4, 4}...),
+		},
+	}
+)
 
 func TestInvalidTypeParams(t *testing.T) {
 	for param, values := range invalidValues {

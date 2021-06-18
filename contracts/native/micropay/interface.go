@@ -4,10 +4,11 @@
 package micropay
 
 import (
+	"time"
+
 	"github.com/iotaledger/wasp/contracts/native"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"time"
 )
 
 const (
@@ -15,13 +16,11 @@ const (
 	description = "Micro payment PoC smart contract"
 )
 
-var (
-	Interface = &coreutil.ContractInterface{
-		Name:        Name,
-		Description: description,
-		ProgramHash: hashing.HashStrings(Name),
-	}
-)
+var Interface = &coreutil.ContractInterface{
+	Name:        Name,
+	Description: description,
+	ProgramHash: hashing.HashStrings(Name),
+}
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{

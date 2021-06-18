@@ -121,8 +121,8 @@ func (r *Impl) DeactivateChainRecord(chainID *chainid.ChainID) (*chainrecord.Cha
 }
 
 func (r *Impl) SaveChainRecord(rec *chainrecord.ChainRecord) error {
-	key := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, rec.ChainID.Bytes())
-	return r.store.Set(key, rec.Bytes())
+	k := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, rec.ChainID.Bytes())
+	return r.store.Set(k, rec.Bytes())
 }
 
 // endregion ///////////////////////////////////////////////////////////////
@@ -169,7 +169,6 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 		return err
 	}
 	return r.store.Set(dbKey, buf)
-
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.
