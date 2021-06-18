@@ -9,6 +9,8 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 )
 
@@ -75,4 +77,81 @@ func (c *Client) PostOffLedgerRequest(
 	offledgerReq := request.NewRequestOffLedger(contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
 	offledgerReq.Sign(c.KeyPair)
 	return offledgerReq, c.WaspClient.PostOffLedgerRequest(&c.ChainID, offledgerReq)
+}
+
+// NewPostRequestParams simplifies encoding of request parameters
+func NewPostRequestParams(p ...interface{}) *PostRequestParams {
+	return &PostRequestParams{
+		Args: requestargs.New(nil).AddEncodeSimpleMany(parseParams(p)),
+	}
+}
+
+func (par *PostRequestParams) WithTransfer(transfer *ledgerstate.ColoredBalances) *PostRequestParams {
+	par.Transfer = transfer
+	return par
+}
+
+func (par *PostRequestParams) WithTransferEncoded(colval ...interface{}) *PostRequestParams {
+	ret := make(map[ledgerstate.Color]uint64)
+	if len(colval) == 0 {
+		return par
+	}
+	if len(colval)%2 != 0 {
+		panic("WithTransferEncode: len(params) % 2 != 0")
+	}
+	for i := 0; i < len(colval)/2; i++ {
+		key, ok := colval[2*i].(ledgerstate.Color)
+		if !ok {
+			panic("toMap: ledgerstate.Color expected")
+		}
+		ret[key] = encodeIntToUint54(colval[2*i+1])
+	}
+	par.Transfer = ledgerstate.NewColoredBalances(ret)
+	return par
+}
+
+func (par *PostRequestParams) WithIotas(i uint64) *PostRequestParams {
+	return par.WithTransferEncoded(ledgerstate.ColorIOTA, i)
+}
+
+func encodeIntToUint54(i interface{}) uint64 {
+	switch i := i.(type) {
+	case int:
+	case byte:
+	case int8:
+	case int16:
+	case uint16:
+	case int32:
+	case uint32:
+	case int64:
+	case uint64:
+		return i
+	}
+	panic("integer type expected")
+}
+
+func parseParams(params []interface{}) dict.Dict {
+	if len(params) == 1 {
+		return params[0].(dict.Dict)
+	}
+	return codec.MakeDict(toMap(params))
+}
+
+// makes map without hashing
+func toMap(params []interface{}) map[string]interface{} {
+	par := make(map[string]interface{})
+	if len(params) == 0 {
+		return par
+	}
+	if len(params)%2 != 0 {
+		panic("toMap: len(params) % 2 != 0")
+	}
+	for i := 0; i < len(params)/2; i++ {
+		key, ok := params[2*i].(string)
+		if !ok {
+			panic("toMap: string expected")
+		}
+		par[key] = params[2*i+1]
+	}
+	return par
 }

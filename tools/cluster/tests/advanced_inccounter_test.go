@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -64,9 +63,6 @@ func TestAccessNode(t *testing.T) {
 		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 		require.NoError(t, err)
 	}
-
-	//err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
-	//require.NoError(t, err)
 
 	require.True(t, waitCounter(t, chain, 7, numRequests, 5*time.Second))
 	require.True(t, waitCounter(t, chain, 8, numRequests, 5*time.Second))
@@ -128,12 +124,9 @@ func TestRotation(t *testing.T) {
 
 	govClient := chain.SCClient(governance.Interface.Hname(), chain.OriginatorKeyPair())
 
-	tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress, chainclient.PostRequestParams{
-		Transfer: ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 1}),
-		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
-			governance.ParamStateControllerAddress: addr2,
-		})),
-	})
+	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addr2).WithIotas(1)
+	tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress, *params)
+
 	require.NoError(t, err)
 
 	require.True(t, waitBlockIndex(t, chain, 9, 4, 5*time.Second))
@@ -150,12 +143,8 @@ func TestRotation(t *testing.T) {
 	require.True(t, waitStateController(t, chain, 0, addr1, 5*time.Second))
 	require.True(t, waitStateController(t, chain, 9, addr1, 5*time.Second))
 
-	tx, err = govClient.PostRequest(governance.FuncRotateStateController, chainclient.PostRequestParams{
-		Transfer: ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 1}),
-		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
-			governance.ParamStateControllerAddress: addr2,
-		})),
-	})
+	params = chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addr2).WithIotas(1)
+	tx, err = govClient.PostRequest(governance.FuncRotateStateController, *params)
 
 	require.True(t, waitStateController(t, chain, 0, addr2, 5*time.Second))
 	require.True(t, waitStateController(t, chain, 9, addr2, 5*time.Second))
