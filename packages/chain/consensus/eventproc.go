@@ -1,6 +1,8 @@
 package consensus
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -55,9 +57,14 @@ func (c *consensus) EventVMResultMsg(msg *chain.VMResultMsg) {
 }
 
 func (c *consensus) eventVMResultMsg(msg *chain.VMResultMsg) {
-	essenceHash := hashing.HashData(msg.Task.ResultTransactionEssence.Bytes())
-	c.log.Debugf("VMResultMsg received: state index: %d state hash: %s essence hash: %s",
-		msg.Task.VirtualState.BlockIndex(), msg.Task.VirtualState.Hash(), essenceHash)
+	var essenceString string
+	if msg.Task.ResultTransactionEssence == nil {
+		essenceString = "essence is nil"
+	} else {
+		essenceString = fmt.Sprintf("essence hash: %s", hashing.HashData(msg.Task.ResultTransactionEssence.Bytes()))
+	}
+	c.log.Debugf("VMResultMsg received: state index: %d state hash: %s %s",
+		msg.Task.VirtualState.BlockIndex(), msg.Task.VirtualState.Hash(), essenceString)
 	c.processVMResult(msg.Task)
 	c.takeAction()
 }
