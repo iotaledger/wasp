@@ -50,7 +50,7 @@ func testPregenerateDKS(t *testing.T, N uint16) {
 			dki.PublicCommits = make([]kyber.Point, 0)
 			dki.PublicShares = make([]kyber.Point, 0)
 		}
-		dkb, err = dki.Bytes()
+		dkb = dki.Bytes()
 		require.Nil(t, util.WriteBytes16(&buf, dkb))
 	}
 	err = ioutil.WriteFile(fmt.Sprintf("testkeys_pregenerated-%v.bin", N), buf.Bytes(), 0644)

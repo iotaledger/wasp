@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"io"
 
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/bls"
 	"github.com/iotaledger/wasp/packages/util"
@@ -75,10 +77,12 @@ func DKShareFromBytes(buf []byte, suite Suite) (*DKShare, error) {
 }
 
 // Bytes returns byte representation of the share.
-func (s *DKShare) Bytes() ([]byte, error) {
+func (s *DKShare) Bytes() []byte {
 	var buf bytes.Buffer
-	s.Write(&buf)
-	return buf.Bytes(), nil
+	if err := s.Write(&buf); err != nil {
+		panic(xerrors.Errorf("DKShare.Bytes: %w", err))
+	}
+	return buf.Bytes()
 }
 
 // Write returns byte representation of this struct.
@@ -142,7 +146,7 @@ func (s *DKShare) Read(r io.Reader) error {
 	if err = util.ReadUint16(r, &s.T); err != nil {
 		return err
 	}
-	s.SharedPublic = s.suite.Point()
+	s.SharedPublic = s.suite.G2().Point()
 	if err = util.ReadMarshaled(r, s.SharedPublic); err != nil {
 		return err
 	}
@@ -153,7 +157,7 @@ func (s *DKShare) Read(r io.Reader) error {
 	}
 	s.PublicCommits = make([]kyber.Point, arrLen)
 	for i := uint16(0); i < arrLen; i++ {
-		s.PublicCommits[i] = s.suite.Point()
+		s.PublicCommits[i] = s.suite.G2().Point()
 		if err = util.ReadMarshaled(r, s.PublicCommits[i]); err != nil {
 			return err
 		}
@@ -165,14 +169,14 @@ func (s *DKShare) Read(r io.Reader) error {
 	}
 	s.PublicShares = make([]kyber.Point, arrLen)
 	for i := uint16(0); i < arrLen; i++ {
-		s.PublicShares[i] = s.suite.Point()
+		s.PublicShares[i] = s.suite.G2().Point()
 		if err = util.ReadMarshaled(r, s.PublicShares[i]); err != nil {
 			return err
 		}
 	}
 	//
 	// Private share.
-	s.PrivateShare = s.suite.Scalar()
+	s.PrivateShare = s.suite.G2().Scalar()
 	if err = util.ReadMarshaled(r, s.PrivateShare); err != nil {
 		return err
 	}
