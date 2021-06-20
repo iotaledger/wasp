@@ -9,12 +9,11 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/bls"
-
-	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"
+	"go.dedis.ch/kyber/v3/sign/tbls"
 )
 
 // DKShare stands for the information stored on
@@ -182,37 +181,37 @@ func (s *DKShare) Read(r io.Reader) error {
 
 // SignShare signs the data with the own key share.
 // returns SigShare, which contains signature and the index
-func (s *DKShare) SignShare(data []byte) (tbdn.SigShare, error) {
+func (s *DKShare) SignShare(data []byte) (tbls.SigShare, error) {
 	priShare := share.PriShare{
 		I: int(*s.Index),
 		V: s.PrivateShare,
 	}
-	return tbdn.Sign(s.suite, &priShare, data)
+	return tbls.Sign(s.suite, &priShare, data)
 }
 
 // VerifySigShare verifies the signature of a particular share.
-func (s *DKShare) VerifySigShare(data []byte, sigshare tbdn.SigShare) error {
+func (s *DKShare) VerifySigShare(data []byte, sigshare tbls.SigShare) error {
 	idx, err := sigshare.Index()
 	if err != nil || idx >= int(s.N) || idx < 0 {
 		return err
 	}
-	return bdn.Verify(s.suite, s.PublicShares[idx], data, sigshare.Value()) // TODO: [KP] Why not `tbdn`.
+	return bdn.Verify(s.suite, s.PublicShares[idx], data, sigshare.Value())
 }
 
 // VerifyOwnSigShare is only used for assertions
 // NOTE: Not used.
-func (s *DKShare) VerifyOwnSigShare(data []byte, sigshare tbdn.SigShare) error {
+func (s *DKShare) VerifyOwnSigShare(data []byte, sigshare tbls.SigShare) error {
 	idx, err := sigshare.Index()
 	if err != nil || uint16(idx) != *s.Index {
 		return err
 	}
-	return bdn.Verify(s.suite, s.PublicShares[idx], data, sigshare[2:]) // TODO: [KP] Why not `tbdn`.
+	return bdn.Verify(s.suite, s.PublicShares[idx], data, sigshare[2:])
 }
 
 // VerifyMasterSignature checks signature against master public key
 // NOTE: Not used.
 func (s *DKShare) VerifyMasterSignature(data []byte, signature []byte) error {
-	return bdn.Verify(s.suite, s.SharedPublic, data, signature) // TODO: [KP] Why not `tbdn`.
+	return bdn.Verify(s.suite, s.SharedPublic, data, signature)
 }
 
 // RecoverFullSignature generates (recovers) master signature from partial sigshares.
@@ -222,12 +221,12 @@ func (s *DKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (*bls.Si
 	var recoveredSignatureBin []byte
 	if s.N > 1 {
 		pubPoly := share.NewPubPoly(s.suite, nil, s.PublicCommits)
-		recoveredSignatureBin, err = tbdn.Recover(s.suite, pubPoly, data, sigShares, int(s.T), int(s.N))
+		recoveredSignatureBin, err = tbls.Recover(s.suite, pubPoly, data, sigShares, int(s.T), int(s.N))
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		singleSigShare := tbdn.SigShare(sigShares[0])
+		singleSigShare := tbls.SigShare(sigShares[0])
 		recoveredSignatureBin = singleSigShare.Value()
 	}
 	sig, _, err := bls.SignatureFromBytes(recoveredSignatureBin)
