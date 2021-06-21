@@ -22,10 +22,10 @@ const (
 const ResultLastWinningNumber = "lastWinningNumber"
 
 const (
-	VarBets              = "bets"
-	VarLastWinningNumber = "lastWinningNumber"
-	VarLockedBets        = "lockedBets"
-	VarPlayPeriod        = "playPeriod"
+	StateBets              = "bets"
+	StateLastWinningNumber = "lastWinningNumber"
+	StateLockedBets        = "lockedBets"
+	StatePlayPeriod        = "playPeriod"
 )
 
 const (

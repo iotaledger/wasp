@@ -32,9 +32,9 @@ const (
 )
 
 const (
-	VarLog           = "log"
-	VarMaxDonation   = "maxDonation"
-	VarTotalDonation = "totalDonation"
+	StateLog           = "log"
+	StateMaxDonation   = "maxDonation"
+	StateTotalDonation = "totalDonation"
 )
 
 const (

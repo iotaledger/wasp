@@ -38,10 +38,10 @@ const (
 )
 
 const (
-	VarAuctions    = "auctions"
-	VarBidderList  = "bidderList"
-	VarBids        = "bids"
-	VarOwnerMargin = "ownerMargin"
+	StateAuctions    = "auctions"
+	StateBidderList  = "bidderList"
+	StateBids        = "bids"
+	StateOwnerMargin = "ownerMargin"
 )
 
 const (
