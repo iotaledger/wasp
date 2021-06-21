@@ -15,8 +15,10 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
-type ObjFactory func() WaspObject
-type ObjFactories map[int32]ObjFactory
+type (
+	ObjFactory   func() WaspObject
+	ObjFactories map[int32]ObjFactory
+)
 
 type WaspObject interface {
 	wasmhost.HostObject
@@ -177,7 +179,7 @@ func (o *ScDict) GetTypeId(keyId int32) int32 {
 	if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
 		return o.typeId &^ wasmhost.OBJTYPE_ARRAY
 	}
-	//TODO incomplete, currently only contains used field types
+	// TODO incomplete, currently only contains used field types
 	typeId, ok := o.types[keyId]
 	if ok {
 		return typeId
@@ -220,7 +222,7 @@ func (o *ScDict) SetBytes(keyId int32, typeId int32, bytes []byte) {
 
 	if keyId == wasmhost.KeyLength {
 		if o.kvStore != nil {
-			//TODO this goes wrong for state, should clear map tree instead
+			// TODO this goes wrong for state, should clear map tree instead
 			o.kvStore = dict.New()
 			//if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
 			//	key := o.NestedKey()[1:]

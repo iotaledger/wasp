@@ -199,7 +199,7 @@ func testChainLogSandboxDeploy(t *testing.T, w bool) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	//This call should return only one record which should be the type of TRDeploy
+	// This call should return only one record which should be the type of TRDeploy
 	res, err := chain.CallView(eventlog.Interface.Name, eventlog.FuncGetRecords,
 		eventlog.ParamContractHname, root.Interface.Hname(),
 	)

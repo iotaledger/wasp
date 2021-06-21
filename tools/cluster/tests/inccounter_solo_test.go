@@ -11,13 +11,17 @@ import (
 
 var incFile = "wasm/inccounter_bg.wasm"
 
-const incName = "inccounter"
-const incDescription = "IncCounter, a PoC smart contract"
+const (
+	incName        = "inccounter"
+	incDescription = "IncCounter, a PoC smart contract"
+)
 
 var incHname = coretypes.Hn(incName)
 
-const varCounter = "counter"
-const varNumRepeats = "numRepeats"
+const (
+	varCounter    = "counter"
+	varNumRepeats = "numRepeats"
+)
 
 func TestIncSoloInc(t *testing.T) {
 	al := solo.New(t, false, false)
@@ -45,7 +49,7 @@ func TestIncSoloRepeatMany(t *testing.T) {
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	require.True(t, chain.WaitForRequestsThrough(6))
-	//chain.WaitForEmptyBacklog()
+	// chain.WaitForEmptyBacklog()
 	ret, err := chain.CallView(incName, "getCounter")
 	require.NoError(t, err)
 	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))

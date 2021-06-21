@@ -25,7 +25,6 @@ import (
 
 func checkRoots(t *testing.T, chain *cluster.Chain) {
 	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
-
 		require.EqualValues(t, []byte{0xFF}, state.MustGet(root.VarStateInitialized))
 
 		chid, _, _ := codec.DecodeChainID(state.MustGet(root.VarChainID))

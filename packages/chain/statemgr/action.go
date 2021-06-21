@@ -126,7 +126,7 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	return true
 }
 
-//addBlockAndCheckStateOutput function adds block to candidate list and returns true iff the block is new and is not yet approved by current stateOutput
+// addBlockAndCheckStateOutput function adds block to candidate list and returns true iff the block is new and is not yet approved by current stateOutput
 func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState state.VirtualState) bool {
 	isBlockNew, candidate := sm.syncingBlocks.addBlockCandidate(block, nextState)
 	if candidate == nil {

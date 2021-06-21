@@ -5,7 +5,12 @@ import (
 	"encoding/json"
 )
 
-// Bytes is the base64 representation of a byte slice
+// Bytes is the base64 representation of a byte slice.
+// It is intended to be a replacement for any []byte attribute in JSON models.
+// Normally it shouldn't be necessary since the standard json package already
+// handles []byte data, but this makes sure that the swagger documentation
+// shows examples correctly (instead of as if a []byte was json-encoded as an
+// array of ints).
 type Bytes string
 
 func NewBytes(data []byte) Bytes {

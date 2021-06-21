@@ -5,12 +5,42 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 )
+
+func buildRequest(t *testing.T, method string, body interface{}) *http.Request {
+	if body == nil {
+		httptest.NewRequest(method, "/", nil)
+	}
+
+	if bodybytes, ok := body.([]byte); ok {
+		req := httptest.NewRequest(method, "/", bytes.NewReader(bodybytes))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEOctetStream)
+		return req
+	}
+
+	if bodymap, ok := body.(map[string]string); ok {
+		f := make(url.Values)
+		for k, v := range bodymap {
+			f.Set(k, v)
+		}
+		req := httptest.NewRequest(method, "/", strings.NewReader(f.Encode()))
+		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
+		return req
+	}
+
+	dataJSON, err := json.Marshal(body)
+	require.NoError(t, err)
+	req := httptest.NewRequest(method, "/", bytes.NewReader(dataJSON))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	return req
+}
 
 func CallWebAPIRequestHandler(
 	t *testing.T,
@@ -20,18 +50,11 @@ func CallWebAPIRequestHandler(
 	params map[string]string,
 	body interface{},
 	res interface{},
+	exptectedStatus int,
 ) {
 	e := echo.New()
 
-	var req *http.Request
-	if body != nil {
-		dataJSON, err := json.Marshal(body)
-		require.NoError(t, err)
-		req = httptest.NewRequest(method, "/", bytes.NewReader(dataJSON))
-	} else {
-		req = httptest.NewRequest(method, "/", nil)
-	}
-	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req := buildRequest(t, method, body)
 
 	rec := httptest.NewRecorder()
 
@@ -50,7 +73,7 @@ func CallWebAPIRequestHandler(
 	err := handler(c)
 	require.NoError(t, err)
 
-	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, exptectedStatus, rec.Code)
 
 	if res != nil {
 		err = json.Unmarshal(rec.Body.Bytes(), res)

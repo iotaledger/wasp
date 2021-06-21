@@ -169,7 +169,6 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 		return err
 	}
 	return r.store.Set(dbKey, buf)
-
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.

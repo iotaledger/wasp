@@ -33,8 +33,10 @@ const (
 // this allows us to display better readable tracing information
 const KeyFromBytes int32 = 0x4000
 
-var HostTracing = false
-var ExtendedHostTracing = false
+var (
+	HostTracing         = false
+	ExtendedHostTracing = false
+)
 
 type HostObject interface {
 	CallFunc(keyId int32, params []byte) []byte

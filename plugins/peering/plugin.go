@@ -75,3 +75,13 @@ func DefaultNetworkProvider() peering_pkg.NetworkProvider {
 func DefaultPeerNetworkConfig() coretypes.PeerNetworkConfigProvider {
 	return peerNetworkConfig
 }
+
+func GossipToNeighbors(upToNumPeers uint16, msg *peering_pkg.PeerMessage) error {
+	neighbors := peerNetworkConfig.Neighbors()
+	peerDomainProvider, err := defaultNetworkProvider.PeerDomain(neighbors)
+	if err != nil {
+		return err
+	}
+	peerDomainProvider.SendMsgToRandomPeers(upToNumPeers, msg)
+	return nil
+}

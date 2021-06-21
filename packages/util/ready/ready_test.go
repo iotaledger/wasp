@@ -1,9 +1,10 @@
 package ready
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestReady1(t *testing.T) {

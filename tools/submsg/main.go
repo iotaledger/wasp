@@ -4,12 +4,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/subscribe"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
+
+	"github.com/iotaledger/wasp/packages/subscribe"
 )
 
 func main() {

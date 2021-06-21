@@ -132,6 +132,7 @@ func (p *decoder) GetInt64(key kv.Key, def ...int64) (int64, error) {
 	}
 	return def[0], nil
 }
+
 func (p *decoder) MustGetInt64(key kv.Key, def ...int64) int64 {
 	ret, err := p.GetInt64(key, def...)
 	if err != nil {

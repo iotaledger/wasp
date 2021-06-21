@@ -4,12 +4,12 @@
 package testutil // not `..._test` because it uses peeringMsg.
 
 import (
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,7 +23,7 @@ func TestPeeringNetDynamicReliable(t *testing.T) {
 		}
 		doneCh <- true
 	}()
-	var someNode = peeringNode{netID: "src"}
+	someNode := peeringNode{netID: "src"}
 	//
 	// Run the test.
 	var behavior PeeringNetBehavior
@@ -44,7 +44,7 @@ func TestPeeringNetDynamicUnreliable(t *testing.T) {
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	var someNode = peeringNode{netID: "src"}
+	someNode := peeringNode{netID: "src"}
 	//
 	// Run the test.
 	var behavior PeeringNetBehavior
@@ -80,7 +80,7 @@ func TestPeeringNetDynamicChanging(t *testing.T) {
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	var someNode = peeringNode{netID: "src"}
+	someNode := peeringNode{netID: "src"}
 	//
 	// Run the test.
 	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
@@ -143,7 +143,7 @@ func TestPeeringNetDynamicLosingChannel(t *testing.T) {
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	var someNode = peeringNode{netID: "src"}
+	someNode := peeringNode{netID: "src"}
 	//
 	// Run the test.
 	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).WithLosingChannel(nil, 50)
@@ -166,7 +166,7 @@ func TestPeeringNetDynamicRepeatingChannel(t *testing.T) {
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	var someNode = peeringNode{netID: "src"}
+	someNode := peeringNode{netID: "src"}
 	//
 	// Run the test.
 	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).WithRepeatingChannel(nil, 150)
@@ -189,7 +189,7 @@ func TestPeeringNetDynamicDelayingChannel(t *testing.T) {
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
-	var someNode = peeringNode{netID: "src"}
+	someNode := peeringNode{netID: "src"}
 	//
 	// Run the test.
 	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).WithDelayingChannel(nil, 25*time.Millisecond, 75*time.Millisecond)
@@ -216,17 +216,17 @@ func TestPeeringNetDynamicPeerDisconnected(t *testing.T) {
 	durationsD := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
 	go testRecvLoop(outChD, &durationsD, stopCh)
-	var connectedNode = peeringNode{netID: "src"}
-	var disconnectedNode = peeringNode{netID: "disconnected"}
+	connectedNode := peeringNode{netID: "src"}
+	disconnectedNode := peeringNode{netID: "disconnected"}
 	//
 	// Run the test.
 	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).WithPeerDisconnected(nil, "disconnected")
 	behavior.AddLink(inCh, outCh, "dst")
 	behavior.AddLink(inChD, outChD, "disconnected")
 	for i := 0; i < 100; i++ {
-		sendMessage(&connectedNode, inCh)    //Will be received
-		sendMessage(&connectedNode, inChD)   //Won't be received - destination is disconnected
-		sendMessage(&disconnectedNode, inCh) //Won't be received - source is disconnected
+		sendMessage(&connectedNode, inCh)    // Will be received
+		sendMessage(&connectedNode, inChD)   // Won't be received - destination is disconnected
+		sendMessage(&disconnectedNode, inCh) // Won't be received - source is disconnected
 	}
 	time.Sleep(100 * time.Millisecond)
 	require.Equal(t, 100, len(durations))

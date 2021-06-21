@@ -2,18 +2,17 @@ package downloader
 
 import (
 	"fmt"
-	"strings"
-	"sync"
-
 	"io/ioutil"
 	"net/http"
+	"strings"
+	"sync"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
-//Downloader struct to store currently being downloaded files and othe things.
+// Downloader struct to store currently being downloaded files and othe things.
 type Downloader struct {
 	log         *logger.Logger
 	ipfsGateway string
@@ -22,16 +21,14 @@ type Downloader struct {
 	downloadsMutex sync.Mutex
 }
 
-var (
-	defaultDownloader *Downloader
-)
+var defaultDownloader *Downloader
 
-//Init initialises default downloader
+// Init initialises default downloader
 func Init(log *logger.Logger, ipfsGateway string) {
 	defaultDownloader = New(log, ipfsGateway)
 }
 
-//New is a downloader constructor
+// New is a downloader constructor
 func New(log *logger.Logger, ipfsGateway string) *Downloader {
 	return &Downloader{
 		log:            log,
@@ -41,7 +38,7 @@ func New(log *logger.Logger, ipfsGateway string) *Downloader {
 	}
 }
 
-//GetDefaultDownloader returns default downloader
+// GetDefaultDownloader returns default downloader
 func GetDefaultDownloader() *Downloader {
 	return defaultDownloader
 }
@@ -64,7 +61,6 @@ func (d *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache 
 		defer d.markCompleted(uri)
 
 		download, err := d.download(uri)
-
 		if err != nil {
 			d.log.Errorf("Error retrieving file %s: %s.", uri, err)
 			return
@@ -79,7 +75,7 @@ func (d *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache 
 		}
 
 		if hash != cacheHash {
-			d.log.Errorf("File %s hash mismatch!!! Expected hash: %s, hash, recieved from cache: %s.", uri, hash.String(), cacheHash.String())
+			d.log.Errorf("File %s hash mismatch!!! Expected hash: %s, hash, received from cache: %s.", uri, hash.String(), cacheHash.String())
 			return
 		}
 
@@ -89,7 +85,7 @@ func (d *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache 
 	return nil
 }
 
-//containsOrMarkStarted returns if the string was part of downloads set before calling it.
+// containsOrMarkStarted returns if the string was part of downloads set before calling it.
 func (d *Downloader) containsOrMarkStarted(uri string) bool {
 	d.downloadsMutex.Lock()
 	defer d.downloadsMutex.Unlock()

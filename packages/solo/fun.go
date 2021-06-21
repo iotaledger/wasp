@@ -99,10 +99,9 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 // data to the chain. It returns hash of the blob, the unique identified of it.
 // Takes request token and necessary fees from the 'sigScheme' address (or OriginatorAddress if nil).
 //
-// The parameters must be in the form of sequence of pairs 'fieldName': 'fieldValue'
+// The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
 func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
-	par := toMap(params...)
-	expectedHash := blob.MustGetBlobHash(codec.MakeDict(par))
+	expectedHash := blob.MustGetBlobHash(parseParams(params))
 	if _, ok := ch.GetBlobInfo(expectedHash); ok {
 		// blob exists, return hash of existing
 		return expectedHash, nil
@@ -140,8 +139,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 // Before running the request in VM, the hash references contained in the request transaction are resolved with
 // the real data, previously uploaded directly.
 func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
-	par := toMap(params...)
-	expectedHash := blob.MustGetBlobHash(codec.MakeDict(par))
+	expectedHash := blob.MustGetBlobHash(parseParams(params))
 	if _, ok := ch.GetBlobInfo(expectedHash); ok {
 		// blob exists, return hash of existing
 		return expectedHash, nil

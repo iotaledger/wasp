@@ -66,16 +66,17 @@ func New(stateReader state.OptimisticStateReader, blobCache coretypes.BlobCache,
 	return ret
 }
 
-func (m *mempool) addToInBuffer(req coretypes.Request) {
+func (m *mempool) addToInBuffer(req coretypes.Request) bool {
 	// just check if it is already in the pool
 	if m.HasRequest(req.ID()) {
-		return
+		return false
 	}
 	m.inMutex.Lock()
 	defer m.inMutex.Unlock()
 	// may be repeating but does not matter
 	m.inBuffer[req.ID()] = req
 	m.inBufCounter++
+	return true
 }
 
 func (m *mempool) removeFromInBuffer(req coretypes.Request) {
@@ -152,6 +153,19 @@ func (m *mempool) ReceiveRequests(reqs ...coretypes.Request) {
 	for _, req := range reqs {
 		m.addToInBuffer(req)
 	}
+}
+
+// ReceiveRequest used to receive off-ledger request
+func (m *mempool) ReceiveRequest(req coretypes.Request) bool {
+	// could be worth it to check if the request was already processed in the blocklog.
+	// Not adding this check now to avoid overhead, but should be looked into in case re-gossiping happens a lot
+	m.inMutex.RLock()
+	if _, exists := m.inBuffer[req.ID()]; exists {
+		m.inMutex.RUnlock()
+		return false
+	}
+	m.inMutex.RUnlock()
+	return m.addToInBuffer(req)
 }
 
 // RemoveRequests removes requests from the pool

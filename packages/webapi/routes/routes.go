@@ -4,6 +4,10 @@ func Info() string {
 	return "/info"
 }
 
+func NewRequest(chainID string) string {
+	return "/request/" + chainID
+}
+
 func CallView(chainID string, contractHname string, functionName string) string {
 	return "chain/" + chainID + "/contract/" + contractHname + "/callview/" + functionName
 }

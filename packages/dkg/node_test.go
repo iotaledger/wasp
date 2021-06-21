@@ -9,7 +9,6 @@ package dkg_test
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 	"time"
 
@@ -17,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
@@ -29,13 +29,13 @@ func TestBasic(t *testing.T) {
 	defer log.Sync()
 	//
 	// Create a fake network and keys for the tests.
-	var timeout = 100 * time.Second
+	timeout := 100 * time.Second
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
 	var peerNetIDs []string = make([]string, peerCount)
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
 	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
-	var suite = pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
+	suite := pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
 	for i := range peerNetIDs {
 		peerPair := key.NewKeyPair(suite)
 		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
@@ -80,13 +80,13 @@ func TestNoPubs(t *testing.T) {
 	defer log.Sync()
 	//
 	// Create a fake network and keys for the tests.
-	var timeout = 100 * time.Second
+	timeout := 100 * time.Second
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
 	var peerNetIDs []string = make([]string, peerCount)
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
 	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
-	var suite = pairing.NewSuiteBn256() // That's from the Pairing Adapter.
+	suite := pairing.NewSuiteBn256() // That's from the Pairing Adapter.
 	for i := range peerNetIDs {
 		peerPair := key.NewKeyPair(suite)
 		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
@@ -134,13 +134,13 @@ func TestUnreliableNet(t *testing.T) {
 	defer log.Sync()
 	//
 	// Create a fake network and keys for the tests.
-	var timeout = 100 * time.Second
+	timeout := 100 * time.Second
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
 	var peerNetIDs []string = make([]string, peerCount)
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
 	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
-	var suite = pairing.NewSuiteBn256() // That's from the Pairing Adapter.
+	suite := pairing.NewSuiteBn256() // That's from the Pairing Adapter.
 	for i := range peerNetIDs {
 		peerPair := key.NewKeyPair(suite)
 		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
@@ -190,13 +190,13 @@ func TestLowN(t *testing.T) {
 	//
 	// Create a fake network and keys for the tests.
 	for n := uint16(1); n < 4; n++ {
-		var timeout = 100 * time.Second
+		timeout := 100 * time.Second
 		var threshold uint16 = n
 		var peerCount uint16 = n
 		var peerNetIDs []string = make([]string, peerCount)
 		var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
 		var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
-		var suite = pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
+		suite := pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
 		for i := range peerNetIDs {
 			peerPair := key.NewKeyPair(suite)
 			peerNetIDs[i] = fmt.Sprintf("P%02d", i)

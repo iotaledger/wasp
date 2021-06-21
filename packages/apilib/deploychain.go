@@ -185,7 +185,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 
 	fmt.Fprint(textout, par.Prefix)
 
-	fmt.Fprintf(textout, "chain has been created succesfully on the Tangle. ChainID: %s, State address: %s, N = %d, T = %d\n",
+	fmt.Fprintf(textout, "chain has been created successfully on the Tangle. ChainID: %s, State address: %s, N = %d, T = %d\n",
 		chainID.String(), stateControllerAddr.Base58(), par.N, par.T)
 
 	return &chainID, err

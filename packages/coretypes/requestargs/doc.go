@@ -3,5 +3,5 @@
 
 // Package encodedargs implements special encoding of the dict.Dict which alows
 // optimized transfer of big data through SC request. It encodes big data chunks
-// as hashes, whihc later can be decoded (solidified) into the original form
+// as hashes, which later can be decoded (solidified) into the original form
 package requestargs

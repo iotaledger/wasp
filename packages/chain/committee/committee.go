@@ -51,7 +51,6 @@ func New(
 	log *logger.Logger,
 	acsRunner ...chain.AsynchronousCommonSubsetRunner, // Only for mocking.
 ) (chain.Committee, error) {
-
 	// load committee record from the registry
 	cmtRec, err := committeeRegistry.GetCommitteeRecord(stateAddr)
 	if err != nil || cmtRec == nil {

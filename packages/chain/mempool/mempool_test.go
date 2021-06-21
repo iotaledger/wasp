@@ -65,7 +65,7 @@ func getRequestsOnLedger(t *testing.T, amount int) ([]*request.RequestOnLedger, 
 	return requests, keyPair
 }
 
-//Test if mempool is created
+// Test if mempool is created
 func TestMempool(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	glb := coreutil.NewChainStateSync()
@@ -82,7 +82,7 @@ func TestMempool(t *testing.T) {
 	time.Sleep(1 * time.Second)
 }
 
-//Test if single on ledger request is added to mempool
+// Test if single on ledger request is added to mempool
 func TestAddRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
@@ -126,8 +126,8 @@ func TestAddRequestInvalidState(t *testing.T) {
 	require.EqualValues(t, 1, stats.Ready)
 }
 
-//Test if adding the same on ledger request more than once to the same mempool
-//is handled correctly
+// Test if adding the same on ledger request more than once to the same mempool
+// is handled correctly
 func TestAddRequestTwice(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
@@ -156,8 +156,8 @@ func TestAddRequestTwice(t *testing.T) {
 	require.EqualValues(t, 1, stats.Ready)
 }
 
-//Test if adding off ledger requests works as expected: correctly signed ones
-//are added, others are ignored
+// Test if adding off ledger requests works as expected: correctly signed ones
+// are added, others are ignored
 func TestAddOffLedgerRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	testlogger.WithLevel(log, zapcore.InfoLevel, false)
@@ -193,7 +193,7 @@ func TestAddOffLedgerRequest(t *testing.T) {
 	require.EqualValues(t, 1, stats.Ready)
 }
 
-//Test if processed request cannot be added to mempool
+// Test if processed request cannot be added to mempool
 func TestProcessedRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
@@ -232,7 +232,7 @@ func TestProcessedRequest(t *testing.T) {
 	require.EqualValues(t, 0, stats.Ready)
 }
 
-//Test if adding and removing requests is handled correctly
+// Test if adding and removing requests is handled correctly
 func TestAddRemoveRequests(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
@@ -280,7 +280,7 @@ func TestAddRemoveRequests(t *testing.T) {
 	require.EqualValues(t, 2, stats.Ready)
 }
 
-//Test if ReadyNow and ReadyFromIDs functions respect the time lock of the request
+// Test if ReadyNow and ReadyFromIDs functions respect the time lock of the request
 func TestTimeLock(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
@@ -382,7 +382,7 @@ func TestTimeLock(t *testing.T) {
 	testStatsFun()
 }
 
-//Test if ReadyFromIDs function correctly handle non-existing or removed IDs
+// Test if ReadyFromIDs function correctly handle non-existing or removed IDs
 func TestReadyFromIDs(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
@@ -461,7 +461,7 @@ func TestReadyFromIDs(t *testing.T) {
 	require.EqualValues(t, 4, stats.Ready)
 }
 
-//Test if solidification works as expected
+// Test if solidification works as expected
 func TestSolidification(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)

@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 
 	"github.com/iotaledger/hive.go/logger"
 
@@ -94,6 +95,7 @@ func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupPro
 func (n *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
 	panic("not implemented")
 }
+
 func (p *peeringNetworkProvider) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {
 	panic("not implemented")
 }
@@ -253,13 +255,13 @@ func (m *mockChain) GetCommitteeInfo() *chain.CommitteeInfo {
 		Quorum:        1,
 		QuorumIsAlive: true,
 		PeerStatus: []*chain.PeerStatus{
-			&chain.PeerStatus{
+			{
 				Index:     0,
 				PeeringID: "0",
 				IsSelf:    true,
 				Connected: true,
 			},
-			&chain.PeerStatus{
+			{
 				Index:     1,
 				PeeringID: "1",
 				IsSelf:    false,
@@ -310,6 +312,10 @@ func (m *mockChain) GetRequestProcessingStatus(id coretypes.RequestID) chain.Req
 }
 
 func (m *mockChain) EventRequestProcessed() *events.Event {
+	panic("not implemented")
+}
+
+func (m *mockChain) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
 	panic("not implemented")
 }
 

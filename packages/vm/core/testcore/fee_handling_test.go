@@ -136,7 +136,6 @@ func TestFeesNoNeed(t *testing.T) {
 	chain.AssertTotalIotas(2 + 7)
 	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 0)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2-7)
-
 }
 
 func TestFeesNotEnough(t *testing.T) {
@@ -169,5 +168,4 @@ func TestFeesNotEnough(t *testing.T) {
 	chain.AssertTotalIotas(2 + 7)
 	chain.AssertIotas(userAgentID, 0)
 	env.AssertAddressIotas(userAddr, solo.Saldo-7)
-
 }

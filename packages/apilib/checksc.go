@@ -135,7 +135,6 @@ func CheckDeployment(apiHosts []string, chainID chainid.ChainID, textout ...io.W
 			continue
 		}
 		fmt.Fprintf(out, prefix+"%2d: %s -> key is OK\n", i, host)
-
 	}
 	return ret
 }
