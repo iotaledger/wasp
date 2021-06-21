@@ -5,11 +5,11 @@ build:
 
 test: install
 	go clean -testcache
-	go test ./... -timeout 20m
+	go test -tags rocksdb ./... -timeout 20m
 
 test-short:
 	go clean -testcache
-	go test --short ./...
+	go test -tags rocksdb --short ./...
 
 install:
 	go install -tags rocksdb ./...

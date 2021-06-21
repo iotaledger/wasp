@@ -61,8 +61,8 @@ On Windows you will need to use `go install -tags rocksdb -buildmode=exe ./...` 
 
 ## Test
 
-- Run all tests (including integration tests which may take several minutes): `go test -timeout 20m ./...`
-- Run only unit tests: `go test -short ./...`
+- Run all tests (including integration tests which may take several minutes): `go test -tags rocksdb -timeout 20m ./...`
+- Run only unit tests: `go test -tags rocksdb -short ./...`
 
 Note: integration tests require the `wasp` and `wasp-cli` commands
 in the system path (i.e. you need to run `go install ./...` before running
