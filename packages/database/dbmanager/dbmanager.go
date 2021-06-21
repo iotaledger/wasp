@@ -34,11 +34,17 @@ func NewDBManager(log *logger.Logger, inMemory bool) *DBManager {
 		inMemory:  inMemory,
 	}
 	// registry db is created with an empty chainID
-	dbm.registryDB = dbm.createDB(&chainid.ChainID{
-		AliasAddress: &ledgerstate.AliasAddress{},
-	})
+	dbm.registryDB = dbm.createDB(nil)
 	dbm.registryStore = dbm.registryDB.NewStore()
 	return &dbm
+}
+
+func getChainBase58(chainID *chainid.ChainID) string {
+	if chainID != nil {
+		return chainID.Base58()
+	} else {
+		return "CHAIN_REGISTRY"
+	}
 }
 
 func (m *DBManager) createDB(chainID *chainid.ChainID) database.DB {
@@ -46,7 +52,7 @@ func (m *DBManager) createDB(chainID *chainid.ChainID) database.DB {
 	defer m.mutex.Unlock()
 
 	if m.inMemory {
-		m.log.Infof("creating new In-Memory database, ChainID: %s", chainID.Base58())
+		m.log.Infof("creating new In-Memory database, ChainID: %s", getChainBase58(chainID))
 		db, err := database.NewMemDB()
 		if err != nil {
 			m.log.Fatal(err)
@@ -63,8 +69,8 @@ func (m *DBManager) createDB(chainID *chainid.ChainID) database.DB {
 			return nil
 		}
 	}
-	instanceDir := fmt.Sprintf("%s/%s", dbDir, chainID.Base58())
-	m.log.Infof("creating new persistent database, ChainID: %s, dir: %s", chainID.Base58(), instanceDir)
+	instanceDir := fmt.Sprintf("%s/%s", dbDir, getChainBase58(chainID))
+	m.log.Infof("creating new persistent database, ChainID: %s, dir: %s", getChainBase58(chainID), instanceDir)
 	db, err := database.NewDB(instanceDir)
 	if err != nil {
 		m.log.Fatal(err)
