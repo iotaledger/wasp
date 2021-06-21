@@ -2,6 +2,7 @@ package dbmanager
 
 import (
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -54,6 +55,14 @@ func (m *DBManager) createDB(chainID *chainid.ChainID) database.DB {
 	}
 
 	dbDir := parameters.GetString(parameters.DatabaseDir)
+	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
+		// create a new database dir if none exists
+		err := os.Mkdir(dbDir, os.ModePerm)
+		if err != nil {
+			m.log.Fatal(err)
+			return nil
+		}
+	}
 	instanceDir := fmt.Sprintf("%s/%s", dbDir, chainID.Base58())
 	m.log.Infof("creating new persistent database, ChainID: %s, dir: %s", chainID.Base58(), instanceDir)
 	db, err := database.NewDB(instanceDir)
