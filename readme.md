@@ -89,6 +89,9 @@ tests).
 
 ## Contributing
 
-We are accepting pull requests! Please create your branch based on `develop`.
+If you want to contribute to this repository, consider posting a [bug report](https://github.com/iotaledger/wasp/issues/new-issue), feature request or a [pull request](https://github.com/iotaledger/wasp/pulls/).
+
+Please read the [Contibuting documentation](/docs/contributing/contributing.md) before creating a Pull Request.
+
 You can also join our [Discord server](https://discord.iota.org/) and ping us
 in `#smartcontracts-dev`.
