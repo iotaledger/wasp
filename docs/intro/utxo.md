@@ -10,7 +10,7 @@ The Goshimmer's Value Tangle implements _UTXO ledger_ with _colored balances_.
 UTXO stands for `Unspent TransaXion Output`. 
 _Colored balances_ means each token in the ledger has _color_: a 32-byte code. 
 The default color is _iota-color_ which corresponds to normal iotas. In the genesis of the IOTA ledger
-all tokens has _iota-color_. Number of all tokens on the ledger is constant, no matter _color_.
+all tokens have _iota-color_. Number of all tokens on the ledger is constant, no matter _color_.
 
 The _UTXO ledger_ contains unspent outputs (UTXOs) rather than just addresses and balances of tokens, 
 like in the current IOTA 1.0 and some ether ledgers, like Ethereum. 
