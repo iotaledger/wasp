@@ -7,6 +7,7 @@ import (
 )
 
 type ChainBackend interface {
-	PostRequest(keyPair *ed25519.KeyPair, transfer map[ledgerstate.Color]uint64, scName string, funName string, optSize int, params ...interface{}) error
-	CallView(scName string, funName string, params ...interface{}) (dict.Dict, error)
+	PostOnLedgerRequest(keyPair *ed25519.KeyPair, scName string, funName string, transfer map[ledgerstate.Color]uint64, args dict.Dict) error
+	PostOffLedgerRequest(keyPair *ed25519.KeyPair, scName string, funName string, transfer map[ledgerstate.Color]uint64, args dict.Dict) error
+	CallView(scName string, funName string, args dict.Dict) (dict.Dict, error)
 }

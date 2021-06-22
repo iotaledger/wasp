@@ -3,6 +3,7 @@ package jsonrpc
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"math/big"
 	"strings"
 	"testing"
@@ -138,7 +139,7 @@ func (e *env) blockByNumber(number *big.Int) *types.Block {
 
 func (e *env) blockByHash(hash common.Hash) *types.Block {
 	block, err := e.client.BlockByHash(context.Background(), hash)
-	if err == ethereum.NotFound {
+	if errors.Is(err, ethereum.NotFound) {
 		return nil
 	}
 	require.NoError(e.t, err)
@@ -147,7 +148,7 @@ func (e *env) blockByHash(hash common.Hash) *types.Block {
 
 func (e *env) transactionByHash(hash common.Hash) *types.Transaction {
 	tx, isPending, err := e.client.TransactionByHash(context.Background(), hash)
-	if err == ethereum.NotFound {
+	if errors.Is(err, ethereum.NotFound) {
 		return nil
 	}
 	require.NoError(e.t, err)
@@ -156,8 +157,8 @@ func (e *env) transactionByHash(hash common.Hash) *types.Transaction {
 }
 
 func (e *env) transactionByBlockHashAndIndex(blockHash common.Hash, index uint) *types.Transaction {
-	tx, err := e.client.TransactionInBlock(context.Background(), blockHash, uint(index))
-	if err == ethereum.NotFound {
+	tx, err := e.client.TransactionInBlock(context.Background(), blockHash, index)
+	if errors.Is(err, ethereum.NotFound) {
 		return nil
 	}
 	require.NoError(e.t, err)

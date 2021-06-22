@@ -287,7 +287,7 @@ func NewNetService() *NetService {
 	return &NetService{}
 }
 
-func (e *NetService) Version() string {
+func (s *NetService) Version() string {
 	return "1074" // IOTA -- get it?
 }
 
