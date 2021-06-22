@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,7 +15,7 @@ func TestChainRecord(t *testing.T) {
 		Peers:   []string{"a", "b", "c"},
 		Active:  false,
 	}
-	recBack, err := ChainRecordFromBytes(rec.Bytes())
+	recBack, err := FromBytes(rec.Bytes())
 	require.NoError(t, err)
 	require.True(t, rec.ChainID.Equals(recBack.ChainID))
 	require.EqualValues(t, rec.Active, recBack.Active)
@@ -30,7 +29,7 @@ func TestChainRecord(t *testing.T) {
 		Active:  true,
 	}
 	require.True(t, rec.Active)
-	recBack, err = ChainRecordFromBytes(rec.Bytes())
+	recBack, err = FromBytes(rec.Bytes())
 	require.NoError(t, err)
 	require.True(t, rec.ChainID.Equals(recBack.ChainID))
 	require.EqualValues(t, rec.Active, recBack.Active)

@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 )
 
-var logDefault *logger.Logger
+var logDefault *logger.Logger //nolint:unused
 
 func InitLogger() {
 	logDefault = logger.NewLogger("view")
@@ -28,14 +28,14 @@ type sandboxview struct {
 	events        vm.ContractEventPublisher
 	params        dict.Dict
 	state         kv.KVStoreReader
-	vctx          *viewcontext
+	vctx          *Viewcontext
 }
 
 var _ coretypes.SandboxView = &sandboxview{}
 
 var getChainInfoHname = coretypes.Hn(root.FuncGetChainInfo)
 
-func newSandboxView(vctx *viewcontext, contractHname coretypes.Hname, params dict.Dict) *sandboxview {
+func newSandboxView(vctx *Viewcontext, contractHname coretypes.Hname, params dict.Dict) *sandboxview {
 	return &sandboxview{
 		vctx:          vctx,
 		contractHname: contractHname,
@@ -58,7 +58,7 @@ func (s *sandboxview) Balances() *ledgerstate.ColoredBalances {
 	panic("not implemented") // TODO: Implement
 }
 
-func (s *sandboxview) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict) (dict.Dict, error) {
+func (s *sandboxview) Call(contractHname, entryPoint coretypes.Hname, params dict.Dict) (dict.Dict, error) {
 	return s.vctx.CallView(contractHname, entryPoint, params)
 }
 

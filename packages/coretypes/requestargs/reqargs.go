@@ -78,19 +78,6 @@ func (a RequestArgs) AddEncodeSimpleMany(d dict.Dict) RequestArgs {
 	return a
 }
 
-// HasBlobRef return if request arguments contain at least one blob reference
-func (a RequestArgs) HasBlobRef() bool {
-	var ret bool
-	(dict.Dict(a)).ForEach(func(key kv.Key, _ []byte) bool {
-		ret = []byte(key)[0] == '*'
-		if ret {
-			return false
-		}
-		return true
-	})
-	return ret
-}
-
 func (a RequestArgs) String() string {
 	return (dict.Dict(a)).String()
 }

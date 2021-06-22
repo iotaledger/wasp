@@ -14,7 +14,7 @@ import (
 var sendFundsCmd = &cobra.Command{
 	Use:   "send-funds <target-address> <color> <amount>",
 	Short: "Transfer tokens",
-	Args:  cobra.ExactArgs(3),
+	Args:  cobra.ExactArgs(3), //nolint:gomnd
 	Run: func(cmd *cobra.Command, args []string) {
 		wallet := Load()
 		sourceAddress := wallet.Address()

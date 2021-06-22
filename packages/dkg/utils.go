@@ -24,10 +24,12 @@ func invalidParams(err error) error {
 	return InvalidParamsError{err}
 }
 
+//nolint:unused
 func pubToBytes(pub kyber.Point) ([]byte, error) {
 	return pub.MarshalBinary()
 }
 
+//nolint:unused,deadcode
 func pubsToBytes(pubs []kyber.Point) ([][]byte, error) {
 	bytes := make([][]byte, len(pubs))
 	for i := range pubs {
@@ -40,6 +42,7 @@ func pubsToBytes(pubs []kyber.Point) ([][]byte, error) {
 	return bytes, nil
 }
 
+//nolint:unused
 func pubFromBytes(bytes []byte, suite kyber.Group) (kyber.Point, error) {
 	pubKey := suite.Point()
 	if err := pubKey.UnmarshalBinary(bytes); err != nil {
@@ -48,6 +51,7 @@ func pubFromBytes(bytes []byte, suite kyber.Group) (kyber.Point, error) {
 	return pubKey, nil
 }
 
+//nolint:unused,deadcode
 func pubsFromBytes(bytes [][]byte, suite kyber.Group) ([]kyber.Point, error) {
 	pubs := make([]kyber.Point, len(bytes))
 	for i := range pubs {
@@ -60,6 +64,7 @@ func pubsFromBytes(bytes [][]byte, suite kyber.Group) ([]kyber.Point, error) {
 	return pubs, nil
 }
 
+//nolint:unused,deadcode
 func haveAll(buf []bool) bool {
 	for i := range buf {
 		if !buf[i] {

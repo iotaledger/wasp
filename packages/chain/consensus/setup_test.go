@@ -8,27 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-
-	"github.com/iotaledger/wasp/packages/chain/mempool"
-
-	"github.com/iotaledger/wasp/packages/util"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/transaction"
-
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/solo"
-
-	"github.com/iotaledger/wasp/packages/testutil"
-
-	"go.dedis.ch/kyber/v3"
-
-	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -38,17 +17,29 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.uber.org/zap/zapcore"
 )
 
-type mockedEnv struct {
+type MockedEnv struct {
 	Suite             *pairing.SuiteBn256
 	T                 *testing.T
 	N                 uint16
@@ -73,27 +64,26 @@ type mockedEnv struct {
 	ChainID           chainid.ChainID
 	mutex             sync.Mutex
 	Nodes             []*mockedNode
-	push              bool
 }
 
 type mockedNode struct {
 	OwnIndex  uint16
-	Env       *mockedEnv
+	Env       *MockedEnv
 	ChainCore *testchain.MockedChainCore
 	Mempool   chain.Mempool
 	Consensus chain.Consensus
 	Log       *logger.Logger
 }
 
-func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledgerstate.Transaction) {
+func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledgerstate.Transaction) {
 	return newMockedEnv(t, n, quorum, debug, false)
 }
 
-func NewMockedEnvWithMockedACS(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledgerstate.Transaction) {
+func NewMockedEnvWithMockedACS(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledgerstate.Transaction) {
 	return newMockedEnv(t, n, quorum, debug, true)
 }
 
-func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mockedEnv, *ledgerstate.Transaction) {
+func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedEnv, *ledgerstate.Transaction) {
 	level := zapcore.InfoLevel
 	if debug {
 		level = zapcore.DebugLevel
@@ -108,7 +98,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 		neighbors[i] = fmt.Sprintf("localhost:%d", 4000+i)
 	}
 
-	ret := &mockedEnv{
+	ret := &MockedEnv{
 		Suite:      pairing.NewSuiteBn256(),
 		T:          t,
 		N:          n,
@@ -187,7 +177,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 	return ret, originTx
 }
 
-func (env *mockedEnv) newNode(i uint16) *mockedNode {
+func (env *MockedEnv) newNode(i uint16) *mockedNode {
 	log := env.Log.Named(fmt.Sprintf("%d", i))
 	chainCore := testchain.NewMockedChainCore(env.T, env.ChainID, log)
 	chainCore.OnGlobalStateSync(func() coreutil.ChainStateSync {
@@ -253,7 +243,7 @@ func (env *mockedEnv) newNode(i uint16) *mockedNode {
 	return ret
 }
 
-func (env *mockedEnv) receiveStateCandidate(newState state.VirtualState, from uint16) {
+func (env *MockedEnv) receiveStateCandidate(newState state.VirtualState, from uint16) {
 	env.mutex.Lock()
 	defer env.mutex.Unlock()
 
@@ -270,7 +260,7 @@ func (env *mockedEnv) receiveStateCandidate(newState state.VirtualState, from ui
 	env.checkStateApproval(from)
 }
 
-func (env *mockedEnv) receiveNewTransaction(tx *ledgerstate.Transaction, from uint16) {
+func (env *MockedEnv) receiveNewTransaction(tx *ledgerstate.Transaction, from uint16) {
 	env.mutex.Lock()
 	defer env.mutex.Unlock()
 
@@ -289,7 +279,7 @@ func (env *mockedEnv) receiveNewTransaction(tx *ledgerstate.Transaction, from ui
 	}
 }
 
-func (env *mockedEnv) checkStateApproval(from uint16) {
+func (env *MockedEnv) checkStateApproval(from uint16) {
 	if env.SolidState == nil || env.StateOutput == nil {
 		return
 	}
@@ -308,22 +298,22 @@ func (env *mockedEnv) checkStateApproval(from uint16) {
 	env.EventStateTransition()
 }
 
-func (env *mockedNode) processPeerMessage(msg *peering.PeerMessage) {
+func (n *mockedNode) processPeerMessage(msg *peering.PeerMessage) {
 	var err error
-	switch msg.MsgType {
+	switch msg.MsgType { //nolint:gocritic
 	case chain.MsgSignedResult:
 		decoded := chain.SignedResultMsg{}
 		if err = decoded.Read(bytes.NewReader(msg.MsgData)); err == nil {
 			decoded.SenderIndex = msg.SenderIndex
-			env.Consensus.EventSignedResultMsg(&decoded)
+			n.Consensus.EventSignedResultMsg(&decoded)
 		}
 	}
 	if err != nil {
-		env.Log.Errorf("unexpected peer message type = %d", msg.MsgType)
+		n.Log.Errorf("unexpected peer message type = %d", msg.MsgType)
 	}
 }
 
-func (env *mockedEnv) EventStateTransition() {
+func (env *MockedEnv) EventStateTransition() {
 	env.Log.Debugf("EventStateTransition")
 	nowis := time.Now()
 	solidState := env.SolidState.Clone()
@@ -343,7 +333,7 @@ func (env *mockedEnv) EventStateTransition() {
 	}
 }
 
-func (env *mockedEnv) StartTimers() {
+func (env *MockedEnv) StartTimers() {
 	for _, n := range env.Nodes {
 		n.StartTimer()
 	}
@@ -374,7 +364,7 @@ func (n *mockedNode) WaitTimerTick(until int) {
 	}
 }
 
-func (env *mockedEnv) WaitTimerTick(until int) {
+func (env *MockedEnv) WaitTimerTick(until int) {
 	var wg sync.WaitGroup
 	wg.Add(int(env.N))
 	for _, n := range env.Nodes {
@@ -427,7 +417,7 @@ func (n *mockedNode) WaitMempool(numRequests int, timeout time.Duration) error {
 	}
 }
 
-func (env *mockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...time.Duration) error {
+func (env *MockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...time.Duration) error {
 	ch := make(chan int)
 	for _, n := range env.Nodes {
 		go func(n *mockedNode) {
@@ -448,7 +438,7 @@ func (env *mockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...t
 	return fmt.Errorf("WaitStateIndex: timeout")
 }
 
-func (env *mockedEnv) WaitMempool(numRequests int, quorum int, timeout ...time.Duration) error {
+func (env *MockedEnv) WaitMempool(numRequests, quorum int, timeout ...time.Duration) error {
 	to := 10 * time.Second
 	if len(timeout) > 0 {
 		to = timeout[0]
@@ -477,7 +467,7 @@ func (env *mockedEnv) WaitMempool(numRequests int, quorum int, timeout ...time.D
 	return fmt.Errorf("WaitMempool: timeout expired %v", to)
 }
 
-func (env *mockedEnv) getReqIDsForLastState() []coretypes.RequestID {
+func (env *MockedEnv) getReqIDsForLastState() []coretypes.RequestID {
 	ret := make([]coretypes.RequestID, 0)
 	prefix := kv.Key(util.Uint32To4Bytes(env.SolidState.BlockIndex()))
 	err := env.SolidState.KVStoreReader().Iterate(prefix, func(key kv.Key, value []byte) bool {
@@ -490,7 +480,7 @@ func (env *mockedEnv) getReqIDsForLastState() []coretypes.RequestID {
 	return ret
 }
 
-func (env *mockedEnv) PostDummyRequests(n int, randomize ...bool) {
+func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
 	reqs := make([]coretypes.Request, n)
 	for i := 0; i < n; i++ {
 		reqs[i] = solo.NewCallParams("dummy", "dummy", "c", i).

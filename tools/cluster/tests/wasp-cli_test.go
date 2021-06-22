@@ -25,6 +25,10 @@ type WaspCliTest struct {
 	dir string
 }
 
+const file = "inccounter_bg.wasm"
+
+const srcFile = "wasm/" + file
+
 func NewWaspCliTest(t *testing.T) *WaspCliTest {
 	clu := testutil.NewCluster(t)
 
@@ -122,7 +126,7 @@ func TestWaspCliNoChains(t *testing.T) {
 
 	out := w.Run("address")
 
-	ownerAddr := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
+	ownerAddr := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
 	require.NotEmpty(t, ownerAddr)
 
 	out = w.Run("chain", "list")
@@ -136,7 +140,7 @@ func TestWaspCli1Chain(t *testing.T) {
 	w.Run("request-funds")
 
 	out := w.Run("address")
-	ownerAddr := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
+	ownerAddr := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
 	require.NotEmpty(t, ownerAddr)
 	t.Logf("Owner address: %s", ownerAddr)
 
@@ -149,7 +153,7 @@ func TestWaspCli1Chain(t *testing.T) {
 
 	// test chain info command
 	out = w.Run("chain", "info")
-	chainID := regexp.MustCompile(`(?m)Chain ID:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
+	chainID := regexp.MustCompile(`(?m)Chain ID:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1] //nolint:gocritic
 	require.NotEmpty(t, chainID)
 	t.Logf("Chain ID: %s", chainID)
 
@@ -197,8 +201,6 @@ func TestWaspCliContract(t *testing.T) {
 	vmtype := "wasmtimevm"
 	name := "inccounter"
 	description := "inccounter SC"
-	file := "inccounter_bg.wasm"
-	srcFile := "wasm/" + file
 	w.copyFile(srcFile)
 
 	// test chain deploy-contract command
@@ -247,8 +249,6 @@ func TestWaspCliBlobContract(t *testing.T) {
 
 	vmtype := "wasmtimevm"
 	description := "inccounter SC"
-	file := "inccounter_bg.wasm"
-	srcFile := "wasm/" + file
 	w.copyFile(srcFile)
 
 	// test chain store-blob command
@@ -262,7 +262,7 @@ func TestWaspCliBlobContract(t *testing.T) {
 	out = w.Run("chain", "list-blobs")
 	require.Contains(t, out[0], "Total 1 blob(s)")
 
-	blobHash := regexp.MustCompile(`(?m)([[:alnum:]]+)[[:space:]]`).FindStringSubmatch(out[4])[1]
+	blobHash := regexp.MustCompile(`(?m)([[:alnum:]]+)[[:space:]]`).FindStringSubmatch(out[4])[1] //nolint:gocritic
 	require.NotEmpty(t, blobHash)
 	t.Logf("Blob hash: %s", blobHash)
 
@@ -280,8 +280,6 @@ func TestWaspCliBlobRegistry(t *testing.T) {
 	require.Contains(t, out[0], "false")
 
 	// test `blob put` command
-	file := "inccounter_bg.wasm"
-	srcFile := "wasm/" + file
 	w.copyFile(srcFile)
 	out = w.Run("blob", "put", file)
 	blobHash := regexp.MustCompile(`(?m)Hash: ([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]

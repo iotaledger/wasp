@@ -17,7 +17,7 @@ var rootCmd = &cobra.Command{
 	Long: `wasp-cli is a command line tool for interacting with Wasp and its smart contracts.
 NOTE: this is alpha software, only suitable for testing purposes.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		cmd.Help() //nolint:errcheck
 	},
 }
 

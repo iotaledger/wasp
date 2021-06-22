@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -21,7 +20,7 @@ var (
 var configSetCmd = &cobra.Command{
 	Use:   "set <key> <value>",
 	Short: "Set a configuration value",
-	Args:  cobra.ExactArgs(2),
+	Args:  cobra.ExactArgs(2), //nolint:gomnd
 	Run: func(cmd *cobra.Command, args []string) {
 		v := args[1]
 		switch v {
@@ -36,7 +35,7 @@ var configSetCmd = &cobra.Command{
 }
 
 const (
-	HostKindApi     = "api"
+	HostKindAPI     = "api"
 	HostKindPeering = "peering"
 	HostKindNanomsg = "nanomsg"
 )
@@ -53,12 +52,12 @@ func Read() {
 	_ = viper.ReadInConfig()
 }
 
-func GoshimmerApiConfigVar() string {
-	return "goshimmer." + HostKindApi
+func GoshimmerAPIConfigVar() string {
+	return "goshimmer." + HostKindAPI
 }
 
-func GoshimmerApi() string {
-	r := viper.GetString(GoshimmerApiConfigVar())
+func GoshimmerAPI() string {
+	r := viper.GetString(GoshimmerAPIConfigVar())
 	if r != "" {
 		return r
 	}
@@ -74,22 +73,22 @@ func GoshimmerFaucetPoWTarget() int {
 }
 
 func GoshimmerClient() *goshimmer.Client {
-	log.Verbose("using Goshimmer host %s, faucet pow target %d\n", GoshimmerApi(), GoshimmerFaucetPoWTarget())
-	return goshimmer.NewClient(GoshimmerApi(), GoshimmerFaucetPoWTarget())
+	log.Verbosef("using Goshimmer host %s, faucet pow target %d\n", GoshimmerAPI(), GoshimmerFaucetPoWTarget())
+	return goshimmer.NewClient(GoshimmerAPI(), GoshimmerFaucetPoWTarget())
 }
 
 func WaspClient() *client.WaspClient {
 	// TODO: add authentication for /adm
-	log.Verbose("using Wasp host %s\n", WaspApi())
-	return client.NewWaspClient(WaspApi())
+	log.Verbosef("using Wasp host %s\n", WaspAPI())
+	return client.NewWaspClient(WaspAPI())
 }
 
-func WaspApi() string {
-	r := viper.GetString("wasp." + HostKindApi)
+func WaspAPI() string {
+	r := viper.GetString("wasp." + HostKindAPI)
 	if r != "" {
 		return r
 	}
-	return committeeHost(HostKindApi, 0)
+	return committeeHost(HostKindAPI, 0)
 }
 
 func WaspNanomsg() string {
@@ -100,18 +99,18 @@ func WaspNanomsg() string {
 	return committeeHost(HostKindNanomsg, 0)
 }
 
-func FindNodeBy(kind string, v string) int {
+func FindNodeBy(kind, v string) int {
 	for i := 0; i < 100; i++ {
 		if committeeHost(kind, i) == v {
 			return i
 		}
 	}
-	log.Fatal("Cannot find node with %q = %q in configuration", kind, v)
+	log.Fatalf("Cannot find node with %q = %q in configuration", kind, v)
 	return 0
 }
 
-func CommitteeApi(indices []int) []string {
-	return committee(HostKindApi, indices)
+func CommitteeAPI(indices []int) []string {
+	return committee(HostKindAPI, indices)
 }
 
 func CommitteePeering(indices []int) []string {
@@ -134,8 +133,8 @@ func committeeConfigVar(kind string, i int) string {
 	return fmt.Sprintf("wasp.%d.%s", i, kind)
 }
 
-func CommitteeApiConfigVar(i int) string {
-	return committeeConfigVar(HostKindApi, i)
+func CommitteeAPIConfigVar(i int) string {
+	return committeeConfigVar(HostKindAPI, i)
 }
 
 func CommitteePeeringConfigVar(i int) string {
@@ -155,13 +154,14 @@ func committeeHost(kind string, i int) string {
 	return fmt.Sprintf("127.0.0.1:%d", defaultPort)
 }
 
+//nolint:gomnd
 func defaultWaspPort(kind string, i int) int {
 	switch kind {
 	case HostKindNanomsg:
 		return 5550 + i
 	case HostKindPeering:
 		return 4000 + i
-	case HostKindApi:
+	case HostKindAPI:
 		return 9090 + i
 	}
 	panic(fmt.Sprintf("no handler for kind %s", kind))
@@ -174,7 +174,7 @@ func Set(key string, value interface{}) {
 
 func TrySCAddress(scAlias string) ledgerstate.Address {
 	b58 := viper.GetString("sc." + scAlias + ".address")
-	if len(b58) == 0 {
+	if b58 == "" {
 		return nil
 	}
 	address, err := ledgerstate.AddressFromBase58EncodedString(b58)
@@ -185,7 +185,7 @@ func TrySCAddress(scAlias string) ledgerstate.Address {
 func GetSCAddress(scAlias string) ledgerstate.Address {
 	address := TrySCAddress(scAlias)
 	if address == nil {
-		log.Fatal("call `%s set sc.%s.address` or deploy a contract first", os.Args[0], scAlias)
+		log.Fatalf("call `%s set sc.%s.address` or deploy a contract first", os.Args[0], scAlias)
 	}
 	return address
 }

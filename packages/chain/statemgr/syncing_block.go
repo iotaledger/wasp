@@ -50,7 +50,7 @@ func (syncsT *syncingBlocks) setRequestBlockRetryTime(stateIndex uint32, request
 func (syncsT *syncingBlocks) getBlockCandidates(stateIndex uint32) []*candidateBlock {
 	sync, ok := syncsT.blocks[stateIndex]
 	if !ok {
-		return make([]*candidateBlock, 0, 0)
+		return make([]*candidateBlock, 0)
 	}
 	result := make([]*candidateBlock, 0, len(sync.blockCandidates))
 	for _, candidate := range sync.blockCandidates {
@@ -114,7 +114,7 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 	hash := hashing.HashData(block.EssenceBytes())
 	syncsT.log.Debugf("addBlockCandidate: adding block candidate for index %v with essence hash %v; next state provided: %v", stateIndex, hash.String(), nextState != nil)
 	syncsT.startSyncingIfNeeded(stateIndex)
-	sync, _ := syncsT.blocks[stateIndex]
+	sync := syncsT.blocks[stateIndex]
 	candidateExisting, ok := sync.blockCandidates[hash]
 	if ok {
 		// already have block. Check consistency. If inconsistent, start from scratch

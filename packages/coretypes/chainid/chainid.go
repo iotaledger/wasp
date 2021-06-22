@@ -23,7 +23,7 @@ func NewChainID(addr *ledgerstate.AliasAddress) *ChainID {
 }
 
 // ChainIDFromAddress creates a chainIDD from alias address. Returns and error if not an alias address type
-func ChainIDFromAddress(addr ledgerstate.Address) (*ChainID, error) {
+func ChainIDFromAddress(addr ledgerstate.Address) (*ChainID, error) { //nolint:revive // stutters chain.chain... to be refactored back to coretypes, or another pkg
 	alias, ok := addr.(*ledgerstate.AliasAddress)
 	if !ok {
 		return nil, xerrors.New("chain id must be an alias address")
@@ -32,7 +32,7 @@ func ChainIDFromAddress(addr ledgerstate.Address) (*ChainID, error) {
 }
 
 // ChainIDFromBase58 constructor decodes base58 string to the ChainID
-func ChainIDFromBase58(b58 string) (*ChainID, error) {
+func ChainIDFromBase58(b58 string) (*ChainID, error) { //nolint:revive // stutters chain.chain... to be refactored back to coretypes, or another pkg
 	alias, err := ledgerstate.AliasAddressFromBase58EncodedString(b58)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func ChainIDFromBase58(b58 string) (*ChainID, error) {
 }
 
 // ChainIDFromBytes reconstructs a ChainID from its binary representation.
-func ChainIDFromBytes(data []byte) (*ChainID, error) {
+func ChainIDFromBytes(data []byte) (*ChainID, error) { //nolint:revive // stutters chain.chain... to be refactored back to coretypes, or another pkg
 	alias, _, err := ledgerstate.AliasAddressFromBytes(data)
 	if err != nil {
 		return nil, err

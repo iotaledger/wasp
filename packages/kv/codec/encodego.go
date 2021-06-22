@@ -21,7 +21,7 @@ func Encode(v interface{}) []byte {
 	case int32:
 		return EncodeInt64(int64(vt))
 	case int64:
-		return EncodeInt64(int64(vt))
+		return EncodeInt64(vt)
 	case uint16:
 		return EncodeInt64(int64(vt))
 	case uint32:

@@ -5,10 +5,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/hashing"
-
-	"github.com/iotaledger/hive.go/kvstore"
 )
 
 const (
@@ -24,7 +23,7 @@ var ErrDBVersionIncompatible = errors.New("database version is not compatible. p
 // also automatically sets the version if the database if new.
 // version is stored in niladdr partition.
 // it consists of one byte of version and the hash (checksum) of that one byte
-func checkDatabaseVersion() error {
+func checkDatabaseVersion() error { //nolint:deadcode,unused
 	db := GetRegistryKVStore()
 	ver, err := db.Get(dbkeys.MakeKey(dbkeys.ObjectTypeDBSchemaVersion))
 
@@ -33,7 +32,7 @@ func checkDatabaseVersion() error {
 	vh := hashing.HashStrings(fmt.Sprintf("dbversion = %d", DBVersion))
 	copy(versiondata[1:], vh[:])
 
-	if err == kvstore.ErrKeyNotFound {
+	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		// set the version in an empty DB
 		return db.Set(dbkeys.MakeKey(dbkeys.ObjectTypeDBSchemaVersion), versiondata[:])
 	}

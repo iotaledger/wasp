@@ -42,8 +42,8 @@ func (ch *Chain) ChainAddress() ledgerstate.Address {
 	return ch.ChainID.AsAddress()
 }
 
-func (ch *Chain) CommitteeApiHosts() []string {
-	return ch.Cluster.Config.ApiHosts(ch.CommitteeNodes)
+func (ch *Chain) CommitteeAPIHosts() []string {
+	return ch.Cluster.Config.APIHosts(ch.CommitteeNodes)
 }
 
 func (ch *Chain) CommitteePeeringHosts() []string {
@@ -54,8 +54,8 @@ func (ch *Chain) AllPeeringHosts() []string {
 	return ch.Cluster.Config.PeeringHosts(ch.AllPeers)
 }
 
-func (ch *Chain) AllApiHosts() []string {
-	return ch.Cluster.Config.ApiHosts(ch.AllPeers)
+func (ch *Chain) AllAPIHosts() []string {
+	return ch.Cluster.Config.APIHosts(ch.AllPeers)
 }
 
 func (ch *Chain) OriginatorAddress() ledgerstate.Address {
@@ -90,12 +90,12 @@ func (ch *Chain) SCClient(contractHname coretypes.Hname, sigScheme *ed25519.KeyP
 }
 
 func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
-	return multiclient.New(ch.CommitteeApiHosts())
+	return multiclient.New(ch.CommitteeAPIHosts())
 }
 
 func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockIndex uint32, state dict.Dict) bool) bool {
 	pass := true
-	for i, host := range ch.CommitteeApiHosts() {
+	for i, host := range ch.CommitteeAPIHosts() {
 		if !ch.Cluster.IsNodeUp(i) {
 			continue
 		}
@@ -115,7 +115,7 @@ func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockInd
 	return pass
 }
 
-func (ch *Chain) DeployContract(name string, progHashStr string, description string, initParams map[string]interface{}) (*ledgerstate.Transaction, error) {
+func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*ledgerstate.Transaction, error) {
 	programHash, err := hashing.HashValueFromBase58(progHashStr)
 	if err != nil {
 		return nil, err
@@ -146,15 +146,15 @@ func (ch *Chain) DeployContract(name string, progHashStr string, description str
 	return tx, nil
 }
 
-func (ch *Chain) DeployWasmContract(name string, description string, progBinary []byte, initParams map[string]interface{}) (*ledgerstate.Transaction, hashing.HashValue, error) {
+func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte, initParams map[string]interface{}) (*ledgerstate.Transaction, hashing.HashValue, error) {
 	blobFieldValues := codec.MakeDict(map[string]interface{}{
 		blob.VarFieldVMType:             wasmtimevm.VMType,
 		blob.VarFieldProgramBinary:      progBinary,
 		blob.VarFieldProgramDescription: description,
 	})
 
-	quorum := (2*len(ch.CommitteeApiHosts()))/3 + 1
-	programHash, tx, err := ch.OriginatorClient().UploadBlob(blobFieldValues, ch.CommitteeApiHosts(), quorum, 256)
+	quorum := (2*len(ch.CommitteeAPIHosts()))/3 + 1
+	programHash, tx, err := ch.OriginatorClient().UploadBlob(blobFieldValues, ch.CommitteeAPIHosts(), quorum, 256)
 	if err != nil {
 		return nil, hashing.NilHash, err
 	}
@@ -199,7 +199,7 @@ func (ch *Chain) DeployWasmContract(name string, description string, progBinary 
 	return tx, programHash, nil
 }
 
-func (ch *Chain) DeployWasmContractOld(name string, description string, progBinary []byte, initParams map[string]interface{}) (*ledgerstate.Transaction, hashing.HashValue, error) {
+func (ch *Chain) DeployWasmContractOld(name, description string, progBinary []byte, initParams map[string]interface{}) (*ledgerstate.Transaction, hashing.HashValue, error) {
 	// upload binary to the chain
 	blobFieldValues := map[string]interface{}{
 		blob.VarFieldVMType:             wasmtimevm.VMType,
@@ -208,14 +208,14 @@ func (ch *Chain) DeployWasmContractOld(name string, description string, progBina
 	}
 	programHash := blob.MustGetBlobHash(codec.MakeDict(blobFieldValues))
 
-	reqTx, err := ch.OriginatorClient().Post1Request(
+	reqTx, _ := ch.OriginatorClient().Post1Request(
 		blob.Interface.Hname(),
 		coretypes.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
 			Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(blobFieldValues)),
 		},
 	)
-	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, reqTx, 30*time.Second)
+	err := ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, reqTx, 30*time.Second)
 	if err != nil {
 		return nil, hashing.NilHash, err
 	}

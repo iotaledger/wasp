@@ -26,8 +26,7 @@ func TestPeeringNetDynamicReliable(t *testing.T) {
 	someNode := peeringNode{netID: "src"}
 	//
 	// Run the test.
-	var behavior PeeringNetBehavior
-	behavior = NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
+	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 10; i++ {
 		sendMessage(&someNode, inCh)
@@ -47,8 +46,7 @@ func TestPeeringNetDynamicUnreliable(t *testing.T) {
 	someNode := peeringNode{netID: "src"}
 	//
 	// Run the test.
-	var behavior PeeringNetBehavior
-	behavior = NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).
+	behavior := NewPeeringNetDynamic(testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)).
 		WithLosingChannel(nil, 50).
 		WithRepeatingChannel(nil, 50).
 		WithDelayingChannel(nil, 50*time.Millisecond, 100*time.Millisecond)
@@ -238,7 +236,7 @@ func TestPeeringNetDynamicPeerDisconnected(t *testing.T) {
 	behavior.Close()
 }
 
-func testRecvLoop(outCh chan (*peeringMsg), durations *[]time.Duration, stopCh chan (bool)) {
+func testRecvLoop(outCh chan *peeringMsg, durations *[]time.Duration, stopCh chan bool) {
 	for {
 		select {
 		case <-stopCh:
@@ -250,14 +248,14 @@ func testRecvLoop(outCh chan (*peeringMsg), durations *[]time.Duration, stopCh c
 }
 
 func averageDuration(durations []time.Duration) int64 {
-	var result int64 = 0
+	result := int64(0)
 	for _, d := range durations {
 		result += d.Milliseconds()
 	}
 	return result / int64(len(durations))
 }
 
-func sendMessage(from *peeringNode, inCh chan (*peeringMsg)) {
+func sendMessage(from *peeringNode, inCh chan *peeringMsg) {
 	inCh <- &peeringMsg{
 		from: from,
 		msg: peering.PeerMessage{

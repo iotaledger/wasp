@@ -1,6 +1,8 @@
 package state
 
 import (
+	"errors"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
@@ -16,10 +18,9 @@ func (vs *virtualState) Commit(blocks ...Block) error {
 		// nothing to commit
 		return nil
 	}
-	var err error
 	batch := vs.db.Batched()
 
-	if err = batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
+	if err := batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
 		return err
 	}
 
@@ -82,7 +83,7 @@ func LoadSolidState(store kvstore.KVStore, chainID *chainid.ChainID) (VirtualSta
 // LoadBlockBytes loads block bytes of the specified block index from DB
 func LoadBlockBytes(store kvstore.KVStore, stateIndex uint32) ([]byte, error) {
 	data, err := store.Get(dbkeys.MakeKey(dbkeys.ObjectTypeBlock, util.Uint32To4Bytes(stateIndex)))
-	if err == kvstore.ErrKeyNotFound {
+	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
 	}
 	if err != nil {
@@ -92,7 +93,7 @@ func LoadBlockBytes(store kvstore.KVStore, stateIndex uint32) ([]byte, error) {
 }
 
 // LoadBlock loads block from DB and decodes it
-func LoadBlock(store kvstore.KVStore, stateIndex uint32) (*block, error) {
+func LoadBlock(store kvstore.KVStore, stateIndex uint32) (*BlockImpl, error) {
 	data, err := LoadBlockBytes(store, stateIndex)
 	if err != nil {
 		return nil, err

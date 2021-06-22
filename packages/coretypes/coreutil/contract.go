@@ -64,10 +64,10 @@ func Funcs(init Handler, fns []ContractFunctionInterface, defaultHandler ...Hand
 
 		handlers := 0
 		if f.Handler != nil {
-			handlers += 1
+			handlers++
 		}
 		if f.ViewHandler != nil {
-			handlers += 1
+			handlers++
 		}
 		if handlers != 1 {
 			panic("Exactly one of (Handler, ViewHandler) must be set")

@@ -108,6 +108,7 @@ func (vmctx *VMContext) getMyBalances() *ledgerstate.ColoredBalances {
 	return ret
 }
 
+//nolint:unused
 func (vmctx *VMContext) moveBalance(target coretypes.AgentID, col ledgerstate.Color, amount uint64) bool {
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()

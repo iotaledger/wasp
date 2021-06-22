@@ -13,9 +13,9 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type vmRunner struct{}
+type VMRunner struct{}
 
-func (r vmRunner) Run(task *vm.VMTask) {
+func (r VMRunner) Run(task *vm.VMTask) {
 	// panic catcher for the whole VM task
 	// ir returns gracefully if the panic was about invalidated state
 	// otherwise it panics again
@@ -34,8 +34,8 @@ func (r vmRunner) Run(task *vm.VMTask) {
 	runTask(task)
 }
 
-func NewVMRunner() vmRunner {
-	return vmRunner{}
+func NewVMRunner() VMRunner {
+	return VMRunner{}
 }
 
 // runTask runs batch of requests on VM

@@ -1,6 +1,7 @@
 package root
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -66,7 +67,7 @@ func GetFeeInfo(state kv.KVStoreReader, hname coretypes.Hname) (ledgerstate.Colo
 	// returns nil of contract not found
 	rec, err := FindContract(state, hname)
 	if err != nil {
-		if err != ErrContractNotFound {
+		if !errors.Is(err, ErrContractNotFound) {
 			panic(err)
 		} else {
 			rec = nil

@@ -9,9 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
@@ -72,6 +71,7 @@ func (n *Node) Close() {
 
 // GenerateDistributedKey takes all the required parameters from the node and initiated the DKG procedure.
 // This function is executed on the DKG initiator node (a chosen leader for this DKG instance).
+//nolint:funlen,gocritic
 func (n *Node) GenerateDistributedKey(
 	peerNetIDs []string,
 	peerPubs []kyber.Point,

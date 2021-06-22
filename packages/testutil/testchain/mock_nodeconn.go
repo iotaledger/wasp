@@ -26,8 +26,8 @@ func (m *MockedNodeConn) PullBacklog(addr *ledgerstate.AliasAddress) {
 	m.onPullBacklog(addr)
 }
 
-func (n *MockedNodeConn) PullState(addr *ledgerstate.AliasAddress) {
-	n.onPullState(addr)
+func (m *MockedNodeConn) PullState(addr *ledgerstate.AliasAddress) {
+	m.onPullState(addr)
 }
 
 func (m *MockedNodeConn) PullConfirmedTransaction(addr ledgerstate.Address, txid ledgerstate.TransactionID) {

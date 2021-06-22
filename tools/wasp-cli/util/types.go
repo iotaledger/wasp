@@ -14,7 +14,7 @@ import (
 	"github.com/mr-tron/base58"
 )
 
-func ValueFromString(vtype string, s string) []byte {
+func ValueFromString(vtype, s string) []byte {
 	switch vtype {
 	case "color":
 		col, err := ledgerstate.ColorFromBase58EncodedString(s)
@@ -33,7 +33,7 @@ func ValueFromString(vtype string, s string) []byte {
 		log.Check(err)
 		return b
 	}
-	log.Fatal("ValueFromString: No handler for type %s", vtype)
+	log.Fatalf("ValueFromString: No handler for type %s", vtype)
 	return nil
 }
 
@@ -49,14 +49,14 @@ func ValueToString(vtype string, v []byte) string {
 	case "string":
 		return fmt.Sprintf("%q", string(v))
 	}
-	log.Fatal("ValueToString: No handler for type %s", vtype)
+	log.Fatalf("ValueToString: No handler for type %s", vtype)
 	return ""
 }
 
 func EncodeParams(params []string) dict.Dict {
 	d := dict.New()
 	if len(params)%4 != 0 {
-		log.Fatal("Params format: <type> <key> <type> <value> ...")
+		log.Fatalf("Params format: <type> <key> <type> <value> ...")
 	}
 	for i := 0; i < len(params)/4; i++ {
 		ktype := params[i*4]
@@ -71,7 +71,7 @@ func EncodeParams(params []string) dict.Dict {
 	return d
 }
 
-func PrintDictAsJson(d dict.Dict) {
+func PrintDictAsJSON(d dict.Dict) {
 	log.Check(json.NewEncoder(os.Stdout).Encode(d))
 }
 

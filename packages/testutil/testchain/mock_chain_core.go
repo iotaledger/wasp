@@ -29,7 +29,7 @@ type MockedChainCore struct {
 	onEventRequestProcessed func(id coretypes.RequestID)
 	onEventStateSynced      func(id ledgerstate.OutputID, blockIndex uint32)
 	onReceiveMessage        func(i interface{})
-	onSync                  func(out ledgerstate.OutputID, blockIndex uint32)
+	onSync                  func(out ledgerstate.OutputID, blockIndex uint32) //nolint:structcheck,unused
 	log                     *logger.Logger
 }
 
@@ -78,8 +78,8 @@ func (m *MockedChainCore) ID() *chainid.ChainID {
 	return &m.chainID
 }
 
-func (c *MockedChainCore) GlobalStateSync() coreutil.ChainStateSync {
-	return c.onGlobalStateSync()
+func (m *MockedChainCore) GlobalStateSync() coreutil.ChainStateSync {
+	return m.onGlobalStateSync()
 }
 
 func (m *MockedChainCore) GetStateReader() state.OptimisticStateReader {

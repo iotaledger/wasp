@@ -11,7 +11,7 @@ import (
 // DeployContract deploys contract by its program hash
 // - if called from 'root' contract only loads VM from binary
 // - otherwise calls 'root' contract 'DeployContract' entry point to do the job.
-func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name string, description string, initParams dict.Dict) error {
+func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, description string, initParams dict.Dict) error {
 	vmtype, programBinary, err := vmctx.getBinary(programHash)
 	if err != nil {
 		return err

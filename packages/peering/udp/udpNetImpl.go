@@ -253,7 +253,7 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 		}
 		var peerUDPAddr *net.UDPAddr
 		recvDeadline := time.Now().Add(recvBlockingDuration)
-		n.myUDPConn.SetReadDeadline(recvDeadline)
+		n.myUDPConn.SetReadDeadline(recvDeadline) //nolint:errcheck //TODO should err be checked here?
 		if _, peerUDPAddr, err = n.myUDPConn.ReadFromUDP(buf); err != nil {
 			if errors.Is(err, os.ErrDeadlineExceeded) {
 				// We need to limit the blocking to make graceful stop possible.
