@@ -19,20 +19,21 @@ func main() {
 	// TODO: use wasp backend
 	env := solo.New(solo.NewFakeTestingT("evmproxy"), true, false)
 
-	// TODO: make signer key configurable
-	signer, _ := env.NewKeyPairWithFunds()
-
 	// TODO: make chain deployment / genesis configurable
+	chainOwner, _ := env.NewKeyPairWithFunds()
 	genesis := core.GenesisAlloc{
 		evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 	}
-	chain := env.NewChain(signer, "iscpchain")
-	err := chain.DeployContract(signer, "evmchain", evmchain.Interface.ProgramHash,
+	chain := env.NewChain(chainOwner, "iscpchain")
+	err := chain.DeployContract(chainOwner, "evmchain", evmchain.Interface.ProgramHash,
 		evmchain.FieldGenesisAlloc, evmchain.EncodeGenesisAlloc(genesis),
 	)
 	if err != nil {
 		panic(err)
 	}
+
+	// TODO: make signer key configurable
+	signer, _ := env.NewKeyPairWithFunds()
 
 	backend := jsonrpc.NewSoloBackend(env, chain, signer)
 	evmChain := jsonrpc.NewEVMChain(backend)
