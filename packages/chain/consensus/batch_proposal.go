@@ -4,16 +4,13 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/hashing"
-
-	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
-
-	"github.com/iotaledger/wasp/packages/util"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/util"
+	"go.dedis.ch/kyber/v3/sign/tbls"
 	"golang.org/x/xerrors"
 )
 
@@ -25,7 +22,7 @@ type batchProposal struct {
 	ConsensusManaPledge     identity.ID
 	AccessManaPledge        identity.ID
 	FeeDestination          *coretypes.AgentID
-	SigShareOfStateOutputID tbdn.SigShare
+	SigShareOfStateOutputID tbls.SigShare
 }
 
 type consensusBatchParams struct {

@@ -3,11 +3,13 @@ module github.com/iotaledger/wasp
 go 1.16
 
 require (
+	github.com/NebulousLabs/errors v0.0.0-20181203160057-9f787ce8f69e // indirect
+	github.com/NebulousLabs/fastrand v0.0.0-20181203155948-6fb6489aac4e // indirect
 	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/bytecodealliance/wasmtime-go v0.21.0
 	github.com/ethereum/go-ethereum v1.10.3
-	github.com/iotaledger/goshimmer v0.6.5-0.20210607123300-2b57453f8501
+	github.com/iotaledger/goshimmer v0.7.1-0.20210616161008-c86e0980d632
 	github.com/iotaledger/hive.go v0.0.0-20210602094236-4305b15fac6e
 	github.com/knadh/koanf v0.15.0
 	github.com/labstack/echo/v4 v4.1.13

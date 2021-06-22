@@ -1,8 +1,10 @@
 package apilib
 
 import (
-	"math/rand"
 	"time"
+
+	"github.com/iotaledger/wasp/client/multiclient"
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client"
@@ -11,8 +13,9 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// RunDKG runs DKG procedure on specifiec Wasp hosts. In case of success, generated address is returned
-func RunDKG(apiHosts []string, peeringHosts []string, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
+// RunDKG runs DKG procedure on specific Wasp hosts: generates new keys and puts corresponding committee records
+// into nodes. In case of success, generated address is returned
+func RunDKG(apiHosts, peeringHosts []string, threshold, initiatorIndex uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
 	// TODO temporary. Correct type of timeout.
 	to := uint16(60 * 1000)
 	if len(timeout) > 0 {
@@ -21,8 +24,10 @@ func RunDKG(apiHosts []string, peeringHosts []string, threshold uint16, timeout 
 			to = uint16(n)
 		}
 	}
-	dkgInitiatorIndex := rand.Intn(len(apiHosts))
-	dkShares, err := client.NewWaspClient(apiHosts[dkgInitiatorIndex]).DKSharesPost(&model.DKSharesPostRequest{
+	if int(initiatorIndex) >= len(apiHosts) {
+		return nil, xerrors.New("RunDKG: wrong initiator index")
+	}
+	dkShares, err := client.NewWaspClient(apiHosts[initiatorIndex]).DKSharesPost(&model.DKSharesPostRequest{
 		PeerNetIDs:  peeringHosts,
 		PeerPubKeys: nil,
 		Threshold:   threshold,
@@ -31,9 +36,18 @@ func RunDKG(apiHosts []string, peeringHosts []string, threshold uint16, timeout 
 	if err != nil {
 		return nil, err
 	}
-	var ret ledgerstate.Address
-	if ret, err = ledgerstate.AddressFromBase58EncodedString(dkShares.Address); err != nil {
-		return nil, xerrors.Errorf("invalid address from DKG: %w", err)
+	var addr ledgerstate.Address
+	if addr, err = ledgerstate.AddressFromBase58EncodedString(dkShares.Address); err != nil {
+		return nil, xerrors.Errorf("RunDKG: invalid address returned from DKG: %w", err)
 	}
-	return ret, nil
+
+	// put committee records to hosts
+	err = multiclient.New(apiHosts).PutCommitteeRecord(&committee_record.CommitteeRecord{
+		Address: addr,
+		Nodes:   peeringHosts,
+	})
+	if err != nil {
+		return nil, xerrors.Errorf("RunDKG: PutCommitteeRecord: %w", err)
+	}
+	return addr, nil
 }

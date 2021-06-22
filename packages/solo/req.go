@@ -51,12 +51,12 @@ func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
 // calls:
 //  - 'scName' is a a name of the target smart contract
 //  - 'funName' is a name of the target entry point (the function) of he smart contract program
-//  - 'params' is a sequence of pairs 'paramName', 'paramValue' which constitute call parameters
+//  - 'params' is either a dict.Dict, or a sequence of pairs 'paramName', 'paramValue' which constitute call parameters
 //     The 'paramName' must be a string and 'paramValue' must different types (encoded based on type)
 // With the WithTransfers the CallParams structure may be complemented with attached colored
 // tokens sent together with the request
 func NewCallParams(scName, funName string, params ...interface{}) *CallParams {
-	return NewCallParamsFromDic(scName, funName, codec.MakeDict(toMap(params...)))
+	return NewCallParamsFromDic(scName, funName, parseParams(params))
 }
 
 func NewCallParamsOptimized(scName, funName string, optSize int, params ...interface{}) (*CallParams, map[kv.Key][]byte) {
@@ -69,9 +69,8 @@ func NewCallParamsOptimized(scName, funName string, optSize int, params ...inter
 		epName:     funName,
 		entryPoint: coretypes.Hn(funName),
 	}
-	d := codec.MakeDict(toMap(params...))
 	var retOptimized map[kv.Key][]byte
-	ret.args, retOptimized = requestargs.NewOptimizedRequestArgs(d)
+	ret.args, retOptimized = requestargs.NewOptimizedRequestArgs(parseParams(params), optSize)
 	return ret, retOptimized
 }
 
@@ -101,16 +100,20 @@ func (r *CallParams) WithMint(targetAddress ledgerstate.Address, amount uint64) 
 
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(keyPair *ed25519.KeyPair) *request.RequestOffLedger {
-	ret := request.NewRequestOffLedger(r.target, r.entryPoint, r.args)
-	if r.transfer != nil {
-		ret.Transfer(r.transfer)
-	}
+	ret := request.NewRequestOffLedger(r.target, r.entryPoint, r.args).WithTransfer(r.transfer)
 	ret.Sign(keyPair)
 	return ret
 }
 
+func parseParams(params []interface{}) dict.Dict {
+	if len(params) == 1 {
+		return params[0].(dict.Dict)
+	}
+	return codec.MakeDict(toMap(params))
+}
+
 // makes map without hashing
-func toMap(params ...interface{}) map[string]interface{} {
+func toMap(params []interface{}) map[string]interface{} {
 	par := make(map[string]interface{})
 	if len(params) == 0 {
 		return par
@@ -232,12 +235,13 @@ func (ch *Chain) callViewFull(req *CallParams) (dict.Dict, error) {
 }
 
 // CallView calls the view entry point of the smart contract.
-// The call params should be in pairs ('paramName', 'paramValue') where 'paramName' is a string
-// and 'paramValue' must be of type accepted by the 'codec' package
-func (ch *Chain) CallView(scName string, funName string, params ...interface{}) (dict.Dict, error) {
+// The call params should be either a dict.Dict, or pairs of ('paramName',
+// 'paramValue') where 'paramName' is a string and 'paramValue' must be of type
+// accepted by the 'codec' package
+func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.Dict, error) {
 	ch.Log.Infof("callView: %s::%s", scName, funName)
 
-	p := codec.MakeDict(toMap(params...))
+	p := parseParams(params)
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()

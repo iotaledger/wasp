@@ -17,11 +17,11 @@ func NewCluster(t *testing.T, nNodes ...int) *cluster.Cluster {
 		t.Skip("Skipping cluster test in short mode")
 	}
 
-	if len(nNodes) > 0 {
-		*numNodes = nNodes[0]
-	}
 	config := cluster.DefaultConfig()
 	config.Wasp.NumNodes = *numNodes
+	if len(nNodes) > 0 {
+		config.Wasp.NumNodes = nNodes[0]
+	}
 	clu := cluster.New(t.Name(), config)
 
 	dataPath := path.Join(os.TempDir(), "wasp-cluster")

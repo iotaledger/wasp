@@ -57,11 +57,12 @@ func handlePutCommitteeRecord(c echo.Context) error {
 	if bd2 != nil {
 		return httperrors.Conflict(fmt.Sprintf("Record already exists: %s", cr.Address.Base58()))
 	}
+	// TODO if I am not among committee nodes, should not save
 	if err = defaultRegistry.SaveCommitteeRecord(cr); err != nil {
 		return err
 	}
 
-	log.Infof("Committee record saved. Address: %s", cr.Address.Base58())
+	log.Infof("Committee record saved. Address: %s", cr.String())
 
 	return c.NoContent(http.StatusCreated)
 }
