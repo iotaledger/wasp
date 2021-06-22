@@ -176,10 +176,7 @@ func (s *DKShare) Read(r io.Reader) error {
 	//
 	// Private share.
 	s.PrivateShare = s.suite.G2().Scalar()
-	if err = util.ReadMarshaled(r, s.PrivateShare); err != nil {
-		return err
-	}
-	return nil
+	return util.ReadMarshaled(r, s.PrivateShare)
 }
 
 // SignShare signs the data with the own key share.
@@ -213,7 +210,7 @@ func (s *DKShare) VerifyOwnSigShare(data []byte, sigshare tbls.SigShare) error {
 
 // VerifyMasterSignature checks signature against master public key
 // NOTE: Not used.
-func (s *DKShare) VerifyMasterSignature(data []byte, signature []byte) error {
+func (s *DKShare) VerifyMasterSignature(data, signature []byte) error {
 	return bdn.Verify(s.suite, s.SharedPublic, data, signature)
 }
 

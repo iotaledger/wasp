@@ -350,6 +350,7 @@ func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*committee_r
 	}
 	return rec, nil
 }
+
 func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *committee_record.CommitteeRecord) error {
 	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
 	cmt, err := committee.New(

@@ -52,7 +52,7 @@ func handlePutChainRecord(c echo.Context) error {
 	if bd2 != nil {
 		return httperrors.Conflict(fmt.Sprintf("Record already exists: %s", bd.ChainID.String()))
 	}
-	if err = reg.SaveChainRecord(bd); err != nil {
+	if err := reg.SaveChainRecord(bd); err != nil {
 		return err
 	}
 

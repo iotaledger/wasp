@@ -40,8 +40,8 @@ func TestBasicAccountsN1(t *testing.T) {
 		"state": 3,
 	})
 	check(err, t)
-	defer counter.Close()
-	chain, err := clu.DeployChainWithDKG("single_node_chain", chainNodes, chainNodes, 1)
+	defer counter1.Close()
+	chain1, err := clu.DeployChainWithDKG("single_node_chain", chainNodes, chainNodes, 1)
 	check(err, t)
 	testBasicAccounts(t, chain1, counter1)
 }
@@ -213,7 +213,7 @@ func TestBasic2Accounts(t *testing.T) {
 	check(err, t)
 
 	transferIotas := uint64(42)
-	myWalletClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, myWallet)
+	myWalletClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
 	reqTx, err := myWalletClient.Post1Request(hname, coretypes.Hn(inccounter.FuncIncCounter), *par)

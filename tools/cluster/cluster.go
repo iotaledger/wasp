@@ -94,9 +94,9 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 
 	chainid, err := apilib.DeployChain(apilib.CreateChainParams{
 		Node:                  clu.GoshimmerClient(),
-		AllApiHosts:           chain.AllApiHosts(),
+		AllAPIHosts:           chain.AllAPIHosts(),
 		AllPeeringHosts:       chain.AllPeeringHosts(),
-		CommitteeApiHosts:     chain.CommitteeApiHosts(),
+		CommitteeAPIHosts:     chain.CommitteeAPIHosts(),
 		CommitteePeeringHosts: chain.CommitteePeeringHosts(),
 		N:                     uint16(len(committeeNodes)),
 		T:                     quorum,

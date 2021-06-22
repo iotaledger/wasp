@@ -25,9 +25,9 @@ import (
 
 type CreateChainParams struct {
 	Node                  *goshimmer.Client
-	AllApiHosts           []string
+	AllAPIHosts           []string
 	AllPeeringHosts       []string
-	CommitteeApiHosts     []string
+	CommitteeAPIHosts     []string
 	CommitteePeeringHosts []string
 	N                     uint16
 	T                     uint16
@@ -47,8 +47,8 @@ func DeployChainWithDKG(par CreateChainParams) (*chainid.ChainID, ledgerstate.Ad
 		}
 	}
 
-	dkgInitiatorIndex := uint16(rand.Intn(len(par.CommitteeApiHosts)))
-	stateControllerAddr, err := RunDKG(par.CommitteeApiHosts, par.CommitteePeeringHosts, par.T, dkgInitiatorIndex)
+	dkgInitiatorIndex := uint16(rand.Intn(len(par.CommitteeAPIHosts)))
+	stateControllerAddr, err := RunDKG(par.CommitteeAPIHosts, par.CommitteePeeringHosts, par.T, dkgInitiatorIndex)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -61,7 +61,7 @@ func DeployChainWithDKG(par CreateChainParams) (*chainid.ChainID, ledgerstate.Ad
 
 // DeployChain creates a new chain on specified committee address
 // noinspection ALL
-//nolint:funlen
+
 func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address) (*chainid.ChainID, error) {
 	var err error
 	textout := ioutil.Discard
@@ -80,12 +80,11 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 	if err != nil {
 		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("DeployChain: %w", err)
-	} else {
-		fmt.Fprint(textout, "creating chain origin and init transaction.. OK\n")
 	}
+	fmt.Fprint(textout, "creating chain origin and init transaction.. OK\n")
 	fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
 
-	err = ActivateChainOnAccessNodes(par.AllApiHosts, par.AllPeeringHosts, chainID)
+	err = ActivateChainOnAccessNodes(par.AllAPIHosts, par.AllPeeringHosts, chainID)
 	fmt.Fprint(textout, par.Prefix)
 	if err != nil {
 		fmt.Fprintf(textout, "activating chain %s.. FAILED: %v\n", chainID.Base58(), err)
@@ -93,7 +92,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 	}
 	fmt.Fprintf(textout, "activating chain %s.. OK.\n", chainID.Base58())
 
-	peers := multiclient.New(par.CommitteeApiHosts)
+	peers := multiclient.New(par.CommitteeAPIHosts)
 
 	// ---------- wait until the request is processed at least in all committee nodes
 	if err = peers.WaitUntilAllRequestsProcessed(*chainID, initRequestTx, 30*time.Second); err != nil {
@@ -102,7 +101,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 	}
 
 	fmt.Fprint(textout, par.Prefix)
-	fmt.Fprintf(textout, "chain has been created succesfully on the Tangle. ChainID: %s, State address: %s, N = %d, T = %d\n",
+	fmt.Fprintf(textout, "chain has been created successfully on the Tangle. ChainID: %s, State address: %s, N = %d, T = %d\n",
 		chainID.String(), stateControllerAddr.Base58(), par.N, par.T)
 
 	return chainID, err
@@ -116,7 +115,6 @@ func CreateChainOrigin(node *goshimmer.Client, originator *ed25519.KeyPair, stat
 	if err != nil {
 		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
-	fmt.Fprint(textout, "requesting owner address' UTXOs from node.. OK\n")
 
 	// ----------- create origin transaction
 	originTx, chainID, err := transaction.NewChainOriginTransaction(
@@ -129,7 +127,6 @@ func CreateChainOrigin(node *goshimmer.Client, originator *ed25519.KeyPair, stat
 	if err != nil {
 		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
-	fmt.Fprintf(textout, "creating origin transaction.. OK. Origin txid = %s\n", originTx.ID().String())
 
 	// ------------- post origin transaction and wait for confirmation
 	err = node.PostAndWaitForConfirmation(originTx)
@@ -179,7 +176,7 @@ func ActivateChainOnAccessNodes(apiHosts, peers []string, chainID *chainid.Chain
 	// ------------- activate chain
 	err = nodes.ActivateChain(*chainID)
 	if err != nil {
-		return xerrors.Errorf("ActivateChainOnAccessNodes: %w")
+		return xerrors.Errorf("ActivateChainOnAccessNodes: %w", err)
 	}
 	return nil
 }

@@ -27,152 +27,153 @@ var (
 
 // cluster of 10 access nodes with the committee of 4 nodes. tested if all nodes are synced
 func TestAccessNode(t *testing.T) {
-	//core.PrintWellKnownHnames()
-	//t.Logf("contract: name = %s, hname = %s", contractName, contractHname.String())
-	clu := clutest.NewCluster(t, 10)
+	// core.PrintWellKnownHnames()
+	// t.Logf("contract: name = %s, hname = %s", contractName, contractHname.String())
+	clu1 := clutest.NewCluster(t, 10)
 
 	numRequests := 8
 	cmt1 := []int{0, 1, 2, 3}
 
-	addr1, err := clu.RunDKG(cmt1, 3)
+	addr1, err := clu1.RunDKG(cmt1, 3)
 	require.NoError(t, err)
 
 	t.Logf("addr1: %s", addr1.Base58())
 
-	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt1, 3, addr1)
+	chain1, err := clu1.DeployChain("chain", clu1.Config.AllNodes(), cmt1, 3, addr1)
 	require.NoError(t, err)
-	t.Logf("chainID: %s", chain.ChainID.Base58())
+	t.Logf("chainID: %s", chain1.ChainID.Base58())
 
 	description := "testing with inccounter"
 	programHash = inccounter.Interface.ProgramHash
 
-	_, err = chain.DeployContract(contractName, programHash.String(), description, nil)
+	_, err = chain1.DeployContract(contractName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	rec, err := findContract(chain, contractName)
+	rec, err := findContract(chain1, contractName)
 	require.NoError(t, err)
 	require.EqualValues(t, contractName, rec.Name)
 
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
-	err = requestFunds(clu, myAddress, "myAddress")
+	err = requestFunds(clu1, myAddress, "myAddress")
 	require.NoError(t, err)
 
-	myClient := chain.SCClient(contractHname, kp)
+	myClient := chain1.SCClient(contractHname, kp)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 		require.NoError(t, err)
 	}
 
-	require.True(t, waitCounter(t, chain, 7, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 8, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 9, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 4, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 5, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 6, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 1, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 7, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 8, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 9, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 4, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 5, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 6, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 1, numRequests, 5*time.Second))
 }
 
-// cluster of 10 access nodes and two overlaping committees
+// cluster of 10 access nodes and two overlapping committees
 func TestRotation(t *testing.T) {
 	numRequests := 8
 
 	cmt1 := []int{0, 1, 2, 3}
 	cmt2 := []int{2, 3, 4, 5}
 
-	clu := clutest.NewCluster(t, 10)
-	addr1, err := clu.RunDKG(cmt1, 3)
+	clu1 := clutest.NewCluster(t, 10)
+	addr1, err := clu1.RunDKG(cmt1, 3)
 	require.NoError(t, err)
-	addr2, err := clu.RunDKG(cmt2, 3)
+	addr2, err := clu1.RunDKG(cmt2, 3)
 	require.NoError(t, err)
 
 	t.Logf("addr1: %s", addr1.Base58())
 	t.Logf("addr2: %s", addr2.Base58())
 
-	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt1, 3, addr1)
+	chain1, err := clu1.DeployChain("chain", clu1.Config.AllNodes(), cmt1, 3, addr1)
 	require.NoError(t, err)
-	t.Logf("chainID: %s", chain.ChainID.Base58())
+	t.Logf("chainID: %s", chain1.ChainID.Base58())
 
 	description := "inccounter testing contract"
 	programHash = inccounter.Interface.ProgramHash
 
-	_, err = chain.DeployContract(contractName, programHash.String(), description, nil)
+	_, err = chain1.DeployContract(contractName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	rec, err := findContract(chain, contractName)
+	rec, err := findContract(chain1, contractName)
 	require.NoError(t, err)
 	require.EqualValues(t, contractName, rec.Name)
 
-	require.True(t, waitStateController(t, chain, 0, addr1, 5*time.Second))
-	require.True(t, waitStateController(t, chain, 9, addr1, 5*time.Second))
+	require.True(t, waitStateController(t, chain1, 0, addr1, 5*time.Second))
+	require.True(t, waitStateController(t, chain1, 9, addr1, 5*time.Second))
 
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
-	err = requestFunds(clu, myAddress, "myAddress")
+	err = requestFunds(clu1, myAddress, "myAddress")
 	require.NoError(t, err)
 
-	myClient := chain.SCClient(contractHname, kp)
+	myClient := chain1.SCClient(contractHname, kp)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 		require.NoError(t, err)
 	}
 
-	require.True(t, waitCounter(t, chain, 0, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 3, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 8, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 9, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 0, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 3, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 8, numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 9, numRequests, 5*time.Second))
 
-	govClient := chain.SCClient(governance.Interface.Hname(), chain.OriginatorKeyPair())
+	govClient := chain1.SCClient(governance.Interface.Hname(), chain1.OriginatorKeyPair())
 
 	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addr2).WithIotas(1)
 	tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress, *params)
 
 	require.NoError(t, err)
 
-	require.True(t, waitBlockIndex(t, chain, 9, 4, 5*time.Second))
-	require.True(t, waitBlockIndex(t, chain, 0, 4, 5*time.Second))
-	require.True(t, waitBlockIndex(t, chain, 6, 4, 5*time.Second))
+	require.True(t, waitBlockIndex(t, chain1, 9, 4, 5*time.Second))
+	require.True(t, waitBlockIndex(t, chain1, 0, 4, 5*time.Second))
+	require.True(t, waitBlockIndex(t, chain1, 6, 4, 5*time.Second))
 
 	reqid := coretypes.NewRequestID(tx.ID(), 0)
-	require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, 5*time.Second))
-	require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, 5*time.Second))
+	require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, 5*time.Second))
+	require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, 5*time.Second))
 
 	require.NoError(t, err)
-	require.True(t, isAllowedStateControllerAddress(t, chain, 0, addr2))
+	require.True(t, isAllowedStateControllerAddress(t, chain1, 0, addr2))
 
-	require.True(t, waitStateController(t, chain, 0, addr1, 5*time.Second))
-	require.True(t, waitStateController(t, chain, 9, addr1, 5*time.Second))
+	require.True(t, waitStateController(t, chain1, 0, addr1, 5*time.Second))
+	require.True(t, waitStateController(t, chain1, 9, addr1, 5*time.Second))
 
 	params = chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addr2).WithIotas(1)
 	tx, err = govClient.PostRequest(governance.FuncRotateStateController, *params)
+	require.NoError(t, err)
 
-	require.True(t, waitStateController(t, chain, 0, addr2, 5*time.Second))
-	require.True(t, waitStateController(t, chain, 9, addr2, 5*time.Second))
+	require.True(t, waitStateController(t, chain1, 0, addr2, 5*time.Second))
+	require.True(t, waitStateController(t, chain1, 9, addr2, 5*time.Second))
 
-	require.True(t, waitBlockIndex(t, chain, 9, 5, 5*time.Second))
-	require.True(t, waitBlockIndex(t, chain, 0, 5, 5*time.Second))
-	require.True(t, waitBlockIndex(t, chain, 6, 5, 5*time.Second))
+	require.True(t, waitBlockIndex(t, chain1, 9, 5, 5*time.Second))
+	require.True(t, waitBlockIndex(t, chain1, 0, 5, 5*time.Second))
+	require.True(t, waitBlockIndex(t, chain1, 6, 5, 5*time.Second))
 
 	reqid = coretypes.NewRequestID(tx.ID(), 0)
-	require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, 5*time.Second))
-	require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, 5*time.Second))
+	require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, 5*time.Second))
+	require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, 5*time.Second))
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 		require.NoError(t, err)
 	}
-	require.True(t, waitCounter(t, chain, 0, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 1, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 2, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 3, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 4, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 5, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 6, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 7, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 8, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain, 9, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 0, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 1, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 2, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 3, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 4, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 5, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 6, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 7, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 8, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain1, 9, 2*numRequests, 5*time.Second))
 }
 
 func TestRotationMany(t *testing.T) {
@@ -198,63 +199,63 @@ func TestRotationMany(t *testing.T) {
 	addrs := make([]ledgerstate.Address, numCmt)
 
 	var err error
-	clu := clutest.NewCluster(t, 10)
+	clu1 := clutest.NewCluster(t, 10)
 	for i := range cmt {
-		addrs[i], err = clu.RunDKG(cmt[i], quorum[i])
+		addrs[i], err = clu1.RunDKG(cmt[i], quorum[i])
 		require.NoError(t, err)
 		t.Logf("addr[%d]: %s", i, addrs[i].Base58())
 	}
 
-	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt[0], quorum[0], addrs[0])
+	chain1, err := clu1.DeployChain("chain", clu1.Config.AllNodes(), cmt[0], quorum[0], addrs[0])
 	require.NoError(t, err)
-	t.Logf("chainID: %s", chain.ChainID.Base58())
+	t.Logf("chainID: %s", chain1.ChainID.Base58())
 
-	govClient := chain.SCClient(governance.Interface.Hname(), chain.OriginatorKeyPair())
+	govClient := chain1.SCClient(governance.Interface.Hname(), chain1.OriginatorKeyPair())
 
 	for i := range addrs {
 		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addrs[i]).WithIotas(1)
 		tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress, *par)
 		require.NoError(t, err)
 		reqid := coretypes.NewRequestID(tx.ID(), 0)
-		require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, waitTimeout))
-		require.EqualValues(t, "", waitRequest(t, chain, 5, reqid, waitTimeout))
-		require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, waitTimeout))
-		require.True(t, isAllowedStateControllerAddress(t, chain, 0, addrs[i]))
-		require.True(t, isAllowedStateControllerAddress(t, chain, 5, addrs[i]))
-		require.True(t, isAllowedStateControllerAddress(t, chain, 9, addrs[i]))
+		require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, waitTimeout))
+		require.EqualValues(t, "", waitRequest(t, chain1, 5, reqid, waitTimeout))
+		require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, waitTimeout))
+		require.True(t, isAllowedStateControllerAddress(t, chain1, 0, addrs[i]))
+		require.True(t, isAllowedStateControllerAddress(t, chain1, 5, addrs[i]))
+		require.True(t, isAllowedStateControllerAddress(t, chain1, 9, addrs[i]))
 	}
 
 	description := "inccounter testing contract"
 	programHash = inccounter.Interface.ProgramHash
 
-	_, err = chain.DeployContract(contractName, programHash.String(), description, nil)
+	_, err = chain1.DeployContract(contractName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	rec, err := findContract(chain, contractName)
+	rec, err := findContract(chain1, contractName)
 	require.NoError(t, err)
 	require.EqualValues(t, contractName, rec.Name)
 
 	addrIndex := 0
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
-	err = requestFunds(clu, myAddress, "myAddress")
+	err = requestFunds(clu1, myAddress, "myAddress")
 	require.NoError(t, err)
 
-	myClient := chain.SCClient(contractHname, kp)
+	myClient := chain1.SCClient(contractHname, kp)
 
 	for i := 0; i < numRotations; i++ {
-		require.True(t, waitStateController(t, chain, 0, addrs[addrIndex], waitTimeout))
-		require.True(t, waitStateController(t, chain, 4, addrs[addrIndex], waitTimeout))
-		require.True(t, waitStateController(t, chain, 9, addrs[addrIndex], waitTimeout))
+		require.True(t, waitStateController(t, chain1, 0, addrs[addrIndex], waitTimeout))
+		require.True(t, waitStateController(t, chain1, 4, addrs[addrIndex], waitTimeout))
+		require.True(t, waitStateController(t, chain1, 9, addrs[addrIndex], waitTimeout))
 
-		for i := 0; i < numRequests; i++ {
+		for j := 0; j < numRequests; j++ {
 			_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 			require.NoError(t, err)
 		}
-		require.True(t, waitCounter(t, chain, 0, numRequests*(i+1), waitTimeout))
-		require.True(t, waitCounter(t, chain, 3, numRequests*(i+1), waitTimeout))
-		require.True(t, waitCounter(t, chain, 8, numRequests*(i+1), waitTimeout))
-		require.True(t, waitCounter(t, chain, 9, numRequests*(i+1), waitTimeout))
+		require.True(t, waitCounter(t, chain1, 0, numRequests*(i+1), waitTimeout))
+		require.True(t, waitCounter(t, chain1, 3, numRequests*(i+1), waitTimeout))
+		require.True(t, waitCounter(t, chain1, 8, numRequests*(i+1), waitTimeout))
+		require.True(t, waitCounter(t, chain1, 9, numRequests*(i+1), waitTimeout))
 
 		addrIndex = (addrIndex + 1) % numCmt
 
@@ -262,13 +263,13 @@ func TestRotationMany(t *testing.T) {
 		tx, err := govClient.PostRequest(governance.FuncRotateStateController, *par)
 		require.NoError(t, err)
 		reqid := coretypes.NewRequestID(tx.ID(), 0)
-		require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, waitTimeout))
-		require.EqualValues(t, "", waitRequest(t, chain, 4, reqid, waitTimeout))
-		require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, waitTimeout))
+		require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, waitTimeout))
+		require.EqualValues(t, "", waitRequest(t, chain1, 4, reqid, waitTimeout))
+		require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, waitTimeout))
 
-		require.True(t, waitStateController(t, chain, 0, addrs[addrIndex], waitTimeout))
-		require.True(t, waitStateController(t, chain, 4, addrs[addrIndex], waitTimeout))
-		require.True(t, waitStateController(t, chain, 9, addrs[addrIndex], waitTimeout))
+		require.True(t, waitStateController(t, chain1, 0, addrs[addrIndex], waitTimeout))
+		require.True(t, waitStateController(t, chain1, 4, addrs[addrIndex], waitTimeout))
+		require.True(t, waitStateController(t, chain1, 9, addrs[addrIndex], waitTimeout))
 	}
 }
 
@@ -303,13 +304,14 @@ func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid corety
 	return ret
 }
 
-func waitCounter(t *testing.T, chain *cluster.Chain, nodeIndex int, counter int, timeout time.Duration) bool {
+func waitCounter(t *testing.T, chain *cluster.Chain, nodeIndex, counter int, timeout time.Duration) bool {
 	return waitTrue(timeout, func() bool {
 		c, err := callGetCounter(t, chain, nodeIndex)
 		return err == nil && c >= int64(counter)
 	})
 }
 
+//nolint:unparam
 func waitBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int, blockIndex uint32, timeout time.Duration) bool {
 	return waitTrue(timeout, func() bool {
 		i, err := callGetBlockIndex(t, chain, nodeIndex)
