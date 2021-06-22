@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
 )
 
@@ -104,7 +105,7 @@ func TestGasCharged(t *testing.T) {
 	evmChain.soloChain.AssertIotas(iotaAgentID, expectedUserBalance)
 
 	// call `store(123)` without enough gas
-	_, _, _, err = storage.store(999, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: 1}})
+	_, _, _, err = storage.store(123, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: 1}})
 	require.Contains(t, err.Error(), "transferred tokens (1) not enough")
 
 	// call `retrieve` view, get 999 - which means store(123) failed and the previous state is kept
@@ -282,7 +283,7 @@ func TestLoop(t *testing.T) {
 		iota:     iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent1},
 	})
 	require.NoError(t, err)
-	require.Equal(t, chargedGasFee, uint64(iotasSpent1))
+	require.Equal(t, chargedGasFee, iotasSpent1)
 	gasUsed := receipt.GasUsed
 
 	iotasSpent2 := uint64(1000)
@@ -291,7 +292,7 @@ func TestLoop(t *testing.T) {
 		iota:     iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent2},
 	})
 	require.NoError(t, err)
-	require.Equal(t, chargedGasFee, uint64(iotasSpent2))
+	require.Equal(t, chargedGasFee, iotasSpent2)
 	require.Greater(t, receipt.GasUsed, gasUsed)
 
 	// ensure iotas sent are kept by the evmchain SC
@@ -307,9 +308,36 @@ func TestNonFaucetUsers(t *testing.T) {
 	gasPerIotas := evmChain.getGasPerIotas()
 	iotas := uint64(10000)
 	// this should be successful because gasPrice is 0
-	_, _, gasFees, err := storage.store(123, ethCallOptions{gasLimit: iotas * uint64(gasPerIotas), iota: iotaCallOptions{transfer: iotas}})
+	_, _, gasFees, err := storage.store(123, ethCallOptions{gasLimit: iotas * gasPerIotas, iota: iotaCallOptions{transfer: iotas}})
 	require.NoError(t, err)
 	require.Greater(t, gasFees, uint64(0))
 
 	require.EqualValues(t, 123, storage.retrieve())
+}
+
+func TestPrePaidFees(t *testing.T) {
+	evmChain := initEVMChain(t)
+	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
+
+	iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
+
+	// test sending off-ledger request without depositing funds first
+	txdata, _, _ := storage.buildEthTxData(nil, "store", uint32(999))
+	offledgerRequest := evmChain.buildSoloRequest(FuncSendTransaction, 100, FieldTransactionData, txdata)
+	evmChain.soloChain.PostRequestOffLedger(offledgerRequest, iotaWallet)
+
+	// check that the tx has no effect
+	require.EqualValues(t, 42, storage.retrieve())
+
+	// deposit funds
+	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, ledgerstate.ColorIOTA)
+	_, err := evmChain.soloChain.PostRequestSync(
+		solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit).WithIotas(initialBalance),
+		iotaWallet,
+	)
+	require.NoError(t, err)
+
+	// send offledger request again and check that is works
+	evmChain.soloChain.PostRequestOffLedger(offledgerRequest, iotaWallet)
+	require.EqualValues(t, 999, storage.retrieve())
 }
