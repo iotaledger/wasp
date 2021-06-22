@@ -26,9 +26,7 @@ func NewCommitteeRecord(addr ledgerstate.Address, nodes ...string) *CommitteeRec
 
 // CommitteeRecordFromMarshalUtil
 func CommitteeRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*CommitteeRecord, error) {
-	ret := &CommitteeRecord{
-		Nodes: make([]string, 0),
-	}
+	ret := &CommitteeRecord{}
 	var err error
 	ret.Address, err = ledgerstate.AddressFromMarshalUtil(mu)
 	if err != nil {
@@ -38,6 +36,7 @@ func CommitteeRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*CommitteeReco
 	if err != nil {
 		return nil, err
 	}
+	ret.Nodes = make([]string, numNodes)
 	for i := uint16(0); i < numNodes; i++ {
 		strSize, err := mu.ReadUint16()
 		if err != nil {
@@ -47,7 +46,7 @@ func CommitteeRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*CommitteeReco
 		if err != nil {
 			return nil, err
 		}
-		ret.Nodes = append(ret.Nodes, string(d))
+		ret.Nodes[i] = string(d)
 	}
 	return ret, nil
 }
@@ -69,5 +68,5 @@ func (rec *CommitteeRecord) Bytes() []byte {
 }
 
 func (rec *CommitteeRecord) String() string {
-	return fmt.Sprintf("Committee: %s. %+v", rec.Address.Base58(), rec.Nodes)
+	return fmt.Sprintf("Committee(Address: %s Nodes:%+v)", rec.Address.Base58(), rec.Nodes)
 }

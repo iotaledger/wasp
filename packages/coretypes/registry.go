@@ -61,5 +61,4 @@ type ChainRecordRegistryProvider interface {
 	UpdateChainRecord(chainID *chainid.ChainID, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error)
 	ActivateChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error)
 	DeactivateChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error)
-	SaveChainRecord(rec *chainrecord.ChainRecord) error
 }

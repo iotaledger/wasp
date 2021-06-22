@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path"
@@ -53,30 +54,35 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	if quorum < minQuorum {
 		quorum = minQuorum
 	}
-	return clu.DeployChainWithDKG("Default chain", committee, uint16(quorum))
+	return clu.DeployChainWithDKG("Default chain", committee, committee, uint16(quorum))
 }
 
 func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
 	apiHosts := clu.Config.APIHosts(committeeNodes)
 	peeringHosts := clu.Config.PeeringHosts(committeeNodes)
-	return apilib.RunDKG(apiHosts, peeringHosts, threshold, timeout...)
+	dkgInitiatorIndex := uint16(rand.Intn(len(apiHosts)))
+	return apilib.RunDKG(apiHosts, peeringHosts, threshold, dkgInitiatorIndex, timeout...)
 }
 
-func (clu *Cluster) DeployChainWithDKG(description string, committeeNodes []int, quorum uint16) (*Chain, error) {
+func (clu *Cluster) DeployChainWithDKG(description string, allPeers, committeeNodes []int, quorum uint16) (*Chain, error) {
 	stateAddr, err := clu.RunDKG(committeeNodes, quorum)
 	if err != nil {
 		return nil, err
 	}
 
-	return clu.DeployChain(description, committeeNodes, quorum, stateAddr)
+	return clu.DeployChain(description, allPeers, committeeNodes, quorum, stateAddr)
 }
 
-func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum uint16, stateAddr ledgerstate.Address) (*Chain, error) {
+func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []int, quorum uint16, stateAddr ledgerstate.Address) (*Chain, error) {
 	ownerSeed := seed.NewSeed()
 
+	if len(allPeers) == 0 {
+		allPeers = clu.Config.AllNodes()
+	}
 	chain := &Chain{
 		Description:    description,
 		OriginatorSeed: ownerSeed,
+		AllPeers:       allPeers,
 		CommitteeNodes: committeeNodes,
 		Quorum:         quorum,
 		Cluster:        clu,
@@ -88,8 +94,10 @@ func (clu *Cluster) DeployChain(description string, committeeNodes []int, quorum
 
 	chainid, err := apilib.DeployChain(apilib.CreateChainParams{
 		Node:                  clu.GoshimmerClient(),
-		CommitteeAPIHosts:     chain.APIHosts(),
-		CommitteePeeringHosts: chain.PeeringHosts(),
+		AllApiHosts:           chain.AllApiHosts(),
+		AllPeeringHosts:       chain.AllPeeringHosts(),
+		CommitteeApiHosts:     chain.CommitteeApiHosts(),
+		CommitteePeeringHosts: chain.CommitteePeeringHosts(),
 		N:                     uint16(len(committeeNodes)),
 		T:                     quorum,
 		OriginatorKeyPair:     chain.OriginatorKeyPair(),

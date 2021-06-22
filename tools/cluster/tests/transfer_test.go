@@ -50,10 +50,11 @@ func TestDepositWithdraw(t *testing.T) {
 	// deposit some iotas to the chain
 	depositIotas := uint64(42)
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, testOwner)
-	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
-		Transfer: coretypes.NewTransferIotas(depositIotas),
-	})
+
+	par := chainclient.NewPostRequestParams().WithIotas(depositIotas)
+	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), *par)
 	check(err, t)
+
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
 	check(err, t)
 	checkLedger(t, chain)

@@ -118,8 +118,8 @@ func (r *Impl) DeactivateChainRecord(chainID *chainid.ChainID) (*chainrecord.Cha
 }
 
 func (r *Impl) SaveChainRecord(rec *chainrecord.ChainRecord) error {
-	dbkey := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, rec.ChainID.Bytes())
-	return r.store.Set(dbkey, rec.Bytes())
+	k := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, rec.ChainID.Bytes())
+	return r.store.Set(k, rec.Bytes())
 }
 
 // endregion ///////////////////////////////////////////////////////////////
@@ -161,11 +161,7 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 	if exists {
 		return fmt.Errorf("attempt to overwrite existing DK key share")
 	}
-	var buf []byte
-	if buf, err = dkShare.Bytes(); err != nil {
-		return err
-	}
-	return r.store.Set(dbKey, buf)
+	return r.store.Set(dbKey, dkShare.Bytes())
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.

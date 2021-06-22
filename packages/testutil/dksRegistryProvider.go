@@ -27,12 +27,7 @@ func NewDkgRegistryProvider(suite tcrypto.Suite) *DkgRegistryProvider {
 
 // SaveDKShare implements dkg.DKShareRegistryProvider.
 func (p *DkgRegistryProvider) SaveDKShare(dkShare *tcrypto.DKShare) error {
-	var err error
-	var dkShareBytes []byte
-	if dkShareBytes, err = dkShare.Bytes(); err != nil {
-		return err
-	}
-	p.DB[dkShare.Address.String()] = dkShareBytes
+	p.DB[dkShare.Address.String()] = dkShare.Bytes()
 	return nil
 }
 

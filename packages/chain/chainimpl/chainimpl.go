@@ -7,7 +7,10 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
+
+	"github.com/iotaledger/wasp/packages/util"
+
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
@@ -62,8 +65,13 @@ type chainObj struct {
 	peers                 *peering.PeerDomainProvider
 }
 
+type committeeStruct struct {
+	valid bool
+	cmt   chain.Committee
+}
+
 func NewChain(
-	chr *chainrecord.ChainRecord,
+	chainID *chainid.ChainID,
 	log *logger.Logger,
 	txstreamClient *txstream.Client,
 	peerNetConfig coretypes.PeerNetworkConfigProvider,
@@ -73,15 +81,15 @@ func NewChain(
 	committeeRegistry coretypes.CommitteeRegistryProvider,
 	blobProvider coretypes.BlobCache,
 ) chain.Chain {
-	log.Debugf("creating chain object for %s", chr.ChainID.String())
+	log.Debugf("creating chain object for %s", chainID.String())
 
-	chainLog := log.Named(chr.ChainID.Base58()[:6] + ".")
+	chainLog := log.Named(chainID.Base58()[:6] + ".")
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog),
 		procset:           processors.MustNew(),
 		chMsg:             make(chan interface{}, 100),
-		chainID:           *chr.ChainID,
+		chainID:           *chainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
 		db:                db,
@@ -102,6 +110,7 @@ func NewChain(
 			handler.(func(outputID ledgerstate.OutputID, blockIndex uint32))(params[0].(ledgerstate.OutputID), params[1].(uint32))
 		}),
 	}
+	ret.committee.Store(&committeeStruct{})
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
 	ret.eventSynced.Attach(events.NewClosure(ret.processSynced))
 
@@ -267,21 +276,11 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 		msg.ChainOutput.GetStateAddress().Base58(), !msg.ChainOutput.GetIsGovernanceUpdated(),
 	)
 	cmt := c.getCommittee()
+
 	if cmt != nil {
-		// committee already exists
-		if msg.ChainOutput.GetIsGovernanceUpdated() &&
-			!cmt.Address().Equals(msg.ChainOutput.GetStateAddress()) {
-			// governance transition. Committee needs to be rotated
-			// close current committee and consensus
-			cmt.Close()
-			c.consensus.Close()
-			c.setCommittee(nil)
-			c.consensus = nil
-			err = c.createNewCommitteeAndConsensus(msg.ChainOutput.GetStateAddress())
-		}
+		err = c.rotateCommitteeIfNeeded(msg.ChainOutput, cmt)
 	} else {
-		// committee does not exist yet. Must be created
-		err = c.createNewCommitteeAndConsensus(msg.ChainOutput.GetStateAddress())
+		err = c.createCommitteeIfNeeded(msg.ChainOutput)
 	}
 	if err != nil {
 		c.log.Errorf("processStateMessage: %v", err)
@@ -290,38 +289,106 @@ func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
 	c.stateMgr.EventStateMsg(msg)
 }
 
-func (c *chainObj) createNewCommitteeAndConsensus(addr ledgerstate.Address) error {
-	c.log.Debugf("creating new committee...")
+func (c *chainObj) rotateCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput, currentCmt chain.Committee) error {
+	if currentCmt.Address().Equals(anchorOutput.GetStateAddress()) {
+		// nothing changed. no rotation
+		return nil
+	}
+	// address changed
+	if !anchorOutput.GetIsGovernanceUpdated() {
+		return xerrors.Errorf("rotateCommitteeIfNeeded: inconsistency. Governance transition expected... New output: %s", anchorOutput.String())
+	}
+	rec, err := c.getOwnCommitteeRecord(anchorOutput.GetStateAddress())
+	if err != nil {
+		return xerrors.Errorf("rotateCommitteeIfNeeded: %w", err)
+	}
+	// rotation needed
+	// close current in any case
+	c.log.Infof("CLOSING COMMITTEE for %s", currentCmt.Address().Base58())
+
+	currentCmt.Close()
+	c.consensus.Close()
+	c.setCommittee(nil)
+	c.consensus = nil
+	if rec != nil {
+		// create new if committee record is available
+		if err = c.createNewCommitteeAndConsensus(rec); err != nil {
+			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus: %v", err)
+		}
+	}
+	return nil
+}
+
+func (c *chainObj) createCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput) error {
+	// check if I am in the committee
+	rec, err := c.getOwnCommitteeRecord(anchorOutput.GetStateAddress())
+	if err != nil {
+		return xerrors.Errorf("rotateCommitteeIfNeeded: %w", err)
+	}
+	if rec != nil {
+		// create if record is present
+		if err = c.createNewCommitteeAndConsensus(rec); err != nil {
+			return xerrors.Errorf("rotateCommitteeIfNeeded: creating committee and consensus: %v", err)
+		}
+	}
+	return nil
+}
+
+func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error) {
+	rec, err := c.committeeRegistry.GetCommitteeRecord(addr)
+	if err != nil {
+		return nil, xerrors.Errorf("createCommitteeIfNeeded: reading committee record: %v", err)
+	}
+	if rec == nil {
+		// committee record wasn't found in th registry, I am not the part of the committee
+		return nil, nil
+	}
+	// just in case check if I am among committee nodes
+	// should not happen
+	if !util.StringInList(c.peerNetworkConfig.OwnNetID(), rec.Nodes) {
+		return nil, xerrors.Errorf("createCommitteeIfNeeded: I am not among nodes of the committee record. Inconsistency")
+	}
+	return rec, nil
+}
+func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *committee_record.CommitteeRecord) error {
+	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
 	cmt, err := committee.New(
-		addr,
+		cmtRec,
 		&c.chainID,
 		c.netProvider,
 		c.peerNetworkConfig,
 		c.dksProvider,
-		c.committeeRegistry,
 		c.log,
 	)
 	if err != nil {
 		c.setCommittee(nil)
-		return xerrors.Errorf("failed to create committee object for state address %s: %w", addr.Base58(), err)
+		return xerrors.Errorf("createNewCommitteeAndConsensus: failed to create committee object for state address %s: %w",
+			cmtRec.Address.Base58(), err)
 	}
 	cmt.Attach(c)
 	c.log.Debugf("creating new consensus object...")
 	c.consensus = consensus.New(c, c.mempool, cmt, c.nodeConn)
 	c.setCommittee(cmt)
 
-	c.log.Infof("NEW COMMITTEE OF VALiDATORS has been initialized for the state address %s", addr.Base58())
+	c.log.Infof("NEW COMMITTEE OF VALIDATORS has been initialized for the state address %s", cmtRec.Address.Base58())
 	return nil
 }
 
 func (c *chainObj) getCommittee() chain.Committee {
-	ret := c.committee.Load()
-	if ret == nil {
+	ret := c.committee.Load().(*committeeStruct)
+	if !ret.valid {
 		return nil
 	}
-	return ret.(chain.Committee)
+	return ret.cmt
 }
 
 func (c *chainObj) setCommittee(cmt chain.Committee) {
-	c.committee.Store(cmt)
+	if cmt == nil {
+		c.committee.Store(&committeeStruct{})
+	} else {
+		c.committee.Store(&committeeStruct{
+			valid: true,
+			cmt:   cmt,
+		})
+	}
 }

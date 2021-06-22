@@ -40,8 +40,8 @@ func TestBasicAccountsN1(t *testing.T) {
 		"state": 3,
 	})
 	check(err, t)
-	defer counter1.Close()
-	chain1, err := clu.DeployChainWithDKG("single_node_chain", chainNodes, 1)
+	defer counter.Close()
+	chain, err := clu.DeployChainWithDKG("single_node_chain", chainNodes, chainNodes, 1)
 	check(err, t)
 	testBasicAccounts(t, chain1, counter1)
 }
@@ -102,9 +102,9 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 
 	transferIotas := uint64(42)
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, scOwner)
-	reqTx, err := chClient.Post1Request(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
-		Transfer: coretypes.NewTransferIotas(transferIotas),
-	})
+
+	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
+	reqTx, err := chClient.Post1Request(hname, coretypes.Hn(inccounter.FuncIncCounter), *par)
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 10*time.Second)
@@ -213,10 +213,10 @@ func TestBasic2Accounts(t *testing.T) {
 	check(err, t)
 
 	transferIotas := uint64(42)
-	myWalletClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, myWallet)
-	reqTx, err := myWalletClient.Post1Request(hname, coretypes.Hn(inccounter.FuncIncCounter), chainclient.PostRequestParams{
-		Transfer: coretypes.NewTransferIotas(transferIotas),
-	})
+	myWalletClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, myWallet)
+
+	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
+	reqTx, err := myWalletClient.Post1Request(hname, coretypes.Hn(inccounter.FuncIncCounter), *par)
 	check(err, t)
 
 	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, reqTx, 30*time.Second)

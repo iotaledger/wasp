@@ -24,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -186,7 +187,6 @@ func (env *MockedEnv) newNode(i uint16) *mockedNode {
 		return state.NewOptimisticStateReader(env.store, env.GlobalSync)
 	})
 	mpool := mempool.New(chainCore.GetStateReader(), coretypes.NewInMemoryBlobCache(), log)
-	mockCommitteeRegistry := testchain.NewMockedCommitteeRegistry(env.Neighbors)
 	cfg, err := peering.NewStaticPeerNetworkConfigProvider(env.Neighbors[i], 4000+int(i), env.Neighbors...)
 	require.NoError(env.T, err)
 	//
@@ -195,13 +195,16 @@ func (env *MockedEnv) newNode(i uint16) *mockedNode {
 	if env.MockedACS != nil {
 		acs = append(acs, env.MockedACS)
 	}
+	cmtRec := &committee_record.CommitteeRecord{
+		Address: env.StateAddress,
+		Nodes:   env.Neighbors,
+	}
 	cmt, err := committee.New(
-		env.StateAddress,
+		cmtRec,
 		&env.ChainID,
 		env.NetworkProviders[i],
 		cfg,
 		env.DKSRegistries[i],
-		mockCommitteeRegistry,
 		log,
 		acs...,
 	)

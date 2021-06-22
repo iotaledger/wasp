@@ -12,14 +12,8 @@ import (
 // TODO optimize, no need for a persistent structure, simple activity tag is enough
 type ChainRecord struct {
 	ChainID *chainid.ChainID
+	Peers   []string
 	Active  bool
-}
-
-func NewChainRecord(chainID *chainid.ChainID, active bool) *ChainRecord {
-	return &ChainRecord{
-		ChainID: chainID,
-		Active:  active,
-	}
 }
 
 func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
@@ -34,7 +28,22 @@ func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	numPeers, err := mu.ReadUint16()
+	if err != nil {
+		return nil, err
+	}
+	ret.Peers = make([]string, numPeers)
+	for i := uint16(0); i < numPeers; i++ {
+		strSize, err := mu.ReadUint16()
+		if err != nil {
+			return nil, err
+		}
+		d, err := mu.ReadBytes(int(strSize))
+		if err != nil {
+			return nil, err
+		}
+		ret.Peers[i] = string(d)
+	}
 	return ret, nil
 }
 
@@ -44,14 +53,20 @@ func FromBytes(data []byte) (*ChainRecord, error) {
 }
 
 func (rec *ChainRecord) Bytes() []byte {
-	return marshalutil.New().
-		WriteBytes(rec.ChainID.Bytes()).
+	mu := marshalutil.New().WriteBytes(rec.ChainID.Bytes()).
 		WriteBool(rec.Active).
-		Bytes()
+		WriteUint16(uint16(len(rec.Peers)))
+	for _, s := range rec.Peers {
+		b := []byte(s)
+		mu.WriteUint16(uint16(len(b))).
+			WriteBytes(b)
+	}
+	return mu.Bytes()
 }
 
 func (rec *ChainRecord) String() string {
 	ret := "ChainID: " + rec.ChainID.String() + "\n"
+	ret += fmt.Sprintf("      Peers:  %+v\n", rec.Peers)
 	ret += fmt.Sprintf("      Active: %v\n", rec.Active)
 	return ret
 }
