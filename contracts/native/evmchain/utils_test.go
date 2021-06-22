@@ -302,7 +302,7 @@ func (e *evmContractInstance) buildEthTxData(opts []ethCallOptions, fnName strin
 func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (tx *types.Transaction, receipt *Receipt, iotaChargedFee uint64, err error) {
 	e.chain.t.Logf("callFn: %s %+v", fnName, args)
 
-	txdata, tx, opt := e.buildEthTxData(opts, fnName, args)
+	txdata, tx, opt := e.buildEthTxData(opts, fnName, args...)
 
 	result, err := e.chain.postRequest([]iotaCallOptions{opt.iota}, FuncSendTransaction, FieldTransactionData, txdata)
 	if err != nil {

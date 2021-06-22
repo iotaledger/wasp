@@ -14,20 +14,18 @@ import (
 	"github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/evm"
 	"golang.org/x/crypto/sha3"
 	"golang.org/x/xerrors"
 )
 
 type EthService struct {
-	evmChain     *EVMChain
-	tangleSigner *ed25519.KeyPair
-	accounts     *AccountManager
+	evmChain *EVMChain
+	accounts *AccountManager
 }
 
-func NewEthService(evmChain *EVMChain, tangleSigner *ed25519.KeyPair, accounts *AccountManager) *EthService {
-	return &EthService{evmChain, tangleSigner, accounts}
+func NewEthService(evmChain *EVMChain, accounts *AccountManager) *EthService {
+	return &EthService{evmChain, accounts}
 }
 
 func (e *EthService) ProtocolVersion() hexutil.Uint {
@@ -134,7 +132,7 @@ func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, err
 	if err := rlp.DecodeBytes(txBytes, tx); err != nil {
 		return common.Hash{}, err
 	}
-	if err := e.evmChain.SendTransaction(e.tangleSigner, tx); err != nil {
+	if err := e.evmChain.SendTransaction(tx); err != nil {
 		return common.Hash{}, err
 	}
 	return tx.Hash(), nil
@@ -244,7 +242,7 @@ func (e *EthService) SendTransaction(args *SendTxArgs) (common.Hash, error) {
 	if err != nil {
 		return common.Hash{}, err
 	}
-	if err := e.evmChain.SendTransaction(e.tangleSigner, tx); err != nil {
+	if err := e.evmChain.SendTransaction(tx); err != nil {
 		return common.Hash{}, err
 	}
 	return tx.Hash(), nil

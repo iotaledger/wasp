@@ -7,7 +7,8 @@ import (
 )
 
 type ChainBackend interface {
-	PostOnLedgerRequest(keyPair *ed25519.KeyPair, scName string, funName string, transfer map[ledgerstate.Color]uint64, args dict.Dict) error
-	PostOffLedgerRequest(keyPair *ed25519.KeyPair, scName string, funName string, transfer map[ledgerstate.Color]uint64, args dict.Dict) error
+	PostOnLedgerRequest(scName string, funName string, transfer map[ledgerstate.Color]uint64, args dict.Dict) error
+	PostOffLedgerRequest(scName string, funName string, transfer map[ledgerstate.Color]uint64, args dict.Dict) error
 	CallView(scName string, funName string, args dict.Dict) (dict.Dict, error)
+	Signer() *ed25519.KeyPair
 }

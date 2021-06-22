@@ -2,10 +2,9 @@ package jsonrpc
 
 import (
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 )
 
-func NewServer(chain *EVMChain, signer *ed25519.KeyPair, accountManager *AccountManager) *rpc.Server {
+func NewServer(chain *EVMChain, accountManager *AccountManager) *rpc.Server {
 	rpcsrv := rpc.NewServer()
 	for _, srv := range []struct {
 		namespace string
@@ -13,7 +12,7 @@ func NewServer(chain *EVMChain, signer *ed25519.KeyPair, accountManager *Account
 	}{
 		{"web3", NewWeb3Service()},
 		{"net", NewNetService()},
-		{"eth", NewEthService(chain, signer, accountManager)},
+		{"eth", NewEthService(chain, accountManager)},
 	} {
 		err := rpcsrv.RegisterName(srv.namespace, srv.service)
 		if err != nil {

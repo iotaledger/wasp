@@ -16,10 +16,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	ethlog "github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,23 +32,24 @@ type env struct {
 }
 
 func newEnv(t *testing.T) *env {
-	ethlog.Root().SetHandler(ethlog.FuncHandler(func(r *ethlog.Record) error {
-		if r.Lvl <= ethlog.LvlWarn {
-			t.Logf("[%s] %s", r.Lvl.AlignedString(), r.Msg)
-		}
-		return nil
-	}))
+	evmtest.InitGoEthLogger(t)
 
-	solo := NewSoloBackend(core.GenesisAlloc{
-		evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
-	})
-	soloEVMChain := NewEVMChain(solo)
-
-	signer, _ := solo.Env.NewKeyPairWithFunds()
+	s := solo.New(t, true, false)
+	chainOwner, _ := s.NewKeyPairWithFunds()
+	chain := s.NewChain(chainOwner, "iscpchain")
+	err := chain.DeployContract(chainOwner, "evmchain", evmchain.Interface.ProgramHash,
+		evmchain.FieldGenesisAlloc, evmchain.EncodeGenesisAlloc(core.GenesisAlloc{
+			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
+		}),
+	)
+	require.NoError(t, err)
+	signer, _ := s.NewKeyPairWithFunds()
+	backend := NewSoloBackend(s, chain, signer)
+	evmChain := NewEVMChain(backend)
 
 	accountManager := NewAccountManager(evmtest.Accounts)
 
-	rpcsrv := NewServer(soloEVMChain, signer, accountManager)
+	rpcsrv := NewServer(evmChain, accountManager)
 	t.Cleanup(rpcsrv.Stop)
 
 	rawClient := rpc.DialInProc(rpcsrv)
@@ -88,7 +90,7 @@ func (e *env) deployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, 
 	constructorArguments, err := contractABI.Pack("", args...)
 	require.NoError(e.t, err)
 
-	data := append(contractBytecode, constructorArguments...)
+	data := concatenate(contractBytecode, constructorArguments)
 
 	value := big.NewInt(0)
 
@@ -111,6 +113,13 @@ func (e *env) deployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, 
 	require.NoError(e.t, err)
 
 	return tx, crypto.CreateAddress(creatorAddress, nonce)
+}
+
+func concatenate(a, b []byte) []byte {
+	r := make([]byte, 0, len(a)+len(b))
+	r = append(r, a...)
+	r = append(r, b...)
+	return r
 }
 
 func (e *env) estimateGas(msg ethereum.CallMsg) uint64 {

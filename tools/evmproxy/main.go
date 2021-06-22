@@ -7,27 +7,40 @@ import (
 
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
 	// TODO: use wasp backend
-	// TODO: make genesis configurable
-	solo := jsonrpc.NewSoloBackend(core.GenesisAlloc{
-		evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
-	})
-	soloEVMChain := jsonrpc.NewEVMChain(solo)
+	env := solo.New(solo.NewFakeTestingT("evmproxy"), true, false)
 
 	// TODO: make signer key configurable
-	signer, _ := solo.Env.NewKeyPairWithFunds()
+	signer, _ := env.NewKeyPairWithFunds()
+
+	// TODO: make chain deployment / genesis configurable
+	genesis := core.GenesisAlloc{
+		evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
+	}
+	chain := env.NewChain(signer, "iscpchain")
+	err := chain.DeployContract(signer, "evmchain", evmchain.Interface.ProgramHash,
+		evmchain.FieldGenesisAlloc, evmchain.EncodeGenesisAlloc(genesis),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	backend := jsonrpc.NewSoloBackend(env, chain, signer)
+	evmChain := jsonrpc.NewEVMChain(backend)
 
 	// TODO: make accounts configurable
 	accountManager := jsonrpc.NewAccountManager(nil)
 
-	rpcsrv := jsonrpc.NewServer(soloEVMChain, signer, accountManager)
+	rpcsrv := jsonrpc.NewServer(evmChain, accountManager)
 	defer rpcsrv.Stop()
 
 	serveHTTP(rpcsrv)

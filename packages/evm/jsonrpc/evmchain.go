@@ -7,9 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -55,27 +53,26 @@ func (e *EVMChain) FeeColor() (ledgerstate.Color, error) {
 	return feeColor, err
 }
 
-func (e *EVMChain) GasLimitFee(tx *types.Transaction) (map[ledgerstate.Color]uint64, error) {
+func (e *EVMChain) GasLimitFee(tx *types.Transaction) (ledgerstate.Color, uint64, error) {
 	gpi, err := e.GasPerIota()
 	if err != nil {
-		return nil, err
+		return ledgerstate.Color{}, 0, err
 	}
 	feeColor, err := e.FeeColor()
 	if err != nil {
-		return nil, err
+		return ledgerstate.Color{}, 0, err
 	}
-	return map[ledgerstate.Color]uint64{feeColor: tx.Gas() / gpi}, nil
+	return feeColor, tx.Gas() / gpi, nil
 }
 
-func (e *EVMChain) SendTransaction(keyPair *ed25519.KeyPair, tx *types.Transaction) error {
-	fee, err := e.GasLimitFee(tx)
+func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
+	feeColor, feeAmount, err := e.GasLimitFee(tx)
 	if err != nil {
 		return err
 	}
+	fee := map[ledgerstate.Color]uint64{feeColor: feeAmount}
 	// deposit fee into sender's on-chain account
-	err = e.backend.PostOnLedgerRequest(keyPair, accounts.Interface.Name, accounts.FuncDeposit, fee, dict.Dict{
-		accounts.ParamAgentID: coretypes.NewAgentID(ledgerstate.NewED25519Address(keyPair.PublicKey), 0).Bytes(),
-	})
+	err = e.backend.PostOnLedgerRequest(accounts.Interface.Name, accounts.FuncDeposit, fee, nil)
 	if err != nil {
 		return err
 	}
@@ -84,7 +81,7 @@ func (e *EVMChain) SendTransaction(keyPair *ed25519.KeyPair, tx *types.Transacti
 		return err
 	}
 	// send the Ethereum transaction to the evmchain contract
-	return e.backend.PostOffLedgerRequest(keyPair, evmchain.Interface.Name, evmchain.FuncSendTransaction, fee, dict.Dict{
+	return e.backend.PostOffLedgerRequest(evmchain.Interface.Name, evmchain.FuncSendTransaction, fee, dict.Dict{
 		evmchain.FieldTransactionData: txdata,
 	})
 }
