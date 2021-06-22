@@ -19,8 +19,8 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
+	"go.dedis.ch/kyber/v3/sign/tbls"
 	"golang.org/x/xerrors"
 )
 
@@ -209,7 +209,7 @@ func (ccn *commonCoinNode) onCoinShare(recvEvent *peering.RecvEvent) {
 		ccn.log.Errorf("Unable to parse a commonCoinMsg, error=%+v", err)
 		return
 	}
-	var sigShare tbdn.SigShare = msg.coinShare
+	var sigShare tbls.SigShare = msg.coinShare
 	if err = ccn.dkShare.VerifySigShare(msg.sid, sigShare); err != nil {
 		ccn.log.Errorf("Invalid signature share in %+v, error=%+v", msg, err)
 		return
@@ -287,7 +287,7 @@ func (cc *commonCoin) getCoin(waitCh chan []byte) {
 
 func (cc *commonCoin) addOurShare() (bool, error) {
 	var err error
-	var signed tbdn.SigShare
+	var signed tbls.SigShare
 	if signed, err = cc.node.dkShare.SignShare(cc.sid); err != nil {
 		return false, xerrors.Errorf("failed to sign our share: %w", err)
 	}

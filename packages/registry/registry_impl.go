@@ -164,11 +164,7 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 	if exists {
 		return fmt.Errorf("attempt to overwrite existing DK key share")
 	}
-	var buf []byte
-	if buf, err = dkShare.Bytes(); err != nil {
-		return err
-	}
-	return r.store.Set(dbKey, buf)
+	return r.store.Set(dbKey, dkShare.Bytes())
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.

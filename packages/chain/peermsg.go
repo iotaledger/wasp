@@ -11,10 +11,9 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
-	"github.com/iotaledger/wasp/packages/vm"
-
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
+	"go.dedis.ch/kyber/v3/sign/tbls"
 )
 
 // Message types for the committee communications.
@@ -31,7 +30,7 @@ type SignedResultMsg struct {
 	SenderIndex  uint16
 	ChainInputID ledgerstate.OutputID
 	EssenceHash  hashing.HashValue
-	SigShare     tbdn.SigShare
+	SigShare     tbls.SigShare
 }
 
 // GetBlockMsg StateManager queries specific block data from another peer (access node)
