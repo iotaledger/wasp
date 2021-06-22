@@ -104,7 +104,7 @@ func (par *PostRequestParams) WithTransferEncoded(colval ...interface{}) *PostRe
 		if !ok {
 			panic("toMap: ledgerstate.Color expected")
 		}
-		ret[key] = encodeIntToUint54(colval[2*i+1])
+		ret[key] = encodeIntToUint64(colval[2*i+1])
 	}
 	par.Transfer = ledgerstate.NewColoredBalances(ret)
 	return par
@@ -114,7 +114,7 @@ func (par *PostRequestParams) WithIotas(i uint64) *PostRequestParams {
 	return par.WithTransferEncoded(ledgerstate.ColorIOTA, i)
 }
 
-func encodeIntToUint54(i interface{}) uint64 {
+func encodeIntToUint64(i interface{}) uint64 {
 	switch i := i.(type) {
 	case int:
 	case byte:

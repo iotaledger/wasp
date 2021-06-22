@@ -25,6 +25,7 @@ var (
 	contractHname = coretypes.Hn(contractName)
 )
 
+// cluster of 10 access nodes with the committee of 4 nodes. tested if all nodes are synced
 func TestAccessNode(t *testing.T) {
 	//core.PrintWellKnownHnames()
 	//t.Logf("contract: name = %s, hname = %s", contractName, contractHname.String())
@@ -73,6 +74,7 @@ func TestAccessNode(t *testing.T) {
 	require.True(t, waitCounter(t, chain, 1, numRequests, 5*time.Second))
 }
 
+// cluster of 10 access nodes and two overlaping committees
 func TestRotation(t *testing.T) {
 	numRequests := 8
 
@@ -92,7 +94,7 @@ func TestRotation(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain.ChainID.Base58())
 
-	description := "testing contract deployment with inccounter"
+	description := "inccounter testing contract"
 	programHash = inccounter.Interface.ProgramHash
 
 	_, err = chain.DeployContract(contractName, programHash.String(), description, nil)
@@ -138,7 +140,7 @@ func TestRotation(t *testing.T) {
 	require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, 5*time.Second))
 
 	require.NoError(t, err)
-	require.True(t, isAllowedStateControllerAddresses(t, chain, 0, addr2))
+	require.True(t, isAllowedStateControllerAddress(t, chain, 0, addr2))
 
 	require.True(t, waitStateController(t, chain, 0, addr1, 5*time.Second))
 	require.True(t, waitStateController(t, chain, 9, addr1, 5*time.Second))
@@ -156,7 +158,121 @@ func TestRotation(t *testing.T) {
 	reqid = coretypes.NewRequestID(tx.ID(), 0)
 	require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, 5*time.Second))
 	require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, 5*time.Second))
+
+	for i := 0; i < numRequests; i++ {
+		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
+		require.NoError(t, err)
+	}
+	require.True(t, waitCounter(t, chain, 0, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 1, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 2, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 3, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 4, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 5, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 6, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 7, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 8, 2*numRequests, 5*time.Second))
+	require.True(t, waitCounter(t, chain, 9, 2*numRequests, 5*time.Second))
 }
+
+func TestRotationMany(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	const numRequests = 2
+	const numCmt = 3
+	const numRotations = 5
+	const waitTimeout = 180 * time.Second
+
+	cmtPredef := [][]int{
+		{0, 1, 2, 3},
+		{2, 3, 4, 5},
+		{3, 4, 5, 6, 7, 8},
+		{9, 4, 5, 6, 7, 8, 3},
+		{1, 2, 3, 4, 5, 6, 7, 8, 9},
+	}
+	quorumPredef := []uint16{3, 3, 5, 5, 7}
+	cmt := cmtPredef[:numCmt]
+	quorum := quorumPredef[:numCmt]
+	addrs := make([]ledgerstate.Address, numCmt)
+
+	var err error
+	clu := clutest.NewCluster(t, 10)
+	for i := range cmt {
+		addrs[i], err = clu.RunDKG(cmt[i], quorum[i])
+		require.NoError(t, err)
+		t.Logf("addr[%d]: %s", i, addrs[i].Base58())
+	}
+
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt[0], quorum[0], addrs[0])
+	require.NoError(t, err)
+	t.Logf("chainID: %s", chain.ChainID.Base58())
+
+	govClient := chain.SCClient(governance.Interface.Hname(), chain.OriginatorKeyPair())
+
+	for i := range addrs {
+		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addrs[i]).WithIotas(1)
+		tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress, *par)
+		require.NoError(t, err)
+		reqid := coretypes.NewRequestID(tx.ID(), 0)
+		require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, waitTimeout))
+		require.EqualValues(t, "", waitRequest(t, chain, 5, reqid, waitTimeout))
+		require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, waitTimeout))
+		require.True(t, isAllowedStateControllerAddress(t, chain, 0, addrs[i]))
+		require.True(t, isAllowedStateControllerAddress(t, chain, 5, addrs[i]))
+		require.True(t, isAllowedStateControllerAddress(t, chain, 9, addrs[i]))
+	}
+
+	description := "inccounter testing contract"
+	programHash = inccounter.Interface.ProgramHash
+
+	_, err = chain.DeployContract(contractName, programHash.String(), description, nil)
+	require.NoError(t, err)
+
+	rec, err := findContract(chain, contractName)
+	require.NoError(t, err)
+	require.EqualValues(t, contractName, rec.Name)
+
+	addrIndex := 0
+	kp := wallet.KeyPair(1)
+	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
+	err = requestFunds(clu, myAddress, "myAddress")
+	require.NoError(t, err)
+
+	myClient := chain.SCClient(contractHname, kp)
+
+	for i := 0; i < numRotations; i++ {
+		require.True(t, waitStateController(t, chain, 0, addrs[addrIndex], waitTimeout))
+		require.True(t, waitStateController(t, chain, 4, addrs[addrIndex], waitTimeout))
+		require.True(t, waitStateController(t, chain, 9, addrs[addrIndex], waitTimeout))
+
+		for i := 0; i < numRequests; i++ {
+			_, err = myClient.PostRequest(inccounter.FuncIncCounter)
+			require.NoError(t, err)
+		}
+		require.True(t, waitCounter(t, chain, 0, numRequests*(i+1), waitTimeout))
+		require.True(t, waitCounter(t, chain, 3, numRequests*(i+1), waitTimeout))
+		require.True(t, waitCounter(t, chain, 8, numRequests*(i+1), waitTimeout))
+		require.True(t, waitCounter(t, chain, 9, numRequests*(i+1), waitTimeout))
+
+		addrIndex = (addrIndex + 1) % numCmt
+
+		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addrs[addrIndex]).WithIotas(1)
+		tx, err := govClient.PostRequest(governance.FuncRotateStateController, *par)
+		require.NoError(t, err)
+		reqid := coretypes.NewRequestID(tx.ID(), 0)
+		require.EqualValues(t, "", waitRequest(t, chain, 0, reqid, waitTimeout))
+		require.EqualValues(t, "", waitRequest(t, chain, 4, reqid, waitTimeout))
+		require.EqualValues(t, "", waitRequest(t, chain, 9, reqid, waitTimeout))
+
+		require.True(t, waitStateController(t, chain, 0, addrs[addrIndex], waitTimeout))
+		require.True(t, waitStateController(t, chain, 4, addrs[addrIndex], waitTimeout))
+		require.True(t, waitStateController(t, chain, 9, addrs[addrIndex], waitTimeout))
+	}
+}
+
+const pollPeriod = 500 * time.Millisecond
 
 func waitTrue(timeout time.Duration, fun func() bool) bool {
 	deadline := time.Now().Add(timeout)
@@ -164,7 +280,7 @@ func waitTrue(timeout time.Duration, fun func() bool) bool {
 		if fun() {
 			return true
 		}
-		time.Sleep(30 * time.Millisecond)
+		time.Sleep(pollPeriod)
 		if time.Now().After(deadline) {
 			return false
 		}
@@ -173,10 +289,13 @@ func waitTrue(timeout time.Duration, fun func() bool) bool {
 
 func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid coretypes.RequestID, timeout time.Duration) string {
 	var ret string
-	var err error
 	succ := waitTrue(timeout, func() bool {
-		ret, err = callGetRequestRecord(t, chain, nodeIndex, reqid)
-		return err == nil
+		rec, err := callGetRequestRecord(t, chain, nodeIndex, reqid)
+		if err == nil && rec != nil {
+			ret = string(rec.LogData)
+			return true
+		}
+		return false
 	})
 	if !succ {
 		return "(timeout)"
@@ -226,7 +345,7 @@ func callGetBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int) (uint3
 	return uint32(v), nil
 }
 
-func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid coretypes.RequestID) (string, error) {
+func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid coretypes.RequestID) (*blocklog.RequestLogRecord, error) {
 	args := dict.New()
 	args.Set(blocklog.ParamRequestID, reqid.Bytes())
 
@@ -237,15 +356,15 @@ func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, req
 		args,
 	)
 	if err != nil {
-		return "", xerrors.New("not found")
+		return nil, xerrors.New("not found")
 	}
 	if len(res) == 0 {
-		return "", nil
+		return nil, nil
 	}
 	recBin := res.MustGet(blocklog.ParamRequestRecord)
 	rec, err := blocklog.RequestLogRecordFromBytes(recBin)
 	require.NoError(t, err)
-	return string(rec.LogData), nil
+	return rec, nil
 }
 
 func waitStateController(t *testing.T, chain *cluster.Chain, nodeIndex int, addr ledgerstate.Address, timeout time.Duration) bool {
@@ -270,7 +389,7 @@ func callGetStateController(t *testing.T, chain *cluster.Chain, nodeIndex int) (
 	return addr, nil
 }
 
-func isAllowedStateControllerAddresses(t *testing.T, chain *cluster.Chain, nodeIndex int, addr ledgerstate.Address) bool {
+func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeIndex int, addr ledgerstate.Address) bool {
 	ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
 		governance.Interface.Hname(),
