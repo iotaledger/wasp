@@ -94,11 +94,14 @@ func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCall
 	return opt
 }
 
+func (e *evmChainInstance) buildSoloRequest(funName string, transfer uint64, params ...interface{}) *solo.CallParams {
+	return solo.NewCallParams(Interface.Name, funName, params...).WithIotas(transfer)
+}
+
 func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, params ...interface{}) (dict.Dict, error) {
 	opt := e.parseIotaCallOptions(opts)
 	return e.soloChain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, funName, params...).
-			WithIotas(opt.transfer),
+		e.buildSoloRequest(funName, opt.transfer, params...),
 		opt.wallet,
 	)
 }
@@ -277,24 +280,29 @@ func (e *evmContractInstance) parseEthCallOptions(opts []ethCallOptions, callDat
 	return opt
 }
 
-func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (tx *types.Transaction, receipt *Receipt, iotaChargedFee uint64, err error) {
-	e.chain.t.Logf("callFn: %s %+v", fnName, args)
-
+func (e *evmContractInstance) buildEthTxData(opts []ethCallOptions, fnName string, args ...interface{}) ([]byte, *types.Transaction, ethCallOptions) {
 	callArguments, err := e.abi.Pack(fnName, args...)
 	require.NoError(e.chain.t, err)
-
 	opt := e.parseEthCallOptions(opts, callArguments)
+
 	senderAddress := crypto.PubkeyToAddress(opt.sender.PublicKey)
 
 	nonce := e.chain.getNonce(senderAddress)
 
 	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, opt.gasLimit, evm.GasPrice, callArguments)
 
-	tx, err = types.SignTx(unsignedTx, evm.Signer(), opt.sender)
+	tx, err := types.SignTx(unsignedTx, evm.Signer(), opt.sender)
 	require.NoError(e.chain.t, err)
 
 	txdata, err := tx.MarshalBinary()
 	require.NoError(e.chain.t, err)
+	return txdata, tx, opt
+}
+
+func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (tx *types.Transaction, receipt *Receipt, iotaChargedFee uint64, err error) {
+	e.chain.t.Logf("callFn: %s %+v", fnName, args)
+
+	txdata, tx, opt := e.buildEthTxData(opts, fnName, args)
 
 	result, err := e.chain.postRequest([]iotaCallOptions{opt.iota}, FuncSendTransaction, FieldTransactionData, txdata)
 	if err != nil {

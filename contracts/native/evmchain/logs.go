@@ -116,7 +116,7 @@ func DecodeLogs(b []byte) ([]*types.Log, error) {
 
 func EncodeFilterQuery(q *ethereum.FilterQuery) []byte {
 	buf := new(bytes.Buffer)
-	// TODO: using gob temporarilly until we decide on a proper binary codec format
+	// TODO: using gob temporarily until we decide on a proper binary codec format
 	err := gob.NewEncoder(buf).Encode(q)
 	if err != nil {
 		panic(err)
