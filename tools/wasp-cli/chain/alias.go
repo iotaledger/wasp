@@ -28,7 +28,7 @@ func initAliasFlags(chainCmd *cobra.Command) {
 	chainCmd.PersistentFlags().StringVarP(&chainAlias, "chain", "a", "", "chain alias")
 }
 
-func AddChainAlias(chainAlias string, id string) {
+func AddChainAlias(chainAlias, id string) {
 	config.Set("chains."+chainAlias, id)
 	SetCurrentChain(chainAlias)
 }

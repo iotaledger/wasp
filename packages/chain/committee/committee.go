@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
+
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 
 	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
@@ -42,27 +44,22 @@ type committee struct {
 const waitReady = false
 
 func New(
-	stateAddr ledgerstate.Address,
+	cmtRec *committee_record.CommitteeRecord,
 	chainID *chainid.ChainID,
 	netProvider peering.NetworkProvider,
 	peerConfig coretypes.PeerNetworkConfigProvider,
 	dksProvider coretypes.DKShareRegistryProvider,
-	committeeRegistry coretypes.CommitteeRegistryProvider,
 	log *logger.Logger,
 	acsRunner ...chain.AsynchronousCommonSubsetRunner, // Only for mocking.
 ) (chain.Committee, error) {
-	// load committee record from the registry
-	cmtRec, err := committeeRegistry.GetCommitteeRecord(stateAddr)
-	if err != nil || cmtRec == nil {
-		return nil, xerrors.Errorf("NewCommittee: failed to lead committee record for address %s: %w", stateAddr.Base58(), err)
-	}
+
 	// load DKShare from the registry
 	dkshare, err := dksProvider.LoadDKShare(cmtRec.Address)
 	if err != nil {
-		return nil, xerrors.Errorf("NewCommittee: failed loading DKShare for address %s: %w", stateAddr.Base58(), err)
+		return nil, xerrors.Errorf("NewCommittee: failed loading DKShare for address %s: %w", cmtRec.Address.Base58(), err)
 	}
 	if dkshare.Index == nil {
-		return nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: %w", stateAddr.Base58(), err)
+		return nil, xerrors.Errorf("NewCommittee: wrong DKShare record for address %s: %w", cmtRec.Address.Base58(), err)
 	}
 	if err := checkValidatorNodeIDs(peerConfig, dkshare.N, *dkshare.Index, cmtRec.Nodes); err != nil {
 		return nil, xerrors.Errorf("NewCommittee: %w", err)
@@ -74,7 +71,7 @@ func New(
 	log.Debugf("NewCommittee: peer group: %+v", cmtRec.Nodes)
 	// peerGroupID is calculated by XORing chainID and stateAddr.
 	// It allows to use same statAddr for different chains
-	peerGroupID := stateAddr.Array()
+	peerGroupID := cmtRec.Address.Array()
 	var chainArr [33]byte
 	if chainID != nil {
 		chainArr = chainID.Array()
@@ -84,7 +81,7 @@ func New(
 	}
 	ret := &committee{
 		isReady:        atomic.NewBool(false),
-		address:        stateAddr,
+		address:        cmtRec.Address,
 		validatorNodes: peers,
 		peeringID:      peerGroupID,
 		peerConfig:     peerConfig,
@@ -274,18 +271,11 @@ func checkValidatorNodeIDs(cfg coretypes.PeerNetworkConfigProvider, n, ownIndex 
 		return xerrors.New("checkValidatorNodeIDs: own netID is expected at own validator index")
 	}
 	// check if all validator node IDs are among known validatorNodes
-	allPeers := cfg.Neighbors()
-	notNeigbors := make([]string, 0)
-	for _, nid := range validatorNetIDs {
-		if nid == cfg.OwnNetID() {
-			continue
-		}
-		if !util.StringInList(nid, allPeers) {
-			notNeigbors = append(notNeigbors, nid)
-		}
-	}
-	if len(notNeigbors) > 0 {
-		return xerrors.Errorf("not all validator nodes are among known neighbors: %+v", notNeigbors)
+	allPeers := []string{cfg.OwnNetID()}
+	allPeers = append(allPeers, cfg.Neighbors()...)
+	if !util.IsSubset(validatorNetIDs, allPeers) {
+		return xerrors.Errorf("not all validator nodes are among known neighbors: all peers: %+v, committee: %+v",
+			allPeers, validatorNetIDs)
 	}
 	return nil
 }

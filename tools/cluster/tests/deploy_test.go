@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
-
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -102,12 +100,11 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	dscrNew := "spawned contract it is"
 	hnameNew := coretypes.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
-	tx, err := chain.OriginatorClient().Post1Request(hname, coretypes.Hn(inccounter.FuncSpawn), chainclient.PostRequestParams{
-		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
-			inccounter.VarName:        nameNew,
-			inccounter.VarDescription: dscrNew,
-		})),
-	})
+	par := chainclient.NewPostRequestParams(
+		inccounter.VarName, nameNew,
+		inccounter.VarDescription, dscrNew,
+	).WithIotas(1)
+	tx, err := chain.OriginatorClient().Post1Request(hname, coretypes.Hn(inccounter.FuncSpawn), *par)
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)

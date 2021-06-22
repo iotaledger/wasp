@@ -27,6 +27,7 @@ type NewRequestTransactionParams struct {
 var oneIota = map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 1}
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
+// To avoid empty transfer it defaults to 1 iota
 func NewRequestTransaction(par NewRequestTransactionParams) (*ledgerstate.Transaction, error) {
 	txb := utxoutil.NewBuilder(par.UnspentOutputs...)
 	for _, req := range par.Requests {

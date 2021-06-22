@@ -22,3 +22,12 @@ func AllDifferentStrings(lst []string) bool {
 	}
 	return true
 }
+
+func IsSubset(sub, super []string) bool {
+	for _, s := range sub {
+		if !StringInList(s, super) {
+			return false
+		}
+	}
+	return true
+}

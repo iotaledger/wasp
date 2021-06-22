@@ -11,19 +11,29 @@ import (
 func TestChainRecord(t *testing.T) {
 	chainID := chainid.RandomChainID()
 
-	rec := NewChainRecord(chainID, false)
-	require.False(t, rec.Active)
+	rec := ChainRecord{
+		ChainID: chainID,
+		Peers:   []string{"a", "b", "c"},
+		Active:  false,
+	}
 	recBack, err := ChainRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)
 	require.True(t, rec.ChainID.Equals(recBack.ChainID))
 	require.EqualValues(t, rec.Active, recBack.Active)
+	require.EqualValues(t, rec.Bytes(), recBack.Bytes())
 
-	t.Logf("\n%s", rec)
+	t.Logf("\n%s", rec.String())
 
-	rec = NewChainRecord(chainID, true)
+	rec = ChainRecord{
+		ChainID: chainID,
+		Peers:   []string{"k", "l"},
+		Active:  true,
+	}
 	require.True(t, rec.Active)
 	recBack, err = ChainRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)
 	require.True(t, rec.ChainID.Equals(recBack.ChainID))
 	require.EqualValues(t, rec.Active, recBack.Active)
+	require.EqualValues(t, rec.Bytes(), recBack.Bytes())
+	t.Logf("\n%s", rec.String())
 }

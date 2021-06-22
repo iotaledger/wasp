@@ -42,21 +42,22 @@ func handlePutChainRecord(c echo.Context) error {
 		return httperrors.BadRequest("Invalid request body")
 	}
 
-	registry := registry.DefaultRegistry()
+	reg := registry.DefaultRegistry()
 	bd := req.Record()
 
-	bd2, err := registry.GetChainRecordByChainID(bd.ChainID)
+	bd2, err := reg.GetChainRecordByChainID(bd.ChainID)
+
 	if err != nil {
 		return err
 	}
 	if bd2 != nil {
 		return httperrors.Conflict(fmt.Sprintf("Record already exists: %s", bd.ChainID.String()))
 	}
-	if err = registry.SaveChainRecord(bd); err != nil {
+	if err = reg.SaveChainRecord(bd); err != nil {
 		return err
 	}
 
-	log.Infof("Chain record saved. ChainID: %s", bd.ChainID.String())
+	log.Infof("Chain record saved: %s", bd.String())
 
 	return c.NoContent(http.StatusCreated)
 }
