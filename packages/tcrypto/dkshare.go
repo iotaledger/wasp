@@ -86,6 +86,7 @@ func (s *DKShare) Bytes() []byte {
 }
 
 // Write returns byte representation of this struct.
+//nolint:gocritic
 func (s *DKShare) Write(w io.Writer) error {
 	var err error
 	if _, err = w.Write(s.Address.Bytes()); err != nil {
@@ -119,12 +120,10 @@ func (s *DKShare) Write(w io.Writer) error {
 			return err
 		}
 	}
-	if err = util.WriteMarshaled(w, s.PrivateShare); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteMarshaled(w, s.PrivateShare)
 }
 
+//nolint:gocritic
 func (s *DKShare) Read(r io.Reader) error {
 	var err error
 	var addrBytes [ledgerstate.AddressLength]byte
@@ -177,10 +176,7 @@ func (s *DKShare) Read(r io.Reader) error {
 	//
 	// Private share.
 	s.PrivateShare = s.suite.G2().Scalar()
-	if err = util.ReadMarshaled(r, s.PrivateShare); err != nil {
-		return err
-	}
-	return nil
+	return util.ReadMarshaled(r, s.PrivateShare)
 }
 
 // SignShare signs the data with the own key share.
@@ -214,7 +210,7 @@ func (s *DKShare) VerifyOwnSigShare(data []byte, sigshare tbls.SigShare) error {
 
 // VerifyMasterSignature checks signature against master public key
 // NOTE: Not used.
-func (s *DKShare) VerifyMasterSignature(data []byte, signature []byte) error {
+func (s *DKShare) VerifyMasterSignature(data, signature []byte) error {
 	return bdn.Verify(s.suite, s.SharedPublic, data, signature)
 }
 

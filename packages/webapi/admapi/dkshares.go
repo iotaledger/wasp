@@ -67,7 +67,7 @@ func handleDKSharesPost(c echo.Context) error {
 		return httperrors.BadRequest("Inconsistent PeerNetIDs and PeerPubKeys.")
 	}
 
-	var peerPubKeys []kyber.Point = nil
+	var peerPubKeys []kyber.Point
 	if req.PeerPubKeys != nil {
 		peerPubKeys = make([]kyber.Point, len(req.PeerPubKeys))
 		for i := range req.PeerPubKeys {

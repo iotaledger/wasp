@@ -73,7 +73,7 @@ type committeeStruct struct {
 func NewChain(
 	chainID *chainid.ChainID,
 	log *logger.Logger,
-	txstream *txstream.Client,
+	txstreamClient *txstream.Client,
 	peerNetConfig coretypes.PeerNetworkConfigProvider,
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
@@ -91,7 +91,7 @@ func NewChain(
 		chMsg:             make(chan interface{}, 100),
 		chainID:           *chainID,
 		log:               chainLog,
-		nodeConn:          nodeconnimpl.New(txstream, chainLog),
+		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
 		db:                db,
 		chainStateSync:    chainStateSync,
 		stateReader:       state.NewOptimisticStateReader(db, chainStateSync),
@@ -164,10 +164,8 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 	case chain.TimerTick:
 		if msgt%2 == 0 {
 			c.stateMgr.EventTimerMsg(msgt / 2)
-		} else {
-			if c.consensus != nil {
-				c.consensus.EventTimerMsg(msgt / 2)
-			}
+		} else if c.consensus != nil {
+			c.consensus.EventTimerMsg(msgt / 2)
 		}
 		if msgt%40 == 0 {
 			stats := c.mempool.Stats()
@@ -352,6 +350,7 @@ func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*committee_r
 	}
 	return rec, nil
 }
+
 func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *committee_record.CommitteeRecord) error {
 	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
 	cmt, err := committee.New(

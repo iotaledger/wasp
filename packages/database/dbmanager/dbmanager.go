@@ -42,9 +42,8 @@ func NewDBManager(log *logger.Logger, inMemory bool) *DBManager {
 func getChainBase58(chainID *chainid.ChainID) string {
 	if chainID != nil {
 		return chainID.Base58()
-	} else {
-		return "CHAIN_REGISTRY"
 	}
+	return "CHAIN_REGISTRY"
 }
 
 func (m *DBManager) createDB(chainID *chainid.ChainID) database.DB {

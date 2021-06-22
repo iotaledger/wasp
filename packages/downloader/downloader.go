@@ -23,7 +23,7 @@ type Downloader struct {
 
 var defaultDownloader *Downloader
 
-// Init initialises default downloader
+// Init initializes default downloader
 func Init(log *logger.Logger, ipfsGateway string) {
 	defaultDownloader = New(log, ipfsGateway)
 }
@@ -47,7 +47,7 @@ func GetDefaultDownloader() *Downloader {
 // http://<url of the contents> (e.g. http://some.place.lt/some/contents.txt)
 // https://<url of the contents> (e.g. https://some.place.lt/some/contents.txt)
 // ipfs://<cid of the contents> (e.g. ipfs://QmeyMc1i9KLqqyqYCksDZiwntxwuiz5Z1hbLBrHvAXyjMZ)
-func (d *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCache, completedChanOpt ...chan (bool)) error {
+func (d *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCache, completedChanOpt ...chan bool) error {
 	if d.containsOrMarkStarted(uri) {
 		d.log.Warnf("File %s is already being downloaded. Skipping it.", uri)
 		trueVar := true
@@ -106,20 +106,20 @@ func (d *Downloader) markCompleted(uri string) {
 	delete(d.downloads, uri)
 }
 
-func (d *Downloader) notifyCompletedIfNeeded(success *bool, completedChanOpt ...chan (bool)) {
+func (d *Downloader) notifyCompletedIfNeeded(success *bool, completedChanOpt ...chan bool) {
 	if len(completedChanOpt) > 0 {
 		completedChanOpt[0] <- *success
 	}
 }
 
 func (d *Downloader) download(uri string) ([]byte, error) {
-	var split []string = strings.SplitN(uri, "://", 2)
+	split := strings.SplitN(uri, "://", 2)
 	if len(split) != 2 {
 		return nil, fmt.Errorf("file uri %s is invalid", uri)
 	}
 
-	var protocol string = split[0]
-	var path string = split[1]
+	protocol := split[0]
+	path := split[1]
 	switch protocol {
 	case "ipfs":
 		return d.donwloadFromHTTP(d.ipfsGateway + "/ipfs/" + path)
@@ -133,7 +133,7 @@ func (d *Downloader) download(uri string) ([]byte, error) {
 }
 
 func (*Downloader) donwloadFromHTTP(url string) ([]byte, error) {
-	response, err := http.Get(url)
+	response, err := http.Get(url) //nolint:gosec,noctx // TODO http request to an arbitrary URL could be a potential security hole
 	if err != nil {
 		return nil, err
 	}

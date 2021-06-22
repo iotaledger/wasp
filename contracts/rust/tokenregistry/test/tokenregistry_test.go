@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setupTest(t *testing.T) *solo.Chain {
+func setupTest(t *testing.T) *solo.Chain { //nolint:deadcode,unused
 	return common.StartChainAndDeployWasmContractByName(t, ScName)
 }
 

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // package sb_utils implements Sandbox utility functions
-package sandbox_utils
+package sandbox_utils //nolint:revive // TODO refactor to remove `_` from package name
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes"

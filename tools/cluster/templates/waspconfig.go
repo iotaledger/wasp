@@ -1,7 +1,7 @@
 package templates
 
 type WaspConfigParams struct {
-	ApiPort       int
+	APIPort       int
 	DashboardPort int
 	PeeringPort   int
 	NanomsgPort   int
@@ -34,7 +34,7 @@ const WaspConfig = `
     "enablePlugins": []
   },
   "webapi": {
-    "bindAddress": "0.0.0.0:{{.ApiPort}}"
+    "bindAddress": "0.0.0.0:{{.APIPort}}"
   },
   "dashboard": {
     "bindAddress": "0.0.0.0:{{.DashboardPort}}"

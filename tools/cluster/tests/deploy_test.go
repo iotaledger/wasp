@@ -18,55 +18,55 @@ import (
 func TestDeployChain(t *testing.T) {
 	setup(t, "test_cluster")
 
-	counter, err := clu.StartMessageCounter(map[string]int{
+	counter1, err := clu.StartMessageCounter(map[string]int{
 		"dismissed_chain": 0,
 		"state":           2,
 		"request_out":     1,
 	})
 	check(err, t)
-	defer counter.Close()
+	defer counter1.Close()
 
-	chain, err := clu.DeployDefaultChain()
+	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	if !counter.WaitUntilExpectationsMet() {
+	if !counter1.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
-	chainID, chainOwnerID := getChainInfo(t, chain)
-	require.Equal(t, chainID, chain.ChainID)
-	require.Equal(t, chainOwnerID, *coretypes.NewAgentID(chain.OriginatorAddress(), 0))
+	chainID, chainOwnerID := getChainInfo(t, chain1)
+	require.Equal(t, chainID, chain1.ChainID)
+	require.Equal(t, chainOwnerID, *coretypes.NewAgentID(chain1.OriginatorAddress(), 0))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
+	chain1.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 1, blockIndex)
-		checkRoots(t, chain)
+		checkRoots(t, chain1)
 		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
 		require.EqualValues(t, 4, contractRegistry.MustLen())
 		return true
 	})
-	checkRootsOutside(t, chain)
+	checkRootsOutside(t, chain1)
 }
 
 func TestDeployContractOnly(t *testing.T) {
 	setup(t, "test_cluster")
 
-	counter, err := clu.StartMessageCounter(map[string]int{
+	counter1, err := clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
 		"request_out":         1,
 	})
 	check(err, t)
-	defer counter.Close()
+	defer counter1.Close()
 
-	chain, err := clu.DeployDefaultChain()
+	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	deployIncCounterSC(t, chain, counter)
+	deployIncCounterSC(t, chain1, counter1)
 
 	// test calling root.FuncFindContractByName view function using client
-	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, root.Interface.Hname(), root.FuncFindContract,
+	ret, err := chain1.Cluster.WaspClient(0).CallView(
+		chain1.ChainID, root.Interface.Hname(), root.FuncFindContract,
 		dict.Dict{
 			root.ParamHname: coretypes.Hn("inncounter1").Bytes(),
 		})
@@ -81,18 +81,18 @@ func TestDeployContractOnly(t *testing.T) {
 func TestDeployContractAndSpawn(t *testing.T) {
 	setup(t, "test_cluster")
 
-	counter, err := clu.StartMessageCounter(map[string]int{
+	counter1, err := clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
 		"request_out":         1,
 	})
 	check(err, t)
-	defer counter.Close()
+	defer counter1.Close()
 
-	chain, err := clu.DeployDefaultChain()
+	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	deployIncCounterSC(t, chain, counter)
+	deployIncCounterSC(t, chain1, counter1)
 
 	hname := coretypes.Hn("inncounter1")
 
@@ -107,12 +107,12 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	tx, err := chain.OriginatorClient().Post1Request(hname, coretypes.Hn(inccounter.FuncSpawn), *par)
 	check(err, t)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
+	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, tx, 30*time.Second)
 	check(err, t)
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
+	chain1.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 3, blockIndex)
-		checkRoots(t, chain)
+		checkRoots(t, chain1)
 
 		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
 		require.EqualValues(t, 6, contractRegistry.MustLen())
@@ -137,12 +137,12 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		require.EqualValues(t, nameNew, cr.Name)
 		return true
 	})
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
+	chain1.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
 		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 42, counterValue)
 		return true
 	})
-	chain.WithSCState(coretypes.Hn(nameNew), func(host string, blockIndex uint32, state dict.Dict) bool {
+	chain1.WithSCState(coretypes.Hn(nameNew), func(host string, blockIndex uint32, state dict.Dict) bool {
 		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 44, counterValue)
 		return true

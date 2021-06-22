@@ -9,14 +9,14 @@ type ScMaps struct {
 	ScSandboxObject
 }
 
-func NewScMaps(vm *wasmProcessor) *ScMaps {
+func NewScMaps(vm *WasmProcessor) *ScMaps {
 	a := &ScMaps{}
 	a.vm = vm
 	return a
 }
 
-func (a *ScMaps) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
+func (a *ScMaps) GetObjectID(keyID, typeID int32) int32 {
+	return GetArrayObjectID(a, keyID, typeID, func() WaspObject {
 		return NewScDict(a.vm)
 	})
 }

@@ -9,8 +9,8 @@ type subrealmReadOnly struct {
 	prefix kv.Key
 }
 
-func NewReadOnly(kv kv.KVStoreReader, prefix kv.Key) kv.KVStoreReader {
-	return &subrealmReadOnly{kv, prefix}
+func NewReadOnly(kvReader kv.KVStoreReader, prefix kv.Key) kv.KVStoreReader {
+	return &subrealmReadOnly{kvReader, prefix}
 }
 
 // Get returns the value, or nil if not found

@@ -70,7 +70,7 @@ func (pndT *PeeringNetDynamic) WithRepeatingChannel(id *string, repeatProbabilit
 	return pndT
 }
 
-func (pndT *PeeringNetDynamic) WithDelayingChannel(id *string, delayFrom time.Duration, delayTill time.Duration) *PeeringNetDynamic {
+func (pndT *PeeringNetDynamic) WithDelayingChannel(id *string, delayFrom, delayTill time.Duration) *PeeringNetDynamic {
 	pndT.addHandlerEntry(peeringNetDynamicHandlerEntry{
 		id,
 		&peeringNetDynamicHandlerDelayingChannel{

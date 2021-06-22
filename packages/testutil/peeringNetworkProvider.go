@@ -7,10 +7,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/peering/domain"
-
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/peering/domain"
 	"github.com/iotaledger/wasp/packages/peering/group"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
@@ -69,11 +68,11 @@ func NewPeeringNetwork(
 
 // NetworkProviders returns network providers for each of the nodes in the network.
 func (p *PeeringNetwork) NetworkProviders() []peering.NetworkProvider {
-	copy := make([]peering.NetworkProvider, len(p.providers))
+	cp := make([]peering.NetworkProvider, len(p.providers))
 	for i := range p.providers {
-		copy[i] = p.providers[i]
+		cp[i] = p.providers[i]
 	}
-	return copy
+	return cp
 }
 
 func (p *PeeringNetwork) nodeByNetID(nodeNetID string) *peeringNode {
@@ -129,7 +128,7 @@ func newPeeringNode(netID string, pubKey kyber.Point, secKey kyber.Scalar, netwo
 	network.behavior.AddLink(sendCh, recvCh, netID)
 	go func() { // Receive loop.
 		for {
-			var pm *peeringMsg = <-recvCh
+			pm := <-recvCh
 			node.log.Debugf(
 				"received msgType=%v from=%v, peeringID=%v",
 				pm.msg.MsgType, pm.from.netID, pm.msg.PeeringID,
@@ -202,8 +201,8 @@ func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupPro
 }
 
 // Domain creates peering.PeerDomainProvider.
-func (n *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
-	return domain.NewPeerDomainByNetIDs(n, peerNetIDs, n.network.log)
+func (p *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
+	return domain.NewPeerDomainByNetIDs(p, peerNetIDs, p.network.log)
 }
 
 // Attach implements peering.NetworkProvider.

@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+//nolint:dupl //TODO lots of duplicated code in the tests, should be simplified
 package dkg_test
 
 // TODO: Tests with corrupted messages.
@@ -32,7 +33,7 @@ func TestBasic(t *testing.T) {
 	timeout := 100 * time.Second
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
-	var peerNetIDs []string = make([]string, peerCount)
+	peerNetIDs := make([]string, peerCount)
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
 	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
 	suite := pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
@@ -83,7 +84,7 @@ func TestNoPubs(t *testing.T) {
 	timeout := 100 * time.Second
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
-	var peerNetIDs []string = make([]string, peerCount)
+	peerNetIDs := make([]string, peerCount)
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
 	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
 	suite := pairing.NewSuiteBn256() // That's from the Pairing Adapter.
@@ -137,7 +138,7 @@ func TestUnreliableNet(t *testing.T) {
 	timeout := 100 * time.Second
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
-	var peerNetIDs []string = make([]string, peerCount)
+	peerNetIDs := make([]string, peerCount)
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
 	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
 	suite := pairing.NewSuiteBn256() // That's from the Pairing Adapter.
@@ -191,9 +192,9 @@ func TestLowN(t *testing.T) {
 	// Create a fake network and keys for the tests.
 	for n := uint16(1); n < 4; n++ {
 		timeout := 100 * time.Second
-		var threshold uint16 = n
-		var peerCount uint16 = n
-		var peerNetIDs []string = make([]string, peerCount)
+		threshold := n
+		peerCount := n
+		peerNetIDs := make([]string, peerCount)
 		var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
 		var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
 		suite := pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.

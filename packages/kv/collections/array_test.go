@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//nolint:dupl // TODO duplicated code, could be refactored
 func TestBasicArray16(t *testing.T) {
 	vars := dict.New()
 	arr := NewArray16(vars, "testArray")
@@ -53,6 +54,7 @@ func TestConcurrentAccessArray16(t *testing.T) {
 	assert.EqualValues(t, a2.MustLen(), 1)
 }
 
+//nolint:dupl // TODO duplicated code, could be refactored
 func TestBasicArray32(t *testing.T) {
 	vars := dict.New()
 	arr := NewArray32(vars, "testArray")

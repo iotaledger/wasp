@@ -28,14 +28,14 @@ func TestBasic(t *testing.T) {
 	t.Run("N=10/T=7", func(tt *testing.T) { testBasic(tt, 10, 7) })
 }
 
-func testBasic(t *testing.T, peerCount uint16, threshold uint16) {
+func testBasic(t *testing.T, peerCount, threshold uint16) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	suite := pairing.NewSuiteBn256()
 	peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerPubs, peerSecs := setupKeys(peerCount, suite)
 	networkProviders := setupNet(
-		t, peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(),
+		peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(),
 		testlogger.WithLevel(log.Named("Network"), logger.LevelDebug, false),
 	)
 	t.Logf("Network created.")
@@ -84,7 +84,7 @@ func TestRandomized(t *testing.T) {
 	peerNetIDs, peerPubs, peerSecs := setupKeys(peerCount, suite)
 	netLogger := testlogger.WithLevel(log.Named("Network"), logger.LevelInfo, false)
 	netBehavior := testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 100*time.Millisecond, netLogger)
-	networkProviders := setupNet(t, peerNetIDs, peerPubs, peerSecs, netBehavior, netLogger)
+	networkProviders := setupNet(peerNetIDs, peerPubs, peerSecs, netBehavior, netLogger)
 	t.Logf("Network created.")
 
 	acsPeers := make([]*commonsubset.CommonSubset, peerCount)
@@ -111,7 +111,7 @@ func TestRandomized(t *testing.T) {
 
 	//
 	// Async wait here is for debugging only.
-	var output []map[uint16][]byte = make([]map[uint16][]byte, peerCount)
+	output := make([]map[uint16][]byte, peerCount)
 	outputWG := &sync.WaitGroup{}
 	outputWG.Add(int(peerCount))
 	for a := range acsPeers {
@@ -153,14 +153,14 @@ func TestCoordinator(t *testing.T) {
 	t.Run("N=10/T=7", func(tt *testing.T) { testCoordinator(tt, 10, 7) })
 }
 
-func testCoordinator(t *testing.T, peerCount uint16, threshold uint16) {
+func testCoordinator(t *testing.T, peerCount, threshold uint16) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	suite := pairing.NewSuiteBn256()
 	peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerPubs, peerSecs := setupKeys(peerCount, suite)
 	networkProviders := setupNet(
-		t, peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(),
+		peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(),
 		testlogger.WithLevel(log.Named("Network"), logger.LevelDebug, false),
 	)
 	t.Logf("Network created.")
@@ -205,7 +205,7 @@ func testCoordinator(t *testing.T, peerCount uint16, threshold uint16) {
 }
 
 func setupKeys(peerCount uint16, suite *pairing.SuiteBn256) ([]string, []kyber.Point, []kyber.Scalar) {
-	var peerNetIDs []string = make([]string, peerCount)
+	peerNetIDs := make([]string, peerCount)
 	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
 	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
 	for i := range peerNetIDs {
@@ -219,7 +219,6 @@ func setupKeys(peerCount uint16, suite *pairing.SuiteBn256) ([]string, []kyber.P
 
 // A helper for testcases.
 func setupNet(
-	t *testing.T,
 	peerNetIDs []string,
 	peerPubs []kyber.Point,
 	peerSecs []kyber.Scalar,

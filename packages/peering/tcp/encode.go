@@ -49,8 +49,12 @@ func encodeMessage(msg *peering.PeerMessage, ts int64) []byte {
 
 	case msg.MsgType >= peering.FirstUserMsgCode:
 		buf.WriteByte(msg.MsgType)
+		//TODO should these errors be checked?
+		//nolint:errcheck
 		msg.PeeringID.Write(&buf)
+		//nolint:errcheck
 		util.WriteUint16(&buf, msg.SenderIndex)
+		//nolint:errcheck
 		util.WriteBytes32(&buf, msg.MsgData)
 
 	default:
@@ -87,10 +91,10 @@ func decodeMessage(data []byte) (*peering.PeerMessage, error) {
 
 	case ret.MsgType >= peering.FirstUserMsgCode:
 		// committee message
-		if err = ret.PeeringID.Read(rdr); err != nil {
+		if err := ret.PeeringID.Read(rdr); err != nil {
 			return nil, err
 		}
-		if err = util.ReadUint16(rdr, &ret.SenderIndex); err != nil {
+		if err := util.ReadUint16(rdr, &ret.SenderIndex); err != nil {
 			return nil, err
 		}
 		if ret.MsgData, err = util.ReadBytes32(rdr); err != nil {
@@ -110,15 +114,14 @@ type handshakeMsg struct {
 }
 
 func (m *handshakeMsg) bytes() ([]byte, error) {
-	var err error
 	var buf bytes.Buffer
-	if err = util.WriteString16(&buf, m.peeringID); err != nil {
+	if err := util.WriteString16(&buf, m.peeringID); err != nil {
 		return nil, err
 	}
-	if err = util.WriteString16(&buf, m.srcNetID); err != nil {
+	if err := util.WriteString16(&buf, m.srcNetID); err != nil {
 		return nil, err
 	}
-	if err = util.WriteMarshaled(&buf, m.pubKey); err != nil {
+	if err := util.WriteMarshaled(&buf, m.pubKey); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
@@ -135,7 +138,7 @@ func handshakeMsgFromBytes(buf []byte, suite kyber.Group) (*handshakeMsg, error)
 		return nil, err
 	}
 	m.pubKey = suite.Point()
-	if err = util.ReadMarshaled(r, m.pubKey); err != nil {
+	if err := util.ReadMarshaled(r, m.pubKey); err != nil {
 		return nil, err
 	}
 	return &m, nil

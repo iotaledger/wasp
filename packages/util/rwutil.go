@@ -13,7 +13,7 @@ import (
 
 func WriteByte(w io.Writer, val byte) error {
 	b := []byte{val}
-	_, err := w.Write(b[:])
+	_, err := w.Write(b)
 	return err
 }
 
@@ -33,10 +33,10 @@ func Uint16To2Bytes(val uint16) []byte {
 }
 
 func MustUint16From2Bytes(b []byte) uint16 {
-	if len(b) != 2 {
+	if len(b) != 2 { //nolint:gomnd
 		panic("len(b) != 2")
 	}
-	return binary.LittleEndian.Uint16(b[:])
+	return binary.LittleEndian.Uint16(b)
 }
 
 func Uint32To4Bytes(val uint32) []byte {
@@ -46,10 +46,10 @@ func Uint32To4Bytes(val uint32) []byte {
 }
 
 func Uint32From4Bytes(b []byte) (uint32, error) {
-	if len(b) != 4 {
+	if len(b) != 4 { //nolint:gomnd
 		return 0, errors.New("len(b) != 4")
 	}
-	return binary.LittleEndian.Uint32(b[:]), nil
+	return binary.LittleEndian.Uint32(b), nil
 }
 
 func MustUint32From4Bytes(b []byte) uint32 {
@@ -61,17 +61,17 @@ func MustUint32From4Bytes(b []byte) uint32 {
 }
 
 func MustUint64From8Bytes(b []byte) uint64 {
-	if len(b) != 8 {
+	if len(b) != 8 { //nolint:gomnd
 		panic("len(b) != 8")
 	}
-	return binary.LittleEndian.Uint64(b[:])
+	return binary.LittleEndian.Uint64(b)
 }
 
 func Uint64From8Bytes(b []byte) (uint64, error) {
-	if len(b) != 8 {
+	if len(b) != 8 { //nolint:gomnd
 		return 0, errors.New("len(b) != 8")
 	}
-	return binary.LittleEndian.Uint64(b[:]), nil
+	return binary.LittleEndian.Uint64(b), nil
 }
 
 func Int64From8Bytes(b []byte) (int64, error) {
@@ -324,10 +324,7 @@ func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
 	if bin, err = val.MarshalBinary(); err != nil {
 		return err
 	}
-	if err = WriteBytes16(w, bin); err != nil {
-		return err
-	}
-	return nil
+	return WriteBytes16(w, bin)
 }
 
 // ReadMarshaled supports kyber.Point, kyber.Scalar and similar.
@@ -337,8 +334,5 @@ func ReadMarshaled(r io.Reader, val encoding.BinaryUnmarshaler) error {
 	if bin, err = ReadBytes16(r); err != nil {
 		return err
 	}
-	if err = val.UnmarshalBinary(bin); err != nil {
-		return err
-	}
-	return nil
+	return val.UnmarshalBinary(bin)
 }

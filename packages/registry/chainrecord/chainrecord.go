@@ -3,10 +3,9 @@ package chainrecord
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 )
 
 // ChainRecord represents chain the node is participating in
@@ -17,7 +16,7 @@ type ChainRecord struct {
 	Active  bool
 }
 
-func ChainRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
+func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
 	ret := &ChainRecord{}
 	aliasAddr, err := ledgerstate.AliasAddressFromMarshalUtil(mu)
 	if err != nil {
@@ -49,8 +48,8 @@ func ChainRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, erro
 }
 
 // CommitteeRecordFromBytes
-func ChainRecordFromBytes(data []byte) (*ChainRecord, error) {
-	return ChainRecordFromMarshalUtil(marshalutil.New(data))
+func FromBytes(data []byte) (*ChainRecord, error) {
+	return FromMarshalUtil(marshalutil.New(data))
 }
 
 func (rec *ChainRecord) Bytes() []byte {

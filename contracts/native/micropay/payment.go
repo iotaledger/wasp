@@ -69,10 +69,7 @@ func (p *Payment) Write(w io.Writer) error {
 	if err := util.WriteUint64(w, p.Amount); err != nil {
 		return err
 	}
-	if err := util.WriteBytes16(w, p.SignatureShort); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteBytes16(w, p.SignatureShort)
 }
 
 func (p *Payment) Read(r io.Reader) error {

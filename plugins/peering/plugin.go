@@ -36,7 +36,7 @@ func Init(suite *pairing.SuiteBn256) *node.Plugin {
 			panic(err)
 		}
 		peerNetworkConfig, err = peering_pkg.NewStaticPeerNetworkConfigProvider(
-			parameters.GetString(parameters.PeeringMyNetId),
+			parameters.GetString(parameters.PeeringMyNetID),
 			parameters.GetInt(parameters.PeeringPort),
 			parameters.GetStringSlice(parameters.PeeringNeighbors)...,
 		)

@@ -3,27 +3,21 @@ package chains
 import (
 	"sync"
 
-	"github.com/iotaledger/wasp/packages/parameters"
-	peering_pkg "github.com/iotaledger/wasp/packages/peering"
-
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-
-	"github.com/iotaledger/wasp/packages/coretypes"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
-
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/parameters"
+	peering_pkg "github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
+	"golang.org/x/xerrors"
 )
 
 type Chains struct {
@@ -104,7 +98,7 @@ func (c *Chains) Activate(chr *chainrecord.ChainRecord) error {
 	}
 	// create new chain object
 	peerNetworkConfig, err := peering_pkg.NewStaticPeerNetworkConfigProvider(
-		parameters.GetString(parameters.PeeringMyNetId),
+		parameters.GetString(parameters.PeeringMyNetID),
 		parameters.GetInt(parameters.PeeringPort),
 		chr.Peers...,
 	)

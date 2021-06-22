@@ -42,10 +42,10 @@ func testCallRecursive(t *testing.T, w bool) {
 		sbtestsc.ParamHnameContract, cID.Hname(),
 		sbtestsc.ParamHnameEP, coretypes.Hn(sbtestsc.FuncRunRecursion),
 	).WithIotas(1)
-	ret, err := chain.PostRequestSync(req, nil)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	ret, err = chain.CallView(ScName, sbtestsc.FuncGetCounter)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter)
 	require.NoError(t, err)
 
 	r, exists, err := codec.DecodeInt64(ret.MustGet(sbtestsc.VarCounter))

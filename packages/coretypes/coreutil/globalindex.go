@@ -18,15 +18,15 @@ type ChainStateSync interface {
 	Mutex() *sync.RWMutex
 }
 
-type chainStateSync struct {
+type ChainStateSyncImpl struct {
 	solidIndex  atomic.Uint32
 	globalMutex *sync.RWMutex
 }
 
 // we assume last state index 2^32 will never be reached :)
 
-func NewChainStateSync() *chainStateSync {
-	ret := &chainStateSync{
+func NewChainStateSync() *ChainStateSyncImpl {
+	ret := &ChainStateSyncImpl{
 		globalMutex: &sync.RWMutex{},
 	}
 	ret.solidIndex.Store(^uint32(0))
@@ -35,7 +35,7 @@ func NewChainStateSync() *chainStateSync {
 
 // SetSolidIndex sets solid index to the global sync and makes it valid
 // To validate baselines, method Set should be called for each
-func (g *chainStateSync) SetSolidIndex(idx uint32) ChainStateSync {
+func (g *ChainStateSyncImpl) SetSolidIndex(idx uint32) ChainStateSync {
 	if idx == ^uint32(0) {
 		panic("SetSolidIndex: wrong state index")
 	}
@@ -44,21 +44,21 @@ func (g *chainStateSync) SetSolidIndex(idx uint32) ChainStateSync {
 }
 
 // GetSolidIndexBaseline creates an instance of the state baseline linked to the global sync
-func (g *chainStateSync) GetSolidIndexBaseline() StateBaseline {
+func (g *ChainStateSyncImpl) GetSolidIndexBaseline() StateBaseline {
 	return newStateIndexBaseline(&g.solidIndex)
 }
 
 // InvalidateSolidIndex invalidates state index and, globally, all baselines
 //.All vaselines remain invalid until SetSolidIndex is called globally
 // and Set for each baseline individually
-func (g *chainStateSync) InvalidateSolidIndex() ChainStateSync {
+func (g *ChainStateSyncImpl) InvalidateSolidIndex() ChainStateSync {
 	g.solidIndex.Store(^uint32(0))
 	return g
 }
 
 // Mutex return global mutex which is locked by the state manager during write to DB
 // The read lock ar not used atm, it may be removed in the future
-func (g *chainStateSync) Mutex() *sync.RWMutex {
+func (g *ChainStateSyncImpl) Mutex() *sync.RWMutex {
 	return g.globalMutex
 }
 
@@ -84,7 +84,7 @@ func newStateIndexBaseline(globalStateIndex *atomic.Uint32) *stateBaseline {
 }
 
 func (g *stateBaseline) Set() {
-	g.baseline = uint32(g.solidStateIndex.Load())
+	g.baseline = g.solidStateIndex.Load()
 }
 
 func (g *stateBaseline) IsValid() bool {

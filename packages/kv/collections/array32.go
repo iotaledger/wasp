@@ -1,4 +1,4 @@
-package collections
+package collections //nolint:dupl
 
 import (
 	"bytes"
@@ -20,16 +20,16 @@ type ImmutableArray32 struct {
 	name string
 }
 
-func NewArray32(kv kv.KVStore, name string) *Array32 {
+func NewArray32(kvStore kv.KVStore, name string) *Array32 {
 	return &Array32{
-		ImmutableArray32: NewArray32ReadOnly(kv, name),
-		kvw:              kv,
+		ImmutableArray32: NewArray32ReadOnly(kvStore, name),
+		kvw:              kvStore,
 	}
 }
 
-func NewArray32ReadOnly(kv kv.KVStoreReader, name string) *ImmutableArray32 {
+func NewArray32ReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableArray32 {
 	return &ImmutableArray32{
-		kvr:  kv,
+		kvr:  kvReader,
 		name: name,
 	}
 }
@@ -68,7 +68,7 @@ func array32ElemKey(name string, idx uint32) kv.Key {
 
 // Array16RangeKeys returns the KVStore keys for the items between [from, to) (`to` being not inclusive),
 // assuming it has `length` elements.
-func Array32RangeKeys(name string, length uint32, from uint32, to uint32) []kv.Key {
+func Array32RangeKeys(name string, length, from, to uint32) []kv.Key {
 	keys := make([]kv.Key, 0)
 	if to >= from {
 		for i := from; i < to && i < length; i++ {

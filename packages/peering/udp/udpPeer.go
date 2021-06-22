@@ -67,6 +67,7 @@ func newPeerFromHandshake(handshake *handshakeMsg, remoteUDPAddr *net.UDPAddr, n
 }
 
 // That's internal, called from other constructors.
+//nolint:unparam
 func newPeer(remoteNetID string, remoteUDPAddr *net.UDPAddr, n *NetImpl) (*peer, error) {
 	log := n.log.Named("peer:" + remoteNetID)
 	p := &peer{

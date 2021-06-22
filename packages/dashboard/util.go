@@ -38,8 +38,8 @@ func formatTimestamp(ts interface{}) string {
 	return t.UTC().Format(time.RFC3339)
 }
 
-func exploreAddressUrl(baseUrl string) func(address ledgerstate.Address) string {
+func exploreAddressURL(baseURL string) func(address ledgerstate.Address) string {
 	return func(address ledgerstate.Address) string {
-		return baseUrl + "/" + address.Base58()
+		return baseURL + "/" + address.Base58()
 	}
 }

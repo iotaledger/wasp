@@ -6,9 +6,8 @@ package tcp
 import (
 	"net"
 
-	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
-
 	"github.com/iotaledger/goshimmer/packages/tangle"
+	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -23,15 +22,15 @@ type peeredConnection struct {
 	peer        *peer
 	net         *NetImpl
 	msgChopper  *chopper.Chopper
-	handshakeOk bool
+	handshakeOk bool //nolint:structcheck,unused
 }
 
 // creates new peered connection and attach event handlers for received data and closing
-func newPeeredConnection(conn net.Conn, net *NetImpl, peer *peer) *peeredConnection {
+func newPeeredConnection(conn net.Conn, netw *NetImpl, peer *peer) *peeredConnection {
 	c := &peeredConnection{
 		BufferedConnection: buffconn.NewBufferedConnection(conn, tangle.MaxMessageSize),
 		peer:               peer, // may be nil
-		net:                net,
+		net:                netw,
 		msgChopper:         chopper.NewChopper(),
 	}
 	c.Events.ReceiveMessage.Attach(events.NewClosure(func(data []byte) {
@@ -44,7 +43,7 @@ func newPeeredConnection(conn net.Conn, net *NetImpl, peer *peer) *peeredConnect
 			c.peer.handshakeOk = false
 			c.peer.Unlock()
 		}
-		net.log.Debugw("closed buff connection", "conn", conn.RemoteAddr().String())
+		netw.log.Debugw("closed buff connection", "conn", conn.RemoteAddr().String())
 	}))
 	return c
 }

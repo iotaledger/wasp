@@ -33,7 +33,7 @@ func (s sandboxView) Balances() *ledgerstate.ColoredBalances {
 	return s.vmctx.GetMyBalances()
 }
 
-func (s sandboxView) Call(contractHname coretypes.Hname, entryPoint coretypes.Hname, params dict.Dict) (dict.Dict, error) {
+func (s sandboxView) Call(contractHname, entryPoint coretypes.Hname, params dict.Dict) (dict.Dict, error) {
 	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 

@@ -14,7 +14,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type batchProposal struct {
+type BatchProposal struct {
 	ValidatorIndex          uint16
 	StateOutputID           ledgerstate.OutputID
 	RequestIDs              []coretypes.RequestID
@@ -33,14 +33,14 @@ type consensusBatchParams struct {
 	entropy         hashing.HashValue
 }
 
-func BatchProposalFromBytes(data []byte) (*batchProposal, error) {
+func BatchProposalFromBytes(data []byte) (*BatchProposal, error) {
 	return BatchProposalFromMarshalUtil(marshalutil.New(data))
 }
 
 const errFmt = "BatchProposalFromMarshalUtil: %w"
 
-func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*batchProposal, error) {
-	ret := &batchProposal{}
+func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, error) {
+	ret := &BatchProposal{}
 	var err error
 	ret.ValidatorIndex, err = mu.ReadUint16()
 	if err != nil {
@@ -87,7 +87,7 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*batchProposal, 
 	return ret, nil
 }
 
-func (b *batchProposal) Bytes() []byte {
+func (b *BatchProposal) Bytes() []byte {
 	mu := marshalutil.New()
 	mu.WriteUint16(b.ValidatorIndex).
 		Write(b.StateOutputID).
@@ -108,7 +108,7 @@ func (b *batchProposal) Bytes() []byte {
 // mana pledges and fee destination
 // Timestamp is calculated by taking closest value from above to the median.
 // TODO final version of pladeges and fee destination
-func (c *consensus) calcBatchParameters(props []*batchProposal) (*consensusBatchParams, error) {
+func (c *Consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatchParams, error) {
 	var retTS time.Time
 
 	ts := make([]time.Time, len(props))
@@ -153,14 +153,14 @@ func (c *consensus) calcBatchParameters(props []*batchProposal) (*consensusBatch
 // calcIntersection a simple algorithm to calculate acceptable intersection. It simply takes all requests
 // seen by 1/3+1 node. The assumptions is there can be at max 1/3 of bizantine nodes, so if something is reported
 // by more that 1/3 of nodes it means it is correct
-func calcIntersection(acs []*batchProposal, n uint16) []coretypes.RequestID {
+func calcIntersection(acs []*BatchProposal, n uint16) []coretypes.RequestID {
 	minNumberMentioned := n/3 + 1
 	numMentioned := make(map[coretypes.RequestID]uint16)
 
 	maxLen := 0
 	for _, prop := range acs {
 		for _, reqid := range prop.RequestIDs {
-			s, _ := numMentioned[reqid]
+			s := numMentioned[reqid]
 			numMentioned[reqid] = s + 1
 		}
 		if len(prop.RequestIDs) > maxLen {

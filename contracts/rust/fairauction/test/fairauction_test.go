@@ -165,7 +165,8 @@ func requireInt64(t *testing.T, res dict.Dict, key string, expected int64) {
 	require.EqualValues(t, expected, actual)
 }
 
-func requireString(t *testing.T, res dict.Dict, key string, expected string) {
+//nolint:unused,deadcode
+func requireString(t *testing.T, res dict.Dict, key, expected string) {
 	actual, exists, err := codec.DecodeString(res.MustGet(kv.Key(key)))
 	require.NoError(t, err)
 	require.True(t, exists)

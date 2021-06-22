@@ -32,14 +32,14 @@ var initCmd = &cobra.Command{
 		log.Printf("\nIMPORTANT: wasp-cli is alpha phase. The seed is currently being stored " +
 			"in a plain text file which is NOT secure. Do not use this seed to store funds " +
 			"in the mainnet!\n")
-		log.Verbose("\nSeed: %s\n", seed)
+		log.Verbosef("\nSeed: %s\n", seed)
 	},
 }
 
 func Load() *Wallet {
 	seedb58 := viper.GetString("wallet.seed")
-	if len(seedb58) == 0 {
-		log.Fatal("call `init` first")
+	if seedb58 == "" {
+		log.Fatalf("call `init` first")
 	}
 	seedBytes, err := base58.Decode(seedb58)
 	log.Check(err)

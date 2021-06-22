@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/sign/bls"
+	"go.dedis.ch/kyber/v3/sign/bls" //nolint:staticcheck // TODO IMPORTANT: this lib is deprecated and a potential security issue, needs to be updated
 )
 
 type handshakeMsg struct {
@@ -17,6 +17,7 @@ type handshakeMsg struct {
 	respond bool        // Do the message asks for a response?
 }
 
+//nolint: gocritic
 func (m *handshakeMsg) bytes(secKey kyber.Scalar, suite Suite) ([]byte, error) {
 	var err error
 	//
@@ -48,6 +49,7 @@ func (m *handshakeMsg) bytes(secKey kyber.Scalar, suite Suite) ([]byte, error) {
 	return signedBuf.Bytes(), nil
 }
 
+//nolint: gocritic
 func handshakeMsgFromBytes(buf []byte, suite Suite) (*handshakeMsg, error) {
 	var err error
 	//

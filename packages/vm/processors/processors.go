@@ -88,7 +88,7 @@ func (cps *ProcessorCache) GetOrCreateProcessorByProgramHash(progHash hashing.Ha
 	if err != nil {
 		return nil, fmt.Errorf("internal error: can't get the binary for the program: %v", err)
 	}
-	if err = cps.newProcessor(progHash, binary, vmtype); err != nil {
+	if err := cps.newProcessor(progHash, binary, vmtype); err != nil {
 		return nil, err
 	}
 	if proc, ok := cps.processors[progHash]; ok {

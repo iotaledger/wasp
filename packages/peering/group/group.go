@@ -70,7 +70,7 @@ func (g *groupImpl) PeerIndexByNetID(peerNetID string) (uint16, error) {
 			return uint16(i), nil
 		}
 	}
-	return uint16(NotInGroup), errors.New("peer_not_found_by_net_id")
+	return NotInGroup, errors.New("peer_not_found_by_net_id")
 }
 
 // SendMsgByIndex implements peering.GroupProvider.
@@ -162,9 +162,9 @@ func (g *groupImpl) ExchangeRound(
 					continue
 				}
 				if errs[i] != nil {
-					errMsg = errMsg + fmt.Sprintf("[%v:%v]", i, errs[i].Error())
+					errMsg += fmt.Sprintf("[%v:%v]", i, errs[i].Error())
 				} else {
-					errMsg = errMsg + fmt.Sprintf("[%v:%v]", i, "round_timeout")
+					errMsg += fmt.Sprintf("[%v:%v]", i, "round_timeout")
 				}
 			}
 			return errors.New(errMsg)
@@ -175,7 +175,7 @@ func (g *groupImpl) ExchangeRound(
 	}
 	var errMsg string
 	for i := range errs {
-		errMsg = errMsg + fmt.Sprintf("[%v:%v]", i, errs[i].Error())
+		errMsg += fmt.Sprintf("[%v:%v]", i, errs[i].Error())
 	}
 	return errors.New(errMsg)
 }
