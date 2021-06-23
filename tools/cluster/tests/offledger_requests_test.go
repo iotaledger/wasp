@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -21,8 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//nolint:unparam
-func newWalletWithFunds(t *testing.T, clust *cluster.Cluster, ch *cluster.Chain, waspnode int, seedN, iotas uint64) (*chainclient.Client, *ed25519.KeyPair) {
+func newWalletWithFunds(t *testing.T, clust *cluster.Cluster, ch *cluster.Chain, waspnode int, seedN, iotas uint64) *chainclient.Client {
 	userWallet := wallet.KeyPair(seedN)
 	userAddress := ledgerstate.NewED25519Address(userWallet.PublicKey)
 	userAgentID := coretypes.NewAgentID(userAddress, 0)
@@ -40,7 +38,7 @@ func newWalletWithFunds(t *testing.T, clust *cluster.Cluster, ch *cluster.Chain,
 	check(err, t)
 	checkBalanceOnChain(t, ch, userAgentID, ledgerstate.ColorIOTA, iotas)
 
-	return chClient, userWallet
+	return chClient
 }
 
 func TestOffledgerRequest(t *testing.T) {
@@ -60,7 +58,7 @@ func TestOffledgerRequest(t *testing.T) {
 	scHname := coretypes.Hn("inncounter1")
 	deployIncCounterSC(t, chain1, counter1)
 
-	chClient, _ := newWalletWithFunds(t, clu, chain1, 0, 1, 100)
+	chClient := newWalletWithFunds(t, clu, chain1, 0, 1, 100)
 
 	// send off-ledger request via Web API
 	offledgerReq, err := chClient.PostOffLedgerRequest(scHname, coretypes.Hn(inccounter.FuncIncCounter))
@@ -92,7 +90,7 @@ func TestOffledgerRequest1Mb(t *testing.T) {
 	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	chClient, _ := newWalletWithFunds(t, clu, chain1, 0, 1, 100)
+	chClient := newWalletWithFunds(t, clu, chain1, 0, 1, 100)
 
 	// send big blob off-ledger request via Web API
 	size := int64(1 * 1024 * 1024) // 1 MB
@@ -147,7 +145,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	require.NoError(t, err)
 
 	// use an access node to create the chainClient
-	chClient, _ := newWalletWithFunds(t, clu1, chain1, 5, 1, 100)
+	chClient := newWalletWithFunds(t, clu1, chain1, 5, 1, 100)
 
 	// send off-ledger request via Web API (to the access node)
 	offledgerReq, err := chClient.PostOffLedgerRequest(scHname, coretypes.Hn(inccounter.FuncIncCounter))
