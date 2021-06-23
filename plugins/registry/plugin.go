@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	hive_node "github.com/iotaledger/hive.go/node"
 	registry "github.com/iotaledger/wasp/packages/registry"
-	tcrypto_pkg "github.com/iotaledger/wasp/packages/tcrypto"
 )
 
 const pluginName = "Registry"
@@ -22,9 +21,9 @@ func DefaultRegistry() *registry.Impl {
 }
 
 // Init is an entry point for the plugin.
-func Init(suite tcrypto_pkg.Suite) *hive_node.Plugin {
+func Init() *hive_node.Plugin {
 	configure := func(_ *hive_node.Plugin) {
-		defaultRegistry = registry.NewRegistry(suite, logger.NewLogger(pluginName), nil)
+		defaultRegistry = registry.NewRegistry(logger.NewLogger(pluginName), nil)
 	}
 	run := func(_ *hive_node.Plugin) {
 		// Nothing to run here.

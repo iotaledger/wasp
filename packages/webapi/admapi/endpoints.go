@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
@@ -18,7 +19,7 @@ func initLogger() {
 	log = logger.NewLogger("webapi/adm")
 }
 
-func AddEndpoints(adm echoswagger.ApiGroup, adminWhitelist []net.IP) {
+func AddEndpoints(adm echoswagger.ApiGroup, adminWhitelist []net.IP, tnm peering.TrustedNetworkManager) {
 	initLogger()
 
 	adm.EchoGroup().Use(protected(adminWhitelist))
@@ -28,7 +29,7 @@ func AddEndpoints(adm echoswagger.ApiGroup, adminWhitelist []net.IP) {
 	addCommitteeRecordEndpoints(adm)
 	addChainEndpoints(adm)
 	addDKSharesEndpoints(adm)
-	addPeeringEndpoints(adm)
+	addPeeringEndpoints(adm, tnm)
 }
 
 // allow only if the remote address is private or in whitelist

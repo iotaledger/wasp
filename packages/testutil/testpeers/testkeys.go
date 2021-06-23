@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dkg"
@@ -17,35 +18,38 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
-func SetupKeys(peerCount uint16, suite *pairing.SuiteBn256) ([]string, []kyber.Point, []kyber.Scalar) {
+func SetupKeys(peerCount uint16) ([]string, []*ed25519.KeyPair) {
 	peerNetIDs := make([]string, peerCount)
-	peerPubs := make([]kyber.Point, len(peerNetIDs))
-	peerSecs := make([]kyber.Scalar, len(peerNetIDs))
+	peerIdentities := make([]*ed25519.KeyPair, peerCount)
 	for i := range peerNetIDs {
-		peerPair := key.NewKeyPair(suite)
+		peerIdentity := ed25519.GenerateKeyPair()
 		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
-		peerSecs[i] = peerPair.Private
-		peerPubs[i] = peerPair.Public
+		peerIdentities[i] = &peerIdentity
 	}
-	return peerNetIDs, peerPubs, peerSecs
+	return peerNetIDs, peerIdentities
+}
+
+func PublicKeys(peerIdentities []*ed25519.KeyPair) []ed25519.PublicKey {
+	pubKeys := make([]ed25519.PublicKey, len(peerIdentities))
+	for i := range pubKeys {
+		pubKeys[i] = peerIdentities[i].PublicKey
+	}
+	return pubKeys
 }
 
 func SetupDkg(
 	t *testing.T,
 	threshold uint16,
 	peerNetIDs []string,
-	peerPubs []kyber.Point,
-	peerSecs []kyber.Scalar,
+	peerIdentities []*ed25519.KeyPair,
 	suite *pairing.SuiteBn256,
 	log *logger.Logger,
 ) (ledgerstate.Address, []coretypes.DKShareRegistryProvider) {
 	timeout := 100 * time.Second
-	networkProviders := SetupNet(peerNetIDs, peerPubs, peerSecs, testutil.NewPeeringNetReliable(), log)
+	networkProviders := SetupNet(peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(), log)
 	//
 	// Initialize the DKG subsystem in each node.
 	dkgNodes := make([]*dkg.Node, len(peerNetIDs))
@@ -53,7 +57,7 @@ func SetupDkg(
 	for i := range peerNetIDs {
 		registries[i] = testutil.NewDkgRegistryProvider(suite)
 		dkgNodes[i] = dkg.NewNode(
-			peerSecs[i], peerPubs[i], suite, networkProviders[i], registries[i],
+			peerIdentities[i], networkProviders[i], registries[i],
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelError, false),
 		)
 	}
@@ -61,7 +65,7 @@ func SetupDkg(
 	// Initiate the key generation from some client node.
 	dkShare, err := dkgNodes[0].GenerateDistributedKey(
 		peerNetIDs,
-		peerPubs,
+		PublicKeys(peerIdentities),
 		threshold,
 		100*time.Second,
 		200*time.Second,
@@ -100,13 +104,12 @@ func SetupDkgPregenerated(
 
 func SetupNet(
 	peerNetIDs []string,
-	peerPubs []kyber.Point,
-	peerSecs []kyber.Scalar,
+	peerIdentities []*ed25519.KeyPair,
 	behavior testutil.PeeringNetBehavior,
 	log *logger.Logger,
 ) []peering.NetworkProvider {
 	peeringNetwork := testutil.NewPeeringNetwork(
-		peerNetIDs, peerPubs, peerSecs, 10000, behavior,
+		peerNetIDs, peerIdentities, 10000, behavior,
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
 	return peeringNetwork.NetworkProviders()

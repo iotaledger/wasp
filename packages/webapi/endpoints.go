@@ -4,6 +4,7 @@ import (
 	"net"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/webapi/admapi"
 	"github.com/iotaledger/wasp/packages/webapi/blob"
 	"github.com/iotaledger/wasp/packages/webapi/info"
@@ -15,7 +16,7 @@ import (
 
 var log *logger.Logger
 
-func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP) {
+func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP, tnm peering.TrustedNetworkManager) {
 	log = logger.NewLogger("WebAPI")
 
 	server.SetRequestContentType(echo.MIMEApplicationJSON)
@@ -28,6 +29,6 @@ func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP) {
 	state.AddEndpoints(pub)
 
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")
-	admapi.AddEndpoints(adm, adminWhitelist)
+	admapi.AddEndpoints(adm, adminWhitelist, tnm)
 	log.Infof("added web api endpoints")
 }

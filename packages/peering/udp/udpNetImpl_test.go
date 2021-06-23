@@ -6,17 +6,20 @@ package udp_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/udp"
+	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3/pairing"
+	"go.dedis.ch/kyber/v3/group/edwards25519"
+	"go.dedis.ch/kyber/v3/sign/eddsa"
+	"go.dedis.ch/kyber/v3/sign/schnorr"
 	"go.dedis.ch/kyber/v3/util/key"
 )
 
 func TestUDPPeeringImpl(t *testing.T) {
-	suite := pairing.NewSuiteBn256()
+	var err error
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
@@ -24,17 +27,24 @@ func TestUDPPeeringImpl(t *testing.T) {
 	netIDs := []string{"localhost:9017", "localhost:9018", "localhost:9019"}
 	nodes := make([]peering.NetworkProvider, len(netIDs))
 
-	cfg0, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[0], 9017, netIDs...)
+	keys := make([]ed25519.KeyPair, len(netIDs))
+	tnms := make([]peering.TrustedNetworkManager, len(netIDs))
+	for i := range keys {
+		keys[i] = ed25519.GenerateKeyPair()
+		tnms[i] = testutil.NewTrustedNetworkManager()
+	}
+	for _, tnm := range tnms {
+		for i := range netIDs {
+			_, err = tnm.TrustPeer(keys[i].PublicKey, netIDs[1])
+			require.NoError(t, err)
+		}
+	}
+
+	nodes[0], err = udp.NewNetworkProvider(netIDs[0], 9017, ed25519.GenerateKeyPair(), tnms[0], log.Named("node0"))
 	require.NoError(t, err)
-	nodes[0], err = udp.NewNetworkProvider(cfg0, key.NewKeyPair(suite), suite, log.Named("node0"))
+	nodes[1], err = udp.NewNetworkProvider(netIDs[1], 9018, ed25519.GenerateKeyPair(), tnms[1], log.Named("node1"))
 	require.NoError(t, err)
-	cfg1, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[1], 9018, netIDs...)
-	require.NoError(t, err)
-	nodes[1], err = udp.NewNetworkProvider(cfg1, key.NewKeyPair(suite), suite, log.Named("node1"))
-	require.NoError(t, err)
-	cfg2, err := peering.NewStaticPeerNetworkConfigProvider(netIDs[2], 9019, netIDs...)
-	require.NoError(t, err)
-	nodes[2], err = udp.NewNetworkProvider(cfg2, key.NewKeyPair(suite), suite, log.Named("node2"))
+	nodes[2], err = udp.NewNetworkProvider(netIDs[2], 9019, ed25519.GenerateKeyPair(), tnms[1], log.Named("node2"))
 	require.NoError(t, err)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))
@@ -58,4 +68,41 @@ func TestUDPPeeringImpl(t *testing.T) {
 	n2p0.SendMsg(&peering.PeerMessage{PeeringID: chain2, MsgType: 125})
 
 	<-doneCh
+}
+
+// TestHiveKyberInterop checks, if hive keys can be used in kyber.
+//	```
+//  public, private, _ := hive.GenerateKey()
+// 	var kyber eddsa.EdDSA
+// 	kyber.UnmarshalBinary(private.Bytes())
+// 	kyberSig, _ := kyber.Sign(msg)
+// 	hiveSig, _, _ := hive.SignatureFromBytes(kyberSig)
+// 	public.VerifySignature(msg, hiveSig)
+//	```
+func TestHiveKyberInterop(t *testing.T) {
+	var err error
+	hiveKeyPair := ed25519.GenerateKeyPair()
+	kyberSuite := edwards25519.NewBlakeSHA256Ed25519()
+	kyberEdDSSA := eddsa.EdDSA{}
+	require.NoError(t, kyberEdDSSA.UnmarshalBinary(hiveKeyPair.PrivateKey.Bytes()))
+	kyberKeyPair := &key.Pair{
+		Public:  kyberEdDSSA.Public,
+		Private: kyberEdDSSA.Secret,
+	}
+	// Check, if pub key can be unmarshalled directly.
+	kyberPubUnmarshaled := kyberSuite.Point()
+	require.NoError(t, kyberPubUnmarshaled.UnmarshalBinary(hiveKeyPair.PublicKey.Bytes()))
+	//
+	// Check signatures.
+	message := []byte{0, 1, 2}
+	//
+	// Hive-to-Hive
+	hiveSig := hiveKeyPair.PrivateKey.Sign(message)
+	require.True(t, hiveKeyPair.PublicKey.VerifySignature(message, hiveSig))
+	//
+	// Kyber-to-Kyber
+	kyberSig, err := schnorr.Sign(kyberSuite, kyberKeyPair.Private, message)
+	require.NoError(t, err)
+	require.NoError(t, schnorr.Verify(kyberSuite, kyberKeyPair.Public, message, kyberSig))
+	require.NoError(t, schnorr.Verify(kyberSuite, kyberPubUnmarshaled, message, kyberSig))
 }

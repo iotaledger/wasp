@@ -11,11 +11,10 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
-
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
-	"go.dedis.ch/kyber/v3"
 )
 
 const (
@@ -28,7 +27,7 @@ const (
 
 type peer struct {
 	remoteNetID   string
-	remotePubKey  kyber.Point
+	remotePubKey  *ed25519.PublicKey
 	remoteUDPAddr *net.UDPAddr
 	waitReady     *util.WaitChan
 	accessLock    *sync.RWMutex
@@ -47,7 +46,7 @@ func newPeerOnUserRequest(remoteNetID string, n *NetImpl) (*peer, error) {
 		return nil, err
 	}
 	var p *peer
-	if p, err = newPeer(remoteNetID, remoteUDPAddr, n); err != nil {
+	if p, err = newPeer(remoteNetID, nil, remoteUDPAddr, n); err != nil {
 		return nil, err
 	}
 	p.usePeer()
@@ -57,7 +56,7 @@ func newPeerOnUserRequest(remoteNetID string, n *NetImpl) (*peer, error) {
 func newPeerFromHandshake(handshake *handshakeMsg, remoteUDPAddr *net.UDPAddr, n *NetImpl) (*peer, error) {
 	var err error
 	var p *peer
-	if p, err = newPeer(handshake.netID, remoteUDPAddr, n); err != nil {
+	if p, err = newPeer(handshake.netID, &handshake.pubKey, remoteUDPAddr, n); err != nil {
 		return nil, err
 	}
 	if oldUDPAddrStr, newUDPAddrStr := p.handleHandshake(handshake, remoteUDPAddr); oldUDPAddrStr != newUDPAddrStr {
@@ -67,11 +66,11 @@ func newPeerFromHandshake(handshake *handshakeMsg, remoteUDPAddr *net.UDPAddr, n
 }
 
 // That's internal, called from other constructors.
-func newPeer(remoteNetID string, remoteUDPAddr *net.UDPAddr, n *NetImpl) (*peer, error) {
+func newPeer(remoteNetID string, remotePubKey *ed25519.PublicKey, remoteUDPAddr *net.UDPAddr, n *NetImpl) (*peer, error) {
 	var log = n.log.Named("peer:" + remoteNetID)
 	p := &peer{
 		remoteNetID:   remoteNetID,
-		remotePubKey:  nil, // Will be retrieved on handshake.
+		remotePubKey:  nil, // TODO: KP: XXX: .... remotePubKey, // Can be nil, in that case will be set on the handshake.
 		remoteUDPAddr: remoteUDPAddr,
 		waitReady:     util.NewWaitChan(),
 		accessLock:    &sync.RWMutex{},
@@ -102,17 +101,17 @@ func (p *peer) handleHandshake(handshake *handshakeMsg, remoteUDPAddr *net.UDPAd
 	}
 	if p.remotePubKey == nil {
 		// That's the first received handshake, pairing established.
-		p.remotePubKey = handshake.pubKey
+		p.remotePubKey = &handshake.pubKey
 		p.waitReady.Done()
 		p.log.Infof("Paired %v with %v", p.net.NetID(), p.remoteNetID)
-	} else if p.remotePubKey != nil && p.remotePubKey.Equal(handshake.pubKey) {
+	} else if p.remotePubKey != nil && *p.remotePubKey == handshake.pubKey {
 		// It's just a ping.
 	} else {
 		// New PublicKey is used by the peer!
-		if !p.remotePubKey.Equal(handshake.pubKey) {
+		if *p.remotePubKey != handshake.pubKey {
 			p.log.Warnf("Remote PubKey has changed, old=%v, new=%v", p.remotePubKey, handshake.pubKey)
 		}
-		p.remotePubKey = handshake.pubKey
+		p.remotePubKey = &handshake.pubKey
 	}
 	p.lastMsgRecv = time.Now()
 	p.accessLock.Unlock()
@@ -127,11 +126,11 @@ func (p *peer) sendHandshake(respond bool) {
 	var err error
 	handshake := handshakeMsg{
 		netID:   p.net.NetID(),
-		pubKey:  p.net.PubKey(),
+		pubKey:  *p.net.PubKey(),
 		respond: respond,
 	}
 	var msgDataBin []byte
-	if msgDataBin, err = handshake.bytes(p.net.nodeKeyPair.Private, p.net.suite); err != nil {
+	if msgDataBin, err = handshake.bytes(p.net.nodeKeyPair.PrivateKey); err != nil {
 		p.log.Errorf("Unable to encode outgoing handshake msg, reason=%v", err)
 	}
 	p.SendMsg(&peering.PeerMessage{
@@ -170,7 +169,7 @@ func (p *peer) NetID() string {
 
 // PubKey implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
 // This function tries to await for the public key to be resolves for some time, but with no guarantees.
-func (p *peer) PubKey() kyber.Point {
+func (p *peer) PubKey() *ed25519.PublicKey {
 	_ = p.waitReady.WaitTimeout(sendMsgSyncTimeout)
 	p.accessLock.RLock()
 	defer p.accessLock.RUnlock()
@@ -184,7 +183,7 @@ func (p *peer) SendMsg(msg *peering.PeerMessage) {
 	if msg.IsUserMessage() {
 		if !p.waitReady.WaitTimeout(sendMsgSyncTimeout) {
 			// Just log a warning and try to send a message anyway.
-			p.log.Warn("Sending a message despite the peering is not established yet, MsgType=%v", msg.MsgType)
+			p.log.Warnf("Sending a message despite the peering %v -> %v is not established yet, MsgType=%v", p.net.myNetID, p.NetID(), msg.MsgType)
 		}
 	}
 	if msgChunks, err = msg.ChunkedBytes(maxChunkSize, p.msgChopper); err != nil {

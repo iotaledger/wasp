@@ -8,8 +8,6 @@ package dkg_test
 // TODO: Single node down for some time.
 
 import (
-	"fmt"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"testing"
 	"time"
 
@@ -17,10 +15,10 @@ import (
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
 // TestBasic checks if DKG procedure is executed successfully in a common case.
@@ -32,18 +30,10 @@ func TestBasic(t *testing.T) {
 	var timeout = 100 * time.Second
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
-	var peerNetIDs []string = make([]string, peerCount)
-	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
-	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
+	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
 	var suite = pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
-	for i := range peerNetIDs {
-		peerPair := key.NewKeyPair(suite)
-		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
-		peerSecs[i] = peerPair.Private
-		peerPubs[i] = peerPair.Public
-	}
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
-		peerNetIDs, peerPubs, peerSecs, 10000,
+		peerNetIDs, peerIdentities, 10000,
 		testutil.NewPeeringNetReliable(),
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
@@ -54,7 +44,7 @@ func TestBasic(t *testing.T) {
 	for i := range peerNetIDs {
 		registry := testutil.NewDkgRegistryProvider(suite)
 		dkgNodes[i] = dkg.NewNode(
-			peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
+			peerIdentities[i], networkProviders[i], registry,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
 	}
@@ -62,7 +52,7 @@ func TestBasic(t *testing.T) {
 	// Initiate the key generation from some client node.
 	dkShare, err := dkgNodes[0].GenerateDistributedKey(
 		peerNetIDs,
-		peerPubs,
+		testpeers.PublicKeys(peerIdentities),
 		threshold,
 		1*time.Second,
 		2*time.Second,
@@ -83,18 +73,10 @@ func TestNoPubs(t *testing.T) {
 	var timeout = 100 * time.Second
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
-	var peerNetIDs []string = make([]string, peerCount)
-	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
-	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
+	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
 	var suite = pairing.NewSuiteBn256() // That's from the Pairing Adapter.
-	for i := range peerNetIDs {
-		peerPair := key.NewKeyPair(suite)
-		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
-		peerSecs[i] = peerPair.Private
-		peerPubs[i] = peerPair.Public
-	}
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
-		peerNetIDs, peerPubs, peerSecs, 10000,
+		peerNetIDs, peerIdentities, 10000,
 		testutil.NewPeeringNetReliable(),
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
@@ -105,7 +87,7 @@ func TestNoPubs(t *testing.T) {
 	for i := range peerNetIDs {
 		registry := testutil.NewDkgRegistryProvider(suite)
 		dkgNodes[i] = dkg.NewNode(
-			peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
+			peerIdentities[i], networkProviders[i], registry,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
 	}
@@ -137,18 +119,10 @@ func TestUnreliableNet(t *testing.T) {
 	var timeout = 100 * time.Second
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
-	var peerNetIDs []string = make([]string, peerCount)
-	var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
-	var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
+	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
 	var suite = pairing.NewSuiteBn256() // That's from the Pairing Adapter.
-	for i := range peerNetIDs {
-		peerPair := key.NewKeyPair(suite)
-		peerNetIDs[i] = fmt.Sprintf("P%02d", i)
-		peerSecs[i] = peerPair.Private
-		peerPubs[i] = peerPair.Public
-	}
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
-		peerNetIDs, peerPubs, peerSecs, 10000,
+		peerNetIDs, peerIdentities, 10000,
 		testutil.NewPeeringNetUnreliable( // NOTE: Network parameters.
 			80,                                         // Delivered %
 			20,                                         // Duplicated %
@@ -164,7 +138,7 @@ func TestUnreliableNet(t *testing.T) {
 	for i := range peerNetIDs {
 		registry := testutil.NewDkgRegistryProvider(suite)
 		dkgNodes[i] = dkg.NewNode(
-			peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
+			peerIdentities[i], networkProviders[i], registry,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
 	}
@@ -193,18 +167,10 @@ func TestLowN(t *testing.T) {
 		var timeout = 100 * time.Second
 		var threshold uint16 = n
 		var peerCount uint16 = n
-		var peerNetIDs []string = make([]string, peerCount)
-		var peerPubs []kyber.Point = make([]kyber.Point, len(peerNetIDs))
-		var peerSecs []kyber.Scalar = make([]kyber.Scalar, len(peerNetIDs))
 		var suite = pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
-		for i := range peerNetIDs {
-			peerPair := key.NewKeyPair(suite)
-			peerNetIDs[i] = fmt.Sprintf("P%02d", i)
-			peerSecs[i] = peerPair.Private
-			peerPubs[i] = peerPair.Public
-		}
+		peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
 		var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
-			peerNetIDs, peerPubs, peerSecs, 10000,
+			peerNetIDs, peerIdentities, 10000,
 			testutil.NewPeeringNetReliable(),
 			testlogger.WithLevel(log, logger.LevelWarn, false),
 		)
@@ -215,7 +181,7 @@ func TestLowN(t *testing.T) {
 		for i := range peerNetIDs {
 			registry := testutil.NewDkgRegistryProvider(suite)
 			dkgNodes[i] = dkg.NewNode(
-				peerSecs[i], peerPubs[i], suite, networkProviders[i], registry,
+				peerIdentities[i], networkProviders[i], registry,
 				testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 			)
 		}
@@ -223,7 +189,7 @@ func TestLowN(t *testing.T) {
 		// Initiate the key generation from some client node.
 		dkShare, err := dkgNodes[0].GenerateDistributedKey(
 			peerNetIDs,
-			peerPubs,
+			testpeers.PublicKeys(peerIdentities),
 			threshold,
 			1*time.Second,
 			2*time.Second,

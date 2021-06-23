@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
-	"go.dedis.ch/kyber/v3"
 )
 
 // structure of the encoded PeerMessage:
@@ -104,9 +104,9 @@ func decodeMessage(data []byte) (*peering.PeerMessage, error) {
 }
 
 type handshakeMsg struct {
-	peeringID string      // Pair of peer NetIDs
-	srcNetID  string      // Their NetID
-	pubKey    kyber.Point // Our PubKey.
+	peeringID string            // Pair of peer NetIDs
+	srcNetID  string            // Their NetID
+	pubKey    ed25519.PublicKey // Our PubKey.
 }
 
 func (m *handshakeMsg) bytes() ([]byte, error) {
@@ -118,12 +118,12 @@ func (m *handshakeMsg) bytes() ([]byte, error) {
 	if err = util.WriteString16(&buf, m.srcNetID); err != nil {
 		return nil, err
 	}
-	if err = util.WriteMarshaled(&buf, m.pubKey); err != nil {
+	if err = util.WriteBytes16(&buf, m.pubKey.Bytes()); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
 }
-func handshakeMsgFromBytes(buf []byte, suite kyber.Group) (*handshakeMsg, error) {
+func handshakeMsgFromBytes(buf []byte) (*handshakeMsg, error) {
 	var err error
 	r := bytes.NewReader(buf)
 	m := handshakeMsg{}
@@ -133,8 +133,11 @@ func handshakeMsgFromBytes(buf []byte, suite kyber.Group) (*handshakeMsg, error)
 	if m.srcNetID, err = util.ReadString16(r); err != nil {
 		return nil, err
 	}
-	m.pubKey = suite.Point()
-	if err = util.ReadMarshaled(r, m.pubKey); err != nil {
+	var pubKeyBytes []byte
+	if pubKeyBytes, err = util.ReadBytes16(r); err != nil {
+		return nil, err
+	}
+	if m.pubKey, _, err = ed25519.PublicKeyFromBytes(pubKeyBytes); err != nil {
 		return nil, err
 	}
 	return &m, nil

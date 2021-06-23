@@ -19,9 +19,9 @@ func TestCommitteeBasic(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	nodeCount := 4
-	netIDs, pubKeys, privKeys := testpeers.SetupKeys(uint16(nodeCount), suite)
+	netIDs, identities := testpeers.SetupKeys(uint16(nodeCount))
 	stateAddr, dksRegistries := testpeers.SetupDkgPregenerated(t, uint16((len(netIDs)*2)/3+1), netIDs, suite)
-	nodes := testpeers.SetupNet(netIDs, pubKeys, privKeys, testutil.NewPeeringNetReliable(), log)
+	nodes := testpeers.SetupNet(netIDs, identities, testutil.NewPeeringNetReliable(), log)
 	net0 := nodes[0]
 	reg := testchain.NewMockedCommitteeRegistry(netIDs)
 	cfg0 := &committeeimplTestConfigProvider{

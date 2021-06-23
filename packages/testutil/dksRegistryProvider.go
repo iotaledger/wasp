@@ -18,7 +18,7 @@ type DkgRegistryProvider struct {
 }
 
 // NewDkgRegistryProvider creates new mocked DKG registry provider.
-func NewDkgRegistryProvider(suite tcrypto.Suite) *DkgRegistryProvider {
+func NewDkgRegistryProvider(suite tcrypto.Suite) *DkgRegistryProvider { // TODO: XXX: KP: Remove the SUITE.
 	return &DkgRegistryProvider{
 		DB:    map[string][]byte{},
 		Suite: suite,

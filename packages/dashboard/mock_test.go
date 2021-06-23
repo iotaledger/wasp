@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package dashboard
 
 import (
@@ -31,7 +34,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/labstack/echo/v4"
-	"go.dedis.ch/kyber/v3"
 )
 
 // waspServices is a mock implementation of the WaspServices interface
@@ -106,7 +108,7 @@ func (p *peeringNetworkProvider) PeerByNetID(peerNetID string) (peering.PeerSend
 	panic("not implemented")
 }
 
-func (p *peeringNetworkProvider) PeerByPubKey(peerPub kyber.Point) (peering.PeerSender, error) {
+func (p *peeringNetworkProvider) PeerByPubKey(peerPub *ed25519.PublicKey) (peering.PeerSender, error) {
 	panic("not implemented")
 }
 
@@ -132,7 +134,7 @@ func (p *peeringNode) NetID() string {
 	return "127.0.0.1:4000"
 }
 
-func (p *peeringNode) PubKey() kyber.Point {
+func (p *peeringNode) PubKey() *ed25519.PublicKey {
 	panic("not implemented")
 }
 

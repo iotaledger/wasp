@@ -35,8 +35,8 @@ func testPregenerateDKS(t *testing.T, N uint16) {
 	suite := pairing.NewSuiteBn256()
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
-	netIDs, pubKeys, privKeys := testpeers.SetupKeys(N, suite)
-	dksAddr, dksRegistries := testpeers.SetupDkg(t, uint16((len(netIDs)*2)/3+1), netIDs, pubKeys, privKeys, suite, log.Named("dkg"))
+	netIDs, identities := testpeers.SetupKeys(N)
+	dksAddr, dksRegistries := testpeers.SetupDkg(t, uint16((len(netIDs)*2)/3+1), netIDs, identities, suite, log.Named("dkg"))
 	var buf bytes.Buffer
 	util.WriteUint16(&buf, uint16(len(dksRegistries)))
 	for i := range dksRegistries {

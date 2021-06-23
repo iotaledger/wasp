@@ -12,9 +12,9 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/tangle"
 	"github.com/iotaledger/hive.go/backoff"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
-	"go.dedis.ch/kyber/v3"
 	"go.uber.org/atomic"
 )
 
@@ -34,7 +34,7 @@ type peer struct {
 	handshakeOk bool
 
 	remoteNetID  string // network locations as taken from the SC data
-	remotePubKey kyber.Point
+	remotePubKey *ed25519.PublicKey
 
 	startOnce *sync.Once
 	waitReady *sync.WaitGroup
@@ -63,7 +63,7 @@ func (p *peer) NetID() string {
 }
 
 // PubKey implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
-func (p *peer) PubKey() kyber.Point {
+func (p *peer) PubKey() *ed25519.PublicKey {
 	p.log.Infof("Waiting for connection to become ready to get %v peer's public key, inbound=%v.", p.remoteNetID, p.IsInbound())
 	p.waitReady.Wait()
 	return p.remotePubKey
@@ -192,7 +192,7 @@ func (p *peer) sendHandshake() error {
 	msg := handshakeMsg{
 		peeringID: p.peeringID(),
 		srcNetID:  p.net.Self().NetID(),
-		pubKey:    p.net.nodeKeyPair.Public,
+		pubKey:    p.net.nodeKeyPair.PublicKey,
 	}
 	var msgData []byte
 	if msgData, err = msg.bytes(); err != nil {

@@ -238,7 +238,7 @@ func (cluster *Cluster) start(dataPath string) error {
 	initOk := make(chan bool, cluster.Config.Wasp.NumNodes)
 
 	for i := 0; i < cluster.Config.Wasp.NumNodes; i++ {
-		cmd, err := cluster.startServer("wasp", waspNodeDataPath(dataPath, i), fmt.Sprintf("wasp %d", i), initOk, "nanomsg publisher is running")
+		cmd, err := cluster.startServer("wasp", waspNodeDataPath(dataPath, i), fmt.Sprintf("wasp %d", i), initOk, "WebAPI started")
 		if err != nil {
 			return err
 		}

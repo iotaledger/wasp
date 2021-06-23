@@ -8,14 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/peering/domain"
-
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/peering/domain"
 	"github.com/iotaledger/wasp/packages/peering/group"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
 // NetImpl implements a peering.NetworkProvider interface.
@@ -27,14 +25,13 @@ type NetImpl struct {
 	peersMutex *sync.RWMutex
 	events     *events.Event
 
-	nodeKeyPair *key.Pair
-	suite       kyber.Group
+	nodeKeyPair *ed25519.KeyPair
 	log         *logger.Logger
 }
 
 // NewNetworkProvider is a constructor for the TCP based
 // peering network implementation.
-func NewNetworkProvider(myNetID string, port int, nodeKeyPair *key.Pair, suite kyber.Group, log *logger.Logger) (*NetImpl, error) {
+func NewNetworkProvider(myNetID string, port int, nodeKeyPair *ed25519.KeyPair, log *logger.Logger) (*NetImpl, error) {
 	if err := peering.CheckMyNetID(myNetID, port); err != nil {
 		// can't continue because NetID parameter is not correct
 		log.Panicf("checkMyNetworkID: '%v'. || Check the 'netid' parameter in config.json", err)
@@ -46,7 +43,6 @@ func NewNetworkProvider(myNetID string, port int, nodeKeyPair *key.Pair, suite k
 		peers:       make(map[string]*peer),
 		peersMutex:  &sync.RWMutex{},
 		nodeKeyPair: nodeKeyPair,
-		suite:       suite,
 		log:         log,
 	}
 	n.events = events.NewEvent(n.eventHandler)
@@ -125,10 +121,10 @@ func (n *NetImpl) PeerByNetID(peerNetID string) (peering.PeerSender, error) {
 
 // PeerByPubKey implements peering.NetworkProvider.
 // NOTE: For now, only known nodes can be looked up by PubKey.
-func (n *NetImpl) PeerByPubKey(peerPub kyber.Point) (peering.PeerSender, error) {
+func (n *NetImpl) PeerByPubKey(peerPub *ed25519.PublicKey) (peering.PeerSender, error) {
 	for i := range n.peers {
 		pk := n.peers[i].PubKey()
-		if pk != nil && pk.Equal(peerPub) {
+		if pk != nil && *pk == *peerPub {
 			return n.PeerByNetID(n.peers[i].NetID())
 		}
 	}
@@ -150,8 +146,8 @@ func (n *NetImpl) NetID() string {
 }
 
 // PubKey implements peering.PeerSender for the Self() node.
-func (n *NetImpl) PubKey() kyber.Point {
-	return n.nodeKeyPair.Public
+func (n *NetImpl) PubKey() *ed25519.PublicKey {
+	return &n.nodeKeyPair.PublicKey
 }
 
 // SendMsg implements peering.PeerSender for the Self() node.

@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -59,7 +60,11 @@ func configure(*node.Plugin) {
 
 	auth.AddAuthentication(Server.Echo(), parameters.GetStringToString(parameters.WebAPIAuth))
 
-	webapi.Init(Server, adminWhitelist())
+	tnm := peering.DefaultTrustedNetworkManager()
+	if tnm == nil {
+		panic("dependency TrustedNetworkManager is missing in WebAPI")
+	}
+	webapi.Init(Server, adminWhitelist(), tnm)
 }
 
 func customHTTPErrorHandler(err error, c echo.Context) {

@@ -20,11 +20,10 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
-
-	"github.com/iotaledger/wasp/packages/util"
-	"go.dedis.ch/kyber/v3"
 )
 
 const (
@@ -87,8 +86,59 @@ type NetworkProvider interface {
 	Attach(peeringID *PeeringID, callback func(recv *RecvEvent)) interface{}
 	Detach(attachID interface{})
 	PeerByNetID(peerNetID string) (PeerSender, error)
-	PeerByPubKey(peerPub kyber.Point) (PeerSender, error)
+	PeerByPubKey(peerPub *ed25519.PublicKey) (PeerSender, error)
 	PeerStatus() []PeerStatusProvider
+}
+
+// TrustedNetworkManager is used maintain a configuration which peers are trusted.
+// In a typical implementation, this interface should be implemented by the same
+// struct, that implements the NetworkProvider. These implementations should interact,
+// e.g. when we distrust some peer, all the connections to it should be cut immediately.
+type TrustedNetworkManager interface {
+	IsTrustedPeer(pubKey ed25519.PublicKey) error
+	TrustPeer(pubKey ed25519.PublicKey, netID string) (*TrustedPeer, error)
+	DistrustPeer(pubKey ed25519.PublicKey) (*TrustedPeer, error)
+	TrustedPeers() ([]*TrustedPeer, error)
+}
+
+// TrustedPeer carries a peer information we use to trust it.
+type TrustedPeer struct {
+	PubKey ed25519.PublicKey
+	NetID  string
+}
+
+func TrustedPeerFromBytes(buf []byte) (*TrustedPeer, error) {
+	var err error
+	r := bytes.NewBuffer(buf)
+	tp := TrustedPeer{}
+	var keyBytes []byte
+	if keyBytes, err = util.ReadBytes16(r); err != nil {
+		return nil, err
+	}
+	tp.PubKey, _, err = ed25519.PublicKeyFromBytes(keyBytes)
+	if err != nil {
+		return nil, err
+	}
+	if tp.NetID, err = util.ReadString16(r); err != nil {
+		return nil, err
+	}
+	return &tp, nil
+}
+
+func (tp *TrustedPeer) Bytes() ([]byte, error) {
+	var err error
+	var buf bytes.Buffer
+	if err = util.WriteBytes16(&buf, tp.PubKey.Bytes()); err != nil {
+		return nil, err
+	}
+	if err = util.WriteString16(&buf, tp.NetID); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func (tp *TrustedPeer) PubKeyBytes() ([]byte, error) {
+	return tp.PubKey.Bytes(), nil
 }
 
 type PeerCollection interface {
@@ -143,7 +193,7 @@ type PeerSender interface {
 	// authenticated, therefore it can return nil, if pub
 	// key is not known yet. You can call await before calling
 	// this function to ensure the public key is already resolved.
-	PubKey() kyber.Point
+	PubKey() *ed25519.PublicKey
 
 	// SendMsg works in an asynchronous way, and therefore the
 	// errors are not returned here.
@@ -169,7 +219,7 @@ type PeerSender interface {
 // by the same object.
 type PeerStatusProvider interface {
 	NetID() string
-	PubKey() kyber.Point
+	PubKey() *ed25519.PublicKey
 	IsInbound() bool
 	IsAlive() bool
 	NumUsers() int

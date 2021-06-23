@@ -4,6 +4,7 @@
 package peering
 
 import (
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
@@ -12,8 +13,6 @@ import (
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
 	peering_udp "github.com/iotaledger/wasp/packages/peering/udp"
 	"github.com/iotaledger/wasp/plugins/registry"
-	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
 const (
@@ -21,38 +20,43 @@ const (
 )
 
 var (
-	log                    *logger.Logger
-	defaultNetworkProvider peering_pkg.NetworkProvider // A singleton instance.
-	peerNetworkConfig      coretypes.PeerNetworkConfigProvider
+	log                          *logger.Logger
+	defaultNetworkProvider       peering_pkg.NetworkProvider         // A singleton instance.
+	defaultTrustedNetworkManager peering_pkg.TrustedNetworkManager   // A singleton instance.
+	peerNetworkConfig            coretypes.PeerNetworkConfigProvider // TODO: Remove.
 )
 
 // Init is an entry point for this plugin.
-func Init(suite *pairing.SuiteBn256) *node.Plugin {
+func Init() *node.Plugin {
 	configure := func(_ *node.Plugin) {
 		log = logger.NewLogger(pluginName)
 		var err error
-		var nodeKeyPair *key.Pair
+		var nodeKeyPair *ed25519.KeyPair
 		if nodeKeyPair, err = registry.DefaultRegistry().GetNodeIdentity(); err != nil {
 			panic(err)
 		}
-		peerNetworkConfig, err = peering_pkg.NewStaticPeerNetworkConfigProvider(
+		peerNetworkConfig, err = peering_pkg.NewStaticPeerNetworkConfigProvider( // TODO: Remove.
 			parameters.GetString(parameters.PeeringMyNetId),
 			parameters.GetInt(parameters.PeeringPort),
-			parameters.GetStringSlice(parameters.PeeringNeighbors)...,
+			parameters.GetStringSlice(parameters.PeeringNeighbors)..., // Unregister the parameter?
 		)
 		if err != nil {
 			log.Panicf("Init.peering: %w", err)
 		}
 		log.Infof("default peering configuration: %s", peerNetworkConfig.String())
-		defaultNetworkProvider, err = peering_udp.NewNetworkProvider(
-			peerNetworkConfig,
-			nodeKeyPair,
-			suite,
+		netImpl, err := peering_udp.NewNetworkProvider(
+			parameters.GetString(parameters.PeeringMyNetId),
+			parameters.GetInt(parameters.PeeringPort),
+			*nodeKeyPair,
+			registry.DefaultRegistry(),
 			log,
 		)
 		if err != nil {
 			log.Panicf("Init.peering: %w", err)
 		}
+		defaultNetworkProvider = netImpl
+		defaultTrustedNetworkManager = netImpl
+		log.Infof("------------- NetID is %s ------------------", peerNetworkConfig.OwnNetID())
 	}
 	run := func(_ *node.Plugin) {
 		err := daemon.BackgroundWorker(
@@ -72,6 +76,10 @@ func DefaultNetworkProvider() peering_pkg.NetworkProvider {
 	return defaultNetworkProvider
 }
 
-func DefaultPeerNetworkConfig() coretypes.PeerNetworkConfigProvider {
+func DefaultTrustedNetworkManager() peering_pkg.TrustedNetworkManager {
+	return defaultTrustedNetworkManager
+}
+
+func DefaultPeerNetworkConfig() coretypes.PeerNetworkConfigProvider { // TODO: Remove.
 	return peerNetworkConfig
 }

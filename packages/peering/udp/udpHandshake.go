@@ -6,18 +6,18 @@ package udp
 import (
 	"bytes"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/util"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/sign/bls"
+	"golang.org/x/xerrors"
 )
 
 type handshakeMsg struct {
-	netID   string      // Their NetID
-	pubKey  kyber.Point // Our PubKey.
-	respond bool        // Do the message asks for a response?
+	netID   string            // Their NetID
+	pubKey  ed25519.PublicKey // Our PubKey.
+	respond bool              // Do the message asks for a response?
 }
 
-func (m *handshakeMsg) bytes(secKey kyber.Scalar, suite Suite) ([]byte, error) {
+func (m *handshakeMsg) bytes(secKey ed25519.PrivateKey) ([]byte, error) {
 	var err error
 	//
 	// Payload.
@@ -25,21 +25,18 @@ func (m *handshakeMsg) bytes(secKey kyber.Scalar, suite Suite) ([]byte, error) {
 	if err = util.WriteString16(&payloadBuf, m.netID); err != nil {
 		return nil, err
 	}
-	if err = util.WriteMarshaled(&payloadBuf, m.pubKey); err != nil {
+	if err = util.WriteBytes16(&payloadBuf, m.pubKey.Bytes()); err != nil {
 		return nil, err
 	}
 	if err = util.WriteBoolByte(&payloadBuf, m.respond); err != nil {
 		return nil, err
 	}
-	var payload = payloadBuf.Bytes()
-	var signature []byte
-	if signature, err = bls.Sign(suite, secKey, payload); err != nil {
-		return nil, err
-	}
 	//
 	// Signed frame.
-	var signedBuf bytes.Buffer
-	if err = util.WriteBytes16(&signedBuf, signature); err != nil {
+	payload := payloadBuf.Bytes()
+	signature := secKey.Sign(payload)
+	signedBuf := bytes.Buffer{}
+	if err = util.WriteBytes16(&signedBuf, signature.Bytes()); err != nil {
 		return nil, err
 	}
 	if err = util.WriteBytes16(&signedBuf, payload); err != nil {
@@ -48,14 +45,14 @@ func (m *handshakeMsg) bytes(secKey kyber.Scalar, suite Suite) ([]byte, error) {
 	return signedBuf.Bytes(), nil
 }
 
-func handshakeMsgFromBytes(buf []byte, suite Suite) (*handshakeMsg, error) {
+func handshakeMsgFromBytes(buf []byte) (*handshakeMsg, error) {
 	var err error
 	//
 	// Signed frame.
 	rSigned := bytes.NewReader(buf)
 	var payload []byte
-	var signature []byte
-	if signature, err = util.ReadBytes16(rSigned); err != nil {
+	var signatureBytes []byte
+	if signatureBytes, err = util.ReadBytes16(rSigned); err != nil {
 		return nil, err
 	}
 	if payload, err = util.ReadBytes16(rSigned); err != nil {
@@ -68,8 +65,11 @@ func handshakeMsgFromBytes(buf []byte, suite Suite) (*handshakeMsg, error) {
 	if m.netID, err = util.ReadString16(rPayload); err != nil {
 		return nil, err
 	}
-	m.pubKey = suite.Point()
-	if err = util.ReadMarshaled(rPayload, m.pubKey); err != nil {
+	var pubKeyBytes []byte
+	if pubKeyBytes, err = util.ReadBytes16(rPayload); err != nil {
+		return nil, err
+	}
+	if m.pubKey, _, err = ed25519.PublicKeyFromBytes(pubKeyBytes); err != nil {
 		return nil, err
 	}
 	if err = util.ReadBoolByte(rPayload, &m.respond); err != nil {
@@ -77,8 +77,12 @@ func handshakeMsgFromBytes(buf []byte, suite Suite) (*handshakeMsg, error) {
 	}
 	//
 	// Verify the signature.
-	if err = bls.Verify(suite, m.pubKey, payload, signature); err != nil {
+	var signature ed25519.Signature
+	if signature, _, err = ed25519.SignatureFromBytes(signatureBytes); err != nil {
 		return nil, err
+	}
+	if !m.pubKey.VerifySignature(payload, signature) {
+		return nil, xerrors.New("invalid message signature")
 	}
 	return &m, nil
 }

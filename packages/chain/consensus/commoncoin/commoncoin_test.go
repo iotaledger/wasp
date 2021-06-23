@@ -53,9 +53,9 @@ func testCC(t *testing.T, netBehavior testutil.PeeringNetBehavior, log *logger.L
 	var threshold uint16 = 7
 	suite := pairing.NewSuiteBn256()
 	peeringID := peering.RandomPeeringID()
-	peerNetIDs, peerPubs, peerSecs := testpeers.SetupKeys(peerCount, suite)
+	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
 	address, nodeRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, suite)
-	networkProviders := testpeers.SetupNet(peerNetIDs, peerPubs, peerSecs, netBehavior, log)
+	networkProviders := testpeers.SetupNet(peerNetIDs, peerIdentities, netBehavior, log)
 	ccNodes := setupCommonCoinNodes(peeringID, address, peerNetIDs, nodeRegistries, networkProviders, log)
 	//
 	// Check, if the common coin algorithm works.

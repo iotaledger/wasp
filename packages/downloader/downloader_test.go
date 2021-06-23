@@ -65,7 +65,7 @@ func TestIpfsDownload(t *testing.T) {
 	defer stopMockServer(server)
 
 	hash := hashing.HashData(constVarFile)
-	reg := registry.NewRegistry(nil, log, mapdb.NewMapDB())
+	reg := registry.NewRegistry(log, mapdb.NewMapDB())
 	result, err := reg.HasBlob(hash)
 	chanDownloaded := make(chan bool)
 	require.NoError(t, err)

@@ -11,16 +11,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-
-	"github.com/iotaledger/wasp/packages/peering/domain"
-
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/peering/domain"
 	"github.com/iotaledger/wasp/packages/peering/group"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
 const (
@@ -39,30 +35,36 @@ type NetImpl struct {
 	peersLock   *sync.RWMutex
 	recvEvents  *events.Event
 	recvQueue   chan *peering.RecvEvent // A queue for received messages.
-	nodeKeyPair *key.Pair
-	suite       Suite
+	nodeKeyPair ed25519.KeyPair
+	trusted     peering.TrustedNetworkManager
 	log         *logger.Logger
 }
 
 // NewNetworkProvider is a constructor for the TCP based
 // peering network implementation.
-func NewNetworkProvider(peerNetConfig coretypes.PeerNetworkConfigProvider, nodeKeyPair *key.Pair, suite Suite, log *logger.Logger) (*NetImpl, error) {
+func NewNetworkProvider(
+	myNetID string,
+	port int,
+	nodeKeyPair ed25519.KeyPair,
+	trusted peering.TrustedNetworkManager,
+	log *logger.Logger,
+) (*NetImpl, error) {
 	var err error
 	var myUDPConn *net.UDPConn
-	if myUDPConn, err = net.ListenUDP("udp", &net.UDPAddr{Port: peerNetConfig.PeeringPort()}); err != nil {
+	if myUDPConn, err = net.ListenUDP("udp", &net.UDPAddr{Port: port}); err != nil {
 		return nil, err
 	}
 	n := NetImpl{
-		myNetID:     peerNetConfig.OwnNetID(),
+		myNetID:     myNetID,
 		myUDPConn:   myUDPConn,
-		port:        peerNetConfig.PeeringPort(),
+		port:        port,
 		peers:       make(map[string]*peer),
 		peersByAddr: make(map[string]*peer),
 		peersLock:   &sync.RWMutex{},
 		recvEvents:  nil, // Initialized bellow.
 		recvQueue:   make(chan *peering.RecvEvent, recvQueueSize),
 		nodeKeyPair: nodeKeyPair,
-		suite:       suite,
+		trusted:     trusted,
 		log:         log,
 	}
 	n.recvEvents = events.NewEvent(n.eventHandler)
@@ -152,12 +154,12 @@ func (n *NetImpl) PeerByNetID(peerNetID string) (peering.PeerSender, error) {
 
 // PeerByPubKey implements peering.NetworkProvider.
 // NOTE: For now, only known nodes can be looked up by PubKey.
-func (n *NetImpl) PeerByPubKey(peerPub kyber.Point) (peering.PeerSender, error) {
+func (n *NetImpl) PeerByPubKey(peerPub *ed25519.PublicKey) (peering.PeerSender, error) {
 	n.peersLock.RLock()
 	defer n.peersLock.RUnlock()
 	for i := range n.peers {
 		pk := n.peers[i].PubKey()
-		if pk != nil && pk.Equal(peerPub) {
+		if pk != nil && *pk == *peerPub { // Compared as binaries.
 			return n.PeerByNetID(n.peers[i].NetID())
 		}
 	}
@@ -181,8 +183,8 @@ func (n *NetImpl) NetID() string {
 }
 
 // PubKey implements peering.PeerSender for the Self() node.
-func (n *NetImpl) PubKey() kyber.Point {
-	return n.nodeKeyPair.Public
+func (n *NetImpl) PubKey() *ed25519.PublicKey {
+	return &n.nodeKeyPair.PublicKey
 }
 
 // SendMsg implements peering.PeerSender for the Self() node.
@@ -207,6 +209,30 @@ func (n *NetImpl) Await(timeout time.Duration) error {
 // Close implements peering.PeerSender for the Self() node.
 func (n *NetImpl) Close() {
 	// We will con close the connection of the own node.
+}
+
+// IsTrustedPeer implements the peering.TrustedNetworkManager interface.
+func (n *NetImpl) IsTrustedPeer(pubKey ed25519.PublicKey) error {
+	return n.trusted.IsTrustedPeer(pubKey)
+}
+
+// TrustPeer implements the peering.TrustedNetworkManager interface.
+// It delegates everything to other implementation and updates the connections accordingly.
+func (n *NetImpl) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.TrustedPeer, error) {
+	// TODO: Implement
+	return n.trusted.TrustPeer(pubKey, netID)
+}
+
+// DistrustPeer implements the peering.TrustedNetworkManager interface.
+// It delegates everything to other implementation and updates the connections accordingly.
+func (n *NetImpl) DistrustPeer(pubKey ed25519.PublicKey) (*peering.TrustedPeer, error) {
+	// TODO: Implement
+	return n.trusted.DistrustPeer(pubKey)
+}
+
+// TrustedPeers implements the peering.TrustedNetworkManager interface.
+func (n *NetImpl) TrustedPeers() ([]*peering.TrustedPeer, error) {
+	return n.trusted.TrustedPeers()
 }
 
 func (n *NetImpl) usePeer(remoteNetID string) (peering.PeerSender, error) {
@@ -272,10 +298,13 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 			// Nothing
 		case peering.MsgTypeHandshake:
 			var h *handshakeMsg
-			if h, err = handshakeMsgFromBytes(peerMsg.MsgData, n.suite); err != nil {
+			if h, err = handshakeMsgFromBytes(peerMsg.MsgData); err != nil {
 				n.log.Warnf("Error while decoding a UDP handshake, reason=%v", err)
 				continue
 			}
+			// if err = n.trusted.IsTrustedPeer(h.pubKey); err != nil { // TODO: XXX: KP
+			// 	n.log.Warnf("Dropping handshakeMsg from %v with pubKey=%v, error=%v", peerUDPAddr, h.pubKey, err)
+			// }
 			n.peersLock.Lock()
 			if p, ok := n.peers[h.netID]; ok {
 				if oldUDPAddrStr, newUDPAddrStr := p.handleHandshake(h, peerUDPAddr); oldUDPAddrStr != newUDPAddrStr {

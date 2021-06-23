@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"go.dedis.ch/kyber/v3/pairing"
 
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 
@@ -22,8 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 
 	"github.com/iotaledger/wasp/packages/testutil"
-
-	"go.dedis.ch/kyber/v3"
 
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 
@@ -42,12 +41,10 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3/pairing"
 	"go.uber.org/zap/zapcore"
 )
 
 type mockedEnv struct {
-	Suite             *pairing.SuiteBn256
 	T                 *testing.T
 	N                 uint16
 	Quorum            uint16
@@ -57,8 +54,7 @@ type mockedEnv struct {
 	OriginatorKeyPair *ed25519.KeyPair
 	OriginatorAddress ledgerstate.Address
 	StateAddress      ledgerstate.Address
-	PubKeys           []kyber.Point
-	PrivKeys          []kyber.Scalar
+	Identities        []*ed25519.KeyPair
 	NetworkProviders  []peering.NetworkProvider
 	DKSRegistries     []coretypes.DKShareRegistryProvider
 	store             kvstore.KVStore
@@ -107,7 +103,6 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 	}
 
 	ret := &mockedEnv{
-		Suite:      pairing.NewSuiteBn256(),
 		T:          t,
 		N:          n,
 		Quorum:     quorum,
@@ -147,9 +142,9 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 	}
 
 	log.Infof("running DKG and setting up mocked network..")
-	_, ret.PubKeys, ret.PrivKeys = testpeers.SetupKeys(n, ret.Suite)
-	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, neighbors, ret.Suite)
-	ret.NetworkProviders = testpeers.SetupNet(neighbors, ret.PubKeys, ret.PrivKeys, testutil.NewPeeringNetReliable(), log)
+	_, ret.Identities = testpeers.SetupKeys(n)
+	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, neighbors, pairing.NewSuiteBn256())
+	ret.NetworkProviders = testpeers.SetupNet(neighbors, ret.Identities, testutil.NewPeeringNetReliable(), log)
 
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)
