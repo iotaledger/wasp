@@ -27,11 +27,11 @@ func TestBasic(t *testing.T) {
 	defer log.Sync()
 	//
 	// Create a fake network and keys for the tests.
-	var timeout = 100 * time.Second
+	timeout := 100 * time.Second
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-	var suite = pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
+	suite := pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
 		testutil.NewPeeringNetReliable(),
@@ -43,10 +43,12 @@ func TestBasic(t *testing.T) {
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 	for i := range peerNetIDs {
 		registry := testutil.NewDkgRegistryProvider(suite)
-		dkgNodes[i] = dkg.NewNode(
+		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], registry,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
+		require.NoError(t, err)
+		dkgNodes[i] = dkgNode
 	}
 	//
 	// Initiate the key generation from some client node.
@@ -70,11 +72,11 @@ func TestNoPubs(t *testing.T) {
 	defer log.Sync()
 	//
 	// Create a fake network and keys for the tests.
-	var timeout = 100 * time.Second
+	timeout := 100 * time.Second
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-	var suite = pairing.NewSuiteBn256() // That's from the Pairing Adapter.
+	suite := pairing.NewSuiteBn256() // That's from the Pairing Adapter.
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
 		testutil.NewPeeringNetReliable(),
@@ -86,10 +88,12 @@ func TestNoPubs(t *testing.T) {
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 	for i := range peerNetIDs {
 		registry := testutil.NewDkgRegistryProvider(suite)
-		dkgNodes[i] = dkg.NewNode(
+		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], registry,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
+		require.NoError(t, err)
+		dkgNodes[i] = dkgNode
 	}
 	//
 	// Initiate the key generation from some client node.
@@ -116,11 +120,11 @@ func TestUnreliableNet(t *testing.T) {
 	defer log.Sync()
 	//
 	// Create a fake network and keys for the tests.
-	var timeout = 100 * time.Second
+	timeout := 100 * time.Second
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-	var suite = pairing.NewSuiteBn256() // That's from the Pairing Adapter.
+	suite := pairing.NewSuiteBn256() // That's from the Pairing Adapter.
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
 		testutil.NewPeeringNetUnreliable( // NOTE: Network parameters.
@@ -137,10 +141,12 @@ func TestUnreliableNet(t *testing.T) {
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 	for i := range peerNetIDs {
 		registry := testutil.NewDkgRegistryProvider(suite)
-		dkgNodes[i] = dkg.NewNode(
+		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], registry,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 		)
+		require.NoError(t, err)
+		dkgNodes[i] = dkgNode
 	}
 	//
 	// Initiate the key generation from some client node.
@@ -164,10 +170,10 @@ func TestLowN(t *testing.T) {
 	//
 	// Create a fake network and keys for the tests.
 	for n := uint16(1); n < 4; n++ {
-		var timeout = 100 * time.Second
-		var threshold uint16 = n
-		var peerCount uint16 = n
-		var suite = pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
+		timeout := 100 * time.Second
+		threshold := n
+		peerCount := n
+		suite := pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
 		peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
 		var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 			peerNetIDs, peerIdentities, 10000,
@@ -180,10 +186,12 @@ func TestLowN(t *testing.T) {
 		var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 		for i := range peerNetIDs {
 			registry := testutil.NewDkgRegistryProvider(suite)
-			dkgNodes[i] = dkg.NewNode(
+			dkgNode, err := dkg.NewNode(
 				peerIdentities[i], networkProviders[i], registry,
 				testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
 			)
+			require.NoError(t, err)
+			dkgNodes[i] = dkgNode
 		}
 		//
 		// Initiate the key generation from some client node.

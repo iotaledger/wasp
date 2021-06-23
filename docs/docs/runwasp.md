@@ -12,7 +12,7 @@ The `goshimmer` command must be compiled from the Goshimmer repository:
 ```
 $ git clone https://github.com/iotaledger/goshimmer.git
 $ cd goshimmer
-$ go install
+$ go install -tags rocksdb
 ```
 
 The `wasp` and `wasp-cli` commands can be installed from this repository:
@@ -20,7 +20,7 @@ The `wasp` and `wasp-cli` commands can be installed from this repository:
 ```
 $ git clone https://github.com/iotaledger/wasp.git
 $ cd wasp
-$ go install ./...
+$ go install -tags rocksdb ./...
 ```
 
 ## Step 2: Run Goshimmer connected to the Pollen network

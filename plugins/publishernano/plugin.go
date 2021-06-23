@@ -19,9 +19,7 @@ import (
 // PluginName is the name of the Publisher plugin.
 const PluginName = "PublisherNano"
 
-var (
-	log *logger.Logger
-)
+var log *logger.Logger
 
 func Init() *node.Plugin {
 	return node.NewPlugin(PluginName, node.Enabled, configure, run)
@@ -82,7 +80,7 @@ func openSocket(port int) (mangos.Socket, error) {
 	}
 
 	url := fmt.Sprintf("tcp://:%d", port)
-	if err = socket.Listen(url); err != nil {
+	if err := socket.Listen(url); err != nil {
 		return nil, err
 	}
 	return socket, nil

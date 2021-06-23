@@ -12,17 +12,15 @@ const (
 	description = "Governance contract"
 )
 
-var (
-	Interface = &coreutil.ContractInterface{
-		Name:        Name,
-		Description: description,
-		ProgramHash: hashing.HashStrings(Name),
-	}
-)
+var Interface = &coreutil.ContractInterface{
+	Name:        Name,
+	Description: description,
+	ProgramHash: hashing.HashStrings(Name),
+}
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.Func(coreutil.CoreEPRotateStateController, rotateStateController),
+		coreutil.Func(FuncRotateStateController, rotateStateController),
 		coreutil.Func(FuncAddAllowedStateControllerAddress, addAllowedStateControllerAddress),
 		coreutil.Func(FuncRemoveAllowedStateControllerAddress, removeAllowedStateControllerAddress),
 		coreutil.ViewFunc(FuncGetAllowedStateControllerAddresses, getAllowedStateControllerAddresses),
@@ -31,6 +29,7 @@ func init() {
 
 const (
 	// functions
+	FuncRotateStateController               = coreutil.CoreEPRotateStateController
 	FuncAddAllowedStateControllerAddress    = "addAllowedStateControllerAddress"
 	FuncRemoveAllowedStateControllerAddress = "removeAllowedStateControllerAddress"
 	FuncGetAllowedStateControllerAddresses  = "getAllowedStateControllerAddresses"

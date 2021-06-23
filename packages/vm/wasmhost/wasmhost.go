@@ -12,10 +12,11 @@ import (
 
 type WasmHost struct {
 	KvStoreHost
-	vm          WasmVM
-	codeToFunc  map[uint32]string
-	funcToCode  map[string]uint32
-	funcToIndex map[string]int32
+	vm            WasmVM
+	codeToFunc    map[uint32]string
+	funcToCode    map[string]uint32
+	funcToIndex   map[string]int32
+	useBase58Keys bool
 }
 
 func (host *WasmHost) InitVM(vm WasmVM, useBase58Keys bool) error {

@@ -8,12 +8,11 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -24,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
@@ -37,7 +37,7 @@ func (ch *Chain) String() string {
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
 	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.Hash().String())
 	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GetGenesisAddress())
-	return string(buf.Bytes())
+	return buf.String()
 }
 
 // DumpAccounts dumps all account balances into the human readable string
@@ -45,7 +45,8 @@ func (ch *Chain) DumpAccounts() string {
 	_, chainOwnerID, _ := ch.GetInfo()
 	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n", ch.ChainID.String(), chainOwnerID.String())
 	acc := ch.GetAccounts()
-	for _, aid := range acc {
+	for i := range acc {
+		aid := acc[i]
 		ret += fmt.Sprintf("  %s:\n", aid.String())
 		bals := ch.GetAccountBalance(&aid)
 		bals.ForEach(func(col ledgerstate.Color, bal uint64) bool {
@@ -99,10 +100,9 @@ func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, boo
 // data to the chain. It returns hash of the blob, the unique identified of it.
 // Takes request token and necessary fees from the 'sigScheme' address (or OriginatorAddress if nil).
 //
-// The parameters must be in the form of sequence of pairs 'fieldName': 'fieldValue'
+// The parameters must be either a dict.Dict, or a sequence of pairs 'fieldName': 'fieldValue'
 func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
-	par := toMap(params...)
-	expectedHash := blob.MustGetBlobHash(codec.MakeDict(par))
+	expectedHash := blob.MustGetBlobHash(parseParams(params))
 	if _, ok := ch.GetBlobInfo(expectedHash); ok {
 		// blob exists, return hash of existing
 		return expectedHash, nil
@@ -131,7 +131,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 		return
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
-	return
+	return ret, err
 }
 
 // UploadBlobOptimized does the same as UploadBlob, only better but more complicated
@@ -140,8 +140,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 // Before running the request in VM, the hash references contained in the request transaction are resolved with
 // the real data, previously uploaded directly.
 func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
-	par := toMap(params...)
-	expectedHash := blob.MustGetBlobHash(codec.MakeDict(par))
+	expectedHash := blob.MustGetBlobHash(parseParams(params))
 	if _, ok := ch.GetBlobInfo(expectedHash); ok {
 		// blob exists, return hash of existing
 		return expectedHash, nil
@@ -175,7 +174,7 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, 
 		return
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
-	return
+	return ret, err
 }
 
 const (
@@ -250,7 +249,7 @@ func (ch *Chain) DeployContract(keyPair *ed25519.KeyPair, name string, programHa
 
 // DeployWasmContract is syntactic sugar for uploading Wasm binary from file and
 // deploying the smart contract in one call
-func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name string, fname string, params ...interface{}) error {
+func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name, fname string, params ...interface{}) error {
 	hprog, err := ch.UploadWasmFromFile(keyPair, fname)
 	if err != nil {
 		return err
@@ -283,7 +282,7 @@ func (ch *Chain) GetInfo() (chainid.ChainID, coretypes.AgentID, map[coretypes.Hn
 // on the UTXODB ledger
 func (env *Solo) GetAddressBalance(addr ledgerstate.Address, col ledgerstate.Color) uint64 {
 	bals := env.GetAddressBalances(addr)
-	ret, _ := bals[col]
+	ret := bals[col]
 	return ret
 }
 
@@ -374,12 +373,10 @@ func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint
 	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(root.VarValidatorFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
-	require.True(ch.Env.T, validatorFee >= 0)
 
 	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(root.VarOwnerFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
-	require.True(ch.Env.T, ownerFee >= 0)
 
 	return feeColor, ownerFee, validatorFee
 }
@@ -610,7 +607,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []ledgerstate.Address {
 // RotateStateController rotates the chain to the new controller address.
 // We assume self-governed chain here.
 // Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
-func (ch *Chain) RotateStateController(newStateAddr ledgerstate.Address, newStateKeyPair *ed25519.KeyPair, ownerKeyPair *ed25519.KeyPair) error {
+func (ch *Chain) RotateStateController(newStateAddr ledgerstate.Address, newStateKeyPair, ownerKeyPair *ed25519.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
 	).WithIotas(1)

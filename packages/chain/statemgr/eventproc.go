@@ -16,6 +16,7 @@ import (
 func (sm *stateManager) EventGetBlockMsg(msg *chain.GetBlockMsg) {
 	sm.eventGetBlockMsgCh <- msg
 }
+
 func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 	sm.log.Debugw("EventGetBlockMsg received: ",
 		"sender", msg.SenderNetID,
@@ -52,6 +53,7 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 func (sm *stateManager) EventBlockMsg(msg *chain.BlockMsg) {
 	sm.eventBlockMsgCh <- msg
 }
+
 func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
 	sm.log.Debugf("EventBlockMsg received from %v", msg.SenderNetID)
 	if sm.stateOutput == nil {
@@ -76,6 +78,7 @@ func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
 func (sm *stateManager) EventOutputMsg(msg ledgerstate.Output) {
 	sm.eventOutputMsgCh <- msg
 }
+
 func (sm *stateManager) eventOutputMsg(msg ledgerstate.Output) {
 	sm.log.Debugf("EventOutputMsg received: %s", coretypes.OID(msg.ID()))
 	chainOutput, ok := msg.(*ledgerstate.AliasOutput)
@@ -93,6 +96,7 @@ func (sm *stateManager) eventOutputMsg(msg ledgerstate.Output) {
 func (sm *stateManager) EventStateMsg(msg *chain.StateMsg) {
 	sm.eventStateOutputMsgCh <- msg
 }
+
 func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 	sm.log.Debugw("EventStateMsg received: ",
 		"state index", msg.ChainOutput.GetStateIndex(),
@@ -112,6 +116,7 @@ func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 func (sm *stateManager) EventStateCandidateMsg(msg *chain.StateCandidateMsg) {
 	sm.eventPendingBlockMsgCh <- msg
 }
+
 func (sm *stateManager) eventStateCandidateMsg(msg *chain.StateCandidateMsg) {
 	sm.log.Debugf("EventStateCandidateMsg received: state index: %d, timestamp: %v",
 		msg.State.BlockIndex(), msg.State.Timestamp(),
@@ -130,7 +135,8 @@ func (sm *stateManager) EventTimerMsg(msg chain.TimerTick) {
 		sm.eventTimerMsgCh <- msg
 	}
 }
-func (sm *stateManager) eventTimerMsg(msg chain.TimerTick) {
+
+func (sm *stateManager) eventTimerMsg() {
 	sm.log.Debugf("EventTimerMsg received")
 	sm.takeAction()
 }

@@ -14,9 +14,7 @@ import (
 // PluginName is the name of the CLI plugin.
 const PluginName = "CLI"
 
-var (
-	printVersion bool
-)
+var printVersion bool
 
 func Init() *node.Plugin {
 	flag.BoolVarP(&printVersion, "version", "v", false, "Prints the Wasp version")

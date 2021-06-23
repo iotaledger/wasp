@@ -11,9 +11,7 @@ import (
 
 const pluginName = "Registry"
 
-var (
-	defaultRegistry *registry.Impl // A singleton.
-)
+var defaultRegistry *registry.Impl // A singleton.
 
 // DefaultRegistry returns an initialized default registry.
 func DefaultRegistry() *registry.Impl {

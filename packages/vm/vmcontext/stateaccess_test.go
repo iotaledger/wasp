@@ -20,7 +20,7 @@ import (
 
 func TestSetThenGet(t *testing.T) {
 	chainID := chainid.RandomChainID([]byte("hmm"))
-	virtualState, err := state.CreateOriginState(mapdb.NewMapDB(), chainID)
+	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")
@@ -37,7 +37,7 @@ func TestSetThenGet(t *testing.T) {
 
 	// contract sets variable x
 	s.Set("x", []byte{42})
-	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: []byte{42}}, stateUpdate.Mutations().Sets)
+	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: {42}}, stateUpdate.Mutations().Sets)
 	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations().Dels)
 
 	// contract gets variable x
@@ -56,7 +56,7 @@ func TestSetThenGet(t *testing.T) {
 	// contract deletes variable x
 	s.Del("x")
 	assert.Equal(t, map[kv.Key][]byte{}, stateUpdate.Mutations().Sets)
-	assert.Equal(t, map[kv.Key]struct{}{subpartitionedKey: struct{}{}}, stateUpdate.Mutations().Dels)
+	assert.Equal(t, map[kv.Key]struct{}{subpartitionedKey: {}}, stateUpdate.Mutations().Dels)
 
 	// contract sees variable x does not exist
 	v, err = s.Get("x")
@@ -65,11 +65,11 @@ func TestSetThenGet(t *testing.T) {
 
 	// contract makes several writes to same variable, gets the latest value
 	s.Set("x", []byte{2 * 42})
-	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: []byte{2 * 42}}, stateUpdate.Mutations().Sets)
+	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: {2 * 42}}, stateUpdate.Mutations().Sets)
 	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations().Dels)
 
 	s.Set("x", []byte{3 * 42})
-	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: []byte{3 * 42}}, stateUpdate.Mutations().Sets)
+	assert.Equal(t, map[kv.Key][]byte{subpartitionedKey: {3 * 42}}, stateUpdate.Mutations().Sets)
 	assert.Equal(t, map[kv.Key]struct{}{}, stateUpdate.Mutations().Dels)
 
 	v, err = s.Get("x")
@@ -80,7 +80,7 @@ func TestSetThenGet(t *testing.T) {
 
 func TestIterate(t *testing.T) {
 	chainID := chainid.RandomChainID([]byte("hmm"))
-	virtualState, err := state.CreateOriginState(mapdb.NewMapDB(), chainID)
+	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")
@@ -96,7 +96,7 @@ func TestIterate(t *testing.T) {
 	s.Set("xy2", []byte{42 * 2})
 
 	arr := make([][]byte, 0)
-	err = s.IterateSorted("xy", func(k kv.Key, v []byte) bool {
+	err := s.IterateSorted("xy", func(k kv.Key, v []byte) bool {
 		assert.True(t, strings.HasPrefix(string(k), "xy"))
 		arr = append(arr, v)
 		return true

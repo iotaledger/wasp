@@ -64,7 +64,7 @@ func handleDKSharesPost(c echo.Context) error {
 		return httperrors.BadRequest("Inconsistent PeerNetIDs and PeerPubKeys.")
 	}
 
-	var peerPubKeys []ed25519.PublicKey = nil
+	var peerPubKeys []ed25519.PublicKey
 	if req.PeerPubKeys != nil {
 		peerPubKeys = make([]ed25519.PublicKey, len(req.PeerPubKeys))
 		for i := range req.PeerPubKeys {

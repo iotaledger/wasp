@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
@@ -72,10 +71,11 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 		approvedBlockCandidatesCount := sm.syncingBlocks.getApprovedBlockCandidatesCount(i)
 		sm.log.Debugf("doSyncAction: trying to sync state for index %v; requestBlockRetryTime %v, blockCandidates count %v, approved blockCandidates count %v",
 			i, requestBlockRetryTime, blockCandidatesCount, approvedBlockCandidatesCount)
-		//TODO: temporar if. We need to find a solution to synchronise over large gaps. Making state snapshots may help.
+		// TODO: temporary if. We need to find a solution to synchronize over large gaps. Making state snapshots may help.
 		if i > startSyncFromIndex+maxBlocksToCommitConst {
 			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
-				Reason: fmt.Sprintf("StateManager.doSyncActionIfNeeded: too many blocks to catch up: %v", sm.stateOutput.GetStateIndex()-startSyncFromIndex+1)},
+				Reason: fmt.Sprintf("StateManager.doSyncActionIfNeeded: too many blocks to catch up: %v", sm.stateOutput.GetStateIndex()-startSyncFromIndex+1),
+			},
 			)
 			return
 		}
@@ -106,10 +106,10 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	}
 }
 
-func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex uint32, toStateIndex uint32) ([]*candidateBlock, state.VirtualState, bool) {
+func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex, toStateIndex uint32) ([]*candidateBlock, state.VirtualState, bool) {
 	sm.log.Debugf("getCandidatesToCommit from %v to %v", fromStateIndex, toStateIndex)
 	if fromStateIndex > toStateIndex {
-		//Blocks gathered. Check if the correct result is received if they are applied
+		// Blocks gathered. Check if the correct result is received if they are applied
 		tentativeState := sm.solidState.Clone()
 		for _, candidate := range candidateAcc {
 			var err error
@@ -162,7 +162,7 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	to := blocks[len(blocks)-1].BlockIndex()
 	sm.log.Debugf("commitCandidates: syncing of state indexes from %v to %v is stopped", from, to)
 
-	//TODO: maybe commit in 10 (or some const) block batches?
+	// TODO: maybe commit in 10 (or some const) block batches?
 	//      This would save from large commits and huge memory usage to store blocks
 
 	// invalidate solid state

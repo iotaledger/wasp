@@ -9,8 +9,10 @@ import (
 	"time"
 )
 
-const defaultTimeout = 5 * time.Second
-const disableWasmTimeout = false
+const (
+	defaultTimeout     = 5 * time.Second
+	disableWasmTimeout = false
+)
 
 // WasmTimeout set this to non-zero for a one-time override of the defaultTimeout
 var WasmTimeout = 0 * time.Second
@@ -23,23 +25,22 @@ type WasmVM interface {
 	RunScFunction(index int32) error
 	SaveMemory()
 	UnsafeMemory() []byte
-	VmGetBytes(offset int32, size int32) []byte
-	VmSetBytes(offset int32, size int32, bytes []byte) int32
+	VMGetBytes(offset int32, size int32) []byte
+	VMSetBytes(offset int32, size int32, bytes []byte) int32
 }
 
-type WasmVmBase struct {
+type WasmVMBase struct {
 	impl           WasmVM
 	host           *WasmHost
 	memoryCopy     []byte
 	memoryDirty    bool
 	memoryNonZero  int
 	result         []byte
-	resultKeyId    int32
+	resultKeyID    int32
 	timeoutStarted bool
 }
 
-func (vm *WasmVmBase) LinkHost(impl WasmVM, host *WasmHost) error {
-
+func (vm *WasmVMBase) LinkHost(impl WasmVM, host *WasmHost) error {
 	// trick vm into thinking it doesn't have to start the timeout timer
 	// useful when debugging to prevent timing out on breakpoints
 	vm.timeoutStarted = disableWasmTimeout
@@ -50,8 +51,8 @@ func (vm *WasmVmBase) LinkHost(impl WasmVM, host *WasmHost) error {
 	return nil
 }
 
-func (vm *WasmVmBase) HostFdWrite(fd int32, iovs int32, size int32, written int32) int32 {
-	vm.host.TraceAll("HostFdWrite(...)")
+func (vm *WasmVMBase) HostFdWrite(fd, iovs, size, written int32) int32 {
+	vm.host.TraceAllf("HostFdWrite(...)")
 	// very basic implementation that expects fd to be stdout and iovs to be only one element
 	ptr := vm.impl.UnsafeMemory()
 	txt := binary.LittleEndian.Uint32(ptr[iovs : iovs+4])
@@ -61,13 +62,13 @@ func (vm *WasmVmBase) HostFdWrite(fd int32, iovs int32, size int32, written int3
 	return int32(siz)
 }
 
-func (vm *WasmVmBase) HostGetBytes(objId int32, keyId int32, typeId int32, stringRef int32, size int32) int32 {
+func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) int32 {
 	host := vm.host
-	host.TraceAll("HostGetBytes(o%d,k%d,t%d,r%d,s%d)", objId, keyId, typeId, stringRef, size)
+	host.TraceAllf("HostGetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
 
 	// only check for existence ?
 	if size < 0 {
-		if host.Exists(objId, keyId, typeId) {
+		if host.Exists(objID, keyID, typeID) {
 			return 0
 		}
 		// missing key is indicated by -1
@@ -75,66 +76,66 @@ func (vm *WasmVmBase) HostGetBytes(objId int32, keyId int32, typeId int32, strin
 	}
 
 	// actual GetBytes request ?
-	if (typeId & OBJTYPE_CALL) == 0 {
-		bytes := host.GetBytes(objId, keyId, typeId)
+	if (typeID & OBJTYPE_CALL) == 0 {
+		bytes := host.GetBytes(objID, keyID, typeID)
 		if bytes == nil {
 			return -1
 		}
-		return vm.impl.VmSetBytes(stringRef, size, bytes)
+		return vm.impl.VMSetBytes(stringRef, size, bytes)
 	}
 
 	// func call request
-	switch typeId {
+	switch typeID {
 	case OBJTYPE_CALL:
 		// func call with params, returns result length
-		vm.resultKeyId = keyId
-		params := vm.impl.VmGetBytes(stringRef, size)
-		vm.result = host.CallFunc(objId, keyId, params)
+		vm.resultKeyID = keyID
+		params := vm.impl.VMGetBytes(stringRef, size)
+		vm.result = host.CallFunc(objID, keyID, params)
 		return int32(len(vm.result))
 
 	case OBJTYPE_CALL + 1:
 		// retrieve previous func call result
-		if vm.resultKeyId == keyId {
+		if vm.resultKeyID == keyID {
 			result := vm.result
 			vm.result = nil
-			vm.resultKeyId = 0
+			vm.resultKeyID = 0
 			if result == nil {
 				return -1
 			}
-			return vm.impl.VmSetBytes(stringRef, int32(len(result)), result)
+			return vm.impl.VMSetBytes(stringRef, int32(len(result)), result)
 		}
 	}
 	panic("HostGetBytes: Invalid func call state")
 }
 
-func (vm *WasmVmBase) HostGetKeyId(keyRef int32, size int32) int32 {
+func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
 	host := vm.host
-	host.TraceAll("HostGetKeyId(r%d,s%d)", keyRef, size)
+	host.TraceAllf("HostGetKeyId(r%d,s%d)", keyRef, size)
 	// non-negative size means original key was a string
 	if size >= 0 {
-		bytes := vm.impl.VmGetBytes(keyRef, size)
-		return host.GetKeyIdFromString(string(bytes))
+		bytes := vm.impl.VMGetBytes(keyRef, size)
+		return host.GetKeyIDFromString(string(bytes))
 	}
 
 	// negative size means original key was a byte slice
-	bytes := vm.impl.VmGetBytes(keyRef, -size-1)
-	return host.GetKeyIdFromBytes(bytes)
+	bytes := vm.impl.VMGetBytes(keyRef, -size-1)
+	return host.GetKeyIDFromBytes(bytes)
 }
 
-func (vm *WasmVmBase) HostGetObjectId(objId int32, keyId int32, typeId int32) int32 {
+func (vm *WasmVMBase) hostGetObjectID(objID, keyID, typeID int32) int32 {
 	host := vm.host
-	host.TraceAll("HostGetObjectId(o%d,k%d,t%d)", objId, keyId, typeId)
-	return host.GetObjectId(objId, keyId, typeId)
+	host.TraceAllf("hostGetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
+	return host.GetObjectID(objID, keyID, typeID)
 }
 
-func (vm *WasmVmBase) HostSetBytes(objId int32, keyId int32, typeId int32, stringRef int32, size int32) {
+func (vm *WasmVMBase) HostSetBytes(objID, keyID, typeID, stringRef, size int32) {
 	host := vm.host
-	host.TraceAll("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objId, keyId, typeId, stringRef, size)
-	bytes := vm.impl.VmGetBytes(stringRef, size)
-	host.SetBytes(objId, keyId, typeId, bytes)
+	host.TraceAllf("HostSetBytes(o%d,k%d,t%d,r%d,s%d)", objID, keyID, typeID, stringRef, size)
+	bytes := vm.impl.VMGetBytes(stringRef, size)
+	host.SetBytes(objID, keyID, typeID, bytes)
 }
 
-func (vm *WasmVmBase) PreCall() []byte {
+func (vm *WasmVMBase) PreCall() []byte {
 	ptr := vm.impl.UnsafeMemory()
 	frame := make([]byte, len(ptr))
 	copy(frame, ptr)
@@ -147,12 +148,12 @@ func (vm *WasmVmBase) PreCall() []byte {
 	return frame
 }
 
-func (vm *WasmVmBase) PostCall(frame []byte) {
+func (vm *WasmVMBase) PostCall(frame []byte) {
 	ptr := vm.impl.UnsafeMemory()
 	copy(ptr, frame)
 }
 
-func (vm *WasmVmBase) Run(runner func() error) (err error) {
+func (vm *WasmVMBase) Run(runner func() error) (err error) {
 	if vm.timeoutStarted {
 		// no need to wrap nested calls in timeout code
 		return runner()
@@ -182,10 +183,10 @@ func (vm *WasmVmBase) Run(runner func() error) (err error) {
 	err = runner()
 	done <- true
 	vm.timeoutStarted = false
-	return
+	return err
 }
 
-func (vm *WasmVmBase) SaveMemory() {
+func (vm *WasmVMBase) SaveMemory() {
 	// find initialized data range in memory
 	ptr := vm.impl.UnsafeMemory()
 	if ptr == nil {
@@ -213,14 +214,14 @@ func (vm *WasmVmBase) SaveMemory() {
 	}
 }
 
-func (vm *WasmVmBase) VmGetBytes(offset int32, size int32) []byte {
+func (vm *WasmVMBase) VMGetBytes(offset, size int32) []byte {
 	ptr := vm.impl.UnsafeMemory()
 	bytes := make([]byte, size)
 	copy(bytes, ptr[offset:offset+size])
 	return bytes
 }
 
-func (vm *WasmVmBase) VmSetBytes(offset int32, size int32, bytes []byte) int32 {
+func (vm *WasmVMBase) VMSetBytes(offset, size int32, bytes []byte) int32 {
 	if size != 0 {
 		ptr := vm.impl.UnsafeMemory()
 		copy(ptr[offset:offset+size], bytes)

@@ -7,12 +7,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"golang.org/x/xerrors"
 	"io"
 	"strconv"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/pkg/errors"
+	"golang.org/x/xerrors"
 )
 
 // Hname is 4 bytes of blake2b hash of any string interpreted as little-endian uint32.
@@ -53,7 +53,7 @@ func Hn(funname string) (ret Hname) {
 
 func (hn Hname) Bytes() []byte {
 	ret := make([]byte, HnameLength)
-	binary.LittleEndian.PutUint32(ret, (uint32)(hn))
+	binary.LittleEndian.PutUint32(ret, uint32(hn))
 	return ret
 }
 
@@ -62,7 +62,7 @@ func (hn Hname) Clone() Hname {
 }
 
 func (hn Hname) String() string {
-	return fmt.Sprintf("%08x", (int)(hn))
+	return fmt.Sprintf("%08x", int(hn))
 }
 
 func HnameFromString(s string) (Hname, error) {
@@ -88,6 +88,6 @@ func (hn *Hname) Read(r io.Reader) error {
 		return xerrors.New("wrong data length")
 	}
 	t := binary.LittleEndian.Uint32(b[:])
-	*hn = (Hname)(t)
+	*hn = Hname(t)
 	return nil
 }

@@ -34,7 +34,7 @@ func TestHandshakeCodec(t *testing.T) {
 	require.Equal(t, a.respond, b.respond)
 	//
 	// Damaged message.
-	buf[2] = buf[2] + 1
+	buf[2]++
 	var c *handshakeMsg
 	c, err = handshakeMsgFromBytes(buf)
 	require.NotNil(t, err)

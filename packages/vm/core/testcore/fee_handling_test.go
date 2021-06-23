@@ -50,6 +50,7 @@ func TestBase(t *testing.T) {
 	checkFees(chain, blob.Interface.Name, 5, 0)
 }
 
+//nolint:dupl
 func TestFeeIsEnough1(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
@@ -80,6 +81,7 @@ func TestFeeIsEnough1(t *testing.T) {
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2-1)
 }
 
+//nolint:dupl
 func TestFeeIsEnough2(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
@@ -136,7 +138,6 @@ func TestFeesNoNeed(t *testing.T) {
 	chain.AssertTotalIotas(2 + 7)
 	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 0)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2-7)
-
 }
 
 func TestFeesNotEnough(t *testing.T) {
@@ -169,5 +170,4 @@ func TestFeesNotEnough(t *testing.T) {
 	chain.AssertTotalIotas(2 + 7)
 	chain.AssertIotas(userAgentID, 0)
 	env.AssertAddressIotas(userAddr, solo.Saldo-7)
-
 }

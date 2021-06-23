@@ -270,7 +270,7 @@ func (n *NetImpl) queueRecvLoop(stopCh chan bool) {
 
 func (n *NetImpl) receiveLoop(stopCh chan bool) {
 	var err error
-	var buf = make([]byte, 2024)
+	buf := make([]byte, 2024)
 	for {
 		select { // Terminate the loop, if such request has been made.
 		case <-stopCh:
@@ -278,8 +278,8 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 		default:
 		}
 		var peerUDPAddr *net.UDPAddr
-		var recvDeadline = time.Now().Add(recvBlockingDuration)
-		n.myUDPConn.SetReadDeadline(recvDeadline)
+		recvDeadline := time.Now().Add(recvBlockingDuration)
+		n.myUDPConn.SetReadDeadline(recvDeadline) //nolint:errcheck //TODO should err be checked here?
 		if _, peerUDPAddr, err = n.myUDPConn.ReadFromUDP(buf); err != nil {
 			if errors.Is(err, os.ErrDeadlineExceeded) {
 				// We need to limit the blocking to make graceful stop possible.

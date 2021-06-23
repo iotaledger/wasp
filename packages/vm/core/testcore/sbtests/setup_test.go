@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:revive
 const (
 	DEBUG        = false
 	ERC20_NAME   = "erc20"
@@ -81,17 +82,18 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, 
 	return deployed, extraToken
 }
 
+//nolint:deadcode,unused
 func setupERC20(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, runWasm bool) *coretypes.AgentID {
 	var err error
 	if !runWasm {
 		t.Logf("skipped %s. Only for Wasm tests, always loads %s", t.Name(), WasmFileErc20)
 		return nil
 	}
-	userAddr := ledgerstate.NewED25519Address(user.PublicKey)
 	var userAgentID *coretypes.AgentID
 	if user == nil {
 		userAgentID = &chain.OriginatorAgentID
 	} else {
+		userAddr := ledgerstate.NewED25519Address(user.PublicKey)
 		userAgentID = coretypes.NewAgentID(userAddr, 0)
 	}
 	err = chain.DeployWasmContract(user, ERC20_NAME, WasmFileErc20,
@@ -123,5 +125,5 @@ func testSetup3(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	user, _, _ := setupDeployer(t, chain)
 	setupTestSandboxSC(t, chain, user, w)
-	//setupERC20(t, chain, user, w)
+	// setupERC20(t, chain, user, w)
 }

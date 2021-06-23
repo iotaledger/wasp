@@ -2,12 +2,13 @@ package processors
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/iotaledger/wasp/contracts/native"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"sync"
 )
 
 // ProcessorCache is an object maintained by each chain
@@ -87,7 +88,7 @@ func (cps *ProcessorCache) GetOrCreateProcessorByProgramHash(progHash hashing.Ha
 	if err != nil {
 		return nil, fmt.Errorf("internal error: can't get the binary for the program: %v", err)
 	}
-	if err = cps.newProcessor(progHash, binary, vmtype); err != nil {
+	if err := cps.newProcessor(progHash, binary, vmtype); err != nil {
 		return nil, err
 	}
 	if proc, ok := cps.processors[progHash]; ok {

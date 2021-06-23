@@ -111,8 +111,8 @@ func revokeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 // - ParamPayerAddress ledgerstate.Address
 func closeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	myAgentId := coretypes.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
-	a.Require(ctx.Caller().Equals(myAgentId), "caller must be self")
+	myAgentID := coretypes.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
+	a.Require(ctx.Caller().Equals(myAgentID), "caller must be self")
 
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	payerAddr := par.MustGetAddress(ParamPayerAddress)
@@ -176,7 +176,7 @@ func getWarrantInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 }
 
 //  utility
-
+//nolint:ineffassign,staticcheck // TODO err is never checked, shouldn't errors be handled?
 func getWarrantInfoIntern(state kv.KVStoreReader, payer, service ledgerstate.Address, a assert.Assert) (uint64, uint64, uint64) {
 	payerInfo := collections.NewMapReadOnly(state, string(payer.Bytes()))
 	warrantBin, err := payerInfo.GetAt(service.Bytes())

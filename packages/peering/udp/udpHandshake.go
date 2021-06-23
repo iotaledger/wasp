@@ -17,6 +17,7 @@ type handshakeMsg struct {
 	respond bool              // Do the message asks for a response?
 }
 
+//nolint: gocritic
 func (m *handshakeMsg) bytes(secKey ed25519.PrivateKey) ([]byte, error) {
 	var err error
 	//
@@ -45,6 +46,7 @@ func (m *handshakeMsg) bytes(secKey ed25519.PrivateKey) ([]byte, error) {
 	return signedBuf.Bytes(), nil
 }
 
+//nolint: gocritic
 func handshakeMsgFromBytes(buf []byte) (*handshakeMsg, error) {
 	var err error
 	//

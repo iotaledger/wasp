@@ -67,7 +67,7 @@ func newPeerFromHandshake(handshake *handshakeMsg, remoteUDPAddr *net.UDPAddr, n
 
 // That's internal, called from other constructors.
 func newPeer(remoteNetID string, remotePubKey *ed25519.PublicKey, remoteUDPAddr *net.UDPAddr, n *NetImpl) (*peer, error) {
-	var log = n.log.Named("peer:" + remoteNetID)
+	log := n.log.Named("peer:" + remoteNetID)
 	p := &peer{
 		remoteNetID:   remoteNetID,
 		remotePubKey:  nil, // TODO: KP: XXX: .... remotePubKey, // Can be nil, in that case will be set on the handshake.

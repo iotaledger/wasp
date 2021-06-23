@@ -83,13 +83,12 @@ func (cT *candidateBlock) getNextStateHash() hashing.HashValue {
 	return cT.nextStateHash
 }
 
-func (ct *candidateBlock) getNextState(currentState state.VirtualState) (state.VirtualState, error) {
-	if ct.isLocal() {
-		return ct.nextState, nil
-	} else {
-		err := currentState.ApplyBlock(ct.block)
-		return currentState, err
+func (cT *candidateBlock) getNextState(currentState state.VirtualState) (state.VirtualState, error) {
+	if cT.isLocal() {
+		return cT.nextState, nil
 	}
+	err := currentState.ApplyBlock(cT.block)
+	return currentState, err
 }
 
 func (cT *candidateBlock) getApprovingOutputID() ledgerstate.OutputID {

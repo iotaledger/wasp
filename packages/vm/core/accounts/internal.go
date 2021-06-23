@@ -2,8 +2,8 @@ package accounts
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -103,7 +103,7 @@ func debitFromAccount(state kv.KVStore, account *collections.Map, transfer *ledg
 
 	for col, rem := range current {
 		if rem > 0 {
-			account.MustSetAt(col[:], util.Uint64To8Bytes(uint64(rem)))
+			account.MustSetAt(col[:], util.Uint64To8Bytes(rem))
 		} else {
 			account.MustDelAt(col[:])
 		}
@@ -189,7 +189,7 @@ func calcTotalAssets(state kv.KVStoreReader) *ledgerstate.ColoredBalances {
 			panic(err)
 		}
 		for col, b := range getAccountBalances(getAccountR(state, agentID)) {
-			ret[col] = ret[col] + b
+			ret[col] += b
 		}
 		return true
 	})
@@ -204,9 +204,10 @@ func mustCheckLedger(state kv.KVStore, checkpoint string) {
 	}
 }
 
+//nolint:unparam
 func getAccountBalanceDict(ctx coretypes.SandboxView, account *collections.ImmutableMap, tag string) dict.Dict {
 	balances := getAccountBalances(account)
-	//ctx.Log().Debugf("%s. balance = %s\n", tag, balances.String())
+	// ctx.Log().Debugf("%s. balance = %s\n", tag, balances.String())
 	return EncodeBalances(balances)
 }
 

@@ -10,7 +10,7 @@ type trustedNetworkManager struct {
 	data map[ed25519.PublicKey]string
 }
 
-func NewTrustedNetworkManager() *trustedNetworkManager {
+func NewTrustedNetworkManager() peering.TrustedNetworkManager {
 	return &trustedNetworkManager{
 		data: map[ed25519.PublicKey]string{},
 	}

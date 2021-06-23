@@ -28,9 +28,9 @@ var listAccountsCmd = &cobra.Command{
 		rows := make([][]string, len(ret))
 		i := 0
 		for k := range ret {
-			agentId, _, err := codec.DecodeAgentID([]byte(k))
+			agentID, _, err := codec.DecodeAgentID([]byte(k))
 			log.Check(err)
-			rows[i] = []string{agentId.String()}
+			rows[i] = []string{agentID.String()}
 			i++
 		}
 		log.PrintTable(header, rows)

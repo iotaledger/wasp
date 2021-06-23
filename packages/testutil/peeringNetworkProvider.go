@@ -46,7 +46,7 @@ func NewPeeringNetwork(
 ) *PeeringNetwork {
 	nodes := make([]*peeringNode, len(netIDs))
 	providers := make([]*peeringNetworkProvider, len(netIDs))
-	var network = PeeringNetwork{
+	network := PeeringNetwork{
 		nodes:     nodes,
 		providers: providers,
 		bufSize:   bufSize,
@@ -64,11 +64,11 @@ func NewPeeringNetwork(
 
 // NetworkProviders returns network providers for each of the nodes in the network.
 func (p *PeeringNetwork) NetworkProviders() []peering.NetworkProvider {
-	copy := make([]peering.NetworkProvider, len(p.providers))
+	cp := make([]peering.NetworkProvider, len(p.providers))
 	for i := range p.providers {
-		copy[i] = p.providers[i]
+		cp[i] = p.providers[i]
 	}
-	return copy
+	return cp
 }
 
 func (p *PeeringNetwork) nodeByNetID(nodeNetID string) *peeringNode {
@@ -94,10 +94,12 @@ type peeringNode struct {
 	network  *PeeringNetwork
 	log      *logger.Logger
 }
+
 type peeringMsg struct {
 	from *peeringNode
 	msg  peering.PeerMessage
 }
+
 type peeringCb struct {
 	callback  func(recv *peering.RecvEvent) // Receive callback.
 	destNP    *peeringNetworkProvider       // Destination node.
@@ -120,7 +122,7 @@ func newPeeringNode(netID string, identity *ed25519.KeyPair, network *PeeringNet
 	network.behavior.AddLink(sendCh, recvCh, netID)
 	go func() { // Receive loop.
 		for {
-			var pm *peeringMsg = <-recvCh
+			pm := <-recvCh
 			node.log.Debugf(
 				"received msgType=%v from=%v, peeringID=%v",
 				pm.msg.MsgType, pm.from.netID, pm.msg.PeeringID,
@@ -193,8 +195,8 @@ func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupPro
 }
 
 // Domain creates peering.PeerDomainProvider.
-func (n *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
-	return domain.NewPeerDomainByNetIDs(n, peerNetIDs, n.network.log)
+func (p *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
+	return domain.NewPeerDomainByNetIDs(p, peerNetIDs, p.network.log)
 }
 
 // Attach implements peering.NetworkProvider.

@@ -31,7 +31,7 @@ import (
 // - creates record in the registry for the 'root' itself
 // - deploys other core contracts: 'accounts', 'blob', 'eventlog' by creating records in the registry and calling constructors
 // Input:
-// - ParamChainID coretypes.ChainID. ID of the chain. Cannot be changed
+// - ParamChainID chainid.ChainID. ID of the chain. Cannot be changed
 // - ParamChainColor ledgerstate.Color
 // - ParamChainAddress ledgerstate.Address
 // - ParamDescription string defaults to "N/A"
@@ -280,9 +280,10 @@ func setContractFee(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}
 
 	ownerFee := params.MustGetUint64(ParamOwnerFee, 0)
-	ownerFeeSet := ownerFee >= 0
+	ownerFeeSet := ownerFee >= 0 //nolint:staticcheck
 	validatorFee := params.MustGetUint64(ParamValidatorFee, 0)
-	validatorFeeSet := validatorFee >= 0
+	validatorFeeSet := validatorFee >= 0 //nolint:staticcheck
+	// TODO ownerFeeSet and validatorFeeSet checks are probably obsolete and could be removed. to be refactored
 
 	a.Require(ownerFeeSet || validatorFeeSet, "root.setContractFee: wrong parameters")
 	if ownerFeeSet {

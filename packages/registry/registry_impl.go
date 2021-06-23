@@ -4,6 +4,7 @@
 package registry
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -55,20 +56,20 @@ func MakeChainRecordDbKey(chainID *chainid.ChainID) []byte {
 
 func (r *Impl) GetChainRecordByChainID(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error) {
 	data, err := r.store.Get(MakeChainRecordDbKey(chainID))
-	if err == kvstore.ErrKeyNotFound {
+	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return chainrecord.ChainRecordFromBytes(data)
+	return chainrecord.FromBytes(data)
 }
 
 func (r *Impl) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
 	ret := make([]*chainrecord.ChainRecord, 0)
 
 	err := r.store.Iterate([]byte{dbkeys.ObjectTypeChainRecord}, func(key kvstore.Key, value kvstore.Value) bool {
-		if rec, err1 := chainrecord.ChainRecordFromBytes(value); err1 == nil {
+		if rec, err1 := chainrecord.FromBytes(value); err1 == nil {
 			ret = append(ret, rec)
 		}
 		return true
@@ -114,8 +115,8 @@ func (r *Impl) DeactivateChainRecord(chainID *chainid.ChainID) (*chainrecord.Cha
 }
 
 func (r *Impl) SaveChainRecord(rec *chainrecord.ChainRecord) error {
-	key := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, rec.ChainID.Bytes())
-	return r.store.Set(key, rec.Bytes())
+	k := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, rec.ChainID.Bytes())
+	return r.store.Set(k, rec.Bytes())
 }
 
 // endregion ///////////////////////////////////////////////////////////////
@@ -128,7 +129,7 @@ func dbKeyCommitteeRecord(addr ledgerstate.Address) []byte {
 
 func (r *Impl) GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error) {
 	data, err := r.store.Get(dbKeyCommitteeRecord(addr))
-	if err == kvstore.ErrKeyNotFound {
+	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
 	}
 	if err != nil {
@@ -157,12 +158,7 @@ func (r *Impl) SaveDKShare(dkShare *tcrypto.DKShare) error {
 	if exists {
 		return fmt.Errorf("attempt to overwrite existing DK key share")
 	}
-	var buf []byte
-	if buf, err = dkShare.Bytes(); err != nil {
-		return err
-	}
-	return r.store.Set(dbKey, buf)
-
+	return r.store.Set(dbKey, dkShare.Bytes())
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.
@@ -268,7 +264,7 @@ func dbKeyForBlob(h hashing.HashValue) []byte {
 }
 
 func dbKeyForBlobTTL(h hashing.HashValue) []byte {
-	return dbkeys.MakeKey(dbkeys.ObjectTypeBlobCacheTTL)
+	return dbkeys.MakeKey(dbkeys.ObjectTypeBlobCacheTTL, h[:])
 }
 
 const BlobCacheDefaultTTL = 1 * time.Hour
@@ -299,7 +295,7 @@ func (r *Impl) PutBlob(data []byte, ttl ...time.Duration) (hashing.HashValue, er
 // Reads data from registry by hash. Returns existence flag
 func (r *Impl) GetBlob(h hashing.HashValue) ([]byte, bool, error) {
 	ret, err := r.store.Get(dbKeyForBlob(h))
-	if err == kvstore.ErrKeyNotFound {
+	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, false, nil
 	}
 	return ret, ret != nil && err == nil, err
@@ -320,11 +316,13 @@ func (r *Impl) GetNodeIdentity() (*ed25519.KeyPair, error) {
 	dbKey := dbKeyForNodeIdentity()
 	var exists bool
 	var data []byte
-	exists, err = r.store.Has(dbKey)
+	exists, _ = r.store.Has(dbKey)
 	if !exists {
 		pair = ed25519.GenerateKeyPair()
 		data = pair.PrivateKey.Bytes()
-		r.store.Set(dbKey, data)
+		if err := r.store.Set(dbKey, data); err != nil {
+			return nil, err
+		}
 		r.log.Info("Node identity key pair generated.")
 		return &pair, nil
 	}

@@ -66,7 +66,6 @@ type Solo struct {
 	timeStep    time.Duration
 	chains      map[[33]byte]*Chain
 	vmRunner    vm.VMRunner
-	doOnce      sync.Once
 	// publisher wait group
 	publisherWG      sync.WaitGroup
 	publisherEnabled atomic.Bool
@@ -126,7 +125,7 @@ var (
 // New creates an instance of the `solo` environment for the test instances.
 //   'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
 //   'printStackTrace' controls printing stack trace in case of errors
-func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
+func New(t *testing.T, debug, printStackTrace bool) *Solo {
 	doOnce.Do(func() {
 		glbLogger = testlogger.NewLogger(t, "04:05.000")
 		if !debug {
@@ -168,6 +167,7 @@ func New(t *testing.T, debug bool, printStackTrace bool) *Solo {
 //  - 'init' request is run by the VM. The 'root' contracts deploys the rest of the core contracts:
 //    '_default', 'blocklog', 'blob', 'accounts' and 'eventlog',
 // Upon return, the chain is fully functional to process requests
+//nolint:funlen
 func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
 	env.logger.Debugf("deploying new chain '%s'", name)
 	stateController := ed25519.GenerateKeyPair() // chain address will be ED25519, not BLS
@@ -412,7 +412,7 @@ func (ch *Chain) collateAndRunBatch() bool {
 }
 
 // backlogLen is a thread-safe function to return size of the current backlog
-func (ch *Chain) backlogLen() int {
+func (ch *Chain) backlogLen() int { //nolint:unused
 	mstats := ch.mempool.Stats()
 	return mstats.InBufCounter - mstats.OutPoolCounter
 }

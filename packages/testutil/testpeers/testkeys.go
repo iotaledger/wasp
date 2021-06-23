@@ -56,10 +56,12 @@ func SetupDkg(
 	registries := make([]coretypes.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range peerNetIDs {
 		registries[i] = testutil.NewDkgRegistryProvider(suite)
-		dkgNodes[i] = dkg.NewNode(
+		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], registries[i],
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelError, false),
 		)
+		require.NoError(t, err)
+		dkgNodes[i] = dkgNode
 	}
 	//
 	// Initiate the key generation from some client node.

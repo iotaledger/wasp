@@ -23,7 +23,7 @@ func Printf(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 }
 
-func Verbose(format string, args ...interface{}) {
+func Verbosef(format string, args ...interface{}) {
 	if VerboseFlag {
 		Printf(format, args...)
 	}
@@ -36,7 +36,7 @@ func addNL(s string) string {
 	return s
 }
 
-func Fatal(format string, args ...interface{}) {
+func Fatalf(format string, args ...interface{}) {
 	s := fmt.Sprintf(format, args...)
 	if DebugFlag {
 		panic(s)
@@ -47,7 +47,7 @@ func Fatal(format string, args ...interface{}) {
 
 func Check(err error) {
 	if err != nil {
-		Fatal(err.Error())
+		Fatalf(err.Error())
 	}
 }
 

@@ -9,18 +9,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-
-	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3/pairing"
 )
 
@@ -90,7 +87,7 @@ func testCC(t *testing.T, netBehavior testutil.PeeringNetBehavior, log *logger.L
 	// Print duration.
 	ccDAwg := 0 * time.Millisecond
 	for i := range ccDuration {
-		ccDAwg = ccDAwg + ccDuration[i]
+		ccDAwg += ccDuration[i]
 	}
 	ccDAwg = time.Duration((int64(ccDAwg/time.Nanosecond) / int64(len(ccDuration)))) * time.Nanosecond
 	t.Logf("Average duration: %v", ccDAwg)

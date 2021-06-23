@@ -13,8 +13,8 @@ location only by the entity represented by the corresponding agent ID.  The
 system requires cryptographically secure authorization to move funds between
 on-chain accounts. 
 
-Note that there's no any "superuser" or any other centralized entity which could move 
-tokens from chain accounts without authorisation of its owners.
+Note that there isn't any "superuser" or any other centralized entity which could move 
+tokens from chain accounts without authorization of its owners.
 
 Some corollaries:
 
@@ -48,10 +48,10 @@ The most important functions of the `accounts` contract are:
 
 - `deposit`. Allows the caller to deposit its own funds to any target account on the chain.
 - `withdrawToAddress`. Allows a L1 address (a wallet) to take funds from its on-chain account back to the address. 
-- `withdrawToChain`. Allows a smart contract take back its funds from another chain to its native chain. 
+- `withdrawToChain`. Allows a smart contract to take back its funds from another chain to its native chain. 
 
 By sending requests to the `accounts` contract on a chain, the sender is in
-full control on its on-chain funds. 
+full control of its on-chain funds. 
 
 The `Sandbox` interface provides `TransferToAddress` method for the smart contract 
 to transfer its funds to any address on the Tangle.
@@ -60,7 +60,7 @@ For more information see [accounts contract](../tutorial/accounts.md).
 
 ## How secure are the on-chain accounts?
 
-On-chain accounts are as secure as the chain they are residing on.
+On-chain accounts are as secure as the chain they reside on.
 
 ## Node fees
 

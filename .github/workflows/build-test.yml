@@ -13,10 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
+    - name: Setup dependencies
+      run: sudo apt-get install libgflags-dev libsnappy-dev zlib1g-dev libbz2-dev liblz4-dev libzstd-dev
+
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
       with:
-        go-version: ^1.13
+        go-version: ^1.15
       id: go
 
     - name: Check out code into the Go module directory
@@ -26,7 +29,10 @@ jobs:
       run: go get -v -t -d ./...
 
     - name: Build
-      run: go build -v ./...
+      run: go build -tags -v ./...
 
     - name: Test
-      run: go test -v -short ./...
+      run: go test -tags rocksdb -v -short ./...
+
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v2.5.2

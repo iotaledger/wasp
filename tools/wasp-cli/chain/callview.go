@@ -15,6 +15,6 @@ var callViewCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		r, err := SCClient(coretypes.Hn(args[0])).CallView(args[1], util.EncodeParams(args[2:]))
 		log.Check(err)
-		util.PrintDictAsJson(r)
+		util.PrintDictAsJSON(r)
 	},
 }

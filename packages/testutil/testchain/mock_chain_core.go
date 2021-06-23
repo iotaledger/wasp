@@ -10,8 +10,10 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"go.uber.org/atomic"
 )
 
 type MockedChainCore struct {
@@ -27,7 +29,7 @@ type MockedChainCore struct {
 	onEventRequestProcessed func(id coretypes.RequestID)
 	onEventStateSynced      func(id ledgerstate.OutputID, blockIndex uint32)
 	onReceiveMessage        func(i interface{})
-	onSync                  func(out ledgerstate.OutputID, blockIndex uint32)
+	onSync                  func(out ledgerstate.OutputID, blockIndex uint32) //nolint:structcheck,unused
 	log                     *logger.Logger
 }
 
@@ -76,8 +78,8 @@ func (m *MockedChainCore) ID() *chainid.ChainID {
 	return &m.chainID
 }
 
-func (c *MockedChainCore) GlobalStateSync() coreutil.ChainStateSync {
-	return c.onGlobalStateSync()
+func (m *MockedChainCore) GlobalStateSync() coreutil.ChainStateSync {
+	return m.onGlobalStateSync()
 }
 
 func (m *MockedChainCore) GetStateReader() state.OptimisticStateReader {
@@ -134,4 +136,11 @@ func (m *MockedChainCore) OnGetStateReader(f func() state.OptimisticStateReader)
 
 func (m *MockedChainCore) OnGlobalStateSync(f func() coreutil.ChainStateSync) {
 	m.onGlobalStateSync = f
+}
+
+func (m *MockedChainCore) GlobalSolidIndex() *atomic.Uint32 {
+	return nil
+}
+
+func (m *MockedChainCore) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
 }

@@ -36,7 +36,7 @@ func Init() *node.Plugin {
 			panic(err)
 		}
 		peerNetworkConfig, err = peering_pkg.NewStaticPeerNetworkConfigProvider( // TODO: Remove.
-			parameters.GetString(parameters.PeeringMyNetId),
+			parameters.GetString(parameters.PeeringMyNetID),
 			parameters.GetInt(parameters.PeeringPort),
 			parameters.GetStringSlice(parameters.PeeringNeighbors)..., // Unregister the parameter?
 		)
@@ -45,7 +45,7 @@ func Init() *node.Plugin {
 		}
 		log.Infof("default peering configuration: %s", peerNetworkConfig.String())
 		netImpl, err := peering_udp.NewNetworkProvider(
-			parameters.GetString(parameters.PeeringMyNetId),
+			parameters.GetString(parameters.PeeringMyNetID),
 			parameters.GetInt(parameters.PeeringPort),
 			*nodeKeyPair,
 			registry.DefaultRegistry(),
@@ -82,4 +82,14 @@ func DefaultTrustedNetworkManager() peering_pkg.TrustedNetworkManager {
 
 func DefaultPeerNetworkConfig() coretypes.PeerNetworkConfigProvider { // TODO: Remove.
 	return peerNetworkConfig
+}
+
+func GossipToNeighbors(upToNumPeers uint16, msg *peering_pkg.PeerMessage) error {
+	neighbors := peerNetworkConfig.Neighbors()
+	peerDomainProvider, err := defaultNetworkProvider.PeerDomain(neighbors)
+	if err != nil {
+		return err
+	}
+	peerDomainProvider.SendMsgToRandomPeers(upToNumPeers, msg)
+	return nil
 }

@@ -9,15 +9,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/util/ready"
-	"go.uber.org/atomic"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/ready"
+	"go.uber.org/atomic"
 )
 
 type stateManager struct {
@@ -48,7 +47,7 @@ type stateManager struct {
 
 const (
 	numberOfNodesToRequestBlockFromConst = 5
-	maxBlocksToCommitConst               = 10000 //10k
+	maxBlocksToCommitConst               = 10000 // 10k
 )
 
 func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, timersOpt ...Timers) chain.StateManager {
@@ -90,21 +89,21 @@ func (sm *stateManager) initLoadState() {
 	solidState, stateExists, err := state.LoadSolidState(sm.store, sm.chain.ID())
 	if err != nil {
 		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
-			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err)},
+			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err),
+		},
 		)
 		return
 	}
 	if stateExists {
 		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
 			solidState.BlockIndex(), solidState.Hash().String())
-	} else {
+	} else if err := sm.createOriginState(); err != nil {
 		// create origin state in DB
-		if err := sm.createOriginState(); err != nil {
-			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
-				Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err)},
-			)
-			return
-		}
+		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
+			Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err),
+		},
+		)
+		return
 	}
 	sm.recvLoop() // Check to process external events.
 }
@@ -119,7 +118,8 @@ func (sm *stateManager) createOriginState() error {
 	sm.solidState, err = state.CreateOriginState(sm.store, sm.chain.ID())
 	if err != nil {
 		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
-			Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err)},
+			Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err),
+		},
 		)
 		return err
 	}
@@ -164,9 +164,9 @@ func (sm *stateManager) recvLoop() {
 			if ok {
 				sm.eventStateCandidateMsg(msg)
 			}
-		case msg, ok := <-sm.eventTimerMsgCh:
+		case _, ok := <-sm.eventTimerMsgCh:
 			if ok {
-				sm.eventTimerMsg(msg)
+				sm.eventTimerMsg()
 			}
 		case <-sm.closeCh:
 			return

@@ -16,13 +16,13 @@ import (
 var (
 	allParams = []string{
 		ParamAddress,
-		ParamAgentId,
-		ParamChainId,
+		ParamAgentID,
+		ParamChainID,
 		ParamColor,
 		ParamHash,
 		ParamHname,
 		ParamInt64,
-		ParamRequestId,
+		ParamRequestID,
 	}
 	allLengths = []int{33, 37, 33, 32, 32, 4, 8, 34}
 )
@@ -48,26 +48,26 @@ func TestNoParams(t *testing.T) {
 func TestValidParams(t *testing.T) {
 	chain := setupTest(t)
 
-	chainId := chain.ChainID
-	address := chainId.AsAddress()
+	chainID := chain.ChainID
+	address := chainID.AsAddress()
 	hname := HScName
-	agentId := coretypes.NewAgentID(address, hname)
+	agentID := coretypes.NewAgentID(address, hname)
 	color, _, err := ledgerstate.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhite"))
 	require.NoError(t, err)
 	hash, err := hashing.HashValueFromBytes([]byte("0123456789abcdeffedcba9876543210"))
 	require.NoError(t, err)
-	requestId, err := coretypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))
+	requestID, err := coretypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))
 	require.NoError(t, err)
 	req := solo.NewCallParams(ScName, FuncParamTypes,
 		ParamAddress, address,
-		ParamAgentId, agentId,
+		ParamAgentID, agentID,
 		ParamBytes, []byte("these are bytes"),
-		ParamChainId, chainId,
+		ParamChainID, chainID,
 		ParamColor, color,
 		ParamHash, hash,
 		ParamHname, hname,
 		ParamInt64, int64(1234567890123456789),
-		ParamRequestId, requestId,
+		ParamRequestID, requestID,
 		ParamString, "this is a string",
 	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
@@ -83,7 +83,7 @@ func TestValidSizeParams(t *testing.T) {
 			).WithIotas(1)
 			_, err := chain.PostRequestSync(req, nil)
 			require.Error(t, err)
-			if param == ParamChainId {
+			if param == ParamChainID {
 				require.True(t, strings.Contains(err.Error(), "invalid "))
 			} else {
 				require.True(t, strings.Contains(err.Error(), "mismatch: "))
@@ -121,28 +121,30 @@ func TestInvalidSizeParams(t *testing.T) {
 	}
 }
 
-var zeroHash = make([]byte, 32)
-var invalidValues = map[string][][]byte{
-	ParamAddress: {
-		append([]byte{3}, zeroHash...),
-		append([]byte{4}, zeroHash...),
-		append([]byte{255}, zeroHash...),
-	},
-	ParamChainId: {
-		append([]byte{0}, zeroHash...),
-		append([]byte{1}, zeroHash...),
-		append([]byte{3}, zeroHash...),
-		append([]byte{4}, zeroHash...),
-		append([]byte{255}, zeroHash...),
-	},
-	ParamRequestId: {
-		append(zeroHash, []byte{128, 0}...),
-		append(zeroHash, []byte{127, 1}...),
-		append(zeroHash, []byte{0, 1}...),
-		append(zeroHash, []byte{255, 255}...),
-		append(zeroHash, []byte{4, 4}...),
-	},
-}
+var (
+	zeroHash      = make([]byte, 32)
+	invalidValues = map[string][][]byte{
+		ParamAddress: {
+			append([]byte{3}, zeroHash...),
+			append([]byte{4}, zeroHash...),
+			append([]byte{255}, zeroHash...),
+		},
+		ParamChainID: {
+			append([]byte{0}, zeroHash...),
+			append([]byte{1}, zeroHash...),
+			append([]byte{3}, zeroHash...),
+			append([]byte{4}, zeroHash...),
+			append([]byte{255}, zeroHash...),
+		},
+		ParamRequestID: {
+			append(zeroHash, []byte{128, 0}...),
+			append(zeroHash, []byte{127, 1}...),
+			append(zeroHash, []byte{0, 1}...),
+			append(zeroHash, []byte{255, 255}...),
+			append(zeroHash, []byte{4, 4}...),
+		},
+	}
+)
 
 func TestInvalidTypeParams(t *testing.T) {
 	for param, values := range invalidValues {

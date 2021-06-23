@@ -48,9 +48,11 @@ func NewNode(
 	netProvider peering.NetworkProvider,
 	registry coretypes.DKShareRegistryProvider,
 	log *logger.Logger,
-) *Node {
+) (*Node, error) {
 	kyberEdDSSA := eddsa.EdDSA{}
-	kyberEdDSSA.UnmarshalBinary(identity.PrivateKey.Bytes())
+	if err := kyberEdDSSA.UnmarshalBinary(identity.PrivateKey.Bytes()); err != nil {
+		return nil, err
+	}
 	n := Node{
 		identity:    identity,
 		secKey:      kyberEdDSSA.Secret,
@@ -69,7 +71,7 @@ func NewNode(
 		n.recvQueue <- recv
 	})
 	go n.recvLoop()
-	return &n
+	return &n, nil
 }
 
 func (n *Node) Close() {
@@ -80,6 +82,7 @@ func (n *Node) Close() {
 
 // GenerateDistributedKey takes all the required parameters from the node and initiated the DKG procedure.
 // This function is executed on the DKG initiator node (a chosen leader for this DKG instance).
+//nolint:funlen,gocritic
 func (n *Node) GenerateDistributedKey(
 	peerNetIDs []string,
 	peerPubs []ed25519.PublicKey,
@@ -90,7 +93,7 @@ func (n *Node) GenerateDistributedKey(
 ) (*tcrypto.DKShare, error) {
 	n.log.Infof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().NetID(), peerNetIDs)
 	var err error
-	var peerCount = uint16(len(peerNetIDs))
+	peerCount := uint16(len(peerNetIDs))
 	//
 	// Some validationfor the parameters.
 	if peerCount < 1 || threshold < 1 || threshold > peerCount {
@@ -357,7 +360,6 @@ func (n *Node) exchangeInitiatorMsgs(
 		if err != nil {
 			n.log.Warnf("Failed to read message from %v: %v", recv.From.NetID(), recv.Msg)
 			return false, err
-
 		}
 		if !initMsg.IsResponse() {
 			return false, nil

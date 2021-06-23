@@ -30,12 +30,12 @@ func TestPregenerateDKS(t *testing.T) {
 	t.Run("N=100/F=33", func(t *testing.T) { testPregenerateDKS(t, 100) })
 }
 
-func testPregenerateDKS(t *testing.T, N uint16) {
+func testPregenerateDKS(t *testing.T, n uint16) {
 	var err error
 	suite := pairing.NewSuiteBn256()
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
-	netIDs, identities := testpeers.SetupKeys(N)
+	netIDs, identities := testpeers.SetupKeys(n)
 	dksAddr, dksRegistries := testpeers.SetupDkg(t, uint16((len(netIDs)*2)/3+1), netIDs, identities, suite, log.Named("dkg"))
 	var buf bytes.Buffer
 	util.WriteUint16(&buf, uint16(len(dksRegistries)))
@@ -50,9 +50,9 @@ func testPregenerateDKS(t *testing.T, N uint16) {
 			dki.PublicCommits = make([]kyber.Point, 0)
 			dki.PublicShares = make([]kyber.Point, 0)
 		}
-		dkb, err = dki.Bytes()
+		dkb = dki.Bytes()
 		require.Nil(t, util.WriteBytes16(&buf, dkb))
 	}
-	err = ioutil.WriteFile(fmt.Sprintf("testkeys_pregenerated-%v.bin", N), buf.Bytes(), 0644)
+	err = ioutil.WriteFile(fmt.Sprintf("testkeys_pregenerated-%v.bin", n), buf.Bytes(), 0644)
 	require.Nil(t, err)
 }

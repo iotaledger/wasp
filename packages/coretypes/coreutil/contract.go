@@ -32,8 +32,10 @@ type ContractFunctionInterface struct {
 	ViewHandler ViewHandler
 }
 
-type Handler func(ctx coretypes.Sandbox) (dict.Dict, error)
-type ViewHandler func(ctx coretypes.SandboxView) (dict.Dict, error)
+type (
+	Handler     func(ctx coretypes.Sandbox) (dict.Dict, error)
+	ViewHandler func(ctx coretypes.SandboxView) (dict.Dict, error)
+)
 
 func defaultInitFunc(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("default init function invoked for contract %s from caller %s", ctx.Contract(), ctx.Caller())
@@ -62,10 +64,10 @@ func Funcs(init Handler, fns []ContractFunctionInterface, defaultHandler ...Hand
 
 		handlers := 0
 		if f.Handler != nil {
-			handlers += 1
+			handlers++
 		}
 		if f.ViewHandler != nil {
-			handlers += 1
+			handlers++
 		}
 		if handlers != 1 {
 			panic("Exactly one of (Handler, ViewHandler) must be set")

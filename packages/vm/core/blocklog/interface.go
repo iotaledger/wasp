@@ -21,13 +21,11 @@ const (
 	description = "Block log contract"
 )
 
-var (
-	Interface = &coreutil.ContractInterface{
-		Name:        Name,
-		Description: description,
-		ProgramHash: hashing.HashStrings(Name),
-	}
-)
+var Interface = &coreutil.ContractInterface{
+	Name:        Name,
+	Description: description,
+	ProgramHash: hashing.HashStrings(Name),
+}
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
@@ -118,10 +116,7 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	if err := util.WriteUint16(w, bi.NumSuccessfulRequests); err != nil {
 		return err
 	}
-	if err := util.WriteUint16(w, bi.NumOffLedgerRequests); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteUint16(w, bi.NumOffLedgerRequests)
 }
 
 func (bi *BlockInfo) Read(r io.Reader) error {
@@ -134,10 +129,7 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	if err := util.ReadUint16(r, &bi.NumSuccessfulRequests); err != nil {
 		return err
 	}
-	if err := util.ReadUint16(r, &bi.NumOffLedgerRequests); err != nil {
-		return err
-	}
-	return nil
+	return util.ReadUint16(r, &bi.NumOffLedgerRequests)
 }
 
 // endregion //////////////////////////////////////////////////////////

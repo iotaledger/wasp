@@ -2,12 +2,13 @@ package requestargs
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"io"
 )
 
 // TODO: extend '*' option in RequestArgs with download options (web, IPFS)
@@ -75,19 +76,6 @@ func (a RequestArgs) AddEncodeSimpleMany(d dict.Dict) RequestArgs {
 		a.AddEncodeSimple(k, v)
 	}
 	return a
-}
-
-// HasBlobRef return if request arguments contain at least one blob reference
-func (a RequestArgs) HasBlobRef() bool {
-	var ret bool
-	(dict.Dict(a)).ForEach(func(key kv.Key, _ []byte) bool {
-		ret = []byte(key)[0] == '*'
-		if ret {
-			return false
-		}
-		return true
-	})
-	return ret
 }
 
 func (a RequestArgs) String() string {

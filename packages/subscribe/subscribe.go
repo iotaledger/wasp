@@ -37,12 +37,12 @@ func Subscribe(host string, messages chan<- []string, done <-chan bool, keepTryi
 	go func() {
 		for {
 			var buf []byte
-			//fmt.Printf("recv\n")
+			// fmt.Printf("recv\n")
 			if buf, err = socket.Recv(); err != nil {
 				close(messages)
 				return
 			}
-			//fmt.Printf("received nanomsg '%s'\n", string(buf))
+			// fmt.Printf("received nanomsg '%s'\n", string(buf))
 			if len(buf) > 0 {
 				s := string(buf)
 				messages <- strings.Split(s, " ")
@@ -75,7 +75,8 @@ const (
 	channelLockTimeout = 1 * time.Second
 )
 
-func SubscribeMulti(hosts []string, topics []string, quorum ...int) (*Subscription, error) {
+//nolint:revive
+func SubscribeMulti(hosts, topics []string, quorum ...int) (*Subscription, error) {
 	if len(hosts) == 0 {
 		return nil, fmt.Errorf("SubscribeMulti: no nanomsg hosts provided")
 	}

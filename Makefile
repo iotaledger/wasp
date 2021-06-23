@@ -14,6 +14,8 @@ test-short:
 install:
 	go install -tags rocksdb ./...
 
+lint:
+	golangci-lint run
 
 .PHONY: all build test test-short
 

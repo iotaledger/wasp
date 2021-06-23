@@ -19,8 +19,8 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
 	"github.com/iotaledger/wasp/packages/util"
+	"go.dedis.ch/kyber/v3/sign/tbls"
 	"golang.org/x/xerrors"
 )
 
@@ -71,7 +71,7 @@ func NewCommonCoinNode(
 	group peering.GroupProvider,
 	log *logger.Logger,
 ) Provider {
-	var ccn = commonCoinNode{
+	ccn := commonCoinNode{
 		coins:     make(map[string]*commonCoin),
 		dkShare:   dkShare,
 		peeringID: peeringID,
@@ -114,6 +114,7 @@ func (ccn *commonCoinNode) GetCoin(sid []byte) ([]byte, error) {
 func (ccn *commonCoinNode) FlipCoin(epoch uint32) bool {
 	return ccn.flipCoin(epoch, nil)
 }
+
 func (ccn *commonCoinNode) flipCoin(epoch uint32, prefix []byte) bool {
 	mod5 := epoch % 5
 	if mod5 < 2 {
@@ -123,7 +124,7 @@ func (ccn *commonCoinNode) flipCoin(epoch uint32, prefix []byte) bool {
 		return false
 	}
 	sid := make([]byte, 4)
-	binary.BigEndian.PutUint32(sid[:], epoch)
+	binary.BigEndian.PutUint32(sid, epoch)
 	if prefix != nil {
 		sid = append(prefix, sid...)
 	}
@@ -208,7 +209,7 @@ func (ccn *commonCoinNode) onCoinShare(recvEvent *peering.RecvEvent) {
 		ccn.log.Errorf("Unable to parse a commonCoinMsg, error=%+v", err)
 		return
 	}
-	var sigShare tbdn.SigShare = msg.coinShare
+	var sigShare tbls.SigShare = msg.coinShare
 	if err = ccn.dkShare.VerifySigShare(msg.sid, sigShare); err != nil {
 		ccn.log.Errorf("Invalid signature share in %+v, error=%+v", msg, err)
 		return
@@ -218,7 +219,7 @@ func (ccn *commonCoinNode) onCoinShare(recvEvent *peering.RecvEvent) {
 		ccn.log.Errorf("Invalid peerIndex in %+v, error=%+v", sigShare, err)
 		return
 	}
-	var cc = ccn.getCoinObj(msg.sid)
+	cc := ccn.getCoinObj(msg.sid)
 	var reconstructed bool
 	reconstructed, err = cc.acceptCoinShare(uint16(peerIndex), msg.coinShare, msg.needReply, recvEvent.From)
 	if err != nil && err.Error() != "threshold not reached" && !reconstructed {
@@ -238,7 +239,7 @@ func (ccn *commonCoinNode) onTimerTick() {
 // getCoinObj returns an object responsible for the specified coin.
 // It creates one, if there is no such.
 func (ccn *commonCoinNode) getCoinObj(sid []byte) *commonCoin {
-	var sidStr = string(sid)
+	sidStr := string(sid)
 	if _, ok := ccn.coins[sidStr]; !ok {
 		ccn.coins[sidStr] = newCommonCoin(sid, ccn)
 	}
@@ -286,7 +287,7 @@ func (cc *commonCoin) getCoin(waitCh chan []byte) {
 
 func (cc *commonCoin) addOurShare() (bool, error) {
 	var err error
-	var signed tbdn.SigShare
+	var signed tbls.SigShare
 	if signed, err = cc.node.dkShare.SignShare(cc.sid); err != nil {
 		return false, xerrors.Errorf("failed to sign our share: %w", err)
 	}
@@ -306,7 +307,7 @@ func (cc *commonCoin) acceptCoinShare(peerIndex uint16, coinShare []byte, needRe
 		// Ignore duplicated messages.
 		cc.shares[peerIndex] = coinShare
 	}
-	var receivedShares = make([][]byte, 0)
+	receivedShares := make([][]byte, 0)
 	for _, share := range cc.shares {
 		if share != nil {
 			receivedShares = append(receivedShares, share)
@@ -319,7 +320,7 @@ func (cc *commonCoin) acceptCoinShare(peerIndex uint16, coinShare []byte, needRe
 	if sig, err = cc.node.dkShare.RecoverFullSignature(receivedShares, cc.sid); err != nil {
 		return false, xerrors.Errorf("unable to reconstruct the signature: %w", err)
 	}
-	var value = sig.Signature.Bytes()
+	value := sig.Signature.Bytes()
 	if err = cc.node.dkShare.VerifyMasterSignature(cc.sid, value); err != nil {
 		return false, xerrors.Errorf("unable to verify the master signature: %w", err)
 	}

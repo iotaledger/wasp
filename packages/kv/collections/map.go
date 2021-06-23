@@ -3,6 +3,7 @@ package collections
 import (
 	"bytes"
 	"errors"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
@@ -25,16 +26,16 @@ const (
 	mapElemKeyCode = byte(1)
 )
 
-func NewMap(kv kv.KVStore, name string) *Map {
+func NewMap(kvStore kv.KVStore, name string) *Map {
 	return &Map{
-		ImmutableMap: NewMapReadOnly(kv, name),
-		kvw:          kv,
+		ImmutableMap: NewMapReadOnly(kvStore, name),
+		kvw:          kvStore,
 	}
 }
 
-func NewMapReadOnly(kv kv.KVStoreReader, name string) *ImmutableMap {
+func NewMapReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableMap {
 	return &ImmutableMap{
-		kvr:  kv,
+		kvr:  kvReader,
 		name: name,
 	}
 }
@@ -92,7 +93,7 @@ func (m *ImmutableMap) MustGetAt(key []byte) []byte {
 	return ret
 }
 
-func (m *Map) SetAt(key []byte, value []byte) error {
+func (m *Map) SetAt(key, value []byte) error {
 	ok, err := m.HasAt(key)
 	if err != nil {
 		return err
@@ -107,7 +108,7 @@ func (m *Map) SetAt(key []byte, value []byte) error {
 	return nil
 }
 
-func (m *Map) MustSetAt(key []byte, value []byte) {
+func (m *Map) MustSetAt(key, value []byte) {
 	err := m.SetAt(key, value)
 	if err != nil {
 		panic(err)
@@ -180,7 +181,7 @@ func (m *ImmutableMap) Iterate(f func(elemKey []byte, value []byte) bool) error 
 	prefix := m.getElemKey(nil)
 	return m.kvr.Iterate(prefix, func(key kv.Key, value []byte) bool {
 		return f([]byte(key)[len(prefix):], value)
-		//return f([]byte(key), value)
+		// return f([]byte(key), value)
 	})
 }
 

@@ -94,7 +94,6 @@ func NewAgentIDFromString(s string) (*AgentID, error) {
 		return nil, xerrors.Errorf("NewAgentIDFromString: %v", err)
 	}
 	return NewAgentID(addr, hname), nil
-
 }
 
 // NewRandomAgentID creates random AgentID
@@ -150,15 +149,10 @@ func (a *AgentID) Write(w io.Writer) error {
 		if _, err := w.Write(t[:]); err != nil {
 			return err
 		}
-	} else {
-		if _, err := w.Write(a.a.Bytes()); err != nil {
-			return err
-		}
-	}
-	if err := a.h.Write(w); err != nil {
+	} else if _, err := w.Write(a.a.Bytes()); err != nil {
 		return err
 	}
-	return nil
+	return a.h.Write(w)
 }
 
 func (a *AgentID) Read(r io.Reader) error {
@@ -168,13 +162,10 @@ func (a *AgentID) Read(r io.Reader) error {
 	}
 	if t, _, err := ledgerstate.AddressFromBytes(buf[:]); err != nil {
 		return err
-	} else {
+	} else { //nolint:revive
 		a.a = t
 	}
-	if err := a.h.Read(r); err != nil {
-		return err
-	}
-	return nil
+	return a.h.Read(r)
 }
 
 func (a *AgentID) IsNil() bool {

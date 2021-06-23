@@ -2,6 +2,7 @@ package downloader
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"testing"
@@ -15,10 +16,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const constMockServerPort string = ":9999"
-const constFileCID string = "someunrealistichash12345"
+const (
+	constMockServerPort string = ":9999"
+	constFileCID        string = "someunrealistichash12345"
+)
 
-var constVarFile []byte = []byte("some file for testing")
+var constVarFile = []byte("some file for testing")
 
 func startMockServer() *echo.Echo {
 	l, err := net.Listen("tcp", constMockServerPort)
@@ -41,7 +44,7 @@ func startMockServer() *echo.Echo {
 	})
 	go func() {
 		err := e.Start("")
-		if err != nil && err != http.ErrServerClosed {
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			e.Logger.Fatal(err)
 		}
 	}()

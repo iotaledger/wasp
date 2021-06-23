@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
-
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -20,175 +18,101 @@ import (
 func TestDeployChain(t *testing.T) {
 	setup(t, "test_cluster")
 
-	counter, err := clu.StartMessageCounter(map[string]int{
+	counter1, err := clu.StartMessageCounter(map[string]int{
 		"dismissed_chain": 0,
 		"state":           2,
 		"request_out":     1,
 	})
 	check(err, t)
-	defer counter.Close()
+	defer counter1.Close()
 
-	chain, err := clu.DeployDefaultChain()
+	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	if !counter.WaitUntilExpectationsMet() {
+	if !counter1.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
-	chainID, chainOwnerID := getChainInfo(t, chain)
-	require.Equal(t, chainID, chain.ChainID)
-	require.Equal(t, chainOwnerID, *coretypes.NewAgentID(chain.OriginatorAddress(), 0))
+	chainID, chainOwnerID := getChainInfo(t, chain1)
+	require.Equal(t, chainID, chain1.ChainID)
+	require.Equal(t, chainOwnerID, *coretypes.NewAgentID(chain1.OriginatorAddress(), 0))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
+	chain1.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 1, blockIndex)
-		checkRoots(t, chain)
+		checkRoots(t, chain1)
 		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
 		require.EqualValues(t, 4, contractRegistry.MustLen())
 		return true
 	})
-	checkRootsOutside(t, chain)
+	checkRootsOutside(t, chain1)
 }
 
 func TestDeployContractOnly(t *testing.T) {
 	setup(t, "test_cluster")
 
-	counter, err := clu.StartMessageCounter(map[string]int{
+	counter1, err := clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
 		"request_out":         1,
 	})
 	check(err, t)
-	defer counter.Close()
+	defer counter1.Close()
 
-	chain, err := clu.DeployDefaultChain()
+	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	name := "inncounter1"
-	hname := coretypes.Hn(name)
-	description := "testing contract deployment with inccounter"
-	programHash := inccounter.Interface.ProgramHash
-	check(err, t)
-
-	_, err = chain.DeployContract(name, programHash.String(), description, map[string]interface{}{
-		inccounter.VarCounter: 42,
-		root.ParamName:        name,
-	})
-	check(err, t)
-
-	if !counter.WaitUntilExpectationsMet() {
-		t.Fail()
-	}
-
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
-		require.EqualValues(t, 2, blockIndex)
-		checkRoots(t, chain)
-
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		crBytes := contractRegistry.MustGetAt(hname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
-
-		require.EqualValues(t, programHash, cr.ProgramHash)
-		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
-		require.EqualValues(t, cr.Name, name)
-
-		return true
-	})
-
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
-		require.EqualValues(t, 42, counterValue)
-		return true
-	})
+	deployIncCounterSC(t, chain1, counter1)
 
 	// test calling root.FuncFindContractByName view function using client
-	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, root.Interface.Hname(), root.FuncFindContract,
+	ret, err := chain1.Cluster.WaspClient(0).CallView(
+		chain1.ChainID, root.Interface.Hname(), root.FuncFindContract,
 		dict.Dict{
-			root.ParamHname: hname.Bytes(),
+			root.ParamHname: coretypes.Hn("inncounter1").Bytes(),
 		})
 	check(err, t)
 	recb, err := ret.Get(root.VarData)
 	check(err, t)
 	rec, err := root.DecodeContractRecord(recb)
 	check(err, t)
-	require.EqualValues(t, description, rec.Description)
+	require.EqualValues(t, "testing contract deployment with inccounter", rec.Description)
 }
 
 func TestDeployContractAndSpawn(t *testing.T) {
 	setup(t, "test_cluster")
 
-	counter, err := clu.StartMessageCounter(map[string]int{
+	counter1, err := clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
 		"request_out":         1,
 	})
 	check(err, t)
-	defer counter.Close()
+	defer counter1.Close()
 
-	chain, err := clu.DeployDefaultChain()
+	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	description := "testing contract deployment with inccounter"
-	name := "inncounter1"
-	hname := coretypes.Hn(name)
-	programHash := inccounter.Interface.ProgramHash
-	check(err, t)
+	deployIncCounterSC(t, chain1, counter1)
 
-	_, err = chain.DeployContract(name, programHash.String(), description, map[string]interface{}{
-		inccounter.VarCounter: 42,
-	})
-	check(err, t)
-
-	if !counter.WaitUntilExpectationsMet() {
-		t.Fail()
-	}
-
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
-		require.EqualValues(t, 2, blockIndex)
-		checkRoots(t, chain)
-
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		require.EqualValues(t, 5, contractRegistry.MustLen())
-		crBytes := contractRegistry.MustGetAt(hname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
-
-		require.EqualValues(t, programHash, cr.ProgramHash)
-		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
-		require.EqualValues(t, cr.Name, name)
-
-		return true
-	})
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
-		require.EqualValues(t, 42, counterValue)
-		return true
-	})
+	hname := coretypes.Hn("inncounter1")
 
 	nameNew := "spawnedContract"
 	dscrNew := "spawned contract it is"
 	hnameNew := coretypes.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
-	tx, err := chain.OriginatorClient().Post1Request(hname, coretypes.Hn(inccounter.FuncSpawn), chainclient.PostRequestParams{
-		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
-			inccounter.VarName:        nameNew,
-			inccounter.VarDescription: dscrNew,
-		})),
-	})
+	par := chainclient.NewPostRequestParams(
+		inccounter.VarName, nameNew,
+		inccounter.VarDescription, dscrNew,
+	).WithIotas(1)
+	tx, err := chain.OriginatorClient().Post1Request(hname, coretypes.Hn(inccounter.FuncSpawn), *par)
 	check(err, t)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
+	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, tx, 30*time.Second)
 	check(err, t)
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
+	chain1.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
 		require.EqualValues(t, 3, blockIndex)
-		checkRoots(t, chain)
+		checkRoots(t, chain1)
 
 		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
 		require.EqualValues(t, 6, contractRegistry.MustLen())
@@ -213,15 +137,14 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		require.EqualValues(t, nameNew, cr.Name)
 		return true
 	})
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
+	chain1.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
 		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 42, counterValue)
 		return true
 	})
-	chain.WithSCState(coretypes.Hn(nameNew), func(host string, blockIndex uint32, state dict.Dict) bool {
+	chain1.WithSCState(coretypes.Hn(nameNew), func(host string, blockIndex uint32, state dict.Dict) bool {
 		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 44, counterValue)
 		return true
 	})
-
 }

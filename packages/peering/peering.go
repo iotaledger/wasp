@@ -39,9 +39,7 @@ const (
 	chunkMessageOverhead = 8 + 1
 )
 
-var (
-	crc32q *crc32.Table
-)
+var crc32q *crc32.Table
 
 func init() {
 	crc32q = crc32.MakeTable(0xD5828281)
@@ -126,12 +124,11 @@ func TrustedPeerFromBytes(buf []byte) (*TrustedPeer, error) {
 }
 
 func (tp *TrustedPeer) Bytes() ([]byte, error) {
-	var err error
 	var buf bytes.Buffer
-	if err = util.WriteBytes16(&buf, tp.PubKey.Bytes()); err != nil {
+	if err := util.WriteBytes16(&buf, tp.PubKey.Bytes()); err != nil {
 		return nil, err
 	}
-	if err = util.WriteString16(&buf, tp.NetID); err != nil {
+	if err := util.WriteString16(&buf, tp.NetID); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
@@ -243,6 +240,7 @@ type PeerMessage struct {
 	MsgData     []byte
 }
 
+//nolint:gocritic
 func NewPeerMessageFromBytes(buf []byte) (*PeerMessage, error) {
 	var err error
 	r := bytes.NewBuffer(buf)
@@ -300,37 +298,36 @@ func NewPeerMessageFromChunks(chunkBytes []byte, chunkSize int, msgChopper *chop
 }
 
 func (m *PeerMessage) Bytes() ([]byte, error) {
-	var err error
 	var buf bytes.Buffer
-	if err = util.WriteInt64(&buf, m.Timestamp); err != nil {
+	if err := util.WriteInt64(&buf, m.Timestamp); err != nil {
 		return nil, err
 	}
-	if err = util.WriteByte(&buf, m.MsgType); err != nil {
+	if err := util.WriteByte(&buf, m.MsgType); err != nil {
 		return nil, err
 	}
 	switch m.MsgType {
 	case MsgTypeReserved:
 	case MsgTypeHandshake:
-		if err = util.WriteBytes32(&buf, m.MsgData); err != nil {
+		if err := util.WriteBytes32(&buf, m.MsgData); err != nil {
 			return nil, err
 		}
 	case MsgTypeMsgChunk:
-		if err = util.WriteBytes32(&buf, m.MsgData); err != nil {
+		if err := util.WriteBytes32(&buf, m.MsgData); err != nil {
 			return nil, err
 		}
 	default:
-		if err = m.PeeringID.Write(&buf); err != nil {
+		if err := m.PeeringID.Write(&buf); err != nil {
 			return nil, err
 		}
-		if err = util.WriteUint16(&buf, m.SenderIndex); err != nil {
+		if err := util.WriteUint16(&buf, m.SenderIndex); err != nil {
 			return nil, err
 		}
-		if err = util.WriteBytes32(&buf, m.MsgData); err != nil {
+		if err := util.WriteBytes32(&buf, m.MsgData); err != nil {
 			return nil, err
 		}
 		var checksumCalc uint32
 		checksumCalc = crc32.Checksum(m.MsgData, crc32q)
-		if err = util.WriteUint32(&buf, checksumCalc); err != nil {
+		if err := util.WriteUint32(&buf, checksumCalc); err != nil {
 			return nil, err
 		}
 	}

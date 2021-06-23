@@ -37,16 +37,16 @@ type TimeSlice struct {
 	latest   int64
 }
 
-func NewTimestampedLog(kv kv.KVStore, name kv.Key) *TimestampedLog {
+func NewTimestampedLog(kvStore kv.KVStore, name kv.Key) *TimestampedLog {
 	return &TimestampedLog{
-		ImmutableTimestampedLog: NewTimestampedLogReadOnly(kv, name),
-		kvw:                     kv,
+		ImmutableTimestampedLog: NewTimestampedLogReadOnly(kvStore, name),
+		kvw:                     kvStore,
 	}
 }
 
-func NewTimestampedLogReadOnly(kv kv.KVStoreReader, name kv.Key) *ImmutableTimestampedLog {
+func NewTimestampedLogReadOnly(kvReader kv.KVStoreReader, name kv.Key) *ImmutableTimestampedLog {
 	return &ImmutableTimestampedLog{
-		kvr:  kv,
+		kvr:  kvReader,
 		name: name,
 	}
 }
@@ -430,7 +430,6 @@ func (l *ImmutableTimestampedLog) findUpperIdx(ts int64, fromIdx, toIdx uint32) 
 		return toIdx, true, nil
 	case fromIdx == toIdx:
 		return 0, false, nil
-
 	}
 	if !(ts < upperTs && fromIdx < toIdx) {
 		panic(fmt.Errorf("TimestampedLog.findUpperIdx: assertion failed: ts < upperTs && fromIdx < toIdx: args: %d, %d, %d", ts, fromIdx, toIdx))

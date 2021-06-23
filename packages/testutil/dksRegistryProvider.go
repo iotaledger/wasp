@@ -27,18 +27,13 @@ func NewDkgRegistryProvider(suite tcrypto.Suite) *DkgRegistryProvider { // TODO:
 
 // SaveDKShare implements dkg.DKShareRegistryProvider.
 func (p *DkgRegistryProvider) SaveDKShare(dkShare *tcrypto.DKShare) error {
-	var err error
-	var dkShareBytes []byte
-	if dkShareBytes, err = dkShare.Bytes(); err != nil {
-		return err
-	}
-	p.DB[dkShare.Address.String()] = dkShareBytes
+	p.DB[dkShare.Address.String()] = dkShare.Bytes()
 	return nil
 }
 
 // LoadDKShare implements dkg.DKShareRegistryProvider.
 func (p *DkgRegistryProvider) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare, error) {
-	var dkShareBytes = p.DB[sharedAddress.String()]
+	dkShareBytes := p.DB[sharedAddress.String()]
 	if dkShareBytes == nil {
 		return nil, fmt.Errorf("DKShare not found for %v", sharedAddress.Base58())
 	}

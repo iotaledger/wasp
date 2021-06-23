@@ -1,18 +1,18 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package sandbox_utils
+package sandbox_utils //nolint:revive // TODO refactor to remove `_` from package name
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 )
 
-type ed25519Util struct {
-}
+type ed25519Util struct{}
 
-func (u ed25519Util) ValidSignature(data []byte, pubKey []byte, signature []byte) bool {
+func (u ed25519Util) ValidSignature(data, pubKey, signature []byte) bool {
 	pk, _, err := ed25519.PublicKeyFromBytes(pubKey)
 	if err != nil {
 		return false

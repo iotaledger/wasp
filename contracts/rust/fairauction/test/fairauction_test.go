@@ -18,9 +18,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var auctioneer *ed25519.KeyPair
-var auctioneerAddr ledgerstate.Address
-var tokenColor ledgerstate.Color
+var (
+	auctioneer     *ed25519.KeyPair
+	auctioneerAddr ledgerstate.Address
+	tokenColor     ledgerstate.Color
+)
 
 func setupTest(t *testing.T) *solo.Chain {
 	chain := common.StartChainAndDeployWasmContractByName(t, ScName)
@@ -163,7 +165,8 @@ func requireInt64(t *testing.T, res dict.Dict, key string, expected int64) {
 	require.EqualValues(t, expected, actual)
 }
 
-func requireString(t *testing.T, res dict.Dict, key string, expected string) {
+//nolint:unused,deadcode
+func requireString(t *testing.T, res dict.Dict, key, expected string) {
 	actual, exists, err := codec.DecodeString(res.MustGet(kv.Key(key)))
 	require.NoError(t, err)
 	require.True(t, exists)

@@ -12,20 +12,24 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
-const ScName = "testwasmlib"
-const ScDescription = "Exercise all aspects of WasmLib"
-const HScName = coretypes.Hname(0x89703a45)
+const (
+	ScName        = "testwasmlib"
+	ScDescription = "Exercise all aspects of WasmLib"
+	HScName       = coretypes.Hname(0x89703a45)
+)
 
-const ParamAddress = kv.Key("address")
-const ParamAgentId = kv.Key("agentId")
-const ParamBytes = kv.Key("bytes")
-const ParamChainId = kv.Key("chainId")
-const ParamColor = kv.Key("color")
-const ParamHash = kv.Key("hash")
-const ParamHname = kv.Key("hname")
-const ParamInt64 = kv.Key("int64")
-const ParamRequestId = kv.Key("requestId")
-const ParamString = kv.Key("string")
+const (
+	ParamAddress   = kv.Key("address")
+	ParamAgentID   = kv.Key("agentId")
+	ParamBytes     = kv.Key("bytes")
+	ParamChainID   = kv.Key("chainId")
+	ParamColor     = kv.Key("color")
+	ParamHash      = kv.Key("hash")
+	ParamHname     = kv.Key("hname")
+	ParamInt64     = kv.Key("int64")
+	ParamRequestID = kv.Key("requestId")
+	ParamString    = kv.Key("string")
+)
 
 const FuncParamTypes = "paramTypes"
 

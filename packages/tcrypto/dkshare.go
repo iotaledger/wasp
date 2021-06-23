@@ -5,15 +5,17 @@ package tcrypto
 
 import (
 	"bytes"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/bls"
 	"io"
 
-	"github.com/iotaledger/wasp/packages/tcrypto/tbdn"
+	"golang.org/x/xerrors"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/bls"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bdn"
+	"go.dedis.ch/kyber/v3/sign/tbls"
 )
 
 // DKShare stands for the information stored on
@@ -47,7 +49,7 @@ func NewDKShare(
 	if pubBytes, err = sharedPublic.MarshalBinary(); err != nil {
 		return nil, err
 	}
-	var sharedAddress = ledgerstate.NewBLSAddress(pubBytes)
+	sharedAddress := ledgerstate.NewBLSAddress(pubBytes)
 	//
 	// Construct the DKShare.
 	dkShare := DKShare{
@@ -75,13 +77,16 @@ func DKShareFromBytes(buf []byte, suite Suite) (*DKShare, error) {
 }
 
 // Bytes returns byte representation of the share.
-func (s *DKShare) Bytes() ([]byte, error) {
+func (s *DKShare) Bytes() []byte {
 	var buf bytes.Buffer
-	s.Write(&buf)
-	return buf.Bytes(), nil
+	if err := s.Write(&buf); err != nil {
+		panic(xerrors.Errorf("DKShare.Bytes: %w", err))
+	}
+	return buf.Bytes()
 }
 
 // Write returns byte representation of this struct.
+//nolint:gocritic
 func (s *DKShare) Write(w io.Writer) error {
 	var err error
 	if _, err = w.Write(s.Address.Bytes()); err != nil {
@@ -115,12 +120,10 @@ func (s *DKShare) Write(w io.Writer) error {
 			return err
 		}
 	}
-	if err = util.WriteMarshaled(w, s.PrivateShare); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteMarshaled(w, s.PrivateShare)
 }
 
+//nolint:gocritic
 func (s *DKShare) Read(r io.Reader) error {
 	var err error
 	var addrBytes [ledgerstate.AddressLength]byte
@@ -142,7 +145,7 @@ func (s *DKShare) Read(r io.Reader) error {
 	if err = util.ReadUint16(r, &s.T); err != nil {
 		return err
 	}
-	s.SharedPublic = s.suite.Point()
+	s.SharedPublic = s.suite.G2().Point()
 	if err = util.ReadMarshaled(r, s.SharedPublic); err != nil {
 		return err
 	}
@@ -153,7 +156,7 @@ func (s *DKShare) Read(r io.Reader) error {
 	}
 	s.PublicCommits = make([]kyber.Point, arrLen)
 	for i := uint16(0); i < arrLen; i++ {
-		s.PublicCommits[i] = s.suite.Point()
+		s.PublicCommits[i] = s.suite.G2().Point()
 		if err = util.ReadMarshaled(r, s.PublicCommits[i]); err != nil {
 			return err
 		}
@@ -165,53 +168,50 @@ func (s *DKShare) Read(r io.Reader) error {
 	}
 	s.PublicShares = make([]kyber.Point, arrLen)
 	for i := uint16(0); i < arrLen; i++ {
-		s.PublicShares[i] = s.suite.Point()
+		s.PublicShares[i] = s.suite.G2().Point()
 		if err = util.ReadMarshaled(r, s.PublicShares[i]); err != nil {
 			return err
 		}
 	}
 	//
 	// Private share.
-	s.PrivateShare = s.suite.Scalar()
-	if err = util.ReadMarshaled(r, s.PrivateShare); err != nil {
-		return err
-	}
-	return nil
+	s.PrivateShare = s.suite.G2().Scalar()
+	return util.ReadMarshaled(r, s.PrivateShare)
 }
 
 // SignShare signs the data with the own key share.
 // returns SigShare, which contains signature and the index
-func (s *DKShare) SignShare(data []byte) (tbdn.SigShare, error) {
+func (s *DKShare) SignShare(data []byte) (tbls.SigShare, error) {
 	priShare := share.PriShare{
 		I: int(*s.Index),
 		V: s.PrivateShare,
 	}
-	return tbdn.Sign(s.suite, &priShare, data)
+	return tbls.Sign(s.suite, &priShare, data)
 }
 
 // VerifySigShare verifies the signature of a particular share.
-func (s *DKShare) VerifySigShare(data []byte, sigshare tbdn.SigShare) error {
+func (s *DKShare) VerifySigShare(data []byte, sigshare tbls.SigShare) error {
 	idx, err := sigshare.Index()
 	if err != nil || idx >= int(s.N) || idx < 0 {
 		return err
 	}
-	return bdn.Verify(s.suite, s.PublicShares[idx], data, sigshare.Value()) // TODO: [KP] Why not `tbdn`.
+	return bdn.Verify(s.suite, s.PublicShares[idx], data, sigshare.Value())
 }
 
 // VerifyOwnSigShare is only used for assertions
 // NOTE: Not used.
-func (s *DKShare) VerifyOwnSigShare(data []byte, sigshare tbdn.SigShare) error {
+func (s *DKShare) VerifyOwnSigShare(data []byte, sigshare tbls.SigShare) error {
 	idx, err := sigshare.Index()
 	if err != nil || uint16(idx) != *s.Index {
 		return err
 	}
-	return bdn.Verify(s.suite, s.PublicShares[idx], data, sigshare[2:]) // TODO: [KP] Why not `tbdn`.
+	return bdn.Verify(s.suite, s.PublicShares[idx], data, sigshare[2:])
 }
 
 // VerifyMasterSignature checks signature against master public key
 // NOTE: Not used.
-func (s *DKShare) VerifyMasterSignature(data []byte, signature []byte) error {
-	return bdn.Verify(s.suite, s.SharedPublic, data, signature) // TODO: [KP] Why not `tbdn`.
+func (s *DKShare) VerifyMasterSignature(data, signature []byte) error {
+	return bdn.Verify(s.suite, s.SharedPublic, data, signature)
 }
 
 // RecoverFullSignature generates (recovers) master signature from partial sigshares.
@@ -221,12 +221,12 @@ func (s *DKShare) RecoverFullSignature(sigShares [][]byte, data []byte) (*bls.Si
 	var recoveredSignatureBin []byte
 	if s.N > 1 {
 		pubPoly := share.NewPubPoly(s.suite, nil, s.PublicCommits)
-		recoveredSignatureBin, err = tbdn.Recover(s.suite, pubPoly, data, sigShares, int(s.T), int(s.N))
+		recoveredSignatureBin, err = tbls.Recover(s.suite, pubPoly, data, sigShares, int(s.T), int(s.N))
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		singleSigShare := tbdn.SigShare(sigShares[0])
+		singleSigShare := tbls.SigShare(sigShares[0])
 		recoveredSignatureBin = singleSigShare.Value()
 	}
 	sig, _, err := bls.SignatureFromBytes(recoveredSignatureBin)

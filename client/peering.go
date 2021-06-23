@@ -22,7 +22,7 @@ func (c *WaspClient) GetPeeringTrusted(pubKey string) (*model.PeeringTrustedNode
 	return response, err
 }
 
-func (c *WaspClient) PutPeeringTrusted(pubKey string, netID string) (*model.PeeringTrustedNode, error) {
+func (c *WaspClient) PutPeeringTrusted(pubKey, netID string) (*model.PeeringTrustedNode, error) {
 	request := model.PeeringTrustedNode{
 		PubKey: pubKey,
 		NetID:  netID,
@@ -32,7 +32,7 @@ func (c *WaspClient) PutPeeringTrusted(pubKey string, netID string) (*model.Peer
 	return &response, err
 }
 
-func (c *WaspClient) PostPeeringTrusted(pubKey string, netID string) (*model.PeeringTrustedNode, error) {
+func (c *WaspClient) PostPeeringTrusted(pubKey, netID string) (*model.PeeringTrustedNode, error) {
 	request := model.PeeringTrustedNode{
 		PubKey: pubKey,
 		NetID:  netID,

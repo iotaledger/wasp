@@ -56,7 +56,7 @@ func check(err error, t *testing.T) {
 	require.NoError(t, err)
 }
 
-func deployContract(wasmName string, scDescription string, initParams map[string]interface{}) error {
+func deployContract(wasmName, scDescription string, initParams map[string]interface{}) error {
 	wasmPath := "wasm/" + wasmName + "_bg.wasm"
 	if *useGo {
 		wasmPath = "wasm/" + wasmName + "_go.wasm"
@@ -83,10 +83,10 @@ func deployContract(wasmName string, scDescription string, initParams map[string
 	// TODO detached example contract code
 	//_, err := chain.DeployContract(wasmName, examples.VMType, hash, scDescription, initParams)
 	//return err
-	return nil
+	// return nil
 }
 
-func postRequest(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, tokens int, params map[string]interface{}) {
+func postRequest(t *testing.T, contract, entryPoint coretypes.Hname, tokens int, params map[string]interface{}) {
 	var transfer map[ledgerstate.Color]uint64
 	if tokens != 0 {
 		transfer = map[ledgerstate.Color]uint64{
@@ -96,7 +96,7 @@ func postRequest(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hn
 	postRequestFull(t, contract, entryPoint, transfer, params)
 }
 
-func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretypes.Hname, transfer map[ledgerstate.Color]uint64, params map[string]interface{}) {
+func postRequestFull(t *testing.T, contract, entryPoint coretypes.Hname, transfer map[ledgerstate.Color]uint64, params map[string]interface{}) {
 	var b *ledgerstate.ColoredBalances
 	if transfer != nil {
 		b = ledgerstate.NewColoredBalances(transfer)
@@ -113,11 +113,11 @@ func postRequestFull(t *testing.T, contract coretypes.Hname, entryPoint coretype
 	}
 }
 
-func setup(t *testing.T, configPath string) {
+func setup(t *testing.T, configPath string) { //nolint:unparam
 	clu = clutest.NewCluster(t)
 }
 
-func setupAndLoad(t *testing.T, name string, description string, nrOfRequests int, expectedMessages map[string]int) {
+func setupAndLoad(t *testing.T, name, description string, nrOfRequests int, expectedMessages map[string]int) {
 	setup(t, "test_cluster")
 
 	expectations := map[string]int{
