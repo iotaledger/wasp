@@ -22,12 +22,12 @@ import (
 )
 
 //nolint:unparam
-func newWalletWithFunds(t *testing.T, clust *cluster.Cluster, ch *cluster.Chain, wapnode int, seedN, iotas uint64) (*chainclient.Client, *ed25519.KeyPair) {
+func newWalletWithFunds(t *testing.T, clust *cluster.Cluster, ch *cluster.Chain, waspnode int, seedN, iotas uint64) (*chainclient.Client, *ed25519.KeyPair) {
 	userWallet := wallet.KeyPair(seedN)
 	userAddress := ledgerstate.NewED25519Address(userWallet.PublicKey)
 	userAgentID := coretypes.NewAgentID(userAddress, 0)
 
-	chClient := chainclient.New(clust.GoshimmerClient(), clust.WaspClient(wapnode), ch.ChainID, userWallet)
+	chClient := chainclient.New(clust.GoshimmerClient(), clust.WaspClient(waspnode), ch.ChainID, userWallet)
 
 	// deposit funds before sending the off-ledger requestargs
 	err = requestFunds(clust, userAddress, "userWallet")
