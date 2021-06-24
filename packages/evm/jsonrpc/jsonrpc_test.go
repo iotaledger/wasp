@@ -24,14 +24,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type env struct {
+type testEnv struct {
 	t         *testing.T
 	server    *rpc.Server
-	rawClient *rpc.Client
 	client    *ethclient.Client
+	rawClient *rpc.Client
 }
 
-func newEnv(t *testing.T) *env {
+type soloTestEnv struct {
+	testEnv
+	solo *solo.Solo
+}
+
+func newSoloTestEnv(t *testing.T) *soloTestEnv {
 	evmtest.InitGoEthLogger(t)
 
 	s := solo.New(t, true, false)
@@ -56,7 +61,15 @@ func newEnv(t *testing.T) *env {
 	client := ethclient.NewClient(rawClient)
 	t.Cleanup(client.Close)
 
-	return &env{t, rpcsrv, rawClient, client}
+	return &soloTestEnv{
+		testEnv: testEnv{
+			t:         t,
+			server:    rpcsrv,
+			client:    client,
+			rawClient: rawClient,
+		},
+		solo: s,
+	}
 }
 
 func generateKey(t *testing.T) (*ecdsa.PrivateKey, common.Address) {
@@ -68,7 +81,7 @@ func generateKey(t *testing.T) (*ecdsa.PrivateKey, common.Address) {
 
 var requestFundsAmount = big.NewInt(1e18) // 1 ETH
 
-func (e *env) requestFunds(target common.Address) *types.Transaction {
+func (e *testEnv) requestFunds(target common.Address) *types.Transaction {
 	nonce, err := e.client.NonceAt(context.Background(), evmtest.FaucetAddress, nil)
 	require.NoError(e.t, err)
 	tx, err := types.SignTx(
@@ -82,7 +95,7 @@ func (e *env) requestFunds(target common.Address) *types.Transaction {
 	return tx
 }
 
-func (e *env) deployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (*types.Transaction, common.Address) {
+func (e *testEnv) deployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (*types.Transaction, common.Address) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce := e.nonceAt(creatorAddress)
@@ -122,31 +135,31 @@ func concatenate(a, b []byte) []byte {
 	return r
 }
 
-func (e *env) estimateGas(msg ethereum.CallMsg) uint64 {
+func (e *testEnv) estimateGas(msg ethereum.CallMsg) uint64 {
 	gas, err := e.client.EstimateGas(context.Background(), msg)
 	require.NoError(e.t, err)
 	return gas
 }
 
-func (e *env) nonceAt(address common.Address) uint64 {
+func (e *testEnv) nonceAt(address common.Address) uint64 {
 	nonce, err := e.client.NonceAt(context.Background(), address, nil)
 	require.NoError(e.t, err)
 	return nonce
 }
 
-func (e *env) blockNumber() uint64 {
+func (e *testEnv) blockNumber() uint64 {
 	blockNumber, err := e.client.BlockNumber(context.Background())
 	require.NoError(e.t, err)
 	return blockNumber
 }
 
-func (e *env) blockByNumber(number *big.Int) *types.Block {
+func (e *testEnv) blockByNumber(number *big.Int) *types.Block {
 	block, err := e.client.BlockByNumber(context.Background(), number)
 	require.NoError(e.t, err)
 	return block
 }
 
-func (e *env) blockByHash(hash common.Hash) *types.Block {
+func (e *testEnv) blockByHash(hash common.Hash) *types.Block {
 	block, err := e.client.BlockByHash(context.Background(), hash)
 	if errors.Is(err, ethereum.NotFound) {
 		return nil
@@ -155,7 +168,7 @@ func (e *env) blockByHash(hash common.Hash) *types.Block {
 	return block
 }
 
-func (e *env) transactionByHash(hash common.Hash) *types.Transaction {
+func (e *testEnv) transactionByHash(hash common.Hash) *types.Transaction {
 	tx, isPending, err := e.client.TransactionByHash(context.Background(), hash)
 	if errors.Is(err, ethereum.NotFound) {
 		return nil
@@ -165,7 +178,7 @@ func (e *env) transactionByHash(hash common.Hash) *types.Transaction {
 	return tx
 }
 
-func (e *env) transactionByBlockHashAndIndex(blockHash common.Hash, index uint) *types.Transaction {
+func (e *testEnv) transactionByBlockHashAndIndex(blockHash common.Hash, index uint) *types.Transaction {
 	tx, err := e.client.TransactionInBlock(context.Background(), blockHash, index)
 	if errors.Is(err, ethereum.NotFound) {
 		return nil
@@ -174,114 +187,114 @@ func (e *env) transactionByBlockHashAndIndex(blockHash common.Hash, index uint) 
 	return tx
 }
 
-func (e *env) uncleByBlockHashAndIndex(blockHash common.Hash, index uint) map[string]interface{} {
+func (e *testEnv) uncleByBlockHashAndIndex(blockHash common.Hash, index uint) map[string]interface{} {
 	var uncle map[string]interface{}
 	err := e.rawClient.Call(&uncle, "eth_getUncleByBlockHashAndIndex", blockHash, hexutil.Uint(index))
 	require.NoError(e.t, err)
 	return uncle
 }
 
-func (e *env) transactionByBlockNumberAndIndex(blockNumber *big.Int, index uint) *RPCTransaction {
+func (e *testEnv) transactionByBlockNumberAndIndex(blockNumber *big.Int, index uint) *RPCTransaction {
 	var tx *RPCTransaction
 	err := e.rawClient.Call(&tx, "eth_getTransactionByBlockNumberAndIndex", (*hexutil.Big)(blockNumber), hexutil.Uint(index))
 	require.NoError(e.t, err)
 	return tx
 }
 
-func (e *env) uncleByBlockNumberAndIndex(blockNumber *big.Int, index uint) map[string]interface{} {
+func (e *testEnv) uncleByBlockNumberAndIndex(blockNumber *big.Int, index uint) map[string]interface{} {
 	var uncle map[string]interface{}
 	err := e.rawClient.Call(&uncle, "eth_getUncleByBlockNumberAndIndex", (*hexutil.Big)(blockNumber), hexutil.Uint(index))
 	require.NoError(e.t, err)
 	return uncle
 }
 
-func (e *env) blockTransactionCountByHash(hash common.Hash) uint {
+func (e *testEnv) blockTransactionCountByHash(hash common.Hash) uint {
 	n, err := e.client.TransactionCount(context.Background(), hash)
 	require.NoError(e.t, err)
 	return n
 }
 
-func (e *env) uncleCountByBlockHash(hash common.Hash) uint {
+func (e *testEnv) uncleCountByBlockHash(hash common.Hash) uint {
 	var res hexutil.Uint
 	err := e.rawClient.Call(&res, "eth_getUncleCountByBlockHash", hash)
 	require.NoError(e.t, err)
 	return uint(res)
 }
 
-func (e *env) blockTransactionCountByNumber() uint {
+func (e *testEnv) blockTransactionCountByNumber() uint {
 	// the client only supports calling this method with "pending"
 	n, err := e.client.PendingTransactionCount(context.Background())
 	require.NoError(e.t, err)
 	return n
 }
 
-func (e *env) uncleCountByBlockNumber(blockNumber *big.Int) uint {
+func (e *testEnv) uncleCountByBlockNumber(blockNumber *big.Int) uint {
 	var res hexutil.Uint
 	err := e.rawClient.Call(&res, "eth_getUncleCountByBlockNumber", (*hexutil.Big)(blockNumber))
 	require.NoError(e.t, err)
 	return uint(res)
 }
 
-func (e *env) balance(address common.Address) *big.Int {
+func (e *testEnv) balance(address common.Address) *big.Int {
 	bal, err := e.client.BalanceAt(context.Background(), address, nil)
 	require.NoError(e.t, err)
 	return bal
 }
 
-func (e *env) code(address common.Address) []byte {
+func (e *testEnv) code(address common.Address) []byte {
 	code, err := e.client.CodeAt(context.Background(), address, nil)
 	require.NoError(e.t, err)
 	return code
 }
 
-func (e *env) storage(address common.Address, key common.Hash) []byte {
+func (e *testEnv) storage(address common.Address, key common.Hash) []byte {
 	data, err := e.client.StorageAt(context.Background(), address, key, nil)
 	require.NoError(e.t, err)
 	return data
 }
 
-func (e *env) txReceipt(hash common.Hash) *types.Receipt {
+func (e *testEnv) txReceipt(hash common.Hash) *types.Receipt {
 	r, err := e.client.TransactionReceipt(context.Background(), hash)
 	require.NoError(e.t, err)
 	return r
 }
 
-func (e *env) accounts() []common.Address {
+func (e *testEnv) accounts() []common.Address {
 	var res []common.Address
 	err := e.rawClient.Call(&res, "eth_accounts")
 	require.NoError(e.t, err)
 	return res
 }
 
-func (e *env) sign(address common.Address, data []byte) []byte {
+func (e *testEnv) sign(address common.Address, data []byte) []byte {
 	var res hexutil.Bytes
 	err := e.rawClient.Call(&res, "eth_sign", address, hexutil.Bytes(data))
 	require.NoError(e.t, err)
 	return res
 }
 
-func (e *env) signTransaction(args *SendTxArgs) []byte {
+func (e *testEnv) signTransaction(args *SendTxArgs) []byte {
 	var res hexutil.Bytes
 	err := e.rawClient.Call(&res, "eth_signTransaction", args)
 	require.NoError(e.t, err)
 	return res
 }
 
-func (e *env) sendTransaction(args *SendTxArgs) common.Hash {
+func (e *testEnv) sendTransaction(args *SendTxArgs) common.Hash {
 	var res common.Hash
 	err := e.rawClient.Call(&res, "eth_sendTransaction", args)
 	require.NoError(e.t, err)
 	return res
 }
 
-func (e *env) getLogs(q ethereum.FilterQuery) []types.Log {
+func (e *testEnv) getLogs(q ethereum.FilterQuery) []types.Log {
 	logs, err := e.client.FilterLogs(context.Background(), q)
 	require.NoError(e.t, err)
 	return logs
 }
 
 func TestRPCGetBalance(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	require.Zero(t, big.NewInt(0).Cmp(env.balance(receiverAddress)))
 	env.requestFunds(receiverAddress)
@@ -289,7 +302,7 @@ func TestRPCGetBalance(t *testing.T) {
 }
 
 func TestRPCGetCode(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	creator, creatorAddress := generateKey(t)
 
 	// account address
@@ -307,7 +320,7 @@ func TestRPCGetCode(t *testing.T) {
 }
 
 func TestRPCGetStorage(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	creator, creatorAddress := generateKey(t)
 
 	env.requestFunds(creatorAddress)
@@ -328,7 +341,7 @@ func TestRPCGetStorage(t *testing.T) {
 }
 
 func TestRPCBlockNumber(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	require.EqualValues(t, 0, env.blockNumber())
 	env.requestFunds(receiverAddress)
@@ -336,7 +349,7 @@ func TestRPCBlockNumber(t *testing.T) {
 }
 
 func TestRPCGetTransactionCount(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	require.EqualValues(t, 0, env.nonceAt(evmtest.FaucetAddress))
 	env.requestFunds(receiverAddress)
@@ -344,7 +357,7 @@ func TestRPCGetTransactionCount(t *testing.T) {
 }
 
 func TestRPCGetBlockByNumber(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	require.EqualValues(t, 0, env.blockByNumber(big.NewInt(0)).Number().Uint64())
 	env.requestFunds(receiverAddress)
@@ -352,7 +365,7 @@ func TestRPCGetBlockByNumber(t *testing.T) {
 }
 
 func TestRPCGetBlockByHash(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	require.Nil(t, env.blockByHash(common.Hash{}))
 	require.EqualValues(t, 0, env.blockByHash(env.blockByNumber(big.NewInt(0)).Hash()).Number().Uint64())
@@ -361,7 +374,7 @@ func TestRPCGetBlockByHash(t *testing.T) {
 }
 
 func TestRPCGetTransactionByHash(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	require.Nil(t, env.transactionByHash(common.Hash{}))
 	env.requestFunds(receiverAddress)
@@ -371,7 +384,7 @@ func TestRPCGetTransactionByHash(t *testing.T) {
 }
 
 func TestRPCGetTransactionByBlockHashAndIndex(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	require.Nil(t, env.transactionByBlockHashAndIndex(common.Hash{}, 0))
 	env.requestFunds(receiverAddress)
@@ -381,7 +394,7 @@ func TestRPCGetTransactionByBlockHashAndIndex(t *testing.T) {
 }
 
 func TestRPCGetUncleByBlockHashAndIndex(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	require.Nil(t, env.uncleByBlockHashAndIndex(common.Hash{}, 0))
 	env.requestFunds(receiverAddress)
@@ -390,7 +403,7 @@ func TestRPCGetUncleByBlockHashAndIndex(t *testing.T) {
 }
 
 func TestRPCGetTransactionByBlockNumberAndIndex(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	require.Nil(t, env.transactionByBlockNumberAndIndex(big.NewInt(3), 0))
 	env.requestFunds(receiverAddress)
@@ -401,7 +414,7 @@ func TestRPCGetTransactionByBlockNumberAndIndex(t *testing.T) {
 }
 
 func TestRPCGetUncleByBlockNumberAndIndex(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	require.Nil(t, env.uncleByBlockNumberAndIndex(big.NewInt(3), 0))
 	env.requestFunds(receiverAddress)
@@ -410,7 +423,7 @@ func TestRPCGetUncleByBlockNumberAndIndex(t *testing.T) {
 }
 
 func TestRPCGetTransactionCountByHash(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	env.requestFunds(receiverAddress)
 	block1 := env.blockByNumber(big.NewInt(1))
@@ -420,7 +433,7 @@ func TestRPCGetTransactionCountByHash(t *testing.T) {
 }
 
 func TestRPCGetUncleCountByBlockHash(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	env.requestFunds(receiverAddress)
 	block1 := env.blockByNumber(big.NewInt(1))
@@ -430,7 +443,7 @@ func TestRPCGetUncleCountByBlockHash(t *testing.T) {
 }
 
 func TestRPCGetTransactionCountByNumber(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	env.requestFunds(receiverAddress)
 	block1 := env.blockByNumber(nil)
@@ -439,7 +452,7 @@ func TestRPCGetTransactionCountByNumber(t *testing.T) {
 }
 
 func TestRPCGetUncleCountByBlockNumber(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	_, receiverAddress := generateKey(t)
 	env.requestFunds(receiverAddress)
 	block1 := env.blockByNumber(big.NewInt(1))
@@ -448,19 +461,19 @@ func TestRPCGetUncleCountByBlockNumber(t *testing.T) {
 }
 
 func TestRPCAccounts(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	accounts := env.accounts()
 	require.Equal(t, len(evmtest.Accounts), len(accounts))
 }
 
 func TestRPCSign(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	signed := env.sign(evmtest.AccountAddress(0), []byte("hello"))
 	require.NotEmpty(t, signed)
 }
 
 func TestRPCSignTransaction(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 
 	from := evmtest.AccountAddress(0)
 	to := evmtest.AccountAddress(1)
@@ -483,7 +496,7 @@ func TestRPCSignTransaction(t *testing.T) {
 }
 
 func TestRPCSendTransaction(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 
 	from := evmtest.AccountAddress(0)
 	env.requestFunds(from)
@@ -503,7 +516,7 @@ func TestRPCSendTransaction(t *testing.T) {
 }
 
 func TestRPCGetTxReceipt(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	creator, creatorAddr := generateKey(t)
 
 	// regular transaction
@@ -550,7 +563,7 @@ func TestRPCGetTxReceipt(t *testing.T) {
 }
 
 func TestRPCCall(t *testing.T) {
-	env := newEnv(t)
+	env := newSoloTestEnv(t)
 	creator, creatorAddress := generateKey(t)
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
@@ -573,34 +586,37 @@ func TestRPCCall(t *testing.T) {
 }
 
 func TestRPCGetLogs(t *testing.T) {
-	env := newEnv(t)
+	newSoloTestEnv(t).testRPCGetLogs()
+}
+
+func (e *testEnv) testRPCGetLogs() {
 	creator, creatorAddress := evmtest.Accounts[0], evmtest.AccountAddress(0)
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
-	require.NoError(t, err)
-	contractAddress := crypto.CreateAddress(creatorAddress, env.nonceAt(creatorAddress))
+	require.NoError(e.t, err)
+	contractAddress := crypto.CreateAddress(creatorAddress, e.nonceAt(creatorAddress))
 
 	filterQuery := ethereum.FilterQuery{
 		Addresses: []common.Address{contractAddress},
 	}
 
-	require.Empty(t, env.getLogs(filterQuery))
+	require.Empty(e.t, e.getLogs(filterQuery))
 
-	env.deployEVMContract(creator, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+	e.deployEVMContract(creator, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
 
-	require.Equal(t, 1, len(env.getLogs(filterQuery)))
+	require.Equal(e.t, 1, len(e.getLogs(filterQuery)))
 
 	recipientAddress := evmtest.AccountAddress(1)
-	nonce := hexutil.Uint64(env.nonceAt(creatorAddress))
+	nonce := hexutil.Uint64(e.nonceAt(creatorAddress))
 	callArguments, err := contractABI.Pack("transfer", recipientAddress, big.NewInt(1337))
 	value := big.NewInt(0)
-	gas := hexutil.Uint64(env.estimateGas(ethereum.CallMsg{
+	gas := hexutil.Uint64(e.estimateGas(ethereum.CallMsg{
 		From:  creatorAddress,
 		To:    &contractAddress,
 		Value: value,
 		Data:  callArguments,
 	}))
-	require.NoError(t, err)
-	env.sendTransaction(&SendTxArgs{
+	require.NoError(e.t, err)
+	e.sendTransaction(&SendTxArgs{
 		From:     creatorAddress,
 		To:       &contractAddress,
 		Gas:      &gas,
@@ -610,5 +626,5 @@ func TestRPCGetLogs(t *testing.T) {
 		Data:     (*hexutil.Bytes)(&callArguments),
 	})
 
-	require.Equal(t, 2, len(env.getLogs(filterQuery)))
+	require.Equal(e.t, 2, len(e.getLogs(filterQuery)))
 }
