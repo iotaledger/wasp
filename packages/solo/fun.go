@@ -37,7 +37,7 @@ func (ch *Chain) String() string {
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
 	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.Hash().String())
 	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GetGenesisAddress())
-	return string(buf.Bytes())
+	return buf.String()
 }
 
 // DumpAccounts dumps all account balances into the human readable string
@@ -45,7 +45,8 @@ func (ch *Chain) DumpAccounts() string {
 	_, chainOwnerID, _ := ch.GetInfo()
 	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n", ch.ChainID.String(), chainOwnerID.String())
 	acc := ch.GetAccounts()
-	for _, aid := range acc {
+	for i := range acc {
+		aid := acc[i]
 		ret += fmt.Sprintf("  %s:\n", aid.String())
 		bals := ch.GetAccountBalance(&aid)
 		bals.ForEach(func(col ledgerstate.Color, bal uint64) bool {
@@ -130,7 +131,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 		return
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
-	return
+	return ret, err
 }
 
 // UploadBlobOptimized does the same as UploadBlob, only better but more complicated
@@ -173,7 +174,7 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, 
 		return
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
-	return
+	return ret, err
 }
 
 const (
@@ -248,7 +249,7 @@ func (ch *Chain) DeployContract(keyPair *ed25519.KeyPair, name string, programHa
 
 // DeployWasmContract is syntactic sugar for uploading Wasm binary from file and
 // deploying the smart contract in one call
-func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name string, fname string, params ...interface{}) error {
+func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name, fname string, params ...interface{}) error {
 	hprog, err := ch.UploadWasmFromFile(keyPair, fname)
 	if err != nil {
 		return err
@@ -281,7 +282,7 @@ func (ch *Chain) GetInfo() (chainid.ChainID, coretypes.AgentID, map[coretypes.Hn
 // on the UTXODB ledger
 func (env *Solo) GetAddressBalance(addr ledgerstate.Address, col ledgerstate.Color) uint64 {
 	bals := env.GetAddressBalances(addr)
-	ret, _ := bals[col]
+	ret := bals[col]
 	return ret
 }
 
@@ -372,12 +373,10 @@ func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint
 	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(root.VarValidatorFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
-	require.True(ch.Env.T, validatorFee >= 0)
 
 	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(root.VarOwnerFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
-	require.True(ch.Env.T, ownerFee >= 0)
 
 	return feeColor, ownerFee, validatorFee
 }
@@ -608,7 +607,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []ledgerstate.Address {
 // RotateStateController rotates the chain to the new controller address.
 // We assume self-governed chain here.
 // Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
-func (ch *Chain) RotateStateController(newStateAddr ledgerstate.Address, newStateKeyPair *ed25519.KeyPair, ownerKeyPair *ed25519.KeyPair) error {
+func (ch *Chain) RotateStateController(newStateAddr ledgerstate.Address, newStateKeyPair, ownerKeyPair *ed25519.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
 	).WithIotas(1)

@@ -28,7 +28,7 @@ func AddEndpoints(server echoswagger.ApiRouter, getChain getChainFn) {
 		AddParamBody(
 			model.OffLedgerRequestBody{Request: "base64 string"},
 			"Request",
-			"Offledger Request encoded in base64. Optimally, the body can be the binary representation of the offledger request, but mime-type must be specified to \"application/octet-stream\"",
+			"Offledger Request encoded in base64. Optinally, the body can be the binary representation of the offledger request, but mime-type must be specified to \"application/octet-stream\"", //nolint:misspell
 			false).
 		AddResponse(http.StatusAccepted, "Request submitted", nil, nil)
 }

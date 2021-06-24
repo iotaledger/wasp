@@ -26,7 +26,7 @@ func postRequestCmd() *cobra.Command {
 			for _, tr := range transfer {
 				parts := strings.Split(tr, ":")
 				if len(parts) != 2 {
-					log.Fatal("Syntax for --transfer: <color>:<amount>,<color:amount>...\nExample: IOTA:100")
+					log.Fatalf("Syntax for --transfer: <color>:<amount>,<color:amount>...\nExample: IOTA:100")
 				}
 				color := colorFromString(parts[0])
 				amount, err := strconv.Atoi(parts[1])

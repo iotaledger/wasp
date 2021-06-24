@@ -4,18 +4,15 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/wasp/plugins/registry"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/labstack/echo/v4"
-	"github.com/pangpanglabs/echoswagger/v2"
-
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/plugins/chains"
+	"github.com/iotaledger/wasp/plugins/registry"
+	"github.com/labstack/echo/v4"
+	"github.com/pangpanglabs/echoswagger/v2"
 )
 
 func addCommitteeRecordEndpoints(adm echoswagger.ApiGroup) {
@@ -58,7 +55,7 @@ func handlePutCommitteeRecord(c echo.Context) error {
 		return httperrors.Conflict(fmt.Sprintf("Record already exists: %s", cr.Address.Base58()))
 	}
 	// TODO if I am not among committee nodes, should not save
-	if err = defaultRegistry.SaveCommitteeRecord(cr); err != nil {
+	if err := defaultRegistry.SaveCommitteeRecord(cr); err != nil {
 		return err
 	}
 

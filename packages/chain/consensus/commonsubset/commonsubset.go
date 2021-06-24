@@ -26,6 +26,8 @@
 //  - https://dl.acm.org/doi/10.1145/197917.198088
 //    The definition of ACS is by Ben-Or. At least looks so.
 //
+
+//nolint:dupl // TODO there is a bunch of duplicated code in this file, should be refactored to reusable funcs
 package commonsubset
 
 import (
@@ -235,7 +237,7 @@ func (cs *CommonSubset) handleInput(input []byte) error {
 	if err = cs.impl.InputValue(input); err != nil {
 		return xerrors.Errorf("Failed to process ACS.InputValue: %w", err)
 	}
-	cs.sendPendingMessages(nil)
+	cs.sendPendingMessages()
 	return nil
 }
 
@@ -285,7 +287,7 @@ func (cs *CommonSubset) handleMsgBatch(recvBatch *msgBatch) {
 	}
 	//
 	// Send the outgoing messages.
-	cs.sendPendingMessages(recvBatch)
+	cs.sendPendingMessages()
 	//
 	// Check, maybe we are done.
 	if cs.impl.Done() {
@@ -299,7 +301,7 @@ func (cs *CommonSubset) handleMsgBatch(recvBatch *msgBatch) {
 	}
 }
 
-func (cs *CommonSubset) sendPendingMessages(recvBatch *msgBatch) {
+func (cs *CommonSubset) sendPendingMessages() {
 	var outBatches []*msgBatch
 	var err error
 	if outBatches, err = cs.makeBatches(cs.impl.Messages()); err != nil {
@@ -418,6 +420,7 @@ func (b *msgBatch) NeedsAck() bool {
 	return b.id != 0
 }
 
+//nolint:funlen, gocyclo // TODO this function is too long and has a high cyclomatic complexity, should be refactored
 func (b *msgBatch) Write(w io.Writer) error {
 	var err error
 	if err = util.WriteUint64(w, b.sessionID); err != nil {
@@ -541,6 +544,7 @@ func (b *msgBatch) Write(w io.Writer) error {
 	return nil
 }
 
+//nolint:funlen, gocyclo // TODO this function is too long and has a high cyclomatic complexity, should be refactored
 func (b *msgBatch) Read(r io.Reader) error {
 	var err error
 	if err = util.ReadUint64(r, &b.sessionID); err != nil {

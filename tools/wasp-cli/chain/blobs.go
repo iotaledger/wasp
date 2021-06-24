@@ -17,7 +17,7 @@ import (
 var uploadQuorum int
 
 func initUploadFlags(chainCmd *cobra.Command) {
-	chainCmd.PersistentFlags().IntVarP(&uploadQuorum, "upload-quorum", "", 3, "quorum for blob upload")
+	chainCmd.PersistentFlags().IntVarP(&uploadQuorum, "upload-quorum", "", 3, "quorum for blob upload") //nolint:gomnd
 }
 
 var storeBlobCmd = &cobra.Command{
@@ -33,7 +33,7 @@ func uploadBlob(fieldValues dict.Dict, forceWait bool) (hash hashing.HashValue) 
 	util.WithSCTransaction(
 		GetCurrentChainID(),
 		func() (tx *ledgerstate.Transaction, err error) {
-			hash, tx, err = Client().UploadBlob(fieldValues, config.CommitteeApi(chainCommittee()), uploadQuorum)
+			hash, tx, err = Client().UploadBlob(fieldValues, config.CommitteeAPI(chainCommittee()), uploadQuorum)
 			if err == nil {
 				log.Printf("uploaded blob to chain -- hash: %s", hash)
 			}
@@ -65,7 +65,7 @@ var showBlobCmd = &cobra.Command{
 			log.Check(err)
 			values.Set(field, value[blob.ParamBytes])
 		}
-		util.PrintDictAsJson(values)
+		util.PrintDictAsJSON(values)
 	},
 }
 

@@ -19,7 +19,7 @@ import (
 	"go.uber.org/atomic"
 )
 
-type consensus struct {
+type Consensus struct {
 	isReady                    atomic.Bool
 	chain                      chain.ChainCore
 	committee                  chain.Committee
@@ -30,7 +30,7 @@ type consensus struct {
 	stateOutput                *ledgerstate.AliasOutput
 	stateTimestamp             time.Time
 	acsSessionID               uint64
-	consensusBatch             *batchProposal
+	consensusBatch             *BatchProposal
 	consensusEntropy           hashing.HashValue
 	iAmContributor             bool
 	myContributionSeqNumber    uint16
@@ -71,9 +71,9 @@ type workflowFlags struct {
 	finished             bool
 }
 
-var _ chain.Consensus = &consensus{}
+var _ chain.Consensus = &Consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, timersOpt ...util.TimerParams) *consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, timersOpt ...util.TimerParams) *Consensus {
 	var timers util.TimerParams
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -81,7 +81,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		timers = NewConsensusTimers()
 	}
 	log := chainCore.Log().Named("c")
-	ret := &consensus{
+	ret := &Consensus{
 		chain:                     chainCore,
 		committee:                 committee,
 		mempool:                   mempool,
@@ -104,15 +104,15 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 	return ret
 }
 
-func (c *consensus) IsReady() bool {
+func (c *Consensus) IsReady() bool {
 	return c.isReady.Load()
 }
 
-func (c *consensus) Close() {
+func (c *Consensus) Close() {
 	close(c.closeCh)
 }
 
-func (c *consensus) recvLoop() {
+func (c *Consensus) recvLoop() {
 	// wait at startup
 	for !c.committee.IsReady() {
 		select {
@@ -155,7 +155,7 @@ func (c *consensus) recvLoop() {
 	}
 }
 
-func (c *consensus) refreshConsensusInfo() {
+func (c *Consensus) refreshConsensusInfo() {
 	index := uint32(0)
 	if c.currentState != nil {
 		index = c.currentState.BlockIndex()
@@ -176,7 +176,7 @@ func (c *consensus) refreshConsensusInfo() {
 	c.consensusInfoSnapshot.Store(consensusInfo)
 }
 
-func (c *consensus) GetStatusSnapshot() *chain.ConsensusInfo {
+func (c *Consensus) GetStatusSnapshot() *chain.ConsensusInfo {
 	ret := c.consensusInfoSnapshot.Load()
 	if ret == nil {
 		return nil

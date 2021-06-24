@@ -33,3 +33,6 @@ jobs:
 
     - name: Test
       run: go test -tags rocksdb -v -short ./...
+
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v2.5.2

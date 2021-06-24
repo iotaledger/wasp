@@ -16,8 +16,8 @@ func testCheckContextFromFullEP(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a.Require(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
 	a.Require(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
 	a.Require(par.MustGetAgentID(ParamCaller).Equals(ctx.Caller()), "fail: caller")
-	myAgentId := coretypes.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
-	a.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentId), "fail: agentID")
+	myAgentID := coretypes.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
+	a.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
 	a.Require(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
 	return nil, nil
 }
@@ -28,8 +28,8 @@ func testCheckContextFromViewEP(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 	a.Require(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
 	a.Require(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
-	myAgentId := coretypes.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
-	a.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentId), "fail: agentID")
+	myAgentID := coretypes.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
+	a.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
 	a.Require(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
 	return nil, nil
 }
@@ -67,9 +67,9 @@ func passTypesFull(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if hname != coretypes.Hn("Hname") {
 		ctx.Log().Panicf("wrong hname")
 	}
-	hname_0, exists, err := codec.DecodeHname(ctx.Params().MustGet("Hname-0"))
+	hname0, exists, err := codec.DecodeHname(ctx.Params().MustGet("Hname-0"))
 	checkFull(ctx, exists, err)
-	if hname_0 != 0 {
+	if hname0 != 0 {
 		ctx.Log().Panicf("wrong Hname-0")
 	}
 	_, exists, err = codec.DecodeHname(ctx.Params().MustGet("ContractID"))
@@ -112,9 +112,9 @@ func passTypesView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	if hname != coretypes.Hn("Hname") {
 		ctx.Log().Panicf("wrong hname")
 	}
-	hname_0, exists, err := codec.DecodeHname(ctx.Params().MustGet("Hname-0"))
+	hname0, exists, err := codec.DecodeHname(ctx.Params().MustGet("Hname-0"))
 	checkView(ctx, exists, err)
-	if hname_0 != 0 {
+	if hname0 != 0 {
 		ctx.Log().Panicf("wrong hname-0")
 	}
 	_, exists, err = codec.DecodeHname(ctx.Params().MustGet("ContractID"))

@@ -42,7 +42,7 @@ func configure(plugin *node.Plugin) {
 
 		go func() {
 			start := time.Now()
-			for x := range time.Tick(1 * time.Second) {
+			for x := range time.NewTicker(1 * time.Second).C {
 				secondsSinceStart := x.Sub(start).Seconds()
 
 				if secondsSinceStart <= WaitToKillTimeInSeconds {

@@ -14,9 +14,9 @@ import (
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-func NewScBalances(vm *wasmProcessor, keyId int32) *ScDict {
+func NewScBalances(vm *WasmProcessor, keyID int32) *ScDict {
 	o := NewScDict(vm)
-	switch keyId {
+	switch keyID {
 	case wasmhost.KeyIncoming:
 		if vm.ctx == nil {
 			o.Panic("no incoming() on views")
@@ -34,13 +34,13 @@ func NewScBalances(vm *wasmProcessor, keyId int32) *ScDict {
 		}
 		return loadBalances(o, vm.ctxView.Balances())
 	}
-	o.Panic("unknown balances: %s", vm.GetKeyStringFromId(keyId))
+	o.Panic("unknown balances: %s", vm.GetKeyStringFromID(keyID))
 	return nil
 }
 
 func loadBalances(o *ScDict, balances *ledgerstate.ColoredBalances) *ScDict {
 	index := 0
-	key := o.host.GetKeyStringFromId(wasmhost.KeyColor)
+	key := o.host.GetKeyStringFromID(wasmhost.KeyColor)
 	balances.ForEach(func(color ledgerstate.Color, balance uint64) bool {
 		o.kvStore.Set(kv.Key(color[:]), codec.EncodeUint64(balance))
 		o.kvStore.Set(kv.Key(key+"."+strconv.Itoa(index)), color[:])

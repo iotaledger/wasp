@@ -19,7 +19,7 @@ func Client() *chainclient.Client {
 }
 
 func MultiClient() *multiclient.MultiClient {
-	return multiclient.New(config.CommitteeApi(chainCommittee()))
+	return multiclient.New(config.CommitteeAPI(chainCommittee()))
 }
 
 func SCClient(contractHname coretypes.Hname) *scclient.SCClient {

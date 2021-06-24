@@ -38,7 +38,7 @@ type MockedChainCore struct {
 	onReceiveVMResultMsg                 func(*chain.VMResultMsg)
 	onReceiveAsynchronousCommonSubsetMsg func(*chain.AsynchronousCommonSubsetMsg)
 	onReceiveTimerTick                   func(chain.TimerTick)
-	onSync                               func(out ledgerstate.OutputID, blockIndex uint32)
+	onSync                               func(out ledgerstate.OutputID, blockIndex uint32) //nolint:structcheck,unused
 	log                                  *logger.Logger
 }
 
@@ -101,8 +101,8 @@ func (m *MockedChainCore) ID() *chainid.ChainID {
 	return &m.chainID
 }
 
-func (c *MockedChainCore) GlobalStateSync() coreutil.ChainStateSync {
-	return c.onGlobalStateSync()
+func (m *MockedChainCore) GlobalStateSync() coreutil.ChainStateSync {
+	return m.onGlobalStateSync()
 }
 
 func (m *MockedChainCore) GetStateReader() state.OptimisticStateReader {

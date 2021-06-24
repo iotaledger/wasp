@@ -17,7 +17,7 @@ type MockNode struct {
 
 const debug = false
 
-func Start(txStreamBindAddress string, webapiBindAddress string) *MockNode {
+func Start(txStreamBindAddress, webapiBindAddress string) *MockNode {
 	log := testlogger.NewSimple(debug).Named("txstream")
 	log.Infof("starting mocked goshimmer node...")
 	m := &MockNode{

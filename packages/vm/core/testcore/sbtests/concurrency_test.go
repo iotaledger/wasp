@@ -50,7 +50,7 @@ func testConcurrency(t *testing.T, w bool) {
 		sum += i
 	}
 	for r, n := range repeats {
-		go func(r, n int) {
+		go func(_, n int) {
 			for i := 0; i < n; i++ {
 				tx, err := chain.RequestFromParamsToLedger(req, nil)
 				require.NoError(t, err)

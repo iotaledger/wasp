@@ -24,7 +24,7 @@ func LocateFile(fileName string, relativePath ...string) string {
 
 	// walk up the directory tree to find the Wasm repo folder
 	path := relPath
-	exists, err = ExistsFilePath(path)
+	_, err = ExistsFilePath(path)
 	if err != nil {
 		panic(err)
 	}

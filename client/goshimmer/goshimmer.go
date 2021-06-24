@@ -55,7 +55,7 @@ func (c *Client) balanceIOTA(targetAddress ledgerstate.Address) (uint64, error) 
 	total := uint64(0)
 	for _, out := range outs {
 		bal, _ := out.Balances().Get(ledgerstate.ColorIOTA)
-		total += uint64(bal)
+		total += bal
 	}
 	return total, nil
 }
@@ -127,7 +127,7 @@ func (c *Client) PostRequestTransaction(par transaction.NewRequestTransactionPar
 		return nil, err
 	}
 
-	if err = c.PostTransaction(tx); err != nil {
+	if err := c.PostTransaction(tx); err != nil {
 		return nil, err
 	}
 	return tx, nil

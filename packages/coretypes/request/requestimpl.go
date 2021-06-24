@@ -37,6 +37,7 @@ func NewRequestMetadata() *RequestMetadata {
 	}
 }
 
+//nolint:revive // TODO refactor stutter request.request
 func RequestMetadataFromBytes(data []byte) *RequestMetadata {
 	ret := NewRequestMetadata()
 	ret.err = ret.Read(bytes.NewReader(data))
@@ -121,10 +122,7 @@ func (p *RequestMetadata) Write(w io.Writer) error {
 	if err := p.entryPoint.Write(w); err != nil {
 		return err
 	}
-	if err := p.args.Write(w); err != nil {
-		return err
-	}
-	return nil
+	return p.args.Write(w)
 }
 
 func (p *RequestMetadata) Read(r io.Reader) error {
@@ -137,10 +135,7 @@ func (p *RequestMetadata) Read(r io.Reader) error {
 	if err := p.entryPoint.Read(r); err != nil {
 		return err
 	}
-	if err := p.args.Read(r); err != nil {
-		return err
-	}
-	return nil
+	return p.args.Read(r)
 }
 
 // endregion
@@ -160,6 +155,7 @@ type RequestOnLedger struct {
 var _ coretypes.Request = &RequestOnLedger{}
 
 // RequestOnLedgerFromOutput
+//nolint:revive // TODO refactor stutter request.request
 func RequestOnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, timestamp time.Time, senderAddr ledgerstate.Address, minted ...map[ledgerstate.Color]uint64) *RequestOnLedger {
 	ret := &RequestOnLedger{
 		outputObj:     output,
@@ -167,7 +163,7 @@ func RequestOnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, timesta
 		senderAddress: senderAddr,
 	}
 	ret.requestMetadata = RequestMetadataFromBytes(output.GetPayload())
-	ret.minted = make(map[ledgerstate.Color]uint64, 0)
+	ret.minted = make(map[ledgerstate.Color]uint64)
 	if len(minted) > 0 {
 		for k, v := range minted[0] {
 			ret.minted[k] = v
@@ -303,7 +299,7 @@ type RequestOffLedger struct {
 var _ coretypes.Request = &RequestOffLedger{}
 
 // NewRequestOffLedger creates a basic request
-func NewRequestOffLedger(contract coretypes.Hname, entryPoint coretypes.Hname, args requestargs.RequestArgs) *RequestOffLedger {
+func NewRequestOffLedger(contract, entryPoint coretypes.Hname, args requestargs.RequestArgs) *RequestOffLedger {
 	return &RequestOffLedger{
 		args:       args.Clone(),
 		contract:   contract,
@@ -364,7 +360,7 @@ func NewRequestOffLedgerFromBytes(data []byte) (request *RequestOffLedger, err e
 
 // Essence encodes request essence as bytes
 func (req *RequestOffLedger) Essence() []byte {
-	buf := bytes.NewBuffer(make([]byte, 0, 1024))
+	buf := bytes.NewBuffer(make([]byte, 0, 1024)) //nolint:gomnd
 	_ = req.contract.Write(buf)
 	_ = req.entryPoint.Write(buf)
 	_ = req.args.Write(buf)
@@ -409,7 +405,7 @@ func (req *RequestOffLedger) VerifySignature() bool {
 // index part of request id is always 0 for off ledger requests
 // note that request needs to have been signed before this value is
 // considered valid
-func (req *RequestOffLedger) ID() (requestId coretypes.RequestID) {
+func (req *RequestOffLedger) ID() (requestID coretypes.RequestID) {
 	txid := ledgerstate.TransactionID(hashing.HashData(req.Bytes()))
 	return coretypes.RequestID(ledgerstate.NewOutputID(txid, 0))
 }

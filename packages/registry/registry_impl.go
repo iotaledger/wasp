@@ -5,27 +5,24 @@ package registry
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"time"
-
-	"github.com/iotaledger/wasp/packages/util"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/util/key"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/plugins/database"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/util/key"
 )
 
 // region Registry /////////////////////////////////////////////////////////
@@ -62,20 +59,20 @@ func MakeChainRecordDbKey(chainID *chainid.ChainID) []byte {
 
 func (r *Impl) GetChainRecordByChainID(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error) {
 	data, err := r.store.Get(MakeChainRecordDbKey(chainID))
-	if err == kvstore.ErrKeyNotFound {
+	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return chainrecord.ChainRecordFromBytes(data)
+	return chainrecord.FromBytes(data)
 }
 
 func (r *Impl) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
 	ret := make([]*chainrecord.ChainRecord, 0)
 
 	err := r.store.Iterate([]byte{dbkeys.ObjectTypeChainRecord}, func(key kvstore.Key, value kvstore.Value) bool {
-		if rec, err1 := chainrecord.ChainRecordFromBytes(value); err1 == nil {
+		if rec, err1 := chainrecord.FromBytes(value); err1 == nil {
 			ret = append(ret, rec)
 		}
 		return true
@@ -135,7 +132,7 @@ func dbKeyCommitteeRecord(addr ledgerstate.Address) []byte {
 
 func (r *Impl) GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error) {
 	data, err := r.store.Get(dbKeyCommitteeRecord(addr))
-	if err == kvstore.ErrKeyNotFound {
+	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
 	}
 	if err != nil {
@@ -191,7 +188,7 @@ func dbKeyForBlob(h hashing.HashValue) []byte {
 }
 
 func dbKeyForBlobTTL(h hashing.HashValue) []byte {
-	return dbkeys.MakeKey(dbkeys.ObjectTypeBlobCacheTTL)
+	return dbkeys.MakeKey(dbkeys.ObjectTypeBlobCacheTTL, h[:])
 }
 
 const BlobCacheDefaultTTL = 1 * time.Hour
@@ -222,7 +219,7 @@ func (r *Impl) PutBlob(data []byte, ttl ...time.Duration) (hashing.HashValue, er
 // Reads data from registry by hash. Returns existence flag
 func (r *Impl) GetBlob(h hashing.HashValue) ([]byte, bool, error) {
 	ret, err := r.store.Get(dbKeyForBlob(h))
-	if err == kvstore.ErrKeyNotFound {
+	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, false, nil
 	}
 	return ret, ret != nil && err == nil, err
@@ -243,13 +240,15 @@ func (r *Impl) GetNodeIdentity() (*key.Pair, error) {
 	dbKey := dbKeyForNodeIdentity()
 	var exists bool
 	var data []byte
-	exists, err = r.store.Has(dbKey)
+	exists, _ = r.store.Has(dbKey)
 	if !exists {
 		pair = key.NewKeyPair(r.suite)
 		if data, err = keyPairToBytes(pair); err != nil {
 			return nil, err
 		}
-		r.store.Set(dbKey, data)
+		if err := r.store.Set(dbKey, data); err != nil {
+			return nil, err
+		}
 		r.log.Info("Node identity key pair generated.")
 		return pair, nil
 	}
@@ -277,28 +276,26 @@ func dbKeyForNodeIdentity() []byte {
 }
 
 func keyPairToBytes(pair *key.Pair) ([]byte, error) {
-	var err error
 	var w bytes.Buffer
-	if err = util.WriteMarshaled(&w, pair.Private); err != nil {
+	if err := util.WriteMarshaled(&w, pair.Private); err != nil {
 		return nil, err
 	}
-	if err = util.WriteMarshaled(&w, pair.Public); err != nil {
+	if err := util.WriteMarshaled(&w, pair.Public); err != nil {
 		return nil, err
 	}
 	return w.Bytes(), nil
 }
 
 func keyPairFromBytes(buf []byte, suite kyber.Group) (*key.Pair, error) {
-	var err error
 	r := bytes.NewReader(buf)
 	pair := key.Pair{
 		Public:  suite.Point(),
 		Private: suite.Scalar(),
 	}
-	if err = util.ReadMarshaled(r, pair.Private); err != nil {
+	if err := util.ReadMarshaled(r, pair.Private); err != nil {
 		return nil, err
 	}
-	if err = util.ReadMarshaled(r, pair.Public); err != nil {
+	if err := util.ReadMarshaled(r, pair.Public); err != nil {
 		return nil, err
 	}
 	return &pair, nil

@@ -12,16 +12,16 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// staticPeerNetworkConfig in an implementation of coretypes.PeerNetworkConfigProvider. It does not change
+// StaticPeerNetworkConfig in an implementation of coretypes.PeerNetworkConfigProvider. It does not change
 // Alternatively, the configuration of peers behind could change and be dependent on chain
-type staticPeerNetworkConfig struct {
+type StaticPeerNetworkConfig struct {
 	ownNetID    string
 	peeringPort int
 	neighbors   []string
 }
 
 // NewStaticPeerNetworkConfigProvider is a configuration of the peer environment which does not change
-func NewStaticPeerNetworkConfigProvider(ownNetID string, peeringPort int, neighbors ...string) (*staticPeerNetworkConfig, error) {
+func NewStaticPeerNetworkConfigProvider(ownNetID string, peeringPort int, neighbors ...string) (*StaticPeerNetworkConfig, error) {
 	if err := CheckMyNetID(ownNetID, peeringPort); err != nil {
 		return nil, xerrors.Errorf("NewStaticPeerNetworkConfigProvider: %w", err)
 	}
@@ -35,26 +35,26 @@ func NewStaticPeerNetworkConfigProvider(ownNetID string, peeringPort int, neighb
 			neigh = append(neigh, n)
 		}
 	}
-	return &staticPeerNetworkConfig{
+	return &StaticPeerNetworkConfig{
 		ownNetID:    ownNetID,
 		peeringPort: peeringPort,
 		neighbors:   neigh,
 	}, nil
 }
 
-func (p *staticPeerNetworkConfig) OwnNetID() string {
+func (p *StaticPeerNetworkConfig) OwnNetID() string {
 	return p.ownNetID
 }
 
-func (p *staticPeerNetworkConfig) PeeringPort() int {
+func (p *StaticPeerNetworkConfig) PeeringPort() int {
 	return p.peeringPort
 }
 
-func (p *staticPeerNetworkConfig) Neighbors() []string {
+func (p *StaticPeerNetworkConfig) Neighbors() []string {
 	return p.neighbors
 }
 
-func (p *staticPeerNetworkConfig) String() string {
+func (p *StaticPeerNetworkConfig) String() string {
 	return fmt.Sprintf("PeerConfig( ownNetID: %s, peeringPort: %d, neighbors: %+v )", p.OwnNetID(), p.PeeringPort(), p.Neighbors())
 }
 

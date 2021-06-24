@@ -25,7 +25,7 @@ import (
 )
 
 // takeAction triggers actions whenever relevant
-func (c *consensus) takeAction() {
+func (c *Consensus) takeAction() {
 	if !c.workflow.stateReceived || c.workflow.finished {
 		c.log.Debugf("takeAction skipped: stateReceived %v, workflow finished %v", c.workflow.stateReceived, c.workflow.finished)
 		return
@@ -40,7 +40,7 @@ func (c *consensus) takeAction() {
 
 // proposeBatchIfNeeded when non empty ready batch is available is in mempool propose it as a candidate
 // for the ACS agreement
-func (c *consensus) proposeBatchIfNeeded() {
+func (c *Consensus) proposeBatchIfNeeded() {
 	if c.workflow.batchProposalSent {
 		c.log.Debugf("proposeBatch not needed: batch proposal already sent")
 		return
@@ -76,7 +76,7 @@ func (c *consensus) proposeBatchIfNeeded() {
 
 // runVMIfNeeded attempts to extract deterministic batch of requests from ACS.
 // If it succeeds (i.e. all requests are available) and the extracted batch is nonempty, it runs the request
-func (c *consensus) runVMIfNeeded() {
+func (c *Consensus) runVMIfNeeded() {
 	if !c.workflow.consensusBatchKnown {
 		c.log.Debugf("runVM not needed: consensus batch is not known")
 		return
@@ -113,7 +113,7 @@ func (c *consensus) runVMIfNeeded() {
 	}
 }
 
-func (c *consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
+func (c *Consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
 	// here reqs as as set is deterministic. Must be sorted to have fully deterministic list
 	sort.Slice(reqs, func(i, j int) bool {
 		switch {
@@ -184,7 +184,7 @@ func (c *consensus) broadcastSignedResultIfNeeded() {
 // Then it deterministically calculates a priority sequence among contributing nodes for posting
 // the transaction to L1. The deadline por posting is set proportionally to the sequence number (deterministic)
 // If the node sees the transaction of the L1 before its deadline, it cancels its posting
-func (c *consensus) checkQuorum() {
+func (c *Consensus) checkQuorum() {
 	if c.workflow.transactionFinalized {
 		c.log.Debugf("checkQuorum not needed: transaction already finalized")
 		return
@@ -271,7 +271,7 @@ func (c *consensus) checkQuorum() {
 }
 
 // postTransactionIfNeeded posts a finalized transaction upon deadline unless it was evidenced on L1 before the deadline.
-func (c *consensus) postTransactionIfNeeded() {
+func (c *Consensus) postTransactionIfNeeded() {
 	if !c.workflow.transactionFinalized {
 		c.log.Debugf("postTransaction not needed: transaction is not finalized")
 		return
@@ -301,7 +301,7 @@ func (c *consensus) postTransactionIfNeeded() {
 
 // pullInclusionStateIfNeeded periodic pull to know the inclusions state of the transaction. Note that pulling
 // starts immediately after finalization of the transaction, not after posting it
-func (c *consensus) pullInclusionStateIfNeeded() {
+func (c *Consensus) pullInclusionStateIfNeeded() {
 	if !c.workflow.transactionFinalized {
 		c.log.Debugf("pullInclusionState not needed: transaction is not finalized")
 		return
@@ -320,7 +320,7 @@ func (c *consensus) pullInclusionStateIfNeeded() {
 }
 
 // prepareBatchProposal creates a batch proposal structure out of requests
-func (c *consensus) prepareBatchProposal(reqs []coretypes.Request) *batchProposal {
+func (c *Consensus) prepareBatchProposal(reqs []coretypes.Request) *BatchProposal {
 	ts := time.Now()
 	if !ts.After(c.stateTimestamp) {
 		ts = c.stateTimestamp.Add(1 * time.Nanosecond)
@@ -332,7 +332,7 @@ func (c *consensus) prepareBatchProposal(reqs []coretypes.Request) *batchProposa
 	sigShare, err := c.committee.DKShare().SignShare(c.stateOutput.ID().Bytes())
 	c.assert.RequireNoError(err, fmt.Sprintf("prepareBatchProposal: signing output ID %v failed", coretypes.OID(c.stateOutput.ID())))
 
-	ret := &batchProposal{
+	ret := &BatchProposal{
 		ValidatorIndex:          c.committee.OwnPeerIndex(),
 		StateOutputID:           c.stateOutput.ID(),
 		RequestIDs:              make([]coretypes.RequestID, len(reqs)),
@@ -351,7 +351,8 @@ func (c *consensus) prepareBatchProposal(reqs []coretypes.Request) *batchProposa
 }
 
 // receiveACS processed new ACS received from ACS consensus
-func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
+//nolint:funlen
+func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 	if c.acsSessionID != sessionID {
 		c.log.Debugf("receiveACS: session id missmatch: expected %v, received %v", c.acsSessionID, sessionID)
 		return
@@ -368,7 +369,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 		return
 	}
 	// decode ACS
-	acs := make([]*batchProposal, len(values))
+	acs := make([]*BatchProposal, len(values))
 	for i, data := range values {
 		proposal, err := BatchProposalFromBytes(data)
 		if err != nil {
@@ -436,7 +437,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 		c.resetWorkflow()
 		c.delayBatchProposalUntil = time.Now().Add(c.timers.Get(TimerProposeBatchRetryNameConst))
 	}
-	c.consensusBatch = &batchProposal{
+	c.consensusBatch = &BatchProposal{
 		ValidatorIndex:      c.committee.OwnPeerIndex(),
 		StateOutputID:       c.stateOutput.ID(),
 		RequestIDs:          inBatchSet,
@@ -464,7 +465,7 @@ func (c *consensus) receiveACS(values [][]byte, sessionID uint64) {
 	c.runVMIfNeeded()
 }
 
-func (c *consensus) processInclusionState(msg *chain.InclusionStateMsg) {
+func (c *Consensus) processInclusionState(msg *chain.InclusionStateMsg) {
 	if !c.workflow.transactionFinalized {
 		c.log.Debugf("processInclusionState: transaction finalised -> skipping.")
 		return
@@ -490,7 +491,7 @@ func (c *consensus) processInclusionState(msg *chain.InclusionStateMsg) {
 	}
 }
 
-func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, *ledgerstate.AliasOutput, error) {
+func (c *Consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgerstate.Transaction, *ledgerstate.AliasOutput, error) {
 	signatureWithPK, err := c.committee.DKShare().RecoverFullSignature(sigSharesToAggregate, c.resultTxEssence.Bytes())
 	if err != nil {
 		return nil, nil, xerrors.Errorf("finalizeTransaction RecoverFullSignature fail: %w", err)
@@ -523,7 +524,7 @@ func (c *consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 	return tx, chained, nil
 }
 
-func (c *consensus) setNewState(msg *chain.StateTransitionMsg) {
+func (c *Consensus) setNewState(msg *chain.StateTransitionMsg) {
 	c.stateOutput = msg.StateOutput
 	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp
@@ -537,7 +538,7 @@ func (c *consensus) setNewState(msg *chain.StateTransitionMsg) {
 	c.resetWorkflow()
 }
 
-func (c *consensus) resetWorkflow() {
+func (c *Consensus) resetWorkflow() {
 	for i := range c.resultSignatures {
 		c.resultSignatures[i] = nil
 	}
@@ -553,7 +554,7 @@ func (c *consensus) resetWorkflow() {
 	c.log.Debugf("Workflow reset")
 }
 
-func (c *consensus) processVMResult(result *vm.VMTask) {
+func (c *Consensus) processVMResult(result *vm.VMTask) {
 	if !c.workflow.vmStarted ||
 		c.workflow.vmResultSigned ||
 		c.acsSessionID != result.ACSSessionID {
@@ -594,7 +595,7 @@ func (c *consensus) processVMResult(result *vm.VMTask) {
 	c.log.Debugf("processVMResult signed: essence hash: %s", essenceHash.String())
 }
 
-func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledgerstate.TransactionEssence {
+func (c *Consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledgerstate.TransactionEssence {
 	c.log.Debugf("makeRotateStateControllerTransaction: %s", task.RotationAddress.Base58())
 
 	// TODO access and consensus pledge
@@ -609,7 +610,7 @@ func (c *consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledge
 	return essence
 }
 
-func (c *consensus) receiveSignedResult(msg *chain.SignedResultMsg) {
+func (c *Consensus) receiveSignedResult(msg *chain.SignedResultMsg) {
 	if c.resultSignatures[msg.SenderIndex] != nil {
 		if c.resultSignatures[msg.SenderIndex].EssenceHash != msg.EssenceHash ||
 			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare[:], msg.SigShare[:]) {

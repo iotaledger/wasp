@@ -19,6 +19,8 @@ issues:
         - 'should have comment .*or be unexported' # revive
         - 'exported: comment on exported' # revive
         - 'package-comments: package comment should be of the form' # revive
+        - 'blank-imports' # revive
+        - "var-naming: don't use leading k in Go names;" #revive
         - 'shadow: declaration of "err"' # govet
 
     exclude-rules:
@@ -87,7 +89,6 @@ linters:
         - gofumpt # Gofumpt checks whether code was gofumpt-ed. A more strict version of gofmt.
         - goimports # Sorts and format imports.
         - revive # revive is the newer replacement for golint
-        - gomnd # An analyzer to detect magic numbers.
         - goprintffuncname # Checks that printf-like functions are named with f at the end.
         - gosec # Inspects source code for security problems.
         - gosimple # Linter for Go source code that specializes in simplifying a code.
@@ -107,6 +108,7 @@ linters:
 
 
     # don't enable:
+    # gomnd: An analyzer to detect magic numbers.
     # asciicheck: Simple linter to check that your code does not contain non-ASCII identifiers [fast: true, auto-fix: false]
     # cyclop: checks function and package cyclomatic complexity [fast: true, auto-fix: false]
     # depguard: Go linter that checks if package imports are in a list of acceptable packages [fast: true, auto-fix: false]
@@ -137,7 +139,6 @@ linters:
     # paralleltest: paralleltest detects missing usage of t.Parallel() method in your Go test [fast: true, auto-fix: false]
     # prealloc: Finds slice declarations that could potentially be preallocated [fast: true, auto-fix: false]
     # predeclared: find code that shadows one of Go's predeclared identifiers [fast: true, auto-fix: false]
-    # revive: Fast, configurable, extensible, flexible, and beautiful linter for Go. Drop-in replacement of golint. [fast: true, auto-fix: false]
     # rowserrcheck: checks whether Err of rows is checked successfully [fast: true, auto-fix: false]
     # scopelint: Scopelint checks for unpinned variables in go programs [fast: true, auto-fix: false]
     # sqlclosecheck: Checks that sql.Rows and sql.Stmt are closed. [fast: true, auto-fix: false]

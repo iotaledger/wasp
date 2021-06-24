@@ -8,25 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-
-	"github.com/iotaledger/wasp/packages/chain/mempool"
-
-	"github.com/iotaledger/wasp/packages/util"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/transaction"
-
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/solo"
-
-	"github.com/iotaledger/wasp/packages/testutil"
-
-	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -36,17 +17,29 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
+	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.uber.org/zap/zapcore"
 )
 
-type mockedEnv struct {
+type MockedEnv struct {
 	T                 *testing.T
 	Quorum            uint16
 	Log               *logger.Logger
@@ -63,12 +56,11 @@ type mockedEnv struct {
 	InitStateOutput   *ledgerstate.AliasOutput
 	mutex             sync.Mutex
 	Nodes             []*mockedNode
-	push              bool
 }
 
 type mockedNode struct {
 	NodeID      string
-	Env         *mockedEnv
+	Env         *MockedEnv
 	NodeConn    *testchain.MockedNodeConn  // GoShimmer mock
 	ChainCore   *testchain.MockedChainCore // Chain mock
 	stateSync   coreutil.ChainStateSync    // Chain mock
@@ -81,15 +73,15 @@ type mockedNode struct {
 	mutex       sync.Mutex
 }
 
-func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledgerstate.Transaction) {
+func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledgerstate.Transaction) {
 	return newMockedEnv(t, n, quorum, debug, false)
 }
 
-func NewMockedEnvWithMockedACS(t *testing.T, n, quorum uint16, debug bool) (*mockedEnv, *ledgerstate.Transaction) {
+func NewMockedEnvWithMockedACS(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledgerstate.Transaction) {
 	return newMockedEnv(t, n, quorum, debug, true)
 }
 
-func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mockedEnv, *ledgerstate.Transaction) {
+func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedEnv, *ledgerstate.Transaction) {
 	level := zapcore.InfoLevel
 	if debug {
 		level = zapcore.DebugLevel
@@ -99,7 +91,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug bool, mockACS bool) (*mo
 
 	log.Infof("creating test environment with N = %d, T = %d", n, quorum)
 
-	ret := &mockedEnv{
+	ret := &MockedEnv{
 		T:      t,
 		Quorum: quorum,
 		Log:    log,
@@ -154,7 +146,7 @@ func (env *mockedEnv) CreateNodes(timers util.TimerParams) {
 	}
 }
 
-func (env *mockedEnv) NewNode(nodeIndex uint16, timers util.TimerParams) *mockedNode {
+func (env *MockedEnv) NewNode(nodeIndex uint16, timers util.TimerParams) *mockedNode {
 	nodeID := env.NodeIDs[nodeIndex]
 	log := env.Log.Named(nodeID)
 	ret := &mockedNode{
@@ -287,11 +279,11 @@ func (env *mockedEnv) NewNode(nodeIndex uint16, timers util.TimerParams) *mocked
 	return ret
 }
 
-func (env *mockedEnv) nodeCount() int {
+func (env *MockedEnv) nodeCount() int {
 	return len(env.NodeIDs)
 }
 
-func (env *mockedEnv) SetInitialConsensusState() {
+func (env *MockedEnv) SetInitialConsensusState() {
 	env.mutex.Lock()
 	defer env.mutex.Unlock()
 
@@ -344,7 +336,7 @@ func (n *mockedNode) EventStateTransition() {
 	})
 }
 
-func (env *mockedEnv) StartTimers() {
+func (env *MockedEnv) StartTimers() {
 	for _, n := range env.Nodes {
 		n.StartTimer()
 	}
@@ -373,7 +365,7 @@ func (env *mockedEnv) WaitTimerTick(until int) error {
 	return env.WaitForEventFromNodes("TimerTick", checkTimerTickFun)
 }
 
-func (env *mockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...time.Duration) error {
+func (env *MockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...time.Duration) error {
 	checkStateIndexFun := func(node *mockedNode) bool {
 		snap := node.Consensus.GetStatusSnapshot()
 		if snap != nil && snap.StateIndex >= stateIndex {
@@ -395,11 +387,11 @@ func (env *mockedEnv) WaitMempool(numRequests int, quorum int, timeout ...time.D
 	return env.WaitForEventFromNodesQuorum("mempool", quorum, checkMempoolFun, timeout...)
 }
 
-func (env *mockedEnv) WaitForEventFromNodes(waitName string, nodeConditionFun func(node *mockedNode) bool, timeout ...time.Duration) error {
+func (env *MockedEnv) WaitForEventFromNodes(waitName string, nodeConditionFun func(node *mockedNode) bool, timeout ...time.Duration) error {
 	return env.WaitForEventFromNodesQuorum(waitName, env.nodeCount(), nodeConditionFun, timeout...)
 }
 
-func (env *mockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, isEventOccuredFun func(node *mockedNode) bool, timeout ...time.Duration) error {
+func (env *MockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, isEventOccuredFun func(node *mockedNode) bool, timeout ...time.Duration) error {
 	to := 10 * time.Second
 	if len(timeout) > 0 {
 		to = timeout[0]
@@ -429,11 +421,10 @@ func (env *mockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, i
 			return fmt.Errorf("Wait for %s: test timeouted", waitName)
 		}
 	}
-	return fmt.Errorf("Wait for %s: timeout expired %v; %v of %v nodes reached condition, %v responded, quorum needed %v",
-		waitName, to, sum, nodeCount, total, quorum)
+	return fmt.Errorf("WaitMempool: timeout expired %v", to)
 }
 
-func (env *mockedEnv) PostDummyRequests(n int, randomize ...bool) {
+func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
 	reqs := make([]coretypes.Request, n)
 	for i := 0; i < n; i++ {
 		reqs[i] = solo.NewCallParams("dummy", "dummy", "c", i).

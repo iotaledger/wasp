@@ -4,23 +4,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
-	"github.com/iotaledger/wasp/packages/util"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
-
-	"github.com/iotaledger/hive.go/logger"
-	"go.uber.org/atomic"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/util"
+	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
 )
 
@@ -52,7 +47,6 @@ func New(
 	log *logger.Logger,
 	acsRunner ...chain.AsynchronousCommonSubsetRunner, // Only for mocking.
 ) (chain.Committee, error) {
-
 	// load DKShare from the registry
 	dkshare, err := dksProvider.LoadDKShare(cmtRec.Address)
 	if err != nil {
@@ -77,7 +71,7 @@ func New(
 		chainArr = chainID.Array()
 	}
 	for i := range peerGroupID {
-		peerGroupID[i] = peerGroupID[i] ^ chainArr[i]
+		peerGroupID[i] ^= chainArr[i]
 	}
 	ret := &committee{
 		isReady:        atomic.NewBool(false),
@@ -217,7 +211,7 @@ func (c *committee) PeerStatus() []*chain.PeerStatus {
 	return ret
 }
 
-func (c *committee) Attach(chain chain.ChainCore) {
+func (c *committee) Attach(ch chain.ChainCore) {
 	c.attachID = c.validatorNodes.Attach(&c.peeringID, func(recv *peering.RecvEvent) {
 		if c.ccProvider != nil && c.ccProvider.TryHandleMessage(recv) {
 			return
@@ -225,7 +219,7 @@ func (c *committee) Attach(chain chain.ChainCore) {
 		if c.acsRunner.TryHandleMessage(recv) {
 			return
 		}
-		chain.ReceiveMessage(recv.Msg)
+		ch.ReceiveMessage(recv.Msg)
 	})
 }
 

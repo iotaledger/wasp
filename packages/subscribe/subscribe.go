@@ -75,7 +75,8 @@ const (
 	channelLockTimeout = 1 * time.Second
 )
 
-func SubscribeMulti(hosts []string, topics []string, quorum ...int) (*Subscription, error) {
+//nolint:revive
+func SubscribeMulti(hosts, topics []string, quorum ...int) (*Subscription, error) {
 	if len(hosts) == 0 {
 		return nil, fmt.Errorf("SubscribeMulti: no nanomsg hosts provided")
 	}

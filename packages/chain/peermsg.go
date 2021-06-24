@@ -90,24 +90,15 @@ type StateMsg struct {
 }
 
 func (msg *GetBlockMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteUint32(w, msg.BlockIndex)
 }
 
 func (msg *GetBlockMsg) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
-		return err
-	}
-	return nil
+	return util.ReadUint32(r, &msg.BlockIndex)
 }
 
 func (msg *BlockMsg) Write(w io.Writer) error {
-	if err := util.WriteBytes32(w, msg.BlockBytes); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteBytes32(w, msg.BlockBytes)
 }
 
 func (msg *BlockMsg) Read(r io.Reader) error {

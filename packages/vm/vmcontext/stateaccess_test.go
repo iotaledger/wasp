@@ -20,7 +20,7 @@ import (
 
 func TestSetThenGet(t *testing.T) {
 	chainID := chainid.RandomChainID([]byte("hmm"))
-	virtualState, err := state.CreateOriginState(mapdb.NewMapDB(), chainID)
+	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")
@@ -80,7 +80,7 @@ func TestSetThenGet(t *testing.T) {
 
 func TestIterate(t *testing.T) {
 	chainID := chainid.RandomChainID([]byte("hmm"))
-	virtualState, err := state.CreateOriginState(mapdb.NewMapDB(), chainID)
+	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()
 	hname := coretypes.Hn("test")
@@ -96,7 +96,7 @@ func TestIterate(t *testing.T) {
 	s.Set("xy2", []byte{42 * 2})
 
 	arr := make([][]byte, 0)
-	err = s.IterateSorted("xy", func(k kv.Key, v []byte) bool {
+	err := s.IterateSorted("xy", func(k kv.Key, v []byte) bool {
 		assert.True(t, strings.HasPrefix(string(k), "xy"))
 		arr = append(arr, v)
 		return true
