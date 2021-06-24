@@ -69,13 +69,16 @@ func InitGenesis(db ethdb.Database, alloc core.GenesisAlloc, gasLimit uint64) {
 	genesis.MustCommit(db)
 }
 
+// disable caching & shnapshotting, since it produces a nondeterministic result
+var cacheConfig = &core.CacheConfig{}
+
 func NewEVMEmulator(db ethdb.Database) *EVMEmulator {
 	stored := rawdb.ReadCanonicalHash(db, 0)
 	if (stored == common.Hash{}) {
 		panic("must initialize genesis block first")
 	}
 
-	blockchain, _ := core.NewBlockChain(db, nil, Config, ethash.NewFaker(), vm.Config{}, nil, nil)
+	blockchain, _ := core.NewBlockChain(db, cacheConfig, Config, ethash.NewFaker(), vm.Config{}, nil, nil)
 
 	e := &EVMEmulator{
 		database:   db,
