@@ -16,10 +16,12 @@ import (
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/cluster/mocknode"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
@@ -41,6 +43,12 @@ func New(name string, config *ClusterConfig) *Cluster {
 		Config:   config,
 		waspCmds: make([]*exec.Cmd, config.Wasp.NumNodes),
 	}
+}
+
+func (clu *Cluster) NewKeyPairWithFunds() (*ed25519.KeyPair, ledgerstate.Address, error) {
+	key, addr := testkey.GenKeyAddr()
+	err := clu.GoshimmerClient().RequestFunds(addr)
+	return key, addr, err
 }
 
 func (clu *Cluster) GoshimmerClient() *goshimmer.Client {
