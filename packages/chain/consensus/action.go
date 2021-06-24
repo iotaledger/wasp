@@ -157,7 +157,7 @@ func (c *Consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
 	return task
 }
 
-func (c *consensus) broadcastSignedResultIfNeeded() {
+func (c *Consensus) broadcastSignedResultIfNeeded() {
 	if !c.workflow.vmResultSigned {
 		c.log.Debugf("broadcastSignedResult not needed: vm result is not signed")
 		return

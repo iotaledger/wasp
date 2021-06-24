@@ -34,7 +34,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.uber.org/zap/zapcore"
 )
@@ -140,7 +139,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	return ret, originTx
 }
 
-func (env *mockedEnv) CreateNodes(timers util.TimerParams) {
+func (env *MockedEnv) CreateNodes(timers util.TimerParams) {
 	for i := range env.Nodes {
 		env.Nodes[i] = env.NewNode(uint16(i), timers)
 	}
@@ -354,7 +353,7 @@ func (n *mockedNode) StartTimer() {
 	}()
 }
 
-func (env *mockedEnv) WaitTimerTick(until int) error {
+func (env *MockedEnv) WaitTimerTick(until int) error {
 	checkTimerTickFun := func(node *mockedNode) bool {
 		snap := node.Consensus.GetStatusSnapshot()
 		if snap != nil && snap.TimerTick >= until {
@@ -376,7 +375,7 @@ func (env *MockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...t
 	return env.WaitForEventFromNodesQuorum("stateIndex", quorum, checkStateIndexFun, timeout...)
 }
 
-func (env *mockedEnv) WaitMempool(numRequests int, quorum int, timeout ...time.Duration) error {
+func (env *MockedEnv) WaitMempool(numRequests int, quorum int, timeout ...time.Duration) error {
 	checkMempoolFun := func(node *mockedNode) bool {
 		snap := node.Consensus.GetStatusSnapshot()
 		if snap != nil && snap.Mempool.InPoolCounter >= numRequests && snap.Mempool.OutPoolCounter >= numRequests {
