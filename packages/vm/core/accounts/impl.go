@@ -106,10 +106,12 @@ func withdraw(ctx coretypes.Sandbox) (dict.Dict, error) {
 //   ParamWithdrawAmount if do not exist or is 0 means withdraw all balance
 //   ParamWithdrawColor color to withdraw if amount is specified. Defaults to ledgerstate.ColorIOTA
 func harvest(ctx coretypes.Sandbox) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	a.RequireChainOwner(ctx, "harvest")
+
 	state := ctx.State()
 	mustCheckLedger(state, "accounts.withdraw.begin")
 	defer mustCheckLedger(state, "accounts.withdraw.exit")
-	a := assert.NewAssert(ctx.Log())
 
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	// if ParamWithdrawAmount > 0, take it as exact amount to withdraw
@@ -121,8 +123,6 @@ func harvest(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}
 	// if color not specified and amount is specified, default is harvest specified amount of iotas
 	color := par.MustGetColor(ParamWithdrawColor, ledgerstate.ColorIOTA)
-
-	a.RequireChainOwner(ctx, "harvest")
 
 	sourceAccount := commonaccount.Get(ctx.ChainID())
 	bals, ok := GetAccountBalances(state, sourceAccount)
