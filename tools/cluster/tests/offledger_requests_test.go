@@ -55,7 +55,7 @@ func TestOffledgerRequest(t *testing.T) {
 	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	scHname := coretypes.Hn("inncounter1")
+	scHname := coretypes.Hn(incCounterSCName)
 	deployIncCounterSC(t, chain1, counter1)
 
 	chClient := newWalletWithFunds(t, clu, chain1, 0, 1, 100)
@@ -135,8 +135,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	chain1, err := clu1.DeployChain("chain", clu1.Config.AllNodes(), cmt1, 3, addr1)
 	require.NoError(t, err)
 
-	name := "inncounter1"
-	scHname := coretypes.Hn(name)
+	scHname := coretypes.Hn(incCounterSCName)
 
 	_, err = chain1.DeployContract(name, inccounter.Interface.ProgramHash.String(), "test inc counter", map[string]interface{}{
 		inccounter.VarCounter: 42,

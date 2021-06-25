@@ -47,14 +47,13 @@ func TestBasicAccountsN1(t *testing.T) {
 }
 
 func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.MessageCounter) {
-	name := "inccounter1"
-	hname := coretypes.Hn(name)
+	hname := coretypes.Hn(incCounterSCName)
 	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Interface.ProgramHash
 
-	_, err = chain.DeployContract(name, programHash1.String(), description, map[string]interface{}{
+	_, err = chain.DeployContract(incCounterSCName, programHash1.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
-		root.ParamName:        name,
+		root.ParamName:        incCounterSCName,
 	})
 	check(err, t)
 
@@ -80,7 +79,7 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 		require.EqualValues(t, programHash1, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, 0, cr.OwnerFee)
-		require.EqualValues(t, name, cr.Name)
+		require.EqualValues(t, incCounterSCName, cr.Name)
 
 		return true
 	})
@@ -145,15 +144,14 @@ func TestBasic2Accounts(t *testing.T) {
 	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	name := "inncounter1"
-	hname := coretypes.Hn(name)
+	hname := coretypes.Hn(incCounterSCName)
 	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Interface.ProgramHash
 	check(err, t)
 
-	_, err = chain1.DeployContract(name, programHash1.String(), description, map[string]interface{}{
+	_, err = chain1.DeployContract(incCounterSCName, programHash1.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
-		root.ParamName:        name,
+		root.ParamName:        incCounterSCName,
 	})
 	check(err, t)
 
@@ -179,7 +177,7 @@ func TestBasic2Accounts(t *testing.T) {
 		require.EqualValues(t, programHash1, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, 0, cr.OwnerFee)
-		require.EqualValues(t, name, cr.Name)
+		require.EqualValues(t, incCounterSCName, cr.Name)
 
 		return true
 	})

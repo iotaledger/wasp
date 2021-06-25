@@ -13,16 +13,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const incCounterSCName = "inccounter1"
+
 func deployIncCounterSC(t *testing.T, chain *cluster.Chain, counter *cluster.MessageCounter) {
-	name := "inncounter1"
-	hname := coretypes.Hn(name)
+	hname := coretypes.Hn(incCounterSCName)
 	description := "testing contract deployment with inccounter" //nolint:goconst
 	programHash := inccounter.Interface.ProgramHash
 	check(err, t)
 
-	_, err = chain.DeployContract(name, programHash.String(), description, map[string]interface{}{
+	_, err = chain.DeployContract(incCounterSCName, programHash.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
-		root.ParamName:        name,
+		root.ParamName:        incCounterSCName,
 	})
 	check(err, t)
 
@@ -43,7 +44,7 @@ func deployIncCounterSC(t *testing.T, chain *cluster.Chain, counter *cluster.Mes
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, 0, cr.OwnerFee)
-		require.EqualValues(t, cr.Name, name)
+		require.EqualValues(t, cr.Name, incCounterSCName)
 
 		return true
 	})
