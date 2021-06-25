@@ -60,7 +60,7 @@ By default the server has no unlocked accounts. To send transactions, either:
 }
 
 func start(cmd *cobra.Command, args []string) {
-	env := solo.New(solo.NewFakeTestingT("evmproxy"), true, false)
+	env := solo.New(nil, log.DebugFlag, log.DebugFlag)
 
 	chainOwner, _ := env.NewKeyPairWithFunds()
 	chain := env.NewChain(chainOwner, "iscpchain")

@@ -4,7 +4,6 @@
 package solo
 
 import (
-	"fmt"
 	"math/rand"
 	"strings"
 	"sync"
@@ -54,7 +53,7 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T           TestingT
+	T           TestContext
 	logger      *logger.Logger
 	dbmanager   *dbmanager.DBManager
 	utxoDB      *utxodb.UtxoDB
@@ -69,32 +68,6 @@ type Solo struct {
 	// publisher wait group
 	publisherWG      sync.WaitGroup
 	publisherEnabled atomic.Bool
-}
-
-type TestingT interface {
-	Name() string
-	Errorf(format string, args ...interface{})
-	FailNow()
-}
-
-func NewFakeTestingT(name string) TestingT {
-	return &fakeTestingT{name}
-}
-
-type fakeTestingT struct {
-	name string
-}
-
-func (f *fakeTestingT) Name() string {
-	return f.name
-}
-
-func (f *fakeTestingT) Errorf(format string, args ...interface{}) {
-	fmt.Printf(format, args...)
-}
-
-func (f *fakeTestingT) FailNow() {
-	panic("FailNow() called")
 }
 
 // Chain represents state of individual chain.
@@ -149,9 +122,13 @@ var (
 )
 
 // New creates an instance of the `solo` environment for the test instances.
+//   If solo is used for unit testing, 't' should be the *testing.T instance; otherwise it can be either nil or an instance created with NewTestContext
 //   'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
 //   'printStackTrace' controls printing stack trace in case of errors
-func New(t TestingT, debug, printStackTrace bool) *Solo {
+func New(t TestContext, debug, printStackTrace bool) *Solo {
+	if t == nil {
+		t = NewTestContext("solo")
+	}
 	doOnce.Do(func() {
 		glbLogger = testlogger.NewNamedLogger(t.Name(), "04:05.000")
 		if !debug {
