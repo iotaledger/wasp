@@ -330,8 +330,8 @@ func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *ledgerstate.Colore
 func (ch *Chain) GetOnChainLedger() map[string]*ledgerstate.ColoredBalances {
 	accs := ch.GetAccounts()
 	ret := make(map[string]*ledgerstate.ColoredBalances)
-	for _, a := range accs {
-		ret[a.String()] = ch.GetAccountBalance(&a)
+	for i := range accs {
+		ret[accs[i].String()] = ch.GetAccountBalance(&accs[i])
 	}
 	return ret
 }

@@ -134,7 +134,7 @@ func harvest(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if harvestAll {
 		tokensToSend = ledgerstate.NewColoredBalances(bals)
 	} else {
-		balCol, _ := bals[color]
+		balCol := bals[color]
 		a.Require(balCol >= amount, "accounts.harvest.error: not enough tokens")
 		tokensToSend = ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 			color: amount,
