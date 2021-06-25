@@ -78,13 +78,13 @@ func (ch *Chain) AssertIotas(agentID *coretypes.AgentID, bal uint64) {
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
 func (ch *Chain) AssertOwnersBalance(col ledgerstate.Color, bal uint64) {
-	bals := ch.GetOwnersBalance()
+	bals := ch.GetCommonAccountBalance()
 	b, _ := bals.Get(col)
 	require.EqualValues(ch.Env.T, int(bal), int(b))
 }
 
-func (ch *Chain) AssertOwnersIotas(bal uint64) {
-	require.EqualValues(ch.Env.T, int(bal), int(ch.GetOwnersIotas()))
+func (ch *Chain) AssertCommonAccountIotas(bal uint64) {
+	require.EqualValues(ch.Env.T, int(bal), int(ch.GetCommonAccountIotas()))
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color

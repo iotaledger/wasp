@@ -7,6 +7,9 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"sort"
+
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -293,7 +296,7 @@ func (env *Solo) GetAddressBalances(addr ledgerstate.Address) map[ledgerstate.Co
 
 // GetAccounts returns all accounts on the chain with non-zero balances
 func (ch *Chain) GetAccounts() []coretypes.AgentID {
-	d, err := ch.CallView(accounts.Interface.Name, accounts.FuncAccounts)
+	d, err := ch.CallView(accounts.Interface.Name, accounts.FuncViewAccounts)
 	require.NoError(ch.Env.T, err)
 	keys := d.KeysSorted()
 	ret := make([]coretypes.AgentID, 0, len(keys)-1)
@@ -306,7 +309,7 @@ func (ch *Chain) GetAccounts() []coretypes.AgentID {
 	return ret
 }
 
-func (ch *Chain) getAccountBalance(d dict.Dict, err error) *ledgerstate.ColoredBalances {
+func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *ledgerstate.ColoredBalances {
 	require.NoError(ch.Env.T, err)
 	if d.IsEmpty() {
 		return ledgerstate.NewColoredBalances(nil)
@@ -324,27 +327,51 @@ func (ch *Chain) getAccountBalance(d dict.Dict, err error) *ledgerstate.ColoredB
 	return ledgerstate.NewColoredBalances(ret)
 }
 
+func (ch *Chain) GetOnChainLedger() map[string]*ledgerstate.ColoredBalances {
+	accs := ch.GetAccounts()
+	ret := make(map[string]*ledgerstate.ColoredBalances)
+	for _, a := range accs {
+		ret[a.String()] = ch.GetAccountBalance(&a)
+	}
+	return ret
+}
+
+func (ch *Chain) GetOnChainLedgerString() string {
+	l := ch.GetOnChainLedger()
+	keys := make([]string, 0, len(l))
+	for aid := range l {
+		keys = append(keys, aid)
+	}
+	sort.Strings(keys)
+	ret := ""
+	for _, aid := range keys {
+		ret += aid + "\n"
+		ret += "        " + l[aid].String() + "\n"
+	}
+	return ret
+}
+
 // GetAccountBalance return all balances of colored tokens contained in the on-chain
 // account controlled by the 'agentID'
 func (ch *Chain) GetAccountBalance(agentID *coretypes.AgentID) *ledgerstate.ColoredBalances {
-	return ch.getAccountBalance(
-		ch.CallView(accounts.Interface.Name, accounts.FuncBalance, accounts.ParamAgentID, agentID),
+	return ch.parseAccountBalance(
+		ch.CallView(accounts.Interface.Name, accounts.FuncViewBalance, accounts.ParamAgentID, agentID),
 	)
 }
 
-func (ch *Chain) GetOwnersBalance() *ledgerstate.ColoredBalances {
-	return ch.GetAccountBalance(ch.OwnersAccount())
+func (ch *Chain) GetCommonAccountBalance() *ledgerstate.ColoredBalances {
+	return ch.GetAccountBalance(ch.CommonAccount())
 }
 
-func (ch *Chain) GetOwnersIotas() uint64 {
-	ret, _ := ch.GetAccountBalance(ch.OwnersAccount()).Get(ledgerstate.ColorIOTA)
+func (ch *Chain) GetCommonAccountIotas() uint64 {
+	ret, _ := ch.GetAccountBalance(ch.CommonAccount()).Get(ledgerstate.ColorIOTA)
 	return ret
 }
 
 // GetTotalAssets return total sum of colored tokens contained in the on-chain accounts
 func (ch *Chain) GetTotalAssets() *ledgerstate.ColoredBalances {
-	return ch.getAccountBalance(
-		ch.CallView(accounts.Interface.Name, accounts.FuncTotalAssets),
+	return ch.parseAccountBalance(
+		ch.CallView(accounts.Interface.Name, accounts.FuncViewTotalAssets),
 	)
 }
 
@@ -429,9 +456,9 @@ func (ch *Chain) GetEventLogNumRecords(name string) int {
 	return int(ret)
 }
 
-// OwnersAccount return the agentID of the common account (controlled by the owner)
-func (ch *Chain) OwnersAccount() *coretypes.AgentID {
-	return coretypes.NewAgentID(ch.ChainID.AsAddress(), 0)
+// CommonAccount return the agentID of the common account (controlled by the owner)
+func (ch *Chain) CommonAccount() *coretypes.AgentID {
+	return commonaccount.Get(&ch.ChainID)
 }
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain

@@ -21,10 +21,10 @@ func TestInit(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
-	chain.AssertOwnersIotas(1)
+	chain.AssertCommonAccountIotas(1)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-1)
 	chain.AssertTotalIotas(1)
-	chain.AssertOwnersIotas(1)
+	chain.AssertCommonAccountIotas(1)
 
 	checkFees(chain, blob.Interface.Name, 0, 0)
 	checkFees(chain, root.Interface.Name, 0, 0)
@@ -43,7 +43,7 @@ func TestBase(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertOwnersIotas(2)
+	chain.AssertCommonAccountIotas(2)
 	chain.AssertTotalIotas(2)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
@@ -62,7 +62,7 @@ func TestFeeIsEnough1(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertOwnersIotas(2)
+	chain.AssertCommonAccountIotas(2)
 	chain.AssertTotalIotas(2)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
@@ -75,7 +75,7 @@ func TestFeeIsEnough1(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	chain.AssertOwnersIotas(2 + 1)
+	chain.AssertCommonAccountIotas(2 + 1)
 	chain.AssertTotalIotas(2 + 1)
 	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 0)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2-1)
@@ -93,7 +93,7 @@ func TestFeeIsEnough2(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertOwnersIotas(2)
+	chain.AssertCommonAccountIotas(2)
 	chain.AssertTotalIotas(2)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
@@ -106,7 +106,7 @@ func TestFeeIsEnough2(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	chain.AssertOwnersIotas(2 + 10)
+	chain.AssertCommonAccountIotas(2 + 10)
 	chain.AssertTotalIotas(2 + 10)
 	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 0)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2-10)
@@ -123,7 +123,7 @@ func TestFeesNoNeed(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertOwnersIotas(2)
+	chain.AssertCommonAccountIotas(2)
 	chain.AssertTotalIotas(2)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
@@ -134,7 +134,7 @@ func TestFeesNoNeed(t *testing.T) {
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertOwnersIotas(2 + 7)
+	chain.AssertCommonAccountIotas(2 + 7)
 	chain.AssertTotalIotas(2 + 7)
 	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 0)
 	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2-7)
@@ -156,7 +156,7 @@ func TestFeesNotEnough(t *testing.T) {
 
 	checkFees(chain, blob.Interface.Name, 10, 0)
 
-	chain.AssertOwnersIotas(2)
+	chain.AssertCommonAccountIotas(2)
 	chain.AssertTotalIotas(2)
 	chain.AssertIotas(userAgentID, 0)
 	env.AssertAddressIotas(userAddr, solo.Saldo)
@@ -166,7 +166,7 @@ func TestFeesNotEnough(t *testing.T) {
 	_, err = chain.PostRequestSync(req, user)
 	require.Error(t, err)
 
-	chain.AssertOwnersIotas(2 + 7)
+	chain.AssertCommonAccountIotas(2 + 7)
 	chain.AssertTotalIotas(2 + 7)
 	chain.AssertIotas(userAgentID, 0)
 	env.AssertAddressIotas(userAddr, solo.Saldo-7)

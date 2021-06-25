@@ -104,7 +104,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		inccounter.VarName, nameNew,
 		inccounter.VarDescription, dscrNew,
 	).WithIotas(1)
-	tx, err := chain.OriginatorClient().Post1Request(hname, coretypes.Hn(inccounter.FuncSpawn), *par)
+	tx, err := chain1.OriginatorClient().Post1Request(hname, coretypes.Hn(inccounter.FuncSpawn), *par)
 	check(err, t)
 
 	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, tx, 30*time.Second)
