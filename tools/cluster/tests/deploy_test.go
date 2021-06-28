@@ -68,7 +68,7 @@ func TestDeployContractOnly(t *testing.T) {
 	ret, err := chain1.Cluster.WaspClient(0).CallView(
 		chain1.ChainID, root.Interface.Hname(), root.FuncFindContract,
 		dict.Dict{
-			root.ParamHname: coretypes.Hn("inncounter1").Bytes(),
+			root.ParamHname: coretypes.Hn(incCounterSCName).Bytes(),
 		})
 	check(err, t)
 	recb, err := ret.Get(root.VarData)
@@ -94,7 +94,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 	deployIncCounterSC(t, chain1, counter1)
 
-	hname := coretypes.Hn("inncounter1")
+	hname := coretypes.Hn(incCounterSCName)
 
 	nameNew := "spawnedContract"
 	dscrNew := "spawned contract it is"
