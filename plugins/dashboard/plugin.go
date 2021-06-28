@@ -119,6 +119,10 @@ func (w *waspServices) NetworkProvider() peering_pkg.NetworkProvider {
 	return peering.DefaultNetworkProvider()
 }
 
+func (w *waspServices) TrustedNetworkManager() peering_pkg.TrustedNetworkManager {
+	return peering.DefaultTrustedNetworkManager()
+}
+
 func configure(*node.Plugin) {
 	log = logger.NewLogger(PluginName)
 

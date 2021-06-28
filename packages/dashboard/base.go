@@ -39,6 +39,7 @@ type WaspServices interface {
 	ConfigDump() map[string]interface{}
 	ExploreAddressBaseURL() string
 	NetworkProvider() peering.NetworkProvider
+	TrustedNetworkManager() peering.TrustedNetworkManager
 	GetChainRecords() ([]*chainrecord.ChainRecord, error)
 	GetChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error)
 	GetChainState(chainID *chainid.ChainID) (*ChainState, error)

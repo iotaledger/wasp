@@ -24,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -47,6 +48,13 @@ func (w *waspServices) ExploreAddressBaseURL() string {
 
 func (w *waspServices) NetworkProvider() peering.NetworkProvider {
 	return &peeringNetworkProvider{}
+}
+
+func (w *waspServices) TrustedNetworkManager() peering.TrustedNetworkManager {
+	tnm := testutil.NewTrustedNetworkManager()
+	tnm.TrustPeer(ed25519.GenerateKeyPair().PublicKey, "some:254")
+	tnm.TrustPeer(ed25519.GenerateKeyPair().PublicKey, "")
+	return tnm
 }
 
 func (w *waspServices) GetChain(chainID *chainid.ChainID) chain.ChainCore {

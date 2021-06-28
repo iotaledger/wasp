@@ -29,5 +29,22 @@
 		{{end}}
 		</tbody>
 	</table>
+	<h3 class="section">Trusted</h3>
+	<table>
+		<thead>
+			<tr>
+				<th>PublicKey</th>
+				<th>NetID</th>
+			</tr>
+		</thead>
+		<tbody>
+		{{range $_, $t := .TrustedNetworkManager.TrustedPeers}}
+			<tr>
+				<td data-label="PublicKey">{{$t.PubKey.String}}</td>
+				<td data-label="NetID"><tt>{{$t.NetID}}</tt></td>
+			</tr>
+		{{end}}
+		</tbody>
+	</table>
 </div>
 {{end}}
