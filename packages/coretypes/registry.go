@@ -33,7 +33,7 @@ type NodeIdentityProvider interface {
 }
 
 // PeerNetworkConfigProvider access to node and chain configuration: a list of netIDs of potential peers
-type PeerNetworkConfigProvider interface {
+type PeerNetworkConfigProvider interface { // TODO: KP: Remove or redesign.
 	OwnNetID() string
 	PeeringPort() int
 	Neighbors() []string

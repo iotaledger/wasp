@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
 	peering_udp "github.com/iotaledger/wasp/packages/peering/udp"
@@ -21,9 +20,8 @@ const (
 
 var (
 	log                          *logger.Logger
-	defaultNetworkProvider       peering_pkg.NetworkProvider         // A singleton instance.
-	defaultTrustedNetworkManager peering_pkg.TrustedNetworkManager   // A singleton instance.
-	peerNetworkConfig            coretypes.PeerNetworkConfigProvider // TODO: Remove.
+	defaultNetworkProvider       peering_pkg.NetworkProvider       // A singleton instance.
+	defaultTrustedNetworkManager peering_pkg.TrustedNetworkManager // A singleton instance.
 )
 
 // Init is an entry point for this plugin.
@@ -35,17 +33,12 @@ func Init() *node.Plugin {
 		if nodeKeyPair, err = registry.DefaultRegistry().GetNodeIdentity(); err != nil {
 			panic(err)
 		}
-		peerNetworkConfig, err = peering_pkg.NewStaticPeerNetworkConfigProvider( // TODO: Remove.
-			parameters.GetString(parameters.PeeringMyNetID),
-			parameters.GetInt(parameters.PeeringPort),
-			parameters.GetStringSlice(parameters.PeeringNeighbors)..., // Unregister the parameter?
-		)
 		if err != nil {
 			log.Panicf("Init.peering: %w", err)
 		}
-		log.Infof("default peering configuration: %s", peerNetworkConfig.String())
+		netID := parameters.GetString(parameters.PeeringMyNetID)
 		netImpl, err := peering_udp.NewNetworkProvider(
-			parameters.GetString(parameters.PeeringMyNetID),
+			netID,
 			parameters.GetInt(parameters.PeeringPort),
 			nodeKeyPair,
 			registry.DefaultRegistry(),
@@ -56,7 +49,7 @@ func Init() *node.Plugin {
 		}
 		defaultNetworkProvider = netImpl
 		defaultTrustedNetworkManager = netImpl
-		log.Infof("------------- NetID is %s ------------------", peerNetworkConfig.OwnNetID())
+		log.Infof("------------- NetID is %s ------------------", netID)
 	}
 	run := func(_ *node.Plugin) {
 		err := daemon.BackgroundWorker(
@@ -78,18 +71,4 @@ func DefaultNetworkProvider() peering_pkg.NetworkProvider {
 
 func DefaultTrustedNetworkManager() peering_pkg.TrustedNetworkManager {
 	return defaultTrustedNetworkManager
-}
-
-func DefaultPeerNetworkConfig() coretypes.PeerNetworkConfigProvider { // TODO: Remove.
-	return peerNetworkConfig
-}
-
-func GossipToNeighbors(upToNumPeers uint16, msg *peering_pkg.PeerMessage) error {
-	neighbors := peerNetworkConfig.Neighbors()
-	peerDomainProvider, err := defaultNetworkProvider.PeerDomain(neighbors)
-	if err != nil {
-		return err
-	}
-	peerDomainProvider.SendMsgToRandomPeers(upToNumPeers, msg)
-	return nil
 }
