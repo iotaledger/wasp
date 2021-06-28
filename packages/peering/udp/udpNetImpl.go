@@ -219,14 +219,28 @@ func (n *NetImpl) IsTrustedPeer(pubKey ed25519.PublicKey) error {
 // TrustPeer implements the peering.TrustedNetworkManager interface.
 // It delegates everything to other implementation and updates the connections accordingly.
 func (n *NetImpl) TrustPeer(pubKey ed25519.PublicKey, netID string) (*peering.TrustedPeer, error) {
-	// TODO: Implement
+	n.peersLock.Lock()
+	for _, peer := range n.peers {
+		peerPubKey := peer.remotePubKey
+		if peerPubKey != nil && *peerPubKey == pubKey {
+			peer.trust(true)
+		}
+	}
+	n.peersLock.Unlock()
 	return n.trusted.TrustPeer(pubKey, netID)
 }
 
 // DistrustPeer implements the peering.TrustedNetworkManager interface.
 // It delegates everything to other implementation and updates the connections accordingly.
 func (n *NetImpl) DistrustPeer(pubKey ed25519.PublicKey) (*peering.TrustedPeer, error) {
-	// TODO: Implement
+	n.peersLock.Lock()
+	for _, peer := range n.peers {
+		peerPubKey := peer.remotePubKey
+		if peerPubKey != nil && *peerPubKey == pubKey {
+			peer.trust(false)
+		}
+	}
+	n.peersLock.Unlock()
 	return n.trusted.DistrustPeer(pubKey)
 }
 
@@ -295,6 +309,10 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 		var peerPubKey *ed25519.PublicKey
 		n.peersLock.RLock()
 		if p, ok := n.peersByAddr[peerUDPAddr.String()]; ok {
+			if !p.isTrusted() {
+				n.log.Debugf("Dropping message from untrusted peer: %v.", p.NetID())
+				continue
+			}
 			// We will only find the pub key, if the session is already established.
 			// The pub key is here needed only for user messages, so the handshake can proceed with nil.
 			peerPubKey = p.remotePubKey // Do not use PubKey() here, has it waits for it to be set.

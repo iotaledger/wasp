@@ -34,6 +34,7 @@ type peer struct {
 	lastMsgSent   time.Time
 	lastMsgRecv   time.Time
 	numUsers      int
+	trusted       bool
 	msgChopper    *chopper.Chopper
 	net           *NetImpl
 	log           *logger.Logger
@@ -70,6 +71,7 @@ func newPeer(remoteNetID string, remoteUDPAddr *net.UDPAddr, n *NetImpl) *peer {
 		lastMsgSent:   time.Time{},
 		lastMsgRecv:   time.Time{},
 		numUsers:      0,
+		trusted:       true,
 		msgChopper:    chopper.NewChopper(),
 		net:           n,
 		log:           log,
@@ -173,6 +175,14 @@ func (p *peer) PubKey() *ed25519.PublicKey {
 func (p *peer) SendMsg(msg *peering.PeerMessage) {
 	var err error
 	var msgChunks [][]byte
+	//
+	p.accessLock.RLock()
+	if !p.trusted {
+		p.log.Infof("Dropping outgoing message, because it was meant to send to a distrusted peer.")
+		p.accessLock.RUnlock()
+	}
+	p.accessLock.RUnlock()
+	//
 	if msg.IsUserMessage() {
 		if !p.waitReady.WaitTimeout(sendMsgSyncTimeout) {
 			// Just log a warning and try to send a message anyway.
@@ -237,4 +247,16 @@ func (p *peer) Close() {
 	p.accessLock.Lock()
 	defer p.accessLock.Unlock()
 	p.numUsers--
+}
+
+func (p *peer) trust(trusted bool) {
+	p.accessLock.Lock()
+	defer p.accessLock.Unlock()
+	p.trusted = trusted
+}
+
+func (p *peer) isTrusted() bool {
+	p.accessLock.RLock()
+	defer p.accessLock.RUnlock()
+	return p.trusted
 }
