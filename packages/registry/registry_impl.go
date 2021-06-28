@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/plugins/database"
-	"go.dedis.ch/kyber/v3/pairing"
 )
 
 // region Registry /////////////////////////////////////////////////////////
@@ -167,7 +166,7 @@ func (r *Impl) LoadDKShare(sharedAddress ledgerstate.Address) (*tcrypto.DKShare,
 	if err != nil {
 		return nil, err
 	}
-	return tcrypto.DKShareFromBytes(data, pairing.NewSuiteBn256()) // TODO: XXX: KP: Maybe we should have a single place to choose the suite.
+	return tcrypto.DKShareFromBytes(data, tcrypto.DefaultSuite())
 }
 
 func dbKeyForDKShare(sharedAddress ledgerstate.Address) []byte {

@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3/pairing"
 )
 
 func SetupKeys(peerCount uint16) ([]string, []*ed25519.KeyPair) {
@@ -45,7 +44,7 @@ func SetupDkg(
 	threshold uint16,
 	peerNetIDs []string,
 	peerIdentities []*ed25519.KeyPair,
-	suite *pairing.SuiteBn256,
+	suite tcrypto.Suite,
 	log *logger.Logger,
 ) (ledgerstate.Address, []coretypes.DKShareRegistryProvider) {
 	timeout := 100 * time.Second
@@ -83,7 +82,7 @@ func SetupDkgPregenerated(
 	t *testing.T,
 	threshold uint16,
 	peerNetIDs []string,
-	suite *pairing.SuiteBn256,
+	suite tcrypto.Suite,
 ) (ledgerstate.Address, []coretypes.DKShareRegistryProvider) {
 	var err error
 	var serializedDks [][]byte = pregeneratedDksRead(uint16(len(peerNetIDs)))

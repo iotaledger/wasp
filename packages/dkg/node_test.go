@@ -14,11 +14,11 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3/pairing"
 )
 
 // TestBasic checks if DKG procedure is executed successfully in a common case.
@@ -31,7 +31,6 @@ func TestBasic(t *testing.T) {
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-	suite := pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
 		testutil.NewPeeringNetReliable(),
@@ -42,7 +41,7 @@ func TestBasic(t *testing.T) {
 	// Initialize the DKG subsystem in each node.
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 	for i := range peerNetIDs {
-		registry := testutil.NewDkgRegistryProvider(suite)
+		registry := testutil.NewDkgRegistryProvider(tcrypto.DefaultSuite())
 		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], registry,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
@@ -76,7 +75,6 @@ func TestNoPubs(t *testing.T) {
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-	suite := pairing.NewSuiteBn256() // That's from the Pairing Adapter.
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
 		testutil.NewPeeringNetReliable(),
@@ -87,7 +85,7 @@ func TestNoPubs(t *testing.T) {
 	// Initialize the DKG subsystem in each node.
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 	for i := range peerNetIDs {
-		registry := testutil.NewDkgRegistryProvider(suite)
+		registry := testutil.NewDkgRegistryProvider(tcrypto.DefaultSuite())
 		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], registry,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
@@ -124,7 +122,6 @@ func TestUnreliableNet(t *testing.T) {
 	var threshold uint16 = 10
 	var peerCount uint16 = 10
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-	suite := pairing.NewSuiteBn256() // That's from the Pairing Adapter.
 	var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000,
 		testutil.NewPeeringNetUnreliable( // NOTE: Network parameters.
@@ -140,7 +137,7 @@ func TestUnreliableNet(t *testing.T) {
 	// Initialize the DKG subsystem in each node.
 	var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 	for i := range peerNetIDs {
-		registry := testutil.NewDkgRegistryProvider(suite)
+		registry := testutil.NewDkgRegistryProvider(tcrypto.DefaultSuite())
 		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], registry,
 			testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),
@@ -173,7 +170,6 @@ func TestLowN(t *testing.T) {
 		timeout := 100 * time.Second
 		threshold := n
 		peerCount := n
-		suite := pairing.NewSuiteBn256() // NOTE: That's from the Pairing Adapter.
 		peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
 		var peeringNetwork *testutil.PeeringNetwork = testutil.NewPeeringNetwork(
 			peerNetIDs, peerIdentities, 10000,
@@ -185,7 +181,7 @@ func TestLowN(t *testing.T) {
 		// Initialize the DKG subsystem in each node.
 		var dkgNodes []*dkg.Node = make([]*dkg.Node, len(peerNetIDs))
 		for i := range peerNetIDs {
-			registry := testutil.NewDkgRegistryProvider(suite)
+			registry := testutil.NewDkgRegistryProvider(tcrypto.DefaultSuite())
 			dkgNode, err := dkg.NewNode(
 				peerIdentities[i], networkProviders[i], registry,
 				testlogger.WithLevel(log.With("NetID", peerNetIDs[i]), logger.LevelDebug, false),

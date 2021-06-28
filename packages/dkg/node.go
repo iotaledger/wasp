@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
-	"go.dedis.ch/kyber/v3/pairing"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 	"go.dedis.ch/kyber/v3/sign/bdn"
 	"go.dedis.ch/kyber/v3/sign/eddsa"
@@ -57,7 +56,7 @@ func NewNode(
 		identity:    identity,
 		secKey:      kyberEdDSSA.Secret,
 		pubKey:      kyberEdDSSA.Public,
-		blsSuite:    pairing.NewSuiteBn256(),
+		blsSuite:    tcrypto.DefaultSuite(),
 		edSuite:     edwards25519.NewBlakeSHA256Ed25519(),
 		netProvider: netProvider,
 		registry:    registry,
