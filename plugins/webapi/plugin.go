@@ -60,11 +60,15 @@ func configure(*node.Plugin) {
 
 	auth.AddAuthentication(Server.Echo(), parameters.GetStringToString(parameters.WebAPIAuth))
 
+	network := peering.DefaultNetworkProvider()
+	if network == nil {
+		panic("dependency NetworkProvider is missing in WebAPI")
+	}
 	tnm := peering.DefaultTrustedNetworkManager()
 	if tnm == nil {
 		panic("dependency TrustedNetworkManager is missing in WebAPI")
 	}
-	webapi.Init(Server, adminWhitelist(), tnm)
+	webapi.Init(Server, adminWhitelist(), network, tnm)
 }
 
 func customHTTPErrorHandler(err error, c echo.Context) {

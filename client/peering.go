@@ -10,6 +10,12 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
+func (c *WaspClient) GetPeeringSelf() (*model.PeeringTrustedNode, error) {
+	var response *model.PeeringTrustedNode
+	err := c.do(http.MethodGet, routes.PeeringSelfGet(), nil, &response)
+	return response, err
+}
+
 func (c *WaspClient) GetPeeringTrustedList() ([]*model.PeeringTrustedNode, error) {
 	var response []*model.PeeringTrustedNode
 	err := c.do(http.MethodGet, routes.PeeringTrustedList(), nil, &response)

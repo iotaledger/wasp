@@ -83,6 +83,10 @@ func DumpState(chainID, contractHname string) string {
 	return "/adm/chain/" + chainID + "/contract/" + contractHname + "/dumpstate"
 }
 
+func PeeringSelfGet() string {
+	return "/adm/peering/self"
+}
+
 func PeeringTrustedList() string {
 	return "/adm/peering/trusted"
 }

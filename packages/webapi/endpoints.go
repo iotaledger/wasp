@@ -24,7 +24,7 @@ func getChain(chainID *chainid.ChainID) chain.ChainCore {
 	return chain.ChainCore(chains.AllChains().Get(chainID))
 }
 
-func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP, tnm peering.TrustedNetworkManager) {
+func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP, network peering.NetworkProvider, tnm peering.TrustedNetworkManager) {
 	log = logger.NewLogger("WebAPI")
 
 	server.SetRequestContentType(echo.MIMEApplicationJSON)
@@ -38,6 +38,6 @@ func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP, tnm peering.Trust
 	state.AddEndpoints(pub)
 
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")
-	admapi.AddEndpoints(adm, adminWhitelist, tnm)
+	admapi.AddEndpoints(adm, adminWhitelist, network, tnm)
 	log.Infof("added web api endpoints")
 }

@@ -15,40 +15,55 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addPeeringEndpoints(adm echoswagger.ApiGroup, tnm peering.TrustedNetworkManager) {
+func addPeeringEndpoints(adm echoswagger.ApiGroup, network peering.NetworkProvider, tnm peering.TrustedNetworkManager) {
 	listExample := []*model.PeeringTrustedNode{
 		{PubKey: "8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiQ", NetID: "some-host:9081"},
 		{PubKey: "8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiR", NetID: "some-host:9082"},
 	}
-	addTnm := func(next echo.HandlerFunc) echo.HandlerFunc {
+	addCtx := func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			c.Set("net", network)
 			c.Set("tnm", tnm)
 			return next(c)
 		}
 	}
-	adm.GET(routes.PeeringTrustedList(), handlePeeringTrustedList, addTnm).
+
+	adm.GET(routes.PeeringSelfGet(), handlePeeringSelfGet, addCtx).
+		AddResponse(http.StatusOK, "This node as a peer.", listExample[0], nil).
+		SetSummary("Basic peer info of the current node.")
+
+	adm.GET(routes.PeeringTrustedList(), handlePeeringTrustedList, addCtx).
 		AddResponse(http.StatusOK, "A list of trusted peers.", listExample, nil).
 		SetSummary("Get a list of trusted peers.")
 
-	adm.GET(routes.PeeringTrustedGet(":pubKey"), handlePeeringTrustedGet, addTnm).
+	adm.GET(routes.PeeringTrustedGet(":pubKey"), handlePeeringTrustedGet, addCtx).
 		AddParamPath(listExample[0].PubKey, "pubKey", "Public key of the trusted peer (base58).").
 		AddResponse(http.StatusOK, "Trusted peer info.", listExample[0], nil).
 		SetSummary("Get details on a particular trusted peer.")
 
-	adm.PUT(routes.PeeringTrustedPut(":pubKey"), handlePeeringTrustedPut, addTnm).
+	adm.PUT(routes.PeeringTrustedPut(":pubKey"), handlePeeringTrustedPut, addCtx).
 		AddParamPath(listExample[0].PubKey, "pubKey", "Public key of the trusted peer (base58).").
 		AddParamBody(listExample[0], "PeeringTrustedNode", "Info of the peer to trust.", true).
 		AddResponse(http.StatusOK, "Trusted peer info.", listExample[0], nil).
 		SetSummary("Trust the specified peer, the pub key is passed via the path.")
 
-	adm.POST(routes.PeeringTrustedPost(), handlePeeringTrustedPost, addTnm).
+	adm.POST(routes.PeeringTrustedPost(), handlePeeringTrustedPost, addCtx).
 		AddParamBody(listExample[0], "PeeringTrustedNode", "Info of the peer to trust.", true).
 		AddResponse(http.StatusOK, "Trusted peer info.", listExample[0], nil).
 		SetSummary("Trust the specified peer.")
 
-	adm.DELETE(routes.PeeringTrustedDelete(":pubKey"), handlePeeringTrustedDelete, addTnm).
+	adm.DELETE(routes.PeeringTrustedDelete(":pubKey"), handlePeeringTrustedDelete, addCtx).
 		AddParamPath(listExample[0].PubKey, "pubKey", "Public key of the trusted peer (base58).").
 		SetSummary("Distrust the specified peer.")
+}
+
+func handlePeeringSelfGet(c echo.Context) error {
+	network := c.Get("net").(peering.NetworkProvider)
+	resp := model.PeeringTrustedNode{
+		PubKey: network.Self().PubKey().String(),
+		NetID:  network.Self().NetID(),
+	}
+	return c.JSON(http.StatusOK, resp)
 }
 
 func handlePeeringTrustedList(c echo.Context) error {

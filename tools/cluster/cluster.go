@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/tools/cluster/mocknode"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"golang.org/x/xerrors"
@@ -45,6 +46,26 @@ func New(name string, config *ClusterConfig) *Cluster {
 
 func (clu *Cluster) GoshimmerClient() *goshimmer.Client {
 	return goshimmer.NewClient(clu.Config.goshimmerAPIHost(), clu.Config.FaucetPoWTarget)
+}
+
+func (clu *Cluster) TrustAll() error {
+	allNodes := clu.Config.AllNodes()
+	allPeers := make([]*model.PeeringTrustedNode, len(allNodes))
+	for ni := range allNodes {
+		var err error
+		if allPeers[ni], err = clu.WaspClient(allNodes[ni]).GetPeeringSelf(); err != nil {
+			return err
+		}
+	}
+	for ni := range allNodes {
+		for pi := range allPeers {
+			var err error
+			if _, err = clu.WaspClient(allNodes[ni]).PostPeeringTrusted(allPeers[pi].PubKey, allPeers[pi].NetID); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
@@ -222,8 +243,11 @@ func (clu *Cluster) Start(dataPath string) error {
 		return fmt.Errorf("Data path %s does not exist", dataPath)
 	}
 
-	err = clu.start(dataPath)
-	if err != nil {
+	if err := clu.start(dataPath); err != nil {
+		return err
+	}
+
+	if err := clu.TrustAll(); err != nil {
 		return err
 	}
 

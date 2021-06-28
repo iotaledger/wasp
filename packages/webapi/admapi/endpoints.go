@@ -19,7 +19,7 @@ func initLogger() {
 	log = logger.NewLogger("webapi/adm")
 }
 
-func AddEndpoints(adm echoswagger.ApiGroup, adminWhitelist []net.IP, tnm peering.TrustedNetworkManager) {
+func AddEndpoints(adm echoswagger.ApiGroup, adminWhitelist []net.IP, network peering.NetworkProvider, tnm peering.TrustedNetworkManager) {
 	initLogger()
 
 	adm.EchoGroup().Use(protected(adminWhitelist))
@@ -29,7 +29,7 @@ func AddEndpoints(adm echoswagger.ApiGroup, adminWhitelist []net.IP, tnm peering
 	addCommitteeRecordEndpoints(adm)
 	addChainEndpoints(adm)
 	addDKSharesEndpoints(adm)
-	addPeeringEndpoints(adm, tnm)
+	addPeeringEndpoints(adm, network, tnm)
 }
 
 // allow only if the remote address is private or in whitelist
