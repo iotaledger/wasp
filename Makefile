@@ -17,5 +17,8 @@ install:
 lint:
 	golangci-lint run
 
-.PHONY: all build test test-short
+gofumpt-list:
+	gofumpt -l ./
+
+.PHONY: all build test test-short lint gofumpt-list
 

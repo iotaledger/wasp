@@ -35,16 +35,15 @@ func TestUDPPeeringImpl(t *testing.T) {
 	}
 	for _, tnm := range tnms {
 		for i := range netIDs {
-			_, err = tnm.TrustPeer(keys[i].PublicKey, netIDs[1])
+			_, err = tnm.TrustPeer(keys[i].PublicKey, netIDs[i])
 			require.NoError(t, err)
 		}
 	}
-
-	nodes[0], err = udp.NewNetworkProvider(netIDs[0], 9017, ed25519.GenerateKeyPair(), tnms[0], log.Named("node0"))
+	nodes[0], err = udp.NewNetworkProvider(netIDs[0], 9017, &keys[0], tnms[0], log.Named("node0"))
 	require.NoError(t, err)
-	nodes[1], err = udp.NewNetworkProvider(netIDs[1], 9018, ed25519.GenerateKeyPair(), tnms[1], log.Named("node1"))
+	nodes[1], err = udp.NewNetworkProvider(netIDs[1], 9018, &keys[1], tnms[1], log.Named("node1"))
 	require.NoError(t, err)
-	nodes[2], err = udp.NewNetworkProvider(netIDs[2], 9019, ed25519.GenerateKeyPair(), tnms[1], log.Named("node2"))
+	nodes[2], err = udp.NewNetworkProvider(netIDs[2], 9019, &keys[2], tnms[2], log.Named("node2"))
 	require.NoError(t, err)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))

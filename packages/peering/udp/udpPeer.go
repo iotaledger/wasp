@@ -45,20 +45,13 @@ func newPeerOnUserRequest(remoteNetID string, n *NetImpl) (*peer, error) {
 	if remoteUDPAddr, err = net.ResolveUDPAddr("udp", remoteNetID); err != nil {
 		return nil, err
 	}
-	var p *peer
-	if p, err = newPeer(remoteNetID, nil, remoteUDPAddr, n); err != nil {
-		return nil, err
-	}
+	p := newPeer(remoteNetID, remoteUDPAddr, n)
 	p.usePeer()
 	return p, nil
 }
 
 func newPeerFromHandshake(handshake *handshakeMsg, remoteUDPAddr *net.UDPAddr, n *NetImpl) (*peer, error) {
-	var err error
-	var p *peer
-	if p, err = newPeer(handshake.netID, &handshake.pubKey, remoteUDPAddr, n); err != nil {
-		return nil, err
-	}
+	p := newPeer(handshake.netID, remoteUDPAddr, n)
 	if oldUDPAddrStr, newUDPAddrStr := p.handleHandshake(handshake, remoteUDPAddr); oldUDPAddrStr != newUDPAddrStr {
 		return nil, errors.New("inconsistent_udp_addr_on_create")
 	}
@@ -66,11 +59,11 @@ func newPeerFromHandshake(handshake *handshakeMsg, remoteUDPAddr *net.UDPAddr, n
 }
 
 // That's internal, called from other constructors.
-func newPeer(remoteNetID string, remotePubKey *ed25519.PublicKey, remoteUDPAddr *net.UDPAddr, n *NetImpl) (*peer, error) {
+func newPeer(remoteNetID string, remoteUDPAddr *net.UDPAddr, n *NetImpl) *peer {
 	log := n.log.Named("peer:" + remoteNetID)
 	p := &peer{
 		remoteNetID:   remoteNetID,
-		remotePubKey:  nil, // TODO: KP: XXX: .... remotePubKey, // Can be nil, in that case will be set on the handshake.
+		remotePubKey:  nil, // Will be set on the handshake.
 		remoteUDPAddr: remoteUDPAddr,
 		waitReady:     util.NewWaitChan(),
 		accessLock:    &sync.RWMutex{},
@@ -82,7 +75,7 @@ func newPeer(remoteNetID string, remotePubKey *ed25519.PublicKey, remoteUDPAddr 
 		log:           log,
 	}
 	p.sendHandshake(true)
-	return p, nil
+	return p
 }
 
 func (p *peer) usePeer() {
@@ -103,7 +96,7 @@ func (p *peer) handleHandshake(handshake *handshakeMsg, remoteUDPAddr *net.UDPAd
 		// That's the first received handshake, pairing established.
 		p.remotePubKey = &handshake.pubKey
 		p.waitReady.Done()
-		p.log.Infof("Paired %v with %v", p.net.NetID(), p.remoteNetID)
+		p.log.Infof("Node %v is now paired with %v", p.net.NetID(), p.remoteNetID)
 	} else if p.remotePubKey != nil && *p.remotePubKey == handshake.pubKey {
 		// It's just a ping.
 	} else {
@@ -186,7 +179,7 @@ func (p *peer) SendMsg(msg *peering.PeerMessage) {
 			p.log.Warnf("Sending a message despite the peering %v -> %v is not established yet, MsgType=%v", p.net.myNetID, p.NetID(), msg.MsgType)
 		}
 	}
-	if msgChunks, err = msg.ChunkedBytes(maxChunkSize, p.msgChopper); err != nil {
+	if msgChunks, err = msg.ChunkedBytes(maxChunkSize, p.msgChopper, p.net.nodeKeyPair); err != nil {
 		p.log.Warnf("Dropping outgoing message, unable to encode, reason=%v", err)
 		return
 	}

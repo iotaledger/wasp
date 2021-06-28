@@ -35,7 +35,7 @@ type NetImpl struct {
 	peersLock   *sync.RWMutex
 	recvEvents  *events.Event
 	recvQueue   chan *peering.RecvEvent // A queue for received messages.
-	nodeKeyPair ed25519.KeyPair
+	nodeKeyPair *ed25519.KeyPair
 	trusted     peering.TrustedNetworkManager
 	log         *logger.Logger
 }
@@ -45,7 +45,7 @@ type NetImpl struct {
 func NewNetworkProvider(
 	myNetID string,
 	port int,
-	nodeKeyPair ed25519.KeyPair,
+	nodeKeyPair *ed25519.KeyPair,
 	trusted peering.TrustedNetworkManager,
 	log *logger.Logger,
 ) (*NetImpl, error) {
@@ -279,7 +279,11 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 		}
 		var peerUDPAddr *net.UDPAddr
 		recvDeadline := time.Now().Add(recvBlockingDuration)
-		n.myUDPConn.SetReadDeadline(recvDeadline) //nolint:errcheck //TODO should err be checked here?
+		if err := n.myUDPConn.SetReadDeadline(recvDeadline); err != nil {
+			n.log.Warnf("Error while setting UDP read timeout, %v", err)
+			time.Sleep(1 * time.Second) // To avoid too frequent retries.
+			continue
+		}
 		if _, peerUDPAddr, err = n.myUDPConn.ReadFromUDP(buf); err != nil {
 			if errors.Is(err, os.ErrDeadlineExceeded) {
 				// We need to limit the blocking to make graceful stop possible.
@@ -288,8 +292,16 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 			n.log.Warnf("Error while reading from UDP socket, reason=%v", err)
 			continue
 		}
+		var peerPubKey *ed25519.PublicKey
+		n.peersLock.RLock()
+		if p, ok := n.peersByAddr[peerUDPAddr.String()]; ok {
+			// We will only find the pub key, if the session is already established.
+			// The pub key is here needed only for user messages, so the handshake can proceed with nil.
+			peerPubKey = p.remotePubKey // Do not use PubKey() here, has it waits for it to be set.
+		}
+		n.peersLock.RUnlock()
 		var peerMsg *peering.PeerMessage
-		if peerMsg, err = peering.NewPeerMessageFromBytes(buf); err != nil {
+		if peerMsg, err = peering.NewPeerMessageFromBytes(buf, peerPubKey); err != nil {
 			n.log.Warnf("Error while decoding a UDP message, reason=%v", err)
 			continue
 		}
@@ -297,52 +309,63 @@ func (n *NetImpl) receiveLoop(stopCh chan bool) {
 		case peering.MsgTypeReserved:
 			// Nothing
 		case peering.MsgTypeHandshake:
-			var h *handshakeMsg
-			if h, err = handshakeMsgFromBytes(peerMsg.MsgData); err != nil {
-				n.log.Warnf("Error while decoding a UDP handshake, reason=%v", err)
-				continue
-			}
-			// if err = n.trusted.IsTrustedPeer(h.pubKey); err != nil { // TODO: XXX: KP
-			// 	n.log.Warnf("Dropping handshakeMsg from %v with pubKey=%v, error=%v", peerUDPAddr, h.pubKey, err)
-			// }
-			n.peersLock.Lock()
-			if p, ok := n.peers[h.netID]; ok {
-				if oldUDPAddrStr, newUDPAddrStr := p.handleHandshake(h, peerUDPAddr); oldUDPAddrStr != newUDPAddrStr {
-					// Update the index to find the peer later on.
-					n.peersByAddr[newUDPAddrStr] = p
-					delete(n.peersByAddr, oldUDPAddrStr)
-				}
-			} else {
-				if p, err = newPeerFromHandshake(h, peerUDPAddr, n); err != nil {
-					n.log.Warnf("Error while creating a peer based on UDP handshake, reason=%v", err)
-					n.peersLock.Unlock()
-					continue
-				}
-				n.peers[p.NetID()] = p
-				n.peersByAddr[p.remoteUDPAddr.String()] = p
-			}
-			n.peersLock.Unlock()
+			n.receiveHandshake(peerMsg, peerUDPAddr)
 		case peering.MsgTypeMsgChunk:
-			remoteUDPAddrStr := peerUDPAddr.String()
-			n.peersLock.RLock()
-			if p, ok := n.peersByAddr[remoteUDPAddrStr]; ok {
-				n.peersLock.RUnlock()
-				var reconstructedMsg *peering.PeerMessage
-				if reconstructedMsg, err = peering.NewPeerMessageFromChunks(peerMsg.MsgData, maxChunkSize, p.msgChopper); err != nil {
-					n.log.Warnf("Error while decoding chunked message, reason=%v", err)
-					continue
-				}
-				if reconstructedMsg != nil {
-					n.receiveUserMsg(reconstructedMsg, peerUDPAddr)
-				}
-			} else {
-				n.peersLock.RUnlock()
-				n.log.Warnf("Dropping received message from unknown peer=%v", remoteUDPAddrStr)
-				continue
-			}
+			n.receiveMsgChunk(peerMsg, peerUDPAddr)
 		default:
 			n.receiveUserMsg(peerMsg, peerUDPAddr)
 		}
+	}
+}
+
+func (n *NetImpl) receiveHandshake(peerMsg *peering.PeerMessage, peerUDPAddr *net.UDPAddr) {
+	var err error
+	var h *handshakeMsg
+	if h, err = handshakeMsgFromBytes(peerMsg.MsgData); err != nil {
+		n.log.Warnf("Error while decoding a UDP handshake, reason=%v", err)
+		return
+	}
+	if err = n.trusted.IsTrustedPeer(h.pubKey); err != nil {
+		n.log.Warnf("Dropping handshakeMsg from %v with pubKey=%v, error=%v", peerUDPAddr, h.pubKey, err)
+		return
+	}
+	n.peersLock.Lock()
+	if p, ok := n.peers[h.netID]; ok {
+		if oldUDPAddrStr, newUDPAddrStr := p.handleHandshake(h, peerUDPAddr); oldUDPAddrStr != newUDPAddrStr {
+			// Update the index to find the peer later on.
+			n.peersByAddr[newUDPAddrStr] = p
+			delete(n.peersByAddr, oldUDPAddrStr)
+		}
+	} else {
+		if p, err = newPeerFromHandshake(h, peerUDPAddr, n); err != nil {
+			n.log.Warnf("Error while creating a peer based on UDP handshake, reason=%v", err)
+			n.peersLock.Unlock()
+			return
+		}
+		n.peers[p.NetID()] = p
+		n.peersByAddr[p.remoteUDPAddr.String()] = p
+	}
+	n.peersLock.Unlock()
+}
+
+func (n *NetImpl) receiveMsgChunk(peerMsg *peering.PeerMessage, peerUDPAddr *net.UDPAddr) {
+	var err error
+	remoteUDPAddrStr := peerUDPAddr.String()
+	n.peersLock.RLock()
+	if p, ok := n.peersByAddr[remoteUDPAddrStr]; ok {
+		n.peersLock.RUnlock()
+		var reconstructedMsg *peering.PeerMessage
+		if reconstructedMsg, err = peering.NewPeerMessageFromChunks(peerMsg.MsgData, maxChunkSize, p.msgChopper, p.remotePubKey); err != nil {
+			n.log.Warnf("Error while decoding chunked message, reason=%v", err)
+			return
+		}
+		if reconstructedMsg != nil {
+			n.receiveUserMsg(reconstructedMsg, peerUDPAddr)
+		}
+	} else {
+		n.peersLock.RUnlock()
+		n.log.Warnf("Dropping received message from unknown peer=%v", remoteUDPAddrStr)
+		return
 	}
 }
 

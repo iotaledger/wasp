@@ -12,8 +12,6 @@ package peering
 
 import (
 	"bytes"
-	"errors"
-	"hash/crc32"
 	"io"
 	"math/rand"
 	"time"
@@ -38,12 +36,6 @@ const (
 
 	chunkMessageOverhead = 8 + 1
 )
-
-var crc32q *crc32.Table
-
-func init() {
-	crc32q = crc32.MakeTable(0xD5828281)
-}
 
 // PeeringID is relates peers in different nodes for a particular
 // communication group. E.g. PeeringID identifies a committee in
@@ -241,7 +233,7 @@ type PeerMessage struct {
 }
 
 //nolint:gocritic
-func NewPeerMessageFromBytes(buf []byte) (*PeerMessage, error) {
+func NewPeerMessageFromBytes(buf []byte, peerPubKey *ed25519.PublicKey) (*PeerMessage, error) {
 	var err error
 	r := bytes.NewBuffer(buf)
 	m := PeerMessage{}
@@ -271,21 +263,29 @@ func NewPeerMessageFromBytes(buf []byte) (*PeerMessage, error) {
 		if m.MsgData, err = util.ReadBytes32(r); err != nil {
 			return nil, err
 		}
-		var checksumCalc uint32
-		var checksumRead uint32
-		checksumCalc = crc32.Checksum(m.MsgData, crc32q)
-		if err = util.ReadUint32(r, &checksumRead); err != nil {
-			return nil, err
+		//
+		// Check the signature.
+		if peerPubKey == nil {
+			return nil, xerrors.New("peer pub key is mandatory to decode user messages")
 		}
-		if checksumCalc != checksumRead {
-			return nil, errors.New("message_checksum_invalid")
+		lenBeforeSig := r.Len()
+		var signatureBin []byte
+		if signatureBin, err = util.ReadBytes16(r); err != nil {
+			return nil, xerrors.Errorf("failed to read signature: %w", err)
+		}
+		var signature ed25519.Signature
+		if signature, _, err = ed25519.SignatureFromBytes(signatureBin); err != nil {
+			return nil, xerrors.Errorf("failed to parse signature: %w", err)
+		}
+		if !peerPubKey.VerifySignature(buf[:len(buf)-lenBeforeSig], signature) {
+			return nil, xerrors.New("signature verification failed")
 		}
 	}
 	return &m, nil
 }
 
 // NewPeerMessageFromChunks can return nil, if there is not enough chunks to reconstruct the message.
-func NewPeerMessageFromChunks(chunkBytes []byte, chunkSize int, msgChopper *chopper.Chopper) (*PeerMessage, error) {
+func NewPeerMessageFromChunks(chunkBytes []byte, chunkSize int, msgChopper *chopper.Chopper, peerPubKey *ed25519.PublicKey) (*PeerMessage, error) {
 	var err error
 	var msgBytes []byte
 	if msgBytes, err = msgChopper.IncomingChunk(chunkBytes, chunkSize, chunkMessageOverhead); err != nil {
@@ -294,10 +294,10 @@ func NewPeerMessageFromChunks(chunkBytes []byte, chunkSize int, msgChopper *chop
 	if msgBytes == nil {
 		return nil, nil
 	}
-	return NewPeerMessageFromBytes(msgBytes)
+	return NewPeerMessageFromBytes(msgBytes, peerPubKey)
 }
 
-func (m *PeerMessage) Bytes() ([]byte, error) {
+func (m *PeerMessage) Bytes(nodeIdentity *ed25519.KeyPair) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := util.WriteInt64(&buf, m.Timestamp); err != nil {
 		return nil, err
@@ -325,19 +325,19 @@ func (m *PeerMessage) Bytes() ([]byte, error) {
 		if err := util.WriteBytes32(&buf, m.MsgData); err != nil {
 			return nil, err
 		}
-		var checksumCalc uint32
-		checksumCalc = crc32.Checksum(m.MsgData, crc32q)
-		if err := util.WriteUint32(&buf, checksumCalc); err != nil {
-			return nil, err
+		payload := buf.Bytes()
+		signature := nodeIdentity.PrivateKey.Sign(payload).Bytes()
+		if err := util.WriteBytes16(&buf, signature); err != nil {
+			return nil, xerrors.Errorf("failed to write signature: %w", err)
 		}
 	}
 	return buf.Bytes(), nil
 }
 
-func (m *PeerMessage) ChunkedBytes(chunkSize int, msgChopper *chopper.Chopper) ([][]byte, error) {
+func (m *PeerMessage) ChunkedBytes(chunkSize int, msgChopper *chopper.Chopper, nodeIdentity *ed25519.KeyPair) ([][]byte, error) {
 	var err error
 	var msgBytes []byte
-	if msgBytes, err = m.Bytes(); err != nil {
+	if msgBytes, err = m.Bytes(nodeIdentity); err != nil {
 		return nil, err
 	}
 	var choppedBytes [][]byte
@@ -354,7 +354,7 @@ func (m *PeerMessage) ChunkedBytes(chunkSize int, msgChopper *chopper.Chopper) (
 				MsgType:   MsgTypeMsgChunk,
 				MsgData:   choppedBytes[i],
 			}
-			if msgs[i], err = chunkMsg.Bytes(); err != nil {
+			if msgs[i], err = chunkMsg.Bytes(nil); err != nil {
 				return nil, err
 			}
 		}

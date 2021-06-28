@@ -47,7 +47,7 @@ func Init() *node.Plugin {
 		netImpl, err := peering_udp.NewNetworkProvider(
 			parameters.GetString(parameters.PeeringMyNetID),
 			parameters.GetInt(parameters.PeeringPort),
-			*nodeKeyPair,
+			nodeKeyPair,
 			registry.DefaultRegistry(),
 			log,
 		)
