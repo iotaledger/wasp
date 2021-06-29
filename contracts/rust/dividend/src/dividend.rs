@@ -28,14 +28,14 @@ pub fn func_init(ctx: &ScFuncContext) {
 
     // First we set up a default value for the owner in case the optional
     // 'owner' parameter was omitted.
-    let mut owner: ScAgentId = ctx.contract_creator();
+    let mut owner: ScAgentID = ctx.contract_creator();
 
     // Now it is time to check if parameters were provided to the function.
     // We create an ScImmutableMap proxy to the params map on the host.
     let p: ScImmutableMap = ctx.params();
 
-    // Then we create an ScImmutableAgentId proxy to the 'owner' parameter.
-    let param_owner: ScImmutableAgentId = p.get_agent_id(PARAM_OWNER);
+    // Then we create an ScImmutableAgentID proxy to the 'owner' parameter.
+    let param_owner: ScImmutableAgentID = p.get_agent_id(PARAM_OWNER);
 
     // Now we check if the optional 'owner' parameter is present in the params map.
     if param_owner.exists() {
@@ -49,8 +49,8 @@ pub fn func_init(ctx: &ScFuncContext) {
     // an ScMutableMap proxy that refers to the state storage map on the host.
     let state: ScMutableMap = ctx.state();
 
-    // Then we create an ScMutableAgentId proxy to an 'owner' variable in state storage.
-    let state_owner: ScMutableAgentId = state.get_agent_id(STATE_OWNER);
+    // Then we create an ScMutableAgentID proxy to an 'owner' variable in state storage.
+    let state_owner: ScMutableAgentID = state.get_agent_id(STATE_OWNER);
 
     // And then we save the owner value in the 'owner' variable in state storage.
     state_owner.set_value(&owner);
@@ -81,8 +81,8 @@ pub fn func_member(ctx: &ScFuncContext) {
     // proxy that refers to the state storage map on the host.
     let state: ScMutableMap = ctx.state();
 
-    // Next we create an ScMutableAgentId proxy to the 'owner' variable in state storage.
-    let owner: ScMutableAgentId = state.get_agent_id(STATE_OWNER);
+    // Next we create an ScMutableAgentID proxy to the 'owner' variable in state storage.
+    let owner: ScMutableAgentID = state.get_agent_id(STATE_OWNER);
 
     // Only the defined smart contract owner can add members, so we require
     // that the caller's agent id is equal to the stored owner's agent id.
@@ -287,13 +287,13 @@ pub fn func_set_owner(ctx: &ScFuncContext) {
     ctx.log("dividend.setOwner");
 
     // Get a proxy to the 'owner' variable in state storage.
-    let state_owner: ScMutableAgentId = ctx.state().get_agent_id(STATE_OWNER);
+    let state_owner: ScMutableAgentID = ctx.state().get_agent_id(STATE_OWNER);
 
     // Require the caller to be the current owner.
     ctx.require(ctx.caller() == state_owner.value(), "no permission");
 
     // Get a proxy to the 'owner' parameter.
-    let param_owner: ScImmutableAgentId = ctx.params().get_agent_id(PARAM_OWNER);
+    let param_owner: ScImmutableAgentID = ctx.params().get_agent_id(PARAM_OWNER);
 
     // Require that the 'owner' parameter is mandatory.
     ctx.require(param_owner.exists(), "missing mandatory owner");

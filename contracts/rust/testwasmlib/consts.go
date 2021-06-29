@@ -20,14 +20,14 @@ const (
 
 const (
 	ParamAddress   = kv.Key("address")
-	ParamAgentId   = kv.Key("agentId")
+	ParamAgentID   = kv.Key("agentID")
 	ParamBytes     = kv.Key("bytes")
-	ParamChainId   = kv.Key("chainId")
+	ParamChainID   = kv.Key("chainID")
 	ParamColor     = kv.Key("color")
 	ParamHash      = kv.Key("hash")
 	ParamHname     = kv.Key("hname")
 	ParamInt64     = kv.Key("int64")
-	ParamRequestId = kv.Key("requestId")
+	ParamRequestID = kv.Key("requestID")
 	ParamString    = kv.Key("string")
 )
 

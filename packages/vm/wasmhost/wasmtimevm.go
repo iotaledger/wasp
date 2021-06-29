@@ -10,7 +10,7 @@ import (
 )
 
 type WasmTimeVM struct {
-	WasmVmBase
+	WasmVMBase
 	instance  *wasmtime.Instance
 	interrupt *wasmtime.InterruptHandle
 	linker    *wasmtime.Linker
@@ -36,32 +36,32 @@ func (vm *WasmTimeVM) Interrupt() {
 }
 
 func (vm *WasmTimeVM) LinkHost(impl WasmVM, host *WasmHost) error {
-	_ = vm.WasmVmBase.LinkHost(impl, host)
+	_ = vm.WasmVMBase.LinkHost(impl, host)
 
 	err := vm.linker.DefineFunc("WasmLib", "hostGetBytes",
-		func(objId int32, keyId int32, typeId int32, stringRef int32, size int32) int32 {
-			return vm.HostGetBytes(objId, keyId, typeId, stringRef, size)
+		func(objID int32, keyID int32, typeID int32, stringRef int32, size int32) int32 {
+			return vm.HostGetBytes(objID, keyID, typeID, stringRef, size)
 		})
 	if err != nil {
 		return err
 	}
-	err = vm.linker.DefineFunc("WasmLib", "hostGetKeyId",
+	err = vm.linker.DefineFunc("WasmLib", "hostGetKeyID",
 		func(keyRef int32, size int32) int32 {
-			return vm.HostGetKeyId(keyRef, size)
+			return vm.HostGetKeyID(keyRef, size)
 		})
 	if err != nil {
 		return err
 	}
-	err = vm.linker.DefineFunc("WasmLib", "hostGetObjectId",
-		func(objId int32, keyId int32, typeId int32) int32 {
-			return vm.HostGetObjectId(objId, keyId, typeId)
+	err = vm.linker.DefineFunc("WasmLib", "hostGetObjectID",
+		func(objID int32, keyID int32, typeID int32) int32 {
+			return vm.HostGetObjectID(objID, keyID, typeID)
 		})
 	if err != nil {
 		return err
 	}
 	err = vm.linker.DefineFunc("WasmLib", "hostSetBytes",
-		func(objId int32, keyId int32, typeId int32, stringRef int32, size int32) {
-			vm.HostSetBytes(objId, keyId, typeId, stringRef, size)
+		func(objID int32, keyID int32, typeID int32, stringRef int32, size int32) {
+			vm.HostSetBytes(objID, keyID, typeID, stringRef, size)
 		})
 	if err != nil {
 		return err

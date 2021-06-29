@@ -4,7 +4,7 @@ package wasmhost
 // note that predefined key ids are negative values to distinguish them from indexes
 
 const (
-	KeyAccountId       = int32(-1)
+	KeyAccountID       = int32(-1)
 	KeyAddress         = int32(-2)
 	KeyBalances        = int32(-3)
 	KeyBase58Decode    = int32(-4)
@@ -14,8 +14,8 @@ const (
 	KeyBlsValid        = int32(-8)
 	KeyCall            = int32(-9)
 	KeyCaller          = int32(-10)
-	KeyChainId         = int32(-11)
-	KeyChainOwnerId    = int32(-12)
+	KeyChainID         = int32(-11)
+	KeyChainOwnerID    = int32(-12)
 	KeyColor           = int32(-13)
 	KeyContract        = int32(-14)
 	KeyContractCreator = int32(-15)
@@ -37,7 +37,7 @@ const (
 	KeyParams          = int32(-31)
 	KeyPost            = int32(-32)
 	KeyRandom          = int32(-33)
-	KeyRequestId       = int32(-34)
+	KeyRequestID       = int32(-34)
 	KeyResults         = int32(-35)
 	KeyReturn          = int32(-36)
 	KeyState           = int32(-37)
@@ -55,7 +55,7 @@ const (
 
 // associate names with predefined key ids
 var keyMap = map[string]int32{
-	"$accountId":       KeyAccountId,
+	"$accountID":       KeyAccountID,
 	"$address":         KeyAddress,
 	"$balances":        KeyBalances,
 	"$base58Bytes":     KeyBase58Decode,
@@ -65,8 +65,8 @@ var keyMap = map[string]int32{
 	"$blsValid":        KeyBlsValid,
 	"$call":            KeyCall,
 	"$caller":          KeyCaller,
-	"$chainId":         KeyChainId,
-	"$chainOwnerId":    KeyChainOwnerId,
+	"$chainID":         KeyChainID,
+	"$chainOwnerID":    KeyChainOwnerID,
 	"$color":           KeyColor,
 	"$contract":        KeyContract,
 	"$contractCreator": KeyContractCreator,
@@ -88,7 +88,7 @@ var keyMap = map[string]int32{
 	"$params":          KeyParams,
 	"$post":            KeyPost,
 	"$random":          KeyRandom,
-	"$requestId":       KeyRequestId,
+	"$requestID":       KeyRequestID,
 	"$results":         KeyResults,
 	"$return":          KeyReturn,
 	"$state":           KeyState,

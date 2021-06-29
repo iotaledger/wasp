@@ -39,138 +39,138 @@ var (
 )
 
 type HostObject interface {
-	CallFunc(keyId int32, params []byte) []byte
-	Exists(keyId int32, typeId int32) bool
-	GetBytes(keyId int32, typeId int32) []byte
-	GetObjectId(keyId int32, typeId int32) int32
-	GetTypeId(keyId int32) int32
-	SetBytes(keyId int32, typeId int32, bytes []byte)
+	CallFunc(keyID int32, params []byte) []byte
+	Exists(keyID int32, typeID int32) bool
+	GetBytes(keyID int32, typeID int32) []byte
+	GetObjectID(keyID int32, typeID int32) int32
+	GetTypeID(keyID int32) int32
+	SetBytes(keyID int32, typeID int32, bytes []byte)
 }
 
 // KvStoreHost implements WaspLib.client.ScHost interface
 // it allows WasmGoVM to bypass Wasm and access the sandbox directly
 // so that it is possible to debug into SC code that was written in Go
 type KvStoreHost struct {
-	keyIdToKey    [][]byte
-	keyIdToKeyMap [][]byte
-	keyToKeyId    map[string]int32
+	keyIDToKey    [][]byte
+	keyIDToKeyMap [][]byte
+	keyToKeyID    map[string]int32
 	log           *logger.Logger
-	objIdToObj    []HostObject
+	objIDToObj    []HostObject
 	useBase58Keys bool
 }
 
 func (host *KvStoreHost) Init(log *logger.Logger) {
 	host.log = log
-	host.objIdToObj = make([]HostObject, 0, 16)
-	host.keyIdToKey = [][]byte{[]byte("<null>")}
-	host.keyToKeyId = make(map[string]int32)
-	host.keyIdToKeyMap = make([][]byte, len(keyMap)+1)
+	host.objIDToObj = make([]HostObject, 0, 16)
+	host.keyIDToKey = [][]byte{[]byte("<null>")}
+	host.keyToKeyID = make(map[string]int32)
+	host.keyIDToKeyMap = make([][]byte, len(keyMap)+1)
 	for k, v := range keyMap {
-		host.keyIdToKeyMap[-v] = []byte(k)
+		host.keyIDToKeyMap[-v] = []byte(k)
 	}
 }
 
-func (host *KvStoreHost) CallFunc(objId int32, keyId int32, params []byte) []byte {
-	return host.FindObject(objId).CallFunc(keyId, params)
+func (host *KvStoreHost) CallFunc(objID int32, keyID int32, params []byte) []byte {
+	return host.FindObject(objID).CallFunc(keyID, params)
 }
 
-func (host *KvStoreHost) Exists(objId int32, keyId int32, typeId int32) bool {
-	return host.FindObject(objId).Exists(keyId, typeId)
+func (host *KvStoreHost) Exists(objID int32, keyID int32, typeID int32) bool {
+	return host.FindObject(objID).Exists(keyID, typeID)
 }
 
-func (host *KvStoreHost) FindObject(objId int32) HostObject {
-	if objId < 0 || objId >= int32(len(host.objIdToObj)) {
-		panic("FindObject: invalid objId")
+func (host *KvStoreHost) FindObject(objID int32) HostObject {
+	if objID < 0 || objID >= int32(len(host.objIDToObj)) {
+		panic("FindObject: invalid objID")
 	}
-	return host.objIdToObj[objId]
+	return host.objIDToObj[objID]
 }
 
-func (host *KvStoreHost) FindSubObject(obj HostObject, keyId int32, typeId int32) HostObject {
+func (host *KvStoreHost) FindSubObject(obj HostObject, keyID int32, typeID int32) HostObject {
 	if obj == nil {
 		// use root object
 		obj = host.FindObject(1)
 	}
-	return host.FindObject(obj.GetObjectId(keyId, typeId))
+	return host.FindObject(obj.GetObjectID(keyID, typeID))
 }
 
-func (host *KvStoreHost) GetBytes(objId int32, keyId int32, typeId int32) []byte {
-	obj := host.FindObject(objId)
-	if !obj.Exists(keyId, typeId) {
-		host.Trace("GetBytes o%d k%d missing key", objId, keyId)
+func (host *KvStoreHost) GetBytes(objID int32, keyID int32, typeID int32) []byte {
+	obj := host.FindObject(objID)
+	if !obj.Exists(keyID, typeID) {
+		host.Trace("GetBytes o%d k%d missing key", objID, keyID)
 		return nil
 	}
-	bytes := obj.GetBytes(keyId, typeId)
-	switch typeId {
+	bytes := obj.GetBytes(keyID, typeID)
+	switch typeID {
 	case OBJTYPE_INT16:
 		val16, _, err := codec.DecodeInt16(bytes)
 		if err != nil {
 			panic("GetBytes: invalid int16")
 		}
-		host.Trace("GetBytes o%d k%d = %ds", objId, keyId, val16)
+		host.Trace("GetBytes o%d k%d = %ds", objID, keyID, val16)
 	case OBJTYPE_INT32:
 		val32, _, err := codec.DecodeInt32(bytes)
 		if err != nil {
 			panic("GetBytes: invalid int32")
 		}
-		host.Trace("GetBytes o%d k%d = %di", objId, keyId, val32)
+		host.Trace("GetBytes o%d k%d = %di", objID, keyID, val32)
 	case OBJTYPE_INT64:
 		val64, _, err := codec.DecodeInt64(bytes)
 		if err != nil {
 			panic("GetBytes: invalid int64")
 		}
-		host.Trace("GetBytes o%d k%d = %dl", objId, keyId, val64)
+		host.Trace("GetBytes o%d k%d = %dl", objID, keyID, val64)
 	case OBJTYPE_STRING:
-		host.Trace("GetBytes o%d k%d = '%s'", objId, keyId, string(bytes))
+		host.Trace("GetBytes o%d k%d = '%s'", objID, keyID, string(bytes))
 	default:
-		host.Trace("GetBytes o%d k%d = '%s'", objId, keyId, base58.Encode(bytes))
+		host.Trace("GetBytes o%d k%d = '%s'", objID, keyID, base58.Encode(bytes))
 	}
 	return bytes
 }
 
-func (host *KvStoreHost) getKeyFromId(keyId int32) []byte {
+func (host *KvStoreHost) getKeyFromID(keyID int32) []byte {
 	// find predefined key
-	if keyId < 0 {
-		return host.keyIdToKeyMap[-keyId]
+	if keyID < 0 {
+		return host.keyIDToKeyMap[-keyID]
 	}
 
 	// find user-defined key
-	return host.keyIdToKey[keyId & ^KeyFromBytes]
+	return host.keyIDToKey[keyID & ^KeyFromBytes]
 }
 
-func (host *KvStoreHost) GetKeyFromId(keyId int32) []byte {
-	host.TraceAll("GetKeyFromId(k%d)", keyId)
-	key := host.getKeyFromId(keyId)
-	if (keyId & (KeyFromBytes | -0x80000000)) == KeyFromBytes {
+func (host *KvStoreHost) GetKeyFromID(keyID int32) []byte {
+	host.TraceAll("GetKeyFromID(k%d)", keyID)
+	key := host.getKeyFromID(keyID)
+	if (keyID & (KeyFromBytes | -0x80000000)) == KeyFromBytes {
 		// originally a byte slice key
-		host.Trace("GetKeyFromId k%d='%s'", keyId, base58.Encode(key))
+		host.Trace("GetKeyFromID k%d='%s'", keyID, base58.Encode(key))
 		return key
 	}
 	// originally a string key
-	host.Trace("GetKeyFromId k%d='%s'", keyId, string(key))
+	host.Trace("GetKeyFromID k%d='%s'", keyID, string(key))
 	return key
 }
 
-func (host *KvStoreHost) getKeyId(key []byte, fromBytes bool) int32 {
+func (host *KvStoreHost) getKeyID(key []byte, fromBytes bool) int32 {
 	// cannot use []byte as key in maps
 	// so we will convert to (non-utf8) string
 	// most will have started out as string anyway
 	keyString := string(key)
-	keyId, ok := host.keyToKeyId[keyString]
+	keyID, ok := host.keyToKeyID[keyString]
 	if ok {
-		return keyId
+		return keyID
 	}
 
 	// unknown key, add it to user-defined key map
-	keyId = int32(len(host.keyIdToKey))
+	keyID = int32(len(host.keyIDToKey))
 	if fromBytes {
-		keyId |= KeyFromBytes
+		keyID |= KeyFromBytes
 	}
-	host.keyToKeyId[keyString] = keyId
-	host.keyIdToKey = append(host.keyIdToKey, key)
-	return keyId
+	host.keyToKeyID[keyString] = keyID
+	host.keyIDToKey = append(host.keyIDToKey, key)
+	return keyID
 }
 
-func (host *KvStoreHost) GetKeyIdFromBytes(bytes []byte) int32 {
+func (host *KvStoreHost) GetKeyIDFromBytes(bytes []byte) int32 {
 	encoded := base58.Encode(bytes)
 	if host.useBase58Keys {
 		// transform byte slice key into base58 string
@@ -178,67 +178,67 @@ func (host *KvStoreHost) GetKeyIdFromBytes(bytes []byte) int32 {
 		bytes = []byte(encoded)
 	}
 
-	keyId := host.getKeyId(bytes, true)
-	host.Trace("GetKeyIdFromBytes '%s'=k%d", encoded, keyId)
-	return keyId
+	keyID := host.getKeyID(bytes, true)
+	host.Trace("GetKeyIDFromBytes '%s'=k%d", encoded, keyID)
+	return keyID
 }
 
-func (host *KvStoreHost) GetKeyIdFromString(key string) int32 {
-	keyId := host.getKeyId([]byte(key), false)
-	host.Trace("GetKeyIdFromString '%s'=k%d", key, keyId)
-	return keyId
+func (host *KvStoreHost) GetKeyIDFromString(key string) int32 {
+	keyID := host.getKeyID([]byte(key), false)
+	host.Trace("GetKeyIDFromString '%s'=k%d", key, keyID)
+	return keyID
 }
 
-func (host *KvStoreHost) GetKeyStringFromId(keyId int32) string {
-	return string(host.GetKeyFromId(keyId))
+func (host *KvStoreHost) GetKeyStringFromID(keyID int32) string {
+	return string(host.GetKeyFromID(keyID))
 }
 
-func (host *KvStoreHost) GetObjectId(objId int32, keyId int32, typeId int32) int32 {
-	host.TraceAll("GetObjectId(o%d,k%d,t%d)", objId, keyId, typeId)
-	subId := host.FindObject(objId).GetObjectId(keyId, typeId)
-	host.Trace("GetObjectId o%d k%d t%d = o%d", objId, keyId, typeId, subId)
-	return subId
+func (host *KvStoreHost) GetObjectID(objID int32, keyID int32, typeID int32) int32 {
+	host.TraceAll("GetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
+	subID := host.FindObject(objID).GetObjectID(keyID, typeID)
+	host.Trace("GetObjectID o%d k%d t%d = o%d", objID, keyID, typeID, subID)
+	return subID
 }
 
 func (host *KvStoreHost) PopFrame(frame []HostObject) {
-	host.objIdToObj = frame
+	host.objIDToObj = frame
 }
 
 func (host *KvStoreHost) PushFrame() []HostObject {
 	// reset frame to contain only null and root object
 	// create a fresh slice to allow garbage collection
 	// it's up to the caller to save and/or restore the old frame
-	pushed := host.objIdToObj
-	host.objIdToObj = make([]HostObject, 2, 16)
-	copy(host.objIdToObj, pushed[:2])
+	pushed := host.objIDToObj
+	host.objIDToObj = make([]HostObject, 2, 16)
+	copy(host.objIDToObj, pushed[:2])
 	return pushed
 }
 
-func (host *KvStoreHost) SetBytes(objId int32, keyId int32, typeId int32, bytes []byte) {
-	host.FindObject(objId).SetBytes(keyId, typeId, bytes)
-	switch typeId {
+func (host *KvStoreHost) SetBytes(objID int32, keyID int32, typeID int32, bytes []byte) {
+	host.FindObject(objID).SetBytes(keyID, typeID, bytes)
+	switch typeID {
 	case OBJTYPE_INT16:
 		val16, _, err := codec.DecodeInt16(bytes)
 		if err != nil {
 			panic("SetBytes: invalid int16")
 		}
-		host.Trace("SetBytes o%d k%d v=%ds", objId, keyId, val16)
+		host.Trace("SetBytes o%d k%d v=%ds", objID, keyID, val16)
 	case OBJTYPE_INT32:
 		val32, _, err := codec.DecodeInt32(bytes)
 		if err != nil {
 			panic("SetBytes: invalid int32")
 		}
-		host.Trace("SetBytes o%d k%d v=%di", objId, keyId, val32)
+		host.Trace("SetBytes o%d k%d v=%di", objID, keyID, val32)
 	case OBJTYPE_INT64:
 		val64, _, err := codec.DecodeInt64(bytes)
 		if err != nil {
 			panic("SetBytes: invalid int64")
 		}
-		host.Trace("SetBytes o%d k%d v=%dl", objId, keyId, val64)
+		host.Trace("SetBytes o%d k%d v=%dl", objID, keyID, val64)
 	case OBJTYPE_STRING:
-		host.Trace("SetBytes o%d k%d v='%s'", objId, keyId, string(bytes))
+		host.Trace("SetBytes o%d k%d v='%s'", objID, keyID, string(bytes))
 	default:
-		host.Trace("SetBytes o%d k%d v='%s'", objId, keyId, base58.Encode(bytes))
+		host.Trace("SetBytes o%d k%d v='%s'", objID, keyID, base58.Encode(bytes))
 	}
 }
 
@@ -255,7 +255,7 @@ func (host *KvStoreHost) TraceAll(format string, a ...interface{}) {
 }
 
 func (host *KvStoreHost) TrackObject(obj HostObject) int32 {
-	objId := int32(len(host.objIdToObj))
-	host.objIdToObj = append(host.objIdToObj, obj)
-	return objId
+	objID := int32(len(host.objIDToObj))
+	host.objIDToObj = append(host.objIDToObj, obj)
+	return objID
 }

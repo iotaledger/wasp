@@ -21,16 +21,16 @@ fn on_load() {
 //@formatter:off
 pub struct FuncParamTypesParams {
     pub address:    ScImmutableAddress,
-    pub agent_id:   ScImmutableAgentId,
+    pub agent_id:   ScImmutableAgentID,
     pub bytes:      ScImmutableBytes,
-    pub chain_id:   ScImmutableChainId,
+    pub chain_id:   ScImmutableChainID,
     pub color:      ScImmutableColor,
     pub hash:       ScImmutableHash,
     pub hname:      ScImmutableHname,
     pub int16:      ScImmutableInt16,
     pub int32:      ScImmutableInt32,
     pub int64:      ScImmutableInt64,
-    pub request_id: ScImmutableRequestId,
+    pub request_id: ScImmutableRequestID,
     pub string:     ScImmutableString,
 }
 //@formatter:on
