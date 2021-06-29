@@ -21,12 +21,9 @@ import (
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/plugins/webapi"
-	"go.dedis.ch/kyber/v3/pairing"
 )
 
 func main() {
-	suite := pairing.NewSuiteBn256() // TODO: [KP] Single suite should be used in all the places.
-
 	registry.InitFlags()
 	parameters.InitFlags()
 
@@ -35,15 +32,15 @@ func main() {
 		config.Init(),
 		logger.Init(),
 		gracefulshutdown.Init(),
-		webapi.Init(),
 		downloader.Init(),
 		cli.Init(),
 		database.Init(),
-		registry.Init(suite),
-		peering.Init(suite),
-		dkg.Init(suite),
+		registry.Init(),
+		peering.Init(),
+		dkg.Init(),
 		nodeconn.Init(),
 		chains.Init(),
+		webapi.Init(),
 		publishernano.Init(),
 		dashboard.Init(),
 		wasmtimevm.Init(),

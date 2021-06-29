@@ -14,11 +14,11 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3/pairing"
 )
 
 func TestBasic(t *testing.T) {
@@ -48,11 +48,10 @@ func TestUnreliableNet(t *testing.T) {
 func testCC(t *testing.T, netBehavior testutil.PeeringNetBehavior, log *logger.Logger) {
 	var peerCount uint16 = 10
 	var threshold uint16 = 7
-	suite := pairing.NewSuiteBn256()
 	peeringID := peering.RandomPeeringID()
-	peerNetIDs, peerPubs, peerSecs := testpeers.SetupKeys(peerCount, suite)
-	address, nodeRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, suite)
-	networkProviders := testpeers.SetupNet(peerNetIDs, peerPubs, peerSecs, netBehavior, log)
+	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
+	address, nodeRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
+	networkProviders := testpeers.SetupNet(peerNetIDs, peerIdentities, netBehavior, log)
 	ccNodes := setupCommonCoinNodes(peeringID, address, peerNetIDs, nodeRegistries, networkProviders, log)
 	//
 	// Check, if the common coin algorithm works.

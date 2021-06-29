@@ -284,7 +284,8 @@ func (vmctx *VMContext) mustCallFromRequest() {
 	vmctx.mustSaveRequestOrder()
 
 	// calling only non view entry points. Calling the view will trigger error and fallback
-	targetContract, entryPoint := vmctx.req.Target()
+	_, entryPoint := vmctx.req.Target()
+	targetContract := vmctx.contractRecord.Hname()
 	params, _ := vmctx.req.Params()
 	vmctx.lastResult, vmctx.lastError = vmctx.callNonViewByProgramHash(
 		targetContract, entryPoint, params, vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)

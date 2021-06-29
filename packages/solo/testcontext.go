@@ -26,7 +26,7 @@ func (f *testContext) Name() string {
 }
 
 func (f *testContext) Errorf(format string, args ...interface{}) {
-	fmt.Printf(format, args...)
+	fmt.Printf("["+f.name+"] ERROR: "+format+"\n", args...)
 }
 
 func (f *testContext) FailNow() {

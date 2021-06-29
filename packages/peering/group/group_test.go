@@ -3,23 +3,20 @@ package group_test
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-
-	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3/pairing"
 )
 
 func TestGroupProvider(t *testing.T) {
-	suite := pairing.NewSuiteBn256()
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 
 	nodeCount := 3
-	netIDs, pubKeys, privKeys := testpeers.SetupKeys(uint16(nodeCount), suite)
-	nodes := testpeers.SetupNet(netIDs, pubKeys, privKeys, testutil.NewPeeringNetReliable(), log)
+	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
+	nodes := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(), log)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))
 	}

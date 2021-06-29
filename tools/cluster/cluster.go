@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/tools/cluster/mocknode"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"golang.org/x/xerrors"
@@ -55,6 +56,26 @@ func (clu *Cluster) GoshimmerClient() *goshimmer.Client {
 	return goshimmer.NewClient(clu.Config.goshimmerAPIHost(), clu.Config.FaucetPoWTarget)
 }
 
+func (clu *Cluster) TrustAll() error {
+	allNodes := clu.Config.AllNodes()
+	allPeers := make([]*model.PeeringTrustedNode, len(allNodes))
+	for ni := range allNodes {
+		var err error
+		if allPeers[ni], err = clu.WaspClient(allNodes[ni]).GetPeeringSelf(); err != nil {
+			return err
+		}
+	}
+	for ni := range allNodes {
+		for pi := range allPeers {
+			var err error
+			if _, err = clu.WaspClient(allNodes[ni]).PostPeeringTrusted(allPeers[pi].PubKey, allPeers[pi].NetID); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	committee := clu.Config.AllNodes()
 	minQuorum := len(committee)/2 + 1
@@ -77,7 +98,6 @@ func (clu *Cluster) DeployChainWithDKG(description string, allPeers, committeeNo
 	if err != nil {
 		return nil, err
 	}
-
 	return clu.DeployChain(description, allPeers, committeeNodes, quorum, stateAddr)
 }
 
@@ -231,8 +251,11 @@ func (clu *Cluster) Start(dataPath string) error {
 		return fmt.Errorf("Data path %s does not exist", dataPath)
 	}
 
-	err = clu.start(dataPath)
-	if err != nil {
+	if err := clu.start(dataPath); err != nil {
+		return err
+	}
+
+	if err := clu.TrustAll(); err != nil {
 		return err
 	}
 
@@ -254,7 +277,7 @@ func (clu *Cluster) start(dataPath string) error {
 	initOk := make(chan bool, clu.Config.Wasp.NumNodes)
 
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
-		cmd, err := clu.startServer("wasp", waspNodeDataPath(dataPath, i), fmt.Sprintf("wasp %d", i), initOk, "nanomsg publisher is running")
+		cmd, err := clu.startServer("wasp", waspNodeDataPath(dataPath, i), fmt.Sprintf("wasp %d", i), initOk, "WebAPI started")
 		if err != nil {
 			return err
 		}

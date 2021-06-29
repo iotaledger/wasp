@@ -137,9 +137,9 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 
 	scHname := coretypes.Hn(incCounterSCName)
 
-	_, err = chain1.DeployContract(name, inccounter.Interface.ProgramHash.String(), "test inc counter", map[string]interface{}{
+	_, err = chain1.DeployContract(incCounterSCName, inccounter.Interface.ProgramHash.String(), "test inc counter", map[string]interface{}{
 		inccounter.VarCounter: 42,
-		root.ParamName:        name,
+		root.ParamName:        incCounterSCName,
 	})
 	require.NoError(t, err)
 

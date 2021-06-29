@@ -5,24 +5,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3/pairing"
 )
 
 func TestCommitteeBasic(t *testing.T) {
-	suite := pairing.NewSuiteBn256()
+	suite := tcrypto.DefaultSuite()
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	nodeCount := 4
-	netIDs, pubKeys, privKeys := testpeers.SetupKeys(uint16(nodeCount), suite)
+	netIDs, identities := testpeers.SetupKeys(uint16(nodeCount))
 	stateAddr, dksRegistries := testpeers.SetupDkgPregenerated(t, uint16((len(netIDs)*2)/3+1), netIDs, suite)
-	nodes := testpeers.SetupNet(netIDs, pubKeys, privKeys, testutil.NewPeeringNetReliable(), log)
+	nodes := testpeers.SetupNet(netIDs, identities, testutil.NewPeeringNetReliable(), log)
 	net0 := nodes[0]
 
 	cfg0 := &committeeimplTestConfigProvider{

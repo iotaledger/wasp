@@ -266,8 +266,8 @@ func TestBasic2Accounts(t *testing.T) {
 	actual = getBalanceOnChain(t, chain1, agentID, ledgerstate.ColorIOTA)
 	require.EqualValues(t, 0, actual)
 
-	if !clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - ledgerstate.DustThresholdAliasOutputIOTA,
+	if !clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-3, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - ledgerstate.DustThresholdAliasOutputIOTA - 3,
 	}, "originator after withdraw: "+originatorAddress.String()) {
 		t.Fail()
 	}

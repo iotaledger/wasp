@@ -20,7 +20,7 @@ func (vmctx *VMContext) AccountID() *coretypes.AgentID {
 }
 
 func (vmctx *VMContext) adjustAccount(agentID *coretypes.AgentID) *coretypes.AgentID {
-	return commonaccount.Adjust(agentID, &vmctx.chainID, &vmctx.chainOwnerID)
+	return commonaccount.AdjustIfNeeded(agentID, &vmctx.chainID)
 }
 
 func (vmctx *VMContext) commonAccount() *coretypes.AgentID {
