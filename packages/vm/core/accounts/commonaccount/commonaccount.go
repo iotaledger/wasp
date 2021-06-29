@@ -11,22 +11,18 @@ func SetCoreHname(hname coretypes.Hname) {
 	coreHnames[hname] = struct{}{}
 }
 
-func isCoreHname(hname coretypes.Hname) bool {
+func IsCoreHname(hname coretypes.Hname) bool {
 	_, ret := coreHnames[hname]
 	return ret
 }
 
-// Adjust makes account of the chain owner and all core contracts equal to (chainID, 0)
-func Adjust(agentID *coretypes.AgentID, chainID *chainid.ChainID, chainOwnerID *coretypes.AgentID) *coretypes.AgentID {
-	if chainOwnerID.Equals(agentID) {
-		// chain owner
-		return Get(chainID)
-	}
+// AdjustIfNeeded makes account of the chain owner and all core contracts equal to (chainID, 0)
+func AdjustIfNeeded(agentID *coretypes.AgentID, chainID *chainid.ChainID) *coretypes.AgentID {
 	if !agentID.Address().Equals(chainID.AsAddress()) {
 		// from another chain
 		return agentID
 	}
-	if isCoreHname(agentID.Hname()) {
+	if IsCoreHname(agentID.Hname()) {
 		// one of core contracts
 		return Get(chainID)
 	}

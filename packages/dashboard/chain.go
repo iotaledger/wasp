@@ -87,7 +87,7 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 }
 
 func (d *Dashboard) fetchAccounts(ch chain.ChainCore) ([]*coretypes.AgentID, error) {
-	accs, err := d.wasp.CallView(ch, accounts.Interface.Hname(), accounts.FuncAccounts, nil)
+	accs, err := d.wasp.CallView(ch, accounts.Interface.Hname(), accounts.FuncViewAccounts, nil)
 	if err != nil {
 		return nil, fmt.Errorf("accountsc view call failed: %v", err)
 	}
@@ -104,7 +104,7 @@ func (d *Dashboard) fetchAccounts(ch chain.ChainCore) ([]*coretypes.AgentID, err
 }
 
 func (d *Dashboard) fetchTotalAssets(ch chain.ChainCore) (map[ledgerstate.Color]uint64, error) {
-	bal, err := d.wasp.CallView(ch, accounts.Interface.Hname(), accounts.FuncTotalAssets, nil)
+	bal, err := d.wasp.CallView(ch, accounts.Interface.Hname(), accounts.FuncViewTotalAssets, nil)
 	if err != nil {
 		return nil, err
 	}

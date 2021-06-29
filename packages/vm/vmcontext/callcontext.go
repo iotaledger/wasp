@@ -11,22 +11,22 @@ import (
 
 func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) error {
 	if transfer != nil {
-		agentID := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), contract)
-		agentID = vmctx.adjustAccount(agentID)
+		targetAccount := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), contract)
+		targetAccount = vmctx.adjustAccount(targetAccount)
 		if len(vmctx.callStack) == 0 {
 			// was this an off-ledger request?
 			if _, ok := vmctx.req.(*request.RequestOffLedger); ok {
 				sender := vmctx.req.SenderAccount()
-				if !vmctx.moveBetweenAccounts(sender, agentID, transfer) {
+				if !vmctx.moveBetweenAccounts(sender, targetAccount, transfer) {
 					return fmt.Errorf("pushCallContextWithTransfer: off-ledger transfer failed: not enough funds")
 				}
 			} else {
-				vmctx.creditToAccount(agentID, transfer)
+				vmctx.creditToAccount(targetAccount, transfer)
 			}
 		} else {
 			fromAgentID := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
 			fromAgentID = vmctx.adjustAccount(fromAgentID)
-			if !vmctx.moveBetweenAccounts(fromAgentID, agentID, transfer) {
+			if !vmctx.moveBetweenAccounts(fromAgentID, targetAccount, transfer) {
 				return fmt.Errorf("pushCallContextWithTransfer: transfer failed: not enough funds")
 			}
 		}
