@@ -31,7 +31,7 @@ pub fn func_call_on_chain(ctx: &ScFuncContext) {
         target_ep = param_hname_ep.value()
     }
 
-    let var_counter = ctx.state().get_int64(VAR_COUNTER);
+    let var_counter = ctx.state().get_int64(STATE_COUNTER);
     let counter = var_counter.value();
     var_counter.set_value(counter + 1);
 
@@ -84,7 +84,7 @@ pub fn func_get_minted_supply(ctx: &ScFuncContext) {
 
 pub fn func_inc_counter(ctx: &ScFuncContext) {
     ctx.log("testcore.incCounter");
-    ctx.state().get_int64(VAR_COUNTER).set_value(ctx.state().get_int64(VAR_COUNTER).value() + 1);
+    ctx.state().get_int64(STATE_COUNTER).set_value(ctx.state().get_int64(STATE_COUNTER).value() + 1);
     ctx.log("testcore.incCounter ok");
 }
 
@@ -284,7 +284,7 @@ pub fn view_fibonacci(ctx: &ScViewContext) {
 
 pub fn view_get_counter(ctx: &ScViewContext) {
     ctx.log("testcore.getCounter");
-    let counter = ctx.state().get_int64(VAR_COUNTER);
+    let counter = ctx.state().get_int64(STATE_COUNTER);
     ctx.results().get_int64(RESULT_COUNTER).set_value(counter.value());
     ctx.log("testcore.getCounter ok");
 }

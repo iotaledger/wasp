@@ -25,7 +25,7 @@ pub fn func_finalize_auction(ctx: &ScFuncContext) {
 
     let color = param_color.value();
     let state = ctx.state();
-    let current_auction = state.get_map(VAR_AUCTIONS).get_bytes(&color);
+    let current_auction = state.get_map(STATE_AUCTIONS).get_bytes(&color);
     ctx.require(current_auction.exists(), "Missing auction info");
     let auction = Auction::from_bytes(&current_auction.value());
     if auction.highest_bid < 0 {
@@ -47,8 +47,8 @@ pub fn func_finalize_auction(ctx: &ScFuncContext) {
     }
 
     // return staked bids to losers
-    let bids = state.get_map(VAR_BIDS).get_map(&color);
-    let bidder_list = state.get_map(VAR_BIDDER_LIST).get_agent_id_array(&color);
+    let bids = state.get_map(STATE_BIDS).get_map(&color);
+    let bidder_list = state.get_map(STATE_BIDDER_LIST).get_agent_id_array(&color);
     let size = bidder_list.length();
     for i in 0..size {
         let loser = bidder_list.get_agent_id(i).value();
@@ -76,12 +76,12 @@ pub fn func_place_bid(ctx: &ScFuncContext) {
 
     let color = param_color.value();
     let state = ctx.state();
-    let current_auction = state.get_map(VAR_AUCTIONS).get_bytes(&color);
+    let current_auction = state.get_map(STATE_AUCTIONS).get_bytes(&color);
     ctx.require(current_auction.exists(), "Missing auction info");
 
     let mut auction = Auction::from_bytes(&current_auction.value());
-    let bids = state.get_map(VAR_BIDS).get_map(&color);
-    let bidder_list = state.get_map(VAR_BIDDER_LIST).get_agent_id_array(&color);
+    let bids = state.get_map(STATE_BIDS).get_map(&color);
+    let bidder_list = state.get_map(STATE_BIDDER_LIST).get_agent_id_array(&color);
     let caller = ctx.caller();
     let current_bid = bids.get_bytes(&caller);
     if current_bid.exists() {
@@ -129,7 +129,7 @@ pub fn func_set_owner_margin(ctx: &ScFuncContext) {
     if owner_margin > OWNER_MARGIN_MAX {
         owner_margin = OWNER_MARGIN_MAX;
     }
-    ctx.state().get_int64(VAR_OWNER_MARGIN).set_value(owner_margin);
+    ctx.state().get_int64(STATE_OWNER_MARGIN).set_value(owner_margin);
     ctx.log("fairauction.setOwnerMargin ok");
 }
 
@@ -177,7 +177,7 @@ pub fn func_start_auction(ctx: &ScFuncContext) {
     }
 
     let state = ctx.state();
-    let mut owner_margin = state.get_int64(VAR_OWNER_MARGIN).value();
+    let mut owner_margin = state.get_int64(STATE_OWNER_MARGIN).value();
     if owner_margin == 0 {
         owner_margin = OWNER_MARGIN_DEFAULT;
     }
@@ -192,7 +192,7 @@ pub fn func_start_auction(ctx: &ScFuncContext) {
         ctx.panic("Insufficient deposit");
     }
 
-    let current_auction = state.get_map(VAR_AUCTIONS).get_bytes(&color);
+    let current_auction = state.get_map(STATE_AUCTIONS).get_bytes(&color);
     if current_auction.exists() {
         ctx.panic("Auction for this token color already exists");
     }
@@ -227,7 +227,7 @@ pub fn view_get_info(ctx: &ScViewContext) {
     ctx.require(param_color.exists(), "missing mandatory color");
     let color = param_color.value();
     let state = ctx.state();
-    let current_auction = state.get_map(VAR_AUCTIONS).get_bytes(&color);
+    let current_auction = state.get_map(STATE_AUCTIONS).get_bytes(&color);
     ctx.require(current_auction.exists(), "Missing auction info");
 
     let auction = Auction::from_bytes(&current_auction.value());
@@ -244,7 +244,7 @@ pub fn view_get_info(ctx: &ScViewContext) {
     results.get_int64(RESULT_OWNER_MARGIN).set_value(auction.owner_margin);
     results.get_int64(RESULT_WHEN_STARTED).set_value(auction.when_started);
 
-    let bidder_list = state.get_map(VAR_BIDDER_LIST).get_agent_id_array(&color);
+    let bidder_list = state.get_map(STATE_BIDDER_LIST).get_agent_id_array(&color);
     results.get_int64(RESULT_BIDDERS).set_value(bidder_list.length() as i64);
     ctx.log("fairauction.getInfo ok");
 }
