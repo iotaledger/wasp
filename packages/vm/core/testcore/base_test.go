@@ -17,7 +17,7 @@ func Test1(t *testing.T) {
 	defer chain.Log.Sync()
 	chain.CheckControlAddresses()
 	chain.AssertTotalIotas(1)
-	chain.AssertOwnersIotas(1)
+	chain.AssertCommonAccountIotas(1)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-1)
 	env.WaitPublisher()
 	chain.CheckControlAddresses()

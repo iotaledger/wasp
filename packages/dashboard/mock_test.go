@@ -185,17 +185,17 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname coretypes.Hname, fname
 		ret.Set(root.VarData, root.EncodeContractRecord(contract))
 		return ret, nil
 
-	case hname == accounts.Interface.Hname() && fname == accounts.FuncAccounts:
+	case hname == accounts.Interface.Hname() && fname == accounts.FuncViewAccounts:
 		ret := dict.New()
 		ret.Set(kv.Key(coretypes.NewRandomAgentID().Bytes()), []byte{})
 		return ret, nil
 
-	case hname == accounts.Interface.Hname() && fname == accounts.FuncTotalAssets:
+	case hname == accounts.Interface.Hname() && fname == accounts.FuncViewTotalAssets:
 		return accounts.EncodeBalances(map[ledgerstate.Color]uint64{
 			ledgerstate.ColorIOTA: 42,
 		}), nil
 
-	case hname == accounts.Interface.Hname() && fname == accounts.FuncBalance:
+	case hname == accounts.Interface.Hname() && fname == accounts.FuncViewBalance:
 		return accounts.EncodeBalances(map[ledgerstate.Color]uint64{
 			ledgerstate.ColorIOTA: 42,
 		}), nil
