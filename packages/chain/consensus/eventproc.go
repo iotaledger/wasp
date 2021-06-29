@@ -1,8 +1,11 @@
 package consensus
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
 )
 
 func (c *Consensus) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
@@ -10,7 +13,7 @@ func (c *Consensus) EventStateTransitionMsg(msg *chain.StateTransitionMsg) {
 }
 
 func (c *Consensus) eventStateTransitionMsg(msg *chain.StateTransitionMsg) {
-	c.log.Debugf("eventStateTransitionMsg: state index: %d, state output: %s, timestamp: %v",
+	c.log.Debugf("StateTransitionMsg received: state index: %d, state output: %s, timestamp: %v",
 		msg.State.BlockIndex(), coretypes.OID(msg.StateOutput.ID()), msg.StateTimestamp)
 	c.setNewState(msg)
 	c.takeAction()
@@ -21,7 +24,8 @@ func (c *Consensus) EventSignedResultMsg(msg *chain.SignedResultMsg) {
 }
 
 func (c *Consensus) eventSignedResult(msg *chain.SignedResultMsg) {
-	c.log.Debugf("eventSignedResult: from sender: %d", msg.SenderIndex)
+	c.log.Debugf("SignedResultMsg received: from sender %d, hash=%s, chain input id=%v",
+		msg.SenderIndex, msg.EssenceHash, coretypes.OID(msg.ChainInputID))
 	c.receiveSignedResult(msg)
 	c.takeAction()
 }
@@ -31,7 +35,7 @@ func (c *Consensus) EventInclusionsStateMsg(msg *chain.InclusionStateMsg) {
 }
 
 func (c *Consensus) eventInclusionState(msg *chain.InclusionStateMsg) {
-	c.log.Debugf("eventInclusionState:  %s: '%s'", msg.TxID.Base58(), msg.State.String())
+	c.log.Debugf("InclusionStateMsg received:  %s: '%s'", msg.TxID.Base58(), msg.State.String())
 	c.processInclusionState(msg)
 
 	c.takeAction()
@@ -42,7 +46,7 @@ func (c *Consensus) EventAsynchronousCommonSubsetMsg(msg *chain.AsynchronousComm
 }
 
 func (c *Consensus) eventAsynchronousCommonSubset(msg *chain.AsynchronousCommonSubsetMsg) {
-	c.log.Debugf("eventAsynchronousCommonSubset: len = %d", len(msg.ProposedBatchesBin))
+	c.log.Debugf("AsynchronousCommonSubsetMsg received for session %v: len = %d", msg.SessionID, len(msg.ProposedBatchesBin))
 	c.receiveACS(msg.ProposedBatchesBin, msg.SessionID)
 
 	c.takeAction()
@@ -53,6 +57,14 @@ func (c *Consensus) EventVMResultMsg(msg *chain.VMResultMsg) {
 }
 
 func (c *Consensus) eventVMResultMsg(msg *chain.VMResultMsg) {
+	var essenceString string
+	if msg.Task.ResultTransactionEssence == nil {
+		essenceString = "essence is nil"
+	} else {
+		essenceString = fmt.Sprintf("essence hash: %s", hashing.HashData(msg.Task.ResultTransactionEssence.Bytes()))
+	}
+	c.log.Debugf("VMResultMsg received: state index: %d state hash: %s %s",
+		msg.Task.VirtualState.BlockIndex(), msg.Task.VirtualState.Hash(), essenceString)
 	c.processVMResult(msg.Task)
 	c.takeAction()
 }

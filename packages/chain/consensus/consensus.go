@@ -37,6 +37,7 @@ type Consensus struct {
 	workflow                   workflowFlags
 	delayBatchProposalUntil    time.Time
 	delayRunVMUntil            time.Time
+	delaySendingSignedResult   time.Time
 	resultTxEssence            *ledgerstate.TransactionEssence
 	resultState                state.VirtualState
 	resultSignatures           []*chain.SignedResultMsg
@@ -45,6 +46,7 @@ type Consensus struct {
 	pullInclusionStateDeadline time.Time
 	lastTimerTick              atomic.Int64
 	consensusInfoSnapshot      atomic.Value
+	timers                     ConsensusTimers
 	log                        *logger.Logger
 	eventStateTransitionMsgCh  chan *chain.StateTransitionMsg
 	eventSignedResultMsgCh     chan *chain.SignedResultMsg
@@ -57,20 +59,26 @@ type Consensus struct {
 }
 
 type workflowFlags struct {
-	stateReceived                bool
-	batchProposalSent            bool
-	consensusBatchKnown          bool
-	vmStarted                    bool
-	vmResultSignedAndBroadcasted bool
-	transactionFinalized         bool
-	transactionPosted            bool
-	transactionSeen              bool
-	finished                     bool
+	stateReceived        bool
+	batchProposalSent    bool
+	consensusBatchKnown  bool
+	vmStarted            bool
+	vmResultSigned       bool
+	transactionFinalized bool
+	transactionPosted    bool
+	transactionSeen      bool
+	finished             bool
 }
 
 var _ chain.Consensus = &Consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection) *Consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, timersOpt ...ConsensusTimers) *Consensus {
+	var timers ConsensusTimers
+	if len(timersOpt) > 0 {
+		timers = timersOpt[0]
+	} else {
+		timers = NewConsensusTimers()
+	}
 	log := chainCore.Log().Named("c")
 	ret := &Consensus{
 		chain:                     chainCore,
@@ -79,6 +87,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		nodeConn:                  nodeConn,
 		vmRunner:                  runvm.NewVMRunner(),
 		resultSignatures:          make([]*chain.SignedResultMsg, committee.Size()),
+		timers:                    timers,
 		log:                       log,
 		eventStateTransitionMsgCh: make(chan *chain.StateTransitionMsg),
 		eventSignedResultMsgCh:    make(chan *chain.SignedResultMsg),
@@ -150,11 +159,20 @@ func (c *Consensus) refreshConsensusInfo() {
 	if c.currentState != nil {
 		index = c.currentState.BlockIndex()
 	}
-	c.consensusInfoSnapshot.Store(&chain.ConsensusInfo{
+	consensusInfo := &chain.ConsensusInfo{
 		StateIndex: index,
 		Mempool:    c.mempool.Stats(),
 		TimerTick:  int(c.lastTimerTick.Load()),
-	})
+	}
+	c.log.Debugf("Refreshing consensus info: index=%v, timerTick=%v, "+
+		"totalPool=%v, mempoolReady=%v, inBufCounter=%v, outBufCounter=%v, "+
+		"inPoolCounter=%v, outPoolCounter=%v",
+		consensusInfo.StateIndex, consensusInfo.TimerTick,
+		consensusInfo.Mempool.TotalPool, consensusInfo.Mempool.Ready,
+		consensusInfo.Mempool.InBufCounter, consensusInfo.Mempool.OutBufCounter,
+		consensusInfo.Mempool.InPoolCounter, consensusInfo.Mempool.OutPoolCounter,
+	)
+	c.consensusInfoSnapshot.Store(consensusInfo)
 }
 
 func (c *Consensus) GetStatusSnapshot() *chain.ConsensusInfo {
