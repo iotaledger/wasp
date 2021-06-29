@@ -11,3 +11,4 @@ wasp-cli.json
 **/target/
 book
 .DS_Store
+tools/wasp-cli/wasp-cli

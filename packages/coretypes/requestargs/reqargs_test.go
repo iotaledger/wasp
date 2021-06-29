@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package requestargs
 
 import (
@@ -83,7 +86,7 @@ func TestRequestArguments3(t *testing.T) {
 	require.EqualValues(t, r["-arg3"], "data3")
 
 	log := testlogger.NewLogger(t)
-	reg := registry.NewRegistry(nil, log, mapdb.NewMapDB())
+	reg := registry.NewRegistry(log, mapdb.NewMapDB())
 
 	d, ok, err := r.SolidifyRequestArguments(reg)
 	require.NoError(t, err)
@@ -118,7 +121,7 @@ func TestRequestArguments4(t *testing.T) {
 	require.EqualValues(t, r["*arg4"], h[:])
 
 	log := testlogger.NewLogger(t)
-	reg := registry.NewRegistry(nil, log, mapdb.NewMapDB())
+	reg := registry.NewRegistry(log, mapdb.NewMapDB())
 
 	_, ok, err := r.SolidifyRequestArguments(reg, downloader.New(log, "http://some.fake.address.lt"))
 	require.NoError(t, err)
@@ -140,7 +143,7 @@ func TestRequestArguments5(t *testing.T) {
 	require.EqualValues(t, r["*arg4"], hash[:])
 
 	log := testlogger.NewLogger(t)
-	reg := registry.NewRegistry(nil, log, mapdb.NewMapDB())
+	reg := registry.NewRegistry(log, mapdb.NewMapDB())
 
 	// cannot solidify yet
 	back, ok, err := r.SolidifyRequestArguments(reg)

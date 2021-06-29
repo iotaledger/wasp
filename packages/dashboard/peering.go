@@ -29,12 +29,14 @@ func (d *Dashboard) peeringInit(e *echo.Echo, r renderer) Tab {
 
 func (d *Dashboard) handlePeering(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), &PeeringTemplateParams{
-		BaseTemplateParams: d.BaseParams(c),
-		NetworkProvider:    d.wasp.NetworkProvider(),
+		BaseTemplateParams:    d.BaseParams(c),
+		NetworkProvider:       d.wasp.NetworkProvider(),
+		TrustedNetworkManager: d.wasp.TrustedNetworkManager(),
 	})
 }
 
 type PeeringTemplateParams struct {
 	BaseTemplateParams
-	NetworkProvider peering_pkg.NetworkProvider
+	NetworkProvider       peering_pkg.NetworkProvider
+	TrustedNetworkManager peering_pkg.TrustedNetworkManager
 }

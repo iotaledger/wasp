@@ -15,6 +15,7 @@ const (
 	ObjectTypeNodeIdentity
 	ObjectTypeBlobCache
 	ObjectTypeBlobCacheTTL
+	ObjectTypeTrustedPeer
 )
 
 // MakeKey makes key within the partition. It consists to one byte for object type

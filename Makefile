@@ -1,7 +1,7 @@
 all: build
 
 build:
-	go build ./...
+	go build -tags rocksdb ./...
 
 test: install
 	go clean -testcache
@@ -14,6 +14,11 @@ test-short:
 install:
 	go install -tags rocksdb ./...
 
+lint:
+	golangci-lint run
 
-.PHONY: all build test test-short
+gofumpt-list:
+	gofumpt -l ./
+
+.PHONY: all build test test-short lint gofumpt-list
 

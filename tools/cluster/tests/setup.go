@@ -115,6 +115,8 @@ func postRequestFull(t *testing.T, contract, entryPoint coretypes.Hname, transfe
 
 func setup(t *testing.T, configPath string) { //nolint:unparam
 	clu = clutest.NewCluster(t)
+	chain, err = clu.DeployDefaultChain()
+	check(err, t)
 }
 
 func setupAndLoad(t *testing.T, name, description string, nrOfRequests int, expectedMessages map[string]int) {

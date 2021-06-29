@@ -28,7 +28,7 @@ func TestDashboardConfig(t *testing.T) {
 func TestDashboardPeering(t *testing.T) {
 	e, d := mockDashboard()
 	html := testutil.CallHTMLRequestHandler(t, e, d.handlePeering, "/peering", nil)
-	require.Equal(t, 3, html.Find("table tbody tr").Length())
+	require.Equal(t, 5, html.Find("table tbody tr").Length()) // 3 in peer list and 2 in trusted list.
 }
 
 func TestDashboardChainList(t *testing.T) {
