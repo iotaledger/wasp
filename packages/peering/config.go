@@ -58,6 +58,25 @@ func (p *StaticPeerNetworkConfig) String() string {
 	return fmt.Sprintf("PeerConfig( ownNetID: %s, peeringPort: %d, neighbors: %+v )", p.OwnNetID(), p.PeeringPort(), p.Neighbors())
 }
 
+// Check, if NetID is of proper format.
+func CheckNetID(netID string) error {
+	sHost, sPort, err := net.SplitHostPort(netID)
+	if err != nil {
+		return err
+	}
+	if sHost == "" {
+		return xerrors.New("netID: host part missing")
+	}
+	port, err := strconv.Atoi(sPort)
+	if err != nil {
+		return err
+	}
+	if port == 0 {
+		return xerrors.New("netID: invalid port")
+	}
+	return nil
+}
+
 // CheckMyNetID checks if NetID from the committee list represents current node.
 func CheckMyNetID(myNetID string, configPort int) error {
 	sHost, sPort, err := net.SplitHostPort(myNetID)

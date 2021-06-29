@@ -27,6 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -34,7 +35,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3/pairing"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -107,11 +107,10 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 
 	log.Infof("running DKG and setting up mocked network..")
-	suite := pairing.NewSuiteBn256()
-	nodeIDs, pubKeys, privKeys := testpeers.SetupKeys(n, suite)
+	nodeIDs, identities := testpeers.SetupKeys(n)
 	ret.NodeIDs = nodeIDs
-	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, ret.NodeIDs, suite)
-	ret.NetworkProviders = testpeers.SetupNet(ret.NodeIDs, pubKeys, privKeys, ret.NetworkBehaviour, log)
+	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, ret.NodeIDs, tcrypto.DefaultSuite())
+	ret.NetworkProviders = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
 
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)

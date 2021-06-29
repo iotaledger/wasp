@@ -15,13 +15,14 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 	rabin_vss "go.dedis.ch/kyber/v3/share/vss/rabin"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -133,35 +134,35 @@ type initiatorMsg interface {
 	IsResponse() bool
 }
 
-func readInitiatorMsg(peerMessage *peering.PeerMessage, suite kyber.Group) (bool, initiatorMsg, error) {
+func readInitiatorMsg(peerMessage *peering.PeerMessage, blsSuite kyber.Group) (bool, initiatorMsg, error) {
 	switch peerMessage.MsgType {
 	case initiatorInitMsgType:
 		msg := initiatorInitMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData, suite); err != nil {
+		if err := msg.fromBytes(peerMessage.MsgData); err != nil {
 			return true, nil, err
 		}
 		return true, &msg, nil
 	case initiatorStepMsgType:
 		msg := initiatorStepMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData, suite); err != nil {
+		if err := msg.fromBytes(peerMessage.MsgData); err != nil {
 			return true, nil, err
 		}
 		return true, &msg, nil
 	case initiatorDoneMsgType:
 		msg := initiatorDoneMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData, suite); err != nil {
+		if err := msg.fromBytes(peerMessage.MsgData, blsSuite); err != nil {
 			return true, nil, err
 		}
 		return true, &msg, nil
 	case initiatorPubShareMsgType:
 		msg := initiatorPubShareMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData, suite); err != nil {
+		if err := msg.fromBytes(peerMessage.MsgData, blsSuite); err != nil {
 			return true, nil, err
 		}
 		return true, &msg, nil
 	case initiatorStatusMsgType:
 		msg := initiatorStatusMsg{}
-		if err := msg.fromBytes(peerMessage.MsgData, suite); err != nil {
+		if err := msg.fromBytes(peerMessage.MsgData); err != nil {
 			return true, nil, err
 		}
 		return true, &msg, nil
@@ -180,12 +181,11 @@ type initiatorInitMsg struct {
 	step         byte
 	dkgRef       string // Some unique string to identify duplicate initialization.
 	peerNetIDs   []string
-	peerPubs     []kyber.Point
-	initiatorPub kyber.Point
+	peerPubs     []ed25519.PublicKey
+	initiatorPub ed25519.PublicKey
 	threshold    uint16
 	timeout      time.Duration
 	roundRetry   time.Duration
-	suite        kyber.Group // Transient, for un-marshaling only.
 }
 
 func (m *initiatorInitMsg) MsgType() byte {
@@ -216,11 +216,11 @@ func (m *initiatorInitMsg) Write(w io.Writer) error {
 		return err
 	}
 	for i := range m.peerPubs {
-		if err = util.WriteMarshaled(w, m.peerPubs[i]); err != nil {
+		if err = util.WriteBytes16(w, m.peerPubs[i].Bytes()); err != nil {
 			return err
 		}
 	}
-	if err = util.WriteMarshaled(w, m.initiatorPub); err != nil {
+	if err = util.WriteBytes16(w, m.initiatorPub.Bytes()); err != nil {
 		return err
 	}
 	if err = util.WriteUint16(w, m.threshold); err != nil {
@@ -248,15 +248,21 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 	if err = util.ReadUint16(r, &arrLen); err != nil {
 		return err
 	}
-	m.peerPubs = make([]kyber.Point, arrLen)
+	m.peerPubs = make([]ed25519.PublicKey, arrLen)
 	for i := range m.peerPubs {
-		m.peerPubs[i] = m.suite.Point()
-		if err = util.ReadMarshaled(r, m.peerPubs[i]); err != nil {
+		var peerPubBytes []byte
+		if peerPubBytes, err = util.ReadBytes16(r); err != nil {
+			return err
+		}
+		if m.peerPubs[i], _, err = ed25519.PublicKeyFromBytes(peerPubBytes); err != nil {
 			return err
 		}
 	}
-	m.initiatorPub = m.suite.Point()
-	if err = util.ReadMarshaled(r, m.initiatorPub); err != nil {
+	var initiatorPubBytes []byte
+	if initiatorPubBytes, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	if m.initiatorPub, _, err = ed25519.PublicKeyFromBytes(initiatorPubBytes); err != nil {
 		return err
 	}
 	if err = util.ReadUint16(r, &m.threshold); err != nil {
@@ -275,9 +281,8 @@ func (m *initiatorInitMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (m *initiatorInitMsg) fromBytes(buf []byte, group kyber.Group) error {
+func (m *initiatorInitMsg) fromBytes(buf []byte) error {
 	r := bytes.NewReader(buf)
-	m.suite = group
 	return m.Read(r)
 }
 
@@ -324,7 +329,7 @@ func (m *initiatorStepMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (m *initiatorStepMsg) fromBytes(buf []byte, group kyber.Group) error { //nolint:unparam
+func (m *initiatorStepMsg) fromBytes(buf []byte) error {
 	r := bytes.NewReader(buf)
 	return m.Read(r)
 }
@@ -343,7 +348,7 @@ func (m *initiatorStepMsg) IsResponse() bool {
 type initiatorDoneMsg struct {
 	step      byte
 	pubShares []kyber.Point
-	suite     kyber.Group // Transient, for un-marshaling only.
+	blsSuite  kyber.Group // Transient, for un-marshaling only.
 }
 
 func (m *initiatorDoneMsg) MsgType() byte {
@@ -387,17 +392,17 @@ func (m *initiatorDoneMsg) Read(r io.Reader) error {
 	}
 	m.pubShares = make([]kyber.Point, arrLen)
 	for i := range m.pubShares {
-		m.pubShares[i] = m.suite.Point()
+		m.pubShares[i] = m.blsSuite.Point()
 		if err = util.ReadMarshaled(r, m.pubShares[i]); err != nil {
-			return err
+			return xerrors.Errorf("failed to unmarshal initiatorDoneMsg.pubShares: %w", err)
 		}
 	}
 	return nil
 }
 
-func (m *initiatorDoneMsg) fromBytes(buf []byte, suite kyber.Group) error {
+func (m *initiatorDoneMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
 	r := bytes.NewReader(buf)
-	m.suite = suite
+	m.blsSuite = blsSuite
 	return m.Read(r)
 }
 
@@ -422,7 +427,7 @@ type initiatorPubShareMsg struct {
 	sharedPublic  kyber.Point
 	publicShare   kyber.Point
 	signature     []byte
-	suite         kyber.Group // Transient, for un-marshaling only.
+	blsSuite      kyber.Group // Transient, for un-marshaling only.
 }
 
 func (m *initiatorPubShareMsg) MsgType() byte {
@@ -455,7 +460,6 @@ func (m *initiatorPubShareMsg) Write(w io.Writer) error {
 	return util.WriteBytes16(w, m.signature)
 }
 
-//nolint:gocritic
 func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	var err error
 	if m.step, err = util.ReadByte(r); err != nil {
@@ -470,13 +474,13 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 		return err
 	}
 	m.sharedAddress = sharedAddress
-	m.sharedPublic = m.suite.Point()
+	m.sharedPublic = m.blsSuite.Point()
 	if err = util.ReadMarshaled(r, m.sharedPublic); err != nil {
-		return err
+		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.sharedPublic: %w", err)
 	}
-	m.publicShare = m.suite.Point()
+	m.publicShare = m.blsSuite.Point()
 	if err = util.ReadMarshaled(r, m.publicShare); err != nil {
-		return err
+		return xerrors.Errorf("failed to unmarshal initiatorPubShareMsg.publicShare: %w", err)
 	}
 	if m.signature, err = util.ReadBytes16(r); err != nil {
 		return err
@@ -484,9 +488,9 @@ func (m *initiatorPubShareMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (m *initiatorPubShareMsg) fromBytes(buf []byte, suite kyber.Group) error {
+func (m *initiatorPubShareMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
 	r := bytes.NewReader(buf)
-	m.suite = suite
+	m.blsSuite = blsSuite
 	return m.Read(r)
 }
 
@@ -546,7 +550,7 @@ func (m *initiatorStatusMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (m *initiatorStatusMsg) fromBytes(buf []byte, group kyber.Group) error { //nolint:unparam
+func (m *initiatorStatusMsg) fromBytes(buf []byte) error {
 	r := bytes.NewReader(buf)
 	return m.Read(r)
 }
@@ -624,10 +628,10 @@ func (m *rabinDealMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (m *rabinDealMsg) fromBytes(buf []byte, group kyber.Group) error {
+func (m *rabinDealMsg) fromBytes(buf []byte, edSuite kyber.Group) error {
 	m.deal = &rabin_dkg.Deal{
 		Deal: &rabin_vss.EncryptedDeal{
-			DHKey: group.Point(),
+			DHKey: edSuite.Point(),
 		},
 	}
 	rdr := bytes.NewReader(buf)
@@ -730,7 +734,7 @@ func (m *rabinResponseMsg) fromBytes(buf []byte) error {
 type rabinJustificationMsg struct {
 	step           byte
 	justifications []*rabin_dkg.Justification
-	group          kyber.Group // Just for un-marshaling.
+	blsSuite       kyber.Group // Just for un-marshaling.
 }
 
 func (m *rabinJustificationMsg) MsgType() byte {
@@ -800,7 +804,7 @@ func (m *rabinJustificationMsg) Read(r io.Reader) error {
 		if err = util.ReadUint32(r, &j.Justification.Index); err != nil {
 			return err
 		}
-		if err = readVssDeal(r, &j.Justification.Deal, m.group); err != nil {
+		if err = readVssDeal(r, &j.Justification.Deal, m.blsSuite); err != nil {
 			return err
 		}
 		if j.Justification.Signature, err = util.ReadBytes16(r); err != nil {
@@ -810,8 +814,8 @@ func (m *rabinJustificationMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (m *rabinJustificationMsg) fromBytes(buf []byte, group kyber.Group) error {
-	m.group = group
+func (m *rabinJustificationMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
+	m.blsSuite = blsSuite
 	rdr := bytes.NewReader(buf)
 	return m.Read(rdr)
 }
@@ -822,7 +826,7 @@ func (m *rabinJustificationMsg) fromBytes(buf []byte, group kyber.Group) error {
 type rabinSecretCommitsMsg struct {
 	step          byte
 	secretCommits *rabin_dkg.SecretCommits
-	group         kyber.Group // Just for un-marshaling.
+	blsSuite      kyber.Group // Just for un-marshaling.
 }
 
 func (m *rabinSecretCommitsMsg) MsgType() byte {
@@ -890,7 +894,7 @@ func (m *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	}
 	m.secretCommits.Commitments = make([]kyber.Point, cLen)
 	for i := range m.secretCommits.Commitments {
-		m.secretCommits.Commitments[i] = m.group.Point()
+		m.secretCommits.Commitments[i] = m.blsSuite.Point()
 		if err = util.ReadMarshaled(r, m.secretCommits.Commitments[i]); err != nil {
 			return err
 		}
@@ -904,8 +908,8 @@ func (m *rabinSecretCommitsMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (m *rabinSecretCommitsMsg) fromBytes(buf []byte, group kyber.Group) error {
-	m.group = group
+func (m *rabinSecretCommitsMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
+	m.blsSuite = blsSuite
 	rdr := bytes.NewReader(buf)
 	return m.Read(rdr)
 }
@@ -916,7 +920,7 @@ func (m *rabinSecretCommitsMsg) fromBytes(buf []byte, group kyber.Group) error {
 type rabinComplaintCommitsMsg struct {
 	step             byte
 	complaintCommits []*rabin_dkg.ComplaintCommits
-	group            kyber.Group // Just for un-marshaling.
+	blsSuite         kyber.Group // Just for un-marshaling.
 }
 
 func (m *rabinComplaintCommitsMsg) MsgType() byte {
@@ -976,7 +980,7 @@ func (m *rabinComplaintCommitsMsg) Read(r io.Reader) error {
 		if err = util.ReadUint32(r, &m.complaintCommits[i].DealerIndex); err != nil {
 			return err
 		}
-		if err = readVssDeal(r, &m.complaintCommits[i].Deal, m.group); err != nil {
+		if err = readVssDeal(r, &m.complaintCommits[i].Deal, m.blsSuite); err != nil {
 			return err
 		}
 		if m.complaintCommits[i].Signature, err = util.ReadBytes16(r); err != nil {
@@ -986,8 +990,8 @@ func (m *rabinComplaintCommitsMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (m *rabinComplaintCommitsMsg) fromBytes(buf []byte, group kyber.Group) error {
-	m.group = group
+func (m *rabinComplaintCommitsMsg) fromBytes(buf []byte, blsSuite kyber.Group) error {
+	m.blsSuite = blsSuite
 	rdr := bytes.NewReader(buf)
 	return m.Read(rdr)
 }
@@ -998,7 +1002,6 @@ func (m *rabinComplaintCommitsMsg) fromBytes(buf []byte, group kyber.Group) erro
 type rabinReconstructCommitsMsg struct {
 	step               byte
 	reconstructCommits []*rabin_dkg.ReconstructCommits
-	group              kyber.Group // Just for un-marshaling.
 }
 
 func (m *rabinReconstructCommitsMsg) MsgType() byte {
@@ -1074,8 +1077,7 @@ func (m *rabinReconstructCommitsMsg) Read(r io.Reader) error {
 	return nil
 }
 
-func (m *rabinReconstructCommitsMsg) fromBytes(buf []byte, group kyber.Group) error {
-	m.group = group
+func (m *rabinReconstructCommitsMsg) fromBytes(buf []byte) error {
 	rdr := bytes.NewReader(buf)
 	return m.Read(rdr)
 }
@@ -1154,30 +1156,29 @@ func writeVssDeal(w io.Writer, d *rabin_vss.Deal) error {
 	return nil
 }
 
-//nolint:gocritic
-func readVssDeal(r io.Reader, d **rabin_vss.Deal, group kyber.Group) error {
+func readVssDeal(r io.Reader, d **rabin_vss.Deal, blsSuite kyber.Group) error {
 	var err error
 	dd := rabin_vss.Deal{}
 	if dd.SessionID, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if err = readPriShare(r, &dd.SecShare); err != nil {
+	if err := readPriShare(r, &dd.SecShare); err != nil {
 		return err
 	}
-	if err = readPriShare(r, &dd.RndShare); err != nil {
+	if err := readPriShare(r, &dd.RndShare); err != nil {
 		return err
 	}
-	if err = util.ReadUint32(r, &dd.T); err != nil {
+	if err := util.ReadUint32(r, &dd.T); err != nil {
 		return err
 	}
 	var commitmentCount uint32
-	if err = util.ReadUint32(r, &commitmentCount); err != nil {
+	if err := util.ReadUint32(r, &commitmentCount); err != nil {
 		return err
 	}
 	dd.Commitments = make([]kyber.Point, int(commitmentCount))
 	for i := range dd.Commitments {
-		dd.Commitments[i] = group.Point()
-		if err = util.ReadMarshaled(r, dd.Commitments[i]); err != nil {
+		dd.Commitments[i] = blsSuite.Point()
+		if err := util.ReadMarshaled(r, dd.Commitments[i]); err != nil {
 			return err
 		}
 	}

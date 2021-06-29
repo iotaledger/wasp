@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/chain/consensus"
-
 	"github.com/stretchr/testify/require"
 )
 

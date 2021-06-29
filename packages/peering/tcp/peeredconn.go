@@ -103,7 +103,7 @@ func (c *peeredConnection) receiveData(data []byte) {
 func (c *peeredConnection) processHandShakeOutbound(msg *peering.PeerMessage) {
 	var err error
 	var hMsg *handshakeMsg
-	if hMsg, err = handshakeMsgFromBytes(msg.MsgData, c.net.suite); err != nil {
+	if hMsg, err = handshakeMsgFromBytes(msg.MsgData); err != nil {
 		c.net.log.Errorf(
 			"closeConn the peer connection: wrong handshake message from outbound peer %v, error: %v",
 			c.peer.peeringID(), err,
@@ -122,7 +122,7 @@ func (c *peeredConnection) processHandShakeOutbound(msg *peering.PeerMessage) {
 		}
 	} else {
 		c.net.log.Infof("CONNECTED WITH PEER %s (outbound)", hMsg.peeringID)
-		c.peer.remotePubKey = hMsg.pubKey
+		c.peer.remotePubKey = &hMsg.pubKey
 		c.peer.handshakeOk = true
 		c.peer.waitReady.Done()
 	}
@@ -134,7 +134,7 @@ func (c *peeredConnection) processHandShakeOutbound(msg *peering.PeerMessage) {
 func (c *peeredConnection) processHandShakeInbound(msg *peering.PeerMessage) {
 	var err error
 	var hMsg *handshakeMsg
-	if hMsg, err = handshakeMsgFromBytes(msg.MsgData, c.net.suite); err != nil {
+	if hMsg, err = handshakeMsgFromBytes(msg.MsgData); err != nil {
 		c.net.log.Errorf(
 			"closeConn the peer connection: wrong handshake message from outbound peer %v, error: %v",
 			c.peer.peeringID(), err,
@@ -157,7 +157,7 @@ func (c *peeredConnection) processHandShakeInbound(msg *peering.PeerMessage) {
 
 	peer.Lock()
 	peer.peerconn = c
-	peer.remotePubKey = hMsg.pubKey
+	peer.remotePubKey = &hMsg.pubKey
 	peer.handshakeOk = true
 	peer.waitReady.Done()
 	peer.Unlock()
