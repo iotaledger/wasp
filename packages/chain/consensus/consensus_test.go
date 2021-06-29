@@ -316,19 +316,19 @@ func TestCruelWorld(t *testing.T) {
 	}
 	var disconnectedNodes []string
 	var mutex sync.Mutex
-	go func() { //Connection cutter
+	go func() { // Connection cutter
 		for {
 			time.Sleep(randFromIntervalFun(1000, 3000) * time.Millisecond)
 			mutex.Lock()
-			//nodeName := env.Nodes[rand.Intn(numNodes)].NodeID
-			//env.NetworkBehaviour.WithPeerDisconnected(&nodeName, nodeName)
-			//env.Log.Debugf("Connection to node %v lost", nodeName)
-			//disconnectedNodes = append(disconnectedNodes, nodeName)
-			mutex.Unlock()
+			// nodeName := env.Nodes[rand.Intn(numNodes)].NodeID
+			// env.NetworkBehaviour.WithPeerDisconnected(&nodeName, nodeName)
+			// env.Log.Debugf("Connection to node %v lost", nodeName)
+			// disconnectedNodes = append(disconnectedNodes, nodeName)
+			mutex.Unlock() // nolint:gocritic,staticcheck
 		}
 	}()
 
-	go func() { //Connection restorer
+	go func() { // Connection restorer
 		for {
 			time.Sleep(randFromIntervalFun(500, 2000) * time.Millisecond)
 			mutex.Lock()

@@ -467,7 +467,7 @@ func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 
 func (c *Consensus) processInclusionState(msg *chain.InclusionStateMsg) {
 	if !c.workflow.transactionFinalized {
-		c.log.Debugf("processInclusionState: transaction finalised -> skipping.")
+		c.log.Debugf("processInclusionState: transaction finalized -> skipping.")
 		return
 	}
 	if msg.TxID != c.finalTx.ID() {
@@ -520,7 +520,7 @@ func (c *Consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 	}
 	tx := ledgerstate.NewTransaction(c.resultTxEssence, blocks)
 	chained := transaction.GetAliasOutput(tx, c.chain.ID().AsAddress())
-	c.log.Debugf("finalizeTransaction: transaction %v finalised; approving output ID: %v", tx.ID().Base58(), coretypes.OID(chained.ID()))
+	c.log.Debugf("finalizeTransaction: transaction %v finalized; approving output ID: %v", tx.ID().Base58(), coretypes.OID(chained.ID()))
 	return tx, chained, nil
 }
 

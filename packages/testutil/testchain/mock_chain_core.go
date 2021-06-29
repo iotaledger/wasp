@@ -114,25 +114,25 @@ func (m *MockedChainCore) GetCommitteeInfo() *chain.CommitteeInfo {
 }
 
 func (m *MockedChainCore) ReceiveMessage(msg interface{}) {
-	switch msg.(type) {
+	switch msgTypecasted := msg.(type) {
 	case *peering.PeerMessage:
-		m.onReceivePeerMessage(msg.(*peering.PeerMessage))
+		m.onReceivePeerMessage(msgTypecasted)
 	case *chain.DismissChainMsg:
-		m.onReceiveDismissChainMsg(msg.(*chain.DismissChainMsg))
+		m.onReceiveDismissChainMsg(msgTypecasted)
 	case *chain.StateTransitionMsg:
-		m.onReceiveStateTransitionMsg(msg.(*chain.StateTransitionMsg))
+		m.onReceiveStateTransitionMsg(msgTypecasted)
 	case *chain.StateCandidateMsg:
-		m.onReceiveStateCandidateMsg(msg.(*chain.StateCandidateMsg))
+		m.onReceiveStateCandidateMsg(msgTypecasted)
 	case *chain.InclusionStateMsg:
-		m.onReceiveInclusionStateMsg(msg.(*chain.InclusionStateMsg))
+		m.onReceiveInclusionStateMsg(msgTypecasted)
 	case *chain.StateMsg:
-		m.onReceiveStateMsg(msg.(*chain.StateMsg))
+		m.onReceiveStateMsg(msgTypecasted)
 	case *chain.VMResultMsg:
-		m.onReceiveVMResultMsg(msg.(*chain.VMResultMsg))
+		m.onReceiveVMResultMsg(msgTypecasted)
 	case *chain.AsynchronousCommonSubsetMsg:
-		m.onReceiveAsynchronousCommonSubsetMsg(msg.(*chain.AsynchronousCommonSubsetMsg))
+		m.onReceiveAsynchronousCommonSubsetMsg(msgTypecasted)
 	case chain.TimerTick:
-		m.onReceiveTimerTick(msg.(chain.TimerTick))
+		m.onReceiveTimerTick(msgTypecasted)
 	}
 }
 

@@ -130,7 +130,7 @@ func (msg *SignedResultMsg) Read(r io.Reader) error {
 	if msg.SigShare, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if err = util.ReadOutputID(r, &msg.ChainInputID); err != nil {
+	if err := util.ReadOutputID(r, &msg.ChainInputID); /* nolint:revive */ err != nil {
 		return err
 	}
 	return nil

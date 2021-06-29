@@ -145,7 +145,7 @@ func (env *MockedEnv) CreateNodes(timers ConsensusTimers) {
 	}
 }
 
-func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedNode {
+func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedNode { //nolint:revive
 	nodeID := env.NodeIDs[nodeIndex]
 	log := env.Log.Named(nodeID)
 	ret := &mockedNode{
@@ -263,8 +263,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	})
 	ret.ChainCore.OnReceivePeerMessage(func(msg *peering.PeerMessage) {
 		var err error
-		switch msg.MsgType {
-		case chain.MsgSignedResult:
+		if msg.MsgType == chain.MsgSignedResult {
 			decoded := chain.SignedResultMsg{}
 			if err = decoded.Read(bytes.NewReader(msg.MsgData)); err == nil {
 				decoded.SenderIndex = msg.SenderIndex
@@ -375,7 +374,7 @@ func (env *MockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...t
 	return env.WaitForEventFromNodesQuorum("stateIndex", quorum, checkStateIndexFun, timeout...)
 }
 
-func (env *MockedEnv) WaitMempool(numRequests int, quorum int, timeout ...time.Duration) error {
+func (env *MockedEnv) WaitMempool(numRequests int, quorum int, timeout ...time.Duration) error { //nolint:gocritic
 	checkMempoolFun := func(node *mockedNode) bool {
 		snap := node.Consensus.GetStatusSnapshot()
 		if snap != nil && snap.Mempool.InPoolCounter >= numRequests && snap.Mempool.OutPoolCounter >= numRequests {

@@ -324,8 +324,8 @@ func ReadOutputID(r io.Reader, oid *ledgerstate.OutputID) error {
 		return err
 	}
 	if n != ledgerstate.OutputIDLength {
-		return errors.New(fmt.Sprintf("error while reading output ID: read %v bytes, expected %v bytes",
-			n, ledgerstate.OutputIDLength))
+		return fmt.Errorf("error while reading output ID: read %v bytes, expected %v bytes",
+			n, ledgerstate.OutputIDLength)
 	}
 	return nil
 }
