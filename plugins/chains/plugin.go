@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
+	"github.com/iotaledger/wasp/plugins/processors"
 	"github.com/iotaledger/wasp/plugins/registry"
 )
 
@@ -30,7 +31,7 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	allChains = chains.New(log)
+	allChains = chains.New(log, processors.Config)
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry()); err != nil {
 			log.Errorf("failed to read chain activation records from registry: %v", err)

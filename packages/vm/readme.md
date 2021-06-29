@@ -135,12 +135,12 @@ The call to `processors.RegisterVMType` takes name of the new _VM type_ and the 
 new `coretypes.Processor` object from the binary data of the program.
 
 The following _VM types_ are pre-defined in the current release of the Wasp:
-* `builtinvm` represents core contracts
-* `examplevm` represents example contracts which conforms to the native interface and are hardcoded before run
-* `wasmtimevm` represents Wasmtime WebAssembly interpreter and native `Rust/Wasm` environment to create smart contracts.
+* `core` represents core contracts
+* `native` represents example and other contracts (e.g. the `evmchain` contract) which conform to the native interface and are hardcoded before run
+* `wasmtime` represents Wasmtime WebAssembly interpreter and native `Rust/Wasm` environment to create smart contracts.
 
-To implement new types of interpreters, for example EVM, other languages or interpreters, a new _VM Type_  
-must be implemented into the Wasp.
+To implement new types of interpreters, other languages or interpreters, a new _VM Type_
+must be implemented into Wasp.
 
 ### Program binary and blob hash
 To dynamically deploy a smart contract we need code of it in some binary format and dynamical linking of it  
@@ -151,7 +151,7 @@ For example, `WebAssembly` (_wasm_) smart contracts produced by the `Rust/Wasm` 
 with the Wasp, are represented by `wasm` binaries. Other VM types may take different formats to represent its  
 executable code.
 
-To deploy a `wasmtimevm` smart contract on the chain, first we need to upload the corresponding `wasm` binary.  
+To deploy a `wasmtime` smart contract on the chain, first we need to upload the corresponding `wasm` binary.  
 All `wasm` binaries (as well as any other files of data) are kept in the registry handled by the `blob` core contact.  
 To upload a `wasm` binary to the chain one must send a request to the `blob`. Each blob on the chain is referenced by  
 its hash.
@@ -164,7 +164,7 @@ it with `processors.RegisterVMType`. The rest is handled by the generic logic of
 
 ## Processor and the sandbox interface
 
-In native and `wasmtimevm` implementations one _processor_ represents one smart contract. It gives full power
+In native and `wasmtime` implementations one _processor_ represents one smart contract. It gives full power
 to the smart contracts on the ISCP chain, such as manipulate native IOTA assets, call other smart contracts (processors)
 on the same chain and send requests and assets to other ISCP chains.
 

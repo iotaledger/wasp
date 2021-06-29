@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
@@ -20,7 +21,7 @@ import (
 type MockedChainCore struct {
 	T                                    *testing.T
 	chainID                              chainid.ChainID
-	processors                           *processors.ProcessorCache
+	processors                           *processors.Cache
 	eventStateTransition                 *events.Event
 	eventRequestProcessed                *events.Event
 	eventStateSynced                     *events.Event
@@ -49,7 +50,7 @@ func NewMockedChainCore(t *testing.T, chainID chainid.ChainID, log *logger.Logge
 	ret := &MockedChainCore{
 		T:          t,
 		chainID:    chainID,
-		processors: processors.MustNew(),
+		processors: processors.MustNew(processors.NewConfig(inccounter.Interface)),
 		log:        log,
 		eventStateTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
@@ -140,7 +141,7 @@ func (m *MockedChainCore) Events() chain.ChainEvents {
 	return m
 }
 
-func (m *MockedChainCore) Processors() *processors.ProcessorCache {
+func (m *MockedChainCore) Processors() *processors.Cache {
 	return m.processors
 }
 

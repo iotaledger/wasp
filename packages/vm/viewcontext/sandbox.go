@@ -2,7 +2,6 @@ package viewcontext
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
@@ -16,12 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 )
-
-var logDefault *logger.Logger //nolint:unused
-
-func InitLogger() {
-	logDefault = logger.NewLogger("view")
-}
 
 type sandboxview struct {
 	contractHname coretypes.Hname
