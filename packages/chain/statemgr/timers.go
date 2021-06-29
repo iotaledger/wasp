@@ -5,20 +5,20 @@ package statemgr
 
 import (
 	"time"
-
-	"github.com/iotaledger/wasp/packages/util"
 )
 
-const TimerPullStateRetryNameConst = "PullStateRetry"
-const TimerPullStateAfterStateCandidateDelayNameConst = "PullStateAfterStateCandidateDelay"
-const TimerGetBlockRetryConstNameConst = "GetBlockRetry"
+type StateManagerTimers struct {
+	// period of state pull retry
+	PullStateRetry time.Duration
+	// how long delay state pull after state candidate received
+	PullStateAfterStateCandidateDelay time.Duration
+	GetBlockRetry                     time.Duration
+}
 
-func NewStateManagerTimers() util.TimerParams {
-	return util.NewTimerParams(
-		// period of state pull retry
-		util.NewTimerParam(TimerPullStateRetryNameConst, 1*time.Second),
-		// how long delay state pull after state candidate received
-		util.NewTimerParam(TimerPullStateAfterStateCandidateDelayNameConst, 1*time.Second),
-		util.NewTimerParam(TimerGetBlockRetryConstNameConst, 3*time.Second),
-	)
+func NewStateManagerTimers() StateManagerTimers {
+	return StateManagerTimers{
+		PullStateRetry:                    1 * time.Second,
+		PullStateAfterStateCandidateDelay: 1 * time.Second,
+		GetBlockRetry:                     3 * time.Second,
+	}
 }

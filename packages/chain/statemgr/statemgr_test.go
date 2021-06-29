@@ -81,7 +81,9 @@ func TestGetInitialState(t *testing.T) {
 
 func TestGetNextState(t *testing.T) {
 	env, originTx := NewMockedEnv(1, t, false)
-	node := env.NewMockedNode(0, NewStateManagerTimers().With(TimerPullStateAfterStateCandidateDelayNameConst, 50*time.Millisecond))
+	timers := NewStateManagerTimers()
+	timers.PullStateAfterStateCandidateDelay = 50 * time.Millisecond
+	node := env.NewMockedNode(0, timers)
 	node.StateManager.Ready().MustWait()
 	require.NotNil(t, node.StateManager.(*stateManager).solidState)
 	require.False(t, node.StateManager.(*stateManager).syncingBlocks.hasBlockCandidates())
@@ -133,7 +135,7 @@ func testManyStateTransitions(t *testing.T, pushStateToNodes bool) {
 
 	timers := NewStateManagerTimers()
 	if !pushStateToNodes {
-		timers = timers.With(TimerPullStateAfterStateCandidateDelayNameConst, 50*time.Millisecond)
+		timers.PullStateAfterStateCandidateDelay = 50 * time.Millisecond
 	}
 
 	node := env.NewMockedNode(0, timers)
@@ -188,7 +190,9 @@ func TestManyStateTransitionsManyNodes(t *testing.T) {
 
 	catchingNodes := make([]*MockedNode, numberOfCatchingPeers)
 	for i := 0; i < numberOfCatchingPeers; i++ {
-		catchingNodes[i] = env.NewMockedNode(i+1, NewStateManagerTimers().With(TimerGetBlockRetryConstNameConst, 200*time.Millisecond))
+		timers := NewStateManagerTimers()
+		timers.GetBlockRetry = 200 * time.Millisecond
+		catchingNodes[i] = env.NewMockedNode(i+1, timers)
 		catchingNodes[i].StateManager.Ready().MustWait()
 	}
 	for i := 0; i < numberOfCatchingPeers; i++ {
@@ -234,11 +238,11 @@ func TestNodeDisconnected(t *testing.T) {
 	env.SetPushStateToNodesOption(false)
 
 	createNodeFun := func(nodeIndex int) *MockedNode {
-		result := env.NewMockedNode(nodeIndex, NewStateManagerTimers().
-			With(TimerPullStateAfterStateCandidateDelayNameConst, 150*time.Millisecond).
-			With(TimerPullStateRetryNameConst, 150*time.Millisecond).
-			With(TimerGetBlockRetryConstNameConst, 150*time.Millisecond),
-		)
+		timers := NewStateManagerTimers()
+		timers.PullStateAfterStateCandidateDelay = 150 * time.Millisecond
+		timers.PullStateRetry = 150 * time.Millisecond
+		timers.GetBlockRetry = 150 * time.Millisecond
+		result := env.NewMockedNode(nodeIndex, timers)
 		result.StateManager.Ready().MustWait()
 		result.StartTimer()
 		env.AddNode(result)
@@ -323,11 +327,11 @@ func TestCruelWorld(t *testing.T) {
 	}
 	nodes := make([]*MockedNode, numberOfPeers)
 	for i := 0; i < numberOfPeers; i++ {
-		nodes[i] = env.NewMockedNode(i, NewStateManagerTimers().
-			With(TimerPullStateAfterStateCandidateDelayNameConst, randFromIntervalFun(200, 500)*time.Millisecond).
-			With(TimerPullStateRetryNameConst, randFromIntervalFun(50, 200)*time.Millisecond).
-			With(TimerGetBlockRetryConstNameConst, randFromIntervalFun(50, 200)*time.Millisecond),
-		)
+		timers := NewStateManagerTimers()
+		timers.PullStateAfterStateCandidateDelay = randFromIntervalFun(200, 500) * time.Millisecond
+		timers.PullStateRetry = randFromIntervalFun(50, 200) * time.Millisecond
+		timers.GetBlockRetry = randFromIntervalFun(50, 200) * time.Millisecond
+		nodes[i] = env.NewMockedNode(i, timers)
 		nodes[i].StateManager.Ready().MustWait()
 		nodes[i].StartTimer()
 		env.AddNode(nodes[i])

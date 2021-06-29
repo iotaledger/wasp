@@ -5,22 +5,22 @@ package consensus
 
 import (
 	"time"
-
-	"github.com/iotaledger/wasp/packages/util"
 )
 
-const TimerVMRunRetryToWaitForReadyRequestsNameConst = "VMRunRetryToWaitForReadyRequests"
-const TimerBroadcastSignedResultRetryNameConst = "BroadcastSignedResultRetry"
-const TimerPostTxSequenceStepNameConst = "PostTxSequenceStep"
-const TimerPullInclusionStateRetryNameConst = "PullInclusionStateRetry"
-const TimerProposeBatchRetryNameConst = "ProposeBatchRetry"
+type ConsensusTimers struct {
+	VMRunRetryToWaitForReadyRequests time.Duration
+	BroadcastSignedResultRetry       time.Duration
+	PostTxSequenceStep               time.Duration
+	PullInclusionStateRetry          time.Duration
+	ProposeBatchRetry                time.Duration
+}
 
-func NewConsensusTimers() util.TimerParams {
-	return util.NewTimerParams(
-		util.NewTimerParam(TimerVMRunRetryToWaitForReadyRequestsNameConst, 500*time.Millisecond),
-		util.NewTimerParam(TimerBroadcastSignedResultRetryNameConst, 1*time.Second),
-		util.NewTimerParam(TimerPostTxSequenceStepNameConst, 1*time.Second),
-		util.NewTimerParam(TimerPullInclusionStateRetryNameConst, 1*time.Second),
-		util.NewTimerParam(TimerProposeBatchRetryNameConst, 500*time.Millisecond),
-	)
+func NewConsensusTimers() ConsensusTimers {
+	return ConsensusTimers{
+		VMRunRetryToWaitForReadyRequests: 500 * time.Millisecond,
+		BroadcastSignedResultRetry:       1 * time.Second,
+		PostTxSequenceStep:               1 * time.Second,
+		PullInclusionStateRetry:          1 * time.Second,
+		ProposeBatchRetry:                500 * time.Millisecond,
+	}
 }

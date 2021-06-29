@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"go.uber.org/atomic"
 )
@@ -33,7 +32,7 @@ type stateManager struct {
 	currentSyncData        atomic.Value
 	notifiedAnchorOutputID ledgerstate.OutputID
 	syncingBlocks          *syncingBlocks
-	timers                 util.TimerParams
+	timers                 StateManagerTimers
 	log                    *logger.Logger
 
 	// Channels for accepting external events.
@@ -51,8 +50,8 @@ const (
 	maxBlocksToCommitConst               = 10000 // 10k
 )
 
-func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, timersOpt ...util.TimerParams) chain.StateManager {
-	var timers util.TimerParams
+func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, timersOpt ...StateManagerTimers) chain.StateManager {
+	var timers StateManagerTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
 	} else {
@@ -64,7 +63,7 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		chain:                  c,
 		nodeConn:               nodeconn,
 		peers:                  peers,
-		syncingBlocks:          newSyncingBlocks(c.Log(), timers.Get(TimerGetBlockRetryConstNameConst)),
+		syncingBlocks:          newSyncingBlocks(c.Log(), timers.GetBlockRetry),
 		timers:                 timers,
 		log:                    c.Log().Named("s"),
 		pullStateRetryTime:     time.Now(),

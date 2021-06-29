@@ -93,7 +93,7 @@ func (c *Consensus) runVMIfNeeded() {
 	reqs, allArrived := c.mempool.ReadyFromIDs(c.consensusBatch.Timestamp, c.consensusBatch.RequestIDs...)
 	if !allArrived {
 		// some requests are not ready, so skip VM call this time. Maybe next time will be more luck
-		c.delayRunVMUntil = time.Now().Add(c.timers.Get(TimerVMRunRetryToWaitForReadyRequestsNameConst))
+		c.delayRunVMUntil = time.Now().Add(c.timers.VMRunRetryToWaitForReadyRequests)
 		c.log.Infof("runVM not needed: some requests didn't arrive yet")
 		return
 	}
@@ -170,7 +170,7 @@ func (c *Consensus) broadcastSignedResultIfNeeded() {
 			SigShare:     signedResult.SigShare,
 		}
 		c.committee.SendMsgToPeers(chain.MsgSignedResult, util.MustBytes(msg), time.Now().UnixNano())
-		c.delaySendingSignedResult = time.Now().Add(c.timers.Get(TimerBroadcastSignedResultRetryNameConst))
+		c.delaySendingSignedResult = time.Now().Add(c.timers.BroadcastSignedResultRetry)
 
 		c.log.Debugf("broadcastSignedResult: broadcasted: essence hash: %s, chain input %s",
 			msg.EssenceHash.String(), coretypes.OID(msg.ChainInputID))
@@ -259,7 +259,7 @@ func (c *Consensus) checkQuorum() {
 	if c.iAmContributor {
 		permutation = util.NewPermutation16(uint16(len(c.contributors)), tx.ID().Bytes())
 		postSeqNumber = permutation.GetArray()[c.myContributionSeqNumber]
-		c.postTxDeadline = time.Now().Add(time.Duration(postSeqNumber) * c.timers.Get(TimerPostTxSequenceStepNameConst))
+		c.postTxDeadline = time.Now().Add(time.Duration(postSeqNumber) * c.timers.PostTxSequenceStep)
 
 		c.log.Debugf("checkQuorum: finalized tx %s, iAmContributor: true, postSeqNum: %d, permutation: %+v",
 			tx.ID().Base58(), postSeqNumber, permutation.GetArray())
@@ -315,7 +315,7 @@ func (c *Consensus) pullInclusionStateIfNeeded() {
 		return
 	}
 	c.nodeConn.PullTransactionInclusionState(c.chain.ID().AsAddress(), c.finalTx.ID())
-	c.pullInclusionStateDeadline = time.Now().Add(c.timers.Get(TimerPullInclusionStateRetryNameConst))
+	c.pullInclusionStateDeadline = time.Now().Add(c.timers.PullInclusionStateRetry)
 	c.log.Debugf("pullInclusionState: request for inclusion state sent")
 }
 
@@ -425,7 +425,7 @@ func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 		c.log.Warnf("receiveACS: ACS intersection (light) is empty. reset workflow. State index: %d, ACS sessionID %d",
 			c.stateOutput.GetStateIndex(), sessionID)
 		c.resetWorkflow()
-		c.delayBatchProposalUntil = time.Now().Add(c.timers.Get(TimerProposeBatchRetryNameConst))
+		c.delayBatchProposalUntil = time.Now().Add(c.timers.ProposeBatchRetry)
 		return
 	}
 	// calculate other batch parameters in a deterministic way
@@ -435,7 +435,7 @@ func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 		c.log.Errorf("receiveACS: inconsistent ACS. Reset workflow. State index: %d, ACS sessionID %d, reason: %v",
 			c.stateOutput.GetStateIndex(), sessionID, err)
 		c.resetWorkflow()
-		c.delayBatchProposalUntil = time.Now().Add(c.timers.Get(TimerProposeBatchRetryNameConst))
+		c.delayBatchProposalUntil = time.Now().Add(c.timers.ProposeBatchRetry)
 	}
 	c.consensusBatch = &BatchProposal{
 		ValidatorIndex:      c.committee.OwnPeerIndex(),
@@ -618,6 +618,11 @@ func (c *Consensus) receiveSignedResult(msg *chain.SignedResultMsg) {
 		} else {
 			c.log.Warnf("receiveSignedResult: duplicated signed result from peer #%d", msg.SenderIndex)
 		}
+		return
+	}
+	if c.stateOutput == nil {
+		c.log.Warnf("receiveSignedResult: chain input ID %v received, but state output is nil",
+			coretypes.OID(msg.ChainInputID))
 		return
 	}
 	if msg.ChainInputID != c.stateOutput.ID() {

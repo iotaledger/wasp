@@ -69,7 +69,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 	if nowis.After(sm.pullStateRetryTime) {
 		chainAliasAddress := sm.chain.ID().AsAliasAddress()
 		sm.nodeConn.PullState(chainAliasAddress)
-		sm.pullStateRetryTime = nowis.Add(sm.timers.Get(TimerPullStateRetryNameConst))
+		sm.pullStateRetryTime = nowis.Add(sm.timers.PullStateRetry)
 		sm.log.Debugf("pullState: pulling state for address %v. Next pull in: %v",
 			chainAliasAddress.Base58(), sm.pullStateRetryTime.Sub(nowis))
 	} else {
@@ -104,7 +104,7 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 
 	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < block.BlockIndex() {
 		sm.log.Debugf("addStateCandidateFromConsensus: delaying pullStateRetry")
-		sm.pullStateRetryTime = time.Now().Add(sm.timers.Get(TimerPullStateAfterStateCandidateDelayNameConst))
+		sm.pullStateRetryTime = time.Now().Add(sm.timers.PullStateAfterStateCandidateDelay)
 	}
 
 	return true

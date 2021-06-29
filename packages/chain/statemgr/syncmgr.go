@@ -88,7 +88,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			})
 			sm.peers.SendMsgToRandomPeersSimple(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
 			sm.syncingBlocks.startSyncingIfNeeded(i)
-			sm.syncingBlocks.setRequestBlockRetryTime(i, nowis.Add(sm.timers.Get(TimerGetBlockRetryConstNameConst)))
+			sm.syncingBlocks.setRequestBlockRetryTime(i, nowis.Add(sm.timers.GetBlockRetry))
 			if blockCandidatesCount == 0 {
 				return
 			}

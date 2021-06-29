@@ -139,13 +139,13 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	return ret, originTx
 }
 
-func (env *MockedEnv) CreateNodes(timers util.TimerParams) {
+func (env *MockedEnv) CreateNodes(timers ConsensusTimers) {
 	for i := range env.Nodes {
 		env.Nodes[i] = env.NewNode(uint16(i), timers)
 	}
 }
 
-func (env *MockedEnv) NewNode(nodeIndex uint16, timers util.TimerParams) *mockedNode {
+func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedNode {
 	nodeID := env.NodeIDs[nodeIndex]
 	log := env.Log.Named(nodeID)
 	ret := &mockedNode{
