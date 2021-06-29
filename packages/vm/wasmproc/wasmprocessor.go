@@ -6,7 +6,6 @@ package wasmproc
 import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -101,12 +100,6 @@ func (host *wasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.Sandbox
 		host.ctxView = saveCtxView
 	}()
 
-	testMode, _ := host.params().Has("testMode")
-	if testMode {
-		host.Trace("TEST MODE")
-		TestMode = true
-	}
-
 	host.Trace("Calling " + host.function)
 	frame := host.PushFrame()
 	frameObjects := host.scContext.objects
@@ -151,41 +144,6 @@ func (host *wasmProcessor) GetDefaultEntryPoint() coretypes.VMProcessorEntryPoin
 
 func (host *wasmProcessor) IsView() bool {
 	return host.WasmHost.IsView(host.function)
-}
-
-func (host *wasmProcessor) accountID() *coretypes.AgentID {
-	if host.ctx != nil {
-		return host.ctx.AccountID()
-	}
-	return host.ctxView.AccountID()
-}
-
-func (host *wasmProcessor) contract() coretypes.Hname {
-	if host.ctx != nil {
-		return host.ctx.Contract()
-	}
-	return host.ctxView.Contract()
-}
-
-func (host *wasmProcessor) chainID() *chainid.ChainID {
-	if host.ctx != nil {
-		return host.ctx.ChainID()
-	}
-	return host.ctxView.ChainID()
-}
-
-func (host *wasmProcessor) chainOwnerID() *coretypes.AgentID {
-	if host.ctx != nil {
-		return host.ctx.ChainOwnerID()
-	}
-	return host.ctxView.ChainOwnerID()
-}
-
-func (host *wasmProcessor) contractCreator() *coretypes.AgentID {
-	if host.ctx != nil {
-		return host.ctx.ContractCreator()
-	}
-	return host.ctxView.ContractCreator()
 }
 
 func (host *wasmProcessor) log() coretypes.LogInterface {

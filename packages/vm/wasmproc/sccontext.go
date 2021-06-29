@@ -68,23 +68,48 @@ func (o *ScContext) Exists(keyId int32, typeId int32) bool {
 }
 
 func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
+	ctx := o.vm.ctx
+	if ctx == nil {
+		return o.getBytesForView(keyId, typeId)
+	}
 	switch keyId {
 	case wasmhost.KeyAccountId:
-		return o.vm.accountID().Bytes()
+		return ctx.AccountID().Bytes()
 	case wasmhost.KeyCaller:
-		return o.vm.ctx.Caller().Bytes()
+		return ctx.Caller().Bytes()
 	case wasmhost.KeyChainId:
-		return o.vm.chainID().Bytes()
+		return ctx.ChainID().Bytes()
 	case wasmhost.KeyChainOwnerId:
-		return o.vm.chainOwnerID().Bytes()
+		return ctx.ChainOwnerID().Bytes()
 	case wasmhost.KeyContract:
-		return o.vm.contract().Bytes()
+		return ctx.Contract().Bytes()
 	case wasmhost.KeyContractCreator:
-		return o.vm.contractCreator().Bytes()
+		return ctx.ContractCreator().Bytes()
 	case wasmhost.KeyRequestId:
-		return o.vm.ctx.RequestID().Bytes()
+		return ctx.RequestID().Bytes()
 	case wasmhost.KeyTimestamp:
-		return codec.EncodeInt64(o.vm.ctx.GetTimestamp())
+		return codec.EncodeInt64(ctx.GetTimestamp())
+	}
+	o.invalidKey(keyId)
+	return nil
+}
+
+func (o *ScContext) getBytesForView(keyId int32, typeId int32) []byte {
+	ctx := o.vm.ctxView
+	if ctx == nil {
+		o.Panic("missing context")
+	}
+	switch keyId {
+	case wasmhost.KeyAccountId:
+		return ctx.AccountID().Bytes()
+	case wasmhost.KeyChainId:
+		return ctx.ChainID().Bytes()
+	case wasmhost.KeyChainOwnerId:
+		return ctx.ChainOwnerID().Bytes()
+	case wasmhost.KeyContract:
+		return ctx.Contract().Bytes()
+	case wasmhost.KeyContractCreator:
+		return ctx.ContractCreator().Bytes()
 	}
 	o.invalidKey(keyId)
 	return nil
