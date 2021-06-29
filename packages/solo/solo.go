@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"strings"
 	"sync"
-	"testing"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -54,7 +53,7 @@ const (
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
 	// instance of the test
-	T           *testing.T
+	T           TestContext
 	logger      *logger.Logger
 	dbmanager   *dbmanager.DBManager
 	utxoDB      *utxodb.UtxoDB
@@ -123,11 +122,15 @@ var (
 )
 
 // New creates an instance of the `solo` environment for the test instances.
+//   If solo is used for unit testing, 't' should be the *testing.T instance; otherwise it can be either nil or an instance created with NewTestContext
 //   'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
 //   'printStackTrace' controls printing stack trace in case of errors
-func New(t *testing.T, debug, printStackTrace bool) *Solo {
+func New(t TestContext, debug, printStackTrace bool) *Solo {
+	if t == nil {
+		t = NewTestContext("solo")
+	}
 	doOnce.Do(func() {
-		glbLogger = testlogger.NewLogger(t, "04:05.000")
+		glbLogger = testlogger.NewNamedLogger(t.Name(), "04:05.000")
 		if !debug {
 			glbLogger = testlogger.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
 		}
