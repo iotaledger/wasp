@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
@@ -15,6 +16,7 @@ import (
 
 func postRequestCmd() *cobra.Command {
 	var transfer []string
+	var offLedger bool
 
 	cmd := &cobra.Command{
 		Use:   "post-request <name> <funcname> [params]",
@@ -34,20 +36,31 @@ func postRequestCmd() *cobra.Command {
 				cb[color] = uint64(amount)
 			}
 
-			util.WithSCTransaction(GetCurrentChainID(), func() (*ledgerstate.Transaction, error) {
-				return SCClient(coretypes.Hn(args[0])).PostRequest(
-					args[1],
-					chainclient.PostRequestParams{
-						Args:     requestargs.New().AddEncodeSimpleMany(util.EncodeParams(args[2:])),
-						Transfer: ledgerstate.NewColoredBalances(cb),
-					},
-				)
-			})
+			fname := args[1]
+			params := chainclient.PostRequestParams{
+				Args:     requestargs.New().AddEncodeSimpleMany(util.EncodeParams(args[2:])),
+				Transfer: ledgerstate.NewColoredBalances(cb),
+			}
+
+			scClient := SCClient(coretypes.Hn(args[0]))
+
+			if offLedger {
+				util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.RequestOffLedger, error) {
+					return scClient.PostOffLedgerRequest(fname, params)
+				})
+			} else {
+				util.WithSCTransaction(GetCurrentChainID(), func() (*ledgerstate.Transaction, error) {
+					return scClient.PostRequest(fname, params)
+				})
+			}
 		},
 	}
 
-	cmd.Flags().StringSliceVarP(&transfer, "transfer", "", []string{"IOTA:1"},
+	cmd.Flags().StringSliceVarP(&transfer, "transfer", "t", []string{"IOTA:1"},
 		"include a funds transfer as part of the transaction. Format: <color>:<amount>,<color>:amount...",
+	)
+	cmd.Flags().BoolVarP(&offLedger, "off-ledger", "o", false,
+		"post an off-ledger request",
 	)
 
 	return cmd

@@ -219,24 +219,26 @@ func TestWaspCliContract(t *testing.T) {
 	}
 	require.True(t, found)
 
-	// test chain call-view command
-	out = w.Run("chain", "call-view", name, "getCounter")
-	out = w.Pipe(out, "decode", "string", "counter", "int")
-	require.Regexp(t, "(?m)counter:[[:space:]]+42$", out[0])
+	checkCounter := func(n int) {
+		// test chain call-view command
+		out = w.Run("chain", "call-view", name, "getCounter")
+		out = w.Pipe(out, "decode", "string", "counter", "int")
+		require.Regexp(t, fmt.Sprintf("(?m)counter:[[:space:]]+%d$", n), out[0])
+	}
+
+	checkCounter(42)
 
 	// test chain post-request command
 	w.Run("chain", "post-request", name, "increment")
-
-	out = w.Run("chain", "call-view", name, "getCounter")
-	out = w.Pipe(out, "decode", "string", "counter", "int")
-	require.Regexp(t, "(?m)counter:[[:space:]]+43$", out[0])
+	checkCounter(43)
 
 	// include a funds transfer
 	w.Run("chain", "post-request", name, "increment", "--transfer=IOTA:10")
+	checkCounter(44)
 
-	out = w.Run("chain", "call-view", name, "getCounter")
-	out = w.Pipe(out, "decode", "string", "counter", "int")
-	require.Regexp(t, "(?m)counter:[[:space:]]+44$", out[0])
+	// test off-ledger request
+	w.Run("chain", "post-request", name, "increment", "--off-ledger")
+	checkCounter(45)
 }
 
 func TestWaspCliBlobContract(t *testing.T) {
