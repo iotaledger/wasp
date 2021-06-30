@@ -34,7 +34,7 @@ func Init() *node.Plugin {
 			panic(err)
 		}
 		if err != nil {
-			log.Panicf("Init.peering: %w", err)
+			log.Panicf("Init.peering: %v", err)
 		}
 		netID := parameters.GetString(parameters.PeeringMyNetID)
 		netImpl, err := peering_udp.NewNetworkProvider(
@@ -45,7 +45,7 @@ func Init() *node.Plugin {
 			log,
 		)
 		if err != nil {
-			log.Panicf("Init.peering: %w", err)
+			log.Panicf("Init.peering: %v", err)
 		}
 		defaultNetworkProvider = netImpl
 		defaultTrustedNetworkManager = netImpl

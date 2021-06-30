@@ -3,14 +3,13 @@ package chain
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/contracts/native"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
@@ -28,10 +27,10 @@ var deployContractCmd = &cobra.Command{
 		var progHash hashing.HashValue
 
 		switch vmtype {
-		case core.VMType:
+		case vmtypes.Core:
 			log.Fatalf("cannot manually deploy core contracts")
 
-		case native.VMType:
+		case vmtypes.Native:
 			var err error
 			progHash, err = hashing.HashValueFromBase58(args[3])
 			log.Check(err)

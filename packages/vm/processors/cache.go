@@ -4,26 +4,28 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/iotaledger/wasp/contracts/native"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
-// ProcessorCache is an object maintained by each chain
-type ProcessorCache struct {
+// Cache stores all initialized VMProcessor instances used by a single chain
+type Cache struct {
 	*sync.Mutex
+	Config     *Config
 	processors map[hashing.HashValue]coretypes.VMProcessor
 }
 
-func MustNew() *ProcessorCache {
-	ret := &ProcessorCache{
+func MustNew(config *Config) *Cache {
+	ret := &Cache{
 		Mutex:      &sync.Mutex{},
+		Config:     config,
 		processors: make(map[hashing.HashValue]coretypes.VMProcessor),
 	}
 	// default builtin processor has root contract hash
-	err := ret.NewProcessor(root.Interface.ProgramHash, nil, core.VMType)
+	err := ret.NewProcessor(root.Interface.ProgramHash, nil, vmtypes.Core)
 	if err != nil {
 		panic(err)
 	}
@@ -31,14 +33,14 @@ func MustNew() *ProcessorCache {
 }
 
 // NewProcessor deploys new processor in the cache
-func (cps *ProcessorCache) NewProcessor(programHash hashing.HashValue, programCode []byte, vmtype string) error {
+func (cps *Cache) NewProcessor(programHash hashing.HashValue, programCode []byte, vmtype string) error {
 	cps.Lock()
 	defer cps.Unlock()
 
 	return cps.newProcessor(programHash, programCode, vmtype)
 }
 
-func (cps *ProcessorCache) newProcessor(programHash hashing.HashValue, programCode []byte, vmtype string) error {
+func (cps *Cache) newProcessor(programHash hashing.HashValue, programCode []byte, vmtype string) error {
 	var proc coretypes.VMProcessor
 	var ok bool
 	var err error
@@ -47,19 +49,19 @@ func (cps *ProcessorCache) newProcessor(programHash hashing.HashValue, programCo
 		return nil
 	}
 	switch vmtype {
-	case core.VMType:
+	case vmtypes.Core:
 		proc, err = core.GetProcessor(programHash)
 		if err != nil {
 			return err
 		}
 
-	case native.VMType:
-		if proc, ok = native.GetProcessor(programHash); !ok {
+	case vmtypes.Native:
+		if proc, ok = cps.Config.GetNativeProcessor(programHash); !ok {
 			return fmt.Errorf("NewProcessor: can't load example processor with hash %s", programHash.String())
 		}
 
 	default:
-		proc, err = NewProcessorFromBinary(vmtype, programCode)
+		proc, err = cps.Config.NewProcessorFromBinary(vmtype, programCode)
 		if err != nil {
 			return err
 		}
@@ -68,16 +70,16 @@ func (cps *ProcessorCache) newProcessor(programHash hashing.HashValue, programCo
 	return nil
 }
 
-func (cps *ProcessorCache) ExistsProcessor(h hashing.HashValue) bool {
+func (cps *Cache) ExistsProcessor(h hashing.HashValue) bool {
 	_, ok := cps.processors[h]
 	return ok
 }
 
-func (cps *ProcessorCache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(hashing.HashValue) (string, []byte, error)) (coretypes.VMProcessor, error) {
+func (cps *Cache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(hashing.HashValue) (string, []byte, error)) (coretypes.VMProcessor, error) {
 	return cps.GetOrCreateProcessorByProgramHash(rec.ProgramHash, getBinary)
 }
 
-func (cps *ProcessorCache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary func(hashing.HashValue) (string, []byte, error)) (coretypes.VMProcessor, error) {
+func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary func(hashing.HashValue) (string, []byte, error)) (coretypes.VMProcessor, error) {
 	cps.Lock()
 	defer cps.Unlock()
 
@@ -98,7 +100,7 @@ func (cps *ProcessorCache) GetOrCreateProcessorByProgramHash(progHash hashing.Ha
 }
 
 // RemoveProcessor deletes processor from cache
-func (cps *ProcessorCache) RemoveProcessor(h hashing.HashValue) {
+func (cps *Cache) RemoveProcessor(h hashing.HashValue) {
 	cps.Lock()
 	defer cps.Unlock()
 	delete(cps.processors, h)

@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
@@ -21,16 +22,18 @@ import (
 )
 
 type Chains struct {
-	mutex     sync.RWMutex
-	log       *logger.Logger
-	allChains map[[ledgerstate.AddressLength]byte]chain.Chain
-	nodeConn  *txstream.Client
+	mutex           sync.RWMutex
+	log             *logger.Logger
+	allChains       map[[ledgerstate.AddressLength]byte]chain.Chain
+	nodeConn        *txstream.Client
+	processorConfig *processors.Config
 }
 
-func New(log *logger.Logger) *Chains {
+func New(log *logger.Logger, processorConfig *processors.Config) *Chains {
 	ret := &Chains{
-		log:       log,
-		allChains: make(map[[ledgerstate.AddressLength]byte]chain.Chain),
+		log:             log,
+		allChains:       make(map[[ledgerstate.AddressLength]byte]chain.Chain),
+		processorConfig: processorConfig,
 	}
 	return ret
 }
@@ -118,6 +121,7 @@ func (c *Chains) Activate(chr *chainrecord.ChainRecord) error {
 		defaultRegistry,
 		defaultRegistry,
 		defaultRegistry,
+		c.processorConfig,
 	)
 	if newChain == nil {
 		return xerrors.New("Chains.Activate: failed to create chain object")

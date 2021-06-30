@@ -30,7 +30,7 @@ type ChainCore interface {
 	GetCommitteeInfo() *CommitteeInfo
 	ReceiveMessage(interface{})
 	Events() ChainEvents
-	Processors() *processors.ProcessorCache
+	Processors() *processors.Cache
 	GlobalStateSync() coreutil.ChainStateSync
 	GetStateReader() state.OptimisticStateReader
 	Log() *logger.Logger

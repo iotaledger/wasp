@@ -40,36 +40,36 @@ import (
 
 type MockedEnv struct {
 	T                 *testing.T
-	N                 uint16
 	Quorum            uint16
-	Neighbors         []string
 	Log               *logger.Logger
 	Ledger            *utxodb.UtxoDB
+	StateAddress      ledgerstate.Address
 	OriginatorKeyPair *ed25519.KeyPair
 	OriginatorAddress ledgerstate.Address
-	StateAddress      ledgerstate.Address
-	Identities        []*ed25519.KeyPair
+	NodeIDs           []string
 	NetworkProviders  []peering.NetworkProvider
+	NetworkBehaviour  *testutil.PeeringNetDynamic
 	DKSRegistries     []coretypes.DKShareRegistryProvider
-	store             kvstore.KVStore
-	SolidState        state.VirtualState
-	GlobalSync        coreutil.ChainStateSync
-	StateOutput       *ledgerstate.AliasOutput
-	RequestIDsLast    []coretypes.RequestID
-	NodeConn          []*testchain.MockedNodeConn
-	MockedACS         chain.AsynchronousCommonSubsetRunner
 	ChainID           chainid.ChainID
+	MockedACS         chain.AsynchronousCommonSubsetRunner
+	InitStateOutput   *ledgerstate.AliasOutput
 	mutex             sync.Mutex
 	Nodes             []*mockedNode
 }
 
 type mockedNode struct {
-	OwnIndex  uint16
-	Env       *MockedEnv
-	ChainCore *testchain.MockedChainCore
-	Mempool   chain.Mempool
-	Consensus chain.Consensus
-	Log       *logger.Logger
+	NodeID      string
+	Env         *MockedEnv
+	NodeConn    *testchain.MockedNodeConn  // GoShimmer mock
+	ChainCore   *testchain.MockedChainCore // Chain mock
+	stateSync   coreutil.ChainStateSync    // Chain mock
+	Mempool     chain.Mempool              // Consensus needs
+	Consensus   chain.Consensus            // Consensus needs
+	store       kvstore.KVStore            // State manager mock
+	SolidState  state.VirtualState         // State manager mock
+	StateOutput *ledgerstate.AliasOutput   // State manager mock
+	Log         *logger.Logger
+	mutex       sync.Mutex
 }
 
 func NewMockedEnv(t *testing.T, n, quorum uint16, debug bool) (*MockedEnv, *ledgerstate.Transaction) {
@@ -90,21 +90,12 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 
 	log.Infof("creating test environment with N = %d, T = %d", n, quorum)
 
-	neighbors := make([]string, n)
-	for i := range neighbors {
-		neighbors[i] = fmt.Sprintf("localhost:%d", 4000+i)
-	}
-
 	ret := &MockedEnv{
-		T:          t,
-		N:          n,
-		Quorum:     quorum,
-		Neighbors:  neighbors,
-		Log:        log,
-		Ledger:     utxodb.New(),
-		NodeConn:   make([]*testchain.MockedNodeConn, n),
-		Nodes:      make([]*mockedNode, n),
-		GlobalSync: coreutil.NewChainStateSync(),
+		T:      t,
+		Quorum: quorum,
+		Log:    log,
+		Ledger: utxodb.New(),
+		Nodes:  make([]*mockedNode, n),
 	}
 	if mockACS {
 		ret.MockedACS = testchain.NewMockedACSRunner(quorum, log)
@@ -113,31 +104,13 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 		log.Infof("running REAL ACS consensus")
 	}
 
-	for i := range ret.NodeConn {
-		func(j int) {
-			nconn := testchain.NewMockedNodeConnection(fmt.Sprintf("nodecon-%d", j))
-			ret.NodeConn[j] = nconn
-			nconn.OnPostTransaction(func(tx *ledgerstate.Transaction) {
-				ret.receiveNewTransaction(tx, uint16(j))
-			})
-			nconn.OnPullBacklog(func(addr *ledgerstate.AliasAddress) {
-				// TODO
-			})
-			nconn.OnPullTransactionInclusionState(func(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
-				if _, already := ret.Ledger.GetTransaction(txid); already {
-					go ret.Nodes[j].ChainCore.ReceiveMessage(&chain.InclusionStateMsg{
-						TxID:  txid,
-						State: ledgerstate.Confirmed,
-					})
-				}
-			})
-		}(i)
-	}
+	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 
 	log.Infof("running DKG and setting up mocked network..")
-	_, ret.Identities = testpeers.SetupKeys(n)
-	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, neighbors, tcrypto.DefaultSuite())
-	ret.NetworkProviders = testpeers.SetupNet(neighbors, ret.Identities, testutil.NewPeeringNetReliable(), log)
+	nodeIDs, identities := testpeers.SetupKeys(n)
+	ret.NodeIDs = nodeIDs
+	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, ret.NodeIDs, tcrypto.DefaultSuite())
+	ret.NetworkProviders = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
 
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)
@@ -157,176 +130,207 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	err = ret.Ledger.AddTransaction(originTx)
 	require.NoError(t, err)
 
-	ret.StateOutput, err = utxoutil.GetSingleChainedAliasOutput(originTx)
+	ret.InitStateOutput, err = utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
-	ret.ChainID = *chainid.NewChainID(ret.StateOutput.GetAliasAddress())
+	ret.ChainID = *chainid.NewChainID(ret.InitStateOutput.GetAliasAddress())
 
-	ret.store = mapdb.NewMapDB()
-	ret.SolidState, err = state.CreateOriginState(ret.store, &ret.ChainID)
-	ret.GlobalSync.SetSolidIndex(0)
-	require.NoError(t, err)
-
-	for i := range ret.Nodes {
-		ret.Nodes[i] = ret.newNode(uint16(i))
-	}
 	return ret, originTx
 }
 
-func (env *MockedEnv) newNode(i uint16) *mockedNode {
-	log := env.Log.Named(fmt.Sprintf("%d", i))
-	chainCore := testchain.NewMockedChainCore(env.T, env.ChainID, log)
-	chainCore.OnGlobalStateSync(func() coreutil.ChainStateSync {
-		return env.GlobalSync
+func (env *MockedEnv) CreateNodes(timers ConsensusTimers) {
+	for i := range env.Nodes {
+		env.Nodes[i] = env.NewNode(uint16(i), timers)
+	}
+}
+
+func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedNode { //nolint:revive
+	nodeID := env.NodeIDs[nodeIndex]
+	log := env.Log.Named(nodeID)
+	ret := &mockedNode{
+		NodeID:    nodeID,
+		Env:       env,
+		NodeConn:  testchain.NewMockedNodeConnection("Node_" + nodeID),
+		store:     mapdb.NewMapDB(),
+		ChainCore: testchain.NewMockedChainCore(env.T, env.ChainID, log),
+		stateSync: coreutil.NewChainStateSync(),
+		Log:       log,
+	}
+	ret.ChainCore.OnGlobalStateSync(func() coreutil.ChainStateSync {
+		return ret.stateSync
 	})
-	chainCore.OnGetStateReader(func() state.OptimisticStateReader {
-		return state.NewOptimisticStateReader(env.store, env.GlobalSync)
+	ret.ChainCore.OnGetStateReader(func() state.OptimisticStateReader {
+		return state.NewOptimisticStateReader(ret.store, ret.stateSync)
 	})
-	mpool := mempool.New(chainCore.GetStateReader(), coretypes.NewInMemoryBlobCache(), log)
-	cfg, err := peering.NewStaticPeerNetworkConfigProvider(env.Neighbors[i], 4000+int(i), env.Neighbors...)
-	require.NoError(env.T, err)
+	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction) {
+		env.mutex.Lock()
+		defer env.mutex.Unlock()
+
+		if _, already := env.Ledger.GetTransaction(tx.ID()); !already {
+			if err := env.Ledger.AddTransaction(tx); err != nil {
+				ret.Log.Error(err)
+				return
+			}
+			stateOutput := transaction.GetAliasOutput(tx, env.ChainID.AsAddress())
+			require.NotNil(env.T, stateOutput)
+
+			ret.Log.Infof("stored transaction to the ledger: %s", tx.ID().Base58())
+			for _, node := range env.Nodes {
+				go func(n *mockedNode) {
+					ret.mutex.Lock()
+					defer ret.mutex.Unlock()
+					n.StateOutput = stateOutput
+					n.checkStateApproval()
+				}(node)
+			}
+		} else {
+			ret.Log.Infof("transaction already in the ledger: %s", tx.ID().Base58())
+		}
+	})
+	ret.NodeConn.OnPullTransactionInclusionState(func(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
+		if _, already := env.Ledger.GetTransaction(txid); already {
+			go ret.ChainCore.ReceiveMessage(&chain.InclusionStateMsg{
+				TxID:  txid,
+				State: ledgerstate.Confirmed,
+			})
+		}
+	})
+	ret.Mempool = mempool.New(ret.ChainCore.GetStateReader(), coretypes.NewInMemoryBlobCache(), log)
+
+	cfg := &consensusTestConfigProvider{
+		ownNetID:  nodeID,
+		neighbors: env.NodeIDs,
+	}
 	//
 	// Pass the ACS mock, if it was set in env.MockedACS.
-	acs := make([]chain.AsynchronousCommonSubsetRunner, 0)
+	acs := make([]chain.AsynchronousCommonSubsetRunner, 0, 1)
 	if env.MockedACS != nil {
 		acs = append(acs, env.MockedACS)
 	}
 	cmtRec := &committee_record.CommitteeRecord{
 		Address: env.StateAddress,
-		Nodes:   env.Neighbors,
+		Nodes:   env.NodeIDs,
 	}
 	cmt, err := committee.New(
 		cmtRec,
 		&env.ChainID,
-		env.NetworkProviders[i],
+		env.NetworkProviders[nodeIndex],
 		cfg,
-		env.DKSRegistries[i],
+		env.DKSRegistries[nodeIndex],
 		log,
 		acs...,
 	)
 	require.NoError(env.T, err)
+	cmt.Attach(ret.ChainCore)
 
-	cmt.Attach(chainCore)
-	cons := New(chainCore, mpool, cmt, env.NodeConn[i])
+	ret.StateOutput = env.InitStateOutput
+	ret.SolidState, err = state.CreateOriginState(ret.store, &env.ChainID)
+	ret.stateSync.SetSolidIndex(0)
+	require.NoError(env.T, err)
+
+	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn, timers)
 	cons.vmRunner = testchain.NewMockedVMRunner(env.T, log)
-	ret := &mockedNode{
-		OwnIndex:  i,
-		Env:       env,
-		ChainCore: chainCore,
-		Mempool:   mpool,
-		Consensus: cons,
-		Log:       log,
-	}
+	ret.Consensus = cons
 
-	chainCore.OnReceiveMessage(func(msg interface{}) {
-		switch msg := msg.(type) {
-		case *chain.AsynchronousCommonSubsetMsg:
-			ret.Consensus.EventAsynchronousCommonSubsetMsg(msg)
-		case *chain.VMResultMsg:
-			ret.Consensus.EventVMResultMsg(msg)
-		case *chain.StateCandidateMsg:
-			ret.Log.Infof("chainCore.StateCandidateMsg: state hash: %s, approving output: %s",
-				msg.State.Hash(), coretypes.OID(msg.ApprovingOutputID))
-			ret.Env.receiveStateCandidate(msg.State, i)
-		case *chain.InclusionStateMsg:
-			ret.Consensus.EventInclusionsStateMsg(msg)
-		case *peering.PeerMessage:
-			ret.processPeerMessage(msg)
-		default:
-			ret.Log.Errorf("chainCore: unexpected message type: %T", msg)
+	ret.ChainCore.OnReceiveAsynchronousCommonSubsetMsg(func(msg *chain.AsynchronousCommonSubsetMsg) {
+		ret.Consensus.EventAsynchronousCommonSubsetMsg(msg)
+	})
+	ret.ChainCore.OnReceiveVMResultMsg(func(msg *chain.VMResultMsg) {
+		ret.Consensus.EventVMResultMsg(msg)
+	})
+	ret.ChainCore.OnReceiveInclusionStateMsg(func(msg *chain.InclusionStateMsg) {
+		ret.Consensus.EventInclusionsStateMsg(msg)
+	})
+	ret.ChainCore.OnReceiveStateCandidateMsg(func(msg *chain.StateCandidateMsg) {
+		ret.mutex.Lock()
+		defer ret.mutex.Unlock()
+		newState := msg.State
+		ret.Log.Infof("chainCore.StateCandidateMsg: state hash: %s, approving output: %s",
+			msg.State.Hash(), coretypes.OID(msg.ApprovingOutputID))
+
+		if ret.SolidState != nil && ret.SolidState.BlockIndex() == newState.BlockIndex() {
+			ret.Log.Debugf("new state already committed for index %d", newState.BlockIndex())
+			return
+		}
+		err := newState.Commit()
+		require.NoError(env.T, err)
+
+		ret.SolidState = newState
+		ret.Log.Debugf("committed new state for index %d", newState.BlockIndex())
+
+		ret.checkStateApproval()
+	})
+	ret.ChainCore.OnReceivePeerMessage(func(msg *peering.PeerMessage) {
+		var err error
+		if msg.MsgType == chain.MsgSignedResult {
+			decoded := chain.SignedResultMsg{}
+			if err = decoded.Read(bytes.NewReader(msg.MsgData)); err == nil {
+				decoded.SenderIndex = msg.SenderIndex
+				ret.Consensus.EventSignedResultMsg(&decoded)
+			}
+		}
+		if err != nil {
+			ret.Log.Errorf("unexpected peer message type = %d", msg.MsgType)
 		}
 	})
 	return ret
 }
 
-func (env *MockedEnv) receiveStateCandidate(newState state.VirtualState, from uint16) {
+func (env *MockedEnv) nodeCount() int {
+	return len(env.NodeIDs)
+}
+
+func (env *MockedEnv) SetInitialConsensusState() {
 	env.mutex.Lock()
 	defer env.mutex.Unlock()
-
-	if env.SolidState != nil && env.SolidState.BlockIndex() == newState.BlockIndex() {
-		env.Log.Debugf("node #%d: new state already committed for index %d", from, newState.BlockIndex())
-		return
-	}
-	err := newState.Commit()
-	require.NoError(env.T, err)
-
-	env.SolidState = newState
-	env.Log.Debugf("node #%d: committed new state for index %d", from, newState.BlockIndex())
-
-	env.checkStateApproval(from)
-}
-
-func (env *MockedEnv) receiveNewTransaction(tx *ledgerstate.Transaction, from uint16) {
-	env.mutex.Lock()
-	defer env.mutex.Unlock()
-
-	if _, already := env.Ledger.GetTransaction(tx.ID()); !already {
-		if err := env.Ledger.AddTransaction(tx); err != nil {
-			env.Log.Error(err)
-			return
-		}
-		env.StateOutput = transaction.GetAliasOutput(tx, env.ChainID.AsAddress())
-		require.NotNil(env.T, env.StateOutput)
-
-		env.Log.Infof("node #%d: stored transaction to the ledger: %s", from, tx.ID().Base58())
-		env.checkStateApproval(from)
-	} else {
-		env.Log.Infof("node #%d: transaction already in the ledger: %s", from, tx.ID().Base58())
-	}
-}
-
-func (env *MockedEnv) checkStateApproval(from uint16) {
-	if env.SolidState == nil || env.StateOutput == nil {
-		return
-	}
-	if env.SolidState.BlockIndex() != env.StateOutput.GetStateIndex() {
-		return
-	}
-	stateHash, err := hashing.HashValueFromBytes(env.StateOutput.GetStateData())
-	require.NoError(env.T, err)
-	require.EqualValues(env.T, stateHash, env.SolidState.Hash())
-
-	env.RequestIDsLast = env.getReqIDsForLastState()
-
-	env.Log.Infof("STATE APPROVED (%d reqs). Index: %d, State output: %s (from node #%d)",
-		len(env.RequestIDsLast), env.SolidState.BlockIndex(), coretypes.OID(env.StateOutput.ID()), from)
-
-	env.EventStateTransition()
-}
-
-func (n *mockedNode) processPeerMessage(msg *peering.PeerMessage) {
-	var err error
-	switch msg.MsgType { //nolint:gocritic
-	case chain.MsgSignedResult:
-		decoded := chain.SignedResultMsg{}
-		if err = decoded.Read(bytes.NewReader(msg.MsgData)); err == nil {
-			decoded.SenderIndex = msg.SenderIndex
-			n.Consensus.EventSignedResultMsg(&decoded)
-		}
-	}
-	if err != nil {
-		n.Log.Errorf("unexpected peer message type = %d", msg.MsgType)
-	}
-}
-
-func (env *MockedEnv) EventStateTransition() {
-	env.Log.Debugf("EventStateTransition")
-	nowis := time.Now()
-	solidState := env.SolidState.Clone()
-	stateOutput := env.StateOutput
 
 	for _, node := range env.Nodes {
 		go func(n *mockedNode) {
-			n.Mempool.RemoveRequests(env.RequestIDsLast...)
-			n.ChainCore.GlobalStateSync().SetSolidIndex(solidState.BlockIndex())
-
-			n.Consensus.EventStateTransitionMsg(&chain.StateTransitionMsg{
-				State:          solidState.Clone(),
-				StateOutput:    stateOutput,
-				StateTimestamp: nowis,
-			})
+			if n.SolidState != nil && n.SolidState.BlockIndex() == 0 {
+				n.EventStateTransition()
+			}
 		}(node)
 	}
+}
+
+func (n *mockedNode) checkStateApproval() {
+	if n.SolidState == nil || n.StateOutput == nil {
+		return
+	}
+	if n.SolidState.BlockIndex() != n.StateOutput.GetStateIndex() {
+		return
+	}
+	stateHash, err := hashing.HashValueFromBytes(n.StateOutput.GetStateData())
+	require.NoError(n.Env.T, err)
+	require.EqualValues(n.Env.T, stateHash, n.SolidState.Hash())
+
+	reqIDsForLastState := make([]coretypes.RequestID, 0)
+	prefix := kv.Key(util.Uint32To4Bytes(n.SolidState.BlockIndex()))
+	err = n.SolidState.KVStoreReader().Iterate(prefix, func(key kv.Key, value []byte) bool {
+		reqid, err := coretypes.RequestIDFromBytes(value)
+		require.NoError(n.Env.T, err)
+		reqIDsForLastState = append(reqIDsForLastState, reqid)
+		return true
+	})
+	require.NoError(n.Env.T, err)
+	n.Mempool.RemoveRequests(reqIDsForLastState...)
+
+	n.Log.Infof("STATE APPROVED (%d reqs). Index: %d, State output: %s",
+		len(reqIDsForLastState), n.SolidState.BlockIndex(), coretypes.OID(n.StateOutput.ID()))
+
+	n.EventStateTransition()
+}
+
+func (n *mockedNode) EventStateTransition() {
+	n.Log.Debugf("EventStateTransition")
+
+	n.ChainCore.GlobalStateSync().SetSolidIndex(n.SolidState.BlockIndex())
+
+	n.Consensus.EventStateTransitionMsg(&chain.StateTransitionMsg{
+		State:          n.SolidState.Clone(),
+		StateOutput:    n.StateOutput,
+		StateTimestamp: time.Now(),
+	})
 }
 
 func (env *MockedEnv) StartTimers() {
@@ -347,106 +351,60 @@ func (n *mockedNode) StartTimer() {
 	}()
 }
 
-func (n *mockedNode) WaitTimerTick(until int) {
-	for {
-		snap := n.Consensus.GetStatusSnapshot()
-		if snap == nil {
-			continue
+func (env *MockedEnv) WaitTimerTick(until int) error {
+	checkTimerTickFun := func(node *mockedNode) bool {
+		snap := node.Consensus.GetStatusSnapshot()
+		if snap != nil && snap.TimerTick >= until {
+			return true
 		}
-		if snap.TimerTick >= until {
-			return
-		}
-		time.Sleep(10 * time.Millisecond)
+		return false
 	}
-}
-
-func (env *MockedEnv) WaitTimerTick(until int) {
-	var wg sync.WaitGroup
-	wg.Add(int(env.N))
-	for _, n := range env.Nodes {
-		nn := n
-		go func() {
-			nn.WaitTimerTick(until)
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-	env.Log.Infof("target timer tick #%d has been reached", until)
-}
-
-func (n *mockedNode) WaitStateIndex(until uint32, timeout ...time.Duration) error {
-	deadline := time.Now().Add(10 * time.Second)
-	if len(timeout) > 0 {
-		deadline = time.Now().Add(timeout[0])
-	}
-	for {
-		snap := n.Consensus.GetStatusSnapshot()
-		if snap == nil {
-			continue
-		}
-		if snap.StateIndex >= until {
-			// n.Log.Debugf("reached index %d", until)
-			return nil
-		}
-		time.Sleep(10 * time.Millisecond)
-		if time.Now().After(deadline) {
-			return fmt.Errorf("node %d: WaitStateIndex timeout", n.OwnIndex)
-		}
-	}
-}
-
-func (n *mockedNode) WaitMempool(numRequests int, timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
-	for {
-		snap := n.Consensus.GetStatusSnapshot()
-		if snap == nil {
-			time.Sleep(10 * time.Millisecond)
-			continue
-		}
-		if snap.Mempool.InPoolCounter >= numRequests && snap.Mempool.OutPoolCounter >= numRequests {
-			return nil
-		}
-		if time.Now().After(deadline) {
-			return fmt.Errorf("node %d: WaitMempool timeout", n.OwnIndex)
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
+	return env.WaitForEventFromNodes("TimerTick", checkTimerTickFun)
 }
 
 func (env *MockedEnv) WaitStateIndex(quorum int, stateIndex uint32, timeout ...time.Duration) error {
-	ch := make(chan int)
-	for _, n := range env.Nodes {
-		go func(n *mockedNode) {
-			if err := n.WaitStateIndex(stateIndex, timeout...); err != nil {
-				ch <- 0
-			} else {
-				ch <- 1
-			}
-		}(n)
-	}
-	var sum int
-	for n := range ch {
-		sum += n
-		if sum >= quorum {
-			return nil
+	checkStateIndexFun := func(node *mockedNode) bool {
+		snap := node.Consensus.GetStatusSnapshot()
+		if snap != nil && snap.StateIndex >= stateIndex {
+			return true
 		}
+		return false
 	}
-	return fmt.Errorf("WaitStateIndex: timeout")
+	return env.WaitForEventFromNodesQuorum("stateIndex", quorum, checkStateIndexFun, timeout...)
 }
 
-func (env *MockedEnv) WaitMempool(numRequests, quorum int, timeout ...time.Duration) error {
+func (env *MockedEnv) WaitMempool(numRequests int, quorum int, timeout ...time.Duration) error { //nolint:gocritic
+	checkMempoolFun := func(node *mockedNode) bool {
+		snap := node.Consensus.GetStatusSnapshot()
+		if snap != nil && snap.Mempool.InPoolCounter >= numRequests && snap.Mempool.OutPoolCounter >= numRequests {
+			return true
+		}
+		return false
+	}
+	return env.WaitForEventFromNodesQuorum("mempool", quorum, checkMempoolFun, timeout...)
+}
+
+func (env *MockedEnv) WaitForEventFromNodes(waitName string, nodeConditionFun func(node *mockedNode) bool, timeout ...time.Duration) error {
+	return env.WaitForEventFromNodesQuorum(waitName, env.nodeCount(), nodeConditionFun, timeout...)
+}
+
+func (env *MockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, isEventOccuredFun func(node *mockedNode) bool, timeout ...time.Duration) error {
 	to := 10 * time.Second
 	if len(timeout) > 0 {
 		to = timeout[0]
 	}
 	ch := make(chan int)
+	nodeCount := env.nodeCount()
+	deadline := time.Now().Add(to)
 	for _, n := range env.Nodes {
 		go func(node *mockedNode) {
-			if err := node.WaitMempool(numRequests, to); err != nil {
-				ch <- 0
-			} else {
-				ch <- 1
+			for time.Now().Before(deadline) {
+				if isEventOccuredFun(node) {
+					ch <- 1
+				}
+				time.Sleep(10 * time.Millisecond)
 			}
+			ch <- 0
 		}(n)
 	}
 	var sum, total int
@@ -456,24 +414,11 @@ func (env *MockedEnv) WaitMempool(numRequests, quorum int, timeout ...time.Durat
 		if sum >= quorum {
 			return nil
 		}
-		if total >= len(env.Nodes) {
-			break
+		if total >= nodeCount {
+			return fmt.Errorf("Wait for %s: test timeouted", waitName)
 		}
 	}
 	return fmt.Errorf("WaitMempool: timeout expired %v", to)
-}
-
-func (env *MockedEnv) getReqIDsForLastState() []coretypes.RequestID {
-	ret := make([]coretypes.RequestID, 0)
-	prefix := kv.Key(util.Uint32To4Bytes(env.SolidState.BlockIndex()))
-	err := env.SolidState.KVStoreReader().Iterate(prefix, func(key kv.Key, value []byte) bool {
-		reqid, err := coretypes.RequestIDFromBytes(value)
-		require.NoError(env.T, err)
-		ret = append(ret, reqid)
-		return true
-	})
-	require.NoError(env.T, err)
-	return ret
 }
 
 func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
@@ -495,4 +440,28 @@ func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
 			n.Mempool.ReceiveRequests(reqs...)
 		}
 	}
+}
+
+// TODO: should this object be obtained from peering.NetworkProvider?
+// Or should coretypes.PeerNetworkConfigProvider methods methods be part of
+// peering.NetworkProvider interface
+type consensusTestConfigProvider struct {
+	ownNetID  string
+	neighbors []string
+}
+
+func (p *consensusTestConfigProvider) OwnNetID() string {
+	return p.ownNetID
+}
+
+func (p *consensusTestConfigProvider) PeeringPort() int {
+	return 0 // Anything
+}
+
+func (p *consensusTestConfigProvider) Neighbors() []string {
+	return p.neighbors
+}
+
+func (p *consensusTestConfigProvider) String() string {
+	return fmt.Sprintf("consensusTestConfigProvider( ownNetID: %s, neighbors: %+v )", p.OwnNetID(), p.Neighbors())
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
@@ -76,7 +75,7 @@ func (vmctx *VMContext) getFeeInfo() (ledgerstate.Color, uint64, uint64) {
 }
 
 func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {
-	vmtype, ok := processors.GetBuiltinProcessorType(programHash)
+	vmtype, ok := vmctx.processors.Config.GetNativeProcessorType(programHash)
 	if ok {
 		return vmtype, nil, nil
 	}

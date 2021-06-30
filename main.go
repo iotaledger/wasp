@@ -12,11 +12,11 @@ import (
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/dkg"
 	"github.com/iotaledger/wasp/plugins/downloader"
-	"github.com/iotaledger/wasp/plugins/globals"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"github.com/iotaledger/wasp/plugins/logger"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/plugins/processors"
 	"github.com/iotaledger/wasp/plugins/publishernano"
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
@@ -39,12 +39,12 @@ func main() {
 		peering.Init(),
 		dkg.Init(),
 		nodeconn.Init(),
+		processors.Init(),
+		wasmtimevm.Init(),
 		chains.Init(),
 		webapi.Init(),
 		publishernano.Init(),
 		dashboard.Init(),
-		wasmtimevm.Init(),
-		globals.Init(),
 	)
 
 	node.Run(

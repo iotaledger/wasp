@@ -177,7 +177,7 @@ func (env *MockedEnv) PullConfirmedOutputFromLedger(addr ledgerstate.Address, ou
 	return output
 }
 
-func (env *MockedEnv) NewMockedNode(nodeIndex int, timers Timers) *MockedNode {
+func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *MockedNode {
 	nodeID := env.NodeIDs[nodeIndex]
 	log := env.Log.Named(nodeID)
 	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.NodeIDs)
