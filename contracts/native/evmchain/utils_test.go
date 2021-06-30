@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -61,8 +62,11 @@ type ethCallOptions struct {
 	gasLimit uint64
 }
 
-func initEVMChain(t *testing.T) *evmChainInstance {
-	env := solo.New(t, true, false)
+func initEVMChain(t *testing.T, nativeContracts ...*coreutil.ContractInterface) *evmChainInstance {
+	env := solo.New(t, true, false).WithNativeContract(Interface)
+	for _, c := range nativeContracts {
+		env = env.WithNativeContract(c)
+	}
 	faucetKey, _ := crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	e := &evmChainInstance{
 		t:            t,

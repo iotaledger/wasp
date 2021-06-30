@@ -6,7 +6,6 @@
 package evmchain
 
 import (
-	"github.com/iotaledger/wasp/contracts/native"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 )
@@ -51,7 +50,6 @@ func init() {
 		coreutil.ViewFunc(FuncGetOwner, getOwner),
 		coreutil.ViewFunc(FuncGetGasPerIota, getGasPerIota),
 	})
-	native.AddProcessor(Interface)
 }
 
 const (

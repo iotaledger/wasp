@@ -39,7 +39,7 @@ type soloTestEnv struct {
 func newSoloTestEnv(t *testing.T) *soloTestEnv {
 	evmtest.InitGoEthLogger(t)
 
-	s := solo.New(t, true, false)
+	s := solo.New(t, true, false).WithNativeContract(evmchain.Interface)
 	chainOwner, _ := s.NewKeyPairWithFunds()
 	chain := s.NewChain(chainOwner, "iscpchain")
 	err := chain.DeployContract(chainOwner, "evmchain", evmchain.Interface.ProgramHash,
