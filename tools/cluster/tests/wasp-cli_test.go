@@ -205,7 +205,9 @@ func TestWaspCliContract(t *testing.T) {
 	w.copyFile(srcFile)
 
 	// test chain deploy-contract command
-	w.Run("chain", "deploy-contract", vmtype, name, description, file)
+	w.Run("chain", "deploy-contract", vmtype, name, description, file,
+		"string", "counter", "int64", "42",
+	)
 
 	out := w.Run("chain", "list-contracts")
 	found := false
@@ -220,21 +222,21 @@ func TestWaspCliContract(t *testing.T) {
 	// test chain call-view command
 	out = w.Run("chain", "call-view", name, "getCounter")
 	out = w.Pipe(out, "decode", "string", "counter", "int")
-	require.Regexp(t, "(?m)counter:[[:space:]]+<nil>$", out[0])
+	require.Regexp(t, "(?m)counter:[[:space:]]+42$", out[0])
 
 	// test chain post-request command
 	w.Run("chain", "post-request", name, "increment")
 
 	out = w.Run("chain", "call-view", name, "getCounter")
 	out = w.Pipe(out, "decode", "string", "counter", "int")
-	require.Regexp(t, "(?m)counter:[[:space:]]+1$", out[0])
+	require.Regexp(t, "(?m)counter:[[:space:]]+43$", out[0])
 
 	// include a funds transfer
 	w.Run("chain", "post-request", name, "increment", "--transfer=IOTA:10")
 
 	out = w.Run("chain", "call-view", name, "getCounter")
 	out = w.Pipe(out, "decode", "string", "counter", "int")
-	require.Regexp(t, "(?m)counter:[[:space:]]+2$", out[0])
+	require.Regexp(t, "(?m)counter:[[:space:]]+44$", out[0])
 }
 
 func TestWaspCliBlobContract(t *testing.T) {
