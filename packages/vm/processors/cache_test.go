@@ -6,18 +6,18 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestBasic(t *testing.T) {
-	p := MustNew()
+	p := MustNew(NewConfig())
 
 	rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
 	rootproc, err := p.GetOrCreateProcessor(
 		rec,
-		func(hashing.HashValue) (string, []byte, error) { return core.VMType, nil, nil },
+		func(hashing.HashValue) (string, []byte, error) { return vmtypes.Core, nil, nil },
 	)
 	assert.NoError(t, err)
 

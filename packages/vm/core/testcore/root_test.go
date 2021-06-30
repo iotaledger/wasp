@@ -59,7 +59,7 @@ func TestGetInfo(t *testing.T) {
 }
 
 func TestDeployExample(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Interface)
 	chain := env.NewChain(nil, "chain1")
 
 	name := "testInc"
@@ -94,7 +94,7 @@ func TestDeployExample(t *testing.T) {
 }
 
 func TestDeployDouble(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Interface)
 	chain := env.NewChain(nil, "chain1")
 
 	name := "testInc"

@@ -17,10 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-const (
-	VMType = "builtinvm"
-)
-
 var AllCoreContractsByHash = map[hashing.HashValue]*coreutil.ContractInterface{
 	_default.Interface.ProgramHash:   _default.Interface,
 	root.Interface.ProgramHash:       root.Interface,

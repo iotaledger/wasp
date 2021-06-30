@@ -284,7 +284,7 @@ func (m *mockChain) Events() chain.ChainEvents {
 	panic("not implemented")
 }
 
-func (m *mockChain) Processors() *processors.ProcessorCache {
+func (m *mockChain) Processors() *processors.Cache {
 	panic("not implemented")
 }
 

@@ -16,7 +16,7 @@ func Test2Chains(t *testing.T) { run2(t, test2Chains) }
 func test2Chains(t *testing.T, w bool) {
 	core.PrintWellKnownHnames()
 
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Interface)
 	chain1 := env.NewChain(nil, "ch1")
 	chain2 := env.NewChain(nil, "ch2")
 	chain1.CheckAccountLedger()
