@@ -10,6 +10,7 @@ import (
 	"sort"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -28,7 +29,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
 )
 
@@ -193,12 +193,12 @@ const (
 func (ch *Chain) UploadWasm(keyPair *ed25519.KeyPair, binaryCode []byte) (ret hashing.HashValue, err error) {
 	if OptimizeUpload {
 		return ch.UploadBlobOptimized(OptimalBlobSize, keyPair,
-			blob.VarFieldVMType, wasmtimevm.VMType,
+			blob.VarFieldVMType, vmtypes.WasmTime,
 			blob.VarFieldProgramBinary, binaryCode,
 		)
 	}
 	return ch.UploadBlob(keyPair,
-		blob.VarFieldVMType, wasmtimevm.VMType,
+		blob.VarFieldVMType, vmtypes.WasmTime,
 		blob.VarFieldProgramBinary, binaryCode,
 	)
 }
@@ -222,7 +222,7 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	require.EqualValues(ch.Env.T, wasmtimevm.VMType, string(res.MustGet(blob.ParamBytes)))
+	require.EqualValues(ch.Env.T, vmtypes.WasmTime, string(res.MustGet(blob.ParamBytes)))
 
 	res, err = ch.CallView(blob.Interface.Name, blob.FuncGetBlobField,
 		blob.ParamHash, progHash,

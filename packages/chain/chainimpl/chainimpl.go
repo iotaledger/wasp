@@ -7,22 +7,6 @@ import (
 	"bytes"
 	"sync"
 
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
-
-	"github.com/iotaledger/wasp/packages/util"
-
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-
-	"github.com/iotaledger/wasp/packages/chain/consensus"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
-
-	"github.com/iotaledger/wasp/packages/chain/statemgr"
-	"github.com/iotaledger/wasp/packages/state"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
 	"github.com/iotaledger/hive.go/events"
@@ -30,10 +14,19 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
+	"github.com/iotaledger/wasp/packages/chain/consensus"
+	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
+	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
@@ -47,7 +40,7 @@ type chainObj struct {
 	chainID               chainid.ChainID
 	chainStateSync        coreutil.ChainStateSync
 	stateReader           state.OptimisticStateReader
-	procset               *processors.ProcessorCache
+	procset               *processors.Cache
 	chMsg                 chan interface{}
 	stateMgr              chain.StateManager
 	consensus             chain.Consensus
@@ -80,6 +73,7 @@ func NewChain(
 	dksProvider coretypes.DKShareRegistryProvider,
 	committeeRegistry coretypes.CommitteeRegistryProvider,
 	blobProvider coretypes.BlobCache,
+	processorConfig *processors.Config,
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chainID.String())
 
@@ -87,7 +81,7 @@ func NewChain(
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog),
-		procset:           processors.MustNew(),
+		procset:           processors.MustNew(processorConfig),
 		chMsg:             make(chan interface{}, 100),
 		chainID:           *chainID,
 		log:               chainLog,

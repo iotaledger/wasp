@@ -32,7 +32,7 @@ var (
 
 func setupChain(t *testing.T, keyPairOriginator *ed25519.KeyPair) (*solo.Solo, *solo.Chain) {
 	core.PrintWellKnownHnames()
-	env := solo.New(t, DEBUG, false)
+	env := solo.New(t, DEBUG, false).WithNativeContract(sbtestsc.Interface)
 	chain := env.NewChain(keyPairOriginator, "ch1")
 	return env, chain
 }

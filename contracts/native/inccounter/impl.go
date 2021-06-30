@@ -3,7 +3,6 @@ package inccounter
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/contracts/native"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -46,10 +45,6 @@ const (
 	VarName        = "name"
 	VarDescription = "dscr"
 )
-
-func init() {
-	native.AddProcessor(Interface)
-}
 
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.init in %s", ctx.Contract().String())

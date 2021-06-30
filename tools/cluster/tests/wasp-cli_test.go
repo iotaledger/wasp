@@ -14,6 +14,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
@@ -198,7 +199,7 @@ func TestWaspCliContract(t *testing.T) {
 	committee, quorum := w.committeeConfig()
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
-	vmtype := "wasmtimevm"
+	vmtype := vmtypes.WasmTime
 	name := "inccounter"
 	description := "inccounter SC"
 	w.copyFile(srcFile)
@@ -247,7 +248,7 @@ func TestWaspCliBlobContract(t *testing.T) {
 	out := w.Run("chain", "list-blobs")
 	require.Contains(t, out[0], "Total 0 blob(s)")
 
-	vmtype := "wasmtimevm"
+	vmtype := vmtypes.WasmTime
 	description := "inccounter SC"
 	w.copyFile(srcFile)
 
