@@ -40,12 +40,15 @@ func TestRequestGasFees(t *testing.T) {
 	evmChain := initEVMChain(t, evmChainMgmtInterface)
 	soloChain := evmChain.soloChain
 
+	err := soloChain.DeployContract(nil, evmChainMgmtInterface.Name, evmChainMgmtInterface.ProgramHash)
+	require.NoError(t, err)
+
 	// deploy solidity `storage` contract (just to produce some fees to be claimed)
 	evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
 	// change owner to evnchainmanagement SC
 	managerAgentID := coretypes.NewAgentID(soloChain.ChainID.AsAddress(), coretypes.Hn(evmChainMgmtInterface.Name))
-	_, err := soloChain.PostRequestSync(
+	_, err = soloChain.PostRequestSync(
 		solo.NewCallParams(Interface.Name, FuncSetNextOwner, FieldNextEvmOwner, managerAgentID).
 			WithIotas(1),
 		soloChain.OriginatorKeyPair,
