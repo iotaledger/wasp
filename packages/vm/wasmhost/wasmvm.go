@@ -183,7 +183,7 @@ func (vm *WasmVMBase) Run(runner func() error) (err error) {
 	err = runner()
 	done <- true
 	vm.timeoutStarted = false
-	return
+	return err
 }
 
 func (vm *WasmVMBase) SaveMemory() {

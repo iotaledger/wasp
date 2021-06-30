@@ -94,6 +94,7 @@ func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
 	return nil
 }
 
+//nolint:unparam
 func (o *ScContext) getBytesForView(keyID, typeID int32) []byte {
 	ctx := o.vm.ctxView
 	if ctx == nil {

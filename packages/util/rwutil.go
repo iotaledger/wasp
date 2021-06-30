@@ -25,7 +25,7 @@ func ReadByte(r io.Reader) (byte, error) {
 
 func WriteByte(w io.Writer, val byte) error {
 	b := []byte{val}
-	_, err := w.Write(b[:])
+	_, err := w.Write(b)
 	return err
 }
 
@@ -422,10 +422,7 @@ func ReadMarshaled(r io.Reader, val encoding.BinaryUnmarshaler) error {
 	if bin, err = ReadBytes16(r); err != nil {
 		return err
 	}
-	if err = val.UnmarshalBinary(bin); err != nil {
-		return err
-	}
-	return nil
+	return val.UnmarshalBinary(bin)
 }
 
 // WriteMarshaled supports kyber.Point, kyber.Scalar and similar.
@@ -435,10 +432,7 @@ func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
 	if bin, err = val.MarshalBinary(); err != nil {
 		return err
 	}
-	if err = WriteBytes16(w, bin); err != nil {
-		return err
-	}
-	return nil
+	return WriteBytes16(w, bin)
 }
 
 func ReadOutputID(r io.Reader, oid *ledgerstate.OutputID) error {

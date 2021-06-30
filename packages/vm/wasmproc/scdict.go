@@ -53,18 +53,17 @@ func GetMapObjectID(mapObj WaspObject, keyID, typeID int32, factories ObjFactori
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScDict struct {
-	host      *wasmhost.KvStoreHost
-	id        int32
-	isMutable bool
-	isRoot    bool
-	keyID     int32
-	kvStore   kv.KVStore
-	length    int32
-	name      string
-	objects   map[int32]int32
-	ownerID   int32
-	typeID    int32
-	types     map[int32]int32
+	host    *wasmhost.KvStoreHost
+	id      int32
+	isRoot  bool
+	keyID   int32
+	kvStore kv.KVStore
+	length  int32
+	name    string
+	objects map[int32]int32
+	ownerID int32
+	typeID  int32
+	types   map[int32]int32
 }
 
 var _ WaspObject = &ScDict{}
@@ -212,11 +211,6 @@ func (o *ScDict) Panic(format string, args ...interface{}) {
 }
 
 func (o *ScDict) SetBytes(keyID, typeID int32, bytes []byte) {
-	//TODO
-	//if !o.isMutable {
-	//	o.Panic("validate: Immutable field: %s key %d", o.name, keyID)
-	//}
-
 	if keyID == wasmhost.KeyLength {
 		if o.kvStore != nil {
 			// TODO this goes wrong for state, should clear map tree instead
@@ -300,7 +294,7 @@ func (o *ScDict) validate(keyID, typeID int32) {
 		} else if arrayTypeID != typeID {
 			o.Panic("validate: Invalid type")
 		}
-		if /*o.isMutable && */ keyID == o.length {
+		if keyID == o.length {
 			o.length++
 			if o.kvStore != nil {
 				key := o.NestedKey()[1:]
