@@ -16,13 +16,14 @@ import (
 )
 
 var deployContractCmd = &cobra.Command{
-	Use:   "deploy-contract <vmtype> <name> <description> <filename|program-hash>",
+	Use:   "deploy-contract <vmtype> <name> <description> <filename|program-hash> [init-params]",
 	Short: "Deploy a contract in the chain",
-	Args:  cobra.ExactArgs(4),
+	Args:  cobra.MinimumNArgs(4),
 	Run: func(cmd *cobra.Command, args []string) {
 		vmtype := args[0]
 		name := args[1]
 		description := args[2]
+		initParams := util.EncodeParams(args[4:])
 
 		var progHash hashing.HashValue
 
@@ -50,11 +51,13 @@ var deployContractCmd = &cobra.Command{
 				root.Interface.Hname(),
 				coretypes.Hn(root.FuncDeployContract),
 				chainclient.PostRequestParams{
-					Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
-						root.ParamName:        name,
-						root.ParamDescription: description,
-						root.ParamProgramHash: progHash,
-					})),
+					Args: requestargs.New().
+						AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
+							root.ParamName:        name,
+							root.ParamDescription: description,
+							root.ParamProgramHash: progHash,
+						})).
+						AddEncodeSimpleMany(initParams),
 				},
 			)
 		})
