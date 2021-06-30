@@ -11,9 +11,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	dkg_pkg "github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -23,7 +23,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
-	"go.dedis.ch/kyber/v3"
 )
 
 func addDKSharesEndpoints(adm echoswagger.ApiGroup) {
@@ -57,8 +56,6 @@ func handleDKSharesPost(c echo.Context) error {
 	var req model.DKSharesPostRequest
 	var err error
 
-	suite := dkg.DefaultNode().GroupSuite()
-
 	if err = c.Bind(&req); err != nil {
 		return httperrors.BadRequest("Invalid request body.")
 	}
@@ -67,16 +64,11 @@ func handleDKSharesPost(c echo.Context) error {
 		return httperrors.BadRequest("Inconsistent PeerNetIDs and PeerPubKeys.")
 	}
 
-	var peerPubKeys []kyber.Point = nil
+	var peerPubKeys []ed25519.PublicKey
 	if req.PeerPubKeys != nil {
-		peerPubKeys = make([]kyber.Point, len(req.PeerPubKeys))
+		peerPubKeys = make([]ed25519.PublicKey, len(req.PeerPubKeys))
 		for i := range req.PeerPubKeys {
-			peerPubKeys[i] = suite.Point()
-			b, err := base64.StdEncoding.DecodeString(req.PeerPubKeys[i])
-			if err != nil {
-				return httperrors.BadRequest(fmt.Sprintf("Invalid PeerPubKeys[%v]=%v", i, req.PeerPubKeys[i]))
-			}
-			if err = peerPubKeys[i].UnmarshalBinary(b); err != nil {
+			if peerPubKeys[i], err = ed25519.PublicKeyFromString(req.PeerPubKeys[i]); err != nil {
 				return httperrors.BadRequest(fmt.Sprintf("Invalid PeerPubKeys[%v]=%v", i, req.PeerPubKeys[i]))
 			}
 		}

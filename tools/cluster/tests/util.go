@@ -146,7 +146,7 @@ func requestFunds(wasps *cluster.Cluster, addr ledgerstate.Address, who string) 
 
 func getBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.AgentID, color ledgerstate.Color) uint64 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, accounts.Interface.Hname(), accounts.FuncBalance,
+		chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewBalance,
 		dict.Dict{
 			accounts.ParamAgentID: agentID.Bytes(),
 		})
@@ -165,7 +165,7 @@ func checkBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.
 
 func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []*coretypes.AgentID {
 	r, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, accounts.Interface.Hname(), accounts.FuncAccounts,
+		chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewAccounts,
 	)
 	check(err, t)
 
@@ -186,7 +186,7 @@ func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[*coretypes.Agent
 	acc := getAccountsOnChain(t, chain)
 	for _, agentID := range acc {
 		r, err := chain.Cluster.WaspClient(0).CallView(
-			chain.ChainID, accounts.Interface.Hname(), accounts.FuncBalance,
+			chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewBalance,
 			dict.Dict{
 				accounts.ParamAgentID: agentID.Bytes(),
 			})
@@ -198,7 +198,7 @@ func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[*coretypes.Agent
 
 func getTotalBalance(t *testing.T, chain *cluster.Chain) map[ledgerstate.Color]uint64 {
 	r, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, accounts.Interface.Hname(), accounts.FuncTotalAssets,
+		chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewTotalAssets,
 	)
 	check(err, t)
 	return balancesDictToMap(t, r)
@@ -233,7 +233,7 @@ func checkLedger(t *testing.T, chain *cluster.Chain) {
 	sum := make(map[ledgerstate.Color]uint64)
 	for _, bal := range balances {
 		for col, b := range bal {
-			s, _ := sum[col]
+			s := sum[col]
 			sum[col] = s + b
 		}
 	}

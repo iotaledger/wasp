@@ -9,15 +9,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/util/ready"
-	"go.uber.org/atomic"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/ready"
+	"go.uber.org/atomic"
 )
 
 type stateManager struct {
@@ -33,7 +32,7 @@ type stateManager struct {
 	currentSyncData        atomic.Value
 	notifiedAnchorOutputID ledgerstate.OutputID
 	syncingBlocks          *syncingBlocks
-	timers                 Timers
+	timers                 StateManagerTimers
 	log                    *logger.Logger
 
 	// Channels for accepting external events.
@@ -51,12 +50,12 @@ const (
 	maxBlocksToCommitConst               = 10000 // 10k
 )
 
-func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, timersOpt ...Timers) chain.StateManager {
-	var timers Timers
+func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvider, nodeconn chain.NodeConnection, timersOpt ...StateManagerTimers) chain.StateManager {
+	var timers StateManagerTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
 	} else {
-		timers = Timers{}
+		timers = NewStateManagerTimers()
 	}
 	ret := &stateManager{
 		ready:                  ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
@@ -64,7 +63,7 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		chain:                  c,
 		nodeConn:               nodeconn,
 		peers:                  peers,
-		syncingBlocks:          newSyncingBlocks(c.Log(), timers.getGetBlockRetry()),
+		syncingBlocks:          newSyncingBlocks(c.Log(), timers.GetBlockRetry),
 		timers:                 timers,
 		log:                    c.Log().Named("s"),
 		pullStateRetryTime:     time.Now(),
@@ -98,15 +97,13 @@ func (sm *stateManager) initLoadState() {
 	if stateExists {
 		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
 			solidState.BlockIndex(), solidState.Hash().String())
-	} else {
+	} else if err := sm.createOriginState(); err != nil {
 		// create origin state in DB
-		if err := sm.createOriginState(); err != nil {
-			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
-				Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err),
-			},
-			)
-			return
-		}
+		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
+			Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err),
+		},
+		)
+		return
 	}
 	sm.recvLoop() // Check to process external events.
 }
@@ -167,9 +164,9 @@ func (sm *stateManager) recvLoop() {
 			if ok {
 				sm.eventStateCandidateMsg(msg)
 			}
-		case msg, ok := <-sm.eventTimerMsgCh:
+		case _, ok := <-sm.eventTimerMsgCh:
 			if ok {
-				sm.eventTimerMsg(msg)
+				sm.eventTimerMsg()
 			}
 		case <-sm.closeCh:
 			return

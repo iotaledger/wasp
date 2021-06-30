@@ -9,8 +9,8 @@ type subrealm struct {
 	prefix kv.Key
 }
 
-func New(kv kv.KVStore, prefix kv.Key) kv.KVStore {
-	return &subrealm{kv, prefix}
+func New(kvStore kv.KVStore, prefix kv.Key) kv.KVStore {
+	return &subrealm{kvStore, prefix}
 }
 
 func (s *subrealm) Set(key kv.Key, value []byte) {

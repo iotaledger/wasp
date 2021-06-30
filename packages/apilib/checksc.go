@@ -25,6 +25,7 @@ const prefix = "[checkSC] "
 // it loads the chainrecord from the first node in the list and uses CommitteeNodes from that
 // chainrecord to check the whole committee
 //goland:noinspection ALL
+//nolint:funlen
 func CheckDeployment(apiHosts []string, chainID chainid.ChainID, textout ...io.Writer) bool {
 	ret := true
 	var out io.Writer
@@ -75,9 +76,8 @@ func CheckDeployment(apiHosts []string, chainID chainid.ChainID, textout ...io.W
 		if first == nil {
 			fmt.Fprintf(out, prefix+"failed to load chainrecord. Exit\n")
 			return false
-		} else {
-			fmt.Fprintf(out, prefix+"some chain records failed to load\n")
 		}
+		fmt.Fprintf(out, prefix+"some chain records failed to load\n")
 	} else {
 		fmt.Fprintf(out, prefix+"chain records have been loaded from %d nodes\n", len(apiHosts))
 	}

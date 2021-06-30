@@ -41,24 +41,25 @@ func TestDepositWithdraw(t *testing.T) {
 	checkLedger(t, chain)
 
 	myAgentID := coretypes.NewAgentID(myAddress, 0)
-	origAgentId := coretypes.NewAgentID(chain.OriginatorAddress(), 0)
+	origAgentID := coretypes.NewAgentID(chain.OriginatorAddress(), 0)
 
-	checkBalanceOnChain(t, chain, origAgentId, ledgerstate.ColorIOTA, 0)
+	checkBalanceOnChain(t, chain, origAgentID, ledgerstate.ColorIOTA, 0)
 	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 0)
 	checkLedger(t, chain)
 
 	// deposit some iotas to the chain
 	depositIotas := uint64(42)
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, testOwner)
-	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
-		Transfer: coretypes.NewTransferIotas(depositIotas),
-	})
+
+	par := chainclient.NewPostRequestParams().WithIotas(depositIotas)
+	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), *par)
 	check(err, t)
+
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
 	check(err, t)
 	checkLedger(t, chain)
 	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, depositIotas)
-	checkBalanceOnChain(t, chain, origAgentId, ledgerstate.ColorIOTA, 0)
+	checkBalanceOnChain(t, chain, origAgentID, ledgerstate.ColorIOTA, 0)
 
 	if !clu.VerifyAddressBalances(myAddress, solo.Saldo-depositIotas, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: solo.Saldo - depositIotas,

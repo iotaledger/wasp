@@ -579,11 +579,11 @@ halign=left</panel_attributes>
       <x>8</x>
       <y>208</y>
       <w>184</w>
-      <h>992</h>
+      <h>984</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
 stateOutput == null</panel_attributes>
-    <additional_attributes>210.0;1220.0;210.0;1200.0;210.0;1220.0;10.0;1220.0;10.0;10.0;130.0;10.0</additional_attributes>
+    <additional_attributes>210.0;1210.0;210.0;1190.0;210.0;1210.0;10.0;1210.0;10.0;10.0;130.0;10.0</additional_attributes>
   </element>
   <element>
     <id>UMLState</id>
@@ -1922,7 +1922,7 @@ halign=left</panel_attributes>
       <h>32</h>
     </coordinates>
     <panel_attributes>*StateManager*
-version: 4
+version: 5
 </panel_attributes>
     <additional_attributes/>
   </element>

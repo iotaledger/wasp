@@ -7,12 +7,12 @@ type ScExports struct {
 	ScSandboxObject
 }
 
-func NewScExports(vm *wasmProcessor) *ScExports {
+func NewScExports(vm *WasmProcessor) *ScExports {
 	o := &ScExports{}
 	o.vm = vm
 	return o
 }
 
-func (o *ScExports) SetBytes(keyID int32, typeID int32, bytes []byte) {
+func (o *ScExports) SetBytes(keyID, typeID int32, bytes []byte) {
 	o.vm.SetExport(keyID, string(bytes))
 }

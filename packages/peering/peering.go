@@ -12,19 +12,16 @@ package peering
 
 import (
 	"bytes"
-	"errors"
-	"hash/crc32"
 	"io"
 	"math/rand"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
-
-	"github.com/iotaledger/wasp/packages/util"
-	"go.dedis.ch/kyber/v3"
 )
 
 const (
@@ -39,12 +36,6 @@ const (
 
 	chunkMessageOverhead = 8 + 1
 )
-
-var crc32q *crc32.Table
-
-func init() {
-	crc32q = crc32.MakeTable(0xD5828281)
-}
 
 // PeeringID is relates peers in different nodes for a particular
 // communication group. E.g. PeeringID identifies a committee in
@@ -85,8 +76,58 @@ type NetworkProvider interface {
 	Attach(peeringID *PeeringID, callback func(recv *RecvEvent)) interface{}
 	Detach(attachID interface{})
 	PeerByNetID(peerNetID string) (PeerSender, error)
-	PeerByPubKey(peerPub kyber.Point) (PeerSender, error)
+	PeerByPubKey(peerPub *ed25519.PublicKey) (PeerSender, error)
 	PeerStatus() []PeerStatusProvider
+}
+
+// TrustedNetworkManager is used maintain a configuration which peers are trusted.
+// In a typical implementation, this interface should be implemented by the same
+// struct, that implements the NetworkProvider. These implementations should interact,
+// e.g. when we distrust some peer, all the connections to it should be cut immediately.
+type TrustedNetworkManager interface {
+	IsTrustedPeer(pubKey ed25519.PublicKey) error
+	TrustPeer(pubKey ed25519.PublicKey, netID string) (*TrustedPeer, error)
+	DistrustPeer(pubKey ed25519.PublicKey) (*TrustedPeer, error)
+	TrustedPeers() ([]*TrustedPeer, error)
+}
+
+// TrustedPeer carries a peer information we use to trust it.
+type TrustedPeer struct {
+	PubKey ed25519.PublicKey
+	NetID  string
+}
+
+func TrustedPeerFromBytes(buf []byte) (*TrustedPeer, error) {
+	var err error
+	r := bytes.NewBuffer(buf)
+	tp := TrustedPeer{}
+	var keyBytes []byte
+	if keyBytes, err = util.ReadBytes16(r); err != nil {
+		return nil, err
+	}
+	tp.PubKey, _, err = ed25519.PublicKeyFromBytes(keyBytes)
+	if err != nil {
+		return nil, err
+	}
+	if tp.NetID, err = util.ReadString16(r); err != nil {
+		return nil, err
+	}
+	return &tp, nil
+}
+
+func (tp *TrustedPeer) Bytes() ([]byte, error) {
+	var buf bytes.Buffer
+	if err := util.WriteBytes16(&buf, tp.PubKey.Bytes()); err != nil {
+		return nil, err
+	}
+	if err := util.WriteString16(&buf, tp.NetID); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func (tp *TrustedPeer) PubKeyBytes() ([]byte, error) {
+	return tp.PubKey.Bytes(), nil
 }
 
 type PeerCollection interface {
@@ -141,7 +182,7 @@ type PeerSender interface {
 	// authenticated, therefore it can return nil, if pub
 	// key is not known yet. You can call await before calling
 	// this function to ensure the public key is already resolved.
-	PubKey() kyber.Point
+	PubKey() *ed25519.PublicKey
 
 	// SendMsg works in an asynchronous way, and therefore the
 	// errors are not returned here.
@@ -167,7 +208,7 @@ type PeerSender interface {
 // by the same object.
 type PeerStatusProvider interface {
 	NetID() string
-	PubKey() kyber.Point
+	PubKey() *ed25519.PublicKey
 	IsInbound() bool
 	IsAlive() bool
 	NumUsers() int
@@ -191,7 +232,8 @@ type PeerMessage struct {
 	MsgData     []byte
 }
 
-func NewPeerMessageFromBytes(buf []byte) (*PeerMessage, error) {
+//nolint:gocritic
+func NewPeerMessageFromBytes(buf []byte, peerPubKey *ed25519.PublicKey) (*PeerMessage, error) {
 	var err error
 	r := bytes.NewBuffer(buf)
 	m := PeerMessage{}
@@ -221,21 +263,29 @@ func NewPeerMessageFromBytes(buf []byte) (*PeerMessage, error) {
 		if m.MsgData, err = util.ReadBytes32(r); err != nil {
 			return nil, err
 		}
-		var checksumCalc uint32
-		var checksumRead uint32
-		checksumCalc = crc32.Checksum(m.MsgData, crc32q)
-		if err = util.ReadUint32(r, &checksumRead); err != nil {
-			return nil, err
+		//
+		// Check the signature.
+		if peerPubKey == nil {
+			return nil, xerrors.New("peer pub key is mandatory to decode user messages")
 		}
-		if checksumCalc != checksumRead {
-			return nil, errors.New("message_checksum_invalid")
+		lenBeforeSig := r.Len()
+		var signatureBin []byte
+		if signatureBin, err = util.ReadBytes16(r); err != nil {
+			return nil, xerrors.Errorf("failed to read signature: %w", err)
+		}
+		var signature ed25519.Signature
+		if signature, _, err = ed25519.SignatureFromBytes(signatureBin); err != nil {
+			return nil, xerrors.Errorf("failed to parse signature: %w", err)
+		}
+		if !peerPubKey.VerifySignature(buf[:len(buf)-lenBeforeSig], signature) {
+			return nil, xerrors.New("signature verification failed")
 		}
 	}
 	return &m, nil
 }
 
 // NewPeerMessageFromChunks can return nil, if there is not enough chunks to reconstruct the message.
-func NewPeerMessageFromChunks(chunkBytes []byte, chunkSize int, msgChopper *chopper.Chopper) (*PeerMessage, error) {
+func NewPeerMessageFromChunks(chunkBytes []byte, chunkSize int, msgChopper *chopper.Chopper, peerPubKey *ed25519.PublicKey) (*PeerMessage, error) {
 	var err error
 	var msgBytes []byte
 	if msgBytes, err = msgChopper.IncomingChunk(chunkBytes, chunkSize, chunkMessageOverhead); err != nil {
@@ -244,51 +294,50 @@ func NewPeerMessageFromChunks(chunkBytes []byte, chunkSize int, msgChopper *chop
 	if msgBytes == nil {
 		return nil, nil
 	}
-	return NewPeerMessageFromBytes(msgBytes)
+	return NewPeerMessageFromBytes(msgBytes, peerPubKey)
 }
 
-func (m *PeerMessage) Bytes() ([]byte, error) {
-	var err error
+func (m *PeerMessage) Bytes(nodeIdentity *ed25519.KeyPair) ([]byte, error) {
 	var buf bytes.Buffer
-	if err = util.WriteInt64(&buf, m.Timestamp); err != nil {
+	if err := util.WriteInt64(&buf, m.Timestamp); err != nil {
 		return nil, err
 	}
-	if err = util.WriteByte(&buf, m.MsgType); err != nil {
+	if err := util.WriteByte(&buf, m.MsgType); err != nil {
 		return nil, err
 	}
 	switch m.MsgType {
 	case MsgTypeReserved:
 	case MsgTypeHandshake:
-		if err = util.WriteBytes32(&buf, m.MsgData); err != nil {
+		if err := util.WriteBytes32(&buf, m.MsgData); err != nil {
 			return nil, err
 		}
 	case MsgTypeMsgChunk:
-		if err = util.WriteBytes32(&buf, m.MsgData); err != nil {
+		if err := util.WriteBytes32(&buf, m.MsgData); err != nil {
 			return nil, err
 		}
 	default:
-		if err = m.PeeringID.Write(&buf); err != nil {
+		if err := m.PeeringID.Write(&buf); err != nil {
 			return nil, err
 		}
-		if err = util.WriteUint16(&buf, m.SenderIndex); err != nil {
+		if err := util.WriteUint16(&buf, m.SenderIndex); err != nil {
 			return nil, err
 		}
-		if err = util.WriteBytes32(&buf, m.MsgData); err != nil {
+		if err := util.WriteBytes32(&buf, m.MsgData); err != nil {
 			return nil, err
 		}
-		var checksumCalc uint32
-		checksumCalc = crc32.Checksum(m.MsgData, crc32q)
-		if err = util.WriteUint32(&buf, checksumCalc); err != nil {
-			return nil, err
+		payload := buf.Bytes()
+		signature := nodeIdentity.PrivateKey.Sign(payload).Bytes()
+		if err := util.WriteBytes16(&buf, signature); err != nil {
+			return nil, xerrors.Errorf("failed to write signature: %w", err)
 		}
 	}
 	return buf.Bytes(), nil
 }
 
-func (m *PeerMessage) ChunkedBytes(chunkSize int, msgChopper *chopper.Chopper) ([][]byte, error) {
+func (m *PeerMessage) ChunkedBytes(chunkSize int, msgChopper *chopper.Chopper, nodeIdentity *ed25519.KeyPair) ([][]byte, error) {
 	var err error
 	var msgBytes []byte
-	if msgBytes, err = m.Bytes(); err != nil {
+	if msgBytes, err = m.Bytes(nodeIdentity); err != nil {
 		return nil, err
 	}
 	var choppedBytes [][]byte
@@ -305,7 +354,7 @@ func (m *PeerMessage) ChunkedBytes(chunkSize int, msgChopper *chopper.Chopper) (
 				MsgType:   MsgTypeMsgChunk,
 				MsgData:   choppedBytes[i],
 			}
-			if msgs[i], err = chunkMsg.Bytes(); err != nil {
+			if msgs[i], err = chunkMsg.Bytes(nil); err != nil {
 				return nil, err
 			}
 		}

@@ -29,7 +29,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/stretchr/testify/require"
-	"go.dedis.ch/kyber/v3/pairing"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/xerrors"
 )
@@ -101,9 +100,9 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 
 	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 
-	nodeIDs, pubKeys, privKeys := testpeers.SetupKeys(uint16(nodeCount), pairing.NewSuiteBn256())
+	nodeIDs, identities := testpeers.SetupKeys(uint16(nodeCount))
 	ret.NodeIDs = nodeIDs
-	ret.NetworkProviders = testpeers.SetupNet(ret.NodeIDs, pubKeys, privKeys, ret.NetworkBehaviour, log)
+	ret.NetworkProviders = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
 
 	return ret, originTx
 }
@@ -178,7 +177,7 @@ func (env *MockedEnv) PullConfirmedOutputFromLedger(addr ledgerstate.Address, ou
 	return output
 }
 
-func (env *MockedEnv) NewMockedNode(nodeIndex int, timers Timers) *MockedNode {
+func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *MockedNode {
 	nodeID := env.NodeIDs[nodeIndex]
 	log := env.Log.Named(nodeID)
 	peers, err := env.NetworkProviders[nodeIndex].PeerDomain(env.NodeIDs)

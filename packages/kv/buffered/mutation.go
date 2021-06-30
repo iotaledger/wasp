@@ -54,6 +54,7 @@ func (ms *Mutations) Write(w io.Writer) error {
 	return nil
 }
 
+//nolint:gocritic
 func (ms *Mutations) Read(r io.Reader) error {
 	var err error
 	var n uint32

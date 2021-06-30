@@ -1,38 +1,36 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package dashboard
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-
-	"github.com/iotaledger/hive.go/logger"
-
-	"github.com/iotaledger/wasp/packages/state"
-
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/labstack/echo/v4"
-	"go.dedis.ch/kyber/v3"
 )
 
 // waspServices is a mock implementation of the WaspServices interface
@@ -50,6 +48,13 @@ func (w *waspServices) ExploreAddressBaseURL() string {
 
 func (w *waspServices) NetworkProvider() peering.NetworkProvider {
 	return &peeringNetworkProvider{}
+}
+
+func (w *waspServices) TrustedNetworkManager() peering.TrustedNetworkManager {
+	tnm := testutil.NewTrustedNetworkManager()
+	tnm.TrustPeer(ed25519.GenerateKeyPair().PublicKey, "some:254")
+	tnm.TrustPeer(ed25519.GenerateKeyPair().PublicKey, "")
+	return tnm
 }
 
 func (w *waspServices) GetChain(chainID *chainid.ChainID) chain.ChainCore {
@@ -92,7 +97,7 @@ func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupPro
 }
 
 // Domain creates peering.PeerDomainProvider.
-func (n *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
+func (p *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
 	panic("not implemented")
 }
 
@@ -108,7 +113,7 @@ func (p *peeringNetworkProvider) PeerByNetID(peerNetID string) (peering.PeerSend
 	panic("not implemented")
 }
 
-func (p *peeringNetworkProvider) PeerByPubKey(peerPub kyber.Point) (peering.PeerSender, error) {
+func (p *peeringNetworkProvider) PeerByPubKey(peerPub *ed25519.PublicKey) (peering.PeerSender, error) {
 	panic("not implemented")
 }
 
@@ -134,7 +139,7 @@ func (p *peeringNode) NetID() string {
 	return "127.0.0.1:4000"
 }
 
-func (p *peeringNode) PubKey() kyber.Point {
+func (p *peeringNode) PubKey() *ed25519.PublicKey {
 	panic("not implemented")
 }
 
@@ -157,8 +162,8 @@ func (p *peeringNode) Close() {
 	panic("not implemented")
 }
 
-func (w *waspServices) CallView(chain chain.ChainCore, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
-	chainID := chain.ID()
+func (w *waspServices) CallView(ch chain.ChainCore, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
+	chainID := ch.ID()
 
 	contract := &root.ContractRecord{
 		ProgramHash:  hashing.RandomHash(nil),
@@ -190,17 +195,17 @@ func (w *waspServices) CallView(chain chain.ChainCore, hname coretypes.Hname, fn
 		ret.Set(root.VarData, root.EncodeContractRecord(contract))
 		return ret, nil
 
-	case hname == accounts.Interface.Hname() && fname == accounts.FuncAccounts:
+	case hname == accounts.Interface.Hname() && fname == accounts.FuncViewAccounts:
 		ret := dict.New()
 		ret.Set(kv.Key(coretypes.NewRandomAgentID().Bytes()), []byte{})
 		return ret, nil
 
-	case hname == accounts.Interface.Hname() && fname == accounts.FuncTotalAssets:
+	case hname == accounts.Interface.Hname() && fname == accounts.FuncViewTotalAssets:
 		return accounts.EncodeBalances(map[ledgerstate.Color]uint64{
 			ledgerstate.ColorIOTA: 42,
 		}), nil
 
-	case hname == accounts.Interface.Hname() && fname == accounts.FuncBalance:
+	case hname == accounts.Interface.Hname() && fname == accounts.FuncViewBalance:
 		return accounts.EncodeBalances(map[ledgerstate.Color]uint64{
 			ledgerstate.ColorIOTA: 42,
 		}), nil

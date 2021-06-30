@@ -17,18 +17,18 @@ type ScUtility struct {
 	random     []byte
 }
 
-func NewScUtility(vm *wasmProcessor) *ScUtility {
+func NewScUtility(vm *WasmProcessor) *ScUtility {
 	o := &ScUtility{}
 	o.vm = vm
 	return o
 }
 
-func (o *ScUtility) InitObj(id int32, keyID int32, owner *ScDict) {
+func (o *ScUtility) InitObj(id, keyID int32, owner *ScDict) {
 	o.ScSandboxObject.InitObj(id, keyID, owner)
 	if TestMode {
 		// preset randomizer to generate sequence 1..8 before
 		// continuing with proper hashed values
-		o.random = make([]byte, 8*8)
+		o.random = make([]byte, 8*8) //nolint:gomnd
 		for i := 0; i < len(o.random); i += 8 {
 			o.random[i] = byte(i + 1)
 		}
@@ -85,7 +85,7 @@ func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {
 	return nil
 }
 
-func (o *ScUtility) Exists(keyID int32, typeID int32) bool {
+func (o *ScUtility) Exists(keyID, typeID int32) bool {
 	return o.GetTypeID(keyID) > 0
 }
 

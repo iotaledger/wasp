@@ -7,13 +7,8 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/contracts/common"
-	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 )
-
-func setupTest(t *testing.T) *solo.Chain {
-	return common.StartChainAndDeployWasmContractByName(t, ScName)
-}
 
 func TestDeploy(t *testing.T) {
 	chain := common.StartChainAndDeployWasmContractByName(t, ScName)

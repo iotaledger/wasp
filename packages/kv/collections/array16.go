@@ -1,4 +1,4 @@
-package collections
+package collections //nolint:dupl
 
 import (
 	"bytes"
@@ -20,16 +20,16 @@ type ImmutableArray16 struct {
 	name string
 }
 
-func NewArray16(kv kv.KVStore, name string) *Array16 {
+func NewArray16(kvStore kv.KVStore, name string) *Array16 {
 	return &Array16{
-		ImmutableArray16: NewArray16ReadOnly(kv, name),
-		kvw:              kv,
+		ImmutableArray16: NewArray16ReadOnly(kvStore, name),
+		kvw:              kvStore,
 	}
 }
 
-func NewArray16ReadOnly(kv kv.KVStoreReader, name string) *ImmutableArray16 {
+func NewArray16ReadOnly(kvReader kv.KVStoreReader, name string) *ImmutableArray16 {
 	return &ImmutableArray16{
-		kvr:  kv,
+		kvr:  kvReader,
 		name: name,
 	}
 }
@@ -68,7 +68,7 @@ func array16ElemKey(name string, idx uint16) kv.Key {
 
 // Array16RangeKeys returns the KVStore keys for the items between [from, to) (`to` being not inclusive),
 // assuming it has `length` elements.
-func Array16RangeKeys(name string, length uint16, from uint16, to uint16) []kv.Key {
+func Array16RangeKeys(name string, length, from, to uint16) []kv.Key {
 	keys := make([]kv.Key, 0)
 	if to >= from {
 		for i := from; i < to && i < length; i++ {

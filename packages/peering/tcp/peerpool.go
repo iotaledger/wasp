@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 )
 
+//nolint:unused
 func (n *NetImpl) iteratePeers(f func(p *peer)) {
 	n.peersMutex.Lock()
 	defer n.peersMutex.Unlock()
@@ -89,6 +90,7 @@ func (n *NetImpl) connectInboundLoop() {
 }
 
 // for testing
+//nolint:unused
 func (n *NetImpl) countConnectionsLoop() {
 	var totalNum, inboundNum, outboundNum, inConnectedNum, outConnectedNum, inHSNum, outHSNum int
 	for {
@@ -122,6 +124,7 @@ func (n *NetImpl) countConnectionsLoop() {
 	}
 }
 
+//nolint:unused,deadcode
 func permanentBufConnReadingError(err error) bool {
 	if err == io.EOF {
 		return false

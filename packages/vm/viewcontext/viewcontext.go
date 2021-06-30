@@ -3,6 +3,8 @@ package viewcontext
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/vm/core/_default"
+
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -20,19 +22,19 @@ import (
 	"golang.org/x/xerrors"
 )
 
-type viewcontext struct {
+type Viewcontext struct {
 	processors  *processors.ProcessorCache
 	stateReader state.OptimisticStateReader
 	chainID     chainid.ChainID
 	log         *logger.Logger
 }
 
-func NewFromChain(chain chain.ChainCore) *viewcontext {
-	return New(*chain.ID(), chain.GetStateReader(), chain.Processors(), chain.Log().Named("view"))
+func NewFromChain(ch chain.ChainCore) *Viewcontext {
+	return New(*ch.ID(), ch.GetStateReader(), ch.Processors(), ch.Log().Named("view"))
 }
 
-func New(chainID chainid.ChainID, stateReader state.OptimisticStateReader, proc *processors.ProcessorCache, log *logger.Logger) *viewcontext {
-	return &viewcontext{
+func New(chainID chainid.ChainID, stateReader state.OptimisticStateReader, proc *processors.ProcessorCache, log *logger.Logger) *Viewcontext {
+	return &Viewcontext{
 		processors:  proc,
 		stateReader: stateReader,
 		chainID:     chainID,
@@ -41,7 +43,7 @@ func New(chainID chainid.ChainID, stateReader state.OptimisticStateReader, proc 
 }
 
 // CallView in viewcontext implements own panic catcher.
-func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
+func (v *Viewcontext) CallView(contractHname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
 	var ret dict.Dict
 	var err error
 	func() {
@@ -65,11 +67,15 @@ func (v *viewcontext) CallView(contractHname coretypes.Hname, epCode coretypes.H
 	return ret, err
 }
 
-func (v *viewcontext) callView(contractHname coretypes.Hname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
+func (v *Viewcontext) callView(contractHname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
 	var err error
 	contractRecord, err := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Interface.Hname()), contractHname)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find contract %s: %v", contractHname, err)
+		return nil, fmt.Errorf("inconsistency while searching for contract %s: %v", contractHname, err)
+	}
+	if contractHname != _default.Interface.Hname() && contractRecord.Hname() == _default.Interface.Hname() {
+		// in the view call we do not run default contract
+		return nil, fmt.Errorf("can't find contract '%s'", contractHname)
 	}
 	proc, err := v.processors.GetOrCreateProcessor(contractRecord, func(programHash hashing.HashValue) (string, []byte, error) {
 		if vmtype, ok := processors.GetBuiltinProcessorType(programHash); ok {
@@ -83,7 +89,7 @@ func (v *viewcontext) callView(contractHname coretypes.Hname, epCode coretypes.H
 
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		return nil, fmt.Errorf("%s: can't find entry point '%s'", proc.GetDescription(), epCode.String())
+		return nil, fmt.Errorf("trying to call contract '%s': can't find entry point '%s'", proc.GetDescription(), epCode.String())
 	}
 
 	if !ep.IsView() {
@@ -92,18 +98,18 @@ func (v *viewcontext) callView(contractHname coretypes.Hname, epCode coretypes.H
 	return ep.Call(newSandboxView(v, contractHname, params))
 }
 
-func contractStateSubpartition(state kv.KVStoreReader, contractHname coretypes.Hname) kv.KVStoreReader {
-	return subrealm.NewReadOnly(state, kv.Key(contractHname.Bytes()))
+func contractStateSubpartition(stateKvReader kv.KVStoreReader, contractHname coretypes.Hname) kv.KVStoreReader {
+	return subrealm.NewReadOnly(stateKvReader, kv.Key(contractHname.Bytes()))
 }
 
-func (v *viewcontext) Infof(format string, params ...interface{}) {
+func (v *Viewcontext) Infof(format string, params ...interface{}) {
 	v.log.Infof(format, params...)
 }
 
-func (v *viewcontext) Debugf(format string, params ...interface{}) {
+func (v *Viewcontext) Debugf(format string, params ...interface{}) {
 	v.log.Debugf(format, params...)
 }
 
-func (v *viewcontext) Panicf(format string, params ...interface{}) {
+func (v *Viewcontext) Panicf(format string, params ...interface{}) {
 	v.log.Panicf(format, params...)
 }

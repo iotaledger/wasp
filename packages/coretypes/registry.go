@@ -6,6 +6,7 @@ package coretypes
 import (
 	"time"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
@@ -16,8 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 
 	"github.com/iotaledger/wasp/packages/hashing"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/util/key"
 )
 
 // BlobCache is an access to the cache of big binary objects
@@ -29,12 +28,12 @@ type BlobCache interface {
 }
 
 type NodeIdentityProvider interface {
-	GetNodeIdentity() (*key.Pair, error)
-	GetNodePublicKey() (kyber.Point, error)
+	GetNodeIdentity() (*ed25519.KeyPair, error)
+	GetNodePublicKey() (*ed25519.PublicKey, error)
 }
 
 // PeerNetworkConfigProvider access to node and chain configuration: a list of netIDs of potential peers
-type PeerNetworkConfigProvider interface {
+type PeerNetworkConfigProvider interface { // TODO: KP: Remove or redesign.
 	OwnNetID() string
 	PeeringPort() int
 	Neighbors() []string
@@ -61,5 +60,4 @@ type ChainRecordRegistryProvider interface {
 	UpdateChainRecord(chainID *chainid.ChainID, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error)
 	ActivateChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error)
 	DeactivateChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error)
-	SaveChainRecord(rec *chainrecord.ChainRecord) error
 }

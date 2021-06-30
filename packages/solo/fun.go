@@ -7,6 +7,9 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"sort"
+
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -37,7 +40,7 @@ func (ch *Chain) String() string {
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
 	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.Hash().String())
 	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GetGenesisAddress())
-	return string(buf.Bytes())
+	return buf.String()
 }
 
 // DumpAccounts dumps all account balances into the human readable string
@@ -45,7 +48,8 @@ func (ch *Chain) DumpAccounts() string {
 	_, chainOwnerID, _ := ch.GetInfo()
 	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n", ch.ChainID.String(), chainOwnerID.String())
 	acc := ch.GetAccounts()
-	for _, aid := range acc {
+	for i := range acc {
+		aid := acc[i]
 		ret += fmt.Sprintf("  %s:\n", aid.String())
 		bals := ch.GetAccountBalance(&aid)
 		bals.ForEach(func(col ledgerstate.Color, bal uint64) bool {
@@ -130,7 +134,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 		return
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
-	return
+	return ret, err
 }
 
 // UploadBlobOptimized does the same as UploadBlob, only better but more complicated
@@ -173,7 +177,7 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, 
 		return
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
-	return
+	return ret, err
 }
 
 const (
@@ -248,7 +252,7 @@ func (ch *Chain) DeployContract(keyPair *ed25519.KeyPair, name string, programHa
 
 // DeployWasmContract is syntactic sugar for uploading Wasm binary from file and
 // deploying the smart contract in one call
-func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name string, fname string, params ...interface{}) error {
+func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name, fname string, params ...interface{}) error {
 	hprog, err := ch.UploadWasmFromFile(keyPair, fname)
 	if err != nil {
 		return err
@@ -281,7 +285,7 @@ func (ch *Chain) GetInfo() (chainid.ChainID, coretypes.AgentID, map[coretypes.Hn
 // on the UTXODB ledger
 func (env *Solo) GetAddressBalance(addr ledgerstate.Address, col ledgerstate.Color) uint64 {
 	bals := env.GetAddressBalances(addr)
-	ret, _ := bals[col]
+	ret := bals[col]
 	return ret
 }
 
@@ -292,7 +296,7 @@ func (env *Solo) GetAddressBalances(addr ledgerstate.Address) map[ledgerstate.Co
 
 // GetAccounts returns all accounts on the chain with non-zero balances
 func (ch *Chain) GetAccounts() []coretypes.AgentID {
-	d, err := ch.CallView(accounts.Interface.Name, accounts.FuncAccounts)
+	d, err := ch.CallView(accounts.Interface.Name, accounts.FuncViewAccounts)
 	require.NoError(ch.Env.T, err)
 	keys := d.KeysSorted()
 	ret := make([]coretypes.AgentID, 0, len(keys)-1)
@@ -305,7 +309,7 @@ func (ch *Chain) GetAccounts() []coretypes.AgentID {
 	return ret
 }
 
-func (ch *Chain) getAccountBalance(d dict.Dict, err error) *ledgerstate.ColoredBalances {
+func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *ledgerstate.ColoredBalances {
 	require.NoError(ch.Env.T, err)
 	if d.IsEmpty() {
 		return ledgerstate.NewColoredBalances(nil)
@@ -323,27 +327,51 @@ func (ch *Chain) getAccountBalance(d dict.Dict, err error) *ledgerstate.ColoredB
 	return ledgerstate.NewColoredBalances(ret)
 }
 
+func (ch *Chain) GetOnChainLedger() map[string]*ledgerstate.ColoredBalances {
+	accs := ch.GetAccounts()
+	ret := make(map[string]*ledgerstate.ColoredBalances)
+	for i := range accs {
+		ret[accs[i].String()] = ch.GetAccountBalance(&accs[i])
+	}
+	return ret
+}
+
+func (ch *Chain) GetOnChainLedgerString() string {
+	l := ch.GetOnChainLedger()
+	keys := make([]string, 0, len(l))
+	for aid := range l {
+		keys = append(keys, aid)
+	}
+	sort.Strings(keys)
+	ret := ""
+	for _, aid := range keys {
+		ret += aid + "\n"
+		ret += "        " + l[aid].String() + "\n"
+	}
+	return ret
+}
+
 // GetAccountBalance return all balances of colored tokens contained in the on-chain
 // account controlled by the 'agentID'
 func (ch *Chain) GetAccountBalance(agentID *coretypes.AgentID) *ledgerstate.ColoredBalances {
-	return ch.getAccountBalance(
-		ch.CallView(accounts.Interface.Name, accounts.FuncBalance, accounts.ParamAgentID, agentID),
+	return ch.parseAccountBalance(
+		ch.CallView(accounts.Interface.Name, accounts.FuncViewBalance, accounts.ParamAgentID, agentID),
 	)
 }
 
-func (ch *Chain) GetOwnersBalance() *ledgerstate.ColoredBalances {
-	return ch.GetAccountBalance(ch.OwnersAccount())
+func (ch *Chain) GetCommonAccountBalance() *ledgerstate.ColoredBalances {
+	return ch.GetAccountBalance(ch.CommonAccount())
 }
 
-func (ch *Chain) GetOwnersIotas() uint64 {
-	ret, _ := ch.GetAccountBalance(ch.OwnersAccount()).Get(ledgerstate.ColorIOTA)
+func (ch *Chain) GetCommonAccountIotas() uint64 {
+	ret, _ := ch.GetAccountBalance(ch.CommonAccount()).Get(ledgerstate.ColorIOTA)
 	return ret
 }
 
 // GetTotalAssets return total sum of colored tokens contained in the on-chain accounts
 func (ch *Chain) GetTotalAssets() *ledgerstate.ColoredBalances {
-	return ch.getAccountBalance(
-		ch.CallView(accounts.Interface.Name, accounts.FuncTotalAssets),
+	return ch.parseAccountBalance(
+		ch.CallView(accounts.Interface.Name, accounts.FuncViewTotalAssets),
 	)
 }
 
@@ -372,12 +400,10 @@ func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint
 	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(root.VarValidatorFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
-	require.True(ch.Env.T, validatorFee >= 0)
 
 	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(root.VarOwnerFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
-	require.True(ch.Env.T, ownerFee >= 0)
 
 	return feeColor, ownerFee, validatorFee
 }
@@ -430,9 +456,9 @@ func (ch *Chain) GetEventLogNumRecords(name string) int {
 	return int(ret)
 }
 
-// OwnersAccount return the agentID of the common account (controlled by the owner)
-func (ch *Chain) OwnersAccount() *coretypes.AgentID {
-	return coretypes.NewAgentID(ch.ChainID.AsAddress(), 0)
+// CommonAccount return the agentID of the common account (controlled by the owner)
+func (ch *Chain) CommonAccount() *coretypes.AgentID {
+	return commonaccount.Get(&ch.ChainID)
 }
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
@@ -608,7 +634,7 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []ledgerstate.Address {
 // RotateStateController rotates the chain to the new controller address.
 // We assume self-governed chain here.
 // Mostly use for the testinng of committee rotation logic, otherwise not much needed for smart contract testing
-func (ch *Chain) RotateStateController(newStateAddr ledgerstate.Address, newStateKeyPair *ed25519.KeyPair, ownerKeyPair *ed25519.KeyPair) error {
+func (ch *Chain) RotateStateController(newStateAddr ledgerstate.Address, newStateKeyPair, ownerKeyPair *ed25519.KeyPair) error {
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
 	).WithIotas(1)

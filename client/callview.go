@@ -13,7 +13,7 @@ import (
 // CallView sends a request to call a view function of a given contract, and returns the result of the call
 func (c *WaspClient) CallView(chainID chainid.ChainID, hContract coretypes.Hname, functionName string, args ...dict.Dict) (dict.Dict, error) {
 	arguments := dict.Dict(nil)
-	if args != nil && len(args) != 0 {
+	if len(args) != 0 {
 		arguments = args[0]
 	}
 	var res dict.Dict

@@ -18,7 +18,7 @@ import (
 	"go.uber.org/atomic"
 )
 
-type consensus struct {
+type Consensus struct {
 	isReady                    atomic.Bool
 	chain                      chain.ChainCore
 	committee                  chain.Committee
@@ -29,7 +29,7 @@ type consensus struct {
 	stateOutput                *ledgerstate.AliasOutput
 	stateTimestamp             time.Time
 	acsSessionID               uint64
-	consensusBatch             *batchProposal
+	consensusBatch             *BatchProposal
 	consensusEntropy           hashing.HashValue
 	iAmContributor             bool
 	myContributionSeqNumber    uint16
@@ -37,6 +37,7 @@ type consensus struct {
 	workflow                   workflowFlags
 	delayBatchProposalUntil    time.Time
 	delayRunVMUntil            time.Time
+	delaySendingSignedResult   time.Time
 	resultTxEssence            *ledgerstate.TransactionEssence
 	resultState                state.VirtualState
 	resultSignatures           []*chain.SignedResultMsg
@@ -45,6 +46,7 @@ type consensus struct {
 	pullInclusionStateDeadline time.Time
 	lastTimerTick              atomic.Int64
 	consensusInfoSnapshot      atomic.Value
+	timers                     ConsensusTimers
 	log                        *logger.Logger
 	eventStateTransitionMsgCh  chan *chain.StateTransitionMsg
 	eventSignedResultMsgCh     chan *chain.SignedResultMsg
@@ -57,28 +59,35 @@ type consensus struct {
 }
 
 type workflowFlags struct {
-	stateReceived                bool
-	batchProposalSent            bool
-	consensusBatchKnown          bool
-	vmStarted                    bool
-	vmResultSignedAndBroadcasted bool
-	transactionFinalized         bool
-	transactionPosted            bool
-	transactionSeen              bool
-	finished                     bool
+	stateReceived        bool
+	batchProposalSent    bool
+	consensusBatchKnown  bool
+	vmStarted            bool
+	vmResultSigned       bool
+	transactionFinalized bool
+	transactionPosted    bool
+	transactionSeen      bool
+	finished             bool
 }
 
-var _ chain.Consensus = &consensus{}
+var _ chain.Consensus = &Consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection) *consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, timersOpt ...ConsensusTimers) *Consensus {
+	var timers ConsensusTimers
+	if len(timersOpt) > 0 {
+		timers = timersOpt[0]
+	} else {
+		timers = NewConsensusTimers()
+	}
 	log := chainCore.Log().Named("c")
-	ret := &consensus{
+	ret := &Consensus{
 		chain:                     chainCore,
 		committee:                 committee,
 		mempool:                   mempool,
 		nodeConn:                  nodeConn,
 		vmRunner:                  runvm.NewVMRunner(),
 		resultSignatures:          make([]*chain.SignedResultMsg, committee.Size()),
+		timers:                    timers,
 		log:                       log,
 		eventStateTransitionMsgCh: make(chan *chain.StateTransitionMsg),
 		eventSignedResultMsgCh:    make(chan *chain.SignedResultMsg),
@@ -94,15 +103,15 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 	return ret
 }
 
-func (c *consensus) IsReady() bool {
+func (c *Consensus) IsReady() bool {
 	return c.isReady.Load()
 }
 
-func (c *consensus) Close() {
+func (c *Consensus) Close() {
 	close(c.closeCh)
 }
 
-func (c *consensus) recvLoop() {
+func (c *Consensus) recvLoop() {
 	// wait at startup
 	for !c.committee.IsReady() {
 		select {
@@ -145,19 +154,28 @@ func (c *consensus) recvLoop() {
 	}
 }
 
-func (c *consensus) refreshConsensusInfo() {
+func (c *Consensus) refreshConsensusInfo() {
 	index := uint32(0)
 	if c.currentState != nil {
 		index = c.currentState.BlockIndex()
 	}
-	c.consensusInfoSnapshot.Store(&chain.ConsensusInfo{
+	consensusInfo := &chain.ConsensusInfo{
 		StateIndex: index,
 		Mempool:    c.mempool.Stats(),
 		TimerTick:  int(c.lastTimerTick.Load()),
-	})
+	}
+	c.log.Debugf("Refreshing consensus info: index=%v, timerTick=%v, "+
+		"totalPool=%v, mempoolReady=%v, inBufCounter=%v, outBufCounter=%v, "+
+		"inPoolCounter=%v, outPoolCounter=%v",
+		consensusInfo.StateIndex, consensusInfo.TimerTick,
+		consensusInfo.Mempool.TotalPool, consensusInfo.Mempool.Ready,
+		consensusInfo.Mempool.InBufCounter, consensusInfo.Mempool.OutBufCounter,
+		consensusInfo.Mempool.InPoolCounter, consensusInfo.Mempool.OutPoolCounter,
+	)
+	c.consensusInfoSnapshot.Store(consensusInfo)
 }
 
-func (c *consensus) GetStatusSnapshot() *chain.ConsensusInfo {
+func (c *Consensus) GetStatusSnapshot() *chain.ConsensusInfo {
 	ret := c.consensusInfoSnapshot.Load()
 	if ret == nil {
 		return nil

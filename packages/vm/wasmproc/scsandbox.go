@@ -7,14 +7,14 @@ import (
 
 type ScSandboxObject struct {
 	ScDict
-	vm *wasmProcessor
+	vm *WasmProcessor //nolint:structcheck
 }
 
 func (o *ScSandboxObject) invalidKey(keyID int32) {
 	o.Panic("invalid key: %d", keyID)
 }
 
-func (o *ScSandboxObject) GetBytes(keyID int32, typeID int32) []byte {
+func (o *ScSandboxObject) GetBytes(keyID, typeID int32) []byte {
 	if keyID == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
 		return codec.EncodeInt32(o.length)
 	}
@@ -22,11 +22,11 @@ func (o *ScSandboxObject) GetBytes(keyID int32, typeID int32) []byte {
 	return nil
 }
 
-func (o *ScSandboxObject) GetObjectID(keyID int32, typeID int32) int32 {
+func (o *ScSandboxObject) GetObjectID(keyID, typeID int32) int32 {
 	o.invalidKey(keyID)
 	return 0
 }
 
-func (o *ScSandboxObject) SetBytes(keyID int32, typeID int32, bytes []byte) {
+func (o *ScSandboxObject) SetBytes(keyID, typeID int32, bytes []byte) {
 	o.invalidKey(keyID)
 }

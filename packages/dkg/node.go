@@ -9,22 +9,27 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/group/edwards25519"
+	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 	"go.dedis.ch/kyber/v3/sign/bdn"
+	"go.dedis.ch/kyber/v3/sign/eddsa"
 )
 
 // Node represents a node, that can participate in a DKG procedure.
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	secKey      kyber.Scalar
-	pubKey      kyber.Point
-	suite       Suite                             // Cryptography to use.
+	identity    *ed25519.KeyPair                  // Keys of the current node.
+	secKey      kyber.Scalar                      // Derived from the identity.
+	pubKey      kyber.Point                       // Derived from the identity.
+	blsSuite    Suite                             // Cryptography to use for the Pairing based operations.
+	edSuite     rabin_dkg.Suite                   // Cryptography to use for the Ed25519 based operations.
 	netProvider peering.NetworkProvider           // Network to communicate through.
 	registry    coretypes.DKShareRegistryProvider // Where to store the generated keys.
 	processes   map[string]*proc                  // Only for introspection.
@@ -38,17 +43,21 @@ type Node struct {
 // Init creates new node, that can participate in the DKG procedure.
 // The node then can run several DKG procedures.
 func NewNode(
-	secKey kyber.Scalar,
-	pubKey kyber.Point,
-	suite Suite,
+	identity *ed25519.KeyPair,
 	netProvider peering.NetworkProvider,
 	registry coretypes.DKShareRegistryProvider,
 	log *logger.Logger,
-) *Node {
+) (*Node, error) {
+	kyberEdDSSA := eddsa.EdDSA{}
+	if err := kyberEdDSSA.UnmarshalBinary(identity.PrivateKey.Bytes()); err != nil {
+		return nil, err
+	}
 	n := Node{
-		secKey:      secKey,
-		pubKey:      pubKey,
-		suite:       suite,
+		identity:    identity,
+		secKey:      kyberEdDSSA.Secret,
+		pubKey:      kyberEdDSSA.Public,
+		blsSuite:    tcrypto.DefaultSuite(),
+		edSuite:     edwards25519.NewBlakeSHA256Ed25519(),
 		netProvider: netProvider,
 		registry:    registry,
 		processes:   make(map[string]*proc),
@@ -61,7 +70,7 @@ func NewNode(
 		n.recvQueue <- recv
 	})
 	go n.recvLoop()
-	return &n
+	return &n, nil
 }
 
 func (n *Node) Close() {
@@ -72,9 +81,10 @@ func (n *Node) Close() {
 
 // GenerateDistributedKey takes all the required parameters from the node and initiated the DKG procedure.
 // This function is executed on the DKG initiator node (a chosen leader for this DKG instance).
+//nolint:funlen,gocritic
 func (n *Node) GenerateDistributedKey(
 	peerNetIDs []string,
-	peerPubs []kyber.Point,
+	peerPubs []ed25519.PublicKey,
 	threshold uint16,
 	roundRetry time.Duration, // Retry for Peer <-> Peer communication.
 	stepRetry time.Duration,  // Retry for Initiator -> Peer communication.
@@ -110,14 +120,16 @@ func (n *Node) GenerateDistributedKey(
 	gTimeout := timeout
 	if peerPubs == nil {
 		// Take the public keys from the peering network, if they were not specified.
-		peerPubs = make([]kyber.Point, peerCount)
+		peerPubs = make([]ed25519.PublicKey, peerCount)
 		for i, n := range netGroup.AllNodes() {
 			if err = n.Await(timeout); err != nil {
 				return nil, err
 			}
-			if peerPubs[i] = n.PubKey(); peerPubs[i] == nil {
+			nPub := n.PubKey()
+			if nPub == nil {
 				return nil, fmt.Errorf("Have no public key for %v", n.NetID())
 			}
+			peerPubs[i] = *nPub
 		}
 	}
 	//
@@ -129,7 +141,7 @@ func (n *Node) GenerateDistributedKey(
 				dkgRef:       dkgID.String(), // It could be some other identifier.
 				peerNetIDs:   peerNetIDs,
 				peerPubs:     peerPubs,
-				initiatorPub: n.pubKey,
+				initiatorPub: n.identity.PublicKey,
 				threshold:    threshold,
 				timeout:      timeout,
 				roundRetry:   roundRetry,
@@ -197,7 +209,7 @@ func (n *Node) GenerateDistributedKey(
 				return nil, err
 			}
 			err = bdn.Verify(
-				n.suite,
+				n.blsSuite,
 				pubShareResponses[i].publicShare,
 				pubShareBytes,
 				pubShareResponses[i].signature,
@@ -233,11 +245,6 @@ func (n *Node) GenerateDistributedKey(
 	return &dkShare, nil
 }
 
-// GroupSuite returns the cryptography PeerGroup used by this node.
-func (n *Node) GroupSuite() kyber.Group {
-	return n.suite
-}
-
 // Async recv is needed to avoid locking on the even publisher (Recv vs Attach in proc).
 func (n *Node) recvLoop() {
 	for {
@@ -260,7 +267,7 @@ func (n *Node) onInitMsg(recv *peering.RecvEvent) {
 	var err error
 	var p *proc
 	req := initiatorInitMsg{}
-	if err = req.fromBytes(recv.Msg.MsgData, n.suite); err != nil {
+	if err = req.fromBytes(recv.Msg.MsgData); err != nil {
 		n.log.Warnf("Dropping unknown message: %v", recv)
 	}
 	n.procLock.RLock()
@@ -345,7 +352,7 @@ func (n *Node) exchangeInitiatorMsgs(
 		var err error
 		var initMsg initiatorMsg
 		var isInitMsg bool
-		isInitMsg, initMsg, err = readInitiatorMsg(recv.Msg, n.suite)
+		isInitMsg, initMsg, err = readInitiatorMsg(recv.Msg, n.blsSuite)
 		if !isInitMsg {
 			return false, nil
 		}

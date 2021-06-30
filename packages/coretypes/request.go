@@ -59,6 +59,10 @@ const RequestIDDigestLen = 6
 // if it was never seen
 type RequestLookupDigest [RequestIDDigestLen + 2]byte
 
+func NewRequestID(txid ledgerstate.TransactionID, index uint16) RequestID {
+	return RequestID(ledgerstate.NewOutputID(txid, index))
+}
+
 func RequestIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestID, error) {
 	ret, err := ledgerstate.OutputIDFromMarshalUtil(mu)
 	return RequestID(ret), err

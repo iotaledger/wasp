@@ -10,18 +10,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var numNodes = flag.Int("num-nodes", 4, "amount of wasp nodes")
+var numNodes = flag.Int("num-nodes", 4, "amount of wasp nodes") //nolint:gomnd
 
 func NewCluster(t *testing.T, nNodes ...int) *cluster.Cluster {
 	if testing.Short() {
 		t.Skip("Skipping cluster test in short mode")
 	}
 
-	if len(nNodes) > 0 {
-		*numNodes = nNodes[0]
-	}
 	config := cluster.DefaultConfig()
 	config.Wasp.NumNodes = *numNodes
+	if len(nNodes) > 0 {
+		config.Wasp.NumNodes = nNodes[0]
+	}
 	clu := cluster.New(t.Name(), config)
 
 	dataPath := path.Join(os.TempDir(), "wasp-cluster")

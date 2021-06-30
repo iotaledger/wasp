@@ -3,6 +3,7 @@ package util
 import (
 	"encoding"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"time"
 
@@ -67,7 +68,7 @@ func Uint16To2Bytes(val uint16) []byte {
 }
 
 func Uint16From2Bytes(b []byte) (uint16, error) {
-	if len(b) != 2 {
+	if len(b) != 2 { //nolint:gomnd
 		return 0, errors.New("len(b) != 2")
 	}
 	return binary.LittleEndian.Uint16(b), nil
@@ -135,7 +136,7 @@ func Uint32To4Bytes(val uint32) []byte {
 }
 
 func Uint32From4Bytes(b []byte) (uint32, error) {
-	if len(b) != 4 {
+	if len(b) != 4 { //nolint:gomnd
 		return 0, errors.New("len(b) != 4")
 	}
 	return binary.LittleEndian.Uint32(b), nil
@@ -203,7 +204,7 @@ func Uint64To8Bytes(val uint64) []byte {
 }
 
 func Uint64From8Bytes(b []byte) (uint64, error) {
-	if len(b) != 8 {
+	if len(b) != 8 { //nolint:gomnd
 		return 0, errors.New("len(b) != 8")
 	}
 	return binary.LittleEndian.Uint64(b), nil
@@ -436,6 +437,18 @@ func WriteMarshaled(w io.Writer, val encoding.BinaryMarshaler) error {
 	}
 	if err = WriteBytes16(w, bin); err != nil {
 		return err
+	}
+	return nil
+}
+
+func ReadOutputID(r io.Reader, oid *ledgerstate.OutputID) error {
+	n, err := r.Read(oid[:])
+	if err != nil {
+		return err
+	}
+	if n != ledgerstate.OutputIDLength {
+		return fmt.Errorf("error while reading output ID: read %v bytes, expected %v bytes",
+			n, ledgerstate.OutputIDLength)
 	}
 	return nil
 }

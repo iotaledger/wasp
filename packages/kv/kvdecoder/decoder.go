@@ -18,12 +18,12 @@ type Decoder struct {
 	log coretypes.LogInterface
 }
 
-func New(kv kv.KVStoreReader, log ...coretypes.LogInterface) Decoder {
+func New(kvReader kv.KVStoreReader, log ...coretypes.LogInterface) Decoder {
 	var l coretypes.LogInterface
 	if len(log) > 0 {
 		l = log[0]
 	}
-	return Decoder{kv, l}
+	return Decoder{kvReader, l}
 }
 
 func (p *Decoder) panic(err error) {

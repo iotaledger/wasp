@@ -45,10 +45,11 @@ func (ch *Chain) CheckAccountLedger() {
 	total := ch.GetTotalAssets()
 	accs := ch.GetAccounts()
 	sum := make(map[ledgerstate.Color]uint64)
-	for _, acc := range accs {
+	for i := range accs {
+		acc := accs[i]
 		bals := ch.GetAccountBalance(&acc)
 		bals.ForEach(func(col ledgerstate.Color, bal uint64) bool {
-			s, _ := sum[col]
+			s := sum[col]
 			sum[col] = s + bal
 			return true
 		})
@@ -77,13 +78,13 @@ func (ch *Chain) AssertIotas(agentID *coretypes.AgentID, bal uint64) {
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
 func (ch *Chain) AssertOwnersBalance(col ledgerstate.Color, bal uint64) {
-	bals := ch.GetOwnersBalance()
+	bals := ch.GetCommonAccountBalance()
 	b, _ := bals.Get(col)
 	require.EqualValues(ch.Env.T, int(bal), int(b))
 }
 
-func (ch *Chain) AssertOwnersIotas(bal uint64) {
-	require.EqualValues(ch.Env.T, int(bal), int(ch.GetOwnersIotas()))
+func (ch *Chain) AssertCommonAccountIotas(bal uint64) {
+	require.EqualValues(ch.Env.T, int(bal), int(ch.GetCommonAccountIotas()))
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color

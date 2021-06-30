@@ -19,7 +19,7 @@ var listAccountsCmd = &cobra.Command{
 	Short: "List accounts in chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncAccounts)
+		ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncViewAccounts)
 		log.Check(err)
 
 		log.Printf("Total %d account(s) in chain %s\n", len(ret), GetCurrentChainID().Base58())
@@ -28,9 +28,9 @@ var listAccountsCmd = &cobra.Command{
 		rows := make([][]string, len(ret))
 		i := 0
 		for k := range ret {
-			agentId, _, err := codec.DecodeAgentID([]byte(k))
+			agentID, _, err := codec.DecodeAgentID([]byte(k))
 			log.Check(err)
-			rows[i] = []string{agentId.String()}
+			rows[i] = []string{agentID.String()}
 			i++
 		}
 		log.PrintTable(header, rows)
@@ -45,7 +45,7 @@ var balanceCmd = &cobra.Command{
 		agentID, err := coretypes.NewAgentIDFromString(args[0])
 		log.Check(err)
 
-		ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncBalance,
+		ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncViewBalance,
 			dict.Dict{
 				accounts.ParamAgentID: agentID.Bytes(),
 			})

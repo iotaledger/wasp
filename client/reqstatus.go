@@ -4,10 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
@@ -26,15 +25,12 @@ func (c *WaspClient) WaitUntilRequestProcessed(chainID *chainid.ChainID, reqID c
 	if timeout == 0 {
 		timeout = model.WaitRequestProcessedDefaultTimeout
 	}
-	if err := c.do(
+	return c.do(
 		http.MethodGet,
 		routes.WaitRequestProcessed(chainID.Base58(), reqID.Base58()),
 		&model.WaitRequestProcessedParams{Timeout: timeout},
 		nil,
-	); err != nil {
-		return err
-	}
-	return nil
+	)
 }
 
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed

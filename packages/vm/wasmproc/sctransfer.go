@@ -16,13 +16,13 @@ type ScTransfers struct {
 	ScSandboxObject
 }
 
-func NewScTransfers(vm *wasmProcessor) *ScTransfers {
+func NewScTransfers(vm *WasmProcessor) *ScTransfers {
 	a := &ScTransfers{}
 	a.vm = vm
 	return a
 }
 
-func (a *ScTransfers) GetObjectID(keyID int32, typeID int32) int32 {
+func (a *ScTransfers) GetObjectID(keyID, typeID int32) int32 {
 	return GetArrayObjectID(a, keyID, typeID, func() WaspObject {
 		return NewScTransferInfo(a.vm)
 	})
@@ -35,7 +35,7 @@ type ScTransferInfo struct {
 	address ledgerstate.Address
 }
 
-func NewScTransferInfo(vm *wasmProcessor) *ScTransferInfo {
+func NewScTransferInfo(vm *WasmProcessor) *ScTransferInfo {
 	o := &ScTransferInfo{}
 	o.vm = vm
 	return o
@@ -57,7 +57,7 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.Base58())
+		o.Tracef("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.Base58())
 		balancesMap[color] = amount
 		return true
 	})
@@ -67,7 +67,7 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 	}
 }
 
-func (o *ScTransferInfo) SetBytes(keyID int32, typeID int32, bytes []byte) {
+func (o *ScTransferInfo) SetBytes(keyID, typeID int32, bytes []byte) {
 	switch keyID {
 	case wasmhost.KeyAddress:
 		var err error

@@ -10,6 +10,8 @@ import (
 )
 
 // all type id values should exactly match their counterpart values on the client!
+
+//nolint:revive
 const (
 	OBJTYPE_ARRAY int32 = 0x20
 	OBJTYPE_CALL  int32 = 0x40
@@ -40,11 +42,11 @@ var (
 
 type HostObject interface {
 	CallFunc(keyID int32, params []byte) []byte
-	Exists(keyID int32, typeID int32) bool
-	GetBytes(keyID int32, typeID int32) []byte
-	GetObjectID(keyID int32, typeID int32) int32
+	Exists(keyID, typeID int32) bool
+	GetBytes(keyID, typeID int32) []byte
+	GetObjectID(keyID, typeID int32) int32
 	GetTypeID(keyID int32) int32
-	SetBytes(keyID int32, typeID int32, bytes []byte)
+	SetBytes(keyID, typeID int32, bytes []byte)
 }
 
 // KvStoreHost implements WaspLib.client.ScHost interface
@@ -70,11 +72,11 @@ func (host *KvStoreHost) Init(log *logger.Logger) {
 	}
 }
 
-func (host *KvStoreHost) CallFunc(objID int32, keyID int32, params []byte) []byte {
+func (host *KvStoreHost) CallFunc(objID, keyID int32, params []byte) []byte {
 	return host.FindObject(objID).CallFunc(keyID, params)
 }
 
-func (host *KvStoreHost) Exists(objID int32, keyID int32, typeID int32) bool {
+func (host *KvStoreHost) Exists(objID, keyID, typeID int32) bool {
 	return host.FindObject(objID).Exists(keyID, typeID)
 }
 
@@ -85,7 +87,7 @@ func (host *KvStoreHost) FindObject(objID int32) HostObject {
 	return host.objIDToObj[objID]
 }
 
-func (host *KvStoreHost) FindSubObject(obj HostObject, keyID int32, typeID int32) HostObject {
+func (host *KvStoreHost) FindSubObject(obj HostObject, keyID, typeID int32) HostObject {
 	if obj == nil {
 		// use root object
 		obj = host.FindObject(1)
@@ -93,10 +95,10 @@ func (host *KvStoreHost) FindSubObject(obj HostObject, keyID int32, typeID int32
 	return host.FindObject(obj.GetObjectID(keyID, typeID))
 }
 
-func (host *KvStoreHost) GetBytes(objID int32, keyID int32, typeID int32) []byte {
+func (host *KvStoreHost) GetBytes(objID, keyID, typeID int32) []byte {
 	obj := host.FindObject(objID)
 	if !obj.Exists(keyID, typeID) {
-		host.Trace("GetBytes o%d k%d missing key", objID, keyID)
+		host.Tracef("GetBytes o%d k%d missing key", objID, keyID)
 		return nil
 	}
 	bytes := obj.GetBytes(keyID, typeID)
@@ -106,23 +108,23 @@ func (host *KvStoreHost) GetBytes(objID int32, keyID int32, typeID int32) []byte
 		if err != nil {
 			panic("GetBytes: invalid int16")
 		}
-		host.Trace("GetBytes o%d k%d = %ds", objID, keyID, val16)
+		host.Tracef("GetBytes o%d k%d = %ds", objID, keyID, val16)
 	case OBJTYPE_INT32:
 		val32, _, err := codec.DecodeInt32(bytes)
 		if err != nil {
 			panic("GetBytes: invalid int32")
 		}
-		host.Trace("GetBytes o%d k%d = %di", objID, keyID, val32)
+		host.Tracef("GetBytes o%d k%d = %di", objID, keyID, val32)
 	case OBJTYPE_INT64:
 		val64, _, err := codec.DecodeInt64(bytes)
 		if err != nil {
 			panic("GetBytes: invalid int64")
 		}
-		host.Trace("GetBytes o%d k%d = %dl", objID, keyID, val64)
+		host.Tracef("GetBytes o%d k%d = %dl", objID, keyID, val64)
 	case OBJTYPE_STRING:
-		host.Trace("GetBytes o%d k%d = '%s'", objID, keyID, string(bytes))
+		host.Tracef("GetBytes o%d k%d = '%s'", objID, keyID, string(bytes))
 	default:
-		host.Trace("GetBytes o%d k%d = '%s'", objID, keyID, base58.Encode(bytes))
+		host.Tracef("GetBytes o%d k%d = '%s'", objID, keyID, base58.Encode(bytes))
 	}
 	return bytes
 }
@@ -138,15 +140,15 @@ func (host *KvStoreHost) getKeyFromID(keyID int32) []byte {
 }
 
 func (host *KvStoreHost) GetKeyFromID(keyID int32) []byte {
-	host.TraceAll("GetKeyFromID(k%d)", keyID)
+	host.TraceAllf("GetKeyFromID(k%d)", keyID)
 	key := host.getKeyFromID(keyID)
 	if (keyID & (KeyFromBytes | -0x80000000)) == KeyFromBytes {
 		// originally a byte slice key
-		host.Trace("GetKeyFromID k%d='%s'", keyID, base58.Encode(key))
+		host.Tracef("GetKeyFromID k%d='%s'", keyID, base58.Encode(key))
 		return key
 	}
 	// originally a string key
-	host.Trace("GetKeyFromID k%d='%s'", keyID, string(key))
+	host.Tracef("GetKeyFromID k%d='%s'", keyID, string(key))
 	return key
 }
 
@@ -179,13 +181,13 @@ func (host *KvStoreHost) GetKeyIDFromBytes(bytes []byte) int32 {
 	}
 
 	keyID := host.getKeyID(bytes, true)
-	host.Trace("GetKeyIDFromBytes '%s'=k%d", encoded, keyID)
+	host.Tracef("GetKeyIDFromBytes '%s'=k%d", encoded, keyID)
 	return keyID
 }
 
 func (host *KvStoreHost) GetKeyIDFromString(key string) int32 {
 	keyID := host.getKeyID([]byte(key), false)
-	host.Trace("GetKeyIDFromString '%s'=k%d", key, keyID)
+	host.Tracef("GetKeyIDFromString '%s'=k%d", key, keyID)
 	return keyID
 }
 
@@ -193,10 +195,10 @@ func (host *KvStoreHost) GetKeyStringFromID(keyID int32) string {
 	return string(host.GetKeyFromID(keyID))
 }
 
-func (host *KvStoreHost) GetObjectID(objID int32, keyID int32, typeID int32) int32 {
-	host.TraceAll("GetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
+func (host *KvStoreHost) GetObjectID(objID, keyID, typeID int32) int32 {
+	host.TraceAllf("GetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
 	subID := host.FindObject(objID).GetObjectID(keyID, typeID)
-	host.Trace("GetObjectID o%d k%d t%d = o%d", objID, keyID, typeID, subID)
+	host.Tracef("GetObjectID o%d k%d t%d = o%d", objID, keyID, typeID, subID)
 	return subID
 }
 
@@ -209,12 +211,12 @@ func (host *KvStoreHost) PushFrame() []HostObject {
 	// create a fresh slice to allow garbage collection
 	// it's up to the caller to save and/or restore the old frame
 	pushed := host.objIDToObj
-	host.objIDToObj = make([]HostObject, 2, 16)
+	host.objIDToObj = make([]HostObject, 2, 16) //nolint:gomnd
 	copy(host.objIDToObj, pushed[:2])
 	return pushed
 }
 
-func (host *KvStoreHost) SetBytes(objID int32, keyID int32, typeID int32, bytes []byte) {
+func (host *KvStoreHost) SetBytes(objID, keyID, typeID int32, bytes []byte) {
 	host.FindObject(objID).SetBytes(keyID, typeID, bytes)
 	switch typeID {
 	case OBJTYPE_INT16:
@@ -222,35 +224,35 @@ func (host *KvStoreHost) SetBytes(objID int32, keyID int32, typeID int32, bytes 
 		if err != nil {
 			panic("SetBytes: invalid int16")
 		}
-		host.Trace("SetBytes o%d k%d v=%ds", objID, keyID, val16)
+		host.Tracef("SetBytes o%d k%d v=%ds", objID, keyID, val16)
 	case OBJTYPE_INT32:
 		val32, _, err := codec.DecodeInt32(bytes)
 		if err != nil {
 			panic("SetBytes: invalid int32")
 		}
-		host.Trace("SetBytes o%d k%d v=%di", objID, keyID, val32)
+		host.Tracef("SetBytes o%d k%d v=%di", objID, keyID, val32)
 	case OBJTYPE_INT64:
 		val64, _, err := codec.DecodeInt64(bytes)
 		if err != nil {
 			panic("SetBytes: invalid int64")
 		}
-		host.Trace("SetBytes o%d k%d v=%dl", objID, keyID, val64)
+		host.Tracef("SetBytes o%d k%d v=%dl", objID, keyID, val64)
 	case OBJTYPE_STRING:
-		host.Trace("SetBytes o%d k%d v='%s'", objID, keyID, string(bytes))
+		host.Tracef("SetBytes o%d k%d v='%s'", objID, keyID, string(bytes))
 	default:
-		host.Trace("SetBytes o%d k%d v='%s'", objID, keyID, base58.Encode(bytes))
+		host.Tracef("SetBytes o%d k%d v='%s'", objID, keyID, base58.Encode(bytes))
 	}
 }
 
-func (host *KvStoreHost) Trace(format string, a ...interface{}) {
+func (host *KvStoreHost) Tracef(format string, a ...interface{}) {
 	if HostTracing {
 		host.log.Debugf(format, a...)
 	}
 }
 
-func (host *KvStoreHost) TraceAll(format string, a ...interface{}) {
+func (host *KvStoreHost) TraceAllf(format string, a ...interface{}) {
 	if ExtendedHostTracing {
-		host.Trace(format, a...)
+		host.Tracef(format, a...)
 	}
 }
 

@@ -37,16 +37,16 @@ type TimeSlice struct {
 	latest   int64
 }
 
-func NewTimestampedLog(kv kv.KVStore, name kv.Key) *TimestampedLog {
+func NewTimestampedLog(kvStore kv.KVStore, name kv.Key) *TimestampedLog {
 	return &TimestampedLog{
-		ImmutableTimestampedLog: NewTimestampedLogReadOnly(kv, name),
-		kvw:                     kv,
+		ImmutableTimestampedLog: NewTimestampedLogReadOnly(kvStore, name),
+		kvw:                     kvStore,
 	}
 }
 
-func NewTimestampedLogReadOnly(kv kv.KVStoreReader, name kv.Key) *ImmutableTimestampedLog {
+func NewTimestampedLogReadOnly(kvReader kv.KVStoreReader, name kv.Key) *ImmutableTimestampedLog {
 	return &ImmutableTimestampedLog{
-		kvr:  kv,
+		kvr:  kvReader,
 		name: name,
 	}
 }

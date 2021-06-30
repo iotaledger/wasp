@@ -35,7 +35,7 @@ const sigCount = 1000
 var (
 	signatures  []bls.SignatureWithPublicKey
 	privateKeys []bls.PrivateKey
-	data        [][]byte
+	data        [][]byte //nolint
 )
 
 func init() {

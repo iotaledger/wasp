@@ -1,3 +1,4 @@
+//nolint:dupl
 package sbtests
 
 import (
@@ -120,7 +121,7 @@ func TestOffLedgerFeesEnough(t *testing.T) {
 		chain.AssertIotas(cAID, 1)
 		env.AssertAddressIotas(userAddr, solo.Saldo-10)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
-		chain.AssertOwnersIotas(4 + extraToken + 10)
+		chain.AssertCommonAccountIotas(4 + extraToken + 10)
 	})
 }
 
@@ -158,7 +159,7 @@ func TestOffLedgerFeesNotEnough(t *testing.T) {
 		chain.AssertIotas(cAID, 1)
 		env.AssertAddressIotas(userAddr, solo.Saldo-9)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
-		chain.AssertOwnersIotas(4 + extraToken + 9)
+		chain.AssertCommonAccountIotas(4 + extraToken + 9)
 	})
 }
 
@@ -195,7 +196,7 @@ func TestOffLedgerFeesExtra(t *testing.T) {
 		chain.AssertIotas(cAID, 1)
 		env.AssertAddressIotas(userAddr, solo.Saldo-11)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
-		chain.AssertOwnersIotas(4 + extraToken + 10)
+		chain.AssertCommonAccountIotas(4 + extraToken + 10)
 	})
 }
 
@@ -232,7 +233,7 @@ func TestOffLedgerTransferWithFeesEnough(t *testing.T) {
 		chain.AssertIotas(cAID, 1+42)
 		env.AssertAddressIotas(userAddr, solo.Saldo-10-42)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
-		chain.AssertOwnersIotas(4 + extraToken + 10)
+		chain.AssertCommonAccountIotas(4 + extraToken + 10)
 	})
 }
 
@@ -269,7 +270,7 @@ func TestOffLedgerTransferWithFeesNotEnough(t *testing.T) {
 		chain.AssertIotas(cAID, 1+41)
 		env.AssertAddressIotas(userAddr, solo.Saldo-10-41)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
-		chain.AssertOwnersIotas(4 + extraToken + 10)
+		chain.AssertCommonAccountIotas(4 + extraToken + 10)
 	})
 }
 
@@ -306,7 +307,7 @@ func TestOffLedgerTransferWithFeesExtra(t *testing.T) {
 		chain.AssertIotas(cAID, 1+42)
 		env.AssertAddressIotas(userAddr, solo.Saldo-10-43)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
-		chain.AssertOwnersIotas(4 + extraToken + 10)
+		chain.AssertCommonAccountIotas(4 + extraToken + 10)
 	})
 }
 
@@ -336,7 +337,7 @@ func TestOffLedgerTransferEnough(t *testing.T) {
 		chain.AssertIotas(cAID, 1+42)
 		env.AssertAddressIotas(userAddr, solo.Saldo-42)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
-		chain.AssertOwnersIotas(3 + extraToken)
+		chain.AssertCommonAccountIotas(3 + extraToken)
 	})
 }
 
@@ -366,7 +367,7 @@ func TestOffLedgerTransferNotEnough(t *testing.T) {
 		chain.AssertIotas(cAID, 1+41)
 		env.AssertAddressIotas(userAddr, solo.Saldo-41)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
-		chain.AssertOwnersIotas(3 + extraToken)
+		chain.AssertCommonAccountIotas(3 + extraToken)
 	})
 }
 
@@ -396,6 +397,6 @@ func TestOffLedgerTransferExtra(t *testing.T) {
 		chain.AssertIotas(cAID, 1+42)
 		env.AssertAddressIotas(userAddr, solo.Saldo-43)
 		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
-		chain.AssertOwnersIotas(3 + extraToken)
+		chain.AssertCommonAccountIotas(3 + extraToken)
 	})
 }

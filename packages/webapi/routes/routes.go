@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package routes
 
 func Info() string {
@@ -8,15 +11,15 @@ func NewRequest(chainID string) string {
 	return "/request/" + chainID
 }
 
-func CallView(chainID string, contractHname string, functionName string) string {
+func CallView(chainID, contractHname, functionName string) string {
 	return "chain/" + chainID + "/contract/" + contractHname + "/callview/" + functionName
 }
 
-func RequestStatus(chainID string, reqID string) string {
+func RequestStatus(chainID, reqID string) string {
 	return "/chain/" + chainID + "/request/" + reqID + "/status"
 }
 
-func WaitRequestProcessed(chainID string, reqID string) string {
+func WaitRequestProcessed(chainID, reqID string) string {
 	return "/chain/" + chainID + "/request/" + reqID + "/wait"
 }
 
@@ -76,8 +79,32 @@ func DKSharesGet(sharedAddress string) string {
 	return "/adm/dks/" + sharedAddress
 }
 
-func DumpState(chainID string, contractHname string) string {
+func DumpState(chainID, contractHname string) string {
 	return "/adm/chain/" + chainID + "/contract/" + contractHname + "/dumpstate"
+}
+
+func PeeringSelfGet() string {
+	return "/adm/peering/self"
+}
+
+func PeeringTrustedList() string {
+	return "/adm/peering/trusted"
+}
+
+func PeeringTrustedGet(pubKey string) string {
+	return "/adm/peering/trusted/" + pubKey
+}
+
+func PeeringTrustedPost() string {
+	return PeeringTrustedList()
+}
+
+func PeeringTrustedPut(pubKey string) string {
+	return PeeringTrustedGet(pubKey)
+}
+
+func PeeringTrustedDelete(pubKey string) string {
+	return PeeringTrustedGet(pubKey)
 }
 
 func Shutdown() string {

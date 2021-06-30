@@ -64,7 +64,9 @@ pub fn call_func(obj_id: i32, key_id: Key32, params: &[u8]) -> Vec<u8> {
         size = hostGetBytes(obj_id, key_id.0, TYPE_CALL, args, size);
 
         // -1 means non-existent, so return default value for type
-        if size <= 0 { return vec![0_u8; 0]; }
+        if size <= 0 {
+            return vec![0_u8; 0];
+        }
 
         // allocate a sufficient length byte array in Wasm memory
         // and let the host copy the actual data bytes into this Wasm byte array
@@ -103,7 +105,9 @@ pub fn get_bytes(obj_id: i32, key_id: Key32, type_id: i32) -> Vec<u8> {
             size = hostGetBytes(obj_id, key_id.0, type_id, std::ptr::null_mut(), 0);
 
             // -1 means non-existent, so return default value for type
-            if size < 0 { return vec![0_u8; 0]; }
+            if size < 0 {
+                return vec![0_u8; 0];
+            }
         }
 
         // allocate a sufficient length byte array in Wasm memory

@@ -14,7 +14,7 @@ import (
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-func NewScBalances(vm *wasmProcessor, keyID int32) *ScDict {
+func NewScBalances(vm *WasmProcessor, keyID int32) *ScDict {
 	o := NewScDict(vm)
 	switch keyID {
 	case wasmhost.KeyIncoming:

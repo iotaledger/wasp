@@ -21,7 +21,7 @@ func AddEndpoints(server echoswagger.ApiRouter) {
 func handleInfo(c echo.Context) error {
 	return c.JSON(http.StatusOK, model.InfoResponse{
 		Version:       banner.AppVersion,
-		NetworkId:     peering.DefaultNetworkProvider().Self().NetID(),
+		NetworkID:     peering.DefaultNetworkProvider().Self().NetID(),
 		PublisherPort: parameters.GetInt(parameters.NanomsgPublisherPort),
 	})
 }

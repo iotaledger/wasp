@@ -37,6 +37,8 @@ Note: The Wasp node requires the Goshimmer node to have the
 plugin enabled. Being an experimental plugin, it is currently disabled by default and can
 be enabled via configuration.
 
+- [RocksDB](https://github.com/facebook/rocksdb/blob/master/INSTALL.md)
+
 ### Microsoft Windows installation errors:
 
 If the go install command is telling you it cannot find gcc you will need to
@@ -50,17 +52,17 @@ C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
 
 ## Compile
 
-- Build the `wasp` binary (Wasp node): `go build`
-- Build the `wasp-cli` binary (CLI client): `go build ./tools/wasp-cli`
+- Build the `wasp` binary (Wasp node): `go build -tags rocksdb`
+- Build the `wasp-cli` binary (CLI client): `go build -tags rocksdb ./tools/wasp-cli`
 
-Alternatively, build and install everything with `go install ./...`
+Alternatively, build and install everything with `go install -tags rocksdb ./...`
 
-On Windows you will need to use `go install -buildmode=exe ./...` instead
+On Windows you will need to use `go install -tags rocksdb -buildmode=exe ./...` instead
 
 ## Test
 
-- Run all tests (including integration tests which may take several minutes): `go test -timeout 20m ./...`
-- Run only unit tests: `go test -short ./...`
+- Run all tests (including integration tests which may take several minutes): `go test -tags rocksdb -timeout 20m ./...`
+- Run only unit tests: `go test -tags rocksdb -short ./...`
 
 Note: integration tests require the `wasp` and `wasp-cli` commands
 in the system path (i.e. you need to run `go install ./...` before running
@@ -87,6 +89,9 @@ tests).
 
 ## Contributing
 
-We are accepting pull requests! Please create your branch based on `develop`.
+If you want to contribute to this repository, consider posting a [bug report](https://github.com/iotaledger/wasp/issues/new-issue), feature request or a [pull request](https://github.com/iotaledger/wasp/pulls/).
+
+Please read the [Contibuting documentation](/docs/contributing/contributing.md) before creating a Pull Request.
+
 You can also join our [Discord server](https://discord.iota.org/) and ping us
 in `#smartcontracts-dev`.
