@@ -3,7 +3,6 @@ package collections
 import (
 	"testing"
 
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/kv/dict"

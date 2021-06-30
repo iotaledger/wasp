@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/sc/tr"
 )
 

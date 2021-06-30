@@ -3,8 +3,9 @@
 package chainclient
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/vmconst"

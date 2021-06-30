@@ -27,7 +27,7 @@ var (
 		ParamInt64,
 		ParamRequestID,
 	}
-	allLengths = []int{33, 37, 33, 32, 32, 4, 2, 4, 8, 34}
+	allLengths    = []int{33, 37, 33, 32, 32, 4, 2, 4, 8, 34}
 	invalidValues = map[string][][]byte{
 		ParamAddress: {
 			append([]byte{3}, zeroHash...),

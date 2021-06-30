@@ -85,8 +85,8 @@ func (csc *CommonSubsetCoordinator) Close() {
 // It is possible that the instacne is already created because of the messages
 // from other nodes. In such case we will just provide our input and register the callback.
 func (csc *CommonSubsetCoordinator) RunACSConsensus(
-	value []byte, // Our proposal.
-	sessionID uint64, // Consensus to participate in.
+	value []byte,      // Our proposal.
+	sessionID uint64,  // Consensus to participate in.
 	stateIndex uint32, // Monotonic sequence, used to clear old ACS instances.
 	callback func(sessionID uint64, acs [][]byte),
 ) {
