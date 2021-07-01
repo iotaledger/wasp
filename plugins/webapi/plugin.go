@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -28,18 +27,14 @@ var (
 	Server echoswagger.ApiRoot
 
 	log *logger.Logger
-
-	initWG sync.WaitGroup
 )
 
 func Init() *node.Plugin {
 	Plugin := node.NewPlugin(PluginName, node.Enabled, configure, run)
-	initWG.Add(1)
 	return Plugin
 }
 
 func WaitUntilIsUp() { // TODO: Not used?
-	initWG.Wait()
 }
 
 func configure(*node.Plugin) {
@@ -98,8 +93,6 @@ func run(_ *node.Plugin) {
 	if err := daemon.BackgroundWorker("WebAPI Server", worker, parameters.PriorityWebAPI); err != nil {
 		log.Errorf("Error starting as daemon: %s", err)
 	}
-
-	initWG.Done()
 }
 
 func worker(shutdownSignal <-chan struct{}) {

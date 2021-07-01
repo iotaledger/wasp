@@ -4,19 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"testing"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core"
-
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -259,9 +259,14 @@ func getChainInfo(t *testing.T, chain *cluster.Chain) (chainid.ChainID, coretype
 	return chainID, ownerID
 }
 
-func findContract(chain *cluster.Chain, name string) (*root.ContractRecord, error) {
+func findContract(chain *cluster.Chain, name string, nodeIndex ...int) (*root.ContractRecord, error) {
+	i := 0
+	if len(nodeIndex) > 0 {
+		i = nodeIndex[0]
+	}
+
 	hname := coretypes.Hn(name)
-	ret, err := chain.Cluster.WaspClient(0).CallView(
+	ret, err := chain.Cluster.WaspClient(i).CallView(
 		chain.ChainID, root.Interface.Hname(), root.FuncFindContract,
 		dict.Dict{
 			root.ParamHname: codec.EncodeHname(hname),
@@ -274,4 +279,65 @@ func findContract(chain *cluster.Chain, name string) (*root.ContractRecord, erro
 		return nil, err
 	}
 	return root.DecodeContractRecord(recBin)
+}
+
+// region waitUntilProcessed ///////////////////////////////////////////////////
+
+const pollPeriod = 500 * time.Millisecond
+
+func waitTrue(timeout time.Duration, fun func() bool) bool {
+	deadline := time.Now().Add(timeout)
+	for {
+		if fun() {
+			return true
+		}
+		time.Sleep(pollPeriod)
+		if time.Now().After(deadline) {
+			return false
+		}
+	}
+}
+
+func createCheckCounterFn(chain *cluster.Chain, expected int64) conditionFn {
+	return func(t *testing.T, nodeIndex int) bool {
+		ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
+			chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter,
+		)
+		require.NoError(t, err)
+		counter, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
+		require.NoError(t, err)
+		return counter == expected
+	}
+}
+
+func createCheckContractDeployedFn(chain *cluster.Chain, contractName string) conditionFn {
+	return func(t *testing.T, nodeIndex int) bool {
+		ret, err := findContract(chain, contractName, nodeIndex)
+		if err != nil {
+			return false
+		}
+		return ret.Name == contractName
+	}
+}
+
+type conditionFn func(t *testing.T, nodeIndex int) bool
+
+func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Duration) {
+	for _, nodeIndex := range nodeIndexes {
+		require.True(t,
+			waitTrue(timeout, func() bool {
+				return fn(t, nodeIndex)
+			}),
+		)
+	}
+}
+
+// endregion ///////////////////////////////////////////////////////////////
+
+func makeRange(min, max int) []int {
+	a := make([]int, max-min+1)
+	for i := range a {
+		a[i] = min + i
+	}
+	return a
 }

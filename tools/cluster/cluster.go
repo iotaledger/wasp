@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
 	"sort"
-	"strings"
+	"strconv"
 	"text/template"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/model"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/tools/cluster/mocknode"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"golang.org/x/xerrors"
@@ -269,7 +271,7 @@ func (clu *Cluster) start(dataPath string) error {
 	initOk := make(chan bool, clu.Config.Wasp.NumNodes)
 
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
-		cmd, err := clu.startServer("wasp", waspNodeDataPath(dataPath, i), fmt.Sprintf("wasp %d", i), initOk, "WebAPI started")
+		cmd, err := clu.startServer("wasp", waspNodeDataPath(dataPath, i), i, initOk)
 		if err != nil {
 			return err
 		}
@@ -287,7 +289,8 @@ func (clu *Cluster) start(dataPath string) error {
 	return nil
 }
 
-func (clu *Cluster) startServer(command, cwd, name string, initOk chan<- bool, initOkMsg string) (*exec.Cmd, error) {
+func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<- bool) (*exec.Cmd, error) {
+	name := fmt.Sprintf("wasp %d", nodeIndex)
 	cmd := exec.Command(command)
 	cmd.Dir = cwd
 	stdoutPipe, err := cmd.StdoutPipe()
@@ -310,10 +313,32 @@ func (clu *Cluster) startServer(command, cwd, name string, initOk chan<- bool, i
 	go scanLog(
 		stdoutPipe,
 		func(line string) { fmt.Printf("[ %s] %s\n", name, line) },
-		waitFor(initOkMsg, initOk),
 	)
+	go clu.waitForAPIReady(initOk, nodeIndex)
 
 	return cmd, nil
+}
+
+const poolAPIInterval = 500 * time.Millisecond
+
+// waits until API for a given node is ready
+func (clu *Cluster) waitForAPIReady(initOk chan<- bool, nodeIndex int) {
+	infoEndpointURL := fmt.Sprintf("http://localhost:%s%s", strconv.Itoa(clu.Config.APIPort(nodeIndex)), routes.Info())
+
+	ticker := time.NewTicker(poolAPIInterval)
+	go func() {
+		for {
+			<-ticker.C
+			rsp, err := http.Get(infoEndpointURL) //nolint:gosec,noctx
+			fmt.Printf("Polling node %d API ready status: %s %s\n", nodeIndex, infoEndpointURL, rsp.Status)
+			rsp.Body.Close()
+			if err == nil && rsp.StatusCode != 404 {
+				initOk <- true
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 }
 
 func scanLog(reader io.Reader, hooks ...func(string)) {
@@ -322,19 +347,6 @@ func scanLog(reader io.Reader, hooks ...func(string)) {
 		line := scanner.Text()
 		for _, hook := range hooks {
 			hook(line)
-		}
-	}
-}
-
-func waitFor(msg string, initOk chan<- bool) func(line string) {
-	found := false
-	return func(line string) {
-		if found {
-			return
-		}
-		if strings.Contains(line, msg) {
-			initOk <- true
-			found = true
 		}
 	}
 }

@@ -91,18 +91,12 @@ func getCounter(t *testing.T, hname coretypes.Hname) int64 {
 func TestPostDeployInccounter(t *testing.T) {
 	setup(t, "test_cluster")
 
-	chain, err = clu.DeployDefaultChain()
-	check(err, t)
-
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 }
 
 func TestPost1Request(t *testing.T) {
 	setup(t, "test_cluster")
-
-	chain, err = clu.DeployDefaultChain()
-	check(err, t)
 
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
@@ -125,9 +119,6 @@ func TestPost1Request(t *testing.T) {
 
 func TestPost3Recursive(t *testing.T) {
 	setup(t, "test_cluster")
-
-	chain, err = clu.DeployDefaultChain()
-	check(err, t)
 
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
@@ -158,9 +149,6 @@ func TestPost3Recursive(t *testing.T) {
 
 func TestPost5Requests(t *testing.T) {
 	setup(t, "test_cluster")
-
-	chain, err = clu.DeployDefaultChain()
-	check(err, t)
 
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
@@ -193,9 +181,6 @@ func TestPost5Requests(t *testing.T) {
 
 func TestPost5AsyncRequests(t *testing.T) {
 	setup(t, "test_cluster")
-
-	chain, err = clu.DeployDefaultChain()
-	check(err, t)
 
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
