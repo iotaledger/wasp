@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/cluster/testutil"
@@ -97,6 +98,9 @@ func TestWaspCLIContract(t *testing.T) {
 	committee, quorum := w.CommitteeConfig()
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
+	// for running off-ledger requests
+	w.Run("chain", "post-request", accounts.Interface.Name, "deposit", "--transfer=IOTA:10")
+
 	vmtype := vmtypes.WasmTime
 	name := "inccounter"
 	description := "inccounter SC"
@@ -145,6 +149,9 @@ func TestWaspCLIBlobContract(t *testing.T) {
 	w.Run("request-funds")
 	committee, quorum := w.CommitteeConfig()
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
+
+	// for running off-ledger requests
+	w.Run("chain", "post-request", accounts.Interface.Name, "deposit", "--transfer=IOTA:10")
 
 	// test chain list-blobs command
 	out := w.Run("chain", "list-blobs")
