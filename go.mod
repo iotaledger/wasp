@@ -3,8 +3,6 @@ module github.com/iotaledger/wasp
 go 1.16
 
 require (
-	github.com/NebulousLabs/errors v0.0.0-20181203160057-9f787ce8f69e // indirect
-	github.com/NebulousLabs/fastrand v0.0.0-20181203155948-6fb6489aac4e // indirect
 	github.com/PuerkitoBio/goquery v1.6.1
 	github.com/anthdm/hbbft v0.0.0-20190702061856-0826ffdcf567
 	github.com/bytecodealliance/wasmtime-go v0.21.0

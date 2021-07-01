@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -18,11 +16,7 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster"
 	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
-)
-
-var (
-	contractName  = "inccounter"
-	contractHname = coretypes.Hn(contractName)
+	"golang.org/x/xerrors"
 )
 
 // cluster of 10 access nodes with the committee of 4 nodes. tested if all nodes are synced
@@ -46,32 +40,24 @@ func TestAccessNode(t *testing.T) {
 	description := "testing with inccounter"
 	programHash = inccounter.Interface.ProgramHash
 
-	_, err = chain1.DeployContract(contractName, programHash.String(), description, nil)
+	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	rec, err := findContract(chain1, contractName)
-	require.NoError(t, err)
-	require.EqualValues(t, contractName, rec.Name)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
 
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
 	err = requestFunds(clu1, myAddress, "myAddress")
 	require.NoError(t, err)
 
-	myClient := chain1.SCClient(contractHname, kp)
+	myClient := chain1.SCClient(incCounterSCHname, kp)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 		require.NoError(t, err)
 	}
 
-	require.True(t, waitCounter(t, chain1, 7, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 8, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 9, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 4, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 5, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 6, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 1, numRequests, 5*time.Second))
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), []int{7, 8, 9, 4, 5, 6, 1}, 5*time.Second)
 }
 
 // cluster of 10 access nodes and two overlapping committees
@@ -97,12 +83,10 @@ func TestRotation(t *testing.T) {
 	description := "inccounter testing contract"
 	programHash = inccounter.Interface.ProgramHash
 
-	_, err = chain1.DeployContract(contractName, programHash.String(), description, nil)
+	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	rec, err := findContract(chain1, contractName)
-	require.NoError(t, err)
-	require.EqualValues(t, contractName, rec.Name)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
 
 	require.True(t, waitStateController(t, chain1, 0, addr1, 5*time.Second))
 	require.True(t, waitStateController(t, chain1, 9, addr1, 5*time.Second))
@@ -112,17 +96,14 @@ func TestRotation(t *testing.T) {
 	err = requestFunds(clu1, myAddress, "myAddress")
 	require.NoError(t, err)
 
-	myClient := chain1.SCClient(contractHname, kp)
+	myClient := chain1.SCClient(incCounterSCHname, kp)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 		require.NoError(t, err)
 	}
 
-	require.True(t, waitCounter(t, chain1, 0, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 3, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 8, numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 9, numRequests, 5*time.Second))
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), []int{0, 3, 8, 9}, 5*time.Second)
 
 	govClient := chain1.SCClient(governance.Interface.Hname(), chain1.OriginatorKeyPair())
 
@@ -136,6 +117,7 @@ func TestRotation(t *testing.T) {
 	require.True(t, waitBlockIndex(t, chain1, 6, 4, 5*time.Second))
 
 	reqid := coretypes.NewRequestID(tx.ID(), 0)
+
 	require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, 5*time.Second))
 	require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, 5*time.Second))
 
@@ -164,16 +146,8 @@ func TestRotation(t *testing.T) {
 		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 		require.NoError(t, err)
 	}
-	require.True(t, waitCounter(t, chain1, 0, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 1, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 2, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 3, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 4, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 5, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 6, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 7, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 8, 2*numRequests, 5*time.Second))
-	require.True(t, waitCounter(t, chain1, 9, 2*numRequests, 5*time.Second))
+
+	waitUntil(t, counterEquals(chain1, int64(2*numRequests)), clu1.Config.AllNodes(), 5*time.Second)
 }
 
 func TestRotationMany(t *testing.T) {
@@ -228,12 +202,10 @@ func TestRotationMany(t *testing.T) {
 	description := "inccounter testing contract"
 	programHash = inccounter.Interface.ProgramHash
 
-	_, err = chain1.DeployContract(contractName, programHash.String(), description, nil)
+	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	rec, err := findContract(chain1, contractName)
-	require.NoError(t, err)
-	require.EqualValues(t, contractName, rec.Name)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
 
 	addrIndex := 0
 	kp := wallet.KeyPair(1)
@@ -241,7 +213,7 @@ func TestRotationMany(t *testing.T) {
 	err = requestFunds(clu1, myAddress, "myAddress")
 	require.NoError(t, err)
 
-	myClient := chain1.SCClient(contractHname, kp)
+	myClient := chain1.SCClient(incCounterSCHname, kp)
 
 	for i := 0; i < numRotations; i++ {
 		require.True(t, waitStateController(t, chain1, 0, addrs[addrIndex], waitTimeout))
@@ -252,10 +224,8 @@ func TestRotationMany(t *testing.T) {
 			_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 			require.NoError(t, err)
 		}
-		require.True(t, waitCounter(t, chain1, 0, numRequests*(i+1), waitTimeout))
-		require.True(t, waitCounter(t, chain1, 3, numRequests*(i+1), waitTimeout))
-		require.True(t, waitCounter(t, chain1, 8, numRequests*(i+1), waitTimeout))
-		require.True(t, waitCounter(t, chain1, 9, numRequests*(i+1), waitTimeout))
+
+		waitUntil(t, counterEquals(chain1, int64(numRequests*(i+1))), []int{0, 3, 8, 9}, 5*time.Second)
 
 		addrIndex = (addrIndex + 1) % numCmt
 
@@ -270,21 +240,6 @@ func TestRotationMany(t *testing.T) {
 		require.True(t, waitStateController(t, chain1, 0, addrs[addrIndex], waitTimeout))
 		require.True(t, waitStateController(t, chain1, 4, addrs[addrIndex], waitTimeout))
 		require.True(t, waitStateController(t, chain1, 9, addrs[addrIndex], waitTimeout))
-	}
-}
-
-const pollPeriod = 500 * time.Millisecond
-
-func waitTrue(timeout time.Duration, fun func() bool) bool {
-	deadline := time.Now().Add(timeout)
-	for {
-		if fun() {
-			return true
-		}
-		time.Sleep(pollPeriod)
-		if time.Now().After(deadline) {
-			return false
-		}
 	}
 }
 
@@ -304,32 +259,11 @@ func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid corety
 	return ret
 }
 
-func waitCounter(t *testing.T, chain *cluster.Chain, nodeIndex, counter int, timeout time.Duration) bool {
-	return waitTrue(timeout, func() bool {
-		c, err := callGetCounter(t, chain, nodeIndex)
-		return err == nil && c >= int64(counter)
-	})
-}
-
-//nolint:unparam
-func waitBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int, blockIndex uint32, timeout time.Duration) bool {
+func waitBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int, blockIndex uint32, timeout time.Duration) bool { //nolint:unparam // (timeout is always 5s)
 	return waitTrue(timeout, func() bool {
 		i, err := callGetBlockIndex(t, chain, nodeIndex)
 		return err == nil && i >= blockIndex
 	})
-}
-
-func callGetCounter(t *testing.T, chain *cluster.Chain, nodeIndex int) (int64, error) {
-	ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
-		chain.ChainID, contractHname, "getCounter",
-	)
-	if err != nil {
-		return 0, err
-	}
-	counter, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
-	require.NoError(t, err)
-
-	return counter, nil
 }
 
 func callGetBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int) (uint32, error) {
@@ -341,10 +275,10 @@ func callGetBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int) (uint3
 	if err != nil {
 		return 0, err
 	}
-	v, ok, err := codec.DecodeUint64(ret.MustGet(blocklog.ParamBlockIndex))
+	v, ok, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 	require.NoError(t, err)
 	require.True(t, ok)
-	return uint32(v), nil
+	return v, nil
 }
 
 func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid coretypes.RequestID) (*blocklog.RequestLogRecord, error) {

@@ -23,7 +23,7 @@ func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *Tok
 }
 
 type MintAndRegisterParams struct {
-	Supply          int64           // number of tokens to mint
+	Supply          int64               // number of tokens to mint
 	MintTarget      ledgerstate.Address // where to mint new Supply
 	Description     string
 	UserDefinedData []byte

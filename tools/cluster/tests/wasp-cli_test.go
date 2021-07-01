@@ -97,6 +97,9 @@ func TestWaspCLIContract(t *testing.T) {
 	committee, quorum := w.CommitteeConfig()
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
+	// for running off-ledger requests
+	w.Run("chain", "deposit", "IOTA:10")
+
 	vmtype := vmtypes.WasmTime
 	name := "inccounter"
 	description := "inccounter SC"
@@ -145,6 +148,9 @@ func TestWaspCLIBlobContract(t *testing.T) {
 	w.Run("request-funds")
 	committee, quorum := w.CommitteeConfig()
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
+
+	// for running off-ledger requests
+	w.Run("chain", "deposit", "IOTA:10")
 
 	// test chain list-blobs command
 	out := w.Run("chain", "list-blobs")

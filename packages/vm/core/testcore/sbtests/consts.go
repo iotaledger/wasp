@@ -46,10 +46,10 @@ const (
 )
 
 const (
-	VarCounter      = "counter"
-	VarHnameEP      = "hnameEP"
-	VarMintedColor  = "mintedColor"
-	VarMintedSupply = "mintedSupply"
+	StateCounter      = "counter"
+	StateHnameEP      = "hnameEP"
+	StateMintedColor  = "mintedColor"
+	StateMintedSupply = "mintedSupply"
 )
 
 const (

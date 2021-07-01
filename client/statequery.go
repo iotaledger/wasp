@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )

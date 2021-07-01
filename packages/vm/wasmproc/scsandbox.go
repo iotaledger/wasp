@@ -1,6 +1,7 @@
 package wasmproc
 
 import (
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -15,7 +16,7 @@ func (o *ScSandboxObject) invalidKey(keyID int32) {
 
 func (o *ScSandboxObject) GetBytes(keyID, typeID int32) []byte {
 	if keyID == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
-		return o.Int64Bytes(int64(o.length))
+		return codec.EncodeInt32(o.length)
 	}
 	o.invalidKey(keyID)
 	return nil

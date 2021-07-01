@@ -99,18 +99,43 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 	}
 }
 
+func (c *chainObj) gossipOffLedgerRequest(req *request.RequestOffLedger) {
+	msgData := chain.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
+	committee := c.getCommittee()
+	var sendMessage func()
+
+	if committee != nil {
+		sendMessage = func() {
+			committee.SendMsgToPeers(chain.MsgOffLedgerRequest, msgData, time.Now().UnixNano())
+		}
+	} else {
+		sendMessage = func() {
+			gossipUpToNPeers := parameters.GetInt(parameters.OffledgerGossipUpToNPeers)
+			(*c.peers).SendMsgToRandomPeersSimple(uint16(gossipUpToNPeers), chain.MsgOffLedgerRequest, msgData)
+		}
+	}
+	broadcastInterval := time.Duration(parameters.GetInt(parameters.OffledgerBroadcastInterVal)) * time.Millisecond
+
+	ticker := time.NewTicker(broadcastInterval)
+
+	go func() {
+		for {
+			<-ticker.C
+			// check if processed (request already left the mempool)
+			if !c.mempool.HasRequest(req.ID()) {
+				ticker.Stop()
+				return
+			}
+			sendMessage()
+		}
+	}()
+}
+
 func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
 	if !c.mempool.ReceiveRequest(req) {
 		return
 	}
-	msgData := chain.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
-	committee := c.getCommittee()
-	if committee != nil {
-		committee.SendMsgToPeers(chain.MsgOffLedgerRequest, msgData, time.Now().UnixNano())
-		return
-	}
-	gossipUpToNPeers := parameters.GetInt(parameters.OffledgerGossipUpToNPeers)
-	(*c.peers).SendMsgToRandomPeersSimple(uint16(gossipUpToNPeers), chain.MsgOffLedgerRequest, msgData)
+	c.gossipOffLedgerRequest(req)
 }
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
