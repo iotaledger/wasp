@@ -87,8 +87,8 @@ func (n *Node) GenerateDistributedKey(
 	peerPubs []ed25519.PublicKey,
 	threshold uint16,
 	roundRetry time.Duration, // Retry for Peer <-> Peer communication.
-	stepRetry time.Duration,  // Retry for Initiator -> Peer communication.
-	timeout time.Duration,    // Timeout for the entire procedure.
+	stepRetry time.Duration, // Retry for Initiator -> Peer communication.
+	timeout time.Duration, // Timeout for the entire procedure.
 ) (*tcrypto.DKShare, error) {
 	n.log.Infof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().NetID(), peerNetIDs)
 	var err error
