@@ -24,22 +24,10 @@ func postRequestCmd() *cobra.Command {
 		Long:  "Post a request to contract <name>, function <funcname> with given params.",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			cb := make(map[ledgerstate.Color]uint64)
-			for _, tr := range transfer {
-				parts := strings.Split(tr, ":")
-				if len(parts) != 2 {
-					log.Fatalf("Syntax for --transfer: <color>:<amount>,<color:amount>...\nExample: IOTA:100")
-				}
-				color := colorFromString(parts[0])
-				amount, err := strconv.Atoi(parts[1])
-				log.Check(err)
-				cb[color] = uint64(amount)
-			}
-
 			fname := args[1]
 			params := chainclient.PostRequestParams{
 				Args:     requestargs.New().AddEncodeSimpleMany(util.EncodeParams(args[2:])),
-				Transfer: ledgerstate.NewColoredBalances(cb),
+				Transfer: parseColoredBalances(transfer),
 			}
 
 			scClient := SCClient(coretypes.Hn(args[0]))
@@ -73,4 +61,19 @@ func colorFromString(s string) ledgerstate.Color {
 	c, err := ledgerstate.ColorFromBase58EncodedString(s)
 	log.Check(err)
 	return c
+}
+
+func parseColoredBalances(args []string) *ledgerstate.ColoredBalances {
+	cb := make(map[ledgerstate.Color]uint64)
+	for _, tr := range args {
+		parts := strings.Split(tr, ":")
+		if len(parts) != 2 {
+			log.Fatalf("colored balances syntax: <color>:<amount>,<color:amount>... -- Example: IOTA:100")
+		}
+		color := colorFromString(parts[0])
+		amount, err := strconv.Atoi(parts[1])
+		log.Check(err)
+		cb[color] = uint64(amount)
+	}
+	return ledgerstate.NewColoredBalances(cb)
 }
