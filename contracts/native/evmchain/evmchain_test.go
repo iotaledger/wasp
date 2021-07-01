@@ -37,9 +37,9 @@ func TestStorageContract(t *testing.T) {
 	require.EqualValues(t, 42, storage.retrieve())
 
 	// call FuncSendTransaction with EVM tx that calls `store(43)`
-	_, receipt, _, err := storage.store(43)
+	res, err := storage.store(43)
 	require.NoError(t, err)
-	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+	require.Equal(t, types.ReceiptStatusSuccessful, res.receipt.Status)
 
 	// call `retrieve` view, get 43
 	require.EqualValues(t, 43, storage.retrieve())
@@ -63,11 +63,11 @@ func TestERC20Contract(t *testing.T) {
 	transferAmount := big.NewInt(1337)
 
 	// call `transfer` => send 1337 TestCoin to recipientAddress
-	_, receipt, _, err := erc20.transfer(recipientAddress, transferAmount)
+	res, err := erc20.transfer(recipientAddress, transferAmount)
 	require.NoError(t, err)
 
-	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
-	require.Equal(t, 1, len(receipt.Logs))
+	require.Equal(t, types.ReceiptStatusSuccessful, res.receipt.Status)
+	require.Equal(t, 1, len(res.receipt.Logs))
 
 	// call `balanceOf` view => check balance of recipient = 1337 TestCoin
 	require.Zero(t, erc20.balanceOf(recipientAddress).Cmp(transferAmount))
@@ -95,20 +95,20 @@ func TestGasCharged(t *testing.T) {
 	iotasSent := initialBalance - 1
 
 	// call `store(999)` with enough gas
-	_, _, gasFee, err := storage.store(999, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: iotasSent}})
+	res, err := storage.store(999, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: iotasSent}})
 	require.NoError(t, err)
-	require.Greater(t, gasFee, uint64(0))
+	require.Greater(t, res.iotaChargedFee, uint64(0))
 
 	// call `retrieve` view, get 42
 	require.EqualValues(t, 999, storage.retrieve())
 
 	// user on-chain account is credited with excess iotas (iotasSent - gasUsed)
-	expectedUserBalance := iotasSent - gasFee
+	expectedUserBalance := iotasSent - res.iotaChargedFee
 
 	evmChain.soloChain.AssertIotas(iotaAgentID, expectedUserBalance)
 
 	// call `store(123)` without enough gas
-	_, _, _, err = storage.store(123, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: 1}})
+	_, err = storage.store(123, ethCallOptions{iota: iotaCallOptions{wallet: iotaWallet, transfer: 1}})
 	require.Contains(t, err.Error(), "transferred tokens (1) not enough")
 
 	// call `retrieve` view, get 999 - which means store(123) failed and the previous state is kept
@@ -127,9 +127,9 @@ func TestOwner(t *testing.T) {
 
 	// only the owner can call the setOwner endpoint
 	user1Wallet, user1Address := evmChain.solo.NewKeyPairWithFunds()
-	user1AgentId := coretypes.NewAgentID(user1Address, 0)
+	user1AgentID := coretypes.NewAgentID(user1Address, 0)
 	_, err := evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, FuncSetNextOwner, FieldNextEvmOwner, user1AgentId).
+		solo.NewCallParams(Interface.Name, FuncSetNextOwner, FieldNextEvmOwner, user1AgentID).
 			WithIotas(100000),
 		user1Wallet,
 	)
@@ -141,7 +141,7 @@ func TestOwner(t *testing.T) {
 
 	// current owner is able to set a new "next owner"
 	_, err = evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, FuncSetNextOwner, FieldNextEvmOwner, user1AgentId).
+		solo.NewCallParams(Interface.Name, FuncSetNextOwner, FieldNextEvmOwner, user1AgentID).
 			WithIotas(100000),
 		evmChain.soloChain.OriginatorKeyPair,
 	)
@@ -173,7 +173,7 @@ func TestOwner(t *testing.T) {
 	)
 	require.NoError(t, err)
 	owner = evmChain.getOwner()
-	require.True(t, owner.Equals(user1AgentId))
+	require.True(t, owner.Equals(user1AgentID))
 }
 
 func TestGasPerIotas(t *testing.T) {
@@ -183,9 +183,9 @@ func TestGasPerIotas(t *testing.T) {
 	// the default value is correct
 	require.Equal(t, DefaultGasPerIota, evmChain.getGasPerIotas())
 
-	_, _, gasFee, err := storage.store(43)
+	res, err := storage.store(43)
 	require.NoError(t, err)
-	initialGasFee := gasFee
+	initialGasFee := res.iotaChargedFee
 
 	// only the owner can call the setGasPerIotas endpoint
 	newGasPerIota := DefaultGasPerIota * 1000
@@ -200,9 +200,9 @@ func TestGasPerIotas(t *testing.T) {
 	require.Equal(t, newGasPerIota, evmChain.getGasPerIotas())
 
 	// run an equivalent request and compare the gas fees
-	_, _, gasFee, err = storage.store(44)
+	res, err = storage.store(44)
 	require.NoError(t, err)
-	require.Less(t, gasFee, initialGasFee)
+	require.Less(t, res.iotaChargedFee, initialGasFee)
 }
 
 func TestWithdrawalOwnerFees(t *testing.T) {
@@ -230,11 +230,11 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 
 	// collect fees from a SC call, check that the collected fees matches the fees charged
 	user1Balance2 := evmChain.solo.GetAddressBalance(user1Address, ledgerstate.ColorIOTA)
-	_, _, chargedGasFee, err := storage.store(43)
+	res, err := storage.store(43)
 	require.NoError(t, err)
 	require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
 	user1Balance3 := evmChain.solo.GetAddressBalance(user1Address, ledgerstate.ColorIOTA)
-	require.Equal(t, user1Balance3, user1Balance2+chargedGasFee)
+	require.Equal(t, user1Balance3, user1Balance2+res.iotaChargedFee)
 
 	// try to withdraw a second time, it should succeed, but owner balance shouldnt not change (there are no fees to withdraw)
 	require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
@@ -242,7 +242,7 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 	require.Equal(t, user1Balance3, user1Balance4)
 
 	// try to withdraw fees to another actor using using the FieldAgentId param
-	_, _, chargedGasFee, err = storage.store(44)
+	res, err = storage.store(44)
 	require.NoError(t, err)
 	_, user2Address := evmChain.solo.NewKeyPairWithFunds()
 	user2AgentID := coretypes.NewAgentID(user2Address, 0)
@@ -250,7 +250,7 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 	err = evmChain.withdrawGasFees(user1Wallet, user2AgentID)
 	require.NoError(t, err)
 	user2Balance1 := evmChain.solo.GetAddressBalance(user2Address, ledgerstate.ColorIOTA)
-	require.Equal(t, user2Balance1, user2Balance0+chargedGasFee+1) // 1 extra iota from the withdrawal request
+	require.Equal(t, user2Balance1, user2Balance0+res.iotaChargedFee+1) // 1 extra iota from the withdrawal request
 }
 
 // tests that the gas limits are correctly enforced based on the iotas sent
@@ -263,10 +263,10 @@ func TestGasLimit(t *testing.T) {
 	iotasForGas := uint64(10000)
 	gaslimit := iotasForGas * gasPerIotas
 
-	_, _, _, err := storage.store(123, ethCallOptions{gasLimit: gaslimit, iota: iotaCallOptions{transfer: iotasForGas - 1}})
+	_, err := storage.store(123, ethCallOptions{gasLimit: gaslimit, iota: iotaCallOptions{transfer: iotasForGas - 1}})
 	require.Contains(t, err.Error(), "transferred tokens (9999) not enough")
 
-	_, _, _, err = storage.store(123, ethCallOptions{gasLimit: gaslimit, iota: iotaCallOptions{transfer: iotasForGas}})
+	_, err = storage.store(123, ethCallOptions{gasLimit: gaslimit, iota: iotaCallOptions{transfer: iotasForGas}})
 	require.NoError(t, err)
 }
 
@@ -281,22 +281,22 @@ func TestLoop(t *testing.T) {
 
 	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, ledgerstate.ColorIOTA)
 	iotasSpent1 := uint64(100)
-	_, receipt, chargedGasFee, err := loop.loop(ethCallOptions{
+	res, err := loop.loop(ethCallOptions{
 		gasLimit: iotasSpent1 * gasPerIotas,
 		iota:     iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent1},
 	})
 	require.NoError(t, err)
-	require.Equal(t, chargedGasFee, iotasSpent1)
-	gasUsed := receipt.GasUsed
+	require.Equal(t, res.iotaChargedFee, iotasSpent1)
+	gasUsed := res.receipt.GasUsed
 
 	iotasSpent2 := uint64(1000)
-	_, receipt, chargedGasFee, err = loop.loop(ethCallOptions{
+	res, err = loop.loop(ethCallOptions{
 		gasLimit: iotasSpent2 * gasPerIotas,
 		iota:     iotaCallOptions{wallet: iotaWallet, transfer: iotasSpent2},
 	})
 	require.NoError(t, err)
-	require.Equal(t, chargedGasFee, iotasSpent2)
-	require.Greater(t, receipt.GasUsed, gasUsed)
+	require.Equal(t, res.iotaChargedFee, iotasSpent2)
+	require.Greater(t, res.receipt.GasUsed, gasUsed)
 
 	// ensure iotas sent are kept by the evmchain SC
 	require.Equal(t, evmChain.solo.GetAddressBalance(iotaAddress, ledgerstate.ColorIOTA), initialBalance-iotasSpent1-iotasSpent2)
@@ -311,9 +311,9 @@ func TestNonFaucetUsers(t *testing.T) {
 	gasPerIotas := evmChain.getGasPerIotas()
 	iotas := uint64(10000)
 	// this should be successful because gasPrice is 0
-	_, _, gasFees, err := storage.store(123, ethCallOptions{gasLimit: iotas * gasPerIotas, iota: iotaCallOptions{transfer: iotas}})
+	res, err := storage.store(123, ethCallOptions{gasLimit: iotas * gasPerIotas, iota: iotaCallOptions{transfer: iotas}})
 	require.NoError(t, err)
-	require.Greater(t, gasFees, uint64(0))
+	require.Greater(t, res.iotaChargedFee, uint64(0))
 
 	require.EqualValues(t, 123, storage.retrieve())
 }

@@ -85,11 +85,11 @@ func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte
 	return blob.LocateProgram(vmctx.State(), programHash)
 }
 
-func (vmctx *VMContext) getBalanceOfAccount(agentId *coretypes.AgentID, col ledgerstate.Color) uint64 {
+func (vmctx *VMContext) getBalanceOfAccount(agentID *coretypes.AgentID, col ledgerstate.Color) uint64 {
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return accounts.GetBalance(vmctx.State(), agentId, col)
+	return accounts.GetBalance(vmctx.State(), agentID, col)
 }
 
 func (vmctx *VMContext) getBalance(col ledgerstate.Color) uint64 {

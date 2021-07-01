@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -68,7 +69,9 @@ func start(cmd *cobra.Command, args []string) {
 	chainOwner, _ := env.NewKeyPairWithFunds()
 	chain := env.NewChain(chainOwner, "iscpchain")
 	err := chain.DeployContract(chainOwner, "evmchain", evmchain.Interface.ProgramHash,
-		evmchain.FieldGenesisAlloc, evmchain.EncodeGenesisAlloc(deployParams.GetGenesis()),
+		evmchain.FieldGenesisAlloc, evmchain.EncodeGenesisAlloc(deployParams.GetGenesis(core.GenesisAlloc{
+			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
+		})),
 		evmchain.FieldGasPerIota, deployParams.GasPerIOTA,
 	)
 	log.Check(err)

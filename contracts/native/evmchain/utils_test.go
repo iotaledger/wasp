@@ -184,11 +184,11 @@ func (e *evmChainInstance) getOwner() coretypes.AgentID {
 	return owner
 }
 
-func (e *evmChainInstance) deployStorageContract(creator *ecdsa.PrivateKey, n uint32) *storageContractInstance {
+func (e *evmChainInstance) deployStorageContract(creator *ecdsa.PrivateKey, n uint32) *storageContractInstance { // nolint:unparam
 	return &storageContractInstance{e.deployContract(creator, evmtest.StorageContractABI, evmtest.StorageContractBytecode, n)}
 }
 
-func (e *evmChainInstance) deployERC20Contract(creator *ecdsa.PrivateKey, name string, symbol string) *erc20ContractInstance {
+func (e *evmChainInstance) deployERC20Contract(creator *ecdsa.PrivateKey, name, symbol string) *erc20ContractInstance {
 	return &erc20ContractInstance{e.deployContract(creator, evmtest.ERC20ContractABI, evmtest.ERC20ContractBytecode, name, symbol)}
 }
 
@@ -205,7 +205,10 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	require.NoError(e.t, err)
 	constructorArguments, err := contractABI.Pack("", args...)
 	require.NoError(e.t, err)
-	data := append(bytecode, constructorArguments...)
+
+	data := []byte{}
+	data = append(data, bytecode...)
+	data = append(data, constructorArguments...)
 
 	value := big.NewInt(0)
 
@@ -306,17 +309,24 @@ func (e *evmContractInstance) buildEthTxData(opts []ethCallOptions, fnName strin
 	return txdata, tx, opt
 }
 
-func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (tx *types.Transaction, receipt *Receipt, iotaChargedFee uint64, err error) {
+type callFnResult struct {
+	tx             *types.Transaction
+	receipt        *Receipt
+	iotaChargedFee uint64
+}
+
+func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args ...interface{}) (res callFnResult, err error) {
 	e.chain.t.Logf("callFn: %s %+v", fnName, args)
 
 	txdata, tx, opt := e.buildEthTxData(opts, fnName, args...)
+	res.tx = tx
 
 	result, err := e.chain.postRequest([]iotaCallOptions{opt.iota}, FuncSendTransaction, FieldTransactionData, txdata)
 	if err != nil {
 		return
 	}
 
-	iotaChargedFee, _, err = codec.DecodeUint64(result.MustGet(FieldGasFee))
+	res.iotaChargedFee, _, err = codec.DecodeUint64(result.MustGet(FieldGasFee))
 	require.NoError(e.chain.t, err)
 
 	gasUsed, _, err := codec.DecodeUint64(result.MustGet(FieldGasUsed))
@@ -325,10 +335,10 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	receiptResult, err := e.chain.callView(FuncGetReceipt, FieldTransactionHash, tx.Hash().Bytes())
 	require.NoError(e.chain.t, err)
 
-	receipt, err = DecodeReceipt(receiptResult.MustGet(FieldResult))
+	res.receipt, err = DecodeReceipt(receiptResult.MustGet(FieldResult))
 	require.NoError(e.chain.t, err)
 
-	require.LessOrEqual(e.chain.t, receipt.GasUsed, gasUsed)
+	require.LessOrEqual(e.chain.t, res.receipt.GasUsed, gasUsed)
 	return
 }
 
@@ -353,13 +363,13 @@ func (e *evmContractInstance) callView(opts []ethCallOptions, fnName string, arg
 	}
 }
 
-func (s *storageContractInstance) retrieve(opts ...ethCallOptions) uint32 {
+func (s *storageContractInstance) retrieve() uint32 {
 	var v uint32
-	s.callView(opts, "retrieve", nil, &v)
+	s.callView(nil, "retrieve", nil, &v)
 	return v
 }
 
-func (s *storageContractInstance) store(n uint32, opts ...ethCallOptions) (tx *types.Transaction, receipt *Receipt, iotaChargedFee uint64, err error) {
+func (s *storageContractInstance) store(n uint32, opts ...ethCallOptions) (res callFnResult, err error) {
 	return s.callFn(opts, "store", n)
 }
 
@@ -375,11 +385,11 @@ func (e *erc20ContractInstance) totalSupply(opts ...ethCallOptions) *big.Int {
 	return v
 }
 
-func (e *erc20ContractInstance) transfer(recipientAddress common.Address, amount *big.Int, opts ...ethCallOptions) (tx *types.Transaction, receipt *Receipt, iotaChargedFee uint64, err error) {
+func (e *erc20ContractInstance) transfer(recipientAddress common.Address, amount *big.Int, opts ...ethCallOptions) (res callFnResult, err error) {
 	return e.callFn(opts, "transfer", recipientAddress, amount)
 }
 
-func (l *loopContractInstance) loop(opts ...ethCallOptions) (tx *types.Transaction, receipt *Receipt, iotaChargedFee uint64, err error) {
+func (l *loopContractInstance) loop(opts ...ethCallOptions) (res callFnResult, err error) {
 	return l.callFn(opts, "loop")
 }
 

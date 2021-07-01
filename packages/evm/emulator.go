@@ -169,7 +169,7 @@ func (e *EVMEmulator) StorageAt(contract common.Address, key common.Hash, blockN
 
 // TransactionReceipt returns the receipt of a transaction.
 func (e *EVMEmulator) TransactionReceipt(txHash common.Hash) (*types.Receipt, error) {
-	receipt, _, _, _ := rawdb.ReadReceipt(e.database, txHash, e.blockchain.Config())
+	receipt, _, _, _ := rawdb.ReadReceipt(e.database, txHash, e.blockchain.Config()) //nolint:dogsled
 	return receipt, nil
 }
 
@@ -182,7 +182,7 @@ func (e *EVMEmulator) TransactionByHash(txHash common.Hash) (*types.Transaction,
 	if tx != nil {
 		return tx, true, nil
 	}
-	tx, _, _, _ = rawdb.ReadTransaction(e.database, txHash)
+	tx, _, _, _ = rawdb.ReadTransaction(e.database, txHash) //nolint:dogsled
 	if tx != nil {
 		return tx, false, nil
 	}
@@ -366,7 +366,7 @@ func (e *EVMEmulator) EstimateGas(call ethereum.CallMsg) (uint64, error) {
 	var (
 		lo  uint64 = params.TxGas - 1
 		hi  uint64
-		cap uint64
+		max uint64
 	)
 	if call.Gas >= params.TxGas {
 		hi = call.Gas
@@ -394,7 +394,7 @@ func (e *EVMEmulator) EstimateGas(call ethereum.CallMsg) (uint64, error) {
 			hi = allowance.Uint64()
 		}
 	}
-	cap = hi
+	max = hi
 
 	// Create a helper to check if a gas allowance results in an executable transaction
 	executable := func(gas uint64) (bool, *core.ExecutionResult, error) {
@@ -410,7 +410,7 @@ func (e *EVMEmulator) EstimateGas(call ethereum.CallMsg) (uint64, error) {
 			}
 			return true, nil, fmt.Errorf("Bail out: %w", err)
 		}
-		return res.Failed(), res, nil
+		return res.Failed(), res, nil //nolint:gocritic
 	}
 	// Execute the binary search and hone in on an executable gas limit
 	for lo+1 < hi {
@@ -429,20 +429,20 @@ func (e *EVMEmulator) EstimateGas(call ethereum.CallMsg) (uint64, error) {
 		}
 	}
 	// Reject the transaction as invalid if it still fails at the highest allowance
-	if hi == cap {
+	if hi == max {
 		failed, result, err := executable(hi)
 		if err != nil {
 			return 0, fmt.Errorf("executable(hi): %w", err)
 		}
 		if failed {
-			if result != nil && result.Err != vm.ErrOutOfGas {
+			if result != nil && !errors.Is(result.Err, vm.ErrOutOfGas) {
 				if len(result.Revert()) > 0 {
 					return 0, newRevertError(result)
 				}
 				return 0, fmt.Errorf("revert: %w", result.Err)
 			}
 			// Otherwise, the specified gas cap is too low
-			return 0, fmt.Errorf("gas required exceeds allowance (%d)", cap)
+			return 0, fmt.Errorf("gas required exceeds allowance (%d)", max)
 		}
 	}
 	return hi, nil
@@ -560,7 +560,7 @@ type filterBackend struct {
 var _ filters.Backend = &filterBackend{}
 
 func (fb *filterBackend) ChainDb() ethdb.Database  { return fb.db }
-func (fb *filterBackend) EventMux() *event.TypeMux { panic("not supported") }
+func (fb *filterBackend) EventMux() *event.TypeMux { panic("not supported") } //nolint:staticcheck
 
 func (fb *filterBackend) HeaderByNumber(ctx context.Context, block rpc.BlockNumber) (*types.Header, error) {
 	if block == rpc.LatestBlockNumber {

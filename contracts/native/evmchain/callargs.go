@@ -35,53 +35,51 @@ func DecodeCallMsg(callArgsBytes []byte) (ret ethereum.CallMsg, err error) {
 	m := marshalutil.New(callArgsBytes)
 	var b []byte
 	var exists bool
-	{
+
+	if b, err = m.ReadBytes(common.AddressLength); err != nil {
+		return
+	}
+	ret.From.SetBytes(b)
+
+	if exists, err = m.ReadBool(); err != nil {
+		return
+	}
+	if exists {
 		if b, err = m.ReadBytes(common.AddressLength); err != nil {
 			return
 		}
-		ret.From.SetBytes(b)
+		ret.To = &common.Address{}
+		ret.To.SetBytes(b)
 	}
-	{
-		if exists, err = m.ReadBool(); err != nil {
-			return
-		}
-		if exists {
-			if b, err = m.ReadBytes(common.AddressLength); err != nil {
-				return
-			}
-			ret.To = &common.Address{}
-			ret.To.SetBytes(b)
-		}
-	}
+
 	if ret.Gas, err = m.ReadUint64(); err != nil {
 		return
 	}
-	{
-		if exists, err = m.ReadBool(); err != nil {
+
+	if exists, err = m.ReadBool(); err != nil {
+		return
+	}
+	if exists {
+		if b, err = readBytes(m); err != nil {
 			return
 		}
-		if exists {
-			if b, err = readBytes(m); err != nil {
-				return
-			}
-			ret.GasPrice = new(big.Int)
-			ret.GasPrice.SetBytes(b)
-		}
+		ret.GasPrice = new(big.Int)
+		ret.GasPrice.SetBytes(b)
 	}
-	{
-		if exists, err = m.ReadBool(); err != nil {
+
+	if exists, err = m.ReadBool(); err != nil {
+		return
+	}
+	if exists {
+		if b, err = readBytes(m); err != nil {
 			return
 		}
-		if exists {
-			if b, err = readBytes(m); err != nil {
-				return
-			}
-			ret.Value = new(big.Int)
-			ret.Value.SetBytes(b)
-		}
+		ret.Value = new(big.Int)
+		ret.Value.SetBytes(b)
 	}
+
 	if ret.Data, err = readBytes(m); err != nil {
 		return
 	}
-	return
+	return ret, err
 }

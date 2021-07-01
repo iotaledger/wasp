@@ -25,9 +25,9 @@ type JSONRPCServer struct {
 }
 
 func (j *JSONRPCServer) InitFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&j.listenAddr, "listen", "l", ":8545", "JSON-RPC listen address")
-	cmd.PersistentFlags().StringSliceVarP(&j.corsAllowOrigins, "cors", "o", []string{"*"}, "CORS allow origins")
-	cmd.PersistentFlags().StringVarP(&j.unlockedAccount, "account", "a", "", "unlocked account (hex-encoded private key)")
+	cmd.Flags().StringVarP(&j.listenAddr, "listen", "l", ":8545", "JSON-RPC listen address")
+	cmd.Flags().StringSliceVarP(&j.corsAllowOrigins, "cors", "", []string{"*"}, "CORS allow origins")
+	cmd.Flags().StringVarP(&j.unlockedAccount, "account", "", "", "unlocked account (hex-encoded private key)")
 }
 
 func (j *JSONRPCServer) getUnlockedAccount() []*ecdsa.PrivateKey {

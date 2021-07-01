@@ -272,21 +272,21 @@ func withdrawGasFees(ctx coretypes.Sandbox) (dict.Dict, error) {
 	requireOwner(ctx)
 
 	paramsDecoder := kvdecoder.New(ctx.Params(), ctx.Log())
-	targetAgentId := paramsDecoder.MustGetAgentID(FieldAgentID, *ctx.Caller())
+	targetAgentID := paramsDecoder.MustGetAgentID(FieldAgentID, *ctx.Caller())
 
-	isOnChain := targetAgentId.Address().Equals(ctx.ChainID().AsAddress())
+	isOnChain := targetAgentID.Address().Equals(ctx.ChainID().AsAddress())
 
 	if isOnChain {
 		params := codec.MakeDict(map[string]interface{}{
-			accounts.ParamAgentID: targetAgentId,
+			accounts.ParamAgentID: targetAgentID,
 		})
 		_, err := ctx.Call(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), params, ctx.Balances())
 		a.RequireNoError(err)
 		return nil, nil
 	}
 
-	a.Require(ctx.Send(targetAgentId.Address(), ctx.Balances(), &coretypes.SendMetadata{
-		TargetContract: targetAgentId.Hname(),
+	a.Require(ctx.Send(targetAgentID.Address(), ctx.Balances(), &coretypes.SendMetadata{
+		TargetContract: targetAgentID.Hname(),
 	}), "withdraw.inconsistency: failed sending tokens ")
 
 	return nil, nil

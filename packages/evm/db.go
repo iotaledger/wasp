@@ -16,8 +16,8 @@ type KVAdapter struct {
 
 var _ ethdb.KeyValueStore = &KVAdapter{}
 
-func NewKVAdapter(kv kv.KVStore) *KVAdapter {
-	return &KVAdapter{kv}
+func NewKVAdapter(store kv.KVStore) *KVAdapter {
+	return &KVAdapter{store}
 }
 
 // Has retrieves if a key is present in the key-value data store.
@@ -31,7 +31,7 @@ func (k *KVAdapter) Get(key []byte) ([]byte, error) {
 }
 
 // Put inserts the given value into the key-value data store.
-func (k *KVAdapter) Put(key []byte, value []byte) error {
+func (k *KVAdapter) Put(key, value []byte) error {
 	if value == nil {
 		value = []byte{}
 	}
@@ -57,7 +57,7 @@ func (k *KVAdapter) NewBatch() ethdb.Batch {
 //
 // Note: This method assumes that the prefix is NOT part of the start, so there's
 // no need for the caller to prepend the prefix to the start
-func (k *KVAdapter) NewIterator(prefix []byte, start []byte) ethdb.Iterator {
+func (k *KVAdapter) NewIterator(prefix, start []byte) ethdb.Iterator {
 	it := &iterator{
 		next:  make(chan struct{}),
 		items: make(chan keyvalue, 1),
@@ -95,7 +95,7 @@ func (k *KVAdapter) Stat(property string) (string, error) {
 // A nil start is treated as a key before all keys in the data store; a nil limit
 // is treated as a key after all keys in the data store. If both is nil then it
 // will compact entire data store.
-func (k *KVAdapter) Compact(start []byte, limit []byte) error {
+func (k *KVAdapter) Compact(start, limit []byte) error {
 	return nil
 }
 

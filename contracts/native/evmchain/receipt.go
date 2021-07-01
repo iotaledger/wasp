@@ -73,70 +73,67 @@ func (r *Receipt) Bytes() []byte {
 	return m.Bytes()
 }
 
-func DecodeReceipt(receiptBytes []byte) (*Receipt, error) {
+func DecodeReceipt(receiptBytes []byte) (*Receipt, error) { //nolint:funlen
 	m := marshalutil.New(receiptBytes)
 	r := &Receipt{}
 	var err error
 	var b []byte
 	var exists bool
-	{
-		if b, err = m.ReadBytes(common.HashLength); err != nil {
-			return nil, err
-		}
-		r.TxHash.SetBytes(b)
+
+	if b, err = m.ReadBytes(common.HashLength); err != nil {
+		return nil, err
 	}
+	r.TxHash.SetBytes(b)
+
 	if r.TransactionIndex, err = m.ReadUint32(); err != nil {
 		return nil, err
 	}
-	{
-		if b, err = m.ReadBytes(common.HashLength); err != nil {
-			return nil, err
-		}
-		r.BlockHash.SetBytes(b)
+
+	if b, err = m.ReadBytes(common.HashLength); err != nil {
+		return nil, err
 	}
-	{
-		if b, err = readBytes(m); err != nil {
-			return nil, err
-		}
-		r.BlockNumber = new(big.Int)
-		r.BlockNumber.SetBytes(b)
+	r.BlockHash.SetBytes(b)
+
+	if b, err = readBytes(m); err != nil {
+		return nil, err
 	}
-	{
+	r.BlockNumber = new(big.Int)
+	r.BlockNumber.SetBytes(b)
+
+	if b, err = m.ReadBytes(common.AddressLength); err != nil {
+		return nil, err
+	}
+	r.From.SetBytes(b)
+
+	if exists, err = m.ReadBool(); err != nil {
+		return nil, err
+	}
+	if exists {
 		if b, err = m.ReadBytes(common.AddressLength); err != nil {
 			return nil, err
 		}
-		r.From.SetBytes(b)
+		r.To = &common.Address{}
+		r.To.SetBytes(b)
 	}
-	{
-		if exists, err = m.ReadBool(); err != nil {
-			return nil, err
-		}
-		if exists {
-			if b, err = m.ReadBytes(common.AddressLength); err != nil {
-				return nil, err
-			}
-			r.To = &common.Address{}
-			r.To.SetBytes(b)
-		}
-	}
+
 	if r.CumulativeGasUsed, err = m.ReadUint64(); err != nil {
 		return nil, err
 	}
 	if r.GasUsed, err = m.ReadUint64(); err != nil {
 		return nil, err
 	}
-	{
-		if exists, err = m.ReadBool(); err != nil {
+
+	if exists, err = m.ReadBool(); err != nil {
+		return nil, err
+	}
+	if exists {
+		if b, err = m.ReadBytes(common.AddressLength); err != nil {
 			return nil, err
 		}
-		if exists {
-			if b, err = m.ReadBytes(common.AddressLength); err != nil {
-				return nil, err
-			}
-			r.ContractAddress = &common.Address{}
-			r.ContractAddress.SetBytes(b)
-		}
+		r.ContractAddress = &common.Address{}
+		r.ContractAddress.SetBytes(b)
 	}
+
 	{
 		var n uint32
 		if n, err = m.ReadUint32(); err != nil {
@@ -158,12 +155,12 @@ func DecodeReceipt(receiptBytes []byte) (*Receipt, error) {
 			r.Logs = append(r.Logs, log)
 		}
 	}
-	{
-		if b, err = m.ReadBytes(types.BloomByteLength); err != nil {
-			return nil, err
-		}
-		r.Bloom.SetBytes(b)
+
+	if b, err = m.ReadBytes(types.BloomByteLength); err != nil {
+		return nil, err
 	}
+	r.Bloom.SetBytes(b)
+
 	if r.Status, err = m.ReadUint64(); err != nil {
 		return nil, err
 	}

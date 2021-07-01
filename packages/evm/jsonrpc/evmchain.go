@@ -172,14 +172,14 @@ func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, b
 	})
 }
 
-func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumber, index_ uint64, err error) {
+func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumber, indexRet uint64, err error) {
 	return e.getTransactionBy(evmchain.FuncGetTransactionByBlockHashAndIndex, dict.Dict{
 		evmchain.FieldBlockHash:        hash.Bytes(),
 		evmchain.FieldTransactionIndex: codec.EncodeUint64(index),
 	})
 }
 
-func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumber_, index_ uint64, err error) {
+func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumberRet, indexRet uint64, err error) {
 	return e.getTransactionBy(evmchain.FuncGetTransactionByBlockNumberAndIndex, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
 		evmchain.FieldTransactionIndex: codec.EncodeUint64(index),
 	}))

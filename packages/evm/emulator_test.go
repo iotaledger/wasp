@@ -215,7 +215,10 @@ func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	require.NoError(t, err)
 	require.NotEmpty(t, constructorArguments)
 
-	data := append(contractBytecode, constructorArguments...)
+	data := []byte{}
+	data = append(data, contractBytecode...)
+	data = append(data, constructorArguments...)
+
 	gas := estimateGas(t, emu, creatorAddress, nil, txValue, data)
 	require.NoError(t, err)
 

@@ -4,6 +4,7 @@
 package evmchain
 
 import (
+	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -100,7 +101,7 @@ func withBlockByHash(ctx coretypes.SandboxView, f func(*evm.EVMEmulator, *types.
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
 		block, err := emu.BlockByHash(hash)
-		if err != evm.ErrBlockDoesNotExist {
+		if !errors.Is(err, evm.ErrBlockDoesNotExist) {
 			a.RequireNoError(err)
 		}
 		return f(emu, block)

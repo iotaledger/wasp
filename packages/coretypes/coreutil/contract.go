@@ -48,7 +48,7 @@ func defaultHandlerFunc(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func NewContractInterface(name string, description string, progHash ...hashing.HashValue) *ContractInterface {
+func NewContractInterface(name, description string, progHash ...hashing.HashValue) *ContractInterface {
 	i := &ContractInterface{Name: name, Description: description}
 	if len(progHash) > 0 {
 		i.ProgramHash = progHash[0]

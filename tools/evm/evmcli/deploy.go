@@ -4,39 +4,58 @@
 package evmcli
 
 import (
+	"encoding/base64"
 	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
-	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
 
 type DeployParams struct {
-	genesis    []string
-	GasPerIOTA uint64
+	alloc       []string
+	allocBase64 string
+	GasPerIOTA  uint64
 }
 
 func (d *DeployParams) InitFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringSliceVarP(&d.genesis, "genesis", "s", nil, "genesis allocation (format: <address>:<wei>,...)")
-	cmd.PersistentFlags().Uint64VarP(&d.GasPerIOTA, "gas-per-iota", "f", evmchain.DefaultGasPerIota, "Gas per IOTA charged as fee")
+	cmd.Flags().StringSliceVarP(&d.alloc, "alloc", "", nil, "Genesis allocation (format: <address>:<wei>,<address>:<wei>,...)")
+	cmd.Flags().StringVarP(&d.allocBase64, "alloc-bytes", "", "", "Genesis allocation (base64-encoded)")
+	cmd.Flags().Uint64VarP(&d.GasPerIOTA, "gas-per-iota", "", evmchain.DefaultGasPerIota, "Gas per IOTA charged as fee")
 }
 
-func (d *DeployParams) GetGenesis() core.GenesisAlloc {
-	if len(d.genesis) == 0 {
-		return core.GenesisAlloc{
-			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
+func (d *DeployParams) GetGenesis(def core.GenesisAlloc) core.GenesisAlloc {
+	if len(d.alloc) != 0 && d.allocBase64 != "" {
+		log.Fatalf("--alloc and --alloc-bytes are mutually exclusive")
+	}
+	if len(d.alloc) == 0 && d.allocBase64 == "" {
+		if len(def) == 0 {
+			log.Fatalf("One of --alloc and --alloc-bytes is mandatory")
 		}
+		return def
 	}
-	ret := core.GenesisAlloc{}
-	for _, s := range d.genesis {
-		parts := strings.Split(s, ":")
-		addr := common.HexToAddress(parts[0])
-		amount := big.NewInt(0)
-		amount.SetString(parts[1], 10)
-		ret[addr] = core.GenesisAccount{Balance: amount}
+	if len(d.alloc) != 0 {
+		// --alloc provided
+		ret := core.GenesisAlloc{}
+		for _, arg := range d.alloc {
+			parts := strings.Split(arg, ":")
+			addr := common.HexToAddress(parts[0])
+			wei := big.NewInt(0)
+			_, ok := wei.SetString(parts[1], 10)
+			if !ok {
+				log.Fatalf("cannot parse wei")
+			}
+			ret[addr] = core.GenesisAccount{Balance: wei}
+		}
+		return ret
 	}
+	// --alloc-bytes provided
+	b, err := base64.StdEncoding.DecodeString(d.allocBase64)
+	log.Check(err)
+	ret, err := evmchain.DecodeGenesisAlloc(b)
+	log.Check(err)
 	return ret
 }
