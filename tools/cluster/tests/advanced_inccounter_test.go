@@ -43,7 +43,7 @@ func TestAccessNode(t *testing.T) {
 	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	waitUntil(t, createCheckContractDeployedFn(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
 
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
@@ -57,7 +57,7 @@ func TestAccessNode(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, createCheckCounterFn(chain1, int64(numRequests)), []int{7, 8, 9, 4, 5, 6, 1}, 5*time.Second)
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), []int{7, 8, 9, 4, 5, 6, 1}, 5*time.Second)
 }
 
 // cluster of 10 access nodes and two overlapping committees
@@ -86,7 +86,7 @@ func TestRotation(t *testing.T) {
 	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	waitUntil(t, createCheckContractDeployedFn(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
 
 	require.True(t, waitStateController(t, chain1, 0, addr1, 5*time.Second))
 	require.True(t, waitStateController(t, chain1, 9, addr1, 5*time.Second))
@@ -103,7 +103,7 @@ func TestRotation(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, createCheckCounterFn(chain1, int64(numRequests)), []int{0, 3, 8, 9}, 5*time.Second)
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), []int{0, 3, 8, 9}, 5*time.Second)
 
 	govClient := chain1.SCClient(governance.Interface.Hname(), chain1.OriginatorKeyPair())
 
@@ -147,7 +147,7 @@ func TestRotation(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, createCheckCounterFn(chain1, int64(2*numRequests)), clu1.Config.AllNodes(), 5*time.Second)
+	waitUntil(t, counterEquals(chain1, int64(2*numRequests)), clu1.Config.AllNodes(), 5*time.Second)
 }
 
 func TestRotationMany(t *testing.T) {
@@ -205,7 +205,7 @@ func TestRotationMany(t *testing.T) {
 	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	waitUntil(t, createCheckContractDeployedFn(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
 
 	addrIndex := 0
 	kp := wallet.KeyPair(1)
@@ -225,7 +225,7 @@ func TestRotationMany(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		waitUntil(t, createCheckCounterFn(chain1, int64(numRequests*(i+1))), []int{0, 3, 8, 9}, 5*time.Second)
+		waitUntil(t, counterEquals(chain1, int64(numRequests*(i+1))), []int{0, 3, 8, 9}, 5*time.Second)
 
 		addrIndex = (addrIndex + 1) % numCmt
 

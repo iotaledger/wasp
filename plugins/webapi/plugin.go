@@ -34,9 +34,6 @@ func Init() *node.Plugin {
 	return Plugin
 }
 
-func WaitUntilIsUp() { // TODO: Not used?
-}
-
 func configure(*node.Plugin) {
 	log = logger.NewLogger(PluginName)
 

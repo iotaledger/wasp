@@ -298,7 +298,7 @@ func waitTrue(timeout time.Duration, fun func() bool) bool {
 	}
 }
 
-func createCheckCounterFn(chain *cluster.Chain, expected int64) conditionFn {
+func counterEquals(chain *cluster.Chain, expected int64) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
 		ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 			chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter,
@@ -310,7 +310,7 @@ func createCheckCounterFn(chain *cluster.Chain, expected int64) conditionFn {
 	}
 }
 
-func createCheckContractDeployedFn(chain *cluster.Chain, contractName string) conditionFn {
+func contractIsDeployed(chain *cluster.Chain, contractName string) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
 		ret, err := findContract(chain, contractName, nodeIndex)
 		if err != nil {

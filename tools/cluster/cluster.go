@@ -319,13 +319,13 @@ func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<
 	return cmd, nil
 }
 
-const poolAPIInterval = 500 * time.Millisecond
+const pollAPIInterval = 500 * time.Millisecond
 
 // waits until API for a given node is ready
 func (clu *Cluster) waitForAPIReady(initOk chan<- bool, nodeIndex int) {
 	infoEndpointURL := fmt.Sprintf("http://localhost:%s%s", strconv.Itoa(clu.Config.APIPort(nodeIndex)), routes.Info())
 
-	ticker := time.NewTicker(poolAPIInterval)
+	ticker := time.NewTicker(pollAPIInterval)
 	go func() {
 		for {
 			<-ticker.C
