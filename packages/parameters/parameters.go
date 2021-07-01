@@ -21,15 +21,19 @@ const (
 	WebAPIAuth           = "webapi.auth"
 
 	DashboardBindAddress       = "dashboard.bindAddress"
-	DashboardExploreAddressUrl = "dashboard.exploreAddressUrl"
+	DashboardExploreAddressURL = "dashboard.exploreAddressUrl"
 	DashboardAuth              = "dashboard.auth"
 
 	NodeAddress = "nodeconn.address"
 
-	PeeringMyNetId = "peering.netid"
+	PeeringMyNetID = "peering.netid"
 	PeeringPort    = "peering.port"
 
 	NanomsgPublisherPort = "nanomsg.port"
+
+	IpfsGatewayAddress = "ipfs.gatewayAddress"
+
+	OffledgerGossipUpToNPeers = "offledger.gossipUpToNPeers"
 )
 
 func InitFlags() {
@@ -48,15 +52,19 @@ func InitFlags() {
 	flag.StringToString(WebAPIAuth, nil, "authentication scheme for web API")
 
 	flag.String(DashboardBindAddress, "127.0.0.1:7000", "the bind address for the node dashboard")
-	flag.String(DashboardExploreAddressUrl, "", "URL to add as href to addresses in the dashboard [default: <nodeconn.address>:8081/explorer/address]")
+	flag.String(DashboardExploreAddressURL, "", "URL to add as href to addresses in the dashboard [default: <nodeconn.address>:8081/explorer/address]")
 	flag.StringToString(DashboardAuth, nil, "authentication scheme for the node dashboard")
 
 	flag.String(NodeAddress, "127.0.0.1:5000", "node host address")
 
 	flag.Int(PeeringPort, 4000, "port for Wasp committee connection/peering")
-	flag.String(PeeringMyNetId, "127.0.0.1:4000", "node host address as it is recognized by other peers")
+	flag.String(PeeringMyNetID, "127.0.0.1:4000", "node host address as it is recognized by other peers")
 
 	flag.Int(NanomsgPublisherPort, 5550, "the port for nanomsg even publisher")
+
+	flag.String(IpfsGatewayAddress, "https://ipfs.io/", "the address of HTTP(s) gateway to which download from ipfs requests will be forwarded")
+
+	flag.Int(OffledgerGossipUpToNPeers, 10, "number of peers an offledger request is gossiped to")
 }
 
 func GetBool(name string) bool {

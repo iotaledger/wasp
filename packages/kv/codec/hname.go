@@ -8,7 +8,7 @@ func DecodeHname(b []byte) (coretypes.Hname, bool, error) {
 	if b == nil {
 		return 0, false, nil
 	}
-	r, err := coretypes.NewHnameFromBytes(b)
+	r, err := coretypes.HnameFromBytes(b)
 	return r, err == nil, err
 }
 

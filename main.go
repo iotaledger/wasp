@@ -10,24 +10,20 @@ import (
 	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/iotaledger/wasp/plugins/dashboard"
 	"github.com/iotaledger/wasp/plugins/database"
-	"github.com/iotaledger/wasp/plugins/dispatcher"
 	"github.com/iotaledger/wasp/plugins/dkg"
-	"github.com/iotaledger/wasp/plugins/globals"
+	"github.com/iotaledger/wasp/plugins/downloader"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"github.com/iotaledger/wasp/plugins/logger"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
-	"github.com/iotaledger/wasp/plugins/publisher"
+	"github.com/iotaledger/wasp/plugins/processors"
+	"github.com/iotaledger/wasp/plugins/publishernano"
 	"github.com/iotaledger/wasp/plugins/registry"
-	"github.com/iotaledger/wasp/plugins/testplugins/nodeping"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/iotaledger/wasp/plugins/webapi"
-	"go.dedis.ch/kyber/v3/pairing"
 )
 
 func main() {
-	suite := pairing.NewSuiteBn256() // TODO: [KP] Single suite should be used in all the places.
-
 	registry.InitFlags()
 	parameters.InitFlags()
 
@@ -36,27 +32,22 @@ func main() {
 		config.Init(),
 		logger.Init(),
 		gracefulshutdown.Init(),
-		webapi.Init(),
+		downloader.Init(),
 		cli.Init(),
 		database.Init(),
-		registry.Init(suite),
-		peering.Init(suite),
-		dkg.Init(suite),
+		registry.Init(),
+		peering.Init(),
+		dkg.Init(),
 		nodeconn.Init(),
-		dispatcher.Init(),
-		chains.Init(),
-		publisher.Init(),
-		dashboard.Init(),
+		processors.Init(),
 		wasmtimevm.Init(),
-		globals.Init(),
-	)
-
-	testPlugins := node.Plugins(
-		nodeping.Init(),
+		chains.Init(),
+		webapi.Init(),
+		publishernano.Init(),
+		dashboard.Init(),
 	)
 
 	node.Run(
 		plugins,
-		testPlugins,
 	)
 }

@@ -2,13 +2,13 @@ package blob
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
 func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
@@ -48,7 +48,7 @@ func storeBlob(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}
 
 	ret := dict.New()
-	ret.Set(ParamHash, codec.EncodeHashValue(&blobHash))
+	ret.Set(ParamHash, codec.EncodeHashValue(blobHash))
 
 	directory.MustSetAt(blobHash[:], EncodeSize(totalSize))
 

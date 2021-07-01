@@ -4,8 +4,6 @@
 package wasmproc
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -15,66 +13,78 @@ var TestMode = false
 
 type ScUtility struct {
 	ScSandboxObject
-	address       address.Address
-	aggregatedBls []byte
-	base58Decoded []byte
-	base58Encoded string
-	hash          hashing.HashValue
-	hname         coretypes.Hname
-	nextRandom    int
-	random        []byte
-	valid         bool
+	nextRandom int
+	random     []byte
 }
 
-func NewScUtility(vm *wasmProcessor) *ScUtility {
+func NewScUtility(vm *WasmProcessor) *ScUtility {
 	o := &ScUtility{}
 	o.vm = vm
 	return o
 }
 
-func (o *ScUtility) InitObj(id int32, keyId int32, owner *ScDict) {
-	o.ScSandboxObject.InitObj(id, keyId, owner)
+func (o *ScUtility) InitObj(id, keyID int32, owner *ScDict) {
+	o.ScSandboxObject.InitObj(id, keyID, owner)
 	if TestMode {
 		// preset randomizer to generate sequence 1..8 before
 		// continuing with proper hashed values
-		o.random = make([]byte, 8*8)
+		o.random = make([]byte, 8*8) //nolint:gomnd
 		for i := 0; i < len(o.random); i += 8 {
 			o.random[i] = byte(i + 1)
 		}
 	}
 }
 
-func (o *ScUtility) Exists(keyId int32, typeId int32) bool {
-	return o.GetTypeId(keyId) > 0
-}
-
-func (o *ScUtility) GetBytes(keyId int32, typeId int32) []byte {
-	switch keyId {
-	case wasmhost.KeyAddress:
-		return o.address.Bytes()
+func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {
+	utils := o.vm.utils()
+	switch keyID {
+	case wasmhost.KeyBase58Decode:
+		base58Decoded, err := utils.Base58().Decode(string(bytes))
+		if err != nil {
+			o.Panic(err.Error())
+		}
+		return base58Decoded
+	case wasmhost.KeyBase58Encode:
+		return []byte(utils.Base58().Encode(bytes))
+	case wasmhost.KeyBlsAddress:
+		address, err := utils.BLS().AddressFromPublicKey(bytes)
+		if err != nil {
+			o.Panic(err.Error())
+		}
+		return address.Bytes()
 	case wasmhost.KeyBlsAggregate:
-		return o.aggregatedBls
-	case wasmhost.KeyBase58Bytes:
-		return o.base58Decoded
-	case wasmhost.KeyBase58String:
-		return []byte(o.base58Encoded)
+		return o.aggregateBLSSignatures(bytes)
+	case wasmhost.KeyBlsValid:
+		if o.validBLSSignature(bytes) {
+			return make([]byte, 1)
+		}
+		return nil
+	case wasmhost.KeyEd25519Address:
+		address, err := utils.ED25519().AddressFromPublicKey(bytes)
+		if err != nil {
+			o.Panic(err.Error())
+		}
+		return address.Bytes()
+	case wasmhost.KeyEd25519Valid:
+		if o.validED25519Signature(bytes) {
+			return make([]byte, 1)
+		}
+		return nil
 	case wasmhost.KeyHashBlake2b:
-		return o.hash.Bytes()
+		return utils.Hashing().Blake2b(bytes).Bytes()
 	case wasmhost.KeyHashSha3:
-		return o.hash.Bytes()
+		return utils.Hashing().Sha3(bytes).Bytes()
 	case wasmhost.KeyHname:
-		return codec.EncodeHname(o.hname)
+		return codec.EncodeHname(utils.Hashing().Hname(string(bytes)))
 	case wasmhost.KeyRandom:
 		return o.getRandom8Bytes()
-	case wasmhost.KeyValid:
-		bytes := make([]byte, 8)
-		if o.valid {
-			bytes[0] = 1
-		}
-		return bytes
 	}
-	o.invalidKey(keyId)
+	o.invalidKey(keyID)
 	return nil
+}
+
+func (o *ScUtility) Exists(keyID, typeID int32) bool {
+	return o.GetTypeID(keyID) > 0
 }
 
 func (o *ScUtility) getRandom8Bytes() []byte {
@@ -95,80 +105,18 @@ func (o *ScUtility) getRandom8Bytes() []byte {
 	return o.random[i : i+8]
 }
 
-func (o *ScUtility) GetTypeId(keyId int32) int32 {
-	switch keyId {
-	case wasmhost.KeyAddress:
-		return wasmhost.OBJTYPE_ADDRESS
-	case wasmhost.KeyBlsAddress:
-		return wasmhost.OBJTYPE_BYTES
-	case wasmhost.KeyBlsAggregate:
-		return wasmhost.OBJTYPE_BYTES
-	case wasmhost.KeyBlsValid:
-		return wasmhost.OBJTYPE_BYTES
-	case wasmhost.KeyBase58Bytes:
-		return wasmhost.OBJTYPE_BYTES
-	case wasmhost.KeyBase58String:
-		return wasmhost.OBJTYPE_STRING
-	case wasmhost.KeyEd25519Address:
-		return wasmhost.OBJTYPE_BYTES
-	case wasmhost.KeyEd25519Valid:
-		return wasmhost.OBJTYPE_BYTES
-	case wasmhost.KeyHashBlake2b:
-		return wasmhost.OBJTYPE_HASH
-	case wasmhost.KeyHashSha3:
-		return wasmhost.OBJTYPE_HASH
-	case wasmhost.KeyHname:
-		return wasmhost.OBJTYPE_HNAME
-	case wasmhost.KeyName:
-		return wasmhost.OBJTYPE_STRING
-	case wasmhost.KeyRandom:
-		return wasmhost.OBJTYPE_INT
-	case wasmhost.KeyValid:
-		return wasmhost.OBJTYPE_INT
-	}
-	return 0
-}
-
-func (o *ScUtility) SetBytes(keyId int32, typeId int32, bytes []byte) {
-	utils := o.vm.utils()
-	var err error
-	switch keyId {
-	case wasmhost.KeyBlsAddress:
-		o.address, err = utils.BLS().AddressFromPublicKey(bytes)
-	case wasmhost.KeyEd25519Address:
-		o.address, err = utils.ED25519().AddressFromPublicKey(bytes)
-	case wasmhost.KeyBlsAggregate:
-		o.aggregatedBls = o.aggregateBLSSignatures(bytes)
-	case wasmhost.KeyBase58Bytes:
-		o.base58Encoded = utils.Base58().Encode(bytes)
-	case wasmhost.KeyBase58String:
-		o.base58Decoded, err = utils.Base58().Decode(string(bytes))
-	case wasmhost.KeyHashBlake2b:
-		o.hash = utils.Hashing().Blake2b(bytes)
-	case wasmhost.KeyHashSha3:
-		o.hash = utils.Hashing().Sha3(bytes)
-	case wasmhost.KeyName:
-		o.hname = utils.Hashing().Hname(string(bytes))
-	case wasmhost.KeyBlsValid:
-		o.valid = o.validBLSSignature(bytes)
-	case wasmhost.KeyEd25519Valid:
-		o.valid = o.validED25519Signature(bytes)
-	default:
-		o.invalidKey(keyId)
-	}
-	if err != nil {
-		o.Panic(err.Error())
-	}
+func (o *ScUtility) GetTypeID(keyID int32) int32 {
+	return wasmhost.OBJTYPE_BYTES
 }
 
 func (o *ScUtility) aggregateBLSSignatures(bytes []byte) []byte {
 	decode := NewBytesDecoder(bytes)
-	count := int(decode.Int())
+	count := int(decode.Int64())
 	pubKeysBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
 		pubKeysBin[i] = decode.Bytes()
 	}
-	count = int(decode.Int())
+	count = int(decode.Int64())
 	sigsBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
 		sigsBin[i] = decode.Bytes()
@@ -185,11 +133,7 @@ func (o *ScUtility) validBLSSignature(bytes []byte) bool {
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
-	ok, err := o.vm.utils().BLS().ValidSignature(data, pubKey, signature)
-	if err != nil {
-		o.Panic(err.Error())
-	}
-	return ok
+	return o.vm.utils().BLS().ValidSignature(data, pubKey, signature)
 }
 
 func (o *ScUtility) validED25519Signature(bytes []byte) bool {
@@ -197,9 +141,5 @@ func (o *ScUtility) validED25519Signature(bytes []byte) bool {
 	data := decode.Bytes()
 	pubKey := decode.Bytes()
 	signature := decode.Bytes()
-	ok, err := o.vm.utils().ED25519().ValidSignature(data, pubKey, signature)
-	if err != nil {
-		o.Panic(err.Error())
-	}
-	return ok
+	return o.vm.utils().ED25519().ValidSignature(data, pubKey, signature)
 }

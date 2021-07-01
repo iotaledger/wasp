@@ -4,9 +4,11 @@
 package wasmproc
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"time"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -15,25 +17,29 @@ import (
 )
 
 var typeIds = map[int32]int32{
+	wasmhost.KeyAccountID:       wasmhost.OBJTYPE_AGENT_ID,
 	wasmhost.KeyBalances:        wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyCall:            wasmhost.OBJTYPE_BYTES,
 	wasmhost.KeyCaller:          wasmhost.OBJTYPE_AGENT_ID,
-	wasmhost.KeyChainOwnerId:    wasmhost.OBJTYPE_AGENT_ID,
+	wasmhost.KeyChainID:         wasmhost.OBJTYPE_CHAIN_ID,
+	wasmhost.KeyChainOwnerID:    wasmhost.OBJTYPE_AGENT_ID,
+	wasmhost.KeyContract:        wasmhost.OBJTYPE_HNAME,
 	wasmhost.KeyContractCreator: wasmhost.OBJTYPE_AGENT_ID,
 	wasmhost.KeyDeploy:          wasmhost.OBJTYPE_BYTES,
 	wasmhost.KeyEvent:           wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyExports:         wasmhost.OBJTYPE_STRING | wasmhost.OBJTYPE_ARRAY,
-	wasmhost.KeyContractId:      wasmhost.OBJTYPE_CONTRACT_ID,
 	wasmhost.KeyIncoming:        wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyLog:             wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyMaps:            wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
+	wasmhost.KeyMinted:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyPanic:           wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyParams:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyPost:            wasmhost.OBJTYPE_BYTES,
+	wasmhost.KeyRequestID:       wasmhost.OBJTYPE_REQUEST_ID,
 	wasmhost.KeyResults:         wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyReturn:          wasmhost.OBJTYPE_MAP,
 	wasmhost.KeyState:           wasmhost.OBJTYPE_MAP,
-	wasmhost.KeyTimestamp:       wasmhost.OBJTYPE_INT,
+	wasmhost.KeyTimestamp:       wasmhost.OBJTYPE_INT64,
 	wasmhost.KeyTrace:           wasmhost.OBJTYPE_STRING,
 	wasmhost.KeyTransfers:       wasmhost.OBJTYPE_MAP | wasmhost.OBJTYPE_ARRAY,
 	wasmhost.KeyUtility:         wasmhost.OBJTYPE_MAP,
@@ -43,7 +49,7 @@ type ScContext struct {
 	ScSandboxObject
 }
 
-func NewScContext(vm *wasmProcessor) *ScContext {
+func NewScContext(vm *WasmProcessor) *ScContext {
 	o := &ScContext{}
 	o.vm = vm
 	o.host = &vm.KvStoreHost
@@ -54,42 +60,49 @@ func NewScContext(vm *wasmProcessor) *ScContext {
 	return o
 }
 
-func (o *ScContext) Exists(keyId int32, typeId int32) bool {
-	if keyId == wasmhost.KeyExports {
+func (o *ScContext) Exists(keyID, typeID int32) bool {
+	if keyID == wasmhost.KeyExports {
 		return o.vm.ctx == nil && o.vm.ctxView == nil
 	}
-	return o.GetTypeId(keyId) > 0
+	return o.GetTypeID(keyID) > 0
 }
 
-func (o *ScContext) GetBytes(keyId int32, typeId int32) []byte {
-	switch keyId {
+func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
+	switch keyID {
+	case wasmhost.KeyAccountID:
+		return o.vm.accountID().Bytes()
 	case wasmhost.KeyCaller:
 		return o.vm.ctx.Caller().Bytes()
-	case wasmhost.KeyChainOwnerId:
+	case wasmhost.KeyChainID:
+		return o.vm.chainID().Bytes()
+	case wasmhost.KeyChainOwnerID:
 		return o.vm.chainOwnerID().Bytes()
+	case wasmhost.KeyContract:
+		return o.vm.contract().Bytes()
 	case wasmhost.KeyContractCreator:
 		return o.vm.contractCreator().Bytes()
-	case wasmhost.KeyContractId:
-		return o.vm.contractID().Bytes()
+	case wasmhost.KeyRequestID:
+		return o.vm.ctx.RequestID().Bytes()
 	case wasmhost.KeyTimestamp:
 		return codec.EncodeInt64(o.vm.ctx.GetTimestamp())
 	}
-	o.invalidKey(keyId)
+	o.invalidKey(keyID)
 	return nil
 }
 
-func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
-	if keyId == wasmhost.KeyExports && (o.vm.ctx != nil || o.vm.ctxView != nil) {
+func (o *ScContext) GetObjectID(keyID, typeID int32) int32 {
+	if keyID == wasmhost.KeyExports && (o.vm.ctx != nil || o.vm.ctxView != nil) {
 		// once map has entries (after on_load) this cannot be called any more
-		o.invalidKey(keyId)
+		o.invalidKey(keyID)
 		return 0
 	}
 
-	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		wasmhost.KeyBalances:  func() WaspObject { return NewScBalances(o.vm, false) },
+	return GetMapObjectID(o, keyID, typeID, ObjFactories{
+		wasmhost.KeyBalances:  func() WaspObject { return NewScBalances(o.vm, keyID) },
 		wasmhost.KeyExports:   func() WaspObject { return NewScExports(o.vm) },
-		wasmhost.KeyIncoming:  func() WaspObject { return NewScBalances(o.vm, true) },
+		wasmhost.KeyIncoming:  func() WaspObject { return NewScBalances(o.vm, keyID) },
 		wasmhost.KeyMaps:      func() WaspObject { return NewScMaps(o.vm) },
+		wasmhost.KeyMinted:    func() WaspObject { return NewScBalances(o.vm, keyID) },
 		wasmhost.KeyParams:    func() WaspObject { return NewScDictFromKvStore(&o.vm.KvStoreHost, o.vm.params()) },
 		wasmhost.KeyResults:   func() WaspObject { return NewScDict(o.vm) },
 		wasmhost.KeyReturn:    func() WaspObject { return NewScDict(o.vm) },
@@ -99,12 +112,12 @@ func (o *ScContext) GetObjectId(keyId int32, typeId int32) int32 {
 	})
 }
 
-func (o *ScContext) GetTypeId(keyId int32) int32 {
-	return typeIds[keyId]
+func (o *ScContext) GetTypeID(keyID int32) int32 {
+	return typeIds[keyID]
 }
 
-func (o *ScContext) SetBytes(keyId int32, typeId int32, bytes []byte) {
-	switch keyId {
+func (o *ScContext) SetBytes(keyID, typeID int32, bytes []byte) {
+	switch keyID {
 	case wasmhost.KeyCall:
 		o.processCall(bytes)
 	case wasmhost.KeyDeploy:
@@ -120,24 +133,24 @@ func (o *ScContext) SetBytes(keyId int32, typeId int32, bytes []byte) {
 	case wasmhost.KeyPost:
 		o.processPost(bytes)
 	default:
-		o.invalidKey(keyId)
+		o.invalidKey(keyID)
 	}
 }
 
 func (o *ScContext) processCall(bytes []byte) {
 	decode := NewBytesDecoder(bytes)
-	contract, err := coretypes.NewHnameFromBytes(decode.Bytes())
+	contract, err := coretypes.HnameFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	function, err := coretypes.NewHnameFromBytes(decode.Bytes())
+	function, err := coretypes.HnameFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	params := o.getParams(int32(decode.Int()))
-	transfer := o.getTransfer(int32(decode.Int()))
+	params := o.getParams(int32(decode.Int64()))
+	transfer := o.getTransfer(int32(decode.Int64()))
 
-	o.Trace("CALL c'%s' f'%s'", contract.String(), function.String())
+	o.Tracef("CALL c'%s' f'%s'", contract.String(), function.String())
 	var results dict.Dict
 	if o.vm.ctx != nil {
 		results, err = o.vm.ctx.Call(contract, function, params, transfer)
@@ -147,8 +160,8 @@ func (o *ScContext) processCall(bytes []byte) {
 	if err != nil {
 		o.Panic("failed to invoke call: %v", err)
 	}
-	resultsId := o.GetObjectId(wasmhost.KeyReturn, wasmhost.OBJTYPE_MAP)
-	o.host.FindObject(resultsId).(*ScDict).kvStore = results
+	resultsID := o.GetObjectID(wasmhost.KeyReturn, wasmhost.OBJTYPE_MAP)
+	o.host.FindObject(resultsID).(*ScDict).kvStore = results
 }
 
 func (o *ScContext) processDeploy(bytes []byte) {
@@ -159,70 +172,89 @@ func (o *ScContext) processDeploy(bytes []byte) {
 	}
 	name := string(decode.Bytes())
 	description := string(decode.Bytes())
-	params := o.getParams(int32(decode.Int()))
-	o.Trace("DEPLOY c'%s' f'%s'", name, description)
+	params := o.getParams(int32(decode.Int64()))
+	o.Tracef("DEPLOY c'%s' f'%s'", name, description)
 	err = o.vm.ctx.DeployContract(programHash, name, description, params)
 	if err != nil {
 		o.Panic("failed to deploy: %v", err)
 	}
 }
 
+// TODO refactor
 func (o *ScContext) processPost(bytes []byte) {
 	decode := NewBytesDecoder(bytes)
-	contract, err := coretypes.NewContractIDFromBytes(decode.Bytes())
+	chainID, err := chainid.ChainIDFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	function, err := coretypes.NewHnameFromBytes(decode.Bytes())
+	contract, err := coretypes.HnameFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	o.Trace("POST c'%s' f'%s'", contract.String(), function.String())
-	params := o.getParams(int32(decode.Int()))
-	transfer := o.getTransfer(int32(decode.Int()))
-	delay := decode.Int()
+	function, err := coretypes.HnameFromBytes(decode.Bytes())
+	if err != nil {
+		o.Panic(err.Error())
+	}
+	o.Tracef("POST c'%s' f'%s'", contract.String(), function.String())
+	params := o.getParams(int32(decode.Int64()))
+	transfer := o.getTransfer(int32(decode.Int64()))
+	metadata := &coretypes.SendMetadata{
+		TargetContract: contract,
+		EntryPoint:     function,
+		Args:           params,
+	}
+	delay := decode.Int64()
+	if delay == 0 {
+		if !o.vm.ctx.Send(chainID.AsAddress(), transfer, metadata) {
+			o.Panic("failed to send to %s", chainID.AsAddress().String())
+		}
+		return
+	}
+
 	if delay < -1 {
 		o.Panic("invalid delay: %d", delay)
 	}
-	o.vm.ctx.PostRequest(coretypes.PostRequestParams{
-		TargetContractID: contract,
-		EntryPoint:       function,
-		Params:           params,
-		Transfer:         transfer,
-		TimeLock:         uint32(delay),
-	})
+
+	timeLock := time.Unix(0, o.vm.ctx.GetTimestamp())
+	timeLock = timeLock.Add(time.Duration(delay) * time.Second)
+	options := coretypes.SendOptions{
+		TimeLock: uint32(timeLock.Unix()),
+	}
+	if !o.vm.ctx.Send(chainID.AsAddress(), transfer, metadata, options) {
+		o.Panic("failed to send to %s", chainID.AsAddress().String())
+	}
 }
 
-func (o *ScContext) getParams(paramsId int32) dict.Dict {
-	if paramsId == 0 {
+func (o *ScContext) getParams(paramsID int32) dict.Dict {
+	if paramsID == 0 {
 		return dict.New()
 	}
-	params := o.host.FindObject(paramsId).(*ScDict).kvStore.(dict.Dict)
+	params := o.host.FindObject(paramsID).(*ScDict).kvStore.(dict.Dict)
 	params.MustIterate("", func(key kv.Key, value []byte) bool {
-		o.Trace("  PARAM '%s'", key)
+		o.Tracef("  PARAM '%s'", key)
 		return true
 	})
 	return params
 }
 
-func (o *ScContext) getTransfer(transferId int32) coretypes.ColoredBalances {
-	if transferId == 0 {
-		return cbalances.NewFromMap(nil)
+func (o *ScContext) getTransfer(transferID int32) *ledgerstate.ColoredBalances {
+	if transferID == 0 {
+		return ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{})
 	}
-	transfer := make(map[balance.Color]int64)
-	transferDict := o.host.FindObject(transferId).(*ScDict).kvStore
+	transfer := make(map[ledgerstate.Color]uint64)
+	transferDict := o.host.FindObject(transferID).(*ScDict).kvStore
 	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
 		color, _, err := codec.DecodeColor([]byte(key))
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		amount, _, err := codec.DecodeInt64(value)
+		amount, _, err := codec.DecodeUint64(value)
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		o.Trace("  XFER %d '%s'", amount, color.String())
+		o.Tracef("  XFER %d '%s'", amount, color.String())
 		transfer[color] = amount
 		return true
 	})
-	return cbalances.NewFromMap(transfer)
+	return ledgerstate.NewColoredBalances(transfer)
 }

@@ -1,33 +1,33 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package sandbox_utils
+package sandbox_utils //nolint:revive // TODO refactor to remove `_` from package name
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 )
 
-type ed25519Util struct {
-}
+type ed25519Util struct{}
 
-func (u ed25519Util) ValidSignature(data []byte, pubKey []byte, signature []byte) (bool, error) {
+func (u ed25519Util) ValidSignature(data, pubKey, signature []byte) bool {
 	pk, _, err := ed25519.PublicKeyFromBytes(pubKey)
 	if err != nil {
-		return false, fmt.Errorf("ED255519Util: wrong public key bytes")
+		return false
 	}
 	sig, _, err := ed25519.SignatureFromBytes(signature)
 	if err != nil {
-		return false, fmt.Errorf("ED255519Util: wrong signature bytes")
+		return false
 	}
-	return pk.VerifySignature(data, sig), nil
+	return pk.VerifySignature(data, sig)
 }
 
-func (u ed25519Util) AddressFromPublicKey(pubKey []byte) (address.Address, error) {
+func (u ed25519Util) AddressFromPublicKey(pubKey []byte) (ledgerstate.Address, error) {
 	pk, _, err := ed25519.PublicKeyFromBytes(pubKey)
 	if err != nil {
-		return address.Address{}, fmt.Errorf("ED255519Util: wrong public key bytes")
+		return nil, fmt.Errorf("ED255519Util: wrong public key bytes. Err: %v", err)
 	}
-	return address.FromED25519PubKey(pk), nil
+	return ledgerstate.NewED25519Address(pk), nil
 }

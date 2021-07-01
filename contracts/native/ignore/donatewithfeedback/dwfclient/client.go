@@ -5,12 +5,10 @@ package dwfclient
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/sctransaction"
 	"github.com/iotaledger/wasp/packages/vm/examples/donatewithfeedback"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
 )
@@ -27,18 +25,18 @@ func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *DWF
 	}
 }
 
-func (dwf *DWFClient) Donate(amount int64, feedback string) (*sctransaction.Transaction, error) {
+func (dwf *DWFClient) Donate(amount int64, feedback string) (*ledgerstate.Transaction, error) {
 	return dwf.PostRequest(
 		dwf.contractHname,
 		donatewithfeedback.RequestDonate,
 		chainclient.PostRequestParams{
-			Transfer: map[balance.Color]int64{balance.ColorIOTA: amount},
+			Transfer: map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: amount},
 			ArgsRaw:  codec.MakeDict(map[string]interface{}{donatewithfeedback.VarReqFeedback: feedback}),
 		},
 	)
 }
 
-func (dwf *DWFClient) Withdraw(amount int64) (*sctransaction.Transaction, error) {
+func (dwf *DWFClient) Withdraw(amount int64) (*ledgerstate.Transaction, error) {
 	return dwf.PostRequest(
 		dwf.contractHname,
 		donatewithfeedback.RequestWithdraw,

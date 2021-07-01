@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
+	"golang.org/x/xerrors"
 )
 
 const NotInGroup uint16 = 0xFFFF
@@ -23,24 +23,39 @@ type groupImpl struct {
 	netProvider peering.NetworkProvider
 	nodes       []peering.PeerSender
 	other       map[uint16]peering.PeerSender
+	selfIndex   uint16
 	log         *logger.Logger
 }
 
 // NewPeeringGroupProvider creates a generic peering group.
 // That should be used as a helper for peering implementations.
-func NewPeeringGroupProvider(netProvider peering.NetworkProvider, nodes []peering.PeerSender, log *logger.Logger) peering.GroupProvider {
+func NewPeeringGroupProvider(netProvider peering.NetworkProvider, nodes []peering.PeerSender, log *logger.Logger) (peering.GroupProvider, error) {
 	other := make(map[uint16]peering.PeerSender)
+	selfFound := false
+	selfIndex := uint16(0)
 	for i := range nodes {
-		if nodes[i].NetID() != netProvider.Self().NetID() {
+		if nodes[i].NetID() == netProvider.Self().NetID() {
+			selfIndex = uint16(i)
+			selfFound = true
+		} else {
 			other[uint16(i)] = nodes[i]
 		}
+	}
+	if !selfFound {
+		return nil, xerrors.Errorf("group must involve the current node")
 	}
 	return &groupImpl{
 		netProvider: netProvider,
 		nodes:       nodes,
 		other:       other,
+		selfIndex:   selfIndex,
 		log:         log,
-	}
+	}, nil
+}
+
+// PeerIndex implements peering.GroupProvider.
+func (g *groupImpl) SelfIndex() uint16 {
+	return g.selfIndex
 }
 
 // PeerIndex implements peering.GroupProvider.
@@ -55,7 +70,7 @@ func (g *groupImpl) PeerIndexByNetID(peerNetID string) (uint16, error) {
 			return uint16(i), nil
 		}
 	}
-	return uint16(NotInGroup), errors.New("peer_not_found_by_net_id")
+	return NotInGroup, errors.New("peer_not_found_by_net_id")
 }
 
 // SendMsgByIndex implements peering.GroupProvider.
@@ -147,9 +162,9 @@ func (g *groupImpl) ExchangeRound(
 					continue
 				}
 				if errs[i] != nil {
-					errMsg = errMsg + fmt.Sprintf("[%v:%v]", i, errs[i].Error())
+					errMsg += fmt.Sprintf("[%v:%v]", i, errs[i].Error())
 				} else {
-					errMsg = errMsg + fmt.Sprintf("[%v:%v]", i, "round_timeout")
+					errMsg += fmt.Sprintf("[%v:%v]", i, "round_timeout")
 				}
 			}
 			return errors.New(errMsg)
@@ -160,7 +175,7 @@ func (g *groupImpl) ExchangeRound(
 	}
 	var errMsg string
 	for i := range errs {
-		errMsg = errMsg + fmt.Sprintf("[%v:%v]", i, errs[i].Error())
+		errMsg += fmt.Sprintf("[%v:%v]", i, errs[i].Error())
 	}
 	return errors.New(errMsg)
 }
@@ -182,8 +197,8 @@ func (g *groupImpl) OtherNodes() map[uint16]peering.PeerSender {
 // Attach starts listening for messages. Messages in this case will be filtered
 // to those received from nodes in the group only. SenderIndex will be filled
 // for the messages according to the message source.
-func (g *groupImpl) Attach(chainID *coretypes.ChainID, callback func(recv *peering.RecvEvent)) interface{} {
-	return g.netProvider.Attach(chainID, func(recv *peering.RecvEvent) {
+func (g *groupImpl) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {
+	return g.netProvider.Attach(peeringID, func(recv *peering.RecvEvent) {
 		if idx, err := g.PeerIndexByNetID(recv.From.NetID()); err == nil && idx != NotInGroup {
 			recv.Msg.SenderIndex = idx
 			callback(recv)

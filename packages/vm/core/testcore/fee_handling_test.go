@@ -4,24 +4,27 @@
 package testcore
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"testing"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestInit(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 1)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-2)
+	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertCommonAccountIotas(1)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-1)
+	chain.AssertTotalIotas(1)
+	chain.AssertCommonAccountIotas(1)
 
 	checkFees(chain, blob.Interface.Name, 0, 0)
 	checkFees(chain, root.Interface.Name, 0, 0)
@@ -35,17 +38,19 @@ func TestBase(t *testing.T) {
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
-		root.ParamOwnerFee, 1,
-	)
-	_, err := chain.PostRequest(req, nil)
+		root.ParamOwnerFee, 5,
+	).WithIotas(1)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertCommonAccountIotas(2)
+	chain.AssertTotalIotas(2)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
-	checkFees(chain, blob.Interface.Name, 1, 0)
+	checkFees(chain, blob.Interface.Name, 5, 0)
 }
 
+//nolint:dupl
 func TestFeeIsEnough1(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
@@ -53,52 +58,116 @@ func TestFeeIsEnough1(t *testing.T) {
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamOwnerFee, 1,
-	)
-	_, err := chain.PostRequest(req, nil)
+	).WithIotas(1)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertCommonAccountIotas(2)
+	chain.AssertTotalIotas(2)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Interface.Name, 1, 0)
 
+	// the upload blob takes fees itself
 	_, err = chain.UploadBlob(nil,
 		blob.VarFieldVMType, "dummyType",
 		blob.VarFieldProgramBinary, "dummyBinary",
 	)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 3)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-5)
+	chain.AssertCommonAccountIotas(2 + 1)
+	chain.AssertTotalIotas(2 + 1)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 0)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2-1)
 }
 
+//nolint:dupl
 func TestFeeIsEnough2(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),
-		root.ParamOwnerFee, 2,
-	)
-	_, err := chain.PostRequest(req, nil)
+		root.ParamOwnerFee, 10,
+	).WithIotas(1)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 2)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertCommonAccountIotas(2)
+	chain.AssertTotalIotas(2)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
-	checkFees(chain, blob.Interface.Name, 2, 0)
+	checkFees(chain, blob.Interface.Name, 10, 0)
 
-	user := env.NewSignatureSchemeWithFunds()
-	userAgentID := coretypes.NewAgentIDFromAddress(user.Address())
-	_, err = chain.UploadBlob(user,
+	// the upload blob takes fees itself
+	_, err = chain.UploadBlob(nil,
 		blob.VarFieldVMType, "dummyType",
 		blob.VarFieldProgramBinary, "dummyBinary",
 	)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(chain.OriginatorAgentID, balance.ColorIOTA, 4)
-	env.AssertAddressBalance(chain.OriginatorAddress, balance.ColorIOTA, testutil.RequestFundsAmount-3)
+	chain.AssertCommonAccountIotas(2 + 10)
+	chain.AssertTotalIotas(2 + 10)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 0)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2-10)
+}
 
-	chain.AssertAccountBalance(userAgentID, balance.ColorIOTA, 1)
-	env.AssertAddressBalance(user.Address(), balance.ColorIOTA, testutil.RequestFundsAmount-3)
+func TestFeesNoNeed(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
+		root.ParamHname, blob.Interface.Hname(),
+		root.ParamOwnerFee, 10,
+	).WithIotas(1)
+	_, err := chain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	chain.AssertCommonAccountIotas(2)
+	chain.AssertTotalIotas(2)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2)
+
+	checkFees(chain, blob.Interface.Name, 10, 0)
+
+	req = solo.NewCallParams(blob.Interface.Name, blob.FuncStoreBlob, "par1", []byte("data1"))
+	req.WithIotas(7)
+	_, err = chain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	chain.AssertCommonAccountIotas(2 + 7)
+	chain.AssertTotalIotas(2 + 7)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, ledgerstate.ColorIOTA, 0)
+	env.AssertAddressBalance(chain.OriginatorAddress, ledgerstate.ColorIOTA, solo.Saldo-solo.ChainDustThreshold-2-7)
+}
+
+func TestFeesNotEnough(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+
+	user, userAddr := env.NewKeyPairWithFunds()
+	userAgentID := coretypes.NewAgentID(userAddr, 0)
+
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
+		root.ParamHname, blob.Interface.Hname(),
+		root.ParamOwnerFee, 10,
+	).WithIotas(1)
+	_, err := chain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	checkFees(chain, blob.Interface.Name, 10, 0)
+
+	chain.AssertCommonAccountIotas(2)
+	chain.AssertTotalIotas(2)
+	chain.AssertIotas(userAgentID, 0)
+	env.AssertAddressIotas(userAddr, solo.Saldo)
+
+	req = solo.NewCallParams(blob.Interface.Name, blob.FuncStoreBlob, "par1", []byte("data1"))
+	req.WithIotas(7)
+	_, err = chain.PostRequestSync(req, user)
+	require.Error(t, err)
+
+	chain.AssertCommonAccountIotas(2 + 7)
+	chain.AssertTotalIotas(2 + 7)
+	chain.AssertIotas(userAgentID, 0)
+	env.AssertAddressIotas(userAddr, solo.Saldo-7)
 }

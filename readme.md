@@ -9,8 +9,8 @@ introduction](https://blog.iota.org/an-introduction-to-iota-smart-contracts-16ea
 into ISCP.
 
 A _smart contract_ is a distributed software agent that stores its state in the
-[UTXO ledger](articles/intro/utxo.md), and evolves with each _request_ sent to
-the contrct. Since the UTXO ledger is immutable, by extension the smart
+[UTXO ledger](docs/intro/utxo.md), and evolves with each _request_ sent to
+the contract. Since the UTXO ledger is immutable, by extension the smart
 contract state is also immutable.
 
 A _committee_ of an arbitrary number of Wasp nodes runs a _chain_ of smart
@@ -29,50 +29,69 @@ commercial settings or whenever processing of critical data is involved._
 ## Prerequisites
 
 - Go 1.15
-- The `goshimmer` command, compiled from [Goshimmer `master+wasp` branch](https://github.com/iotaledger/goshimmer/tree/master+wasp)
+- Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node for
+  production operation
+
+Note: The Wasp node requires the Goshimmer node to have the
+[TXStream](https://github.com/iotaledger/goshimmer/tree/master/plugins/txstream)
+plugin enabled. Being an experimental plugin, it is currently disabled by default and can
+be enabled via configuration.
+
+- [RocksDB](https://github.com/facebook/rocksdb/blob/master/INSTALL.md)
+
+### Microsoft Windows installation errors:
+
+If the go install command is telling you it cannot find gcc you will need to
+install [MinGW-w64](https://sourceforge.net/projects/mingw-w64/). When you do
+make sure to select *x86_64* architecture instead of the preselected *i686*
+architecture. After installation make sure to add this folder to your PATH variable:
 
 ```
-$ git clone -b master+wasp https://github.com/iotaledger/goshimmer.git
-$ cd goshimmer
-$ go install
+C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
 ```
-
-Note: The only difference between standard Goshimmer (`master` branch) and the
-`master+wasp` branch is the
-[WaspConn](https://github.com/iotaledger/goshimmer/tree/master+wasp/dapps/waspconn)
-plugin, which accepts connections from Wasp nodes.
 
 ## Compile
 
-- Build the `wasp` binary (Wasp node): `go build`
-- Build the `wasp-cli` binary (CLI client): `go build ./tools/wasp-cli`
+- Build the `wasp` binary (Wasp node): `go build -tags rocksdb`
+- Build the `wasp-cli` binary (CLI client): `go build -tags rocksdb ./tools/wasp-cli`
 
-Alternatively, build and install everything with `go install ./...`
+Alternatively, build and install everything with `go install -tags rocksdb ./...`
+
+On Windows you will need to use `go install -tags rocksdb -buildmode=exe ./...` instead
 
 ## Test
 
-- Run all tests (including integration tests which may take several minutes): `go test -timeout 20m ./...`
-- Run only unit tests: `go test -short ./...`
+- Run all tests (including integration tests which may take several minutes): `go test -tags rocksdb -timeout 20m ./...`
+- Run only unit tests: `go test -tags rocksdb -short ./...`
 
-Note: integration tests require the `goshimmer`, `wasp` and `wasp-cli` commands
+Note: integration tests require the `wasp` and `wasp-cli` commands
 in the system path (i.e. you need to run `go install ./...` before running
 tests).
 
 ## Run
 
-- [How to run a Wasp node on Pollen](articles/docs/runwasp.md)
-- [Using `wasp-cli` to deploy a chain and a contract](articles/docs/deploy.md)
+- [How to run a Wasp node on Pollen](docs/docs/runwasp.md)
+- [Using `wasp-cli` to deploy a chain and a contract](docs/docs/deploy.md)
 
 ## Learn
 
-- [Exploring IOTA Smart Contracts](articles/tutorial/readme.md)
-- [UTXO ledger and digital assets](articles/intro/utxo.md)
-- [Core types](articles/docs/coretypes.md)
-- [On-chain accounts](articles/docs/accounts.md)
-- [Wasp Publisher](articles/docs/publisher.md)
+- [Exploring IOTA Smart Contracts](docs/tutorial/readme.md)
+- [UTXO ledger and digital assets](docs/intro/utxo.md)
+- [Core types](docs/docs/coretypes.md)
+- [On-chain accounts](docs/docs/accounts.md)
+- [Wasp Publisher](docs/docs/publisher.md)
 
 ## Tools
 
 - [`wasp-cli`](tools/wasp-cli/README.md): A CLI client for the Wasp node.
 - [`wasp-cluster`](tools/cluster/wasp-cluster/README.md): allows to easily run
   a network of Wasp nodes, for testing.
+
+## Contributing
+
+If you want to contribute to this repository, consider posting a [bug report](https://github.com/iotaledger/wasp/issues/new-issue), feature request or a [pull request](https://github.com/iotaledger/wasp/pulls/).
+
+Please read the [Contibuting documentation](/docs/contributing/contributing.md) before creating a Pull Request.
+
+You can also join our [Discord server](https://discord.iota.org/) and ping us
+in `#smartcontracts-dev`.

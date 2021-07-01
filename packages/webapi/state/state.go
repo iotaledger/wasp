@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -28,7 +30,7 @@ func addStateQueryEndpoint(server echoswagger.ApiRouter) {
 }
 
 func handleStateQuery(c echo.Context) error {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainID"))
+	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}
@@ -39,14 +41,14 @@ func handleStateQuery(c echo.Context) error {
 	}
 
 	// TODO serialize access to solid state
-	state, batch, exist, err := state.LoadSolidState(&chainID)
+	state, exist, err := state.LoadSolidState(&chainID)
 	if err != nil {
 		return err
 	}
 	if !exist {
 		return httperrors.NotFound(fmt.Sprintf("State not found with address %s", chainID.String()))
 	}
-	txid := batch.StateTransactionID()
+	txid := batch.ApprovingOutputID()
 	ret := &statequery.Results{
 		KeyQueryResults: make([]*statequery.QueryResult, len(req.KeyQueries)),
 
@@ -54,10 +56,10 @@ func handleStateQuery(c echo.Context) error {
 		Timestamp:  time.Unix(0, state.Timestamp()),
 		StateHash:  state.Hash(),
 		StateTxId:  model.NewValueTxID(&txid),
-		Requests:   make([]*coretypes.RequestID, len(batch.RequestIDs())),
+		Requests:   make([]coretypes.RequestID, len(batch.RequestIDs())),
 	}
 	copy(ret.Requests, batch.RequestIDs())
-	vars := state.Variables()
+	vars := state.KVStore()
 	for i, q := range req.KeyQueries {
 		result, err := q.Execute(vars)
 		if err != nil {

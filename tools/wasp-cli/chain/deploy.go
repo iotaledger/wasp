@@ -7,34 +7,49 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
-	"github.com/spf13/pflag"
+	"github.com/spf13/cobra"
 )
 
-var committee []int
-var quorum int
-var description string
+func deployCmd() *cobra.Command {
+	var (
+		peers       []int
+		committee   []int
+		quorum      int
+		description string
+	)
 
-func initDeployFlags(flags *pflag.FlagSet) {
-	flags.IntSliceVarP(&committee, "committee", "", []int{0, 1, 2, 3}, "committee indices")
-	flags.IntVarP(&quorum, "quorum", "", 3, "quorum")
-	flags.StringVarP(&description, "description", "", "", "description")
-}
+	cmd := &cobra.Command{
+		Use:   "deploy",
+		Short: "Deploy a new chain",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			alias := GetChainAlias()
 
-func deployCmd(args []string) {
-	alias := GetChainAlias()
+			if peers == nil {
+				peers = committee
+			}
 
-	chainid, _, _, err := apilib.DeployChain(apilib.CreateChainParams{
-		Node:                  config.GoshimmerClient(),
-		CommitteeApiHosts:     config.CommitteeApi(committee),
-		CommitteePeeringHosts: config.CommitteePeering(committee),
-		N:                     uint16(len(committee)),
-		T:                     uint16(quorum),
-		OriginatorSigScheme:   wallet.Load().SignatureScheme(),
-		Description:           description,
-		Textout:               os.Stdout,
-		Prefix:                "",
-	})
-	log.Check(err)
+			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
+				Node:                  config.GoshimmerClient(),
+				AllAPIHosts:           config.CommitteeAPI(peers),
+				AllPeeringHosts:       config.CommitteePeering(peers),
+				CommitteeAPIHosts:     config.CommitteeAPI(committee),
+				CommitteePeeringHosts: config.CommitteePeering(committee),
+				N:                     uint16(len(committee)),
+				T:                     uint16(quorum),
+				OriginatorKeyPair:     wallet.Load().KeyPair(),
+				Description:           description,
+				Textout:               os.Stdout,
+			})
+			log.Check(err)
 
-	AddChainAlias(alias, chainid.String())
+			AddChainAlias(alias, chainid.Base58())
+		},
+	}
+
+	cmd.Flags().IntSliceVarP(&committee, "committee", "", []int{0, 1, 2, 3}, "indices of committee nodes")
+	cmd.Flags().IntSliceVarP(&committee, "peers", "", nil, "indices of peer nodes (default: same as committee)")
+	cmd.Flags().IntVarP(&quorum, "quorum", "", 3, "quorum")
+	cmd.Flags().StringVarP(&description, "description", "", "", "description")
+	return cmd
 }

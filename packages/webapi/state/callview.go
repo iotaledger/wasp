@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+
+	"github.com/iotaledger/wasp/packages/kv/optimism"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -21,41 +25,43 @@ func AddEndpoints(server echoswagger.ApiRouter) {
 		kv.Key("key1"): []byte("value1"),
 	}.JSONDict()
 
-	server.GET(routes.CallView(":contractID", ":fname"), handleCallView).
+	server.GET(routes.CallView(":chainID", ":contractHname", ":fname"), handleCallView).
 		SetSummary("Call a view function on a contract").
-		AddParamPath("", "contractID", "ContractID (base58-encoded)").
+		AddParamPath("", "chainID", "ChainID (base58-encoded)").
+		AddParamPath("", "contractHname", "Contract Hname").
 		AddParamPath("getInfo", "fname", "Function name").
 		AddParamBody(dictExample, "params", "Parameters", false).
 		AddResponse(http.StatusOK, "Result", dictExample, nil)
 }
 
 func handleCallView(c echo.Context) error {
-	contractID, err := coretypes.NewContractIDFromBase58(c.Param("contractID"))
+	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid contract ID: %+v", c.Param("contractID")))
+		return httperrors.BadRequest(fmt.Sprintf("Invalid theChain ID: %+v", c.Param("chainID")))
+	}
+	contractHname, err := coretypes.HnameFromString(c.Param("contractHname"))
+	if err != nil {
+		return httperrors.BadRequest(fmt.Sprintf("Invalid contract ID: %+v", c.Param("contractHname")))
 	}
 
 	fname := c.Param("fname")
 
 	var params dict.Dict
-	// for some reason c.Bind(&params) doesn't work
 	if c.Request().Body != nil {
 		if err := json.NewDecoder(c.Request().Body).Decode(&params); err != nil {
 			return httperrors.BadRequest("Invalid request body")
 		}
 	}
-
-	chain := chains.GetChain(contractID.ChainID())
-	if chain == nil {
-		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", contractID.ChainID()))
+	theChain := chains.AllChains().Get(chainID)
+	if theChain == nil {
+		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
-
-	vctx, err := viewcontext.NewFromDB(*chain.ID(), chain.Processors())
-	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("Failed to create context: %v", err))
-	}
-
-	ret, err := vctx.CallView(contractID.Hname(), coretypes.Hn(fname), params)
+	vctx := viewcontext.NewFromChain(theChain)
+	var ret dict.Dict
+	_ = optimism.RepeatOnceIfUnlucky(func() error {
+		ret, err = vctx.CallView(contractHname, coretypes.Hn(fname), params)
+		return err
+	})
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("View call failed: %v", err))
 	}

@@ -13,12 +13,12 @@ func testCheckContextFromFullEP(ctx coretypes.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
 
-	a.Require(par.MustGetChainID(ParamChainID) == ctx.ContractID().ChainID(), "fail: chainID")
-	a.Require(par.MustGetAgentID(ParamChainOwnerID) == ctx.ChainOwnerID(), "fail: chainOwnerID")
-	a.Require(par.MustGetAgentID(ParamCaller) == ctx.Caller(), "fail: caller")
-	a.Require(par.MustGetContractID(ParamContractID) == ctx.ContractID(), "fail: contractID")
-	a.Require(par.MustGetAgentID(ParamAgentID) == coretypes.NewAgentIDFromContractID(ctx.ContractID()), "fail: agentID")
-	a.Require(par.MustGetAgentID(ParamContractCreator) == ctx.ContractCreator(), "fail: creator")
+	a.Require(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
+	a.Require(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
+	a.Require(par.MustGetAgentID(ParamCaller).Equals(ctx.Caller()), "fail: caller")
+	myAgentID := coretypes.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
+	a.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
+	a.Require(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
 	return nil, nil
 }
 
@@ -26,11 +26,11 @@ func testCheckContextFromViewEP(ctx coretypes.SandboxView) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
 
-	a.Require(par.MustGetChainID(ParamChainID) == ctx.ContractID().ChainID(), "fail: chainID")
-	a.Require(par.MustGetAgentID(ParamChainOwnerID) == ctx.ChainOwnerID(), "fail: chainOwnerID")
-	a.Require(par.MustGetContractID(ParamContractID) == ctx.ContractID(), "fail: contractID")
-	a.Require(par.MustGetAgentID(ParamAgentID) == coretypes.NewAgentIDFromContractID(ctx.ContractID()), "fail: agentID")
-	a.Require(par.MustGetAgentID(ParamContractCreator) == ctx.ContractCreator(), "fail: creator")
+	a.Require(par.MustGetChainID(ParamChainID).Equals(ctx.ChainID()), "fail: chainID")
+	a.Require(par.MustGetAgentID(ParamChainOwnerID).Equals(ctx.ChainOwnerID()), "fail: chainOwnerID")
+	myAgentID := coretypes.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
+	a.Require(par.MustGetAgentID(ParamAgentID).Equals(myAgentID), "fail: agentID")
+	a.Require(par.MustGetAgentID(ParamContractCreator).Equals(ctx.ContractCreator()), "fail: creator")
 	return nil, nil
 }
 
@@ -59,7 +59,7 @@ func passTypesFull(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	hash, exists, err := codec.DecodeHashValue(ctx.Params().MustGet("Hash"))
 	checkFull(ctx, exists, err)
-	if *hash != hashing.HashStrings("Hash") {
+	if hash != hashing.HashStrings("Hash") {
 		ctx.Log().Panicf("wrong hash")
 	}
 	hname, exists, err := codec.DecodeHname(ctx.Params().MustGet("Hname"))
@@ -67,9 +67,9 @@ func passTypesFull(ctx coretypes.Sandbox) (dict.Dict, error) {
 	if hname != coretypes.Hn("Hname") {
 		ctx.Log().Panicf("wrong hname")
 	}
-	hname_0, exists, err := codec.DecodeHname(ctx.Params().MustGet("Hname-0"))
+	hname0, exists, err := codec.DecodeHname(ctx.Params().MustGet("Hname-0"))
 	checkFull(ctx, exists, err)
-	if hname_0 != 0 {
+	if hname0 != 0 {
 		ctx.Log().Panicf("wrong Hname-0")
 	}
 	_, exists, err = codec.DecodeHname(ctx.Params().MustGet("ContractID"))
@@ -104,7 +104,7 @@ func passTypesView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	}
 	hash, exists, err := codec.DecodeHashValue(ctx.Params().MustGet("Hash"))
 	checkView(ctx, exists, err)
-	if *hash != hashing.HashStrings("Hash") {
+	if hash != hashing.HashStrings("Hash") {
 		ctx.Log().Panicf("wrong hash")
 	}
 	hname, exists, err := codec.DecodeHname(ctx.Params().MustGet("Hname"))
@@ -112,9 +112,9 @@ func passTypesView(ctx coretypes.SandboxView) (dict.Dict, error) {
 	if hname != coretypes.Hn("Hname") {
 		ctx.Log().Panicf("wrong hname")
 	}
-	hname_0, exists, err := codec.DecodeHname(ctx.Params().MustGet("Hname-0"))
+	hname0, exists, err := codec.DecodeHname(ctx.Params().MustGet("Hname-0"))
 	checkView(ctx, exists, err)
-	if hname_0 != 0 {
+	if hname0 != 0 {
 		ctx.Log().Panicf("wrong hname-0")
 	}
 	_, exists, err = codec.DecodeHname(ctx.Params().MustGet("ContractID"))

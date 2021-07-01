@@ -12,17 +12,18 @@ pub fn func_mint_supply(ctx: &ScFuncContext) {
     let param_description = p.get_string(PARAM_DESCRIPTION);
     let param_user_defined = p.get_string(PARAM_USER_DEFINED);
 
-    let minted = ctx.incoming().minted();
-    if minted == ScColor::MINT {
-        ctx.panic("TokenRegistry: No newly minted tokens found");
-    }
+    let minted = ctx.minted();
+    let minted_colors = minted.colors();
+    ctx.require(minted_colors.length() == 1, "need single minted color");
+    let minted_color = minted_colors.get_color(0).value();
     let state = ctx.state();
-    let registry = state.get_map(VAR_REGISTRY).get_bytes(&minted);
+    let registry = state.get_map(VAR_REGISTRY).get_bytes(&minted_color);
     if registry.exists() {
-        ctx.panic("TokenRegistry: Color already exists");
+        // should never happen, because transaction id is unique
+        ctx.panic("TokenRegistry: registry for color already exists");
     }
     let mut token = Token {
-        supply: ctx.incoming().balance(&minted),
+        supply: minted.balance(&minted_color),
         minted_by: ctx.caller(),
         owner: ctx.caller(),
         created: ctx.timestamp(),
@@ -30,15 +31,12 @@ pub fn func_mint_supply(ctx: &ScFuncContext) {
         description: param_description.value(),
         user_defined: param_user_defined.value(),
     };
-    if token.supply <= 0 {
-        ctx.panic("TokenRegistry: Insufficient supply");
-    }
     if token.description.is_empty() {
         token.description += "no dscr";
     }
     registry.set_value(&token.to_bytes());
     let colors = state.get_color_array(VAR_COLOR_LIST);
-    colors.get_color(colors.length()).set_value(&minted);
+    colors.get_color(colors.length()).set_value(&minted_color);
     ctx.log("tokenregistry.mintSupply ok");
 }
 

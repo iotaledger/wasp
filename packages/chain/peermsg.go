@@ -4,173 +4,89 @@
 package chain
 
 import (
-	"fmt"
 	"io"
+	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/waspconn"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm"
+	"go.dedis.ch/kyber/v3/sign/tbls"
 )
 
-func (msg *StateIndexPingPongMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
-		return err
-	}
-	return util.WriteBoolByte(w, msg.RSVP)
+// Message types for the committee communications.
+const (
+	MsgGetBlock = 1 + peering.FirstUserMsgCode + iota
+	MsgBlock
+	MsgSignedResult
+	MsgOffLedgerRequest
+)
+
+type TimerTick int
+
+type SignedResultMsg struct {
+	SenderIndex  uint16
+	ChainInputID ledgerstate.OutputID
+	EssenceHash  hashing.HashValue
+	SigShare     tbls.SigShare
 }
 
-func (msg *StateIndexPingPongMsg) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
-		return err
-	}
-	return util.ReadBoolByte(r, &msg.RSVP)
+// GetBlockMsg StateManager queries specific block data from another peer (access node)
+type GetBlockMsg struct {
+	SenderNetID string
+	BlockIndex  uint32
 }
 
-func (msg *NotifyReqMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, uint16(len(msg.RequestIDs))); err != nil {
-		return err
-	}
-	for _, reqid := range msg.RequestIDs {
-		if _, err := w.Write(reqid[:]); err != nil {
-			return err
-		}
-	}
-	return nil
+// BlockMsg StateManager in response to GetBlockMsg sends block data to the querying node's StateManager
+type BlockMsg struct {
+	SenderNetID string
+	BlockBytes  []byte
 }
 
-func (msg *NotifyReqMsg) Read(r io.Reader) error {
-	err := util.ReadUint32(r, &msg.BlockIndex)
-	if err != nil {
-		return err
-	}
-	var arrLen uint16
-	err = util.ReadUint16(r, &arrLen)
-	if err != nil {
-		return err
-	}
-	if arrLen == 0 {
-		return nil
-	}
-	msg.RequestIDs = make([]coretypes.RequestID, arrLen)
-	for i := range msg.RequestIDs {
-		_, err = r.Read(msg.RequestIDs[i][:])
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+// DismissChainMsg sent by component to the chain core in case of major setback
+type DismissChainMsg struct {
+	Reason string
 }
 
-func (msg *NotifyFinalResultPostedMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
-		return err
-	}
-	if _, err := w.Write(msg.TxId.Bytes()); err != nil {
-		return err
-	}
-	return nil
+// StateTransitionMsg Notifies chain about changed state
+type StateTransitionMsg struct {
+	// new variable state
+	State state.VirtualState
+	// corresponding state transaction
+	StateOutput *ledgerstate.AliasOutput
+	//
+	StateTimestamp time.Time
 }
 
-func (msg *NotifyFinalResultPostedMsg) Read(r io.Reader) error {
-	err := util.ReadUint32(r, &msg.BlockIndex)
-	if err != nil {
-		return err
-	}
-	if err := util.ReadTransactionId(r, &msg.TxId); err != nil {
-		return err
-	}
-	return nil
+// StateCandidateMsg Consensus sends the finalized next state to StateManager
+type StateCandidateMsg struct {
+	State             state.VirtualState
+	ApprovingOutputID ledgerstate.OutputID
 }
 
-func (msg *StartProcessingBatchMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, uint16(len(msg.RequestIds))); err != nil {
-		return err
-	}
-	for i := range msg.RequestIds {
-		if _, err := w.Write(msg.RequestIds[i][:]); err != nil {
-			return err
-		}
-	}
-	if _, err := w.Write(msg.FeeDestination[:]); err != nil {
-		return err
-	}
-	if err := waspconn.WriteBalances(w, msg.Balances); err != nil {
-		return err
-	}
-	return nil
+// VMResultMsg Consensus -> Consensus. VM sends result of async task started by Consensus to itself
+type VMResultMsg struct {
+	Task *vm.VMTask
 }
 
-func (msg *StartProcessingBatchMsg) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
-		return err
-	}
-	var size uint16
-	if err := util.ReadUint16(r, &size); err != nil {
-		return err
-	}
-	msg.RequestIds = make([]coretypes.RequestID, size)
-	for i := range msg.RequestIds {
-		if err := msg.RequestIds[i].Read(r); err != nil {
-			return err
-		}
-	}
-	if err := coretypes.ReadAgentID(r, &msg.FeeDestination); err != nil {
-		return err
-	}
-	var err error
-	if msg.Balances, err = waspconn.ReadBalances(r); err != nil {
-		return err
-	}
-	return nil
+// AsynchronousCommonSubsetMsg
+type AsynchronousCommonSubsetMsg struct {
+	ProposedBatchesBin [][]byte
+	SessionID          uint64
 }
 
-func (msg *SignedHashMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
-		return err
-	}
-	if err := util.WriteUint64(w, uint64(msg.OrigTimestamp)); err != nil {
-		return err
-	}
-	if _, err := w.Write(msg.BatchHash[:]); err != nil {
-		return err
-	}
-	if _, err := w.Write(msg.EssenceHash[:]); err != nil {
-		return err
-	}
-	if err := util.WriteBytes16(w, msg.SigShare); err != nil {
-		return err
-	}
-	return nil
+// InclusionStateMsg txstream plugin sends inclusions state of the transaction to ConsensusOld
+type InclusionStateMsg struct {
+	TxID  ledgerstate.TransactionID
+	State ledgerstate.InclusionState
 }
 
-func (msg *SignedHashMsg) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
-		return err
-	}
-	var ts uint64
-	if err := util.ReadUint64(r, &ts); err != nil {
-		return err
-	}
-	msg.OrigTimestamp = int64(ts)
-
-	if err := util.ReadHashValue(r, &msg.BatchHash); err != nil {
-		return err
-	}
-	if err := util.ReadHashValue(r, &msg.EssenceHash); err != nil {
-		return err
-	}
-	var err error
-	if msg.SigShare, err = util.ReadBytes16(r); err != nil {
-		return err
-	}
-	return nil
+// StateMsg txstream plugin sends the only existing AliasOutput in the chain's address to StateManager
+type StateMsg struct {
+	ChainOutput *ledgerstate.AliasOutput
+	Timestamp   time.Time
 }
 
 func (msg *GetBlockMsg) Write(w io.Writer) error {
@@ -181,107 +97,41 @@ func (msg *GetBlockMsg) Read(r io.Reader) error {
 	return util.ReadUint32(r, &msg.BlockIndex)
 }
 
-func (msg *BlockHeaderMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, msg.Size); err != nil {
-		return err
-	}
-	if _, err := w.Write(msg.AnchorTransactionID.Bytes()); err != nil {
+func (msg *BlockMsg) Write(w io.Writer) error {
+	return util.WriteBytes32(w, msg.BlockBytes)
+}
+
+func (msg *BlockMsg) Read(r io.Reader) error {
+	var err error
+	if msg.BlockBytes, err = util.ReadBytes32(r); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (msg *BlockHeaderMsg) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
+func (msg *SignedResultMsg) Write(w io.Writer) error {
+	if _, err := w.Write(msg.EssenceHash[:]); err != nil {
 		return err
 	}
-	if err := util.ReadUint16(r, &msg.Size); err != nil {
+	if err := util.WriteBytes16(w, msg.SigShare); err != nil {
 		return err
 	}
-	if _, err := r.Read(msg.AnchorTransactionID[:]); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (msg *StateUpdateMsg) Write(w io.Writer) error {
-	if err := util.WriteUint32(w, msg.BlockIndex); err != nil {
-		return err
-	}
-	if err := msg.StateUpdate.Write(w); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, msg.IndexInTheBlock); err != nil {
+	if _, err := w.Write(msg.ChainInputID[:]); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (msg *StateUpdateMsg) Read(r io.Reader) error {
-	if err := util.ReadUint32(r, &msg.BlockIndex); err != nil {
+func (msg *SignedResultMsg) Read(r io.Reader) error {
+	if err := util.ReadHashValue(r, &msg.EssenceHash); err != nil {
 		return err
 	}
-	msg.StateUpdate = state.NewStateUpdate(nil)
-	if err := msg.StateUpdate.Read(r); err != nil {
+	var err error
+	if msg.SigShare, err = util.ReadBytes16(r); err != nil {
 		return err
 	}
-	if err := util.ReadUint16(r, &msg.IndexInTheBlock); err != nil {
+	if err := util.ReadOutputID(r, &msg.ChainInputID); /* nolint:revive */ err != nil {
 		return err
-	}
-	return nil
-}
-
-func (msg *TestTraceMsg) Write(w io.Writer) error {
-	if !util.ValidPermutation(msg.Sequence) {
-		panic(fmt.Sprintf("Write: wrong permutation %+v", msg.Sequence))
-	}
-	if err := util.WriteUint64(w, uint64(msg.InitTime)); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, msg.InitPeerIndex); err != nil {
-		return err
-	}
-	if err := util.WriteUint16(w, uint16(len(msg.Sequence))); err != nil {
-		return err
-	}
-	for _, idx := range msg.Sequence {
-		if err := util.WriteUint16(w, idx); err != nil {
-			return err
-		}
-	}
-	if err := util.WriteUint16(w, msg.NumHops); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (msg *TestTraceMsg) Read(r io.Reader) error {
-	var initTime uint64
-	if err := util.ReadUint64(r, &initTime); err != nil {
-		return err
-	}
-	msg.InitTime = int64(initTime)
-	if err := util.ReadUint16(r, &msg.InitPeerIndex); err != nil {
-		return err
-	}
-	var size uint16
-	if err := util.ReadUint16(r, &size); err != nil {
-		return err
-	}
-	msg.Sequence = make([]uint16, size)
-	for i := range msg.Sequence {
-		if err := util.ReadUint16(r, &msg.Sequence[i]); err != nil {
-			return err
-		}
-	}
-	if err := util.ReadUint16(r, &msg.NumHops); err != nil {
-		return err
-	}
-	if !util.ValidPermutation(msg.Sequence) {
-		panic(fmt.Sprintf("Read: wrong permutation %+v", msg.Sequence))
 	}
 	return nil
 }

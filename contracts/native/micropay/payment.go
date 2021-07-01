@@ -3,43 +3,46 @@ package micropay
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
+	"io"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/util"
-	"io"
 )
 
 type Payment struct {
 	Ord            uint32
-	Amount         int64
+	Amount         uint64
 	SignatureShort []byte
 }
 
 type BatchPayment struct {
-	Payer    address.Address
-	Provider address.Address
+	Payer    ledgerstate.Address
+	Provider ledgerstate.Address
 	Payments []Payment
 }
 
-func NewPayment(ord uint32, amount int64, targetAddr address.Address, payerSigScheme signaturescheme.SignatureScheme) *Payment {
-	data := paymentEssence(ord, amount, payerSigScheme.Address(), targetAddr)
-	sig := payerSigScheme.Sign(data)
-	shortSig := make([]byte, ed25519.SignatureSize)
-	copy(shortSig, sig.Bytes()[1+ed25519.PublicKeySize:])
+func NewPayment(ord uint32, amount uint64, targetAddr ledgerstate.Address, payerKeyPair *ed25519.KeyPair) *Payment {
+	payerAddr := ledgerstate.NewED25519Address(payerKeyPair.PublicKey)
+	data := paymentEssence(ord, amount, payerAddr, targetAddr)
+	shortSig := payerKeyPair.PrivateKey.Sign(data)
+	signature := ledgerstate.NewED25519Signature(payerKeyPair.PublicKey, shortSig)
+	if !signature.AddressSignatureValid(payerAddr, data) {
+		panic("NewPayment: internal error, signature invalid")
+	}
 	return &Payment{
 		Ord:            ord,
 		Amount:         amount,
-		SignatureShort: shortSig,
+		SignatureShort: shortSig[:],
 	}
 }
 
-func paymentEssence(ord uint32, amount int64, payerAddr, targetAddr address.Address) []byte {
+func paymentEssence(ord uint32, amount uint64, payerAddr, targetAddr ledgerstate.Address) []byte {
 	var buf bytes.Buffer
 	buf.Write(util.Uint32To4Bytes(ord))
-	buf.Write(util.Uint64To8Bytes(uint64(amount)))
-	buf.Write(payerAddr[:])
-	buf.Write(targetAddr[:])
+	buf.Write(util.Uint64To8Bytes(amount))
+	buf.Write(payerAddr.Bytes())
+	buf.Write(targetAddr.Bytes())
 	return buf.Bytes()
 }
 
@@ -63,20 +66,17 @@ func (p *Payment) Write(w io.Writer) error {
 	if err := util.WriteUint32(w, p.Ord); err != nil {
 		return err
 	}
-	if err := util.WriteInt64(w, p.Amount); err != nil {
+	if err := util.WriteUint64(w, p.Amount); err != nil {
 		return err
 	}
-	if err := util.WriteBytes16(w, p.SignatureShort); err != nil {
-		return err
-	}
-	return nil
+	return util.WriteBytes16(w, p.SignatureShort)
 }
 
 func (p *Payment) Read(r io.Reader) error {
 	if err := util.ReadUint32(r, &p.Ord); err != nil {
 		return err
 	}
-	if err := util.ReadInt64(r, &p.Amount); err != nil {
+	if err := util.ReadUint64(r, &p.Amount); err != nil {
 		return err
 	}
 	var err error

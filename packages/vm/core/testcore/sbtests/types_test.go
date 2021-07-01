@@ -1,12 +1,13 @@
 package sbtests
 
 import (
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestTypesFull(t *testing.T) { run2(t, testTypesFull) }
@@ -14,7 +15,7 @@ func testTypesFull(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	cID, _ := setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncPassTypesFull,
+	req := solo.NewCallParams(ScName, sbtestsc.FuncPassTypesFull,
 		"string", "string",
 		"string-0", "",
 		"int64", 42,
@@ -24,10 +25,10 @@ func testTypesFull(t *testing.T, w bool) {
 		"Hname-0", coretypes.Hname(0),
 		"ContractID", cID,
 		"ChainID", chain.ChainID,
-		"Address", chain.ChainAddress,
+		"Address", chain.ChainID.AsAddress(),
 		"AgentID", chain.OriginatorAgentID,
-	)
-	_, err := chain.PostRequest(req, nil)
+	).WithIotas(1)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 }
 
@@ -36,7 +37,7 @@ func testTypesView(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	cID, _ := setupTestSandboxSC(t, chain, nil, w)
 
-	_, err := chain.CallView(SandboxSCName, sbtestsc.FuncPassTypesView,
+	_, err := chain.CallView(ScName, sbtestsc.FuncPassTypesView,
 		"string", "string",
 		"string-0", "",
 		"int64", 42,
@@ -46,7 +47,7 @@ func testTypesView(t *testing.T, w bool) {
 		"Hname-0", coretypes.Hname(0),
 		"ContractID", cID,
 		"ChainID", chain.ChainID,
-		"Address", chain.ChainAddress,
+		"Address", chain.ChainID.AsAddress(),
 		"AgentID", chain.OriginatorAgentID,
 	)
 	require.NoError(t, err)

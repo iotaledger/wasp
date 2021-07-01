@@ -1,11 +1,24 @@
 package chain
 
-import "github.com/iotaledger/wasp/tools/wasp-cli/log"
+import (
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/spf13/cobra"
+)
 
-func activateCmd(args []string) {
-	log.Check(MultiClient().ActivateChain(GetCurrentChainID()))
+var activateCmd = &cobra.Command{
+	Use:   "activate",
+	Short: "Activate the chain",
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		log.Check(MultiClient().ActivateChain(*GetCurrentChainID()))
+	},
 }
 
-func deactivateCmd(args []string) {
-	log.Check(MultiClient().DeactivateChain(GetCurrentChainID()))
+var deactivateCmd = &cobra.Command{
+	Use:   "deactivate",
+	Short: "Deactivate the chain",
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		log.Check(MultiClient().DeactivateChain(*GetCurrentChainID()))
+	},
 }

@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::hashtypes::*;
+use crate::host::*;
 
-// decodes binary encoded data into its separate entities
+// decodes separate entities from a byte buffer
 pub struct BytesDecoder<'a> {
     data: &'a [u8],
 }
@@ -26,9 +27,9 @@ impl BytesDecoder<'_> {
 
     // decodes the next substring of bytes from the byte buffer
     pub fn bytes(&mut self) -> &[u8] {
-        let size = self.int() as usize;
+        let size = self.int64() as usize;
         if self.data.len() < size {
-            panic!("Cannot decode bytes");
+            panic("insufficient bytes");
         }
         let value = &self.data[..size];
         self.data = &self.data[size..];
@@ -45,11 +46,6 @@ impl BytesDecoder<'_> {
         ScColor::from_bytes(self.bytes())
     }
 
-    // decodes an ScContractId from the byte buffer
-    pub fn contract_id(&mut self) -> ScContractId {
-        ScContractId::from_bytes(self.bytes())
-    }
-
     // decodes an ScHash from the byte buffer
     pub fn hash(&mut self) -> ScHash {
         ScHash::from_bytes(self.bytes())
@@ -61,31 +57,41 @@ impl BytesDecoder<'_> {
     }
 
     // decodes an int64 from the byte buffer
-    // note that ints are encoded using leb128 encoding
-    pub fn int(&mut self) -> i64 {
+    // note that these are encoded using leb128 encoding to conserve space
+    pub fn int64(&mut self) -> i64 {
         // leb128 decoder
         let mut val = 0_i64;
         let mut s = 0;
         loop {
+            if self.data.len() == 0 {
+                panic("insufficient bytes");
+            }
             let mut b = self.data[0] as i8;
             self.data = &self.data[1..];
             val |= ((b & 0x7f) as i64) << s;
-            if b >= 0 {
+
+            // termination bit set?
+            if (b & -0x80) == 0 {
                 if ((val >> s) as i8) & 0x7f != b & 0x7f {
-                    panic!("Integer too large");
+                    panic("integer too large");
                 }
+
                 // extend int7 sign to int8
-                if (b & 0x40) != 0 {
-                    b |= -0x80
-                }
+                b |= (b & 0x40) << 1;
+
                 // extend int8 sign to int64
                 return val | ((b as i64) << s);
             }
             s += 7;
             if s >= 64 {
-                panic!("integer representation too long");
+                panic("integer representation too long");
             }
         }
+    }
+
+    // decodes an ScRequestId from the byte buffer
+    pub fn request_id(&mut self) -> ScRequestId {
+        ScRequestId::from_bytes(self.bytes())
     }
 
     // decodes an UTF-8 text string from the byte buffer
@@ -94,9 +100,17 @@ impl BytesDecoder<'_> {
     }
 }
 
+impl Drop for BytesDecoder<'_> {
+    fn drop(&mut self) {
+        if self.data.len() != 0 {
+            panic("extra bytes");
+        }
+    }
+}
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// encodes entities into a binary data buffer
+// encodes separate entities into a byte buffer
 pub struct BytesEncoder {
     data: Vec<u8>,
 }
@@ -121,7 +135,7 @@ impl BytesEncoder {
 
     // encodes a substring of bytes into the byte buffer
     pub fn bytes(&mut self, value: &[u8]) -> &BytesEncoder {
-        self.int(value.len() as i64);
+        self.int64(value.len() as i64);
         self.data.extend_from_slice(value);
         self
     }
@@ -134,12 +148,6 @@ impl BytesEncoder {
 
     // encodes an ScColor into the byte buffer
     pub fn color(&mut self, value: &ScColor) -> &BytesEncoder {
-        self.bytes(value.to_bytes());
-        self
-    }
-
-    // encodes an ScContractId into the byte buffer
-    pub fn contract_id(&mut self, value: &ScContractId) -> &BytesEncoder {
         self.bytes(value.to_bytes());
         self
     }
@@ -162,8 +170,8 @@ impl BytesEncoder {
     }
 
     // encodes an int64 into the byte buffer
-    // note that ints are encoded using leb128 encoding
-    pub fn int(&mut self, mut val: i64) -> &BytesEncoder {
+    // note that these are encoded using leb128 encoding to conserve space
+    pub fn int64(&mut self, mut val: i64) -> &BytesEncoder {
         // leb128 encoder
         loop {
             let b = val as u8;
@@ -175,6 +183,12 @@ impl BytesEncoder {
             }
             self.data.push(b | 0x80)
         }
+    }
+
+    // encodes an ScRequestId into the byte buffer
+    pub fn request_id(&mut self, value: &ScRequestId) -> &BytesEncoder {
+        self.bytes(value.to_bytes());
+        self
     }
 
     // encodes an UTF-8 text string into the byte buffer

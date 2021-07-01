@@ -1,12 +1,13 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// constants use to access the core contracts in the chain
+
 use crate::hashtypes::*;
 
 pub const CORE_ACCOUNTS: ScHname = ScHname(0x3c4b5e02);
 pub const CORE_ACCOUNTS_FUNC_DEPOSIT: ScHname = ScHname(0xbdc9102d);
-pub const CORE_ACCOUNTS_FUNC_WITHDRAW_TO_ADDRESS: ScHname = ScHname(0x26608cb5);
-pub const CORE_ACCOUNTS_FUNC_WITHDRAW_TO_CHAIN: ScHname = ScHname(0x437bc026);
+pub const CORE_ACCOUNTS_FUNC_WITHDRAW: ScHname = ScHname(0x9dcc0f41);
 pub const CORE_ACCOUNTS_VIEW_ACCOUNTS: ScHname = ScHname(0x3c4b5e02);
 pub const CORE_ACCOUNTS_VIEW_BALANCE: ScHname = ScHname(0x84168cb4);
 pub const CORE_ACCOUNTS_VIEW_TOTAL_ASSETS: ScHname = ScHname(0xfab0f8d2);
@@ -21,6 +22,17 @@ pub const CORE_BLOB_VIEW_LIST_BLOBS: ScHname = ScHname(0x62ca7990);
 
 pub const CORE_BLOB_PARAM_FIELD: &str = "field";
 pub const CORE_BLOB_PARAM_HASH: &str = "hash";
+
+pub const CORE_BLOCKLOG: ScHname = ScHname(0xf538ef2b);
+pub const CORE_BLOCKLOG_VIEW_GET_BLOCK_INFO: ScHname = ScHname(0xbe89f9b3);
+pub const CORE_BLOCKLOG_VIEW_GET_LATEST_BLOCK_INFO: ScHname = ScHname(0x084a1760);
+pub const CORE_BLOCKLOG_VIEW_GET_REQUEST_I_DS_FOR_BLOCK: ScHname = ScHname(0x5a20327a);
+pub const CORE_BLOCKLOG_VIEW_GET_REQUEST_LOG_RECORD: ScHname = ScHname(0x31e07e48);
+pub const CORE_BLOCKLOG_VIEW_GET_REQUEST_LOG_RECORDS_FOR_BLOCK: ScHname = ScHname(0x7210e621);
+pub const CORE_BLOCKLOG_VIEW_IS_REQUEST_PROCESSED: ScHname = ScHname(0xd57d50a9);
+
+pub const CORE_BLOCKLOG_PARAM_BLOCK_INDEX: &str = "n";
+pub const CORE_BLOCKLOG_PARAM_REQUEST_ID: &str = "u";
 
 pub const CORE_EVENTLOG: ScHname = ScHname(0x661aa7d8);
 pub const CORE_EVENTLOG_VIEW_GET_NUM_RECORDS: ScHname = ScHname(0x2f4b4a8c);

@@ -1,10 +1,11 @@
 package database
 
 import (
+	"testing"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestMapDB(t *testing.T) {

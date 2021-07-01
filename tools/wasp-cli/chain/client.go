@@ -13,13 +13,13 @@ func Client() *chainclient.Client {
 	return chainclient.New(
 		config.GoshimmerClient(),
 		config.WaspClient(),
-		GetCurrentChainID(),
-		wallet.Load().SignatureScheme(),
+		*GetCurrentChainID(),
+		wallet.Load().KeyPair(),
 	)
 }
 
 func MultiClient() *multiclient.MultiClient {
-	return multiclient.New(config.CommitteeApi(chainCommittee()))
+	return multiclient.New(config.CommitteeAPI(chainCommittee()))
 }
 
 func SCClient(contractHname coretypes.Hname) *scclient.SCClient {

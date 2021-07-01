@@ -1,12 +1,13 @@
 package sbtests
 
 import (
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestGetSet(t *testing.T) { run2(t, testGetSet) }
@@ -14,14 +15,14 @@ func testGetSet(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncSetInt,
+	req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt,
 		sbtestsc.ParamIntParamName, "ppp",
 		sbtestsc.ParamIntParamValue, 314,
-	)
-	_, err := chain.PostRequest(req, nil)
+	).WithIotas(1)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	ret, err := chain.CallView(SandboxSCName, sbtestsc.FuncGetInt,
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetInt,
 		sbtestsc.ParamIntParamName, "ppp")
 	require.NoError(t, err)
 
@@ -36,15 +37,15 @@ func testCallRecursive(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	cID, _ := setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncCallOnChain,
+	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain,
 		sbtestsc.ParamIntParamValue, 31,
 		sbtestsc.ParamHnameContract, cID.Hname(),
 		sbtestsc.ParamHnameEP, coretypes.Hn(sbtestsc.FuncRunRecursion),
-	)
-	ret, err := chain.PostRequest(req, nil)
+	).WithIotas(1)
+	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	ret, err = chain.CallView(sbtestsc.Interface.Name, sbtestsc.FuncGetCounter)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter)
 	require.NoError(t, err)
 
 	r, exists, err := codec.DecodeInt64(ret.MustGet(sbtestsc.VarCounter))
@@ -67,7 +68,7 @@ func testCallFibonacci(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	ret, err := chain.CallView(SandboxSCName, sbtestsc.FuncGetFibonacci,
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetFibonacci,
 		sbtestsc.ParamIntParamValue, n,
 	)
 	require.NoError(t, err)
@@ -82,19 +83,19 @@ func testCallFibonacciIndirect(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	cID, _ := setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncCallOnChain,
+	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain,
 		sbtestsc.ParamIntParamValue, n,
 		sbtestsc.ParamHnameContract, cID.Hname(),
 		sbtestsc.ParamHnameEP, coretypes.Hn(sbtestsc.FuncGetFibonacci),
-	)
-	ret, err := chain.PostRequest(req, nil)
+	).WithIotas(1)
+	ret, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	r, exists, err := codec.DecodeInt64(ret.MustGet(sbtestsc.ParamIntParamValue))
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.EqualValues(t, fibo(n), r)
 
-	ret, err = chain.CallView(sbtestsc.Interface.Name, sbtestsc.FuncGetCounter)
+	ret, err = chain.CallView(ScName, sbtestsc.FuncGetCounter)
 	require.NoError(t, err)
 
 	r, exists, err = codec.DecodeInt64(ret.MustGet(sbtestsc.VarCounter))

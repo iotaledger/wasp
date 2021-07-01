@@ -6,12 +6,13 @@ package wasmproc
 import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
-type wasmProcessor struct {
+type WasmProcessor struct {
 	wasmhost.WasmHost
 	ctx       coretypes.Sandbox
 	ctxView   coretypes.SandboxView
@@ -20,30 +21,55 @@ type wasmProcessor struct {
 	scContext *ScContext
 }
 
-const ViewCopyAllState = "copy_all_state"
+var _ coretypes.VMProcessor = &WasmProcessor{}
+
+const (
+	FuncDefault      = "_default"
+	ViewCopyAllState = "copy_all_state"
+)
 
 var GoWasmVM wasmhost.WasmVM
 
 // NewWasmProcessor creates new wasm processor.
-func NewWasmProcessor(vm wasmhost.WasmVM, logger *logger.Logger) (*wasmProcessor, error) {
-	host := &wasmProcessor{}
+func NewWasmProcessor(vm wasmhost.WasmVM, log *logger.Logger) (*WasmProcessor, error) {
+	host := &WasmProcessor{}
 	if GoWasmVM != nil {
 		vm = GoWasmVM
+		GoWasmVM = nil
 	}
 	err := host.InitVM(vm, false)
 	if err != nil {
 		return nil, err
 	}
 	host.scContext = NewScContext(host)
-	host.Init(NewNullObject(&host.KvStoreHost), host.scContext, logger)
-	host.SetExport(0x8fff, ViewCopyAllState)
+	host.Init(log)
+	host.TrackObject(NewNullObject(&host.KvStoreHost))
+	host.TrackObject(host.scContext)
+	host.SetExport(0x8fff, ViewCopyAllState) //nolint:gomnd
 	return host, nil
 }
 
-func (host *wasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.SandboxView) (dict.Dict, error) {
+func GetProcessor(binaryCode []byte, log *logger.Logger) (coretypes.VMProcessor, error) {
+	vm, err := NewWasmProcessor(wasmhost.NewWasmTimeVM(), log)
+	if err != nil {
+		return nil, err
+	}
+	err = vm.LoadWasm(binaryCode)
+	if err != nil {
+		return nil, err
+	}
+	return vm, nil
+}
+
+func (host *WasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.SandboxView) (dict.Dict, error) {
 	if host.function == "" {
 		// init function was missing, do nothing
-		return dict.New(), nil
+		return nil, nil
+	}
+
+	if host.function == FuncDefault {
+		// TODO default function, do nothing for now
+		return nil, nil
 	}
 
 	if host.function == ViewCopyAllState {
@@ -67,7 +93,7 @@ func (host *wasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.Sandbox
 	defer func() {
 		host.nesting--
 		if host.nesting == 0 {
-			host.Trace("Finalizing calls")
+			host.Tracef("Finalizing calls")
 			host.scContext.objects = make(map[int32]int32)
 			host.PushFrame()
 		}
@@ -77,11 +103,11 @@ func (host *wasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.Sandbox
 
 	testMode, _ := host.params().Has("testMode")
 	if testMode {
-		host.Trace("TEST MODE")
+		host.Tracef("TEST MODE")
 		TestMode = true
 	}
 
-	host.Trace("Calling " + host.function)
+	host.Tracef("Calling " + host.function)
 	frame := host.PushFrame()
 	frameObjects := host.scContext.objects
 	host.scContext.objects = make(map[int32]int32)
@@ -95,19 +121,21 @@ func (host *wasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.Sandbox
 	return results, nil
 }
 
-func (host *wasmProcessor) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
-	return host.call(ctx, nil)
+func (host *WasmProcessor) Call(ctx interface{}) (dict.Dict, error) {
+	switch tctx := ctx.(type) {
+	case coretypes.Sandbox:
+		return host.call(tctx, nil)
+	case coretypes.SandboxView:
+		return host.call(nil, tctx)
+	}
+	panic(coretypes.ErrWrongTypeEntryPoint)
 }
 
-func (host *wasmProcessor) CallView(ctx coretypes.SandboxView) (dict.Dict, error) {
-	return host.call(nil, ctx)
-}
-
-func (host *wasmProcessor) GetDescription() string {
+func (host *WasmProcessor) GetDescription() string {
 	return "Wasm VM smart contract processor"
 }
 
-func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
+func (host *WasmProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
 	function := host.FunctionFromCode(uint32(code))
 	if function == "" && code != coretypes.EntryPointInit {
 		return nil, false
@@ -116,65 +144,72 @@ func (host *wasmProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryP
 	return host, true
 }
 
-func GetProcessor(binaryCode []byte, logger *logger.Logger) (coretypes.Processor, error) {
-	vm, err := NewWasmProcessor(wasmhost.NewWasmTimeVM(), logger)
-	if err != nil {
-		return nil, err
-	}
-	err = vm.LoadWasm(binaryCode)
-	if err != nil {
-		return nil, err
-	}
-	return vm, nil
+func (host *WasmProcessor) GetDefaultEntryPoint() coretypes.VMProcessorEntryPoint {
+	host.function = FuncDefault
+	return host
 }
 
-func (host *wasmProcessor) IsView() bool {
+func (host *WasmProcessor) IsView() bool {
 	return host.WasmHost.IsView(host.function)
 }
 
-func (host *wasmProcessor) chainOwnerID() coretypes.AgentID {
+func (host *WasmProcessor) accountID() *coretypes.AgentID {
+	if host.ctx != nil {
+		return host.ctx.AccountID()
+	}
+	return host.ctxView.AccountID()
+}
+
+func (host *WasmProcessor) contract() coretypes.Hname {
+	if host.ctx != nil {
+		return host.ctx.Contract()
+	}
+	return host.ctxView.Contract()
+}
+
+func (host *WasmProcessor) chainID() *chainid.ChainID {
+	if host.ctx != nil {
+		return host.ctx.ChainID()
+	}
+	return host.ctxView.ChainID()
+}
+
+func (host *WasmProcessor) chainOwnerID() *coretypes.AgentID {
 	if host.ctx != nil {
 		return host.ctx.ChainOwnerID()
 	}
 	return host.ctxView.ChainOwnerID()
 }
 
-func (host *wasmProcessor) contractCreator() coretypes.AgentID {
+func (host *WasmProcessor) contractCreator() *coretypes.AgentID {
 	if host.ctx != nil {
 		return host.ctx.ContractCreator()
 	}
 	return host.ctxView.ContractCreator()
 }
 
-func (host *wasmProcessor) contractID() coretypes.ContractID {
-	if host.ctx != nil {
-		return host.ctx.ContractID()
-	}
-	return host.ctxView.ContractID()
-}
-
-func (host *wasmProcessor) log() coretypes.LogInterface {
+func (host *WasmProcessor) log() coretypes.LogInterface {
 	if host.ctx != nil {
 		return host.ctx.Log()
 	}
 	return host.ctxView.Log()
 }
 
-func (host *wasmProcessor) params() dict.Dict {
+func (host *WasmProcessor) params() dict.Dict {
 	if host.ctx != nil {
 		return host.ctx.Params()
 	}
 	return host.ctxView.Params()
 }
 
-func (host *wasmProcessor) state() kv.KVStore {
+func (host *WasmProcessor) state() kv.KVStore {
 	if host.ctx != nil {
 		return host.ctx.State()
 	}
 	return NewScViewState(host.ctxView)
 }
 
-func (host *wasmProcessor) utils() coretypes.Utils {
+func (host *WasmProcessor) utils() coretypes.Utils {
 	if host.ctx != nil {
 		return host.ctx.Utils()
 	}

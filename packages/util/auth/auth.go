@@ -23,7 +23,7 @@ func AddAuthentication(e *echo.Echo, config map[string]string) {
 	}
 }
 
-func addBasicAuth(e *echo.Echo, username string, password string) {
+func addBasicAuth(e *echo.Echo, username, password string) {
 	e.Use(middleware.BasicAuth(func(u, p string, c echo.Context) (bool, error) {
 		return u == username && p == password, nil
 	}))

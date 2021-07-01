@@ -3,9 +3,6 @@
 package trcmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/iotaledger/wasp/tools/wasp-cli/sc/tr"
 )
 

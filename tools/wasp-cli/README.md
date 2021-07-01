@@ -1,6 +1,10 @@
 # Wasp Client tool
 
-`wasp-cli` is a command line tool for interacting with Wasp and its smart contracts.
+`wasp-cli` is a command line tool for interacting with Wasp and its smart
+contracts.
+
+**Note:** `wasp-cli` is in its early stages, only suitable for testing
+purposes.
 
 Flags common to all subcommands:
 
@@ -31,29 +35,44 @@ wasp.1.peering: 127.0.0.1:4001
 
 All commands that need to contact a single wasp node use `wasp.0`.
 
-To change the configuration (saved in `wasp-cli.json`): `wasp-cli set <name> <value>`
+To change the configuration (saved
+in `wasp-cli.json`): `wasp-cli set <name> <value>`
 
 Example: `wasp-cli set wasp.1.api wasp1.example.com:9091`
 
-*Note:* If the cluster is using Utxodb: `wasp-cli set utxodb true`
+To connect to a production Goshimmer node, the faucet PoW target must also be
+set:
+
+```
+wasp-cli set goshimmer.api goshimmer.node:8080
+wasp-cli set goshimmer.faucetPoWTarget -1
+```
 
 ## IOTA wallet
 
 `wasp-cli` provides the following commands for manipulating an IOTA wallet:
 
-* Create a new wallet seed (creates `wasp-cli.json` which stores the seed): `wasp-cli init`
+* Create a new wallet seed (creates `wasp-cli.json` which stores the
+  seed): `wasp-cli init`
 
-* Show private key + public key + account address for index 0 (index optional, default 0): `wasp-cli address [-i index]`
+  **Note:** `wasp-cli` is alpha phase. The seed is currently being stored in a
+  plain text file, which is NOT secure; do not use this seed to store funds in
+  the mainnet!
+
+* Show private key + public key + account address for index 0 (index optional,
+  default 0): `wasp-cli address [-i index]`
 
 * Query Goshimmer for account balance: `wasp-cli balance [-i index]`
 
-* Use Testnet Faucet to transfer some funds into the wallet address at index n: `wasp-cli request-funds [-i index]`
+* Use Testnet Faucet to transfer some funds into the wallet address at index
+  n: `wasp-cli request-funds [-i index]`
 
 ## Working with chains
 
 * List the currently deployed chains: `wasp-cli chain list`
 
-* Deploy a chain: `wasp-cli chain deploy --chain=<alias> --committee=<node indices> --quorum=<T>`
+* Deploy a
+  chain: `wasp-cli chain deploy --chain=<alias> --committee=<node indices> --quorum=<T>`
 
 Example:
 
@@ -61,7 +80,8 @@ Example:
 wasp-cli chain deploy --chain=mychain --committee='0,1,2,3' --quorum=3 --description="My chain"
 ```
 
-* Set the chain alias for future commands (automatically done after deploying a chain): `wasp-cli set chain <alias>`
+* Set the chain alias for future commands (automatically done after deploying a
+  chain): `wasp-cli set chain <alias>`
 
 * List all contracts in the chain: `wasp-cli chain list-contracts`
 
@@ -71,9 +91,10 @@ wasp-cli chain deploy --chain=mychain --committee='0,1,2,3' --quorum=3 --descrip
 
 ## Working with contracts
 
-* Deploy a contract: `wasp-cli chain deploy-contract <vmtype> <sc-name> <description> <wasm-file>`
+* Deploy a
+  contract: `wasp-cli chain deploy-contract <vmtype> <sc-name> <description> <wasm-file>`
 
-Example: `wasp-cli chain deploy-contract wasmtimevm inccounter "inccounter SC" contracts/wasm/inccounter_bg.wasm`
+Example: `wasp-cli chain deploy-contract wasmtime inccounter "inccounter SC" contracts/wasm/inccounter_bg.wasm`
 
 * Post a request: `wasp-cli chain post-request <sc-name> <func-name> [args...]`
 

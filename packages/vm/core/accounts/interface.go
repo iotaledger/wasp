@@ -6,36 +6,36 @@ import (
 )
 
 const (
-	Name        = "accounts"
+	Name        = coreutil.CoreContractAccounts
 	description = "Chain account ledger contract"
 )
 
-var (
-	Interface = &coreutil.ContractInterface{
-		Name:        Name,
-		Description: description,
-		ProgramHash: hashing.HashStrings(Name),
-	}
-)
+var Interface = &coreutil.ContractInterface{
+	Name:        Name,
+	Description: description,
+	ProgramHash: hashing.HashStrings(Name),
+}
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.ViewFunc(FuncBalance, getBalance),
-		coreutil.ViewFunc(FuncTotalAssets, getTotalAssets),
-		coreutil.ViewFunc(FuncAccounts, getAccounts),
+		coreutil.ViewFunc(FuncViewBalance, viewBalance),
+		coreutil.ViewFunc(FuncViewTotalAssets, viewTotalAssets),
+		coreutil.ViewFunc(FuncViewAccounts, viewAccounts),
 		coreutil.Func(FuncDeposit, deposit),
-		coreutil.Func(FuncWithdrawToAddress, withdrawToAddress),
-		coreutil.Func(FuncWithdrawToChain, withdrawToChain),
+		coreutil.Func(FuncWithdraw, withdraw),
+		coreutil.Func(FuncHarvest, harvest),
 	})
 }
 
 const (
-	FuncBalance           = "balance"
-	FuncTotalAssets       = "totalAssets"
-	FuncDeposit           = "deposit"
-	FuncWithdrawToAddress = "withdrawToAddress"
-	FuncWithdrawToChain   = "withdrawToChain"
-	FuncAccounts          = "accounts"
+	FuncViewBalance     = "balance"
+	FuncViewTotalAssets = "totalAssets"
+	FuncViewAccounts    = "accounts"
+	FuncDeposit         = "deposit"
+	FuncWithdraw        = "withdraw"
+	FuncHarvest         = "harvest"
 
-	ParamAgentID = "a"
+	ParamAgentID        = "a"
+	ParamWithdrawColor  = "c"
+	ParamWithdrawAmount = "m"
 )

@@ -1,18 +1,25 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package routes
 
 func Info() string {
 	return "/info"
 }
 
-func CallView(contractID string, hname string) string {
-	return "/contract/" + contractID + "/callview/" + hname
+func NewRequest(chainID string) string {
+	return "/request/" + chainID
 }
 
-func RequestStatus(chainID string, reqID string) string {
+func CallView(chainID, contractHname, functionName string) string {
+	return "chain/" + chainID + "/contract/" + contractHname + "/callview/" + functionName
+}
+
+func RequestStatus(chainID, reqID string) string {
 	return "/chain/" + chainID + "/request/" + reqID + "/status"
 }
 
-func WaitRequestProcessed(chainID string, reqID string) string {
+func WaitRequestProcessed(chainID, reqID string) string {
 	return "/chain/" + chainID + "/request/" + reqID + "/wait"
 }
 
@@ -52,6 +59,18 @@ func GetChainRecord(chainID string) string {
 	return "/adm/chainrecord/" + chainID
 }
 
+func PutCommitteeRecord() string {
+	return "/adm/committeerecord"
+}
+
+func GetCommitteeRecord(addr string) string {
+	return "/adm/committeerecord/" + addr
+}
+
+func GetCommitteeForChain(chainID string) string {
+	return "/adm/chain/" + chainID + "/committeerecord"
+}
+
 func DKSharesPost() string {
 	return "/adm/dks"
 }
@@ -60,8 +79,32 @@ func DKSharesGet(sharedAddress string) string {
 	return "/adm/dks/" + sharedAddress
 }
 
-func DumpState(contractID string) string {
-	return "/adm/contract/" + contractID + "/dumpstate"
+func DumpState(chainID, contractHname string) string {
+	return "/adm/chain/" + chainID + "/contract/" + contractHname + "/dumpstate"
+}
+
+func PeeringSelfGet() string {
+	return "/adm/peering/self"
+}
+
+func PeeringTrustedList() string {
+	return "/adm/peering/trusted"
+}
+
+func PeeringTrustedGet(pubKey string) string {
+	return "/adm/peering/trusted/" + pubKey
+}
+
+func PeeringTrustedPost() string {
+	return PeeringTrustedList()
+}
+
+func PeeringTrustedPut(pubKey string) string {
+	return PeeringTrustedGet(pubKey)
+}
+
+func PeeringTrustedDelete(pubKey string) string {
+	return PeeringTrustedGet(pubKey)
 }
 
 func Shutdown() string {

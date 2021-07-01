@@ -1,17 +1,24 @@
 all: build
 
 build:
-	go build ./...
+	go build -tags rocksdb ./...
 
-test:
-	go install ./...
+test: install
 	go clean -testcache
-	go test ./... -timeout 20m
+	go test -tags rocksdb ./... -timeout 20m
 
 test-short:
 	go clean -testcache
-	go test --short ./...
+	go test -tags rocksdb --short ./...
 
+install:
+	go install -tags rocksdb ./...
 
-.PHONY: all build test test-short
+lint:
+	golangci-lint run
+
+gofumpt-list:
+	gofumpt -l ./
+
+.PHONY: all build test test-short lint gofumpt-list
 

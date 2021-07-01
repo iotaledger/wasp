@@ -1,26 +1,25 @@
 package tests
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/sctransaction"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
-func deployInccounter42(t *testing.T, name string, counter int64) coretypes.ContractID {
+const name = "inc"
+
+func deployInccounter42(t *testing.T, name string, counter int64) *coretypes.AgentID {
 	hname := coretypes.Hn(name)
 	description := "testing contract deployment with inccounter"
 	programHash = inccounter.Interface.ProgramHash
@@ -57,21 +56,19 @@ func deployInccounter42(t *testing.T, name string, counter int64) coretypes.Cont
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(root.Interface.Hname()),
-		root.FuncFindContract,
-		dict.FromGoMap(map[kv.Key][]byte{
+		chain.ChainID, root.Interface.Hname(), root.FuncFindContract,
+		dict.Dict{
 			root.ParamHname: hname.Bytes(),
-		}),
-	)
+		})
 	check(err, t)
-	recb, err := ret.Get(root.ParamData)
+	recb, err := ret.Get(root.VarData)
 	check(err, t)
 	rec, err := root.DecodeContractRecord(recb)
 	check(err, t)
 	require.EqualValues(t, description, rec.Description)
 
 	expectCounter(t, hname, counter)
-	return coretypes.NewContractID(chain.ChainID, hname)
+	return coretypes.NewAgentID(chain.ChainID.AsAddress(), hname)
 }
 
 func expectCounter(t *testing.T, hname coretypes.Hname, counter int64) {
@@ -81,9 +78,7 @@ func expectCounter(t *testing.T, hname coretypes.Hname, counter int64) {
 
 func getCounter(t *testing.T, hname coretypes.Hname) int64 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(hname),
-		"getCounter",
-		nil,
+		chain.ChainID, hname, "getCounter",
 	)
 	check(err, t)
 
@@ -99,7 +94,6 @@ func TestPostDeployInccounter(t *testing.T) {
 	chain, err = clu.DeployDefaultChain()
 	check(err, t)
 
-	name := "inc"
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 }
@@ -110,22 +104,20 @@ func TestPost1Request(t *testing.T) {
 	chain, err = clu.DeployDefaultChain()
 	check(err, t)
 
-	name := "inc"
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 
-	testOwner := wallet.WithIndex(1)
-	mySigScheme := testOwner.SigScheme()
-	myAddress := testOwner.Address()
+	testOwner := wallet.KeyPair(1)
+	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), testOwner)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncCounter)
 	check(err, t)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 	check(err, t)
 
 	expectCounter(t, contractID.Hname(), 43)
@@ -137,27 +129,25 @@ func TestPost3Recursive(t *testing.T) {
 	chain, err = clu.DeployDefaultChain()
 	check(err, t)
 
-	name := "inc"
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 
-	testOwner := wallet.WithIndex(1)
-	mySigScheme := testOwner.SigScheme()
-	myAddress := testOwner.Address()
+	testOwner := wallet.KeyPair(1)
+	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), testOwner)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany, chainclient.PostRequestParams{
-		Transfer: cbalances.NewIotasOnly(1),
+		Transfer: coretypes.NewTransferIotas(1),
 		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		})),
 	})
 	check(err, t)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 	check(err, t)
 
 	// must wait for recursion to complete
@@ -172,31 +162,29 @@ func TestPost5Requests(t *testing.T) {
 	chain, err = clu.DeployDefaultChain()
 	check(err, t)
 
-	name := "inc"
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 
-	testOwner := wallet.WithIndex(1)
-	mySigScheme := testOwner.SigScheme()
-	myAddress := testOwner.Address()
-	myAgentID := coretypes.NewAgentIDFromAddress(*myAddress)
+	testOwner := wallet.KeyPair(1)
+	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
+	myAgentID := coretypes.NewAgentID(myAddress, 0)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), testOwner)
 
 	for i := 0; i < 5; i++ {
 		tx, err := myClient.PostRequest(inccounter.FuncIncCounter)
 		check(err, t)
-		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 		check(err, t)
 	}
 
 	expectCounter(t, contractID.Hname(), 42+5)
-	checkBalanceOnChain(t, chain, myAgentID, balance.ColorIOTA, 5)
+	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 0)
 
-	if !clu.VerifyAddressBalances(myAddress, testutil.RequestFundsAmount-5, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 5,
+	if !clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - 5,
 	}, "myAddress in the end") {
 		t.Fail()
 	}
@@ -209,20 +197,18 @@ func TestPost5AsyncRequests(t *testing.T) {
 	chain, err = clu.DeployDefaultChain()
 	check(err, t)
 
-	name := "inc"
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 
-	testOwner := wallet.WithIndex(1)
-	mySigScheme := testOwner.SigScheme()
-	myAddress := testOwner.Address()
-	myAgentID := coretypes.NewAgentIDFromAddress(*myAddress)
+	testOwner := wallet.KeyPair(1)
+	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
+	myAgentID := coretypes.NewAgentID(myAddress, 0)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
-	myClient := chain.SCClient(contractID.Hname(), mySigScheme)
+	myClient := chain.SCClient(contractID.Hname(), testOwner)
 
-	tx := [5]*sctransaction.Transaction{}
+	tx := [5]*ledgerstate.Transaction{}
 	var err error
 
 	for i := 0; i < 5; i++ {
@@ -231,15 +217,15 @@ func TestPost5AsyncRequests(t *testing.T) {
 	}
 
 	for i := 0; i < 5; i++ {
-		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx[i], 30*time.Second)
+		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx[i], 30*time.Second)
 		check(err, t)
 	}
 
 	expectCounter(t, contractID.Hname(), 42+5)
-	checkBalanceOnChain(t, chain, myAgentID, balance.ColorIOTA, 5)
+	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 0)
 
-	if !clu.VerifyAddressBalances(myAddress, testutil.RequestFundsAmount-5, map[balance.Color]int64{
-		balance.ColorIOTA: testutil.RequestFundsAmount - 5,
+	if !clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo - 5,
 	}, "myAddress in the end") {
 		t.Fail()
 	}

@@ -1,34 +1,42 @@
 package root
 
 import (
+	"errors"
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm/core/_default"
 )
 
 // FindContract is an internal utility function which finds a contract in the KVStore
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
 // It is not directly exposed to the sandbox
+// If contract is not found by the given hname, the default contract is returned
 func FindContract(state kv.KVStoreReader, hname coretypes.Hname) (*ContractRecord, error) {
 	contractRegistry := collections.NewMapReadOnly(state, VarContractRegistry)
 	retBin := contractRegistry.MustGetAt(hname.Bytes())
-	if retBin == nil {
+	var ret *ContractRecord
+	var err error
+	if retBin != nil {
+		if ret, err = DecodeContractRecord(retBin); err != nil {
+			return nil, fmt.Errorf("root: %v", err)
+		}
+	} else {
+		// not founc in registry
 		if hname == Interface.Hname() {
 			// if not found and it is root, it means it is chain init --> return empty root record
-			rec := NewContractRecord(Interface, coretypes.AgentID{})
-			return &rec, nil
+			ret = NewContractRecord(Interface, &coretypes.AgentID{})
+		} else {
+			// return default contract
+			ret = NewContractRecord(_default.Interface, &coretypes.AgentID{})
 		}
-		return nil, ErrContractNotFound
-	}
-
-	ret, err := DecodeContractRecord(retBin)
-	if err != nil {
-		return nil, fmt.Errorf("root: %v", err)
 	}
 	return ret, nil
 }
@@ -37,26 +45,29 @@ func FindContract(state kv.KVStoreReader, hname coretypes.Hname) (*ContractRecor
 func MustGetChainInfo(state kv.KVStoreReader) ChainInfo {
 	d := kvdecoder.New(state)
 	ret := ChainInfo{
-		ChainID:             d.MustGetChainID(VarChainID),
-		ChainOwnerID:        d.MustGetAgentID(VarChainOwnerID),
-		ChainColor:          d.MustGetColor(VarChainColor),
-		ChainAddress:        d.MustGetAddress(VarChainAddress),
+		ChainID:             *d.MustGetChainID(VarChainID),
+		ChainOwnerID:        *d.MustGetAgentID(VarChainOwnerID),
 		Description:         d.MustGetString(VarDescription, ""),
-		FeeColor:            d.MustGetColor(VarFeeColor, balance.ColorIOTA),
+		FeeColor:            d.MustGetColor(VarFeeColor, ledgerstate.ColorIOTA),
 		DefaultOwnerFee:     d.MustGetInt64(VarDefaultOwnerFee, 0),
 		DefaultValidatorFee: d.MustGetInt64(VarDefaultValidatorFee, 0),
 	}
 	return ret
 }
 
+func MustGetChainOwnerID(state kv.KVStoreReader) *coretypes.AgentID {
+	d := kvdecoder.New(state)
+	return d.MustGetAgentID(VarChainOwnerID)
+}
+
 // GetFeeInfo is an internal utility function which returns fee info for the contract
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
 // It is not exposed to the sandbox
-func GetFeeInfo(state kv.KVStoreReader, hname coretypes.Hname) (balance.Color, int64, int64) {
-	//returns nil of contract not found
+func GetFeeInfo(state kv.KVStoreReader, hname coretypes.Hname) (ledgerstate.Color, uint64, uint64) {
+	// returns nil of contract not found
 	rec, err := FindContract(state, hname)
 	if err != nil {
-		if err != ErrContractNotFound {
+		if !errors.Is(err, ErrContractNotFound) {
 			panic(err)
 		} else {
 			rec = nil
@@ -65,8 +76,8 @@ func GetFeeInfo(state kv.KVStoreReader, hname coretypes.Hname) (balance.Color, i
 	return GetFeeInfoByContractRecord(state, rec)
 }
 
-func GetFeeInfoByContractRecord(state kv.KVStoreReader, rec *ContractRecord) (balance.Color, int64, int64) {
-	var ownerFee, validatorFee int64
+func GetFeeInfoByContractRecord(state kv.KVStoreReader, rec *ContractRecord) (ledgerstate.Color, uint64, uint64) {
+	var ownerFee, validatorFee uint64
 	if rec != nil {
 		ownerFee = rec.OwnerFee
 		validatorFee = rec.ValidatorFee
@@ -84,21 +95,21 @@ func GetFeeInfoByContractRecord(state kv.KVStoreReader, rec *ContractRecord) (ba
 	return feeColor, ownerFee, validatorFee
 }
 
-func GetDefaultFeeInfo(state kv.KVStoreReader) (balance.Color, int64, int64, error) {
+func GetDefaultFeeInfo(state kv.KVStoreReader) (ledgerstate.Color, uint64, uint64, error) {
 	feeColor, ok, err := codec.DecodeColor(state.MustGet(VarFeeColor))
 	if err != nil {
 		panic(err)
 	}
 	if !ok {
-		feeColor = balance.ColorIOTA
+		feeColor = ledgerstate.ColorIOTA
 	}
-	defaultOwnerFee, _, err := codec.DecodeInt64(state.MustGet(VarDefaultOwnerFee))
+	defaultOwnerFee, _, err := codec.DecodeUint64(state.MustGet(VarDefaultOwnerFee))
 	if err != nil {
-		return balance.Color{}, 0, 0, err
+		return ledgerstate.Color{}, 0, 0, err
 	}
-	defaultValidatorFee, _, err := codec.DecodeInt64(state.MustGet(VarDefaultValidatorFee))
+	defaultValidatorFee, _, err := codec.DecodeUint64(state.MustGet(VarDefaultValidatorFee))
 	if err != nil {
-		return balance.Color{}, 0, 0, err
+		return ledgerstate.Color{}, 0, 0, err
 	}
 	return feeColor, defaultOwnerFee, defaultValidatorFee, nil
 }
@@ -109,7 +120,7 @@ func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[cor
 	var err error
 	contractRegistry.MustIterate(func(k []byte, v []byte) bool {
 		var deploymentHash coretypes.Hname
-		deploymentHash, err = coretypes.NewHnameFromBytes(k)
+		deploymentHash, err = coretypes.HnameFromBytes(k)
 		if err != nil {
 			return false
 		}
@@ -126,40 +137,44 @@ func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[cor
 	return ret, err
 }
 
-func CheckAuthorizationByChainOwner(state kv.KVStore, agentID coretypes.AgentID) bool {
+func CheckAuthorizationByChainOwner(state kv.KVStore, agentID *coretypes.AgentID) bool {
 	currentOwner, _, err := codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
 	if err != nil {
 		panic(err)
 	}
-	return currentOwner == agentID
+	return currentOwner.Equals(agentID)
 }
 
-// storeAndInitContract internal utility function
-func storeAndInitContract(ctx coretypes.Sandbox, rec *ContractRecord, initParams dict.Dict) error {
+func mustStoreContract(ctx coretypes.Sandbox, i *coreutil.ContractInterface, a assert.Assert) {
+	rec := NewContractRecord(i, &coretypes.AgentID{})
+	ctx.Log().Debugf("mustStoreAndInitCoreContract: '%s', hname = %s", i.Name, i.Hname())
+	mustStoreContractRecord(ctx, rec, a)
+}
+
+func mustStoreAndInitCoreContract(ctx coretypes.Sandbox, i *coreutil.ContractInterface, a assert.Assert) {
+	mustStoreContract(ctx, i, a)
+	_, err := ctx.Call(coretypes.Hn(i.Name), coretypes.EntryPointInit, nil, nil)
+	a.RequireNoError(err)
+}
+
+func mustStoreContractRecord(ctx coretypes.Sandbox, rec *ContractRecord, a assert.Assert) {
 	hname := coretypes.Hn(rec.Name)
 	contractRegistry := collections.NewMap(ctx.State(), VarContractRegistry)
-	if contractRegistry.MustHasAt(hname.Bytes()) {
-		return fmt.Errorf("contract '%s'/%s already exist", rec.Name, hname.String())
-	}
+	a.Require(!contractRegistry.MustHasAt(hname.Bytes()), "contract '%s'/%s already exist", rec.Name, hname.String())
 	contractRegistry.MustSetAt(hname.Bytes(), EncodeContractRecord(rec))
-	_, err := ctx.Call(coretypes.Hn(rec.Name), coretypes.EntryPointInit, initParams, nil)
-	if err != nil {
-		// call to 'init' failed: delete record
-		contractRegistry.MustDelAt(hname.Bytes())
-		err = fmt.Errorf("contract '%s'/%s: calling 'init': %v", rec.Name, hname.String(), err)
-	}
-	return err
 }
 
 // isAuthorizedToDeploy checks if caller is authorized to deploy smart contract
 func isAuthorizedToDeploy(ctx coretypes.Sandbox) bool {
-	if ctx.Caller() == ctx.ChainOwnerID() {
+	caller := ctx.Caller()
+	if caller.Equals(ctx.ChainOwnerID()) {
 		// chain owner is always authorized
 		return true
 	}
-	if !ctx.Caller().IsAddress() {
+	if caller.Address().Equals(ctx.ChainID().AsAddress()) {
 		// smart contract from the same chain is always authorize
-		return ctx.Caller().MustContractID().ChainID() == ctx.ContractID().ChainID()
+		return true
 	}
-	return collections.NewMap(ctx.State(), VarDeployPermissions).MustHasAt(ctx.Caller().Bytes())
+
+	return collections.NewMap(ctx.State(), VarDeployPermissions).MustHasAt(caller.Bytes())
 }

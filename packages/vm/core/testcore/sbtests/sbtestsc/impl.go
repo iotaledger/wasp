@@ -2,9 +2,12 @@ package sbtestsc
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -50,20 +53,6 @@ func testChainOwnerIDFull(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return ret, nil
 }
 
-func testContractIDView(ctx coretypes.SandboxView) (dict.Dict, error) {
-	cID := ctx.ContractID()
-	ret := dict.New()
-	ret.Set(VarContractID, cID[:])
-	return ret, nil
-}
-
-func testContractIDFull(ctx coretypes.Sandbox) (dict.Dict, error) {
-	cID := ctx.ContractID()
-	ret := dict.New()
-	ret.Set(VarContractID, cID[:])
-	return ret, nil
-}
-
 func testSandboxCall(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ret, err := ctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncGetChainInfo), nil)
 	if err != nil {
@@ -77,7 +66,7 @@ func testSandboxCall(ctx coretypes.SandboxView) (dict.Dict, error) {
 }
 
 func testEventLogDeploy(ctx coretypes.Sandbox) (dict.Dict, error) {
-	//Deploy the same contract with another name
+	// Deploy the same contract with another name
 	err := ctx.DeployContract(Interface.ProgramHash,
 		VarContractNameDeployed, "test contract deploy log", nil)
 	if err != nil {
@@ -117,7 +106,7 @@ func testCallPanicViewEPFromView(ctx coretypes.SandboxView) (dict.Dict, error) {
 }
 
 func doNothing(ctx coretypes.Sandbox) (dict.Dict, error) {
-	if ctx.IncomingTransfer().Len() == 0 {
+	if ctx.IncomingTransfer() == nil || ctx.IncomingTransfer().Size() == 0 {
 		ctx.Log().Infof(MsgDoNothing)
 	} else {
 		ctx.Log().Infof(MsgDoNothing+" with transfer\n%s", ctx.IncomingTransfer().String())
@@ -129,17 +118,14 @@ func doNothing(ctx coretypes.Sandbox) (dict.Dict, error) {
 // Panics if wrong parameter or unauthorized access
 func sendToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof(FuncSendToAddress)
-	if ctx.Caller() != ctx.ContractCreator() {
-		ctx.Log().Panicf(MsgPanicUnauthorized)
-	}
-	targetAddress, ok, err := codec.DecodeAddress(ctx.Params().MustGet(ParamAddress))
-	if err != nil || !ok {
-		ctx.Log().Panicf("wrong parameter '%s'", ParamAddress)
-	}
+	a := assert.NewAssert(ctx.Log())
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	a.Require(ctx.Caller().Equals(ctx.ContractCreator()), MsgPanicUnauthorized)
+	targetAddress := par.MustGetAddress(ParamAddress)
 	myTokens := ctx.Balances()
-	succ := ctx.TransferToAddress(targetAddress, myTokens)
-	if !succ {
-		ctx.Log().Panicf("failed send to %s: tokens:\n%s", targetAddress, myTokens.String())
-	}
+	a.Require(ctx.Send(targetAddress, myTokens, nil),
+		fmt.Sprintf("failed send to %s: tokens:\n%s", targetAddress, myTokens.String()))
+
+	ctx.Log().Infof("sent to %s: tokens:\n%s", targetAddress.Base58(), myTokens.String())
 	return nil, nil
 }

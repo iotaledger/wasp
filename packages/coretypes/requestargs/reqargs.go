@@ -2,11 +2,13 @@ package requestargs
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"io"
 )
 
 // TODO: extend '*' option in RequestArgs with download options (web, IPFS)
@@ -76,19 +78,6 @@ func (a RequestArgs) AddEncodeSimpleMany(d dict.Dict) RequestArgs {
 	return a
 }
 
-// HasBlobRef return if request arguments contain at least one blob reference
-func (a RequestArgs) HasBlobRef() bool {
-	var ret bool
-	(dict.Dict(a)).ForEach(func(key kv.Key, _ []byte) bool {
-		ret = []byte(key)[0] == '*'
-		if ret {
-			return false
-		}
-		return true
-	})
-	return ret
-}
-
 func (a RequestArgs) String() string {
 	return (dict.Dict(a)).String()
 }
@@ -106,11 +95,12 @@ func (a RequestArgs) Read(r io.Reader) error {
 }
 
 // SolidifyRequestArguments decodes RequestArgs.
-// each value treated according to the value of the first byte:
-//  - if the value is '*' the data is a content reference. First 32 bytes always treated as data hash.
+// each key-value pair ir treated according to the first byte of the key:
+//  - if the key starts with '*' the value is a content reference.
+//    First 32 bytes of the value are always treated as data hash.
 //    The rest (if any) is a content address. It will be treated by a downloader
-//  - otherwise it is a raw data
-func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache) (dict.Dict, bool, error) {
+//  - otherwise, value is treated a raw data and the first byte of the key is ignored
+func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache, downloaderOpt ...*downloader.Downloader) (dict.Dict, bool, error) {
 	ret := dict.New()
 	ok := true
 	var err error
@@ -142,12 +132,21 @@ func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache) (dict.Dic
 			ok = false
 			return false
 		}
-		if !ok {
-			ok = false
-			return false
+		if ok {
+			ret.Set(kv.Key(d[1:]), data)
+			return true
 		}
-		ret.Set(kv.Key(d[1:]), data)
-		return true
+		contentAddr := value[hashing.HashSize:]
+		if len(contentAddr) > 0 {
+			downloaderObj := downloader.GetDefaultDownloader()
+			if len(downloaderOpt) > 0 {
+				downloaderObj = downloaderOpt[0]
+			}
+			if downloaderObj != nil {
+				err = downloaderObj.DownloadAndStore(h, string(contentAddr), reg)
+			}
+		}
+		return false
 	})
 	if err != nil || !ok {
 		ret = nil

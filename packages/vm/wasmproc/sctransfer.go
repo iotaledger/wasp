@@ -4,9 +4,7 @@
 package wasmproc
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -18,14 +16,14 @@ type ScTransfers struct {
 	ScSandboxObject
 }
 
-func NewScTransfers(vm *wasmProcessor) *ScTransfers {
+func NewScTransfers(vm *WasmProcessor) *ScTransfers {
 	a := &ScTransfers{}
 	a.vm = vm
 	return a
 }
 
-func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
+func (a *ScTransfers) GetObjectID(keyID, typeID int32) int32 {
+	return GetArrayObjectID(a, keyID, typeID, func() WaspObject {
 		return NewScTransferInfo(a.vm)
 	})
 }
@@ -34,51 +32,52 @@ func (a *ScTransfers) GetObjectId(keyId int32, typeId int32) int32 {
 
 type ScTransferInfo struct {
 	ScSandboxObject
-	address address.Address
+	address ledgerstate.Address
 }
 
-func NewScTransferInfo(vm *wasmProcessor) *ScTransferInfo {
+func NewScTransferInfo(vm *WasmProcessor) *ScTransferInfo {
 	o := &ScTransferInfo{}
 	o.vm = vm
 	return o
 }
 
+// TODO refactor
 func (o *ScTransferInfo) Invoke(balances int32) {
-	balancesMap := make(map[balance.Color]int64)
+	balancesMap := make(map[ledgerstate.Color]uint64)
 	balancesObj := o.host.FindObject(balances).(*ScDict)
 	balancesObj.kvStore.MustIterate("", func(key kv.Key, value []byte) bool {
-		if len(key) != balance.ColorLength {
+		if len(key) != ledgerstate.ColorLength {
 			return true
 		}
 		color, _, err := codec.DecodeColor([]byte(key))
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		amount, _, err := codec.DecodeInt64(value)
+		amount, _, err := codec.DecodeUint64(value)
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		o.Trace("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.String())
+		o.Tracef("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.Base58())
 		balancesMap[color] = amount
 		return true
 	})
-	transfer := cbalances.NewFromMap(balancesMap)
-	if !o.vm.ctx.TransferToAddress(o.address, transfer) {
-		o.Panic("failed to transfer to %s", o.address.String())
+	transfer := ledgerstate.NewColoredBalances(balancesMap)
+	if !o.vm.ctx.Send(o.address, transfer, nil) {
+		o.Panic("failed to send to %s", o.address.Base58())
 	}
 }
 
-func (o *ScTransferInfo) SetBytes(keyId int32, typeId int32, bytes []byte) {
+func (o *ScTransferInfo) SetBytes(keyID, typeID int32, bytes []byte) {
 	var err error
-	switch keyId {
+	switch keyID {
 	case wasmhost.KeyAddress:
-		o.address, _, err = address.FromBytes(bytes)
+		o.address, _, err = ledgerstate.AddressFromBytes(bytes)
 		if err != nil {
 			o.Panic("SetBytes: invalid address: " + err.Error())
 		}
 	case wasmhost.KeyBalances:
 		o.Invoke(int32(o.MustInt64(bytes)))
 	default:
-		o.invalidKey(keyId)
+		o.invalidKey(keyID)
 	}
 }

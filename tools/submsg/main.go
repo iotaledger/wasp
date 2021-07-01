@@ -4,12 +4,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/subscribe"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
+
+	"github.com/iotaledger/wasp/packages/subscribe"
 )
 
 func main() {
@@ -37,7 +38,7 @@ func main() {
 	}()
 
 	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM) //nolint:govet // TODO check: sigchanyzer: misuse of unbuffered os.Signal channel as argument to signal.Notify
 
 	go func() {
 		<-c

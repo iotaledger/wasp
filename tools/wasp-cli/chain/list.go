@@ -3,27 +3,32 @@ package chain
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/spf13/cobra"
 )
 
-func listCmd(args []string) {
-	client := config.WaspClient()
-	chains, err := client.GetChainRecordList()
-	log.Check(err)
-	log.Printf("Total %d chain(s) in wasp node %s\n", len(chains), client.BaseURL())
-	showChainList(chains)
+var listCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List deployed chains",
+	Args:  cobra.NoArgs,
+	Run: func(cmd *cobra.Command, args []string) {
+		client := config.WaspClient()
+		chains, err := client.GetChainRecordList()
+		log.Check(err)
+		log.Printf("Total %d chain(s) in wasp node %s\n", len(chains), client.BaseURL())
+		showChainList(chains)
+	},
 }
 
-func showChainList(chains []*registry.ChainRecord) {
-	header := []string{"chainid", "color", "committee", "active"}
+func showChainList(chains []*chainrecord.ChainRecord) {
+	header := []string{"chainid", "active"}
 	rows := make([][]string, len(chains))
 	for i, chain := range chains {
 		rows[i] = []string{
-			chain.ChainID.String(),
-			chain.Color.String(),
-			fmt.Sprintf("%v", chain.CommitteeNodes),
+			chain.ChainID.Base58(),
 			fmt.Sprintf("%v", chain.Active),
 		}
 	}

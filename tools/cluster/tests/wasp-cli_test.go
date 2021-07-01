@@ -14,6 +14,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
@@ -24,6 +25,10 @@ type WaspCliTest struct {
 	clu *cluster.Cluster
 	dir string
 }
+
+const file = "inccounter_bg.wasm"
+
+const srcFile = "wasm/" + file
 
 func NewWaspCliTest(t *testing.T) *WaspCliTest {
 	clu := testutil.NewCluster(t)
@@ -100,6 +105,20 @@ func (w *WaspCliTest) copyFile(srcFile string) {
 	require.NoError(w.t, err)
 }
 
+func (w *WaspCliTest) committeeConfig() (string, string) {
+	var committee []string
+	for i := 0; i < w.clu.Config.Wasp.NumNodes; i++ {
+		committee = append(committee, fmt.Sprintf("%d", i))
+	}
+
+	quorum := 3 * w.clu.Config.Wasp.NumNodes / 4
+	if quorum < 1 {
+		quorum = 1
+	}
+
+	return "--committee=" + strings.Join(committee, ","), fmt.Sprintf("--quorum=%d", quorum)
+}
+
 func TestWaspCliNoChains(t *testing.T) {
 	w := NewWaspCliTest(t)
 
@@ -108,7 +127,7 @@ func TestWaspCliNoChains(t *testing.T) {
 
 	out := w.Run("address")
 
-	ownerAddr := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
+	ownerAddr := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
 	require.NotEmpty(t, ownerAddr)
 
 	out = w.Run("chain", "list")
@@ -122,18 +141,20 @@ func TestWaspCli1Chain(t *testing.T) {
 	w.Run("request-funds")
 
 	out := w.Run("address")
-	ownerAddr := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
+	ownerAddr := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
 	require.NotEmpty(t, ownerAddr)
 	t.Logf("Owner address: %s", ownerAddr)
 
 	alias := "chain1"
 
+	committee, quorum := w.committeeConfig()
+
 	// test chain deploy command
-	w.Run("chain", "deploy", "--chain="+alias, "--committee=0,1,2,3", "--quorum=3")
+	w.Run("chain", "deploy", "--chain="+alias, committee, quorum)
 
 	// test chain info command
 	out = w.Run("chain", "info")
-	chainID := regexp.MustCompile(`(?m)Chain ID:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
+	chainID := regexp.MustCompile(`(?m)Chain ID:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1] //nolint:gocritic
 	require.NotEmpty(t, chainID)
 	t.Logf("Chain ID: %s", chainID)
 
@@ -147,7 +168,7 @@ func TestWaspCli1Chain(t *testing.T) {
 
 	// test chain list-contracts command
 	out = w.Run("chain", "list-contracts")
-	require.Contains(t, out[0], "Total 4 contracts")
+	require.Regexp(t, `Total \d+ contracts`, out[0])
 
 	// test chain list-accounts command
 	out = w.Run("chain", "list-accounts")
@@ -175,48 +196,62 @@ func TestWaspCliContract(t *testing.T) {
 	w := NewWaspCliTest(t)
 	w.Run("init")
 	w.Run("request-funds")
-	w.Run("chain", "deploy", "--chain=chain1", "--committee=0,1,2,3", "--quorum=3")
+	committee, quorum := w.committeeConfig()
+	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
-	vmtype := "wasmtimevm"
+	vmtype := vmtypes.WasmTime
 	name := "inccounter"
 	description := "inccounter SC"
-	file := "inccounter_bg.wasm"
-	srcFile := "wasm/" + file
 	w.copyFile(srcFile)
 
 	// test chain deploy-contract command
-	w.Run("chain", "deploy-contract", vmtype, name, description, file)
+	w.Run("chain", "deploy-contract", vmtype, name, description, file,
+		"string", "counter", "int64", "42",
+	)
 
 	out := w.Run("chain", "list-contracts")
-	require.Contains(t, out[0], "Total 5 contracts")
+	found := false
+	for _, s := range out {
+		if strings.Contains(s, name) {
+			found = true
+			break
+		}
+	}
+	require.True(t, found)
 
 	// test chain call-view command
 	out = w.Run("chain", "call-view", name, "getCounter")
 	out = w.Pipe(out, "decode", "string", "counter", "int")
-	require.Regexp(t, "(?m)counter:[[:space:]]+<nil>$", out[0])
+	require.Regexp(t, "(?m)counter:[[:space:]]+42$", out[0])
 
 	// test chain post-request command
 	w.Run("chain", "post-request", name, "increment")
 
 	out = w.Run("chain", "call-view", name, "getCounter")
 	out = w.Pipe(out, "decode", "string", "counter", "int")
-	require.Regexp(t, "(?m)counter:[[:space:]]+1$", out[0])
+	require.Regexp(t, "(?m)counter:[[:space:]]+43$", out[0])
+
+	// include a funds transfer
+	w.Run("chain", "post-request", name, "increment", "--transfer=IOTA:10")
+
+	out = w.Run("chain", "call-view", name, "getCounter")
+	out = w.Pipe(out, "decode", "string", "counter", "int")
+	require.Regexp(t, "(?m)counter:[[:space:]]+44$", out[0])
 }
 
 func TestWaspCliBlobContract(t *testing.T) {
 	w := NewWaspCliTest(t)
 	w.Run("init")
 	w.Run("request-funds")
-	w.Run("chain", "deploy", "--chain=chain1", "--committee=0,1,2,3", "--quorum=3")
+	committee, quorum := w.committeeConfig()
+	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	// test chain list-blobs command
 	out := w.Run("chain", "list-blobs")
 	require.Contains(t, out[0], "Total 0 blob(s)")
 
-	vmtype := "wasmtimevm"
+	vmtype := vmtypes.WasmTime
 	description := "inccounter SC"
-	file := "inccounter_bg.wasm"
-	srcFile := "wasm/" + file
 	w.copyFile(srcFile)
 
 	// test chain store-blob command
@@ -230,7 +265,7 @@ func TestWaspCliBlobContract(t *testing.T) {
 	out = w.Run("chain", "list-blobs")
 	require.Contains(t, out[0], "Total 1 blob(s)")
 
-	blobHash := regexp.MustCompile(`(?m)([[:alnum:]]+)[[:space:]]`).FindStringSubmatch(out[4])[1]
+	blobHash := regexp.MustCompile(`(?m)([[:alnum:]]+)[[:space:]]`).FindStringSubmatch(out[4])[1] //nolint:gocritic
 	require.NotEmpty(t, blobHash)
 	t.Logf("Blob hash: %s", blobHash)
 
@@ -248,8 +283,6 @@ func TestWaspCliBlobRegistry(t *testing.T) {
 	require.Contains(t, out[0], "false")
 
 	// test `blob put` command
-	file := "inccounter_bg.wasm"
-	srcFile := "wasm/" + file
 	w.copyFile(srcFile)
 	out = w.Run("blob", "put", file)
 	blobHash := regexp.MustCompile(`(?m)Hash: ([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]

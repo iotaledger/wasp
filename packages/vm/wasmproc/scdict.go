@@ -6,64 +6,71 @@ package wasmproc
 import (
 	"encoding/binary"
 	"fmt"
+	"strings"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
-	"strings"
 )
 
-type ObjFactory func() WaspObject
-type ObjFactories map[int32]ObjFactory
+type (
+	ObjFactory   func() WaspObject
+	ObjFactories map[int32]ObjFactory
+)
 
 type WaspObject interface {
 	wasmhost.HostObject
-	InitObj(id int32, keyId int32, owner *ScDict)
+	InitObj(id int32, keyID int32, owner *ScDict)
 	Panic(format string, args ...interface{})
-	FindOrMakeObjectId(keyId int32, factory ObjFactory) int32
+	FindOrMakeObjectID(keyID int32, factory ObjFactory) int32
 	NestedKey() string
-	Suffix(keyId int32) string
+	Suffix(keyID int32) string
 }
 
-func GetArrayObjectId(arrayObj WaspObject, index int32, typeId int32, factory ObjFactory) int32 {
-	if !arrayObj.Exists(index, typeId) {
-		arrayObj.Panic("GetArrayObjectId: Invalid index")
+func GetArrayObjectID(arrayObj WaspObject, index, typeID int32, factory ObjFactory) int32 {
+	if !arrayObj.Exists(index, typeID) {
+		arrayObj.Panic("GetArrayObjectId: invalid index")
 	}
-	if typeId != arrayObj.GetTypeId(index) {
-		arrayObj.Panic("GetArrayObjectId: Invalid type")
+	if typeID != arrayObj.GetTypeID(index) {
+		arrayObj.Panic("GetArrayObjectId: invalid type")
 	}
-	return arrayObj.FindOrMakeObjectId(index, factory)
+	return arrayObj.FindOrMakeObjectID(index, factory)
 }
 
-func GetMapObjectId(mapObj WaspObject, keyId int32, typeId int32, factories ObjFactories) int32 {
-	factory, ok := factories[keyId]
+func GetMapObjectID(mapObj WaspObject, keyID, typeID int32, factories ObjFactories) int32 {
+	factory, ok := factories[keyID]
 	if !ok {
-		mapObj.Panic("GetMapObjectId: Invalid key")
+		mapObj.Panic("GetMapObjectId: invalid key")
 	}
-	if typeId != mapObj.GetTypeId(keyId) {
-		mapObj.Panic("GetMapObjectId: Invalid type")
+	if typeID != mapObj.GetTypeID(keyID) {
+		mapObj.Panic("GetMapObjectId: invalid type")
 	}
-	return mapObj.FindOrMakeObjectId(keyId, factory)
+	return mapObj.FindOrMakeObjectID(keyID, factory)
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScDict struct {
-	host      *wasmhost.KvStoreHost
-	id        int32
-	isMutable bool
-	isRoot    bool
-	keyId     int32
-	kvStore   kv.KVStore
-	length    int32
-	name      string
-	objects   map[int32]int32
-	ownerId   int32
-	typeId    int32
-	types     map[int32]int32
+	host    *wasmhost.KvStoreHost
+	id      int32
+	isRoot  bool
+	keyID   int32
+	kvStore kv.KVStore
+	length  int32
+	name    string
+	objects map[int32]int32
+	ownerID int32
+	typeID  int32
+	types   map[int32]int32
 }
 
-func NewScDict(vm *wasmProcessor) *ScDict {
+var _ WaspObject = &ScDict{}
+
+var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 8, 0, 34, 0}
+
+func NewScDict(vm *WasmProcessor) *ScDict {
 	return NewScDictFromKvStore(&vm.KvStoreHost, dict.New())
 }
 
@@ -82,29 +89,25 @@ func NewNullObject(host *wasmhost.KvStoreHost) WaspObject {
 	return o
 }
 
-func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
+func (o *ScDict) InitObj(id, keyID int32, owner *ScDict) {
 	o.id = id
-	o.keyId = keyId
-	o.ownerId = owner.id
+	o.keyID = keyID
+	o.ownerID = owner.id
 	o.host = owner.host
 	o.isRoot = o.kvStore != nil
 	if !o.isRoot {
 		o.kvStore = owner.kvStore
 	}
 	ownerObj := o.Owner()
-	o.typeId = ownerObj.GetTypeId(keyId)
-	o.name = owner.name + ownerObj.Suffix(keyId)
-	if o.ownerId == 1 {
-		if strings.HasPrefix(o.name, "root.") {
-			// strip off "root." prefix
-			o.name = o.name[len("root."):]
-		}
-		if strings.HasPrefix(o.name, ".") {
-			// strip off "." prefix
-			o.name = o.name[1:]
-		}
+	o.typeID = ownerObj.GetTypeID(keyID)
+	o.name = owner.name + ownerObj.Suffix(keyID)
+	if o.ownerID == 1 {
+		// strip off "root." prefix
+		o.name = strings.TrimPrefix(o.name, "root.")
+		// strip off "." prefix
+		o.name = strings.TrimPrefix(o.name, ".")
 	}
-	if (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 && o.kvStore != nil {
+	if (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 && o.kvStore != nil {
 		key := o.NestedKey()[1:]
 		length, _, err := codec.DecodeInt64(o.kvStore.MustGet(kv.Key(key)))
 		if err != nil {
@@ -112,74 +115,84 @@ func (o *ScDict) InitObj(id int32, keyId int32, owner *ScDict) {
 		}
 		o.length = int32(length)
 	}
-	o.Trace("InitObj %s", o.name)
+	o.Tracef("InitObj %s", o.name)
 	o.objects = make(map[int32]int32)
 	o.types = make(map[int32]int32)
 }
 
-func (o *ScDict) Exists(keyId int32, typeId int32) bool {
-	if keyId == wasmhost.KeyLength && (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 {
+func (o *ScDict) CallFunc(keyID int32, params []byte) []byte {
+	o.Panic("CallFunc: invalid call")
+	return nil
+}
+
+func (o *ScDict) Exists(keyID, typeID int32) bool {
+	if keyID == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
 		return true
 	}
-	if o.typeId == (wasmhost.OBJTYPE_ARRAY | wasmhost.OBJTYPE_MAP) {
-		return uint32(keyId) <= uint32(len(o.objects))
+	if o.typeID == (wasmhost.OBJTYPE_ARRAY | wasmhost.OBJTYPE_MAP) {
+		return uint32(keyID) <= uint32(len(o.objects))
 	}
-	return o.kvStore.MustHas(o.key(keyId, typeId))
+	return o.kvStore.MustHas(o.key(keyID, typeID))
 }
 
-func (o *ScDict) FindOrMakeObjectId(keyId int32, factory ObjFactory) int32 {
-	objId, ok := o.objects[keyId]
+func (o *ScDict) FindOrMakeObjectID(keyID int32, factory ObjFactory) int32 {
+	objID, ok := o.objects[keyID]
 	if ok {
-		return objId
+		return objID
 	}
 	newObject := factory()
-	objId = o.host.TrackObject(newObject)
-	newObject.InitObj(objId, keyId, o)
-	o.objects[keyId] = objId
-	return objId
+	objID = o.host.TrackObject(newObject)
+	newObject.InitObj(objID, keyID, o)
+	o.objects[keyID] = objID
+	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
+		o.length++
+	}
+	return objID
 }
 
-func (o *ScDict) GetBytes(keyId int32, typeId int32) []byte {
-	if keyId == wasmhost.KeyLength && (o.typeId&wasmhost.OBJTYPE_ARRAY) != 0 {
+func (o *ScDict) GetBytes(keyID, typeID int32) []byte {
+	if keyID == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
 		return o.Int64Bytes(int64(o.length))
 	}
-	return o.kvStore.MustGet(o.key(keyId, typeId))
+	bytes := o.kvStore.MustGet(o.key(keyID, typeID))
+	o.typeCheck(typeID, bytes)
+	return bytes
 }
 
-func (o *ScDict) GetObjectId(keyId int32, typeId int32) int32 {
-	o.validate(keyId, typeId)
-	if (typeId&wasmhost.OBJTYPE_ARRAY) == 0 && typeId != wasmhost.OBJTYPE_MAP {
-		o.Panic("GetObjectId: Invalid type")
+func (o *ScDict) GetObjectID(keyID, typeID int32) int32 {
+	o.validate(keyID, typeID)
+	if (typeID&wasmhost.OBJTYPE_ARRAY) == 0 && typeID != wasmhost.OBJTYPE_MAP {
+		o.Panic("GetObjectId: invalid type")
 	}
-	return GetMapObjectId(o, keyId, typeId, ObjFactories{
-		keyId: func() WaspObject { return &ScDict{} },
+	return GetMapObjectID(o, keyID, typeID, ObjFactories{
+		keyID: func() WaspObject { return &ScDict{} },
 	})
 }
 
-func (o *ScDict) GetTypeId(keyId int32) int32 {
-	if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
-		return o.typeId &^ wasmhost.OBJTYPE_ARRAY
+func (o *ScDict) GetTypeID(keyID int32) int32 {
+	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
+		return o.typeID &^ wasmhost.OBJTYPE_ARRAY
 	}
-	//TODO incomplete, currently only contains used field types
-	typeId, ok := o.types[keyId]
+	// TODO incomplete, currently only contains used field types
+	typeID, ok := o.types[keyID]
 	if ok {
-		return typeId
+		return typeID
 	}
 	return 0
 }
 
 func (o *ScDict) Int64Bytes(value int64) []byte {
-	bytes := make([]byte, 8)
+	bytes := make([]byte, 8) //nolint:gomnd
 	binary.LittleEndian.PutUint64(bytes, uint64(value))
 	return bytes
 }
 
-func (o *ScDict) key(keyId int32, typeId int32) kv.Key {
-	o.validate(keyId, typeId)
-	suffix := o.Suffix(keyId)
+func (o *ScDict) key(keyID, typeID int32) kv.Key {
+	o.validate(keyID, typeID)
+	suffix := o.Suffix(keyID)
 	key := o.NestedKey() + suffix
-	o.Trace("fld: %s%s", o.name, suffix)
-	o.Trace("key: %s", key[1:])
+	o.Tracef("fld: %s%s", o.name, suffix)
+	o.Tracef("key: %s", key[1:])
 	return kv.Key(key[1:])
 }
 
@@ -195,28 +208,29 @@ func (o *ScDict) NestedKey() string {
 		return ""
 	}
 	ownerObj := o.Owner()
-	return ownerObj.NestedKey() + ownerObj.Suffix(o.keyId)
+	return ownerObj.NestedKey() + ownerObj.Suffix(o.keyID)
 }
 
 func (o *ScDict) Owner() WaspObject {
-	return o.host.FindObject(o.ownerId).(WaspObject)
+	return o.host.FindObject(o.ownerID).(WaspObject)
 }
 
+//nolint:goprintffuncname
 func (o *ScDict) Panic(format string, args ...interface{}) {
 	err := o.name + "." + fmt.Sprintf(format, args...)
-	o.Trace(err)
+	o.Tracef(err)
 	panic(err)
 }
 
-func (o *ScDict) SetBytes(keyId int32, typeId int32, bytes []byte) {
+func (o *ScDict) SetBytes(keyID, typeID int32, bytes []byte) {
 	//TODO
 	//if !o.isMutable {
 	//	o.Panic("validate: Immutable field: %s key %d", o.name, keyId)
 	//}
 
-	if keyId == wasmhost.KeyLength {
+	if keyID == wasmhost.KeyLength {
 		if o.kvStore != nil {
-			//TODO this goes wrong for state, should clear map tree instead
+			// TODO this goes wrong for state, should clear map tree instead
 			o.kvStore = dict.New()
 			//if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
 			//	key := o.NestedKey()[1:]
@@ -227,36 +241,65 @@ func (o *ScDict) SetBytes(keyId int32, typeId int32, bytes []byte) {
 		o.length = 0
 		return
 	}
-	o.kvStore.Set(o.key(keyId, typeId), bytes)
+
+	key := o.key(keyID, typeID)
+	o.typeCheck(typeID, bytes)
+	o.kvStore.Set(key, bytes)
 }
 
-func (o *ScDict) Suffix(keyId int32) string {
-	if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
-		return fmt.Sprintf(".%d", keyId)
+func (o *ScDict) Suffix(keyID int32) string {
+	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
+		return fmt.Sprintf(".%d", keyID)
 	}
-	key := o.host.GetKeyFromId(keyId)
-	if (keyId & wasmhost.KeyFromString) != 0 {
-		return "." + string(key)
-	}
+	key := o.host.GetKeyFromID(keyID)
 	return "." + string(key)
 }
 
-func (o *ScDict) Trace(format string, a ...interface{}) {
-	o.host.Trace(format, a...)
+func (o *ScDict) Tracef(format string, a ...interface{}) {
+	o.host.Tracef(format, a...)
 }
 
-func (o *ScDict) validate(keyId int32, typeId int32) {
+func (o *ScDict) typeCheck(typeID int32, bytes []byte) {
+	typeSize := typeSizes[typeID]
+	if typeSize != 0 && typeSize != len(bytes) {
+		o.Panic("typeCheck: invalid type size")
+	}
+	switch typeID {
+	case wasmhost.OBJTYPE_ADDRESS:
+		// address bytes must start with valid address type
+		if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
+			o.Panic("typeCheck: invalid address type")
+		}
+	case wasmhost.OBJTYPE_AGENT_ID:
+		// address bytes in agent id must start with valid address type
+		if ledgerstate.AddressType(bytes[0]) > ledgerstate.AliasAddressType {
+			o.Panic("typeCheck: invalid agent id address type")
+		}
+	case wasmhost.OBJTYPE_CHAIN_ID:
+		// chain id must be alias address
+		if ledgerstate.AddressType(bytes[0]) != ledgerstate.AliasAddressType {
+			o.Panic("typeCheck: invalid chain id address type")
+		}
+	case wasmhost.OBJTYPE_REQUEST_ID:
+		outputIndex := binary.LittleEndian.Uint16(bytes[ledgerstate.TransactionIDLength:])
+		if outputIndex > ledgerstate.MaxOutputCount {
+			o.Panic("typeCheck: invalid request id output index")
+		}
+	}
+}
+
+func (o *ScDict) validate(keyID, typeID int32) {
 	if o.kvStore == nil {
 		o.Panic("validate: Missing kvstore")
 	}
-	if typeId == -1 {
+	if typeID == -1 {
 		return
 	}
-	if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
+	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
 		// actually array
-		arrayTypeId := o.typeId &^ wasmhost.OBJTYPE_ARRAY
-		if typeId == wasmhost.OBJTYPE_BYTES {
-			switch arrayTypeId {
+		arrayTypeID := o.typeID &^ wasmhost.OBJTYPE_ARRAY
+		if typeID == wasmhost.OBJTYPE_BYTES {
+			switch arrayTypeID {
 			case wasmhost.OBJTYPE_ADDRESS:
 			case wasmhost.OBJTYPE_AGENT_ID:
 			case wasmhost.OBJTYPE_BYTES:
@@ -265,10 +308,10 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 			default:
 				o.Panic("validate: Invalid byte type")
 			}
-		} else if arrayTypeId != typeId {
+		} else if arrayTypeID != typeID {
 			o.Panic("validate: Invalid type")
 		}
-		if /*o.isMutable && */ keyId == o.length {
+		if /*o.isMutable && */ keyID == o.length {
 			o.length++
 			if o.kvStore != nil {
 				key := o.NestedKey()[1:]
@@ -276,19 +319,19 @@ func (o *ScDict) validate(keyId int32, typeId int32) {
 			}
 			return
 		}
-		if keyId < 0 || keyId >= o.length {
+		if keyID < 0 || keyID >= o.length {
 			o.Panic("validate: Invalid index")
 		}
 		return
 	}
-	fieldType, ok := o.types[keyId]
+	fieldType, ok := o.types[keyID]
 	if !ok {
 		// first encounter of this key id, register type to make
 		// sure that future usages are all using that same type
-		o.types[keyId] = typeId
+		o.types[keyID] = typeID
 		return
 	}
-	if fieldType != typeId {
+	if fieldType != typeID {
 		o.Panic("validate: Invalid access")
 	}
 }
