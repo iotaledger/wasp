@@ -15,8 +15,9 @@ import (
 
 const incCounterSCName = "inccounter1"
 
+var incCounterSCHname = coretypes.Hn(incCounterSCName)
+
 func deployIncCounterSC(t *testing.T, chain *cluster.Chain, counter *cluster.MessageCounter) {
-	hname := coretypes.Hn(incCounterSCName)
 	description := "testing contract deployment with inccounter" //nolint:goconst
 	programHash := inccounter.Interface.ProgramHash
 	check(err, t)
@@ -27,7 +28,7 @@ func deployIncCounterSC(t *testing.T, chain *cluster.Chain, counter *cluster.Mes
 	})
 	check(err, t)
 
-	if !counter.WaitUntilExpectationsMet() {
+	if counter != nil && !counter.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
 
@@ -36,7 +37,7 @@ func deployIncCounterSC(t *testing.T, chain *cluster.Chain, counter *cluster.Mes
 		checkRoots(t, chain)
 
 		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		crBytes := contractRegistry.MustGetAt(hname.Bytes())
+		crBytes := contractRegistry.MustGetAt(incCounterSCHname.Bytes())
 		require.NotNil(t, crBytes)
 		cr, err := root.DecodeContractRecord(crBytes)
 		check(err, t)
@@ -49,7 +50,7 @@ func deployIncCounterSC(t *testing.T, chain *cluster.Chain, counter *cluster.Mes
 		return true
 	})
 
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
+	chain.WithSCState(incCounterSCHname, func(host string, blockIndex uint32, state dict.Dict) bool {
 		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
 		require.EqualValues(t, 42, counterValue) //nolint:gomnd
 		return true
