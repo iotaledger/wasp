@@ -54,7 +54,7 @@ func (msg *OffLedgerRequestMsg) read(r io.Reader) error {
 	if err != nil {
 		return xerrors.Errorf("failed to read request data: %w", err)
 	}
-	if msg.Req, err = request.NewRequestOffLedgerFromBytes(reqBytes); err != nil {
+	if msg.Req, err = request.OffLedgerFromBytes(reqBytes); err != nil {
 		return xerrors.Errorf("failed to read request data: %w", err)
 	}
 	return nil

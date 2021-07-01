@@ -37,6 +37,10 @@ type Request interface {
 	TimeLock() time.Time
 	// returns tokens to transfer
 	Tokens() *ledgerstate.ColoredBalances
+	// returns binary representation of the request
+	Bytes() []byte
+	// returns the hash of the request (used for consensus)
+	Hash() [32]byte
 }
 
 func TakeRequestIDs(reqs ...Request) []RequestID {

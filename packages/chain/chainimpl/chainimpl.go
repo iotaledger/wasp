@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/state"
@@ -201,14 +202,34 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 			c.consensus.EventSignedResultMsg(msgt)
 		}
 	case chain.MsgOffLedgerRequest:
-		msg, err := chain.OffLedgerRequestMsgFromBytes(msg.MsgData)
+		msgt, err := chain.OffLedgerRequestMsgFromBytes(msg.MsgData)
 		if err != nil {
 			c.log.Error(err)
 			return
 		}
-		c.ReceiveOffLedgerRequest(msg.Req)
-		return
-
+		c.ReceiveOffLedgerRequest(msgt.Req)
+	case chain.MsgMissingRequestIDs:
+		if !parameters.GetBool(parameters.PullMissingRequestsFromCommittee) {
+			return
+		}
+		msgt, err := chain.MissingRequestIDsMsgFromBytes(msg.MsgData)
+		if err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.SendMissingRequestsToPeer(msgt, msg.SenderNetID)
+	case chain.MsgMissingRequest:
+		if !parameters.GetBool(parameters.PullMissingRequestsFromCommittee) {
+			return
+		}
+		msgt, err := chain.MissingRequestMsgFromBytes(msg.MsgData)
+		if err != nil {
+			c.log.Error(err)
+			return
+		}
+		if c.consensus.ShouldReceiveMissingRequest(msgt.Request) {
+			c.mempool.ReceiveRequest(msgt.Request)
+		}
 	default:
 		c.log.Errorf("processPeerMessage: wrong msg type")
 	}

@@ -138,6 +138,15 @@ func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
 	c.gossipOffLedgerRequest(req)
 }
 
+// SendMissingRequestsToPeer sends the requested missing requests by a peer
+func (c *chainObj) SendMissingRequestsToPeer(msg chain.MissingRequestIDsMsg, peerID string) {
+	for _, reqID := range msg.IDs {
+		req := c.mempool.GetRequest(reqID)
+		msg := chain.NewMissingRequestMsg(req)
+		(*c.peers).SendSimple(peerID, chain.MsgMissingRequest, msg.Bytes())
+	}
+}
+
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 	c.log.Debugf("ReceiveTransaction: %s", tx.ID().Base58())
 	reqs, err := request.RequestsOnLedgerFromTransaction(tx, c.chainID.AsAddress())

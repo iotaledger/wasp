@@ -115,6 +115,7 @@ type Consensus interface {
 	IsReady() bool
 	Close()
 	GetStatusSnapshot() *ConsensusInfo
+	ShouldReceiveMissingRequest(req coretypes.Request) bool
 }
 
 type Mempool interface {
@@ -122,8 +123,9 @@ type Mempool interface {
 	ReceiveRequest(req coretypes.Request) bool
 	RemoveRequests(reqs ...coretypes.RequestID)
 	ReadyNow(nowis ...time.Time) []coretypes.Request
-	ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
+	ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, []int, bool)
 	HasRequest(id coretypes.RequestID) bool
+	GetRequest(id coretypes.RequestID) coretypes.Request
 	Stats() MempoolStats
 	WaitRequestInPool(reqid coretypes.RequestID, timeout ...time.Duration) bool // for testing
 	WaitInBufferEmpty(timeout ...time.Duration) bool                            // for testing

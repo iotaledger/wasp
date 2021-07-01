@@ -22,6 +22,8 @@ const (
 	MsgBlock
 	MsgSignedResult
 	MsgOffLedgerRequest
+	MsgMissingRequestIDs
+	MsgMissingRequest
 )
 
 type TimerTick int

@@ -1,20 +1,18 @@
 package consensus
 
 import (
+	"sync"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-
-	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/runvm"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/state"
-
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/runvm"
 	"go.uber.org/atomic"
 )
 
@@ -56,6 +54,8 @@ type Consensus struct {
 	eventTimerMsgCh            chan chain.TimerTick
 	closeCh                    chan struct{}
 	assert                     assert.Assert
+	missingRequestsFromBatch   map[coretypes.RequestID][32]byte
+	missingRequestsMutex       sync.Mutex
 }
 
 type workflowFlags struct {
