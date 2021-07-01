@@ -162,7 +162,7 @@ func getFeeColor(ctx coretypes.Sandbox) ledgerstate.Color {
 	feeInfo, err := ctx.Call(
 		root.Interface.Hname(),
 		coretypes.Hn(root.FuncGetFeeInfo),
-		dict.Dict{root.ParamHname: coretypes.Hn(Name).Bytes()},
+		dict.Dict{root.ParamHname: Interface.Hname().Bytes()},
 		nil,
 	)
 	a.RequireNoError(err)

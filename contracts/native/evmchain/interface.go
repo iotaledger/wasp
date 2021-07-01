@@ -2,24 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // package evmchain provides the `evmchain` contract, which allows to emulate an
-// Ethereum chain on top of ISCP and run EVM contracts.
+// Ethereum blockchain on top of ISCP.
 package evmchain
 
 import (
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/hashing"
 )
 
-const (
-	Name        = "evmchain"
-	description = "EVM chain smart contract"
-)
-
-var Interface = &coreutil.ContractInterface{
-	Name:        Name,
-	Description: description,
-	ProgramHash: hashing.HashStrings(Name),
-}
+var Interface = coreutil.NewContractInterface("evmchain", "EVM chain smart contract")
 
 func init() {
 	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
@@ -85,7 +75,7 @@ const (
 	FieldGenesisAlloc            = "g"
 	FieldAddress                 = "a"
 	FieldKey                     = "k"
-	FieldAgentId                 = "i"
+	FieldAgentID                 = "i"
 	FieldTransaction             = "tx"
 	FieldTransactionIndex        = "ti"
 	FieldTransactionHash         = "h"

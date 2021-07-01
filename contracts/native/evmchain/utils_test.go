@@ -149,7 +149,7 @@ func (e *evmChainInstance) setNextOwner(nextOwner *coretypes.AgentID, opts ...io
 func (e *evmChainInstance) withdrawGasFees(wallet *ed25519.KeyPair, agentID ...*coretypes.AgentID) error {
 	var params []interface{}
 	if len(agentID) > 0 {
-		params = append(params, FieldAgentId, agentID[0])
+		params = append(params, FieldAgentID, agentID[0])
 	}
 	_, err := e.postRequest([]iotaCallOptions{{wallet: wallet}}, FuncWithdrawGasFees, params...)
 	return err

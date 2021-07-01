@@ -272,7 +272,7 @@ func withdrawGasFees(ctx coretypes.Sandbox) (dict.Dict, error) {
 	requireOwner(ctx)
 
 	paramsDecoder := kvdecoder.New(ctx.Params(), ctx.Log())
-	targetAgentId := paramsDecoder.MustGetAgentID(FieldAgentId, *ctx.Caller())
+	targetAgentId := paramsDecoder.MustGetAgentID(FieldAgentID, *ctx.Caller())
 
 	isOnChain := targetAgentId.Address().Equals(ctx.ChainID().AsAddress())
 
