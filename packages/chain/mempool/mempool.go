@@ -285,6 +285,9 @@ func (m *Mempool) ReadyNow(now ...time.Time) []coretypes.Request {
 // Note that (a list of processable requests) can be empty if none satisfies nowis time constraint (timelock, fallback)
 // For requests which are known and solidified, the result is deterministic
 func (m *Mempool) ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool) {
+	m.poolMutex.RLock()
+	defer m.poolMutex.RUnlock()
+
 	ret := make([]coretypes.Request, 0, len(reqids))
 	for _, reqid := range reqids {
 		reqref, ok := m.pool[reqid]
