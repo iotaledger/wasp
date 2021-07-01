@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -238,9 +239,17 @@ func (m *Mempool) ReadyNow(now ...time.Time) []coretypes.Request {
 	var oldestRotateTime time.Time
 
 	ret := make([]coretypes.Request, 0, len(m.pool))
+	countOnLedger := 0
 	for _, ref := range m.pool {
 		if !isRequestReady(ref, nowis) {
 			continue
+		}
+		if _, ok := ref.req.(*request.RequestOnLedger); ok {
+			countOnLedger++
+			if countOnLedger > ledgerstate.MaxInputCount {
+				// do not include more on-ledger requests that number of tx inputs allowed
+				continue
+			}
 		}
 		ret = append(ret, ref.req)
 		if !rotate.IsRotateStateControllerRequest(ref.req) {
