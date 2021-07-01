@@ -1,9 +1,9 @@
 package chain
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -46,8 +46,8 @@ var deployContractCmd = &cobra.Command{
 			progHash = uploadBlob(blobFieldValues, true)
 		}
 
-		util.WithSCTransaction(GetCurrentChainID(), func() (*ledgerstate.Transaction, error) {
-			return Client().Post1Request(
+		util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.RequestOffLedger, error) {
+			return Client().PostOffLedgerRequest(
 				root.Interface.Hname(),
 				coretypes.Hn(root.FuncDeployContract),
 				chainclient.PostRequestParams{
