@@ -28,14 +28,14 @@ pub fn func_init(ctx: &ScFuncContext) {
 
     // First we set up a default value for the owner in case the optional
     // 'owner' parameter was omitted.
-    let mut owner: ScAgentId = ctx.contract_creator();
+    let mut owner: ScAgentID = ctx.contract_creator();
 
     // Now it is time to check if parameters were provided to the function.
     // We create an ScImmutableMap proxy to the params map on the host.
     let p: ScImmutableMap = ctx.params();
 
-    // Then we create an ScImmutableAgentId proxy to the 'owner' parameter.
-    let param_owner: ScImmutableAgentId = p.get_agent_id(PARAM_OWNER);
+    // Then we create an ScImmutableAgentID proxy to the 'owner' parameter.
+    let param_owner: ScImmutableAgentID = p.get_agent_id(PARAM_OWNER);
 
     // Now we check if the optional 'owner' parameter is present in the params map.
     if param_owner.exists() {
@@ -49,8 +49,8 @@ pub fn func_init(ctx: &ScFuncContext) {
     // an ScMutableMap proxy that refers to the state storage map on the host.
     let state: ScMutableMap = ctx.state();
 
-    // Then we create an ScMutableAgentId proxy to an 'owner' variable in state storage.
-    let state_owner: ScMutableAgentId = state.get_agent_id(VAR_OWNER);
+    // Then we create an ScMutableAgentID proxy to an 'owner' variable in state storage.
+    let state_owner: ScMutableAgentID = state.get_agent_id(STATE_OWNER);
 
     // And then we save the owner value in the 'owner' variable in state storage.
     state_owner.set_value(&owner);
@@ -81,8 +81,8 @@ pub fn func_member(ctx: &ScFuncContext) {
     // proxy that refers to the state storage map on the host.
     let state: ScMutableMap = ctx.state();
 
-    // Next we create an ScMutableAgentId proxy to the 'owner' variable in state storage.
-    let owner: ScMutableAgentId = state.get_agent_id(VAR_OWNER);
+    // Next we create an ScMutableAgentID proxy to the 'owner' variable in state storage.
+    let owner: ScMutableAgentID = state.get_agent_id(STATE_OWNER);
 
     // Only the defined smart contract owner can add members, so we require
     // that the caller's agent id is equal to the stored owner's agent id.
@@ -135,7 +135,7 @@ pub fn func_member(ctx: &ScFuncContext) {
     // the state map. We tell the state map proxy to create an ScMutableMap proxy
     // to a map named 'members' in the state storage. If there is no 'members' map
     // present yet this will automatically create an empty map on the host.
-    let members: ScMutableMap = state.get_map(VAR_MEMBERS);
+    let members: ScMutableMap = state.get_map(STATE_MEMBERS);
 
     // Now we create an ScMutableInt64 proxy for the value stored in the 'members'
     // map under the key defined by the 'address' parameter we retrieved earlier.
@@ -148,7 +148,7 @@ pub fn func_member(ctx: &ScFuncContext) {
         // ScMutableAddressArray proxy to an Address array named 'memberList' in
         // the state storage. Again, if the array was not present yet it will
         // automatically be created.
-        let member_list: ScMutableAddressArray = state.get_address_array(VAR_MEMBER_LIST);
+        let member_list: ScMutableAddressArray = state.get_address_array(STATE_MEMBER_LIST);
 
         // Now we will append the new address to the memberList array.
         // First we determine the current length of the array.
@@ -166,7 +166,7 @@ pub fn func_member(ctx: &ScFuncContext) {
     // Create an ScMutableInt64 proxy named 'totalFactor' for an Int64 value in
     // state storage. Note that we don't care whether this value exists or not,
     // because WasmLib will treat it as if it has the default value of zero.
-    let total_factor: ScMutableInt64 = state.get_int64(VAR_TOTAL_FACTOR);
+    let total_factor: ScMutableInt64 = state.get_int64(STATE_TOTAL_FACTOR);
 
     // Now we calculate the new running total sum of factors by first getting the
     // current value of 'totalFactor' from the state storage, then subtracting the
@@ -214,7 +214,7 @@ pub fn func_divide(ctx: &ScFuncContext) {
 
     // retrieve the pre-calculated totalFactor value from the state storage
     // through an ScmutableInt64 proxy
-    let total_factor: i64 = state.get_int64(VAR_TOTAL_FACTOR).value();
+    let total_factor: i64 = state.get_int64(STATE_TOTAL_FACTOR).value();
 
     // note that it is useless to try to divide less than totalFactor iotas
     // because every member would receive zero iotas
@@ -231,11 +231,11 @@ pub fn func_divide(ctx: &ScFuncContext) {
     }
 
     // Create an ScMutableMap proxy to the 'members' map in the state storage.
-    let members: ScMutableMap = state.get_map(VAR_MEMBERS);
+    let members: ScMutableMap = state.get_map(STATE_MEMBERS);
 
     // Create an ScMutableAddressArray proxy to the 'memberList' Address array
     // in the state storage.
-    let member_list: ScMutableAddressArray = state.get_address_array(VAR_MEMBER_LIST);
+    let member_list: ScMutableAddressArray = state.get_address_array(STATE_MEMBER_LIST);
 
     // Determine the current length of the memberList array.
     let size: i32 = member_list.length();
@@ -287,13 +287,13 @@ pub fn func_set_owner(ctx: &ScFuncContext) {
     ctx.log("dividend.setOwner");
 
     // Get a proxy to the 'owner' variable in state storage.
-    let state_owner: ScMutableAgentId = ctx.state().get_agent_id(VAR_OWNER);
+    let state_owner: ScMutableAgentID = ctx.state().get_agent_id(STATE_OWNER);
 
     // Require the caller to be the current owner.
     ctx.require(ctx.caller() == state_owner.value(), "no permission");
 
     // Get a proxy to the 'owner' parameter.
-    let param_owner: ScImmutableAgentId = ctx.params().get_agent_id(PARAM_OWNER);
+    let param_owner: ScImmutableAgentID = ctx.params().get_agent_id(PARAM_OWNER);
 
     // Require that the 'owner' parameter is mandatory.
     ctx.require(param_owner.exists(), "missing mandatory owner");
@@ -338,7 +338,7 @@ pub fn view_get_factor(ctx: &ScViewContext) {
     // Create an ScImmutableMap proxy to the 'members' map in the state storage.
     // Note that again, this is an *immutable* map as opposed to the *mutable*
     // map we get from the *mutable* state map we get through ScFuncContext.
-    let members: ScImmutableMap = state.get_map(VAR_MEMBERS);
+    let members: ScImmutableMap = state.get_map(STATE_MEMBERS);
 
     // Retrieve the factor associated with the address parameter through
     // an ScImmutableInt64 proxy to the value stored in the 'members' map.

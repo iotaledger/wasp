@@ -275,10 +275,10 @@ func callGetBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int) (uint3
 	if err != nil {
 		return 0, err
 	}
-	v, ok, err := codec.DecodeUint64(ret.MustGet(blocklog.ParamBlockIndex))
+	v, ok, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 	require.NoError(t, err)
 	require.True(t, ok)
-	return uint32(v), nil
+	return v, nil
 }
 
 func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid coretypes.RequestID) (*blocklog.RequestLogRecord, error) {

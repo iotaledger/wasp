@@ -68,23 +68,49 @@ func (o *ScContext) Exists(keyID, typeID int32) bool {
 }
 
 func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
+	ctx := o.vm.ctx
+	if ctx == nil {
+		return o.getBytesForView(keyID, typeID)
+	}
 	switch keyID {
 	case wasmhost.KeyAccountID:
-		return o.vm.accountID().Bytes()
+		return ctx.AccountID().Bytes()
 	case wasmhost.KeyCaller:
-		return o.vm.ctx.Caller().Bytes()
+		return ctx.Caller().Bytes()
 	case wasmhost.KeyChainID:
-		return o.vm.chainID().Bytes()
+		return ctx.ChainID().Bytes()
 	case wasmhost.KeyChainOwnerID:
-		return o.vm.chainOwnerID().Bytes()
+		return ctx.ChainOwnerID().Bytes()
 	case wasmhost.KeyContract:
-		return o.vm.contract().Bytes()
+		return ctx.Contract().Bytes()
 	case wasmhost.KeyContractCreator:
-		return o.vm.contractCreator().Bytes()
+		return ctx.ContractCreator().Bytes()
 	case wasmhost.KeyRequestID:
-		return o.vm.ctx.RequestID().Bytes()
+		return ctx.RequestID().Bytes()
 	case wasmhost.KeyTimestamp:
-		return codec.EncodeInt64(o.vm.ctx.GetTimestamp())
+		return codec.EncodeInt64(ctx.GetTimestamp())
+	}
+	o.invalidKey(keyID)
+	return nil
+}
+
+//nolint:unparam
+func (o *ScContext) getBytesForView(keyID, typeID int32) []byte {
+	ctx := o.vm.ctxView
+	if ctx == nil {
+		o.Panic("missing context")
+	}
+	switch keyID {
+	case wasmhost.KeyAccountID:
+		return ctx.AccountID().Bytes()
+	case wasmhost.KeyChainID:
+		return ctx.ChainID().Bytes()
+	case wasmhost.KeyChainOwnerID:
+		return ctx.ChainOwnerID().Bytes()
+	case wasmhost.KeyContract:
+		return ctx.Contract().Bytes()
+	case wasmhost.KeyContractCreator:
+		return ctx.ContractCreator().Bytes()
 	}
 	o.invalidKey(keyID)
 	return nil
@@ -147,8 +173,8 @@ func (o *ScContext) processCall(bytes []byte) {
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	params := o.getParams(int32(decode.Int64()))
-	transfer := o.getTransfer(int32(decode.Int64()))
+	params := o.getParams(decode.Int32())
+	transfer := o.getTransfer(decode.Int32())
 
 	o.Tracef("CALL c'%s' f'%s'", contract.String(), function.String())
 	var results dict.Dict
@@ -172,7 +198,7 @@ func (o *ScContext) processDeploy(bytes []byte) {
 	}
 	name := string(decode.Bytes())
 	description := string(decode.Bytes())
-	params := o.getParams(int32(decode.Int64()))
+	params := o.getParams(decode.Int32())
 	o.Tracef("DEPLOY c'%s' f'%s'", name, description)
 	err = o.vm.ctx.DeployContract(programHash, name, description, params)
 	if err != nil {
@@ -196,14 +222,14 @@ func (o *ScContext) processPost(bytes []byte) {
 		o.Panic(err.Error())
 	}
 	o.Tracef("POST c'%s' f'%s'", contract.String(), function.String())
-	params := o.getParams(int32(decode.Int64()))
-	transfer := o.getTransfer(int32(decode.Int64()))
+	params := o.getParams(decode.Int32())
+	transfer := o.getTransfer(decode.Int32())
 	metadata := &coretypes.SendMetadata{
 		TargetContract: contract,
 		EntryPoint:     function,
 		Args:           params,
 	}
-	delay := decode.Int64()
+	delay := decode.Int32()
 	if delay == 0 {
 		if !o.vm.ctx.Send(chainID.AsAddress(), transfer, metadata) {
 			o.Panic("failed to send to %s", chainID.AsAddress().String())

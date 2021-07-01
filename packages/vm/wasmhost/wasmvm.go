@@ -110,7 +110,7 @@ func (vm *WasmVMBase) HostGetBytes(objID, keyID, typeID, stringRef, size int32) 
 
 func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
 	host := vm.host
-	host.TraceAllf("HostGetKeyId(r%d,s%d)", keyRef, size)
+	host.TraceAllf("HostGetKeyID(r%d,s%d)", keyRef, size)
 	// non-negative size means original key was a string
 	if size >= 0 {
 		bytes := vm.impl.VMGetBytes(keyRef, size)
@@ -122,9 +122,9 @@ func (vm *WasmVMBase) HostGetKeyID(keyRef, size int32) int32 {
 	return host.GetKeyIDFromBytes(bytes)
 }
 
-func (vm *WasmVMBase) hostGetObjectID(objID, keyID, typeID int32) int32 {
+func (vm *WasmVMBase) HostGetObjectID(objID, keyID, typeID int32) int32 {
 	host := vm.host
-	host.TraceAllf("hostGetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
+	host.TraceAllf("HostGetObjectID(o%d,k%d,t%d)", objID, keyID, typeID)
 	return host.GetObjectID(objID, keyID, typeID)
 }
 

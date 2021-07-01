@@ -47,6 +47,7 @@ func loadBalances(o *ScDict, balances *ledgerstate.ColoredBalances) *ScDict {
 		index++
 		return true
 	})
-	o.kvStore.Set(kv.Key(key), codec.EncodeInt64(int64(index)))
+	// save KeyLength
+	o.kvStore.Set(kv.Key(key), codec.EncodeInt32(int32(index)))
 	return o
 }

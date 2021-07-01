@@ -17,7 +17,7 @@ use crate::types::*;
 // the maximum number one can bet on. The range of numbers starts at 1.
 const MAX_NUMBER: i64 = 5;
 // the default playing period of one betting round in minutes
-const DEFAULT_PLAY_PERIOD: i64 = 120;
+const DEFAULT_PLAY_PERIOD: i32 = 120;
 
 // 'placeBet' is used by betters to place a bet on a number from 1 to MAX_NUMBER. The first
 // incoming bet triggers a betting round of configurable duration. After the playing period
@@ -74,7 +74,7 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
     let state: ScMutableMap = ctx.state();
 
     // Create an ScMutableBytesArray proxy to a bytes array named "bets" in the state storage.
-    let bets: ScMutableBytesArray = state.get_bytes_array(VAR_BETS);
+    let bets: ScMutableBytesArray = state.get_bytes_array(STATE_BETS);
 
     // Determine what the next bet number is by retrieving the length of the bets array.
     let bet_nr: i32 = bets.length();
@@ -88,7 +88,7 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
     if bet_nr == 0 {
         // Yes it was, query the state for the length of the playing period in seconds by
         // retrieving the "playPeriod" from state storage
-        let mut play_period: i64 = state.get_int64(VAR_PLAY_PERIOD).value();
+        let mut play_period: i32 = state.get_int32(STATE_PLAY_PERIOD).value();
 
         // if the play period is less than 10 seconds we override it with the default duration.
         // Note that this will also happen when the play period was not set yet because in that
@@ -133,10 +133,10 @@ pub fn func_lock_bets(ctx: &ScFuncContext) {
     let state: ScMutableMap = ctx.state();
 
     // Create an ScMutableBytesArray proxy to the bytes array named 'bets' in state storage.
-    let bets: ScMutableBytesArray = state.get_bytes_array(VAR_BETS);
+    let bets: ScMutableBytesArray = state.get_bytes_array(STATE_BETS);
 
     // Create an ScMutableBytesArray proxy to a bytes array named 'lockedBets' in state storage.
-    let locked_bets: ScMutableBytesArray = state.get_bytes_array(VAR_LOCKED_BETS);
+    let locked_bets: ScMutableBytesArray = state.get_bytes_array(STATE_LOCKED_BETS);
 
     // Determine the amount of bets in the 'bets' array.
     let nr_bets: i32 = bets.length();
@@ -202,7 +202,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     // number if they wish. Note that this is just a silly example. We could log much more extensive
     // statistics information about each playing round in state storage and make that data available
     // through views for anyone to see.
-    state.get_int64(VAR_LAST_WINNING_NUMBER).set_value(winning_number);
+    state.get_int64(STATE_LAST_WINNING_NUMBER).set_value(winning_number);
 
     // Gather all winners and calculate some totals at the same time.
     // Keep track of the total bet amount, the total win amount, and all the winners
@@ -211,7 +211,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     let mut winners: Vec<Bet> = Vec::new();
 
     // Create an ScMutableBytesArray proxy to the 'lockedBets' bytes array in state storage.
-    let locked_bets: ScMutableBytesArray = state.get_bytes_array(VAR_LOCKED_BETS);
+    let locked_bets: ScMutableBytesArray = state.get_bytes_array(STATE_LOCKED_BETS);
 
     // Determine the amount of bets in the 'lockedBets' array.
     let nr_bets: i32 = locked_bets.length();
@@ -320,7 +320,7 @@ pub fn func_play_period(ctx: &ScFuncContext) {
 
     // Create an ScImmutableInt64 proxy to the 'playPeriod' parameter that
     // is still stored in the map on the host.
-    let param_play_period: ScImmutableInt64 = p.get_int64(PARAM_PLAY_PERIOD);
+    let param_play_period: ScImmutableInt32 = p.get_int32(PARAM_PLAY_PERIOD);
 
     // Require that the mandatory 'playPeriod' parameter actually exists in the map
     // on the host. If it doesn't we panic out with an error message.
@@ -328,7 +328,7 @@ pub fn func_play_period(ctx: &ScFuncContext) {
 
     // Now that we are sure that the 'playPeriod' parameter actually exists we can
     // retrieve its actual value into an i64 value.
-    let play_period: i64 = param_play_period.value();
+    let play_period: i32 = param_play_period.value();
 
     // Require that the play period (in seconds) is not ridiculously low.
     // Otherwise panic out with an error message.
@@ -336,7 +336,7 @@ pub fn func_play_period(ctx: &ScFuncContext) {
 
     // Now we set the corresponding state variable 'playPeriod' through the state
     // map proxy to the value we just got.
-    ctx.state().get_int64(VAR_PLAY_PERIOD).set_value(play_period);
+    ctx.state().get_int32(STATE_PLAY_PERIOD).set_value(play_period);
 
     // Finally, we log the fact that we have successfully completed execution
     // of the 'playPeriod' Func in the log on the host.
@@ -353,7 +353,7 @@ pub fn view_last_winning_number(ctx: &ScViewContext) {
 
     // Get the 'lastWinningNumber' int64 value from state storage through
     // an ScImmutableInt64 proxy.
-    let last_winning_number: i64 = state.get_int64(VAR_LAST_WINNING_NUMBER).value();
+    let last_winning_number: i64 = state.get_int64(STATE_LAST_WINNING_NUMBER).value();
 
     // Create an ScMutableMap proxy to the map on the host that will store the
     // key/value pairs that we want to return from this View function
