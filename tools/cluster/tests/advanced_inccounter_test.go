@@ -259,7 +259,7 @@ func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid corety
 	return ret
 }
 
-func waitBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int, blockIndex uint32, timeout time.Duration) bool {
+func waitBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int, blockIndex uint32, timeout time.Duration) bool { //nolint:unparam // (timeout is always 5s)
 	return waitTrue(timeout, func() bool {
 		i, err := callGetBlockIndex(t, chain, nodeIndex)
 		return err == nil && i >= blockIndex
