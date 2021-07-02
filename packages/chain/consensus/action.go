@@ -121,23 +121,16 @@ func (c *Consensus) runVMIfNeeded() {
 	// ensure that no more than 126 on ledger requests are in a batch
 	onLedgerCount := 0
 	reqsFiltered := make([]coretypes.Request, 0, len(reqs))
-	var include bool
 	for _, req := range reqs {
 		_, isOnLedgerReq := req.(*request.RequestOnLedger)
 		if isOnLedgerReq {
 			onLedgerCount++
 			if onLedgerCount >= ledgerstate.MaxInputCount {
 				// do not include more on-ledger requests that number of tx inputs allowed-1 ("-1" for chain input)
-				include = false
-			} else {
-				include = true
+				continue
 			}
-		} else {
-			include = true
 		}
-		if include {
-			reqsFiltered = append(reqsFiltered, req)
-		}
+		reqsFiltered = append(reqsFiltered, req)
 	}
 
 	c.log.Debugf("runVM: sorted requests and filtered onLedger request overhead, running VM with batch len = %d", len(reqsFiltered))
