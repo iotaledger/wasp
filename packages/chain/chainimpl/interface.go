@@ -99,7 +99,7 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 	}
 }
 
-func (c *chainObj) gossipOffLedgerRequest(req *request.RequestOffLedger) {
+func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 	msgData := chain.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
 	committee := c.getCommittee()
 	var sendMessage func()
@@ -110,8 +110,8 @@ func (c *chainObj) gossipOffLedgerRequest(req *request.RequestOffLedger) {
 		}
 	} else {
 		sendMessage = func() {
-			gossipUpToNPeers := parameters.GetInt(parameters.OffledgerGossipUpToNPeers)
-			(*c.peers).SendMsgToRandomPeersSimple(uint16(gossipUpToNPeers), chain.MsgOffLedgerRequest, msgData)
+			broadcastUpToNPeers := parameters.GetInt(parameters.OffledgerBroadcastUpToNPeers)
+			(*c.peers).SendMsgToRandomPeersSimple(uint16(broadcastUpToNPeers), chain.MsgOffLedgerRequest, msgData)
 		}
 	}
 	broadcastInterval := time.Duration(parameters.GetInt(parameters.OffledgerBroadcastInterVal)) * time.Millisecond
@@ -135,7 +135,7 @@ func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
 	if !c.mempool.ReceiveRequest(req) {
 		return
 	}
-	c.gossipOffLedgerRequest(req)
+	c.broadcastOffLedgerRequest(req)
 }
 
 // SendMissingRequestsToPeer sends the requested missing requests by a peer
