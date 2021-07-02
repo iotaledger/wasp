@@ -83,19 +83,17 @@ func TestAccessNodeMany(t *testing.T) {
 	description := "testing with inccounter"
 	programHash = inccounter.Interface.ProgramHash
 
-	_, err = chain1.DeployContract(contractName, programHash.String(), description, nil)
+	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	rec, err := findContract(chain1, contractName)
-	require.NoError(t, err)
-	require.EqualValues(t, contractName, rec.Name)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
 
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
 	err = requestFunds(clu1, myAddress, "myAddress")
 	require.NoError(t, err)
 
-	myClient := chain1.SCClient(contractHname, kp)
+	myClient := chain1.SCClient(incCounterSCHname, kp)
 
 	requestsCount := requestsCountInitial
 	requestsCummulative := 0
@@ -108,7 +106,7 @@ func TestAccessNodeMany(t *testing.T) {
 		requestsCummulative += requestsCount
 		for j := 0; j < clusterSize; j++ {
 			t.Logf("-->Checking node %v for %v requests", j, requestsCummulative)
-			require.True(t, waitCounter(t, chain1, j, requestsCummulative, 10*time.Second))
+			waitUntil(t, counterEquals(chain1, int64(requestsCummulative)), []int{j}, 5*time.Second)
 		}
 		requestsCount *= requestsCountIncrement
 	}
