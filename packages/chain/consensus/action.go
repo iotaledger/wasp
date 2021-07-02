@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/rotate"
 
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -103,18 +104,9 @@ func (c *Consensus) runVMIfNeeded() {
 		c.resetWorkflow()
 		return
 	}
-	c.log.Debugf("runVM needed: run VM with batch len = %d", len(reqs))
-	if vmTask := c.prepareVMTask(reqs); vmTask != nil {
-		c.workflow.vmStarted = true
-		go c.vmRunner.Run(vmTask)
-		c.log.Debugf("runVM: VM started")
-	} else {
-		c.log.Errorf("runVM: error preparing VM task")
-	}
-}
 
-func (c *Consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
-	// here reqs as as set is deterministic. Must be sorted to have fully deterministic list
+	c.log.Debugf("runVM needed: total number of requests = %d", len(reqs))
+	// here reqs as a set is deterministic. Must be sorted to have fully deterministic list
 	sort.Slice(reqs, func(i, j int) bool {
 		switch {
 		case reqs[i].Nonce() < reqs[j].Nonce():
@@ -126,6 +118,39 @@ func (c *Consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
 		}
 	})
 
+	// ensure that no more than 126 on ledger requests are in a batch
+	onLedgerCount := 0
+	reqsFiltered := make([]coretypes.Request, 0, len(reqs))
+	var include bool
+	for _, req := range reqs {
+		_, isOnLedgerReq := req.(*request.RequestOnLedger)
+		if isOnLedgerReq {
+			onLedgerCount++
+			if onLedgerCount >= ledgerstate.MaxInputCount {
+				// do not include more on-ledger requests that number of tx inputs allowed-1 ("-1" for chain input)
+				include = false
+			} else {
+				include = true
+			}
+		} else {
+			include = true
+		}
+		if include {
+			reqsFiltered = append(reqsFiltered, req)
+		}
+	}
+
+	c.log.Debugf("runVM: sorted requests and filtered onLedger request overhead, running VM with batch len = %d", len(reqsFiltered))
+	if vmTask := c.prepareVMTask(reqsFiltered); vmTask != nil {
+		c.workflow.vmStarted = true
+		go c.vmRunner.Run(vmTask)
+		c.log.Debugf("runVM: VM started")
+	} else {
+		c.log.Errorf("runVM: error preparing VM task")
+	}
+}
+
+func (c *Consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
 	task := &vm.VMTask{
 		ACSSessionID:       c.acsSessionID,
 		Processors:         c.chain.Processors(),
@@ -296,7 +321,7 @@ func (c *Consensus) postTransactionIfNeeded() {
 	c.nodeConn.PostTransaction(c.finalTx)
 
 	c.workflow.transactionPosted = true
-	c.log.Infof("postTransaction: POSTED TRANSACTION: %s", c.finalTx.ID().Base58())
+	c.log.Infof("postTransaction: POSTED TRANSACTION: %s, number of inputs: %d, outputs: %d", c.finalTx.ID().Base58(), len(c.finalTx.Essence().Inputs()), len(c.finalTx.Essence().Outputs()))
 }
 
 // pullInclusionStateIfNeeded periodic pull to know the inclusions state of the transaction. Note that pulling

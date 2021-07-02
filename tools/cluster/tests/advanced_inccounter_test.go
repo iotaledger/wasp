@@ -26,7 +26,7 @@ var (
 )
 
 // cluster of 10 access nodes with the committee of 4 nodes. tested if all nodes are synced
-func TestAccessNode(t *testing.T) {
+func TestAccessNodeOne(t *testing.T) {
 	// core.PrintWellKnownHnames()
 	// t.Logf("contract: name = %s, hname = %s", contractName, contractHname.String())
 	clu1 := clutest.NewCluster(t, 10)
@@ -72,6 +72,60 @@ func TestAccessNode(t *testing.T) {
 	require.True(t, waitCounter(t, chain1, 5, numRequests, 5*time.Second))
 	require.True(t, waitCounter(t, chain1, 6, numRequests, 5*time.Second))
 	require.True(t, waitCounter(t, chain1, 1, numRequests, 5*time.Second))
+}
+
+// cluster of 10 access nodes with the committee of 4 nodes. tested if all nodes are synced
+func TestAccessNodeMany(t *testing.T) {
+	clusterSize := 15
+	committee := []int{0, 1, 2, 3, 4, 5, 6}
+	consensusSize := 5
+	requestsCountInitial := 8
+	requestsCountIncrement := 8
+	itterationCount := 3
+
+	clu1 := clutest.NewCluster(t, clusterSize)
+
+	addr1, err := clu1.RunDKG(committee, uint16(consensusSize))
+	require.NoError(t, err)
+
+	t.Logf("addr1: %s", addr1.Base58())
+
+	chain1, err := clu1.DeployChain("chain", clu1.Config.AllNodes(), committee, uint16(consensusSize), addr1)
+	require.NoError(t, err)
+	t.Logf("chainID: %s", chain1.ChainID.Base58())
+
+	description := "testing with inccounter"
+	programHash = inccounter.Interface.ProgramHash
+
+	_, err = chain1.DeployContract(contractName, programHash.String(), description, nil)
+	require.NoError(t, err)
+
+	rec, err := findContract(chain1, contractName)
+	require.NoError(t, err)
+	require.EqualValues(t, contractName, rec.Name)
+
+	kp := wallet.KeyPair(1)
+	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
+	err = requestFunds(clu1, myAddress, "myAddress")
+	require.NoError(t, err)
+
+	myClient := chain1.SCClient(contractHname, kp)
+
+	requestsCount := requestsCountInitial
+	requestsCummulative := 0
+	for i := 0; i < itterationCount; i++ {
+		t.Logf("Running %v itteration of %v requests", i, requestsCount)
+		for j := 0; j < requestsCount; j++ {
+			_, err = myClient.PostRequest(inccounter.FuncIncCounter)
+			require.NoError(t, err)
+		}
+		requestsCummulative += requestsCount
+		for j := 0; j < clusterSize; j++ {
+			t.Logf("-->Checking node %v for %v requests", j, requestsCummulative)
+			require.True(t, waitCounter(t, chain1, j, requestsCummulative, 10*time.Second))
+		}
+		requestsCount *= requestsCountIncrement
+	}
 }
 
 // cluster of 10 access nodes and two overlapping committees
