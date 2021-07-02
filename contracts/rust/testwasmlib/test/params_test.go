@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/common"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 )
@@ -21,10 +22,34 @@ var (
 		ParamColor,
 		ParamHash,
 		ParamHname,
+		ParamInt16,
+		ParamInt32,
 		ParamInt64,
 		ParamRequestID,
 	}
-	allLengths = []int{33, 37, 33, 32, 32, 4, 8, 34}
+	allLengths    = []int{33, 37, 33, 32, 32, 4, 2, 4, 8, 34}
+	invalidValues = map[string][][]byte{
+		ParamAddress: {
+			append([]byte{3}, zeroHash...),
+			append([]byte{4}, zeroHash...),
+			append([]byte{255}, zeroHash...),
+		},
+		ParamChainID: {
+			append([]byte{0}, zeroHash...),
+			append([]byte{1}, zeroHash...),
+			append([]byte{3}, zeroHash...),
+			append([]byte{4}, zeroHash...),
+			append([]byte{255}, zeroHash...),
+		},
+		ParamRequestID: {
+			append(zeroHash, []byte{128, 0}...),
+			append(zeroHash, []byte{127, 1}...),
+			append(zeroHash, []byte{0, 1}...),
+			append(zeroHash, []byte{255, 255}...),
+			append(zeroHash, []byte{4, 4}...),
+		},
+	}
+	zeroHash = make([]byte, 32)
 )
 
 func setupTest(t *testing.T) *solo.Chain {
@@ -46,6 +71,10 @@ func TestNoParams(t *testing.T) {
 }
 
 func TestValidParams(t *testing.T) {
+	_ = testValidParams(t)
+}
+
+func testValidParams(t *testing.T) *solo.Chain {
 	chain := setupTest(t)
 
 	chainID := chain.ChainID
@@ -66,12 +95,15 @@ func TestValidParams(t *testing.T) {
 		ParamColor, color,
 		ParamHash, hash,
 		ParamHname, hname,
+		ParamInt16, int16(12345),
+		ParamInt32, int32(1234567890),
 		ParamInt64, int64(1234567890123456789),
 		ParamRequestID, requestID,
 		ParamString, "this is a string",
 	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
+	return chain
 }
 
 func TestValidSizeParams(t *testing.T) {
@@ -121,31 +153,6 @@ func TestInvalidSizeParams(t *testing.T) {
 	}
 }
 
-var (
-	zeroHash      = make([]byte, 32)
-	invalidValues = map[string][][]byte{
-		ParamAddress: {
-			append([]byte{3}, zeroHash...),
-			append([]byte{4}, zeroHash...),
-			append([]byte{255}, zeroHash...),
-		},
-		ParamChainID: {
-			append([]byte{0}, zeroHash...),
-			append([]byte{1}, zeroHash...),
-			append([]byte{3}, zeroHash...),
-			append([]byte{4}, zeroHash...),
-			append([]byte{255}, zeroHash...),
-		},
-		ParamRequestID: {
-			append(zeroHash, []byte{128, 0}...),
-			append(zeroHash, []byte{127, 1}...),
-			append(zeroHash, []byte{0, 1}...),
-			append(zeroHash, []byte{255, 255}...),
-			append(zeroHash, []byte{4, 4}...),
-		},
-	}
-)
-
 func TestInvalidTypeParams(t *testing.T) {
 	for param, values := range invalidValues {
 		for index, value := range values {
@@ -160,4 +167,16 @@ func TestInvalidTypeParams(t *testing.T) {
 			})
 		}
 	}
+}
+
+func TestViewBlockRecords(t *testing.T) {
+	t.SkipNow()
+	chain := testValidParams(t)
+
+	res, err := chain.CallView(ScName, ViewBlockRecords, ParamBlockIndex, int32(1))
+	require.NoError(t, err)
+	count, exist, err := codec.DecodeInt32(res.MustGet(ResultCount))
+	require.NoError(t, err)
+	require.True(t, exist)
+	require.EqualValues(t, 1, count)
 }

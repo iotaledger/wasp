@@ -21,8 +21,8 @@ const (
 )
 
 const (
-	VarColorList = "colorList"
-	VarRegistry  = "registry"
+	StateColorList = "colorList"
+	StateRegistry  = "registry"
 )
 
 const (

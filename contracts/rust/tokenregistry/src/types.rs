@@ -7,8 +7,8 @@ use wasmlib::*;
 pub struct Token {
     pub created:      i64,       // creation timestamp
     pub description:  String,    // description what minted token represents
-    pub minted_by:    ScAgentId, // original minter
-    pub owner:        ScAgentId, // current owner
+    pub minted_by:    ScAgentID, // original minter
+    pub owner:        ScAgentID, // current owner
     pub supply:       i64,       // amount of tokens originally minted
     pub updated:      i64,       // last update timestamp
     pub user_defined: String,    // any user defined text

@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
@@ -28,11 +27,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 func viewGetBlockInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
-	blockIndex64 := params.MustGetUint64(ParamBlockIndex)
-	if blockIndex64 > uint64(util.MaxUint32) {
-		return nil, xerrors.New("blocklog::viewGetBlockInfo: incorrect block index")
-	}
-	blockIndex := uint32(blockIndex64)
+	blockIndex := params.MustGetUint32(ParamBlockIndex)
 	data, found, err := getBlockInfoDataIntern(ctx.State(), blockIndex)
 	if err != nil {
 		return nil, err
@@ -47,13 +42,13 @@ func viewGetBlockInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 func viewGetLatestBlockInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	registry := collections.NewArray32ReadOnly(ctx.State(), StateVarBlockRegistry)
-	l := registry.MustLen()
-	if l == 0 {
+	regLen := registry.MustLen()
+	if regLen == 0 {
 		return nil, xerrors.New("blocklog::viewGetLatestBlockInfo: empty log")
 	}
-	data := registry.MustGetAt(l - 1)
+	data := registry.MustGetAt(regLen - 1)
 	ret := dict.New()
-	ret.Set(ParamBlockIndex, codec.EncodeUint64(uint64(l-1)))
+	ret.Set(ParamBlockIndex, codec.EncodeUint32(regLen-1))
 	ret.Set(ParamBlockInfo, data)
 	return ret, nil
 }
@@ -80,17 +75,15 @@ func viewGetRequestLogRecord(ctx coretypes.SandboxView) (dict.Dict, error) {
 		return ret, nil
 	}
 	ret.Set(ParamRequestRecord, recBin)
-	ret.Set(ParamBlockIndex, codec.EncodeUint64(uint64(blockIndex)))
-	ret.Set(ParamRequestIndex, codec.EncodeUint64(uint64(requestIndex)))
+	ret.Set(ParamBlockIndex, codec.EncodeUint32(blockIndex))
+	ret.Set(ParamRequestIndex, codec.EncodeUint16(requestIndex))
 	return ret, nil
 }
 
 func viewGetRequestIDsForBlock(ctx coretypes.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	a := assert.NewAssert(ctx.Log())
-	blockIndex64 := params.MustGetUint64(ParamBlockIndex)
-	a.Require(int(blockIndex64) <= util.MaxUint32, "wrong block index parameter")
-	blockIndex := uint32(blockIndex64)
+	blockIndex := params.MustGetUint32(ParamBlockIndex)
 
 	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
 	a.RequireNoError(err)
@@ -109,9 +102,7 @@ func viewGetRequestIDsForBlock(ctx coretypes.SandboxView) (dict.Dict, error) {
 func viewGetRequestLogRecordsForBlock(ctx coretypes.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	a := assert.NewAssert(ctx.Log())
-	blockIndex64 := params.MustGetUint64(ParamBlockIndex)
-	a.Require(int(blockIndex64) <= util.MaxUint32, "wrong block index parameter")
-	blockIndex := uint32(blockIndex64)
+	blockIndex := params.MustGetUint32(ParamBlockIndex)
 
 	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
 	a.RequireNoError(err)
@@ -135,6 +126,6 @@ func viewControlAddresses(ctx coretypes.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 	ret.Set(ParamStateControllerAddress, codec.EncodeAddress(rec.StateAddress))
 	ret.Set(ParamGoverningAddress, codec.EncodeAddress(rec.GoverningAddress))
-	ret.Set(ParamBlockIndex, codec.EncodeUint64(uint64(rec.SinceBlockIndex)))
+	ret.Set(ParamBlockIndex, codec.EncodeUint32(rec.SinceBlockIndex))
 	return ret, nil
 }

@@ -17,7 +17,7 @@ pub fn func_mint_supply(ctx: &ScFuncContext) {
     ctx.require(minted_colors.length() == 1, "need single minted color");
     let minted_color = minted_colors.get_color(0).value();
     let state = ctx.state();
-    let registry = state.get_map(VAR_REGISTRY).get_bytes(&minted_color);
+    let registry = state.get_map(STATE_REGISTRY).get_bytes(&minted_color);
     if registry.exists() {
         // should never happen, because transaction id is unique
         ctx.panic("TokenRegistry: registry for color already exists");
@@ -35,7 +35,7 @@ pub fn func_mint_supply(ctx: &ScFuncContext) {
         token.description += "no dscr";
     }
     registry.set_value(&token.to_bytes());
-    let colors = state.get_color_array(VAR_COLOR_LIST);
+    let colors = state.get_color_array(STATE_COLOR_LIST);
     colors.get_color(colors.length()).set_value(&minted_color);
     ctx.log("tokenregistry.mintSupply ok");
 }

@@ -24,11 +24,11 @@ const (
 const ResultFactor = "factor"
 
 const (
-	VarFactor      = "factor"
-	VarMemberList  = "memberList"
-	VarMembers     = "members"
-	VarOwner       = "owner"
-	VarTotalFactor = "totalFactor"
+	StateFactor      = "factor"
+	StateMemberList  = "memberList"
+	StateMembers     = "members"
+	StateOwner       = "owner"
+	StateTotalFactor = "totalFactor"
 )
 
 const (
