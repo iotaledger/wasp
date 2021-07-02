@@ -82,6 +82,7 @@ type Committee interface {
 	IsReady() bool
 	Close()
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
+	GetAllValidatorsPeerID() []string
 }
 
 type NodeConnection interface {

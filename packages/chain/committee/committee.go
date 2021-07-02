@@ -273,3 +273,12 @@ func checkValidatorNodeIDs(cfg coretypes.PeerNetworkConfigProvider, n, ownIndex 
 	}
 	return nil
 }
+
+func (c *committee) GetAllValidatorsPeerID() []string {
+	nodes := c.validatorNodes.AllNodes()
+	ret := make([]string, len(nodes))
+	for i, node := range nodes {
+		ret[i] = node.NetID()
+	}
+	return ret
+}

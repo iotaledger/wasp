@@ -34,29 +34,31 @@ import (
 )
 
 type chainObj struct {
-	committee             atomic.Value
-	mempool               chain.Mempool
-	dismissed             atomic.Bool
-	dismissOnce           sync.Once
-	chainID               chainid.ChainID
-	chainStateSync        coreutil.ChainStateSync
-	stateReader           state.OptimisticStateReader
-	procset               *processors.Cache
-	chMsg                 chan interface{}
-	stateMgr              chain.StateManager
-	consensus             chain.Consensus
-	log                   *logger.Logger
-	nodeConn              chain.NodeConnection
-	db                    kvstore.KVStore
-	peerNetworkConfig     coretypes.PeerNetworkConfigProvider
-	netProvider           peering.NetworkProvider
-	dksProvider           coretypes.DKShareRegistryProvider
-	committeeRegistry     coretypes.CommitteeRegistryProvider
-	blobProvider          coretypes.BlobCache
-	eventRequestProcessed *events.Event
-	eventChainTransition  *events.Event
-	eventSynced           *events.Event
-	peers                 *peering.PeerDomainProvider
+	committee              atomic.Value
+	mempool                chain.Mempool
+	dismissed              atomic.Bool
+	dismissOnce            sync.Once
+	chainID                chainid.ChainID
+	chainStateSync         coreutil.ChainStateSync
+	stateReader            state.OptimisticStateReader
+	procset                *processors.Cache
+	chMsg                  chan interface{}
+	stateMgr               chain.StateManager
+	consensus              chain.Consensus
+	log                    *logger.Logger
+	nodeConn               chain.NodeConnection
+	db                     kvstore.KVStore
+	peerNetworkConfig      coretypes.PeerNetworkConfigProvider
+	netProvider            peering.NetworkProvider
+	dksProvider            coretypes.DKShareRegistryProvider
+	committeeRegistry      coretypes.CommitteeRegistryProvider
+	blobProvider           coretypes.BlobCache
+	eventRequestProcessed  *events.Event
+	eventChainTransition   *events.Event
+	eventSynced            *events.Event
+	peers                  *peering.PeerDomainProvider
+	offLedgerReqsAcksMutex sync.RWMutex
+	offLedgerReqsAcks      map[coretypes.RequestID][]string
 }
 
 type committeeStruct struct {

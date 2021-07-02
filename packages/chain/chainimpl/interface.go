@@ -99,39 +99,65 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 	}
 }
 
+type shouldSendToPeerFn func(peerID string) bool
+
+func shouldSend(ackPeers []string) shouldSendToPeerFn {
+	return func(peerID string) bool {
+		for _, p := range ackPeers {
+			if p == peerID {
+				return false
+			}
+		}
+		return true
+	}
+}
+
 func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 	msgData := chain.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
 	committee := c.getCommittee()
-	var sendMessage func()
+	var getPeerIDs func() []string
 
 	if committee != nil {
-		sendMessage = func() {
-			committee.SendMsgToPeers(chain.MsgOffLedgerRequest, msgData, time.Now().UnixNano())
-		}
+		getPeerIDs = committee.GetAllValidatorsPeerID
 	} else {
-		sendMessage = func() {
-			broadcastUpToNPeers := parameters.GetInt(parameters.OffledgerBroadcastUpToNPeers)
-			(*c.peers).SendMsgToRandomPeersSimple(uint16(broadcastUpToNPeers), chain.MsgOffLedgerRequest, msgData)
+		broadcastUpToNPeers := parameters.GetInt(parameters.OffledgerBroadcastUpToNPeers)
+		getPeerIDs = func() []string {
+			return (*c.peers).GetRandomPeers(broadcastUpToNPeers)
 		}
 	}
+
+	sendMessage := func(shouldSendToPeer shouldSendToPeerFn) {
+		peerIDs := getPeerIDs()
+		for _, peerID := range peerIDs {
+			if shouldSendToPeer(peerID) {
+				(*c.peers).SendSimple(peerID, chain.MsgOffLedgerRequest, msgData)
+			}
+		}
+	}
+
 	broadcastInterval := time.Duration(parameters.GetInt(parameters.OffledgerBroadcastInterVal)) * time.Millisecond
-
 	ticker := time.NewTicker(broadcastInterval)
-
 	go func() {
 		for {
 			<-ticker.C
 			// check if processed (request already left the mempool)
 			if !c.mempool.HasRequest(req.ID()) {
+				c.offLedgerReqsAcksMutex.Lock()
+				defer c.offLedgerReqsAcksMutex.Unlock()
+				delete(c.offLedgerReqsAcks, req.ID())
 				ticker.Stop()
 				return
 			}
-			sendMessage()
+			c.offLedgerReqsAcksMutex.RLock()
+			defer c.offLedgerReqsAcksMutex.RUnlock()
+			ackPeers := c.offLedgerReqsAcks[(*req).ID()]
+			sendMessage(shouldSend(ackPeers))
 		}
 	}()
 }
 
 func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
+	// TODO send/receive ACK message
 	if !c.mempool.ReceiveRequest(req) {
 		return
 	}
