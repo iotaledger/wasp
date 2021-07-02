@@ -7,16 +7,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/hive.go/logger"
-
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -34,7 +32,7 @@ type ChainCore interface {
 	GlobalStateSync() coreutil.ChainStateSync
 	GetStateReader() state.OptimisticStateReader
 	Log() *logger.Logger
-	ReceiveOffLedgerRequest(req *request.RequestOffLedger)
+	ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string)
 }
 
 // ChainEntry interface to access chain from the chain registry side
@@ -96,23 +94,23 @@ type NodeConnection interface {
 
 type StateManager interface {
 	Ready() *ready.Ready
-	EventGetBlockMsg(msg *GetBlockMsg)
-	EventBlockMsg(msg *BlockMsg)
-	EventStateMsg(msg *StateMsg)
+	EventGetBlockMsg(msg *messages.GetBlockMsg)
+	EventBlockMsg(msg *messages.BlockMsg)
+	EventStateMsg(msg *messages.StateMsg)
 	EventOutputMsg(msg ledgerstate.Output)
-	EventStateCandidateMsg(msg *StateCandidateMsg)
-	EventTimerMsg(msg TimerTick)
+	EventStateCandidateMsg(msg *messages.StateCandidateMsg)
+	EventTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
 	Close()
 }
 
 type Consensus interface {
-	EventStateTransitionMsg(*StateTransitionMsg)
-	EventSignedResultMsg(*SignedResultMsg)
-	EventInclusionsStateMsg(*InclusionStateMsg)
-	EventAsynchronousCommonSubsetMsg(msg *AsynchronousCommonSubsetMsg)
-	EventVMResultMsg(msg *VMResultMsg)
-	EventTimerMsg(TimerTick)
+	EventStateTransitionMsg(*messages.StateTransitionMsg)
+	EventSignedResultMsg(*messages.SignedResultMsg)
+	EventInclusionsStateMsg(*messages.InclusionStateMsg)
+	EventAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
+	EventVMResultMsg(msg *messages.VMResultMsg)
+	EventTimerMsg(messages.TimerTick)
 	IsReady() bool
 	Close()
 	GetStatusSnapshot() *ConsensusInfo

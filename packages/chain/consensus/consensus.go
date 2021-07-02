@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -38,7 +39,7 @@ type Consensus struct {
 	delaySendingSignedResult   time.Time
 	resultTxEssence            *ledgerstate.TransactionEssence
 	resultState                state.VirtualState
-	resultSignatures           []*chain.SignedResultMsg
+	resultSignatures           []*messages.SignedResultMsg
 	finalTx                    *ledgerstate.Transaction
 	postTxDeadline             time.Time
 	pullInclusionStateDeadline time.Time
@@ -46,12 +47,12 @@ type Consensus struct {
 	consensusInfoSnapshot      atomic.Value
 	timers                     ConsensusTimers
 	log                        *logger.Logger
-	eventStateTransitionMsgCh  chan *chain.StateTransitionMsg
-	eventSignedResultMsgCh     chan *chain.SignedResultMsg
-	eventInclusionStateMsgCh   chan *chain.InclusionStateMsg
-	eventACSMsgCh              chan *chain.AsynchronousCommonSubsetMsg
-	eventVMResultMsgCh         chan *chain.VMResultMsg
-	eventTimerMsgCh            chan chain.TimerTick
+	eventStateTransitionMsgCh  chan *messages.StateTransitionMsg
+	eventSignedResultMsgCh     chan *messages.SignedResultMsg
+	eventInclusionStateMsgCh   chan *messages.InclusionStateMsg
+	eventACSMsgCh              chan *messages.AsynchronousCommonSubsetMsg
+	eventVMResultMsgCh         chan *messages.VMResultMsg
+	eventTimerMsgCh            chan messages.TimerTick
 	closeCh                    chan struct{}
 	assert                     assert.Assert
 	missingRequestsFromBatch   map[coretypes.RequestID][32]byte
@@ -86,15 +87,15 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		mempool:                   mempool,
 		nodeConn:                  nodeConn,
 		vmRunner:                  runvm.NewVMRunner(),
-		resultSignatures:          make([]*chain.SignedResultMsg, committee.Size()),
+		resultSignatures:          make([]*messages.SignedResultMsg, committee.Size()),
 		timers:                    timers,
 		log:                       log,
-		eventStateTransitionMsgCh: make(chan *chain.StateTransitionMsg),
-		eventSignedResultMsgCh:    make(chan *chain.SignedResultMsg),
-		eventInclusionStateMsgCh:  make(chan *chain.InclusionStateMsg),
-		eventACSMsgCh:             make(chan *chain.AsynchronousCommonSubsetMsg),
-		eventVMResultMsgCh:        make(chan *chain.VMResultMsg),
-		eventTimerMsgCh:           make(chan chain.TimerTick),
+		eventStateTransitionMsgCh: make(chan *messages.StateTransitionMsg),
+		eventSignedResultMsgCh:    make(chan *messages.SignedResultMsg),
+		eventInclusionStateMsgCh:  make(chan *messages.InclusionStateMsg),
+		eventACSMsgCh:             make(chan *messages.AsynchronousCommonSubsetMsg),
+		eventVMResultMsgCh:        make(chan *messages.VMResultMsg),
+		eventTimerMsgCh:           make(chan messages.TimerTick),
 		closeCh:                   make(chan struct{}),
 		assert:                    assert.NewAssert(log),
 	}

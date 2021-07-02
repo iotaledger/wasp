@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/consensus"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -135,30 +136,30 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 	switch msgt := msg.(type) {
 	case *peering.PeerMessage:
 		c.processPeerMessage(msgt)
-	case *chain.DismissChainMsg:
+	case *messages.DismissChainMsg:
 		c.Dismiss(msgt.Reason)
-	case *chain.StateTransitionMsg:
+	case *messages.StateTransitionMsg:
 		if c.consensus != nil {
 			c.consensus.EventStateTransitionMsg(msgt)
 		}
-	case *chain.StateCandidateMsg:
+	case *messages.StateCandidateMsg:
 		c.stateMgr.EventStateCandidateMsg(msgt)
-	case *chain.InclusionStateMsg:
+	case *messages.InclusionStateMsg:
 		if c.consensus != nil {
 			c.consensus.EventInclusionsStateMsg(msgt)
 		}
-	case *chain.StateMsg:
+	case *messages.StateMsg:
 		c.processStateMessage(msgt)
-	case *chain.VMResultMsg:
+	case *messages.VMResultMsg:
 		// VM finished working
 		if c.consensus != nil {
 			c.consensus.EventVMResultMsg(msgt)
 		}
-	case *chain.AsynchronousCommonSubsetMsg:
+	case *messages.AsynchronousCommonSubsetMsg:
 		if c.consensus != nil {
 			c.consensus.EventAsynchronousCommonSubsetMsg(msgt)
 		}
-	case chain.TimerTick:
+	case messages.TimerTick:
 		if msgt%2 == 0 {
 			c.stateMgr.EventTimerMsg(msgt / 2)
 		} else if c.consensus != nil {
@@ -175,8 +176,8 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 	rdr := bytes.NewReader(msg.MsgData)
 
 	switch msg.MsgType {
-	case chain.MsgGetBlock:
-		msgt := &chain.GetBlockMsg{}
+	case messages.MsgGetBlock:
+		msgt := &messages.GetBlockMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
@@ -184,8 +185,8 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 		msgt.SenderNetID = msg.SenderNetID
 		c.stateMgr.EventGetBlockMsg(msgt)
 
-	case chain.MsgBlock:
-		msgt := &chain.BlockMsg{}
+	case messages.MsgBlock:
+		msgt := &messages.BlockMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
@@ -193,8 +194,8 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 		msgt.SenderNetID = msg.SenderNetID
 		c.stateMgr.EventBlockMsg(msgt)
 
-	case chain.MsgSignedResult:
-		msgt := &chain.SignedResultMsg{}
+	case messages.MsgSignedResult:
+		msgt := &messages.SignedResultMsg{}
 		if err := msgt.Read(rdr); err != nil {
 			c.log.Error(err)
 			return
@@ -203,28 +204,35 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 		if c.consensus != nil {
 			c.consensus.EventSignedResultMsg(msgt)
 		}
-	case chain.MsgOffLedgerRequest:
-		msgt, err := chain.OffLedgerRequestMsgFromBytes(msg.MsgData)
+	case messages.MsgOffLedgerRequest:
+		msgt, err := messages.OffLedgerRequestMsgFromBytes(msg.MsgData)
 		if err != nil {
 			c.log.Error(err)
 			return
 		}
-		c.ReceiveOffLedgerRequest(msgt.Req)
-	case chain.MsgMissingRequestIDs:
+		c.ReceiveOffLedgerRequest(msgt.Req, msg.SenderNetID)
+	case messages.MsgRequestAck:
+		msgt, err := messages.RequestAckMsgFromBytes(msg.MsgData)
+		if err != nil {
+			c.log.Error(err)
+			return
+		}
+		c.ReceiveRequestAckMessage(msgt.ReqID, msg.SenderNetID)
+	case messages.MsgMissingRequestIDs:
 		if !parameters.GetBool(parameters.PullMissingRequestsFromCommittee) {
 			return
 		}
-		msgt, err := chain.MissingRequestIDsMsgFromBytes(msg.MsgData)
+		msgt, err := messages.MissingRequestIDsMsgFromBytes(msg.MsgData)
 		if err != nil {
 			c.log.Error(err)
 			return
 		}
 		c.SendMissingRequestsToPeer(msgt, msg.SenderNetID)
-	case chain.MsgMissingRequest:
+	case messages.MsgMissingRequest:
 		if !parameters.GetBool(parameters.PullMissingRequestsFromCommittee) {
 			return
 		}
-		msgt, err := chain.MissingRequestMsgFromBytes(msg.MsgData)
+		msgt, err := messages.MissingRequestMsgFromBytes(msg.MsgData)
 		if err != nil {
 			c.log.Error(err)
 			return
@@ -269,7 +277,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 			msg.VirtualState.BlockIndex(), msg.VirtualState.Hash().String())
 	}
 	// send to consensus
-	c.ReceiveMessage(&chain.StateTransitionMsg{
+	c.ReceiveMessage(&messages.StateTransitionMsg{
 		State:          msg.VirtualState,
 		StateOutput:    msg.ChainOutput,
 		StateTimestamp: msg.OutputTimestamp,
@@ -282,7 +290,7 @@ func (c *chainObj) processSynced(outputID ledgerstate.OutputID, blockIndex uint3
 
 // processStateMessage processes the only chain output which exists on the chain's address
 // If necessary, it creates/changes/rotates committee object
-func (c *chainObj) processStateMessage(msg *chain.StateMsg) {
+func (c *chainObj) processStateMessage(msg *messages.StateMsg) {
 	sh, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
 	if err != nil {
 		c.log.Error(xerrors.Errorf("parsing state hash: %w", err))

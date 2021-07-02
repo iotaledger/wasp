@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/ready"
@@ -36,12 +37,12 @@ type stateManager struct {
 	log                    *logger.Logger
 
 	// Channels for accepting external events.
-	eventGetBlockMsgCh     chan *chain.GetBlockMsg
-	eventBlockMsgCh        chan *chain.BlockMsg
-	eventStateOutputMsgCh  chan *chain.StateMsg
+	eventGetBlockMsgCh     chan *messages.GetBlockMsg
+	eventBlockMsgCh        chan *messages.BlockMsg
+	eventStateOutputMsgCh  chan *messages.StateMsg
 	eventOutputMsgCh       chan ledgerstate.Output
-	eventPendingBlockMsgCh chan *chain.StateCandidateMsg
-	eventTimerMsgCh        chan chain.TimerTick
+	eventPendingBlockMsgCh chan *messages.StateCandidateMsg
+	eventTimerMsgCh        chan messages.TimerTick
 	closeCh                chan bool
 }
 
@@ -67,12 +68,12 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		timers:                 timers,
 		log:                    c.Log().Named("s"),
 		pullStateRetryTime:     time.Now(),
-		eventGetBlockMsgCh:     make(chan *chain.GetBlockMsg),
-		eventBlockMsgCh:        make(chan *chain.BlockMsg),
-		eventStateOutputMsgCh:  make(chan *chain.StateMsg),
+		eventGetBlockMsgCh:     make(chan *messages.GetBlockMsg),
+		eventBlockMsgCh:        make(chan *messages.BlockMsg),
+		eventStateOutputMsgCh:  make(chan *messages.StateMsg),
 		eventOutputMsgCh:       make(chan ledgerstate.Output),
-		eventPendingBlockMsgCh: make(chan *chain.StateCandidateMsg),
-		eventTimerMsgCh:        make(chan chain.TimerTick),
+		eventPendingBlockMsgCh: make(chan *messages.StateCandidateMsg),
+		eventTimerMsgCh:        make(chan messages.TimerTick),
 		closeCh:                make(chan bool),
 	}
 	go ret.initLoadState()
@@ -88,7 +89,7 @@ func (sm *stateManager) Close() {
 func (sm *stateManager) initLoadState() {
 	solidState, stateExists, err := state.LoadSolidState(sm.store, sm.chain.ID())
 	if err != nil {
-		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
+		go sm.chain.ReceiveMessage(messages.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err),
 		},
 		)
@@ -99,7 +100,7 @@ func (sm *stateManager) initLoadState() {
 			solidState.BlockIndex(), solidState.Hash().String())
 	} else if err := sm.createOriginState(); err != nil {
 		// create origin state in DB
-		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
+		go sm.chain.ReceiveMessage(messages.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err),
 		},
 		)
@@ -117,7 +118,7 @@ func (sm *stateManager) createOriginState() error {
 	var err error
 	sm.solidState, err = state.CreateOriginState(sm.store, sm.chain.ID())
 	if err != nil {
-		go sm.chain.ReceiveMessage(chain.DismissChainMsg{
+		go sm.chain.ReceiveMessage(messages.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err),
 		},
 		)

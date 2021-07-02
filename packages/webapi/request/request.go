@@ -47,7 +47,7 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	if ch == nil {
 		return httperrors.NotFound(fmt.Sprintf("Unknown chain: %s", chainID.Base58()))
 	}
-	ch.ReceiveOffLedgerRequest(offLedgerReq)
+	ch.ReceiveOffLedgerRequest(offLedgerReq, "")
 
 	return c.NoContent(http.StatusAccepted)
 }

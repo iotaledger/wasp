@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package chain
+package messages
 
 import (
 	"io"
@@ -24,6 +24,7 @@ const (
 	MsgOffLedgerRequest
 	MsgMissingRequestIDs
 	MsgMissingRequest
+	MsgRequestAck
 )
 
 type TimerTick int

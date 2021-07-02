@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/identity"
-	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/rotate"
@@ -60,7 +60,7 @@ func (c *Consensus) proposeBatchIfNeeded() {
 	// call the ACS consensus. The call should spawn goroutine itself
 	c.committee.RunACSConsensus(proposal.Bytes(), c.acsSessionID, c.stateOutput.GetStateIndex(), func(sessionID uint64, acs [][]byte) {
 		c.log.Debugf("proposeBatch RunACSConsensus callback: responding to ACS session ID %v: len = %d", sessionID, len(acs))
-		go c.chain.ReceiveMessage(&chain.AsynchronousCommonSubsetMsg{
+		go c.chain.ReceiveMessage(&messages.AsynchronousCommonSubsetMsg{
 			ProposedBatchesBin: acs,
 			SessionID:          sessionID,
 		})
@@ -110,8 +110,8 @@ func (c *Consensus) runVMIfNeeded() {
 			missingRequestIds = append(missingRequestIds, reqID)
 		}
 		c.log.Debugf("runVMIfNeeded: asking for missing requests, ids: %v", missingRequestIds)
-		msgData := chain.NewMissingRequestIDsMsg(&missingRequestIds).Bytes()
-		c.committee.SendMsgToPeers(chain.MsgMissingRequestIDs, msgData, time.Now().UnixNano())
+		msgData := messages.NewMissingRequestIDsMsg(&missingRequestIds).Bytes()
+		c.committee.SendMsgToPeers(messages.MsgMissingRequestIDs, msgData, time.Now().UnixNano())
 	}
 	if len(reqs) == 0 {
 		// due to change in time, all requests became non processable ACS must be run again
@@ -182,7 +182,7 @@ func (c *Consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
 		}
 		c.log.Debugf("runVM OnFinish callback: responding by state index: %d state hash: %s",
 			task.VirtualState.BlockIndex(), task.VirtualState.Hash())
-		c.chain.ReceiveMessage(&chain.VMResultMsg{
+		c.chain.ReceiveMessage(&messages.VMResultMsg{
 			Task: task,
 		})
 	}
@@ -197,12 +197,12 @@ func (c *Consensus) broadcastSignedResultIfNeeded() {
 	}
 	if time.Now().After(c.delaySendingSignedResult) {
 		signedResult := c.resultSignatures[c.committee.OwnPeerIndex()]
-		msg := &chain.SignedResultMsg{
+		msg := &messages.SignedResultMsg{
 			ChainInputID: c.stateOutput.ID(),
 			EssenceHash:  signedResult.EssenceHash,
 			SigShare:     signedResult.SigShare,
 		}
-		c.committee.SendMsgToPeers(chain.MsgSignedResult, util.MustBytes(msg), time.Now().UnixNano())
+		c.committee.SendMsgToPeers(messages.MsgSignedResult, util.MustBytes(msg), time.Now().UnixNano())
 		c.delaySendingSignedResult = time.Now().Add(c.timers.BroadcastSignedResultRetry)
 
 		c.log.Debugf("broadcastSignedResult: broadcasted: essence hash: %s, chain input %s",
@@ -278,7 +278,7 @@ func (c *Consensus) checkQuorum() {
 		// if it is not state controller rotation, sending message to state manager
 		// Otherwise state manager is not notified
 		chainOutputID := chainOutput.ID()
-		go c.chain.ReceiveMessage(&chain.StateCandidateMsg{
+		go c.chain.ReceiveMessage(&messages.StateCandidateMsg{
 			State:             c.resultState,
 			ApprovingOutputID: chainOutputID,
 		})
@@ -500,7 +500,7 @@ func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 	c.runVMIfNeeded()
 }
 
-func (c *Consensus) processInclusionState(msg *chain.InclusionStateMsg) {
+func (c *Consensus) processInclusionState(msg *messages.InclusionStateMsg) {
 	if !c.workflow.transactionFinalized {
 		c.log.Debugf("processInclusionState: transaction finalized -> skipping.")
 		return
@@ -559,7 +559,7 @@ func (c *Consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 	return tx, chained, nil
 }
 
-func (c *Consensus) setNewState(msg *chain.StateTransitionMsg) {
+func (c *Consensus) setNewState(msg *messages.StateTransitionMsg) {
 	c.stateOutput = msg.StateOutput
 	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp
@@ -618,7 +618,7 @@ func (c *Consensus) processVMResult(result *vm.VMTask) {
 	sigShare, err := c.committee.DKShare().SignShare(essenceBytes)
 	c.assert.RequireNoError(err, "processVMResult: ")
 
-	c.resultSignatures[c.committee.OwnPeerIndex()] = &chain.SignedResultMsg{
+	c.resultSignatures[c.committee.OwnPeerIndex()] = &messages.SignedResultMsg{
 		SenderIndex:  c.committee.OwnPeerIndex(),
 		ChainInputID: result.ChainInput.ID(),
 		EssenceHash:  essenceHash,
@@ -645,7 +645,7 @@ func (c *Consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledge
 	return essence
 }
 
-func (c *Consensus) receiveSignedResult(msg *chain.SignedResultMsg) {
+func (c *Consensus) receiveSignedResult(msg *messages.SignedResultMsg) {
 	if c.resultSignatures[msg.SenderIndex] != nil {
 		if c.resultSignatures[msg.SenderIndex].EssenceHash != msg.EssenceHash ||
 			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare[:], msg.SigShare[:]) {

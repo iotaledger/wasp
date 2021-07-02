@@ -5,7 +5,7 @@ package statemgr
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/state"
@@ -13,11 +13,11 @@ import (
 )
 
 // EventGetBlockMsg is a request for a block while syncing
-func (sm *stateManager) EventGetBlockMsg(msg *chain.GetBlockMsg) {
+func (sm *stateManager) EventGetBlockMsg(msg *messages.GetBlockMsg) {
 	sm.eventGetBlockMsgCh <- msg
 }
 
-func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
+func (sm *stateManager) eventGetBlockMsg(msg *messages.GetBlockMsg) {
 	sm.log.Debugw("EventGetBlockMsg received: ",
 		"sender", msg.SenderNetID,
 		"block index", msg.BlockIndex,
@@ -44,17 +44,17 @@ func (sm *stateManager) eventGetBlockMsg(msg *chain.GetBlockMsg) {
 
 	sm.log.Debugf("EventGetBlockMsg for state index #%d --> responding to peer %s", msg.BlockIndex, msg.SenderNetID)
 
-	sm.peers.SendSimple(msg.SenderNetID, chain.MsgBlock, util.MustBytes(&chain.BlockMsg{
+	sm.peers.SendSimple(msg.SenderNetID, messages.MsgBlock, util.MustBytes(&messages.BlockMsg{
 		BlockBytes: blockBytes,
 	}))
 }
 
 // EventBlockMsg
-func (sm *stateManager) EventBlockMsg(msg *chain.BlockMsg) {
+func (sm *stateManager) EventBlockMsg(msg *messages.BlockMsg) {
 	sm.eventBlockMsgCh <- msg
 }
 
-func (sm *stateManager) eventBlockMsg(msg *chain.BlockMsg) {
+func (sm *stateManager) eventBlockMsg(msg *messages.BlockMsg) {
 	sm.log.Debugf("EventBlockMsg received from %v", msg.SenderNetID)
 	if sm.stateOutput == nil {
 		sm.log.Debugf("EventBlockMsg ignored: stateOutput is nil")
@@ -93,11 +93,11 @@ func (sm *stateManager) eventOutputMsg(msg ledgerstate.Output) {
 
 // EventStateTransactionMsg triggered whenever new state transaction arrives
 // the state transaction may be confirmed or not
-func (sm *stateManager) EventStateMsg(msg *chain.StateMsg) {
+func (sm *stateManager) EventStateMsg(msg *messages.StateMsg) {
 	sm.eventStateOutputMsgCh <- msg
 }
 
-func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
+func (sm *stateManager) eventStateMsg(msg *messages.StateMsg) {
 	sm.log.Debugw("EventStateMsg received: ",
 		"state index", msg.ChainOutput.GetStateIndex(),
 		"chainOutput", coretypes.OID(msg.ChainOutput.ID()),
@@ -113,11 +113,11 @@ func (sm *stateManager) eventStateMsg(msg *chain.StateMsg) {
 	}
 }
 
-func (sm *stateManager) EventStateCandidateMsg(msg *chain.StateCandidateMsg) {
+func (sm *stateManager) EventStateCandidateMsg(msg *messages.StateCandidateMsg) {
 	sm.eventPendingBlockMsgCh <- msg
 }
 
-func (sm *stateManager) eventStateCandidateMsg(msg *chain.StateCandidateMsg) {
+func (sm *stateManager) eventStateCandidateMsg(msg *messages.StateCandidateMsg) {
 	sm.log.Debugf("EventStateCandidateMsg received: state index: %d, timestamp: %v",
 		msg.State.BlockIndex(), msg.State.Timestamp(),
 	)
@@ -130,7 +130,7 @@ func (sm *stateManager) eventStateCandidateMsg(msg *chain.StateCandidateMsg) {
 	}
 }
 
-func (sm *stateManager) EventTimerMsg(msg chain.TimerTick) {
+func (sm *stateManager) EventTimerMsg(msg messages.TimerTick) {
 	if msg%2 == 0 {
 		sm.eventTimerMsgCh <- msg
 	}
