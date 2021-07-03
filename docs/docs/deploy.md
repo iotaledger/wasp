@@ -8,11 +8,12 @@ contract to the chain.
 
 ---
 
-First we need to tell `wasp-cli` the location of the Goshimmer node and the
+First we need to tell `wasp-cli` the location of the Goshimmer node, the faucet PoW target and the
 committee of Wasp nodes:
 
 ```
 $ wasp-cli set goshimmer.api 127.0.0.1:8080
+$ wasp-cli set goshimmer.faucetPoWTarget 22
 
 $ wasp-cli set wasp.0.api 127.0.0.1:9090
 $ wasp-cli set wasp.0.nanomsg 127.0.0.1:5550
@@ -29,6 +30,7 @@ The configuration is stored in `wasp-cli.json`, you can also edit the file by ha
 instead of running the commands.
 
 ---
+
 
 Next, we initialize a seed and request some funds from the faucet (we need at
 least one token for each transaction; which can be [redeemed](./accounts.md) later).

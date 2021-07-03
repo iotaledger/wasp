@@ -45,7 +45,7 @@ set:
 
 ```
 wasp-cli set goshimmer.api goshimmer.node:8080
-wasp-cli set goshimmer.faucetPoWTarget -1
+wasp-cli set goshimmer.faucetPoWTarget 22
 ```
 
 ## IOTA wallet
