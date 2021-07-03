@@ -53,7 +53,7 @@ func newSoloTestEnv(t *testing.T) *soloTestEnv {
 	require.NoError(t, err)
 	signer, _ := s.NewKeyPairWithFunds()
 	backend := NewSoloBackend(s, chain, signer)
-	evmChain := NewEVMChain(backend)
+	evmChain := NewEVMChain(backend, evmchain.Interface.Name)
 
 	accountManager := NewAccountManager(evmtest.Accounts)
 

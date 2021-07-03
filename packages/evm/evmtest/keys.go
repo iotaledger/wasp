@@ -5,7 +5,6 @@ package evmtest
 
 import (
 	"crypto/ecdsa"
-	_ "embed"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"

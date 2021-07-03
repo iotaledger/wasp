@@ -39,8 +39,8 @@ func (j *JSONRPCServer) getUnlockedAccount() []*ecdsa.PrivateKey {
 	return []*ecdsa.PrivateKey{account}
 }
 
-func (j *JSONRPCServer) ServeJSONRPC(backend jsonrpc.ChainBackend) {
-	evmChain := jsonrpc.NewEVMChain(backend)
+func (j *JSONRPCServer) ServeJSONRPC(backend jsonrpc.ChainBackend, contractName string) {
+	evmChain := jsonrpc.NewEVMChain(backend, contractName)
 
 	accountManager := jsonrpc.NewAccountManager(j.getUnlockedAccount())
 
