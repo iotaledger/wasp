@@ -102,7 +102,7 @@ func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockInd
 		actual, err := ch.Cluster.WaspClient(i).DumpSCState(&ch.ChainID, hname)
 		if model.IsHTTPNotFound(err) {
 			pass = false
-			fmt.Printf("   FAIL: state does not exist\n")
+			fmt.Printf("   ERROR: state does not exist\n")
 			continue
 		}
 		if err != nil {
