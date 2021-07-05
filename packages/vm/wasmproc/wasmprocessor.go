@@ -40,7 +40,7 @@ func NewWasmProcessor(vm wasmhost.WasmVM, log *logger.Logger) (*WasmProcessor, e
 	if err != nil {
 		return nil, err
 	}
-	host.scContext = NewScContext(host)
+	host.scContext = NewScContext(host, &host.KvStoreHost)
 	host.Init(log)
 	host.TrackObject(NewNullObject(&host.KvStoreHost))
 	host.TrackObject(host.scContext)

@@ -50,10 +50,10 @@ type ScContext struct {
 	vm *WasmProcessor
 }
 
-func NewScContext(vm *WasmProcessor) *ScContext {
+func NewScContext(vm *WasmProcessor, host *wasmhost.KvStoreHost) *ScContext {
 	o := &ScContext{}
 	o.vm = vm
-	o.host = &vm.KvStoreHost
+	o.host = host
 	o.name = "root"
 	o.id = 1
 	o.isRoot = true
