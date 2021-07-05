@@ -100,17 +100,13 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 	}
 }
 
-type shouldSendToPeerFn func(peerID string) bool
-
-func shouldSend(ackPeers []string) shouldSendToPeerFn {
-	return func(peerID string) bool {
-		for _, p := range ackPeers {
-			if p == peerID {
-				return false
-			}
+func shouldSendToPeer(peerID string, ackPeers []string) bool {
+	for _, p := range ackPeers {
+		if p == peerID {
+			return false
 		}
-		return true
 	}
+	return true
 }
 
 func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
@@ -127,10 +123,10 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 		}
 	}
 
-	sendMessage := func(shouldSendToPeer shouldSendToPeerFn) {
+	sendMessage := func(ackPeers []string) {
 		peerIDs := getPeerIDs()
 		for _, peerID := range peerIDs {
-			if shouldSendToPeer(peerID) {
+			if shouldSendToPeer(peerID, ackPeers) {
 				c.log.Debugf("sending offledger request ID: reqID: %s, peerID: %s", req.ID(), peerID)
 				(*c.peers).SendSimple(peerID, messages.MsgOffLedgerRequest, msgData)
 			}
@@ -152,7 +148,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 			}
 			c.offLedgerReqsAcksMutex.RLock()
 			ackPeers := c.offLedgerReqsAcks[(*req).ID()]
-			sendMessage(shouldSend(ackPeers))
+			sendMessage(ackPeers)
 			c.offLedgerReqsAcksMutex.RUnlock()
 		}
 	}()
