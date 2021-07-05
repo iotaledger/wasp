@@ -277,7 +277,7 @@ func TestRotationMany(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		waitUntil(t, counterEquals(chain1, int64(numRequests*(i+1))), []int{0, 3, 8, 9}, 5*time.Second)
+		waitUntil(t, counterEquals(chain1, int64(numRequests*(i+1))), []int{0, 3, 8, 9}, 30*time.Second)
 
 		addrIndex = (addrIndex + 1) % numCmt
 

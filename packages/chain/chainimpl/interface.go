@@ -119,7 +119,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 	var getPeerIDs func() []string
 
 	if committee != nil {
-		getPeerIDs = committee.GetAllValidatorsPeerID
+		getPeerIDs = committee.GetOtherValidatorsPeerIDs
 	} else {
 		broadcastUpToNPeers := parameters.GetInt(parameters.OffledgerBroadcastUpToNPeers)
 		getPeerIDs = func() []string {
@@ -145,26 +145,17 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 			// check if processed (request already left the mempool)
 			if !c.mempool.HasRequest(req.ID()) {
 				c.offLedgerReqsAcksMutex.Lock()
-				defer c.offLedgerReqsAcksMutex.Unlock()
 				delete(c.offLedgerReqsAcks, req.ID())
+				c.offLedgerReqsAcksMutex.Unlock()
 				ticker.Stop()
 				return
 			}
 			c.offLedgerReqsAcksMutex.RLock()
-			defer c.offLedgerReqsAcksMutex.RUnlock()
 			ackPeers := c.offLedgerReqsAcks[(*req).ID()]
 			sendMessage(shouldSend(ackPeers))
+			c.offLedgerReqsAcksMutex.RUnlock()
 		}
 	}()
-}
-
-func (c *chainObj) sendRequestAckowledgementMsg(reqID coretypes.RequestID, peerID string) {
-	c.log.Debugf("sendRequestAckowledgementMsg: reqID: %s, peerID: %s", reqID, peerID)
-	if peerID == "" {
-		return
-	}
-	msgData := messages.NewRequestAckMsg(reqID).Bytes()
-	(*c.peers).SendSimple(peerID, messages.MsgRequestAck, msgData)
 }
 
 func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string) {
@@ -174,6 +165,15 @@ func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger, sender
 		return
 	}
 	c.broadcastOffLedgerRequest(req)
+}
+
+func (c *chainObj) sendRequestAckowledgementMsg(reqID coretypes.RequestID, peerID string) {
+	c.log.Debugf("sendRequestAckowledgementMsg: reqID: %s, peerID: %s", reqID, peerID)
+	if peerID == "" {
+		return
+	}
+	msgData := messages.NewRequestAckMsg(reqID).Bytes()
+	(*c.peers).SendSimple(peerID, messages.MsgRequestAck, msgData)
 }
 
 func (c *chainObj) ReceiveRequestAckMessage(reqID *coretypes.RequestID, peerID string) {

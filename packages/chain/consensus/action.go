@@ -112,6 +112,7 @@ func (c *Consensus) runVMIfNeeded() {
 		c.log.Debugf("runVMIfNeeded: asking for missing requests, ids: %v", missingRequestIds)
 		msgData := messages.NewMissingRequestIDsMsg(&missingRequestIds).Bytes()
 		c.committee.SendMsgToPeers(messages.MsgMissingRequestIDs, msgData, time.Now().UnixNano())
+		return
 	}
 	if len(reqs) == 0 {
 		// due to change in time, all requests became non processable ACS must be run again
