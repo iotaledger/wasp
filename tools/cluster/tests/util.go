@@ -324,6 +324,7 @@ type conditionFn func(t *testing.T, nodeIndex int) bool
 
 func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Duration) {
 	for _, nodeIndex := range nodeIndexes {
+		t.Logf("-->Checking node %v...", nodeIndex)
 		require.True(t,
 			waitTrue(timeout, func() bool {
 				return fn(t, nodeIndex)
