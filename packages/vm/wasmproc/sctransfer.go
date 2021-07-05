@@ -14,6 +14,7 @@ import (
 
 type ScTransfers struct {
 	ScSandboxObject
+	vm *WasmProcessor
 }
 
 func NewScTransfers(vm *WasmProcessor) *ScTransfers {
@@ -33,6 +34,7 @@ func (a *ScTransfers) GetObjectID(keyID, typeID int32) int32 {
 type ScTransferInfo struct {
 	ScSandboxObject
 	address ledgerstate.Address
+	vm      *WasmProcessor
 }
 
 func NewScTransferInfo(vm *WasmProcessor) *ScTransferInfo {
@@ -82,6 +84,6 @@ func (o *ScTransferInfo) SetBytes(keyID, typeID int32, bytes []byte) {
 		}
 		o.Invoke(balanceMapID)
 	default:
-		o.invalidKey(keyID)
+		o.InvalidKey(keyID)
 	}
 }

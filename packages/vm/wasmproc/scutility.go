@@ -15,6 +15,7 @@ type ScUtility struct {
 	ScSandboxObject
 	nextRandom int
 	random     []byte
+	vm         *WasmProcessor
 }
 
 func NewScUtility(vm *WasmProcessor) *ScUtility {
@@ -81,7 +82,7 @@ func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {
 	case wasmhost.KeyRandom:
 		return o.getRandom8Bytes()
 	}
-	o.invalidKey(keyID)
+	o.InvalidKey(keyID)
 	return nil
 }
 

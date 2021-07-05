@@ -58,7 +58,6 @@ type KvStoreHost struct {
 	keyToKeyID    map[string]int32
 	log           *logger.Logger
 	objIDToObj    []HostObject
-	useBase58Keys bool
 }
 
 func (host *KvStoreHost) Init(log *logger.Logger) {
@@ -173,15 +172,8 @@ func (host *KvStoreHost) getKeyID(key []byte, fromBytes bool) int32 {
 }
 
 func (host *KvStoreHost) GetKeyIDFromBytes(bytes []byte) int32 {
-	encoded := base58.Encode(bytes)
-	if host.useBase58Keys {
-		// transform byte slice key into base58 string
-		// now all keys are byte slices from strings
-		bytes = []byte(encoded)
-	}
-
 	keyID := host.getKeyID(bytes, true)
-	host.Tracef("GetKeyIDFromBytes '%s'=k%d", encoded, keyID)
+	host.Tracef("GetKeyIDFromBytes '%s'=k%d", base58.Encode(bytes), keyID)
 	return keyID
 }
 
