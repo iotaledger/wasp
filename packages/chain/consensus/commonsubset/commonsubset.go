@@ -98,7 +98,7 @@ func NewCommonSubset(
 		nodePos++
 	}
 	if outputCh == nil {
-		outputCh = make(chan map[uint16][]byte)
+		outputCh = make(chan map[uint16][]byte, 1)
 	}
 	acsCfg := hbbft.Config{
 		N:          nodeCount,
@@ -120,8 +120,8 @@ func NewCommonSubset(
 		peeringID:      peeringID,
 		netGroup:       netGroup,
 		netOwnIndex:    ownIndex,
-		inputCh:        make(chan []byte),
-		recvCh:         make(chan *msgBatch, 1),
+		inputCh:        make(chan []byte, 1),
+		recvCh:         make(chan *msgBatch, 100000), // TODO: XXX: KP
 		closeCh:        make(chan bool),
 		closed:         false,
 		closedLock:     &sync.RWMutex{},
@@ -168,12 +168,18 @@ func (cs *CommonSubset) TryHandleMessage(recv *peering.RecvEvent) bool {
 // This function is used in the CommonSubsetCoordinator to avoid parsing
 // the received message multiple times.
 func (cs *CommonSubset) HandleMsgBatch(mb *msgBatch) {
+	cs.log.Infof("XXX: HandleMsgBatch(%+v), closed=%v", mb, cs.closed)
+	// TODO: Duplicate acks.
+	//  XXX: HandleMsgBatch(&{sessionID:21695645984168 stateIndex:1 id:0 src:0 dst:7 msgs:[] acks:[91 91]}), closed=false
+
 	cs.closedLock.RLock()
-	defer cs.closedLock.RUnlock()
 	if !cs.closed {
+		cs.closedLock.RUnlock()
 		// Just to avoid panics on writing to a closed channel.
 		cs.recvCh <- mb
+		return
 	}
+	cs.closedLock.RUnlock()
 }
 
 func (cs *CommonSubset) Close() {
@@ -217,11 +223,13 @@ func (cs *CommonSubset) run() {
 }
 
 func (cs *CommonSubset) timeTick() {
+	cs.log.Infof("XXX: timeTick")
 	now := time.Now()
 	resentBefore := now.Add(resendPeriod * (-2))
 	for missingAck, lastSentTime := range cs.missingAcks {
 		if lastSentTime.Before(resentBefore) {
 			if mb, ok := cs.sentMsgBatches[missingAck]; ok {
+				cs.log.Infof("XXX: Resending batch %+v", mb)
 				cs.send(mb)
 				cs.missingAcks[missingAck] = now
 			} else {
@@ -242,6 +250,7 @@ func (cs *CommonSubset) handleInput(input []byte) error {
 }
 
 func (cs *CommonSubset) handleMsgBatch(recvBatch *msgBatch) {
+	cs.log.Infof("XXX: handleMsgBatch(%+v)", recvBatch)
 	//
 	// Cleanup all the acknowledged messages from the missing acks list.
 	for _, receivedAck := range recvBatch.acks {
@@ -404,7 +413,6 @@ type msgBatch struct {
 	dst        uint16              // Recipient of the batch.
 	msgs       []*hbbft.ACSMessage // New messages to send.
 	acks       []uint32            // Acknowledgements.
-	// TODO: Add a signature.
 }
 
 const (

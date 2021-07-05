@@ -24,8 +24,7 @@ type committee struct {
 	address        ledgerstate.Address
 	peerConfig     coretypes.PeerNetworkConfigProvider
 	validatorNodes peering.GroupProvider
-	ccProvider     commoncoin.Provider     // Just to close it afterwards.
-	ccRecvCh       chan *peering.RecvEvent // To pass messages to CC.
+	ccProvider     commoncoin.Provider // Just to close it afterwards.
 	acsRunner      chain.AsynchronousCommonSubsetRunner
 	peeringID      peering.PeeringID
 	size           uint16
@@ -90,9 +89,8 @@ func New(
 	} else {
 		// That's the default implementation of the ACS.
 		// We use it, of the mocked variant was not passed.
-		ret.ccRecvCh = make(chan *peering.RecvEvent)
 		ret.ccProvider = commoncoin.NewCommonCoinNode(
-			ret.ccRecvCh, // TODO: KP: Refactor the CC part to avoid passing the channels. Use TryHandleMessage instead.
+			nil,
 			dkshare,
 			peerGroupID,
 			peers,
@@ -213,12 +211,15 @@ func (c *committee) PeerStatus() []*chain.PeerStatus {
 
 func (c *committee) Attach(ch chain.ChainCore) {
 	c.attachID = c.validatorNodes.Attach(&c.peeringID, func(recv *peering.RecvEvent) {
+		c.log.Infof("XXX: Attach(received=%+v)-0", recv)
 		if c.ccProvider != nil && c.ccProvider.TryHandleMessage(recv) {
 			return
 		}
-		if c.acsRunner.TryHandleMessage(recv) {
+		c.log.Infof("XXX: Attach(received=%+v)-1", recv)
+		if c.acsRunner != nil && c.acsRunner.TryHandleMessage(recv) {
 			return
 		}
+		c.log.Infof("XXX: Attach(received=%+v)-2", recv)
 		ch.ReceiveMessage(recv.Msg)
 	})
 }

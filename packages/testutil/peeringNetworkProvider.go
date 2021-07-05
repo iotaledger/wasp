@@ -110,7 +110,7 @@ func newPeeringNode(netID string, identity *ed25519.KeyPair, network *PeeringNet
 	sendCh := make(chan *peeringMsg, network.bufSize)
 	recvCh := make(chan *peeringMsg, network.bufSize)
 	recvCbs := make([]*peeringCb, 0)
-	node := peeringNode{
+	n := peeringNode{
 		netID:    netID,
 		identity: identity,
 		sendCh:   sendCh,
@@ -120,25 +120,26 @@ func newPeeringNode(netID string, identity *ed25519.KeyPair, network *PeeringNet
 		log:      network.log.With("loc", netID),
 	}
 	network.behavior.AddLink(sendCh, recvCh, netID)
-	go func() { // Receive loop.
-		for {
-			pm := <-recvCh
-			node.log.Debugf(
-				"received msgType=%v from=%v, peeringID=%v",
-				pm.msg.MsgType, pm.from.netID, pm.msg.PeeringID,
-			)
-			msgPeeringID := pm.msg.PeeringID.String()
-			for _, cb := range node.recvCbs {
-				if cb.peeringID == nil || cb.peeringID.String() == msgPeeringID {
-					cb.callback(&peering.RecvEvent{
-						From: cb.destNP.senderByNetID(pm.from.netID),
-						Msg:  &pm.msg,
-					})
-				}
+	go n.recvLoop()
+	return &n
+}
+func (n *peeringNode) recvLoop() {
+	for {
+		pm := <-n.recvCh
+		n.log.Debugf(
+			"received msgType=%v from=%v, peeringID=%v",
+			pm.msg.MsgType, pm.from.netID, pm.msg.PeeringID,
+		)
+		msgPeeringID := pm.msg.PeeringID.String()
+		for _, cb := range n.recvCbs {
+			if cb.peeringID == nil || cb.peeringID.String() == msgPeeringID {
+				cb.callback(&peering.RecvEvent{
+					From: cb.destNP.senderByNetID(pm.from.netID),
+					Msg:  &pm.msg,
+				})
 			}
 		}
-	}()
-	return &node
+	}
 }
 
 func (n *peeringNode) sendMsg(from *peeringNode, msg *peering.PeerMessage) {

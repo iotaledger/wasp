@@ -76,12 +76,12 @@ func NewCommonCoinNode(
 		dkShare:   dkShare,
 		peeringID: peeringID,
 		group:     group,
-		coinCh:    make(chan *commonCoinReq),
+		coinCh:    make(chan *commonCoinReq, 1),
 		stopCh:    make(chan bool),
 		log:       log,
 	}
 	if recvCh == nil {
-		ccn.recvCh = make(chan *peering.RecvEvent)
+		ccn.recvCh = make(chan *peering.RecvEvent, 1)
 		ccn.attachID = group.Attach(&peeringID, func(recvEvent *peering.RecvEvent) {
 			if recvEvent.Msg.MsgType == commonCoinShareMsgType {
 				ccn.recvCh <- recvEvent
@@ -97,7 +97,7 @@ func NewCommonCoinNode(
 // GetCoin returns an instance of a common coin.
 // It can block for some time, if other peers are lagging.
 func (ccn *commonCoinNode) GetCoin(sid []byte) ([]byte, error) {
-	waitCh := make(chan []byte)
+	waitCh := make(chan []byte, 1)
 	ccn.coinCh <- &commonCoinReq{sid: sid, waitCh: waitCh}
 	if coin, ok := <-waitCh; ok {
 		return coin, nil
@@ -159,6 +159,7 @@ func (ccn *commonCoinNode) Close() error {
 // TryHandleMessage accepts messages if they are of proper type.
 func (ccn *commonCoinNode) TryHandleMessage(recv *peering.RecvEvent) bool {
 	if recv.Msg.MsgType == commonCoinShareMsgType {
+		ccn.log.Infof("XXX: CC: TryHandleMessage(%+v)", recv)
 		ccn.recvCh <- recv
 		return true
 	}
@@ -202,6 +203,7 @@ func (ccn *commonCoinNode) onCoinReq(req *commonCoinReq) {
 
 // onCoinShare handles the coin share received from our peers.
 func (ccn *commonCoinNode) onCoinShare(recvEvent *peering.RecvEvent) {
+	ccn.log.Infof("XXX: CC: onCoinShare(%+v)", recvEvent)
 	var err error
 
 	msg := commonCoinMsg{}
@@ -229,6 +231,7 @@ func (ccn *commonCoinNode) onCoinShare(recvEvent *peering.RecvEvent) {
 
 // onTimerTick performs periodic tasks: cleanup, message resends.
 func (ccn *commonCoinNode) onTimerTick() {
+	ccn.log.Infof("XXX: CC: onTimerTick()")
 	for sid, cc := range ccn.coins {
 		if !cc.onTimerTick() {
 			delete(ccn.coins, sid)
@@ -279,6 +282,9 @@ func (cc *commonCoin) getCoin(waitCh chan []byte) {
 	cc.cancelReq() // Cancel the previous request, if any.
 	cc.waitCh = waitCh
 	if done, err := cc.addOurShare(); !done || err != nil {
+		if err != nil {
+			cc.node.log.Warnf("Failed to add our CC share: %v", err)
+		}
 		// On the first iteration we don't ask for resends,
 		// because it highly possible that the messages are on the way.
 		cc.broadcastCoinShare(false)
@@ -334,6 +340,7 @@ func (cc *commonCoin) acceptCoinShare(peerIndex uint16, coinShare []byte, needRe
 }
 
 func (cc *commonCoin) onTimerTick() bool {
+	cc.node.log.Infof("XXX: CC: onTimerTick() -- %+v", cc)
 	now := time.Now()
 	if cc.created.Add(giveUpTimeout).Before(now) {
 		cc.cancelReq()
