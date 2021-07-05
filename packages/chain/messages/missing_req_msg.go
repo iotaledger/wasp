@@ -16,7 +16,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// region MissingRequestsMsg ///////////////////////////////////////////////////
+// region MissingRequestIDsMsg ///////////////////////////////////////////////////
 
 type MissingRequestIDsMsg struct {
 	IDs []coretypes.RequestID
