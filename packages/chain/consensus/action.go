@@ -96,7 +96,7 @@ func (c *Consensus) runVMIfNeeded() {
 	if !allArrived {
 		// some requests are not ready, so skip VM call this time. Maybe next time will be more luck
 		c.delayRunVMUntil = time.Now().Add(c.timers.VMRunRetryToWaitForReadyRequests)
-		c.log.Infof("runVM not needed: some requests didn't arrive yet")
+		c.log.Infof("runVM not needed: some requests didn't arrive yet. batch IDs: %v | batch Hashes: %v | missing indexes: %v", c.consensusBatch.RequestIDs, c.consensusBatch.RequestHashes, missingRequestIndexes)
 
 		// send message to other committee nodes asking for the missing requests
 		if !parameters.GetBool(parameters.PullMissingRequestsFromCommittee) {
@@ -454,8 +454,8 @@ func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 	}
 
 	// calculate intersection of proposals
-	inBatchSet := calcIntersection(acs, c.committee.Size())
-	if len(inBatchSet) == 0 {
+	inBatchIDs, inBatchHashes := calcIntersection(acs, c.committee.Size())
+	if len(inBatchIDs) == 0 {
 		// if intersection is empty, reset workflow and retry after some time. It means not all requests
 		// reached nodes and we have give it a time. Should not happen often
 		c.log.Warnf("receiveACS: ACS intersection (light) is empty. reset workflow. State index: %d, ACS sessionID %d",
@@ -476,7 +476,8 @@ func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 	c.consensusBatch = &BatchProposal{
 		ValidatorIndex:      c.committee.OwnPeerIndex(),
 		StateOutputID:       c.stateOutput.ID(),
-		RequestIDs:          inBatchSet,
+		RequestIDs:          inBatchIDs,
+		RequestHashes:       inBatchHashes,
 		Timestamp:           par.medianTs,
 		ConsensusManaPledge: par.consensusPledge,
 		AccessManaPledge:    par.accessPledge,

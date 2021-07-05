@@ -164,7 +164,7 @@ const keyLen = ledgerstate.OutputIDLength + 32
 // calcIntersection a simple algorithm to calculate acceptable intersection. It simply takes all requests
 // seen by 1/3+1 node. The assumptions is there can be at max 1/3 of bizantine nodes, so if something is reported
 // by more that 1/3 of nodes it means it is correct
-func calcIntersection(acs []*BatchProposal, n uint16) []coretypes.RequestID {
+func calcIntersection(acs []*BatchProposal, n uint16) ([]coretypes.RequestID, [][32]byte) {
 	minNumberMentioned := n/3 + 1
 	numMentioned := make(map[[keyLen]byte]uint16)
 
@@ -181,15 +181,19 @@ func calcIntersection(acs []*BatchProposal, n uint16) []coretypes.RequestID {
 			maxLen = len(prop.RequestIDs)
 		}
 	}
-	ret := make([]coretypes.RequestID, 0, maxLen)
+	retIDs := make([]coretypes.RequestID, 0, maxLen)
+	retHashes := make([][32]byte, 0)
 	for key, num := range numMentioned {
 		if num >= minNumberMentioned {
 			reqID, err := coretypes.RequestIDFromBytes(key[:])
 			if err != nil {
 				continue
 			}
-			ret = append(ret, reqID)
+			retIDs = append(retIDs, reqID)
+			var hash [32]byte
+			copy(hash[:], key[len(key)-32:])
+			retHashes = append(retHashes, hash)
 		}
 	}
-	return ret
+	return retIDs, retHashes
 }
