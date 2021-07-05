@@ -74,10 +74,10 @@ type MissingRequestMsg struct {
 	Request     coretypes.Request
 }
 
-func NewMissingRequestMsg(request coretypes.Request) *MissingRequestMsg {
+func NewMissingRequestMsg(req coretypes.Request) *MissingRequestMsg {
 	return &MissingRequestMsg{
-		IsOffledger: request.Output() == nil,
-		Request:     request,
+		IsOffledger: req.Output() == nil,
+		Request:     req,
 	}
 }
 
@@ -105,14 +105,8 @@ func (msg *MissingRequestMsg) read(r io.Reader) error {
 	if err != nil {
 		return xerrors.Errorf("failed to read request: %w", err)
 	}
-	if msg.IsOffledger {
-		if msg.Request, err = request.FromBytes(reqBytes); err != nil {
-			return xerrors.Errorf("failed to read request: %w", err)
-		}
-	} else {
-		if msg.Request, err = request.FromBytes(reqBytes); err != nil { // TODO
-			return xerrors.Errorf("failed to read request: %w", err)
-		}
+	if msg.Request, err = request.FromBytes(reqBytes); err != nil {
+		return xerrors.Errorf("failed to read request: %w", err)
 	}
 	return nil
 }

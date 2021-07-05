@@ -173,6 +173,7 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 	}
 }
 
+//nolint:funlen
 func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 	rdr := bytes.NewReader(msg.MsgData)
 
