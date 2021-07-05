@@ -122,7 +122,7 @@ type Mempool interface {
 	ReceiveRequest(req coretypes.Request) bool
 	RemoveRequests(reqs ...coretypes.RequestID)
 	ReadyNow(nowis ...time.Time) []coretypes.Request
-	ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, []int, bool)
+	ReadyFromIDs(nowis time.Time, reqIDs ...coretypes.RequestID) ([]coretypes.Request, []int, bool)
 	HasRequest(id coretypes.RequestID) bool
 	GetRequest(id coretypes.RequestID) coretypes.Request
 	Stats() MempoolStats
