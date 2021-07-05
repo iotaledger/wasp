@@ -148,8 +148,8 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 			}
 			c.offLedgerReqsAcksMutex.RLock()
 			ackPeers := c.offLedgerReqsAcks[(*req).ID()]
-			sendMessage(ackPeers)
 			c.offLedgerReqsAcksMutex.RUnlock()
+			sendMessage(ackPeers)
 		}
 	}()
 }
