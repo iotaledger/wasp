@@ -67,7 +67,11 @@ func TestAccessNodeMany(t *testing.T) {
 	consensusSize := 5
 	requestsCountInitial := 8
 	requestsCountIncrement := 8
-	itterationCount := 3
+	itterationCount := 4
+	allClusterNodes := make([]int, clusterSize)
+	for i := range allClusterNodes {
+		allClusterNodes[i] = i
+	}
 
 	clu1 := clutest.NewCluster(t, clusterSize)
 
@@ -104,10 +108,7 @@ func TestAccessNodeMany(t *testing.T) {
 			require.NoError(t, err)
 		}
 		requestsCummulative += requestsCount
-		for j := 0; j < clusterSize; j++ {
-			t.Logf("-->Checking node %v for %v requests", j, requestsCummulative)
-			waitUntil(t, counterEquals(chain1, int64(requestsCummulative)), []int{j}, 5*time.Second)
-		}
+		waitUntil(t, counterEquals(chain1, int64(requestsCummulative)), allClusterNodes, 60*time.Second)
 		requestsCount *= requestsCountIncrement
 	}
 }
