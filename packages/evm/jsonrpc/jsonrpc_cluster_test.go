@@ -48,7 +48,7 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 	require.NoError(t, err)
 
 	backend := NewWaspClientBackend(chain.Client(signer))
-	evmChain := NewEVMChain(backend)
+	evmChain := NewEVMChain(backend, evmchain.Interface.Name)
 
 	accountManager := NewAccountManager(evmtest.Accounts)
 
