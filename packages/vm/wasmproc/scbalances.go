@@ -9,13 +9,14 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 func NewScBalances(vm *WasmProcessor, keyID int32) *ScDict {
-	o := NewScDict(vm)
+	o := NewScDict(&vm.KvStoreHost, dict.New())
 	switch keyID {
 	case wasmhost.KeyIncoming:
 		if vm.ctx == nil {

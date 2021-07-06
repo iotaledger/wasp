@@ -70,15 +70,8 @@ var _ WaspObject = &ScDict{}
 
 var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 2, 4, 8, 0, 34, 0}
 
-func NewScDict(vm *WasmProcessor) *ScDict {
-	return NewScDictFromKvStore(&vm.KvStoreHost, dict.New())
-}
-
-func NewScDictFromKvStore(host *wasmhost.KvStoreHost, kvStore kv.KVStore) *ScDict {
-	o := &ScDict{}
-	o.host = host
-	o.kvStore = kvStore
-	return o
+func NewScDict(host *wasmhost.KvStoreHost, kvStore kv.KVStore) *ScDict {
+	return &ScDict{host: host, kvStore: kvStore}
 }
 
 func NewNullObject(host *wasmhost.KvStoreHost) WaspObject {
@@ -182,6 +175,10 @@ func (o *ScDict) GetTypeID(keyID int32) int32 {
 	return 0
 }
 
+func (o *ScDict) InvalidKey(keyID int32) {
+	o.Panic("invalid key: %d", keyID)
+}
+
 func (o *ScDict) key(keyID, typeID int32) kv.Key {
 	o.validate(keyID, typeID)
 	suffix := o.Suffix(keyID)
@@ -189,6 +186,10 @@ func (o *ScDict) key(keyID, typeID int32) kv.Key {
 	o.Tracef("fld: %s%s", o.name, suffix)
 	o.Tracef("key: %s", key[1:])
 	return kv.Key(key[1:])
+}
+
+func (o *ScDict) KvStore() kv.KVStore {
+	return o.kvStore
 }
 
 func (o *ScDict) NestedKey() string {
@@ -317,4 +318,10 @@ func (o *ScDict) validate(keyID, typeID int32) {
 	if fieldType != typeID {
 		o.Panic("validate: Invalid access")
 	}
+}
+
+func (o *ScDict) SetKvStore(res kv.KVStore) {
+	o.kvStore = res
+	o.objects = make(map[int32]int32)
+	o.types = make(map[int32]int32)
 }
