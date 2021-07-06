@@ -1,4 +1,4 @@
-// +build evm
+// +build !noevm
 
 package processors
 

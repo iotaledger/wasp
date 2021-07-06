@@ -3,16 +3,18 @@
 The `evmchain` smart contract emulates an Ethereum blockchain on top of the
 ISCP chain, allowing to run Ethereum smart contracts.
 
-## Install
+## EVM support
 
-**Important:** The `evmchain` contract is implemented as a native contract, and it has
-to be enabled in all Wasp nodes in the chain before deployment:
+The `evmchain` contract is implemented as a native contract, and as such it
+needs to be enabled at compile time. **EVM support is enabled by default, so
+no special action is needed.**
 
-To include support for the `evmchain` native contract in `wasp` and `wasp-cli`,
-you must provide the `-tags evm` flag to the Go compiler. For example:
+EVM support inflates the `wasp` and `wasp-cli` binaries by several MB. If this
+is a problem and you don't need EVM support, you can disable it at compile
+time by providing the `-tags noevm` flag to the Go compiler. For example:
 
 ```
-go install -tags evm ./...
+go install -tags noevm ./...
 ```
 
 ## Deploy

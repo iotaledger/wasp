@@ -1,3 +1,5 @@
+// +build !noevm
+
 package chain
 
 import (
