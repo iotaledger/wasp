@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -117,9 +116,8 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 	if committee != nil {
 		getPeerIDs = committee.GetOtherValidatorsPeerIDs
 	} else {
-		broadcastUpToNPeers := parameters.GetInt(parameters.OffledgerBroadcastUpToNPeers)
 		getPeerIDs = func() []string {
-			return (*c.peers).GetRandomPeers(broadcastUpToNPeers)
+			return (*c.peers).GetRandomPeers(c.offledgerBroadcastUpToNPeers)
 		}
 	}
 
@@ -133,8 +131,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 		}
 	}
 
-	broadcastInterval := time.Duration(parameters.GetInt(parameters.OffledgerBroadcastInterVal)) * time.Millisecond
-	ticker := time.NewTicker(broadcastInterval)
+	ticker := time.NewTicker(c.offledgerBroadcastInterval)
 	go func() {
 		for {
 			<-ticker.C

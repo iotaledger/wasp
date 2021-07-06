@@ -229,7 +229,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	ret.stateSync.SetSolidIndex(0)
 	require.NoError(env.T, err)
 
-	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn, timers)
+	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn, true, timers)
 	cons.vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret.Consensus = cons
 

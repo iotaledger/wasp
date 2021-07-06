@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	_ "github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/processors"
@@ -31,7 +32,13 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	allChains = chains.New(log, processors.Config)
+	allChains = chains.New(
+		log,
+		processors.Config,
+		parameters.GetInt(parameters.OffledgerBroadcastUpToNPeers),
+		time.Duration(parameters.GetInt(parameters.OffledgerBroadcastInterval))*time.Millisecond,
+		parameters.GetBool(parameters.PullMissingRequestsFromCommittee),
+	)
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry()); err != nil {
 			log.Errorf("failed to read chain activation records from registry: %v", err)

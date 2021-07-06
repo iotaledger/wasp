@@ -18,45 +18,46 @@ import (
 )
 
 type Consensus struct {
-	isReady                    atomic.Bool
-	chain                      chain.ChainCore
-	committee                  chain.Committee
-	mempool                    chain.Mempool
-	nodeConn                   chain.NodeConnection
-	vmRunner                   vm.VMRunner
-	currentState               state.VirtualState
-	stateOutput                *ledgerstate.AliasOutput
-	stateTimestamp             time.Time
-	acsSessionID               uint64
-	consensusBatch             *BatchProposal
-	consensusEntropy           hashing.HashValue
-	iAmContributor             bool
-	myContributionSeqNumber    uint16
-	contributors               []uint16
-	workflow                   workflowFlags
-	delayBatchProposalUntil    time.Time
-	delayRunVMUntil            time.Time
-	delaySendingSignedResult   time.Time
-	resultTxEssence            *ledgerstate.TransactionEssence
-	resultState                state.VirtualState
-	resultSignatures           []*messages.SignedResultMsg
-	finalTx                    *ledgerstate.Transaction
-	postTxDeadline             time.Time
-	pullInclusionStateDeadline time.Time
-	lastTimerTick              atomic.Int64
-	consensusInfoSnapshot      atomic.Value
-	timers                     ConsensusTimers
-	log                        *logger.Logger
-	eventStateTransitionMsgCh  chan *messages.StateTransitionMsg
-	eventSignedResultMsgCh     chan *messages.SignedResultMsg
-	eventInclusionStateMsgCh   chan *messages.InclusionStateMsg
-	eventACSMsgCh              chan *messages.AsynchronousCommonSubsetMsg
-	eventVMResultMsgCh         chan *messages.VMResultMsg
-	eventTimerMsgCh            chan messages.TimerTick
-	closeCh                    chan struct{}
-	assert                     assert.Assert
-	missingRequestsFromBatch   map[coretypes.RequestID][32]byte
-	missingRequestsMutex       sync.Mutex
+	isReady                          atomic.Bool
+	chain                            chain.ChainCore
+	committee                        chain.Committee
+	mempool                          chain.Mempool
+	nodeConn                         chain.NodeConnection
+	vmRunner                         vm.VMRunner
+	currentState                     state.VirtualState
+	stateOutput                      *ledgerstate.AliasOutput
+	stateTimestamp                   time.Time
+	acsSessionID                     uint64
+	consensusBatch                   *BatchProposal
+	consensusEntropy                 hashing.HashValue
+	iAmContributor                   bool
+	myContributionSeqNumber          uint16
+	contributors                     []uint16
+	workflow                         workflowFlags
+	delayBatchProposalUntil          time.Time
+	delayRunVMUntil                  time.Time
+	delaySendingSignedResult         time.Time
+	resultTxEssence                  *ledgerstate.TransactionEssence
+	resultState                      state.VirtualState
+	resultSignatures                 []*messages.SignedResultMsg
+	finalTx                          *ledgerstate.Transaction
+	postTxDeadline                   time.Time
+	pullInclusionStateDeadline       time.Time
+	lastTimerTick                    atomic.Int64
+	consensusInfoSnapshot            atomic.Value
+	timers                           ConsensusTimers
+	log                              *logger.Logger
+	eventStateTransitionMsgCh        chan *messages.StateTransitionMsg
+	eventSignedResultMsgCh           chan *messages.SignedResultMsg
+	eventInclusionStateMsgCh         chan *messages.InclusionStateMsg
+	eventACSMsgCh                    chan *messages.AsynchronousCommonSubsetMsg
+	eventVMResultMsgCh               chan *messages.VMResultMsg
+	eventTimerMsgCh                  chan messages.TimerTick
+	closeCh                          chan struct{}
+	assert                           assert.Assert
+	missingRequestsFromBatch         map[coretypes.RequestID][32]byte
+	missingRequestsMutex             sync.Mutex
+	pullMissingRequestsFromCommittee bool
 }
 
 type workflowFlags struct {
@@ -73,7 +74,7 @@ type workflowFlags struct {
 
 var _ chain.Consensus = &Consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, timersOpt ...ConsensusTimers) *Consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, timersOpt ...ConsensusTimers) *Consensus {
 	var timers ConsensusTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -82,22 +83,23 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 	}
 	log := chainCore.Log().Named("c")
 	ret := &Consensus{
-		chain:                     chainCore,
-		committee:                 committee,
-		mempool:                   mempool,
-		nodeConn:                  nodeConn,
-		vmRunner:                  runvm.NewVMRunner(),
-		resultSignatures:          make([]*messages.SignedResultMsg, committee.Size()),
-		timers:                    timers,
-		log:                       log,
-		eventStateTransitionMsgCh: make(chan *messages.StateTransitionMsg),
-		eventSignedResultMsgCh:    make(chan *messages.SignedResultMsg),
-		eventInclusionStateMsgCh:  make(chan *messages.InclusionStateMsg),
-		eventACSMsgCh:             make(chan *messages.AsynchronousCommonSubsetMsg),
-		eventVMResultMsgCh:        make(chan *messages.VMResultMsg),
-		eventTimerMsgCh:           make(chan messages.TimerTick),
-		closeCh:                   make(chan struct{}),
-		assert:                    assert.NewAssert(log),
+		chain:                            chainCore,
+		committee:                        committee,
+		mempool:                          mempool,
+		nodeConn:                         nodeConn,
+		vmRunner:                         runvm.NewVMRunner(),
+		resultSignatures:                 make([]*messages.SignedResultMsg, committee.Size()),
+		timers:                           timers,
+		log:                              log,
+		eventStateTransitionMsgCh:        make(chan *messages.StateTransitionMsg),
+		eventSignedResultMsgCh:           make(chan *messages.SignedResultMsg),
+		eventInclusionStateMsgCh:         make(chan *messages.InclusionStateMsg),
+		eventACSMsgCh:                    make(chan *messages.AsynchronousCommonSubsetMsg),
+		eventVMResultMsgCh:               make(chan *messages.VMResultMsg),
+		eventTimerMsgCh:                  make(chan messages.TimerTick),
+		closeCh:                          make(chan struct{}),
+		assert:                           assert.NewAssert(log),
+		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 	}
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()

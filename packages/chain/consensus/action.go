@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/rotate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -99,7 +98,7 @@ func (c *Consensus) runVMIfNeeded() {
 		c.log.Infof("runVM not needed: some requests didn't arrive yet. batch IDs: %v | batch Hashes: %v | missing indexes: %v", c.consensusBatch.RequestIDs, c.consensusBatch.RequestHashes, missingRequestIndexes)
 
 		// send message to other committee nodes asking for the missing requests
-		if !parameters.GetBool(parameters.PullMissingRequestsFromCommittee) {
+		if !c.pullMissingRequestsFromCommittee {
 			return
 		}
 		missingRequestIds := []coretypes.RequestID{}

@@ -36,7 +36,7 @@ const (
 	IpfsGatewayAddress = "ipfs.gatewayAddress"
 
 	OffledgerBroadcastUpToNPeers = "offledger.broadcastUpToNPeers"
-	OffledgerBroadcastInterVal   = "offledger.broadcastInterval"
+	OffledgerBroadcastInterval   = "offledger.broadcastInterval"
 )
 
 func InitFlags() {
@@ -70,7 +70,7 @@ func InitFlags() {
 	flag.String(IpfsGatewayAddress, "https://ipfs.io/", "the address of HTTP(s) gateway to which download from ipfs requests will be forwarded")
 
 	flag.Int(OffledgerBroadcastUpToNPeers, 10, "number of peers an offledger request is broadcasted to")
-	flag.Int(OffledgerBroadcastInterVal, 1000, "time between re-broadcast of offledger requests (in ms)")
+	flag.Int(OffledgerBroadcastInterval, 1000, "time between re-broadcast of offledger requests (in ms)")
 }
 
 func GetBool(name string) bool {
