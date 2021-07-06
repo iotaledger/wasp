@@ -23,7 +23,7 @@ var tplChain string
 func chainBreadcrumb(e *echo.Echo, chainID chainid.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("chain"),
-		Title: fmt.Sprintf("Chain %.8s…", chainID),
+		Title: fmt.Sprintf("Chain %.8s…", chainID.Base58()),
 		Href:  e.Reverse("chain", chainID.Base58()),
 	}
 }

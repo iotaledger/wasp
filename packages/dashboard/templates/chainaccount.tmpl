@@ -5,11 +5,11 @@
 		<div class="card fluid">
 			<h2 class="section">On-chain account</h2>
 			<dl>
-				<dt>AgentID</dt><dd><tt>{{.AgentID}}</tt></dd>
+				<dt>AgentID</dt><dd><tt class="value-agentid">{{.AgentID.String}}</tt></dd>
 			</dl>
 		</div>
 		<div class="card fluid">
-			<h3 class="section">Inputs</h3>
+			<h3 class="section">Balance</h3>
 			{{ template "balances" .Balances }}
 		</div>
 		{{ template "ws" .ChainID }}
