@@ -57,7 +57,7 @@ func (v *Viewcontext) CallView(contractHname, epCode coretypes.Hname, params dic
 			case *optimism.ErrorStateInvalidated:
 				err = err1
 			default:
-				err = xerrors.Errorf("viewcontext: panic in VM: %w", err1)
+				err = xerrors.Errorf("viewcontext: panic in VM: %v", err1)
 			}
 		}()
 		ret, err = v.callView(contractHname, epCode, params)
