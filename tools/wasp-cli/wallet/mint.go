@@ -3,7 +3,6 @@ package wallet
 import (
 	"strconv"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -25,13 +24,21 @@ var mintCmd = &cobra.Command{
 		outs, err := config.GoshimmerClient().GetConfirmedOutputs(address)
 		log.Check(err)
 
-		tx := util.WithTransaction(func() (*ledgerstate.Transaction, error) {
-			txb := utxoutil.NewBuilder(outs...)
-			log.Check(txb.AddSigLockedColoredOutput(address, nil, uint64(amount)))
-			log.Check(txb.AddRemainderOutputIfNeeded(address, nil, true))
-			return txb.BuildWithED25519(wallet.KeyPair())
-		})
+		txb := utxoutil.NewBuilder(outs...)
+		log.Check(txb.AddSigLockedIOTAOutput(address, uint64(amount), uint64(amount)))
+		log.Check(txb.AddRemainderOutputIfNeeded(address, nil, true))
+		tx, err := txb.BuildWithED25519(wallet.KeyPair())
+		log.Check(err)
 
-		log.Printf("Minted %d tokens of color %s\n", amount, tx.ID())
+		util.PostTransaction(tx)
+
+		minted := utxoutil.GetMintedAmounts(tx)
+		if len(minted) == 0 {
+			panic("transaction does not contain minted tokens")
+		}
+		for color := range minted {
+			log.Printf("Minted %d tokens of color %s\n", amount, color.Base58())
+		}
+		log.Printf("Transaction ID: %s\n", tx.ID().Base58())
 	},
 }
