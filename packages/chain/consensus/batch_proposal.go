@@ -184,16 +184,17 @@ func calcIntersection(acs []*BatchProposal, n uint16) ([]coretypes.RequestID, []
 	retIDs := make([]coretypes.RequestID, 0, maxLen)
 	retHashes := make([][32]byte, 0)
 	for key, num := range numMentioned {
-		if num >= minNumberMentioned {
-			reqID, err := coretypes.RequestIDFromBytes(key[:])
-			if err != nil {
-				continue
-			}
-			retIDs = append(retIDs, reqID)
-			var hash [32]byte
-			copy(hash[:], key[len(key)-32:])
-			retHashes = append(retHashes, hash)
+		if num < minNumberMentioned {
+			continue
 		}
+		reqID, err := coretypes.RequestIDFromBytes(key[:])
+		if err != nil {
+			continue
+		}
+		retIDs = append(retIDs, reqID)
+		var hash [32]byte
+		copy(hash[:], key[len(key)-32:])
+		retHashes = append(retHashes, hash)
 	}
 	return retIDs, retHashes
 }
