@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -67,7 +68,7 @@ func TestAccessNodeMany(t *testing.T) {
 	consensusSize := 5
 	requestsCountInitial := 8
 	requestsCountIncrement := 8
-	itterationCount := 3
+	iterationCount := 4
 
 	clu1 := clutest.NewCluster(t, clusterSize)
 
@@ -86,7 +87,7 @@ func TestAccessNodeMany(t *testing.T) {
 	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second, "contract to be deployed")
 
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
@@ -97,17 +98,15 @@ func TestAccessNodeMany(t *testing.T) {
 
 	requestsCount := requestsCountInitial
 	requestsCummulative := 0
-	for i := 0; i < itterationCount; i++ {
-		t.Logf("Running %v itteration of %v requests", i, requestsCount)
+	for i := 0; i < iterationCount; i++ {
+		logMsg := fmt.Sprintf("iteration %v of %v requests", i, requestsCount)
+		t.Logf("Running %s", logMsg)
 		for j := 0; j < requestsCount; j++ {
 			_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 			require.NoError(t, err)
 		}
 		requestsCummulative += requestsCount
-		for j := 0; j < clusterSize; j++ {
-			t.Logf("-->Checking node %v for %v requests", j, requestsCummulative)
-			waitUntil(t, counterEquals(chain1, int64(requestsCummulative)), []int{j}, 5*time.Second)
-		}
+		waitUntil(t, counterEquals(chain1, int64(requestsCummulative)), clu1.Config.AllNodes(), 60*time.Second, logMsg)
 		requestsCount *= requestsCountIncrement
 	}
 }
