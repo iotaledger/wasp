@@ -14,19 +14,21 @@ import (
 //go:embed testkeys_pregenerated-*.bin
 var embedded embed.FS
 
-func pregeneratedDksName(n uint16) string {
-	return fmt.Sprintf("testkeys_pregenerated-%v.bin", n)
+func pregeneratedDksName(n, t uint16) string {
+	return fmt.Sprintf("testkeys_pregenerated-%v-%v.bin", n, t)
 }
 
-func pregeneratedDksRead(n uint16) [][]byte {
+func pregeneratedDksRead(n, t uint16) [][]byte {
 	var err error
 	var buf []byte
 	var bufN uint16
-	if buf, err = embedded.ReadFile(pregeneratedDksName(n)); err != nil {
+	if buf, err = embedded.ReadFile(pregeneratedDksName(n, t)); err != nil {
 		panic(err)
 	}
 	r := bytes.NewReader(buf)
-	util.ReadUint16(r, &bufN) //nolint:errcheck
+	if err = util.ReadUint16(r, &bufN); err != nil {
+		panic(err)
+	}
 	if n != bufN {
 		panic("wrong_file")
 	}
