@@ -322,9 +322,11 @@ func contractIsDeployed(chain *cluster.Chain, contractName string) conditionFn {
 
 type conditionFn func(t *testing.T, nodeIndex int) bool
 
-func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Duration) {
+func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Duration, logMsg *string) {
 	for _, nodeIndex := range nodeIndexes {
-		t.Logf("-->Checking node %v...", nodeIndex)
+		if logMsg != nil {
+			t.Logf("-->Waiting for %s on node %v...", *logMsg, nodeIndex)
+		}
 		require.True(t,
 			waitTrue(timeout, func() bool {
 				return fn(t, nodeIndex)
