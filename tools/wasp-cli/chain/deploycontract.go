@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -46,20 +47,24 @@ var deployContractCmd = &cobra.Command{
 			progHash = uploadBlob(blobFieldValues, true)
 		}
 
-		util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.RequestOffLedger, error) {
-			return Client().PostOffLedgerRequest(
-				root.Interface.Hname(),
-				coretypes.Hn(root.FuncDeployContract),
-				chainclient.PostRequestParams{
-					Args: requestargs.New().
-						AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
-							root.ParamName:        name,
-							root.ParamDescription: description,
-							root.ParamProgramHash: progHash,
-						})).
-						AddEncodeSimpleMany(initParams),
-				},
-			)
-		})
+		deployContract(name, description, progHash, initParams)
 	},
+}
+
+func deployContract(name, description string, progHash hashing.HashValue, initParams dict.Dict) {
+	util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.RequestOffLedger, error) {
+		return Client().PostOffLedgerRequest(
+			root.Interface.Hname(),
+			coretypes.Hn(root.FuncDeployContract),
+			chainclient.PostRequestParams{
+				Args: requestargs.New().
+					AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
+						root.ParamName:        name,
+						root.ParamDescription: description,
+						root.ParamProgramHash: progHash,
+					})).
+					AddEncodeSimpleMany(initParams),
+			},
+		)
+	})
 }

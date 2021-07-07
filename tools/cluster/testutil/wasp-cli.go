@@ -55,6 +55,7 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) []string {
 		f(cmd)
 	}
 
+	w.t.Logf("Running: %s", strings.Join(cmd.Args, " "))
 	err := cmd.Run()
 
 	outStr, errStr := stdout.String(), stderr.String()
