@@ -18,23 +18,26 @@ import (
 )
 
 func TestPregenerateDKS(t *testing.T) {
-	t.Skip("This test was used only to pre-generate the keys once.")
-	t.Run("N=1/F=0", func(t *testing.T) { testPregenerateDKS(t, 1) })
-	t.Run("N=4/F=1", func(t *testing.T) { testPregenerateDKS(t, 4) })
-	t.Run("N=10/F=3", func(t *testing.T) { testPregenerateDKS(t, 10) })
-	t.Run("N=22/F=7", func(t *testing.T) { testPregenerateDKS(t, 22) })
-	t.Run("N=31/F=10", func(t *testing.T) { testPregenerateDKS(t, 31) })
-	t.Run("N=40/F=13", func(t *testing.T) { testPregenerateDKS(t, 40) })
-	t.Run("N=70/F=23", func(t *testing.T) { testPregenerateDKS(t, 70) })
-	t.Run("N=100/F=33", func(t *testing.T) { testPregenerateDKS(t, 100) })
+	t.Skip("This test was used only to pre-generate the keys once.") // Comment that temporarily, if you need to regenerate the keys.
+	t.Run("N=1/F=0", func(t *testing.T) { testPregenerateDKS(t, 1, 0) })
+	t.Run("N=4/F=0", func(t *testing.T) { testPregenerateDKS(t, 4, 0) })
+	t.Run("N=4/F=1", func(t *testing.T) { testPregenerateDKS(t, 4, 1) })
+	t.Run("N=10/F=3", func(t *testing.T) { testPregenerateDKS(t, 10, 3) })
+	t.Run("N=22/F=7", func(t *testing.T) { testPregenerateDKS(t, 22, 7) })
+	t.Run("N=31/F=10", func(t *testing.T) { testPregenerateDKS(t, 31, 10) })
+	t.Run("N=40/F=13", func(t *testing.T) { testPregenerateDKS(t, 40, 13) })
+	t.Run("N=70/F=23", func(t *testing.T) { testPregenerateDKS(t, 70, 23) })
+	t.Run("N=100/F=33", func(t *testing.T) { testPregenerateDKS(t, 100, 33) })
 }
 
-func testPregenerateDKS(t *testing.T, n uint16) {
+func testPregenerateDKS(t *testing.T, n, f uint16) {
 	var err error
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
+	threshold := n - f
+	require.GreaterOrEqual(t, threshold, (n*2)/3+1)
 	netIDs, identities := testpeers.SetupKeys(n)
-	dksAddr, dksRegistries := testpeers.SetupDkg(t, uint16((len(netIDs)*2)/3+1), netIDs, identities, tcrypto.DefaultSuite(), log.Named("dkg"))
+	dksAddr, dksRegistries := testpeers.SetupDkg(t, threshold, netIDs, identities, tcrypto.DefaultSuite(), log.Named("dkg"))
 	var buf bytes.Buffer
 	util.WriteUint16(&buf, uint16(len(dksRegistries)))
 	for i := range dksRegistries {
@@ -51,6 +54,6 @@ func testPregenerateDKS(t *testing.T, n uint16) {
 		dkb = dki.Bytes()
 		require.Nil(t, util.WriteBytes16(&buf, dkb))
 	}
-	err = ioutil.WriteFile(fmt.Sprintf("testkeys_pregenerated-%v.bin", n), buf.Bytes(), 0644)
+	err = ioutil.WriteFile(fmt.Sprintf("testkeys_pregenerated-%v-%v.bin", n, threshold), buf.Bytes(), 0644)
 	require.Nil(t, err)
 }
