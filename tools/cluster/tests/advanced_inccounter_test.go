@@ -44,7 +44,7 @@ func TestAccessNodeOne(t *testing.T) {
 	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second, nil)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
 
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
@@ -58,7 +58,7 @@ func TestAccessNodeOne(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, counterEquals(chain1, int64(numRequests)), []int{7, 8, 9, 4, 5, 6, 1}, 5*time.Second, nil)
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), []int{7, 8, 9, 4, 5, 6, 1}, 5*time.Second)
 }
 
 // cluster of 10 access nodes with the committee of 4 nodes. tested if all nodes are synced
@@ -87,8 +87,7 @@ func TestAccessNodeMany(t *testing.T) {
 	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	logMsg := "contract to be deployed"
-	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second, &logMsg)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second, "contract to be deployed")
 
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
@@ -100,14 +99,14 @@ func TestAccessNodeMany(t *testing.T) {
 	requestsCount := requestsCountInitial
 	requestsCummulative := 0
 	for i := 0; i < iterationCount; i++ {
-		logMsg = fmt.Sprintf("iteration %v of %v requests", i, requestsCount)
+		logMsg := fmt.Sprintf("iteration %v of %v requests", i, requestsCount)
 		t.Logf("Running %s", logMsg)
 		for j := 0; j < requestsCount; j++ {
 			_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 			require.NoError(t, err)
 		}
 		requestsCummulative += requestsCount
-		waitUntil(t, counterEquals(chain1, int64(requestsCummulative)), clu1.Config.AllNodes(), 60*time.Second, &logMsg)
+		waitUntil(t, counterEquals(chain1, int64(requestsCummulative)), clu1.Config.AllNodes(), 60*time.Second, logMsg)
 		requestsCount *= requestsCountIncrement
 	}
 }
@@ -138,7 +137,7 @@ func TestRotation(t *testing.T) {
 	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second, nil)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
 
 	require.True(t, waitStateController(t, chain1, 0, addr1, 5*time.Second))
 	require.True(t, waitStateController(t, chain1, 9, addr1, 5*time.Second))
@@ -155,7 +154,7 @@ func TestRotation(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, counterEquals(chain1, int64(numRequests)), []int{0, 3, 8, 9}, 5*time.Second, nil)
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), []int{0, 3, 8, 9}, 5*time.Second)
 
 	govClient := chain1.SCClient(governance.Interface.Hname(), chain1.OriginatorKeyPair())
 
@@ -199,7 +198,7 @@ func TestRotation(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, counterEquals(chain1, int64(2*numRequests)), clu1.Config.AllNodes(), 5*time.Second, nil)
+	waitUntil(t, counterEquals(chain1, int64(2*numRequests)), clu1.Config.AllNodes(), 5*time.Second)
 }
 
 func TestRotationMany(t *testing.T) {
@@ -257,7 +256,7 @@ func TestRotationMany(t *testing.T) {
 	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
 
-	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second, nil)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
 
 	addrIndex := 0
 	kp := wallet.KeyPair(1)
@@ -277,7 +276,7 @@ func TestRotationMany(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		waitUntil(t, counterEquals(chain1, int64(numRequests*(i+1))), []int{0, 3, 8, 9}, 5*time.Second, nil)
+		waitUntil(t, counterEquals(chain1, int64(numRequests*(i+1))), []int{0, 3, 8, 9}, 5*time.Second)
 
 		addrIndex = (addrIndex + 1) % numCmt
 
