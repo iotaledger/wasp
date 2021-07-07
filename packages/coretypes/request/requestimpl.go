@@ -509,7 +509,7 @@ func (req *RequestOffLedger) Bytes() []byte {
 
 // only used for consensus
 func (req *RequestOffLedger) Hash() [32]byte {
-	return blake2b.Sum256(req.Bytes())
+	return hashing.HashData(req.Bytes())
 }
 
 // Sign signs essence
