@@ -13,6 +13,10 @@ const pluginName = "Processors"
 var (
 	log    *logger.Logger
 	Config *processors.Config
+
+	nativeContracts = []*coreutil.ContractInterface{
+		inccounter.Interface,
+	}
 )
 
 func Init() *node.Plugin {
@@ -23,9 +27,6 @@ func configure(ctx *node.Plugin) {
 	log = logger.NewLogger(pluginName)
 
 	log.Info("Registering native contracts...")
-	nativeContracts := []*coreutil.ContractInterface{
-		inccounter.Interface,
-	}
 	for _, c := range nativeContracts {
 		log.Debugf(
 			"Registering native contract: name: '%s', program hash: %s, description: '%s'\n",
