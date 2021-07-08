@@ -38,7 +38,7 @@ func TestDeployChain(t *testing.T) {
 
 	checkCoreContracts(t, chain1)
 	checkRootsOutside(t, chain1)
-	for i := range chain1.CommitteeNodes {
+	for _, i := range chain1.CommitteeNodes {
 		blockIndex, err := chain1.BlockIndex(i)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, blockIndex)
@@ -73,7 +73,7 @@ func TestDeployContractFail(t *testing.T) {
 	}
 
 	checkCoreContracts(t, chain1)
-	for i := range chain1.CommitteeNodes {
+	for _, i := range chain1.CommitteeNodes {
 		blockIndex, err := chain1.BlockIndex(i)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, blockIndex)
