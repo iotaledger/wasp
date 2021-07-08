@@ -156,20 +156,15 @@ func spawn(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	a := assert.NewAssert(ctx.Log())
 
-	ctx.Log().Infof("kuku all ok 1")
-
 	callPar := dict.New()
 	callPar.Set(VarCounter, codec.EncodeInt64(val+1))
 	err := ctx.DeployContract(Interface.ProgramHash, name, dscr, callPar)
 	a.RequireNoError(err)
 
-	ctx.Log().Infof("kuku all ok 2")
 	// increase counter in newly spawned contract
 	hname := coretypes.Hn(name)
 	_, err = ctx.Call(hname, coretypes.Hn(FuncIncCounter), nil, nil)
 	a.RequireNoError(err)
-
-	ctx.Log().Infof("kuku all ok 3")
 
 	res, err := ctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncGetChainInfo), nil, nil)
 	a.RequireNoError(err)
