@@ -11,16 +11,18 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/packages/webapi/model"
 )
 
 type Chain struct {
@@ -76,43 +78,25 @@ func (ch *Chain) OriginatorClient() *chainclient.Client {
 	return ch.Client(ch.OriginatorKeyPair())
 }
 
-func (ch *Chain) Client(sigScheme *ed25519.KeyPair) *chainclient.Client {
+func (ch *Chain) Client(sigScheme *ed25519.KeyPair, nodeIndex ...int) *chainclient.Client {
+	i := 0
+	if len(nodeIndex) == 1 {
+		i = nodeIndex[0]
+	}
 	return chainclient.New(
 		ch.Cluster.GoshimmerClient(),
-		ch.Cluster.WaspClient(ch.CommitteeNodes[0]),
+		ch.Cluster.WaspClient(ch.CommitteeNodes[i]),
 		ch.ChainID,
 		sigScheme,
 	)
 }
 
-func (ch *Chain) SCClient(contractHname coretypes.Hname, sigScheme *ed25519.KeyPair) *scclient.SCClient {
-	return scclient.New(ch.Client(sigScheme), contractHname)
+func (ch *Chain) SCClient(contractHname coretypes.Hname, sigScheme *ed25519.KeyPair, nodeIndex ...int) *scclient.SCClient {
+	return scclient.New(ch.Client(sigScheme, nodeIndex...), contractHname)
 }
 
 func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
 	return multiclient.New(ch.CommitteeAPIHosts())
-}
-
-func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockIndex uint32, state dict.Dict) bool) bool {
-	pass := true
-	for i, host := range ch.CommitteeAPIHosts() {
-		if !ch.Cluster.IsNodeUp(i) {
-			continue
-		}
-		actual, err := ch.Cluster.WaspClient(i).DumpSCState(&ch.ChainID, hname)
-		if model.IsHTTPNotFound(err) {
-			pass = false
-			fmt.Printf("   ERROR: state does not exist\n")
-			continue
-		}
-		if err != nil {
-			panic(err)
-		}
-		if !f(host, actual.Index, actual.Variables) {
-			pass = false
-		}
-	}
-	return pass
 }
 
 func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*ledgerstate.Transaction, error) {
@@ -221,4 +205,38 @@ func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]
 
 func (ch *Chain) StartMessageCounter(expectations map[string]int) (*MessageCounter, error) {
 	return NewMessageCounter(ch.Cluster, ch.CommitteeNodes, expectations)
+}
+
+func (ch *Chain) BlockIndex(committeeIndex ...int) (uint32, error) {
+	cl := ch.SCClient(blocklog.Interface.Hname(), nil, committeeIndex...)
+	ret, err := cl.CallView(blocklog.FuncGetLatestBlockInfo)
+	if err != nil {
+		return 0, err
+	}
+	n, _, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
+	return n, err
+}
+
+func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[coretypes.Hname]*root.ContractRecord, error) {
+	cl := ch.SCClient(root.Interface.Hname(), nil, nodeIndex...)
+	ret, err := cl.CallView(root.FuncGetChainInfo)
+	if err != nil {
+		return nil, err
+	}
+	return root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+}
+
+func (ch *Chain) GetCounterValue(inccounterSCHname coretypes.Hname, committeeIndex ...int) (int64, error) {
+	cl := ch.SCClient(inccounterSCHname, nil, committeeIndex...)
+	ret, err := cl.CallView(inccounter.FuncGetCounter)
+	if err != nil {
+		return 0, err
+	}
+	n, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
+	return n, err
+}
+
+func (ch *Chain) GetStateVariable(contractHname coretypes.Hname, key string, committeeIndex ...int) ([]byte, error) {
+	cl := ch.SCClient(contractHname, nil, committeeIndex...)
+	return cl.StateGet(key)
 }

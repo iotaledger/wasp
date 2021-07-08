@@ -5,9 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
@@ -32,27 +29,25 @@ func deployIncCounterSC(t *testing.T, chain *cluster.Chain, counter *cluster.Mes
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
-		require.EqualValues(t, 2, blockIndex) //nolint:gomnd
-		checkRoots(t, chain)
+	checkCoreContracts(t, chain)
 
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		crBytes := contractRegistry.MustGetAt(incCounterSCHname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
+	for i := range chain.CommitteeNodes {
+		blockIndex, err := chain.BlockIndex(i)
+		require.NoError(t, err)
+		require.EqualValues(t, 2, blockIndex)
+
+		contractRegistry, err := chain.ContractRegistry(i)
+		require.NoError(t, err)
+
+		cr := contractRegistry[incCounterSCHname]
 
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, cr.Name, incCounterSCName)
 
-		return true
-	})
-
-	chain.WithSCState(incCounterSCHname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
-		require.EqualValues(t, 42, counterValue) //nolint:gomnd
-		return true
-	})
+		counterValue, err := chain.GetCounterValue(incCounterSCHname, i)
+		require.NoError(t, err)
+		require.EqualValues(t, 42, counterValue)
+	}
 }

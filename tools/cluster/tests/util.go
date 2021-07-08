@@ -23,60 +23,37 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func checkRoots(t *testing.T, chain *cluster.Chain) {
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
-		require.EqualValues(t, []byte{0xFF}, state.MustGet(root.VarStateInitialized))
+func checkCoreContracts(t *testing.T, chain *cluster.Chain) {
+	for i := range chain.CommitteeNodes {
+		b, err := chain.GetStateVariable(root.Interface.Hname(), root.VarStateInitialized, i)
+		require.NoError(t, err)
+		require.EqualValues(t, []byte{0xFF}, b)
 
-		chid, _, _ := codec.DecodeChainID(state.MustGet(root.VarChainID))
+		cl := chain.SCClient(root.Interface.Hname(), nil, i)
+		ret, err := cl.CallView(root.FuncGetChainInfo)
+		require.NoError(t, err)
+
+		chid, _, _ := codec.DecodeChainID(ret.MustGet(root.VarChainID))
 		require.EqualValues(t, chain.ChainID, chid)
 
-		aid, _, _ := codec.DecodeAgentID(state.MustGet(root.VarChainOwnerID))
+		aid, _, _ := codec.DecodeAgentID(ret.MustGet(root.VarChainOwnerID))
 		require.EqualValues(t, *chain.OriginatorID(), aid)
 
-		desc, _, _ := codec.DecodeString(state.MustGet(root.VarDescription))
+		desc, _, _ := codec.DecodeString(ret.MustGet(root.VarDescription))
 		require.EqualValues(t, chain.Description, desc)
 
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-
+		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+		require.NoError(t, err)
 		for _, rec := range core.AllCoreContractsByHash {
-			crBytes := contractRegistry.MustGetAt(rec.Hname().Bytes())
-			require.NotNil(t, crBytes)
-			cr, err := root.DecodeContractRecord(crBytes)
-			check(err, t)
+			cr := contractRegistry[rec.Hname()]
+			require.NotNil(t, cr, "core contract %s %+v missing", rec.Name, rec.Hname())
 
 			require.EqualValues(t, rec.ProgramHash, cr.ProgramHash)
 			require.EqualValues(t, rec.Description, cr.Description)
 			require.EqualValues(t, 0, cr.OwnerFee)
 			require.EqualValues(t, rec.Name, cr.Name)
 		}
-		//
-		//crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
-		//require.NotNil(t, crBytes)
-		//rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
-		//require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
-		//
-		//crBytes = contractRegistry.MustGetAt(blob.Interface.Hname().Bytes())
-		//require.NotNil(t, crBytes)
-		//cr, err := root.DecodeContractRecord(crBytes)
-		//check(err, t)
-		//
-		//require.EqualValues(t, blob.Interface.ProgramHash, cr.ProgramHash)
-		//require.EqualValues(t, blob.Interface.Description, cr.Description)
-		//require.EqualValues(t, 0, cr.OwnerFee)
-		//require.EqualValues(t, blob.Interface.Name, cr.Name)
-		//
-		//crBytes = contractRegistry.MustGetAt(accounts.Interface.Hname().Bytes())
-		//require.NotNil(t, crBytes)
-		//cr, err = root.DecodeContractRecord(crBytes)
-		//check(err, t)
-		//
-		//require.EqualValues(t, accounts.Interface.ProgramHash, cr.ProgramHash)
-		//require.EqualValues(t, accounts.Interface.Description, cr.Description)
-		//require.EqualValues(t, 0, cr.OwnerFee)
-		//require.EqualValues(t, accounts.Interface.Name, cr.Name)
-
-		return true
-	})
+	}
 }
 
 func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
@@ -89,46 +66,6 @@ func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
 		require.EqualValues(t, rec.Description, recBack.Description)
 		require.True(t, recBack.Creator.IsNil())
 	}
-	//
-	//recRoot, err := findContract(chain, root.Interface.Name)
-	//check(err, t)
-	//require.NotNil(t, recRoot)
-	//require.EqualValues(t, root.Interface.Name, recRoot.Name)
-	//require.EqualValues(t, root.Interface.ProgramHash, recRoot.ProgramHash)
-	//require.EqualValues(t, root.Interface.Description, recRoot.Description)
-	//require.True(t, recRoot.Creator.IsNil())
-	//
-	//recBlob, err := findContract(chain, blob.Interface.Name)
-	//check(err, t)
-	//require.NotNil(t, recBlob)
-	//require.EqualValues(t, blob.Interface.Name, recBlob.Name)
-	//require.EqualValues(t, blob.Interface.ProgramHash, recBlob.ProgramHash)
-	//require.EqualValues(t, blob.Interface.Description, recBlob.Description)
-	//require.True(t, recBlob.Creator.IsNil())
-	//
-	//recAccounts, err := findContract(chain, accounts.Interface.Name)
-	//check(err, t)
-	//require.NotNil(t, recAccounts)
-	//require.EqualValues(t, accounts.Interface.Name, recAccounts.Name)
-	//require.EqualValues(t, accounts.Interface.ProgramHash, recAccounts.ProgramHash)
-	//require.EqualValues(t, accounts.Interface.Description, recAccounts.Description)
-	//require.True(t, recAccounts.Creator.IsNil())
-	//
-	//recEventlog, err := findContract(chain, eventlog.Interface.Name)
-	//check(err, t)
-	//require.NotNil(t, recEventlog)
-	//require.EqualValues(t, eventlog.Interface.Name, recEventlog.Name)
-	//require.EqualValues(t, eventlog.Interface.ProgramHash, recEventlog.ProgramHash)
-	//require.EqualValues(t, eventlog.Interface.Description, recEventlog.Description)
-	//require.True(t, recEventlog.Creator.IsNil())
-	//
-	//recDefault, err := findContract(chain, _default.Interface.Name)
-	//check(err, t)
-	//require.NotNil(t, recDefault)
-	//require.EqualValues(t, _default.Interface.Name, recDefault.Name)
-	//require.EqualValues(t, _default.Interface.ProgramHash, recDefault.ProgramHash)
-	//require.EqualValues(t, _default.Interface.Description, recDefault.Description)
-	//require.True(t, recDefault.Creator.IsNil())
 }
 
 func requestFunds(wasps *cluster.Cluster, addr ledgerstate.Address, who string) error {
