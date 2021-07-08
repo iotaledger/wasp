@@ -302,9 +302,36 @@ func NewWeb3Service() *Web3Service {
 }
 
 func (s *Web3Service) ClientVersion() string {
-	return "evmproxy"
+	return "wasp/evmproxy"
 }
 
 func (s *Web3Service) Sha3(input hexutil.Bytes) hexutil.Bytes {
 	return crypto.Keccak256(input)
+}
+
+type TxPoolService struct{}
+
+func NewTxPoolService() *TxPoolService {
+	return &TxPoolService{}
+}
+
+func (s *TxPoolService) Content() map[string]map[string]map[string]*RPCTransaction {
+	return map[string]map[string]map[string]*RPCTransaction{
+		"pending": make(map[string]map[string]*RPCTransaction),
+		"queued":  make(map[string]map[string]*RPCTransaction),
+	}
+}
+
+func (s *TxPoolService) Inspect() map[string]map[string]map[string]string {
+	return map[string]map[string]map[string]string{
+		"pending": make(map[string]map[string]string),
+		"queued":  make(map[string]map[string]string),
+	}
+}
+
+func (s *TxPoolService) Status() map[string]hexutil.Uint {
+	return map[string]hexutil.Uint{
+		"pending": hexutil.Uint(0),
+		"queued":  hexutil.Uint(0),
+	}
 }
