@@ -1,8 +1,6 @@
 package tests
 
 import (
-	"bytes"
-	"fmt"
 	"testing"
 	"time"
 
@@ -10,55 +8,50 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
 
-func checkSC(t *testing.T, numRequests int) func(host string, blockIndex uint32, state dict.Dict) bool {
-	return func(host string, blockIndex uint32, state dict.Dict) bool {
+func checkSC(t *testing.T, chain *cluster.Chain, numRequests int) {
+	for i := range chain.CommitteeNodes {
+		blockIndex, err := chain.BlockIndex(i)
+		require.NoError(t, err)
 		require.EqualValues(t, numRequests+3, blockIndex)
 
-		chid, _, _ := codec.DecodeChainID(state.MustGet(root.VarChainID))
+		cl := chain.SCClient(root.Interface.Hname(), nil, i)
+		ret, err := cl.CallView(root.FuncGetChainInfo)
+		require.NoError(t, err)
+
+		chid, _, _ := codec.DecodeChainID(ret.MustGet(root.VarChainID))
 		require.EqualValues(t, chain.ChainID, chid)
 
-		aid, _, _ := codec.DecodeAgentID(state.MustGet(root.VarChainOwnerID))
+		aid, _, _ := codec.DecodeAgentID(ret.MustGet(root.VarChainOwnerID))
 		require.EqualValues(t, *chain.OriginatorID(), aid)
 
-		desc, _, _ := codec.DecodeString(state.MustGet(root.VarDescription))
+		desc, _, _ := codec.DecodeString(ret.MustGet(root.VarDescription))
 		require.EqualValues(t, chain.Description, desc)
 
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		require.EqualValues(t, 5, contractRegistry.MustLen())
-		//--
-		crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
-		require.NotNil(t, crBytes)
-		rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
-		//--
-		crBytes = contractRegistry.MustGetAt(incHname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
+		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+		require.NoError(t, err)
+		require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contractRegistry))
+
+		cr := contractRegistry[incHname]
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
 		require.EqualValues(t, 0, cr.OwnerFee)
-		return true
 	}
 }
 
 func checkCounter(t *testing.T, expected int) {
-	chain.WithSCState(incHname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		for k, v := range state {
-			fmt.Printf("%s: %v\n", string(k), v)
-		}
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(varCounter))
+	for i := range chain.CommitteeNodes {
+		counterValue, err := chain.GetCounterValue(incHname, i)
+		require.NoError(t, err)
 		require.EqualValues(t, expected, counterValue)
-		return true
-	})
+	}
 }
 
 func TestIncDeployment(t *testing.T) {
@@ -69,37 +62,35 @@ func TestIncDeployment(t *testing.T) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
+	for i := range chain.CommitteeNodes {
+		blockIndex, err := chain.BlockIndex(i)
+		require.NoError(t, err)
 		require.EqualValues(t, 3, blockIndex)
 
-		chid, _, _ := codec.DecodeChainID(state.MustGet(root.VarChainID))
+		cl := chain.SCClient(root.Interface.Hname(), nil, i)
+		ret, err := cl.CallView(root.FuncGetChainInfo)
+		require.NoError(t, err)
+
+		chid, _, _ := codec.DecodeChainID(ret.MustGet(root.VarChainID))
 		require.EqualValues(t, chain.ChainID, chid)
 
-		aid, _, _ := codec.DecodeAgentID(state.MustGet(root.VarChainOwnerID))
+		aid, _, _ := codec.DecodeAgentID(ret.MustGet(root.VarChainOwnerID))
 		require.EqualValues(t, *chain.OriginatorID(), aid)
 
-		desc, _, _ := codec.DecodeString(state.MustGet(root.VarDescription))
+		desc, _, _ := codec.DecodeString(ret.MustGet(root.VarDescription))
 		require.EqualValues(t, chain.Description, desc)
 
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		require.EqualValues(t, 5, contractRegistry.MustLen())
-		//--
-		crBytes := contractRegistry.MustGetAt(root.Interface.Hname().Bytes())
-		require.NotNil(t, crBytes)
-		rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
-		require.True(t, bytes.Equal(crBytes, util.MustBytes(rec)))
-		//--
-		crBytes = contractRegistry.MustGetAt(incHname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
+		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+		require.NoError(t, err)
+		require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contractRegistry))
+
+		cr := contractRegistry[incHname]
 
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
 		require.EqualValues(t, 0, cr.OwnerFee)
-		return true
-	})
+	}
 	checkCounter(t, 0)
 }
 
@@ -127,7 +118,7 @@ func testNothing(t *testing.T, numRequests int) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Interface.Hname(), checkSC(t, numRequests))
+	checkSC(t, chain, numRequests)
 	checkCounter(t, 0)
 }
 
@@ -155,7 +146,7 @@ func testIncrement(t *testing.T, numRequests int) {
 		t.Fail()
 	}
 
-	chain.WithSCState(root.Interface.Hname(), checkSC(t, numRequests))
+	checkSC(t, chain, numRequests)
 	checkCounter(t, numRequests)
 }
 
@@ -217,13 +208,17 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 		varNumRepeats: numRepeats,
 	})
 
-	chain.WithSCState(incHname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(varCounter))
+	for i := range chain.CommitteeNodes {
+		b, err := chain.GetStateVariable(incHname, varCounter, i)
+		require.NoError(t, err)
+		counterValue, _, _ := codec.DecodeInt64(b)
 		require.EqualValues(t, numRepeats+1, counterValue)
-		repeats, _, _ := codec.DecodeInt64(state.MustGet(varNumRepeats))
+
+		b, err = chain.GetStateVariable(incHname, varNumRepeats, i)
+		require.NoError(t, err)
+		repeats, _, _ := codec.DecodeInt64(b)
 		require.EqualValues(t, 0, repeats)
-		return true
-	})
+	}
 }
 
 func TestIncLocalStateInternalCall(t *testing.T) {

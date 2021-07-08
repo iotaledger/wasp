@@ -9,9 +9,6 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -64,31 +61,27 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 	t.Logf("   %s: %s", root.Name, root.Interface.Hname().String())
 	t.Logf("   %s: %s", accounts.Name, accounts.Interface.Hname().String())
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
+	checkCoreContracts(t, chain)
+
+	for i := range chain.CommitteeNodes {
+		blockIndex, err := chain.BlockIndex(i)
+		require.NoError(t, err)
 		require.EqualValues(t, 2, blockIndex)
-		checkRoots(t, chain)
 
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		require.EqualValues(t, 5, contractRegistry.MustLen())
+		contractRegistry, err := chain.ContractRegistry(i)
+		require.NoError(t, err)
 
-		crBytes := contractRegistry.MustGetAt(hname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
+		cr := contractRegistry[hname]
 
 		require.EqualValues(t, programHash1, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, incCounterSCName, cr.Name)
 
-		return true
-	})
-
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
+		counterValue, err := chain.GetCounterValue(hname, i)
+		require.NoError(t, err)
 		require.EqualValues(t, 42, counterValue)
-		return true
-	})
+	}
 
 	if !clu.VerifyAddressBalances(chain.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA + 2,
@@ -109,11 +102,12 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 10*time.Second)
 	check(err, t)
 
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
+	for i := range chain.CommitteeNodes {
+		counterValue, err := chain.GetCounterValue(incCounterSCHname, i)
+		require.NoError(t, err)
 		require.EqualValues(t, 43, counterValue)
-		return true
-	})
+	}
+
 	if !clu.VerifyAddressBalances(scOwnerAddr, solo.Saldo-transferIotas, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: solo.Saldo - transferIotas,
 	}, "owner after") {
@@ -159,34 +153,28 @@ func TestBasic2Accounts(t *testing.T) {
 		t.Fail()
 	}
 
-	t.Logf("   %s: %s", root.Name, root.Interface.Hname().String())
-	t.Logf("   %s: %s", accounts.Name, accounts.Interface.Hname().String())
+	checkCoreContracts(t, chain1)
 
-	chain1.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
+	for i := range chain1.CommitteeNodes {
+		blockIndex, err := chain1.BlockIndex(i)
+		require.NoError(t, err)
 		require.EqualValues(t, 2, blockIndex)
-		checkRoots(t, chain1)
 
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		require.EqualValues(t, 5, contractRegistry.MustLen())
+		contractRegistry, err := chain1.ContractRegistry(i)
+		require.NoError(t, err)
 
-		crBytes := contractRegistry.MustGetAt(hname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
+		t.Logf("%+v", contractRegistry)
+		cr := contractRegistry[hname]
 
 		require.EqualValues(t, programHash1, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, incCounterSCName, cr.Name)
 
-		return true
-	})
-
-	chain1.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
+		counterValue, err := chain1.GetCounterValue(hname, i)
+		require.NoError(t, err)
 		require.EqualValues(t, 42, counterValue)
-		return true
-	})
+	}
 
 	if !clu.VerifyAddressBalances(chain1.ChainID.AsAddress(), ledgerstate.DustThresholdAliasOutputIOTA+2, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA + 2,
@@ -221,11 +209,11 @@ func TestBasic2Accounts(t *testing.T) {
 	check(err, t)
 	checkLedger(t, chain1)
 
-	chain1.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
+	for i := range chain1.CommitteeNodes {
+		counterValue, err := chain1.GetCounterValue(hname, i)
+		require.NoError(t, err)
 		require.EqualValues(t, 43, counterValue)
-		return true
-	})
+	}
 	if !clu.VerifyAddressBalances(originatorAddress, solo.Saldo-ledgerstate.DustThresholdAliasOutputIOTA-2, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: solo.Saldo - ledgerstate.DustThresholdAliasOutputIOTA - 2, // 1 for chain, 1 init, 1 inccounter
 	}, "originator after") {
