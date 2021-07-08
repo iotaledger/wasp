@@ -72,6 +72,7 @@ const (
 )
 
 const (
+	FieldChainID                 = "chid"
 	FieldGenesisAlloc            = "g"
 	FieldAddress                 = "a"
 	FieldKey                     = "k"

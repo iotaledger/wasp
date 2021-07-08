@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
+	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -19,11 +20,16 @@ import (
 
 type EVMChain struct {
 	backend      ChainBackend
+	chainID      int
 	contractName string
 }
 
-func NewEVMChain(backend ChainBackend, contractName string) *EVMChain {
-	return &EVMChain{backend, contractName}
+func NewEVMChain(backend ChainBackend, chainID int, contractName string) *EVMChain {
+	return &EVMChain{backend, chainID, contractName}
+}
+
+func (e *EVMChain) Signer() types.Signer {
+	return evm.Signer(big.NewInt(int64(e.chainID)))
 }
 
 func (e *EVMChain) GasPerIota() (uint64, error) {

@@ -54,18 +54,36 @@ var (
 	GasPrice        = big.NewInt(0)
 )
 
-var Config = params.AllEthashProtocolChanges
+const DefaultChainID = 1074 // IOTA -- get it?
 
-func Signer() types.Signer {
-	return types.NewEIP155Signer(Config.ChainID)
+func MakeConfig(chainID int) *params.ChainConfig {
+	return &params.ChainConfig{
+		ChainID:             big.NewInt(int64(chainID)),
+		HomesteadBlock:      big.NewInt(0),
+		EIP150Block:         big.NewInt(0),
+		EIP150Hash:          common.Hash{},
+		EIP155Block:         big.NewInt(0),
+		EIP158Block:         big.NewInt(0),
+		ByzantiumBlock:      big.NewInt(0),
+		ConstantinopleBlock: big.NewInt(0),
+		PetersburgBlock:     big.NewInt(0),
+		IstanbulBlock:       big.NewInt(0),
+		MuirGlacierBlock:    big.NewInt(0),
+		BerlinBlock:         big.NewInt(0),
+		Ethash:              &params.EthashConfig{},
+	}
 }
 
-func InitGenesis(db ethdb.Database, alloc core.GenesisAlloc, gasLimit uint64) {
+func Signer(chainID *big.Int) types.Signer {
+	return types.NewEIP155Signer(chainID)
+}
+
+func InitGenesis(chainID int, db ethdb.Database, alloc core.GenesisAlloc, gasLimit uint64) {
 	stored := rawdb.ReadCanonicalHash(db, 0)
 	if (stored != common.Hash{}) {
 		panic("genesis block already initialized")
 	}
-	genesis := core.Genesis{Config: Config, Alloc: alloc, GasLimit: gasLimit}
+	genesis := core.Genesis{Config: MakeConfig(chainID), Alloc: alloc, GasLimit: gasLimit}
 	genesis.MustCommit(db)
 }
 
@@ -73,12 +91,13 @@ func InitGenesis(db ethdb.Database, alloc core.GenesisAlloc, gasLimit uint64) {
 var cacheConfig = &core.CacheConfig{}
 
 func NewEVMEmulator(db ethdb.Database) *EVMEmulator {
-	stored := rawdb.ReadCanonicalHash(db, 0)
-	if (stored == common.Hash{}) {
+	canonicalHash := rawdb.ReadCanonicalHash(db, 0)
+	if (canonicalHash == common.Hash{}) {
 		panic("must initialize genesis block first")
 	}
 
-	blockchain, _ := core.NewBlockChain(db, cacheConfig, Config, ethash.NewFaker(), vm.Config{}, nil, nil)
+	config := rawdb.ReadChainConfig(db, canonicalHash)
+	blockchain, _ := core.NewBlockChain(db, cacheConfig, config, ethash.NewFaker(), vm.Config{}, nil, nil)
 
 	e := &EVMEmulator{
 		database:   db,
@@ -532,7 +551,7 @@ func (e *EVMEmulator) Blockchain() *core.BlockChain {
 }
 
 func (e *EVMEmulator) Signer() types.Signer {
-	return Signer()
+	return Signer(e.blockchain.Config().ChainID)
 }
 
 // callMsg implements core.Message to allow passing it as a transaction simulator.

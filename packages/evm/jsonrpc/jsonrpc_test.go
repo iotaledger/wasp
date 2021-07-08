@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 )
@@ -32,6 +33,7 @@ type testEnv struct {
 	server    *rpc.Server
 	client    *ethclient.Client
 	rawClient *rpc.Client
+	chainID   int
 }
 
 type soloTestEnv struct {
@@ -42,10 +44,13 @@ type soloTestEnv struct {
 func newSoloTestEnv(t *testing.T) *soloTestEnv {
 	evmtest.InitGoEthLogger(t)
 
+	chainID := evm.DefaultChainID
+
 	s := solo.New(t, true, false).WithNativeContract(evmchain.Interface)
 	chainOwner, _ := s.NewKeyPairWithFunds()
 	chain := s.NewChain(chainOwner, "iscpchain")
 	err := chain.DeployContract(chainOwner, "evmchain", evmchain.Interface.ProgramHash,
+		evmchain.FieldChainID, codec.EncodeUint16(uint16(chainID)),
 		evmchain.FieldGenesisAlloc, evmchain.EncodeGenesisAlloc(core.GenesisAlloc{
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 		}),
@@ -53,7 +58,7 @@ func newSoloTestEnv(t *testing.T) *soloTestEnv {
 	require.NoError(t, err)
 	signer, _ := s.NewKeyPairWithFunds()
 	backend := NewSoloBackend(s, chain, signer)
-	evmChain := NewEVMChain(backend, evmchain.Interface.Name)
+	evmChain := NewEVMChain(backend, chainID, evmchain.Interface.Name)
 
 	accountManager := NewAccountManager(evmtest.Accounts)
 
@@ -70,6 +75,7 @@ func newSoloTestEnv(t *testing.T) *soloTestEnv {
 			server:    rpcsrv,
 			client:    client,
 			rawClient: rawClient,
+			chainID:   chainID,
 		},
 		solo: s,
 	}
@@ -84,12 +90,16 @@ func generateKey(t *testing.T) (*ecdsa.PrivateKey, common.Address) {
 
 var requestFundsAmount = big.NewInt(1e18) // 1 ETH
 
+func (e *testEnv) signer() types.Signer {
+	return evm.Signer(big.NewInt(int64(e.chainID)))
+}
+
 func (e *testEnv) requestFunds(target common.Address) *types.Transaction {
 	nonce, err := e.client.NonceAt(context.Background(), evmtest.FaucetAddress, nil)
 	require.NoError(e.t, err)
 	tx, err := types.SignTx(
 		types.NewTransaction(nonce, target, requestFundsAmount, evm.TxGas, evm.GasPrice, nil),
-		evm.Signer(),
+		e.signer(),
 		evmtest.FaucetKey,
 	)
 	require.NoError(e.t, err)
@@ -120,7 +130,7 @@ func (e *testEnv) deployEVMContract(creator *ecdsa.PrivateKey, contractABI abi.A
 
 	tx, err := types.SignTx(
 		types.NewContractCreation(nonce, value, gasLimit, evm.GasPrice, data),
-		evm.Signer(),
+		e.signer(),
 		creator,
 	)
 	require.NoError(e.t, err)

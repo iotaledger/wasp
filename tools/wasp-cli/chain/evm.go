@@ -4,7 +4,9 @@ package chain
 
 import (
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
+	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/tools/evm/evmcli"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -35,6 +37,7 @@ func initEVMDeploy(evmCmd *cobra.Command) {
 		Short: "Deploy the evmchain contract (i.e. create a new EVM chain)",
 		Run: func(cmd *cobra.Command, args []string) {
 			deployContract(deployParams.Name, deployParams.Description, evmchain.Interface.ProgramHash, dict.Dict{
+				evmchain.FieldChainID:      codec.EncodeUint16(uint16(deployParams.ChainID)),
 				evmchain.FieldGenesisAlloc: evmchain.EncodeGenesisAlloc(deployParams.GetGenesis(nil)),
 			})
 			log.Printf("%s contract successfully deployed.\n", evmchain.Interface.Name)
@@ -47,6 +50,7 @@ func initEVMDeploy(evmCmd *cobra.Command) {
 
 func initJSONRPCCommand(evmCmd *cobra.Command) {
 	var jsonRPCServer evmcli.JSONRPCServer
+	var chainID int
 	var contractName string
 
 	jsonRPCCmd := &cobra.Command{
@@ -61,11 +65,12 @@ By default the server has no unlocked accounts. To send transactions, either:
 - configure an unlocked account with --account, and use eth_sendTransaction`,
 		Run: func(cmd *cobra.Command, args []string) {
 			backend := jsonrpc.NewWaspClientBackend(Client())
-			jsonRPCServer.ServeJSONRPC(backend, contractName)
+			jsonRPCServer.ServeJSONRPC(backend, chainID, contractName)
 		},
 	}
 
 	jsonRPCServer.InitFlags(jsonRPCCmd)
+	jsonRPCCmd.Flags().IntVarP(&chainID, "chainid", "", evm.DefaultChainID, "ChainID (used for signing transactions)")
 	jsonRPCCmd.Flags().StringVarP(&contractName, "name", "", evmchain.Interface.Name, "evmchain contract name")
 	evmCmd.AddCommand(jsonRPCCmd)
 }
