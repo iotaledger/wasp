@@ -63,7 +63,7 @@ func TestDeployContractFail(t *testing.T) {
 	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	_, err = chain.DeployContract(incCounterSCName, programHash.String(), "", map[string]interface{}{
+	tx, err := chain1.DeployContract(incCounterSCName, programHash.String(), "", map[string]interface{}{
 		root.ParamName: "", // intentionally empty so that it fails
 	})
 	check(err, t)
@@ -76,16 +76,18 @@ func TestDeployContractFail(t *testing.T) {
 	for _, i := range chain1.CommitteeNodes {
 		blockIndex, err := chain1.BlockIndex(i)
 		require.NoError(t, err)
-		require.EqualValues(t, 1, blockIndex)
+		require.EqualValues(t, 2, blockIndex)
 
 		contractRegistry, err := chain1.ContractRegistry(i)
 		require.NoError(t, err)
-
 		// contract was not deployed:
 		require.EqualValues(t, len(core.AllCoreContractsByHash), len(contractRegistry))
 	}
 
-	// TODO: check error message
+	// query error message from blocklog:
+	rec, _, _, err := chain1.GetRequestLogRecord(coretypes.NewRequestID(tx.ID(), 0))
+	require.NoError(t, err)
+	require.Contains(t, string(rec.LogData), "wrong name")
 }
 
 func TestDeployContractOnly(t *testing.T) {
@@ -102,7 +104,7 @@ func TestDeployContractOnly(t *testing.T) {
 	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	deployIncCounterSC(t, chain1, counter1)
+	tx := deployIncCounterSC(t, chain1, counter1)
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := chain1.Cluster.WaspClient(0).CallView(
@@ -116,6 +118,12 @@ func TestDeployContractOnly(t *testing.T) {
 	rec, err := root.DecodeContractRecord(recb)
 	check(err, t)
 	require.EqualValues(t, "testing contract deployment with inccounter", rec.Description)
+
+	{
+		rec, _, _, err := chain1.GetRequestLogRecord(coretypes.NewRequestID(tx.ID(), 0))
+		require.NoError(t, err)
+		require.Empty(t, string(rec.LogData))
+	}
 }
 
 func TestDeployContractAndSpawn(t *testing.T) {

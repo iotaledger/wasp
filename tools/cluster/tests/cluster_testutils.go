@@ -3,6 +3,7 @@ package tests
 import (
 	"testing"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -14,12 +15,12 @@ const incCounterSCName = "inccounter1"
 
 var incCounterSCHname = coretypes.Hn(incCounterSCName)
 
-func deployIncCounterSC(t *testing.T, chain *cluster.Chain, counter *cluster.MessageCounter) {
+func deployIncCounterSC(t *testing.T, chain *cluster.Chain, counter *cluster.MessageCounter) *ledgerstate.Transaction {
 	description := "testing contract deployment with inccounter" //nolint:goconst
 	programHash := inccounter.Interface.ProgramHash
 	check(err, t)
 
-	_, err = chain.DeployContract(incCounterSCName, programHash.String(), description, map[string]interface{}{
+	tx, err := chain.DeployContract(incCounterSCName, programHash.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
 		root.ParamName:        incCounterSCName,
 	})
@@ -50,4 +51,6 @@ func deployIncCounterSC(t *testing.T, chain *cluster.Chain, counter *cluster.Mes
 		require.NoError(t, err)
 		require.EqualValues(t, 42, counterValue)
 	}
+
+	return tx
 }
