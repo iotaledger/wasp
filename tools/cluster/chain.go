@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -239,4 +240,24 @@ func (ch *Chain) GetCounterValue(inccounterSCHname coretypes.Hname, nodeIndex ..
 func (ch *Chain) GetStateVariable(contractHname coretypes.Hname, key string, nodeIndex ...int) ([]byte, error) {
 	cl := ch.SCClient(contractHname, nil, nodeIndex...)
 	return cl.StateGet(key)
+}
+
+func (ch *Chain) GetRequestLogRecord(reqID coretypes.RequestID, committeeIndex ...int) (*blocklog.RequestLogRecord, uint32, uint16, error) {
+	cl := ch.SCClient(blocklog.Interface.Hname(), nil, committeeIndex...)
+	ret, err := cl.CallView(blocklog.FuncGetRequestLogRecord, dict.Dict{blocklog.ParamRequestID: reqID.Bytes()})
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	resultDecoder := kvdecoder.New(ret)
+	binRec, err := resultDecoder.GetBytes(blocklog.ParamRequestRecord, nil)
+	if err != nil || binRec == nil {
+		return nil, 0, 0, err
+	}
+	rec, err := blocklog.RequestLogRecordFromBytes(binRec)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	blockIndex := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
+	requestIndex := resultDecoder.MustGetUint16(blocklog.ParamRequestIndex)
+	return rec, blockIndex, requestIndex, nil
 }
