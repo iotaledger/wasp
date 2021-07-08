@@ -78,10 +78,10 @@ func (ch *Chain) OriginatorClient() *chainclient.Client {
 	return ch.Client(ch.OriginatorKeyPair())
 }
 
-func (ch *Chain) Client(sigScheme *ed25519.KeyPair, committeeIndex ...int) *chainclient.Client {
+func (ch *Chain) Client(sigScheme *ed25519.KeyPair, nodeIndex ...int) *chainclient.Client {
 	i := 0
-	if len(committeeIndex) == 1 {
-		i = committeeIndex[0]
+	if len(nodeIndex) == 1 {
+		i = nodeIndex[0]
 	}
 	return chainclient.New(
 		ch.Cluster.GoshimmerClient(),
@@ -91,8 +91,8 @@ func (ch *Chain) Client(sigScheme *ed25519.KeyPair, committeeIndex ...int) *chai
 	)
 }
 
-func (ch *Chain) SCClient(contractHname coretypes.Hname, sigScheme *ed25519.KeyPair, committeeIndex ...int) *scclient.SCClient {
-	return scclient.New(ch.Client(sigScheme, committeeIndex...), contractHname)
+func (ch *Chain) SCClient(contractHname coretypes.Hname, sigScheme *ed25519.KeyPair, nodeIndex ...int) *scclient.SCClient {
+	return scclient.New(ch.Client(sigScheme, nodeIndex...), contractHname)
 }
 
 func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
@@ -217,8 +217,8 @@ func (ch *Chain) BlockIndex(committeeIndex ...int) (uint32, error) {
 	return n, err
 }
 
-func (ch *Chain) ContractRegistry(committeeIndex ...int) (map[coretypes.Hname]*root.ContractRecord, error) {
-	cl := ch.SCClient(root.Interface.Hname(), nil, committeeIndex...)
+func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[coretypes.Hname]*root.ContractRecord, error) {
+	cl := ch.SCClient(root.Interface.Hname(), nil, nodeIndex...)
 	ret, err := cl.CallView(root.FuncGetChainInfo)
 	if err != nil {
 		return nil, err

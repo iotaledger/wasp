@@ -56,6 +56,8 @@ func init() {
 		coreutil.ViewFunc(FuncGetStringValue, getStringValue),
 
 		coreutil.ViewFunc(FuncJustView, testJustView),
+
+		coreutil.Func(FuncSpawn, spawn),
 	})
 }
 
@@ -100,6 +102,8 @@ const (
 
 	FuncPassTypesFull = "passTypesFull"
 	FuncPassTypesView = "passTypesView"
+
+	FuncSpawn = "spawn"
 
 	// State variables
 	VarCounter              = "counter"
