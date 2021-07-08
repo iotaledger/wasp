@@ -19,61 +19,15 @@ pub struct ControlAddressesCall {
     pub results: ImmutableControlAddressesResults,
 }
 
-impl ControlAddressesCall {
-    pub fn new(_ctx: &ScFuncContext) -> ControlAddressesCall {
-        let mut f = ControlAddressesCall {
-            func:    ScView::new(HSC_NAME, HVIEW_CONTROL_ADDRESSES),
-            results: ImmutableControlAddressesResults { id: 0 },
-        };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
-        f
-    }
-
-    pub fn new_from_view(_ctx: &ScViewContext) -> ControlAddressesCall {
-        ControlAddressesCall::new(&ScFuncContext {})
-    }
-}
-
 pub struct GetBlockInfoCall {
     pub func:    ScView,
     pub params:  MutableGetBlockInfoParams,
     pub results: ImmutableGetBlockInfoResults,
 }
 
-impl GetBlockInfoCall {
-    pub fn new(_ctx: &ScFuncContext) -> GetBlockInfoCall {
-        let mut f = GetBlockInfoCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_BLOCK_INFO),
-            params:  MutableGetBlockInfoParams { id: 0 },
-            results: ImmutableGetBlockInfoResults { id: 0 },
-        };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
-        f
-    }
-
-    pub fn new_from_view(_ctx: &ScViewContext) -> GetBlockInfoCall {
-        GetBlockInfoCall::new(&ScFuncContext {})
-    }
-}
-
 pub struct GetLatestBlockInfoCall {
     pub func:    ScView,
     pub results: ImmutableGetLatestBlockInfoResults,
-}
-
-impl GetLatestBlockInfoCall {
-    pub fn new(_ctx: &ScFuncContext) -> GetLatestBlockInfoCall {
-        let mut f = GetLatestBlockInfoCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_LATEST_BLOCK_INFO),
-            results: ImmutableGetLatestBlockInfoResults { id: 0 },
-        };
-        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
-        f
-    }
-
-    pub fn new_from_view(_ctx: &ScViewContext) -> GetLatestBlockInfoCall {
-        GetLatestBlockInfoCall::new(&ScFuncContext {})
-    }
 }
 
 pub struct GetRequestIDsForBlockCall {
@@ -82,42 +36,10 @@ pub struct GetRequestIDsForBlockCall {
     pub results: ImmutableGetRequestIDsForBlockResults,
 }
 
-impl GetRequestIDsForBlockCall {
-    pub fn new(_ctx: &ScFuncContext) -> GetRequestIDsForBlockCall {
-        let mut f = GetRequestIDsForBlockCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_REQUEST_I_DS_FOR_BLOCK),
-            params:  MutableGetRequestIDsForBlockParams { id: 0 },
-            results: ImmutableGetRequestIDsForBlockResults { id: 0 },
-        };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
-        f
-    }
-
-    pub fn new_from_view(_ctx: &ScViewContext) -> GetRequestIDsForBlockCall {
-        GetRequestIDsForBlockCall::new(&ScFuncContext {})
-    }
-}
-
 pub struct GetRequestLogRecordCall {
     pub func:    ScView,
     pub params:  MutableGetRequestLogRecordParams,
     pub results: ImmutableGetRequestLogRecordResults,
-}
-
-impl GetRequestLogRecordCall {
-    pub fn new(_ctx: &ScFuncContext) -> GetRequestLogRecordCall {
-        let mut f = GetRequestLogRecordCall {
-            func:    ScView::new(HSC_NAME, HVIEW_GET_REQUEST_LOG_RECORD),
-            params:  MutableGetRequestLogRecordParams { id: 0 },
-            results: ImmutableGetRequestLogRecordResults { id: 0 },
-        };
-        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
-        f
-    }
-
-    pub fn new_from_view(_ctx: &ScViewContext) -> GetRequestLogRecordCall {
-        GetRequestLogRecordCall::new(&ScFuncContext {})
-    }
 }
 
 pub struct GetRequestLogRecordsForBlockCall {
@@ -126,8 +48,60 @@ pub struct GetRequestLogRecordsForBlockCall {
     pub results: ImmutableGetRequestLogRecordsForBlockResults,
 }
 
-impl GetRequestLogRecordsForBlockCall {
-    pub fn new(_ctx: &ScFuncContext) -> GetRequestLogRecordsForBlockCall {
+pub struct IsRequestProcessedCall {
+    pub func:    ScView,
+    pub params:  MutableIsRequestProcessedParams,
+    pub results: ImmutableIsRequestProcessedResults,
+}
+
+pub struct ScFuncs {
+}
+
+impl ScFuncs {
+    pub fn control_addresses(_ctx: & dyn ScViewCallContext) -> ControlAddressesCall {
+        let mut f = ControlAddressesCall {
+            func:    ScView::new(HSC_NAME, HVIEW_CONTROL_ADDRESSES),
+            results: ImmutableControlAddressesResults { id: 0 },
+        };
+        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        f
+    }
+    pub fn get_block_info(_ctx: & dyn ScViewCallContext) -> GetBlockInfoCall {
+        let mut f = GetBlockInfoCall {
+            func:    ScView::new(HSC_NAME, HVIEW_GET_BLOCK_INFO),
+            params:  MutableGetBlockInfoParams { id: 0 },
+            results: ImmutableGetBlockInfoResults { id: 0 },
+        };
+        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        f
+    }
+    pub fn get_latest_block_info(_ctx: & dyn ScViewCallContext) -> GetLatestBlockInfoCall {
+        let mut f = GetLatestBlockInfoCall {
+            func:    ScView::new(HSC_NAME, HVIEW_GET_LATEST_BLOCK_INFO),
+            results: ImmutableGetLatestBlockInfoResults { id: 0 },
+        };
+        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        f
+    }
+    pub fn get_request_i_ds_for_block(_ctx: & dyn ScViewCallContext) -> GetRequestIDsForBlockCall {
+        let mut f = GetRequestIDsForBlockCall {
+            func:    ScView::new(HSC_NAME, HVIEW_GET_REQUEST_I_DS_FOR_BLOCK),
+            params:  MutableGetRequestIDsForBlockParams { id: 0 },
+            results: ImmutableGetRequestIDsForBlockResults { id: 0 },
+        };
+        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        f
+    }
+    pub fn get_request_log_record(_ctx: & dyn ScViewCallContext) -> GetRequestLogRecordCall {
+        let mut f = GetRequestLogRecordCall {
+            func:    ScView::new(HSC_NAME, HVIEW_GET_REQUEST_LOG_RECORD),
+            params:  MutableGetRequestLogRecordParams { id: 0 },
+            results: ImmutableGetRequestLogRecordResults { id: 0 },
+        };
+        f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        f
+    }
+    pub fn get_request_log_records_for_block(_ctx: & dyn ScViewCallContext) -> GetRequestLogRecordsForBlockCall {
         let mut f = GetRequestLogRecordsForBlockCall {
             func:    ScView::new(HSC_NAME, HVIEW_GET_REQUEST_LOG_RECORDS_FOR_BLOCK),
             params:  MutableGetRequestLogRecordsForBlockParams { id: 0 },
@@ -136,20 +110,7 @@ impl GetRequestLogRecordsForBlockCall {
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
     }
-
-    pub fn new_from_view(_ctx: &ScViewContext) -> GetRequestLogRecordsForBlockCall {
-        GetRequestLogRecordsForBlockCall::new(&ScFuncContext {})
-    }
-}
-
-pub struct IsRequestProcessedCall {
-    pub func:    ScView,
-    pub params:  MutableIsRequestProcessedParams,
-    pub results: ImmutableIsRequestProcessedResults,
-}
-
-impl IsRequestProcessedCall {
-    pub fn new(_ctx: &ScFuncContext) -> IsRequestProcessedCall {
+    pub fn is_request_processed(_ctx: & dyn ScViewCallContext) -> IsRequestProcessedCall {
         let mut f = IsRequestProcessedCall {
             func:    ScView::new(HSC_NAME, HVIEW_IS_REQUEST_PROCESSED),
             params:  MutableIsRequestProcessedParams { id: 0 },
@@ -157,10 +118,6 @@ impl IsRequestProcessedCall {
         };
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
         f
-    }
-
-    pub fn new_from_view(_ctx: &ScViewContext) -> IsRequestProcessedCall {
-        IsRequestProcessedCall::new(&ScFuncContext {})
     }
 }
 
