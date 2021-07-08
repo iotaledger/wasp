@@ -175,8 +175,8 @@ func TestIncrementWithTransfer(t *testing.T) {
 func TestIncCallIncrement1(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
 
-	entryPoint := coretypes.Hn("call_increment")
-	postRequest(t, incHname, entryPoint, 0, nil)
+	entryPoint := coretypes.Hn("callIncrement")
+	postRequest(t, incHname, entryPoint, 1, nil)
 
 	checkCounter(t, 2)
 }
@@ -184,7 +184,7 @@ func TestIncCallIncrement1(t *testing.T) {
 func TestIncCallIncrement2Recurse5x(t *testing.T) {
 	setupAndLoad(t, incName, incDescription, 1, nil)
 
-	entryPoint := coretypes.Hn("call_increment_recurse5x")
+	entryPoint := coretypes.Hn("callIncrementRecurse5x")
 	postRequest(t, incHname, entryPoint, 0, nil)
 
 	checkCounter(t, 6)
@@ -236,7 +236,7 @@ func TestIncLocalStateSandboxCall(t *testing.T) {
 }
 
 func TestIncLocalStatePost(t *testing.T) {
-	setupAndLoad(t, incName, incDescription, 5, nil)
+	setupAndLoad(t, incName, incDescription, 3, nil)
 	entryPoint := coretypes.Hn("localStatePost")
 	postRequest(t, incHname, entryPoint, 3, nil)
 	checkCounter(t, 0)

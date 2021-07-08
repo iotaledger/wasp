@@ -124,7 +124,7 @@ func setupAndLoad(t *testing.T, name, description string, nrOfRequests int, expe
 
 	expectations := map[string]int{
 		"dismissed_committee": 0,
-		//"state":               3 + nrOfRequests,
+		"state":               3 + nrOfRequests,
 		//"request_out":         3 + nrOfRequests,    // not always coming from all nodes, but from quorum only
 	}
 	if nrOfRequests == 1 {
