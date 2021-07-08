@@ -55,7 +55,7 @@ func checkCounter(t *testing.T, expected int) {
 }
 
 func TestIncDeployment(t *testing.T) {
-	setupAndLoad(t, incName, incDescription, 0, nil)
+	setupAndLoad(t, incName, incDescription, 0)
 	defer counter.Close()
 
 	if !counter.WaitUntilExpectationsMet() {
@@ -103,7 +103,7 @@ func TestInc5xNothing(t *testing.T) {
 }
 
 func testNothing(t *testing.T, numRequests int) {
-	setupAndLoad(t, incName, incDescription, numRequests, nil)
+	setupAndLoad(t, incName, incDescription, numRequests)
 	defer counter.Close()
 
 	entryPoint := coretypes.Hn("nothing")
@@ -131,7 +131,7 @@ func TestInc5xIncrement(t *testing.T) {
 }
 
 func testIncrement(t *testing.T, numRequests int) {
-	setupAndLoad(t, incName, incDescription, numRequests, nil)
+	setupAndLoad(t, incName, incDescription, numRequests)
 	defer counter.Close()
 
 	entryPoint := coretypes.Hn("increment")
@@ -151,7 +151,7 @@ func testIncrement(t *testing.T, numRequests int) {
 }
 
 func TestIncrementWithTransfer(t *testing.T) {
-	setupAndLoad(t, incName, incDescription, 1, nil)
+	setupAndLoad(t, incName, incDescription, 1)
 
 	entryPoint := coretypes.Hn("increment")
 	postRequest(t, incHname, entryPoint, 42, nil)
@@ -173,25 +173,25 @@ func TestIncrementWithTransfer(t *testing.T) {
 }
 
 func TestIncCallIncrement1(t *testing.T) {
-	setupAndLoad(t, incName, incDescription, 1, nil)
+	setupAndLoad(t, incName, incDescription, 1)
 
-	entryPoint := coretypes.Hn("call_increment")
-	postRequest(t, incHname, entryPoint, 0, nil)
+	entryPoint := coretypes.Hn("callIncrement")
+	postRequest(t, incHname, entryPoint, 1, nil)
 
 	checkCounter(t, 2)
 }
 
 func TestIncCallIncrement2Recurse5x(t *testing.T) {
-	setupAndLoad(t, incName, incDescription, 1, nil)
+	setupAndLoad(t, incName, incDescription, 1)
 
-	entryPoint := coretypes.Hn("call_increment_recurse5x")
+	entryPoint := coretypes.Hn("callIncrementRecurse5x")
 	postRequest(t, incHname, entryPoint, 0, nil)
 
 	checkCounter(t, 6)
 }
 
 func TestIncPostIncrement(t *testing.T) {
-	setupAndLoad(t, incName, incDescription, 3, nil)
+	setupAndLoad(t, incName, incDescription, 3)
 
 	entryPoint := coretypes.Hn("postIncrement")
 	postRequest(t, incHname, entryPoint, 1, nil)
@@ -201,7 +201,7 @@ func TestIncPostIncrement(t *testing.T) {
 
 func TestIncRepeatManyIncrement(t *testing.T) {
 	const numRepeats = 5
-	setupAndLoad(t, incName, incDescription, numRepeats+2, nil)
+	setupAndLoad(t, incName, incDescription, numRepeats+2)
 
 	entryPoint := coretypes.Hn("repeatMany")
 	postRequest(t, incHname, entryPoint, numRepeats, map[string]interface{}{
@@ -222,28 +222,28 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 }
 
 func TestIncLocalStateInternalCall(t *testing.T) {
-	setupAndLoad(t, incName, incDescription, 1, nil)
+	setupAndLoad(t, incName, incDescription, 1)
 	entryPoint := coretypes.Hn("localStateInternalCall")
 	postRequest(t, incHname, entryPoint, 0, nil)
 	checkCounter(t, 2)
 }
 
 func TestIncLocalStateSandboxCall(t *testing.T) {
-	setupAndLoad(t, incName, incDescription, 1, nil)
+	setupAndLoad(t, incName, incDescription, 1)
 	entryPoint := coretypes.Hn("localStateSandboxCall")
 	postRequest(t, incHname, entryPoint, 0, nil)
 	checkCounter(t, 0)
 }
 
 func TestIncLocalStatePost(t *testing.T) {
-	setupAndLoad(t, incName, incDescription, 5, nil)
+	setupAndLoad(t, incName, incDescription, 3)
 	entryPoint := coretypes.Hn("localStatePost")
 	postRequest(t, incHname, entryPoint, 3, nil)
 	checkCounter(t, 0)
 }
 
 func TestIncViewCounter(t *testing.T) {
-	setupAndLoad(t, incName, incDescription, 1, nil)
+	setupAndLoad(t, incName, incDescription, 1)
 	entryPoint := coretypes.Hn("increment")
 	postRequest(t, incHname, entryPoint, 0, nil)
 	checkCounter(t, 1)
