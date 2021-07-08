@@ -43,8 +43,12 @@ func defaultInitFunc(ctx coretypes.Sandbox) (dict.Dict, error) {
 }
 
 func defaultHandlerFunc(ctx coretypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("default full entry point handler invoked for contact %s from caller %s\nTokens: %s",
-		ctx.Contract(), ctx.Caller(), ctx.IncomingTransfer().String())
+	transferStr := "(empty)"
+	if ctx.IncomingTransfer() != nil {
+		transferStr = ctx.IncomingTransfer().String()
+	}
+	ctx.Log().Debugf("default full entry point handler invoked for contact %s from caller %s\nTransfer: %s",
+		ctx.Contract(), ctx.Caller(), transferStr)
 	return nil, nil
 }
 

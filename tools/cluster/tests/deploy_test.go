@@ -45,7 +45,7 @@ func TestDeployChain(t *testing.T) {
 
 		contractRegistry, err := chain1.ContractRegistry(i)
 		require.NoError(t, err)
-		require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contractRegistry))
+		require.EqualValues(t, len(core.AllCoreContractsByHash), len(contractRegistry))
 	}
 }
 
@@ -151,7 +151,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 	check(err, t)
 
 	checkCoreContracts(t, chain1)
-	for i := range chain1.CommitteeNodes {
+	for _, i := range chain1.CommitteeNodes {
 		blockIndex, err := chain1.BlockIndex(i)
 		require.NoError(t, err)
 		require.EqualValues(t, 3, blockIndex)
@@ -161,7 +161,6 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		require.EqualValues(t, len(core.AllCoreContractsByHash)+2, len(contractRegistry))
 
 		cr := contractRegistry[hnameNew]
-		// TODO check program hash
 		require.EqualValues(t, dscrNew, cr.Description)
 		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, nameNew, cr.Name)
