@@ -88,7 +88,7 @@ func testBlockchain(t *testing.T, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(db, genesisAlloc, GasLimitDefault)
+	InitGenesis(DefaultChainID, db, genesisAlloc, GasLimitDefault)
 
 	emu := NewEVMEmulator(db)
 	defer emu.Close()
@@ -177,7 +177,7 @@ func testBlockchainPersistence(t *testing.T, db ethdb.Database) {
 	receiverAddress := crypto.PubkeyToAddress(receiver.PublicKey)
 	transferAmount := big.NewInt(1000)
 
-	InitGenesis(db, genesisAlloc, GasLimitDefault)
+	InitGenesis(DefaultChainID, db, genesisAlloc, GasLimitDefault)
 
 	// do a transfer using one instance of EVMEmulator
 	func() {
@@ -300,7 +300,7 @@ func testStorageContract(t *testing.T, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(db, genesisAlloc, GasLimitDefault)
+	InitGenesis(DefaultChainID, db, genesisAlloc, GasLimitDefault)
 
 	emu := NewEVMEmulator(db)
 	defer emu.Close()
@@ -387,7 +387,7 @@ func testERC20Contract(t *testing.T, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(db, genesisAlloc, GasLimitDefault)
+	InitGenesis(DefaultChainID, db, genesisAlloc, GasLimitDefault)
 
 	emu := NewEVMEmulator(db)
 	defer emu.Close()

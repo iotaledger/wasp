@@ -20,7 +20,12 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	genesisAlloc, err := DecodeGenesisAlloc(ctx.Params().MustGet(FieldGenesisAlloc))
 	a.RequireNoError(err)
-	evm.InitGenesis(rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())), genesisAlloc, evm.GasLimitDefault)
+	chainID, ok, err := codec.DecodeUint16(ctx.Params().MustGet(FieldChainID))
+	a.RequireNoError(err)
+	if !ok {
+		chainID = evm.DefaultChainID
+	}
+	evm.InitGenesis(int(chainID), rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())), genesisAlloc, evm.GasLimitDefault)
 	ctx.State().Set(FieldGasPerIota, codec.EncodeUint64(DefaultGasPerIota))
 	ctx.State().Set(FieldEvmOwner, codec.EncodeAgentID(ctx.ContractCreator()))
 	return nil, nil

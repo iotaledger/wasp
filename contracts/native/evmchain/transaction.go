@@ -28,6 +28,6 @@ func DecodeTransaction(b []byte) (*types.Transaction, error) {
 }
 
 func getSender(tx *types.Transaction) common.Address {
-	sender, _ := types.Sender(evm.Signer(), tx)
+	sender, _ := types.Sender(evm.Signer(tx.ChainId()), tx)
 	return sender
 }

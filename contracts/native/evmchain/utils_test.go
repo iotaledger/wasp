@@ -32,6 +32,7 @@ type evmChainInstance struct {
 	soloChain    *solo.Chain
 	faucetKey    *ecdsa.PrivateKey
 	faucetSupply *big.Int
+	chainID      int
 }
 
 type evmContractInstance struct {
@@ -71,14 +72,17 @@ func initEVMChain(t *testing.T, nativeContracts ...*coreutil.ContractInterface) 
 		env = env.WithNativeContract(c)
 	}
 	faucetKey, _ := crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
+	chainID := evm.DefaultChainID
 	e := &evmChainInstance{
 		t:            t,
 		solo:         env,
 		soloChain:    env.NewChain(nil, "ch1"),
 		faucetKey:    faucetKey,
 		faucetSupply: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9)),
+		chainID:      chainID,
 	}
 	err := e.soloChain.DeployContract(nil, "evmchain", Interface.ProgramHash,
+		FieldChainID, codec.EncodeUint16(uint16(chainID)),
 		FieldGenesisAlloc, EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
 			e.faucetAddress(): {Balance: e.faucetSupply},
 		}),
@@ -196,6 +200,10 @@ func (e *evmChainInstance) deployLoopContract(creator *ecdsa.PrivateKey) *loopCo
 	return &loopContractInstance{e.deployContract(creator, evmtest.LoopContractABI, evmtest.LoopContractBytecode)}
 }
 
+func (e *evmChainInstance) signer() types.Signer {
+	return evm.Signer(big.NewInt(int64(e.chainID)))
+}
+
 func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) *evmContractInstance {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
@@ -221,7 +229,7 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 
 	tx, err := types.SignTx(
 		types.NewContractCreation(nonce, value, gas, evm.GasPrice, data),
-		evm.Signer(),
+		e.signer(),
 		e.faucetKey,
 	)
 	require.NoError(e.t, err)
@@ -301,7 +309,7 @@ func (e *evmContractInstance) buildEthTxData(opts []ethCallOptions, fnName strin
 
 	unsignedTx := types.NewTransaction(nonce, e.address, opt.value, opt.gasLimit, evm.GasPrice, callArguments)
 
-	tx, err := types.SignTx(unsignedTx, evm.Signer(), opt.sender)
+	tx, err := types.SignTx(unsignedTx, e.chain.signer(), opt.sender)
 	require.NoError(e.chain.t, err)
 
 	txdata, err := tx.MarshalBinary()

@@ -11,11 +11,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
+	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
 
 type DeployParams struct {
+	ChainID     int
 	Name        string
 	Description string
 	alloc       []string
@@ -24,6 +26,7 @@ type DeployParams struct {
 }
 
 func (d *DeployParams) InitFlags(cmd *cobra.Command) {
+	cmd.Flags().IntVarP(&d.ChainID, "chainid", "", evm.DefaultChainID, "ChainID")
 	cmd.Flags().StringVarP(&d.Name, "name", "", evmchain.Interface.Name, "Contract name")
 	cmd.Flags().StringVarP(&d.Description, "description", "", evmchain.Interface.Description, "Contract description")
 	cmd.Flags().StringSliceVarP(&d.alloc, "alloc", "", nil, "Genesis allocation (format: <address>:<wei>,<address>:<wei>,...)")

@@ -7,15 +7,15 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-func NewServer(chain *EVMChain, accountManager *AccountManager) *rpc.Server {
+func NewServer(evmChain *EVMChain, accountManager *AccountManager) *rpc.Server {
 	rpcsrv := rpc.NewServer()
 	for _, srv := range []struct {
 		namespace string
 		service   interface{}
 	}{
 		{"web3", NewWeb3Service()},
-		{"net", NewNetService()},
-		{"eth", NewEthService(chain, accountManager)},
+		{"net", NewNetService(evmChain.chainID)},
+		{"eth", NewEthService(evmChain, accountManager)},
 		{"txpool", NewTxPoolService()},
 	} {
 		err := rpcsrv.RegisterName(srv.namespace, srv.service)
