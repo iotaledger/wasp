@@ -79,13 +79,13 @@ func (ch *Chain) OriginatorClient() *chainclient.Client {
 }
 
 func (ch *Chain) Client(sigScheme *ed25519.KeyPair, nodeIndex ...int) *chainclient.Client {
-	i := 0
+	idx := 0
 	if len(nodeIndex) == 1 {
-		i = nodeIndex[0]
+		idx = nodeIndex[0]
 	}
 	return chainclient.New(
 		ch.Cluster.GoshimmerClient(),
-		ch.Cluster.WaspClient(ch.CommitteeNodes[i]),
+		ch.Cluster.WaspClient(idx),
 		ch.ChainID,
 		sigScheme,
 	)
@@ -207,8 +207,8 @@ func (ch *Chain) StartMessageCounter(expectations map[string]int) (*MessageCount
 	return NewMessageCounter(ch.Cluster, ch.CommitteeNodes, expectations)
 }
 
-func (ch *Chain) BlockIndex(committeeIndex ...int) (uint32, error) {
-	cl := ch.SCClient(blocklog.Interface.Hname(), nil, committeeIndex...)
+func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
+	cl := ch.SCClient(blocklog.Interface.Hname(), nil, nodeIndex...)
 	ret, err := cl.CallView(blocklog.FuncGetLatestBlockInfo)
 	if err != nil {
 		return 0, err
@@ -226,8 +226,8 @@ func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[coretypes.Hname]*root.C
 	return root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
 }
 
-func (ch *Chain) GetCounterValue(inccounterSCHname coretypes.Hname, committeeIndex ...int) (int64, error) {
-	cl := ch.SCClient(inccounterSCHname, nil, committeeIndex...)
+func (ch *Chain) GetCounterValue(inccounterSCHname coretypes.Hname, nodeIndex ...int) (int64, error) {
+	cl := ch.SCClient(inccounterSCHname, nil, nodeIndex...)
 	ret, err := cl.CallView(inccounter.FuncGetCounter)
 	if err != nil {
 		return 0, err
@@ -236,7 +236,7 @@ func (ch *Chain) GetCounterValue(inccounterSCHname coretypes.Hname, committeeInd
 	return n, err
 }
 
-func (ch *Chain) GetStateVariable(contractHname coretypes.Hname, key string, committeeIndex ...int) ([]byte, error) {
-	cl := ch.SCClient(contractHname, nil, committeeIndex...)
+func (ch *Chain) GetStateVariable(contractHname coretypes.Hname, key string, nodeIndex ...int) ([]byte, error) {
+	cl := ch.SCClient(contractHname, nil, nodeIndex...)
 	return cl.StateGet(key)
 }

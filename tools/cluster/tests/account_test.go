@@ -155,7 +155,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 	checkCoreContracts(t, chain1)
 
-	for i := range chain1.CommitteeNodes {
+	for _, i := range chain1.CommitteeNodes {
 		blockIndex, err := chain1.BlockIndex(i)
 		require.NoError(t, err)
 		require.EqualValues(t, 2, blockIndex)
@@ -209,7 +209,7 @@ func TestBasic2Accounts(t *testing.T) {
 	check(err, t)
 	checkLedger(t, chain1)
 
-	for i := range chain1.CommitteeNodes {
+	for _, i := range chain1.CommitteeNodes {
 		counterValue, err := chain1.GetCounterValue(hname, i)
 		require.NoError(t, err)
 		require.EqualValues(t, 43, counterValue)

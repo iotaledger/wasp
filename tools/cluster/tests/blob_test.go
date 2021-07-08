@@ -32,7 +32,7 @@ func setupBlobTest(t *testing.T) *cluster.Chain {
 	check(err, t)
 
 	checkCoreContracts(t, chain1)
-	for i := range chain1.CommitteeNodes {
+	for _, i := range chain1.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, blockIndex)
