@@ -43,5 +43,6 @@ func (n *NodeConnImplementation) PullConfirmedOutput(addr ledgerstate.Address, o
 }
 
 func (n *NodeConnImplementation) PostTransaction(tx *ledgerstate.Transaction) {
+//	n.log.Infof("XXX NodeConnImplementation.PostTransaction calling n.client.PostTransaction %s", tx.ID().Base58())
 	n.client.PostTransaction(tx)
 }

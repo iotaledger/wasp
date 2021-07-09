@@ -33,29 +33,30 @@ import (
 )
 
 type chainObj struct {
-	committee             atomic.Value
-	mempool               chain.Mempool
-	dismissed             atomic.Bool
-	dismissOnce           sync.Once
-	chainID               chainid.ChainID
-	chainStateSync        coreutil.ChainStateSync
-	stateReader           state.OptimisticStateReader
-	procset               *processors.Cache
-	chMsg                 chan interface{}
-	stateMgr              chain.StateManager
-	consensus             chain.Consensus
-	log                   *logger.Logger
-	nodeConn              chain.NodeConnection
-	db                    kvstore.KVStore
-	peerNetworkConfig     coretypes.PeerNetworkConfigProvider
-	netProvider           peering.NetworkProvider
-	dksProvider           coretypes.DKShareRegistryProvider
-	committeeRegistry     coretypes.CommitteeRegistryProvider
-	blobProvider          coretypes.BlobCache
-	eventRequestProcessed *events.Event
-	eventChainTransition  *events.Event
-	eventSynced           *events.Event
-	peers                 *peering.PeerDomainProvider
+	committee               atomic.Value
+	mempool                 chain.Mempool
+	mempoolLastCleanedIndex uint32
+	dismissed               atomic.Bool
+	dismissOnce             sync.Once
+	chainID                 chainid.ChainID
+	chainStateSync          coreutil.ChainStateSync
+	stateReader             state.OptimisticStateReader
+	procset                 *processors.Cache
+	chMsg                   chan interface{}
+	stateMgr                chain.StateManager
+	consensus               chain.Consensus
+	log                     *logger.Logger
+	nodeConn                chain.NodeConnection
+	db                      kvstore.KVStore
+	peerNetworkConfig       coretypes.PeerNetworkConfigProvider
+	netProvider             peering.NetworkProvider
+	dksProvider             coretypes.DKShareRegistryProvider
+	committeeRegistry       coretypes.CommitteeRegistryProvider
+	blobProvider            coretypes.BlobCache
+	eventRequestProcessed   *events.Event
+	eventChainTransition    *events.Event
+	eventSynced             *events.Event
+	peers                   *peering.PeerDomainProvider
 }
 
 type committeeStruct struct {
@@ -220,24 +221,27 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	if !msg.ChainOutput.GetIsGovernanceUpdated() {
 		// normal state update:
 		c.stateReader.SetBaseline()
-		reqids, err := blocklog.GetRequestIDsForLastBlock(c.stateReader)
-		if err != nil {
-			// The error means a database error. The optimistic state read failure can't occur here
-			// because the state transition message is only sent only after state is committed and before consensus
-			// start new round
-			c.log.Panicf("processChainTransition. unexpected error: %v", err)
-		}
-		// remove processed requests from the mempool
-		c.mempool.RemoveRequests(reqids...)
-		// publish events
-		chain.LogStateTransition(msg, reqids, c.log)
-		chain.PublishStateTransition(msg.ChainOutput, reqids)
-		for _, reqid := range reqids {
-			c.eventRequestProcessed.Trigger(reqid)
-		}
+		for i := c.mempoolLastCleanedIndex + 1; i <= msg.VirtualState.BlockIndex(); i++ {
+			reqids, err := blocklog.GetRequestIDsForBlock(c.stateReader, i)
+			if reqids == nil {
+				// The error means a database error. The optimistic state read failure can't occur here
+				// because the state transition message is only sent only after state is committed and before consensus
+				// start new round
+				c.log.Panicf("processChainTransition. unexpected error: %v", err)
+			}
+			// remove processed requests from the mempool
+			c.mempool.RemoveRequests(reqids...)
+			// publish events
+			chain.LogStateTransition(msg, reqids, c.log)
+			chain.PublishStateTransition(msg.ChainOutput, reqids)
+			for _, reqid := range reqids {
+				c.eventRequestProcessed.Trigger(reqid)
+			}
 
-		c.log.Debugf("processChainTransition (state): state index: %d, state hash: %s, requests: %+v",
-			msg.VirtualState.BlockIndex(), msg.VirtualState.Hash().String(), coretypes.ShortRequestIDs(reqids))
+			c.log.Debugf("processChainTransition (state): state index: %d, state hash: %s, requests: %+v",
+				msg.VirtualState.BlockIndex(), msg.VirtualState.Hash().String(), coretypes.ShortRequestIDs(reqids))
+		}
+		c.mempoolLastCleanedIndex = msg.VirtualState.BlockIndex()
 	} else {
 		chain.LogGovernanceTransition(msg, c.log)
 		chain.PublishGovernanceTransition(msg.ChainOutput)
