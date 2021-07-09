@@ -66,7 +66,7 @@ func TestMissingRequests(t *testing.T) {
 
 	//------
 	// send a dummy request to node #3, so that it proposes a batch and the consensus hang is broken
-	req2 := request.NewRequestOffLedger(coretypes.Hn("foo"), coretypes.Hn("bar"), nil) //.WithTransfer(par.Transfer)
+	req2 := request.NewRequestOffLedger(coretypes.Hn("foo"), coretypes.Hn("bar"), nil)
 	req2.Sign(userWallet)
 	err = clu1.WaspClient(3).PostOffLedgerRequest(&chainID, req2)
 	check(err, t)
