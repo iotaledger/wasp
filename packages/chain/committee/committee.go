@@ -1,6 +1,7 @@
 package committee
 
 import (
+	"crypto/rand"
 	"fmt"
 	"time"
 
@@ -282,5 +283,25 @@ func (c *committee) GetOtherValidatorsPeerIDs() []string {
 		ret[i] = node.NetID()
 		i++
 	}
+	return ret
+}
+
+func (c *committee) GetRandomValidators(upToN int) []string {
+	validators := c.GetOtherValidatorsPeerIDs()
+	if upToN >= len(validators) {
+		return validators
+	}
+
+	var b [8]byte
+	seed := b[:]
+	_, _ = rand.Read(seed)
+	permutation := util.NewPermutation16(uint16(len(validators)), seed)
+	permutation.Shuffle(seed)
+	ret := make([]string, 0)
+	for len(ret) < upToN {
+		i := permutation.Next()
+		ret = append(ret, validators[i])
+	}
+
 	return ret
 }

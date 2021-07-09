@@ -109,20 +109,17 @@ func shouldSendToPeer(peerID string, ackPeers []string) bool {
 }
 
 func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
+	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID())
 	msgData := messages.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
 	committee := c.getCommittee()
-	var getPeerIDs func() []string
+	getPeerIDs := (*c.peers).GetRandomPeers
 
 	if committee != nil {
-		getPeerIDs = committee.GetOtherValidatorsPeerIDs
-	} else {
-		getPeerIDs = func() []string {
-			return (*c.peers).GetRandomPeers(c.offledgerBroadcastUpToNPeers)
-		}
+		getPeerIDs = committee.GetRandomValidators
 	}
 
 	sendMessage := func(ackPeers []string) {
-		peerIDs := getPeerIDs()
+		peerIDs := getPeerIDs(c.offledgerBroadcastUpToNPeers)
 		for _, peerID := range peerIDs {
 			if shouldSendToPeer(peerID, ackPeers) {
 				c.log.Debugf("sending offledger request ID: reqID: %s, peerID: %s", req.ID(), peerID)
@@ -179,6 +176,7 @@ func (c *chainObj) ReceiveRequestAckMessage(reqID *coretypes.RequestID, peerID s
 // SendMissingRequestsToPeer sends the requested missing requests by a peer
 func (c *chainObj) SendMissingRequestsToPeer(msg messages.MissingRequestIDsMsg, peerID string) {
 	for _, reqID := range msg.IDs {
+		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID, peerID)
 		req := c.mempool.GetRequest(reqID)
 		msg := messages.NewMissingRequestMsg(req)
 		(*c.peers).SendSimple(peerID, messages.MsgMissingRequest, msg.Bytes())

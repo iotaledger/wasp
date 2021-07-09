@@ -81,6 +81,7 @@ type Committee interface {
 	Close()
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
 	GetOtherValidatorsPeerIDs() []string
+	GetRandomValidators(upToN int) []string
 }
 
 type NodeConnection interface {

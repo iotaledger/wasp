@@ -59,7 +59,7 @@ func main() {
 		}
 
 		dataPath := flags.Arg(0)
-		err = cluster.New("cluster", config).InitDataPath(*templatesPath, dataPath, *forceRemove)
+		err = cluster.New("cluster", config).InitDataPath(*templatesPath, dataPath, *forceRemove, nil)
 		check(err)
 
 	case "start":
@@ -101,7 +101,7 @@ func main() {
 		clu := cluster.New("wasp-cluster", config)
 
 		if *disposable {
-			check(clu.InitDataPath(*templatesPath, dataPath, true))
+			check(clu.InitDataPath(*templatesPath, dataPath, true, nil))
 			defer os.RemoveAll(dataPath)
 		}
 

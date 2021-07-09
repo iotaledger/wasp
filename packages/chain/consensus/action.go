@@ -680,6 +680,8 @@ func (c *Consensus) receiveSignedResult(msg *messages.SignedResultMsg) {
 
 // ShouldReceiveMissingRequest returns whether or not a request is missing, if the incoming request matches the expetec ID/Hash it is removed from the list
 func (c *Consensus) ShouldReceiveMissingRequest(req coretypes.Request) bool {
+	c.log.Debugf("ShouldReceiveMissingRequest: reqID %s, hash %v", req.ID(), req.Hash())
+
 	c.missingRequestsMutex.Lock()
 	defer c.missingRequestsMutex.Unlock()
 	expectedHash, exists := c.missingRequestsFromBatch[req.ID()]
