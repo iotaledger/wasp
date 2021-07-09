@@ -700,7 +700,7 @@ valign=top
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
-      <x>1328</x>
+      <x>1320</x>
       <y>808</y>
       <w>16</w>
       <h>16</h>
@@ -711,13 +711,13 @@ valign=top
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1336</x>
+      <x>1328</x>
       <y>808</y>
-      <w>32</w>
+      <w>40</w>
       <h>24</h>
     </coordinates>
     <panel_attributes>lt=-&gt;</panel_attributes>
-    <additional_attributes>10.0;10.0;20.0;10.0</additional_attributes>
+    <additional_attributes>10.0;10.0;30.0;10.0</additional_attributes>
   </element>
   <element>
     <id>UMLSpecialState</id>
@@ -985,7 +985,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>720</x>
-      <y>1312</y>
+      <y>1288</y>
       <w>40</w>
       <h>24</h>
     </coordinates>
@@ -996,7 +996,7 @@ halign=left</panel_attributes>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>712</x>
-      <y>1312</y>
+      <y>1288</y>
       <w>16</w>
       <h>16</h>
     </coordinates>
@@ -1007,7 +1007,7 @@ halign=left</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>760</x>
-      <y>1328</y>
+      <y>1304</y>
       <w>24</w>
       <h>40</h>
     </coordinates>
