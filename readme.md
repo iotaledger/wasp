@@ -32,9 +32,9 @@ commercial settings or whenever processing of critical data is involved._
 - The `goshimmer` command, compiled from [Goshimmer `master+wasp` branch](https://github.com/iotaledger/goshimmer/tree/master+wasp)
 
 ```
-$ git clone -b master+wasp https://github.com/iotaledger/goshimmer.git
-$ cd goshimmer
-$ go install
+git clone -b master+wasp https://github.com/iotaledger/goshimmer.git
+cd goshimmer
+go install
 ```
 
 Note: The only difference between standard Goshimmer (`master` branch) and the
