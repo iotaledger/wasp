@@ -10,7 +10,7 @@ require (
 	github.com/bytecodealliance/wasmtime-go v0.21.0
 	github.com/ethereum/go-ethereum v1.10.3
 	github.com/iotaledger/goshimmer v0.7.2-0.20210628074845-4f90850164d1
-	github.com/iotaledger/hive.go v0.0.0-20210623095912-c1c6f098a6db
+	github.com/iotaledger/hive.go v0.0.0-20210625103722-68b2cf52ef4e
 	github.com/knadh/koanf v0.15.0
 	github.com/labstack/echo/v4 v4.1.13
 	github.com/mr-tron/base58 v1.2.0
@@ -32,3 +32,5 @@ require (
 replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210517200904-c897be85c569
 
 replace go.dedis.ch/kyber/v3 v3.0.13 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3
+
+replace github.com/iotaledger/goshimmer => C:\Users\evaldas\Documents\proj\Go\src\github.com\iotaledger\goshimmer-wasp2
