@@ -65,19 +65,19 @@ func TestAccessNodeOne(t *testing.T) {
 func TestAccessNodeMany(t *testing.T) {
 	const clusterSize = 15
 	committee := []int{0, 1, 2, 3, 4, 5, 6}
-	const consensusSize = 5
+	const quorum = 5
 	const requestsCountInitial = 8
 	const requestsCountIncrement = 8
 	const iterationCount = 4
 
 	clu1 := clutest.NewCluster(t, clusterSize)
 
-	addr1, err := clu1.RunDKG(committee, uint16(consensusSize))
+	addr1, err := clu1.RunDKG(committee, uint16(quorum))
 	require.NoError(t, err)
 
 	t.Logf("addr1: %s", addr1.Base58())
 
-	chain1, err := clu1.DeployChain("chain", clu1.Config.AllNodes(), committee, uint16(consensusSize), addr1)
+	chain1, err := clu1.DeployChain("chain", clu1.Config.AllNodes(), committee, uint16(quorum), addr1)
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain1.ChainID.Base58())
 

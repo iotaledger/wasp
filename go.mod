@@ -16,6 +16,7 @@ require (
 	github.com/mr-tron/base58 v1.2.0
 	github.com/pangpanglabs/echoswagger/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.7.0
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.7.0
@@ -32,5 +33,3 @@ require (
 replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210517200904-c897be85c569
 
 replace go.dedis.ch/kyber/v3 v3.0.13 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3
-
-replace github.com/iotaledger/goshimmer => C:\Users\evaldas\Documents\proj\Go\src\github.com\iotaledger\goshimmer-wasp2

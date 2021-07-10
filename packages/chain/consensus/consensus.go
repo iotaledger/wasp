@@ -79,7 +79,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
 	} else {
-		timers = NewConsensusTimers()
+		timers = newConsensusTimers()
 	}
 	log := chainCore.Log().Named("c")
 	ret := &Consensus{
