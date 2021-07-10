@@ -63,12 +63,12 @@ func TestAccessNodeOne(t *testing.T) {
 
 // cluster of 10 access nodes with the committee of 4 nodes. tested if all nodes are synced
 func TestAccessNodeMany(t *testing.T) {
-	clusterSize := 15
+	const clusterSize = 15
 	committee := []int{0, 1, 2, 3, 4, 5, 6}
-	consensusSize := 5
-	requestsCountInitial := 8
-	requestsCountIncrement := 8
-	iterationCount := 4
+	const consensusSize = 5
+	const requestsCountInitial = 8
+	const requestsCountIncrement = 8
+	const iterationCount = 4
 
 	clu1 := clutest.NewCluster(t, clusterSize)
 

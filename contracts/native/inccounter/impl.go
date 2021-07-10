@@ -66,23 +66,19 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 func incCounter(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.Contract().String())
-	params := ctx.Params()
-	inc, ok, err := codec.DecodeInt64(params.MustGet(VarCounter))
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		inc = 1
-	}
-	state := ctx.State()
-	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
-	ctx.Log().Infof("incCounter: increasing counter value %d by %d", val, inc)
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	inc := par.MustGetInt64(VarCounter, 1)
+
+	state := kvdecoder.New(ctx.State(), ctx.Log())
+	val := state.MustGetInt64(VarCounter, 0)
+	ctx.Log().Infof("incCounter: increasing counter value %d by %d, anchor index: #%d",
+		val, inc, ctx.StateAnchor().StateIndex())
 	tra := "(empty)"
 	if ctx.IncomingTransfer() != nil {
 		tra = ctx.IncomingTransfer().String()
 	}
 	ctx.Log().Infof("incCounter: incoming transfer: %s", tra)
-	state.Set(VarCounter, codec.EncodeInt64(val+inc))
+	ctx.State().Set(VarCounter, codec.EncodeInt64(val+inc))
 	return nil, nil
 }
 

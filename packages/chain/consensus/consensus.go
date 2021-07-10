@@ -164,14 +164,14 @@ func (c *Consensus) refreshConsensusInfo() {
 	}
 	consensusInfo := &chain.ConsensusInfo{
 		StateIndex: index,
-		Mempool:    c.mempool.Stats(),
+		Mempool:    c.mempool.Info(),
 		TimerTick:  int(c.lastTimerTick.Load()),
 	}
 	c.log.Debugf("Refreshing consensus info: index=%v, timerTick=%v, "+
 		"totalPool=%v, mempoolReady=%v, inBufCounter=%v, outBufCounter=%v, "+
 		"inPoolCounter=%v, outPoolCounter=%v",
 		consensusInfo.StateIndex, consensusInfo.TimerTick,
-		consensusInfo.Mempool.TotalPool, consensusInfo.Mempool.Ready,
+		consensusInfo.Mempool.TotalPool, consensusInfo.Mempool.ReadyCounter,
 		consensusInfo.Mempool.InBufCounter, consensusInfo.Mempool.OutBufCounter,
 		consensusInfo.Mempool.InPoolCounter, consensusInfo.Mempool.OutPoolCounter,
 	)

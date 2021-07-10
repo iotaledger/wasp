@@ -261,7 +261,7 @@ func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bo
 	}
 	deadline = time.Now().Add(maxw)
 	for {
-		mstats := ch.mempool.Stats()
+		mstats := ch.mempool.Info()
 		if mstats.InBufCounter == numReq && mstats.OutPoolCounter == numReq {
 			return true
 		}

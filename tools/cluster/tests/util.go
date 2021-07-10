@@ -262,13 +262,15 @@ type conditionFn func(t *testing.T, nodeIndex int) bool
 func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Duration, logMsg ...string) {
 	for _, nodeIndex := range nodeIndexes {
 		if len(logMsg) > 0 {
-			t.Logf("-->Waiting for %s on node %v...", logMsg[0], nodeIndex)
+			t.Logf("-->Waiting for '%s' on node %v...", logMsg[0], nodeIndex)
 		}
-		require.True(t,
-			waitTrue(timeout, func() bool {
-				return fn(t, nodeIndex)
-			}),
-		)
+		w := waitTrue(timeout, func() bool {
+			return fn(t, nodeIndex)
+		})
+		if !w {
+			t.Errorf("-->Waiting for %s on node %v... FAILED after %v", logMsg[0], nodeIndex, timeout)
+			t.FailNow()
+		}
 	}
 }
 

@@ -652,7 +652,7 @@ func (c *Consensus) receiveSignedResult(msg *messages.SignedResultMsg) {
 			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare[:], msg.SigShare[:]) {
 			c.log.Errorf("receiveSignedResult: conflicting signed result from peer #%d", msg.SenderIndex)
 		} else {
-			c.log.Warnf("receiveSignedResult: duplicated signed result from peer #%d", msg.SenderIndex)
+			c.log.Debugf("receiveSignedResult: duplicated signed result from peer #%d", msg.SenderIndex)
 		}
 		return
 	}
