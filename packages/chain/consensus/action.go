@@ -676,13 +676,13 @@ func (c *Consensus) receiveSignedResult(msg *messages.SignedResultMsg) {
 		uint16(idx) == c.committee.OwnPeerIndex() ||
 		uint16(idx) != msg.SenderIndex {
 		c.log.Errorf("receiveSignedResult: wrong sig share from peer #%d", msg.SenderIndex)
-		return
+	} else {
+		c.resultSignatures[msg.SenderIndex] = msg
+		c.log.Debugf("receiveSignedResult: stored sig share from sender %d, essenceHash %v", msg.SenderIndex, msg.EssenceHash)
 	}
-	c.resultSignatures[msg.SenderIndex] = msg
-	c.log.Debugf("receiveSignedResult: stored sig share from sender %d, essenceHash %v", msg.SenderIndex, msg.EssenceHash)
 	// send acknowledgement
 	msgAck := &messages.SignedResultAckMsg{
-		ChainInputID: c.stateOutput.ID(),
+		ChainInputID: msg.ChainInputID,
 		EssenceHash:  msg.EssenceHash,
 	}
 	if err := c.committee.SendMsg(msg.SenderIndex, messages.MsgSignedResultAck, util.MustBytes(msgAck)); err != nil {
