@@ -16,7 +16,7 @@ type ConsensusTimers struct {
 	ProposeBatchDelayForNewState     time.Duration
 }
 
-func newConsensusTimers() ConsensusTimers {
+func NewConsensusTimers() ConsensusTimers {
 	return ConsensusTimers{
 		VMRunRetryToWaitForReadyRequests: 500 * time.Millisecond,
 		BroadcastSignedResultRetry:       1 * time.Second,
