@@ -218,6 +218,29 @@ func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
 	return n, err
 }
 
+func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.BlockInfo, error) {
+	blockIndex, err := ch.BlockIndex(nodeIndex...)
+	if err != nil {
+		return nil, err
+	}
+	cl := ch.SCClient(blocklog.Interface.Hname(), nil, nodeIndex...)
+	ret := make([]*blocklog.BlockInfo, 0, blockIndex+1)
+	for idx := int(blockIndex); idx >= 0; idx-- {
+		res, err := cl.CallView(blocklog.FuncGetBlockInfo, dict.Dict{
+			blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(idx)),
+		})
+		if err != nil {
+			return nil, err
+		}
+		bi, err := blocklog.BlockInfoFromBytes(uint32(idx), res.MustGet(blocklog.ParamBlockInfo))
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, bi)
+	}
+	return ret, nil
+}
+
 func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[coretypes.Hname]*root.ContractRecord, error) {
 	cl := ch.SCClient(root.Interface.Hname(), nil, nodeIndex...)
 	ret, err := cl.CallView(root.FuncGetChainInfo)

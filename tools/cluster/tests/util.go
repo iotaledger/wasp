@@ -268,7 +268,11 @@ func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Dur
 			return fn(t, nodeIndex)
 		})
 		if !w {
-			t.Errorf("-->Waiting for %s on node %v... FAILED after %v", logMsg[0], nodeIndex, timeout)
+			if len(logMsg) > 0 {
+				t.Errorf("-->Waiting for %s on node %v... FAILED after %v", logMsg[0], nodeIndex, timeout)
+			} else {
+				t.Errorf("-->Waiting on node %v... FAILED after %v", nodeIndex, timeout)
+			}
 			t.FailNow()
 		}
 	}
