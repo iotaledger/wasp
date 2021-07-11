@@ -1,4 +1,4 @@
-package consensus
+package consensus //nolint:gofmt
 
 import (
 	"fmt"
