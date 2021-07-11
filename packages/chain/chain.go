@@ -72,7 +72,7 @@ type Committee interface {
 	OwnPeerIndex() uint16
 	DKShare() *tcrypto.DKShare
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
-	SendMsgToPeers(msgType byte, msgData []byte, ts int64)
+	SendMsgToPeers(msgType byte, msgData []byte, ts int64, except ...uint16)
 	IsAlivePeer(peerIndex uint16) bool
 	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
@@ -108,6 +108,7 @@ type StateManager interface {
 type Consensus interface {
 	EventStateTransitionMsg(*messages.StateTransitionMsg)
 	EventSignedResultMsg(*messages.SignedResultMsg)
+	EventSignedResultAckMsg(*messages.SignedResultAckMsg)
 	EventInclusionsStateMsg(*messages.InclusionStateMsg)
 	EventAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
 	EventVMResultMsg(msg *messages.VMResultMsg)

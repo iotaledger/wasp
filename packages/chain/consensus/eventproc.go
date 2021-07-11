@@ -11,7 +11,6 @@ import (
 func (c *Consensus) EventStateTransitionMsg(msg *messages.StateTransitionMsg) {
 	c.eventStateTransitionMsgCh <- msg
 }
-
 func (c *Consensus) eventStateTransitionMsg(msg *messages.StateTransitionMsg) {
 	c.log.Debugf("StateTransitionMsg received: state index: %d, state output: %s, timestamp: %v",
 		msg.State.BlockIndex(), coretypes.OID(msg.StateOutput.ID()), msg.StateTimestamp)
@@ -22,7 +21,6 @@ func (c *Consensus) eventStateTransitionMsg(msg *messages.StateTransitionMsg) {
 func (c *Consensus) EventSignedResultMsg(msg *messages.SignedResultMsg) {
 	c.eventSignedResultMsgCh <- msg
 }
-
 func (c *Consensus) eventSignedResult(msg *messages.SignedResultMsg) {
 	c.log.Debugf("SignedResultMsg received: from sender %d, hash=%s, chain input id=%v",
 		msg.SenderIndex, msg.EssenceHash, coretypes.OID(msg.ChainInputID))
@@ -30,10 +28,19 @@ func (c *Consensus) eventSignedResult(msg *messages.SignedResultMsg) {
 	c.takeAction()
 }
 
+func (c *Consensus) EventSignedResultAckMsg(msg *messages.SignedResultAckMsg) {
+	c.eventSignedResultAckMsgCh <- msg
+}
+func (c *Consensus) eventSignedResultAck(msg *messages.SignedResultAckMsg) {
+	c.log.Debugf("SignedResultAckMsg received: from sender %d, hash=%s, chain input id=%v",
+		msg.SenderIndex, msg.EssenceHash, coretypes.OID(msg.ChainInputID))
+	c.receiveSignedResultAck(msg)
+	c.takeAction()
+}
+
 func (c *Consensus) EventInclusionsStateMsg(msg *messages.InclusionStateMsg) {
 	c.eventInclusionStateMsgCh <- msg
 }
-
 func (c *Consensus) eventInclusionState(msg *messages.InclusionStateMsg) {
 	c.log.Debugf("InclusionStateMsg received:  %s: '%s'", msg.TxID.Base58(), msg.State.String())
 	c.processInclusionState(msg)
@@ -44,7 +51,6 @@ func (c *Consensus) eventInclusionState(msg *messages.InclusionStateMsg) {
 func (c *Consensus) EventAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg) {
 	c.eventACSMsgCh <- msg
 }
-
 func (c *Consensus) eventAsynchronousCommonSubset(msg *messages.AsynchronousCommonSubsetMsg) {
 	c.log.Debugf("AsynchronousCommonSubsetMsg received for session %v: len = %d", msg.SessionID, len(msg.ProposedBatchesBin))
 	c.receiveACS(msg.ProposedBatchesBin, msg.SessionID)
@@ -55,7 +61,6 @@ func (c *Consensus) eventAsynchronousCommonSubset(msg *messages.AsynchronousComm
 func (c *Consensus) EventVMResultMsg(msg *messages.VMResultMsg) {
 	c.eventVMResultMsgCh <- msg
 }
-
 func (c *Consensus) eventVMResultMsg(msg *messages.VMResultMsg) {
 	var essenceString string
 	if msg.Task.ResultTransactionEssence == nil {
@@ -72,7 +77,6 @@ func (c *Consensus) eventVMResultMsg(msg *messages.VMResultMsg) {
 func (c *Consensus) EventTimerMsg(msg messages.TimerTick) {
 	c.eventTimerMsgCh <- msg
 }
-
 func (c *Consensus) eventTimerMsg(msg messages.TimerTick) {
 	c.lastTimerTick.Store(int64(msg))
 	c.refreshConsensusInfo()

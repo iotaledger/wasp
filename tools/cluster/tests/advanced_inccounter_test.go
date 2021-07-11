@@ -63,6 +63,8 @@ func TestAccessNodeOne(t *testing.T) {
 
 // cluster of 10 access nodes with the committee of 4 nodes. tested if all nodes are synced
 func TestAccessNodeMany(t *testing.T) {
+	t.Skip("too long")
+
 	clusterSize := 15
 	committee := []int{0, 1, 2, 3, 4, 5, 6}
 	consensusSize := 5

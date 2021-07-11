@@ -40,6 +40,7 @@ type Consensus struct {
 	resultTxEssence                  *ledgerstate.TransactionEssence
 	resultState                      state.VirtualState
 	resultSignatures                 []*messages.SignedResultMsg
+	resultSigAck                     []uint16
 	finalTx                          *ledgerstate.Transaction
 	postTxDeadline                   time.Time
 	pullInclusionStateDeadline       time.Time
@@ -49,6 +50,7 @@ type Consensus struct {
 	log                              *logger.Logger
 	eventStateTransitionMsgCh        chan *messages.StateTransitionMsg
 	eventSignedResultMsgCh           chan *messages.SignedResultMsg
+	eventSignedResultAckMsgCh        chan *messages.SignedResultAckMsg
 	eventInclusionStateMsgCh         chan *messages.InclusionStateMsg
 	eventACSMsgCh                    chan *messages.AsynchronousCommonSubsetMsg
 	eventVMResultMsgCh               chan *messages.VMResultMsg
@@ -89,10 +91,12 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		nodeConn:                         nodeConn,
 		vmRunner:                         runvm.NewVMRunner(),
 		resultSignatures:                 make([]*messages.SignedResultMsg, committee.Size()),
+		resultSigAck:                     make([]uint16, 0, committee.Size()),
 		timers:                           timers,
 		log:                              log,
 		eventStateTransitionMsgCh:        make(chan *messages.StateTransitionMsg),
 		eventSignedResultMsgCh:           make(chan *messages.SignedResultMsg),
+		eventSignedResultAckMsgCh:        make(chan *messages.SignedResultAckMsg),
 		eventInclusionStateMsgCh:         make(chan *messages.InclusionStateMsg),
 		eventACSMsgCh:                    make(chan *messages.AsynchronousCommonSubsetMsg),
 		eventVMResultMsgCh:               make(chan *messages.VMResultMsg),
@@ -134,6 +138,10 @@ func (c *Consensus) recvLoop() {
 		case msg, ok := <-c.eventSignedResultMsgCh:
 			if ok {
 				c.eventSignedResult(msg)
+			}
+		case msg, ok := <-c.eventSignedResultAckMsgCh:
+			if ok {
+				c.eventSignedResultAck(msg)
 			}
 		case msg, ok := <-c.eventInclusionStateMsgCh:
 			if ok {

@@ -21,6 +21,7 @@ const (
 	MsgGetBlock = 1 + peering.FirstUserMsgCode + iota
 	MsgBlock
 	MsgSignedResult
+	MsgSignedResultAck
 	MsgOffLedgerRequest
 	MsgMissingRequestIDs
 	MsgMissingRequest
@@ -34,6 +35,12 @@ type SignedResultMsg struct {
 	ChainInputID ledgerstate.OutputID
 	EssenceHash  hashing.HashValue
 	SigShare     tbls.SigShare
+}
+
+type SignedResultAckMsg struct {
+	SenderIndex  uint16
+	ChainInputID ledgerstate.OutputID
+	EssenceHash  hashing.HashValue
 }
 
 // GetBlockMsg StateManager queries specific block data from another peer (access node)
@@ -131,6 +138,26 @@ func (msg *SignedResultMsg) Read(r io.Reader) error {
 	}
 	var err error
 	if msg.SigShare, err = util.ReadBytes16(r); err != nil {
+		return err
+	}
+	if err := util.ReadOutputID(r, &msg.ChainInputID); /* nolint:revive */ err != nil {
+		return err
+	}
+	return nil
+}
+
+func (msg *SignedResultAckMsg) Write(w io.Writer) error {
+	if _, err := w.Write(msg.EssenceHash[:]); err != nil {
+		return err
+	}
+	if _, err := w.Write(msg.ChainInputID[:]); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (msg *SignedResultAckMsg) Read(r io.Reader) error {
+	if err := util.ReadHashValue(r, &msg.EssenceHash); err != nil {
 		return err
 	}
 	if err := util.ReadOutputID(r, &msg.ChainInputID); /* nolint:revive */ err != nil {
