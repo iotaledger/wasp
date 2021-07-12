@@ -205,7 +205,7 @@ func (g *groupImpl) OtherNodes(except ...uint16) map[uint16]peering.PeerSender {
 	for _, i := range except {
 		exceptions[i] = struct{}{}
 	}
-	for i := range g.nodes {
+	for i := range g.other {
 		if _, ok := exceptions[uint16(i)]; !ok {
 			ret[uint16(i)] = g.nodes[i]
 		}
