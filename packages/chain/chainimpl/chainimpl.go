@@ -323,7 +323,7 @@ func (c *chainObj) processStateMessage(msg *messages.StateMsg) {
 		c.log.Error(xerrors.Errorf("parsing state hash: %w", err))
 		return
 	}
-	c.log.Debugf("processStateMessage. stateIndex: %d, stateHash: %d, stateAddr: %d, state transition: %v",
+	c.log.Debugf("processStateMessage. stateIndex: %d, stateHash: %s, stateAddr: %s, state transition: %v",
 		msg.ChainOutput.GetStateIndex(), sh.String(),
 		msg.ChainOutput.GetStateAddress().Base58(), !msg.ChainOutput.GetIsGovernanceUpdated(),
 	)
