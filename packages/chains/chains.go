@@ -2,6 +2,7 @@ package chains
 
 import (
 	"sync"
+	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	txstream "github.com/iotaledger/goshimmer/packages/txstream/client"
@@ -22,18 +23,30 @@ import (
 )
 
 type Chains struct {
-	mutex           sync.RWMutex
-	log             *logger.Logger
-	allChains       map[[ledgerstate.AddressLength]byte]chain.Chain
-	nodeConn        *txstream.Client
-	processorConfig *processors.Config
+	mutex                            sync.RWMutex
+	log                              *logger.Logger
+	allChains                        map[[ledgerstate.AddressLength]byte]chain.Chain
+	nodeConn                         *txstream.Client
+	processorConfig                  *processors.Config
+	offledgerBroadcastUpToNPeers     int
+	offledgerBroadcastInterval       time.Duration
+	pullMissingRequestsFromCommittee bool
 }
 
-func New(log *logger.Logger, processorConfig *processors.Config) *Chains {
+func New(
+	log *logger.Logger,
+	processorConfig *processors.Config,
+	offledgerBroadcastUpToNPeers int,
+	offledgerBroadcastInterval time.Duration,
+	pullMissingRequestsFromCommittee bool,
+) *Chains {
 	ret := &Chains{
-		log:             log,
-		allChains:       make(map[[ledgerstate.AddressLength]byte]chain.Chain),
-		processorConfig: processorConfig,
+		log:                              log,
+		allChains:                        make(map[[ledgerstate.AddressLength]byte]chain.Chain),
+		processorConfig:                  processorConfig,
+		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
+		offledgerBroadcastInterval:       offledgerBroadcastInterval,
+		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 	}
 	return ret
 }
@@ -122,6 +135,9 @@ func (c *Chains) Activate(chr *chainrecord.ChainRecord) error {
 		defaultRegistry,
 		defaultRegistry,
 		c.processorConfig,
+		c.offledgerBroadcastUpToNPeers,
+		c.offledgerBroadcastInterval,
+		c.pullMissingRequestsFromCommittee,
 	)
 	if newChain == nil {
 		return xerrors.New("Chains.Activate: failed to create chain object")

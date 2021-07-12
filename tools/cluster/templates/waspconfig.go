@@ -1,11 +1,13 @@
 package templates
 
 type WaspConfigParams struct {
-	APIPort       int
-	DashboardPort int
-	PeeringPort   int
-	NanomsgPort   int
-	Neighbors     string
+	APIPort                      int
+	DashboardPort                int
+	PeeringPort                  int
+	NanomsgPort                  int
+	Neighbors                    string
+	TxStreamPort                 int
+	OffledgerBroadcastUpToNPeers int
 }
 
 const WaspConfig = `
@@ -42,13 +44,16 @@ const WaspConfig = `
   "peering":{
     "port": {{.PeeringPort}},
     "netid": "127.0.0.1:{{.PeeringPort}}",
-	"neighbors": [{{.Neighbors}}]
+    "neighbors": [{{.Neighbors}}]
   },
   "nodeconn": {
-    "address": "127.0.0.1:5000"
+    "address": "127.0.0.1:{{.TxStreamPort}}"
   },
   "nanomsg":{
     "port": {{.NanomsgPort}}
+  },
+  "offledger":{
+    "broadcastUpToNPeers": {{.OffledgerBroadcastUpToNPeers}}
   }
 }
 `

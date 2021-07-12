@@ -71,7 +71,7 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().Base58()))
 	}
 
-	ch.ReceiveOffLedgerRequest(offLedgerReq)
+	ch.ReceiveOffLedgerRequest(offLedgerReq, "")
 
 	return c.NoContent(http.StatusAccepted)
 }
@@ -88,7 +88,7 @@ func parseParams(c echo.Context) (chainID *chainid.ChainID, req *request.Request
 		if err = c.Bind(r); err != nil {
 			return nil, nil, httperrors.BadRequest("Error parsing request from payload")
 		}
-		req, err = request.NewRequestOffLedgerFromBytes(r.Request.Bytes())
+		req, err = request.OffLedgerFromBytes(r.Request.Bytes())
 		if err != nil {
 			return nil, nil, httperrors.BadRequest(fmt.Sprintf("Error constructing off-ledger request from base64 string: \"%s\"", r.Request))
 		}
@@ -100,7 +100,7 @@ func parseParams(c echo.Context) (chainID *chainid.ChainID, req *request.Request
 	if err != nil {
 		return nil, nil, httperrors.BadRequest("Error parsing request from payload")
 	}
-	req, err = request.NewRequestOffLedgerFromBytes(reqBytes)
+	req, err = request.OffLedgerFromBytes(reqBytes)
 	if err != nil {
 		return nil, nil, httperrors.BadRequest("Error parsing request from payload")
 	}

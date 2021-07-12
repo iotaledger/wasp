@@ -181,9 +181,11 @@ func fileExists(filepath string) (bool, error) {
 	return true, err
 }
 
+type ModifyNodesConfigFn = func(nodeIndex int, configParams *templates.WaspConfigParams) *templates.WaspConfigParams
+
 // InitDataPath initializes the cluster data directory (cluster.json + one subdirectory
 // for each node).
-func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting bool) error {
+func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting bool, modifyConfig ModifyNodesConfigFn) error {
 	exists, err := fileExists(dataPath)
 	if err != nil {
 		return err
@@ -204,6 +206,8 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 			path.Join(templatesPath, "wasp-config-template.json"),
 			templates.WaspConfig,
 			clu.Config.WaspConfigTemplateParams(i),
+			i,
+			modifyConfig,
 		)
 		if err != nil {
 			return err
@@ -212,7 +216,7 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 	return clu.Config.Save(dataPath)
 }
 
-func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params interface{}) error {
+func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params *templates.WaspConfigParams, nodeIndex int, modifyConfig ModifyNodesConfigFn) error {
 	exists, err := fileExists(configTemplatePath)
 	if err != nil {
 		return err
@@ -239,6 +243,10 @@ func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params
 		return err
 	}
 	defer f.Close()
+
+	if modifyConfig != nil {
+		params = modifyConfig(nodeIndex, params)
+	}
 
 	return configTmpl.Execute(f, params)
 }
