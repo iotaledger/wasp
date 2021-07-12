@@ -320,7 +320,7 @@ func (m *mockChain) EventRequestProcessed() *events.Event {
 	panic("not implemented")
 }
 
-func (m *mockChain) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
+func (m *mockChain) ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string) {
 	panic("not implemented")
 }
 

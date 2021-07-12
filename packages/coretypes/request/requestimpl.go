@@ -3,6 +3,7 @@ package request
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -15,7 +16,28 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"go.uber.org/atomic"
 	"golang.org/x/crypto/blake2b"
+	"golang.org/x/xerrors"
 )
+
+const (
+	OnLedgerRequestType  byte = 0
+	OffLedgerRequestType byte = 1
+)
+
+func FromBytes(b []byte) (coretypes.Request, error) {
+	// first byte is the request type
+	switch b[0] {
+	case OnLedgerRequestType:
+		return onLedgerFromBytes(b[1:])
+	case OffLedgerRequestType:
+		return offLedgerFromBytes(b[1:])
+	}
+	return nil, xerrors.Errorf("invalid Request Type")
+}
+
+func OffLedgerFromBytes(b []byte) (*RequestOffLedger, error) {
+	return offLedgerFromBytes(b[1:])
+}
 
 // region RequestMetadata  ///////////////////////////////////////////////////////
 
@@ -279,6 +301,108 @@ func (req *RequestOnLedger) Short() string {
 	return req.outputObj.ID().Base58()[:6] + ".."
 }
 
+// only used for consensus
+func (req *RequestOnLedger) Hash() [32]byte {
+	return blake2b.Sum256(req.Bytes())
+}
+
+func (req *RequestOnLedger) readMinted(r io.Reader) error {
+	req.minted = make(map[ledgerstate.Color]uint64)
+	var length uint64
+	err := util.ReadUint64(r, &length)
+	if err != nil {
+		return err
+	}
+	i := uint64(0)
+	for i < length {
+		var colorBytes [ledgerstate.ColorLength]byte
+		_, err := r.Read(colorBytes[:])
+		if err != nil {
+			return err
+		}
+
+		var amount int64
+		err = util.ReadInt64(r, &amount)
+		if err != nil {
+			return err
+		}
+
+		req.minted[colorBytes] = uint64(amount)
+		i++
+	}
+	return nil
+}
+
+func (req *RequestOnLedger) mintedBytes() []byte {
+	var buf bytes.Buffer
+	_ = util.WriteInt64(&buf, int64(len(req.minted)))
+	for k, v := range req.minted {
+		buf.Write(k.Bytes())
+		_ = util.WriteInt64(&buf, int64(v))
+	}
+	return buf.Bytes()
+}
+
+func (req *RequestOnLedger) Bytes() []byte {
+	var buf bytes.Buffer
+	buf.WriteByte(OnLedgerRequestType)
+	buf.Write(req.Output().Bytes())
+	buf.Write(req.senderAddress.Bytes())
+	buf.Write(req.mintedBytes())
+	_ = util.WriteTime(&buf, req.timestamp)
+	buf.Write(req.requestMetadata.Bytes())
+	return buf.Bytes()
+}
+
+func onLedgerFromBytes(buf []byte) (*RequestOnLedger, error) {
+	req := &RequestOnLedger{}
+	r := bytes.NewReader(buf)
+
+	// output
+	outputObj, offset, err := ledgerstate.ExtendedOutputFromBytes(buf)
+	if err != nil {
+		return nil, err
+	}
+	req.outputObj = outputObj
+	_, err = r.Seek(int64(offset), 0)
+	if err != nil {
+		return nil, err
+	}
+
+	// sender address
+	addrBytes := make([]byte, ledgerstate.AddressLength)
+	_, err = r.Read(addrBytes)
+	if err != nil {
+		return nil, err
+	}
+	addr, _, err := ledgerstate.AddressFromBytes(addrBytes)
+	if err != nil {
+		return nil, err
+	}
+	req.senderAddress = addr
+
+	// minted
+	err = req.readMinted(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// timestamp
+	err = util.ReadTime(r, &req.timestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	// metadata
+	metadataBytes, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	req.requestMetadata = RequestMetadataFromBytes(metadataBytes)
+
+	return req, nil
+}
+
 // endregion /////////////////////////////////////////////////////////////////
 
 // region RequestOffLedger  ///////////////////////////////////////////////////////
@@ -308,9 +432,9 @@ func NewRequestOffLedger(contract, entryPoint coretypes.Hname, args requestargs.
 	}
 }
 
-// NewRequestOffLedgerFromBytes creates a basic request from previously serialized bytes
-func NewRequestOffLedgerFromBytes(data []byte) (request *RequestOffLedger, err error) {
-	req := &RequestOffLedger{
+// offLedgerFromBytes creates a basic request from previously serialized bytes
+func offLedgerFromBytes(data []byte) (req *RequestOffLedger, err error) {
+	req = &RequestOffLedger{
 		args: requestargs.New(nil),
 	}
 	buf := bytes.NewBuffer(data)
@@ -376,7 +500,16 @@ func (req *RequestOffLedger) Essence() []byte {
 
 // Bytes encodes request as bytes
 func (req *RequestOffLedger) Bytes() []byte {
-	return append(req.Essence(), req.signature[:]...)
+	var buf bytes.Buffer
+	buf.WriteByte(OffLedgerRequestType)
+	buf.Write(req.Essence())
+	buf.Write(req.signature[:])
+	return buf.Bytes()
+}
+
+// only used for consensus
+func (req *RequestOffLedger) Hash() [32]byte {
+	return hashing.HashData(req.Bytes())
 }
 
 // Sign signs essence

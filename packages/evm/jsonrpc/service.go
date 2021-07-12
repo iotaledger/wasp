@@ -8,6 +8,7 @@ package jsonrpc
 import (
 	"fmt"
 	"math/big"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -17,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/eth/protocols/eth"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/iotaledger/wasp/packages/evm"
 	"golang.org/x/crypto/sha3"
 	"golang.org/x/xerrors"
 )
@@ -259,7 +259,7 @@ func (e *EthService) parseTxArgs(args *SendTxArgs) (*types.Transaction, error) {
 	if err := args.setDefaults(e); err != nil {
 		return nil, err
 	}
-	return types.SignTx(args.toTransaction(), evm.Signer(), account)
+	return types.SignTx(args.toTransaction(), e.evmChain.Signer(), account)
 }
 
 func (e *EthService) GetLogs(q *RPCFilterQuery) ([]*types.Log, error) {
@@ -282,14 +282,16 @@ func (e *EthService) CompileSolidity()
 func (e *EthService) CompileSerpent()
 */
 
-type NetService struct{}
+type NetService struct {
+	chainID int
+}
 
-func NewNetService() *NetService {
-	return &NetService{}
+func NewNetService(chainID int) *NetService {
+	return &NetService{chainID}
 }
 
 func (s *NetService) Version() string {
-	return "1074" // IOTA -- get it?
+	return strconv.Itoa(s.chainID)
 }
 
 func (s *NetService) Listening() bool         { return true }
@@ -302,9 +304,36 @@ func NewWeb3Service() *Web3Service {
 }
 
 func (s *Web3Service) ClientVersion() string {
-	return "evmproxy"
+	return "wasp/evmproxy"
 }
 
 func (s *Web3Service) Sha3(input hexutil.Bytes) hexutil.Bytes {
 	return crypto.Keccak256(input)
+}
+
+type TxPoolService struct{}
+
+func NewTxPoolService() *TxPoolService {
+	return &TxPoolService{}
+}
+
+func (s *TxPoolService) Content() map[string]map[string]map[string]*RPCTransaction {
+	return map[string]map[string]map[string]*RPCTransaction{
+		"pending": make(map[string]map[string]*RPCTransaction),
+		"queued":  make(map[string]map[string]*RPCTransaction),
+	}
+}
+
+func (s *TxPoolService) Inspect() map[string]map[string]map[string]string {
+	return map[string]map[string]map[string]string{
+		"pending": make(map[string]map[string]string),
+		"queued":  make(map[string]map[string]string),
+	}
+}
+
+func (s *TxPoolService) Status() map[string]hexutil.Uint {
+	return map[string]hexutil.Uint{
+		"pending": hexutil.Uint(0),
+		"queued":  hexutil.Uint(0),
+	}
 }

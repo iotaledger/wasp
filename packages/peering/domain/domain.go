@@ -94,6 +94,16 @@ func (d *DomainImpl) SendMsgToRandomPeersSimple(upToNumPeers uint16, msgType byt
 	})
 }
 
+func (d *DomainImpl) GetRandomPeers(upToNumPeers int) []string {
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
+	ret := make([]string, upToNumPeers)
+	for i := range ret {
+		ret[i] = d.netIDs[d.permutation.Next()]
+	}
+	return ret
+}
+
 func (d *DomainImpl) AddPeer(netID string) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()

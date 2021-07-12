@@ -235,7 +235,7 @@ pub fn func_withdraw_to_chain(ctx: &ScFuncContext) {
     ctx.require(param_chain_id.exists(), "missing mandatory chainID");
 
     let transfer = ScTransfers::iotas(1);
-    ctx.post(&param_chain_id.value(), CORE_ACCOUNTS, CORE_ACCOUNTS_FUNC_WITHDRAW, None, transfer, 0);
+    ctx.post(&param_chain_id.value(), corecontracts::coreaccounts::HSC_NAME, corecontracts::coreaccounts::HFUNC_WITHDRAW, None, transfer, 0);
     ctx.log("testcore.withdrawToChain ok");
 }
 
@@ -360,7 +360,7 @@ pub fn view_test_panic_view_ep(ctx: &ScViewContext) {
 
 pub fn view_test_sandbox_call(ctx: &ScViewContext) {
     ctx.log("testcore.testSandboxCall");
-    let ret = ctx.call(CORE_ROOT, CORE_ROOT_VIEW_GET_CHAIN_INFO, None);
+    let ret = ctx.call(corecontracts::coreroot::HSC_NAME, corecontracts::coreroot::HVIEW_GET_CHAIN_INFO, None);
     let desc = ret.get_string("d").value();
     ctx.results().get_string(RESULT_SANDBOX_CALL).set_value(&desc);
     ctx.log("testcore.testSandboxCall ok");

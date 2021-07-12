@@ -6,23 +6,18 @@ import (
 	"sort"
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/identity"
+	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/rotate"
-
-	"github.com/iotaledger/wasp/packages/transaction"
-
-	"golang.org/x/xerrors"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
-
-	"github.com/iotaledger/hive.go/identity"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"golang.org/x/xerrors"
 )
 
 // takeAction triggers actions whenever relevant
@@ -64,7 +59,7 @@ func (c *Consensus) proposeBatchIfNeeded() {
 	// call the ACS consensus. The call should spawn goroutine itself
 	c.committee.RunACSConsensus(proposal.Bytes(), c.acsSessionID, c.stateOutput.GetStateIndex(), func(sessionID uint64, acs [][]byte) {
 		c.log.Debugf("proposeBatch RunACSConsensus callback: responding to ACS session ID %v: len = %d", sessionID, len(acs))
-		go c.chain.ReceiveMessage(&chain.AsynchronousCommonSubsetMsg{
+		go c.chain.ReceiveMessage(&messages.AsynchronousCommonSubsetMsg{
 			ProposedBatchesBin: acs,
 			SessionID:          sessionID,
 		})
@@ -91,11 +86,31 @@ func (c *Consensus) runVMIfNeeded() {
 		c.log.Debugf("runVM not needed: delayed till %v", c.delayRunVMUntil)
 		return
 	}
-	reqs, allArrived := c.mempool.ReadyFromIDs(c.consensusBatch.Timestamp, c.consensusBatch.RequestIDs...)
+	reqs, missingRequestIndexes, allArrived := c.mempool.ReadyFromIDs(c.consensusBatch.Timestamp, c.consensusBatch.RequestIDs...)
+
+	c.missingRequestsMutex.Lock()
+	defer c.missingRequestsMutex.Unlock()
+	c.missingRequestsFromBatch = make(map[coretypes.RequestID][32]byte) // reset list of missing requests
+
 	if !allArrived {
 		// some requests are not ready, so skip VM call this time. Maybe next time will be more luck
 		c.delayRunVMUntil = time.Now().Add(c.timers.VMRunRetryToWaitForReadyRequests)
-		c.log.Infof("runVM not needed: some requests didn't arrive yet")
+		c.log.Infof("runVM not needed: some requests didn't arrive yet. batch IDs: %v | batch Hashes: %v | missing indexes: %v", c.consensusBatch.RequestIDs, c.consensusBatch.RequestHashes, missingRequestIndexes)
+
+		// send message to other committee nodes asking for the missing requests
+		if !c.pullMissingRequestsFromCommittee {
+			return
+		}
+		missingRequestIds := []coretypes.RequestID{}
+		for _, idx := range missingRequestIndexes {
+			reqID := c.consensusBatch.RequestIDs[idx]
+			reqHash := c.consensusBatch.RequestHashes[idx]
+			c.missingRequestsFromBatch[reqID] = reqHash
+			missingRequestIds = append(missingRequestIds, reqID)
+		}
+		c.log.Debugf("runVMIfNeeded: asking for missing requests, ids: %v", missingRequestIds)
+		msgData := messages.NewMissingRequestIDsMsg(&missingRequestIds).Bytes()
+		c.committee.SendMsgToPeers(messages.MsgMissingRequestIDs, msgData, time.Now().UnixNano())
 		return
 	}
 	if len(reqs) == 0 {
@@ -167,7 +182,7 @@ func (c *Consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
 		}
 		c.log.Debugf("runVM OnFinish callback: responding by state index: %d state hash: %s",
 			task.VirtualState.BlockIndex(), task.VirtualState.Hash())
-		c.chain.ReceiveMessage(&chain.VMResultMsg{
+		c.chain.ReceiveMessage(&messages.VMResultMsg{
 			Task: task,
 		})
 	}
@@ -182,12 +197,12 @@ func (c *Consensus) broadcastSignedResultIfNeeded() {
 	}
 	if time.Now().After(c.delaySendingSignedResult) {
 		signedResult := c.resultSignatures[c.committee.OwnPeerIndex()]
-		msg := &chain.SignedResultMsg{
+		msg := &messages.SignedResultMsg{
 			ChainInputID: c.stateOutput.ID(),
 			EssenceHash:  signedResult.EssenceHash,
 			SigShare:     signedResult.SigShare,
 		}
-		c.committee.SendMsgToPeers(chain.MsgSignedResult, util.MustBytes(msg), time.Now().UnixNano())
+		c.committee.SendMsgToPeers(messages.MsgSignedResult, util.MustBytes(msg), time.Now().UnixNano())
 		c.delaySendingSignedResult = time.Now().Add(c.timers.BroadcastSignedResultRetry)
 
 		c.log.Debugf("broadcastSignedResult: broadcasted: essence hash: %s, chain input %s",
@@ -263,7 +278,7 @@ func (c *Consensus) checkQuorum() {
 		// if it is not state controller rotation, sending message to state manager
 		// Otherwise state manager is not notified
 		chainOutputID := chainOutput.ID()
-		go c.chain.ReceiveMessage(&chain.StateCandidateMsg{
+		go c.chain.ReceiveMessage(&messages.StateCandidateMsg{
 			State:             c.resultState,
 			ApprovingOutputID: chainOutputID,
 		})
@@ -354,14 +369,16 @@ func (c *Consensus) prepareBatchProposal(reqs []coretypes.Request) *BatchProposa
 		ValidatorIndex:          c.committee.OwnPeerIndex(),
 		StateOutputID:           c.stateOutput.ID(),
 		RequestIDs:              make([]coretypes.RequestID, len(reqs)),
+		RequestHashes:           make([][32]byte, len(reqs)),
 		Timestamp:               ts,
 		ConsensusManaPledge:     consensusManaPledge,
 		AccessManaPledge:        accessManaPledge,
 		FeeDestination:          feeDestination,
 		SigShareOfStateOutputID: sigShare,
 	}
-	for i := range ret.RequestIDs {
-		ret.RequestIDs[i] = reqs[i].ID()
+	for i, req := range reqs {
+		ret.RequestIDs[i] = req.ID()
+		ret.RequestHashes[i] = req.Hash()
 	}
 
 	c.log.Debugf("prepareBatchProposal: proposal prepared")
@@ -436,8 +453,8 @@ func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 	}
 
 	// calculate intersection of proposals
-	inBatchSet := calcIntersection(acs, c.committee.Size())
-	if len(inBatchSet) == 0 {
+	inBatchIDs, inBatchHashes := calcIntersection(acs, c.committee.Size())
+	if len(inBatchIDs) == 0 {
 		// if intersection is empty, reset workflow and retry after some time. It means not all requests
 		// reached nodes and we have give it a time. Should not happen often
 		c.log.Warnf("receiveACS: ACS intersection (light) is empty. reset workflow. State index: %d, ACS sessionID %d",
@@ -458,7 +475,8 @@ func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 	c.consensusBatch = &BatchProposal{
 		ValidatorIndex:      c.committee.OwnPeerIndex(),
 		StateOutputID:       c.stateOutput.ID(),
-		RequestIDs:          inBatchSet,
+		RequestIDs:          inBatchIDs,
+		RequestHashes:       inBatchHashes,
 		Timestamp:           par.medianTs,
 		ConsensusManaPledge: par.consensusPledge,
 		AccessManaPledge:    par.accessPledge,
@@ -483,7 +501,7 @@ func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 	c.runVMIfNeeded()
 }
 
-func (c *Consensus) processInclusionState(msg *chain.InclusionStateMsg) {
+func (c *Consensus) processInclusionState(msg *messages.InclusionStateMsg) {
 	if !c.workflow.transactionFinalized {
 		c.log.Debugf("processInclusionState: transaction finalized -> skipping.")
 		return
@@ -542,7 +560,7 @@ func (c *Consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 	return tx, chained, nil
 }
 
-func (c *Consensus) setNewState(msg *chain.StateTransitionMsg) {
+func (c *Consensus) setNewState(msg *messages.StateTransitionMsg) {
 	c.stateOutput = msg.StateOutput
 	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp
@@ -601,7 +619,7 @@ func (c *Consensus) processVMResult(result *vm.VMTask) {
 	sigShare, err := c.committee.DKShare().SignShare(essenceBytes)
 	c.assert.RequireNoError(err, "processVMResult: ")
 
-	c.resultSignatures[c.committee.OwnPeerIndex()] = &chain.SignedResultMsg{
+	c.resultSignatures[c.committee.OwnPeerIndex()] = &messages.SignedResultMsg{
 		SenderIndex:  c.committee.OwnPeerIndex(),
 		ChainInputID: result.ChainInput.ID(),
 		EssenceHash:  essenceHash,
@@ -628,7 +646,7 @@ func (c *Consensus) makeRotateStateControllerTransaction(task *vm.VMTask) *ledge
 	return essence
 }
 
-func (c *Consensus) receiveSignedResult(msg *chain.SignedResultMsg) {
+func (c *Consensus) receiveSignedResult(msg *messages.SignedResultMsg) {
 	if c.resultSignatures[msg.SenderIndex] != nil {
 		if c.resultSignatures[msg.SenderIndex].EssenceHash != msg.EssenceHash ||
 			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare[:], msg.SigShare[:]) {
@@ -658,4 +676,22 @@ func (c *Consensus) receiveSignedResult(msg *chain.SignedResultMsg) {
 	}
 	c.resultSignatures[msg.SenderIndex] = msg
 	c.log.Debugf("receiveSignedResult: stored sig share from sender %d, essenceHash %v", msg.SenderIndex, msg.EssenceHash)
+}
+
+// ShouldReceiveMissingRequest returns whether or not a request is missing, if the incoming request matches the expetec ID/Hash it is removed from the list
+func (c *Consensus) ShouldReceiveMissingRequest(req coretypes.Request) bool {
+	c.log.Debugf("ShouldReceiveMissingRequest: reqID %s, hash %v", req.ID(), req.Hash())
+
+	c.missingRequestsMutex.Lock()
+	defer c.missingRequestsMutex.Unlock()
+	expectedHash, exists := c.missingRequestsFromBatch[req.ID()]
+	if !exists {
+		return false
+	}
+	reqHash := req.Hash()
+	result := bytes.Equal(expectedHash[:], reqHash[:])
+	if result {
+		delete(c.missingRequestsFromBatch, req.ID())
+	}
+	return result
 }

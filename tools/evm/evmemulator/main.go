@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/tools/evm/evmcli"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -69,6 +70,7 @@ func start(cmd *cobra.Command, args []string) {
 	chainOwner, _ := env.NewKeyPairWithFunds()
 	chain := env.NewChain(chainOwner, "iscpchain")
 	err := chain.DeployContract(chainOwner, deployParams.Name, evmchain.Interface.ProgramHash,
+		evmchain.FieldChainID, codec.EncodeUint16(uint16(deployParams.ChainID)),
 		evmchain.FieldGenesisAlloc, evmchain.EncodeGenesisAlloc(deployParams.GetGenesis(core.GenesisAlloc{
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 		})),
@@ -79,5 +81,5 @@ func start(cmd *cobra.Command, args []string) {
 	signer, _ := env.NewKeyPairWithFunds()
 
 	backend := jsonrpc.NewSoloBackend(env, chain, signer)
-	jsonRPCServer.ServeJSONRPC(backend, deployParams.Name)
+	jsonRPCServer.ServeJSONRPC(backend, deployParams.ChainID, deployParams.Name)
 }

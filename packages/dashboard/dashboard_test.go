@@ -4,12 +4,22 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
 	"github.com/stretchr/testify/require"
 )
+
+func checkProperConversionsToString(t *testing.T, html *goquery.Document) {
+	// make sure we are using .Base58() instead of the default String() implementation
+	// for things like OutputID, ChainID, Address, etc
+	require.NotContains(t, strings.ToLower(html.Text()), "outputid {")
+	require.NotContains(t, strings.ToLower(html.Text()), "{alias")
+	require.NotContains(t, strings.ToLower(html.Text()), "address {")
+	require.NotContains(t, strings.ToLower(html.Text()), "$/")
+}
 
 func TestDashboardConfig(t *testing.T) {
 	e, d := mockDashboard()
@@ -35,6 +45,7 @@ func TestDashboardChainList(t *testing.T) {
 	e, d := mockDashboard()
 	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainList, "/chains", nil)
 	require.Equal(t, "mock chain", html.Find(`table tbody tr td[data-label="Description"]`).Text())
+	checkProperConversionsToString(t, html)
 }
 
 func TestDashboardChainView(t *testing.T) {
@@ -42,10 +53,7 @@ func TestDashboardChainView(t *testing.T) {
 	html := testutil.CallHTMLRequestHandler(t, e, d.handleChain, "/chain/:chainid", map[string]string{
 		"chainid": chainid.RandomChainID().Base58(),
 	})
-
-	// make sure we are using .Base58()
-	require.NotContains(t, html.Text(), "OutputID {")
-	require.NotContains(t, html.Text(), "Address {")
+	checkProperConversionsToString(t, html)
 }
 
 func TestDashboardChainAccount(t *testing.T) {
@@ -54,10 +62,8 @@ func TestDashboardChainAccount(t *testing.T) {
 		"chainid": chainid.RandomChainID().Base58(),
 		"agentid": strings.Replace(coretypes.NewRandomAgentID().String(), "/", ":", 1),
 	})
-
-	// make sure we are using .Base58()
-	require.NotContains(t, html.Text(), "OutputID {")
-	require.NotContains(t, html.Text(), "Address {")
+	checkProperConversionsToString(t, html)
+	require.Regexp(t, "^A/", html.Find(".value-agentid").Text())
 }
 
 func TestDashboardChainBlob(t *testing.T) {
@@ -66,10 +72,7 @@ func TestDashboardChainBlob(t *testing.T) {
 		"chainid": chainid.RandomChainID().Base58(),
 		"hash":    hashing.RandomHash(nil).Base58(),
 	})
-
-	// make sure we are using .Base58()
-	require.NotContains(t, html.Text(), "OutputID {")
-	require.NotContains(t, html.Text(), "Address {")
+	checkProperConversionsToString(t, html)
 }
 
 func TestDashboardChainContract(t *testing.T) {
@@ -78,8 +81,5 @@ func TestDashboardChainContract(t *testing.T) {
 		"chainid": chainid.RandomChainID().Base58(),
 		"hname":   coretypes.Hname(0).String(),
 	})
-
-	// make sure we are using .Base58()
-	require.NotContains(t, html.Text(), "OutputID {")
-	require.NotContains(t, html.Text(), "Address {")
+	checkProperConversionsToString(t, html)
 }

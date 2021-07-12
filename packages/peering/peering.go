@@ -169,6 +169,7 @@ type PeerDomainProvider interface {
 	SendSimple(netID string, msgType byte, msgData []byte)
 	SendMsgToRandomPeersSimple(upToNumPeers uint16, msgType byte, msgData []byte)
 	ReshufflePeers(seedBytes ...[]byte)
+	GetRandomPeers(upToNumPeers int) []string
 	PeerCollection
 }
 
