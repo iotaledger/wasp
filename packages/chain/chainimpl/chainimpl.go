@@ -5,6 +5,7 @@ package chainimpl
 
 import (
 	"bytes"
+	"log"
 	"sync"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -227,7 +228,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 				// The error means a database error. The optimistic state read failure can't occur here
 				// because the state transition message is only sent only after state is committed and before consensus
 				// start new round
-				c.log.Panicf("processChainTransition. unexpected error: %v", err)
+				log.Panicf("processChainTransition. unexpected error: %v", err)
 			}
 			// remove processed requests from the mempool
 			c.mempool.RemoveRequests(reqids...)
