@@ -1,6 +1,8 @@
 package webapiutil
 
 import (
+	"time"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -15,6 +17,6 @@ func CallView(ch chain.ChainCore, contractHname, viewHname coretypes.Hname, para
 	err = optimism.RepeatOnceIfUnlucky(func() error {
 		ret, err = vctx.CallView(contractHname, viewHname, params)
 		return err
-	})
+	}, 100*time.Millisecond)
 	return ret, err
 }
