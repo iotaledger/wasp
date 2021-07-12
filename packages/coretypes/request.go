@@ -21,6 +21,7 @@ type Request interface {
 	IsFeePrepaid() bool
 	// number used for ordering requests in the mempool. Priority order is a descending order
 	Nonce() uint64
+	WithNonce(nonce uint64) Request
 	// ledgerstate.Output interface for on-ledger requests, nil for off-ledger requests
 	Output() ledgerstate.Output
 	// arguments of the call with the flag if they are ready. No arguments mean empty dictionary and true

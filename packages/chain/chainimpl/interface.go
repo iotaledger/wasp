@@ -152,10 +152,8 @@ func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger, sender
 	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID(), senderNetID)
 	c.sendRequestAckowledgementMsg(req.ID(), senderNetID)
 	if !c.mempool.ReceiveRequest(req) {
-		c.log.Infof("SEEN ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID(), senderNetID)
 		return
 	}
-	c.log.Infof("NEW ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID(), senderNetID)
 	c.broadcastOffLedgerRequest(req)
 }
 
