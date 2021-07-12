@@ -1,6 +1,11 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package commoncoin implements a common coin abstraction needed by
+// the HoneyBadgerBFT for synchronization and randomness.
+//
+// See A. Miller et al. The honey badger of bft protocols. 2016.
+// <https://eprint.iacr.org/2016/199.pdf>, Appendix C.
 package commoncoin
 
 import (

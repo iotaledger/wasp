@@ -114,7 +114,7 @@ func SetupNet(
 ) ([]peering.NetworkProvider, io.Closer) {
 	peeringNetwork := testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000, behavior,
-		testlogger.WithLevel(log, logger.LevelInfo, false),
+		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
 	networkProviders := peeringNetwork.NetworkProviders()
 	return networkProviders, peeringNetwork

@@ -83,7 +83,7 @@ func NewCommonSubset(
 	peeringID peering.PeeringID,
 	netGroup peering.GroupProvider,
 	dkShare *tcrypto.DKShare,
-	allRandom bool, // All coin flips should be random, for testing mostly.
+	allRandom bool, // Set to true to have real CC rounds for each epoch. That's for testing mostly.
 	outputCh chan map[uint16][]byte,
 	log *logger.Logger,
 ) (*CommonSubset, error) {

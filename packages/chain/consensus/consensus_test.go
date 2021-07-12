@@ -299,7 +299,7 @@ func TestCruelWorld(t *testing.T) {
 	}
 	const numNodes = 10
 	const quorum = (numNodes*2)/3 + 1
-	env, _ := consensus.NewMockedEnv(t, numNodes, quorum, true)
+	env, _ := consensus.NewMockedEnv(t, numNodes, quorum, false)
 	timers := consensus.NewConsensusTimers()
 	timers.BroadcastSignedResultRetry = 50 * time.Millisecond
 	env.CreateNodes(timers)
