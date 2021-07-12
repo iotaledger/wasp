@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -14,6 +12,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -44,14 +44,6 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 
 	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second, "contract to be deployed")
 	return clu1, chain1
-}
-
-func sliceN(n int) []int {
-	ret := make([]int, n)
-	for i := range ret {
-		ret[i] = i
-	}
-	return ret
 }
 
 func printBlocks(t *testing.T, ch *cluster.Chain, expected int) {
@@ -98,7 +90,7 @@ func TestAccessNodesOnLedger(t *testing.T) {
 }
 
 func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
-	cmt := sliceN(numValidatorNodes)
+	cmt := util.MakeRange(0, numValidatorNodes)
 
 	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
 
@@ -114,7 +106,7 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, counterEquals(chain1, int64(numRequests)), sliceN(clusterSize), 60*time.Second)
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), util.MakeRange(0, clusterSize), 60*time.Second)
 
 	printBlocks(t, chain1, numRequests+3)
 }
@@ -150,7 +142,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 }
 
 func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
-	cmt := sliceN(numValidatorNodes)
+	cmt := util.MakeRange(0, numValidatorNodes)
 
 	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
 
@@ -166,7 +158,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	})
 	require.NoError(t, err)
 
-	waitUntil(t, balanceOnChainIotaEquals(chain1, myAgentID, 100), sliceN(clusterSize), 60*time.Second, "send 100i")
+	waitUntil(t, balanceOnChainIotaEquals(chain1, myAgentID, 100), util.MakeRange(0, clusterSize), 60*time.Second, "send 100i")
 
 	myClient := chain1.SCClient(coretypes.Hn(incCounterSCName), kp)
 
@@ -175,7 +167,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, counterEquals(chain1, int64(numRequests)), sliceN(clusterSize), 60*time.Second)
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), util.MakeRange(0, clusterSize), 60*time.Second)
 
 	printBlocks(t, chain1, numRequests+4)
 }
@@ -191,7 +183,7 @@ func TestAccessNodesMany(t *testing.T) {
 	if iterationCount > 8 {
 		t.Skip("skipping test with iteration count > 8")
 	}
-	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, sliceN(numValidatorNodes))
+	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes))
 
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)

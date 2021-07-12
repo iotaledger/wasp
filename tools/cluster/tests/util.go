@@ -289,11 +289,3 @@ func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Dur
 }
 
 // endregion ///////////////////////////////////////////////////////////////
-
-func makeRange(min, max int) []int {
-	a := make([]int, max-min+1)
-	for i := range a {
-		a[i] = min + i
-	}
-	return a
-}
