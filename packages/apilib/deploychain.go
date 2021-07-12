@@ -81,7 +81,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 		fmt.Fprintf(textout, "creating chain origin and init transaction.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
-	fmt.Fprint(textout, "creating chain origin and init transaction.. OK\n")
+	fmt.Fprintf(textout, "creating chain origin and init transaction %s.. OK\n", initRequestTx.ID().Base58())
 	fmt.Fprint(textout, "sending committee record to nodes.. OK\n")
 
 	err = ActivateChainOnAccessNodes(par.AllAPIHosts, par.AllPeeringHosts, chainID)
