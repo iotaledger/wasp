@@ -217,6 +217,17 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 		if c.consensus != nil {
 			c.consensus.EventSignedResultMsg(msgt)
 		}
+	case messages.MsgSignedResultAck:
+		if c.consensus == nil {
+			return
+		}
+		msgt := &messages.SignedResultAckMsg{}
+		if err := msgt.Read(rdr); err != nil {
+			c.log.Error(err)
+			return
+		}
+		msgt.SenderIndex = msg.SenderIndex
+		c.consensus.EventSignedResultAckMsg(msgt)
 	case messages.MsgOffLedgerRequest:
 		msgt, err := messages.OffLedgerRequestMsgFromBytes(msg.MsgData)
 		if err != nil {

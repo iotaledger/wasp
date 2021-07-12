@@ -30,6 +30,17 @@ func (c *Consensus) eventSignedResult(msg *messages.SignedResultMsg) {
 	c.takeAction()
 }
 
+func (c *Consensus) EventSignedResultAckMsg(msg *messages.SignedResultAckMsg) {
+	c.eventSignedResultAckMsgCh <- msg
+}
+
+func (c *Consensus) eventSignedResultAck(msg *messages.SignedResultAckMsg) {
+	c.log.Debugf("SignedResultAckMsg received: from sender %d, hash=%s, chain input id=%v",
+		msg.SenderIndex, msg.EssenceHash, coretypes.OID(msg.ChainInputID))
+	c.receiveSignedResultAck(msg)
+	c.takeAction()
+}
+
 func (c *Consensus) EventInclusionsStateMsg(msg *messages.InclusionStateMsg) {
 	c.eventInclusionStateMsgCh <- msg
 }
