@@ -225,14 +225,15 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.Bl
 	}
 	cl := ch.SCClient(blocklog.Interface.Hname(), nil, nodeIndex...)
 	ret := make([]*blocklog.BlockInfo, 0, blockIndex+1)
-	for idx := int(blockIndex); idx >= 0; idx-- {
+	//nolint:unconvert
+	for idx := uint32(blockIndex); idx >= 0; idx-- {
 		res, err := cl.CallView(blocklog.FuncGetBlockInfo, dict.Dict{
-			blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(idx)),
+			blocklog.ParamBlockIndex: codec.EncodeUint32(idx),
 		})
 		if err != nil {
 			return nil, err
 		}
-		bi, err := blocklog.BlockInfoFromBytes(uint32(idx), res.MustGet(blocklog.ParamBlockInfo))
+		bi, err := blocklog.BlockInfoFromBytes(idx, res.MustGet(blocklog.ParamBlockInfo))
 		if err != nil {
 			return nil, err
 		}
