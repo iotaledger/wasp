@@ -123,10 +123,10 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
-	t.Run("cluster=10, N=4, req=8", func(t *testing.T) {
+	t.Run("cluster=4, N=4, req=8", func(t *testing.T) {
 		const numRequests = 8
 		const numValidatorNodes = 4
-		const clusterSize = 10
+		const clusterSize = 5
 		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
 	//t.Run("cluster=10, N=4, req=100", func(t *testing.T) {
@@ -175,7 +175,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, counterEquals(chain1, int64(numRequests)), sliceN(clusterSize), 60*time.Second)
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), sliceN(clusterSize), 10*time.Second)
 
 	printBlocks(t, chain1, numRequests+4)
 }
