@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 
@@ -95,7 +96,7 @@ func handleStateGet(c echo.Context) error {
 		}
 		ret = v
 		return nil
-	})
+	}, 100*time.Millisecond)
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("View call failed: %v", err))
 	}
