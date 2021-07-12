@@ -16,18 +16,35 @@ const (
 )
 
 const (
-	ParamAddress   = "address"
-	ParamAgentID   = "agentId"
-	ParamBytes     = "bytes"
-	ParamChainID   = "chainId"
-	ParamColor     = "color"
-	ParamHash      = "hash"
-	ParamHname     = "hname"
-	ParamInt64     = "int64"
-	ParamRequestID = "requestId"
-	ParamString    = "string"
+	ParamAddress     = "address"
+	ParamAgentID     = "agentID"
+	ParamBlockIndex  = "blockIndex"
+	ParamBytes       = "bytes"
+	ParamChainID     = "chainID"
+	ParamColor       = "color"
+	ParamHash        = "hash"
+	ParamHname       = "hname"
+	ParamInt16       = "int16"
+	ParamInt32       = "int32"
+	ParamInt64       = "int64"
+	ParamRecordIndex = "recordIndex"
+	ParamRequestID   = "requestID"
+	ParamString      = "string"
 )
 
-const FuncParamTypes = "paramTypes"
+const (
+	ResultCount  = "count"
+	ResultRecord = "record"
+)
 
-const HFuncParamTypes = coretypes.Hname(0x6921c4cd)
+const (
+	FuncParamTypes   = "paramTypes"
+	ViewBlockRecord  = "blockRecord"
+	ViewBlockRecords = "blockRecords"
+)
+
+const (
+	HFuncParamTypes   = coretypes.Hname(0x6921c4cd)
+	HViewBlockRecord  = coretypes.Hname(0xad13b2f8)
+	HViewBlockRecords = coretypes.Hname(0x16e249ea)
+)

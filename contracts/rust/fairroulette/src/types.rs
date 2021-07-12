@@ -6,7 +6,7 @@ use wasmlib::*;
 //@formatter:off
 pub struct Bet {
     pub amount: i64,
-    pub better: ScAgentId,
+    pub better: ScAgentID,
     pub number: i64,
 }
 //@formatter:on

@@ -11,16 +11,19 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/client/scclient"
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/webapi/model"
-	"github.com/iotaledger/wasp/plugins/wasmtimevm"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 type Chain struct {
@@ -76,43 +79,25 @@ func (ch *Chain) OriginatorClient() *chainclient.Client {
 	return ch.Client(ch.OriginatorKeyPair())
 }
 
-func (ch *Chain) Client(sigScheme *ed25519.KeyPair) *chainclient.Client {
+func (ch *Chain) Client(sigScheme *ed25519.KeyPair, nodeIndex ...int) *chainclient.Client {
+	idx := 0
+	if len(nodeIndex) == 1 {
+		idx = nodeIndex[0]
+	}
 	return chainclient.New(
 		ch.Cluster.GoshimmerClient(),
-		ch.Cluster.WaspClient(ch.CommitteeNodes[0]),
+		ch.Cluster.WaspClient(idx),
 		ch.ChainID,
 		sigScheme,
 	)
 }
 
-func (ch *Chain) SCClient(contractHname coretypes.Hname, sigScheme *ed25519.KeyPair) *scclient.SCClient {
-	return scclient.New(ch.Client(sigScheme), contractHname)
+func (ch *Chain) SCClient(contractHname coretypes.Hname, sigScheme *ed25519.KeyPair, nodeIndex ...int) *scclient.SCClient {
+	return scclient.New(ch.Client(sigScheme, nodeIndex...), contractHname)
 }
 
 func (ch *Chain) CommitteeMultiClient() *multiclient.MultiClient {
 	return multiclient.New(ch.CommitteeAPIHosts())
-}
-
-func (ch *Chain) WithSCState(hname coretypes.Hname, f func(host string, blockIndex uint32, state dict.Dict) bool) bool {
-	pass := true
-	for i, host := range ch.CommitteeAPIHosts() {
-		if !ch.Cluster.IsNodeUp(i) {
-			continue
-		}
-		actual, err := ch.Cluster.WaspClient(i).DumpSCState(&ch.ChainID, hname)
-		if model.IsHTTPNotFound(err) {
-			pass = false
-			fmt.Printf("   FAIL: state does not exist\n")
-			continue
-		}
-		if err != nil {
-			panic(err)
-		}
-		if !f(host, actual.Index, actual.Variables) {
-			pass = false
-		}
-	}
-	return pass
 }
 
 func (ch *Chain) DeployContract(name, progHashStr, description string, initParams map[string]interface{}) (*ledgerstate.Transaction, error) {
@@ -148,7 +133,7 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 
 func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte, initParams map[string]interface{}) (*ledgerstate.Transaction, hashing.HashValue, error) {
 	blobFieldValues := codec.MakeDict(map[string]interface{}{
-		blob.VarFieldVMType:             wasmtimevm.VMType,
+		blob.VarFieldVMType:             vmtypes.WasmTime,
 		blob.VarFieldProgramBinary:      progBinary,
 		blob.VarFieldProgramDescription: description,
 	})
@@ -199,62 +184,6 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 	return tx, programHash, nil
 }
 
-func (ch *Chain) DeployWasmContractOld(name, description string, progBinary []byte, initParams map[string]interface{}) (*ledgerstate.Transaction, hashing.HashValue, error) {
-	// upload binary to the chain
-	blobFieldValues := map[string]interface{}{
-		blob.VarFieldVMType:             wasmtimevm.VMType,
-		blob.VarFieldProgramBinary:      progBinary,
-		blob.VarFieldProgramDescription: description,
-	}
-	programHash := blob.MustGetBlobHash(codec.MakeDict(blobFieldValues))
-
-	reqTx, _ := ch.OriginatorClient().Post1Request(
-		blob.Interface.Hname(),
-		coretypes.Hn(blob.FuncStoreBlob),
-		chainclient.PostRequestParams{
-			Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(blobFieldValues)),
-		},
-	)
-	err := ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, reqTx, 30*time.Second)
-	if err != nil {
-		return nil, hashing.NilHash, err
-	}
-	progBinaryBack, err := ch.GetBlobFieldValue(programHash, blob.VarFieldProgramBinary)
-	if err != nil {
-		return nil, hashing.NilHash, err
-	}
-	if !bytes.Equal(progBinary, progBinaryBack) {
-		return nil, hashing.NilHash, fmt.Errorf("!bytes.Equal(progBinary, progBinaryBack)")
-	}
-	fmt.Printf("---- blob installed correctly len = %d\n", len(progBinaryBack))
-
-	params := make(map[string]interface{})
-	for k, v := range initParams {
-		params[k] = v
-	}
-	params[root.ParamName] = name
-	params[root.ParamProgramHash] = programHash
-	params[root.ParamDescription] = description
-
-	tx, err := ch.OriginatorClient().Post1Request(
-		root.Interface.Hname(),
-		coretypes.Hn(root.FuncDeployContract),
-		chainclient.PostRequestParams{
-			Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
-		},
-	)
-	if err != nil {
-		return nil, hashing.NilHash, err
-	}
-
-	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, tx, 30*time.Second)
-	if err != nil {
-		return nil, hashing.NilHash, err
-	}
-
-	return tx, programHash, nil
-}
-
 func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]byte, error) {
 	v, err := ch.Cluster.WaspClient(0).CallView(
 		ch.ChainID, blob.Interface.Hname(), blob.FuncGetBlobField,
@@ -277,4 +206,81 @@ func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]
 
 func (ch *Chain) StartMessageCounter(expectations map[string]int) (*MessageCounter, error) {
 	return NewMessageCounter(ch.Cluster, ch.CommitteeNodes, expectations)
+}
+
+func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
+	cl := ch.SCClient(blocklog.Interface.Hname(), nil, nodeIndex...)
+	ret, err := cl.CallView(blocklog.FuncGetLatestBlockInfo)
+	if err != nil {
+		return 0, err
+	}
+	n, _, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
+	return n, err
+}
+
+func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.BlockInfo, error) {
+	blockIndex, err := ch.BlockIndex(nodeIndex...)
+	if err != nil {
+		return nil, err
+	}
+	cl := ch.SCClient(blocklog.Interface.Hname(), nil, nodeIndex...)
+	ret := make([]*blocklog.BlockInfo, 0, blockIndex+1)
+	for idx := int(blockIndex); idx >= 0; idx-- {
+		res, err := cl.CallView(blocklog.FuncGetBlockInfo, dict.Dict{
+			blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(idx)),
+		})
+		if err != nil {
+			return nil, err
+		}
+		bi, err := blocklog.BlockInfoFromBytes(uint32(idx), res.MustGet(blocklog.ParamBlockInfo))
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, bi)
+	}
+	return ret, nil
+}
+
+func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[coretypes.Hname]*root.ContractRecord, error) {
+	cl := ch.SCClient(root.Interface.Hname(), nil, nodeIndex...)
+	ret, err := cl.CallView(root.FuncGetChainInfo)
+	if err != nil {
+		return nil, err
+	}
+	return root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+}
+
+func (ch *Chain) GetCounterValue(inccounterSCHname coretypes.Hname, nodeIndex ...int) (int64, error) {
+	cl := ch.SCClient(inccounterSCHname, nil, nodeIndex...)
+	ret, err := cl.CallView(inccounter.FuncGetCounter)
+	if err != nil {
+		return 0, err
+	}
+	n, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
+	return n, err
+}
+
+func (ch *Chain) GetStateVariable(contractHname coretypes.Hname, key string, nodeIndex ...int) ([]byte, error) {
+	cl := ch.SCClient(contractHname, nil, nodeIndex...)
+	return cl.StateGet(key)
+}
+
+func (ch *Chain) GetRequestLogRecord(reqID coretypes.RequestID, committeeIndex ...int) (*blocklog.RequestLogRecord, uint32, uint16, error) {
+	cl := ch.SCClient(blocklog.Interface.Hname(), nil, committeeIndex...)
+	ret, err := cl.CallView(blocklog.FuncGetRequestLogRecord, dict.Dict{blocklog.ParamRequestID: reqID.Bytes()})
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	resultDecoder := kvdecoder.New(ret)
+	binRec, err := resultDecoder.GetBytes(blocklog.ParamRequestRecord, nil)
+	if err != nil || binRec == nil {
+		return nil, 0, 0, err
+	}
+	rec, err := blocklog.RequestLogRecordFromBytes(binRec)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	blockIndex := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
+	requestIndex := resultDecoder.MustGetUint16(blocklog.ParamRequestIndex)
+	return rec, blockIndex, requestIndex, nil
 }

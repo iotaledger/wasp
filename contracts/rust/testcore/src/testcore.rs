@@ -31,7 +31,7 @@ pub fn func_call_on_chain(ctx: &ScFuncContext) {
         target_ep = param_hname_ep.value()
     }
 
-    let var_counter = ctx.state().get_int64(VAR_COUNTER);
+    let var_counter = ctx.state().get_int64(STATE_COUNTER);
     let counter = var_counter.value();
     var_counter.set_value(counter + 1);
 
@@ -84,7 +84,7 @@ pub fn func_get_minted_supply(ctx: &ScFuncContext) {
 
 pub fn func_inc_counter(ctx: &ScFuncContext) {
     ctx.log("testcore.incCounter");
-    ctx.state().get_int64(VAR_COUNTER).set_value(ctx.state().get_int64(VAR_COUNTER).value() + 1);
+    ctx.state().get_int64(STATE_COUNTER).set_value(ctx.state().get_int64(STATE_COUNTER).value() + 1);
     ctx.log("testcore.incCounter ok");
 }
 
@@ -232,10 +232,10 @@ pub fn func_withdraw_to_chain(ctx: &ScFuncContext) {
     let p = ctx.params();
     let param_chain_id = p.get_chain_id(PARAM_CHAIN_ID);
 
-    ctx.require(param_chain_id.exists(), "missing mandatory chainId");
+    ctx.require(param_chain_id.exists(), "missing mandatory chainID");
 
     let transfer = ScTransfers::iotas(1);
-    ctx.post(&param_chain_id.value(), CORE_ACCOUNTS, CORE_ACCOUNTS_FUNC_WITHDRAW, None, transfer, 0);
+    ctx.post(&param_chain_id.value(), corecontracts::coreaccounts::HSC_NAME, corecontracts::coreaccounts::HFUNC_WITHDRAW, None, transfer, 0);
     ctx.log("testcore.withdrawToChain ok");
 }
 
@@ -284,7 +284,7 @@ pub fn view_fibonacci(ctx: &ScViewContext) {
 
 pub fn view_get_counter(ctx: &ScViewContext) {
     ctx.log("testcore.getCounter");
-    let counter = ctx.state().get_int64(VAR_COUNTER);
+    let counter = ctx.state().get_int64(STATE_COUNTER);
     ctx.results().get_int64(RESULT_COUNTER).set_value(counter.value());
     ctx.log("testcore.getCounter ok");
 }
@@ -360,7 +360,7 @@ pub fn view_test_panic_view_ep(ctx: &ScViewContext) {
 
 pub fn view_test_sandbox_call(ctx: &ScViewContext) {
     ctx.log("testcore.testSandboxCall");
-    let ret = ctx.call(CORE_ROOT, CORE_ROOT_VIEW_GET_CHAIN_INFO, None);
+    let ret = ctx.call(corecontracts::coreroot::HSC_NAME, corecontracts::coreroot::HVIEW_GET_CHAIN_INFO, None);
     let desc = ret.get_string("d").value();
     ctx.results().get_string(RESULT_SANDBOX_CALL).set_value(&desc);
     ctx.log("testcore.testSandboxCall ok");

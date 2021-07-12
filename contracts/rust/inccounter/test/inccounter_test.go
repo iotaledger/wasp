@@ -163,7 +163,7 @@ func TestLoop(t *testing.T) {
 	chain := setupTest(t)
 
 	wasmhost.WasmTimeout = 1 * time.Second
-	req := solo.NewCallParams(ScName, FuncLoop).WithIotas(1)
+	req := solo.NewCallParams(ScName, FuncEndlessLoop).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 	errText := err.Error()
@@ -181,7 +181,7 @@ func checkStateCounter(t *testing.T, chain *solo.Chain, expected interface{}) {
 		ScName, ViewGetCounter,
 	)
 	require.NoError(t, err)
-	counter, exists, err := codec.DecodeInt64(res[VarCounter])
+	counter, exists, err := codec.DecodeInt64(res[ResultCounter])
 	require.NoError(t, err)
 	if expected == nil {
 		require.False(t, exists)

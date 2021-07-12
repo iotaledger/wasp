@@ -49,13 +49,13 @@ pub fn func_init(ctx: &ScFuncContext) {
 
     let supply = param_supply.value();
     ctx.require(supply > 0, "erc20.on_init.fail: wrong 'supply' parameter");
-    ctx.state().get_int64(VAR_SUPPLY).set_value(supply);
+    ctx.state().get_int64(STATE_SUPPLY).set_value(supply);
 
     // we cannot use 'caller' here because on_init is always called from the 'root'
     // so, owner of the initial supply must be provided as a parameter PARAM_CREATOR to constructor (on_init)
     // assign the whole supply to creator
     let creator = param_creator.value();
-    ctx.state().get_map(VAR_BALANCES).get_int64(&creator).set_value(supply);
+    ctx.state().get_map(STATE_BALANCES).get_int64(&creator).set_value(supply);
 
     let t = "erc20.on_init.success. Supply: ".to_string() + &supply.to_string() +
         &", creator:".to_string() + &creator.to_string();
@@ -79,7 +79,7 @@ pub fn func_transfer(ctx: &ScFuncContext) {
     let amount = param_amount.value();
     ctx.require(amount > 0, "erc20.transfer.fail: wrong 'amount' parameter");
 
-    let balances = ctx.state().get_map(VAR_BALANCES);
+    let balances = ctx.state().get_map(STATE_BALANCES);
     let source_balance = balances.get_int64(&ctx.caller());
     ctx.require(source_balance.value() >= amount, "erc20.transfer.fail: not enough funds");
 
@@ -122,7 +122,7 @@ pub fn func_transfer_from(ctx: &ScFuncContext) {
     let allowance = allowances.get_int64(&recipient);
     ctx.require(allowance.value() >= amount, "erc20.transfer_from.fail: not enough allowance");
 
-    let balances = ctx.state().get_map(VAR_BALANCES);
+    let balances = ctx.state().get_map(STATE_BALANCES);
     let source_balance = balances.get_int64(&account);
     ctx.require(source_balance.value() >= amount, "erc20.transfer_from.fail: not enough funds");
 
@@ -170,7 +170,7 @@ pub fn view_balance_of(ctx: &ScViewContext) {
     let param_account = p.get_agent_id(PARAM_ACCOUNT);
     ctx.require(param_account.exists(), "missing mandatory account");
 
-    let balances = ctx.state().get_map(VAR_BALANCES);
+    let balances = ctx.state().get_map(STATE_BALANCES);
     let balance = balances.get_int64(&param_account.value()).value();
     ctx.results().get_int64(RESULT_AMOUNT).set_value(balance);
     ctx.trace("erc20.balanceOf ok");
@@ -181,7 +181,7 @@ pub fn view_balance_of(ctx: &ScViewContext) {
 // - PARAM_SUPPLY: i64
 pub fn view_total_supply(ctx: &ScViewContext) {
     ctx.trace("erc20.totalSupply");
-    let supply = ctx.state().get_int64(VAR_SUPPLY).value();
+    let supply = ctx.state().get_int64(STATE_SUPPLY).value();
     ctx.results().get_int64(RESULT_SUPPLY).set_value(supply);
     ctx.trace("erc20.totalSupply ok");
 }

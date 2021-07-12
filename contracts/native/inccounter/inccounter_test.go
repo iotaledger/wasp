@@ -22,7 +22,7 @@ func checkCounter(e *solo.Chain, expected int64) {
 }
 
 func TestDeployInc(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false).WithNativeContract(Interface)
 	chain := env.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash)
@@ -35,7 +35,7 @@ func TestDeployInc(t *testing.T) {
 }
 
 func TestDeployIncInitParams(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false).WithNativeContract(Interface)
 	chain := env.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
@@ -45,7 +45,7 @@ func TestDeployIncInitParams(t *testing.T) {
 }
 
 func TestIncDefaultParam(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false).WithNativeContract(Interface)
 	chain := env.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
@@ -60,7 +60,7 @@ func TestIncDefaultParam(t *testing.T) {
 }
 
 func TestIncParam(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false).WithNativeContract(Interface)
 	chain := env.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
@@ -76,7 +76,7 @@ func TestIncParam(t *testing.T) {
 }
 
 func TestIncWith1Post(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false).WithNativeContract(Interface)
 	chain := env.NewChain(nil, "chain1")
 
 	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)

@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/util"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -14,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/cluster"
 	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
@@ -54,21 +55,19 @@ func TestOffledgerRequest(t *testing.T) {
 
 	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
-
-	scHname := coretypes.Hn(incCounterSCName)
 	deployIncCounterSC(t, chain1, counter1)
 
 	chClient := newWalletWithFunds(t, clu, chain1, 0, 1, 100)
 
 	// send off-ledger request via Web API
-	offledgerReq, err := chClient.PostOffLedgerRequest(scHname, coretypes.Hn(inccounter.FuncIncCounter))
+	offledgerReq, err := chClient.PostOffLedgerRequest(incCounterSCHname, coretypes.Hn(inccounter.FuncIncCounter))
 	check(err, t)
 	err = chain1.CommitteeMultiClient().WaitUntilRequestProcessed(&chain1.ChainID, offledgerReq.ID(), 30*time.Second)
 	check(err, t)
 
 	// check off-ledger request was successfully processed
 	ret, err := chain1.Cluster.WaspClient(0).CallView(
-		chain1.ChainID, scHname, inccounter.FuncGetCounter,
+		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter,
 	)
 	check(err, t)
 	result, _ := ret.Get(inccounter.VarCounter)
@@ -108,6 +107,7 @@ func TestOffledgerRequest1Mb(t *testing.T) {
 			Args: requestargs.New().AddEncodeSimpleMany(paramsDict),
 		})
 	check(err, t)
+
 	err = chain1.CommitteeMultiClient().WaitUntilRequestProcessed(&chain1.ChainID, offledgerReq.ID(), 30*time.Second)
 	check(err, t)
 
@@ -125,7 +125,8 @@ func TestOffledgerRequest1Mb(t *testing.T) {
 }
 
 func TestOffledgerRequestAccessNode(t *testing.T) {
-	clu1 := clutest.NewCluster(t, 10)
+	const clusterSize = 10
+	clu1 := clutest.NewCluster(t, clusterSize)
 
 	cmt1 := []int{0, 1, 2, 3}
 
@@ -135,26 +136,22 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	chain1, err := clu1.DeployChain("chain", clu1.Config.AllNodes(), cmt1, 3, addr1)
 	require.NoError(t, err)
 
-	scHname := coretypes.Hn(incCounterSCName)
+	deployIncCounterSC(t, chain1, nil)
 
-	_, err = chain1.DeployContract(incCounterSCName, inccounter.Interface.ProgramHash.String(), "test inc counter", map[string]interface{}{
-		inccounter.VarCounter: 42,
-		root.ParamName:        incCounterSCName,
-	})
-	require.NoError(t, err)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), util.MakeRange(0, clusterSize), 30*time.Second)
 
 	// use an access node to create the chainClient
 	chClient := newWalletWithFunds(t, clu1, chain1, 5, 1, 100)
 
 	// send off-ledger request via Web API (to the access node)
-	offledgerReq, err := chClient.PostOffLedgerRequest(scHname, coretypes.Hn(inccounter.FuncIncCounter))
+	_, err = chClient.PostOffLedgerRequest(incCounterSCHname, coretypes.Hn(inccounter.FuncIncCounter))
 	check(err, t)
-	err = chain1.CommitteeMultiClient().WaitUntilRequestProcessed(&chain1.ChainID, offledgerReq.ID(), 30*time.Second)
-	check(err, t)
+
+	waitUntil(t, counterEquals(chain1, 43), []int{0, 1, 2, 3, 6}, 30*time.Second)
 
 	// check off-ledger request was successfully processed (check by asking another access node)
 	ret, err := clu1.WaspClient(6).CallView(
-		chain1.ChainID, scHname, inccounter.FuncGetCounter,
+		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter,
 	)
 	check(err, t)
 	result, _ := ret.Get(inccounter.VarCounter)

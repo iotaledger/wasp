@@ -2,7 +2,6 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/contracts/native"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 )
@@ -57,8 +56,9 @@ func init() {
 		coreutil.ViewFunc(FuncGetStringValue, getStringValue),
 
 		coreutil.ViewFunc(FuncJustView, testJustView),
+
+		coreutil.Func(FuncSpawn, spawn),
 	})
-	native.AddProcessor(Interface)
 }
 
 const (
@@ -102,6 +102,8 @@ const (
 
 	FuncPassTypesFull = "passTypesFull"
 	FuncPassTypesView = "passTypesView"
+
+	FuncSpawn = "spawn"
 
 	// State variables
 	VarCounter              = "counter"

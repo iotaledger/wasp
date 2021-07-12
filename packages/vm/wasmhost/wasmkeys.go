@@ -55,7 +55,7 @@ const (
 
 // associate names with predefined key ids
 var keyMap = map[string]int32{
-	"$accountId":       KeyAccountID,
+	"$accountID":       KeyAccountID,
 	"$address":         KeyAddress,
 	"$balances":        KeyBalances,
 	"$base58Bytes":     KeyBase58Decode,
@@ -65,8 +65,8 @@ var keyMap = map[string]int32{
 	"$blsValid":        KeyBlsValid,
 	"$call":            KeyCall,
 	"$caller":          KeyCaller,
-	"$chainId":         KeyChainID,
-	"$chainOwnerId":    KeyChainOwnerID,
+	"$chainID":         KeyChainID,
+	"$chainOwnerID":    KeyChainOwnerID,
 	"$color":           KeyColor,
 	"$contract":        KeyContract,
 	"$contractCreator": KeyContractCreator,
@@ -88,7 +88,7 @@ var keyMap = map[string]int32{
 	"$params":          KeyParams,
 	"$post":            KeyPost,
 	"$random":          KeyRandom,
-	"$requestId":       KeyRequestID,
+	"$requestID":       KeyRequestID,
 	"$results":         KeyResults,
 	"$return":          KeyReturn,
 	"$state":           KeyState,

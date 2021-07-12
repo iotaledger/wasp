@@ -31,10 +31,10 @@ type WaspObject interface {
 
 func GetArrayObjectID(arrayObj WaspObject, index, typeID int32, factory ObjFactory) int32 {
 	if !arrayObj.Exists(index, typeID) {
-		arrayObj.Panic("GetArrayObjectId: invalid index")
+		arrayObj.Panic("GetArrayObjectID: invalid index")
 	}
 	if typeID != arrayObj.GetTypeID(index) {
-		arrayObj.Panic("GetArrayObjectId: invalid type")
+		arrayObj.Panic("GetArrayObjectID: invalid type")
 	}
 	return arrayObj.FindOrMakeObjectID(index, factory)
 }
@@ -42,10 +42,10 @@ func GetArrayObjectID(arrayObj WaspObject, index, typeID int32, factory ObjFacto
 func GetMapObjectID(mapObj WaspObject, keyID, typeID int32, factories ObjFactories) int32 {
 	factory, ok := factories[keyID]
 	if !ok {
-		mapObj.Panic("GetMapObjectId: invalid key")
+		mapObj.Panic("GetMapObjectID: invalid key")
 	}
 	if typeID != mapObj.GetTypeID(keyID) {
-		mapObj.Panic("GetMapObjectId: invalid type")
+		mapObj.Panic("GetMapObjectID: invalid type")
 	}
 	return mapObj.FindOrMakeObjectID(keyID, factory)
 }
@@ -68,17 +68,10 @@ type ScDict struct {
 
 var _ WaspObject = &ScDict{}
 
-var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 8, 0, 34, 0}
+var typeSizes = [...]int{0, 33, 37, 0, 33, 32, 32, 4, 2, 4, 8, 0, 34, 0}
 
-func NewScDict(vm *WasmProcessor) *ScDict {
-	return NewScDictFromKvStore(&vm.KvStoreHost, dict.New())
-}
-
-func NewScDictFromKvStore(host *wasmhost.KvStoreHost, kvStore kv.KVStore) *ScDict {
-	o := &ScDict{}
-	o.host = host
-	o.kvStore = kvStore
-	return o
+func NewScDict(host *wasmhost.KvStoreHost, kvStore kv.KVStore) *ScDict {
+	return &ScDict{host: host, kvStore: kvStore}
 }
 
 func NewNullObject(host *wasmhost.KvStoreHost) WaspObject {
@@ -109,11 +102,12 @@ func (o *ScDict) InitObj(id, keyID int32, owner *ScDict) {
 	}
 	if (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 && o.kvStore != nil {
 		key := o.NestedKey()[1:]
-		length, _, err := codec.DecodeInt64(o.kvStore.MustGet(kv.Key(key)))
+		var err error
+		bytes := o.kvStore.MustGet(kv.Key(key))
+		o.length, _, err = codec.DecodeInt32(bytes)
 		if err != nil {
 			o.Panic("InitObj: %v", err)
 		}
-		o.length = int32(length)
 	}
 	o.Tracef("InitObj %s", o.name)
 	o.objects = make(map[int32]int32)
@@ -152,7 +146,7 @@ func (o *ScDict) FindOrMakeObjectID(keyID int32, factory ObjFactory) int32 {
 
 func (o *ScDict) GetBytes(keyID, typeID int32) []byte {
 	if keyID == wasmhost.KeyLength && (o.typeID&wasmhost.OBJTYPE_ARRAY) != 0 {
-		return o.Int64Bytes(int64(o.length))
+		return codec.EncodeInt32(o.length)
 	}
 	bytes := o.kvStore.MustGet(o.key(keyID, typeID))
 	o.typeCheck(typeID, bytes)
@@ -162,7 +156,7 @@ func (o *ScDict) GetBytes(keyID, typeID int32) []byte {
 func (o *ScDict) GetObjectID(keyID, typeID int32) int32 {
 	o.validate(keyID, typeID)
 	if (typeID&wasmhost.OBJTYPE_ARRAY) == 0 && typeID != wasmhost.OBJTYPE_MAP {
-		o.Panic("GetObjectId: invalid type")
+		o.Panic("GetObjectID: invalid type")
 	}
 	return GetMapObjectID(o, keyID, typeID, ObjFactories{
 		keyID: func() WaspObject { return &ScDict{} },
@@ -181,10 +175,8 @@ func (o *ScDict) GetTypeID(keyID int32) int32 {
 	return 0
 }
 
-func (o *ScDict) Int64Bytes(value int64) []byte {
-	bytes := make([]byte, 8) //nolint:gomnd
-	binary.LittleEndian.PutUint64(bytes, uint64(value))
-	return bytes
+func (o *ScDict) InvalidKey(keyID int32) {
+	o.Panic("invalid key: %d", keyID)
 }
 
 func (o *ScDict) key(keyID, typeID int32) kv.Key {
@@ -196,11 +188,8 @@ func (o *ScDict) key(keyID, typeID int32) kv.Key {
 	return kv.Key(key[1:])
 }
 
-func (o *ScDict) MustInt64(bytes []byte) int64 {
-	if len(bytes) != 8 {
-		o.Panic("invalid int64 length")
-	}
-	return int64(binary.LittleEndian.Uint64(bytes))
+func (o *ScDict) KvStore() kv.KVStore {
+	return o.kvStore
 }
 
 func (o *ScDict) NestedKey() string {
@@ -223,16 +212,11 @@ func (o *ScDict) Panic(format string, args ...interface{}) {
 }
 
 func (o *ScDict) SetBytes(keyID, typeID int32, bytes []byte) {
-	//TODO
-	//if !o.isMutable {
-	//	o.Panic("validate: Immutable field: %s key %d", o.name, keyId)
-	//}
-
 	if keyID == wasmhost.KeyLength {
 		if o.kvStore != nil {
 			// TODO this goes wrong for state, should clear map tree instead
 			o.kvStore = dict.New()
-			//if (o.typeId & wasmhost.OBJTYPE_ARRAY) != 0 {
+			//if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
 			//	key := o.NestedKey()[1:]
 			//	o.kvStore.Del(kv.Key(key))
 			//}
@@ -311,11 +295,11 @@ func (o *ScDict) validate(keyID, typeID int32) {
 		} else if arrayTypeID != typeID {
 			o.Panic("validate: Invalid type")
 		}
-		if /*o.isMutable && */ keyID == o.length {
+		if keyID == o.length {
 			o.length++
 			if o.kvStore != nil {
 				key := o.NestedKey()[1:]
-				o.kvStore.Set(kv.Key(key), codec.EncodeInt64(int64(o.length)))
+				o.kvStore.Set(kv.Key(key), codec.EncodeInt32(o.length))
 			}
 			return
 		}
@@ -334,4 +318,10 @@ func (o *ScDict) validate(keyID, typeID int32) {
 	if fieldType != typeID {
 		o.Panic("validate: Invalid access")
 	}
+}
+
+func (o *ScDict) SetKvStore(res kv.KVStore) {
+	o.kvStore = res
+	o.objects = make(map[int32]int32)
+	o.types = make(map[int32]int32)
 }

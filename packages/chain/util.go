@@ -16,8 +16,8 @@ import (
 // LogStateTransition also used in testing
 func LogStateTransition(msg *ChainTransitionEventData, reqids []coretypes.RequestID, log *logger.Logger) {
 	if msg.ChainOutput.GetStateIndex() > 0 {
-		log.Infof("STATE TRANSITION TO #%d. Chain output: %s, block size: %d",
-			msg.VirtualState.BlockIndex(), coretypes.OID(msg.ChainOutput.ID()), len(reqids))
+		log.Infof("STATE TRANSITION TO #%d. requests: %d, chain output: %s",
+			msg.VirtualState.BlockIndex(), len(reqids), coretypes.OID(msg.ChainOutput.ID()))
 		log.Debugf("STATE TRANSITION. State hash: %s",
 			msg.VirtualState.Hash().String())
 	} else {

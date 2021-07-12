@@ -23,7 +23,7 @@ type VMRunner interface {
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
 	ACSSessionID             uint64
-	Processors               *processors.ProcessorCache
+	Processors               *processors.Cache
 	ChainInput               *ledgerstate.AliasOutput
 	VirtualState             state.VirtualState // in/out  Return uncommitted updated virtual state
 	SolidStateBaseline       coreutil.StateBaseline

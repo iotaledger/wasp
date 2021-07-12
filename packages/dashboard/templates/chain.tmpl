@@ -8,10 +8,10 @@
 		{{ $desc := trim 50 $rootinfo.Description }}
 
 		<div class="card fluid">
-			<h2 class="section">{{if $desc}}{{$desc}}{{else}}Chain <tt>{{$chainid}}</tt>{{end}}</h2>
+			<h2 class="section">{{if $desc}}{{$desc}}{{else}}Chain <tt>{{$chainid.Base58}}</tt>{{end}}</h2>
 
 			<dl>
-				<dt>ChainID</dt><dd><tt>{{.Record.ChainID}}</tt></dd>
+				<dt>ChainID</dt><dd><tt>{{.Record.ChainID.Base58}}</tt></dd>
 				<dt>Active</dt><dd><tt>{{.Record.Active}}</tt></dd>
 				{{if .Record.Active}}
 					<dt>Owner ID</dt><dd>{{template "agentid" (args .ChainID $rootinfo.OwnerID)}}</dd>
@@ -31,7 +31,7 @@
 				<h3 class="section">Contracts</h3>
 				<dl>
 				{{range $_, $c := $rootinfo.Contracts}}
-					<dt><a href="{{ uri "chainContract" $chainid $c.Hname }}"><tt>{{trim 30 $c.Name}}</tt></a></dt>
+					<dt><a href="{{ uri "chainContract" $chainid.Base58 $c.Hname }}"><tt>{{trim 30 $c.Name}}</tt></a></dt>
 					<dd><tt>{{trim 50 $c.Description}}</tt></dd>
 				{{end}}
 				</dl>
@@ -69,7 +69,7 @@
 					<tbody>
 					{{range $hash, $size := .Blobs}}
 						<tr>
-							<td style="flex: 2"><a href="{{ uri "chainBlob" $chainid (hashref $hash) }}"><tt>{{ hashref $hash }}</tt></a></td>
+							<td style="flex: 2"><a href="{{ uri "chainBlob" $chainid.Base58 (hashref $hash) }}"><tt>{{ hashref $hash }}</tt></a></td>
 							<td>{{ $size }}</td>
 						</tr>
 					{{end}}
@@ -118,6 +118,6 @@
 		{{end}}
 		{{ template "ws" .ChainID }}
 	{{else}}
-		<div class="card fluid error">No chain record for ID <td>{{$chainid}}</tt></div>
+		<div class="card fluid error">No chain record for ID <td>{{$chainid.Base58}}</tt></div>
 	{{end}}
 {{end}}

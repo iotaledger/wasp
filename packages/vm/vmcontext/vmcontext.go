@@ -3,22 +3,18 @@ package vmcontext
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"golang.org/x/xerrors"
@@ -33,7 +29,7 @@ type VMContext struct {
 	chainID              chainid.ChainID
 	chainOwnerID         coretypes.AgentID
 	chainInput           *ledgerstate.AliasOutput
-	processors           *processors.ProcessorCache
+	processors           *processors.Cache
 	txBuilder            *utxoutil.Builder
 	virtualState         state.VirtualState
 	solidStateBaseline   coreutil.StateBaseline

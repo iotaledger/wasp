@@ -4,12 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/rotate"
-
-	"github.com/iotaledger/wasp/packages/testutil/testkey"
-
-	"go.uber.org/zap/zapcore"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -19,13 +13,16 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/coretypes/rotate"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 )
 
 func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.OptimisticStateReader, state.VirtualState) {
@@ -73,11 +70,11 @@ func TestMempool(t *testing.T) {
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 	time.Sleep(2 * time.Second)
-	stats := pool.Stats()
+	stats := pool.Info()
 	require.EqualValues(t, 0, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 0, stats.TotalPool)
-	require.EqualValues(t, 0, stats.Ready)
+	require.EqualValues(t, 0, stats.ReadyCounter)
 	pool.Close()
 	time.Sleep(1 * time.Second)
 }
@@ -93,11 +90,11 @@ func TestAddRequest(t *testing.T) {
 
 	pool.ReceiveRequests(requests[0])
 	require.True(t, pool.WaitRequestInPool(requests[0].ID()))
-	stats := pool.Stats()
+	stats := pool.Info()
 	require.EqualValues(t, 1, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 1, stats.TotalPool)
-	require.EqualValues(t, 1, stats.Ready)
+	require.EqualValues(t, 1, stats.ReadyCounter)
 }
 
 func TestAddRequestInvalidState(t *testing.T) {
@@ -111,19 +108,19 @@ func TestAddRequestInvalidState(t *testing.T) {
 
 	pool.ReceiveRequests(requests[0])
 	require.False(t, pool.WaitRequestInPool(requests[0].ID(), 100*time.Millisecond))
-	stats := pool.Stats()
+	stats := pool.Info()
 	require.EqualValues(t, 0, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 0, stats.TotalPool)
-	require.EqualValues(t, 0, stats.Ready)
+	require.EqualValues(t, 0, stats.ReadyCounter)
 
 	glb.SetSolidIndex(1)
 	require.True(t, pool.WaitRequestInPool(requests[0].ID(), 100*time.Millisecond))
-	stats = pool.Stats()
+	stats = pool.Info()
 	require.EqualValues(t, 1, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 1, stats.TotalPool)
-	require.EqualValues(t, 1, stats.Ready)
+	require.EqualValues(t, 1, stats.ReadyCounter)
 }
 
 // Test if adding the same on ledger request more than once to the same mempool
@@ -140,20 +137,20 @@ func TestAddRequestTwice(t *testing.T) {
 	pool.ReceiveRequests(requests[0])
 	require.True(t, pool.WaitRequestInPool(requests[0].ID(), 200*time.Millisecond))
 
-	stats := pool.Stats()
+	stats := pool.Info()
 	require.EqualValues(t, 1, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 1, stats.TotalPool)
-	require.EqualValues(t, 1, stats.Ready)
+	require.EqualValues(t, 1, stats.ReadyCounter)
 
 	pool.ReceiveRequests(requests[0])
 	require.True(t, pool.WaitRequestInPool(requests[0].ID(), 200*time.Millisecond))
 
-	stats = pool.Stats()
+	stats = pool.Info()
 	require.EqualValues(t, 1, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 1, stats.TotalPool)
-	require.EqualValues(t, 1, stats.Ready)
+	require.EqualValues(t, 1, stats.ReadyCounter)
 }
 
 // Test if adding off ledger requests works as expected: correctly signed ones
@@ -178,19 +175,19 @@ func TestAddOffLedgerRequest(t *testing.T) {
 
 	pool.ReceiveRequests(offLedgerRequestUnsigned)
 	require.False(t, pool.WaitRequestInPool(offLedgerRequestUnsigned.ID(), 200*time.Millisecond))
-	stats := pool.Stats()
+	stats := pool.Info()
 	require.EqualValues(t, 0, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 0, stats.TotalPool)
-	require.EqualValues(t, 0, stats.Ready)
+	require.EqualValues(t, 0, stats.ReadyCounter)
 
 	pool.ReceiveRequests(offLedgerRequestSigned)
 	require.True(t, pool.WaitRequestInPool(offLedgerRequestSigned.ID(), 200*time.Millisecond))
-	stats = pool.Stats()
+	stats = pool.Info()
 	require.EqualValues(t, 1, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 1, stats.TotalPool)
-	require.EqualValues(t, 1, stats.Ready)
+	require.EqualValues(t, 1, stats.ReadyCounter)
 }
 
 // Test if processed request cannot be added to mempool
@@ -203,11 +200,11 @@ func TestProcessedRequest(t *testing.T) {
 	pool := New(rdr, coretypes.NewInMemoryBlobCache(), log)
 	require.NotNil(t, pool)
 
-	stats := pool.Stats()
+	stats := pool.Info()
 	require.EqualValues(t, 0, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 0, stats.TotalPool)
-	require.EqualValues(t, 0, stats.Ready)
+	require.EqualValues(t, 0, stats.ReadyCounter)
 
 	requests, _ := getRequestsOnLedger(t, 1)
 
@@ -225,11 +222,11 @@ func TestProcessedRequest(t *testing.T) {
 	pool.ReceiveRequests(requests[0])
 	require.False(t, pool.WaitRequestInPool(requests[0].ID(), 1*time.Second))
 
-	stats = pool.Stats()
+	stats = pool.Info()
 	require.EqualValues(t, 0, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 0, stats.TotalPool)
-	require.EqualValues(t, 0, stats.Ready)
+	require.EqualValues(t, 0, stats.ReadyCounter)
 }
 
 // Test if adding and removing requests is handled correctly
@@ -255,11 +252,11 @@ func TestAddRemoveRequests(t *testing.T) {
 	require.True(t, pool.WaitRequestInPool(requests[3].ID()))
 	require.True(t, pool.WaitRequestInPool(requests[4].ID()))
 	require.True(t, pool.WaitRequestInPool(requests[5].ID()))
-	stats := pool.Stats()
+	stats := pool.Info()
 	require.EqualValues(t, 6, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 6, stats.TotalPool)
-	require.EqualValues(t, 6, stats.Ready)
+	require.EqualValues(t, 6, stats.ReadyCounter)
 
 	pool.RemoveRequests(
 		requests[3].ID(),
@@ -273,11 +270,11 @@ func TestAddRemoveRequests(t *testing.T) {
 	require.False(t, pool.HasRequest(requests[3].ID()))
 	require.True(t, pool.HasRequest(requests[4].ID()))
 	require.False(t, pool.HasRequest(requests[5].ID()))
-	stats = pool.Stats()
+	stats = pool.Info()
 	require.EqualValues(t, 6, stats.InPoolCounter)
 	require.EqualValues(t, 4, stats.OutPoolCounter)
 	require.EqualValues(t, 2, stats.TotalPool)
-	require.EqualValues(t, 2, stats.Ready)
+	require.EqualValues(t, 2, stats.ReadyCounter)
 }
 
 // Test if ReadyNow and ReadyFromIDs functions respect the time lock of the request
@@ -293,12 +290,12 @@ func TestTimeLock(t *testing.T) {
 	requests[2].Output().(*ledgerstate.ExtendedLockedOutput).WithTimeLock(now)
 	requests[3].Output().(*ledgerstate.ExtendedLockedOutput).WithTimeLock(now.Add(2 * time.Hour))
 
-	testStatsFun := func() { // Stats does not change after requests are added to the mempool
-		stats := pool.Stats()
+	testStatsFun := func() { // Info does not change after requests are added to the mempool
+		stats := pool.Info()
 		require.EqualValues(t, 4, stats.InPoolCounter)
 		require.EqualValues(t, 0, stats.OutPoolCounter)
 		require.EqualValues(t, 4, stats.TotalPool)
-		require.EqualValues(t, 3, stats.Ready)
+		require.EqualValues(t, 3, stats.ReadyCounter)
 	}
 	pool.ReceiveRequests(
 		requests[0], // + No time lock
@@ -319,7 +316,7 @@ func TestTimeLock(t *testing.T) {
 	require.Contains(t, ready, requests[2])
 	testStatsFun()
 
-	ready, result := pool.ReadyFromIDs(now.Add(-3*time.Hour),
+	ready, _, result := pool.ReadyFromIDs(now.Add(-3*time.Hour),
 		requests[0].ID(), // + No time lock
 		requests[1].ID(), // - Time lock less than three hours before now
 		requests[2].ID(), // - Time lock at exactly the same time as now
@@ -330,7 +327,7 @@ func TestTimeLock(t *testing.T) {
 	require.Contains(t, ready, requests[0])
 	testStatsFun()
 
-	ready, result = pool.ReadyFromIDs(now.Add(-1*time.Hour),
+	ready, _, result = pool.ReadyFromIDs(now.Add(-1*time.Hour),
 		requests[0].ID(), // + No time lock
 		requests[1].ID(), // + Time lock more than one hour before now
 		requests[2].ID(), // - Time lock at exactly the same time as now
@@ -342,7 +339,7 @@ func TestTimeLock(t *testing.T) {
 	require.Contains(t, ready, requests[1])
 	testStatsFun()
 
-	ready, result = pool.ReadyFromIDs(now,
+	ready, _, result = pool.ReadyFromIDs(now,
 		requests[0].ID(), // + No time lock
 		requests[1].ID(), // + Time lock before now
 		requests[2].ID(), // - Time lock at exactly the same time as now
@@ -354,7 +351,7 @@ func TestTimeLock(t *testing.T) {
 	require.Contains(t, ready, requests[1])
 	testStatsFun()
 
-	ready, result = pool.ReadyFromIDs(now.Add(1*time.Hour),
+	ready, _, result = pool.ReadyFromIDs(now.Add(1*time.Hour),
 		requests[0].ID(), // + No time lock
 		requests[1].ID(), // + Time lock before now
 		requests[2].ID(), // + Time lock at exactly the same time as now
@@ -367,7 +364,7 @@ func TestTimeLock(t *testing.T) {
 	require.Contains(t, ready, requests[2])
 	testStatsFun()
 
-	ready, result = pool.ReadyFromIDs(now.Add(3*time.Hour),
+	ready, _, result = pool.ReadyFromIDs(now.Add(3*time.Hour),
 		requests[0].ID(), // + No time lock
 		requests[1].ID(), // + Time lock before now
 		requests[2].ID(), // + Time lock at exactly the same time as now
@@ -402,13 +399,13 @@ func TestReadyFromIDs(t *testing.T) {
 	require.True(t, pool.WaitRequestInPool(requests[2].ID()))
 	require.True(t, pool.WaitRequestInPool(requests[3].ID()))
 	require.True(t, pool.WaitRequestInPool(requests[4].ID()))
-	stats := pool.Stats()
+	stats := pool.Info()
 	require.EqualValues(t, 5, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 5, stats.TotalPool)
-	require.EqualValues(t, 5, stats.Ready)
+	require.EqualValues(t, 5, stats.ReadyCounter)
 
-	ready, result := pool.ReadyFromIDs(time.Now(),
+	ready, missingIndexes, result := pool.ReadyFromIDs(time.Now(),
 		requests[0].ID(),
 		requests[1].ID(),
 		requests[2].ID(),
@@ -422,27 +419,30 @@ func TestReadyFromIDs(t *testing.T) {
 	require.Contains(t, ready, requests[2])
 	require.Contains(t, ready, requests[3])
 	require.Contains(t, ready, requests[4])
-	stats = pool.Stats()
+	require.Empty(t, missingIndexes)
+	stats = pool.Info()
 	require.EqualValues(t, 5, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 5, stats.TotalPool)
-	require.EqualValues(t, 5, stats.Ready)
+	require.EqualValues(t, 5, stats.ReadyCounter)
 
 	pool.RemoveRequests(requests[3].ID())
-	_, result = pool.ReadyFromIDs(time.Now(),
+	_, missingIndexes, result = pool.ReadyFromIDs(time.Now(),
 		requests[0].ID(),
 		requests[1].ID(),
 		requests[2].ID(),
 		requests[3].ID(), // Request was removed from mempool
 	)
 	require.False(t, result)
-	_, result = pool.ReadyFromIDs(time.Now(),
+	require.EqualValues(t, missingIndexes, []int{3})
+	_, missingIndexes, result = pool.ReadyFromIDs(time.Now(),
 		requests[5].ID(), // Request hasn't been received by mempool
 		requests[4].ID(),
 		requests[2].ID(),
 	)
 	require.False(t, result)
-	ready, result = pool.ReadyFromIDs(time.Now(),
+	require.EqualValues(t, missingIndexes, []int{0})
+	ready, _, result = pool.ReadyFromIDs(time.Now(),
 		requests[0].ID(),
 		requests[1].ID(),
 		requests[2].ID(),
@@ -454,11 +454,11 @@ func TestReadyFromIDs(t *testing.T) {
 	require.Contains(t, ready, requests[1])
 	require.Contains(t, ready, requests[2])
 	require.Contains(t, ready, requests[4])
-	stats = pool.Stats()
+	stats = pool.Info()
 	require.EqualValues(t, 5, stats.InPoolCounter)
 	require.EqualValues(t, 1, stats.OutPoolCounter)
 	require.EqualValues(t, 4, stats.TotalPool)
-	require.EqualValues(t, 4, stats.Ready)
+	require.EqualValues(t, 4, stats.ReadyCounter)
 }
 
 // Test if solidification works as expected
@@ -482,7 +482,7 @@ func TestSolidification(t *testing.T) {
 	// no solidification yet => request is not ready
 	pool.ReceiveRequests(requests[0])
 	require.True(t, pool.WaitRequestInPool(requests[0].ID()))
-	ready, result := pool.ReadyFromIDs(time.Now(), requests[0].ID())
+	ready, _, result := pool.ReadyFromIDs(time.Now(), requests[0].ID())
 	require.True(t, result)
 	require.True(t, len(ready) == 0)
 
@@ -496,7 +496,7 @@ func TestSolidification(t *testing.T) {
 
 	// now that solidification happened => request is ready
 	require.True(t, pool.HasRequest(requests[0].ID()))
-	ready, result = pool.ReadyFromIDs(time.Now(), requests[0].ID())
+	ready, _, result = pool.ReadyFromIDs(time.Now(), requests[0].ID())
 	require.True(t, result)
 	require.True(t, len(ready) == 1)
 	require.Contains(t, ready, requests[0])
@@ -521,13 +521,13 @@ func TestRotateRequest(t *testing.T) {
 	require.True(t, pool.WaitRequestInPool(requests[2].ID()))
 	require.True(t, pool.WaitRequestInPool(requests[3].ID()))
 	require.True(t, pool.WaitRequestInPool(requests[4].ID()))
-	stats := pool.Stats()
+	stats := pool.Info()
 	require.EqualValues(t, 5, stats.InPoolCounter)
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 5, stats.TotalPool)
-	require.EqualValues(t, 5, stats.Ready)
+	require.EqualValues(t, 5, stats.ReadyCounter)
 
-	ready, result := pool.ReadyFromIDs(time.Now(),
+	ready, _, result := pool.ReadyFromIDs(time.Now(),
 		requests[0].ID(),
 		requests[1].ID(),
 		requests[2].ID(),
@@ -545,14 +545,14 @@ func TestRotateRequest(t *testing.T) {
 	require.True(t, pool.WaitRequestInPool(rotateReq.ID()))
 	require.True(t, pool.HasRequest(rotateReq.ID()))
 
-	stats = pool.Stats()
+	stats = pool.Info()
 	require.EqualValues(t, 6, stats.TotalPool)
 
 	ready = pool.ReadyNow(time.Now())
 	require.EqualValues(t, 1, len(ready))
 	require.EqualValues(t, rotateReq.ID(), ready[0].ID())
 
-	ready, ok := pool.ReadyFromIDs(time.Now(), rotateReq.ID())
+	ready, _, ok := pool.ReadyFromIDs(time.Now(), rotateReq.ID())
 	require.True(t, ok)
 	require.EqualValues(t, 1, len(ready))
 	require.EqualValues(t, rotateReq.ID(), ready[0].ID())
@@ -563,7 +563,7 @@ func TestRotateRequest(t *testing.T) {
 	ready = pool.ReadyNow(time.Now())
 	require.EqualValues(t, 5, len(ready))
 
-	ready, result = pool.ReadyFromIDs(time.Now(),
+	ready, _, result = pool.ReadyFromIDs(time.Now(),
 		requests[0].ID(),
 		requests[1].ID(),
 		requests[2].ID(),

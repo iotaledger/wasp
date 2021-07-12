@@ -3,19 +3,17 @@ package viewcontext
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/vm/core/_default"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -23,7 +21,7 @@ import (
 )
 
 type Viewcontext struct {
-	processors  *processors.ProcessorCache
+	processors  *processors.Cache
 	stateReader state.OptimisticStateReader
 	chainID     chainid.ChainID
 	log         *logger.Logger
@@ -33,7 +31,7 @@ func NewFromChain(ch chain.ChainCore) *Viewcontext {
 	return New(*ch.ID(), ch.GetStateReader(), ch.Processors(), ch.Log().Named("view"))
 }
 
-func New(chainID chainid.ChainID, stateReader state.OptimisticStateReader, proc *processors.ProcessorCache, log *logger.Logger) *Viewcontext {
+func New(chainID chainid.ChainID, stateReader state.OptimisticStateReader, proc *processors.Cache, log *logger.Logger) *Viewcontext {
 	return &Viewcontext{
 		processors:  proc,
 		stateReader: stateReader,
@@ -59,7 +57,7 @@ func (v *Viewcontext) CallView(contractHname, epCode coretypes.Hname, params dic
 			case *optimism.ErrorStateInvalidated:
 				err = err1
 			default:
-				err = xerrors.Errorf("viewcontext: panic in VM: %w", err1)
+				err = xerrors.Errorf("viewcontext: panic in VM: %v", err1)
 			}
 		}()
 		ret, err = v.callView(contractHname, epCode, params)
@@ -78,7 +76,7 @@ func (v *Viewcontext) callView(contractHname, epCode coretypes.Hname, params dic
 		return nil, fmt.Errorf("can't find contract '%s'", contractHname)
 	}
 	proc, err := v.processors.GetOrCreateProcessor(contractRecord, func(programHash hashing.HashValue) (string, []byte, error) {
-		if vmtype, ok := processors.GetBuiltinProcessorType(programHash); ok {
+		if vmtype, ok := v.processors.Config.GetNativeProcessorType(programHash); ok {
 			return vmtype, nil, nil
 		}
 		return blob.LocateProgram(contractStateSubpartition(v.stateReader.KVStoreReader(), blob.Interface.Hname()), programHash)

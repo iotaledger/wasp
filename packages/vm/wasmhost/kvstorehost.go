@@ -23,10 +23,12 @@ const (
 	OBJTYPE_COLOR      int32 = 5
 	OBJTYPE_HASH       int32 = 6
 	OBJTYPE_HNAME      int32 = 7
-	OBJTYPE_INT64      int32 = 8
-	OBJTYPE_MAP        int32 = 9
-	OBJTYPE_REQUEST_ID int32 = 10
-	OBJTYPE_STRING     int32 = 11
+	OBJTYPE_INT16      int32 = 8
+	OBJTYPE_INT32      int32 = 9
+	OBJTYPE_INT64      int32 = 10
+	OBJTYPE_MAP        int32 = 11
+	OBJTYPE_REQUEST_ID int32 = 12
+	OBJTYPE_STRING     int32 = 13
 )
 
 // flag to indicate that this key id originally comes from a bytes key
@@ -56,7 +58,6 @@ type KvStoreHost struct {
 	keyToKeyID    map[string]int32
 	log           *logger.Logger
 	objIDToObj    []HostObject
-	useBase58Keys bool
 }
 
 func (host *KvStoreHost) Init(log *logger.Logger) {
@@ -80,7 +81,7 @@ func (host *KvStoreHost) Exists(objID, keyID, typeID int32) bool {
 
 func (host *KvStoreHost) FindObject(objID int32) HostObject {
 	if objID < 0 || objID >= int32(len(host.objIDToObj)) {
-		panic("FindObject: invalid objId")
+		panic("FindObject: invalid objID")
 	}
 	return host.objIDToObj[objID]
 }
@@ -101,9 +102,24 @@ func (host *KvStoreHost) GetBytes(objID, keyID, typeID int32) []byte {
 	}
 	bytes := obj.GetBytes(keyID, typeID)
 	switch typeID {
+	case OBJTYPE_INT16:
+		val16, _, err := codec.DecodeInt16(bytes)
+		if err != nil {
+			panic("GetBytes: invalid int16")
+		}
+		host.Tracef("GetBytes o%d k%d = %ds", objID, keyID, val16)
+	case OBJTYPE_INT32:
+		val32, _, err := codec.DecodeInt32(bytes)
+		if err != nil {
+			panic("GetBytes: invalid int32")
+		}
+		host.Tracef("GetBytes o%d k%d = %di", objID, keyID, val32)
 	case OBJTYPE_INT64:
-		val, _, _ := codec.DecodeInt64(bytes)
-		host.Tracef("GetBytes o%d k%d = %d", objID, keyID, val)
+		val64, _, err := codec.DecodeInt64(bytes)
+		if err != nil {
+			panic("GetBytes: invalid int64")
+		}
+		host.Tracef("GetBytes o%d k%d = %dl", objID, keyID, val64)
 	case OBJTYPE_STRING:
 		host.Tracef("GetBytes o%d k%d = '%s'", objID, keyID, string(bytes))
 	default:
@@ -123,15 +139,15 @@ func (host *KvStoreHost) getKeyFromID(keyID int32) []byte {
 }
 
 func (host *KvStoreHost) GetKeyFromID(keyID int32) []byte {
-	host.TraceAllf("GetKeyFromId(k%d)", keyID)
+	host.TraceAllf("GetKeyFromID(k%d)", keyID)
 	key := host.getKeyFromID(keyID)
 	if (keyID & (KeyFromBytes | -0x80000000)) == KeyFromBytes {
 		// originally a byte slice key
-		host.Tracef("GetKeyFromId k%d='%s'", keyID, base58.Encode(key))
+		host.Tracef("GetKeyFromID k%d='%s'", keyID, base58.Encode(key))
 		return key
 	}
 	// originally a string key
-	host.Tracef("GetKeyFromId k%d='%s'", keyID, string(key))
+	host.Tracef("GetKeyFromID k%d='%s'", keyID, string(key))
 	return key
 }
 
@@ -156,21 +172,14 @@ func (host *KvStoreHost) getKeyID(key []byte, fromBytes bool) int32 {
 }
 
 func (host *KvStoreHost) GetKeyIDFromBytes(bytes []byte) int32 {
-	encoded := base58.Encode(bytes)
-	if host.useBase58Keys {
-		// transform byte slice key into base58 string
-		// now all keys are byte slices from strings
-		bytes = []byte(encoded)
-	}
-
 	keyID := host.getKeyID(bytes, true)
-	host.Tracef("GetKeyIdFromBytes '%s'=k%d", encoded, keyID)
+	host.Tracef("GetKeyIDFromBytes '%s'=k%d", base58.Encode(bytes), keyID)
 	return keyID
 }
 
 func (host *KvStoreHost) GetKeyIDFromString(key string) int32 {
 	keyID := host.getKeyID([]byte(key), false)
-	host.Tracef("GetKeyIdFromString '%s'=k%d", key, keyID)
+	host.Tracef("GetKeyIDFromString '%s'=k%d", key, keyID)
 	return keyID
 }
 
@@ -202,9 +211,24 @@ func (host *KvStoreHost) PushFrame() []HostObject {
 func (host *KvStoreHost) SetBytes(objID, keyID, typeID int32, bytes []byte) {
 	host.FindObject(objID).SetBytes(keyID, typeID, bytes)
 	switch typeID {
+	case OBJTYPE_INT16:
+		val16, _, err := codec.DecodeInt16(bytes)
+		if err != nil {
+			panic("SetBytes: invalid int16")
+		}
+		host.Tracef("SetBytes o%d k%d v=%ds", objID, keyID, val16)
+	case OBJTYPE_INT32:
+		val32, _, err := codec.DecodeInt32(bytes)
+		if err != nil {
+			panic("SetBytes: invalid int32")
+		}
+		host.Tracef("SetBytes o%d k%d v=%di", objID, keyID, val32)
 	case OBJTYPE_INT64:
-		val, _, _ := codec.DecodeInt64(bytes)
-		host.Tracef("SetBytes o%d k%d v=%d", objID, keyID, val)
+		val64, _, err := codec.DecodeInt64(bytes)
+		if err != nil {
+			panic("SetBytes: invalid int64")
+		}
+		host.Tracef("SetBytes o%d k%d v=%dl", objID, keyID, val64)
 	case OBJTYPE_STRING:
 		host.Tracef("SetBytes o%d k%d v='%s'", objID, keyID, string(bytes))
 	default:

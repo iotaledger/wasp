@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -30,29 +29,25 @@ func deployInccounter42(t *testing.T, name string, counter int64) *coretypes.Age
 	})
 	check(err, t)
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
+	checkCoreContracts(t, chain)
+	for i := range chain.CommitteeNodes {
+		blockIndex, err := chain.BlockIndex(i)
+		require.NoError(t, err)
 		require.EqualValues(t, 2, blockIndex)
-		checkRoots(t, chain)
 
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		crBytes := contractRegistry.MustGetAt(hname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
+		contractRegistry, err := chain.ContractRegistry(i)
+		require.NoError(t, err)
+		cr := contractRegistry[hname]
 
 		require.EqualValues(t, programHash, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
 		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, cr.Name, name)
 
-		return true
-	})
-
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
+		counterValue, err := chain.GetCounterValue(hname, i)
+		require.NoError(t, err)
 		require.EqualValues(t, 42, counterValue)
-		return true
-	})
+	}
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := chain.Cluster.WaspClient(0).CallView(
@@ -91,18 +86,12 @@ func getCounter(t *testing.T, hname coretypes.Hname) int64 {
 func TestPostDeployInccounter(t *testing.T) {
 	setup(t, "test_cluster")
 
-	chain, err = clu.DeployDefaultChain()
-	check(err, t)
-
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
 }
 
 func TestPost1Request(t *testing.T) {
 	setup(t, "test_cluster")
-
-	chain, err = clu.DeployDefaultChain()
-	check(err, t)
 
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
@@ -125,9 +114,6 @@ func TestPost1Request(t *testing.T) {
 
 func TestPost3Recursive(t *testing.T) {
 	setup(t, "test_cluster")
-
-	chain, err = clu.DeployDefaultChain()
-	check(err, t)
 
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
@@ -158,9 +144,6 @@ func TestPost3Recursive(t *testing.T) {
 
 func TestPost5Requests(t *testing.T) {
 	setup(t, "test_cluster")
-
-	chain, err = clu.DeployDefaultChain()
-	check(err, t)
 
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
@@ -193,9 +176,6 @@ func TestPost5Requests(t *testing.T) {
 
 func TestPost5AsyncRequests(t *testing.T) {
 	setup(t, "test_cluster")
-
-	chain, err = clu.DeployDefaultChain()
-	check(err, t)
 
 	contractID := deployInccounter42(t, name, 42)
 	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())

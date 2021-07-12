@@ -147,7 +147,7 @@ type GroupProvider interface {
 	PeerIndex(peer PeerSender) (uint16, error)
 	PeerIndexByNetID(peerNetID string) (uint16, error)
 	SendMsgByIndex(peerIdx uint16, msg *PeerMessage)
-	Broadcast(msg *PeerMessage, includingSelf bool)
+	Broadcast(msg *PeerMessage, includingSelf bool, except ...uint16)
 	ExchangeRound(
 		peers map[uint16]PeerSender,
 		recvCh chan *RecvEvent,
@@ -156,8 +156,8 @@ type GroupProvider interface {
 		sendCB func(peerIdx uint16, peer PeerSender),
 		recvCB func(recv *RecvEvent) (bool, error),
 	) error
-	AllNodes() map[uint16]PeerSender   // Returns all the nodes in the group.
-	OtherNodes() map[uint16]PeerSender // Returns other nodes in the group (excluding Self).
+	AllNodes(except ...uint16) map[uint16]PeerSender   // Returns all the nodes in the group except specified.
+	OtherNodes(except ...uint16) map[uint16]PeerSender // Returns other nodes in the group (excluding Self and specified).
 	PeerCollection
 }
 
@@ -169,6 +169,7 @@ type PeerDomainProvider interface {
 	SendSimple(netID string, msgType byte, msgData []byte)
 	SendMsgToRandomPeersSimple(upToNumPeers uint16, msgType byte, msgData []byte)
 	ReshufflePeers(seedBytes ...[]byte)
+	GetRandomPeers(upToNumPeers int) []string
 	PeerCollection
 }
 

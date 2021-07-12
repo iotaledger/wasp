@@ -6,7 +6,9 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -20,7 +22,7 @@ import (
 type MockedChainCore struct {
 	T                                    *testing.T
 	chainID                              chainid.ChainID
-	processors                           *processors.ProcessorCache
+	processors                           *processors.Cache
 	eventStateTransition                 *events.Event
 	eventRequestProcessed                *events.Event
 	eventStateSynced                     *events.Event
@@ -30,14 +32,14 @@ type MockedChainCore struct {
 	onEventRequestProcessed              func(id coretypes.RequestID)
 	onEventStateSynced                   func(id ledgerstate.OutputID, blockIndex uint32)
 	onReceivePeerMessage                 func(*peering.PeerMessage)
-	onReceiveDismissChainMsg             func(*chain.DismissChainMsg)
-	onReceiveStateTransitionMsg          func(*chain.StateTransitionMsg)
-	onReceiveStateCandidateMsg           func(*chain.StateCandidateMsg)
-	onReceiveInclusionStateMsg           func(*chain.InclusionStateMsg)
-	onReceiveStateMsg                    func(*chain.StateMsg)
-	onReceiveVMResultMsg                 func(*chain.VMResultMsg)
-	onReceiveAsynchronousCommonSubsetMsg func(*chain.AsynchronousCommonSubsetMsg)
-	onReceiveTimerTick                   func(chain.TimerTick)
+	onReceiveDismissChainMsg             func(*messages.DismissChainMsg)
+	onReceiveStateTransitionMsg          func(*messages.StateTransitionMsg)
+	onReceiveStateCandidateMsg           func(*messages.StateCandidateMsg)
+	onReceiveInclusionStateMsg           func(*messages.InclusionStateMsg)
+	onReceiveStateMsg                    func(*messages.StateMsg)
+	onReceiveVMResultMsg                 func(*messages.VMResultMsg)
+	onReceiveAsynchronousCommonSubsetMsg func(*messages.AsynchronousCommonSubsetMsg)
+	onReceiveTimerTick                   func(messages.TimerTick)
 	onSync                               func(out ledgerstate.OutputID, blockIndex uint32) //nolint:structcheck,unused
 	log                                  *logger.Logger
 }
@@ -49,7 +51,7 @@ func NewMockedChainCore(t *testing.T, chainID chainid.ChainID, log *logger.Logge
 	ret := &MockedChainCore{
 		T:          t,
 		chainID:    chainID,
-		processors: processors.MustNew(),
+		processors: processors.MustNew(processors.NewConfig(inccounter.Interface)),
 		log:        log,
 		eventStateTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
@@ -67,16 +69,16 @@ func NewMockedChainCore(t *testing.T, chainID chainid.ChainID, log *logger.Logge
 			chain.LogSyncedEvent(outputID, blockIndex, log)
 		},
 		onReceivePeerMessage:        func(msg *peering.PeerMessage) { receiveFailFun("*peering.PeerMessage", msg) },
-		onReceiveDismissChainMsg:    func(msg *chain.DismissChainMsg) { receiveFailFun("*chain.DismissChainMs", msg) },
-		onReceiveStateTransitionMsg: func(msg *chain.StateTransitionMsg) { receiveFailFun("*chain.StateTransitionMsg", msg) },
-		onReceiveStateCandidateMsg:  func(msg *chain.StateCandidateMsg) { receiveFailFun("*chain.StateCandidateMsg", msg) },
-		onReceiveInclusionStateMsg:  func(msg *chain.InclusionStateMsg) { receiveFailFun("*chain.InclusionStateMsg", msg) },
-		onReceiveStateMsg:           func(msg *chain.StateMsg) { receiveFailFun("*chain.StateMsg", msg) },
-		onReceiveVMResultMsg:        func(msg *chain.VMResultMsg) { receiveFailFun("*chain.VMResultMsg", msg) },
-		onReceiveAsynchronousCommonSubsetMsg: func(msg *chain.AsynchronousCommonSubsetMsg) {
-			receiveFailFun("*chain.AsynchronousCommonSubsetMsg", msg)
+		onReceiveDismissChainMsg:    func(msg *messages.DismissChainMsg) { receiveFailFun("*messages.DismissChainMs", msg) },
+		onReceiveStateTransitionMsg: func(msg *messages.StateTransitionMsg) { receiveFailFun("*messages.StateTransitionMsg", msg) },
+		onReceiveStateCandidateMsg:  func(msg *messages.StateCandidateMsg) { receiveFailFun("*messages.StateCandidateMsg", msg) },
+		onReceiveInclusionStateMsg:  func(msg *messages.InclusionStateMsg) { receiveFailFun("*messages.InclusionStateMsg", msg) },
+		onReceiveStateMsg:           func(msg *messages.StateMsg) { receiveFailFun("*messages.StateMsg", msg) },
+		onReceiveVMResultMsg:        func(msg *messages.VMResultMsg) { receiveFailFun("*messages.VMResultMsg", msg) },
+		onReceiveAsynchronousCommonSubsetMsg: func(msg *messages.AsynchronousCommonSubsetMsg) {
+			receiveFailFun("*messages.AsynchronousCommonSubsetMsg", msg)
 		},
-		onReceiveTimerTick: func(msg chain.TimerTick) { receiveFailFun("chain.TimerTick", msg) },
+		onReceiveTimerTick: func(msg messages.TimerTick) { receiveFailFun("messages.TimerTick", msg) },
 	}
 	ret.onEventStateTransition = func(msg *chain.ChainTransitionEventData) {
 		chain.LogStateTransition(msg, nil, log)
@@ -117,21 +119,21 @@ func (m *MockedChainCore) ReceiveMessage(msg interface{}) {
 	switch msgTypecasted := msg.(type) {
 	case *peering.PeerMessage:
 		m.onReceivePeerMessage(msgTypecasted)
-	case *chain.DismissChainMsg:
+	case *messages.DismissChainMsg:
 		m.onReceiveDismissChainMsg(msgTypecasted)
-	case *chain.StateTransitionMsg:
+	case *messages.StateTransitionMsg:
 		m.onReceiveStateTransitionMsg(msgTypecasted)
-	case *chain.StateCandidateMsg:
+	case *messages.StateCandidateMsg:
 		m.onReceiveStateCandidateMsg(msgTypecasted)
-	case *chain.InclusionStateMsg:
+	case *messages.InclusionStateMsg:
 		m.onReceiveInclusionStateMsg(msgTypecasted)
-	case *chain.StateMsg:
+	case *messages.StateMsg:
 		m.onReceiveStateMsg(msgTypecasted)
-	case *chain.VMResultMsg:
+	case *messages.VMResultMsg:
 		m.onReceiveVMResultMsg(msgTypecasted)
-	case *chain.AsynchronousCommonSubsetMsg:
+	case *messages.AsynchronousCommonSubsetMsg:
 		m.onReceiveAsynchronousCommonSubsetMsg(msgTypecasted)
-	case chain.TimerTick:
+	case messages.TimerTick:
 		m.onReceiveTimerTick(msgTypecasted)
 	}
 }
@@ -140,7 +142,7 @@ func (m *MockedChainCore) Events() chain.ChainEvents {
 	return m
 }
 
-func (m *MockedChainCore) Processors() *processors.ProcessorCache {
+func (m *MockedChainCore) Processors() *processors.Cache {
 	return m.processors
 }
 
@@ -168,35 +170,35 @@ func (m *MockedChainCore) OnReceivePeerMessage(f func(*peering.PeerMessage)) {
 	m.onReceivePeerMessage = f
 }
 
-func (m *MockedChainCore) OnReceiveDismissChainMsg(f func(*chain.DismissChainMsg)) {
+func (m *MockedChainCore) OnReceiveDismissChainMsg(f func(*messages.DismissChainMsg)) {
 	m.onReceiveDismissChainMsg = f
 }
 
-func (m *MockedChainCore) OnReceiveStateTransitionMsg(f func(*chain.StateTransitionMsg)) {
+func (m *MockedChainCore) OnReceiveStateTransitionMsg(f func(*messages.StateTransitionMsg)) {
 	m.onReceiveStateTransitionMsg = f
 }
 
-func (m *MockedChainCore) OnReceiveStateCandidateMsg(f func(*chain.StateCandidateMsg)) {
+func (m *MockedChainCore) OnReceiveStateCandidateMsg(f func(*messages.StateCandidateMsg)) {
 	m.onReceiveStateCandidateMsg = f
 }
 
-func (m *MockedChainCore) OnReceiveInclusionStateMsg(f func(*chain.InclusionStateMsg)) {
+func (m *MockedChainCore) OnReceiveInclusionStateMsg(f func(*messages.InclusionStateMsg)) {
 	m.onReceiveInclusionStateMsg = f
 }
 
-func (m *MockedChainCore) OnReceiveStateMsg(f func(*chain.StateMsg)) {
+func (m *MockedChainCore) OnReceiveStateMsg(f func(*messages.StateMsg)) {
 	m.onReceiveStateMsg = f
 }
 
-func (m *MockedChainCore) OnReceiveVMResultMsg(f func(*chain.VMResultMsg)) {
+func (m *MockedChainCore) OnReceiveVMResultMsg(f func(*messages.VMResultMsg)) {
 	m.onReceiveVMResultMsg = f
 }
 
-func (m *MockedChainCore) OnReceiveAsynchronousCommonSubsetMsg(f func(*chain.AsynchronousCommonSubsetMsg)) {
+func (m *MockedChainCore) OnReceiveAsynchronousCommonSubsetMsg(f func(*messages.AsynchronousCommonSubsetMsg)) {
 	m.onReceiveAsynchronousCommonSubsetMsg = f
 }
 
-func (m *MockedChainCore) OnReceiveTimerTick(f func(chain.TimerTick)) {
+func (m *MockedChainCore) OnReceiveTimerTick(f func(messages.TimerTick)) {
 	m.onReceiveTimerTick = f
 }
 
@@ -216,5 +218,5 @@ func (m *MockedChainCore) GlobalSolidIndex() *atomic.Uint32 {
 	return nil
 }
 
-func (m *MockedChainCore) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
+func (m *MockedChainCore) ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string) {
 }

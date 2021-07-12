@@ -14,6 +14,8 @@ var chainCmd = &cobra.Command{
 	},
 }
 
+var plugins []func(*cobra.Command)
+
 func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(chainCmd)
 
@@ -27,6 +29,7 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(deployContractCmd)
 	chainCmd.AddCommand(listAccountsCmd)
 	chainCmd.AddCommand(balanceCmd)
+	chainCmd.AddCommand(depositCmd)
 	chainCmd.AddCommand(listBlobsCmd)
 	chainCmd.AddCommand(storeBlobCmd)
 	chainCmd.AddCommand(showBlobCmd)
@@ -35,4 +38,8 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(callViewCmd)
 	chainCmd.AddCommand(activateCmd)
 	chainCmd.AddCommand(deactivateCmd)
+
+	for _, p := range plugins {
+		p(chainCmd)
+	}
 }

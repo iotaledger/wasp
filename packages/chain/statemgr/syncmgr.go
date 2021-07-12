@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -73,7 +73,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 			i, requestBlockRetryTime, blockCandidatesCount, approvedBlockCandidatesCount)
 		// TODO: temporary if. We need to find a solution to synchronize over large gaps. Making state snapshots may help.
 		if i > startSyncFromIndex+maxBlocksToCommitConst {
-			go sm.chain.ReceiveMessage(chain.DismissChainMsg{
+			go sm.chain.ReceiveMessage(messages.DismissChainMsg{
 				Reason: fmt.Sprintf("StateManager.doSyncActionIfNeeded: too many blocks to catch up: %v", sm.stateOutput.GetStateIndex()-startSyncFromIndex+1),
 			},
 			)
@@ -83,10 +83,10 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 		if nowis.After(requestBlockRetryTime) {
 			// have to pull
 			sm.log.Debugf("doSyncAction: requesting block index %v from %v random peers", i, numberOfNodesToRequestBlockFromConst)
-			data := util.MustBytes(&chain.GetBlockMsg{
+			data := util.MustBytes(&messages.GetBlockMsg{
 				BlockIndex: i,
 			})
-			sm.peers.SendMsgToRandomPeersSimple(numberOfNodesToRequestBlockFromConst, chain.MsgGetBlock, data)
+			sm.peers.SendMsgToRandomPeersSimple(numberOfNodesToRequestBlockFromConst, messages.MsgGetBlock, data)
 			sm.syncingBlocks.startSyncingIfNeeded(i)
 			sm.syncingBlocks.setRequestBlockRetryTime(i, nowis.Add(sm.timers.GetBlockRetry))
 			if blockCandidatesCount == 0 {

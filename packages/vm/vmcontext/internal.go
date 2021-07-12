@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
@@ -76,7 +75,7 @@ func (vmctx *VMContext) getFeeInfo() (ledgerstate.Color, uint64, uint64) {
 }
 
 func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {
-	vmtype, ok := processors.GetBuiltinProcessorType(programHash)
+	vmtype, ok := vmctx.processors.Config.GetNativeProcessorType(programHash)
 	if ok {
 		return vmtype, nil, nil
 	}
@@ -86,12 +85,15 @@ func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte
 	return blob.LocateProgram(vmctx.State(), programHash)
 }
 
-func (vmctx *VMContext) getBalance(col ledgerstate.Color) uint64 {
+func (vmctx *VMContext) getBalanceOfAccount(agentID *coretypes.AgentID, col ledgerstate.Color) uint64 {
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	aid := vmctx.MyAgentID()
-	return accounts.GetBalance(vmctx.State(), aid, col)
+	return accounts.GetBalance(vmctx.State(), agentID, col)
+}
+
+func (vmctx *VMContext) getBalance(col ledgerstate.Color) uint64 {
+	return vmctx.getBalanceOfAccount(vmctx.MyAgentID(), col)
 }
 
 func (vmctx *VMContext) getMyBalances() *ledgerstate.ColoredBalances {

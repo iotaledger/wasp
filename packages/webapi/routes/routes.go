@@ -23,8 +23,8 @@ func WaitRequestProcessed(chainID, reqID string) string {
 	return "/chain/" + chainID + "/request/" + reqID + "/wait"
 }
 
-func StateQuery(chainID string) string {
-	return "/chain/" + chainID + "/state/query"
+func StateGet(chainID, key string) string {
+	return "/chain/" + chainID + "/state/" + key
 }
 
 func PutBlob() string {
@@ -77,10 +77,6 @@ func DKSharesPost() string {
 
 func DKSharesGet(sharedAddress string) string {
 	return "/adm/dks/" + sharedAddress
-}
-
-func DumpState(chainID, contractHname string) string {
-	return "/adm/chain/" + chainID + "/contract/" + contractHname + "/dumpstate"
 }
 
 func PeeringSelfGet() string {

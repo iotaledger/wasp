@@ -158,7 +158,7 @@ func mustStoreAndInitCoreContract(ctx coretypes.Sandbox, i *coreutil.ContractInt
 }
 
 func mustStoreContractRecord(ctx coretypes.Sandbox, rec *ContractRecord, a assert.Assert) {
-	hname := coretypes.Hn(rec.Name)
+	hname := rec.Hname()
 	contractRegistry := collections.NewMap(ctx.State(), VarContractRegistry)
 	a.Require(!contractRegistry.MustHasAt(hname.Bytes()), "contract '%s'/%s already exist", rec.Name, hname.String())
 	contractRegistry.MustSetAt(hname.Bytes(), EncodeContractRecord(rec))

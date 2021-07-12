@@ -30,9 +30,9 @@ const (
 )
 
 const (
-	VarAllAllowances = "a"
-	VarBalances      = "b"
-	VarSupply        = "s"
+	StateAllAllowances = "a"
+	StateBalances      = "b"
+	StateSupply        = "s"
 )
 
 const (

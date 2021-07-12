@@ -27,9 +27,10 @@ type WaspConfig struct {
 }
 
 type ClusterConfig struct {
-	Wasp            WaspConfig
-	Goshimmer       GoshimmerConfig
-	FaucetPoWTarget int
+	Wasp                  WaspConfig
+	Goshimmer             GoshimmerConfig
+	FaucetPoWTarget       int
+	BlockedGoshimmerNodes map[int]bool
 }
 
 func DefaultConfig() *ClusterConfig {
@@ -46,7 +47,8 @@ func DefaultConfig() *ClusterConfig {
 			APIPort:      8080,
 			Provided:     false,
 		},
-		FaucetPoWTarget: 0,
+		FaucetPoWTarget:       0,
+		BlockedGoshimmerNodes: make(map[int]bool),
 	}
 }
 
@@ -159,12 +161,21 @@ func (c *ClusterConfig) DashboardPort(nodeIndex int) int {
 	return c.Wasp.FirstDashboardPort + nodeIndex
 }
 
+func (c *ClusterConfig) TxStreamPort(nodeIndex int) int {
+	if c.BlockedGoshimmerNodes[nodeIndex] {
+		return 0
+	}
+	return c.Goshimmer.TxStreamPort
+}
+
 func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigParams {
 	return &templates.WaspConfigParams{
-		APIPort:       c.APIPort(i),
-		DashboardPort: c.DashboardPort(i),
-		PeeringPort:   c.PeeringPort(i),
-		NanomsgPort:   c.NanomsgPort(i),
-		Neighbors:     c.NeighborsString(),
+		APIPort:                      c.APIPort(i),
+		DashboardPort:                c.DashboardPort(i),
+		PeeringPort:                  c.PeeringPort(i),
+		NanomsgPort:                  c.NanomsgPort(i),
+		Neighbors:                    c.NeighborsString(),
+		TxStreamPort:                 c.TxStreamPort(i),
+		OffledgerBroadcastUpToNPeers: 10,
 	}
 }

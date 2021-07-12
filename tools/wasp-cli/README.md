@@ -94,7 +94,7 @@ wasp-cli chain deploy --chain=mychain --committee='0,1,2,3' --quorum=3 --descrip
 * Deploy a
   contract: `wasp-cli chain deploy-contract <vmtype> <sc-name> <description> <wasm-file>`
 
-Example: `wasp-cli chain deploy-contract wasmtimevm inccounter "inccounter SC" contracts/wasm/inccounter_bg.wasm`
+Example: `wasp-cli chain deploy-contract wasmtime inccounter "inccounter SC" contracts/wasm/inccounter_bg.wasm`
 
 * Post a request: `wasp-cli chain post-request <sc-name> <func-name> [args...]`
 

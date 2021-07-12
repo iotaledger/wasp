@@ -7,16 +7,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/hive.go/logger"
-
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
@@ -30,11 +28,11 @@ type ChainCore interface {
 	GetCommitteeInfo() *CommitteeInfo
 	ReceiveMessage(interface{})
 	Events() ChainEvents
-	Processors() *processors.ProcessorCache
+	Processors() *processors.Cache
 	GlobalStateSync() coreutil.ChainStateSync
 	GetStateReader() state.OptimisticStateReader
 	Log() *logger.Logger
-	ReceiveOffLedgerRequest(req *request.RequestOffLedger)
+	ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string)
 }
 
 // ChainEntry interface to access chain from the chain registry side
@@ -74,7 +72,7 @@ type Committee interface {
 	OwnPeerIndex() uint16
 	DKShare() *tcrypto.DKShare
 	SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error
-	SendMsgToPeers(msgType byte, msgData []byte, ts int64)
+	SendMsgToPeers(msgType byte, msgData []byte, ts int64, except ...uint16)
 	IsAlivePeer(peerIndex uint16) bool
 	QuorumIsAlive(quorum ...uint16) bool
 	PeerStatus() []*PeerStatus
@@ -82,6 +80,8 @@ type Committee interface {
 	IsReady() bool
 	Close()
 	RunACSConsensus(value []byte, sessionID uint64, stateIndex uint32, callback func(sessionID uint64, acs [][]byte))
+	GetOtherValidatorsPeerIDs() []string
+	GetRandomValidators(upToN int) []string
 }
 
 type NodeConnection interface {
@@ -95,26 +95,28 @@ type NodeConnection interface {
 
 type StateManager interface {
 	Ready() *ready.Ready
-	EventGetBlockMsg(msg *GetBlockMsg)
-	EventBlockMsg(msg *BlockMsg)
-	EventStateMsg(msg *StateMsg)
+	EventGetBlockMsg(msg *messages.GetBlockMsg)
+	EventBlockMsg(msg *messages.BlockMsg)
+	EventStateMsg(msg *messages.StateMsg)
 	EventOutputMsg(msg ledgerstate.Output)
-	EventStateCandidateMsg(msg *StateCandidateMsg)
-	EventTimerMsg(msg TimerTick)
+	EventStateCandidateMsg(msg *messages.StateCandidateMsg)
+	EventTimerMsg(msg messages.TimerTick)
 	GetStatusSnapshot() *SyncInfo
 	Close()
 }
 
 type Consensus interface {
-	EventStateTransitionMsg(*StateTransitionMsg)
-	EventSignedResultMsg(*SignedResultMsg)
-	EventInclusionsStateMsg(*InclusionStateMsg)
-	EventAsynchronousCommonSubsetMsg(msg *AsynchronousCommonSubsetMsg)
-	EventVMResultMsg(msg *VMResultMsg)
-	EventTimerMsg(TimerTick)
+	EventStateTransitionMsg(*messages.StateTransitionMsg)
+	EventSignedResultMsg(*messages.SignedResultMsg)
+	EventSignedResultAckMsg(*messages.SignedResultAckMsg)
+	EventInclusionsStateMsg(*messages.InclusionStateMsg)
+	EventAsynchronousCommonSubsetMsg(msg *messages.AsynchronousCommonSubsetMsg)
+	EventVMResultMsg(msg *messages.VMResultMsg)
+	EventTimerMsg(messages.TimerTick)
 	IsReady() bool
 	Close()
 	GetStatusSnapshot() *ConsensusInfo
+	ShouldReceiveMissingRequest(req coretypes.Request) bool
 }
 
 type Mempool interface {
@@ -122,9 +124,10 @@ type Mempool interface {
 	ReceiveRequest(req coretypes.Request) bool
 	RemoveRequests(reqs ...coretypes.RequestID)
 	ReadyNow(nowis ...time.Time) []coretypes.Request
-	ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool)
+	ReadyFromIDs(nowis time.Time, reqIDs ...coretypes.RequestID) ([]coretypes.Request, []int, bool)
 	HasRequest(id coretypes.RequestID) bool
-	Stats() MempoolStats
+	GetRequest(id coretypes.RequestID) coretypes.Request
+	Info() MempoolInfo
 	WaitRequestInPool(reqid coretypes.RequestID, timeout ...time.Duration) bool // for testing
 	WaitInBufferEmpty(timeout ...time.Duration) bool                            // for testing
 	Close()
@@ -136,9 +139,9 @@ type AsynchronousCommonSubsetRunner interface {
 	Close()
 }
 
-type MempoolStats struct {
+type MempoolInfo struct {
 	TotalPool      int
-	Ready          int
+	ReadyCounter   int
 	InBufCounter   int
 	OutBufCounter  int
 	InPoolCounter  int
@@ -158,7 +161,7 @@ type SyncInfo struct {
 
 type ConsensusInfo struct {
 	StateIndex uint32
-	Mempool    MempoolStats
+	Mempool    MempoolInfo
 	TimerTick  int
 }
 

@@ -87,7 +87,7 @@ func SetupDkgPregenerated(
 	suite tcrypto.Suite,
 ) (ledgerstate.Address, []coretypes.DKShareRegistryProvider) {
 	var err error
-	var serializedDks [][]byte = pregeneratedDksRead(uint16(len(peerNetIDs)))
+	var serializedDks [][]byte = pregeneratedDksRead(uint16(len(peerNetIDs)), threshold)
 	dks := make([]*tcrypto.DKShare, len(serializedDks))
 	registries := make([]coretypes.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range dks {
@@ -101,6 +101,7 @@ func SetupDkgPregenerated(
 		registries[i] = testutil.NewDkgRegistryProvider(suite)
 		require.Nil(t, registries[i].SaveDKShare(dks[i]))
 	}
+	require.Equal(t, dks[0].N, uint16(len(peerNetIDs)), "dks was pregenerated for different node count (N=%v)", dks[0].N)
 	require.Equal(t, dks[0].T, threshold, "dks was pregenerated for different threshold (T=%v)", dks[0].T)
 	return dks[0].Address, registries
 }

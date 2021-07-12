@@ -43,9 +43,23 @@ func defaultInitFunc(ctx coretypes.Sandbox) (dict.Dict, error) {
 }
 
 func defaultHandlerFunc(ctx coretypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("default full entry point handler invoked for contact %s from caller %s\nTokens: %s",
-		ctx.Contract(), ctx.Caller(), ctx.IncomingTransfer().String())
+	transferStr := "(empty)"
+	if ctx.IncomingTransfer() != nil {
+		transferStr = ctx.IncomingTransfer().String()
+	}
+	ctx.Log().Debugf("default full entry point handler invoked for contact %s from caller %s\nTransfer: %s",
+		ctx.Contract(), ctx.Caller(), transferStr)
 	return nil, nil
+}
+
+func NewContractInterface(name, description string, progHash ...hashing.HashValue) *ContractInterface {
+	i := &ContractInterface{Name: name, Description: description}
+	if len(progHash) > 0 {
+		i.ProgramHash = progHash[0]
+	} else {
+		i.ProgramHash = hashing.HashStrings(i.Name)
+	}
+	return i
 }
 
 // Funcs declares init entry point and a list of full and view entry points
@@ -103,8 +117,9 @@ func ViewFunc(name string, handler ViewHandler) ContractFunctionInterface {
 	}
 }
 
-func (i *ContractInterface) WithFunctions(init Handler, funcs []ContractFunctionInterface) {
+func (i *ContractInterface) WithFunctions(init Handler, funcs []ContractFunctionInterface) *ContractInterface {
 	i.Functions = Funcs(init, funcs)
+	return i
 }
 
 func (i *ContractInterface) GetFunction(name string) (*ContractFunctionInterface, bool) {

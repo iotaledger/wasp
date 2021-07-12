@@ -6,24 +6,19 @@ package chainimpl
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/parameters"
-
-	"github.com/iotaledger/hive.go/logger"
-
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/transaction"
-
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -55,7 +50,7 @@ func (c *chainObj) startTimer() {
 		tick := 0
 		for !c.IsDismissed() {
 			time.Sleep(chain.TimerTickPeriod)
-			c.ReceiveMessage(chain.TimerTick(tick))
+			c.ReceiveMessage(messages.TimerTick(tick))
 			tick++
 		}
 	}()
@@ -104,18 +99,88 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 	}
 }
 
-func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger) {
+func shouldSendToPeer(peerID string, ackPeers []string) bool {
+	for _, p := range ackPeers {
+		if p == peerID {
+			return false
+		}
+	}
+	return true
+}
+
+func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
+	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID())
+	msgData := messages.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
+	committee := c.getCommittee()
+	getPeerIDs := (*c.peers).GetRandomPeers
+
+	if committee != nil {
+		getPeerIDs = committee.GetRandomValidators
+	}
+
+	sendMessage := func(ackPeers []string) {
+		peerIDs := getPeerIDs(c.offledgerBroadcastUpToNPeers)
+		for _, peerID := range peerIDs {
+			if shouldSendToPeer(peerID, ackPeers) {
+				c.log.Debugf("sending offledger request ID: reqID: %s, peerID: %s", req.ID(), peerID)
+				(*c.peers).SendSimple(peerID, messages.MsgOffLedgerRequest, msgData)
+			}
+		}
+	}
+
+	ticker := time.NewTicker(c.offledgerBroadcastInterval)
+	go func() {
+		for {
+			<-ticker.C
+			// check if processed (request already left the mempool)
+			if !c.mempool.HasRequest(req.ID()) {
+				c.offLedgerReqsAcksMutex.Lock()
+				delete(c.offLedgerReqsAcks, req.ID())
+				c.offLedgerReqsAcksMutex.Unlock()
+				ticker.Stop()
+				return
+			}
+			c.offLedgerReqsAcksMutex.RLock()
+			ackPeers := c.offLedgerReqsAcks[(*req).ID()]
+			c.offLedgerReqsAcksMutex.RUnlock()
+			sendMessage(ackPeers)
+		}
+	}()
+}
+
+func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string) {
+	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID(), senderNetID)
+	c.sendRequestAckowledgementMsg(req.ID(), senderNetID)
 	if !c.mempool.ReceiveRequest(req) {
 		return
 	}
-	msgData := chain.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
-	committee := c.getCommittee()
-	if committee != nil {
-		committee.SendMsgToPeers(chain.MsgOffLedgerRequest, msgData, time.Now().UnixNano())
+	c.broadcastOffLedgerRequest(req)
+}
+
+func (c *chainObj) sendRequestAckowledgementMsg(reqID coretypes.RequestID, peerID string) {
+	c.log.Debugf("sendRequestAckowledgementMsg: reqID: %s, peerID: %s", reqID, peerID)
+	if peerID == "" {
 		return
 	}
-	gossipUpToNPeers := parameters.GetInt(parameters.OffledgerGossipUpToNPeers)
-	(*c.peers).SendMsgToRandomPeersSimple(uint16(gossipUpToNPeers), chain.MsgOffLedgerRequest, msgData)
+	msgData := messages.NewRequestAckMsg(reqID).Bytes()
+	(*c.peers).SendSimple(peerID, messages.MsgRequestAck, msgData)
+}
+
+func (c *chainObj) ReceiveRequestAckMessage(reqID *coretypes.RequestID, peerID string) {
+	c.log.Debugf("ReceiveRequestAckMessage: reqID: %s, peerID: %s", reqID, peerID)
+	c.offLedgerReqsAcksMutex.Lock()
+	defer c.offLedgerReqsAcksMutex.Unlock()
+	c.offLedgerReqsAcks[*reqID] = append(c.offLedgerReqsAcks[*reqID], peerID)
+}
+
+// SendMissingRequestsToPeer sends the requested missing requests by a peer
+func (c *chainObj) SendMissingRequestsToPeer(msg messages.MissingRequestIDsMsg, peerID string) {
+	for _, reqID := range msg.IDs {
+		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID, peerID)
+		req := c.mempool.GetRequest(reqID)
+		msg := messages.NewMissingRequestMsg(req)
+		(*c.peers).SendSimple(peerID, messages.MsgMissingRequest, msg.Bytes())
+	}
 }
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
@@ -141,14 +206,14 @@ func (c *chainObj) ReceiveRequest(req coretypes.Request) {
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
 	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
 		stateOutput.GetStateIndex(), coretypes.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
-	c.ReceiveMessage(&chain.StateMsg{
+	c.ReceiveMessage(&messages.StateMsg{
 		ChainOutput: stateOutput,
 		Timestamp:   timestamp,
 	})
 }
 
 func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
-	c.ReceiveMessage(&chain.InclusionStateMsg{
+	c.ReceiveMessage(&messages.InclusionStateMsg{
 		TxID:  txID,
 		State: inclusionState,
 	}) // TODO special entry point
@@ -179,7 +244,7 @@ func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.R
 	return chain.RequestProcessingStatusCompleted
 }
 
-func (c *chainObj) Processors() *processors.ProcessorCache {
+func (c *chainObj) Processors() *processors.Cache {
 	return c.procset
 }
 

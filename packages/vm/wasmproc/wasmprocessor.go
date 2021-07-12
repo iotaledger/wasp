@@ -6,7 +6,6 @@ package wasmproc
 import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -37,11 +36,11 @@ func NewWasmProcessor(vm wasmhost.WasmVM, log *logger.Logger) (*WasmProcessor, e
 		vm = GoWasmVM
 		GoWasmVM = nil
 	}
-	err := host.InitVM(vm, false)
+	err := host.InitVM(vm)
 	if err != nil {
 		return nil, err
 	}
-	host.scContext = NewScContext(host)
+	host.scContext = NewScContext(host, &host.KvStoreHost)
 	host.Init(log)
 	host.TrackObject(NewNullObject(&host.KvStoreHost))
 	host.TrackObject(host.scContext)
@@ -101,12 +100,6 @@ func (host *WasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.Sandbox
 		host.ctxView = saveCtxView
 	}()
 
-	testMode, _ := host.params().Has("testMode")
-	if testMode {
-		host.Tracef("TEST MODE")
-		TestMode = true
-	}
-
 	host.Tracef("Calling " + host.function)
 	frame := host.PushFrame()
 	frameObjects := host.scContext.objects
@@ -151,41 +144,6 @@ func (host *WasmProcessor) GetDefaultEntryPoint() coretypes.VMProcessorEntryPoin
 
 func (host *WasmProcessor) IsView() bool {
 	return host.WasmHost.IsView(host.function)
-}
-
-func (host *WasmProcessor) accountID() *coretypes.AgentID {
-	if host.ctx != nil {
-		return host.ctx.AccountID()
-	}
-	return host.ctxView.AccountID()
-}
-
-func (host *WasmProcessor) contract() coretypes.Hname {
-	if host.ctx != nil {
-		return host.ctx.Contract()
-	}
-	return host.ctxView.Contract()
-}
-
-func (host *WasmProcessor) chainID() *chainid.ChainID {
-	if host.ctx != nil {
-		return host.ctx.ChainID()
-	}
-	return host.ctxView.ChainID()
-}
-
-func (host *WasmProcessor) chainOwnerID() *coretypes.AgentID {
-	if host.ctx != nil {
-		return host.ctx.ChainOwnerID()
-	}
-	return host.ctxView.ChainOwnerID()
-}
-
-func (host *WasmProcessor) contractCreator() *coretypes.AgentID {
-	if host.ctx != nil {
-		return host.ctx.ContractCreator()
-	}
-	return host.ctxView.ContractCreator()
 }
 
 func (host *WasmProcessor) log() coretypes.LogInterface {

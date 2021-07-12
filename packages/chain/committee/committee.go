@@ -4,6 +4,7 @@
 package committee
 
 import (
+	"crypto/rand"
 	"fmt"
 	"time"
 
@@ -140,7 +141,7 @@ func (c *committee) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte
 	return fmt.Errorf("SendMsg: wrong peer index")
 }
 
-func (c *committee) SendMsgToPeers(msgType byte, msgData []byte, ts int64) {
+func (c *committee) SendMsgToPeers(msgType byte, msgData []byte, ts int64, except ...uint16) {
 	msg := &peering.PeerMessage{
 		PeeringID:   c.peeringID,
 		SenderIndex: c.ownIndex,
@@ -148,7 +149,7 @@ func (c *committee) SendMsgToPeers(msgType byte, msgData []byte, ts int64) {
 		MsgType:     msgType,
 		MsgData:     msgData,
 	}
-	c.validatorNodes.Broadcast(msg, false)
+	c.validatorNodes.Broadcast(msg, false, except...)
 }
 
 func (c *committee) IsAlivePeer(peerIndex uint16) bool {
@@ -257,4 +258,35 @@ func checkValidatorNodeIDs(cfg coretypes.PeerNetworkConfigProvider, n, ownIndex 
 			allPeers, validatorNetIDs)
 	}
 	return nil
+}
+
+func (c *committee) GetOtherValidatorsPeerIDs() []string {
+	nodes := c.validatorNodes.OtherNodes()
+	ret := make([]string, len(nodes))
+	i := 0
+	for _, node := range nodes {
+		ret[i] = node.NetID()
+		i++
+	}
+	return ret
+}
+
+func (c *committee) GetRandomValidators(upToN int) []string {
+	validators := c.GetOtherValidatorsPeerIDs()
+	if upToN >= len(validators) {
+		return validators
+	}
+
+	var b [8]byte
+	seed := b[:]
+	_, _ = rand.Read(seed)
+	permutation := util.NewPermutation16(uint16(len(validators)), seed)
+	permutation.Shuffle(seed)
+	ret := make([]string, 0)
+	for len(ret) < upToN {
+		i := permutation.Next()
+		ret = append(ret, validators[i])
+	}
+
+	return ret
 }

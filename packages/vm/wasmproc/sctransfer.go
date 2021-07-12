@@ -14,6 +14,7 @@ import (
 
 type ScTransfers struct {
 	ScSandboxObject
+	vm *WasmProcessor
 }
 
 func NewScTransfers(vm *WasmProcessor) *ScTransfers {
@@ -33,6 +34,7 @@ func (a *ScTransfers) GetObjectID(keyID, typeID int32) int32 {
 type ScTransferInfo struct {
 	ScSandboxObject
 	address ledgerstate.Address
+	vm      *WasmProcessor
 }
 
 func NewScTransferInfo(vm *WasmProcessor) *ScTransferInfo {
@@ -68,16 +70,20 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 }
 
 func (o *ScTransferInfo) SetBytes(keyID, typeID int32, bytes []byte) {
-	var err error
 	switch keyID {
 	case wasmhost.KeyAddress:
+		var err error
 		o.address, _, err = ledgerstate.AddressFromBytes(bytes)
 		if err != nil {
 			o.Panic("SetBytes: invalid address: " + err.Error())
 		}
 	case wasmhost.KeyBalances:
-		o.Invoke(int32(o.MustInt64(bytes)))
+		balanceMapID, _, err := codec.DecodeInt32(bytes)
+		if err != nil {
+			o.Panic("SetBytes: invalid balance map id: " + err.Error())
+		}
+		o.Invoke(balanceMapID)
 	default:
-		o.invalidKey(keyID)
+		o.InvalidKey(keyID)
 	}
 }

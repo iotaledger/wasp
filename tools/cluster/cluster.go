@@ -6,22 +6,26 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
 	"sort"
-	"strings"
+	"strconv"
 	"text/template"
 	"time"
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/model"
+	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/tools/cluster/mocknode"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	"golang.org/x/xerrors"
@@ -42,6 +46,12 @@ func New(name string, config *ClusterConfig) *Cluster {
 		Config:   config,
 		waspCmds: make([]*exec.Cmd, config.Wasp.NumNodes),
 	}
+}
+
+func (clu *Cluster) NewKeyPairWithFunds() (*ed25519.KeyPair, ledgerstate.Address, error) {
+	key, addr := testkey.GenKeyAddr()
+	err := clu.GoshimmerClient().RequestFunds(addr)
+	return key, addr, err
 }
 
 func (clu *Cluster) GoshimmerClient() *goshimmer.Client {
@@ -79,6 +89,9 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 }
 
 func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
+	if threshold == 0 {
+		threshold = (uint16(len(committeeNodes))*2)/3 + 1
+	}
 	apiHosts := clu.Config.APIHosts(committeeNodes)
 	peeringHosts := clu.Config.PeeringHosts(committeeNodes)
 	dkgInitiatorIndex := uint16(rand.Intn(len(apiHosts)))
@@ -171,9 +184,11 @@ func fileExists(filepath string) (bool, error) {
 	return true, err
 }
 
+type ModifyNodesConfigFn = func(nodeIndex int, configParams *templates.WaspConfigParams) *templates.WaspConfigParams
+
 // InitDataPath initializes the cluster data directory (cluster.json + one subdirectory
 // for each node).
-func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting bool) error {
+func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting bool, modifyConfig ModifyNodesConfigFn) error {
 	exists, err := fileExists(dataPath)
 	if err != nil {
 		return err
@@ -194,6 +209,8 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 			path.Join(templatesPath, "wasp-config-template.json"),
 			templates.WaspConfig,
 			clu.Config.WaspConfigTemplateParams(i),
+			i,
+			modifyConfig,
 		)
 		if err != nil {
 			return err
@@ -202,7 +219,7 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 	return clu.Config.Save(dataPath)
 }
 
-func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params interface{}) error {
+func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params *templates.WaspConfigParams, nodeIndex int, modifyConfig ModifyNodesConfigFn) error {
 	exists, err := fileExists(configTemplatePath)
 	if err != nil {
 		return err
@@ -229,6 +246,10 @@ func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params
 		return err
 	}
 	defer f.Close()
+
+	if modifyConfig != nil {
+		params = modifyConfig(nodeIndex, params)
+	}
 
 	return configTmpl.Execute(f, params)
 }
@@ -269,7 +290,7 @@ func (clu *Cluster) start(dataPath string) error {
 	initOk := make(chan bool, clu.Config.Wasp.NumNodes)
 
 	for i := 0; i < clu.Config.Wasp.NumNodes; i++ {
-		cmd, err := clu.startServer("wasp", waspNodeDataPath(dataPath, i), fmt.Sprintf("wasp %d", i), initOk, "WebAPI started")
+		cmd, err := clu.startServer("wasp", waspNodeDataPath(dataPath, i), i, initOk)
 		if err != nil {
 			return err
 		}
@@ -287,7 +308,8 @@ func (clu *Cluster) start(dataPath string) error {
 	return nil
 }
 
-func (clu *Cluster) startServer(command, cwd, name string, initOk chan<- bool, initOkMsg string) (*exec.Cmd, error) {
+func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<- bool) (*exec.Cmd, error) {
+	name := fmt.Sprintf("wasp %d", nodeIndex)
 	cmd := exec.Command(command)
 	cmd.Dir = cwd
 	stdoutPipe, err := cmd.StdoutPipe()
@@ -310,10 +332,36 @@ func (clu *Cluster) startServer(command, cwd, name string, initOk chan<- bool, i
 	go scanLog(
 		stdoutPipe,
 		func(line string) { fmt.Printf("[ %s] %s\n", name, line) },
-		waitFor(initOkMsg, initOk),
 	)
+	go clu.waitForAPIReady(initOk, nodeIndex)
 
 	return cmd, nil
+}
+
+const pollAPIInterval = 500 * time.Millisecond
+
+// waits until API for a given node is ready
+func (clu *Cluster) waitForAPIReady(initOk chan<- bool, nodeIndex int) {
+	infoEndpointURL := fmt.Sprintf("http://localhost:%s%s", strconv.Itoa(clu.Config.APIPort(nodeIndex)), routes.Info())
+
+	ticker := time.NewTicker(pollAPIInterval)
+	go func() {
+		for {
+			<-ticker.C
+			rsp, err := http.Get(infoEndpointURL) //nolint:gosec,noctx
+			if err != nil {
+				fmt.Printf("Error Polling node %d API ready status: %v", nodeIndex, err)
+				continue
+			}
+			fmt.Printf("Polling node %d API ready status: %s %s\n", nodeIndex, infoEndpointURL, rsp.Status)
+			rsp.Body.Close()
+			if err == nil && rsp.StatusCode != 404 {
+				initOk <- true
+				ticker.Stop()
+				return
+			}
+		}
+	}()
 }
 
 func scanLog(reader io.Reader, hooks ...func(string)) {
@@ -322,19 +370,6 @@ func scanLog(reader io.Reader, hooks ...func(string)) {
 		line := scanner.Text()
 		for _, hook := range hooks {
 			hook(line)
-		}
-	}
-}
-
-func waitFor(msg string, initOk chan<- bool) func(line string) {
-	found := false
-	return func(line string) {
-		if found {
-			return
-		}
-		if strings.Contains(line, msg) {
-			initOk <- true
-			found = true
 		}
 	}
 }

@@ -18,31 +18,38 @@ pub const TYPE_CHAIN_ID: i32 = 4;
 pub const TYPE_COLOR: i32 = 5;
 pub const TYPE_HASH: i32 = 6;
 pub const TYPE_HNAME: i32 = 7;
-pub const TYPE_INT64: i32 = 8;
-pub const TYPE_MAP: i32 = 9;
-pub const TYPE_REQUEST_ID: i32 = 10;
-pub const TYPE_STRING: i32 = 11;
+pub const TYPE_INT16: i32 = 8;
+pub const TYPE_INT32: i32 = 9;
+pub const TYPE_INT64: i32 = 10;
+pub const TYPE_MAP: i32 = 11;
+pub const TYPE_REQUEST_ID: i32 = 12;
+pub const TYPE_STRING: i32 = 13;
+
+pub const OBJ_ID_NULL: i32 = 0;
+pub const OBJ_ID_ROOT: i32 = 1;
+pub const OBJ_ID_STATE: i32 = 2;
+pub const OBJ_ID_PARAMS: i32 = 3;
+pub const OBJ_ID_RESULTS: i32 = 4;
 
 // size in bytes of predefined types, indexed by the TYPE_* consts
-const TYPE_SIZES: &[u8] = &[0, 33, 37, 0, 33, 32, 32, 4, 8, 0, 34, 0];
+const TYPE_SIZES: &[u8] = &[0, 33, 37, 0, 33, 32, 32, 4, 2, 4, 8, 0, 34, 0];
 
 // These 4 external functions are funneling the entire WasmLib functionality
 // to their counterparts on the host.
 #[link(wasm_import_module = "WasmLib")]
-extern "C" {
-    // Copy the value data bytes of type <type_id> stored in the host container object <obj_Id>,
+extern {
+    // Copy the value data bytes of type <type_id> stored in the host container object <obj_id>,
     // under key <key_id>, into the pre-allocated <buffer> which can hold len bytes.
     // Returns the actual length of the value data bytes on the host.
-    pub fn hostGetBytes(obj_id: i32, key_id: i32, type_id: i32, buffer: *const u8, len: i32)
-        -> i32;
+    pub fn hostGetBytes(obj_id: i32, key_id: i32, type_id: i32, buffer: *const u8, len: i32) -> i32;
 
     // Retrieve the key id associated with the <key> data bytes of length <len>.
     // A negative length indicates a bytes key, positive indicates a string key
     // We discern between the two for better readable logging purposes
-    pub fn hostGetKeyId(key: *const u8, len: i32) -> i32;
+    pub fn hostGetKeyID(key: *const u8, len: i32) -> i32;
 
     // Retrieve the id of the container sub-object of type <type_id> stored in
-    // the host container object <obj_Id>, under key <key_id>.
+    // the host container object <obj_id>, under key <key_id>.
     pub fn hostGetObjectID(obj_id: i32, key_id: i32, type_id: i32) -> i32;
 
     // copy the <len> value data bytes of type <type_id> from the <buffer>
@@ -79,14 +86,14 @@ pub fn call_func(obj_id: i32, key_id: Key32, params: &[u8]) -> Vec<u8> {
 // Removes all its sub-objects as well.
 pub fn clear(obj_id: i32) {
     // special key "length" is used with integer value zero
-    set_bytes(obj_id, KEY_LENGTH, TYPE_INT64, &0_i64.to_le_bytes())
+    set_bytes(obj_id, KEY_LENGTH, TYPE_INT32, &0_i32.to_le_bytes())
 }
 
 // Check if the specified container object contains a value with the specified key and type.
 pub fn exists(obj_id: i32, key_id: Key32, type_id: i32) -> bool {
     unsafe {
         // negative length (-1) means only test for existence
-        // returned size -1 indicates keyId not found (or error)
+        // returned size -1 indicates keyID not found (or error)
         // this removes the need for a separate hostExists function
         hostGetBytes(obj_id, key_id.0, type_id, std::ptr::null_mut(), -1) >= 0
     }
@@ -122,7 +129,7 @@ pub fn get_key_id_from_bytes(bytes: &[u8]) -> Key32 {
     unsafe {
         let size = bytes.len() as i32;
         // negative size indicates this is a bytes key
-        Key32(hostGetKeyId(bytes.as_ptr(), -size - 1))
+        Key32(hostGetKeyID(bytes.as_ptr(), -size - 1))
     }
 }
 
@@ -131,20 +138,22 @@ pub fn get_key_id_from_string(key: &str) -> Key32 {
     let bytes = key.as_bytes();
     unsafe {
         // non-negative size indicates this is a string key
-        Key32(hostGetKeyId(bytes.as_ptr(), bytes.len() as i32))
+        Key32(hostGetKeyID(bytes.as_ptr(), bytes.len() as i32))
     }
 }
 
 // Retrieve the length of an array container object on the host
 pub fn get_length(obj_id: i32) -> i32 {
     // special integer key "length" is used
-    let bytes = get_bytes(obj_id, KEY_LENGTH, TYPE_INT64);
-    i64::from_le_bytes(bytes.try_into().unwrap()) as i32
+    let bytes = get_bytes(obj_id, KEY_LENGTH, TYPE_INT32);
+    i32::from_le_bytes(bytes.try_into().unwrap())
 }
 
 // Retrieve the id of the specified container sub-object
 pub fn get_object_id(obj_id: i32, key_id: Key32, type_id: i32) -> i32 {
-    unsafe { hostGetObjectID(obj_id, key_id.0, type_id) }
+    unsafe {
+        hostGetObjectID(obj_id, key_id.0, type_id)
+    }
 }
 
 // Direct logging of informational text to host log
@@ -162,13 +171,7 @@ pub fn panic(text: &str) {
 // create it first.
 pub fn set_bytes(obj_id: i32, key_id: Key32, type_id: i32, value: &[u8]) {
     unsafe {
-        hostSetBytes(
-            obj_id,
-            key_id.0,
-            type_id,
-            value.as_ptr(),
-            value.len() as i32,
-        )
+        hostSetBytes(obj_id, key_id.0, type_id, value.as_ptr(), value.len() as i32)
     }
 }
 

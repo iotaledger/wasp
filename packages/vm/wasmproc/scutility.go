@@ -15,6 +15,7 @@ type ScUtility struct {
 	ScSandboxObject
 	nextRandom int
 	random     []byte
+	vm         *WasmProcessor
 }
 
 func NewScUtility(vm *WasmProcessor) *ScUtility {
@@ -56,7 +57,8 @@ func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {
 		return o.aggregateBLSSignatures(bytes)
 	case wasmhost.KeyBlsValid:
 		if o.validBLSSignature(bytes) {
-			return make([]byte, 1)
+			var flag [1]byte
+			return flag[:]
 		}
 		return nil
 	case wasmhost.KeyEd25519Address:
@@ -67,7 +69,8 @@ func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {
 		return address.Bytes()
 	case wasmhost.KeyEd25519Valid:
 		if o.validED25519Signature(bytes) {
-			return make([]byte, 1)
+			var flag [1]byte
+			return flag[:]
 		}
 		return nil
 	case wasmhost.KeyHashBlake2b:
@@ -79,7 +82,7 @@ func (o *ScUtility) CallFunc(keyID int32, bytes []byte) []byte {
 	case wasmhost.KeyRandom:
 		return o.getRandom8Bytes()
 	}
-	o.invalidKey(keyID)
+	o.InvalidKey(keyID)
 	return nil
 }
 
@@ -111,12 +114,12 @@ func (o *ScUtility) GetTypeID(keyID int32) int32 {
 
 func (o *ScUtility) aggregateBLSSignatures(bytes []byte) []byte {
 	decode := NewBytesDecoder(bytes)
-	count := int(decode.Int64())
+	count := int(decode.Int32())
 	pubKeysBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
 		pubKeysBin[i] = decode.Bytes()
 	}
-	count = int(decode.Int64())
+	count = int(decode.Int32())
 	sigsBin := make([][]byte, count)
 	for i := 0; i < count; i++ {
 		sigsBin[i] = decode.Bytes()

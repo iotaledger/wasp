@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
 const varStateDirectory = "d"
@@ -77,7 +78,7 @@ func LocateProgram(state kv.KVStoreReader, programHash hashing.HashValue) (strin
 		return "", nil, fmt.Errorf("can't find program binary for hash %s", programHash.String())
 	}
 	v := blbValues.MustGetAt([]byte(VarFieldVMType))
-	vmType := "wasmtimevm"
+	vmType := vmtypes.WasmTime
 	if v != nil {
 		vmType = string(v)
 	}

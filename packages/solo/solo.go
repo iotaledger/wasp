@@ -30,8 +30,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
-	"github.com/iotaledger/wasp/plugins/wasmtimevm"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 	"go.uber.org/zap/zapcore"
@@ -68,6 +68,7 @@ type Solo struct {
 	// publisher wait group
 	publisherWG      sync.WaitGroup
 	publisherEnabled atomic.Bool
+	processorConfig  *processors.Config
 }
 
 // Chain represents state of individual chain.
@@ -109,7 +110,7 @@ type Chain struct {
 	Log *logger.Logger
 
 	// processor cache
-	proc *processors.ProcessorCache
+	proc *processors.Cache
 
 	// related to asynchronous backlog processing
 	runVMMutex sync.Mutex
@@ -134,26 +135,35 @@ func New(t TestContext, debug, printStackTrace bool) *Solo {
 		if !debug {
 			glbLogger = testlogger.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
 		}
-		wasmtimeConstructor := func(binary []byte) (coretypes.VMProcessor, error) {
-			return wasmproc.GetProcessor(binary, glbLogger)
-		}
-		err := processors.RegisterVMType(wasmtimevm.VMType, wasmtimeConstructor)
-		require.NoError(t, err)
 	})
+
+	processorConfig := processors.NewConfig()
+	err := processorConfig.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (coretypes.VMProcessor, error) {
+		return wasmproc.GetProcessor(binary, glbLogger)
+	})
+	require.NoError(t, err)
+
 	initialTime := time.Now()
 	ret := &Solo{
-		T:           t,
-		logger:      glbLogger,
-		dbmanager:   dbmanager.NewDBManager(glbLogger.Named("db"), true),
-		utxoDB:      utxodb.NewWithTimestamp(initialTime),
-		blobCache:   coretypes.NewInMemoryBlobCache(),
-		logicalTime: initialTime,
-		timeStep:    DefaultTimeStep,
-		chains:      make(map[[33]byte]*Chain),
-		vmRunner:    runvm.NewVMRunner(),
+		T:               t,
+		logger:          glbLogger,
+		dbmanager:       dbmanager.NewDBManager(glbLogger.Named("db"), true),
+		utxoDB:          utxodb.NewWithTimestamp(initialTime),
+		blobCache:       coretypes.NewInMemoryBlobCache(),
+		logicalTime:     initialTime,
+		timeStep:        DefaultTimeStep,
+		chains:          make(map[[33]byte]*Chain),
+		vmRunner:        runvm.NewVMRunner(),
+		processorConfig: processorConfig,
 	}
 	ret.logger.Infof("Solo environment has been created with initial logical time %v", initialTime)
 	return ret
+}
+
+// WithNativeContract registers a native contract so that it may be deployed
+func (env *Solo) WithNativeContract(c *coreutil.ContractInterface) *Solo {
+	env.processorConfig.RegisterNativeContract(c)
+	return env
 }
 
 // NewChain deploys new chain instance.
@@ -228,7 +238,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		State:                  vs,
 		StateReader:            srdr,
 		GlobalSync:             glbSync,
-		proc:                   processors.MustNew(),
+		proc:                   processors.MustNew(env.processorConfig),
 		Log:                    chainlog,
 	}
 	ret.mempool = mempool.New(ret.StateReader, env.blobCache, chainlog)
@@ -416,7 +426,7 @@ func (ch *Chain) collateAndRunBatch() bool {
 
 // backlogLen is a thread-safe function to return size of the current backlog
 func (ch *Chain) backlogLen() int { //nolint:unused
-	mstats := ch.mempool.Stats()
+	mstats := ch.mempool.Info()
 	return mstats.InBufCounter - mstats.OutPoolCounter
 }
 

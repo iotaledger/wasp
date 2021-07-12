@@ -271,23 +271,24 @@ func (m *Mempool) ReadyNow(now ...time.Time) []coretypes.Request {
 }
 
 // ReadyFromIDs if successful, function returns a deterministic list of requests for running on the VM
-// - nil, false if some requests not arrived to the mempool yet. For retry later
+// - (a list of missing requests), false if some requests not arrived to the mempool yet. For retry later
 // - (a list of processable requests), true if the list can be deterministically calculated
 // Note that (a list of processable requests) can be empty if none satisfies nowis time constraint (timelock, fallback)
 // For requests which are known and solidified, the result is deterministic
-func (m *Mempool) ReadyFromIDs(nowis time.Time, reqids ...coretypes.RequestID) ([]coretypes.Request, bool) {
-	ret := make([]coretypes.Request, 0, len(reqids))
-	for _, reqid := range reqids {
-		reqref, ok := m.pool[reqid]
+func (m *Mempool) ReadyFromIDs(nowis time.Time, reqIDs ...coretypes.RequestID) ([]coretypes.Request, []int, bool) {
+	requests := make([]coretypes.Request, 0, len(reqIDs))
+	missingRequestIndexes := []int{}
+	m.poolMutex.RLock()
+	defer m.poolMutex.RUnlock()
+	for i, reqID := range reqIDs {
+		reqref, ok := m.pool[reqID]
 		if !ok {
-			// retry later
-			return nil, false
-		}
-		if isRequestReady(reqref, nowis) {
-			ret = append(ret, reqref.req)
+			missingRequestIndexes = append(missingRequestIndexes, i)
+		} else if isRequestReady(reqref, nowis) {
+			requests = append(requests, reqref.req)
 		}
 	}
-	return ret, true
+	return requests, missingRequestIndexes, len(missingRequestIndexes) == 0
 }
 
 // HasRequest checks if the request is in the pool
@@ -297,6 +298,14 @@ func (m *Mempool) HasRequest(id coretypes.RequestID) bool {
 
 	_, ok := m.pool[id]
 	return ok
+}
+
+func (m *Mempool) GetRequest(id coretypes.RequestID) coretypes.Request {
+	m.poolMutex.RLock()
+	defer m.poolMutex.RUnlock()
+
+	reqRef := m.pool[id]
+	return reqRef.req
 }
 
 const waitRequestInPoolTimeoutDefault = 2 * time.Second
@@ -347,11 +356,11 @@ func (m *Mempool) WaitInBufferEmpty(timeout ...time.Duration) bool {
 }
 
 // Stats collects mempool stats
-func (m *Mempool) Stats() chain.MempoolStats {
+func (m *Mempool) Info() chain.MempoolInfo {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
-	ret := chain.MempoolStats{
+	ret := chain.MempoolInfo{
 		InPoolCounter:  m.inPoolCounter,
 		OutPoolCounter: m.outPoolCounter,
 		InBufCounter:   m.inBufCounter,
@@ -361,7 +370,7 @@ func (m *Mempool) Stats() chain.MempoolStats {
 	nowis := time.Now()
 	for _, ref := range m.pool {
 		if isRequestReady(ref, nowis) {
-			ret.Ready++
+			ret.ReadyCounter++
 		}
 	}
 	return ret
