@@ -217,7 +217,7 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 		}
 	case messages.MsgSignedResultAck:
 		if c.consensus == nil {
-			return	
+			return
 		}
 		msgt := &messages.SignedResultAckMsg{}
 		if err := msgt.Read(rdr); err != nil {
