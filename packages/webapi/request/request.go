@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -16,11 +18,15 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-type getChainFn func(chainID *chainid.ChainID) chain.ChainCore
+type (
+	getChainFn          func(chainID *chainid.ChainID) chain.ChainCore
+	getAccountBalanceFn func(ch chain.ChainCore, agentID *coretypes.AgentID) (map[ledgerstate.Color]uint64, error)
+)
 
-func AddEndpoints(server echoswagger.ApiRouter, getChain getChainFn) {
+func AddEndpoints(server echoswagger.ApiRouter, getChain getChainFn, getChainBalance getAccountBalanceFn) {
 	instance := &offLedgerReqAPI{
-		getChain: getChain,
+		getChain:          getChain,
+		getAccountBalance: getChainBalance,
 	}
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
 		SetSummary("New off-ledger request").
@@ -34,7 +40,8 @@ func AddEndpoints(server echoswagger.ApiRouter, getChain getChainFn) {
 }
 
 type offLedgerReqAPI struct {
-	getChain getChainFn
+	getChain          getChainFn
+	getAccountBalance getAccountBalanceFn
 }
 
 func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
@@ -43,10 +50,27 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 		return err
 	}
 
+	// check req signature
+	if !offLedgerReq.VerifySignature() {
+		return httperrors.BadRequest("Invalid signature.")
+	}
+
+	// check chain exists
 	ch := o.getChain(chainID)
 	if ch == nil {
 		return httperrors.NotFound(fmt.Sprintf("Unknown chain: %s", chainID.Base58()))
 	}
+
+	// check user has on-chain balance
+	balances, err := o.getAccountBalance(ch, offLedgerReq.SenderAccount())
+	if err != nil {
+		return httperrors.ServerError("Unable to get account balance")
+	}
+
+	if len(balances) == 0 {
+		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().Base58()))
+	}
+
 	ch.ReceiveOffLedgerRequest(offLedgerReq, "")
 
 	return c.NoContent(http.StatusAccepted)
