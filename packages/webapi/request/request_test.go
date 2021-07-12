@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
@@ -11,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
+	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -23,20 +25,26 @@ func createMockedGetChain(t *testing.T) getChainFn {
 	}
 }
 
-const foo = "foo"
+func getAccountBalanceMocked(ch chain.ChainCore, agentID *coretypes.AgentID) (map[ledgerstate.Color]uint64, error) {
+	ret := make(map[ledgerstate.Color]uint64)
+	ret[ledgerstate.ColorIOTA] = 100
+	return ret, nil
+}
 
 func dummyOffledgerRequest() *request.RequestOffLedger {
 	contract := coretypes.Hn("somecontract")
 	entrypoint := coretypes.Hn("someentrypoint")
-	args := requestargs.New(
-		dict.Dict{foo: []byte("bar")},
-	)
-	return request.NewRequestOffLedger(contract, entrypoint, args)
+	args := requestargs.New(dict.Dict{})
+	req := request.NewRequestOffLedger(contract, entrypoint, args)
+	keys, _ := testkey.GenKeyAddr()
+	req.Sign(keys)
+	return req
 }
 
 func TestNewRequestBase64(t *testing.T) {
 	instance := &offLedgerReqAPI{
-		getChain: createMockedGetChain(t),
+		getChain:          createMockedGetChain(t),
+		getAccountBalance: getAccountBalanceMocked,
 	}
 
 	testutil.CallWebAPIRequestHandler(
@@ -53,7 +61,8 @@ func TestNewRequestBase64(t *testing.T) {
 
 func TestNewRequestBinary(t *testing.T) {
 	instance := &offLedgerReqAPI{
-		getChain: createMockedGetChain(t),
+		getChain:          createMockedGetChain(t),
+		getAccountBalance: getAccountBalanceMocked,
 	}
 
 	testutil.CallWebAPIRequestHandler(

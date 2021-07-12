@@ -198,6 +198,9 @@ func (c *Consensus) broadcastSignedResultIfNeeded() {
 		c.log.Debugf("broadcastSignedResult not needed: vm result is not signed")
 		return
 	}
+	if len(c.resultSigAck) >= int(c.committee.Size()-1) {
+		return
+	}
 	if time.Now().After(c.delaySendingSignedResult) {
 		signedResult := c.resultSignatures[c.committee.OwnPeerIndex()]
 		msg := &messages.SignedResultMsg{
@@ -205,7 +208,7 @@ func (c *Consensus) broadcastSignedResultIfNeeded() {
 			EssenceHash:  signedResult.EssenceHash,
 			SigShare:     signedResult.SigShare,
 		}
-		c.committee.SendMsgToPeers(messages.MsgSignedResult, util.MustBytes(msg), time.Now().UnixNano())
+		c.committee.SendMsgToPeers(messages.MsgSignedResult, util.MustBytes(msg), time.Now().UnixNano(), c.resultSigAck...)
 		c.delaySendingSignedResult = time.Now().Add(c.timers.BroadcastSignedResultRetry)
 
 		c.log.Debugf("broadcastSignedResult: broadcasted: essence hash: %s, chain input %s",
@@ -587,6 +590,7 @@ func (c *Consensus) resetWorkflow() {
 	c.finalTx = nil
 	c.consensusBatch = nil
 	c.contributors = nil
+	c.resultSigAck = c.resultSigAck[:0]
 	c.workflow = workflowFlags{
 		stateReceived: c.stateOutput != nil,
 	}
@@ -675,10 +679,31 @@ func (c *Consensus) receiveSignedResult(msg *messages.SignedResultMsg) {
 		uint16(idx) == c.committee.OwnPeerIndex() ||
 		uint16(idx) != msg.SenderIndex {
 		c.log.Errorf("receiveSignedResult: wrong sig share from peer #%d", msg.SenderIndex)
+	} else {
+		c.resultSignatures[msg.SenderIndex] = msg
+		c.log.Debugf("receiveSignedResult: stored sig share from sender %d, essenceHash %v", msg.SenderIndex, msg.EssenceHash)
+	}
+	// send acknowledgement
+	msgAck := &messages.SignedResultAckMsg{
+		ChainInputID: msg.ChainInputID,
+		EssenceHash:  msg.EssenceHash,
+	}
+	if err := c.committee.SendMsg(msg.SenderIndex, messages.MsgSignedResultAck, util.MustBytes(msgAck)); err != nil {
+		c.log.Errorf("receiveSignedResult: failed to send acknowledgement: %v", err)
+	}
+}
+
+func (c *Consensus) receiveSignedResultAck(msg *messages.SignedResultAckMsg) {
+	own := c.resultSignatures[c.committee.OwnPeerIndex()]
+	if own == nil || msg.EssenceHash != own.EssenceHash || msg.ChainInputID != own.ChainInputID {
 		return
 	}
-	c.resultSignatures[msg.SenderIndex] = msg
-	c.log.Debugf("receiveSignedResult: stored sig share from sender %d, essenceHash %v", msg.SenderIndex, msg.EssenceHash)
+	for _, i := range c.resultSigAck {
+		if i == msg.SenderIndex {
+			return
+		}
+	}
+	c.resultSigAck = append(c.resultSigAck, msg.SenderIndex)
 }
 
 // ShouldReceiveMissingRequest returns whether or not a request is missing, if the incoming request matches the expetec ID/Hash it is removed from the list

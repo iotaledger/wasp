@@ -13,9 +13,9 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
+	"github.com/iotaledger/wasp/packages/webapi/webapiutil"
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -63,12 +63,7 @@ func handleCallView(c echo.Context) error {
 	if theChain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
-	vctx := viewcontext.NewFromChain(theChain)
-	var ret dict.Dict
-	err = optimism.RepeatOnceIfUnlucky(func() error {
-		ret, err = vctx.CallView(contractHname, coretypes.Hn(fname), params)
-		return err
-	})
+	ret, err := webapiutil.CallView(theChain, contractHname, coretypes.Hn(fname), params)
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("View call failed: %v", err))
 	}

@@ -79,12 +79,12 @@ func (g *groupImpl) SendMsgByIndex(peerIdx uint16, msg *peering.PeerMessage) {
 }
 
 // Broadcast implements peering.GroupProvider.
-func (g *groupImpl) Broadcast(msg *peering.PeerMessage, includingSelf bool) {
+func (g *groupImpl) Broadcast(msg *peering.PeerMessage, includingSelf bool, except ...uint16) {
 	var peers map[uint16]peering.PeerSender
 	if includingSelf {
-		peers = g.AllNodes()
+		peers = g.AllNodes(except...)
 	} else {
-		peers = g.OtherNodes()
+		peers = g.OtherNodes(except...)
 	}
 	for i := range peers {
 		peers[i].SendMsg(msg)
@@ -181,17 +181,36 @@ func (g *groupImpl) ExchangeRound(
 }
 
 // AllNodes returns a map of all nodes in the group.
-func (g *groupImpl) AllNodes() map[uint16]peering.PeerSender {
+func (g *groupImpl) AllNodes(except ...uint16) map[uint16]peering.PeerSender {
 	all := make(map[uint16]peering.PeerSender)
+	exceptions := make(map[uint16]struct{})
+	for _, i := range except {
+		exceptions[i] = struct{}{}
+	}
 	for i := range g.nodes {
-		all[uint16(i)] = g.nodes[i]
+		if _, ok := exceptions[uint16(i)]; !ok {
+			all[uint16(i)] = g.nodes[i]
+		}
 	}
 	return all
 }
 
 // OtherNodes returns a map of all nodes in the group, excluding the self node.
-func (g *groupImpl) OtherNodes() map[uint16]peering.PeerSender {
-	return g.other
+func (g *groupImpl) OtherNodes(except ...uint16) map[uint16]peering.PeerSender {
+	if len(except) == 0 {
+		return g.other
+	}
+	ret := make(map[uint16]peering.PeerSender)
+	exceptions := make(map[uint16]struct{})
+	for _, i := range except {
+		exceptions[i] = struct{}{}
+	}
+	for i := range g.other {
+		if _, ok := exceptions[i]; !ok {
+			ret[i] = g.nodes[i]
+		}
+	}
+	return ret
 }
 
 // Attach starts listening for messages. Messages in this case will be filtered

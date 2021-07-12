@@ -150,7 +150,7 @@ func (c *committee) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte
 	return fmt.Errorf("SendMsg: wrong peer index")
 }
 
-func (c *committee) SendMsgToPeers(msgType byte, msgData []byte, ts int64) {
+func (c *committee) SendMsgToPeers(msgType byte, msgData []byte, ts int64, except ...uint16) {
 	msg := &peering.PeerMessage{
 		PeeringID:   c.peeringID,
 		SenderIndex: c.ownIndex,
@@ -158,7 +158,7 @@ func (c *committee) SendMsgToPeers(msgType byte, msgData []byte, ts int64) {
 		MsgType:     msgType,
 		MsgData:     msgData,
 	}
-	c.validatorNodes.Broadcast(msg, false)
+	c.validatorNodes.Broadcast(msg, false, except...)
 }
 
 func (c *committee) IsAlivePeer(peerIndex uint16) bool {
