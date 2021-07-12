@@ -28,6 +28,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 )
 
-replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210517200904-c897be85c569
+replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210712164915-258e54d010fb
 
 replace go.dedis.ch/kyber/v3 v3.0.13 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3

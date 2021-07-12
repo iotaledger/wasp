@@ -32,14 +32,15 @@ package commonsubset
 
 import (
 	"bytes"
+	"encoding/binary"
 	"io"
-	"sync"
 	"time"
 
 	"github.com/anthdm/hbbft"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -68,14 +69,12 @@ type CommonSubset struct {
 	netGroup    peering.GroupProvider // Group of nodes we are communicating with.
 	netOwnIndex uint16                // Our index in the group.
 
-	inputCh    chan []byte            // For our input to the consensus.
-	recvCh     chan *msgBatch         // For incoming messages.
-	closeCh    chan bool              // To implement closing of the object.
-	closed     bool                   // Indicates, if this object can be dismissed.
-	closedLock *sync.RWMutex          // A lock for the closed.
-	outputCh   chan map[uint16][]byte // The caller will receive its result via this channel.
-	done       bool                   // Indicates, if the decision is already made.
-	log        *logger.Logger         // Logger, of course.
+	inputCh  chan []byte            // For our input to the consensus.
+	recvCh   chan *msgBatch         // For incoming messages.
+	closeCh  chan bool              // To implement closing of the object.
+	outputCh chan map[uint16][]byte // The caller will receive its result via this channel.
+	done     bool                   // Indicates, if the decision is already made.
+	log      *logger.Logger         // Logger, of course.
 }
 
 func NewCommonSubset(
@@ -83,8 +82,8 @@ func NewCommonSubset(
 	stateIndex uint32,
 	peeringID peering.PeeringID,
 	netGroup peering.GroupProvider,
-	threshold uint16,
-	commonCoin commoncoin.Provider,
+	dkShare *tcrypto.DKShare,
+	allRandom bool, // All coin flips should be random, for testing mostly.
 	outputCh chan map[uint16][]byte,
 	log *logger.Logger,
 ) (*CommonSubset, error) {
@@ -100,13 +99,15 @@ func NewCommonSubset(
 	if outputCh == nil {
 		outputCh = make(chan map[uint16][]byte, 1)
 	}
+	var salt [8]byte
+	binary.BigEndian.PutUint64(salt[:], sessionID)
 	acsCfg := hbbft.Config{
 		N:          nodeCount,
-		F:          nodeCount - int(threshold),
+		F:          nodeCount - int(dkShare.T),
 		ID:         uint64(ownIndex),
 		Nodes:      nodes,
 		BatchSize:  0, // Unused in ACS.
-		CommonCoin: commonCoin,
+		CommonCoin: commoncoin.NewBlsCommonCoin(dkShare, salt[:], allRandom),
 	}
 	cs := CommonSubset{
 		impl:           hbbft.NewACS(acsCfg),
@@ -121,10 +122,8 @@ func NewCommonSubset(
 		netGroup:       netGroup,
 		netOwnIndex:    ownIndex,
 		inputCh:        make(chan []byte, 1),
-		recvCh:         make(chan *msgBatch, 100000), // TODO: XXX: KP
+		recvCh:         make(chan *msgBatch, 1),
 		closeCh:        make(chan bool),
-		closed:         false,
-		closedLock:     &sync.RWMutex{},
 		outputCh:       outputCh,
 		log:            log,
 	}
@@ -168,25 +167,18 @@ func (cs *CommonSubset) TryHandleMessage(recv *peering.RecvEvent) bool {
 // This function is used in the CommonSubsetCoordinator to avoid parsing
 // the received message multiple times.
 func (cs *CommonSubset) HandleMsgBatch(mb *msgBatch) {
-	cs.log.Infof("XXX: HandleMsgBatch(%+v), closed=%v", mb, cs.closed)
-	// TODO: Duplicate acks.
-	//  XXX: HandleMsgBatch(&{sessionID:21695645984168 stateIndex:1 id:0 src:0 dst:7 msgs:[] acks:[91 91]}), closed=false
-
-	cs.closedLock.RLock()
-	if !cs.closed {
-		cs.closedLock.RUnlock()
-		// Just to avoid panics on writing to a closed channel.
-		cs.recvCh <- mb
-		return
-	}
-	cs.closedLock.RUnlock()
+	defer func() {
+		if err := recover(); err != nil {
+			// Just to avoid panics on writing to a closed channel.
+			// This can happen on the ACS termination.
+			cs.log.Warnf("Dropping msgBatch reason=%v", err)
+		}
+	}()
+	cs.recvCh <- mb
 }
 
 func (cs *CommonSubset) Close() {
-	cs.closedLock.Lock()
-	cs.closed = true
 	cs.impl.Stop()
-	cs.closedLock.Unlock()
 	close(cs.closeCh)
 	close(cs.recvCh)
 	close(cs.inputCh)
@@ -223,13 +215,11 @@ func (cs *CommonSubset) run() {
 }
 
 func (cs *CommonSubset) timeTick() {
-	cs.log.Infof("XXX: timeTick")
 	now := time.Now()
 	resentBefore := now.Add(resendPeriod * (-2))
 	for missingAck, lastSentTime := range cs.missingAcks {
 		if lastSentTime.Before(resentBefore) {
 			if mb, ok := cs.sentMsgBatches[missingAck]; ok {
-				cs.log.Infof("XXX: Resending batch %+v", mb)
 				cs.send(mb)
 				cs.missingAcks[missingAck] = now
 			} else {
@@ -250,7 +240,6 @@ func (cs *CommonSubset) handleInput(input []byte) error {
 }
 
 func (cs *CommonSubset) handleMsgBatch(recvBatch *msgBatch) {
-	cs.log.Infof("XXX: handleMsgBatch(%+v)", recvBatch)
 	//
 	// Cleanup all the acknowledged messages from the missing acks list.
 	for _, receivedAck := range recvBatch.acks {
@@ -421,7 +410,8 @@ const (
 	acsMsgTypeRbcReadyRequest byte = 3 << 4
 	acsMsgTypeAbaBvalRequest  byte = 4 << 4
 	acsMsgTypeAbaAuxRequest   byte = 5 << 4
-	acsMsgTypeAbaDoneRequest  byte = 6 << 4
+	acsMsgTypeAbaCCRequest    byte = 6 << 4
+	acsMsgTypeAbaDoneRequest  byte = 7 << 4
 )
 
 func (b *msgBatch) NeedsAck() bool {
@@ -518,6 +508,9 @@ func (b *msgBatch) Write(w io.Writer) error {
 				if err = util.WriteByte(w, encoded); err != nil {
 					return xerrors.Errorf("failed to write msgBatch.msgs[%v].value: %w", i, err)
 				}
+				if err = util.WriteUint16(w, uint16(acsMsgPayload.Epoch)); err != nil {
+					return xerrors.Errorf("failed to write msgBatch.msgs[%v].epoch: %w", i, err)
+				}
 			case *hbbft.AuxRequest:
 				encoded := acsMsgTypeAbaAuxRequest
 				if abaMsgPayload.Value {
@@ -526,16 +519,30 @@ func (b *msgBatch) Write(w io.Writer) error {
 				if err = util.WriteByte(w, encoded); err != nil {
 					return xerrors.Errorf("failed to write msgBatch.msgs[%v].value: %w", i, err)
 				}
+				if err = util.WriteUint16(w, uint16(acsMsgPayload.Epoch)); err != nil {
+					return xerrors.Errorf("failed to write msgBatch.msgs[%v].epoch: %w", i, err)
+				}
+			case *hbbft.CCRequest:
+				coinMsg := abaMsgPayload.Payload.(*commoncoin.BlsCommonCoinMsg)
+				if err = util.WriteByte(w, acsMsgTypeAbaCCRequest); err != nil {
+					return xerrors.Errorf("failed to write msgBatch.msgs[%v].type: %w", i, err)
+				}
+				if err = util.WriteUint16(w, uint16(acsMsgPayload.Epoch)); err != nil {
+					return xerrors.Errorf("failed to write msgBatch.msgs[%v].epoch: %w", i, err)
+				}
+				if err = coinMsg.Write(w); err != nil {
+					return xerrors.Errorf("failed to write msgBatch.msgs[%v].Payload: %w", i, err)
+				}
 			case *hbbft.DoneRequest:
 				encoded := acsMsgTypeAbaDoneRequest
 				if err = util.WriteByte(w, encoded); err != nil {
 					return xerrors.Errorf("failed to write msgBatch.msgs[%v].type: %w", i, err)
 				}
+				if err = util.WriteUint16(w, uint16(acsMsgPayload.Epoch)); err != nil {
+					return xerrors.Errorf("failed to write msgBatch.msgs[%v].epoch: %w", i, err)
+				}
 			default:
 				return xerrors.Errorf("failed to write msgBatch.msgs[%v]: unexpected agreemet message type", i)
-			}
-			if err = util.WriteUint16(w, uint16(acsMsgPayload.Epoch)); err != nil {
-				return xerrors.Errorf("failed to write msgBatch.msgs[%v].epoch: %w", i, err)
 			}
 		default:
 			return xerrors.Errorf("failed to write msgBatch.msgs[%v]: unexpected acs message type", i)
@@ -673,6 +680,21 @@ func (b *msgBatch) Read(r io.Reader) error {
 			acsMsg.Payload = &hbbft.AgreementMessage{
 				Epoch:   int(epoch),
 				Message: &hbbft.AuxRequest{Value: msgType&0x01 == 1},
+			}
+		case acsMsgTypeAbaCCRequest:
+			var epoch uint16
+			if err = util.ReadUint16(r, &epoch); err != nil {
+				return xerrors.Errorf("failed to read msgBatch.msgs[%v].epoch: %w", mi, err)
+			}
+			var ccReq commoncoin.BlsCommonCoinMsg
+			if err = ccReq.Read(r); err != nil {
+				return xerrors.Errorf("failed to read msgBatch.msgs[%v].Payload: %w", mi, err)
+			}
+			acsMsg.Payload = &hbbft.AgreementMessage{
+				Epoch: int(epoch),
+				Message: &hbbft.CCRequest{
+					Payload: &ccReq,
+				},
 			}
 		case acsMsgTypeAbaDoneRequest:
 			var epoch uint16

@@ -3,6 +3,7 @@ package consensus
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"math/rand"
 	"sync"
 	"testing"
@@ -49,6 +50,7 @@ type MockedEnv struct {
 	NodeIDs           []string
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
+	NetworkCloser     io.Closer
 	DKSRegistries     []coretypes.DKShareRegistryProvider
 	ChainID           chainid.ChainID
 	MockedACS         chain.AsynchronousCommonSubsetRunner
@@ -110,7 +112,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	nodeIDs, identities := testpeers.SetupKeys(n)
 	ret.NodeIDs = nodeIDs
 	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, ret.NodeIDs, tcrypto.DefaultSuite())
-	ret.NetworkProviders = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
+	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
 
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)

@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/domain"
 	"github.com/iotaledger/wasp/packages/peering/group"
+	"golang.org/x/xerrors"
 )
 
 //
@@ -80,6 +81,17 @@ func (p *PeeringNetwork) nodeByNetID(nodeNetID string) *peeringNode {
 	return nil
 }
 
+// Close implements the io.Closer interface.
+func (p *PeeringNetwork) Close() error {
+	for _, n := range p.nodes {
+		if err := n.Close(); err != nil {
+			return xerrors.Errorf("failed to close test peering node: %w", err)
+		}
+	}
+	p.behavior.Close()
+	return nil
+}
+
 //
 // peeringNode stands for a mock of a node in a fake network.
 // It does NOT implement the peering.PeerSender, because the source
@@ -123,13 +135,9 @@ func newPeeringNode(netID string, identity *ed25519.KeyPair, network *PeeringNet
 	go n.recvLoop()
 	return &n
 }
+
 func (n *peeringNode) recvLoop() {
-	for {
-		pm := <-n.recvCh
-		n.log.Debugf(
-			"received msgType=%v from=%v, peeringID=%v",
-			pm.msg.MsgType, pm.from.netID, pm.msg.PeeringID,
-		)
+	for pm := range n.recvCh {
 		msgPeeringID := pm.msg.PeeringID.String()
 		for _, cb := range n.recvCbs {
 			if cb.peeringID == nil || cb.peeringID.String() == msgPeeringID {
@@ -147,6 +155,11 @@ func (n *peeringNode) sendMsg(from *peeringNode, msg *peering.PeerMessage) {
 		from: from,
 		msg:  *msg,
 	}
+}
+
+func (n *peeringNode) Close() error {
+	close(n.recvCh)
+	return nil
 }
 
 //
