@@ -70,98 +70,32 @@ func TestAccessNodes(t *testing.T) {
 		t.SkipNow()
 	}
 	t.Run("cluster=10, N=4, req=8", func(t *testing.T) {
-		testAccessNodes1(t)
+		const numRequests = 8
+		const numValidatorNodes = 4
+		const clusterSize = 10
+		testAccessNodes(t, numRequests, numValidatorNodes, clusterSize)
 	})
 	t.Run("cluster=10, N=4, req=100", func(t *testing.T) {
-		testAccessNodes2(t)
+		const numRequests = 100
+		const numValidatorNodes = 4
+		const clusterSize = 10
+		testAccessNodes(t, numRequests, numValidatorNodes, clusterSize)
 	})
 	t.Run("cluster=15, N=4, req=1000", func(t *testing.T) {
-		testAccessNodes3(t)
+		const numRequests = 1000
+		const numValidatorNodes = 4
+		const clusterSize = 15
+		testAccessNodes(t, numRequests, numValidatorNodes, clusterSize)
 	})
 	t.Run("cluster=15, N=6, req=1000", func(t *testing.T) {
-		testAccessNodes4(t)
+		const numRequests = 1000
+		const numValidatorNodes = 6
+		const clusterSize = 15
+		testAccessNodes(t, numRequests, numValidatorNodes, clusterSize)
 	})
 }
 
-func testAccessNodes1(t *testing.T) {
-	const numRequests = 8
-	const numValidatorNodes = 4
-	const clusterSize = 10
-	cmt := sliceN(numValidatorNodes)
-
-	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
-
-	kp := wallet.KeyPair(1)
-	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
-	err = requestFunds(clu1, myAddress, "myAddress")
-	require.NoError(t, err)
-
-	myClient := chain1.SCClient(coretypes.Hn(incCounterSCName), kp)
-
-	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
-		require.NoError(t, err)
-	}
-
-	waitUntil(t, counterEquals(chain1, int64(numRequests)), sliceN(clusterSize), 15*time.Second)
-
-	printBlocks(t, chain1, numRequests+3)
-}
-
-func testAccessNodes2(t *testing.T) {
-	const numRequests = 100
-	const numValidatorNodes = 4
-	const clusterSize = 10
-	cmt := sliceN(numValidatorNodes)
-
-	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
-
-	kp := wallet.KeyPair(1)
-	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
-	err = requestFunds(clu1, myAddress, "myAddress")
-	require.NoError(t, err)
-
-	myClient := chain1.SCClient(coretypes.Hn(incCounterSCName), kp)
-
-	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
-		require.NoError(t, err)
-	}
-
-	waitUntil(t, counterEquals(chain1, int64(numRequests)), sliceN(clusterSize), 15*time.Second)
-
-	printBlocks(t, chain1, numRequests+3)
-}
-
-func testAccessNodes3(t *testing.T) {
-	const numRequests = 1000
-	const numValidatorNodes = 4
-	const clusterSize = 15
-	cmt := sliceN(numValidatorNodes)
-
-	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
-
-	kp := wallet.KeyPair(1)
-	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
-	err = requestFunds(clu1, myAddress, "myAddress")
-	require.NoError(t, err)
-
-	myClient := chain1.SCClient(coretypes.Hn(incCounterSCName), kp)
-
-	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
-		require.NoError(t, err)
-	}
-
-	waitUntil(t, counterEquals(chain1, int64(numRequests)), sliceN(clusterSize), 15*time.Second)
-
-	printBlocks(t, chain1, numRequests+3)
-}
-
-func testAccessNodes4(t *testing.T) {
-	const numRequests = 1000
-	const numValidatorNodes = 6
-	const clusterSize = 15
+func testAccessNodes(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
 	cmt := sliceN(numValidatorNodes)
 
 	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
