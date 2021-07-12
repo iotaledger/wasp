@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/util"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -123,7 +125,8 @@ func TestOffledgerRequest1Mb(t *testing.T) {
 }
 
 func TestOffledgerRequestAccessNode(t *testing.T) {
-	clu1 := clutest.NewCluster(t, 10)
+	const clusterSize = 10
+	clu1 := clutest.NewCluster(t, clusterSize)
 
 	cmt1 := []int{0, 1, 2, 3}
 
@@ -135,7 +138,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 
 	deployIncCounterSC(t, chain1, nil)
 
-	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), makeRange(0, 9), 30*time.Second)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), util.MakeRange(0, clusterSize), 30*time.Second)
 
 	// use an access node to create the chainClient
 	chClient := newWalletWithFunds(t, clu1, chain1, 5, 1, 100)

@@ -81,8 +81,12 @@ func requestFunds(wasps *cluster.Cluster, addr ledgerstate.Address, who string) 
 	return nil
 }
 
-func getBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.AgentID, color ledgerstate.Color) uint64 {
-	ret, err := chain.Cluster.WaspClient(0).CallView(
+func getBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.AgentID, color ledgerstate.Color, nodeIndex ...int) uint64 {
+	idx := 0
+	if len(nodeIndex) > 0 {
+		idx = nodeIndex[0]
+	}
+	ret, err := chain.Cluster.WaspClient(idx).CallView(
 		chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewBalance,
 		dict.Dict{
 			accounts.ParamAgentID: agentID.Bytes(),
@@ -257,27 +261,31 @@ func contractIsDeployed(chain *cluster.Chain, contractName string) conditionFn {
 	}
 }
 
+func balanceOnChainIotaEquals(chain *cluster.Chain, agentID *coretypes.AgentID, iotas uint64) conditionFn {
+	return func(t *testing.T, nodeIndex int) bool {
+		return iotas == getBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA, nodeIndex)
+	}
+}
+
 type conditionFn func(t *testing.T, nodeIndex int) bool
 
 func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Duration, logMsg ...string) {
 	for _, nodeIndex := range nodeIndexes {
 		if len(logMsg) > 0 {
-			t.Logf("-->Waiting for %s on node %v...", logMsg[0], nodeIndex)
+			t.Logf("-->Waiting for '%s' on node %v...", logMsg[0], nodeIndex)
 		}
-		require.True(t,
-			waitTrue(timeout, func() bool {
-				return fn(t, nodeIndex)
-			}),
-		)
+		w := waitTrue(timeout, func() bool {
+			return fn(t, nodeIndex)
+		})
+		if !w {
+			if len(logMsg) > 0 {
+				t.Errorf("-->Waiting for %s on node %v... FAILED after %v", logMsg[0], nodeIndex, timeout)
+			} else {
+				t.Errorf("-->Waiting on node %v... FAILED after %v", nodeIndex, timeout)
+			}
+			t.FailNow()
+		}
 	}
 }
 
 // endregion ///////////////////////////////////////////////////////////////
-
-func makeRange(min, max int) []int {
-	a := make([]int, max-min+1)
-	for i := range a {
-		a[i] = min + i
-	}
-	return a
-}

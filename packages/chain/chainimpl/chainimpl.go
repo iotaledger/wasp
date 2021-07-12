@@ -178,8 +178,8 @@ func (c *chainObj) dispatchMessage(msg interface{}) {
 			c.consensus.EventTimerMsg(msgt / 2)
 		}
 		if msgt%40 == 0 {
-			stats := c.mempool.Stats()
-			c.log.Debugf("mempool total = %d, ready = %d, in = %d, out = %d", stats.TotalPool, stats.Ready, stats.InPoolCounter, stats.OutPoolCounter)
+			stats := c.mempool.Info()
+			c.log.Debugf("mempool total = %d, ready = %d, in = %d, out = %d", stats.TotalPool, stats.ReadyCounter, stats.InPoolCounter, stats.OutPoolCounter)
 		}
 	}
 }

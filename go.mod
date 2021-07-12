@@ -10,7 +10,7 @@ require (
 	github.com/bytecodealliance/wasmtime-go v0.21.0
 	github.com/ethereum/go-ethereum v1.10.3
 	github.com/iotaledger/goshimmer v0.7.2-0.20210628074845-4f90850164d1
-	github.com/iotaledger/hive.go v0.0.0-20210623095912-c1c6f098a6db
+	github.com/iotaledger/hive.go v0.0.0-20210625103722-68b2cf52ef4e
 	github.com/knadh/koanf v0.15.0
 	github.com/labstack/echo/v4 v4.1.13
 	github.com/mr-tron/base58 v1.2.0

@@ -49,6 +49,9 @@ func (c *Consensus) proposeBatchIfNeeded() {
 		c.log.Debugf("proposeBatch not needed: delayed till %v", c.delayBatchProposalUntil)
 		return
 	}
+	if time.Now().Before(c.stateTimestamp.Add(c.timers.ProposeBatchDelayForNewState)) {
+		return
+	}
 	reqs := c.mempool.ReadyNow()
 	if len(reqs) == 0 {
 		c.log.Debugf("proposeBatch not needed: no ready requests in mempool")
@@ -329,7 +332,7 @@ func (c *Consensus) postTransactionIfNeeded() {
 		c.log.Debugf("postTransaction not needed: delayed till %v", c.postTxDeadline)
 		return
 	}
-	c.nodeConn.PostTransaction(c.finalTx)
+	go c.nodeConn.PostTransaction(c.finalTx)
 
 	c.workflow.transactionPosted = true
 	c.log.Infof("postTransaction: POSTED TRANSACTION: %s, number of inputs: %d, outputs: %d", c.finalTx.ID().Base58(), len(c.finalTx.Essence().Inputs()), len(c.finalTx.Essence().Outputs()))
@@ -656,7 +659,7 @@ func (c *Consensus) receiveSignedResult(msg *messages.SignedResultMsg) {
 			!bytes.Equal(c.resultSignatures[msg.SenderIndex].SigShare[:], msg.SigShare[:]) {
 			c.log.Errorf("receiveSignedResult: conflicting signed result from peer #%d", msg.SenderIndex)
 		} else {
-			c.log.Warnf("receiveSignedResult: duplicated signed result from peer #%d", msg.SenderIndex)
+			c.log.Debugf("receiveSignedResult: duplicated signed result from peer #%d", msg.SenderIndex)
 		}
 		return
 	}

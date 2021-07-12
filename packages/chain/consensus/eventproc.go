@@ -89,8 +89,8 @@ func (c *Consensus) eventTimerMsg(msg messages.TimerTick) {
 	c.refreshConsensusInfo()
 	if msg%40 == 0 {
 		if snap := c.GetStatusSnapshot(); snap != nil {
-			c.log.Infof("timer tick #%d: state index: %d, mempool = (%d, %d)",
-				snap.TimerTick, snap.StateIndex, snap.Mempool.InPoolCounter, snap.Mempool.OutPoolCounter)
+			c.log.Infof("timer tick #%d: state index: %d, mempool = (%d, %d, %d)",
+				snap.TimerTick, snap.StateIndex, snap.Mempool.InPoolCounter, snap.Mempool.OutPoolCounter, snap.Mempool.TotalPool)
 		}
 	}
 	c.takeAction()

@@ -356,11 +356,11 @@ func (m *Mempool) WaitInBufferEmpty(timeout ...time.Duration) bool {
 }
 
 // Stats collects mempool stats
-func (m *Mempool) Stats() chain.MempoolStats {
+func (m *Mempool) Info() chain.MempoolInfo {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
-	ret := chain.MempoolStats{
+	ret := chain.MempoolInfo{
 		InPoolCounter:  m.inPoolCounter,
 		OutPoolCounter: m.outPoolCounter,
 		InBufCounter:   m.inBufCounter,
@@ -370,7 +370,7 @@ func (m *Mempool) Stats() chain.MempoolStats {
 	nowis := time.Now()
 	for _, ref := range m.pool {
 		if isRequestReady(ref, nowis) {
-			ret.Ready++
+			ret.ReadyCounter++
 		}
 	}
 	return ret

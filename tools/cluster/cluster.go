@@ -89,6 +89,9 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 }
 
 func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
+	if threshold == 0 {
+		threshold = (uint16(len(committeeNodes))*2)/3 + 1
+	}
 	apiHosts := clu.Config.APIHosts(committeeNodes)
 	peeringHosts := clu.Config.PeeringHosts(committeeNodes)
 	dkgInitiatorIndex := uint16(rand.Intn(len(apiHosts)))
