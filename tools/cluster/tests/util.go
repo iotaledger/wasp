@@ -81,8 +81,12 @@ func requestFunds(wasps *cluster.Cluster, addr ledgerstate.Address, who string) 
 	return nil
 }
 
-func getBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.AgentID, color ledgerstate.Color) uint64 {
-	ret, err := chain.Cluster.WaspClient(0).CallView(
+func getBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.AgentID, color ledgerstate.Color, nodeIndex ...int) uint64 {
+	idx := 0
+	if len(nodeIndex) > 0 {
+		idx = nodeIndex[0]
+	}
+	ret, err := chain.Cluster.WaspClient(idx).CallView(
 		chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewBalance,
 		dict.Dict{
 			accounts.ParamAgentID: agentID.Bytes(),
@@ -254,6 +258,12 @@ func contractIsDeployed(chain *cluster.Chain, contractName string) conditionFn {
 			return false
 		}
 		return ret.Name == contractName
+	}
+}
+
+func balanceOnChainIotaEquals(chain *cluster.Chain, agentID *coretypes.AgentID, iotas uint64) conditionFn {
+	return func(t *testing.T, nodeIndex int) bool {
+		return iotas == getBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA, nodeIndex)
 	}
 }
 

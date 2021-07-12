@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
@@ -65,7 +67,7 @@ func printBlocks(t *testing.T, ch *cluster.Chain, expected int) {
 	require.EqualValues(t, expected, sum)
 }
 
-func TestAccessNodes(t *testing.T) {
+func TestAccessNodesOnLedger(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
@@ -73,29 +75,29 @@ func TestAccessNodes(t *testing.T) {
 		const numRequests = 8
 		const numValidatorNodes = 4
 		const clusterSize = 10
-		testAccessNodes(t, numRequests, numValidatorNodes, clusterSize)
+		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
 	t.Run("cluster=10, N=4, req=100", func(t *testing.T) {
 		const numRequests = 100
 		const numValidatorNodes = 4
 		const clusterSize = 10
-		testAccessNodes(t, numRequests, numValidatorNodes, clusterSize)
+		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
 	t.Run("cluster=15, N=4, req=1000", func(t *testing.T) {
 		const numRequests = 1000
 		const numValidatorNodes = 4
 		const clusterSize = 15
-		testAccessNodes(t, numRequests, numValidatorNodes, clusterSize)
+		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
 	t.Run("cluster=15, N=6, req=1000", func(t *testing.T) {
 		const numRequests = 1000
 		const numValidatorNodes = 6
 		const clusterSize = 15
-		testAccessNodes(t, numRequests, numValidatorNodes, clusterSize)
+		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
 }
 
-func testAccessNodes(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
+func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
 	cmt := sliceN(numValidatorNodes)
 
 	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
@@ -115,6 +117,67 @@ func testAccessNodes(t *testing.T, numRequests, numValidatorNodes, clusterSize i
 	waitUntil(t, counterEquals(chain1, int64(numRequests)), sliceN(clusterSize), 60*time.Second)
 
 	printBlocks(t, chain1, numRequests+3)
+}
+
+func TestAccessNodesOffLedger(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+	t.Run("cluster=10, N=4, req=8", func(t *testing.T) {
+		const numRequests = 8
+		const numValidatorNodes = 4
+		const clusterSize = 10
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize)
+	})
+	//t.Run("cluster=10, N=4, req=100", func(t *testing.T) {
+	//	const numRequests = 100
+	//	const numValidatorNodes = 4
+	//	const clusterSize = 10
+	//	testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize)
+	//})
+	//t.Run("cluster=15, N=4, req=1000", func(t *testing.T) {
+	//	const numRequests = 1000
+	//	const numValidatorNodes = 4
+	//	const clusterSize = 15
+	//	testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize)
+	//})
+	//t.Run("cluster=15, N=6, req=1000", func(t *testing.T) {
+	//	const numRequests = 1000
+	//	const numValidatorNodes = 6
+	//	const clusterSize = 15
+	//	testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize)
+	//})
+}
+
+func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
+	cmt := sliceN(numValidatorNodes)
+
+	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
+
+	kp := wallet.KeyPair(1)
+	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
+	myAgentID := coretypes.NewAgentID(myAddress, 0)
+	err = requestFunds(clu1, myAddress, "myAddress")
+	require.NoError(t, err)
+
+	accountsClient := chain1.SCClient(accounts.Interface.Hname(), kp)
+	_, err := accountsClient.PostRequest(accounts.FuncDeposit, chainclient.PostRequestParams{
+		Transfer: coretypes.NewTransferIotas(100),
+	})
+	require.NoError(t, err)
+
+	waitUntil(t, balanceOnChainIotaEquals(chain1, myAgentID, 100), sliceN(clusterSize), 60*time.Second, "send 100i")
+
+	myClient := chain1.SCClient(coretypes.Hn(incCounterSCName), kp)
+
+	for i := 0; i < numRequests; i++ {
+		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter)
+		require.NoError(t, err)
+	}
+
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), sliceN(clusterSize), 60*time.Second)
+
+	printBlocks(t, chain1, numRequests+4)
 }
 
 // extreme test
