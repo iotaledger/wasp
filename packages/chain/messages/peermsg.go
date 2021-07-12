@@ -160,8 +160,5 @@ func (msg *SignedResultAckMsg) Read(r io.Reader) error {
 	if err := util.ReadHashValue(r, &msg.EssenceHash); err != nil {
 		return err
 	}
-	if err := util.ReadOutputID(r, &msg.ChainInputID); /* nolint:revive */ err != nil {
-		return err
-	}
-	return nil
+	return util.ReadOutputID(r, &msg.ChainInputID)
 }
