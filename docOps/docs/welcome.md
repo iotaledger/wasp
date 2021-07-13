@@ -7,7 +7,7 @@ introduction](https://blog.iota.org/an-introduction-to-iota-smart-contracts-16ea
 into ISCP.
 
 A _smart contract_ is a distributed software agent that stores its state in the
-[UTXO ledger](utxo.md), and evolves with each _request_ sent to
+[UTXO ledger](misc/utxo.md), and evolves with each _request_ sent to
 the contract. Since the UTXO ledger is immutable, by extension the smart
 contract state is also immutable.
 
@@ -68,16 +68,16 @@ tests).
 
 ## Run
 
-- [How to run a Wasp node on Pollen](runwasp.md)
-- [Using `wasp-cli` to deploy a chain and a contract](deploy.md)
+- [How to run a Wasp node on Pollen](misc/runwasp.md)
+- [Using `wasp-cli` to deploy a chain and a contract](misc/deploy.md)
 
 ## Learn
 
 - [Exploring IOTA Smart Contracts](tutorial/readme.md)
-- [UTXO ledger and digital assets](utxo.md)
-- [Core types](coretypes.md)
-- [On-chain accounts](accounts.md)
-- [Wasp Publisher](publisher.md)
+- [UTXO ledger and digital assets](misc/utxo.md)
+- [Core types](misc/coretypes.md)
+- [On-chain accounts](misc/accounts.md)
+- [Wasp Publisher](misc/publisher.md)
 
 ## Tools
 

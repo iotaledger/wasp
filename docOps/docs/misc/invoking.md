@@ -1,4 +1,4 @@
-## General scheme of invoking an entry point
+# General scheme of invoking an entry point
 
 An entry point is a function provided by the smart contract. By “invoking” we
 mean calling the function from a particular environment. The effect of invoking
@@ -33,7 +33,7 @@ call and view call.
 * A _request_ can be sent to the target contract from the “outside”: by a
   wallet, or another smart contract, on the same or on another chain. The Solo
   environment is also regarded as the “outside”.
-  (see [Invoking smart contracts. Sending a request](../06.md)). The _request_
+  (see [Invoking smart contracts. Sending a request](../tutorial/06.md)). The _request_
   itself is a transaction, it contains parameters and attached tokens. The
   tokens that are transferred to the smart contract together with the parameters
   become part of its account. Requests can only be invoked (sent) by signing the

@@ -17,7 +17,7 @@ other smart contracts into the chain:
 
 - [root](root.md) contract responsible for initialization of the chain,
   deployment of new contracts, and other administrative functions.
-- [_default](_default.md) catch-all contract for unhandled requests.
+- [_default](default.md) catch-all contract for unhandled requests.
 - [blob](blob.md) contract responsible for on-chain registration of arbitrary
   _data blobs_.
 - [accounts](accounts.md) contract responsible for the ledger of on-chain

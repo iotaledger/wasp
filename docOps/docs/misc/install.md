@@ -1,4 +1,4 @@
-## Installation (TBD)
+# Installation (TBD)
 
 _Solo_ tests are written in Go. The tutorial assumes you are familiar with and
 have installed the Go 1.16 environment. The _Solo_ package can be installed by

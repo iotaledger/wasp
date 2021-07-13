@@ -89,64 +89,94 @@ module.exports = {
           label: 'ISCP On-Chain Accounts',
           id: 'tutorial/12',
         },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Contract Types',
+      items:
+      [
         {
-          type: 'category',
-          label: 'Contract Types',
-          items:
-          [
-            {
-              type: 'doc',
-              label: 'Overview',
-              id: 'tutorial/contract_types/overview',
-            },
-            {
-              type: 'doc',
-              label: 'Root Contracts',
-              id: 'tutorial/contract_types/root',
-            },
-            {
-              type: 'doc',
-              label: 'Default Contracts',
-              id: 'tutorial/contract_types/default',
-            },
-            {
-              type: 'doc',
-              label: 'Account Contracts',
-              id: 'tutorial/contract_types/accounts',
-            },
-            {
-              type: 'doc',
-              label: 'Blob Contracts',
-              id: 'tutorial/contract_types/blob',
-            },
-            {
-              type: 'doc',
-              label: 'Blocklog Contracts',
-              id: 'tutorial/contract_types/blocklog',
-            },
-            {
-              type: 'doc',
-              label: 'Eventlog Contracts',
-              id: 'tutorial/contract_types/eventlog',
-            },
-          ],
+          type: 'doc',
+          label: 'Overview',
+          id: 'contract_types/overview',
         },
         {
-          type: 'category',
-          label: 'Annexes',
-          items:
-          [
-            {
-              type: 'doc',
-              label: 'Install',
-              id: 'tutorial/annexes/install',
-            },
-            {
-              type: 'doc',
-              label: 'Invoke',
-              id: 'tutorial/annexes/invoking',
-            },
-          ],
+          type: 'doc',
+          label: 'Root Contracts',
+          id: 'contract_types/root',
+        },
+        {
+          type: 'doc',
+          label: 'Default Contracts',
+          id: 'contract_types/default',
+        },
+        {
+          type: 'doc',
+          label: 'Account Contracts',
+          id: 'contract_types/accounts',
+        },
+        {
+          type: 'doc',
+          label: 'Blob Contracts',
+          id: 'contract_types/blob',
+        },
+        {
+          type: 'doc',
+          label: 'Blocklog Contracts',
+          id: 'contract_types/blocklog',
+        },
+        {
+          type: 'doc',
+          label: 'Eventlog Contracts',
+          id: 'contract_types/eventlog',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Miscellaneous',
+      items:
+      [
+        {
+          type: 'doc',
+          label: 'Run a Node',
+          id: 'misc/runwasp',
+        },
+        {
+          type: 'doc',
+          label: 'Deploy with Wasp-CLI',
+          id: 'misc/deploy',
+        },
+        {
+          type: 'doc',
+          label: 'Install',
+          id: 'misc/install',
+        },
+        {
+          type: 'doc',
+          label: 'Invoke',
+          id: 'misc/invoking',
+        },
+        {
+          type: 'doc',
+          label: 'UTXO Ledger',
+          id: 'misc/utxo',
+        },
+        {
+          type: 'doc',
+          label: 'Core Types',
+          id: 'misc/coretypes',
+        },
+        {
+          type: 'doc',
+          label: 'On-Chain Accounts',
+          id: 'misc/accounts',
+        },
+        {
+          type: 'doc',
+          label: 'Wasp Publisher',
+          id: 'misc/publisher',
         },
       ],
     },
