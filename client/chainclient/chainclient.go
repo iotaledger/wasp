@@ -1,6 +1,8 @@
 package chainclient
 
 import (
+	"time"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
@@ -40,6 +42,7 @@ func New(
 type PostRequestParams struct {
 	Transfer *ledgerstate.ColoredBalances
 	Args     requestargs.RequestArgs
+	Nonce    uint64
 }
 
 // Post1Request sends an on-ledger transaction with one request on it to the chain
@@ -74,7 +77,11 @@ func (c *Client) PostOffLedgerRequest(
 	if len(params) > 0 {
 		par = params[0]
 	}
+	if par.Nonce == 0 {
+		par.Nonce = uint64(time.Now().UnixNano())
+	}
 	offledgerReq := request.NewRequestOffLedger(contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
+	offledgerReq.WithNonce(par.Nonce)
 	offledgerReq.Sign(c.KeyPair)
 	return offledgerReq, c.WaspClient.PostOffLedgerRequest(&c.ChainID, offledgerReq)
 }

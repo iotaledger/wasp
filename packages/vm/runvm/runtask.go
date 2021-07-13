@@ -74,8 +74,11 @@ func runTask(task *vm.VMTask) {
 		}
 		if lastErr == nil {
 			numSuccess++
+		} else {
+			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().Base58(), lastErr)
 		}
 	}
+	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d", len(task.Requests), numSuccess, numOffLedger)
 
 	// save the block info into the 'blocklog' contract
 	// if rotationAddr != nil ir means the block is a rotation block

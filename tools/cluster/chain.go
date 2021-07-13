@@ -265,8 +265,8 @@ func (ch *Chain) GetStateVariable(contractHname coretypes.Hname, key string, nod
 	return cl.StateGet(key)
 }
 
-func (ch *Chain) GetRequestLogRecord(reqID coretypes.RequestID, committeeIndex ...int) (*blocklog.RequestLogRecord, uint32, uint16, error) {
-	cl := ch.SCClient(blocklog.Interface.Hname(), nil, committeeIndex...)
+func (ch *Chain) GetRequestLogRecord(reqID coretypes.RequestID, nodeIndex ...int) (*blocklog.RequestLogRecord, uint32, uint16, error) {
+	cl := ch.SCClient(blocklog.Interface.Hname(), nil, nodeIndex...)
 	ret, err := cl.CallView(blocklog.FuncGetRequestLogRecord, dict.Dict{blocklog.ParamRequestID: reqID.Bytes()})
 	if err != nil {
 		return nil, 0, 0, err
@@ -283,4 +283,28 @@ func (ch *Chain) GetRequestLogRecord(reqID coretypes.RequestID, committeeIndex .
 	blockIndex := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 	requestIndex := resultDecoder.MustGetUint16(blocklog.ParamRequestIndex)
 	return rec, blockIndex, requestIndex, nil
+}
+
+func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32, nodeIndex ...int) ([]*blocklog.RequestLogRecord, error) {
+	cl := ch.SCClient(blocklog.Interface.Hname(), nil, nodeIndex...)
+	res, err := cl.CallView(blocklog.FuncGetRequestLogRecordsForBlock, dict.Dict{
+		blocklog.ParamBlockIndex: codec.EncodeUint32(blockIndex),
+	})
+	if err != nil {
+		return nil, err
+	}
+	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestRecord)
+	ret := make([]*blocklog.RequestLogRecord, recs.MustLen())
+	for i := range ret {
+		data, err := recs.GetAt(uint16(i))
+		if err != nil {
+			return nil, err
+		}
+		ret[i], err = blocklog.RequestLogRecordFromBytes(data)
+		if err != nil {
+			return nil, err
+		}
+		ret[i].WithBlockData(blockIndex, uint16(i))
+	}
+	return ret, nil
 }

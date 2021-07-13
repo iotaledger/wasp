@@ -47,7 +47,6 @@ func TestOffledgerRequest(t *testing.T) {
 
 	counter1, err := clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
-		"state":               2,
 		"request_out":         1,
 	})
 	check(err, t)
