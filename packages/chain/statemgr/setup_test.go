@@ -5,6 +5,7 @@ package statemgr
 
 import (
 	"bytes"
+	"io"
 	"sync"
 	"testing"
 	"time"
@@ -43,6 +44,7 @@ type MockedEnv struct {
 	NodeIDs           []string
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
+	NetworkCloser     io.Closer
 	ChainID           chainid.ChainID
 	mutex             sync.Mutex
 	Nodes             map[string]*MockedNode
@@ -103,7 +105,7 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 
 	nodeIDs, identities := testpeers.SetupKeys(uint16(nodeCount))
 	ret.NodeIDs = nodeIDs
-	ret.NetworkProviders = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
+	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
 
 	return ret, originTx
 }
