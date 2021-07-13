@@ -5,6 +5,7 @@ package testpeers
 
 import (
 	"fmt"
+	"io"
 	"testing"
 	"time"
 
@@ -48,7 +49,7 @@ func SetupDkg(
 	log *logger.Logger,
 ) (ledgerstate.Address, []coretypes.DKShareRegistryProvider) {
 	timeout := 100 * time.Second
-	networkProviders := SetupNet(peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(), log)
+	networkProviders, networkCloser := SetupNet(peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(), log)
 	//
 	// Initialize the DKG subsystem in each node.
 	dkgNodes := make([]*dkg.Node, len(peerNetIDs))
@@ -75,6 +76,7 @@ func SetupDkg(
 	require.Nil(t, err)
 	require.NotNil(t, dkShare.Address)
 	require.NotNil(t, dkShare.SharedPublic)
+	require.NoError(t, networkCloser.Close())
 	return dkShare.Address, registries
 }
 
@@ -109,10 +111,11 @@ func SetupNet(
 	peerIdentities []*ed25519.KeyPair,
 	behavior testutil.PeeringNetBehavior,
 	log *logger.Logger,
-) []peering.NetworkProvider {
+) ([]peering.NetworkProvider, io.Closer) {
 	peeringNetwork := testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000, behavior,
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
-	return peeringNetwork.NetworkProviders()
+	networkProviders := peeringNetwork.NetworkProviders()
+	return networkProviders, peeringNetwork
 }

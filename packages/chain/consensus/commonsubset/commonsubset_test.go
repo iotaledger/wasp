@@ -5,14 +5,15 @@ package commonsubset_test
 
 import (
 	"bytes"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -20,21 +21,34 @@ import (
 )
 
 func TestBasic(t *testing.T) {
-	t.Run("N=4/T=3", func(tt *testing.T) { testBasic(tt, 4, 3) })
-	t.Run("N=7/T=5", func(tt *testing.T) { testBasic(tt, 7, 5) })
-	t.Run("N=10/T=7", func(tt *testing.T) { testBasic(tt, 10, 7) })
+	t.Run("N=4/T=3/allRandom=true", func(tt *testing.T) { testBasic(tt, 4, 3, true) })
+	t.Run("N=4/T=3/allRandom=false", func(tt *testing.T) { testBasic(tt, 4, 3, false) })
+	if !testing.Short() {
+		t.Run("N=10/T=7/allRandom=true", func(tt *testing.T) { testBasic(tt, 10, 7, true) })
+		t.Run("N=10/T=7/allRandom=false", func(tt *testing.T) { testBasic(tt, 10, 7, false) })
+		t.Run("N=40/T=27/allRandom=true", func(tt *testing.T) { testBasic(tt, 40, 27, true) })
+		t.Run("N=40/T=27/allRandom=false", func(tt *testing.T) { testBasic(tt, 40, 27, false) })
+	}
 }
 
-func testBasic(t *testing.T, peerCount, threshold uint16) {
+func testBasic(t *testing.T, peerCount, threshold uint16, allRandom bool) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
 	peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-	networkProviders := testpeers.SetupNet(
+	networkProviders, networkCloser := testpeers.SetupNet(
 		peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(),
 		testlogger.WithLevel(log.Named("Network"), logger.LevelDebug, false),
 	)
 	t.Logf("Network created.")
+
+	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
+	dkShares := make([]*tcrypto.DKShare, len(peerNetIDs))
+	for i := range dkShares {
+		dkShare, err := dkRegistries[i].LoadDKShare(dkAddress)
+		require.NoError(t, err)
+		dkShares[i] = dkShare
+	}
 
 	acsPeers := make([]*commonsubset.CommonSubset, peerCount)
 	for i := range acsPeers {
@@ -48,7 +62,7 @@ func testBasic(t *testing.T, peerCount, threshold uint16) {
 	for a := range acsPeers {
 		group, err := networkProviders[a].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
-		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, group, threshold, newFakeCoin(), nil, log)
+		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, group, dkShares[a], allRandom, nil, log)
 		require.Nil(t, err)
 	}
 	t.Logf("ACS Nodes created.")
@@ -68,6 +82,7 @@ func testBasic(t *testing.T, peerCount, threshold uint16) {
 		acsPeers[a].Close()
 	}
 	t.Logf("ACS Nodes closed.")
+	require.NoError(t, networkCloser.Close())
 }
 
 func TestRandomized(t *testing.T) {
@@ -79,8 +94,16 @@ func TestRandomized(t *testing.T) {
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
 	netLogger := testlogger.WithLevel(log.Named("Network"), logger.LevelInfo, false)
 	netBehavior := testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 100*time.Millisecond, netLogger)
-	networkProviders := testpeers.SetupNet(peerNetIDs, peerIdentities, netBehavior, netLogger)
+	networkProviders, networkCloser := testpeers.SetupNet(peerNetIDs, peerIdentities, netBehavior, netLogger)
 	t.Logf("Network created.")
+
+	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
+	dkShares := make([]*tcrypto.DKShare, len(peerNetIDs))
+	for i := range dkShares {
+		dkShare, err := dkRegistries[i].LoadDKShare(dkAddress)
+		require.NoError(t, err)
+		dkShares[i] = dkShare
+	}
 
 	acsPeers := make([]*commonsubset.CommonSubset, peerCount)
 	for i := range acsPeers {
@@ -94,7 +117,7 @@ func TestRandomized(t *testing.T) {
 	for a := range acsPeers {
 		group, err := networkProviders[a].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
-		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, group, threshold, newFakeCoin(), nil, log)
+		acsPeers[a], err = commonsubset.NewCommonSubset(0, 0, peeringID, group, dkShares[a], true, nil, log)
 		require.Nil(t, err)
 	}
 	t.Logf("ACS Nodes created.")
@@ -139,12 +162,12 @@ func TestRandomized(t *testing.T) {
 			require.Equal(t, 0, bytes.Compare(output[0][i], output[a][i]))
 		}
 	}
+	require.NoError(t, networkCloser.Close())
 }
 
 func TestCoordinator(t *testing.T) {
 	t.Run("N=1/T=1", func(tt *testing.T) { testCoordinator(tt, 1, 1) })
 	t.Run("N=4/T=3", func(tt *testing.T) { testCoordinator(tt, 4, 3) })
-	t.Run("N=7/T=5", func(tt *testing.T) { testCoordinator(tt, 7, 5) })
 	t.Run("N=10/T=7", func(tt *testing.T) { testCoordinator(tt, 10, 7) })
 }
 
@@ -153,18 +176,26 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16) {
 	defer log.Sync()
 	peeringID := peering.RandomPeeringID()
 	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
-	networkProviders := testpeers.SetupNet(
+	networkProviders, networkCloser := testpeers.SetupNet(
 		peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(),
 		testlogger.WithLevel(log.Named("Network"), logger.LevelDebug, false),
 	)
 	t.Logf("Network created.")
+
+	dkAddress, dkRegistries := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
+	dkShares := make([]*tcrypto.DKShare, len(peerNetIDs))
+	for i := range dkShares {
+		dkShare, err := dkRegistries[i].LoadDKShare(dkAddress)
+		require.NoError(t, err)
+		dkShares[i] = dkShare
+	}
 
 	acsCoords := make([]*commonsubset.CommonSubsetCoordinator, peerCount)
 	for i := range acsCoords {
 		ii := i // Use a local copy in the callback.
 		group, err := networkProviders[i].PeerGroup(peerNetIDs)
 		require.Nil(t, err)
-		acsCoords[i] = commonsubset.NewCommonSubsetCoordinator(peeringID, networkProviders[i], group, threshold, newFakeCoin(), log)
+		acsCoords[i] = commonsubset.NewCommonSubsetCoordinator(peeringID, networkProviders[i], group, dkShares[i], log)
 		networkProviders[ii].Attach(&peeringID, func(recv *peering.RecvEvent) {
 			if acsCoords[ii] != nil {
 				require.True(t, acsCoords[ii].TryHandleMessage(recv))
@@ -196,28 +227,69 @@ func testCoordinator(t *testing.T, peerCount, threshold uint16) {
 		acsCoords[i].Close()
 	}
 	t.Logf("ACS Nodes closed.")
+	require.NoError(t, networkCloser.Close())
 }
 
-// fakeCoin is a trivial incorrect implementation of the common coin interface.
-// It is used here just to avoid dependencies to particular crypto libraries.
-type fakeCoin struct{}
-
-func newFakeCoin() commoncoin.Provider {
-	return &fakeCoin{}
+func TestRandomizedWithCC(t *testing.T) {
+	t.Run("N=1/T=1", func(tt *testing.T) { testRandomizedWithCC(tt, 1, 1) })
+	t.Run("N=4/T=3", func(tt *testing.T) { testRandomizedWithCC(tt, 4, 3) })
+	t.Run("N=10/T=7", func(tt *testing.T) { testRandomizedWithCC(tt, 10, 7) })
 }
 
-func (fc *fakeCoin) GetCoin(seed []byte) ([]byte, error) {
-	return seed, nil
-}
+func testRandomizedWithCC(t *testing.T, peerCount, threshold uint16) {
+	log := testlogger.NewLogger(t)
+	defer log.Sync()
+	peeringID := peering.RandomPeeringID()
+	peerNetIDs, peerIdentities := testpeers.SetupKeys(peerCount)
+	networkProviders, networkCloser := testpeers.SetupNet(
+		peerNetIDs, peerIdentities, testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 100*time.Millisecond, log),
+		testlogger.WithLevel(log.Named("Network"), logger.LevelDebug, false),
+	)
+	t.Logf("Network created.")
+	logs := make([]*logger.Logger, peerCount)
+	for i := range logs {
+		logs[i] = log.Named(fmt.Sprintf("%02d", i))
+	}
 
-func (fc *fakeCoin) FlipCoin(epoch uint32) bool {
-	return (epoch/2)%2 == 0
-}
+	dkAddress, dkShares := testpeers.SetupDkgPregenerated(t, threshold, peerNetIDs, tcrypto.DefaultSuite())
+	acsCoords := make([]*commonsubset.CommonSubsetCoordinator, peerCount)
+	for i := range acsCoords {
+		ii := i // Use a local copy in the callback.
+		group, err := networkProviders[i].PeerGroup(peerNetIDs)
+		require.Nil(t, err)
+		dkShare, err := dkShares[i].LoadDKShare(dkAddress)
+		require.Nil(t, err)
+		acsCoords[i] = commonsubset.NewCommonSubsetCoordinator(peeringID, networkProviders[i], group, dkShare, logs[i])
+		networkProviders[ii].Attach(&peeringID, func(recv *peering.RecvEvent) {
+			if acsCoords[ii] != nil {
+				acsCoords[ii].TryHandleMessage(recv)
+			}
+		})
+	}
+	t.Logf("ACS Nodes created.")
 
-func (fc *fakeCoin) Close() error {
-	return nil
-}
-
-func (fc *fakeCoin) TryHandleMessage(recv *peering.RecvEvent) bool {
-	return false
+	sessionID := uint64(21695645984168)
+	results := make([][][]byte, peerCount)
+	resultsWG := &sync.WaitGroup{}
+	resultsWG.Add(int(peerCount))
+	for i := range acsCoords {
+		ii := i
+		input := []byte(peerNetIDs[i])
+		acsCoords[i].RunACSConsensus(input, sessionID, 1, func(sid uint64, res [][]byte) {
+			results[ii] = res
+			resultsWG.Done()
+		})
+	}
+	resultsWG.Wait()
+	t.Logf("ACS Nodes all decided.")
+	for i := range results {
+		for j := range results[i] {
+			require.True(t, bytes.Equal(results[i][j], results[0][j]))
+		}
+	}
+	for i := range acsCoords {
+		acsCoords[i].Close()
+	}
+	t.Logf("ACS Nodes closed.")
+	require.NoError(t, networkCloser.Close())
 }
