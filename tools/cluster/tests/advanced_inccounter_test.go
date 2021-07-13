@@ -59,22 +59,23 @@ func printBlocks(t *testing.T, ch *cluster.Chain, expected int) {
 	require.EqualValues(t, expected, sum)
 }
 
-func printBlocksWithRecords(t *testing.T, ch *cluster.Chain) {
-	recs, err := ch.GetAllBlockInfoRecordsReverse()
-	require.NoError(t, err)
-
-	sum := 0
-	for _, rec := range recs {
-		t.Logf("---- block #%d: total: %d, off-ledger: %d, success: %d", rec.BlockIndex, rec.TotalRequests, rec.NumOffLedgerRequests, rec.NumSuccessfulRequests)
-		sum += int(rec.TotalRequests)
-		recs, err := ch.GetRequestLogRecordsForBlock(rec.BlockIndex)
-		require.NoError(t, err)
-		for _, rec := range recs {
-			t.Logf("---------- %s : %s", rec.RequestID.String(), string(rec.LogData))
-		}
-	}
-	t.Logf("Total requests processed: %d", sum)
-}
+//
+//func printBlocksWithRecords(t *testing.T, ch *cluster.Chain) {
+//	recs, err := ch.GetAllBlockInfoRecordsReverse()
+//	require.NoError(t, err)
+//
+//	sum := 0
+//	for _, rec := range recs {
+//		t.Logf("---- block #%d: total: %d, off-ledger: %d, success: %d", rec.BlockIndex, rec.TotalRequests, rec.NumOffLedgerRequests, rec.NumSuccessfulRequests)
+//		sum += int(rec.TotalRequests)
+//		recs, err := ch.GetRequestLogRecordsForBlock(rec.BlockIndex)
+//		require.NoError(t, err)
+//		for _, rec := range recs {
+//			t.Logf("---------- %s : %s", rec.RequestID.String(), string(rec.LogData))
+//		}
+//	}
+//	t.Logf("Total requests processed: %d", sum)
+//}
 
 func TestAccessNodesOnLedger(t *testing.T) {
 	if testing.Short() {
@@ -192,10 +193,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, func(t *testing.T, nodeIndex int) bool {
-		//printBlocksWithRecords(t, chain1)
-		return counterEquals(chain1, int64(numRequests))(t, nodeIndex)
-	}, util.MakeRange(0, clusterSize), to)
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), util.MakeRange(0, clusterSize), to)
 
 	printBlocks(t, chain1, numRequests+4)
 }
