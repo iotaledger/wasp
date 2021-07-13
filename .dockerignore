@@ -1,0 +1,13 @@
+Dockerfile
+.github
+.git
+.*
+*.bat
+*.md
+*.png
+*.toml
+wasp
+wasp-cli
+*.log
+waspdb/
+docs/
