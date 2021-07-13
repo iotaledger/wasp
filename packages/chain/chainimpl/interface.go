@@ -109,7 +109,7 @@ func shouldSendToPeer(peerID string, ackPeers []string) bool {
 }
 
 func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
-	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID())
+	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
 	msgData := messages.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
 	committee := c.getCommittee()
 	getPeerIDs := (*c.peers).GetRandomPeers
@@ -122,7 +122,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 		peerIDs := getPeerIDs(c.offledgerBroadcastUpToNPeers)
 		for _, peerID := range peerIDs {
 			if shouldSendToPeer(peerID, ackPeers) {
-				c.log.Debugf("sending offledger request ID: reqID: %s, peerID: %s", req.ID(), peerID)
+				c.log.Debugf("sending offledger request ID: reqID: %s, peerID: %s", req.ID().Base58(), peerID)
 				(*c.peers).SendSimple(peerID, messages.MsgOffLedgerRequest, msgData)
 			}
 		}
@@ -149,16 +149,17 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 }
 
 func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string) {
-	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID(), senderNetID)
+	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
 	c.sendRequestAckowledgementMsg(req.ID(), senderNetID)
 	if !c.mempool.ReceiveRequest(req) {
 		return
 	}
+	c.log.Debugf("ReceiveOffLedgerRequest - added to mempool: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
 	c.broadcastOffLedgerRequest(req)
 }
 
 func (c *chainObj) sendRequestAckowledgementMsg(reqID coretypes.RequestID, peerID string) {
-	c.log.Debugf("sendRequestAckowledgementMsg: reqID: %s, peerID: %s", reqID, peerID)
+	c.log.Debugf("sendRequestAckowledgementMsg: reqID: %s, peerID: %s", reqID.Base58(), peerID)
 	if peerID == "" {
 		return
 	}
@@ -167,7 +168,7 @@ func (c *chainObj) sendRequestAckowledgementMsg(reqID coretypes.RequestID, peerI
 }
 
 func (c *chainObj) ReceiveRequestAckMessage(reqID *coretypes.RequestID, peerID string) {
-	c.log.Debugf("ReceiveRequestAckMessage: reqID: %s, peerID: %s", reqID, peerID)
+	c.log.Debugf("ReceiveRequestAckMessage: reqID: %s, peerID: %s", reqID.Base58(), peerID)
 	c.offLedgerReqsAcksMutex.Lock()
 	defer c.offLedgerReqsAcksMutex.Unlock()
 	c.offLedgerReqsAcks[*reqID] = append(c.offLedgerReqsAcks[*reqID], peerID)
@@ -176,7 +177,7 @@ func (c *chainObj) ReceiveRequestAckMessage(reqID *coretypes.RequestID, peerID s
 // SendMissingRequestsToPeer sends the requested missing requests by a peer
 func (c *chainObj) SendMissingRequestsToPeer(msg messages.MissingRequestIDsMsg, peerID string) {
 	for _, reqID := range msg.IDs {
-		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID, peerID)
+		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID.Base58(), peerID)
 		req := c.mempool.GetRequest(reqID)
 		msg := messages.NewMissingRequestMsg(req)
 		(*c.peers).SendSimple(peerID, messages.MsgMissingRequest, msg.Bytes())
