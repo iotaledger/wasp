@@ -165,7 +165,7 @@ func (p *RequestMetadata) Read(r io.Reader) error {
 // region RequestOnLedger //////////////////////////////////////////////////////////////////
 
 type RequestOnLedger struct {
-	timestamp       time.Time
+	nonce           uint64
 	minted          map[ledgerstate.Color]uint64
 	outputObj       *ledgerstate.ExtendedLockedOutput
 	requestMetadata *RequestMetadata
@@ -181,7 +181,7 @@ var _ coretypes.Request = &RequestOnLedger{}
 func RequestOnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, timestamp time.Time, senderAddr ledgerstate.Address, minted ...map[ledgerstate.Color]uint64) *RequestOnLedger {
 	ret := &RequestOnLedger{
 		outputObj:     output,
-		timestamp:     timestamp,
+		nonce:         uint64(timestamp.UnixNano()),
 		senderAddress: senderAddr,
 	}
 	ret.requestMetadata = RequestMetadataFromBytes(output.GetPayload())
@@ -222,7 +222,12 @@ func (req *RequestOnLedger) IsFeePrepaid() bool {
 }
 
 func (req *RequestOnLedger) Nonce() uint64 {
-	return uint64(req.timestamp.UnixNano())
+	return req.nonce
+}
+
+func (req *RequestOnLedger) WithNonce(nonce uint64) coretypes.Request {
+	req.nonce = nonce
+	return req
 }
 
 func (req *RequestOnLedger) Output() ledgerstate.Output {
@@ -274,11 +279,6 @@ func (req *RequestOnLedger) TimeLock() time.Time {
 
 func (req *RequestOnLedger) Tokens() *ledgerstate.ColoredBalances {
 	return req.outputObj.Balances()
-}
-
-// coming from the transaction timestamp
-func (req *RequestOnLedger) Timestamp() time.Time {
-	return req.timestamp
 }
 
 func (req *RequestOnLedger) SetMetadata(d *RequestMetadata) {
@@ -349,7 +349,7 @@ func (req *RequestOnLedger) Bytes() []byte {
 	buf.Write(req.Output().Bytes())
 	buf.Write(req.senderAddress.Bytes())
 	buf.Write(req.mintedBytes())
-	_ = util.WriteTime(&buf, req.timestamp)
+	_ = util.WriteUint64(&buf, req.nonce)
 	buf.Write(req.requestMetadata.Bytes())
 	return buf.Bytes()
 }
@@ -388,7 +388,7 @@ func onLedgerFromBytes(buf []byte) (*RequestOnLedger, error) {
 	}
 
 	// timestamp
-	err = util.ReadTime(r, &req.timestamp)
+	err = util.ReadUint64(r, &req.nonce)
 	if err != nil {
 		return nil, err
 	}
@@ -415,7 +415,7 @@ type RequestOffLedger struct {
 	publicKey  ed25519.PublicKey
 	sender     ledgerstate.Address
 	signature  ed25519.Signature
-	timestamp  time.Time
+	nonce      uint64
 	transfer   *ledgerstate.ColoredBalances
 }
 
@@ -428,7 +428,7 @@ func NewRequestOffLedger(contract, entryPoint coretypes.Hname, args requestargs.
 		args:       args.Clone(),
 		contract:   contract,
 		entryPoint: entryPoint,
-		timestamp:  time.Now(),
+		nonce:      uint64(time.Now().UnixNano()),
 	}
 }
 
@@ -452,7 +452,7 @@ func offLedgerFromBytes(data []byte) (req *RequestOffLedger, err error) {
 	if err != nil || n != len(req.publicKey) {
 		return nil, io.EOF
 	}
-	if err = util.ReadTime(buf, &req.timestamp); err != nil {
+	if err = util.ReadUint64(buf, &req.nonce); err != nil {
 		return
 	}
 	var colors uint32
@@ -489,7 +489,7 @@ func (req *RequestOffLedger) Essence() []byte {
 	_ = req.entryPoint.Write(buf)
 	_ = req.args.Write(buf)
 	_, _ = buf.Write(req.publicKey[:])
-	_ = util.WriteTime(buf, req.timestamp)
+	_ = util.WriteUint64(buf, req.nonce)
 	if req.transfer == nil {
 		_ = util.WriteUint32(buf, 0)
 		return buf.Bytes()
@@ -550,7 +550,12 @@ func (req *RequestOffLedger) IsFeePrepaid() bool {
 
 // Order number used for ordering requests in the mempool. Priority order is a descending order
 func (req *RequestOffLedger) Nonce() uint64 {
-	return uint64(req.timestamp.UnixNano())
+	return req.nonce
+}
+
+func (req *RequestOffLedger) WithNonce(nonce uint64) coretypes.Request {
+	req.nonce = nonce
+	return req
 }
 
 // Output nil for off-ledger requests

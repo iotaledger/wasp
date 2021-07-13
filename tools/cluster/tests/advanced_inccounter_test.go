@@ -106,7 +106,7 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, counterEquals(chain1, int64(numRequests)), util.MakeRange(0, clusterSize), 60*time.Second)
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), util.MakeRange(0, clusterSize), 20*time.Second)
 
 	printBlocks(t, chain1, numRequests+3)
 }
@@ -115,33 +115,41 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
-	t.Run("cluster=4, N=4, req=8", func(t *testing.T) {
+	t.Run("cluster=6,N=4,req=8", func(t *testing.T) {
+		const waitFor = 20 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 4
-		const clusterSize = 4
-		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize)
+		const clusterSize = 6
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
 	})
-	//t.Run("cluster=10, N=4, req=100", func(t *testing.T) {
-	//	const numRequests = 100
-	//	const numValidatorNodes = 4
-	//	const clusterSize = 10
-	//	testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize)
-	//})
-	//t.Run("cluster=15, N=4, req=1000", func(t *testing.T) {
-	//	const numRequests = 1000
-	//	const numValidatorNodes = 4
-	//	const clusterSize = 15
-	//	testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize)
-	//})
-	//t.Run("cluster=15, N=6, req=1000", func(t *testing.T) {
-	//	const numRequests = 1000
-	//	const numValidatorNodes = 6
-	//	const clusterSize = 15
-	//	testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize)
-	//})
+	t.Run("cluster=10,N=4,req=100", func(t *testing.T) {
+		const waitFor = 20 * time.Second
+		const numRequests = 100
+		const numValidatorNodes = 4
+		const clusterSize = 10
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
+	})
+	t.Run("cluster=10,N=6,req=1000", func(t *testing.T) {
+		const waitFor = 60 * time.Second
+		const numRequests = 1000
+		const numValidatorNodes = 6
+		const clusterSize = 10
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
+	})
+	t.Run("cluster=15,N=6,req=1000", func(t *testing.T) {
+		const waitFor = 60 * time.Second
+		const numRequests = 1000
+		const numValidatorNodes = 6
+		const clusterSize = 15
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
+	})
 }
 
-func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
+func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int, timeout ...time.Duration) {
+	to := 60 * time.Second
+	if len(timeout) > 0 {
+		to = timeout[0]
+	}
 	cmt := util.MakeRange(0, numValidatorNodes)
 
 	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
@@ -163,11 +171,11 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	myClient := chain1.SCClient(coretypes.Hn(incCounterSCName), kp)
 
 	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter)
+		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter, chainclient.PostRequestParams{Nonce: uint64(i)})
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, counterEquals(chain1, int64(numRequests)), util.MakeRange(0, clusterSize), 60*time.Second)
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), util.MakeRange(0, clusterSize), to)
 
 	printBlocks(t, chain1, numRequests+4)
 }

@@ -247,6 +247,7 @@ func counterEquals(chain *cluster.Chain, expected int64) conditionFn {
 		require.NoError(t, err)
 		counter, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
 		require.NoError(t, err)
+		t.Logf("node %d: counter: %d, waiting for: %d", nodeIndex, counter, expected)
 		return counter == expected
 	}
 }
