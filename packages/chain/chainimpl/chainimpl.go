@@ -35,6 +35,12 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var _ chain.Chain = &chainObj{}     //nolint: gofumpt
+var _ chain.ChainCore = &chainObj{} //nolint: gofumpt
+var _ chain.ChainEntry = &chainObj{}
+var _ chain.ChainRequests = &chainObj{}
+var _ chain.ChainEvents = &chainObj{}
+
 type chainObj struct {
 	committee                        atomic.Value
 	mempool                          chain.Mempool
@@ -272,11 +278,19 @@ func (c *chainObj) processPeerMessage(msg *peering.PeerMessage) {
 // processChainTransition processes the unique chain output which exists on the chain's address
 // If necessary, it creates/changes/rotates committee object
 func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
+	stateIndex := msg.VirtualState.BlockIndex()
+	c.log.Debugf("processChainTransition: processing state %d", stateIndex)
 	if !msg.ChainOutput.GetIsGovernanceUpdated() {
+		c.log.Debugf("processChainTransition state %d: output %s is not governance updated; state hash %s; last cleaned state is %d",
+			stateIndex, coretypes.OID(msg.ChainOutput.ID()), msg.VirtualState.Hash().String(), c.mempoolLastCleanedIndex)
 		// normal state update:
 		c.stateReader.SetBaseline()
+		chainID := chainid.NewChainID(msg.ChainOutput.GetAliasAddress())
+		var reqids []coretypes.RequestID
 		for i := c.mempoolLastCleanedIndex + 1; i <= msg.VirtualState.BlockIndex(); i++ {
-			reqids, err := blocklog.GetRequestIDsForBlock(c.stateReader, i)
+			c.log.Debugf("processChainTransition state %d: cleaning state %d", stateIndex, i)
+			var err error
+			reqids, err = blocklog.GetRequestIDsForBlock(c.stateReader, i)
 			if reqids == nil {
 				// The error means a database error. The optimistic state read failure can't occur here
 				// because the state transition message is only sent only after state is committed and before consensus
@@ -284,24 +298,25 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 				logpkg.Panicf("processChainTransition. unexpected error: %v", err)
 			}
 			// remove processed requests from the mempool
+			c.log.Debugf("processChainTransition state %d cleaning state %d: removing %d requests", stateIndex, i, len(reqids))
 			c.mempool.RemoveRequests(reqids...)
+			chain.PublishRequestsSettled(chainID, i, reqids)
 			// publish events
-			chain.LogStateTransition(msg, reqids, c.log)
-			chain.PublishStateTransition(msg.ChainOutput, reqids)
 			for _, reqid := range reqids {
 				c.eventRequestProcessed.Trigger(reqid)
 			}
 
-			c.log.Debugf("processChainTransition (state): state index: %d, state hash: %s, requests: %+v",
-				msg.VirtualState.BlockIndex(), msg.VirtualState.Hash().String(), coretypes.ShortRequestIDs(reqids))
+			c.log.Debugf("processChainTransition state %d: state %d cleaned, deleted requests: %+v",
+				stateIndex, i, coretypes.ShortRequestIDs(reqids))
 		}
-		c.mempoolLastCleanedIndex = msg.VirtualState.BlockIndex()
+		chain.PublishStateTransition(chainID, msg.ChainOutput, len(reqids))
+		chain.LogStateTransition(msg, reqids, c.log)
+		c.mempoolLastCleanedIndex = stateIndex
 	} else {
+		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
+			stateIndex, coretypes.OID(msg.ChainOutput.ID()), msg.VirtualState.Hash().String())
 		chain.LogGovernanceTransition(msg, c.log)
 		chain.PublishGovernanceTransition(msg.ChainOutput)
-
-		c.log.Debugf("processChainTransition (rotate): state index: %d, state hash: %s",
-			msg.VirtualState.BlockIndex(), msg.VirtualState.Hash().String())
 	}
 	// send to consensus
 	c.ReceiveMessage(&messages.StateTransitionMsg{
@@ -309,6 +324,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		StateOutput:    msg.ChainOutput,
 		StateTimestamp: msg.OutputTimestamp,
 	})
+	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.Hash().String())
 }
 
 func (c *chainObj) processSynced(outputID ledgerstate.OutputID, blockIndex uint32) {
