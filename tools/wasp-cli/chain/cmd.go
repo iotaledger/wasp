@@ -34,6 +34,8 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(storeBlobCmd)
 	chainCmd.AddCommand(showBlobCmd)
 	chainCmd.AddCommand(logCmd)
+	chainCmd.AddCommand(blockCmd())
+	chainCmd.AddCommand(requestCmd())
 	chainCmd.AddCommand(postRequestCmd())
 	chainCmd.AddCommand(callViewCmd)
 	chainCmd.AddCommand(activateCmd)
