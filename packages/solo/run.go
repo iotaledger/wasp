@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/rotate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -121,7 +122,7 @@ func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction, stateOu
 	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
 	require.EqualValues(ch.Env.T, stateOutput.ID(), blockBack.ApprovingOutputID())
 
-	chain.PublishStateTransition(stateOutput, reqids)
+	chain.PublishStateTransition(chainid.NewChainID(stateOutput.GetAliasAddress()), stateOutput, len(reqids))
 
 	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
 		ch.State.BlockIndex(), len(reqids), len(stateTx.Essence().Outputs()))
