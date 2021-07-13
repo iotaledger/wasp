@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/domain"
 	"github.com/iotaledger/wasp/packages/peering/group"
+	"golang.org/x/xerrors"
 )
 
 //
@@ -80,6 +81,17 @@ func (p *PeeringNetwork) nodeByNetID(nodeNetID string) *peeringNode {
 	return nil
 }
 
+// Close implements the io.Closer interface.
+func (p *PeeringNetwork) Close() error {
+	for _, n := range p.nodes {
+		if err := n.Close(); err != nil {
+			return xerrors.Errorf("failed to close test peering node: %w", err)
+		}
+	}
+	p.behavior.Close()
+	return nil
+}
+
 //
 // peeringNode stands for a mock of a node in a fake network.
 // It does NOT implement the peering.PeerSender, because the source
@@ -110,7 +122,7 @@ func newPeeringNode(netID string, identity *ed25519.KeyPair, network *PeeringNet
 	sendCh := make(chan *peeringMsg, network.bufSize)
 	recvCh := make(chan *peeringMsg, network.bufSize)
 	recvCbs := make([]*peeringCb, 0)
-	node := peeringNode{
+	n := peeringNode{
 		netID:    netID,
 		identity: identity,
 		sendCh:   sendCh,
@@ -120,25 +132,22 @@ func newPeeringNode(netID string, identity *ed25519.KeyPair, network *PeeringNet
 		log:      network.log.With("loc", netID),
 	}
 	network.behavior.AddLink(sendCh, recvCh, netID)
-	go func() { // Receive loop.
-		for {
-			pm := <-recvCh
-			node.log.Debugf(
-				"received msgType=%v from=%v, peeringID=%v",
-				pm.msg.MsgType, pm.from.netID, pm.msg.PeeringID,
-			)
-			msgPeeringID := pm.msg.PeeringID.String()
-			for _, cb := range node.recvCbs {
-				if cb.peeringID == nil || cb.peeringID.String() == msgPeeringID {
-					cb.callback(&peering.RecvEvent{
-						From: cb.destNP.senderByNetID(pm.from.netID),
-						Msg:  &pm.msg,
-					})
-				}
+	go n.recvLoop()
+	return &n
+}
+
+func (n *peeringNode) recvLoop() {
+	for pm := range n.recvCh {
+		msgPeeringID := pm.msg.PeeringID.String()
+		for _, cb := range n.recvCbs {
+			if cb.peeringID == nil || cb.peeringID.String() == msgPeeringID {
+				cb.callback(&peering.RecvEvent{
+					From: cb.destNP.senderByNetID(pm.from.netID),
+					Msg:  &pm.msg,
+				})
 			}
 		}
-	}()
-	return &node
+	}
 }
 
 func (n *peeringNode) sendMsg(from *peeringNode, msg *peering.PeerMessage) {
@@ -146,6 +155,11 @@ func (n *peeringNode) sendMsg(from *peeringNode, msg *peering.PeerMessage) {
 		from: from,
 		msg:  *msg,
 	}
+}
+
+func (n *peeringNode) Close() error {
+	close(n.recvCh)
+	return nil
 }
 
 //

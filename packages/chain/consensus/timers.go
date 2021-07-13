@@ -13,6 +13,7 @@ type ConsensusTimers struct {
 	PostTxSequenceStep               time.Duration
 	PullInclusionStateRetry          time.Duration
 	ProposeBatchRetry                time.Duration
+	ProposeBatchDelayForNewState     time.Duration
 }
 
 func NewConsensusTimers() ConsensusTimers {
@@ -22,5 +23,6 @@ func NewConsensusTimers() ConsensusTimers {
 		PostTxSequenceStep:               1 * time.Second,
 		PullInclusionStateRetry:          1 * time.Second,
 		ProposeBatchRetry:                500 * time.Millisecond,
+		ProposeBatchDelayForNewState:     1 * time.Second, // experimental !!!!!
 	}
 }

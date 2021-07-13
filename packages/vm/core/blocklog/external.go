@@ -1,6 +1,8 @@
 package blocklog
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -9,13 +11,9 @@ import (
 
 // GetRequestIDsForLastBlock reads blocklog from chain state and returns request IDs settled in specific block
 // Can only panic on DB error of internal error
-func GetRequestIDsForLastBlock(stateReader state.OptimisticStateReader) ([]coretypes.RequestID, error) {
-	blockIndex, err := stateReader.BlockIndex()
-	if err != nil {
-		return nil, err
-	}
+func GetRequestIDsForBlock(stateReader state.OptimisticStateReader, blockIndex uint32) ([]coretypes.RequestID, error) {
 	if blockIndex == 0 {
-		return nil, nil
+		return []coretypes.RequestID{}, nil
 	}
 	partition := subrealm.NewReadOnly(stateReader.KVStoreReader(), kv.Key(Interface.Hname().Bytes()))
 	recsBin, exist, err := getRequestLogRecordsForBlockBin(partition, blockIndex)
@@ -23,7 +21,7 @@ func GetRequestIDsForLastBlock(stateReader state.OptimisticStateReader) ([]coret
 		return nil, err
 	}
 	if !exist {
-		return nil, nil
+		return []coretypes.RequestID{}, fmt.Errorf("block index %v does not exist", blockIndex)
 	}
 	ret := make([]coretypes.RequestID, len(recsBin))
 	for i, d := range recsBin {

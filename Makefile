@@ -1,7 +1,9 @@
-all: build
+all: build-lint
 
 build:
 	go build -tags rocksdb ./...
+
+build-lint: build lint
 
 test: install
 	go clean -testcache

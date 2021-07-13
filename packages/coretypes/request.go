@@ -21,6 +21,7 @@ type Request interface {
 	IsFeePrepaid() bool
 	// number used for ordering requests in the mempool. Priority order is a descending order
 	Nonce() uint64
+	WithNonce(nonce uint64) Request
 	// ledgerstate.Output interface for on-ledger requests, nil for off-ledger requests
 	Output() ledgerstate.Output
 	// arguments of the call with the flag if they are ready. No arguments mean empty dictionary and true
@@ -37,6 +38,10 @@ type Request interface {
 	TimeLock() time.Time
 	// returns tokens to transfer
 	Tokens() *ledgerstate.ColoredBalances
+	// returns binary representation of the request
+	Bytes() []byte
+	// returns the hash of the request (used for consensus)
+	Hash() [32]byte
 }
 
 func TakeRequestIDs(reqs ...Request) []RequestID {

@@ -3,6 +3,12 @@ package inccounter
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
+
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -60,19 +66,19 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 func incCounter(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.Contract().String())
-	params := ctx.Params()
-	inc, ok, err := codec.DecodeInt64(params.MustGet(VarCounter))
-	if err != nil {
-		return nil, err
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	inc := par.MustGetInt64(VarCounter, 1)
+
+	state := kvdecoder.New(ctx.State(), ctx.Log())
+	val := state.MustGetInt64(VarCounter, 0)
+	ctx.Log().Infof("incCounter: increasing counter value %d by %d, anchor index: #%d",
+		val, inc, ctx.StateAnchor().StateIndex())
+	tra := "(empty)"
+	if ctx.IncomingTransfer() != nil {
+		tra = ctx.IncomingTransfer().String()
 	}
-	if !ok {
-		inc = 1
-	}
-	state := ctx.State()
-	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
-	ctx.Log().Infof("incCounter: increasing counter value %d by %d", val, inc)
-	ctx.Log().Infof("incCounter: incoming transfer: %s", ctx.IncomingTransfer().String())
-	state.Set(VarCounter, codec.EncodeInt64(val+inc))
+	ctx.Log().Infof("incCounter: incoming transfer: %s", tra)
+	ctx.State().Set(VarCounter, codec.EncodeInt64(val+inc))
 	return nil, nil
 }
 
@@ -137,38 +143,30 @@ func incCounterAndRepeatMany(ctx coretypes.Sandbox) (dict.Dict, error) {
 // spawn deploys new contract and calls it
 func spawn(ctx coretypes.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.spawn")
-	state := ctx.State()
 
-	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
+	state := kvdecoder.New(ctx.State(), ctx.Log())
+	val := state.MustGetInt64(VarCounter)
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	name := par.MustGetString(VarName)
+	dscr := par.MustGetString(VarDescription, "N/A")
 
-	name, ok, err := codec.DecodeString(ctx.Params().MustGet(VarName))
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
-	if !ok {
-		return nil, fmt.Errorf("parameter 'name' wasnt found")
-	}
-	dscr, ok, err := codec.DecodeString(ctx.Params().MustGet(VarDescription))
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
-	if !ok {
-		dscr = "N/A"
-	}
-	par := dict.New()
-	par.Set(VarCounter, codec.EncodeInt64(val+1))
-	err = ctx.DeployContract(Interface.ProgramHash, name, dscr, par)
-	if err != nil {
-		return nil, err
-	}
+	a := assert.NewAssert(ctx.Log())
+
+	callPar := dict.New()
+	callPar.Set(VarCounter, codec.EncodeInt64(val+1))
+	err := ctx.DeployContract(Interface.ProgramHash, name, dscr, callPar)
+	a.RequireNoError(err)
 
 	// increase counter in newly spawned contract
 	hname := coretypes.Hn(name)
 	_, err = ctx.Call(hname, coretypes.Hn(FuncIncCounter), nil, nil)
-	if err != nil {
-		return nil, err
-	}
+	a.RequireNoError(err)
 
+	res, err := ctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncGetChainInfo), nil, nil)
+	a.RequireNoError(err)
+
+	creg := collections.NewMapReadOnly(res, root.VarContractRegistry)
+	a.Require(int(creg.MustLen()) == len(core.AllCoreContractsByHash)+2, "unexpected contract registry len %d", creg.MustLen())
 	ctx.Log().Debugf("inccounter.spawn: new contract name = %s hname = %s", name, hname.String())
 	return nil, nil
 }

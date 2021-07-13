@@ -426,7 +426,7 @@ func (ch *Chain) collateAndRunBatch() bool {
 
 // backlogLen is a thread-safe function to return size of the current backlog
 func (ch *Chain) backlogLen() int { //nolint:unused
-	mstats := ch.mempool.Stats()
+	mstats := ch.mempool.Info()
 	return mstats.InBufCounter - mstats.OutPoolCounter
 }
 

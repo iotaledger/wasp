@@ -18,8 +18,7 @@ type WasmHost struct {
 	funcToIndex map[string]int32
 }
 
-func (host *WasmHost) InitVM(vm WasmVM, useBase58Keys bool) error {
-	host.useBase58Keys = useBase58Keys
+func (host *WasmHost) InitVM(vm WasmVM) error {
 	return vm.LinkHost(vm, host)
 }
 

@@ -3,6 +3,7 @@ package consensus
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"math/rand"
 	"sync"
 	"testing"
@@ -18,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -49,6 +51,7 @@ type MockedEnv struct {
 	NodeIDs           []string
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
+	NetworkCloser     io.Closer
 	DKSRegistries     []coretypes.DKShareRegistryProvider
 	ChainID           chainid.ChainID
 	MockedACS         chain.AsynchronousCommonSubsetRunner
@@ -110,7 +113,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	nodeIDs, identities := testpeers.SetupKeys(n)
 	ret.NodeIDs = nodeIDs
 	ret.StateAddress, ret.DKSRegistries = testpeers.SetupDkgPregenerated(t, quorum, ret.NodeIDs, tcrypto.DefaultSuite())
-	ret.NetworkProviders = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
+	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
 
 	ret.OriginatorKeyPair, ret.OriginatorAddress = ret.Ledger.NewKeyPairByIndex(0)
 	_, err = ret.Ledger.RequestFunds(ret.OriginatorAddress)
@@ -189,7 +192,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	})
 	ret.NodeConn.OnPullTransactionInclusionState(func(addr ledgerstate.Address, txid ledgerstate.TransactionID) {
 		if _, already := env.Ledger.GetTransaction(txid); already {
-			go ret.ChainCore.ReceiveMessage(&chain.InclusionStateMsg{
+			go ret.ChainCore.ReceiveMessage(&messages.InclusionStateMsg{
 				TxID:  txid,
 				State: ledgerstate.Confirmed,
 			})
@@ -228,20 +231,20 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	ret.stateSync.SetSolidIndex(0)
 	require.NoError(env.T, err)
 
-	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn, timers)
+	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn, true, timers)
 	cons.vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret.Consensus = cons
 
-	ret.ChainCore.OnReceiveAsynchronousCommonSubsetMsg(func(msg *chain.AsynchronousCommonSubsetMsg) {
+	ret.ChainCore.OnReceiveAsynchronousCommonSubsetMsg(func(msg *messages.AsynchronousCommonSubsetMsg) {
 		ret.Consensus.EventAsynchronousCommonSubsetMsg(msg)
 	})
-	ret.ChainCore.OnReceiveVMResultMsg(func(msg *chain.VMResultMsg) {
+	ret.ChainCore.OnReceiveVMResultMsg(func(msg *messages.VMResultMsg) {
 		ret.Consensus.EventVMResultMsg(msg)
 	})
-	ret.ChainCore.OnReceiveInclusionStateMsg(func(msg *chain.InclusionStateMsg) {
+	ret.ChainCore.OnReceiveInclusionStateMsg(func(msg *messages.InclusionStateMsg) {
 		ret.Consensus.EventInclusionsStateMsg(msg)
 	})
-	ret.ChainCore.OnReceiveStateCandidateMsg(func(msg *chain.StateCandidateMsg) {
+	ret.ChainCore.OnReceiveStateCandidateMsg(func(msg *messages.StateCandidateMsg) {
 		ret.mutex.Lock()
 		defer ret.mutex.Unlock()
 		newState := msg.State
@@ -262,8 +265,8 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	})
 	ret.ChainCore.OnReceivePeerMessage(func(msg *peering.PeerMessage) {
 		var err error
-		if msg.MsgType == chain.MsgSignedResult {
-			decoded := chain.SignedResultMsg{}
+		if msg.MsgType == messages.MsgSignedResult {
+			decoded := messages.SignedResultMsg{}
 			if err = decoded.Read(bytes.NewReader(msg.MsgData)); err == nil {
 				decoded.SenderIndex = msg.SenderIndex
 				ret.Consensus.EventSignedResultMsg(&decoded)
@@ -326,7 +329,7 @@ func (n *mockedNode) EventStateTransition() {
 
 	n.ChainCore.GlobalStateSync().SetSolidIndex(n.SolidState.BlockIndex())
 
-	n.Consensus.EventStateTransitionMsg(&chain.StateTransitionMsg{
+	n.Consensus.EventStateTransitionMsg(&messages.StateTransitionMsg{
 		State:          n.SolidState.Clone(),
 		StateOutput:    n.StateOutput,
 		StateTimestamp: time.Now(),
@@ -344,7 +347,7 @@ func (n *mockedNode) StartTimer() {
 	go func() {
 		counter := 0
 		for {
-			n.Consensus.EventTimerMsg(chain.TimerTick(counter))
+			n.Consensus.EventTimerMsg(messages.TimerTick(counter))
 			counter++
 			time.Sleep(50 * time.Millisecond)
 		}

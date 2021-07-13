@@ -1,13 +1,16 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package committee
 
 import (
+	"crypto/rand"
 	"fmt"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
@@ -24,8 +27,6 @@ type committee struct {
 	address        ledgerstate.Address
 	peerConfig     coretypes.PeerNetworkConfigProvider
 	validatorNodes peering.GroupProvider
-	ccProvider     commoncoin.Provider     // Just to close it afterwards.
-	ccRecvCh       chan *peering.RecvEvent // To pass messages to CC.
 	acsRunner      chain.AsynchronousCommonSubsetRunner
 	peeringID      peering.PeeringID
 	size           uint16
@@ -90,20 +91,11 @@ func New(
 	} else {
 		// That's the default implementation of the ACS.
 		// We use it, of the mocked variant was not passed.
-		ret.ccRecvCh = make(chan *peering.RecvEvent)
-		ret.ccProvider = commoncoin.NewCommonCoinNode(
-			ret.ccRecvCh, // TODO: KP: Refactor the CC part to avoid passing the channels. Use TryHandleMessage instead.
-			dkshare,
-			peerGroupID,
-			peers,
-			log,
-		)
 		ret.acsRunner = commonsubset.NewCommonSubsetCoordinator(
 			peerGroupID,
 			netProvider,
 			peers,
-			dkshare.T,
-			ret.ccProvider,
+			dkshare,
 			log,
 		)
 	}
@@ -149,7 +141,7 @@ func (c *committee) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte
 	return fmt.Errorf("SendMsg: wrong peer index")
 }
 
-func (c *committee) SendMsgToPeers(msgType byte, msgData []byte, ts int64) {
+func (c *committee) SendMsgToPeers(msgType byte, msgData []byte, ts int64, except ...uint16) {
 	msg := &peering.PeerMessage{
 		PeeringID:   c.peeringID,
 		SenderIndex: c.ownIndex,
@@ -157,7 +149,7 @@ func (c *committee) SendMsgToPeers(msgType byte, msgData []byte, ts int64) {
 		MsgType:     msgType,
 		MsgData:     msgData,
 	}
-	c.validatorNodes.Broadcast(msg, false)
+	c.validatorNodes.Broadcast(msg, false, except...)
 }
 
 func (c *committee) IsAlivePeer(peerIndex uint16) bool {
@@ -213,10 +205,7 @@ func (c *committee) PeerStatus() []*chain.PeerStatus {
 
 func (c *committee) Attach(ch chain.ChainCore) {
 	c.attachID = c.validatorNodes.Attach(&c.peeringID, func(recv *peering.RecvEvent) {
-		if c.ccProvider != nil && c.ccProvider.TryHandleMessage(recv) {
-			return
-		}
-		if c.acsRunner.TryHandleMessage(recv) {
+		if c.acsRunner != nil && c.acsRunner.TryHandleMessage(recv) {
 			return
 		}
 		ch.ReceiveMessage(recv.Msg)
@@ -225,9 +214,6 @@ func (c *committee) Attach(ch chain.ChainCore) {
 
 func (c *committee) Close() {
 	c.acsRunner.Close()
-	if c.ccProvider != nil {
-		c.ccProvider.Close()
-	}
 	c.isReady.Store(false)
 	if c.attachID != nil {
 		c.validatorNodes.Detach(c.attachID)
@@ -272,4 +258,35 @@ func checkValidatorNodeIDs(cfg coretypes.PeerNetworkConfigProvider, n, ownIndex 
 			allPeers, validatorNetIDs)
 	}
 	return nil
+}
+
+func (c *committee) GetOtherValidatorsPeerIDs() []string {
+	nodes := c.validatorNodes.OtherNodes()
+	ret := make([]string, len(nodes))
+	i := 0
+	for _, node := range nodes {
+		ret[i] = node.NetID()
+		i++
+	}
+	return ret
+}
+
+func (c *committee) GetRandomValidators(upToN int) []string {
+	validators := c.GetOtherValidatorsPeerIDs()
+	if upToN >= len(validators) {
+		return validators
+	}
+
+	var b [8]byte
+	seed := b[:]
+	_, _ = rand.Read(seed)
+	permutation := util.NewPermutation16(uint16(len(validators)), seed)
+	permutation.Shuffle(seed)
+	ret := make([]string, 0)
+	for len(ret) < upToN {
+		i := permutation.Next()
+		ret = append(ret, validators[i])
+	}
+
+	return ret
 }

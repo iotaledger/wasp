@@ -5,6 +5,7 @@ package testpeers
 
 import (
 	"fmt"
+	"io"
 	"testing"
 	"time"
 
@@ -48,7 +49,7 @@ func SetupDkg(
 	log *logger.Logger,
 ) (ledgerstate.Address, []coretypes.DKShareRegistryProvider) {
 	timeout := 100 * time.Second
-	networkProviders := SetupNet(peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(), log)
+	networkProviders, networkCloser := SetupNet(peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(), log)
 	//
 	// Initialize the DKG subsystem in each node.
 	dkgNodes := make([]*dkg.Node, len(peerNetIDs))
@@ -75,6 +76,7 @@ func SetupDkg(
 	require.Nil(t, err)
 	require.NotNil(t, dkShare.Address)
 	require.NotNil(t, dkShare.SharedPublic)
+	require.NoError(t, networkCloser.Close())
 	return dkShare.Address, registries
 }
 
@@ -85,7 +87,7 @@ func SetupDkgPregenerated(
 	suite tcrypto.Suite,
 ) (ledgerstate.Address, []coretypes.DKShareRegistryProvider) {
 	var err error
-	var serializedDks [][]byte = pregeneratedDksRead(uint16(len(peerNetIDs)))
+	var serializedDks [][]byte = pregeneratedDksRead(uint16(len(peerNetIDs)), threshold)
 	dks := make([]*tcrypto.DKShare, len(serializedDks))
 	registries := make([]coretypes.DKShareRegistryProvider, len(peerNetIDs))
 	for i := range dks {
@@ -99,6 +101,7 @@ func SetupDkgPregenerated(
 		registries[i] = testutil.NewDkgRegistryProvider(suite)
 		require.Nil(t, registries[i].SaveDKShare(dks[i]))
 	}
+	require.Equal(t, dks[0].N, uint16(len(peerNetIDs)), "dks was pregenerated for different node count (N=%v)", dks[0].N)
 	require.Equal(t, dks[0].T, threshold, "dks was pregenerated for different threshold (T=%v)", dks[0].T)
 	return dks[0].Address, registries
 }
@@ -108,10 +111,11 @@ func SetupNet(
 	peerIdentities []*ed25519.KeyPair,
 	behavior testutil.PeeringNetBehavior,
 	log *logger.Logger,
-) []peering.NetworkProvider {
+) ([]peering.NetworkProvider, io.Closer) {
 	peeringNetwork := testutil.NewPeeringNetwork(
 		peerNetIDs, peerIdentities, 10000, behavior,
 		testlogger.WithLevel(log, logger.LevelWarn, false),
 	)
-	return peeringNetwork.NetworkProviders()
+	networkProviders := peeringNetwork.NetworkProviders()
+	return networkProviders, peeringNetwork
 }

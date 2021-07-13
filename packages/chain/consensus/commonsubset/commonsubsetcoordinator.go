@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/chain/consensus/commoncoin"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 	"golang.org/x/xerrors"
 )
 
@@ -47,30 +47,27 @@ type CommonSubsetCoordinator struct {
 	currentStateIndex uint32                   // Last state index passed by this node.
 	lock              sync.RWMutex
 
-	peeringID  peering.PeeringID
-	netGroup   peering.GroupProvider
-	threshold  uint16
-	commonCoin commoncoin.Provider
-	log        *logger.Logger
+	peeringID peering.PeeringID
+	netGroup  peering.GroupProvider
+	dkShare   *tcrypto.DKShare
+	log       *logger.Logger
 }
 
 func NewCommonSubsetCoordinator(
 	peeringID peering.PeeringID,
 	net peering.NetworkProvider,
 	netGroup peering.GroupProvider,
-	threshold uint16,
-	commonCoin commoncoin.Provider,
+	dkShare *tcrypto.DKShare,
 	log *logger.Logger,
 ) *CommonSubsetCoordinator {
 	return &CommonSubsetCoordinator{
-		csInsts:    make(map[uint64]*CommonSubset),
-		csAsked:    make(map[uint64]bool),
-		lock:       sync.RWMutex{},
-		peeringID:  peeringID,
-		netGroup:   netGroup,
-		threshold:  threshold,
-		commonCoin: commonCoin,
-		log:        log,
+		csInsts:   make(map[uint64]*CommonSubset),
+		csAsked:   make(map[uint64]bool),
+		lock:      sync.RWMutex{},
+		peeringID: peeringID,
+		netGroup:  netGroup,
+		dkShare:   dkShare,
+		log:       log,
 	}
 }
 
@@ -168,8 +165,8 @@ func (csc *CommonSubsetCoordinator) getOrCreateCS(
 	if ownCall || csc.inRange(stateIndex) {
 		var err error
 		var newCS *CommonSubset
-		outCh := make(chan map[uint16][]byte)
-		if newCS, err = NewCommonSubset(sessionID, stateIndex, csc.peeringID, csc.netGroup, csc.threshold, csc.commonCoin, outCh, csc.log); err != nil {
+		outCh := make(chan map[uint16][]byte, 1)
+		if newCS, err = NewCommonSubset(sessionID, stateIndex, csc.peeringID, csc.netGroup, csc.dkShare, false, outCh, csc.log); err != nil {
 			return nil, err
 		}
 		csc.csInsts[sessionID] = newCS

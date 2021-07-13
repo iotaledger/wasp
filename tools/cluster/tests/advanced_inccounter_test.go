@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -19,74 +22,176 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// cluster of 10 access nodes with the committee of 4 nodes. tested if all nodes are synced
-func TestAccessNodeOne(t *testing.T) {
-	// core.PrintWellKnownHnames()
-	// t.Logf("contract: name = %s, hname = %s", contractName, contractHname.String())
-	clu1 := clutest.NewCluster(t, 10)
+func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int) (*cluster.Cluster, *cluster.Chain) {
+	quorum := uint16((2*len(committee))/3 + 1)
 
-	numRequests := 8
-	cmt1 := []int{0, 1, 2, 3}
+	clu1 := clutest.NewCluster(t, clusterSize)
 
-	addr1, err := clu1.RunDKG(cmt1, 3)
+	addr, err := clu1.RunDKG(committee, quorum)
 	require.NoError(t, err)
 
-	t.Logf("addr1: %s", addr1.Base58())
+	t.Logf("generated state address: %s", addr.Base58())
 
-	chain1, err := clu1.DeployChain("chain", clu1.Config.AllNodes(), cmt1, 3, addr1)
+	chain1, err := clu1.DeployChain("chain", clu1.Config.AllNodes(), committee, quorum, addr)
 	require.NoError(t, err)
-	t.Logf("chainID: %s", chain1.ChainID.Base58())
+	t.Logf("deployed chainID: %s", chain1.ChainID.Base58())
 
 	description := "testing with inccounter"
-	programHash = inccounter.Interface.ProgramHash
+	progHash := inccounter.Interface.ProgramHash
 
-	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
+	_, err = chain1.DeployContract(incCounterSCName, progHash.String(), description, nil)
 	require.NoError(t, err)
 
-	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second, "contract to be deployed")
+	return clu1, chain1
+}
+
+func printBlocks(t *testing.T, ch *cluster.Chain, expected int) {
+	recs, err := ch.GetAllBlockInfoRecordsReverse()
+	require.NoError(t, err)
+
+	sum := 0
+	for _, rec := range recs {
+		t.Logf("---- block #%d: total: %d, off-ledger: %d, success: %d", rec.BlockIndex, rec.TotalRequests, rec.NumOffLedgerRequests, rec.NumSuccessfulRequests)
+		sum += int(rec.TotalRequests)
+	}
+	t.Logf("Total requests processed: %d", sum)
+	require.EqualValues(t, expected, sum)
+}
+
+func TestAccessNodesOnLedger(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+	t.Run("cluster=10, N=4, req=8", func(t *testing.T) {
+		const numRequests = 8
+		const numValidatorNodes = 4
+		const clusterSize = 10
+		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
+	})
+	t.Run("cluster=10, N=4, req=100", func(t *testing.T) {
+		const numRequests = 100
+		const numValidatorNodes = 4
+		const clusterSize = 10
+		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
+	})
+	t.Run("cluster=15, N=4, req=1000", func(t *testing.T) {
+		const numRequests = 1000
+		const numValidatorNodes = 4
+		const clusterSize = 15
+		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
+	})
+	t.Run("cluster=15, N=6, req=1000", func(t *testing.T) {
+		const numRequests = 1000
+		const numValidatorNodes = 6
+		const clusterSize = 15
+		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
+	})
+}
+
+func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
+	cmt := util.MakeRange(0, numValidatorNodes)
+
+	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
 
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
 	err = requestFunds(clu1, myAddress, "myAddress")
 	require.NoError(t, err)
 
-	myClient := chain1.SCClient(incCounterSCHname, kp)
+	myClient := chain1.SCClient(coretypes.Hn(incCounterSCName), kp)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, counterEquals(chain1, int64(numRequests)), []int{7, 8, 9, 4, 5, 6, 1}, 5*time.Second)
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), util.MakeRange(0, clusterSize), 20*time.Second)
+
+	printBlocks(t, chain1, numRequests+3)
 }
 
-// cluster of 10 access nodes with the committee of 4 nodes. tested if all nodes are synced
-func TestAccessNodeMany(t *testing.T) {
-	clusterSize := 15
-	committee := []int{0, 1, 2, 3, 4, 5, 6}
-	consensusSize := 5
-	requestsCountInitial := 8
-	requestsCountIncrement := 8
-	itterationCount := 3
+func TestAccessNodesOffLedger(t *testing.T) {
+	if testing.Short() {
+		t.SkipNow()
+	}
+	t.Run("cluster=6,N=4,req=8", func(t *testing.T) {
+		const waitFor = 20 * time.Second
+		const numRequests = 8
+		const numValidatorNodes = 4
+		const clusterSize = 6
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
+	})
+	t.Run("cluster=10,N=4,req=100", func(t *testing.T) {
+		const waitFor = 20 * time.Second
+		const numRequests = 100
+		const numValidatorNodes = 4
+		const clusterSize = 10
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
+	})
+	t.Run("cluster=10,N=6,req=1000", func(t *testing.T) {
+		const waitFor = 60 * time.Second
+		const numRequests = 1000
+		const numValidatorNodes = 6
+		const clusterSize = 10
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
+	})
+	t.Run("cluster=15,N=6,req=1000", func(t *testing.T) {
+		const waitFor = 60 * time.Second
+		const numRequests = 1000
+		const numValidatorNodes = 6
+		const clusterSize = 15
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
+	})
+}
 
-	clu1 := clutest.NewCluster(t, clusterSize)
+func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int, timeout ...time.Duration) {
+	to := 60 * time.Second
+	if len(timeout) > 0 {
+		to = timeout[0]
+	}
+	cmt := util.MakeRange(0, numValidatorNodes)
 
-	addr1, err := clu1.RunDKG(committee, uint16(consensusSize))
+	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
+
+	kp := wallet.KeyPair(1)
+	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
+	myAgentID := coretypes.NewAgentID(myAddress, 0)
+	err = requestFunds(clu1, myAddress, "myAddress")
 	require.NoError(t, err)
 
-	t.Logf("addr1: %s", addr1.Base58())
-
-	chain1, err := clu1.DeployChain("chain", clu1.Config.AllNodes(), committee, uint16(consensusSize), addr1)
-	require.NoError(t, err)
-	t.Logf("chainID: %s", chain1.ChainID.Base58())
-
-	description := "testing with inccounter"
-	programHash = inccounter.Interface.ProgramHash
-
-	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
+	accountsClient := chain1.SCClient(accounts.Interface.Hname(), kp)
+	_, err := accountsClient.PostRequest(accounts.FuncDeposit, chainclient.PostRequestParams{
+		Transfer: coretypes.NewTransferIotas(100),
+	})
 	require.NoError(t, err)
 
-	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, balanceOnChainIotaEquals(chain1, myAgentID, 100), util.MakeRange(0, clusterSize), 60*time.Second, "send 100i")
+
+	myClient := chain1.SCClient(coretypes.Hn(incCounterSCName), kp)
+
+	for i := 0; i < numRequests; i++ {
+		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter, chainclient.PostRequestParams{Nonce: uint64(i)})
+		require.NoError(t, err)
+	}
+
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), util.MakeRange(0, clusterSize), to)
+
+	printBlocks(t, chain1, numRequests+4)
+}
+
+// extreme test
+func TestAccessNodesMany(t *testing.T) {
+	const clusterSize = 15
+	const numValidatorNodes = 6
+	const requestsCountInitial = 8
+	const requestsCountProgression = 2
+	const iterationCount = 7
+
+	if iterationCount > 8 {
+		t.Skip("skipping test with iteration count > 8")
+	}
+	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes))
 
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
@@ -97,19 +202,20 @@ func TestAccessNodeMany(t *testing.T) {
 
 	requestsCount := requestsCountInitial
 	requestsCummulative := 0
-	for i := 0; i < itterationCount; i++ {
-		t.Logf("Running %v itteration of %v requests", i, requestsCount)
+	posted := 0
+	for i := 0; i < iterationCount; i++ {
+		logMsg := fmt.Sprintf("iteration %v of %v requests", i, requestsCount)
+		t.Logf("Running %s", logMsg)
 		for j := 0; j < requestsCount; j++ {
 			_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 			require.NoError(t, err)
 		}
+		posted += requestsCount
 		requestsCummulative += requestsCount
-		for j := 0; j < clusterSize; j++ {
-			t.Logf("-->Checking node %v for %v requests", j, requestsCummulative)
-			waitUntil(t, counterEquals(chain1, int64(requestsCummulative)), []int{j}, 5*time.Second)
-		}
-		requestsCount *= requestsCountIncrement
+		waitUntil(t, counterEquals(chain1, int64(requestsCummulative)), clu1.Config.AllNodes(), 60*time.Second, logMsg)
+		requestsCount *= requestsCountProgression
 	}
+	printBlocks(t, chain1, posted+3)
 }
 
 // cluster of 10 access nodes and two overlapping committees
@@ -164,45 +270,47 @@ func TestRotation(t *testing.T) {
 
 	require.NoError(t, err)
 
-	require.True(t, waitBlockIndex(t, chain1, 9, 4, 5*time.Second))
-	require.True(t, waitBlockIndex(t, chain1, 0, 4, 5*time.Second))
-	require.True(t, waitBlockIndex(t, chain1, 6, 4, 5*time.Second))
+	require.True(t, waitBlockIndex(t, chain1, 9, 4, 15*time.Second))
+	require.True(t, waitBlockIndex(t, chain1, 0, 4, 15*time.Second))
+	require.True(t, waitBlockIndex(t, chain1, 6, 4, 15*time.Second))
 
 	reqid := coretypes.NewRequestID(tx.ID(), 0)
 
-	require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, 5*time.Second))
-	require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, 5*time.Second))
+	require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, 15*time.Second))
+	require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, 15*time.Second))
 
 	require.NoError(t, err)
 	require.True(t, isAllowedStateControllerAddress(t, chain1, 0, addr2))
 
-	require.True(t, waitStateController(t, chain1, 0, addr1, 5*time.Second))
-	require.True(t, waitStateController(t, chain1, 9, addr1, 5*time.Second))
+	require.True(t, waitStateController(t, chain1, 0, addr1, 15*time.Second))
+	require.True(t, waitStateController(t, chain1, 9, addr1, 15*time.Second))
 
 	params = chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addr2).WithIotas(1)
 	tx, err = govClient.PostRequest(governance.FuncRotateStateController, *params)
 	require.NoError(t, err)
 
-	require.True(t, waitStateController(t, chain1, 0, addr2, 5*time.Second))
-	require.True(t, waitStateController(t, chain1, 9, addr2, 5*time.Second))
+	require.True(t, waitStateController(t, chain1, 0, addr2, 15*time.Second))
+	require.True(t, waitStateController(t, chain1, 9, addr2, 15*time.Second))
 
-	require.True(t, waitBlockIndex(t, chain1, 9, 5, 5*time.Second))
-	require.True(t, waitBlockIndex(t, chain1, 0, 5, 5*time.Second))
-	require.True(t, waitBlockIndex(t, chain1, 6, 5, 5*time.Second))
+	require.True(t, waitBlockIndex(t, chain1, 9, 5, 15*time.Second))
+	require.True(t, waitBlockIndex(t, chain1, 0, 5, 15*time.Second))
+	require.True(t, waitBlockIndex(t, chain1, 6, 5, 15*time.Second))
 
 	reqid = coretypes.NewRequestID(tx.ID(), 0)
-	require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, 5*time.Second))
-	require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, 5*time.Second))
+	require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, 15*time.Second))
+	require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, 15*time.Second))
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, counterEquals(chain1, int64(2*numRequests)), clu1.Config.AllNodes(), 5*time.Second)
+	waitUntil(t, counterEquals(chain1, int64(2*numRequests)), clu1.Config.AllNodes(), 15*time.Second)
 }
 
 func TestRotationMany(t *testing.T) {
+	t.Skip("skipping extreme test")
+
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -277,7 +385,7 @@ func TestRotationMany(t *testing.T) {
 			require.NoError(t, err)
 		}
 
-		waitUntil(t, counterEquals(chain1, int64(numRequests*(i+1))), []int{0, 3, 8, 9}, 5*time.Second)
+		waitUntil(t, counterEquals(chain1, int64(numRequests*(i+1))), []int{0, 3, 8, 9}, 30*time.Second)
 
 		addrIndex = (addrIndex + 1) % numCmt
 

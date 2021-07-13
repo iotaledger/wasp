@@ -15,7 +15,7 @@
 		</thead>
 		<tbody>
 			{{range $_, $c := .Chains}}
-				{{ $id := $c.ChainRecord.ChainID }}
+				{{ $id := $c.ChainRecord.ChainID.Base58 }}
 				<tr>
 					<td data-label="ID">{{ if not $c.Error }}<a href="{{ uri "chain" $id }}"><tt>{{ $id }}</tt></a>{{ else }}<tt>{{ $id }}</tt>{{ end }}</td>
 					<td data-label="Description">{{ trim 50 $c.RootInfo.Description }}

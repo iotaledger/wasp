@@ -47,12 +47,13 @@ var typeIds = map[int32]int32{
 
 type ScContext struct {
 	ScSandboxObject
+	vm *WasmProcessor
 }
 
-func NewScContext(vm *WasmProcessor) *ScContext {
+func NewScContext(vm *WasmProcessor, host *wasmhost.KvStoreHost) *ScContext {
 	o := &ScContext{}
 	o.vm = vm
-	o.host = &vm.KvStoreHost
+	o.host = host
 	o.name = "root"
 	o.id = 1
 	o.isRoot = true
@@ -68,6 +69,9 @@ func (o *ScContext) Exists(keyID, typeID int32) bool {
 }
 
 func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
+	if o.vm == nil {
+		o.Panic("missing context")
+	}
 	ctx := o.vm.ctx
 	if ctx == nil {
 		return o.getBytesForView(keyID, typeID)
@@ -90,7 +94,7 @@ func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
 	case wasmhost.KeyTimestamp:
 		return codec.EncodeInt64(ctx.GetTimestamp())
 	}
-	o.invalidKey(keyID)
+	o.InvalidKey(keyID)
 	return nil
 }
 
@@ -112,27 +116,27 @@ func (o *ScContext) getBytesForView(keyID, typeID int32) []byte {
 	case wasmhost.KeyContractCreator:
 		return ctx.ContractCreator().Bytes()
 	}
-	o.invalidKey(keyID)
+	o.InvalidKey(keyID)
 	return nil
 }
 
 func (o *ScContext) GetObjectID(keyID, typeID int32) int32 {
 	if keyID == wasmhost.KeyExports && (o.vm.ctx != nil || o.vm.ctxView != nil) {
 		// once map has entries (after on_load) this cannot be called any more
-		o.invalidKey(keyID)
+		o.InvalidKey(keyID)
 		return 0
 	}
 
 	return GetMapObjectID(o, keyID, typeID, ObjFactories{
 		wasmhost.KeyBalances:  func() WaspObject { return NewScBalances(o.vm, keyID) },
-		wasmhost.KeyExports:   func() WaspObject { return NewScExports(o.vm) },
+		wasmhost.KeyExports:   func() WaspObject { return NewScExports(&o.vm.WasmHost) },
 		wasmhost.KeyIncoming:  func() WaspObject { return NewScBalances(o.vm, keyID) },
-		wasmhost.KeyMaps:      func() WaspObject { return NewScMaps(o.vm) },
+		wasmhost.KeyMaps:      func() WaspObject { return NewScMaps(o.host) },
 		wasmhost.KeyMinted:    func() WaspObject { return NewScBalances(o.vm, keyID) },
-		wasmhost.KeyParams:    func() WaspObject { return NewScDictFromKvStore(&o.vm.KvStoreHost, o.vm.params()) },
-		wasmhost.KeyResults:   func() WaspObject { return NewScDict(o.vm) },
-		wasmhost.KeyReturn:    func() WaspObject { return NewScDict(o.vm) },
-		wasmhost.KeyState:     func() WaspObject { return NewScDictFromKvStore(&o.vm.KvStoreHost, o.vm.state()) },
+		wasmhost.KeyParams:    func() WaspObject { return NewScDict(o.host, o.vm.params()) },
+		wasmhost.KeyResults:   func() WaspObject { return NewScDict(o.host, dict.New()) },
+		wasmhost.KeyReturn:    func() WaspObject { return NewScDict(o.host, dict.New()) },
+		wasmhost.KeyState:     func() WaspObject { return NewScDict(o.host, o.vm.state()) },
 		wasmhost.KeyTransfers: func() WaspObject { return NewScTransfers(o.vm) },
 		wasmhost.KeyUtility:   func() WaspObject { return NewScUtility(o.vm) },
 	})
@@ -159,7 +163,7 @@ func (o *ScContext) SetBytes(keyID, typeID int32, bytes []byte) {
 	case wasmhost.KeyPost:
 		o.processPost(bytes)
 	default:
-		o.invalidKey(keyID)
+		o.InvalidKey(keyID)
 	}
 }
 

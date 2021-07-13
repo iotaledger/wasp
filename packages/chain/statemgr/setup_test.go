@@ -5,10 +5,12 @@ package statemgr
 
 import (
 	"bytes"
+	"io"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
@@ -42,6 +44,7 @@ type MockedEnv struct {
 	NodeIDs           []string
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
+	NetworkCloser     io.Closer
 	ChainID           chainid.ChainID
 	mutex             sync.Mutex
 	Nodes             map[string]*MockedNode
@@ -102,7 +105,7 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 
 	nodeIDs, identities := testpeers.SetupKeys(uint16(nodeCount))
 	ret.NodeIDs = nodeIDs
-	ret.NetworkProviders = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
+	ret.NetworkProviders, ret.NetworkCloser = testpeers.SetupNet(ret.NodeIDs, identities, ret.NetworkBehaviour, log)
 
 	return ret, originTx
 }
@@ -124,7 +127,7 @@ func (env *MockedEnv) pushStateToNodesIfSet(tx *ledgerstate.Transaction) {
 	require.NoError(env.T, err)
 
 	for _, node := range env.Nodes {
-		go node.StateManager.EventStateMsg(&chain.StateMsg{
+		go node.StateManager.EventStateMsg(&messages.StateMsg{
 			ChainOutput: stateOutput,
 			Timestamp:   tx.Essence().Timestamp(),
 		})
@@ -148,7 +151,7 @@ func (env *MockedEnv) PostTransactionToLedger(tx *ledgerstate.Transaction) {
 	env.Log.Infof("MockedEnv.PostTransactionToLedger: posted transaction to ledger: %s", tx.ID().Base58())
 }
 
-func (env *MockedEnv) PullStateFromLedger(addr *ledgerstate.AliasAddress) *chain.StateMsg {
+func (env *MockedEnv) PullStateFromLedger(addr *ledgerstate.AliasAddress) *messages.StateMsg {
 	env.Log.Debugf("MockedEnv.PullStateFromLedger request received for address %v", addr.Base58)
 	outputs := env.Ledger.GetAddressOutputs(addr)
 	require.EqualValues(env.T, 1, len(outputs))
@@ -158,7 +161,7 @@ func (env *MockedEnv) PullStateFromLedger(addr *ledgerstate.AliasAddress) *chain
 	require.NoError(env.T, err)
 
 	env.Log.Debugf("MockedEnv.PullStateFromLedger chain output %s found", coretypes.OID(stateOutput.ID()))
-	return &chain.StateMsg{
+	return &messages.StateMsg{
 		ChainOutput: stateOutput,
 		Timestamp:   outTx.Essence().Timestamp(),
 	}
@@ -202,7 +205,7 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 	ret.StateTransition = testchain.NewMockedStateTransition(env.T, env.OriginatorKeyPair)
 	ret.StateTransition.OnNextState(func(vstate state.VirtualState, tx *ledgerstate.Transaction) {
 		log.Debugf("MockedEnv.onNextState: state index %d", vstate.BlockIndex())
-		go ret.StateManager.EventStateCandidateMsg(&chain.StateCandidateMsg{State: vstate})
+		go ret.StateManager.EventStateCandidateMsg(&messages.StateCandidateMsg{State: vstate})
 		go ret.NodeConn.PostTransaction(tx)
 	})
 	ret.NodeConn.OnPostTransaction(func(tx *ledgerstate.Transaction) {
@@ -227,8 +230,8 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 		rdr := bytes.NewReader(recvEvent.Msg.MsgData)
 
 		switch recvEvent.Msg.MsgType {
-		case chain.MsgGetBlock:
-			msgt := &chain.GetBlockMsg{}
+		case messages.MsgGetBlock:
+			msgt := &messages.GetBlockMsg{}
 			if err := msgt.Read(rdr); err != nil {
 				log.Error(err)
 				return
@@ -237,8 +240,8 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 			msgt.SenderNetID = recvEvent.Msg.SenderNetID
 			ret.StateManager.EventGetBlockMsg(msgt)
 
-		case chain.MsgBlock:
-			msgt := &chain.BlockMsg{}
+		case messages.MsgBlock:
+			msgt := &messages.BlockMsg{}
 			if err := msgt.Read(rdr); err != nil {
 				log.Error(err)
 				return
@@ -260,7 +263,7 @@ func (node *MockedNode) StartTimer() {
 		node.StateManager.Ready().MustWait()
 		counter := 0
 		for {
-			node.StateManager.EventTimerMsg(chain.TimerTick(counter))
+			node.StateManager.EventTimerMsg(messages.TimerTick(counter))
 			counter++
 			time.Sleep(50 * time.Millisecond)
 		}

@@ -16,8 +16,8 @@ import (
 // LogStateTransition also used in testing
 func LogStateTransition(msg *ChainTransitionEventData, reqids []coretypes.RequestID, log *logger.Logger) {
 	if msg.ChainOutput.GetStateIndex() > 0 {
-		log.Infof("STATE TRANSITION TO #%d. Chain output: %s, block size: %d",
-			msg.VirtualState.BlockIndex(), coretypes.OID(msg.ChainOutput.ID()), len(reqids))
+		log.Infof("STATE TRANSITION TO #%d. requests: %d, chain output: %s",
+			msg.VirtualState.BlockIndex(), len(reqids), coretypes.OID(msg.ChainOutput.ID()))
 		log.Debugf("STATE TRANSITION. State hash: %s",
 			msg.VirtualState.Hash().String())
 	} else {
@@ -38,25 +38,27 @@ func LogSyncedEvent(outputID ledgerstate.OutputID, blockIndex uint32, log *logge
 	log.Infof("EVENT: state was synced to block index #%d, approving output: %s", blockIndex, coretypes.OID(outputID))
 }
 
-func PublishStateTransition(stateOutput *ledgerstate.AliasOutput, reqids []coretypes.RequestID) {
-	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateData())
-	chainID := chainid.NewChainID(stateOutput.GetAliasAddress())
-
-	publisher.Publish("state",
-		chainID.String(),
-		strconv.Itoa(int(stateOutput.GetStateIndex())),
-		strconv.Itoa(len(reqids)),
-		coretypes.OID(stateOutput.ID()),
-		stateHash.String(),
-	)
+func PublishRequestsSettled(chainID *chainid.ChainID, stateIndex uint32, reqids []coretypes.RequestID) {
 	for _, reqid := range reqids {
 		publisher.Publish("request_out",
 			chainID.String(),
 			reqid.String(),
-			strconv.Itoa(int(stateOutput.GetStateIndex())),
+			strconv.Itoa(int(stateIndex)),
 			strconv.Itoa(len(reqids)),
 		)
 	}
+}
+
+func PublishStateTransition(chainID *chainid.ChainID, stateOutput *ledgerstate.AliasOutput, reqIDsLength int) {
+	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateData())
+
+	publisher.Publish("state",
+		chainID.String(),
+		strconv.Itoa(int(stateOutput.GetStateIndex())),
+		strconv.Itoa(reqIDsLength),
+		coretypes.OID(stateOutput.ID()),
+		stateHash.String(),
+	)
 }
 
 func PublishGovernanceTransition(stateOutput *ledgerstate.AliasOutput) {

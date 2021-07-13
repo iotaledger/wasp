@@ -8,17 +8,19 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"strings"
 	"testing"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
 
 type WaspCLITest struct {
-	t   *testing.T
-	clu *cluster.Cluster
-	dir string
+	T       *testing.T
+	Cluster *cluster.Cluster
+	dir     string
 }
 
 func NewWaspCLITest(t *testing.T) *WaspCLITest {
@@ -32,9 +34,9 @@ func NewWaspCLITest(t *testing.T) *WaspCLITest {
 	})
 
 	w := &WaspCLITest{
-		t:   t,
-		clu: clu,
-		dir: dir,
+		T:       t,
+		Cluster: clu,
+		dir:     dir,
 	}
 	w.Run("set", "utxodb", "true")
 	return w
@@ -55,11 +57,12 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) []string {
 		f(cmd)
 	}
 
+	w.T.Logf("Running: %s", strings.Join(cmd.Args, " "))
 	err := cmd.Run()
 
 	outStr, errStr := stdout.String(), stderr.String()
 	if err != nil {
-		require.NoError(w.t, fmt.Errorf(
+		require.NoError(w.T, fmt.Errorf(
 			"cmd `wasp-cli %s` failed\n%w\noutput:\n%s",
 			strings.Join(args, " "),
 			err,
@@ -84,28 +87,36 @@ func (w *WaspCLITest) Pipe(in []string, args ...string) []string {
 // CopyFile copies the given file into the temp directory
 func (w *WaspCLITest) CopyFile(srcFile string) {
 	source, err := os.Open(srcFile)
-	require.NoError(w.t, err)
+	require.NoError(w.T, err)
 	defer source.Close()
 
 	dst := path.Join(w.dir, path.Base(srcFile))
 	destination, err := os.Create(dst)
-	require.NoError(w.t, err)
+	require.NoError(w.T, err)
 	defer destination.Close()
 
 	_, err = io.Copy(destination, source)
-	require.NoError(w.t, err)
+	require.NoError(w.T, err)
 }
 
 func (w *WaspCLITest) CommitteeConfig() (string, string) {
 	var committee []string
-	for i := 0; i < w.clu.Config.Wasp.NumNodes; i++ {
+	for i := 0; i < w.Cluster.Config.Wasp.NumNodes; i++ {
 		committee = append(committee, fmt.Sprintf("%d", i))
 	}
 
-	quorum := 3 * w.clu.Config.Wasp.NumNodes / 4
+	quorum := 3 * w.Cluster.Config.Wasp.NumNodes / 4
 	if quorum < 1 {
 		quorum = 1
 	}
 
 	return "--committee=" + strings.Join(committee, ","), fmt.Sprintf("--quorum=%d", quorum)
+}
+
+func (w *WaspCLITest) Address() ledgerstate.Address {
+	out := w.Run("address")
+	s := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
+	addr, err := ledgerstate.AddressFromBase58EncodedString(s)
+	require.NoError(w.T, err)
+	return addr
 }

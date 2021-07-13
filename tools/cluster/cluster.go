@@ -17,10 +17,12 @@ import (
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -44,6 +46,12 @@ func New(name string, config *ClusterConfig) *Cluster {
 		Config:   config,
 		waspCmds: make([]*exec.Cmd, config.Wasp.NumNodes),
 	}
+}
+
+func (clu *Cluster) NewKeyPairWithFunds() (*ed25519.KeyPair, ledgerstate.Address, error) {
+	key, addr := testkey.GenKeyAddr()
+	err := clu.GoshimmerClient().RequestFunds(addr)
+	return key, addr, err
 }
 
 func (clu *Cluster) GoshimmerClient() *goshimmer.Client {
@@ -81,6 +89,9 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 }
 
 func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
+	if threshold == 0 {
+		threshold = (uint16(len(committeeNodes))*2)/3 + 1
+	}
 	apiHosts := clu.Config.APIHosts(committeeNodes)
 	peeringHosts := clu.Config.PeeringHosts(committeeNodes)
 	dkgInitiatorIndex := uint16(rand.Intn(len(apiHosts)))
@@ -173,9 +184,11 @@ func fileExists(filepath string) (bool, error) {
 	return true, err
 }
 
+type ModifyNodesConfigFn = func(nodeIndex int, configParams *templates.WaspConfigParams) *templates.WaspConfigParams
+
 // InitDataPath initializes the cluster data directory (cluster.json + one subdirectory
 // for each node).
-func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting bool) error {
+func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting bool, modifyConfig ModifyNodesConfigFn) error {
 	exists, err := fileExists(dataPath)
 	if err != nil {
 		return err
@@ -196,6 +209,8 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 			path.Join(templatesPath, "wasp-config-template.json"),
 			templates.WaspConfig,
 			clu.Config.WaspConfigTemplateParams(i),
+			i,
+			modifyConfig,
 		)
 		if err != nil {
 			return err
@@ -204,7 +219,7 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 	return clu.Config.Save(dataPath)
 }
 
-func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params interface{}) error {
+func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params *templates.WaspConfigParams, nodeIndex int, modifyConfig ModifyNodesConfigFn) error {
 	exists, err := fileExists(configTemplatePath)
 	if err != nil {
 		return err
@@ -231,6 +246,10 @@ func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params
 		return err
 	}
 	defer f.Close()
+
+	if modifyConfig != nil {
+		params = modifyConfig(nodeIndex, params)
+	}
 
 	return configTmpl.Execute(f, params)
 }
@@ -330,6 +349,10 @@ func (clu *Cluster) waitForAPIReady(initOk chan<- bool, nodeIndex int) {
 		for {
 			<-ticker.C
 			rsp, err := http.Get(infoEndpointURL) //nolint:gosec,noctx
+			if err != nil {
+				fmt.Printf("Error Polling node %d API ready status: %v", nodeIndex, err)
+				continue
+			}
 			fmt.Printf("Polling node %d API ready status: %s %s\n", nodeIndex, infoEndpointURL, rsp.Status)
 			rsp.Body.Close()
 			if err == nil && rsp.StatusCode != 404 {

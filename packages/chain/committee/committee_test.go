@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package committee
 
 import (
@@ -21,7 +24,7 @@ func TestCommitteeBasic(t *testing.T) {
 	nodeCount := 4
 	netIDs, identities := testpeers.SetupKeys(uint16(nodeCount))
 	stateAddr, dksRegistries := testpeers.SetupDkgPregenerated(t, uint16((len(netIDs)*2)/3+1), netIDs, suite)
-	nodes := testpeers.SetupNet(netIDs, identities, testutil.NewPeeringNetReliable(), log)
+	nodes, netCloser := testpeers.SetupNet(netIDs, identities, testutil.NewPeeringNetReliable(), log)
 	net0 := nodes[0]
 
 	cfg0 := &committeeimplTestConfigProvider{
@@ -43,6 +46,7 @@ func TestCommitteeBasic(t *testing.T) {
 	require.True(t, c.IsReady())
 	c.Close()
 	require.False(t, c.IsReady())
+	require.NoError(t, netCloser.Close())
 }
 
 var _ coretypes.PeerNetworkConfigProvider = &committeeimplTestConfigProvider{}

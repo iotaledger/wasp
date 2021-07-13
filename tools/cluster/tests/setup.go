@@ -119,22 +119,14 @@ func setup(t *testing.T, configPath string) { //nolint:unparam
 	check(err, t)
 }
 
-func setupAndLoad(t *testing.T, name, description string, nrOfRequests int, expectedMessages map[string]int) {
+func setupAndLoad(t *testing.T, name, description string, nrOfRequests int) {
 	setup(t, "test_cluster")
 
 	expectations := map[string]int{
 		"dismissed_committee": 0,
-		//"state":               3 + nrOfRequests,
+		"state":               3 + nrOfRequests,
 		//"request_out":         3 + nrOfRequests,    // not always coming from all nodes, but from quorum only
 	}
-	if nrOfRequests == 1 {
-		expectations["state"] = 4
-	}
-	for k, v := range expectedMessages {
-		expectations[k] = v
-	}
-
-	var err error
 
 	counter, err = clu.StartMessageCounter(expectations)
 	check(err, t)
