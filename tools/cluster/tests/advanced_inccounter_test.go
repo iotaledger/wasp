@@ -115,30 +115,34 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
-	t.Run("cluster=6, N=4, req=8", func(t *testing.T) {
+	t.Run("cluster=6,N=4,req=8", func(t *testing.T) {
+		const waitFor = 20 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 4
 		const clusterSize = 6
-		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, 20*time.Second)
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
 	})
-	//t.Run("cluster=10, N=4, req=100", func(t *testing.T) {
-	//	const numRequests = 100
-	//	const numValidatorNodes = 4
-	//	const clusterSize = 10
-	//	testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize)
-	//})
-	//t.Run("cluster=15, N=4, req=1000", func(t *testing.T) {
-	//	const numRequests = 1000
-	//	const numValidatorNodes = 4
-	//	const clusterSize = 15
-	//	testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize)
-	//})
-	//t.Run("cluster=15, N=6, req=1000", func(t *testing.T) {
-	//	const numRequests = 1000
-	//	const numValidatorNodes = 6
-	//	const clusterSize = 15
-	//	testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize)
-	//})
+	t.Run("cluster=10,N=4,req=100", func(t *testing.T) {
+		const waitFor = 20 * time.Second
+		const numRequests = 100
+		const numValidatorNodes = 4
+		const clusterSize = 10
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
+	})
+	t.Run("cluster=10,N=6,req=1000", func(t *testing.T) {
+		const waitFor = 60 * time.Second
+		const numRequests = 1000
+		const numValidatorNodes = 6
+		const clusterSize = 10
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
+	})
+	t.Run("cluster=15,N=6,req=1000", func(t *testing.T) {
+		const waitFor = 60 * time.Second
+		const numRequests = 1000
+		const numValidatorNodes = 6
+		const clusterSize = 15
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
+	})
 }
 
 func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int, timeout ...time.Duration) {
