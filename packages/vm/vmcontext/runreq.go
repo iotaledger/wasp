@@ -28,7 +28,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 
 	// guard against replaying off-ledger requests here to prevent replaying fee deduction
 	// also verifies that account for off-ledger request exists
-	if !vmctx.validRequest() {
+	if !vmctx.validateRequest() {
 		return
 	}
 
@@ -162,7 +162,7 @@ func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
 	return ledgerstate.NewColoredBalances(transfers)
 }
 
-func (vmctx *VMContext) validRequest() bool {
+func (vmctx *VMContext) validateRequest() bool {
 	req, ok := vmctx.req.(*request.RequestOffLedger)
 	if !ok {
 		// on-ledger request is always valid
@@ -174,15 +174,18 @@ func (vmctx *VMContext) validRequest() bool {
 
 	// off-ledger account must exist
 	if _, exists := accounts.GetAccountBalances(vmctx.State(), req.SenderAccount()); !exists {
-		vmctx.lastError = fmt.Errorf("validRequest: unverified account %s for %s", req.SenderAccount(), req.ID().String())
+		vmctx.lastError = fmt.Errorf("validateRequest: unverified account %s for %s", req.SenderAccount(), req.ID().String())
 		return false
 	}
 
-	// order of requests must always increase
-	if vmctx.req.Nonce() <= accounts.GetOrder(vmctx.State(), req.SenderAddress()) {
-		vmctx.lastError = fmt.Errorf("validRequest: invalid order for %s", req.ID().String())
-		return false
-	}
+	// order of nonces requests must always strictly increase
+	// temporary disable TODO
+	//lastNonce := accounts.GetLastNonce(vmctx.State(), req.SenderAddress())
+	//if vmctx.req.Nonce() <= lastNonce {
+	//	vmctx.lastError = fmt.Errorf("validateRequest: invalid order %d <= %d of request %s",
+	//		vmctx.req.Nonce(), lastNonce, req.ID().String())
+	//	return false
+	//}
 
 	return true
 }
@@ -281,7 +284,7 @@ func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
 func (vmctx *VMContext) mustCallFromRequest() {
 	vmctx.log.Debugf("mustCallFromRequest: %s", vmctx.req.ID().String())
 
-	vmctx.mustSaveRequestOrder()
+	vmctx.mustSaveOffledgerRequestNonce()
 
 	// calling only non view entry points. Calling the view will trigger error and fallback
 	_, entryPoint := vmctx.req.Target()
@@ -291,14 +294,14 @@ func (vmctx *VMContext) mustCallFromRequest() {
 		targetContract, entryPoint, params, vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)
 }
 
-func (vmctx *VMContext) mustSaveRequestOrder() {
+func (vmctx *VMContext) mustSaveOffledgerRequestNonce() {
 	if _, ok := vmctx.req.(*request.RequestOffLedger); ok {
 		vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 		defer vmctx.popCallContext()
 
 		address := vmctx.req.SenderAddress()
 		order := vmctx.req.Nonce()
-		accounts.SetOrder(vmctx.State(), address, order)
+		accounts.SetLastNonce(vmctx.State(), address, order)
 	}
 }
 

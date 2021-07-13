@@ -3,6 +3,9 @@ package viewcontext
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/kv/optimism"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -10,14 +13,12 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"golang.org/x/xerrors"
 )
 
 type Viewcontext struct {
@@ -59,6 +60,7 @@ func (v *Viewcontext) CallView(contractHname, epCode coretypes.Hname, params dic
 			default:
 				err = xerrors.Errorf("viewcontext: panic in VM: %v", err1)
 			}
+			v.log.Infof("+++++ error after calling view: err = %v", err)
 		}()
 		ret, err = v.callView(contractHname, epCode, params)
 	}()
