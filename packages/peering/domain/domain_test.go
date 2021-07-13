@@ -17,7 +17,7 @@ func TestDomainProvider(t *testing.T) {
 
 	nodeCount := 3
 	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
-	nodes := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(), log)
+	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(), log)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))
 	}
@@ -54,6 +54,7 @@ func TestDomainProvider(t *testing.T) {
 	//
 	// Done.
 	d.Close()
+	require.NoError(t, netCloser.Close())
 }
 
 func TestRandom(t *testing.T) {
@@ -62,7 +63,7 @@ func TestRandom(t *testing.T) {
 
 	nodeCount := 5
 	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
-	nodes := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(), log)
+	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(), log)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))
 	}
@@ -107,4 +108,5 @@ func TestRandom(t *testing.T) {
 	require.EqualValues(t, sendTo*5, r2)
 	d1.Close()
 	d2.Close()
+	require.NoError(t, netCloser.Close())
 }

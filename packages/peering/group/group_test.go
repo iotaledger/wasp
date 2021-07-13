@@ -16,7 +16,7 @@ func TestGroupProvider(t *testing.T) {
 
 	nodeCount := 3
 	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
-	nodes := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(), log)
+	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(), log)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))
 	}
@@ -49,4 +49,5 @@ func TestGroupProvider(t *testing.T) {
 	//
 	// Done.
 	g.Close()
+	require.NoError(t, netCloser.Close())
 }

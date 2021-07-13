@@ -7,6 +7,7 @@ package testutil
 // It is used for testing network protocols in more realistic settings.
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -52,7 +53,7 @@ func (n *peeringNetReliable) recvLoop(inCh, outCh chan *peeringMsg, closeCh chan
 		case <-closeCh:
 			return
 		case recv := <-inCh:
-			outCh <- recv
+			safeSendPeeringMsg(outCh, recv)
 		}
 	}
 }
@@ -136,5 +137,15 @@ func (n *peeringNetUnreliable) sendDelayed(recv *peeringMsg, outCh chan *peering
 		"Network delivers message %v -%v-> %v (duplicate %v/%v, delay=%vms)",
 		recv.from.netID, recv.msg.MsgType, dstNetID, dupNum, dupCount, delay.Milliseconds(),
 	)
+	safeSendPeeringMsg(outCh, recv)
+}
+
+// To avoid panics when tests are being stopped.
+func safeSendPeeringMsg(outCh chan *peeringMsg, recv *peeringMsg) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Printf("NOTE: peeringNetReliable dropping message: %v\n", err)
+		}
+	}()
 	outCh <- recv
 }
