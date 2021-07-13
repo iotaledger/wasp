@@ -11,4 +11,3 @@ wasp-cli
 *.log
 waspdb/
 docs/
-tests/

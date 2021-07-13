@@ -1,6 +1,8 @@
 # Build stage
 FROM golang:1.16.5-buster AS build
 
+ARG BUILD_TAGS=rocksdb
+
 RUN mkdir /wasp
 WORKDIR /wasp
 
@@ -12,8 +14,8 @@ RUN go mod verify
 # Project build stage
 COPY . .
 
-RUN go build -tags rocksdb
-RUN go build -tags rocksdb ./tools/wasp-cli
+RUN go build -tags="$BUILD_TAGS"
+RUN go build -tags="$BUILD_TAGS" ./tools/wasp-cli
 
 
 

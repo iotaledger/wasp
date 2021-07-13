@@ -13,7 +13,7 @@ committee of Wasp nodes:
 
 ```
 $ wasp-cli set goshimmer.api 127.0.0.1:8080
-$ wasp-cli set goshimmer.faucetPoWTarget 22
+$ wasp-cli set -- goshimmer.faucetPoWTarget -1
 
 $ wasp-cli set wasp.0.api 127.0.0.1:9090
 $ wasp-cli set wasp.0.nanomsg 127.0.0.1:5550
