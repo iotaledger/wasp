@@ -182,7 +182,7 @@ func (m *Mempool) RemoveRequests(reqs ...coretypes.RequestID) {
 	}
 }
 
-const traceInOut = false
+const traceInOut = true
 
 func (m *Mempool) traceIn(req coretypes.Request) {
 	rotateStr := ""
