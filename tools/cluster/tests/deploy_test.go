@@ -49,47 +49,6 @@ func TestDeployChain(t *testing.T) {
 	}
 }
 
-func TestDeployContractFail(t *testing.T) {
-	setup(t, "test_cluster")
-
-	counter1, err := clu.StartMessageCounter(map[string]int{
-		"dismissed_chain": 0,
-		"state":           2,
-		"request_out":     1,
-	})
-	check(err, t)
-	defer counter1.Close()
-
-	chain1, err := clu.DeployDefaultChain()
-	check(err, t)
-
-	tx, err := chain1.DeployContract(incCounterSCName, programHash.String(), "", map[string]interface{}{
-		root.ParamName: "", // intentionally empty so that it fails
-	})
-	check(err, t)
-
-	if !counter1.WaitUntilExpectationsMet() {
-		t.Fail()
-	}
-
-	checkCoreContracts(t, chain1)
-	for _, i := range chain1.CommitteeNodes {
-		blockIndex, err := chain1.BlockIndex(i)
-		require.NoError(t, err)
-		require.EqualValues(t, 2, blockIndex)
-
-		contractRegistry, err := chain1.ContractRegistry(i)
-		require.NoError(t, err)
-		// contract was not deployed:
-		require.EqualValues(t, len(core.AllCoreContractsByHash), len(contractRegistry))
-	}
-
-	// query error message from blocklog:
-	rec, _, _, err := chain1.GetRequestLogRecord(coretypes.NewRequestID(tx.ID(), 0))
-	require.NoError(t, err)
-	require.Contains(t, string(rec.LogData), "wrong name")
-}
-
 func TestDeployContractOnly(t *testing.T) {
 	setup(t, "test_cluster")
 
