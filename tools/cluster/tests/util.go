@@ -3,7 +3,6 @@ package tests
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -20,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
@@ -240,16 +240,25 @@ func waitTrue(timeout time.Duration, fun func() bool) bool {
 	}
 }
 
+func getHTTPError(err error) *model.HTTPError {
+	if err == nil {
+		return nil
+	}
+	httpError, ok := err.(*model.HTTPError)
+	if ok {
+		return httpError
+	}
+	return getHTTPError(errors.Unwrap(err))
+}
+
 func repeatIfInvalidated(fun func() (dict.Dict, error), deadline time.Time) (dict.Dict, error) {
 	result, err := fun()
-	if err != nil {
-		errStr := fmt.Sprintf("%v", err)
-		if strings.Contains(errStr, "virtual state has been invalidated") {
-			if time.Now().Before(deadline) {
-				return repeatIfInvalidated(fun, deadline)
-			}
-			return result, fmt.Errorf("Retrying timeouted. Last error: %w", err)
+	httpError := getHTTPError(err)
+	if httpError != nil && httpError.StatusCode == 409 {
+		if time.Now().Before(deadline) {
+			return repeatIfInvalidated(fun, deadline)
 		}
+		return result, fmt.Errorf("Retrying timeouted. Last error: %w", err)
 	}
 	return result, err
 }
