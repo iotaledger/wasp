@@ -10,13 +10,16 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 )
 
+const retryOnStateInvalidatedRetry = 100 * time.Millisecond //nolint:gofumpt
+const retryOnStateInvalidatedTimeout = 5 * time.Minute
+
 func CallView(ch chain.ChainCore, contractHname, viewHname coretypes.Hname, params dict.Dict) (dict.Dict, error) {
 	vctx := viewcontext.NewFromChain(ch)
 	var ret dict.Dict
-	var err error
-	err = optimism.RepeatOnceIfUnlucky(func() error {
+	err := optimism.RetryOnStateInvalidated(func() error {
+		var err error
 		ret, err = vctx.CallView(contractHname, viewHname, params)
 		return err
-	}, 100*time.Millisecond)
+	}, retryOnStateInvalidatedRetry, time.Now().Add(retryOnStateInvalidatedTimeout))
 	return ret, err
 }
