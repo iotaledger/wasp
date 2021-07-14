@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -57,23 +56,23 @@ func (w *waspServices) TrustedNetworkManager() peering.TrustedNetworkManager {
 	return tnm
 }
 
-func (w *waspServices) GetChain(chainID *chainid.ChainID) chain.ChainCore {
+func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.ChainCore {
 	return &mockChain{}
 }
 
 func (w *waspServices) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
-	r, _ := w.GetChainRecord(chainid.RandomChainID())
+	r, _ := w.GetChainRecord(coretypes.RandomChainID())
 	return []*chainrecord.ChainRecord{r}, nil
 }
 
-func (w *waspServices) GetChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error) {
+func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error) {
 	return &chainrecord.ChainRecord{
 		ChainID: chainID,
 		Active:  true,
 	}, nil
 }
 
-func (w *waspServices) GetChainState(chainID *chainid.ChainID) (*ChainState, error) {
+func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*ChainState, error) {
 	return &ChainState{
 		Index:             1,
 		Hash:              hashing.RandomHash(nil),
@@ -249,8 +248,8 @@ func (m *mockChain) GetStateReader() state.OptimisticStateReader {
 	panic("implement me")
 }
 
-func (m *mockChain) ID() *chainid.ChainID {
-	return chainid.RandomChainID()
+func (m *mockChain) ID() *coretypes.ChainID {
+	return coretypes.RandomChainID()
 }
 
 func (m *mockChain) GetCommitteeInfo() *chain.CommitteeInfo {

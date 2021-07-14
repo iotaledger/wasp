@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/rotate"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
@@ -29,7 +30,7 @@ type Mempool struct {
 	stateReader             state.OptimisticStateReader
 	pool                    map[coretypes.RequestID]*requestRef
 	chStop                  chan struct{}
-	blobCache               coretypes.BlobCache
+	blobCache               registry.BlobCache
 	solidificationLoopDelay time.Duration
 	log                     *logger.Logger
 }
@@ -46,7 +47,7 @@ const (
 
 var _ chain.Mempool = &Mempool{}
 
-func New(stateReader state.OptimisticStateReader, blobCache coretypes.BlobCache, log *logger.Logger, solidificationLoopDelay ...time.Duration) *Mempool {
+func New(stateReader state.OptimisticStateReader, blobCache registry.BlobCache, log *logger.Logger, solidificationLoopDelay ...time.Duration) *Mempool {
 	ret := &Mempool{
 		inBuffer:    make(map[coretypes.RequestID]coretypes.Request),
 		stateReader: stateReader,
@@ -140,7 +141,7 @@ func (m *Mempool) addToPool(req coretypes.Request) bool {
 		req:          req,
 		whenReceived: nowis,
 	}
-	if _, err := req.SolidifyArgs(m.blobCache); err != nil {
+	if _, err := request.SolidifyArgs(req, m.blobCache); err != nil {
 		m.log.Errorf("ReceiveRequest.SolidifyArgs: %s", err)
 	}
 	// return true to remove from the in-buffer
@@ -420,7 +421,7 @@ func (m *Mempool) doSolidifyRequests() {
 
 	for _, ref := range m.pool {
 		if ref.req != nil {
-			_, _ = ref.req.SolidifyArgs(m.blobCache)
+			_, _ = request.SolidifyArgs(ref.req, m.blobCache)
 		}
 	}
 }

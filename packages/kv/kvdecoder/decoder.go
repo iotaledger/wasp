@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -320,7 +318,7 @@ func (p *Decoder) MustGetAgentID(key kv.Key, def ...coretypes.AgentID) *coretype
 	return ret
 }
 
-func (p *Decoder) GetChainID(key kv.Key, def ...chainid.ChainID) (*chainid.ChainID, error) {
+func (p *Decoder) GetChainID(key kv.Key, def ...coretypes.ChainID) (*coretypes.ChainID, error) {
 	v, exists, err := codec.DecodeChainID(p.kv.MustGet(key))
 	if err != nil {
 		return nil, fmt.Errorf("GetChainID: decoding parameter '%s': %v", key, err)
@@ -335,7 +333,7 @@ func (p *Decoder) GetChainID(key kv.Key, def ...chainid.ChainID) (*chainid.Chain
 	return &r, nil
 }
 
-func (p *Decoder) MustGetChainID(key kv.Key, def ...chainid.ChainID) *chainid.ChainID {
+func (p *Decoder) MustGetChainID(key kv.Key, def ...coretypes.ChainID) *coretypes.ChainID {
 	ret, err := p.GetChainID(key, def...)
 	if err != nil {
 		p.panic(err)

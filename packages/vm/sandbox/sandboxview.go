@@ -6,7 +6,6 @@ package sandbox
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
@@ -37,7 +36,7 @@ func (s sandboxView) Call(contractHname, entryPoint coretypes.Hname, params dict
 	return s.vmctx.Call(contractHname, entryPoint, params, nil)
 }
 
-func (s sandboxView) ChainID() *chainid.ChainID {
+func (s sandboxView) ChainID() *coretypes.ChainID {
 	return s.vmctx.ChainID()
 }
 

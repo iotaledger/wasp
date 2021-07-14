@@ -12,7 +12,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/multiclient"
@@ -26,7 +26,7 @@ const prefix = "[checkSC] "
 // chainrecord to check the whole committee
 //goland:noinspection ALL
 //nolint:funlen
-func CheckDeployment(apiHosts []string, chainID chainid.ChainID, textout ...io.Writer) bool {
+func CheckDeployment(apiHosts []string, chainID coretypes.ChainID, textout ...io.Writer) bool {
 	ret := true
 	var out io.Writer
 	if len(textout) == 0 {

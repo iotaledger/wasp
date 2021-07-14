@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -19,7 +18,7 @@ import (
 )
 
 type (
-	getChainFn          func(chainID *chainid.ChainID) chain.ChainCore
+	getChainFn          func(chainID *coretypes.ChainID) chain.ChainCore
 	getAccountBalanceFn func(ch chain.ChainCore, agentID *coretypes.AgentID) (map[ledgerstate.Color]uint64, error)
 )
 
@@ -76,8 +75,8 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	return c.NoContent(http.StatusAccepted)
 }
 
-func parseParams(c echo.Context) (chainID *chainid.ChainID, req *request.RequestOffLedger, err error) {
-	chainID, err = chainid.ChainIDFromBase58(c.Param("chainID"))
+func parseParams(c echo.Context) (chainID *coretypes.ChainID, req *request.RequestOffLedger, err error) {
+	chainID, err = coretypes.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return nil, nil, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}

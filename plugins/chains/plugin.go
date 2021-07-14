@@ -40,7 +40,7 @@ func run(_ *node.Plugin) {
 		parameters.GetBool(parameters.PullMissingRequestsFromCommittee),
 	)
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry()); err != nil {
+		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry); err != nil {
 			log.Errorf("failed to read chain activation records from registry: %v", err)
 			return
 		}

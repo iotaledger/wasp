@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/registry"
 )
 
 // TODO: extend '*' option in RequestArgs with download options (web, IPFS)
@@ -100,7 +100,7 @@ func (a RequestArgs) Read(r io.Reader) error {
 //    First 32 bytes of the value are always treated as data hash.
 //    The rest (if any) is a content address. It will be treated by a downloader
 //  - otherwise, value is treated a raw data and the first byte of the key is ignored
-func (a RequestArgs) SolidifyRequestArguments(reg coretypes.BlobCache, downloaderOpt ...*downloader.Downloader) (dict.Dict, bool, error) {
+func (a RequestArgs) SolidifyRequestArguments(reg registry.BlobCache, downloaderOpt ...*downloader.Downloader) (dict.Dict, bool, error) {
 	ret := dict.New()
 	ok := true
 	var err error

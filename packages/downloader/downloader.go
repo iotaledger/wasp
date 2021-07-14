@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/registry"
 )
 
 // Downloader struct to store currently being downloaded files and othe things.
@@ -47,7 +47,7 @@ func GetDefaultDownloader() *Downloader {
 // http://<url of the contents> (e.g. http://some.place.lt/some/contents.txt)
 // https://<url of the contents> (e.g. https://some.place.lt/some/contents.txt)
 // ipfs://<cid of the contents> (e.g. ipfs://QmeyMc1i9KLqqyqYCksDZiwntxwuiz5Z1hbLBrHvAXyjMZ)
-func (d *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache coretypes.BlobCache, completedChanOpt ...chan bool) error {
+func (d *Downloader) DownloadAndStore(hash hashing.HashValue, uri string, cache registry.BlobCache, completedChanOpt ...chan bool) error {
 	if d.containsOrMarkStarted(uri) {
 		d.log.Warnf("File %s is already being downloaded. Skipping it.", uri)
 		trueVar := true

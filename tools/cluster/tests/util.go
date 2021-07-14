@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -185,7 +184,7 @@ func checkLedger(t *testing.T, chain *cluster.Chain) {
 	require.EqualValues(t, sum, total.Map())
 }
 
-func getChainInfo(t *testing.T, chain *cluster.Chain) (chainid.ChainID, coretypes.AgentID) {
+func getChainInfo(t *testing.T, chain *cluster.Chain) (coretypes.ChainID, coretypes.AgentID) {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ChainID, root.Interface.Hname(), root.FuncGetChainInfo,
 	)

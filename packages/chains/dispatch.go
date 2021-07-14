@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/txstream"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 )
 
 func (c *Chains) dispatchTransactionMsg(msg *txstream.MsgTransaction) {
@@ -13,7 +12,7 @@ func (c *Chains) dispatchTransactionMsg(msg *txstream.MsgTransaction) {
 		c.log.Warnf("chains: cannot dispatch transaction message to non-alias address")
 		return
 	}
-	chainID := chainid.NewChainID(aliasAddr)
+	chainID := coretypes.NewChainID(aliasAddr)
 	chain := c.Get(chainID)
 	if chain == nil {
 		// not interested in this chainID
@@ -32,7 +31,7 @@ func (c *Chains) dispatchInclusionStateMsg(msg *txstream.MsgTxInclusionState) {
 		c.log.Warnf("chains: cannot dispatch inclusion state message to non-alias address")
 		return
 	}
-	chainID := chainid.NewChainID(aliasAddr)
+	chainID := coretypes.NewChainID(aliasAddr)
 	chain := c.Get(chainID)
 	if chain == nil {
 		// not interested in this chainID
@@ -52,7 +51,7 @@ func (c *Chains) dispatchOutputMsg(msg *txstream.MsgOutput) {
 		c.log.Warnf("chains: cannot dispatch output message to non-alias address")
 		return
 	}
-	chainID := chainid.NewChainID(aliasAddr)
+	chainID := coretypes.NewChainID(aliasAddr)
 	chain := c.Get(chainID)
 	if chain == nil {
 		// not interested in this message
@@ -66,7 +65,7 @@ func (c *Chains) dispatchOutputMsg(msg *txstream.MsgOutput) {
 }
 
 func (c *Chains) dispatchUnspentAliasOutputMsg(msg *txstream.MsgUnspentAliasOutput) {
-	chainID := chainid.NewChainID(msg.AliasAddress)
+	chainID := coretypes.NewChainID(msg.AliasAddress)
 	chain := c.Get(chainID)
 	if chain == nil {
 		// not interested in this message

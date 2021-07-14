@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -21,7 +20,7 @@ import (
 
 type MockedChainCore struct {
 	T                                    *testing.T
-	chainID                              chainid.ChainID
+	chainID                              coretypes.ChainID
 	processors                           *processors.Cache
 	eventStateTransition                 *events.Event
 	eventRequestProcessed                *events.Event
@@ -44,7 +43,7 @@ type MockedChainCore struct {
 	log                                  *logger.Logger
 }
 
-func NewMockedChainCore(t *testing.T, chainID chainid.ChainID, log *logger.Logger) *MockedChainCore {
+func NewMockedChainCore(t *testing.T, chainID coretypes.ChainID, log *logger.Logger) *MockedChainCore {
 	receiveFailFun := func(typee string, msg interface{}) {
 		t.Fatalf("Receiving of %s is not implemented, but %v is received", typee, msg)
 	}
@@ -99,7 +98,7 @@ func (m *MockedChainCore) Log() *logger.Logger {
 	return m.log
 }
 
-func (m *MockedChainCore) ID() *chainid.ChainID {
+func (m *MockedChainCore) ID() *coretypes.ChainID {
 	return &m.chainID
 }
 

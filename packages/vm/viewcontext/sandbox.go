@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/assert"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -55,7 +54,7 @@ func (s *sandboxview) Call(contractHname, entryPoint coretypes.Hname, params dic
 	return s.vctx.CallView(contractHname, entryPoint, params)
 }
 
-func (s *sandboxview) ChainID() *chainid.ChainID {
+func (s *sandboxview) ChainID() *coretypes.ChainID {
 	return &s.vctx.chainID
 }
 
