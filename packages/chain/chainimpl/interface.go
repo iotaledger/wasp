@@ -178,9 +178,10 @@ func (c *chainObj) ReceiveRequestAckMessage(reqID *iscp.RequestID, peerID string
 func (c *chainObj) SendMissingRequestsToPeer(msg messages.MissingRequestIDsMsg, peerID string) {
 	for _, reqID := range msg.IDs {
 		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID.Base58(), peerID)
-		req := c.mempool.GetRequest(reqID)
-		msg := messages.NewMissingRequestMsg(req)
-		(*c.peers).SendSimple(peerID, messages.MsgMissingRequest, msg.Bytes())
+		if req := c.mempool.GetRequest(reqID); req != nil {
+			msg := messages.NewMissingRequestMsg(req)
+			(*c.peers).SendSimple(peerID, messages.MsgMissingRequest, msg.Bytes())
+		}
 	}
 }
 
