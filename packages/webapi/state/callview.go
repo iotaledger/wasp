@@ -3,6 +3,7 @@ package state
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -72,6 +73,9 @@ func handleCallView(c echo.Context) error {
 	return c.JSON(http.StatusOK, ret)
 }
 
+const retryOnStateInvalidatedRetry = 100 * time.Millisecond //nolint:gofumpt
+const retryOnStateInvalidatedTimeout = 5 * time.Minute
+
 func handleStateGet(c echo.Context) error {
 	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
@@ -89,16 +93,17 @@ func handleStateGet(c echo.Context) error {
 	}
 
 	var ret []byte
-	err = optimism.RepeatOnceIfUnlucky(func() error {
-		v, err := theChain.GetStateReader().KVStoreReader().Get(kv.Key(key))
-		if err != nil {
-			return err
-		}
-		ret = v
-		return nil
-	}, 100*time.Millisecond)
+	err = optimism.RetryOnStateInvalidated(func() error {
+		var err error
+		ret, err = theChain.GetStateReader().KVStoreReader().Get(kv.Key(key))
+		return err
+	}, retryOnStateInvalidatedRetry, time.Now().Add(retryOnStateInvalidatedTimeout))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("View call failed: %v", err))
+		reason := fmt.Sprintf("View call failed: %v", err)
+		if errors.Is(err, optimism.ErrStateHasBeenInvalidated) {
+			return httperrors.Conflict(reason)
+		}
+		return httperrors.BadRequest(reason)
 	}
 
 	return c.JSON(http.StatusOK, ret)
