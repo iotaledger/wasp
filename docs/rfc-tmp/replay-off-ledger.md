@@ -3,7 +3,7 @@
 ## Motivation
 
 The _off-ledger requests_ (aka _L2 requests_) are ISCP requests sent to the smart contract directly
-through the Wasp node, a validator node or access node of the chain. In contrast, _on-ledger requests_ (aka _L1 requests_)  
+through the Wasp node, a validator node or access node of the chain. In contrast, _on-ledger requests_ (aka _L1 requests_)
 are sent to the smart contract by wrapping the request into the IOTA value transaction and confirming it on the Tangle.
 
 The _on-ledger requests_ thus are protected from replay because UTXO ledger on L1 ledger does not allow
@@ -23,7 +23,7 @@ The [mempool](../../packages/chain/mempool/mempool.go#L116) checks the state and
 The above is valid for both _off-ledger_ and _on-ledger_ requests. It means current implementation is fundamentally protected  
 against request replay.
 
-However, the problem is with potentially huge logs. We are aiming at high TPS to be processed by the ISCP chains,  
+However, the problem is with potentially huge logs. We are aiming at high TPS to be processed by the ISCP chains,
 mostly by using mechanism of _off-ledger_ requests.
 
 Let's assume we have 1000 TPS (requests per second). Each request generates a record 50+ bytes long in the `blocklog`.
@@ -32,7 +32,7 @@ This gives us 50 kB/s = 180 MB/h = 4.3 GB/day. This isn't sustainable in the lon
 It means ISCP chain state will necessary be periodically pruned, deleting non-critical and obsolete information from the state.
 
 _(In short, the pruning of the state involves extracting witnesses/proofs of existence of the past state
-and then deleting that part from the state. Witnesses may be stored independently of the chain, while the chain will contain  
+and then deleting that part from the state. Witnesses may be stored independently of the chain, while the chain will contain
 root of the witness. Witnesses may be implemented by Merkle trees or other techniques, such as vector commitments)_
 
 In any case, after some time it won't be possible to check in the state if the requests was processed in the past.
@@ -41,21 +41,21 @@ It creates and attack vector: the same request can be replayed by anyone after s
 
 ## Naive replay protection with increasing `nonce`
 
-We may require from each request an ever-increasing value, the `nonce`. The VM would store the maximum value of the `nonce`  
-for requests with the same sender address. Then VM would reject any _off-ledger request_ from this address with the  
-`nonce` less or equal with the stored maximum. The use will be forced to use incrementally updated value for the `nonce` or  
+We may require from each request an ever-increasing value, the `nonce`. The VM would store the maximum value of the `nonce`
+for requests with the same sender address. Then VM would reject any _off-ledger request_ from this address with the
+`nonce` less or equal with the stored maximum. The use will be forced to use incrementally updated value for the `nonce` or
 e.g. timestamp.
 
 The good thing with this approach is that the check can be performed early by calling a view and checking the `blocklog`.
 
-The problem, however, is that with our consensus we cannot guarantee the requests will be included into the block in  
-the order they arrived. For example, if a client sends 5 requests at once, with nonces `1, 2, 3, 4, 5`, the  
-requests may be picked and processed in two batches `1,2,5` and `3,4`.  
+The problem, however, is that with our consensus we cannot guarantee the requests will be included into the block in
+the order they arrived. For example, if a client sends 5 requests at once, with nonces `1, 2, 3, 4, 5`, the
+requests may be picked and processed in two batches `1,2,5` and `3,4`.
 In this case requests `3,4` will fail for no reason for the user.
 
 ## Proposed solution
 
-We propose to combine the two methods: by logging and checking processed requests in the state and requiring  
+We propose to combine the two methods: by logging and checking processed requests in the state and requiring
 incremental nonce for _off-ledger requests_:
 
 * each _off-ledger request_ is required a _nonce_, `uint64` value
