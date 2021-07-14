@@ -3,6 +3,7 @@ package tests
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -239,11 +240,27 @@ func waitTrue(timeout time.Duration, fun func() bool) bool {
 	}
 }
 
+func repeatIfInvalidated(fun func() (dict.Dict, error), deadline time.Time) (dict.Dict, error) {
+	result, err := fun()
+	if err != nil {
+		errStr := fmt.Sprintf("%v", err)
+		if strings.Contains(errStr, "virtual state has been invalidated") {
+			if time.Now().Before(deadline) {
+				return repeatIfInvalidated(fun, deadline)
+			}
+			return result, fmt.Errorf("Retrying timeouted. Last error: %w", err)
+		}
+	}
+	return result, err
+}
+
 func counterEquals(chain *cluster.Chain, expected int64) conditionFn {
-	return func(t *testing.T, nodeIndex int) bool {
-		ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
-			chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter,
-		)
+	return func(t *testing.T, nodeIndex int, timeout time.Duration) bool {
+		ret, err := repeatIfInvalidated(func() (dict.Dict, error) {
+			return chain.Cluster.WaspClient(nodeIndex).CallView(
+				chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter,
+			)
+		}, time.Now().Add(timeout))
 		require.NoError(t, err)
 		counter, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
 		require.NoError(t, err)
@@ -253,7 +270,7 @@ func counterEquals(chain *cluster.Chain, expected int64) conditionFn {
 }
 
 func contractIsDeployed(chain *cluster.Chain, contractName string) conditionFn {
-	return func(t *testing.T, nodeIndex int) bool {
+	return func(t *testing.T, nodeIndex int, timeout time.Duration) bool {
 		ret, err := findContract(chain, contractName, nodeIndex)
 		if err != nil {
 			return false
@@ -263,12 +280,12 @@ func contractIsDeployed(chain *cluster.Chain, contractName string) conditionFn {
 }
 
 func balanceOnChainIotaEquals(chain *cluster.Chain, agentID *coretypes.AgentID, iotas uint64) conditionFn {
-	return func(t *testing.T, nodeIndex int) bool {
+	return func(t *testing.T, nodeIndex int, timeout time.Duration) bool {
 		return iotas == getBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA, nodeIndex)
 	}
 }
 
-type conditionFn func(t *testing.T, nodeIndex int) bool
+type conditionFn func(t *testing.T, nodeIndex int, timeout time.Duration) bool
 
 func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Duration, logMsg ...string) {
 	for _, nodeIndex := range nodeIndexes {
@@ -276,7 +293,7 @@ func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Dur
 			t.Logf("-->Waiting for '%s' on node %v...", logMsg[0], nodeIndex)
 		}
 		w := waitTrue(timeout, func() bool {
-			return fn(t, nodeIndex)
+			return fn(t, nodeIndex, timeout)
 		})
 		if !w {
 			if len(logMsg) > 0 {
