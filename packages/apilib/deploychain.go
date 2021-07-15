@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
@@ -166,7 +166,7 @@ func CreateChainOrigin(node *goshimmer.Client, originator *ed25519.KeyPair, stat
 func ActivateChainOnAccessNodes(apiHosts, peers []string, chainID *iscp.ChainID) error {
 	nodes := multiclient.New(apiHosts)
 	// ------------ put chain records to hosts
-	err := nodes.PutChainRecord(&chainrecord.ChainRecord{
+	err := nodes.PutChainRecord(&registry.ChainRecord{
 		ChainID: chainID,
 		Peers:   peers,
 	})

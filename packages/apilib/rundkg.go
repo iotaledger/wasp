@@ -3,11 +3,10 @@ package apilib
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/client/multiclient"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client"
+	"github.com/iotaledger/wasp/client/multiclient"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"golang.org/x/xerrors"
@@ -41,7 +40,7 @@ func RunDKG(apiHosts, peeringHosts []string, threshold, initiatorIndex uint16, t
 	}
 
 	// put committee records to hosts
-	err = multiclient.New(apiHosts).PutCommitteeRecord(&committee_record.CommitteeRecord{
+	err = multiclient.New(apiHosts).PutCommitteeRecord(&registry.CommitteeRecord{
 		Address: addr,
 		Nodes:   peeringHosts,
 	})

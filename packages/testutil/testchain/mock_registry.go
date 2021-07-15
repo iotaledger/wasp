@@ -2,7 +2,7 @@ package testchain
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
+	"github.com/iotaledger/wasp/packages/registry"
 )
 
 type MockedCommitteeRegistry struct {
@@ -13,13 +13,13 @@ func NewMockedCommitteeRegistry(validators []string) *MockedCommitteeRegistry {
 	return &MockedCommitteeRegistry{validators}
 }
 
-func (m *MockedCommitteeRegistry) GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error) {
-	return &committee_record.CommitteeRecord{
+func (m *MockedCommitteeRegistry) GetCommitteeRecord(addr ledgerstate.Address) (*registry.CommitteeRecord, error) {
+	return &registry.CommitteeRecord{
 		Address: addr,
 		Nodes:   m.validators,
 	}, nil
 }
 
-func (m *MockedCommitteeRegistry) SaveCommitteeRecord(rec *committee_record.CommitteeRecord) error {
+func (m *MockedCommitteeRegistry) SaveCommitteeRecord(rec *registry.CommitteeRecord) error {
 	panic("implement me")
 }

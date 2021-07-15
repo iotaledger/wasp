@@ -10,8 +10,6 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
@@ -46,16 +44,15 @@ type DKShareRegistryProvider interface {
 }
 
 type CommitteeRegistryProvider interface {
-	GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error)
-	SaveCommitteeRecord(rec *committee_record.CommitteeRecord) error
+	GetCommitteeRecord(addr ledgerstate.Address) (*CommitteeRecord, error)
+	SaveCommitteeRecord(rec *CommitteeRecord) error
 }
 
 // ChainRecordRegistryProvider stands for a partial registry interface, needed for this package.
-// It should be implemented by in the chainrecord package
 type ChainRecordRegistryProvider interface {
-	GetChainRecordByChainID(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error)
-	GetChainRecords() ([]*chainrecord.ChainRecord, error)
-	UpdateChainRecord(chainID *iscp.ChainID, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error)
-	ActivateChainRecord(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error)
-	DeactivateChainRecord(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error)
+	GetChainRecordByChainID(chainID *iscp.ChainID) (*ChainRecord, error)
+	GetChainRecords() ([]*ChainRecord, error)
+	UpdateChainRecord(chainID *iscp.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error)
+	ActivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error)
+	DeactivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error)
 }

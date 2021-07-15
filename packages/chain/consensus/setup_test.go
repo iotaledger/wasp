@@ -26,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -210,7 +209,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	if env.MockedACS != nil {
 		acs = append(acs, env.MockedACS)
 	}
-	cmtRec := &committee_record.CommitteeRecord{
+	cmtRec := &registry.CommitteeRecord{
 		Address: env.StateAddress,
 		Nodes:   env.NodeIDs,
 	}

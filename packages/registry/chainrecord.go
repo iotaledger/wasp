@@ -1,4 +1,4 @@
-package chainrecord
+package registry
 
 import (
 	"fmt"
@@ -48,7 +48,7 @@ func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
 }
 
 // CommitteeRecordFromBytes
-func FromBytes(data []byte) (*ChainRecord, error) {
+func ChainRecordFromBytes(data []byte) (*ChainRecord, error) {
 	return FromMarshalUtil(marshalutil.New(data))
 }
 

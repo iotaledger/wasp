@@ -1,11 +1,10 @@
-package registry_test
+package registry
 
 import (
 	"testing"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 )
@@ -13,7 +12,7 @@ import (
 func TestTrustedPeer(t *testing.T) {
 	// var err error
 	log := testlogger.NewLogger(t)
-	reg := registry.NewRegistry(log, mapdb.NewMapDB())
+	reg := NewRegistry(log, mapdb.NewMapDB())
 
 	tpList, err := reg.TrustedPeers()
 	require.Nil(t, err)

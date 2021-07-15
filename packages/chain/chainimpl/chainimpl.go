@@ -26,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -402,7 +401,7 @@ func (c *chainObj) createCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput
 	return nil
 }
 
-func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error) {
+func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*registry.CommitteeRecord, error) {
 	rec, err := c.committeeRegistry.GetCommitteeRecord(addr)
 	if err != nil {
 		return nil, xerrors.Errorf("createCommitteeIfNeeded: reading committee record: %v", err)
@@ -419,7 +418,7 @@ func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*committee_r
 	return rec, nil
 }
 
-func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *committee_record.CommitteeRecord) error {
+func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeRecord) error {
 	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
 	cmt, err := committee.New(
 		cmtRec,

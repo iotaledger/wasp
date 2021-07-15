@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
