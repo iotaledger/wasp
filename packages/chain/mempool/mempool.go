@@ -305,8 +305,10 @@ func (m *Mempool) GetRequest(id iscp.RequestID) iscp.Request {
 	m.poolMutex.RLock()
 	defer m.poolMutex.RUnlock()
 
-	reqRef := m.pool[id]
-	return reqRef.req
+	if reqRef, ok := m.pool[id]; ok {
+		return reqRef.req
+	}
+	return nil
 }
 
 const waitRequestInPoolTimeoutDefault = 2 * time.Second
