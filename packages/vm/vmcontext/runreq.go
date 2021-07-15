@@ -19,6 +19,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
+// TODO temporary place for the constant. In the future must be shared with pruning module
+//  the number is approximate assumed maximum number of requests in the batch
+//  The node must guarantee at least this number of last requests processed recorded in the state
+//  for each address
+const OffLedgerNonceStrictOrderTolerance = 10000
+
 // RunTheRequest processes any request based on the Extended output, even if it
 // doesn't parse correctly as a SC request
 func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16) {
@@ -172,22 +178,20 @@ func (vmctx *VMContext) validateRequest() bool {
 	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	// off-ledger account must exist
+	// off-ledger account must exist, i.e. it should have non zero balance on the chain
 	if _, exists := accounts.GetAccountBalances(vmctx.State(), req.SenderAccount()); !exists {
 		vmctx.lastError = fmt.Errorf("validateRequest: unverified account %s for %s", req.SenderAccount(), req.ID().String())
 		return false
 	}
 
-	// order of nonces requests must always strictly increase
-	// temporary disable TODO
-	//lastNonce := accounts.GetLastNonce(vmctx.State(), req.SenderAddress())
-	//if vmctx.req.Nonce() <= lastNonce {
-	//	vmctx.lastError = fmt.Errorf("validateRequest: invalid order %d <= %d of request %s",
-	//		vmctx.req.Nonce(), lastNonce, req.ID().String())
-	//	return false
-	//}
+	// this is a replay protection measure for off-ledger requests assuming in the batch order of requests is random.
+	// See rfc [replay-off-ledger.md]
 
-	return true
+	maxAssumed := accounts.GetMaxAssumedNonce(vmctx.State(), req.SenderAddress())
+	if maxAssumed < OffLedgerNonceStrictOrderTolerance {
+		return true
+	}
+	return req.Nonce() > maxAssumed-OffLedgerNonceStrictOrderTolerance
 }
 
 // mustHandleFees handles node fees. If not enough, takes as much as it can, the rest sends back
@@ -295,13 +299,11 @@ func (vmctx *VMContext) mustCallFromRequest() {
 }
 
 func (vmctx *VMContext) mustSaveOffledgerRequestNonce() {
-	if _, ok := vmctx.req.(*request.RequestOffLedger); ok {
+	if offl, ok := vmctx.req.(*request.RequestOffLedger); ok {
 		vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 		defer vmctx.popCallContext()
 
-		address := vmctx.req.SenderAddress()
-		order := vmctx.req.Nonce()
-		accounts.SetLastNonce(vmctx.State(), address, order)
+		accounts.RecordMaxAssumedNonce(vmctx.State(), offl.SenderAddress(), offl.Nonce())
 	}
 }
 

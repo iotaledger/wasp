@@ -166,7 +166,6 @@ func (p *RequestMetadata) Read(r io.Reader) error {
 // region RequestOnLedger //////////////////////////////////////////////////////////////////
 
 type RequestOnLedger struct {
-	nonce           uint64
 	minted          map[ledgerstate.Color]uint64
 	outputObj       *ledgerstate.ExtendedLockedOutput
 	requestMetadata *RequestMetadata
@@ -179,10 +178,9 @@ var _ coretypes.Request = &RequestOnLedger{}
 
 // RequestOnLedgerFromOutput
 //nolint:revive // TODO refactor stutter request.request
-func RequestOnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, timestamp time.Time, senderAddr ledgerstate.Address, minted ...map[ledgerstate.Color]uint64) *RequestOnLedger {
+func RequestOnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...map[ledgerstate.Color]uint64) *RequestOnLedger {
 	ret := &RequestOnLedger{
 		outputObj:     output,
-		nonce:         uint64(timestamp.UnixNano()),
 		senderAddress: senderAddr,
 	}
 	ret.requestMetadata = RequestMetadataFromBytes(output.GetPayload())
@@ -207,7 +205,7 @@ func RequestsOnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr led
 		if out, ok := o.(*ledgerstate.ExtendedLockedOutput); ok {
 			if out.Address().Equals(targetAddr) {
 				out1 := out.UpdateMintingColor().(*ledgerstate.ExtendedLockedOutput)
-				ret = append(ret, RequestOnLedgerFromOutput(out1, tx.Essence().Timestamp(), senderAddr, mintedAmounts))
+				ret = append(ret, RequestOnLedgerFromOutput(out1, senderAddr, mintedAmounts))
 			}
 		}
 	}
@@ -220,15 +218,6 @@ func (req *RequestOnLedger) ID() coretypes.RequestID {
 
 func (req *RequestOnLedger) IsFeePrepaid() bool {
 	return false
-}
-
-func (req *RequestOnLedger) Nonce() uint64 {
-	return req.nonce
-}
-
-func (req *RequestOnLedger) WithNonce(nonce uint64) coretypes.Request {
-	req.nonce = nonce
-	return req
 }
 
 func (req *RequestOnLedger) Output() ledgerstate.Output {
@@ -341,7 +330,6 @@ func (req *RequestOnLedger) Bytes() []byte {
 	buf.Write(req.Output().Bytes())
 	buf.Write(req.senderAddress.Bytes())
 	buf.Write(req.mintedBytes())
-	_ = util.WriteUint64(&buf, req.nonce)
 	buf.Write(req.requestMetadata.Bytes())
 	return buf.Bytes()
 }
@@ -375,12 +363,6 @@ func onLedgerFromBytes(buf []byte) (*RequestOnLedger, error) {
 
 	// minted
 	err = req.readMinted(r)
-	if err != nil {
-		return nil, err
-	}
-
-	// timestamp
-	err = util.ReadUint64(r, &req.nonce)
 	if err != nil {
 		return nil, err
 	}
@@ -540,7 +522,7 @@ func (req *RequestOffLedger) IsFeePrepaid() bool {
 	return true
 }
 
-// Order number used for ordering requests in the mempool. Priority order is a descending order
+// Order number used for replay protection
 func (req *RequestOffLedger) Nonce() uint64 {
 	return req.nonce
 }

@@ -58,11 +58,21 @@ In this case requests `3,4` will fail for no reason for the user.
 We propose to combine the two methods: by logging and checking processed requests in the state and requiring
 incremental nonce for _off-ledger requests_:
 
+* each _off-ledger request_ is first checked in the (pruned) state if it wasn't processed before
 * each _off-ledger request_ is required a _nonce_, `uint64` value
 * _on-ledger requests_ don't have `nonce`
-* VM will store maximum seen `nonce` in the state next to the sender's address
-* VM will invalidate any request with the `nonce` < `stored maximum` - `NConst`
+* for each new off-ledger request VM will store value `MaxAssumed` in the state next to the sender's address the following way:
+  * if the `nonce` of the request is greather than existing `MaxAssumed`, it stores `nonce` as new `MaxAssumed`
+  * otherwise it increments `MaxAssumed` by 1
+* VM will validate any request the following way:
+  * if `MaxAssumed` < `NConst` the request is **valid**
+  * otherwise, if `nonce` > `MaxAssumed` - `NConst`, the requests **valid**
+  * otherwise, the request is deemed **invalid**
 * `NConst` is a global static constant, say `10000`.
-* chain guarantee at least last `NConst` requests not pruned and present in the `blocklog` state
+* chain guarantee at least last `NConst` requests not pruned and present in the `blocklog` state for each address
 
-The approach means VM will not allow too old `nonces` (too far in the past), but otherwise local sequence is not important.
+`NConst` also known as `EnforceOrderNumberOfNoncesBack`. It must be at least the number of theoretically maximum number of  
+_offledger requests_ from one address in one batch, i.e. with `NConst` number of requests in one batch the order is ignored.
+
+The approach will enforce ever growing nonces. The user will be forced to use incremental nonces or use for example timestamp.  
+VM will not allow too old `nonces` (too far in the past), but otherwise local sequence is not enforced and is assumed random.

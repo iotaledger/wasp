@@ -235,11 +235,15 @@ func DecodeBalances(balances dict.Dict) (map[ledgerstate.Color]uint64, error) {
 	return ret, nil
 }
 
-func GetLastNonce(state kv.KVStore, address ledgerstate.Address) uint64 {
-	order, _, _ := codec.DecodeUint64(state.MustGet(kv.Key(address.Bytes()) + "ord"))
-	return order
+func GetMaxAssumedNonce(state kv.KVStore, address ledgerstate.Address) uint64 {
+	nonce, _, _ := codec.DecodeUint64(state.MustGet(kv.Key(address.Bytes()) + "non"))
+	return nonce
 }
 
-func SetLastNonce(state kv.KVStore, address ledgerstate.Address, order uint64) {
-	state.Set(kv.Key(address.Bytes())+"ord", codec.EncodeUint64(order))
+func RecordMaxAssumedNonce(state kv.KVStore, address ledgerstate.Address, nonce uint64) {
+	next := GetMaxAssumedNonce(state, address) + 1
+	if nonce > next {
+		next = nonce
+	}
+	state.Set(kv.Key(address.Bytes())+"non", codec.EncodeUint64(next))
 }

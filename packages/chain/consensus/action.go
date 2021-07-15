@@ -125,20 +125,12 @@ func (c *Consensus) runVMIfNeeded() {
 
 	c.log.Debugf("runVM needed: total number of requests = %d", len(reqs))
 	// here reqs as a set is deterministic. Must be sorted to have fully deterministic list
-	sort.Slice(reqs, func(i, j int) bool {
-		switch {
-		case reqs[i].Nonce() < reqs[j].Nonce():
-			return true
-		case reqs[i].Nonce() > reqs[j].Nonce():
-			return false
-		default:
-			return bytes.Compare(reqs[i].ID().Bytes(), reqs[j].ID().Bytes()) < 0
-		}
-	})
+	c.sortBatch(reqs)
 
-	// ensure that no more than 126 on ledger requests are in a batch
+	// ensure that no more than 126 of on-ledger requests are in a batch.
+	// This is a restriction on max number of inputs in the transaction
 	onLedgerCount := 0
-	reqsFiltered := make([]coretypes.Request, 0, len(reqs))
+	reqsFiltered := reqs[:0]
 	for _, req := range reqs {
 		_, isOnLedgerReq := req.(*request.RequestOnLedger)
 		if isOnLedgerReq {
@@ -158,6 +150,40 @@ func (c *Consensus) runVMIfNeeded() {
 		c.log.Debugf("runVM: VM started")
 	} else {
 		c.log.Errorf("runVM: error preparing VM task")
+	}
+}
+
+// sortBatch deterministically sorts batch based on the value extracted from the consensus entropy
+// It is needed for determinism and as a MEV prevention measure see [prevent-mev.md]
+func (c *Consensus) sortBatch(reqs []coretypes.Request) {
+	if len(reqs) <= 1 {
+		return
+	}
+	rnd := util.MustUint32From4Bytes(c.consensusEntropy[:4])
+
+	type sortStru struct {
+		num uint32
+		req coretypes.Request
+	}
+	toSort := make([]sortStru, len(reqs))
+	for i, req := range reqs {
+		toSort[i] = sortStru{
+			num: (util.MustUint32From4Bytes(req.ID().Bytes()[:4]) + rnd) & 0x0000FFFF,
+			req: req,
+		}
+	}
+	sort.Slice(toSort, func(i, j int) bool {
+		switch {
+		case toSort[i].num < toSort[j].num:
+			return true
+		case toSort[i].num > toSort[j].num:
+			return false
+		default: // ==
+			return bytes.Compare(toSort[i].req.ID().Bytes(), toSort[j].req.ID().Bytes()) < 0
+		}
+	})
+	for i := range reqs {
+		reqs[i] = toSort[i].req
 	}
 }
 
