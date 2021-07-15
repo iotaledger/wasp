@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -43,7 +43,7 @@ var balanceCmd = &cobra.Command{
 	Short: "Show balance of on-chain account",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		agentID, err := coretypes.NewAgentIDFromString(args[0])
+		agentID, err := iscp.NewAgentIDFromString(args[0])
 		log.Check(err)
 
 		ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncViewBalance,

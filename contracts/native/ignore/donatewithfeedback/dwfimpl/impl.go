@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/native/ignore/donatewithfeedback"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -21,9 +22,9 @@ const ProgramHash = "5ydEfDeAJZX6dh6Fy7tMoHcDeh42gENeqVDASGWuD64X"
 const Description = "DonateWithFeedback, a PoC smart contract"
 
 // implementation of 'vmtypes.VMProcessor' and 'vmtypes.VMProcessorEntryPoint' interfaces
-type dwfProcessor map[coretypes.Hname]dwfEntryPoint
+type dwfProcessor map[iscp.Hname]dwfEntryPoint
 
-type dwfEntryPoint func(ctx coretypes.Sandbox) error
+type dwfEntryPoint func(ctx iscp.Sandbox) error
 
 // the processor implementation is a map of entry points: one for each request
 var entryPoints = dwfProcessor{
@@ -32,13 +33,13 @@ var entryPoints = dwfProcessor{
 }
 
 // point of attachment of hard coded code to the rest of Wasp
-func GetProcessor() coretypes.VMProcessor {
+func GetProcessor() iscp.VMProcessor {
 	return entryPoints
 }
 
 // GetEntryPoint implements VMProcessorEntryPoint interfaces. It resolves request code to the
 // function
-func (v dwfProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
+func (v dwfProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }
@@ -49,7 +50,7 @@ func (v dwfProcessor) GetDescription() string {
 }
 
 // Run calls the function wrapped into the VMProcessorEntryPoint
-func (ep dwfEntryPoint) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
+func (ep dwfEntryPoint) Call(ctx iscp.Sandbox) (dict.Dict, error) {
 	ret := ep(ctx)
 	if ret != nil {
 		ctx.Event(fmt.Sprintf("error %v", ret))
@@ -63,7 +64,7 @@ func (ep dwfEntryPoint) IsView() bool {
 }
 
 // TODO
-func (ep dwfEntryPoint) CallView(ctx coretypes.SandboxView) (dict.Dict, error) {
+func (ep dwfEntryPoint) CallView(ctx iscp.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 
@@ -71,7 +72,7 @@ const maxComment = 150
 
 // donate implements request 'donate'. It takes feedback text from the request
 // and adds it into the log of feedback messages
-func donate(ctx coretypes.Sandbox) error {
+func donate(ctx iscp.Sandbox) error {
 	ctx.Event(fmt.Sprintf("DonateWithFeedback: donate"))
 	params := ctx.Params()
 
@@ -133,7 +134,7 @@ func donate(ctx coretypes.Sandbox) error {
 }
 
 // TODO implement withdrawal of other than IOTA colored tokens
-func withdraw(ctx coretypes.Sandbox) error {
+func withdraw(ctx iscp.Sandbox) error {
 	ctx.Event(fmt.Sprintf("DonateWithFeedback: withdraw"))
 	params := ctx.Params()
 

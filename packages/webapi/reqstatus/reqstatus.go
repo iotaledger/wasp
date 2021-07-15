@@ -5,11 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -19,11 +17,11 @@ import (
 )
 
 type reqstatusWebAPI struct {
-	getChain func(chainID *chainid.ChainID) chain.ChainRequests
+	getChain func(chainID *iscp.ChainID) chain.ChainRequests
 }
 
 func AddEndpoints(server echoswagger.ApiRouter) {
-	r := &reqstatusWebAPI{func(chainID *chainid.ChainID) chain.ChainRequests {
+	r := &reqstatusWebAPI{func(chainID *iscp.ChainID) chain.ChainRequests {
 		return chains.AllChains().Get(chainID)
 	}}
 
@@ -79,7 +77,7 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 
 	// subscribe to event
 	requestProcessed := make(chan bool)
-	handler := events.NewClosure(func(rid coretypes.RequestID) {
+	handler := events.NewClosure(func(rid iscp.RequestID) {
 		if rid == reqID {
 			requestProcessed <- true
 		}
@@ -99,18 +97,18 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 	}
 }
 
-func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, coretypes.RequestID, error) {
-	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
+func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, iscp.RequestID, error) {
+	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
-		return nil, coretypes.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
+		return nil, iscp.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}
 	theChain := r.getChain(chainID)
 	if theChain == nil {
-		return nil, coretypes.RequestID{}, httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID.String()))
+		return nil, iscp.RequestID{}, httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID.String()))
 	}
-	reqID, err := coretypes.RequestIDFromBase58(c.Param("reqID"))
+	reqID, err := iscp.RequestIDFromBase58(c.Param("reqID"))
 	if err != nil {
-		return nil, coretypes.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid request id %+v: %s", c.Param("reqID"), err.Error()))
+		return nil, iscp.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid request id %+v: %s", c.Param("reqID"), err.Error()))
 	}
 	return theChain, reqID, nil
 }

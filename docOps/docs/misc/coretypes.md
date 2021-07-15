@@ -1,7 +1,7 @@
 # Core types
 
 All core types used in the Wasp code are defined in the
-[`coretypes`](https://github.com/iotaledger/wasp/tree/master/packages/coretypes)
+[`iscp`](https://github.com/iotaledger/wasp/tree/master/packages/iscp)
 package.
 
 
@@ -20,18 +20,18 @@ transient because chains can be moved from address to address. The chain color
 is an ultimate identifier of the chain for its lifetime.
 
 Each chain is identified on the ISCP by its _chain ID_, represented by the
-[`chainid.ChainID`](https://github.com/iotaledger/wasp/blob/master/packages/coretypes/chainid/chainid.go)
-type. In the current implementation `chainid.ChainID` is just a synonym of
+[`iscp.ChainID`](https://github.com/iotaledger/wasp/blob/master/packages/iscp/chainid/chainid.go)
+type. In the current implementation `iscp.ChainID` is just a synonym of
 the chain address. In the future, the chain color will be used as chain ID.
 
 
 ## Hashed names
 
 The hashed vales of string identifiers (called _hname_ for short) are used in
-several places of the sandbox interface as type `coretypes.Hame`.  The type is
+several places of the sandbox interface as type `iscp.Hame`.  The type is
 alias of `uint32`.
 
-The function `coretypes.Hn(string) coretypes.Hname` is used to compute the
+The function `iscp.Hn(string) iscp.Hname` is used to compute the
 hname of an identifier, by hashing the string with `blake2b` and returning the
 first 4 bytes, casted to uint32 (little endian). (If all 4 bytes are _0x00_ or
 _0xFF_, the function takes the next 4 bytes, since `0x00000000` and
@@ -46,7 +46,7 @@ _hname_ of the _name_ uniquely identifies the contract within a particular
 chain.
 
 The global identifier of the smart contract contract is represented by the type
-`coretypes.ContractID`.  The _contract ID_ is concatenation of the _chain ID_
+`iscp.ContractID`.  The _contract ID_ is concatenation of the _chain ID_
 and _hname_ of the contract (resulting in a 37 byte long value):
 
 ```
@@ -72,7 +72,7 @@ transfered to the chain address. The chain keeps a ledger to know who is the
 actual owner of the tokens (address or contract), and allows the actual owner
 to withdraw at any time (more on this [here](./accounts.md)).
 
-An _agent ID_ (`coretypes.AgentID` type, 37 bytes) represents an owner of
+An _agent ID_ (`iscp.AgentID` type, 37 bytes) represents an owner of
 tokens in the internal chain ledger. It is a union type that can be either an
 IOTA address (when the last 4 bytes are 0x00) or an ISCP contract ID.
 
@@ -87,7 +87,7 @@ C/mZdSYhXd4F5qQGgELK8JvzUYovcNmPoVHxW1p4LF4gxT::cebf5908
 
 ## Colored balances
 
-The interface `coretypes.ColoredBalances` represents a map of color values and
+The interface `iscp.ColoredBalances` represents a map of color values and
 their balances. The implementation is backed by the type `map[balance.Color]int64`.
 It is guaranteed that the map does not contain colors with balance 0.
 

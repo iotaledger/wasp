@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 func (c *Consensus) EventStateTransitionMsg(msg *messages.StateTransitionMsg) {
@@ -14,7 +14,7 @@ func (c *Consensus) EventStateTransitionMsg(msg *messages.StateTransitionMsg) {
 
 func (c *Consensus) eventStateTransitionMsg(msg *messages.StateTransitionMsg) {
 	c.log.Debugf("StateTransitionMsg received: state index: %d, state output: %s, timestamp: %v",
-		msg.State.BlockIndex(), coretypes.OID(msg.StateOutput.ID()), msg.StateTimestamp)
+		msg.State.BlockIndex(), iscp.OID(msg.StateOutput.ID()), msg.StateTimestamp)
 	c.setNewState(msg)
 	c.takeAction()
 }
@@ -25,7 +25,7 @@ func (c *Consensus) EventSignedResultMsg(msg *messages.SignedResultMsg) {
 
 func (c *Consensus) eventSignedResult(msg *messages.SignedResultMsg) {
 	c.log.Debugf("SignedResultMsg received: from sender %d, hash=%s, chain input id=%v",
-		msg.SenderIndex, msg.EssenceHash, coretypes.OID(msg.ChainInputID))
+		msg.SenderIndex, msg.EssenceHash, iscp.OID(msg.ChainInputID))
 	c.receiveSignedResult(msg)
 	c.takeAction()
 }
@@ -36,7 +36,7 @@ func (c *Consensus) EventSignedResultAckMsg(msg *messages.SignedResultAckMsg) {
 
 func (c *Consensus) eventSignedResultAck(msg *messages.SignedResultAckMsg) {
 	c.log.Debugf("SignedResultAckMsg received: from sender %d, hash=%s, chain input id=%v",
-		msg.SenderIndex, msg.EssenceHash, coretypes.OID(msg.ChainInputID))
+		msg.SenderIndex, msg.EssenceHash, iscp.OID(msg.ChainInputID))
 	c.receiveSignedResultAck(msg)
 	c.takeAction()
 }

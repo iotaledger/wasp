@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -79,7 +79,7 @@ func TestDeployExample(t *testing.T) {
 	_, ok = contracts[accounts.Interface.Hname()]
 	require.True(t, ok)
 
-	rec, ok := contracts[coretypes.Hn(name)]
+	rec, ok := contracts[iscp.Hn(name)]
 	require.True(t, ok)
 
 	require.EqualValues(t, name, rec.Name)
@@ -117,7 +117,7 @@ func TestDeployDouble(t *testing.T) {
 	_, ok = contracts[accounts.Interface.Hname()]
 	require.True(t, ok)
 
-	rec, ok := contracts[coretypes.Hn(name)]
+	rec, ok := contracts[iscp.Hn(name)]
 	require.True(t, ok)
 
 	require.EqualValues(t, name, rec.Name)
@@ -132,7 +132,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := coretypes.NewAgentID(ownerAddr, 0)
+	newOwnerAgentID := iscp.NewAgentID(ownerAddr, 0)
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	req.WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
@@ -154,7 +154,7 @@ func TestChangeOwnerUnauthorized(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := coretypes.NewAgentID(ownerAddr, 0)
+	newOwnerAgentID := iscp.NewAgentID(ownerAddr, 0)
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.Error(t, err)

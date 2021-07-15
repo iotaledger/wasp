@@ -5,27 +5,27 @@
 package sandbox_utils //nolint:revive // TODO refactor to remove `_` from package name
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 type utilImpl struct{}
 
-func NewUtils() coretypes.Utils {
+func NewUtils() iscp.Utils {
 	return utilImpl{}
 }
 
-func (u utilImpl) Base58() coretypes.Base58 {
+func (u utilImpl) Base58() iscp.Base58 {
 	return base58Util{}
 }
 
-func (u utilImpl) Hashing() coretypes.Hashing {
+func (u utilImpl) Hashing() iscp.Hashing {
 	return hashUtil{}
 }
 
-func (u utilImpl) ED25519() coretypes.ED25519 {
+func (u utilImpl) ED25519() iscp.ED25519 {
 	return ed25519Util{}
 }
 
-func (u utilImpl) BLS() coretypes.BLS {
+func (u utilImpl) BLS() iscp.BLS {
 	return blsUtil{}
 }

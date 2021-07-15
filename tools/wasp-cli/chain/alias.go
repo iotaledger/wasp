@@ -1,7 +1,7 @@
 package chain
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
@@ -33,8 +33,8 @@ func AddChainAlias(chainAlias, id string) {
 	SetCurrentChain(chainAlias)
 }
 
-func GetCurrentChainID() *chainid.ChainID {
-	chid, err := chainid.ChainIDFromBase58(viper.GetString("chains." + GetChainAlias()))
+func GetCurrentChainID() *iscp.ChainID {
+	chid, err := iscp.ChainIDFromBase58(viper.GetString("chains." + GetChainAlias()))
 	log.Check(err)
 	return chid
 }

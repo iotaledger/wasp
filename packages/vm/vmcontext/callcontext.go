@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) error {
+func (vmctx *VMContext) pushCallContextWithTransfer(contract iscp.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) error {
 	if transfer != nil {
-		targetAccount := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), contract)
+		targetAccount := iscp.NewAgentID(vmctx.ChainID().AsAddress(), contract)
 		targetAccount = vmctx.adjustAccount(targetAccount)
 		if len(vmctx.callStack) == 0 {
 			// was this an off-ledger request?
@@ -24,7 +24,7 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, pa
 				vmctx.creditToAccount(targetAccount, transfer)
 			}
 		} else {
-			fromAgentID := coretypes.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
+			fromAgentID := iscp.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
 			fromAgentID = vmctx.adjustAccount(fromAgentID)
 			if !vmctx.moveBetweenAccounts(fromAgentID, targetAccount, transfer) {
 				return fmt.Errorf("pushCallContextWithTransfer: transfer failed: not enough funds")
@@ -37,11 +37,11 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, pa
 
 const traceStack = false
 
-func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) {
+func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) {
 	if traceStack {
 		vmctx.log.Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
 	}
-	var caller *coretypes.AgentID
+	var caller *iscp.AgentID
 	isRequestContext := len(vmctx.callStack) == 0
 	if isRequestContext {
 		// request context

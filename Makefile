@@ -6,12 +6,10 @@ build:
 build-lint: build lint
 
 test: install
-	go clean -testcache
-	go test -tags rocksdb ./... -timeout 20m
+	go test -tags rocksdb ./... --timeout 20m --count 1
 
 test-short:
-	go clean -testcache
-	go test -tags rocksdb --short ./...
+	go test -tags rocksdb --short --count 1 ./...
 
 install:
 	go install -tags rocksdb ./...

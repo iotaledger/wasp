@@ -7,8 +7,8 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/common"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
@@ -80,12 +80,12 @@ func testValidParams(t *testing.T) *solo.Chain {
 	chainID := chain.ChainID
 	address := chainID.AsAddress()
 	hname := HScName
-	agentID := coretypes.NewAgentID(address, hname)
+	agentID := iscp.NewAgentID(address, hname)
 	color, _, err := ledgerstate.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhite"))
 	require.NoError(t, err)
 	hash, err := hashing.HashValueFromBytes([]byte("0123456789abcdeffedcba9876543210"))
 	require.NoError(t, err)
-	requestID, err := coretypes.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))
+	requestID, err := iscp.RequestIDFromBytes([]byte("abcdefghijklmnopqrstuvwxyz123456\x00\x00"))
 	require.NoError(t, err)
 	req := solo.NewCallParams(ScName, FuncParamTypes,
 		ParamAddress, address,

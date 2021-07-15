@@ -3,13 +3,13 @@ package model
 import (
 	"encoding/json"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
-// ChainID is the base58 representation of chainid.ChainID
+// ChainID is the base58 representation of iscp.ChainID
 type ChainID string
 
-func NewChainID(chainID *chainid.ChainID) ChainID {
+func NewChainID(chainID *iscp.ChainID) ChainID {
 	return ChainID(chainID.Base58())
 }
 
@@ -22,13 +22,13 @@ func (ch *ChainID) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
-	_, err := chainid.ChainIDFromBase58(s)
+	_, err := iscp.ChainIDFromBase58(s)
 	*ch = ChainID(s)
 	return err
 }
 
-func (ch ChainID) ChainID() *chainid.ChainID {
-	chainID, err := chainid.ChainIDFromBase58(string(ch))
+func (ch ChainID) ChainID() *iscp.ChainID {
+	chainID, err := iscp.ChainIDFromBase58(string(ch))
 	if err != nil {
 		panic(err)
 	}

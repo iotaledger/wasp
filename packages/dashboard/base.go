@@ -9,11 +9,10 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/mr-tron/base58"
 )
@@ -40,11 +39,11 @@ type WaspServices interface {
 	ExploreAddressBaseURL() string
 	NetworkProvider() peering.NetworkProvider
 	TrustedNetworkManager() peering.TrustedNetworkManager
-	GetChainRecords() ([]*chainrecord.ChainRecord, error)
-	GetChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error)
-	GetChainState(chainID *chainid.ChainID) (*ChainState, error)
-	GetChain(chainID *chainid.ChainID) chain.ChainCore
-	CallView(chain chain.ChainCore, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error)
+	GetChainRecords() ([]*registry.ChainRecord, error)
+	GetChainRecord(chainID *iscp.ChainID) (*registry.ChainRecord, error)
+	GetChainState(chainID *iscp.ChainID) (*ChainState, error)
+	GetChain(chainID *iscp.ChainID) chain.ChainCore
+	CallView(chain chain.ChainCore, hname iscp.Hname, fname string, params dict.Dict) (dict.Dict, error)
 }
 
 type Dashboard struct {

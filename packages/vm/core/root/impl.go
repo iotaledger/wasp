@@ -10,8 +10,8 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -31,12 +31,12 @@ import (
 // - creates record in the registry for the 'root' itself
 // - deploys other core contracts: 'accounts', 'blob', 'eventlog' by creating records in the registry and calling constructors
 // Input:
-// - ParamChainID chainid.ChainID. ID of the chain. Cannot be changed
+// - ParamChainID iscp.ChainID. ID of the chain. Cannot be changed
 // - ParamChainColor ledgerstate.Color
 // - ParamChainAddress ledgerstate.Address
 // - ParamDescription string defaults to "N/A"
 // - ParamFeeColor ledgerstate.Color fee color code. Defaults to IOTA color. It cannot be changed
-func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.initialize.begin")
 	state := ctx.State()
 	a := assert.NewAssert(ctx.Log())
@@ -83,7 +83,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 // - ParamProgramHash HashValue is a hash of the blob which represents program binary in the 'blob' contract.
 //     In case of hardcoded examples its an arbitrary unique hash set in the global call examples.AddProcessor
 // - ParamDescription string is an arbitrary string. Defaults to "N/A"
-func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
+func deployContract(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.deployContract.begin")
 	if !isAuthorizedToDeploy(ctx) {
 		return nil, fmt.Errorf("root.deployContract: deploy not permitted for: %s", ctx.Caller())
@@ -114,11 +114,11 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 		Name:        name,
 		Creator:     ctx.Caller(),
 	}, a)
-	_, err = ctx.Call(coretypes.Hn(name), coretypes.EntryPointInit, initParams, nil)
+	_, err = ctx.Call(iscp.Hn(name), iscp.EntryPointInit, initParams, nil)
 	a.RequireNoError(err)
 
 	ctx.Event(fmt.Sprintf("[deploy] name: %s hname: %s, progHash: %s, dscr: '%s'",
-		name, coretypes.Hn(name), progHash.String(), description))
+		name, iscp.Hn(name), progHash.String(), description))
 	return nil, nil
 }
 
@@ -127,7 +127,7 @@ func deployContract(ctx coretypes.Sandbox) (dict.Dict, error) {
 // - ParamHname
 // Output:
 // - ParamData
-func findContract(ctx coretypes.SandboxView) (dict.Dict, error) {
+func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	hname, err := params.GetHname(ParamHname)
 	if err != nil {
@@ -151,7 +151,7 @@ func findContract(ctx coretypes.SandboxView) (dict.Dict, error) {
 // - VarChainOwnerID - AgentID
 // - VarDescription - string
 // - VarContractRegistry: a map of contract registry
-func getChainInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	info := MustGetChainInfo(ctx.State())
 	ret := dict.New()
 	ret.Set(VarChainID, codec.EncodeChainID(info.ChainID))
@@ -173,7 +173,7 @@ func getChainInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 // delegateChainOwnership stores next possible (delegated) chain owner to another agentID
 // checks authorisation by the current owner
 // Two step process allow/change is in order to avoid mistakes
-func delegateChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
+func delegateChainOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.delegateChainOwnership.begin")
 	a := assert.NewAssert(ctx.Log())
 	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.delegateChainOwnership: not authorized")
@@ -188,7 +188,7 @@ func delegateChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 // claimChainOwnership changes the chain owner to the delegated agentID (if any)
 // Checks authorisation if the caller is the one to which the ownership is delegated
 // Note that ownership is only changed by the successful call to  claimChainOwnership
-func claimChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
+func claimChainOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.delegateChainOwnership.begin")
 	state := ctx.State()
 	a := assert.NewAssert(ctx.Log())
@@ -209,12 +209,12 @@ func claimChainOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 // getFeeInfo returns fee information for the contract.
 // Input:
-// - ParamHname coretypes.Hname contract id
+// - ParamHname iscp.Hname contract id
 // Output:
 // - ParamFeeColor ledgerstate.Color color of tokens accepted for fees
 // - ParamValidatorFee int64 minimum fee for contract
 // Note: return default chain values if contract doesn't exist
-func getFeeInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getFeeInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	hname, err := params.GetHname(ParamHname)
 	if err != nil {
@@ -232,7 +232,7 @@ func getFeeInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 // Input:
 // - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
 // - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
-func setDefaultFee(ctx coretypes.Sandbox) (dict.Dict, error) {
+func setDefaultFee(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setDefaultFee: not authorized")
 
@@ -264,10 +264,10 @@ func setDefaultFee(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 // setContractFee sets fee for the particular smart contract
 // Input:
-// - ParamHname coretypes.Hname smart contract ID
+// - ParamHname iscp.Hname smart contract ID
 // - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
 // - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
-func setContractFee(ctx coretypes.Sandbox) (dict.Dict, error) {
+func setContractFee(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setContractFee: not authorized")
 
@@ -298,8 +298,8 @@ func setContractFee(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 // grantDeployPermission grants permission to deploy contracts
 // Input:
-//  - ParamDeployer coretypes.AgentID
-func grantDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
+//  - ParamDeployer iscp.AgentID
+func grantDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.grantDeployPermissions: not authorized")
 
@@ -313,8 +313,8 @@ func grantDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 // revokeDeployPermission revokes permission to deploy contracts
 // Input:
-//  - ParamDeployer coretypes.AgentID
-func revokeDeployPermission(ctx coretypes.Sandbox) (dict.Dict, error) {
+//  - ParamDeployer iscp.AgentID
+func revokeDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.revokeDeployPermissions: not authorized")
 

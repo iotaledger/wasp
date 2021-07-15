@@ -4,12 +4,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
@@ -18,7 +16,7 @@ import (
 
 type mockChain struct{}
 
-func (m *mockChain) GetRequestProcessingStatus(id coretypes.RequestID) chain.RequestProcessingStatus {
+func (m *mockChain) GetRequestProcessingStatus(id iscp.RequestID) chain.RequestProcessingStatus {
 	return chain.RequestProcessingStatusCompleted
 }
 
@@ -27,12 +25,12 @@ func (m *mockChain) EventRequestProcessed() *events.Event {
 }
 
 func TestRequestStatus(t *testing.T) {
-	r := &reqstatusWebAPI{func(chainID *chainid.ChainID) chain.ChainRequests {
+	r := &reqstatusWebAPI{func(chainID *iscp.ChainID) chain.ChainRequests {
 		return &mockChain{}
 	}}
 
-	chainID := chainid.RandomChainID()
-	reqID := coretypes.RequestID(ledgerstate.OutputID{})
+	chainID := iscp.RandomChainID()
+	reqID := iscp.RequestID(ledgerstate.OutputID{})
 
 	var res model.RequestStatusResponse
 	testutil.CallWebAPIRequestHandler(

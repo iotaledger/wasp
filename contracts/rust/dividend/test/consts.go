@@ -7,12 +7,12 @@
 
 package test
 
-import "github.com/iotaledger/wasp/packages/coretypes"
+import "github.com/iotaledger/wasp/packages/iscp"
 
 const (
 	ScName        = "dividend"
 	ScDescription = "Simple dividend smart contract"
-	HScName       = coretypes.Hname(0xcce2e239)
+	HScName       = iscp.Hname(0xcce2e239)
 )
 
 const (
@@ -40,9 +40,9 @@ const (
 )
 
 const (
-	HFuncDivide    = coretypes.Hname(0xc7878107)
-	HFuncInit      = coretypes.Hname(0x1f44d644)
-	HFuncMember    = coretypes.Hname(0xc07da2cb)
-	HFuncSetOwner  = coretypes.Hname(0x2a15fe7b)
-	HViewGetFactor = coretypes.Hname(0x0ee668fe)
+	HFuncDivide    = iscp.Hname(0xc7878107)
+	HFuncInit      = iscp.Hname(0x1f44d644)
+	HFuncMember    = iscp.Hname(0xc07da2cb)
+	HFuncSetOwner  = iscp.Hname(0x2a15fe7b)
+	HViewGetFactor = iscp.Hname(0x0ee668fe)
 )

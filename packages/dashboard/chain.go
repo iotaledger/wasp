@@ -7,11 +7,10 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/labstack/echo/v4"
@@ -20,7 +19,7 @@ import (
 //go:embed templates/chain.tmpl
 var tplChain string
 
-func chainBreadcrumb(e *echo.Echo, chainID chainid.ChainID) Tab {
+func chainBreadcrumb(e *echo.Echo, chainID iscp.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("chain"),
 		Title: fmt.Sprintf("Chain %.8s…", chainID.Base58()),
@@ -35,7 +34,7 @@ func (d *Dashboard) initChain(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChain(c echo.Context) error {
-	chainID, err := chainid.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
@@ -86,13 +85,13 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), result)
 }
 
-func (d *Dashboard) fetchAccounts(ch chain.ChainCore) ([]*coretypes.AgentID, error) {
+func (d *Dashboard) fetchAccounts(ch chain.ChainCore) ([]*iscp.AgentID, error) {
 	accs, err := d.wasp.CallView(ch, accounts.Interface.Hname(), accounts.FuncViewAccounts, nil)
 	if err != nil {
 		return nil, fmt.Errorf("accountsc view call failed: %v", err)
 	}
 
-	ret := make([]*coretypes.AgentID, 0)
+	ret := make([]*iscp.AgentID, 0)
 	for k := range accs {
 		agentid, _, err := codec.DecodeAgentID([]byte(k))
 		if err != nil {
@@ -129,12 +128,12 @@ type ChainState struct {
 type ChainTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID *chainid.ChainID
+	ChainID *iscp.ChainID
 
-	Record      *chainrecord.ChainRecord
+	Record      *registry.ChainRecord
 	State       *ChainState
 	RootInfo    RootInfo
-	Accounts    []*coretypes.AgentID
+	Accounts    []*iscp.AgentID
 	TotalAssets map[ledgerstate.Color]uint64
 	Blobs       map[hashing.HashValue]uint32
 	Committee   *chain.CommitteeInfo

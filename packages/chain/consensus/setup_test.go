@@ -20,13 +20,12 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/committee"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -52,8 +51,8 @@ type MockedEnv struct {
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
 	NetworkCloser     io.Closer
-	DKSRegistries     []coretypes.DKShareRegistryProvider
-	ChainID           chainid.ChainID
+	DKSRegistries     []registry.DKShareRegistryProvider
+	ChainID           iscp.ChainID
 	MockedACS         chain.AsynchronousCommonSubsetRunner
 	InitStateOutput   *ledgerstate.AliasOutput
 	mutex             sync.Mutex
@@ -136,7 +135,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	ret.InitStateOutput, err = utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
-	ret.ChainID = *chainid.NewChainID(ret.InitStateOutput.GetAliasAddress())
+	ret.ChainID = *iscp.NewChainID(ret.InitStateOutput.GetAliasAddress())
 
 	return ret, originTx
 }
@@ -198,7 +197,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 			})
 		}
 	})
-	ret.Mempool = mempool.New(ret.ChainCore.GetStateReader(), coretypes.NewInMemoryBlobCache(), log)
+	ret.Mempool = mempool.New(ret.ChainCore.GetStateReader(), iscp.NewInMemoryBlobCache(), log)
 
 	cfg := &consensusTestConfigProvider{
 		ownNetID:  nodeID,
@@ -210,7 +209,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	if env.MockedACS != nil {
 		acs = append(acs, env.MockedACS)
 	}
-	cmtRec := &committee_record.CommitteeRecord{
+	cmtRec := &registry.CommitteeRecord{
 		Address: env.StateAddress,
 		Nodes:   env.NodeIDs,
 	}
@@ -249,7 +248,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 		defer ret.mutex.Unlock()
 		newState := msg.State
 		ret.Log.Infof("chainCore.StateCandidateMsg: state hash: %s, approving output: %s",
-			msg.State.Hash(), coretypes.OID(msg.ApprovingOutputID))
+			msg.State.Hash(), iscp.OID(msg.ApprovingOutputID))
 
 		if ret.SolidState != nil && ret.SolidState.BlockIndex() == newState.BlockIndex() {
 			ret.Log.Debugf("new state already committed for index %d", newState.BlockIndex())
@@ -307,10 +306,10 @@ func (n *mockedNode) checkStateApproval() {
 	require.NoError(n.Env.T, err)
 	require.EqualValues(n.Env.T, stateHash, n.SolidState.Hash())
 
-	reqIDsForLastState := make([]coretypes.RequestID, 0)
+	reqIDsForLastState := make([]iscp.RequestID, 0)
 	prefix := kv.Key(util.Uint32To4Bytes(n.SolidState.BlockIndex()))
 	err = n.SolidState.KVStoreReader().Iterate(prefix, func(key kv.Key, value []byte) bool {
-		reqid, err := coretypes.RequestIDFromBytes(value)
+		reqid, err := iscp.RequestIDFromBytes(value)
 		require.NoError(n.Env.T, err)
 		reqIDsForLastState = append(reqIDsForLastState, reqid)
 		return true
@@ -319,7 +318,7 @@ func (n *mockedNode) checkStateApproval() {
 	n.Mempool.RemoveRequests(reqIDsForLastState...)
 
 	n.Log.Infof("STATE APPROVED (%d reqs). Index: %d, State output: %s",
-		len(reqIDsForLastState), n.SolidState.BlockIndex(), coretypes.OID(n.StateOutput.ID()))
+		len(reqIDsForLastState), n.SolidState.BlockIndex(), iscp.OID(n.StateOutput.ID()))
 
 	n.EventStateTransition()
 }
@@ -425,7 +424,7 @@ func (env *MockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, i
 }
 
 func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
-	reqs := make([]coretypes.Request, n)
+	reqs := make([]iscp.Request, n)
 	for i := 0; i < n; i++ {
 		reqs[i] = solo.NewCallParams("dummy", "dummy", "c", i).
 			NewRequestOffLedger(env.OriginatorKeyPair)
@@ -434,7 +433,7 @@ func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
 	for _, n := range env.Nodes {
 		if rnd {
 			for _, req := range reqs {
-				go func(node *mockedNode, r coretypes.Request) {
+				go func(node *mockedNode, r iscp.Request) {
 					time.Sleep(time.Duration(rand.Intn(50)) * time.Millisecond)
 					node.Mempool.ReceiveRequests(r)
 				}(n, req)
@@ -446,7 +445,7 @@ func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
 }
 
 // TODO: should this object be obtained from peering.NetworkProvider?
-// Or should coretypes.PeerNetworkConfigProvider methods methods be part of
+// Or should registry.PeerNetworkConfigProvider methods methods be part of
 // peering.NetworkProvider interface
 type consensusTestConfigProvider struct {
 	ownNetID  string

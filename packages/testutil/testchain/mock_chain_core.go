@@ -9,10 +9,9 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -21,7 +20,7 @@ import (
 
 type MockedChainCore struct {
 	T                                    *testing.T
-	chainID                              chainid.ChainID
+	chainID                              iscp.ChainID
 	processors                           *processors.Cache
 	eventStateTransition                 *events.Event
 	eventRequestProcessed                *events.Event
@@ -29,7 +28,7 @@ type MockedChainCore struct {
 	onGlobalStateSync                    func() coreutil.ChainStateSync
 	onGetStateReader                     func() state.OptimisticStateReader
 	onEventStateTransition               func(data *chain.ChainTransitionEventData)
-	onEventRequestProcessed              func(id coretypes.RequestID)
+	onEventRequestProcessed              func(id iscp.RequestID)
 	onEventStateSynced                   func(id ledgerstate.OutputID, blockIndex uint32)
 	onReceivePeerMessage                 func(*peering.PeerMessage)
 	onReceiveDismissChainMsg             func(*messages.DismissChainMsg)
@@ -44,7 +43,7 @@ type MockedChainCore struct {
 	log                                  *logger.Logger
 }
 
-func NewMockedChainCore(t *testing.T, chainID chainid.ChainID, log *logger.Logger) *MockedChainCore {
+func NewMockedChainCore(t *testing.T, chainID iscp.ChainID, log *logger.Logger) *MockedChainCore {
 	receiveFailFun := func(typee string, msg interface{}) {
 		t.Fatalf("Receiving of %s is not implemented, but %v is received", typee, msg)
 	}
@@ -57,12 +56,12 @@ func NewMockedChainCore(t *testing.T, chainID chainid.ChainID, log *logger.Logge
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
 		}),
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
+			handler.(func(_ iscp.RequestID))(params[0].(iscp.RequestID))
 		}),
 		eventStateSynced: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(outputID ledgerstate.OutputID, blockIndex uint32))(params[0].(ledgerstate.OutputID), params[1].(uint32))
 		}),
-		onEventRequestProcessed: func(id coretypes.RequestID) {
+		onEventRequestProcessed: func(id iscp.RequestID) {
 			log.Infof("onEventRequestProcessed: %s", id)
 		},
 		onEventStateSynced: func(outputID ledgerstate.OutputID, blockIndex uint32) {
@@ -86,7 +85,7 @@ func NewMockedChainCore(t *testing.T, chainID chainid.ChainID, log *logger.Logge
 	ret.eventStateTransition.Attach(events.NewClosure(func(data *chain.ChainTransitionEventData) {
 		ret.onEventStateTransition(data)
 	}))
-	ret.eventRequestProcessed.Attach(events.NewClosure(func(id coretypes.RequestID) {
+	ret.eventRequestProcessed.Attach(events.NewClosure(func(id iscp.RequestID) {
 		ret.onEventRequestProcessed(id)
 	}))
 	ret.eventStateSynced.Attach(events.NewClosure(func(outid ledgerstate.OutputID, blockIndex uint32) {
@@ -99,7 +98,7 @@ func (m *MockedChainCore) Log() *logger.Logger {
 	return m.log
 }
 
-func (m *MockedChainCore) ID() *chainid.ChainID {
+func (m *MockedChainCore) ID() *iscp.ChainID {
 	return &m.chainID
 }
 
@@ -162,7 +161,7 @@ func (m *MockedChainCore) OnStateTransition(f func(data *chain.ChainTransitionEv
 	m.onEventStateTransition = f
 }
 
-func (m *MockedChainCore) OnRequestProcessed(f func(id coretypes.RequestID)) {
+func (m *MockedChainCore) OnRequestProcessed(f func(id iscp.RequestID)) {
 	m.onEventRequestProcessed = f
 }
 

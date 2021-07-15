@@ -12,10 +12,9 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.uber.org/atomic"
@@ -25,7 +24,7 @@ import (
 type committee struct {
 	isReady        *atomic.Bool
 	address        ledgerstate.Address
-	peerConfig     coretypes.PeerNetworkConfigProvider
+	peerConfig     registry.PeerNetworkConfigProvider
 	validatorNodes peering.GroupProvider
 	acsRunner      chain.AsynchronousCommonSubsetRunner
 	peeringID      peering.PeeringID
@@ -40,11 +39,11 @@ type committee struct {
 const waitReady = false
 
 func New(
-	cmtRec *committee_record.CommitteeRecord,
-	chainID *chainid.ChainID,
+	cmtRec *registry.CommitteeRecord,
+	chainID *iscp.ChainID,
 	netProvider peering.NetworkProvider,
-	peerConfig coretypes.PeerNetworkConfigProvider,
-	dksProvider coretypes.DKShareRegistryProvider,
+	peerConfig registry.PeerNetworkConfigProvider,
+	dksProvider registry.DKShareRegistryProvider,
 	log *logger.Logger,
 	acsRunner ...chain.AsynchronousCommonSubsetRunner, // Only for mocking.
 ) (chain.Committee, error) {
@@ -237,7 +236,7 @@ func (c *committee) waitReady(waitReady bool) {
 	c.isReady.Store(true)
 }
 
-func checkValidatorNodeIDs(cfg coretypes.PeerNetworkConfigProvider, n, ownIndex uint16, validatorNetIDs []string) error {
+func checkValidatorNodeIDs(cfg registry.PeerNetworkConfigProvider, n, ownIndex uint16, validatorNetIDs []string) error {
 	if !util.AllDifferentStrings(validatorNetIDs) {
 		return xerrors.Errorf("checkValidatorNodeIDs: list of validators nodes contains duplicates: %+v", validatorNetIDs)
 	}

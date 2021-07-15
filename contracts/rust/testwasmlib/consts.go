@@ -8,14 +8,14 @@
 package testwasmlib
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
 const (
 	ScName        = "testwasmlib"
 	ScDescription = "Exercise all aspects of WasmLib"
-	HScName       = coretypes.Hname(0x89703a45)
+	HScName       = iscp.Hname(0x89703a45)
 )
 
 const (
@@ -33,4 +33,4 @@ const (
 
 const FuncParamTypes = "paramTypes"
 
-const HFuncParamTypes = coretypes.Hname(0x6921c4cd)
+const HFuncParamTypes = iscp.Hname(0x6921c4cd)

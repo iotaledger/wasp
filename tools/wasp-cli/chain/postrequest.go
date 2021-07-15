@@ -6,9 +6,9 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
@@ -30,7 +30,7 @@ func postRequestCmd() *cobra.Command {
 				Transfer: parseColoredBalances(transfer),
 			}
 
-			scClient := SCClient(coretypes.Hn(args[0]))
+			scClient := SCClient(iscp.Hn(args[0]))
 
 			if offLedger {
 				util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.RequestOffLedger, error) {

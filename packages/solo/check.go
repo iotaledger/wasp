@@ -5,7 +5,7 @@ package solo
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -54,25 +54,25 @@ func (ch *Chain) CheckAccountLedger() {
 			return true
 		})
 	}
-	require.True(ch.Env.T, coretypes.EqualColoredBalances(total, ledgerstate.NewColoredBalances(sum)))
-	coreacc := coretypes.NewAgentID(ch.ChainID.AsAddress(), root.Interface.Hname())
+	require.True(ch.Env.T, iscp.EqualColoredBalances(total, ledgerstate.NewColoredBalances(sum)))
+	coreacc := iscp.NewAgentID(ch.ChainID.AsAddress(), root.Interface.Hname())
 	require.Zero(ch.Env.T, ch.GetAccountBalance(coreacc).Size())
-	coreacc = coretypes.NewAgentID(ch.ChainID.AsAddress(), blob.Interface.Hname())
+	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), blob.Interface.Hname())
 	require.Zero(ch.Env.T, ch.GetAccountBalance(coreacc).Size())
-	coreacc = coretypes.NewAgentID(ch.ChainID.AsAddress(), accounts.Interface.Hname())
+	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), accounts.Interface.Hname())
 	require.Zero(ch.Env.T, ch.GetAccountBalance(coreacc).Size())
-	coreacc = coretypes.NewAgentID(ch.ChainID.AsAddress(), eventlog.Interface.Hname())
+	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), eventlog.Interface.Hname())
 	require.Zero(ch.Env.T, ch.GetAccountBalance(coreacc).Size())
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertAccountBalance(agentID *coretypes.AgentID, col ledgerstate.Color, bal uint64) {
+func (ch *Chain) AssertAccountBalance(agentID *iscp.AgentID, col ledgerstate.Color, bal uint64) {
 	bals := ch.GetAccountBalance(agentID)
 	b, _ := bals.Get(col)
 	require.EqualValues(ch.Env.T, int(bal), int(b))
 }
 
-func (ch *Chain) AssertIotas(agentID *coretypes.AgentID, bal uint64) {
+func (ch *Chain) AssertIotas(agentID *iscp.AgentID, bal uint64) {
 	ch.AssertAccountBalance(agentID, ledgerstate.ColorIOTA, bal)
 }
 

@@ -3,7 +3,7 @@ package sbtests
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -40,7 +40,7 @@ func testCallRecursive(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain,
 		sbtestsc.ParamIntParamValue, 31,
 		sbtestsc.ParamHnameContract, cID.Hname(),
-		sbtestsc.ParamHnameEP, coretypes.Hn(sbtestsc.FuncRunRecursion),
+		sbtestsc.ParamHnameEP, iscp.Hn(sbtestsc.FuncRunRecursion),
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -86,7 +86,7 @@ func testCallFibonacciIndirect(t *testing.T, w bool) {
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain,
 		sbtestsc.ParamIntParamValue, n,
 		sbtestsc.ParamHnameContract, cID.Hname(),
-		sbtestsc.ParamHnameEP, coretypes.Hn(sbtestsc.FuncGetFibonacci),
+		sbtestsc.ParamHnameEP, iscp.Hn(sbtestsc.FuncGetFibonacci),
 	).WithIotas(1)
 	ret, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)

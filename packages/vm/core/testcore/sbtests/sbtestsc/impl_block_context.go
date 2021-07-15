@@ -1,8 +1,8 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -13,8 +13,8 @@ type blockCtx1 struct {
 	numcalls int
 }
 
-func getBlockContext1(ctx coretypes.Sandbox) *blockCtx1 {
-	construct := func(ctx coretypes.Sandbox) interface{} {
+func getBlockContext1(ctx iscp.Sandbox) *blockCtx1 {
+	construct := func(ctx iscp.Sandbox) interface{} {
 		return &blockCtx1{1}
 	}
 	log := ctx.Log()
@@ -27,7 +27,7 @@ func getBlockContext1(ctx coretypes.Sandbox) *blockCtx1 {
 	return bctx
 }
 
-func testBlockContext1(ctx coretypes.Sandbox) (dict.Dict, error) {
+func testBlockContext1(ctx iscp.Sandbox) (dict.Dict, error) {
 	bctx := getBlockContext1(ctx)
 	bctx.numcalls++
 
@@ -36,10 +36,10 @@ func testBlockContext1(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 type blockCtx2 struct {
 	state kv.KVStore
-	log   coretypes.LogInterface
+	log   iscp.LogInterface
 }
 
-func construct2(ctx coretypes.Sandbox) interface{} {
+func construct2(ctx iscp.Sandbox) interface{} {
 	return &blockCtx2{
 		state: ctx.State(),
 		log:   ctx.Log(),
@@ -52,12 +52,12 @@ func onClose2(obj interface{}) {
 	bctx.log.Infof("closing block context...")
 }
 
-func testBlockContext2(ctx coretypes.Sandbox) (dict.Dict, error) {
+func testBlockContext2(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.BlockContext(construct2, onClose2) // just creating context, doing nothing, checking side effect
 	return nil, nil
 }
 
-func getStringValue(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getStringValue(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Infof(FuncGetStringValue)
 	deco := kvdecoder.New(ctx.Params(), ctx.Log())
 	varName := deco.MustGetString(ParamVarName)

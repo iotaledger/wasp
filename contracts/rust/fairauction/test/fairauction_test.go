@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/contracts/common"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -65,7 +65,7 @@ func TestFaStartAuction(t *testing.T) {
 	// auctioneer sent 25 deposit + 10 tokenColor + used 1 for request
 	chain.Env.AssertAddressBalance(auctioneerAddr, ledgerstate.ColorIOTA, solo.Saldo-35)
 	// 1 used for request was sent back to auctioneer's account on chain
-	account := coretypes.NewAgentID(auctioneerAddr, 0)
+	account := iscp.NewAgentID(auctioneerAddr, 0)
 	chain.AssertAccountBalance(account, ledgerstate.ColorIOTA, 0)
 
 	// remove delayed finalize_auction from backlog
@@ -81,7 +81,7 @@ func TestFaAuctionInfo(t *testing.T) {
 		ParamColor, tokenColor,
 	)
 	require.NoError(t, err)
-	account := coretypes.NewAgentID(auctioneerAddr, 0)
+	account := iscp.NewAgentID(auctioneerAddr, 0)
 	requireAgent(t, res, ResultCreator, *account)
 	requireInt64(t, res, ResultBidders, 0)
 
@@ -148,10 +148,10 @@ func TestFaOneBid(t *testing.T) {
 	require.NoError(t, err)
 	requireInt64(t, res, ResultBidders, 1)
 	requireInt64(t, res, ResultHighestBid, 500)
-	requireAgent(t, res, ResultHighestBidder, *coretypes.NewAgentID(bidderAddr, 0))
+	requireAgent(t, res, ResultHighestBidder, *iscp.NewAgentID(bidderAddr, 0))
 }
 
-func requireAgent(t *testing.T, res dict.Dict, key string, expected coretypes.AgentID) {
+func requireAgent(t *testing.T, res dict.Dict, key string, expected iscp.AgentID) {
 	actual, exists, err := codec.DecodeAgentID(res.MustGet(kv.Key(key)))
 	require.NoError(t, err)
 	require.True(t, exists)

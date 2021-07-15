@@ -3,12 +3,12 @@ package vm
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -27,10 +27,10 @@ type VMTask struct {
 	ChainInput               *ledgerstate.AliasOutput
 	VirtualState             state.VirtualState // in/out  Return uncommitted updated virtual state
 	SolidStateBaseline       coreutil.StateBaseline
-	Requests                 []coretypes.Request
+	Requests                 []iscp.Request
 	Timestamp                time.Time
 	Entropy                  hashing.HashValue
-	ValidatorFeeTarget       coretypes.AgentID
+	ValidatorFeeTarget       iscp.AgentID
 	Log                      *logger.Logger
 	OnFinish                 func(callResult dict.Dict, callError error, vmError error)
 	ResultTransactionEssence *ledgerstate.TransactionEssence // if not nil it is a normal block

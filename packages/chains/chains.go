@@ -10,17 +10,17 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/peering"
-	"github.com/iotaledger/wasp/plugins/registry"
 	"golang.org/x/xerrors"
 )
+
+type Provider func() *Chains
 
 type Chains struct {
 	mutex                            sync.RWMutex
@@ -73,8 +73,8 @@ func (c *Chains) Attach(nodeConn *txstream.Client) {
 	// TODO attach to off-ledger request module
 }
 
-func (c *Chains) ActivateAllFromRegistry(chainRecordProvider coretypes.ChainRecordRegistryProvider) error {
-	chainRecords, err := chainRecordProvider.GetChainRecords()
+func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider) error {
+	chainRecords, err := registryProvider().GetChainRecords()
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (c *Chains) ActivateAllFromRegistry(chainRecordProvider coretypes.ChainReco
 
 	for _, chr := range chainRecords {
 		if chr.Active {
-			if err := c.Activate(chr); err != nil {
+			if err := c.Activate(chr, registryProvider); err != nil {
 				c.log.Errorf("cannot activate chain %s: %v", chr.ChainID, err)
 			}
 		}
@@ -99,7 +99,7 @@ func (c *Chains) ActivateAllFromRegistry(chainRecordProvider coretypes.ChainReco
 // - creates chain object
 // - insert it into the runtime registry
 // - subscribes for related transactions in he IOTA node
-func (c *Chains) Activate(chr *chainrecord.ChainRecord) error {
+func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.Provider) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -122,7 +122,7 @@ func (c *Chains) Activate(chr *chainrecord.ChainRecord) error {
 		return xerrors.Errorf("cannot create peer network config provider")
 	}
 
-	defaultRegistry := registry.DefaultRegistry()
+	defaultRegistry := registryProvider()
 	chainKVStore := database.GetOrCreateKVStore(chr.ChainID)
 	newChain := chainimpl.NewChain(
 		chr.ChainID,
@@ -149,7 +149,7 @@ func (c *Chains) Activate(chr *chainrecord.ChainRecord) error {
 }
 
 // Deactivate deactivates chain in the node
-func (c *Chains) Deactivate(chr *chainrecord.ChainRecord) error {
+func (c *Chains) Deactivate(chr *registry.ChainRecord) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -166,7 +166,7 @@ func (c *Chains) Deactivate(chr *chainrecord.ChainRecord) error {
 
 // Get returns active chain object or nil if it doesn't exist
 // lazy unsubscribing
-func (c *Chains) Get(chainID *chainid.ChainID) chain.Chain {
+func (c *Chains) Get(chainID *iscp.ChainID) chain.Chain {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 

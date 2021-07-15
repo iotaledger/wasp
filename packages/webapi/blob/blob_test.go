@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
@@ -13,8 +14,8 @@ import (
 )
 
 func TestPutBlob(t *testing.T) {
-	blobCache := coretypes.NewInMemoryBlobCache()
-	b := &blobWebAPI{func() coretypes.BlobCache { return blobCache }}
+	blobCache := iscp.NewInMemoryBlobCache()
+	b := &blobWebAPI{func() registry.BlobCache { return blobCache }}
 
 	data := []byte{1, 3, 3, 7}
 	hash := hashing.HashData(data)
@@ -37,8 +38,8 @@ func TestPutBlob(t *testing.T) {
 }
 
 func TestGetBlob(t *testing.T) {
-	blobCache := coretypes.NewInMemoryBlobCache()
-	b := &blobWebAPI{func() coretypes.BlobCache { return blobCache }}
+	blobCache := iscp.NewInMemoryBlobCache()
+	b := &blobWebAPI{func() registry.BlobCache { return blobCache }}
 
 	data := []byte{1, 3, 3, 7}
 
@@ -60,8 +61,8 @@ func TestGetBlob(t *testing.T) {
 }
 
 func TestHasBlob(t *testing.T) {
-	blobCache := coretypes.NewInMemoryBlobCache()
-	b := &blobWebAPI{func() coretypes.BlobCache { return blobCache }}
+	blobCache := iscp.NewInMemoryBlobCache()
+	b := &blobWebAPI{func() registry.BlobCache { return blobCache }}
 
 	data := []byte{1, 3, 3, 7}
 

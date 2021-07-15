@@ -7,9 +7,9 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
@@ -42,15 +42,15 @@ func TestMissingRequests(t *testing.T) {
 	err = requestFunds(clu1, userAddress, "userWallet")
 	check(err, t)
 	chClient := chainclient.New(clu1.GoshimmerClient(), clu1.WaspClient(0), chainID, userWallet)
-	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
-		Transfer: coretypes.NewTransferIotas(100),
+	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), iscp.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
+		Transfer: iscp.NewTransferIotas(100),
 	})
 	check(err, t)
 	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chainID, reqTx, 30*time.Second)
 	check(err, t)
 
 	// send off-ledger request to all nodes except #3
-	req := request.NewRequestOffLedger(incCounterSCHname, coretypes.Hn(inccounter.FuncIncCounter), requestargs.RequestArgs{}) //.WithTransfer(par.Transfer)
+	req := request.NewRequestOffLedger(incCounterSCHname, iscp.Hn(inccounter.FuncIncCounter), requestargs.RequestArgs{}) //.WithTransfer(par.Transfer)
 	req.Sign(userWallet)
 
 	err = clu1.WaspClient(0).PostOffLedgerRequest(&chainID, req)
@@ -66,7 +66,7 @@ func TestMissingRequests(t *testing.T) {
 
 	//------
 	// send a dummy request to node #3, so that it proposes a batch and the consensus hang is broken
-	req2 := request.NewRequestOffLedger(coretypes.Hn("foo"), coretypes.Hn("bar"), nil)
+	req2 := request.NewRequestOffLedger(iscp.Hn("foo"), iscp.Hn("bar"), nil)
 	req2.Sign(userWallet)
 	err = clu1.WaspClient(3).PostOffLedgerRequest(&chainID, req2)
 	check(err, t)

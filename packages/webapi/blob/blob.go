@@ -4,20 +4,21 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func AddEndpoints(server echoswagger.ApiRouter) {
+type BlobCacheProvider func() registry.BlobCache
+
+func AddEndpoints(server echoswagger.ApiRouter, provider BlobCacheProvider) {
 	example := model.NewBlobInfo(true, hashing.RandomHash(nil))
 
-	b := &blobWebAPI{func() coretypes.BlobCache { return registry.DefaultRegistry() }}
+	b := &blobWebAPI{provider}
 
 	server.POST(routes.PutBlob(), b.handlePutBlob).
 		SetSummary("Upload a blob to the blob cache").
@@ -37,7 +38,7 @@ func AddEndpoints(server echoswagger.ApiRouter) {
 }
 
 type blobWebAPI struct {
-	blobCache func() coretypes.BlobCache
+	getCache BlobCacheProvider
 }
 
 func (b *blobWebAPI) handlePutBlob(c echo.Context) error {
@@ -45,7 +46,7 @@ func (b *blobWebAPI) handlePutBlob(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
-	hash, err := b.blobCache().PutBlob(req.Data.Bytes())
+	hash, err := b.getCache().PutBlob(req.Data.Bytes())
 	if err != nil {
 		return err
 	}
@@ -57,7 +58,7 @@ func (b *blobWebAPI) handleGetBlob(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid hash: %q", c.Param("hash")))
 	}
-	data, ok, err := b.blobCache().GetBlob(hash)
+	data, ok, err := b.getCache().GetBlob(hash)
 	if err != nil {
 		return err
 	}
@@ -72,7 +73,7 @@ func (b *blobWebAPI) handleHasBlob(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid hash: %q", c.Param("hash")))
 	}
-	ok, err := b.blobCache().HasBlob(hash)
+	ok, err := b.getCache().HasBlob(hash)
 	if err != nil {
 		return err
 	}

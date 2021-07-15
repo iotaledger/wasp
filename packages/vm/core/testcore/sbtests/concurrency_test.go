@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -73,7 +73,7 @@ func testConcurrency(t *testing.T, w bool) {
 	}
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(extraIota + 2)
-	agentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), HScName)
+	agentID := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
 	chain.AssertIotas(agentID, uint64(sum)+1)
 }
 
@@ -117,7 +117,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	require.EqualValues(t, sum, res)
 
 	for i := range users {
-		chain.AssertIotas(coretypes.NewAgentID(userAddr[i], 0), 0)
+		chain.AssertIotas(iscp.NewAgentID(userAddr[i], 0), 0)
 		chain.Env.AssertAddressIotas(userAddr[i], solo.Saldo-uint64(repeats[i]))
 	}
 	extraIota := uint64(0)
@@ -126,6 +126,6 @@ func testConcurrency2(t *testing.T, w bool) {
 	}
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(extraIota + 2)
-	agentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), HScName)
+	agentID := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
 	chain.AssertIotas(agentID, uint64(sum)+1)
 }

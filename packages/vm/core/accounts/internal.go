@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -25,11 +25,11 @@ func getAccountsMapR(state kv.KVStoreReader) *collections.ImmutableMap {
 	return collections.NewMapReadOnly(state, varStateAccounts)
 }
 
-func getAccount(state kv.KVStore, agentID *coretypes.AgentID) *collections.Map {
+func getAccount(state kv.KVStore, agentID *iscp.AgentID) *collections.Map {
 	return collections.NewMap(state, string(agentID.Bytes()))
 }
 
-func getAccountR(state kv.KVStoreReader, agentID *coretypes.AgentID) *collections.ImmutableMap {
+func getAccountR(state kv.KVStoreReader, agentID *iscp.AgentID) *collections.ImmutableMap {
 	return collections.NewMapReadOnly(state, string(agentID.Bytes()))
 }
 
@@ -42,7 +42,7 @@ func getTotalAssetsAccountR(state kv.KVStoreReader) *collections.ImmutableMap {
 }
 
 // CreditToAccount brings new funds to the on chain ledger.
-func CreditToAccount(state kv.KVStore, agentID *coretypes.AgentID, transfer *ledgerstate.ColoredBalances) {
+func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, transfer *ledgerstate.ColoredBalances) {
 	creditToAccount(state, getAccount(state, agentID), transfer)
 	creditToAccount(state, getTotalAssetsAccount(state), transfer)
 	mustCheckLedger(state, "CreditToAccount")
@@ -67,7 +67,7 @@ func creditToAccount(state kv.KVStore, account *collections.Map, transfer *ledge
 }
 
 // DebitFromAccount removes funds from the chain ledger.
-func DebitFromAccount(state kv.KVStore, agentID *coretypes.AgentID, transfer *ledgerstate.ColoredBalances) bool {
+func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, transfer *ledgerstate.ColoredBalances) bool {
 	if !debitFromAccount(state, getAccount(state, agentID), transfer) {
 		return false
 	}
@@ -111,7 +111,7 @@ func debitFromAccount(state kv.KVStore, account *collections.Map, transfer *ledg
 	return true
 }
 
-func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *coretypes.AgentID, transfer *ledgerstate.ColoredBalances) bool {
+func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer *ledgerstate.ColoredBalances) bool {
 	if fromAgentID.Equals(toAgentID) {
 		// no need to move
 		return true
@@ -137,7 +137,7 @@ func touchAccount(state kv.KVStore, account *collections.Map) {
 	}
 }
 
-func GetBalance(state kv.KVStoreReader, agentID *coretypes.AgentID, color ledgerstate.Color) uint64 {
+func GetBalance(state kv.KVStoreReader, agentID *iscp.AgentID, color ledgerstate.Color) uint64 {
 	b := getAccountR(state, agentID).MustGetAt(color[:])
 	if b == nil {
 		return 0
@@ -169,7 +169,7 @@ func getAccountBalances(account *collections.ImmutableMap) map[ledgerstate.Color
 
 // GetAccountBalances returns all colored balances belonging to the agentID on the state.
 // Normally, the state is the partition of the 'accountsc'
-func GetAccountBalances(state kv.KVStoreReader, agentID *coretypes.AgentID) (map[ledgerstate.Color]uint64, bool) {
+func GetAccountBalances(state kv.KVStoreReader, agentID *iscp.AgentID) (map[ledgerstate.Color]uint64, bool) {
 	account := getAccountR(state, agentID)
 	if account.MustLen() == 0 {
 		return nil, false
@@ -184,7 +184,7 @@ func GetTotalAssets(state kv.KVStoreReader) *ledgerstate.ColoredBalances {
 func calcTotalAssets(state kv.KVStoreReader) *ledgerstate.ColoredBalances {
 	ret := make(map[ledgerstate.Color]uint64)
 	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
-		agentID, err := coretypes.NewAgentIDFromBytes(key)
+		agentID, err := iscp.NewAgentIDFromBytes(key)
 		if err != nil {
 			panic(err)
 		}
@@ -199,13 +199,13 @@ func calcTotalAssets(state kv.KVStoreReader) *ledgerstate.ColoredBalances {
 func mustCheckLedger(state kv.KVStore, checkpoint string) {
 	a := GetTotalAssets(state)
 	c := calcTotalAssets(state)
-	if !coretypes.EqualColoredBalances(a, c) {
+	if !iscp.EqualColoredBalances(a, c) {
 		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'", checkpoint))
 	}
 }
 
 //nolint:unparam
-func getAccountBalanceDict(ctx coretypes.SandboxView, account *collections.ImmutableMap, tag string) dict.Dict {
+func getAccountBalanceDict(ctx iscp.SandboxView, account *collections.ImmutableMap, tag string) dict.Dict {
 	balances := getAccountBalances(account)
 	// ctx.Log().Debugf("%s. balance = %s\n", tag, balances.String())
 	return EncodeBalances(balances)
@@ -235,11 +235,17 @@ func DecodeBalances(balances dict.Dict) (map[ledgerstate.Color]uint64, error) {
 	return ret, nil
 }
 
-func GetLastNonce(state kv.KVStore, address ledgerstate.Address) uint64 {
-	order, _, _ := codec.DecodeUint64(state.MustGet(kv.Key(address.Bytes()) + "ord"))
-	return order
+const postfixMaxAssumedNonceKey = "non"
+
+func GetMaxAssumedNonce(state kv.KVStore, address ledgerstate.Address) uint64 {
+	nonce, _, _ := codec.DecodeUint64(state.MustGet(kv.Key(address.Bytes()) + postfixMaxAssumedNonceKey))
+	return nonce
 }
 
-func SetLastNonce(state kv.KVStore, address ledgerstate.Address, order uint64) {
-	state.Set(kv.Key(address.Bytes())+"ord", codec.EncodeUint64(order))
+func RecordMaxAssumedNonce(state kv.KVStore, address ledgerstate.Address, nonce uint64) {
+	next := GetMaxAssumedNonce(state, address) + 1
+	if nonce > next {
+		next = nonce
+	}
+	state.Set(kv.Key(address.Bytes())+postfixMaxAssumedNonceKey, codec.EncodeUint64(next))
 }

@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/net/websocket"
@@ -24,7 +24,7 @@ func addWsEndpoints(e *echo.Echo) {
 }
 
 func handleWebSocket(c echo.Context) error {
-	chainID, err := chainid.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}

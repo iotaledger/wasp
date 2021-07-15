@@ -10,4 +10,4 @@ wasp
 wasp-cli
 *.log
 waspdb/
-docs/
+docOps/

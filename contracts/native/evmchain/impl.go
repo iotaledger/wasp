@@ -7,16 +7,16 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
 	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
-func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	genesisAlloc, err := DecodeGenesisAlloc(ctx.Params().MustGet(FieldGenesisAlloc))
 	a.RequireNoError(err)
@@ -31,7 +31,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
+func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
 	tx := &types.Transaction{}
@@ -57,9 +57,9 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 		iotasGasRefund := transferredIotas - iotasGasFee
 		_, err = ctx.Call(
 			accounts.Interface.Hname(),
-			coretypes.Hn(accounts.FuncDeposit),
+			iscp.Hn(accounts.FuncDeposit),
 			dict.Dict{accounts.ParamAgentID: codec.EncodeAgentID(ctx.Caller())},
-			coretypes.NewTransferIotas(iotasGasRefund),
+			iscp.NewTransferIotas(iotasGasRefund),
 		)
 		a.RequireNoError(err)
 	}
@@ -70,7 +70,7 @@ func applyTransaction(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}, nil
 }
 
-func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getBalance(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
 	blockNumber := paramBlockNumber(ctx)
@@ -82,13 +82,13 @@ func getBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
 	})
 }
 
-func getBlockNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getBlockNumber(ctx iscp.SandboxView) (dict.Dict, error) {
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
 		return result(emu.Blockchain().CurrentBlock().Number().Bytes())
 	})
 }
 
-func getBlockByNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getBlockByNumber(ctx iscp.SandboxView) (dict.Dict, error) {
 	return withBlockByNumber(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
 		if block == nil {
 			return nil
@@ -97,7 +97,7 @@ func getBlockByNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
 	})
 }
 
-func getBlockByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getBlockByHash(ctx iscp.SandboxView) (dict.Dict, error) {
 	return withBlockByHash(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
 		if block == nil {
 			return nil
@@ -106,25 +106,25 @@ func getBlockByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
 	})
 }
 
-func getTransactionByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getTransactionByHash(ctx iscp.SandboxView) (dict.Dict, error) {
 	return withTransactionByHash(ctx, func(emu *evm.EVMEmulator, tx *types.Transaction) dict.Dict {
 		return txResult(ctx, emu, tx)
 	})
 }
 
-func getTransactionByBlockHashAndIndex(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getTransactionByBlockHashAndIndex(ctx iscp.SandboxView) (dict.Dict, error) {
 	return withTransactionByBlockHashAndIndex(ctx, func(emu *evm.EVMEmulator, tx *types.Transaction) dict.Dict {
 		return txResult(ctx, emu, tx)
 	})
 }
 
-func getTransactionByBlockNumberAndIndex(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getTransactionByBlockNumberAndIndex(ctx iscp.SandboxView) (dict.Dict, error) {
 	return withTransactionByBlockNumberAndIndex(ctx, func(emu *evm.EVMEmulator, tx *types.Transaction) dict.Dict {
 		return txResult(ctx, emu, tx)
 	})
 }
 
-func getBlockTransactionCountByHash(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getBlockTransactionCountByHash(ctx iscp.SandboxView) (dict.Dict, error) {
 	return withBlockByHash(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
 		if block == nil {
 			return nil
@@ -133,7 +133,7 @@ func getBlockTransactionCountByHash(ctx coretypes.SandboxView) (dict.Dict, error
 	})
 }
 
-func getBlockTransactionCountByNumber(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getBlockTransactionCountByNumber(ctx iscp.SandboxView) (dict.Dict, error) {
 	return withBlockByNumber(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
 		if block == nil {
 			return nil
@@ -142,7 +142,7 @@ func getBlockTransactionCountByNumber(ctx coretypes.SandboxView) (dict.Dict, err
 	})
 }
 
-func getReceipt(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getReceipt(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	return withTransactionByHash(ctx, func(emu *evm.EVMEmulator, tx *types.Transaction) dict.Dict {
 		if tx == nil {
@@ -155,7 +155,7 @@ func getReceipt(ctx coretypes.SandboxView) (dict.Dict, error) {
 	})
 }
 
-func getNonce(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getNonce(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
 	blockNumber := paramBlockNumber(ctx)
@@ -167,7 +167,7 @@ func getNonce(ctx coretypes.SandboxView) (dict.Dict, error) {
 	})
 }
 
-func getCode(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getCode(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
 	blockNumber := paramBlockNumber(ctx)
@@ -179,7 +179,7 @@ func getCode(ctx coretypes.SandboxView) (dict.Dict, error) {
 	})
 }
 
-func getStorage(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getStorage(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	addr := common.BytesToAddress(ctx.Params().MustGet(FieldAddress))
 	key := common.BytesToHash(ctx.Params().MustGet(FieldKey))
@@ -192,7 +192,7 @@ func getStorage(ctx coretypes.SandboxView) (dict.Dict, error) {
 	})
 }
 
-func getLogs(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getLogs(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	q, err := DecodeFilterQuery(ctx.Params().MustGet(FieldFilterQuery))
 	a.RequireNoError(err)
@@ -204,7 +204,7 @@ func getLogs(ctx coretypes.SandboxView) (dict.Dict, error) {
 	})
 }
 
-func callContract(ctx coretypes.SandboxView) (dict.Dict, error) {
+func callContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	callMsg, err := DecodeCallMsg(ctx.Params().MustGet(FieldCallMsg))
 	a.RequireNoError(err)
@@ -217,7 +217,7 @@ func callContract(ctx coretypes.SandboxView) (dict.Dict, error) {
 	})
 }
 
-func estimateGas(ctx coretypes.SandboxView) (dict.Dict, error) {
+func estimateGas(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	callMsg, err := DecodeCallMsg(ctx.Params().MustGet(FieldCallMsg))
 	a.RequireNoError(err)
@@ -231,21 +231,21 @@ func estimateGas(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 // EVM chain management functions ///////////////////////////////////////////////////////////////////////////////////////
 
-func requireOwner(ctx coretypes.Sandbox) {
+func requireOwner(ctx iscp.Sandbox) {
 	contractOwner, _, err := codec.DecodeAgentID(ctx.State().MustGet(FieldEvmOwner))
 	a := assert.NewAssert(ctx.Log())
 	a.RequireNoError(err)
 	a.Require(contractOwner.Equals(ctx.Caller()), "can only be called by the contract owner")
 }
 
-func setNextOwner(ctx coretypes.Sandbox) (dict.Dict, error) {
+func setNextOwner(ctx iscp.Sandbox) (dict.Dict, error) {
 	requireOwner(ctx)
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	ctx.State().Set(FieldNextEvmOwner, codec.EncodeAgentID(par.MustGetAgentID(FieldNextEvmOwner)))
 	return nil, nil
 }
 
-func claimOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
+func claimOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
 	nextOwner, _, err := codec.DecodeAgentID(ctx.State().MustGet(FieldNextEvmOwner))
@@ -256,11 +256,11 @@ func claimOwnership(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func getOwner(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getOwner(ctx iscp.SandboxView) (dict.Dict, error) {
 	return result(ctx.State().MustGet(FieldEvmOwner)), nil
 }
 
-func setGasPerIota(ctx coretypes.Sandbox) (dict.Dict, error) {
+func setGasPerIota(ctx iscp.Sandbox) (dict.Dict, error) {
 	requireOwner(ctx)
 	par := kvdecoder.New(ctx.Params())
 	gasPerIotaBin := codec.EncodeUint64(par.MustGetUint64(FieldGasPerIota))
@@ -268,11 +268,11 @@ func setGasPerIota(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func getGasPerIota(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getGasPerIota(ctx iscp.SandboxView) (dict.Dict, error) {
 	return result(ctx.State().MustGet(FieldGasPerIota)), nil
 }
 
-func withdrawGasFees(ctx coretypes.Sandbox) (dict.Dict, error) {
+func withdrawGasFees(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	requireOwner(ctx)
 
@@ -285,12 +285,12 @@ func withdrawGasFees(ctx coretypes.Sandbox) (dict.Dict, error) {
 		params := codec.MakeDict(map[string]interface{}{
 			accounts.ParamAgentID: targetAgentID,
 		})
-		_, err := ctx.Call(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), params, ctx.Balances())
+		_, err := ctx.Call(accounts.Interface.Hname(), iscp.Hn(accounts.FuncDeposit), params, ctx.Balances())
 		a.RequireNoError(err)
 		return nil, nil
 	}
 
-	a.Require(ctx.Send(targetAgentID.Address(), ctx.Balances(), &coretypes.SendMetadata{
+	a.Require(ctx.Send(targetAgentID.Address(), ctx.Balances(), &iscp.SendMetadata{
 		TargetContract: targetAgentID.Hname(),
 	}), "withdraw.inconsistency: failed sending tokens ")
 

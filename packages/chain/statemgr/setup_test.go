@@ -10,11 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -23,7 +18,9 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -45,7 +42,7 @@ type MockedEnv struct {
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
 	NetworkCloser     io.Closer
-	ChainID           chainid.ChainID
+	ChainID           iscp.ChainID
 	mutex             sync.Mutex
 	Nodes             map[string]*MockedNode
 	push              bool
@@ -99,7 +96,7 @@ func NewMockedEnv(nodeCount int, t *testing.T, debug bool) (*MockedEnv, *ledgers
 	retOut, err := utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
-	ret.ChainID = *chainid.NewChainID(retOut.GetAliasAddress())
+	ret.ChainID = *iscp.NewChainID(retOut.GetAliasAddress())
 
 	ret.NetworkBehaviour = testutil.NewPeeringNetDynamic(log)
 
@@ -160,7 +157,7 @@ func (env *MockedEnv) PullStateFromLedger(addr *ledgerstate.AliasAddress) *messa
 	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(outTx)
 	require.NoError(env.T, err)
 
-	env.Log.Debugf("MockedEnv.PullStateFromLedger chain output %s found", coretypes.OID(stateOutput.ID()))
+	env.Log.Debugf("MockedEnv.PullStateFromLedger chain output %s found", iscp.OID(stateOutput.ID()))
 	return &messages.StateMsg{
 		ChainOutput: stateOutput,
 		Timestamp:   outTx.Essence().Timestamp(),
@@ -168,7 +165,7 @@ func (env *MockedEnv) PullStateFromLedger(addr *ledgerstate.AliasAddress) *messa
 }
 
 func (env *MockedEnv) PullConfirmedOutputFromLedger(addr ledgerstate.Address, outputID ledgerstate.OutputID) ledgerstate.Output {
-	env.Log.Debugf("MockedEnv.PullConfirmedOutputFromLedger for address %v output %v", addr.Base58, coretypes.OID(outputID))
+	env.Log.Debugf("MockedEnv.PullConfirmedOutputFromLedger for address %v output %v", addr.Base58, iscp.OID(outputID))
 	tx, foundTx := env.Ledger.GetTransaction(outputID.TransactionID())
 	require.True(env.T, foundTx)
 	outputIndex := outputID.OutputIndex()
@@ -215,11 +212,11 @@ func (env *MockedEnv) NewMockedNode(nodeIndex int, timers StateManagerTimers) *M
 	ret.NodeConn.OnPullState(func(addr *ledgerstate.AliasAddress) {
 		log.Debugf("MockedNode.OnPullState request received for address %v", addr.Base58)
 		response := env.PullStateFromLedger(addr)
-		log.Debugf("MockedNode.OnPullState call EventStateMsg: chain output %s", coretypes.OID(response.ChainOutput.ID()))
+		log.Debugf("MockedNode.OnPullState call EventStateMsg: chain output %s", iscp.OID(response.ChainOutput.ID()))
 		go ret.StateManager.EventStateMsg(response)
 	})
 	ret.NodeConn.OnPullConfirmedOutput(func(addr ledgerstate.Address, outputID ledgerstate.OutputID) {
-		log.Debugf("MockedNode.OnPullConfirmedOutput %v", coretypes.OID(outputID))
+		log.Debugf("MockedNode.OnPullConfirmedOutput %v", iscp.OID(outputID))
 		response := env.PullConfirmedOutputFromLedger(addr, outputID)
 		log.Debugf("MockedNode.OnPullConfirmedOutput call EventOutputMsg")
 		go ret.StateManager.EventOutputMsg(response)

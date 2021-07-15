@@ -6,7 +6,7 @@ package testcore
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 
@@ -109,7 +109,7 @@ func TestDeployGrant(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 	user1, addr1 := env.NewKeyPairWithFunds()
-	user1AgentID := coretypes.NewAgentID(addr1, 0)
+	user1AgentID := iscp.NewAgentID(addr1, 0)
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
 		root.ParamDeployer, user1AgentID,
@@ -134,7 +134,7 @@ func TestRevokeDeploy(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 	user1, addr1 := env.NewKeyPairWithFunds()
-	user1AgentID := coretypes.NewAgentID(addr1, 0)
+	user1AgentID := iscp.NewAgentID(addr1, 0)
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
 		root.ParamDeployer, user1AgentID,
@@ -165,7 +165,7 @@ func TestDeployGrantFail(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 	user1, addr1 := env.NewKeyPairWithFunds()
-	user1AgentID := coretypes.NewAgentID(addr1, 0)
+	user1AgentID := iscp.NewAgentID(addr1, 0)
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
 		root.ParamDeployer, user1AgentID,

@@ -21,12 +21,11 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -47,7 +46,7 @@ type chainObj struct {
 	mempoolLastCleanedIndex          uint32
 	dismissed                        atomic.Bool
 	dismissOnce                      sync.Once
-	chainID                          chainid.ChainID
+	chainID                          iscp.ChainID
 	chainStateSync                   coreutil.ChainStateSync
 	stateReader                      state.OptimisticStateReader
 	procset                          *processors.Cache
@@ -57,17 +56,17 @@ type chainObj struct {
 	log                              *logger.Logger
 	nodeConn                         chain.NodeConnection
 	db                               kvstore.KVStore
-	peerNetworkConfig                coretypes.PeerNetworkConfigProvider
+	peerNetworkConfig                registry.PeerNetworkConfigProvider
 	netProvider                      peering.NetworkProvider
-	dksProvider                      coretypes.DKShareRegistryProvider
-	committeeRegistry                coretypes.CommitteeRegistryProvider
-	blobProvider                     coretypes.BlobCache
+	dksProvider                      registry.DKShareRegistryProvider
+	committeeRegistry                registry.CommitteeRegistryProvider
+	blobProvider                     registry.BlobCache
 	eventRequestProcessed            *events.Event
 	eventChainTransition             *events.Event
 	eventSynced                      *events.Event
 	peers                            *peering.PeerDomainProvider
 	offLedgerReqsAcksMutex           sync.RWMutex
-	offLedgerReqsAcks                map[coretypes.RequestID][]string
+	offLedgerReqsAcks                map[iscp.RequestID][]string
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
@@ -79,15 +78,15 @@ type committeeStruct struct {
 }
 
 func NewChain(
-	chainID *chainid.ChainID,
+	chainID *iscp.ChainID,
 	log *logger.Logger,
 	txstreamClient *txstream.Client,
-	peerNetConfig coretypes.PeerNetworkConfigProvider,
+	peerNetConfig registry.PeerNetworkConfigProvider,
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
-	dksProvider coretypes.DKShareRegistryProvider,
-	committeeRegistry coretypes.CommitteeRegistryProvider,
-	blobProvider coretypes.BlobCache,
+	dksProvider registry.DKShareRegistryProvider,
+	committeeRegistry registry.CommitteeRegistryProvider,
+	blobProvider registry.BlobCache,
 	processorConfig *processors.Config,
 	offledgerBroadcastUpToNPeers int,
 	offledgerBroadcastInterval time.Duration,
@@ -113,7 +112,7 @@ func NewChain(
 		committeeRegistry: committeeRegistry,
 		blobProvider:      blobProvider,
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(_ coretypes.RequestID))(params[0].(coretypes.RequestID))
+			handler.(func(_ iscp.RequestID))(params[0].(iscp.RequestID))
 		}),
 		eventChainTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
@@ -121,7 +120,7 @@ func NewChain(
 		eventSynced: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(outputID ledgerstate.OutputID, blockIndex uint32))(params[0].(ledgerstate.OutputID), params[1].(uint32))
 		}),
-		offLedgerReqsAcks:                make(map[coretypes.RequestID][]string),
+		offLedgerReqsAcks:                make(map[iscp.RequestID][]string),
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
@@ -282,11 +281,11 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	c.log.Debugf("processChainTransition: processing state %d", stateIndex)
 	if !msg.ChainOutput.GetIsGovernanceUpdated() {
 		c.log.Debugf("processChainTransition state %d: output %s is not governance updated; state hash %s; last cleaned state is %d",
-			stateIndex, coretypes.OID(msg.ChainOutput.ID()), msg.VirtualState.Hash().String(), c.mempoolLastCleanedIndex)
+			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.Hash().String(), c.mempoolLastCleanedIndex)
 		// normal state update:
 		c.stateReader.SetBaseline()
-		chainID := chainid.NewChainID(msg.ChainOutput.GetAliasAddress())
-		var reqids []coretypes.RequestID
+		chainID := iscp.NewChainID(msg.ChainOutput.GetAliasAddress())
+		var reqids []iscp.RequestID
 		for i := c.mempoolLastCleanedIndex + 1; i <= msg.VirtualState.BlockIndex(); i++ {
 			c.log.Debugf("processChainTransition state %d: cleaning state %d", stateIndex, i)
 			var err error
@@ -307,14 +306,14 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 			}
 
 			c.log.Debugf("processChainTransition state %d: state %d cleaned, deleted requests: %+v",
-				stateIndex, i, coretypes.ShortRequestIDs(reqids))
+				stateIndex, i, iscp.ShortRequestIDs(reqids))
 		}
 		chain.PublishStateTransition(chainID, msg.ChainOutput, len(reqids))
 		chain.LogStateTransition(msg, reqids, c.log)
 		c.mempoolLastCleanedIndex = stateIndex
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
-			stateIndex, coretypes.OID(msg.ChainOutput.ID()), msg.VirtualState.Hash().String())
+			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.Hash().String())
 		chain.LogGovernanceTransition(msg, c.log)
 		chain.PublishGovernanceTransition(msg.ChainOutput)
 	}
@@ -402,7 +401,7 @@ func (c *chainObj) createCommitteeIfNeeded(anchorOutput *ledgerstate.AliasOutput
 	return nil
 }
 
-func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error) {
+func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*registry.CommitteeRecord, error) {
 	rec, err := c.committeeRegistry.GetCommitteeRecord(addr)
 	if err != nil {
 		return nil, xerrors.Errorf("createCommitteeIfNeeded: reading committee record: %v", err)
@@ -419,7 +418,7 @@ func (c *chainObj) getOwnCommitteeRecord(addr ledgerstate.Address) (*committee_r
 	return rec, nil
 }
 
-func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *committee_record.CommitteeRecord) error {
+func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeRecord) error {
 	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
 	cmt, err := committee.New(
 		cmtRec,

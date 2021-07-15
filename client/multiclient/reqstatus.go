@@ -3,15 +3,13 @@ package multiclient
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 // WaitUntilRequestProcessed blocks until the request has been processed by all nodes
-func (m *MultiClient) WaitUntilRequestProcessed(chainID *chainid.ChainID, reqID coretypes.RequestID, timeout time.Duration) error {
+func (m *MultiClient) WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp.RequestID, timeout time.Duration) error {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 
@@ -23,7 +21,7 @@ func (m *MultiClient) WaitUntilRequestProcessed(chainID *chainid.ChainID, reqID 
 
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by all nodes
-func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID chainid.ChainID, tx *ledgerstate.Transaction, timeout time.Duration) error {
+func (m *MultiClient) WaitUntilAllRequestsProcessed(chainID iscp.ChainID, tx *ledgerstate.Transaction, timeout time.Duration) error {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 

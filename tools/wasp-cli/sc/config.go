@@ -26,7 +26,7 @@ type Config struct {
 	Name        string
 	ProgramHash string
 
-	chainRecord *chainrecord.ChainRecord
+	chainRecord *registry.ChainRecord
 }
 
 func (c *Config) MakeClient(sigScheme *ed25519.KeyPair) *chainclient.Client {
@@ -195,7 +195,7 @@ func (p *DeployParams) progHash() hashing.HashValue {
 	return hash
 }
 
-func (c *Config) ChainRecord() *chainrecord.ChainRecord {
+func (c *Config) ChainRecord() *registry.ChainRecord {
 	if c.chainRecord != nil {
 		return c.chainRecord
 	}

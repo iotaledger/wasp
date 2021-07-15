@@ -113,6 +113,7 @@ func (csc *CommonSubsetCoordinator) TryHandleMessage(recv *peering.RecvEvent) bo
 		csc.log.Errorf("Cannot decode message: %v", err)
 		return true
 	}
+	csc.log.Debugf("ACS::IO - Received a msgBatch=%+v", mb)
 	var err error
 	var cs *CommonSubset
 	if cs, err = csc.getOrCreateCS(mb.sessionID, mb.stateIndex, nil); err != nil {

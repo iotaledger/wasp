@@ -3,14 +3,12 @@ package tests
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -20,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
@@ -82,7 +81,7 @@ func requestFunds(wasps *cluster.Cluster, addr ledgerstate.Address, who string) 
 	return nil
 }
 
-func getBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.AgentID, color ledgerstate.Color, nodeIndex ...int) uint64 {
+func getBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *iscp.AgentID, color ledgerstate.Color, nodeIndex ...int) uint64 {
 	idx := 0
 	if len(nodeIndex) > 0 {
 		idx = nodeIndex[0]
@@ -100,20 +99,20 @@ func getBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.Ag
 	return actual
 }
 
-func checkBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *coretypes.AgentID, color ledgerstate.Color, expected uint64) {
+func checkBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *iscp.AgentID, color ledgerstate.Color, expected uint64) {
 	actual := getBalanceOnChain(t, chain, agentID, color)
 	require.EqualValues(t, int64(expected), int64(actual))
 }
 
-func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []*coretypes.AgentID {
+func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []*iscp.AgentID {
 	r, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewAccounts,
 	)
 	check(err, t)
 
-	ret := make([]*coretypes.AgentID, 0)
+	ret := make([]*iscp.AgentID, 0)
 	for key := range r {
-		aid, err := coretypes.NewAgentIDFromBytes([]byte(key))
+		aid, err := iscp.NewAgentIDFromBytes([]byte(key))
 		check(err, t)
 
 		ret = append(ret, aid)
@@ -123,8 +122,8 @@ func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []*coretypes.AgentID
 	return ret
 }
 
-func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[*coretypes.AgentID]map[ledgerstate.Color]uint64 {
-	ret := make(map[*coretypes.AgentID]map[ledgerstate.Color]uint64)
+func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[*iscp.AgentID]map[ledgerstate.Color]uint64 {
+	ret := make(map[*iscp.AgentID]map[ledgerstate.Color]uint64)
 	acc := getAccountsOnChain(t, chain)
 	for _, agentID := range acc {
 		r, err := chain.Cluster.WaspClient(0).CallView(
@@ -185,7 +184,7 @@ func checkLedger(t *testing.T, chain *cluster.Chain) {
 	require.EqualValues(t, sum, total.Map())
 }
 
-func getChainInfo(t *testing.T, chain *cluster.Chain) (chainid.ChainID, coretypes.AgentID) {
+func getChainInfo(t *testing.T, chain *cluster.Chain) (iscp.ChainID, iscp.AgentID) {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ChainID, root.Interface.Hname(), root.FuncGetChainInfo,
 	)
@@ -207,7 +206,7 @@ func findContract(chain *cluster.Chain, name string, nodeIndex ...int) (*root.Co
 		i = nodeIndex[0]
 	}
 
-	hname := coretypes.Hn(name)
+	hname := iscp.Hn(name)
 	ret, err := chain.Cluster.WaspClient(i).CallView(
 		chain.ChainID, root.Interface.Hname(), root.FuncFindContract,
 		dict.Dict{
@@ -240,16 +239,25 @@ func waitTrue(timeout time.Duration, fun func() bool) bool {
 	}
 }
 
+func getHTTPError(err error) *model.HTTPError {
+	if err == nil {
+		return nil
+	}
+	httpError, ok := err.(*model.HTTPError)
+	if ok {
+		return httpError
+	}
+	return getHTTPError(errors.Unwrap(err))
+}
+
 func repeatIfInvalidated(fun func() (dict.Dict, error), deadline time.Time) (dict.Dict, error) {
 	result, err := fun()
-	if err != nil {
-		errStr := fmt.Sprintf("%v", err)
-		if strings.Contains(errStr, "virtual state has been invalidated") {
-			if time.Now().Before(deadline) {
-				return repeatIfInvalidated(fun, deadline)
-			}
-			return result, fmt.Errorf("Retrying timeouted. Last error: %w", err)
+	httpError := getHTTPError(err)
+	if httpError != nil && httpError.StatusCode == 409 {
+		if time.Now().Before(deadline) {
+			return repeatIfInvalidated(fun, deadline)
 		}
+		return result, fmt.Errorf("Retrying timeouted. Last error: %w", err)
 	}
 	return result, err
 }
@@ -279,7 +287,7 @@ func contractIsDeployed(chain *cluster.Chain, contractName string) conditionFn {
 	}
 }
 
-func balanceOnChainIotaEquals(chain *cluster.Chain, agentID *coretypes.AgentID, iotas uint64) conditionFn {
+func balanceOnChainIotaEquals(chain *cluster.Chain, agentID *iscp.AgentID, iotas uint64) conditionFn {
 	return func(t *testing.T, nodeIndex int, timeout time.Duration) bool {
 		return iotas == getBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA, nodeIndex)
 	}

@@ -6,8 +6,8 @@ package statemgr
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -68,7 +68,7 @@ func (sm *stateManager) eventBlockMsg(msg *messages.BlockMsg) {
 	sm.log.Debugw("EventBlockMsg from ",
 		"sender", msg.SenderNetID,
 		"block index", block.BlockIndex(),
-		"approving output", coretypes.OID(block.ApprovingOutputID()),
+		"approving output", iscp.OID(block.ApprovingOutputID()),
 	)
 	if sm.addBlockFromPeer(block) {
 		sm.takeAction()
@@ -80,7 +80,7 @@ func (sm *stateManager) EventOutputMsg(msg ledgerstate.Output) {
 }
 
 func (sm *stateManager) eventOutputMsg(msg ledgerstate.Output) {
-	sm.log.Debugf("EventOutputMsg received: %s", coretypes.OID(msg.ID()))
+	sm.log.Debugf("EventOutputMsg received: %s", iscp.OID(msg.ID()))
 	chainOutput, ok := msg.(*ledgerstate.AliasOutput)
 	if !ok {
 		sm.log.Debugf("EventOutputMsg ignored: output is of type %t, expecting *ledgerstate.AliasOutput", msg)
@@ -100,7 +100,7 @@ func (sm *stateManager) EventStateMsg(msg *messages.StateMsg) {
 func (sm *stateManager) eventStateMsg(msg *messages.StateMsg) {
 	sm.log.Debugw("EventStateMsg received: ",
 		"state index", msg.ChainOutput.GetStateIndex(),
-		"chainOutput", coretypes.OID(msg.ChainOutput.ID()),
+		"chainOutput", iscp.OID(msg.ChainOutput.ID()),
 	)
 	stateHash, err := hashing.HashValueFromBytes(msg.ChainOutput.GetStateData())
 	if err != nil {

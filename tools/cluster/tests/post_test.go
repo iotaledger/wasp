@@ -7,8 +7,8 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -18,8 +18,8 @@ import (
 
 const name = "inc"
 
-func deployInccounter42(t *testing.T, name string, counter int64) *coretypes.AgentID {
-	hname := coretypes.Hn(name)
+func deployInccounter42(t *testing.T, name string, counter int64) *iscp.AgentID {
+	hname := iscp.Hn(name)
 	description := "testing contract deployment with inccounter"
 	programHash = inccounter.Interface.ProgramHash
 
@@ -63,15 +63,15 @@ func deployInccounter42(t *testing.T, name string, counter int64) *coretypes.Age
 	require.EqualValues(t, description, rec.Description)
 
 	expectCounter(t, hname, counter)
-	return coretypes.NewAgentID(chain.ChainID.AsAddress(), hname)
+	return iscp.NewAgentID(chain.ChainID.AsAddress(), hname)
 }
 
-func expectCounter(t *testing.T, hname coretypes.Hname, counter int64) {
+func expectCounter(t *testing.T, hname iscp.Hname, counter int64) {
 	c := getCounter(t, hname)
 	require.EqualValues(t, counter, c)
 }
 
-func getCounter(t *testing.T, hname coretypes.Hname) int64 {
+func getCounter(t *testing.T, hname iscp.Hname) int64 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
 		chain.ChainID, hname, "getCounter",
 	)
@@ -126,7 +126,7 @@ func TestPost3Recursive(t *testing.T) {
 	myClient := chain.SCClient(contractID.Hname(), testOwner)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany, chainclient.PostRequestParams{
-		Transfer: coretypes.NewTransferIotas(1),
+		Transfer: iscp.NewTransferIotas(1),
 		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		})),
@@ -150,7 +150,7 @@ func TestPost5Requests(t *testing.T) {
 
 	testOwner := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
-	myAgentID := coretypes.NewAgentID(myAddress, 0)
+	myAgentID := iscp.NewAgentID(myAddress, 0)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 
@@ -182,7 +182,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 
 	testOwner := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
-	myAgentID := coretypes.NewAgentID(myAddress, 0)
+	myAgentID := iscp.NewAgentID(myAddress, 0)
 	err = requestFunds(clu, myAddress, "myAddress")
 	check(err, t)
 

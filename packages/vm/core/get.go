@@ -5,9 +5,9 @@ import (
 
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
@@ -33,7 +33,7 @@ func init() {
 	}
 }
 
-func GetProcessor(programHash hashing.HashValue) (coretypes.VMProcessor, error) {
+func GetProcessor(programHash hashing.HashValue) (iscp.VMProcessor, error) {
 	ret, ok := AllCoreContractsByHash[programHash]
 	if !ok {
 		return nil, fmt.Errorf("can't find builtin processor with hash %s", programHash.String())

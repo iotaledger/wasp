@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"golang.org/x/xerrors"
@@ -82,7 +82,7 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestLogRecord, key Reque
 }
 
 // isRequestProcessedIntern does quick lookup to check if it wasn't seen yet
-func isRequestProcessedIntern(partition kv.KVStoreReader, reqid *coretypes.RequestID) (bool, error) {
+func isRequestProcessedIntern(partition kv.KVStoreReader, reqid *iscp.RequestID) (bool, error) {
 	lookupTable := collections.NewMapReadOnly(partition, StateVarRequestLookupIndex)
 	digest := reqid.LookupDigest()
 	seen, err := lookupTable.HasAt(digest[:])
@@ -152,7 +152,7 @@ func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, re
 	return recBin, true
 }
 
-func getRequestRecordDataByRequestID(ctx coretypes.SandboxView, reqID coretypes.RequestID) ([]byte, uint32, uint16, bool) {
+func getRequestRecordDataByRequestID(ctx iscp.SandboxView, reqID iscp.RequestID) ([]byte, uint32, uint16, bool) {
 	lookupDigest := reqID.LookupDigest()
 	lookupTable := collections.NewMapReadOnly(ctx.State(), StateVarRequestLookupIndex)
 	lookupKeyListBin := lookupTable.MustGetAt(lookupDigest[:])

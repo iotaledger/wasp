@@ -15,14 +15,13 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/dashboard"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	registry_pkg "github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
@@ -63,15 +62,15 @@ func (w *waspServices) ExploreAddressBaseURL() string {
 	return exploreAddressURLFromGoshimmerURI(parameters.GetString(parameters.NodeAddress))
 }
 
-func (w *waspServices) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
+func (w *waspServices) GetChainRecords() ([]*registry_pkg.ChainRecord, error) {
 	return registry.DefaultRegistry().GetChainRecords()
 }
 
-func (w *waspServices) GetChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error) {
+func (w *waspServices) GetChainRecord(chainID *iscp.ChainID) (*registry_pkg.ChainRecord, error) {
 	return registry.DefaultRegistry().GetChainRecordByChainID(chainID)
 }
 
-func (w *waspServices) GetChainState(chainID *chainid.ChainID) (*dashboard.ChainState, error) {
+func (w *waspServices) GetChainState(chainID *iscp.ChainID) (*dashboard.ChainState, error) {
 	chainStore := database.GetKVStore(chainID)
 	virtualState, _, err := state.LoadSolidState(chainStore, chainID)
 	if err != nil {
@@ -89,20 +88,23 @@ func (w *waspServices) GetChainState(chainID *chainid.ChainID) (*dashboard.Chain
 	}, nil
 }
 
-func (w *waspServices) GetChain(chainID *chainid.ChainID) chain.ChainCore {
+func (w *waspServices) GetChain(chainID *iscp.ChainID) chain.ChainCore {
 	return chains.AllChains().Get(chainID)
 }
 
-func (w *waspServices) CallView(ch chain.ChainCore, hname coretypes.Hname, funName string, params dict.Dict) (dict.Dict, error) {
+const retryOnStateInvalidatedRetry = 100 * time.Millisecond //nolint:gofumpt
+const retryOnStateInvalidatedTimeout = 5 * time.Minute
+
+func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, funName string, params dict.Dict) (dict.Dict, error) {
 	vctx := viewcontext.NewFromChain(ch)
-	var err error
 	var ret dict.Dict
-	_ = optimism.RepeatOnceIfUnlucky(func() error {
-		ret, err = vctx.CallView(hname, coretypes.Hn(funName), params)
+	err := optimism.RetryOnStateInvalidated(func() error {
+		var err error
+		ret, err = vctx.CallView(hname, iscp.Hn(funName), params)
 		return err
-	})
+	}, retryOnStateInvalidatedRetry, time.Now().Add(retryOnStateInvalidatedTimeout))
 	if err != nil {
-		return nil, fmt.Errorf("root view call failed: %v", err)
+		return nil, fmt.Errorf("root view call failed: %w", err)
 	}
 	return ret, nil
 }

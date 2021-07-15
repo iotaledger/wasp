@@ -6,8 +6,9 @@ import (
 	"bytes"
 	"sort"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/examples/tokenregistry"
 	"github.com/iotaledger/wasp/packages/webapi/model/statequery"
@@ -15,10 +16,10 @@ import (
 
 type TokenRegistryClient struct {
 	*chainclient.Client
-	contractHname coretypes.Hname
+	contractHname iscp.Hname
 }
 
-func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *TokenRegistryClient {
+func NewClient(scClient *chainclient.Client, contractHname iscp.Hname) *TokenRegistryClient {
 	return &TokenRegistryClient{scClient, contractHname}
 }
 

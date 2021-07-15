@@ -10,9 +10,9 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -23,9 +23,9 @@ import (
 
 type CallParams struct {
 	targetName  string
-	target      coretypes.Hname
+	target      iscp.Hname
 	epName      string
-	entryPoint  coretypes.Hname
+	entryPoint  iscp.Hname
 	transfer    *ledgerstate.ColoredBalances
 	mintAmount  uint64
 	mintAddress ledgerstate.Address
@@ -35,9 +35,9 @@ type CallParams struct {
 func NewCallParamsFromDic(scName, funName string, par dict.Dict) *CallParams {
 	ret := &CallParams{
 		targetName: scName,
-		target:     coretypes.Hn(scName),
+		target:     iscp.Hn(scName),
 		epName:     funName,
-		entryPoint: coretypes.Hn(funName),
+		entryPoint: iscp.Hn(funName),
 	}
 	ret.args = requestargs.New(nil)
 	for k, v := range par {
@@ -64,9 +64,9 @@ func NewCallParamsOptimized(scName, funName string, optSize int, params ...inter
 	}
 	ret := &CallParams{
 		targetName: scName,
-		target:     coretypes.Hn(scName),
+		target:     iscp.Hn(scName),
 		epName:     funName,
-		entryPoint: coretypes.Hn(funName),
+		entryPoint: iscp.Hn(funName),
 	}
 	var retOptimized map[kv.Key][]byte
 	ret.args, retOptimized = requestargs.NewOptimizedRequestArgs(parseParams(params), optSize)
@@ -201,7 +201,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair)
 		keyPair = ch.OriginatorKeyPair
 	}
 	r := req.NewRequestOffLedger(keyPair)
-	return ch.runRequestsSync([]coretypes.Request{r}, "off-ledger")
+	return ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, dict.Dict, error) {
@@ -248,7 +248,7 @@ func (ch *Chain) CallView(scName, funName string, params ...interface{}) (dict.D
 
 	vctx := viewcontext.New(ch.ChainID, ch.StateReader, ch.proc, ch.Log)
 	ch.StateReader.SetBaseline()
-	return vctx.CallView(coretypes.Hn(scName), coretypes.Hn(funName), p)
+	return vctx.CallView(iscp.Hn(scName), iscp.Hn(funName), p)
 }
 
 // WaitForRequestsThrough waits for the moment when counters for incoming requests and removed

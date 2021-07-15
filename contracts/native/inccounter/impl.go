@@ -3,15 +3,15 @@ package inccounter
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -52,7 +52,7 @@ const (
 	VarDescription = "dscr"
 )
 
-func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.init in %s", ctx.Contract().String())
 	params := ctx.Params()
 	val, _, err := codec.DecodeInt64(params.MustGet(VarCounter))
@@ -64,7 +64,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func incCounter(ctx coretypes.Sandbox) (dict.Dict, error) {
+func incCounter(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.incCounter in %s", ctx.Contract().String())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	inc := par.MustGetInt64(VarCounter, 1)
@@ -82,17 +82,17 @@ func incCounter(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func incCounterAndRepeatOnce(ctx coretypes.Sandbox) (dict.Dict, error) {
+func incCounterAndRepeatOnce(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatOnce")
 	state := ctx.State()
 	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
 
 	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
-	if !ctx.Send(ctx.ChainID().AsAddress(), coretypes.NewTransferIotas(1), &coretypes.SendMetadata{
+	if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewTransferIotas(1), &iscp.SendMetadata{
 		TargetContract: ctx.Contract(),
-		EntryPoint:     coretypes.Hn(FuncIncCounter),
-	}, coretypes.SendOptions{
+		EntryPoint:     iscp.Hn(FuncIncCounter),
+	}, iscp.SendOptions{
 		TimeLock: 5 * 60,
 	}) {
 		return nil, fmt.Errorf("incCounterAndRepeatOnce: not enough funds")
@@ -101,7 +101,7 @@ func incCounterAndRepeatOnce(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func incCounterAndRepeatMany(ctx coretypes.Sandbox) (dict.Dict, error) {
+func incCounterAndRepeatMany(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany")
 
 	state := ctx.State()
@@ -127,10 +127,10 @@ func incCounterAndRepeatMany(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	state.Set(VarNumRepeats, codec.EncodeInt64(numRepeats-1))
 
-	if !ctx.Send(ctx.ChainID().AsAddress(), coretypes.NewTransferIotas(1), &coretypes.SendMetadata{
+	if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewTransferIotas(1), &iscp.SendMetadata{
 		TargetContract: ctx.Contract(),
-		EntryPoint:     coretypes.Hn(FuncIncAndRepeatMany),
-	}, coretypes.SendOptions{
+		EntryPoint:     iscp.Hn(FuncIncAndRepeatMany),
+	}, iscp.SendOptions{
 		TimeLock: 1 * 60,
 	}) {
 		ctx.Log().Debugf("incCounterAndRepeatMany. remaining repeats = %d", numRepeats-1)
@@ -141,7 +141,7 @@ func incCounterAndRepeatMany(ctx coretypes.Sandbox) (dict.Dict, error) {
 }
 
 // spawn deploys new contract and calls it
-func spawn(ctx coretypes.Sandbox) (dict.Dict, error) {
+func spawn(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.spawn")
 
 	state := kvdecoder.New(ctx.State(), ctx.Log())
@@ -158,11 +158,11 @@ func spawn(ctx coretypes.Sandbox) (dict.Dict, error) {
 	a.RequireNoError(err)
 
 	// increase counter in newly spawned contract
-	hname := coretypes.Hn(name)
-	_, err = ctx.Call(hname, coretypes.Hn(FuncIncCounter), nil, nil)
+	hname := iscp.Hn(name)
+	_, err = ctx.Call(hname, iscp.Hn(FuncIncCounter), nil, nil)
 	a.RequireNoError(err)
 
-	res, err := ctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncGetChainInfo), nil, nil)
+	res, err := ctx.Call(root.Interface.Hname(), iscp.Hn(root.FuncGetChainInfo), nil, nil)
 	a.RequireNoError(err)
 
 	creg := collections.NewMapReadOnly(res, root.VarContractRegistry)
@@ -171,7 +171,7 @@ func spawn(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func getCounter(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getCounter(ctx iscp.SandboxView) (dict.Dict, error) {
 	state := ctx.State()
 	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
 	ret := dict.New()

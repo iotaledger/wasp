@@ -7,8 +7,8 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.dedis.ch/kyber/v3/sign/tbls"
 	"golang.org/x/xerrors"
@@ -17,12 +17,12 @@ import (
 type BatchProposal struct {
 	ValidatorIndex          uint16
 	StateOutputID           ledgerstate.OutputID
-	RequestIDs              []coretypes.RequestID
+	RequestIDs              []iscp.RequestID
 	RequestHashes           [][32]byte
 	Timestamp               time.Time
 	ConsensusManaPledge     identity.ID
 	AccessManaPledge        identity.ID
-	FeeDestination          *coretypes.AgentID
+	FeeDestination          *iscp.AgentID
 	SigShareOfStateOutputID tbls.SigShare
 }
 
@@ -30,7 +30,7 @@ type consensusBatchParams struct {
 	medianTs        time.Time
 	accessPledge    identity.ID
 	consensusPledge identity.ID
-	feeDestination  *coretypes.AgentID
+	feeDestination  *iscp.AgentID
 	entropy         hashing.HashValue
 }
 
@@ -59,7 +59,7 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
-	ret.FeeDestination, err = coretypes.AgentIDFromMarshalUtil(mu)
+	ret.FeeDestination, err = iscp.AgentIDFromMarshalUtil(mu)
 	if err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
@@ -78,10 +78,10 @@ func BatchProposalFromMarshalUtil(mu *marshalutil.MarshalUtil) (*BatchProposal, 
 	if ret.SigShareOfStateOutputID, err = mu.ReadBytes(int(sigShareSize)); err != nil {
 		return nil, xerrors.Errorf(errFmt, err)
 	}
-	ret.RequestIDs = make([]coretypes.RequestID, size)
+	ret.RequestIDs = make([]iscp.RequestID, size)
 	ret.RequestHashes = make([][32]byte, size)
 	for i := range ret.RequestIDs {
-		ret.RequestIDs[i], err = coretypes.RequestIDFromMarshalUtil(mu)
+		ret.RequestIDs[i], err = iscp.RequestIDFromMarshalUtil(mu)
 		if err != nil {
 			return nil, xerrors.Errorf(errFmt, err)
 		}
@@ -164,7 +164,7 @@ const keyLen = ledgerstate.OutputIDLength + 32
 // calcIntersection a simple algorithm to calculate acceptable intersection. It simply takes all requests
 // seen by 1/3+1 node. The assumptions is there can be at max 1/3 of bizantine nodes, so if something is reported
 // by more that 1/3 of nodes it means it is correct
-func calcIntersection(acs []*BatchProposal, n uint16) ([]coretypes.RequestID, [][32]byte) {
+func calcIntersection(acs []*BatchProposal, n uint16) ([]iscp.RequestID, [][32]byte) {
 	minNumberMentioned := n/3 + 1
 	numMentioned := make(map[[keyLen]byte]uint16)
 
@@ -181,13 +181,13 @@ func calcIntersection(acs []*BatchProposal, n uint16) ([]coretypes.RequestID, []
 			maxLen = len(prop.RequestIDs)
 		}
 	}
-	retIDs := make([]coretypes.RequestID, 0, maxLen)
+	retIDs := make([]iscp.RequestID, 0, maxLen)
 	retHashes := make([][32]byte, 0)
 	for key, num := range numMentioned {
 		if num < minNumberMentioned {
 			continue
 		}
-		reqID, err := coretypes.RequestIDFromBytes(key[:])
+		reqID, err := iscp.RequestIDFromBytes(key[:])
 		if err != nil {
 			continue
 		}

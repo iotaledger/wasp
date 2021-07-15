@@ -8,8 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -32,7 +31,7 @@ func TestCommitteeBasic(t *testing.T) {
 		neighbors: netIDs,
 	}
 
-	cmtRec := &committee_record.CommitteeRecord{
+	cmtRec := &registry.CommitteeRecord{
 		Address: stateAddr,
 		Nodes:   netIDs,
 	}
@@ -49,10 +48,10 @@ func TestCommitteeBasic(t *testing.T) {
 	require.NoError(t, netCloser.Close())
 }
 
-var _ coretypes.PeerNetworkConfigProvider = &committeeimplTestConfigProvider{}
+var _ registry.PeerNetworkConfigProvider = &committeeimplTestConfigProvider{}
 
 // TODO: should this object be obtained from peering.NetworkProvider?
-// Or should coretypes.PeerNetworkConfigProvider methods methods be part of
+// Or should registry.PeerNetworkConfigProvider methods methods be part of
 // peering.NetworkProvider interface
 type committeeimplTestConfigProvider struct {
 	ownNetID  string

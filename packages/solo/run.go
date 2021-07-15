@@ -13,17 +13,16 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/rotate"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/rotate"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/stretchr/testify/require"
 )
 
-func (ch *Chain) runRequestsSync(reqs []coretypes.Request, trace string) (dict.Dict, error) {
+func (ch *Chain) runRequestsSync(reqs []iscp.Request, trace string) (dict.Dict, error) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
@@ -33,7 +32,7 @@ func (ch *Chain) runRequestsSync(reqs []coretypes.Request, trace string) (dict.D
 	return ch.runRequestsNolock(reqs, trace)
 }
 
-func (ch *Chain) runRequestsNolock(reqs []coretypes.Request, trace string) (dict.Dict, error) {
+func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict, error) {
 	ch.Log.Debugf("runRequestsSync ('%s')", trace)
 
 	for _, r := range reqs {
@@ -95,7 +94,7 @@ func (ch *Chain) runRequestsNolock(reqs []coretypes.Request, trace string) (dict
 	if task.RotationAddress == nil {
 		// normal state transition
 		ch.State = task.VirtualState
-		ch.settleStateTransition(tx, stateOutput, coretypes.TakeRequestIDs(reqs...))
+		ch.settleStateTransition(tx, stateOutput, iscp.TakeRequestIDs(reqs...))
 	} else {
 		ch.Log.Infof("ROTATED STATE CONTROLLER to %s", stateOutput.GetStateAddress().Base58())
 	}
@@ -104,7 +103,7 @@ func (ch *Chain) runRequestsNolock(reqs []coretypes.Request, trace string) (dict
 }
 
 //nolint // TODO check this function, the `stateOutput` param is unused, and its re-assigned on the first line
-func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction, stateOutput *ledgerstate.AliasOutput, reqids []coretypes.RequestID) {
+func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction, stateOutput *ledgerstate.AliasOutput, reqids []iscp.RequestID) {
 	stateOutput, err := utxoutil.GetSingleChainedAliasOutput(stateTx)
 	require.NoError(ch.Env.T, err)
 
@@ -122,7 +121,7 @@ func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction, stateOu
 	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
 	require.EqualValues(ch.Env.T, stateOutput.ID(), blockBack.ApprovingOutputID())
 
-	chain.PublishStateTransition(chainid.NewChainID(stateOutput.GetAliasAddress()), stateOutput, len(reqids))
+	chain.PublishStateTransition(iscp.NewChainID(stateOutput.GetAliasAddress()), stateOutput, len(reqids))
 
 	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
 		ch.State.BlockIndex(), len(reqids), len(stateTx.Essence().Outputs()))
@@ -134,7 +133,7 @@ func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction, stateOu
 	ch.Env.ClockStep()
 }
 
-func batchShortStr(reqIds []coretypes.RequestID) string {
+func batchShortStr(reqIds []iscp.RequestID) string {
 	ret := make([]string, len(reqIds))
 	for i, r := range reqIds {
 		ret[i] = r.Short()
