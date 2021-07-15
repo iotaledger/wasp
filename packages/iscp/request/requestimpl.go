@@ -220,15 +220,6 @@ func (req *RequestOnLedger) IsFeePrepaid() bool {
 	return false
 }
 
-func (req *RequestOnLedger) Nonce() uint64 {
-	return req.nonce
-}
-
-func (req *RequestOnLedger) WithNonce(nonce uint64) iscp.Request {
-	req.nonce = nonce
-	return req
-}
-
 func (req *RequestOnLedger) Output() ledgerstate.Output {
 	return req.outputObj
 }

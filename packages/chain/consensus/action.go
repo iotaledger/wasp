@@ -155,7 +155,7 @@ func (c *Consensus) runVMIfNeeded() {
 
 // sortBatch deterministically sorts batch based on the value extracted from the consensus entropy
 // It is needed for determinism and as a MEV prevention measure see [prevent-mev.md]
-func (c *Consensus) sortBatch(reqs []coretypes.Request) {
+func (c *Consensus) sortBatch(reqs []iscp.Request) {
 	if len(reqs) <= 1 {
 		return
 	}
@@ -163,7 +163,7 @@ func (c *Consensus) sortBatch(reqs []coretypes.Request) {
 
 	type sortStru struct {
 		num uint32
-		req coretypes.Request
+		req iscp.Request
 	}
 	toSort := make([]sortStru, len(reqs))
 	for i, req := range reqs {
