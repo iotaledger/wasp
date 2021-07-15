@@ -172,10 +172,6 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
 
-	defer func() {
-		clu1.Stop()
-	}()
-
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
 	myAgentID := coretypes.NewAgentID(myAddress, 0)

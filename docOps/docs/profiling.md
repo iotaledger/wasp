@@ -34,4 +34,4 @@ These profiles can be explored in the same way as the pprof server resources (us
 ## Notes
 
 - Profiling has a negative impact on performance. Use when in need.
-- Profiles may have no content if the node is not shutdown gracefully. (in cluster tests make sure `cluster.Stop()` is called, and the test fails via internal timeout checks, not via `-timeout` parameter)
+- Profiles may have no content if the node is not shutdown gracefully. (to use in tests, the test should fails via assertions, not via `-timeout` parameter)

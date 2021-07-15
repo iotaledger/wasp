@@ -3,7 +3,6 @@ package profiling
 import (
 	"net/http"
 	"runtime"
-	"sync"
 
 	// import required to profile
 	_ "net/http/pprof"
@@ -15,22 +14,13 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
-// PluginName is the name of the profiling plugin.
 const PluginName = "Profiling"
 
-var (
-	// plugin is the profiling plugin.
-	plugin *node.Plugin
-	once   sync.Once
-	log    *logger.Logger
-)
+var log *logger.Logger
 
 // Init gets the plugin instance.
 func Init() *node.Plugin {
-	once.Do(func() {
-		plugin = node.NewPlugin(PluginName, node.Enabled, configure, run)
-	})
-	return plugin
+	return node.NewPlugin(PluginName, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {
