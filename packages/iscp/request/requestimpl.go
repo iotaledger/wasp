@@ -9,9 +9,9 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util"
@@ -25,7 +25,7 @@ const (
 	OffLedgerRequestType byte = 1
 )
 
-func FromBytes(b []byte) (coretypes.Request, error) {
+func FromBytes(b []byte) (iscp.Request, error) {
 	// first byte is the request type
 	switch b[0] {
 	case OnLedgerRequestType:
@@ -45,11 +45,11 @@ func OffLedgerFromBytes(b []byte) (*RequestOffLedger, error) {
 // RequestMetadata represents content of the data payload of the output
 type RequestMetadata struct {
 	err            error
-	senderContract coretypes.Hname
+	senderContract iscp.Hname
 	// ID of the target smart contract
-	targetContract coretypes.Hname
+	targetContract iscp.Hname
 	// entry point code
-	entryPoint coretypes.Hname
+	entryPoint iscp.Hname
 	// request arguments, not decoded yet wrt blobRefs
 	args requestargs.RequestArgs
 }
@@ -67,17 +67,17 @@ func RequestMetadataFromBytes(data []byte) *RequestMetadata {
 	return ret
 }
 
-func (p *RequestMetadata) WithSender(s coretypes.Hname) *RequestMetadata {
+func (p *RequestMetadata) WithSender(s iscp.Hname) *RequestMetadata {
 	p.senderContract = s
 	return p
 }
 
-func (p *RequestMetadata) WithTarget(t coretypes.Hname) *RequestMetadata {
+func (p *RequestMetadata) WithTarget(t iscp.Hname) *RequestMetadata {
 	p.targetContract = t
 	return p
 }
 
-func (p *RequestMetadata) WithEntryPoint(ep coretypes.Hname) *RequestMetadata {
+func (p *RequestMetadata) WithEntryPoint(ep iscp.Hname) *RequestMetadata {
 	p.entryPoint = ep
 	return p
 }
@@ -101,21 +101,21 @@ func (p *RequestMetadata) ParsedError() error {
 	return p.err
 }
 
-func (p *RequestMetadata) SenderContract() coretypes.Hname {
+func (p *RequestMetadata) SenderContract() iscp.Hname {
 	if !p.ParsedOk() {
 		return 0
 	}
 	return p.senderContract
 }
 
-func (p *RequestMetadata) TargetContract() coretypes.Hname {
+func (p *RequestMetadata) TargetContract() iscp.Hname {
 	if !p.ParsedOk() {
 		return 0
 	}
 	return p.targetContract
 }
 
-func (p *RequestMetadata) EntryPoint() coretypes.Hname {
+func (p *RequestMetadata) EntryPoint() iscp.Hname {
 	if !p.ParsedOk() {
 		return 0
 	}
@@ -174,8 +174,8 @@ type RequestOnLedger struct {
 	params          atomic.Value // this part is mutable
 }
 
-// implements coretypes.Request interface
-var _ coretypes.Request = &RequestOnLedger{}
+// implements iscp.Request interface
+var _ iscp.Request = &RequestOnLedger{}
 
 // RequestOnLedgerFromOutput
 //nolint:revive // TODO refactor stutter request.request
@@ -214,8 +214,8 @@ func RequestsOnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr led
 	return ret, nil
 }
 
-func (req *RequestOnLedger) ID() coretypes.RequestID {
-	return coretypes.RequestID(req.Output().ID())
+func (req *RequestOnLedger) ID() iscp.RequestID {
+	return iscp.RequestID(req.Output().ID())
 }
 
 func (req *RequestOnLedger) IsFeePrepaid() bool {
@@ -226,7 +226,7 @@ func (req *RequestOnLedger) Nonce() uint64 {
 	return req.nonce
 }
 
-func (req *RequestOnLedger) WithNonce(nonce uint64) coretypes.Request {
+func (req *RequestOnLedger) WithNonce(nonce uint64) iscp.Request {
 	req.nonce = nonce
 	return req
 }
@@ -244,8 +244,8 @@ func (req *RequestOnLedger) Params() (dict.Dict, bool) {
 	return par.(dict.Dict), true
 }
 
-func (req *RequestOnLedger) SenderAccount() *coretypes.AgentID {
-	return coretypes.NewAgentID(req.senderAddress, req.requestMetadata.SenderContract())
+func (req *RequestOnLedger) SenderAccount() *iscp.AgentID {
+	return iscp.NewAgentID(req.senderAddress, req.requestMetadata.SenderContract())
 }
 
 func (req *RequestOnLedger) SenderAddress() ledgerstate.Address {
@@ -253,7 +253,7 @@ func (req *RequestOnLedger) SenderAddress() ledgerstate.Address {
 }
 
 // Target returns target contract and target entry point
-func (req *RequestOnLedger) Target() (coretypes.Hname, coretypes.Hname) {
+func (req *RequestOnLedger) Target() (iscp.Hname, iscp.Hname) {
 	return req.requestMetadata.TargetContract(), req.requestMetadata.EntryPoint()
 }
 
@@ -401,8 +401,8 @@ func onLedgerFromBytes(buf []byte) (*RequestOnLedger, error) {
 
 type RequestOffLedger struct {
 	args       requestargs.RequestArgs
-	contract   coretypes.Hname
-	entryPoint coretypes.Hname
+	contract   iscp.Hname
+	entryPoint iscp.Hname
 	params     atomic.Value // mutable
 	publicKey  ed25519.PublicKey
 	sender     ledgerstate.Address
@@ -411,11 +411,11 @@ type RequestOffLedger struct {
 	transfer   *ledgerstate.ColoredBalances
 }
 
-// implements coretypes.Request interface
-var _ coretypes.Request = &RequestOffLedger{}
+// implements iscp.Request interface
+var _ iscp.Request = &RequestOffLedger{}
 
 // NewRequestOffLedger creates a basic request
-func NewRequestOffLedger(contract, entryPoint coretypes.Hname, args requestargs.RequestArgs) *RequestOffLedger {
+func NewRequestOffLedger(contract, entryPoint iscp.Hname, args requestargs.RequestArgs) *RequestOffLedger {
 	return &RequestOffLedger{
 		args:       args.Clone(),
 		contract:   contract,
@@ -530,9 +530,9 @@ func (req *RequestOffLedger) VerifySignature() bool {
 // index part of request id is always 0 for off ledger requests
 // note that request needs to have been signed before this value is
 // considered valid
-func (req *RequestOffLedger) ID() (requestID coretypes.RequestID) {
+func (req *RequestOffLedger) ID() (requestID iscp.RequestID) {
 	txid := ledgerstate.TransactionID(hashing.HashData(req.Bytes()))
-	return coretypes.RequestID(ledgerstate.NewOutputID(txid, 0))
+	return iscp.RequestID(ledgerstate.NewOutputID(txid, 0))
 }
 
 // IsFeePrepaid always true for off-ledger
@@ -545,7 +545,7 @@ func (req *RequestOffLedger) Nonce() uint64 {
 	return req.nonce
 }
 
-func (req *RequestOffLedger) WithNonce(nonce uint64) coretypes.Request {
+func (req *RequestOffLedger) WithNonce(nonce uint64) iscp.Request {
 	req.nonce = nonce
 	return req
 }
@@ -563,8 +563,8 @@ func (req *RequestOffLedger) Params() (dict.Dict, bool) {
 	return par.(dict.Dict), true
 }
 
-func (req *RequestOffLedger) SenderAccount() *coretypes.AgentID {
-	return coretypes.NewAgentID(req.SenderAddress(), 0)
+func (req *RequestOffLedger) SenderAccount() *iscp.AgentID {
+	return iscp.NewAgentID(req.SenderAddress(), 0)
 }
 
 func (req *RequestOffLedger) SenderAddress() ledgerstate.Address {
@@ -574,7 +574,7 @@ func (req *RequestOffLedger) SenderAddress() ledgerstate.Address {
 	return req.sender
 }
 
-func (req *RequestOffLedger) Target() (coretypes.Hname, coretypes.Hname) {
+func (req *RequestOffLedger) Target() (iscp.Hname, iscp.Hname) {
 	return req.contract, req.entryPoint
 }
 
@@ -611,7 +611,7 @@ var (
 )
 
 // SolidifyArgs solidifies the request arguments
-func SolidifyArgs(req coretypes.Request, reg registry.BlobCache) (bool, error) {
+func SolidifyArgs(req iscp.Request, reg registry.BlobCache) (bool, error) {
 	sreq := req.(SolidifiableRequest)
 	par, _ := sreq.Params()
 	if par != nil {

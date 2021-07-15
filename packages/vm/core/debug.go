@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 func init() {
@@ -27,7 +27,7 @@ func PrintWellKnownHnames() {
 		rec := AllCoreContractsByHash[h]
 		fmt.Printf("    %10d, %10s: '%s'\n", rec.Hname(), rec.Hname(), rec.Name)
 	}
-	fmt.Printf("    %10d, %10s: '%s'\n", coretypes.EntryPointInit, coretypes.EntryPointInit, coretypes.FuncInit)
-	fmt.Printf("    %10d, %10s: '%s'\n", coretypes.Hn("testcore"), coretypes.Hn("testcore"), "testcore")
+	fmt.Printf("    %10d, %10s: '%s'\n", iscp.EntryPointInit, iscp.EntryPointInit, iscp.FuncInit)
+	fmt.Printf("    %10d, %10s: '%s'\n", iscp.Hn("testcore"), iscp.Hn("testcore"), "testcore")
 	fmt.Printf("--------------- well known hnames ------------------\n")
 }

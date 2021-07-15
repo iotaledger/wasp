@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -19,7 +19,7 @@ var logCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		r, err := SCClient(eventlog.Interface.Hname()).CallView(eventlog.FuncGetRecords,
 			dict.Dict{
-				eventlog.ParamContractHname: coretypes.Hn(args[0]).Bytes(),
+				eventlog.ParamContractHname: iscp.Hn(args[0]).Bytes(),
 			})
 		log.Check(err)
 

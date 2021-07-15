@@ -7,7 +7,7 @@ import (
 	"errors"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 type WasmHost struct {
@@ -74,7 +74,7 @@ func (host *WasmHost) SetExport(index int32, functionName string) {
 	if ok {
 		panic("SetExport: duplicate function name")
 	}
-	hn := coretypes.Hn(functionName)
+	hn := iscp.Hn(functionName)
 	hashedName := uint32(hn)
 	_, ok = host.codeToFunc[hashedName]
 	if ok {

@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -15,11 +15,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
-func initialize(_ coretypes.Sandbox) (dict.Dict, error) {
+func initialize(_ iscp.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func publicKey(ctx coretypes.Sandbox) (dict.Dict, error) {
+func publicKey(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	a.Require(ctx.Caller().Address().Type() != ledgerstate.AliasAddressType, "micropay.publicKey: caller must be an address")
 
@@ -38,7 +38,7 @@ func publicKey(ctx coretypes.Sandbox) (dict.Dict, error) {
 // addWarrant adds payment warrant for specific service address
 // Params:
 // - ParamServiceAddress ledgerstate.Address
-func addWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
+func addWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
 
@@ -74,7 +74,7 @@ func addWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 // It will be in effect next 1 hour, the will be deleted
 // Params:
 // - ParamServiceAddress ledgerstate.Address
-func revokeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
+func revokeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert.NewAssert(ctx.Log())
 
@@ -92,15 +92,15 @@ func revokeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 	// send deterred request to self to revoke the warrant
 	iota1 := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 1})
-	meta := &coretypes.SendMetadata{
+	meta := &iscp.SendMetadata{
 		TargetContract: ctx.Contract(),
-		EntryPoint:     coretypes.Hn(FuncCloseWarrant),
+		EntryPoint:     iscp.Hn(FuncCloseWarrant),
 		Args: codec.MakeDict(map[string]interface{}{
 			ParamPayerAddress:   payerAddr,
 			ParamServiceAddress: serviceAddr,
 		}),
 	}
-	opts := coretypes.SendOptions{TimeLock: uint32(revokeDeadline.Unix())}
+	opts := iscp.SendOptions{TimeLock: uint32(revokeDeadline.Unix())}
 	succ := ctx.Send(ctx.ChainID().AsAddress(), iota1, meta, opts)
 	a.Require(succ, "failed to issue deterred 'close warrant' request")
 	return nil, nil
@@ -109,9 +109,9 @@ func revokeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 // closeWarrant can only be sent from self. It closes the warrant account
 // - ParamServiceAddress ledgerstate.Address
 // - ParamPayerAddress ledgerstate.Address
-func closeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
+func closeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	myAgentID := coretypes.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
+	myAgentID := iscp.NewAgentID(ctx.ChainID().AsAddress(), ctx.Contract())
 	a.Require(ctx.Caller().Equals(myAgentID), "caller must be self")
 
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -130,7 +130,7 @@ func closeWarrant(ctx coretypes.Sandbox) (dict.Dict, error) {
 // Params:
 // - ParamPayerAddress address.address
 // - ParamPayments - array of encoded payments
-func settle(ctx coretypes.Sandbox) (dict.Dict, error) {
+func settle(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	targetAddr := ctx.Caller().Address()
 	a.Require(targetAddr.Type() != ledgerstate.AliasAddressType, "micropay.addWarrant: caller must be an address")
@@ -157,7 +157,7 @@ func settle(ctx coretypes.Sandbox) (dict.Dict, error) {
 // Output:
 // - ParamWarrant int64 if == 0 no warrant
 // - ParamRevoked int64 is exists, timestamp in Unix nanosec when warrant will be revoked
-func getWarrantInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getWarrantInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	payerAddr := par.MustGetAddress(ParamPayerAddress)
 	serviceAddr := par.MustGetAddress(ParamServiceAddress)
@@ -252,7 +252,7 @@ func decodePayments(state kv.KVStoreReader, a assert.Assert) []*Payment {
 	return ret
 }
 
-func processPayments(ctx coretypes.Sandbox, payments []*Payment, payerAddr, targetAddr ledgerstate.Address, payerPubKey []byte) (uint64, []*Payment) {
+func processPayments(ctx iscp.Sandbox, payments []*Payment, payerAddr, targetAddr ledgerstate.Address, payerPubKey []byte) (uint64, []*Payment) {
 	a := assert.NewAssert(ctx.Log())
 	remainingWarrant, _, lastOrd := getWarrantInfoIntern(ctx.State(), payerAddr, targetAddr, a)
 	a.Require(remainingWarrant > 0, "warrant == 0, can't settle payments")

@@ -8,8 +8,8 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -121,7 +121,7 @@ func (syncsT *syncingBlocks) addBlockCandidate(block state.Block, nextState stat
 		if candidateExisting.getApprovingOutputID() != block.ApprovingOutputID() {
 			delete(sync.blockCandidates, hash)
 			syncsT.log.Debugf("addBlockCandidate: conflicting block index %v with hash %v arrived: prsent approvingOutputID %v, new block approvingOutputID: %v",
-				stateIndex, hash.String(), candidateExisting.getApprovingOutputID(), coretypes.OID(block.ApprovingOutputID()))
+				stateIndex, hash.String(), candidateExisting.getApprovingOutputID(), iscp.OID(block.ApprovingOutputID()))
 			return false, nil
 		}
 		candidateExisting.addVote()
@@ -141,14 +141,14 @@ func (syncsT *syncingBlocks) approveBlockCandidates(output *ledgerstate.AliasOut
 	}
 	someApproved := false
 	stateIndex := output.GetStateIndex()
-	syncsT.log.Debugf("approveBlockCandidates using output ID %v for state index %v", coretypes.OID(output.ID()), stateIndex)
+	syncsT.log.Debugf("approveBlockCandidates using output ID %v for state index %v", iscp.OID(output.ID()), stateIndex)
 	sync, ok := syncsT.blocks[stateIndex]
 	if ok {
 		syncsT.log.Debugf("approveBlockCandidates: %v block candidates to check", len(sync.blockCandidates))
 		for blockHash, candidate := range sync.blockCandidates {
 			alreadyApproved := candidate.isApproved()
 			syncsT.log.Debugf("approveBlockCandidates: checking candidate %v: local %v, nextStateHash %v, approvingOutputID %v, already approved %v",
-				blockHash.String(), candidate.isLocal(), candidate.getNextStateHash().String(), coretypes.OID(candidate.getApprovingOutputID()), alreadyApproved)
+				blockHash.String(), candidate.isLocal(), candidate.getNextStateHash().String(), iscp.OID(candidate.getApprovingOutputID()), alreadyApproved)
 			if !alreadyApproved {
 				candidate.approveIfRightOutput(output)
 				if candidate.isApproved() {

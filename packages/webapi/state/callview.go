@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
@@ -41,11 +41,11 @@ func AddEndpoints(server echoswagger.ApiRouter) {
 }
 
 func handleCallView(c echo.Context) error {
-	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}
-	contractHname, err := coretypes.HnameFromString(c.Param("contractHname"))
+	contractHname, err := iscp.HnameFromString(c.Param("contractHname"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid contract ID: %+v", c.Param("contractHname")))
 	}
@@ -62,7 +62,7 @@ func handleCallView(c echo.Context) error {
 	if theChain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
-	ret, err := webapiutil.CallView(theChain, contractHname, coretypes.Hn(fname), params)
+	ret, err := webapiutil.CallView(theChain, contractHname, iscp.Hn(fname), params)
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("View call failed: %v", err))
 	}
@@ -74,7 +74,7 @@ const retryOnStateInvalidatedRetry = 100 * time.Millisecond //nolint:gofumpt
 const retryOnStateInvalidatedTimeout = 5 * time.Minute
 
 func handleStateGet(c echo.Context) error {
-	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}

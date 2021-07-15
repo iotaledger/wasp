@@ -3,7 +3,7 @@ package optimism
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/require"
 )

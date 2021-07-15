@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairroulette"
@@ -16,10 +17,10 @@ import (
 
 type FairRouletteClient struct {
 	*chainclient.Client
-	contractHname coretypes.Hname
+	contractHname iscp.Hname
 }
 
-func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *FairRouletteClient {
+func NewClient(scClient *chainclient.Client, contractHname iscp.Hname) *FairRouletteClient {
 	return &FairRouletteClient{
 		Client:        scClient,
 		contractHname: contractHname,

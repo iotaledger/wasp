@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/common"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
@@ -77,7 +77,7 @@ func TestDonateOnce(t *testing.T) {
 	// 42 iota transferred to contract
 	chain.AssertAccountBalance(chain.ContractAgentID(ScName), ledgerstate.ColorIOTA, 42)
 	// returned 1 used for transaction to wallet account
-	account1 := coretypes.NewAgentID(donator1Addr, 0)
+	account1 := iscp.NewAgentID(donator1Addr, 0)
 	chain.AssertAccountBalance(account1, ledgerstate.ColorIOTA, 0)
 }
 
@@ -122,8 +122,8 @@ func TestDonateTwice(t *testing.T) {
 	// 42+69 iota transferred to contract
 	chain.AssertAccountBalance(chain.ContractAgentID(ScName), ledgerstate.ColorIOTA, 42+69)
 	// returned 1 used for transaction to wallet accounts
-	account1 := coretypes.NewAgentID(donator1Addr, 0)
+	account1 := iscp.NewAgentID(donator1Addr, 0)
 	chain.AssertAccountBalance(account1, ledgerstate.ColorIOTA, 0)
-	account2 := coretypes.NewAgentID(donator2Addr, 0)
+	account2 := iscp.NewAgentID(donator2Addr, 0)
 	chain.AssertAccountBalance(account2, ledgerstate.ColorIOTA, 0)
 }

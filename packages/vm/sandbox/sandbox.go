@@ -5,8 +5,8 @@ package sandbox
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
@@ -17,15 +17,15 @@ type sandbox struct {
 	vmctx *vmcontext.VMContext
 }
 
-var _ coretypes.Sandbox = &sandbox{}
+var _ iscp.Sandbox = &sandbox{}
 
 func init() {
-	vmcontext.NewSandbox = func(vmctx *vmcontext.VMContext) coretypes.Sandbox {
+	vmcontext.NewSandbox = func(vmctx *vmcontext.VMContext) iscp.Sandbox {
 		return &sandbox{vmctx: vmctx}
 	}
 }
 
-func (s *sandbox) AccountID() *coretypes.AgentID {
+func (s *sandbox) AccountID() *iscp.AgentID {
 	return s.vmctx.AccountID()
 }
 
@@ -38,27 +38,27 @@ func (s *sandbox) Balances() *ledgerstate.ColoredBalances {
 }
 
 // Call calls an entry point of contact, passes parameters and funds
-func (s *sandbox) Call(target, entryPoint coretypes.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) (dict.Dict, error) {
+func (s *sandbox) Call(target, entryPoint iscp.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) (dict.Dict, error) {
 	return s.vmctx.Call(target, entryPoint, params, transfer)
 }
 
-func (s *sandbox) Caller() *coretypes.AgentID {
+func (s *sandbox) Caller() *iscp.AgentID {
 	return s.vmctx.Caller()
 }
 
-func (s *sandbox) ChainID() *coretypes.ChainID {
+func (s *sandbox) ChainID() *iscp.ChainID {
 	return s.vmctx.ChainID()
 }
 
-func (s *sandbox) ChainOwnerID() *coretypes.AgentID {
+func (s *sandbox) ChainOwnerID() *iscp.AgentID {
 	return s.vmctx.ChainOwnerID()
 }
 
-func (s *sandbox) Contract() coretypes.Hname {
+func (s *sandbox) Contract() iscp.Hname {
 	return s.vmctx.CurrentContractHname()
 }
 
-func (s *sandbox) ContractCreator() *coretypes.AgentID {
+func (s *sandbox) ContractCreator() *iscp.AgentID {
 	return s.vmctx.ContractCreator()
 }
 
@@ -86,7 +86,7 @@ func (s *sandbox) IncomingTransfer() *ledgerstate.ColoredBalances {
 	return s.vmctx.GetIncoming()
 }
 
-func (s *sandbox) Log() coretypes.LogInterface {
+func (s *sandbox) Log() iscp.LogInterface {
 	return s.vmctx
 }
 
@@ -98,11 +98,11 @@ func (s *sandbox) Params() dict.Dict {
 	return s.vmctx.Params()
 }
 
-func (s *sandbox) RequestID() coretypes.RequestID {
+func (s *sandbox) RequestID() iscp.RequestID {
 	return s.vmctx.RequestID()
 }
 
-func (s *sandbox) Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *coretypes.SendMetadata, options ...coretypes.SendOptions) bool {
+func (s *sandbox) Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *iscp.SendMetadata, options ...iscp.SendOptions) bool {
 	return s.vmctx.Send(target, tokens, metadata, options...)
 }
 
@@ -110,14 +110,14 @@ func (s *sandbox) State() kv.KVStore {
 	return s.vmctx.State()
 }
 
-func (s *sandbox) Utils() coretypes.Utils {
+func (s *sandbox) Utils() iscp.Utils {
 	return sandbox_utils.NewUtils()
 }
 
-func (s *sandbox) BlockContext(construct func(ctx coretypes.Sandbox) interface{}, onClose func(interface{})) interface{} {
+func (s *sandbox) BlockContext(construct func(ctx iscp.Sandbox) interface{}, onClose func(interface{})) interface{} {
 	return s.vmctx.BlockContext(s, construct, onClose)
 }
 
-func (s *sandbox) StateAnchor() coretypes.StateAnchor {
+func (s *sandbox) StateAnchor() iscp.StateAnchor {
 	return s.vmctx
 }

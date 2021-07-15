@@ -6,14 +6,14 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
 // initialize the init call
-func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
@@ -21,7 +21,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 // viewBalance returns colored balances of the account belonging to the AgentID
 // Params:
 // - ParamAgentID
-func viewBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
+func viewBalance(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.viewBalance")
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	aid, err := params.GetAgentID(ParamAgentID)
@@ -32,13 +32,13 @@ func viewBalance(ctx coretypes.SandboxView) (dict.Dict, error) {
 }
 
 // viewTotalAssets returns total colored balances controlled by the chain
-func viewTotalAssets(ctx coretypes.SandboxView) (dict.Dict, error) {
+func viewTotalAssets(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.viewTotalAssets")
 	return getAccountBalanceDict(ctx, getTotalAssetsAccountR(ctx.State()), "viewTotalAssets"), nil
 }
 
 // viewAccounts returns list of all accounts as keys of the ImmutableCodec
-func viewAccounts(ctx coretypes.SandboxView) (dict.Dict, error) {
+func viewAccounts(ctx iscp.SandboxView) (dict.Dict, error) {
 	return getAccountsIntern(ctx.State()), nil
 }
 
@@ -48,7 +48,7 @@ func viewAccounts(ctx coretypes.SandboxView) (dict.Dict, error) {
 // Params:
 // - ParamAgentID. default is ctx.Caller(), i.e. deposit to the own account
 //   in case ParamAgentID. == ctx.Caller() and it is an on-chain call, it means NOP
-func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
+func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.deposit.begin -- %s", ctx.IncomingTransfer())
 
 	mustCheckLedger(ctx.State(), "accounts.deposit.begin")
@@ -69,7 +69,7 @@ func deposit(ctx coretypes.Sandbox) (dict.Dict, error) {
 }
 
 // withdraw sends caller's funds to the caller
-func withdraw(ctx coretypes.Sandbox) (dict.Dict, error) {
+func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	mustCheckLedger(state, "accounts.withdraw.begin")
 	defer mustCheckLedger(state, "accounts.withdraw.exit")
@@ -93,7 +93,7 @@ func withdraw(ctx coretypes.Sandbox) (dict.Dict, error) {
 		"accounts.withdraw.inconsistency. failed to move tokens to owner's account")
 
 	// Send call assumes tokens in the current account
-	a.Require(ctx.Send(ctx.Caller().Address(), tokensToSend, &coretypes.SendMetadata{
+	a.Require(ctx.Send(ctx.Caller().Address(), tokensToSend, &iscp.SendMetadata{
 		TargetContract: ctx.Caller().Hname(),
 	}), "accounts.withdraw.inconsistency: failed sending tokens ")
 
@@ -105,7 +105,7 @@ func withdraw(ctx coretypes.Sandbox) (dict.Dict, error) {
 // Params:
 //   ParamWithdrawAmount if do not exist or is 0 means withdraw all balance
 //   ParamWithdrawColor color to withdraw if amount is specified. Defaults to ledgerstate.ColorIOTA
-func harvest(ctx coretypes.Sandbox) (dict.Dict, error) {
+func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	a.RequireChainOwner(ctx, "harvest")
 

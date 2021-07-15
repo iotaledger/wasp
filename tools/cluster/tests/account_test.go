@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -44,7 +44,7 @@ func TestBasicAccountsN1(t *testing.T) {
 }
 
 func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.MessageCounter) {
-	hname := coretypes.Hn(incCounterSCName)
+	hname := iscp.Hn(incCounterSCName)
 	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Interface.ProgramHash
 
@@ -96,7 +96,7 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, scOwner)
 
 	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
-	reqTx, err := chClient.Post1Request(hname, coretypes.Hn(inccounter.FuncIncCounter), *par)
+	reqTx, err := chClient.Post1Request(hname, iscp.Hn(inccounter.FuncIncCounter), *par)
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 10*time.Second)
@@ -119,7 +119,7 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 	}, "chain after") {
 		t.Fail()
 	}
-	agentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), hname)
+	agentID := iscp.NewAgentID(chain.ChainID.AsAddress(), hname)
 	actual := getBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA)
 	require.EqualValues(t, 42, actual)
 }
@@ -138,7 +138,7 @@ func TestBasic2Accounts(t *testing.T) {
 	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	hname := coretypes.Hn(incCounterSCName)
+	hname := iscp.Hn(incCounterSCName)
 	description := "testing contract deployment with inccounter"
 	programHash1 := inccounter.Interface.ProgramHash
 	check(err, t)
@@ -202,7 +202,7 @@ func TestBasic2Accounts(t *testing.T) {
 	myWalletClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
-	reqTx, err := myWalletClient.Post1Request(hname, coretypes.Hn(inccounter.FuncIncCounter), *par)
+	reqTx, err := myWalletClient.Post1Request(hname, iscp.Hn(inccounter.FuncIncCounter), *par)
 	check(err, t)
 
 	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, reqTx, 30*time.Second)
@@ -230,7 +230,7 @@ func TestBasic2Accounts(t *testing.T) {
 		t.Fail()
 	}
 	// verify and print chain accounts
-	agentID := coretypes.NewAgentID(chain1.ChainID.AsAddress(), hname)
+	agentID := iscp.NewAgentID(chain1.ChainID.AsAddress(), hname)
 	actual := getBalanceOnChain(t, chain1, agentID, ledgerstate.ColorIOTA)
 	require.EqualValues(t, 42, actual)
 
@@ -239,7 +239,7 @@ func TestBasic2Accounts(t *testing.T) {
 	// withdraw back 2 iotas to originator address
 	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Base58())
 	originatorClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, originatorSigScheme)
-	reqTx2, err := originatorClient.Post1Request(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
+	reqTx2, err := originatorClient.Post1Request(accounts.Interface.Hname(), iscp.Hn(accounts.FuncWithdraw))
 	check(err, t)
 
 	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, reqTx2, 30*time.Second)
@@ -250,7 +250,7 @@ func TestBasic2Accounts(t *testing.T) {
 	printAccounts(t, chain1, "withdraw after")
 
 	// must remain 0 on chain
-	agentID = coretypes.NewAgentID(originatorAddress, 0)
+	agentID = iscp.NewAgentID(originatorAddress, 0)
 	actual = getBalanceOnChain(t, chain1, agentID, ledgerstate.ColorIOTA)
 	require.EqualValues(t, 0, actual)
 

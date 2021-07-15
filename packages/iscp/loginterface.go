@@ -1,4 +1,4 @@
-package coretypes
+package iscp
 
 type LogInterface interface {
 	Infof(format string, param ...interface{})

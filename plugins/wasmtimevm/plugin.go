@@ -8,7 +8,7 @@ package wasmtimevm
 import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
 	"github.com/iotaledger/wasp/plugins/processors"
@@ -27,7 +27,7 @@ func configure(_ *node.Plugin) {
 	log = logger.NewLogger(pluginName)
 
 	// register VM type(s)
-	err := processors.Config.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (coretypes.VMProcessor, error) {
+	err := processors.Config.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (iscp.VMProcessor, error) {
 		// TODO (via config?) pass non-default timeout for WasmTime processor like this:
 		// WasmTimeout = 3 * time.Second
 		return wasmproc.GetProcessor(binary, log)

@@ -6,7 +6,7 @@
 package evmchain
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
 var Interface = coreutil.NewContractInterface("evmchain", "EVM chain smart contract")

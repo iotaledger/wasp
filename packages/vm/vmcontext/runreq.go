@@ -11,9 +11,9 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -21,7 +21,7 @@ import (
 
 // RunTheRequest processes any request based on the Extended output, even if it
 // doesn't parse correctly as a SC request
-func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16) {
+func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 	defer vmctx.mustFinalizeRequestCall()
 
 	vmctx.mustSetUpRequestContext(req, requestIndex)
@@ -82,7 +82,7 @@ func (vmctx *VMContext) RunTheRequest(req coretypes.Request, requestIndex uint16
 }
 
 // mustSetUpRequestContext sets up VMContext for request
-func (vmctx *VMContext) mustSetUpRequestContext(req coretypes.Request, requestIndex uint16) {
+func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex uint16) {
 	if _, ok := req.Params(); !ok {
 		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: request args should had been solidified")
 	}
@@ -216,7 +216,7 @@ func (vmctx *VMContext) mustHandleFees() bool {
 }
 
 // Return false if not enough fees
-func (vmctx *VMContext) grabFee(account *coretypes.AgentID, amount uint64) bool {
+func (vmctx *VMContext) grabFee(account *iscp.AgentID, amount uint64) bool {
 	if amount == 0 {
 		return true
 	}
@@ -331,10 +331,10 @@ func (vmctx *VMContext) mustGetBaseValuesFromState() {
 
 func (vmctx *VMContext) isInitChainRequest() bool {
 	targetContract, entryPoint := vmctx.req.Target()
-	return targetContract == root.Interface.Hname() && entryPoint == coretypes.EntryPointInit
+	return targetContract == root.Interface.Hname() && entryPoint == iscp.EntryPointInit
 }
 
-func isRequestTimeLockedNow(req coretypes.Request, nowis time.Time) bool {
+func isRequestTimeLockedNow(req iscp.Request, nowis time.Time) bool {
 	if req.TimeLock().IsZero() {
 		return false
 	}

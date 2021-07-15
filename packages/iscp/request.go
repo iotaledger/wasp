@@ -1,4 +1,4 @@
-package coretypes
+package iscp
 
 import (
 	"fmt"

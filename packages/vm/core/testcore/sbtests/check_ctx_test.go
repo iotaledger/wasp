@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -22,7 +22,7 @@ func testMainCallsFromFullEP(t *testing.T, w bool) {
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCheckContextFromFullEP,
 		sbtestsc.ParamChainID, chain.ChainID,
-		sbtestsc.ParamAgentID, coretypes.NewAgentID(chain.ChainID.AsAddress(), HScName),
+		sbtestsc.ParamAgentID, iscp.NewAgentID(chain.ChainID.AsAddress(), HScName),
 		sbtestsc.ParamCaller, userAgentID,
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
 		sbtestsc.ParamContractCreator, userAgentID,
@@ -41,7 +41,7 @@ func testMainCallsFromViewEP(t *testing.T, w bool) {
 
 	_, err := chain.CallView(ScName, sbtestsc.FuncCheckContextFromViewEP,
 		sbtestsc.ParamChainID, chain.ChainID,
-		sbtestsc.ParamAgentID, coretypes.NewAgentID(chain.ChainID.AsAddress(), HScName),
+		sbtestsc.ParamAgentID, iscp.NewAgentID(chain.ChainID.AsAddress(), HScName),
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
 		sbtestsc.ParamContractCreator, userAgentID,
 	)

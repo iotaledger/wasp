@@ -6,9 +6,9 @@ import (
 	"io"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -100,7 +100,7 @@ type ContractRecord struct {
 	// Description of the instance
 	Description string
 	// Unique name of the contract on the chain. The real identity of the instance on the chain
-	// is hname(name) =  coretypes.Hn(name)
+	// is hname(name) =  iscp.Hn(name)
 	Name string
 	// Chain owner part of the fee. If it is 0, it means chain-global default is in effect
 	OwnerFee uint64
@@ -108,24 +108,24 @@ type ContractRecord struct {
 	ValidatorFee uint64 // validator part of the fee
 	// The agentID of the entity which deployed the instance. It can be interpreted as
 	// an priviledged user of the instance, however it is up to the smart contract.
-	Creator *coretypes.AgentID
+	Creator *iscp.AgentID
 }
 
 // ChainInfo is an API structure which contains main properties of the chain in on place
 type ChainInfo struct {
-	ChainID             coretypes.ChainID
-	ChainOwnerID        coretypes.AgentID
+	ChainID             iscp.ChainID
+	ChainOwnerID        iscp.AgentID
 	Description         string
 	FeeColor            ledgerstate.Color
 	DefaultOwnerFee     int64
 	DefaultValidatorFee int64
 }
 
-func (p *ContractRecord) Hname() coretypes.Hname {
+func (p *ContractRecord) Hname() iscp.Hname {
 	if p.Name == "_default" {
 		return 0
 	}
-	return coretypes.Hn(p.Name)
+	return iscp.Hn(p.Name)
 }
 
 // serde
@@ -178,7 +178,7 @@ func (p *ContractRecord) Read(r io.Reader) error {
 		return err
 	}
 	if hasCreator {
-		p.Creator = &coretypes.AgentID{}
+		p.Creator = &iscp.AgentID{}
 		if err := p.Creator.Read(r); err != nil {
 			return err
 		}
@@ -196,7 +196,7 @@ func DecodeContractRecord(data []byte) (*ContractRecord, error) {
 	return ret, err
 }
 
-func NewContractRecord(itf *coreutil.ContractInterface, creator *coretypes.AgentID) *ContractRecord {
+func NewContractRecord(itf *coreutil.ContractInterface, creator *iscp.AgentID) *ContractRecord {
 	return &ContractRecord{
 		ProgramHash: itf.ProgramHash,
 		Description: itf.Description,

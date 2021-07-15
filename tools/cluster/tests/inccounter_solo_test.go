@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
@@ -16,7 +16,7 @@ const (
 	incDescription = "IncCounter, a PoC smart contract"
 )
 
-var incHname = coretypes.Hn(incName)
+var incHname = iscp.Hn(incName)
 
 const (
 	varCounter    = "counter"

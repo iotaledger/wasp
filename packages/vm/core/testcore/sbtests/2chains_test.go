@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -26,7 +26,7 @@ func test2Chains(t *testing.T, w bool) {
 	contractAgentID2, extraToken2 := setupTestSandboxSC(t, chain2, nil, w)
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
-	userAgentID := coretypes.NewAgentID(userAddress, 0)
+	userAgentID := iscp.NewAgentID(userAddress, 0)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
 	chain1.AssertIotas(contractAgentID1, 1)

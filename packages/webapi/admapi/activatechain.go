@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -36,7 +36,7 @@ func (w *chainWebAPI) handleActivateChain(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid alias address: %s", c.Param("chainID")))
 	}
-	chainID, err := coretypes.ChainIDFromAddress(aliasAddress)
+	chainID, err := iscp.ChainIDFromAddress(aliasAddress)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (w *chainWebAPI) handleDeactivateChain(c echo.Context) error {
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain id: %s", c.Param("chainID")))
 	}
-	chainID, err := coretypes.ChainIDFromAddress(scAddress)
+	chainID, err := iscp.ChainIDFromAddress(scAddress)
 	if err != nil {
 		return err
 	}

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"golang.org/x/xerrors"
 )

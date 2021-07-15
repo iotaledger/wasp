@@ -8,8 +8,8 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -53,9 +53,9 @@ type CommitteeRegistryProvider interface {
 // ChainRecordRegistryProvider stands for a partial registry interface, needed for this package.
 // It should be implemented by in the chainrecord package
 type ChainRecordRegistryProvider interface {
-	GetChainRecordByChainID(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error)
+	GetChainRecordByChainID(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error)
 	GetChainRecords() ([]*chainrecord.ChainRecord, error)
-	UpdateChainRecord(chainID *coretypes.ChainID, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error)
-	ActivateChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error)
-	DeactivateChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error)
+	UpdateChainRecord(chainID *iscp.ChainID, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error)
+	ActivateChainRecord(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error)
+	DeactivateChainRecord(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error)
 }

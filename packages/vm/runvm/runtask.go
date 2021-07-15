@@ -3,8 +3,8 @@ package runvm
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/util"
@@ -109,7 +109,7 @@ func runTask(task *vm.VMTask) {
 }
 
 // outputsFromRequests collect all outputs from requests which are on-ledger
-func outputsFromRequests(requests ...coretypes.Request) []ledgerstate.Output {
+func outputsFromRequests(requests ...iscp.Request) []ledgerstate.Output {
 	ret := make([]ledgerstate.Output, 0)
 	for _, req := range requests {
 		if out := req.Output(); out != nil {

@@ -15,8 +15,8 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/dashboard"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -66,11 +66,11 @@ func (w *waspServices) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
 	return registry.DefaultRegistry().GetChainRecords()
 }
 
-func (w *waspServices) GetChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error) {
+func (w *waspServices) GetChainRecord(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error) {
 	return registry.DefaultRegistry().GetChainRecordByChainID(chainID)
 }
 
-func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*dashboard.ChainState, error) {
+func (w *waspServices) GetChainState(chainID *iscp.ChainID) (*dashboard.ChainState, error) {
 	chainStore := database.GetKVStore(chainID)
 	virtualState, _, err := state.LoadSolidState(chainStore, chainID)
 	if err != nil {
@@ -88,19 +88,19 @@ func (w *waspServices) GetChainState(chainID *coretypes.ChainID) (*dashboard.Cha
 	}, nil
 }
 
-func (w *waspServices) GetChain(chainID *coretypes.ChainID) chain.ChainCore {
+func (w *waspServices) GetChain(chainID *iscp.ChainID) chain.ChainCore {
 	return chains.AllChains().Get(chainID)
 }
 
 const retryOnStateInvalidatedRetry = 100 * time.Millisecond //nolint:gofumpt
 const retryOnStateInvalidatedTimeout = 5 * time.Minute
 
-func (w *waspServices) CallView(ch chain.ChainCore, hname coretypes.Hname, funName string, params dict.Dict) (dict.Dict, error) {
+func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, funName string, params dict.Dict) (dict.Dict, error) {
 	vctx := viewcontext.NewFromChain(ch)
 	var ret dict.Dict
 	err := optimism.RetryOnStateInvalidated(func() error {
 		var err error
-		ret, err = vctx.CallView(hname, coretypes.Hn(funName), params)
+		ret, err = vctx.CallView(hname, iscp.Hn(funName), params)
 		return err
 	}, retryOnStateInvalidatedRetry, time.Now().Add(retryOnStateInvalidatedTimeout))
 	if err != nil {

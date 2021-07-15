@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/consensus/commonsubset"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/registry/committee_record"
@@ -41,7 +41,7 @@ const waitReady = false
 
 func New(
 	cmtRec *committee_record.CommitteeRecord,
-	chainID *coretypes.ChainID,
+	chainID *iscp.ChainID,
 	netProvider peering.NetworkProvider,
 	peerConfig registry.PeerNetworkConfigProvider,
 	dksProvider registry.DKShareRegistryProvider,

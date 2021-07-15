@@ -1,7 +1,7 @@
 package coreutil
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 // names of core contracts
@@ -17,16 +17,16 @@ const (
 )
 
 var (
-	CoreContractDefaultHname         = coretypes.Hname(0)
-	CoreContractRootHname            = coretypes.Hn(CoreContractRoot)
-	CoreContractAccountsHname        = coretypes.Hn(CoreContractAccounts)
-	CoreContractBlobHname            = coretypes.Hn(CoreContractBlob)
-	CoreContractEventlogHname        = coretypes.Hn(CoreContractEventlog)
-	CoreContractBlocklogHname        = coretypes.Hn(CoreContractBlocklog)
-	CoreContractGovernanceHname      = coretypes.Hn(CoreContractGovernance)
-	CoreEPRotateStateControllerHname = coretypes.Hn(CoreEPRotateStateController)
+	CoreContractDefaultHname         = iscp.Hname(0)
+	CoreContractRootHname            = iscp.Hn(CoreContractRoot)
+	CoreContractAccountsHname        = iscp.Hn(CoreContractAccounts)
+	CoreContractBlobHname            = iscp.Hn(CoreContractBlob)
+	CoreContractEventlogHname        = iscp.Hn(CoreContractEventlog)
+	CoreContractBlocklogHname        = iscp.Hn(CoreContractBlocklog)
+	CoreContractGovernanceHname      = iscp.Hn(CoreContractGovernance)
+	CoreEPRotateStateControllerHname = iscp.Hn(CoreEPRotateStateController)
 
-	hnames = map[string]coretypes.Hname{
+	hnames = map[string]iscp.Hname{
 		CoreContractDefault:    CoreContractDefaultHname,
 		CoreContractRoot:       CoreContractRootHname,
 		CoreContractAccounts:   CoreContractAccountsHname,
@@ -50,9 +50,9 @@ var (
 	StatePrefixBlockIndex = string(CoreContractBlocklogHname.Bytes()) + StateVarBlockIndex
 )
 
-func CoreHname(name string) coretypes.Hname {
+func CoreHname(name string) iscp.Hname {
 	if ret, ok := hnames[name]; ok {
 		return ret
 	}
-	return coretypes.Hn(name)
+	return iscp.Hn(name)
 }

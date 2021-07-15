@@ -1,7 +1,7 @@
 package eventlog
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 
@@ -11,7 +11,7 @@ import (
 )
 
 // initialize is mandatory
-func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("eventlog.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
@@ -19,7 +19,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 // getNumRecords gets the number of eventlog records for contract
 // Parameters:
 //	- ParamContractHname Hname of the contract to view the logs
-func getNumRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getNumRecords(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	contractHname, err := params.GetHname(ParamContractHname)
 	if err != nil {
@@ -38,7 +38,7 @@ func getNumRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
 //  - ParamFromTs From timestamp. Defaults to 0
 //  - ParamToTs To timestamp. Defaults to now (if both are missing means all)
 //  - ParamMaxLastRecords Max amount of records that you want to return. Default is 50
-func getRecords(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getRecords(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 
 	contractHname, err := params.GetHname(ParamContractHname)

@@ -7,10 +7,10 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -22,7 +22,7 @@ import (
 // region VirtualState /////////////////////////////////////////////////
 
 type virtualState struct {
-	chainID   coretypes.ChainID
+	chainID   iscp.ChainID
 	db        kvstore.KVStore
 	empty     bool
 	kvs       *buffered.BufferedKVStore
@@ -31,7 +31,7 @@ type virtualState struct {
 }
 
 // newVirtualState creates VirtualState interface with the partition of KVStore
-func newVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualState {
+func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualState {
 	sub := subRealm(db, []byte{dbkeys.ObjectTypeStateVariable})
 	ret := &virtualState{
 		db:        db,
@@ -45,7 +45,7 @@ func newVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) *virtualSta
 	return ret
 }
 
-func newZeroVirtualState(db kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, *BlockImpl) {
+func newZeroVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) (*virtualState, *BlockImpl) {
 	ret := newVirtualState(db, chainID)
 	originBlock := newOriginBlock()
 	if err := ret.ApplyBlock(originBlock); err != nil {
