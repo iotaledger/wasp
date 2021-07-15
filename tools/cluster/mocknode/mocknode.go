@@ -42,5 +42,11 @@ func Start(txStreamBindAddress, webapiBindAddress string) *MockNode {
 }
 
 func (m *MockNode) Stop() {
+	defer func() {
+		err := recover()
+		if err != nil {
+			m.log.Errorf("recovered from panic while stopping mock node: %v", err) // likely to be caused by test failing + cluster.Stop()
+		}
+	}()
 	close(m.shutdownSignal)
 }

@@ -7,6 +7,7 @@ type WaspConfigParams struct {
 	NanomsgPort                  int
 	Neighbors                    string
 	TxStreamPort                 int
+	ProfilingPort                int
 	OffledgerBroadcastUpToNPeers int
 }
 
@@ -17,7 +18,7 @@ const WaspConfig = `
     "directory": "waspdb"
   },
   "logger": {
-    "level": "info",
+    "level": "debug",
     "disableCaller": false,
     "disableStacktrace": true,
     "encoding": "console",
@@ -54,6 +55,10 @@ const WaspConfig = `
   },
   "offledger":{
     "broadcastUpToNPeers": {{.OffledgerBroadcastUpToNPeers}}
+  },
+  "profiling":{
+    "bindAddress": "0.0.0.0:{{.ProfilingPort}}",
+    "enabled": true
   }
 }
 `
