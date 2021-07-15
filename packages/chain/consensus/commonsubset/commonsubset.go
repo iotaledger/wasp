@@ -215,6 +215,21 @@ func (cs *CommonSubset) run() {
 }
 
 func (cs *CommonSubset) timeTick() {
+	if cs.log.Desugar().Core().Enabled(logger.LevelDebug) { // Debug info for the ACS.
+		rbcInstances, bbaInstances, rbcResults, bbaResults, msgQueue := cs.impl.DebugInfo()
+		cs.log.Debugf("ACS::timeTick[%v], sessionId=%v, done=%v queue.len=%v, bba.res=%v", cs.impl.ID, cs.sessionID, cs.done, len(msgQueue), bbaResults)
+		for i, bba := range bbaInstances {
+			if !bba.Done() {
+				cs.log.Debugf("ACS::timeTick[%v], sessionId=%v, impl.bba[%v]=%+v", cs.impl.ID, cs.sessionID, i, bba)
+			}
+		}
+		for i, rbc := range rbcInstances {
+			if _, ok := rbcResults[i]; !ok {
+				cs.log.Debugf("ACS::timeTick[%v], sessionId=%v, impl.rbc[%v]=%+v", cs.impl.ID, cs.sessionID, i, rbc)
+			}
+		}
+	}
+
 	now := time.Now()
 	resentBefore := now.Add(resendPeriod * (-2))
 	for missingAck, lastSentTime := range cs.missingAcks {
@@ -380,6 +395,7 @@ func (cs *CommonSubset) send(msgBatch *msgBatch) {
 		// to acknowledge. We handle that here, to avoid IFs in multiple places.
 		return
 	}
+	cs.log.Debugf("ACS::IO - Sending a msgBatch=%+v", msgBatch)
 	cs.netGroup.SendMsgByIndex(msgBatch.dst, &peering.PeerMessage{
 		PeeringID:   cs.peeringID,
 		SenderIndex: cs.netOwnIndex,
