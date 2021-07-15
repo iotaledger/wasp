@@ -13,7 +13,8 @@ import (
 type GoshimmerConfig struct {
 	TxStreamPort int
 	APIPort      int
-	Provided     bool
+	UseNode      bool
+	Hostname     string
 }
 
 type WaspConfig struct {
@@ -43,11 +44,12 @@ func DefaultConfig() *ClusterConfig {
 			FirstDashboardPort: 7000,
 		},
 		Goshimmer: GoshimmerConfig{
-			TxStreamPort: 5000,
+			TxStreamPort: 5001,
 			APIPort:      8080,
-			Provided:     false,
+			UseNode:      false,
+			Hostname:     "127.0.0.1",
 		},
-		FaucetPoWTarget:       0,
+		FaucetPoWTarget:       -1,
 		BlockedGoshimmerNodes: make(map[int]bool),
 	}
 }
@@ -79,7 +81,7 @@ func configPath(dataPath string) string {
 }
 
 func (c *ClusterConfig) goshimmerAPIHost() string {
-	return fmt.Sprintf("127.0.0.1:%d", c.Goshimmer.APIPort)
+	return fmt.Sprintf("%s:%d", c.Goshimmer.Hostname, c.Goshimmer.APIPort)
 }
 
 func (c *ClusterConfig) waspHosts(nodeIndexes []int, getHost func(i int) string) []string {

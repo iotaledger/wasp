@@ -143,7 +143,7 @@ func (c *Consensus) runVMIfNeeded() {
 		_, isOnLedgerReq := req.(*request.RequestOnLedger)
 		if isOnLedgerReq {
 			onLedgerCount++
-			if onLedgerCount >= ledgerstate.MaxInputCount {
+			if onLedgerCount > ledgerstate.MaxInputCount {
 				// do not include more on-ledger requests that number of tx inputs allowed-1 ("-1" for chain input)
 				continue
 			}

@@ -10,7 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var numNodes = flag.Int("num-nodes", 4, "amount of wasp nodes") //nolint:gomnd
+var defaultConfig = cluster.DefaultConfig()
+
+var (
+	numNodes          = flag.Int("num-nodes", 4, "amount of wasp nodes") //nolint:gomnd
+	goShimmerUseNode  = flag.Bool("goshimmer-use-node", defaultConfig.Goshimmer.UseNode, "If false (default), a mocked version of Goshimmer will be used")
+	goShimmerHostname = flag.String("goshimmer-hostname", defaultConfig.Goshimmer.Hostname, "Goshimmer hostname")
+)
 
 // opt: [n nodes, custom cluster config, modifyNodesConfigFn]
 func NewCluster(t *testing.T, opt ...interface{}) *cluster.Cluster {
@@ -19,6 +25,10 @@ func NewCluster(t *testing.T, opt ...interface{}) *cluster.Cluster {
 	}
 
 	config := cluster.DefaultConfig()
+
+	config.Goshimmer.Hostname = *goShimmerHostname
+	config.Goshimmer.UseNode = *goShimmerUseNode
+
 	nNodes := *numNodes
 	if len(opt) > 0 {
 		n, ok := opt[0].(int)

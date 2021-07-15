@@ -2,11 +2,13 @@ package tests
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
+	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -42,7 +44,7 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 	_, err = chain1.DeployContract(incCounterSCName, progHash.String(), description, nil)
 	require.NoError(t, err)
 
-	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second, "contract to be deployed")
+	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 50*time.Second, "contract to be deployed")
 	return clu1, chain1
 }
 
@@ -87,18 +89,21 @@ func TestAccessNodesOnLedger(t *testing.T) {
 		const clusterSize = 10
 		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
+
 	t.Run("cluster=10, N=4, req=100", func(t *testing.T) {
 		const numRequests = 100
 		const numValidatorNodes = 4
 		const clusterSize = 10
 		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
+
 	t.Run("cluster=15, N=4, req=1000", func(t *testing.T) {
 		const numRequests = 1000
 		const numValidatorNodes = 4
 		const clusterSize = 15
 		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
+
 	t.Run("cluster=15, N=6, req=1000", func(t *testing.T) {
 		const numRequests = 1000
 		const numValidatorNodes = 6
@@ -107,24 +112,50 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	})
 }
 
-func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
-	cmt := util.MakeRange(0, numValidatorNodes)
+var addressCount uint64 = 1
 
-	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
+func createNewClient(t *testing.T, clu1 *cluster.Cluster, chain1 *cluster.Chain) *scclient.SCClient {
+	minimalTokenAmountBeforeRequestingNewFunds := uint64(1000)
+	randomAddress := rand.NewSource(time.Now().UnixNano())
 
-	kp := wallet.KeyPair(1)
+	kp := wallet.KeyPair(addressCount)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
-	err = requestFunds(clu1, myAddress, "myAddress")
+
+	funds, err := clu1.GoshimmerClient().BalanceIOTA(myAddress)
+
 	require.NoError(t, err)
 
-	myClient := chain1.SCClient(coretypes.Hn(incCounterSCName), kp)
+	if funds <= minimalTokenAmountBeforeRequestingNewFunds {
+		// Requesting new token requires a new address
 
-	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
+		addressCount = rand.New(randomAddress).Uint64()
+		fmt.Printf("Generating new address: %v", addressCount)
+
+		kp = wallet.KeyPair(addressCount)
+		myAddress = ledgerstate.NewED25519Address(kp.PublicKey)
+
+		err = requestFunds(clu1, myAddress, "myAddress")
+		fmt.Printf("Funds: %v, AddressCount: %v", funds, addressCount)
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, counterEquals(chain1, int64(numRequests)), util.MakeRange(0, clusterSize), 20*time.Second)
+	client := chain1.SCClient(coretypes.Hn(incCounterSCName), kp)
+
+	return client
+}
+
+func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
+	cmt := util.MakeRange(0, numValidatorNodes)
+	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, cmt)
+
+	for i := 0; i < numRequests; i++ {
+		client := createNewClient(t, clu1, chain1)
+
+		_, err = client.PostRequest(inccounter.FuncIncCounter)
+		require.NoError(t, err)
+	}
+
+	waitUntil(t, counterEquals(chain1, int64(numRequests)), util.MakeRange(0, clusterSize), 40*time.Second)
 
 	printBlocks(t, chain1, numRequests+3)
 }
