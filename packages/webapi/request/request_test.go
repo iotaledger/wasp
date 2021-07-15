@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -20,7 +19,7 @@ import (
 )
 
 func createMockedGetChain(t *testing.T) getChainFn {
-	return func(chainID *chainid.ChainID) chain.ChainCore {
+	return func(chainID *coretypes.ChainID) chain.ChainCore {
 		return testchain.NewMockedChainCore(t, *chainID, testlogger.NewLogger(t))
 	}
 }
@@ -52,7 +51,7 @@ func TestNewRequestBase64(t *testing.T) {
 		instance.handleNewRequest,
 		http.MethodPost,
 		routes.NewRequest(":chainID"),
-		map[string]string{"chainID": chainid.RandomChainID().Base58()},
+		map[string]string{"chainID": coretypes.RandomChainID().Base58()},
 		model.OffLedgerRequestBody{Request: model.NewBytes(dummyOffledgerRequest().Bytes())},
 		nil,
 		http.StatusAccepted,
@@ -70,7 +69,7 @@ func TestNewRequestBinary(t *testing.T) {
 		instance.handleNewRequest,
 		http.MethodPost,
 		routes.NewRequest(":chainID"),
-		map[string]string{"chainID": chainid.RandomChainID().Base58()},
+		map[string]string{"chainID": coretypes.RandomChainID().Base58()},
 		dummyOffledgerRequest().Bytes(),
 		nil,
 		http.StatusAccepted,

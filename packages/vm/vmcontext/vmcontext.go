@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -26,7 +25,7 @@ import (
 // chain address contained in the statetxbuilder.Builder
 type VMContext struct {
 	// same for the block
-	chainID              chainid.ChainID
+	chainID              coretypes.ChainID
 	chainOwnerID         coretypes.AgentID
 	chainInput           *ledgerstate.AliasOutput
 	processors           *processors.Cache
@@ -69,7 +68,7 @@ type blockContext struct {
 
 // CreateVMContext a constructor
 func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
-	chainID, err := chainid.ChainIDFromAddress(task.ChainInput.Address())
+	chainID, err := coretypes.ChainIDFromAddress(task.ChainInput.Address())
 	if err != nil {
 		task.Log.Panicf("CreateVMContext: %v", err)
 	}

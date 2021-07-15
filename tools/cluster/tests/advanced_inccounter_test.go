@@ -202,11 +202,11 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 func TestAccessNodesMany(t *testing.T) {
 	const clusterSize = 15
 	const numValidatorNodes = 6
-	const requestsCountInitial = 8
+	const requestsCountInitial = 2
 	const requestsCountProgression = 2
-	const iterationCount = 7
+	const iterationCount = 9
 
-	if iterationCount > 8 {
+	if iterationCount > 12 {
 		t.Skip("skipping test with iteration count > 8")
 	}
 	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes))

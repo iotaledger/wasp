@@ -3,13 +3,10 @@ package chain
 import (
 	"strconv"
 
-	"github.com/iotaledger/wasp/packages/hashing"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/publisher"
 )
 
@@ -38,7 +35,7 @@ func LogSyncedEvent(outputID ledgerstate.OutputID, blockIndex uint32, log *logge
 	log.Infof("EVENT: state was synced to block index #%d, approving output: %s", blockIndex, coretypes.OID(outputID))
 }
 
-func PublishRequestsSettled(chainID *chainid.ChainID, stateIndex uint32, reqids []coretypes.RequestID) {
+func PublishRequestsSettled(chainID *coretypes.ChainID, stateIndex uint32, reqids []coretypes.RequestID) {
 	for _, reqid := range reqids {
 		publisher.Publish("request_out",
 			chainID.String(),
@@ -49,7 +46,7 @@ func PublishRequestsSettled(chainID *chainid.ChainID, stateIndex uint32, reqids 
 	}
 }
 
-func PublishStateTransition(chainID *chainid.ChainID, stateOutput *ledgerstate.AliasOutput, reqIDsLength int) {
+func PublishStateTransition(chainID *coretypes.ChainID, stateOutput *ledgerstate.AliasOutput, reqIDsLength int) {
 	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateData())
 
 	publisher.Publish("state",
@@ -63,7 +60,7 @@ func PublishStateTransition(chainID *chainid.ChainID, stateOutput *ledgerstate.A
 
 func PublishGovernanceTransition(stateOutput *ledgerstate.AliasOutput) {
 	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateData())
-	chainID := chainid.NewChainID(stateOutput.GetAliasAddress())
+	chainID := coretypes.NewChainID(stateOutput.GetAliasAddress())
 
 	publisher.Publish("rotate",
 		chainID.String(),

@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.uber.org/atomic"
 	"golang.org/x/crypto/blake2b"
@@ -251,23 +252,6 @@ func (req *RequestOnLedger) SenderAddress() ledgerstate.Address {
 	return req.senderAddress
 }
 
-// SolidifyArgs return true if solidified successfully
-func (req *RequestOnLedger) SolidifyArgs(reg coretypes.BlobCache) (bool, error) {
-	par := req.params.Load()
-	if par != nil {
-		return true, nil
-	}
-	solid, ok, err := req.requestMetadata.Args().SolidifyRequestArguments(reg)
-	if err != nil || !ok {
-		return ok, err
-	}
-	if solid == nil {
-		panic("solid == nil")
-	}
-	req.params.Store(solid)
-	return true, nil
-}
-
 // Target returns target contract and target entry point
 func (req *RequestOnLedger) Target() (coretypes.Hname, coretypes.Hname) {
 	return req.requestMetadata.TargetContract(), req.requestMetadata.EntryPoint()
@@ -304,6 +288,14 @@ func (req *RequestOnLedger) Short() string {
 // only used for consensus
 func (req *RequestOnLedger) Hash() [32]byte {
 	return blake2b.Sum256(req.Bytes())
+}
+
+func (req *RequestOnLedger) SetParams(params dict.Dict) {
+	req.params.Store(params)
+}
+
+func (req *RequestOnLedger) Args() requestargs.RequestArgs {
+	return req.requestMetadata.Args()
 }
 
 func (req *RequestOnLedger) readMinted(r io.Reader) error {
@@ -582,23 +574,6 @@ func (req *RequestOffLedger) SenderAddress() ledgerstate.Address {
 	return req.sender
 }
 
-// SolidifyArgs return true if solidified successfully
-func (req *RequestOffLedger) SolidifyArgs(reg coretypes.BlobCache) (bool, error) {
-	par := req.params.Load()
-	if par != nil {
-		return true, nil
-	}
-	solid, ok, err := req.args.SolidifyRequestArguments(reg)
-	if err != nil || !ok {
-		return ok, err
-	}
-	if solid == nil {
-		panic("solid == nil")
-	}
-	req.params.Store(solid)
-	return true, nil
-}
-
 func (req *RequestOffLedger) Target() (coretypes.Hname, coretypes.Hname) {
 	return req.contract, req.entryPoint
 }
@@ -613,4 +588,42 @@ func (req *RequestOffLedger) Tokens() *ledgerstate.ColoredBalances {
 	return req.transfer
 }
 
+func (req *RequestOffLedger) SetParams(params dict.Dict) {
+	req.params.Store(params)
+}
+
+func (req *RequestOffLedger) Args() requestargs.RequestArgs {
+	return req.args
+}
+
 // endregion /////////////////////////////////////////////////////////////////
+
+// SolidifiableRequest is the minimal interface required for SolidifyArgs
+type SolidifiableRequest interface {
+	Params() (dict.Dict, bool)
+	SetParams(params dict.Dict)
+	Args() requestargs.RequestArgs
+}
+
+var (
+	_ SolidifiableRequest = &RequestOnLedger{}
+	_ SolidifiableRequest = &RequestOffLedger{}
+)
+
+// SolidifyArgs solidifies the request arguments
+func SolidifyArgs(req coretypes.Request, reg registry.BlobCache) (bool, error) {
+	sreq := req.(SolidifiableRequest)
+	par, _ := sreq.Params()
+	if par != nil {
+		return true, nil
+	}
+	solid, ok, err := sreq.Args().SolidifyRequestArguments(reg)
+	if err != nil || !ok {
+		return ok, err
+	}
+	if solid == nil {
+		panic("solid == nil")
+	}
+	sreq.SetParams(solid)
+	return true, nil
+}

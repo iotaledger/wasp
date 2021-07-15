@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -213,7 +212,7 @@ func (o *ScContext) processDeploy(bytes []byte) {
 // TODO refactor
 func (o *ScContext) processPost(bytes []byte) {
 	decode := NewBytesDecoder(bytes)
-	chainID, err := chainid.ChainIDFromBytes(decode.Bytes())
+	chainID, err := coretypes.ChainIDFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}

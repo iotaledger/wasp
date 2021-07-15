@@ -3,11 +3,9 @@ package util
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -30,7 +28,7 @@ func WithTransaction(f func() (*ledgerstate.Transaction, error)) *ledgerstate.Tr
 	return tx
 }
 
-func WithOffLedgerRequest(chainID *chainid.ChainID, f func() (*request.RequestOffLedger, error)) {
+func WithOffLedgerRequest(chainID *coretypes.ChainID, f func() (*request.RequestOffLedger, error)) {
 	req, err := f()
 	log.Check(err)
 	log.Printf("Posted off-ledger request %s\n", req.ID().Base58())
@@ -40,7 +38,7 @@ func WithOffLedgerRequest(chainID *chainid.ChainID, f func() (*request.RequestOf
 	}
 }
 
-func WithSCTransaction(chainID *chainid.ChainID, f func() (*ledgerstate.Transaction, error), forceWait ...bool) *ledgerstate.Transaction {
+func WithSCTransaction(chainID *coretypes.ChainID, f func() (*ledgerstate.Transaction, error), forceWait ...bool) *ledgerstate.Transaction {
 	tx, err := f()
 	log.Check(err)
 	logTx(tx, chainID)
@@ -53,7 +51,7 @@ func WithSCTransaction(chainID *chainid.ChainID, f func() (*ledgerstate.Transact
 	return tx
 }
 
-func logTx(tx *ledgerstate.Transaction, chainID *chainid.ChainID) {
+func logTx(tx *ledgerstate.Transaction, chainID *coretypes.ChainID) {
 	var reqs []coretypes.RequestID
 	if chainID != nil {
 		for _, out := range tx.Essence().Outputs() {

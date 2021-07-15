@@ -5,7 +5,6 @@ package coretypes
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -23,7 +22,7 @@ type SandboxView interface {
 	// Call calls another contract. Only calls view entry points
 	Call(contractHname Hname, entryPoint Hname, params dict.Dict) (dict.Dict, error)
 	// ChainID is the chain
-	ChainID() *chainid.ChainID
+	ChainID() *ChainID
 	// ChainOwnerID AgentID of the current owner of the chain
 	ChainOwnerID() *AgentID
 	// Contract ID

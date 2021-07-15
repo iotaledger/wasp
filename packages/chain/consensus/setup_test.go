@@ -21,11 +21,11 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/state"
@@ -52,8 +52,8 @@ type MockedEnv struct {
 	NetworkProviders  []peering.NetworkProvider
 	NetworkBehaviour  *testutil.PeeringNetDynamic
 	NetworkCloser     io.Closer
-	DKSRegistries     []coretypes.DKShareRegistryProvider
-	ChainID           chainid.ChainID
+	DKSRegistries     []registry.DKShareRegistryProvider
+	ChainID           coretypes.ChainID
 	MockedACS         chain.AsynchronousCommonSubsetRunner
 	InitStateOutput   *ledgerstate.AliasOutput
 	mutex             sync.Mutex
@@ -136,7 +136,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	ret.InitStateOutput, err = utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
-	ret.ChainID = *chainid.NewChainID(ret.InitStateOutput.GetAliasAddress())
+	ret.ChainID = *coretypes.NewChainID(ret.InitStateOutput.GetAliasAddress())
 
 	return ret, originTx
 }
@@ -446,7 +446,7 @@ func (env *MockedEnv) PostDummyRequests(n int, randomize ...bool) {
 }
 
 // TODO: should this object be obtained from peering.NetworkProvider?
-// Or should coretypes.PeerNetworkConfigProvider methods methods be part of
+// Or should registry.PeerNetworkConfigProvider methods methods be part of
 // peering.NetworkProvider interface
 type consensusTestConfigProvider struct {
 	ownNetID  string

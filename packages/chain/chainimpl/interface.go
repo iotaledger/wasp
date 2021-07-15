@@ -12,17 +12,17 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
-func (c *chainObj) ID() *chainid.ChainID {
+func (c *chainObj) ID() *coretypes.ChainID {
 	return &c.chainID
 }
 
@@ -224,7 +224,7 @@ func (c *chainObj) ReceiveOutput(output ledgerstate.Output) {
 	c.stateMgr.EventOutputMsg(output)
 }
 
-func (c *chainObj) BlobCache() coretypes.BlobCache {
+func (c *chainObj) BlobCache() registry.BlobCache {
 	return c.blobProvider
 }
 

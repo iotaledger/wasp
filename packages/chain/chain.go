@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/messages"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -24,7 +23,7 @@ import (
 )
 
 type ChainCore interface {
-	ID() *chainid.ChainID
+	ID() *coretypes.ChainID
 	GetCommitteeInfo() *CommitteeInfo
 	ReceiveMessage(interface{})
 	Events() ChainEvents

@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/timeutil"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
@@ -39,14 +39,14 @@ func NewDBManager(log *logger.Logger, inMemory bool) *DBManager {
 	return &dbm
 }
 
-func getChainBase58(chainID *chainid.ChainID) string {
+func getChainBase58(chainID *coretypes.ChainID) string {
 	if chainID != nil {
 		return chainID.Base58()
 	}
 	return "CHAIN_REGISTRY"
 }
 
-func (m *DBManager) createDB(chainID *chainid.ChainID) database.DB {
+func (m *DBManager) createDB(chainID *coretypes.ChainID) database.DB {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -81,7 +81,7 @@ func (m *DBManager) GetRegistryKVStore() kvstore.KVStore {
 	return m.registryStore
 }
 
-func (m *DBManager) GetOrCreateKVStore(chainID *chainid.ChainID) kvstore.KVStore {
+func (m *DBManager) GetOrCreateKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
 	store := m.GetKVStore(chainID)
 	if store != nil {
 		return store
@@ -95,7 +95,7 @@ func (m *DBManager) GetOrCreateKVStore(chainID *chainid.ChainID) kvstore.KVStore
 	return store
 }
 
-func (m *DBManager) GetKVStore(chainID *chainid.ChainID) kvstore.KVStore {
+func (m *DBManager) GetKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
 	return m.stores[chainID.Array()]
 }
 

@@ -3,28 +3,26 @@ package viewcontext
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/kv/optimism"
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"golang.org/x/xerrors"
 )
 
 type Viewcontext struct {
 	processors  *processors.Cache
 	stateReader state.OptimisticStateReader
-	chainID     chainid.ChainID
+	chainID     coretypes.ChainID
 	log         *logger.Logger
 }
 
@@ -32,7 +30,7 @@ func NewFromChain(ch chain.ChainCore) *Viewcontext {
 	return New(*ch.ID(), ch.GetStateReader(), ch.Processors(), ch.Log().Named("view"))
 }
 
-func New(chainID chainid.ChainID, stateReader state.OptimisticStateReader, proc *processors.Cache, log *logger.Logger) *Viewcontext {
+func New(chainID coretypes.ChainID, stateReader state.OptimisticStateReader, proc *processors.Cache, log *logger.Logger) *Viewcontext {
 	return &Viewcontext{
 		processors:  proc,
 		stateReader: stateReader,

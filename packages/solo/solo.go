@@ -18,11 +18,11 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -57,7 +57,7 @@ type Solo struct {
 	logger      *logger.Logger
 	dbmanager   *dbmanager.DBManager
 	utxoDB      *utxodb.UtxoDB
-	blobCache   coretypes.BlobCache
+	blobCache   registry.BlobCache
 	glbMutex    sync.RWMutex
 	ledgerMutex sync.RWMutex
 	clockMutex  sync.RWMutex
@@ -90,7 +90,7 @@ type Chain struct {
 	OriginatorKeyPair *ed25519.KeyPair
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
-	ChainID chainid.ChainID
+	ChainID coretypes.ChainID
 
 	// OriginatorAddress is the alias for OriginatorKeyPair.Address()
 	OriginatorAddress ledgerstate.Address
@@ -296,7 +296,7 @@ func (env *Solo) AddToLedger(tx *ledgerstate.Transaction) error {
 }
 
 // RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
-func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID chainid.ChainID) ([]coretypes.Request, error) {
+func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID coretypes.ChainID) ([]coretypes.Request, error) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 
@@ -339,7 +339,7 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 	requests := env.requestsByChain(tx)
 
 	for chidArr, reqs := range requests {
-		chid, err := chainid.ChainIDFromBytes(chidArr[:])
+		chid, err := coretypes.ChainIDFromBytes(chidArr[:])
 		require.NoError(env.T, err)
 		ch, ok := env.chains[chidArr]
 		if !ok {
@@ -432,7 +432,7 @@ func (ch *Chain) backlogLen() int { //nolint:unused
 
 // solidifies request arguments without mempool (only for solo)
 func (ch *Chain) solidifyRequest(req coretypes.Request) {
-	ok, err := req.SolidifyArgs(ch.Env.blobCache)
+	ok, err := request.SolidifyArgs(req, ch.Env.blobCache)
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 }

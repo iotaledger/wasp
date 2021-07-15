@@ -3,17 +3,15 @@ package state
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/wasp/packages/kv/optimism"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/webapiutil"
@@ -43,7 +41,7 @@ func AddEndpoints(server echoswagger.ApiRouter) {
 }
 
 func handleCallView(c echo.Context) error {
-	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}
@@ -72,8 +70,11 @@ func handleCallView(c echo.Context) error {
 	return c.JSON(http.StatusOK, ret)
 }
 
+const retryOnStateInvalidatedRetry = 100 * time.Millisecond //nolint:gofumpt
+const retryOnStateInvalidatedTimeout = 5 * time.Minute
+
 func handleStateGet(c echo.Context) error {
-	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}
@@ -89,16 +90,17 @@ func handleStateGet(c echo.Context) error {
 	}
 
 	var ret []byte
-	err = optimism.RepeatOnceIfUnlucky(func() error {
-		v, err := theChain.GetStateReader().KVStoreReader().Get(kv.Key(key))
-		if err != nil {
-			return err
-		}
-		ret = v
-		return nil
-	}, 100*time.Millisecond)
+	err = optimism.RetryOnStateInvalidated(func() error {
+		var err error
+		ret, err = theChain.GetStateReader().KVStoreReader().Get(kv.Key(key))
+		return err
+	}, retryOnStateInvalidatedRetry, time.Now().Add(retryOnStateInvalidatedTimeout))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("View call failed: %v", err))
+		reason := fmt.Sprintf("View call failed: %v", err)
+		if errors.Is(err, optimism.ErrStateHasBeenInvalidated) {
+			return httperrors.Conflict(reason)
+		}
+		return httperrors.BadRequest(reason)
 	}
 
 	return c.JSON(http.StatusOK, ret)

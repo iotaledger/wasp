@@ -22,10 +22,10 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/nodeconnimpl"
 	"github.com/iotaledger/wasp/packages/chain/statemgr"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -47,7 +47,7 @@ type chainObj struct {
 	mempoolLastCleanedIndex          uint32
 	dismissed                        atomic.Bool
 	dismissOnce                      sync.Once
-	chainID                          chainid.ChainID
+	chainID                          coretypes.ChainID
 	chainStateSync                   coreutil.ChainStateSync
 	stateReader                      state.OptimisticStateReader
 	procset                          *processors.Cache
@@ -57,11 +57,11 @@ type chainObj struct {
 	log                              *logger.Logger
 	nodeConn                         chain.NodeConnection
 	db                               kvstore.KVStore
-	peerNetworkConfig                coretypes.PeerNetworkConfigProvider
+	peerNetworkConfig                registry.PeerNetworkConfigProvider
 	netProvider                      peering.NetworkProvider
-	dksProvider                      coretypes.DKShareRegistryProvider
-	committeeRegistry                coretypes.CommitteeRegistryProvider
-	blobProvider                     coretypes.BlobCache
+	dksProvider                      registry.DKShareRegistryProvider
+	committeeRegistry                registry.CommitteeRegistryProvider
+	blobProvider                     registry.BlobCache
 	eventRequestProcessed            *events.Event
 	eventChainTransition             *events.Event
 	eventSynced                      *events.Event
@@ -79,15 +79,15 @@ type committeeStruct struct {
 }
 
 func NewChain(
-	chainID *chainid.ChainID,
+	chainID *coretypes.ChainID,
 	log *logger.Logger,
 	txstreamClient *txstream.Client,
-	peerNetConfig coretypes.PeerNetworkConfigProvider,
+	peerNetConfig registry.PeerNetworkConfigProvider,
 	db kvstore.KVStore,
 	netProvider peering.NetworkProvider,
-	dksProvider coretypes.DKShareRegistryProvider,
-	committeeRegistry coretypes.CommitteeRegistryProvider,
-	blobProvider coretypes.BlobCache,
+	dksProvider registry.DKShareRegistryProvider,
+	committeeRegistry registry.CommitteeRegistryProvider,
+	blobProvider registry.BlobCache,
 	processorConfig *processors.Config,
 	offledgerBroadcastUpToNPeers int,
 	offledgerBroadcastInterval time.Duration,
@@ -285,7 +285,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 			stateIndex, coretypes.OID(msg.ChainOutput.ID()), msg.VirtualState.Hash().String(), c.mempoolLastCleanedIndex)
 		// normal state update:
 		c.stateReader.SetBaseline()
-		chainID := chainid.NewChainID(msg.ChainOutput.GetAliasAddress())
+		chainID := coretypes.NewChainID(msg.ChainOutput.GetAliasAddress())
 		var reqids []coretypes.RequestID
 		for i := c.mempoolLastCleanedIndex + 1; i <= msg.VirtualState.BlockIndex(); i++ {
 			c.log.Debugf("processChainTransition state %d: cleaning state %d", stateIndex, i)

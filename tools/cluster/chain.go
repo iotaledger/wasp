@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -36,7 +35,7 @@ type Chain struct {
 	Quorum         uint16
 	StateAddress   ledgerstate.Address
 
-	ChainID chainid.ChainID
+	ChainID coretypes.ChainID
 
 	Cluster *Cluster
 }

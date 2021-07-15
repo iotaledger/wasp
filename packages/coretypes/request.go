@@ -30,8 +30,6 @@ type Request interface {
 	SenderAccount() *AgentID
 	// address of the sender for all requests,
 	SenderAddress() ledgerstate.Address
-	// return true if solidified successfully
-	SolidifyArgs(reg BlobCache) (bool, error)
 	// returns contract/entry point pair
 	Target() (Hname, Hname)
 	// returns time lock time or zero time if no time lock
