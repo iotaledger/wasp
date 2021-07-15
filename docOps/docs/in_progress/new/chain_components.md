@@ -28,7 +28,7 @@ The node can participate as:
 
 ## Requests
 
-it is implemented as `coretypes.Request` interface
+it is implemented as `iscp.Request` interface
 
 There are 2 types of requests which implements the interface:
 * on-ledger requests which are coming as UTXO outputs of confirmed transactions from L1.

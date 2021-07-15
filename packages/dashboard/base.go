@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
@@ -40,10 +40,10 @@ type WaspServices interface {
 	NetworkProvider() peering.NetworkProvider
 	TrustedNetworkManager() peering.TrustedNetworkManager
 	GetChainRecords() ([]*chainrecord.ChainRecord, error)
-	GetChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error)
-	GetChainState(chainID *coretypes.ChainID) (*ChainState, error)
-	GetChain(chainID *coretypes.ChainID) chain.ChainCore
-	CallView(chain chain.ChainCore, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error)
+	GetChainRecord(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error)
+	GetChainState(chainID *iscp.ChainID) (*ChainState, error)
+	GetChain(chainID *iscp.ChainID) chain.ChainCore
+	CallView(chain chain.ChainCore, hname iscp.Hname, fname string, params dict.Dict) (dict.Dict, error)
 }
 
 type Dashboard struct {

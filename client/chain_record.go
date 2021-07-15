@@ -3,7 +3,7 @@ package client
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -15,7 +15,7 @@ func (c *WaspClient) PutChainRecord(rec *chainrecord.ChainRecord) error {
 }
 
 // GetChainRecord fetches a Record by address
-func (c *WaspClient) GetChainRecord(chID coretypes.ChainID) (*chainrecord.ChainRecord, error) {
+func (c *WaspClient) GetChainRecord(chID iscp.ChainID) (*chainrecord.ChainRecord, error) {
 	res := &model.ChainRecord{}
 	if err := c.do(http.MethodGet, routes.GetChainRecord(chID.Base58()), nil, res); err != nil {
 		return nil, err

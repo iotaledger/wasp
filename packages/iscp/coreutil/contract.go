@@ -8,8 +8,8 @@ package coreutil
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
@@ -22,7 +22,7 @@ type ContractInterface struct {
 	Name        string
 	Description string
 	ProgramHash hashing.HashValue
-	Functions   map[coretypes.Hname]ContractFunctionInterface
+	Functions   map[iscp.Hname]ContractFunctionInterface
 }
 
 // ContractFunctionInterface represents entry point interface
@@ -33,16 +33,16 @@ type ContractFunctionInterface struct {
 }
 
 type (
-	Handler     func(ctx coretypes.Sandbox) (dict.Dict, error)
-	ViewHandler func(ctx coretypes.SandboxView) (dict.Dict, error)
+	Handler     func(ctx iscp.Sandbox) (dict.Dict, error)
+	ViewHandler func(ctx iscp.SandboxView) (dict.Dict, error)
 )
 
-func defaultInitFunc(ctx coretypes.Sandbox) (dict.Dict, error) {
+func defaultInitFunc(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("default init function invoked for contract %s from caller %s", ctx.Contract(), ctx.Caller())
 	return nil, nil
 }
 
-func defaultHandlerFunc(ctx coretypes.Sandbox) (dict.Dict, error) {
+func defaultHandlerFunc(ctx iscp.Sandbox) (dict.Dict, error) {
 	transferStr := "(empty)"
 	if ctx.IncomingTransfer() != nil {
 		transferStr = ctx.IncomingTransfer().String()
@@ -63,12 +63,12 @@ func NewContractInterface(name, description string, progHash ...hashing.HashValu
 }
 
 // Funcs declares init entry point and a list of full and view entry points
-func Funcs(init Handler, fns []ContractFunctionInterface, defaultHandler ...Handler) map[coretypes.Hname]ContractFunctionInterface {
+func Funcs(init Handler, fns []ContractFunctionInterface, defaultHandler ...Handler) map[iscp.Hname]ContractFunctionInterface {
 	if init == nil {
 		init = defaultInitFunc
 	}
-	ret := map[coretypes.Hname]ContractFunctionInterface{
-		coretypes.EntryPointInit: Func("init", init),
+	ret := map[iscp.Hname]ContractFunctionInterface{
+		iscp.EntryPointInit: Func("init", init),
 	}
 	for _, f := range fns {
 		hname := f.Hname()
@@ -123,11 +123,11 @@ func (i *ContractInterface) WithFunctions(init Handler, funcs []ContractFunction
 }
 
 func (i *ContractInterface) GetFunction(name string) (*ContractFunctionInterface, bool) {
-	f, ok := i.Functions[coretypes.Hn(name)]
+	f, ok := i.Functions[iscp.Hn(name)]
 	return &f, ok
 }
 
-func (i *ContractInterface) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
+func (i *ContractInterface) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntryPoint, bool) {
 	f, entryPointFound := i.Functions[code]
 	if !entryPointFound {
 		return nil, false
@@ -135,7 +135,7 @@ func (i *ContractInterface) GetEntryPoint(code coretypes.Hname) (coretypes.VMPro
 	return &f, true
 }
 
-func (i *ContractInterface) GetDefaultEntryPoint() coretypes.VMProcessorEntryPoint {
+func (i *ContractInterface) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
 	ret := i.Functions[0]
 	return &ret
 }
@@ -145,21 +145,21 @@ func (i *ContractInterface) GetDescription() string {
 }
 
 // Hname caches the value
-func (i *ContractInterface) Hname() coretypes.Hname {
+func (i *ContractInterface) Hname() iscp.Hname {
 	return CoreHname(i.Name)
 }
 
-func (f *ContractFunctionInterface) Hname() coretypes.Hname {
-	return coretypes.Hn(f.Name)
+func (f *ContractFunctionInterface) Hname() iscp.Hname {
+	return iscp.Hn(f.Name)
 }
 
 func (f *ContractFunctionInterface) Call(ctx interface{}) (dict.Dict, error) {
 	switch tctx := ctx.(type) {
-	case coretypes.Sandbox:
+	case iscp.Sandbox:
 		if f.Handler != nil {
 			return f.Handler(tctx)
 		}
-	case coretypes.SandboxView:
+	case iscp.SandboxView:
 		if f.ViewHandler != nil {
 			return f.ViewHandler(tctx)
 		}

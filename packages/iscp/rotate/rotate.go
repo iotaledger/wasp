@@ -3,25 +3,25 @@ package rotate
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/identity"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 // IsRotateStateControllerRequest determines if request may be a committee rotation request
-func IsRotateStateControllerRequest(req coretypes.Request) bool {
+func IsRotateStateControllerRequest(req iscp.Request) bool {
 	targetContract, targetEP := req.Target()
 	return targetContract == coreutil.CoreContractGovernanceHname && targetEP == coreutil.CoreEPRotateStateControllerHname
 }
 
-func NewRotateRequestOffLedger(newStateAddress ledgerstate.Address, keyPair *ed25519.KeyPair) coretypes.Request {
+func NewRotateRequestOffLedger(newStateAddress ledgerstate.Address, keyPair *ed25519.KeyPair) iscp.Request {
 	args := requestargs.New(nil)
 	args.AddEncodeSimple(coreutil.ParamStateControllerAddress, codec.EncodeAddress(newStateAddress))
 	ret := request.NewRequestOffLedger(coreutil.CoreContractGovernanceHname, coreutil.CoreEPRotateStateControllerHname, args)

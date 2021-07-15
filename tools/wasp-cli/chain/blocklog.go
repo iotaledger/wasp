@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -85,7 +85,7 @@ func requestCmd() *cobra.Command {
 		Short: "Get information about a request given its ID",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			reqID, err := coretypes.RequestIDFromBase58(args[0])
+			reqID, err := iscp.RequestIDFromBase58(args[0])
 			log.Check(err)
 			ret, err := SCClient(blocklog.Interface.Hname()).CallView(blocklog.FuncGetRequestLogRecord, dict.Dict{
 				blocklog.ParamRequestID: codec.EncodeRequestID(reqID),

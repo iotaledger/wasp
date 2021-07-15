@@ -2,23 +2,23 @@ package vmcontext
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm"
 )
 
-func (vmctx *VMContext) ChainID() *coretypes.ChainID {
+func (vmctx *VMContext) ChainID() *iscp.ChainID {
 	return &vmctx.chainID
 }
 
-func (vmctx *VMContext) ChainOwnerID() *coretypes.AgentID {
+func (vmctx *VMContext) ChainOwnerID() *iscp.AgentID {
 	return &vmctx.chainOwnerID
 }
 
-func (vmctx *VMContext) ContractCreator() *coretypes.AgentID {
+func (vmctx *VMContext) ContractCreator() *iscp.AgentID {
 	rec, ok := vmctx.findContractByHname(vmctx.CurrentContractHname())
 	if !ok {
 		vmctx.log.Panicf("can't find current contract")
@@ -26,12 +26,12 @@ func (vmctx *VMContext) ContractCreator() *coretypes.AgentID {
 	return rec.Creator
 }
 
-func (vmctx *VMContext) CurrentContractHname() coretypes.Hname {
+func (vmctx *VMContext) CurrentContractHname() iscp.Hname {
 	return vmctx.getCallContext().contract
 }
 
-func (vmctx *VMContext) MyAgentID() *coretypes.AgentID {
-	return coretypes.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
+func (vmctx *VMContext) MyAgentID() *iscp.AgentID {
+	return iscp.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
 }
 
 func (vmctx *VMContext) Minted() map[ledgerstate.Color]uint64 {
@@ -45,7 +45,7 @@ func (vmctx *VMContext) IsRequestContext() bool {
 	return vmctx.getCallContext().isRequestContext
 }
 
-func (vmctx *VMContext) Caller() *coretypes.AgentID {
+func (vmctx *VMContext) Caller() *iscp.AgentID {
 	ret := vmctx.getCallContext().caller
 	return &ret
 }
@@ -60,7 +60,7 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 
 // Post1Request creates a request section in the transaction with specified parameters
 // The transfer not include 1 iota for the request token but includes node fee, if eny
-//func (vmctx *VMContext) Post1Request(par coretypes.PostRequestParams) bool {
+//func (vmctx *VMContext) Post1Request(par iscp.PostRequestParams) bool {
 //	vmctx.log.Debugw("-- PostRequestSync",
 //		"target", par.TargetContractID.String(),
 //		"ep", par.VMProcessorEntryPoint.String(),
@@ -80,18 +80,18 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 //	return vmctx.txBuilder.AddRequestSection(reqSection) == nil
 //}
 //
-//func (vmctx *VMContext) PostRequestToSelf(reqCode coretypes.Hname, params dict.Dict) bool {
-//	return vmctx.Post1Request(coretypes.PostRequestParams{
+//func (vmctx *VMContext) PostRequestToSelf(reqCode iscp.Hname, params dict.Dict) bool {
+//	return vmctx.Post1Request(iscp.PostRequestParams{
 //		TargetContractID: vmctx.CurrentContractID(),
 //		VMProcessorEntryPoint:       reqCode,
 //		Params:           params,
 //	})
 //}
 //
-//func (vmctx *VMContext) PostRequestToSelfWithDelay(entryPoint coretypes.Hname, args dict.Dict, delaySec uint32) bool {
+//func (vmctx *VMContext) PostRequestToSelfWithDelay(entryPoint iscp.Hname, args dict.Dict, delaySec uint32) bool {
 //	timelock := util.NanoSecToUnixSec(vmctx.timestamp) + delaySec
 //
-//	return vmctx.Post1Request(coretypes.PostRequestParams{
+//	return vmctx.Post1Request(iscp.PostRequestParams{
 //		TargetContractID: vmctx.CurrentContractID(),
 //		VMProcessorEntryPoint:       entryPoint,
 //		Params:           args,
@@ -103,13 +103,13 @@ func (vmctx *VMContext) EventPublisher() vm.ContractEventPublisher {
 	return vm.NewContractEventPublisher(vmctx.ChainID(), vmctx.CurrentContractHname(), vmctx.log)
 }
 
-func (vmctx *VMContext) RequestID() coretypes.RequestID {
+func (vmctx *VMContext) RequestID() iscp.RequestID {
 	return vmctx.req.ID()
 }
 
 const maxParamSize = 512
 
-func (vmctx *VMContext) Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *coretypes.SendMetadata, options ...coretypes.SendOptions) bool {
+func (vmctx *VMContext) Send(target ledgerstate.Address, tokens *ledgerstate.ColoredBalances, metadata *iscp.SendMetadata, options ...iscp.SendOptions) bool {
 	if tokens == nil || tokens.Size() == 0 {
 		vmctx.log.Errorf("Send: transfer can't be empty")
 		return false

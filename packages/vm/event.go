@@ -2,17 +2,17 @@ package vm
 
 import (
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/publisher"
 )
 
 type ContractEventPublisher struct {
-	chainID  *coretypes.ChainID
-	contract coretypes.Hname
+	chainID  *iscp.ChainID
+	contract iscp.Hname
 	log      *logger.Logger
 }
 
-func NewContractEventPublisher(chainID *coretypes.ChainID, contract coretypes.Hname, log *logger.Logger) ContractEventPublisher {
+func NewContractEventPublisher(chainID *iscp.ChainID, contract iscp.Hname, log *logger.Logger) ContractEventPublisher {
 	return ContractEventPublisher{
 		chainID:  chainID,
 		contract: contract,

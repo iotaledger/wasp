@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
@@ -25,7 +25,7 @@ func TestTutorial1(t *testing.T) {
 	t.Logf("chain ID: %s", chainID.String())
 	t.Logf("chain owner ID: %s", chainOwnerID.String())
 	for hname, rec := range coreContracts {
-		t.Logf("    Core contract '%s': %s", rec.Name, coretypes.NewAgentID(chainID.AsAddress(), hname))
+		t.Logf("    Core contract '%s': %s", rec.Name, iscp.NewAgentID(chainID.AsAddress(), hname))
 	}
 }
 
@@ -82,7 +82,7 @@ func TestTutorial5(t *testing.T) {
 	// the wallet has address and it is globally identified
 	// through a universal identifier: the agent ID
 	userWallet, userAddress := env.NewKeyPairWithFunds()
-	userAgentID := coretypes.NewAgentID(userAddress, 0)
+	userAgentID := iscp.NewAgentID(userAddress, 0)
 
 	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
@@ -121,10 +121,10 @@ func TestTutorial6(t *testing.T) {
 	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
-	contractAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("example1"))
+	contractAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("example1"))
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
-	userAgentID := coretypes.NewAgentID(userAddress, 0)
+	userAgentID := iscp.NewAgentID(userAddress, 0)
 
 	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
@@ -147,10 +147,10 @@ func TestTutorial7(t *testing.T) {
 	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
-	contractAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("example1"))
+	contractAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("example1"))
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
-	userAgentID := coretypes.NewAgentID(userAddress, 0)
+	userAgentID := iscp.NewAgentID(userAddress, 0)
 
 	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
@@ -177,7 +177,7 @@ func TestTutorial8(t *testing.T) {
 	// create a user's wallet (private key) and request 1337 iotas from the faucet.
 	// It corresponds to L1 address
 	userWallet, userAddress := env.NewKeyPairWithFunds()
-	userAgentID := coretypes.NewAgentID(userAddress, 0)
+	userAgentID := iscp.NewAgentID(userAddress, 0)
 	t.Logf("userAgentID: %s", userAgentID)
 
 	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
@@ -195,7 +195,7 @@ func TestTutorial8(t *testing.T) {
 	err = chain.DeployWasmContract(userWallet, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
-	contractAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("example1"))
+	contractAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("example1"))
 
 	// the deployment of the smart contract required 1 requests to the root contract:
 	// - to submit binary to the on-chain "blob" registry

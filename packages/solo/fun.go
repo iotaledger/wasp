@@ -14,9 +14,9 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -63,7 +63,7 @@ func (ch *Chain) DumpAccounts() string {
 // It returns blobCache record of the deployed smart contract with the given name
 func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 	retDict, err := ch.CallView(root.Interface.Name, root.FuncFindContract,
-		root.ParamHname, coretypes.Hn(scName),
+		root.ParamHname, iscp.Hn(scName),
 	)
 	if err != nil {
 		return nil, err
@@ -263,7 +263,7 @@ func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name, fname string
 //  - chainID
 //  - agentID of the chain owner
 //  - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
-func (ch *Chain) GetInfo() (coretypes.ChainID, coretypes.AgentID, map[coretypes.Hname]*root.ContractRecord) {
+func (ch *Chain) GetInfo() (iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
 	require.NoError(ch.Env.T, err)
 
@@ -294,11 +294,11 @@ func (env *Solo) GetAddressBalances(addr ledgerstate.Address) map[ledgerstate.Co
 }
 
 // GetAccounts returns all accounts on the chain with non-zero balances
-func (ch *Chain) GetAccounts() []coretypes.AgentID {
+func (ch *Chain) GetAccounts() []iscp.AgentID {
 	d, err := ch.CallView(accounts.Interface.Name, accounts.FuncViewAccounts)
 	require.NoError(ch.Env.T, err)
 	keys := d.KeysSorted()
-	ret := make([]coretypes.AgentID, 0, len(keys)-1)
+	ret := make([]iscp.AgentID, 0, len(keys)-1)
 	for _, key := range keys {
 		aid, ok, err := codec.DecodeAgentID([]byte(key))
 		require.NoError(ch.Env.T, err)
@@ -352,7 +352,7 @@ func (ch *Chain) GetOnChainLedgerString() string {
 
 // GetAccountBalance return all balances of colored tokens contained in the on-chain
 // account controlled by the 'agentID'
-func (ch *Chain) GetAccountBalance(agentID *coretypes.AgentID) *ledgerstate.ColoredBalances {
+func (ch *Chain) GetAccountBalance(agentID *iscp.AgentID) *ledgerstate.ColoredBalances {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Interface.Name, accounts.FuncViewBalance, accounts.ParamAgentID, agentID),
 	)
@@ -386,7 +386,7 @@ func (ch *Chain) GetTotalIotas() uint64 {
 //  - validator part of the fee (number of tokens)
 // Total fee is sum of owner fee and validator fee
 func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint64) {
-	hname := coretypes.Hn(contactName)
+	hname := iscp.Hn(contactName)
 	ret, err := ch.CallView(root.Interface.Name, root.FuncGetFeeInfo, root.ParamHname, hname)
 	require.NoError(ch.Env.T, err)
 	require.NotEqualValues(ch.Env.T, 0, len(ret))
@@ -413,7 +413,7 @@ func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint
 // More than 50 records may be retrieved by calling the view directly
 func (ch *Chain) GetEventLogRecords(name string) ([]collections.TimestampedLogRecord, error) {
 	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetRecords,
-		eventlog.ParamContractHname, coretypes.Hn(name),
+		eventlog.ParamContractHname, iscp.Hn(name),
 	)
 	if err != nil {
 		return nil, err
@@ -446,7 +446,7 @@ func (ch *Chain) GetEventLogRecordsString(name string) (string, error) {
 // GetEventLogNumRecords returns total number of eventlog records for the given contact.
 func (ch *Chain) GetEventLogNumRecords(name string) int {
 	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetNumRecords,
-		eventlog.ParamContractHname, coretypes.Hn(name),
+		eventlog.ParamContractHname, iscp.Hn(name),
 	)
 	require.NoError(ch.Env.T, err)
 	ret, ok, err := codec.DecodeInt64(res.MustGet(eventlog.ParamNumRecords))
@@ -456,7 +456,7 @@ func (ch *Chain) GetEventLogNumRecords(name string) int {
 }
 
 // CommonAccount return the agentID of the common account (controlled by the owner)
-func (ch *Chain) CommonAccount() *coretypes.AgentID {
+func (ch *Chain) CommonAccount() *iscp.AgentID {
 	return commonaccount.Get(&ch.ChainID)
 }
 
@@ -489,7 +489,7 @@ func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
 }
 
 // IsRequestProcessed checks if the request is booked on the chain as processed
-func (ch *Chain) IsRequestProcessed(reqID coretypes.RequestID) bool {
+func (ch *Chain) IsRequestProcessed(reqID iscp.RequestID) bool {
 	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncIsRequestProcessed,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
@@ -500,7 +500,7 @@ func (ch *Chain) IsRequestProcessed(reqID coretypes.RequestID) bool {
 }
 
 // GetRequestLogRecord gets the log records for a particular request, the block index and request index in the block
-func (ch *Chain) GetRequestLogRecord(reqID coretypes.RequestID) (*blocklog.RequestLogRecord, uint32, uint16, bool) {
+func (ch *Chain) GetRequestLogRecord(reqID iscp.RequestID) (*blocklog.RequestLogRecord, uint32, uint16, bool) {
 	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestLogRecord,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
@@ -537,7 +537,7 @@ func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32) []*blocklog.Req
 }
 
 // GetRequestIDsForBlock returns return the list of requestIDs settled in a particular block
-func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []coretypes.RequestID {
+func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []iscp.RequestID {
 	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestIDsForBlock,
 		blocklog.ParamBlockIndex, blockIndex)
 	if err != nil {
@@ -545,11 +545,11 @@ func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []coretypes.RequestID 
 		return nil
 	}
 	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestID)
-	ret := make([]coretypes.RequestID, recs.MustLen())
+	ret := make([]iscp.RequestID, recs.MustLen())
 	for i := range ret {
 		reqIDBin, err := recs.GetAt(uint16(i))
 		require.NoError(ch.Env.T, err)
-		ret[i], err = coretypes.RequestIDFromBytes(reqIDBin)
+		ret[i], err = iscp.RequestIDFromBytes(reqIDBin)
 		require.NoError(ch.Env.T, err)
 	}
 	return ret

@@ -2,13 +2,13 @@ package sbtestsc
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func getMintedSupply(ctx coretypes.Sandbox) (dict.Dict, error) {
+func getMintedSupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	ret := dict.New()
 	allMinted := ctx.Minted()
 	a := assert.NewAssert(ctx.Log())

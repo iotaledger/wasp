@@ -1,17 +1,17 @@
 package codec
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
-func DecodeRequestID(b []byte) (coretypes.RequestID, bool, error) {
+func DecodeRequestID(b []byte) (iscp.RequestID, bool, error) {
 	if b == nil {
-		return coretypes.RequestID{}, false, nil
+		return iscp.RequestID{}, false, nil
 	}
-	r, err := coretypes.RequestIDFromBytes(b)
+	r, err := iscp.RequestIDFromBytes(b)
 	return r, err == nil, err
 }
 
-func EncodeRequestID(value coretypes.RequestID) []byte {
+func EncodeRequestID(value iscp.RequestID) []byte {
 	return value.Bytes()
 }

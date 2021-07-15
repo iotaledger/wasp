@@ -10,9 +10,9 @@ import (
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/tools/cluster"
 	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
@@ -86,7 +86,7 @@ func deployContract(wasmName, scDescription string, initParams map[string]interf
 	// return nil
 }
 
-func postRequest(t *testing.T, contract, entryPoint coretypes.Hname, tokens int, params map[string]interface{}) {
+func postRequest(t *testing.T, contract, entryPoint iscp.Hname, tokens int, params map[string]interface{}) {
 	var transfer map[ledgerstate.Color]uint64
 	if tokens != 0 {
 		transfer = map[ledgerstate.Color]uint64{
@@ -96,7 +96,7 @@ func postRequest(t *testing.T, contract, entryPoint coretypes.Hname, tokens int,
 	postRequestFull(t, contract, entryPoint, transfer, params)
 }
 
-func postRequestFull(t *testing.T, contract, entryPoint coretypes.Hname, transfer map[ledgerstate.Color]uint64, params map[string]interface{}) {
+func postRequestFull(t *testing.T, contract, entryPoint iscp.Hname, transfer map[ledgerstate.Color]uint64, params map[string]interface{}) {
 	var b *ledgerstate.ColoredBalances
 	if transfer != nil {
 		b = ledgerstate.NewColoredBalances(transfer)

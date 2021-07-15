@@ -4,8 +4,8 @@ import (
 	"errors"
 
 	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -58,7 +58,7 @@ func (vs *virtualState) Commit(blocks ...Block) error {
 
 // CreateOriginState creates zero state which is the minimal consistent state.
 // It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
-func CreateOriginState(store kvstore.KVStore, chainID *coretypes.ChainID) (*virtualState, error) {
+func CreateOriginState(store kvstore.KVStore, chainID *iscp.ChainID) (*virtualState, error) {
 	originState, originBlock := newZeroVirtualState(store, chainID)
 	if err := originState.Commit(originBlock); err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func CreateOriginState(store kvstore.KVStore, chainID *coretypes.ChainID) (*virt
 }
 
 // LoadSolidState establishes VirtualState interface with the solid state in DB. Checks consistency of DB
-func LoadSolidState(store kvstore.KVStore, chainID *coretypes.ChainID) (VirtualState, bool, error) {
+func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualState, bool, error) {
 	stateHash, exists, err := loadStateHashFromDb(store)
 	if err != nil {
 		return nil, exists, xerrors.Errorf("LoadSolidState: %w", err)

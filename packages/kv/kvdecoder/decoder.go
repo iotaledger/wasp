@@ -5,19 +5,19 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 type Decoder struct {
 	kv  kv.KVStoreReader
-	log coretypes.LogInterface
+	log iscp.LogInterface
 }
 
-func New(kvReader kv.KVStoreReader, log ...coretypes.LogInterface) Decoder {
-	var l coretypes.LogInterface
+func New(kvReader kv.KVStoreReader, log ...iscp.LogInterface) Decoder {
+	var l iscp.LogInterface
 	if len(log) > 0 {
 		l = log[0]
 	}
@@ -207,7 +207,7 @@ func (p *Decoder) MustGetString(key kv.Key, def ...string) string {
 	return ret
 }
 
-func (p *Decoder) GetHname(key kv.Key, def ...coretypes.Hname) (coretypes.Hname, error) {
+func (p *Decoder) GetHname(key kv.Key, def ...iscp.Hname) (iscp.Hname, error) {
 	v, exists, err := codec.DecodeHname(p.kv.MustGet(key))
 	if err != nil {
 		return 0, fmt.Errorf("GetHname: decoding parameter '%s': %v", key, err)
@@ -221,7 +221,7 @@ func (p *Decoder) GetHname(key kv.Key, def ...coretypes.Hname) (coretypes.Hname,
 	return def[0], nil
 }
 
-func (p *Decoder) MustGetHname(key kv.Key, def ...coretypes.Hname) coretypes.Hname {
+func (p *Decoder) MustGetHname(key kv.Key, def ...iscp.Hname) iscp.Hname {
 	ret, err := p.GetHname(key, def...)
 	if err != nil {
 		p.panic(err)
@@ -273,21 +273,21 @@ func (p *Decoder) MustGetAddress(key kv.Key, def ...ledgerstate.Address) ledgers
 	return ret
 }
 
-func (p *Decoder) GetRequestID(key kv.Key, def ...coretypes.RequestID) (coretypes.RequestID, error) {
+func (p *Decoder) GetRequestID(key kv.Key, def ...iscp.RequestID) (iscp.RequestID, error) {
 	v, exists, err := codec.DecodeRequestID(p.kv.MustGet(key))
 	if err != nil {
-		return coretypes.RequestID{}, fmt.Errorf("GetRequestID: decoding parameter '%s': %v", key, err)
+		return iscp.RequestID{}, fmt.Errorf("GetRequestID: decoding parameter '%s': %v", key, err)
 	}
 	if exists {
 		return v, nil
 	}
 	if len(def) == 0 {
-		return coretypes.RequestID{}, fmt.Errorf("GetRequestID: mandatory parameter '%s' does not exist", key)
+		return iscp.RequestID{}, fmt.Errorf("GetRequestID: mandatory parameter '%s' does not exist", key)
 	}
 	return def[0], nil
 }
 
-func (p *Decoder) MustGetRequestID(key kv.Key, def ...coretypes.RequestID) coretypes.RequestID {
+func (p *Decoder) MustGetRequestID(key kv.Key, def ...iscp.RequestID) iscp.RequestID {
 	ret, err := p.GetRequestID(key, def...)
 	if err != nil {
 		p.panic(err)
@@ -295,7 +295,7 @@ func (p *Decoder) MustGetRequestID(key kv.Key, def ...coretypes.RequestID) coret
 	return ret
 }
 
-func (p *Decoder) GetAgentID(key kv.Key, def ...coretypes.AgentID) (*coretypes.AgentID, error) {
+func (p *Decoder) GetAgentID(key kv.Key, def ...iscp.AgentID) (*iscp.AgentID, error) {
 	v, exists, err := codec.DecodeAgentID(p.kv.MustGet(key))
 	if err != nil {
 		return nil, fmt.Errorf("GetAgentID: decoding parameter '%s': %v", key, err)
@@ -310,7 +310,7 @@ func (p *Decoder) GetAgentID(key kv.Key, def ...coretypes.AgentID) (*coretypes.A
 	return &r, nil
 }
 
-func (p *Decoder) MustGetAgentID(key kv.Key, def ...coretypes.AgentID) *coretypes.AgentID {
+func (p *Decoder) MustGetAgentID(key kv.Key, def ...iscp.AgentID) *iscp.AgentID {
 	ret, err := p.GetAgentID(key, def...)
 	if err != nil {
 		p.panic(err)
@@ -318,7 +318,7 @@ func (p *Decoder) MustGetAgentID(key kv.Key, def ...coretypes.AgentID) *coretype
 	return ret
 }
 
-func (p *Decoder) GetChainID(key kv.Key, def ...coretypes.ChainID) (*coretypes.ChainID, error) {
+func (p *Decoder) GetChainID(key kv.Key, def ...iscp.ChainID) (*iscp.ChainID, error) {
 	v, exists, err := codec.DecodeChainID(p.kv.MustGet(key))
 	if err != nil {
 		return nil, fmt.Errorf("GetChainID: decoding parameter '%s': %v", key, err)
@@ -333,7 +333,7 @@ func (p *Decoder) GetChainID(key kv.Key, def ...coretypes.ChainID) (*coretypes.C
 	return &r, nil
 }
 
-func (p *Decoder) MustGetChainID(key kv.Key, def ...coretypes.ChainID) *coretypes.ChainID {
+func (p *Decoder) MustGetChainID(key kv.Key, def ...iscp.ChainID) *iscp.ChainID {
 	ret, err := p.GetChainID(key, def...)
 	if err != nil {
 		p.panic(err)

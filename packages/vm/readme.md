@@ -30,14 +30,14 @@ Naturally, results of calculations, the output, is fully defined by inputs.
 
 The VM contains multiple dynamically attached _VM plugins_ or _processors_.  
 The _VM_ invokes _VM plugins_ to perform user-defined algorithms, the smart contracts.  
-The _processor_ is attached to the VM through [coretypes.VMProcessor](../coretypes/vmprocessor.go#L23) interface.  
+The _processor_ is attached to the VM through [iscp.VMProcessor](../iscp/vmprocessor.go#L23) interface.  
 Each _VM type_ has own implementation of _VMProcessor_ interface.  
 Usually, one _processor_ represents one smart contract, however one processor can represent entirely new plugged-in VM, such as EVM.
 
 For more details about implementation of _VMProcessor_ interface see below.
 
 In Wasp node, the VM-related code is mostly located in [wasp/packages/vm](../vm) directory.  
-The globally defined data types and definitions are located in [wasp/packages/coretypes](../coretypes).
+The globally defined data types and definitions are located in [wasp/packages/iscp](../iscp).
 
 ## The VM
 
@@ -53,10 +53,10 @@ type VMTask struct {
 	Processors         *processors.ProcessorCache
 	ChainInput         *ledgerstate.AliasOutput
 	VirtualState       state.VirtualState 
-	Requests           []coretypes.Request
+	Requests           []iscp.Request
 	Timestamp          time.Time
 	Entropy            hashing.HashValue
-	ValidatorFeeTarget coretypes.AgentID
+	ValidatorFeeTarget iscp.AgentID
 	Log                *logger.Logger
 	// call when finished
 	OnFinish           func(callResult dict.Dict, callError error, vmError error)
@@ -67,7 +67,7 @@ type VMTask struct {
 ```
 At input, the most important parameters are:
 ```
-	Requests           []coretypes.Request
+	Requests           []iscp.Request
 	VirtualState       state.VirtualState 
 ```
 * _VirtualState_ represents current state of the chain, a collection of key/value pairs.
@@ -132,7 +132,7 @@ A new _VM Type_ is introduced to the rest of the VM abstraction logic through th
  [`processors.RegisterVMType`](processors/factory.go#L20).
 
 The call to `processors.RegisterVMType` takes name of the new _VM type_ and the constructor, a function which creates  
-new `coretypes.Processor` object from the binary data of the program.
+new `iscp.Processor` object from the binary data of the program.
 
 The following _VM types_ are pre-defined in the current release of the Wasp:
 * `core` represents core contracts
@@ -168,7 +168,7 @@ In native and `wasmtime` implementations one _processor_ represents one smart co
 to the smart contracts on the ISCP chain, such as manipulate native IOTA assets, call other smart contracts (processors)
 on the same chain and send requests and assets to other ISCP chains.
 
-Each processor object implements two simple [interfaces](../coretypes/vmprocessor.go#L15): `coretypes.VMProcessor`:and `coretypes.VMProcessorEntryPoint`.
+Each processor object implements two simple [interfaces](../iscp/vmprocessor.go#L15): `iscp.VMProcessor`:and `iscp.VMProcessorEntryPoint`.
 
 ```go
 type VMProcessor interface {
@@ -188,7 +188,7 @@ The smart contract is "plugged" into the _VM_ with this interface.
 A processor (smart contract) is a collection of callable _entry points_.
 
 Each entry point is identified in the processor with its `hname` (hashed name), a 4 byte value, normally first 4 bytes
-of `blake2b` hash of the smart contract function's name or signature. See [coretypes.Hname](../coretypes/hname.go#L19).
+of `blake2b` hash of the smart contract function's name or signature. See [iscp.Hname](../iscp/hname.go#L19).
 
 Function `GetEntryPoint` returns entry point object with the existence flag.
 
@@ -200,23 +200,23 @@ The call returns a dictionary of resulting values, a collection of key/value pai
 
 There are two types of entry points: _full entry points_ and _view entry points_.
 
-* _full entry point_ only accepts context handlers of `coretypes.Sandbox` interface type. This type of context
+* _full entry point_ only accepts context handlers of `iscp.Sandbox` interface type. This type of context
 provides full access to the state of the smart contract so that the smart contract could modify it.
 
-* _view entry point_ only accepts context handler of `coretypes.SandboxView` interface type. It provides
+* _view entry point_ only accepts context handler of `iscp.SandboxView` interface type. It provides
 limited _read-only_ access to the state.
 
 The type of entry point is recognized by `IsView()` function. Using `Call()` with the wrong context type will result
 panic in the VM.
 
-The _VM_ provides implementation of `coretypes.Sandbox` and `coretypes.SandboxView` interfaces. It limits access
+The _VM_ provides implementation of `iscp.Sandbox` and `iscp.SandboxView` interfaces. It limits access
 to the smart contract's state partition and its on-chain account of tokens.
 
 Each new VM type has to provide its own `VMProcessor` and `VMProcessorEntryPoint` implementations.
 
 ### Sandbox interface
 
-The `coretypes.Sandbox` [interface](../coretypes/sandbox.go) implements a number of functions which can be used by the processor's implementation  
+The `iscp.Sandbox` [interface](../iscp/sandbox.go) implements a number of functions which can be used by the processor's implementation  
 (a smart contract). Here are some of them:
 
 * `Params()` returns a dictionary (key/value pairs) of the call parameters
@@ -240,7 +240,7 @@ to run on the host than on an interpreter.
 The view entry points are called from outside, for example by a web server to query state of specific  
 smart contracts. By intention those entry points cannot modify the state of the chain.
 
-The `SandboxView` [interface](../coretypes/sandboxview.go) must be passed as a parameter to the view entry points.  
+The `SandboxView` [interface](../iscp/sandboxview.go) must be passed as a parameter to the view entry points.  
 The `SandboxView` implements limited access to the state, fo example it doesn't have a concept of  
 `IncomingTransfer` or possibility of `Send()` tokens.  
 The `State()` interface provides read-only access to the `VirtualState`.

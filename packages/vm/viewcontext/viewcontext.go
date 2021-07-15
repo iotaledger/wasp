@@ -5,8 +5,8 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
@@ -22,7 +22,7 @@ import (
 type Viewcontext struct {
 	processors  *processors.Cache
 	stateReader state.OptimisticStateReader
-	chainID     coretypes.ChainID
+	chainID     iscp.ChainID
 	log         *logger.Logger
 }
 
@@ -30,7 +30,7 @@ func NewFromChain(ch chain.ChainCore) *Viewcontext {
 	return New(*ch.ID(), ch.GetStateReader(), ch.Processors(), ch.Log().Named("view"))
 }
 
-func New(chainID coretypes.ChainID, stateReader state.OptimisticStateReader, proc *processors.Cache, log *logger.Logger) *Viewcontext {
+func New(chainID iscp.ChainID, stateReader state.OptimisticStateReader, proc *processors.Cache, log *logger.Logger) *Viewcontext {
 	return &Viewcontext{
 		processors:  proc,
 		stateReader: stateReader,
@@ -40,7 +40,7 @@ func New(chainID coretypes.ChainID, stateReader state.OptimisticStateReader, pro
 }
 
 // CallView in viewcontext implements own panic catcher.
-func (v *Viewcontext) CallView(contractHname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
+func (v *Viewcontext) CallView(contractHname, epCode iscp.Hname, params dict.Dict) (dict.Dict, error) {
 	var ret dict.Dict
 	var err error
 	func() {
@@ -65,7 +65,7 @@ func (v *Viewcontext) CallView(contractHname, epCode coretypes.Hname, params dic
 	return ret, err
 }
 
-func (v *Viewcontext) callView(contractHname, epCode coretypes.Hname, params dict.Dict) (dict.Dict, error) {
+func (v *Viewcontext) callView(contractHname, epCode iscp.Hname, params dict.Dict) (dict.Dict, error) {
 	var err error
 	contractRecord, err := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Interface.Hname()), contractHname)
 	if err != nil {
@@ -96,7 +96,7 @@ func (v *Viewcontext) callView(contractHname, epCode coretypes.Hname, params dic
 	return ep.Call(newSandboxView(v, contractHname, params))
 }
 
-func contractStateSubpartition(stateKvReader kv.KVStoreReader, contractHname coretypes.Hname) kv.KVStoreReader {
+func contractStateSubpartition(stateKvReader kv.KVStoreReader, contractHname iscp.Hname) kv.KVStoreReader {
 	return subrealm.NewReadOnly(stateKvReader, kv.Key(contractHname.Bytes()))
 }
 

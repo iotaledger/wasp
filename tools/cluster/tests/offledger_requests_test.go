@@ -10,8 +10,8 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -24,15 +24,15 @@ import (
 func newWalletWithFunds(t *testing.T, clust *cluster.Cluster, ch *cluster.Chain, waspnode int, seedN, iotas uint64) *chainclient.Client {
 	userWallet := wallet.KeyPair(seedN)
 	userAddress := ledgerstate.NewED25519Address(userWallet.PublicKey)
-	userAgentID := coretypes.NewAgentID(userAddress, 0)
+	userAgentID := iscp.NewAgentID(userAddress, 0)
 
 	chClient := chainclient.New(clust.GoshimmerClient(), clust.WaspClient(waspnode), ch.ChainID, userWallet)
 
 	// deposit funds before sending the off-ledger requestargs
 	err = requestFunds(clust, userAddress, "userWallet")
 	check(err, t)
-	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
-		Transfer: coretypes.NewTransferIotas(iotas),
+	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), iscp.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
+		Transfer: iscp.NewTransferIotas(iotas),
 	})
 	check(err, t)
 	err = ch.CommitteeMultiClient().WaitUntilAllRequestsProcessed(ch.ChainID, reqTx, 30*time.Second)
@@ -59,7 +59,7 @@ func TestOffledgerRequest(t *testing.T) {
 	chClient := newWalletWithFunds(t, clu, chain1, 0, 1, 100)
 
 	// send off-ledger request via Web API
-	offledgerReq, err := chClient.PostOffLedgerRequest(incCounterSCHname, coretypes.Hn(inccounter.FuncIncCounter))
+	offledgerReq, err := chClient.PostOffLedgerRequest(incCounterSCHname, iscp.Hn(inccounter.FuncIncCounter))
 	check(err, t)
 	err = chain1.CommitteeMultiClient().WaitUntilRequestProcessed(&chain1.ChainID, offledgerReq.ID(), 30*time.Second)
 	check(err, t)
@@ -101,7 +101,7 @@ func TestOffledgerRequest1Mb(t *testing.T) {
 
 	offledgerReq, err := chClient.PostOffLedgerRequest(
 		blob.Interface.Hname(),
-		coretypes.Hn(blob.FuncStoreBlob),
+		iscp.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
 			Args: requestargs.New().AddEncodeSimpleMany(paramsDict),
 		})
@@ -143,7 +143,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	chClient := newWalletWithFunds(t, clu1, chain1, 5, 1, 100)
 
 	// send off-ledger request via Web API (to the access node)
-	_, err = chClient.PostOffLedgerRequest(incCounterSCHname, coretypes.Hn(inccounter.FuncIncCounter))
+	_, err = chClient.PostOffLedgerRequest(incCounterSCHname, iscp.Hn(inccounter.FuncIncCounter))
 	check(err, t)
 
 	waitUntil(t, counterEquals(chain1, 43), []int{0, 1, 2, 3, 6}, 30*time.Second)

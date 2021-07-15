@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/labstack/echo/v4"
@@ -23,12 +23,12 @@ func (d *Dashboard) initChainAccount(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChainAccount(c echo.Context) error {
-	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
 
-	agentID, err := coretypes.NewAgentIDFromString(strings.Replace(c.Param("agentid"), ":", "/", 1))
+	agentID, err := iscp.NewAgentIDFromString(strings.Replace(c.Param("agentid"), ":", "/", 1))
 	if err != nil {
 		return err
 	}
@@ -64,8 +64,8 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 type ChainAccountTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID coretypes.ChainID
-	AgentID coretypes.AgentID
+	ChainID iscp.ChainID
+	AgentID iscp.AgentID
 
 	Ok       bool
 	Balances map[ledgerstate.Color]uint64

@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/require"
 )
@@ -38,7 +38,7 @@ func TestCreditDebit1(t *testing.T) {
 
 	require.EqualValues(t, 0, total.Size())
 
-	agentID1 := coretypes.NewRandomAgentID()
+	agentID1 := iscp.NewRandomAgentID()
 	transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 42,
 		color:                 2,
@@ -48,7 +48,7 @@ func TestCreditDebit1(t *testing.T) {
 
 	require.NotNil(t, total)
 	require.EqualValues(t, 2, total.Size())
-	require.True(t, coretypes.EqualColoredBalances(total, transfer))
+	require.True(t, iscp.EqualColoredBalances(total, transfer))
 
 	transfer = ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 1,
@@ -61,7 +61,7 @@ func TestCreditDebit1(t *testing.T) {
 		ledgerstate.ColorIOTA: 43,
 		color:                 4,
 	})
-	require.True(t, coretypes.EqualColoredBalances(expected, total))
+	require.True(t, iscp.EqualColoredBalances(expected, total))
 
 	require.EqualValues(t, 43, GetBalance(state, agentID1, ledgerstate.ColorIOTA))
 	require.EqualValues(t, 4, GetBalance(state, agentID1, color))
@@ -70,7 +70,7 @@ func TestCreditDebit1(t *testing.T) {
 	DebitFromAccount(state, agentID1, expected)
 	total = checkLedger(t, state, "cp3")
 	expected = ledgerstate.NewColoredBalances(nil)
-	require.True(t, coretypes.EqualColoredBalances(expected, total))
+	require.True(t, iscp.EqualColoredBalances(expected, total))
 }
 
 func TestCreditDebit2(t *testing.T) {
@@ -79,7 +79,7 @@ func TestCreditDebit2(t *testing.T) {
 	total := checkLedger(t, state, "cp0")
 	require.EqualValues(t, 0, total.Size())
 
-	agentID1 := coretypes.NewRandomAgentID()
+	agentID1 := iscp.NewRandomAgentID()
 	transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 42,
 		color:                 2,
@@ -89,7 +89,7 @@ func TestCreditDebit2(t *testing.T) {
 
 	expected := transfer
 	require.EqualValues(t, 2, total.Size())
-	require.True(t, coretypes.EqualColoredBalances(expected, total))
+	require.True(t, iscp.EqualColoredBalances(expected, total))
 
 	transfer = ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 		color: 2,
@@ -100,12 +100,12 @@ func TestCreditDebit2(t *testing.T) {
 	expected = ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 42,
 	})
-	require.True(t, coretypes.EqualColoredBalances(expected, total))
+	require.True(t, iscp.EqualColoredBalances(expected, total))
 
 	require.EqualValues(t, 0, GetBalance(state, agentID1, color))
 	bal1, ok := GetAccountBalances(state, agentID1)
 	require.True(t, ok)
-	require.True(t, coretypes.EqualColoredBalances(total, ledgerstate.NewColoredBalances(bal1)))
+	require.True(t, iscp.EqualColoredBalances(total, ledgerstate.NewColoredBalances(bal1)))
 }
 
 func TestCreditDebit3(t *testing.T) {
@@ -114,7 +114,7 @@ func TestCreditDebit3(t *testing.T) {
 	total := checkLedger(t, state, "cp0")
 	require.EqualValues(t, 0, total.Size())
 
-	agentID1 := coretypes.NewRandomAgentID()
+	agentID1 := iscp.NewRandomAgentID()
 	transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 42,
 		color:                 2,
@@ -124,7 +124,7 @@ func TestCreditDebit3(t *testing.T) {
 
 	expected := transfer
 	require.EqualValues(t, 2, total.Size())
-	require.True(t, coretypes.EqualColoredBalances(expected, total))
+	require.True(t, iscp.EqualColoredBalances(expected, total))
 
 	transfer = ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 		color: 100,
@@ -138,7 +138,7 @@ func TestCreditDebit3(t *testing.T) {
 		ledgerstate.ColorIOTA: 42,
 		color:                 2,
 	})
-	require.True(t, coretypes.EqualColoredBalances(expected, total))
+	require.True(t, iscp.EqualColoredBalances(expected, total))
 }
 
 func TestCreditDebit4(t *testing.T) {
@@ -147,7 +147,7 @@ func TestCreditDebit4(t *testing.T) {
 	total := checkLedger(t, state, "cp0")
 	require.EqualValues(t, 0, total.Size())
 
-	agentID1 := coretypes.NewRandomAgentID()
+	agentID1 := iscp.NewRandomAgentID()
 	transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 42,
 		color:                 2,
@@ -157,12 +157,12 @@ func TestCreditDebit4(t *testing.T) {
 
 	expected := transfer
 	require.EqualValues(t, 2, total.Size())
-	require.True(t, coretypes.EqualColoredBalances(expected, total))
+	require.True(t, iscp.EqualColoredBalances(expected, total))
 
 	keys := getAccountsIntern(state).Keys()
 	require.EqualValues(t, 1, len(keys))
 
-	agentID2 := coretypes.NewRandomAgentID()
+	agentID2 := iscp.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
 	transfer = ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
@@ -179,7 +179,7 @@ func TestCreditDebit4(t *testing.T) {
 		ledgerstate.ColorIOTA: 42,
 		color:                 2,
 	})
-	require.True(t, coretypes.EqualColoredBalances(expected, total))
+	require.True(t, iscp.EqualColoredBalances(expected, total))
 
 	bm1, ok := GetAccountBalances(state, agentID1)
 	require.True(t, ok)
@@ -187,14 +187,14 @@ func TestCreditDebit4(t *testing.T) {
 		ledgerstate.ColorIOTA: 22,
 		color:                 2,
 	})
-	require.True(t, coretypes.EqualColoredBalances(expected, ledgerstate.NewColoredBalances(bm1)))
+	require.True(t, iscp.EqualColoredBalances(expected, ledgerstate.NewColoredBalances(bm1)))
 
 	bm2, ok := GetAccountBalances(state, agentID2)
 	require.True(t, ok)
 	expected = ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 20,
 	})
-	require.True(t, coretypes.EqualColoredBalances(expected, ledgerstate.NewColoredBalances(bm2)))
+	require.True(t, iscp.EqualColoredBalances(expected, ledgerstate.NewColoredBalances(bm2)))
 }
 
 func TestCreditDebit5(t *testing.T) {
@@ -203,7 +203,7 @@ func TestCreditDebit5(t *testing.T) {
 	total := checkLedger(t, state, "cp0")
 	require.EqualValues(t, 0, total.Size())
 
-	agentID1 := coretypes.NewRandomAgentID()
+	agentID1 := iscp.NewRandomAgentID()
 	transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 42,
 		color:                 2,
@@ -213,12 +213,12 @@ func TestCreditDebit5(t *testing.T) {
 
 	expected := transfer
 	require.EqualValues(t, 2, total.Size())
-	require.True(t, coretypes.EqualColoredBalances(expected, total))
+	require.True(t, iscp.EqualColoredBalances(expected, total))
 
 	keys := getAccountsIntern(state).Keys()
 	require.EqualValues(t, 1, len(keys))
 
-	agentID2 := coretypes.NewRandomAgentID()
+	agentID2 := iscp.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
 	transfer = ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
@@ -235,11 +235,11 @@ func TestCreditDebit5(t *testing.T) {
 		ledgerstate.ColorIOTA: 42,
 		color:                 2,
 	})
-	require.True(t, coretypes.EqualColoredBalances(expected, total))
+	require.True(t, iscp.EqualColoredBalances(expected, total))
 
 	bm1, ok := GetAccountBalances(state, agentID1)
 	require.True(t, ok)
-	require.True(t, coretypes.EqualColoredBalances(expected, ledgerstate.NewColoredBalances(bm1)))
+	require.True(t, iscp.EqualColoredBalances(expected, ledgerstate.NewColoredBalances(bm1)))
 
 	_, ok = GetAccountBalances(state, agentID2)
 	require.False(t, ok)
@@ -251,7 +251,7 @@ func TestCreditDebit6(t *testing.T) {
 	total := checkLedger(t, state, "cp0")
 	require.EqualValues(t, 0, total.Size())
 
-	agentID1 := coretypes.NewRandomAgentID()
+	agentID1 := iscp.NewRandomAgentID()
 	transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: 42,
 		color:                 2,
@@ -259,7 +259,7 @@ func TestCreditDebit6(t *testing.T) {
 	CreditToAccount(state, agentID1, transfer)
 	checkLedger(t, state, "cp1")
 
-	agentID2 := coretypes.NewRandomAgentID()
+	agentID2 := iscp.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
 	ok := MoveBetweenAccounts(state, agentID1, agentID2, transfer)
@@ -274,7 +274,7 @@ func TestCreditDebit6(t *testing.T) {
 
 	bal2, ok := GetAccountBalances(state, agentID2)
 	require.True(t, ok)
-	require.True(t, coretypes.EqualColoredBalances(total, ledgerstate.NewColoredBalances(bal2)))
+	require.True(t, iscp.EqualColoredBalances(total, ledgerstate.NewColoredBalances(bal2)))
 }
 
 func TestCreditDebit7(t *testing.T) {
@@ -283,7 +283,7 @@ func TestCreditDebit7(t *testing.T) {
 	total := checkLedger(t, state, "cp0")
 	require.EqualValues(t, 0, total.Size())
 
-	agentID1 := coretypes.NewRandomAgentID()
+	agentID1 := iscp.NewRandomAgentID()
 	transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
 		color: 2,
 	})
@@ -298,5 +298,5 @@ func TestCreditDebit7(t *testing.T) {
 	require.False(t, ok)
 
 	total = checkLedger(t, state, "cp1")
-	require.True(t, coretypes.EqualColoredBalances(transfer, total))
+	require.True(t, iscp.EqualColoredBalances(transfer, total))
 }

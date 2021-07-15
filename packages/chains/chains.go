@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/parameters"
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -167,7 +167,7 @@ func (c *Chains) Deactivate(chr *chainrecord.ChainRecord) error {
 
 // Get returns active chain object or nil if it doesn't exist
 // lazy unsubscribing
-func (c *Chains) Get(chainID *coretypes.ChainID) chain.Chain {
+func (c *Chains) Get(chainID *iscp.ChainID) chain.Chain {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 

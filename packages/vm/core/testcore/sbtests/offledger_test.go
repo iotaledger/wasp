@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -20,7 +20,7 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 		cAID, _ := setupTestSandboxSC(t, chain, nil, w)
 
 		owner, ownerAddr := env.NewKeyPairWithFunds()
-		ownerAgentID := coretypes.NewAgentID(ownerAddr, 0)
+		ownerAgentID := iscp.NewAgentID(ownerAddr, 0)
 
 		chain.AssertIotas(ownerAgentID, 0)
 		chain.AssertIotas(cAID, 1)
@@ -53,7 +53,7 @@ func TestOffLedgerNoFeeNoTransfer(t *testing.T) {
 		cAID, _ := setupTestSandboxSC(t, chain, nil, w)
 
 		owner, ownerAddr := env.NewKeyPairWithFunds()
-		ownerAgentID := coretypes.NewAgentID(ownerAddr, 0)
+		ownerAgentID := iscp.NewAgentID(ownerAddr, 0)
 
 		chain.AssertIotas(ownerAgentID, 0)
 		chain.AssertIotas(cAID, 1)

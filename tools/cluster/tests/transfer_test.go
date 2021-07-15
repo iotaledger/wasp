@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
@@ -40,8 +40,8 @@ func TestDepositWithdraw(t *testing.T) {
 	}
 	checkLedger(t, chain)
 
-	myAgentID := coretypes.NewAgentID(myAddress, 0)
-	origAgentID := coretypes.NewAgentID(chain.OriginatorAddress(), 0)
+	myAgentID := iscp.NewAgentID(myAddress, 0)
+	origAgentID := iscp.NewAgentID(chain.OriginatorAddress(), 0)
 
 	checkBalanceOnChain(t, chain, origAgentID, ledgerstate.ColorIOTA, 0)
 	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 0)
@@ -52,7 +52,7 @@ func TestDepositWithdraw(t *testing.T) {
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, testOwner)
 
 	par := chainclient.NewPostRequestParams().WithIotas(depositIotas)
-	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncDeposit), *par)
+	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), iscp.Hn(accounts.FuncDeposit), *par)
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 30*time.Second)
@@ -68,7 +68,7 @@ func TestDepositWithdraw(t *testing.T) {
 	}
 
 	// withdraw iotas back
-	reqTx3, err := chClient.Post1Request(accounts.Interface.Hname(), coretypes.Hn(accounts.FuncWithdraw))
+	reqTx3, err := chClient.Post1Request(accounts.Interface.Hname(), iscp.Hn(accounts.FuncWithdraw))
 	check(err, t)
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx3, 30*time.Second)
 	check(err, t)

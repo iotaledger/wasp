@@ -10,8 +10,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
@@ -89,7 +89,7 @@ func TestGasCharged(t *testing.T) {
 	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
 	iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
-	iotaAgentID := coretypes.NewAgentID(iotaAddress, 0)
+	iotaAgentID := iscp.NewAgentID(iotaAddress, 0)
 
 	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, ledgerstate.ColorIOTA)
 	iotasSent := initialBalance - 1
@@ -127,7 +127,7 @@ func TestOwner(t *testing.T) {
 
 	// only the owner can call the setOwner endpoint
 	user1Wallet, user1Address := evmChain.solo.NewKeyPairWithFunds()
-	user1AgentID := coretypes.NewAgentID(user1Address, 0)
+	user1AgentID := iscp.NewAgentID(user1Address, 0)
 	_, err := evmChain.soloChain.PostRequestSync(
 		solo.NewCallParams(Interface.Name, FuncSetNextOwner, FieldNextEvmOwner, user1AgentID).
 			WithIotas(100000),
@@ -211,7 +211,7 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 
 	// only the owner can call withdrawal
 	user1Wallet, user1Address := evmChain.solo.NewKeyPairWithFunds()
-	user1AgentID := coretypes.NewAgentID(user1Address, 0)
+	user1AgentID := iscp.NewAgentID(user1Address, 0)
 
 	err := evmChain.withdrawGasFees(user1Wallet)
 	require.Contains(t, err.Error(), "can only be called by the contract owner")
@@ -245,7 +245,7 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 	res, err = storage.store(44)
 	require.NoError(t, err)
 	_, user2Address := evmChain.solo.NewKeyPairWithFunds()
-	user2AgentID := coretypes.NewAgentID(user2Address, 0)
+	user2AgentID := iscp.NewAgentID(user2Address, 0)
 	user2Balance0 := evmChain.solo.GetAddressBalance(user2Address, ledgerstate.ColorIOTA)
 	err = evmChain.withdrawGasFees(user1Wallet, user2AgentID)
 	require.NoError(t, err)
@@ -277,7 +277,7 @@ func TestLoop(t *testing.T) {
 	gasPerIotas := evmChain.getGasPerIotas()
 
 	iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
-	iotaAgentID := coretypes.NewAgentID(iotaAddress, 0)
+	iotaAgentID := iscp.NewAgentID(iotaAddress, 0)
 
 	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, ledgerstate.ColorIOTA)
 	iotasSpent1 := uint64(100)

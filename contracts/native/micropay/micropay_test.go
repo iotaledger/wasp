@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -52,7 +52,7 @@ func TestOpenChannelFail(t *testing.T) {
 	_, err = chain.PostRequestSync(req, payer)
 	require.Error(t, err)
 
-	cAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("micropay"))
+	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
 	chain.AssertIotas(cAgentID, 0)
 	env.AssertAddressIotas(payerAddr, solo.Saldo)
 }
@@ -80,7 +80,7 @@ func TestOpenChannelOk(t *testing.T) {
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	cAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("micropay"))
+	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
 	chain.AssertIotas(cAgentID, 600+1)
 	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
 }
@@ -110,7 +110,7 @@ func TestOpenChannelTwice(t *testing.T) {
 	_, err = chain.PostRequestSync(req, payer)
 	require.NoError(t, err)
 
-	cAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("micropay"))
+	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
 	chain.AssertIotas(cAgentID, 600+1)
 	env.AssertAddressIotas(payerAddr, solo.Saldo-600-1)
 
@@ -158,7 +158,7 @@ func TestRevokeWarrant(t *testing.T) {
 	_, providerAddr := env.NewKeyPairWithFunds()
 	env.AssertAddressIotas(providerAddr, solo.Saldo)
 
-	cAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("micropay"))
+	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
 
 	req = solo.NewCallParams("micropay", FuncAddWarrant,
 		ParamServiceAddress, providerAddr).
@@ -245,7 +245,7 @@ func TestPayment(t *testing.T) {
 	provider, providerAddr := env.NewKeyPairWithFunds()
 	env.AssertAddressIotas(providerAddr, solo.Saldo)
 
-	cAgentID := coretypes.NewAgentID(chain.ChainID.AsAddress(), coretypes.Hn("micropay"))
+	cAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("micropay"))
 
 	req = solo.NewCallParams("micropay", FuncAddWarrant,
 		ParamServiceAddress, providerAddr).

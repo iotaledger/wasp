@@ -7,9 +7,9 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/goshimmer"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -19,7 +19,7 @@ import (
 type Client struct {
 	GoshimmerClient *goshimmer.Client
 	WaspClient      *client.WaspClient
-	ChainID         coretypes.ChainID
+	ChainID         iscp.ChainID
 	KeyPair         *ed25519.KeyPair
 }
 
@@ -27,7 +27,7 @@ type Client struct {
 func New(
 	goshimmerClient *goshimmer.Client,
 	waspClient *client.WaspClient,
-	chainID coretypes.ChainID,
+	chainID iscp.ChainID,
 	keyPair *ed25519.KeyPair,
 ) *Client {
 	return &Client{
@@ -46,8 +46,8 @@ type PostRequestParams struct {
 
 // Post1Request sends an on-ledger transaction with one request on it to the chain
 func (c *Client) Post1Request(
-	contractHname coretypes.Hname,
-	entryPoint coretypes.Hname,
+	contractHname iscp.Hname,
+	entryPoint iscp.Hname,
 	params ...PostRequestParams,
 ) (*ledgerstate.Transaction, error) {
 	par := PostRequestParams{}
@@ -68,8 +68,8 @@ func (c *Client) Post1Request(
 
 // PostOffLedgerRequest sends an off-ledger tx via the wasp node web api
 func (c *Client) PostOffLedgerRequest(
-	contractHname coretypes.Hname,
-	entrypoint coretypes.Hname,
+	contractHname iscp.Hname,
+	entrypoint iscp.Hname,
 	params ...PostRequestParams,
 ) (*request.RequestOffLedger, error) {
 	par := PostRequestParams{}

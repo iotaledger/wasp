@@ -8,15 +8,15 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"golang.org/x/xerrors"
 )
 
 type RequestAcKMsg struct {
-	ReqID *coretypes.RequestID
+	ReqID *iscp.RequestID
 }
 
-func NewRequestAckMsg(reqID coretypes.RequestID) *RequestAcKMsg {
+func NewRequestAckMsg(reqID iscp.RequestID) *RequestAcKMsg {
 	return &RequestAcKMsg{
 		ReqID: &reqID,
 	}
@@ -40,7 +40,7 @@ func (msg *RequestAcKMsg) read(r io.Reader) error {
 	if err != nil {
 		return xerrors.Errorf("failed to read requestIDs: %w", err)
 	}
-	reqID, err := coretypes.RequestIDFromBytes(b)
+	reqID, err := iscp.RequestIDFromBytes(b)
 	if err != nil {
 		return xerrors.Errorf("failed to read requestIDs: %w", err)
 	}
