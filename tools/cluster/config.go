@@ -24,6 +24,7 @@ type WaspConfig struct {
 	FirstPeeringPort   int
 	FirstNanomsgPort   int
 	FirstDashboardPort int
+	FirstProfilingPort int
 }
 
 type ClusterConfig struct {
@@ -41,6 +42,7 @@ func DefaultConfig() *ClusterConfig {
 			FirstPeeringPort:   4000,
 			FirstNanomsgPort:   5550,
 			FirstDashboardPort: 7000,
+			FirstProfilingPort: 6060,
 		},
 		Goshimmer: GoshimmerConfig{
 			TxStreamPort: 5000,
@@ -168,6 +170,10 @@ func (c *ClusterConfig) TxStreamPort(nodeIndex int) int {
 	return c.Goshimmer.TxStreamPort
 }
 
+func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {
+	return c.Wasp.FirstProfilingPort + nodeIndex
+}
+
 func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigParams {
 	return &templates.WaspConfigParams{
 		APIPort:                      c.APIPort(i),
@@ -176,6 +182,7 @@ func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigPar
 		NanomsgPort:                  c.NanomsgPort(i),
 		Neighbors:                    c.NeighborsString(),
 		TxStreamPort:                 c.TxStreamPort(i),
+		ProfilingPort:                c.ProfilingPort(i),
 		OffledgerBroadcastUpToNPeers: 10,
 	}
 }
