@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -15,14 +15,14 @@ import (
 type Cache struct {
 	*sync.Mutex
 	Config     *Config
-	processors map[hashing.HashValue]coretypes.VMProcessor
+	processors map[hashing.HashValue]iscp.VMProcessor
 }
 
 func MustNew(config *Config) *Cache {
 	ret := &Cache{
 		Mutex:      &sync.Mutex{},
 		Config:     config,
-		processors: make(map[hashing.HashValue]coretypes.VMProcessor),
+		processors: make(map[hashing.HashValue]iscp.VMProcessor),
 	}
 	// default builtin processor has root contract hash
 	err := ret.NewProcessor(root.Interface.ProgramHash, nil, vmtypes.Core)
@@ -41,7 +41,7 @@ func (cps *Cache) NewProcessor(programHash hashing.HashValue, programCode []byte
 }
 
 func (cps *Cache) newProcessor(programHash hashing.HashValue, programCode []byte, vmtype string) error {
-	var proc coretypes.VMProcessor
+	var proc iscp.VMProcessor
 	var ok bool
 	var err error
 
@@ -75,11 +75,11 @@ func (cps *Cache) ExistsProcessor(h hashing.HashValue) bool {
 	return ok
 }
 
-func (cps *Cache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(hashing.HashValue) (string, []byte, error)) (coretypes.VMProcessor, error) {
+func (cps *Cache) GetOrCreateProcessor(rec *root.ContractRecord, getBinary func(hashing.HashValue) (string, []byte, error)) (iscp.VMProcessor, error) {
 	return cps.GetOrCreateProcessorByProgramHash(rec.ProgramHash, getBinary)
 }
 
-func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary func(hashing.HashValue) (string, []byte, error)) (coretypes.VMProcessor, error) {
+func (cps *Cache) GetOrCreateProcessorByProgramHash(progHash hashing.HashValue, getBinary func(hashing.HashValue) (string, []byte, error)) (iscp.VMProcessor, error) {
 	cps.Lock()
 	defer cps.Unlock()
 

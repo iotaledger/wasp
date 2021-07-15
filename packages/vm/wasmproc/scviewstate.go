@@ -1,7 +1,7 @@
 package wasmproc
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
@@ -11,11 +11,11 @@ import (
 // so these panics should never trigger and we can avoid
 // a much more drastic refactoring for now
 type ScViewState struct {
-	ctxView   coretypes.SandboxView
+	ctxView   iscp.SandboxView
 	viewState kv.KVStoreReader
 }
 
-func NewScViewState(ctxView coretypes.SandboxView) kv.KVStore {
+func NewScViewState(ctxView iscp.SandboxView) kv.KVStore {
 	return &ScViewState{ctxView: ctxView, viewState: ctxView.State()}
 }
 

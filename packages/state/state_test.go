@@ -6,9 +6,9 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
@@ -26,7 +26,7 @@ func TestVirtualStateBasic(t *testing.T) {
 	})
 	t.Run("create new2", func(t *testing.T) {
 		db := mapdb.NewMapDB()
-		chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
+		chainID := iscp.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
 		vs1 := newVirtualState(db, chainID)
 		h1 := vs1.Hash()
 		require.EqualValues(t, hashing.NilHash, h1)
@@ -67,14 +67,14 @@ func TestOriginHashes(t *testing.T) {
 func TestStateWithDB(t *testing.T) {
 	t.Run("state not found", func(t *testing.T) {
 		store := mapdb.NewMapDB()
-		chainID := coretypes.RandomChainID([]byte("1"))
+		chainID := iscp.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
 	})
 	t.Run("save zero state", func(t *testing.T) {
 		store := mapdb.NewMapDB()
-		chainID := coretypes.RandomChainID([]byte("1"))
+		chainID := iscp.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
@@ -98,7 +98,7 @@ func TestStateWithDB(t *testing.T) {
 	})
 	t.Run("load 0 block", func(t *testing.T) {
 		store := mapdb.NewMapDB()
-		chainID := coretypes.RandomChainID([]byte("1"))
+		chainID := iscp.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
@@ -114,7 +114,7 @@ func TestStateWithDB(t *testing.T) {
 	})
 	t.Run("apply, save and load block 1", func(t *testing.T) {
 		store := mapdb.NewMapDB()
-		chainID := coretypes.RandomChainID([]byte("1"))
+		chainID := iscp.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
@@ -163,7 +163,7 @@ func TestStateWithDB(t *testing.T) {
 	})
 	t.Run("state reader", func(t *testing.T) {
 		store := mapdb.NewMapDB()
-		chainID := coretypes.RandomChainID([]byte("1"))
+		chainID := iscp.RandomChainID([]byte("1"))
 		_, exists, err := LoadSolidState(store, chainID)
 		require.NoError(t, err)
 		require.False(t, exists)
@@ -217,7 +217,7 @@ func TestStateWithDB(t *testing.T) {
 }
 
 func TestVariableStateBasic(t *testing.T) {
-	chainID := coretypes.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
+	chainID := iscp.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
 	vs1, err := CreateOriginState(mapdb.NewMapDB(), chainID)
 	require.NoError(t, err)
 	h1 := vs1.Hash()
@@ -248,7 +248,7 @@ func TestVariableStateBasic(t *testing.T) {
 func TestStateReader(t *testing.T) {
 	t.Run("state not found", func(t *testing.T) {
 		store := mapdb.NewMapDB()
-		chainID := coretypes.RandomChainID([]byte("1"))
+		chainID := iscp.RandomChainID([]byte("1"))
 		_, err := CreateOriginState(store, chainID)
 		require.NoError(t, err)
 

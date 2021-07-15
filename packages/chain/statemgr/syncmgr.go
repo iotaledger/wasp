@@ -7,13 +7,13 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
 func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) bool {
-	sm.log.Debugf("outputPulled: output index %v id %v", output.GetStateIndex(), coretypes.OID(output.ID()))
+	sm.log.Debugf("outputPulled: output index %v id %v", output.GetStateIndex(), iscp.OID(output.ID()))
 	if !sm.syncingBlocks.isSyncing(output.GetStateIndex()) {
 		// not interested
 		sm.log.Debugf("outputPulled: not interested in output for state index %v", output.GetStateIndex())
@@ -24,7 +24,7 @@ func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) bool {
 
 func (sm *stateManager) stateOutputReceived(output *ledgerstate.AliasOutput, timestamp time.Time) bool {
 	sm.log.Debugf("stateOutputReceived: received output index: %v, id: %v, timestamp: %v",
-		output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
+		output.GetStateIndex(), iscp.OID(output.ID()), timestamp)
 	if sm.stateOutput != nil {
 		switch {
 		case sm.stateOutput.GetStateIndex() == output.GetStateIndex():
@@ -34,7 +34,7 @@ func (sm *stateManager) stateOutputReceived(output *ledgerstate.AliasOutput, tim
 				return false
 			}
 			if !output.GetIsGovernanceUpdated() {
-				sm.log.Panicf("L1 inconsistency: governance transition expected in %s", coretypes.OID(output.ID()))
+				sm.log.Panicf("L1 inconsistency: governance transition expected in %s", iscp.OID(output.ID()))
 			}
 			// it is a state controller address rotation
 
@@ -45,7 +45,7 @@ func (sm *stateManager) stateOutputReceived(output *ledgerstate.AliasOutput, tim
 	}
 	sm.stateOutput = output
 	sm.stateOutputTimestamp = timestamp
-	sm.log.Debugf("stateOutputReceived: stateOutput set to index %v id %v timestampe %v", output.GetStateIndex(), coretypes.OID(output.ID()), timestamp)
+	sm.log.Debugf("stateOutputReceived: stateOutput set to index %v id %v timestampe %v", output.GetStateIndex(), iscp.OID(output.ID()), timestamp)
 	sm.syncingBlocks.approveBlockCandidates(output)
 	return true
 }

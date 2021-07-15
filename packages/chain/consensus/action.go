@@ -9,10 +9,10 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/identity"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/coretypes/rotate"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/iscp/rotate"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -69,7 +69,7 @@ func (c *Consensus) proposeBatchIfNeeded() {
 	})
 
 	c.log.Infof("proposeBatch: proposed batch len = %d, ACS session ID: %d, state index: %d, proposal: %+v",
-		len(reqs), c.acsSessionID, c.stateOutput.GetStateIndex(), coretypes.ShortRequestIDs(proposal.RequestIDs))
+		len(reqs), c.acsSessionID, c.stateOutput.GetStateIndex(), iscp.ShortRequestIDs(proposal.RequestIDs))
 	c.workflow.batchProposalSent = true
 }
 
@@ -93,7 +93,7 @@ func (c *Consensus) runVMIfNeeded() {
 
 	c.missingRequestsMutex.Lock()
 	defer c.missingRequestsMutex.Unlock()
-	c.missingRequestsFromBatch = make(map[coretypes.RequestID][32]byte) // reset list of missing requests
+	c.missingRequestsFromBatch = make(map[iscp.RequestID][32]byte) // reset list of missing requests
 
 	if !allArrived {
 		// some requests are not ready, so skip VM call this time. Maybe next time will be more luck
@@ -104,7 +104,7 @@ func (c *Consensus) runVMIfNeeded() {
 		if !c.pullMissingRequestsFromCommittee {
 			return
 		}
-		missingRequestIds := []coretypes.RequestID{}
+		missingRequestIds := []iscp.RequestID{}
 		for _, idx := range missingRequestIndexes {
 			reqID := c.consensusBatch.RequestIDs[idx]
 			reqHash := c.consensusBatch.RequestHashes[idx]
@@ -187,7 +187,7 @@ func (c *Consensus) sortBatch(reqs []coretypes.Request) {
 	}
 }
 
-func (c *Consensus) prepareVMTask(reqs []coretypes.Request) *vm.VMTask {
+func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 	task := &vm.VMTask{
 		ACSSessionID:       c.acsSessionID,
 		Processors:         c.chain.Processors(),
@@ -238,7 +238,7 @@ func (c *Consensus) broadcastSignedResultIfNeeded() {
 		c.delaySendingSignedResult = time.Now().Add(c.timers.BroadcastSignedResultRetry)
 
 		c.log.Debugf("broadcastSignedResult: broadcasted: essence hash: %s, chain input %s",
-			msg.EssenceHash.String(), coretypes.OID(msg.ChainInputID))
+			msg.EssenceHash.String(), iscp.OID(msg.ChainInputID))
 	} else {
 		c.log.Debugf("broadcastSignedResult not needed: delayed till %v", c.delaySendingSignedResult)
 	}
@@ -315,7 +315,7 @@ func (c *Consensus) checkQuorum() {
 			ApprovingOutputID: chainOutputID,
 		})
 		c.log.Debugf("checkQuorum: StateCandidateMsg sent for state index %v, approving output ID %v",
-			c.resultState.BlockIndex(), coretypes.OID(chainOutputID))
+			c.resultState.BlockIndex(), iscp.OID(chainOutputID))
 	}
 
 	// calculate deterministic and pseudo-random order and postTxDeadline among contributors
@@ -385,22 +385,22 @@ func (c *Consensus) pullInclusionStateIfNeeded() {
 }
 
 // prepareBatchProposal creates a batch proposal structure out of requests
-func (c *Consensus) prepareBatchProposal(reqs []coretypes.Request) *BatchProposal {
+func (c *Consensus) prepareBatchProposal(reqs []iscp.Request) *BatchProposal {
 	ts := time.Now()
 	if !ts.After(c.stateTimestamp) {
 		ts = c.stateTimestamp.Add(1 * time.Nanosecond)
 	}
 	consensusManaPledge := identity.ID{}
 	accessManaPledge := identity.ID{}
-	feeDestination := coretypes.NewAgentID(c.chain.ID().AsAddress(), 0)
+	feeDestination := iscp.NewAgentID(c.chain.ID().AsAddress(), 0)
 	// sign state output ID. It will be used to produce unpredictable entropy in consensus
 	sigShare, err := c.committee.DKShare().SignShare(c.stateOutput.ID().Bytes())
-	c.assert.RequireNoError(err, fmt.Sprintf("prepareBatchProposal: signing output ID %v failed", coretypes.OID(c.stateOutput.ID())))
+	c.assert.RequireNoError(err, fmt.Sprintf("prepareBatchProposal: signing output ID %v failed", iscp.OID(c.stateOutput.ID())))
 
 	ret := &BatchProposal{
 		ValidatorIndex:          c.committee.OwnPeerIndex(),
 		StateOutputID:           c.stateOutput.ID(),
-		RequestIDs:              make([]coretypes.RequestID, len(reqs)),
+		RequestIDs:              make([]iscp.RequestID, len(reqs)),
 		RequestHashes:           make([][32]byte, len(reqs)),
 		Timestamp:               ts,
 		ConsensusManaPledge:     consensusManaPledge,
@@ -452,7 +452,7 @@ func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 	for _, prop := range acs {
 		if prop.StateOutputID != c.stateOutput.ID() {
 			c.log.Warnf("receiveACS: ACS out of context or consensus failure: expected stateOuptudId: %v, generated stateOutputID: %v ",
-				coretypes.OID(c.stateOutput.ID()), coretypes.OID(prop.StateOutputID))
+				iscp.OID(c.stateOutput.ID()), iscp.OID(prop.StateOutputID))
 			c.resetWorkflow()
 			return
 		}
@@ -524,10 +524,10 @@ func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 
 	if c.iAmContributor {
 		c.log.Debugf("receiveACS: ACS received. Contributors to ACS: %+v, iAmContributor: true, seqnr: %d, reqs: %+v",
-			c.contributors, c.myContributionSeqNumber, coretypes.ShortRequestIDs(c.consensusBatch.RequestIDs))
+			c.contributors, c.myContributionSeqNumber, iscp.ShortRequestIDs(c.consensusBatch.RequestIDs))
 	} else {
 		c.log.Debugf("receiveACS: ACS received. Contributors to ACS: %+v, iAmContributor: false, reqs: %+v",
-			c.contributors, coretypes.ShortRequestIDs(c.consensusBatch.RequestIDs))
+			c.contributors, iscp.ShortRequestIDs(c.consensusBatch.RequestIDs))
 	}
 
 	c.runVMIfNeeded()
@@ -575,7 +575,7 @@ func (c *Consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 			break
 		}
 	}
-	c.assert.Require(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", coretypes.OID(c.stateOutput.ID())))
+	c.assert.Require(indexChainInput >= 0, fmt.Sprintf("finalizeTransaction: cannot find tx input for state output %v. major inconsistency", iscp.OID(c.stateOutput.ID())))
 	// check consistency ---------------- end
 
 	blocks := make([]ledgerstate.UnlockBlock, len(c.resultTxEssence.Inputs()))
@@ -588,7 +588,7 @@ func (c *Consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 	}
 	tx := ledgerstate.NewTransaction(c.resultTxEssence, blocks)
 	chained := transaction.GetAliasOutput(tx, c.chain.ID().AsAddress())
-	c.log.Debugf("finalizeTransaction: transaction %v finalized; approving output ID: %v", tx.ID().Base58(), coretypes.OID(chained.ID()))
+	c.log.Debugf("finalizeTransaction: transaction %v finalized; approving output ID: %v", tx.ID().Base58(), iscp.OID(chained.ID()))
 	return tx, chained, nil
 }
 
@@ -602,7 +602,7 @@ func (c *Consensus) setNewState(msg *messages.StateTransitionMsg) {
 		r = " (rotate) "
 	}
 	c.log.Debugf("SET NEW STATE #%d%s, output: %s, hash: %s",
-		msg.StateOutput.GetStateIndex(), r, coretypes.OID(msg.StateOutput.ID()), msg.State.Hash().String())
+		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), msg.State.Hash().String())
 	c.resetWorkflow()
 }
 
@@ -691,12 +691,12 @@ func (c *Consensus) receiveSignedResult(msg *messages.SignedResultMsg) {
 	}
 	if c.stateOutput == nil {
 		c.log.Warnf("receiveSignedResult: chain input ID %v received, but state output is nil",
-			coretypes.OID(msg.ChainInputID))
+			iscp.OID(msg.ChainInputID))
 		return
 	}
 	if msg.ChainInputID != c.stateOutput.ID() {
 		c.log.Warnf("receiveSignedResult: wrong chain input ID: expected %v, received %v",
-			coretypes.OID(c.stateOutput.ID()), coretypes.OID(msg.ChainInputID))
+			iscp.OID(c.stateOutput.ID()), iscp.OID(msg.ChainInputID))
 		return
 	}
 	idx, err := msg.SigShare.Index()
@@ -733,7 +733,7 @@ func (c *Consensus) receiveSignedResultAck(msg *messages.SignedResultAckMsg) {
 }
 
 // ShouldReceiveMissingRequest returns whether or not a request is missing, if the incoming request matches the expetec ID/Hash it is removed from the list
-func (c *Consensus) ShouldReceiveMissingRequest(req coretypes.Request) bool {
+func (c *Consensus) ShouldReceiveMissingRequest(req iscp.Request) bool {
 	c.log.Debugf("ShouldReceiveMissingRequest: reqID %s, hash %v", req.ID(), req.Hash())
 
 	c.missingRequestsMutex.Lock()

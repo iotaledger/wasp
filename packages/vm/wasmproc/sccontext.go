@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -168,11 +168,11 @@ func (o *ScContext) SetBytes(keyID, typeID int32, bytes []byte) {
 
 func (o *ScContext) processCall(bytes []byte) {
 	decode := NewBytesDecoder(bytes)
-	contract, err := coretypes.HnameFromBytes(decode.Bytes())
+	contract, err := iscp.HnameFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	function, err := coretypes.HnameFromBytes(decode.Bytes())
+	function, err := iscp.HnameFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
@@ -212,22 +212,22 @@ func (o *ScContext) processDeploy(bytes []byte) {
 // TODO refactor
 func (o *ScContext) processPost(bytes []byte) {
 	decode := NewBytesDecoder(bytes)
-	chainID, err := coretypes.ChainIDFromBytes(decode.Bytes())
+	chainID, err := iscp.ChainIDFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	contract, err := coretypes.HnameFromBytes(decode.Bytes())
+	contract, err := iscp.HnameFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	function, err := coretypes.HnameFromBytes(decode.Bytes())
+	function, err := iscp.HnameFromBytes(decode.Bytes())
 	if err != nil {
 		o.Panic(err.Error())
 	}
 	o.Tracef("POST c'%s' f'%s'", contract.String(), function.String())
 	params := o.getParams(decode.Int32())
 	transfer := o.getTransfer(decode.Int32())
-	metadata := &coretypes.SendMetadata{
+	metadata := &iscp.SendMetadata{
 		TargetContract: contract,
 		EntryPoint:     function,
 		Args:           params,
@@ -246,7 +246,7 @@ func (o *ScContext) processPost(bytes []byte) {
 
 	timeLock := time.Unix(0, o.vm.ctx.GetTimestamp())
 	timeLock = timeLock.Add(time.Duration(delay) * time.Second)
-	options := coretypes.SendOptions{
+	options := iscp.SendOptions{
 		TimeLock: uint32(timeLock.Unix()),
 	}
 	if !o.vm.ctx.Send(chainID.AsAddress(), transfer, metadata, options) {

@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package coretypes
+package iscp
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ import (
 )
 
 // Hname is 4 bytes of blake2b hash of any string interpreted as little-endian uint32.
-// 0 and not ^0 are reserved values and the coretypes.Hn ensures it is not returned
+// 0 and not ^0 are reserved values and the iscp.Hn ensures it is not returned
 type Hname uint32
 
 const HnameLength = 4

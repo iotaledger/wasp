@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 func Encode(v interface{}) []byte {
@@ -41,19 +41,19 @@ func Encode(v interface{}) []byte {
 		return EncodeColor(*vt)
 	case ledgerstate.Color:
 		return EncodeColor(vt)
-	case *coretypes.ChainID:
+	case *iscp.ChainID:
 		return EncodeChainID(*vt)
-	case coretypes.ChainID:
+	case iscp.ChainID:
 		return EncodeChainID(vt)
-	case *coretypes.AgentID:
+	case *iscp.AgentID:
 		return EncodeAgentID(vt)
-	case coretypes.AgentID:
+	case iscp.AgentID:
 		return EncodeAgentID(&vt)
-	case coretypes.RequestID:
+	case iscp.RequestID:
 		return EncodeRequestID(vt)
-	case *coretypes.RequestID:
+	case *iscp.RequestID:
 		return EncodeRequestID(*vt)
-	case coretypes.Hname:
+	case iscp.Hname:
 		return vt.Bytes()
 	case time.Time:
 		return EncodeTime(vt)

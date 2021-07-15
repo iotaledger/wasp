@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -32,7 +32,7 @@ func TestDeployChain(t *testing.T) {
 	}
 	chainID, chainOwnerID := getChainInfo(t, chain1)
 	require.Equal(t, chainID, chain1.ChainID)
-	require.Equal(t, chainOwnerID, *coretypes.NewAgentID(chain1.OriginatorAddress(), 0))
+	require.Equal(t, chainOwnerID, *iscp.NewAgentID(chain1.OriginatorAddress(), 0))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
@@ -69,7 +69,7 @@ func TestDeployContractOnly(t *testing.T) {
 	ret, err := chain1.Cluster.WaspClient(0).CallView(
 		chain1.ChainID, root.Interface.Hname(), root.FuncFindContract,
 		dict.Dict{
-			root.ParamHname: coretypes.Hn(incCounterSCName).Bytes(),
+			root.ParamHname: iscp.Hn(incCounterSCName).Bytes(),
 		})
 	check(err, t)
 	recb, err := ret.Get(root.VarData)
@@ -79,7 +79,7 @@ func TestDeployContractOnly(t *testing.T) {
 	require.EqualValues(t, "testing contract deployment with inccounter", rec.Description)
 
 	{
-		rec, _, _, err := chain1.GetRequestLogRecord(coretypes.NewRequestID(tx.ID(), 0))
+		rec, _, _, err := chain1.GetRequestLogRecord(iscp.NewRequestID(tx.ID(), 0))
 		require.NoError(t, err)
 		require.Empty(t, string(rec.LogData))
 	}
@@ -101,17 +101,17 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 	deployIncCounterSC(t, chain1, counter1)
 
-	hname := coretypes.Hn(incCounterSCName)
+	hname := iscp.Hn(incCounterSCName)
 
 	nameNew := "spawnedContract"
 	dscrNew := "spawned contract it is"
-	hnameNew := coretypes.Hn(nameNew)
+	hnameNew := iscp.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
 	par := chainclient.NewPostRequestParams(
 		inccounter.VarName, nameNew,
 		inccounter.VarDescription, dscrNew,
 	).WithIotas(1)
-	tx, err := chain1.OriginatorClient().Post1Request(hname, coretypes.Hn(inccounter.FuncSpawn), *par)
+	tx, err := chain1.OriginatorClient().Post1Request(hname, iscp.Hn(inccounter.FuncSpawn), *par)
 	check(err, t)
 
 	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, tx, 30*time.Second)

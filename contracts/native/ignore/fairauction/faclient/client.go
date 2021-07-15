@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -18,10 +18,10 @@ import (
 
 type FairAuctionClient struct {
 	*chainclient.Client
-	contractHname coretypes.Hname
+	contractHname iscp.Hname
 }
 
-func NewClient(scClient *chainclient.Client, contractHname coretypes.Hname) *FairAuctionClient {
+func NewClient(scClient *chainclient.Client, contractHname iscp.Hname) *FairAuctionClient {
 	return &FairAuctionClient{
 		Client:        scClient,
 		contractHname: contractHname,

@@ -5,13 +5,13 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 // ChainRecord represents chain the node is participating in
 // TODO optimize, no need for a persistent structure, simple activity tag is enough
 type ChainRecord struct {
-	ChainID *coretypes.ChainID
+	ChainID *iscp.ChainID
 	Peers   []string
 	Active  bool
 }
@@ -22,7 +22,7 @@ func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
 	if err != nil {
 		return nil, err
 	}
-	ret.ChainID = coretypes.NewChainID(aliasAddr)
+	ret.ChainID = iscp.NewChainID(aliasAddr)
 
 	ret.Active, err = mu.ReadBool()
 	if err != nil {

@@ -10,8 +10,8 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -32,7 +32,7 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 	}
 	if sm.notifiedAnchorOutputID == sm.stateOutput.ID() {
 		sm.log.Debugf("notifyStateTransition not needed: already notified about state %v at index #%d",
-			coretypes.OID(sm.notifiedAnchorOutputID), sm.solidState.BlockIndex())
+			iscp.OID(sm.notifiedAnchorOutputID), sm.solidState.BlockIndex())
 		return
 	}
 	if !sm.isSynced() {
@@ -48,7 +48,7 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 		gu = " (rotation) "
 	}
 	sm.log.Debugf("notifyStateTransition: %sstate IS SYNCED to index %d and is approved by output %v",
-		gu, stateOutputIndex, coretypes.OID(stateOutputID))
+		gu, stateOutputIndex, iscp.OID(stateOutputID))
 	go sm.chain.Events().ChainTransition().Trigger(&chain.ChainTransitionEventData{
 		VirtualState:    sm.solidState.Clone(),
 		ChainOutput:     sm.stateOutput,
@@ -87,7 +87,7 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
 		"hash", nextState.Hash(),
-		"output", coretypes.OID(approvingOutput),
+		"output", iscp.OID(approvingOutput),
 	)
 
 	block, err := nextState.ExtractBlock()
@@ -120,7 +120,7 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 	if sm.addBlockAndCheckStateOutput(block, nil) {
 		// ask for approving output
 		chainAddress := sm.chain.ID().AsAddress()
-		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v for chain %v", coretypes.OID(block.ApprovingOutputID()), chainAddress.Base58())
+		sm.log.Debugf("addBlockFromPeer: requesting approving output ID %v for chain %v", iscp.OID(block.ApprovingOutputID()), chainAddress.Base58())
 		sm.nodeConn.PullConfirmedOutput(chainAddress, block.ApprovingOutputID())
 	}
 	return true
@@ -135,7 +135,7 @@ func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState
 	if isBlockNew {
 		if sm.stateOutput != nil {
 			sm.log.Debugf("addBlockAndCheckStateOutput: checking if block index %v (local %v, nextStateHash %v, approvingOutputID %v, already approved %v) is approved by current stateOutput",
-				block.BlockIndex(), candidate.isLocal(), candidate.getNextStateHash().String(), coretypes.OID(candidate.getApprovingOutputID()), candidate.isApproved())
+				block.BlockIndex(), candidate.isLocal(), candidate.getNextStateHash().String(), iscp.OID(candidate.getApprovingOutputID()), candidate.isApproved())
 			candidate.approveIfRightOutput(sm.stateOutput)
 		}
 		sm.log.Debugf("addBlockAndCheckStateOutput: block index %v approved %v", block.BlockIndex(), candidate.isApproved())
@@ -155,7 +155,7 @@ func (sm *stateManager) storeSyncingData() {
 		return
 	}
 	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateHash %v, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputHash %v, StateOutputTimestamp %v",
-		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.Hash().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), coretypes.OID(sm.stateOutput.ID()), outputStateHash.String(), sm.stateOutputTimestamp)
+		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.Hash().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateHash.String(), sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
 		Synced:                sm.isSynced(),
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),

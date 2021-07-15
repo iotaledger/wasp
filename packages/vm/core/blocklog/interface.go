@@ -10,9 +10,9 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -175,7 +175,7 @@ func (k *RequestLookupKey) Read(r io.Reader) error {
 
 // region RequestLookupKeyList //////////////////////////////////////////////
 
-// RequestLookupKeyList a list of RequestLookupReference of requests with colliding coretypes.RequestLookupDigest
+// RequestLookupKeyList a list of RequestLookupReference of requests with colliding iscp.RequestLookupDigest
 type RequestLookupKeyList []RequestLookupKey
 
 func RequestLookupKeyListFromBytes(data []byte) (RequestLookupKeyList, error) {
@@ -211,7 +211,7 @@ func (ll RequestLookupKeyList) Bytes() []byte {
 
 // RequestLogRecord represents log record of processed request on the chain
 type RequestLogRecord struct {
-	RequestID coretypes.RequestID
+	RequestID iscp.RequestID
 	OffLedger bool
 	LogData   []byte
 	// not persistent
@@ -226,7 +226,7 @@ func RequestLogRecordFromBytes(data []byte) (*RequestLogRecord, error) {
 func RequestLogRecordFromMarshalutil(mu *marshalutil.MarshalUtil) (*RequestLogRecord, error) {
 	ret := &RequestLogRecord{}
 	var err error
-	if ret.RequestID, err = coretypes.RequestIDFromMarshalUtil(mu); err != nil {
+	if ret.RequestID, err = iscp.RequestIDFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 	if ret.OffLedger, err = mu.ReadBool(); err != nil {

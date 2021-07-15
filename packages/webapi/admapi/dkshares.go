@@ -13,8 +13,8 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	dkg_pkg "github.com/iotaledger/wasp/packages/dkg"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -32,7 +32,7 @@ func addDKSharesEndpoints(adm echoswagger.ApiGroup) {
 		Threshold:   3,
 		TimeoutMS:   10000,
 	}
-	addr1 := coretypes.RandomChainID().AsAddress()
+	addr1 := iscp.RandomChainID().AsAddress()
 	infoExample := model.DKSharesInfo{
 		Address:      addr1.Base58(),
 		SharedPubKey: base64.StdEncoding.EncodeToString([]byte("key")),

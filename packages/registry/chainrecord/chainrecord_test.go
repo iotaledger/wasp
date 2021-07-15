@@ -3,12 +3,12 @@ package chainrecord
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/stretchr/testify/require"
 )
 
 func TestChainRecord(t *testing.T) {
-	chainID := coretypes.RandomChainID()
+	chainID := iscp.RandomChainID()
 
 	rec := ChainRecord{
 		ChainID: chainID,

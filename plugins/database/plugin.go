@@ -2,14 +2,13 @@
 package database
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/database/dbmanager"
-	"github.com/iotaledger/wasp/packages/parameters"
-
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/database/dbmanager"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 const pluginName = "Database"
@@ -50,10 +49,10 @@ func GetRegistryKVStore() kvstore.KVStore {
 	return dbm.GetRegistryKVStore()
 }
 
-func GetOrCreateKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
+func GetOrCreateKVStore(chainID *iscp.ChainID) kvstore.KVStore {
 	return dbm.GetOrCreateKVStore(chainID)
 }
 
-func GetKVStore(chainID *coretypes.ChainID) kvstore.KVStore {
+func GetKVStore(chainID *iscp.ChainID) kvstore.KVStore {
 	return dbm.GetKVStore(chainID)
 }

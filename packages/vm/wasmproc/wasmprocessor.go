@@ -5,7 +5,7 @@ package wasmproc
 
 import (
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -13,14 +13,14 @@ import (
 
 type WasmProcessor struct {
 	wasmhost.WasmHost
-	ctx       coretypes.Sandbox
-	ctxView   coretypes.SandboxView
+	ctx       iscp.Sandbox
+	ctxView   iscp.SandboxView
 	function  string
 	nesting   int
 	scContext *ScContext
 }
 
-var _ coretypes.VMProcessor = &WasmProcessor{}
+var _ iscp.VMProcessor = &WasmProcessor{}
 
 const (
 	FuncDefault      = "_default"
@@ -48,7 +48,7 @@ func NewWasmProcessor(vm wasmhost.WasmVM, log *logger.Logger) (*WasmProcessor, e
 	return host, nil
 }
 
-func GetProcessor(binaryCode []byte, log *logger.Logger) (coretypes.VMProcessor, error) {
+func GetProcessor(binaryCode []byte, log *logger.Logger) (iscp.VMProcessor, error) {
 	vm, err := NewWasmProcessor(wasmhost.NewWasmTimeVM(), log)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func GetProcessor(binaryCode []byte, log *logger.Logger) (coretypes.VMProcessor,
 	return vm, nil
 }
 
-func (host *WasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.SandboxView) (dict.Dict, error) {
+func (host *WasmProcessor) call(ctx iscp.Sandbox, ctxView iscp.SandboxView) (dict.Dict, error) {
 	if host.function == "" {
 		// init function was missing, do nothing
 		return nil, nil
@@ -116,28 +116,28 @@ func (host *WasmProcessor) call(ctx coretypes.Sandbox, ctxView coretypes.Sandbox
 
 func (host *WasmProcessor) Call(ctx interface{}) (dict.Dict, error) {
 	switch tctx := ctx.(type) {
-	case coretypes.Sandbox:
+	case iscp.Sandbox:
 		return host.call(tctx, nil)
-	case coretypes.SandboxView:
+	case iscp.SandboxView:
 		return host.call(nil, tctx)
 	}
-	panic(coretypes.ErrWrongTypeEntryPoint)
+	panic(iscp.ErrWrongTypeEntryPoint)
 }
 
 func (host *WasmProcessor) GetDescription() string {
 	return "Wasm VM smart contract processor"
 }
 
-func (host *WasmProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
+func (host *WasmProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntryPoint, bool) {
 	function := host.FunctionFromCode(uint32(code))
-	if function == "" && code != coretypes.EntryPointInit {
+	if function == "" && code != iscp.EntryPointInit {
 		return nil, false
 	}
 	host.function = function
 	return host, true
 }
 
-func (host *WasmProcessor) GetDefaultEntryPoint() coretypes.VMProcessorEntryPoint {
+func (host *WasmProcessor) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
 	host.function = FuncDefault
 	return host
 }
@@ -146,7 +146,7 @@ func (host *WasmProcessor) IsView() bool {
 	return host.WasmHost.IsView(host.function)
 }
 
-func (host *WasmProcessor) log() coretypes.LogInterface {
+func (host *WasmProcessor) log() iscp.LogInterface {
 	if host.ctx != nil {
 		return host.ctx.Log()
 	}
@@ -167,7 +167,7 @@ func (host *WasmProcessor) state() kv.KVStore {
 	return NewScViewState(host.ctxView)
 }
 
-func (host *WasmProcessor) utils() coretypes.Utils {
+func (host *WasmProcessor) utils() iscp.Utils {
 	if host.ctx != nil {
 		return host.ctx.Utils()
 	}

@@ -1,22 +1,22 @@
 package commonaccount
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
-var coreHnames = make(map[coretypes.Hname]struct{})
+var coreHnames = make(map[iscp.Hname]struct{})
 
-func SetCoreHname(hname coretypes.Hname) {
+func SetCoreHname(hname iscp.Hname) {
 	coreHnames[hname] = struct{}{}
 }
 
-func IsCoreHname(hname coretypes.Hname) bool {
+func IsCoreHname(hname iscp.Hname) bool {
 	_, ret := coreHnames[hname]
 	return ret
 }
 
 // AdjustIfNeeded makes account of the chain owner and all core contracts equal to (chainID, 0)
-func AdjustIfNeeded(agentID *coretypes.AgentID, chainID *coretypes.ChainID) *coretypes.AgentID {
+func AdjustIfNeeded(agentID *iscp.AgentID, chainID *iscp.ChainID) *iscp.AgentID {
 	if !agentID.Address().Equals(chainID.AsAddress()) {
 		// from another chain
 		return agentID
@@ -28,6 +28,6 @@ func AdjustIfNeeded(agentID *coretypes.AgentID, chainID *coretypes.ChainID) *cor
 	return agentID
 }
 
-func Get(chainID *coretypes.ChainID) *coretypes.AgentID {
-	return coretypes.NewAgentID(chainID.AsAddress(), 0)
+func Get(chainID *iscp.ChainID) *iscp.AgentID {
+	return iscp.NewAgentID(chainID.AsAddress(), 0)
 }

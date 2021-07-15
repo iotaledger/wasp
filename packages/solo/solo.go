@@ -17,10 +17,10 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
@@ -90,16 +90,16 @@ type Chain struct {
 	OriginatorKeyPair *ed25519.KeyPair
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
-	ChainID coretypes.ChainID
+	ChainID iscp.ChainID
 
 	// OriginatorAddress is the alias for OriginatorKeyPair.Address()
 	OriginatorAddress ledgerstate.Address
 
 	// OriginatorAgentID is the OriginatorAddress represented in the form of AgentID
-	OriginatorAgentID coretypes.AgentID
+	OriginatorAgentID iscp.AgentID
 
 	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default is its equal to OriginatorAddress
-	ValidatorFeeTarget coretypes.AgentID
+	ValidatorFeeTarget iscp.AgentID
 
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
 	State       state.VirtualState
@@ -138,7 +138,7 @@ func New(t TestContext, debug, printStackTrace bool) *Solo {
 	})
 
 	processorConfig := processors.NewConfig()
-	err := processorConfig.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (coretypes.VMProcessor, error) {
+	err := processorConfig.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (iscp.VMProcessor, error) {
 		return wasmproc.GetProcessor(binary, glbLogger)
 	})
 	require.NoError(t, err)
@@ -149,7 +149,7 @@ func New(t TestContext, debug, printStackTrace bool) *Solo {
 		logger:          glbLogger,
 		dbmanager:       dbmanager.NewDBManager(glbLogger.Named("db"), true),
 		utxoDB:          utxodb.NewWithTimestamp(initialTime),
-		blobCache:       coretypes.NewInMemoryBlobCache(),
+		blobCache:       iscp.NewInMemoryBlobCache(),
 		logicalTime:     initialTime,
 		timeStep:        DefaultTimeStep,
 		chains:          make(map[[33]byte]*Chain),
@@ -181,7 +181,7 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractInterface) *Solo {
 //    '_default', 'blocklog', 'blob', 'accounts' and 'eventlog',
 // Upon return, the chain is fully functional to process requests
 //nolint:funlen
-func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...coretypes.AgentID) *Chain {
+func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...iscp.AgentID) *Chain {
 	env.logger.Debugf("deploying new chain '%s'", name)
 	stateController := ed25519.GenerateKeyPair() // chain address will be ED25519, not BLS
 	stateAddr := ledgerstate.NewED25519Address(stateController.PublicKey)
@@ -196,7 +196,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	} else {
 		originatorAddr = ledgerstate.NewED25519Address(chainOriginator.PublicKey)
 	}
-	originatorAgentID := coretypes.NewAgentID(originatorAddr, 0)
+	originatorAgentID := iscp.NewAgentID(originatorAddr, 0)
 	feeTarget := originatorAgentID
 	if len(validatorFeeTarget) > 0 {
 		feeTarget = &validatorFeeTarget[0]
@@ -296,7 +296,7 @@ func (env *Solo) AddToLedger(tx *ledgerstate.Transaction) error {
 }
 
 // RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
-func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID coretypes.ChainID) ([]coretypes.Request, error) {
+func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID iscp.ChainID) ([]iscp.Request, error) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 
@@ -308,10 +308,10 @@ func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID coretypes
 	return ret, nil
 }
 
-func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]coretypes.Request {
+func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]iscp.Request {
 	sender, err := utxoutil.GetSingleSender(tx)
 	require.NoError(env.T, err)
-	ret := make(map[[33]byte][]coretypes.Request)
+	ret := make(map[[33]byte][]iscp.Request)
 	for _, out := range tx.Essence().Outputs() {
 		o, ok := out.(*ledgerstate.ExtendedLockedOutput)
 		if !ok {
@@ -324,7 +324,7 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]cor
 		}
 		lst, ok := ret[arr]
 		if !ok {
-			lst = make([]coretypes.Request, 0)
+			lst = make([]iscp.Request, 0)
 		}
 		ret[arr] = append(lst, request.RequestOnLedgerFromOutput(o, sender, utxoutil.GetMintedAmounts(tx)))
 	}
@@ -339,7 +339,7 @@ func (env *Solo) EnqueueRequests(tx *ledgerstate.Transaction) {
 	requests := env.requestsByChain(tx)
 
 	for chidArr, reqs := range requests {
-		chid, err := coretypes.ChainIDFromBytes(chidArr[:])
+		chid, err := iscp.ChainIDFromBytes(chidArr[:])
 		require.NoError(env.T, err)
 		ch, ok := env.chains[chidArr]
 		if !ok {
@@ -373,11 +373,11 @@ func (ch *Chain) GetChainOutput() *ledgerstate.AliasOutput {
 
 // collateBatch selects requests which are not time locked
 // returns batch and and 'remains unprocessed' flag
-func (ch *Chain) collateBatch() []coretypes.Request {
+func (ch *Chain) collateBatch() []iscp.Request {
 	// emulating variable sized blocks
 	maxBatch := MaxRequestsInBlock - rand.Intn(MaxRequestsInBlock/3)
 
-	ret := make([]coretypes.Request, 0)
+	ret := make([]iscp.Request, 0)
 	ready := ch.mempool.ReadyNow(ch.Env.LogicalTime())
 	batchSize := len(ready)
 	if batchSize > maxBatch {
@@ -431,7 +431,7 @@ func (ch *Chain) backlogLen() int { //nolint:unused
 }
 
 // solidifies request arguments without mempool (only for solo)
-func (ch *Chain) solidifyRequest(req coretypes.Request) {
+func (ch *Chain) solidifyRequest(req iscp.Request) {
 	ok, err := request.SolidifyArgs(req, ch.Env.blobCache)
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)

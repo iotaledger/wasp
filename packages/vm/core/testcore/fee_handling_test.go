@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -145,7 +145,7 @@ func TestFeesNotEnough(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 
 	user, userAddr := env.NewKeyPairWithFunds()
-	userAgentID := coretypes.NewAgentID(userAddr, 0)
+	userAgentID := iscp.NewAgentID(userAddr, 0)
 
 	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
 		root.ParamHname, blob.Interface.Hname(),

@@ -6,9 +6,9 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 )
@@ -21,7 +21,7 @@ func NewChainOriginTransaction(
 	balance map[ledgerstate.Color]uint64,
 	timestamp time.Time,
 	allInputs ...ledgerstate.Output,
-) (*ledgerstate.Transaction, coretypes.ChainID, error) {
+) (*ledgerstate.Transaction, iscp.ChainID, error) {
 	walletAddr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	txb := utxoutil.NewBuilder(allInputs...).WithTimestamp(timestamp)
 
@@ -30,24 +30,24 @@ func NewChainOriginTransaction(
 		balance = map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA}
 	}
 	if err := txb.AddNewAliasMint(balance, stateAddress, stateHash.Bytes()); err != nil {
-		return nil, coretypes.ChainID{}, err
+		return nil, iscp.ChainID{}, err
 	}
 	// adding reminder in compressing mode, i.e. all provided inputs will be consumed
 	if err := txb.AddRemainderOutputIfNeeded(walletAddr, nil, true); err != nil {
-		return nil, coretypes.ChainID{}, err
+		return nil, iscp.ChainID{}, err
 	}
 	tx, err := txb.BuildWithED25519(keyPair)
 	if err != nil {
-		return nil, coretypes.ChainID{}, err
+		return nil, iscp.ChainID{}, err
 	}
 	// determine aliasAddress of the newly minted chain
 	chained, err := utxoutil.GetSingleChainedAliasOutput(tx)
 	if err != nil {
-		return nil, coretypes.ChainID{}, err
+		return nil, iscp.ChainID{}, err
 	}
-	chainID, err := coretypes.ChainIDFromAddress(chained.Address())
+	chainID, err := iscp.ChainIDFromAddress(chained.Address())
 	if err != nil {
-		return nil, coretypes.ChainID{}, err
+		return nil, iscp.ChainID{}, err
 	}
 	return tx, *chainID, nil
 }
@@ -58,7 +58,7 @@ func NewChainOriginTransaction(
 // TransactionEssence must be signed by the same address which created origin transaction
 func NewRootInitRequestTransaction(
 	keyPair *ed25519.KeyPair,
-	chainID coretypes.ChainID,
+	chainID iscp.ChainID,
 	description string,
 	timestamp time.Time,
 	allInputs ...ledgerstate.Output,
@@ -74,8 +74,8 @@ func NewRootInitRequestTransaction(
 	args.AddEncodeSimple(paramDescription, codec.EncodeString(description))
 
 	metadata := request.NewRequestMetadata().
-		WithTarget(coretypes.Hn("root")).
-		WithEntryPoint(coretypes.EntryPointInit).
+		WithTarget(iscp.Hn("root")).
+		WithEntryPoint(iscp.EntryPointInit).
 		WithArgs(args).
 		Bytes()
 	err := txb.AddExtendedOutputConsume(chainID.AsAddress(), metadata, map[ledgerstate.Color]uint64{

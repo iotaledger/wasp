@@ -2,8 +2,8 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
 const (
