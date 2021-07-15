@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
@@ -19,11 +17,11 @@ import (
 )
 
 type reqstatusWebAPI struct {
-	getChain func(chainID *chainid.ChainID) chain.ChainRequests
+	getChain func(chainID *coretypes.ChainID) chain.ChainRequests
 }
 
 func AddEndpoints(server echoswagger.ApiRouter) {
-	r := &reqstatusWebAPI{func(chainID *chainid.ChainID) chain.ChainRequests {
+	r := &reqstatusWebAPI{func(chainID *coretypes.ChainID) chain.ChainRequests {
 		return chains.AllChains().Get(chainID)
 	}}
 
@@ -100,7 +98,7 @@ func (r *reqstatusWebAPI) handleWaitRequestProcessed(c echo.Context) error {
 }
 
 func (r *reqstatusWebAPI) parseParams(c echo.Context) (chain.ChainRequests, coretypes.RequestID, error) {
-	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return nil, coretypes.RequestID{}, httperrors.BadRequest(fmt.Sprintf("Invalid Chain ID %+v: %s", c.Param("chainID"), err.Error()))
 	}

@@ -1,4 +1,4 @@
-package chainid
+package coretypes
 
 import (
 	"testing"

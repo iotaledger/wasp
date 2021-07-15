@@ -8,13 +8,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/wasp/packages/kv/optimism"
-
 	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/webapiutil"
@@ -44,7 +41,7 @@ func AddEndpoints(server echoswagger.ApiRouter) {
 }
 
 func handleCallView(c echo.Context) error {
-	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}
@@ -77,7 +74,7 @@ const retryOnStateInvalidatedRetry = 100 * time.Millisecond //nolint:gofumpt
 const retryOnStateInvalidatedTimeout = 5 * time.Minute
 
 func handleStateGet(c echo.Context) error {
-	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
 	}

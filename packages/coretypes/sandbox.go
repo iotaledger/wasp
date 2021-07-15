@@ -5,7 +5,6 @@ package coretypes
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -33,7 +32,7 @@ type Sandbox interface {
 	// Caller is the agentID of the caller.
 	Caller() *AgentID
 	// ChainID id of the chain
-	ChainID() *chainid.ChainID
+	ChainID() *ChainID
 	// ChainOwnerID agentID of the current owner of the chain
 	ChainOwnerID() *AgentID
 	// Contract Hname of the contract in the current chain

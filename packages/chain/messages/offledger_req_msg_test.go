@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -26,7 +25,7 @@ func TestMarshalling(t *testing.T) {
 	)
 
 	msg := NewOffledgerRequestMsg(
-		chainid.RandomChainID(),
+		coretypes.RandomChainID(),
 		request.NewRequestOffLedger(contract, entrypoint, args),
 	)
 

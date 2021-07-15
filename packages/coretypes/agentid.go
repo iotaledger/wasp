@@ -8,11 +8,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/hive.go/marshalutil"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/mr-tron/base58"
 	"golang.org/x/xerrors"
 )
@@ -98,7 +95,7 @@ func NewAgentIDFromString(s string) (*AgentID, error) {
 
 // NewRandomAgentID creates random AgentID
 func NewRandomAgentID() *AgentID {
-	addr := chainid.RandomChainID().AsAddress()
+	addr := RandomChainID().AsAddress()
 	hname := Hn("testName")
 	return NewAgentID(addr, hname)
 }

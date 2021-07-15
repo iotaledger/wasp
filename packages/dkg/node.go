@@ -11,8 +11,8 @@ import (
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
@@ -25,18 +25,18 @@ import (
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	identity    *ed25519.KeyPair                  // Keys of the current node.
-	secKey      kyber.Scalar                      // Derived from the identity.
-	pubKey      kyber.Point                       // Derived from the identity.
-	blsSuite    Suite                             // Cryptography to use for the Pairing based operations.
-	edSuite     rabin_dkg.Suite                   // Cryptography to use for the Ed25519 based operations.
-	netProvider peering.NetworkProvider           // Network to communicate through.
-	registry    coretypes.DKShareRegistryProvider // Where to store the generated keys.
-	processes   map[string]*proc                  // Only for introspection.
-	procLock    *sync.RWMutex                     // To guard access to the process pool.
-	recvQueue   chan *peering.RecvEvent           // Incoming events processed async.
-	recvStopCh  chan bool                         // To coordinate shutdown.
-	attachID    interface{}                       // Peering attach ID
+	identity    *ed25519.KeyPair                 // Keys of the current node.
+	secKey      kyber.Scalar                     // Derived from the identity.
+	pubKey      kyber.Point                      // Derived from the identity.
+	blsSuite    Suite                            // Cryptography to use for the Pairing based operations.
+	edSuite     rabin_dkg.Suite                  // Cryptography to use for the Ed25519 based operations.
+	netProvider peering.NetworkProvider          // Network to communicate through.
+	registry    registry.DKShareRegistryProvider // Where to store the generated keys.
+	processes   map[string]*proc                 // Only for introspection.
+	procLock    *sync.RWMutex                    // To guard access to the process pool.
+	recvQueue   chan *peering.RecvEvent          // Incoming events processed async.
+	recvStopCh  chan bool                        // To coordinate shutdown.
+	attachID    interface{}                      // Peering attach ID
 	log         *logger.Logger
 }
 
@@ -45,7 +45,7 @@ type Node struct {
 func NewNode(
 	identity *ed25519.KeyPair,
 	netProvider peering.NetworkProvider,
-	registry coretypes.DKShareRegistryProvider,
+	reg registry.DKShareRegistryProvider,
 	log *logger.Logger,
 ) (*Node, error) {
 	kyberEdDSSA := eddsa.EdDSA{}
@@ -59,7 +59,7 @@ func NewNode(
 		blsSuite:    tcrypto.DefaultSuite(),
 		edSuite:     edwards25519.NewBlakeSHA256Ed25519(),
 		netProvider: netProvider,
-		registry:    registry,
+		registry:    reg,
 		processes:   make(map[string]*proc),
 		procLock:    &sync.RWMutex{},
 		recvQueue:   make(chan *peering.RecvEvent),

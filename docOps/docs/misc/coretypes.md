@@ -20,8 +20,8 @@ transient because chains can be moved from address to address. The chain color
 is an ultimate identifier of the chain for its lifetime.
 
 Each chain is identified on the ISCP by its _chain ID_, represented by the
-[`chainid.ChainID`](https://github.com/iotaledger/wasp/blob/master/packages/coretypes/chainid/chainid.go)
-type. In the current implementation `chainid.ChainID` is just a synonym of
+[`coretypes.ChainID`](https://github.com/iotaledger/wasp/blob/master/packages/coretypes/chainid/chainid.go)
+type. In the current implementation `coretypes.ChainID` is just a synonym of
 the chain address. In the future, the chain color will be used as chain ID.
 
 

@@ -3,7 +3,7 @@ package client
 import (
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/wasp/packages/registry/committee_record"
 
@@ -28,7 +28,7 @@ func (c *WaspClient) GetCommitteeRecord(addr ledgerstate.Address) (*committee_re
 }
 
 // GetCommitteeForChain fetches the CommitteeRecord that manages the given chain
-func (c *WaspClient) GetCommitteeForChain(chainID chainid.ChainID) (*committee_record.CommitteeRecord, error) {
+func (c *WaspClient) GetCommitteeForChain(chainID coretypes.ChainID) (*committee_record.CommitteeRecord, error) {
 	res := &model.CommitteeRecord{}
 	if err := c.do(http.MethodGet, routes.GetCommitteeForChain(chainID.Base58()), nil, res); err != nil {
 		return nil, err

@@ -1,23 +1,21 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package coretypes
+package registry
 
 import (
 	"time"
 
-	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/tcrypto"
-
+	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+	"github.com/iotaledger/wasp/packages/registry/committee_record"
+	"github.com/iotaledger/wasp/packages/tcrypto"
 )
+
+type Provider func() *Impl
 
 // BlobCache is an access to the cache of big binary objects
 type BlobCache interface {
@@ -55,9 +53,9 @@ type CommitteeRegistryProvider interface {
 // ChainRecordRegistryProvider stands for a partial registry interface, needed for this package.
 // It should be implemented by in the chainrecord package
 type ChainRecordRegistryProvider interface {
-	GetChainRecordByChainID(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error)
+	GetChainRecordByChainID(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error)
 	GetChainRecords() ([]*chainrecord.ChainRecord, error)
-	UpdateChainRecord(chainID *chainid.ChainID, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error)
-	ActivateChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error)
-	DeactivateChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error)
+	UpdateChainRecord(chainID *coretypes.ChainID, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error)
+	ActivateChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error)
+	DeactivateChainRecord(chainID *coretypes.ChainID) (*chainrecord.ChainRecord, error)
 }

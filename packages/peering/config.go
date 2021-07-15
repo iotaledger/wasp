@@ -12,7 +12,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// StaticPeerNetworkConfig in an implementation of coretypes.PeerNetworkConfigProvider. It does not change
+// StaticPeerNetworkConfig in an implementation of registry.PeerNetworkConfigProvider. It does not change
 // Alternatively, the configuration of peers behind could change and be dependent on chain
 type StaticPeerNetworkConfig struct {
 	ownNetID    string

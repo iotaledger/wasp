@@ -8,7 +8,7 @@ import (
 
 // InMemoryBlobCache is supposed to be used as BlobCache in tests through
 // factory method NewInMemoryBlobCache
-// NOTE: Implements coretypes.BlobCache
+// NOTE: Implements registry.BlobCache
 type InMemoryBlobCache struct {
 	b map[hashing.HashValue][]byte
 }

@@ -4,13 +4,12 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/plugins/chains"
 )
 
-func GetChain(chainID *chainid.ChainID) chain.ChainCore {
+func GetChain(chainID *coretypes.ChainID) chain.ChainCore {
 	return chain.ChainCore(chains.AllChains().Get(chainID))
 }
 

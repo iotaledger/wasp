@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
@@ -20,7 +19,7 @@ import (
 //go:embed templates/chain.tmpl
 var tplChain string
 
-func chainBreadcrumb(e *echo.Echo, chainID chainid.ChainID) Tab {
+func chainBreadcrumb(e *echo.Echo, chainID coretypes.ChainID) Tab {
 	return Tab{
 		Path:  e.Reverse("chain"),
 		Title: fmt.Sprintf("Chain %.8s…", chainID.Base58()),
@@ -35,7 +34,7 @@ func (d *Dashboard) initChain(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChain(c echo.Context) error {
-	chainID, err := chainid.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
@@ -129,7 +128,7 @@ type ChainState struct {
 type ChainTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID *chainid.ChainID
+	ChainID *coretypes.ChainID
 
 	Record      *chainrecord.ChainRecord
 	State       *ChainState

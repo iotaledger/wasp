@@ -9,17 +9,17 @@ import (
 	"io/ioutil"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"golang.org/x/xerrors"
 )
 
 type OffLedgerRequestMsg struct {
-	ChainID *chainid.ChainID
+	ChainID *coretypes.ChainID
 	Req     *request.RequestOffLedger
 }
 
-func NewOffledgerRequestMsg(chainID *chainid.ChainID, req *request.RequestOffLedger) *OffLedgerRequestMsg {
+func NewOffledgerRequestMsg(chainID *coretypes.ChainID, req *request.RequestOffLedger) *OffLedgerRequestMsg {
 	return &OffLedgerRequestMsg{
 		ChainID: chainID,
 		Req:     req,
@@ -49,7 +49,7 @@ func (msg *OffLedgerRequestMsg) read(r io.Reader) error {
 	if err != nil {
 		return xerrors.Errorf("failed to read chainID: %w", err)
 	}
-	if msg.ChainID, err = chainid.ChainIDFromBytes(chainIDBytes[:]); err != nil {
+	if msg.ChainID, err = coretypes.ChainIDFromBytes(chainIDBytes[:]); err != nil {
 		return xerrors.Errorf("failed to read chainID: %w", err)
 	}
 	// read off-ledger request

@@ -31,7 +31,7 @@ import (
 // - creates record in the registry for the 'root' itself
 // - deploys other core contracts: 'accounts', 'blob', 'eventlog' by creating records in the registry and calling constructors
 // Input:
-// - ParamChainID chainid.ChainID. ID of the chain. Cannot be changed
+// - ParamChainID coretypes.ChainID. ID of the chain. Cannot be changed
 // - ParamChainColor ledgerstate.Color
 // - ParamChainAddress ledgerstate.Address
 // - ParamDescription string defaults to "N/A"

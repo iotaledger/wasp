@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/coretypes"
 
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
@@ -15,7 +15,7 @@ import (
 )
 
 func addChainRecordEndpoints(adm echoswagger.ApiGroup) {
-	rnd1 := chainid.RandomChainID()
+	rnd1 := coretypes.RandomChainID()
 	example := model.ChainRecord{
 		ChainID: model.NewChainID(rnd1),
 		Active:  false,
@@ -62,7 +62,7 @@ func handlePutChainRecord(c echo.Context) error {
 }
 
 func handleGetChainRecord(c echo.Context) error {
-	chainID, err := chainid.ChainIDFromBase58(c.Param("chainID"))
+	chainID, err := coretypes.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}

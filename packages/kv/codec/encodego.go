@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/hashing"
 )
 
@@ -42,9 +41,9 @@ func Encode(v interface{}) []byte {
 		return EncodeColor(*vt)
 	case ledgerstate.Color:
 		return EncodeColor(vt)
-	case *chainid.ChainID:
+	case *coretypes.ChainID:
 		return EncodeChainID(*vt)
-	case chainid.ChainID:
+	case coretypes.ChainID:
 		return EncodeChainID(vt)
 	case *coretypes.AgentID:
 		return EncodeAgentID(vt)
