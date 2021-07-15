@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -32,7 +31,7 @@ func TestCommitteeBasic(t *testing.T) {
 		neighbors: netIDs,
 	}
 
-	cmtRec := &committee_record.CommitteeRecord{
+	cmtRec := &registry.CommitteeRecord{
 		Address: stateAddr,
 		Nodes:   netIDs,
 	}

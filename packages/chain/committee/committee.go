@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
 	"go.uber.org/atomic"
@@ -40,7 +39,7 @@ type committee struct {
 const waitReady = false
 
 func New(
-	cmtRec *committee_record.CommitteeRecord,
+	cmtRec *registry.CommitteeRecord,
 	chainID *iscp.ChainID,
 	netProvider peering.NetworkProvider,
 	peerConfig registry.PeerNetworkConfigProvider,

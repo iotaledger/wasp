@@ -1,4 +1,4 @@
-package chainrecord
+package registry
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ func TestChainRecord(t *testing.T) {
 		Peers:   []string{"a", "b", "c"},
 		Active:  false,
 	}
-	recBack, err := FromBytes(rec.Bytes())
+	recBack, err := ChainRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)
 	require.True(t, rec.ChainID.Equals(recBack.ChainID))
 	require.EqualValues(t, rec.Active, recBack.Active)
@@ -29,7 +29,7 @@ func TestChainRecord(t *testing.T) {
 		Active:  true,
 	}
 	require.True(t, rec.Active)
-	recBack, err = FromBytes(rec.Bytes())
+	recBack, err = ChainRecordFromBytes(rec.Bytes())
 	require.NoError(t, err)
 	require.True(t, rec.ChainID.Equals(recBack.ChainID))
 	require.EqualValues(t, rec.Active, recBack.Active)

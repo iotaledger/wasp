@@ -17,8 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry/chainrecord"
-	"github.com/iotaledger/wasp/packages/registry/committee_record"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/plugins/database"
 )
@@ -53,7 +51,7 @@ func MakeChainRecordDbKey(chainID *iscp.ChainID) []byte {
 	return dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, chainID.Bytes())
 }
 
-func (r *Impl) GetChainRecordByChainID(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error) {
+func (r *Impl) GetChainRecordByChainID(chainID *iscp.ChainID) (*ChainRecord, error) {
 	data, err := r.store.Get(MakeChainRecordDbKey(chainID))
 	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
@@ -61,14 +59,14 @@ func (r *Impl) GetChainRecordByChainID(chainID *iscp.ChainID) (*chainrecord.Chai
 	if err != nil {
 		return nil, err
 	}
-	return chainrecord.FromBytes(data)
+	return ChainRecordFromBytes(data)
 }
 
-func (r *Impl) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
-	ret := make([]*chainrecord.ChainRecord, 0)
+func (r *Impl) GetChainRecords() ([]*ChainRecord, error) {
+	ret := make([]*ChainRecord, 0)
 
 	err := r.store.Iterate([]byte{dbkeys.ObjectTypeChainRecord}, func(key kvstore.Key, value kvstore.Value) bool {
-		if rec, err1 := chainrecord.FromBytes(value); err1 == nil {
+		if rec, err1 := ChainRecordFromBytes(value); err1 == nil {
 			ret = append(ret, rec)
 		}
 		return true
@@ -76,7 +74,7 @@ func (r *Impl) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
 	return ret, err
 }
 
-func (r *Impl) UpdateChainRecord(chainID *iscp.ChainID, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error) {
+func (r *Impl) UpdateChainRecord(chainID *iscp.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error) {
 	rec, err := r.GetChainRecordByChainID(chainID)
 	if err != nil {
 		return nil, err
@@ -93,8 +91,8 @@ func (r *Impl) UpdateChainRecord(chainID *iscp.ChainID, f func(*chainrecord.Chai
 	return rec, nil
 }
 
-func (r *Impl) ActivateChainRecord(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error) {
-	return r.UpdateChainRecord(chainID, func(bd *chainrecord.ChainRecord) bool {
+func (r *Impl) ActivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error) {
+	return r.UpdateChainRecord(chainID, func(bd *ChainRecord) bool {
 		if bd.Active {
 			return false
 		}
@@ -103,8 +101,8 @@ func (r *Impl) ActivateChainRecord(chainID *iscp.ChainID) (*chainrecord.ChainRec
 	})
 }
 
-func (r *Impl) DeactivateChainRecord(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error) {
-	return r.UpdateChainRecord(chainID, func(bd *chainrecord.ChainRecord) bool {
+func (r *Impl) DeactivateChainRecord(chainID *iscp.ChainID) (*ChainRecord, error) {
+	return r.UpdateChainRecord(chainID, func(bd *ChainRecord) bool {
 		if !bd.Active {
 			return false
 		}
@@ -113,7 +111,7 @@ func (r *Impl) DeactivateChainRecord(chainID *iscp.ChainID) (*chainrecord.ChainR
 	})
 }
 
-func (r *Impl) SaveChainRecord(rec *chainrecord.ChainRecord) error {
+func (r *Impl) SaveChainRecord(rec *ChainRecord) error {
 	k := dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, rec.ChainID.Bytes())
 	return r.store.Set(k, rec.Bytes())
 }
@@ -126,7 +124,7 @@ func dbKeyCommitteeRecord(addr ledgerstate.Address) []byte {
 	return dbkeys.MakeKey(dbkeys.ObjectTypeCommitteeRecord, addr.Bytes())
 }
 
-func (r *Impl) GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.CommitteeRecord, error) {
+func (r *Impl) GetCommitteeRecord(addr ledgerstate.Address) (*CommitteeRecord, error) {
 	data, err := r.store.Get(dbKeyCommitteeRecord(addr))
 	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
@@ -134,10 +132,10 @@ func (r *Impl) GetCommitteeRecord(addr ledgerstate.Address) (*committee_record.C
 	if err != nil {
 		return nil, err
 	}
-	return committee_record.CommitteeRecordFromBytes(data)
+	return CommitteeRecordFromBytes(data)
 }
 
-func (r *Impl) SaveCommitteeRecord(rec *committee_record.CommitteeRecord) error {
+func (r *Impl) SaveCommitteeRecord(rec *CommitteeRecord) error {
 	return r.store.Set(dbKeyCommitteeRecord(rec.Address), rec.Bytes())
 }
 

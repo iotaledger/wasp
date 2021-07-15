@@ -1,4 +1,4 @@
-package committee_record //nolint:revive //TODO remove `_` from packagename
+package registry
 
 import (
 	"testing"
