@@ -26,7 +26,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -34,9 +35,9 @@ import (
 )
 
 // implement VMProcessor and VMProcessorEntryPoint interfaces
-type fairRouletteProcessor map[coretypes.Hname]fairRouletteEntryPoint
+type fairRouletteProcessor map[iscp.Hname]fairRouletteEntryPoint
 
-type fairRouletteEntryPoint func(ctx coretypes.Sandbox) error
+type fairRouletteEntryPoint func(ctx iscp.Sandbox) error
 
 // ID of the smart contract program
 const ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
@@ -44,14 +45,14 @@ const ProgramHash = "FNT6snmmEM28duSg7cQomafbJ5fs596wtuNRn18wfaAz"
 // constants for request codes
 var (
 	// request to place the bet
-	RequestPlaceBet = coretypes.Hn("placeBet")
+	RequestPlaceBet = iscp.Hn("placeBet")
 	// request to lock the bets
-	RequestLockBets = coretypes.Hn("lockBets")
+	RequestLockBets = iscp.Hn("lockBets")
 	// request to play and distribute
-	RequestPlayAndDistribute = coretypes.Hn("playAndDistribute")
+	RequestPlayAndDistribute = iscp.Hn("playAndDistribute")
 	// request to set the play period. By default it is 2 minutes.
 	// It only will be processed is sent by the owner of the smart contract
-	RequestSetPlayPeriod = coretypes.Hn("setPlayPeriod")
+	RequestSetPlayPeriod = iscp.Hn("setPlayPeriod")
 )
 
 // the processor is a map of entry points
@@ -96,8 +97,8 @@ const (
 
 // BetInfo contains data of the bet
 type BetInfo struct {
-	Player coretypes.AgentID
-	reqId  coretypes.RequestID
+	Player iscp.AgentID
+	reqId  iscp.RequestID
 	Sum    int64
 	Color  byte
 }
@@ -109,11 +110,11 @@ type PlayerStats struct {
 }
 
 // coonnection of the SC program with the Wasp node
-func GetProcessor() coretypes.VMProcessor {
+func GetProcessor() iscp.VMProcessor {
 	return entryPoints
 }
 
-func (f fairRouletteProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
+func (f fairRouletteProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntryPoint, bool) {
 	ep, ok := entryPoints[code]
 	return ep, ok
 }
@@ -122,7 +123,7 @@ func (v fairRouletteProcessor) GetDescription() string {
 	return "FairRoulette hard coded smart contract processor"
 }
 
-func (f fairRouletteEntryPoint) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
+func (f fairRouletteEntryPoint) Call(ctx iscp.Sandbox) (dict.Dict, error) {
 	err := f(ctx)
 	if err != nil {
 		ctx.Event(fmt.Sprintf("error %v", err))
@@ -136,12 +137,12 @@ func (ep fairRouletteEntryPoint) IsView() bool {
 }
 
 // TODO
-func (ep fairRouletteEntryPoint) CallView(ctx coretypes.SandboxView) (dict.Dict, error) {
+func (ep fairRouletteEntryPoint) CallView(ctx iscp.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 
 // the request places bet into the smart contract
-func placeBet(ctx coretypes.Sandbox) error {
+func placeBet(ctx iscp.Sandbox) error {
 	ctx.Event("placeBet")
 	params := ctx.Params()
 
@@ -213,7 +214,7 @@ func placeBet(ctx coretypes.Sandbox) error {
 
 		// send the timelocked Lock request to self. TimeLock is for number of seconds taken from the state variable
 		// By default it is 2 minutes, i.e. Lock request will be processed after 2 minutes.
-		if ctx.PostRequest(coretypes.PostRequestParams{
+		if ctx.PostRequest(iscp.PostRequestParams{
 			TargetContractID: ctx.ContractID(),
 			EntryPoint:       RequestLockBets,
 			TimeLock:         uint32(period),
@@ -227,7 +228,7 @@ func placeBet(ctx coretypes.Sandbox) error {
 }
 
 // admin (protected) request to set the period of autoplay. It only can be processed by the owner of the smart contract
-func setPlayPeriod(ctx coretypes.Sandbox) error {
+func setPlayPeriod(ctx iscp.Sandbox) error {
 	ctx.Event("setPlayPeriod")
 	params := ctx.Params()
 
@@ -251,10 +252,10 @@ func setPlayPeriod(ctx coretypes.Sandbox) error {
 
 // lockBet moves all current bets into the LockedBets array and erases current bets array
 // it only processed if sent from the smart contract to itself
-func lockBets(ctx coretypes.Sandbox) error {
+func lockBets(ctx iscp.Sandbox) error {
 	ctx.Event("lockBets")
 
-	scAddr := coretypes.NewAgentIDFromContractID(ctx.ContractID())
+	scAddr := iscp.NewAgentIDFromContractID(ctx.ContractID())
 	if ctx.Caller() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("attempt of unauthorised access")
@@ -273,7 +274,7 @@ func lockBets(ctx coretypes.Sandbox) error {
 
 	// send request to self for playing the wheel with the entropy whicl will be known
 	// after signing this state update transaction therefore unpredictable
-	ctx.PostRequest(coretypes.PostRequestParams{
+	ctx.PostRequest(iscp.PostRequestParams{
 		TargetContractID: ctx.ContractID(),
 		EntryPoint:       RequestPlayAndDistribute,
 	})
@@ -282,10 +283,10 @@ func lockBets(ctx coretypes.Sandbox) error {
 }
 
 // playAndDistribute takes the entropy, plays the game and distributes rewards to winners
-func playAndDistribute(ctx coretypes.Sandbox) error {
+func playAndDistribute(ctx iscp.Sandbox) error {
 	ctx.Event("playAndDistribute")
 
-	scAddr := coretypes.NewAgentIDFromContractID(ctx.ContractID())
+	scAddr := iscp.NewAgentIDFromContractID(ctx.ContractID())
 	if ctx.Caller() != scAddr {
 		// ignore if request is not from itself
 		return fmt.Errorf("playAndDistribute from the wrong sender")
@@ -354,7 +355,7 @@ func playAndDistribute(ctx coretypes.Sandbox) error {
 		// It is not necessary because all tokens are in the own account anyway.
 		// However, it is healthy to compress number of outputs in the address
 
-		//agent := coretypes.NewAgentIDFromContractID(ctx.ContractID())
+		//agent := iscp.NewAgentIDFromContractID(ctx.ContractID())
 		//if !ctx.MoveTokens(agent, ledgerstate.ColorIOTA, totalLockedAmount) {
 		//	// inconsistency. A disaster
 		//	ctx.Event(fmt.Sprintf("$$$$$$$$$$ something went wrong 1"))
@@ -379,7 +380,7 @@ func playAndDistribute(ctx coretypes.Sandbox) error {
 	return nil
 }
 
-func addToWinsPerColor(ctx coretypes.Sandbox, winningColor byte) {
+func addToWinsPerColor(ctx iscp.Sandbox, winningColor byte) {
 	winsPerColorArray := collections.NewArray16(ctx.State(), StateArrayWinsPerColor)
 
 	// first time? Initialize counters
@@ -395,8 +396,8 @@ func addToWinsPerColor(ctx coretypes.Sandbox, winningColor byte) {
 }
 
 // distributeLockedAmount distributes total locked amount proportionally to placed sums
-func distributeLockedAmount(ctx coretypes.Sandbox, bets []*BetInfo, totalLockedAmount int64) bool {
-	sumsByPlayers := make(map[coretypes.AgentID]uint64)
+func distributeLockedAmount(ctx iscp.Sandbox, bets []*BetInfo, totalLockedAmount int64) bool {
+	sumsByPlayers := make(map[iscp.AgentID]uint64)
 	totalWinningAmount := int64(0)
 	for _, bet := range bets {
 		if _, ok := sumsByPlayers[bet.Player]; !ok {
@@ -414,7 +415,7 @@ func distributeLockedAmount(ctx coretypes.Sandbox, bets []*BetInfo, totalLockedA
 	}
 
 	// make deterministic sequence by sorting. Eliminate possible rounding effects
-	seqPlayers := make([]coretypes.AgentID, 0, len(sumsByPlayers))
+	seqPlayers := make([]iscp.AgentID, 0, len(sumsByPlayers))
 	resultSum := int64(0)
 	for player, sum := range sumsByPlayers {
 		seqPlayers = append(seqPlayers, player)
@@ -482,7 +483,7 @@ func (bi *BetInfo) Write(w io.Writer) error {
 
 func (bi *BetInfo) Read(r io.Reader) error {
 	var err error
-	if err = coretypes.ReadAgentID(r, &bi.Player); err != nil {
+	if err = iscp.ReadAgentID(r, &bi.Player); err != nil {
 		return err
 	}
 	if err = bi.reqId.Read(r); err != nil {
@@ -541,7 +542,7 @@ func (ps *PlayerStats) String() string {
 	return fmt.Sprintf("[bets: %d - wins: %d]", ps.Bets, ps.Wins)
 }
 
-func withPlayerStats(ctx coretypes.Sandbox, player *coretypes.AgentID, f func(ps *PlayerStats)) error {
+func withPlayerStats(ctx iscp.Sandbox, player *iscp.AgentID, f func(ps *PlayerStats)) error {
 	statsDict := collections.NewMap(ctx.State(), StateVarPlayerStats)
 	b := statsDict.MustGetAt(player[:])
 	stats, err := DecodePlayerStats(b)

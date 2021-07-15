@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
@@ -39,7 +39,7 @@ type CreateChainParams struct {
 
 // DeployChainWithDKG performs all actions needed to deploy the chain
 // TODO: [KP] Shouldn't that be in the client packages?
-func DeployChainWithDKG(par CreateChainParams) (*chainid.ChainID, ledgerstate.Address, error) {
+func DeployChainWithDKG(par CreateChainParams) (*iscp.ChainID, ledgerstate.Address, error) {
 	if len(par.AllPeeringHosts) > 0 {
 		// all committee nodes most also be among allPeers
 		if !util.IsSubset(par.CommitteePeeringHosts, par.AllPeeringHosts) {
@@ -62,7 +62,7 @@ func DeployChainWithDKG(par CreateChainParams) (*chainid.ChainID, ledgerstate.Ad
 // DeployChain creates a new chain on specified committee address
 // noinspection ALL
 
-func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address) (*chainid.ChainID, error) {
+func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address) (*iscp.ChainID, error) {
 	var err error
 	textout := ioutil.Discard
 	if par.Textout != nil {
@@ -108,7 +108,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 }
 
 // CreateChainOrigin creates and confirms origin transaction of the chain and init request transaction to initialize state of it
-func CreateChainOrigin(node *goshimmer.Client, originator *ed25519.KeyPair, stateController ledgerstate.Address, dscr string) (*chainid.ChainID, *ledgerstate.Transaction, error) {
+func CreateChainOrigin(node *goshimmer.Client, originator *ed25519.KeyPair, stateController ledgerstate.Address, dscr string) (*iscp.ChainID, *ledgerstate.Transaction, error) {
 	originatorAddr := ledgerstate.NewED25519Address(originator.PublicKey)
 	// ----------- request owner address' outputs from the ledger
 	allOuts, err := node.GetConfirmedOutputs(originatorAddr)
@@ -163,7 +163,7 @@ func CreateChainOrigin(node *goshimmer.Client, originator *ed25519.KeyPair, stat
 
 // ActivateChainOnAccessNodes puts chain records into nodes and activates its
 // TODO needs refactoring and optimization
-func ActivateChainOnAccessNodes(apiHosts, peers []string, chainID *chainid.ChainID) error {
+func ActivateChainOnAccessNodes(apiHosts, peers []string, chainID *iscp.ChainID) error {
 	nodes := multiclient.New(apiHosts)
 	// ------------ put chain records to hosts
 	err := nodes.PutChainRecord(&chainrecord.ChainRecord{

@@ -3,15 +3,15 @@ package blob
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
-func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil
 }
@@ -19,7 +19,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 // storeBlob treats parameters as names of fields and field values
 // it stores it in the state in deterministic binary representation
 // Returns hash of the blob
-func storeBlob(ctx coretypes.Sandbox) (dict.Dict, error) {
+func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.storeBlob.begin")
 	state := ctx.State()
 	params := ctx.Params()
@@ -57,7 +57,7 @@ func storeBlob(ctx coretypes.Sandbox) (dict.Dict, error) {
 }
 
 // getBlobInfo return lengths of all fields in the blob
-func getBlobInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getBlobInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.getBlobInfo.begin")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -72,7 +72,7 @@ func getBlobInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func getBlobField(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getBlobField(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.getBlobField.begin")
 	state := ctx.State()
 
@@ -93,7 +93,7 @@ func getBlobField(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func listBlobs(ctx coretypes.SandboxView) (dict.Dict, error) {
+func listBlobs(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.listBlobs.begin")
 	ret := dict.New()
 	GetDirectoryR(ctx.State()).MustIterate(func(hash []byte, totalSize []byte) bool {

@@ -6,10 +6,9 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -26,24 +25,24 @@ import (
 // chain address contained in the statetxbuilder.Builder
 type VMContext struct {
 	// same for the block
-	chainID              chainid.ChainID
-	chainOwnerID         coretypes.AgentID
+	chainID              iscp.ChainID
+	chainOwnerID         iscp.AgentID
 	chainInput           *ledgerstate.AliasOutput
 	processors           *processors.Cache
 	txBuilder            *utxoutil.Builder
 	virtualState         state.VirtualState
 	solidStateBaseline   coreutil.StateBaseline
 	remainingAfterFees   *ledgerstate.ColoredBalances
-	blockContext         map[coretypes.Hname]*blockContext
-	blockContextCloseSeq []coretypes.Hname
+	blockContext         map[iscp.Hname]*blockContext
+	blockContextCloseSeq []iscp.Hname
 	log                  *logger.Logger
 	// fee related
-	validatorFeeTarget coretypes.AgentID // provided by validator
+	validatorFeeTarget iscp.AgentID // provided by validator
 	feeColor           ledgerstate.Color
 	ownerFee           uint64
 	validatorFee       uint64
 	// request context
-	req                coretypes.Request
+	req                iscp.Request
 	requestIndex       uint16
 	currentStateUpdate state.StateUpdate
 	entropy            hashing.HashValue // mutates with each request
@@ -56,8 +55,8 @@ type VMContext struct {
 
 type callContext struct {
 	isRequestContext bool                         // is called from the request (true) or from another SC (false)
-	caller           coretypes.AgentID            // calling agent
-	contract         coretypes.Hname              // called contract
+	caller           iscp.AgentID                 // calling agent
+	contract         iscp.Hname                   // called contract
 	params           dict.Dict                    // params passed
 	transfer         *ledgerstate.ColoredBalances // transfer passed
 }
@@ -69,7 +68,7 @@ type blockContext struct {
 
 // CreateVMContext a constructor
 func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
-	chainID, err := chainid.ChainIDFromAddress(task.ChainInput.Address())
+	chainID, err := iscp.ChainIDFromAddress(task.ChainInput.Address())
 	if err != nil {
 		task.Log.Panicf("CreateVMContext: %v", err)
 	}
@@ -97,8 +96,8 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 		virtualState:         task.VirtualState,
 		solidStateBaseline:   task.SolidStateBaseline,
 		processors:           task.Processors,
-		blockContext:         make(map[coretypes.Hname]*blockContext),
-		blockContextCloseSeq: make([]coretypes.Hname, 0),
+		blockContext:         make(map[iscp.Hname]*blockContext),
+		blockContextCloseSeq: make([]iscp.Hname, 0),
 		log:                  task.Log,
 		entropy:              task.Entropy,
 		callStack:            make([]*callContext, 0),

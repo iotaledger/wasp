@@ -4,26 +4,21 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSetThenGet(t *testing.T) {
-	chainID := chainid.RandomChainID([]byte("hmm"))
+	chainID := iscp.RandomChainID([]byte("hmm"))
 	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()
-	hname := coretypes.Hn("test")
+	hname := iscp.Hn("test")
 
 	vmctx := &VMContext{
 		virtualState:       virtualState,
@@ -79,11 +74,11 @@ func TestSetThenGet(t *testing.T) {
 }
 
 func TestIterate(t *testing.T) {
-	chainID := chainid.RandomChainID([]byte("hmm"))
+	chainID := iscp.RandomChainID([]byte("hmm"))
 	virtualState, _ := state.CreateOriginState(mapdb.NewMapDB(), chainID)
 
 	stateUpdate := state.NewStateUpdate()
-	hname := coretypes.Hn("test")
+	hname := iscp.Hn("test")
 
 	vmctx := &VMContext{
 		virtualState:       virtualState,

@@ -11,18 +11,18 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
-func (c *chainObj) ID() *chainid.ChainID {
+func (c *chainObj) ID() *iscp.ChainID {
 	return &c.chainID
 }
 
@@ -109,7 +109,7 @@ func shouldSendToPeer(peerID string, ackPeers []string) bool {
 }
 
 func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
-	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID())
+	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
 	msgData := messages.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
 	committee := c.getCommittee()
 	getPeerIDs := (*c.peers).GetRandomPeers
@@ -122,7 +122,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 		peerIDs := getPeerIDs(c.offledgerBroadcastUpToNPeers)
 		for _, peerID := range peerIDs {
 			if shouldSendToPeer(peerID, ackPeers) {
-				c.log.Debugf("sending offledger request ID: reqID: %s, peerID: %s", req.ID(), peerID)
+				c.log.Debugf("sending offledger request ID: reqID: %s, peerID: %s", req.ID().Base58(), peerID)
 				(*c.peers).SendSimple(peerID, messages.MsgOffLedgerRequest, msgData)
 			}
 		}
@@ -149,16 +149,17 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 }
 
 func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string) {
-	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID(), senderNetID)
+	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
 	c.sendRequestAckowledgementMsg(req.ID(), senderNetID)
 	if !c.mempool.ReceiveRequest(req) {
 		return
 	}
+	c.log.Debugf("ReceiveOffLedgerRequest - added to mempool: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
 	c.broadcastOffLedgerRequest(req)
 }
 
-func (c *chainObj) sendRequestAckowledgementMsg(reqID coretypes.RequestID, peerID string) {
-	c.log.Debugf("sendRequestAckowledgementMsg: reqID: %s, peerID: %s", reqID, peerID)
+func (c *chainObj) sendRequestAckowledgementMsg(reqID iscp.RequestID, peerID string) {
+	c.log.Debugf("sendRequestAckowledgementMsg: reqID: %s, peerID: %s", reqID.Base58(), peerID)
 	if peerID == "" {
 		return
 	}
@@ -166,8 +167,8 @@ func (c *chainObj) sendRequestAckowledgementMsg(reqID coretypes.RequestID, peerI
 	(*c.peers).SendSimple(peerID, messages.MsgRequestAck, msgData)
 }
 
-func (c *chainObj) ReceiveRequestAckMessage(reqID *coretypes.RequestID, peerID string) {
-	c.log.Debugf("ReceiveRequestAckMessage: reqID: %s, peerID: %s", reqID, peerID)
+func (c *chainObj) ReceiveRequestAckMessage(reqID *iscp.RequestID, peerID string) {
+	c.log.Debugf("ReceiveRequestAckMessage: reqID: %s, peerID: %s", reqID.Base58(), peerID)
 	c.offLedgerReqsAcksMutex.Lock()
 	defer c.offLedgerReqsAcksMutex.Unlock()
 	c.offLedgerReqsAcks[*reqID] = append(c.offLedgerReqsAcks[*reqID], peerID)
@@ -176,7 +177,7 @@ func (c *chainObj) ReceiveRequestAckMessage(reqID *coretypes.RequestID, peerID s
 // SendMissingRequestsToPeer sends the requested missing requests by a peer
 func (c *chainObj) SendMissingRequestsToPeer(msg messages.MissingRequestIDsMsg, peerID string) {
 	for _, reqID := range msg.IDs {
-		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID, peerID)
+		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID.Base58(), peerID)
 		req := c.mempool.GetRequest(reqID)
 		msg := messages.NewMissingRequestMsg(req)
 		(*c.peers).SendSimple(peerID, messages.MsgMissingRequest, msg.Bytes())
@@ -198,14 +199,14 @@ func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 	}
 }
 
-func (c *chainObj) ReceiveRequest(req coretypes.Request) {
+func (c *chainObj) ReceiveRequest(req iscp.Request) {
 	c.log.Debugf("ReceiveRequest: %s", req.ID())
 	c.mempool.ReceiveRequests(req)
 }
 
 func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
 	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
-		stateOutput.GetStateIndex(), coretypes.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
+		stateOutput.GetStateIndex(), iscp.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
 	c.ReceiveMessage(&messages.StateMsg{
 		ChainOutput: stateOutput,
 		Timestamp:   timestamp,
@@ -223,11 +224,11 @@ func (c *chainObj) ReceiveOutput(output ledgerstate.Output) {
 	c.stateMgr.EventOutputMsg(output)
 }
 
-func (c *chainObj) BlobCache() coretypes.BlobCache {
+func (c *chainObj) BlobCache() registry.BlobCache {
 	return c.blobProvider
 }
 
-func (c *chainObj) GetRequestProcessingStatus(reqID coretypes.RequestID) chain.RequestProcessingStatus {
+func (c *chainObj) GetRequestProcessingStatus(reqID iscp.RequestID) chain.RequestProcessingStatus {
 	if c.IsDismissed() {
 		return chain.RequestProcessingStatusUnknown
 	}

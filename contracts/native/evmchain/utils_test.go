@@ -16,10 +16,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -145,12 +145,12 @@ func (e *evmChainInstance) claimOwnership(opts ...iotaCallOptions) error {
 	return err
 }
 
-func (e *evmChainInstance) setNextOwner(nextOwner *coretypes.AgentID, opts ...iotaCallOptions) error {
+func (e *evmChainInstance) setNextOwner(nextOwner *iscp.AgentID, opts ...iotaCallOptions) error {
 	_, err := e.postRequest(opts, FuncSetNextOwner, FieldNextEvmOwner, nextOwner)
 	return err
 }
 
-func (e *evmChainInstance) withdrawGasFees(wallet *ed25519.KeyPair, agentID ...*coretypes.AgentID) error {
+func (e *evmChainInstance) withdrawGasFees(wallet *ed25519.KeyPair, agentID ...*iscp.AgentID) error {
 	var params []interface{}
 	if len(agentID) > 0 {
 		params = append(params, FieldAgentID, agentID[0])
@@ -180,7 +180,7 @@ func (e *evmChainInstance) getNonce(addr common.Address) uint64 {
 	return nonce
 }
 
-func (e *evmChainInstance) getOwner() coretypes.AgentID {
+func (e *evmChainInstance) getOwner() iscp.AgentID {
 	ret, err := e.callView(FuncGetOwner)
 	require.NoError(e.t, err)
 	owner, _, err := codec.DecodeAgentID(ret.MustGet(FieldResult))

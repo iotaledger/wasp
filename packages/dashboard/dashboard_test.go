@@ -5,9 +5,8 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -51,7 +50,7 @@ func TestDashboardChainList(t *testing.T) {
 func TestDashboardChainView(t *testing.T) {
 	e, d := mockDashboard()
 	html := testutil.CallHTMLRequestHandler(t, e, d.handleChain, "/chain/:chainid", map[string]string{
-		"chainid": chainid.RandomChainID().Base58(),
+		"chainid": iscp.RandomChainID().Base58(),
 	})
 	checkProperConversionsToString(t, html)
 }
@@ -59,8 +58,8 @@ func TestDashboardChainView(t *testing.T) {
 func TestDashboardChainAccount(t *testing.T) {
 	e, d := mockDashboard()
 	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainAccount, "/chain/:chainid/account/:agentid", map[string]string{
-		"chainid": chainid.RandomChainID().Base58(),
-		"agentid": strings.Replace(coretypes.NewRandomAgentID().String(), "/", ":", 1),
+		"chainid": iscp.RandomChainID().Base58(),
+		"agentid": strings.Replace(iscp.NewRandomAgentID().String(), "/", ":", 1),
 	})
 	checkProperConversionsToString(t, html)
 	require.Regexp(t, "^A/", html.Find(".value-agentid").Text())
@@ -69,7 +68,7 @@ func TestDashboardChainAccount(t *testing.T) {
 func TestDashboardChainBlob(t *testing.T) {
 	e, d := mockDashboard()
 	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainBlob, "/chain/:chainid/blob/:hash", map[string]string{
-		"chainid": chainid.RandomChainID().Base58(),
+		"chainid": iscp.RandomChainID().Base58(),
 		"hash":    hashing.RandomHash(nil).Base58(),
 	})
 	checkProperConversionsToString(t, html)
@@ -78,8 +77,8 @@ func TestDashboardChainBlob(t *testing.T) {
 func TestDashboardChainContract(t *testing.T) {
 	e, d := mockDashboard()
 	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainContract, "/chain/:chainid/contract/:hname", map[string]string{
-		"chainid": chainid.RandomChainID().Base58(),
-		"hname":   coretypes.Hname(0).String(),
+		"chainid": iscp.RandomChainID().Base58(),
+		"hname":   iscp.Hname(0).String(),
 	})
 	checkProperConversionsToString(t, html)
 }

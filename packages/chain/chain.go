@@ -11,11 +11,10 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain/messages"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -24,7 +23,7 @@ import (
 )
 
 type ChainCore interface {
-	ID() *chainid.ChainID
+	ID() *iscp.ChainID
 	GetCommitteeInfo() *CommitteeInfo
 	ReceiveMessage(interface{})
 	Events() ChainEvents
@@ -48,7 +47,7 @@ type ChainEntry interface {
 
 // ChainRequests is an interface to query status of the request
 type ChainRequests interface {
-	GetRequestProcessingStatus(id coretypes.RequestID) RequestProcessingStatus
+	GetRequestProcessingStatus(id iscp.RequestID) RequestProcessingStatus
 	EventRequestProcessed() *events.Event
 }
 
@@ -116,20 +115,20 @@ type Consensus interface {
 	IsReady() bool
 	Close()
 	GetStatusSnapshot() *ConsensusInfo
-	ShouldReceiveMissingRequest(req coretypes.Request) bool
+	ShouldReceiveMissingRequest(req iscp.Request) bool
 }
 
 type Mempool interface {
-	ReceiveRequests(reqs ...coretypes.Request)
-	ReceiveRequest(req coretypes.Request) bool
-	RemoveRequests(reqs ...coretypes.RequestID)
-	ReadyNow(nowis ...time.Time) []coretypes.Request
-	ReadyFromIDs(nowis time.Time, reqIDs ...coretypes.RequestID) ([]coretypes.Request, []int, bool)
-	HasRequest(id coretypes.RequestID) bool
-	GetRequest(id coretypes.RequestID) coretypes.Request
+	ReceiveRequests(reqs ...iscp.Request)
+	ReceiveRequest(req iscp.Request) bool
+	RemoveRequests(reqs ...iscp.RequestID)
+	ReadyNow(nowis ...time.Time) []iscp.Request
+	ReadyFromIDs(nowis time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool)
+	HasRequest(id iscp.RequestID) bool
+	GetRequest(id iscp.RequestID) iscp.Request
 	Info() MempoolInfo
-	WaitRequestInPool(reqid coretypes.RequestID, timeout ...time.Duration) bool // for testing
-	WaitInBufferEmpty(timeout ...time.Duration) bool                            // for testing
+	WaitRequestInPool(reqid iscp.RequestID, timeout ...time.Duration) bool // for testing
+	WaitInBufferEmpty(timeout ...time.Duration) bool                       // for testing
 	Close()
 }
 
@@ -166,7 +165,7 @@ type ConsensusInfo struct {
 }
 
 type ReadyListRecord struct {
-	Request coretypes.Request
+	Request iscp.Request
 	Seen    map[uint16]bool
 }
 

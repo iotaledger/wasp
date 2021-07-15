@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
@@ -22,15 +22,15 @@ const (
 
 // TODO this SC could adjust gasPerIota based on some conditions
 var evmChainMgmtInterface = coreutil.NewContractInterface("EVMChainManagement", "EVM chain management").WithFunctions(nil, []coreutil.ContractFunctionInterface{
-	coreutil.Func(mgmtFuncClaimOwnership, func(ctx coretypes.Sandbox) (dict.Dict, error) {
+	coreutil.Func(mgmtFuncClaimOwnership, func(ctx iscp.Sandbox) (dict.Dict, error) {
 		a := assert.NewAssert(ctx.Log())
-		_, err := ctx.Call(Interface.Hname(), coretypes.Hn(FuncClaimOwnership), nil, nil)
+		_, err := ctx.Call(Interface.Hname(), iscp.Hn(FuncClaimOwnership), nil, nil)
 		a.RequireNoError(err)
 		return nil, nil
 	}),
-	coreutil.Func(mgmtFuncWithdrawGasFees, func(ctx coretypes.Sandbox) (dict.Dict, error) {
+	coreutil.Func(mgmtFuncWithdrawGasFees, func(ctx iscp.Sandbox) (dict.Dict, error) {
 		a := assert.NewAssert(ctx.Log())
-		_, err := ctx.Call(Interface.Hname(), coretypes.Hn(FuncWithdrawGasFees), nil, nil)
+		_, err := ctx.Call(Interface.Hname(), iscp.Hn(FuncWithdrawGasFees), nil, nil)
 		a.RequireNoError(err)
 		return nil, nil
 	}),
@@ -47,7 +47,7 @@ func TestRequestGasFees(t *testing.T) {
 	evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
 	// change owner to evnchainmanagement SC
-	managerAgentID := coretypes.NewAgentID(soloChain.ChainID.AsAddress(), coretypes.Hn(evmChainMgmtInterface.Name))
+	managerAgentID := iscp.NewAgentID(soloChain.ChainID.AsAddress(), iscp.Hn(evmChainMgmtInterface.Name))
 	_, err = soloChain.PostRequestSync(
 		solo.NewCallParams(Interface.Name, FuncSetNextOwner, FieldNextEvmOwner, managerAgentID).
 			WithIotas(1),

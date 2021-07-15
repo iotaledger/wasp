@@ -3,8 +3,8 @@ package blocklog
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -12,7 +12,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
-func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	blockIndex := SaveNextBlockInfo(ctx.State(), &BlockInfo{
 		Timestamp:             time.Unix(0, ctx.GetTimestamp()),
 		TotalRequests:         1,
@@ -25,7 +25,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func viewGetBlockInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
+func viewGetBlockInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	blockIndex := params.MustGetUint32(ParamBlockIndex)
 	data, found, err := getBlockInfoDataIntern(ctx.State(), blockIndex)
@@ -40,7 +40,7 @@ func viewGetBlockInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func viewGetLatestBlockInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
+func viewGetLatestBlockInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	registry := collections.NewArray32ReadOnly(ctx.State(), StateVarBlockRegistry)
 	regLen := registry.MustLen()
 	if regLen == 0 {
@@ -53,7 +53,7 @@ func viewGetLatestBlockInfo(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func viewIsRequestProcessed(ctx coretypes.SandboxView) (dict.Dict, error) {
+func viewIsRequestProcessed(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	requestID := params.MustGetRequestID(ParamRequestID)
 	a := assert.NewAssert(ctx.Log())
@@ -66,7 +66,7 @@ func viewIsRequestProcessed(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func viewGetRequestLogRecord(ctx coretypes.SandboxView) (dict.Dict, error) {
+func viewGetRequestLogRecord(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	requestID := params.MustGetRequestID(ParamRequestID)
 	recBin, blockIndex, requestIndex, found := getRequestRecordDataByRequestID(ctx, requestID)
@@ -80,7 +80,7 @@ func viewGetRequestLogRecord(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func viewGetRequestIDsForBlock(ctx coretypes.SandboxView) (dict.Dict, error) {
+func viewGetRequestIDsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	a := assert.NewAssert(ctx.Log())
 	blockIndex := params.MustGetUint32(ParamBlockIndex)
@@ -99,7 +99,7 @@ func viewGetRequestIDsForBlock(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func viewGetRequestLogRecordsForBlock(ctx coretypes.SandboxView) (dict.Dict, error) {
+func viewGetRequestLogRecordsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	a := assert.NewAssert(ctx.Log())
 	blockIndex := params.MustGetUint32(ParamBlockIndex)
@@ -116,7 +116,7 @@ func viewGetRequestLogRecordsForBlock(ctx coretypes.SandboxView) (dict.Dict, err
 	return ret, nil
 }
 
-func viewControlAddresses(ctx coretypes.SandboxView) (dict.Dict, error) {
+func viewControlAddresses(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	registry := collections.NewArray32ReadOnly(ctx.State(), StateVarControlAddresses)
 	l := registry.MustLen()

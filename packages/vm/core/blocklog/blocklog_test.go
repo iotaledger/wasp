@@ -5,14 +5,14 @@ import (
 	"testing"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSerdeRequestLogRecord(t *testing.T) {
 	var txid ledgerstate.TransactionID
 	rand.Read(txid[:])
-	rid := coretypes.RequestID(ledgerstate.NewOutputID(txid, 0))
+	rid := iscp.RequestID(ledgerstate.NewOutputID(txid, 0))
 	rec := &RequestLogRecord{
 		RequestID: rid,
 		OffLedger: true,

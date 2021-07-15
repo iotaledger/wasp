@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -25,12 +23,12 @@ func (d *Dashboard) initChainContract(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChainContract(c echo.Context) error {
-	chainID, err := chainid.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
 
-	hname, err := coretypes.HnameFromString(c.Param("hname"))
+	hname, err := iscp.HnameFromString(c.Param("hname"))
 	if err != nil {
 		return err
 	}
@@ -86,8 +84,8 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 type ChainContractTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID *chainid.ChainID
-	Hname   coretypes.Hname
+	ChainID *iscp.ChainID
+	Hname   iscp.Hname
 
 	ContractRecord *root.ContractRecord
 	Log            []*collections.TimestampedLogRecord

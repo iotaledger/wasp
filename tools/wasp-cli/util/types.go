@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -30,7 +30,7 @@ func ValueFromString(vtype, s string) []byte {
 		log.Check(err)
 		return col.Bytes()
 	case "agentid":
-		agentid, err := coretypes.NewAgentIDFromString(s)
+		agentid, err := iscp.NewAgentIDFromString(s)
 		log.Check(err)
 		return agentid.Bytes()
 	case "file":

@@ -6,10 +6,10 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv"
 
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -33,7 +33,7 @@ func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedSt
 	}
 }
 
-func (c *MockedStateTransition) NextState(vs state.VirtualState, chainOutput *ledgerstate.AliasOutput, ts time.Time, reqs ...coretypes.Request) {
+func (c *MockedStateTransition) NextState(vs state.VirtualState, chainOutput *ledgerstate.AliasOutput, ts time.Time, reqs ...iscp.Request) {
 	if c.chainKey != nil {
 		require.True(c.t, chainOutput.GetStateAddress().Equals(ledgerstate.NewED25519Address(c.chainKey.PublicKey)))
 	}

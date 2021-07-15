@@ -1,7 +1,7 @@
 package _default
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
 const description = "Default core contract"

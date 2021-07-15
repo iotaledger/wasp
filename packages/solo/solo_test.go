@@ -3,8 +3,8 @@ package solo
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/stretchr/testify/require"
 )
 

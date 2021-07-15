@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
@@ -13,7 +13,7 @@ import (
 
 const incCounterSCName = "inccounter1"
 
-var incCounterSCHname = coretypes.Hn(incCounterSCName)
+var incCounterSCHname = iscp.Hn(incCounterSCName)
 
 func deployIncCounterSC(t *testing.T, chain *cluster.Chain, counter *cluster.MessageCounter) *ledgerstate.Transaction {
 	description := "testing contract deployment with inccounter" //nolint:goconst

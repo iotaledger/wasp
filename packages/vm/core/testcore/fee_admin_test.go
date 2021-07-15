@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -263,7 +263,7 @@ func TestFeeNotEnough(t *testing.T) {
 	checkFees(chain, blob.Interface.Name, 0, 0)
 
 	// TODO no validator was provided, so iotas end up in null account
-	chain.AssertIotas(&coretypes.NilAgentID, 99)
+	chain.AssertIotas(&iscp.NilAgentID, 99)
 	chain.AssertCommonAccountIotas(2)
 	chain.AssertTotalIotas(101)
 }

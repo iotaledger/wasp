@@ -10,7 +10,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -24,15 +25,15 @@ const Description = "FairAuction, a PoC smart contract"
 
 // implement VMProcessor and VMProcessorEntryPoint interfaces
 
-type fairAuctionProcessor map[coretypes.Hname]fairAuctionEntryPoint
+type fairAuctionProcessor map[iscp.Hname]fairAuctionEntryPoint
 
-type fairAuctionEntryPoint func(ctx coretypes.Sandbox) error
+type fairAuctionEntryPoint func(ctx iscp.Sandbox) error
 
 var (
-	RequestStartAuction    = coretypes.Hn("startAuction")
-	RequestFinalizeAuction = coretypes.Hn("finalizeAuction")
-	RequestPlaceBid        = coretypes.Hn("placeBid")
-	RequestSetOwnerMargin  = coretypes.Hn("setOwnerMargin")
+	RequestStartAuction    = iscp.Hn("startAuction")
+	RequestFinalizeAuction = iscp.Hn("finalizeAuction")
+	RequestPlaceBid        = iscp.Hn("placeBid")
+	RequestSetOwnerMargin  = iscp.Hn("setOwnerMargin")
 )
 
 // the processor is a map of entry points
@@ -84,7 +85,7 @@ func init() {
 }
 
 // statical link point to the Wasp node
-func GetProcessor() coretypes.VMProcessor {
+func GetProcessor() iscp.VMProcessor {
 	return entryPoints
 }
 
@@ -92,12 +93,12 @@ func (v fairAuctionProcessor) GetDescription() string {
 	return "FairAuction hard coded smart contract program"
 }
 
-func (v fairAuctionProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.VMProcessorEntryPoint, bool) {
+func (v fairAuctionProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }
 
-func (ep fairAuctionEntryPoint) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
+func (ep fairAuctionEntryPoint) Call(ctx iscp.Sandbox) (dict.Dict, error) {
 	err := ep(ctx)
 	if err != nil {
 		ctx.Event(fmt.Sprintf("error %v", err))
@@ -111,7 +112,7 @@ func (ep fairAuctionEntryPoint) IsView() bool {
 }
 
 // TODO
-func (ep fairAuctionEntryPoint) CallView(ctx coretypes.SandboxView) (dict.Dict, error) {
+func (ep fairAuctionEntryPoint) CallView(ctx iscp.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 
@@ -131,7 +132,7 @@ type AuctionInfo struct {
 	// duration of the auctions in minutes. Should be >= MinAuctionDurationMinutes
 	DurationMinutes int64
 	// address which issued StartAuction transaction
-	AuctionOwner coretypes.AgentID
+	AuctionOwner iscp.AgentID
 	// total deposit by the auction owner. Iotas sent by the auction owner together with the tokens for sale in the same
 	// transaction.
 	TotalDeposit int64
@@ -147,7 +148,7 @@ type BidInfo struct {
 	// the total is a cumulative sum of all bids from the same bidder
 	Total int64
 	// originator of the bid
-	Bidder coretypes.AgentID
+	Bidder iscp.AgentID
 	// timestamp Unix nano
 	When int64
 }
@@ -196,7 +197,7 @@ func (bi *BidInfo) WinsAgainst(other *BidInfo) bool {
 // Request transaction must contain at least number of iotas >= of current owner margin from the minimum bid
 // (not including node reward with request token)
 // Tokens for sale must be included into the request transaction
-func startAuction(ctx coretypes.Sandbox) error {
+func startAuction(ctx iscp.Sandbox) error {
 	ctx.Event("startAuction begin")
 	params := ctx.Params()
 
@@ -338,7 +339,7 @@ func startAuction(ctx coretypes.Sandbox) error {
 	args := dict.Dict{
 		VarReqAuctionColor: codec.EncodeString(colorForSale.String()),
 	}
-	ctx.PostRequest(coretypes.PostRequestParams{
+	ctx.PostRequest(iscp.PostRequestParams{
 		TargetContractID: ctx.ContractID(),
 		EntryPoint:       RequestFinalizeAuction,
 		TimeLock:         uint32(duration * 60),
@@ -360,7 +361,7 @@ func startAuction(ctx coretypes.Sandbox) error {
 // a rise of the bid and are added to the total
 // Arguments:
 // - VarReqAuctionColor: color of the tokens for sale
-func placeBid(ctx coretypes.Sandbox) error {
+func placeBid(ctx iscp.Sandbox) error {
 	ctx.Event("placeBid: begin")
 	params := ctx.Params()
 	// all iotas in the request transaction are considered a bid/rise sum
@@ -451,11 +452,11 @@ func placeBid(ctx coretypes.Sandbox) error {
 // not by the smart contract instance itself
 // Arguments:
 // - VarReqAuctionColor: color of the auction
-func finalizeAuction(ctx coretypes.Sandbox) error {
+func finalizeAuction(ctx iscp.Sandbox) error {
 	ctx.Event("finalizeAuction begin")
 	params := ctx.Params()
 
-	scAddr := coretypes.NewAgentIDFromContractID(ctx.ContractID())
+	scAddr := iscp.NewAgentIDFromContractID(ctx.ContractID())
 	if ctx.Caller() != scAddr {
 		// finalizeAuction request can only be sent by the smart contract to itself. Otherwise it is NOP
 		return fmt.Errorf("attempt of unauthorized assess")
@@ -597,7 +598,7 @@ func finalizeAuction(ctx coretypes.Sandbox) error {
 // setOwnerMargin is a request to set the service fee to place a bid
 // Arguments:
 // - VarReqOwnerMargin: the margin value in promilles
-func setOwnerMargin(ctx coretypes.Sandbox) error {
+func setOwnerMargin(ctx iscp.Sandbox) error {
 	ctx.Event("setOwnerMargin: begin")
 	params := ctx.Params()
 
@@ -622,7 +623,7 @@ func setOwnerMargin(ctx coretypes.Sandbox) error {
 
 // TODO implement universal 'refund' function to be used in rollback situations
 // refundFromRequest returns all tokens of the given color to the sender minus sunkFee
-func refundFromRequest(ctx coretypes.Sandbox, color ledgerstate.Color, harvest int64) {
+func refundFromRequest(ctx iscp.Sandbox, color ledgerstate.Color, harvest int64) {
 	// TODO
 	//account := ctx.AccessSCAccount()
 	//ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)

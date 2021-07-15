@@ -140,6 +140,72 @@ func TestWaspCLIContract(t *testing.T) {
 	checkCounter(45)
 }
 
+func TestWaspCLIBlockLog(t *testing.T) {
+	w := testutil.NewWaspCLITest(t)
+	w.Run("init")
+	w.Run("request-funds")
+	committee, quorum := w.CommitteeConfig()
+	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
+
+	out := w.Run("chain", "deposit", "IOTA:100")
+	var reqID string
+	for _, line := range out {
+		m := regexp.MustCompile(`(?m)- Request (\w+)$`).FindStringSubmatch(line)
+		if len(m) == 0 {
+			continue
+		}
+		reqID = m[1]
+	}
+	require.NotEmpty(t, reqID)
+
+	out = w.Run("chain", "block")
+	require.Equal(t, "Block index: 2", out[0])
+	found := false
+	for _, line := range out {
+		if strings.Contains(line, reqID) {
+			found = true
+			break
+		}
+	}
+	require.True(t, found)
+
+	out = w.Run("chain", "block", "2")
+	require.Equal(t, "Block index: 2", out[0])
+
+	out = w.Run("chain", "request", reqID)
+	t.Logf("%+v", out)
+	found = false
+	for _, line := range out {
+		if line == `Log: ""` { // log should be empty for successful request
+			found = true
+			break
+		}
+	}
+	require.True(t, found)
+
+	// try an unsuccessful request (missing params)
+	out = w.Run("chain", "post-request", "root", "deployContract")
+	for _, line := range out {
+		m := regexp.MustCompile(`(?m)- Request (\w+)$`).FindStringSubmatch(line)
+		if len(m) == 0 {
+			continue
+		}
+		reqID = m[1]
+	}
+	require.NotEmpty(t, reqID)
+
+	out = w.Run("chain", "request", reqID)
+	found = false
+	for _, line := range out {
+		if strings.Contains(line, "Log: ") {
+			found = true
+			require.Regexp(t, `mandatory parameter.*does not exist`, line)
+			break
+		}
+	}
+	require.True(t, found)
+}
+
 func TestWaspCLIBlobContract(t *testing.T) {
 	w := testutil.NewWaspCLITest(t)
 	w.Run("init")

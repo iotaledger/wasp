@@ -3,8 +3,8 @@ package runvm
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/util"
@@ -74,8 +74,11 @@ func runTask(task *vm.VMTask) {
 		}
 		if lastErr == nil {
 			numSuccess++
+		} else {
+			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().Base58(), lastErr)
 		}
 	}
+	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d", len(task.Requests), numSuccess, numOffLedger)
 
 	// save the block info into the 'blocklog' contract
 	// if rotationAddr != nil ir means the block is a rotation block
@@ -106,7 +109,7 @@ func runTask(task *vm.VMTask) {
 }
 
 // outputsFromRequests collect all outputs from requests which are on-ledger
-func outputsFromRequests(requests ...coretypes.Request) []ledgerstate.Output {
+func outputsFromRequests(requests ...iscp.Request) []ledgerstate.Output {
 	ret := make([]ledgerstate.Output, 0)
 	for _, req := range requests {
 		if out := req.Output(); out != nil {

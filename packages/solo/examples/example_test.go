@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/vm/core"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +21,7 @@ func TestExample1(t *testing.T) {
 	t.Logf("chainID: %s", chainID.String())
 	t.Logf("chain owner ID: %s", chainOwner.String())
 	for hname, rec := range coreContracts {
-		cid := coretypes.NewAgentID(chain.ChainID.AsAddress(), hname)
+		cid := iscp.NewAgentID(chain.ChainID.AsAddress(), hname)
 		t.Logf("    Core contract '%s': %s", rec.Name, cid)
 	}
 }

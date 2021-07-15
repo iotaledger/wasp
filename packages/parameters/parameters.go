@@ -37,6 +37,9 @@ const (
 
 	OffledgerBroadcastUpToNPeers = "offledger.broadcastUpToNPeers"
 	OffledgerBroadcastInterval   = "offledger.broadcastInterval"
+
+	ProfilingBindAddress = "profiling.bindAddress"
+	ProfilingEnabled     = "profiling.enabled"
 )
 
 func InitFlags() {
@@ -71,6 +74,9 @@ func InitFlags() {
 
 	flag.Int(OffledgerBroadcastUpToNPeers, 10, "number of peers an offledger request is broadcasted to")
 	flag.Int(OffledgerBroadcastInterval, 1000, "time between re-broadcast of offledger requests (in ms)")
+
+	flag.String(ProfilingBindAddress, "127.0.0.1:6060", "pprof http server address")
+	flag.Bool(ProfilingEnabled, false, "whether profiling is enabled")
 }
 
 func GetBool(name string) bool {

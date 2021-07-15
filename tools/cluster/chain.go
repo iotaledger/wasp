@@ -12,10 +12,9 @@ import (
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -36,7 +35,7 @@ type Chain struct {
 	Quorum         uint16
 	StateAddress   ledgerstate.Address
 
-	ChainID chainid.ChainID
+	ChainID iscp.ChainID
 
 	Cluster *Cluster
 }
@@ -66,8 +65,8 @@ func (ch *Chain) OriginatorAddress() ledgerstate.Address {
 	return addr
 }
 
-func (ch *Chain) OriginatorID() *coretypes.AgentID {
-	ret := coretypes.NewAgentID(ch.OriginatorAddress(), 0)
+func (ch *Chain) OriginatorID() *iscp.AgentID {
+	ret := iscp.NewAgentID(ch.OriginatorAddress(), 0)
 	return ret
 }
 
@@ -92,7 +91,7 @@ func (ch *Chain) Client(sigScheme *ed25519.KeyPair, nodeIndex ...int) *chainclie
 	)
 }
 
-func (ch *Chain) SCClient(contractHname coretypes.Hname, sigScheme *ed25519.KeyPair, nodeIndex ...int) *scclient.SCClient {
+func (ch *Chain) SCClient(contractHname iscp.Hname, sigScheme *ed25519.KeyPair, nodeIndex ...int) *scclient.SCClient {
 	return scclient.New(ch.Client(sigScheme, nodeIndex...), contractHname)
 }
 
@@ -116,7 +115,7 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 	}
 	tx, err := ch.OriginatorClient().Post1Request(
 		root.Interface.Hname(),
-		coretypes.Hn(root.FuncDeployContract),
+		iscp.Hn(root.FuncDeployContract),
 		chainclient.PostRequestParams{
 			Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
 		},
@@ -168,7 +167,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 	args := requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params))
 	tx, err = ch.OriginatorClient().Post1Request(
 		root.Interface.Hname(),
-		coretypes.Hn(root.FuncDeployContract),
+		iscp.Hn(root.FuncDeployContract),
 		chainclient.PostRequestParams{
 			Args: args,
 		},
@@ -241,7 +240,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.Bl
 	return ret, nil
 }
 
-func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[coretypes.Hname]*root.ContractRecord, error) {
+func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.ContractRecord, error) {
 	cl := ch.SCClient(root.Interface.Hname(), nil, nodeIndex...)
 	ret, err := cl.CallView(root.FuncGetChainInfo)
 	if err != nil {
@@ -250,7 +249,7 @@ func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[coretypes.Hname]*root.C
 	return root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
 }
 
-func (ch *Chain) GetCounterValue(inccounterSCHname coretypes.Hname, nodeIndex ...int) (int64, error) {
+func (ch *Chain) GetCounterValue(inccounterSCHname iscp.Hname, nodeIndex ...int) (int64, error) {
 	cl := ch.SCClient(inccounterSCHname, nil, nodeIndex...)
 	ret, err := cl.CallView(inccounter.FuncGetCounter)
 	if err != nil {
@@ -260,12 +259,12 @@ func (ch *Chain) GetCounterValue(inccounterSCHname coretypes.Hname, nodeIndex ..
 	return n, err
 }
 
-func (ch *Chain) GetStateVariable(contractHname coretypes.Hname, key string, nodeIndex ...int) ([]byte, error) {
+func (ch *Chain) GetStateVariable(contractHname iscp.Hname, key string, nodeIndex ...int) ([]byte, error) {
 	cl := ch.SCClient(contractHname, nil, nodeIndex...)
 	return cl.StateGet(key)
 }
 
-func (ch *Chain) GetRequestLogRecord(reqID coretypes.RequestID, nodeIndex ...int) (*blocklog.RequestLogRecord, uint32, uint16, error) {
+func (ch *Chain) GetRequestLogRecord(reqID iscp.RequestID, nodeIndex ...int) (*blocklog.RequestLogRecord, uint32, uint16, error) {
 	cl := ch.SCClient(blocklog.Interface.Hname(), nil, nodeIndex...)
 	ret, err := cl.CallView(blocklog.FuncGetRequestLogRecord, dict.Dict{blocklog.ParamRequestID: reqID.Bytes()})
 	if err != nil {

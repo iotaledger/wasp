@@ -1,8 +1,8 @@
 package vmcontext
 
-import "github.com/iotaledger/wasp/packages/coretypes"
+import "github.com/iotaledger/wasp/packages/iscp"
 
-func (vmctx *VMContext) BlockContext(ctx coretypes.Sandbox, construct func(ctx coretypes.Sandbox) interface{}, onClose func(interface{})) interface{} {
+func (vmctx *VMContext) BlockContext(ctx iscp.Sandbox, construct func(ctx iscp.Sandbox) interface{}, onClose func(interface{})) interface{} {
 	hname := vmctx.CurrentContractHname()
 	if bctx, alreadyExists := vmctx.blockContext[hname]; alreadyExists {
 		return bctx

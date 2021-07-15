@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -42,7 +42,7 @@ func TestAccountsBase1(t *testing.T) {
 	chain.CheckAccountLedger()
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := coretypes.NewAgentID(ownerAddr, 0)
+	newOwnerAgentID := iscp.NewAgentID(ownerAddr, 0)
 	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
 	req.WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
@@ -71,7 +71,7 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 	chain.CheckAccountLedger()
 
 	newOwner, newOwnerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := coretypes.NewAgentID(newOwnerAddr, 0)
+	newOwnerAgentID := iscp.NewAgentID(newOwnerAddr, 0)
 	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit).
 		WithIotas(42)
 	_, err := chain.PostRequestSync(req, newOwner)

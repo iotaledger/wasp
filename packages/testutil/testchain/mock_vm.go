@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/stretchr/testify/require"
 
@@ -36,10 +36,10 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 }
 
 func (r *MockedVMRunner) Run(task *vm.VMTask) {
-	reqstr := strings.Join(coretypes.ShortRequestIDs(coretypes.TakeRequestIDs(task.Requests...)), ",")
+	reqstr := strings.Join(iscp.ShortRequestIDs(iscp.TakeRequestIDs(task.Requests...)), ",")
 
 	r.log.Debugf("VM input: state hash: %s, chain input: %s, requests: [%s]",
-		task.VirtualState.Hash(), coretypes.OID(task.ChainInput.ID()), reqstr)
+		task.VirtualState.Hash(), iscp.OID(task.ChainInput.ID()), reqstr)
 
 	r.stateTransition.NextState(task.VirtualState, task.ChainInput, task.Timestamp, task.Requests...)
 	task.ResultTransactionEssence = r.tx
@@ -49,6 +49,6 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 	require.EqualValues(r.t, task.ChainInput.GetStateIndex()+1, newOut.GetStateIndex())
 	// essenceHash := hashing.HashData(task.ResultTransactionEssence.Bytes())
 	// r.log.Debugf("mockedVMRunner: new state produced: stateIndex: #%d state hash: %s, essence hash: %s stateOutput: %s\n essence : %s",
-	//	r.nextState.BlockIndex(), r.nextState.Hash().String(), essenceHash.String(), coretypes.OID(newOut.ID()), task.ResultTransactionEssence.String())
+	//	r.nextState.BlockIndex(), r.nextState.Hash().String(), essenceHash.String(), iscp.OID(newOut.ID()), task.ResultTransactionEssence.String())
 	task.OnFinish(nil, nil, nil)
 }

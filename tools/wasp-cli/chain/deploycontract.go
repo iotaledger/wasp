@@ -2,10 +2,10 @@ package chain
 
 import (
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -55,7 +55,7 @@ func deployContract(name, description string, progHash hashing.HashValue, initPa
 	util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.RequestOffLedger, error) {
 		return Client().PostOffLedgerRequest(
 			root.Interface.Hname(),
-			coretypes.Hn(root.FuncDeployContract),
+			iscp.Hn(root.FuncDeployContract),
 			chainclient.PostRequestParams{
 				Args: requestargs.New().
 					AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{

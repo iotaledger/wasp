@@ -3,9 +3,9 @@ package processors
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +14,7 @@ import (
 func TestBasic(t *testing.T) {
 	p := MustNew(NewConfig())
 
-	rec := root.NewContractRecord(root.Interface, &coretypes.AgentID{})
+	rec := root.NewContractRecord(root.Interface, &iscp.AgentID{})
 	rootproc, err := p.GetOrCreateProcessor(
 		rec,
 		func(hashing.HashValue) (string, []byte, error) { return vmtypes.Core, nil, nil },
@@ -26,7 +26,7 @@ func TestBasic(t *testing.T) {
 	assert.True(t, exists)
 	assert.Equal(t, ep.(*coreutil.ContractFunctionInterface).Name, coreutil.DefaultHandler)
 
-	ep, exists = rootproc.GetEntryPoint(coretypes.Hn(root.FuncDeployContract))
+	ep, exists = rootproc.GetEntryPoint(iscp.Hn(root.FuncDeployContract))
 	assert.True(t, exists)
 	assert.Equal(t, ep.(*coreutil.ContractFunctionInterface).Name, root.FuncDeployContract)
 }

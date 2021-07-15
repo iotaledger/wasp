@@ -10,8 +10,8 @@ import (
 	"io/ioutil"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
@@ -19,10 +19,10 @@ import (
 // region MissingRequestIDsMsg ///////////////////////////////////////////////////
 
 type MissingRequestIDsMsg struct {
-	IDs []coretypes.RequestID
+	IDs []iscp.RequestID
 }
 
-func NewMissingRequestIDsMsg(missingIDs *[]coretypes.RequestID) *MissingRequestIDsMsg {
+func NewMissingRequestIDsMsg(missingIDs *[]iscp.RequestID) *MissingRequestIDsMsg {
 	return &MissingRequestIDsMsg{
 		IDs: *missingIDs,
 	}
@@ -71,10 +71,10 @@ func MissingRequestIDsMsgFromBytes(buf []byte) (MissingRequestIDsMsg, error) {
 
 type MissingRequestMsg struct {
 	IsOffledger bool
-	Request     coretypes.Request
+	Request     iscp.Request
 }
 
-func NewMissingRequestMsg(req coretypes.Request) *MissingRequestMsg {
+func NewMissingRequestMsg(req iscp.Request) *MissingRequestMsg {
 	return &MissingRequestMsg{
 		IsOffledger: req.Output() == nil,
 		Request:     req,

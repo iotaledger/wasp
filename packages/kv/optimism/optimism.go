@@ -2,9 +2,11 @@
 package optimism
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"golang.org/x/xerrors"
 )
@@ -190,18 +192,16 @@ func (o *OptimisticKVStoreReader) MustIterateKeysSorted(prefix kv.Key, f func(ke
 	}
 }
 
-const repeatAfterDefault = 1 * time.Second
-
-// RepeatOnceIfUnlucky the closure must take care of setting the optimistic read baseline itself
-func RepeatOnceIfUnlucky(f func() error, repeatAfter ...time.Duration) error {
-	waitOnError := repeatAfterDefault
-	if len(repeatAfter) > 0 {
-		waitOnError = repeatAfter[0]
-	}
-	err := f()
-	if _, ok := err.(*ErrorStateInvalidated); ok {
-		time.Sleep(waitOnError)
-		err = f()
+func RetryOnStateInvalidated(fun func() error, retryDelay time.Duration, timeout time.Time) error {
+	err := fun()
+	if err != nil {
+		if errors.Is(err, ErrStateHasBeenInvalidated) {
+			if time.Now().Before(timeout) {
+				time.Sleep(retryDelay)
+				return RetryOnStateInvalidated(fun, retryDelay, timeout)
+			}
+			return fmt.Errorf("Retrying timeouted. Last error: %w", err)
+		}
 	}
 	return err
 }

@@ -9,8 +9,8 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
@@ -31,7 +31,7 @@ func (w *WaspClientBackend) Signer() *ed25519.KeyPair {
 }
 
 func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer map[ledgerstate.Color]uint64, args dict.Dict) error {
-	tx, err := w.ChainClient.Post1Request(coretypes.Hn(scName), coretypes.Hn(funName), chainclient.PostRequestParams{
+	tx, err := w.ChainClient.Post1Request(iscp.Hn(scName), iscp.Hn(funName), chainclient.PostRequestParams{
 		Transfer: ledgerstate.NewColoredBalances(transfer),
 		Args:     requestargs.New(nil).AddEncodeSimpleMany(args),
 	})
@@ -42,7 +42,7 @@ func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer
 }
 
 func (w *WaspClientBackend) PostOffLedgerRequest(scName, funName string, transfer map[ledgerstate.Color]uint64, args dict.Dict) error {
-	req, err := w.ChainClient.PostOffLedgerRequest(coretypes.Hn(scName), coretypes.Hn(funName), chainclient.PostRequestParams{
+	req, err := w.ChainClient.PostOffLedgerRequest(iscp.Hn(scName), iscp.Hn(funName), chainclient.PostRequestParams{
 		Transfer: ledgerstate.NewColoredBalances(transfer),
 		Args:     requestargs.New().AddEncodeSimpleMany(args),
 	})
@@ -53,5 +53,5 @@ func (w *WaspClientBackend) PostOffLedgerRequest(scName, funName string, transfe
 }
 
 func (w *WaspClientBackend) CallView(scName, funName string, args dict.Dict) (dict.Dict, error) {
-	return w.ChainClient.CallView(coretypes.Hn(scName), funName, args)
+	return w.ChainClient.CallView(iscp.Hn(scName), funName, args)
 }

@@ -9,9 +9,9 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -97,7 +97,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, testOwner)
 	reqTx, err := chClient.Post1Request(
 		blob.Interface.Hname(),
-		coretypes.Hn(blob.FuncStoreBlob),
+		iscp.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
 			Args: requestargs.New().AddEncodeSimpleMany(fv),
 		},
@@ -181,7 +181,7 @@ func TestBlobRefConsensus(t *testing.T) {
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, testOwner)
 	reqTx, err := chClient.Post1Request(
 		blob.Interface.Hname(),
-		coretypes.Hn(blob.FuncStoreBlob),
+		iscp.Hn(blob.FuncStoreBlob),
 		chainclient.PostRequestParams{
 			Args: argsEncoded,
 		},

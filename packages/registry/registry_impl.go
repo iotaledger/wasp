@@ -12,9 +12,9 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
 	"github.com/iotaledger/wasp/packages/database/dbkeys"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry/chainrecord"
@@ -49,11 +49,11 @@ func NewRegistry(log *logger.Logger, store kvstore.KVStore) *Impl {
 
 // region ChainRecordProvider /////////////////////////////////////////////////////////
 
-func MakeChainRecordDbKey(chainID *chainid.ChainID) []byte {
+func MakeChainRecordDbKey(chainID *iscp.ChainID) []byte {
 	return dbkeys.MakeKey(dbkeys.ObjectTypeChainRecord, chainID.Bytes())
 }
 
-func (r *Impl) GetChainRecordByChainID(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error) {
+func (r *Impl) GetChainRecordByChainID(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error) {
 	data, err := r.store.Get(MakeChainRecordDbKey(chainID))
 	if errors.Is(err, kvstore.ErrKeyNotFound) {
 		return nil, nil
@@ -76,7 +76,7 @@ func (r *Impl) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
 	return ret, err
 }
 
-func (r *Impl) UpdateChainRecord(chainID *chainid.ChainID, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error) {
+func (r *Impl) UpdateChainRecord(chainID *iscp.ChainID, f func(*chainrecord.ChainRecord) bool) (*chainrecord.ChainRecord, error) {
 	rec, err := r.GetChainRecordByChainID(chainID)
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (r *Impl) UpdateChainRecord(chainID *chainid.ChainID, f func(*chainrecord.C
 	return rec, nil
 }
 
-func (r *Impl) ActivateChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error) {
+func (r *Impl) ActivateChainRecord(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error) {
 	return r.UpdateChainRecord(chainID, func(bd *chainrecord.ChainRecord) bool {
 		if bd.Active {
 			return false
@@ -103,7 +103,7 @@ func (r *Impl) ActivateChainRecord(chainID *chainid.ChainID) (*chainrecord.Chain
 	})
 }
 
-func (r *Impl) DeactivateChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error) {
+func (r *Impl) DeactivateChainRecord(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error) {
 	return r.UpdateChainRecord(chainID, func(bd *chainrecord.ChainRecord) bool {
 		if !bd.Active {
 			return false

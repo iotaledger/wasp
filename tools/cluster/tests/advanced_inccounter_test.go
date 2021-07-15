@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -117,7 +117,7 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 	err = requestFunds(clu1, myAddress, "myAddress")
 	require.NoError(t, err)
 
-	myClient := chain1.SCClient(coretypes.Hn(incCounterSCName), kp)
+	myClient := chain1.SCClient(iscp.Hn(incCounterSCName), kp)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
@@ -174,19 +174,19 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	kp := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(kp.PublicKey)
-	myAgentID := coretypes.NewAgentID(myAddress, 0)
+	myAgentID := iscp.NewAgentID(myAddress, 0)
 	err = requestFunds(clu1, myAddress, "myAddress")
 	require.NoError(t, err)
 
 	accountsClient := chain1.SCClient(accounts.Interface.Hname(), kp)
 	_, err := accountsClient.PostRequest(accounts.FuncDeposit, chainclient.PostRequestParams{
-		Transfer: coretypes.NewTransferIotas(100),
+		Transfer: iscp.NewTransferIotas(100),
 	})
 	require.NoError(t, err)
 
 	waitUntil(t, balanceOnChainIotaEquals(chain1, myAgentID, 100), util.MakeRange(0, clusterSize), 60*time.Second, "send 100i")
 
-	myClient := chain1.SCClient(coretypes.Hn(incCounterSCName), kp)
+	myClient := chain1.SCClient(iscp.Hn(incCounterSCName), kp)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
@@ -202,11 +202,11 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 func TestAccessNodesMany(t *testing.T) {
 	const clusterSize = 15
 	const numValidatorNodes = 6
-	const requestsCountInitial = 8
+	const requestsCountInitial = 2
 	const requestsCountProgression = 2
-	const iterationCount = 7
+	const iterationCount = 9
 
-	if iterationCount > 8 {
+	if iterationCount > 12 {
 		t.Skip("skipping test with iteration count > 8")
 	}
 	clu1, chain1 := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes))
@@ -292,7 +292,7 @@ func TestRotation(t *testing.T) {
 	require.True(t, waitBlockIndex(t, chain1, 0, 4, 15*time.Second))
 	require.True(t, waitBlockIndex(t, chain1, 6, 4, 15*time.Second))
 
-	reqid := coretypes.NewRequestID(tx.ID(), 0)
+	reqid := iscp.NewRequestID(tx.ID(), 0)
 
 	require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, 15*time.Second))
 	require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, 15*time.Second))
@@ -314,7 +314,7 @@ func TestRotation(t *testing.T) {
 	require.True(t, waitBlockIndex(t, chain1, 0, 5, 15*time.Second))
 	require.True(t, waitBlockIndex(t, chain1, 6, 5, 15*time.Second))
 
-	reqid = coretypes.NewRequestID(tx.ID(), 0)
+	reqid = iscp.NewRequestID(tx.ID(), 0)
 	require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, 15*time.Second))
 	require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, 15*time.Second))
 
@@ -368,7 +368,7 @@ func TestRotationMany(t *testing.T) {
 		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addrs[i]).WithIotas(1)
 		tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress, *par)
 		require.NoError(t, err)
-		reqid := coretypes.NewRequestID(tx.ID(), 0)
+		reqid := iscp.NewRequestID(tx.ID(), 0)
 		require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, waitTimeout))
 		require.EqualValues(t, "", waitRequest(t, chain1, 5, reqid, waitTimeout))
 		require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, waitTimeout))
@@ -410,7 +410,7 @@ func TestRotationMany(t *testing.T) {
 		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addrs[addrIndex]).WithIotas(1)
 		tx, err := govClient.PostRequest(governance.FuncRotateStateController, *par)
 		require.NoError(t, err)
-		reqid := coretypes.NewRequestID(tx.ID(), 0)
+		reqid := iscp.NewRequestID(tx.ID(), 0)
 		require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, waitTimeout))
 		require.EqualValues(t, "", waitRequest(t, chain1, 4, reqid, waitTimeout))
 		require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, waitTimeout))
@@ -421,7 +421,7 @@ func TestRotationMany(t *testing.T) {
 	}
 }
 
-func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid coretypes.RequestID, timeout time.Duration) string {
+func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.RequestID, timeout time.Duration) string {
 	var ret string
 	succ := waitTrue(timeout, func() bool {
 		rec, err := callGetRequestRecord(t, chain, nodeIndex, reqid)
@@ -459,7 +459,7 @@ func callGetBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int) (uint3
 	return v, nil
 }
 
-func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid coretypes.RequestID) (*blocklog.RequestLogRecord, error) {
+func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.RequestID) (*blocklog.RequestLogRecord, error) {
 	args := dict.New()
 	args.Set(blocklog.ParamRequestID, reqid.Bytes())
 

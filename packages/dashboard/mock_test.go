@@ -12,11 +12,10 @@ import (
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/coretypes/request"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -57,23 +56,23 @@ func (w *waspServices) TrustedNetworkManager() peering.TrustedNetworkManager {
 	return tnm
 }
 
-func (w *waspServices) GetChain(chainID *chainid.ChainID) chain.ChainCore {
+func (w *waspServices) GetChain(chainID *iscp.ChainID) chain.ChainCore {
 	return &mockChain{}
 }
 
 func (w *waspServices) GetChainRecords() ([]*chainrecord.ChainRecord, error) {
-	r, _ := w.GetChainRecord(chainid.RandomChainID())
+	r, _ := w.GetChainRecord(iscp.RandomChainID())
 	return []*chainrecord.ChainRecord{r}, nil
 }
 
-func (w *waspServices) GetChainRecord(chainID *chainid.ChainID) (*chainrecord.ChainRecord, error) {
+func (w *waspServices) GetChainRecord(chainID *iscp.ChainID) (*chainrecord.ChainRecord, error) {
 	return &chainrecord.ChainRecord{
 		ChainID: chainID,
 		Active:  true,
 	}, nil
 }
 
-func (w *waspServices) GetChainState(chainID *chainid.ChainID) (*ChainState, error) {
+func (w *waspServices) GetChainState(chainID *iscp.ChainID) (*ChainState, error) {
 	return &ChainState{
 		Index:             1,
 		Hash:              hashing.RandomHash(nil),
@@ -162,7 +161,7 @@ func (p *peeringNode) Close() {
 	panic("not implemented")
 }
 
-func (w *waspServices) CallView(ch chain.ChainCore, hname coretypes.Hname, fname string, params dict.Dict) (dict.Dict, error) {
+func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, fname string, params dict.Dict) (dict.Dict, error) {
 	chainID := ch.ID()
 
 	contract := &root.ContractRecord{
@@ -171,14 +170,14 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname coretypes.Hname, fname
 		Name:         "mock",
 		OwnerFee:     42,
 		ValidatorFee: 1,
-		Creator:      coretypes.NewRandomAgentID(),
+		Creator:      iscp.NewRandomAgentID(),
 	}
 
 	switch {
 	case hname == root.Interface.Hname() && fname == root.FuncGetChainInfo:
 		ret := dict.New()
 		ret.Set(root.VarChainID, codec.EncodeChainID(*chainID))
-		ret.Set(root.VarChainOwnerID, codec.EncodeAgentID(coretypes.NewRandomAgentID()))
+		ret.Set(root.VarChainOwnerID, codec.EncodeAgentID(iscp.NewRandomAgentID()))
 		ret.Set(root.VarDescription, codec.EncodeString("mock chain"))
 		ret.Set(root.VarFeeColor, codec.EncodeColor(ledgerstate.Color{}))
 		ret.Set(root.VarDefaultOwnerFee, codec.EncodeInt64(42))
@@ -186,7 +185,7 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname coretypes.Hname, fname
 
 		dst := collections.NewMap(ret, root.VarContractRegistry)
 		for i := 0; i < 5; i++ {
-			dst.MustSetAt(coretypes.Hname(uint32(i)).Bytes(), root.EncodeContractRecord(contract))
+			dst.MustSetAt(iscp.Hname(uint32(i)).Bytes(), root.EncodeContractRecord(contract))
 		}
 		return ret, nil
 
@@ -197,7 +196,7 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname coretypes.Hname, fname
 
 	case hname == accounts.Interface.Hname() && fname == accounts.FuncViewAccounts:
 		ret := dict.New()
-		ret.Set(kv.Key(coretypes.NewRandomAgentID().Bytes()), []byte{})
+		ret.Set(kv.Key(iscp.NewRandomAgentID().Bytes()), []byte{})
 		return ret, nil
 
 	case hname == accounts.Interface.Hname() && fname == accounts.FuncViewTotalAssets:
@@ -249,8 +248,8 @@ func (m *mockChain) GetStateReader() state.OptimisticStateReader {
 	panic("implement me")
 }
 
-func (m *mockChain) ID() *chainid.ChainID {
-	return chainid.RandomChainID()
+func (m *mockChain) ID() *iscp.ChainID {
+	return iscp.RandomChainID()
 }
 
 func (m *mockChain) GetCommitteeInfo() *chain.CommitteeInfo {
@@ -312,7 +311,7 @@ func (m *mockChain) IsDismissed() bool {
 	panic("not implemented")
 }
 
-func (m *mockChain) GetRequestProcessingStatus(id coretypes.RequestID) chain.RequestProcessingStatus {
+func (m *mockChain) GetRequestProcessingStatus(id iscp.RequestID) chain.RequestProcessingStatus {
 	panic("not implemented")
 }
 

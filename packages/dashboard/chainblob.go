@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/coretypes/chainid"
+	"github.com/iotaledger/wasp/packages/iscp"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -28,7 +28,7 @@ func (d *Dashboard) initChainBlob(e *echo.Echo, r renderer) {
 }
 
 func (d *Dashboard) handleChainBlob(c echo.Context) error {
-	chainID, err := chainid.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 }
 
 func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
-	chainID, err := chainid.ChainIDFromBase58(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
 type ChainBlobTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID chainid.ChainID
+	ChainID iscp.ChainID
 	Hash    hashing.HashValue
 
 	Blob []BlobField
