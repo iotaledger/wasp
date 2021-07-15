@@ -288,7 +288,7 @@ func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
 func (vmctx *VMContext) mustCallFromRequest() {
 	vmctx.log.Debugf("mustCallFromRequest: %s", vmctx.req.ID().String())
 
-	vmctx.mustSaveOffledgerRequestNonce()
+	vmctx.mustUpdateOffledgerRequestMaxAssumedNonce()
 
 	// calling only non view entry points. Calling the view will trigger error and fallback
 	_, entryPoint := vmctx.req.Target()
@@ -298,7 +298,7 @@ func (vmctx *VMContext) mustCallFromRequest() {
 		targetContract, entryPoint, params, vmctx.remainingAfterFees, vmctx.contractRecord.ProgramHash)
 }
 
-func (vmctx *VMContext) mustSaveOffledgerRequestNonce() {
+func (vmctx *VMContext) mustUpdateOffledgerRequestMaxAssumedNonce() {
 	if offl, ok := vmctx.req.(*request.RequestOffLedger); ok {
 		vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
 		defer vmctx.popCallContext()
