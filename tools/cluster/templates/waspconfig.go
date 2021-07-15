@@ -18,7 +18,7 @@ const WaspConfig = `
     "directory": "waspdb"
   },
   "logger": {
-    "level": "debug",
+    "level": "info",
     "disableCaller": false,
     "disableStacktrace": true,
     "encoding": "console",
@@ -58,7 +58,7 @@ const WaspConfig = `
   },
   "profiling":{
     "bindAddress": "0.0.0.0:{{.ProfilingPort}}",
-    "enabled": true
+    "enabled": false
   }
 }
 `
