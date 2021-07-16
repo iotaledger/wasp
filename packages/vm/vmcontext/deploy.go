@@ -2,7 +2,6 @@ package vmcontext
 
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -29,6 +28,6 @@ func (vmctx *VMContext) DeployContract(programHash hashing.HashValue, name, desc
 	par.Set(root.ParamProgramHash, codec.EncodeHashValue(programHash))
 	par.Set(root.ParamName, codec.EncodeString(name))
 	par.Set(root.ParamDescription, codec.EncodeString(description))
-	_, err = vmctx.Call(root.Interface.Hname(), iscp.Hn(root.FuncDeployContract), par, nil)
+	_, err = vmctx.Call(root.Interface.Hname(), root.FuncDeployContract.Hname(), par, nil)
 	return err
 }

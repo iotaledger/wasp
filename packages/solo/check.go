@@ -25,15 +25,15 @@ func (env *Solo) AssertAddressIotas(addr ledgerstate.Address, expected uint64) {
 
 // CheckChain checks fundamental integrity of the chain
 func (ch *Chain) CheckChain() {
-	_, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
+	_, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
 	for _, rec := range core.AllCoreContractsByHash {
-		recFromState, err := ch.FindContract(rec.Name)
+		recFromState, err := ch.FindContract(rec.Interface.Name)
 		require.NoError(ch.Env.T, err)
-		require.EqualValues(ch.Env.T, rec.Name, recFromState.Name)
-		require.EqualValues(ch.Env.T, rec.Description, recFromState.Description)
-		require.EqualValues(ch.Env.T, rec.ProgramHash, recFromState.ProgramHash)
+		require.EqualValues(ch.Env.T, rec.Interface.Name, recFromState.Name)
+		require.EqualValues(ch.Env.T, rec.Interface.Description, recFromState.Description)
+		require.EqualValues(ch.Env.T, rec.Interface.ProgramHash, recFromState.ProgramHash)
 		require.True(ch.Env.T, recFromState.Creator.IsNil())
 	}
 	ch.CheckAccountLedger()

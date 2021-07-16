@@ -31,7 +31,7 @@ func newWalletWithFunds(t *testing.T, clust *cluster.Cluster, ch *cluster.Chain,
 	// deposit funds before sending the off-ledger requestargs
 	err = requestFunds(clust, userAddress, "userWallet")
 	check(err, t)
-	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), iscp.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
+	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
 		Transfer: iscp.NewTransferIotas(iotas),
 	})
 	check(err, t)
@@ -59,14 +59,14 @@ func TestOffledgerRequest(t *testing.T) {
 	chClient := newWalletWithFunds(t, clu, chain1, 0, 1, 100)
 
 	// send off-ledger request via Web API
-	offledgerReq, err := chClient.PostOffLedgerRequest(incCounterSCHname, iscp.Hn(inccounter.FuncIncCounter))
+	offledgerReq, err := chClient.PostOffLedgerRequest(incCounterSCHname, inccounter.FuncIncCounter.Hname())
 	check(err, t)
 	err = chain1.CommitteeMultiClient().WaitUntilRequestProcessed(&chain1.ChainID, offledgerReq.ID(), 30*time.Second)
 	check(err, t)
 
 	// check off-ledger request was successfully processed
 	ret, err := chain1.Cluster.WaspClient(0).CallView(
-		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter,
+		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name,
 	)
 	check(err, t)
 	result, _ := ret.Get(inccounter.VarCounter)
@@ -101,7 +101,7 @@ func TestOffledgerRequest1Mb(t *testing.T) {
 
 	offledgerReq, err := chClient.PostOffLedgerRequest(
 		blob.Interface.Hname(),
-		iscp.Hn(blob.FuncStoreBlob),
+		blob.FuncStoreBlob.Hname(),
 		chainclient.PostRequestParams{
 			Args: requestargs.New().AddEncodeSimpleMany(paramsDict),
 		})
@@ -112,7 +112,7 @@ func TestOffledgerRequest1Mb(t *testing.T) {
 
 	// ensure blob was stored by the cluster
 	res, err := chain1.Cluster.WaspClient(2).CallView(
-		chain1.ChainID, blob.Interface.Hname(), blob.FuncGetBlobField,
+		chain1.ChainID, blob.Interface.Hname(), blob.FuncGetBlobField.Name,
 		dict.Dict{
 			blob.ParamHash:  expectedHash[:],
 			blob.ParamField: []byte("data"),
@@ -143,14 +143,14 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 	chClient := newWalletWithFunds(t, clu1, chain1, 5, 1, 100)
 
 	// send off-ledger request via Web API (to the access node)
-	_, err = chClient.PostOffLedgerRequest(incCounterSCHname, iscp.Hn(inccounter.FuncIncCounter))
+	_, err = chClient.PostOffLedgerRequest(incCounterSCHname, inccounter.FuncIncCounter.Hname())
 	check(err, t)
 
 	waitUntil(t, counterEquals(chain1, 43), []int{0, 1, 2, 3, 6}, 30*time.Second)
 
 	// check off-ledger request was successfully processed (check by asking another access node)
 	ret, err := clu1.WaspClient(6).CallView(
-		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter,
+		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name,
 	)
 	check(err, t)
 	result, _ := ret.Get(inccounter.VarCounter)

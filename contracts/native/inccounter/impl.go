@@ -3,46 +3,33 @@ package inccounter
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-const (
-	Name        = "inccounter"
-	description = "Increment counter, a PoC smart contract"
+var Interface = coreutil.NewContractInterface("inccounter", "Increment counter, a PoC smart contract")
+
+var Processor = Interface.Processor(initialize,
+	FuncIncCounter.Handler(incCounter),
+	FuncIncAndRepeatOnceAfter5s.Handler(incCounterAndRepeatOnce),
+	FuncIncAndRepeatMany.Handler(incCounterAndRepeatMany),
+	FuncSpawn.Handler(spawn),
+	FuncGetCounter.ViewHandler(getCounter),
 )
 
-var Interface = &coreutil.ContractInterface{
-	Name:        Name,
-	Description: description,
-	ProgramHash: hashing.HashStrings(Name),
-}
-
-func init() {
-	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.Func(FuncIncCounter, incCounter),
-		coreutil.Func(FuncIncAndRepeatOnceAfter5s, incCounterAndRepeatOnce),
-		coreutil.Func(FuncIncAndRepeatMany, incCounterAndRepeatMany),
-		coreutil.Func(FuncSpawn, spawn),
-		coreutil.ViewFunc(FuncGetCounter, getCounter),
-	})
-}
-
-const (
-	FuncIncCounter              = "incCounter"
-	FuncIncAndRepeatOnceAfter5s = "incAndRepeatOnceAfter5s"
-	FuncIncAndRepeatMany        = "incAndRepeatMany"
-	FuncSpawn                   = "spawn"
-	FuncGetCounter              = "getCounter"
+var (
+	FuncIncCounter              = coreutil.Func("incCounter")
+	FuncIncAndRepeatOnceAfter5s = coreutil.Func("incAndRepeatOnceAfter5s")
+	FuncIncAndRepeatMany        = coreutil.Func("incAndRepeatMany")
+	FuncSpawn                   = coreutil.Func("spawn")
+	FuncGetCounter              = coreutil.ViewFunc("getCounter")
 )
 
 const (
@@ -91,7 +78,7 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) (dict.Dict, error) {
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
 	if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewTransferIotas(1), &iscp.SendMetadata{
 		TargetContract: ctx.Contract(),
-		EntryPoint:     iscp.Hn(FuncIncCounter),
+		EntryPoint:     FuncIncCounter.Hname(),
 	}, iscp.SendOptions{
 		TimeLock: 5 * 60,
 	}) {
@@ -129,7 +116,7 @@ func incCounterAndRepeatMany(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	if !ctx.Send(ctx.ChainID().AsAddress(), iscp.NewTransferIotas(1), &iscp.SendMetadata{
 		TargetContract: ctx.Contract(),
-		EntryPoint:     iscp.Hn(FuncIncAndRepeatMany),
+		EntryPoint:     FuncIncAndRepeatMany.Hname(),
 	}, iscp.SendOptions{
 		TimeLock: 1 * 60,
 	}) {
@@ -159,10 +146,10 @@ func spawn(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	// increase counter in newly spawned contract
 	hname := iscp.Hn(name)
-	_, err = ctx.Call(hname, iscp.Hn(FuncIncCounter), nil, nil)
+	_, err = ctx.Call(hname, FuncIncCounter.Hname(), nil, nil)
 	a.RequireNoError(err)
 
-	res, err := ctx.Call(root.Interface.Hname(), iscp.Hn(root.FuncGetChainInfo), nil, nil)
+	res, err := ctx.Call(root.Interface.Hname(), root.FuncGetChainInfo.Hname(), nil, nil)
 	a.RequireNoError(err)
 
 	creg := collections.NewMapReadOnly(res, root.VarContractRegistry)

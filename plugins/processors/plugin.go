@@ -14,8 +14,8 @@ var (
 	log    *logger.Logger
 	Config *processors.Config
 
-	nativeContracts = []*coreutil.ContractInterface{
-		inccounter.Interface,
+	nativeContracts = []*coreutil.ContractProcessor{
+		inccounter.Processor,
 	}
 )
 
@@ -30,7 +30,7 @@ func configure(ctx *node.Plugin) {
 	for _, c := range nativeContracts {
 		log.Debugf(
 			"Registering native contract: name: '%s', program hash: %s, description: '%s'\n",
-			c.Name, c.ProgramHash.String(), c.Description,
+			c.Interface.Name, c.Interface.ProgramHash.String(), c.Interface.Description,
 		)
 	}
 	Config = processors.NewConfig(nativeContracts...)

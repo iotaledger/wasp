@@ -12,6 +12,16 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var Processor = Interface.Processor(initialize,
+	FuncGetBlockInfo.ViewHandler(viewGetBlockInfo),
+	FuncGetLatestBlockInfo.ViewHandler(viewGetLatestBlockInfo),
+	FuncGetRequestLogRecord.ViewHandler(viewGetRequestLogRecord),
+	FuncGetRequestLogRecordsForBlock.ViewHandler(viewGetRequestLogRecordsForBlock),
+	FuncGetRequestIDsForBlock.ViewHandler(viewGetRequestIDsForBlock),
+	FuncIsRequestProcessed.ViewHandler(viewIsRequestProcessed),
+	FuncControlAddresses.ViewHandler(viewControlAddresses),
+)
+
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	blockIndex := SaveNextBlockInfo(ctx.State(), &BlockInfo{
 		Timestamp:             time.Unix(0, ctx.GetTimestamp()),

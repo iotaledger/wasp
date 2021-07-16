@@ -13,11 +13,11 @@ import (
 // ParamCallIntParam
 // ParamHnameContract
 func callOnChain(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf(FuncCallOnChain)
+	ctx.Log().Debugf(FuncCallOnChain.Name)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	paramIn := params.MustGetInt64(ParamIntParamValue)
 	hnameContract := params.MustGetHname(ParamHnameContract, ctx.Contract())
-	hnameEP := params.MustGetHname(ParamHnameEP, iscp.Hn(FuncCallOnChain))
+	hnameEP := params.MustGetHname(ParamHnameEP, FuncCallOnChain.Hname())
 
 	state := kvdecoder.New(ctx.State(), ctx.Log())
 	counter := state.MustGetInt64(VarCounter, 0)
@@ -52,8 +52,8 @@ func runRecursion(ctx iscp.Sandbox) (dict.Dict, error) {
 	if depth <= 0 {
 		return nil, nil
 	}
-	return ctx.Call(ctx.Contract(), iscp.Hn(FuncCallOnChain), codec.MakeDict(map[string]interface{}{
-		ParamHnameEP:       iscp.Hn(FuncRunRecursion),
+	return ctx.Call(ctx.Contract(), FuncCallOnChain.Hname(), codec.MakeDict(map[string]interface{}{
+		ParamHnameEP:       FuncRunRecursion.Hname(),
 		ParamIntParamValue: depth - 1,
 	}), nil)
 }
@@ -69,14 +69,14 @@ func getFibonacci(ctx iscp.SandboxView) (dict.Dict, error) {
 		ret.Set(ParamIntParamValue, codec.EncodeInt64(callInt))
 		return ret, nil
 	}
-	r1, err := ctx.Call(ctx.Contract(), iscp.Hn(FuncGetFibonacci), codec.MakeDict(map[string]interface{}{
+	r1, err := ctx.Call(ctx.Contract(), FuncGetFibonacci.Hname(), codec.MakeDict(map[string]interface{}{
 		ParamIntParamValue: callInt - 1,
 	}))
 	a.RequireNoError(err)
 	result := kvdecoder.New(r1, ctx.Log())
 	r1val := result.MustGetInt64(ParamIntParamValue)
 
-	r2, err := ctx.Call(ctx.Contract(), iscp.Hn(FuncGetFibonacci), codec.MakeDict(map[string]interface{}{
+	r2, err := ctx.Call(ctx.Contract(), FuncGetFibonacci.Hname(), codec.MakeDict(map[string]interface{}{
 		ParamIntParamValue: callInt - 2,
 	}))
 	a.RequireNoError(err)
@@ -89,7 +89,7 @@ func getFibonacci(ctx iscp.SandboxView) (dict.Dict, error) {
 // ParamIntParamName
 // ParamIntParamValue
 func setInt(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Infof(FuncSetInt)
+	ctx.Log().Infof(FuncSetInt.Name)
 	paramName, exists, err := codec.DecodeString(ctx.Params().MustGet(ParamIntParamName))
 	if err != nil {
 		ctx.Log().Panicf("%v", err)
@@ -110,7 +110,7 @@ func setInt(ctx iscp.Sandbox) (dict.Dict, error) {
 
 // ParamIntParamName
 func getInt(ctx iscp.SandboxView) (dict.Dict, error) {
-	ctx.Log().Infof(FuncGetInt)
+	ctx.Log().Infof(FuncGetInt.Name)
 	paramName, exists, err := codec.DecodeString(ctx.Params().MustGet(ParamIntParamName))
 	if err != nil {
 		ctx.Log().Panicf("%v", err)

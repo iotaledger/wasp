@@ -42,7 +42,7 @@ func TestMissingRequests(t *testing.T) {
 	err = requestFunds(clu1, userAddress, "userWallet")
 	check(err, t)
 	chClient := chainclient.New(clu1.GoshimmerClient(), clu1.WaspClient(0), chainID, userWallet)
-	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), iscp.Hn(accounts.FuncDeposit), chainclient.PostRequestParams{
+	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
 		Transfer: iscp.NewTransferIotas(100),
 	})
 	check(err, t)
@@ -50,7 +50,7 @@ func TestMissingRequests(t *testing.T) {
 	check(err, t)
 
 	// send off-ledger request to all nodes except #3
-	req := request.NewRequestOffLedger(incCounterSCHname, iscp.Hn(inccounter.FuncIncCounter), requestargs.RequestArgs{}) //.WithTransfer(par.Transfer)
+	req := request.NewRequestOffLedger(incCounterSCHname, inccounter.FuncIncCounter.Hname(), requestargs.RequestArgs{}) //.WithTransfer(par.Transfer)
 	req.Sign(userWallet)
 
 	err = clu1.WaspClient(0).PostOffLedgerRequest(&chainID, req)

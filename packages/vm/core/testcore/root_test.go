@@ -59,7 +59,7 @@ func TestGetInfo(t *testing.T) {
 }
 
 func TestDeployExample(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Interface)
+	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Processor)
 	chain := env.NewChain(nil, "chain1")
 
 	name := "testInc"
@@ -94,7 +94,7 @@ func TestDeployExample(t *testing.T) {
 }
 
 func TestDeployDouble(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Interface)
+	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Processor)
 	chain := env.NewChain(nil, "chain1")
 
 	name := "testInc"
@@ -133,7 +133,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := iscp.NewAgentID(ownerAddr, 0)
-	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership.Name, root.ParamChainOwner, newOwnerAgentID)
 	req.WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -141,7 +141,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 	_, ownerAgentID, _ := chain.GetInfo()
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
 
-	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership).WithIotas(1)
+	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
@@ -155,7 +155,7 @@ func TestChangeOwnerUnauthorized(t *testing.T) {
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := iscp.NewAgentID(ownerAddr, 0)
-	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership.Name, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.Error(t, err)
 

@@ -58,8 +58,8 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 		t.Fail()
 	}
 
-	t.Logf("   %s: %s", root.Name, root.Interface.Hname().String())
-	t.Logf("   %s: %s", accounts.Name, accounts.Interface.Hname().String())
+	t.Logf("   %s: %s", root.Interface.Name, root.Interface.Hname().String())
+	t.Logf("   %s: %s", accounts.Interface.Name, accounts.Interface.Hname().String())
 
 	checkCoreContracts(t, chain)
 
@@ -96,7 +96,7 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain.ChainID, scOwner)
 
 	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
-	reqTx, err := chClient.Post1Request(hname, iscp.Hn(inccounter.FuncIncCounter), *par)
+	reqTx, err := chClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, reqTx, 10*time.Second)
@@ -202,7 +202,7 @@ func TestBasic2Accounts(t *testing.T) {
 	myWalletClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithIotas(transferIotas)
-	reqTx, err := myWalletClient.Post1Request(hname, iscp.Hn(inccounter.FuncIncCounter), *par)
+	reqTx, err := myWalletClient.Post1Request(hname, inccounter.FuncIncCounter.Hname(), *par)
 	check(err, t)
 
 	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, reqTx, 30*time.Second)
@@ -239,7 +239,7 @@ func TestBasic2Accounts(t *testing.T) {
 	// withdraw back 2 iotas to originator address
 	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Base58())
 	originatorClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, originatorSigScheme)
-	reqTx2, err := originatorClient.Post1Request(accounts.Interface.Hname(), iscp.Hn(accounts.FuncWithdraw))
+	reqTx2, err := originatorClient.Post1Request(accounts.Interface.Hname(), accounts.FuncWithdraw.Hname())
 	check(err, t)
 
 	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, reqTx2, 30*time.Second)

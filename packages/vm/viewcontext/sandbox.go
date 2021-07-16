@@ -25,7 +25,7 @@ type sandboxview struct {
 
 var _ iscp.SandboxView = &sandboxview{}
 
-var getChainInfoHname = iscp.Hn(root.FuncGetChainInfo)
+var getChainInfoHname = root.FuncGetChainInfo.Hname()
 
 func newSandboxView(vctx *Viewcontext, contractHname iscp.Hname, params dict.Dict) *sandboxview {
 	return &sandboxview{

@@ -62,7 +62,7 @@ func (ch *Chain) DumpAccounts() string {
 // FindContract is a view call to the 'root' smart contract on the chain.
 // It returns blobCache record of the deployed smart contract with the given name
 func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
-	retDict, err := ch.CallView(root.Interface.Name, root.FuncFindContract,
+	retDict, err := ch.CallView(root.Interface.Name, root.FuncFindContract.Name,
 		root.ParamHname, iscp.Hn(scName),
 	)
 	if err != nil {
@@ -88,7 +88,7 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 // GetBlobInfo return info about blob with the given hash with existence flag
 // The blob information is returned as a map of pairs 'blobFieldName': 'fieldDataLength'
 func (ch *Chain) GetBlobInfo(blobHash hashing.HashValue) (map[string]uint32, bool) {
-	res, err := ch.CallView(blob.Interface.Name, blob.FuncGetBlobInfo, blob.ParamHash, blobHash)
+	res, err := ch.CallView(blob.Interface.Name, blob.FuncGetBlobInfo.Name, blob.ParamHash, blobHash)
 	require.NoError(ch.Env.T, err)
 	if res.IsEmpty() {
 		return nil, false
@@ -110,7 +110,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 		return expectedHash, nil
 	}
 
-	req := NewCallParams(blob.Interface.Name, blob.FuncStoreBlob, params...)
+	req := NewCallParams(blob.Interface.Name, blob.FuncStoreBlob.Name, params...)
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Interface.Name)
 	require.EqualValues(ch.Env.T, feeColor, ledgerstate.ColorIOTA)
 	totalFee := ownerFee + validatorFee
@@ -150,7 +150,7 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, 
 	// creates call parameters by optimizing big data chunks, the ones larger than optimalSize.
 	// The call returns map of keys/value pairs which were replaced by hashes. These data must be uploaded
 	// separately
-	req, toUpload := NewCallParamsOptimized(blob.Interface.Name, blob.FuncStoreBlob, optimalSize, params...)
+	req, toUpload := NewCallParamsOptimized(blob.Interface.Name, blob.FuncStoreBlob.Name, optimalSize, params...)
 	req.WithIotas(1)
 	// the too big data we first upload into the blobCache
 	for _, v := range toUpload {
@@ -214,7 +214,7 @@ func (ch *Chain) UploadWasmFromFile(keyPair *ed25519.KeyPair, fileName string) (
 
 // GetWasmBinary retrieves program binary in the format of Wasm blob from the chain by hash.
 func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
-	res, err := ch.CallView(blob.Interface.Name, blob.FuncGetBlobField,
+	res, err := ch.CallView(blob.Interface.Name, blob.FuncGetBlobField.Name,
 		blob.ParamHash, progHash,
 		blob.ParamField, blob.VarFieldVMType,
 	)
@@ -223,7 +223,7 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 	}
 	require.EqualValues(ch.Env.T, vmtypes.WasmTime, string(res.MustGet(blob.ParamBytes)))
 
-	res, err = ch.CallView(blob.Interface.Name, blob.FuncGetBlobField,
+	res, err = ch.CallView(blob.Interface.Name, blob.FuncGetBlobField.Name,
 		blob.ParamHash, progHash,
 		blob.ParamField, blob.VarFieldProgramBinary,
 	)
@@ -244,7 +244,7 @@ func (ch *Chain) GetWasmBinary(progHash hashing.HashValue) ([]byte, error) {
 func (ch *Chain) DeployContract(keyPair *ed25519.KeyPair, name string, programHash hashing.HashValue, params ...interface{}) error {
 	par := []interface{}{root.ParamProgramHash, programHash, root.ParamName, name}
 	par = append(par, params...)
-	req := NewCallParams(root.Interface.Name, root.FuncDeployContract, par...).WithIotas(1)
+	req := NewCallParams(root.Interface.Name, root.FuncDeployContract.Name, par...).WithIotas(1)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -264,7 +264,7 @@ func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name, fname string
 //  - agentID of the chain owner
 //  - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
 func (ch *Chain) GetInfo() (iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.ContractRecord) {
-	res, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo)
+	res, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
 	chainID, ok, err := codec.DecodeChainID(res.MustGet(root.VarChainID))
@@ -295,7 +295,7 @@ func (env *Solo) GetAddressBalances(addr ledgerstate.Address) map[ledgerstate.Co
 
 // GetAccounts returns all accounts on the chain with non-zero balances
 func (ch *Chain) GetAccounts() []iscp.AgentID {
-	d, err := ch.CallView(accounts.Interface.Name, accounts.FuncViewAccounts)
+	d, err := ch.CallView(accounts.Interface.Name, accounts.FuncViewAccounts.Name)
 	require.NoError(ch.Env.T, err)
 	keys := d.KeysSorted()
 	ret := make([]iscp.AgentID, 0, len(keys)-1)
@@ -354,7 +354,7 @@ func (ch *Chain) GetOnChainLedgerString() string {
 // account controlled by the 'agentID'
 func (ch *Chain) GetAccountBalance(agentID *iscp.AgentID) *ledgerstate.ColoredBalances {
 	return ch.parseAccountBalance(
-		ch.CallView(accounts.Interface.Name, accounts.FuncViewBalance, accounts.ParamAgentID, agentID),
+		ch.CallView(accounts.Interface.Name, accounts.FuncViewBalance.Name, accounts.ParamAgentID, agentID),
 	)
 }
 
@@ -370,7 +370,7 @@ func (ch *Chain) GetCommonAccountIotas() uint64 {
 // GetTotalAssets return total sum of colored tokens contained in the on-chain accounts
 func (ch *Chain) GetTotalAssets() *ledgerstate.ColoredBalances {
 	return ch.parseAccountBalance(
-		ch.CallView(accounts.Interface.Name, accounts.FuncViewTotalAssets),
+		ch.CallView(accounts.Interface.Name, accounts.FuncViewTotalAssets.Name),
 	)
 }
 
@@ -387,7 +387,7 @@ func (ch *Chain) GetTotalIotas() uint64 {
 // Total fee is sum of owner fee and validator fee
 func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint64) {
 	hname := iscp.Hn(contactName)
-	ret, err := ch.CallView(root.Interface.Name, root.FuncGetFeeInfo, root.ParamHname, hname)
+	ret, err := ch.CallView(root.Interface.Name, root.FuncGetFeeInfo.Name, root.ParamHname, hname)
 	require.NoError(ch.Env.T, err)
 	require.NotEqualValues(ch.Env.T, 0, len(ret))
 
@@ -412,7 +412,7 @@ func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint
 // It returns records as array in time-descending order.
 // More than 50 records may be retrieved by calling the view directly
 func (ch *Chain) GetEventLogRecords(name string) ([]collections.TimestampedLogRecord, error) {
-	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetRecords,
+	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetRecords.Name,
 		eventlog.ParamContractHname, iscp.Hn(name),
 	)
 	if err != nil {
@@ -445,7 +445,7 @@ func (ch *Chain) GetEventLogRecordsString(name string) (string, error) {
 
 // GetEventLogNumRecords returns total number of eventlog records for the given contact.
 func (ch *Chain) GetEventLogNumRecords(name string) int {
-	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetNumRecords,
+	res, err := ch.CallView(eventlog.Interface.Name, eventlog.FuncGetNumRecords.Name,
 		eventlog.ParamContractHname, iscp.Hn(name),
 	)
 	require.NoError(ch.Env.T, err)
@@ -462,7 +462,7 @@ func (ch *Chain) CommonAccount() *iscp.AgentID {
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
 func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
-	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetLatestBlockInfo)
+	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetLatestBlockInfo.Name)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log)
 	blockIndex := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
@@ -475,7 +475,7 @@ func (ch *Chain) GetLatestBlockInfo() *blocklog.BlockInfo {
 
 // GetBlockInfo return BlockInfo for the particular block index in the chain
 func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
-	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetBlockInfo,
+	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetBlockInfo.Name,
 		blocklog.ParamBlockIndex, blockIndex)
 	if err != nil {
 		return nil, err
@@ -490,7 +490,7 @@ func (ch *Chain) GetBlockInfo(blockIndex uint32) (*blocklog.BlockInfo, error) {
 
 // IsRequestProcessed checks if the request is booked on the chain as processed
 func (ch *Chain) IsRequestProcessed(reqID iscp.RequestID) bool {
-	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncIsRequestProcessed,
+	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncIsRequestProcessed.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log)
@@ -501,7 +501,7 @@ func (ch *Chain) IsRequestProcessed(reqID iscp.RequestID) bool {
 
 // GetRequestLogRecord gets the log records for a particular request, the block index and request index in the block
 func (ch *Chain) GetRequestLogRecord(reqID iscp.RequestID) (*blocklog.RequestLogRecord, uint32, uint16, bool) {
-	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestLogRecord,
+	ret, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestLogRecord.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log)
@@ -519,7 +519,7 @@ func (ch *Chain) GetRequestLogRecord(reqID iscp.RequestID) (*blocklog.RequestLog
 
 // GetRequestLogRecordsForBlock returns all request log records for a particular block
 func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32) []*blocklog.RequestLogRecord {
-	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestLogRecordsForBlock,
+	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestLogRecordsForBlock.Name,
 		blocklog.ParamBlockIndex, blockIndex)
 	if err != nil {
 		return nil
@@ -538,7 +538,7 @@ func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32) []*blocklog.Req
 
 // GetRequestIDsForBlock returns return the list of requestIDs settled in a particular block
 func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []iscp.RequestID {
-	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestIDsForBlock,
+	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncGetRequestIDsForBlock.Name,
 		blocklog.ParamBlockIndex, blockIndex)
 	if err != nil {
 		ch.Log.Warnf("GetRequestIDsForBlock: %v", err)
@@ -583,7 +583,7 @@ func (ch *Chain) GetLogRecordsForBlockRangeAsStrings(fromBlockIndex, toBlockInde
 }
 
 func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
-	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncControlAddresses)
+	res, err := ch.CallView(blocklog.Interface.Name, blocklog.FuncControlAddresses.Name)
 	require.NoError(ch.Env.T, err)
 	par := kvdecoder.New(res, ch.Log)
 	ret := &blocklog.ControlAddresses{
@@ -596,7 +596,7 @@ func (ch *Chain) GetControlAddresses() *blocklog.ControlAddresses {
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
 func (ch *Chain) AddAllowedStateController(addr ledgerstate.Address, keyPair *ed25519.KeyPair) error {
-	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedStateControllerAddress,
+	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncAddAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
 	).WithIotas(1)
 	_, err := ch.PostRequestSync(req, keyPair)
@@ -605,7 +605,7 @@ func (ch *Chain) AddAllowedStateController(addr ledgerstate.Address, keyPair *ed
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
 func (ch *Chain) RemoveAllowedStateController(addr ledgerstate.Address, keyPair *ed25519.KeyPair) error {
-	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedStateControllerAddress,
+	req := NewCallParams(coreutil.CoreContractGovernance, governance.FuncRemoveAllowedStateControllerAddress.Name,
 		governance.ParamStateControllerAddress, addr,
 	).WithIotas(1)
 	_, err := ch.PostRequestSync(req, keyPair)
@@ -614,7 +614,7 @@ func (ch *Chain) RemoveAllowedStateController(addr ledgerstate.Address, keyPair 
 
 // AddAllowedStateController adds the address to the allowed state controlled address list
 func (ch *Chain) GetAllowedStateControllerAddresses() []ledgerstate.Address {
-	res, err := ch.CallView(coreutil.CoreContractGovernance, governance.FuncGetAllowedStateControllerAddresses)
+	res, err := ch.CallView(coreutil.CoreContractGovernance, governance.FuncGetAllowedStateControllerAddresses.Name)
 	require.NoError(ch.Env.T, err)
 	if len(res) == 0 {
 		return nil

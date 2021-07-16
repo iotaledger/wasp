@@ -43,7 +43,7 @@ func TestAccountsBase1(t *testing.T) {
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := iscp.NewAgentID(ownerAddr, 0)
-	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership.Name, root.ParamChainOwner, newOwnerAgentID)
 	req.WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -53,7 +53,7 @@ func TestAccountsBase1(t *testing.T) {
 	chain.AssertIotas(chain.ContractAgentID(root.Interface.Name), 0)
 	chain.CheckAccountLedger()
 
-	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership).WithIotas(1)
+	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
@@ -72,14 +72,14 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 
 	newOwner, newOwnerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := iscp.NewAgentID(newOwnerAddr, 0)
-	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit).
+	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit.Name).
 		WithIotas(42)
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(newOwnerAgentID, ledgerstate.ColorIOTA, 42)
 
-	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdraw).WithIotas(1)
+	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdraw.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 	chain.CheckAccountLedger()
@@ -93,14 +93,14 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 	require.True(t, chain.OriginatorAgentID.Equals(&ownerFromChain))
 	t.Logf("origintor/owner: %s", chain.OriginatorAgentID.String())
 
-	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdraw).WithIotas(1)
+	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdraw.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, chain.OriginatorKeyPair)
 	require.NoError(t, err)
 	chain.AssertTotalIotas(3)
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(3)
 
-	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncHarvest).WithIotas(1)
+	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncHarvest.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, chain.OriginatorKeyPair)
 
 	require.NoError(t, err)
@@ -123,7 +123,7 @@ func TestAccountsHarvest(t *testing.T) {
 	chain.AssertTotalIotas(43)
 	chain.AssertCommonAccountIotas(43)
 
-	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncHarvest).
+	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncHarvest.Name).
 		WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -149,7 +149,7 @@ func TestAccountsHarvestFail(t *testing.T) {
 
 	kp, _ := env.NewKeyPairWithFunds()
 
-	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncHarvest).
+	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncHarvest.Name).
 		WithIotas(1)
 	_, err = chain.PostRequestSync(req, kp)
 	require.Error(t, err)

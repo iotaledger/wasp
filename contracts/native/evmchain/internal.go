@@ -162,7 +162,7 @@ func getFeeColor(ctx iscp.Sandbox) ledgerstate.Color {
 	// call root contract view to get the feecolor
 	feeInfo, err := ctx.Call(
 		root.Interface.Hname(),
-		iscp.Hn(root.FuncGetFeeInfo),
+		root.FuncGetFeeInfo.Hname(),
 		dict.Dict{root.ParamHname: Interface.Hname().Bytes()},
 		nil,
 	)

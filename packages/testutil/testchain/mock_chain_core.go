@@ -50,7 +50,7 @@ func NewMockedChainCore(t *testing.T, chainID iscp.ChainID, log *logger.Logger) 
 	ret := &MockedChainCore{
 		T:          t,
 		chainID:    chainID,
-		processors: processors.MustNew(processors.NewConfig(inccounter.Interface)),
+		processors: processors.MustNew(processors.NewConfig(inccounter.Processor)),
 		log:        log,
 		eventStateTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))

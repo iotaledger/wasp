@@ -12,34 +12,10 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-const (
-	Name        = coreutil.CoreContractRoot
-	description = "Root Contract"
-)
-
 var (
-	Interface = &coreutil.ContractInterface{
-		Name:        Name,
-		Description: description,
-		ProgramHash: hashing.HashStrings(Name),
-	}
+	Interface           = coreutil.NewContractInterface(coreutil.CoreContractRoot, "Root Contract")
 	ErrContractNotFound = errors.New("smart contract not found")
 )
-
-func init() {
-	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.Func(FuncClaimChainOwnership, claimChainOwnership),
-		coreutil.Func(FuncDelegateChainOwnership, delegateChainOwnership),
-		coreutil.Func(FuncDeployContract, deployContract),
-		coreutil.Func(FuncGrantDeployPermission, grantDeployPermission),
-		coreutil.Func(FuncRevokeDeployPermission, revokeDeployPermission),
-		coreutil.Func(FuncSetContractFee, setContractFee),
-		coreutil.Func(FuncSetDefaultFee, setDefaultFee),
-		coreutil.ViewFunc(FuncFindContract, findContract),
-		coreutil.ViewFunc(FuncGetChainInfo, getChainInfo),
-		coreutil.ViewFunc(FuncGetFeeInfo, getFeeInfo),
-	})
-}
 
 // state variables
 const (
@@ -75,17 +51,17 @@ const (
 // TODO move ownership and fee-related methods to the governance contract
 
 // function names
-const (
-	FuncClaimChainOwnership    = "claimChainOwnership"
-	FuncDelegateChainOwnership = "delegateChainOwnership"
-	FuncDeployContract         = "deployContract"
-	FuncFindContract           = "findContract"
-	FuncGetChainInfo           = "getChainInfo"
-	FuncGetFeeInfo             = "getFeeInfo"
-	FuncGrantDeployPermission  = "grantDeployPermission"
-	FuncRevokeDeployPermission = "revokeDeployPermission"
-	FuncSetContractFee         = "setContractFee"
-	FuncSetDefaultFee          = "setDefaultFee"
+var (
+	FuncClaimChainOwnership    = coreutil.Func("claimChainOwnership")
+	FuncDelegateChainOwnership = coreutil.Func("delegateChainOwnership")
+	FuncDeployContract         = coreutil.Func("deployContract")
+	FuncGrantDeployPermission  = coreutil.Func("grantDeployPermission")
+	FuncRevokeDeployPermission = coreutil.Func("revokeDeployPermission")
+	FuncSetContractFee         = coreutil.Func("setContractFee")
+	FuncSetDefaultFee          = coreutil.Func("setDefaultFee")
+	FuncFindContract           = coreutil.ViewFunc("findContract")
+	FuncGetChainInfo           = coreutil.ViewFunc("getChainInfo")
+	FuncGetFeeInfo             = coreutil.ViewFunc("getFeeInfo")
 )
 
 // ContractRecord is a structure which contains metadata of the deployed contract instance

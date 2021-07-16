@@ -11,64 +11,33 @@ import (
 
 var Interface = coreutil.NewContractInterface("evmchain", "EVM chain smart contract")
 
-func init() {
-	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		// Ethereum blockchain
-		coreutil.Func(FuncSendTransaction, applyTransaction),
-		coreutil.ViewFunc(FuncGetBalance, getBalance),
-		coreutil.ViewFunc(FuncCallContract, callContract),
-		coreutil.ViewFunc(FuncEstimateGas, estimateGas),
-		coreutil.ViewFunc(FuncGetNonce, getNonce),
-		coreutil.ViewFunc(FuncGetReceipt, getReceipt),
-		coreutil.ViewFunc(FuncGetCode, getCode),
-		coreutil.ViewFunc(FuncGetBlockNumber, getBlockNumber),
-		coreutil.ViewFunc(FuncGetBlockByNumber, getBlockByNumber),
-		coreutil.ViewFunc(FuncGetBlockByHash, getBlockByHash),
-		coreutil.ViewFunc(FuncGetTransactionByHash, getTransactionByHash),
-		coreutil.ViewFunc(FuncGetTransactionByBlockHashAndIndex, getTransactionByBlockHashAndIndex),
-		coreutil.ViewFunc(FuncGetTransactionByBlockNumberAndIndex, getTransactionByBlockNumberAndIndex),
-		coreutil.ViewFunc(FuncGetBlockTransactionCountByHash, getBlockTransactionCountByHash),
-		coreutil.ViewFunc(FuncGetBlockTransactionCountByNumber, getBlockTransactionCountByNumber),
-		coreutil.ViewFunc(FuncGetStorage, getStorage),
-		coreutil.ViewFunc(FuncGetLogs, getLogs),
-
-		// EVMchain SC management
-		coreutil.Func(FuncSetNextOwner, setNextOwner),
-		coreutil.Func(FuncClaimOwnership, claimOwnership),
-		coreutil.Func(FuncSetGasPerIota, setGasPerIota),
-		coreutil.Func(FuncWithdrawGasFees, withdrawGasFees),
-		coreutil.ViewFunc(FuncGetOwner, getOwner),
-		coreutil.ViewFunc(FuncGetGasPerIota, getGasPerIota),
-	})
-}
-
-const (
+var (
 	// Ethereum blockchain
-	FuncGetBalance                          = "getBalance"
-	FuncSendTransaction                     = "sendTransaction"
-	FuncCallContract                        = "callContract"
-	FuncEstimateGas                         = "estimateGas"
-	FuncGetNonce                            = "getNonce"
-	FuncGetReceipt                          = "getReceipt"
-	FuncGetCode                             = "getCode"
-	FuncGetBlockNumber                      = "getBlockNumber"
-	FuncGetBlockByNumber                    = "getBlockByNumber"
-	FuncGetBlockByHash                      = "getBlockByHash"
-	FuncGetTransactionByHash                = "getTransactionByHash"
-	FuncGetTransactionByBlockHashAndIndex   = "getTransactionByBlockHashAndIndex"
-	FuncGetTransactionByBlockNumberAndIndex = "getTransactionByBlockNumberAndIndex"
-	FuncGetBlockTransactionCountByHash      = "getBlockTransactionCountByHash"
-	FuncGetBlockTransactionCountByNumber    = "getBlockTransactionCountByNumber"
-	FuncGetStorage                          = "getStorage"
-	FuncGetLogs                             = "getLogs"
+	FuncGetBalance                          = coreutil.ViewFunc("getBalance")
+	FuncSendTransaction                     = coreutil.Func("sendTransaction")
+	FuncCallContract                        = coreutil.ViewFunc("callContract")
+	FuncEstimateGas                         = coreutil.ViewFunc("estimateGas")
+	FuncGetNonce                            = coreutil.ViewFunc("getNonce")
+	FuncGetReceipt                          = coreutil.ViewFunc("getReceipt")
+	FuncGetCode                             = coreutil.ViewFunc("getCode")
+	FuncGetBlockNumber                      = coreutil.ViewFunc("getBlockNumber")
+	FuncGetBlockByNumber                    = coreutil.ViewFunc("getBlockByNumber")
+	FuncGetBlockByHash                      = coreutil.ViewFunc("getBlockByHash")
+	FuncGetTransactionByHash                = coreutil.ViewFunc("getTransactionByHash")
+	FuncGetTransactionByBlockHashAndIndex   = coreutil.ViewFunc("getTransactionByBlockHashAndIndex")
+	FuncGetTransactionByBlockNumberAndIndex = coreutil.ViewFunc("getTransactionByBlockNumberAndIndex")
+	FuncGetBlockTransactionCountByHash      = coreutil.ViewFunc("getBlockTransactionCountByHash")
+	FuncGetBlockTransactionCountByNumber    = coreutil.ViewFunc("getBlockTransactionCountByNumber")
+	FuncGetStorage                          = coreutil.ViewFunc("getStorage")
+	FuncGetLogs                             = coreutil.ViewFunc("getLogs")
 
 	// EVMchain SC management
-	FuncSetNextOwner    = "setNextOwner"
-	FuncClaimOwnership  = "claimOwnership"
-	FuncGetOwner        = "getOwner"
-	FuncSetGasPerIota   = "setGasPerIota"
-	FuncGetGasPerIota   = "getGasPerIota"
-	FuncWithdrawGasFees = "withdrawGasFees"
+	FuncSetNextOwner    = coreutil.Func("setNextOwner")
+	FuncClaimOwnership  = coreutil.Func("claimOwnership")
+	FuncGetOwner        = coreutil.ViewFunc("getOwner")
+	FuncSetGasPerIota   = coreutil.Func("setGasPerIota")
+	FuncGetGasPerIota   = coreutil.ViewFunc("getGasPerIota")
+	FuncWithdrawGasFees = coreutil.Func("withdrawGasFees")
 )
 
 const (

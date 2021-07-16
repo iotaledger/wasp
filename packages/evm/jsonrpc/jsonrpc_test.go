@@ -46,7 +46,7 @@ func newSoloTestEnv(t *testing.T) *soloTestEnv {
 
 	chainID := evm.DefaultChainID
 
-	s := solo.New(t, true, false).WithNativeContract(evmchain.Interface)
+	s := solo.New(t, true, false).WithNativeContract(evmchain.Processor)
 	chainOwner, _ := s.NewKeyPairWithFunds()
 	chain := s.NewChain(chainOwner, "iscpchain")
 	err := chain.DeployContract(chainOwner, "evmchain", evmchain.Interface.ProgramHash,

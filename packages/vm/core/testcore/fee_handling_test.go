@@ -36,7 +36,7 @@ func TestBase(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee.Name,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamOwnerFee, 5,
 	).WithIotas(1)
@@ -55,7 +55,7 @@ func TestFeeIsEnough1(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee.Name,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamOwnerFee, 1,
 	).WithIotas(1)
@@ -86,7 +86,7 @@ func TestFeeIsEnough2(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee.Name,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamOwnerFee, 10,
 	).WithIotas(1)
@@ -116,7 +116,7 @@ func TestFeesNoNeed(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee.Name,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamOwnerFee, 10,
 	).WithIotas(1)
@@ -129,7 +129,7 @@ func TestFeesNoNeed(t *testing.T) {
 
 	checkFees(chain, blob.Interface.Name, 10, 0)
 
-	req = solo.NewCallParams(blob.Interface.Name, blob.FuncStoreBlob, "par1", []byte("data1"))
+	req = solo.NewCallParams(blob.Interface.Name, blob.FuncStoreBlob.Name, "par1", []byte("data1"))
 	req.WithIotas(7)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -147,7 +147,7 @@ func TestFeesNotEnough(t *testing.T) {
 	user, userAddr := env.NewKeyPairWithFunds()
 	userAgentID := iscp.NewAgentID(userAddr, 0)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee.Name,
 		root.ParamHname, blob.Interface.Hname(),
 		root.ParamOwnerFee, 10,
 	).WithIotas(1)
@@ -161,7 +161,7 @@ func TestFeesNotEnough(t *testing.T) {
 	chain.AssertIotas(userAgentID, 0)
 	env.AssertAddressIotas(userAddr, solo.Saldo)
 
-	req = solo.NewCallParams(blob.Interface.Name, blob.FuncStoreBlob, "par1", []byte("data1"))
+	req = solo.NewCallParams(blob.Interface.Name, blob.FuncStoreBlob.Name, "par1", []byte("data1"))
 	req.WithIotas(7)
 	_, err = chain.PostRequestSync(req, user)
 	require.Error(t, err)

@@ -10,34 +10,12 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-const (
-	Name        = coreutil.CoreContractBlocklog
-	description = "Block log contract"
-)
-
-var Interface = &coreutil.ContractInterface{
-	Name:        Name,
-	Description: description,
-	ProgramHash: hashing.HashStrings(Name),
-}
-
-func init() {
-	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.ViewFunc(FuncGetBlockInfo, viewGetBlockInfo),
-		coreutil.ViewFunc(FuncGetLatestBlockInfo, viewGetLatestBlockInfo),
-		coreutil.ViewFunc(FuncGetRequestLogRecord, viewGetRequestLogRecord),
-		coreutil.ViewFunc(FuncGetRequestLogRecordsForBlock, viewGetRequestLogRecordsForBlock),
-		coreutil.ViewFunc(FuncGetRequestIDsForBlock, viewGetRequestIDsForBlock),
-		coreutil.ViewFunc(FuncIsRequestProcessed, viewIsRequestProcessed),
-		coreutil.ViewFunc(FuncControlAddresses, viewControlAddresses),
-	})
-}
+var Interface = coreutil.NewContractInterface(coreutil.CoreContractBlocklog, "Block log contract")
 
 const (
 	// state variables
@@ -45,16 +23,19 @@ const (
 	StateVarControlAddresses   = "c"
 	StateVarRequestLookupIndex = "l"
 	StateVarRequestRecords     = "r"
+)
 
-	// functions
-	FuncControlAddresses             = "controlAddresses"
-	FuncGetBlockInfo                 = "getBlockInfo"
-	FuncGetLatestBlockInfo           = "getLatestBlockInfo"
-	FuncGetRequestIDsForBlock        = "getRequestIDsForBlock"
-	FuncGetRequestLogRecord          = "getRequestLogRecord"
-	FuncGetRequestLogRecordsForBlock = "getRequestLogRecordsForBlock"
-	FuncIsRequestProcessed           = "isRequestProcessed"
+var (
+	FuncControlAddresses             = coreutil.ViewFunc("controlAddresses")
+	FuncGetBlockInfo                 = coreutil.ViewFunc("getBlockInfo")
+	FuncGetLatestBlockInfo           = coreutil.ViewFunc("getLatestBlockInfo")
+	FuncGetRequestIDsForBlock        = coreutil.ViewFunc("getRequestIDsForBlock")
+	FuncGetRequestLogRecord          = coreutil.ViewFunc("getRequestLogRecord")
+	FuncGetRequestLogRecordsForBlock = coreutil.ViewFunc("getRequestLogRecordsForBlock")
+	FuncIsRequestProcessed           = coreutil.ViewFunc("isRequestProcessed")
+)
 
+const (
 	// parameters
 	ParamBlockIndex             = "n"
 	ParamBlockInfo              = "i"

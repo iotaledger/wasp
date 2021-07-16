@@ -3,13 +3,21 @@ package accounts
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+)
+
+var Processor = Interface.Processor(initialize,
+	FuncViewBalance.ViewHandler(viewBalance),
+	FuncViewTotalAssets.ViewHandler(viewTotalAssets),
+	FuncViewAccounts.ViewHandler(viewAccounts),
+	FuncDeposit.Handler(deposit),
+	FuncWithdraw.Handler(withdraw),
+	FuncHarvest.Handler(harvest),
 )
 
 // initialize the init call

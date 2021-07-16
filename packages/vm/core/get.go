@@ -17,19 +17,19 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-var AllCoreContractsByHash = map[hashing.HashValue]*coreutil.ContractInterface{
-	_default.Interface.ProgramHash:   _default.Interface,
-	root.Interface.ProgramHash:       root.Interface,
-	accounts.Interface.ProgramHash:   accounts.Interface,
-	blob.Interface.ProgramHash:       blob.Interface,
-	eventlog.Interface.ProgramHash:   eventlog.Interface,
-	blocklog.Interface.ProgramHash:   blocklog.Interface,
-	governance.Interface.ProgramHash: governance.Interface,
+var AllCoreContractsByHash = map[hashing.HashValue]*coreutil.ContractProcessor{
+	_default.Interface.ProgramHash:   _default.Processor,
+	root.Interface.ProgramHash:       root.Processor,
+	accounts.Interface.ProgramHash:   accounts.Processor,
+	blob.Interface.ProgramHash:       blob.Processor,
+	eventlog.Interface.ProgramHash:   eventlog.Processor,
+	blocklog.Interface.ProgramHash:   blocklog.Processor,
+	governance.Interface.ProgramHash: governance.Processor,
 }
 
 func init() {
 	for _, rec := range AllCoreContractsByHash {
-		commonaccount.SetCoreHname(rec.Hname())
+		commonaccount.SetCoreHname(rec.Interface.Hname())
 	}
 }
 

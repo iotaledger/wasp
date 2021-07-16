@@ -20,7 +20,7 @@ type Config struct {
 	nativeContracts map[hashing.HashValue]iscp.VMProcessor
 }
 
-func NewConfig(nativeContracts ...*coreutil.ContractInterface) *Config {
+func NewConfig(nativeContracts ...*coreutil.ContractProcessor) *Config {
 	p := &Config{
 		vmConstructors:  make(map[string]VMConstructor),
 		nativeContracts: make(map[hashing.HashValue]iscp.VMProcessor),
@@ -64,8 +64,8 @@ func (p *Config) GetNativeProcessorType(programHash hashing.HashValue) (string, 
 }
 
 // RegisterNativeContract registers a native contract so that it may be deployed
-func (p *Config) RegisterNativeContract(c *coreutil.ContractInterface) {
-	p.nativeContracts[c.ProgramHash] = c
+func (p *Config) RegisterNativeContract(c *coreutil.ContractProcessor) {
+	p.nativeContracts[c.Interface.ProgramHash] = c
 }
 
 func (p *Config) GetNativeProcessor(programHash hashing.HashValue) (iscp.VMProcessor, bool) {

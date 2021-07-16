@@ -10,6 +10,11 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
+var Processor = Interface.Processor(initialize,
+	FuncGetRecords.ViewHandler(getRecords),
+	FuncGetNumRecords.ViewHandler(getNumRecords),
+)
+
 // initialize is mandatory
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("eventlog.initialize.success hname = %s", Interface.Hname().String())

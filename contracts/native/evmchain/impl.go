@@ -16,6 +16,35 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
+var Processor = Interface.Processor(initialize,
+	// Ethereum blockchain
+	FuncSendTransaction.Handler(applyTransaction),
+	FuncGetBalance.ViewHandler(getBalance),
+	FuncCallContract.ViewHandler(callContract),
+	FuncEstimateGas.ViewHandler(estimateGas),
+	FuncGetNonce.ViewHandler(getNonce),
+	FuncGetReceipt.ViewHandler(getReceipt),
+	FuncGetCode.ViewHandler(getCode),
+	FuncGetBlockNumber.ViewHandler(getBlockNumber),
+	FuncGetBlockByNumber.ViewHandler(getBlockByNumber),
+	FuncGetBlockByHash.ViewHandler(getBlockByHash),
+	FuncGetTransactionByHash.ViewHandler(getTransactionByHash),
+	FuncGetTransactionByBlockHashAndIndex.ViewHandler(getTransactionByBlockHashAndIndex),
+	FuncGetTransactionByBlockNumberAndIndex.ViewHandler(getTransactionByBlockNumberAndIndex),
+	FuncGetBlockTransactionCountByHash.ViewHandler(getBlockTransactionCountByHash),
+	FuncGetBlockTransactionCountByNumber.ViewHandler(getBlockTransactionCountByNumber),
+	FuncGetStorage.ViewHandler(getStorage),
+	FuncGetLogs.ViewHandler(getLogs),
+
+	// EVMchain SC management
+	FuncSetNextOwner.Handler(setNextOwner),
+	FuncClaimOwnership.Handler(claimOwnership),
+	FuncSetGasPerIota.Handler(setGasPerIota),
+	FuncWithdrawGasFees.Handler(withdrawGasFees),
+	FuncGetOwner.ViewHandler(getOwner),
+	FuncGetGasPerIota.ViewHandler(getGasPerIota),
+)
+
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	genesisAlloc, err := DecodeGenesisAlloc(ctx.Params().MustGet(FieldGenesisAlloc))
@@ -57,7 +86,7 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 		iotasGasRefund := transferredIotas - iotasGasFee
 		_, err = ctx.Call(
 			accounts.Interface.Hname(),
-			iscp.Hn(accounts.FuncDeposit),
+			accounts.FuncDeposit.Hname(),
 			dict.Dict{accounts.ParamAgentID: codec.EncodeAgentID(ctx.Caller())},
 			iscp.NewTransferIotas(iotasGasRefund),
 		)
@@ -285,7 +314,7 @@ func withdrawGasFees(ctx iscp.Sandbox) (dict.Dict, error) {
 		params := codec.MakeDict(map[string]interface{}{
 			accounts.ParamAgentID: targetAgentID,
 		})
-		_, err := ctx.Call(accounts.Interface.Hname(), iscp.Hn(accounts.FuncDeposit), params, ctx.Balances())
+		_, err := ctx.Call(accounts.Interface.Hname(), accounts.FuncDeposit.Hname(), params, ctx.Balances())
 		a.RequireNoError(err)
 		return nil, nil
 	}

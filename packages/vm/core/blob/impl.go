@@ -11,6 +11,13 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
+var Processor = Interface.Processor(initialize,
+	FuncStoreBlob.Handler(storeBlob),
+	FuncGetBlobInfo.ViewHandler(getBlobInfo),
+	FuncGetBlobField.ViewHandler(getBlobField),
+	FuncListBlobs.ViewHandler(listBlobs),
+)
+
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.initialize.success hname = %s", Interface.Hname().String())
 	return nil, nil

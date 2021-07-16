@@ -78,7 +78,7 @@ func TestOkCall(t *testing.T) {
 	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee.Name,
 		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0)
 	req.WithIotas(2)
 	_, err := chain.PostRequestSync(req, nil)
@@ -94,7 +94,7 @@ func TestNoTokens(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 	chain.CheckControlAddresses()
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee,
+	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee.Name,
 		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0)
 	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)

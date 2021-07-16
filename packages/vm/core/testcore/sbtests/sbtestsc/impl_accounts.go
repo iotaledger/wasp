@@ -11,12 +11,12 @@ import (
 
 // calls withdrawToChain to the chain ID
 func withdrawToChain(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Infof(FuncWithdrawToChain)
+	ctx.Log().Infof(FuncWithdrawToChain.Name)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetChain := params.MustGetChainID(ParamChainID)
 	succ := ctx.Send(targetChain.AsAddress(), iscp.NewTransferIotas(1), &iscp.SendMetadata{
 		TargetContract: accounts.Interface.Hname(),
-		EntryPoint:     iscp.Hn(accounts.FuncWithdraw),
+		EntryPoint:     accounts.FuncWithdraw.Hname(),
 		Args:           nil,
 	})
 	if !succ {

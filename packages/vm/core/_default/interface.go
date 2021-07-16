@@ -4,15 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-const description = "Default core contract"
-
 var (
-	Interface = &coreutil.ContractInterface{
-		Name:        coreutil.CoreContractDefault,
-		Description: description,
-	}
+	Interface = coreutil.NewContractInterface(coreutil.CoreContractDefault, "Default core contract")
+	Processor = Interface.Processor(nil)
 )
-
-func init() {
-	Interface.WithFunctions(nil, []coreutil.ContractFunctionInterface{})
-}

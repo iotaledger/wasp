@@ -15,19 +15,27 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
-const DefaultHandler = "defaultHandler"
-
 // ContractInterface represents smart contract interface
 type ContractInterface struct {
 	Name        string
 	Description string
 	ProgramHash hashing.HashValue
-	Functions   map[iscp.Hname]ContractFunctionInterface
+}
+
+type ContractProcessor struct {
+	Interface *ContractInterface
+	Handlers  map[iscp.Hname]ContractFunctionHandler
 }
 
 // ContractFunctionInterface represents entry point interface
 type ContractFunctionInterface struct {
-	Name        string
+	Name   string
+	IsView bool
+}
+
+// ContractFunctionHandler is a union structure: one of Handler, ViewHandler will be set
+type ContractFunctionHandler struct {
+	Interface   *ContractFunctionInterface
 	Handler     Handler
 	ViewHandler ViewHandler
 }
@@ -37,12 +45,17 @@ type (
 	ViewHandler func(ctx iscp.SandboxView) (dict.Dict, error)
 )
 
+var (
+	FuncFallback           = Func("fallbackHandler")
+	FuncDefaultInitializer = Func("initializer")
+)
+
 func defaultInitFunc(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("default init function invoked for contract %s from caller %s", ctx.Contract(), ctx.Caller())
 	return nil, nil
 }
 
-func defaultHandlerFunc(ctx iscp.Sandbox) (dict.Dict, error) {
+func fallbackHandler(ctx iscp.Sandbox) (dict.Dict, error) {
 	transferStr := "(empty)"
 	if ctx.IncomingTransfer() != nil {
 		transferStr = ctx.IncomingTransfer().String()
@@ -52,108 +65,105 @@ func defaultHandlerFunc(ctx iscp.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func NewContractInterface(name, description string, progHash ...hashing.HashValue) *ContractInterface {
-	i := &ContractInterface{Name: name, Description: description}
-	if len(progHash) > 0 {
-		i.ProgramHash = progHash[0]
-	} else {
-		i.ProgramHash = hashing.HashStrings(i.Name)
+func NewContractInterface(name, description string) *ContractInterface {
+	return &ContractInterface{
+		Name:        name,
+		Description: description,
+		ProgramHash: hashing.HashStrings(name),
 	}
-	return i
 }
 
-// Funcs declares init entry point and a list of full and view entry points
-func Funcs(init Handler, fns []ContractFunctionInterface, defaultHandler ...Handler) map[iscp.Hname]ContractFunctionInterface {
+// Func declares a full entry point
+func Func(name string) ContractFunctionInterface {
+	return ContractFunctionInterface{
+		Name:   name,
+		IsView: false,
+	}
+}
+
+// Func declares a view entry point
+func ViewFunc(name string) ContractFunctionInterface {
+	return ContractFunctionInterface{
+		Name:   name,
+		IsView: true,
+	}
+}
+
+// HandlerFunc declares a full entry point
+func (fi *ContractFunctionInterface) Handler(fn Handler) ContractFunctionHandler {
+	if fi.IsView {
+		panic("can't create a full entry point handler from a view entry point")
+	}
+	return ContractFunctionHandler{Interface: fi, Handler: fn}
+}
+
+// ViewHandlerFunc declares a view entry point
+func (fi *ContractFunctionInterface) ViewHandler(fn ViewHandler) ContractFunctionHandler {
+	if !fi.IsView {
+		panic("can't create a view entry point handler from a full entry point")
+	}
+	return ContractFunctionHandler{Interface: fi, ViewHandler: fn}
+}
+
+// Processor creates a ContractProcessor with the provided handlers
+func (i *ContractInterface) Processor(init Handler, fns ...ContractFunctionHandler) *ContractProcessor {
 	if init == nil {
 		init = defaultInitFunc
 	}
-	ret := map[iscp.Hname]ContractFunctionInterface{
-		iscp.EntryPointInit: Func("init", init),
+	handlers := map[iscp.Hname]ContractFunctionHandler{
+		// under hname == 0 always resides default handler:
+		0: FuncFallback.Handler(fallbackHandler),
+		// constructor:
+		iscp.EntryPointInit: FuncDefaultInitializer.Handler(init),
 	}
 	for _, f := range fns {
-		hname := f.Hname()
-		if _, ok := ret[hname]; ok {
-			panic(fmt.Sprintf("Duplicate function: %s (%s)", f.Name, hname.String()))
+		hname := f.Interface.Hname()
+		if _, ok := handlers[hname]; ok {
+			panic(fmt.Sprintf("Duplicate function: %s (%s)", f.Interface.Name, hname.String()))
 		}
 
-		handlers := 0
+		n := 0
 		if f.Handler != nil {
-			handlers++
+			n++
 		}
 		if f.ViewHandler != nil {
-			handlers++
+			n++
 		}
-		if handlers != 1 {
+		if n != 1 {
 			panic("Exactly one of (Handler, ViewHandler) must be set")
 		}
 
-		ret[hname] = f
+		handlers[hname] = f
 	}
-	def := defaultHandlerFunc
-	if len(defaultHandler) > 0 {
-		def = defaultHandler[0]
-	}
-	// under hname == 0 always resides default handler
-	ret[0] = ContractFunctionInterface{
-		Name:    DefaultHandler,
-		Handler: def,
-	}
-	return ret
+	return &ContractProcessor{Interface: i, Handlers: handlers}
 }
 
-// Func declares a full entry point: its name and its handler
-func Func(name string, handler Handler) ContractFunctionInterface {
-	return ContractFunctionInterface{
-		Name:    name,
-		Handler: handler,
-	}
-}
-
-// Func declares a view entry point: its name and its handler
-func ViewFunc(name string, handler ViewHandler) ContractFunctionInterface {
-	return ContractFunctionInterface{
-		Name:        name,
-		ViewHandler: handler,
-	}
-}
-
-func (i *ContractInterface) WithFunctions(init Handler, funcs []ContractFunctionInterface) *ContractInterface {
-	i.Functions = Funcs(init, funcs)
-	return i
-}
-
-func (i *ContractInterface) GetFunction(name string) (*ContractFunctionInterface, bool) {
-	f, ok := i.Functions[iscp.Hn(name)]
-	return &f, ok
-}
-
-func (i *ContractInterface) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntryPoint, bool) {
-	f, entryPointFound := i.Functions[code]
-	if !entryPointFound {
+func (i *ContractProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntryPoint, bool) {
+	f, ok := i.Handlers[code]
+	if !ok {
 		return nil, false
 	}
 	return &f, true
 }
 
-func (i *ContractInterface) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
-	ret := i.Functions[0]
+func (i *ContractProcessor) GetDefaultEntryPoint() iscp.VMProcessorEntryPoint {
+	ret := i.Handlers[0]
 	return &ret
 }
 
-func (i *ContractInterface) GetDescription() string {
-	return i.Description
+func (i *ContractProcessor) GetDescription() string {
+	return i.Interface.Description
 }
 
-// Hname caches the value
 func (i *ContractInterface) Hname() iscp.Hname {
 	return CoreHname(i.Name)
 }
 
-func (f *ContractFunctionInterface) Hname() iscp.Hname {
-	return iscp.Hn(f.Name)
+func (fi *ContractFunctionInterface) Hname() iscp.Hname {
+	return iscp.Hn(fi.Name)
 }
 
-func (f *ContractFunctionInterface) Call(ctx interface{}) (dict.Dict, error) {
+func (f *ContractFunctionHandler) Call(ctx interface{}) (dict.Dict, error) {
 	switch tctx := ctx.(type) {
 	case iscp.Sandbox:
 		if f.Handler != nil {
@@ -167,10 +177,10 @@ func (f *ContractFunctionInterface) Call(ctx interface{}) (dict.Dict, error) {
 	panic("inconsistency: wrong type of call context")
 }
 
-func (f *ContractFunctionInterface) IsView() bool {
+func (f *ContractFunctionHandler) IsView() bool {
 	return f.ViewHandler != nil
 }
 
-func (i *ContractInterface) GetStateReadOnly(chainState kv.KVStoreReader) kv.KVStoreReader {
-	return subrealm.NewReadOnly(chainState, kv.Key(i.Hname().Bytes()))
+func (i *ContractProcessor) GetStateReadOnly(chainState kv.KVStoreReader) kv.KVStoreReader {
+	return subrealm.NewReadOnly(chainState, kv.Key(i.Interface.Hname().Bytes()))
 }

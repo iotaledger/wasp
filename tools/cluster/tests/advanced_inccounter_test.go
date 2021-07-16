@@ -120,7 +120,7 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 	myClient := chain1.SCClient(iscp.Hn(incCounterSCName), kp)
 
 	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
+		_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
 		require.NoError(t, err)
 	}
 
@@ -179,7 +179,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	require.NoError(t, err)
 
 	accountsClient := chain1.SCClient(accounts.Interface.Hname(), kp)
-	_, err := accountsClient.PostRequest(accounts.FuncDeposit, chainclient.PostRequestParams{
+	_, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
 		Transfer: iscp.NewTransferIotas(100),
 	})
 	require.NoError(t, err)
@@ -189,7 +189,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	myClient := chain1.SCClient(iscp.Hn(incCounterSCName), kp)
 
 	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
+		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
 		require.NoError(t, err)
 	}
 
@@ -225,7 +225,7 @@ func TestAccessNodesMany(t *testing.T) {
 		logMsg := fmt.Sprintf("iteration %v of %v requests", i, requestsCount)
 		t.Logf("Running %s", logMsg)
 		for j := 0; j < requestsCount; j++ {
-			_, err = myClient.PostRequest(inccounter.FuncIncCounter)
+			_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
 			require.NoError(t, err)
 		}
 		posted += requestsCount
@@ -275,7 +275,7 @@ func TestRotation(t *testing.T) {
 	myClient := chain1.SCClient(incCounterSCHname, kp)
 
 	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
+		_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
 		require.NoError(t, err)
 	}
 
@@ -284,7 +284,7 @@ func TestRotation(t *testing.T) {
 	govClient := chain1.SCClient(governance.Interface.Hname(), chain1.OriginatorKeyPair())
 
 	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addr2).WithIotas(1)
-	tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress, *params)
+	tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
 
 	require.NoError(t, err)
 
@@ -304,7 +304,7 @@ func TestRotation(t *testing.T) {
 	require.True(t, waitStateController(t, chain1, 9, addr1, 15*time.Second))
 
 	params = chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addr2).WithIotas(1)
-	tx, err = govClient.PostRequest(governance.FuncRotateStateController, *params)
+	tx, err = govClient.PostRequest(governance.FuncRotateStateController.Name, *params)
 	require.NoError(t, err)
 
 	require.True(t, waitStateController(t, chain1, 0, addr2, 15*time.Second))
@@ -319,7 +319,7 @@ func TestRotation(t *testing.T) {
 	require.EqualValues(t, "", waitRequest(t, chain1, 9, reqid, 15*time.Second))
 
 	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostRequest(inccounter.FuncIncCounter)
+		_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
 		require.NoError(t, err)
 	}
 
@@ -366,7 +366,7 @@ func TestRotationMany(t *testing.T) {
 
 	for i := range addrs {
 		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addrs[i]).WithIotas(1)
-		tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress, *par)
+		tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *par)
 		require.NoError(t, err)
 		reqid := iscp.NewRequestID(tx.ID(), 0)
 		require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, waitTimeout))
@@ -399,7 +399,7 @@ func TestRotationMany(t *testing.T) {
 		require.True(t, waitStateController(t, chain1, 9, addrs[addrIndex], waitTimeout))
 
 		for j := 0; j < numRequests; j++ {
-			_, err = myClient.PostRequest(inccounter.FuncIncCounter)
+			_, err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
 			require.NoError(t, err)
 		}
 
@@ -408,7 +408,7 @@ func TestRotationMany(t *testing.T) {
 		addrIndex = (addrIndex + 1) % numCmt
 
 		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addrs[addrIndex]).WithIotas(1)
-		tx, err := govClient.PostRequest(governance.FuncRotateStateController, *par)
+		tx, err := govClient.PostRequest(governance.FuncRotateStateController.Name, *par)
 		require.NoError(t, err)
 		reqid := iscp.NewRequestID(tx.ID(), 0)
 		require.EqualValues(t, "", waitRequest(t, chain1, 0, reqid, waitTimeout))
@@ -448,7 +448,7 @@ func callGetBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int) (uint3
 	ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
 		blocklog.Interface.Hname(),
-		blocklog.FuncGetLatestBlockInfo,
+		blocklog.FuncGetLatestBlockInfo.Name,
 	)
 	if err != nil {
 		return 0, err
@@ -466,7 +466,7 @@ func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, req
 	res, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
 		blocklog.Interface.Hname(),
-		blocklog.FuncGetRequestLogRecord,
+		blocklog.FuncGetRequestLogRecord.Name,
 		args,
 	)
 	if err != nil {
@@ -492,7 +492,7 @@ func callGetStateController(t *testing.T, chain *cluster.Chain, nodeIndex int) (
 	ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
 		blocklog.Interface.Hname(),
-		blocklog.FuncControlAddresses,
+		blocklog.FuncControlAddresses.Name,
 	)
 	if err != nil {
 		return nil, err
@@ -507,7 +507,7 @@ func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeInd
 	ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
 		governance.Interface.Hname(),
-		governance.FuncGetAllowedStateControllerAddresses,
+		governance.FuncGetAllowedStateControllerAddresses.Name,
 	)
 	require.NoError(t, err)
 	arr := collections.NewArray16ReadOnly(ret, governance.ParamAllowedStateControllerAddresses)

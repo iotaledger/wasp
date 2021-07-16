@@ -24,6 +24,19 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
+var Processor = Interface.Processor(initialize,
+	FuncClaimChainOwnership.Handler(claimChainOwnership),
+	FuncDelegateChainOwnership.Handler(delegateChainOwnership),
+	FuncDeployContract.Handler(deployContract),
+	FuncGrantDeployPermission.Handler(grantDeployPermission),
+	FuncRevokeDeployPermission.Handler(revokeDeployPermission),
+	FuncSetContractFee.Handler(setContractFee),
+	FuncSetDefaultFee.Handler(setDefaultFee),
+	FuncFindContract.ViewHandler(findContract),
+	FuncGetChainInfo.ViewHandler(getChainInfo),
+	FuncGetFeeInfo.ViewHandler(getFeeInfo),
+)
+
 // initialize handles constructor, the "init" request. This is the first call to the chain
 // if it fails, chain is not initialized. Does the following:
 // - stores chain ID and chain description in the state

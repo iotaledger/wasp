@@ -54,7 +54,7 @@ func testChainOwnerIDFull(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func testSandboxCall(ctx iscp.SandboxView) (dict.Dict, error) {
-	ret, err := ctx.Call(root.Interface.Hname(), iscp.Hn(root.FuncGetChainInfo), nil)
+	ret, err := ctx.Call(root.Interface.Hname(), root.FuncGetChainInfo.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -92,17 +92,17 @@ func testJustView(ctx iscp.SandboxView) (dict.Dict, error) {
 
 func testCallPanicFullEP(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicFullEP)
-	return ctx.Call(Interface.Hname(), iscp.Hn(FuncPanicFullEP), nil, nil)
+	return ctx.Call(Interface.Hname(), FuncPanicFullEP.Hname(), nil, nil)
 }
 
 func testCallPanicViewEPFromFull(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicViewEP)
-	return ctx.Call(Interface.Hname(), iscp.Hn(FuncPanicViewEP), nil, nil)
+	return ctx.Call(Interface.Hname(), FuncPanicViewEP.Hname(), nil, nil)
 }
 
 func testCallPanicViewEPFromView(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Infof("will be calling entry point '%s' from view EP", FuncPanicViewEP)
-	return ctx.Call(Interface.Hname(), iscp.Hn(FuncPanicViewEP), nil)
+	return ctx.Call(Interface.Hname(), FuncPanicViewEP.Hname(), nil)
 }
 
 func doNothing(ctx iscp.Sandbox) (dict.Dict, error) {
@@ -117,7 +117,7 @@ func doNothing(ctx iscp.Sandbox) (dict.Dict, error) {
 // sendToAddress send the whole account to ParamAddress if invoked by the creator
 // Panics if wrong parameter or unauthorized access
 func sendToAddress(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Infof(FuncSendToAddress)
+	ctx.Log().Infof(FuncSendToAddress.Name)
 	a := assert.NewAssert(ctx.Log())
 	par := kvdecoder.New(ctx.Params(), ctx.Log())
 	a.Require(ctx.Caller().Equals(ctx.ContractCreator()), MsgPanicUnauthorized)

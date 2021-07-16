@@ -67,7 +67,7 @@ func TestDeployContractOnly(t *testing.T) {
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := chain1.Cluster.WaspClient(0).CallView(
-		chain1.ChainID, root.Interface.Hname(), root.FuncFindContract,
+		chain1.ChainID, root.Interface.Hname(), root.FuncFindContract.Name,
 		dict.Dict{
 			root.ParamHname: iscp.Hn(incCounterSCName).Bytes(),
 		})
@@ -111,7 +111,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		inccounter.VarName, nameNew,
 		inccounter.VarDescription, dscrNew,
 	).WithIotas(1)
-	tx, err := chain1.OriginatorClient().Post1Request(hname, iscp.Hn(inccounter.FuncSpawn), *par)
+	tx, err := chain1.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
 	check(err, t)
 
 	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, tx, 30*time.Second)

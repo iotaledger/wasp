@@ -24,9 +24,9 @@ func TestBasic(t *testing.T) {
 	// TODO always exists because it returns default handler
 	ep, exists := rootproc.GetEntryPoint(0)
 	assert.True(t, exists)
-	assert.Equal(t, ep.(*coreutil.ContractFunctionInterface).Name, coreutil.DefaultHandler)
+	assert.Same(t, ep.(*coreutil.ContractFunctionHandler).Interface, &coreutil.FuncFallback)
 
-	ep, exists = rootproc.GetEntryPoint(iscp.Hn(root.FuncDeployContract))
+	ep, exists = rootproc.GetEntryPoint(root.FuncDeployContract.Hname())
 	assert.True(t, exists)
-	assert.Equal(t, ep.(*coreutil.ContractFunctionInterface).Name, root.FuncDeployContract)
+	assert.Same(t, ep.(*coreutil.ContractFunctionHandler).Interface, &root.FuncDeployContract)
 }

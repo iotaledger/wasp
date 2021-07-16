@@ -12,6 +12,13 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
+var Processor = Interface.Processor(initialize,
+	FuncRotateStateController.Handler(rotateStateController),
+	FuncAddAllowedStateControllerAddress.Handler(addAllowedStateControllerAddress),
+	FuncRemoveAllowedStateControllerAddress.Handler(removeAllowedStateControllerAddress),
+	FuncGetAllowedStateControllerAddresses.ViewHandler(getAllowedStateControllerAddresses),
+)
+
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
@@ -40,7 +47,7 @@ func rotateStateController(ctx iscp.Sandbox) (dict.Dict, error) {
 	// Two situations possible:
 	// - either there's no need to rotate
 	// - or it just has been rotated. In case of the second situation we emit a 'rotate' event
-	addrs, err := ctx.Call(coreutil.CoreContractBlocklogHname, iscp.Hn(blocklog.FuncControlAddresses), nil, nil)
+	addrs, err := ctx.Call(coreutil.CoreContractBlocklogHname, blocklog.FuncControlAddresses.Hname(), nil, nil)
 	a.RequireNoError(err)
 	par = kvdecoder.New(addrs, ctx.Log())
 	storedStateController := par.MustGetAddress(blocklog.ParamStateControllerAddress)
