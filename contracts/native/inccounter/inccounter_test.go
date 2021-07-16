@@ -25,7 +25,7 @@ func TestDeployInc(t *testing.T) {
 	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, incName, Interface.ProgramHash)
+	err := chain.DeployContract(nil, incName, Contract.ProgramHash)
 	require.NoError(t, err)
 	chain.CheckChain()
 	_, _, contracts := chain.GetInfo()
@@ -38,7 +38,7 @@ func TestDeployIncInitParams(t *testing.T) {
 	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 	chain.CheckAccountLedger()
@@ -48,7 +48,7 @@ func TestIncDefaultParam(t *testing.T) {
 	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
@@ -63,7 +63,7 @@ func TestIncParam(t *testing.T) {
 	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
@@ -79,7 +79,7 @@ func TestIncWith1Post(t *testing.T) {
 	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 

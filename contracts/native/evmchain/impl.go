@@ -16,33 +16,33 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
-var Processor = Interface.Processor(initialize,
+var Processor = Contract.Processor(initialize,
 	// Ethereum blockchain
-	FuncSendTransaction.Handler(applyTransaction),
-	FuncGetBalance.ViewHandler(getBalance),
-	FuncCallContract.ViewHandler(callContract),
-	FuncEstimateGas.ViewHandler(estimateGas),
-	FuncGetNonce.ViewHandler(getNonce),
-	FuncGetReceipt.ViewHandler(getReceipt),
-	FuncGetCode.ViewHandler(getCode),
-	FuncGetBlockNumber.ViewHandler(getBlockNumber),
-	FuncGetBlockByNumber.ViewHandler(getBlockByNumber),
-	FuncGetBlockByHash.ViewHandler(getBlockByHash),
-	FuncGetTransactionByHash.ViewHandler(getTransactionByHash),
-	FuncGetTransactionByBlockHashAndIndex.ViewHandler(getTransactionByBlockHashAndIndex),
-	FuncGetTransactionByBlockNumberAndIndex.ViewHandler(getTransactionByBlockNumberAndIndex),
-	FuncGetBlockTransactionCountByHash.ViewHandler(getBlockTransactionCountByHash),
-	FuncGetBlockTransactionCountByNumber.ViewHandler(getBlockTransactionCountByNumber),
-	FuncGetStorage.ViewHandler(getStorage),
-	FuncGetLogs.ViewHandler(getLogs),
+	FuncSendTransaction.WithHandler(applyTransaction),
+	FuncGetBalance.WithHandler(getBalance),
+	FuncCallContract.WithHandler(callContract),
+	FuncEstimateGas.WithHandler(estimateGas),
+	FuncGetNonce.WithHandler(getNonce),
+	FuncGetReceipt.WithHandler(getReceipt),
+	FuncGetCode.WithHandler(getCode),
+	FuncGetBlockNumber.WithHandler(getBlockNumber),
+	FuncGetBlockByNumber.WithHandler(getBlockByNumber),
+	FuncGetBlockByHash.WithHandler(getBlockByHash),
+	FuncGetTransactionByHash.WithHandler(getTransactionByHash),
+	FuncGetTransactionByBlockHashAndIndex.WithHandler(getTransactionByBlockHashAndIndex),
+	FuncGetTransactionByBlockNumberAndIndex.WithHandler(getTransactionByBlockNumberAndIndex),
+	FuncGetBlockTransactionCountByHash.WithHandler(getBlockTransactionCountByHash),
+	FuncGetBlockTransactionCountByNumber.WithHandler(getBlockTransactionCountByNumber),
+	FuncGetStorage.WithHandler(getStorage),
+	FuncGetLogs.WithHandler(getLogs),
 
 	// EVMchain SC management
-	FuncSetNextOwner.Handler(setNextOwner),
-	FuncClaimOwnership.Handler(claimOwnership),
-	FuncSetGasPerIota.Handler(setGasPerIota),
-	FuncWithdrawGasFees.Handler(withdrawGasFees),
-	FuncGetOwner.ViewHandler(getOwner),
-	FuncGetGasPerIota.ViewHandler(getGasPerIota),
+	FuncSetNextOwner.WithHandler(setNextOwner),
+	FuncClaimOwnership.WithHandler(claimOwnership),
+	FuncSetGasPerIota.WithHandler(setGasPerIota),
+	FuncWithdrawGasFees.WithHandler(withdrawGasFees),
+	FuncGetOwner.WithHandler(getOwner),
+	FuncGetGasPerIota.WithHandler(getGasPerIota),
 )
 
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
@@ -85,7 +85,7 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 		// refund unspent gas fee to the sender's on-chain account
 		iotasGasRefund := transferredIotas - iotasGasFee
 		_, err = ctx.Call(
-			accounts.Interface.Hname(),
+			accounts.Contract.Hname(),
 			accounts.FuncDeposit.Hname(),
 			dict.Dict{accounts.ParamAgentID: codec.EncodeAgentID(ctx.Caller())},
 			iscp.NewTransferIotas(iotasGasRefund),
@@ -314,7 +314,7 @@ func withdrawGasFees(ctx iscp.Sandbox) (dict.Dict, error) {
 		params := codec.MakeDict(map[string]interface{}{
 			accounts.ParamAgentID: targetAgentID,
 		})
-		_, err := ctx.Call(accounts.Interface.Hname(), accounts.FuncDeposit.Hname(), params, ctx.Balances())
+		_, err := ctx.Call(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), params, ctx.Balances())
 		a.RequireNoError(err)
 		return nil, nil
 	}

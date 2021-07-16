@@ -25,15 +25,15 @@ func (env *Solo) AssertAddressIotas(addr ledgerstate.Address, expected uint64) {
 
 // CheckChain checks fundamental integrity of the chain
 func (ch *Chain) CheckChain() {
-	_, err := ch.CallView(root.Interface.Name, root.FuncGetChainInfo.Name)
+	_, err := ch.CallView(root.Contract.Name, root.FuncGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
 	for _, rec := range core.AllCoreContractsByHash {
-		recFromState, err := ch.FindContract(rec.Interface.Name)
+		recFromState, err := ch.FindContract(rec.Contract.Name)
 		require.NoError(ch.Env.T, err)
-		require.EqualValues(ch.Env.T, rec.Interface.Name, recFromState.Name)
-		require.EqualValues(ch.Env.T, rec.Interface.Description, recFromState.Description)
-		require.EqualValues(ch.Env.T, rec.Interface.ProgramHash, recFromState.ProgramHash)
+		require.EqualValues(ch.Env.T, rec.Contract.Name, recFromState.Name)
+		require.EqualValues(ch.Env.T, rec.Contract.Description, recFromState.Description)
+		require.EqualValues(ch.Env.T, rec.Contract.ProgramHash, recFromState.ProgramHash)
 		require.True(ch.Env.T, recFromState.Creator.IsNil())
 	}
 	ch.CheckAccountLedger()
@@ -55,13 +55,13 @@ func (ch *Chain) CheckAccountLedger() {
 		})
 	}
 	require.True(ch.Env.T, iscp.EqualColoredBalances(total, ledgerstate.NewColoredBalances(sum)))
-	coreacc := iscp.NewAgentID(ch.ChainID.AsAddress(), root.Interface.Hname())
+	coreacc := iscp.NewAgentID(ch.ChainID.AsAddress(), root.Contract.Hname())
 	require.Zero(ch.Env.T, ch.GetAccountBalance(coreacc).Size())
-	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), blob.Interface.Hname())
+	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), blob.Contract.Hname())
 	require.Zero(ch.Env.T, ch.GetAccountBalance(coreacc).Size())
-	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), accounts.Interface.Hname())
+	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), accounts.Contract.Hname())
 	require.Zero(ch.Env.T, ch.GetAccountBalance(coreacc).Size())
-	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), eventlog.Interface.Hname())
+	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), eventlog.Contract.Hname())
 	require.Zero(ch.Env.T, ch.GetAccountBalance(coreacc).Size())
 }
 

@@ -212,7 +212,7 @@ func TestProcessedRequest(t *testing.T) {
 	rec := &blocklog.RequestLogRecord{
 		RequestID: requests[0].ID(),
 	}
-	blocklogPartition := subrealm.New(wrt, kv.Key(blocklog.Interface.Hname().Bytes()))
+	blocklogPartition := subrealm.New(wrt, kv.Key(blocklog.Contract.Hname().Bytes()))
 	err := blocklog.SaveRequestLogRecord(blocklogPartition, rec, [6]byte{})
 	require.NoError(t, err)
 	blocklogPartition.Set(coreutil.StateVarBlockIndex, util.Uint64To8Bytes(1))

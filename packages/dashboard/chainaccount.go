@@ -45,7 +45,7 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 
 	theChain := d.wasp.GetChain(chainID)
 	if theChain != nil {
-		bal, err := d.wasp.CallView(theChain, accounts.Interface.Hname(), accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
+		bal, err := d.wasp.CallView(theChain, accounts.Contract.Hname(), accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
 			accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 		}))
 		if err != nil {

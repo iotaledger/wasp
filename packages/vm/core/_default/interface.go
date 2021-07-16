@@ -5,6 +5,6 @@ import (
 )
 
 var (
-	Interface = coreutil.NewContractInterface(coreutil.CoreContractDefault, "Default core contract")
-	Processor = Interface.Processor(nil)
+	Contract = coreutil.NewContract(coreutil.CoreContractDefault, "Default core contract")
+	Processor = Contract.Processor(nil)
 )

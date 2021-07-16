@@ -20,7 +20,7 @@ var listAccountsCmd = &cobra.Command{
 	Short: "List accounts in chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncViewAccounts.Name)
+		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewAccounts.Name)
 		log.Check(err)
 
 		log.Printf("Total %d account(s) in chain %s\n", len(ret), GetCurrentChainID().Base58())
@@ -46,7 +46,7 @@ var balanceCmd = &cobra.Command{
 		agentID, err := iscp.NewAgentIDFromString(args[0])
 		log.Check(err)
 
-		ret, err := SCClient(accounts.Interface.Hname()).CallView(accounts.FuncViewBalance.Name,
+		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewBalance.Name,
 			dict.Dict{
 				accounts.ParamAgentID: agentID.Bytes(),
 			})
@@ -74,7 +74,7 @@ var depositCmd = &cobra.Command{
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		util.WithSCTransaction(GetCurrentChainID(), func() (*ledgerstate.Transaction, error) {
-			return SCClient(accounts.Interface.Hname()).PostRequest(
+			return SCClient(accounts.Contract.Hname()).PostRequest(
 				accounts.FuncDeposit.Name,
 				chainclient.PostRequestParams{
 					Transfer: parseColoredBalances(args),

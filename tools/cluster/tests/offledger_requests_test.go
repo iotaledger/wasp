@@ -31,7 +31,7 @@ func newWalletWithFunds(t *testing.T, clust *cluster.Cluster, ch *cluster.Chain,
 	// deposit funds before sending the off-ledger requestargs
 	err = requestFunds(clust, userAddress, "userWallet")
 	check(err, t)
-	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
+	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
 		Transfer: iscp.NewTransferIotas(iotas),
 	})
 	check(err, t)
@@ -100,7 +100,7 @@ func TestOffledgerRequest1Mb(t *testing.T) {
 	expectedHash := blob.MustGetBlobHash(paramsDict)
 
 	offledgerReq, err := chClient.PostOffLedgerRequest(
-		blob.Interface.Hname(),
+		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
 		chainclient.PostRequestParams{
 			Args: requestargs.New().AddEncodeSimpleMany(paramsDict),
@@ -112,7 +112,7 @@ func TestOffledgerRequest1Mb(t *testing.T) {
 
 	// ensure blob was stored by the cluster
 	res, err := chain1.Cluster.WaspClient(2).CallView(
-		chain1.ChainID, blob.Interface.Hname(), blob.FuncGetBlobField.Name,
+		chain1.ChainID, blob.Contract.Hname(), blob.FuncGetBlobField.Name,
 		dict.Dict{
 			blob.ParamHash:  expectedHash[:],
 			blob.ParamField: []byte("data"),

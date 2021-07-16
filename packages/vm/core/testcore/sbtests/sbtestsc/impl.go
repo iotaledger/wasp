@@ -54,7 +54,7 @@ func testChainOwnerIDFull(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func testSandboxCall(ctx iscp.SandboxView) (dict.Dict, error) {
-	ret, err := ctx.Call(root.Interface.Hname(), root.FuncGetChainInfo.Hname(), nil)
+	ret, err := ctx.Call(root.Contract.Hname(), root.FuncGetChainInfo.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func testSandboxCall(ctx iscp.SandboxView) (dict.Dict, error) {
 
 func testEventLogDeploy(ctx iscp.Sandbox) (dict.Dict, error) {
 	// Deploy the same contract with another name
-	err := ctx.DeployContract(Interface.ProgramHash,
+	err := ctx.DeployContract(Contract.ProgramHash,
 		VarContractNameDeployed, "test contract deploy log", nil)
 	if err != nil {
 		return nil, err
@@ -92,17 +92,17 @@ func testJustView(ctx iscp.SandboxView) (dict.Dict, error) {
 
 func testCallPanicFullEP(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicFullEP)
-	return ctx.Call(Interface.Hname(), FuncPanicFullEP.Hname(), nil, nil)
+	return ctx.Call(Contract.Hname(), FuncPanicFullEP.Hname(), nil, nil)
 }
 
 func testCallPanicViewEPFromFull(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicViewEP)
-	return ctx.Call(Interface.Hname(), FuncPanicViewEP.Hname(), nil, nil)
+	return ctx.Call(Contract.Hname(), FuncPanicViewEP.Hname(), nil, nil)
 }
 
 func testCallPanicViewEPFromView(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Infof("will be calling entry point '%s' from view EP", FuncPanicViewEP)
-	return ctx.Call(Interface.Hname(), FuncPanicViewEP.Hname(), nil)
+	return ctx.Call(Contract.Hname(), FuncPanicViewEP.Hname(), nil)
 }
 
 func doNothing(ctx iscp.Sandbox) (dict.Dict, error) {

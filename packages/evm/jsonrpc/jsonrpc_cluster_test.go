@@ -37,8 +37,8 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 	chainID := evm.DefaultChainID
 
 	_, err = chain.DeployContract(
-		evmchain.Interface.Name,
-		evmchain.Interface.ProgramHash.String(),
+		evmchain.Contract.Name,
+		evmchain.Contract.ProgramHash.String(),
 		"EVM chain on top of ISCP",
 		map[string]interface{}{
 			evmchain.FieldChainID: codec.EncodeUint16(uint16(chainID)),
@@ -53,7 +53,7 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 	require.NoError(t, err)
 
 	backend := NewWaspClientBackend(chain.Client(signer))
-	evmChain := NewEVMChain(backend, chainID, evmchain.Interface.Name)
+	evmChain := NewEVMChain(backend, chainID, evmchain.Contract.Name)
 
 	accountManager := NewAccountManager(evmtest.Accounts)
 

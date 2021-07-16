@@ -53,7 +53,7 @@ var deployContractCmd = &cobra.Command{
 func deployContract(name, description string, progHash hashing.HashValue, initParams dict.Dict) {
 	util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.RequestOffLedger, error) {
 		return Client().PostOffLedgerRequest(
-			root.Interface.Hname(),
+			root.Contract.Hname(),
 			root.FuncDeployContract.Hname(),
 			chainclient.PostRequestParams{
 				Args: requestargs.New().

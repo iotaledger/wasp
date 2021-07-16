@@ -81,7 +81,7 @@ func initEVMChain(t *testing.T, nativeContracts ...*coreutil.ContractProcessor) 
 		faucetSupply: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9)),
 		chainID:      chainID,
 	}
-	err := e.soloChain.DeployContract(nil, "evmchain", Interface.ProgramHash,
+	err := e.soloChain.DeployContract(nil, "evmchain", Contract.ProgramHash,
 		FieldChainID, codec.EncodeUint16(uint16(chainID)),
 		FieldGenesisAlloc, EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
 			e.faucetAddress(): {Balance: e.faucetSupply},
@@ -106,7 +106,7 @@ func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCall
 }
 
 func (e *evmChainInstance) buildSoloRequest(funName string, transfer uint64, params ...interface{}) *solo.CallParams {
-	return solo.NewCallParams(Interface.Name, funName, params...).WithIotas(transfer)
+	return solo.NewCallParams(Contract.Name, funName, params...).WithIotas(transfer)
 }
 
 func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, params ...interface{}) (dict.Dict, error) {
@@ -118,7 +118,7 @@ func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, p
 }
 
 func (e *evmChainInstance) callView(funName string, params ...interface{}) (dict.Dict, error) {
-	return e.soloChain.CallView(Interface.Name, funName, params...)
+	return e.soloChain.CallView(Contract.Name, funName, params...)
 }
 
 func (e *evmChainInstance) getCode(addr common.Address) []byte {
@@ -237,7 +237,7 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	txdata, err := tx.MarshalBinary()
 	require.NoError(e.t, err)
 
-	req, toUpload := solo.NewCallParamsOptimized(Interface.Name, FuncSendTransaction.Name, 1024,
+	req, toUpload := solo.NewCallParamsOptimized(Contract.Name, FuncSendTransaction.Name, 1024,
 		FieldTransactionData, txdata,
 	)
 	req.WithIotas(gas / e.getGasPerIotas())

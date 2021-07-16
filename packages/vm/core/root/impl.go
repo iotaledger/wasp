@@ -24,17 +24,17 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-var Processor = Interface.Processor(initialize,
-	FuncClaimChainOwnership.Handler(claimChainOwnership),
-	FuncDelegateChainOwnership.Handler(delegateChainOwnership),
-	FuncDeployContract.Handler(deployContract),
-	FuncGrantDeployPermission.Handler(grantDeployPermission),
-	FuncRevokeDeployPermission.Handler(revokeDeployPermission),
-	FuncSetContractFee.Handler(setContractFee),
-	FuncSetDefaultFee.Handler(setDefaultFee),
-	FuncFindContract.ViewHandler(findContract),
-	FuncGetChainInfo.ViewHandler(getChainInfo),
-	FuncGetFeeInfo.ViewHandler(getFeeInfo),
+var Processor = Contract.Processor(initialize,
+	FuncClaimChainOwnership.WithHandler(claimChainOwnership),
+	FuncDelegateChainOwnership.WithHandler(delegateChainOwnership),
+	FuncDeployContract.WithHandler(deployContract),
+	FuncGrantDeployPermission.WithHandler(grantDeployPermission),
+	FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
+	FuncSetContractFee.WithHandler(setContractFee),
+	FuncSetDefaultFee.WithHandler(setDefaultFee),
+	FuncFindContract.WithHandler(findContract),
+	FuncGetChainInfo.WithHandler(getChainInfo),
+	FuncGetFeeInfo.WithHandler(getFeeInfo),
 )
 
 // initialize handles constructor, the "init" request. This is the first call to the chain
@@ -69,13 +69,13 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	contractRegistry := collections.NewMap(state, VarContractRegistry)
 	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
 
-	mustStoreContract(ctx, _default.Interface, a)
-	mustStoreContract(ctx, Interface, a)
-	mustStoreAndInitCoreContract(ctx, blob.Interface, a)
-	mustStoreAndInitCoreContract(ctx, accounts.Interface, a)
-	mustStoreAndInitCoreContract(ctx, eventlog.Interface, a)
-	mustStoreAndInitCoreContract(ctx, blocklog.Interface, a)
-	mustStoreAndInitCoreContract(ctx, governance.Interface, a)
+	mustStoreContract(ctx, _default.Contract, a)
+	mustStoreContract(ctx, Contract, a)
+	mustStoreAndInitCoreContract(ctx, blob.Contract, a)
+	mustStoreAndInitCoreContract(ctx, accounts.Contract, a)
+	mustStoreAndInitCoreContract(ctx, eventlog.Contract, a)
+	mustStoreAndInitCoreContract(ctx, blocklog.Contract, a)
+	mustStoreAndInitCoreContract(ctx, governance.Contract, a)
 
 	state.Set(VarStateInitialized, []byte{0xFF})
 	state.Set(VarChainID, codec.EncodeChainID(*chainID))

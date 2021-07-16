@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-var Interface = coreutil.NewContractInterface(coreutil.CoreContractBlocklog, "Block log contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log contract")
 
 const (
 	// state variables

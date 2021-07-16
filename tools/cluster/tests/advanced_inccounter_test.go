@@ -37,7 +37,7 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 	t.Logf("deployed chainID: %s", chain1.ChainID.Base58())
 
 	description := "testing with inccounter"
-	progHash := inccounter.Interface.ProgramHash
+	progHash := inccounter.Contract.ProgramHash
 
 	_, err = chain1.DeployContract(incCounterSCName, progHash.String(), description, nil)
 	require.NoError(t, err)
@@ -178,7 +178,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	err = requestFunds(clu1, myAddress, "myAddress")
 	require.NoError(t, err)
 
-	accountsClient := chain1.SCClient(accounts.Interface.Hname(), kp)
+	accountsClient := chain1.SCClient(accounts.Contract.Hname(), kp)
 	_, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
 		Transfer: iscp.NewTransferIotas(100),
 	})
@@ -257,7 +257,7 @@ func TestRotation(t *testing.T) {
 	t.Logf("chainID: %s", chain1.ChainID.Base58())
 
 	description := "inccounter testing contract"
-	programHash = inccounter.Interface.ProgramHash
+	programHash = inccounter.Contract.ProgramHash
 
 	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
@@ -281,7 +281,7 @@ func TestRotation(t *testing.T) {
 
 	waitUntil(t, counterEquals(chain1, int64(numRequests)), []int{0, 3, 8, 9}, 5*time.Second)
 
-	govClient := chain1.SCClient(governance.Interface.Hname(), chain1.OriginatorKeyPair())
+	govClient := chain1.SCClient(governance.Contract.Hname(), chain1.OriginatorKeyPair())
 
 	params := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addr2).WithIotas(1)
 	tx, err := govClient.PostRequest(governance.FuncAddAllowedStateControllerAddress.Name, *params)
@@ -362,7 +362,7 @@ func TestRotationMany(t *testing.T) {
 	require.NoError(t, err)
 	t.Logf("chainID: %s", chain1.ChainID.Base58())
 
-	govClient := chain1.SCClient(governance.Interface.Hname(), chain1.OriginatorKeyPair())
+	govClient := chain1.SCClient(governance.Contract.Hname(), chain1.OriginatorKeyPair())
 
 	for i := range addrs {
 		par := chainclient.NewPostRequestParams(governance.ParamStateControllerAddress, addrs[i]).WithIotas(1)
@@ -378,7 +378,7 @@ func TestRotationMany(t *testing.T) {
 	}
 
 	description := "inccounter testing contract"
-	programHash = inccounter.Interface.ProgramHash
+	programHash = inccounter.Contract.ProgramHash
 
 	_, err = chain1.DeployContract(incCounterSCName, programHash.String(), description, nil)
 	require.NoError(t, err)
@@ -447,7 +447,7 @@ func waitBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int, blockInde
 func callGetBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int) (uint32, error) {
 	ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
-		blocklog.Interface.Hname(),
+		blocklog.Contract.Hname(),
 		blocklog.FuncGetLatestBlockInfo.Name,
 	)
 	if err != nil {
@@ -465,7 +465,7 @@ func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, req
 
 	res, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
-		blocklog.Interface.Hname(),
+		blocklog.Contract.Hname(),
 		blocklog.FuncGetRequestLogRecord.Name,
 		args,
 	)
@@ -491,7 +491,7 @@ func waitStateController(t *testing.T, chain *cluster.Chain, nodeIndex int, addr
 func callGetStateController(t *testing.T, chain *cluster.Chain, nodeIndex int) (ledgerstate.Address, error) {
 	ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
-		blocklog.Interface.Hname(),
+		blocklog.Contract.Hname(),
 		blocklog.FuncControlAddresses.Name,
 	)
 	if err != nil {
@@ -506,7 +506,7 @@ func callGetStateController(t *testing.T, chain *cluster.Chain, nodeIndex int) (
 func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeIndex int, addr ledgerstate.Address) bool {
 	ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
-		governance.Interface.Hname(),
+		governance.Contract.Hname(),
 		governance.FuncGetAllowedStateControllerAddresses.Name,
 	)
 	require.NoError(t, err)

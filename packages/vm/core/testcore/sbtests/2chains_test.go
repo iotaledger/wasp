@@ -39,7 +39,7 @@ func test2Chains(t *testing.T, w bool) {
 	chain2.AssertCommonAccountIotas(2 + extraToken2)
 	chain2.AssertTotalIotas(3 + extraToken2)
 
-	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit.Name,
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name,
 		accounts.ParamAgentID, contractAgentID2,
 	).WithIotas(42)
 	_, err := chain1.PostRequestSync(req, userWallet)

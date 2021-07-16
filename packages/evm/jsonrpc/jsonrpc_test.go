@@ -49,7 +49,7 @@ func newSoloTestEnv(t *testing.T) *soloTestEnv {
 	s := solo.New(t, true, false).WithNativeContract(evmchain.Processor)
 	chainOwner, _ := s.NewKeyPairWithFunds()
 	chain := s.NewChain(chainOwner, "iscpchain")
-	err := chain.DeployContract(chainOwner, "evmchain", evmchain.Interface.ProgramHash,
+	err := chain.DeployContract(chainOwner, "evmchain", evmchain.Contract.ProgramHash,
 		evmchain.FieldChainID, codec.EncodeUint16(uint16(chainID)),
 		evmchain.FieldGenesisAlloc, evmchain.EncodeGenesisAlloc(core.GenesisAlloc{
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
@@ -58,7 +58,7 @@ func newSoloTestEnv(t *testing.T) *soloTestEnv {
 	require.NoError(t, err)
 	signer, _ := s.NewKeyPairWithFunds()
 	backend := NewSoloBackend(s, chain, signer)
-	evmChain := NewEVMChain(backend, chainID, evmchain.Interface.Name)
+	evmChain := NewEVMChain(backend, chainID, evmchain.Contract.Name)
 
 	accountManager := NewAccountManager(evmtest.Accounts)
 

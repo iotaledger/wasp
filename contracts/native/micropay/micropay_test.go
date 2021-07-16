@@ -15,14 +15,14 @@ import (
 func TestBasics(t *testing.T) {
 	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "ch1")
-	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
+	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 	require.NoError(t, err)
 }
 
 func TestSubmitPk(t *testing.T) {
 	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "ch1")
-	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
+	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 	require.NoError(t, err)
 
 	payer, payerAddr := env.NewKeyPairWithFunds()
@@ -39,7 +39,7 @@ func TestSubmitPk(t *testing.T) {
 func TestOpenChannelFail(t *testing.T) {
 	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "ch1")
-	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
+	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 	require.NoError(t, err)
 
 	payer, payerAddr := env.NewKeyPairWithFunds()
@@ -60,7 +60,7 @@ func TestOpenChannelFail(t *testing.T) {
 func TestOpenChannelOk(t *testing.T) {
 	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "ch1")
-	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
+	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 	require.NoError(t, err)
 
 	payer, payerAddr := env.NewKeyPairWithFunds()
@@ -88,7 +88,7 @@ func TestOpenChannelOk(t *testing.T) {
 func TestOpenChannelTwice(t *testing.T) {
 	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "ch1")
-	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
+	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 	require.NoError(t, err)
 
 	payer, payerAddr := env.NewKeyPairWithFunds()
@@ -142,7 +142,7 @@ func TestOpenChannelTwice(t *testing.T) {
 func TestRevokeWarrant(t *testing.T) {
 	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "ch1")
-	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
+	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 	require.NoError(t, err)
 
 	payer, payerAddr := env.NewKeyPairWithFunds()
@@ -229,7 +229,7 @@ func TestRevokeWarrant(t *testing.T) {
 func TestPayment(t *testing.T) {
 	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "ch1")
-	err := chain.DeployContract(nil, "micropay", Interface.ProgramHash)
+	err := chain.DeployContract(nil, "micropay", Contract.ProgramHash)
 	require.NoError(t, err)
 
 	payer, payerAddr := env.NewKeyPairWithFunds()

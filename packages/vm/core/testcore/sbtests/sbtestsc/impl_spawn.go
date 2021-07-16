@@ -8,10 +8,10 @@ import (
 // spawn deploys new contract and calls it
 func spawn(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf(FuncSpawn.Name)
-	name := Interface.Name + "_spawned"
+	name := Contract.Name + "_spawned"
 	dscr := "spawned contract description"
 	hname := iscp.Hn(name)
-	err := ctx.DeployContract(Interface.ProgramHash, name, dscr, nil)
+	err := ctx.DeployContract(Contract.ProgramHash, name, dscr, nil)
 	if err != nil {
 		return nil, err
 	}

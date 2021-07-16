@@ -12,11 +12,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
-var Processor = Interface.Processor(initialize,
-	FuncRotateStateController.Handler(rotateStateController),
-	FuncAddAllowedStateControllerAddress.Handler(addAllowedStateControllerAddress),
-	FuncRemoveAllowedStateControllerAddress.Handler(removeAllowedStateControllerAddress),
-	FuncGetAllowedStateControllerAddresses.ViewHandler(getAllowedStateControllerAddresses),
+var Processor = Contract.Processor(initialize,
+	FuncRotateStateController.WithHandler(rotateStateController),
+	FuncAddAllowedStateControllerAddress.WithHandler(addAllowedStateControllerAddress),
+	FuncRemoveAllowedStateControllerAddress.WithHandler(removeAllowedStateControllerAddress),
+	FuncGetAllowedStateControllerAddresses.WithHandler(getAllowedStateControllerAddresses),
 )
 
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {

@@ -86,7 +86,7 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 }
 
 func (d *Dashboard) fetchAccounts(ch chain.ChainCore) ([]*iscp.AgentID, error) {
-	accs, err := d.wasp.CallView(ch, accounts.Interface.Hname(), accounts.FuncViewAccounts.Name, nil)
+	accs, err := d.wasp.CallView(ch, accounts.Contract.Hname(), accounts.FuncViewAccounts.Name, nil)
 	if err != nil {
 		return nil, fmt.Errorf("accountsc view call failed: %v", err)
 	}
@@ -103,7 +103,7 @@ func (d *Dashboard) fetchAccounts(ch chain.ChainCore) ([]*iscp.AgentID, error) {
 }
 
 func (d *Dashboard) fetchTotalAssets(ch chain.ChainCore) (map[ledgerstate.Color]uint64, error) {
-	bal, err := d.wasp.CallView(ch, accounts.Interface.Hname(), accounts.FuncViewTotalAssets.Name, nil)
+	bal, err := d.wasp.CallView(ch, accounts.Contract.Hname(), accounts.FuncViewTotalAssets.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (d *Dashboard) fetchTotalAssets(ch chain.ChainCore) (map[ledgerstate.Color]
 }
 
 func (d *Dashboard) fetchBlobs(ch chain.ChainCore) (map[hashing.HashValue]uint32, error) {
-	ret, err := d.wasp.CallView(ch, blob.Interface.Hname(), blob.FuncListBlobs.Name, nil)
+	ret, err := d.wasp.CallView(ch, blob.Contract.Hname(), blob.FuncListBlobs.Name, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-var Interface = coreutil.NewContractInterface("evmchain", "EVM chain smart contract")
+var Contract = coreutil.NewContract("evmchain", "EVM chain smart contract")
 
 var (
 	// Ethereum blockchain

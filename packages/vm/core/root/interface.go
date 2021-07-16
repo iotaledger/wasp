@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	Interface           = coreutil.NewContractInterface(coreutil.CoreContractRoot, "Root Contract")
+	Contract            = coreutil.NewContract(coreutil.CoreContractRoot, "Root Contract")
 	ErrContractNotFound = errors.New("smart contract not found")
 )
 
@@ -172,7 +172,7 @@ func DecodeContractRecord(data []byte) (*ContractRecord, error) {
 	return ret, err
 }
 
-func NewContractRecord(itf *coreutil.ContractInterface, creator *iscp.AgentID) *ContractRecord {
+func NewContractRecord(itf *coreutil.ContractInfo, creator *iscp.AgentID) *ContractRecord {
 	return &ContractRecord{
 		ProgramHash: itf.ProgramHash,
 		Description: itf.Description,

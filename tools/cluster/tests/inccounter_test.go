@@ -21,7 +21,7 @@ func checkSC(t *testing.T, chain *cluster.Chain, numRequests int) {
 		require.NoError(t, err)
 		require.EqualValues(t, numRequests+3, blockIndex)
 
-		cl := chain.SCClient(root.Interface.Hname(), nil, i)
+		cl := chain.SCClient(root.Contract.Hname(), nil, i)
 		ret, err := cl.CallView(root.FuncGetChainInfo.Name)
 		require.NoError(t, err)
 
@@ -67,7 +67,7 @@ func TestIncDeployment(t *testing.T) {
 		require.NoError(t, err)
 		require.EqualValues(t, 3, blockIndex)
 
-		cl := chain.SCClient(root.Interface.Hname(), nil, i)
+		cl := chain.SCClient(root.Contract.Hname(), nil, i)
 		ret, err := cl.CallView(root.FuncGetChainInfo.Name)
 		require.NoError(t, err)
 

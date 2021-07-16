@@ -46,7 +46,7 @@ func TestBasicAccountsN1(t *testing.T) {
 func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.MessageCounter) {
 	hname := iscp.Hn(incCounterSCName)
 	description := "testing contract deployment with inccounter"
-	programHash1 := inccounter.Interface.ProgramHash
+	programHash1 := inccounter.Contract.ProgramHash
 
 	_, err = chain.DeployContract(incCounterSCName, programHash1.String(), description, map[string]interface{}{
 		inccounter.VarCounter: 42,
@@ -58,8 +58,8 @@ func testBasicAccounts(t *testing.T, chain *cluster.Chain, counter *cluster.Mess
 		t.Fail()
 	}
 
-	t.Logf("   %s: %s", root.Interface.Name, root.Interface.Hname().String())
-	t.Logf("   %s: %s", accounts.Interface.Name, accounts.Interface.Hname().String())
+	t.Logf("   %s: %s", root.Contract.Name, root.Contract.Hname().String())
+	t.Logf("   %s: %s", accounts.Contract.Name, accounts.Contract.Hname().String())
 
 	checkCoreContracts(t, chain)
 
@@ -140,7 +140,7 @@ func TestBasic2Accounts(t *testing.T) {
 
 	hname := iscp.Hn(incCounterSCName)
 	description := "testing contract deployment with inccounter"
-	programHash1 := inccounter.Interface.ProgramHash
+	programHash1 := inccounter.Contract.ProgramHash
 	check(err, t)
 
 	_, err = chain1.DeployContract(incCounterSCName, programHash1.String(), description, map[string]interface{}{
@@ -239,7 +239,7 @@ func TestBasic2Accounts(t *testing.T) {
 	// withdraw back 2 iotas to originator address
 	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.Base58())
 	originatorClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, originatorSigScheme)
-	reqTx2, err := originatorClient.Post1Request(accounts.Interface.Hname(), accounts.FuncWithdraw.Hname())
+	reqTx2, err := originatorClient.Post1Request(accounts.Contract.Hname(), accounts.FuncWithdraw.Hname())
 	check(err, t)
 
 	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, reqTx2, 30*time.Second)

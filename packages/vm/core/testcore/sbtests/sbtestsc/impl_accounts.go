@@ -15,7 +15,7 @@ func withdrawToChain(ctx iscp.Sandbox) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetChain := params.MustGetChainID(ParamChainID)
 	succ := ctx.Send(targetChain.AsAddress(), iscp.NewTransferIotas(1), &iscp.SendMetadata{
-		TargetContract: accounts.Interface.Hname(),
+		TargetContract: accounts.Contract.Hname(),
 		EntryPoint:     accounts.FuncWithdraw.Hname(),
 		Args:           nil,
 	})

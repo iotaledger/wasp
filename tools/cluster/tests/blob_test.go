@@ -50,7 +50,7 @@ func setupBlobTest(t *testing.T) *cluster.Chain {
 
 func getBlobInfo(t *testing.T, chain *cluster.Chain, hash hashing.HashValue) map[string]uint32 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, blob.Interface.Hname(), blob.FuncGetBlobInfo.Name,
+		chain.ChainID, blob.Contract.Hname(), blob.FuncGetBlobInfo.Name,
 		dict.Dict{
 			blob.ParamHash: hash[:],
 		})
@@ -62,7 +62,7 @@ func getBlobInfo(t *testing.T, chain *cluster.Chain, hash hashing.HashValue) map
 
 func getBlobFieldValue(t *testing.T, chain *cluster.Chain, blobHash hashing.HashValue, field string) []byte {
 	v, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, blob.Interface.Hname(), blob.FuncGetBlobField.Name,
+		chain.ChainID, blob.Contract.Hname(), blob.FuncGetBlobField.Name,
 		dict.Dict{
 			blob.ParamHash:  blobHash[:],
 			blob.ParamField: []byte(field),
@@ -95,7 +95,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, testOwner)
 	reqTx, err := chClient.Post1Request(
-		blob.Interface.Hname(),
+		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
 		chainclient.PostRequestParams{
 			Args: requestargs.New().AddEncodeSimpleMany(fv),
@@ -179,7 +179,7 @@ func TestBlobRefConsensus(t *testing.T) {
 	// sending storeBlob request (data is not uploaded yet)
 	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, testOwner)
 	reqTx, err := chClient.Post1Request(
-		blob.Interface.Hname(),
+		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
 		chainclient.PostRequestParams{
 			Args: argsEncoded,

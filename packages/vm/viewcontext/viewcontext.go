@@ -67,11 +67,11 @@ func (v *Viewcontext) CallView(contractHname, epCode iscp.Hname, params dict.Dic
 
 func (v *Viewcontext) callView(contractHname, epCode iscp.Hname, params dict.Dict) (dict.Dict, error) {
 	var err error
-	contractRecord, err := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Interface.Hname()), contractHname)
+	contractRecord, err := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Contract.Hname()), contractHname)
 	if err != nil {
 		return nil, fmt.Errorf("inconsistency while searching for contract %s: %v", contractHname, err)
 	}
-	if contractHname != _default.Interface.Hname() && contractRecord.Hname() == _default.Interface.Hname() {
+	if contractHname != _default.Contract.Hname() && contractRecord.Hname() == _default.Contract.Hname() {
 		// in the view call we do not run default contract
 		return nil, fmt.Errorf("can't find contract '%s'", contractHname)
 	}
@@ -79,7 +79,7 @@ func (v *Viewcontext) callView(contractHname, epCode iscp.Hname, params dict.Dic
 		if vmtype, ok := v.processors.Config.GetNativeProcessorType(programHash); ok {
 			return vmtype, nil, nil
 		}
-		return blob.LocateProgram(contractStateSubpartition(v.stateReader.KVStoreReader(), blob.Interface.Hname()), programHash)
+		return blob.LocateProgram(contractStateSubpartition(v.stateReader.KVStoreReader(), blob.Contract.Hname()), programHash)
 	})
 	if err != nil {
 		return nil, err

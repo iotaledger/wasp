@@ -54,7 +54,7 @@ func TestNoEPPost(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 	chain.CheckControlAddresses()
 
-	req := solo.NewCallParams(root.Interface.Name, "dummyEP").WithIotas(2)
+	req := solo.NewCallParams(root.Contract.Name, "dummyEP").WithIotas(2)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	env.WaitPublisher()
@@ -67,7 +67,7 @@ func TestNoEPView(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 	chain.CheckControlAddresses()
 
-	_, err := chain.CallView(root.Interface.Name, "dummyEP")
+	_, err := chain.CallView(root.Contract.Name, "dummyEP")
 	require.Error(t, err)
 	env.WaitPublisher()
 	chain.CheckControlAddresses()
@@ -78,7 +78,7 @@ func TestOkCall(t *testing.T) {
 	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee.Name,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name,
 		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0)
 	req.WithIotas(2)
 	_, err := chain.PostRequestSync(req, nil)
@@ -94,7 +94,7 @@ func TestNoTokens(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 	chain.CheckControlAddresses()
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncSetDefaultFee.Name,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name,
 		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0)
 	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)

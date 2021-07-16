@@ -5,48 +5,48 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-var Interface = coreutil.NewContractInterface("testcore", "Test Core Sandbox functions")
+var Contract = coreutil.NewContract("testcore", "Test Core Sandbox functions")
 
-var Processor = Interface.Processor(initialize,
-	FuncChainOwnerIDView.ViewHandler(testChainOwnerIDView),
-	FuncChainOwnerIDFull.Handler(testChainOwnerIDFull),
-	FuncGetMintedSupply.Handler(getMintedSupply),
+var Processor = Contract.Processor(initialize,
+	FuncChainOwnerIDView.WithHandler(testChainOwnerIDView),
+	FuncChainOwnerIDFull.WithHandler(testChainOwnerIDFull),
+	FuncGetMintedSupply.WithHandler(getMintedSupply),
 
-	FuncEventLogGenericData.Handler(testEventLogGenericData),
-	FuncEventLogEventData.Handler(testEventLogEventData),
-	FuncEventLogDeploy.Handler(testEventLogDeploy),
-	FuncSandboxCall.ViewHandler(testSandboxCall),
+	FuncEventLogGenericData.WithHandler(testEventLogGenericData),
+	FuncEventLogEventData.WithHandler(testEventLogEventData),
+	FuncEventLogDeploy.WithHandler(testEventLogDeploy),
+	FuncSandboxCall.WithHandler(testSandboxCall),
 
-	FuncPanicFullEP.Handler(testPanicFullEP),
-	FuncPanicViewEP.ViewHandler(testPanicViewEP),
-	FuncCallPanicFullEP.Handler(testCallPanicFullEP),
-	FuncCallPanicViewEPFromFull.Handler(testCallPanicViewEPFromFull),
-	FuncCallPanicViewEPFromView.ViewHandler(testCallPanicViewEPFromView),
+	FuncPanicFullEP.WithHandler(testPanicFullEP),
+	FuncPanicViewEP.WithHandler(testPanicViewEP),
+	FuncCallPanicFullEP.WithHandler(testCallPanicFullEP),
+	FuncCallPanicViewEPFromFull.WithHandler(testCallPanicViewEPFromFull),
+	FuncCallPanicViewEPFromView.WithHandler(testCallPanicViewEPFromView),
 
-	FuncDoNothing.Handler(doNothing),
-	FuncSendToAddress.Handler(sendToAddress),
+	FuncDoNothing.WithHandler(doNothing),
+	FuncSendToAddress.WithHandler(sendToAddress),
 
-	FuncWithdrawToChain.Handler(withdrawToChain),
-	FuncCallOnChain.Handler(callOnChain),
-	FuncSetInt.Handler(setInt),
-	FuncGetInt.ViewHandler(getInt),
-	FuncGetFibonacci.ViewHandler(getFibonacci),
-	FuncIncCounter.Handler(incCounter),
-	FuncGetCounter.ViewHandler(getCounter),
-	FuncRunRecursion.Handler(runRecursion),
+	FuncWithdrawToChain.WithHandler(withdrawToChain),
+	FuncCallOnChain.WithHandler(callOnChain),
+	FuncSetInt.WithHandler(setInt),
+	FuncGetInt.WithHandler(getInt),
+	FuncGetFibonacci.WithHandler(getFibonacci),
+	FuncIncCounter.WithHandler(incCounter),
+	FuncGetCounter.WithHandler(getCounter),
+	FuncRunRecursion.WithHandler(runRecursion),
 
-	FuncPassTypesFull.Handler(passTypesFull),
-	FuncPassTypesView.ViewHandler(passTypesView),
-	FuncCheckContextFromFullEP.Handler(testCheckContextFromFullEP),
-	FuncCheckContextFromViewEP.ViewHandler(testCheckContextFromViewEP),
+	FuncPassTypesFull.WithHandler(passTypesFull),
+	FuncPassTypesView.WithHandler(passTypesView),
+	FuncCheckContextFromFullEP.WithHandler(testCheckContextFromFullEP),
+	FuncCheckContextFromViewEP.WithHandler(testCheckContextFromViewEP),
 
-	FuncTestBlockContext1.Handler(testBlockContext1),
-	FuncTestBlockContext2.Handler(testBlockContext2),
-	FuncGetStringValue.ViewHandler(getStringValue),
+	FuncTestBlockContext1.WithHandler(testBlockContext1),
+	FuncTestBlockContext2.WithHandler(testBlockContext2),
+	FuncGetStringValue.WithHandler(getStringValue),
 
-	FuncJustView.ViewHandler(testJustView),
+	FuncJustView.WithHandler(testJustView),
 
-	FuncSpawn.Handler(spawn),
+	FuncSpawn.WithHandler(spawn),
 )
 
 var (

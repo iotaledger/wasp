@@ -20,7 +20,7 @@ func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, transfer *ledgers
 	if len(vmctx.callStack) > 0 {
 		vmctx.log.Panicf("creditToAccount must be called only from request")
 	}
-	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil) // create local context for the state
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil) // create local context for the state
 	defer vmctx.popCallContext()
 
 	accounts.CreditToAccount(vmctx.State(), agentID, transfer)
@@ -29,28 +29,28 @@ func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, transfer *ledgers
 // debitFromAccount subtracts tokens from account if it is enough of it.
 // should be called only when posting request
 func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer *ledgerstate.ColoredBalances) bool {
-	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil) // create local context for the state
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil) // create local context for the state
 	defer vmctx.popCallContext()
 
 	return accounts.DebitFromAccount(vmctx.State(), agentID, transfer)
 }
 
 func (vmctx *VMContext) moveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, transfer *ledgerstate.ColoredBalances) bool {
-	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil) // create local context for the state
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil) // create local context for the state
 	defer vmctx.popCallContext()
 
 	return accounts.MoveBetweenAccounts(vmctx.State(), fromAgentID, toAgentID, transfer)
 }
 
 func (vmctx *VMContext) totalAssets() *ledgerstate.ColoredBalances {
-	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	return accounts.GetTotalAssets(vmctx.State())
 }
 
 func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) (*root.ContractRecord, bool) {
-	vmctx.pushCallContext(root.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	ret, err := root.FindContract(vmctx.State(), contractHname)
@@ -61,14 +61,14 @@ func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) (*root.Con
 }
 
 func (vmctx *VMContext) mustGetChainInfo() root.ChainInfo {
-	vmctx.pushCallContext(root.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	return root.MustGetChainInfo(vmctx.State())
 }
 
 func (vmctx *VMContext) getFeeInfo() (ledgerstate.Color, uint64, uint64) {
-	vmctx.pushCallContext(root.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	return root.GetFeeInfoByContractRecord(vmctx.State(), vmctx.contractRecord)
@@ -79,14 +79,14 @@ func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte
 	if ok {
 		return vmtype, nil, nil
 	}
-	vmctx.pushCallContext(blob.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(blob.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	return blob.LocateProgram(vmctx.State(), programHash)
 }
 
 func (vmctx *VMContext) getBalanceOfAccount(agentID *iscp.AgentID, col ledgerstate.Color) uint64 {
-	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	return accounts.GetBalance(vmctx.State(), agentID, col)
@@ -99,7 +99,7 @@ func (vmctx *VMContext) getBalance(col ledgerstate.Color) uint64 {
 func (vmctx *VMContext) getMyBalances() *ledgerstate.ColoredBalances {
 	agentID := vmctx.MyAgentID()
 
-	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	r, _ := accounts.GetAccountBalances(vmctx.State(), agentID)
@@ -109,7 +109,7 @@ func (vmctx *VMContext) getMyBalances() *ledgerstate.ColoredBalances {
 
 //nolint:unused
 func (vmctx *VMContext) moveBalance(target iscp.AgentID, col ledgerstate.Color, amount uint64) bool {
-	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	aid := vmctx.MyAgentID()
@@ -122,7 +122,7 @@ func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
 }
 
 func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
-	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	var data []byte
@@ -140,7 +140,7 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 }
 
 func (vmctx *VMContext) StoreToEventLog(contract iscp.Hname, data []byte) {
-	vmctx.pushCallContext(eventlog.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(eventlog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	vmctx.log.Debugf("StoreToEventLog/%s: data: '%s'", contract.String(), string(data))

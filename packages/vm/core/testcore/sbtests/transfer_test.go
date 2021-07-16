@@ -138,7 +138,7 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
-	req = solo.NewCallParams(accounts.Interface.Name, accounts.FuncWithdraw.Name).WithIotas(1)
+	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, user)
 	require.NoError(t, err)
 
@@ -166,7 +166,7 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
 	env.AssertAddressIotas(userAddress, solo.Saldo)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncSetContractFee.Name,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncSetContractFee.Name,
 		root.ParamHname, cAID.Hname(),
 		root.ParamOwnerFee, 10,
 	).WithIotas(1)

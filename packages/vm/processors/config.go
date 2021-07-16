@@ -65,7 +65,7 @@ func (p *Config) GetNativeProcessorType(programHash hashing.HashValue) (string, 
 
 // RegisterNativeContract registers a native contract so that it may be deployed
 func (p *Config) RegisterNativeContract(c *coreutil.ContractProcessor) {
-	p.nativeContracts[c.Interface.ProgramHash] = c
+	p.nativeContracts[c.Contract.ProgramHash] = c
 }
 
 func (p *Config) GetNativeProcessor(programHash hashing.HashValue) (iscp.VMProcessor, bool) {

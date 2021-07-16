@@ -14,14 +14,14 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-var Interface = coreutil.NewContractInterface("inccounter", "Increment counter, a PoC smart contract")
+var Contract = coreutil.NewContract("inccounter", "Increment counter, a PoC smart contract")
 
-var Processor = Interface.Processor(initialize,
-	FuncIncCounter.Handler(incCounter),
-	FuncIncAndRepeatOnceAfter5s.Handler(incCounterAndRepeatOnce),
-	FuncIncAndRepeatMany.Handler(incCounterAndRepeatMany),
-	FuncSpawn.Handler(spawn),
-	FuncGetCounter.ViewHandler(getCounter),
+var Processor = Contract.Processor(initialize,
+	FuncIncCounter.WithHandler(incCounter),
+	FuncIncAndRepeatOnceAfter5s.WithHandler(incCounterAndRepeatOnce),
+	FuncIncAndRepeatMany.WithHandler(incCounterAndRepeatMany),
+	FuncSpawn.WithHandler(spawn),
+	FuncGetCounter.WithHandler(getCounter),
 )
 
 var (
@@ -141,7 +141,7 @@ func spawn(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	callPar := dict.New()
 	callPar.Set(VarCounter, codec.EncodeInt64(val+1))
-	err := ctx.DeployContract(Interface.ProgramHash, name, dscr, callPar)
+	err := ctx.DeployContract(Contract.ProgramHash, name, dscr, callPar)
 	a.RequireNoError(err)
 
 	// increase counter in newly spawned contract
@@ -149,7 +149,7 @@ func spawn(ctx iscp.Sandbox) (dict.Dict, error) {
 	_, err = ctx.Call(hname, FuncIncCounter.Hname(), nil, nil)
 	a.RequireNoError(err)
 
-	res, err := ctx.Call(root.Interface.Hname(), root.FuncGetChainInfo.Hname(), nil, nil)
+	res, err := ctx.Call(root.Contract.Hname(), root.FuncGetChainInfo.Hname(), nil, nil)
 	a.RequireNoError(err)
 
 	creg := collections.NewMapReadOnly(res, root.VarContractRegistry)

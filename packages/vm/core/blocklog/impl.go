@@ -12,14 +12,14 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var Processor = Interface.Processor(initialize,
-	FuncGetBlockInfo.ViewHandler(viewGetBlockInfo),
-	FuncGetLatestBlockInfo.ViewHandler(viewGetLatestBlockInfo),
-	FuncGetRequestLogRecord.ViewHandler(viewGetRequestLogRecord),
-	FuncGetRequestLogRecordsForBlock.ViewHandler(viewGetRequestLogRecordsForBlock),
-	FuncGetRequestIDsForBlock.ViewHandler(viewGetRequestIDsForBlock),
-	FuncIsRequestProcessed.ViewHandler(viewIsRequestProcessed),
-	FuncControlAddresses.ViewHandler(viewControlAddresses),
+var Processor = Contract.Processor(initialize,
+	FuncGetBlockInfo.WithHandler(viewGetBlockInfo),
+	FuncGetLatestBlockInfo.WithHandler(viewGetLatestBlockInfo),
+	FuncGetRequestLogRecord.WithHandler(viewGetRequestLogRecord),
+	FuncGetRequestLogRecordsForBlock.WithHandler(viewGetRequestLogRecordsForBlock),
+	FuncGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
+	FuncIsRequestProcessed.WithHandler(viewIsRequestProcessed),
+	FuncControlAddresses.WithHandler(viewControlAddresses),
 )
 
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
@@ -31,7 +31,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	})
 	a := assert.NewAssert(ctx.Log())
 	a.Require(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
-	ctx.Log().Debugf("blocklog.initialize.success hname = %s", Interface.Hname().String())
+	ctx.Log().Debugf("blocklog.initialize.success hname = %s", Contract.Hname().String())
 	return nil, nil
 }
 

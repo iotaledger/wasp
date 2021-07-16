@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-var Interface = coreutil.NewContractInterface(coreutil.CoreContractBlob, "Blob Contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractBlob, "Blob Contract")
 
 const (
 	// request parameters

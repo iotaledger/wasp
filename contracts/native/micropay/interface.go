@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-var Interface = coreutil.NewContractInterface("micropay", "Micro payment PoC smart contract")
+var Contract = coreutil.NewContract("micropay", "Micro payment PoC smart contract")
 
 const MinimumWarrantIotas = 500
 

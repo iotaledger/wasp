@@ -11,18 +11,18 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 )
 
-var Processor = Interface.Processor(initialize,
-	FuncViewBalance.ViewHandler(viewBalance),
-	FuncViewTotalAssets.ViewHandler(viewTotalAssets),
-	FuncViewAccounts.ViewHandler(viewAccounts),
-	FuncDeposit.Handler(deposit),
-	FuncWithdraw.Handler(withdraw),
-	FuncHarvest.Handler(harvest),
+var Processor = Contract.Processor(initialize,
+	FuncViewBalance.WithHandler(viewBalance),
+	FuncViewTotalAssets.WithHandler(viewTotalAssets),
+	FuncViewAccounts.WithHandler(viewAccounts),
+	FuncDeposit.WithHandler(deposit),
+	FuncWithdraw.WithHandler(withdraw),
+	FuncHarvest.WithHandler(harvest),
 )
 
 // initialize the init call
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.initialize.success hname = %s", Interface.Hname().String())
+	ctx.Log().Debugf("accounts.initialize.success hname = %s", Contract.Hname().String())
 	return nil, nil
 }
 

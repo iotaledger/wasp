@@ -41,7 +41,7 @@ func setupDeployer(t *testing.T, chain *solo.Chain) (*ed25519.KeyPair, ledgersta
 	user, userAddr := chain.Env.NewKeyPairWithFunds()
 	chain.Env.AssertAddressIotas(userAddr, solo.Saldo)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission.Name,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, iscp.NewAgentID(userAddr, 0),
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
@@ -69,7 +69,7 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, 
 		err = chain.DeployWasmContract(user, ScName, WasmFileTestcore)
 		extraToken = 1
 	} else {
-		err = chain.DeployContract(user, ScName, sbtestsc.Interface.ProgramHash)
+		err = chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
 		extraToken = 0
 	}
 	require.NoError(t, err)

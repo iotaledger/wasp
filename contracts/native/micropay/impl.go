@@ -15,13 +15,13 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
-var Processor = Interface.Processor(initialize,
-	FuncPublicKey.Handler(publicKey),
-	FuncAddWarrant.Handler(addWarrant),
-	FuncRevokeWarrant.Handler(revokeWarrant),
-	FuncCloseWarrant.Handler(closeWarrant),
-	FuncSettle.Handler(settle),
-	FuncGetChannelInfo.ViewHandler(getWarrantInfo),
+var Processor = Contract.Processor(initialize,
+	FuncPublicKey.WithHandler(publicKey),
+	FuncAddWarrant.WithHandler(addWarrant),
+	FuncRevokeWarrant.WithHandler(revokeWarrant),
+	FuncCloseWarrant.WithHandler(closeWarrant),
+	FuncSettle.WithHandler(settle),
+	FuncGetChannelInfo.WithHandler(getWarrantInfo),
 )
 
 func initialize(_ iscp.Sandbox) (dict.Dict, error) {

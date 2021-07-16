@@ -3,8 +3,6 @@ package core
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -14,22 +12,23 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 var AllCoreContractsByHash = map[hashing.HashValue]*coreutil.ContractProcessor{
-	_default.Interface.ProgramHash:   _default.Processor,
-	root.Interface.ProgramHash:       root.Processor,
-	accounts.Interface.ProgramHash:   accounts.Processor,
-	blob.Interface.ProgramHash:       blob.Processor,
-	eventlog.Interface.ProgramHash:   eventlog.Processor,
-	blocklog.Interface.ProgramHash:   blocklog.Processor,
-	governance.Interface.ProgramHash: governance.Processor,
+	_default.Contract.ProgramHash:   _default.Processor,
+	root.Contract.ProgramHash:       root.Processor,
+	accounts.Contract.ProgramHash:   accounts.Processor,
+	blob.Contract.ProgramHash:       blob.Processor,
+	eventlog.Contract.ProgramHash:   eventlog.Processor,
+	blocklog.Contract.ProgramHash:   blocklog.Processor,
+	governance.Contract.ProgramHash: governance.Processor,
 }
 
 func init() {
 	for _, rec := range AllCoreContractsByHash {
-		commonaccount.SetCoreHname(rec.Interface.Hname())
+		commonaccount.SetCoreHname(rec.Contract.Hname())
 	}
 }
 

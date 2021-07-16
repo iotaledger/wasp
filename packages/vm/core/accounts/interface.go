@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-var Interface = coreutil.NewContractInterface(coreutil.CoreContractAccounts, "Chain account ledger contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain account ledger contract")
 
 var (
 	FuncViewBalance     = coreutil.ViewFunc("balance")

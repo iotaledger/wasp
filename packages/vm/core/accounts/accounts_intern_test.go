@@ -11,10 +11,10 @@ import (
 )
 
 func TestBasic(t *testing.T) {
-	t.Logf("Name: %s", Interface.Name)
-	t.Logf("Description: %s", Interface.Description)
-	t.Logf("Program hash: %s", Interface.ProgramHash.String())
-	t.Logf("Hname: %s", Interface.Hname())
+	t.Logf("Name: %s", Contract.Name)
+	t.Logf("Description: %s", Contract.Description)
+	t.Logf("Program hash: %s", Contract.ProgramHash.String())
+	t.Logf("Hname: %s", Contract.Hname())
 }
 
 var color = ledgerstate.Color(hashing.HashStrings("dummy string"))

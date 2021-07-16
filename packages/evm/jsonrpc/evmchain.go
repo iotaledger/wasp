@@ -53,8 +53,8 @@ func (e *EVMChain) BlockNumber() (*big.Int, error) {
 }
 
 func (e *EVMChain) FeeColor() (ledgerstate.Color, error) {
-	feeInfo, err := e.backend.CallView(root.Interface.Name, root.FuncGetFeeInfo.Name, dict.Dict{
-		root.ParamHname: evmchain.Interface.Hname().Bytes(),
+	feeInfo, err := e.backend.CallView(root.Contract.Name, root.FuncGetFeeInfo.Name, dict.Dict{
+		root.ParamHname: evmchain.Contract.Hname().Bytes(),
 	})
 	if err != nil {
 		return ledgerstate.Color{}, err
@@ -82,7 +82,7 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	}
 	fee := map[ledgerstate.Color]uint64{feeColor: feeAmount}
 	// deposit fee into sender's on-chain account
-	err = e.backend.PostOnLedgerRequest(accounts.Interface.Name, accounts.FuncDeposit.Name, fee, nil)
+	err = e.backend.PostOnLedgerRequest(accounts.Contract.Name, accounts.FuncDeposit.Name, fee, nil)
 	if err != nil {
 		return err
 	}

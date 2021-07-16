@@ -42,7 +42,7 @@ func TestMissingRequests(t *testing.T) {
 	err = requestFunds(clu1, userAddress, "userWallet")
 	check(err, t)
 	chClient := chainclient.New(clu1.GoshimmerClient(), clu1.WaspClient(0), chainID, userWallet)
-	reqTx, err := chClient.Post1Request(accounts.Interface.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
+	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
 		Transfer: iscp.NewTransferIotas(100),
 	})
 	check(err, t)

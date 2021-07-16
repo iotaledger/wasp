@@ -17,7 +17,7 @@ var incCounterSCHname = iscp.Hn(incCounterSCName)
 
 func deployIncCounterSC(t *testing.T, chain *cluster.Chain, counter *cluster.MessageCounter) *ledgerstate.Transaction {
 	description := "testing contract deployment with inccounter" //nolint:goconst
-	programHash := inccounter.Interface.ProgramHash
+	programHash := inccounter.Contract.ProgramHash
 	check(err, t)
 
 	tx, err := chain.DeployContract(incCounterSCName, programHash.String(), description, map[string]interface{}{

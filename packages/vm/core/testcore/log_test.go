@@ -23,20 +23,20 @@ func TestEventLogBasicEmpty(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	recs, err := chain.GetEventLogRecords(root.Interface.Name)
+	recs, err := chain.GetEventLogRecords(root.Contract.Name)
 	require.NoError(t, err)
 	require.Len(t, recs, 0)
 
-	num := chain.GetEventLogNumRecords(root.Interface.Name)
+	num := chain.GetEventLogNumRecords(root.Contract.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetEventLogNumRecords(accounts.Interface.Name)
+	num = chain.GetEventLogNumRecords(accounts.Contract.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetEventLogNumRecords(blob.Interface.Name)
+	num = chain.GetEventLogNumRecords(blob.Contract.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetEventLogNumRecords(eventlog.Interface.Name)
+	num = chain.GetEventLogNumRecords(eventlog.Contract.Name)
 	require.EqualValues(t, 0, num)
 
 	reqRecs := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
@@ -54,19 +54,19 @@ func TestChainLogDeploy(t *testing.T) {
 	hwasm, err := chain.UploadWasmFromFile(nil, wasmFile)
 	require.NoError(t, err)
 
-	num := chain.GetEventLogNumRecords(root.Interface.Name)
+	num := chain.GetEventLogNumRecords(root.Contract.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetEventLogNumRecords(accounts.Interface.Name)
+	num = chain.GetEventLogNumRecords(accounts.Contract.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetEventLogNumRecords(eventlog.Interface.Name)
+	num = chain.GetEventLogNumRecords(eventlog.Contract.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetEventLogNumRecords(blob.Interface.Name)
+	num = chain.GetEventLogNumRecords(blob.Contract.Name)
 	require.EqualValues(t, 1, num)
 
-	recs, err := chain.GetEventLogRecords(blob.Interface.Name)
+	recs, err := chain.GetEventLogRecords(blob.Contract.Name)
 	require.NoError(t, err)
 	require.Len(t, recs, 1)
 	printLogRecords(t, recs, "blob")
@@ -75,16 +75,16 @@ func TestChainLogDeploy(t *testing.T) {
 	err = chain.DeployContract(nil, name, hwasm)
 	require.NoError(t, err)
 
-	num = chain.GetEventLogNumRecords(root.Interface.Name)
+	num = chain.GetEventLogNumRecords(root.Contract.Name)
 	require.EqualValues(t, 1, num)
 
-	num = chain.GetEventLogNumRecords(accounts.Interface.Name)
+	num = chain.GetEventLogNumRecords(accounts.Contract.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetEventLogNumRecords(eventlog.Interface.Name)
+	num = chain.GetEventLogNumRecords(eventlog.Contract.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetEventLogNumRecords(blob.Interface.Name)
+	num = chain.GetEventLogNumRecords(blob.Contract.Name)
 	require.EqualValues(t, 1, num)
 
 	num = chain.GetEventLogNumRecords(name)

@@ -21,7 +21,7 @@ const name = "inc"
 func deployInccounter42(t *testing.T, name string, counter int64) *iscp.AgentID {
 	hname := iscp.Hn(name)
 	description := "testing contract deployment with inccounter"
-	programHash = inccounter.Interface.ProgramHash
+	programHash = inccounter.Contract.ProgramHash
 
 	_, err = chain.DeployContract(name, programHash.String(), description, map[string]interface{}{
 		inccounter.VarCounter: counter,
@@ -51,7 +51,7 @@ func deployInccounter42(t *testing.T, name string, counter int64) *iscp.AgentID 
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, root.Interface.Hname(), root.FuncFindContract.Name,
+		chain.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
 		dict.Dict{
 			root.ParamHname: hname.Bytes(),
 		})

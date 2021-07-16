@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-var Interface = coreutil.NewContractInterface(coreutil.CoreContractGovernance, "Governance contract")
+var Contract = coreutil.NewContract(coreutil.CoreContractGovernance, "Governance contract")
 
 var (
 	// functions
