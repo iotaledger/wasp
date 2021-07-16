@@ -33,7 +33,7 @@ func blockCmd() *cobra.Command {
 
 func fetchBlockInfo(args []string) *blocklog.BlockInfo {
 	if len(args) == 0 {
-		ret, err := SCClient(blocklog.Interface.Hname()).CallView(blocklog.FuncGetLatestBlockInfo)
+		ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetLatestBlockInfo.Name)
 		log.Check(err)
 		index, _, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 		log.Check(err)
@@ -43,7 +43,7 @@ func fetchBlockInfo(args []string) *blocklog.BlockInfo {
 	}
 	index, err := strconv.Atoi(args[0])
 	log.Check(err)
-	ret, err := SCClient(blocklog.Interface.Hname()).CallView(blocklog.FuncGetBlockInfo, dict.Dict{
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetBlockInfo.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(index)),
 	})
 	log.Check(err)
@@ -53,7 +53,7 @@ func fetchBlockInfo(args []string) *blocklog.BlockInfo {
 }
 
 func logRequestsInBlock(index uint32) {
-	ret, err := SCClient(blocklog.Interface.Hname()).CallView(blocklog.FuncGetRequestLogRecordsForBlock, dict.Dict{
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetRequestLogRecordsForBlock.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(index),
 	})
 	log.Check(err)
@@ -87,7 +87,7 @@ func requestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			reqID, err := iscp.RequestIDFromBase58(args[0])
 			log.Check(err)
-			ret, err := SCClient(blocklog.Interface.Hname()).CallView(blocklog.FuncGetRequestLogRecord, dict.Dict{
+			ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetRequestLogRecord.Name, dict.Dict{
 				blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
 			})
 			log.Check(err)

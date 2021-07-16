@@ -140,7 +140,7 @@ func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
 	if !ok {
 		vmctx.log.Panicf("adjustOffLedgerTransfer.inconsistency: unexpected request type")
 	}
-	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	// take sender-provided token transfer info and adjust it to
@@ -175,7 +175,7 @@ func (vmctx *VMContext) validateRequest() bool {
 		return true
 	}
 
-	vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	// off-ledger account must exist, i.e. it should have non zero balance on the chain
@@ -300,7 +300,7 @@ func (vmctx *VMContext) mustCallFromRequest() {
 
 func (vmctx *VMContext) mustUpdateOffledgerRequestMaxAssumedNonce() {
 	if offl, ok := vmctx.req.(*request.RequestOffLedger); ok {
-		vmctx.pushCallContext(accounts.Interface.Hname(), nil, nil)
+		vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 		defer vmctx.popCallContext()
 
 		accounts.RecordMaxAssumedNonce(vmctx.State(), offl.SenderAddress(), offl.Nonce())
@@ -333,7 +333,7 @@ func (vmctx *VMContext) mustGetBaseValuesFromState() {
 
 func (vmctx *VMContext) isInitChainRequest() bool {
 	targetContract, entryPoint := vmctx.req.Target()
-	return targetContract == root.Interface.Hname() && entryPoint == iscp.EntryPointInit
+	return targetContract == root.Contract.Hname() && entryPoint == iscp.EntryPointInit
 }
 
 func isRequestTimeLockedNow(req iscp.Request, nowis time.Time) bool {

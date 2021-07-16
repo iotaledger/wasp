@@ -32,7 +32,7 @@ var (
 
 func setupChain(t *testing.T, keyPairOriginator *ed25519.KeyPair) (*solo.Solo, *solo.Chain) {
 	core.PrintWellKnownHnames()
-	env := solo.New(t, DEBUG, false).WithNativeContract(sbtestsc.Interface)
+	env := solo.New(t, DEBUG, false).WithNativeContract(sbtestsc.Processor)
 	chain := env.NewChain(keyPairOriginator, "ch1")
 	return env, chain
 }
@@ -41,7 +41,7 @@ func setupDeployer(t *testing.T, chain *solo.Chain) (*ed25519.KeyPair, ledgersta
 	user, userAddr := chain.Env.NewKeyPairWithFunds()
 	chain.Env.AssertAddressIotas(userAddr, solo.Saldo)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, iscp.NewAgentID(userAddr, 0),
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
@@ -69,13 +69,13 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, 
 		err = chain.DeployWasmContract(user, ScName, WasmFileTestcore)
 		extraToken = 1
 	} else {
-		err = chain.DeployContract(user, ScName, sbtestsc.Interface.ProgramHash)
+		err = chain.DeployContract(user, ScName, sbtestsc.Contract.ProgramHash)
 		extraToken = 0
 	}
 	require.NoError(t, err)
 
 	deployed := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
-	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing).WithIotas(1)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, user)
 	require.NoError(t, err)
 	t.Logf("deployed test_sandbox'%s': %s", ScName, HScName)

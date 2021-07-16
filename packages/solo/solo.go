@@ -161,7 +161,7 @@ func New(t TestContext, debug, printStackTrace bool) *Solo {
 }
 
 // WithNativeContract registers a native contract so that it may be deployed
-func (env *Solo) WithNativeContract(c *coreutil.ContractInterface) *Solo {
+func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 	env.processorConfig.RegisterNativeContract(c)
 	return env
 }

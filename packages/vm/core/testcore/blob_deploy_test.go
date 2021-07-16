@@ -18,7 +18,7 @@ import (
 func TestBlobRepeatInit(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	req := solo.NewCallParams(blob.Interface.Name, "init")
+	req := solo.NewCallParams(blob.Contract.Name, "init")
 	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
@@ -92,7 +92,7 @@ func TestListBlobs(t *testing.T) {
 	err := chain.DeployWasmContract(nil, "testCore", wasmFile)
 	require.NoError(t, err)
 
-	ret, err := chain.CallView(blob.Interface.Name, blob.FuncListBlobs)
+	ret, err := chain.CallView(blob.Contract.Name, blob.FuncListBlobs.Name)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, len(ret))
 }
@@ -111,7 +111,7 @@ func TestDeployGrant(t *testing.T) {
 	user1, addr1 := env.NewKeyPairWithFunds()
 	user1AgentID := iscp.NewAgentID(addr1, 0)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
@@ -136,7 +136,7 @@ func TestRevokeDeploy(t *testing.T) {
 	user1, addr1 := env.NewKeyPairWithFunds()
 	user1AgentID := iscp.NewAgentID(addr1, 0)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
@@ -148,7 +148,7 @@ func TestRevokeDeploy(t *testing.T) {
 	_, _, contacts := chain.GetInfo()
 	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contacts))
 
-	req = solo.NewCallParams(root.Interface.Name, root.FuncRevokeDeployPermission,
+	req = solo.NewCallParams(root.Contract.Name, root.FuncRevokeDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
 	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
@@ -167,7 +167,7 @@ func TestDeployGrantFail(t *testing.T) {
 	user1, addr1 := env.NewKeyPairWithFunds()
 	user1AgentID := iscp.NewAgentID(addr1, 0)
 
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name,
 		root.ParamDeployer, user1AgentID,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, user1)

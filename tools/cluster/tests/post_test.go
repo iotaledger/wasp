@@ -21,7 +21,7 @@ const name = "inc"
 func deployInccounter42(t *testing.T, name string, counter int64) *iscp.AgentID {
 	hname := iscp.Hn(name)
 	description := "testing contract deployment with inccounter"
-	programHash = inccounter.Interface.ProgramHash
+	programHash = inccounter.Contract.ProgramHash
 
 	_, err = chain.DeployContract(name, programHash.String(), description, map[string]interface{}{
 		inccounter.VarCounter: counter,
@@ -51,7 +51,7 @@ func deployInccounter42(t *testing.T, name string, counter int64) *iscp.AgentID 
 
 	// test calling root.FuncFindContractByName view function using client
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, root.Interface.Hname(), root.FuncFindContract,
+		chain.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
 		dict.Dict{
 			root.ParamHname: hname.Bytes(),
 		})
@@ -103,7 +103,7 @@ func TestPost1Request(t *testing.T) {
 
 	myClient := chain.SCClient(contractID.Hname(), testOwner)
 
-	tx, err := myClient.PostRequest(inccounter.FuncIncCounter)
+	tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
 	check(err, t)
 
 	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
@@ -125,7 +125,7 @@ func TestPost3Recursive(t *testing.T) {
 
 	myClient := chain.SCClient(contractID.Hname(), testOwner)
 
-	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany, chainclient.PostRequestParams{
+	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Name, chainclient.PostRequestParams{
 		Transfer: iscp.NewTransferIotas(1),
 		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
@@ -157,7 +157,7 @@ func TestPost5Requests(t *testing.T) {
 	myClient := chain.SCClient(contractID.Hname(), testOwner)
 
 	for i := 0; i < 5; i++ {
-		tx, err := myClient.PostRequest(inccounter.FuncIncCounter)
+		tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
 		check(err, t)
 		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
 		check(err, t)
@@ -192,7 +192,7 @@ func TestPost5AsyncRequests(t *testing.T) {
 	var err error
 
 	for i := 0; i < 5; i++ {
-		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter)
+		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
 		check(err, t)
 	}
 

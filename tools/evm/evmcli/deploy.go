@@ -27,8 +27,8 @@ type DeployParams struct {
 
 func (d *DeployParams) InitFlags(cmd *cobra.Command) {
 	cmd.Flags().IntVarP(&d.ChainID, "chainid", "", evm.DefaultChainID, "ChainID")
-	cmd.Flags().StringVarP(&d.Name, "name", "", evmchain.Interface.Name, "Contract name")
-	cmd.Flags().StringVarP(&d.Description, "description", "", evmchain.Interface.Description, "Contract description")
+	cmd.Flags().StringVarP(&d.Name, "name", "", evmchain.Contract.Name, "Contract name")
+	cmd.Flags().StringVarP(&d.Description, "description", "", evmchain.Contract.Description, "Contract description")
 	cmd.Flags().StringSliceVarP(&d.alloc, "alloc", "", nil, "Genesis allocation (format: <address>:<wei>,<address>:<wei>,...)")
 	cmd.Flags().StringVarP(&d.allocBase64, "alloc-bytes", "", "", "Genesis allocation (base64-encoded)")
 	cmd.Flags().Uint64VarP(&d.GasPerIOTA, "gas-per-iota", "", evmchain.DefaultGasPerIota, "Gas per IOTA charged as fee")

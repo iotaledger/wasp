@@ -18,13 +18,13 @@ func testCounter(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter).WithIotas(1)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).WithIotas(1)
 	for i := 0; i < 33; i++ {
 		_, err := chain.PostRequestSync(req, nil)
 		require.NoError(t, err)
 	}
 
-	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	deco := kvdecoder.New(ret, chain.Log)
@@ -42,7 +42,7 @@ func testConcurrency(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter).WithIotas(1)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).WithIotas(1)
 
 	repeats := []int{300, 100, 100, 100, 200, 100, 100}
 	sum := 0
@@ -60,7 +60,7 @@ func testConcurrency(t *testing.T, w bool) {
 	}
 	require.True(t, chain.WaitForRequestsThrough(sum+3+extra, 20*time.Second))
 
-	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	deco := kvdecoder.New(ret, chain.Log)
@@ -87,7 +87,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	if w {
 		extra = 1
 	}
-	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter).WithIotas(1)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncIncCounter.Name).WithIotas(1)
 
 	repeats := []int{300, 100, 100, 100, 200, 100, 100}
 	users := make([]*ed25519.KeyPair, len(repeats))
@@ -109,7 +109,7 @@ func testConcurrency2(t *testing.T, w bool) {
 
 	require.True(t, chain.WaitForRequestsThrough(sum+3+extra, 20*time.Second))
 
-	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
 	deco := kvdecoder.New(ret, chain.Log)

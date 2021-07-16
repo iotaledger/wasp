@@ -3,18 +3,26 @@ package accounts
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
+)
+
+var Processor = Contract.Processor(initialize,
+	FuncViewBalance.WithHandler(viewBalance),
+	FuncViewTotalAssets.WithHandler(viewTotalAssets),
+	FuncViewAccounts.WithHandler(viewAccounts),
+	FuncDeposit.WithHandler(deposit),
+	FuncWithdraw.WithHandler(withdraw),
+	FuncHarvest.WithHandler(harvest),
 )
 
 // initialize the init call
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("accounts.initialize.success hname = %s", Interface.Hname().String())
+	ctx.Log().Debugf("accounts.initialize.success hname = %s", Contract.Hname().String())
 	return nil, nil
 }
 

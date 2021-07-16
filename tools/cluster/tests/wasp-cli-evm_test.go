@@ -35,7 +35,7 @@ func TestWaspCLIEVMDeploy(t *testing.T) {
 	out := w.Run("chain", "list-contracts")
 	found := false
 	for _, s := range out {
-		if strings.Contains(s, evmchain.Interface.Name) {
+		if strings.Contains(s, evmchain.Contract.Name) {
 			found = true
 			break
 		}

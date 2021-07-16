@@ -93,7 +93,7 @@ func TestTutorial5(t *testing.T) {
 	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 
 	// send 42 iotas from wallet to own account on-chain, controlled by the same wallet
-	req := solo.NewCallParams(accounts.Name, accounts.FuncDeposit)
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
 	req.WithIotas(42)
 	_, err := chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
@@ -104,7 +104,7 @@ func TestTutorial5(t *testing.T) {
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 42)
 
 	// withdraw all iotas
-	req = solo.NewCallParams(accounts.Name, accounts.FuncWithdraw)
+	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name)
 	req.WithIotas(1)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
@@ -185,7 +185,7 @@ func TestTutorial8(t *testing.T) {
 
 	// the chain owner (default) send a request to the root contract to grant right to deploy
 	// contract on the chain to the use
-	req := solo.NewCallParams(root.Interface.Name, root.FuncGrantDeployPermission, root.ParamDeployer, userAgentID)
+	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name, root.ParamDeployer, userAgentID)
 	req.WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)

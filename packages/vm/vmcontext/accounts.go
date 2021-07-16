@@ -13,7 +13,7 @@ import (
 func (vmctx *VMContext) AccountID() *iscp.AgentID {
 	hname := vmctx.CurrentContractHname()
 	switch hname {
-	case root.Interface.Hname(), accounts.Interface.Hname(), blob.Interface.Hname(), eventlog.Interface.Hname():
+	case root.Contract.Hname(), accounts.Contract.Hname(), blob.Contract.Hname(), eventlog.Contract.Hname():
 		hname = 0
 	}
 	return iscp.NewAgentID(vmctx.ChainID().AsAddress(), hname)

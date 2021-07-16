@@ -129,7 +129,7 @@ func TestOwner(t *testing.T) {
 	user1Wallet, user1Address := evmChain.solo.NewKeyPairWithFunds()
 	user1AgentID := iscp.NewAgentID(user1Address, 0)
 	_, err := evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, FuncSetNextOwner, FieldNextEvmOwner, user1AgentID).
+		solo.NewCallParams(Contract.Name, FuncSetNextOwner.Name, FieldNextEvmOwner, user1AgentID).
 			WithIotas(100000),
 		user1Wallet,
 	)
@@ -141,7 +141,7 @@ func TestOwner(t *testing.T) {
 
 	// current owner is able to set a new "next owner"
 	_, err = evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, FuncSetNextOwner, FieldNextEvmOwner, user1AgentID).
+		solo.NewCallParams(Contract.Name, FuncSetNextOwner.Name, FieldNextEvmOwner, user1AgentID).
 			WithIotas(100000),
 		evmChain.soloChain.OriginatorKeyPair,
 	)
@@ -155,7 +155,7 @@ func TestOwner(t *testing.T) {
 	user2Wallet, _ := evmChain.solo.NewKeyPairWithFunds()
 
 	_, err = evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, FuncClaimOwnership).
+		solo.NewCallParams(Contract.Name, FuncClaimOwnership.Name).
 			WithIotas(100000),
 		user2Wallet,
 	)
@@ -167,7 +167,7 @@ func TestOwner(t *testing.T) {
 
 	// claim ownership successfully
 	_, err = evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, FuncClaimOwnership).
+		solo.NewCallParams(Contract.Name, FuncClaimOwnership.Name).
 			WithIotas(100000),
 		user1Wallet,
 	)
@@ -326,7 +326,7 @@ func TestPrePaidFees(t *testing.T) {
 
 	// test sending off-ledger request without depositing funds first
 	txdata, _, _ := storage.buildEthTxData(nil, "store", uint32(999))
-	offledgerRequest := evmChain.buildSoloRequest(FuncSendTransaction, 100, FieldTransactionData, txdata)
+	offledgerRequest := evmChain.buildSoloRequest(FuncSendTransaction.Name, 100, FieldTransactionData, txdata)
 	evmChain.soloChain.PostRequestOffLedger(offledgerRequest, iotaWallet)
 
 	// check that the tx has no effect
@@ -335,7 +335,7 @@ func TestPrePaidFees(t *testing.T) {
 	// deposit funds
 	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, ledgerstate.ColorIOTA)
 	_, err := evmChain.soloChain.PostRequestSync(
-		solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit).WithIotas(initialBalance),
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(initialBalance),
 		iotaWallet,
 	)
 	require.NoError(t, err)

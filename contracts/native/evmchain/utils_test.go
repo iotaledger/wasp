@@ -66,8 +66,8 @@ type ethCallOptions struct {
 	gasLimit uint64
 }
 
-func initEVMChain(t *testing.T, nativeContracts ...*coreutil.ContractInterface) *evmChainInstance {
-	env := solo.New(t, true, false).WithNativeContract(Interface)
+func initEVMChain(t *testing.T, nativeContracts ...*coreutil.ContractProcessor) *evmChainInstance {
+	env := solo.New(t, true, false).WithNativeContract(Processor)
 	for _, c := range nativeContracts {
 		env = env.WithNativeContract(c)
 	}
@@ -81,7 +81,7 @@ func initEVMChain(t *testing.T, nativeContracts ...*coreutil.ContractInterface) 
 		faucetSupply: new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9)),
 		chainID:      chainID,
 	}
-	err := e.soloChain.DeployContract(nil, "evmchain", Interface.ProgramHash,
+	err := e.soloChain.DeployContract(nil, "evmchain", Contract.ProgramHash,
 		FieldChainID, codec.EncodeUint16(uint16(chainID)),
 		FieldGenesisAlloc, EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
 			e.faucetAddress(): {Balance: e.faucetSupply},
@@ -106,7 +106,7 @@ func (e *evmChainInstance) parseIotaCallOptions(opts []iotaCallOptions) iotaCall
 }
 
 func (e *evmChainInstance) buildSoloRequest(funName string, transfer uint64, params ...interface{}) *solo.CallParams {
-	return solo.NewCallParams(Interface.Name, funName, params...).WithIotas(transfer)
+	return solo.NewCallParams(Contract.Name, funName, params...).WithIotas(transfer)
 }
 
 func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, params ...interface{}) (dict.Dict, error) {
@@ -118,17 +118,17 @@ func (e *evmChainInstance) postRequest(opts []iotaCallOptions, funName string, p
 }
 
 func (e *evmChainInstance) callView(funName string, params ...interface{}) (dict.Dict, error) {
-	return e.soloChain.CallView(Interface.Name, funName, params...)
+	return e.soloChain.CallView(Contract.Name, funName, params...)
 }
 
 func (e *evmChainInstance) getCode(addr common.Address) []byte {
-	ret, err := e.callView(FuncGetCode, FieldAddress, addr.Bytes())
+	ret, err := e.callView(FuncGetCode.Name, FieldAddress, addr.Bytes())
 	require.NoError(e.t, err)
 	return ret.MustGet(FieldResult)
 }
 
 func (e *evmChainInstance) getGasPerIotas() uint64 {
-	ret, err := e.callView(FuncGetGasPerIota)
+	ret, err := e.callView(FuncGetGasPerIota.Name)
 	require.NoError(e.t, err)
 	gasPerIotas, _, err := codec.DecodeUint64(ret.MustGet(FieldResult))
 	require.NoError(e.t, err)
@@ -136,17 +136,17 @@ func (e *evmChainInstance) getGasPerIotas() uint64 {
 }
 
 func (e *evmChainInstance) setGasPerIotas(newGasPerIota uint64, opts ...iotaCallOptions) error {
-	_, err := e.postRequest(opts, FuncSetGasPerIota, FieldGasPerIota, newGasPerIota)
+	_, err := e.postRequest(opts, FuncSetGasPerIota.Name, FieldGasPerIota, newGasPerIota)
 	return err
 }
 
 func (e *evmChainInstance) claimOwnership(opts ...iotaCallOptions) error {
-	_, err := e.postRequest(opts, FuncClaimOwnership)
+	_, err := e.postRequest(opts, FuncClaimOwnership.Name)
 	return err
 }
 
 func (e *evmChainInstance) setNextOwner(nextOwner *iscp.AgentID, opts ...iotaCallOptions) error {
-	_, err := e.postRequest(opts, FuncSetNextOwner, FieldNextEvmOwner, nextOwner)
+	_, err := e.postRequest(opts, FuncSetNextOwner.Name, FieldNextEvmOwner, nextOwner)
 	return err
 }
 
@@ -155,7 +155,7 @@ func (e *evmChainInstance) withdrawGasFees(wallet *ed25519.KeyPair, agentID ...*
 	if len(agentID) > 0 {
 		params = append(params, FieldAgentID, agentID[0])
 	}
-	_, err := e.postRequest([]iotaCallOptions{{wallet: wallet}}, FuncWithdrawGasFees, params...)
+	_, err := e.postRequest([]iotaCallOptions{{wallet: wallet}}, FuncWithdrawGasFees.Name, params...)
 	return err
 }
 
@@ -164,7 +164,7 @@ func (e *evmChainInstance) faucetAddress() common.Address {
 }
 
 func (e *evmChainInstance) getBalance(addr common.Address) *big.Int {
-	ret, err := e.callView(FuncGetBalance, FieldAddress, addr.Bytes())
+	ret, err := e.callView(FuncGetBalance.Name, FieldAddress, addr.Bytes())
 	require.NoError(e.t, err)
 	bal := big.NewInt(0)
 	bal.SetBytes(ret.MustGet(FieldResult))
@@ -172,7 +172,7 @@ func (e *evmChainInstance) getBalance(addr common.Address) *big.Int {
 }
 
 func (e *evmChainInstance) getNonce(addr common.Address) uint64 {
-	ret, err := e.callView(FuncGetNonce, FieldAddress, addr.Bytes())
+	ret, err := e.callView(FuncGetNonce.Name, FieldAddress, addr.Bytes())
 	require.NoError(e.t, err)
 	nonce, ok, err := codec.DecodeUint64(ret.MustGet(FieldResult))
 	require.NoError(e.t, err)
@@ -181,7 +181,7 @@ func (e *evmChainInstance) getNonce(addr common.Address) uint64 {
 }
 
 func (e *evmChainInstance) getOwner() iscp.AgentID {
-	ret, err := e.callView(FuncGetOwner)
+	ret, err := e.callView(FuncGetOwner.Name)
 	require.NoError(e.t, err)
 	owner, _, err := codec.DecodeAgentID(ret.MustGet(FieldResult))
 	require.NoError(e.t, err)
@@ -237,7 +237,7 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 	txdata, err := tx.MarshalBinary()
 	require.NoError(e.t, err)
 
-	req, toUpload := solo.NewCallParamsOptimized(Interface.Name, FuncSendTransaction, 1024,
+	req, toUpload := solo.NewCallParamsOptimized(Contract.Name, FuncSendTransaction.Name, 1024,
 		FieldTransactionData, txdata,
 	)
 	req.WithIotas(gas / e.getGasPerIotas())
@@ -257,7 +257,7 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 }
 
 func (e *evmChainInstance) estimateGas(callMsg ethereum.CallMsg) uint64 {
-	ret, err := e.callView(FuncEstimateGas, FieldCallMsg, EncodeCallMsg(callMsg))
+	ret, err := e.callView(FuncEstimateGas.Name, FieldCallMsg, EncodeCallMsg(callMsg))
 	if err != nil {
 		e.t.Logf("%v", err)
 		return evm.GasLimitDefault - 1
@@ -329,7 +329,7 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	txdata, tx, opt := e.buildEthTxData(opts, fnName, args...)
 	res.tx = tx
 
-	result, err := e.chain.postRequest([]iotaCallOptions{opt.iota}, FuncSendTransaction, FieldTransactionData, txdata)
+	result, err := e.chain.postRequest([]iotaCallOptions{opt.iota}, FuncSendTransaction.Name, FieldTransactionData, txdata)
 	if err != nil {
 		return
 	}
@@ -340,7 +340,7 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	gasUsed, _, err := codec.DecodeUint64(result.MustGet(FieldGasUsed))
 	require.NoError(e.chain.t, err)
 
-	receiptResult, err := e.chain.callView(FuncGetReceipt, FieldTransactionHash, tx.Hash().Bytes())
+	receiptResult, err := e.chain.callView(FuncGetReceipt.Name, FieldTransactionHash, tx.Hash().Bytes())
 	require.NoError(e.chain.t, err)
 
 	res.receipt, err = DecodeReceipt(receiptResult.MustGet(FieldResult))
@@ -363,7 +363,7 @@ func (e *evmContractInstance) callView(opts []ethCallOptions, fnName string, arg
 		Value:    opt.value,
 		Data:     callArguments,
 	})
-	ret, err := e.chain.callView(FuncCallContract, FieldCallMsg, EncodeCallMsg(callMsg))
+	ret, err := e.chain.callView(FuncCallContract.Name, FieldCallMsg, EncodeCallMsg(callMsg))
 	require.NoError(e.chain.t, err)
 	if v != nil {
 		err = e.abi.UnpackIntoInterface(v, fnName, ret.MustGet(FieldResult))

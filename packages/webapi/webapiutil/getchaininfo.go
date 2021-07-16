@@ -17,7 +17,7 @@ func GetAccountBalance(ch chain.ChainCore, agentID *iscp.AgentID) (map[ledgersta
 	params := codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
 	})
-	ret, err := CallView(ch, accounts.Interface.Hname(), iscp.Hn(accounts.FuncViewBalance), params)
+	ret, err := CallView(ch, accounts.Contract.Hname(), accounts.FuncViewBalance.Hname(), params)
 	if err != nil {
 		return nil, err
 	}

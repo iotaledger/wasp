@@ -45,7 +45,7 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 
 	chain := d.wasp.GetChain(chainID)
 	if chain != nil {
-		r, err := d.wasp.CallView(chain, root.Interface.Hname(), root.FuncFindContract, codec.MakeDict(map[string]interface{}{
+		r, err := d.wasp.CallView(chain, root.Contract.Hname(), root.FuncFindContract.Name, codec.MakeDict(map[string]interface{}{
 			root.ParamHname: codec.EncodeHname(hname),
 		}))
 		if err != nil {
@@ -56,7 +56,7 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 			return err
 		}
 
-		r, err = d.wasp.CallView(chain, eventlog.Interface.Hname(), eventlog.FuncGetRecords, codec.MakeDict(map[string]interface{}{
+		r, err = d.wasp.CallView(chain, eventlog.Contract.Hname(), eventlog.FuncGetRecords.Name, codec.MakeDict(map[string]interface{}{
 			eventlog.ParamContractHname: codec.EncodeHname(hname),
 		}))
 		if err != nil {

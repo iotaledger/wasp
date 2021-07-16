@@ -50,7 +50,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 
 	chain := d.wasp.GetChain(chainID)
 	if chain != nil {
-		fields, err := d.wasp.CallView(chain, blob.Interface.Hname(), blob.FuncGetBlobInfo, codec.MakeDict(map[string]interface{}{
+		fields, err := d.wasp.CallView(chain, blob.Contract.Hname(), blob.FuncGetBlobInfo.Name, codec.MakeDict(map[string]interface{}{
 			blob.ParamHash: hash,
 		}))
 		if err != nil {
@@ -59,7 +59,7 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 		result.Blob = []BlobField{}
 		for field := range fields {
 			field := []byte(field)
-			value, err := d.wasp.CallView(chain, blob.Interface.Hname(), blob.FuncGetBlobField, codec.MakeDict(map[string]interface{}{
+			value, err := d.wasp.CallView(chain, blob.Contract.Hname(), blob.FuncGetBlobField.Name, codec.MakeDict(map[string]interface{}{
 				blob.ParamHash:  hash,
 				blob.ParamField: field,
 			}))
@@ -97,7 +97,7 @@ func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
 		return httperrors.NotFound("Not found")
 	}
 
-	value, err := d.wasp.CallView(chain, blob.Interface.Hname(), blob.FuncGetBlobField, codec.MakeDict(map[string]interface{}{
+	value, err := d.wasp.CallView(chain, blob.Contract.Hname(), blob.FuncGetBlobField.Name, codec.MakeDict(map[string]interface{}{
 		blob.ParamHash:  hash,
 		blob.ParamField: field,
 	}))

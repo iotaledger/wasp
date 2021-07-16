@@ -3,7 +3,6 @@ package chain
 import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -54,8 +53,8 @@ var deployContractCmd = &cobra.Command{
 func deployContract(name, description string, progHash hashing.HashValue, initParams dict.Dict) {
 	util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.RequestOffLedger, error) {
 		return Client().PostOffLedgerRequest(
-			root.Interface.Hname(),
-			iscp.Hn(root.FuncDeployContract),
+			root.Contract.Hname(),
+			root.FuncDeployContract.Hname(),
 			chainclient.PostRequestParams{
 				Args: requestargs.New().
 					AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{

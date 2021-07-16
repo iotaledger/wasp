@@ -11,8 +11,15 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
+var Processor = Contract.Processor(initialize,
+	FuncStoreBlob.WithHandler(storeBlob),
+	FuncGetBlobInfo.WithHandler(getBlobInfo),
+	FuncGetBlobField.WithHandler(getBlobField),
+	FuncListBlobs.WithHandler(listBlobs),
+)
+
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("blob.initialize.success hname = %s", Interface.Hname().String())
+	ctx.Log().Debugf("blob.initialize.success hname = %s", Contract.Hname().String())
 	return nil, nil
 }
 

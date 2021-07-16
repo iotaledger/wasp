@@ -15,41 +15,44 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	mgmtFuncClaimOwnership  = "claimOwnership"
-	mgmtFuncWithdrawGasFees = "withdrawGasFees"
+// TODO this SC could adjust gasPerIota based on some conditions
+
+var (
+	evmChainMgmtContract = coreutil.NewContract("EVMChainManagement", "EVM chain management")
+
+	mgmtFuncClaimOwnership  = coreutil.Func("claimOwnership")
+	mgmtFuncWithdrawGasFees = coreutil.Func("withdrawGasFees")
+
+	evmChainMgmtProcessor = evmChainMgmtContract.Processor(nil,
+		mgmtFuncClaimOwnership.WithHandler(func(ctx iscp.Sandbox) (dict.Dict, error) {
+			a := assert.NewAssert(ctx.Log())
+			_, err := ctx.Call(Contract.Hname(), FuncClaimOwnership.Hname(), nil, nil)
+			a.RequireNoError(err)
+			return nil, nil
+		}),
+		mgmtFuncWithdrawGasFees.WithHandler(func(ctx iscp.Sandbox) (dict.Dict, error) {
+			a := assert.NewAssert(ctx.Log())
+			_, err := ctx.Call(Contract.Hname(), FuncWithdrawGasFees.Hname(), nil, nil)
+			a.RequireNoError(err)
+			return nil, nil
+		}),
+	)
 )
 
-// TODO this SC could adjust gasPerIota based on some conditions
-var evmChainMgmtInterface = coreutil.NewContractInterface("EVMChainManagement", "EVM chain management").WithFunctions(nil, []coreutil.ContractFunctionInterface{
-	coreutil.Func(mgmtFuncClaimOwnership, func(ctx iscp.Sandbox) (dict.Dict, error) {
-		a := assert.NewAssert(ctx.Log())
-		_, err := ctx.Call(Interface.Hname(), iscp.Hn(FuncClaimOwnership), nil, nil)
-		a.RequireNoError(err)
-		return nil, nil
-	}),
-	coreutil.Func(mgmtFuncWithdrawGasFees, func(ctx iscp.Sandbox) (dict.Dict, error) {
-		a := assert.NewAssert(ctx.Log())
-		_, err := ctx.Call(Interface.Hname(), iscp.Hn(FuncWithdrawGasFees), nil, nil)
-		a.RequireNoError(err)
-		return nil, nil
-	}),
-})
-
 func TestRequestGasFees(t *testing.T) {
-	evmChain := initEVMChain(t, evmChainMgmtInterface)
+	evmChain := initEVMChain(t, evmChainMgmtProcessor)
 	soloChain := evmChain.soloChain
 
-	err := soloChain.DeployContract(nil, evmChainMgmtInterface.Name, evmChainMgmtInterface.ProgramHash)
+	err := soloChain.DeployContract(nil, evmChainMgmtContract.Name, evmChainMgmtContract.ProgramHash)
 	require.NoError(t, err)
 
 	// deploy solidity `storage` contract (just to produce some fees to be claimed)
 	evmChain.deployStorageContract(evmChain.faucetKey, 42)
 
 	// change owner to evnchainmanagement SC
-	managerAgentID := iscp.NewAgentID(soloChain.ChainID.AsAddress(), iscp.Hn(evmChainMgmtInterface.Name))
+	managerAgentID := iscp.NewAgentID(soloChain.ChainID.AsAddress(), iscp.Hn(evmChainMgmtContract.Name))
 	_, err = soloChain.PostRequestSync(
-		solo.NewCallParams(Interface.Name, FuncSetNextOwner, FieldNextEvmOwner, managerAgentID).
+		solo.NewCallParams(Contract.Name, FuncSetNextOwner.Name, FieldNextEvmOwner, managerAgentID).
 			WithIotas(1),
 		soloChain.OriginatorKeyPair,
 	)
@@ -57,7 +60,7 @@ func TestRequestGasFees(t *testing.T) {
 
 	// claim ownership
 	_, err = soloChain.PostRequestSync(
-		solo.NewCallParams(evmChainMgmtInterface.Name, mgmtFuncClaimOwnership).WithIotas(1),
+		solo.NewCallParams(evmChainMgmtContract.Name, mgmtFuncClaimOwnership.Name).WithIotas(1),
 		soloChain.OriginatorKeyPair,
 	)
 	require.NoError(t, err)
@@ -66,7 +69,7 @@ func TestRequestGasFees(t *testing.T) {
 	balance0, _ := soloChain.GetAccountBalance(managerAgentID).Get(ledgerstate.ColorIOTA)
 
 	_, err = soloChain.PostRequestSync(
-		solo.NewCallParams(evmChainMgmtInterface.Name, mgmtFuncWithdrawGasFees).WithIotas(1),
+		solo.NewCallParams(evmChainMgmtContract.Name, mgmtFuncWithdrawGasFees.Name).WithIotas(1),
 		soloChain.OriginatorKeyPair,
 	)
 	require.NoError(t, err)

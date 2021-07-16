@@ -16,7 +16,7 @@ func Test2Chains(t *testing.T) { run2(t, test2Chains) }
 func test2Chains(t *testing.T, w bool) {
 	core.PrintWellKnownHnames()
 
-	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Interface)
+	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Processor)
 	chain1 := env.NewChain(nil, "ch1")
 	chain2 := env.NewChain(nil, "ch2")
 	chain1.CheckAccountLedger()
@@ -39,7 +39,7 @@ func test2Chains(t *testing.T, w bool) {
 	chain2.AssertCommonAccountIotas(2 + extraToken2)
 	chain2.AssertTotalIotas(3 + extraToken2)
 
-	req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit,
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name,
 		accounts.ParamAgentID, contractAgentID2,
 	).WithIotas(42)
 	_, err := chain1.PostRequestSync(req, userWallet)
@@ -59,7 +59,7 @@ func test2Chains(t *testing.T, w bool) {
 	chain2.AssertCommonAccountIotas(2 + extraToken2)
 	chain2.AssertTotalIotas(3 + extraToken2)
 
-	req = solo.NewCallParams(ScName, sbtestsc.FuncWithdrawToChain,
+	req = solo.NewCallParams(ScName, sbtestsc.FuncWithdrawToChain.Name,
 		sbtestsc.ParamChainID, chain1.ChainID,
 	).WithIotas(1)
 

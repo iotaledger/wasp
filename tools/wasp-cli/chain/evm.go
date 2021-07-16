@@ -36,11 +36,11 @@ func initEVMDeploy(evmCmd *cobra.Command) {
 		Use:   "deploy",
 		Short: "Deploy the evmchain contract (i.e. create a new EVM chain)",
 		Run: func(cmd *cobra.Command, args []string) {
-			deployContract(deployParams.Name, deployParams.Description, evmchain.Interface.ProgramHash, dict.Dict{
+			deployContract(deployParams.Name, deployParams.Description, evmchain.Contract.ProgramHash, dict.Dict{
 				evmchain.FieldChainID:      codec.EncodeUint16(uint16(deployParams.ChainID)),
 				evmchain.FieldGenesisAlloc: evmchain.EncodeGenesisAlloc(deployParams.GetGenesis(nil)),
 			})
-			log.Printf("%s contract successfully deployed.\n", evmchain.Interface.Name)
+			log.Printf("%s contract successfully deployed.\n", evmchain.Contract.Name)
 		},
 	}
 	evmCmd.AddCommand(evmDeployCmd)
@@ -71,6 +71,6 @@ By default the server has no unlocked accounts. To send transactions, either:
 
 	jsonRPCServer.InitFlags(jsonRPCCmd)
 	jsonRPCCmd.Flags().IntVarP(&chainID, "chainid", "", evm.DefaultChainID, "ChainID (used for signing transactions)")
-	jsonRPCCmd.Flags().StringVarP(&contractName, "name", "", evmchain.Interface.Name, "evmchain contract name")
+	jsonRPCCmd.Flags().StringVarP(&contractName, "name", "", evmchain.Contract.Name, "evmchain contract name")
 	evmCmd.AddCommand(jsonRPCCmd)
 }

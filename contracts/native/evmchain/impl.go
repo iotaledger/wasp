@@ -16,6 +16,35 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
+var Processor = Contract.Processor(initialize,
+	// Ethereum blockchain
+	FuncSendTransaction.WithHandler(applyTransaction),
+	FuncGetBalance.WithHandler(getBalance),
+	FuncCallContract.WithHandler(callContract),
+	FuncEstimateGas.WithHandler(estimateGas),
+	FuncGetNonce.WithHandler(getNonce),
+	FuncGetReceipt.WithHandler(getReceipt),
+	FuncGetCode.WithHandler(getCode),
+	FuncGetBlockNumber.WithHandler(getBlockNumber),
+	FuncGetBlockByNumber.WithHandler(getBlockByNumber),
+	FuncGetBlockByHash.WithHandler(getBlockByHash),
+	FuncGetTransactionByHash.WithHandler(getTransactionByHash),
+	FuncGetTransactionByBlockHashAndIndex.WithHandler(getTransactionByBlockHashAndIndex),
+	FuncGetTransactionByBlockNumberAndIndex.WithHandler(getTransactionByBlockNumberAndIndex),
+	FuncGetBlockTransactionCountByHash.WithHandler(getBlockTransactionCountByHash),
+	FuncGetBlockTransactionCountByNumber.WithHandler(getBlockTransactionCountByNumber),
+	FuncGetStorage.WithHandler(getStorage),
+	FuncGetLogs.WithHandler(getLogs),
+
+	// EVMchain SC management
+	FuncSetNextOwner.WithHandler(setNextOwner),
+	FuncClaimOwnership.WithHandler(claimOwnership),
+	FuncSetGasPerIota.WithHandler(setGasPerIota),
+	FuncWithdrawGasFees.WithHandler(withdrawGasFees),
+	FuncGetOwner.WithHandler(getOwner),
+	FuncGetGasPerIota.WithHandler(getGasPerIota),
+)
+
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	genesisAlloc, err := DecodeGenesisAlloc(ctx.Params().MustGet(FieldGenesisAlloc))
@@ -56,8 +85,8 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 		// refund unspent gas fee to the sender's on-chain account
 		iotasGasRefund := transferredIotas - iotasGasFee
 		_, err = ctx.Call(
-			accounts.Interface.Hname(),
-			iscp.Hn(accounts.FuncDeposit),
+			accounts.Contract.Hname(),
+			accounts.FuncDeposit.Hname(),
 			dict.Dict{accounts.ParamAgentID: codec.EncodeAgentID(ctx.Caller())},
 			iscp.NewTransferIotas(iotasGasRefund),
 		)
@@ -285,7 +314,7 @@ func withdrawGasFees(ctx iscp.Sandbox) (dict.Dict, error) {
 		params := codec.MakeDict(map[string]interface{}{
 			accounts.ParamAgentID: targetAgentID,
 		})
-		_, err := ctx.Call(accounts.Interface.Hname(), iscp.Hn(accounts.FuncDeposit), params, ctx.Balances())
+		_, err := ctx.Call(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), params, ctx.Balances())
 		a.RequireNoError(err)
 		return nil, nil
 	}

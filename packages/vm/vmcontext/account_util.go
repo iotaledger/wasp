@@ -16,6 +16,6 @@ func Accrue(ctx iscp.Sandbox, target *iscp.AgentID, tokens *ledgerstate.ColoredB
 	p := codec.MakeDict(map[string]interface{}{
 		accounts.ParamAgentID: target,
 	})
-	_, err := ctx.Call(accounts.Interface.Hname(), iscp.Hn(accounts.FuncDeposit), p, tokens)
+	_, err := ctx.Call(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), p, tokens)
 	return err
 }

@@ -15,6 +15,15 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 )
 
+var Processor = Contract.Processor(initialize,
+	FuncPublicKey.WithHandler(publicKey),
+	FuncAddWarrant.WithHandler(addWarrant),
+	FuncRevokeWarrant.WithHandler(revokeWarrant),
+	FuncCloseWarrant.WithHandler(closeWarrant),
+	FuncSettle.WithHandler(settle),
+	FuncGetChannelInfo.WithHandler(getWarrantInfo),
+)
+
 func initialize(_ iscp.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
@@ -94,7 +103,7 @@ func revokeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	iota1 := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 1})
 	meta := &iscp.SendMetadata{
 		TargetContract: ctx.Contract(),
-		EntryPoint:     iscp.Hn(FuncCloseWarrant),
+		EntryPoint:     FuncCloseWarrant.Hname(),
 		Args: codec.MakeDict(map[string]interface{}{
 			ParamPayerAddress:   payerAddr,
 			ParamServiceAddress: serviceAddr,

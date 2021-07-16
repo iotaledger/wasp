@@ -25,12 +25,12 @@ import (
 
 func checkCoreContracts(t *testing.T, chain *cluster.Chain) {
 	for i := range chain.CommitteeNodes {
-		b, err := chain.GetStateVariable(root.Interface.Hname(), root.VarStateInitialized, i)
+		b, err := chain.GetStateVariable(root.Contract.Hname(), root.VarStateInitialized, i)
 		require.NoError(t, err)
 		require.EqualValues(t, []byte{0xFF}, b)
 
-		cl := chain.SCClient(root.Interface.Hname(), nil, i)
-		ret, err := cl.CallView(root.FuncGetChainInfo)
+		cl := chain.SCClient(root.Contract.Hname(), nil, i)
+		ret, err := cl.CallView(root.FuncGetChainInfo.Name)
 		require.NoError(t, err)
 
 		chid, _, _ := codec.DecodeChainID(ret.MustGet(root.VarChainID))
@@ -45,25 +45,25 @@ func checkCoreContracts(t *testing.T, chain *cluster.Chain) {
 		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
 		require.NoError(t, err)
 		for _, rec := range core.AllCoreContractsByHash {
-			cr := contractRegistry[rec.Hname()]
-			require.NotNil(t, cr, "core contract %s %+v missing", rec.Name, rec.Hname())
+			cr := contractRegistry[rec.Contract.Hname()]
+			require.NotNil(t, cr, "core contract %s %+v missing", rec.Contract.Name, rec.Contract.Hname())
 
-			require.EqualValues(t, rec.ProgramHash, cr.ProgramHash)
-			require.EqualValues(t, rec.Description, cr.Description)
+			require.EqualValues(t, rec.Contract.ProgramHash, cr.ProgramHash)
+			require.EqualValues(t, rec.Contract.Description, cr.Description)
 			require.EqualValues(t, 0, cr.OwnerFee)
-			require.EqualValues(t, rec.Name, cr.Name)
+			require.EqualValues(t, rec.Contract.Name, cr.Name)
 		}
 	}
 }
 
 func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
 	for _, rec := range core.AllCoreContractsByHash {
-		recBack, err := findContract(chain, rec.Name)
+		recBack, err := findContract(chain, rec.Contract.Name)
 		check(err, t)
 		require.NotNil(t, recBack)
-		require.EqualValues(t, rec.Name, recBack.Name)
-		require.EqualValues(t, rec.ProgramHash, recBack.ProgramHash)
-		require.EqualValues(t, rec.Description, recBack.Description)
+		require.EqualValues(t, rec.Contract.Name, recBack.Name)
+		require.EqualValues(t, rec.Contract.ProgramHash, recBack.ProgramHash)
+		require.EqualValues(t, rec.Contract.Description, recBack.Description)
 		require.True(t, recBack.Creator.IsNil())
 	}
 }
@@ -87,7 +87,7 @@ func getBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *iscp.AgentID
 		idx = nodeIndex[0]
 	}
 	ret, err := chain.Cluster.WaspClient(idx).CallView(
-		chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewBalance,
+		chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewBalance.Name,
 		dict.Dict{
 			accounts.ParamAgentID: agentID.Bytes(),
 		})
@@ -106,7 +106,7 @@ func checkBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *iscp.Agent
 
 func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []*iscp.AgentID {
 	r, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewAccounts,
+		chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewAccounts.Name,
 	)
 	check(err, t)
 
@@ -127,7 +127,7 @@ func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[*iscp.AgentID]ma
 	acc := getAccountsOnChain(t, chain)
 	for _, agentID := range acc {
 		r, err := chain.Cluster.WaspClient(0).CallView(
-			chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewBalance,
+			chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewBalance.Name,
 			dict.Dict{
 				accounts.ParamAgentID: agentID.Bytes(),
 			})
@@ -139,7 +139,7 @@ func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[*iscp.AgentID]ma
 
 func getTotalBalance(t *testing.T, chain *cluster.Chain) map[ledgerstate.Color]uint64 {
 	r, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewTotalAssets,
+		chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewTotalAssets.Name,
 	)
 	check(err, t)
 	return balancesDictToMap(t, r)
@@ -186,7 +186,7 @@ func checkLedger(t *testing.T, chain *cluster.Chain) {
 
 func getChainInfo(t *testing.T, chain *cluster.Chain) (iscp.ChainID, iscp.AgentID) {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, root.Interface.Hname(), root.FuncGetChainInfo,
+		chain.ChainID, root.Contract.Hname(), root.FuncGetChainInfo.Name,
 	)
 	check(err, t)
 
@@ -208,7 +208,7 @@ func findContract(chain *cluster.Chain, name string, nodeIndex ...int) (*root.Co
 
 	hname := iscp.Hn(name)
 	ret, err := chain.Cluster.WaspClient(i).CallView(
-		chain.ChainID, root.Interface.Hname(), root.FuncFindContract,
+		chain.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
 		dict.Dict{
 			root.ParamHname: codec.EncodeHname(hname),
 		})
@@ -266,7 +266,7 @@ func counterEquals(chain *cluster.Chain, expected int64) conditionFn {
 	return func(t *testing.T, nodeIndex int, timeout time.Duration) bool {
 		ret, err := repeatIfInvalidated(func() (dict.Dict, error) {
 			return chain.Cluster.WaspClient(nodeIndex).CallView(
-				chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter,
+				chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name,
 			)
 		}, time.Now().Add(timeout))
 		require.NoError(t, err)

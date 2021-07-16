@@ -2,109 +2,99 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-const (
-	Name        = "testcore"
-	description = "Test Core Sandbox functions"
+var Contract = coreutil.NewContract("testcore", "Test Core Sandbox functions")
+
+var Processor = Contract.Processor(initialize,
+	FuncChainOwnerIDView.WithHandler(testChainOwnerIDView),
+	FuncChainOwnerIDFull.WithHandler(testChainOwnerIDFull),
+	FuncGetMintedSupply.WithHandler(getMintedSupply),
+
+	FuncEventLogGenericData.WithHandler(testEventLogGenericData),
+	FuncEventLogEventData.WithHandler(testEventLogEventData),
+	FuncEventLogDeploy.WithHandler(testEventLogDeploy),
+	FuncSandboxCall.WithHandler(testSandboxCall),
+
+	FuncPanicFullEP.WithHandler(testPanicFullEP),
+	FuncPanicViewEP.WithHandler(testPanicViewEP),
+	FuncCallPanicFullEP.WithHandler(testCallPanicFullEP),
+	FuncCallPanicViewEPFromFull.WithHandler(testCallPanicViewEPFromFull),
+	FuncCallPanicViewEPFromView.WithHandler(testCallPanicViewEPFromView),
+
+	FuncDoNothing.WithHandler(doNothing),
+	FuncSendToAddress.WithHandler(sendToAddress),
+
+	FuncWithdrawToChain.WithHandler(withdrawToChain),
+	FuncCallOnChain.WithHandler(callOnChain),
+	FuncSetInt.WithHandler(setInt),
+	FuncGetInt.WithHandler(getInt),
+	FuncGetFibonacci.WithHandler(getFibonacci),
+	FuncIncCounter.WithHandler(incCounter),
+	FuncGetCounter.WithHandler(getCounter),
+	FuncRunRecursion.WithHandler(runRecursion),
+
+	FuncPassTypesFull.WithHandler(passTypesFull),
+	FuncPassTypesView.WithHandler(passTypesView),
+	FuncCheckContextFromFullEP.WithHandler(testCheckContextFromFullEP),
+	FuncCheckContextFromViewEP.WithHandler(testCheckContextFromViewEP),
+
+	FuncTestBlockContext1.WithHandler(testBlockContext1),
+	FuncTestBlockContext2.WithHandler(testBlockContext2),
+	FuncGetStringValue.WithHandler(getStringValue),
+
+	FuncJustView.WithHandler(testJustView),
+
+	FuncSpawn.WithHandler(spawn),
 )
 
-var Interface = &coreutil.ContractInterface{
-	Name:        Name,
-	Description: description,
-	ProgramHash: hashing.HashStrings(Name),
-}
-
-func init() {
-	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.ViewFunc(FuncChainOwnerIDView, testChainOwnerIDView),
-		coreutil.Func(FuncChainOwnerIDFull, testChainOwnerIDFull),
-		coreutil.Func(FuncGetMintedSupply, getMintedSupply),
-
-		coreutil.Func(FuncEventLogGenericData, testEventLogGenericData),
-		coreutil.Func(FuncEventLogEventData, testEventLogEventData),
-		coreutil.Func(FuncEventLogDeploy, testEventLogDeploy),
-		coreutil.ViewFunc(FuncSandboxCall, testSandboxCall),
-
-		coreutil.Func(FuncPanicFullEP, testPanicFullEP),
-		coreutil.ViewFunc(FuncPanicViewEP, testPanicViewEP),
-		coreutil.Func(FuncCallPanicFullEP, testCallPanicFullEP),
-		coreutil.Func(FuncCallPanicViewEPFromFull, testCallPanicViewEPFromFull),
-		coreutil.ViewFunc(FuncCallPanicViewEPFromView, testCallPanicViewEPFromView),
-
-		coreutil.Func(FuncDoNothing, doNothing),
-		coreutil.Func(FuncSendToAddress, sendToAddress),
-
-		coreutil.Func(FuncWithdrawToChain, withdrawToChain),
-		coreutil.Func(FuncCallOnChain, callOnChain),
-		coreutil.Func(FuncSetInt, setInt),
-		coreutil.ViewFunc(FuncGetInt, getInt),
-		coreutil.ViewFunc(FuncGetFibonacci, getFibonacci),
-		coreutil.Func(FuncIncCounter, incCounter),
-		coreutil.ViewFunc(FuncGetCounter, getCounter),
-		coreutil.Func(FuncRunRecursion, runRecursion),
-
-		coreutil.Func(FuncPassTypesFull, passTypesFull),
-		coreutil.ViewFunc(FuncPassTypesView, passTypesView),
-		coreutil.Func(FuncCheckContextFromFullEP, testCheckContextFromFullEP),
-		coreutil.ViewFunc(FuncCheckContextFromViewEP, testCheckContextFromViewEP),
-
-		coreutil.Func(FuncTestBlockContext1, testBlockContext1),
-		coreutil.Func(FuncTestBlockContext2, testBlockContext2),
-		coreutil.ViewFunc(FuncGetStringValue, getStringValue),
-
-		coreutil.ViewFunc(FuncJustView, testJustView),
-
-		coreutil.Func(FuncSpawn, spawn),
-	})
-}
-
-const (
+var (
 	// function eventlog test
-	FuncEventLogGenericData = "testEventLogGenericData"
-	FuncEventLogEventData   = "testEventLogEventData"
-	FuncEventLogDeploy      = "testEventLogDeploy"
+	FuncEventLogGenericData = coreutil.Func("testEventLogGenericData")
+	FuncEventLogEventData   = coreutil.Func("testEventLogEventData")
+	FuncEventLogDeploy      = coreutil.Func("testEventLogDeploy")
 
 	// Function sandbox test
-	FuncChainOwnerIDView = "testChainOwnerIDView"
-	FuncChainOwnerIDFull = "testChainOwnerIDFull"
+	FuncChainOwnerIDView = coreutil.ViewFunc("testChainOwnerIDView")
+	FuncChainOwnerIDFull = coreutil.Func("testChainOwnerIDFull")
 
-	FuncSandboxCall            = "testSandboxCall"
-	FuncCheckContextFromFullEP = "checkContextFromFullEP"
-	FuncCheckContextFromViewEP = "checkContextFromViewEP"
-	FuncGetMintedSupply        = "getMintedSupply"
+	FuncSandboxCall            = coreutil.ViewFunc("testSandboxCall")
+	FuncCheckContextFromFullEP = coreutil.Func("checkContextFromFullEP")
+	FuncCheckContextFromViewEP = coreutil.ViewFunc("checkContextFromViewEP")
+	FuncGetMintedSupply        = coreutil.Func("getMintedSupply")
 
-	FuncPanicFullEP             = "testPanicFullEP"
-	FuncPanicViewEP             = "testPanicViewEP"
-	FuncCallPanicFullEP         = "testCallPanicFullEP"
-	FuncCallPanicViewEPFromFull = "testCallPanicViewEPFromFull"
-	FuncCallPanicViewEPFromView = "testCallPanicViewEPFromView"
+	FuncPanicFullEP             = coreutil.Func("testPanicFullEP")
+	FuncPanicViewEP             = coreutil.ViewFunc("testPanicViewEP")
+	FuncCallPanicFullEP         = coreutil.Func("testCallPanicFullEP")
+	FuncCallPanicViewEPFromFull = coreutil.Func("testCallPanicViewEPFromFull")
+	FuncCallPanicViewEPFromView = coreutil.ViewFunc("testCallPanicViewEPFromView")
 
-	FuncTestBlockContext1 = "testBlockContext1"
-	FuncTestBlockContext2 = "testBlockContext2"
-	FuncGetStringValue    = "getStringValue"
+	FuncTestBlockContext1 = coreutil.Func("testBlockContext1")
+	FuncTestBlockContext2 = coreutil.Func("testBlockContext2")
+	FuncGetStringValue    = coreutil.ViewFunc("getStringValue")
 
-	FuncWithdrawToChain = "withdrawToChain"
+	FuncWithdrawToChain = coreutil.Func("withdrawToChain")
 
-	FuncDoNothing     = "doNothing"
-	FuncSendToAddress = "sendToAddress"
-	FuncJustView      = "justView"
+	FuncDoNothing     = coreutil.Func("doNothing")
+	FuncSendToAddress = coreutil.Func("sendToAddress")
+	FuncJustView      = coreutil.ViewFunc("justView")
 
-	FuncCallOnChain  = "callOnChain"
-	FuncSetInt       = "setInt"
-	FuncGetInt       = "getInt"
-	FuncGetFibonacci = "fibonacci"
-	FuncGetCounter   = "getCounter"
-	FuncIncCounter   = "incCounter"
-	FuncRunRecursion = "runRecursion"
+	FuncCallOnChain  = coreutil.Func("callOnChain")
+	FuncSetInt       = coreutil.Func("setInt")
+	FuncGetInt       = coreutil.ViewFunc("getInt")
+	FuncGetFibonacci = coreutil.ViewFunc("fibonacci")
+	FuncGetCounter   = coreutil.ViewFunc("getCounter")
+	FuncIncCounter   = coreutil.Func("incCounter")
+	FuncRunRecursion = coreutil.Func("runRecursion")
 
-	FuncPassTypesFull = "passTypesFull"
-	FuncPassTypesView = "passTypesView"
+	FuncPassTypesFull = coreutil.Func("passTypesFull")
+	FuncPassTypesView = coreutil.ViewFunc("passTypesView")
 
-	FuncSpawn = "spawn"
+	FuncSpawn = coreutil.Func("spawn")
+)
 
+const (
 	// State variables
 	VarCounter              = "counter"
 	VarSandboxCall          = "sandboxCall"
