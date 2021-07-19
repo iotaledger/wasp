@@ -1,3 +1,4 @@
+// TODO this can probably be removed
 package vm
 
 import (

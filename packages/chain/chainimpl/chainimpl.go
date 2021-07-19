@@ -24,21 +24,32 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
 )
 
-var _ chain.Chain = &chainObj{}     //nolint: gofumpt
-var _ chain.ChainCore = &chainObj{} //nolint: gofumpt
-var _ chain.ChainEntry = &chainObj{}
-var _ chain.ChainRequests = &chainObj{}
-var _ chain.ChainEvents = &chainObj{}
+var (
+	_ chain.Chain         = &chainObj{}
+	_ chain.ChainCore     = &chainObj{}
+	_ chain.ChainEntry    = &chainObj{}
+	_ chain.ChainRequests = &chainObj{}
+	_ chain.ChainEvents   = &chainObj{}
+)
 
 type chainObj struct {
 	committee                        atomic.Value
@@ -70,6 +81,7 @@ type chainObj struct {
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
+	lastPublishedEventsNanoTs        int64
 }
 
 type committeeStruct struct {
@@ -124,6 +136,7 @@ func NewChain(
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
+		lastPublishedEventsNanoTs:        time.Now().UnixNano(),
 	}
 	ret.committee.Store(&committeeStruct{})
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
@@ -310,6 +323,9 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		}
 		chain.PublishStateTransition(chainID, msg.ChainOutput, len(reqids))
 		chain.LogStateTransition(msg, reqids, c.log)
+
+		c.publishNewBlockEvents(stateIndex)
+
 		c.mempoolLastCleanedIndex = stateIndex
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
@@ -324,6 +340,63 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		StateTimestamp: msg.OutputTimestamp,
 	})
 	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.Hash().String())
+}
+
+const (
+	retryOnStateInvalidatedRetry   = 100 * time.Millisecond
+	retryOnStateInvalidatedTimeout = 5 * time.Second
+)
+
+func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
+	// TODO this probably shouldn't run when a node is syncing state(?)
+	if blockIndex == 0 {
+		// don't run on state #0, root contracts not initialized yet.
+		return
+	}
+	newEvents := make(map[iscp.Hname][][]byte)
+	now := time.Now().UnixNano()
+	c.log.Debug("publishNewBlockEvents start")
+
+	vctx := viewcontext.NewFromChain(c)
+	// sift through the chain contracts and emit events created on the last block
+	err := optimism.RetryOnStateInvalidated(func() error {
+		info, err := vctx.CallView(root.Contract.Hname(), iscp.Hn(root.FuncGetChainInfo.Name), dict.Dict{})
+		if err != nil {
+			return err
+		}
+		contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
+		if err != nil {
+			return err
+		}
+
+		kvPartition := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(eventlog.Contract.Hname().Bytes()))
+		for _, contract := range contracts {
+			log := collections.NewTimestampedLogReadOnly(kvPartition, kv.Key(contract.Hname().Bytes()))
+			ts := log.MustTakeTimeSlice(c.lastPublishedEventsNanoTs, now)
+			first, last := ts.FromToIndices()
+			if first == last {
+				continue
+			}
+			data := log.MustLoadRecordsRaw(first, last, false)
+			if len(data) > 0 {
+				newEvents[contract.Hname()] = data
+			}
+		}
+		return nil
+	}, retryOnStateInvalidatedRetry, time.Now().Add(retryOnStateInvalidatedTimeout))
+	if err != nil {
+		c.log.Warnf("error emitting events: %v", err)
+	}
+
+	for contractHname, msgs := range newEvents {
+		for _, msg := range msgs {
+			text := string(msg[8:]) // remove first 8 bytes from timestamp
+			c.log.Info("publishNewBlockEvents - " + c.chainID.String() + "::" + contractHname.String() + "/event " + text)
+			publisher.Publish("vmmsg", c.chainID.Base58(), contractHname.String(), text)
+		}
+	}
+
+	c.lastPublishedEventsNanoTs = now
 }
 
 func (c *chainObj) processSynced(outputID ledgerstate.OutputID, blockIndex uint32) {
