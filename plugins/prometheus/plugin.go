@@ -32,6 +32,10 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
+	if !parameters.GetBool(parameters.PrometheusEnabled) {
+		return
+	}
+
 	log.Infof("Starting %s ...", PluginName)
 	if err := daemon.BackgroundWorker("Prometheus exporter", func(shutdownSignal <-chan struct{}) {
 		log.Info("Starting Prometheus exporter ... done")
@@ -51,7 +55,7 @@ func run(_ *node.Plugin) {
 			return nil
 		})
 
-		bindAddr := ":2112"
+		bindAddr := parameters.GetString(parameters.PrometheusBindAddress)
 		server = &http.Server{Addr: bindAddr, Handler: e}
 
 		stopped := make(chan struct{})
@@ -76,5 +80,4 @@ func run(_ *node.Plugin) {
 	}, parameters.PriorityPrometheus); err != nil {
 		log.Warnf("Error starting as daemon: %s", err)
 	}
-
 }

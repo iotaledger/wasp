@@ -8,6 +8,7 @@ type WaspConfigParams struct {
 	Neighbors                    string
 	TxStreamPort                 int
 	ProfilingPort                int
+	PrometheusPort               int
 	OffledgerBroadcastUpToNPeers int
 }
 
@@ -59,6 +60,10 @@ const WaspConfig = `
   "profiling":{
     "bindAddress": "0.0.0.0:{{.ProfilingPort}}",
     "enabled": false
+  }
+  "prometheus": {
+	"bindAddress": "0.0.0.0:{{.PrometheusPort}}",
+	"enabled": false
   }
 }
 `

@@ -40,6 +40,9 @@ const (
 
 	ProfilingBindAddress = "profiling.bindAddress"
 	ProfilingEnabled     = "profiling.enabled"
+
+	PrometheusBindAddress = "prometheus.bindAddress"
+	PrometheusEnabled     = "prometheus.enabled"
 )
 
 func InitFlags() {
@@ -77,6 +80,9 @@ func InitFlags() {
 
 	flag.String(ProfilingBindAddress, "127.0.0.1:6060", "pprof http server address")
 	flag.Bool(ProfilingEnabled, false, "whether profiling is enabled")
+
+	flag.String(PrometheusBindAddress, "127.0.0.1:2112", "prometheus http server address")
+	flag.Bool(PrometheusEnabled, false, "disable and enable prometheus")
 }
 
 func GetBool(name string) bool {
