@@ -18,9 +18,8 @@ import (
 const PluginName = "Prometheus"
 
 var (
-	log      *logger.Logger
-	registry = prometheus.NewRegistry()
-	server   *http.Server
+	log    *logger.Logger
+	server *http.Server
 )
 
 func Init() *node.Plugin {
@@ -46,7 +45,7 @@ func run(_ *node.Plugin) {
 
 		e.GET("/metrics", func(c echo.Context) error {
 			handler := promhttp.HandlerFor(
-				registry,
+				prometheus.DefaultGatherer,
 				promhttp.HandlerOpts{
 					EnableOpenMetrics: true,
 				},
