@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
@@ -17,7 +16,6 @@ import (
 
 type sandboxview struct {
 	contractHname iscp.Hname
-	events        vm.ContractEventPublisher
 	params        dict.Dict
 	state         kv.KVStoreReader
 	vctx          *Viewcontext
@@ -33,7 +31,6 @@ func newSandboxView(vctx *Viewcontext, contractHname iscp.Hname, params dict.Dic
 		contractHname: contractHname,
 		params:        params,
 		state:         contractStateSubpartition(vctx.stateReader.KVStoreReader(), contractHname),
-		events:        vm.NewContractEventPublisher(&vctx.chainID, contractHname, vctx.log),
 	}
 }
 

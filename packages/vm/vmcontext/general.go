@@ -98,10 +98,6 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 //	})
 //}
 
-// func (vmctx *VMContext) EventPublisher() vm.ContractEventPublisher {
-// 	return vm.NewContractEventPublisher(vmctx.ChainID(), vmctx.CurrentContractHname(), vmctx.log)
-// }
-
 func (vmctx *VMContext) RequestID() iscp.RequestID {
 	return vmctx.req.ID()
 }
