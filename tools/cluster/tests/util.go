@@ -257,7 +257,7 @@ func repeatIfInvalidated(fun func() (dict.Dict, error), deadline time.Time) (dic
 		if time.Now().Before(deadline) {
 			return repeatIfInvalidated(fun, deadline)
 		}
-		return result, fmt.Errorf("Retrying timeouted. Last error: %w", err)
+		return result, fmt.Errorf("Retrying timed out. Last error: %w", err)
 	}
 	return result, err
 }
