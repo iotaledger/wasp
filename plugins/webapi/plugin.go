@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/daemon"
@@ -15,6 +14,9 @@ import (
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
+	"github.com/iotaledger/wasp/plugins/chains"
+	"github.com/iotaledger/wasp/plugins/peering"
+	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
@@ -27,18 +29,11 @@ var (
 	Server echoswagger.ApiRoot
 
 	log *logger.Logger
-
-	initWG sync.WaitGroup
 )
 
 func Init() *node.Plugin {
 	Plugin := node.NewPlugin(PluginName, node.Enabled, configure, run)
-	initWG.Add(1)
 	return Plugin
-}
-
-func WaitUntilIsUp() { // TODO: Not used?
-	initWG.Wait()
 }
 
 func configure(*node.Plugin) {
@@ -59,7 +54,15 @@ func configure(*node.Plugin) {
 
 	auth.AddAuthentication(Server.Echo(), parameters.GetStringToString(parameters.WebAPIAuth))
 
-	webapi.Init(Server, adminWhitelist())
+	network := peering.DefaultNetworkProvider()
+	if network == nil {
+		panic("dependency NetworkProvider is missing in WebAPI")
+	}
+	tnm := peering.DefaultTrustedNetworkManager()
+	if tnm == nil {
+		panic("dependency TrustedNetworkManager is missing in WebAPI")
+	}
+	webapi.Init(Server, adminWhitelist(), network, tnm, registry.DefaultRegistry, chains.AllChains)
 }
 
 func customHTTPErrorHandler(err error, c echo.Context) {
@@ -89,8 +92,6 @@ func run(_ *node.Plugin) {
 	if err := daemon.BackgroundWorker("WebAPI Server", worker, parameters.PriorityWebAPI); err != nil {
 		log.Errorf("Error starting as daemon: %s", err)
 	}
-
-	initWG.Done()
 }
 
 func worker(shutdownSignal <-chan struct{}) {

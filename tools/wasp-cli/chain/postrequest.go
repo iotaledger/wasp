@@ -1,26 +1,79 @@
 package chain
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
-	"os"
+	"strconv"
+	"strings"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/spf13/cobra"
 )
 
-func postRequestCmd(args []string) {
-	if len(args) < 2 {
-		log.Fatal("Usage: %s chain post-request <name> <funcname> [params]", os.Args[0])
+func postRequestCmd() *cobra.Command {
+	var transfer []string
+	var offLedger bool
+
+	cmd := &cobra.Command{
+		Use:   "post-request <name> <funcname> [params]",
+		Short: "Post a request to a contract",
+		Long:  "Post a request to contract <name>, function <funcname> with given params.",
+		Args:  cobra.MinimumNArgs(2),
+		Run: func(cmd *cobra.Command, args []string) {
+			fname := args[1]
+			params := chainclient.PostRequestParams{
+				Args:     requestargs.New().AddEncodeSimpleMany(util.EncodeParams(args[2:])),
+				Transfer: parseColoredBalances(transfer),
+			}
+
+			scClient := SCClient(iscp.Hn(args[0]))
+
+			if offLedger {
+				util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.RequestOffLedger, error) {
+					return scClient.PostOffLedgerRequest(fname, params)
+				})
+			} else {
+				util.WithSCTransaction(GetCurrentChainID(), func() (*ledgerstate.Transaction, error) {
+					return scClient.PostRequest(fname, params)
+				})
+			}
+		},
 	}
-	util.WithSCTransaction(func() (*sctransaction.Transaction, error) {
-		return SCClient(coretypes.Hn(args[0])).PostRequest(
-			args[1],
-			chainclient.PostRequestParams{
-				Args: requestargs.New().AddEncodeSimpleMany(util.EncodeParams(args[2:])),
-			},
-		)
-	})
+
+	cmd.Flags().StringSliceVarP(&transfer, "transfer", "t", []string{"IOTA:1"},
+		"include a funds transfer as part of the transaction. Format: <color>:<amount>,<color>:amount...",
+	)
+	cmd.Flags().BoolVarP(&offLedger, "off-ledger", "o", false,
+		"post an off-ledger request",
+	)
+
+	return cmd
+}
+
+func colorFromString(s string) ledgerstate.Color {
+	if s == ledgerstate.ColorIOTA.String() {
+		return ledgerstate.ColorIOTA
+	}
+	c, err := ledgerstate.ColorFromBase58EncodedString(s)
+	log.Check(err)
+	return c
+}
+
+func parseColoredBalances(args []string) *ledgerstate.ColoredBalances {
+	cb := make(map[ledgerstate.Color]uint64)
+	for _, tr := range args {
+		parts := strings.Split(tr, ":")
+		if len(parts) != 2 {
+			log.Fatalf("colored balances syntax: <color>:<amount>,<color:amount>... -- Example: IOTA:100")
+		}
+		color := colorFromString(parts[0])
+		amount, err := strconv.Atoi(parts[1])
+		log.Check(err)
+		cb[color] = uint64(amount)
+	}
+	return ledgerstate.NewColoredBalances(cb)
 }

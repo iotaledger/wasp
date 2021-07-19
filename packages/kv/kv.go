@@ -1,9 +1,15 @@
 package kv
 
+import "fmt"
+
 // Since map cannot have []byte as key, to avoid unnecessary conversions
 // between string and []byte, we use string as key data type, but it does
 // not necessarily have to be a valid UTF-8 string.
 type Key string
+
+func (k Key) Hex() string {
+	return fmt.Sprintf("kv.Key('%X')", k)
+}
 
 const EmptyPrefix = Key("")
 
@@ -17,35 +23,53 @@ func (k Key) HasPrefix(prefix Key) bool {
 // KVStore represents a key-value store
 // where both keys and values are arbitrary byte slices.
 type KVStore interface {
-	KVStoreWriter
+	KVWriter
 	KVStoreReader
 }
 
-type KVStoreReader interface {
+type KVReader interface {
 	// Get returns the value, or nil if not found
 	Get(key Key) ([]byte, error)
 	Has(key Key) (bool, error)
-	Iterate(prefix Key, f func(key Key, value []byte) bool) error
-	IterateKeys(prefix Key, f func(key Key) bool) error
-
-	// MustGet returns the value, or nil if not found
-	MustGet(key Key) []byte
-	MustHas(key Key) bool
-	MustIterate(prefix Key, f func(key Key, value []byte) bool)
-	MustIterateKeys(prefix Key, f func(key Key) bool)
 }
 
-type KVStoreWriter interface {
+type KVWriter interface {
 	Set(key Key, value []byte)
 	Del(key Key)
 
 	// TODO add DelPrefix(prefix []byte)
-	// deletes all keys with the prefix. Currently we don't have a possibility to iterate over keys
-	// and maybe we do not need one in the sandbox. However we need a possibility to efficiently clear arrays,
-	// dictionaries and timestamped logs
 }
 
-func MustGet(kvs KVStore, key Key) []byte {
+type KVIterator interface {
+	Iterate(prefix Key, f func(key Key, value []byte) bool) error
+	IterateKeys(prefix Key, f func(key Key) bool) error
+
+	IterateSorted(prefix Key, f func(key Key, value []byte) bool) error
+	IterateKeysSorted(prefix Key, f func(key Key) bool) error
+}
+
+type KVMustReader interface {
+	// MustGet returns the value, or nil if not found
+	MustGet(key Key) []byte
+	MustHas(key Key) bool
+}
+
+type KVMustIterator interface {
+	MustIterate(prefix Key, f func(key Key, value []byte) bool)
+	MustIterateKeys(prefix Key, f func(key Key) bool)
+
+	MustIterateSorted(prefix Key, f func(key Key, value []byte) bool)
+	MustIterateKeysSorted(prefix Key, f func(key Key) bool)
+}
+
+type KVStoreReader interface {
+	KVReader
+	KVIterator
+	KVMustReader
+	KVMustIterator
+}
+
+func MustGet(kvs KVStoreReader, key Key) []byte {
 	v, err := kvs.Get(key)
 	if err != nil {
 		panic(err)
@@ -53,7 +77,7 @@ func MustGet(kvs KVStore, key Key) []byte {
 	return v
 }
 
-func MustHas(kvs KVStore, key Key) bool {
+func MustHas(kvs KVStoreReader, key Key) bool {
 	v, err := kvs.Has(key)
 	if err != nil {
 		panic(err)
@@ -61,15 +85,29 @@ func MustHas(kvs KVStore, key Key) bool {
 	return v
 }
 
-func MustIterate(kvs KVStore, prefix Key, f func(key Key, value []byte) bool) {
+func MustIterate(kvs KVStoreReader, prefix Key, f func(key Key, value []byte) bool) {
 	err := kvs.Iterate(prefix, f)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func MustIterateKeys(kvs KVStore, prefix Key, f func(key Key) bool) {
+func MustIterateKeys(kvs KVStoreReader, prefix Key, f func(key Key) bool) {
 	err := kvs.IterateKeys(prefix, f)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func MustIterateSorted(kvs KVStoreReader, prefix Key, f func(key Key, value []byte) bool) {
+	err := kvs.IterateSorted(prefix, f)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func MustIterateKeysSorted(kvs KVStoreReader, prefix Key, f func(key Key) bool) {
+	err := kvs.IterateKeysSorted(prefix, f)
 	if err != nil {
 		panic(err)
 	}

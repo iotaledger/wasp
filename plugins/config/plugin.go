@@ -109,7 +109,7 @@ func Dump() map[string]interface{} {
 	return m
 }
 
-func flatten(dst map[string]interface{}, src map[string]interface{}, path string) {
+func flatten(dst, src map[string]interface{}, path string) {
 	for k, v := range src {
 		switch vt := v.(type) {
 		case map[string]interface{}:

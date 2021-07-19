@@ -8,31 +8,34 @@ package wasmtimevm
 import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/iotaledger/wasp/packages/vm/wasmproc"
+	"github.com/iotaledger/wasp/plugins/processors"
 )
 
-// VMType is the name of the plugin.
-const VMType = "wasmtimevm"
+// pluginName is the name of the plugin.
+const pluginName = "WasmTimeVM"
 
 var log *logger.Logger
 
 func Init() *node.Plugin {
-	return node.NewPlugin(VMType, node.Enabled, configure, run)
+	return node.NewPlugin(pluginName, node.Enabled, configure, run)
 }
 
 func configure(_ *node.Plugin) {
-	log = logger.NewLogger(VMType)
+	log = logger.NewLogger(pluginName)
 
 	// register VM type(s)
-	err := processors.RegisterVMType(VMType, func(binary []byte) (coretypes.Processor, error) {
+	err := processors.Config.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (iscp.VMProcessor, error) {
+		// TODO (via config?) pass non-default timeout for WasmTime processor like this:
+		// WasmTimeout = 3 * time.Second
 		return wasmproc.GetProcessor(binary, log)
 	})
 	if err != nil {
-		log.Panicf("%v: %v", VMType, err)
+		log.Panicf("%v: %v", pluginName, err)
 	}
-	log.Infof("registered VM type: '%s'", VMType)
+	log.Infof("registered VM type: '%s'", vmtypes.WasmTime)
 }
 
 func run(_ *node.Plugin) {

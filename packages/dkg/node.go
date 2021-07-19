@@ -9,47 +9,57 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/group/edwards25519"
+	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 	"go.dedis.ch/kyber/v3/sign/bdn"
+	"go.dedis.ch/kyber/v3/sign/eddsa"
 )
 
 // Node represents a node, that can participate in a DKG procedure.
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.
 type Node struct {
-	secKey      kyber.Scalar
-	pubKey      kyber.Point
-	suite       Suite                    // Cryptography to use.
-	netProvider peering.NetworkProvider  // Network to communicate through.
-	registry    tcrypto.RegistryProvider // Where to store the generated keys.
-	processes   map[string]*proc         // Only for introspection.
-	procLock    *sync.RWMutex            // To guard access to the process pool.
-	recvQueue   chan *peering.RecvEvent  // Incoming events processed async.
-	recvStopCh  chan bool                // To coordinate shutdown.
-	attachID    interface{}              // Peering attach ID
+	identity    *ed25519.KeyPair                 // Keys of the current node.
+	secKey      kyber.Scalar                     // Derived from the identity.
+	pubKey      kyber.Point                      // Derived from the identity.
+	blsSuite    Suite                            // Cryptography to use for the Pairing based operations.
+	edSuite     rabin_dkg.Suite                  // Cryptography to use for the Ed25519 based operations.
+	netProvider peering.NetworkProvider          // Network to communicate through.
+	registry    registry.DKShareRegistryProvider // Where to store the generated keys.
+	processes   map[string]*proc                 // Only for introspection.
+	procLock    *sync.RWMutex                    // To guard access to the process pool.
+	recvQueue   chan *peering.RecvEvent          // Incoming events processed async.
+	recvStopCh  chan bool                        // To coordinate shutdown.
+	attachID    interface{}                      // Peering attach ID
 	log         *logger.Logger
 }
 
 // Init creates new node, that can participate in the DKG procedure.
 // The node then can run several DKG procedures.
 func NewNode(
-	secKey kyber.Scalar,
-	pubKey kyber.Point,
-	suite Suite,
+	identity *ed25519.KeyPair,
 	netProvider peering.NetworkProvider,
-	registry tcrypto.RegistryProvider,
+	reg registry.DKShareRegistryProvider,
 	log *logger.Logger,
-) *Node {
+) (*Node, error) {
+	kyberEdDSSA := eddsa.EdDSA{}
+	if err := kyberEdDSSA.UnmarshalBinary(identity.PrivateKey.Bytes()); err != nil {
+		return nil, err
+	}
 	n := Node{
-		secKey:      secKey,
-		pubKey:      pubKey,
-		suite:       suite,
+		identity:    identity,
+		secKey:      kyberEdDSSA.Secret,
+		pubKey:      kyberEdDSSA.Public,
+		blsSuite:    tcrypto.DefaultSuite(),
+		edSuite:     edwards25519.NewBlakeSHA256Ed25519(),
 		netProvider: netProvider,
-		registry:    registry,
+		registry:    reg,
 		processes:   make(map[string]*proc),
 		procLock:    &sync.RWMutex{},
 		recvQueue:   make(chan *peering.RecvEvent),
@@ -60,7 +70,7 @@ func NewNode(
 		n.recvQueue <- recv
 	})
 	go n.recvLoop()
-	return &n
+	return &n, nil
 }
 
 func (n *Node) Close() {
@@ -71,9 +81,10 @@ func (n *Node) Close() {
 
 // GenerateDistributedKey takes all the required parameters from the node and initiated the DKG procedure.
 // This function is executed on the DKG initiator node (a chosen leader for this DKG instance).
+//nolint:funlen,gocritic
 func (n *Node) GenerateDistributedKey(
 	peerNetIDs []string,
-	peerPubs []kyber.Point,
+	peerPubs []ed25519.PublicKey,
 	threshold uint16,
 	roundRetry time.Duration, // Retry for Peer <-> Peer communication.
 	stepRetry time.Duration, // Retry for Initiator -> Peer communication.
@@ -81,7 +92,7 @@ func (n *Node) GenerateDistributedKey(
 ) (*tcrypto.DKShare, error) {
 	n.log.Infof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().NetID(), peerNetIDs)
 	var err error
-	var peerCount = uint16(len(peerNetIDs))
+	peerCount := uint16(len(peerNetIDs))
 	//
 	// Some validationfor the parameters.
 	if peerCount < 1 || threshold < 1 || threshold > peerCount {
@@ -95,11 +106,11 @@ func (n *Node) GenerateDistributedKey(
 	//
 	// Setup network connections.
 	var netGroup peering.GroupProvider
-	if netGroup, err = n.netProvider.Group(peerNetIDs); err != nil {
+	if netGroup, err = n.netProvider.PeerGroup(peerNetIDs); err != nil {
 		return nil, err
 	}
 	defer netGroup.Close()
-	dkgID := coretypes.NewRandomChainID()
+	dkgID := peering.RandomPeeringID()
 	recvCh := make(chan *peering.RecvEvent, peerCount*2)
 	attachID := n.netProvider.Attach(&dkgID, func(recv *peering.RecvEvent) {
 		recvCh <- recv
@@ -109,14 +120,16 @@ func (n *Node) GenerateDistributedKey(
 	gTimeout := timeout
 	if peerPubs == nil {
 		// Take the public keys from the peering network, if they were not specified.
-		peerPubs = make([]kyber.Point, peerCount)
+		peerPubs = make([]ed25519.PublicKey, peerCount)
 		for i, n := range netGroup.AllNodes() {
 			if err = n.Await(timeout); err != nil {
 				return nil, err
 			}
-			if peerPubs[i] = n.PubKey(); peerPubs[i] == nil {
+			nPub := n.PubKey()
+			if nPub == nil {
 				return nil, fmt.Errorf("Have no public key for %v", n.NetID())
 			}
+			peerPubs[i] = *nPub
 		}
 	}
 	//
@@ -124,11 +137,11 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep0Initialize,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep0Initialize, peer.NetID())
-			peer.SendMsg(makePeerMessage(&dkgID, rabinStep0Initialize, &initiatorInitMsg{
+			peer.SendMsg(makePeerMessage(dkgID, rabinStep0Initialize, &initiatorInitMsg{
 				dkgRef:       dkgID.String(), // It could be some other identifier.
 				peerNetIDs:   peerNetIDs,
 				peerPubs:     peerPubs,
-				initiatorPub: n.pubKey,
+				initiatorPub: n.identity.PublicKey,
 				threshold:    threshold,
 				timeout:      timeout,
 				roundRetry:   roundRetry,
@@ -141,19 +154,19 @@ func (n *Node) GenerateDistributedKey(
 	// Perform the DKG steps, each step in parallel, all steps sequentially.
 	// Step numbering (R) is according to <https://github.com/dedis/kyber/blob/master/share/dkg/rabin/dkg.go>.
 	if peerCount > 1 {
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep1R21SendDeals); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep1R21SendDeals); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep2R22SendResponses); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep2R22SendResponses); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep3R23SendJustifications); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep3R23SendJustifications); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep4R4SendSecretCommits); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep4R4SendSecretCommits); err != nil {
 			return nil, err
 		}
-		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, &dkgID, rabinStep5R5SendComplaintCommits); err != nil {
+		if err = n.exchangeInitiatorStep(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, dkgID, rabinStep5R5SendComplaintCommits); err != nil {
 			return nil, err
 		}
 	}
@@ -164,7 +177,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorMsgs(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep6R6SendReconstructCommits,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep6R6SendReconstructCommits, peer.NetID())
-			peer.SendMsg(makePeerMessage(&dkgID, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
+			peer.SendMsg(makePeerMessage(dkgID, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
 		},
 		func(recv *peering.RecvEvent, initMsg initiatorMsg) (bool, error) {
 			switch msg := initMsg.(type) {
@@ -183,7 +196,7 @@ func (n *Node) GenerateDistributedKey(
 	sharedPublic := pubShareResponses[0].sharedPublic
 	publicShares := make([]kyber.Point, peerCount)
 	for i := range pubShareResponses {
-		if *sharedAddress != *pubShareResponses[i].sharedAddress {
+		if !sharedAddress.Equals(pubShareResponses[i].sharedAddress) {
 			return nil, fmt.Errorf("nodes generated different addresses")
 		}
 		if !sharedPublic.Equal(pubShareResponses[i].sharedPublic) {
@@ -196,7 +209,7 @@ func (n *Node) GenerateDistributedKey(
 				return nil, err
 			}
 			err = bdn.Verify(
-				n.suite,
+				n.blsSuite,
 				pubShareResponses[i].publicShare,
 				pubShareBytes,
 				pubShareResponses[i].signature,
@@ -212,7 +225,7 @@ func (n *Node) GenerateDistributedKey(
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
 		func(peerIdx uint16, peer peering.PeerSender) {
 			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.NetID())
-			peer.SendMsg(makePeerMessage(&dkgID, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
+			peer.SendMsg(makePeerMessage(dkgID, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
 				pubShares: publicShares,
 			}))
 		},
@@ -230,11 +243,6 @@ func (n *Node) GenerateDistributedKey(
 		PrivateShare:  nil, // Not meaningful in this case.
 	}
 	return &dkShare, nil
-}
-
-// GroupSuite returns the cryptography Group used by this node.
-func (n *Node) GroupSuite() kyber.Group {
-	return n.suite
 }
 
 // Async recv is needed to avoid locking on the even publisher (Recv vs Attach in proc).
@@ -259,7 +267,7 @@ func (n *Node) onInitMsg(recv *peering.RecvEvent) {
 	var err error
 	var p *proc
 	req := initiatorInitMsg{}
-	if err = req.fromBytes(recv.Msg.MsgData, n.suite); err != nil {
+	if err = req.fromBytes(recv.Msg.MsgData); err != nil {
 		n.log.Warnf("Dropping unknown message: %v", recv)
 	}
 	n.procLock.RLock()
@@ -267,7 +275,7 @@ func (n *Node) onInitMsg(recv *peering.RecvEvent) {
 		// To have idempotence for retries, we need to consider duplicate
 		// messages as success, if process is already created.
 		n.procLock.RUnlock()
-		recv.From.SendMsg(makePeerMessage(&recv.Msg.ChainID, req.step, &initiatorStatusMsg{
+		recv.From.SendMsg(makePeerMessage(recv.Msg.PeeringID, req.step, &initiatorStatusMsg{
 			error: nil,
 		}))
 		return
@@ -277,11 +285,11 @@ func (n *Node) onInitMsg(recv *peering.RecvEvent) {
 		// This part should be executed async, because it accesses the network again, and can
 		// be locked because of the naive implementation of `events.Event`. It locks on all the callbacks.
 		n.procLock.Lock()
-		if p, err = onInitiatorInit(&recv.Msg.ChainID, &req, n); err == nil {
+		if p, err = onInitiatorInit(recv.Msg.PeeringID, &req, n); err == nil {
 			n.processes[p.dkgRef] = p
 		}
 		n.procLock.Unlock()
-		recv.From.SendMsg(makePeerMessage(&recv.Msg.ChainID, req.step, &initiatorStatusMsg{
+		recv.From.SendMsg(makePeerMessage(recv.Msg.PeeringID, req.step, &initiatorStatusMsg{
 			error: err,
 		}))
 	}()
@@ -304,7 +312,7 @@ func (n *Node) exchangeInitiatorStep(
 	recvCh chan *peering.RecvEvent,
 	retryTimeout time.Duration,
 	giveUpTimeout time.Duration,
-	dkgID *coretypes.ChainID,
+	dkgID peering.PeeringID,
 	step byte,
 ) error {
 	sendCB := func(peerIdx uint16, peer peering.PeerSender) {
@@ -344,14 +352,13 @@ func (n *Node) exchangeInitiatorMsgs(
 		var err error
 		var initMsg initiatorMsg
 		var isInitMsg bool
-		isInitMsg, initMsg, err = readInitiatorMsg(recv.Msg, n.suite)
+		isInitMsg, initMsg, err = readInitiatorMsg(recv.Msg, n.blsSuite)
 		if !isInitMsg {
 			return false, nil
 		}
 		if err != nil {
 			n.log.Warnf("Failed to read message from %v: %v", recv.From.NetID(), recv.Msg)
 			return false, err
-
 		}
 		if !initMsg.IsResponse() {
 			return false, nil

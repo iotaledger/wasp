@@ -5,8 +5,9 @@ package wasmhost
 
 import (
 	"errors"
+
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 type WasmHost struct {
@@ -17,13 +18,12 @@ type WasmHost struct {
 	funcToIndex map[string]int32
 }
 
-func (host *WasmHost) InitVM(vm WasmVM, useBase58Keys bool) error {
-	host.useBase58Keys = useBase58Keys
+func (host *WasmHost) InitVM(vm WasmVM) error {
 	return vm.LinkHost(vm, host)
 }
 
-func (host *WasmHost) Init(null HostObject, root HostObject, log *logger.Logger) {
-	host.KvStoreHost.Init(null, root, log)
+func (host *WasmHost) Init(log *logger.Logger) {
+	host.KvStoreHost.Init(log)
 	host.codeToFunc = make(map[uint32]string)
 	host.funcToCode = make(map[string]uint32)
 	host.funcToIndex = make(map[string]int32)
@@ -50,8 +50,8 @@ func (host *WasmHost) LoadWasm(wasmData []byte) error {
 	return nil
 }
 
-func (host *WasmHost) RunFunction(functionName string) (err error) {
-	return host.vm.RunFunction(functionName)
+func (host *WasmHost) RunFunction(functionName string, args ...interface{}) (err error) {
+	return host.vm.RunFunction(functionName, args...)
 }
 
 func (host *WasmHost) RunScFunction(functionName string) (err error) {
@@ -74,7 +74,7 @@ func (host *WasmHost) SetExport(index int32, functionName string) {
 	if ok {
 		panic("SetExport: duplicate function name")
 	}
-	hn := coretypes.Hn(functionName)
+	hn := iscp.Hn(functionName)
 	hashedName := uint32(hn)
 	_, ok = host.codeToFunc[hashedName]
 	if ok {

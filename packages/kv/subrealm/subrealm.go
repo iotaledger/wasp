@@ -9,8 +9,8 @@ type subrealm struct {
 	prefix kv.Key
 }
 
-func New(kv kv.KVStore, prefix kv.Key) kv.KVStore {
-	return &subrealm{kv, prefix}
+func New(kvStore kv.KVStore, prefix kv.Key) kv.KVStore {
+	return &subrealm{kvStore, prefix}
 }
 
 func (s *subrealm) Set(key kv.Key, value []byte) {
@@ -42,6 +42,18 @@ func (s *subrealm) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	})
 }
 
+func (s *subrealm) IterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+	return s.kv.IterateSorted(s.prefix+prefix, func(key kv.Key, value []byte) bool {
+		return f(key[len(s.prefix):], value)
+	})
+}
+
+func (s *subrealm) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
+	return s.kv.IterateKeysSorted(s.prefix+prefix, func(key kv.Key) bool {
+		return f(key[len(s.prefix):])
+	})
+}
+
 func (s *subrealm) MustGet(key kv.Key) []byte {
 	return kv.MustGet(s, key)
 }
@@ -56,4 +68,12 @@ func (s *subrealm) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte) b
 
 func (s *subrealm) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 	kv.MustIterateKeys(s, prefix, f)
+}
+
+func (s *subrealm) MustIterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	kv.MustIterateSorted(s, prefix, f)
+}
+
+func (s *subrealm) MustIterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
+	kv.MustIterateKeysSorted(s, prefix, f)
 }

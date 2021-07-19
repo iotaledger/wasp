@@ -1,18 +1,14 @@
 package tests
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -20,219 +16,124 @@ import (
 func TestDeployChain(t *testing.T) {
 	setup(t, "test_cluster")
 
-	counter, err := clu.StartMessageCounter(map[string]int{
-		"chainrec":            2,
-		"active_committee":    1,
-		"dismissed_committee": 0,
-		"state":               2,
-		"request_in":          1,
-		"request_out":         2,
+	counter1, err := clu.StartMessageCounter(map[string]int{
+		"dismissed_chain": 0,
+		"state":           2,
+		"request_out":     1,
 	})
 	check(err, t)
-	defer counter.Close()
+	defer counter1.Close()
 
-	chain, err := clu.DeployDefaultChain()
+	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	if !counter.WaitUntilExpectationsMet() {
+	if !counter1.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
-	chainID, chainOwnerID := getChainInfo(t, chain)
-	require.Equal(t, chainID, chain.ChainID)
-	require.Equal(t, chainOwnerID, coretypes.NewAgentIDFromAddress(*chain.OriginatorAddress()))
+	chainID, chainOwnerID := getChainInfo(t, chain1)
+	require.Equal(t, chainID, chain1.ChainID)
+	require.Equal(t, chainOwnerID, *iscp.NewAgentID(chain1.OriginatorAddress(), 0))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
+	checkCoreContracts(t, chain1)
+	checkRootsOutside(t, chain1)
+	for _, i := range chain1.CommitteeNodes {
+		blockIndex, err := chain1.BlockIndex(i)
+		require.NoError(t, err)
 		require.EqualValues(t, 1, blockIndex)
-		checkRoots(t, chain)
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		require.EqualValues(t, 4, contractRegistry.MustLen())
-		return true
-	})
-	checkRootsOutside(t, chain)
+
+		contractRegistry, err := chain1.ContractRegistry(i)
+		require.NoError(t, err)
+		require.EqualValues(t, len(core.AllCoreContractsByHash), len(contractRegistry))
+	}
 }
 
 func TestDeployContractOnly(t *testing.T) {
 	setup(t, "test_cluster")
 
-	counter, err := clu.StartMessageCounter(map[string]int{
-		"chainrec":            2,
-		"active_committee":    1,
+	counter1, err := clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
-		"request_in":          1,
-		"request_out":         2,
+		"request_out":         1,
 	})
 	check(err, t)
-	defer counter.Close()
+	defer counter1.Close()
 
-	chain, err := clu.DeployDefaultChain()
+	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	name := "inncounter1"
-	hname := coretypes.Hn(name)
-	description := "testing contract deployment with inccounter"
-	programHash := inccounter.Interface.ProgramHash
-	check(err, t)
-
-	_, err = chain.DeployContract(name, programHash.String(), description, map[string]interface{}{
-		inccounter.VarCounter: 42,
-		root.ParamName:        name,
-	})
-	check(err, t)
-
-	if !counter.WaitUntilExpectationsMet() {
-		t.Fail()
-	}
-
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
-		require.EqualValues(t, 2, blockIndex)
-		checkRoots(t, chain)
-
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		crBytes := contractRegistry.MustGetAt(hname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
-
-		require.EqualValues(t, programHash, cr.ProgramHash)
-		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
-		require.EqualValues(t, cr.Name, name)
-
-		return true
-	})
-
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
-		require.EqualValues(t, 42, counterValue)
-		return true
-	})
+	tx := deployIncCounterSC(t, chain1, counter1)
 
 	// test calling root.FuncFindContractByName view function using client
-	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ContractID(root.Interface.Hname()),
-		root.FuncFindContract,
-		dict.FromGoMap(map[kv.Key][]byte{
-			root.ParamHname: hname.Bytes(),
-		}),
-	)
+	ret, err := chain1.Cluster.WaspClient(0).CallView(
+		chain1.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
+		dict.Dict{
+			root.ParamHname: iscp.Hn(incCounterSCName).Bytes(),
+		})
 	check(err, t)
-	recb, err := ret.Get(root.ParamData)
+	recb, err := ret.Get(root.VarData)
 	check(err, t)
 	rec, err := root.DecodeContractRecord(recb)
 	check(err, t)
-	require.EqualValues(t, description, rec.Description)
+	require.EqualValues(t, "testing contract deployment with inccounter", rec.Description)
+
+	{
+		rec, _, _, err := chain1.GetRequestLogRecord(iscp.NewRequestID(tx.ID(), 0))
+		require.NoError(t, err)
+		require.Empty(t, string(rec.LogData))
+	}
 }
 
 func TestDeployContractAndSpawn(t *testing.T) {
 	setup(t, "test_cluster")
 
-	counter, err := clu.StartMessageCounter(map[string]int{
-		"chainrec":            2,
-		"active_committee":    1,
+	counter1, err := clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
-		"request_in":          1,
-		"request_out":         2,
+		"request_out":         1,
 	})
 	check(err, t)
-	defer counter.Close()
+	defer counter1.Close()
 
-	chain, err := clu.DeployDefaultChain()
+	chain1, err := clu.DeployDefaultChain()
 	check(err, t)
 
-	description := "testing contract deployment with inccounter"
-	name := "inncounter1"
-	hname := coretypes.Hn(name)
-	programHash := inccounter.Interface.ProgramHash
-	check(err, t)
+	deployIncCounterSC(t, chain1, counter1)
 
-	_, err = chain.DeployContract(name, programHash.String(), description, map[string]interface{}{
-		inccounter.VarCounter: 42,
-	})
-	check(err, t)
-
-	if !counter.WaitUntilExpectationsMet() {
-		t.Fail()
-	}
-
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
-		require.EqualValues(t, 2, blockIndex)
-		checkRoots(t, chain)
-
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		require.EqualValues(t, 5, contractRegistry.MustLen())
-		crBytes := contractRegistry.MustGetAt(hname.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
-
-		require.EqualValues(t, programHash, cr.ProgramHash)
-		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
-		require.EqualValues(t, cr.Name, name)
-
-		return true
-	})
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
-		require.EqualValues(t, 42, counterValue)
-		return true
-	})
+	hname := iscp.Hn(incCounterSCName)
 
 	nameNew := "spawnedContract"
 	dscrNew := "spawned contract it is"
-	hnameNew := coretypes.Hn(nameNew)
+	hnameNew := iscp.Hn(nameNew)
 	// send 'spawn' request to the SC which was just deployed
-	tx, err := chain.OriginatorClient().PostRequest(hname, coretypes.Hn(inccounter.FuncSpawn), chainclient.PostRequestParams{
-		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
-			inccounter.VarName:        nameNew,
-			inccounter.VarDescription: dscrNew,
-		})),
-	})
+	par := chainclient.NewPostRequestParams(
+		inccounter.VarName, nameNew,
+		inccounter.VarDescription, dscrNew,
+	).WithIotas(1)
+	tx, err := chain1.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
 	check(err, t)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(tx, 30*time.Second)
+	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, tx, 30*time.Second)
 	check(err, t)
 
-	chain.WithSCState(root.Interface.Hname(), func(host string, blockIndex uint32, state dict.Dict) bool {
+	checkCoreContracts(t, chain1)
+	for _, i := range chain1.CommitteeNodes {
+		blockIndex, err := chain1.BlockIndex(i)
+		require.NoError(t, err)
 		require.EqualValues(t, 3, blockIndex)
-		checkRoots(t, chain)
 
-		contractRegistry := collections.NewMapReadOnly(state, root.VarContractRegistry)
-		require.EqualValues(t, 6, contractRegistry.MustLen())
-		//--
-		crBytes := contractRegistry.MustGetAt(accounts.Interface.Hname().Bytes())
-		require.NotNil(t, crBytes)
-		cr, err := root.DecodeContractRecord(crBytes)
-		check(err, t)
-		require.EqualValues(t, accounts.Interface.ProgramHash, cr.ProgramHash)
-		require.EqualValues(t, accounts.Interface.Description, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
-		require.EqualValues(t, accounts.Interface.Name, cr.Name)
+		contractRegistry, err := chain1.ContractRegistry(i)
+		require.NoError(t, err)
+		require.EqualValues(t, len(core.AllCoreContractsByHash)+2, len(contractRegistry))
 
-		//--
-		crBytes = contractRegistry.MustGetAt(hnameNew.Bytes())
-		require.NotNil(t, crBytes)
-		cr, err = root.DecodeContractRecord(crBytes)
-		check(err, t)
-		// TODO check program hash
+		cr := contractRegistry[hnameNew]
 		require.EqualValues(t, dscrNew, cr.Description)
 		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, nameNew, cr.Name)
-		return true
-	})
-	chain.WithSCState(hname, func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
-		require.EqualValues(t, 42, counterValue)
-		return true
-	})
-	chain.WithSCState(coretypes.Hn(nameNew), func(host string, blockIndex uint32, state dict.Dict) bool {
-		counterValue, _, _ := codec.DecodeInt64(state.MustGet(inccounter.VarCounter))
-		require.EqualValues(t, 44, counterValue)
-		return true
-	})
 
+		counterValue, err := chain1.GetCounterValue(hname, i)
+		require.NoError(t, err)
+		require.EqualValues(t, 42, counterValue)
+	}
 }

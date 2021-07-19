@@ -13,6 +13,7 @@ fn on_load() {
     let exports = ScExports::new();
     exports.add_func(FUNC_CALL_INCREMENT, func_call_increment);
     exports.add_func(FUNC_CALL_INCREMENT_RECURSE5X, func_call_increment_recurse5x);
+    exports.add_func(FUNC_ENDLESS_LOOP, func_endless_loop);
     exports.add_func(FUNC_INCREMENT, func_increment);
     exports.add_func(FUNC_INIT, func_init);
     exports.add_func(FUNC_LOCAL_STATE_INTERNAL_CALL, func_local_state_internal_call);
@@ -20,6 +21,7 @@ fn on_load() {
     exports.add_func(FUNC_LOCAL_STATE_SANDBOX_CALL, func_local_state_sandbox_call);
     exports.add_func(FUNC_POST_INCREMENT, func_post_increment);
     exports.add_func(FUNC_REPEAT_MANY, func_repeat_many);
+    exports.add_func(FUNC_TEST_LEB128, func_test_leb128);
     exports.add_func(FUNC_WHEN_MUST_INCREMENT, func_when_must_increment);
     exports.add_view(VIEW_GET_COUNTER, view_get_counter);
 }

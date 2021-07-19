@@ -1,41 +1,22 @@
 package accounts
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-const (
-	Name        = "accounts"
-	description = "Chain account ledger contract"
-)
+var Contract = coreutil.NewContract(coreutil.CoreContractAccounts, "Chain account ledger contract")
 
 var (
-	Interface = &coreutil.ContractInterface{
-		Name:        Name,
-		Description: description,
-		ProgramHash: hashing.HashStrings(Name),
-	}
+	FuncViewBalance     = coreutil.ViewFunc("balance")
+	FuncViewTotalAssets = coreutil.ViewFunc("totalAssets")
+	FuncViewAccounts    = coreutil.ViewFunc("accounts")
+	FuncDeposit         = coreutil.Func("deposit")
+	FuncWithdraw        = coreutil.Func("withdraw")
+	FuncHarvest         = coreutil.Func("harvest")
 )
 
-func init() {
-	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.ViewFunc(FuncBalance, getBalance),
-		coreutil.ViewFunc(FuncTotalAssets, getTotalAssets),
-		coreutil.ViewFunc(FuncAccounts, getAccounts),
-		coreutil.Func(FuncDeposit, deposit),
-		coreutil.Func(FuncWithdrawToAddress, withdrawToAddress),
-		coreutil.Func(FuncWithdrawToChain, withdrawToChain),
-	})
-}
-
 const (
-	FuncBalance           = "balance"
-	FuncTotalAssets       = "totalAssets"
-	FuncDeposit           = "deposit"
-	FuncWithdrawToAddress = "withdrawToAddress"
-	FuncWithdrawToChain   = "withdrawToChain"
-	FuncAccounts          = "accounts"
-
-	ParamAgentID = "a"
+	ParamAgentID        = "a"
+	ParamWithdrawColor  = "c"
+	ParamWithdrawAmount = "m"
 )

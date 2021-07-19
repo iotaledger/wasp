@@ -5,43 +5,52 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"strings"
 
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 type GoshimmerConfig struct {
-	ApiPort  int
-	Provided bool
+	TxStreamPort int
+	APIPort      int
+	Provided     bool
 }
 
 type WaspConfig struct {
 	NumNodes int
 
 	// node ports are calculated as these values + node index
-	FirstApiPort       int
+	FirstAPIPort       int
 	FirstPeeringPort   int
 	FirstNanomsgPort   int
 	FirstDashboardPort int
+	FirstProfilingPort int
 }
 
 type ClusterConfig struct {
-	Wasp      WaspConfig
-	Goshimmer GoshimmerConfig
+	Wasp                  WaspConfig
+	Goshimmer             GoshimmerConfig
+	FaucetPoWTarget       int
+	BlockedGoshimmerNodes map[int]bool
 }
 
 func DefaultConfig() *ClusterConfig {
 	return &ClusterConfig{
 		Wasp: WaspConfig{
 			NumNodes:           4,
-			FirstApiPort:       9090,
+			FirstAPIPort:       9090,
 			FirstPeeringPort:   4000,
 			FirstNanomsgPort:   5550,
 			FirstDashboardPort: 7000,
+			FirstProfilingPort: 6060,
 		},
 		Goshimmer: GoshimmerConfig{
-			ApiPort:  8080,
-			Provided: false,
+			TxStreamPort: 5000,
+			APIPort:      8080,
+			Provided:     false,
 		},
+		FaucetPoWTarget:       0,
+		BlockedGoshimmerNodes: make(map[int]bool),
 	}
 }
 
@@ -64,15 +73,15 @@ func (c *ClusterConfig) Save(dataPath string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(configPath(dataPath), b, 0644)
+	return ioutil.WriteFile(configPath(dataPath), b, 0600) //nolint:gomnd
 }
 
 func configPath(dataPath string) string {
 	return path.Join(dataPath, "cluster.json")
 }
 
-func (c *ClusterConfig) goshimmerApiHost() string {
-	return fmt.Sprintf("127.0.0.1:%d", c.Goshimmer.ApiPort)
+func (c *ClusterConfig) goshimmerAPIHost() string {
+	return fmt.Sprintf("127.0.0.1:%d", c.Goshimmer.APIPort)
 }
 
 func (c *ClusterConfig) waspHosts(nodeIndexes []int, getHost func(i int) string) []string {
@@ -94,20 +103,20 @@ func (c *ClusterConfig) AllNodes() []int {
 	return nodes
 }
 
-func (c *ClusterConfig) ApiHosts(nodeIndexes ...[]int) []string {
+func (c *ClusterConfig) APIHosts(nodeIndexes ...[]int) []string {
 	nodes := c.AllNodes()
 	if len(nodeIndexes) == 1 {
 		nodes = nodeIndexes[0]
 	}
-	return c.waspHosts(nodes, func(i int) string { return c.ApiHost(i) })
+	return c.waspHosts(nodes, func(i int) string { return c.APIHost(i) })
 }
 
-func (c *ClusterConfig) ApiHost(nodeIndex int) string {
-	return fmt.Sprintf("127.0.0.1:%d", c.ApiPort(nodeIndex))
+func (c *ClusterConfig) APIHost(nodeIndex int) string {
+	return fmt.Sprintf("127.0.0.1:%d", c.APIPort(nodeIndex))
 }
 
-func (c *ClusterConfig) ApiPort(nodeIndex int) int {
-	return c.Wasp.FirstApiPort + nodeIndex
+func (c *ClusterConfig) APIPort(nodeIndex int) int {
+	return c.Wasp.FirstAPIPort + nodeIndex
 }
 
 func (c *ClusterConfig) PeeringHosts(nodeIndexes ...[]int) []string {
@@ -116,6 +125,14 @@ func (c *ClusterConfig) PeeringHosts(nodeIndexes ...[]int) []string {
 		nodes = nodeIndexes[0]
 	}
 	return c.waspHosts(nodes, func(i int) string { return c.PeeringHost(i) })
+}
+
+func (c *ClusterConfig) NeighborsString() string {
+	ret := make([]string, c.Wasp.NumNodes)
+	for i := range ret {
+		ret[i] = "\"" + c.PeeringHost(i) + "\""
+	}
+	return strings.Join(ret, ",")
 }
 
 func (c *ClusterConfig) PeeringHost(nodeIndex int) string {
@@ -146,20 +163,26 @@ func (c *ClusterConfig) DashboardPort(nodeIndex int) int {
 	return c.Wasp.FirstDashboardPort + nodeIndex
 }
 
-func (c *ClusterConfig) GoshimmerConfigTemplateParams() *templates.GoshimmerConfigParams {
-	if c.Goshimmer.Provided {
-		panic("should not reach here")
+func (c *ClusterConfig) TxStreamPort(nodeIndex int) int {
+	if c.BlockedGoshimmerNodes[nodeIndex] {
+		return 0
 	}
-	return &templates.GoshimmerConfigParams{
-		ApiPort: c.Goshimmer.ApiPort,
-	}
+	return c.Goshimmer.TxStreamPort
+}
+
+func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {
+	return c.Wasp.FirstProfilingPort + nodeIndex
 }
 
 func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigParams {
 	return &templates.WaspConfigParams{
-		ApiPort:       c.ApiPort(i),
-		DashboardPort: c.DashboardPort(i),
-		PeeringPort:   c.PeeringPort(i),
-		NanomsgPort:   c.NanomsgPort(i),
+		APIPort:                      c.APIPort(i),
+		DashboardPort:                c.DashboardPort(i),
+		PeeringPort:                  c.PeeringPort(i),
+		NanomsgPort:                  c.NanomsgPort(i),
+		Neighbors:                    c.NeighborsString(),
+		TxStreamPort:                 c.TxStreamPort(i),
+		ProfilingPort:                c.ProfilingPort(i),
+		OffledgerBroadcastUpToNPeers: 10,
 	}
 }

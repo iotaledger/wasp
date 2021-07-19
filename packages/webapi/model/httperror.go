@@ -3,6 +3,8 @@ package model
 import (
 	"fmt"
 	"net/http"
+
+	"golang.org/x/xerrors"
 )
 
 // HTTPError is the standard error response for all webapi endpoints, and also implements
@@ -27,6 +29,7 @@ func (e *HTTPError) Error() string {
 
 // IsHTTPNotFound returns true if the error is an HTTPError with status code http.StatusNotFound
 func IsHTTPNotFound(e error) bool {
-	er, ok := e.(*HTTPError)
-	return ok && er.StatusCode == http.StatusNotFound
+	var he *HTTPError
+	ok := xerrors.As(e, &he)
+	return ok && he.StatusCode == http.StatusNotFound
 }

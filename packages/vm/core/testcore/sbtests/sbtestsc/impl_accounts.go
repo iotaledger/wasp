@@ -2,25 +2,22 @@ package sbtestsc
 
 import (
 	"fmt"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/cbalances"
+
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 // calls withdrawToChain to the chain ID
-func withdrawToChain(ctx coretypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Infof(FuncWithdrawToChain)
+func withdrawToChain(ctx iscp.Sandbox) (dict.Dict, error) {
+	ctx.Log().Infof(FuncWithdrawToChain.Name)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	targetChain := params.MustGetChainID(ParamChainID)
-	succ := ctx.PostRequest(coretypes.PostRequestParams{
-		TargetContractID: accounts.Interface.ContractID(targetChain),
-		EntryPoint:       coretypes.Hn(accounts.FuncWithdrawToChain),
-		Transfer: cbalances.NewFromMap(map[balance.Color]int64{
-			balance.ColorIOTA: 2,
-		}),
+	succ := ctx.Send(targetChain.AsAddress(), iscp.NewTransferIotas(1), &iscp.SendMetadata{
+		TargetContract: accounts.Contract.Hname(),
+		EntryPoint:     accounts.FuncWithdraw.Hname(),
+		Args:           nil,
 	})
 	if !succ {
 		return nil, fmt.Errorf("failed to post request")

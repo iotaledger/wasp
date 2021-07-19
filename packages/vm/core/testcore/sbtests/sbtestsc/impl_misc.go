@@ -1,8 +1,8 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
-	assert2 "github.com/iotaledger/wasp/packages/coretypes/assert"
+	"github.com/iotaledger/wasp/packages/iscp"
+	assert2 "github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -12,12 +12,12 @@ import (
 // ParamCallOption
 // ParamCallIntParam
 // ParamHnameContract
-func callOnChain(ctx coretypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf(FuncCallOnChain)
+func callOnChain(ctx iscp.Sandbox) (dict.Dict, error) {
+	ctx.Log().Debugf(FuncCallOnChain.Name)
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	paramIn := params.MustGetInt64(ParamIntParamValue)
-	hnameContract := params.MustGetHname(ParamHnameContract, ctx.ContractID().Hname())
-	hnameEP := params.MustGetHname(ParamHnameEP, coretypes.Hn(FuncCallOnChain))
+	hnameContract := params.MustGetHname(ParamHnameContract, ctx.Contract())
+	hnameEP := params.MustGetHname(ParamHnameEP, FuncCallOnChain.Hname())
 
 	state := kvdecoder.New(ctx.State(), ctx.Log())
 	counter := state.MustGetInt64(VarCounter, 0)
@@ -31,14 +31,14 @@ func callOnChain(ctx coretypes.Sandbox) (dict.Dict, error) {
 	}), nil)
 }
 
-func incCounter(ctx coretypes.Sandbox) (dict.Dict, error) {
+func incCounter(ctx iscp.Sandbox) (dict.Dict, error) {
 	state := kvdecoder.New(ctx.State(), ctx.Log())
 	counter := state.MustGetInt64(VarCounter, 0)
 	ctx.State().Set(VarCounter, codec.EncodeInt64(counter+1))
 	return nil, nil
 }
 
-func getCounter(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getCounter(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 	state := kvdecoder.New(ctx.State(), ctx.Log())
 	counter := state.MustGetInt64(VarCounter, 0)
@@ -46,19 +46,19 @@ func getCounter(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func runRecursion(ctx coretypes.Sandbox) (dict.Dict, error) {
+func runRecursion(ctx iscp.Sandbox) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	depth := params.MustGetInt64(ParamIntParamValue)
 	if depth <= 0 {
 		return nil, nil
 	}
-	return ctx.Call(ctx.ContractID().Hname(), coretypes.Hn(FuncCallOnChain), codec.MakeDict(map[string]interface{}{
-		ParamHnameEP:       coretypes.Hn(FuncRunRecursion),
+	return ctx.Call(ctx.Contract(), FuncCallOnChain.Hname(), codec.MakeDict(map[string]interface{}{
+		ParamHnameEP:       FuncRunRecursion.Hname(),
 		ParamIntParamValue: depth - 1,
 	}), nil)
 }
 
-func getFibonacci(ctx coretypes.SandboxView) (dict.Dict, error) {
+func getFibonacci(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	a := assert2.NewAssert(ctx.Log())
 
@@ -69,14 +69,14 @@ func getFibonacci(ctx coretypes.SandboxView) (dict.Dict, error) {
 		ret.Set(ParamIntParamValue, codec.EncodeInt64(callInt))
 		return ret, nil
 	}
-	r1, err := ctx.Call(ctx.ContractID().Hname(), coretypes.Hn(FuncGetFibonacci), codec.MakeDict(map[string]interface{}{
+	r1, err := ctx.Call(ctx.Contract(), FuncGetFibonacci.Hname(), codec.MakeDict(map[string]interface{}{
 		ParamIntParamValue: callInt - 1,
 	}))
 	a.RequireNoError(err)
 	result := kvdecoder.New(r1, ctx.Log())
 	r1val := result.MustGetInt64(ParamIntParamValue)
 
-	r2, err := ctx.Call(ctx.ContractID().Hname(), coretypes.Hn(FuncGetFibonacci), codec.MakeDict(map[string]interface{}{
+	r2, err := ctx.Call(ctx.Contract(), FuncGetFibonacci.Hname(), codec.MakeDict(map[string]interface{}{
 		ParamIntParamValue: callInt - 2,
 	}))
 	a.RequireNoError(err)
@@ -88,8 +88,8 @@ func getFibonacci(ctx coretypes.SandboxView) (dict.Dict, error) {
 
 // ParamIntParamName
 // ParamIntParamValue
-func setInt(ctx coretypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Infof(FuncSetInt)
+func setInt(ctx iscp.Sandbox) (dict.Dict, error) {
+	ctx.Log().Infof(FuncSetInt.Name)
 	paramName, exists, err := codec.DecodeString(ctx.Params().MustGet(ParamIntParamName))
 	if err != nil {
 		ctx.Log().Panicf("%v", err)
@@ -109,8 +109,8 @@ func setInt(ctx coretypes.Sandbox) (dict.Dict, error) {
 }
 
 // ParamIntParamName
-func getInt(ctx coretypes.SandboxView) (dict.Dict, error) {
-	ctx.Log().Infof(FuncGetInt)
+func getInt(ctx iscp.SandboxView) (dict.Dict, error) {
+	ctx.Log().Infof(FuncGetInt.Name)
 	paramName, exists, err := codec.DecodeString(ctx.Params().MustGet(ParamIntParamName))
 	if err != nil {
 		ctx.Log().Panicf("%v", err)

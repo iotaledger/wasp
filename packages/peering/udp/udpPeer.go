@@ -10,11 +10,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
+	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
-	"go.dedis.ch/kyber/v3"
 )
 
 const (
@@ -27,13 +27,14 @@ const (
 
 type peer struct {
 	remoteNetID   string
-	remotePubKey  kyber.Point
+	remotePubKey  *ed25519.PublicKey
 	remoteUDPAddr *net.UDPAddr
 	waitReady     *util.WaitChan
 	accessLock    *sync.RWMutex
 	lastMsgSent   time.Time
 	lastMsgRecv   time.Time
 	numUsers      int
+	trusted       bool
 	msgChopper    *chopper.Chopper
 	net           *NetImpl
 	log           *logger.Logger
@@ -45,20 +46,13 @@ func newPeerOnUserRequest(remoteNetID string, n *NetImpl) (*peer, error) {
 	if remoteUDPAddr, err = net.ResolveUDPAddr("udp", remoteNetID); err != nil {
 		return nil, err
 	}
-	var p *peer
-	if p, err = newPeer(remoteNetID, remoteUDPAddr, n); err != nil {
-		return nil, err
-	}
+	p := newPeer(remoteNetID, remoteUDPAddr, n)
 	p.usePeer()
 	return p, nil
 }
 
 func newPeerFromHandshake(handshake *handshakeMsg, remoteUDPAddr *net.UDPAddr, n *NetImpl) (*peer, error) {
-	var err error
-	var p *peer
-	if p, err = newPeer(handshake.netID, remoteUDPAddr, n); err != nil {
-		return nil, err
-	}
+	p := newPeer(handshake.netID, remoteUDPAddr, n)
 	if oldUDPAddrStr, newUDPAddrStr := p.handleHandshake(handshake, remoteUDPAddr); oldUDPAddrStr != newUDPAddrStr {
 		return nil, errors.New("inconsistent_udp_addr_on_create")
 	}
@@ -66,23 +60,24 @@ func newPeerFromHandshake(handshake *handshakeMsg, remoteUDPAddr *net.UDPAddr, n
 }
 
 // That's internal, called from other constructors.
-func newPeer(remoteNetID string, remoteUDPAddr *net.UDPAddr, n *NetImpl) (*peer, error) {
-	var log = n.log.Named("peer:" + remoteNetID)
+func newPeer(remoteNetID string, remoteUDPAddr *net.UDPAddr, n *NetImpl) *peer {
+	log := n.log.Named("peer:" + remoteNetID)
 	p := &peer{
 		remoteNetID:   remoteNetID,
-		remotePubKey:  nil, // Will be retrieved on handshake.
+		remotePubKey:  nil, // Will be set on the handshake.
 		remoteUDPAddr: remoteUDPAddr,
 		waitReady:     util.NewWaitChan(),
 		accessLock:    &sync.RWMutex{},
 		lastMsgSent:   time.Time{},
 		lastMsgRecv:   time.Time{},
 		numUsers:      0,
+		trusted:       true,
 		msgChopper:    chopper.NewChopper(),
 		net:           n,
 		log:           log,
 	}
 	p.sendHandshake(true)
-	return p, nil
+	return p
 }
 
 func (p *peer) usePeer() {
@@ -101,17 +96,17 @@ func (p *peer) handleHandshake(handshake *handshakeMsg, remoteUDPAddr *net.UDPAd
 	}
 	if p.remotePubKey == nil {
 		// That's the first received handshake, pairing established.
-		p.remotePubKey = handshake.pubKey
+		p.remotePubKey = &handshake.pubKey
 		p.waitReady.Done()
-		p.log.Infof("Paired %v with %v", p.net.NetID(), p.remoteNetID)
-	} else if p.remotePubKey != nil && p.remotePubKey.Equal(handshake.pubKey) {
+		p.log.Infof("Node %v is now paired with %v", p.net.NetID(), p.remoteNetID)
+	} else if p.remotePubKey != nil && *p.remotePubKey == handshake.pubKey {
 		// It's just a ping.
 	} else {
 		// New PublicKey is used by the peer!
-		if !p.remotePubKey.Equal(handshake.pubKey) {
+		if *p.remotePubKey != handshake.pubKey {
 			p.log.Warnf("Remote PubKey has changed, old=%v, new=%v", p.remotePubKey, handshake.pubKey)
 		}
-		p.remotePubKey = handshake.pubKey
+		p.remotePubKey = &handshake.pubKey
 	}
 	p.lastMsgRecv = time.Now()
 	p.accessLock.Unlock()
@@ -126,11 +121,11 @@ func (p *peer) sendHandshake(respond bool) {
 	var err error
 	handshake := handshakeMsg{
 		netID:   p.net.NetID(),
-		pubKey:  p.net.PubKey(),
+		pubKey:  *p.net.PubKey(),
 		respond: respond,
 	}
 	var msgDataBin []byte
-	if msgDataBin, err = handshake.bytes(p.net.nodeKeyPair.Private, p.net.suite); err != nil {
+	if msgDataBin, err = handshake.bytes(p.net.nodeKeyPair.PrivateKey); err != nil {
 		p.log.Errorf("Unable to encode outgoing handshake msg, reason=%v", err)
 	}
 	p.SendMsg(&peering.PeerMessage{
@@ -142,8 +137,9 @@ func (p *peer) sendHandshake(respond bool) {
 
 func (p *peer) noteReceived() {
 	p.accessLock.Lock()
+	defer p.accessLock.Unlock()
+
 	p.lastMsgRecv = time.Now()
-	p.accessLock.Unlock()
 }
 
 // Send pings, if needed. Other periodic actions can be added here.
@@ -168,7 +164,7 @@ func (p *peer) NetID() string {
 
 // PubKey implements peering.PeerSender and peering.PeerStatusProvider interfaces for the remote peers.
 // This function tries to await for the public key to be resolves for some time, but with no guarantees.
-func (p *peer) PubKey() kyber.Point {
+func (p *peer) PubKey() *ed25519.PublicKey {
 	_ = p.waitReady.WaitTimeout(sendMsgSyncTimeout)
 	p.accessLock.RLock()
 	defer p.accessLock.RUnlock()
@@ -179,13 +175,21 @@ func (p *peer) PubKey() kyber.Point {
 func (p *peer) SendMsg(msg *peering.PeerMessage) {
 	var err error
 	var msgChunks [][]byte
+	//
+	p.accessLock.RLock()
+	if !p.trusted {
+		p.log.Infof("Dropping outgoing message, because it was meant to send to a distrusted peer.")
+		p.accessLock.RUnlock()
+	}
+	p.accessLock.RUnlock()
+	//
 	if msg.IsUserMessage() {
 		if !p.waitReady.WaitTimeout(sendMsgSyncTimeout) {
 			// Just log a warning and try to send a message anyway.
-			p.log.Warn("Sending a message despite the peering is not established yet, MsgType=%v", msg.MsgType)
+			p.log.Warnf("Sending a message despite the peering %v -> %v is not established yet, MsgType=%v", p.net.myNetID, p.NetID(), msg.MsgType)
 		}
 	}
-	if msgChunks, err = msg.ChunkedBytes(maxChunkSize, p.msgChopper); err != nil {
+	if msgChunks, err = msg.ChunkedBytes(maxChunkSize, p.msgChopper, p.net.nodeKeyPair); err != nil {
 		p.log.Warnf("Dropping outgoing message, unable to encode, reason=%v", err)
 		return
 	}
@@ -243,4 +247,16 @@ func (p *peer) Close() {
 	p.accessLock.Lock()
 	defer p.accessLock.Unlock()
 	p.numUsers--
+}
+
+func (p *peer) trust(trusted bool) {
+	p.accessLock.Lock()
+	defer p.accessLock.Unlock()
+	p.trusted = trusted
+}
+
+func (p *peer) isTrusted() bool {
+	p.accessLock.RLock()
+	defer p.accessLock.RUnlock()
+	return p.trusted
 }

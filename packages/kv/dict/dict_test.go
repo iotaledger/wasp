@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -94,6 +97,32 @@ func TestDetereminism(t *testing.T) {
 	t.Logf("\n%s", vars2.String())
 }
 
+func TestIterateSorted(t *testing.T) {
+	d := New()
+	d.Set("x", []byte("x"))
+	d.Set("k5", []byte("v5"))
+	d.Set("k1", []byte("v1"))
+	d.Set("k3", []byte("v3"))
+	d.Set("k2", []byte("v2"))
+	d.Set("k4", []byte("v4"))
+
+	var seen []kv.Key
+	err := d.IterateSorted("", func(k kv.Key, v []byte) bool {
+		seen = append(seen, k)
+		return true
+	})
+	require.NoError(t, err)
+	require.Equal(t, []kv.Key{"k1", "k2", "k3", "k4", "k5", "x"}, seen)
+
+	seen = nil
+	err = d.IterateSorted("k", func(k kv.Key, v []byte) bool {
+		seen = append(seen, k)
+		return true
+	})
+	require.NoError(t, err)
+	require.Equal(t, []kv.Key{"k1", "k2", "k3", "k4", "k5"}, seen)
+}
+
 func TestMarshaling(t *testing.T) {
 	vars1 := New()
 	vars1.Set("k1", []byte("kuku"))
@@ -127,4 +156,17 @@ func TestJSONMarshaling(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.EqualValues(t, util.GetHashValue(vars1), util.GetHashValue(vars2))
+}
+
+func TestBytes2(t *testing.T) {
+	d := New()
+	d.Set("k1", []byte{})
+	data, err := util.Bytes(d)
+	require.NoError(t, err)
+
+	dBack := New()
+	rdr := bytes.NewReader(data)
+	err = dBack.Read(rdr)
+	require.NoError(t, err)
+	require.True(t, d.Equals(dBack))
 }

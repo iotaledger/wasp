@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/packages/vm/examples/fairauction"
 	"github.com/iotaledger/wasp/tools/wasp-cli/sc/fa"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
@@ -21,7 +20,7 @@ func statusCmd(args []string) {
 	dumpAuctions(status.Auctions)
 }
 
-func dumpAuctions(auctions map[balance.Color]*fairauction.AuctionInfo) {
+func dumpAuctions(auctions map[ledgerstate.Color]*fairauction.AuctionInfo) {
 	fmt.Printf("  Auctions:\n")
 	for color, auction := range auctions {
 		fmt.Printf("  - color: %s\n", color)

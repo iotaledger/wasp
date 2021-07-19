@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package admapi
 
 import (
@@ -5,6 +8,9 @@ import (
 	"strings"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
@@ -15,15 +21,17 @@ func initLogger() {
 	log = logger.NewLogger("webapi/adm")
 }
 
-func AddEndpoints(adm echoswagger.ApiGroup, adminWhitelist []net.IP) {
+func AddEndpoints(adm echoswagger.ApiGroup, adminWhitelist []net.IP, network peering.NetworkProvider, tnm peering.TrustedNetworkManager, registryProvider registry.Provider, chainsProvider chains.Provider) {
 	initLogger()
 
 	adm.EchoGroup().Use(protected(adminWhitelist))
 
 	addShutdownEndpoint(adm)
 	addChainRecordEndpoints(adm)
-	addChainEndpoints(adm)
+	addCommitteeRecordEndpoints(adm)
+	addChainEndpoints(adm, registryProvider, chainsProvider)
 	addDKSharesEndpoints(adm)
+	addPeeringEndpoints(adm, network, tnm)
 }
 
 // allow only if the remote address is private or in whitelist

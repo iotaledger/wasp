@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,9 +22,8 @@ func TestPeeringNetReliable(t *testing.T) {
 		}
 		doneCh <- true
 	}()
-	var someNode = peeringNode{netID: "src"}
-	var behavior PeeringNetBehavior
-	behavior = NewPeeringNetReliable()
+	someNode := peeringNode{netID: "src"}
+	behavior := NewPeeringNetReliable()
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 10; i++ {
 		inCh <- &peeringMsg{from: &someNode}
@@ -54,9 +54,8 @@ func TestPeeringNetUnreliable(t *testing.T) {
 	}()
 	//
 	// Run the test.
-	var someNode = peeringNode{netID: "src"}
-	var behavior PeeringNetBehavior
-	behavior = NewPeeringNetUnreliable(50, 50, 50*time.Millisecond, 100*time.Millisecond, WithLevel(NewLogger(t), logger.LevelError, false))
+	someNode := peeringNode{netID: "src"}
+	behavior := NewPeeringNetUnreliable(50, 50, 50*time.Millisecond, 100*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false))
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 1000; i++ {
 		inCh <- &peeringMsg{from: &someNode}
@@ -69,11 +68,11 @@ func TestPeeringNetUnreliable(t *testing.T) {
 		require.Less(t, len(durations), 900)
 	}
 	{ // Average should be between the specified boundaries.
-		var avgDuration int64 = 0
+		var avgDuration int64 = 0 //nolint:revive
 		for _, d := range durations {
 			avgDuration += d.Milliseconds()
 		}
-		avgDuration = avgDuration / int64(len(durations))
+		avgDuration /= int64(len(durations))
 		require.Greater(t, avgDuration, int64(50))
 		require.Less(t, avgDuration, int64(100))
 	}
@@ -103,9 +102,8 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 	}()
 	//
 	// Run the test.
-	var someNode = peeringNode{netID: "src"}
-	var behavior PeeringNetBehavior
-	behavior = NewPeeringNetUnreliable(100, 0, 0*time.Microsecond, 0*time.Millisecond, WithLevel(NewLogger(t), logger.LevelError, false)) // NOTE: No drops, duplicates, delays.
+	someNode := peeringNode{netID: "src"}
+	behavior := NewPeeringNetUnreliable(100, 0, 0*time.Microsecond, 0*time.Millisecond, testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelError, false)) // NOTE: No drops, duplicates, delays.
 	behavior.AddLink(inCh, outCh, "dst")
 	for i := 0; i < 1000; i++ {
 		inCh <- &peeringMsg{from: &someNode}
@@ -117,11 +115,11 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 		require.Equal(t, 1000, len(durations))
 	}
 	{ // Average should be small enough.
-		var avgDuration int64 = 0
+		var avgDuration int64 = 0 //nolint:revive
 		for _, d := range durations {
 			avgDuration += d.Milliseconds()
 		}
-		avgDuration = avgDuration / int64(len(durations))
+		avgDuration /= int64(len(durations))
 		require.Less(t, avgDuration, int64(100))
 	}
 	//

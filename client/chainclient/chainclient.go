@@ -1,64 +1,163 @@
 package chainclient
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/coretypes/requestargs"
+	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
-	"github.com/iotaledger/wasp/client/level1"
-	"github.com/iotaledger/wasp/packages/apilib"
-	"github.com/iotaledger/wasp/packages/sctransaction"
+	"github.com/iotaledger/wasp/client/goshimmer"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
 
-// Client allows to send webapi requests to a specific chain in the node
+// Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
 type Client struct {
-	Level1Client level1.Level1Client
-	WaspClient   *client.WaspClient
-	ChainID      coretypes.ChainID
-	SigScheme    signaturescheme.SignatureScheme
+	GoshimmerClient *goshimmer.Client
+	WaspClient      *client.WaspClient
+	ChainID         iscp.ChainID
+	KeyPair         *ed25519.KeyPair
 }
 
 // New creates a new chainclient.Client
 func New(
-	level1Client level1.Level1Client,
+	goshimmerClient *goshimmer.Client,
 	waspClient *client.WaspClient,
-	chainID coretypes.ChainID,
-	sigScheme signaturescheme.SignatureScheme,
+	chainID iscp.ChainID,
+	keyPair *ed25519.KeyPair,
 ) *Client {
 	return &Client{
-		Level1Client: level1Client,
-		WaspClient:   waspClient,
-		ChainID:      chainID,
-		SigScheme:    sigScheme,
+		GoshimmerClient: goshimmerClient,
+		WaspClient:      waspClient,
+		ChainID:         chainID,
+		KeyPair:         keyPair,
 	}
 }
 
 type PostRequestParams struct {
-	Transfer coretypes.ColoredBalances
+	Transfer *ledgerstate.ColoredBalances
 	Args     requestargs.RequestArgs
+	Nonce    uint64
 }
 
-// PostRequest sends a request transaction to the chain
-func (c *Client) PostRequest(
-	contractHname coretypes.Hname,
-	entryPoint coretypes.Hname,
+// Post1Request sends an on-ledger transaction with one request on it to the chain
+func (c *Client) Post1Request(
+	contractHname iscp.Hname,
+	entryPoint iscp.Hname,
 	params ...PostRequestParams,
-) (*sctransaction.Transaction, error) {
+) (*ledgerstate.Transaction, error) {
 	par := PostRequestParams{}
 	if len(params) > 0 {
 		par = params[0]
 	}
-
-	return apilib.CreateRequestTransaction(apilib.CreateRequestTransactionParams{
-		Level1Client:    c.Level1Client,
-		SenderSigScheme: c.SigScheme,
-		RequestSectionParams: []apilib.RequestSectionParams{{
-			TargetContractID: coretypes.NewContractID(c.ChainID, contractHname),
-			EntryPointCode:   entryPoint,
-			Transfer:         par.Transfer,
-			Args:             par.Args,
+	return c.GoshimmerClient.PostRequestTransaction(transaction.NewRequestTransactionParams{
+		SenderKeyPair: c.KeyPair,
+		Requests: []transaction.RequestParams{{
+			ChainID:    c.ChainID,
+			Contract:   contractHname,
+			EntryPoint: entryPoint,
+			Transfer:   par.Transfer,
+			Args:       par.Args,
 		}},
-		Post: true,
 	})
+}
+
+// PostOffLedgerRequest sends an off-ledger tx via the wasp node web api
+func (c *Client) PostOffLedgerRequest(
+	contractHname iscp.Hname,
+	entrypoint iscp.Hname,
+	params ...PostRequestParams,
+) (*request.RequestOffLedger, error) {
+	par := PostRequestParams{}
+	if len(params) > 0 {
+		par = params[0]
+	}
+	if par.Nonce == 0 {
+		par.Nonce = uint64(time.Now().UnixNano())
+	}
+	offledgerReq := request.NewRequestOffLedger(contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
+	offledgerReq.WithNonce(par.Nonce)
+	offledgerReq.Sign(c.KeyPair)
+	return offledgerReq, c.WaspClient.PostOffLedgerRequest(&c.ChainID, offledgerReq)
+}
+
+// NewPostRequestParams simplifies encoding of request parameters
+func NewPostRequestParams(p ...interface{}) *PostRequestParams {
+	return &PostRequestParams{
+		Args: requestargs.New(nil).AddEncodeSimpleMany(parseParams(p)),
+	}
+}
+
+func (par *PostRequestParams) WithTransfer(transfer *ledgerstate.ColoredBalances) *PostRequestParams {
+	par.Transfer = transfer
+	return par
+}
+
+func (par *PostRequestParams) WithTransferEncoded(colval ...interface{}) *PostRequestParams {
+	ret := make(map[ledgerstate.Color]uint64)
+	if len(colval) == 0 {
+		return par
+	}
+	if len(colval)%2 != 0 {
+		panic("WithTransferEncode: len(params) % 2 != 0")
+	}
+	for i := 0; i < len(colval)/2; i++ {
+		key, ok := colval[2*i].(ledgerstate.Color)
+		if !ok {
+			panic("toMap: ledgerstate.Color expected")
+		}
+		ret[key] = encodeIntToUint64(colval[2*i+1])
+	}
+	par.Transfer = ledgerstate.NewColoredBalances(ret)
+	return par
+}
+
+func (par *PostRequestParams) WithIotas(i uint64) *PostRequestParams {
+	return par.WithTransferEncoded(ledgerstate.ColorIOTA, i)
+}
+
+func encodeIntToUint64(i interface{}) uint64 {
+	switch i := i.(type) {
+	case int:
+	case byte:
+	case int8:
+	case int16:
+	case uint16:
+	case int32:
+	case uint32:
+	case int64:
+	case uint64:
+		return i
+	}
+	panic("integer type expected")
+}
+
+func parseParams(params []interface{}) dict.Dict {
+	if len(params) == 1 {
+		return params[0].(dict.Dict)
+	}
+	return codec.MakeDict(toMap(params))
+}
+
+// makes map without hashing
+func toMap(params []interface{}) map[string]interface{} {
+	par := make(map[string]interface{})
+	if len(params) == 0 {
+		return par
+	}
+	if len(params)%2 != 0 {
+		panic("toMap: len(params) % 2 != 0")
+	}
+	for i := 0; i < len(params)/2; i++ {
+		key, ok := params[2*i].(string)
+		if !ok {
+			panic("toMap: string expected")
+		}
+		par[key] = params[2*i+1]
+	}
+	return par
 }

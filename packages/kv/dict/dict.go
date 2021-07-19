@@ -1,6 +1,7 @@
 package dict
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -40,6 +41,14 @@ func (d Dict) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 	kv.MustIterateKeys(d, prefix, f)
 }
 
+func (d Dict) MustIterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	kv.MustIterateSorted(d, prefix, f)
+}
+
+func (d Dict) MustIterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
+	kv.MustIterateKeysSorted(d, prefix, f)
+}
+
 // New creates new
 func New() Dict {
 	return make(Dict)
@@ -55,11 +64,6 @@ func (d Dict) Clone() Dict {
 	return clone
 }
 
-// FromGoMap casts map to Dict
-func FromGoMap(d map[kv.Key][]byte) Dict {
-	return d
-}
-
 // FromKVStore convert (copy) any KVStore to dict
 func FromKVStore(s kv.KVStore) (Dict, error) {
 	d := make(Dict)
@@ -70,20 +74,9 @@ func FromKVStore(s kv.KVStore) (Dict, error) {
 	return d, err
 }
 
-func (d Dict) sortedKeys() []kv.Key {
-	keys := make([]kv.Key, 0)
-	for k := range d {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i] < keys[j]
-	})
-	return keys
-}
-
 func (d Dict) String() string {
 	ret := "         Dict:\n"
-	for _, key := range d.sortedKeys() {
+	for _, key := range d.KeysSorted() {
 		val := d[key]
 		if len(val) > 80 {
 			val = val[:80]
@@ -116,18 +109,6 @@ func (d Dict) ForEach(fun func(key kv.Key, value []byte) bool) {
 	}
 }
 
-// ForEachDeterministic iterates in the order of alphabetically sorted keys
-func (d Dict) ForEachDeterministic(fun func(key kv.Key, value []byte) bool) {
-	if d == nil {
-		return
-	}
-	for _, k := range d.sortedKeys() {
-		if !fun(k, d[k]) {
-			return // abort when callback returns false
-		}
-	}
-}
-
 // IsEmpty returns of it has no records
 func (d Dict) IsEmpty() bool {
 	return len(d) == 0
@@ -154,20 +135,32 @@ func (d Dict) Has(key kv.Key) (bool, error) {
 
 // Iterate over keys with prefix
 func (d Dict) Iterate(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
-	for k, v := range d {
+	return d.IterateKeys(prefix, func(key kv.Key) bool {
+		return f(key, d[key])
+	})
+}
+
+// IterateKeys over keys with prefix
+func (d Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
+	for k := range d {
 		if !k.HasPrefix(prefix) {
 			continue
 		}
-		if !f(k, v) {
+		if !f(k) {
 			break
 		}
 	}
 	return nil
 }
 
-// IterateKeys over keys with prefix
-func (d Dict) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
-	for k := range d {
+func (d Dict) IterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+	return d.IterateKeysSorted(prefix, func(key kv.Key) bool {
+		return f(key, d[key])
+	})
+}
+
+func (d Dict) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
+	for _, k := range d.KeysSorted() {
 		if !k.HasPrefix(prefix) {
 			continue
 		}
@@ -184,7 +177,7 @@ func (d Dict) Get(key kv.Key) ([]byte, error) {
 }
 
 func (d Dict) Write(w io.Writer) error {
-	keys := d.sortedKeys()
+	keys := d.KeysSorted()
 	if err := util.WriteUint64(w, uint64(len(keys))); err != nil {
 		return err
 	}
@@ -256,6 +249,22 @@ func (d Dict) Hash() hashing.HashValue {
 	return hashing.HashData(data...)
 }
 
+func (d Dict) Equals(d1 Dict) bool {
+	if len(d) != len(d1) {
+		return false
+	}
+	for k, v := range d {
+		v1, ok := d1[k]
+		if !ok {
+			return false
+		}
+		if !bytes.Equal(v, v1) {
+			return false
+		}
+	}
+	return true
+}
+
 // JSONDict is the JSON-compatible representation of a Dict
 type JSONDict struct {
 	Items []Item
@@ -270,7 +279,7 @@ type Item struct {
 // JSONDict returns a JSON-compatible representation of the Dict
 func (d Dict) JSONDict() JSONDict {
 	j := JSONDict{Items: make([]Item, len(d))}
-	for i, k := range d.sortedKeys() {
+	for i, k := range d.KeysSorted() {
 		j.Items[i].Key = base64.StdEncoding.EncodeToString([]byte(k))
 		j.Items[i].Value = base64.StdEncoding.EncodeToString(d[k])
 	}

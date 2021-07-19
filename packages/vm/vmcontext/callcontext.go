@@ -3,19 +3,31 @@ package vmcontext
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) error {
+func (vmctx *VMContext) pushCallContextWithTransfer(contract iscp.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) error {
 	if transfer != nil {
-		agentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), contract))
+		targetAccount := iscp.NewAgentID(vmctx.ChainID().AsAddress(), contract)
+		targetAccount = vmctx.adjustAccount(targetAccount)
 		if len(vmctx.callStack) == 0 {
-			vmctx.creditToAccount(agentID, transfer)
+			// was this an off-ledger request?
+			if _, ok := vmctx.req.(*request.RequestOffLedger); ok {
+				sender := vmctx.req.SenderAccount()
+				if !vmctx.moveBetweenAccounts(sender, targetAccount, transfer) {
+					return fmt.Errorf("pushCallContextWithTransfer: off-ledger transfer failed: not enough funds")
+				}
+			} else {
+				vmctx.creditToAccount(targetAccount, transfer)
+			}
 		} else {
-			fromAgentID := coretypes.NewAgentIDFromContractID(coretypes.NewContractID(vmctx.ChainID(), vmctx.CurrentContractHname()))
-			if !vmctx.moveBetweenAccounts(fromAgentID, agentID, transfer) {
-				return fmt.Errorf("pushCallContextWithTransfer: transfer failed")
+			fromAgentID := iscp.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
+			fromAgentID = vmctx.adjustAccount(fromAgentID)
+			if !vmctx.moveBetweenAccounts(fromAgentID, targetAccount, transfer) {
+				return fmt.Errorf("pushCallContextWithTransfer: transfer failed: not enough funds")
 			}
 		}
 	}
@@ -25,26 +37,29 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract coretypes.Hname, pa
 
 const traceStack = false
 
-func (vmctx *VMContext) pushCallContext(contract coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) {
+func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) {
 	if traceStack {
 		vmctx.log.Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
 	}
-	var caller coretypes.AgentID
+	var caller *iscp.AgentID
 	isRequestContext := len(vmctx.callStack) == 0
 	if isRequestContext {
 		// request context
-		caller = vmctx.reqRef.SenderAgentID()
+		caller = vmctx.req.SenderAccount()
 	} else {
-		caller = coretypes.NewAgentIDFromContractID(vmctx.CurrentContractID())
+		caller = vmctx.MyAgentID()
 	}
 	if traceStack {
 		vmctx.log.Debugf("+++++++++++ PUSH %d, stack depth = %d caller = %s", contract, len(vmctx.callStack), caller.String())
 	}
+	if transfer != nil {
+		transfer = transfer.Clone()
+	}
 	vmctx.callStack = append(vmctx.callStack, &callContext{
 		isRequestContext: isRequestContext,
-		caller:           caller,
+		caller:           *caller.Clone(),
 		contract:         contract,
-		params:           params,
+		params:           params.Clone(),
 		transfer:         transfer,
 	})
 }

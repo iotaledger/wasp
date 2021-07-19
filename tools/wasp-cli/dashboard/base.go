@@ -96,10 +96,10 @@ const TplSCInfo = `
 		<p>Description of the instance: <code>{{trim .Status.Description}}</code></p>
 		<p>Owner address: {{template "address" .Status.OriginatorAddress}}</p>
 		<p>Minimum node reward (fee): <code>{{.Status.MinimumReward}}</code></p>
-		<p>Color: <code>{{.Config.ChainRecord.Color}}</code></p>
+		<p>Color: <code>{{.Config.Record.Color}}</code></p>
 		<p>Committee nodes:
 			<ul>
-				{{range $_, $node := .Config.ChainRecord.CommitteeNodes}}
+				{{range $_, $node := .Config.Record.CommitteeNodes}}
 				   <li><code>{{$node}}</code></li>
 				{{end}}
 			</ul>
@@ -109,7 +109,7 @@ const TplSCInfo = `
     <p>
 	  <ul>
 		<li>Index: <code>{{.Status.BlockIndex}}</code></li>
-		<li>Timestamp: <code>{{.Status.Timestamp}}</code></li>
+		<li>Timestamp: <code>{{.Status.OutputTimestamp}}</code></li>
 		<li>Anchor transaction: <code>{{.Status.StateTxId}}</code></li>
 		<li>State hash: <code>{{.Status.StateHash}}</code></li>
 		<li>Batched requests:</li>

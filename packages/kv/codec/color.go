@@ -1,17 +1,17 @@
 package codec
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 )
 
-func DecodeColor(b []byte) (balance.Color, bool, error) {
+func DecodeColor(b []byte) (ledgerstate.Color, bool, error) {
 	if b == nil {
-		return balance.Color{}, false, nil
+		return ledgerstate.Color{}, false, nil
 	}
-	ret, _, err := balance.ColorFromBytes(b)
+	ret, _, err := ledgerstate.ColorFromBytes(b)
 	return ret, err == nil, err
 }
 
-func EncodeColor(value balance.Color) []byte {
-	return value[:]
+func EncodeColor(value ledgerstate.Color) []byte {
+	return value.Bytes()
 }

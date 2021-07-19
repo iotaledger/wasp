@@ -8,6 +8,8 @@ builds:
   - id: wasp
     main: ./main.go
     binary: wasp
+    flags:
+      - -tags=builtin_static,rocksdb
     goos:
       - linux
       - windows
@@ -20,8 +22,6 @@ builds:
     binary: wasp-cli
     goos:
       - linux
-      - windows
-      - darwin
     goarch:
       - amd64
 

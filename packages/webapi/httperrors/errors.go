@@ -26,3 +26,7 @@ func Conflict(message string) *HTTPError {
 func Timeout(message string) *HTTPError {
 	return &HTTPError{Code: http.StatusRequestTimeout, Message: message}
 }
+
+func ServerError(message string) *HTTPError {
+	return &HTTPError{Code: http.StatusInternalServerError, Message: message}
+}

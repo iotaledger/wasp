@@ -1,40 +1,40 @@
 package common
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
-	Debug      = true
-	StackTrace = true
-	TraceHost  = true
+	Debug      = false
+	StackTrace = false
+	TraceHost  = false
 )
 
-var (
-	ContractAccount coretypes.AgentID
-	ContractId      coretypes.ContractID
-	CreatorWallet   signaturescheme.SignatureScheme
-)
-
-func StartChainAndDeployWasmContractByName(t *testing.T, scName string) *solo.Chain {
-	wasmhost.HostTracing = TraceHost
-	env := solo.New(t, Debug, StackTrace)
-	CreatorWallet = env.NewSignatureSchemeWithFunds()
-	chain := env.NewChain(CreatorWallet, "chain1")
+func DeployWasmContractByName(chain *solo.Chain, scName string, params ...interface{}) error {
+	// wasmproc.GoWasmVM = NewWasmTimeJavaVM()
+	// wasmproc.GoWasmVM = NewWartVM()
 	wasmFile := scName + "_bg.wasm"
 	exists, _ := util.ExistsFilePath("../pkg/" + wasmFile)
 	if exists {
 		wasmFile = "../pkg/" + wasmFile
 	}
-	err := chain.DeployWasmContract(CreatorWallet, scName, wasmFile)
+	return chain.DeployWasmContract(nil, scName, wasmFile, params...)
+}
+
+func StartChain(t *testing.T, scName string) *solo.Chain {
+	wasmhost.HostTracing = TraceHost
+	env := solo.New(t, Debug, StackTrace)
+	return env.NewChain(nil, "chain1")
+}
+
+func StartChainAndDeployWasmContractByName(t *testing.T, scName string, params ...interface{}) *solo.Chain {
+	chain := StartChain(t, scName)
+	err := DeployWasmContractByName(chain, scName, params...)
 	require.NoError(t, err)
-	ContractId = coretypes.NewContractID(chain.ChainID, coretypes.Hn(scName))
-	ContractAccount = coretypes.NewAgentIDFromContractID(ContractId)
 	return chain
 }

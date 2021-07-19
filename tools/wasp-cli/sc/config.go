@@ -8,13 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address/signaturescheme"
+	"github.com/iotaledger/wasp/packages/registry/chainrecord"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/chainclient"
 	waspapi "github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/spf13/viper"
@@ -28,8 +29,7 @@ type Config struct {
 	chainRecord *registry.ChainRecord
 }
 
-func (c *Config) MakeClient(sigScheme signaturescheme.SignatureScheme) *chainclient.Client {
-	var timeout time.Duration
+func (c *Config) MakeClient(sigScheme *ed25519.KeyPair) *chainclient.Client {
 	client := chainclient.New(
 		config.GoshimmerClient(),
 		client.NewWaspClient(config.WaspApi()),
@@ -114,7 +114,7 @@ func (c *Config) SetAddress(address string) {
 	config.SetSCAddress(c.Alias(), address)
 }
 
-func (c *Config) Address() *address.Address {
+func (c *Config) Address() ledgerstate.Address {
 	return config.GetSCAddress(c.Alias())
 }
 
@@ -122,7 +122,7 @@ func (c *Config) IsAvailable() bool {
 	return config.TrySCAddress(c.Alias()) != nil
 }
 
-func (c *Config) Deploy(sigScheme signaturescheme.SignatureScheme) error {
+func (c *Config) Deploy(sigScheme *ed25519.KeyPair) error {
 	scAddress, err := Deploy(&DeployParams{
 		Quorum:      c.Quorum(),
 		Committee:   c.Committee(),
@@ -143,17 +143,17 @@ type DeployParams struct {
 	Committee   []int
 	Description string
 	ProgramHash string
-	SigScheme   signaturescheme.SignatureScheme
+	SigScheme   *ed25519.KeyPair
 }
 
-func Deploy(params *DeployParams) (*address.Address, error) {
-	scAddress, _, err := waspapi.DeployChain(waspapi.CreateChainParams{
+func Deploy(params *DeployParams) (ledgerstate.Address, error) {
+	scAddress, _, err := waspapi.DeployChainWithDKG(waspapi.CreateChainParams{
 		Node:                  config.GoshimmerClient(),
 		CommitteeApiHosts:     config.CommitteeApi(params.Committee),
 		CommitteePeeringHosts: config.CommitteePeering(params.Committee),
 		N:                     uint16(len(params.Committee)),
 		T:                     uint16(params.Quorum),
-		OriginatorSigScheme:   params.SigScheme,
+		OriginatorKeyPair:     params.SigScheme,
 		ProgramHash:           params.progHash(),
 		Description:           params.Description,
 		Textout:               os.Stdout,
@@ -163,7 +163,7 @@ func Deploy(params *DeployParams) (*address.Address, error) {
 		return nil, err
 	}
 	err = waspapi.ActivateChain(waspapi.ActivateChainParams{
-		ChainID:           []*address.Address{scAddress},
+		ChainID:           []ledgerstate.Address{scAddress},
 		ApiHosts:          config.CommitteeApi(params.Committee),
 		PublisherHosts:    config.CommitteeNanomsg(params.Committee),
 		WaitForCompletion: config.WaitForCompletion,

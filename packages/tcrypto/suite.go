@@ -14,3 +14,7 @@ type Suite interface {
 	pairing.Suite
 	key.Suite
 }
+
+func DefaultSuite() Suite {
+	return pairing.NewSuiteBn256()
+}

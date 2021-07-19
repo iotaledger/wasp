@@ -1,155 +1,72 @@
 package registry
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/dbprovider"
-	"io"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/plugins/database"
-	"github.com/mr-tron/base58"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/marshalutil"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
-// ChainRecord is a minimum data needed to load a committee for the chain
-// it is up to the node (not smart contract) to check authorizations to create/update this record
+// ChainRecord represents chain the node is participating in
+// TODO optimize, no need for a persistent structure, simple activity tag is enough
 type ChainRecord struct {
-	ChainID        coretypes.ChainID
-	Color          balance.Color // origin tx hash
-	CommitteeNodes []string      // "host_addr:port"
-	Active         bool
+	ChainID *iscp.ChainID
+	Peers   []string
+	Active  bool
 }
 
-func dbkeyChainRecord(chainID *coretypes.ChainID) []byte {
-	return dbprovider.MakeKey(dbprovider.ObjectTypeChainRecord, chainID[:])
-}
-
-func SaveChainRecord(bd *ChainRecord) error {
-	if bd.ChainID == coretypes.NilChainID {
-		return fmt.Errorf("can be empty chain id")
-	}
-	if bd.Color == balance.ColorNew || bd.Color == balance.ColorIOTA {
-		return fmt.Errorf("can't be IOTA or New color")
-	}
-	var buf bytes.Buffer
-	if err := bd.Write(&buf); err != nil {
-		return err
-	}
-	if err := database.GetRegistryPartition().Set(dbkeyChainRecord(&bd.ChainID), buf.Bytes()); err != nil {
-		return err
-	}
-	publisher.Publish("chainrec", bd.ChainID.String(), bd.Color.String())
-	return nil
-}
-
-func GetChainRecord(chainID *coretypes.ChainID) (*ChainRecord, error) {
-	data, err := database.GetRegistryPartition().Get(dbkeyChainRecord(chainID))
-	if err == kvstore.ErrKeyNotFound {
-		return nil, nil
-	}
+func FromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainRecord, error) {
+	ret := &ChainRecord{}
+	aliasAddr, err := ledgerstate.AliasAddressFromMarshalUtil(mu)
 	if err != nil {
 		return nil, err
 	}
-	ret := new(ChainRecord)
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
+	ret.ChainID = iscp.NewChainID(aliasAddr)
+
+	ret.Active, err = mu.ReadBool()
+	if err != nil {
 		return nil, err
+	}
+	numPeers, err := mu.ReadUint16()
+	if err != nil {
+		return nil, err
+	}
+	ret.Peers = make([]string, numPeers)
+	for i := uint16(0); i < numPeers; i++ {
+		strSize, err := mu.ReadUint16()
+		if err != nil {
+			return nil, err
+		}
+		d, err := mu.ReadBytes(int(strSize))
+		if err != nil {
+			return nil, err
+		}
+		ret.Peers[i] = string(d)
 	}
 	return ret, nil
 }
 
-func UpdateChainRecord(chainID *coretypes.ChainID, f func(*ChainRecord) bool) (*ChainRecord, error) {
-	bd, err := GetChainRecord(chainID)
-	if err != nil {
-		return nil, err
-	}
-	if bd == nil {
-		return nil, fmt.Errorf("no chain record found for address %s", chainID.String())
-	}
-	if f(bd) {
-		err = SaveChainRecord(bd)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return bd, nil
+// CommitteeRecordFromBytes
+func ChainRecordFromBytes(data []byte) (*ChainRecord, error) {
+	return FromMarshalUtil(marshalutil.New(data))
 }
 
-func ActivateChainRecord(chainID *coretypes.ChainID) (*ChainRecord, error) {
-	return UpdateChainRecord(chainID, func(bd *ChainRecord) bool {
-		if bd.Active {
-			return false
-		}
-		bd.Active = true
-		return true
-	})
+func (rec *ChainRecord) Bytes() []byte {
+	mu := marshalutil.New().WriteBytes(rec.ChainID.Bytes()).
+		WriteBool(rec.Active).
+		WriteUint16(uint16(len(rec.Peers)))
+	for _, s := range rec.Peers {
+		b := []byte(s)
+		mu.WriteUint16(uint16(len(b))).
+			WriteBytes(b)
+	}
+	return mu.Bytes()
 }
 
-func DeactivateChainRecord(chainID *coretypes.ChainID) (*ChainRecord, error) {
-	return UpdateChainRecord(chainID, func(bd *ChainRecord) bool {
-		if !bd.Active {
-			return false
-		}
-		bd.Active = false
-		return true
-	})
-}
-
-func GetChainRecords() ([]*ChainRecord, error) {
-	db := database.GetRegistryPartition()
-	ret := make([]*ChainRecord, 0)
-
-	err := db.Iterate([]byte{dbprovider.ObjectTypeChainRecord}, func(key kvstore.Key, value kvstore.Value) bool {
-		bd := new(ChainRecord)
-		if err := bd.Read(bytes.NewReader(value)); err == nil {
-			ret = append(ret, bd)
-		} else {
-			log.Warnf("corrupted chain record with key %s", base58.Encode(key))
-		}
-		return true
-	})
-	return ret, err
-}
-
-func (bd *ChainRecord) Write(w io.Writer) error {
-	if err := bd.ChainID.Write(w); err != nil {
-		return err
-	}
-	if _, err := w.Write(bd.Color[:]); err != nil {
-		return err
-	}
-	if err := util.WriteStrings16(w, bd.CommitteeNodes); err != nil {
-		return err
-	}
-	if err := util.WriteBoolByte(w, bd.Active); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (bd *ChainRecord) Read(r io.Reader) error {
-	var err error
-	if err = bd.ChainID.Read(r); err != nil {
-		return err
-	}
-	if err = util.ReadColor(r, &bd.Color); err != nil {
-		return err
-	}
-	if bd.CommitteeNodes, err = util.ReadStrings16(r); err != nil {
-		return err
-	}
-	if err = util.ReadBoolByte(r, &bd.Active); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (bd *ChainRecord) String() string {
-	ret := "      Target: " + bd.ChainID.String() + "\n"
-	ret += "      Color: " + bd.Color.String() + "\n"
-	ret += fmt.Sprintf("      Committee nodes: %+v\n", bd.CommitteeNodes)
+func (rec *ChainRecord) String() string {
+	ret := "ChainID: " + rec.ChainID.String() + "\n"
+	ret += fmt.Sprintf("      Peers:  %+v\n", rec.Peers)
+	ret += fmt.Sprintf("      Active: %v\n", rec.Active)
 	return ret
 }
