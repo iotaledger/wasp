@@ -200,7 +200,7 @@ func RetryOnStateInvalidated(fun func() error, retryDelay time.Duration, timeout
 				time.Sleep(retryDelay)
 				return RetryOnStateInvalidated(fun, retryDelay, timeout)
 			}
-			return fmt.Errorf("Retrying timeouted. Last error: %w", err)
+			return fmt.Errorf("Retrying timed out. Last error: %w", err)
 		}
 	}
 	return err
