@@ -2,13 +2,16 @@ package sbtestsc
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
+
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
+func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	if p, err := ctx.Params().Get(ParamFail); err == nil && p != nil {
 		return nil, fmt.Errorf("failing on purpose")
 	}
@@ -16,7 +19,7 @@ func initialize(ctx coretypes.Sandbox) (dict.Dict, error) {
 }
 
 // testEventLogGenericData is called several times in log_test.go
-func testEventLogGenericData(ctx coretypes.Sandbox) (dict.Dict, error) {
+func testEventLogGenericData(ctx iscp.Sandbox) (dict.Dict, error) {
 	params := ctx.Params()
 	inc, ok, err := codec.DecodeInt64(params.MustGet(VarCounter))
 	if err != nil {
@@ -29,43 +32,29 @@ func testEventLogGenericData(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func testEventLogEventData(ctx coretypes.Sandbox) (dict.Dict, error) {
+func testEventLogEventData(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Event("[Event] - Testing Event...")
 	return nil, nil
 }
 
-func testChainOwnerIDView(ctx coretypes.SandboxView) (dict.Dict, error) {
+func testChainOwnerIDView(ctx iscp.SandboxView) (dict.Dict, error) {
 	cOwnerID := ctx.ChainOwnerID()
 	ret := dict.New()
-	ret.Set(ParamChainOwnerID, cOwnerID[:])
+	ret.Set(ParamChainOwnerID, cOwnerID.Bytes())
 
 	return ret, nil
 }
 
-func testChainOwnerIDFull(ctx coretypes.Sandbox) (dict.Dict, error) {
+func testChainOwnerIDFull(ctx iscp.Sandbox) (dict.Dict, error) {
 	cOwnerID := ctx.ChainOwnerID()
 	ret := dict.New()
-	ret.Set(ParamChainOwnerID, cOwnerID[:])
+	ret.Set(ParamChainOwnerID, cOwnerID.Bytes())
 
 	return ret, nil
 }
 
-func testContractIDView(ctx coretypes.SandboxView) (dict.Dict, error) {
-	cID := ctx.ContractID()
-	ret := dict.New()
-	ret.Set(VarContractID, cID[:])
-	return ret, nil
-}
-
-func testContractIDFull(ctx coretypes.Sandbox) (dict.Dict, error) {
-	cID := ctx.ContractID()
-	ret := dict.New()
-	ret.Set(VarContractID, cID[:])
-	return ret, nil
-}
-
-func testSandboxCall(ctx coretypes.SandboxView) (dict.Dict, error) {
-	ret, err := ctx.Call(root.Interface.Hname(), coretypes.Hn(root.FuncGetChainInfo), nil)
+func testSandboxCall(ctx iscp.SandboxView) (dict.Dict, error) {
+	ret, err := ctx.Call(root.Contract.Hname(), root.FuncGetChainInfo.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -76,9 +65,9 @@ func testSandboxCall(ctx coretypes.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func testEventLogDeploy(ctx coretypes.Sandbox) (dict.Dict, error) {
-	//Deploy the same contract with another name
-	err := ctx.DeployContract(Interface.ProgramHash,
+func testEventLogDeploy(ctx iscp.Sandbox) (dict.Dict, error) {
+	// Deploy the same contract with another name
+	err := ctx.DeployContract(Contract.ProgramHash,
 		VarContractNameDeployed, "test contract deploy log", nil)
 	if err != nil {
 		return nil, err
@@ -86,38 +75,38 @@ func testEventLogDeploy(ctx coretypes.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-func testPanicFullEP(ctx coretypes.Sandbox) (dict.Dict, error) {
+func testPanicFullEP(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Panicf(MsgFullPanic)
 	return nil, nil
 }
 
-func testPanicViewEP(ctx coretypes.SandboxView) (dict.Dict, error) {
+func testPanicViewEP(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Panicf(MsgViewPanic)
 	return nil, nil
 }
 
-func testJustView(ctx coretypes.SandboxView) (dict.Dict, error) {
+func testJustView(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Infof("calling empty view entry point")
 	return nil, nil
 }
 
-func testCallPanicFullEP(ctx coretypes.Sandbox) (dict.Dict, error) {
+func testCallPanicFullEP(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicFullEP)
-	return ctx.Call(Interface.Hname(), coretypes.Hn(FuncPanicFullEP), nil, nil)
+	return ctx.Call(Contract.Hname(), FuncPanicFullEP.Hname(), nil, nil)
 }
 
-func testCallPanicViewEPFromFull(ctx coretypes.Sandbox) (dict.Dict, error) {
+func testCallPanicViewEPFromFull(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicViewEP)
-	return ctx.Call(Interface.Hname(), coretypes.Hn(FuncPanicViewEP), nil, nil)
+	return ctx.Call(Contract.Hname(), FuncPanicViewEP.Hname(), nil, nil)
 }
 
-func testCallPanicViewEPFromView(ctx coretypes.SandboxView) (dict.Dict, error) {
+func testCallPanicViewEPFromView(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Infof("will be calling entry point '%s' from view EP", FuncPanicViewEP)
-	return ctx.Call(Interface.Hname(), coretypes.Hn(FuncPanicViewEP), nil)
+	return ctx.Call(Contract.Hname(), FuncPanicViewEP.Hname(), nil)
 }
 
-func doNothing(ctx coretypes.Sandbox) (dict.Dict, error) {
-	if ctx.IncomingTransfer().Len() == 0 {
+func doNothing(ctx iscp.Sandbox) (dict.Dict, error) {
+	if ctx.IncomingTransfer() == nil || ctx.IncomingTransfer().Size() == 0 {
 		ctx.Log().Infof(MsgDoNothing)
 	} else {
 		ctx.Log().Infof(MsgDoNothing+" with transfer\n%s", ctx.IncomingTransfer().String())
@@ -127,19 +116,16 @@ func doNothing(ctx coretypes.Sandbox) (dict.Dict, error) {
 
 // sendToAddress send the whole account to ParamAddress if invoked by the creator
 // Panics if wrong parameter or unauthorized access
-func sendToAddress(ctx coretypes.Sandbox) (dict.Dict, error) {
-	ctx.Log().Infof(FuncSendToAddress)
-	if ctx.Caller() != ctx.ContractCreator() {
-		ctx.Log().Panicf(MsgPanicUnauthorized)
-	}
-	targetAddress, ok, err := codec.DecodeAddress(ctx.Params().MustGet(ParamAddress))
-	if err != nil || !ok {
-		ctx.Log().Panicf("wrong parameter '%s'", ParamAddress)
-	}
+func sendToAddress(ctx iscp.Sandbox) (dict.Dict, error) {
+	ctx.Log().Infof(FuncSendToAddress.Name)
+	a := assert.NewAssert(ctx.Log())
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	a.Require(ctx.Caller().Equals(ctx.ContractCreator()), MsgPanicUnauthorized)
+	targetAddress := par.MustGetAddress(ParamAddress)
 	myTokens := ctx.Balances()
-	succ := ctx.TransferToAddress(targetAddress, myTokens)
-	if !succ {
-		ctx.Log().Panicf("failed send to %s: tokens:\n%s", targetAddress, myTokens.String())
-	}
+	a.Require(ctx.Send(targetAddress, myTokens, nil),
+		fmt.Sprintf("failed send to %s: tokens:\n%s", targetAddress, myTokens.String()))
+
+	ctx.Log().Infof("sent to %s: tokens:\n%s", targetAddress.Base58(), myTokens.String())
 	return nil, nil
 }

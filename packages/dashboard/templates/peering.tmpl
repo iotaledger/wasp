@@ -1,0 +1,50 @@
+{{define "title"}}Peering{{end}}
+
+{{define "body"}}
+<div class="card fluid">
+	<h2 class="section">Peering</h2>
+	<dl>
+		<dt>Node network ID</dt><dd><tt>{{.MyNetworkID}}</tt></dd>
+	</dl>
+</div>
+<div class="card fluid">
+	<h3 class="section">Peers</h3>
+	<table>
+		<thead>
+			<tr>
+				<th>NetID</th>
+				<th>Type</th>
+				<th>Status</th>
+				<th>#Users</th>
+			</tr>
+		</thead>
+		<tbody>
+		{{range $_, $ps := .NetworkProvider.PeerStatus}}
+			<tr>
+				<td data-label="NetID"><tt>{{$ps.NetID}}</tt></td>
+				<td data-label="Type">{{if $ps.IsInbound}}inbound{{else}}outbound{{end}}</td>
+				<td data-label="Status">{{if $ps.IsAlive}}up{{else}}down{{end}}</td>
+				<td data-label="#Users">{{$ps.NumUsers}}</td>
+			</tr>
+		{{end}}
+		</tbody>
+	</table>
+	<h3 class="section">Trusted</h3>
+	<table>
+		<thead>
+			<tr>
+				<th>PublicKey</th>
+				<th>NetID</th>
+			</tr>
+		</thead>
+		<tbody>
+		{{range $_, $t := .TrustedNetworkManager.TrustedPeers}}
+			<tr>
+				<td data-label="PublicKey"><tt>{{$t.PubKey.String}}</tt></td>
+				<td data-label="NetID"><tt>{{$t.NetID}}</tt></td>
+			</tr>
+		{{end}}
+		</tbody>
+	</table>
+</div>
+{{end}}

@@ -1,30 +1,34 @@
 package dashboard
 
 import (
+	_ "embed"
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
-	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 	"github.com/mr-tron/base58"
 )
 
-func initChainBlob(e *echo.Echo, r renderer) {
-	route := e.GET("/chain/:chainid/blob/:hash", handleChainBlob)
-	route.Name = "chainBlob"
-	r[route.Path] = makeTemplate(e, tplChainBlob, tplWs)
+//go:embed templates/chainblob.tmpl
+var tplChainBlob string
 
-	route = e.GET("/chain/:chainid/blob/:hash/raw/:field", handleChainBlobDownload)
+func (d *Dashboard) initChainBlob(e *echo.Echo, r renderer) {
+	route := e.GET("/chain/:chainid/blob/:hash", d.handleChainBlob)
+	route.Name = "chainBlob"
+	r[route.Path] = d.makeTemplate(e, tplChainBlob, tplWs)
+
+	route = e.GET("/chain/:chainid/blob/:hash/raw/:field", d.handleChainBlobDownload)
 	route.Name = "chainBlobDownload"
 }
 
-func handleChainBlob(c echo.Context) error {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+func (d *Dashboard) handleChainBlob(c echo.Context) error {
+	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
@@ -35,18 +39,18 @@ func handleChainBlob(c echo.Context) error {
 	}
 
 	result := &ChainBlobTemplateParams{
-		BaseTemplateParams: BaseParams(c, chainBreadcrumb(c.Echo(), chainID), Tab{
+		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
 			Path:  c.Path(),
 			Title: fmt.Sprintf("Blob %.8s…", c.Param("hash")),
 			Href:  "#",
 		}),
-		ChainID: chainID,
+		ChainID: *chainID,
 		Hash:    hash,
 	}
 
-	chain := chains.GetChain(chainID)
+	chain := d.wasp.GetChain(chainID)
 	if chain != nil {
-		fields, err := callView(chain, blob.Interface.Hname(), blob.FuncGetBlobInfo, codec.MakeDict(map[string]interface{}{
+		fields, err := d.wasp.CallView(chain, blob.Contract.Hname(), blob.FuncGetBlobInfo.Name, codec.MakeDict(map[string]interface{}{
 			blob.ParamHash: hash,
 		}))
 		if err != nil {
@@ -55,7 +59,7 @@ func handleChainBlob(c echo.Context) error {
 		result.Blob = []BlobField{}
 		for field := range fields {
 			field := []byte(field)
-			value, err := callView(chain, blob.Interface.Hname(), blob.FuncGetBlobField, codec.MakeDict(map[string]interface{}{
+			value, err := d.wasp.CallView(chain, blob.Contract.Hname(), blob.FuncGetBlobField.Name, codec.MakeDict(map[string]interface{}{
 				blob.ParamHash:  hash,
 				blob.ParamField: field,
 			}))
@@ -72,8 +76,8 @@ func handleChainBlob(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), result)
 }
 
-func handleChainBlobDownload(c echo.Context) error {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
+	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
@@ -88,12 +92,12 @@ func handleChainBlobDownload(c echo.Context) error {
 		return err
 	}
 
-	chain := chains.GetChain(chainID)
+	chain := d.wasp.GetChain(chainID)
 	if chain == nil {
 		return httperrors.NotFound("Not found")
 	}
 
-	value, err := callView(chain, blob.Interface.Hname(), blob.FuncGetBlobField, codec.MakeDict(map[string]interface{}{
+	value, err := d.wasp.CallView(chain, blob.Contract.Hname(), blob.FuncGetBlobField.Name, codec.MakeDict(map[string]interface{}{
 		blob.ParamHash:  hash,
 		blob.ParamField: field,
 	}))
@@ -107,7 +111,7 @@ func handleChainBlobDownload(c echo.Context) error {
 type ChainBlobTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID coretypes.ChainID
+	ChainID iscp.ChainID
 	Hash    hashing.HashValue
 
 	Blob []BlobField
@@ -117,47 +121,3 @@ type BlobField struct {
 	Key   []byte
 	Value []byte
 }
-
-const tplChainBlob = `
-{{define "title"}}Blob details{{end}}
-
-{{define "body"}}
-	{{if .Blob}}
-		{{ $chainid := .ChainID }}
-		{{ $hash := .Hash }}
-
-		<div class="card fluid">
-			<h2 class="section">Blob</h2>
-			<dl>
-				<dt>Hash</dt><dd><tt>{{hashref $hash}}</tt></dd>
-			</dl>
-		</div>
-		<div class="card fluid">
-			<h4 class="section">Fields</h3>
-			<table>
-				<thead>
-					<tr>
-						<th>Field</th>
-						<th style="flex: 2">Value (first 100 bytes)</th>
-						<th class="align-right" style="flex: 0.5">Size (bytes)</th>
-						<th style="flex: 0.5"></th>
-					</tr>
-				</thead>
-				<tbody>
-				{{range $i, $field := .Blob}}
-					<tr>
-						<td><tt>{{ trim 30 (bytesToString $field.Key) }}</tt></td>
-						<td style="flex: 2"><pre style="white-space: pre-wrap">{{ trim 100 (bytesToString $field.Value) }}</pre></td>
-						<td class="align-right" style="flex: 0.5">{{ len $field.Value }}</td>
-						<td style="flex: 0.5"><a href="{{ uri "chainBlobDownload" $chainid (hashref $hash) (base58 $field.Key) }}">Download</a></td>
-					</tr>
-				{{end}}
-				</tbody>
-			</table>
-		</div>
-		{{ template "ws" .ChainID }}
-	{{else}}
-		<div class="card fluid error">Not found.</div>
-	{{end}}
-{{end}}
-`

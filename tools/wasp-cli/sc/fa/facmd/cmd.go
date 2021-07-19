@@ -3,9 +3,6 @@
 package facmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/iotaledger/wasp/tools/wasp-cli/sc/fa"
 )
 

@@ -3,23 +3,18 @@ package vmcontext
 import (
 	"errors"
 	"fmt"
+
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
-
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-var (
-	ErrContractNotFound   = errors.New("contract not found")
-	ErrEntryPointNotFound = errors.New("entry point not found")
-	ErrProcessorNotFound  = errors.New("VM not found. Internal error")
-	ErrNotEnoughFees      = errors.New("not enough fees")
-	ErrWrongRequestToken  = errors.New("wrong request token")
-)
+var ErrContractNotFound = errors.New("contract not found")
 
 // Call
-func (vmctx *VMContext) Call(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances) (dict.Dict, error) {
+func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances) (dict.Dict, error) {
 	vmctx.log.Debugw("Call", "targetContract", targetContract, "epCode", epCode.String())
 	rec, ok := vmctx.findContractByHname(targetContract)
 	if !ok {
@@ -28,18 +23,18 @@ func (vmctx *VMContext) Call(targetContract coretypes.Hname, epCode coretypes.Hn
 	return vmctx.callByProgramHash(targetContract, epCode, params, transfer, rec.ProgramHash)
 }
 
-func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances, progHash hashing.HashValue) (dict.Dict, error) {
+func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances, progHash hashing.HashValue) (dict.Dict, error) {
 	proc, err := vmctx.processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
 	if err != nil {
 		return nil, err
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		return nil, ErrEntryPointNotFound
+		ep = proc.GetDefaultEntryPoint()
 	}
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
-		if epCode == coretypes.EntryPointInit {
+		if epCode == iscp.EntryPointInit {
 			return nil, fmt.Errorf("'init' entry point can't be a view")
 		}
 		// passing nil as transfer: calling the view should not have effect on chain ledger
@@ -48,7 +43,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode
 		}
 		defer vmctx.popCallContext()
 
-		return ep.CallView(NewSandboxView(vmctx))
+		return ep.Call(NewSandboxView(vmctx))
 	}
 	if err := vmctx.pushCallContextWithTransfer(targetContract, params, transfer); err != nil {
 		return nil, err
@@ -56,7 +51,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode
 	defer vmctx.popCallContext()
 
 	// prevent calling 'init' not from root contract or not while initializing root
-	if epCode == coretypes.EntryPointInit && targetContract != root.Interface.Hname() {
+	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
 		if !vmctx.callerIsRoot() {
 			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
 		}
@@ -64,16 +59,15 @@ func (vmctx *VMContext) callByProgramHash(targetContract coretypes.Hname, epCode
 	return ep.Call(NewSandbox(vmctx))
 }
 
-func (vmctx *VMContext) callNonViewByProgramHash(targetContract coretypes.Hname, epCode coretypes.Hname, params dict.Dict, transfer coretypes.ColoredBalances, progHash hashing.HashValue) (dict.Dict, error) {
+func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer *ledgerstate.ColoredBalances, progHash hashing.HashValue) (dict.Dict, error) {
 	proc, err := vmctx.processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
 	if err != nil {
 		return nil, err
 	}
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		return nil, ErrEntryPointNotFound
+		ep = proc.GetDefaultEntryPoint()
 	}
-
 	// distinguishing between two types of entry points. Passing different types of sandboxes
 	if ep.IsView() {
 		return nil, fmt.Errorf("non-view entry point expected")
@@ -84,7 +78,7 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract coretypes.Hname,
 	defer vmctx.popCallContext()
 
 	// prevent calling 'init' not from root contract or not while initializing root
-	if epCode == coretypes.EntryPointInit && targetContract != root.Interface.Hname() {
+	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
 		if !vmctx.callerIsRoot() {
 			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
 		}
@@ -94,14 +88,15 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract coretypes.Hname,
 
 func (vmctx *VMContext) callerIsRoot() bool {
 	caller := vmctx.Caller()
-	if caller.IsAddress() {
+	if !caller.Address().Equals(vmctx.chainID.AsAddress()) {
 		return false
 	}
-	return caller.MustContractID().Hname() == root.Interface.Hname()
+	return caller.Hname() == root.Contract.Hname()
 }
 
-func (vmctx *VMContext) requesterIsChainOwner() bool {
-	return vmctx.chainOwnerID == vmctx.reqRef.SenderAgentID()
+func (vmctx *VMContext) requesterIsLocal() bool {
+	return vmctx.chainOwnerID.Equals(vmctx.req.SenderAccount()) ||
+		vmctx.chainID.AsAddress().Equals(vmctx.req.SenderAccount().Address())
 }
 
 func (vmctx *VMContext) Params() dict.Dict {

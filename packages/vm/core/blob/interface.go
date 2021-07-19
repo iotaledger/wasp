@@ -1,31 +1,10 @@
 package blob
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-const (
-	Name        = "blob"
-	description = "Blob Contract"
-)
-
-var (
-	Interface = &coreutil.ContractInterface{
-		Name:        Name,
-		Description: description,
-		ProgramHash: hashing.HashStrings(Name),
-	}
-)
-
-func init() {
-	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.Func(FuncStoreBlob, storeBlob),
-		coreutil.ViewFunc(FuncGetBlobInfo, getBlobInfo),
-		coreutil.ViewFunc(FuncGetBlobField, getBlobField),
-		coreutil.ViewFunc(FuncListBlobs, listBlobs),
-	})
-}
+var Contract = coreutil.NewContract(coreutil.CoreContractBlob, "Blob Contract")
 
 const (
 	// request parameters
@@ -38,10 +17,11 @@ const (
 	VarFieldProgramBinary      = "p"
 	VarFieldVMType             = "v"
 	VarFieldProgramDescription = "d"
+)
 
-	// function names
-	FuncGetBlobInfo  = "getBlobInfo"
-	FuncGetBlobField = "getBlobField"
-	FuncStoreBlob    = "storeBlob"
-	FuncListBlobs    = "listBlobs"
+var (
+	FuncStoreBlob    = coreutil.Func("storeBlob")
+	FuncGetBlobInfo  = coreutil.ViewFunc("getBlobInfo")
+	FuncGetBlobField = coreutil.ViewFunc("getBlobField")
+	FuncListBlobs    = coreutil.ViewFunc("listBlobs")
 )

@@ -1,16 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/util"
-	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"os/signal"
-	"path"
-	"strings"
 
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/spf13/pflag"
@@ -29,6 +23,7 @@ func usage(flags *pflag.FlagSet) {
 	os.Exit(1)
 }
 
+//nolint:funlen
 func main() {
 	commonFlags := pflag.NewFlagSet("common flags", pflag.ExitOnError)
 
@@ -36,12 +31,13 @@ func main() {
 
 	config := cluster.DefaultConfig()
 	commonFlags.IntVarP(&config.Wasp.NumNodes, "num-nodes", "n", config.Wasp.NumNodes, "Amount of wasp nodes")
-	commonFlags.IntVarP(&config.Wasp.FirstApiPort, "first-api-port", "a", config.Wasp.FirstApiPort, "First wasp API port")
+	commonFlags.IntVarP(&config.Wasp.FirstAPIPort, "first-api-port", "a", config.Wasp.FirstAPIPort, "First wasp API port")
 	commonFlags.IntVarP(&config.Wasp.FirstPeeringPort, "first-peering-port", "p", config.Wasp.FirstPeeringPort, "First wasp Peering port")
 	commonFlags.IntVarP(&config.Wasp.FirstNanomsgPort, "first-nanomsg-port", "u", config.Wasp.FirstNanomsgPort, "First wasp nanomsg (publisher) port")
 	commonFlags.IntVarP(&config.Wasp.FirstDashboardPort, "first-dashboard-port", "h", config.Wasp.FirstDashboardPort, "First wasp dashboard port")
-	commonFlags.IntVarP(&config.Goshimmer.ApiPort, "goshimmer-api-port", "w", config.Goshimmer.ApiPort, "Goshimmer API port")
+	commonFlags.IntVarP(&config.Goshimmer.APIPort, "goshimmer-api-port", "i", config.Goshimmer.APIPort, "Goshimmer API port")
 	commonFlags.BoolVarP(&config.Goshimmer.Provided, "goshimmer-provided", "g", config.Goshimmer.Provided, "If true, Goshimmer node will not be spawn")
+	commonFlags.IntVarP(&config.FaucetPoWTarget, "goshimmer-faucet-pow", "w", config.FaucetPoWTarget, "Faucet PoW target")
 
 	if len(os.Args) < 2 {
 		usage(commonFlags)
@@ -63,7 +59,7 @@ func main() {
 		}
 
 		dataPath := flags.Arg(0)
-		err = cluster.New("cluster", config).InitDataPath(*templatesPath, dataPath, *forceRemove)
+		err = cluster.New("cluster", config).InitDataPath(*templatesPath, dataPath, *forceRemove, nil)
 		check(err)
 
 	case "start":
@@ -95,7 +91,7 @@ func main() {
 			exists, err := cluster.ConfigExists(dataPath)
 			check(err)
 			if !exists {
-				check(fmt.Errorf("%s/cluster.json not found. Call `%s init` first.", dataPath, os.Args[0]))
+				check(fmt.Errorf("%s/cluster.json not found. Call `%s init` first", dataPath, os.Args[0]))
 			}
 
 			config, err = cluster.LoadConfig(dataPath)
@@ -105,7 +101,7 @@ func main() {
 		clu := cluster.New("wasp-cluster", config)
 
 		if *disposable {
-			check(clu.InitDataPath(*templatesPath, dataPath, true))
+			check(clu.InitDataPath(*templatesPath, dataPath, true, nil))
 			defer os.RemoveAll(dataPath)
 		}
 
@@ -121,75 +117,6 @@ func main() {
 	default:
 		usage(commonFlags)
 	}
-}
-
-var scripts = map[string]func(*WaspCli){
-	"inc": inccounterScript,
-}
-
-type WaspCli struct {
-	dir string
-}
-
-func (w *WaspCli) Run(args ...string) {
-	// -w: wait for requests
-	// -d: debug output
-	cmd := exec.Command("wasp-cli", append([]string{"-w", "-d"}, args...)...)
-	cmd.Dir = w.dir
-
-	stdout := &bytes.Buffer{}
-	cmd.Stdout = stdout
-	stderr := &bytes.Buffer{}
-	cmd.Stderr = stderr
-
-	err := cmd.Run()
-
-	outStr, errStr := stdout.String(), stderr.String()
-	if err != nil {
-		check(fmt.Errorf(
-			"cmd `wasp-cli %s` failed\n%w\noutput:\n%s",
-			strings.Join(args, " "),
-			err,
-			outStr+errStr,
-		))
-	}
-}
-
-func (w *WaspCli) copyFile(fname string) {
-	source, err := os.Open(fname)
-	check(err)
-	defer source.Close()
-
-	dst := path.Join(w.dir, path.Base(fname))
-	destination, err := os.Create(dst)
-	check(err)
-	defer destination.Close()
-
-	_, err = io.Copy(destination, source)
-	check(err)
-}
-
-func inccounterScript(w *WaspCli) {
-	vmtype := "wasmtimevm"
-	name := "inccounter"
-	description := "inccounter SC"
-	file := util.LocateFile("inccounter_bg.wasm", "contracts/rust/inccounter/pkg")
-
-	w.copyFile(path.Join("wasm", file))
-
-	w.Run("init")
-	w.Run("request-funds")
-	w.Run("chain", "deploy", "--chain=chain1", "--committee=0,1,2,3", "--quorum=3")
-	w.Run("chain", "deploy-contract", vmtype, name, description, file)
-	w.Run("chain", "post-request", name, "increment")
-}
-
-func runScript(dataPath string, scriptName string) {
-	f := scripts[scriptName]
-	if f == nil {
-		check(fmt.Errorf("Script %s not found", scriptName))
-	}
-	f(&WaspCli{dataPath})
 }
 
 func waitCtrlC() {

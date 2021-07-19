@@ -1,18 +1,19 @@
 package hashing
 
 import (
-	"encoding/hex"
-	"github.com/mr-tron/base58"
-	"golang.org/x/crypto/sha3"
-	"hash"
-	"io"
-
-	// github.com/mr-tron/base58
 	"encoding/json"
 	"fmt"
+	"hash"
+	"io"
+	"math/rand"
+
+	"github.com/mr-tron/base58"
+	"golang.org/x/crypto/sha3"
+
+	// github.com/mr-tron/base58
+
 	"github.com/pkg/errors"
 	"golang.org/x/crypto/blake2b"
-	"math/rand"
 )
 
 const HashSize = 32
@@ -26,15 +27,11 @@ func (h HashValue) Bytes() []byte {
 }
 
 func (h HashValue) String() string {
+	return h.Base58()
+}
+
+func (h HashValue) Base58() string {
 	return base58.Encode(h[:])
-}
-
-func (h HashValue) Short() string {
-	return base58.Encode((h)[:6]) + ".."
-}
-
-func (h HashValue) Shortest() string {
-	return hex.EncodeToString((h)[:4])
 }
 
 func (h *HashValue) MarshalJSON() ([]byte, error) {

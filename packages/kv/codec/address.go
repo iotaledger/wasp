@@ -1,20 +1,20 @@
 package codec
 
 import (
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 )
 
-func DecodeAddress(b []byte) (address.Address, bool, error) {
+func DecodeAddress(b []byte) (ledgerstate.Address, bool, error) {
 	if b == nil {
-		return address.Address{}, false, nil
+		return nil, false, nil
 	}
-	ret, _, err := address.FromBytes(b)
+	ret, _, err := ledgerstate.AddressFromBytes(b)
 	if err != nil {
-		return address.Address{}, false, err
+		return nil, false, err
 	}
 	return ret, true, nil
 }
 
-func EncodeAddress(value address.Address) []byte {
+func EncodeAddress(value ledgerstate.Address) []byte {
 	return value.Bytes()
 }

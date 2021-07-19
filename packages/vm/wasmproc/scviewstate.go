@@ -1,21 +1,21 @@
 package wasmproc
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
 // Wraps immutable view state into a mutable KVStore
-// with the KVStoreWriter functions implemented as panics
+// with the KVWriter functions implemented as panics
 // WaspLib already takes care of the immutability aspect,
 // so these panics should never trigger and we can avoid
 // a much more drastic refactoring for now
 type ScViewState struct {
-	ctxView   coretypes.SandboxView
+	ctxView   iscp.SandboxView
 	viewState kv.KVStoreReader
 }
 
-func NewScViewState(ctxView coretypes.SandboxView) kv.KVStore {
+func NewScViewState(ctxView iscp.SandboxView) kv.KVStore {
 	return &ScViewState{ctxView: ctxView, viewState: ctxView.State()}
 }
 
@@ -43,6 +43,14 @@ func (s ScViewState) IterateKeys(prefix kv.Key, f func(key kv.Key) bool) error {
 	return s.viewState.IterateKeys(prefix, f)
 }
 
+func (s ScViewState) IterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) error {
+	return s.viewState.IterateSorted(prefix, f)
+}
+
+func (s ScViewState) IterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) error {
+	return s.viewState.IterateKeysSorted(prefix, f)
+}
+
 func (s ScViewState) MustGet(key kv.Key) []byte {
 	return s.viewState.MustGet(key)
 }
@@ -57,4 +65,12 @@ func (s ScViewState) MustIterate(prefix kv.Key, f func(key kv.Key, value []byte)
 
 func (s ScViewState) MustIterateKeys(prefix kv.Key, f func(key kv.Key) bool) {
 	s.viewState.MustIterateKeys(prefix, f)
+}
+
+func (s ScViewState) MustIterateSorted(prefix kv.Key, f func(key kv.Key, value []byte) bool) {
+	s.viewState.MustIterateSorted(prefix, f)
+}
+
+func (s ScViewState) MustIterateKeysSorted(prefix kv.Key, f func(key kv.Key) bool) {
+	s.viewState.MustIterateKeysSorted(prefix, f)
 }

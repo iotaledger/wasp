@@ -1,17 +1,20 @@
 package codec
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
-func DecodeAgentID(b []byte) (coretypes.AgentID, bool, error) {
+func DecodeAgentID(b []byte) (iscp.AgentID, bool, error) {
 	if b == nil {
-		return coretypes.AgentID{}, false, nil
+		return iscp.AgentID{}, false, nil
 	}
-	r, err := coretypes.NewAgentIDFromBytes(b)
-	return r, err == nil, err
+	ret, err := iscp.NewAgentIDFromBytes(b)
+	if err != nil {
+		return iscp.AgentID{}, false, err
+	}
+	return *ret, true, nil
 }
 
-func EncodeAgentID(value coretypes.AgentID) []byte {
-	return value[:]
+func EncodeAgentID(value *iscp.AgentID) []byte {
+	return value.Bytes()
 }

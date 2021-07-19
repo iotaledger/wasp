@@ -2,31 +2,40 @@ package core
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coretypes"
+
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-const (
-	VMType = "builtinvm"
-)
+var AllCoreContractsByHash = map[hashing.HashValue]*coreutil.ContractProcessor{
+	_default.Contract.ProgramHash:   _default.Processor,
+	root.Contract.ProgramHash:       root.Processor,
+	accounts.Contract.ProgramHash:   accounts.Processor,
+	blob.Contract.ProgramHash:       blob.Processor,
+	eventlog.Contract.ProgramHash:   eventlog.Processor,
+	blocklog.Contract.ProgramHash:   blocklog.Processor,
+	governance.Contract.ProgramHash: governance.Processor,
+}
 
-func GetProcessor(programHash hashing.HashValue) (coretypes.Processor, error) {
-	switch programHash {
-	case root.Interface.ProgramHash:
-		return root.Interface, nil
-
-	case accounts.Interface.ProgramHash:
-		return accounts.Interface, nil
-
-	case blob.Interface.ProgramHash:
-		return blob.Interface, nil
-
-	case eventlog.Interface.ProgramHash:
-		return eventlog.Interface, nil
+func init() {
+	for _, rec := range AllCoreContractsByHash {
+		commonaccount.SetCoreHname(rec.Contract.Hname())
 	}
-	return nil, fmt.Errorf("can't find builtin processor with hash %s", programHash.String())
+}
+
+func GetProcessor(programHash hashing.HashValue) (iscp.VMProcessor, error) {
+	ret, ok := AllCoreContractsByHash[programHash]
+	if !ok {
+		return nil, fmt.Errorf("can't find builtin processor with hash %s", programHash.String())
+	}
+	return ret, nil
 }

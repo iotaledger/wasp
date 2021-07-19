@@ -6,11 +6,12 @@ import (
 )
 
 func chainCommittee() []int {
-	chain, err := config.WaspClient().GetChainRecord(GetCurrentChainID())
+	chainID := GetCurrentChainID()
+	committee, err := config.WaspClient().GetCommitteeForChain(*chainID)
 	log.Check(err)
 
 	r := []int{}
-	for _, peering := range chain.CommitteeNodes {
+	for _, peering := range committee.Nodes {
 		r = append(r, config.FindNodeBy(config.HostKindPeering, peering))
 	}
 	return r

@@ -2,19 +2,19 @@ package scclient
 
 import (
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
 // SCClient allows to send webapi requests targeted to a specific contract
 type SCClient struct {
 	ChainClient   *chainclient.Client
-	ContractHname coretypes.Hname
+	ContractHname iscp.Hname
 }
 
 // New creates a new SCClient
 func New(
 	chainClient *chainclient.Client,
-	contractHname coretypes.Hname,
+	contractHname iscp.Hname,
 ) *SCClient {
 	return &SCClient{
 		ChainClient:   chainClient,

@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
 	"github.com/iotaledger/wasp/tools/wasp-cli/sc/fa"
 	"github.com/mr-tron/base58"
 )
@@ -40,12 +39,12 @@ func startAuctionCmd(args []string) {
 	log.Check(err)
 }
 
-func decodeColor(s string) *balance.Color {
+func decodeColor(s string) ledgerstate.Color {
 	b, err := base58.Decode(s)
 	log.Check(err)
 	color, _, err := balance.ColorFromBytes(b)
 	log.Check(err)
-	return &color
+	return color
 }
 
 func placeBidCmd(args []string) {

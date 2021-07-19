@@ -4,58 +4,70 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addChainEndpoints(adm echoswagger.ApiGroup) {
-	adm.POST(routes.ActivateChain(":chainID"), handleActivateChain).
+func addChainEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, chainsProvider chains.Provider) {
+	c := &chainWebAPI{registryProvider, chainsProvider}
+
+	adm.POST(routes.ActivateChain(":chainID"), c.handleActivateChain).
 		AddParamPath("", "chainID", "ChainID (base58)").
 		SetSummary("Activate a chain")
 
-	adm.POST(routes.DeactivateChain(":chainID"), handleDeactivateChain).
+	adm.POST(routes.DeactivateChain(":chainID"), c.handleDeactivateChain).
 		AddParamPath("", "chainID", "ChainID (base58)").
 		SetSummary("Deactivate a chain")
 }
 
-func handleActivateChain(c echo.Context) error {
-	scAddress, err := address.FromBase58(c.Param("chainID"))
+type chainWebAPI struct {
+	registry registry.Provider
+	chains   chains.Provider
+}
+
+func (w *chainWebAPI) handleActivateChain(c echo.Context) error {
+	aliasAddress, err := ledgerstate.AliasAddressFromBase58EncodedString(c.Param("chainID"))
 	if err != nil {
-		return httperrors.BadRequest(fmt.Sprintf("Invalid SC address: %s", c.Param("address")))
+		return httperrors.BadRequest(fmt.Sprintf("Invalid alias address: %s", c.Param("chainID")))
 	}
-	chainID := (coretypes.ChainID)(scAddress)
-	bd, err := registry.ActivateChainRecord(&chainID)
+	chainID, err := iscp.ChainIDFromAddress(aliasAddress)
+	if err != nil {
+		return err
+	}
+	rec, err := w.registry().ActivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}
 
-	log.Debugw("calling committees.ActivateChain", "chainID", bd.ChainID.String())
-	if err := chains.ActivateChain(bd); err != nil {
+	log.Debugw("calling Chains.Activate", "chainID", rec.ChainID.String())
+	if err := w.chains().Activate(rec, w.registry); err != nil {
 		return err
 	}
 
 	return c.NoContent(http.StatusOK)
 }
 
-func handleDeactivateChain(c echo.Context) error {
-	scAddress, err := address.FromBase58(c.Param("chainID"))
+func (w *chainWebAPI) handleDeactivateChain(c echo.Context) error {
+	scAddress, err := ledgerstate.AddressFromBase58EncodedString(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain id: %s", c.Param("chainID")))
 	}
-
-	chainID := (coretypes.ChainID)(scAddress)
-	bd, err := registry.DeactivateChainRecord(&chainID)
+	chainID, err := iscp.ChainIDFromAddress(scAddress)
+	if err != nil {
+		return err
+	}
+	bd, err := w.registry().DeactivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}
 
-	err = chains.DeactivateChain(bd)
+	err = w.chains().Deactivate(bd)
 	if err != nil {
 		return err
 	}

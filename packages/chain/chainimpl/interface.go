@@ -4,163 +4,89 @@
 package chainimpl
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/address"
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coretypes"
-	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/chain/messages"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
-func init() {
-	chain.RegisterChainConstructor(newCommitteeObj)
+func (c *chainObj) ID() *iscp.ChainID {
+	return &c.chainID
 }
 
-func (c *chainObj) IsOpenQueue() bool {
-	if c.IsDismissed() {
-		return false
-	}
-	if c.isOpenQueue.Load() {
-		return true
-	}
-	c.mutexIsReady.Lock()
-	defer c.mutexIsReady.Unlock()
-
-	return c.checkReady()
+func (c *chainObj) GlobalStateSync() coreutil.ChainStateSync {
+	return c.chainStateSync
 }
 
-func (c *chainObj) SetReadyStateManager() {
-	if c.IsDismissed() {
-		return
+func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {
+	cmt := c.getCommittee()
+	if cmt == nil {
+		return nil
 	}
-	c.mutexIsReady.Lock()
-	defer c.mutexIsReady.Unlock()
-
-	c.isReadyStateManager = true
-	c.log.Debugf("State Manager object was created")
-	c.checkReady()
-}
-
-func (c *chainObj) SetReadyConsensus() {
-	if c.IsDismissed() {
-		return
+	return &chain.CommitteeInfo{
+		Address:       cmt.DKShare().Address,
+		Size:          cmt.Size(),
+		Quorum:        cmt.Quorum(),
+		QuorumIsAlive: cmt.QuorumIsAlive(),
+		PeerStatus:    cmt.PeerStatus(),
 	}
-	c.mutexIsReady.Lock()
-	defer c.mutexIsReady.Unlock()
-
-	c.isReadyConsensus = true
-	c.log.Debugf("consensus object was created")
-	c.checkReady()
-}
-
-func (c *chainObj) SetConnectPeriodOver() {
-	if c.IsDismissed() {
-		return
-	}
-	c.mutexIsReady.Lock()
-	defer c.mutexIsReady.Unlock()
-
-	c.isConnectPeriodOver = true
-	c.log.Debugf("connect period is over")
-	c.checkReady()
-}
-
-func (c *chainObj) SetQuorumOfConnectionsReached() {
-	if c.IsDismissed() {
-		return
-	}
-	c.mutexIsReady.Lock()
-	defer c.mutexIsReady.Unlock()
-
-	c.isQuorumOfConnectionsReached = true
-	c.log.Debugf("quorum of connections has been reached")
-	c.checkReady()
-}
-
-func (c *chainObj) isReady() bool {
-	return c.isReadyConsensus &&
-		c.isReadyStateManager &&
-		c.isConnectPeriodOver &&
-		c.isQuorumOfConnectionsReached
-}
-
-func (c *chainObj) checkReady() bool {
-	if c.IsDismissed() {
-		panic("dismissed")
-	}
-	if c.isReady() {
-		c.isOpenQueue.Store(true)
-		c.startTimer()
-		c.onActivation()
-
-		c.log.Infof("committee now is fully initialized")
-		publisher.Publish("active_committee", c.chainID.String())
-	}
-	return c.isReady()
 }
 
 func (c *chainObj) startTimer() {
 	go func() {
+		c.stateMgr.Ready().MustWait()
 		tick := 0
-		for c.isOpenQueue.Load() {
+		for !c.IsDismissed() {
 			time.Sleep(chain.TimerTickPeriod)
-			c.ReceiveMessage(chain.TimerTick(tick))
+			c.ReceiveMessage(messages.TimerTick(tick))
 			tick++
 		}
 	}()
 }
 
-func (c *chainObj) Dismiss() {
-	c.log.Infof("Dismiss committee for %s", c.chainID.String())
+func (c *chainObj) Dismiss(reason string) {
+	c.log.Infof("Dismiss chain. Reason: '%s'", reason)
 
 	c.dismissOnce.Do(func() {
-		c.isOpenQueue.Store(false)
 		c.dismissed.Store(true)
 
 		close(c.chMsg)
-		c.peers.Detach(c.peersAttachRef)
-		c.peers.Close()
 
+		c.mempool.Close()
 		c.stateMgr.Close()
-		c.operator.Close()
+		cmt := c.getCommittee()
+		if cmt != nil {
+			cmt.Close()
+		}
+		if c.consensus != nil {
+			c.consensus.Close()
+		}
+		c.eventRequestProcessed.DetachAll()
+		c.eventChainTransition.DetachAll()
+		c.eventSynced.DetachAll()
 	})
 
-	publisher.Publish("dismissed_committee", c.chainID.String())
+	publisher.Publish("dismissed_chain", c.chainID.Base58())
 }
 
 func (c *chainObj) IsDismissed() bool {
 	return c.dismissed.Load()
 }
 
-func (c *chainObj) ID() *coretypes.ChainID {
-	return &c.chainID
-}
-
-func (c *chainObj) Color() *balance.Color {
-	return &c.color
-}
-
-func (c *chainObj) Address() address.Address {
-	return address.Address(c.chainID)
-}
-
-func (c *chainObj) Size() uint16 {
-	return c.size
-}
-
-func (c *chainObj) Quorum() uint16 {
-	return c.quorum
-}
-
 func (c *chainObj) ReceiveMessage(msg interface{}) {
-	if c.isOpenQueue.Load() {
+	if !c.IsDismissed() {
 		select {
 		case c.chMsg <- msg:
 		default:
@@ -173,145 +99,182 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 	}
 }
 
-// SendMsg sends message to peer by index. It can be both committee peer or access peer.
-// TODO: [KP] Maybe we can use a broadcast instead of this?
-func (c *chainObj) SendMsg(targetPeerIndex uint16, msgType byte, msgData []byte) error {
-	if peer, ok := c.peers.OtherNodes()[targetPeerIndex]; ok {
-		peer.SendMsg(&peering.PeerMessage{
-			ChainID:     c.chainID,
-			SenderIndex: c.ownIndex,
-			MsgType:     msgType,
-			MsgData:     msgData,
-		})
-		return nil
-	}
-	return fmt.Errorf("SendMsg: wrong peer index")
-}
-
-func (c *chainObj) SendMsgToCommitteePeers(msgType byte, msgData []byte, ts int64) uint16 {
-	msg := &peering.PeerMessage{
-		ChainID:     (coretypes.ChainID)(c.chainID),
-		SenderIndex: c.ownIndex,
-		Timestamp:   ts,
-		MsgType:     msgType,
-		MsgData:     msgData,
-	}
-	c.peers.Broadcast(msg, false)
-	return uint16(len(c.peers.OtherNodes())) // TODO: [KP] Reconsider this, we cannot guaranty if they are actually sent.
-}
-
-// sends message to the peer seq[seqIndex]. If receives error, seqIndex = (seqIndex+1) % size and repeats
-// if is not able to send message after size attempts, returns an error
-// seqIndex is start seqIndex
-// returned index is seqIndex of the successful send
-func (c *chainObj) SendMsgInSequence(msgType byte, msgData []byte, seqIndex uint16, seq []uint16) (uint16, error) {
-	if len(seq) != int(c.Size()) || seqIndex >= c.Size() || !util.ValidPermutation(seq) {
-		return 0, fmt.Errorf("SendMsgInSequence: wrong params")
-	}
-	numAttempts := uint16(0)
-	for ; numAttempts < c.Size(); seqIndex = (seqIndex + 1) % c.Size() {
-		if seq[seqIndex] >= c.Size() {
-			return 0, fmt.Errorf("SendMsgInSequence: wrong params")
+func shouldSendToPeer(peerID string, ackPeers []string) bool {
+	for _, p := range ackPeers {
+		if p == peerID {
+			return false
 		}
-		if err := c.SendMsg(seq[seqIndex], msgType, msgData); err == nil {
-			return seqIndex, nil
-		}
-		numAttempts++
 	}
-	return 0, fmt.Errorf("failed to send")
+	return true
 }
 
-// returns true if peer is alive. Used by the operator to determine current leader
-func (c *chainObj) IsAlivePeer(peerIndex uint16) bool {
-	allNodes := c.peers.AllNodes()
-	if int(peerIndex) >= len(allNodes) {
-		return false
+func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
+	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
+	msgData := messages.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
+	committee := c.getCommittee()
+	getPeerIDs := (*c.peers).GetRandomPeers
+
+	if committee != nil {
+		getPeerIDs = committee.GetRandomValidators
 	}
-	if peerIndex == c.ownIndex {
-		return true
-	}
-	if allNodes[peerIndex] == nil {
-		c.log.Panicf("c.peers[peerIndex] == nil. peerIndex: %d, ownIndex: %d", peerIndex, c.ownIndex)
-	}
-	return allNodes[peerIndex].IsAlive()
-}
 
-func (c *chainObj) OwnPeerIndex() uint16 {
-	return c.ownIndex
-}
-
-func (c *chainObj) NumPeers() uint16 {
-	return uint16(len(c.peers.AllNodes()))
-}
-
-// first N peers are committee peers, the rest are access peers in any
-func (c *chainObj) committeePeers() map[uint16]peering.PeerSender {
-	return c.peers.AllNodes()
-}
-
-func (c *chainObj) HasQuorum() bool {
-	count := uint16(0)
-	for _, peer := range c.committeePeers() {
-		if peer == nil {
-			count++
-		} else {
-			if peer.IsAlive() {
-				count++
+	sendMessage := func(ackPeers []string) {
+		peerIDs := getPeerIDs(c.offledgerBroadcastUpToNPeers)
+		for _, peerID := range peerIDs {
+			if shouldSendToPeer(peerID, ackPeers) {
+				c.log.Debugf("sending offledger request ID: reqID: %s, peerID: %s", req.ID().Base58(), peerID)
+				(*c.peers).SendSimple(peerID, messages.MsgOffLedgerRequest, msgData)
 			}
 		}
-		if count >= c.quorum {
-			return true
-		}
 	}
-	return false
+
+	ticker := time.NewTicker(c.offledgerBroadcastInterval)
+	go func() {
+		for {
+			<-ticker.C
+			// check if processed (request already left the mempool)
+			if !c.mempool.HasRequest(req.ID()) {
+				c.offLedgerReqsAcksMutex.Lock()
+				delete(c.offLedgerReqsAcks, req.ID())
+				c.offLedgerReqsAcksMutex.Unlock()
+				ticker.Stop()
+				return
+			}
+			c.offLedgerReqsAcksMutex.RLock()
+			ackPeers := c.offLedgerReqsAcks[(*req).ID()]
+			c.offLedgerReqsAcksMutex.RUnlock()
+			sendMessage(ackPeers)
+		}
+	}()
 }
 
-func (c *chainObj) PeerStatus() []*chain.PeerStatus {
-	ret := make([]*chain.PeerStatus, 0)
-	for i, peer := range c.committeePeers() {
-		status := &chain.PeerStatus{
-			Index:  int(i),
-			IsSelf: peer == nil || peer.NetID() == c.netProvider.Self().NetID(),
-		}
-		if status.IsSelf {
-			status.PeeringID = c.netProvider.Self().NetID()
-			status.Connected = true
-		} else {
-			status.PeeringID = peer.NetID()
-			status.Connected = peer.IsAlive()
-		}
-		ret = append(ret, status)
+func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string) {
+	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
+	c.sendRequestAckowledgementMsg(req.ID(), senderNetID)
+	if !c.mempool.ReceiveRequest(req) {
+		return
 	}
-	return ret
+	c.log.Debugf("ReceiveOffLedgerRequest - added to mempool: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
+	c.broadcastOffLedgerRequest(req)
 }
 
-func (c *chainObj) BlobCache() coretypes.BlobCache {
+func (c *chainObj) sendRequestAckowledgementMsg(reqID iscp.RequestID, peerID string) {
+	c.log.Debugf("sendRequestAckowledgementMsg: reqID: %s, peerID: %s", reqID.Base58(), peerID)
+	if peerID == "" {
+		return
+	}
+	msgData := messages.NewRequestAckMsg(reqID).Bytes()
+	(*c.peers).SendSimple(peerID, messages.MsgRequestAck, msgData)
+}
+
+func (c *chainObj) ReceiveRequestAckMessage(reqID *iscp.RequestID, peerID string) {
+	c.log.Debugf("ReceiveRequestAckMessage: reqID: %s, peerID: %s", reqID.Base58(), peerID)
+	c.offLedgerReqsAcksMutex.Lock()
+	defer c.offLedgerReqsAcksMutex.Unlock()
+	c.offLedgerReqsAcks[*reqID] = append(c.offLedgerReqsAcks[*reqID], peerID)
+}
+
+// SendMissingRequestsToPeer sends the requested missing requests by a peer
+func (c *chainObj) SendMissingRequestsToPeer(msg messages.MissingRequestIDsMsg, peerID string) {
+	for _, reqID := range msg.IDs {
+		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID.Base58(), peerID)
+		if req := c.mempool.GetRequest(reqID); req != nil {
+			msg := messages.NewMissingRequestMsg(req)
+			(*c.peers).SendSimple(peerID, messages.MsgMissingRequest, msg.Bytes())
+		}
+	}
+}
+
+func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
+	c.log.Debugf("ReceiveTransaction: %s", tx.ID().Base58())
+	reqs, err := request.RequestsOnLedgerFromTransaction(tx, c.chainID.AsAddress())
+	if err != nil {
+		c.log.Warnf("failed to parse transaction %s: %v", tx.ID().Base58(), err)
+		return
+	}
+	for _, req := range reqs {
+		c.ReceiveRequest(req)
+	}
+	if chainOut := transaction.GetAliasOutput(tx, c.chainID.AsAddress()); chainOut != nil {
+		c.ReceiveState(chainOut, tx.Essence().Timestamp())
+	}
+}
+
+func (c *chainObj) ReceiveRequest(req iscp.Request) {
+	c.log.Debugf("ReceiveRequest: %s", req.ID())
+	c.mempool.ReceiveRequests(req)
+}
+
+func (c *chainObj) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
+	c.log.Debugf("ReceiveState #%d: outputID: %s, stateAddr: %s",
+		stateOutput.GetStateIndex(), iscp.OID(stateOutput.ID()), stateOutput.GetStateAddress().Base58())
+	c.ReceiveMessage(&messages.StateMsg{
+		ChainOutput: stateOutput,
+		Timestamp:   timestamp,
+	})
+}
+
+func (c *chainObj) ReceiveInclusionState(txID ledgerstate.TransactionID, inclusionState ledgerstate.InclusionState) {
+	c.ReceiveMessage(&messages.InclusionStateMsg{
+		TxID:  txID,
+		State: inclusionState,
+	}) // TODO special entry point
+}
+
+func (c *chainObj) ReceiveOutput(output ledgerstate.Output) {
+	c.stateMgr.EventOutputMsg(output)
+}
+
+func (c *chainObj) BlobCache() registry.BlobCache {
 	return c.blobProvider
 }
 
-func (c *chainObj) GetRequestProcessingStatus(reqID *coretypes.RequestID) chain.RequestProcessingStatus {
+func (c *chainObj) GetRequestProcessingStatus(reqID iscp.RequestID) chain.RequestProcessingStatus {
 	if c.IsDismissed() {
 		return chain.RequestProcessingStatusUnknown
 	}
-	if c.isCommitteeNode.Load() {
-		if c.IsDismissed() {
-			return chain.RequestProcessingStatusUnknown
-		}
-		if c.operator.IsRequestInBacklog(reqID) {
+	if c.consensus != nil {
+		if c.mempool.HasRequest(reqID) {
 			return chain.RequestProcessingStatusBacklog
 		}
 	}
-	processed, err := state.IsRequestCompleted(c.ID(), reqID)
+	c.stateReader.SetBaseline()
+	processed, err := blocklog.IsRequestProcessed(c.stateReader.KVStoreReader(), &reqID)
 	if err != nil || !processed {
 		return chain.RequestProcessingStatusUnknown
 	}
 	return chain.RequestProcessingStatusCompleted
 }
 
-func (c *chainObj) Processors() *processors.ProcessorCache {
+func (c *chainObj) Processors() *processors.Cache {
 	return c.procset
 }
 
 func (c *chainObj) EventRequestProcessed() *events.Event {
 	return c.eventRequestProcessed
+}
+
+func (c *chainObj) RequestProcessed() *events.Event {
+	return c.eventRequestProcessed
+}
+
+func (c *chainObj) ChainTransition() *events.Event {
+	return c.eventChainTransition
+}
+
+func (c *chainObj) StateSynced() *events.Event {
+	return c.eventSynced
+}
+
+func (c *chainObj) Events() chain.ChainEvents {
+	return c
+}
+
+// GetStateReader returns a new copy of the optimistic state reader, with own baseline
+func (c *chainObj) GetStateReader() state.OptimisticStateReader {
+	return state.NewOptimisticStateReader(c.db, c.chainStateSync)
+}
+
+func (c *chainObj) Log() *logger.Logger {
+	return c.log
 }

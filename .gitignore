@@ -9,3 +9,5 @@ dist/
 wasp-cli.json
 */pkg/
 **/target/
+.DS_Store
+tools/wasp-cli/wasp-cli

@@ -4,18 +4,21 @@
 package dashboard
 
 import (
+	_ "embed"
 	"net/http"
 
 	peering_pkg "github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/labstack/echo/v4"
 )
 
-func peeringInit(e *echo.Echo, r renderer) Tab {
-	route := e.GET("/peering", handlePeering)
+//go:embed templates/peering.tmpl
+var tplPeering string
+
+func (d *Dashboard) peeringInit(e *echo.Echo, r renderer) Tab {
+	route := e.GET("/peering", d.handlePeering)
 	route.Name = "peering"
 
-	r[route.Path] = makeTemplate(e, tplPeering)
+	r[route.Path] = d.makeTemplate(e, tplPeering)
 
 	return Tab{
 		Path:  route.Path,
@@ -24,50 +27,16 @@ func peeringInit(e *echo.Echo, r renderer) Tab {
 	}
 }
 
-func handlePeering(c echo.Context) error {
+func (d *Dashboard) handlePeering(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), &PeeringTemplateParams{
-		BaseTemplateParams: BaseParams(c),
-		NetworkProvider:    peering.DefaultNetworkProvider(),
+		BaseTemplateParams:    d.BaseParams(c),
+		NetworkProvider:       d.wasp.NetworkProvider(),
+		TrustedNetworkManager: d.wasp.TrustedNetworkManager(),
 	})
 }
 
 type PeeringTemplateParams struct {
 	BaseTemplateParams
-	NetworkProvider peering_pkg.NetworkProvider
+	NetworkProvider       peering_pkg.NetworkProvider
+	TrustedNetworkManager peering_pkg.TrustedNetworkManager
 }
-
-const tplPeering = `
-{{define "title"}}Peering{{end}}
-
-{{define "body"}}
-<div class="card fluid">
-	<h2 class="section">Peering</h2>
-	<dl>
-		<dt>Node network ID</dt><dd><tt>{{.MyNetworkId}}</tt></dd>
-	</dl>
-</div>
-<div class="card fluid">
-	<h3 class="section">Peers</h3>
-	<table>
-		<thead>
-			<tr>
-				<th>NetID</th>
-				<th>Type</th>
-				<th>Status</th>
-				<th>#Users</th>
-			</tr>
-		</thead>
-		<tbody>
-		{{range $_, $ps := .NetworkProvider.PeerStatus}}
-			<tr>
-				<td data-label="NetID"><tt>{{$ps.NetID}}</tt></td>
-				<td data-label="Type">{{if $ps.IsInbound}}inbound{{else}}outbound{{end}}</td>
-				<td data-label="Status">{{if $ps.IsAlive}}up{{else}}down{{end}}</td>
-				<td data-label="#Users">{{$ps.NumUsers}}</td>
-			</tr>
-		{{end}}
-		</tbody>
-	</table>
-</div>
-{{end}}
-`

@@ -1,37 +1,40 @@
 package dashboard
 
 import (
+	_ "embed"
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 )
 
-func initChainContract(e *echo.Echo, r renderer) {
-	route := e.GET("/chain/:chainid/contract/:hname", handleChainContract)
+//go:embed templates/chaincontract.tmpl
+var tplChainContract string
+
+func (d *Dashboard) initChainContract(e *echo.Echo, r renderer) {
+	route := e.GET("/chain/:chainid/contract/:hname", d.handleChainContract)
 	route.Name = "chainContract"
-	r[route.Path] = makeTemplate(e, tplChainContract, tplWs)
+	r[route.Path] = d.makeTemplate(e, tplChainContract, tplWs)
 }
 
-func handleChainContract(c echo.Context) error {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+func (d *Dashboard) handleChainContract(c echo.Context) error {
+	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
 
-	hname, err := coretypes.HnameFromString(c.Param("hname"))
+	hname, err := iscp.HnameFromString(c.Param("hname"))
 	if err != nil {
 		return err
 	}
 
 	result := &ChainContractTemplateParams{
-		BaseTemplateParams: BaseParams(c, chainBreadcrumb(c.Echo(), chainID), Tab{
+		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
 			Path:  c.Path(),
 			Title: fmt.Sprintf("Contract %d", hname),
 			Href:  "#",
@@ -40,26 +43,26 @@ func handleChainContract(c echo.Context) error {
 		Hname:   hname,
 	}
 
-	chain := chains.GetChain(chainID)
+	chain := d.wasp.GetChain(chainID)
 	if chain != nil {
-		r, err := callView(chain, root.Interface.Hname(), root.FuncFindContract, codec.MakeDict(map[string]interface{}{
+		r, err := d.wasp.CallView(chain, root.Contract.Hname(), root.FuncFindContract.Name, codec.MakeDict(map[string]interface{}{
 			root.ParamHname: codec.EncodeHname(hname),
 		}))
 		if err != nil {
 			return err
 		}
-		result.ContractRecord, err = root.DecodeContractRecord(r[root.ParamData])
+		result.ContractRecord, err = root.DecodeContractRecord(r[root.VarData])
 		if err != nil {
 			return err
 		}
 
-		r, err = callView(chain, eventlog.Interface.Hname(), eventlog.FuncGetRecords, codec.MakeDict(map[string]interface{}{
+		r, err = d.wasp.CallView(chain, eventlog.Contract.Hname(), eventlog.FuncGetRecords.Name, codec.MakeDict(map[string]interface{}{
 			eventlog.ParamContractHname: codec.EncodeHname(hname),
 		}))
 		if err != nil {
 			return err
 		}
-		records := collections.NewArrayReadOnly(r, eventlog.ParamRecords)
+		records := collections.NewArray16ReadOnly(r, eventlog.ParamRecords)
 		result.Log = make([]*collections.TimestampedLogRecord, records.MustLen())
 		for i := uint16(0); i < records.MustLen(); i++ {
 			b := records.MustGetAt(i)
@@ -69,7 +72,7 @@ func handleChainContract(c echo.Context) error {
 			}
 		}
 
-		result.RootInfo, err = fetchRootInfo(chain)
+		result.RootInfo, err = d.fetchRootInfo(chain)
 		if err != nil {
 			return err
 		}
@@ -81,62 +84,10 @@ func handleChainContract(c echo.Context) error {
 type ChainContractTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID coretypes.ChainID
-	Hname   coretypes.Hname
+	ChainID *iscp.ChainID
+	Hname   iscp.Hname
 
 	ContractRecord *root.ContractRecord
 	Log            []*collections.TimestampedLogRecord
 	RootInfo       RootInfo
 }
-
-const tplChainContract = `
-{{define "title"}}Contract details{{end}}
-
-{{define "body"}}
-	{{ $c := .ContractRecord }}
-	{{ $chainid := .ChainID }}
-	{{ $rootinfo := .RootInfo }}
-	{{ if $c }}
-		<div class="card fluid">
-			<h2 class="section">Contract</h2>
-			<dl>
-				<dt>Name</dt><dd><tt>{{trim 50 $c.Name}}</tt></dd>
-				<dt>Hname</dt><dd><tt>{{.Hname}}</tt></dd>
-				<dt>Description</dt><dd><tt>{{trim 50 $c.Description}}</tt></dd>
-				<dt>Program hash</dt><dd><tt>{{$c.ProgramHash.String}}</tt></dd>
-				{{if $c.HasCreator}}<dt>Creator</dt><dd>{{ template "agentid" (args $chainid $c.Creator) }}</dd>{{end}}
-				<dt>Owner fee</dt><dd>
-					{{- if $c.OwnerFee -}}
-						<tt>{{- $c.OwnerFee }} {{ $rootinfo.FeeColor -}}</tt>
-					{{- else -}}
-						<tt>{{- $rootinfo.DefaultOwnerFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
-					{{- end -}}
-				</dd>
-				<dt>Validator fee</dt><dd>
-					{{- if $c.ValidatorFee -}}
-						<tt>{{- $c.ValidatorFee }} {{ $rootinfo.FeeColor -}}
-					{{- else -}}
-						<tt>{{- $rootinfo.DefaultValidatorFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
-					{{- end -}}
-				</dd>
-			</dl>
-		</div>
-
-		<div class="card fluid">
-			<h3 class="section">Log</h3>
-			<dl style="align-items: center">
-				{{ range $_, $rec := .Log }}
-					<dt><tt>{{ formatTimestamp $rec.Timestamp }}</tt></dt>
-					<dd><pre>{{- trim 1000 (bytesToString $rec.Data) -}}</pre></dd>
-				{{ end }}
-			</dl>
-		</div>
-		{{ template "ws" .ChainID }}
-	{{else}}
-		<div class="card fluid error">Not found.</div>
-	{{end}}
-</div>
-</div>
-</div>
-{{end}}
-`

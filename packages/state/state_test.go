@@ -2,229 +2,261 @@ package state
 
 import (
 	"testing"
+	"time"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/transaction"
-	"github.com/iotaledger/goshimmer/packages/database"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/coretypes"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/stretchr/testify/assert"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
+	"github.com/stretchr/testify/require"
 )
 
+func TestVirtualStateBasic(t *testing.T) {
+	t.Run("create new1", func(t *testing.T) {
+		db := mapdb.NewMapDB()
+		vs1 := newVirtualState(db, nil)
+		require.EqualValues(t, hashing.NilHash, vs1.Hash())
+		require.Panics(t, func() {
+			vs1.BlockIndex()
+		})
+	})
+	t.Run("create new2", func(t *testing.T) {
+		db := mapdb.NewMapDB()
+		chainID := iscp.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
+		vs1 := newVirtualState(db, chainID)
+		h1 := vs1.Hash()
+		require.EqualValues(t, hashing.NilHash, h1)
+		require.Panics(t, func() {
+			vs1.BlockIndex()
+		})
+	})
+	t.Run("zero state", func(t *testing.T) {
+		db := mapdb.NewMapDB()
+		vs1, blk := newZeroVirtualState(db, nil)
+		h1 := vs1.Hash()
+		require.EqualValues(t, OriginStateHash(), h1)
+		require.EqualValues(t, 0, vs1.BlockIndex())
+		require.EqualValues(t, newOriginBlock().Bytes(), blk.Bytes())
+	})
+}
+
+func TestOriginHashes(t *testing.T) {
+	t.Run("origin state hash consistency ", func(t *testing.T) {
+		t.Logf("origin state hash calculated: %s", calcOriginStateHash().String())
+		require.EqualValues(t, OriginStateHashBase58, OriginStateHash().String())
+		require.EqualValues(t, OriginStateHash().String(), calcOriginStateHash().String())
+	})
+	t.Run("zero state hash == origin state hash", func(t *testing.T) {
+		z, _ := newZeroVirtualState(mapdb.NewMapDB(), nil)
+		t.Logf("zero state hash = %s", z.Hash().String())
+		require.EqualValues(t, calcOriginStateHash(), z.Hash())
+	})
+	t.Run("origin state construct", func(t *testing.T) {
+		origBlock := newOriginBlock()
+		emptyState := newVirtualState(mapdb.NewMapDB(), nil)
+		err := emptyState.ApplyBlock(origBlock)
+		require.NoError(t, err)
+		require.EqualValues(t, emptyState.Hash(), calcOriginStateHash())
+	})
+}
+
+func TestStateWithDB(t *testing.T) {
+	t.Run("state not found", func(t *testing.T) {
+		store := mapdb.NewMapDB()
+		chainID := iscp.RandomChainID([]byte("1"))
+		_, exists, err := LoadSolidState(store, chainID)
+		require.NoError(t, err)
+		require.False(t, exists)
+	})
+	t.Run("save zero state", func(t *testing.T) {
+		store := mapdb.NewMapDB()
+		chainID := iscp.RandomChainID([]byte("1"))
+		_, exists, err := LoadSolidState(store, chainID)
+		require.NoError(t, err)
+		require.False(t, exists)
+
+		vs1, err := CreateOriginState(store, chainID)
+		require.NoError(t, err)
+		require.EqualValues(t, 0, vs1.BlockIndex())
+		require.True(t, vs1.Timestamp().IsZero())
+
+		vs2, exists, err := LoadSolidState(store, chainID)
+		require.NoError(t, err)
+		require.True(t, exists)
+
+		require.EqualValues(t, vs1.Hash(), vs2.Hash())
+		require.EqualValues(t, vs1.BlockIndex(), vs2.BlockIndex())
+		require.EqualValues(t, vs1.Timestamp(), vs2.Timestamp())
+		require.True(t, vs2.Timestamp().IsZero())
+		require.EqualValues(t, 0, vs2.BlockIndex())
+
+		require.EqualValues(t, vs1.Clone().Hash(), vs2.Clone().Hash())
+	})
+	t.Run("load 0 block", func(t *testing.T) {
+		store := mapdb.NewMapDB()
+		chainID := iscp.RandomChainID([]byte("1"))
+		_, exists, err := LoadSolidState(store, chainID)
+		require.NoError(t, err)
+		require.False(t, exists)
+
+		vs1, err := CreateOriginState(store, chainID)
+		require.NoError(t, err)
+		require.EqualValues(t, 0, vs1.BlockIndex())
+		require.True(t, vs1.Timestamp().IsZero())
+
+		data, err := LoadBlockBytes(store, 0)
+		require.NoError(t, err)
+		require.EqualValues(t, newOriginBlock().Bytes(), data)
+	})
+	t.Run("apply, save and load block 1", func(t *testing.T) {
+		store := mapdb.NewMapDB()
+		chainID := iscp.RandomChainID([]byte("1"))
+		_, exists, err := LoadSolidState(store, chainID)
+		require.NoError(t, err)
+		require.False(t, exists)
+
+		vs1, err := CreateOriginState(store, chainID)
+		require.NoError(t, err)
+
+		nowis := time.Now()
+		su := NewStateUpdateWithBlockIndexMutation(1)
+		su1 := NewStateUpdate(nowis)
+		su1.Mutations().Set("key", []byte("value"))
+		block1, err := newBlock(su, su1)
+		require.NoError(t, err)
+
+		err = vs1.ApplyBlock(block1)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, vs1.BlockIndex())
+		require.True(t, nowis.Equal(vs1.Timestamp()))
+
+		err = vs1.Commit(block1)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, vs1.BlockIndex())
+		require.True(t, nowis.Equal(vs1.Timestamp()))
+
+		vs2, exists, err := LoadSolidState(store, chainID)
+		require.NoError(t, err)
+		require.True(t, exists)
+
+		require.EqualValues(t, vs1.Hash(), vs2.Hash())
+		require.EqualValues(t, vs1.BlockIndex(), vs2.BlockIndex())
+		require.EqualValues(t, vs1.Timestamp(), vs2.Timestamp())
+		require.EqualValues(t, 1, vs2.BlockIndex())
+
+		data, err := LoadBlockBytes(store, 0)
+		require.NoError(t, err)
+		require.EqualValues(t, newOriginBlock().Bytes(), data)
+
+		data, err = LoadBlockBytes(store, 1)
+		require.NoError(t, err)
+		require.EqualValues(t, block1.Bytes(), data)
+
+		data = vs2.KVStoreReader().MustGet("key")
+		require.EqualValues(t, []byte("value"), data)
+
+		require.EqualValues(t, vs1.Hash(), vs2.Hash())
+	})
+	t.Run("state reader", func(t *testing.T) {
+		store := mapdb.NewMapDB()
+		chainID := iscp.RandomChainID([]byte("1"))
+		_, exists, err := LoadSolidState(store, chainID)
+		require.NoError(t, err)
+		require.False(t, exists)
+
+		vs1, err := CreateOriginState(store, chainID)
+		require.NoError(t, err)
+
+		nowis := time.Now()
+		su := NewStateUpdateWithBlockIndexMutation(1)
+		su1 := NewStateUpdate(nowis)
+		su1.Mutations().Set("key", []byte("value"))
+		block1, err := newBlock(su, su1)
+		require.NoError(t, err)
+
+		err = vs1.ApplyBlock(block1)
+		require.NoError(t, err)
+		require.EqualValues(t, 1, vs1.BlockIndex())
+		require.True(t, nowis.Equal(vs1.Timestamp()))
+
+		err = vs1.Commit()
+		require.NoError(t, err)
+		require.EqualValues(t, 1, vs1.BlockIndex())
+		require.True(t, nowis.Equal(vs1.Timestamp()))
+
+		vs2, exists, err := LoadSolidState(store, chainID)
+		require.NoError(t, err)
+		require.True(t, exists)
+
+		glb := coreutil.NewChainStateSync()
+		glb.SetSolidIndex(0)
+		rdr := NewOptimisticStateReader(store, glb)
+
+		bi, err := rdr.BlockIndex()
+		require.NoError(t, err)
+		require.EqualValues(t, vs2.BlockIndex(), bi)
+
+		ts, err := rdr.Timestamp()
+		require.NoError(t, err)
+		require.EqualValues(t, vs2.Timestamp(), ts)
+
+		h, err := rdr.Hash()
+		require.NoError(t, err)
+		require.EqualValues(t, vs2.Hash(), h)
+		require.EqualValues(t, "value", string(rdr.KVStoreReader().MustGet("key")))
+
+		glb.InvalidateSolidIndex()
+		_, err = rdr.Hash()
+		require.Error(t, err)
+		require.EqualValues(t, err, optimism.ErrStateHasBeenInvalidated)
+	})
+}
+
 func TestVariableStateBasic(t *testing.T) {
-	chainID := coretypes.ChainID{1, 3, 3, 7}
-	vs1 := NewVirtualState(mapdb.NewMapDB(), &chainID)
+	chainID := iscp.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
+	vs1, err := CreateOriginState(mapdb.NewMapDB(), chainID)
+	require.NoError(t, err)
 	h1 := vs1.Hash()
-	assert.EqualValues(t, hashing.NilHash, h1)
-	assert.Equal(t, vs1.BlockIndex(), uint32(0))
+	require.EqualValues(t, OriginStateHash(), h1)
 
 	vs2 := vs1.Clone()
 	h2 := vs2.Hash()
-	assert.EqualValues(t, h1, h2)
-	assert.EqualValues(t, vs1.BlockIndex(), vs1.BlockIndex())
+	require.EqualValues(t, h1, h2)
 
-	vs1.Variables().Set("num", codec.EncodeInt64(int64(123)))
-	vs1.Variables().Set("kuku", codec.EncodeString("A"))
-	vs1.Variables().Set("mumu", codec.EncodeString("B"))
+	vs1.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint64(1))
+	vs1.KVStore().Set("num", codec.EncodeInt64(int64(123)))
+	vs1.KVStore().Set("kuku", codec.EncodeString("A"))
+	vs1.KVStore().Set("mumu", codec.EncodeString("B"))
 
-	vs2.Variables().Set("mumu", codec.EncodeString("B"))
-	vs2.Variables().Set("kuku", codec.EncodeString("A"))
-	vs2.Variables().Set("num", codec.EncodeInt64(int64(123)))
+	vs2.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint64(1))
+	vs2.KVStore().Set("mumu", codec.EncodeString("B"))
+	vs2.KVStore().Set("kuku", codec.EncodeString("A"))
+	vs2.KVStore().Set("num", codec.EncodeInt64(int64(123)))
 
-	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
+	require.EqualValues(t, vs1.Hash(), vs2.Hash())
 
 	vs3 := vs1.Clone()
 	vs4 := vs2.Clone()
 
-	assert.EqualValues(t, vs3.Hash(), vs4.Hash())
+	require.EqualValues(t, vs3.Hash(), vs4.Hash())
 }
 
-func TestApply(t *testing.T) {
-	txid1 := (transaction.ID)(hashing.HashStrings("test string 1"))
-	reqid1 := coretypes.NewRequestID(txid1, 5)
-	su1 := NewStateUpdate(&reqid1)
+func TestStateReader(t *testing.T) {
+	t.Run("state not found", func(t *testing.T) {
+		store := mapdb.NewMapDB()
+		chainID := iscp.RandomChainID([]byte("1"))
+		_, err := CreateOriginState(store, chainID)
+		require.NoError(t, err)
 
-	assert.EqualValues(t, *su1.RequestID(), reqid1)
-
-	txid2 := (transaction.ID)(hashing.HashStrings("test string 2"))
-	reqid2 := coretypes.NewRequestID(txid2, 2)
-	su2 := NewStateUpdate(&reqid2)
-	suwrong := NewStateUpdate(&reqid2)
-
-	assert.EqualValues(t, *su2.RequestID(), reqid2)
-
-	_, err := NewBlock(nil)
-	assert.Equal(t, err == nil, false)
-
-	_, err = NewBlock([]StateUpdate{su1, su1})
-	assert.Equal(t, err == nil, false)
-
-	_, err = NewBlock([]StateUpdate{su2, suwrong})
-	assert.Equal(t, err == nil, false)
-
-	batch1, err := NewBlock([]StateUpdate{su1, su2})
-	assert.NoError(t, err)
-	assert.Equal(t, uint16(2), batch1.Size())
-
-	batch2, err := NewBlock([]StateUpdate{su1, su2})
-	assert.NoError(t, err)
-	assert.Equal(t, uint16(2), batch2.Size())
-
-	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
-
-	batch1.WithStateTransaction(txid1)
-	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
-
-	batch2.WithStateTransaction(txid1)
-	assert.EqualValues(t, batch1.EssenceHash(), batch2.EssenceHash())
-
-	assert.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch2))
-
-	chainID := coretypes.ChainID{1, 3, 3, 7}
-	db := mapdb.NewMapDB()
-	vs1 := NewVirtualState(db, &chainID)
-	vs2 := NewVirtualState(db, &chainID)
-
-	err = vs1.ApplyBlock(batch1)
-	assert.NoError(t, err)
-
-	err = vs2.ApplyBlock(batch2)
-	assert.NoError(t, err)
-}
-
-func TestApply2(t *testing.T) {
-	txid1 := (transaction.ID)(hashing.HashStrings("test string 1"))
-	reqid1 := coretypes.NewRequestID(txid1, 0)
-	reqid2 := coretypes.NewRequestID(txid1, 2)
-	reqid3 := coretypes.NewRequestID(txid1, 5)
-
-	su1 := NewStateUpdate(&reqid1)
-	su2 := NewStateUpdate(&reqid2)
-	su3 := NewStateUpdate(&reqid3)
-
-	chainID := coretypes.ChainID{1, 3, 3, 7}
-	db := mapdb.NewMapDB()
-	vs1 := NewVirtualState(db, &chainID)
-	vs2 := NewVirtualState(db, &chainID)
-
-	batch23, err := NewBlock([]StateUpdate{su2, su3})
-	assert.NoError(t, err)
-	batch23.WithBlockIndex(1)
-
-	batch3, err := NewBlock([]StateUpdate{su3})
-	assert.NoError(t, err)
-	batch3.WithBlockIndex(1)
-
-	vs1.ApplyStateUpdate(su1)
-	err = vs1.ApplyBlock(batch23)
-	assert.NoError(t, err)
-
-	vs2.ApplyStateUpdate(su1)
-	vs2.ApplyStateUpdate(su2)
-	err = vs2.ApplyBlock(batch3)
-	assert.NoError(t, err)
-
-	assert.EqualValues(t, vs1.BlockIndex(), vs2.BlockIndex())
-
-	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
-}
-
-func TestApply3(t *testing.T) {
-	txid1 := (transaction.ID)(hashing.HashStrings("test string 1"))
-	reqid1 := coretypes.NewRequestID(txid1, 0)
-	reqid2 := coretypes.NewRequestID(txid1, 2)
-
-	su1 := NewStateUpdate(&reqid1)
-	su2 := NewStateUpdate(&reqid2)
-
-	chainID := coretypes.ChainID{1, 3, 3, 7}
-	db := mapdb.NewMapDB()
-	vs1 := NewVirtualState(db, &chainID)
-	vs2 := NewVirtualState(db, &chainID)
-
-	vs1.ApplyStateUpdate(su1)
-	vs1.ApplyStateUpdate(su2)
-	vs1.ApplyBlockIndex(0)
-
-	batch, err := NewBlock([]StateUpdate{su1, su2})
-	assert.NoError(t, err)
-	err = vs2.ApplyBlock(batch)
-	assert.NoError(t, err)
-
-	assert.EqualValues(t, vs1.Hash(), vs2.Hash())
-}
-
-func TestCommit(t *testing.T) {
-	tmpdb, _ := database.NewMemDB()
-	db := tmpdb.NewStore()
-
-	partition := db.WithRealm([]byte("2"))
-
-	txid1 := (transaction.ID)(hashing.HashStrings("test string 1"))
-	reqid1 := coretypes.NewRequestID(txid1, 5)
-	su1 := NewStateUpdate(&reqid1)
-
-	su1.Mutations().Add(buffered.NewMutationSet("x", []byte{1}))
-
-	batch1, err := NewBlock([]StateUpdate{su1})
-	assert.NoError(t, err)
-
-	chainID := coretypes.ChainID{1, 3, 3, 7}
-	vs1 := NewVirtualState(partition, &chainID)
-	err = vs1.ApplyBlock(batch1)
-	assert.NoError(t, err)
-
-	v, _ := vs1.Variables().Get(kv.Key([]byte("x")))
-	assert.Equal(t, []byte{1}, v)
-
-	v, _ = partition.Get(dbkeyStateVariable(kv.Key([]byte("x"))))
-	assert.Nil(t, v)
-
-	err = vs1.CommitToDb(batch1)
-	assert.NoError(t, err)
-
-	v, _ = vs1.Variables().Get(kv.Key([]byte("x")))
-	assert.Equal(t, []byte{1}, v)
-
-	v, _ = partition.Get(dbkeyStateVariable(kv.Key([]byte("x"))))
-	assert.Equal(t, []byte{1}, v)
-
-	vs1_2, batch1_2, _, err := loadSolidState(partition, &chainID)
-
-	assert.NoError(t, err)
-	assert.EqualValues(t, util.GetHashValue(batch1), util.GetHashValue(batch1_2))
-	assert.EqualValues(t, vs1.Hash(), vs1_2.Hash())
-
-	v, _ = vs1_2.Variables().Get(kv.Key([]byte("x")))
-	assert.Equal(t, []byte{1}, v)
-
-	txid2 := (transaction.ID)(hashing.HashStrings("test string 2"))
-	reqid2 := coretypes.NewRequestID(txid2, 6)
-	su2 := NewStateUpdate(&reqid2)
-
-	su2.Mutations().Add(buffered.NewMutationDel("x"))
-
-	batch2, err := NewBlock([]StateUpdate{su2})
-	assert.NoError(t, err)
-
-	chainID = coretypes.ChainID{1, 3, 3, 8}
-	vs2 := NewVirtualState(partition, &chainID)
-	err = vs2.ApplyBlock(batch2)
-	assert.NoError(t, err)
-
-	v, _ = vs2.Variables().Get(kv.Key([]byte("x")))
-	assert.Nil(t, v)
-
-	v, _ = partition.Get(dbkeyStateVariable(kv.Key([]byte("x"))))
-	assert.Equal(t, []byte{1}, v)
-
-	err = vs2.CommitToDb(batch2)
-	assert.NoError(t, err)
-
-	v, _ = partition.Get(dbkeyStateVariable(kv.Key([]byte("x"))))
-	assert.Nil(t, v)
+		glb := coreutil.NewChainStateSync()
+		glb.SetSolidIndex(0)
+		st := NewOptimisticStateReader(store, glb)
+		ok, err := st.KVStoreReader().Has("kuku")
+		require.NoError(t, err)
+		require.False(t, ok)
+	})
 }

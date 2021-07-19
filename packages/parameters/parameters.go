@@ -21,15 +21,25 @@ const (
 	WebAPIAuth           = "webapi.auth"
 
 	DashboardBindAddress       = "dashboard.bindAddress"
-	DashboardExploreAddressUrl = "dashboard.exploreAddressUrl"
+	DashboardExploreAddressURL = "dashboard.exploreAddressUrl"
 	DashboardAuth              = "dashboard.auth"
 
 	NodeAddress = "nodeconn.address"
 
-	PeeringMyNetId = "peering.netid"
-	PeeringPort    = "peering.port"
+	PeeringMyNetID                   = "peering.netid"
+	PeeringPort                      = "peering.port"
+	PeeringNeighbors                 = "peering.neighbors"
+	PullMissingRequestsFromCommittee = "peering.pullMissingRequests"
 
 	NanomsgPublisherPort = "nanomsg.port"
+
+	IpfsGatewayAddress = "ipfs.gatewayAddress"
+
+	OffledgerBroadcastUpToNPeers = "offledger.broadcastUpToNPeers"
+	OffledgerBroadcastInterval   = "offledger.broadcastInterval"
+
+	ProfilingBindAddress = "profiling.bindAddress"
+	ProfilingEnabled     = "profiling.enabled"
 )
 
 func InitFlags() {
@@ -48,15 +58,25 @@ func InitFlags() {
 	flag.StringToString(WebAPIAuth, nil, "authentication scheme for web API")
 
 	flag.String(DashboardBindAddress, "127.0.0.1:7000", "the bind address for the node dashboard")
-	flag.String(DashboardExploreAddressUrl, "", "URL to add as href to addresses in the dashboard [default: <nodeconn.address>:8081/explorer/address]")
+	flag.String(DashboardExploreAddressURL, "", "URL to add as href to addresses in the dashboard [default: <nodeconn.address>:8081/explorer/address]")
 	flag.StringToString(DashboardAuth, nil, "authentication scheme for the node dashboard")
 
 	flag.String(NodeAddress, "127.0.0.1:5000", "node host address")
 
 	flag.Int(PeeringPort, 4000, "port for Wasp committee connection/peering")
-	flag.String(PeeringMyNetId, "127.0.0.1:4000", "node host address as it is recognized by other peers")
+	flag.String(PeeringMyNetID, "127.0.0.1:4000", "node host address as it is recognized by other peers")
+	flag.StringSlice(PeeringNeighbors, []string{}, "list of neighbors: known peer netIDs")
+	flag.Bool(PullMissingRequestsFromCommittee, true, "whether or not to pull missing requests from other committee members")
 
 	flag.Int(NanomsgPublisherPort, 5550, "the port for nanomsg even publisher")
+
+	flag.String(IpfsGatewayAddress, "https://ipfs.io/", "the address of HTTP(s) gateway to which download from ipfs requests will be forwarded")
+
+	flag.Int(OffledgerBroadcastUpToNPeers, 10, "number of peers an offledger request is broadcasted to")
+	flag.Int(OffledgerBroadcastInterval, 1000, "time between re-broadcast of offledger requests (in ms)")
+
+	flag.String(ProfilingBindAddress, "127.0.0.1:6060", "pprof http server address")
+	flag.Bool(ProfilingEnabled, false, "whether profiling is enabled")
 }
 
 func GetBool(name string) bool {

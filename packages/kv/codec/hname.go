@@ -1,17 +1,17 @@
 package codec
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 )
 
-func DecodeHname(b []byte) (coretypes.Hname, bool, error) {
+func DecodeHname(b []byte) (iscp.Hname, bool, error) {
 	if b == nil {
 		return 0, false, nil
 	}
-	r, err := coretypes.NewHnameFromBytes(b)
+	r, err := iscp.HnameFromBytes(b)
 	return r, err == nil, err
 }
 
-func EncodeHname(value coretypes.Hname) []byte {
+func EncodeHname(value iscp.Hname) []byte {
 	return value.Bytes()
 }

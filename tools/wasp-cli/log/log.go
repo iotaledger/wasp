@@ -6,22 +6,24 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/spf13/pflag"
+	"github.com/spf13/cobra"
 )
 
-var VerboseFlag bool
-var DebugFlag bool
+var (
+	VerboseFlag bool
+	DebugFlag   bool
+)
 
-func InitCommands(commands map[string]func([]string), flags *pflag.FlagSet) {
-	flags.BoolVarP(&VerboseFlag, "verbose", "v", false, "verbose")
-	flags.BoolVarP(&DebugFlag, "debug", "d", false, "debug")
+func Init(rootCmd *cobra.Command) {
+	rootCmd.PersistentFlags().BoolVarP(&VerboseFlag, "verbose", "", false, "verbose")
+	rootCmd.PersistentFlags().BoolVarP(&DebugFlag, "debug", "d", false, "debug")
 }
 
 func Printf(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 }
 
-func Verbose(format string, args ...interface{}) {
+func Verbosef(format string, args ...interface{}) {
 	if VerboseFlag {
 		Printf(format, args...)
 	}
@@ -34,12 +36,7 @@ func addNL(s string) string {
 	return s
 }
 
-func Usage(format string, args ...interface{}) {
-	Printf("Usage: "+addNL(format), args...)
-	os.Exit(1)
-}
-
-func Fatal(format string, args ...interface{}) {
+func Fatalf(format string, args ...interface{}) {
 	s := fmt.Sprintf(format, args...)
 	if DebugFlag {
 		panic(s)
@@ -50,7 +47,7 @@ func Fatal(format string, args ...interface{}) {
 
 func Check(err error) {
 	if err != nil {
-		Fatal(err.Error())
+		Fatalf(err.Error())
 	}
 }
 

@@ -1,29 +1,10 @@
 package eventlog
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-const (
-	Name        = "eventlog"
-	description = "Event log Contract"
-)
-
-var (
-	Interface = &coreutil.ContractInterface{
-		Name:        Name,
-		Description: description,
-		ProgramHash: hashing.HashStrings(Name),
-	}
-)
-
-func init() {
-	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.ViewFunc(FuncGetRecords, getRecords),
-		coreutil.ViewFunc(FuncGetNumRecords, getNumRecords),
-	})
-}
+var Contract = coreutil.NewContract(coreutil.CoreContractEventlog, "Event log Contract")
 
 const (
 	// request parameters
@@ -34,9 +15,10 @@ const (
 	ParamNumRecords     = "numRecords"
 	ParamRecords        = "records"
 
-	// function names
-	FuncGetRecords    = "getRecords"
-	FuncGetNumRecords = "getNumRecords"
-
 	DefaultMaxNumberOfRecords = 50
+)
+
+var (
+	FuncGetRecords    = coreutil.ViewFunc("getRecords")
+	FuncGetNumRecords = coreutil.ViewFunc("getNumRecords")
 )

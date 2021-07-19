@@ -9,8 +9,8 @@ package tokenregistry
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/dapps/valuetransfers/packages/balance"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -22,9 +22,9 @@ const ProgramHash = "8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p"
 const Description = "TokenRegistry, a PoC smart contract"
 
 var (
-	RequestMintSupply        = coretypes.Hn("mintSupply")
-	RequestUpdateMetadata    = coretypes.Hn("updateMetadata")
-	RequestTransferOwnership = coretypes.Hn("transferOwnership")
+	RequestMintSupply        = iscp.Hn("mintSupply")
+	RequestUpdateMetadata    = iscp.Hn("updateMetadata")
+	RequestTransferOwnership = iscp.Hn("transferOwnership")
 )
 
 const (
@@ -38,11 +38,11 @@ const (
 	VarReqUserDefinedMetadata = "ud"
 )
 
-// implement Processor and EntryPoint interfaces
+// implement VMProcessor and VMProcessorEntryPoint interfaces
 
-type tokenRegistryProcessor map[coretypes.Hname]tokenRegistryEntryPoint
+type tokenRegistryProcessor map[iscp.Hname]tokenRegistryEntryPoint
 
-type tokenRegistryEntryPoint func(ctx coretypes.Sandbox) error
+type tokenRegistryEntryPoint func(ctx iscp.Sandbox) error
 
 // the processor is a map of entry points
 var entryPoints = tokenRegistryProcessor{
@@ -54,20 +54,20 @@ var entryPoints = tokenRegistryProcessor{
 // TokenMetadata is a structure for one supply
 type TokenMetadata struct {
 	Supply      int64
-	MintedBy    coretypes.AgentID // originator
-	Owner       coretypes.AgentID // who can update metadata
-	Created     int64             // when created record
-	Updated     int64             // when recordt last updated
-	Description string            // any text
-	UserDefined []byte            // any other data (marshalled json etc)
+	MintedBy    iscp.AgentID // originator
+	Owner       iscp.AgentID // who can update metadata
+	Created     int64        // when created record
+	Updated     int64        // when recordt last updated
+	Description string       // any text
+	UserDefined []byte       // any other data (marshalled json etc)
 }
 
 // Point to link statically with the Wasp
-func GetProcessor() coretypes.Processor {
+func GetProcessor() iscp.VMProcessor {
 	return entryPoints
 }
 
-func (v tokenRegistryProcessor) GetEntryPoint(code coretypes.Hname) (coretypes.EntryPoint, bool) {
+func (v tokenRegistryProcessor) GetEntryPoint(code iscp.Hname) (iscp.VMProcessorEntryPoint, bool) {
 	f, ok := v[code]
 	return f, ok
 }
@@ -77,7 +77,7 @@ func (v tokenRegistryProcessor) GetDescription() string {
 }
 
 // Run runs the entry point
-func (ep tokenRegistryEntryPoint) Call(ctx coretypes.Sandbox) (dict.Dict, error) {
+func (ep tokenRegistryEntryPoint) Call(ctx iscp.Sandbox) (dict.Dict, error) {
 	err := ep(ctx)
 	if err != nil {
 		ctx.Event(fmt.Sprintf("error %v", err))
@@ -91,19 +91,19 @@ func (ep tokenRegistryEntryPoint) IsView() bool {
 }
 
 // TODO
-func (ep tokenRegistryEntryPoint) CallView(ctx coretypes.SandboxView) (dict.Dict, error) {
+func (ep tokenRegistryEntryPoint) CallView(ctx iscp.SandboxView) (dict.Dict, error) {
 	panic("implement me")
 }
 
 const maxDescription = 150
 
 // mintSupply implements 'mint supply' request
-func mintSupply(ctx coretypes.Sandbox) error {
+func mintSupply(ctx iscp.Sandbox) error {
 	ctx.Event("TokenRegistry: mintSupply")
 	params := ctx.Params()
 
 	reqId := ctx.RequestID()
-	colorOfTheSupply := (balance.Color)(*reqId.TransactionID())
+	colorOfTheSupply := (ledgerstate.Color)(*reqId.TransactionID())
 
 	registry := collections.NewMap(ctx.State(), VarStateTheRegistry)
 	// check for duplicated colors
@@ -169,12 +169,12 @@ func mintSupply(ctx coretypes.Sandbox) error {
 	return nil
 }
 
-func updateMetadata(ctx coretypes.Sandbox) error {
+func updateMetadata(ctx iscp.Sandbox) error {
 	// TODO not implemented
 	return fmt.Errorf("TokenRegistry: updateMetadata not implemented")
 }
 
-func transferOwnership(ctx coretypes.Sandbox) error {
+func transferOwnership(ctx iscp.Sandbox) error {
 	// TODO not implemented
 	return fmt.Errorf("TokenRegistry: transferOwnership not implemented")
 }

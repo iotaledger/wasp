@@ -4,11 +4,12 @@
 package test
 
 import (
+	"testing"
+
 	"github.com/iotaledger/wasp/contracts/common"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func setupTest(t *testing.T) *solo.Chain {
@@ -24,7 +25,7 @@ func TestDeploy(t *testing.T) {
 func TestFuncHelloWorld(t *testing.T) {
 	chain := setupTest(t)
 
-	req := solo.NewCallParams(ScName, FuncHelloWorld)
+	req := solo.NewCallParams(ScName, FuncHelloWorld).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 }
@@ -36,7 +37,7 @@ func TestViewGetHelloWorld(t *testing.T) {
 		ScName, ViewGetHelloWorld,
 	)
 	require.NoError(t, err)
-	hw, _, err := codec.DecodeString(res[VarHelloWorld])
+	hw, _, err := codec.DecodeString(res[ResultHelloWorld])
 	require.NoError(t, err)
 	require.EqualValues(t, "Hello, world!", hw)
 }

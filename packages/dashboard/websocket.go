@@ -1,15 +1,19 @@
 package dashboard
 
 import (
+	_ "embed"
 	"strings"
 	"sync"
 
 	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/net/websocket"
 )
+
+//go:embed templates/websocket.tmpl
+var tplWs string
 
 // ChainID -> *sync.Map{} (map of connected clients)
 var wsClients = sync.Map{}
@@ -20,7 +24,7 @@ func addWsEndpoints(e *echo.Echo) {
 }
 
 func handleWebSocket(c echo.Context) error {
-	chainID, err := coretypes.NewChainIDFromBase58(c.Param("chainid"))
+	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
 		return err
 	}
@@ -31,7 +35,7 @@ func handleWebSocket(c echo.Context) error {
 		c.Logger().Infof("[WebSocket] opened for %s", c.Request().RemoteAddr)
 		defer c.Logger().Infof("[WebSocket] closed for %s", c.Request().RemoteAddr)
 
-		v, _ := wsClients.LoadOrStore(chainID.String(), &sync.Map{})
+		v, _ := wsClients.LoadOrStore(chainID.Base58(), &sync.Map{})
 		chainWsClients := v.(*sync.Map)
 
 		clientCh := make(chan string)
@@ -49,8 +53,8 @@ func handleWebSocket(c echo.Context) error {
 	return nil
 }
 
-func startWsForwarder() {
-	publisher.Event.Attach(events.NewClosure(func(msgType string, parts []string) {
+func (d *Dashboard) startWsForwarder() {
+	cl := events.NewClosure(func(msgType string, parts []string) {
 		if msgType == "state" {
 			if len(parts) < 1 {
 				return
@@ -69,30 +73,10 @@ func startWsForwarder() {
 				return true
 			})
 		}
-	}))
+	})
+	publisher.Event.Attach(cl)
+	go func() {
+		<-d.stop
+		publisher.Event.Detach(cl)
+	}()
 }
-
-const tplWs = `
-{{define "ws"}}
-	<script>
-		const url = 'ws://' +  location.host + '{{ uri "chainWs" . }}';
-		console.log('opening WebSocket to ' + url);
-		const ws = new WebSocket(url);
-
-		ws.addEventListener('error', function (event) {
-			console.error('WebSocket error!', event);
-		});
-
-		const connectedAt = new Date();
-		ws.addEventListener('message', function (event) {
-			console.log('Message from server: ', event.data);
-			ws.close();
-			if (new Date() - connectedAt > 5000) {
-				location.reload();
-			} else {
-				setTimeout(() => location.reload(), 5000);
-			}
-		});
-	</script>
-{{end}}
-`

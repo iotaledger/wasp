@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/sc/tr"
 )
 
@@ -17,7 +16,7 @@ func queryCmd(args []string) {
 		os.Exit(1)
 	}
 
-	color, err := util.ColorFromString(args[0])
+	color, err := ledgerstate.ColorFromBase58EncodedString(args[0])
 	log.Check(err)
 
 	tm, err := tr.Client().Query(&color)

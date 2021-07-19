@@ -1,11 +1,11 @@
 package sbtests
 
 import (
-	"github.com/iotaledger/wasp/packages/coretypes"
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestChainOwnerIDView(t *testing.T) { run2(t, testChainOwnerIDView) }
@@ -13,12 +13,12 @@ func testChainOwnerIDView(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	ret, err := chain.CallView(SandboxSCName, sbtestsc.FuncChainOwnerIDView)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncChainOwnerIDView.Name)
 	require.NoError(t, err)
 
 	c := ret.MustGet(sbtestsc.ParamChainOwnerID)
 
-	require.EqualValues(t, chain.OriginatorAgentID[:], c)
+	require.EqualValues(t, chain.OriginatorAgentID.Bytes(), c)
 }
 
 func TestChainOwnerIDFull(t *testing.T) { run2(t, testChainOwnerIDFull) }
@@ -26,35 +26,12 @@ func testChainOwnerIDFull(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncChainOwnerIDFull)
+	req := solo.NewCallParams(ScName, sbtestsc.FuncChainOwnerIDFull.Name).WithIotas(1)
 	ret, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	c := ret.MustGet(sbtestsc.ParamChainOwnerID)
-	require.EqualValues(t, chain.OriginatorAgentID[:], c)
-}
-
-func TestContractIDView(t *testing.T) { run2(t, testContractIDView) }
-func testContractIDView(t *testing.T, w bool) {
-	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil, w)
-
-	ret, err := chain.CallView(SandboxSCName, sbtestsc.FuncContractIDView)
-	require.NoError(t, err)
-	cID := coretypes.NewContractID(chain.ChainID, coretypes.Hn(SandboxSCName))
-	require.EqualValues(t, cID[:], ret.MustGet(sbtestsc.VarContractID))
-}
-
-func TestContractIDFull(t *testing.T) { run2(t, testContractIDFull) }
-func testContractIDFull(t *testing.T, w bool) {
-	_, chain := setupChain(t, nil)
-	setupTestSandboxSC(t, chain, nil, w)
-
-	req := solo.NewCallParams(SandboxSCName, sbtestsc.FuncContractIDFull)
-	ret, err := chain.PostRequestSync(req, nil)
-	require.NoError(t, err)
-	cID := coretypes.NewContractID(chain.ChainID, coretypes.Hn(SandboxSCName))
-	require.EqualValues(t, cID[:], ret.MustGet(sbtestsc.VarContractID))
+	require.EqualValues(t, chain.OriginatorAgentID.Bytes(), c)
 }
 
 func TestSandboxCall(t *testing.T) { run2(t, testSandboxCall) }
@@ -62,7 +39,7 @@ func testSandboxCall(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil, w)
 
-	ret, err := chain.CallView(SandboxSCName, sbtestsc.FuncSandboxCall)
+	ret, err := chain.CallView(ScName, sbtestsc.FuncSandboxCall.Name)
 	require.NoError(t, err)
 
 	d := ret.MustGet(sbtestsc.VarSandboxCall)

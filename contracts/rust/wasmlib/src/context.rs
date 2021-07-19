@@ -3,8 +3,12 @@
 
 // encapsulates standard host entities into a simple interface
 
+use std::convert::TryInto;
+
 use crate::bytes::*;
+use crate::contract::*;
 use crate::hashtypes::*;
+use crate::host::*;
 use crate::immutable::*;
 use crate::keys::*;
 use crate::mutable::*;
@@ -14,7 +18,7 @@ pub(crate) static ROOT: ScMutableMap = ScMutableMap { obj_id: 1 };
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// used to retrieve any information that is related to colored token balances
+// retrieves any information that is related to colored token balances
 pub struct ScBalances {
     balances: ScImmutableMap,
 }
@@ -25,7 +29,7 @@ impl ScBalances {
         self.balances.get_int64(color).value()
     }
 
-    // retrieve a list of all token colors that have a non-zero balance
+    // retrieve an array of all token colors that have a non-zero balance
     pub fn colors(&self) -> ScImmutableColorArray {
         self.balances.get_color_array(&KEY_COLOR)
     }
@@ -33,16 +37,22 @@ impl ScBalances {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// used to pass token transfer information to a function call
+// passes token transfer information to a function call
+#[derive(Clone, Copy)]
 pub struct ScTransfers {
-    transfers: ScMutableMap,
+    pub(crate) transfers: ScMutableMap,
 }
 
 impl ScTransfers {
+    // create a new transfers object and initialize it with the specified amount of iotas
+    pub fn iotas(amount: i64) -> ScTransfers {
+        ScTransfers::new(&ScColor::IOTA, amount)
+    }
+
     // create a new transfers object and initialize it with the specified token transfer
     pub fn new(color: &ScColor, amount: i64) -> ScTransfers {
         let transfer = ScTransfers::new_transfers();
-        transfer.add(color, amount);
+        transfer.set(color, amount);
         transfer
     }
 
@@ -51,26 +61,31 @@ impl ScTransfers {
         ScTransfers { transfers: ScMutableMap::new() }
     }
 
-    // create a new transfer object ready to add token transfers
+    pub fn none() -> ScTransfers {
+        ScTransfers { transfers: ScMutableMap { obj_id: 0 } }
+    }
+
+    // create a new transfer object from a balances object
     pub fn new_transfers_from_balances(balances: ScBalances) -> ScTransfers {
         let transfers = ScTransfers::new_transfers();
         let colors = balances.colors();
         for i in 0..colors.length() {
             let color = colors.get_color(i).value();
-            transfers.add(&color, balances.balance(&color));
+            transfers.set(&color, balances.balance(&color));
         }
         transfers
     }
 
-    // add the specified token transfer to the transfer object
-    pub fn add(&self, color: &ScColor, amount: i64) {
+    // set the specified colored token transfer in the transfer object
+    // note that this will overwrite any previous amount for the specified color
+    pub fn set(&self, color: &ScColor, amount: i64) {
         self.transfers.get_int64(color).set_value(amount);
     }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// provide access to utility functions that are handled by the host
+// provides access to utility functions that are handled by the host
 pub struct ScUtility {
     utility: ScMutableMap,
 }
@@ -78,38 +93,34 @@ pub struct ScUtility {
 impl ScUtility {
     // decodes the specified base58-encoded string value to its original bytes
     pub fn base58_decode(&self, value: &str) -> Vec<u8> {
-        self.utility.get_string(&KEY_BASE58_STRING).set_value(value);
-        self.utility.get_bytes(&KEY_BASE58_BYTES).value()
+        self.utility.call_func(KEY_BASE58_DECODE, value.as_bytes())
     }
 
     // encodes the specified bytes to a base-58-encoded string
     pub fn base58_encode(&self, value: &[u8]) -> String {
-        self.utility.get_bytes(&KEY_BASE58_BYTES).set_value(value);
-        self.utility.get_string(&KEY_BASE58_STRING).value()
+        let result = self.utility.call_func(KEY_BASE58_ENCODE, value);
+        unsafe { String::from_utf8_unchecked(result) }
     }
 
-    // retrieves the address for the specified ED25519 public key
     // retrieves the address for the specified BLS public key
     pub fn bls_address_from_pubkey(&self, pub_key: &[u8]) -> ScAddress {
-        self.utility.get_bytes(&KEY_BLS_ADDRESS).set_value(pub_key);
-        self.utility.get_address(&KEY_ADDRESS).value()
+        let result = self.utility.call_func(KEY_BLS_ADDRESS, pub_key);
+        ScAddress::from_bytes(&result)
     }
 
     // aggregates the specified multiple BLS signatures and public keys into a single one
     pub fn bls_aggregate_signatures(&self, pub_keys_bin: &[&[u8]], sigs_bin: &[&[u8]]) -> (Vec<u8>, Vec<u8>) {
         let mut encode = BytesEncoder::new();
-        encode.int64(pub_keys_bin.len() as i64);
+        encode.int32(pub_keys_bin.len() as i32);
         for pub_key in pub_keys_bin {
             encode.bytes(pub_key);
         }
-        encode.int64(sigs_bin.len() as i64);
+        encode.int32(sigs_bin.len() as i32);
         for sig in sigs_bin {
             encode.bytes(sig);
         }
-        let aggregator = self.utility.get_bytes(&KEY_BLS_AGGREGATE);
-        aggregator.set_value(&encode.data());
-        let aggregated = aggregator.value();
-        let mut decode = BytesDecoder::new(&aggregated);
+        let result = self.utility.call_func(KEY_BLS_AGGREGATE, &encode.data());
+        let mut decode = BytesDecoder::new(&result);
         return (decode.bytes().to_vec(), decode.bytes().to_vec());
     }
 
@@ -119,13 +130,14 @@ impl ScUtility {
         encode.bytes(data);
         encode.bytes(pub_key);
         encode.bytes(signature);
-        self.utility.get_bytes(&KEY_BLS_VALID).set_value(&encode.data());
-        self.utility.get_int64(&KEY_VALID).value() != 0
+        let result = self.utility.call_func(KEY_BLS_VALID, &encode.data());
+        (result[0] & 0x01) != 0
     }
 
+    // retrieves the address for the specified ED25519 public key
     pub fn ed25519_address_from_pubkey(&self, pub_key: &[u8]) -> ScAddress {
-        self.utility.get_bytes(&KEY_ED25519_ADDRESS).set_value(pub_key);
-        self.utility.get_address(&KEY_ADDRESS).value()
+        let result = self.utility.call_func(KEY_ED25519_ADDRESS, pub_key);
+        ScAddress::from_bytes(&result)
     }
 
     // checks if the specified ED25519 signature is valid
@@ -134,33 +146,32 @@ impl ScUtility {
         encode.bytes(data);
         encode.bytes(pub_key);
         encode.bytes(signature);
-        self.utility.get_bytes(&KEY_ED25519_VALID).set_value(&encode.data());
-        self.utility.get_int64(&KEY_VALID).value() != 0
+        let result = self.utility.call_func(KEY_ED25519_VALID, &encode.data());
+        (result[0] & 0x01) != 0
     }
 
-    // hashes the specified value bytes using blake2b hashing and returns the resulting 32-byte hash
+    // hashes the specified value bytes using BLAKE2b hashing and returns the resulting 32-byte hash
     pub fn hash_blake2b(&self, value: &[u8]) -> ScHash {
-        let hash = self.utility.get_bytes(&KEY_HASH_BLAKE2B);
-        hash.set_value(value);
-        ScHash::from_bytes(&hash.value())
+        let hash = self.utility.call_func(KEY_HASH_BLAKE2B, value);
+        ScHash::from_bytes(&hash)
     }
 
-    // hashes the specified value bytes using sha3 hashing and returns the resulting 32-byte hash
+    // hashes the specified value bytes using SHA3 hashing and returns the resulting 32-byte hash
     pub fn hash_sha3(&self, value: &[u8]) -> ScHash {
-        let hash = self.utility.get_bytes(&KEY_HASH_SHA3);
-        hash.set_value(value);
-        ScHash::from_bytes(&hash.value())
+        let hash = self.utility.call_func(KEY_HASH_SHA3, value);
+        ScHash::from_bytes(&hash)
     }
 
     // calculates 32-bit hash for the specified name string
     pub fn hname(&self, value: &str) -> ScHname {
-        self.utility.get_string(&KEY_NAME).set_value(value);
-        ScHname::from_bytes(&self.utility.get_bytes(&KEY_HNAME).value())
+        let result = self.utility.call_func(KEY_HNAME, value.as_bytes());
+        ScHname::from_bytes(&result)
     }
 
     // generates a random value from 0 to max (exclusive max) using a deterministic RNG
     pub fn random(&self, max: i64) -> i64 {
-        let rnd = self.utility.get_int64(&KEY_RANDOM).value();
+        let result = self.utility.call_func(KEY_RANDOM, &vec![0_u8; 0]);
+        let rnd = i64::from_le_bytes(result.try_into().expect("invalid i64 length"));
         (rnd as u64 % max as u64) as i64
     }
 }
@@ -174,34 +185,44 @@ pub(crate) fn base58_encode(bytes: &[u8]) -> String {
 
 // shared interface part of ScFuncContext and ScViewContext
 pub trait ScBaseContext {
+    // retrieve the agent id of this contract account
+    fn account_id(&self) -> ScAgentID {
+        ROOT.get_agent_id(&KEY_ACCOUNT_ID).value()
+    }
+
     // access the current balances for all token colors
     fn balances(&self) -> ScBalances {
         ScBalances { balances: ROOT.get_map(&KEY_BALANCES).immutable() }
     }
 
+    // retrieve the chain id of the chain this contract lives on
+    fn chain_id(&self) -> ScChainID {
+        ROOT.get_chain_id(&KEY_CHAIN_ID).value()
+    }
+
     // retrieve the agent id of the owner of the chain this contract lives on
-    fn chain_owner_id(&self) -> ScAgentId {
+    fn chain_owner_id(&self) -> ScAgentID {
         ROOT.get_agent_id(&KEY_CHAIN_OWNER_ID).value()
     }
 
+    // retrieve the hname of this contract
+    fn contract(&self) -> ScHname {
+        ROOT.get_hname(&KEY_CONTRACT).value()
+    }
+
     // retrieve the agent id of the creator of this contract
-    fn contract_creator(&self) -> ScAgentId {
+    fn contract_creator(&self) -> ScAgentID {
         ROOT.get_agent_id(&KEY_CONTRACT_CREATOR).value()
     }
 
-    // retrieve the id of this contract
-    fn contract_id(&self) -> ScContractId {
-        ROOT.get_contract_id(&KEY_CONTRACT_ID).value()
-    }
-
-    // logs informational text message
+    // logs informational text message in the log on the host
     fn log(&self, text: &str) {
-        ROOT.get_string(&KEY_LOG).set_value(text)
+        log(text);
     }
 
-    // logs error text message and then panics
+    // logs error text message in the log on the host and then panics
     fn panic(&self, text: &str) {
-        ROOT.get_string(&KEY_PANIC).set_value(text)
+        panic(text);
     }
 
     // retrieve parameters that were passed to the smart contract function
@@ -212,7 +233,7 @@ pub trait ScBaseContext {
     // panics with specified message if specified condition is not satisfied
     fn require(&self, cond: bool, msg: &str) {
         if !cond {
-            self.panic(msg)
+            panic(msg);
         }
     }
 
@@ -226,12 +247,13 @@ pub trait ScBaseContext {
         ROOT.get_int64(&KEY_TIMESTAMP).value()
     }
 
-    // logs debugging trace text message
+    // logs debugging trace text message in the log on the host
+    // similar to log() except this will only show in the log in a special debug mode
     fn trace(&self, text: &str) {
-        ROOT.get_string(&KEY_TRACE).set_value(text)
+        trace(text);
     }
 
-    // access diverse utility functions
+    // access diverse utility functions provided by the host
     fn utility(&self) -> ScUtility {
         ScUtility { utility: ROOT.get_map(&KEY_UTILITY) }
     }
@@ -240,10 +262,23 @@ pub trait ScBaseContext {
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 // smart contract interface with mutable access to state
+#[derive(Clone, Copy)]
 pub struct ScFuncContext {}
 
-// shared part of interface
+// reuse shared part of interface
 impl ScBaseContext for ScFuncContext {}
+
+impl ScFuncCallContext for ScFuncContext {
+    fn can_call_func(&self) {
+        panic!("can_call_func");
+    }
+}
+
+impl ScViewCallContext for ScFuncContext {
+    fn can_call_view(&self) {
+        panic!("can_call_view");
+    }
+}
 
 impl ScFuncContext {
     // synchronously calls the specified smart contract function,
@@ -253,26 +288,26 @@ impl ScFuncContext {
         encode.hname(&hcontract);
         encode.hname(&hfunction);
         if let Some(params) = params {
-            encode.int64(params.obj_id as i64);
+            encode.int32(params.map_id());
         } else {
-            encode.int64(0);
+            encode.int32(0);
         }
-        if let Some(transfers) = transfer {
-            encode.int64(transfers.transfers.obj_id as i64);
+        if let Some(transfer) = transfer {
+            encode.int32(transfer.transfers.map_id());
         } else {
-            encode.int64(0);
+            encode.int32(0);
         }
         ROOT.get_bytes(&KEY_CALL).set_value(&encode.data());
         ROOT.get_map(&KEY_RETURN).immutable()
     }
 
-    // retrieve the agent id of the caller of the smart contract
-    pub fn caller(&self) -> ScAgentId { ROOT.get_agent_id(&KEY_CALLER).value() }
-
-    // shorthand to synchronously call a smart contract function on the current contract
+    // shorthand to synchronously call a smart contract function of the current contract
     pub fn call_self(&self, hfunction: ScHname, params: Option<ScMutableMap>, transfers: Option<ScTransfers>) -> ScImmutableMap {
-        self.call(self.contract_id().hname(), hfunction, params, transfers)
+        self.call(self.contract(), hfunction, params, transfers)
     }
+
+    // retrieve the agent id of the caller of the smart contract
+    pub fn caller(&self) -> ScAgentID { ROOT.get_agent_id(&KEY_CALLER).value() }
 
     // deploys a new instance of the specified smart contract on the current chain
     // the provided parameters are passed to the smart contract "init" function
@@ -282,16 +317,16 @@ impl ScFuncContext {
         encode.string(name);
         encode.string(description);
         if let Some(params) = params {
-            encode.int64(params.obj_id as i64);
+            encode.int32(params.map_id());
         } else {
-            encode.int64(0);
+            encode.int32(0);
         }
         ROOT.get_bytes(&KEY_DEPLOY).set_value(&encode.data());
     }
 
-    // signals an event on the node that external entities can subscribe to
+    // signals an event on the host that external entities can subscribe to
     pub fn event(&self, text: &str) {
-        ROOT.get_string(&KEY_EVENT).set_value(text)
+        ROOT.get_string(&KEY_EVENT).set_value(text);
     }
 
     // access the incoming balances for all token colors
@@ -299,45 +334,40 @@ impl ScFuncContext {
         ScBalances { balances: ROOT.get_map(&KEY_INCOMING).immutable() }
     }
 
-    // retrieve the color of the tokens that were minted in this transaction
-    pub fn minted_color(&self) -> ScColor { ScColor::from_request_id(&self.request_id()) }
-
-    // retrieve the amount of tokens that were minted in this transaction
-    pub fn minted_supply(&self) -> i64 {
-        ROOT.get_int64(&KEY_MINTED).value()
+    // retrieve the tokens that were minted in this transaction
+    pub fn minted(&self) -> ScBalances {
+        ScBalances { balances: ROOT.get_map(&KEY_MINTED).immutable() }
     }
 
     // asynchronously calls the specified smart contract function,
     // passing the provided parameters and token transfers to it
-    pub fn post(&self, contract_id: &ScContractId, function: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>, delay: i64) {
+    // it is possible to schedule the call for a later execution by specifying a delay
+    pub fn post(&self, chain_id: &ScChainID, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>, transfer: ScTransfers, delay: i32) {
         let mut encode = BytesEncoder::new();
-        encode.contract_id(contract_id);
-        encode.hname(&function);
+        encode.chain_id(chain_id);
+        encode.hname(&hcontract);
+        encode.hname(&hfunction);
         if let Some(params) = &params {
-            encode.int64(params.obj_id as i64);
+            encode.int32(params.map_id());
         } else {
-            encode.int64(0);
+            encode.int32(0);
         }
-        if let Some(transfer) = &transfer {
-            encode.int64(transfer.transfers.obj_id as i64);
-        } else {
-            encode.int64(0);
-        }
-        encode.int64(delay);
+        encode.int32(transfer.transfers.map_id());
+        encode.int32(delay);
         ROOT.get_bytes(&KEY_POST).set_value(&encode.data());
     }
 
-    // shorthand to asynchronously call a smart contract function on the current contract
-    pub fn post_self(&self, function: ScHname, params: Option<ScMutableMap>, transfer: Option<ScTransfers>, delay: i64) {
-        self.post(&self.contract_id(), function, params, transfer, delay);
+    // shorthand to asynchronously call a smart contract function of the current contract
+    pub fn post_self(&self, hfunction: ScHname, params: Option<ScMutableMap>, transfer: ScTransfers, delay: i32) {
+        self.post(&self.chain_id(), self.contract(), hfunction, params, transfer, delay);
     }
 
     // retrieve the request id of this transaction
-    fn request_id(&self) -> ScRequestId {
+    pub fn request_id(&self) -> ScRequestID {
         ROOT.get_request_id(&KEY_REQUEST_ID).value()
     }
 
-    // access to mutable state storage
+    // access mutable state storage on the host
     pub fn state(&self) -> ScMutableMap {
         ROOT.get_map(&KEY_STATE)
     }
@@ -347,41 +377,48 @@ impl ScFuncContext {
         let transfers = ROOT.get_map_array(&KEY_TRANSFERS);
         let tx = transfers.get_map(transfers.length());
         tx.get_address(&KEY_ADDRESS).set_value(address);
-        tx.get_int64(&KEY_BALANCES).set_value(transfer.transfers.obj_id as i64);
+        tx.get_int32(&KEY_BALANCES).set_value(transfer.transfers.map_id());
     }
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-// smart contract interface with immutable access to state
+// smart contract view interface which has only immutable access to state
+#[derive(Clone, Copy)]
 pub struct ScViewContext {}
 
-// shared part of interface
+// reuse shared part of interface
 impl ScBaseContext for ScViewContext {}
+
+impl ScViewCallContext for ScViewContext {
+    fn can_call_view(&self) {
+        panic!("can_call_view");
+    }
+}
 
 impl ScViewContext {
     // synchronously calls the specified smart contract view,
     // passing the provided parameters to it
-    pub fn call(&self, contract: ScHname, function: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
+    pub fn call(&self, hcontract: ScHname, hfunction: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
         let mut encode = BytesEncoder::new();
-        encode.hname(&contract);
-        encode.hname(&function);
+        encode.hname(&hcontract);
+        encode.hname(&hfunction);
         if let Some(params) = params {
-            encode.int64(params.obj_id as i64);
+            encode.int32(params.map_id());
         } else {
-            encode.int64(0);
+            encode.int32(0);
         }
-        encode.int64(0);
+        encode.int32(0);
         ROOT.get_bytes(&KEY_CALL).set_value(&encode.data());
         ROOT.get_map(&KEY_RETURN).immutable()
     }
 
-    // shorthand to synchronously call a smart contract view on the current contract
-    pub fn call_self(&self, function: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
-        self.call(self.contract_id().hname(), function, params)
+    // shorthand to synchronously call a smart contract view of the current contract
+    pub fn call_self(&self, hfunction: ScHname, params: Option<ScMutableMap>) -> ScImmutableMap {
+        self.call(self.contract(), hfunction, params)
     }
 
-    // access to immutable state storage
+    // access immutable state storage on the host
     pub fn state(&self) -> ScImmutableMap {
         ROOT.get_map(&KEY_STATE).immutable()
     }

@@ -6,8 +6,8 @@ package tcp
 import (
 	"net"
 
-	"github.com/iotaledger/goshimmer/dapps/waspconn/packages/chopper"
 	"github.com/iotaledger/goshimmer/packages/tangle"
+	"github.com/iotaledger/goshimmer/packages/txstream/chopper"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/netutil/buffconn"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -22,15 +22,15 @@ type peeredConnection struct {
 	peer        *peer
 	net         *NetImpl
 	msgChopper  *chopper.Chopper
-	handshakeOk bool
+	handshakeOk bool //nolint:structcheck,unused
 }
 
 // creates new peered connection and attach event handlers for received data and closing
-func newPeeredConnection(conn net.Conn, net *NetImpl, peer *peer) *peeredConnection {
+func newPeeredConnection(conn net.Conn, netw *NetImpl, peer *peer) *peeredConnection {
 	c := &peeredConnection{
 		BufferedConnection: buffconn.NewBufferedConnection(conn, tangle.MaxMessageSize),
 		peer:               peer, // may be nil
-		net:                net,
+		net:                netw,
 		msgChopper:         chopper.NewChopper(),
 	}
 	c.Events.ReceiveMessage.Attach(events.NewClosure(func(data []byte) {
@@ -43,7 +43,7 @@ func newPeeredConnection(conn net.Conn, net *NetImpl, peer *peer) *peeredConnect
 			c.peer.handshakeOk = false
 			c.peer.Unlock()
 		}
-		net.log.Debugw("closed buff connection", "conn", conn.RemoteAddr().String())
+		netw.log.Debugw("closed buff connection", "conn", conn.RemoteAddr().String())
 	}))
 	return c
 }
@@ -71,6 +71,7 @@ func (c *peeredConnection) receiveData(data []byte) {
 		// it is peered but maybe not handshaked yet (can only be outbound)
 		if c.peer.handshakeOk {
 			// it is handshake-ed
+			msg.SenderNetID = c.peer.NetID()
 			c.net.events.Trigger(&peering.RecvEvent{
 				From: c.peer,
 				Msg:  msg,
@@ -102,7 +103,7 @@ func (c *peeredConnection) receiveData(data []byte) {
 func (c *peeredConnection) processHandShakeOutbound(msg *peering.PeerMessage) {
 	var err error
 	var hMsg *handshakeMsg
-	if hMsg, err = handshakeMsgFromBytes(msg.MsgData, c.net.suite); err != nil {
+	if hMsg, err = handshakeMsgFromBytes(msg.MsgData); err != nil {
 		c.net.log.Errorf(
 			"closeConn the peer connection: wrong handshake message from outbound peer %v, error: %v",
 			c.peer.peeringID(), err,
@@ -121,7 +122,7 @@ func (c *peeredConnection) processHandShakeOutbound(msg *peering.PeerMessage) {
 		}
 	} else {
 		c.net.log.Infof("CONNECTED WITH PEER %s (outbound)", hMsg.peeringID)
-		c.peer.remotePubKey = hMsg.pubKey
+		c.peer.remotePubKey = &hMsg.pubKey
 		c.peer.handshakeOk = true
 		c.peer.waitReady.Done()
 	}
@@ -133,7 +134,7 @@ func (c *peeredConnection) processHandShakeOutbound(msg *peering.PeerMessage) {
 func (c *peeredConnection) processHandShakeInbound(msg *peering.PeerMessage) {
 	var err error
 	var hMsg *handshakeMsg
-	if hMsg, err = handshakeMsgFromBytes(msg.MsgData, c.net.suite); err != nil {
+	if hMsg, err = handshakeMsgFromBytes(msg.MsgData); err != nil {
 		c.net.log.Errorf(
 			"closeConn the peer connection: wrong handshake message from outbound peer %v, error: %v",
 			c.peer.peeringID(), err,
@@ -156,7 +157,7 @@ func (c *peeredConnection) processHandShakeInbound(msg *peering.PeerMessage) {
 
 	peer.Lock()
 	peer.peerconn = c
-	peer.remotePubKey = hMsg.pubKey
+	peer.remotePubKey = &hMsg.pubKey
 	peer.handshakeOk = true
 	peer.waitReady.Done()
 	peer.Unlock()

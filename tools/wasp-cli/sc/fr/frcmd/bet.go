@@ -3,7 +3,6 @@
 package frcmd
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 

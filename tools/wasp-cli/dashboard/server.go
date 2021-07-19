@@ -4,8 +4,8 @@ package dashboard
 
 import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/sc"
-	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 )
 

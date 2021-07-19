@@ -2,125 +2,119 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/contracts/native"
-	"github.com/iotaledger/wasp/packages/coretypes/coreutil"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-const (
-	Name        = "test_sandbox"
-	description = "Test Sandbox functions"
+var Contract = coreutil.NewContract("testcore", "Test Core Sandbox functions")
+
+var Processor = Contract.Processor(initialize,
+	FuncChainOwnerIDView.WithHandler(testChainOwnerIDView),
+	FuncChainOwnerIDFull.WithHandler(testChainOwnerIDFull),
+	FuncGetMintedSupply.WithHandler(getMintedSupply),
+
+	FuncEventLogGenericData.WithHandler(testEventLogGenericData),
+	FuncEventLogEventData.WithHandler(testEventLogEventData),
+	FuncEventLogDeploy.WithHandler(testEventLogDeploy),
+	FuncSandboxCall.WithHandler(testSandboxCall),
+
+	FuncPanicFullEP.WithHandler(testPanicFullEP),
+	FuncPanicViewEP.WithHandler(testPanicViewEP),
+	FuncCallPanicFullEP.WithHandler(testCallPanicFullEP),
+	FuncCallPanicViewEPFromFull.WithHandler(testCallPanicViewEPFromFull),
+	FuncCallPanicViewEPFromView.WithHandler(testCallPanicViewEPFromView),
+
+	FuncDoNothing.WithHandler(doNothing),
+	FuncSendToAddress.WithHandler(sendToAddress),
+
+	FuncWithdrawToChain.WithHandler(withdrawToChain),
+	FuncCallOnChain.WithHandler(callOnChain),
+	FuncSetInt.WithHandler(setInt),
+	FuncGetInt.WithHandler(getInt),
+	FuncGetFibonacci.WithHandler(getFibonacci),
+	FuncIncCounter.WithHandler(incCounter),
+	FuncGetCounter.WithHandler(getCounter),
+	FuncRunRecursion.WithHandler(runRecursion),
+
+	FuncPassTypesFull.WithHandler(passTypesFull),
+	FuncPassTypesView.WithHandler(passTypesView),
+	FuncCheckContextFromFullEP.WithHandler(testCheckContextFromFullEP),
+	FuncCheckContextFromViewEP.WithHandler(testCheckContextFromViewEP),
+
+	FuncTestBlockContext1.WithHandler(testBlockContext1),
+	FuncTestBlockContext2.WithHandler(testBlockContext2),
+	FuncGetStringValue.WithHandler(getStringValue),
+
+	FuncJustView.WithHandler(testJustView),
+
+	FuncSpawn.WithHandler(spawn),
 )
 
 var (
-	Interface = &coreutil.ContractInterface{
-		Name:        Name,
-		Description: description,
-		ProgramHash: hashing.HashStrings(Name),
-	}
+	// function eventlog test
+	FuncEventLogGenericData = coreutil.Func("testEventLogGenericData")
+	FuncEventLogEventData   = coreutil.Func("testEventLogEventData")
+	FuncEventLogDeploy      = coreutil.Func("testEventLogDeploy")
+
+	// Function sandbox test
+	FuncChainOwnerIDView = coreutil.ViewFunc("testChainOwnerIDView")
+	FuncChainOwnerIDFull = coreutil.Func("testChainOwnerIDFull")
+
+	FuncSandboxCall            = coreutil.ViewFunc("testSandboxCall")
+	FuncCheckContextFromFullEP = coreutil.Func("checkContextFromFullEP")
+	FuncCheckContextFromViewEP = coreutil.ViewFunc("checkContextFromViewEP")
+	FuncGetMintedSupply        = coreutil.Func("getMintedSupply")
+
+	FuncPanicFullEP             = coreutil.Func("testPanicFullEP")
+	FuncPanicViewEP             = coreutil.ViewFunc("testPanicViewEP")
+	FuncCallPanicFullEP         = coreutil.Func("testCallPanicFullEP")
+	FuncCallPanicViewEPFromFull = coreutil.Func("testCallPanicViewEPFromFull")
+	FuncCallPanicViewEPFromView = coreutil.ViewFunc("testCallPanicViewEPFromView")
+
+	FuncTestBlockContext1 = coreutil.Func("testBlockContext1")
+	FuncTestBlockContext2 = coreutil.Func("testBlockContext2")
+	FuncGetStringValue    = coreutil.ViewFunc("getStringValue")
+
+	FuncWithdrawToChain = coreutil.Func("withdrawToChain")
+
+	FuncDoNothing     = coreutil.Func("doNothing")
+	FuncSendToAddress = coreutil.Func("sendToAddress")
+	FuncJustView      = coreutil.ViewFunc("justView")
+
+	FuncCallOnChain  = coreutil.Func("callOnChain")
+	FuncSetInt       = coreutil.Func("setInt")
+	FuncGetInt       = coreutil.ViewFunc("getInt")
+	FuncGetFibonacci = coreutil.ViewFunc("fibonacci")
+	FuncGetCounter   = coreutil.ViewFunc("getCounter")
+	FuncIncCounter   = coreutil.Func("incCounter")
+	FuncRunRecursion = coreutil.Func("runRecursion")
+
+	FuncPassTypesFull = coreutil.Func("passTypesFull")
+	FuncPassTypesView = coreutil.ViewFunc("passTypesView")
+
+	FuncSpawn = coreutil.Func("spawn")
 )
 
-func init() {
-	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.ViewFunc(FuncChainOwnerIDView, testChainOwnerIDView),
-		coreutil.Func(FuncChainOwnerIDFull, testChainOwnerIDFull),
-		coreutil.ViewFunc(FuncContractIDView, testContractIDView),
-		coreutil.Func(FuncContractIDFull, testContractIDFull),
-		coreutil.Func(FuncGetMintedSupply, getMintedSupply),
-
-		coreutil.Func(FuncEventLogGenericData, testEventLogGenericData),
-		coreutil.Func(FuncEventLogEventData, testEventLogEventData),
-		coreutil.Func(FuncEventLogDeploy, testEventLogDeploy),
-		coreutil.ViewFunc(FuncSandboxCall, testSandboxCall),
-
-		coreutil.Func(FuncPanicFullEP, testPanicFullEP),
-		coreutil.ViewFunc(FuncPanicViewEP, testPanicViewEP),
-		coreutil.Func(FuncCallPanicFullEP, testCallPanicFullEP),
-		coreutil.Func(FuncCallPanicViewEPFromFull, testCallPanicViewEPFromFull),
-		coreutil.ViewFunc(FuncCallPanicViewEPFromView, testCallPanicViewEPFromView),
-
-		coreutil.Func(FuncDoNothing, doNothing),
-		coreutil.Func(FuncSendToAddress, sendToAddress),
-
-		coreutil.Func(FuncWithdrawToChain, withdrawToChain),
-		coreutil.Func(FuncCallOnChain, callOnChain),
-		coreutil.Func(FuncSetInt, setInt),
-		coreutil.ViewFunc(FuncGetInt, getInt),
-		coreutil.ViewFunc(FuncGetFibonacci, getFibonacci),
-		coreutil.Func(FuncIncCounter, incCounter),
-		coreutil.ViewFunc(FuncGetCounter, getCounter),
-		coreutil.Func(FuncRunRecursion, runRecursion),
-
-		coreutil.Func(FuncPassTypesFull, passTypesFull),
-		coreutil.ViewFunc(FuncPassTypesView, passTypesView),
-		coreutil.Func(FuncCheckContextFromFullEP, testCheckContextFromFullEP),
-		coreutil.ViewFunc(FuncCheckContextFromViewEP, testCheckContextFromViewEP),
-
-		coreutil.ViewFunc(FuncJustView, testJustView),
-	})
-	native.AddProcessor(Interface)
-}
-
 const (
-	// function eventlog test
-	FuncEventLogGenericData = "testEventLogGenericData"
-	FuncEventLogEventData   = "testEventLogEventData"
-	FuncEventLogDeploy      = "testEventLogDeploy"
-
-	//Function sandbox test
-	FuncChainOwnerIDView = "testChainOwnerIDView"
-	FuncChainOwnerIDFull = "testChainOwnerIDFull"
-	FuncContractIDView   = "testContractIDView"
-	FuncContractIDFull   = "testContractIDFull"
-
-	FuncSandboxCall            = "testSandboxCall"
-	FuncCheckContextFromFullEP = "checkContextFromFullEP"
-	FuncCheckContextFromViewEP = "checkContextFromViewEP"
-	FuncGetMintedSupply        = "getMintedSupply"
-
-	FuncPanicFullEP             = "testPanicFullEP"
-	FuncPanicViewEP             = "testPanicViewEP"
-	FuncCallPanicFullEP         = "testCallPanicFullEP"
-	FuncCallPanicViewEPFromFull = "testCallPanicViewEPFromFull"
-	FuncCallPanicViewEPFromView = "testCallPanicViewEPFromView"
-
-	FuncWithdrawToChain = "withdrawToChain"
-
-	FuncDoNothing     = "doNothing"
-	FuncSendToAddress = "sendToAddress"
-	FuncJustView      = "justView"
-
-	FuncCallOnChain  = "callOnChain"
-	FuncSetInt       = "setInt"
-	FuncGetInt       = "getInt"
-	FuncGetFibonacci = "fibonacci"
-	FuncGetCounter   = "getCounter"
-	FuncIncCounter   = "incCounter"
-	FuncRunRecursion = "runRecursion"
-
-	FuncPassTypesFull = "passTypesFull"
-	FuncPassTypesView = "passTypesView"
-
-	//Variables
+	// State variables
 	VarCounter              = "counter"
-	VarContractID           = "contractID"
 	VarSandboxCall          = "sandboxCall"
 	VarContractNameDeployed = "exampleDeployTR"
 	VarMintedSupply         = "mintedSupply"
+	VarMintedColor          = "mintedColor"
 
 	// parameters
 	ParamFail            = "initFailParam"
 	ParamAddress         = "address"
-	ParamChainID         = "chainid"
+	ParamChainID         = "chainID"
 	ParamChainOwnerID    = "chainOwnerID"
 	ParamCaller          = "caller"
-	ParamContractID      = "contractID"
 	ParamAgentID         = "agentID"
 	ParamContractCreator = "contractCreator"
 	ParamIntParamName    = "intParamName"
 	ParamIntParamValue   = "intParamValue"
 	ParamHnameContract   = "hnameContract"
 	ParamHnameEP         = "hnameEP"
+	ParamVarName         = "paramVar"
 
 	// error fragments for testing
 	MsgFullPanic         = "========== panic FULL ENTRY POINT ========="

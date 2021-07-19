@@ -3,20 +3,25 @@
 
 package wasmproc
 
+import (
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/wasmhost"
+)
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScMaps struct {
 	ScSandboxObject
 }
 
-func NewScMaps(vm *wasmProcessor) *ScMaps {
+func NewScMaps(host *wasmhost.KvStoreHost) *ScMaps {
 	a := &ScMaps{}
-	a.vm = vm
+	a.host = host
 	return a
 }
 
-func (a *ScMaps) GetObjectId(keyId int32, typeId int32) int32 {
-	return GetArrayObjectId(a, keyId, typeId, func() WaspObject {
-		return NewScDict(a.vm)
+func (a *ScMaps) GetObjectID(keyID, typeID int32) int32 {
+	return GetArrayObjectID(a, keyID, typeID, func() WaspObject {
+		return NewScDict(a.host, dict.New())
 	})
 }

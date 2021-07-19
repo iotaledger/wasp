@@ -82,7 +82,7 @@ func (m *MessageCounter) WaitUntilExpectationsMet() bool {
 }
 
 func (m *MessageCounter) countMessage(msg *subscribe.HostMessage) {
-	m.counters[msg.Sender][msg.Message[0]] += 1
+	m.counters[msg.Sender][msg.Message[0]]++
 }
 
 func (m *MessageCounter) Report() bool {
