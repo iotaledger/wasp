@@ -317,14 +317,13 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 			for _, reqid := range reqids {
 				c.eventRequestProcessed.Trigger(reqid)
 			}
+			c.publishNewBlockEvents(stateIndex)
 
 			c.log.Debugf("processChainTransition state %d: state %d cleaned, deleted requests: %+v",
 				stateIndex, i, iscp.ShortRequestIDs(reqids))
 		}
 		chain.PublishStateTransition(chainID, msg.ChainOutput, len(reqids))
 		chain.LogStateTransition(msg, reqids, c.log)
-
-		c.publishNewBlockEvents(stateIndex)
 
 		c.mempoolLastCleanedIndex = stateIndex
 	} else {
@@ -348,7 +347,7 @@ const (
 )
 
 func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
-	// TODO this probably shouldn't run when a node is syncing state(?)
+	// TODO refactor to use blocklog
 	if blockIndex == 0 {
 		// don't run on state #0, root contracts not initialized yet.
 		return
