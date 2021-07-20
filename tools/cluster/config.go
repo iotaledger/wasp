@@ -11,9 +11,10 @@ import (
 )
 
 type GoshimmerConfig struct {
-	TxStreamPort int
-	APIPort      int
-	Provided     bool
+	TxStreamPort    int
+	APIPort         int
+	UseProvidedNode bool
+	Hostname        string
 }
 
 type WaspConfig struct {
@@ -47,11 +48,12 @@ func DefaultConfig() *ClusterConfig {
 			FirstPrometheusPort: 2112,
 		},
 		Goshimmer: GoshimmerConfig{
-			TxStreamPort: 5000,
-			APIPort:      8080,
-			Provided:     false,
+			TxStreamPort:    5000,
+			APIPort:         8080,
+			UseProvidedNode: false,
+			Hostname:        "127.0.0.1",
 		},
-		FaucetPoWTarget:       0,
+		FaucetPoWTarget:       -1,
 		BlockedGoshimmerNodes: make(map[int]bool),
 	}
 }
@@ -83,7 +85,7 @@ func configPath(dataPath string) string {
 }
 
 func (c *ClusterConfig) goshimmerAPIHost() string {
-	return fmt.Sprintf("127.0.0.1:%d", c.Goshimmer.APIPort)
+	return fmt.Sprintf("%s:%d", c.Goshimmer.Hostname, c.Goshimmer.APIPort)
 }
 
 func (c *ClusterConfig) waspHosts(nodeIndexes []int, getHost func(i int) string) []string {
@@ -172,6 +174,13 @@ func (c *ClusterConfig) TxStreamPort(nodeIndex int) int {
 	return c.Goshimmer.TxStreamPort
 }
 
+func (c *ClusterConfig) TxStreamHost(nodeIndex int) string {
+	if c.BlockedGoshimmerNodes[nodeIndex] {
+		return ""
+	}
+	return c.Goshimmer.Hostname
+}
+
 func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {
 	return c.Wasp.FirstProfilingPort + nodeIndex
 }
@@ -189,6 +198,7 @@ func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigPar
 		Neighbors:                    c.NeighborsString(),
 		TxStreamPort:                 c.TxStreamPort(i),
 		ProfilingPort:                c.ProfilingPort(i),
+		TxStreamHost:                 c.TxStreamHost(i),
 		PrometheusPort:               c.PrometheusPort(i),
 		OffledgerBroadcastUpToNPeers: 10,
 	}

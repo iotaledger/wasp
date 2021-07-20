@@ -112,6 +112,7 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	if len(allPeers) == 0 {
 		allPeers = clu.Config.AllNodes()
 	}
+
 	chain := &Chain{
 		Description:    description,
 		OriginatorSeed: ownerSeed,
@@ -120,7 +121,10 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 		Quorum:         quorum,
 		Cluster:        clu,
 	}
-	err := clu.GoshimmerClient().RequestFunds(chain.OriginatorAddress())
+
+	address := chain.OriginatorAddress()
+
+	err := clu.GoshimmerClient().RequestFunds(address)
 	if err != nil {
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
@@ -279,7 +283,7 @@ func (clu *Cluster) Start(dataPath string) error {
 func (clu *Cluster) start(dataPath string) error {
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", clu.Config.Wasp.NumNodes)
 
-	if !clu.Config.Goshimmer.Provided {
+	if !clu.Config.Goshimmer.UseProvidedNode {
 		clu.goshimmer = mocknode.Start(
 			fmt.Sprintf(":%d", clu.Config.Goshimmer.TxStreamPort),
 			fmt.Sprintf(":%d", clu.Config.Goshimmer.APIPort),
