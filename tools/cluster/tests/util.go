@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
@@ -239,17 +238,6 @@ func waitTrue(timeout time.Duration, fun func() bool) bool {
 			return false
 		}
 	}
-}
-
-func getHTTPError(err error) *model.HTTPError {
-	if err == nil {
-		return nil
-	}
-	httpError, ok := err.(*model.HTTPError)
-	if ok {
-		return httpError
-	}
-	return getHTTPError(errors.Unwrap(err))
 }
 
 func counterEquals(chain *cluster.Chain, expected int64) conditionFn {
