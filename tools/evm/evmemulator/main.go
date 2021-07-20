@@ -69,7 +69,7 @@ func start(cmd *cobra.Command, args []string) {
 
 	chainOwner, _ := env.NewKeyPairWithFunds()
 	chain := env.NewChain(chainOwner, "iscpchain")
-	err := chain.DeployContract(chainOwner, deployParams.Name, evmchain.Interface.ProgramHash,
+	err := chain.DeployContract(chainOwner, deployParams.Name, evmchain.Contract.ProgramHash,
 		evmchain.FieldChainID, codec.EncodeUint16(uint16(deployParams.ChainID)),
 		evmchain.FieldGenesisAlloc, evmchain.EncodeGenesisAlloc(deployParams.GetGenesis(core.GenesisAlloc{
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},

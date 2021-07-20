@@ -51,7 +51,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 	defer vmctx.popCallContext()
 
 	// prevent calling 'init' not from root contract or not while initializing root
-	if epCode == iscp.EntryPointInit && targetContract != root.Interface.Hname() {
+	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
 		if !vmctx.callerIsRoot() {
 			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
 		}
@@ -78,7 +78,7 @@ func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hna
 	defer vmctx.popCallContext()
 
 	// prevent calling 'init' not from root contract or not while initializing root
-	if epCode == iscp.EntryPointInit && targetContract != root.Interface.Hname() {
+	if epCode == iscp.EntryPointInit && targetContract != root.Contract.Hname() {
 		if !vmctx.callerIsRoot() {
 			return nil, fmt.Errorf("attempt to callByProgramHash init not from the root contract")
 		}
@@ -91,7 +91,7 @@ func (vmctx *VMContext) callerIsRoot() bool {
 	if !caller.Address().Equals(vmctx.chainID.AsAddress()) {
 		return false
 	}
-	return caller.Hname() == root.Interface.Hname()
+	return caller.Hname() == root.Contract.Hname()
 }
 
 func (vmctx *VMContext) requesterIsLocal() bool {

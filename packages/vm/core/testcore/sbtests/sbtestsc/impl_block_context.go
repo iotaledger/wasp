@@ -58,7 +58,7 @@ func testBlockContext2(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func getStringValue(ctx iscp.SandboxView) (dict.Dict, error) {
-	ctx.Log().Infof(FuncGetStringValue)
+	ctx.Log().Infof(FuncGetStringValue.Name)
 	deco := kvdecoder.New(ctx.Params(), ctx.Log())
 	varName := deco.MustGetString(ParamVarName)
 	value := string(ctx.State().MustGet(kv.Key(varName)))

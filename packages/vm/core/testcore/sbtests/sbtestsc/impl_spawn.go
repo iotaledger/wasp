@@ -7,17 +7,17 @@ import (
 
 // spawn deploys new contract and calls it
 func spawn(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf(FuncSpawn)
-	name := Interface.Name + "_spawned"
+	ctx.Log().Debugf(FuncSpawn.Name)
+	name := Contract.Name + "_spawned"
 	dscr := "spawned contract description"
 	hname := iscp.Hn(name)
-	err := ctx.DeployContract(Interface.ProgramHash, name, dscr, nil)
+	err := ctx.DeployContract(Contract.ProgramHash, name, dscr, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	for i := 0; i < 5; i++ {
-		_, err := ctx.Call(hname, iscp.Hn(FuncIncCounter), nil, nil)
+		_, err := ctx.Call(hname, FuncIncCounter.Hname(), nil, nil)
 		if err != nil {
 			return nil, err
 		}

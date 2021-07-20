@@ -13,7 +13,7 @@ import (
 const incName = "incTest"
 
 func checkCounter(e *solo.Chain, expected int64) {
-	ret, err := e.CallView(incName, FuncGetCounter)
+	ret, err := e.CallView(incName, FuncGetCounter.Name)
 	require.NoError(e.Env.T, err)
 	c, ok, err := codec.DecodeInt64(ret.MustGet(VarCounter))
 	require.NoError(e.Env.T, err)
@@ -22,10 +22,10 @@ func checkCounter(e *solo.Chain, expected int64) {
 }
 
 func TestDeployInc(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Interface)
+	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, incName, Interface.ProgramHash)
+	err := chain.DeployContract(nil, incName, Contract.ProgramHash)
 	require.NoError(t, err)
 	chain.CheckChain()
 	_, _, contracts := chain.GetInfo()
@@ -35,24 +35,24 @@ func TestDeployInc(t *testing.T) {
 }
 
 func TestDeployIncInitParams(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Interface)
+	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 	chain.CheckAccountLedger()
 }
 
 func TestIncDefaultParam(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Interface)
+	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncCounter).WithIotas(1)
+	req := solo.NewCallParams(incName, FuncIncCounter.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	checkCounter(chain, 18)
@@ -60,14 +60,14 @@ func TestIncDefaultParam(t *testing.T) {
 }
 
 func TestIncParam(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Interface)
+	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncCounter, VarCounter, 3).WithIotas(1)
+	req := solo.NewCallParams(incName, FuncIncCounter.Name, VarCounter, 3).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 	checkCounter(chain, 20)
@@ -76,14 +76,14 @@ func TestIncParam(t *testing.T) {
 }
 
 func TestIncWith1Post(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(Interface)
+	env := solo.New(t, false, false).WithNativeContract(Processor)
 	chain := env.NewChain(nil, "chain1")
 
-	err := chain.DeployContract(nil, incName, Interface.ProgramHash, VarCounter, 17)
+	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
 	require.NoError(t, err)
 	checkCounter(chain, 17)
 
-	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter5s).WithIotas(1)
+	req := solo.NewCallParams(incName, FuncIncAndRepeatOnceAfter5s.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 

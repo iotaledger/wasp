@@ -12,6 +12,16 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var Processor = Contract.Processor(initialize,
+	FuncGetBlockInfo.WithHandler(viewGetBlockInfo),
+	FuncGetLatestBlockInfo.WithHandler(viewGetLatestBlockInfo),
+	FuncGetRequestLogRecord.WithHandler(viewGetRequestLogRecord),
+	FuncGetRequestLogRecordsForBlock.WithHandler(viewGetRequestLogRecordsForBlock),
+	FuncGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
+	FuncIsRequestProcessed.WithHandler(viewIsRequestProcessed),
+	FuncControlAddresses.WithHandler(viewControlAddresses),
+)
+
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	blockIndex := SaveNextBlockInfo(ctx.State(), &BlockInfo{
 		Timestamp:             time.Unix(0, ctx.GetTimestamp()),
@@ -21,7 +31,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	})
 	a := assert.NewAssert(ctx.Log())
 	a.Require(blockIndex == 0, "blocklog.initialize.fail: unexpected block index")
-	ctx.Log().Debugf("blocklog.initialize.success hname = %s", Interface.Hname().String())
+	ctx.Log().Debugf("blocklog.initialize.success hname = %s", Contract.Hname().String())
 	return nil, nil
 }
 

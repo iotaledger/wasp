@@ -14,7 +14,7 @@ import (
 func TestBasic(t *testing.T) {
 	p := MustNew(NewConfig())
 
-	rec := root.NewContractRecord(root.Interface, &iscp.AgentID{})
+	rec := root.NewContractRecord(root.Contract, &iscp.AgentID{})
 	rootproc, err := p.GetOrCreateProcessor(
 		rec,
 		func(hashing.HashValue) (string, []byte, error) { return vmtypes.Core, nil, nil },
@@ -24,9 +24,9 @@ func TestBasic(t *testing.T) {
 	// TODO always exists because it returns default handler
 	ep, exists := rootproc.GetEntryPoint(0)
 	assert.True(t, exists)
-	assert.Equal(t, ep.(*coreutil.ContractFunctionInterface).Name, coreutil.DefaultHandler)
+	assert.Same(t, ep.(*coreutil.EntryPointHandler).Info, &coreutil.FuncFallback)
 
-	ep, exists = rootproc.GetEntryPoint(iscp.Hn(root.FuncDeployContract))
+	ep, exists = rootproc.GetEntryPoint(root.FuncDeployContract.Hname())
 	assert.True(t, exists)
-	assert.Equal(t, ep.(*coreutil.ContractFunctionInterface).Name, root.FuncDeployContract)
+	assert.Same(t, ep.(*coreutil.EntryPointHandler).Info, &root.FuncDeployContract)
 }

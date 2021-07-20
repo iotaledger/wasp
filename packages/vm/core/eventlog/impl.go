@@ -10,9 +10,14 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
+var Processor = Contract.Processor(initialize,
+	FuncGetRecords.WithHandler(getRecords),
+	FuncGetNumRecords.WithHandler(getNumRecords),
+)
+
 // initialize is mandatory
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
-	ctx.Log().Debugf("eventlog.initialize.success hname = %s", Interface.Hname().String())
+	ctx.Log().Debugf("eventlog.initialize.success hname = %s", Contract.Hname().String())
 	return nil, nil
 }
 

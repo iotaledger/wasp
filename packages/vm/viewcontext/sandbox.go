@@ -25,7 +25,7 @@ type sandboxview struct {
 
 var _ iscp.SandboxView = &sandboxview{}
 
-var getChainInfoHname = iscp.Hn(root.FuncGetChainInfo)
+var getChainInfoHname = root.FuncGetChainInfo.Hname()
 
 func newSandboxView(vctx *Viewcontext, contractHname iscp.Hname, params dict.Dict) *sandboxview {
 	return &sandboxview{
@@ -40,7 +40,7 @@ func newSandboxView(vctx *Viewcontext, contractHname iscp.Hname, params dict.Dic
 func (s *sandboxview) AccountID() *iscp.AgentID {
 	hname := s.contractHname
 	switch hname {
-	case root.Interface.Hname(), accounts.Interface.Hname(), blob.Interface.Hname(), eventlog.Interface.Hname():
+	case root.Contract.Hname(), accounts.Contract.Hname(), blob.Contract.Hname(), eventlog.Contract.Hname():
 		hname = 0
 	}
 	return iscp.NewAgentID(s.vctx.chainID.AsAddress(), hname)
@@ -59,7 +59,7 @@ func (s *sandboxview) ChainID() *iscp.ChainID {
 }
 
 func (s *sandboxview) ChainOwnerID() *iscp.AgentID {
-	r, err := s.Call(root.Interface.Hname(), getChainInfoHname, nil)
+	r, err := s.Call(root.Contract.Hname(), getChainInfoHname, nil)
 	a := assert.NewAssert(s.Log())
 	a.RequireNoError(err)
 	res := kvdecoder.New(r, s.Log())
@@ -71,7 +71,7 @@ func (s *sandboxview) Contract() iscp.Hname {
 }
 
 func (s *sandboxview) ContractCreator() *iscp.AgentID {
-	contractRecord, err := root.FindContract(contractStateSubpartition(s.vctx.stateReader.KVStoreReader(), root.Interface.Hname()), s.contractHname)
+	contractRecord, err := root.FindContract(contractStateSubpartition(s.vctx.stateReader.KVStoreReader(), root.Contract.Hname()), s.contractHname)
 	if err != nil {
 		s.Log().Panicf("failed to find contract %s: %v", s.contractHname, err)
 	}

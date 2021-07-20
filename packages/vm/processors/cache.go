@@ -25,7 +25,7 @@ func MustNew(config *Config) *Cache {
 		processors: make(map[hashing.HashValue]iscp.VMProcessor),
 	}
 	// default builtin processor has root contract hash
-	err := ret.NewProcessor(root.Interface.ProgramHash, nil, vmtypes.Core)
+	err := ret.NewProcessor(root.Contract.ProgramHash, nil, vmtypes.Core)
 	if err != nil {
 		panic(err)
 	}

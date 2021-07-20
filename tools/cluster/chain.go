@@ -114,8 +114,8 @@ func (ch *Chain) DeployContract(name, progHashStr, description string, initParam
 		params[k] = v
 	}
 	tx, err := ch.OriginatorClient().Post1Request(
-		root.Interface.Hname(),
-		iscp.Hn(root.FuncDeployContract),
+		root.Contract.Hname(),
+		root.FuncDeployContract.Hname(),
 		chainclient.PostRequestParams{
 			Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params)),
 		},
@@ -166,8 +166,8 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 
 	args := requestargs.New().AddEncodeSimpleMany(codec.MakeDict(params))
 	tx, err = ch.OriginatorClient().Post1Request(
-		root.Interface.Hname(),
-		iscp.Hn(root.FuncDeployContract),
+		root.Contract.Hname(),
+		root.FuncDeployContract.Hname(),
 		chainclient.PostRequestParams{
 			Args: args,
 		},
@@ -185,7 +185,7 @@ func (ch *Chain) DeployWasmContract(name, description string, progBinary []byte,
 
 func (ch *Chain) GetBlobFieldValue(blobHash hashing.HashValue, field string) ([]byte, error) {
 	v, err := ch.Cluster.WaspClient(0).CallView(
-		ch.ChainID, blob.Interface.Hname(), blob.FuncGetBlobField,
+		ch.ChainID, blob.Contract.Hname(), blob.FuncGetBlobField.Name,
 		dict.Dict{
 			blob.ParamHash:  blobHash[:],
 			blob.ParamField: []byte(field),
@@ -208,8 +208,8 @@ func (ch *Chain) StartMessageCounter(expectations map[string]int) (*MessageCount
 }
 
 func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
-	cl := ch.SCClient(blocklog.Interface.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(blocklog.FuncGetLatestBlockInfo)
+	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
+	ret, err := cl.CallView(blocklog.FuncGetLatestBlockInfo.Name, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -222,10 +222,10 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.Bl
 	if err != nil {
 		return nil, err
 	}
-	cl := ch.SCClient(blocklog.Interface.Hname(), nil, nodeIndex...)
+	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
 	ret := make([]*blocklog.BlockInfo, 0, blockIndex+1)
 	for idx := int(blockIndex); idx >= 0; idx-- {
-		res, err := cl.CallView(blocklog.FuncGetBlockInfo, dict.Dict{
+		res, err := cl.CallView(blocklog.FuncGetBlockInfo.Name, dict.Dict{
 			blocklog.ParamBlockIndex: codec.EncodeUint32(uint32(idx)),
 		})
 		if err != nil {
@@ -241,8 +241,8 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.Bl
 }
 
 func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.ContractRecord, error) {
-	cl := ch.SCClient(root.Interface.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(root.FuncGetChainInfo)
+	cl := ch.SCClient(root.Contract.Hname(), nil, nodeIndex...)
+	ret, err := cl.CallView(root.FuncGetChainInfo.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +251,7 @@ func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.Contra
 
 func (ch *Chain) GetCounterValue(inccounterSCHname iscp.Hname, nodeIndex ...int) (int64, error) {
 	cl := ch.SCClient(inccounterSCHname, nil, nodeIndex...)
-	ret, err := cl.CallView(inccounter.FuncGetCounter)
+	ret, err := cl.CallView(inccounter.FuncGetCounter.Name, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -265,8 +265,8 @@ func (ch *Chain) GetStateVariable(contractHname iscp.Hname, key string, nodeInde
 }
 
 func (ch *Chain) GetRequestLogRecord(reqID iscp.RequestID, nodeIndex ...int) (*blocklog.RequestLogRecord, uint32, uint16, error) {
-	cl := ch.SCClient(blocklog.Interface.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(blocklog.FuncGetRequestLogRecord, dict.Dict{blocklog.ParamRequestID: reqID.Bytes()})
+	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
+	ret, err := cl.CallView(blocklog.FuncGetRequestLogRecord.Name, dict.Dict{blocklog.ParamRequestID: reqID.Bytes()})
 	if err != nil {
 		return nil, 0, 0, err
 	}
@@ -285,8 +285,8 @@ func (ch *Chain) GetRequestLogRecord(reqID iscp.RequestID, nodeIndex ...int) (*b
 }
 
 func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32, nodeIndex ...int) ([]*blocklog.RequestLogRecord, error) {
-	cl := ch.SCClient(blocklog.Interface.Hname(), nil, nodeIndex...)
-	res, err := cl.CallView(blocklog.FuncGetRequestLogRecordsForBlock, dict.Dict{
+	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
+	res, err := cl.CallView(blocklog.FuncGetRequestLogRecordsForBlock.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(blockIndex),
 	})
 	if err != nil {

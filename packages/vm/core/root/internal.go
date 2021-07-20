@@ -30,12 +30,12 @@ func FindContract(state kv.KVStoreReader, hname iscp.Hname) (*ContractRecord, er
 		}
 	} else {
 		// not founc in registry
-		if hname == Interface.Hname() {
+		if hname == Contract.Hname() {
 			// if not found and it is root, it means it is chain init --> return empty root record
-			ret = NewContractRecord(Interface, &iscp.AgentID{})
+			ret = NewContractRecord(Contract, &iscp.AgentID{})
 		} else {
 			// return default contract
-			ret = NewContractRecord(_default.Interface, &iscp.AgentID{})
+			ret = NewContractRecord(_default.Contract, &iscp.AgentID{})
 		}
 	}
 	return ret, nil
@@ -145,13 +145,13 @@ func CheckAuthorizationByChainOwner(state kv.KVStore, agentID *iscp.AgentID) boo
 	return currentOwner.Equals(agentID)
 }
 
-func mustStoreContract(ctx iscp.Sandbox, i *coreutil.ContractInterface, a assert.Assert) {
+func mustStoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, a assert.Assert) {
 	rec := NewContractRecord(i, &iscp.AgentID{})
 	ctx.Log().Debugf("mustStoreAndInitCoreContract: '%s', hname = %s", i.Name, i.Hname())
 	mustStoreContractRecord(ctx, rec, a)
 }
 
-func mustStoreAndInitCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInterface, a assert.Assert) {
+func mustStoreAndInitCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, a assert.Assert) {
 	mustStoreContract(ctx, i, a)
 	_, err := ctx.Call(iscp.Hn(i.Name), iscp.EntryPointInit, nil, nil)
 	a.RequireNoError(err)

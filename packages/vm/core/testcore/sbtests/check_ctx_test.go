@@ -20,7 +20,7 @@ func testMainCallsFromFullEP(t *testing.T, w bool) {
 
 	setupTestSandboxSC(t, chain, user, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncCheckContextFromFullEP,
+	req := solo.NewCallParams(ScName, sbtestsc.FuncCheckContextFromFullEP.Name,
 		sbtestsc.ParamChainID, chain.ChainID,
 		sbtestsc.ParamAgentID, iscp.NewAgentID(chain.ChainID.AsAddress(), HScName),
 		sbtestsc.ParamCaller, userAgentID,
@@ -39,7 +39,7 @@ func testMainCallsFromViewEP(t *testing.T, w bool) {
 
 	setupTestSandboxSC(t, chain, user, w)
 
-	_, err := chain.CallView(ScName, sbtestsc.FuncCheckContextFromViewEP,
+	_, err := chain.CallView(ScName, sbtestsc.FuncCheckContextFromViewEP.Name,
 		sbtestsc.ParamChainID, chain.ChainID,
 		sbtestsc.ParamAgentID, iscp.NewAgentID(chain.ChainID.AsAddress(), HScName),
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
@@ -56,7 +56,7 @@ func testMintedSupplyOk(t *testing.T, w bool) {
 	setupTestSandboxSC(t, chain, user, w)
 
 	newSupply := uint64(42)
-	req := solo.NewCallParams(ScName, sbtestsc.FuncGetMintedSupply).
+	req := solo.NewCallParams(ScName, sbtestsc.FuncGetMintedSupply.Name).
 		WithIotas(1).
 		WithMint(userAddress, newSupply)
 	tx, ret, err := chain.PostRequestSyncTx(req, user)

@@ -55,7 +55,7 @@ func run(_ *node.Plugin) {
 			allChains.Dismiss()
 			log.Info("dismissing chains... Done")
 		}()
-	})
+	}, parameters.PriorityChains)
 	if err != nil {
 		log.Error(err)
 		return

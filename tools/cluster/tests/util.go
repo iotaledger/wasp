@@ -18,19 +18,18 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
 
 func checkCoreContracts(t *testing.T, chain *cluster.Chain) {
 	for i := range chain.CommitteeNodes {
-		b, err := chain.GetStateVariable(root.Interface.Hname(), root.VarStateInitialized, i)
+		b, err := chain.GetStateVariable(root.Contract.Hname(), root.VarStateInitialized, i)
 		require.NoError(t, err)
 		require.EqualValues(t, []byte{0xFF}, b)
 
-		cl := chain.SCClient(root.Interface.Hname(), nil, i)
-		ret, err := cl.CallView(root.FuncGetChainInfo)
+		cl := chain.SCClient(root.Contract.Hname(), nil, i)
+		ret, err := cl.CallView(root.FuncGetChainInfo.Name, nil)
 		require.NoError(t, err)
 
 		chid, _, _ := codec.DecodeChainID(ret.MustGet(root.VarChainID))
@@ -45,25 +44,25 @@ func checkCoreContracts(t *testing.T, chain *cluster.Chain) {
 		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
 		require.NoError(t, err)
 		for _, rec := range core.AllCoreContractsByHash {
-			cr := contractRegistry[rec.Hname()]
-			require.NotNil(t, cr, "core contract %s %+v missing", rec.Name, rec.Hname())
+			cr := contractRegistry[rec.Contract.Hname()]
+			require.NotNil(t, cr, "core contract %s %+v missing", rec.Contract.Name, rec.Contract.Hname())
 
-			require.EqualValues(t, rec.ProgramHash, cr.ProgramHash)
-			require.EqualValues(t, rec.Description, cr.Description)
+			require.EqualValues(t, rec.Contract.ProgramHash, cr.ProgramHash)
+			require.EqualValues(t, rec.Contract.Description, cr.Description)
 			require.EqualValues(t, 0, cr.OwnerFee)
-			require.EqualValues(t, rec.Name, cr.Name)
+			require.EqualValues(t, rec.Contract.Name, cr.Name)
 		}
 	}
 }
 
 func checkRootsOutside(t *testing.T, chain *cluster.Chain) {
 	for _, rec := range core.AllCoreContractsByHash {
-		recBack, err := findContract(chain, rec.Name)
+		recBack, err := findContract(chain, rec.Contract.Name)
 		check(err, t)
 		require.NotNil(t, recBack)
-		require.EqualValues(t, rec.Name, recBack.Name)
-		require.EqualValues(t, rec.ProgramHash, recBack.ProgramHash)
-		require.EqualValues(t, rec.Description, recBack.Description)
+		require.EqualValues(t, rec.Contract.Name, recBack.Name)
+		require.EqualValues(t, rec.Contract.ProgramHash, recBack.ProgramHash)
+		require.EqualValues(t, rec.Contract.Description, recBack.Description)
 		require.True(t, recBack.Creator.IsNil())
 	}
 }
@@ -87,11 +86,13 @@ func getBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *iscp.AgentID
 		idx = nodeIndex[0]
 	}
 	ret, err := chain.Cluster.WaspClient(idx).CallView(
-		chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewBalance,
+		chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewBalance.Name,
 		dict.Dict{
 			accounts.ParamAgentID: agentID.Bytes(),
 		})
-	check(err, t)
+	if err != nil {
+		return 0
+	}
 
 	actual, _, err := codec.DecodeUint64(ret.MustGet(kv.Key(color[:])))
 	check(err, t)
@@ -106,7 +107,7 @@ func checkBalanceOnChain(t *testing.T, chain *cluster.Chain, agentID *iscp.Agent
 
 func getAccountsOnChain(t *testing.T, chain *cluster.Chain) []*iscp.AgentID {
 	r, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewAccounts,
+		chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewAccounts.Name, nil,
 	)
 	check(err, t)
 
@@ -127,7 +128,7 @@ func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[*iscp.AgentID]ma
 	acc := getAccountsOnChain(t, chain)
 	for _, agentID := range acc {
 		r, err := chain.Cluster.WaspClient(0).CallView(
-			chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewBalance,
+			chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewBalance.Name,
 			dict.Dict{
 				accounts.ParamAgentID: agentID.Bytes(),
 			})
@@ -139,7 +140,7 @@ func getBalancesOnChain(t *testing.T, chain *cluster.Chain) map[*iscp.AgentID]ma
 
 func getTotalBalance(t *testing.T, chain *cluster.Chain) map[ledgerstate.Color]uint64 {
 	r, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, accounts.Interface.Hname(), accounts.FuncViewTotalAssets,
+		chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewTotalAssets.Name, nil,
 	)
 	check(err, t)
 	return balancesDictToMap(t, r)
@@ -186,7 +187,7 @@ func checkLedger(t *testing.T, chain *cluster.Chain) {
 
 func getChainInfo(t *testing.T, chain *cluster.Chain) (iscp.ChainID, iscp.AgentID) {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, root.Interface.Hname(), root.FuncGetChainInfo,
+		chain.ChainID, root.Contract.Hname(), root.FuncGetChainInfo.Name, nil,
 	)
 	check(err, t)
 
@@ -208,7 +209,7 @@ func findContract(chain *cluster.Chain, name string, nodeIndex ...int) (*root.Co
 
 	hname := iscp.Hn(name)
 	ret, err := chain.Cluster.WaspClient(i).CallView(
-		chain.ChainID, root.Interface.Hname(), root.FuncFindContract,
+		chain.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
 		dict.Dict{
 			root.ParamHname: codec.EncodeHname(hname),
 		})
@@ -239,37 +240,14 @@ func waitTrue(timeout time.Duration, fun func() bool) bool {
 	}
 }
 
-func getHTTPError(err error) *model.HTTPError {
-	if err == nil {
-		return nil
-	}
-	httpError, ok := err.(*model.HTTPError)
-	if ok {
-		return httpError
-	}
-	return getHTTPError(errors.Unwrap(err))
-}
-
-func repeatIfInvalidated(fun func() (dict.Dict, error), deadline time.Time) (dict.Dict, error) {
-	result, err := fun()
-	httpError := getHTTPError(err)
-	if httpError != nil && httpError.StatusCode == 409 {
-		if time.Now().Before(deadline) {
-			return repeatIfInvalidated(fun, deadline)
-		}
-		return result, fmt.Errorf("Retrying timeouted. Last error: %w", err)
-	}
-	return result, err
-}
-
 func counterEquals(chain *cluster.Chain, expected int64) conditionFn {
-	return func(t *testing.T, nodeIndex int, timeout time.Duration) bool {
-		ret, err := repeatIfInvalidated(func() (dict.Dict, error) {
-			return chain.Cluster.WaspClient(nodeIndex).CallView(
-				chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter,
-			)
-		}, time.Now().Add(timeout))
-		require.NoError(t, err)
+	return func(t *testing.T, nodeIndex int) bool {
+		ret, err := chain.Cluster.WaspClient(nodeIndex).CallView(
+			chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name, nil,
+		)
+		if err != nil {
+			return false
+		}
 		counter, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
 		require.NoError(t, err)
 		t.Logf("node %d: counter: %d, waiting for: %d", nodeIndex, counter, expected)
@@ -278,7 +256,7 @@ func counterEquals(chain *cluster.Chain, expected int64) conditionFn {
 }
 
 func contractIsDeployed(chain *cluster.Chain, contractName string) conditionFn {
-	return func(t *testing.T, nodeIndex int, timeout time.Duration) bool {
+	return func(t *testing.T, nodeIndex int) bool {
 		ret, err := findContract(chain, contractName, nodeIndex)
 		if err != nil {
 			return false
@@ -288,12 +266,12 @@ func contractIsDeployed(chain *cluster.Chain, contractName string) conditionFn {
 }
 
 func balanceOnChainIotaEquals(chain *cluster.Chain, agentID *iscp.AgentID, iotas uint64) conditionFn {
-	return func(t *testing.T, nodeIndex int, timeout time.Duration) bool {
+	return func(t *testing.T, nodeIndex int) bool {
 		return iotas == getBalanceOnChain(t, chain, agentID, ledgerstate.ColorIOTA, nodeIndex)
 	}
 }
 
-type conditionFn func(t *testing.T, nodeIndex int, timeout time.Duration) bool
+type conditionFn func(t *testing.T, nodeIndex int) bool
 
 func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Duration, logMsg ...string) {
 	for _, nodeIndex := range nodeIndexes {
@@ -301,7 +279,7 @@ func waitUntil(t *testing.T, fn conditionFn, nodeIndexes []int, timeout time.Dur
 			t.Logf("-->Waiting for '%s' on node %v...", logMsg[0], nodeIndex)
 		}
 		w := waitTrue(timeout, func() bool {
-			return fn(t, nodeIndex, timeout)
+			return fn(t, nodeIndex)
 		})
 		if !w {
 			if len(logMsg) > 0 {

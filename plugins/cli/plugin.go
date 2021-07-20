@@ -37,7 +37,7 @@ func onInit(*node.Plugin) {
 	flag.Usage = printUsage
 
 	if printVersion {
-		fmt.Println(banner.AppName + " " + banner.AppVersion)
+		fmt.Println(banner.Name + " " + banner.Version)
 		os.Exit(0)
 	}
 }

@@ -3,37 +3,20 @@
 package governance
 
 import (
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 )
 
-const (
-	Name        = coreutil.CoreContractGovernance
-	description = "Governance contract"
+var Contract = coreutil.NewContract(coreutil.CoreContractGovernance, "Governance contract")
+
+var (
+	// functions
+	FuncRotateStateController               = coreutil.Func(coreutil.CoreEPRotateStateController)
+	FuncAddAllowedStateControllerAddress    = coreutil.Func("addAllowedStateControllerAddress")
+	FuncRemoveAllowedStateControllerAddress = coreutil.Func("removeAllowedStateControllerAddress")
+	FuncGetAllowedStateControllerAddresses  = coreutil.ViewFunc("getAllowedStateControllerAddresses")
 )
 
-var Interface = &coreutil.ContractInterface{
-	Name:        Name,
-	Description: description,
-	ProgramHash: hashing.HashStrings(Name),
-}
-
-func init() {
-	Interface.WithFunctions(initialize, []coreutil.ContractFunctionInterface{
-		coreutil.Func(FuncRotateStateController, rotateStateController),
-		coreutil.Func(FuncAddAllowedStateControllerAddress, addAllowedStateControllerAddress),
-		coreutil.Func(FuncRemoveAllowedStateControllerAddress, removeAllowedStateControllerAddress),
-		coreutil.ViewFunc(FuncGetAllowedStateControllerAddresses, getAllowedStateControllerAddresses),
-	})
-}
-
 const (
-	// functions
-	FuncRotateStateController               = coreutil.CoreEPRotateStateController
-	FuncAddAllowedStateControllerAddress    = "addAllowedStateControllerAddress"
-	FuncRemoveAllowedStateControllerAddress = "removeAllowedStateControllerAddress"
-	FuncGetAllowedStateControllerAddresses  = "getAllowedStateControllerAddresses"
-
 	// state variables
 	StateVarAllowedStateControllerAddresses = "a"
 	StateVarRotateToAddress                 = "r"

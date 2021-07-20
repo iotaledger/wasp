@@ -1,22 +1,45 @@
 package client
 
 import (
+	"errors"
 	"net/http"
+	"time"
+
+	"github.com/iotaledger/wasp/packages/kv/optimism"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
-// CallView sends a request to call a view function of a given contract, and returns the result of the call
-func (c *WaspClient) CallView(chainID iscp.ChainID, hContract iscp.Hname, functionName string, args ...dict.Dict) (dict.Dict, error) {
-	arguments := dict.Dict(nil)
-	if len(args) != 0 {
-		arguments = args[0]
+const (
+	retryTimeoutOnOptimisticReadFail = 500 * time.Millisecond
+	defaultOptimisticReadTimeout     = 1100 * time.Millisecond
+)
+
+func (c *WaspClient) CallView(chainID iscp.ChainID, hContract iscp.Hname, functionName string, args dict.Dict, optimisticReadTimeout ...time.Duration) (dict.Dict, error) {
+	deadline := time.Now().Add(defaultOptimisticReadTimeout)
+	if len(optimisticReadTimeout) > 0 {
+		deadline = time.Now().Add(optimisticReadTimeout[0])
+	}
+	arguments := args
+	if arguments == nil {
+		arguments = dict.Dict(nil)
 	}
 	var res dict.Dict
-	if err := c.do(http.MethodGet, routes.CallView(chainID.Base58(), hContract.String(), functionName), arguments, &res); err != nil {
-		return nil, err
+	var err error
+	for {
+		err = c.do(http.MethodGet, routes.CallView(chainID.Base58(), hContract.String(), functionName), arguments, &res)
+		switch {
+		case err == nil:
+			return res, err
+		case errors.Is(err, optimism.ErrStateHasBeenInvalidated):
+			if time.Now().After(deadline) {
+				return nil, optimism.ErrStateHasBeenInvalidated
+			}
+			time.Sleep(retryTimeoutOnOptimisticReadFail)
+		default:
+			return nil, err
+		}
 	}
-	return res, nil
 }

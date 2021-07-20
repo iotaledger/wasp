@@ -31,7 +31,7 @@ func TestRootRepeatInit(t *testing.T) {
 
 	chain.CheckChain()
 
-	req := solo.NewCallParams(root.Interface.Name, "init")
+	req := solo.NewCallParams(root.Contract.Name, "init")
 	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }
@@ -46,24 +46,24 @@ func TestGetInfo(t *testing.T) {
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
 	require.EqualValues(t, len(core.AllCoreContractsByHash), len(contracts))
 
-	_, ok := contracts[root.Interface.Hname()]
+	_, ok := contracts[root.Contract.Hname()]
 	require.True(t, ok)
-	recBlob, ok := contracts[blob.Interface.Hname()]
+	recBlob, ok := contracts[blob.Contract.Hname()]
 	require.True(t, ok)
-	_, ok = contracts[accounts.Interface.Hname()]
+	_, ok = contracts[accounts.Contract.Hname()]
 	require.True(t, ok)
 
-	rec, err := chain.FindContract(blob.Interface.Name)
+	rec, err := chain.FindContract(blob.Contract.Name)
 	require.NoError(t, err)
 	require.EqualValues(t, root.EncodeContractRecord(recBlob), root.EncodeContractRecord(rec))
 }
 
 func TestDeployExample(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Interface)
+	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Processor)
 	chain := env.NewChain(nil, "chain1")
 
 	name := "testInc"
-	err := chain.DeployContract(nil, name, sbtestsc.Interface.ProgramHash)
+	err := chain.DeployContract(nil, name, sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
 
 	chainID, ownerAgentID, contracts := chain.GetInfo()
@@ -72,11 +72,11 @@ func TestDeployExample(t *testing.T) {
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
 	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
 
-	_, ok := contracts[root.Interface.Hname()]
+	_, ok := contracts[root.Contract.Hname()]
 	require.True(t, ok)
-	_, ok = contracts[blob.Interface.Hname()]
+	_, ok = contracts[blob.Contract.Hname()]
 	require.True(t, ok)
-	_, ok = contracts[accounts.Interface.Hname()]
+	_, ok = contracts[accounts.Contract.Hname()]
 	require.True(t, ok)
 
 	rec, ok := contracts[iscp.Hn(name)]
@@ -86,7 +86,7 @@ func TestDeployExample(t *testing.T) {
 	require.EqualValues(t, "N/A", rec.Description)
 	require.EqualValues(t, 0, rec.OwnerFee)
 	require.True(t, chain.OriginatorAgentID.Equals(rec.Creator))
-	require.EqualValues(t, sbtestsc.Interface.ProgramHash, rec.ProgramHash)
+	require.EqualValues(t, sbtestsc.Contract.ProgramHash, rec.ProgramHash)
 
 	recFind, err := chain.FindContract(name)
 	require.NoError(t, err)
@@ -94,14 +94,14 @@ func TestDeployExample(t *testing.T) {
 }
 
 func TestDeployDouble(t *testing.T) {
-	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Interface)
+	env := solo.New(t, false, false).WithNativeContract(sbtestsc.Processor)
 	chain := env.NewChain(nil, "chain1")
 
 	name := "testInc"
-	err := chain.DeployContract(nil, name, sbtestsc.Interface.ProgramHash)
+	err := chain.DeployContract(nil, name, sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
 
-	err = chain.DeployContract(nil, name, sbtestsc.Interface.ProgramHash)
+	err = chain.DeployContract(nil, name, sbtestsc.Contract.ProgramHash)
 	require.Error(t, err)
 
 	chainID, ownerAgentID, contracts := chain.GetInfo()
@@ -110,11 +110,11 @@ func TestDeployDouble(t *testing.T) {
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
 	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contracts))
 
-	_, ok := contracts[root.Interface.Hname()]
+	_, ok := contracts[root.Contract.Hname()]
 	require.True(t, ok)
-	_, ok = contracts[blob.Interface.Hname()]
+	_, ok = contracts[blob.Contract.Hname()]
 	require.True(t, ok)
-	_, ok = contracts[accounts.Interface.Hname()]
+	_, ok = contracts[accounts.Contract.Hname()]
 	require.True(t, ok)
 
 	rec, ok := contracts[iscp.Hn(name)]
@@ -124,7 +124,7 @@ func TestDeployDouble(t *testing.T) {
 	require.EqualValues(t, "N/A", rec.Description)
 	require.EqualValues(t, 0, rec.OwnerFee)
 	require.True(t, chain.OriginatorAgentID.Equals(rec.Creator))
-	require.EqualValues(t, sbtestsc.Interface.ProgramHash, rec.ProgramHash)
+	require.EqualValues(t, sbtestsc.Contract.ProgramHash, rec.ProgramHash)
 }
 
 func TestChangeOwnerAuthorized(t *testing.T) {
@@ -133,7 +133,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := iscp.NewAgentID(ownerAddr, 0)
-	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	req := solo.NewCallParams(root.Contract.Name, root.FuncDelegateChainOwnership.Name, root.ParamChainOwner, newOwnerAgentID)
 	req.WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -141,7 +141,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 	_, ownerAgentID, _ := chain.GetInfo()
 	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
 
-	req = solo.NewCallParams(root.Interface.Name, root.FuncClaimChainOwnership).WithIotas(1)
+	req = solo.NewCallParams(root.Contract.Name, root.FuncClaimChainOwnership.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
@@ -155,7 +155,7 @@ func TestChangeOwnerUnauthorized(t *testing.T) {
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := iscp.NewAgentID(ownerAddr, 0)
-	req := solo.NewCallParams(root.Interface.Name, root.FuncDelegateChainOwnership, root.ParamChainOwner, newOwnerAgentID)
+	req := solo.NewCallParams(root.Contract.Name, root.FuncDelegateChainOwnership.Name, root.ParamChainOwner, newOwnerAgentID)
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.Error(t, err)
 

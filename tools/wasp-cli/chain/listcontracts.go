@@ -14,7 +14,7 @@ var listContractsCmd = &cobra.Command{
 	Short: "List deployed contracts in chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		info, err := SCClient(root.Interface.Hname()).CallView(root.FuncGetChainInfo)
+		info, err := SCClient(root.Contract.Hname()).CallView(root.FuncGetChainInfo.Name, nil)
 		log.Check(err)
 
 		contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))

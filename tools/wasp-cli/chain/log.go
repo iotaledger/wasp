@@ -17,7 +17,7 @@ var logCmd = &cobra.Command{
 	Short: "Show log of contract <name>",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		r, err := SCClient(eventlog.Interface.Hname()).CallView(eventlog.FuncGetRecords,
+		r, err := SCClient(eventlog.Contract.Hname()).CallView(eventlog.FuncGetRecords.Name,
 			dict.Dict{
 				eventlog.ParamContractHname: iscp.Hn(args[0]).Bytes(),
 			})

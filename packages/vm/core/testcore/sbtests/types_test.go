@@ -15,7 +15,7 @@ func testTypesFull(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	cID, _ := setupTestSandboxSC(t, chain, nil, w)
 
-	req := solo.NewCallParams(ScName, sbtestsc.FuncPassTypesFull,
+	req := solo.NewCallParams(ScName, sbtestsc.FuncPassTypesFull.Name,
 		"string", "string",
 		"string-0", "",
 		"int64", 42,
@@ -37,7 +37,7 @@ func testTypesView(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	cID, _ := setupTestSandboxSC(t, chain, nil, w)
 
-	_, err := chain.CallView(ScName, sbtestsc.FuncPassTypesView,
+	_, err := chain.CallView(ScName, sbtestsc.FuncPassTypesView.Name,
 		"string", "string",
 		"string-0", "",
 		"int64", 42,

@@ -38,6 +38,7 @@ func main() {
 	commonFlags.IntVarP(&config.Wasp.FirstDashboardPort, "first-dashboard-port", "h", config.Wasp.FirstDashboardPort, "First wasp dashboard port")
 	commonFlags.IntVarP(&config.Goshimmer.APIPort, "goshimmer-api-port", "i", config.Goshimmer.APIPort, "Goshimmer API port")
 	commonFlags.BoolVarP(&config.Goshimmer.UseNode, "goshimmer-use-node", "g", config.Goshimmer.UseNode, "If false (default), a mocked version of Goshimmer will be used")
+	commonFlags.IntVarP(&config.Goshimmer.TxStreamPort, "goshimmer-txport", "gp", config.Goshimmer.TxStreamPort, "Goshimmer port")
 	commonFlags.StringVarP(&config.Goshimmer.Hostname, "goshimmer-hostname", "gh", config.Goshimmer.Hostname, "Goshimmer hostname")
 	commonFlags.IntVarP(&config.FaucetPoWTarget, "goshimmer-faucet-pow", "w", config.FaucetPoWTarget, "Faucet PoW target")
 

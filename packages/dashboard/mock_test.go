@@ -174,7 +174,7 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, fname stri
 	}
 
 	switch {
-	case hname == root.Interface.Hname() && fname == root.FuncGetChainInfo:
+	case hname == root.Contract.Hname() && fname == root.FuncGetChainInfo.Name:
 		ret := dict.New()
 		ret.Set(root.VarChainID, codec.EncodeChainID(*chainID))
 		ret.Set(root.VarChainOwnerID, codec.EncodeAgentID(iscp.NewRandomAgentID()))
@@ -189,42 +189,42 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, fname stri
 		}
 		return ret, nil
 
-	case hname == root.Interface.Hname() && fname == root.FuncFindContract:
+	case hname == root.Contract.Hname() && fname == root.FuncFindContract.Name:
 		ret := dict.New()
 		ret.Set(root.VarData, root.EncodeContractRecord(contract))
 		return ret, nil
 
-	case hname == accounts.Interface.Hname() && fname == accounts.FuncViewAccounts:
+	case hname == accounts.Contract.Hname() && fname == accounts.FuncViewAccounts.Name:
 		ret := dict.New()
 		ret.Set(kv.Key(iscp.NewRandomAgentID().Bytes()), []byte{})
 		return ret, nil
 
-	case hname == accounts.Interface.Hname() && fname == accounts.FuncViewTotalAssets:
+	case hname == accounts.Contract.Hname() && fname == accounts.FuncViewTotalAssets.Name:
 		return accounts.EncodeBalances(map[ledgerstate.Color]uint64{
 			ledgerstate.ColorIOTA: 42,
 		}), nil
 
-	case hname == accounts.Interface.Hname() && fname == accounts.FuncViewBalance:
+	case hname == accounts.Contract.Hname() && fname == accounts.FuncViewBalance.Name:
 		return accounts.EncodeBalances(map[ledgerstate.Color]uint64{
 			ledgerstate.ColorIOTA: 42,
 		}), nil
 
-	case hname == blob.Interface.Hname() && fname == blob.FuncListBlobs:
+	case hname == blob.Contract.Hname() && fname == blob.FuncListBlobs.Name:
 		ret := dict.New()
 		ret.Set(kv.Key(hashing.RandomHash(nil).Bytes()), blob.EncodeSize(4))
 		return ret, nil
 
-	case hname == blob.Interface.Hname() && fname == blob.FuncGetBlobInfo:
+	case hname == blob.Contract.Hname() && fname == blob.FuncGetBlobInfo.Name:
 		ret := dict.New()
 		ret.Set(kv.Key([]byte("key")), blob.EncodeSize(4))
 		return ret, nil
 
-	case hname == blob.Interface.Hname() && fname == blob.FuncGetBlobField:
+	case hname == blob.Contract.Hname() && fname == blob.FuncGetBlobField.Name:
 		ret := dict.New()
 		ret.Set(blob.ParamBytes, []byte{1, 3, 3, 7})
 		return ret, nil
 
-	case hname == eventlog.Interface.Hname() && fname == eventlog.FuncGetRecords:
+	case hname == eventlog.Contract.Hname() && fname == eventlog.FuncGetRecords.Name:
 		ret := dict.New()
 		a := collections.NewArray16(ret, eventlog.ParamRecords)
 		a.MustPush([]byte("log entry"))

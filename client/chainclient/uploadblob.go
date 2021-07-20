@@ -4,7 +4,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -38,8 +37,8 @@ func (c *Client) UploadBlob(fields dict.Dict, waspHosts []string, quorum int, op
 	blobHash := blob.MustGetBlobHash(fields)
 
 	reqTx, err := c.Post1Request(
-		blob.Interface.Hname(),
-		iscp.Hn(blob.FuncStoreBlob),
+		blob.Contract.Hname(),
+		blob.FuncStoreBlob.Hname(),
 		PostRequestParams{
 			Args: argsEncoded,
 		},

@@ -134,7 +134,7 @@ func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uin
 }
 
 func (vmctx *VMContext) checkRotationAddress() ledgerstate.Address {
-	vmctx.pushCallContext(governance.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(governance.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	return governance.GetRotationAddress(vmctx.State())
@@ -152,7 +152,7 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 		return rotationAddress
 	}
 	// block info will be stored into the separate state update
-	vmctx.pushCallContext(blocklog.Interface.Hname(), nil, nil)
+	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	blockInfo := &blocklog.BlockInfo{

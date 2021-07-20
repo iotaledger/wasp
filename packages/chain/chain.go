@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/request"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/logger"
@@ -14,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -31,7 +32,6 @@ type ChainCore interface {
 	GlobalStateSync() coreutil.ChainStateSync
 	GetStateReader() state.OptimisticStateReader
 	Log() *logger.Logger
-	ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string)
 }
 
 // ChainEntry interface to access chain from the chain registry side
@@ -40,6 +40,7 @@ type ChainEntry interface {
 	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
 	ReceiveOutput(output ledgerstate.Output)
+	ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string)
 
 	Dismiss(reason string)
 	IsDismissed() bool
