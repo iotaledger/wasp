@@ -148,6 +148,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
 	})
 	t.Run("cluster=10,N=6,req=1000", func(t *testing.T) {
+		t.SkipNow()
 		const waitFor = 60 * time.Second
 		const numRequests = 1000
 		const numValidatorNodes = 6
@@ -449,6 +450,7 @@ func callGetBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int) (uint3
 		chain.ChainID,
 		blocklog.Contract.Hname(),
 		blocklog.FuncGetLatestBlockInfo.Name,
+		nil,
 	)
 	if err != nil {
 		return 0, err
@@ -493,6 +495,7 @@ func callGetStateController(t *testing.T, chain *cluster.Chain, nodeIndex int) (
 		chain.ChainID,
 		blocklog.Contract.Hname(),
 		blocklog.FuncControlAddresses.Name,
+		nil,
 	)
 	if err != nil {
 		return nil, err
@@ -508,6 +511,7 @@ func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeInd
 		chain.ChainID,
 		governance.Contract.Hname(),
 		governance.FuncGetAllowedStateControllerAddresses.Name,
+		nil,
 	)
 	require.NoError(t, err)
 	arr := collections.NewArray16ReadOnly(ret, governance.ParamAllowedStateControllerAddresses)

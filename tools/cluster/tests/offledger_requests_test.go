@@ -66,7 +66,7 @@ func TestOffledgerRequest(t *testing.T) {
 
 	// check off-ledger request was successfully processed
 	ret, err := chain1.Cluster.WaspClient(0).CallView(
-		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name,
+		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name, nil,
 	)
 	check(err, t)
 	result, _ := ret.Get(inccounter.VarCounter)
@@ -150,7 +150,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 
 	// check off-ledger request was successfully processed (check by asking another access node)
 	ret, err := clu1.WaspClient(6).CallView(
-		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name,
+		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name, nil,
 	)
 	check(err, t)
 	result, _ := ret.Get(inccounter.VarCounter)
