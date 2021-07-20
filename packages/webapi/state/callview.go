@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -15,17 +16,22 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/webapiutil"
-	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func AddEndpoints(server echoswagger.ApiRouter) {
+type callViewService struct {
+	chains chains.Provider
+}
+
+func AddEndpoints(server echoswagger.ApiRouter, allChains chains.Provider) {
 	dictExample := dict.Dict{
 		kv.Key("key1"): []byte("value1"),
 	}.JSONDict()
 
-	server.GET(routes.CallView(":chainID", ":contractHname", ":fname"), handleCallView).
+	s := &callViewService{allChains}
+
+	server.GET(routes.CallView(":chainID", ":contractHname", ":fname"), s.handleCallView).
 		SetSummary("Call a view function on a contract").
 		AddParamPath("", "chainID", "ChainID (base58-encoded)").
 		AddParamPath("", "contractHname", "Contract Hname").
@@ -33,14 +39,14 @@ func AddEndpoints(server echoswagger.ApiRouter) {
 		AddParamBody(dictExample, "params", "Parameters", false).
 		AddResponse(http.StatusOK, "Result", dictExample, nil)
 
-	server.GET(routes.StateGet(":chainID", ":key"), handleStateGet).
+	server.GET(routes.StateGet(":chainID", ":key"), s.handleStateGet).
 		SetSummary("Fetch the raw value associated with the given key in the chain state").
 		AddParamPath("", "chainID", "ChainID (base58-encoded)").
 		AddParamPath("", "key", "Key (hex-encoded)").
 		AddResponse(http.StatusOK, "Result", []byte("value"), nil)
 }
 
-func handleCallView(c echo.Context) error {
+func (s *callViewService) handleCallView(c echo.Context) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
@@ -58,7 +64,7 @@ func handleCallView(c echo.Context) error {
 			return httperrors.BadRequest("Invalid request body")
 		}
 	}
-	theChain := chains.AllChains().Get(chainID)
+	theChain := s.chains().Get(chainID)
 	if theChain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}
@@ -75,7 +81,7 @@ const (
 	retryOnStateInvalidatedTimeout = 2 * time.Second
 )
 
-func handleStateGet(c echo.Context) error {
+func (s *callViewService) handleStateGet(c echo.Context) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(fmt.Sprintf("Invalid chain ID: %+v", c.Param("chainID")))
@@ -86,7 +92,7 @@ func handleStateGet(c echo.Context) error {
 		return httperrors.BadRequest(fmt.Sprintf("cannot parse hex-encoded key: %+v", c.Param("key")))
 	}
 
-	theChain := chains.AllChains().Get(chainID)
+	theChain := s.chains().Get(chainID)
 	if theChain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Chain not found: %s", chainID))
 	}

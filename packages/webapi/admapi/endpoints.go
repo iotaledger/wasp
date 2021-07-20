@@ -9,6 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/labstack/echo/v4"
@@ -21,16 +22,25 @@ func initLogger() {
 	log = logger.NewLogger("webapi/adm")
 }
 
-func AddEndpoints(adm echoswagger.ApiGroup, adminWhitelist []net.IP, network peering.NetworkProvider, tnm peering.TrustedNetworkManager, registryProvider registry.Provider, chainsProvider chains.Provider) {
+func AddEndpoints(
+	adm echoswagger.ApiGroup,
+	adminWhitelist []net.IP,
+	network peering.NetworkProvider,
+	tnm peering.TrustedNetworkManager,
+	registryProvider registry.Provider,
+	chainsProvider chains.Provider,
+	nodeProvider dkg.NodeProvider,
+	shutdown ShutdownFunc,
+) {
 	initLogger()
 
 	adm.EchoGroup().Use(protected(adminWhitelist))
 
-	addShutdownEndpoint(adm)
-	addChainRecordEndpoints(adm)
-	addCommitteeRecordEndpoints(adm)
+	addShutdownEndpoint(adm, shutdown)
+	addChainRecordEndpoints(adm, registryProvider)
+	addCommitteeRecordEndpoints(adm, registryProvider, chainsProvider)
 	addChainEndpoints(adm, registryProvider, chainsProvider)
-	addDKSharesEndpoints(adm)
+	addDKSharesEndpoints(adm, registryProvider, nodeProvider)
 	addPeeringEndpoints(adm, network, tnm)
 }
 

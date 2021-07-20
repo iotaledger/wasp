@@ -10,17 +10,24 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/chainimpl"
+	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/parameters"
-	peering_pkg "github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/plugins/database"
-	"github.com/iotaledger/wasp/plugins/peering"
 	"golang.org/x/xerrors"
 )
 
 type Provider func() *Chains
+
+func (chains Provider) ChainProvider() func(chainID *iscp.ChainID) chain.Chain {
+	return func(chainID *iscp.ChainID) chain.Chain {
+		return chains().Get(chainID)
+	}
+}
+
+type ChainProvider func(chainID *iscp.ChainID) chain.Chain
 
 type Chains struct {
 	mutex                            sync.RWMutex
@@ -31,6 +38,8 @@ type Chains struct {
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
+	networkProvider                  peering.NetworkProvider
+	getOrCreateKVStore               dbmanager.ChainKVStoreProvider
 }
 
 func New(
@@ -39,6 +48,8 @@ func New(
 	offledgerBroadcastUpToNPeers int,
 	offledgerBroadcastInterval time.Duration,
 	pullMissingRequestsFromCommittee bool,
+	networkProvider peering.NetworkProvider,
+	getOrCreateKVStore dbmanager.ChainKVStoreProvider,
 ) *Chains {
 	ret := &Chains{
 		log:                              log,
@@ -47,6 +58,8 @@ func New(
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
+		networkProvider:                  networkProvider,
+		getOrCreateKVStore:               getOrCreateKVStore,
 	}
 	return ret
 }
@@ -113,7 +126,7 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 		return nil
 	}
 	// create new chain object
-	peerNetworkConfig, err := peering_pkg.NewStaticPeerNetworkConfigProvider(
+	peerNetworkConfig, err := peering.NewStaticPeerNetworkConfigProvider(
 		parameters.GetString(parameters.PeeringMyNetID),
 		parameters.GetInt(parameters.PeeringPort),
 		chr.Peers...,
@@ -123,14 +136,14 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 	}
 
 	defaultRegistry := registryProvider()
-	chainKVStore := database.GetOrCreateKVStore(chr.ChainID)
+	chainKVStore := c.getOrCreateKVStore(chr.ChainID)
 	newChain := chainimpl.NewChain(
 		chr.ChainID,
 		c.log,
 		c.nodeConn,
 		peerNetworkConfig,
 		chainKVStore,
-		peering.DefaultNetworkProvider(),
+		c.networkProvider,
 		defaultRegistry,
 		defaultRegistry,
 		defaultRegistry,

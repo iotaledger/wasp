@@ -21,6 +21,8 @@ import (
 	"go.dedis.ch/kyber/v3/sign/eddsa"
 )
 
+type NodeProvider func() *Node
+
 // Node represents a node, that can participate in a DKG procedure.
 // It receives commands from the initiator as a dkg.NodeProvider,
 // and communicates with other DKG nodes via the peering network.

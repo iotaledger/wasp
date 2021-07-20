@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/plugins/database"
 )
 
 // region Registry /////////////////////////////////////////////////////////
@@ -32,15 +31,10 @@ type Impl struct {
 
 // New creates new instance of the registry implementation.
 func NewRegistry(log *logger.Logger, store kvstore.KVStore) *Impl {
-	if store == nil {
-		store = database.GetRegistryKVStore()
-	}
-	ret := &Impl{
+	return &Impl{
 		log:   log.Named("registry"),
 		store: store,
 	}
-
-	return ret
 }
 
 // endregion ////////////////////////////////////////////////////////
