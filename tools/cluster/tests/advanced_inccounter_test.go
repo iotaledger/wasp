@@ -113,7 +113,7 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	})
 }
 
-var addressCount uint64 = 1
+var addressIndex uint64 = 1
 
 func createNewClient(t *testing.T, clu1 *cluster.Cluster, chain1 *cluster.Chain) *scclient.SCClient {
 	keyPair, _ := getOrCreateAddress(t, clu1)
@@ -124,10 +124,11 @@ func createNewClient(t *testing.T, clu1 *cluster.Cluster, chain1 *cluster.Chain)
 }
 
 func getOrCreateAddress(t *testing.T, clu1 *cluster.Cluster) (*ed25519.KeyPair, *ledgerstate.ED25519Address) {
-	minimalTokenAmountBeforeRequestingNewFunds := uint64(1000)
+	const minimalTokenAmountBeforeRequestingNewFunds uint64 = 1000
+
 	randomAddress := rand.NewSource(time.Now().UnixNano())
 
-	keyPair := wallet.KeyPair(addressCount)
+	keyPair := wallet.KeyPair(addressIndex)
 	myAddress := ledgerstate.NewED25519Address(keyPair.PublicKey)
 
 	funds, err := clu1.GoshimmerClient().BalanceIOTA(myAddress)
@@ -137,14 +138,14 @@ func getOrCreateAddress(t *testing.T, clu1 *cluster.Cluster) (*ed25519.KeyPair, 
 	if funds <= minimalTokenAmountBeforeRequestingNewFunds {
 		// Requesting new token requires a new address
 
-		addressCount = rand.New(randomAddress).Uint64()
-		t.Logf("Generating new address: %v", addressCount)
+		addressIndex = rand.New(randomAddress).Uint64()
+		t.Logf("Generating new address: %v", addressIndex)
 
-		keyPair = wallet.KeyPair(addressCount)
+		keyPair = wallet.KeyPair(addressIndex)
 		myAddress = ledgerstate.NewED25519Address(keyPair.PublicKey)
 
 		err = requestFunds(clu1, myAddress, "myAddress")
-		t.Logf("Funds: %v, AddressCount: %v", funds, addressCount)
+		t.Logf("Funds: %v, addressIndex: %v", funds, addressIndex)
 		require.NoError(t, err)
 	}
 

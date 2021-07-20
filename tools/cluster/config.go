@@ -11,10 +11,10 @@ import (
 )
 
 type GoshimmerConfig struct {
-	TxStreamPort int
-	APIPort      int
-	UseNode      bool
-	Hostname     string
+	TxStreamPort    int
+	APIPort         int
+	UseProvidedNode bool
+	Hostname        string
 }
 
 type WaspConfig struct {
@@ -48,10 +48,10 @@ func DefaultConfig() *ClusterConfig {
 			FirstPrometheusPort: 2112,
 		},
 		Goshimmer: GoshimmerConfig{
-			TxStreamPort: 5000,
-			APIPort:      8080,
-			UseNode:      false,
-			Hostname:     "127.0.0.1",
+			TxStreamPort:    5000,
+			APIPort:         8080,
+			UseProvidedNode: false,
+			Hostname:        "127.0.0.1",
 		},
 		FaucetPoWTarget:       -1,
 		BlockedGoshimmerNodes: make(map[int]bool),

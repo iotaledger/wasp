@@ -283,7 +283,7 @@ func (clu *Cluster) Start(dataPath string) error {
 func (clu *Cluster) start(dataPath string) error {
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", clu.Config.Wasp.NumNodes)
 
-	if !clu.Config.Goshimmer.UseNode {
+	if !clu.Config.Goshimmer.UseProvidedNode {
 		clu.goshimmer = mocknode.Start(
 			fmt.Sprintf(":%d", clu.Config.Goshimmer.TxStreamPort),
 			fmt.Sprintf(":%d", clu.Config.Goshimmer.APIPort),
