@@ -20,11 +20,12 @@ type WaspConfig struct {
 	NumNodes int
 
 	// node ports are calculated as these values + node index
-	FirstAPIPort       int
-	FirstPeeringPort   int
-	FirstNanomsgPort   int
-	FirstDashboardPort int
-	FirstProfilingPort int
+	FirstAPIPort        int
+	FirstPeeringPort    int
+	FirstNanomsgPort    int
+	FirstDashboardPort  int
+	FirstProfilingPort  int
+	FirstPrometheusPort int
 }
 
 type ClusterConfig struct {
@@ -37,12 +38,13 @@ type ClusterConfig struct {
 func DefaultConfig() *ClusterConfig {
 	return &ClusterConfig{
 		Wasp: WaspConfig{
-			NumNodes:           4,
-			FirstAPIPort:       9090,
-			FirstPeeringPort:   4000,
-			FirstNanomsgPort:   5550,
-			FirstDashboardPort: 7000,
-			FirstProfilingPort: 6060,
+			NumNodes:            4,
+			FirstAPIPort:        9090,
+			FirstPeeringPort:    4000,
+			FirstNanomsgPort:    5550,
+			FirstDashboardPort:  7000,
+			FirstProfilingPort:  6060,
+			FirstPrometheusPort: 2112,
 		},
 		Goshimmer: GoshimmerConfig{
 			TxStreamPort: 5000,
@@ -174,6 +176,10 @@ func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {
 	return c.Wasp.FirstProfilingPort + nodeIndex
 }
 
+func (c *ClusterConfig) PrometheusPort(nodeIndex int) int {
+	return c.Wasp.FirstPrometheusPort + nodeIndex
+}
+
 func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigParams {
 	return &templates.WaspConfigParams{
 		APIPort:                      c.APIPort(i),
@@ -183,6 +189,7 @@ func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigPar
 		Neighbors:                    c.NeighborsString(),
 		TxStreamPort:                 c.TxStreamPort(i),
 		ProfilingPort:                c.ProfilingPort(i),
+		PrometheusPort:               c.PrometheusPort(i),
 		OffledgerBroadcastUpToNPeers: 10,
 	}
 }

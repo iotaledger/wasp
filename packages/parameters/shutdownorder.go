@@ -8,4 +8,5 @@ const (
 	PriorityNodeConnection
 	PriorityWebAPI
 	PriorityDBGarbageCollection
+	PriorityPrometheus
 )
