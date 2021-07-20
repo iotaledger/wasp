@@ -18,8 +18,7 @@ import (
 const PluginName = "Prometheus"
 
 var (
-	log    *logger.Logger
-	server *http.Server
+	log *logger.Logger
 )
 
 func Init() *node.Plugin {
@@ -55,7 +54,7 @@ func run(_ *node.Plugin) {
 		})
 
 		bindAddr := parameters.GetString(parameters.PrometheusBindAddress)
-		server = &http.Server{Addr: bindAddr, Handler: e}
+		server := &http.Server{Addr: bindAddr, Handler: e}
 
 		stopped := make(chan struct{})
 		go func() {
