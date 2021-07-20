@@ -124,7 +124,7 @@ func createNewClient(t *testing.T, clu1 *cluster.Cluster, chain1 *cluster.Chain)
 }
 
 func getOrCreateAddress(t *testing.T, clu1 *cluster.Cluster) (*ed25519.KeyPair, *ledgerstate.ED25519Address) {
-	const minimalTokenAmountBeforeRequestingNewFunds uint64 = 1000
+	const minTokenAmountBeforeRequestingNewFunds uint64 = 1000
 
 	randomAddress := rand.NewSource(time.Now().UnixNano())
 
@@ -135,7 +135,7 @@ func getOrCreateAddress(t *testing.T, clu1 *cluster.Cluster) (*ed25519.KeyPair, 
 
 	require.NoError(t, err)
 
-	if funds <= minimalTokenAmountBeforeRequestingNewFunds {
+	if funds <= minTokenAmountBeforeRequestingNewFunds {
 		// Requesting new token requires a new address
 
 		addressIndex = rand.New(randomAddress).Uint64()
