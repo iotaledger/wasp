@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -140,9 +139,10 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 }
 
 func (vmctx *VMContext) StoreToEventLog(contract iscp.Hname, data []byte) {
-	vmctx.pushCallContext(eventlog.Contract.Hname(), nil, nil)
+	// TODO refactor to use blocklog
+	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	vmctx.log.Debugf("StoreToEventLog/%s: data: '%s'", contract.String(), string(data))
-	eventlog.AppendToLog(vmctx.State(), vmctx.virtualState.Timestamp().UnixNano(), contract, data)
+	// blocklog.AppendToLog(vmctx.State(), vmctx.virtualState.Timestamp().UnixNano(), contract, data)
 }

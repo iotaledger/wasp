@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 )
@@ -37,7 +37,7 @@ func newSandboxView(vctx *Viewcontext, contractHname iscp.Hname, params dict.Dic
 func (s *sandboxview) AccountID() *iscp.AgentID {
 	hname := s.contractHname
 	switch hname {
-	case root.Contract.Hname(), accounts.Contract.Hname(), blob.Contract.Hname(), eventlog.Contract.Hname():
+	case root.Contract.Hname(), accounts.Contract.Hname(), blob.Contract.Hname(), blocklog.Contract.Hname():
 		hname = 0
 	}
 	return iscp.NewAgentID(s.vctx.chainID.AsAddress(), hname)

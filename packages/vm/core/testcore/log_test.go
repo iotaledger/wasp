@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -34,9 +33,6 @@ func TestEventLogBasicEmpty(t *testing.T) {
 	require.EqualValues(t, 0, num)
 
 	num = chain.GetEventLogNumRecords(blob.Contract.Name)
-	require.EqualValues(t, 0, num)
-
-	num = chain.GetEventLogNumRecords(eventlog.Contract.Name)
 	require.EqualValues(t, 0, num)
 
 	reqRecs := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)

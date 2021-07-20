@@ -1,3 +1,4 @@
+<!-- TODO  - move this to blocklog after refactoring -->
 # The `eventlog` contract
 
 The `eventlog` contract is one of the [core contracts](overview.md) on each ISCP

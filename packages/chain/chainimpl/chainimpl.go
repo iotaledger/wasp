@@ -24,21 +24,13 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
 )
@@ -81,7 +73,6 @@ type chainObj struct {
 	offledgerBroadcastUpToNPeers     int
 	offledgerBroadcastInterval       time.Duration
 	pullMissingRequestsFromCommittee bool
-	lastPublishedEventsNanoTs        int64
 }
 
 type committeeStruct struct {
@@ -136,7 +127,6 @@ func NewChain(
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
-		lastPublishedEventsNanoTs:        time.Now().UnixNano(),
 	}
 	ret.committee.Store(&committeeStruct{})
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
@@ -347,45 +337,45 @@ const (
 )
 
 func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
-	// TODO refactor to use blocklog
 	if blockIndex == 0 {
 		// don't run on state #0, root contracts not initialized yet.
 		return
 	}
 	newEvents := make(map[iscp.Hname][][]byte)
-	now := time.Now().UnixNano()
-	c.log.Debug("publishNewBlockEvents start")
+	// TODO refactor to use blocklog
+	// now := time.Now().UnixNano()
+	// c.log.Debug("publishNewBlockEvents start")
 
-	vctx := viewcontext.NewFromChain(c)
-	// sift through the chain contracts and emit events created on the last block
-	err := optimism.RetryOnStateInvalidated(func() error {
-		info, err := vctx.CallView(root.Contract.Hname(), iscp.Hn(root.FuncGetChainInfo.Name), dict.Dict{})
-		if err != nil {
-			return err
-		}
-		contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
-		if err != nil {
-			return err
-		}
+	// vctx := viewcontext.NewFromChain(c)
+	// // sift through the chain contracts and emit events created on the last block
+	// err := optimism.RetryOnStateInvalidated(func() error {
+	// 	info, err := vctx.CallView(root.Contract.Hname(), iscp.Hn(root.FuncGetChainInfo.Name), dict.Dict{})
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
+	// 	if err != nil {
+	// 		return err
+	// 	}
 
-		kvPartition := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(eventlog.Contract.Hname().Bytes()))
-		for _, contract := range contracts {
-			log := collections.NewTimestampedLogReadOnly(kvPartition, kv.Key(contract.Hname().Bytes()))
-			ts := log.MustTakeTimeSlice(c.lastPublishedEventsNanoTs, now)
-			first, last := ts.FromToIndices()
-			if first == last {
-				continue
-			}
-			data := log.MustLoadRecordsRaw(first, last, false)
-			if len(data) > 0 {
-				newEvents[contract.Hname()] = data
-			}
-		}
-		return nil
-	}, retryOnStateInvalidatedRetry, time.Now().Add(retryOnStateInvalidatedTimeout))
-	if err != nil {
-		c.log.Warnf("error emitting events: %v", err)
-	}
+	// 	kvPartition := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(eventlog.Contract.Hname().Bytes()))
+	// 	for _, contract := range contracts {
+	// 		log := collections.NewTimestampedLogReadOnly(kvPartition, kv.Key(contract.Hname().Bytes()))
+	// 		ts := log.MustTakeTimeSlice(c.lastPublishedEventsNanoTs, now)
+	// 		first, last := ts.FromToIndices()
+	// 		if first == last {
+	// 			continue
+	// 		}
+	// 		data := log.MustLoadRecordsRaw(first, last, false)
+	// 		if len(data) > 0 {
+	// 			newEvents[contract.Hname()] = data
+	// 		}
+	// 	}
+	// 	return nil
+	// }, retryOnStateInvalidatedRetry, time.Now().Add(retryOnStateInvalidatedTimeout))
+	// if err != nil {
+	// 	c.log.Warnf("error emitting events: %v", err)
+	// }
 
 	for contractHname, msgs := range newEvents {
 		for _, msg := range msgs {
@@ -394,8 +384,6 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 			publisher.Publish("vmmsg", c.chainID.Base58(), contractHname.String(), text)
 		}
 	}
-
-	c.lastPublishedEventsNanoTs = now
 }
 
 func (c *chainObj) processSynced(outputID ledgerstate.OutputID, blockIndex uint32) {

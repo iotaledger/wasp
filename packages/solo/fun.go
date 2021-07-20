@@ -25,7 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
@@ -412,21 +411,23 @@ func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint
 // It returns records as array in time-descending order.
 // More than 50 records may be retrieved by calling the view directly
 func (ch *Chain) GetEventLogRecords(name string) ([]collections.TimestampedLogRecord, error) {
-	res, err := ch.CallView(eventlog.Contract.Name, eventlog.FuncGetRecords.Name,
-		eventlog.ParamContractHname, iscp.Hn(name),
-	)
-	if err != nil {
-		return nil, err
-	}
-	recs := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
-	ret := make([]collections.TimestampedLogRecord, recs.MustLen())
-	for i := uint16(0); i < recs.MustLen(); i++ {
-		data := recs.MustGetAt(i)
-		rec, err := collections.ParseRawLogRecord(data)
-		require.NoError(ch.Env.T, err)
-		ret[i] = *rec
-	}
-	return ret, nil
+	return nil, nil
+	// TODO refactor to use blocklog
+	// res, err := ch.CallView(eventlog.Contract.Name, eventlog.FuncGetRecords.Name,
+	// 	eventlog.ParamContractHname, iscp.Hn(name),
+	// )
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// recs := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
+	// ret := make([]collections.TimestampedLogRecord, recs.MustLen())
+	// for i := uint16(0); i < recs.MustLen(); i++ {
+	// 	data := recs.MustGetAt(i)
+	// 	rec, err := collections.ParseRawLogRecord(data)
+	// 	require.NoError(ch.Env.T, err)
+	// 	ret[i] = *rec
+	// }
+	// return ret, nil
 }
 
 // GetEventLogRecordsString return stringified response from GetEventLogRecords
@@ -445,14 +446,16 @@ func (ch *Chain) GetEventLogRecordsString(name string) (string, error) {
 
 // GetEventLogNumRecords returns total number of eventlog records for the given contact.
 func (ch *Chain) GetEventLogNumRecords(name string) int {
-	res, err := ch.CallView(eventlog.Contract.Name, eventlog.FuncGetNumRecords.Name,
-		eventlog.ParamContractHname, iscp.Hn(name),
-	)
-	require.NoError(ch.Env.T, err)
-	ret, ok, err := codec.DecodeInt64(res.MustGet(eventlog.ParamNumRecords))
-	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
-	return int(ret)
+	return 0
+	// TODO refactor to use blocklog
+	// res, err := ch.CallView(eventlog.Contract.Name, eventlog.FuncGetNumRecords.Name,
+	// 	eventlog.ParamContractHname, iscp.Hn(name),
+	// )
+	// require.NoError(ch.Env.T, err)
+	// ret, ok, err := codec.DecodeInt64(res.MustGet(eventlog.ParamNumRecords))
+	// require.NoError(ch.Env.T, err)
+	// require.True(ch.Env.T, ok)
+	// return int(ret)
 }
 
 // CommonAccount return the agentID of the common account (controlled by the owner)
