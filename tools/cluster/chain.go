@@ -209,7 +209,7 @@ func (ch *Chain) StartMessageCounter(expectations map[string]int) (*MessageCount
 
 func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(blocklog.FuncGetLatestBlockInfo.Name)
+	ret, err := cl.CallView(blocklog.FuncGetLatestBlockInfo.Name, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -242,7 +242,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.Bl
 
 func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.ContractRecord, error) {
 	cl := ch.SCClient(root.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(root.FuncGetChainInfo.Name)
+	ret, err := cl.CallView(root.FuncGetChainInfo.Name, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +251,7 @@ func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.Contra
 
 func (ch *Chain) GetCounterValue(inccounterSCHname iscp.Hname, nodeIndex ...int) (int64, error) {
 	cl := ch.SCClient(inccounterSCHname, nil, nodeIndex...)
-	ret, err := cl.CallView(inccounter.FuncGetCounter.Name)
+	ret, err := cl.CallView(inccounter.FuncGetCounter.Name, nil)
 	if err != nil {
 		return 0, err
 	}

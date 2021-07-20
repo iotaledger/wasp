@@ -10,11 +10,11 @@ import (
 const PluginName = "Banner"
 
 const (
-	// AppVersion version number
-	AppVersion = "v0.1.1"
+	// Version version number
+	Version = "v0.2.0"
 
-	// AppName app code name
-	AppName = "Wasp"
+	// Name app code name
+	Name = "Wasp"
 )
 
 func Init() *node.Plugin {
@@ -32,7 +32,7 @@ func configure(ctx *node.Plugin) {
                          | |
                          |_|
                 %s
-`, AppVersion)
+`, Version)
 	fmt.Println()
 
 	// TODO embed build time see https://stackoverflow.com/questions/53031035/generate-build-timestamp-in-go/53045029

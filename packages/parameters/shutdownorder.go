@@ -3,9 +3,9 @@ package parameters
 const (
 	PriorityDatabase = iota
 
+	PriorityChains
 	PriorityPeering
 	PriorityNodeConnection
-	PriorityDispatcher
 	PriorityWebAPI
-	PriorityBadgerGarbageCollection
+	PriorityDBGarbageCollection
 )
