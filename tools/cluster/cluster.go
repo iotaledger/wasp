@@ -142,7 +142,6 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 		Textout:               os.Stdout,
 		Prefix:                "[cluster] ",
 	}, stateAddr)
-
 	if err != nil {
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}

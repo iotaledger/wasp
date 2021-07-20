@@ -46,7 +46,7 @@ func DefaultConfig() *ClusterConfig {
 			FirstProfilingPort: 6060,
 		},
 		Goshimmer: GoshimmerConfig{
-			TxStreamPort: 5001,
+			TxStreamPort: 5000,
 			APIPort:      8080,
 			UseNode:      false,
 			Hostname:     "127.0.0.1",
@@ -172,6 +172,13 @@ func (c *ClusterConfig) TxStreamPort(nodeIndex int) int {
 	return c.Goshimmer.TxStreamPort
 }
 
+func (c *ClusterConfig) TxStreamHost(nodeIndex int) string {
+	if c.BlockedGoshimmerNodes[nodeIndex] {
+		return ""
+	}
+	return c.Goshimmer.Hostname
+}
+
 func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {
 	return c.Wasp.FirstProfilingPort + nodeIndex
 }
@@ -185,6 +192,7 @@ func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigPar
 		Neighbors:                    c.NeighborsString(),
 		TxStreamPort:                 c.TxStreamPort(i),
 		ProfilingPort:                c.ProfilingPort(i),
+		TxStreamHost:                 c.TxStreamHost(i),
 		OffledgerBroadcastUpToNPeers: 10,
 	}
 }
