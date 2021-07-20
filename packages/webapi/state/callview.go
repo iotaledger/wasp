@@ -70,8 +70,10 @@ func handleCallView(c echo.Context) error {
 	return c.JSON(http.StatusOK, ret)
 }
 
-const retryOnStateInvalidatedRetry = 100 * time.Millisecond //nolint:gofumpt
-const retryOnStateInvalidatedTimeout = 5 * time.Minute
+const (
+	retryOnStateInvalidatedRetry   = 100 * time.Millisecond
+	retryOnStateInvalidatedTimeout = 2 * time.Second
+)
 
 func handleStateGet(c echo.Context) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
