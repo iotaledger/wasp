@@ -17,9 +17,7 @@ import (
 
 const PluginName = "Prometheus"
 
-var (
-	log *logger.Logger
-)
+var log *logger.Logger
 
 func Init() *node.Plugin {
 	return node.NewPlugin(PluginName, node.Enabled, configure, run)
