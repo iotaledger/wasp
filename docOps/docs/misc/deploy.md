@@ -54,7 +54,7 @@ commands will be targeted to this chain.
 
 You can check that the chain was properly deployed in the Wasp node dashboard
 (e.g. `127.0.0.1:7000`). Note that the chain was deployed with some [core
-contracts](../contract_types/overview.md).
+contracts](../contract_core/overview.md).
 
 ---
 

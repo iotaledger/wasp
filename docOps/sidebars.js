@@ -93,43 +93,43 @@ module.exports = {
     },
     {
       type: 'category',
-      label: 'Contract Types',
+      label: 'Core Contracts',
       items:
       [
         {
           type: 'doc',
           label: 'Overview',
-          id: 'contract_types/overview',
+          id: 'contract_core/overview',
         },
         {
           type: 'doc',
-          label: 'Root Contracts',
-          id: 'contract_types/root',
+          label: 'Root Contract',
+          id: 'contract_core/root',
         },
         {
           type: 'doc',
-          label: 'Default Contracts',
-          id: 'contract_types/default',
+          label: 'Default Contract',
+          id: 'contract_core/default',
         },
         {
           type: 'doc',
-          label: 'Account Contracts',
-          id: 'contract_types/accounts',
+          label: 'Account Contract',
+          id: 'contract_core/accounts',
         },
         {
           type: 'doc',
-          label: 'Blob Contracts',
-          id: 'contract_types/blob',
+          label: 'Blob Contract',
+          id: 'contract_core/blob',
         },
         {
           type: 'doc',
-          label: 'Blocklog Contracts',
-          id: 'contract_types/blocklog',
+          label: 'Blocklog Contract',
+          id: 'contract_core/blocklog',
         },
         {
           type: 'doc',
-          label: 'Eventlog Contracts',
-          id: 'contract_types/eventlog',
+          label: 'Eventlog Contract',
+          id: 'contract_core/eventlog',
         },
       ],
     },
