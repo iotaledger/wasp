@@ -26,8 +26,7 @@ This command generates static content into the `build` directory and can be serv
 
 ## Deployment
 
-```console
-GIT_USER=<Your GitHub username> USE_SSH=true yarn deploy
-```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+There is a automatic deployment flow in place which will automatically trigger on a merged PR to the `master` branch
+To deploy in a local fork make sure you update `docusaurus.config.js` `baseUrl` setting to `/wasp/` temporarily and merge this to
+your master branch. This will trigger the workflow (make sure you have github pages enabled on the `gh-pages` branch in your settings.
+Don't commit this `baseUrl` setting to production, it needs to be `/` in the main repo to use the CNAME provided.
