@@ -20,7 +20,7 @@ var listAccountsCmd = &cobra.Command{
 	Short: "List accounts in chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewAccounts.Name)
+		ret, err := SCClient(accounts.Contract.Hname()).CallView(accounts.FuncViewAccounts.Name, nil)
 		log.Check(err)
 
 		log.Printf("Total %d account(s) in chain %s\n", len(ret), GetCurrentChainID().Base58())

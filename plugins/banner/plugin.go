@@ -4,18 +4,11 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/wasp"
 )
 
 // PluginName is the name of the banner plugin.
 const PluginName = "Banner"
-
-const (
-	// AppVersion version number
-	AppVersion = "v0.1.1"
-
-	// AppName app code name
-	AppName = "Wasp"
-)
 
 func Init() *node.Plugin {
 	return node.NewPlugin(PluginName, node.Enabled, configure, run)
@@ -32,7 +25,7 @@ func configure(ctx *node.Plugin) {
                          | |
                          |_|
                 %s
-`, AppVersion)
+`, wasp.Version)
 	fmt.Println()
 
 	// TODO embed build time see https://stackoverflow.com/questions/53031035/generate-build-timestamp-in-go/53045029

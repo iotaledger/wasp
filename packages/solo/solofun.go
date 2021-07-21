@@ -6,16 +6,28 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
+
+func (env *Solo) NewSeedFromIndex(index int) *ed25519.Seed {
+	var seedBytes []byte
+	if env.seed == nil {
+		seedBytes = make([]byte, 32)
+	} else {
+		seedBytes = env.seed.Bytes()
+	}
+	seedBytes = hashing.HashData(seedBytes, util.Int32To4Bytes(int32(index))).Bytes()
+	return ed25519.NewSeed(seedBytes)
+}
 
 // NewSignatureSchemeWithFundsAndPubKey generates new ed25519 signature scheme
 // and requests some tokens from the UTXODB faucet.
 // The amount of tokens is equal to solo.Saldo (=1000000) iotas
 // Returns signature scheme interface and public key in binary form
-func (env *Solo) NewKeyPairWithFunds() (*ed25519.KeyPair, ledgerstate.Address) {
-	keyPair, addr := env.NewKeyPair()
+func (env *Solo) NewKeyPairWithFunds(seed ...*ed25519.Seed) (*ed25519.KeyPair, ledgerstate.Address) {
+	keyPair, addr := env.NewKeyPair(seed...)
 
 	env.ledgerMutex.Lock()
 	defer env.ledgerMutex.Unlock()
@@ -29,8 +41,8 @@ func (env *Solo) NewKeyPairWithFunds() (*ed25519.KeyPair, ledgerstate.Address) {
 
 // NewSignatureSchemeAndPubKey generates new ed25519 signature scheme
 // Returns signature scheme interface and public key in binary form
-func (env *Solo) NewKeyPair() (*ed25519.KeyPair, ledgerstate.Address) {
-	return testkey.GenKeyAddr()
+func (env *Solo) NewKeyPair(seedOpt ...*ed25519.Seed) (*ed25519.KeyPair, ledgerstate.Address) {
+	return testkey.GenKeyAddr(seedOpt...)
 }
 
 // MintTokens mints specified amount of new colored tokens in the given wallet (signature scheme)

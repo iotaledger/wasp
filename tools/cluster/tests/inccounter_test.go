@@ -22,7 +22,7 @@ func checkSC(t *testing.T, chain *cluster.Chain, numRequests int) {
 		require.EqualValues(t, numRequests+3, blockIndex)
 
 		cl := chain.SCClient(root.Contract.Hname(), nil, i)
-		ret, err := cl.CallView(root.FuncGetChainInfo.Name)
+		ret, err := cl.CallView(root.FuncGetChainInfo.Name, nil)
 		require.NoError(t, err)
 
 		chid, _, _ := codec.DecodeChainID(ret.MustGet(root.VarChainID))
@@ -68,7 +68,7 @@ func TestIncDeployment(t *testing.T) {
 		require.EqualValues(t, 3, blockIndex)
 
 		cl := chain.SCClient(root.Contract.Hname(), nil, i)
-		ret, err := cl.CallView(root.FuncGetChainInfo.Name)
+		ret, err := cl.CallView(root.FuncGetChainInfo.Name, nil)
 		require.NoError(t, err)
 
 		chid, _, _ := codec.DecodeChainID(ret.MustGet(root.VarChainID))
@@ -248,7 +248,7 @@ func TestIncViewCounter(t *testing.T) {
 	postRequest(t, incHname, entryPoint, 0, nil)
 	checkCounter(t, 1)
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, incHname, "getCounter",
+		chain.ChainID, incHname, "getCounter", nil,
 	)
 	check(err, t)
 

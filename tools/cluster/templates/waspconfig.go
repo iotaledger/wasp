@@ -7,7 +7,9 @@ type WaspConfigParams struct {
 	NanomsgPort                  int
 	Neighbors                    string
 	TxStreamPort                 int
+	TxStreamHost                 string
 	ProfilingPort                int
+	PrometheusPort               int
 	OffledgerBroadcastUpToNPeers int
 }
 
@@ -48,7 +50,7 @@ const WaspConfig = `
     "neighbors": [{{.Neighbors}}]
   },
   "nodeconn": {
-    "address": "127.0.0.1:{{.TxStreamPort}}"
+    "address": "{{.TxStreamHost}}:{{.TxStreamPort}}"
   },
   "nanomsg":{
     "port": {{.NanomsgPort}}
@@ -58,6 +60,10 @@ const WaspConfig = `
   },
   "profiling":{
     "bindAddress": "0.0.0.0:{{.ProfilingPort}}",
+    "enabled": false
+  },
+  "prometheus": {
+    "bindAddress": "0.0.0.0:{{.PrometheusPort}}",
     "enabled": false
   }
 }

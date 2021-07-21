@@ -74,7 +74,7 @@ var listBlobsCmd = &cobra.Command{
 	Short: "List blobs in chain",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		ret, err := SCClient(blob.Contract.Hname()).CallView(blob.FuncListBlobs.Name)
+		ret, err := SCClient(blob.Contract.Hname()).CallView(blob.FuncListBlobs.Name, nil)
 		log.Check(err)
 
 		blobs, err := blob.DecodeSizesMap(ret)

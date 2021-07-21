@@ -32,7 +32,7 @@ func (env *Solo) AdvanceClockBy(step time.Duration) {
 	defer env.clockMutex.Unlock()
 
 	env.advanceClockTo(env.logicalTime.Add(step))
-	env.logger.Infof("AdvanceClockBy: logical clock advanced by %v", step)
+	env.logger.Infof("AdvanceClockBy: logical clock advanced by %v to %s", step, env.logicalTime.Format(timeLayout))
 }
 
 // ClockStep advances logical clock by time step set by SetTimeStep
@@ -41,7 +41,7 @@ func (env *Solo) ClockStep() {
 	defer env.clockMutex.Unlock()
 
 	env.advanceClockTo(env.logicalTime.Add(env.timeStep))
-	env.logger.Infof("ClockStep: logical clock advanced by %v", env.timeStep)
+	env.logger.Infof("ClockStep: logical clock advanced by %v to %s", env.timeStep, env.logicalTime.Format(timeLayout))
 }
 
 // SetTimeStep sets default time step for the 'solo' instance

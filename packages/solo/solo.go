@@ -48,6 +48,7 @@ const (
 	DustThresholdIotas = uint64(1)
 	ChainDustThreshold = uint64(100)
 	MaxRequestsInBlock = 100
+	timeLayout         = "04:05.000000000"
 )
 
 // Solo is a structure which contains global parameters of the test: one per test instance
@@ -57,6 +58,7 @@ type Solo struct {
 	logger      *logger.Logger
 	dbmanager   *dbmanager.DBManager
 	utxoDB      *utxodb.UtxoDB
+	seed        *ed25519.Seed
 	blobCache   registry.BlobCache
 	glbMutex    sync.RWMutex
 	ledgerMutex sync.RWMutex
@@ -126,12 +128,16 @@ var (
 //   If solo is used for unit testing, 't' should be the *testing.T instance; otherwise it can be either nil or an instance created with NewTestContext
 //   'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
 //   'printStackTrace' controls printing stack trace in case of errors
-func New(t TestContext, debug, printStackTrace bool) *Solo {
+func New(t TestContext, debug, printStackTrace bool, seedOpt ...*ed25519.Seed) *Solo {
 	if t == nil {
 		t = NewTestContext("solo")
 	}
+	var seed *ed25519.Seed
+	if len(seedOpt) > 0 {
+		seed = seedOpt[0]
+	}
 	doOnce.Do(func() {
-		glbLogger = testlogger.NewNamedLogger(t.Name(), "04:05.000")
+		glbLogger = testlogger.NewNamedLogger(t.Name(), timeLayout)
 		if !debug {
 			glbLogger = testlogger.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
 		}
@@ -143,12 +149,13 @@ func New(t TestContext, debug, printStackTrace bool) *Solo {
 	})
 	require.NoError(t, err)
 
-	initialTime := time.Now()
+	initialTime := time.Unix(1, 0)
 	ret := &Solo{
 		T:               t,
 		logger:          glbLogger,
 		dbmanager:       dbmanager.NewDBManager(glbLogger.Named("db"), true),
 		utxoDB:          utxodb.NewWithTimestamp(initialTime),
+		seed:            seed,
 		blobCache:       iscp.NewInMemoryBlobCache(),
 		logicalTime:     initialTime,
 		timeStep:        DefaultTimeStep,
@@ -156,8 +163,12 @@ func New(t TestContext, debug, printStackTrace bool) *Solo {
 		vmRunner:        runvm.NewVMRunner(),
 		processorConfig: processorConfig,
 	}
-	ret.logger.Infof("Solo environment has been created with initial logical time %v", initialTime)
+	ret.logger.Infof("Solo environment has been created with initial logical time %v", initialTime.Format(timeLayout))
 	return ret
+}
+
+func (env *Solo) SyncLog() {
+	_ = env.logger.Sync()
 }
 
 // WithNativeContract registers a native contract so that it may be deployed
@@ -183,14 +194,24 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //nolint:funlen
 func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...iscp.AgentID) *Chain {
 	env.logger.Debugf("deploying new chain '%s'", name)
-	stateController := ed25519.GenerateKeyPair() // chain address will be ED25519, not BLS
+	var stateController ed25519.KeyPair
+	if env.seed == nil {
+		stateController = ed25519.GenerateKeyPair() // chain address will be ED25519, not BLS
+	} else {
+		stateController = *env.seed.KeyPair(2)
+	}
 	stateAddr := ledgerstate.NewED25519Address(stateController.PublicKey)
 
 	var originatorAddr ledgerstate.Address
 	if chainOriginator == nil {
-		kp := ed25519.GenerateKeyPair()
-		chainOriginator = &kp
-		originatorAddr = ledgerstate.NewED25519Address(kp.PublicKey)
+		if env.seed == nil {
+			kp := ed25519.GenerateKeyPair()
+			chainOriginator = &kp
+			originatorAddr = ledgerstate.NewED25519Address(kp.PublicKey)
+		} else {
+			chainOriginator = env.seed.KeyPair(1)
+			originatorAddr = ledgerstate.NewED25519Address(chainOriginator.PublicKey)
+		}
 		_, err := env.utxoDB.RequestFunds(originatorAddr, env.LogicalTime())
 		require.NoError(env.T, err)
 	} else {
@@ -284,6 +305,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 
 	_, err = ret.runRequestsSync(initReq, "new")
 	require.NoError(env.T, err)
+	ret.logRequestLastBlock()
 
 	ret.Log.Infof("chain '%s' deployed. Chain ID: %s", ret.Name, ret.ChainID.String())
 	return ret

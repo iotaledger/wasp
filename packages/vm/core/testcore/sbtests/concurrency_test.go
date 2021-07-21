@@ -52,7 +52,7 @@ func testConcurrency(t *testing.T, w bool) {
 	for r, n := range repeats {
 		go func(_, n int) {
 			for i := 0; i < n; i++ {
-				tx, err := chain.RequestFromParamsToLedger(req, nil)
+				tx, _, err := chain.RequestFromParamsToLedger(req, nil)
 				require.NoError(t, err)
 				chain.Env.EnqueueRequests(tx)
 			}
@@ -100,7 +100,7 @@ func testConcurrency2(t *testing.T, w bool) {
 		go func(r, n int) {
 			users[r], userAddr[r] = chain.Env.NewKeyPairWithFunds()
 			for i := 0; i < n; i++ {
-				tx, err := chain.RequestFromParamsToLedger(req, users[r])
+				tx, _, err := chain.RequestFromParamsToLedger(req, users[r])
 				require.NoError(t, err)
 				chain.Env.EnqueueRequests(tx)
 			}

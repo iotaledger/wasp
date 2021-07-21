@@ -73,7 +73,7 @@ func expectCounter(t *testing.T, hname iscp.Hname, counter int64) {
 
 func getCounter(t *testing.T, hname iscp.Hname) int64 {
 	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, hname, "getCounter",
+		chain.ChainID, hname, "getCounter", nil,
 	)
 	check(err, t)
 

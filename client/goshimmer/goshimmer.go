@@ -26,9 +26,9 @@ func NewClient(goshimmerHost string, faucetPowTarget int) *Client {
 }
 
 func (c *Client) RequestFunds(targetAddress ledgerstate.Address) error {
-	initialBalance, err := c.balanceIOTA(targetAddress)
+	initialBalance, err := c.BalanceIOTA(targetAddress)
 	if err != nil {
-		return fmt.Errorf("balanceIOTA: %s", err)
+		return fmt.Errorf("BalanceIOTA: %s", err)
 	}
 	_, err = c.api.SendFaucetRequest(targetAddress.Base58(), c.faucetPowTarget)
 	if err != nil {
@@ -36,9 +36,9 @@ func (c *Client) RequestFunds(targetAddress ledgerstate.Address) error {
 	}
 	for attempts := 10; attempts > 0; attempts-- {
 		time.Sleep(1 * time.Second)
-		balance, err := c.balanceIOTA(targetAddress)
+		balance, err := c.BalanceIOTA(targetAddress)
 		if err != nil {
-			return fmt.Errorf("balanceIOTA: %s", err)
+			return fmt.Errorf("BalanceIOTA: %s", err)
 		}
 		if balance > initialBalance {
 			return nil
@@ -47,7 +47,7 @@ func (c *Client) RequestFunds(targetAddress ledgerstate.Address) error {
 	return fmt.Errorf("Faucet request seems to have failed")
 }
 
-func (c *Client) balanceIOTA(targetAddress ledgerstate.Address) (uint64, error) {
+func (c *Client) BalanceIOTA(targetAddress ledgerstate.Address) (uint64, error) {
 	outs, err := c.GetConfirmedOutputs(targetAddress)
 	if err != nil {
 		return 0, fmt.Errorf("GetConfirmedOutputs: %s", err)

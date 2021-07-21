@@ -10,7 +10,9 @@ import (
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/ready"
+	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
+	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/processors"
 	"github.com/iotaledger/wasp/plugins/registry"
 )
@@ -38,6 +40,8 @@ func run(_ *node.Plugin) {
 		parameters.GetInt(parameters.OffledgerBroadcastUpToNPeers),
 		time.Duration(parameters.GetInt(parameters.OffledgerBroadcastInterval))*time.Millisecond,
 		parameters.GetBool(parameters.PullMissingRequestsFromCommittee),
+		peering.DefaultNetworkProvider(),
+		database.GetOrCreateKVStore,
 	)
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry); err != nil {
@@ -55,7 +59,7 @@ func run(_ *node.Plugin) {
 			allChains.Dismiss()
 			log.Info("dismissing chains... Done")
 		}()
-	})
+	}, parameters.PriorityChains)
 	if err != nil {
 		log.Error(err)
 		return

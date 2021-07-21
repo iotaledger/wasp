@@ -30,13 +30,16 @@ func main() {
 	templatesPath := commonFlags.StringP("templates-path", "t", ".", "Where to find alternative wasp & goshimmer config.json templates (optional)")
 
 	config := cluster.DefaultConfig()
+
 	commonFlags.IntVarP(&config.Wasp.NumNodes, "num-nodes", "n", config.Wasp.NumNodes, "Amount of wasp nodes")
 	commonFlags.IntVarP(&config.Wasp.FirstAPIPort, "first-api-port", "a", config.Wasp.FirstAPIPort, "First wasp API port")
 	commonFlags.IntVarP(&config.Wasp.FirstPeeringPort, "first-peering-port", "p", config.Wasp.FirstPeeringPort, "First wasp Peering port")
 	commonFlags.IntVarP(&config.Wasp.FirstNanomsgPort, "first-nanomsg-port", "u", config.Wasp.FirstNanomsgPort, "First wasp nanomsg (publisher) port")
 	commonFlags.IntVarP(&config.Wasp.FirstDashboardPort, "first-dashboard-port", "h", config.Wasp.FirstDashboardPort, "First wasp dashboard port")
 	commonFlags.IntVarP(&config.Goshimmer.APIPort, "goshimmer-api-port", "i", config.Goshimmer.APIPort, "Goshimmer API port")
-	commonFlags.BoolVarP(&config.Goshimmer.Provided, "goshimmer-provided", "g", config.Goshimmer.Provided, "If true, Goshimmer node will not be spawn")
+	commonFlags.BoolVarP(&config.Goshimmer.UseProvidedNode, "goshimmer-use-provided-node", "g", config.Goshimmer.UseProvidedNode, "If false (default), a mocked version of Goshimmer will be used")
+	commonFlags.IntVarP(&config.Goshimmer.TxStreamPort, "goshimmer-txport", "gp", config.Goshimmer.TxStreamPort, "Goshimmer port")
+	commonFlags.StringVarP(&config.Goshimmer.Hostname, "goshimmer-hostname", "gh", config.Goshimmer.Hostname, "Goshimmer hostname")
 	commonFlags.IntVarP(&config.FaucetPoWTarget, "goshimmer-faucet-pow", "w", config.FaucetPoWTarget, "Faucet PoW target")
 
 	if len(os.Args) < 2 {

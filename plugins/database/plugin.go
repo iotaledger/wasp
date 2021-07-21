@@ -39,7 +39,7 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	err := daemon.BackgroundWorker(pluginName+"[GC]", dbm.RunGC, parameters.PriorityBadgerGarbageCollection)
+	err := daemon.BackgroundWorker(pluginName+"[GC]", dbm.RunGC, parameters.PriorityDBGarbageCollection)
 	if err != nil {
 		log.Errorf("failed to start as daemon: %s", err)
 	}

@@ -26,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/iotaledger/wasp/plugins/chains"
-	"github.com/iotaledger/wasp/plugins/config"
 	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
@@ -51,7 +50,7 @@ func Init() *node.Plugin {
 type waspServices struct{}
 
 func (w *waspServices) ConfigDump() map[string]interface{} {
-	return config.Dump()
+	return parameters.Dump()
 }
 
 func (w *waspServices) ExploreAddressBaseURL() string {

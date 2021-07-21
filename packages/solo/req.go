@@ -133,9 +133,9 @@ func toMap(params []interface{}) map[string]interface{} {
 // RequestFromParamsToLedger creates transaction with one request based on parameters and sigScheme
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on he same address
-func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, error) {
+func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, iscp.RequestID, error) {
 	if req.transfer == nil || req.transfer.Size() == 0 {
-		return nil, xerrors.New("transfer can't be empty")
+		return nil, iscp.RequestID{}, xerrors.New("transfer can't be empty")
 	}
 
 	ch.Env.ledgerMutex.Lock()
@@ -152,13 +152,13 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 		WithEntryPoint(req.entryPoint).
 		WithArgs(req.args)
 
-	data := metadata.Bytes()
-	mdataBack := request.RequestMetadataFromBytes(data)
+	mdata := metadata.Bytes()
+	mdataBack := request.RequestMetadataFromBytes(mdata)
 	require.True(ch.Env.T, mdataBack.ParsedOk())
 
 	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.LogicalTime())
 	var err error
-	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), data, req.transfer.Map())
+	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), mdata, req.transfer.Map())
 	require.NoError(ch.Env.T, err)
 	if req.mintAmount > 0 {
 		err = txb.AddMintingOutputConsume(req.mintAddress, req.mintAmount)
@@ -173,7 +173,14 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 
 	err = ch.Env.AddToLedger(tx)
 	require.NoError(ch.Env.T, err)
-	return tx, nil
+
+	for _, out := range tx.Essence().Outputs() {
+		if out.Address().Equals(ch.ChainID.AsAddress()) {
+			return tx, iscp.RequestID(out.ID()), nil
+		}
+	}
+	ch.Log.Panicf("solo::inconsistency: can't find output in tx")
+	return nil, iscp.RequestID{}, nil
 }
 
 // PostRequestSync posts a request synchronously  sent by the test program to the smart contract on the same or another chain:
@@ -197,15 +204,29 @@ func (ch *Chain) PostRequestSync(req *CallParams, keyPair *ed25519.KeyPair) (dic
 }
 
 func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair) (dict.Dict, error) {
+	defer ch.logRequestLastBlock()
+
 	if keyPair == nil {
 		keyPair = ch.OriginatorKeyPair
 	}
 	r := req.NewRequestOffLedger(keyPair)
-	return ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
+	res, err := ch.runRequestsSync([]iscp.Request{r}, "off-ledger")
+	if err != nil {
+		return nil, err
+	}
+	rec, _, _, ok := ch.GetRequestReceipt(r.ID())
+	require.True(ch.Env.T, ok)
+	err = nil
+	if len(rec.LogData) > 0 {
+		err = xerrors.New(string(rec.LogData))
+	}
+	return res, err
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, dict.Dict, error) {
-	tx, err := ch.RequestFromParamsToLedger(req, keyPair)
+	defer ch.logRequestLastBlock()
+
+	tx, reqid, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -215,8 +236,13 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*
 	if err != nil {
 		return nil, nil, err
 	}
-
-	return tx, res, nil
+	rec, _, _, ok := ch.GetRequestReceipt(reqid)
+	require.True(ch.Env.T, ok)
+	err = nil
+	if len(rec.LogData) > 0 {
+		err = xerrors.New(string(rec.LogData))
+	}
+	return tx, res, err
 }
 
 // callViewFull calls the view entry point of the smart contract

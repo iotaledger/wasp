@@ -15,6 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
+type ChainKVStoreProvider func(chainID *iscp.ChainID) kvstore.KVStore
+
 type DBManager struct {
 	log           *logger.Logger
 	registryDB    database.DB
@@ -50,8 +52,12 @@ func (m *DBManager) createDB(chainID *iscp.ChainID) database.DB {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
+	if chainID == nil {
+		m.log.Infof("creating new registry database. Persistent: %v", !m.inMemory)
+	} else {
+		m.log.Infof("creating new database for chain %s. Persistent: %v", chainID.String(), !m.inMemory)
+	}
 	if m.inMemory {
-		m.log.Infof("creating new In-Memory database, ChainID: %s", getChainBase58(chainID))
 		db, err := database.NewMemDB()
 		if err != nil {
 			m.log.Fatal(err)
@@ -69,7 +75,6 @@ func (m *DBManager) createDB(chainID *iscp.ChainID) database.DB {
 		}
 	}
 	instanceDir := fmt.Sprintf("%s/%s", dbDir, getChainBase58(chainID))
-	m.log.Infof("creating new persistent database, ChainID: %s, dir: %s", getChainBase58(chainID), instanceDir)
 	db, err := database.NewDB(instanceDir)
 	if err != nil {
 		m.log.Fatal(err)

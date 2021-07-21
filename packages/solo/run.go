@@ -121,7 +121,8 @@ func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction, stateOu
 	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
 	require.EqualValues(ch.Env.T, stateOutput.ID(), blockBack.ApprovingOutputID())
 
-	chain.PublishStateTransition(iscp.NewChainID(stateOutput.GetAliasAddress()), stateOutput, len(reqids))
+	chain.PublishStateTransition(&ch.ChainID, stateOutput, len(reqids))
+	chain.PublishRequestsSettled(&ch.ChainID, stateOutput.GetStateIndex(), reqids)
 
 	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
 		ch.State.BlockIndex(), len(reqids), len(stateTx.Essence().Outputs()))
@@ -139,4 +140,11 @@ func batchShortStr(reqIds []iscp.RequestID) string {
 		ret[i] = r.Short()
 	}
 	return fmt.Sprintf("[%s]", strings.Join(ret, ","))
+}
+
+func (ch *Chain) logRequestLastBlock() {
+	recs := ch.GetRequestReceiptsForBlock(ch.GetLatestBlockInfo().BlockIndex)
+	for _, rec := range recs {
+		ch.Log.Infof("REQ: '%s'", rec.Short())
+	}
 }

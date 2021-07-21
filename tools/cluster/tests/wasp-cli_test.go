@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-	"github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,7 +20,7 @@ const file = "inccounter_bg.wasm"
 const srcFile = "wasm/" + file
 
 func TestWaspCLINoChains(t *testing.T) {
-	w := testutil.NewWaspCLITest(t)
+	w := newWaspCLITest(t)
 
 	w.Run("init")
 	w.Run("request-funds")
@@ -36,7 +35,7 @@ func TestWaspCLINoChains(t *testing.T) {
 }
 
 func TestWaspCLI1Chain(t *testing.T) {
-	w := testutil.NewWaspCLITest(t)
+	w := newWaspCLITest(t)
 
 	w.Run("init")
 	w.Run("request-funds")
@@ -89,7 +88,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 }
 
 func TestWaspCLIContract(t *testing.T) {
-	w := testutil.NewWaspCLITest(t)
+	w := newWaspCLITest(t)
 	w.Run("init")
 	w.Run("request-funds")
 	committee, quorum := w.CommitteeConfig()
@@ -141,7 +140,7 @@ func TestWaspCLIContract(t *testing.T) {
 }
 
 func TestWaspCLIBlockLog(t *testing.T) {
-	w := testutil.NewWaspCLITest(t)
+	w := newWaspCLITest(t)
 	w.Run("init")
 	w.Run("request-funds")
 	committee, quorum := w.CommitteeConfig()
@@ -207,7 +206,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 }
 
 func TestWaspCLIBlobContract(t *testing.T) {
-	w := testutil.NewWaspCLITest(t)
+	w := newWaspCLITest(t)
 	w.Run("init")
 	w.Run("request-funds")
 	committee, quorum := w.CommitteeConfig()
@@ -246,7 +245,7 @@ func TestWaspCLIBlobContract(t *testing.T) {
 }
 
 func TestWaspCLIBlobRegistry(t *testing.T) {
-	w := testutil.NewWaspCLITest(t)
+	w := newWaspCLITest(t)
 
 	// test that `blob has` returns false
 	out := w.Run("blob", "has", hashing.RandomHash(nil).String())
@@ -265,7 +264,7 @@ func TestWaspCLIBlobRegistry(t *testing.T) {
 }
 
 func TestWaspCLIMint(t *testing.T) {
-	w := testutil.NewWaspCLITest(t)
+	w := newWaspCLITest(t)
 
 	w.Run("init")
 	w.Run("request-funds")
@@ -289,7 +288,7 @@ func TestWaspCLIMint(t *testing.T) {
 }
 
 func TestWaspCLIBalance(t *testing.T) {
-	w := testutil.NewWaspCLITest(t)
+	w := newWaspCLITest(t)
 	w.Run("init")
 	w.Run("request-funds")
 	w.Run("mint", "1000")

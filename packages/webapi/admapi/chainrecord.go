@@ -5,43 +5,49 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addChainRecordEndpoints(adm echoswagger.ApiGroup) {
+func addChainRecordEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider) {
 	rnd1 := iscp.RandomChainID()
 	example := model.ChainRecord{
 		ChainID: model.NewChainID(rnd1),
 		Active:  false,
 	}
 
-	adm.POST(routes.PutChainRecord(), handlePutChainRecord).
+	s := &chainRecordService{registryProvider}
+
+	adm.POST(routes.PutChainRecord(), s.handlePutChainRecord).
 		SetSummary("Create a new chain record").
 		AddParamBody(example, "Record", "Chain record", true)
 
-	adm.GET(routes.GetChainRecord(":chainID"), handleGetChainRecord).
+	adm.GET(routes.GetChainRecord(":chainID"), s.handleGetChainRecord).
 		SetSummary("Find the chain record for the given chain ID").
 		AddParamPath("", "chainID", "ChainID (base58)").
 		AddResponse(http.StatusOK, "Chain Record", example, nil)
 
-	adm.GET(routes.ListChainRecords(), handleGetChainRecordList).
+	adm.GET(routes.ListChainRecords(), s.handleGetChainRecordList).
 		SetSummary("Get the list of chain records in the node").
 		AddResponse(http.StatusOK, "Chain Record", []model.ChainRecord{example}, nil)
 }
 
-func handlePutChainRecord(c echo.Context) error {
+type chainRecordService struct {
+	registry registry.Provider
+}
+
+func (s *chainRecordService) handlePutChainRecord(c echo.Context) error {
 	var req model.ChainRecord
 
 	if err := c.Bind(&req); err != nil {
 		return httperrors.BadRequest("Invalid request body")
 	}
 
-	reg := registry.DefaultRegistry()
+	reg := s.registry()
 	bd := req.Record()
 
 	bd2, err := reg.GetChainRecordByChainID(bd.ChainID)
@@ -60,12 +66,12 @@ func handlePutChainRecord(c echo.Context) error {
 	return c.NoContent(http.StatusCreated)
 }
 
-func handleGetChainRecord(c echo.Context) error {
+func (s *chainRecordService) handleGetChainRecord(c echo.Context) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
-	bd, err := registry.DefaultRegistry().GetChainRecordByChainID(chainID)
+	bd, err := s.registry().GetChainRecordByChainID(chainID)
 	if err != nil {
 		return err
 	}
@@ -75,8 +81,8 @@ func handleGetChainRecord(c echo.Context) error {
 	return c.JSON(http.StatusOK, model.NewChainRecord(bd))
 }
 
-func handleGetChainRecordList(c echo.Context) error {
-	lst, err := registry.DefaultRegistry().GetChainRecords()
+func (s *chainRecordService) handleGetChainRecordList(c echo.Context) error {
+	lst, err := s.registry().GetChainRecords()
 	if err != nil {
 		return err
 	}

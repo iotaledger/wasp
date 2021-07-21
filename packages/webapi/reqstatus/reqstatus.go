@@ -7,11 +7,11 @@ import (
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
@@ -20,9 +20,9 @@ type reqstatusWebAPI struct {
 	getChain func(chainID *iscp.ChainID) chain.ChainRequests
 }
 
-func AddEndpoints(server echoswagger.ApiRouter) {
+func AddEndpoints(server echoswagger.ApiRouter, getChain chains.ChainProvider) {
 	r := &reqstatusWebAPI{func(chainID *iscp.ChainID) chain.ChainRequests {
-		return chains.AllChains().Get(chainID)
+		return getChain(chainID)
 	}}
 
 	server.GET(routes.RequestStatus(":chainID", ":reqID"), r.handleRequestStatus).

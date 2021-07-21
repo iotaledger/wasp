@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/processors"
 	"github.com/iotaledger/wasp/plugins/profiling"
+	"github.com/iotaledger/wasp/plugins/prometheus"
 	"github.com/iotaledger/wasp/plugins/publishernano"
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/iotaledger/wasp/plugins/wasmtimevm"
@@ -25,13 +26,13 @@ import (
 )
 
 func main() {
+	params := parameters.Init()
 	registry.InitFlags()
-	parameters.InitFlags()
 
 	plugins := node.Plugins(
 		banner.Init(),
-		config.Init(),
-		logger.Init(),
+		config.Init(params),
+		logger.Init(params),
 		gracefulshutdown.Init(),
 		downloader.Init(),
 		cli.Init(),
@@ -47,6 +48,7 @@ func main() {
 		publishernano.Init(),
 		dashboard.Init(),
 		profiling.Init(),
+		prometheus.Init(),
 	)
 
 	node.Run(

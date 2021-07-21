@@ -6,12 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/plugins/chains"
 )
-
-func GetChain(chainID *iscp.ChainID) chain.Chain {
-	return chains.AllChains().Get(chainID)
-}
 
 func GetAccountBalance(ch chain.ChainCore, agentID *iscp.AgentID) (map[ledgerstate.Color]uint64, error) {
 	params := codec.MakeDict(map[string]interface{}{

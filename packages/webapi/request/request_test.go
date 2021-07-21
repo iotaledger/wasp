@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -57,7 +58,7 @@ func (m *mockedChain) IsDismissed() bool {
 	panic("implement me")
 }
 
-func createMockedGetChain(t *testing.T) getChainFn {
+func createMockedGetChain(t *testing.T) chains.ChainProvider {
 	return func(chainID *iscp.ChainID) chain.Chain {
 		return &mockedChain{
 			testchain.NewMockedChainCore(t, *chainID, testlogger.NewLogger(t)),
