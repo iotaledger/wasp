@@ -168,7 +168,7 @@ func New(t TestContext, debug, printStackTrace bool, seedOpt ...*ed25519.Seed) *
 }
 
 func (env *Solo) SyncLog() {
-	env.logger.Sync()
+	_ = env.logger.Sync()
 }
 
 // WithNativeContract registers a native contract so that it may be deployed

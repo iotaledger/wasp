@@ -179,7 +179,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 			return tx, iscp.RequestID(out.ID()), nil
 		}
 	}
-	ch.Log.Panicf("solo::inconsisteny: can't find output in tx")
+	ch.Log.Panicf("solo::inconsistency: can't find output in tx")
 	return nil, iscp.RequestID{}, nil
 }
 

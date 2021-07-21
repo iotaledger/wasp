@@ -6,7 +6,6 @@ import (
 )
 
 func GenKeyAddr(seedOpt ...*ed25519.Seed) (*ed25519.KeyPair, ledgerstate.Address) {
-
 	var keyPair ed25519.KeyPair
 	if len(seedOpt) > 0 {
 		keyPair = *seedOpt[0].KeyPair(1)
