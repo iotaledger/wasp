@@ -129,7 +129,7 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 	if errProvided != nil {
 		data = []byte(fmt.Sprintf("%v", errProvided))
 	}
-	err := blocklog.SaveRequestLogRecord(vmctx.State(), &blocklog.RequestLogRecord{
+	err := blocklog.SaveRequestLogRecord(vmctx.State(), &blocklog.RequestReceipt{
 		RequestID: vmctx.req.ID(),
 		OffLedger: vmctx.req.Output() == nil,
 		LogData:   data,

@@ -26,13 +26,13 @@ import (
 )
 
 func main() {
+	params := parameters.Init()
 	registry.InitFlags()
-	parameters.InitFlags()
 
 	plugins := node.Plugins(
 		banner.Init(),
-		config.Init(),
-		logger.Init(),
+		config.Init(params),
+		logger.Init(params),
 		gracefulshutdown.Init(),
 		downloader.Init(),
 		cli.Init(),

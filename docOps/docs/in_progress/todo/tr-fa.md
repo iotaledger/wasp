@@ -20,7 +20,7 @@ The _TokenRegistry_ is a simple smart contract which keeps a registry of tagged 
 It also keeps cryptographical proof when, how many and which address minted the tagged tokens. 
 
 The program Go code with program hash `8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p` of the smart contract
-can be found [in repository](https://github.com/iotaledger/wasp/blob/master/packages/vm/examples/tokenregistry/impl.go).
+can be found [in repository TODO](https://github.com/iotaledger/wasp).
 
 The following command mints 3 tokens into the same address of the wallet.
  
@@ -86,7 +86,7 @@ Next 60 minutes anyone can place bids in the auction with commands like this:
 
 Upon expiration of the duration of the auction, the time-locked request will be unlocked and 
 auction will be closed by selecting first bidder with the highest bid as a winner. 
-It is all programmed in the [code of the smart contract](https://github.com/iotaledger/wasp/blob/develop/packages/vm/examples/fairauction/impl.go).
+It is all programmed in the [code of the smart contract TODO](https://github.com/iotaledger/wasp).
 
 The smart contract will transfer tokens for sale to the winner and will return all placed sums to non-winning bidders. 
 It is all codded in the smart contract and it can't be overriden by any parties which do not have quorum. 
