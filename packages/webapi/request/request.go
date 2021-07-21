@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
@@ -18,11 +19,10 @@ import (
 )
 
 type (
-	getChainFn          func(chainID *iscp.ChainID) chain.Chain
 	getAccountBalanceFn func(ch chain.ChainCore, agentID *iscp.AgentID) (map[ledgerstate.Color]uint64, error)
 )
 
-func AddEndpoints(server echoswagger.ApiRouter, getChain getChainFn, getChainBalance getAccountBalanceFn) {
+func AddEndpoints(server echoswagger.ApiRouter, getChain chains.ChainProvider, getChainBalance getAccountBalanceFn) {
 	instance := &offLedgerReqAPI{
 		getChain:          getChain,
 		getAccountBalance: getChainBalance,
@@ -39,7 +39,7 @@ func AddEndpoints(server echoswagger.ApiRouter, getChain getChainFn, getChainBal
 }
 
 type offLedgerReqAPI struct {
-	getChain          getChainFn
+	getChain          chains.ChainProvider
 	getAccountBalance getAccountBalanceFn
 }
 

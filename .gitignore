@@ -1,6 +1,6 @@
 wasp.log
-wasp
-wasp-cli
+./wasp
+./wasp-cli
 waspdb/
 cluster-data/
 dist/

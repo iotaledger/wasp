@@ -5,39 +5,46 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
-	"github.com/iotaledger/wasp/plugins/chains"
-	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-func addCommitteeRecordEndpoints(adm echoswagger.ApiGroup) {
+func addCommitteeRecordEndpoints(adm echoswagger.ApiGroup, registryProvider registry.Provider, chainsProvider chains.Provider) {
 	rnd1 := iscp.RandomChainID()
 	example := model.CommitteeRecord{
 		Address: model.NewAddress(rnd1.AsAddress()),
 		Nodes:   []string{"wasp1.example.org:4000", "wasp2.example.org:4000", "wasp3.example.org:4000"},
 	}
 
-	adm.POST(routes.PutCommitteeRecord(), handlePutCommitteeRecord).
+	s := &committeeRecordService{registryProvider, chainsProvider}
+
+	adm.POST(routes.PutCommitteeRecord(), s.handlePutCommitteeRecord).
 		SetSummary("Create a new committee record").
 		AddParamBody(example, "Record", "Committee record", true)
 
-	adm.GET(routes.GetCommitteeRecord(":address"), handleGetCommitteeRecord).
+	adm.GET(routes.GetCommitteeRecord(":address"), s.handleGetCommitteeRecord).
 		SetSummary("Find the committee record for the given address").
 		AddParamPath("", "address", "Address (base58)").
 		AddResponse(http.StatusOK, "Committee Record", example, nil)
 
-	adm.GET(routes.GetCommitteeForChain(":chainID"), handleGetCommitteeForChain).
+	adm.GET(routes.GetCommitteeForChain(":chainID"), s.handleGetCommitteeForChain).
 		SetSummary("Find the committee record that manages the given chain").
 		AddParamPath("", "chainID", "ChainID (base58)").
 		AddResponse(http.StatusOK, "Committee Record", example, nil)
 }
 
-func handlePutCommitteeRecord(c echo.Context) error {
+type committeeRecordService struct {
+	registry registry.Provider
+	chains   chains.Provider
+}
+
+func (s *committeeRecordService) handlePutCommitteeRecord(c echo.Context) error {
 	var req model.CommitteeRecord
 
 	if err := c.Bind(&req); err != nil {
@@ -46,7 +53,7 @@ func handlePutCommitteeRecord(c echo.Context) error {
 
 	cr := req.Record()
 
-	defaultRegistry := registry.DefaultRegistry()
+	defaultRegistry := s.registry()
 	bd2, err := defaultRegistry.GetCommitteeRecord(cr.Address)
 	if err != nil {
 		return err
@@ -64,12 +71,12 @@ func handlePutCommitteeRecord(c echo.Context) error {
 	return c.NoContent(http.StatusCreated)
 }
 
-func handleGetCommitteeRecord(c echo.Context) error {
+func (s *committeeRecordService) handleGetCommitteeRecord(c echo.Context) error {
 	address, err := ledgerstate.AddressFromBase58EncodedString(c.Param("address"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
-	cr, err := registry.DefaultRegistry().GetCommitteeRecord(address)
+	cr, err := s.registry().GetCommitteeRecord(address)
 	if err != nil {
 		return err
 	}
@@ -79,12 +86,12 @@ func handleGetCommitteeRecord(c echo.Context) error {
 	return c.JSON(http.StatusOK, model.NewCommitteeRecord(cr))
 }
 
-func handleGetCommitteeForChain(c echo.Context) error {
+func (s *committeeRecordService) handleGetCommitteeForChain(c echo.Context) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
 		return httperrors.BadRequest(err.Error())
 	}
-	chain := chains.AllChains().Get(chainID)
+	chain := s.chains().Get(chainID)
 	if chain == nil {
 		return httperrors.NotFound(fmt.Sprintf("Active chain %s not found", chainID))
 	}
@@ -92,7 +99,7 @@ func handleGetCommitteeForChain(c echo.Context) error {
 	if committeeInfo == nil {
 		return httperrors.NotFound(fmt.Sprintf("Committee info for chain %s is not available", chainID))
 	}
-	cr, err := registry.DefaultRegistry().GetCommitteeRecord(committeeInfo.Address)
+	cr, err := s.registry().GetCommitteeRecord(committeeInfo.Address)
 	if err != nil {
 		return err
 	}

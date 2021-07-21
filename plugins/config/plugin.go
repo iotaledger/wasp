@@ -3,13 +3,10 @@ package config
 import (
 	"fmt"
 	"os"
-	"reflect"
-	"unsafe"
 
 	"github.com/iotaledger/hive.go/configuration"
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/node"
-	"github.com/knadh/koanf"
 	flag "github.com/spf13/pflag"
 )
 
@@ -24,20 +21,11 @@ const (
 	CfgEnablePlugins = "node.enablePlugins"
 )
 
-var (
-	Plugin *node.Plugin
+func Init(conf *configuration.Configuration) *node.Plugin {
+	plugin := node.NewPlugin(PluginName, node.Enabled)
 
-	// Node is viper
-	Node *configuration.Configuration
-)
-
-func Init() *node.Plugin {
-	Plugin = node.NewPlugin(PluginName, node.Enabled)
-	// set the default logger config
-	Node = configuration.New()
-
-	Plugin.Events.Init.Attach(events.NewClosure(func(*node.Plugin) {
-		if skipConfigAvailable, err := fetch(false); err != nil {
+	plugin.Events.Init.Attach(events.NewClosure(func(*node.Plugin) {
+		if skipConfigAvailable, err := fetch(conf, false); err != nil {
 			if !skipConfigAvailable {
 				// we wanted a config file but it was not present
 				// global logger instance is not initialized at this stage...
@@ -50,72 +38,50 @@ func Init() *node.Plugin {
 		}
 	}))
 
-	return Plugin
+	return plugin
 }
 
 // fetch fetches config values from a dir defined via CLI flag --config-dir (or the current working dir if not set).
 //
 // It automatically reads in a single config file starting with "config" (can be changed via the --config CLI flag)
 // and ending with: .json, .toml, .yaml or .yml (in this sequence).
-func fetch(printConfig bool, ignoreSettingsAtPrint ...[]string) (bool, error) {
+func fetch(conf *configuration.Configuration, printConfig bool, ignoreSettingsAtPrint ...[]string) (bool, error) {
 	// flags
 	configFilePath := flag.StringP("config", "c", "config.json", "File path of the config file")
 	skipConfigAvailable := flag.Bool("skip-config", false, "Skip config file availability check")
 
 	flag.Parse()
 
-	err := Node.LoadFile(*configFilePath)
+	err := conf.LoadFile(*configFilePath)
 	if err != nil {
 		return *skipConfigAvailable, err
 	}
 
-	if err := Node.LoadFlagSet(flag.CommandLine); err != nil {
+	if err := conf.LoadFlagSet(flag.CommandLine); err != nil {
 		return *skipConfigAvailable, err
 	}
 
 	// read in ENV variables
 	// load the env vars after default values from flags were set (otherwise the env vars are not added because the keys don't exist)
-	if err := Node.LoadEnvironmentVars(""); err != nil {
+	if err := conf.LoadEnvironmentVars(""); err != nil {
 		return *skipConfigAvailable, err
 	}
 
 	// load the flags again to overwrite env vars that were also set via command line
-	if err := Node.LoadFlagSet(flag.CommandLine); err != nil {
+	if err := conf.LoadFlagSet(flag.CommandLine); err != nil {
 		return *skipConfigAvailable, err
 	}
 
 	if printConfig {
-		Node.Print(ignoreSettingsAtPrint...)
+		conf.Print(ignoreSettingsAtPrint...)
 	}
 
-	for _, pluginName := range Node.Strings(CfgDisablePlugins) {
+	for _, pluginName := range conf.Strings(CfgDisablePlugins) {
 		node.DisabledPlugins[node.GetPluginIdentifier(pluginName)] = true
 	}
-	for _, pluginName := range Node.Strings(CfgEnablePlugins) {
+	for _, pluginName := range conf.Strings(CfgEnablePlugins) {
 		node.EnabledPlugins[node.GetPluginIdentifier(pluginName)] = true
 	}
 
 	return *skipConfigAvailable, nil
-}
-
-func Dump() map[string]interface{} {
-	// hack to access private member Node.config
-	rf := reflect.ValueOf(Node).Elem().FieldByName("config")
-	rf = reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
-	tree := rf.Interface().(*koanf.Koanf).Raw()
-
-	m := map[string]interface{}{}
-	flatten(m, tree, "")
-	return m
-}
-
-func flatten(dst, src map[string]interface{}, path string) {
-	for k, v := range src {
-		switch vt := v.(type) {
-		case map[string]interface{}:
-			flatten(dst, vt, path+k+".")
-		default:
-			dst[path+k] = v
-		}
-	}
 }
