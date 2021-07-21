@@ -1,4 +1,4 @@
-package prometheus
+package metrics
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-const PluginName = "Prometheus"
+const PluginName = "Metrics"
 
 var log *logger.Logger
 
@@ -28,7 +28,7 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	if !parameters.GetBool(parameters.PrometheusEnabled) {
+	if !parameters.GetBool(parameters.MetricsEnabled) {
 		return
 	}
 
@@ -51,7 +51,7 @@ func run(_ *node.Plugin) {
 			return nil
 		})
 
-		bindAddr := parameters.GetString(parameters.PrometheusBindAddress)
+		bindAddr := parameters.GetString(parameters.MetricsBindAddress)
 		server := &http.Server{Addr: bindAddr, Handler: e}
 
 		stopped := make(chan struct{})
@@ -73,7 +73,7 @@ func run(_ *node.Plugin) {
 		if err := server.Shutdown(ctx); err != nil {
 			log.Errorf("Error stopping: %s", err)
 		}
-	}, parameters.PriorityPrometheus); err != nil {
+	}, parameters.PriorityMetrics); err != nil {
 		log.Warnf("Error starting as daemon: %s", err)
 	}
 }

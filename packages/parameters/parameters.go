@@ -47,8 +47,8 @@ const (
 	ProfilingBindAddress = "profiling.bindAddress"
 	ProfilingEnabled     = "profiling.enabled"
 
-	PrometheusBindAddress = "prometheus.bindAddress"
-	PrometheusEnabled     = "prometheus.enabled"
+	MetricsBindAddress = "metrics.bindAddress"
+	MetricsEnabled     = "metrics.enabled"
 )
 
 func Init() *configuration.Configuration {
@@ -90,8 +90,8 @@ func Init() *configuration.Configuration {
 	flag.String(ProfilingBindAddress, "127.0.0.1:6060", "pprof http server address")
 	flag.Bool(ProfilingEnabled, false, "whether profiling is enabled")
 
-	flag.String(PrometheusBindAddress, "127.0.0.1:2112", "prometheus http server address")
-	flag.Bool(PrometheusEnabled, false, "disable and enable prometheus")
+	flag.String(MetricsBindAddress, "127.0.0.1:2112", "metrics http server address")
+	flag.Bool(MetricsEnabled, false, "disable and enable metrics")
 
 	return all
 }
