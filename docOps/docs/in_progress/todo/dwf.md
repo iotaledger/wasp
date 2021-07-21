@@ -120,7 +120,7 @@ both donated iotas and the feedback message in a single transaction.
 
 SC transactions are value transactions, i.e. they move tokens from addresses to addresses. 
 It is because ISCP is a protocol on top of the Goshimmer's UTXO Ledger.
-Here you can find a [short introduction](../utxo.md) to main concepts of it.
+Here you can find a [short introduction](../../misc/utxo.md) to main concepts of it.
 
 The smart contract account balance consists of all UTXOs contained in the smart contract address. 
 On the demo dashboards it is displayed in the simplified 1-dimensional form by skipping the containing transaction 
