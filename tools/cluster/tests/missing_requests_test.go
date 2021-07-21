@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
-	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +21,7 @@ func TestMissingRequests(t *testing.T) {
 		configParams.OffledgerBroadcastUpToNPeers = 0
 		return configParams
 	}
-	clu1 := clutest.NewCluster(t, 4, nil, modifyConfig)
+	clu1 := newCluster(t, 4, nil, modifyConfig)
 	cmt1 := []int{0, 1, 2, 3}
 	addr1, err := clu1.RunDKG(cmt1, 4)
 	require.NoError(t, err)

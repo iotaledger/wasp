@@ -3,7 +3,7 @@
 
 // +build !noevm
 
-package jsonrpc
+package tests
 
 import (
 	"testing"
@@ -14,14 +14,15 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/tools/cluster"
-	"github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 type clusterTestEnv struct {
-	testEnv
+	jsonrpctest.Env
 	cluster *cluster.Cluster
 	chain   *cluster.Chain
 }
@@ -29,7 +30,7 @@ type clusterTestEnv struct {
 func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 	evmtest.InitGoEthLogger(t)
 
-	clu := testutil.NewCluster(t)
+	clu := newCluster(t)
 
 	chain, err := clu.DeployDefaultChain()
 	require.NoError(t, err)
@@ -52,12 +53,12 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 	signer, _, err := clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	backend := NewWaspClientBackend(chain.Client(signer))
-	evmChain := NewEVMChain(backend, chainID, evmchain.Contract.Name)
+	backend := jsonrpc.NewWaspClientBackend(chain.Client(signer))
+	evmChain := jsonrpc.NewEVMChain(backend, chainID, evmchain.Contract.Name)
 
-	accountManager := NewAccountManager(evmtest.Accounts)
+	accountManager := jsonrpc.NewAccountManager(evmtest.Accounts)
 
-	rpcsrv := NewServer(evmChain, accountManager)
+	rpcsrv := jsonrpc.NewServer(evmChain, accountManager)
 	t.Cleanup(rpcsrv.Stop)
 
 	rawClient := rpc.DialInProc(rpcsrv)
@@ -65,18 +66,18 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 	t.Cleanup(client.Close)
 
 	return &clusterTestEnv{
-		testEnv: testEnv{
-			t:         t,
-			server:    rpcsrv,
-			client:    client,
-			rawClient: rawClient,
-			chainID:   chainID,
+		Env: jsonrpctest.Env{
+			T:         t,
+			Server:    rpcsrv,
+			Client:    client,
+			RawClient: rawClient,
+			ChainID:   chainID,
 		},
 		cluster: clu,
 		chain:   chain,
 	}
 }
 
-func TestRPCClusterGetLogs(t *testing.T) {
-	newClusterTestEnv(t).testRPCGetLogs()
+func TestEVMJsonRPCClusterGetLogs(t *testing.T) {
+	newClusterTestEnv(t).TestRPCGetLogs()
 }

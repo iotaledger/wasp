@@ -10,12 +10,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
-	"github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestWaspCLIEVMDeploy(t *testing.T) {
-	w := testutil.NewWaspCLITest(t)
+	w := newWaspCLITest(t)
 	w.Run("init")
 	w.Run("request-funds")
 	committee, quorum := w.CommitteeConfig()

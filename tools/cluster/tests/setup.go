@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/tools/cluster"
-	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -109,7 +108,7 @@ func postRequestFull(t *testing.T, contract, entryPoint iscp.Hname, transfer map
 }
 
 func setup(t *testing.T, configPath string) { //nolint:unparam
-	clu = clutest.NewCluster(t)
+	clu = newCluster(t)
 	chain, err = clu.DeployDefaultChain()
 	check(err, t)
 }
