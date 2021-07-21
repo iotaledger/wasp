@@ -14,92 +14,98 @@ import (
 )
 
 func TestDeployChain(t *testing.T) {
-	setup(t, "test_cluster")
+	e := setupWithNoChain(t)
 
-	counter1, err := clu.StartMessageCounter(map[string]int{
+	counter1, err := e.clu.StartMessageCounter(map[string]int{
 		"dismissed_chain": 0,
 		"state":           2,
 		"request_out":     1,
 	})
-	check(err, t)
+	require.NoError(t, err)
 	defer counter1.Close()
 
-	chain1, err := clu.DeployDefaultChain()
-	check(err, t)
+	chain, err := e.clu.DeployDefaultChain()
+	require.NoError(t, err)
+
+	chEnv := newChainEnv(t, e.clu, chain)
 
 	if !counter1.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
-	chainID, chainOwnerID := getChainInfo(t, chain1)
-	require.Equal(t, chainID, chain1.ChainID)
-	require.Equal(t, chainOwnerID, *iscp.NewAgentID(chain1.OriginatorAddress(), 0))
+	chainID, chainOwnerID := chEnv.getChainInfo()
+	require.Equal(t, chainID, chain.ChainID)
+	require.Equal(t, chainOwnerID, *iscp.NewAgentID(chain.OriginatorAddress(), 0))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainOwnerID: %s", chainOwnerID.String())
 
-	checkCoreContracts(t, chain1)
-	checkRootsOutside(t, chain1)
-	for _, i := range chain1.CommitteeNodes {
-		blockIndex, err := chain1.BlockIndex(i)
+	chEnv.checkCoreContracts()
+	chEnv.checkRootsOutside()
+	for _, i := range chain.CommitteeNodes {
+		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, blockIndex)
 
-		contractRegistry, err := chain1.ContractRegistry(i)
+		contractRegistry, err := chain.ContractRegistry(i)
 		require.NoError(t, err)
 		require.EqualValues(t, len(core.AllCoreContractsByHash), len(contractRegistry))
 	}
 }
 
 func TestDeployContractOnly(t *testing.T) {
-	setup(t, "test_cluster")
+	e := setupWithNoChain(t)
 
-	counter1, err := clu.StartMessageCounter(map[string]int{
+	counter, err := e.clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
 		"request_out":         1,
 	})
-	check(err, t)
-	defer counter1.Close()
+	require.NoError(t, err)
+	defer counter.Close()
 
-	chain1, err := clu.DeployDefaultChain()
-	check(err, t)
+	chain, err := e.clu.DeployDefaultChain()
+	require.NoError(t, err)
 
-	tx := deployIncCounterSC(t, chain1, counter1)
+	chEnv := newChainEnv(t, e.clu, chain)
+
+	tx := chEnv.deployIncCounterSC(counter)
 
 	// test calling root.FuncFindContractByName view function using client
-	ret, err := chain1.Cluster.WaspClient(0).CallView(
-		chain1.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
+	ret, err := chain.Cluster.WaspClient(0).CallView(
+		chain.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
 		dict.Dict{
 			root.ParamHname: iscp.Hn(incCounterSCName).Bytes(),
 		})
-	check(err, t)
+	require.NoError(t, err)
 	recb, err := ret.Get(root.VarData)
-	check(err, t)
+	require.NoError(t, err)
 	rec, err := root.DecodeContractRecord(recb)
-	check(err, t)
+	require.NoError(t, err)
 	require.EqualValues(t, "testing contract deployment with inccounter", rec.Description)
 
 	{
-		rec, _, _, err := chain1.GetRequestLogRecord(iscp.NewRequestID(tx.ID(), 0))
+		rec, _, _, err := chain.GetRequestLogRecord(iscp.NewRequestID(tx.ID(), 0))
 		require.NoError(t, err)
 		require.Empty(t, string(rec.LogData))
 	}
 }
 
 func TestDeployContractAndSpawn(t *testing.T) {
-	setup(t, "test_cluster")
+	e := setupWithNoChain(t)
 
-	counter1, err := clu.StartMessageCounter(map[string]int{
+	counter, err := e.clu.StartMessageCounter(map[string]int{
 		"dismissed_committee": 0,
 		"state":               2,
 		"request_out":         1,
 	})
-	check(err, t)
-	defer counter1.Close()
+	require.NoError(t, err)
+	defer counter.Close()
 
-	chain1, err := clu.DeployDefaultChain()
-	check(err, t)
+	chain, err := e.clu.DeployDefaultChain()
+	require.NoError(t, err)
 
-	deployIncCounterSC(t, chain1, counter1)
+	chEnv := newChainEnv(t, e.clu, chain)
+
+	chEnv.deployIncCounterSC(counter)
 
 	hname := iscp.Hn(incCounterSCName)
 
@@ -111,19 +117,19 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		inccounter.VarName, nameNew,
 		inccounter.VarDescription, dscrNew,
 	).WithIotas(1)
-	tx, err := chain1.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
-	check(err, t)
+	tx, err := chain.OriginatorClient().Post1Request(hname, inccounter.FuncSpawn.Hname(), *par)
+	require.NoError(t, err)
 
-	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, tx, 30*time.Second)
-	check(err, t)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
+	require.NoError(t, err)
 
-	checkCoreContracts(t, chain1)
-	for _, i := range chain1.CommitteeNodes {
-		blockIndex, err := chain1.BlockIndex(i)
+	chEnv.checkCoreContracts()
+	for _, i := range chain.CommitteeNodes {
+		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
 		require.EqualValues(t, 3, blockIndex)
 
-		contractRegistry, err := chain1.ContractRegistry(i)
+		contractRegistry, err := chain.ContractRegistry(i)
 		require.NoError(t, err)
 		require.EqualValues(t, len(core.AllCoreContractsByHash)+2, len(contractRegistry))
 
@@ -132,7 +138,7 @@ func TestDeployContractAndSpawn(t *testing.T) {
 		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, nameNew, cr.Name)
 
-		counterValue, err := chain1.GetCounterValue(hname, i)
+		counterValue, err := chain.GetCounterValue(hname, i)
 		require.NoError(t, err)
 		require.EqualValues(t, 42, counterValue)
 	}

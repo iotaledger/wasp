@@ -21,56 +21,57 @@ func TestMissingRequests(t *testing.T) {
 		configParams.OffledgerBroadcastUpToNPeers = 0
 		return configParams
 	}
-	clu1 := newCluster(t, 4, nil, modifyConfig)
-	cmt1 := []int{0, 1, 2, 3}
-	addr1, err := clu1.RunDKG(cmt1, 4)
+	clu := newCluster(t, 4, nil, modifyConfig)
+	cmt := []int{0, 1, 2, 3}
+	addr, err := clu.RunDKG(cmt, 4)
 	require.NoError(t, err)
 
-	chain1, err := clu1.DeployChain("chain", clu1.Config.AllNodes(), cmt1, 4, addr1)
+	chain, err := clu.DeployChain("chain", clu.Config.AllNodes(), cmt, 4, addr)
 	require.NoError(t, err)
-	chainID := chain1.ChainID
+	chainID := chain.ChainID
 
-	deployIncCounterSC(t, chain1, nil)
+	e := newChainEnv(t, clu, chain)
 
-	waitUntil(t, contractIsDeployed(chain1, incCounterSCName), clu1.Config.AllNodes(), 30*time.Second)
+	e.deployIncCounterSC(nil)
+
+	waitUntil(t, e.contractIsDeployed(incCounterSCName), clu.Config.AllNodes(), 30*time.Second)
 
 	userWallet := wallet.KeyPair(0)
 	userAddress := ledgerstate.NewED25519Address(userWallet.PublicKey)
 
 	// deposit funds before sending the off-ledger request
-	err = requestFunds(clu1, userAddress, "userWallet")
-	check(err, t)
-	chClient := chainclient.New(clu1.GoshimmerClient(), clu1.WaspClient(0), chainID, userWallet)
+	e.requestFunds(userAddress, "userWallet")
+	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chainID, userWallet)
 	reqTx, err := chClient.Post1Request(accounts.Contract.Hname(), accounts.FuncDeposit.Hname(), chainclient.PostRequestParams{
 		Transfer: iscp.NewTransferIotas(100),
 	})
-	check(err, t)
-	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chainID, reqTx, 30*time.Second)
-	check(err, t)
+	require.NoError(t, err)
+	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chainID, reqTx, 30*time.Second)
+	require.NoError(t, err)
 
 	// send off-ledger request to all nodes except #3
 	req := request.NewRequestOffLedger(incCounterSCHname, inccounter.FuncIncCounter.Hname(), requestargs.RequestArgs{}) //.WithTransfer(par.Transfer)
 	req.Sign(userWallet)
 
-	err = clu1.WaspClient(0).PostOffLedgerRequest(&chainID, req)
-	check(err, t)
-	err = clu1.WaspClient(1).PostOffLedgerRequest(&chainID, req)
-	check(err, t)
+	err = clu.WaspClient(0).PostOffLedgerRequest(&chainID, req)
+	require.NoError(t, err)
+	err = clu.WaspClient(1).PostOffLedgerRequest(&chainID, req)
+	require.NoError(t, err)
 
 	// TODO try to send to only 2 nodes
-	err = clu1.WaspClient(2).PostOffLedgerRequest(&chainID, req)
-	check(err, t)
+	err = clu.WaspClient(2).PostOffLedgerRequest(&chainID, req)
+	require.NoError(t, err)
 	// err = clu1.WaspClient(3).PostOffLedgerRequest(&chainID, req)
-	// check(err, t)
+	// require.NoError(t, err)
 
 	//------
 	// send a dummy request to node #3, so that it proposes a batch and the consensus hang is broken
 	req2 := request.NewRequestOffLedger(iscp.Hn("foo"), iscp.Hn("bar"), nil)
 	req2.Sign(userWallet)
-	err = clu1.WaspClient(3).PostOffLedgerRequest(&chainID, req2)
-	check(err, t)
+	err = clu.WaspClient(3).PostOffLedgerRequest(&chainID, req2)
+	require.NoError(t, err)
 	//-------
 
 	// expect request to be successful, as node #3 must ask for the missing request from other nodes
-	waitUntil(t, counterEquals(chain1, 43), clu1.Config.AllNodes(), 30*time.Second)
+	waitUntil(t, e.counterEquals(43), clu.Config.AllNodes(), 30*time.Second)
 }

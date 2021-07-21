@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/tools/cluster"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,67 +23,67 @@ var (
 	myAddress = ledgerstate.NewED25519Address(testOwner.PublicKey)
 )
 
-func setupBlobTest(t *testing.T) *cluster.Chain {
-	setup(t, "test_cluster")
+func setupBlobTest(t *testing.T) *chainEnv {
+	e := setupWithNoChain(t)
 
-	chain1, err := clu.DeployDefaultChain()
-	check(err, t)
+	chain, err := e.clu.DeployDefaultChain()
+	require.NoError(t, err)
 
-	checkCoreContracts(t, chain1)
-	for _, i := range chain1.CommitteeNodes {
+	chEnv := newChainEnv(t, e.clu, chain)
+
+	chEnv.checkCoreContracts()
+	for _, i := range chain.CommitteeNodes {
 		blockIndex, err := chain.BlockIndex(i)
 		require.NoError(t, err)
 		require.EqualValues(t, 1, blockIndex)
 	}
 
-	err = requestFunds(clu, myAddress, "myAddress")
-	check(err, t)
+	e.requestFunds(myAddress, "myAddress")
 
-	if !clu.VerifyAddressBalances(myAddress, solo.Saldo, map[ledgerstate.Color]uint64{
+	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: solo.Saldo,
 	}, "myAddress after request funds") {
 		t.Fail()
 	}
-	return chain1
+	return chEnv
 }
 
-func getBlobInfo(t *testing.T, chain *cluster.Chain, hash hashing.HashValue) map[string]uint32 {
-	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, blob.Contract.Hname(), blob.FuncGetBlobInfo.Name,
+func (e *chainEnv) getBlobInfo(hash hashing.HashValue) map[string]uint32 {
+	ret, err := e.chain.Cluster.WaspClient(0).CallView(
+		e.chain.ChainID, blob.Contract.Hname(), blob.FuncGetBlobInfo.Name,
 		dict.Dict{
 			blob.ParamHash: hash[:],
 		})
-	check(err, t)
+	require.NoError(e.t, err)
 	decoded, err := blob.DecodeSizesMap(ret)
-	check(err, t)
+	require.NoError(e.t, err)
 	return decoded
 }
 
-func getBlobFieldValue(t *testing.T, chain *cluster.Chain, blobHash hashing.HashValue, field string) []byte {
-	v, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, blob.Contract.Hname(), blob.FuncGetBlobField.Name,
+func (e *chainEnv) getBlobFieldValue(blobHash hashing.HashValue, field string) []byte {
+	v, err := e.chain.Cluster.WaspClient(0).CallView(
+		e.chain.ChainID, blob.Contract.Hname(), blob.FuncGetBlobField.Name,
 		dict.Dict{
 			blob.ParamHash:  blobHash[:],
 			blob.ParamField: []byte(field),
 		})
-	check(err, t)
+	require.NoError(e.t, err)
 	if v.IsEmpty() {
 		return nil
 	}
 	ret, err := v.Get(blob.ParamBytes)
-	check(err, t)
+	require.NoError(e.t, err)
 	return ret
 }
 
 func TestBlobDeployChain(t *testing.T) {
-	chain1 := setupBlobTest(t)
-
-	ret := getBlobInfo(t, chain1, hashing.NilHash)
+	e := setupBlobTest(t)
+	ret := e.getBlobInfo(hashing.NilHash)
 	require.Len(t, ret, 0)
 }
 
 func TestBlobStoreSmallBlob(t *testing.T) {
-	chain1 := setupBlobTest(t)
+	e := setupBlobTest(t)
 
 	description := "testing the blob"
 	fv := codec.MakeDict(map[string]interface{}{
@@ -93,7 +92,7 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 	expectedHash := blob.MustGetBlobHash(fv)
 	t.Logf("expected hash: %s", expectedHash.String())
 
-	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, testOwner)
+	chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
 	reqTx, err := chClient.Post1Request(
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
@@ -101,29 +100,29 @@ func TestBlobStoreSmallBlob(t *testing.T) {
 			Args: requestargs.New().AddEncodeSimpleMany(fv),
 		},
 	)
-	check(err, t)
-	err = chain1.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain1.ChainID, reqTx, 30*time.Second)
-	check(err, t)
+	require.NoError(t, err)
+	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
+	require.NoError(t, err)
 
-	sizes := getBlobInfo(t, chain1, expectedHash)
+	sizes := e.getBlobInfo(expectedHash)
 	require.NotZero(t, len(sizes))
 
 	require.EqualValues(t, len(description), sizes[blob.VarFieldProgramDescription])
 
-	retBin := getBlobFieldValue(t, chain1, expectedHash, blob.VarFieldProgramDescription)
+	retBin := e.getBlobFieldValue(expectedHash, blob.VarFieldProgramDescription)
 	require.NotNil(t, retBin)
 	require.EqualValues(t, []byte(description), retBin)
 }
 
 func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
-	chain1 := setupBlobTest(t)
+	e := setupBlobTest(t)
 
 	var err error
 	fileNames := []string{"blob_test.go", "deploy_test.go", "inccounter_test.go", "account_test.go"}
 	blobs := make([][]byte, len(fileNames))
 	for i := range fileNames {
 		blobs[i], err = ioutil.ReadFile(fileNames[i])
-		check(err, t)
+		require.NoError(t, err)
 	}
 	blobFieldValues := make(map[string]interface{})
 	totalSize := 0
@@ -134,14 +133,14 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 	t.Logf("================= total size: %d. Files: %+v", totalSize, fileNames)
 
 	fv := codec.MakeDict(blobFieldValues)
-	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, testOwner)
-	expectedHash, tx, err := chClient.UploadBlob(fv, clu.Config.APIHosts(clu.Config.AllNodes()), int(chain1.Quorum))
+	chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
+	expectedHash, tx, err := chClient.UploadBlob(fv, e.clu.Config.APIHosts(e.clu.Config.AllNodes()), int(e.chain.Quorum))
 	require.NoError(t, err)
-	err = chClient.WaspClient.WaitUntilAllRequestsProcessed(chain1.ChainID, tx, 30*time.Second)
+	err = chClient.WaspClient.WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
 	require.NoError(t, err)
 	t.Logf("expected hash: %s", expectedHash.String())
 
-	sizes := getBlobInfo(t, chain1, expectedHash)
+	sizes := e.getBlobInfo(expectedHash)
 	require.NotZero(t, len(sizes))
 
 	for i, fn := range fileNames {
@@ -149,20 +148,21 @@ func TestBlobStoreManyBlobsNoEncoding(t *testing.T) {
 		require.EqualValues(t, len(blobs[i]), v)
 		fmt.Printf("    %s: %d\n", fn, len(blobs[i]))
 
-		fdata := getBlobFieldValue(t, chain1, expectedHash, fn)
+		fdata := e.getBlobFieldValue(expectedHash, fn)
 		require.NotNil(t, fdata)
 		require.EqualValues(t, fdata, blobs[i])
 	}
 }
 
 func TestBlobRefConsensus(t *testing.T) {
-	chain1 := setupBlobTest(t)
+	e := setupBlobTest(t)
 
 	fileNames := []string{"blob_test.go", "deploy_test.go", "inccounter_test.go", "account_test.go"}
 	blobs := make([][]byte, len(fileNames))
 	for i := range fileNames {
+		var err error
 		blobs[i], err = ioutil.ReadFile(fileNames[i])
-		check(err, t)
+		require.NoError(t, err)
 	}
 	blobFieldValues := make(map[string]interface{})
 	for i, fn := range fileNames {
@@ -177,7 +177,7 @@ func TestBlobRefConsensus(t *testing.T) {
 	argsEncoded, optimizedBlobs := requestargs.NewOptimizedRequestArgs(fv)
 
 	// sending storeBlob request (data is not uploaded yet)
-	chClient := chainclient.New(clu.GoshimmerClient(), clu.WaspClient(0), chain1.ChainID, testOwner)
+	chClient := chainclient.New(e.clu.GoshimmerClient(), e.clu.WaspClient(0), e.chain.ChainID, testOwner)
 	reqTx, err := chClient.Post1Request(
 		blob.Contract.Hname(),
 		blob.FuncStoreBlob.Hname(),
@@ -193,19 +193,19 @@ func TestBlobRefConsensus(t *testing.T) {
 	for _, v := range optimizedBlobs {
 		fieldValues = append(fieldValues, v)
 	}
-	nodesMultiAPI := multiclient.New(clu.Config.APIHosts(clu.Config.AllNodes()))
-	err = nodesMultiAPI.UploadData(fieldValues, int(chain1.Quorum))
+	nodesMultiAPI := multiclient.New(e.clu.Config.APIHosts(e.clu.Config.AllNodes()))
+	err = nodesMultiAPI.UploadData(fieldValues, int(e.chain.Quorum))
 	require.NoError(t, err)
 
 	// now waiting
-	err = chClient.WaspClient.WaitUntilAllRequestsProcessed(chain1.ChainID, reqTx, 30*time.Second)
+	err = chClient.WaspClient.WaitUntilAllRequestsProcessed(e.chain.ChainID, reqTx, 30*time.Second)
 	require.NoError(t, err)
 
-	sizes := getBlobInfo(t, chain1, expectedHash)
+	sizes := e.getBlobInfo(expectedHash)
 	require.NotZero(t, len(sizes))
 
 	for k, v := range blobFieldValues {
-		retBin := getBlobFieldValue(t, chain1, expectedHash, k)
+		retBin := e.getBlobFieldValue(expectedHash, k)
 		require.NotNil(t, retBin)
 		require.EqualValues(t, v, retBin)
 	}

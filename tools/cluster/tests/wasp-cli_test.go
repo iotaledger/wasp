@@ -270,7 +270,7 @@ func TestWaspCLIMint(t *testing.T) {
 	w.Run("request-funds")
 
 	out := w.Run("mint", "1000")
-	colorb58 := regexp.MustCompile(`(?m)Minted 1000 tokens of color ([[:alnum:]]+)$`).FindStringSubmatch(out[0])[1]
+	colorb58 := regexp.MustCompile(`(?m)Minted 1000 tokens of color ([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
 	color, err := ledgerstate.ColorFromBase58EncodedString(colorb58)
 	require.NoError(t, err)
 
