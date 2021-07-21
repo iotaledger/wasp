@@ -23,3 +23,10 @@ yarn build
 ```
 
 This command generates static content into the `build` directory and can be served using any static contents hosting service.
+
+## Deployment
+
+There is a automatic deployment flow in place which will automatically trigger on a merged PR to the `master` branch
+To deploy in a local fork make sure you update `docusaurus.config.js` `baseUrl` setting to `/wasp/` temporarily and merge this to
+your master branch. This will trigger the workflow (make sure you have github pages enabled on the `gh-pages` branch in your settings.
+Don't commit this `baseUrl` setting to production, it needs to be `/` in the main repo to use the CNAME provided.
