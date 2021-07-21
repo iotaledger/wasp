@@ -17,7 +17,7 @@ it as an example.
 _DonateWithFeedback_ is a dApp which performs a very common function: it handles an IOTA donation 
 address and user’s feedback log for the owner of a web page.  
 
-_(You may want to follow the Go [code of this smart contract](https://github.com/iotaledger/wasp/blob/master/packages/vm/examples/donatewithfeedback/dwfimpl/impl.go) 
+_(You may want to follow the Go [code of this smart contract TODO](https://github.com/iotaledger/wasp)
 which currently is embedded right into the Wasp. This approach is not typical for the smart contracts 
 in general, however it is very convenient for testing the protocol. 
 In the future all smart contract programs will be run on wasm VM)_   
@@ -120,7 +120,7 @@ both donated iotas and the feedback message in a single transaction.
 
 SC transactions are value transactions, i.e. they move tokens from addresses to addresses. 
 It is because ISCP is a protocol on top of the Goshimmer's UTXO Ledger.
-Here you can find a [short introduction](../utxo.md) to main concepts of it.
+Here you can find a [short introduction](../../misc/utxo.md) to main concepts of it.
 
 The smart contract account balance consists of all UTXOs contained in the smart contract address. 
 On the demo dashboards it is displayed in the simplified 1-dimensional form by skipping the containing transaction 

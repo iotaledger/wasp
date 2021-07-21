@@ -19,7 +19,7 @@ func testPanicFull(t *testing.T, w bool) {
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), sbtestsc.MsgFullPanic))
 
-	recStr := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+	recStr := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
 	str := strings.Join(recStr, "\n")
 	t.Logf("\n%s", str)
 	extra := 0
@@ -39,7 +39,7 @@ func testPanicViewCall(t *testing.T, w bool) {
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), sbtestsc.MsgViewPanic))
 
-	recStr := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+	recStr := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
 	str := strings.Join(recStr, "\n")
 	t.Logf("\n%s", str)
 	extra := 0
@@ -60,7 +60,7 @@ func testCallPanicFull(t *testing.T, w bool) {
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), sbtestsc.MsgFullPanic))
 
-	recStr := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+	recStr := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
 	str := strings.Join(recStr, "\n")
 	t.Logf("\n%s", str)
 	extra := 0
@@ -81,7 +81,7 @@ func testCallPanicViewFromFull(t *testing.T, w bool) {
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), sbtestsc.MsgViewPanic))
 
-	recStr := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+	recStr := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
 	str := strings.Join(recStr, "\n")
 	t.Logf("\n%s", str)
 	extra := 0
@@ -101,7 +101,7 @@ func testCallPanicViewFromView(t *testing.T, w bool) {
 	require.Error(t, err)
 	require.EqualValues(t, 1, strings.Count(err.Error(), sbtestsc.MsgViewPanic))
 
-	recStr := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+	recStr := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
 	str := strings.Join(recStr, "\n")
 	t.Logf("\n%s", str)
 	extra := 0

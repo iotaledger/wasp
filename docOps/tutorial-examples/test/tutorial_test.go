@@ -3,9 +3,12 @@ package test
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+
+	"github.com/iotaledger/hive.go/crypto/ed25519"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -13,14 +16,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO update comments to reflect new way of token handling
+var seed = ed25519.NewSeed([]byte("long long seed for determinism...............1"))
 
 func TestTutorial1(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false, seed)
 	chain := env.NewChain(nil, "ex1")
 
-	chainID, chainOwnerID, coreContracts := chain.GetInfo()                      // calls view root::GetChainInfo
-	require.EqualValues(t, len(core.AllCoreContractsByHash), len(coreContracts)) // all core contracts deployed by default
+	// calls view root::GetChainInfo
+	chainID, chainOwnerID, coreContracts := chain.GetInfo()
+	// assert all core contracts deployed (default)
+	require.EqualValues(t, len(core.AllCoreContractsByHash), len(coreContracts))
 
 	t.Logf("chain ID: %s", chainID.String())
 	t.Logf("chain owner ID: %s", chainOwnerID.String())
@@ -30,46 +35,44 @@ func TestTutorial1(t *testing.T) {
 }
 
 func TestTutorial2(t *testing.T) {
-	env := solo.New(t, false, false)
-	_, userAddress := env.NewKeyPairWithFunds()
-	t.Logf("Address of the userWallet is: %s", userAddress)
+	env := solo.New(t, false, false, seed)
+	_, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
+	t.Logf("address of the userWallet is: %s", userAddress.Base58())
 	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA) // how many iotas the address contains
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
 	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 }
 
 func TestTutorial3(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false, seed)
 	chain := env.NewChain(nil, "ex3")
 	// deploy the contract on chain
 	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
 	// call contract to store string
-	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!")
-	req.WithIotas(1)
+	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
 	// call the contract to extract value of the 'paramString' and check
 	res, err := chain.CallView("example1", "getString")
 	require.NoError(t, err)
-	returnedString, exists, err := codec.DecodeString(res.MustGet("paramString"))
-	require.NoError(t, err)
-	require.True(t, exists)
+	par := kvdecoder.New(res, chain.Log)
+	returnedString := par.MustGetString("paramString")
 	require.EqualValues(t, "Hello, world!", returnedString)
 }
 
 func TestTutorial4(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false, seed)
+
 	chain := env.NewChain(nil, "ex4")
 	// deploy the contract on chain
 	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
 	require.NoError(t, err)
 
 	// call contract incorrectly (omit 'paramString')
-	req := solo.NewCallParams("example1", "storeString")
-	req.WithIotas(1)
+	req := solo.NewCallParams("example1", "storeString").WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 }

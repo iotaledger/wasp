@@ -71,7 +71,7 @@ func printBlocks(t *testing.T, ch *cluster.Chain, expected int) {
 //	for _, rec := range recs {
 //		t.Logf("---- block #%d: total: %d, off-ledger: %d, success: %d", rec.BlockIndex, rec.TotalRequests, rec.NumOffLedgerRequests, rec.NumSuccessfulRequests)
 //		sum += int(rec.TotalRequests)
-//		recs, err := ch.GetRequestLogRecordsForBlock(rec.BlockIndex)
+//		recs, err := ch.GetRequestReceiptsForBlock(rec.BlockIndex)
 //		require.NoError(t, err)
 //		for _, rec := range recs {
 //			t.Logf("---------- %s : %s", rec.RequestID.String(), string(rec.LogData))
@@ -514,14 +514,14 @@ func callGetBlockIndex(t *testing.T, chain *cluster.Chain, nodeIndex int) (uint3
 	return v, nil
 }
 
-func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.RequestID) (*blocklog.RequestLogRecord, error) {
+func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.RequestID) (*blocklog.RequestReceipt, error) {
 	args := dict.New()
 	args.Set(blocklog.ParamRequestID, reqid.Bytes())
 
 	res, err := chain.Cluster.WaspClient(nodeIndex).CallView(
 		chain.ChainID,
 		blocklog.Contract.Hname(),
-		blocklog.FuncGetRequestLogRecord.Name,
+		blocklog.FuncGetRequestReceipt.Name,
 		args,
 	)
 	if err != nil {
@@ -531,7 +531,7 @@ func callGetRequestRecord(t *testing.T, chain *cluster.Chain, nodeIndex int, req
 		return nil, nil
 	}
 	recBin := res.MustGet(blocklog.ParamRequestRecord)
-	rec, err := blocklog.RequestLogRecordFromBytes(recBin)
+	rec, err := blocklog.RequestReceiptFromBytes(recBin)
 	require.NoError(t, err)
 	return rec, nil
 }
