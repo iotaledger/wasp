@@ -1,4 +1,4 @@
-package testutil
+package tests
 
 import (
 	"bytes"
@@ -23,8 +23,8 @@ type WaspCLITest struct {
 	dir     string
 }
 
-func NewWaspCLITest(t *testing.T) *WaspCLITest {
-	clu := NewCluster(t)
+func newWaspCLITest(t *testing.T) *WaspCLITest {
+	clu := newCluster(t)
 
 	dir, err := ioutil.TempDir(os.TempDir(), "wasp-cli-test-*")
 	t.Logf("Using temporary directory %s", dir)

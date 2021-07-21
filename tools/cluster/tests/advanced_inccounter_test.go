@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
-	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
@@ -28,7 +27,7 @@ import (
 func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int) (*cluster.Cluster, *cluster.Chain) {
 	quorum := uint16((2*len(committee))/3 + 1)
 
-	clu1 := clutest.NewCluster(t, clusterSize)
+	clu1 := newCluster(t, clusterSize)
 
 	addr, err := clu1.RunDKG(committee, quorum)
 	require.NoError(t, err)
@@ -297,7 +296,7 @@ func TestRotation(t *testing.T) {
 	cmt1 := []int{0, 1, 2, 3}
 	cmt2 := []int{2, 3, 4, 5}
 
-	clu1 := clutest.NewCluster(t, 10)
+	clu1 := newCluster(t, 10)
 	addr1, err := clu1.RunDKG(cmt1, 3)
 	require.NoError(t, err)
 	addr2, err := clu1.RunDKG(cmt2, 3)
@@ -405,7 +404,7 @@ func TestRotationMany(t *testing.T) {
 	addrs := make([]ledgerstate.Address, numCmt)
 
 	var err error
-	clu1 := clutest.NewCluster(t, 10)
+	clu1 := newCluster(t, 10)
 	for i := range cmt {
 		addrs[i], err = clu1.RunDKG(cmt[i], quorum[i])
 		require.NoError(t, err)
