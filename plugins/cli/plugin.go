@@ -6,9 +6,8 @@ import (
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/wasp"
 	flag "github.com/spf13/pflag"
-
-	"github.com/iotaledger/wasp/plugins/banner"
 )
 
 // PluginName is the name of the CLI plugin.
@@ -37,7 +36,7 @@ func onInit(*node.Plugin) {
 	flag.Usage = printUsage
 
 	if printVersion {
-		fmt.Println(banner.Name + " " + banner.Version)
+		fmt.Println(wasp.Name + " " + wasp.Version)
 		os.Exit(0)
 	}
 }

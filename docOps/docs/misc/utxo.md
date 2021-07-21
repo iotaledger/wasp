@@ -10,14 +10,13 @@ Goshimmer implements a _UTXO Ledger_ with _colored balances_.
 
 UTXO stands for `Unspent Transaction (TX) Output`. _Colored balances_ means that
 tokens in the ledger have a 32-byte attribute called a _color_. The default
-color is _iota-color_ which corresponds to normal iotas. In the genesis of the
-IOTA ledger all tokens were assigned _iota-color_. The number of all tokens on
+color is _ColorIOTA_ which corresponds to normal iotas. In the genesis of the
+IOTA ledger all tokens were assigned _ColorIOTA_. The number of all tokens on
 the ledger is constant, no matter the _color_.
 
 The _UTXO Ledger_ contains unspent transaction outputs (UTXOs) rather than just
-addresses and balances of tokens, like in the current IOTA 1.0 and some other
-ledgers, like Ethereum. Each unspent output of a transaction has the following
-form:
+addresses and balances of tokens, like in Bitcoin and unlike like Ethereum.
+Each unspent output of the transaction has the following form:
 
 ```
 Address: {colorCode1: balance1, colorCode2: balance2, ...}. 
@@ -59,7 +58,7 @@ validation rules of value transactions are the following:
    the containing transaction_. In the new UTXOs they will be booked with the
    hash of that transaction as their color attribute. This is called
    _minting_ of new digital assets (colored balance, colored supply, tokens)
-4. The number of tokens with `iota-color` in the outputs can be smaller or
+4. The number of tokens with `ColorIOTA` in the outputs can be smaller or
    larger than iotas in inputs, provided condition (1) is satisfied.
 
 The ISCP relies heavily on the logic of the tokens in the UTXO Ledger. In later

@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/admapi"
@@ -20,7 +21,16 @@ import (
 
 var log *logger.Logger
 
-func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP, network peering.NetworkProvider, tnm peering.TrustedNetworkManager, registryProvider registry.Provider, chainsProvider chains.Provider) {
+func Init(
+	server echoswagger.ApiRoot,
+	adminWhitelist []net.IP,
+	network peering.NetworkProvider,
+	tnm peering.TrustedNetworkManager,
+	registryProvider registry.Provider,
+	chainsProvider chains.Provider,
+	nodeProvider dkg.NodeProvider,
+	shutdown admapi.ShutdownFunc,
+) {
 	log = logger.NewLogger("WebAPI")
 
 	server.SetRequestContentType(echo.MIMEApplicationJSON)
@@ -28,12 +38,21 @@ func Init(server echoswagger.ApiRoot, adminWhitelist []net.IP, network peering.N
 
 	pub := server.Group("public", "").SetDescription("Public endpoints")
 	blob.AddEndpoints(pub, func() registry.BlobCache { return registryProvider() })
-	info.AddEndpoints(pub)
-	reqstatus.AddEndpoints(pub)
-	request.AddEndpoints(pub, webapiutil.GetChain, webapiutil.GetAccountBalance)
-	state.AddEndpoints(pub)
+	info.AddEndpoints(pub, network)
+	reqstatus.AddEndpoints(pub, chainsProvider.ChainProvider())
+	request.AddEndpoints(pub, chainsProvider.ChainProvider(), webapiutil.GetAccountBalance)
+	state.AddEndpoints(pub, chainsProvider)
 
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")
-	admapi.AddEndpoints(adm, adminWhitelist, network, tnm, registryProvider, chainsProvider)
+	admapi.AddEndpoints(
+		adm,
+		adminWhitelist,
+		network,
+		tnm,
+		registryProvider,
+		chainsProvider,
+		nodeProvider,
+		shutdown,
+	)
 	log.Infof("added web api endpoints")
 }

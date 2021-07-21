@@ -25,7 +25,7 @@ func GetRequestIDsForBlock(stateReader state.OptimisticStateReader, blockIndex u
 	}
 	ret := make([]iscp.RequestID, len(recsBin))
 	for i, d := range recsBin {
-		rec, err := RequestLogRecordFromBytes(d)
+		rec, err := RequestReceiptFromBytes(d)
 		if err != nil {
 			panic(err)
 		}
