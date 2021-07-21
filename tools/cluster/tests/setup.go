@@ -15,8 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/tools/cluster"
-	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
-	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,11 +33,7 @@ var (
 )
 
 func initSeed() *seed.Seed {
-	b, err := base58.Decode("C6hPhCS2E2dKUGS3qj4264itKXohwgL3Lm2fNxayAKr")
-	if err != nil {
-		panic(err)
-	}
-	return seed.NewSeed(b)
+	return seed.NewSeed()
 }
 
 // TODO detached example code
@@ -114,7 +108,7 @@ func postRequestFull(t *testing.T, contract, entryPoint iscp.Hname, transfer map
 }
 
 func setup(t *testing.T, configPath string) { //nolint:unparam
-	clu = clutest.NewCluster(t)
+	clu = newCluster(t)
 	chain, err = clu.DeployDefaultChain()
 	check(err, t)
 }

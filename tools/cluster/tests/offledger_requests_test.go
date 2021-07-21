@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/tools/cluster"
-	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -66,7 +65,7 @@ func TestOffledgerRequest(t *testing.T) {
 
 	// check off-ledger request was successfully processed
 	ret, err := chain1.Cluster.WaspClient(0).CallView(
-		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name,
+		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name, nil,
 	)
 	check(err, t)
 	result, _ := ret.Get(inccounter.VarCounter)
@@ -125,7 +124,7 @@ func TestOffledgerRequest1Mb(t *testing.T) {
 
 func TestOffledgerRequestAccessNode(t *testing.T) {
 	const clusterSize = 10
-	clu1 := clutest.NewCluster(t, clusterSize)
+	clu1 := newCluster(t, clusterSize)
 
 	cmt1 := []int{0, 1, 2, 3}
 
@@ -150,7 +149,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 
 	// check off-ledger request was successfully processed (check by asking another access node)
 	ret, err := clu1.WaspClient(6).CallView(
-		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name,
+		chain1.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name, nil,
 	)
 	check(err, t)
 	result, _ := ret.Get(inccounter.VarCounter)

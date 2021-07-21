@@ -13,13 +13,13 @@ func TestSerdeRequestLogRecord(t *testing.T) {
 	var txid ledgerstate.TransactionID
 	rand.Read(txid[:])
 	rid := iscp.RequestID(ledgerstate.NewOutputID(txid, 0))
-	rec := &RequestLogRecord{
+	rec := &RequestReceipt{
 		RequestID: rid,
 		OffLedger: true,
 		LogData:   []byte("some log data"),
 	}
 	forward := rec.Bytes()
-	back, err := RequestLogRecordFromBytes(forward)
+	back, err := RequestReceiptFromBytes(forward)
 	require.NoError(t, err)
 	require.EqualValues(t, forward, back.Bytes())
 }

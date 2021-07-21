@@ -15,8 +15,8 @@ import (
 var Processor = Contract.Processor(initialize,
 	FuncGetBlockInfo.WithHandler(viewGetBlockInfo),
 	FuncGetLatestBlockInfo.WithHandler(viewGetLatestBlockInfo),
-	FuncGetRequestLogRecord.WithHandler(viewGetRequestLogRecord),
-	FuncGetRequestLogRecordsForBlock.WithHandler(viewGetRequestLogRecordsForBlock),
+	FuncGetRequestReceipt.WithHandler(viewGetRequestReceipt),
+	FuncGetRequestReceiptsForBlock.WithHandler(viewGetRequestReceiptsForBlock),
 	FuncGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
 	FuncIsRequestProcessed.WithHandler(viewIsRequestProcessed),
 	FuncControlAddresses.WithHandler(viewControlAddresses),
@@ -76,7 +76,7 @@ func viewIsRequestProcessed(ctx iscp.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-func viewGetRequestLogRecord(ctx iscp.SandboxView) (dict.Dict, error) {
+func viewGetRequestReceipt(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	requestID := params.MustGetRequestID(ParamRequestID)
 	recBin, blockIndex, requestIndex, found := getRequestRecordDataByRequestID(ctx, requestID)
@@ -102,14 +102,14 @@ func viewGetRequestIDsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestID)
 	for _, d := range dataArr {
-		rec, err := RequestLogRecordFromBytes(d)
+		rec, err := RequestReceiptFromBytes(d)
 		a.RequireNoError(err)
 		_ = arr.Push(rec.RequestID.Bytes())
 	}
 	return ret, nil
 }
 
-func viewGetRequestLogRecordsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
+func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	a := assert.NewAssert(ctx.Log())
 	blockIndex := params.MustGetUint32(ParamBlockIndex)
