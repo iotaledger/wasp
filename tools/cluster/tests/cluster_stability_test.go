@@ -8,6 +8,9 @@ import (
 	"testing"
 )
 
+func initializeStabilityTest(numRequests int, quorum int, clusterSize int) {
+}
+
 func TestOngoingFailureWithoutRecovery(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
