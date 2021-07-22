@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/tools/cluster"
-	clutest "github.com/iotaledger/wasp/tools/cluster/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -125,7 +124,7 @@ func TestOffledgerRequest1Mb(t *testing.T) {
 
 func TestOffledgerRequestAccessNode(t *testing.T) {
 	const clusterSize = 10
-	clu1 := clutest.NewCluster(t, clusterSize)
+	clu1 := newCluster(t, clusterSize)
 
 	cmt1 := []int{0, 1, 2, 3}
 

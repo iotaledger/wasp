@@ -15,6 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/plugins/chains"
+	"github.com/iotaledger/wasp/plugins/dkg"
+	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
@@ -62,7 +64,16 @@ func configure(*node.Plugin) {
 	if tnm == nil {
 		panic("dependency TrustedNetworkManager is missing in WebAPI")
 	}
-	webapi.Init(Server, adminWhitelist(), network, tnm, registry.DefaultRegistry, chains.AllChains)
+	webapi.Init(
+		Server,
+		adminWhitelist(),
+		network,
+		tnm,
+		registry.DefaultRegistry,
+		chains.AllChains,
+		dkg.DefaultNode,
+		gracefulshutdown.Shutdown,
+	)
 }
 
 func customHTTPErrorHandler(err error, c echo.Context) {

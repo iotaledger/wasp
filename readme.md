@@ -4,12 +4,9 @@
 
 [Wasp](https://github.com/iotaledger/wasp) is a node software developed by the
 [IOTA Foundation](http://iota.org) to run the _IOTA Smart Contract Protocol_
-(_ISCP_ in short) on top of the _IOTA Tangle_.  Please find here a [high level
+(_ISCP_ in short) on top of the _IOTA Tangle_.  Here's a [high level
 introduction](https://blog.iota.org/an-introduction-to-iota-smart-contracts-16ea6f247936)
 into ISCP.
-
-Please refer to the [documentation](docOps/docs/welcome.md) to learn more about
-Wasp, and for instructions on how to compile and run.
 
 ## Contributing
 
