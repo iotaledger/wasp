@@ -1,0 +1,23 @@
+{
+  "unversionedId": "contract_types/overview",
+  "id": "contract_types/overview",
+  "isDocsHomePage": false,
+  "title": "Core smart contracts",
+  "description": "The virtual machine or VM of the chain is the component responsible for the",
+  "source": "@site/docs/contract_types/overview.md",
+  "sourceDirName": "contract_types",
+  "slug": "/contract_types/overview",
+  "permalink": "/iscp/docs/contract_types/overview",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/contract_types/overview.md",
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "ISCP accounts. Controlling token balances",
+    "permalink": "/iscp/docs/tutorial/12"
+  },
+  "next": {
+    "title": "The `root` contract",
+    "permalink": "/iscp/docs/contract_types/root"
+  }
+}

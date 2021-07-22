@@ -1,0 +1,23 @@
+{
+  "unversionedId": "tutorial/readme",
+  "id": "tutorial/readme",
+  "isDocsHomePage": false,
+  "title": "Exploring IOTA Smart Contracts",
+  "description": "This document is an introductory tutorial of the IOTA Smart Contract Platform",
+  "source": "@site/docs/tutorial/readme.md",
+  "sourceDirName": "tutorial",
+  "slug": "/tutorial/readme",
+  "permalink": "/iscp/docs/tutorial/readme",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/readme.md",
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Welcome to the Wasp",
+    "permalink": "/iscp/docs/welcome"
+  },
+  "next": {
+    "title": "The Solo package",
+    "permalink": "/iscp/docs/tutorial/01"
+  }
+}

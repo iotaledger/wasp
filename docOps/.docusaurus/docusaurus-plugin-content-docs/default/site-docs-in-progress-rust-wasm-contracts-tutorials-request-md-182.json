@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/rust_wasm_contracts/tutorials/request",
+  "id": "in_progress/rust_wasm_contracts/tutorials/request",
+  "isDocsHomePage": false,
+  "title": "request",
+  "description": "",
+  "source": "@site/docs/in_progress/rust_wasm_contracts/tutorials/request.md",
+  "sourceDirName": "in_progress/rust_wasm_contracts/tutorials",
+  "slug": "/in_progress/rust_wasm_contracts/tutorials/request",
+  "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/tutorials/request",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/tutorials/request.md",
+  "version": "current",
+  "frontMatter": {}
+}

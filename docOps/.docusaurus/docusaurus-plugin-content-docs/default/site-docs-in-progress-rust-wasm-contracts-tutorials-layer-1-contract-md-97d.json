@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/rust_wasm_contracts/tutorials/layer_1_contract",
+  "id": "in_progress/rust_wasm_contracts/tutorials/layer_1_contract",
+  "isDocsHomePage": false,
+  "title": "layer_1_contract",
+  "description": "",
+  "source": "@site/docs/in_progress/rust_wasm_contracts/tutorials/layer_1_contract.md",
+  "sourceDirName": "in_progress/rust_wasm_contracts/tutorials",
+  "slug": "/in_progress/rust_wasm_contracts/tutorials/layer_1_contract",
+  "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/tutorials/layer_1_contract",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/tutorials/layer_1_contract.md",
+  "version": "current",
+  "frontMatter": {}
+}

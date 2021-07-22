@@ -27,15 +27,15 @@ const (
 )
 
 var (
-	FuncControlAddresses             = coreutil.ViewFunc("controlAddresses")
-	FuncGetBlockInfo                 = coreutil.ViewFunc("getBlockInfo")
-	FuncGetLatestBlockInfo           = coreutil.ViewFunc("getLatestBlockInfo")
-	FuncGetRequestIDsForBlock        = coreutil.ViewFunc("getRequestIDsForBlock")
-	FuncGetRequestLogRecord          = coreutil.ViewFunc("getRequestLogRecord")
-	FuncGetRequestLogRecordsForBlock = coreutil.ViewFunc("getRequestLogRecordsForBlock")
-	FuncIsRequestProcessed           = coreutil.ViewFunc("isRequestProcessed")
-	FuncGetEventsForRequest          = coreutil.ViewFunc("getEventsForRequest")
-	FuncGetEventsForBlock            = coreutil.ViewFunc("getEventsForBlock")
+	FuncControlAddresses           = coreutil.ViewFunc("controlAddresses")
+	FuncGetBlockInfo               = coreutil.ViewFunc("getBlockInfo")
+	FuncGetLatestBlockInfo         = coreutil.ViewFunc("getLatestBlockInfo")
+	FuncGetRequestIDsForBlock      = coreutil.ViewFunc("getRequestIDsForBlock")
+	FuncGetRequestReceipt          = coreutil.ViewFunc("getRequestReceipt")
+	FuncGetRequestReceiptsForBlock = coreutil.ViewFunc("getRequestReceiptsForBlock")
+	FuncIsRequestProcessed         = coreutil.ViewFunc("isRequestProcessed")
+	FuncGetEventsForRequest        = coreutil.ViewFunc("getEventsForRequest")
+	FuncGetEventsForBlock          = coreutil.ViewFunc("getEventsForBlock")
 )
 
 const (
@@ -237,8 +237,8 @@ func (k *RequestLookupKey) EventLookupKey(r io.Reader) error {
 
 // region RequestLogReqcord /////////////////////////////////////////////////////
 
-// RequestLogRecord represents log record of processed request on the chain
-type RequestLogRecord struct {
+// RequestReceipt represents log record of processed request on the chain
+type RequestReceipt struct {
 	RequestID iscp.RequestID
 	OffLedger bool
 	LogData   []byte
@@ -247,12 +247,12 @@ type RequestLogRecord struct {
 	RequestIndex uint16
 }
 
-func RequestLogRecordFromBytes(data []byte) (*RequestLogRecord, error) {
-	return RequestLogRecordFromMarshalutil(marshalutil.New(data))
+func RequestReceiptFromBytes(data []byte) (*RequestReceipt, error) {
+	return RequestReceiptFromMarshalutil(marshalutil.New(data))
 }
 
-func RequestLogRecordFromMarshalutil(mu *marshalutil.MarshalUtil) (*RequestLogRecord, error) {
-	ret := &RequestLogRecord{}
+func RequestReceiptFromMarshalutil(mu *marshalutil.MarshalUtil) (*RequestReceipt, error) {
+	ret := &RequestReceipt{}
 	var err error
 	if ret.RequestID, err = iscp.RequestIDFromMarshalUtil(mu); err != nil {
 		return nil, err
@@ -270,7 +270,7 @@ func RequestLogRecordFromMarshalutil(mu *marshalutil.MarshalUtil) (*RequestLogRe
 	return ret, nil
 }
 
-func (r *RequestLogRecord) Bytes() []byte {
+func (r *RequestReceipt) Bytes() []byte {
 	mu := marshalutil.New()
 	mu.Write(r.RequestID).
 		WriteBool(r.OffLedger).
@@ -279,13 +279,13 @@ func (r *RequestLogRecord) Bytes() []byte {
 	return mu.Bytes()
 }
 
-func (r *RequestLogRecord) WithBlockData(blockIndex uint32, requestIndex uint16) *RequestLogRecord {
+func (r *RequestReceipt) WithBlockData(blockIndex uint32, requestIndex uint16) *RequestReceipt {
 	r.BlockIndex = blockIndex
 	r.RequestIndex = requestIndex
 	return r
 }
 
-func (r *RequestLogRecord) strPrefix() string {
+func (r *RequestReceipt) strPrefix() string {
 	prefix := "req"
 	if !r.OffLedger {
 		prefix += "/tx"
@@ -296,7 +296,7 @@ func (r *RequestLogRecord) strPrefix() string {
 	return prefix
 }
 
-func (r *RequestLogRecord) String() string {
+func (r *RequestReceipt) String() string {
 	ret := fmt.Sprintf("%s %s", r.strPrefix(), r.RequestID.String())
 	if len(r.LogData) > 0 {
 		ret += ": '" + string(r.LogData) + "'"
@@ -304,8 +304,12 @@ func (r *RequestLogRecord) String() string {
 	return ret
 }
 
-func (r *RequestLogRecord) Short() string {
-	ret := fmt.Sprintf("%s %s", r.strPrefix(), r.RequestID.Short())
+func (r *RequestReceipt) Short() string {
+	prefix := "tx"
+	if r.OffLedger {
+		prefix = "api"
+	}
+	ret := fmt.Sprintf("%s/%s", prefix, r.RequestID)
 	if len(r.LogData) > 0 {
 		ret += ": '" + string(r.LogData) + "'"
 	}

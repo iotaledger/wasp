@@ -410,7 +410,7 @@ func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint
 // latest up to 50 records for a given smart contract.
 // It returns records as array in time-descending order.
 // More than 50 records may be retrieved by calling the view directly
-func (ch *Chain) GetEventLogRecords(name string) ([]collections.TimestampedLogRecord, error) {
+func (ch *Chain) GetEventLogRecords(name string) ([]string, error) {
 	return nil, nil
 	// TODO refactor to use blocklog
 	// res, err := ch.CallView(eventlog.Contract.Name, eventlog.FuncGetRecords.Name,
@@ -502,9 +502,9 @@ func (ch *Chain) IsRequestProcessed(reqID iscp.RequestID) bool {
 	return bin != nil
 }
 
-// GetRequestLogRecord gets the log records for a particular request, the block index and request index in the block
-func (ch *Chain) GetRequestLogRecord(reqID iscp.RequestID) (*blocklog.RequestLogRecord, uint32, uint16, bool) {
-	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestLogRecord.Name,
+// GetRequestReceipt gets the log records for a particular request, the block index and request index in the block
+func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID) (*blocklog.RequestReceipt, uint32, uint16, bool) {
+	ret, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestReceipt.Name,
 		blocklog.ParamRequestID, reqID)
 	require.NoError(ch.Env.T, err)
 	resultDecoder := kvdecoder.New(ret, ch.Log)
@@ -512,7 +512,7 @@ func (ch *Chain) GetRequestLogRecord(reqID iscp.RequestID) (*blocklog.RequestLog
 	if err != nil || binRec == nil {
 		return nil, 0, 0, false
 	}
-	ret1, err := blocklog.RequestLogRecordFromBytes(binRec)
+	ret1, err := blocklog.RequestReceiptFromBytes(binRec)
 	require.NoError(ch.Env.T, err)
 	blockIndex := resultDecoder.MustGetUint32(blocklog.ParamBlockIndex)
 	requestIndex := resultDecoder.MustGetUint16(blocklog.ParamRequestIndex)
@@ -520,19 +520,19 @@ func (ch *Chain) GetRequestLogRecord(reqID iscp.RequestID) (*blocklog.RequestLog
 	return ret1, blockIndex, requestIndex, true
 }
 
-// GetRequestLogRecordsForBlock returns all request log records for a particular block
-func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32) []*blocklog.RequestLogRecord {
-	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestLogRecordsForBlock.Name,
+// GetRequestReceiptsForBlock returns all request log records for a particular block
+func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32) []*blocklog.RequestReceipt {
+	res, err := ch.CallView(blocklog.Contract.Name, blocklog.FuncGetRequestReceiptsForBlock.Name,
 		blocklog.ParamBlockIndex, blockIndex)
 	if err != nil {
 		return nil
 	}
 	recs := collections.NewArray16ReadOnly(res, blocklog.ParamRequestRecord)
-	ret := make([]*blocklog.RequestLogRecord, recs.MustLen())
+	ret := make([]*blocklog.RequestReceipt, recs.MustLen())
 	for i := range ret {
 		data, err := recs.GetAt(uint16(i))
 		require.NoError(ch.Env.T, err)
-		ret[i], err = blocklog.RequestLogRecordFromBytes(data)
+		ret[i], err = blocklog.RequestReceiptFromBytes(data)
 		require.NoError(ch.Env.T, err)
 		ret[i].WithBlockData(blockIndex, uint16(i))
 	}
@@ -558,26 +558,26 @@ func (ch *Chain) GetRequestIDsForBlock(blockIndex uint32) []iscp.RequestID {
 	return ret
 }
 
-// GetLogRecordsForBlockRange returns all request log records for range of blocks, inclusively.
+// GetRequestReceiptsForBlockRange returns all request log records for range of blocks, inclusively.
 // Upper bound is 'latest block' is set to 0
-func (ch *Chain) GetLogRecordsForBlockRange(fromBlockIndex, toBlockIndex uint32) []*blocklog.RequestLogRecord {
+func (ch *Chain) GetRequestReceiptsForBlockRange(fromBlockIndex, toBlockIndex uint32) []*blocklog.RequestReceipt {
 	if toBlockIndex == 0 {
 		toBlockIndex = ch.GetLatestBlockInfo().BlockIndex
 	}
 	if fromBlockIndex > toBlockIndex {
 		return nil
 	}
-	ret := make([]*blocklog.RequestLogRecord, 0)
+	ret := make([]*blocklog.RequestReceipt, 0)
 	for i := fromBlockIndex; i <= toBlockIndex; i++ {
-		recs := ch.GetRequestLogRecordsForBlock(i)
+		recs := ch.GetRequestReceiptsForBlock(i)
 		require.True(ch.Env.T, i == 0 || len(recs) != 0)
 		ret = append(ret, recs...)
 	}
 	return ret
 }
 
-func (ch *Chain) GetLogRecordsForBlockRangeAsStrings(fromBlockIndex, toBlockIndex uint32) []string {
-	recs := ch.GetLogRecordsForBlockRange(fromBlockIndex, toBlockIndex)
+func (ch *Chain) GetRequestReceiptsForBlockRangeAsStrings(fromBlockIndex, toBlockIndex uint32) []string {
+	recs := ch.GetRequestReceiptsForBlockRange(fromBlockIndex, toBlockIndex)
 	ret := make([]string, len(recs))
 	for i := range ret {
 		ret[i] = recs[i].String()
@@ -640,10 +640,21 @@ func (ch *Chain) RotateStateController(newStateAddr ledgerstate.Address, newStat
 	req := NewCallParams(coreutil.CoreContractGovernance, coreutil.CoreEPRotateStateController,
 		coreutil.ParamStateControllerAddress, newStateAddr,
 	).WithIotas(1)
-	_, err := ch.PostRequestSync(req, ownerKeyPair)
+	err := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
 	if err == nil {
 		ch.StateControllerAddress = newStateAddr
 		ch.StateControllerKeyPair = newStateKeyPair
 	}
+	return err
+}
+
+func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *ed25519.KeyPair) error {
+	tx, _, err := ch.RequestFromParamsToLedger(req, keyPair)
+	if err != nil {
+		return err
+	}
+	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
+	require.NoError(ch.Env.T, err)
+	_, err = ch.runRequestsSync(reqs, "postSpecial")
 	return err
 }

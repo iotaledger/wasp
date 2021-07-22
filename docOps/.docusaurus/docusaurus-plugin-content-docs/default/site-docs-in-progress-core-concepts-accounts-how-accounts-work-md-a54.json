@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/core_concepts/accounts/how_accounts_work",
+  "id": "in_progress/core_concepts/accounts/how_accounts_work",
+  "isDocsHomePage": false,
+  "title": "how_accounts_work",
+  "description": "",
+  "source": "@site/docs/in_progress/core_concepts/accounts/how_accounts_work.md",
+  "sourceDirName": "in_progress/core_concepts/accounts",
+  "slug": "/in_progress/core_concepts/accounts/how_accounts_work",
+  "permalink": "/iscp/docs/in_progress/core_concepts/accounts/how_accounts_work",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/accounts/how_accounts_work.md",
+  "version": "current",
+  "frontMatter": {}
+}

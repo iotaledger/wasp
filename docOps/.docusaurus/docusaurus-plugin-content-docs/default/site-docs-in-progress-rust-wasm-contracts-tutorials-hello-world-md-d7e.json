@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/rust_wasm_contracts/tutorials/hello_world",
+  "id": "in_progress/rust_wasm_contracts/tutorials/hello_world",
+  "isDocsHomePage": false,
+  "title": "hello_world",
+  "description": "",
+  "source": "@site/docs/in_progress/rust_wasm_contracts/tutorials/hello_world.md",
+  "sourceDirName": "in_progress/rust_wasm_contracts/tutorials",
+  "slug": "/in_progress/rust_wasm_contracts/tutorials/hello_world",
+  "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/tutorials/hello_world",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/tutorials/hello_world.md",
+  "version": "current",
+  "frontMatter": {}
+}

@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/rust_wasm_contracts/tutorials/cross_chain_communication",
+  "id": "in_progress/rust_wasm_contracts/tutorials/cross_chain_communication",
+  "isDocsHomePage": false,
+  "title": "cross_chain_communication",
+  "description": "",
+  "source": "@site/docs/in_progress/rust_wasm_contracts/tutorials/cross_chain_communication.md",
+  "sourceDirName": "in_progress/rust_wasm_contracts/tutorials",
+  "slug": "/in_progress/rust_wasm_contracts/tutorials/cross_chain_communication",
+  "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/tutorials/cross_chain_communication",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/tutorials/cross_chain_communication.md",
+  "version": "current",
+  "frontMatter": {}
+}

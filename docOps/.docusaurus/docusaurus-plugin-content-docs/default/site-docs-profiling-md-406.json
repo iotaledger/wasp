@@ -1,0 +1,14 @@
+{
+  "unversionedId": "profiling",
+  "id": "profiling",
+  "isDocsHomePage": false,
+  "title": "Profiling",
+  "description": "Profiling is disabled by default.",
+  "source": "@site/docs/profiling.md",
+  "sourceDirName": ".",
+  "slug": "/profiling",
+  "permalink": "/iscp/docs/profiling",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/profiling.md",
+  "version": "current",
+  "frontMatter": {}
+}

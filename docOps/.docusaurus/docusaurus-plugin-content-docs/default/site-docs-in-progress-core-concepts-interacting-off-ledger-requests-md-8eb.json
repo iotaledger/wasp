@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/core_concepts/interacting/off-ledger_requests",
+  "id": "in_progress/core_concepts/interacting/off-ledger_requests",
+  "isDocsHomePage": false,
+  "title": "off-ledger_requests",
+  "description": "",
+  "source": "@site/docs/in_progress/core_concepts/interacting/off-ledger_requests.md",
+  "sourceDirName": "in_progress/core_concepts/interacting",
+  "slug": "/in_progress/core_concepts/interacting/off-ledger_requests",
+  "permalink": "/iscp/docs/in_progress/core_concepts/interacting/off-ledger_requests",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/interacting/off-ledger_requests.md",
+  "version": "current",
+  "frontMatter": {}
+}

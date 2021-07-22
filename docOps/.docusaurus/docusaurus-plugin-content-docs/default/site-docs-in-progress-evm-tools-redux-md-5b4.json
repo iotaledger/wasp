@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/evm/tools/redux",
+  "id": "in_progress/evm/tools/redux",
+  "isDocsHomePage": false,
+  "title": "redux",
+  "description": "",
+  "source": "@site/docs/in_progress/evm/tools/redux.md",
+  "sourceDirName": "in_progress/evm/tools",
+  "slug": "/in_progress/evm/tools/redux",
+  "permalink": "/iscp/docs/in_progress/evm/tools/redux",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/evm/tools/redux.md",
+  "version": "current",
+  "frontMatter": {}
+}

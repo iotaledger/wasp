@@ -3,6 +3,11 @@ package request
 import (
 	"net/http"
 	"testing"
+	"time"
+
+	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/wasp/packages/chains"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -12,15 +17,52 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
 )
 
-func createMockedGetChain(t *testing.T) getChainFn {
-	return func(chainID *iscp.ChainID) chain.ChainCore {
-		return testchain.NewMockedChainCore(t, *chainID, testlogger.NewLogger(t))
+type mockedChain struct {
+	*testchain.MockedChainCore
+}
+
+func (m *mockedChain) GetRequestProcessingStatus(id iscp.RequestID) chain.RequestProcessingStatus {
+	panic("implement me")
+}
+
+func (m *mockedChain) EventRequestProcessed() *events.Event {
+	panic("implement me")
+}
+
+func (m *mockedChain) ReceiveTransaction(transaction *ledgerstate.Transaction) {
+	panic("implement me")
+}
+
+func (m *mockedChain) ReceiveInclusionState(id ledgerstate.TransactionID, state ledgerstate.InclusionState) {
+	panic("implement me")
+}
+
+func (m *mockedChain) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
+	panic("implement me")
+}
+
+func (m *mockedChain) ReceiveOutput(output ledgerstate.Output) {
+	panic("implement me")
+}
+
+func (m *mockedChain) Dismiss(reason string) {
+	panic("implement me")
+}
+
+func (m *mockedChain) IsDismissed() bool {
+	panic("implement me")
+}
+
+func createMockedGetChain(t *testing.T) chains.ChainProvider {
+	return func(chainID *iscp.ChainID) chain.Chain {
+		return &mockedChain{
+			testchain.NewMockedChainCore(t, *chainID, testlogger.NewLogger(t)),
+		}
 	}
 }
 

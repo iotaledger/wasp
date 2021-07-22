@@ -1,0 +1,23 @@
+{
+  "unversionedId": "tutorial/11",
+  "id": "tutorial/11",
+  "isDocsHomePage": false,
+  "title": "Sending tokens from smart contract to address",
+  "description": "The programmer of the example smart contract implemented the entry point",
+  "source": "@site/docs/tutorial/11.md",
+  "sourceDirName": "tutorial",
+  "slug": "/tutorial/11",
+  "permalink": "/iscp/docs/tutorial/11",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/11.md",
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Return of tokens in case of failure",
+    "permalink": "/iscp/docs/tutorial/10"
+  },
+  "next": {
+    "title": "ISCP accounts. Controlling token balances",
+    "permalink": "/iscp/docs/tutorial/12"
+  }
+}

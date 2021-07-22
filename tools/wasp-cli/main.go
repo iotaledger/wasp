@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/iotaledger/wasp/packages/wasp"
 	"github.com/iotaledger/wasp/tools/wasp-cli/blob"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
@@ -15,7 +16,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Version: "0.1.1",
+	Version: wasp.Version,
 	Use:     "wasp-cli",
 	Short:   "wasp-cli is a command line tool for interacting with Wasp and its smart contracts.",
 	Long: `wasp-cli is a command line tool for interacting with Wasp and its smart contracts.

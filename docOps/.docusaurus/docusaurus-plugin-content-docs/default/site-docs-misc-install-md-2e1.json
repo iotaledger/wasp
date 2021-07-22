@@ -1,0 +1,23 @@
+{
+  "unversionedId": "misc/install",
+  "id": "misc/install",
+  "isDocsHomePage": false,
+  "title": "Installation (TBD)",
+  "description": "Solo tests are written in Go. The tutorial assumes you are familiar with and",
+  "source": "@site/docs/misc/install.md",
+  "sourceDirName": "misc",
+  "slug": "/misc/install",
+  "permalink": "/iscp/docs/misc/install",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/misc/install.md",
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Using `wasp-cli` to deploy a chain and a contract",
+    "permalink": "/iscp/docs/misc/deploy"
+  },
+  "next": {
+    "title": "General scheme of invoking an entry point",
+    "permalink": "/iscp/docs/misc/invoking"
+  }
+}

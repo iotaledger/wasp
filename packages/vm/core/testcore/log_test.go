@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -35,7 +36,10 @@ func TestEventLogBasicEmpty(t *testing.T) {
 	num = chain.GetEventLogNumRecords(blob.Contract.Name)
 	require.EqualValues(t, 0, num)
 
-	reqRecs := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+	num = chain.GetEventLogNumRecords(blocklog.Contract.Name)
+	require.EqualValues(t, 0, num)
+
+	reqRecs := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
 	require.EqualValues(t, 1, len(reqRecs))
 
 	for _, s := range reqRecs {
@@ -56,7 +60,7 @@ func TestChainLogDeploy(t *testing.T) {
 	num = chain.GetEventLogNumRecords(accounts.Contract.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetEventLogNumRecords(eventlog.Contract.Name)
+	num = chain.GetEventLogNumRecords(blocklog.Contract.Name)
 	require.EqualValues(t, 0, num)
 
 	num = chain.GetEventLogNumRecords(blob.Contract.Name)
@@ -77,7 +81,7 @@ func TestChainLogDeploy(t *testing.T) {
 	num = chain.GetEventLogNumRecords(accounts.Contract.Name)
 	require.EqualValues(t, 0, num)
 
-	num = chain.GetEventLogNumRecords(eventlog.Contract.Name)
+	num = chain.GetEventLogNumRecords(blocklog.Contract.Name)
 	require.EqualValues(t, 0, num)
 
 	num = chain.GetEventLogNumRecords(blob.Contract.Name)
@@ -90,7 +94,7 @@ func TestChainLogDeploy(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, recs, 0)
 
-	reqRecs := chain.GetLogRecordsForBlockRangeAsStrings(0, 0)
+	reqRecs := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
 
 	for _, s := range reqRecs {
 		t.Logf("%s", s)

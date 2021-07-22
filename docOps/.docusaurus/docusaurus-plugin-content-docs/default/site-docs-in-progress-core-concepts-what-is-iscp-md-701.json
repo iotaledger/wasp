@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/core_concepts/what_is_iscp",
+  "id": "in_progress/core_concepts/what_is_iscp",
+  "isDocsHomePage": false,
+  "title": "what_is_iscp",
+  "description": "",
+  "source": "@site/docs/in_progress/core_concepts/what_is_iscp.md",
+  "sourceDirName": "in_progress/core_concepts",
+  "slug": "/in_progress/core_concepts/what_is_iscp",
+  "permalink": "/iscp/docs/in_progress/core_concepts/what_is_iscp",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/what_is_iscp.md",
+  "version": "current",
+  "frontMatter": {}
+}

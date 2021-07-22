@@ -33,7 +33,7 @@ func blockCmd() *cobra.Command {
 
 func fetchBlockInfo(args []string) *blocklog.BlockInfo {
 	if len(args) == 0 {
-		ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetLatestBlockInfo.Name)
+		ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetLatestBlockInfo.Name, nil)
 		log.Check(err)
 		index, _, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 		log.Check(err)
@@ -53,7 +53,7 @@ func fetchBlockInfo(args []string) *blocklog.BlockInfo {
 }
 
 func logRequestsInBlock(index uint32) {
-	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetRequestLogRecordsForBlock.Name, dict.Dict{
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetRequestReceiptsForBlock.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(index),
 	})
 	log.Check(err)
@@ -61,7 +61,7 @@ func logRequestsInBlock(index uint32) {
 	header := []string{"request ID", "kind", "log"}
 	var rows [][]string
 	for i := uint16(0); i < arr.MustLen(); i++ {
-		req, err := blocklog.RequestLogRecordFromBytes(arr.MustGetAt(i))
+		req, err := blocklog.RequestReceiptFromBytes(arr.MustGetAt(i))
 		log.Check(err)
 
 		kind := "on-ledger"
@@ -87,14 +87,14 @@ func requestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			reqID, err := iscp.RequestIDFromBase58(args[0])
 			log.Check(err)
-			ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetRequestLogRecord.Name, dict.Dict{
+			ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetRequestReceipt.Name, dict.Dict{
 				blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
 			})
 			log.Check(err)
 
 			blockIndex, _, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
 			log.Check(err)
-			req, err := blocklog.RequestLogRecordFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
+			req, err := blocklog.RequestReceiptFromBytes(ret.MustGet(blocklog.ParamRequestRecord))
 			log.Check(err)
 
 			kind := "on-ledger"

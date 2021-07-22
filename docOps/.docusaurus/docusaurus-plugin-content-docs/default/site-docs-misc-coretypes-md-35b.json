@@ -1,0 +1,23 @@
+{
+  "unversionedId": "misc/coretypes",
+  "id": "misc/coretypes",
+  "isDocsHomePage": false,
+  "title": "Core types",
+  "description": "All core types used in the Wasp code are defined in the",
+  "source": "@site/docs/misc/coretypes.md",
+  "sourceDirName": "misc",
+  "slug": "/misc/coretypes",
+  "permalink": "/iscp/docs/misc/coretypes",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/misc/coretypes.md",
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "UTXO Ledger and Digital Assets",
+    "permalink": "/iscp/docs/misc/utxo"
+  },
+  "next": {
+    "title": "On-chain accounts",
+    "permalink": "/iscp/docs/misc/accounts"
+  }
+}

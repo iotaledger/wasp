@@ -1,0 +1,23 @@
+{
+  "unversionedId": "misc/accounts",
+  "id": "misc/accounts",
+  "isDocsHomePage": false,
+  "title": "On-chain accounts",
+  "description": "ISCP introduces the concept of on-chain account. Each chain maintains a list",
+  "source": "@site/docs/misc/accounts.md",
+  "sourceDirName": "misc",
+  "slug": "/misc/accounts",
+  "permalink": "/iscp/docs/misc/accounts",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/misc/accounts.md",
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Core types",
+    "permalink": "/iscp/docs/misc/coretypes"
+  },
+  "next": {
+    "title": "Wasp Publisher",
+    "permalink": "/iscp/docs/misc/publisher"
+  }
+}

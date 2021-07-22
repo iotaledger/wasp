@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/rust_wasm_contracts/tools/solo",
+  "id": "in_progress/rust_wasm_contracts/tools/solo",
+  "isDocsHomePage": false,
+  "title": "solo",
+  "description": "",
+  "source": "@site/docs/in_progress/rust_wasm_contracts/tools/solo.md",
+  "sourceDirName": "in_progress/rust_wasm_contracts/tools",
+  "slug": "/in_progress/rust_wasm_contracts/tools/solo",
+  "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/tools/solo",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/tools/solo.md",
+  "version": "current",
+  "frontMatter": {}
+}

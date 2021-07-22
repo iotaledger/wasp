@@ -1,0 +1,23 @@
+{
+  "unversionedId": "tutorial/01",
+  "id": "tutorial/01",
+  "isDocsHomePage": false,
+  "title": "The Solo package",
+  "description": "Solo is a Go package to write tests for IOTA smart contracts. It allows the",
+  "source": "@site/docs/tutorial/01.md",
+  "sourceDirName": "tutorial",
+  "slug": "/tutorial/01",
+  "permalink": "/iscp/docs/tutorial/01",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/01.md",
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Exploring IOTA Smart Contracts",
+    "permalink": "/iscp/docs/tutorial/readme"
+  },
+  "next": {
+    "title": "Tokens and the UTXO Ledger",
+    "permalink": "/iscp/docs/tutorial/02"
+  }
+}

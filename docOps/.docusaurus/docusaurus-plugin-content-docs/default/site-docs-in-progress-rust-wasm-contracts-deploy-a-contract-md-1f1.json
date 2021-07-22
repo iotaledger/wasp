@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/rust_wasm_contracts/deploy_a_contract",
+  "id": "in_progress/rust_wasm_contracts/deploy_a_contract",
+  "isDocsHomePage": false,
+  "title": "deploy_a_contract",
+  "description": "",
+  "source": "@site/docs/in_progress/rust_wasm_contracts/deploy_a_contract.md",
+  "sourceDirName": "in_progress/rust_wasm_contracts",
+  "slug": "/in_progress/rust_wasm_contracts/deploy_a_contract",
+  "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/deploy_a_contract",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/deploy_a_contract.md",
+  "version": "current",
+  "frontMatter": {}
+}

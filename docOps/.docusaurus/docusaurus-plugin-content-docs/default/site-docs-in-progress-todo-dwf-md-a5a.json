@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/todo/dwf",
+  "id": "in_progress/todo/dwf",
+  "isDocsHomePage": false,
+  "title": "dwf",
+  "description": "Obsolete. To be adjusted to the new version",
+  "source": "@site/docs/in_progress/todo/dwf.md",
+  "sourceDirName": "in_progress/todo",
+  "slug": "/in_progress/todo/dwf",
+  "permalink": "/iscp/docs/in_progress/todo/dwf",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/todo/dwf.md",
+  "version": "current",
+  "frontMatter": {}
+}

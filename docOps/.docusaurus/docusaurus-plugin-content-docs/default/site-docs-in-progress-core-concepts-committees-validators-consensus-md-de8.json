@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/core_concepts/committees_validators_consensus",
+  "id": "in_progress/core_concepts/committees_validators_consensus",
+  "isDocsHomePage": false,
+  "title": "committees_validators_consensus",
+  "description": "",
+  "source": "@site/docs/in_progress/core_concepts/committees_validators_consensus.md",
+  "sourceDirName": "in_progress/core_concepts",
+  "slug": "/in_progress/core_concepts/committees_validators_consensus",
+  "permalink": "/iscp/docs/in_progress/core_concepts/committees_validators_consensus",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/committees_validators_consensus.md",
+  "version": "current",
+  "frontMatter": {}
+}

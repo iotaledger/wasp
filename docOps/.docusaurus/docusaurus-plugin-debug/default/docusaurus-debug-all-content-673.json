@@ -1,0 +1,1552 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "loadedVersions": [
+        {
+          "versionName": "current",
+          "versionLabel": "Next",
+          "versionPath": "/iscp/docs",
+          "versionEditUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs",
+          "versionEditUrlLocalized": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/i18n/en/docusaurus-plugin-content-docs/current",
+          "versionBanner": "none",
+          "isLast": true,
+          "routePriority": -1,
+          "sidebarFilePath": "/Users/jorge/dev/iota/wasp/docOps/sidebars.js",
+          "contentPath": "/Users/jorge/dev/iota/wasp/docOps/docs",
+          "contentPathLocalized": "/Users/jorge/dev/iota/wasp/docOps/i18n/en/docusaurus-plugin-content-docs/current",
+          "mainDocId": "welcome",
+          "sidebars": {
+            "tutorialSidebar": [
+              {
+                "type": "doc",
+                "label": "Welcome",
+                "id": "welcome"
+              },
+              {
+                "collapsed": true,
+                "type": "category",
+                "label": "Tutorials",
+                "items": [
+                  {
+                    "type": "doc",
+                    "label": "Overview",
+                    "id": "tutorial/readme"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "The Solo Package",
+                    "id": "tutorial/01"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Tokens and the UTXO Ledger",
+                    "id": "tutorial/02"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Creating a Chain; Core Contracts",
+                    "id": "tutorial/03"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Deploying and Running a Rust Smart Contract",
+                    "id": "tutorial/04"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Structure of the Smart Contract",
+                    "id": "tutorial/05"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Sending a Request",
+                    "id": "tutorial/06"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Calling a View",
+                    "id": "tutorial/07"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Deposit and Withdraw Tokens",
+                    "id": "tutorial/08"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Sending Tokens to a Smart Contract",
+                    "id": "tutorial/09"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Return Of Tokens in Case of Failure",
+                    "id": "tutorial/10"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Sending Tokens from a Smart Contract",
+                    "id": "tutorial/11"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "ISCP On-Chain Accounts",
+                    "id": "tutorial/12"
+                  }
+                ]
+              },
+              {
+                "collapsed": true,
+                "type": "category",
+                "label": "Contract Types",
+                "items": [
+                  {
+                    "type": "doc",
+                    "label": "Overview",
+                    "id": "contract_types/overview"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Root Contracts",
+                    "id": "contract_types/root"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Default Contracts",
+                    "id": "contract_types/default"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Account Contracts",
+                    "id": "contract_types/accounts"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Blob Contracts",
+                    "id": "contract_types/blob"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Blocklog Contracts",
+                    "id": "contract_types/blocklog"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Eventlog Contracts",
+                    "id": "contract_types/eventlog"
+                  }
+                ]
+              },
+              {
+                "collapsed": true,
+                "type": "category",
+                "label": "Miscellaneous",
+                "items": [
+                  {
+                    "type": "doc",
+                    "label": "Run a Node",
+                    "id": "misc/runwasp"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Deploy with Wasp-CLI",
+                    "id": "misc/deploy"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Install",
+                    "id": "misc/install"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Invoke",
+                    "id": "misc/invoking"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "UTXO Ledger",
+                    "id": "misc/utxo"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Core Types",
+                    "id": "misc/coretypes"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "On-Chain Accounts",
+                    "id": "misc/accounts"
+                  },
+                  {
+                    "type": "doc",
+                    "label": "Wasp Publisher",
+                    "id": "misc/publisher"
+                  }
+                ]
+              },
+              {
+                "type": "doc",
+                "label": "Contribute",
+                "id": "contribute"
+              }
+            ]
+          },
+          "permalinkToSidebar": {
+            "/iscp/docs/contract_types/accounts": "tutorialSidebar",
+            "/iscp/docs/contract_types/blob": "tutorialSidebar",
+            "/iscp/docs/contract_types/blocklog": "tutorialSidebar",
+            "/iscp/docs/contract_types/default": "tutorialSidebar",
+            "/iscp/docs/contract_types/eventlog": "tutorialSidebar",
+            "/iscp/docs/contract_types/overview": "tutorialSidebar",
+            "/iscp/docs/contract_types/root": "tutorialSidebar",
+            "/iscp/docs/contribute": "tutorialSidebar",
+            "/iscp/docs/misc/accounts": "tutorialSidebar",
+            "/iscp/docs/misc/coretypes": "tutorialSidebar",
+            "/iscp/docs/misc/deploy": "tutorialSidebar",
+            "/iscp/docs/misc/install": "tutorialSidebar",
+            "/iscp/docs/misc/invoking": "tutorialSidebar",
+            "/iscp/docs/misc/publisher": "tutorialSidebar",
+            "/iscp/docs/misc/runwasp": "tutorialSidebar",
+            "/iscp/docs/misc/utxo": "tutorialSidebar",
+            "/iscp/docs/tutorial/01": "tutorialSidebar",
+            "/iscp/docs/tutorial/02": "tutorialSidebar",
+            "/iscp/docs/tutorial/03": "tutorialSidebar",
+            "/iscp/docs/tutorial/04": "tutorialSidebar",
+            "/iscp/docs/tutorial/05": "tutorialSidebar",
+            "/iscp/docs/tutorial/06": "tutorialSidebar",
+            "/iscp/docs/tutorial/07": "tutorialSidebar",
+            "/iscp/docs/tutorial/08": "tutorialSidebar",
+            "/iscp/docs/tutorial/09": "tutorialSidebar",
+            "/iscp/docs/tutorial/10": "tutorialSidebar",
+            "/iscp/docs/tutorial/11": "tutorialSidebar",
+            "/iscp/docs/tutorial/12": "tutorialSidebar",
+            "/iscp/docs/tutorial/readme": "tutorialSidebar",
+            "/iscp/docs/welcome": "tutorialSidebar"
+          },
+          "docs": [
+            {
+              "unversionedId": "contract_types/accounts",
+              "id": "contract_types/accounts",
+              "isDocsHomePage": false,
+              "title": "The `accounts` contract",
+              "description": "The accounts contract is one of the core contracts on each ISCP",
+              "source": "@site/docs/contract_types/accounts.md",
+              "sourceDirName": "contract_types",
+              "slug": "/contract_types/accounts",
+              "permalink": "/iscp/docs/contract_types/accounts",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/contract_types/accounts.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "The `_default` contract",
+                "permalink": "/iscp/docs/contract_types/default"
+              },
+              "next": {
+                "title": "The `blob` contract",
+                "permalink": "/iscp/docs/contract_types/blob"
+              }
+            },
+            {
+              "unversionedId": "contract_types/blob",
+              "id": "contract_types/blob",
+              "isDocsHomePage": false,
+              "title": "The `blob` contract",
+              "description": "The blob contract is one of the core contracts on each ISCP",
+              "source": "@site/docs/contract_types/blob.md",
+              "sourceDirName": "contract_types",
+              "slug": "/contract_types/blob",
+              "permalink": "/iscp/docs/contract_types/blob",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/contract_types/blob.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "The `accounts` contract",
+                "permalink": "/iscp/docs/contract_types/accounts"
+              },
+              "next": {
+                "title": "The `blocklog` contract",
+                "permalink": "/iscp/docs/contract_types/blocklog"
+              }
+            },
+            {
+              "unversionedId": "contract_types/blocklog",
+              "id": "contract_types/blocklog",
+              "isDocsHomePage": false,
+              "title": "The `blocklog` contract",
+              "description": "The blocklog contract is one of the core contracts on each ISCP",
+              "source": "@site/docs/contract_types/blocklog.md",
+              "sourceDirName": "contract_types",
+              "slug": "/contract_types/blocklog",
+              "permalink": "/iscp/docs/contract_types/blocklog",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/contract_types/blocklog.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "The `blob` contract",
+                "permalink": "/iscp/docs/contract_types/blob"
+              },
+              "next": {
+                "title": "The `eventlog` contract",
+                "permalink": "/iscp/docs/contract_types/eventlog"
+              }
+            },
+            {
+              "unversionedId": "contract_types/default",
+              "id": "contract_types/default",
+              "isDocsHomePage": false,
+              "title": "The `_default` contract",
+              "description": "The _default contract is one of the core contracts on each ISCP",
+              "source": "@site/docs/contract_types/default.md",
+              "sourceDirName": "contract_types",
+              "slug": "/contract_types/default",
+              "permalink": "/iscp/docs/contract_types/default",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/contract_types/default.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "The `root` contract",
+                "permalink": "/iscp/docs/contract_types/root"
+              },
+              "next": {
+                "title": "The `accounts` contract",
+                "permalink": "/iscp/docs/contract_types/accounts"
+              }
+            },
+            {
+              "unversionedId": "contract_types/eventlog",
+              "id": "contract_types/eventlog",
+              "isDocsHomePage": false,
+              "title": "The `eventlog` contract",
+              "description": "The eventlog contract is one of the core contracts on each ISCP",
+              "source": "@site/docs/contract_types/eventlog.md",
+              "sourceDirName": "contract_types",
+              "slug": "/contract_types/eventlog",
+              "permalink": "/iscp/docs/contract_types/eventlog",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/contract_types/eventlog.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "The `blocklog` contract",
+                "permalink": "/iscp/docs/contract_types/blocklog"
+              },
+              "next": {
+                "title": "How to run a Wasp node on Pollen",
+                "permalink": "/iscp/docs/misc/runwasp"
+              }
+            },
+            {
+              "unversionedId": "contract_types/overview",
+              "id": "contract_types/overview",
+              "isDocsHomePage": false,
+              "title": "Core smart contracts",
+              "description": "The virtual machine or VM of the chain is the component responsible for the",
+              "source": "@site/docs/contract_types/overview.md",
+              "sourceDirName": "contract_types",
+              "slug": "/contract_types/overview",
+              "permalink": "/iscp/docs/contract_types/overview",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/contract_types/overview.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "ISCP accounts. Controlling token balances",
+                "permalink": "/iscp/docs/tutorial/12"
+              },
+              "next": {
+                "title": "The `root` contract",
+                "permalink": "/iscp/docs/contract_types/root"
+              }
+            },
+            {
+              "unversionedId": "contract_types/root",
+              "id": "contract_types/root",
+              "isDocsHomePage": false,
+              "title": "The `root` contract",
+              "description": "The root contract is one of the core contracts on each ISCP",
+              "source": "@site/docs/contract_types/root.md",
+              "sourceDirName": "contract_types",
+              "slug": "/contract_types/root",
+              "permalink": "/iscp/docs/contract_types/root",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/contract_types/root.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Core smart contracts",
+                "permalink": "/iscp/docs/contract_types/overview"
+              },
+              "next": {
+                "title": "The `_default` contract",
+                "permalink": "/iscp/docs/contract_types/default"
+              }
+            },
+            {
+              "unversionedId": "contribute",
+              "id": "contribute",
+              "isDocsHomePage": false,
+              "title": "Contributing",
+              "description": "If you want to contribute to this repository, consider posting a bug report, feature request or a pull request.",
+              "source": "@site/docs/contribute.md",
+              "sourceDirName": ".",
+              "slug": "/contribute",
+              "permalink": "/iscp/docs/contribute",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/contribute.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Wasp Publisher",
+                "permalink": "/iscp/docs/misc/publisher"
+              }
+            },
+            {
+              "unversionedId": "in_progress/chains_and_nodes/manage_a_chain",
+              "id": "in_progress/chains_and_nodes/manage_a_chain",
+              "isDocsHomePage": false,
+              "title": "manage_a_chain",
+              "description": "",
+              "source": "@site/docs/in_progress/chains_and_nodes/manage_a_chain.md",
+              "sourceDirName": "in_progress/chains_and_nodes",
+              "slug": "/in_progress/chains_and_nodes/manage_a_chain",
+              "permalink": "/iscp/docs/in_progress/chains_and_nodes/manage_a_chain",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/chains_and_nodes/manage_a_chain.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/chains_and_nodes/run_a_node",
+              "id": "in_progress/chains_and_nodes/run_a_node",
+              "isDocsHomePage": false,
+              "title": "run_a_node",
+              "description": "",
+              "source": "@site/docs/in_progress/chains_and_nodes/run_a_node.md",
+              "sourceDirName": "in_progress/chains_and_nodes",
+              "slug": "/in_progress/chains_and_nodes/run_a_node",
+              "permalink": "/iscp/docs/in_progress/chains_and_nodes/run_a_node",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/chains_and_nodes/run_a_node.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/chains_and_nodes/setup_a_chain",
+              "id": "in_progress/chains_and_nodes/setup_a_chain",
+              "isDocsHomePage": false,
+              "title": "setup_a_chain",
+              "description": "",
+              "source": "@site/docs/in_progress/chains_and_nodes/setup_a_chain.md",
+              "sourceDirName": "in_progress/chains_and_nodes",
+              "slug": "/in_progress/chains_and_nodes/setup_a_chain",
+              "permalink": "/iscp/docs/in_progress/chains_and_nodes/setup_a_chain",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/chains_and_nodes/setup_a_chain.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/core_concepts/accounts/how_accounts_work",
+              "id": "in_progress/core_concepts/accounts/how_accounts_work",
+              "isDocsHomePage": false,
+              "title": "how_accounts_work",
+              "description": "",
+              "source": "@site/docs/in_progress/core_concepts/accounts/how_accounts_work.md",
+              "sourceDirName": "in_progress/core_concepts/accounts",
+              "slug": "/in_progress/core_concepts/accounts/how_accounts_work",
+              "permalink": "/iscp/docs/in_progress/core_concepts/accounts/how_accounts_work",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/accounts/how_accounts_work.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/core_concepts/accounts/how_to_deposit",
+              "id": "in_progress/core_concepts/accounts/how_to_deposit",
+              "isDocsHomePage": false,
+              "title": "how_to_deposit",
+              "description": "",
+              "source": "@site/docs/in_progress/core_concepts/accounts/how_to_deposit.md",
+              "sourceDirName": "in_progress/core_concepts/accounts",
+              "slug": "/in_progress/core_concepts/accounts/how_to_deposit",
+              "permalink": "/iscp/docs/in_progress/core_concepts/accounts/how_to_deposit",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/accounts/how_to_deposit.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/core_concepts/accounts/how_to_withdraw",
+              "id": "in_progress/core_concepts/accounts/how_to_withdraw",
+              "isDocsHomePage": false,
+              "title": "how_to_withdraw",
+              "description": "",
+              "source": "@site/docs/in_progress/core_concepts/accounts/how_to_withdraw.md",
+              "sourceDirName": "in_progress/core_concepts/accounts",
+              "slug": "/in_progress/core_concepts/accounts/how_to_withdraw",
+              "permalink": "/iscp/docs/in_progress/core_concepts/accounts/how_to_withdraw",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/accounts/how_to_withdraw.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/core_concepts/architecture_overview",
+              "id": "in_progress/core_concepts/architecture_overview",
+              "isDocsHomePage": false,
+              "title": "architecture_overview",
+              "description": "",
+              "source": "@site/docs/in_progress/core_concepts/architecture_overview.md",
+              "sourceDirName": "in_progress/core_concepts",
+              "slug": "/in_progress/core_concepts/architecture_overview",
+              "permalink": "/iscp/docs/in_progress/core_concepts/architecture_overview",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/architecture_overview.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/core_concepts/committees_validators_consensus",
+              "id": "in_progress/core_concepts/committees_validators_consensus",
+              "isDocsHomePage": false,
+              "title": "committees_validators_consensus",
+              "description": "",
+              "source": "@site/docs/in_progress/core_concepts/committees_validators_consensus.md",
+              "sourceDirName": "in_progress/core_concepts",
+              "slug": "/in_progress/core_concepts/committees_validators_consensus",
+              "permalink": "/iscp/docs/in_progress/core_concepts/committees_validators_consensus",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/committees_validators_consensus.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/core_concepts/interacting/off-ledger_requests",
+              "id": "in_progress/core_concepts/interacting/off-ledger_requests",
+              "isDocsHomePage": false,
+              "title": "off-ledger_requests",
+              "description": "",
+              "source": "@site/docs/in_progress/core_concepts/interacting/off-ledger_requests.md",
+              "sourceDirName": "in_progress/core_concepts/interacting",
+              "slug": "/in_progress/core_concepts/interacting/off-ledger_requests",
+              "permalink": "/iscp/docs/in_progress/core_concepts/interacting/off-ledger_requests",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/interacting/off-ledger_requests.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/core_concepts/interacting/on-ledger_requests",
+              "id": "in_progress/core_concepts/interacting/on-ledger_requests",
+              "isDocsHomePage": false,
+              "title": "on-ledger_requests",
+              "description": "",
+              "source": "@site/docs/in_progress/core_concepts/interacting/on-ledger_requests.md",
+              "sourceDirName": "in_progress/core_concepts/interacting",
+              "slug": "/in_progress/core_concepts/interacting/on-ledger_requests",
+              "permalink": "/iscp/docs/in_progress/core_concepts/interacting/on-ledger_requests",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/interacting/on-ledger_requests.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/core_concepts/state_transitions_anchoring",
+              "id": "in_progress/core_concepts/state_transitions_anchoring",
+              "isDocsHomePage": false,
+              "title": "state_transitions_anchoring",
+              "description": "",
+              "source": "@site/docs/in_progress/core_concepts/state_transitions_anchoring.md",
+              "sourceDirName": "in_progress/core_concepts",
+              "slug": "/in_progress/core_concepts/state_transitions_anchoring",
+              "permalink": "/iscp/docs/in_progress/core_concepts/state_transitions_anchoring",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/state_transitions_anchoring.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/core_concepts/vms_and_languages/agnostic_iscp",
+              "id": "in_progress/core_concepts/vms_and_languages/agnostic_iscp",
+              "isDocsHomePage": false,
+              "title": "agnostic_iscp",
+              "description": "",
+              "source": "@site/docs/in_progress/core_concepts/vms_and_languages/agnostic_iscp.md",
+              "sourceDirName": "in_progress/core_concepts/vms_and_languages",
+              "slug": "/in_progress/core_concepts/vms_and_languages/agnostic_iscp",
+              "permalink": "/iscp/docs/in_progress/core_concepts/vms_and_languages/agnostic_iscp",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/vms_and_languages/agnostic_iscp.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/core_concepts/vms_and_languages/rust_wasm",
+              "id": "in_progress/core_concepts/vms_and_languages/rust_wasm",
+              "isDocsHomePage": false,
+              "title": "rust_wasm",
+              "description": "",
+              "source": "@site/docs/in_progress/core_concepts/vms_and_languages/rust_wasm.md",
+              "sourceDirName": "in_progress/core_concepts/vms_and_languages",
+              "slug": "/in_progress/core_concepts/vms_and_languages/rust_wasm",
+              "permalink": "/iscp/docs/in_progress/core_concepts/vms_and_languages/rust_wasm",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/vms_and_languages/rust_wasm.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/core_concepts/what_are_smart_contracts",
+              "id": "in_progress/core_concepts/what_are_smart_contracts",
+              "isDocsHomePage": false,
+              "title": "what_are_smart_contracts",
+              "description": "",
+              "source": "@site/docs/in_progress/core_concepts/what_are_smart_contracts.md",
+              "sourceDirName": "in_progress/core_concepts",
+              "slug": "/in_progress/core_concepts/what_are_smart_contracts",
+              "permalink": "/iscp/docs/in_progress/core_concepts/what_are_smart_contracts",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/what_are_smart_contracts.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/core_concepts/what_is_iscp",
+              "id": "in_progress/core_concepts/what_is_iscp",
+              "isDocsHomePage": false,
+              "title": "what_is_iscp",
+              "description": "",
+              "source": "@site/docs/in_progress/core_concepts/what_is_iscp.md",
+              "sourceDirName": "in_progress/core_concepts",
+              "slug": "/in_progress/core_concepts/what_is_iscp",
+              "permalink": "/iscp/docs/in_progress/core_concepts/what_is_iscp",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/what_is_iscp.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/evm/contract_example",
+              "id": "in_progress/evm/contract_example",
+              "isDocsHomePage": false,
+              "title": "contract_example",
+              "description": "",
+              "source": "@site/docs/in_progress/evm/contract_example.md",
+              "sourceDirName": "in_progress/evm",
+              "slug": "/in_progress/evm/contract_example",
+              "permalink": "/iscp/docs/in_progress/evm/contract_example",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/evm/contract_example.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/evm/deploy_a_contract",
+              "id": "in_progress/evm/deploy_a_contract",
+              "isDocsHomePage": false,
+              "title": "deploy_a_contract",
+              "description": "",
+              "source": "@site/docs/in_progress/evm/deploy_a_contract.md",
+              "sourceDirName": "in_progress/evm",
+              "slug": "/in_progress/evm/deploy_a_contract",
+              "permalink": "/iscp/docs/in_progress/evm/deploy_a_contract",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/evm/deploy_a_contract.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/evm/external_references",
+              "id": "in_progress/evm/external_references",
+              "isDocsHomePage": false,
+              "title": "external_references",
+              "description": "",
+              "source": "@site/docs/in_progress/evm/external_references.md",
+              "sourceDirName": "in_progress/evm",
+              "slug": "/in_progress/evm/external_references",
+              "permalink": "/iscp/docs/in_progress/evm/external_references",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/evm/external_references.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/evm/introduction",
+              "id": "in_progress/evm/introduction",
+              "isDocsHomePage": false,
+              "title": "introduction",
+              "description": "",
+              "source": "@site/docs/in_progress/evm/introduction.md",
+              "sourceDirName": "in_progress/evm",
+              "slug": "/in_progress/evm/introduction",
+              "permalink": "/iscp/docs/in_progress/evm/introduction",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/evm/introduction.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/evm/limitations",
+              "id": "in_progress/evm/limitations",
+              "isDocsHomePage": false,
+              "title": "limitations",
+              "description": "",
+              "source": "@site/docs/in_progress/evm/limitations.md",
+              "sourceDirName": "in_progress/evm",
+              "slug": "/in_progress/evm/limitations",
+              "permalink": "/iscp/docs/in_progress/evm/limitations",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/evm/limitations.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/evm/tools/cli",
+              "id": "in_progress/evm/tools/cli",
+              "isDocsHomePage": false,
+              "title": "cli",
+              "description": "",
+              "source": "@site/docs/in_progress/evm/tools/cli.md",
+              "sourceDirName": "in_progress/evm/tools",
+              "slug": "/in_progress/evm/tools/cli",
+              "permalink": "/iscp/docs/in_progress/evm/tools/cli",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/evm/tools/cli.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/evm/tools/hardhat",
+              "id": "in_progress/evm/tools/hardhat",
+              "isDocsHomePage": false,
+              "title": "hardhat",
+              "description": "",
+              "source": "@site/docs/in_progress/evm/tools/hardhat.md",
+              "sourceDirName": "in_progress/evm/tools",
+              "slug": "/in_progress/evm/tools/hardhat",
+              "permalink": "/iscp/docs/in_progress/evm/tools/hardhat",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/evm/tools/hardhat.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/evm/tools/metamask",
+              "id": "in_progress/evm/tools/metamask",
+              "isDocsHomePage": false,
+              "title": "metamask",
+              "description": "",
+              "source": "@site/docs/in_progress/evm/tools/metamask.md",
+              "sourceDirName": "in_progress/evm/tools",
+              "slug": "/in_progress/evm/tools/metamask",
+              "permalink": "/iscp/docs/in_progress/evm/tools/metamask",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/evm/tools/metamask.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/evm/tools/redux",
+              "id": "in_progress/evm/tools/redux",
+              "isDocsHomePage": false,
+              "title": "redux",
+              "description": "",
+              "source": "@site/docs/in_progress/evm/tools/redux.md",
+              "sourceDirName": "in_progress/evm/tools",
+              "slug": "/in_progress/evm/tools/redux",
+              "permalink": "/iscp/docs/in_progress/evm/tools/redux",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/evm/tools/redux.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/evm/tools/web3_ethers.js",
+              "id": "in_progress/evm/tools/web3_ethers.js",
+              "isDocsHomePage": false,
+              "title": "web3_ethers.js",
+              "description": "",
+              "source": "@site/docs/in_progress/evm/tools/web3_ethers.js.md",
+              "sourceDirName": "in_progress/evm/tools",
+              "slug": "/in_progress/evm/tools/web3_ethers.js",
+              "permalink": "/iscp/docs/in_progress/evm/tools/web3_ethers.js",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/evm/tools/web3_ethers.js.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/evm/tutorials/tutorial_1",
+              "id": "in_progress/evm/tutorials/tutorial_1",
+              "isDocsHomePage": false,
+              "title": "tutorial_1",
+              "description": "",
+              "source": "@site/docs/in_progress/evm/tutorials/tutorial_1.md",
+              "sourceDirName": "in_progress/evm/tutorials",
+              "slug": "/in_progress/evm/tutorials/tutorial_1",
+              "permalink": "/iscp/docs/in_progress/evm/tutorials/tutorial_1",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/evm/tutorials/tutorial_1.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/new/chain_components",
+              "id": "in_progress/new/chain_components",
+              "isDocsHomePage": false,
+              "title": "chain_components",
+              "description": "DRAFT. IN PROGRESS",
+              "source": "@site/docs/in_progress/new/chain_components.md",
+              "sourceDirName": "in_progress/new",
+              "slug": "/in_progress/new/chain_components",
+              "permalink": "/iscp/docs/in_progress/new/chain_components",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/new/chain_components.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/rust_wasm_contracts/contract_example",
+              "id": "in_progress/rust_wasm_contracts/contract_example",
+              "isDocsHomePage": false,
+              "title": "contract_example",
+              "description": "",
+              "source": "@site/docs/in_progress/rust_wasm_contracts/contract_example.md",
+              "sourceDirName": "in_progress/rust_wasm_contracts",
+              "slug": "/in_progress/rust_wasm_contracts/contract_example",
+              "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/contract_example",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/contract_example.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/rust_wasm_contracts/deploy_a_contract",
+              "id": "in_progress/rust_wasm_contracts/deploy_a_contract",
+              "isDocsHomePage": false,
+              "title": "deploy_a_contract",
+              "description": "",
+              "source": "@site/docs/in_progress/rust_wasm_contracts/deploy_a_contract.md",
+              "sourceDirName": "in_progress/rust_wasm_contracts",
+              "slug": "/in_progress/rust_wasm_contracts/deploy_a_contract",
+              "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/deploy_a_contract",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/deploy_a_contract.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/rust_wasm_contracts/introduction",
+              "id": "in_progress/rust_wasm_contracts/introduction",
+              "isDocsHomePage": false,
+              "title": "introduction",
+              "description": "",
+              "source": "@site/docs/in_progress/rust_wasm_contracts/introduction.md",
+              "sourceDirName": "in_progress/rust_wasm_contracts",
+              "slug": "/in_progress/rust_wasm_contracts/introduction",
+              "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/introduction",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/introduction.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/rust_wasm_contracts/reference",
+              "id": "in_progress/rust_wasm_contracts/reference",
+              "isDocsHomePage": false,
+              "title": "reference",
+              "description": "",
+              "source": "@site/docs/in_progress/rust_wasm_contracts/reference.md",
+              "sourceDirName": "in_progress/rust_wasm_contracts",
+              "slug": "/in_progress/rust_wasm_contracts/reference",
+              "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/reference",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/reference.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/rust_wasm_contracts/tools/cli",
+              "id": "in_progress/rust_wasm_contracts/tools/cli",
+              "isDocsHomePage": false,
+              "title": "cli",
+              "description": "",
+              "source": "@site/docs/in_progress/rust_wasm_contracts/tools/cli.md",
+              "sourceDirName": "in_progress/rust_wasm_contracts/tools",
+              "slug": "/in_progress/rust_wasm_contracts/tools/cli",
+              "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/tools/cli",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/tools/cli.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/rust_wasm_contracts/tools/scaffolding",
+              "id": "in_progress/rust_wasm_contracts/tools/scaffolding",
+              "isDocsHomePage": false,
+              "title": "scaffolding",
+              "description": "",
+              "source": "@site/docs/in_progress/rust_wasm_contracts/tools/scaffolding.md",
+              "sourceDirName": "in_progress/rust_wasm_contracts/tools",
+              "slug": "/in_progress/rust_wasm_contracts/tools/scaffolding",
+              "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/tools/scaffolding",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/tools/scaffolding.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/rust_wasm_contracts/tools/solo",
+              "id": "in_progress/rust_wasm_contracts/tools/solo",
+              "isDocsHomePage": false,
+              "title": "solo",
+              "description": "",
+              "source": "@site/docs/in_progress/rust_wasm_contracts/tools/solo.md",
+              "sourceDirName": "in_progress/rust_wasm_contracts/tools",
+              "slug": "/in_progress/rust_wasm_contracts/tools/solo",
+              "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/tools/solo",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/tools/solo.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/rust_wasm_contracts/tutorials/cross_chain_communication",
+              "id": "in_progress/rust_wasm_contracts/tutorials/cross_chain_communication",
+              "isDocsHomePage": false,
+              "title": "cross_chain_communication",
+              "description": "",
+              "source": "@site/docs/in_progress/rust_wasm_contracts/tutorials/cross_chain_communication.md",
+              "sourceDirName": "in_progress/rust_wasm_contracts/tutorials",
+              "slug": "/in_progress/rust_wasm_contracts/tutorials/cross_chain_communication",
+              "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/tutorials/cross_chain_communication",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/tutorials/cross_chain_communication.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/rust_wasm_contracts/tutorials/hello_world",
+              "id": "in_progress/rust_wasm_contracts/tutorials/hello_world",
+              "isDocsHomePage": false,
+              "title": "hello_world",
+              "description": "",
+              "source": "@site/docs/in_progress/rust_wasm_contracts/tutorials/hello_world.md",
+              "sourceDirName": "in_progress/rust_wasm_contracts/tutorials",
+              "slug": "/in_progress/rust_wasm_contracts/tutorials/hello_world",
+              "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/tutorials/hello_world",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/tutorials/hello_world.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/rust_wasm_contracts/tutorials/layer_1_contract",
+              "id": "in_progress/rust_wasm_contracts/tutorials/layer_1_contract",
+              "isDocsHomePage": false,
+              "title": "layer_1_contract",
+              "description": "",
+              "source": "@site/docs/in_progress/rust_wasm_contracts/tutorials/layer_1_contract.md",
+              "sourceDirName": "in_progress/rust_wasm_contracts/tutorials",
+              "slug": "/in_progress/rust_wasm_contracts/tutorials/layer_1_contract",
+              "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/tutorials/layer_1_contract",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/tutorials/layer_1_contract.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/rust_wasm_contracts/tutorials/request",
+              "id": "in_progress/rust_wasm_contracts/tutorials/request",
+              "isDocsHomePage": false,
+              "title": "request",
+              "description": "",
+              "source": "@site/docs/in_progress/rust_wasm_contracts/tutorials/request.md",
+              "sourceDirName": "in_progress/rust_wasm_contracts/tutorials",
+              "slug": "/in_progress/rust_wasm_contracts/tutorials/request",
+              "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/tutorials/request",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/tutorials/request.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/rust_wasm_contracts/tutorials/view",
+              "id": "in_progress/rust_wasm_contracts/tutorials/view",
+              "isDocsHomePage": false,
+              "title": "view",
+              "description": "",
+              "source": "@site/docs/in_progress/rust_wasm_contracts/tutorials/view.md",
+              "sourceDirName": "in_progress/rust_wasm_contracts/tutorials",
+              "slug": "/in_progress/rust_wasm_contracts/tutorials/view",
+              "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/tutorials/view",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/tutorials/view.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/todo/deploy",
+              "id": "in_progress/todo/deploy",
+              "isDocsHomePage": false,
+              "title": "deploy",
+              "description": "Obsolete. To be adjusted to the new version",
+              "source": "@site/docs/in_progress/todo/deploy.md",
+              "sourceDirName": "in_progress/todo",
+              "slug": "/in_progress/todo/deploy",
+              "permalink": "/iscp/docs/in_progress/todo/deploy",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/todo/deploy.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/todo/dwf",
+              "id": "in_progress/todo/dwf",
+              "isDocsHomePage": false,
+              "title": "dwf",
+              "description": "Obsolete. To be adjusted to the new version",
+              "source": "@site/docs/in_progress/todo/dwf.md",
+              "sourceDirName": "in_progress/todo",
+              "slug": "/in_progress/todo/dwf",
+              "permalink": "/iscp/docs/in_progress/todo/dwf",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/todo/dwf.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "in_progress/todo/tr-fa",
+              "id": "in_progress/todo/tr-fa",
+              "isDocsHomePage": false,
+              "title": "tr-fa",
+              "description": "Obsolete. To be adjusted to the new version",
+              "source": "@site/docs/in_progress/todo/tr-fa.md",
+              "sourceDirName": "in_progress/todo",
+              "slug": "/in_progress/todo/tr-fa",
+              "permalink": "/iscp/docs/in_progress/todo/tr-fa",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/todo/tr-fa.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "misc/accounts",
+              "id": "misc/accounts",
+              "isDocsHomePage": false,
+              "title": "On-chain accounts",
+              "description": "ISCP introduces the concept of on-chain account. Each chain maintains a list",
+              "source": "@site/docs/misc/accounts.md",
+              "sourceDirName": "misc",
+              "slug": "/misc/accounts",
+              "permalink": "/iscp/docs/misc/accounts",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/misc/accounts.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Core types",
+                "permalink": "/iscp/docs/misc/coretypes"
+              },
+              "next": {
+                "title": "Wasp Publisher",
+                "permalink": "/iscp/docs/misc/publisher"
+              }
+            },
+            {
+              "unversionedId": "misc/coretypes",
+              "id": "misc/coretypes",
+              "isDocsHomePage": false,
+              "title": "Core types",
+              "description": "All core types used in the Wasp code are defined in the",
+              "source": "@site/docs/misc/coretypes.md",
+              "sourceDirName": "misc",
+              "slug": "/misc/coretypes",
+              "permalink": "/iscp/docs/misc/coretypes",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/misc/coretypes.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "UTXO Ledger and Digital Assets",
+                "permalink": "/iscp/docs/misc/utxo"
+              },
+              "next": {
+                "title": "On-chain accounts",
+                "permalink": "/iscp/docs/misc/accounts"
+              }
+            },
+            {
+              "unversionedId": "misc/deploy",
+              "id": "misc/deploy",
+              "isDocsHomePage": false,
+              "title": "Using `wasp-cli` to deploy a chain and a contract",
+              "description": "Once you have one or more Wasp nodes you can use the",
+              "source": "@site/docs/misc/deploy.md",
+              "sourceDirName": "misc",
+              "slug": "/misc/deploy",
+              "permalink": "/iscp/docs/misc/deploy",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/misc/deploy.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "How to run a Wasp node on Pollen",
+                "permalink": "/iscp/docs/misc/runwasp"
+              },
+              "next": {
+                "title": "Installation (TBD)",
+                "permalink": "/iscp/docs/misc/install"
+              }
+            },
+            {
+              "unversionedId": "misc/docker",
+              "id": "misc/docker",
+              "isDocsHomePage": false,
+              "title": "Docker",
+              "description": "This page describes the configuration of the Wasp node in combination with Docker.",
+              "source": "@site/docs/misc/docker.md",
+              "sourceDirName": "misc",
+              "slug": "/misc/docker",
+              "permalink": "/iscp/docs/misc/docker",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/misc/docker.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "misc/install",
+              "id": "misc/install",
+              "isDocsHomePage": false,
+              "title": "Installation (TBD)",
+              "description": "Solo tests are written in Go. The tutorial assumes you are familiar with and",
+              "source": "@site/docs/misc/install.md",
+              "sourceDirName": "misc",
+              "slug": "/misc/install",
+              "permalink": "/iscp/docs/misc/install",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/misc/install.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Using `wasp-cli` to deploy a chain and a contract",
+                "permalink": "/iscp/docs/misc/deploy"
+              },
+              "next": {
+                "title": "General scheme of invoking an entry point",
+                "permalink": "/iscp/docs/misc/invoking"
+              }
+            },
+            {
+              "unversionedId": "misc/invoking",
+              "id": "misc/invoking",
+              "isDocsHomePage": false,
+              "title": "General scheme of invoking an entry point",
+              "description": "An entry point is a function provided by the smart contract. By “invoking” we",
+              "source": "@site/docs/misc/invoking.md",
+              "sourceDirName": "misc",
+              "slug": "/misc/invoking",
+              "permalink": "/iscp/docs/misc/invoking",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/misc/invoking.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Installation (TBD)",
+                "permalink": "/iscp/docs/misc/install"
+              },
+              "next": {
+                "title": "UTXO Ledger and Digital Assets",
+                "permalink": "/iscp/docs/misc/utxo"
+              }
+            },
+            {
+              "unversionedId": "misc/publisher",
+              "id": "misc/publisher",
+              "isDocsHomePage": false,
+              "title": "Wasp Publisher",
+              "description": "Each Wasp node publishes important events via a Nanomsg message stream",
+              "source": "@site/docs/misc/publisher.md",
+              "sourceDirName": "misc",
+              "slug": "/misc/publisher",
+              "permalink": "/iscp/docs/misc/publisher",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/misc/publisher.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "On-chain accounts",
+                "permalink": "/iscp/docs/misc/accounts"
+              },
+              "next": {
+                "title": "Contributing",
+                "permalink": "/iscp/docs/contribute"
+              }
+            },
+            {
+              "unversionedId": "misc/runwasp",
+              "id": "misc/runwasp",
+              "isDocsHomePage": false,
+              "title": "How to run a Wasp node on Pollen",
+              "description": "Here we describe step by step instructions how to run Wasp nodes on the Pollen network.",
+              "source": "@site/docs/misc/runwasp.md",
+              "sourceDirName": "misc",
+              "slug": "/misc/runwasp",
+              "permalink": "/iscp/docs/misc/runwasp",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/misc/runwasp.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "The `eventlog` contract",
+                "permalink": "/iscp/docs/contract_types/eventlog"
+              },
+              "next": {
+                "title": "Using `wasp-cli` to deploy a chain and a contract",
+                "permalink": "/iscp/docs/misc/deploy"
+              }
+            },
+            {
+              "unversionedId": "misc/utxo",
+              "id": "misc/utxo",
+              "isDocsHomePage": false,
+              "title": "UTXO Ledger and Digital Assets",
+              "description": "(we use tokens and digital assets as synonyms)",
+              "source": "@site/docs/misc/utxo.md",
+              "sourceDirName": "misc",
+              "slug": "/misc/utxo",
+              "permalink": "/iscp/docs/misc/utxo",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/misc/utxo.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "General scheme of invoking an entry point",
+                "permalink": "/iscp/docs/misc/invoking"
+              },
+              "next": {
+                "title": "Core types",
+                "permalink": "/iscp/docs/misc/coretypes"
+              }
+            },
+            {
+              "unversionedId": "profiling",
+              "id": "profiling",
+              "isDocsHomePage": false,
+              "title": "Profiling",
+              "description": "Profiling is disabled by default.",
+              "source": "@site/docs/profiling.md",
+              "sourceDirName": ".",
+              "slug": "/profiling",
+              "permalink": "/iscp/docs/profiling",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/profiling.md",
+              "version": "current",
+              "frontMatter": {}
+            },
+            {
+              "unversionedId": "tutorial/01",
+              "id": "tutorial/01",
+              "isDocsHomePage": false,
+              "title": "The Solo package",
+              "description": "Solo is a Go package to write tests for IOTA smart contracts. It allows the",
+              "source": "@site/docs/tutorial/01.md",
+              "sourceDirName": "tutorial",
+              "slug": "/tutorial/01",
+              "permalink": "/iscp/docs/tutorial/01",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/01.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Exploring IOTA Smart Contracts",
+                "permalink": "/iscp/docs/tutorial/readme"
+              },
+              "next": {
+                "title": "Tokens and the UTXO Ledger",
+                "permalink": "/iscp/docs/tutorial/02"
+              }
+            },
+            {
+              "unversionedId": "tutorial/02",
+              "id": "tutorial/02",
+              "isDocsHomePage": false,
+              "title": "Tokens and the UTXO Ledger",
+              "description": "The Pollen release of the Goshimmer node implements the IOTA UTXO Ledger, a",
+              "source": "@site/docs/tutorial/02.md",
+              "sourceDirName": "tutorial",
+              "slug": "/tutorial/02",
+              "permalink": "/iscp/docs/tutorial/02",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/02.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "The Solo package",
+                "permalink": "/iscp/docs/tutorial/01"
+              },
+              "next": {
+                "title": "Creating a Chain; Core Contracts",
+                "permalink": "/iscp/docs/tutorial/03"
+              }
+            },
+            {
+              "unversionedId": "tutorial/03",
+              "id": "tutorial/03",
+              "isDocsHomePage": false,
+              "title": "Creating a Chain; Core Contracts",
+              "description": "In a test we can deploy one or several chains, deploy smart contracts on them,",
+              "source": "@site/docs/tutorial/03.md",
+              "sourceDirName": "tutorial",
+              "slug": "/tutorial/03",
+              "permalink": "/iscp/docs/tutorial/03",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/03.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Tokens and the UTXO Ledger",
+                "permalink": "/iscp/docs/tutorial/02"
+              },
+              "next": {
+                "title": "Deploying and running a Rust smart contract",
+                "permalink": "/iscp/docs/tutorial/04"
+              }
+            },
+            {
+              "unversionedId": "tutorial/04",
+              "id": "tutorial/04",
+              "isDocsHomePage": false,
+              "title": "Deploying and running a Rust smart contract",
+              "description": "The following Solo test deploys a wasm contract on the chain. Then it",
+              "source": "@site/docs/tutorial/04.md",
+              "sourceDirName": "tutorial",
+              "slug": "/tutorial/04",
+              "permalink": "/iscp/docs/tutorial/04",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/04.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Creating a Chain; Core Contracts",
+                "permalink": "/iscp/docs/tutorial/03"
+              },
+              "next": {
+                "title": "Structure of the smart contract",
+                "permalink": "/iscp/docs/tutorial/05"
+              }
+            },
+            {
+              "unversionedId": "tutorial/05",
+              "id": "tutorial/05",
+              "isDocsHomePage": false,
+              "title": "Structure of the smart contract",
+              "description": "Smart contracts are programs, immutably stored in the chain. In the previous",
+              "source": "@site/docs/tutorial/05.md",
+              "sourceDirName": "tutorial",
+              "slug": "/tutorial/05",
+              "permalink": "/iscp/docs/tutorial/05",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/05.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Deploying and running a Rust smart contract",
+                "permalink": "/iscp/docs/tutorial/04"
+              },
+              "next": {
+                "title": "Invoking smart contracts. Sending a request",
+                "permalink": "/iscp/docs/tutorial/06"
+              }
+            },
+            {
+              "unversionedId": "tutorial/06",
+              "id": "tutorial/06",
+              "isDocsHomePage": false,
+              "title": "Invoking smart contracts. Sending a request",
+              "description": "The statements",
+              "source": "@site/docs/tutorial/06.md",
+              "sourceDirName": "tutorial",
+              "slug": "/tutorial/06",
+              "permalink": "/iscp/docs/tutorial/06",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/06.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Structure of the smart contract",
+                "permalink": "/iscp/docs/tutorial/05"
+              },
+              "next": {
+                "title": "Invoking smart contracts. Calling a view",
+                "permalink": "/iscp/docs/tutorial/07"
+              }
+            },
+            {
+              "unversionedId": "tutorial/07",
+              "id": "tutorial/07",
+              "isDocsHomePage": false,
+              "title": "Invoking smart contracts. Calling a view",
+              "description": "The statement in the above example calls the view entry point getString of the",
+              "source": "@site/docs/tutorial/07.md",
+              "sourceDirName": "tutorial",
+              "slug": "/tutorial/07",
+              "permalink": "/iscp/docs/tutorial/07",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/07.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Invoking smart contracts. Sending a request",
+                "permalink": "/iscp/docs/tutorial/06"
+              },
+              "next": {
+                "title": "Accounts: deposit and withdraw tokens",
+                "permalink": "/iscp/docs/tutorial/08"
+              }
+            },
+            {
+              "unversionedId": "tutorial/08",
+              "id": "tutorial/08",
+              "isDocsHomePage": false,
+              "title": "Accounts: deposit and withdraw tokens",
+              "description": "Multiple chains in ISCP adds another dimension to the ledger: smart contracts",
+              "source": "@site/docs/tutorial/08.md",
+              "sourceDirName": "tutorial",
+              "slug": "/tutorial/08",
+              "permalink": "/iscp/docs/tutorial/08",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/08.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Invoking smart contracts. Calling a view",
+                "permalink": "/iscp/docs/tutorial/07"
+              },
+              "next": {
+                "title": "Sending tokens to the smart contract",
+                "permalink": "/iscp/docs/tutorial/09"
+              }
+            },
+            {
+              "unversionedId": "tutorial/09",
+              "id": "tutorial/09",
+              "isDocsHomePage": false,
+              "title": "Sending tokens to the smart contract",
+              "description": "Let's send some tokens to the smart contract. The following example deploys the",
+              "source": "@site/docs/tutorial/09.md",
+              "sourceDirName": "tutorial",
+              "slug": "/tutorial/09",
+              "permalink": "/iscp/docs/tutorial/09",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/09.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Accounts: deposit and withdraw tokens",
+                "permalink": "/iscp/docs/tutorial/08"
+              },
+              "next": {
+                "title": "Return of tokens in case of failure",
+                "permalink": "/iscp/docs/tutorial/10"
+              }
+            },
+            {
+              "unversionedId": "tutorial/10",
+              "id": "tutorial/10",
+              "isDocsHomePage": false,
+              "title": "Return of tokens in case of failure",
+              "description": "Natural question: what if I attach tokens to the request, send it to the smart",
+              "source": "@site/docs/tutorial/10.md",
+              "sourceDirName": "tutorial",
+              "slug": "/tutorial/10",
+              "permalink": "/iscp/docs/tutorial/10",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/10.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Sending tokens to the smart contract",
+                "permalink": "/iscp/docs/tutorial/09"
+              },
+              "next": {
+                "title": "Sending tokens from smart contract to address",
+                "permalink": "/iscp/docs/tutorial/11"
+              }
+            },
+            {
+              "unversionedId": "tutorial/11",
+              "id": "tutorial/11",
+              "isDocsHomePage": false,
+              "title": "Sending tokens from smart contract to address",
+              "description": "The programmer of the example smart contract implemented the entry point",
+              "source": "@site/docs/tutorial/11.md",
+              "sourceDirName": "tutorial",
+              "slug": "/tutorial/11",
+              "permalink": "/iscp/docs/tutorial/11",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/11.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Return of tokens in case of failure",
+                "permalink": "/iscp/docs/tutorial/10"
+              },
+              "next": {
+                "title": "ISCP accounts. Controlling token balances",
+                "permalink": "/iscp/docs/tutorial/12"
+              }
+            },
+            {
+              "unversionedId": "tutorial/12",
+              "id": "tutorial/12",
+              "isDocsHomePage": false,
+              "title": "ISCP accounts. Controlling token balances",
+              "description": "ISCP provides secure, trustless transfers of digitized assets:",
+              "source": "@site/docs/tutorial/12.md",
+              "sourceDirName": "tutorial",
+              "slug": "/tutorial/12",
+              "permalink": "/iscp/docs/tutorial/12",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/12.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Sending tokens from smart contract to address",
+                "permalink": "/iscp/docs/tutorial/11"
+              },
+              "next": {
+                "title": "Core smart contracts",
+                "permalink": "/iscp/docs/contract_types/overview"
+              }
+            },
+            {
+              "unversionedId": "tutorial/readme",
+              "id": "tutorial/readme",
+              "isDocsHomePage": false,
+              "title": "Exploring IOTA Smart Contracts",
+              "description": "This document is an introductory tutorial of the IOTA Smart Contract Platform",
+              "source": "@site/docs/tutorial/readme.md",
+              "sourceDirName": "tutorial",
+              "slug": "/tutorial/readme",
+              "permalink": "/iscp/docs/tutorial/readme",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/readme.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "previous": {
+                "title": "Welcome to the Wasp",
+                "permalink": "/iscp/docs/welcome"
+              },
+              "next": {
+                "title": "The Solo package",
+                "permalink": "/iscp/docs/tutorial/01"
+              }
+            },
+            {
+              "unversionedId": "welcome",
+              "id": "welcome",
+              "isDocsHomePage": false,
+              "title": "Welcome to the Wasp",
+              "description": "Wasp is a node software developed by the",
+              "source": "@site/docs/welcome.md",
+              "sourceDirName": ".",
+              "slug": "/welcome",
+              "permalink": "/iscp/docs/welcome",
+              "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/welcome.md",
+              "version": "current",
+              "frontMatter": {},
+              "sidebar": "tutorialSidebar",
+              "next": {
+                "title": "Exploring IOTA Smart Contracts",
+                "permalink": "/iscp/docs/tutorial/readme"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "docusaurus-plugin-content-blog": {
+    "default": {
+      "blogPosts": [],
+      "blogListPaginated": [],
+      "blogTags": {},
+      "blogTagsListPath": null
+    }
+  },
+  "docusaurus-plugin-content-pages": {
+    "default": [
+      {
+        "type": "jsx",
+        "permalink": "/iscp/",
+        "source": "@site/src/pages/index.js"
+      }
+    ]
+  },
+  "docusaurus-plugin-debug": {
+    "default": null
+  },
+  "docusaurus-theme-classic": {
+    "default": null
+  }
+}

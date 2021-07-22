@@ -1,0 +1,23 @@
+{
+  "unversionedId": "tutorial/12",
+  "id": "tutorial/12",
+  "isDocsHomePage": false,
+  "title": "ISCP accounts. Controlling token balances",
+  "description": "ISCP provides secure, trustless transfers of digitized assets:",
+  "source": "@site/docs/tutorial/12.md",
+  "sourceDirName": "tutorial",
+  "slug": "/tutorial/12",
+  "permalink": "/iscp/docs/tutorial/12",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/12.md",
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Sending tokens from smart contract to address",
+    "permalink": "/iscp/docs/tutorial/11"
+  },
+  "next": {
+    "title": "Core smart contracts",
+    "permalink": "/iscp/docs/contract_types/overview"
+  }
+}

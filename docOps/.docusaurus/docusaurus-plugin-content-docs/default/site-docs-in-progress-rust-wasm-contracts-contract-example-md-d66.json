@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/rust_wasm_contracts/contract_example",
+  "id": "in_progress/rust_wasm_contracts/contract_example",
+  "isDocsHomePage": false,
+  "title": "contract_example",
+  "description": "",
+  "source": "@site/docs/in_progress/rust_wasm_contracts/contract_example.md",
+  "sourceDirName": "in_progress/rust_wasm_contracts",
+  "slug": "/in_progress/rust_wasm_contracts/contract_example",
+  "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/contract_example",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/contract_example.md",
+  "version": "current",
+  "frontMatter": {}
+}

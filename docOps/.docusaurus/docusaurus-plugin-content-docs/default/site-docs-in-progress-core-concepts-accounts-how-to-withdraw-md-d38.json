@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/core_concepts/accounts/how_to_withdraw",
+  "id": "in_progress/core_concepts/accounts/how_to_withdraw",
+  "isDocsHomePage": false,
+  "title": "how_to_withdraw",
+  "description": "",
+  "source": "@site/docs/in_progress/core_concepts/accounts/how_to_withdraw.md",
+  "sourceDirName": "in_progress/core_concepts/accounts",
+  "slug": "/in_progress/core_concepts/accounts/how_to_withdraw",
+  "permalink": "/iscp/docs/in_progress/core_concepts/accounts/how_to_withdraw",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/core_concepts/accounts/how_to_withdraw.md",
+  "version": "current",
+  "frontMatter": {}
+}

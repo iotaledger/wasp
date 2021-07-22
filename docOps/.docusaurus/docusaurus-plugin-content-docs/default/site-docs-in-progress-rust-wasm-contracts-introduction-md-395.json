@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/rust_wasm_contracts/introduction",
+  "id": "in_progress/rust_wasm_contracts/introduction",
+  "isDocsHomePage": false,
+  "title": "introduction",
+  "description": "",
+  "source": "@site/docs/in_progress/rust_wasm_contracts/introduction.md",
+  "sourceDirName": "in_progress/rust_wasm_contracts",
+  "slug": "/in_progress/rust_wasm_contracts/introduction",
+  "permalink": "/iscp/docs/in_progress/rust_wasm_contracts/introduction",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/rust_wasm_contracts/introduction.md",
+  "version": "current",
+  "frontMatter": {}
+}

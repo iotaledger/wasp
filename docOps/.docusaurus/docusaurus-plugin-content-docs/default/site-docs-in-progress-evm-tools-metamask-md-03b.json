@@ -1,0 +1,14 @@
+{
+  "unversionedId": "in_progress/evm/tools/metamask",
+  "id": "in_progress/evm/tools/metamask",
+  "isDocsHomePage": false,
+  "title": "metamask",
+  "description": "",
+  "source": "@site/docs/in_progress/evm/tools/metamask.md",
+  "sourceDirName": "in_progress/evm/tools",
+  "slug": "/in_progress/evm/tools/metamask",
+  "permalink": "/iscp/docs/in_progress/evm/tools/metamask",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/in_progress/evm/tools/metamask.md",
+  "version": "current",
+  "frontMatter": {}
+}

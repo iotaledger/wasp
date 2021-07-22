@@ -1,0 +1,23 @@
+{
+  "unversionedId": "tutorial/08",
+  "id": "tutorial/08",
+  "isDocsHomePage": false,
+  "title": "Accounts: deposit and withdraw tokens",
+  "description": "Multiple chains in ISCP adds another dimension to the ledger: smart contracts",
+  "source": "@site/docs/tutorial/08.md",
+  "sourceDirName": "tutorial",
+  "slug": "/tutorial/08",
+  "permalink": "/iscp/docs/tutorial/08",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/08.md",
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Invoking smart contracts. Calling a view",
+    "permalink": "/iscp/docs/tutorial/07"
+  },
+  "next": {
+    "title": "Sending tokens to the smart contract",
+    "permalink": "/iscp/docs/tutorial/09"
+  }
+}

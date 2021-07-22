@@ -1,0 +1,23 @@
+{
+  "unversionedId": "tutorial/03",
+  "id": "tutorial/03",
+  "isDocsHomePage": false,
+  "title": "Creating a Chain; Core Contracts",
+  "description": "In a test we can deploy one or several chains, deploy smart contracts on them,",
+  "source": "@site/docs/tutorial/03.md",
+  "sourceDirName": "tutorial",
+  "slug": "/tutorial/03",
+  "permalink": "/iscp/docs/tutorial/03",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/03.md",
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Tokens and the UTXO Ledger",
+    "permalink": "/iscp/docs/tutorial/02"
+  },
+  "next": {
+    "title": "Deploying and running a Rust smart contract",
+    "permalink": "/iscp/docs/tutorial/04"
+  }
+}

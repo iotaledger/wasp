@@ -1,9 +1,15 @@
 package parameters
 
 import (
-	"github.com/iotaledger/wasp/plugins/config"
+	"reflect"
+	"unsafe"
+
+	"github.com/iotaledger/hive.go/configuration"
+	"github.com/knadh/koanf"
 	flag "github.com/spf13/pflag"
 )
+
+var all *configuration.Configuration
 
 const (
 	LoggerLevel             = "logger.level"
@@ -40,9 +46,15 @@ const (
 
 	ProfilingBindAddress = "profiling.bindAddress"
 	ProfilingEnabled     = "profiling.enabled"
+
+	PrometheusBindAddress = "prometheus.bindAddress"
+	PrometheusEnabled     = "prometheus.enabled"
 )
 
-func InitFlags() {
+func Init() *configuration.Configuration {
+	// set the default logger config
+	all = configuration.New()
+
 	flag.String(LoggerLevel, "info", "log level")
 	flag.Bool(LoggerDisableCaller, false, "disable caller info in log")
 	flag.Bool(LoggerDisableStacktrace, false, "disable stack trace in log")
@@ -77,24 +89,51 @@ func InitFlags() {
 
 	flag.String(ProfilingBindAddress, "127.0.0.1:6060", "pprof http server address")
 	flag.Bool(ProfilingEnabled, false, "whether profiling is enabled")
+
+	flag.String(PrometheusBindAddress, "127.0.0.1:2112", "prometheus http server address")
+	flag.Bool(PrometheusEnabled, false, "disable and enable prometheus")
+
+	return all
 }
 
 func GetBool(name string) bool {
-	return config.Node.Bool(name)
+	return all.Bool(name)
 }
 
 func GetString(name string) string {
-	return config.Node.String(name)
+	return all.String(name)
 }
 
 func GetStringSlice(name string) []string {
-	return config.Node.Strings(name)
+	return all.Strings(name)
 }
 
 func GetInt(name string) int {
-	return config.Node.Int(name)
+	return all.Int(name)
 }
 
 func GetStringToString(name string) map[string]string {
-	return config.Node.StringMap(name)
+	return all.StringMap(name)
+}
+
+func Dump() map[string]interface{} {
+	// hack to access private member Node.config
+	rf := reflect.ValueOf(all).Elem().FieldByName("config")
+	rf = reflect.NewAt(rf.Type(), unsafe.Pointer(rf.UnsafeAddr())).Elem()
+	tree := rf.Interface().(*koanf.Koanf).Raw()
+
+	m := map[string]interface{}{}
+	flatten(m, tree, "")
+	return m
+}
+
+func flatten(dst, src map[string]interface{}, path string) {
+	for k, v := range src {
+		switch vt := v.(type) {
+		case map[string]interface{}:
+			flatten(dst, vt, path+k+".")
+		default:
+			dst[path+k] = v
+		}
+	}
 }

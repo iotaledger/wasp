@@ -1,0 +1,14 @@
+{
+  "unversionedId": "misc/docker",
+  "id": "misc/docker",
+  "isDocsHomePage": false,
+  "title": "Docker",
+  "description": "This page describes the configuration of the Wasp node in combination with Docker.",
+  "source": "@site/docs/misc/docker.md",
+  "sourceDirName": "misc",
+  "slug": "/misc/docker",
+  "permalink": "/iscp/docs/misc/docker",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/misc/docker.md",
+  "version": "current",
+  "frontMatter": {}
+}

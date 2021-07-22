@@ -1,0 +1,23 @@
+{
+  "unversionedId": "tutorial/10",
+  "id": "tutorial/10",
+  "isDocsHomePage": false,
+  "title": "Return of tokens in case of failure",
+  "description": "Natural question: what if I attach tokens to the request, send it to the smart",
+  "source": "@site/docs/tutorial/10.md",
+  "sourceDirName": "tutorial",
+  "slug": "/tutorial/10",
+  "permalink": "/iscp/docs/tutorial/10",
+  "editUrl": "https://github.com/iotaledger/chronicle.rs/tree/main/docs/docs/tutorial/10.md",
+  "version": "current",
+  "frontMatter": {},
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Sending tokens to the smart contract",
+    "permalink": "/iscp/docs/tutorial/09"
+  },
+  "next": {
+    "title": "Sending tokens from smart contract to address",
+    "permalink": "/iscp/docs/tutorial/11"
+  }
+}
