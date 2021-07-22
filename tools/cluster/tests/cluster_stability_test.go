@@ -6,9 +6,21 @@ package tests
 
 import (
 	"testing"
+
+	"github.com/iotaledger/wasp/contracts/native/inccounter"
 )
 
-func initializeStabilityTest(numRequests int, quorum int, clusterSize int) {
+func initializeStabilityTest(t*testing.T, numRequests int, numValidators int, clusterSize int) {
+	
+	progHash := inccounter.Contract.ProgramHash
+	description := "testing with inccounter"
+
+	env := CreateTestEnvironment(t).
+					WithCluster(numValidators, clusterSize).
+					WithDKG().
+					WithDeployChain("chainName").
+					WithDeployContract(incCounterSCName, progHash, description, nil).
+					Build();
 }
 
 func TestOngoingFailureWithoutRecovery(t *testing.T) {
@@ -19,6 +31,9 @@ func TestOngoingFailureWithoutRecovery(t *testing.T) {
 	t.Run("cluster=6,N=4,req=8", func(t *testing.T) {
 		const numRequests = 8
 		const quorum = 3
+		const numValidators = 20
 		const clusterSize = 6
+
+		initializeStabilityTest(t, numRequests, numValidators, clusterSize)
 	})
 }
