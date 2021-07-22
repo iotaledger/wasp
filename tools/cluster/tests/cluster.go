@@ -1,4 +1,4 @@
-package testutil
+package tests
 
 import (
 	"flag"
@@ -19,8 +19,11 @@ var (
 	goShimmerPort            = flag.Int("goshimmer-txport", defaultConfig.Goshimmer.TxStreamPort, "Goshimmer port")
 )
 
+// newCluster starts a new cluster environment for tests.
+// It is a private function because cluster tests cannot be run in parallel,
+// so all cluster tests MUST be in this same package.
 // opt: [n nodes, custom cluster config, modifyNodesConfigFn]
-func NewCluster(t *testing.T, opt ...interface{}) *cluster.Cluster {
+func newCluster(t *testing.T, opt ...interface{}) *cluster.Cluster {
 	if testing.Short() {
 		t.Skip("Skipping cluster test in short mode")
 	}

@@ -7,7 +7,7 @@ import (
 	_ "embed"
 	"net/http"
 
-	peering_pkg "github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/labstack/echo/v4"
 )
 
@@ -37,6 +37,6 @@ func (d *Dashboard) handlePeering(c echo.Context) error {
 
 type PeeringTemplateParams struct {
 	BaseTemplateParams
-	NetworkProvider       peering_pkg.NetworkProvider
-	TrustedNetworkManager peering_pkg.TrustedNetworkManager
+	NetworkProvider       peering.NetworkProvider
+	TrustedNetworkManager peering.TrustedNetworkManager
 }

@@ -288,6 +288,7 @@ func (clu *Cluster) start(dataPath string) error {
 			fmt.Sprintf(":%d", clu.Config.Goshimmer.TxStreamPort),
 			fmt.Sprintf(":%d", clu.Config.Goshimmer.APIPort),
 		)
+		clu.Config.FaucetPoWTarget = 0
 		fmt.Printf("[cluster] started goshimmer node\n")
 	}
 

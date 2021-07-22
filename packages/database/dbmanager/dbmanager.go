@@ -15,6 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
+type ChainKVStoreProvider func(chainID *iscp.ChainID) kvstore.KVStore
+
 type DBManager struct {
 	log           *logger.Logger
 	registryDB    database.DB

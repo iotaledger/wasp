@@ -5,13 +5,14 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 module.exports = {
   title: 'IOTA Smart Contract Protocol',
   tagline: 'IOTA smart contract protocol.',
-  url: 'https://docs.iota.org', // TODO: PROPER URL
-  baseUrl: '/iscp/',
+  url: 'https://iscp.docs.iota.org', 
+  baseUrl: '/',
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'throw',
   favicon: '/img/logo/favicon.ico',
   organizationName: 'iotaledger',
-  projectName: 'iscp',
+  trailingSlash: true,
+  projectName: 'wasp',
   stylesheets: [
     'https://fonts.googleapis.com/css?family=Material+Icons',
   ],
