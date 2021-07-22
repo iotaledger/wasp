@@ -264,7 +264,7 @@ func (ch *Chain) GetStateVariable(contractHname iscp.Hname, key string, nodeInde
 	return cl.StateGet(key)
 }
 
-func (ch *Chain) GetRequestLogRecord(reqID iscp.RequestID, nodeIndex ...int) (*blocklog.RequestReceipt, uint32, uint16, error) {
+func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID, nodeIndex ...int) (*blocklog.RequestReceipt, uint32, uint16, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
 	ret, err := cl.CallView(blocklog.FuncGetRequestReceipt.Name, dict.Dict{blocklog.ParamRequestID: reqID.Bytes()})
 	if err != nil {
@@ -284,7 +284,7 @@ func (ch *Chain) GetRequestLogRecord(reqID iscp.RequestID, nodeIndex ...int) (*b
 	return rec, blockIndex, requestIndex, nil
 }
 
-func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32, nodeIndex ...int) ([]*blocklog.RequestReceipt, error) {
+func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32, nodeIndex ...int) ([]*blocklog.RequestReceipt, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
 	res, err := cl.CallView(blocklog.FuncGetRequestReceiptsForBlock.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(blockIndex),

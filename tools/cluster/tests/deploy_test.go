@@ -83,9 +83,9 @@ func TestDeployContractOnly(t *testing.T) {
 	require.EqualValues(t, "testing contract deployment with inccounter", rec.Description)
 
 	{
-		rec, _, _, err := chain.GetRequestLogRecord(iscp.NewRequestID(tx.ID(), 0))
+		rec, _, _, err := chain.GetRequestReceipt(iscp.NewRequestID(tx.ID(), 0))
 		require.NoError(t, err)
-		require.Empty(t, string(rec.LogData))
+		require.Empty(t, rec.Error)
 	}
 }
 
