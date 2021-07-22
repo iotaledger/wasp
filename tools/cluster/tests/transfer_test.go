@@ -78,8 +78,8 @@ func TestDepositWithdraw(t *testing.T) {
 	chEnv.checkLedger()
 	chEnv.checkBalanceOnChain(myAgentID, ledgerstate.ColorIOTA, 0)
 
-	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo-1, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - 1,
+	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo, map[ledgerstate.Color]uint64{
+		ledgerstate.ColorIOTA: solo.Saldo,
 	}, "myAddress after withdraw") {
 		t.Fail()
 	}
