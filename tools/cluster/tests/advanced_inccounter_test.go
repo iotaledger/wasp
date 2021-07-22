@@ -2,14 +2,11 @@ package tests
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -111,45 +108,6 @@ func TestAccessNodesOnLedger(t *testing.T) {
 		const clusterSize = 15
 		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
-}
-
-var addressIndex uint64 = 1
-
-func createNewClient(t *testing.T, clu1 *cluster.Cluster, chain1 *cluster.Chain) *scclient.SCClient {
-	keyPair, _ := getOrCreateAddress(t, clu1)
-
-	client := chain1.SCClient(iscp.Hn(incCounterSCName), keyPair)
-
-	return client
-}
-
-func getOrCreateAddress(t *testing.T, clu1 *cluster.Cluster) (*ed25519.KeyPair, *ledgerstate.ED25519Address) {
-	const minTokenAmountBeforeRequestingNewFunds uint64 = 1000
-
-	randomAddress := rand.NewSource(time.Now().UnixNano())
-
-	keyPair := wallet.KeyPair(addressIndex)
-	myAddress := ledgerstate.NewED25519Address(keyPair.PublicKey)
-
-	funds, err := clu1.GoshimmerClient().BalanceIOTA(myAddress)
-
-	require.NoError(t, err)
-
-	if funds <= minTokenAmountBeforeRequestingNewFunds {
-		// Requesting new token requires a new address
-
-		addressIndex = rand.New(randomAddress).Uint64()
-		t.Logf("Generating new address: %v", addressIndex)
-
-		keyPair = wallet.KeyPair(addressIndex)
-		myAddress = ledgerstate.NewED25519Address(keyPair.PublicKey)
-
-		err = requestFunds(clu1, myAddress, "myAddress")
-		t.Logf("Funds: %v, addressIndex: %v", funds, addressIndex)
-		require.NoError(t, err)
-	}
-
-	return keyPair, myAddress
 }
 
 func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {

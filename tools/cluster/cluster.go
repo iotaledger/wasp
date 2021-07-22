@@ -32,9 +32,10 @@ import (
 )
 
 type Cluster struct {
-	Name    string
-	Config  *ClusterConfig
-	Started bool
+	Name     string
+	Config   *ClusterConfig
+	Started  bool
+	DataPath string
 
 	goshimmer *mocknode.MockNode
 	waspCmds  []*exec.Cmd
@@ -220,6 +221,9 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 			return err
 		}
 	}
+
+	clu.DataPath = dataPath
+
 	return clu.Config.Save(dataPath)
 }
 
@@ -311,6 +315,47 @@ func (clu *Cluster) start(dataPath string) error {
 	}
 	fmt.Printf("[cluster] started %d Wasp nodes\n", clu.Config.Wasp.NumNodes)
 	return nil
+}
+
+func (clu *Cluster) KillNode(nodeID int) error {
+	if nodeID < len(clu.waspCmds) {
+		process := clu.waspCmds[nodeID]
+
+		if process.ProcessState.Exited() {
+			return fmt.Errorf("[cluster] Wasp node with index %d already dead", nodeID)
+		}
+
+		err := process.Process.Kill()
+
+		if err == nil {
+			clu.waspCmds[nodeID] = nil
+		}
+
+		return err
+	}
+	return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeID)
+}
+
+func (clu *Cluster) RestartNode(nodeID int) error {
+	if nodeID < len(clu.waspCmds) {
+		initOk := make(chan bool, 1)
+
+		cmd, err := clu.startServer("wasp", waspNodeDataPath(clu.DataPath, nodeID), nodeID, initOk)
+		if err != nil {
+			return err
+		}
+
+		select {
+		case <-initOk:
+		case <-time.After(10 * time.Second):
+			return fmt.Errorf("Timeout starting wasp nodes\n") //nolint:revive
+		}
+
+		clu.waspCmds[nodeID] = cmd
+
+		return err
+	}
+	return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeID)
 }
 
 func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<- bool) (*exec.Cmd, error) {
