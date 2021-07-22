@@ -34,7 +34,7 @@
   },
   "peering":{
     "port": 4000,
-    "netid": "0.0.0.0:4000"
+    "netid": "127.0.0.1:4000"
   },
   "nodeconn": {
     "address": "goshimmer:5000"
