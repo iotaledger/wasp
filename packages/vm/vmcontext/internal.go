@@ -120,6 +120,10 @@ func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
 	return blocklog.NewRequestLookupKey(vmctx.virtualState.BlockIndex(), vmctx.requestIndex)
 }
 
+func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
+	return blocklog.NewEventLookupKey(vmctx.virtualState.BlockIndex(), vmctx.requestIndex, vmctx.requestEventIndex)
+}
+
 func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
@@ -138,11 +142,14 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 	}
 }
 
-func (vmctx *VMContext) StoreToEventLog(contract iscp.Hname, data []byte) {
-	// TODO refactor to use blocklog
+func (vmctx *VMContext) MustLogEvent(contract iscp.Hname, msg string) {
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	vmctx.log.Debugf("StoreToEventLog/%s: data: '%s'", contract.String(), string(data))
-	// blocklog.AppendToLog(vmctx.State(), vmctx.virtualState.Timestamp().UnixNano(), contract, data)
+	vmctx.log.Debugf("MustLogEvent/%s: msg: '%s'", contract.String(), msg)
+	err := blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey())
+	if err != nil {
+		vmctx.Panicf("MustLogEvent: %v", err)
+	}
+	vmctx.requestEventIndex++
 }

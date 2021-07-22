@@ -20,6 +20,8 @@ var Processor = Contract.Processor(initialize,
 	FuncGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
 	FuncIsRequestProcessed.WithHandler(viewIsRequestProcessed),
 	FuncControlAddresses.WithHandler(viewControlAddresses),
+	FuncGetEventsForRequest.WithHandler(viewGetEventsForRequest),
+	FuncGetEventsForBlock.WithHandler(viewGetEventsForBlock),
 )
 
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
@@ -137,5 +139,39 @@ func viewControlAddresses(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret.Set(ParamStateControllerAddress, codec.EncodeAddress(rec.StateAddress))
 	ret.Set(ParamGoverningAddress, codec.EncodeAddress(rec.GoverningAddress))
 	ret.Set(ParamBlockIndex, codec.EncodeUint32(rec.SinceBlockIndex))
+	return ret, nil
+}
+
+func viewGetEventsForRequest(ctx iscp.SandboxView) (dict.Dict, error) {
+	params := kvdecoder.New(ctx.Params())
+	requestID := params.MustGetRequestID(ParamRequestID)
+
+	events, err := getRequestEventsIntern(ctx.State(), &requestID)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := dict.New()
+	arr := collections.NewArray16(ret, ParamRequestRecord)
+	for _, event := range events {
+		_ = arr.Push([]byte(event))
+	}
+	return ret, nil
+}
+
+func viewGetEventsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
+	params := kvdecoder.New(ctx.Params())
+	blockIndex := params.MustGetUint32(ParamBlockIndex)
+
+	events, err := getBlockEventsIntern(ctx.State(), blockIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := dict.New()
+	arr := collections.NewArray16(ret, ParamRequestRecord)
+	for _, event := range events {
+		_ = arr.Push([]byte(event))
+	}
 	return ret, nil
 }

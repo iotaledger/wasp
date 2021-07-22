@@ -81,16 +81,22 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestLogRecord, key Reque
 	return nil
 }
 
-// isRequestProcessedIntern does quick lookup to check if it wasn't seen yet
-func isRequestProcessedIntern(partition kv.KVStoreReader, reqid *iscp.RequestID) (bool, error) {
+func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey) error {
+	if err := collections.NewMap(partition, StateVarRequestRecords).SetAt(key.Bytes(), []byte(msg)); err != nil {
+		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+	}
+	return nil
+}
+
+func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.RequestID) RequestLookupKeyList {
 	lookupTable := collections.NewMapReadOnly(partition, StateVarRequestLookupIndex)
-	digest := reqid.LookupDigest()
+	digest := reqID.LookupDigest()
 	seen, err := lookupTable.HasAt(digest[:])
 	if err != nil {
-		return false, err
+		return []RequestLookupKey{}
 	}
 	if !seen {
-		return false, nil
+		return []RequestLookupKey{}
 	}
 	// the lookup record is here, have to check is it is not a collision of digests
 	bin := lookupTable.MustGetAt(digest[:])
@@ -98,38 +104,110 @@ func isRequestProcessedIntern(partition kv.KVStoreReader, reqid *iscp.RequestID)
 	if err != nil {
 		panic("RequestKnown: data conversion error")
 	}
-	records := collections.NewMapReadOnly(partition, StateVarRequestRecords)
-	for i := range lst {
-		seen, err := records.HasAt(lst[i].Bytes())
-		if err != nil {
-			return false, err
-		}
-		if seen {
-			return true, nil
-		}
-	}
-	return false, nil
+	return lst
 }
 
-func getRequestLogRecordsForBlockBin(state kv.KVStoreReader, blockIndex uint32) ([][]byte, bool, error) {
-	if blockIndex == 0 {
-		return nil, true, nil
+// RequestLookupKeyList contains multiple references for record entries with colliding digests, this function returns the correct record for the given requestID
+func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList RequestLookupKeyList, reqID *iscp.RequestID) (*RequestLogRecord, error) {
+	records := collections.NewMapReadOnly(partition, StateVarRequestRecords)
+	for _, lookupKey := range keyList {
+		recBytes, err := records.GetAt(lookupKey.Bytes())
+		if err != nil {
+			return nil, err
+		}
+		rec, err := RequestLogRecordFromBytes(recBytes)
+		if err != nil {
+			return nil, err
+		}
+		if rec.RequestID == *reqID {
+			return rec, nil
+		}
 	}
-	blockInfoBin, found, err := getBlockInfoDataIntern(state, blockIndex)
+	return nil, xerrors.Errorf("couldn't find record for requestID: %s", reqID.Base58())
+}
+
+// isRequestProcessedIntern does quick lookup to check if it wasn't seen yet
+func isRequestProcessedIntern(partition kv.KVStoreReader, reqID *iscp.RequestID) (bool, error) {
+	lst := mustGetLookupKeyListFromReqID(partition, reqID)
+	record, err := getCorrectRecordFromLookupKeyList(partition, lst, reqID)
+	return record != nil, err
+}
+
+func getRequestEventsIntern(partition kv.KVStoreReader, reqID *iscp.RequestID) ([]string, error) {
+	lst := mustGetLookupKeyListFromReqID(partition, reqID)
+	record, err := getCorrectRecordFromLookupKeyList(partition, lst, reqID)
 	if err != nil {
-		return nil, false, err
+		return nil, err
+	}
+	ret := []string{}
+	eventIndex := uint16(0)
+	events := collections.NewMapReadOnly(partition, StateVarRequestEvents)
+	for {
+		key := NewEventLookupKey(record.BlockIndex, record.RequestIndex, eventIndex)
+		msg, err := events.GetAt(key.Bytes())
+		if err != nil {
+			return nil, err
+		}
+		if msg == nil {
+			return ret, nil
+		}
+		ret = append(ret, string(msg))
+		eventIndex++
+	}
+}
+
+func getBlockEventsIntern(partition kv.KVStoreReader, blockIndex uint32) ([]string, error) {
+	blockInfo, err := getRequestLogRecordsForBlock(partition, blockIndex)
+	if err != nil {
+		return nil, err
+	}
+	ret := []string{}
+	events := collections.NewMapReadOnly(partition, StateVarRequestEvents)
+	for reqIdx := uint16(0); reqIdx < blockInfo.NumOffLedgerRequests; reqIdx++ {
+		eventIndex := uint16(0)
+		for {
+			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex)
+			msg, err := events.GetAt(key.Bytes())
+			if err != nil {
+				return nil, err
+			}
+			if msg == nil {
+				break
+			}
+			ret = append(ret, string(msg))
+			eventIndex++
+		}
+	}
+	return ret, nil
+}
+
+func getRequestLogRecordsForBlock(partition kv.KVStoreReader, blockIndex uint32) (*BlockInfo, error) {
+	if blockIndex == 0 {
+		return nil, nil
+	}
+	blockInfoBin, found, err := getBlockInfoDataIntern(partition, blockIndex)
+	if err != nil {
+		return nil, err
 	}
 	if !found {
-		return nil, false, nil
+		return nil, nil
 	}
 	blockInfo, err := BlockInfoFromBytes(blockIndex, blockInfoBin)
 	if err != nil {
+		return nil, err
+	}
+	return blockInfo, nil
+}
+
+func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint32) ([][]byte, bool, error) {
+	blockInfo, err := getRequestLogRecordsForBlock(partition, blockIndex)
+	if err != nil || blockInfo == nil {
 		return nil, false, err
 	}
-
 	ret := make([][]byte, blockInfo.TotalRequests)
+	found := false
 	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
-		ret[reqIdx], found = getRequestRecordDataByRef(state, blockIndex, reqIdx)
+		ret[reqIdx], found = getRequestRecordDataByRef(partition, blockIndex, reqIdx)
 		if !found {
 			panic("getRequestLogRecordsForBlockBin: inconsistency: request record not found")
 		}
