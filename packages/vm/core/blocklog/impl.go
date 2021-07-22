@@ -22,6 +22,7 @@ var Processor = Contract.Processor(initialize,
 	FuncControlAddresses.WithHandler(viewControlAddresses),
 	FuncGetEventsForRequest.WithHandler(viewGetEventsForRequest),
 	FuncGetEventsForBlock.WithHandler(viewGetEventsForBlock),
+	FuncGetEventsForContract.WithHandler(viewGetEventsForContract),
 )
 
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
@@ -142,6 +143,9 @@ func viewControlAddresses(ctx iscp.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
+// viewGetEventsForRequest returns a list of events for a given request.
+// params:
+// ParamRequestID - requestID
 func viewGetEventsForRequest(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	requestID := params.MustGetRequestID(ParamRequestID)
@@ -152,24 +156,47 @@ func viewGetEventsForRequest(ctx iscp.SandboxView) (dict.Dict, error) {
 	}
 
 	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamRequestRecord)
+	arr := collections.NewArray16(ret, ParamEvent)
 	for _, event := range events {
 		_ = arr.Push([]byte(event))
 	}
 	return ret, nil
 }
 
+// viewGetEventsForBlock returns a list of events for a given block.
+// params:
+// ParamBlockIndex - index of the block
 func viewGetEventsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	blockIndex := params.MustGetUint32(ParamBlockIndex)
 
-	events, err := getBlockEventsIntern(ctx.State(), blockIndex)
+	events, err := GetBlockEventsIntern(ctx.State(), blockIndex)
 	if err != nil {
 		return nil, err
 	}
 
 	ret := dict.New()
-	arr := collections.NewArray16(ret, ParamRequestRecord)
+	arr := collections.NewArray16(ret, ParamEvent)
+	for _, event := range events {
+		_ = arr.Push([]byte(event))
+	}
+	return ret, nil
+}
+
+// viewGetEventsForContract returns a list of events for a given smart contract.
+// params:
+// ParamContractHname - hname of the contract
+func viewGetEventsForContract(ctx iscp.SandboxView) (dict.Dict, error) {
+	params := kvdecoder.New(ctx.Params())
+	contract := params.MustGetHname(ParamContractHname)
+
+	events, err := getSmartContractEventsIntern(ctx.State(), contract)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := dict.New()
+	arr := collections.NewArray16(ret, ParamEvent)
 	for _, event := range events {
 		_ = arr.Push([]byte(event))
 	}

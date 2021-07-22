@@ -23,21 +23,21 @@ func TestEventLogBasicEmpty(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	recs, err := chain.GetEventLogRecords(root.Contract.Name)
+	recs, err := chain.GetEventsForContract(root.Contract.Name)
 	require.NoError(t, err)
 	require.Len(t, recs, 0)
 
-	num := chain.GetEventLogNumRecords(root.Contract.Name)
-	require.EqualValues(t, 0, num)
+	events := chain.GetEventsForContract(root.Contract.Name)
+	require.EqualValues(t, 0, len(events))
 
-	num = chain.GetEventLogNumRecords(accounts.Contract.Name)
-	require.EqualValues(t, 0, num)
+	num = chain.GetEventsForContract(accounts.Contract.Name)
+	require.EqualValues(t, 0, len(events))
 
-	num = chain.GetEventLogNumRecords(blob.Contract.Name)
-	require.EqualValues(t, 0, num)
+	num = chain.GetEventsForContract(blob.Contract.Name)
+	require.EqualValues(t, 0, len(events))
 
-	num = chain.GetEventLogNumRecords(blocklog.Contract.Name)
-	require.EqualValues(t, 0, num)
+	num = chain.GetEventsForContract(blocklog.Contract.Name)
+	require.EqualValues(t, 0, len(events))
 
 	reqRecs := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
 	require.EqualValues(t, 1, len(reqRecs))
@@ -66,7 +66,7 @@ func TestChainLogDeploy(t *testing.T) {
 	num = chain.GetEventLogNumRecords(blob.Contract.Name)
 	require.EqualValues(t, 1, num)
 
-	recs, err := chain.GetEventLogRecords(blob.Contract.Name)
+	recs, err := chain.GetEventsForContract(blob.Contract.Name)
 	require.NoError(t, err)
 	require.Len(t, recs, 1)
 	printLogRecords(t, recs, "blob")
@@ -90,7 +90,7 @@ func TestChainLogDeploy(t *testing.T) {
 	num = chain.GetEventLogNumRecords(name)
 	require.EqualValues(t, 0, num)
 
-	recs, err = chain.GetEventLogRecords(name)
+	recs, err = chain.GetEventsForContract(name)
 	require.NoError(t, err)
 	require.Len(t, recs, 0)
 

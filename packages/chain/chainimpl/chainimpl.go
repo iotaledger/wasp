@@ -24,6 +24,8 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -341,48 +343,19 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 		// don't run on state #0, root contracts not initialized yet.
 		return
 	}
-	newEvents := make(map[iscp.Hname][][]byte)
-	// TODO refactor to use blocklog
-	// now := time.Now().UnixNano()
-	// c.log.Debug("publishNewBlockEvents start")
 
-	// vctx := viewcontext.NewFromChain(c)
-	// // sift through the chain contracts and emit events created on the last block
-	// err := optimism.RetryOnStateInvalidated(func() error {
-	// 	info, err := vctx.CallView(root.Contract.Hname(), iscp.Hn(root.FuncGetChainInfo.Name), dict.Dict{})
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
-	// 	if err != nil {
-	// 		return err
-	// 	}
+	kvPartition := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
 
-	// 	kvPartition := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(eventlog.Contract.Hname().Bytes()))
-	// 	for _, contract := range contracts {
-	// 		log := collections.NewTimestampedLogReadOnly(kvPartition, kv.Key(contract.Hname().Bytes()))
-	// 		ts := log.MustTakeTimeSlice(c.lastPublishedEventsNanoTs, now)
-	// 		first, last := ts.FromToIndices()
-	// 		if first == last {
-	// 			continue
-	// 		}
-	// 		data := log.MustLoadRecordsRaw(first, last, false)
-	// 		if len(data) > 0 {
-	// 			newEvents[contract.Hname()] = data
-	// 		}
-	// 	}
-	// 	return nil
-	// }, retryOnStateInvalidatedRetry, time.Now().Add(retryOnStateInvalidatedTimeout))
-	// if err != nil {
-	// 	c.log.Warnf("error emitting events: %v", err)
-	// }
+	events, err := blocklog.GetBlockEventsIntern(kvPartition, blockIndex)
+	if err != nil {
+		c.log.Panicf("publishNewBlockEvents - something went wrong getting events for block. %v", err)
+	}
 
-	for contractHname, msgs := range newEvents {
-		for _, msg := range msgs {
-			text := string(msg[8:]) // remove first 8 bytes from timestamp
-			c.log.Info("publishNewBlockEvents - " + c.chainID.String() + "::" + contractHname.String() + "/event " + text)
-			publisher.Publish("vmmsg", c.chainID.Base58(), contractHname.String(), text)
-		}
+	for _, msg := range events {
+		c.log.Info("publishNewBlockEvents - chainID: %s, event: %s", c.chainID.String(), msg)
+		// TODO THIS IS WRONG. NEEDS TO BE REFACTORED. - just for testing
+		publisher.Publish("vmmsg", c.chainID.Base58(), blocklog.Contract.Name, msg)
+		// publisher.Publish("vmmsg", c.chainID.Base58(), contractHname.String(), msg)
 	}
 }
 

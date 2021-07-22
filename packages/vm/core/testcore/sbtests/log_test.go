@@ -89,7 +89,7 @@ func testEventLogEventData(t *testing.T, w bool) {
 
 	require.EqualValues(t, 1, array.MustLen())
 
-	str, err := chain.GetEventLogRecordsString(ScName)
+	str, err := chain.GetEventsForContractString(ScName)
 	require.NoError(t, err)
 	t.Log(str)
 }
@@ -130,7 +130,7 @@ func testEventLogDifferentCalls(t *testing.T, w bool) {
 	array := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
 	require.EqualValues(t, 5, array.MustLen())
 
-	str, err := chain.GetEventLogRecordsString(ScName)
+	str, err := chain.GetEventsForContractString(ScName)
 	require.NoError(t, err)
 	t.Log(str)
 
@@ -171,7 +171,7 @@ func testChainLogGetNumRecords(t *testing.T, w bool) {
 	require.True(t, ok)
 	require.EqualValues(t, 1, v)
 
-	str, err := chain.GetEventLogRecordsString(ScName)
+	str, err := chain.GetEventsForContractString(ScName)
 	require.NoError(t, err)
 	t.Log(str)
 
@@ -210,7 +210,7 @@ func testChainLogSandboxDeploy(t *testing.T, w bool) {
 
 	require.EqualValues(t, 2, array.MustLen())
 
-	str, err := chain.GetEventLogRecordsString(root.Contract.Name)
+	str, err := chain.GetEventsForContractString(root.Contract.Name)
 	require.NoError(t, err)
 	t.Log(str)
 
@@ -254,13 +254,13 @@ func testChainLogMultiple(t *testing.T, w bool) {
 	require.EqualValues(t, 2, array.MustLen())
 	//////////////////////////////////////
 
-	strRoot, err := chain.GetEventLogRecordsString(root.Contract.Name)
+	strRoot, err := chain.GetEventsForContractString(root.Contract.Name)
 	require.NoError(t, err)
 	t.Log(strRoot)
 	require.EqualValues(t, 0, strings.Count(strRoot, "[req]"))
 	require.EqualValues(t, 1, strings.Count(strRoot, "[deploy]"))
 
-	strTest, err := chain.GetEventLogRecordsString(ScName)
+	strTest, err := chain.GetEventsForContractString(ScName)
 	require.NoError(t, err)
 	t.Log(strTest)
 	require.EqualValues(t, 0, strings.Count(strTest, "[req]"))

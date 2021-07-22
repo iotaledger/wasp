@@ -19,11 +19,12 @@ var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log co
 
 const (
 	// state variables
-	StateVarBlockRegistry      = "b"
-	StateVarControlAddresses   = "c"
-	StateVarRequestLookupIndex = "l"
-	StateVarRequestRecords     = "r"
-	StateVarRequestEvents      = "e"
+	StateVarBlockRegistry             = "b"
+	StateVarControlAddresses          = "c"
+	StateVarRequestLookupIndex        = "l"
+	StateVarRequestRecords            = "r"
+	StateVarRequestEvents             = "e"
+	StateVarSmartContractEventsLookup = "e"
 )
 
 var (
@@ -36,6 +37,7 @@ var (
 	FuncIsRequestProcessed         = coreutil.ViewFunc("isRequestProcessed")
 	FuncGetEventsForRequest        = coreutil.ViewFunc("getEventsForRequest")
 	FuncGetEventsForBlock          = coreutil.ViewFunc("getEventsForBlock")
+	FuncGetEventsForContract       = coreutil.ViewFunc("getEventsForContract")
 )
 
 const (
@@ -43,10 +45,12 @@ const (
 	ParamBlockIndex             = "n"
 	ParamBlockInfo              = "i"
 	ParamGoverningAddress       = "g"
+	ParamContractHname          = "h"
 	ParamRequestID              = "u"
 	ParamRequestIndex           = "r"
 	ParamRequestProcessed       = "p"
 	ParamRequestRecord          = "d"
+	ParamEvent                  = "e"
 	ParamStateControllerAddress = "s"
 )
 
@@ -225,12 +229,13 @@ func (k *EventLookupKey) Write(w io.Writer) error {
 	return err
 }
 
-func (k *RequestLookupKey) EventLookupKey(r io.Reader) error {
+func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
+	k := EventLookupKey{}
 	n, err := r.Read(k[:])
 	if err != nil || n != 8 {
-		return io.EOF
+		return nil, io.EOF
 	}
-	return nil
+	return &k, nil
 }
 
 // endregion ///////////////////////////////////////////////////////////

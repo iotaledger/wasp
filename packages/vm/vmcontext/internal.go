@@ -147,7 +147,7 @@ func (vmctx *VMContext) MustLogEvent(contract iscp.Hname, msg string) {
 	defer vmctx.popCallContext()
 
 	vmctx.log.Debugf("MustLogEvent/%s: msg: '%s'", contract.String(), msg)
-	err := blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey())
+	err := blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey(), contract)
 	if err != nil {
 		vmctx.Panicf("MustLogEvent: %v", err)
 	}

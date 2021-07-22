@@ -1,7 +1,10 @@
 package blocklog
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -81,10 +84,17 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestReceipt, key Request
 	return nil
 }
 
-func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey) error {
+func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract iscp.Hname) error {
 	if err := collections.NewMap(partition, StateVarRequestRecords).SetAt(key.Bytes(), []byte(msg)); err != nil {
 		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
 	}
+	scLut := collections.NewMap(partition, StateVarSmartContractEventsLookup)
+	entries, err := scLut.GetAt(contract.Bytes())
+	if err != nil {
+		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+	}
+	entries = append(entries, key.Bytes()...)
+	scLut.SetAt(contract.Bytes(), entries)
 	return nil
 }
 
@@ -108,14 +118,14 @@ func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.Reque
 }
 
 // RequestLookupKeyList contains multiple references for record entries with colliding digests, this function returns the correct record for the given requestID
-func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList RequestLookupKeyList, reqID *iscp.RequestID) (*RequestLogRecord, error) {
+func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList RequestLookupKeyList, reqID *iscp.RequestID) (*RequestReceipt, error) {
 	records := collections.NewMapReadOnly(partition, StateVarRequestRecords)
 	for _, lookupKey := range keyList {
 		recBytes, err := records.GetAt(lookupKey.Bytes())
 		if err != nil {
 			return nil, err
 		}
-		rec, err := RequestLogRecordFromBytes(recBytes)
+		rec, err := RequestReceiptFromBytes(recBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -156,7 +166,32 @@ func getRequestEventsIntern(partition kv.KVStoreReader, reqID *iscp.RequestID) (
 	}
 }
 
-func getBlockEventsIntern(partition kv.KVStoreReader, blockIndex uint32) ([]string, error) {
+func getSmartContractEventsIntern(partition kv.KVStoreReader, contract iscp.Hname) ([]string, error) {
+	scLut := collections.NewMapReadOnly(partition, StateVarSmartContractEventsLookup)
+	ret := []string{}
+	entries, err := scLut.GetAt(contract.Bytes())
+	if err != nil {
+		return nil, err
+	}
+	events := collections.NewMapReadOnly(partition, StateVarRequestEvents)
+	keysBuf := bytes.NewBuffer(entries)
+	for {
+		key, err := EventLookupKeyFromBytes(keysBuf)
+		if err != nil && !errors.Is(err, io.EOF) {
+			return nil, xerrors.Errorf("getSmartContractEventsIntern unable to parse key. %v", err)
+		}
+		if key == nil { // no more keys
+			return ret, nil
+		}
+		event, err := events.GetAt(key.Bytes())
+		if err != nil {
+			return nil, xerrors.Errorf("getSmartContractEventsIntern unable to get event by key. %v", err)
+		}
+		ret = append(ret, string(event))
+	}
+}
+
+func GetBlockEventsIntern(partition kv.KVStoreReader, blockIndex uint32) ([]string, error) {
 	blockInfo, err := getRequestLogRecordsForBlock(partition, blockIndex)
 	if err != nil {
 		return nil, err
