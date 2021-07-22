@@ -237,8 +237,8 @@ func (ch *Chain) mustGetErrorFromReceipt(reqid iscp.RequestID) error {
 	rec, _, _, ok := ch.GetRequestReceipt(reqid)
 	require.True(ch.Env.T, ok)
 	var err error
-	if len(rec.LogData) > 0 {
-		err = xerrors.New(string(rec.LogData))
+	if len(rec.Error) > 0 {
+		err = xerrors.New(string(rec.Error))
 	}
 	return err
 }

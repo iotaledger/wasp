@@ -72,7 +72,7 @@ func logRequestsInBlock(index uint32) {
 		rows = append(rows, []string{
 			req.RequestID.Base58(),
 			kind,
-			fmt.Sprintf("%q", string(req.LogData)),
+			fmt.Sprintf("%q", string(req.Error)),
 		})
 	}
 	log.Printf("Total %d requests\n", arr.MustLen())
@@ -103,7 +103,7 @@ func requestCmd() *cobra.Command {
 			}
 
 			log.Printf("%s request %s in block %d\n", kind, reqID.Base58(), blockIndex)
-			log.Printf("Log: %q\n", string(req.LogData))
+			log.Printf("Log: %q\n", string(req.Error))
 		},
 	}
 }

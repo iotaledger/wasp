@@ -194,7 +194,7 @@ func (ll RequestLookupKeyList) Bytes() []byte {
 type RequestReceipt struct {
 	RequestID iscp.RequestID
 	OffLedger bool
-	LogData   []byte
+	Error     string
 	// not persistent
 	BlockIndex   uint32
 	RequestIndex uint16
@@ -217,9 +217,11 @@ func RequestReceiptFromMarshalutil(mu *marshalutil.MarshalUtil) (*RequestReceipt
 	if size, err = mu.ReadUint16(); err != nil {
 		return nil, err
 	}
-	if ret.LogData, err = mu.ReadBytes(int(size)); err != nil {
+	strBytes, err := mu.ReadBytes(int(size))
+	if err != nil {
 		return nil, err
 	}
+	ret.Error = string(strBytes)
 	return ret, nil
 }
 
@@ -227,8 +229,8 @@ func (r *RequestReceipt) Bytes() []byte {
 	mu := marshalutil.New()
 	mu.Write(r.RequestID).
 		WriteBool(r.OffLedger).
-		WriteUint16(uint16(len(r.LogData))).
-		WriteBytes(r.LogData)
+		WriteUint16(uint16(len(r.Error))).
+		WriteBytes([]byte(r.Error))
 	return mu.Bytes()
 }
 
@@ -251,8 +253,8 @@ func (r *RequestReceipt) strPrefix() string {
 
 func (r *RequestReceipt) String() string {
 	ret := fmt.Sprintf("%s %s", r.strPrefix(), r.RequestID.String())
-	if len(r.LogData) > 0 {
-		ret += ": '" + string(r.LogData) + "'"
+	if len(r.Error) > 0 {
+		ret += ": '" + r.Error + "'"
 	}
 	return ret
 }
@@ -263,8 +265,8 @@ func (r *RequestReceipt) Short() string {
 		prefix = "api"
 	}
 	ret := fmt.Sprintf("%s/%s", prefix, r.RequestID)
-	if len(r.LogData) > 0 {
-		ret += ": '" + string(r.LogData) + "'"
+	if len(r.Error) > 0 {
+		ret += ": '" + r.Error + "'"
 	}
 	return ret
 }

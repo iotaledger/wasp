@@ -284,7 +284,7 @@ func (ch *Chain) GetRequestReceipt(reqID iscp.RequestID, nodeIndex ...int) (*blo
 	return rec, blockIndex, requestIndex, nil
 }
 
-func (ch *Chain) GetRequestLogRecordsForBlock(blockIndex uint32, nodeIndex ...int) ([]*blocklog.RequestReceipt, error) {
+func (ch *Chain) GetRequestReceiptsForBlock(blockIndex uint32, nodeIndex ...int) ([]*blocklog.RequestReceipt, error) {
 	cl := ch.SCClient(blocklog.Contract.Hname(), nil, nodeIndex...)
 	res, err := cl.CallView(blocklog.FuncGetRequestReceiptsForBlock.Name, dict.Dict{
 		blocklog.ParamBlockIndex: codec.EncodeUint32(blockIndex),

@@ -84,7 +84,7 @@ func (e *chainEnv) printBlocks(expected int) {
 //		recs, err := ch.GetRequestReceiptsForBlock(rec.BlockIndex)
 //		require.NoError(t, err)
 //		for _, rec := range recs {
-//			t.Logf("---------- %s : %s", rec.RequestID.String(), string(rec.LogData))
+//			t.Logf("---------- %s : %s", rec.RequestID.String(), string(rec.Error))
 //		}
 //	}
 //	t.Logf("Total requests processed: %d", sum)
@@ -197,6 +197,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=10,N=6,req=1000", func(t *testing.T) {
+		t.SkipNow()
 		const waitFor = 120 * time.Second
 		const numRequests = 1000
 		const numValidatorNodes = 6
@@ -205,6 +206,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=15,N=6,req=1000", func(t *testing.T) {
+		t.SkipNow()
 		const waitFor = 120 * time.Second
 		const numRequests = 1000
 		const numValidatorNodes = 6
@@ -213,6 +215,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=30,N=15,req=8", func(t *testing.T) {
+		t.SkipNow()
 		const waitFor = 60 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 15
@@ -221,6 +224,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=30,N=20,req=8", func(t *testing.T) {
+		t.SkipNow()
 		const waitFor = 60 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 20
@@ -270,9 +274,6 @@ func TestAccessNodesMany(t *testing.T) {
 	const requestsCountProgression = 2
 	const iterationCount = 9
 
-	if iterationCount > 12 {
-		t.Skip("skipping test with iteration count > 8")
-	}
 	e := setupAdvancedInccounterTest(t, clusterSize, util.MakeRange(0, numValidatorNodes))
 
 	keyPair, _ := e.getOrCreateAddress()
@@ -489,7 +490,7 @@ func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.R
 	succ := waitTrue(timeout, func() bool {
 		rec, err := callGetRequestRecord(t, chain, nodeIndex, reqid)
 		if err == nil && rec != nil {
-			ret = string(rec.LogData)
+			ret = string(rec.Error)
 			return true
 		}
 		return false
