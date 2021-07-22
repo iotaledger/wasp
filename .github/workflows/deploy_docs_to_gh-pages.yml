@@ -2,9 +2,9 @@ name: deploy
 
 on:
   pull_request:
-    branches: [docs/fixDependabotWarnings, master]
+    branches: [master]
   push:
-    branches: [docs/fixDependabotWarnings, master]
+    branches: [master]
 
 jobs:
   checks:
