@@ -222,7 +222,7 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, fname stri
 		ret := dict.New()
 		ret.Set(blob.ParamBytes, []byte{1, 3, 3, 7})
 		return ret, nil
-
+	}
 	panic(fmt.Sprintf("mock view call not implemented: %s::%s", hname.String(), fname))
 }
 

@@ -22,7 +22,7 @@ const (
 	StateVarBlockRegistry             = "b"
 	StateVarControlAddresses          = "c"
 	StateVarRequestLookupIndex        = "l"
-	StateVarRequestRecords            = "r"
+	StateVarRequestRecords            = "r" // TODO check name merged
 	StateVarRequestEvents             = "e"
 	StateVarSmartContractEventsLookup = "e"
 )
@@ -46,6 +46,8 @@ const (
 	ParamBlockInfo              = "i"
 	ParamGoverningAddress       = "g"
 	ParamContractHname          = "h"
+	ParamFromBlock              = "f"
+	ParamToBlock                = "t"
 	ParamRequestID              = "u"
 	ParamRequestIndex           = "r"
 	ParamRequestProcessed       = "p"
@@ -205,6 +207,7 @@ func NewEventLookupKey(blockIndex uint32, requestIndex, eventIndex uint16) Event
 	ret := EventLookupKey{}
 	copy(ret[:4], util.Uint32To4Bytes(blockIndex))
 	copy(ret[4:6], util.Uint16To2Bytes(requestIndex))
+	copy(ret[6:8], util.Uint16To2Bytes(eventIndex))
 	return ret
 }
 

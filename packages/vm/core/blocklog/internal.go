@@ -85,7 +85,7 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestReceipt, key Request
 }
 
 func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract iscp.Hname) error {
-	if err := collections.NewMap(partition, StateVarRequestRecords).SetAt(key.Bytes(), []byte(msg)); err != nil {
+	if err := collections.NewMap(partition, StateVarRequestEvents).SetAt(key.Bytes(), []byte(msg)); err != nil {
 		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
 	}
 	scLut := collections.NewMap(partition, StateVarSmartContractEventsLookup)
@@ -166,7 +166,7 @@ func getRequestEventsIntern(partition kv.KVStoreReader, reqID *iscp.RequestID) (
 	}
 }
 
-func getSmartContractEventsIntern(partition kv.KVStoreReader, contract iscp.Hname) ([]string, error) {
+func getSmartContractEventsIntern(partition kv.KVStoreReader, contract iscp.Hname, fromBlock, toBlock uint32) ([]string, error) {
 	scLut := collections.NewMapReadOnly(partition, StateVarSmartContractEventsLookup)
 	ret := []string{}
 	entries, err := scLut.GetAt(contract.Bytes())
@@ -180,7 +180,14 @@ func getSmartContractEventsIntern(partition kv.KVStoreReader, contract iscp.Hnam
 		if err != nil && !errors.Is(err, io.EOF) {
 			return nil, xerrors.Errorf("getSmartContractEventsIntern unable to parse key. %v", err)
 		}
-		if key == nil { // no more keys
+		if key == nil { // no more events
+			return ret, nil
+		}
+		keyBlockIndex := key.BlockIndex()
+		if keyBlockIndex < fromBlock {
+			continue
+		}
+		if keyBlockIndex > toBlock {
 			return ret, nil
 		}
 		event, err := events.GetAt(key.Bytes())
@@ -198,7 +205,7 @@ func GetBlockEventsIntern(partition kv.KVStoreReader, blockIndex uint32) ([]stri
 	}
 	ret := []string{}
 	events := collections.NewMapReadOnly(partition, StateVarRequestEvents)
-	for reqIdx := uint16(0); reqIdx < blockInfo.NumOffLedgerRequests; reqIdx++ {
+	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
 		eventIndex := uint16(0)
 		for {
 			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex)

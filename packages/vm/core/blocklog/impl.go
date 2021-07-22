@@ -1,6 +1,7 @@
 package blocklog
 
 import (
+	"math"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -186,11 +187,20 @@ func viewGetEventsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 // viewGetEventsForContract returns a list of events for a given smart contract.
 // params:
 // ParamContractHname - hname of the contract
+// fromBlock - defaults to 0
+// toBlock - defaults to latest block
 func viewGetEventsForContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	contract := params.MustGetHname(ParamContractHname)
-
-	events, err := getSmartContractEventsIntern(ctx.State(), contract)
+	fromBlock, err := params.GetUint32(ParamFromBlock, 0)
+	if err != nil {
+		return nil, err
+	}
+	toBlock, _ := params.GetUint32(ParamToBlock, math.MaxInt32)
+	if err != nil {
+		return nil, err
+	}
+	events, err := getSmartContractEventsIntern(ctx.State(), contract, fromBlock, toBlock)
 	if err != nil {
 		return nil, err
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/labstack/echo/v4"
 )
@@ -55,22 +56,24 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 			return err
 		}
 
-		// TODO refactor to use blocklog
-		// r, err = d.wasp.CallView(chain, eventlog.Contract.Hname(), eventlog.FuncGetRecords.Name, codec.MakeDict(map[string]interface{}{
-		// 	eventlog.ParamContractHname: codec.EncodeHname(hname),
-		// }))
-		// if err != nil {
-		// 	return err
-		// }
-		// records := collections.NewArray16ReadOnly(r, eventlog.ParamRecords)
-		// result.Log = make([]*collections.TimestampedLogRecord, records.MustLen())
-		// for i := uint16(0); i < records.MustLen(); i++ {
-		// 	b := records.MustGetAt(i)
-		// 	result.Log[i], err = collections.ParseRawLogRecord(b)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// }
+		// TODO test the dashboard
+
+		r, err = d.wasp.CallView(chain, blocklog.Contract.Hname(), blocklog.FuncGetEventsForContract.Name, codec.MakeDict(map[string]interface{}{
+			blocklog.ParamContractHname: codec.EncodeHname(hname),
+		}))
+		if err != nil {
+			return err
+		}
+
+		recs := collections.NewArray16ReadOnly(r, blocklog.ParamEvent)
+		result.Log = make([]string, recs.MustLen())
+		for i := range result.Log {
+			data, err := recs.GetAt(uint16(i))
+			if err != nil {
+				return err
+			}
+			result.Log[i] = string(data)
+		}
 
 		result.RootInfo, err = d.fetchRootInfo(chain)
 		if err != nil {
@@ -88,6 +91,6 @@ type ChainContractTemplateParams struct {
 	Hname   iscp.Hname
 
 	ContractRecord *root.ContractRecord
-	Log            []*collections.TimestampedLogRecord
+	Log            []string
 	RootInfo       RootInfo
 }
