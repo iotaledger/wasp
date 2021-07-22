@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -13,9 +14,10 @@ import (
 
 type Metrics struct {
 	server *http.Server
+	log    *logger.Logger
 }
 
-func New() *Metrics {
+func New(log *logger.Logger) *Metrics {
 	e := echo.New()
 	e.HideBanner = true
 	e.Use(middleware.Recover())
@@ -26,10 +28,11 @@ func New() *Metrics {
 	})
 	bindAddr := parameters.GetString(parameters.MetricsBindAddress)
 	server := &http.Server{Addr: bindAddr, Handler: e}
-	return &Metrics{server: server}
+	return &Metrics{server: server, log: log}
 }
 
 func (m *Metrics) Start() error {
+	m.log.Infof("metrics server started at %s", m.server.Addr)
 	return m.server.ListenAndServe()
 }
 
