@@ -92,15 +92,17 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 		return nil, nil
 	}
 	// will be sending back to default entry point
-
-	tokensToSend := ledgerstate.NewColoredBalances(bals)
-
 	a := assert.NewAssert(ctx.Log())
 	// bring balances to the current account (owner's account). It is needed for subsequent Send call
-	a.Require(MoveBetweenAccounts(state, ctx.Caller(), commonaccount.Get(ctx.ChainID()), tokensToSend),
+	a.Require(MoveBetweenAccounts(state, ctx.Caller(), commonaccount.Get(ctx.ChainID()), ledgerstate.NewColoredBalances(bals)),
 		"accounts.withdraw.inconsistency. failed to move tokens to owner's account")
 
-	// Send call assumes tokens in the current account
+	// add incoming tokens (after fees) to the balances to be returned. Otherwise they would end up in the common account
+	for col, bal := range ctx.IncomingTransfer().Map() {
+		bals[col] += bal
+	}
+	tokensToSend := ledgerstate.NewColoredBalances(bals)
+	// Send call assumes tokens are in the current account
 	a.Require(ctx.Send(ctx.Caller().Address(), tokensToSend, &iscp.SendMetadata{
 		TargetContract: ctx.Caller().Hname(),
 	}), "accounts.withdraw.inconsistency: failed sending tokens ")

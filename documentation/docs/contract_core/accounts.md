@@ -3,7 +3,7 @@
 The `accounts` contract is one of the [core contracts](overview.md) on each ISCP
 chain.
 
-The function of the `accounts` contract is to keep a consistent ledger of
+The function of the `accounts` contract is to keep in its state a consistent ledger of
 on-chain accounts for the agents that control them: L1 addresses and smart
 contracts.
 
