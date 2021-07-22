@@ -490,7 +490,7 @@ func waitRequest(t *testing.T, chain *cluster.Chain, nodeIndex int, reqid iscp.R
 	succ := waitTrue(timeout, func() bool {
 		rec, err := callGetRequestRecord(t, chain, nodeIndex, reqid)
 		if err == nil && rec != nil {
-			ret = string(rec.Error)
+			ret = rec.Error
 			return true
 		}
 		return false
