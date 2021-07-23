@@ -30,7 +30,7 @@ var oneIota = map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 1}
 func NewRequestTransaction(par NewRequestTransactionParams) (*ledgerstate.Transaction, error) {
 	txb := utxoutil.NewBuilder(par.UnspentOutputs...)
 	for _, req := range par.Requests {
-		metadata := request.NewRequestMetadata().
+		metadata := request.NewMetadata().
 			WithTarget(req.Contract).
 			WithEntryPoint(req.EntryPoint).
 			WithArgs(req.Args).

@@ -348,7 +348,7 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]isc
 		if !ok {
 			lst = make([]iscp.Request, 0)
 		}
-		ret[arr] = append(lst, request.RequestOnLedgerFromOutput(o, sender, utxoutil.GetMintedAmounts(tx)))
+		ret[arr] = append(lst, request.OnLedgerFromOutput(o, sender, utxoutil.GetMintedAmounts(tx)))
 	}
 	return ret
 }

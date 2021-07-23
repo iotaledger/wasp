@@ -2,8 +2,8 @@ package requestargs
 
 import (
 	"fmt"
-	"io"
 
+	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/downloader"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -86,12 +86,16 @@ func (a RequestArgs) Clone() RequestArgs {
 	return RequestArgs((dict.Dict(a)).Clone())
 }
 
-func (a RequestArgs) Write(w io.Writer) error {
-	return (dict.Dict(a)).Write(w)
+func (a RequestArgs) Bytes() []byte {
+	return (dict.Dict(a)).Bytes()
 }
 
-func (a RequestArgs) Read(r io.Reader) error {
-	return (dict.Dict(a)).Read(r)
+func (a RequestArgs) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	(dict.Dict(a)).WriteToMarshalUtil(mu)
+}
+
+func (a RequestArgs) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+	return (dict.Dict(a)).ReadFromMarshalUtil(mu)
 }
 
 // SolidifyRequestArguments decodes RequestArgs.

@@ -56,7 +56,7 @@ func getRequestsOnLedger(t *testing.T, amount int) ([]*request.RequestOnLedger, 
 	require.NoError(t, err)
 	require.NotNil(t, tx)
 
-	requests, err := request.RequestsOnLedgerFromTransaction(tx, targetAddr)
+	requests, err := request.OnLedgerFromTransaction(tx, targetAddr)
 	require.NoError(t, err)
 	require.True(t, amount == len(requests))
 	return requests, keyPair
@@ -476,7 +476,7 @@ func TestSolidification(t *testing.T) {
 	blobData := []byte("blobData")
 	args := requestargs.New(nil)
 	hash := args.AddAsBlobRef("blob", blobData)
-	meta := request.NewRequestMetadata().WithArgs(args)
+	meta := request.NewMetadata().WithArgs(args)
 	requests[0].SetMetadata(meta)
 
 	// no solidification yet => request is not ready

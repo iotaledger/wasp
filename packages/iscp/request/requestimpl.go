@@ -1,20 +1,18 @@
 package request
 
 import (
-	"bytes"
-	"io"
-	"io/ioutil"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/color"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/util"
 	"go.uber.org/atomic"
 	"golang.org/x/crypto/blake2b"
 	"golang.org/x/xerrors"
@@ -25,25 +23,34 @@ const (
 	OffLedgerRequestType byte = 1
 )
 
-func FromBytes(b []byte) (iscp.Request, error) {
+func FromMarshalUtil(mu *marshalutil.MarshalUtil) (iscp.Request, error) {
+	b, err := mu.ReadByte()
+	if err != nil {
+		return nil, xerrors.Errorf("Request.FromMarshalUtil: %w", err)
+	}
 	// first byte is the request type
-	switch b[0] {
+	switch b {
 	case OnLedgerRequestType:
-		return onLedgerFromBytes(b[1:])
+		return onLedgerFromMarshalUtil(mu)
 	case OffLedgerRequestType:
-		return offLedgerFromBytes(b[1:])
+		return offLedgerFromMarshalUtil(mu)
 	}
 	return nil, xerrors.Errorf("invalid Request Type")
 }
 
-func OffLedgerFromBytes(b []byte) (*RequestOffLedger, error) {
-	return offLedgerFromBytes(b[1:])
+func FromBytes(data []byte) (iscp.Request, error) {
+	return FromMarshalUtil(marshalutil.New(data))
 }
 
-// region RequestMetadata  ///////////////////////////////////////////////////////
+func OffLedgerFromBytes(b []byte) (*RequestOffLedger, error) {
+	mu := marshalutil.New(b)
+	return offLedgerFromMarshalUtil(mu)
+}
 
-// RequestMetadata represents content of the data payload of the output
-type RequestMetadata struct {
+// region Metadata  ///////////////////////////////////////////////////////
+
+// Metadata represents content of the data payload of the output
+type Metadata struct {
 	err            error
 	senderContract iscp.Hname
 	// ID of the target smart contract
@@ -54,111 +61,112 @@ type RequestMetadata struct {
 	args requestargs.RequestArgs
 }
 
-func NewRequestMetadata() *RequestMetadata {
-	return &RequestMetadata{
+func NewMetadata() *Metadata {
+	return &Metadata{
 		args: requestargs.RequestArgs(dict.New()),
 	}
 }
 
-//nolint:revive // TODO refactor stutter request.request
-func RequestMetadataFromBytes(data []byte) *RequestMetadata {
-	ret := NewRequestMetadata()
-	ret.err = ret.Read(bytes.NewReader(data))
+func MetadataFromBytes(data []byte) *Metadata {
+	return MetadataFromMarshalUtil(marshalutil.New(data))
+}
+
+func MetadataFromMarshalUtil(mu *marshalutil.MarshalUtil) *Metadata {
+	ret := NewMetadata()
+	ret.err = ret.ReadFromMarshalUtil(mu)
 	return ret
 }
 
-func (p *RequestMetadata) WithSender(s iscp.Hname) *RequestMetadata {
+func (p *Metadata) WithSender(s iscp.Hname) *Metadata {
 	p.senderContract = s
 	return p
 }
 
-func (p *RequestMetadata) WithTarget(t iscp.Hname) *RequestMetadata {
+func (p *Metadata) WithTarget(t iscp.Hname) *Metadata {
 	p.targetContract = t
 	return p
 }
 
-func (p *RequestMetadata) WithEntryPoint(ep iscp.Hname) *RequestMetadata {
+func (p *Metadata) WithEntryPoint(ep iscp.Hname) *Metadata {
 	p.entryPoint = ep
 	return p
 }
 
-func (p *RequestMetadata) WithArgs(args requestargs.RequestArgs) *RequestMetadata {
+func (p *Metadata) WithArgs(args requestargs.RequestArgs) *Metadata {
 	p.args = args.Clone()
 	return p
 }
 
-func (p *RequestMetadata) Clone() *RequestMetadata {
+func (p *Metadata) Clone() *Metadata {
 	ret := *p
 	ret.args = p.args.Clone()
 	return &ret
 }
 
-func (p *RequestMetadata) ParsedOk() bool {
+func (p *Metadata) ParsedOk() bool {
 	return p.err == nil
 }
 
-func (p *RequestMetadata) ParsedError() error {
+func (p *Metadata) ParsedError() error {
 	return p.err
 }
 
-func (p *RequestMetadata) SenderContract() iscp.Hname {
+func (p *Metadata) SenderContract() iscp.Hname {
 	if !p.ParsedOk() {
 		return 0
 	}
 	return p.senderContract
 }
 
-func (p *RequestMetadata) TargetContract() iscp.Hname {
+func (p *Metadata) TargetContract() iscp.Hname {
 	if !p.ParsedOk() {
 		return 0
 	}
 	return p.targetContract
 }
 
-func (p *RequestMetadata) EntryPoint() iscp.Hname {
+func (p *Metadata) EntryPoint() iscp.Hname {
 	if !p.ParsedOk() {
 		return 0
 	}
 	return p.entryPoint
 }
 
-func (p *RequestMetadata) Args() requestargs.RequestArgs {
+func (p *Metadata) Args() requestargs.RequestArgs {
 	if !p.ParsedOk() {
 		return requestargs.RequestArgs(dict.New())
 	}
 	return p.args
 }
 
-func (p *RequestMetadata) Bytes() []byte {
-	var buf bytes.Buffer
-	_ = p.Write(&buf)
-	return buf.Bytes()
+func (p *Metadata) Bytes() []byte {
+	mu := marshalutil.New()
+	p.WriteToMarshalUtil(mu)
+	return mu.Bytes()
 }
 
-func (p *RequestMetadata) Write(w io.Writer) error {
-	if err := p.senderContract.Write(w); err != nil {
-		return err
-	}
-	if err := p.targetContract.Write(w); err != nil {
-		return err
-	}
-	if err := p.entryPoint.Write(w); err != nil {
-		return err
-	}
-	return p.args.Write(w)
+func (p *Metadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	mu.Write(p.senderContract).
+		Write(p.targetContract).
+		Write(p.entryPoint).
+		Write(p.args)
 }
 
-func (p *RequestMetadata) Read(r io.Reader) error {
-	if err := p.senderContract.Read(r); err != nil {
+func (p *Metadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+	var err error
+	if p.senderContract, err = iscp.HnameFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if err := p.targetContract.Read(r); err != nil {
+	if p.targetContract, err = iscp.HnameFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if err := p.entryPoint.Read(r); err != nil {
+	if p.entryPoint, err = iscp.HnameFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	return p.args.Read(r)
+	if p.entryPoint, err = iscp.HnameFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	return nil
 }
 
 // endregion
@@ -166,50 +174,73 @@ func (p *RequestMetadata) Read(r io.Reader) error {
 // region RequestOnLedger //////////////////////////////////////////////////////////////////
 
 type RequestOnLedger struct {
-	minted          map[ledgerstate.Color]uint64
 	outputObj       *ledgerstate.ExtendedLockedOutput
-	requestMetadata *RequestMetadata
+	requestMetadata *Metadata
 	senderAddress   ledgerstate.Address
 	params          atomic.Value // this part is mutable
+	minted          color.Balances
 }
 
 // implements iscp.Request interface
 var _ iscp.Request = &RequestOnLedger{}
 
-// RequestOnLedgerFromOutput
+// OnLedgerFromOutput
 //nolint:revive // TODO refactor stutter request.request
-func RequestOnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...map[ledgerstate.Color]uint64) *RequestOnLedger {
+func OnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...color.Balances) *RequestOnLedger {
 	ret := &RequestOnLedger{
 		outputObj:     output,
 		senderAddress: senderAddr,
 	}
-	ret.requestMetadata = RequestMetadataFromBytes(output.GetPayload())
-	ret.minted = make(map[ledgerstate.Color]uint64)
+	ret.requestMetadata = MetadataFromBytes(output.GetPayload())
 	if len(minted) > 0 {
-		for k, v := range minted[0] {
-			ret.minted[k] = v
-		}
+		ret.minted = minted[0].Clone()
 	}
 	return ret
 }
 
-// RequestsOnLedgerFromTransaction creates RequestOnLedger object from transaction and output index
-func RequestsOnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr ledgerstate.Address) ([]*RequestOnLedger, error) {
+// OnLedgerFromTransaction creates RequestOnLedger object from transaction and output index
+func OnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr ledgerstate.Address) ([]*RequestOnLedger, error) {
 	senderAddr, err := utxoutil.GetSingleSender(tx)
 	if err != nil {
 		return nil, err
 	}
-	mintedAmounts := utxoutil.GetMintedAmounts(tx)
+	mintedAmounts := color.BalancesFromLedgerstate2(utxoutil.GetMintedAmounts(tx))
 	ret := make([]*RequestOnLedger, 0)
 	for _, o := range tx.Essence().Outputs() {
 		if out, ok := o.(*ledgerstate.ExtendedLockedOutput); ok {
 			if out.Address().Equals(targetAddr) {
 				out1 := out.UpdateMintingColor().(*ledgerstate.ExtendedLockedOutput)
-				ret = append(ret, RequestOnLedgerFromOutput(out1, senderAddr, mintedAmounts))
+				ret = append(ret, OnLedgerFromOutput(out1, senderAddr, mintedAmounts))
 			}
 		}
 	}
 	return ret, nil
+}
+
+func onLedgerFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestOnLedger, error) {
+	ret := &RequestOnLedger{}
+	var err error
+
+	if ret.outputObj, err = ledgerstate.ExtendedOutputFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
+	if ret.senderAddress, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
+	ret.requestMetadata = MetadataFromMarshalUtil(mu)
+	if ret.minted, err = color.BalancesFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func (req *RequestOnLedger) Bytes() []byte {
+	return marshalutil.New().WriteByte(OnLedgerRequestType).
+		Write(req.Output()).
+		Write(req.senderAddress).
+		Write(req.requestMetadata).
+		Write(req.minted).
+		Bytes()
 }
 
 func (req *RequestOnLedger) ID() iscp.RequestID {
@@ -250,23 +281,15 @@ func (req *RequestOnLedger) TimeLock() time.Time {
 	return req.outputObj.TimeLock()
 }
 
-func (req *RequestOnLedger) Tokens() *ledgerstate.ColoredBalances {
-	return req.outputObj.Balances()
-}
-
-func (req *RequestOnLedger) SetMetadata(d *RequestMetadata) {
+func (req *RequestOnLedger) SetMetadata(d *Metadata) {
 	req.requestMetadata = d.Clone()
 }
 
-func (req *RequestOnLedger) GetMetadata() *RequestMetadata {
+func (req *RequestOnLedger) GetMetadata() *Metadata {
 	return req.requestMetadata
 }
 
-func (req *RequestOnLedger) MintColor() ledgerstate.Color {
-	return blake2b.Sum256(req.Output().ID().Bytes())
-}
-
-func (req *RequestOnLedger) MintedAmounts() map[ledgerstate.Color]uint64 {
+func (req *RequestOnLedger) MintedAmounts() color.Balances {
 	return req.minted
 }
 
@@ -287,96 +310,6 @@ func (req *RequestOnLedger) Args() requestargs.RequestArgs {
 	return req.requestMetadata.Args()
 }
 
-func (req *RequestOnLedger) readMinted(r io.Reader) error {
-	req.minted = make(map[ledgerstate.Color]uint64)
-	var length uint64
-	err := util.ReadUint64(r, &length)
-	if err != nil {
-		return err
-	}
-	i := uint64(0)
-	for i < length {
-		var colorBytes [ledgerstate.ColorLength]byte
-		_, err := r.Read(colorBytes[:])
-		if err != nil {
-			return err
-		}
-
-		var amount int64
-		err = util.ReadInt64(r, &amount)
-		if err != nil {
-			return err
-		}
-
-		req.minted[colorBytes] = uint64(amount)
-		i++
-	}
-	return nil
-}
-
-func (req *RequestOnLedger) mintedBytes() []byte {
-	var buf bytes.Buffer
-	_ = util.WriteInt64(&buf, int64(len(req.minted)))
-	for k, v := range req.minted {
-		buf.Write(k.Bytes())
-		_ = util.WriteInt64(&buf, int64(v))
-	}
-	return buf.Bytes()
-}
-
-func (req *RequestOnLedger) Bytes() []byte {
-	var buf bytes.Buffer
-	buf.WriteByte(OnLedgerRequestType)
-	buf.Write(req.Output().Bytes())
-	buf.Write(req.senderAddress.Bytes())
-	buf.Write(req.mintedBytes())
-	buf.Write(req.requestMetadata.Bytes())
-	return buf.Bytes()
-}
-
-func onLedgerFromBytes(buf []byte) (*RequestOnLedger, error) {
-	req := &RequestOnLedger{}
-	r := bytes.NewReader(buf)
-
-	// output
-	outputObj, offset, err := ledgerstate.ExtendedOutputFromBytes(buf)
-	if err != nil {
-		return nil, err
-	}
-	req.outputObj = outputObj
-	_, err = r.Seek(int64(offset), 0)
-	if err != nil {
-		return nil, err
-	}
-
-	// sender address
-	addrBytes := make([]byte, ledgerstate.AddressLength)
-	_, err = r.Read(addrBytes)
-	if err != nil {
-		return nil, err
-	}
-	addr, _, err := ledgerstate.AddressFromBytes(addrBytes)
-	if err != nil {
-		return nil, err
-	}
-	req.senderAddress = addr
-
-	// minted
-	err = req.readMinted(r)
-	if err != nil {
-		return nil, err
-	}
-
-	// metadata
-	metadataBytes, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	req.requestMetadata = RequestMetadataFromBytes(metadataBytes)
-
-	return req, nil
-}
-
 // endregion /////////////////////////////////////////////////////////////////
 
 // region RequestOffLedger  ///////////////////////////////////////////////////////
@@ -390,7 +323,7 @@ type RequestOffLedger struct {
 	sender     ledgerstate.Address
 	signature  ed25519.Signature
 	nonce      uint64
-	transfer   *ledgerstate.ColoredBalances
+	transfer   color.Balances
 }
 
 // implements iscp.Request interface
@@ -406,79 +339,62 @@ func NewRequestOffLedger(contract, entryPoint iscp.Hname, args requestargs.Reque
 	}
 }
 
-// offLedgerFromBytes creates a basic request from previously serialized bytes
-func offLedgerFromBytes(data []byte) (req *RequestOffLedger, err error) {
-	req = &RequestOffLedger{
-		args: requestargs.New(nil),
+// Bytes encodes request as bytes
+func (req *RequestOffLedger) Bytes() []byte {
+	mu := marshalutil.New()
+	mu.WriteByte(OffLedgerRequestType)
+	req.WriteEssenceToMarshalUtil(mu)
+	mu.WriteBytes(req.signature[:])
+	return mu.Bytes()
+}
+
+// offLedgerFromBytes creates a basic request from previously serialized bytes (except type byte)
+func offLedgerFromMarshalUtil(mu *marshalutil.MarshalUtil) (req *RequestOffLedger, err error) {
+	req = &RequestOffLedger{}
+	if err := req.ReadEssenceFromMarshalUtil(mu); err != nil {
+		return nil, err
 	}
-	buf := bytes.NewBuffer(data)
-	if err = req.contract.Read(buf); err != nil {
-		return
+	sig, err := mu.ReadBytes(len(req.signature))
+	if err != nil {
+		return nil, err
 	}
-	if err = req.entryPoint.Read(buf); err != nil {
-		return
-	}
-	if err = req.args.Read(buf); err != nil {
-		return
-	}
-	var n int
-	n, err = buf.Read(req.publicKey[:])
-	if err != nil || n != len(req.publicKey) {
-		return nil, io.EOF
-	}
-	if err = util.ReadUint64(buf, &req.nonce); err != nil {
-		return
-	}
-	var colors uint32
-	if err = util.ReadUint32(buf, &colors); err != nil {
-		return
-	}
-	if colors != 0 {
-		balances := make(map[ledgerstate.Color]uint64)
-		for i := uint32(0); i < colors; i++ {
-			var color ledgerstate.Color
-			n, err = buf.Read(color[:])
-			if err != nil || n != len(color) {
-				return nil, io.EOF
-			}
-			var balance uint64
-			if err = util.ReadUint64(buf, &balance); err != nil {
-				return
-			}
-			balances[color] = balance
-		}
-		req.transfer = ledgerstate.NewColoredBalances(balances)
-	}
-	n, err = buf.Read(req.signature[:])
-	if err != nil || n != len(req.signature) {
-		return nil, io.EOF
-	}
+	copy(req.signature[:], sig)
 	return req, nil
 }
 
-// Essence encodes request essence as bytes
-func (req *RequestOffLedger) Essence() []byte {
-	buf := bytes.NewBuffer(make([]byte, 0, 1024)) //nolint:gomnd
-	_ = req.contract.Write(buf)
-	_ = req.entryPoint.Write(buf)
-	_ = req.args.Write(buf)
-	_, _ = buf.Write(req.publicKey[:])
-	_ = util.WriteUint64(buf, req.nonce)
-	if req.transfer == nil {
-		_ = util.WriteUint32(buf, 0)
-		return buf.Bytes()
-	}
-	_, _ = buf.Write(req.transfer.Bytes())
-	return buf.Bytes()
+func (req *RequestOffLedger) WriteEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	mu.Write(req.contract).
+		Write(req.entryPoint).
+		Write(req.args).
+		WriteBytes(req.publicKey[:]).
+		WriteUint64(req.nonce).
+		Write(req.transfer)
 }
 
-// Bytes encodes request as bytes
-func (req *RequestOffLedger) Bytes() []byte {
-	var buf bytes.Buffer
-	buf.WriteByte(OffLedgerRequestType)
-	buf.Write(req.Essence())
-	buf.Write(req.signature[:])
-	return buf.Bytes()
+func (req *RequestOffLedger) ReadEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+	if err := req.contract.ReadFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	if err := req.entryPoint.ReadFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	a, err := dict.FromMarshalUtil(mu)
+	if err != nil {
+		return err
+	}
+	req.args = requestargs.New(a)
+	pk, err := mu.ReadBytes(len(req.publicKey))
+	if err != nil {
+		return err
+	}
+	copy(req.publicKey[:], pk)
+	if req.nonce, err = mu.ReadUint64(); err != nil {
+		return err
+	}
+	if req.transfer, err = color.BalancesFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	return nil
 }
 
 // only used for consensus
@@ -489,23 +405,27 @@ func (req *RequestOffLedger) Hash() [32]byte {
 // Sign signs essence
 func (req *RequestOffLedger) Sign(keyPair *ed25519.KeyPair) {
 	req.publicKey = keyPair.PublicKey
-	req.signature = keyPair.PrivateKey.Sign(req.Essence())
+	mu := marshalutil.New()
+	req.WriteEssenceToMarshalUtil(mu)
+	req.signature = keyPair.PrivateKey.Sign(mu.Bytes())
 }
 
 // Transfer returns the transfers passed to the request
-func (req *RequestOffLedger) Transfer() *ledgerstate.ColoredBalances {
+func (req *RequestOffLedger) Transfer() color.Balances {
 	return req.transfer
 }
 
 // Transfer sets the transfers passed to the request
-func (req *RequestOffLedger) WithTransfer(transfer *ledgerstate.ColoredBalances) *RequestOffLedger {
+func (req *RequestOffLedger) WithTransfer(transfer color.Balances) *RequestOffLedger {
 	req.transfer = transfer
 	return req
 }
 
 // VerifySignature verifies essence signature
 func (req *RequestOffLedger) VerifySignature() bool {
-	return req.publicKey.VerifySignature(req.Essence(), req.signature)
+	mu := marshalutil.New()
+	req.WriteEssenceToMarshalUtil(mu)
+	return req.publicKey.VerifySignature(mu.Bytes(), req.signature)
 }
 
 // ID returns request id for this request
@@ -564,10 +484,6 @@ func (req *RequestOffLedger) Target() (iscp.Hname, iscp.Hname) {
 func (req *RequestOffLedger) TimeLock() time.Time {
 	// no time lock, return zero time
 	return time.Time{}
-}
-
-func (req *RequestOffLedger) Tokens() *ledgerstate.ColoredBalances {
-	return req.transfer
 }
 
 func (req *RequestOffLedger) SetParams(params dict.Dict) {

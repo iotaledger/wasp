@@ -147,7 +147,7 @@ func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
 	// reflect what is actually available in the local sender account
 	sender := req.SenderAccount()
 	transfers := make(map[ledgerstate.Color]uint64)
-	if tokens := req.Tokens(); tokens != nil {
+	if tokens := req.Transfer(); tokens != nil {
 		tokens.ForEach(func(color ledgerstate.Color, balance uint64) bool {
 			available := accounts.GetBalance(vmctx.State(), sender, color)
 			if balance > available {
@@ -277,7 +277,7 @@ func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
 	// is ordinary wallet the tokens (less fees) will be returned back
 	backToAddress := sender.Address()
 	backToContract := sender.Hname()
-	metadata := request.NewRequestMetadata().WithTarget(backToContract)
+	metadata := request.NewMetadata().WithTarget(backToContract)
 	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), tokens.Map())
 	if err != nil {
 		vmctx.log.Errorf("mustSendBack: %v", err)

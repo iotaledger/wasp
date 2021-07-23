@@ -6,13 +6,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"sort"
+
+	"github.com/iotaledger/hive.go/marshalutil"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/mr-tron/base58"
 )
 
@@ -176,34 +176,54 @@ func (d Dict) Get(key kv.Key) ([]byte, error) {
 	return d[key], nil
 }
 
-func (d Dict) Write(w io.Writer) error {
-	keys := d.KeysSorted()
-	if err := util.WriteUint64(w, uint64(len(keys))); err != nil {
-		return err
-	}
-	for _, k := range keys {
-		if err := util.WriteBytes16(w, []byte(k)); err != nil {
-			return err
-		}
-		if err := util.WriteBytes32(w, d[k]); err != nil {
-			return err
-		}
-	}
-	return nil
+func (d Dict) Bytes() []byte {
+	mu := marshalutil.New()
+	d.WriteToMarshalUtil(mu)
+	return mu.Bytes()
 }
 
-func (d Dict) Read(r io.Reader) error {
-	var num uint64
-	err := util.ReadUint64(r, &num)
+func FromMarshalUtil(mu *marshalutil.MarshalUtil) (Dict, error) {
+	ret := New()
+	if err := ret.ReadFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func FromBytes(data []byte) (Dict, error) {
+	return FromMarshalUtil(marshalutil.New(data))
+}
+
+func (d Dict) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	keys := d.KeysSorted()
+	mu.WriteUint32(uint32(len(keys)))
+	for _, k := range keys {
+		mu.WriteUint16(uint16(len(k))).
+			WriteBytes([]byte(k)).
+			WriteUint32(uint32(len(d[k]))).
+			WriteBytes(d[k])
+	}
+}
+
+func (d Dict) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+	num, err := mu.ReadUint32()
 	if err != nil {
 		return err
 	}
-	for i := uint64(0); i < num; i++ {
-		k, err := util.ReadBytes16(r)
+	for i := uint32(0); i < num; i++ {
+		sz16, err := mu.ReadUint16()
 		if err != nil {
 			return err
 		}
-		v, err := util.ReadBytes32(r)
+		k, err := mu.ReadBytes(int(sz16))
+		if err != nil {
+			return err
+		}
+		sz32, err := mu.ReadUint32()
+		if err != nil {
+			return err
+		}
+		v, err := mu.ReadBytes(int(sz32))
 		if err != nil {
 			return err
 		}

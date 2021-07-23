@@ -102,18 +102,18 @@ func (c Color) Compare(otherColor Color) int {
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// region ColoredBalances //////////////////////////////////////////////////////////////////////////////////////////////
+// region Balances //////////////////////////////////////////////////////////////////////////////////////////////
 
-// ColoredBalances represents a collection of balances associated to their respective Color that maintains a
+// Balances represents a collection of balances associated to their respective Color that maintains a
 // deterministic order of the present Colors.
-type ColoredBalances map[Color]uint64
+type Balances map[Color]uint64
 
-// NewBalances returns a new ColoredBalances. In general, it has not deterministic order
-func NewBalances(bals map[Color]uint64) ColoredBalances {
-	return ColoredBalances(bals).Clone()
+// NewBalances returns a new Balances. In general, it has not deterministic order
+func NewBalances(bals map[Color]uint64) Balances {
+	return Balances(bals).Clone()
 }
 
-func BalancesFromGoshimmer(cb *ledgerstate.ColoredBalances) ColoredBalances {
+func BalancesFromLedgerstate1(cb *ledgerstate.ColoredBalances) Balances {
 	ret := NewBalances(nil)
 	if cb != nil {
 		cb.ForEach(func(color ledgerstate.Color, balance uint64) bool {
@@ -124,24 +124,29 @@ func BalancesFromGoshimmer(cb *ledgerstate.ColoredBalances) ColoredBalances {
 	return ret
 }
 
-func BalancesFromIotas(s uint64) ColoredBalances {
+func BalancesFromLedgerstate2(cb map[ledgerstate.Color]uint64) Balances {
+	ret := NewBalances(nil)
+	for col, bal := range cb {
+		ret.Set(Color(col), bal)
+	}
+	return ret
+}
+
+func BalancesFromIotas(s uint64) Balances {
 	return NewBalances(nil).Set(IOTA, s)
 }
 
-// BalancesFromBytes unmarshals ColoredBalances from a sequence of bytes.
-func BalancesFromBytes(data []byte) (ColoredBalances, error) {
+// BalancesFromBytes unmarshals Balances from a sequence of bytes.
+func BalancesFromBytes(data []byte) (Balances, error) {
 	marshalUtil := marshalutil.New(data)
 	return BalancesFromMarshalUtil(marshalUtil)
 }
 
-// BalancesFromMarshalUtil unmarshals ColoredBalances using a MarshalUtil (for easier unmarshaling).
-func BalancesFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (ColoredBalances, error) {
+// BalancesFromMarshalUtil unmarshals Balances using a MarshalUtil (for easier unmarshaling).
+func BalancesFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (Balances, error) {
 	balancesCount, err := marshalUtil.ReadUint32()
 	if err != nil {
 		return nil, xerrors.Errorf("failed to parse element count (%v): %w", err, cerrors.ErrParseBytesFailed)
-	}
-	if balancesCount == 0 {
-		return nil, xerrors.Errorf("empty balances in output")
 	}
 
 	var previousColor *Color
@@ -172,12 +177,12 @@ func BalancesFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (ColoredBalan
 }
 
 // Get returns the balance of the given Color. 0 means balance is empty
-func (c ColoredBalances) Get(color Color) uint64 {
+func (c Balances) Get(color Color) uint64 {
 	return c[color]
 }
 
 // Get returns the balance of the given Color.
-func (c ColoredBalances) Set(color Color, bal uint64) ColoredBalances {
+func (c Balances) Set(color Color, bal uint64) Balances {
 	if bal > 0 {
 		c[color] = bal
 	} else {
@@ -186,16 +191,35 @@ func (c ColoredBalances) Set(color Color, bal uint64) ColoredBalances {
 	return c
 }
 
-func (c ColoredBalances) Add(color Color, bal uint64) ColoredBalances {
+func (c Balances) IsEmpty() bool {
+	return len(c) == 0
+}
+
+func (c Balances) Add(color Color, bal uint64) Balances {
 	if bal > 0 {
 		c[color] += bal
 	}
 	return c
 }
 
+func (c Balances) Sub(col Color, bal uint64) Balances {
+	if bal == 0 {
+		return c
+	}
+	if bal >= c[col] {
+		c[col] = 0
+	} else {
+		c[col] -= bal
+	}
+	if c[col] == 0 {
+		delete(c, col)
+	}
+	return c
+}
+
 // ForEach calls the consumer for each element in the collection and aborts the iteration if the consumer returns false.
 // Non-deterministic order of iteration
-func (c ColoredBalances) ForEachRandomly(consumer func(color Color, balance uint64) bool) {
+func (c Balances) ForEachRandomly(consumer func(color Color, balance uint64) bool) {
 	for col, bal := range c {
 		if bal > 0 && !consumer(col, bal) {
 			return
@@ -205,7 +229,7 @@ func (c ColoredBalances) ForEachRandomly(consumer func(color Color, balance uint
 
 // ForEach calls the consumer for each element in the collection and aborts the iteration if the consumer returns false.
 // Deterministic order of iteration
-func (c ColoredBalances) ForEachSorted(consumer func(color Color, balance uint64) bool) {
+func (c Balances) ForEachSorted(consumer func(color Color, balance uint64) bool) {
 	keys := make([]Color, 0, len(c))
 	for col := range c {
 		keys = append(keys, col)
@@ -221,9 +245,9 @@ func (c ColoredBalances) ForEachSorted(consumer func(color Color, balance uint64
 	}
 }
 
-// Clone returns a copy of the ColoredBalances.
-func (c ColoredBalances) Clone() ColoredBalances {
-	ret := make(ColoredBalances)
+// Clone returns a copy of the Balances.
+func (c Balances) Clone() Balances {
+	ret := make(Balances)
 	for col, bal := range c {
 		if bal > 0 {
 			ret[col] = bal
@@ -232,8 +256,8 @@ func (c ColoredBalances) Clone() ColoredBalances {
 	return ret
 }
 
-// Bytes returns a marshaled version of the ColoredBalances.
-func (c ColoredBalances) Bytes() []byte {
+// Bytes returns a marshaled version of the Balances.
+func (c Balances) Bytes() []byte {
 	marshalUtil := marshalutil.New()
 	marshalUtil.WriteUint32(uint32(len(c)))
 	c.ForEachSorted(func(col Color, bal uint64) bool {
@@ -246,9 +270,9 @@ func (c ColoredBalances) Bytes() []byte {
 	return marshalUtil.Bytes()
 }
 
-// String returns a human readable version of the ColoredBalances.
-func (c ColoredBalances) String() string {
-	structBuilder := stringify.StructBuilder("iscp.ColoredBalances")
+// String returns a human readable version of the Balances.
+func (c Balances) String() string {
+	structBuilder := stringify.StructBuilder("iscp.Balances")
 	c.ForEachSorted(func(color Color, balance uint64) bool {
 		structBuilder.AddField(stringify.StructField(color.String(), balance))
 		return true
@@ -256,7 +280,7 @@ func (c ColoredBalances) String() string {
 	return structBuilder.String()
 }
 
-func (c ColoredBalances) Equals(another ColoredBalances) bool {
+func (c Balances) Equals(another Balances) bool {
 	if len(c) != len(another) {
 		return false
 	}
@@ -271,7 +295,7 @@ func (c ColoredBalances) Equals(another ColoredBalances) bool {
 	return ret
 }
 
-func (c ColoredBalances) AddAll(another ColoredBalances) {
+func (c Balances) AddAll(another Balances) {
 	another.ForEachRandomly(func(col Color, bal uint64) bool {
 		c.Add(col, bal)
 		return true

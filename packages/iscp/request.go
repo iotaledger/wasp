@@ -31,8 +31,6 @@ type Request interface {
 	Target() (Hname, Hname)
 	// returns time lock time or zero time if no time lock
 	TimeLock() time.Time
-	// returns tokens to transfer
-	Tokens() *ledgerstate.ColoredBalances
 	// returns binary representation of the request
 	Bytes() []byte
 	// returns the hash of the request (used for consensus)

@@ -147,13 +147,13 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 	addr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	allOuts := ch.Env.utxoDB.GetAddressOutputs(addr)
 
-	metadata := request.NewRequestMetadata().
+	metadata := request.NewMetadata().
 		WithTarget(req.target).
 		WithEntryPoint(req.entryPoint).
 		WithArgs(req.args)
 
 	mdata := metadata.Bytes()
-	mdataBack := request.RequestMetadataFromBytes(mdata)
+	mdataBack := request.MetadataFromBytes(mdata)
 	require.True(ch.Env.T, mdataBack.ParsedOk())
 
 	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.LogicalTime())

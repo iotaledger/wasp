@@ -187,7 +187,7 @@ func (c *chainObj) SendMissingRequestsToPeer(msg messages.MissingRequestIDsMsg, 
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 	c.log.Debugf("ReceiveTransaction: %s", tx.ID().Base58())
-	reqs, err := request.RequestsOnLedgerFromTransaction(tx, c.chainID.AsAddress())
+	reqs, err := request.OnLedgerFromTransaction(tx, c.chainID.AsAddress())
 	if err != nil {
 		c.log.Warnf("failed to parse transaction %s: %v", tx.ID().Base58(), err)
 		return

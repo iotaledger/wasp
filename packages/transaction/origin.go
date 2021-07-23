@@ -73,7 +73,7 @@ func NewRootInitRequestTransaction(
 	args.AddEncodeSimple(paramChainID, codec.EncodeChainID(chainID))
 	args.AddEncodeSimple(paramDescription, codec.EncodeString(description))
 
-	metadata := request.NewRequestMetadata().
+	metadata := request.NewMetadata().
 		WithTarget(iscp.Hn("root")).
 		WithEntryPoint(iscp.EntryPointInit).
 		WithArgs(args).
