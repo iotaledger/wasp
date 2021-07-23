@@ -84,9 +84,9 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 	require.NoError(t, err)
 	chain.CheckAccountLedger()
 	chain.AssertAccountBalance(newOwnerAgentID, ledgerstate.ColorIOTA, 0)
-	env.AssertAddressBalance(newOwnerAddr, ledgerstate.ColorIOTA, solo.Saldo-1)
-	chain.AssertTotalIotas(2)
-	chain.AssertCommonAccountIotas(2)
+	env.AssertAddressBalance(newOwnerAddr, ledgerstate.ColorIOTA, solo.Saldo)
+	chain.AssertTotalIotas(1)
+	chain.AssertCommonAccountIotas(1)
 
 	// withdraw owner's iotas
 	_, ownerFromChain, _ := chain.GetInfo()
@@ -96,16 +96,16 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, chain.OriginatorKeyPair)
 	require.NoError(t, err)
-	chain.AssertTotalIotas(3)
+	chain.AssertTotalIotas(2)
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
-	chain.AssertCommonAccountIotas(3)
+	chain.AssertCommonAccountIotas(2)
 
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncHarvest.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, chain.OriginatorKeyPair)
 
 	require.NoError(t, err)
-	chain.AssertTotalIotas(4)
-	chain.AssertIotas(&chain.OriginatorAgentID, 4)
+	chain.AssertTotalIotas(3)
+	chain.AssertIotas(&chain.OriginatorAgentID, 3)
 	chain.AssertCommonAccountIotas(0)
 }
 

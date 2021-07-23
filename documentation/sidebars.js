@@ -108,11 +108,6 @@ module.exports = {
         },
         {
           type: 'doc',
-          label: 'Default Contract',
-          id: 'contract_core/default',
-        },
-        {
-          type: 'doc',
           label: 'Account Contract',
           id: 'contract_core/accounts',
         },
@@ -128,8 +123,13 @@ module.exports = {
         },
         {
           type: 'doc',
-          label: 'Eventlog Contract',
-          id: 'contract_core/eventlog',
+          label: 'Governance Contract',
+          id: 'contract_core/governance',
+        },
+        {
+          type: 'doc',
+          label: 'Default Contract',
+          id: 'contract_core/default',
         },
       ],
     },
