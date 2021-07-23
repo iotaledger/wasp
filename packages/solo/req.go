@@ -214,13 +214,7 @@ func (ch *Chain) PostRequestOffLedger(req *CallParams, keyPair *ed25519.KeyPair)
 	if err != nil {
 		return nil, err
 	}
-	rec, _, _, ok := ch.GetRequestReceipt(r.ID())
-	require.True(ch.Env.T, ok)
-	err = nil
-	if len(rec.LogData) > 0 {
-		err = xerrors.New(string(rec.LogData))
-	}
-	return res, err
+	return res, ch.mustGetErrorFromReceipt(r.ID())
 }
 
 func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, dict.Dict, error) {
@@ -236,13 +230,17 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*
 	if err != nil {
 		return nil, nil, err
 	}
+	return tx, res, ch.mustGetErrorFromReceipt(reqid)
+}
+
+func (ch *Chain) mustGetErrorFromReceipt(reqid iscp.RequestID) error {
 	rec, _, _, ok := ch.GetRequestReceipt(reqid)
 	require.True(ch.Env.T, ok)
-	err = nil
-	if len(rec.LogData) > 0 {
-		err = xerrors.New(string(rec.LogData))
+	var err error
+	if len(rec.Error) > 0 {
+		err = xerrors.New(rec.Error)
 	}
-	return tx, res, err
+	return err
 }
 
 // callViewFull calls the view entry point of the smart contract

@@ -121,7 +121,7 @@ func TestRequestLogRecord(t *testing.T) {
 	require.True(t, ok)
 	require.EqualValues(t, reqs[0].ID(), rec.RequestID)
 	require.False(t, rec.OffLedger)
-	require.EqualValues(t, 0, len(rec.LogData))
+	require.EqualValues(t, 0, len(rec.Error))
 	require.EqualValues(t, 2, blockIndex)
 	require.EqualValues(t, 0, requestIndex)
 }

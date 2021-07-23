@@ -78,26 +78,24 @@ func TestTutorial4(t *testing.T) {
 }
 
 func TestTutorial5(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false, seed)
 	chain := env.NewChain(nil, "ex5")
-
-	// create a wallet with 1337 iotas.
+	// create a wallet with 1000000 iotas.
 	// the wallet has address and it is globally identified
 	// through a universal identifier: the agent ID
-	userWallet, userAddress := env.NewKeyPairWithFunds()
+	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
 	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
 
-	t.Logf("Address of the userWallet is: %s", userAddress)
+	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
 	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
 	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 
 	// send 42 iotas from wallet to own account on-chain, controlled by the same wallet
-	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
-	req.WithIotas(42)
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(42)
 	_, err := chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
@@ -106,19 +104,18 @@ func TestTutorial5(t *testing.T) {
 	// check the on-chain account. Must contain 42 iotas
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 42)
 
-	// withdraw all iotas
-	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name)
-	req.WithIotas(1)
+	// withdraw all iotas back to the sender
+	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
 	// we are back to initial situation: IOTA is fee-less!
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-1)
+	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0) // empty
 }
 
 func TestTutorial6(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false, seed)
 	chain := env.NewChain(nil, "ex6")
 
 	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
@@ -126,15 +123,14 @@ func TestTutorial6(t *testing.T) {
 
 	contractAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("example1"))
 
-	userWallet, userAddress := env.NewKeyPairWithFunds()
+	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
 	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
 	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
 	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)     // empty on-chain
 
-	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!")
-	req.WithIotas(42)
+	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").WithIotas(42)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
@@ -144,7 +140,7 @@ func TestTutorial6(t *testing.T) {
 }
 
 func TestTutorial7(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, false, false, seed)
 	chain := env.NewChain(nil, "ex7")
 
 	err := chain.DeployWasmContract(nil, "example1", "example_tutorial_bg.wasm")
@@ -152,34 +148,34 @@ func TestTutorial7(t *testing.T) {
 
 	contractAgentID := iscp.NewAgentID(chain.ChainID.AsAddress(), iscp.Hn("example1"))
 
-	userWallet, userAddress := env.NewKeyPairWithFunds()
+	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
+	// we start with these balances on address and on chain
 	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
-	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)     // empty on-chain
+	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)     // empty
 
-	// missing parameter, will panic
-	req := solo.NewCallParams("example1", "storeString")
-	req.WithIotas(42)
+	// missing parameter, request will panic
+	req := solo.NewCallParams("example1", "storeString").WithIotas(42)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.Error(t, err)
 
-	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0)
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
+	// assert balances didn't change on address and on chain
 	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
+	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // still empty
+	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)     // still empty
 }
 
 // test withdrawIota method
 func TestTutorial8(t *testing.T) {
-	// create solo environment
-	env := solo.New(t, false, false)
+	// create deterministic solo environment
+	env := solo.New(t, false, false, seed)
 	// deploy new chain
 	chain := env.NewChain(nil, "ex8")
 
-	// create a user's wallet (private key) and request 1337 iotas from the faucet.
-	// It corresponds to L1 address
-	userWallet, userAddress := env.NewKeyPairWithFunds()
+	// create a user's wallet (private key) with address and request iotas from the faucet.
+	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 	t.Logf("userAgentID: %s", userAgentID)
 
@@ -188,8 +184,7 @@ func TestTutorial8(t *testing.T) {
 
 	// the chain owner (default) send a request to the root contract to grant right to deploy
 	// contract on the chain to the use
-	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name, root.ParamDeployer, userAgentID)
-	req.WithIotas(1)
+	req := solo.NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name, root.ParamDeployer, userAgentID).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 

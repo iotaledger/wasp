@@ -1,8 +1,6 @@
 package vmcontext
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -128,14 +126,14 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	var data []byte
+	errStr := ""
 	if errProvided != nil {
-		data = []byte(fmt.Sprintf("%v", errProvided))
+		errStr = errProvided.Error()
 	}
 	err := blocklog.SaveRequestLogRecord(vmctx.State(), &blocklog.RequestReceipt{
 		RequestID: vmctx.req.ID(),
 		OffLedger: vmctx.req.Output() == nil,
-		LogData:   data,
+		Error:     errStr,
 	}, vmctx.requestLookupKey())
 	if err != nil {
 		vmctx.Panicf("logRequestToBlockLog: %v", err)

@@ -10,7 +10,7 @@ The `root` contract provides the following functions:
   contracts.
 
 - It functions as a smart contract factory for the chain: it deploys other smart
-  contracts and maintains an on-chain registry of smart contracts.
+  contracts and maintains an on-chain registry of smart contracts in its state.
 
 - It manages chain ownership. The _chain owner_ is a special `agentID`
   (L1 address or another smart contract). Initially the deployer of the chain
