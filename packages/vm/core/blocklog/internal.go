@@ -95,7 +95,10 @@ func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract is
 		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
 	}
 	entries = append(entries, key.Bytes()...)
-	scLut.SetAt(contract.Bytes(), entries)
+	err = scLut.SetAt(contract.Bytes(), entries)
+	if err != nil {
+		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
+	}
 	return nil
 }
 

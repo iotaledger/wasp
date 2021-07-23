@@ -333,11 +333,6 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.Hash().String())
 }
 
-const (
-	retryOnStateInvalidatedRetry   = 100 * time.Millisecond
-	retryOnStateInvalidatedTimeout = 5 * time.Second
-)
-
 func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 	if blockIndex == 0 {
 		// don't run on state #0, root contracts not initialized yet.
@@ -346,12 +341,12 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 
 	kvPartition := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
 
-	events, err := blocklog.GetBlockEventsIntern(kvPartition, blockIndex)
+	evts, err := blocklog.GetBlockEventsIntern(kvPartition, blockIndex)
 	if err != nil {
 		c.log.Panicf("publishNewBlockEvents - something went wrong getting events for block. %v", err)
 	}
 
-	for _, msg := range events {
+	for _, msg := range evts {
 		c.log.Info("publishNewBlockEvents - chainID: %s, event: %s", c.chainID.String(), msg)
 		publisher.Publish("vmmsg", c.chainID.Base58(), msg)
 	}

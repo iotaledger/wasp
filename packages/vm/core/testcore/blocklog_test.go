@@ -187,11 +187,13 @@ func eventsViewResultToStringArray(result dict.Dict) ([]string, error) {
 }
 
 func incrementSCCounter(t *testing.T, chain *solo.Chain) iscp.RequestID {
-	tx, _, _ := chain.PostRequestSyncTx(
+	tx, _, err := chain.PostRequestSyncTx(
 		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).WithIotas(1),
 		nil,
 	)
-	reqs, _ := chain.Env.RequestsForChain(tx, chain.ChainID)
+	require.NoError(t, err)
+	reqs, err := chain.Env.RequestsForChain(tx, chain.ChainID)
+	require.NoError(t, err)
 	return reqs[0].ID()
 }
 
