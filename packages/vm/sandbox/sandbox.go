@@ -70,7 +70,7 @@ func (s *sandbox) DeployContract(programHash hashing.HashValue, name, descriptio
 
 func (s *sandbox) Event(msg string) {
 	s.Log().Infof("eventlog::%s -> '%s'", s.vmctx.CurrentContractHname(), msg)
-	s.vmctx.MustLogEvent(s.vmctx.CurrentContractHname(), msg)
+	s.vmctx.MustSaveEvent(s.vmctx.CurrentContractHname(), msg)
 }
 
 func (s *sandbox) GetEntropy() hashing.HashValue {

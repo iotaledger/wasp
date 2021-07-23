@@ -142,14 +142,14 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 	}
 }
 
-func (vmctx *VMContext) MustLogEvent(contract iscp.Hname, msg string) {
+func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	vmctx.log.Debugf("MustLogEvent/%s: msg: '%s'", contract.String(), msg)
+	vmctx.log.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
 	err := blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey(), contract)
 	if err != nil {
-		vmctx.Panicf("MustLogEvent: %v", err)
+		vmctx.Panicf("MustSaveEvent: %v", err)
 	}
 	vmctx.requestEventIndex++
 }
