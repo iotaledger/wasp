@@ -51,8 +51,6 @@ func (o *OptimisticKVStoreReader) IsStateValid() bool {
 }
 
 func (o *OptimisticKVStoreReader) Get(key kv.Key) ([]byte, error) {
-	println("!!!!!!!!!")
-	println(o.baseline)
 	if !o.baseline.IsValid() {
 		return nil, ErrStateHasBeenInvalidated
 	}

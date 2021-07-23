@@ -187,8 +187,8 @@ func viewGetEventsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 // viewGetEventsForContract returns a list of events for a given smart contract.
 // params:
 // ParamContractHname - hname of the contract
-// fromBlock - defaults to 0
-// toBlock - defaults to latest block
+// ParamFromBlock - defaults to 0
+// ParamToBlock - defaults to latest block
 func viewGetEventsForContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	contract := params.MustGetHname(ParamContractHname)
