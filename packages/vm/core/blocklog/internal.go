@@ -134,7 +134,7 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 			return rec, nil
 		}
 	}
-	return nil, xerrors.Errorf("couldn't find record for requestID: %s", reqID.Base58())
+	return nil, nil
 }
 
 // isRequestProcessedIntern does quick lookup to check if it wasn't seen yet
