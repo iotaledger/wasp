@@ -99,15 +99,15 @@ func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract is
 	return nil
 }
 
-func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.RequestID) RequestLookupKeyList {
+func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.RequestID) (RequestLookupKeyList, error) {
 	lookupTable := collections.NewMapReadOnly(partition, StateVarRequestLookupIndex)
 	digest := reqID.LookupDigest()
 	seen, err := lookupTable.HasAt(digest[:])
 	if err != nil {
-		return []RequestLookupKey{}
+		return nil, err
 	}
 	if !seen {
-		return []RequestLookupKey{}
+		return []RequestLookupKey{}, nil
 	}
 	// the lookup record is here, have to check is it is not a collision of digests
 	bin := lookupTable.MustGetAt(digest[:])
@@ -115,7 +115,7 @@ func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.Reque
 	if err != nil {
 		panic("RequestKnown: data conversion error")
 	}
-	return lst
+	return lst, nil
 }
 
 // RequestLookupKeyList contains multiple references for record entries with colliding digests, this function returns the correct record for the given requestID
@@ -139,13 +139,19 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 
 // isRequestProcessedIntern does quick lookup to check if it wasn't seen yet
 func isRequestProcessedIntern(partition kv.KVStoreReader, reqID *iscp.RequestID) (bool, error) {
-	lst := mustGetLookupKeyListFromReqID(partition, reqID)
+	lst, err := mustGetLookupKeyListFromReqID(partition, reqID)
+	if err != nil {
+		return false, err
+	}
 	record, err := getCorrectRecordFromLookupKeyList(partition, lst, reqID)
 	return record != nil, err
 }
 
 func getRequestEventsIntern(partition kv.KVStoreReader, reqID *iscp.RequestID) ([]string, error) {
-	lst := mustGetLookupKeyListFromReqID(partition, reqID)
+	lst, err := mustGetLookupKeyListFromReqID(partition, reqID)
+	if err != nil {
+		return nil, err
+	}
 	record, err := getCorrectRecordFromLookupKeyList(partition, lst, reqID)
 	if err != nil {
 		return nil, err
