@@ -85,7 +85,8 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestReceipt, key Request
 }
 
 func SaveEvent(partition kv.KVStore, msg string, key EventLookupKey, contract iscp.Hname) error {
-	if err := collections.NewMap(partition, StateVarRequestEvents).SetAt(key.Bytes(), []byte(msg)); err != nil {
+	text := fmt.Sprintf("%s: %s", contract.String(), msg)
+	if err := collections.NewMap(partition, StateVarRequestEvents).SetAt(key.Bytes(), []byte(text)); err != nil {
 		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
 	}
 	scLut := collections.NewMap(partition, StateVarSmartContractEventsLookup)

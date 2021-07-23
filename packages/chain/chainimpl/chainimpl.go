@@ -353,9 +353,7 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 
 	for _, msg := range events {
 		c.log.Info("publishNewBlockEvents - chainID: %s, event: %s", c.chainID.String(), msg)
-		// TODO THIS IS WRONG. NEEDS TO BE REFACTORED. - just for testing
-		publisher.Publish("vmmsg", c.chainID.Base58(), blocklog.Contract.Name, msg)
-		// publisher.Publish("vmmsg", c.chainID.Base58(), contractHname.String(), msg)
+		publisher.Publish("vmmsg", c.chainID.Base58(), msg)
 	}
 }
 
