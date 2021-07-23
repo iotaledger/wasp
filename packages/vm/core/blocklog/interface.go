@@ -22,7 +22,7 @@ const (
 	StateVarBlockRegistry             = "b"
 	StateVarControlAddresses          = "c"
 	StateVarRequestLookupIndex        = "l"
-	StateVarRequestRecords            = "r" // TODO check name merged
+	StateVarRequestReceipts           = "r"
 	StateVarRequestEvents             = "e"
 	StateVarSmartContractEventsLookup = "e"
 )

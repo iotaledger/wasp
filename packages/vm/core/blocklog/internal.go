@@ -78,7 +78,7 @@ func SaveRequestLogRecord(partition kv.KVStore, rec *RequestReceipt, key Request
 		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
 	}
 	// save the record. Key is a LookupKey
-	if err = collections.NewMap(partition, StateVarRequestRecords).SetAt(key.Bytes(), rec.Bytes()); err != nil {
+	if err = collections.NewMap(partition, StateVarRequestReceipts).SetAt(key.Bytes(), rec.Bytes()); err != nil {
 		return xerrors.Errorf("SaveRequestLogRecord: %w", err)
 	}
 	return nil
@@ -120,7 +120,7 @@ func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.Reque
 
 // RequestLookupKeyList contains multiple references for record entries with colliding digests, this function returns the correct record for the given requestID
 func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList RequestLookupKeyList, reqID *iscp.RequestID) (*RequestReceipt, error) {
-	records := collections.NewMapReadOnly(partition, StateVarRequestRecords)
+	records := collections.NewMapReadOnly(partition, StateVarRequestReceipts)
 	for _, lookupKey := range keyList {
 		recBytes, err := records.GetAt(lookupKey.Bytes())
 		if err != nil {
@@ -273,7 +273,7 @@ func getBlockInfoDataIntern(partition kv.KVStoreReader, blockIndex uint32) ([]by
 
 func getRequestRecordDataByRef(partition kv.KVStoreReader, blockIndex uint32, requestIndex uint16) ([]byte, bool) {
 	lookupKey := NewRequestLookupKey(blockIndex, requestIndex)
-	lookupTable := collections.NewMapReadOnly(partition, StateVarRequestRecords)
+	lookupTable := collections.NewMapReadOnly(partition, StateVarRequestReceipts)
 	recBin := lookupTable.MustGetAt(lookupKey[:])
 	if recBin == nil {
 		return nil, false
