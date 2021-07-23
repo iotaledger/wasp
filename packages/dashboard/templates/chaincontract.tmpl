@@ -34,8 +34,7 @@
 			<h3 class="section">Log</h3>
 			<dl style="align-items: center">
 				{{ range $_, $rec := .Log }}
-					<dt><tt>{{ formatTimestamp $rec.Timestamp }}</tt></dt>
-					<dd><pre>{{- trim 1000 (bytesToString $rec.Data) -}}</pre></dd>
+					<dd><pre>{{- trim 1000 ($rec) -}}</pre></dd>
 				{{ end }}
 			</dl>
 		</div>
