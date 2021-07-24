@@ -42,7 +42,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 func viewGetBlockInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	blockIndex := params.MustGetUint32(ParamBlockIndex)
-	data, found, err := getBlockInfoDataIntern(ctx.State(), blockIndex)
+	data, found, err := getBlockInfoDataInternal(ctx.State(), blockIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func viewIsRequestProcessed(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	requestID := params.MustGetRequestID(ParamRequestID)
 	a := assert.NewAssert(ctx.Log())
-	seen, err := isRequestProcessedIntern(ctx.State(), &requestID)
+	seen, err := isRequestProcessedInternal(ctx.State(), &requestID)
 	a.RequireNoError(err)
 	ret := dict.New()
 	if seen {
@@ -151,7 +151,7 @@ func viewGetEventsForRequest(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	requestID := params.MustGetRequestID(ParamRequestID)
 
-	events, err := getRequestEventsIntern(ctx.State(), &requestID)
+	events, err := getRequestEventsInternal(ctx.State(), &requestID)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func viewGetEventsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	blockIndex := params.MustGetUint32(ParamBlockIndex)
 
-	events, err := GetBlockEventsIntern(ctx.State(), blockIndex)
+	events, err := GetBlockEventsInternal(ctx.State(), blockIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func viewGetEventsForContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-	events, err := getSmartContractEventsIntern(ctx.State(), contract, fromBlock, toBlock)
+	events, err := getSmartContractEventsInternal(ctx.State(), contract, fromBlock, toBlock)
 	if err != nil {
 		return nil, err
 	}

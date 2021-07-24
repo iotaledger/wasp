@@ -341,7 +341,7 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 
 	kvPartition := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
 
-	evts, err := blocklog.GetBlockEventsIntern(kvPartition, blockIndex)
+	evts, err := blocklog.GetBlockEventsInternal(kvPartition, blockIndex)
 	if err != nil {
 		c.log.Panicf("publishNewBlockEvents - something went wrong getting events for block. %v", err)
 	}

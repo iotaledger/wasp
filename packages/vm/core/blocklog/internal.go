@@ -142,8 +142,8 @@ func getCorrectRecordFromLookupKeyList(partition kv.KVStoreReader, keyList Reque
 	return nil, nil
 }
 
-// isRequestProcessedIntern does quick lookup to check if it wasn't seen yet
-func isRequestProcessedIntern(partition kv.KVStoreReader, reqID *iscp.RequestID) (bool, error) {
+// isRequestProcessedInternal does quick lookup to check if it wasn't seen yet
+func isRequestProcessedInternal(partition kv.KVStoreReader, reqID *iscp.RequestID) (bool, error) {
 	lst, err := mustGetLookupKeyListFromReqID(partition, reqID)
 	if err != nil {
 		return false, err
@@ -152,7 +152,7 @@ func isRequestProcessedIntern(partition kv.KVStoreReader, reqID *iscp.RequestID)
 	return record != nil, err
 }
 
-func getRequestEventsIntern(partition kv.KVStoreReader, reqID *iscp.RequestID) ([]string, error) {
+func getRequestEventsInternal(partition kv.KVStoreReader, reqID *iscp.RequestID) ([]string, error) {
 	lst, err := mustGetLookupKeyListFromReqID(partition, reqID)
 	if err != nil {
 		return nil, err
@@ -178,7 +178,7 @@ func getRequestEventsIntern(partition kv.KVStoreReader, reqID *iscp.RequestID) (
 	}
 }
 
-func getSmartContractEventsIntern(partition kv.KVStoreReader, contract iscp.Hname, fromBlock, toBlock uint32) ([]string, error) {
+func getSmartContractEventsInternal(partition kv.KVStoreReader, contract iscp.Hname, fromBlock, toBlock uint32) ([]string, error) {
 	scLut := collections.NewMapReadOnly(partition, StateVarSmartContractEventsLookup)
 	ret := []string{}
 	entries, err := scLut.GetAt(contract.Bytes())
@@ -210,7 +210,7 @@ func getSmartContractEventsIntern(partition kv.KVStoreReader, contract iscp.Hnam
 	}
 }
 
-func GetBlockEventsIntern(partition kv.KVStoreReader, blockIndex uint32) ([]string, error) {
+func GetBlockEventsInternal(partition kv.KVStoreReader, blockIndex uint32) ([]string, error) {
 	blockInfo, err := getRequestLogRecordsForBlock(partition, blockIndex)
 	if err != nil {
 		return nil, err
@@ -239,7 +239,7 @@ func getRequestLogRecordsForBlock(partition kv.KVStoreReader, blockIndex uint32)
 	if blockIndex == 0 {
 		return nil, nil
 	}
-	blockInfoBin, found, err := getBlockInfoDataIntern(partition, blockIndex)
+	blockInfoBin, found, err := getBlockInfoDataInternal(partition, blockIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func getRequestLogRecordsForBlockBin(partition kv.KVStoreReader, blockIndex uint
 	return ret, true, nil
 }
 
-func getBlockInfoDataIntern(partition kv.KVStoreReader, blockIndex uint32) ([]byte, bool, error) {
+func getBlockInfoDataInternal(partition kv.KVStoreReader, blockIndex uint32) ([]byte, bool, error) {
 	data, err := collections.NewArray32ReadOnly(partition, StateVarBlockRegistry).GetAt(blockIndex)
 	return data, err == nil, err
 }
