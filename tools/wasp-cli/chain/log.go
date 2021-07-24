@@ -14,8 +14,6 @@ var logCmd = &cobra.Command{
 	Short: "Show log of contract <name>",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO test cli
-
 		r, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetEventsForContract.Name,
 			dict.Dict{
 				blocklog.ParamContractHname: iscp.Hn(args[0]).Bytes(),

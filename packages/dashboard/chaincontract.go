@@ -56,8 +56,6 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 			return err
 		}
 
-		// TODO test the dashboard
-
 		r, err = d.wasp.CallView(chain, blocklog.Contract.Hname(), blocklog.FuncGetEventsForContract.Name, codec.MakeDict(map[string]interface{}{
 			blocklog.ParamContractHname: codec.EncodeHname(hname),
 		}))

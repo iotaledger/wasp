@@ -21,6 +21,14 @@ func ValueFromString(vtype, s string) []byte {
 		n, err := strconv.Atoi(s)
 		log.Check(err)
 		return codec.EncodeUint64(uint64(n))
+	case "uint32":
+		n, err := strconv.Atoi(s)
+		log.Check(err)
+		return codec.EncodeUint32(uint32(n))
+	case "int32":
+		n, err := strconv.Atoi(s) //nolint:gosec // potential int32 overflow
+		log.Check(err)
+		return codec.EncodeInt32(int32(n))
 	case "int", "int64":
 		n, err := strconv.Atoi(s)
 		log.Check(err)

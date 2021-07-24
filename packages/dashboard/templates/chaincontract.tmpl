@@ -31,12 +31,10 @@
 		</div>
 
 		<div class="card fluid">
-			<h3 class="section">Log</h3>
-			<dl style="align-items: center">
-				{{ range $_, $rec := .Log }}
-					<dd><pre>{{- trim 1000 ($rec) -}}</pre></dd>
-				{{ end }}
-			</dl>
+			<h3 class="section">Events</h3>
+			{{ range $_, $rec := .Log }}
+				<pre>{{- trim 1000 ($rec) -}}</pre>
+			{{ end }}
 		</div>
 		{{ template "ws" .ChainID }}
 	{{else}}
