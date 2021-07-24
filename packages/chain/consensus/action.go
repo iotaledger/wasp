@@ -112,7 +112,7 @@ func (c *Consensus) runVMIfNeeded() {
 			missingRequestIds = append(missingRequestIds, reqID)
 		}
 		c.log.Debugf("runVMIfNeeded: asking for missing requests, ids: %v", missingRequestIds)
-		msgData := messages.NewMissingRequestIDsMsg(&missingRequestIds).Bytes()
+		msgData := messages.NewMissingRequestIDsMsg(missingRequestIds).Bytes()
 		c.committee.SendMsgToPeers(messages.MsgMissingRequestIDs, msgData, time.Now().UnixNano())
 		return
 	}

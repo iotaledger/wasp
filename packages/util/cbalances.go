@@ -13,23 +13,6 @@ func allColors(bals ...*ledgerstate.ColoredBalances) map[ledgerstate.Color]bool 
 	return ret
 }
 
-func EqualColoredBalances(b1, b2 *ledgerstate.ColoredBalances) bool {
-	if b1 == b2 {
-		return true
-	}
-	if b1 == nil || b2 == nil {
-		return false
-	}
-	for col := range allColors(b1, b2) {
-		v1, ok1 := b1.Get(col)
-		v2, ok2 := b2.Get(col)
-		if ok1 != ok2 || v1 != v2 {
-			return false
-		}
-	}
-	return true
-}
-
 func DiffColoredBalances(b1, b2 *ledgerstate.ColoredBalances) map[ledgerstate.Color]uint64 {
 	ret := make(map[ledgerstate.Color]uint64)
 	if b1 == b2 {

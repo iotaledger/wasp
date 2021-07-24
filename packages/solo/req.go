@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/color"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -26,7 +28,7 @@ type CallParams struct {
 	target      iscp.Hname
 	epName      string
 	entryPoint  iscp.Hname
-	transfer    *ledgerstate.ColoredBalances
+	transfer    color.Balances
 	mintAmount  uint64
 	mintAddress ledgerstate.Address
 	args        requestargs.RequestArgs
@@ -75,19 +77,19 @@ func NewCallParamsOptimized(scName, funName string, optSize int, params ...inter
 
 // WithTransfer is a shorthand for the most often used case where only
 // a single color is transferred by WithTransfers
-func (r *CallParams) WithTransfer(color ledgerstate.Color, amount uint64) *CallParams {
-	return r.WithTransfers(map[ledgerstate.Color]uint64{color: amount})
+func (r *CallParams) WithTransfer(col color.Color, amount uint64) *CallParams {
+	return r.WithTransfers(color.Balances{col: amount})
 }
 
 // WithTransfers complement CallParams structure with the colored balances of tokens
 // in the form of a collection of pairs 'color': 'balance'
-func (r *CallParams) WithTransfers(transfer map[ledgerstate.Color]uint64) *CallParams {
-	r.transfer = ledgerstate.NewColoredBalances(transfer)
+func (r *CallParams) WithTransfers(transfer color.Balances) *CallParams {
+	r.transfer = transfer
 	return r
 }
 
 func (r *CallParams) WithIotas(amount uint64) *CallParams {
-	return r.WithTransfer(ledgerstate.ColorIOTA, amount)
+	return r.WithTransfer(color.IOTA, amount)
 }
 
 // WithMint adds additional mint proof
@@ -99,7 +101,7 @@ func (r *CallParams) WithMint(targetAddress ledgerstate.Address, amount uint64) 
 
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(keyPair *ed25519.KeyPair) *request.RequestOffLedger {
-	ret := request.NewRequestOffLedger(r.target, r.entryPoint, r.args).WithTransfer(r.transfer)
+	ret := request.NewOffLedger(r.target, r.entryPoint, r.args).WithTransfer(r.transfer)
 	ret.Sign(keyPair)
 	return ret
 }
@@ -134,7 +136,7 @@ func toMap(params []interface{}) map[string]interface{} {
 // Then it adds it to the ledger, atomically.
 // Locking on the mutex is needed to prevent mess when several goroutines work on he same address
 func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.KeyPair) (*ledgerstate.Transaction, iscp.RequestID, error) {
-	if req.transfer == nil || req.transfer.Size() == 0 {
+	if len(req.transfer) == 0 {
 		return nil, iscp.RequestID{}, xerrors.New("transfer can't be empty")
 	}
 
@@ -158,7 +160,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 
 	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.LogicalTime())
 	var err error
-	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), mdata, req.transfer.Map())
+	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), mdata, color.ToLedgerstateMap(req.transfer))
 	require.NoError(ch.Env.T, err)
 	if req.mintAmount > 0 {
 		err = txb.AddMintingOutputConsume(req.mintAddress, req.mintAmount)

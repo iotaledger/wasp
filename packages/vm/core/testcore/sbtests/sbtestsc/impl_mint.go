@@ -1,9 +1,9 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/color"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -13,13 +13,13 @@ func getMintedSupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	allMinted := ctx.Minted()
 	a := assert.NewAssert(ctx.Log())
 	a.Require(len(allMinted) == 1, "test only supports one minted color")
-	var color ledgerstate.Color
+	var colMinted color.Color
 	var amount uint64
 	for col, bal := range allMinted {
-		color = col
+		colMinted = col
 		amount = bal
 	}
 	ret.Set(VarMintedSupply, codec.EncodeUint64(amount))
-	ret.Set(VarMintedColor, codec.EncodeColor(color))
+	ret.Set(VarMintedColor, codec.EncodeColor(colMinted))
 	return ret, nil
 }

@@ -3,7 +3,8 @@ package sbtests
 import (
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp/color"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -62,29 +63,29 @@ func testMintedSupplyOk(t *testing.T, w bool) {
 	tx, ret, err := chain.PostRequestSyncTx(req, user)
 	require.NoError(t, err)
 
-	mintedAmounts := utxoutil.GetMintedAmounts(tx)
+	mintedAmounts := color.BalancesFromLedgerstate2(utxoutil.GetMintedAmounts(tx))
 	t.Logf("minting request tx: %s", tx.ID().Base58())
 
 	require.Len(t, mintedAmounts, 1)
-	var color ledgerstate.Color
-	for col := range mintedAmounts {
-		color = col
+	var col color.Color
+	for col1 := range mintedAmounts {
+		col = col1
 		break
 	}
-	t.Logf("Minted: amount = %d color = %s", newSupply, color.Base58())
+	t.Logf("Minted: amount = %d color = %s", newSupply, col.Base58())
 
 	extraIota := uint64(0)
 	if w {
 		extraIota = 1
 	}
 	chain.Env.AssertAddressIotas(userAddress, solo.Saldo-3-extraIota-newSupply)
-	chain.Env.AssertAddressBalance(userAddress, color, newSupply)
+	chain.Env.AssertAddressBalance(userAddress, col, newSupply)
 
 	colorBack, ok, err := codec.DecodeColor(ret.MustGet(sbtestsc.VarMintedColor))
 	require.NoError(t, err)
 	require.True(t, ok)
 	t.Logf("color back: %s", colorBack.Base58())
-	require.EqualValues(t, color, colorBack)
+	require.EqualValues(t, col, colorBack)
 	supplyBack, ok, err := codec.DecodeUint64(ret.MustGet(sbtestsc.VarMintedSupply))
 	require.NoError(t, err)
 	require.True(t, ok)

@@ -51,6 +51,14 @@ func NewOptimizedRequestArgs(d dict.Dict, optSize ...int) (RequestArgs, map[kv.K
 	return ret, retOptimized
 }
 
+func FromMarshalUtil(mu *marshalutil.MarshalUtil) (RequestArgs, error) {
+	ret := New()
+	if err := ret.ReadFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
 // AddEncodeSimple add new ordinary argument. Encodes the key as "normal"
 func (a RequestArgs) AddEncodeSimple(name kv.Key, data []byte) RequestArgs {
 	a["-"+name] = data

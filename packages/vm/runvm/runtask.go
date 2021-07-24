@@ -5,9 +5,9 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/color"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"golang.org/x/xerrors"
@@ -60,7 +60,7 @@ func runTask(task *vm.VMTask) {
 
 	var lastResult dict.Dict
 	var lastErr error
-	var lastTotalAssets *ledgerstate.ColoredBalances
+	var lastTotalAssets color.Balances
 
 	// loop over the batch of requests and run each request on the VM.
 	// the result accumulates in the VMContext and in the list of stateUpdates
@@ -119,7 +119,7 @@ func outputsFromRequests(requests ...iscp.Request) []ledgerstate.Output {
 	return ret
 }
 
-func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalAssets *ledgerstate.ColoredBalances) error {
+func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalAssets color.Balances) error {
 	var chainOutput *ledgerstate.AliasOutput
 	for _, o := range essence.Outputs() {
 		if out, ok := o.(*ledgerstate.AliasOutput); ok {
@@ -129,8 +129,9 @@ func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalAssets *
 	if chainOutput == nil {
 		return xerrors.New("inconsistency: chain output not found")
 	}
-	diffAssets := util.DiffColoredBalances(chainOutput.Balances(), lastTotalAssets)
-	if iotas, ok := diffAssets[ledgerstate.ColorIOTA]; !ok || iotas != ledgerstate.DustThresholdAliasOutputIOTA {
+	balancesOnOutput := color.BalancesFromLedgerstate1(chainOutput.Balances())
+	diffAssets := balancesOnOutput.Diff(lastTotalAssets)
+	if iotas := diffAssets.Get(color.IOTA); iotas != ledgerstate.DustThresholdAliasOutputIOTA {
 		return xerrors.Errorf("RunVM.BuildTransactionEssence: inconsistency between L1 and L2 ledgers")
 	}
 	return nil

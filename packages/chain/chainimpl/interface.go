@@ -110,7 +110,7 @@ func shouldSendToPeer(peerID string, ackPeers []string) bool {
 
 func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
-	msgData := messages.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
+	msgData := messages.NewOffLedgerRequestMsg(&c.chainID, req).Bytes()
 	committee := c.getCommittee()
 	getPeerIDs := (*c.peers).GetRandomPeers
 
@@ -175,7 +175,7 @@ func (c *chainObj) ReceiveRequestAckMessage(reqID *iscp.RequestID, peerID string
 }
 
 // SendMissingRequestsToPeer sends the requested missing requests by a peer
-func (c *chainObj) SendMissingRequestsToPeer(msg messages.MissingRequestIDsMsg, peerID string) {
+func (c *chainObj) SendMissingRequestsToPeer(msg *messages.MissingRequestIDsMsg, peerID string) {
 	for _, reqID := range msg.IDs {
 		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID.Base58(), peerID)
 		if req := c.mempool.GetRequest(reqID); req != nil {

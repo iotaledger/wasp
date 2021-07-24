@@ -76,7 +76,7 @@ func dummyOffledgerRequest() *request.RequestOffLedger {
 	contract := iscp.Hn("somecontract")
 	entrypoint := iscp.Hn("someentrypoint")
 	args := requestargs.New(dict.Dict{})
-	req := request.NewRequestOffLedger(contract, entrypoint, args)
+	req := request.NewOffLedger(contract, entrypoint, args)
 	keys, _ := testkey.GenKeyAddr()
 	req.Sign(keys)
 	return req

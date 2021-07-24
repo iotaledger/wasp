@@ -5,6 +5,7 @@ package wasmproc
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp/color"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -45,13 +46,13 @@ func NewScTransferInfo(vm *WasmProcessor) *ScTransferInfo {
 
 // TODO refactor
 func (o *ScTransferInfo) Invoke(balances int32) {
-	balancesMap := make(map[ledgerstate.Color]uint64)
+	transfer := color.NewBalances()
 	balancesObj := o.host.FindObject(balances).(*ScDict)
 	balancesObj.kvStore.MustIterate("", func(key kv.Key, value []byte) bool {
 		if len(key) != ledgerstate.ColorLength {
 			return true
 		}
-		color, _, err := codec.DecodeColor([]byte(key))
+		col, _, err := codec.DecodeColor([]byte(key))
 		if err != nil {
 			o.Panic(err.Error())
 		}
@@ -59,11 +60,10 @@ func (o *ScTransferInfo) Invoke(balances int32) {
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		o.Tracef("TRANSFER #%d c'%s' a'%s'", value, color.String(), o.address.Base58())
-		balancesMap[color] = amount
+		o.Tracef("TRANSFER #%d c'%s' a'%s'", value, col.String(), o.address.Base58())
+		transfer.Set(col, amount)
 		return true
 	})
-	transfer := ledgerstate.NewColoredBalances(balancesMap)
 	if !o.vm.ctx.Send(o.address, transfer, nil) {
 		o.Panic("failed to send to %s", o.address.Base58())
 	}

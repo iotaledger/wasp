@@ -3,9 +3,9 @@ package dashboard
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/color"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -20,7 +20,7 @@ type RootInfo struct {
 	Description string
 	Contracts   map[iscp.Hname]*root.ContractRecord
 
-	FeeColor            ledgerstate.Color
+	FeeColor            color.Color
 	DefaultOwnerFee     uint64
 	DefaultValidatorFee uint64
 }

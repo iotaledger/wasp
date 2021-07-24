@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"sort"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/cerrors"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/stringify"
@@ -20,12 +19,6 @@ var IOTA = Color{}
 
 // Mint represents a placeholder Color that indicates that tokens should be "colored" in their Output.
 var Mint = Color{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
-
-// ColorLength represents the length of a Color (amount of bytes).
-const ColorLength = ledgerstate.ColorLength
-
-// Color represents a marker that is associated to a token balance and that can give tokens a certain "meaning".
-type Color ledgerstate.Color
 
 // FromBytes unmarshals a Color from a sequence of bytes.
 func FromBytes(colorBytes []byte) (col Color, err error) {
@@ -109,31 +102,20 @@ func (c Color) Compare(otherColor Color) int {
 type Balances map[Color]uint64
 
 // NewBalances returns a new Balances. In general, it has not deterministic order
-func NewBalances(bals map[Color]uint64) Balances {
-	return Balances(bals).Clone()
-}
-
-func BalancesFromLedgerstate1(cb *ledgerstate.ColoredBalances) Balances {
-	ret := NewBalances(nil)
-	if cb != nil {
-		cb.ForEach(func(color ledgerstate.Color, balance uint64) bool {
-			ret.Set(Color(color), balance)
-			return true
-		})
+func NewBalances(bals ...map[Color]uint64) Balances {
+	var b map[Color]uint64
+	if len(bals) > 0 && len(bals[0]) > 0 {
+		b = bals[0]
 	}
-	return ret
+	return Balances(b).Clone()
 }
 
-func BalancesFromLedgerstate2(cb map[ledgerstate.Color]uint64) Balances {
-	ret := NewBalances(nil)
-	for col, bal := range cb {
-		ret.Set(Color(col), bal)
-	}
-	return ret
+func NewBalancesForIotas(s uint64) Balances {
+	return NewBalances().Set(IOTA, s)
 }
 
-func BalancesFromIotas(s uint64) Balances {
-	return NewBalances(nil).Set(IOTA, s)
+func NewBalancesForColor(col Color, s uint64) Balances {
+	return NewBalances().Set(col, s)
 }
 
 // BalancesFromBytes unmarshals Balances from a sequence of bytes.
@@ -150,7 +132,7 @@ func BalancesFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (Balances, er
 	}
 
 	var previousColor *Color
-	ret := NewBalances(nil)
+	ret := NewBalances()
 	for i := uint32(0); i < balancesCount; i++ {
 		color, colorErr := FromMarshalUtil(marshalUtil)
 		if colorErr != nil {
@@ -202,7 +184,8 @@ func (c Balances) Add(color Color, bal uint64) Balances {
 	return c
 }
 
-func (c Balances) Sub(col Color, bal uint64) Balances {
+// SubNoOverflow securely subtracts amount from color balance. Set to 0 is subtracted amount > existing
+func (c Balances) SubNoOverflow(col Color, bal uint64) Balances {
 	if bal == 0 {
 		return c
 	}
@@ -300,6 +283,26 @@ func (c Balances) AddAll(another Balances) {
 		c.Add(col, bal)
 		return true
 	})
+}
+
+// Diff secure diff, 0 if overflow
+func (c Balances) Diff(another Balances) Balances {
+	ret := c.Clone()
+	for col := range allColors(ret, another) {
+		ret.SubNoOverflow(col, another.Get(col))
+	}
+	return ret
+}
+
+func allColors(bals ...Balances) map[Color]bool {
+	ret := make(map[Color]bool)
+	for _, b := range bals {
+		b.ForEachRandomly(func(col Color, bal uint64) bool {
+			ret[col] = true
+			return true
+		})
+	}
+	return ret
 }
 
 // endregion ///////////////////////////////////////////////////////////////////////////////////////////////////////////

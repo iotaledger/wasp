@@ -1,17 +1,17 @@
 package codec
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp/color"
 )
 
-func DecodeColor(b []byte) (ledgerstate.Color, bool, error) {
+func DecodeColor(b []byte) (color.Color, bool, error) {
 	if b == nil {
-		return ledgerstate.Color{}, false, nil
+		return color.Color{}, false, nil
 	}
-	ret, _, err := ledgerstate.ColorFromBytes(b)
+	ret, err := color.FromBytes(b)
 	return ret, err == nil, err
 }
 
-func EncodeColor(value ledgerstate.Color) []byte {
+func EncodeColor(value color.Color) []byte {
 	return value.Bytes()
 }

@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/color"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -229,7 +231,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	require.NoError(env.T, err)
 	err = env.utxoDB.AddTransaction(originTx)
 	require.NoError(env.T, err)
-	env.AssertAddressBalance(originatorAddr, ledgerstate.ColorIOTA, Saldo-100)
+	env.AssertAddressBalance(originatorAddr, color.IOTA, Saldo-100)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateAddr.Base58())
@@ -348,7 +350,8 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]isc
 		if !ok {
 			lst = make([]iscp.Request, 0)
 		}
-		ret[arr] = append(lst, request.OnLedgerFromOutput(o, sender, utxoutil.GetMintedAmounts(tx)))
+		mintedAmounts := color.BalancesFromLedgerstate2(utxoutil.GetMintedAmounts(tx))
+		ret[arr] = append(lst, request.OnLedgerFromOutput(o, sender, mintedAmounts))
 	}
 	return ret
 }

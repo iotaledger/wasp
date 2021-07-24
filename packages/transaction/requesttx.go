@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/color"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 )
@@ -13,7 +14,7 @@ type RequestParams struct {
 	ChainID    iscp.ChainID
 	Contract   iscp.Hname
 	EntryPoint iscp.Hname
-	Transfer   *ledgerstate.ColoredBalances
+	Transfer   color.Balances
 	Args       requestargs.RequestArgs
 }
 
@@ -22,8 +23,6 @@ type NewRequestTransactionParams struct {
 	UnspentOutputs []ledgerstate.Output
 	Requests       []RequestParams
 }
-
-var oneIota = map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 1}
 
 // NewRequestTransaction creates a transaction including one or more requests to a chain.
 // To avoid empty transfer it defaults to 1 iota
@@ -35,11 +34,13 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*ledgerstate.Transa
 			WithEntryPoint(req.EntryPoint).
 			WithArgs(req.Args).
 			Bytes()
-		transfer := oneIota
-		if req.Transfer != nil {
-			transfer = req.Transfer.Map()
+		var transfer color.Balances
+		if len(req.Transfer) > 0 {
+			transfer = req.Transfer
+		} else {
+			transfer = color.NewBalancesForIotas(1)
 		}
-		err := txb.AddExtendedOutputConsume(req.ChainID.AsAddress(), metadata, transfer)
+		err := txb.AddExtendedOutputConsume(req.ChainID.AsAddress(), metadata, color.ToLedgerstateMap(transfer))
 		if err != nil {
 			return nil, err
 		}

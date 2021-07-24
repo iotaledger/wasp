@@ -6,7 +6,8 @@ package wasmproc
 import (
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp/color"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -266,14 +267,14 @@ func (o *ScContext) getParams(paramsID int32) dict.Dict {
 	return params
 }
 
-func (o *ScContext) getTransfer(transferID int32) *ledgerstate.ColoredBalances {
+func (o *ScContext) getTransfer(transferID int32) color.Balances {
 	if transferID == 0 {
-		return ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{})
+		return color.NewBalances()
 	}
-	transfer := make(map[ledgerstate.Color]uint64)
+	transfer := color.NewBalances()
 	transferDict := o.host.FindObject(transferID).(*ScDict).kvStore
 	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
-		color, _, err := codec.DecodeColor([]byte(key))
+		col, _, err := codec.DecodeColor([]byte(key))
 		if err != nil {
 			o.Panic(err.Error())
 		}
@@ -281,9 +282,9 @@ func (o *ScContext) getTransfer(transferID int32) *ledgerstate.ColoredBalances {
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		o.Tracef("  XFER %d '%s'", amount, color.String())
-		transfer[color] = amount
+		o.Tracef("  XFER %d '%s'", amount, col.String())
+		transfer.Set(col, amount)
 		return true
 	})
-	return ledgerstate.NewColoredBalances(transfer)
+	return transfer
 }

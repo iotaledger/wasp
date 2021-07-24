@@ -3,6 +3,8 @@ package chainclient
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/color"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
@@ -39,7 +41,7 @@ func New(
 }
 
 type PostRequestParams struct {
-	Transfer *ledgerstate.ColoredBalances
+	Transfer color.Balances
 	Args     requestargs.RequestArgs
 	Nonce    uint64
 }
@@ -79,7 +81,7 @@ func (c *Client) PostOffLedgerRequest(
 	if par.Nonce == 0 {
 		par.Nonce = uint64(time.Now().UnixNano())
 	}
-	offledgerReq := request.NewRequestOffLedger(contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
+	offledgerReq := request.NewOffLedger(contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
 	offledgerReq.WithNonce(par.Nonce)
 	offledgerReq.Sign(c.KeyPair)
 	return offledgerReq, c.WaspClient.PostOffLedgerRequest(&c.ChainID, offledgerReq)
@@ -92,27 +94,26 @@ func NewPostRequestParams(p ...interface{}) *PostRequestParams {
 	}
 }
 
-func (par *PostRequestParams) WithTransfer(transfer *ledgerstate.ColoredBalances) *PostRequestParams {
+func (par *PostRequestParams) WithTransfer(transfer color.Balances) *PostRequestParams {
 	par.Transfer = transfer
 	return par
 }
 
 func (par *PostRequestParams) WithTransferEncoded(colval ...interface{}) *PostRequestParams {
-	ret := make(map[ledgerstate.Color]uint64)
 	if len(colval) == 0 {
 		return par
 	}
 	if len(colval)%2 != 0 {
 		panic("WithTransferEncode: len(params) % 2 != 0")
 	}
+	par.Transfer = color.NewBalances()
 	for i := 0; i < len(colval)/2; i++ {
-		key, ok := colval[2*i].(ledgerstate.Color)
+		key, ok := colval[2*i].(color.Color)
 		if !ok {
-			panic("toMap: ledgerstate.Color expected")
+			panic("toMap: color.Color expected")
 		}
-		ret[key] = encodeIntToUint64(colval[2*i+1])
+		par.Transfer.Set(key, encodeIntToUint64(colval[2*i+1]))
 	}
-	par.Transfer = ledgerstate.NewColoredBalances(ret)
 	return par
 }
 

@@ -4,8 +4,8 @@
 package jsonrpc
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/iscp/color"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 )
@@ -26,7 +26,7 @@ func (s *SoloBackend) Signer() *ed25519.KeyPair {
 	return s.signer
 }
 
-func (s *SoloBackend) PostOnLedgerRequest(scName, funName string, transfer map[ledgerstate.Color]uint64, args dict.Dict) error {
+func (s *SoloBackend) PostOnLedgerRequest(scName, funName string, transfer color.Balances, args dict.Dict) error {
 	_, err := s.Chain.PostRequestSync(
 		solo.NewCallParamsFromDic(scName, funName, args).WithTransfers(transfer),
 		s.signer,
@@ -34,7 +34,7 @@ func (s *SoloBackend) PostOnLedgerRequest(scName, funName string, transfer map[l
 	return err
 }
 
-func (s *SoloBackend) PostOffLedgerRequest(scName, funName string, transfer map[ledgerstate.Color]uint64, args dict.Dict) error {
+func (s *SoloBackend) PostOffLedgerRequest(scName, funName string, transfer color.Balances, args dict.Dict) error {
 	_, err := s.Chain.PostRequestOffLedger(
 		solo.NewCallParamsFromDic(scName, funName, args).WithTransfers(transfer),
 		s.signer,

@@ -5,6 +5,7 @@ package iscp
 
 import "github.com/iotaledger/goshimmer/packages/ledgerstate"
 
+// Deprecated:
 func EqualColoredBalances(b1, b2 *ledgerstate.ColoredBalances) bool {
 	if b1 == b2 {
 		return true
@@ -31,6 +32,7 @@ func EqualColoredBalances(b1, b2 *ledgerstate.ColoredBalances) bool {
 	return true
 }
 
+// Deprecated:
 func NewTransferIotas(n uint64) *ledgerstate.ColoredBalances {
 	return ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: n})
 }

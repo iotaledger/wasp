@@ -21,17 +21,17 @@ func TestNewColoredBalances(t *testing.T) {
 		require.EqualValues(t, 0, cb.Get(IOTA))
 	})
 	t.Run("empty 1", func(t *testing.T) {
-		cb := NewBalances(nil)
+		cb := NewBalances()
 		require.EqualValues(t, 0, len(cb))
 	})
 	t.Run("empty 2", func(t *testing.T) {
-		cb1 := NewBalances(nil)
-		cb2 := NewBalances(nil)
+		cb1 := NewBalances()
+		cb2 := NewBalances()
 		require.True(t, cb1.Equals(cb2))
 	})
 	t.Run("empty 3", func(t *testing.T) {
-		cb1 := NewBalances(nil)
-		cb2 := NewBalances(nil)
+		cb1 := NewBalances()
+		cb2 := NewBalances()
 		cb2.Set(IOTA, 0)
 		require.True(t, cb1.Equals(cb2))
 		cb2.Set(IOTA, 5)
@@ -44,14 +44,14 @@ func TestNewColoredBalances(t *testing.T) {
 		require.EqualValues(t, 5, cb.Get(IOTA))
 	})
 	t.Run("with iotas 2", func(t *testing.T) {
-		cb := BalancesFromIotas(5)
+		cb := NewBalancesForIotas(5)
 		require.EqualValues(t, 1, len(cb))
 		require.EqualValues(t, 5, cb.Get(IOTA))
 	})
 	t.Run("with iotas sub", func(t *testing.T) {
-		cb := BalancesFromIotas(5)
+		cb := NewBalancesForIotas(5)
 		require.EqualValues(t, 1, len(cb))
-		cb.Sub(IOTA, 10)
+		cb.SubNoOverflow(IOTA, 10)
 		require.EqualValues(t, 0, len(cb))
 		require.True(t, cb.IsEmpty())
 	})
@@ -61,23 +61,23 @@ func TestNewColoredBalances(t *testing.T) {
 	})
 	t.Run("equals 1", func(t *testing.T) {
 		cb1 := NewBalances(map[Color]uint64{IOTA: 5})
-		cb2 := BalancesFromIotas(5)
+		cb2 := NewBalancesForIotas(5)
 		require.True(t, cb1.Equals(cb2))
 	})
 	t.Run("equals 1", func(t *testing.T) {
 		cb1 := NewBalances(map[Color]uint64{IOTA: 5})
-		cb2 := BalancesFromIotas(5)
+		cb2 := NewBalancesForIotas(5)
 		require.True(t, cb1.Equals(cb2))
 		cb1.AddAll(cb2)
 		require.False(t, cb1.Equals(cb2))
 	})
 	t.Run("add", func(t *testing.T) {
-		cb := BalancesFromIotas(5)
+		cb := NewBalancesForIotas(5)
 		cb.Add(Mint, 8)
 		require.EqualValues(t, 2, len(cb))
 	})
 	t.Run("marshal1", func(t *testing.T) {
-		cb := BalancesFromIotas(5)
+		cb := NewBalancesForIotas(5)
 		cb.Add(Mint, 8)
 		data := cb.Bytes()
 		cbBack, err := BalancesFromBytes(data)
@@ -85,7 +85,7 @@ func TestNewColoredBalances(t *testing.T) {
 		require.True(t, cb.Equals(cbBack))
 	})
 	t.Run("marshal2", func(t *testing.T) {
-		cb := NewBalances(nil)
+		cb := NewBalances()
 		data := cb.Bytes()
 		cbBack, err := BalancesFromBytes(data)
 		require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestNewColoredBalances(t *testing.T) {
 	t.Run("for each", func(t *testing.T) {
 		const howMany = 100
 		arr := make([]Color, howMany)
-		cb := NewBalances(nil)
+		cb := NewBalances()
 		for i := range arr {
 			arr[i] = Random()
 			cb.Set(arr[i], uint64(i+1))

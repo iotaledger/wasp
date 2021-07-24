@@ -19,10 +19,11 @@ import (
 )
 
 const (
-	OnLedgerRequestType  byte = 0
-	OffLedgerRequestType byte = 1
+	onLedgerRequestType byte = iota
+	offLedgerRequestType
 )
 
+// FromMarshalUtil re-creates request from bytes. First byte is treated as type of the request
 func FromMarshalUtil(mu *marshalutil.MarshalUtil) (iscp.Request, error) {
 	b, err := mu.ReadByte()
 	if err != nil {
@@ -30,21 +31,12 @@ func FromMarshalUtil(mu *marshalutil.MarshalUtil) (iscp.Request, error) {
 	}
 	// first byte is the request type
 	switch b {
-	case OnLedgerRequestType:
+	case onLedgerRequestType:
 		return onLedgerFromMarshalUtil(mu)
-	case OffLedgerRequestType:
+	case offLedgerRequestType:
 		return offLedgerFromMarshalUtil(mu)
 	}
 	return nil, xerrors.Errorf("invalid Request Type")
-}
-
-func FromBytes(data []byte) (iscp.Request, error) {
-	return FromMarshalUtil(marshalutil.New(data))
-}
-
-func OffLedgerFromBytes(b []byte) (*RequestOffLedger, error) {
-	mu := marshalutil.New(b)
-	return offLedgerFromMarshalUtil(mu)
 }
 
 // region Metadata  ///////////////////////////////////////////////////////
@@ -148,8 +140,8 @@ func (p *Metadata) Bytes() []byte {
 func (p *Metadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(p.senderContract).
 		Write(p.targetContract).
-		Write(p.entryPoint).
-		Write(p.args)
+		Write(p.entryPoint)
+	p.args.WriteToMarshalUtil(mu)
 }
 
 func (p *Metadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
@@ -163,7 +155,7 @@ func (p *Metadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	if p.entryPoint, err = iscp.HnameFromMarshalUtil(mu); err != nil {
 		return err
 	}
-	if p.entryPoint, err = iscp.HnameFromMarshalUtil(mu); err != nil {
+	if p.args, err = requestargs.FromMarshalUtil(mu); err != nil {
 		return err
 	}
 	return nil
@@ -217,30 +209,43 @@ func OnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr ledgerstate
 	return ret, nil
 }
 
+// onLedgerFromMarshalUtil unmarshals requestOnLedger
 func onLedgerFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestOnLedger, error) {
 	ret := &RequestOnLedger{}
-	var err error
-
-	if ret.outputObj, err = ledgerstate.ExtendedOutputFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-	if ret.senderAddress, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
-		return nil, err
-	}
-	ret.requestMetadata = MetadataFromMarshalUtil(mu)
-	if ret.minted, err = color.BalancesFromMarshalUtil(mu); err != nil {
+	if err := ret.readFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 	return ret, nil
 }
 
+// Bytes serializes with the request type in the first byte
 func (req *RequestOnLedger) Bytes() []byte {
-	return marshalutil.New().WriteByte(OnLedgerRequestType).
-		Write(req.Output()).
+	mu := marshalutil.New().WriteByte(onLedgerRequestType)
+	req.writeToMarshalUtil(mu)
+	return mu.Bytes()
+}
+
+func (req *RequestOnLedger) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	mu.Write(req.Output()).
 		Write(req.senderAddress).
 		Write(req.requestMetadata).
-		Write(req.minted).
-		Bytes()
+		Write(req.minted)
+}
+
+func (req *RequestOnLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+	var err error
+
+	if req.outputObj, err = ledgerstate.ExtendedOutputFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	if req.senderAddress, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	req.requestMetadata = MetadataFromMarshalUtil(mu)
+	if req.minted, err = color.BalancesFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (req *RequestOnLedger) ID() iscp.RequestID {
@@ -329,8 +334,8 @@ type RequestOffLedger struct {
 // implements iscp.Request interface
 var _ iscp.Request = &RequestOffLedger{}
 
-// NewRequestOffLedger creates a basic request
-func NewRequestOffLedger(contract, entryPoint iscp.Hname, args requestargs.RequestArgs) *RequestOffLedger {
+// NewOffLedger creates a basic request
+func NewOffLedger(contract, entryPoint iscp.Hname, args requestargs.RequestArgs) *RequestOffLedger {
 	return &RequestOffLedger{
 		args:       args.Clone(),
 		contract:   contract,
@@ -339,30 +344,41 @@ func NewRequestOffLedger(contract, entryPoint iscp.Hname, args requestargs.Reque
 	}
 }
 
-// Bytes encodes request as bytes
+// Bytes encodes request as bytes with first type byte
 func (req *RequestOffLedger) Bytes() []byte {
 	mu := marshalutil.New()
-	mu.WriteByte(OffLedgerRequestType)
-	req.WriteEssenceToMarshalUtil(mu)
-	mu.WriteBytes(req.signature[:])
+	mu.WriteByte(offLedgerRequestType)
+	req.writeToMarshalUtil(mu)
 	return mu.Bytes()
 }
 
-// offLedgerFromBytes creates a basic request from previously serialized bytes (except type byte)
+// offLedgerFromMarshalUtil creates a request from previously serialized bytes. Does not expects type byte
 func offLedgerFromMarshalUtil(mu *marshalutil.MarshalUtil) (req *RequestOffLedger, err error) {
 	req = &RequestOffLedger{}
-	if err := req.ReadEssenceFromMarshalUtil(mu); err != nil {
+	if err := req.readFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
-	sig, err := mu.ReadBytes(len(req.signature))
-	if err != nil {
-		return nil, err
-	}
-	copy(req.signature[:], sig)
 	return req, nil
 }
 
-func (req *RequestOffLedger) WriteEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
+func (req *RequestOffLedger) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
+	req.writeEssenceToMarshalUtil(mu)
+	mu.WriteBytes(req.signature[:])
+}
+
+func (req *RequestOffLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+	if err := req.readEssenceFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	sig, err := mu.ReadBytes(len(req.signature))
+	if err != nil {
+		return err
+	}
+	copy(req.signature[:], sig)
+	return nil
+}
+
+func (req *RequestOffLedger) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(req.contract).
 		Write(req.entryPoint).
 		Write(req.args).
@@ -371,7 +387,7 @@ func (req *RequestOffLedger) WriteEssenceToMarshalUtil(mu *marshalutil.MarshalUt
 		Write(req.transfer)
 }
 
-func (req *RequestOffLedger) ReadEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+func (req *RequestOffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	if err := req.contract.ReadFromMarshalUtil(mu); err != nil {
 		return err
 	}
@@ -406,16 +422,16 @@ func (req *RequestOffLedger) Hash() [32]byte {
 func (req *RequestOffLedger) Sign(keyPair *ed25519.KeyPair) {
 	req.publicKey = keyPair.PublicKey
 	mu := marshalutil.New()
-	req.WriteEssenceToMarshalUtil(mu)
+	req.writeEssenceToMarshalUtil(mu)
 	req.signature = keyPair.PrivateKey.Sign(mu.Bytes())
 }
 
-// Transfer returns the transfers passed to the request
-func (req *RequestOffLedger) Transfer() color.Balances {
+// Tokens returns the transfers passed to the request
+func (req *RequestOffLedger) Tokens() color.Balances {
 	return req.transfer
 }
 
-// Transfer sets the transfers passed to the request
+// Tokens sets the transfers passed to the request
 func (req *RequestOffLedger) WithTransfer(transfer color.Balances) *RequestOffLedger {
 	req.transfer = transfer
 	return req
@@ -424,7 +440,7 @@ func (req *RequestOffLedger) WithTransfer(transfer color.Balances) *RequestOffLe
 // VerifySignature verifies essence signature
 func (req *RequestOffLedger) VerifySignature() bool {
 	mu := marshalutil.New()
-	req.WriteEssenceToMarshalUtil(mu)
+	req.writeEssenceToMarshalUtil(mu)
 	return req.publicKey.VerifySignature(mu.Bytes(), req.signature)
 }
 

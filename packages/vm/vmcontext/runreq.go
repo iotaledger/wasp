@@ -5,6 +5,8 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/color"
+
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 
 	"github.com/iotaledger/wasp/packages/kv"
@@ -119,7 +121,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 		} else {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: unexpected UTXO type")
 		}
-		vmctx.remainingAfterFees = req.Output().Balances().Clone()
+		vmctx.remainingAfterFees = color.BalancesFromLedgerstate1(req.Output().Balances())
 	} else {
 		// off-ledger request
 		vmctx.remainingAfterFees = vmctx.adjustOffLedgerTransfer()
@@ -135,7 +137,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 	}
 }
 
-func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
+func (vmctx *VMContext) adjustOffLedgerTransfer() color.Balances {
 	req, ok := vmctx.req.(*request.RequestOffLedger)
 	if !ok {
 		vmctx.log.Panicf("adjustOffLedgerTransfer.inconsistency: unexpected request type")
@@ -146,26 +148,25 @@ func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
 	// take sender-provided token transfer info and adjust it to
 	// reflect what is actually available in the local sender account
 	sender := req.SenderAccount()
-	transfers := make(map[ledgerstate.Color]uint64)
-	if tokens := req.Transfer(); tokens != nil {
-		tokens.ForEach(func(color ledgerstate.Color, balance uint64) bool {
-			available := accounts.GetBalance(vmctx.State(), sender, color)
-			if balance > available {
-				vmctx.log.Warn(
-					"adjusting transfer from ", balance,
-					" to available ", available,
-					" for ", sender.String(),
-					" req ", vmctx.RequestID().String(),
-				)
-				balance = available
-			}
-			if balance > 0 {
-				transfers[color] = balance
-			}
-			return true
-		})
-	}
-	return ledgerstate.NewColoredBalances(transfers)
+	transfers := color.NewBalances()
+	// deterministic order of iteration is not necessary
+	req.Tokens().ForEachRandomly(func(col color.Color, bal uint64) bool {
+		available := accounts.GetBalance(vmctx.State(), sender, col)
+		if bal > available {
+			vmctx.log.Warn(
+				"adjusting transfer from ", bal,
+				" to available ", available,
+				" for ", sender.String(),
+				" req ", vmctx.RequestID().String(),
+			)
+			bal = available
+		}
+		if bal > 0 {
+			transfers.Set(col, bal)
+		}
+		return true
+	})
+	return transfers
 }
 
 func (vmctx *VMContext) validateRequest() bool {
@@ -226,7 +227,7 @@ func (vmctx *VMContext) grabFee(account *iscp.AgentID, amount uint64) bool {
 	}
 
 	// determine how much fees we can actually take
-	available, _ := vmctx.remainingAfterFees.Get(vmctx.feeColor)
+	available := vmctx.remainingAfterFees.Get(vmctx.feeColor)
 	if available == 0 {
 		return false
 	}
@@ -235,21 +236,10 @@ func (vmctx *VMContext) grabFee(account *iscp.AgentID, amount uint64) bool {
 		// just take whatever is there
 		amount = available
 	}
-	available -= amount
-
-	// take fee from remainingAfterFees
-	remaining := vmctx.remainingAfterFees.Map()
-	if available == 0 {
-		delete(remaining, vmctx.feeColor)
-	} else {
-		remaining[vmctx.feeColor] = available
-	}
-	vmctx.remainingAfterFees = ledgerstate.NewColoredBalances(remaining)
+	vmctx.remainingAfterFees.SubNoOverflow(vmctx.feeColor, amount)
 
 	// get ready to transfer the fees
-	transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
-		vmctx.feeColor: amount,
-	})
+	transfer := color.NewBalancesForColor(vmctx.feeColor, amount)
 
 	if !vmctx.req.IsFeePrepaid() {
 		vmctx.creditToAccount(account, transfer)
@@ -261,8 +251,8 @@ func (vmctx *VMContext) grabFee(account *iscp.AgentID, amount uint64) bool {
 	return vmctx.moveBetweenAccounts(sender, account, transfer) && enoughFees
 }
 
-func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
-	if tokens == nil || tokens.Size() == 0 || vmctx.req.Output() == nil {
+func (vmctx *VMContext) mustSendBack(tokens color.Balances) {
+	if len(tokens) == 0 || vmctx.req.Output() == nil {
 		return
 	}
 	sender := vmctx.req.SenderAccount()
@@ -278,7 +268,7 @@ func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
 	backToAddress := sender.Address()
 	backToContract := sender.Hname()
 	metadata := request.NewMetadata().WithTarget(backToContract)
-	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), tokens.Map())
+	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), color.ToLedgerstateMap(tokens))
 	if err != nil {
 		vmctx.log.Errorf("mustSendBack: %v", err)
 	}

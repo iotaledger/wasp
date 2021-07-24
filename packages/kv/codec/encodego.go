@@ -38,9 +38,9 @@ func Encode(v interface{}) []byte {
 	case ledgerstate.Address:
 		return EncodeAddress(vt)
 	case *ledgerstate.Color:
-		return EncodeColor(*vt)
+		return EncodeColorLedgerstate(*vt)
 	case ledgerstate.Color:
-		return EncodeColor(vt)
+		return EncodeColorLedgerstate(vt)
 	case *iscp.ChainID:
 		return EncodeChainID(*vt)
 	case iscp.ChainID:
