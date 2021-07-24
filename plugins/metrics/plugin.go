@@ -37,10 +37,11 @@ func run(_ *node.Plugin) {
 	if err := daemon.BackgroundWorker("Prometheus exporter", func(shutdownSignal <-chan struct{}) {
 		log.Info("Starting Prometheus exporter ... done")
 
+		bindAddr := parameters.GetString(parameters.MetricsBindAddress)
 		stopped := make(chan struct{})
 		go func() {
 			defer close(stopped)
-			if err := allMetrics.Start(); err != nil {
+			if err := allMetrics.Start(bindAddr); err != nil {
 				log.Warnf("Error serving: %s", err)
 			}
 		}()
