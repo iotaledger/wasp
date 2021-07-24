@@ -10,8 +10,8 @@ import (
 )
 
 var logCmd = &cobra.Command{
-	Use:   "log <name>",
-	Short: "Show log of contract <name>",
+	Use:   "events <name>",
+	Short: "Show events of contract <name>",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		r, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetEventsForContract.Name,
