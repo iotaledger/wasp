@@ -199,7 +199,7 @@ func (ll RequestLookupKeyList) Bytes() []byte {
 
 // region RequestLookupKey /////////////////////////////////////////////
 
-// EventLookupKey globally unique reference to the event:
+// EventLookupKey is a globally unique reference to the event:
 // block index + index of the request within block + index of the event within the request
 type EventLookupKey [8]byte
 
