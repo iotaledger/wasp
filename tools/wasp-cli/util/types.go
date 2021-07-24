@@ -49,7 +49,7 @@ func ValueFromString(vtype, s string) []byte {
 func ValueToString(vtype string, v []byte) string {
 	switch vtype {
 	case "color":
-		col, _, err := codec.DecodeColorLedgerstate(v)
+		col, _, err := codec.DecodeColor(v)
 		log.Check(err)
 		return col.String()
 	case "agentid":

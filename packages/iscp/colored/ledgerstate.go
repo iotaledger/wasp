@@ -1,4 +1,4 @@
-package color
+package colored
 
 import "github.com/iotaledger/goshimmer/packages/ledgerstate"
 

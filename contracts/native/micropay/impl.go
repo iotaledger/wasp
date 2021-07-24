@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -60,7 +59,7 @@ func addWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 		fmt.Sprintf("unknown public key for address %s", payerAddr))
 
 	serviceAddr := par.MustGetAddress(ParamServiceAddress)
-	addWarrant := ctx.IncomingTransfer().Get(color.IOTA)
+	addWarrant := ctx.IncomingTransfer().Get(colored.IOTA)
 	a.Require(addWarrant >= MinimumWarrantIotas, fmt.Sprintf("warrant must be larger than %d iotas", MinimumWarrantIotas))
 
 	warrant, revoke, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, a)
@@ -71,7 +70,7 @@ func addWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	// all non-iota token accrue on-chain to the caller
 	sendBack := ctx.IncomingTransfer().Clone()
-	sendBack.Set(color.IOTA, 0)
+	sendBack.Set(colored.IOTA, 0)
 	if len(sendBack) > 0 {
 		a.RequireNoError(vmcontext.Accrue(ctx, ctx.Caller(), sendBack))
 	}
@@ -102,7 +101,7 @@ func revokeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	setWarrantRevoke(payerInfo, serviceAddr, revokeDeadline.Unix())
 
 	// send deterred request to self to revoke the warrant
-	iota1 := color.NewBalancesForIotas(1)
+	iota1 := colored.NewBalancesForIotas(1)
 	meta := &iscp.SendMetadata{
 		TargetContract: ctx.Contract(),
 		EntryPoint:     FuncCloseWarrant.Hname(),
@@ -130,7 +129,7 @@ func closeWarrant(ctx iscp.Sandbox) (dict.Dict, error) {
 	serviceAddr := par.MustGetAddress(ParamServiceAddress)
 	warrant, _, _ := getWarrantInfoIntern(ctx.State(), payerAddr, serviceAddr, assert.NewAssert(ctx.Log()))
 	if warrant > 0 {
-		tokens := color.NewBalancesForIotas(warrant)
+		tokens := colored.NewBalancesForIotas(warrant)
 		succ := ctx.Send(payerAddr, tokens, nil)
 		a.Require(succ, "failed to send %d iotas to address %s", warrant, payerAddr)
 	}
@@ -292,7 +291,7 @@ func processPayments(ctx iscp.Sandbox, payments []*Payment, payerAddr, targetAdd
 		lastOrd = uint64(p.Ord)
 	}
 	if settledSum > 0 {
-		tokens := color.NewBalancesForIotas(settledSum)
+		tokens := colored.NewBalancesForIotas(settledSum)
 		ctx.Send(targetAddr, tokens, nil)
 	}
 	payerInfo := collections.NewMap(ctx.State(), string(payerAddr.Bytes()))

@@ -3,7 +3,7 @@ package vmcontext
 import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -14,7 +14,7 @@ import (
 // creditToAccount deposits transfer from request to chain account of of the called contract
 // It adds new tokens to the chain ledger
 // It is used when new tokens arrive with a request
-func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, transfer color.Balances) {
+func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, transfer colored.Balances) {
 	if len(vmctx.callStack) > 0 {
 		vmctx.log.Panicf("creditToAccount must be called only from request")
 	}
@@ -26,21 +26,21 @@ func (vmctx *VMContext) creditToAccount(agentID *iscp.AgentID, transfer color.Ba
 
 // debitFromAccount subtracts tokens from account if it is enough of it.
 // should be called only when posting request
-func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer color.Balances) bool {
+func (vmctx *VMContext) debitFromAccount(agentID *iscp.AgentID, transfer colored.Balances) bool {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil) // create local context for the state
 	defer vmctx.popCallContext()
 
 	return accounts.DebitFromAccount(vmctx.State(), agentID, transfer)
 }
 
-func (vmctx *VMContext) moveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, transfer color.Balances) bool {
+func (vmctx *VMContext) moveBetweenAccounts(fromAgentID, toAgentID *iscp.AgentID, transfer colored.Balances) bool {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil) // create local context for the state
 	defer vmctx.popCallContext()
 
 	return accounts.MoveBetweenAccounts(vmctx.State(), fromAgentID, toAgentID, transfer)
 }
 
-func (vmctx *VMContext) totalAssets() color.Balances {
+func (vmctx *VMContext) totalAssets() colored.Balances {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
@@ -65,7 +65,7 @@ func (vmctx *VMContext) mustGetChainInfo() root.ChainInfo {
 	return root.MustGetChainInfo(vmctx.State())
 }
 
-func (vmctx *VMContext) getFeeInfo() (color.Color, uint64, uint64) {
+func (vmctx *VMContext) getFeeInfo() (colored.Color, uint64, uint64) {
 	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
@@ -83,18 +83,18 @@ func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte
 	return blob.LocateProgram(vmctx.State(), programHash)
 }
 
-func (vmctx *VMContext) getBalanceOfAccount(agentID *iscp.AgentID, col color.Color) uint64 {
+func (vmctx *VMContext) getBalanceOfAccount(agentID *iscp.AgentID, col colored.Color) uint64 {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
 	return accounts.GetBalance(vmctx.State(), agentID, col)
 }
 
-func (vmctx *VMContext) getBalance(col color.Color) uint64 {
+func (vmctx *VMContext) getBalance(col colored.Color) uint64 {
 	return vmctx.getBalanceOfAccount(vmctx.MyAgentID(), col)
 }
 
-func (vmctx *VMContext) getMyBalances() color.Balances {
+func (vmctx *VMContext) getMyBalances() colored.Balances {
 	agentID := vmctx.MyAgentID()
 
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
@@ -105,7 +105,7 @@ func (vmctx *VMContext) getMyBalances() color.Balances {
 }
 
 //nolint:unused
-func (vmctx *VMContext) moveBalance(target iscp.AgentID, col color.Color, amount uint64) bool {
+func (vmctx *VMContext) moveBalance(target iscp.AgentID, col colored.Color, amount uint64) bool {
 	vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
@@ -113,7 +113,7 @@ func (vmctx *VMContext) moveBalance(target iscp.AgentID, col color.Color, amount
 		vmctx.State(),
 		vmctx.MyAgentID(),
 		&target,
-		color.NewBalancesForColor(col, amount),
+		colored.NewBalancesForColor(col, amount),
 	)
 }
 

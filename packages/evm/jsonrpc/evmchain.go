@@ -6,7 +6,7 @@ package jsonrpc
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -53,25 +53,25 @@ func (e *EVMChain) BlockNumber() (*big.Int, error) {
 	return bal, nil
 }
 
-func (e *EVMChain) FeeColor() (color.Color, error) {
+func (e *EVMChain) FeeColor() (colored.Color, error) {
 	feeInfo, err := e.backend.CallView(root.Contract.Name, root.FuncGetFeeInfo.Name, dict.Dict{
 		root.ParamHname: evmchain.Contract.Hname().Bytes(),
 	})
 	if err != nil {
-		return color.Color{}, err
+		return colored.Color{}, err
 	}
 	feeColor, _, err := codec.DecodeColor(feeInfo.MustGet(root.ParamFeeColor))
 	return feeColor, err
 }
 
-func (e *EVMChain) GasLimitFee(tx *types.Transaction) (color.Color, uint64, error) {
+func (e *EVMChain) GasLimitFee(tx *types.Transaction) (colored.Color, uint64, error) {
 	gpi, err := e.GasPerIota()
 	if err != nil {
-		return color.Color{}, 0, err
+		return colored.Color{}, 0, err
 	}
 	feeColor, err := e.FeeColor()
 	if err != nil {
-		return color.Color{}, 0, err
+		return colored.Color{}, 0, err
 	}
 	return feeColor, tx.Gas() / gpi, nil
 }
@@ -81,7 +81,7 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 	if err != nil {
 		return err
 	}
-	fee := color.NewBalancesForColor(feeColor, feeAmount)
+	fee := colored.NewBalancesForColor(feeColor, feeAmount)
 	// deposit fee into sender's on-chain account
 	err = e.backend.PostOnLedgerRequest(accounts.Contract.Name, accounts.FuncDeposit.Name, fee, nil)
 	if err != nil {

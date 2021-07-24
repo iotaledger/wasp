@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -181,7 +181,7 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, fname stri
 		ret.Set(root.VarChainID, codec.EncodeChainID(*chainID))
 		ret.Set(root.VarChainOwnerID, codec.EncodeAgentID(iscp.NewRandomAgentID()))
 		ret.Set(root.VarDescription, codec.EncodeString("mock chain"))
-		ret.Set(root.VarFeeColor, codec.EncodeColor(color.Color{}))
+		ret.Set(root.VarFeeColor, codec.EncodeColor(colored.Color{}))
 		ret.Set(root.VarDefaultOwnerFee, codec.EncodeInt64(42))
 		ret.Set(root.VarDefaultValidatorFee, codec.EncodeInt64(42))
 
@@ -202,10 +202,10 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, fname stri
 		return ret, nil
 
 	case hname == accounts.Contract.Hname() && fname == accounts.FuncViewTotalAssets.Name:
-		return accounts.EncodeBalances(color.NewBalancesForIotas(42)), nil
+		return accounts.EncodeBalances(colored.NewBalancesForIotas(42)), nil
 
 	case hname == accounts.Contract.Hname() && fname == accounts.FuncViewBalance.Name:
-		return accounts.EncodeBalances(color.NewBalancesForIotas(42)), nil
+		return accounts.EncodeBalances(colored.NewBalancesForIotas(42)), nil
 
 	case hname == blob.Contract.Hname() && fname == blob.FuncListBlobs.Name:
 		ret := dict.New()

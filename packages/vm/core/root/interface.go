@@ -5,9 +5,9 @@ import (
 	"errors"
 	"io"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -92,7 +92,7 @@ type ChainInfo struct {
 	ChainID             iscp.ChainID
 	ChainOwnerID        iscp.AgentID
 	Description         string
-	FeeColor            ledgerstate.Color
+	FeeColor            colored.Color
 	DefaultOwnerFee     int64
 	DefaultValidatorFee int64
 }

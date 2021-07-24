@@ -3,7 +3,7 @@ package sbtestsc
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -13,7 +13,7 @@ func getMintedSupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	allMinted := ctx.Minted()
 	a := assert.NewAssert(ctx.Log())
 	a.Require(len(allMinted) == 1, "test only supports one minted color")
-	var colMinted color.Color
+	var colMinted colored.Color
 	var amount uint64
 	for col, bal := range allMinted {
 		colMinted = col

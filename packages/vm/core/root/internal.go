@@ -4,11 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -50,7 +48,7 @@ func MustGetChainInfo(state kv.KVStoreReader) ChainInfo {
 		ChainID:             *d.MustGetChainID(VarChainID),
 		ChainOwnerID:        *d.MustGetAgentID(VarChainOwnerID),
 		Description:         d.MustGetString(VarDescription, ""),
-		FeeColor:            d.MustGetColorLedgerstate(VarFeeColor, ledgerstate.ColorIOTA),
+		FeeColor:            d.MustGetColor(VarFeeColor, colored.IOTA),
 		DefaultOwnerFee:     d.MustGetInt64(VarDefaultOwnerFee, 0),
 		DefaultValidatorFee: d.MustGetInt64(VarDefaultValidatorFee, 0),
 	}
@@ -65,7 +63,7 @@ func MustGetChainOwnerID(state kv.KVStoreReader) *iscp.AgentID {
 // GetFeeInfo is an internal utility function which returns fee info for the contract
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
 // It is not exposed to the sandbox
-func GetFeeInfo(state kv.KVStoreReader, hname iscp.Hname) (color.Color, uint64, uint64) {
+func GetFeeInfo(state kv.KVStoreReader, hname iscp.Hname) (colored.Color, uint64, uint64) {
 	// returns nil of contract not found
 	rec, err := FindContract(state, hname)
 	if err != nil {
@@ -78,7 +76,7 @@ func GetFeeInfo(state kv.KVStoreReader, hname iscp.Hname) (color.Color, uint64, 
 	return GetFeeInfoByContractRecord(state, rec)
 }
 
-func GetFeeInfoByContractRecord(state kv.KVStoreReader, rec *ContractRecord) (color.Color, uint64, uint64) {
+func GetFeeInfoByContractRecord(state kv.KVStoreReader, rec *ContractRecord) (colored.Color, uint64, uint64) {
 	var ownerFee, validatorFee uint64
 	if rec != nil {
 		ownerFee = rec.OwnerFee
@@ -97,9 +95,9 @@ func GetFeeInfoByContractRecord(state kv.KVStoreReader, rec *ContractRecord) (co
 	return feeColor, ownerFee, validatorFee
 }
 
-func GetDefaultFeeInfo(state kv.KVStoreReader) (color.Color, uint64, uint64, error) {
+func GetDefaultFeeInfo(state kv.KVStoreReader) (colored.Color, uint64, uint64, error) {
 	deco := kvdecoder.New(state)
-	feeColor := deco.MustGetColor(VarFeeColor, color.IOTA)
+	feeColor := deco.MustGetColor(VarFeeColor, colored.IOTA)
 	defaultOwnerFee := deco.MustGetUint64(VarDefaultOwnerFee, 0)
 	defaultValidatorFee := deco.MustGetUint64(VarDefaultValidatorFee, 0)
 	return feeColor, defaultOwnerFee, defaultValidatorFee, nil

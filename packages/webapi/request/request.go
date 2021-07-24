@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/hive.go/marshalutil"
 
@@ -22,7 +22,7 @@ import (
 )
 
 type (
-	getAccountBalanceFn func(ch chain.ChainCore, agentID *iscp.AgentID) (color.Balances, error)
+	getAccountBalanceFn func(ch chain.ChainCore, agentID *iscp.AgentID) (colored.Balances, error)
 )
 
 func AddEndpoints(server echoswagger.ApiRouter, getChain chains.ChainProvider, getChainBalance getAccountBalanceFn) {

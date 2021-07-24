@@ -1,4 +1,4 @@
-package color
+package colored
 
 import (
 	"bytes"

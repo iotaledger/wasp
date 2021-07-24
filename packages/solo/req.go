@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -28,7 +28,7 @@ type CallParams struct {
 	target      iscp.Hname
 	epName      string
 	entryPoint  iscp.Hname
-	transfer    color.Balances
+	transfer    colored.Balances
 	mintAmount  uint64
 	mintAddress ledgerstate.Address
 	args        requestargs.RequestArgs
@@ -77,19 +77,19 @@ func NewCallParamsOptimized(scName, funName string, optSize int, params ...inter
 
 // WithTransfer is a shorthand for the most often used case where only
 // a single color is transferred by WithTransfers
-func (r *CallParams) WithTransfer(col color.Color, amount uint64) *CallParams {
-	return r.WithTransfers(color.Balances{col: amount})
+func (r *CallParams) WithTransfer(col colored.Color, amount uint64) *CallParams {
+	return r.WithTransfers(colored.Balances{col: amount})
 }
 
 // WithTransfers complement CallParams structure with the colored balances of tokens
 // in the form of a collection of pairs 'color': 'balance'
-func (r *CallParams) WithTransfers(transfer color.Balances) *CallParams {
+func (r *CallParams) WithTransfers(transfer colored.Balances) *CallParams {
 	r.transfer = transfer
 	return r
 }
 
 func (r *CallParams) WithIotas(amount uint64) *CallParams {
-	return r.WithTransfer(color.IOTA, amount)
+	return r.WithTransfer(colored.IOTA, amount)
 }
 
 // WithMint adds additional mint proof
@@ -160,7 +160,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 
 	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.LogicalTime())
 	var err error
-	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), mdata, color.ToLedgerstateMap(req.transfer))
+	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), mdata, colored.ToLedgerstateMap(req.transfer))
 	require.NoError(ch.Env.T, err)
 	if req.mintAmount > 0 {
 		err = txb.AddMintingOutputConsume(req.mintAddress, req.mintAmount)

@@ -6,7 +6,7 @@ package solo
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -16,12 +16,12 @@ import (
 )
 
 // AssertAddressBalance asserts the UTXODB address balance of specific color in the address
-func (env *Solo) AssertAddressBalance(addr ledgerstate.Address, col color.Color, expected uint64) {
+func (env *Solo) AssertAddressBalance(addr ledgerstate.Address, col colored.Color, expected uint64) {
 	require.EqualValues(env.T, int(expected), int(env.GetAddressBalance(addr, col)))
 }
 
 func (env *Solo) AssertAddressIotas(addr ledgerstate.Address, expected uint64) {
-	env.AssertAddressBalance(addr, color.IOTA, expected)
+	env.AssertAddressBalance(addr, colored.IOTA, expected)
 }
 
 // CheckChain checks fundamental integrity of the chain
@@ -45,11 +45,11 @@ func (ch *Chain) CheckChain() {
 func (ch *Chain) CheckAccountLedger() {
 	total := ch.GetTotalAssets()
 	accs := ch.GetAccounts()
-	sum := color.NewBalances()
+	sum := colored.NewBalances()
 	for i := range accs {
 		acc := accs[i]
 		bals := ch.GetAccountBalance(&acc)
-		bals.ForEachRandomly(func(col color.Color, bal uint64) bool {
+		bals.ForEachRandomly(func(col colored.Color, bal uint64) bool {
 			sum.Add(col, bal)
 			return true
 		})
@@ -66,18 +66,18 @@ func (ch *Chain) CheckAccountLedger() {
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertAccountBalance(agentID *iscp.AgentID, col color.Color, bal uint64) {
+func (ch *Chain) AssertAccountBalance(agentID *iscp.AgentID, col colored.Color, bal uint64) {
 	bals := ch.GetAccountBalance(agentID)
 	b := bals.Get(col)
 	require.EqualValues(ch.Env.T, int(bal), int(b))
 }
 
 func (ch *Chain) AssertIotas(agentID *iscp.AgentID, bal uint64) {
-	ch.AssertAccountBalance(agentID, color.IOTA, bal)
+	ch.AssertAccountBalance(agentID, colored.IOTA, bal)
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertOwnersBalance(col color.Color, bal uint64) {
+func (ch *Chain) AssertOwnersBalance(col colored.Color, bal uint64) {
 	bals := ch.GetCommonAccountBalance()
 	b := bals.Get(col)
 	require.EqualValues(ch.Env.T, int(bal), int(b))
@@ -88,7 +88,7 @@ func (ch *Chain) AssertCommonAccountIotas(bal uint64) {
 }
 
 // AssertAccountBalance asserts the on-chain account balance controlled by agentID for specific color
-func (ch *Chain) AssertTotalAssets(col color.Color, bal uint64) {
+func (ch *Chain) AssertTotalAssets(col colored.Color, bal uint64) {
 	bals := ch.GetTotalAssets()
 	b := bals.Get(col)
 	require.EqualValues(ch.Env.T, int(bal), int(b))

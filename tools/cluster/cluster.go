@@ -15,6 +15,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -460,7 +462,7 @@ func (clu *Cluster) PostTransaction(tx *ledgerstate.Transaction) error {
 	return nil
 }
 
-func (clu *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpected uint64, expect map[ledgerstate.Color]uint64, comment ...string) bool {
+func (clu *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpected uint64, expect colored.Balances, comment ...string) bool {
 	allOuts, err := clu.GoshimmerClient().GetConfirmedOutputs(addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
@@ -489,9 +491,9 @@ func (clu *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpecte
 	return assertionOk
 }
 
-func dumpBalancesByColor(actual, expect map[ledgerstate.Color]uint64) (string, bool) {
+func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
 	assertionOk := true
-	lst := make([]ledgerstate.Color, 0, len(expect))
+	lst := make([]colored.Color, 0, len(expect))
 	for col := range expect {
 		lst = append(lst, col)
 	}

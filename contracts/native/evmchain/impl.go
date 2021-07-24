@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -89,7 +89,7 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 			accounts.Contract.Hname(),
 			accounts.FuncDeposit.Hname(),
 			dict.Dict{accounts.ParamAgentID: codec.EncodeAgentID(ctx.Caller())},
-			color.NewBalancesForIotas(iotasGasRefund),
+			colored.NewBalancesForIotas(iotasGasRefund),
 		)
 		a.RequireNoError(err)
 	}

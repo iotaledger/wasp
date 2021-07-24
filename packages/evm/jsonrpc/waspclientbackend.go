@@ -6,7 +6,7 @@ package jsonrpc
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -31,7 +31,7 @@ func (w *WaspClientBackend) Signer() *ed25519.KeyPair {
 	return w.ChainClient.KeyPair
 }
 
-func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer color.Balances, args dict.Dict) error {
+func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer colored.Balances, args dict.Dict) error {
 	tx, err := w.ChainClient.Post1Request(iscp.Hn(scName), iscp.Hn(funName), chainclient.PostRequestParams{
 		Transfer: transfer,
 		Args:     requestargs.New(nil).AddEncodeSimpleMany(args),
@@ -42,7 +42,7 @@ func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer
 	return w.ChainClient.WaspClient.WaitUntilAllRequestsProcessed(w.ChainClient.ChainID, tx, 1*time.Minute)
 }
 
-func (w *WaspClientBackend) PostOffLedgerRequest(scName, funName string, transfer color.Balances, args dict.Dict) error {
+func (w *WaspClientBackend) PostOffLedgerRequest(scName, funName string, transfer colored.Balances, args dict.Dict) error {
 	req, err := w.ChainClient.PostOffLedgerRequest(iscp.Hn(scName), iscp.Hn(funName), chainclient.PostRequestParams{
 		Transfer: transfer,
 		Args:     requestargs.New().AddEncodeSimpleMany(args),

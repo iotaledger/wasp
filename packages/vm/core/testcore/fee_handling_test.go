@@ -6,7 +6,7 @@ package testcore
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -23,7 +23,7 @@ func TestInit(t *testing.T) {
 
 	chain.AssertIotas(&chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(1)
-	env.AssertAddressBalance(chain.OriginatorAddress, color.IOTA, solo.Saldo-solo.ChainDustThreshold-1)
+	env.AssertAddressBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-1)
 	chain.AssertTotalIotas(1)
 	chain.AssertCommonAccountIotas(1)
 
@@ -46,7 +46,7 @@ func TestBase(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2)
 	chain.AssertTotalIotas(2)
-	env.AssertAddressBalance(chain.OriginatorAddress, color.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
+	env.AssertAddressBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Contract.Name, 5, 0)
 }
@@ -65,7 +65,7 @@ func TestFeeIsEnough1(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2)
 	chain.AssertTotalIotas(2)
-	env.AssertAddressBalance(chain.OriginatorAddress, color.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
+	env.AssertAddressBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Contract.Name, 1, 0)
 
@@ -78,8 +78,8 @@ func TestFeeIsEnough1(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2 + 1)
 	chain.AssertTotalIotas(2 + 1)
-	chain.AssertAccountBalance(&chain.OriginatorAgentID, color.IOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, color.IOTA, solo.Saldo-solo.ChainDustThreshold-2-1)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, colored.IOTA, 0)
+	env.AssertAddressBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2-1)
 }
 
 //nolint:dupl
@@ -96,7 +96,7 @@ func TestFeeIsEnough2(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2)
 	chain.AssertTotalIotas(2)
-	env.AssertAddressBalance(chain.OriginatorAddress, color.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
+	env.AssertAddressBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Contract.Name, 10, 0)
 
@@ -109,8 +109,8 @@ func TestFeeIsEnough2(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2 + 10)
 	chain.AssertTotalIotas(2 + 10)
-	chain.AssertAccountBalance(&chain.OriginatorAgentID, color.IOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, color.IOTA, solo.Saldo-solo.ChainDustThreshold-2-10)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, colored.IOTA, 0)
+	env.AssertAddressBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2-10)
 }
 
 func TestFeesNoNeed(t *testing.T) {
@@ -126,7 +126,7 @@ func TestFeesNoNeed(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2)
 	chain.AssertTotalIotas(2)
-	env.AssertAddressBalance(chain.OriginatorAddress, color.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
+	env.AssertAddressBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2)
 
 	checkFees(chain, blob.Contract.Name, 10, 0)
 
@@ -137,8 +137,8 @@ func TestFeesNoNeed(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2 + 7)
 	chain.AssertTotalIotas(2 + 7)
-	chain.AssertAccountBalance(&chain.OriginatorAgentID, color.IOTA, 0)
-	env.AssertAddressBalance(chain.OriginatorAddress, color.IOTA, solo.Saldo-solo.ChainDustThreshold-2-7)
+	chain.AssertAccountBalance(&chain.OriginatorAgentID, colored.IOTA, 0)
+	env.AssertAddressBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2-7)
 }
 
 func TestFeesNotEnough(t *testing.T) {

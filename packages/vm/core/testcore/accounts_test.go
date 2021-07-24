@@ -6,7 +6,7 @@ package testcore
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
@@ -77,14 +77,14 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 	_, err := chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(newOwnerAgentID, color.IOTA, 42)
+	chain.AssertAccountBalance(newOwnerAgentID, colored.IOTA, 42)
 
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 	chain.CheckAccountLedger()
-	chain.AssertAccountBalance(newOwnerAgentID, color.IOTA, 0)
-	env.AssertAddressBalance(newOwnerAddr, color.IOTA, solo.Saldo)
+	chain.AssertAccountBalance(newOwnerAgentID, colored.IOTA, 0)
+	env.AssertAddressBalance(newOwnerAddr, colored.IOTA, solo.Saldo)
 	chain.AssertTotalIotas(1)
 	chain.AssertCommonAccountIotas(1)
 

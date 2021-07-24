@@ -3,7 +3,7 @@ package testcore
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
@@ -25,7 +25,7 @@ func TestMintOk(t *testing.T) {
 
 	color2, err := env.MintTokens(wallet, 100)
 	require.NoError(t, err)
-	env.AssertAddressBalance(walletAddr, color.IOTA, solo.Saldo-1000-100)
+	env.AssertAddressBalance(walletAddr, colored.IOTA, solo.Saldo-1000-100)
 	env.AssertAddressBalance(walletAddr, color1, 1000)
 	env.AssertAddressBalance(walletAddr, color2, 100)
 }
@@ -37,16 +37,16 @@ func TestMintFail(t *testing.T) {
 	chain.CheckChain()
 
 	wallet, walletAddr := env.NewKeyPairWithFunds()
-	env.AssertAddressBalance(walletAddr, color.IOTA, solo.Saldo)
+	env.AssertAddressBalance(walletAddr, colored.IOTA, solo.Saldo)
 
 	color1, err := env.MintTokens(wallet, 1000)
 	require.NoError(t, err)
-	env.AssertAddressBalance(walletAddr, color.IOTA, solo.Saldo-1000)
+	env.AssertAddressBalance(walletAddr, colored.IOTA, solo.Saldo-1000)
 	env.AssertAddressBalance(walletAddr, color1, 1000)
 
 	_, err = env.MintTokens(wallet, solo.Saldo-500)
 	require.Error(t, err)
-	env.AssertAddressBalance(walletAddr, color.IOTA, solo.Saldo-1000)
+	env.AssertAddressBalance(walletAddr, colored.IOTA, solo.Saldo-1000)
 	env.AssertAddressBalance(walletAddr, color1, 1000)
 }
 

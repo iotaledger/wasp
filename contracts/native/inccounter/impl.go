@@ -3,7 +3,7 @@ package inccounter
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
@@ -78,7 +78,7 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
-	if !ctx.Send(ctx.ChainID().AsAddress(), color.NewBalancesForIotas(1), &iscp.SendMetadata{
+	if !ctx.Send(ctx.ChainID().AsAddress(), colored.NewBalancesForIotas(1), &iscp.SendMetadata{
 		TargetContract: ctx.Contract(),
 		EntryPoint:     FuncIncCounter.Hname(),
 	}, iscp.SendOptions{
@@ -116,7 +116,7 @@ func incCounterAndRepeatMany(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	state.Set(VarNumRepeats, codec.EncodeInt64(numRepeats-1))
 
-	if !ctx.Send(ctx.ChainID().AsAddress(), color.NewBalancesForIotas(1), &iscp.SendMetadata{
+	if !ctx.Send(ctx.ChainID().AsAddress(), colored.NewBalancesForIotas(1), &iscp.SendMetadata{
 		TargetContract: ctx.Contract(),
 		EntryPoint:     FuncIncAndRepeatMany.Hname(),
 	}, iscp.SendOptions{

@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -35,7 +35,7 @@ func (vmctx *VMContext) MyAgentID() *iscp.AgentID {
 	return iscp.NewAgentID(vmctx.ChainID().AsAddress(), vmctx.CurrentContractHname())
 }
 
-func (vmctx *VMContext) Minted() color.Balances {
+func (vmctx *VMContext) Minted() colored.Balances {
 	if req, ok := vmctx.req.(*request.RequestOnLedger); ok {
 		return req.MintedAmounts()
 	}
@@ -111,7 +111,7 @@ func (vmctx *VMContext) RequestID() iscp.RequestID {
 const maxParamSize = 512
 
 // TODO implement send option
-func (vmctx *VMContext) Send(target ledgerstate.Address, tokens color.Balances, metadata *iscp.SendMetadata, options ...iscp.SendOptions) bool {
+func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances, metadata *iscp.SendMetadata, options ...iscp.SendOptions) bool {
 	if tokens == nil || len(tokens) == 0 {
 		vmctx.log.Errorf("Send: transfer can't be empty")
 		return false
@@ -137,7 +137,7 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens color.Balances, 
 	if !vmctx.debitFromAccount(sourceAccount, tokens) {
 		return false
 	}
-	err := vmctx.txBuilder.AddExtendedOutputSpend(target, data.Bytes(), color.ToLedgerstateMap(tokens))
+	err := vmctx.txBuilder.AddExtendedOutputSpend(target, data.Bytes(), colored.ToLedgerstateMap(tokens))
 	if err != nil {
 		vmctx.log.Errorf("Send: %v", err)
 		return false

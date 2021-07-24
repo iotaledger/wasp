@@ -3,12 +3,10 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-
 	"github.com/iotaledger/hive.go/crypto/ed25519"
-
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -38,9 +36,9 @@ func TestTutorial2(t *testing.T) {
 	env := solo.New(t, false, false, seed)
 	_, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
 	t.Logf("address of the userWallet is: %s", userAddress.Base58())
-	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA) // how many iotas the address contains
+	numIotas := env.GetAddressBalance(userAddress, colored.IOTA) // how many iotas the address contains
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
 }
 
 func TestTutorial3(t *testing.T) {
@@ -86,13 +84,13 @@ func TestTutorial5(t *testing.T) {
 	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 0) // empty on-chain
 
 	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
-	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA)
+	numIotas := env.GetAddressBalance(userAddress, colored.IOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
 
 	// send 42 iotas from wallet to own account on-chain, controlled by the same wallet
 	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(42)
@@ -100,9 +98,9 @@ func TestTutorial5(t *testing.T) {
 	require.NoError(t, err)
 
 	// check address balance: must be 42 iotas less
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-42)
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo-42)
 	// check the on-chain account. Must contain 42 iotas
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 42)
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 42)
 
 	// withdraw all iotas back to the sender
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).WithIotas(1)
@@ -110,8 +108,8 @@ func TestTutorial5(t *testing.T) {
 	require.NoError(t, err)
 
 	// we are back to initial situation: IOTA is fee-less!
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0) // empty
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 0) // empty
 }
 
 func TestTutorial6(t *testing.T) {
@@ -126,17 +124,17 @@ func TestTutorial6(t *testing.T) {
 	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(5))
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
-	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)     // empty on-chain
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
+	chain.AssertAccountBalance(contractAgentID, colored.IOTA, 0) // empty on-chain
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)     // empty on-chain
 
 	req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").WithIotas(42)
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 42)
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-42)
+	chain.AssertAccountBalance(contractAgentID, colored.IOTA, 42)
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo-42)
 }
 
 func TestTutorial7(t *testing.T) {
@@ -152,9 +150,9 @@ func TestTutorial7(t *testing.T) {
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 
 	// we start with these balances on address and on chain
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
-	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)     // empty
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
+	chain.AssertAccountBalance(contractAgentID, colored.IOTA, 0) // empty
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)     // empty
 
 	// missing parameter, request will panic
 	req := solo.NewCallParams("example1", "storeString").WithIotas(42)
@@ -162,9 +160,9 @@ func TestTutorial7(t *testing.T) {
 	require.Error(t, err)
 
 	// assert balances didn't change on address and on chain
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
-	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // still empty
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)     // still empty
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
+	chain.AssertAccountBalance(contractAgentID, colored.IOTA, 0) // still empty
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)     // still empty
 }
 
 // test withdrawIota method
@@ -179,8 +177,8 @@ func TestTutorial8(t *testing.T) {
 	userAgentID := iscp.NewAgentID(userAddress, 0)
 	t.Logf("userAgentID: %s", userAgentID)
 
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 0) // empty on-chain
 
 	// the chain owner (default) send a request to the root contract to grant right to deploy
 	// contract on the chain to the use
@@ -200,9 +198,9 @@ func TestTutorial8(t *testing.T) {
 	// - to deploy contract from the blob
 	// Two tokens were taken from the user account to form requests and then were
 	// deposited to the user's account on the chain
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-2)
-	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0) // empty on-chain
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo-2)
+	chain.AssertAccountBalance(contractAgentID, colored.IOTA, 0) // empty on-chain
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)
 
 	// user send a "storeString" request to the smart contract. It attaches 42 iotas to the request
 	// It also takes 1 iota for the request token
@@ -212,9 +210,9 @@ func TestTutorial8(t *testing.T) {
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 42)
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-44)
+	chain.AssertAccountBalance(contractAgentID, colored.IOTA, 42)
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo-44)
 
 	// user withdraws all iotas from the smart contract back
 	// Out of 42 iotas 41 iota is coming back to the user's address, 1 iotas
@@ -224,7 +222,7 @@ func TestTutorial8(t *testing.T) {
 	_, err = chain.PostRequestSync(req, userWallet)
 	require.NoError(t, err)
 
-	chain.AssertAccountBalance(contractAgentID, ledgerstate.ColorIOTA, 0)
-	chain.AssertAccountBalance(userAgentID, ledgerstate.ColorIOTA, 0)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo-44+42)
+	chain.AssertAccountBalance(contractAgentID, colored.IOTA, 0)
+	chain.AssertAccountBalance(userAgentID, colored.IOTA, 0)
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo-44+42)
 }

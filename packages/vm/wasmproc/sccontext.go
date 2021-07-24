@@ -6,7 +6,7 @@ package wasmproc
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -267,11 +267,11 @@ func (o *ScContext) getParams(paramsID int32) dict.Dict {
 	return params
 }
 
-func (o *ScContext) getTransfer(transferID int32) color.Balances {
+func (o *ScContext) getTransfer(transferID int32) colored.Balances {
 	if transferID == 0 {
-		return color.NewBalances()
+		return colored.NewBalances()
 	}
-	transfer := color.NewBalances()
+	transfer := colored.NewBalances()
 	transferDict := o.host.FindObject(transferID).(*ScDict).kvStore
 	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
 		col, _, err := codec.DecodeColor([]byte(key))

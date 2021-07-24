@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
@@ -56,17 +56,17 @@ func postRequestCmd() *cobra.Command {
 	return cmd
 }
 
-func colorFromString(s string) color.Color {
+func colorFromString(s string) colored.Color {
 	if s == ledgerstate.ColorIOTA.String() {
-		return color.IOTA
+		return colored.IOTA
 	}
-	c, err := color.FromBase58EncodedString(s)
+	c, err := colored.FromBase58EncodedString(s)
 	log.Check(err)
 	return c
 }
 
-func parseColoredBalances(args []string) color.Balances {
-	cb := color.NewBalances()
+func parseColoredBalances(args []string) colored.Balances {
+	cb := colored.NewBalances()
 	for _, tr := range args {
 		parts := strings.Split(tr, ":")
 		if len(parts) != 2 {

@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -66,10 +68,8 @@ func createMockedGetChain(t *testing.T) chains.ChainProvider {
 	}
 }
 
-func getAccountBalanceMocked(ch chain.ChainCore, agentID *iscp.AgentID) (map[ledgerstate.Color]uint64, error) {
-	ret := make(map[ledgerstate.Color]uint64)
-	ret[ledgerstate.ColorIOTA] = 100
-	return ret, nil
+func getAccountBalanceMocked(ch chain.ChainCore, agentID *iscp.AgentID) (colored.Balances, error) {
+	return colored.NewBalancesForIotas(100), nil
 }
 
 func dummyOffledgerRequest() *request.RequestOffLedger {

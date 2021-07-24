@@ -5,7 +5,7 @@ package sandbox
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
@@ -28,7 +28,7 @@ func (s sandboxView) AccountID() *iscp.AgentID {
 	return s.vmctx.AccountID()
 }
 
-func (s sandboxView) Balances() color.Balances {
+func (s sandboxView) Balances() colored.Balances {
 	return s.vmctx.GetMyBalances()
 }
 

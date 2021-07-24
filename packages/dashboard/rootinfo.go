@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -20,7 +20,7 @@ type RootInfo struct {
 	Description string
 	Contracts   map[iscp.Hname]*root.ContractRecord
 
-	FeeColor            color.Color
+	FeeColor            colored.Color
 	DefaultOwnerFee     uint64
 	DefaultValidatorFee uint64
 }

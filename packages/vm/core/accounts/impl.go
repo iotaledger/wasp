@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
@@ -111,7 +111,7 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 // owner of the chain moves all tokens from the common account to its own account
 // Params:
 //   ParamWithdrawAmount if do not exist or is 0 means withdraw all balance
-//   ParamWithdrawColor color to withdraw if amount is specified. Defaults to color.IOTA
+//   ParamWithdrawColor dummyColor to withdraw if amount is specified. Defaults to colored.IOTA
 func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	a.RequireChainOwner(ctx, "harvest")
@@ -128,8 +128,8 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	if err == nil && amount > 0 {
 		harvestAll = false
 	}
-	// if color not specified and amount is specified, default is harvest specified amount of iotas
-	col := par.MustGetColor(ParamWithdrawColor, color.IOTA)
+	// if dummyColor not specified and amount is specified, default is harvest specified amount of iotas
+	col := par.MustGetColor(ParamWithdrawColor, colored.IOTA)
 
 	sourceAccount := commonaccount.Get(ctx.ChainID())
 	bals, ok := GetAccountBalances(state, sourceAccount)
@@ -141,7 +141,7 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	if !harvestAll {
 		balCol := bals[col]
 		a.Require(balCol >= amount, "accounts.harvest.error: not enough tokens")
-		tokensToSend = color.NewBalancesForColor(col, amount)
+		tokensToSend = colored.NewBalancesForColor(col, amount)
 	}
 	a.Require(MoveBetweenAccounts(state, sourceAccount, ctx.Caller(), tokensToSend),
 		"accounts.harvest.inconsistency. failed to move tokens to owner's account")

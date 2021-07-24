@@ -3,7 +3,7 @@ package sbtests
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -63,11 +63,11 @@ func testMintedSupplyOk(t *testing.T, w bool) {
 	tx, ret, err := chain.PostRequestSyncTx(req, user)
 	require.NoError(t, err)
 
-	mintedAmounts := color.BalancesFromLedgerstate2(utxoutil.GetMintedAmounts(tx))
+	mintedAmounts := colored.BalancesFromLedgerstate2(utxoutil.GetMintedAmounts(tx))
 	t.Logf("minting request tx: %s", tx.ID().Base58())
 
 	require.Len(t, mintedAmounts, 1)
-	var col color.Color
+	var col colored.Color
 	for col1 := range mintedAmounts {
 		col = col1
 		break

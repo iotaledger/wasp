@@ -5,7 +5,7 @@ package wasmproc
 
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
@@ -46,7 +46,7 @@ func NewScTransferInfo(vm *WasmProcessor) *ScTransferInfo {
 
 // TODO refactor
 func (o *ScTransferInfo) Invoke(balances int32) {
-	transfer := color.NewBalances()
+	transfer := colored.NewBalances()
 	balancesObj := o.host.FindObject(balances).(*ScDict)
 	balancesObj.kvStore.MustIterate("", func(key kv.Key, value []byte) bool {
 		if len(key) != ledgerstate.ColorLength {

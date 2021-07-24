@@ -3,13 +3,12 @@ package chainclient
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -41,7 +40,7 @@ func New(
 }
 
 type PostRequestParams struct {
-	Transfer color.Balances
+	Transfer colored.Balances
 	Args     requestargs.RequestArgs
 	Nonce    uint64
 }
@@ -94,7 +93,7 @@ func NewPostRequestParams(p ...interface{}) *PostRequestParams {
 	}
 }
 
-func (par *PostRequestParams) WithTransfer(transfer color.Balances) *PostRequestParams {
+func (par *PostRequestParams) WithTransfer(transfer colored.Balances) *PostRequestParams {
 	par.Transfer = transfer
 	return par
 }
@@ -106,9 +105,9 @@ func (par *PostRequestParams) WithTransferEncoded(colval ...interface{}) *PostRe
 	if len(colval)%2 != 0 {
 		panic("WithTransferEncode: len(params) % 2 != 0")
 	}
-	par.Transfer = color.NewBalances()
+	par.Transfer = colored.NewBalances()
 	for i := 0; i < len(colval)/2; i++ {
-		key, ok := colval[2*i].(color.Color)
+		key, ok := colval[2*i].(colored.Color)
 		if !ok {
 			panic("toMap: color.Color expected")
 		}
@@ -118,7 +117,7 @@ func (par *PostRequestParams) WithTransferEncoded(colval ...interface{}) *PostRe
 }
 
 func (par *PostRequestParams) WithIotas(i uint64) *PostRequestParams {
-	return par.WithTransferEncoded(ledgerstate.ColorIOTA, i)
+	return par.WithTransferEncoded(colored.IOTA, i)
 }
 
 func encodeIntToUint64(i interface{}) uint64 {

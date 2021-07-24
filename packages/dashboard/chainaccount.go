@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -69,5 +69,5 @@ type ChainAccountTemplateParams struct {
 	AgentID iscp.AgentID
 
 	Ok       bool
-	Balances color.Balances
+	Balances colored.Balances
 }

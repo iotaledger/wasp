@@ -9,9 +9,9 @@ package root
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -63,8 +63,8 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	chainID := params.MustGetChainID(ParamChainID)
 	chainDescription := params.MustGetString(ParamDescription, "N/A")
-	feeColor := params.MustGetColorLedgerstate(ParamFeeColor, ledgerstate.ColorIOTA)
-	feeColorSet := feeColor != ledgerstate.ColorIOTA
+	feeColor := params.MustGetColor(ParamFeeColor, colored.IOTA)
+	feeColorSet := feeColor != colored.IOTA
 
 	contractRegistry := collections.NewMap(state, VarContractRegistry)
 	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
@@ -82,7 +82,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	state.Set(VarChainOwnerID, codec.EncodeAgentID(ctx.Caller())) // chain owner is whoever sends init request
 	state.Set(VarDescription, codec.EncodeString(chainDescription))
 	if feeColorSet {
-		state.Set(VarFeeColor, codec.EncodeColorLedgerstate(feeColor))
+		state.Set(VarFeeColor, codec.EncodeColor(feeColor))
 	}
 	ctx.Log().Debugf("root.initialize.success")
 	return nil, nil
@@ -170,7 +170,7 @@ func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret.Set(VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(VarChainOwnerID, codec.EncodeAgentID(&info.ChainOwnerID))
 	ret.Set(VarDescription, codec.EncodeString(info.Description))
-	ret.Set(VarFeeColor, codec.EncodeColorLedgerstate(info.FeeColor))
+	ret.Set(VarFeeColor, codec.EncodeColor(info.FeeColor))
 	ret.Set(VarDefaultOwnerFee, codec.EncodeInt64(info.DefaultOwnerFee))
 	ret.Set(VarDefaultValidatorFee, codec.EncodeInt64(info.DefaultValidatorFee))
 

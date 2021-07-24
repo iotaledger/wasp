@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -15,7 +15,7 @@ import (
 var ErrContractNotFound = errors.New("contract not found")
 
 // Call
-func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, transfer color.Balances) (dict.Dict, error) {
+func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict, transfer colored.Balances) (dict.Dict, error) {
 	vmctx.log.Debugw("Call", "targetContract", targetContract, "epCode", epCode.String())
 	rec, ok := vmctx.findContractByHname(targetContract)
 	if !ok {
@@ -24,7 +24,7 @@ func (vmctx *VMContext) Call(targetContract, epCode iscp.Hname, params dict.Dict
 	return vmctx.callByProgramHash(targetContract, epCode, params, transfer, rec.ProgramHash)
 }
 
-func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer color.Balances, progHash hashing.HashValue) (dict.Dict, error) {
+func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer colored.Balances, progHash hashing.HashValue) (dict.Dict, error) {
 	proc, err := vmctx.processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func (vmctx *VMContext) callByProgramHash(targetContract, epCode iscp.Hname, par
 	return ep.Call(NewSandbox(vmctx))
 }
 
-func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer color.Balances, progHash hashing.HashValue) (dict.Dict, error) {
+func (vmctx *VMContext) callNonViewByProgramHash(targetContract, epCode iscp.Hname, params dict.Dict, transfer colored.Balances, progHash hashing.HashValue) (dict.Dict, error) {
 	proc, err := vmctx.processors.GetOrCreateProcessorByProgramHash(progHash, vmctx.getBinary)
 	if err != nil {
 		return nil, err

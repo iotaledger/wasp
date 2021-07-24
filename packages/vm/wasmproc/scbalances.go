@@ -6,7 +6,7 @@ package wasmproc
 import (
 	"strconv"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -40,10 +40,10 @@ func NewScBalances(vm *WasmProcessor, keyID int32) *ScDict {
 	return nil
 }
 
-func loadBalances(o *ScDict, balances color.Balances) *ScDict {
+func loadBalances(o *ScDict, balances colored.Balances) *ScDict {
 	index := 0
 	key := o.host.GetKeyStringFromID(wasmhost.KeyColor)
-	balances.ForEachRandomly(func(color color.Color, balance uint64) bool {
+	balances.ForEachRandomly(func(color colored.Color, balance uint64) bool {
 		o.kvStore.Set(kv.Key(color[:]), codec.EncodeUint64(balance))
 		o.kvStore.Set(kv.Key(key+"."+strconv.Itoa(index)), color[:])
 		index++

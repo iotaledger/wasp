@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -170,7 +170,7 @@ type RequestOnLedger struct {
 	requestMetadata *Metadata
 	senderAddress   ledgerstate.Address
 	params          atomic.Value // this part is mutable
-	minted          color.Balances
+	minted          colored.Balances
 }
 
 // implements iscp.Request interface
@@ -178,7 +178,7 @@ var _ iscp.Request = &RequestOnLedger{}
 
 // OnLedgerFromOutput
 //nolint:revive // TODO refactor stutter request.request
-func OnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...color.Balances) *RequestOnLedger {
+func OnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...colored.Balances) *RequestOnLedger {
 	ret := &RequestOnLedger{
 		outputObj:     output,
 		senderAddress: senderAddr,
@@ -196,7 +196,7 @@ func OnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr ledgerstate
 	if err != nil {
 		return nil, err
 	}
-	mintedAmounts := color.BalancesFromLedgerstate2(utxoutil.GetMintedAmounts(tx))
+	mintedAmounts := colored.BalancesFromLedgerstate2(utxoutil.GetMintedAmounts(tx))
 	ret := make([]*RequestOnLedger, 0)
 	for _, o := range tx.Essence().Outputs() {
 		if out, ok := o.(*ledgerstate.ExtendedLockedOutput); ok {
@@ -242,7 +242,7 @@ func (req *RequestOnLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) err
 		return err
 	}
 	req.requestMetadata = MetadataFromMarshalUtil(mu)
-	if req.minted, err = color.BalancesFromMarshalUtil(mu); err != nil {
+	if req.minted, err = colored.BalancesFromMarshalUtil(mu); err != nil {
 		return err
 	}
 	return nil
@@ -294,7 +294,7 @@ func (req *RequestOnLedger) GetMetadata() *Metadata {
 	return req.requestMetadata
 }
 
-func (req *RequestOnLedger) MintedAmounts() color.Balances {
+func (req *RequestOnLedger) MintedAmounts() colored.Balances {
 	return req.minted
 }
 
@@ -328,7 +328,7 @@ type RequestOffLedger struct {
 	sender     ledgerstate.Address
 	signature  ed25519.Signature
 	nonce      uint64
-	transfer   color.Balances
+	transfer   colored.Balances
 }
 
 // implements iscp.Request interface
@@ -407,7 +407,7 @@ func (req *RequestOffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalU
 	if req.nonce, err = mu.ReadUint64(); err != nil {
 		return err
 	}
-	if req.transfer, err = color.BalancesFromMarshalUtil(mu); err != nil {
+	if req.transfer, err = colored.BalancesFromMarshalUtil(mu); err != nil {
 		return err
 	}
 	return nil
@@ -427,12 +427,12 @@ func (req *RequestOffLedger) Sign(keyPair *ed25519.KeyPair) {
 }
 
 // Tokens returns the transfers passed to the request
-func (req *RequestOffLedger) Tokens() color.Balances {
+func (req *RequestOffLedger) Tokens() colored.Balances {
 	return req.transfer
 }
 
 // Tokens sets the transfers passed to the request
-func (req *RequestOffLedger) WithTransfer(transfer color.Balances) *RequestOffLedger {
+func (req *RequestOffLedger) WithTransfer(transfer colored.Balances) *RequestOffLedger {
 	req.transfer = transfer
 	return req
 }

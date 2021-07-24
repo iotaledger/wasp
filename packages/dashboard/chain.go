@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -104,7 +104,7 @@ func (d *Dashboard) fetchAccounts(ch chain.ChainCore) ([]*iscp.AgentID, error) {
 	return ret, nil
 }
 
-func (d *Dashboard) fetchTotalAssets(ch chain.ChainCore) (color.Balances, error) {
+func (d *Dashboard) fetchTotalAssets(ch chain.ChainCore) (colored.Balances, error) {
 	bal, err := d.wasp.CallView(ch, accounts.Contract.Hname(), accounts.FuncViewTotalAssets.Name, nil)
 	if err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ type ChainTemplateParams struct {
 	State       *ChainState
 	RootInfo    RootInfo
 	Accounts    []*iscp.AgentID
-	TotalAssets color.Balances
+	TotalAssets colored.Balances
 	Blobs       map[hashing.HashValue]uint32
 	Committee   *chain.CommitteeInfo
 }

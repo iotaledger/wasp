@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -209,10 +209,10 @@ func (m *ImmutableMap) MustIterateKeys(f func(elemKey []byte) bool) {
 	}
 }
 
-func (m *ImmutableMap) IterateBalances(f func(color color.Color, bal uint64) bool) error {
+func (m *ImmutableMap) IterateBalances(f func(color colored.Color, bal uint64) bool) error {
 	var err error
 	m.MustIterate(func(elemKey []byte, value []byte) bool {
-		col, err := color.FromBytes(elemKey)
+		col, err := colored.FromBytes(elemKey)
 		if err != nil {
 			return false
 		}

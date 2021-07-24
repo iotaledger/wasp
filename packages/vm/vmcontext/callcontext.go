@@ -3,14 +3,14 @@ package vmcontext
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func (vmctx *VMContext) pushCallContextWithTransfer(contract iscp.Hname, params dict.Dict, transfer color.Balances) error {
+func (vmctx *VMContext) pushCallContextWithTransfer(contract iscp.Hname, params dict.Dict, transfer colored.Balances) error {
 	if transfer != nil {
 		targetAccount := iscp.NewAgentID(vmctx.ChainID().AsAddress(), contract)
 		targetAccount = vmctx.adjustAccount(targetAccount)
@@ -38,7 +38,7 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract iscp.Hname, params 
 
 const traceStack = false
 
-func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, transfer color.Balances) {
+func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, transfer colored.Balances) {
 	if traceStack {
 		vmctx.log.Debugf("+++++++++++ PUSH %d, stack depth = %d", contract, len(vmctx.callStack))
 	}

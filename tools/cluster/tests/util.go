@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -68,15 +70,13 @@ func (e *chainEnv) checkRootsOutside() {
 func (e *env) requestFunds(addr ledgerstate.Address, who string) {
 	err := e.clu.GoshimmerClient().RequestFunds(addr)
 	require.NoError(e.t, err)
-	if !e.clu.VerifyAddressBalances(addr, solo.Saldo, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo,
-	}, "requested funds for "+who) {
+	if !e.clu.VerifyAddressBalances(addr, solo.Saldo, colored.NewBalancesForIotas(solo.Saldo), "requested funds for "+who) {
 		e.t.Logf("unexpected requested amount")
 		e.t.FailNow()
 	}
 }
 
-func (e *chainEnv) getBalanceOnChain(agentID *iscp.AgentID, color ledgerstate.Color, nodeIndex ...int) uint64 {
+func (e *chainEnv) getBalanceOnChain(agentID *iscp.AgentID, col colored.Color, nodeIndex ...int) uint64 {
 	idx := 0
 	if len(nodeIndex) > 0 {
 		idx = nodeIndex[0]
@@ -90,14 +90,14 @@ func (e *chainEnv) getBalanceOnChain(agentID *iscp.AgentID, color ledgerstate.Co
 		return 0
 	}
 
-	actual, _, err := codec.DecodeUint64(ret.MustGet(kv.Key(color[:])))
+	actual, _, err := codec.DecodeUint64(ret.MustGet(kv.Key(col[:])))
 	require.NoError(e.t, err)
 
 	return actual
 }
 
-func (e *chainEnv) checkBalanceOnChain(agentID *iscp.AgentID, color ledgerstate.Color, expected uint64) {
-	actual := e.getBalanceOnChain(agentID, color)
+func (e *chainEnv) checkBalanceOnChain(agentID *iscp.AgentID, col colored.Color, expected uint64) {
+	actual := e.getBalanceOnChain(agentID, col)
 	require.EqualValues(e.t, int64(expected), int64(actual))
 }
 
@@ -264,7 +264,7 @@ func (e *chainEnv) contractIsDeployed(contractName string) conditionFn { //nolin
 
 func (e *chainEnv) balanceOnChainIotaEquals(agentID *iscp.AgentID, iotas uint64) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		return iotas == e.getBalanceOnChain(agentID, ledgerstate.ColorIOTA, nodeIndex)
+		return iotas == e.getBalanceOnChain(agentID, colored.IOTA, nodeIndex)
 	}
 }
 

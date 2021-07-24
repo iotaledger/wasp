@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/color"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -344,45 +344,21 @@ func (p *Decoder) MustGetChainID(key kv.Key, def ...iscp.ChainID) *iscp.ChainID 
 	return ret
 }
 
-// Deprecated: use GetColor instead
-func (p *Decoder) GetColorLedgerstate(key kv.Key, def ...ledgerstate.Color) (ledgerstate.Color, error) {
-	v, exists, err := codec.DecodeColorLedgerstate(p.kv.MustGet(key))
-	if err != nil {
-		return ledgerstate.Color{}, fmt.Errorf("GetColorLedgerstate: decoding parameter '%s': %v", key, err)
-	}
-	if exists {
-		return v, nil
-	}
-	if len(def) == 0 {
-		return ledgerstate.Color{}, fmt.Errorf("GetColorLedgerstate: mandatory parameter '%s' does not exist", key)
-	}
-	return def[0], nil
-}
-
-// Deprecated: use MustGetColor instead
-func (p *Decoder) MustGetColorLedgerstate(key kv.Key, def ...ledgerstate.Color) ledgerstate.Color {
-	ret, err := p.GetColorLedgerstate(key, def...)
-	if err != nil {
-		p.panic(err)
-	}
-	return ret
-}
-
-func (p *Decoder) GetColor(key kv.Key, def ...color.Color) (color.Color, error) {
+func (p *Decoder) GetColor(key kv.Key, def ...colored.Color) (colored.Color, error) {
 	v, exists, err := codec.DecodeColor(p.kv.MustGet(key))
 	if err != nil {
-		return color.Color{}, xerrors.Errorf("GetColor: decoding parameter '%s': %w", key, err)
+		return colored.Color{}, xerrors.Errorf("GetColor: decoding parameter '%s': %w", key, err)
 	}
 	if exists {
 		return v, nil
 	}
 	if len(def) == 0 {
-		return color.Color{}, xerrors.Errorf("GetColor: mandatory parameter '%s' does not exist", key)
+		return colored.Color{}, xerrors.Errorf("GetColor: mandatory parameter '%s' does not exist", key)
 	}
 	return def[0], nil
 }
 
-func (p *Decoder) MustGetColor(key kv.Key, def ...color.Color) color.Color {
+func (p *Decoder) MustGetColor(key kv.Key, def ...colored.Color) colored.Color {
 	ret, err := p.GetColor(key, def...)
 	if err != nil {
 		p.panic(err)
