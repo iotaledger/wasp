@@ -4,12 +4,9 @@
 package messages
 
 import (
-	"io"
-
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
-	"golang.org/x/xerrors"
 )
 
 // region MissingRequestIDsMsg ///////////////////////////////////////////////////
@@ -22,15 +19,6 @@ func NewMissingRequestIDsMsg(missingIDs []iscp.RequestID) *MissingRequestIDsMsg 
 	return &MissingRequestIDsMsg{
 		IDs: missingIDs,
 	}
-}
-
-func (msg *MissingRequestIDsMsg) write(w io.Writer) error {
-	for _, ID := range msg.IDs {
-		if _, err := w.Write(ID.Bytes()); err != nil {
-			return xerrors.Errorf("failed to write requestIDs: %w", err)
-		}
-	}
-	return nil
 }
 
 func (msg *MissingRequestIDsMsg) Bytes() []byte {

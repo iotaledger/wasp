@@ -84,7 +84,7 @@ func (hn *Hname) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	if err != nil {
 		return err
 	}
-	*hn = Hname(binary.LittleEndian.Uint32(b[:]))
+	*hn = Hname(binary.LittleEndian.Uint32(b))
 	return nil
 }
 

@@ -94,9 +94,9 @@ func parseParams(c echo.Context) (chainID *iscp.ChainID, req *request.RequestOff
 		if err != nil {
 			return nil, nil, httperrors.BadRequest(fmt.Sprintf("Error constructing off-ledger request from base64 string: \"%s\"", r.Request))
 		}
-		req, ok := rGeneric.(*request.RequestOffLedger)
-		if !ok {
-			return nil, nil, httperrors.BadRequest("Error parsing request: off-ledger request expected")
+		var ok bool
+		if req, ok = rGeneric.(*request.RequestOffLedger); !ok {
+			return nil, nil, httperrors.BadRequest("Error parsing request: off-ledger request is expected")
 		}
 		return chainID, req, err
 	}
