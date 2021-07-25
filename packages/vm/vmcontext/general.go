@@ -111,6 +111,7 @@ func (vmctx *VMContext) RequestID() iscp.RequestID {
 const maxParamSize = 512
 
 // TODO implement send option
+//goland:noinspection GoUnusedParameter
 func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances, metadata *iscp.SendMetadata, options ...iscp.SendOptions) bool {
 	if tokens == nil || len(tokens) == 0 {
 		vmctx.log.Errorf("Send: transfer can't be empty")
@@ -137,7 +138,7 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances
 	if !vmctx.debitFromAccount(sourceAccount, tokens) {
 		return false
 	}
-	err := vmctx.txBuilder.AddExtendedOutputSpend(target, data.Bytes(), colored.ToLedgerstateMap(tokens))
+	err := vmctx.txBuilder.AddExtendedOutputSpend(target, data.Bytes(), colored.ToL1Map(tokens))
 	if err != nil {
 		vmctx.log.Errorf("Send: %v", err)
 		return false

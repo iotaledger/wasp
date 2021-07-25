@@ -56,7 +56,7 @@ func TestNewColoredBalances(t *testing.T) {
 		require.True(t, cb.IsEmpty())
 	})
 	t.Run("new goshimmer", func(t *testing.T) {
-		cb := BalancesFromLedgerstate1(ledgerstate.NewColoredBalances(nil))
+		cb := BalancesFromL1Balances(ledgerstate.NewColoredBalances(nil))
 		require.EqualValues(t, 0, len(cb))
 	})
 	t.Run("equals 1", func(t *testing.T) {
@@ -103,7 +103,7 @@ func TestNewColoredBalances(t *testing.T) {
 		arr := make([]Color, howMany)
 		cb := NewBalances()
 		for i := range arr {
-			arr[i] = Random()
+			arr[i] = ColorRandom()
 			cb.Set(arr[i], uint64(i+1))
 		}
 		require.EqualValues(t, howMany, len(cb))

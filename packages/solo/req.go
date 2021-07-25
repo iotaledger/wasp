@@ -160,7 +160,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 
 	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.LogicalTime())
 	var err error
-	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), mdata, colored.ToLedgerstateMap(req.transfer))
+	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), mdata, colored.ToL1Map(req.transfer))
 	require.NoError(ch.Env.T, err)
 	if req.mintAmount > 0 {
 		err = txb.AddMintingOutputConsume(req.mintAddress, req.mintAmount)

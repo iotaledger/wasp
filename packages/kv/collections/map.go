@@ -212,7 +212,7 @@ func (m *ImmutableMap) MustIterateKeys(f func(elemKey []byte) bool) {
 func (m *ImmutableMap) IterateBalances(f func(color colored.Color, bal uint64) bool) error {
 	var err error
 	m.MustIterate(func(elemKey []byte, value []byte) bool {
-		col, err := colored.FromBytes(elemKey)
+		col, err := colored.ColorFromBytes(elemKey)
 		if err != nil {
 			return false
 		}

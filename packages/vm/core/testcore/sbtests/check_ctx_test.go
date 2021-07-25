@@ -63,7 +63,7 @@ func testMintedSupplyOk(t *testing.T, w bool) {
 	tx, ret, err := chain.PostRequestSyncTx(req, user)
 	require.NoError(t, err)
 
-	mintedAmounts := colored.BalancesFromLedgerstate2(utxoutil.GetMintedAmounts(tx))
+	mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))
 	t.Logf("minting request tx: %s", tx.ID().Base58())
 
 	require.Len(t, mintedAmounts, 1)

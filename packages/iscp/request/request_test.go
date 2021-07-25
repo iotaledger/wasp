@@ -3,13 +3,12 @@ package request
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp/requestargs"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/marshalutil"
-
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/stretchr/testify/require"
 )
 
@@ -67,7 +66,7 @@ func rndAddress() ledgerstate.Address {
 
 func rndOutput() *ledgerstate.ExtendedLockedOutput {
 	addr := rndAddress()
-	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 42}
+	bals := colored.ToL1Map(colored.NewBalancesForIotas(42))
 	return ledgerstate.NewExtendedLockedOutput(bals, addr)
 }
 

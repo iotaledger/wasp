@@ -27,7 +27,7 @@ const (
 func FromMarshalUtil(mu *marshalutil.MarshalUtil) (iscp.Request, error) {
 	b, err := mu.ReadByte()
 	if err != nil {
-		return nil, xerrors.Errorf("Request.FromMarshalUtil: %w", err)
+		return nil, xerrors.Errorf("Request.ColorFromMarshalUtil: %w", err)
 	}
 	// first byte is the request type
 	switch b {
@@ -196,7 +196,7 @@ func OnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr ledgerstate
 	if err != nil {
 		return nil, err
 	}
-	mintedAmounts := colored.BalancesFromLedgerstate2(utxoutil.GetMintedAmounts(tx))
+	mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))
 	ret := make([]*RequestOnLedger, 0)
 	for _, o := range tx.Essence().Outputs() {
 		if out, ok := o.(*ledgerstate.ExtendedLockedOutput); ok {

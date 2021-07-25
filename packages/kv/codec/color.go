@@ -8,7 +8,7 @@ func DecodeColor(b []byte) (colored.Color, bool, error) {
 	if b == nil {
 		return colored.Color{}, false, nil
 	}
-	ret, err := colored.FromBytes(b)
+	ret, err := colored.ColorFromBytes(b)
 	return ret, err == nil, err
 }
 

@@ -14,31 +14,25 @@ import (
 
 // region Color ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// IOTA is the zero value of the Color and represents uncolored tokens.
-var IOTA = Color{}
-
-// Mint represents a placeholder Color that indicates that tokens should be "colored" in their Output.
-var Mint = Color{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255}
-
-// FromBytes unmarshals a Color from a sequence of bytes.
-func FromBytes(colorBytes []byte) (col Color, err error) {
+// ColorFromBytes unmarshals a Color from a sequence of bytes.
+func ColorFromBytes(colorBytes []byte) (col Color, err error) {
 	marshalUtil := marshalutil.New(colorBytes)
-	if col, err = FromMarshalUtil(marshalUtil); err != nil {
+	if col, err = ColorFromMarshalUtil(marshalUtil); err != nil {
 		err = xerrors.Errorf("failed to parse Color from MarshalUtil: %w", err)
 		return
 	}
 	return
 }
 
-// FromBase58EncodedString creates a Color from a base58 encoded string.
-func FromBase58EncodedString(base58String string) (col Color, err error) {
+// ColorFromBase58EncodedString creates a Color from a base58 encoded string.
+func ColorFromBase58EncodedString(base58String string) (col Color, err error) {
 	parsedBytes, err := base58.Decode(base58String)
 	if err != nil {
 		err = xerrors.Errorf("error while decoding base58 encoded Color (%v): %w", err, cerrors.ErrBase58DecodeFailed)
 		return
 	}
 
-	if col, err = FromBytes(parsedBytes); err != nil {
+	if col, err = ColorFromBytes(parsedBytes); err != nil {
 		err = xerrors.Errorf("failed to parse Color from bytes: %w", err)
 		return
 	}
@@ -46,8 +40,8 @@ func FromBase58EncodedString(base58String string) (col Color, err error) {
 	return
 }
 
-// FromMarshalUtil unmarshals a Color using a MarshalUtil (for easier unmarshaling).
-func FromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (col Color, err error) {
+// ColorFromMarshalUtil unmarshals a Color using a MarshalUtil (for easier unmarshaling).
+func ColorFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (col Color, err error) {
 	colorBytes, err := marshalUtil.ReadBytes(ColorLength)
 	if err != nil {
 		err = xerrors.Errorf("failed to parse Color (%v): %w", err, cerrors.ErrParseBytesFailed)
@@ -57,7 +51,7 @@ func FromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (col Color, err error
 	return
 }
 
-func Random() (col Color) {
+func ColorRandom() (col Color) {
 	_, err := rand.Read(col[:])
 	if err != nil {
 		panic(err)
@@ -101,6 +95,8 @@ func (c Color) Compare(otherColor Color) int {
 // deterministic order of the present Colors.
 type Balances map[Color]uint64
 
+var Balances1Iota = NewBalancesForIotas(1)
+
 // NewBalances returns a new Balances. In general, it has not deterministic order
 func NewBalances(bals ...map[Color]uint64) Balances {
 	var b map[Color]uint64
@@ -134,7 +130,7 @@ func BalancesFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (Balances, er
 	var previousColor *Color
 	ret := NewBalances()
 	for i := uint32(0); i < balancesCount; i++ {
-		color, colorErr := FromMarshalUtil(marshalUtil)
+		color, colorErr := ColorFromMarshalUtil(marshalUtil)
 		if colorErr != nil {
 			return nil, xerrors.Errorf("failed to parse Color from MarshalUtil: %w", colorErr)
 		}
@@ -285,11 +281,18 @@ func (c Balances) AddAll(another Balances) {
 	})
 }
 
-// Diff secure diff, 0 if overflow
-func (c Balances) Diff(another Balances) Balances {
-	ret := c.Clone()
-	for col := range allColors(ret, another) {
-		ret.SubNoOverflow(col, another.Get(col))
+// Diff returns difference between two Balances color-by-color
+func (c Balances) Diff(another Balances) map[Color]int64 {
+	ret := make(map[Color]int64)
+	for col := range allColors(c, another) {
+		cBal := c[col]
+		aBal := another[col]
+		switch {
+		case cBal > aBal:
+			ret[col] = int64(cBal - aBal)
+		case cBal < aBal:
+			ret[col] = -int64(aBal - cBal)
+		}
 	}
 	return ret
 }

@@ -121,7 +121,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 		} else {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: unexpected UTXO type")
 		}
-		vmctx.remainingAfterFees = colored.BalancesFromLedgerstate1(req.Output().Balances())
+		vmctx.remainingAfterFees = colored.BalancesFromL1Balances(req.Output().Balances())
 	} else {
 		// off-ledger request
 		vmctx.remainingAfterFees = vmctx.adjustOffLedgerTransfer()
@@ -268,7 +268,7 @@ func (vmctx *VMContext) mustSendBack(tokens colored.Balances) {
 	backToAddress := sender.Address()
 	backToContract := sender.Hname()
 	metadata := request.NewMetadata().WithTarget(backToContract)
-	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), colored.ToLedgerstateMap(tokens))
+	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), colored.ToL1Map(tokens))
 	if err != nil {
 		vmctx.log.Errorf("mustSendBack: %v", err)
 	}

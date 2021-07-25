@@ -119,8 +119,8 @@ func (e *chainEnv) getAccountsOnChain() []*iscp.AgentID {
 	return ret
 }
 
-func (e *chainEnv) getBalancesOnChain() map[*iscp.AgentID]map[ledgerstate.Color]uint64 {
-	ret := make(map[*iscp.AgentID]map[ledgerstate.Color]uint64)
+func (e *chainEnv) getBalancesOnChain() map[*iscp.AgentID]colored.Balances {
+	ret := make(map[*iscp.AgentID]colored.Balances)
 	acc := e.getAccountsOnChain()
 	for _, agentID := range acc {
 		r, err := e.chain.Cluster.WaspClient(0).CallView(
@@ -135,7 +135,7 @@ func (e *chainEnv) getBalancesOnChain() map[*iscp.AgentID]map[ledgerstate.Color]
 	return ret
 }
 
-func (e *chainEnv) getTotalBalance() map[ledgerstate.Color]uint64 {
+func (e *chainEnv) getTotalBalance() colored.Balances {
 	r, err := e.chain.Cluster.WaspClient(0).CallView(
 		e.chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewTotalAssets.Name, nil,
 	)
@@ -143,10 +143,10 @@ func (e *chainEnv) getTotalBalance() map[ledgerstate.Color]uint64 {
 	return balancesDictToMap(e.t, r)
 }
 
-func balancesDictToMap(t *testing.T, d dict.Dict) map[ledgerstate.Color]uint64 {
-	ret := make(map[ledgerstate.Color]uint64)
+func balancesDictToMap(t *testing.T, d dict.Dict) colored.Balances {
+	ret := colored.NewBalances()
 	for key, value := range d {
-		col, _, err := ledgerstate.ColorFromBytes([]byte(key))
+		col, err := colored.ColorFromBytes([]byte(key))
 		require.NoError(t, err)
 		v, err := util.Uint64From8Bytes(value)
 		require.NoError(t, err)
@@ -169,17 +169,13 @@ func (e *chainEnv) printAccounts(title string) {
 
 func (e *chainEnv) checkLedger() {
 	balances := e.getBalancesOnChain()
-	sum := make(map[ledgerstate.Color]uint64)
+	sum := colored.NewBalances()
 	for _, bal := range balances {
 		for col, b := range bal {
-			s := sum[col]
-			sum[col] = s + b
+			sum.Add(col, b)
 		}
 	}
-
-	total := ledgerstate.NewColoredBalances(e.getTotalBalance())
-
-	require.EqualValues(e.t, sum, total.Map())
+	require.True(e.t, sum.Equals(e.getTotalBalance()))
 }
 
 func (e *chainEnv) getChainInfo() (iscp.ChainID, iscp.AgentID) {

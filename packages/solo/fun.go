@@ -9,15 +9,11 @@ import (
 	"io/ioutil"
 	"sort"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -25,11 +21,13 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
 )
 
@@ -114,7 +112,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 
 	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...)
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Contract.Name)
-	require.EqualValues(ch.Env.T, feeColor, ledgerstate.ColorIOTA)
+	require.EqualValues(ch.Env.T, feeColor, colored.IOTA)
 	totalFee := ownerFee + validatorFee
 	if totalFee > 0 {
 		req.WithIotas(totalFee)
@@ -159,7 +157,7 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, 
 		ch.Env.PutBlobDataIntoRegistry(v)
 	}
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Contract.Name)
-	require.EqualValues(ch.Env.T, feeColor, ledgerstate.ColorIOTA)
+	require.EqualValues(ch.Env.T, feeColor, colored.IOTA)
 	totalFee := ownerFee + validatorFee
 	if totalFee > 0 {
 		req.WithIotas(totalFee)
@@ -292,7 +290,7 @@ func (env *Solo) GetAddressBalance(addr ledgerstate.Address, col colored.Color) 
 
 // GetAddressBalances returns all colored balances of the address contained in the UTXODB ledger
 func (env *Solo) GetAddressBalances(addr ledgerstate.Address) colored.Balances {
-	return colored.BalancesFromLedgerstate2(env.utxoDB.GetAddressBalances(addr))
+	return colored.BalancesFromL1Map(env.utxoDB.GetAddressBalances(addr))
 }
 
 // GetAccounts returns all accounts on the chain with non-zero balances

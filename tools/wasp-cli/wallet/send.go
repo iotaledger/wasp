@@ -3,6 +3,8 @@ package wallet
 import (
 	"strconv"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
@@ -32,7 +34,8 @@ var sendFundsCmd = &cobra.Command{
 
 		tx := util.WithTransaction(func() (*ledgerstate.Transaction, error) {
 			txb := utxoutil.NewBuilder(outs...)
-			err := txb.AddSigLockedColoredOutput(targetAddress, map[ledgerstate.Color]uint64{color: uint64(amount)})
+			bals := colored.ToL1Map(colored.NewBalancesForColor(color, uint64(amount)))
+			err := txb.AddSigLockedColoredOutput(targetAddress, bals)
 			log.Check(err)
 			err = txb.AddRemainderOutputIfNeeded(sourceAddress, nil, true)
 			log.Check(err)
@@ -43,8 +46,8 @@ var sendFundsCmd = &cobra.Command{
 	},
 }
 
-func decodeColor(s string) ledgerstate.Color {
-	color, err := ledgerstate.ColorFromBase58EncodedString(s)
+func decodeColor(s string) colored.Color {
+	color, err := colored.ColorFromBase58EncodedString(s)
 	log.Check(err)
 	return color
 }

@@ -40,7 +40,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*ledgerstate.Transa
 		} else {
 			transfer = colored.NewBalancesForIotas(1)
 		}
-		err := txb.AddExtendedOutputConsume(req.ChainID.AsAddress(), metadata, colored.ToLedgerstateMap(transfer))
+		err := txb.AddExtendedOutputConsume(req.ChainID.AsAddress(), metadata, colored.ToL1Map(transfer))
 		if err != nil {
 			return nil, err
 		}

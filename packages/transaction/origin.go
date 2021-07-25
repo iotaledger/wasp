@@ -3,6 +3,8 @@ package transaction
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -18,7 +20,7 @@ import (
 func NewChainOriginTransaction(
 	keyPair *ed25519.KeyPair,
 	stateAddress ledgerstate.Address,
-	balance map[ledgerstate.Color]uint64,
+	balances colored.Balances,
 	timestamp time.Time,
 	allInputs ...ledgerstate.Output,
 ) (*ledgerstate.Transaction, iscp.ChainID, error) {
@@ -26,10 +28,10 @@ func NewChainOriginTransaction(
 	txb := utxoutil.NewBuilder(allInputs...).WithTimestamp(timestamp)
 
 	stateHash := state.OriginStateHash()
-	if len(balance) == 0 {
-		balance = map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: ledgerstate.DustThresholdAliasOutputIOTA}
+	if len(balances) == 0 {
+		balances = colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA)
 	}
-	if err := txb.AddNewAliasMint(balance, stateAddress, stateHash.Bytes()); err != nil {
+	if err := txb.AddNewAliasMint(colored.ToL1Map(balances), stateAddress, stateHash.Bytes()); err != nil {
 		return nil, iscp.ChainID{}, err
 	}
 	// adding reminder in compressing mode, i.e. all provided inputs will be consumed
@@ -78,9 +80,8 @@ func NewRootInitRequestTransaction(
 		WithEntryPoint(iscp.EntryPointInit).
 		WithArgs(args).
 		Bytes()
-	err := txb.AddExtendedOutputConsume(chainID.AsAddress(), metadata, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: 1,
-	})
+
+	err := txb.AddExtendedOutputConsume(chainID.AsAddress(), metadata, colored.Balances1IotaL1)
 	if err != nil {
 		return nil, err
 	}

@@ -22,7 +22,7 @@ var dummyColor colored.Color
 
 func init() {
 	var err error
-	dummyColor, err = colored.FromBase58EncodedString(hashing.HashStrings("dummy string").Base58())
+	dummyColor, err = colored.ColorFromBase58EncodedString(hashing.HashStrings("dummy string").Base58())
 	if err != nil {
 		panic(err)
 	}

@@ -225,7 +225,8 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		feeTarget = &validatorFeeTarget[0]
 	}
 
-	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
+	bals := colored.NewBalancesForIotas(100)
+
 	inputs := env.utxoDB.GetAddressOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(chainOriginator, stateAddr, bals, env.LogicalTime(), inputs...)
 	require.NoError(env.T, err)
@@ -350,7 +351,7 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]isc
 		if !ok {
 			lst = make([]iscp.Request, 0)
 		}
-		mintedAmounts := colored.BalancesFromLedgerstate2(utxoutil.GetMintedAmounts(tx))
+		mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))
 		ret[arr] = append(lst, request.OnLedgerFromOutput(o, sender, mintedAmounts))
 	}
 	return ret

@@ -87,12 +87,11 @@ func runTask(task *vm.VMTask) {
 	if rotationAddr == nil {
 		task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
 		if err != nil {
-			task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
+			task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %w", err))
 			return
 		}
 		if err = checkTotalAssets(task.ResultTransactionEssence, lastTotalAssets); err != nil {
-			task.OnFinish(nil, nil, xerrors.Errorf("RunVM.checkTotalAssets: %v", err))
-			return
+			task.Log.Panic(xerrors.Errorf("RunVM.checkTotalAssets: %w", err))
 		}
 		task.Log.Debug("runTask OUT. ",
 			"block index: ", task.VirtualState.BlockIndex(),
@@ -119,7 +118,7 @@ func outputsFromRequests(requests ...iscp.Request) []ledgerstate.Output {
 	return ret
 }
 
-func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalAssets colored.Balances) error {
+func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalOnChainAssets colored.Balances) error {
 	var chainOutput *ledgerstate.AliasOutput
 	for _, o := range essence.Outputs() {
 		if out, ok := o.(*ledgerstate.AliasOutput); ok {
@@ -129,10 +128,12 @@ func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalAssets c
 	if chainOutput == nil {
 		return xerrors.New("inconsistency: chain output not found")
 	}
-	balancesOnOutput := colored.BalancesFromLedgerstate1(chainOutput.Balances())
-	diffAssets := balancesOnOutput.Diff(lastTotalAssets)
-	if iotas := diffAssets.Get(colored.IOTA); iotas != ledgerstate.DustThresholdAliasOutputIOTA {
-		return xerrors.Errorf("RunVM.BuildTransactionEssence: inconsistency between L1 and L2 ledgers")
+	balancesOnOutput := colored.BalancesFromL1Balances(chainOutput.Balances())
+	diffAssets := balancesOnOutput.Diff(lastTotalOnChainAssets)
+	// we expect assets in the chain output and total assets on-chain differs only in the amount of
+	// ant-dust tokens locked in the output. Otherwise it is inconsistency
+	if len(diffAssets) != 1 || diffAssets[colored.IOTA] != int64(ledgerstate.DustThresholdAliasOutputIOTA) {
+		return xerrors.Errorf("inconsistency between L1 and L2 ledgers. Diff: %+v", diffAssets)
 	}
 	return nil
 }

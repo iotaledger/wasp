@@ -4,11 +4,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -57,10 +56,10 @@ func postRequestCmd() *cobra.Command {
 }
 
 func colorFromString(s string) colored.Color {
-	if s == ledgerstate.ColorIOTA.String() {
+	if s == colored.IOTA.String() {
 		return colored.IOTA
 	}
-	c, err := colored.FromBase58EncodedString(s)
+	c, err := colored.ColorFromBase58EncodedString(s)
 	log.Check(err)
 	return c
 }
