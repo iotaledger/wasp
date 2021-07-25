@@ -176,8 +176,6 @@ type RequestOnLedger struct {
 // implements iscp.Request interface
 var _ iscp.Request = &RequestOnLedger{}
 
-// OnLedgerFromOutput
-//nolint:revive // TODO refactor stutter request.request
 func OnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...colored.Balances) *RequestOnLedger {
 	ret := &RequestOnLedger{
 		outputObj:     output,
