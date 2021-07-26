@@ -117,6 +117,7 @@ func (m *Mempool) addToPool(req iscp.Request) bool {
 	alreadyProcessed, err := blocklog.IsRequestProcessed(m.stateReader.KVStoreReader(), &reqid)
 	if err != nil {
 		// may be invalidated state. Do not remove from in-buffer yet
+		m.log.Debugf("addToPool, IsRequestProcessed error: %v", err)
 		return false
 	}
 	if alreadyProcessed {

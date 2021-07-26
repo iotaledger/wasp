@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
@@ -21,7 +20,6 @@ var AllCoreContractsByHash = map[hashing.HashValue]*coreutil.ContractProcessor{
 	root.Contract.ProgramHash:       root.Processor,
 	accounts.Contract.ProgramHash:   accounts.Processor,
 	blob.Contract.ProgramHash:       blob.Processor,
-	eventlog.Contract.ProgramHash:   eventlog.Processor,
 	blocklog.Contract.ProgramHash:   blocklog.Processor,
 	governance.Contract.ProgramHash: governance.Processor,
 }

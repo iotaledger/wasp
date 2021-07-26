@@ -24,7 +24,10 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -34,11 +37,13 @@ import (
 	"golang.org/x/xerrors"
 )
 
-var _ chain.Chain = &chainObj{}     //nolint: gofumpt
-var _ chain.ChainCore = &chainObj{} //nolint: gofumpt
-var _ chain.ChainEntry = &chainObj{}
-var _ chain.ChainRequests = &chainObj{}
-var _ chain.ChainEvents = &chainObj{}
+var (
+	_ chain.Chain         = &chainObj{}
+	_ chain.ChainCore     = &chainObj{}
+	_ chain.ChainEntry    = &chainObj{}
+	_ chain.ChainRequests = &chainObj{}
+	_ chain.ChainEvents   = &chainObj{}
+)
 
 type chainObj struct {
 	committee                        atomic.Value
@@ -304,12 +309,14 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 			for _, reqid := range reqids {
 				c.eventRequestProcessed.Trigger(reqid)
 			}
+			c.publishNewBlockEvents(stateIndex)
 
 			c.log.Debugf("processChainTransition state %d: state %d cleaned, deleted requests: %+v",
 				stateIndex, i, iscp.ShortRequestIDs(reqids))
 		}
 		chain.PublishStateTransition(chainID, msg.ChainOutput, len(reqids))
 		chain.LogStateTransition(msg, reqids, c.log)
+
 		c.mempoolLastCleanedIndex = stateIndex
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
@@ -324,6 +331,25 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		StateTimestamp: msg.OutputTimestamp,
 	})
 	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.Hash().String())
+}
+
+func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
+	if blockIndex == 0 {
+		// don't run on state #0, root contracts not initialized yet.
+		return
+	}
+
+	kvPartition := subrealm.NewReadOnly(c.stateReader.KVStoreReader(), kv.Key(blocklog.Contract.Hname().Bytes()))
+
+	evts, err := blocklog.GetBlockEventsInternal(kvPartition, blockIndex)
+	if err != nil {
+		c.log.Panicf("publishNewBlockEvents - something went wrong getting events for block. %v", err)
+	}
+
+	for _, msg := range evts {
+		c.log.Info("publishNewBlockEvents - chainID: %s, event: %s", c.chainID.String(), msg)
+		publisher.Publish("vmmsg", c.chainID.Base58(), msg)
+	}
 }
 
 func (c *chainObj) processSynced(outputID ledgerstate.OutputID, blockIndex uint32) {

@@ -420,7 +420,7 @@ func (env *MockedEnv) WaitForEventFromNodesQuorum(waitName string, quorum int, i
 			return nil
 		}
 		if total >= nodeCount {
-			return fmt.Errorf("Wait for %s: test timeouted", waitName)
+			return fmt.Errorf("Wait for %s: test timed out", waitName)
 		}
 	}
 	return fmt.Errorf("WaitMempool: timeout expired %v", to)

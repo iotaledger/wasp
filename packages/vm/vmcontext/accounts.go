@@ -6,14 +6,14 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 func (vmctx *VMContext) AccountID() *iscp.AgentID {
 	hname := vmctx.CurrentContractHname()
 	switch hname {
-	case root.Contract.Hname(), accounts.Contract.Hname(), blob.Contract.Hname(), eventlog.Contract.Hname():
+	case root.Contract.Hname(), accounts.Contract.Hname(), blob.Contract.Hname(), blocklog.Contract.Hname():
 		hname = 0
 	}
 	return iscp.NewAgentID(vmctx.ChainID().AsAddress(), hname)

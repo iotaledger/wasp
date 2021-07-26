@@ -1,6 +1,7 @@
 package blocklog
 
 import (
+	"math"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -20,6 +21,9 @@ var Processor = Contract.Processor(initialize,
 	FuncGetRequestIDsForBlock.WithHandler(viewGetRequestIDsForBlock),
 	FuncIsRequestProcessed.WithHandler(viewIsRequestProcessed),
 	FuncControlAddresses.WithHandler(viewControlAddresses),
+	FuncGetEventsForRequest.WithHandler(viewGetEventsForRequest),
+	FuncGetEventsForBlock.WithHandler(viewGetEventsForBlock),
+	FuncGetEventsForContract.WithHandler(viewGetEventsForContract),
 )
 
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
@@ -38,7 +42,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 func viewGetBlockInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	blockIndex := params.MustGetUint32(ParamBlockIndex)
-	data, found, err := getBlockInfoDataIntern(ctx.State(), blockIndex)
+	data, found, err := getBlockInfoDataInternal(ctx.State(), blockIndex)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +71,7 @@ func viewIsRequestProcessed(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	requestID := params.MustGetRequestID(ParamRequestID)
 	a := assert.NewAssert(ctx.Log())
-	seen, err := isRequestProcessedIntern(ctx.State(), &requestID)
+	seen, err := isRequestProcessedInternal(ctx.State(), &requestID)
 	a.RequireNoError(err)
 	ret := dict.New()
 	if seen {
@@ -104,7 +108,7 @@ func viewGetRequestIDsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	for _, d := range dataArr {
 		rec, err := RequestReceiptFromBytes(d)
 		a.RequireNoError(err)
-		_ = arr.Push(rec.RequestID.Bytes())
+		arr.MustPush(rec.RequestID.Bytes())
 	}
 	return ret, nil
 }
@@ -121,7 +125,7 @@ func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestRecord)
 	for _, d := range dataArr {
-		_ = arr.Push(d)
+		arr.MustPush(d)
 	}
 	return ret, nil
 }
@@ -137,5 +141,74 @@ func viewControlAddresses(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret.Set(ParamStateControllerAddress, codec.EncodeAddress(rec.StateAddress))
 	ret.Set(ParamGoverningAddress, codec.EncodeAddress(rec.GoverningAddress))
 	ret.Set(ParamBlockIndex, codec.EncodeUint32(rec.SinceBlockIndex))
+	return ret, nil
+}
+
+// viewGetEventsForRequest returns a list of events for a given request.
+// params:
+// ParamRequestID - requestID
+func viewGetEventsForRequest(ctx iscp.SandboxView) (dict.Dict, error) {
+	params := kvdecoder.New(ctx.Params())
+	requestID := params.MustGetRequestID(ParamRequestID)
+
+	events, err := getRequestEventsInternal(ctx.State(), &requestID)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := dict.New()
+	arr := collections.NewArray16(ret, ParamEvent)
+	for _, event := range events {
+		arr.MustPush([]byte(event))
+	}
+	return ret, nil
+}
+
+// viewGetEventsForBlock returns a list of events for a given block.
+// params:
+// ParamBlockIndex - index of the block
+func viewGetEventsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
+	params := kvdecoder.New(ctx.Params())
+	blockIndex := params.MustGetUint32(ParamBlockIndex)
+
+	events, err := GetBlockEventsInternal(ctx.State(), blockIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := dict.New()
+	arr := collections.NewArray16(ret, ParamEvent)
+	for _, event := range events {
+		arr.MustPush([]byte(event))
+	}
+	return ret, nil
+}
+
+// viewGetEventsForContract returns a list of events for a given smart contract.
+// params:
+// ParamContractHname - hname of the contract
+// ParamFromBlock - defaults to 0
+// ParamToBlock - defaults to latest block
+func viewGetEventsForContract(ctx iscp.SandboxView) (dict.Dict, error) {
+	params := kvdecoder.New(ctx.Params())
+	contract := params.MustGetHname(ParamContractHname)
+	fromBlock, err := params.GetUint32(ParamFromBlock, 0)
+	if err != nil {
+		return nil, err
+	}
+	toBlock, _ := params.GetUint32(ParamToBlock, math.MaxUint32)
+	if err != nil {
+		return nil, err
+	}
+	events, err := getSmartContractEventsInternal(ctx.State(), contract, fromBlock, toBlock)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := dict.New()
+	arr := collections.NewArray16(ret, ParamEvent)
+	for _, event := range events {
+		arr.MustPush([]byte(event))
+	}
 	return ret, nil
 }

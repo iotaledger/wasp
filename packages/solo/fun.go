@@ -24,7 +24,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
@@ -407,52 +406,25 @@ func (ch *Chain) GetFeeInfo(contactName string) (colored.Color, uint64, uint64) 
 	return feeColor, ownerFee, validatorFee
 }
 
-// GetEventLogRecords calls the view in the  'eventlog' core smart contract to retrieve
-// latest up to 50 records for a given smart contract.
-// It returns records as array in time-descending order.
-// More than 50 records may be retrieved by calling the view directly
-func (ch *Chain) GetEventLogRecords(name string) ([]collections.TimestampedLogRecord, error) {
-	res, err := ch.CallView(eventlog.Contract.Name, eventlog.FuncGetRecords.Name,
-		eventlog.ParamContractHname, iscp.Hn(name),
+// GetEventsForContract calls the view in the  'blocklog' core smart contract to retrieve events for a given smart contract.
+func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
+	viewResult, err := ch.CallView(
+		blocklog.Contract.Name, blocklog.FuncGetEventsForContract.Name,
+		blocklog.ParamContractHname, iscp.Hn(name),
 	)
 	if err != nil {
 		return nil, err
 	}
-	recs := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
-	ret := make([]collections.TimestampedLogRecord, recs.MustLen())
-	for i := uint16(0); i < recs.MustLen(); i++ {
-		data := recs.MustGetAt(i)
-		rec, err := collections.ParseRawLogRecord(data)
+
+	recs := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
+	ret := make([]string, recs.MustLen())
+	for i := range ret {
+		data, err := recs.GetAt(uint16(i))
 		require.NoError(ch.Env.T, err)
-		ret[i] = *rec
+		ret[i] = string(data)
 	}
-	return ret, nil
-}
 
-// GetEventLogRecordsString return stringified response from GetEventLogRecords
-// Returns latest 50 records from the log
-func (ch *Chain) GetEventLogRecordsString(name string) (string, error) {
-	recs, err := ch.GetEventLogRecords(name)
-	if err != nil {
-		return "", err
-	}
-	ret := fmt.Sprintf("log records for '%s':", name)
-	for _, r := range recs {
-		ret += fmt.Sprintf("\n%d: %s", r.Timestamp, string(r.Data))
-	}
 	return ret, nil
-}
-
-// GetEventLogNumRecords returns total number of eventlog records for the given contact.
-func (ch *Chain) GetEventLogNumRecords(name string) int {
-	res, err := ch.CallView(eventlog.Contract.Name, eventlog.FuncGetNumRecords.Name,
-		eventlog.ParamContractHname, iscp.Hn(name),
-	)
-	require.NoError(ch.Env.T, err)
-	ret, ok, err := codec.DecodeInt64(res.MustGet(eventlog.ParamNumRecords))
-	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
-	return int(ret)
 }
 
 // CommonAccount return the agentID of the common account (controlled by the owner)

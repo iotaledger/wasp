@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -61,7 +60,6 @@ func (ch *Chain) CheckAccountLedger() {
 	require.Zero(ch.Env.T, len(ch.GetAccountBalance(coreacc)))
 	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), accounts.Contract.Hname())
 	require.Zero(ch.Env.T, len(ch.GetAccountBalance(coreacc)))
-	coreacc = iscp.NewAgentID(ch.ChainID.AsAddress(), eventlog.Contract.Hname())
 	require.Zero(ch.Env.T, len(ch.GetAccountBalance(coreacc)))
 }
 
