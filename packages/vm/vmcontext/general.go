@@ -110,7 +110,7 @@ func (vmctx *VMContext) RequestID() iscp.RequestID {
 
 const maxParamSize = 512
 
-// TODO implement send option
+// TODO implement send options
 //goland:noinspection GoUnusedParameter
 func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances, metadata *iscp.SendMetadata, options ...iscp.SendOptions) bool {
 	if tokens == nil || len(tokens) == 0 {

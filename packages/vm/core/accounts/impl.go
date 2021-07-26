@@ -111,7 +111,7 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 // owner of the chain moves all tokens from the common account to its own account
 // Params:
 //   ParamWithdrawAmount if do not exist or is 0 means withdraw all balance
-//   ParamWithdrawColor dummyColor to withdraw if amount is specified. Defaults to colored.IOTA
+//   ParamWithdrawColor color to withdraw if amount is specified. Defaults to colored.IOTA
 func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	a.RequireChainOwner(ctx, "harvest")
