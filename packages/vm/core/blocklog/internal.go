@@ -110,7 +110,7 @@ func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.Reque
 		return nil, err
 	}
 	if !seen {
-		return []RequestLookupKey{}, nil
+		return nil, nil
 	}
 	// the lookup record is here, have to check is it is not a collision of digests
 	bin := lookupTable.MustGetAt(digest[:])
