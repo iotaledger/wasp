@@ -116,7 +116,7 @@ func mustGetLookupKeyListFromReqID(partition kv.KVStoreReader, reqID *iscp.Reque
 	bin := lookupTable.MustGetAt(digest[:])
 	lst, err := RequestLookupKeyListFromBytes(bin)
 	if err != nil {
-		panic("RequestKnown: data conversion error")
+		panic("mustGetLookupKeyListFromReqID: data conversion error")
 	}
 	return lst, nil
 }
@@ -162,7 +162,7 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID *iscp.RequestID)
 		return nil, err
 	}
 	ret := []string{}
-	eventIndex := uint16(0)
+	eventIndex := uint8(0)
 	events := collections.NewMapReadOnly(partition, StateVarRequestEvents)
 	for {
 		key := NewEventLookupKey(record.BlockIndex, record.RequestIndex, eventIndex)
@@ -218,7 +218,7 @@ func GetBlockEventsInternal(partition kv.KVStoreReader, blockIndex uint32) ([]st
 	ret := []string{}
 	events := collections.NewMapReadOnly(partition, StateVarRequestEvents)
 	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
-		eventIndex := uint16(0)
+		eventIndex := uint8(0)
 		for {
 			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex)
 			msg, err := events.GetAt(key.Bytes())

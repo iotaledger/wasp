@@ -44,7 +44,7 @@ type VMContext struct {
 	// request context
 	req                iscp.Request
 	requestIndex       uint16
-	requestEventIndex  uint16
+	requestEventIndex  uint8
 	currentStateUpdate state.StateUpdate
 	entropy            hashing.HashValue // mutates with each request
 	contractRecord     *root.ContractRecord

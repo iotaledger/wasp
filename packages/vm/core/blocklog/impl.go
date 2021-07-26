@@ -108,7 +108,7 @@ func viewGetRequestIDsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	for _, d := range dataArr {
 		rec, err := RequestReceiptFromBytes(d)
 		a.RequireNoError(err)
-		_ = arr.Push(rec.RequestID.Bytes())
+		arr.MustPush(rec.RequestID.Bytes())
 	}
 	return ret, nil
 }
@@ -125,7 +125,7 @@ func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamRequestRecord)
 	for _, d := range dataArr {
-		_ = arr.Push(d)
+		arr.MustPush(d)
 	}
 	return ret, nil
 }
@@ -159,7 +159,7 @@ func viewGetEventsForRequest(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamEvent)
 	for _, event := range events {
-		_ = arr.Push([]byte(event))
+		arr.MustPush([]byte(event))
 	}
 	return ret, nil
 }
@@ -179,7 +179,7 @@ func viewGetEventsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamEvent)
 	for _, event := range events {
-		_ = arr.Push([]byte(event))
+		arr.MustPush([]byte(event))
 	}
 	return ret, nil
 }
@@ -196,7 +196,7 @@ func viewGetEventsForContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-	toBlock, _ := params.GetUint32(ParamToBlock, math.MaxInt32)
+	toBlock, _ := params.GetUint32(ParamToBlock, math.MaxUint32)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +208,7 @@ func viewGetEventsForContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret := dict.New()
 	arr := collections.NewArray16(ret, ParamEvent)
 	for _, event := range events {
-		_ = arr.Push([]byte(event))
+		arr.MustPush([]byte(event))
 	}
 	return ret, nil
 }
