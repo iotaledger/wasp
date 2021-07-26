@@ -26,7 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/labstack/echo/v4"
@@ -223,14 +223,12 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, fname stri
 		ret := dict.New()
 		ret.Set(blob.ParamBytes, []byte{1, 3, 3, 7})
 		return ret, nil
-
-	case hname == eventlog.Contract.Hname() && fname == eventlog.FuncGetRecords.Name:
+	case hname == blocklog.Contract.Hname() && fname == blocklog.FuncGetEventsForContract.Name:
 		ret := dict.New()
-		a := collections.NewArray16(ret, eventlog.ParamRecords)
-		a.MustPush([]byte("log entry"))
+		arr := collections.NewArray16(ret, blocklog.ParamEvent)
+		arr.Push([]byte("some event"))
 		return ret, nil
 	}
-
 	panic(fmt.Sprintf("mock view call not implemented: %s::%s", hname.String(), fname))
 }
 

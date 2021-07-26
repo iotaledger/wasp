@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/vm"
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
@@ -98,10 +97,6 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 //		TimeLock:         timelock,
 //	})
 //}
-
-func (vmctx *VMContext) EventPublisher() vm.ContractEventPublisher {
-	return vm.NewContractEventPublisher(vmctx.ChainID(), vmctx.CurrentContractHname(), vmctx.log)
-}
 
 func (vmctx *VMContext) RequestID() iscp.RequestID {
 	return vmctx.req.ID()

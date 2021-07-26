@@ -6,11 +6,7 @@ chain.
 The function of the `blocklog` contract is to keep track of the blocks of
 requests that were processed by the chain.
 
-It provides functions to deposit and withdraw funds, also gives the count of
-total assets deposited on the chain. Note that the ledger of accounts is
-consistently maintained by the VM behind scenes,the `accounts`
-core smart contract provides frontend of authorized access to those account by
-outside users.
+It provides views to get request status or receipts, block information, or events (per request / block / smart contract).
 
 ### Entry Points
 
@@ -40,3 +36,9 @@ processing to the chain.
 * **viewIsRequestProcessed** - Returns whether a request with specified ID has
   been processed.
 
+* **viewGetEventsForRequest** - returns a list of events for a given request.
+
+* **viewGetEventsForBlock** - returns a list of events for a given block.
+  
+* **viewGetEventsForContract** - returns a list of events for a given smart contract.
+  

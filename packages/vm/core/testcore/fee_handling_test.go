@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -29,7 +28,6 @@ func TestInit(t *testing.T) {
 	checkFees(chain, blob.Contract.Name, 0, 0)
 	checkFees(chain, root.Contract.Name, 0, 0)
 	checkFees(chain, accounts.Contract.Name, 0, 0)
-	checkFees(chain, eventlog.Contract.Name, 0, 0)
 }
 
 func TestBase(t *testing.T) {

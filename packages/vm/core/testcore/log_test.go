@@ -3,19 +3,18 @@ package testcore
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
-func printLogRecords(t *testing.T, recs []collections.TimestampedLogRecord, title string) {
+func printLogRecords(t *testing.T, recs []string, title string) {
 	t.Logf("------- Log records for '%s'", title)
-	for i := range recs {
-		t.Logf("%d: '%s'", recs[i].Timestamp, string(recs[i].Data))
+	for _, text := range recs {
+		t.Logf(text)
 	}
 }
 
@@ -23,21 +22,21 @@ func TestEventLogBasicEmpty(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	recs, err := chain.GetEventLogRecords(root.Contract.Name)
+	recs, err := chain.GetEventsForContract(root.Contract.Name)
 	require.NoError(t, err)
 	require.Len(t, recs, 0)
 
-	num := chain.GetEventLogNumRecords(root.Contract.Name)
-	require.EqualValues(t, 0, num)
+	events, _ := chain.GetEventsForContract(root.Contract.Name)
+	require.EqualValues(t, 0, len(events))
 
-	num = chain.GetEventLogNumRecords(accounts.Contract.Name)
-	require.EqualValues(t, 0, num)
+	events, _ = chain.GetEventsForContract(accounts.Contract.Name)
+	require.EqualValues(t, 0, len(events))
 
-	num = chain.GetEventLogNumRecords(blob.Contract.Name)
-	require.EqualValues(t, 0, num)
+	events, _ = chain.GetEventsForContract(blob.Contract.Name)
+	require.EqualValues(t, 0, len(events))
 
-	num = chain.GetEventLogNumRecords(eventlog.Contract.Name)
-	require.EqualValues(t, 0, num)
+	events, _ = chain.GetEventsForContract(blocklog.Contract.Name)
+	require.EqualValues(t, 0, len(events))
 
 	reqRecs := chain.GetRequestReceiptsForBlockRangeAsStrings(0, 0)
 	require.EqualValues(t, 1, len(reqRecs))
@@ -54,19 +53,19 @@ func TestChainLogDeploy(t *testing.T) {
 	hwasm, err := chain.UploadWasmFromFile(nil, wasmFile)
 	require.NoError(t, err)
 
-	num := chain.GetEventLogNumRecords(root.Contract.Name)
-	require.EqualValues(t, 0, num)
+	events, _ := chain.GetEventsForContract(root.Contract.Name)
+	require.EqualValues(t, 0, len(events))
 
-	num = chain.GetEventLogNumRecords(accounts.Contract.Name)
-	require.EqualValues(t, 0, num)
+	events, _ = chain.GetEventsForContract(accounts.Contract.Name)
+	require.EqualValues(t, 0, len(events))
 
-	num = chain.GetEventLogNumRecords(eventlog.Contract.Name)
-	require.EqualValues(t, 0, num)
+	events, _ = chain.GetEventsForContract(blocklog.Contract.Name)
+	require.EqualValues(t, 0, len(events))
 
-	num = chain.GetEventLogNumRecords(blob.Contract.Name)
-	require.EqualValues(t, 1, num)
+	events, _ = chain.GetEventsForContract(blob.Contract.Name)
+	require.EqualValues(t, 1, len(events))
 
-	recs, err := chain.GetEventLogRecords(blob.Contract.Name)
+	recs, err := chain.GetEventsForContract(blob.Contract.Name)
 	require.NoError(t, err)
 	require.Len(t, recs, 1)
 	printLogRecords(t, recs, "blob")
@@ -75,22 +74,22 @@ func TestChainLogDeploy(t *testing.T) {
 	err = chain.DeployContract(nil, name, hwasm)
 	require.NoError(t, err)
 
-	num = chain.GetEventLogNumRecords(root.Contract.Name)
-	require.EqualValues(t, 1, num)
+	events, _ = chain.GetEventsForContract(root.Contract.Name)
+	require.EqualValues(t, 1, len(events))
 
-	num = chain.GetEventLogNumRecords(accounts.Contract.Name)
-	require.EqualValues(t, 0, num)
+	events, _ = chain.GetEventsForContract(accounts.Contract.Name)
+	require.EqualValues(t, 0, len(events))
 
-	num = chain.GetEventLogNumRecords(eventlog.Contract.Name)
-	require.EqualValues(t, 0, num)
+	events, _ = chain.GetEventsForContract(blocklog.Contract.Name)
+	require.EqualValues(t, 0, len(events))
 
-	num = chain.GetEventLogNumRecords(blob.Contract.Name)
-	require.EqualValues(t, 1, num)
+	events, _ = chain.GetEventsForContract(blob.Contract.Name)
+	require.EqualValues(t, 1, len(events))
 
-	num = chain.GetEventLogNumRecords(name)
-	require.EqualValues(t, 0, num)
+	events, _ = chain.GetEventsForContract(name)
+	require.EqualValues(t, 0, len(events))
 
-	recs, err = chain.GetEventLogRecords(name)
+	recs, err = chain.GetEventsForContract(name)
 	require.NoError(t, err)
 	require.Len(t, recs, 0)
 

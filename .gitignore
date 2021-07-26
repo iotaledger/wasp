@@ -12,3 +12,5 @@ wasp-cli.json
 **/target/
 .DS_Store
 tools/wasp-cli/wasp-cli
+.docusaurus
+node_modules

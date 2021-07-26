@@ -94,6 +94,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 	}
 	vmctx.req = req
 	vmctx.requestIndex = requestIndex
+	vmctx.requestEventIndex = 0
 	if req.Output() != nil {
 		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.Output().ID()); err != nil {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)

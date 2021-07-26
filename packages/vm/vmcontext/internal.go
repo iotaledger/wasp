@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -119,6 +118,10 @@ func (vmctx *VMContext) requestLookupKey() blocklog.RequestLookupKey {
 	return blocklog.NewRequestLookupKey(vmctx.virtualState.BlockIndex(), vmctx.requestIndex)
 }
 
+func (vmctx *VMContext) eventLookupKey() blocklog.EventLookupKey {
+	return blocklog.NewEventLookupKey(vmctx.virtualState.BlockIndex(), vmctx.requestIndex, vmctx.requestEventIndex)
+}
+
 func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
@@ -137,10 +140,14 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 	}
 }
 
-func (vmctx *VMContext) StoreToEventLog(contract iscp.Hname, data []byte) {
-	vmctx.pushCallContext(eventlog.Contract.Hname(), nil, nil)
+func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
+	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	vmctx.log.Debugf("StoreToEventLog/%s: data: '%s'", contract.String(), string(data))
-	eventlog.AppendToLog(vmctx.State(), vmctx.virtualState.Timestamp().UnixNano(), contract, data)
+	vmctx.log.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
+	err := blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey(), contract)
+	if err != nil {
+		vmctx.Panicf("MustSaveEvent: %v", err)
+	}
+	vmctx.requestEventIndex++
 }
