@@ -282,7 +282,7 @@ func TestAccessNodesMany(t *testing.T) {
 	myClient := e.chain.SCClient(incCounterSCHname, keyPair)
 
 	requestsCount := requestsCountInitial
-	requestsCummulative := 0
+	requestsCumulative := 0
 	posted := 0
 	for i := 0; i < iterationCount; i++ {
 		logMsg := fmt.Sprintf("iteration %v of %v requests", i, requestsCount)
@@ -292,8 +292,8 @@ func TestAccessNodesMany(t *testing.T) {
 			require.NoError(t, err)
 		}
 		posted += requestsCount
-		requestsCummulative += requestsCount
-		waitUntil(t, e.counterEquals(int64(requestsCummulative)), e.clu.Config.AllNodes(), 60*time.Second, logMsg)
+		requestsCumulative += requestsCount
+		waitUntil(t, e.counterEquals(int64(requestsCumulative)), e.clu.Config.AllNodes(), 60*time.Second, logMsg)
 		requestsCount *= requestsCountProgression
 	}
 	e.printBlocks(posted + 3)
