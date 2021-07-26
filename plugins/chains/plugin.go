@@ -44,11 +44,11 @@ func run(_ *node.Plugin) {
 		database.GetOrCreateKVStore,
 	)
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
+		allChains.Attach(nodeconn.NodeConnection())
 		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry); err != nil {
 			log.Errorf("failed to read chain activation records from registry: %v", err)
 			return
 		}
-		allChains.Attach(nodeconn.NodeConnection())
 
 		initialized.SetReady()
 

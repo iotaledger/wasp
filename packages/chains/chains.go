@@ -40,6 +40,7 @@ type Chains struct {
 	pullMissingRequestsFromCommittee bool
 	networkProvider                  peering.NetworkProvider
 	getOrCreateKVStore               dbmanager.ChainKVStoreProvider
+	nodeConnEstablished              chan bool
 }
 
 func New(
@@ -60,6 +61,7 @@ func New(
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
 		networkProvider:                  networkProvider,
 		getOrCreateKVStore:               getOrCreateKVStore,
+		nodeConnEstablished:              make(chan bool, 1),
 	}
 	return ret
 }
@@ -83,6 +85,7 @@ func (c *Chains) Attach(nodeConn *txstream.Client) {
 	c.nodeConn.Events.InclusionStateReceived.Attach(events.NewClosure(c.dispatchInclusionStateMsg))
 	c.nodeConn.Events.OutputReceived.Attach(events.NewClosure(c.dispatchOutputMsg))
 	c.nodeConn.Events.UnspentAliasOutputReceived.Attach(events.NewClosure(c.dispatchUnspentAliasOutputMsg))
+	close(c.nodeConnEstablished)
 	// TODO attach to off-ledger request module
 }
 
@@ -113,6 +116,7 @@ func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider) err
 // - insert it into the runtime registry
 // - subscribes for related transactions in he IOTA node
 func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.Provider) error {
+	<-c.nodeConnEstablished
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
