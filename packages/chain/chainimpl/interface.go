@@ -108,7 +108,7 @@ func shouldSendToPeer(peerID string, ackPeers []string) bool {
 	return true
 }
 
-func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
+func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
 	msgData := messages.NewOffLedgerRequestMsg(&c.chainID, req).Bytes()
 	committee := c.getCommittee()
@@ -148,7 +148,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 	}()
 }
 
-func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string) {
+func (c *chainObj) ReceiveOffLedgerRequest(req *request.OffLedger, senderNetID string) {
 	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
 	c.sendRequestAckowledgementMsg(req.ID(), senderNetID)
 	if !c.mempool.ReceiveRequest(req) {

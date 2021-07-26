@@ -96,8 +96,8 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 	}
 	vmctx.req = req
 	vmctx.requestIndex = requestIndex
-	if req.Output() != nil {
-		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.Output().ID()); err != nil {
+	if !req.IsOffLedger() {
+		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.(*request.OnLedger).Output().ID()); err != nil {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
 		}
 	}
@@ -110,9 +110,10 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 	if isRequestTimeLockedNow(req, ts) {
 		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", ts, req.ID().String())
 	}
-	if req.Output() != nil {
+	if !req.IsOffLedger() {
 		// on-ledger request
-		if input, ok := req.Output().(*ledgerstate.ExtendedLockedOutput); ok {
+		reqt := req.(*request.OnLedger)
+		if input, ok := reqt.Output().(*ledgerstate.ExtendedLockedOutput); ok {
 			// it is an on-ledger request
 			if !input.UnlockAddressNow(ts).Equals(vmctx.chainID.AsAddress()) {
 				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
@@ -121,7 +122,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 		} else {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: unexpected UTXO type")
 		}
-		vmctx.remainingAfterFees = colored.BalancesFromL1Balances(req.Output().Balances())
+		vmctx.remainingAfterFees = colored.BalancesFromL1Balances(reqt.Output().Balances())
 	} else {
 		// off-ledger request
 		vmctx.remainingAfterFees = vmctx.adjustOffLedgerTransfer()
@@ -138,7 +139,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 }
 
 func (vmctx *VMContext) adjustOffLedgerTransfer() colored.Balances {
-	req, ok := vmctx.req.(*request.RequestOffLedger)
+	req, ok := vmctx.req.(*request.OffLedger)
 	if !ok {
 		vmctx.log.Panicf("adjustOffLedgerTransfer.inconsistency: unexpected request type")
 	}
@@ -170,7 +171,7 @@ func (vmctx *VMContext) adjustOffLedgerTransfer() colored.Balances {
 }
 
 func (vmctx *VMContext) validateRequest() bool {
-	req, ok := vmctx.req.(*request.RequestOffLedger)
+	req, ok := vmctx.req.(*request.OffLedger)
 	if !ok {
 		// on-ledger request is always valid
 		return true
@@ -252,7 +253,7 @@ func (vmctx *VMContext) grabFee(account *iscp.AgentID, amount uint64) bool {
 }
 
 func (vmctx *VMContext) mustSendBack(tokens colored.Balances) {
-	if len(tokens) == 0 || vmctx.req.Output() == nil {
+	if len(tokens) == 0 || vmctx.req.IsOffLedger() {
 		return
 	}
 	sender := vmctx.req.SenderAccount()
@@ -289,7 +290,7 @@ func (vmctx *VMContext) mustCallFromRequest() {
 }
 
 func (vmctx *VMContext) mustUpdateOffledgerRequestMaxAssumedNonce() {
-	if offl, ok := vmctx.req.(*request.RequestOffLedger); ok {
+	if offl, ok := vmctx.req.(*request.OffLedger); ok {
 		vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 		defer vmctx.popCallContext()
 

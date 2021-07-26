@@ -40,7 +40,7 @@ type ChainEntry interface {
 	ReceiveInclusionState(ledgerstate.TransactionID, ledgerstate.InclusionState)
 	ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time)
 	ReceiveOutput(output ledgerstate.Output)
-	ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string)
+	ReceiveOffLedgerRequest(req *request.OffLedger, senderNetID string)
 
 	Dismiss(reason string)
 	IsDismissed() bool

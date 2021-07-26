@@ -131,7 +131,7 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 	}
 	err := blocklog.SaveRequestLogRecord(vmctx.State(), &blocklog.RequestReceipt{
 		RequestID: vmctx.req.ID(),
-		OffLedger: vmctx.req.Output() == nil,
+		OffLedger: vmctx.req.IsOffLedger(),
 		Error:     errStr,
 	}, vmctx.requestLookupKey())
 	if err != nil {

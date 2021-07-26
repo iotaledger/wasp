@@ -12,10 +12,10 @@ import (
 
 type OffLedgerRequestMsg struct {
 	ChainID *iscp.ChainID
-	Req     *request.RequestOffLedger
+	Req     *request.OffLedger
 }
 
-func NewOffLedgerRequestMsg(chainID *iscp.ChainID, req *request.RequestOffLedger) *OffLedgerRequestMsg {
+func NewOffLedgerRequestMsg(chainID *iscp.ChainID, req *request.OffLedger) *OffLedgerRequestMsg {
 	return &OffLedgerRequestMsg{
 		ChainID: chainID,
 		Req:     req,
@@ -39,7 +39,7 @@ func OffLedgerRequestMsgFromBytes(data []byte) (*OffLedgerRequestMsg, error) {
 	if err != nil {
 		return nil, err
 	}
-	reqCasted, ok := req.(*request.RequestOffLedger)
+	reqCasted, ok := req.(*request.OffLedger)
 	if !ok {
 		return nil, xerrors.New("OffLedgerRequestMsgFromBytes: wrong type of request data")
 	}

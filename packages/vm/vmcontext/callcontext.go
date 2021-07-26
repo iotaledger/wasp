@@ -16,7 +16,7 @@ func (vmctx *VMContext) pushCallContextWithTransfer(contract iscp.Hname, params 
 		targetAccount = vmctx.adjustAccount(targetAccount)
 		if len(vmctx.callStack) == 0 {
 			// was this an off-ledger request?
-			if _, ok := vmctx.req.(*request.RequestOffLedger); ok {
+			if _, ok := vmctx.req.(*request.OffLedger); ok {
 				sender := vmctx.req.SenderAccount()
 				if !vmctx.moveBetweenAccounts(sender, targetAccount, transfer) {
 					return fmt.Errorf("pushCallContextWithTransfer: off-ledger transfer failed: not enough funds")

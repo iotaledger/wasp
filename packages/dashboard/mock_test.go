@@ -53,12 +53,12 @@ func (w *waspServices) NetworkProvider() peering.NetworkProvider {
 
 func (w *waspServices) TrustedNetworkManager() peering.TrustedNetworkManager {
 	tnm := testutil.NewTrustedNetworkManager()
-	tnm.TrustPeer(ed25519.GenerateKeyPair().PublicKey, "some:254")
-	tnm.TrustPeer(ed25519.GenerateKeyPair().PublicKey, "")
+	_, _ = tnm.TrustPeer(ed25519.GenerateKeyPair().PublicKey, "some:254")
+	_, _ = tnm.TrustPeer(ed25519.GenerateKeyPair().PublicKey, "")
 	return tnm
 }
 
-func (w *waspServices) GetChain(chainID *iscp.ChainID) chain.ChainCore {
+func (w *waspServices) GetChain(_ *iscp.ChainID) chain.ChainCore {
 	return &mockChain{}
 }
 
@@ -74,7 +74,7 @@ func (w *waspServices) GetChainRecord(chainID *iscp.ChainID) (*registry.ChainRec
 	}, nil
 }
 
-func (w *waspServices) GetChainState(chainID *iscp.ChainID) (*ChainState, error) {
+func (w *waspServices) GetChainState(_ *iscp.ChainID) (*ChainState, error) {
 	return &ChainState{
 		Index:             1,
 		Hash:              hashing.RandomHash(nil),
@@ -85,7 +85,7 @@ func (w *waspServices) GetChainState(chainID *iscp.ChainID) (*ChainState, error)
 
 type peeringNetworkProvider struct{}
 
-func (p *peeringNetworkProvider) Run(stopCh <-chan struct{}) {
+func (p *peeringNetworkProvider) Run(_ <-chan struct{}) {
 	panic("not implemented")
 }
 
@@ -93,28 +93,28 @@ func (p *peeringNetworkProvider) Self() peering.PeerSender {
 	return &peeringNode{}
 }
 
-func (p *peeringNetworkProvider) PeerGroup(peerAddrs []string) (peering.GroupProvider, error) {
+func (p *peeringNetworkProvider) PeerGroup(_ []string) (peering.GroupProvider, error) {
 	panic("not implemented")
 }
 
 // Domain creates peering.PeerDomainProvider.
-func (p *peeringNetworkProvider) PeerDomain(peerNetIDs []string) (peering.PeerDomainProvider, error) {
+func (p *peeringNetworkProvider) PeerDomain(_ []string) (peering.PeerDomainProvider, error) {
 	panic("not implemented")
 }
 
-func (p *peeringNetworkProvider) Attach(peeringID *peering.PeeringID, callback func(recv *peering.RecvEvent)) interface{} {
+func (p *peeringNetworkProvider) Attach(_ *peering.PeeringID, _ func(recv *peering.RecvEvent)) interface{} {
 	panic("not implemented")
 }
 
-func (p *peeringNetworkProvider) Detach(attachID interface{}) {
+func (p *peeringNetworkProvider) Detach(_ interface{}) {
 	panic("not implemented")
 }
 
-func (p *peeringNetworkProvider) PeerByNetID(peerNetID string) (peering.PeerSender, error) {
+func (p *peeringNetworkProvider) PeerByNetID(_ string) (peering.PeerSender, error) {
 	panic("not implemented")
 }
 
-func (p *peeringNetworkProvider) PeerByPubKey(peerPub *ed25519.PublicKey) (peering.PeerSender, error) {
+func (p *peeringNetworkProvider) PeerByPubKey(_ *ed25519.PublicKey) (peering.PeerSender, error) {
 	panic("not implemented")
 }
 
@@ -144,7 +144,7 @@ func (p *peeringNode) PubKey() *ed25519.PublicKey {
 	panic("not implemented")
 }
 
-func (p *peeringNode) SendMsg(msg *peering.PeerMessage) {
+func (p *peeringNode) SendMsg(_ *peering.PeerMessage) {
 	panic("not implemented")
 }
 
@@ -152,7 +152,7 @@ func (p *peeringNode) IsAlive() bool {
 	return true
 }
 
-func (p *peeringNode) Await(timeout time.Duration) error {
+func (p *peeringNode) Await(_ time.Duration) error {
 	panic("not implemented")
 }
 
@@ -163,7 +163,7 @@ func (p *peeringNode) Close() {
 	panic("not implemented")
 }
 
-func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, fname string, params dict.Dict) (dict.Dict, error) {
+func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, fname string, _ dict.Dict) (dict.Dict, error) {
 	chainID := ch.ID()
 
 	contract := &root.ContractRecord{
@@ -293,15 +293,15 @@ func (m *mockChain) ReceiveInclusionState(_ ledgerstate.TransactionID, _ ledgers
 	panic("not implemented")
 }
 
-func (m *mockChain) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
+func (m *mockChain) ReceiveState(_ *ledgerstate.AliasOutput, _ time.Time) {
 	panic("not implemented")
 }
 
-func (m *mockChain) ReceiveOutput(output ledgerstate.Output) {
+func (m *mockChain) ReceiveOutput(_ ledgerstate.Output) {
 	panic("not implemented")
 }
 
-func (m *mockChain) Dismiss(reason string) {
+func (m *mockChain) Dismiss(_ string) {
 	panic("not implemented")
 }
 
@@ -309,7 +309,7 @@ func (m *mockChain) IsDismissed() bool {
 	panic("not implemented")
 }
 
-func (m *mockChain) GetRequestProcessingStatus(id iscp.RequestID) chain.RequestProcessingStatus {
+func (m *mockChain) GetRequestProcessingStatus(_ iscp.RequestID) chain.RequestProcessingStatus {
 	panic("not implemented")
 }
 
@@ -317,7 +317,7 @@ func (m *mockChain) EventRequestProcessed() *events.Event {
 	panic("not implemented")
 }
 
-func (m *mockChain) ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string) {
+func (m *mockChain) ReceiveOffLedgerRequest(_ *request.OffLedger, _ string) {
 	panic("not implemented")
 }
 

@@ -163,9 +163,9 @@ func (p *Metadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 
 // endregion
 
-// region RequestOnLedger //////////////////////////////////////////////////////////////////
+// region OnLedger //////////////////////////////////////////////////////////////////
 
-type RequestOnLedger struct {
+type OnLedger struct {
 	outputObj       *ledgerstate.ExtendedLockedOutput
 	requestMetadata *Metadata
 	senderAddress   ledgerstate.Address
@@ -174,10 +174,10 @@ type RequestOnLedger struct {
 }
 
 // implements iscp.Request interface
-var _ iscp.Request = &RequestOnLedger{}
+var _ iscp.Request = &OnLedger{}
 
-func OnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...colored.Balances) *RequestOnLedger {
-	ret := &RequestOnLedger{
+func OnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...colored.Balances) *OnLedger {
+	ret := &OnLedger{
 		outputObj:     output,
 		senderAddress: senderAddr,
 	}
@@ -188,14 +188,14 @@ func OnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr led
 	return ret
 }
 
-// OnLedgerFromTransaction creates RequestOnLedger object from transaction and output index
-func OnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr ledgerstate.Address) ([]*RequestOnLedger, error) {
+// OnLedgerFromTransaction creates OnLedger object from transaction and output index
+func OnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr ledgerstate.Address) ([]*OnLedger, error) {
 	senderAddr, err := utxoutil.GetSingleSender(tx)
 	if err != nil {
 		return nil, err
 	}
 	mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))
-	ret := make([]*RequestOnLedger, 0)
+	ret := make([]*OnLedger, 0)
 	for _, o := range tx.Essence().Outputs() {
 		if out, ok := o.(*ledgerstate.ExtendedLockedOutput); ok {
 			if out.Address().Equals(targetAddr) {
@@ -208,8 +208,8 @@ func OnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr ledgerstate
 }
 
 // onLedgerFromMarshalUtil unmarshals requestOnLedger
-func onLedgerFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestOnLedger, error) {
-	ret := &RequestOnLedger{}
+func onLedgerFromMarshalUtil(mu *marshalutil.MarshalUtil) (*OnLedger, error) {
+	ret := &OnLedger{}
 	if err := ret.readFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
@@ -217,20 +217,20 @@ func onLedgerFromMarshalUtil(mu *marshalutil.MarshalUtil) (*RequestOnLedger, err
 }
 
 // Bytes serializes with the request type in the first byte
-func (req *RequestOnLedger) Bytes() []byte {
+func (req *OnLedger) Bytes() []byte {
 	mu := marshalutil.New().WriteByte(onLedgerRequestType)
 	req.writeToMarshalUtil(mu)
 	return mu.Bytes()
 }
 
-func (req *RequestOnLedger) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
+func (req *OnLedger) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(req.Output()).
 		Write(req.senderAddress).
 		Write(req.requestMetadata).
 		Write(req.minted)
 }
 
-func (req *RequestOnLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+func (req *OnLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	var err error
 
 	if req.outputObj, err = ledgerstate.ExtendedOutputFromMarshalUtil(mu); err != nil {
@@ -246,20 +246,24 @@ func (req *RequestOnLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) err
 	return nil
 }
 
-func (req *RequestOnLedger) ID() iscp.RequestID {
+func (req *OnLedger) ID() iscp.RequestID {
 	return iscp.RequestID(req.Output().ID())
 }
 
-func (req *RequestOnLedger) IsFeePrepaid() bool {
+func (req *OnLedger) IsFeePrepaid() bool {
 	return false
 }
 
-func (req *RequestOnLedger) Output() ledgerstate.Output {
+func (req *OnLedger) IsOffLedger() bool {
+	return false
+}
+
+func (req *OnLedger) Output() ledgerstate.Output {
 	return req.outputObj
 }
 
 // Params returns solid args if decoded already or nil otherwise
-func (req *RequestOnLedger) Params() (dict.Dict, bool) {
+func (req *OnLedger) Params() (dict.Dict, bool) {
 	par := req.params.Load()
 	if par == nil {
 		return nil, false
@@ -267,57 +271,57 @@ func (req *RequestOnLedger) Params() (dict.Dict, bool) {
 	return par.(dict.Dict), true
 }
 
-func (req *RequestOnLedger) SenderAccount() *iscp.AgentID {
+func (req *OnLedger) SenderAccount() *iscp.AgentID {
 	return iscp.NewAgentID(req.senderAddress, req.requestMetadata.SenderContract())
 }
 
-func (req *RequestOnLedger) SenderAddress() ledgerstate.Address {
+func (req *OnLedger) SenderAddress() ledgerstate.Address {
 	return req.senderAddress
 }
 
 // Target returns target contract and target entry point
-func (req *RequestOnLedger) Target() (iscp.Hname, iscp.Hname) {
+func (req *OnLedger) Target() (iscp.Hname, iscp.Hname) {
 	return req.requestMetadata.TargetContract(), req.requestMetadata.EntryPoint()
 }
 
-func (req *RequestOnLedger) TimeLock() time.Time {
+func (req *OnLedger) TimeLock() time.Time {
 	return req.outputObj.TimeLock()
 }
 
-func (req *RequestOnLedger) SetMetadata(d *Metadata) {
+func (req *OnLedger) SetMetadata(d *Metadata) {
 	req.requestMetadata = d.Clone()
 }
 
-func (req *RequestOnLedger) GetMetadata() *Metadata {
+func (req *OnLedger) GetMetadata() *Metadata {
 	return req.requestMetadata
 }
 
-func (req *RequestOnLedger) MintedAmounts() colored.Balances {
+func (req *OnLedger) MintedAmounts() colored.Balances {
 	return req.minted
 }
 
-func (req *RequestOnLedger) Short() string {
+func (req *OnLedger) Short() string {
 	return req.outputObj.ID().Base58()[:6] + ".."
 }
 
 // only used for consensus
-func (req *RequestOnLedger) Hash() [32]byte {
+func (req *OnLedger) Hash() [32]byte {
 	return blake2b.Sum256(req.Bytes())
 }
 
-func (req *RequestOnLedger) SetParams(params dict.Dict) {
+func (req *OnLedger) SetParams(params dict.Dict) {
 	req.params.Store(params)
 }
 
-func (req *RequestOnLedger) Args() requestargs.RequestArgs {
+func (req *OnLedger) Args() requestargs.RequestArgs {
 	return req.requestMetadata.Args()
 }
 
 // endregion /////////////////////////////////////////////////////////////////
 
-// region RequestOffLedger  ///////////////////////////////////////////////////////
+// region OffLedger  ///////////////////////////////////////////////////////
 
-type RequestOffLedger struct {
+type OffLedger struct {
 	args       requestargs.RequestArgs
 	contract   iscp.Hname
 	entryPoint iscp.Hname
@@ -330,11 +334,11 @@ type RequestOffLedger struct {
 }
 
 // implements iscp.Request interface
-var _ iscp.Request = &RequestOffLedger{}
+var _ iscp.Request = &OffLedger{}
 
 // NewOffLedger creates a basic request
-func NewOffLedger(contract, entryPoint iscp.Hname, args requestargs.RequestArgs) *RequestOffLedger {
-	return &RequestOffLedger{
+func NewOffLedger(contract, entryPoint iscp.Hname, args requestargs.RequestArgs) *OffLedger {
+	return &OffLedger{
 		args:       args.Clone(),
 		contract:   contract,
 		entryPoint: entryPoint,
@@ -343,7 +347,7 @@ func NewOffLedger(contract, entryPoint iscp.Hname, args requestargs.RequestArgs)
 }
 
 // Bytes encodes request as bytes with first type byte
-func (req *RequestOffLedger) Bytes() []byte {
+func (req *OffLedger) Bytes() []byte {
 	mu := marshalutil.New()
 	mu.WriteByte(offLedgerRequestType)
 	req.writeToMarshalUtil(mu)
@@ -351,20 +355,20 @@ func (req *RequestOffLedger) Bytes() []byte {
 }
 
 // offLedgerFromMarshalUtil creates a request from previously serialized bytes. Does not expects type byte
-func offLedgerFromMarshalUtil(mu *marshalutil.MarshalUtil) (req *RequestOffLedger, err error) {
-	req = &RequestOffLedger{}
+func offLedgerFromMarshalUtil(mu *marshalutil.MarshalUtil) (req *OffLedger, err error) {
+	req = &OffLedger{}
 	if err := req.readFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
 	return req, nil
 }
 
-func (req *RequestOffLedger) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
+func (req *OffLedger) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	req.writeEssenceToMarshalUtil(mu)
 	mu.WriteBytes(req.signature[:])
 }
 
-func (req *RequestOffLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+func (req *OffLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	if err := req.readEssenceFromMarshalUtil(mu); err != nil {
 		return err
 	}
@@ -376,7 +380,7 @@ func (req *RequestOffLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) er
 	return nil
 }
 
-func (req *RequestOffLedger) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
+func (req *OffLedger) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(req.contract).
 		Write(req.entryPoint).
 		Write(req.args).
@@ -385,7 +389,7 @@ func (req *RequestOffLedger) writeEssenceToMarshalUtil(mu *marshalutil.MarshalUt
 		Write(req.transfer)
 }
 
-func (req *RequestOffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
+func (req *OffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 	if err := req.contract.ReadFromMarshalUtil(mu); err != nil {
 		return err
 	}
@@ -412,12 +416,12 @@ func (req *RequestOffLedger) readEssenceFromMarshalUtil(mu *marshalutil.MarshalU
 }
 
 // only used for consensus
-func (req *RequestOffLedger) Hash() [32]byte {
+func (req *OffLedger) Hash() [32]byte {
 	return hashing.HashData(req.Bytes())
 }
 
 // Sign signs essence
-func (req *RequestOffLedger) Sign(keyPair *ed25519.KeyPair) {
+func (req *OffLedger) Sign(keyPair *ed25519.KeyPair) {
 	req.publicKey = keyPair.PublicKey
 	mu := marshalutil.New()
 	req.writeEssenceToMarshalUtil(mu)
@@ -425,18 +429,18 @@ func (req *RequestOffLedger) Sign(keyPair *ed25519.KeyPair) {
 }
 
 // Tokens returns the transfers passed to the request
-func (req *RequestOffLedger) Tokens() colored.Balances {
+func (req *OffLedger) Tokens() colored.Balances {
 	return req.transfer
 }
 
 // Tokens sets the transfers passed to the request
-func (req *RequestOffLedger) WithTransfer(transfer colored.Balances) *RequestOffLedger {
+func (req *OffLedger) WithTransfer(transfer colored.Balances) *OffLedger {
 	req.transfer = transfer
 	return req
 }
 
 // VerifySignature verifies essence signature
-func (req *RequestOffLedger) VerifySignature() bool {
+func (req *OffLedger) VerifySignature() bool {
 	mu := marshalutil.New()
 	req.writeEssenceToMarshalUtil(mu)
 	return req.publicKey.VerifySignature(mu.Bytes(), req.signature)
@@ -446,32 +450,31 @@ func (req *RequestOffLedger) VerifySignature() bool {
 // index part of request id is always 0 for off ledger requests
 // note that request needs to have been signed before this value is
 // considered valid
-func (req *RequestOffLedger) ID() (requestID iscp.RequestID) {
+func (req *OffLedger) ID() (requestID iscp.RequestID) {
 	txid := ledgerstate.TransactionID(hashing.HashData(req.Bytes()))
 	return iscp.RequestID(ledgerstate.NewOutputID(txid, 0))
 }
 
 // IsFeePrepaid always true for off-ledger
-func (req *RequestOffLedger) IsFeePrepaid() bool {
+func (req *OffLedger) IsFeePrepaid() bool {
 	return true
 }
 
 // Order number used for replay protection
-func (req *RequestOffLedger) Nonce() uint64 {
+func (req *OffLedger) Nonce() uint64 {
 	return req.nonce
 }
 
-func (req *RequestOffLedger) WithNonce(nonce uint64) iscp.Request {
+func (req *OffLedger) WithNonce(nonce uint64) iscp.Request {
 	req.nonce = nonce
 	return req
 }
 
-// Output nil for off-ledger requests
-func (req *RequestOffLedger) Output() ledgerstate.Output {
-	return nil
+func (req *OffLedger) IsOffLedger() bool {
+	return true
 }
 
-func (req *RequestOffLedger) Params() (dict.Dict, bool) {
+func (req *OffLedger) Params() (dict.Dict, bool) {
 	par := req.params.Load()
 	if par == nil {
 		return nil, false
@@ -479,32 +482,32 @@ func (req *RequestOffLedger) Params() (dict.Dict, bool) {
 	return par.(dict.Dict), true
 }
 
-func (req *RequestOffLedger) SenderAccount() *iscp.AgentID {
+func (req *OffLedger) SenderAccount() *iscp.AgentID {
 	return iscp.NewAgentID(req.SenderAddress(), 0)
 }
 
-func (req *RequestOffLedger) SenderAddress() ledgerstate.Address {
+func (req *OffLedger) SenderAddress() ledgerstate.Address {
 	if req.sender == nil {
 		req.sender = ledgerstate.NewED25519Address(req.publicKey)
 	}
 	return req.sender
 }
 
-func (req *RequestOffLedger) Target() (iscp.Hname, iscp.Hname) {
+func (req *OffLedger) Target() (iscp.Hname, iscp.Hname) {
 	return req.contract, req.entryPoint
 }
 
 // TimeLock returns time lock time or zero time if no time lock
-func (req *RequestOffLedger) TimeLock() time.Time {
+func (req *OffLedger) TimeLock() time.Time {
 	// no time lock, return zero time
 	return time.Time{}
 }
 
-func (req *RequestOffLedger) SetParams(params dict.Dict) {
+func (req *OffLedger) SetParams(params dict.Dict) {
 	req.params.Store(params)
 }
 
-func (req *RequestOffLedger) Args() requestargs.RequestArgs {
+func (req *OffLedger) Args() requestargs.RequestArgs {
 	return req.args
 }
 
@@ -518,8 +521,8 @@ type SolidifiableRequest interface {
 }
 
 var (
-	_ SolidifiableRequest = &RequestOnLedger{}
-	_ SolidifiableRequest = &RequestOffLedger{}
+	_ SolidifiableRequest = &OnLedger{}
+	_ SolidifiableRequest = &OffLedger{}
 )
 
 // SolidifyArgs solidifies the request arguments

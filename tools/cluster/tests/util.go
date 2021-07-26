@@ -248,6 +248,12 @@ func (e *chainEnv) counterEquals(expected int64) conditionFn {
 	}
 }
 
+func (e *chainEnv) accountExists(agentID *iscp.AgentID) conditionFn {
+	return func(t *testing.T, nodeIndex int) bool {
+		return e.getBalanceOnChain(agentID, colored.IOTA, nodeIndex) > 0
+	}
+}
+
 func (e *chainEnv) contractIsDeployed(contractName string) conditionFn { //nolint:unparam
 	return func(t *testing.T, nodeIndex int) bool {
 		ret, err := e.findContract(contractName, nodeIndex)

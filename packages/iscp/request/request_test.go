@@ -75,7 +75,7 @@ func TestOnLedger(t *testing.T) {
 		req := OnLedgerFromOutput(rndOutput(), rndAddress())
 		reqBack, err := FromMarshalUtil(marshalutil.New(req.Bytes()))
 		require.NoError(t, err)
-		_, ok := reqBack.(*RequestOnLedger)
+		_, ok := reqBack.(*OnLedger)
 		require.True(t, ok)
 
 		require.EqualValues(t, req.Bytes(), reqBack.Bytes())
@@ -90,7 +90,7 @@ func TestOffLedger(t *testing.T) {
 		req := NewOffLedger(target, ep, args)
 		reqBack, err := FromMarshalUtil(marshalutil.New(req.Bytes()))
 		require.NoError(t, err)
-		_, ok := reqBack.(*RequestOffLedger)
+		_, ok := reqBack.(*OffLedger)
 		require.True(t, ok)
 
 		require.EqualValues(t, req.Bytes(), reqBack.Bytes())

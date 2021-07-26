@@ -100,7 +100,7 @@ func (r *CallParams) WithMint(targetAddress ledgerstate.Address, amount uint64) 
 }
 
 // NewRequestOffLedger creates off-ledger request from parameters
-func (r *CallParams) NewRequestOffLedger(keyPair *ed25519.KeyPair) *request.RequestOffLedger {
+func (r *CallParams) NewRequestOffLedger(keyPair *ed25519.KeyPair) *request.OffLedger {
 	ret := request.NewOffLedger(r.target, r.entryPoint, r.args).WithTransfer(r.transfer)
 	ret.Sign(keyPair)
 	return ret

@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -69,7 +70,7 @@ func runTask(task *vm.VMTask) {
 		vmctx.RunTheRequest(req, uint16(i))
 		lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
 
-		if req.Output() == nil {
+		if req.IsOffLedger() {
 			numOffLedger++
 		}
 		if lastErr == nil {
@@ -111,9 +112,10 @@ func runTask(task *vm.VMTask) {
 func outputsFromRequests(requests ...iscp.Request) []ledgerstate.Output {
 	ret := make([]ledgerstate.Output, 0)
 	for _, req := range requests {
-		if out := req.Output(); out != nil {
-			ret = append(ret, out)
+		if req.IsOffLedger() {
+			continue
 		}
+		ret = append(ret, req.(*request.OnLedger).Output())
 	}
 	return ret
 }

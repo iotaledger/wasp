@@ -28,7 +28,7 @@ type mockedChain struct {
 	*testchain.MockedChainCore
 }
 
-func (m *mockedChain) GetRequestProcessingStatus(id iscp.RequestID) chain.RequestProcessingStatus {
+func (m *mockedChain) GetRequestProcessingStatus(_ iscp.RequestID) chain.RequestProcessingStatus {
 	panic("implement me")
 }
 
@@ -36,23 +36,23 @@ func (m *mockedChain) EventRequestProcessed() *events.Event {
 	panic("implement me")
 }
 
-func (m *mockedChain) ReceiveTransaction(transaction *ledgerstate.Transaction) {
+func (m *mockedChain) ReceiveTransaction(_ *ledgerstate.Transaction) {
 	panic("implement me")
 }
 
-func (m *mockedChain) ReceiveInclusionState(id ledgerstate.TransactionID, state ledgerstate.InclusionState) {
+func (m *mockedChain) ReceiveInclusionState(_ ledgerstate.TransactionID, _ ledgerstate.InclusionState) {
 	panic("implement me")
 }
 
-func (m *mockedChain) ReceiveState(stateOutput *ledgerstate.AliasOutput, timestamp time.Time) {
+func (m *mockedChain) ReceiveState(_ *ledgerstate.AliasOutput, _ time.Time) {
 	panic("implement me")
 }
 
-func (m *mockedChain) ReceiveOutput(output ledgerstate.Output) {
+func (m *mockedChain) ReceiveOutput(_ ledgerstate.Output) {
 	panic("implement me")
 }
 
-func (m *mockedChain) Dismiss(reason string) {
+func (m *mockedChain) Dismiss(_ string) {
 	panic("implement me")
 }
 
@@ -68,11 +68,11 @@ func createMockedGetChain(t *testing.T) chains.ChainProvider {
 	}
 }
 
-func getAccountBalanceMocked(ch chain.ChainCore, agentID *iscp.AgentID) (colored.Balances, error) {
+func getAccountBalanceMocked(_ chain.ChainCore, _ *iscp.AgentID) (colored.Balances, error) {
 	return colored.NewBalancesForIotas(100), nil
 }
 
-func dummyOffledgerRequest() *request.RequestOffLedger {
+func dummyOffledgerRequest() *request.OffLedger {
 	contract := iscp.Hn("somecontract")
 	entrypoint := iscp.Hn("someentrypoint")
 	args := requestargs.New(dict.Dict{})

@@ -72,7 +72,7 @@ func (c *Client) PostOffLedgerRequest(
 	contractHname iscp.Hname,
 	entrypoint iscp.Hname,
 	params ...PostRequestParams,
-) (*request.RequestOffLedger, error) {
+) (*request.OffLedger, error) {
 	par := PostRequestParams{}
 	if len(params) > 0 {
 		par = params[0]

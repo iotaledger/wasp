@@ -36,7 +36,7 @@ func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.Optimis
 	return ret, vs
 }
 
-func getRequestsOnLedger(t *testing.T, amount int) ([]*request.RequestOnLedger, *ed25519.KeyPair) {
+func getRequestsOnLedger(t *testing.T, amount int) ([]*request.OnLedger, *ed25519.KeyPair) {
 	utxo := utxodb.New()
 	keyPair, addr := utxo.NewKeyPairByIndex(0)
 	_, err := utxo.RequestFunds(addr)
@@ -166,7 +166,7 @@ func TestAddOffLedgerRequest(t *testing.T) {
 	require.NotNil(t, pool)
 	onLedgerRequests, keyPair := getRequestsOnLedger(t, 2)
 
-	offFromOnLedgerFun := func(onLedger *request.RequestOnLedger) *request.RequestOffLedger {
+	offFromOnLedgerFun := func(onLedger *request.OnLedger) *request.OffLedger {
 		contract, emptyPoint := onLedger.Target()
 		return request.NewOffLedger(contract, emptyPoint, onLedger.GetMetadata().Args())
 	}

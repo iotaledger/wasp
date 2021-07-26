@@ -36,7 +36,7 @@ func (vmctx *VMContext) MyAgentID() *iscp.AgentID {
 }
 
 func (vmctx *VMContext) Minted() colored.Balances {
-	if req, ok := vmctx.req.(*request.RequestOnLedger); ok {
+	if req, ok := vmctx.req.(*request.OnLedger); ok {
 		return req.MintedAmounts()
 	}
 	return nil

@@ -412,7 +412,7 @@ func (ch *Chain) collateBatch() []iscp.Request {
 	ready = ready[:batchSize]
 	for _, req := range ready {
 		// using logical clock
-		if onLegderRequest, ok := req.(*request.RequestOnLedger); ok {
+		if onLegderRequest, ok := req.(*request.OnLedger); ok {
 			if onLegderRequest.TimeLock().Before(ch.Env.LogicalTime()) {
 				if !onLegderRequest.TimeLock().IsZero() {
 					ch.Log.Infof("unlocked time-locked request %s", req.ID())
