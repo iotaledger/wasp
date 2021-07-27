@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -123,7 +124,7 @@ func TestPost3Recursive(t *testing.T) {
 	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTransferIotas(1),
+		Transfer: colored.NewBalancesForIotas(1),
 		Args: requestargs.New().AddEncodeSimpleMany(codec.MakeDict(map[string]interface{}{
 			inccounter.VarNumRepeats: 3,
 		})),
@@ -160,11 +161,11 @@ func TestPost5Requests(t *testing.T) {
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
-	e.checkBalanceOnChain(myAgentID, ledgerstate.ColorIOTA, 0)
+	e.checkBalanceOnChain(myAgentID, colored.IOTA, 0)
 
-	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - 5,
-	}, "myAddress in the end") {
+	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo-5,
+		colored.NewBalancesForIotas(solo.Saldo-5),
+		"myAddress in the end") {
 		t.Fail()
 	}
 	e.checkLedger()
@@ -197,11 +198,11 @@ func TestPost5AsyncRequests(t *testing.T) {
 	}
 
 	e.expectCounter(contractID.Hname(), 42+5)
-	e.checkBalanceOnChain(myAgentID, ledgerstate.ColorIOTA, 0)
+	e.checkBalanceOnChain(myAgentID, colored.IOTA, 0)
 
-	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - 5,
-	}, "myAddress in the end") {
+	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo-5,
+		colored.NewBalancesForIotas(solo.Saldo-5),
+		"myAddress in the end") {
 		t.Fail()
 	}
 	e.checkLedger()

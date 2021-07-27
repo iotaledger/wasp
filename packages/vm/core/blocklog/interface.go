@@ -19,10 +19,12 @@ var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog, "Block log co
 
 const (
 	// state variables
-	StateVarBlockRegistry      = "b"
-	StateVarControlAddresses   = "c"
-	StateVarRequestLookupIndex = "l"
-	StateVarRequestRecords     = "r"
+	StateVarBlockRegistry             = "b"
+	StateVarControlAddresses          = "c"
+	StateVarRequestLookupIndex        = "l"
+	StateVarRequestReceipts           = "r"
+	StateVarRequestEvents             = "e"
+	StateVarSmartContractEventsLookup = "e"
 )
 
 var (
@@ -33,6 +35,9 @@ var (
 	FuncGetRequestReceipt          = coreutil.ViewFunc("getRequestReceipt")
 	FuncGetRequestReceiptsForBlock = coreutil.ViewFunc("getRequestReceiptsForBlock")
 	FuncIsRequestProcessed         = coreutil.ViewFunc("isRequestProcessed")
+	FuncGetEventsForRequest        = coreutil.ViewFunc("getEventsForRequest")
+	FuncGetEventsForBlock          = coreutil.ViewFunc("getEventsForBlock")
+	FuncGetEventsForContract       = coreutil.ViewFunc("getEventsForContract")
 )
 
 const (
@@ -40,10 +45,14 @@ const (
 	ParamBlockIndex             = "n"
 	ParamBlockInfo              = "i"
 	ParamGoverningAddress       = "g"
+	ParamContractHname          = "h"
+	ParamFromBlock              = "f"
+	ParamToBlock                = "t"
 	ParamRequestID              = "u"
 	ParamRequestIndex           = "r"
 	ParamRequestProcessed       = "p"
 	ParamRequestRecord          = "d"
+	ParamEvent                  = "e"
 	ParamStateControllerAddress = "s"
 )
 
@@ -187,6 +196,52 @@ func (ll RequestLookupKeyList) Bytes() []byte {
 }
 
 // endregion /////////////////////////////////////////////////////////////
+
+// region RequestLookupKey /////////////////////////////////////////////
+
+// EventLookupKey is a globally unique reference to the event:
+// block index + index of the request within block + index of the event within the request
+type EventLookupKey [7]byte
+
+func NewEventLookupKey(blockIndex uint32, requestIndex uint16, eventIndex uint8) EventLookupKey {
+	ret := EventLookupKey{}
+	copy(ret[:4], util.Uint32To4Bytes(blockIndex))
+	copy(ret[4:6], util.Uint16To2Bytes(requestIndex))
+	ret[6] = eventIndex
+	return ret
+}
+
+func (k EventLookupKey) BlockIndex() uint32 {
+	return util.MustUint32From4Bytes(k[:4])
+}
+
+func (k EventLookupKey) RequestIndex() uint16 {
+	return util.MustUint16From2Bytes(k[4:6])
+}
+
+func (k EventLookupKey) RequestEventIndex() uint8 {
+	return k[6]
+}
+
+func (k EventLookupKey) Bytes() []byte {
+	return k[:]
+}
+
+func (k *EventLookupKey) Write(w io.Writer) error {
+	_, err := w.Write(k[:])
+	return err
+}
+
+func EventLookupKeyFromBytes(r io.Reader) (*EventLookupKey, error) {
+	k := EventLookupKey{}
+	n, err := r.Read(k[:])
+	if err != nil || n != 7 {
+		return nil, io.EOF
+	}
+	return &k, nil
+}
+
+// endregion ///////////////////////////////////////////////////////////
 
 // region RequestLogReqcord /////////////////////////////////////////////////////
 

@@ -5,11 +5,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/wasp/contracts/common"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
 )
@@ -81,7 +81,7 @@ func testValidParams(t *testing.T) *solo.Chain {
 	address := chainID.AsAddress()
 	hname := HScName
 	agentID := iscp.NewAgentID(address, hname)
-	color, _, err := ledgerstate.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhite"))
+	color, err := colored.ColorFromBytes([]byte("RedGreenBlueYellowCyanBlackWhite"))
 	require.NoError(t, err)
 	hash, err := hashing.HashValueFromBytes([]byte("0123456789abcdeffedcba9876543210"))
 	require.NoError(t, err)
@@ -167,16 +167,4 @@ func TestInvalidTypeParams(t *testing.T) {
 			})
 		}
 	}
-}
-
-func TestViewBlockRecords(t *testing.T) {
-	t.SkipNow()
-	chain := testValidParams(t)
-
-	res, err := chain.CallView(ScName, ViewBlockRecords, ParamBlockIndex, int32(1))
-	require.NoError(t, err)
-	count, exist, err := codec.DecodeInt32(res.MustGet(ResultCount))
-	require.NoError(t, err)
-	require.True(t, exist)
-	require.EqualValues(t, 1, count)
 }

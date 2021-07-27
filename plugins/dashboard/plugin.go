@@ -91,9 +91,6 @@ func (w *waspServices) GetChain(chainID *iscp.ChainID) chain.ChainCore {
 	return chains.AllChains().Get(chainID)
 }
 
-const retryOnStateInvalidatedRetry = 100 * time.Millisecond //nolint:gofumpt
-const retryOnStateInvalidatedTimeout = 5 * time.Minute
-
 func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, funName string, params dict.Dict) (dict.Dict, error) {
 	vctx := viewcontext.NewFromChain(ch)
 	var ret dict.Dict
@@ -101,7 +98,7 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, funName st
 		var err error
 		ret, err = vctx.CallView(hname, iscp.Hn(funName), params)
 		return err
-	}, retryOnStateInvalidatedRetry, time.Now().Add(retryOnStateInvalidatedTimeout))
+	})
 	if err != nil {
 		return nil, fmt.Errorf("root view call failed: %w", err)
 	}

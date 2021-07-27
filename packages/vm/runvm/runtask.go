@@ -5,9 +5,10 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"golang.org/x/xerrors"
@@ -60,7 +61,7 @@ func runTask(task *vm.VMTask) {
 
 	var lastResult dict.Dict
 	var lastErr error
-	var lastTotalAssets *ledgerstate.ColoredBalances
+	var lastTotalAssets colored.Balances
 
 	// loop over the batch of requests and run each request on the VM.
 	// the result accumulates in the VMContext and in the list of stateUpdates
@@ -69,7 +70,7 @@ func runTask(task *vm.VMTask) {
 		vmctx.RunTheRequest(req, uint16(i))
 		lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
 
-		if req.Output() == nil {
+		if req.IsOffLedger() {
 			numOffLedger++
 		}
 		if lastErr == nil {
@@ -87,12 +88,11 @@ func runTask(task *vm.VMTask) {
 	if rotationAddr == nil {
 		task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
 		if err != nil {
-			task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %v", err))
+			task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %w", err))
 			return
 		}
 		if err = checkTotalAssets(task.ResultTransactionEssence, lastTotalAssets); err != nil {
-			task.OnFinish(nil, nil, xerrors.Errorf("RunVM.checkTotalAssets: %v", err))
-			return
+			task.Log.Panic(xerrors.Errorf("RunVM.checkTotalAssets: %w", err))
 		}
 		task.Log.Debug("runTask OUT. ",
 			"block index: ", task.VirtualState.BlockIndex(),
@@ -112,14 +112,15 @@ func runTask(task *vm.VMTask) {
 func outputsFromRequests(requests ...iscp.Request) []ledgerstate.Output {
 	ret := make([]ledgerstate.Output, 0)
 	for _, req := range requests {
-		if out := req.Output(); out != nil {
-			ret = append(ret, out)
+		if req.IsOffLedger() {
+			continue
 		}
+		ret = append(ret, req.(*request.OnLedger).Output())
 	}
 	return ret
 }
 
-func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalAssets *ledgerstate.ColoredBalances) error {
+func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalOnChainAssets colored.Balances) error {
 	var chainOutput *ledgerstate.AliasOutput
 	for _, o := range essence.Outputs() {
 		if out, ok := o.(*ledgerstate.AliasOutput); ok {
@@ -129,9 +130,12 @@ func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalAssets *
 	if chainOutput == nil {
 		return xerrors.New("inconsistency: chain output not found")
 	}
-	diffAssets := util.DiffColoredBalances(chainOutput.Balances(), lastTotalAssets)
-	if iotas, ok := diffAssets[ledgerstate.ColorIOTA]; !ok || iotas != ledgerstate.DustThresholdAliasOutputIOTA {
-		return xerrors.Errorf("RunVM.BuildTransactionEssence: inconsistency between L1 and L2 ledgers")
+	balancesOnOutput := colored.BalancesFromL1Balances(chainOutput.Balances())
+	diffAssets := balancesOnOutput.Diff(lastTotalOnChainAssets)
+	// we expect assets in the chain output and total assets on-chain differs only in the amount of
+	// ant-dust tokens locked in the output. Otherwise it is inconsistency
+	if len(diffAssets) != 1 || diffAssets[colored.IOTA] != int64(ledgerstate.DustThresholdAliasOutputIOTA) {
+		return xerrors.Errorf("inconsistency between L1 and L2 ledgers. Diff: %+v", diffAssets)
 	}
 	return nil
 }

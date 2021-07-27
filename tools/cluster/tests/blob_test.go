@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -40,9 +41,9 @@ func setupBlobTest(t *testing.T) *chainEnv {
 
 	e.requestFunds(myAddress, "myAddress")
 
-	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo,
-	}, "myAddress after request funds") {
+	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo,
+		colored.NewBalancesForIotas(solo.Saldo),
+		"myAddress after request funds") {
 		t.Fail()
 	}
 	return chEnv

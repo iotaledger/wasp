@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -223,13 +225,14 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		feeTarget = &validatorFeeTarget[0]
 	}
 
-	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
+	bals := colored.NewBalancesForIotas(100)
+
 	inputs := env.utxoDB.GetAddressOutputs(originatorAddr)
 	originTx, chainID, err := transaction.NewChainOriginTransaction(chainOriginator, stateAddr, bals, env.LogicalTime(), inputs...)
 	require.NoError(env.T, err)
 	err = env.utxoDB.AddTransaction(originTx)
 	require.NoError(env.T, err)
-	env.AssertAddressBalance(originatorAddr, ledgerstate.ColorIOTA, Saldo-100)
+	env.AssertAddressBalance(originatorAddr, colored.IOTA, Saldo-100)
 
 	env.logger.Infof("deploying new chain '%s'. ID: %s, state controller address: %s",
 		name, chainID.String(), stateAddr.Base58())
@@ -348,7 +351,8 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]isc
 		if !ok {
 			lst = make([]iscp.Request, 0)
 		}
-		ret[arr] = append(lst, request.RequestOnLedgerFromOutput(o, sender, utxoutil.GetMintedAmounts(tx)))
+		mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))
+		ret[arr] = append(lst, request.OnLedgerFromOutput(o, sender, mintedAmounts))
 	}
 	return ret
 }
@@ -408,7 +412,7 @@ func (ch *Chain) collateBatch() []iscp.Request {
 	ready = ready[:batchSize]
 	for _, req := range ready {
 		// using logical clock
-		if onLegderRequest, ok := req.(*request.RequestOnLedger); ok {
+		if onLegderRequest, ok := req.(*request.OnLedger); ok {
 			if onLegderRequest.TimeLock().Before(ch.Env.LogicalTime()) {
 				if !onLegderRequest.TimeLock().IsZero() {
 					ch.Log.Infof("unlocked time-locked request %s", req.ID())

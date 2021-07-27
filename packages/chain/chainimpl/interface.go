@@ -108,9 +108,9 @@ func shouldSendToPeer(peerID string, ackPeers []string) bool {
 	return true
 }
 
-func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
+func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
-	msgData := messages.NewOffledgerRequestMsg(&c.chainID, req).Bytes()
+	msgData := messages.NewOffLedgerRequestMsg(&c.chainID, req).Bytes()
 	committee := c.getCommittee()
 	getPeerIDs := (*c.peers).GetRandomPeers
 
@@ -148,7 +148,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.RequestOffLedger) {
 	}()
 }
 
-func (c *chainObj) ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string) {
+func (c *chainObj) ReceiveOffLedgerRequest(req *request.OffLedger, senderNetID string) {
 	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
 	c.sendRequestAckowledgementMsg(req.ID(), senderNetID)
 	if !c.mempool.ReceiveRequest(req) {
@@ -175,7 +175,7 @@ func (c *chainObj) ReceiveRequestAckMessage(reqID *iscp.RequestID, peerID string
 }
 
 // SendMissingRequestsToPeer sends the requested missing requests by a peer
-func (c *chainObj) SendMissingRequestsToPeer(msg messages.MissingRequestIDsMsg, peerID string) {
+func (c *chainObj) SendMissingRequestsToPeer(msg *messages.MissingRequestIDsMsg, peerID string) {
 	for _, reqID := range msg.IDs {
 		c.log.Debugf("Sending MissingRequestsToPeer: reqID: %s, peerID: %s", reqID.Base58(), peerID)
 		if req := c.mempool.GetRequest(reqID); req != nil {
@@ -187,7 +187,7 @@ func (c *chainObj) SendMissingRequestsToPeer(msg messages.MissingRequestIDsMsg, 
 
 func (c *chainObj) ReceiveTransaction(tx *ledgerstate.Transaction) {
 	c.log.Debugf("ReceiveTransaction: %s", tx.ID().Base58())
-	reqs, err := request.RequestsOnLedgerFromTransaction(tx, c.chainID.AsAddress())
+	reqs, err := request.OnLedgerFromTransaction(tx, c.chainID.AsAddress())
 	if err != nil {
 		c.log.Warnf("failed to parse transaction %s: %v", tx.ID().Base58(), err)
 		return

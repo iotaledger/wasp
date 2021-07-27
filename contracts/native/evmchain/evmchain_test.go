@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
@@ -91,7 +91,7 @@ func TestGasCharged(t *testing.T) {
 	iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
 	iotaAgentID := iscp.NewAgentID(iotaAddress, 0)
 
-	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, ledgerstate.ColorIOTA)
+	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, colored.IOTA)
 	iotasSent := initialBalance - 1
 
 	// call `store(999)` with enough gas
@@ -223,22 +223,22 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 	require.NoError(t, err)
 
 	// collect fees from contract deployment
-	user1Balance0 := evmChain.solo.GetAddressBalance(user1Address, ledgerstate.ColorIOTA)
+	user1Balance0 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
 	require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
-	user1Balance1 := evmChain.solo.GetAddressBalance(user1Address, ledgerstate.ColorIOTA)
+	user1Balance1 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
 	require.Greater(t, user1Balance1, user1Balance0)
 
 	// collect fees from a SC call, check that the collected fees matches the fees charged
-	user1Balance2 := evmChain.solo.GetAddressBalance(user1Address, ledgerstate.ColorIOTA)
+	user1Balance2 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
 	res, err := storage.store(43)
 	require.NoError(t, err)
 	require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
-	user1Balance3 := evmChain.solo.GetAddressBalance(user1Address, ledgerstate.ColorIOTA)
+	user1Balance3 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
 	require.Equal(t, user1Balance3, user1Balance2+res.iotaChargedFee)
 
 	// try to withdraw a second time, it should succeed, but owner balance shouldnt not change (there are no fees to withdraw)
 	require.NoError(t, evmChain.withdrawGasFees(user1Wallet))
-	user1Balance4 := evmChain.solo.GetAddressBalance(user1Address, ledgerstate.ColorIOTA)
+	user1Balance4 := evmChain.solo.GetAddressBalance(user1Address, colored.IOTA)
 	require.Equal(t, user1Balance3, user1Balance4)
 
 	// try to withdraw fees to another actor using using the FieldAgentId param
@@ -246,10 +246,10 @@ func TestWithdrawalOwnerFees(t *testing.T) {
 	require.NoError(t, err)
 	_, user2Address := evmChain.solo.NewKeyPairWithFunds()
 	user2AgentID := iscp.NewAgentID(user2Address, 0)
-	user2Balance0 := evmChain.solo.GetAddressBalance(user2Address, ledgerstate.ColorIOTA)
+	user2Balance0 := evmChain.solo.GetAddressBalance(user2Address, colored.IOTA)
 	err = evmChain.withdrawGasFees(user1Wallet, user2AgentID)
 	require.NoError(t, err)
-	user2Balance1 := evmChain.solo.GetAddressBalance(user2Address, ledgerstate.ColorIOTA)
+	user2Balance1 := evmChain.solo.GetAddressBalance(user2Address, colored.IOTA)
 	require.Equal(t, user2Balance1, user2Balance0+res.iotaChargedFee+1) // 1 extra iota from the withdrawal request
 }
 
@@ -279,7 +279,7 @@ func TestLoop(t *testing.T) {
 	iotaWallet, iotaAddress := evmChain.solo.NewKeyPairWithFunds()
 	iotaAgentID := iscp.NewAgentID(iotaAddress, 0)
 
-	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, ledgerstate.ColorIOTA)
+	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, colored.IOTA)
 	iotasSpent1 := uint64(100)
 	res, err := loop.loop(ethCallOptions{
 		gasLimit: iotasSpent1 * gasPerIotas,
@@ -299,7 +299,7 @@ func TestLoop(t *testing.T) {
 	require.Greater(t, res.receipt.GasUsed, gasUsed)
 
 	// ensure iotas sent are kept by the evmchain SC
-	require.Equal(t, evmChain.solo.GetAddressBalance(iotaAddress, ledgerstate.ColorIOTA), initialBalance-iotasSpent1-iotasSpent2)
+	require.Equal(t, evmChain.solo.GetAddressBalance(iotaAddress, colored.IOTA), initialBalance-iotasSpent1-iotasSpent2)
 	evmChain.soloChain.AssertIotas(iotaAgentID, 0)
 }
 
@@ -333,7 +333,7 @@ func TestPrePaidFees(t *testing.T) {
 	require.EqualValues(t, 42, storage.retrieve())
 
 	// deposit funds
-	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, ledgerstate.ColorIOTA)
+	initialBalance := evmChain.solo.GetAddressBalance(iotaAddress, colored.IOTA)
 	_, err := evmChain.soloChain.PostRequestSync(
 		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(initialBalance),
 		iotaWallet,

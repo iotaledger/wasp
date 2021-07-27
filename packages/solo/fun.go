@@ -9,13 +9,11 @@ import (
 	"io/ioutil"
 	"sort"
 
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -23,11 +21,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,7 +50,7 @@ func (ch *Chain) DumpAccounts() string {
 		aid := acc[i]
 		ret += fmt.Sprintf("  %s:\n", aid.String())
 		bals := ch.GetAccountBalance(&aid)
-		bals.ForEach(func(col ledgerstate.Color, bal uint64) bool {
+		bals.ForEachRandomly(func(col colored.Color, bal uint64) bool {
 			ret += fmt.Sprintf("       %s: %d\n", col, bal)
 			return true
 		})
@@ -112,7 +111,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 
 	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...)
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Contract.Name)
-	require.EqualValues(ch.Env.T, feeColor, ledgerstate.ColorIOTA)
+	require.EqualValues(ch.Env.T, feeColor, colored.IOTA)
 	totalFee := ownerFee + validatorFee
 	if totalFee > 0 {
 		req.WithIotas(totalFee)
@@ -157,10 +156,10 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, 
 		ch.Env.PutBlobDataIntoRegistry(v)
 	}
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Contract.Name)
-	require.EqualValues(ch.Env.T, feeColor, ledgerstate.ColorIOTA)
+	require.EqualValues(ch.Env.T, feeColor, colored.IOTA)
 	totalFee := ownerFee + validatorFee
 	if totalFee > 0 {
-		req.WithTransfer(ledgerstate.ColorIOTA, totalFee)
+		req.WithIotas(totalFee)
 	}
 	res, err := ch.PostRequestSync(req, keyPair)
 	if err != nil {
@@ -282,15 +281,15 @@ func (ch *Chain) GetInfo() (iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.Con
 
 // GetAddressBalance returns number of tokens of given color contained in the given address
 // on the UTXODB ledger
-func (env *Solo) GetAddressBalance(addr ledgerstate.Address, col ledgerstate.Color) uint64 {
+func (env *Solo) GetAddressBalance(addr ledgerstate.Address, col colored.Color) uint64 {
 	bals := env.GetAddressBalances(addr)
 	ret := bals[col]
 	return ret
 }
 
 // GetAddressBalances returns all colored balances of the address contained in the UTXODB ledger
-func (env *Solo) GetAddressBalances(addr ledgerstate.Address) map[ledgerstate.Color]uint64 {
-	return env.utxoDB.GetAddressBalances(addr)
+func (env *Solo) GetAddressBalances(addr ledgerstate.Address) colored.Balances {
+	return colored.BalancesFromL1Map(env.utxoDB.GetAddressBalances(addr))
 }
 
 // GetAccounts returns all accounts on the chain with non-zero balances
@@ -308,27 +307,27 @@ func (ch *Chain) GetAccounts() []iscp.AgentID {
 	return ret
 }
 
-func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *ledgerstate.ColoredBalances {
+func (ch *Chain) parseAccountBalance(d dict.Dict, err error) colored.Balances {
 	require.NoError(ch.Env.T, err)
 	if d.IsEmpty() {
-		return ledgerstate.NewColoredBalances(nil)
+		return colored.NewBalances()
 	}
-	ret := make(map[ledgerstate.Color]uint64)
+	ret := colored.NewBalances()
 	err = d.Iterate("", func(key kv.Key, value []byte) bool {
 		col, _, err := codec.DecodeColor([]byte(key))
 		require.NoError(ch.Env.T, err)
 		val, _, err := codec.DecodeUint64(value)
 		require.NoError(ch.Env.T, err)
-		ret[col] = val
+		ret.Set(col, val)
 		return true
 	})
 	require.NoError(ch.Env.T, err)
-	return ledgerstate.NewColoredBalances(ret)
+	return ret
 }
 
-func (ch *Chain) GetOnChainLedger() map[string]*ledgerstate.ColoredBalances {
+func (ch *Chain) GetOnChainLedger() map[string]colored.Balances {
 	accs := ch.GetAccounts()
-	ret := make(map[string]*ledgerstate.ColoredBalances)
+	ret := make(map[string]colored.Balances)
 	for i := range accs {
 		ret[accs[i].String()] = ch.GetAccountBalance(&accs[i])
 	}
@@ -352,23 +351,23 @@ func (ch *Chain) GetOnChainLedgerString() string {
 
 // GetAccountBalance return all balances of colored tokens contained in the on-chain
 // account controlled by the 'agentID'
-func (ch *Chain) GetAccountBalance(agentID *iscp.AgentID) *ledgerstate.ColoredBalances {
+func (ch *Chain) GetAccountBalance(agentID *iscp.AgentID) colored.Balances {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, accounts.ParamAgentID, agentID),
 	)
 }
 
-func (ch *Chain) GetCommonAccountBalance() *ledgerstate.ColoredBalances {
+func (ch *Chain) GetCommonAccountBalance() colored.Balances {
 	return ch.GetAccountBalance(ch.CommonAccount())
 }
 
 func (ch *Chain) GetCommonAccountIotas() uint64 {
-	ret, _ := ch.GetAccountBalance(ch.CommonAccount()).Get(ledgerstate.ColorIOTA)
+	ret := ch.GetAccountBalance(ch.CommonAccount()).Get(colored.IOTA)
 	return ret
 }
 
 // GetTotalAssets return total sum of colored tokens contained in the on-chain accounts
-func (ch *Chain) GetTotalAssets() *ledgerstate.ColoredBalances {
+func (ch *Chain) GetTotalAssets() colored.Balances {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewTotalAssets.Name),
 	)
@@ -376,7 +375,7 @@ func (ch *Chain) GetTotalAssets() *ledgerstate.ColoredBalances {
 
 // GetTotalIotas return total sum of iotas
 func (ch *Chain) GetTotalIotas() uint64 {
-	ret, _ := ch.GetTotalAssets().Get(ledgerstate.ColorIOTA)
+	ret := ch.GetTotalAssets().Get(colored.IOTA)
 	return ret
 }
 
@@ -385,7 +384,7 @@ func (ch *Chain) GetTotalIotas() uint64 {
 //  - chain owner part of the fee (number of tokens)
 //  - validator part of the fee (number of tokens)
 // Total fee is sum of owner fee and validator fee
-func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint64) {
+func (ch *Chain) GetFeeInfo(contactName string) (colored.Color, uint64, uint64) {
 	hname := iscp.Hn(contactName)
 	ret, err := ch.CallView(root.Contract.Name, root.FuncGetFeeInfo.Name, root.ParamHname, hname)
 	require.NoError(ch.Env.T, err)
@@ -407,52 +406,25 @@ func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint
 	return feeColor, ownerFee, validatorFee
 }
 
-// GetEventLogRecords calls the view in the  'eventlog' core smart contract to retrieve
-// latest up to 50 records for a given smart contract.
-// It returns records as array in time-descending order.
-// More than 50 records may be retrieved by calling the view directly
-func (ch *Chain) GetEventLogRecords(name string) ([]collections.TimestampedLogRecord, error) {
-	res, err := ch.CallView(eventlog.Contract.Name, eventlog.FuncGetRecords.Name,
-		eventlog.ParamContractHname, iscp.Hn(name),
+// GetEventsForContract calls the view in the  'blocklog' core smart contract to retrieve events for a given smart contract.
+func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
+	viewResult, err := ch.CallView(
+		blocklog.Contract.Name, blocklog.FuncGetEventsForContract.Name,
+		blocklog.ParamContractHname, iscp.Hn(name),
 	)
 	if err != nil {
 		return nil, err
 	}
-	recs := collections.NewArray16ReadOnly(res, eventlog.ParamRecords)
-	ret := make([]collections.TimestampedLogRecord, recs.MustLen())
-	for i := uint16(0); i < recs.MustLen(); i++ {
-		data := recs.MustGetAt(i)
-		rec, err := collections.ParseRawLogRecord(data)
+
+	recs := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
+	ret := make([]string, recs.MustLen())
+	for i := range ret {
+		data, err := recs.GetAt(uint16(i))
 		require.NoError(ch.Env.T, err)
-		ret[i] = *rec
+		ret[i] = string(data)
 	}
-	return ret, nil
-}
 
-// GetEventLogRecordsString return stringified response from GetEventLogRecords
-// Returns latest 50 records from the log
-func (ch *Chain) GetEventLogRecordsString(name string) (string, error) {
-	recs, err := ch.GetEventLogRecords(name)
-	if err != nil {
-		return "", err
-	}
-	ret := fmt.Sprintf("log records for '%s':", name)
-	for _, r := range recs {
-		ret += fmt.Sprintf("\n%d: %s", r.Timestamp, string(r.Data))
-	}
 	return ret, nil
-}
-
-// GetEventLogNumRecords returns total number of eventlog records for the given contact.
-func (ch *Chain) GetEventLogNumRecords(name string) int {
-	res, err := ch.CallView(eventlog.Contract.Name, eventlog.FuncGetNumRecords.Name,
-		eventlog.ParamContractHname, iscp.Hn(name),
-	)
-	require.NoError(ch.Env.T, err)
-	ret, ok, err := codec.DecodeInt64(res.MustGet(eventlog.ParamNumRecords))
-	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
-	return int(ret)
 }
 
 // CommonAccount return the agentID of the common account (controlled by the owner)

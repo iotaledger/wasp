@@ -103,7 +103,7 @@ func (m *Mempool) takeInBuffer(buf []iscp.Request) []iscp.Request {
 // addToPool adds request to the pool. It may fail
 // returns true if it must be removed from the input buffer
 func (m *Mempool) addToPool(req iscp.Request) bool {
-	if offLedgerReq, ok := req.(*request.RequestOffLedger); ok {
+	if offLedgerReq, ok := req.(*request.OffLedger); ok {
 		if !offLedgerReq.VerifySignature() {
 			// wrong signature, must be removed from in buffer
 			m.log.Warnf("ReceiveRequest.VerifySignature: invalid signature")
@@ -117,6 +117,7 @@ func (m *Mempool) addToPool(req iscp.Request) bool {
 	alreadyProcessed, err := blocklog.IsRequestProcessed(m.stateReader.KVStoreReader(), &reqid)
 	if err != nil {
 		// may be invalidated state. Do not remove from in-buffer yet
+		m.log.Debugf("addToPool, IsRequestProcessed error: %v", err)
 		return false
 	}
 	if alreadyProcessed {

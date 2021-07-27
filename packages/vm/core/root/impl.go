@@ -9,9 +9,9 @@ package root
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/eventlog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
@@ -42,7 +41,7 @@ var Processor = Contract.Processor(initialize,
 // - stores chain ID and chain description in the state
 // - sets state ownership to the caller
 // - creates record in the registry for the 'root' itself
-// - deploys other core contracts: 'accounts', 'blob', 'eventlog' by creating records in the registry and calling constructors
+// - deploys other core contracts: 'accounts', 'blob', 'blocklog' by creating records in the registry and calling constructors
 // Input:
 // - ParamChainID iscp.ChainID. ID of the chain. Cannot be changed
 // - ParamChainColor ledgerstate.Color
@@ -63,8 +62,8 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	chainID := params.MustGetChainID(ParamChainID)
 	chainDescription := params.MustGetString(ParamDescription, "N/A")
-	feeColor := params.MustGetColor(ParamFeeColor, ledgerstate.ColorIOTA)
-	feeColorSet := feeColor != ledgerstate.ColorIOTA
+	feeColor := params.MustGetColor(ParamFeeColor, colored.IOTA)
+	feeColorSet := feeColor != colored.IOTA
 
 	contractRegistry := collections.NewMap(state, VarContractRegistry)
 	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")
@@ -73,7 +72,6 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	mustStoreContract(ctx, Contract, a)
 	mustStoreAndInitCoreContract(ctx, blob.Contract, a)
 	mustStoreAndInitCoreContract(ctx, accounts.Contract, a)
-	mustStoreAndInitCoreContract(ctx, eventlog.Contract, a)
 	mustStoreAndInitCoreContract(ctx, blocklog.Contract, a)
 	mustStoreAndInitCoreContract(ctx, governance.Contract, a)
 

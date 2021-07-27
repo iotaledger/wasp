@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -42,20 +43,18 @@ func getTotalAssetsAccountR(state kv.KVStoreReader) *collections.ImmutableMap {
 }
 
 // CreditToAccount brings new funds to the on chain ledger.
-func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, transfer *ledgerstate.ColoredBalances) {
+func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, transfer colored.Balances) {
 	creditToAccount(state, getAccount(state, agentID), transfer)
 	creditToAccount(state, getTotalAssetsAccount(state), transfer)
 	mustCheckLedger(state, "CreditToAccount")
 }
 
 // creditToAccount internal
-func creditToAccount(state kv.KVStore, account *collections.Map, transfer *ledgerstate.ColoredBalances) {
-	if transfer == nil {
-		return
-	}
+func creditToAccount(state kv.KVStore, account *collections.Map, transfer colored.Balances) {
 	defer touchAccount(state, account)
 
-	transfer.ForEach(func(col ledgerstate.Color, bal uint64) bool {
+	// deterministic order of iteration is not important here
+	transfer.ForEachRandomly(func(col colored.Color, bal uint64) bool {
 		var currentBalance uint64
 		v := account.MustGetAt(col[:])
 		if v != nil {
@@ -67,7 +66,7 @@ func creditToAccount(state kv.KVStore, account *collections.Map, transfer *ledge
 }
 
 // DebitFromAccount removes funds from the chain ledger.
-func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, transfer *ledgerstate.ColoredBalances) bool {
+func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, transfer colored.Balances) bool {
 	if !debitFromAccount(state, getAccount(state, agentID), transfer) {
 		return false
 	}
@@ -79,16 +78,13 @@ func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, transfer *ledgers
 }
 
 // debitFromAccount internal
-func debitFromAccount(state kv.KVStore, account *collections.Map, transfer *ledgerstate.ColoredBalances) bool {
-	if transfer == nil {
-		return true
-	}
+func debitFromAccount(state kv.KVStore, account *collections.Map, transfer colored.Balances) bool {
 	defer touchAccount(state, account)
 
 	current := getAccountBalances(account.Immutable())
-
 	ok := true
-	transfer.ForEach(func(col ledgerstate.Color, transferAmount uint64) bool {
+	// deterministic order of iteration is not important here
+	transfer.ForEachRandomly(func(col colored.Color, transferAmount uint64) bool {
 		bal := current[col]
 		if bal < transferAmount {
 			ok = false
@@ -111,7 +107,7 @@ func debitFromAccount(state kv.KVStore, account *collections.Map, transfer *ledg
 	return true
 }
 
-func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer *ledgerstate.ColoredBalances) bool {
+func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer colored.Balances) bool {
 	if fromAgentID.Equals(toAgentID) {
 		// no need to move
 		return true
@@ -137,8 +133,8 @@ func touchAccount(state kv.KVStore, account *collections.Map) {
 	}
 }
 
-func GetBalance(state kv.KVStoreReader, agentID *iscp.AgentID, color ledgerstate.Color) uint64 {
-	b := getAccountR(state, agentID).MustGetAt(color[:])
+func GetBalance(state kv.KVStoreReader, agentID *iscp.AgentID, col colored.Color) uint64 {
+	b := getAccountR(state, agentID).MustGetAt(col[:])
 	if b == nil {
 		return 0
 	}
@@ -155,9 +151,9 @@ func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
 	return ret
 }
 
-func getAccountBalances(account *collections.ImmutableMap) map[ledgerstate.Color]uint64 {
-	ret := make(map[ledgerstate.Color]uint64)
-	err := account.IterateBalances(func(col ledgerstate.Color, bal uint64) bool {
+func getAccountBalances(account *collections.ImmutableMap) colored.Balances {
+	ret := colored.NewBalances()
+	err := account.IterateBalances(func(col colored.Color, bal uint64) bool {
 		ret[col] = bal
 		return true
 	})
@@ -169,7 +165,7 @@ func getAccountBalances(account *collections.ImmutableMap) map[ledgerstate.Color
 
 // GetAccountBalances returns all colored balances belonging to the agentID on the state.
 // Normally, the state is the partition of the 'accountsc'
-func GetAccountBalances(state kv.KVStoreReader, agentID *iscp.AgentID) (map[ledgerstate.Color]uint64, bool) {
+func GetAccountBalances(state kv.KVStoreReader, agentID *iscp.AgentID) (colored.Balances, bool) {
 	account := getAccountR(state, agentID)
 	if account.MustLen() == 0 {
 		return nil, false
@@ -177,29 +173,29 @@ func GetAccountBalances(state kv.KVStoreReader, agentID *iscp.AgentID) (map[ledg
 	return getAccountBalances(account), true
 }
 
-func GetTotalAssets(state kv.KVStoreReader) *ledgerstate.ColoredBalances {
-	return ledgerstate.NewColoredBalances(getAccountBalances(getTotalAssetsAccountR(state)))
+func GetTotalAssets(state kv.KVStoreReader) colored.Balances {
+	return getAccountBalances(getTotalAssetsAccountR(state))
 }
 
-func calcTotalAssets(state kv.KVStoreReader) *ledgerstate.ColoredBalances {
-	ret := make(map[ledgerstate.Color]uint64)
+func calcTotalAssets(state kv.KVStoreReader) colored.Balances {
+	ret := colored.NewBalances()
 	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
 		agentID, err := iscp.NewAgentIDFromBytes(key)
 		if err != nil {
 			panic(err)
 		}
 		for col, b := range getAccountBalances(getAccountR(state, agentID)) {
-			ret[col] += b
+			ret.Add(col, b)
 		}
 		return true
 	})
-	return ledgerstate.NewColoredBalances(ret)
+	return ret
 }
 
 func mustCheckLedger(state kv.KVStore, checkpoint string) {
 	a := GetTotalAssets(state)
 	c := calcTotalAssets(state)
-	if !iscp.EqualColoredBalances(a, c) {
+	if !a.Equals(c) {
 		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'", checkpoint))
 	}
 }
@@ -211,7 +207,7 @@ func getAccountBalanceDict(ctx iscp.SandboxView, account *collections.ImmutableM
 	return EncodeBalances(balances)
 }
 
-func EncodeBalances(balances map[ledgerstate.Color]uint64) dict.Dict {
+func EncodeBalances(balances colored.Balances) dict.Dict {
 	ret := dict.New()
 	for col, bal := range balances {
 		ret.Set(kv.Key(col[:]), codec.EncodeUint64(bal))
@@ -219,8 +215,8 @@ func EncodeBalances(balances map[ledgerstate.Color]uint64) dict.Dict {
 	return ret
 }
 
-func DecodeBalances(balances dict.Dict) (map[ledgerstate.Color]uint64, error) {
-	ret := map[ledgerstate.Color]uint64{}
+func DecodeBalances(balances dict.Dict) (colored.Balances, error) {
+	ret := colored.NewBalances()
 	for col, bal := range balances {
 		c, _, err := codec.DecodeColor([]byte(col))
 		if err != nil {
@@ -230,7 +226,7 @@ func DecodeBalances(balances dict.Dict) (map[ledgerstate.Color]uint64, error) {
 		if err != nil {
 			return nil, err
 		}
-		ret[c] = b
+		ret.Set(c, b)
 	}
 	return ret, nil
 }

@@ -11,7 +11,7 @@ provides a mutable context for running the batch by the smart contracts on the
 chain. It also provides access to the other smart contracts that are deployed on
 the chain.
 
-There are currently 6 core smart contracts that are always deployed on each
+There are currently 5 core smart contracts that are always deployed on each
 chain. They ensure core logic of the VM and provide a platform for plugging
 other smart contracts into the chain:
 
@@ -22,6 +22,7 @@ other smart contracts into the chain:
   _data blobs_.
 - [accounts](accounts.md) contract responsible for the ledger of on-chain
   colored token accounts.
-- [blocklog](blocklog.md) contract keeps track of the blocks of requests that
-  were processed by the chain.
-- [eventlog](eventlog.md) contract responsible for the on-chain event log.  
+- [blocklog](blocklog.md) contract keeps track of the blocks and receipts of requests which
+  were processed by the chain. It also contains all events emitted by smart conttacts
+- [governance](governance.md) contract (in development) implements administration functions of the chain itself.
+  For example function of rotation of the committee of validators of the chain.
