@@ -91,19 +91,19 @@ func (sm *stateManager) initLoadState() {
 	if err != nil {
 		go sm.chain.ReceiveMessage(messages.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState: %v", err),
-		},
-		)
+		})
 		return
 	}
 	if stateExists {
+		sm.solidState = solidState
+		sm.chain.GlobalStateSync().SetSolidIndex(solidState.BlockIndex())
 		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
 			solidState.BlockIndex(), solidState.Hash().String())
 	} else if err := sm.createOriginState(); err != nil {
 		// create origin state in DB
 		go sm.chain.ReceiveMessage(messages.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err),
-		},
-		)
+		})
 		return
 	}
 	sm.recvLoop() // Check to process external events.
