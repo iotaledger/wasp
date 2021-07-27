@@ -427,6 +427,27 @@ func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
 	return ret, nil
 }
 
+// GetEventsForRequest calls the view in the  'blocklog' core smart contract to retrieve events for a given request.
+func (ch *Chain) GetEventsForRequest(reqID iscp.RequestID) ([]string, error) {
+	viewResult, err := ch.CallView(
+		blocklog.Contract.Name, blocklog.FuncGetEventsForRequest.Name,
+		blocklog.ParamRequestID, reqID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	recs := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
+	ret := make([]string, recs.MustLen())
+	for i := range ret {
+		data, err := recs.GetAt(uint16(i))
+		require.NoError(ch.Env.T, err)
+		ret[i] = string(data)
+	}
+
+	return ret, nil
+}
+
 // CommonAccount return the agentID of the common account (controlled by the owner)
 func (ch *Chain) CommonAccount() *iscp.AgentID {
 	return commonaccount.Get(&ch.ChainID)

@@ -161,6 +161,9 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID *iscp.RequestID)
 	if err != nil {
 		return nil, err
 	}
+	if record == nil {
+		return nil, nil
+	}
 	ret := []string{}
 	eventIndex := uint8(0)
 	events := collections.NewMapReadOnly(partition, StateVarRequestEvents)

@@ -1,6 +1,8 @@
 package vmcontext
 
 import (
+	"math"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -141,11 +143,16 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
+	if vmctx.requestEventIndex == math.MaxUint8 {
+		vmctx.Panicf("too many events issued for contract: %s, request index: %d", contract.String(), vmctx.requestIndex)
+	}
 
 	vmctx.log.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
 	err := blocklog.SaveEvent(vmctx.State(), msg, vmctx.eventLookupKey(), contract)
 	if err != nil {
 		vmctx.Panicf("MustSaveEvent: %v", err)
 	}
-	vmctx.requestEventIndex++
+	if vmctx.requestEventIndex < math.MaxUint8 {
+		vmctx.requestEventIndex++
+	}
 }
