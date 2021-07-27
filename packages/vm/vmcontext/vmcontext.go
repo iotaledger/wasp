@@ -3,13 +3,12 @@ package vmcontext
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
@@ -98,6 +97,7 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 		txBuilder:            txb,
 		virtualState:         task.VirtualState,
 		solidStateBaseline:   task.SolidStateBaseline,
+		validatorFeeTarget:   task.ValidatorFeeTarget,
 		processors:           task.Processors,
 		blockContext:         make(map[iscp.Hname]*blockContext),
 		blockContextCloseSeq: make([]iscp.Hname, 0),

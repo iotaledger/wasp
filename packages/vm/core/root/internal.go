@@ -25,17 +25,17 @@ func FindContract(state kv.KVStoreReader, hname iscp.Hname) (*ContractRecord, er
 	var ret *ContractRecord
 	var err error
 	if retBin != nil {
-		if ret, err = DecodeContractRecord(retBin); err != nil {
+		if ret, err = ContractRecordFromBytes(retBin); err != nil {
 			return nil, fmt.Errorf("root: %v", err)
 		}
 	} else {
 		// not founc in registry
 		if hname == Contract.Hname() {
 			// if not found and it is root, it means it is chain init --> return empty root record
-			ret = NewContractRecord(Contract, &iscp.AgentID{})
+			ret = NewContractRecord(Contract, &iscp.NilAgentID)
 		} else {
 			// return default contract
-			ret = NewContractRecord(_default.Contract, &iscp.AgentID{})
+			ret = NewContractRecord(_default.Contract, &iscp.NilAgentID)
 		}
 	}
 	return ret, nil
@@ -114,8 +114,7 @@ func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[isc
 			return false
 		}
 
-		var cr *ContractRecord
-		cr, err = DecodeContractRecord(v)
+		cr, err := ContractRecordFromBytes(v)
 		if err != nil {
 			return false
 		}
@@ -135,7 +134,7 @@ func CheckAuthorizationByChainOwner(state kv.KVStore, agentID *iscp.AgentID) boo
 }
 
 func mustStoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, a assert.Assert) {
-	rec := NewContractRecord(i, &iscp.AgentID{})
+	rec := NewContractRecord(i, &iscp.NilAgentID)
 	ctx.Log().Debugf("mustStoreAndInitCoreContract: '%s', hname = %s", i.Name, i.Hname())
 	mustStoreContractRecord(ctx, rec, a)
 }
@@ -150,7 +149,7 @@ func mustStoreContractRecord(ctx iscp.Sandbox, rec *ContractRecord, a assert.Ass
 	hname := rec.Hname()
 	contractRegistry := collections.NewMap(ctx.State(), VarContractRegistry)
 	a.Require(!contractRegistry.MustHasAt(hname.Bytes()), "contract '%s'/%s already exist", rec.Name, hname.String())
-	contractRegistry.MustSetAt(hname.Bytes(), EncodeContractRecord(rec))
+	contractRegistry.MustSetAt(hname.Bytes(), rec.Bytes())
 }
 
 // isAuthorizedToDeploy checks if caller is authorized to deploy smart contract

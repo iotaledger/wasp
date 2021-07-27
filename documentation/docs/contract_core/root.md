@@ -5,11 +5,11 @@ chain.
 
 The `root` contract provides the following functions:
 
-- It is the first smart contract deployed on the chain. It initializes the state
-  of the chain. Part of the state initialization is deployment of all other core
+- It is the first smart contract deployed on the chain. It receives the `initialize` request and
+  which the state of the chain. Part of the state initialization is deployment of all other core
   contracts.
 
-- It functions as a smart contract factory for the chain: it deploys other smart
+- It functions as a smart contract factory for the chain: upon request, it deploys other smart
   contracts and maintains an on-chain registry of smart contracts in its state.
 
 - It manages chain ownership. The _chain owner_ is a special `agentID`
@@ -27,19 +27,19 @@ The following are the functions / entry points of the `root` contract. Some of
 them may require authorisation, i.e. can only be invoked by a specific caller,
 for example the _chain owner_.
 
-* **init** - The constructor. Automatically called immediately after deployment,
-  as the first call.
-    * Initializes base values of the chain according to parameters: chainID,
-      chain color, chain address
-    * sets _chain owner_ to the caller
+* **init** - The constructor. Automatically posted to the chain immediately after
+  confirmation of the origin transaction, as the first call.
+    * Initializes base values of the chain according to parameters
+    * sets the caller as the _chain owner_
     * sets chain fee color (default is _IOTA color_)
-    * deploys all 4 core contracts
+    * deploys all core contracts. The core contracts become part of the immutable state.
+      It makes them callable just like any other smart contract deployed on the chain.
+
+* **delegateChainOwnership** - Prepares a successor (an `agent ID`) to become the
+  owner of the chain. The ownership is not transferred until claimed.
 
 * **claimChainOwnership** - The new chain owner can claim ownership if it was
   delegated. Chain ownership changes.
-
-* **delegateChainOwnership** - Prepares a successor (an agent ID) to become the
-  owner of the chain. The ownership is not transferred until claimed.
 
 * **deployContract** - Deploys a smart contract on the chain, if the caller has
   deploy permission. Parameters:

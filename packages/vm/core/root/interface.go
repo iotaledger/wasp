@@ -1,15 +1,13 @@
 package root
 
 import (
-	"bytes"
 	"errors"
-	"io"
 
+	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 var (
@@ -47,8 +45,6 @@ const (
 	ParamProgramHash  = "$$proghash$$"
 	ParamValidatorFee = "$$validatorfee$$"
 )
-
-// TODO move ownership and fee-related methods to the governance contract
 
 // function names
 var (
@@ -97,6 +93,68 @@ type ChainInfo struct {
 	DefaultValidatorFee int64
 }
 
+func NewContractRecord(itf *coreutil.ContractInfo, creator *iscp.AgentID) *ContractRecord {
+	// enforce correct creator agentID --  begin
+	if creator == nil {
+		panic("NewContractRecord: creator can't be nil")
+	}
+	creator.Bytes() // panics if wrong address
+	// enforce correct creator agentID --  end
+
+	return &ContractRecord{
+		ProgramHash: itf.ProgramHash,
+		Description: itf.Description,
+		Name:        itf.Name,
+		Creator:     creator,
+	}
+}
+
+func ContractRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ContractRecord, error) {
+	ret := &ContractRecord{}
+	if buf, err := mu.ReadBytes(len(ret.ProgramHash)); err != nil {
+		return nil, err
+	} else {
+		copy(ret.ProgramHash[:], buf)
+	}
+	var err error
+	if ret.Description, err = readString(mu); err != nil {
+		return nil, err
+	}
+	if ret.Name, err = readString(mu); err != nil {
+		return nil, err
+	}
+	if ret.OwnerFee, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	if ret.ValidatorFee, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	creatorNotNil, err := mu.ReadBool()
+	if err != nil {
+		return nil, err
+	}
+	if creatorNotNil {
+		if ret.Creator, err = iscp.AgentIDFromMarshalUtil(mu); err != nil {
+			return nil, err
+		}
+	}
+	return ret, nil
+}
+
+func (p *ContractRecord) Bytes() []byte {
+	mu := marshalutil.New()
+	mu.WriteBytes(p.ProgramHash[:])
+	writeString(mu, p.Description)
+	writeString(mu, p.Name)
+	mu.WriteUint64(p.OwnerFee)
+	mu.WriteUint64(p.ValidatorFee)
+	mu.WriteBool(p.Creator != nil)
+	if p.Creator != nil {
+		mu.Write(p.Creator)
+	}
+	return mu.Bytes()
+}
+
 func (p *ContractRecord) Hname() iscp.Hname {
 	if p.Name == "_default" {
 		return 0
@@ -104,81 +162,24 @@ func (p *ContractRecord) Hname() iscp.Hname {
 	return iscp.Hn(p.Name)
 }
 
-// serde
-func (p *ContractRecord) Write(w io.Writer) error {
-	if _, err := w.Write(p.ProgramHash[:]); err != nil {
-		return err
-	}
-	if err := util.WriteString16(w, p.Description); err != nil {
-		return err
-	}
-	if err := util.WriteString16(w, p.Name); err != nil {
-		return err
-	}
-	if err := util.WriteUint64(w, p.OwnerFee); err != nil {
-		return err
-	}
-	if err := util.WriteUint64(w, p.ValidatorFee); err != nil {
-		return err
-	}
-	if err := util.WriteBoolByte(w, p.Creator != nil); err != nil {
-		return err
-	}
-	if p.Creator != nil {
-		if err := p.Creator.Write(w); err != nil {
-			return err
-		}
-	}
-	return nil
+func ContractRecordFromBytes(data []byte) (*ContractRecord, error) {
+	return ContractRecordFromMarshalUtil(marshalutil.New(data))
 }
 
-func (p *ContractRecord) Read(r io.Reader) error {
-	var err error
-	if err := util.ReadHashValue(r, &p.ProgramHash); err != nil {
-		return err
-	}
-	if p.Description, err = util.ReadString16(r); err != nil {
-		return err
-	}
-	if p.Name, err = util.ReadString16(r); err != nil {
-		return err
-	}
-	if err := util.ReadUint64(r, &p.OwnerFee); err != nil {
-		return err
-	}
-	if err := util.ReadUint64(r, &p.ValidatorFee); err != nil {
-		return err
-	}
-	var hasCreator bool
-	if err := util.ReadBoolByte(r, &hasCreator); err != nil {
-		return err
-	}
-	if hasCreator {
-		p.Creator = &iscp.AgentID{}
-		if err := p.Creator.Read(r); err != nil {
-			return err
-		}
-	}
-	return nil
+func writeString(mu *marshalutil.MarshalUtil, str string) {
+	mu.WriteUint16(uint16(len(str))).WriteBytes([]byte(str))
 }
 
-func EncodeContractRecord(p *ContractRecord) []byte {
-	return util.MustBytes(p)
-}
-
-func DecodeContractRecord(data []byte) (*ContractRecord, error) {
-	ret := new(ContractRecord)
-	err := ret.Read(bytes.NewReader(data))
-	return ret, err
-}
-
-func NewContractRecord(itf *coreutil.ContractInfo, creator *iscp.AgentID) *ContractRecord {
-	return &ContractRecord{
-		ProgramHash: itf.ProgramHash,
-		Description: itf.Description,
-		Name:        itf.Name,
-		Creator:     creator,
+func readString(mu *marshalutil.MarshalUtil) (string, error) {
+	sz, err := mu.ReadUint16()
+	if err != nil {
+		return "", err
 	}
+	ret, err := mu.ReadBytes(int(sz))
+	if err != nil {
+		return "", err
+	}
+	return string(ret), nil
 }
 
 func (p *ContractRecord) HasCreator() bool {

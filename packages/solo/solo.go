@@ -9,8 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -21,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -194,7 +193,7 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //    '_default', 'blocklog', 'blob', 'accounts' and 'eventlog',
 // Upon return, the chain is fully functional to process requests
 //nolint:funlen
-func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...iscp.AgentID) *Chain {
+func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
 	env.logger.Debugf("deploying new chain '%s'", name)
 	var stateController ed25519.KeyPair
 	if env.seed == nil {
@@ -222,7 +221,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	originatorAgentID := iscp.NewAgentID(originatorAddr, 0)
 	feeTarget := originatorAgentID
 	if len(validatorFeeTarget) > 0 {
-		feeTarget = &validatorFeeTarget[0]
+		feeTarget = validatorFeeTarget[0]
 	}
 
 	bals := colored.NewBalancesForIotas(100)
