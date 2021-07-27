@@ -12,6 +12,7 @@ import (
 	"path"
 	"sort"
 	"strconv"
+	"syscall"
 	"text/template"
 	"time"
 
@@ -317,30 +318,54 @@ func (clu *Cluster) start(dataPath string) error {
 	return nil
 }
 
-func (clu *Cluster) KillNode(nodeID int) error {
-	if nodeID < len(clu.waspCmds) {
-		process := clu.waspCmds[nodeID]
+func (clu *Cluster) KillNode(nodeIndex int) error {
+	if nodeIndex < len(clu.waspCmds) {
+		process := clu.waspCmds[nodeIndex]
 
 		if process.ProcessState.Exited() {
-			return fmt.Errorf("[cluster] Wasp node with index %d already dead", nodeID)
+			return fmt.Errorf("[cluster] Wasp node with index %d already dead", nodeIndex)
 		}
 
 		err := process.Process.Kill()
 
 		if err == nil {
-			clu.waspCmds[nodeID] = nil
+			clu.waspCmds[nodeIndex] = nil
 		}
 
 		return err
 	}
-	return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeID)
+	return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
 }
 
-func (clu *Cluster) RestartNode(nodeID int) error {
-	if nodeID < len(clu.waspCmds) {
+func (clu *Cluster) FreezeNode(nodeIndex int) error {
+	if nodeIndex < len(clu.waspCmds) {
+		process := clu.waspCmds[nodeIndex]
+
+		err := process.Process.Signal(syscall.SIGSTOP)
+
+		return err
+	}
+
+	return fmt.Errorf("[cluster] Wasp node with index %d not found, active processes: %v", nodeIndex, len(clu.waspCmds))
+}
+
+func (clu *Cluster) UnfreezeNode(nodeIndex int) error {
+	if nodeIndex < len(clu.waspCmds) {
+		process := clu.waspCmds[nodeIndex]
+
+		err := process.Process.Signal(syscall.SIGCONT)
+
+		return err
+	}
+
+	return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
+}
+
+func (clu *Cluster) RestartNode(nodeIndex int) error {
+	if nodeIndex < len(clu.waspCmds) {
 		initOk := make(chan bool, 1)
 
-		cmd, err := clu.startServer("wasp", waspNodeDataPath(clu.DataPath, nodeID), nodeID, initOk)
+		cmd, err := clu.startServer("wasp", waspNodeDataPath(clu.DataPath, nodeIndex), nodeIndex, initOk)
 		if err != nil {
 			return err
 		}
@@ -351,11 +376,11 @@ func (clu *Cluster) RestartNode(nodeID int) error {
 			return fmt.Errorf("Timeout starting wasp nodes\n") //nolint:revive
 		}
 
-		clu.waspCmds[nodeID] = cmd
+		clu.waspCmds[nodeIndex] = cmd
 
 		return err
 	}
-	return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeID)
+	return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
 }
 
 func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<- bool) (*exec.Cmd, error) {

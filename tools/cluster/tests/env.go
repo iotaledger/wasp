@@ -159,12 +159,12 @@ func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint isc
 	}
 }
 
-func setupWithNoChain(t *testing.T) *env {
-	return &env{t: t, clu: newCluster(t)}
+func setupWithNoChain(t *testing.T, opt ...interface{}) *env {
+	return &env{t: t, clu: newCluster(t, opt...)}
 }
 
-func setupWithChain(t *testing.T) *chainEnv {
-	e := setupWithNoChain(t)
+func setupWithChain(t *testing.T, opt ...interface{}) *chainEnv {
+	e := setupWithNoChain(t, opt...)
 	chain, err := e.clu.DeployDefaultChain()
 	require.NoError(t, err)
 	return newChainEnv(e.t, e.clu, chain)
