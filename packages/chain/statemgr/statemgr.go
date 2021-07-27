@@ -110,13 +110,12 @@ func (sm *stateManager) initLoadState() {
 }
 
 func (sm *stateManager) createOriginState() error {
-	sm.chain.GlobalStateSync().InvalidateSolidIndex()
-
-	sm.chain.GlobalStateSync().Mutex().Lock()
-	defer sm.chain.GlobalStateSync().Mutex().Unlock()
-
 	var err error
+
+	sm.chain.GlobalStateSync().InvalidateSolidIndex()
 	sm.solidState, err = state.CreateOriginState(sm.store, sm.chain.ID())
+	sm.chain.GlobalStateSync().SetSolidIndex(0)
+
 	if err != nil {
 		go sm.chain.ReceiveMessage(messages.DismissChainMsg{
 			Reason: fmt.Sprintf("StateManager.initLoadState. Failed to create origin state: %v", err),
@@ -124,7 +123,6 @@ func (sm *stateManager) createOriginState() error {
 		)
 		return err
 	}
-	sm.chain.GlobalStateSync().SetSolidIndex(0)
 	sm.log.Infof("ORIGIN STATE has been created")
 	return nil
 }

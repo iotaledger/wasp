@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/tools/cluster"
@@ -95,19 +96,17 @@ func (e *chainEnv) deployContract(wasmName, scDescription string, initParams map
 }
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint iscp.Hname, tokens int, params map[string]interface{}) {
-	var transfer map[ledgerstate.Color]uint64
+	transfer := colored.NewBalances()
 	if tokens != 0 {
-		transfer = map[ledgerstate.Color]uint64{
-			ledgerstate.ColorIOTA: uint64(tokens),
-		}
+		transfer = colored.NewBalancesForIotas(uint64(tokens))
 	}
 	e.postRequestFull(contract, entryPoint, transfer, params)
 }
 
-func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint iscp.Hname, transfer map[ledgerstate.Color]uint64, params map[string]interface{}) {
-	var b *ledgerstate.ColoredBalances
+func (e *contractWithMessageCounterEnv) postRequestFull(contract, entryPoint iscp.Hname, transfer colored.Balances, params map[string]interface{}) {
+	b := colored.NewBalances()
 	if transfer != nil {
-		b = ledgerstate.NewColoredBalances(transfer)
+		b = transfer
 	}
 	tx, err := e.chainClient().Post1Request(contract, entryPoint, chainclient.PostRequestParams{
 		Transfer: b,

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -152,17 +152,17 @@ func TestIncrementWithTransfer(t *testing.T) {
 	entryPoint := iscp.Hn("increment")
 	e.postRequest(incHname, entryPoint, 42, nil)
 
-	if !e.clu.VerifyAddressBalances(scOwnerAddr, solo.Saldo-42, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo - 42,
-	}, "owner after") {
+	if !e.clu.VerifyAddressBalances(scOwnerAddr, solo.Saldo-42,
+		colored.NewBalancesForIotas(solo.Saldo-42),
+		"owner after") {
 		t.Fail()
 	}
 	agentID := iscp.NewAgentID(e.chain.ChainID.AsAddress(), incHname)
-	actual := e.getBalanceOnChain(agentID, ledgerstate.ColorIOTA)
+	actual := e.getBalanceOnChain(agentID, colored.IOTA)
 	require.EqualValues(t, 42, actual)
 
 	agentID = iscp.NewAgentID(scOwnerAddr, 0)
-	actual = e.getBalanceOnChain(agentID, ledgerstate.ColorIOTA)
+	actual = e.getBalanceOnChain(agentID, colored.IOTA)
 	require.EqualValues(t, 0, actual)
 
 	e.checkCounter(1)

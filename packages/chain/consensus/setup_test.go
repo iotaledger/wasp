@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -121,7 +123,8 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	outputs := ret.Ledger.GetAddressOutputs(ret.OriginatorAddress)
 	require.True(t, len(outputs) == 1)
 
-	bals := map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 100}
+	bals := colored.ToL1Map(map[colored.Color]uint64{colored.IOTA: 100})
+
 	txBuilder := utxoutil.NewBuilder(outputs...)
 	err = txBuilder.AddNewAliasMint(bals, ret.StateAddress, state.OriginStateHash().Bytes())
 	require.NoError(t, err)

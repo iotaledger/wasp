@@ -28,7 +28,7 @@ func WithTransaction(f func() (*ledgerstate.Transaction, error)) *ledgerstate.Tr
 	return tx
 }
 
-func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (*request.RequestOffLedger, error)) {
+func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (*request.OffLedger, error)) {
 	req, err := f()
 	log.Check(err)
 	log.Printf("Posted off-ledger request %s\n", req.ID().Base58())

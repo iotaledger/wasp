@@ -1,9 +1,9 @@
 package viewcontext
 
 import (
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -43,7 +43,7 @@ func (s *sandboxview) AccountID() *iscp.AgentID {
 	return iscp.NewAgentID(s.vctx.chainID.AsAddress(), hname)
 }
 
-func (s *sandboxview) Balances() *ledgerstate.ColoredBalances {
+func (s *sandboxview) Balances() colored.Balances {
 	panic("not implemented") // TODO: Implement
 }
 

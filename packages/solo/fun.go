@@ -9,13 +9,11 @@ import (
 	"io/ioutil"
 	"sort"
 
-	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
-	"github.com/iotaledger/wasp/packages/vm/vmtypes"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -23,10 +21,12 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,7 +50,7 @@ func (ch *Chain) DumpAccounts() string {
 		aid := acc[i]
 		ret += fmt.Sprintf("  %s:\n", aid.String())
 		bals := ch.GetAccountBalance(&aid)
-		bals.ForEach(func(col ledgerstate.Color, bal uint64) bool {
+		bals.ForEachRandomly(func(col colored.Color, bal uint64) bool {
 			ret += fmt.Sprintf("       %s: %d\n", col, bal)
 			return true
 		})
@@ -111,7 +111,7 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 
 	req := NewCallParams(blob.Contract.Name, blob.FuncStoreBlob.Name, params...)
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Contract.Name)
-	require.EqualValues(ch.Env.T, feeColor, ledgerstate.ColorIOTA)
+	require.EqualValues(ch.Env.T, feeColor, colored.IOTA)
 	totalFee := ownerFee + validatorFee
 	if totalFee > 0 {
 		req.WithIotas(totalFee)
@@ -156,10 +156,10 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, 
 		ch.Env.PutBlobDataIntoRegistry(v)
 	}
 	feeColor, ownerFee, validatorFee := ch.GetFeeInfo(blob.Contract.Name)
-	require.EqualValues(ch.Env.T, feeColor, ledgerstate.ColorIOTA)
+	require.EqualValues(ch.Env.T, feeColor, colored.IOTA)
 	totalFee := ownerFee + validatorFee
 	if totalFee > 0 {
-		req.WithTransfer(ledgerstate.ColorIOTA, totalFee)
+		req.WithIotas(totalFee)
 	}
 	res, err := ch.PostRequestSync(req, keyPair)
 	if err != nil {
@@ -281,15 +281,15 @@ func (ch *Chain) GetInfo() (iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.Con
 
 // GetAddressBalance returns number of tokens of given color contained in the given address
 // on the UTXODB ledger
-func (env *Solo) GetAddressBalance(addr ledgerstate.Address, col ledgerstate.Color) uint64 {
+func (env *Solo) GetAddressBalance(addr ledgerstate.Address, col colored.Color) uint64 {
 	bals := env.GetAddressBalances(addr)
 	ret := bals[col]
 	return ret
 }
 
 // GetAddressBalances returns all colored balances of the address contained in the UTXODB ledger
-func (env *Solo) GetAddressBalances(addr ledgerstate.Address) map[ledgerstate.Color]uint64 {
-	return env.utxoDB.GetAddressBalances(addr)
+func (env *Solo) GetAddressBalances(addr ledgerstate.Address) colored.Balances {
+	return colored.BalancesFromL1Map(env.utxoDB.GetAddressBalances(addr))
 }
 
 // GetAccounts returns all accounts on the chain with non-zero balances
@@ -307,27 +307,27 @@ func (ch *Chain) GetAccounts() []iscp.AgentID {
 	return ret
 }
 
-func (ch *Chain) parseAccountBalance(d dict.Dict, err error) *ledgerstate.ColoredBalances {
+func (ch *Chain) parseAccountBalance(d dict.Dict, err error) colored.Balances {
 	require.NoError(ch.Env.T, err)
 	if d.IsEmpty() {
-		return ledgerstate.NewColoredBalances(nil)
+		return colored.NewBalances()
 	}
-	ret := make(map[ledgerstate.Color]uint64)
+	ret := colored.NewBalances()
 	err = d.Iterate("", func(key kv.Key, value []byte) bool {
 		col, _, err := codec.DecodeColor([]byte(key))
 		require.NoError(ch.Env.T, err)
 		val, _, err := codec.DecodeUint64(value)
 		require.NoError(ch.Env.T, err)
-		ret[col] = val
+		ret.Set(col, val)
 		return true
 	})
 	require.NoError(ch.Env.T, err)
-	return ledgerstate.NewColoredBalances(ret)
+	return ret
 }
 
-func (ch *Chain) GetOnChainLedger() map[string]*ledgerstate.ColoredBalances {
+func (ch *Chain) GetOnChainLedger() map[string]colored.Balances {
 	accs := ch.GetAccounts()
-	ret := make(map[string]*ledgerstate.ColoredBalances)
+	ret := make(map[string]colored.Balances)
 	for i := range accs {
 		ret[accs[i].String()] = ch.GetAccountBalance(&accs[i])
 	}
@@ -351,23 +351,23 @@ func (ch *Chain) GetOnChainLedgerString() string {
 
 // GetAccountBalance return all balances of colored tokens contained in the on-chain
 // account controlled by the 'agentID'
-func (ch *Chain) GetAccountBalance(agentID *iscp.AgentID) *ledgerstate.ColoredBalances {
+func (ch *Chain) GetAccountBalance(agentID *iscp.AgentID) colored.Balances {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewBalance.Name, accounts.ParamAgentID, agentID),
 	)
 }
 
-func (ch *Chain) GetCommonAccountBalance() *ledgerstate.ColoredBalances {
+func (ch *Chain) GetCommonAccountBalance() colored.Balances {
 	return ch.GetAccountBalance(ch.CommonAccount())
 }
 
 func (ch *Chain) GetCommonAccountIotas() uint64 {
-	ret, _ := ch.GetAccountBalance(ch.CommonAccount()).Get(ledgerstate.ColorIOTA)
+	ret := ch.GetAccountBalance(ch.CommonAccount()).Get(colored.IOTA)
 	return ret
 }
 
 // GetTotalAssets return total sum of colored tokens contained in the on-chain accounts
-func (ch *Chain) GetTotalAssets() *ledgerstate.ColoredBalances {
+func (ch *Chain) GetTotalAssets() colored.Balances {
 	return ch.parseAccountBalance(
 		ch.CallView(accounts.Contract.Name, accounts.FuncViewTotalAssets.Name),
 	)
@@ -375,7 +375,7 @@ func (ch *Chain) GetTotalAssets() *ledgerstate.ColoredBalances {
 
 // GetTotalIotas return total sum of iotas
 func (ch *Chain) GetTotalIotas() uint64 {
-	ret, _ := ch.GetTotalAssets().Get(ledgerstate.ColorIOTA)
+	ret := ch.GetTotalAssets().Get(colored.IOTA)
 	return ret
 }
 
@@ -384,7 +384,7 @@ func (ch *Chain) GetTotalIotas() uint64 {
 //  - chain owner part of the fee (number of tokens)
 //  - validator part of the fee (number of tokens)
 // Total fee is sum of owner fee and validator fee
-func (ch *Chain) GetFeeInfo(contactName string) (ledgerstate.Color, uint64, uint64) {
+func (ch *Chain) GetFeeInfo(contactName string) (colored.Color, uint64, uint64) {
 	hname := iscp.Hn(contactName)
 	ret, err := ch.CallView(root.Contract.Name, root.FuncGetFeeInfo.Name, root.ParamHname, hname)
 	require.NoError(ch.Env.T, err)

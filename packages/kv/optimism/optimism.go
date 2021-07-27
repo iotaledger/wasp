@@ -3,7 +3,6 @@ package optimism
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -192,15 +191,31 @@ func (o *OptimisticKVStoreReader) MustIterateKeysSorted(prefix kv.Key, f func(ke
 	}
 }
 
-func RetryOnStateInvalidated(fun func() error, retryDelay time.Duration, timeout time.Time) error {
-	err := fun()
-	if err != nil {
-		if errors.Is(err, ErrStateHasBeenInvalidated) {
-			if time.Now().Before(timeout) {
-				time.Sleep(retryDelay)
-				return RetryOnStateInvalidated(fun, retryDelay, timeout)
-			}
-			return fmt.Errorf("Retrying timed out. Last error: %w", err)
+const (
+	defaultRetryDelay   = 300 * time.Millisecond
+	defaultRetryTimeout = 2 * time.Second
+)
+
+// RetryOnStateInvalidated repeats function while it returns ErrStateHasBeenInvalidated
+// Optional parameters:
+//  - timeouts[0] - overall timeout
+//  - timeouts[1] - repeat delay
+func RetryOnStateInvalidated(fun func() error, timeouts ...time.Duration) error {
+	timeout := defaultRetryTimeout
+	if len(timeouts) >= 1 {
+		timeout = timeouts[0]
+	}
+	timeoutAfter := time.Now().Add(timeout)
+	retryDelay := defaultRetryDelay
+	if len(timeouts) >= 2 {
+		retryDelay = timeouts[1]
+	}
+
+	var err error
+	for err = fun(); errors.Is(err, ErrStateHasBeenInvalidated); err = fun() {
+		time.Sleep(retryDelay)
+		if time.Now().After(timeoutAfter) {
+			return xerrors.Errorf("optimistic read retry timeout. Last error: %w", err)
 		}
 	}
 	return err

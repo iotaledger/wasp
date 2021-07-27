@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -76,11 +75,6 @@ func (s *callViewService) handleCallView(c echo.Context) error {
 	return c.JSON(http.StatusOK, ret)
 }
 
-const (
-	retryOnStateInvalidatedRetry   = 100 * time.Millisecond
-	retryOnStateInvalidatedTimeout = 2 * time.Second
-)
-
 func (s *callViewService) handleStateGet(c echo.Context) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainID"))
 	if err != nil {
@@ -102,7 +96,7 @@ func (s *callViewService) handleStateGet(c echo.Context) error {
 		var err error
 		ret, err = theChain.GetStateReader().KVStoreReader().Get(kv.Key(key))
 		return err
-	}, retryOnStateInvalidatedRetry, time.Now().Add(retryOnStateInvalidatedTimeout))
+	})
 	if err != nil {
 		reason := fmt.Sprintf("View call failed: %v", err)
 		if errors.Is(err, optimism.ErrStateHasBeenInvalidated) {

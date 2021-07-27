@@ -3,11 +3,10 @@ package examples
 import (
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/vm/core"
-
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,16 +29,16 @@ func TestExample2(t *testing.T) {
 	env := solo.New(t, false, false)
 	_, userAddress := env.NewKeyPair()
 	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
-	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA)
+	numIotas := env.GetAddressBalance(userAddress, colored.IOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, 0)
+	env.AssertAddressBalance(userAddress, colored.IOTA, 0)
 }
 
 func TestExample3(t *testing.T) {
 	env := solo.New(t, false, false)
 	_, userAddress := env.NewKeyPairWithFunds()
 	t.Logf("Address of the userWallet is: %s", userAddress.Base58())
-	numIotas := env.GetAddressBalance(userAddress, ledgerstate.ColorIOTA)
+	numIotas := env.GetAddressBalance(userAddress, colored.IOTA)
 	t.Logf("balance of the userWallet is: %d iota", numIotas)
-	env.AssertAddressBalance(userAddress, ledgerstate.ColorIOTA, solo.Saldo)
+	env.AssertAddressBalance(userAddress, colored.IOTA, solo.Saldo)
 }

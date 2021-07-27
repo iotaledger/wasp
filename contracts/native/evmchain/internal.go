@@ -11,10 +11,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -156,7 +156,7 @@ func paramBlockNumber(ctx iscp.SandboxView) *big.Int {
 	return nil
 }
 
-func getFeeColor(ctx iscp.Sandbox) ledgerstate.Color {
+func getFeeColor(ctx iscp.Sandbox) colored.Color {
 	a := assert.NewAssert(ctx.Log())
 
 	// call root contract view to get the feecolor

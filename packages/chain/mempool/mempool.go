@@ -103,7 +103,7 @@ func (m *Mempool) takeInBuffer(buf []iscp.Request) []iscp.Request {
 // addToPool adds request to the pool. It may fail
 // returns true if it must be removed from the input buffer
 func (m *Mempool) addToPool(req iscp.Request) bool {
-	if offLedgerReq, ok := req.(*request.RequestOffLedger); ok {
+	if offLedgerReq, ok := req.(*request.OffLedger); ok {
 		if !offLedgerReq.VerifySignature() {
 			// wrong signature, must be removed from in buffer
 			m.log.Warnf("ReceiveRequest.VerifySignature: invalid signature")

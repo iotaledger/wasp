@@ -215,7 +215,7 @@ func GetBlockEventsInternal(partition kv.KVStoreReader, blockIndex uint32) ([]st
 	if err != nil {
 		return nil, err
 	}
-	ret := []string{}
+	ret := make([]string, 0)
 	events := collections.NewMapReadOnly(partition, StateVarRequestEvents)
 	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
 		eventIndex := uint8(0)

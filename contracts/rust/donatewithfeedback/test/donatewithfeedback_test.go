@@ -6,9 +6,9 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/common"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/stretchr/testify/require"
@@ -73,12 +73,12 @@ func TestDonateOnce(t *testing.T) {
 	require.EqualValues(t, 42, tot)
 
 	// 42 iota transferred from wallet to contract
-	chain.Env.AssertAddressBalance(donator1Addr, ledgerstate.ColorIOTA, solo.Saldo-42)
+	chain.Env.AssertAddressBalance(donator1Addr, colored.IOTA, solo.Saldo-42)
 	// 42 iota transferred to contract
-	chain.AssertAccountBalance(chain.ContractAgentID(ScName), ledgerstate.ColorIOTA, 42)
+	chain.AssertAccountBalance(chain.ContractAgentID(ScName), colored.IOTA, 42)
 	// returned 1 used for transaction to wallet account
 	account1 := iscp.NewAgentID(donator1Addr, 0)
-	chain.AssertAccountBalance(account1, ledgerstate.ColorIOTA, 0)
+	chain.AssertAccountBalance(account1, colored.IOTA, 0)
 }
 
 func TestDonateTwice(t *testing.T) {
@@ -116,14 +116,14 @@ func TestDonateTwice(t *testing.T) {
 	require.EqualValues(t, 42+69, tot)
 
 	// 42 iota transferred from wallet to contract plus 1 used for transaction
-	chain.Env.AssertAddressBalance(donator1Addr, ledgerstate.ColorIOTA, solo.Saldo-42)
+	chain.Env.AssertAddressBalance(donator1Addr, colored.IOTA, solo.Saldo-42)
 	// 69 iota transferred from wallet to contract plus 1 used for transaction
-	chain.Env.AssertAddressBalance(donator2Addr, ledgerstate.ColorIOTA, solo.Saldo-69)
+	chain.Env.AssertAddressBalance(donator2Addr, colored.IOTA, solo.Saldo-69)
 	// 42+69 iota transferred to contract
-	chain.AssertAccountBalance(chain.ContractAgentID(ScName), ledgerstate.ColorIOTA, 42+69)
+	chain.AssertAccountBalance(chain.ContractAgentID(ScName), colored.IOTA, 42+69)
 	// returned 1 used for transaction to wallet accounts
 	account1 := iscp.NewAgentID(donator1Addr, 0)
-	chain.AssertAccountBalance(account1, ledgerstate.ColorIOTA, 0)
+	chain.AssertAccountBalance(account1, colored.IOTA, 0)
 	account2 := iscp.NewAgentID(donator2Addr, 0)
-	chain.AssertAccountBalance(account2, ledgerstate.ColorIOTA, 0)
+	chain.AssertAccountBalance(account2, colored.IOTA, 0)
 }

@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"golang.org/x/xerrors"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -341,21 +344,21 @@ func (p *Decoder) MustGetChainID(key kv.Key, def ...iscp.ChainID) *iscp.ChainID 
 	return ret
 }
 
-func (p *Decoder) GetColor(key kv.Key, def ...ledgerstate.Color) (ledgerstate.Color, error) {
+func (p *Decoder) GetColor(key kv.Key, def ...colored.Color) (colored.Color, error) {
 	v, exists, err := codec.DecodeColor(p.kv.MustGet(key))
 	if err != nil {
-		return ledgerstate.Color{}, fmt.Errorf("GetColor: decoding parameter '%s': %v", key, err)
+		return colored.Color{}, xerrors.Errorf("GetColor: decoding parameter '%s': %w", key, err)
 	}
 	if exists {
 		return v, nil
 	}
 	if len(def) == 0 {
-		return ledgerstate.Color{}, fmt.Errorf("GetColor: mandatory parameter '%s' does not exist", key)
+		return colored.Color{}, xerrors.Errorf("GetColor: mandatory parameter '%s' does not exist", key)
 	}
 	return def[0], nil
 }
 
-func (p *Decoder) MustGetColor(key kv.Key, def ...ledgerstate.Color) ledgerstate.Color {
+func (p *Decoder) MustGetColor(key kv.Key, def ...colored.Color) colored.Color {
 	ret, err := p.GetColor(key, def...)
 	if err != nil {
 		p.panic(err)

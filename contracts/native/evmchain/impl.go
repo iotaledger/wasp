@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
@@ -67,7 +68,7 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 	err := tx.UnmarshalBinary(ctx.Params().MustGet(FieldTransactionData))
 	a.RequireNoError(err)
 
-	transferredIotas, _ := ctx.IncomingTransfer().Get(getFeeColor(ctx))
+	transferredIotas := ctx.IncomingTransfer().Get(getFeeColor(ctx))
 	gasPerIota, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasPerIota))
 	a.RequireNoError(err)
 
@@ -88,7 +89,7 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 			accounts.Contract.Hname(),
 			accounts.FuncDeposit.Hname(),
 			dict.Dict{accounts.ParamAgentID: codec.EncodeAgentID(ctx.Caller())},
-			iscp.NewTransferIotas(iotasGasRefund),
+			colored.NewBalancesForIotas(iotasGasRefund),
 		)
 		a.RequireNoError(err)
 	}

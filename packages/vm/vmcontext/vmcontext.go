@@ -3,6 +3,8 @@ package vmcontext
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/logger"
@@ -32,13 +34,13 @@ type VMContext struct {
 	txBuilder            *utxoutil.Builder
 	virtualState         state.VirtualState
 	solidStateBaseline   coreutil.StateBaseline
-	remainingAfterFees   *ledgerstate.ColoredBalances
+	remainingAfterFees   colored.Balances
 	blockContext         map[iscp.Hname]*blockContext
 	blockContextCloseSeq []iscp.Hname
 	log                  *logger.Logger
 	// fee related
 	validatorFeeTarget iscp.AgentID // provided by validator
-	feeColor           ledgerstate.Color
+	feeColor           colored.Color
 	ownerFee           uint64
 	validatorFee       uint64
 	// request context
@@ -50,16 +52,16 @@ type VMContext struct {
 	contractRecord     *root.ContractRecord
 	lastError          error     // mutated
 	lastResult         dict.Dict // mutated. Used only by 'solo'
-	lastTotalAssets    *ledgerstate.ColoredBalances
+	lastTotalAssets    colored.Balances
 	callStack          []*callContext
 }
 
 type callContext struct {
-	isRequestContext bool                         // is called from the request (true) or from another SC (false)
-	caller           iscp.AgentID                 // calling agent
-	contract         iscp.Hname                   // called contract
-	params           dict.Dict                    // params passed
-	transfer         *ledgerstate.ColoredBalances // transfer passed
+	isRequestContext bool             // is called from the request (true) or from another SC (false)
+	caller           iscp.AgentID     // calling agent
+	contract         iscp.Hname       // called contract
+	params           dict.Dict        // params passed
+	transfer         colored.Balances // transfer passed
 }
 
 type blockContext struct {
@@ -111,7 +113,7 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 	return ret, nil
 }
 
-func (vmctx *VMContext) GetResult() (dict.Dict, *ledgerstate.ColoredBalances, error) {
+func (vmctx *VMContext) GetResult() (dict.Dict, colored.Balances, error) {
 	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError
 }
 

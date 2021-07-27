@@ -217,5 +217,5 @@ func (m *MockedChainCore) GlobalSolidIndex() *atomic.Uint32 {
 	return nil
 }
 
-func (m *MockedChainCore) ReceiveOffLedgerRequest(req *request.RequestOffLedger, senderNetID string) {
+func (m *MockedChainCore) ReceiveOffLedgerRequest(_ *request.OffLedger, _ string) {
 }

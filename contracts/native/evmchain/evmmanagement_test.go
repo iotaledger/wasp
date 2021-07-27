@@ -6,7 +6,8 @@ package evmchain
 import (
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
@@ -66,14 +67,14 @@ func TestRequestGasFees(t *testing.T) {
 	require.NoError(t, err)
 
 	// call requestGasFees manually, so that the manager SC request funds from the evm chain, check funds are received by the manager SC
-	balance0, _ := soloChain.GetAccountBalance(managerAgentID).Get(ledgerstate.ColorIOTA)
+	balance0 := soloChain.GetAccountBalance(managerAgentID).Get(colored.IOTA)
 
 	_, err = soloChain.PostRequestSync(
 		solo.NewCallParams(evmChainMgmtContract.Name, mgmtFuncWithdrawGasFees.Name).WithIotas(1),
 		soloChain.OriginatorKeyPair,
 	)
 	require.NoError(t, err)
-	balance1, _ := soloChain.GetAccountBalance(managerAgentID).Get(ledgerstate.ColorIOTA)
+	balance1 := soloChain.GetAccountBalance(managerAgentID).Get(colored.IOTA)
 
 	require.Greater(t, balance1, balance0)
 }

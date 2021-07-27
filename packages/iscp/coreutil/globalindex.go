@@ -1,8 +1,6 @@
 package coreutil
 
 import (
-	"sync"
-
 	"go.uber.org/atomic"
 )
 
@@ -15,20 +13,16 @@ type ChainStateSync interface {
 	GetSolidIndexBaseline() StateBaseline
 	SetSolidIndex(idx uint32) ChainStateSync // for use in state manager
 	InvalidateSolidIndex() ChainStateSync    // only for state manager
-	Mutex() *sync.RWMutex
 }
 
 type ChainStateSyncImpl struct {
-	solidIndex  atomic.Uint32
-	globalMutex *sync.RWMutex
+	solidIndex atomic.Uint32
 }
 
 // we assume last state index 2^32 will never be reached :)
 
 func NewChainStateSync() *ChainStateSyncImpl {
-	ret := &ChainStateSyncImpl{
-		globalMutex: &sync.RWMutex{},
-	}
+	ret := &ChainStateSyncImpl{}
 	ret.solidIndex.Store(^uint32(0))
 	return ret
 }
@@ -54,12 +48,6 @@ func (g *ChainStateSyncImpl) GetSolidIndexBaseline() StateBaseline {
 func (g *ChainStateSyncImpl) InvalidateSolidIndex() ChainStateSync {
 	g.solidIndex.Store(^uint32(0))
 	return g
-}
-
-// Mutex return global mutex which is locked by the state manager during write to DB
-// The read lock ar not used atm, it may be removed in the future
-func (g *ChainStateSyncImpl) Mutex() *sync.RWMutex {
-	return g.globalMutex
 }
 
 // endregion  ///////////////////////////////////////////////////

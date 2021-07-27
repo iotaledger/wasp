@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -34,7 +36,7 @@ func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.Optimis
 	return ret, vs
 }
 
-func getRequestsOnLedger(t *testing.T, amount int) ([]*request.RequestOnLedger, *ed25519.KeyPair) {
+func getRequestsOnLedger(t *testing.T, amount int) ([]*request.OnLedger, *ed25519.KeyPair) {
 	utxo := utxodb.New()
 	keyPair, addr := utxo.NewKeyPairByIndex(0)
 	_, err := utxo.RequestFunds(addr)
@@ -47,7 +49,7 @@ func getRequestsOnLedger(t *testing.T, amount int) ([]*request.RequestOnLedger, 
 	txBuilder := utxoutil.NewBuilder(outputs...)
 	var i uint64
 	for i = 0; int(i) < amount; i++ {
-		err = txBuilder.AddExtendedOutputConsume(targetAddr, util.Uint64To8Bytes(i), map[ledgerstate.Color]uint64{ledgerstate.ColorIOTA: 1})
+		err = txBuilder.AddExtendedOutputConsume(targetAddr, util.Uint64To8Bytes(i), colored.Balances1IotaL1)
 		require.NoError(t, err)
 	}
 	err = txBuilder.AddRemainderOutputIfNeeded(addr, nil)
@@ -56,7 +58,7 @@ func getRequestsOnLedger(t *testing.T, amount int) ([]*request.RequestOnLedger, 
 	require.NoError(t, err)
 	require.NotNil(t, tx)
 
-	requests, err := request.RequestsOnLedgerFromTransaction(tx, targetAddr)
+	requests, err := request.OnLedgerFromTransaction(tx, targetAddr)
 	require.NoError(t, err)
 	require.True(t, amount == len(requests))
 	return requests, keyPair
@@ -164,9 +166,9 @@ func TestAddOffLedgerRequest(t *testing.T) {
 	require.NotNil(t, pool)
 	onLedgerRequests, keyPair := getRequestsOnLedger(t, 2)
 
-	offFromOnLedgerFun := func(onLedger *request.RequestOnLedger) *request.RequestOffLedger {
+	offFromOnLedgerFun := func(onLedger *request.OnLedger) *request.OffLedger {
 		contract, emptyPoint := onLedger.Target()
-		return request.NewRequestOffLedger(contract, emptyPoint, onLedger.GetMetadata().Args())
+		return request.NewOffLedger(contract, emptyPoint, onLedger.GetMetadata().Args())
 	}
 	offLedgerRequestUnsigned := offFromOnLedgerFun(onLedgerRequests[0])
 	offLedgerRequestSigned := offFromOnLedgerFun(onLedgerRequests[1])
@@ -476,7 +478,7 @@ func TestSolidification(t *testing.T) {
 	blobData := []byte("blobData")
 	args := requestargs.New(nil)
 	hash := args.AddAsBlobRef("blob", blobData)
-	meta := request.NewRequestMetadata().WithArgs(args)
+	meta := request.NewMetadata().WithArgs(args)
 	requests[0].SetMetadata(meta)
 
 	// no solidification yet => request is not ready

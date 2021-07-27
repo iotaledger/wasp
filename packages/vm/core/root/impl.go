@@ -9,9 +9,9 @@ package root
 import (
 	"fmt"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -62,8 +62,8 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	chainID := params.MustGetChainID(ParamChainID)
 	chainDescription := params.MustGetString(ParamDescription, "N/A")
-	feeColor := params.MustGetColor(ParamFeeColor, ledgerstate.ColorIOTA)
-	feeColorSet := feeColor != ledgerstate.ColorIOTA
+	feeColor := params.MustGetColor(ParamFeeColor, colored.IOTA)
+	feeColorSet := feeColor != colored.IOTA
 
 	contractRegistry := collections.NewMap(state, VarContractRegistry)
 	a.Require(contractRegistry.MustLen() == 0, "root.initialize.fail: registry not empty")

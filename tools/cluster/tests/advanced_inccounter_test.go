@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -248,7 +249,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 	accountsClient := e.chain.SCClient(accounts.Contract.Hname(), keyPair)
 	_, err := accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: iscp.NewTransferIotas(100),
+		Transfer: colored.NewBalancesForIotas(100),
 	})
 	require.NoError(t, err)
 
@@ -281,7 +282,7 @@ func TestAccessNodesMany(t *testing.T) {
 	myClient := e.chain.SCClient(incCounterSCHname, keyPair)
 
 	requestsCount := requestsCountInitial
-	requestsCummulative := 0
+	requestsCumulative := 0
 	posted := 0
 	for i := 0; i < iterationCount; i++ {
 		logMsg := fmt.Sprintf("iteration %v of %v requests", i, requestsCount)
@@ -291,8 +292,8 @@ func TestAccessNodesMany(t *testing.T) {
 			require.NoError(t, err)
 		}
 		posted += requestsCount
-		requestsCummulative += requestsCount
-		waitUntil(t, e.counterEquals(int64(requestsCummulative)), e.clu.Config.AllNodes(), 60*time.Second, logMsg)
+		requestsCumulative += requestsCount
+		waitUntil(t, e.counterEquals(int64(requestsCumulative)), e.clu.Config.AllNodes(), 60*time.Second, logMsg)
 		requestsCount *= requestsCountProgression
 	}
 	e.printBlocks(posted + 3)
