@@ -243,11 +243,12 @@ func (e *chainEnv) counterEquals(expected int64) conditionFn {
 			e.chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name, nil,
 		)
 		if err != nil {
+			e.t.Logf("chainEnv::counterEquals: failed to call GetCounter: %v", err)
 			return false
 		}
 		counter, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
 		require.NoError(t, err)
-		t.Logf("node %d: counter: %d, waiting for: %d", nodeIndex, counter, expected)
+		t.Logf("chainEnv::counterEquals: node %d: counter: %d, waiting for: %d", nodeIndex, counter, expected)
 		return counter == expected
 	}
 }
@@ -264,7 +265,9 @@ func (e *chainEnv) contractIsDeployed(contractName string) conditionFn { //nolin
 
 func (e *chainEnv) balanceOnChainIotaEquals(agentID *iscp.AgentID, iotas uint64) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		return iotas == e.getBalanceOnChain(agentID, ledgerstate.ColorIOTA, nodeIndex)
+		have := e.getBalanceOnChain(agentID, ledgerstate.ColorIOTA, nodeIndex)
+		e.t.Logf("chainEnv::balanceOnChainIotaEquals: node=%v, have=%v, expected=%v", nodeIndex, have, iotas)
+		return iotas == have
 	}
 }
 

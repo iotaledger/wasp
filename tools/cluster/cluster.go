@@ -325,8 +325,7 @@ func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<
 	if err != nil {
 		return nil, err
 	}
-	err = cmd.Start()
-	if err != nil {
+	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
 

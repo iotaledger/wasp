@@ -98,7 +98,10 @@ func (c *Consensus) runVMIfNeeded() {
 	if !allArrived {
 		// some requests are not ready, so skip VM call this time. Maybe next time will be more luck
 		c.delayRunVMUntil = time.Now().Add(c.timers.VMRunRetryToWaitForReadyRequests)
-		c.log.Infof("runVM not needed: some requests didn't arrive yet. batch IDs: %v | batch Hashes: %v | missing indexes: %v", c.consensusBatch.RequestIDs, c.consensusBatch.RequestHashes, missingRequestIndexes)
+		c.log.Infof( // Was silently failing when entire arrays were logged instead of counts.
+			"runVM not needed: some requests didn't arrive yet. #BatchRequestIDs: %v | #BatchHashes: %v | #MissingIndexes: %v",
+			len(c.consensusBatch.RequestIDs), len(c.consensusBatch.RequestHashes), len(missingRequestIndexes),
+		)
 
 		// send message to other committee nodes asking for the missing requests
 		if !c.pullMissingRequestsFromCommittee {
