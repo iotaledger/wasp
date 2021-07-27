@@ -96,7 +96,7 @@ func (sm *stateManager) initLoadState() {
 	}
 	if stateExists {
 		sm.solidState = solidState
-		sm.chain.SetGlobalStateIndex(solidState.BlockIndex())
+		sm.chain.GlobalStateSync().SetSolidIndex(solidState.BlockIndex())
 		sm.log.Infof("SOLID STATE has been loaded. Block index: #%d, State hash: %s",
 			solidState.BlockIndex(), solidState.Hash().String())
 	} else if err := sm.createOriginState(); err != nil {
