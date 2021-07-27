@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -33,7 +34,7 @@ func postRequestCmd() *cobra.Command {
 			scClient := SCClient(iscp.Hn(args[0]))
 
 			if offLedger {
-				util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.RequestOffLedger, error) {
+				util.WithOffLedgerRequest(GetCurrentChainID(), func() (*request.OffLedger, error) {
 					return scClient.PostOffLedgerRequest(fname, params)
 				})
 			} else {
@@ -54,26 +55,26 @@ func postRequestCmd() *cobra.Command {
 	return cmd
 }
 
-func colorFromString(s string) ledgerstate.Color {
-	if s == ledgerstate.ColorIOTA.String() {
-		return ledgerstate.ColorIOTA
+func colorFromString(s string) colored.Color {
+	if s == colored.IOTA.String() {
+		return colored.IOTA
 	}
-	c, err := ledgerstate.ColorFromBase58EncodedString(s)
+	c, err := colored.ColorFromBase58EncodedString(s)
 	log.Check(err)
 	return c
 }
 
-func parseColoredBalances(args []string) *ledgerstate.ColoredBalances {
-	cb := make(map[ledgerstate.Color]uint64)
+func parseColoredBalances(args []string) colored.Balances {
+	cb := colored.NewBalances()
 	for _, tr := range args {
 		parts := strings.Split(tr, ":")
 		if len(parts) != 2 {
 			log.Fatalf("colored balances syntax: <color>:<amount>,<color:amount>... -- Example: IOTA:100")
 		}
-		color := colorFromString(parts[0])
+		col := colorFromString(parts[0])
 		amount, err := strconv.Atoi(parts[1])
 		log.Check(err)
-		cb[color] = uint64(amount)
+		cb.Set(col, uint64(amount))
 	}
-	return ledgerstate.NewColoredBalances(cb)
+	return cb
 }

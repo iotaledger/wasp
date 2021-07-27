@@ -6,7 +6,8 @@ package wasmproc
 import (
 	"strconv"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -27,7 +28,7 @@ func NewScBalances(vm *WasmProcessor, keyID int32) *ScDict {
 		if vm.ctx == nil {
 			o.Panic("no minted() on views")
 		}
-		return loadBalances(o, ledgerstate.NewColoredBalances(vm.ctx.Minted()))
+		return loadBalances(o, vm.ctx.Minted())
 
 	case wasmhost.KeyBalances:
 		if vm.ctx != nil {
@@ -39,10 +40,10 @@ func NewScBalances(vm *WasmProcessor, keyID int32) *ScDict {
 	return nil
 }
 
-func loadBalances(o *ScDict, balances *ledgerstate.ColoredBalances) *ScDict {
+func loadBalances(o *ScDict, balances colored.Balances) *ScDict {
 	index := 0
 	key := o.host.GetKeyStringFromID(wasmhost.KeyColor)
-	balances.ForEach(func(color ledgerstate.Color, balance uint64) bool {
+	balances.ForEachRandomly(func(color colored.Color, balance uint64) bool {
 		o.kvStore.Set(kv.Key(color[:]), codec.EncodeUint64(balance))
 		o.kvStore.Set(kv.Key(key+"."+strconv.Itoa(index)), color[:])
 		index++

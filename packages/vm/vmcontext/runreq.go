@@ -5,6 +5,8 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 
 	"github.com/iotaledger/wasp/packages/kv"
@@ -94,8 +96,9 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 	}
 	vmctx.req = req
 	vmctx.requestIndex = requestIndex
-	if req.Output() != nil {
-		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.Output().ID()); err != nil {
+	vmctx.requestEventIndex = 0
+	if !req.IsOffLedger() {
+		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.(*request.OnLedger).Output().ID()); err != nil {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
 		}
 	}
@@ -108,9 +111,10 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 	if isRequestTimeLockedNow(req, ts) {
 		vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input is time locked. Nowis: %v\nInput: %s\n", ts, req.ID().String())
 	}
-	if req.Output() != nil {
+	if !req.IsOffLedger() {
 		// on-ledger request
-		if input, ok := req.Output().(*ledgerstate.ExtendedLockedOutput); ok {
+		reqt := req.(*request.OnLedger)
+		if input, ok := reqt.Output().(*ledgerstate.ExtendedLockedOutput); ok {
 			// it is an on-ledger request
 			if !input.UnlockAddressNow(ts).Equals(vmctx.chainID.AsAddress()) {
 				vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: input cannot be unlocked at %v.\nInput: %s\n chainID: %s",
@@ -119,7 +123,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 		} else {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: unexpected UTXO type")
 		}
-		vmctx.remainingAfterFees = req.Output().Balances().Clone()
+		vmctx.remainingAfterFees = colored.BalancesFromL1Balances(reqt.Output().Balances())
 	} else {
 		// off-ledger request
 		vmctx.remainingAfterFees = vmctx.adjustOffLedgerTransfer()
@@ -135,8 +139,8 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 	}
 }
 
-func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
-	req, ok := vmctx.req.(*request.RequestOffLedger)
+func (vmctx *VMContext) adjustOffLedgerTransfer() colored.Balances {
+	req, ok := vmctx.req.(*request.OffLedger)
 	if !ok {
 		vmctx.log.Panicf("adjustOffLedgerTransfer.inconsistency: unexpected request type")
 	}
@@ -146,30 +150,29 @@ func (vmctx *VMContext) adjustOffLedgerTransfer() *ledgerstate.ColoredBalances {
 	// take sender-provided token transfer info and adjust it to
 	// reflect what is actually available in the local sender account
 	sender := req.SenderAccount()
-	transfers := make(map[ledgerstate.Color]uint64)
-	if tokens := req.Tokens(); tokens != nil {
-		tokens.ForEach(func(color ledgerstate.Color, balance uint64) bool {
-			available := accounts.GetBalance(vmctx.State(), sender, color)
-			if balance > available {
-				vmctx.log.Warn(
-					"adjusting transfer from ", balance,
-					" to available ", available,
-					" for ", sender.String(),
-					" req ", vmctx.RequestID().String(),
-				)
-				balance = available
-			}
-			if balance > 0 {
-				transfers[color] = balance
-			}
-			return true
-		})
-	}
-	return ledgerstate.NewColoredBalances(transfers)
+	transfers := colored.NewBalances()
+	// deterministic order of iteration is not necessary
+	req.Tokens().ForEachRandomly(func(col colored.Color, bal uint64) bool {
+		available := accounts.GetBalance(vmctx.State(), sender, col)
+		if bal > available {
+			vmctx.log.Warn(
+				"adjusting transfer from ", bal,
+				" to available ", available,
+				" for ", sender.String(),
+				" req ", vmctx.RequestID().String(),
+			)
+			bal = available
+		}
+		if bal > 0 {
+			transfers.Set(col, bal)
+		}
+		return true
+	})
+	return transfers
 }
 
 func (vmctx *VMContext) validateRequest() bool {
-	req, ok := vmctx.req.(*request.RequestOffLedger)
+	req, ok := vmctx.req.(*request.OffLedger)
 	if !ok {
 		// on-ledger request is always valid
 		return true
@@ -226,7 +229,7 @@ func (vmctx *VMContext) grabFee(account *iscp.AgentID, amount uint64) bool {
 	}
 
 	// determine how much fees we can actually take
-	available, _ := vmctx.remainingAfterFees.Get(vmctx.feeColor)
+	available := vmctx.remainingAfterFees.Get(vmctx.feeColor)
 	if available == 0 {
 		return false
 	}
@@ -235,21 +238,10 @@ func (vmctx *VMContext) grabFee(account *iscp.AgentID, amount uint64) bool {
 		// just take whatever is there
 		amount = available
 	}
-	available -= amount
-
-	// take fee from remainingAfterFees
-	remaining := vmctx.remainingAfterFees.Map()
-	if available == 0 {
-		delete(remaining, vmctx.feeColor)
-	} else {
-		remaining[vmctx.feeColor] = available
-	}
-	vmctx.remainingAfterFees = ledgerstate.NewColoredBalances(remaining)
+	vmctx.remainingAfterFees.SubNoOverflow(vmctx.feeColor, amount)
 
 	// get ready to transfer the fees
-	transfer := ledgerstate.NewColoredBalances(map[ledgerstate.Color]uint64{
-		vmctx.feeColor: amount,
-	})
+	transfer := colored.NewBalancesForColor(vmctx.feeColor, amount)
 
 	if !vmctx.req.IsFeePrepaid() {
 		vmctx.creditToAccount(account, transfer)
@@ -261,8 +253,8 @@ func (vmctx *VMContext) grabFee(account *iscp.AgentID, amount uint64) bool {
 	return vmctx.moveBetweenAccounts(sender, account, transfer) && enoughFees
 }
 
-func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
-	if tokens == nil || tokens.Size() == 0 || vmctx.req.Output() == nil {
+func (vmctx *VMContext) mustSendBack(tokens colored.Balances) {
+	if len(tokens) == 0 || vmctx.req.IsOffLedger() {
 		return
 	}
 	sender := vmctx.req.SenderAccount()
@@ -277,8 +269,8 @@ func (vmctx *VMContext) mustSendBack(tokens *ledgerstate.ColoredBalances) {
 	// is ordinary wallet the tokens (less fees) will be returned back
 	backToAddress := sender.Address()
 	backToContract := sender.Hname()
-	metadata := request.NewRequestMetadata().WithTarget(backToContract)
-	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), tokens.Map())
+	metadata := request.NewMetadata().WithTarget(backToContract)
+	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), colored.ToL1Map(tokens))
 	if err != nil {
 		vmctx.log.Errorf("mustSendBack: %v", err)
 	}
@@ -299,7 +291,7 @@ func (vmctx *VMContext) mustCallFromRequest() {
 }
 
 func (vmctx *VMContext) mustUpdateOffledgerRequestMaxAssumedNonce() {
-	if offl, ok := vmctx.req.(*request.RequestOffLedger); ok {
+	if offl, ok := vmctx.req.(*request.OffLedger); ok {
 		vmctx.pushCallContext(accounts.Contract.Hname(), nil, nil)
 		defer vmctx.popCallContext()
 

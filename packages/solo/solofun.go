@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
@@ -34,7 +35,7 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*ed25519.Seed) (*ed25519.KeyPair, l
 
 	_, err := env.utxoDB.RequestFunds(addr, env.LogicalTime())
 	require.NoError(env.T, err)
-	env.AssertAddressBalance(addr, ledgerstate.ColorIOTA, Saldo)
+	env.AssertAddressBalance(addr, colored.IOTA, Saldo)
 
 	return keyPair, addr
 }
@@ -47,7 +48,7 @@ func (env *Solo) NewKeyPair(seedOpt ...*ed25519.Seed) (*ed25519.KeyPair, ledgers
 
 // MintTokens mints specified amount of new colored tokens in the given wallet (signature scheme)
 // Returns the color of minted tokens: the hash of the transaction
-func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (ledgerstate.Color, error) {
+func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (colored.Color, error) {
 	env.ledgerMutex.Lock()
 	defer env.ledgerMutex.Unlock()
 
@@ -74,9 +75,9 @@ func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (ledgerstate
 	m := utxoutil.GetMintedAmounts(tx)
 	require.EqualValues(env.T, 1, len(m))
 
-	var ret ledgerstate.Color
+	var ret colored.Color
 	for col := range m {
-		ret = col
+		ret = colored.Color(col)
 		break
 	}
 	return ret, nil

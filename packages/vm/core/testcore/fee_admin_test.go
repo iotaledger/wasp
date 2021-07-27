@@ -6,8 +6,8 @@ package testcore
 import (
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -17,7 +17,7 @@ import (
 
 func checkFees(chain *solo.Chain, contract string, expectedOf, expectedVf uint64) {
 	col, ownerFee, validatorFee := chain.GetFeeInfo(contract)
-	require.EqualValues(chain.Env.T, ledgerstate.ColorIOTA, col)
+	require.EqualValues(chain.Env.T, colored.IOTA, col)
 	require.EqualValues(chain.Env.T, int(expectedOf), int(ownerFee))
 	require.EqualValues(chain.Env.T, int(expectedVf), int(validatorFee))
 }

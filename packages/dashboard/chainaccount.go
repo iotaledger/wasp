@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -68,5 +69,5 @@ type ChainAccountTemplateParams struct {
 	AgentID iscp.AgentID
 
 	Ok       bool
-	Balances map[ledgerstate.Color]uint64
+	Balances colored.Balances
 }

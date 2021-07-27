@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -68,15 +70,13 @@ func (e *chainEnv) checkRootsOutside() {
 func (e *env) requestFunds(addr ledgerstate.Address, who string) {
 	err := e.clu.GoshimmerClient().RequestFunds(addr)
 	require.NoError(e.t, err)
-	if !e.clu.VerifyAddressBalances(addr, solo.Saldo, map[ledgerstate.Color]uint64{
-		ledgerstate.ColorIOTA: solo.Saldo,
-	}, "requested funds for "+who) {
+	if !e.clu.VerifyAddressBalances(addr, solo.Saldo, colored.NewBalancesForIotas(solo.Saldo), "requested funds for "+who) {
 		e.t.Logf("unexpected requested amount")
 		e.t.FailNow()
 	}
 }
 
-func (e *chainEnv) getBalanceOnChain(agentID *iscp.AgentID, color ledgerstate.Color, nodeIndex ...int) uint64 {
+func (e *chainEnv) getBalanceOnChain(agentID *iscp.AgentID, col colored.Color, nodeIndex ...int) uint64 {
 	idx := 0
 	if len(nodeIndex) > 0 {
 		idx = nodeIndex[0]
@@ -90,14 +90,14 @@ func (e *chainEnv) getBalanceOnChain(agentID *iscp.AgentID, color ledgerstate.Co
 		return 0
 	}
 
-	actual, _, err := codec.DecodeUint64(ret.MustGet(kv.Key(color[:])))
+	actual, _, err := codec.DecodeUint64(ret.MustGet(kv.Key(col[:])))
 	require.NoError(e.t, err)
 
 	return actual
 }
 
-func (e *chainEnv) checkBalanceOnChain(agentID *iscp.AgentID, color ledgerstate.Color, expected uint64) {
-	actual := e.getBalanceOnChain(agentID, color)
+func (e *chainEnv) checkBalanceOnChain(agentID *iscp.AgentID, col colored.Color, expected uint64) {
+	actual := e.getBalanceOnChain(agentID, col)
 	require.EqualValues(e.t, int64(expected), int64(actual))
 }
 
@@ -119,8 +119,8 @@ func (e *chainEnv) getAccountsOnChain() []*iscp.AgentID {
 	return ret
 }
 
-func (e *chainEnv) getBalancesOnChain() map[*iscp.AgentID]map[ledgerstate.Color]uint64 {
-	ret := make(map[*iscp.AgentID]map[ledgerstate.Color]uint64)
+func (e *chainEnv) getBalancesOnChain() map[*iscp.AgentID]colored.Balances {
+	ret := make(map[*iscp.AgentID]colored.Balances)
 	acc := e.getAccountsOnChain()
 	for _, agentID := range acc {
 		r, err := e.chain.Cluster.WaspClient(0).CallView(
@@ -135,7 +135,7 @@ func (e *chainEnv) getBalancesOnChain() map[*iscp.AgentID]map[ledgerstate.Color]
 	return ret
 }
 
-func (e *chainEnv) getTotalBalance() map[ledgerstate.Color]uint64 {
+func (e *chainEnv) getTotalBalance() colored.Balances {
 	r, err := e.chain.Cluster.WaspClient(0).CallView(
 		e.chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewTotalAssets.Name, nil,
 	)
@@ -143,10 +143,10 @@ func (e *chainEnv) getTotalBalance() map[ledgerstate.Color]uint64 {
 	return balancesDictToMap(e.t, r)
 }
 
-func balancesDictToMap(t *testing.T, d dict.Dict) map[ledgerstate.Color]uint64 {
-	ret := make(map[ledgerstate.Color]uint64)
+func balancesDictToMap(t *testing.T, d dict.Dict) colored.Balances {
+	ret := colored.NewBalances()
 	for key, value := range d {
-		col, _, err := ledgerstate.ColorFromBytes([]byte(key))
+		col, err := colored.ColorFromBytes([]byte(key))
 		require.NoError(t, err)
 		v, err := util.Uint64From8Bytes(value)
 		require.NoError(t, err)
@@ -169,17 +169,13 @@ func (e *chainEnv) printAccounts(title string) {
 
 func (e *chainEnv) checkLedger() {
 	balances := e.getBalancesOnChain()
-	sum := make(map[ledgerstate.Color]uint64)
+	sum := colored.NewBalances()
 	for _, bal := range balances {
 		for col, b := range bal {
-			s := sum[col]
-			sum[col] = s + b
+			sum.Add(col, b)
 		}
 	}
-
-	total := ledgerstate.NewColoredBalances(e.getTotalBalance())
-
-	require.EqualValues(e.t, sum, total.Map())
+	require.True(e.t, sum.Equals(e.getTotalBalance()))
 }
 
 func (e *chainEnv) getChainInfo() (iscp.ChainID, iscp.AgentID) {
@@ -253,6 +249,12 @@ func (e *chainEnv) counterEquals(expected int64) conditionFn {
 	}
 }
 
+func (e *chainEnv) accountExists(agentID *iscp.AgentID) conditionFn {
+	return func(t *testing.T, nodeIndex int) bool {
+		return e.getBalanceOnChain(agentID, colored.IOTA, nodeIndex) > 0
+	}
+}
+
 func (e *chainEnv) contractIsDeployed(contractName string) conditionFn { //nolint:unparam
 	return func(t *testing.T, nodeIndex int) bool {
 		ret, err := e.findContract(contractName, nodeIndex)
@@ -265,7 +267,7 @@ func (e *chainEnv) contractIsDeployed(contractName string) conditionFn { //nolin
 
 func (e *chainEnv) balanceOnChainIotaEquals(agentID *iscp.AgentID, iotas uint64) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
-		have := e.getBalanceOnChain(agentID, ledgerstate.ColorIOTA, nodeIndex)
+		have := e.getBalanceOnChain(agentID, colored.IOTA, nodeIndex)
 		e.t.Logf("chainEnv::balanceOnChainIotaEquals: node=%v, have=%v, expected=%v", nodeIndex, have, iotas)
 		return iotas == have
 	}

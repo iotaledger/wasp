@@ -165,22 +165,19 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	// TODO: maybe commit in 10 (or some const) block batches?
 	//      This would save from large commits and huge memory usage to store blocks
 
-	// invalidate solid state
-	// if any VM task is running with the assumption of the previous state,
-	// it is obsolete and will self-cancel
+	// invalidate solid state.
+	// - If any VM task is running with the assumption of the previous state, it is obsolete and will self-cancel
+	// - any view call will return 'state invalidated message'
 	sm.chain.GlobalStateSync().InvalidateSolidIndex()
-	sm.chain.GlobalStateSync().Mutex().Lock()
-	defer sm.chain.GlobalStateSync().Mutex().Unlock()
-
 	err := tentativeState.Commit(blocks...)
+	sm.chain.GlobalStateSync().SetSolidIndex(tentativeState.BlockIndex())
+
 	if err != nil {
 		sm.log.Errorf("commitCandidates: failed to commit synced changes into DB. Restart syncing")
 		sm.syncingBlocks.restartSyncing()
 		return
 	}
 	sm.solidState = tentativeState
-	// set the solid state valid
-	sm.chain.GlobalStateSync().SetSolidIndex(tentativeState.BlockIndex())
 
 	sm.log.Debugf("commitCandidates: committing of block indices from %v to %v was successful", from, to)
 }

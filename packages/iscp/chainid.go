@@ -6,6 +6,8 @@ package iscp
 import (
 	"io"
 
+	"github.com/iotaledger/hive.go/marshalutil"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"golang.org/x/xerrors"
@@ -38,6 +40,14 @@ func ChainIDFromBase58(b58 string) (*ChainID, error) {
 		return nil, err
 	}
 	return &ChainID{alias}, nil
+}
+
+func ChainIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ChainID, error) {
+	aliasAddr, err := ledgerstate.AliasAddressFromMarshalUtil(mu)
+	if err != nil {
+		return nil, err
+	}
+	return &ChainID{aliasAddr}, nil
 }
 
 // ChainIDFromBytes reconstructs a ChainID from its binary representation.

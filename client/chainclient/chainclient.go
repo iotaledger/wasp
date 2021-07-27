@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/client"
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -39,7 +40,7 @@ func New(
 }
 
 type PostRequestParams struct {
-	Transfer *ledgerstate.ColoredBalances
+	Transfer colored.Balances
 	Args     requestargs.RequestArgs
 	Nonce    uint64
 }
@@ -71,7 +72,7 @@ func (c *Client) PostOffLedgerRequest(
 	contractHname iscp.Hname,
 	entrypoint iscp.Hname,
 	params ...PostRequestParams,
-) (*request.RequestOffLedger, error) {
+) (*request.OffLedger, error) {
 	par := PostRequestParams{}
 	if len(params) > 0 {
 		par = params[0]
@@ -79,7 +80,7 @@ func (c *Client) PostOffLedgerRequest(
 	if par.Nonce == 0 {
 		par.Nonce = uint64(time.Now().UnixNano())
 	}
-	offledgerReq := request.NewRequestOffLedger(contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
+	offledgerReq := request.NewOffLedger(contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
 	offledgerReq.WithNonce(par.Nonce)
 	offledgerReq.Sign(c.KeyPair)
 	return offledgerReq, c.WaspClient.PostOffLedgerRequest(&c.ChainID, offledgerReq)
@@ -92,32 +93,31 @@ func NewPostRequestParams(p ...interface{}) *PostRequestParams {
 	}
 }
 
-func (par *PostRequestParams) WithTransfer(transfer *ledgerstate.ColoredBalances) *PostRequestParams {
+func (par *PostRequestParams) WithTransfer(transfer colored.Balances) *PostRequestParams {
 	par.Transfer = transfer
 	return par
 }
 
 func (par *PostRequestParams) WithTransferEncoded(colval ...interface{}) *PostRequestParams {
-	ret := make(map[ledgerstate.Color]uint64)
 	if len(colval) == 0 {
 		return par
 	}
 	if len(colval)%2 != 0 {
 		panic("WithTransferEncode: len(params) % 2 != 0")
 	}
+	par.Transfer = colored.NewBalances()
 	for i := 0; i < len(colval)/2; i++ {
-		key, ok := colval[2*i].(ledgerstate.Color)
+		key, ok := colval[2*i].(colored.Color)
 		if !ok {
-			panic("toMap: ledgerstate.Color expected")
+			panic("toMap: color.Color expected")
 		}
-		ret[key] = encodeIntToUint64(colval[2*i+1])
+		par.Transfer.Set(key, encodeIntToUint64(colval[2*i+1]))
 	}
-	par.Transfer = ledgerstate.NewColoredBalances(ret)
 	return par
 }
 
 func (par *PostRequestParams) WithIotas(i uint64) *PostRequestParams {
-	return par.WithTransferEncoded(ledgerstate.ColorIOTA, i)
+	return par.WithTransferEncoded(colored.IOTA, i)
 }
 
 func encodeIntToUint64(i interface{}) uint64 {

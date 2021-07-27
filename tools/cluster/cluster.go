@@ -22,8 +22,8 @@ import (
 	"github.com/iotaledger/wasp/client/goshimmer"
 	"github.com/iotaledger/wasp/client/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/tools/cluster/mocknode"
@@ -172,11 +172,6 @@ func waspNodeDataPath(dataPath string, i int) string {
 	return path.Join(dataPath, fmt.Sprintf("wasp%d", i))
 }
 
-//nolint:deadcode,unused
-func goshimmerDataPath(dataPath string) string {
-	return path.Join(dataPath, "goshimmer")
-}
-
 func fileExists(filepath string) (bool, error) {
 	_, err := os.Stat(filepath)
 	if err == nil {
@@ -249,6 +244,7 @@ func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params
 	if err != nil {
 		return err
 	}
+	//goland:noinspection GoUnhandledErrorResult
 	defer f.Close()
 
 	if modifyConfig != nil {
@@ -358,6 +354,7 @@ func (clu *Cluster) waitForAPIReady(initOk chan<- bool, nodeIndex int) {
 				continue
 			}
 			fmt.Printf("Polling node %d API ready status: %s %s\n", nodeIndex, infoEndpointURL, rsp.Status)
+			//goland:noinspection GoUnhandledErrorResult
 			rsp.Body.Close()
 			if err == nil && rsp.StatusCode != 404 {
 				initOk <- true
@@ -459,13 +456,13 @@ func (clu *Cluster) PostTransaction(tx *ledgerstate.Transaction) error {
 	return nil
 }
 
-func (clu *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpected uint64, expect map[ledgerstate.Color]uint64, comment ...string) bool {
+func (clu *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpected uint64, expect colored.Balances, comment ...string) bool {
 	allOuts, err := clu.GoshimmerClient().GetConfirmedOutputs(addr)
 	if err != nil {
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
 		return false
 	}
-	byColor, total := util.OutputBalancesByColor(allOuts)
+	byColor, total := colored.OutputBalancesByColor(allOuts)
 	dumpStr, assertionOk := dumpBalancesByColor(byColor, expect)
 
 	var totalExpectedStr string
@@ -488,9 +485,9 @@ func (clu *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpecte
 	return assertionOk
 }
 
-func dumpBalancesByColor(actual, expect map[ledgerstate.Color]uint64) (string, bool) {
+func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
 	assertionOk := true
-	lst := make([]ledgerstate.Color, 0, len(expect))
+	lst := make([]colored.Color, 0, len(expect))
 	for col := range expect {
 		lst = append(lst, col)
 	}
@@ -524,34 +521,4 @@ func dumpBalancesByColor(actual, expect map[ledgerstate.Color]uint64) (string, b
 		ret += fmt.Sprintf("         %s %d\n", col.String(), actual[col])
 	}
 	return ret, assertionOk
-}
-
-//nolint:deadcode,unused
-func interface2bytes(v interface{}) []byte {
-	var ret []byte
-	switch vt := v.(type) {
-	case int:
-		ret = util.Uint64To8Bytes(uint64(vt))
-	case int16:
-		ret = util.Uint64To8Bytes(uint64(vt))
-	case int32:
-		ret = util.Uint64To8Bytes(uint64(vt))
-	case int64:
-		ret = util.Uint64To8Bytes(uint64(vt))
-	case uint:
-		ret = util.Uint64To8Bytes(uint64(vt))
-	case uint16:
-		ret = util.Uint64To8Bytes(uint64(vt))
-	case uint32:
-		ret = util.Uint64To8Bytes(uint64(vt))
-	case uint64:
-		ret = util.Uint64To8Bytes(vt)
-	case []byte:
-		ret = vt
-	case string:
-		ret = []byte(vt)
-	default:
-		panic("unexpected type")
-	}
-	return ret
 }
