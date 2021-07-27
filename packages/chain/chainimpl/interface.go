@@ -30,6 +30,10 @@ func (c *chainObj) GlobalStateSync() coreutil.ChainStateSync {
 	return c.chainStateSync
 }
 
+func (c *chainObj) SetGlobalStateIndex(index uint32) {
+	c.chainStateSync.SetSolidIndex(index)
+}
+
 func (c *chainObj) GetCommitteeInfo() *chain.CommitteeInfo {
 	cmt := c.getCommittee()
 	if cmt == nil {

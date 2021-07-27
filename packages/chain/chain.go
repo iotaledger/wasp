@@ -31,6 +31,7 @@ type ChainCore interface {
 	Processors() *processors.Cache
 	GlobalStateSync() coreutil.ChainStateSync
 	GetStateReader() state.OptimisticStateReader
+	SetGlobalStateIndex(index uint32)
 	Log() *logger.Logger
 }
 
