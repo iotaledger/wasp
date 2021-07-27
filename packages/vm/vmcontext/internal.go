@@ -152,7 +152,5 @@ func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 	if err != nil {
 		vmctx.Panicf("MustSaveEvent: %v", err)
 	}
-	if vmctx.requestEventIndex < math.MaxUint8 {
-		vmctx.requestEventIndex++
-	}
+	vmctx.requestEventIndex++
 }
