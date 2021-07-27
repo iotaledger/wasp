@@ -121,16 +121,26 @@ type Chain struct {
 	mempool    chain.Mempool
 }
 
-var (
-	doOnce    = sync.Once{}
-	glbLogger *logger.Logger
-)
-
-// New creates an instance of the `solo` environment for the test instances.
-//   If solo is used for unit testing, 't' should be the *testing.T instance; otherwise it can be either nil or an instance created with NewTestContext
-//   'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
-//   'printStackTrace' controls printing stack trace in case of errors
+// New creates an instance of the `solo` environment.
+//
+// If solo is used for unit testing, 't' should be the *testing.T instance;
+// otherwise it can be either nil or an instance created with NewTestContext.
+//
+// 'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
+// 'printStackTrace' controls printing stack trace in case of errors
 func New(t TestContext, debug, printStackTrace bool, seedOpt ...*ed25519.Seed) *Solo {
+	log := testlogger.NewNamedLogger(t.Name(), timeLayout)
+	if !debug {
+		log = testlogger.WithLevel(log, zapcore.InfoLevel, printStackTrace)
+	}
+	return NewWithLogger(t, log, seedOpt...)
+}
+
+// New creates an instance of the `solo` environment with the given logger.
+//
+// If solo is used for unit testing, 't' should be the *testing.T instance;
+// otherwise it can be either nil or an instance created with NewTestContext.
+func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...*ed25519.Seed) *Solo {
 	if t == nil {
 		t = NewTestContext("solo")
 	}
@@ -138,24 +148,18 @@ func New(t TestContext, debug, printStackTrace bool, seedOpt ...*ed25519.Seed) *
 	if len(seedOpt) > 0 {
 		seed = seedOpt[0]
 	}
-	doOnce.Do(func() {
-		glbLogger = testlogger.NewNamedLogger(t.Name(), timeLayout)
-		if !debug {
-			glbLogger = testlogger.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
-		}
-	})
 
 	processorConfig := processors.NewConfig()
 	err := processorConfig.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (iscp.VMProcessor, error) {
-		return wasmproc.GetProcessor(binary, glbLogger)
+		return wasmproc.GetProcessor(binary, log)
 	})
 	require.NoError(t, err)
 
 	initialTime := time.Unix(1, 0)
 	ret := &Solo{
 		T:               t,
-		logger:          glbLogger,
-		dbmanager:       dbmanager.NewDBManager(glbLogger.Named("db"), true),
+		logger:          log,
+		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true),
 		utxoDB:          utxodb.NewWithTimestamp(initialTime),
 		seed:            seed,
 		blobCache:       iscp.NewInMemoryBlobCache(),

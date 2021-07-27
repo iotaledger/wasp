@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/stretchr/testify/require"
 )
@@ -93,4 +94,30 @@ func TestIncWith1Post(t *testing.T) {
 
 	checkCounter(chain, 19)
 	chain.CheckAccountLedger()
+}
+
+// BenchmarkEVMStorage is a benchmark for the inccounter native contract running under solo.
+// run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
+func BenchmarkInc(b *testing.B) {
+	// setup: deploy the inccounter contract
+	log := testlogger.NewSilentLogger(b.Name(), true)
+	env := solo.NewWithLogger(b, log).WithNativeContract(Processor)
+	chain := env.NewChain(nil, "chain1")
+
+	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 0)
+	require.NoError(b, err)
+
+	// setup: prepare N requests that call FuncIncCounter
+	reqs := make([]*solo.CallParams, b.N)
+	for i := 0; i < b.N; i++ {
+		reqs[i] = solo.NewCallParams(incName, FuncIncCounter.Name).WithIotas(1)
+	}
+
+	// benchmark: send the requests.
+	// TODO: benchmark multiple requests per block -- requires support from solo
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err = chain.PostRequestSync(reqs[i], nil)
+		require.NoError(b, err)
+	}
 }
