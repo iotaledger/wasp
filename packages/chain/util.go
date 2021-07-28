@@ -31,10 +31,6 @@ func LogGovernanceTransition(msg *ChainTransitionEventData, log *logger.Logger) 
 		msg.VirtualState.BlockIndex(), iscp.OID(msg.ChainOutput.ID()), stateHash.String())
 }
 
-func LogSyncedEvent(outputID ledgerstate.OutputID, blockIndex uint32, log *logger.Logger) {
-	log.Infof("EVENT: state was synced to block index #%d, approving output: %s", blockIndex, iscp.OID(outputID))
-}
-
 func PublishRequestsSettled(chainID *iscp.ChainID, stateIndex uint32, reqids []iscp.RequestID) {
 	for _, reqid := range reqids {
 		publisher.Publish("request_out",

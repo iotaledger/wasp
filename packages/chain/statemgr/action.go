@@ -53,7 +53,6 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 		ChainOutput:     sm.stateOutput,
 		OutputTimestamp: sm.stateOutputTimestamp,
 	})
-	go sm.chain.Events().StateSynced().Trigger(stateOutputID, stateOutputIndex)
 }
 
 func (sm *stateManager) isSynced() bool {

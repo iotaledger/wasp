@@ -68,7 +68,6 @@ type chainObj struct {
 	blobProvider                     registry.BlobCache
 	eventRequestProcessed            *events.Event
 	eventChainTransition             *events.Event
-	eventSynced                      *events.Event
 	peers                            *peering.PeerDomainProvider
 	offLedgerReqsAcksMutex           sync.RWMutex
 	offLedgerReqsAcks                map[iscp.RequestID][]string
@@ -122,9 +121,6 @@ func NewChain(
 		eventChainTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
 		}),
-		eventSynced: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(outputID ledgerstate.OutputID, blockIndex uint32))(params[0].(ledgerstate.OutputID), params[1].(uint32))
-		}),
 		offLedgerReqsAcks:                make(map[iscp.RequestID][]string),
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
@@ -132,7 +128,6 @@ func NewChain(
 	}
 	ret.committee.Store(&committeeStruct{})
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
-	ret.eventSynced.Attach(events.NewClosure(ret.processSynced))
 
 	peers, err := netProvider.PeerDomain(peerNetConfig.Neighbors())
 	if err != nil {
@@ -350,10 +345,6 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 		c.log.Infof("publishNewBlockEvents: '%s'", msg)
 		publisher.Publish("vmmsg", c.chainID.Base58(), msg)
 	}
-}
-
-func (c *chainObj) processSynced(outputID ledgerstate.OutputID, blockIndex uint32) {
-	chain.LogSyncedEvent(outputID, blockIndex, c.log)
 }
 
 // processStateMessage processes the only chain output which exists on the chain's address

@@ -33,16 +33,14 @@ func newSyncingBlocks(log *logger.Logger, initialBlockRetry time.Duration) *sync
 }
 
 func (syncsT *syncingBlocks) getRequestBlockRetryTime(stateIndex uint32) time.Time {
-	sync, ok := syncsT.blocks[stateIndex]
-	if !ok {
-		return time.Time{}
+	if sync, ok := syncsT.blocks[stateIndex]; ok {
+		return sync.requestBlockRetryTime
 	}
-	return sync.requestBlockRetryTime
+	return time.Time{}
 }
 
 func (syncsT *syncingBlocks) setRequestBlockRetryTime(stateIndex uint32, requestBlockRetryTime time.Time) {
-	sync, ok := syncsT.blocks[stateIndex]
-	if ok {
+	if sync, ok := syncsT.blocks[stateIndex]; ok {
 		sync.requestBlockRetryTime = requestBlockRetryTime
 	}
 }

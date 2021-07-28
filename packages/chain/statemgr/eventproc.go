@@ -114,7 +114,7 @@ func (sm *stateManager) eventStateMsg(msg *messages.StateMsg) {
 }
 
 func (sm *stateManager) EventStateCandidateMsg(msg *messages.StateCandidateMsg) {
-	sm.eventPendingBlockMsgCh <- msg
+	sm.eventStateCandidateMsgCh <- msg
 }
 
 func (sm *stateManager) eventStateCandidateMsg(msg *messages.StateCandidateMsg) {
