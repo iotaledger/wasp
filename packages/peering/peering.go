@@ -210,7 +210,6 @@ type PeerSender interface {
 type PeerStatusProvider interface {
 	NetID() string
 	PubKey() *ed25519.PublicKey
-	IsInbound() bool
 	IsAlive() bool
 	NumUsers() int
 }
