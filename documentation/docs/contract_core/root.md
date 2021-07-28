@@ -5,8 +5,8 @@ chain.
 
 The `root` contract provides the following functions:
 
-- It is the first smart contract deployed on the chain. It receives the `initialize` request and
-  which the state of the chain. Part of the state initialization is deployment of all other core
+- It is the first smart contract deployed on the chain. It receives the `init` request and
+  bootstraps the state of the chain. Part of the state initialization is the deployment of all other core
   contracts.
 
 - It functions as a smart contract factory for the chain: upon request, it deploys other smart
@@ -47,11 +47,9 @@ for example the _chain owner_.
     * name of the instance. This is later used in the hashed form of _hname_
     * description of the instance
 
-* **grantDeployPermission** - Chain owner grants deploy permission to an agent
-  ID
+* **grantDeployPermission** - Chain owner grants deploy permission to an agent ID
 
-* **revokeDeployPermission** - Chain owner revokes deploy permission from an
-  agent ID
+* **revokeDeployPermission** - Chain owner revokes deploy permission from an agent ID
 
 * **setContractFee** - Sets fee values for a particular smart contract. There
   are two values for each smart contract: `validatorFee` and `chainOwnerFee`. If
@@ -66,12 +64,13 @@ Can be called directly. Calling a view does not modify the state of the smart
 contract.
 
 * **findContract** - Returns the data of the provided smart contract (if it
-  exists) in marshalled binary form.
+  exists) in a marshalled binary form.
 
 * **getChainInfo** - Returns main values of the chain, such as chain ID, chain
-  owner ID, and description. It also returns a registry of all smart contracts
-  in marshalled binary form
+  owner ID and description. It also returns the registry of all smart contracts
+  in a marshalled binary form
 
 * **getFeeInfo** - Returns fee information for the particular smart
-  contract: `validatorFee` and `chainOwnerFee`. It takes into account default
-  values if specific values for the smart contract are not set.   
+  contract: `validatorFee` and `chainOwnerFee`. If specific values for the
+  smart contract are not set, it returns chain-wide defaults.
+

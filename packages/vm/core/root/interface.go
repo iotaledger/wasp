@@ -111,12 +111,12 @@ func NewContractRecord(itf *coreutil.ContractInfo, creator *iscp.AgentID) *Contr
 
 func ContractRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ContractRecord, error) {
 	ret := &ContractRecord{}
-	if buf, err := mu.ReadBytes(len(ret.ProgramHash)); err != nil {
+	buf, err := mu.ReadBytes(len(ret.ProgramHash))
+	if err != nil {
 		return nil, err
-	} else {
-		copy(ret.ProgramHash[:], buf)
 	}
-	var err error
+	copy(ret.ProgramHash[:], buf)
+
 	if ret.Description, err = readString(mu); err != nil {
 		return nil, err
 	}
