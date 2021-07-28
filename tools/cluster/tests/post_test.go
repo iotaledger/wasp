@@ -59,7 +59,7 @@ func (e *chainEnv) deployInccounter42(counter int64) *iscp.AgentID { //nolint:un
 	require.NoError(e.t, err)
 	recb, err := ret.Get(root.VarData)
 	require.NoError(e.t, err)
-	rec, err := root.DecodeContractRecord(recb)
+	rec, err := root.ContractRecordFromBytes(recb)
 	require.NoError(e.t, err)
 	require.EqualValues(e.t, description, rec.Description)
 

@@ -180,7 +180,7 @@ func GetTotalAssets(state kv.KVStoreReader) colored.Balances {
 func calcTotalAssets(state kv.KVStoreReader) colored.Balances {
 	ret := colored.NewBalances()
 	getAccountsMapR(state).MustIterateKeys(func(key []byte) bool {
-		agentID, err := iscp.NewAgentIDFromBytes(key)
+		agentID, err := iscp.AgentIDFromBytes(key)
 		if err != nil {
 			panic(err)
 		}

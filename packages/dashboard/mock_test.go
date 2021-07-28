@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/events"
@@ -16,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -187,13 +186,13 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, fname stri
 
 		dst := collections.NewMap(ret, root.VarContractRegistry)
 		for i := 0; i < 5; i++ {
-			dst.MustSetAt(iscp.Hname(uint32(i)).Bytes(), root.EncodeContractRecord(contract))
+			dst.MustSetAt(iscp.Hname(uint32(i)).Bytes(), contract.Bytes())
 		}
 		return ret, nil
 
 	case hname == root.Contract.Hname() && fname == root.FuncFindContract.Name:
 		ret := dict.New()
-		ret.Set(root.VarData, root.EncodeContractRecord(contract))
+		ret.Set(root.VarData, contract.Bytes())
 		return ret, nil
 
 	case hname == accounts.Contract.Hname() && fname == accounts.FuncViewAccounts.Name:

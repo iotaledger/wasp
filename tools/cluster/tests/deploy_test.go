@@ -78,7 +78,7 @@ func TestDeployContractOnly(t *testing.T) {
 	require.NoError(t, err)
 	recb, err := ret.Get(root.VarData)
 	require.NoError(t, err)
-	rec, err := root.DecodeContractRecord(recb)
+	rec, err := root.ContractRecordFromBytes(recb)
 	require.NoError(t, err)
 	require.EqualValues(t, "testing contract deployment with inccounter", rec.Description)
 

@@ -148,9 +148,8 @@ func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-	retBin := EncodeContractRecord(rec)
 	ret := dict.New()
-	ret.Set(VarData, retBin)
+	ret.Set(VarData, rec.Bytes())
 	return ret, nil
 }
 
@@ -303,7 +302,7 @@ func setContractFee(ctx iscp.Sandbox) (dict.Dict, error) {
 	if validatorFeeSet {
 		rec.ValidatorFee = validatorFee
 	}
-	collections.NewMap(ctx.State(), VarContractRegistry).MustSetAt(hname.Bytes(), EncodeContractRecord(rec))
+	collections.NewMap(ctx.State(), VarContractRegistry).MustSetAt(hname.Bytes(), rec.Bytes())
 	return nil, nil
 }
 

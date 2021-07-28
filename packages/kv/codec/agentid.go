@@ -8,7 +8,7 @@ func DecodeAgentID(b []byte) (iscp.AgentID, bool, error) {
 	if b == nil {
 		return iscp.AgentID{}, false, nil
 	}
-	ret, err := iscp.NewAgentIDFromBytes(b)
+	ret, err := iscp.AgentIDFromBytes(b)
 	if err != nil {
 		return iscp.AgentID{}, false, err
 	}
