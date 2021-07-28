@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func estimateGas(t *testing.T, emu *EVMEmulator, from common.Address, to *common.Address, value *big.Int, data []byte) uint64 {
+func estimateGas(t testing.TB, emu *EVMEmulator, from common.Address, to *common.Address, value *big.Int, data []byte) uint64 {
 	gas, err := emu.EstimateGas(ethereum.CallMsg{
 		From:  from,
 		To:    to,
@@ -36,7 +36,7 @@ func estimateGas(t *testing.T, emu *EVMEmulator, from common.Address, to *common
 	return gas
 }
 
-func sendTransaction(t *testing.T, emu *EVMEmulator, sender *ecdsa.PrivateKey, receiverAddress common.Address, amount *big.Int, data []byte) *types.Receipt {
+func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, receiverAddress common.Address, amount *big.Int, data []byte) *types.Receipt {
 	senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
 	nonce, err := emu.PendingNonceAt(senderAddress)
@@ -72,7 +72,7 @@ func TestBlockchainWithKVStoreBackend(t *testing.T) {
 	testBlockchain(t, db)
 }
 
-func testBlockchain(t *testing.T, db ethdb.Database) {
+func testBlockchain(t testing.TB, db ethdb.Database) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
@@ -160,7 +160,7 @@ func TestBlockchainPersistenceWithKVStoreBackend(t *testing.T) {
 	testBlockchainPersistence(t, db)
 }
 
-func testBlockchainPersistence(t *testing.T, db ethdb.Database) {
+func testBlockchainPersistence(t testing.TB, db ethdb.Database) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
@@ -202,7 +202,7 @@ func testBlockchainPersistence(t *testing.T, db ethdb.Database) {
 
 type contractFnCaller func(sender *ecdsa.PrivateKey, name string, args ...interface{}) *types.Receipt
 
-func deployEVMContract(t *testing.T, emu *EVMEmulator, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCaller) {
+func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCaller) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce, err := emu.PendingNonceAt(creatorAddress)
@@ -289,7 +289,7 @@ func TestStorageContractWithKVStoreBackend(t *testing.T) {
 	testStorageContract(t, db)
 }
 
-func testStorageContract(t *testing.T, db ethdb.Database) {
+func testStorageContract(t testing.TB, db ethdb.Database) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
@@ -376,7 +376,7 @@ func TestERC20ContractWithKVStoreBackend(t *testing.T) {
 	testERC20Contract(t, db)
 }
 
-func testERC20Contract(t *testing.T, db ethdb.Database) {
+func testERC20Contract(t testing.TB, db ethdb.Database) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
@@ -465,3 +465,86 @@ func testERC20Contract(t *testing.T, db ethdb.Database) {
 	// call `balanceOf` view => check balance of recipient = 2 * 1337 TestCoin
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(new(big.Int).Mul(transferAmount, big.NewInt(2))))
 }
+
+func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction) {
+	db := rawdb.NewDatabase(NewKVAdapter(dict.New()))
+
+	// faucet address with initial supply
+	faucet, err := crypto.GenerateKey()
+	require.NoError(b, err)
+	faucetAddress := crypto.PubkeyToAddress(faucet.PublicKey)
+	faucetSupply := new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(9))
+
+	genesisAlloc := map[common.Address]core.GenesisAccount{
+		faucetAddress: {Balance: faucetSupply},
+	}
+
+	InitGenesis(DefaultChainID, db, genesisAlloc, GasLimitDefault)
+
+	emu := NewEVMEmulator(db)
+	defer emu.Close()
+
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(b, err)
+
+	contractAddress, _ := deployEVMContract(
+		b,
+		emu,
+		faucet,
+		contractABI,
+		evmtest.StorageContractBytecode,
+		uint32(42),
+	)
+
+	txs := make([]*types.Transaction, b.N)
+	for i := 0; i < b.N; i++ {
+		sender, err := crypto.GenerateKey() // send from a new address so that nonce is always 0
+		require.NoError(b, err)
+		senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
+
+		amount := big.NewInt(0)
+		nonce := uint64(0)
+
+		callArguments, err := contractABI.Pack("store", uint32(i))
+		require.NoError(b, err)
+
+		gas := estimateGas(b, emu, senderAddress, &contractAddress, amount, callArguments)
+
+		txs[i], err = types.SignTx(
+			types.NewTransaction(nonce, contractAddress, amount, gas, GasPrice, callArguments),
+			emu.Signer(),
+			sender,
+		)
+		require.NoError(b, err)
+	}
+
+	return emu, txs
+}
+
+// benchmarkEVMEmulator is a benchmark for the EVMEmulator that sends an EVM transaction
+// that calls `storage.store()`, committing a block every k transactions.
+//
+// run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
+//
+// To generate mem and cpu profiles, add -cpuprofile=cpu.out -memprofile=mem.out
+// Then: go tool pprof -http :8080 {cpu,mem}.out
+func benchmarkEVMEmulator(b *testing.B, k int) {
+	// setup: deploy the storage contract and prepare N transactions to send
+	emu, txs := initBenchmark(b)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := emu.SendTransaction(txs[i])
+		require.NoError(b, err)
+
+		// commit a block every n txs
+		if i%k == 0 {
+			emu.Commit()
+		}
+	}
+}
+
+func BenchmarkEVMEmulator1(b *testing.B)   { benchmarkEVMEmulator(b, 1) }
+func BenchmarkEVMEmulator10(b *testing.B)  { benchmarkEVMEmulator(b, 10) }
+func BenchmarkEVMEmulator50(b *testing.B)  { benchmarkEVMEmulator(b, 50) }
+func BenchmarkEVMEmulator100(b *testing.B) { benchmarkEVMEmulator(b, 100) }

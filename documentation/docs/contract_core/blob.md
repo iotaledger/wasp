@@ -1,10 +1,9 @@
 # The `blob` contract
 
-The `blob` contract is one of the [core contracts](overview.md) on each ISCP
-chain.
+The `blob` contract is one of the [core contracts](overview.md) on each ISCP chain.
 
 The function of the `blob` contract is to maintain an on-chain registry of
-_blobs_, which consist of arbitrary binary data. The _blobs_ are referenced from
+_blobs_, a collections of arbitrary binary data. The _blobs_ are referenced from
 smart contracts via their hashes.
 
 A _blob_ is a collection of named pieces of arbitrary binary data:
@@ -16,13 +15,13 @@ A _blob_ is a collection of named pieces of arbitrary binary data:
     <fieldNameN> : <binaryChunkN>
 ``` 
 
-Here the `fieldNameK` is an arbitrary binary string used as a name for the
+Here the `fieldNameK` is an arbitrary binary (a string) used as a name for the
 binary data `binaryChunkK`. Usually `fieldNameK` is not long. Its interpretation
 is use-case specific.
 
 The `binaryChunkK` may be of arbitrary size (practical limits apply, of course).
 
-The order of the field-chunk pairs is essential.
+The order of the field-chunk pairs is essential because the hash of the blob depends on the oder.
 
 The hash of the _blob_ is equal to the hash of concatenation of all pieces:
 
@@ -52,10 +51,9 @@ immutable data of a smart contract program:
 
 ### Entry points
 
-There's only one entry point, which allows us to submit a _blob_ to the `blob`
-contract:
+There's only one full entry point which allows us to submit a _blob_ to the `blob` contract:
 
-* **storeBlob** - In the current implementation the data of the _blob_ is passed
+* **storeBlob**. In the current implementation the data of the _blob_ is passed
   as parameters to the call of the entry point. It may be practically impossible
   to submit very large _blobs_ to the chain. In the future we plan to implement
   a special mechanism which allows for the nodes to download big data chunks as

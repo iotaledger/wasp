@@ -9,10 +9,12 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
 )
@@ -343,4 +345,36 @@ func TestPrePaidFees(t *testing.T) {
 	// send offledger request again and check that is works
 	evmChain.soloChain.PostRequestOffLedger(offledgerRequest, iotaWallet)
 	require.EqualValues(t, 999, storage.retrieve())
+}
+
+// BenchmarkEVMStorage is a benchmark for the evmchain contract running under solo.
+// run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
+func BenchmarkEVMStorage(b *testing.B) {
+	// setup: deploy the evmchain contract
+	log := testlogger.NewSilentLogger(b.Name(), true)
+	env := solo.NewWithLogger(b, log).WithNativeContract(Processor)
+	evmChain := initEVMChainWithSolo(b, env)
+	// setup: deploy the `storage` EVM contract
+	storage := evmChain.deployStorageContract(evmChain.faucetKey, 42)
+
+	// setup: prepare N requests that call FuncSendTransaction with an EVM tx
+	// that calls `storage.store()`
+	reqs := make([]*solo.CallParams, b.N)
+	for i := 0; i < b.N; i++ {
+		sender, err := crypto.GenerateKey() // send from a new address so that nonce is always 0
+		require.NoError(b, err)
+
+		opt := ethCallOptions{sender: sender}
+		txdata, _, opt := storage.buildEthTxData([]ethCallOptions{opt}, "store", uint32(i))
+		iotaOpt := storage.chain.parseIotaCallOptions([]iotaCallOptions{opt.iota})
+		reqs[i] = storage.chain.buildSoloRequest(FuncSendTransaction.Name, iotaOpt.transfer, FieldTransactionData, txdata)
+	}
+
+	// benchmark: send the requests.
+	// TODO: benchmark multiple requests per block -- requires support from solo
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := evmChain.soloChain.PostRequestSync(reqs[i], evmChain.soloChain.OriginatorKeyPair)
+		require.NoError(b, err)
+	}
 }

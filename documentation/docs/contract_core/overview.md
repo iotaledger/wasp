@@ -2,7 +2,7 @@
 
 The _virtual machine_ or _VM_ of the chain is the component responsible for the
 deterministic calculation of the next state of the chain from the current state
-and requests. The input of the _VM_ task is an ordered batch of requests plus
+and requests sent to the chain. The input of the _VM_ task is an ordered batch of requests plus
 UTXO state of the chain address. The output of the VM task is the mutation of
 the chain state (the _block_) and an anchor transaction, yet unsigned.
 
@@ -11,18 +11,18 @@ provides a mutable context for running the batch by the smart contracts on the
 chain. It also provides access to the other smart contracts that are deployed on
 the chain.
 
-There are currently 5 core smart contracts that are always deployed on each
+There are currently 6 core smart contracts that are always deployed on each
 chain. They ensure core logic of the VM and provide a platform for plugging
 other smart contracts into the chain:
 
 - [root](root.md) contract responsible for initialization of the chain,
-  deployment of new contracts, and other administrative functions.
+  deployment of new contracts, some other administrative functions.
 - [_default](default.md) catch-all contract for unhandled requests.
-- [blob](blob.md) contract responsible for on-chain registration of arbitrary
+- [blob](blob.md) contract responsible for on-chain storage of arbitrary
   _data blobs_.
 - [accounts](accounts.md) contract responsible for the ledger of on-chain
   colored token accounts.
 - [blocklog](blocklog.md) contract keeps track of the blocks and receipts of requests which
-  were processed by the chain. It also contains all events emitted by smart conttacts
-- [governance](governance.md) contract (in development) implements administration functions of the chain itself.
+  were processed by the chain. It also contains all events emitted by smart contracts
+- [governance](governance.md) contract (_in development_) implements administration functions of the chain itself.
   For example function of rotation of the committee of validators of the chain.

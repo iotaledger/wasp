@@ -45,7 +45,7 @@ func (sm *stateManager) stateOutputReceived(output *ledgerstate.AliasOutput, tim
 	}
 	sm.stateOutput = output
 	sm.stateOutputTimestamp = timestamp
-	sm.log.Debugf("stateOutputReceived: stateOutput set to index %v id %v timestampe %v", output.GetStateIndex(), iscp.OID(output.ID()), timestamp)
+	sm.log.Debugf("stateOutputReceived: stateOutput set to index %v id %v timestamp %v", output.GetStateIndex(), iscp.OID(output.ID()), timestamp)
 	sm.syncingBlocks.approveBlockCandidates(output)
 	return true
 }

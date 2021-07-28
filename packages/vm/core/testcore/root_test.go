@@ -6,14 +6,13 @@ package testcore
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/vm/core"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -55,7 +54,7 @@ func TestGetInfo(t *testing.T) {
 
 	rec, err := chain.FindContract(blob.Contract.Name)
 	require.NoError(t, err)
-	require.EqualValues(t, root.EncodeContractRecord(recBlob), root.EncodeContractRecord(rec))
+	require.EqualValues(t, recBlob.Bytes(), rec.Bytes())
 }
 
 func TestDeployExample(t *testing.T) {
@@ -90,7 +89,7 @@ func TestDeployExample(t *testing.T) {
 
 	recFind, err := chain.FindContract(name)
 	require.NoError(t, err)
-	require.EqualValues(t, root.EncodeContractRecord(recFind), root.EncodeContractRecord(rec))
+	require.EqualValues(t, recFind.Bytes(), rec.Bytes())
 }
 
 func TestDeployDouble(t *testing.T) {
