@@ -208,7 +208,7 @@ func (e *chainEnv) findContract(name string, nodeIndex ...int) (*root.ContractRe
 	if err != nil {
 		return nil, err
 	}
-	recBin, err := ret.Get(root.VarData)
+	recBin, err := ret.Get(root.ParamContractRecData)
 	if err != nil {
 		return nil, err
 	}

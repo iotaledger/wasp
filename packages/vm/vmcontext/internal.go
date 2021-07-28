@@ -50,11 +50,7 @@ func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) (*root.Con
 	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	ret, err := root.FindContract(vmctx.State(), contractHname)
-	if err != nil {
-		return nil, false
-	}
-	return ret, true
+	return root.FindContract(vmctx.State(), contractHname)
 }
 
 func (vmctx *VMContext) mustGetChainInfo() root.ChainInfo {

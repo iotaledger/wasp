@@ -192,7 +192,7 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, fname stri
 
 	case hname == root.Contract.Hname() && fname == root.FuncFindContract.Name:
 		ret := dict.New()
-		ret.Set(root.VarData, contract.Bytes())
+		ret.Set(root.ParamContractRecData, contract.Bytes())
 		return ret, nil
 
 	case hname == accounts.Contract.Hname() && fname == accounts.FuncViewAccounts.Name:

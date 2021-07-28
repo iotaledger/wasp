@@ -76,7 +76,7 @@ func TestDeployContractOnly(t *testing.T) {
 			root.ParamHname: iscp.Hn(incCounterSCName).Bytes(),
 		})
 	require.NoError(t, err)
-	recb, err := ret.Get(root.VarData)
+	recb, err := ret.Get(root.ParamContractRecData)
 	require.NoError(t, err)
 	rec, err := root.ContractRecordFromBytes(recb)
 	require.NoError(t, err)

@@ -70,7 +70,6 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	if len(balances) == 0 {
 		return httperrors.BadRequest(fmt.Sprintf("No balance on account %s", offLedgerReq.SenderAccount().Base58()))
 	}
-
 	ch.ReceiveOffLedgerRequest(offLedgerReq, "")
 
 	return c.NoContent(http.StatusAccepted)
