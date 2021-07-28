@@ -197,6 +197,9 @@ func (m *Mempool) RemoveRequests(reqs ...iscp.RequestID) {
 			continue
 		}
 		m.outPoolCounter++
+		if m.mempoolMetrics != nil {
+			m.mempoolMetrics.ProcessRequest(m.chainID.String())
+		}
 		delete(m.pool, rid)
 		m.traceOut(rid)
 	}

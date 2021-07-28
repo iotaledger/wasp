@@ -32,7 +32,8 @@ func (m *Metrics) Start(addr string) error {
 		})
 		m.server = &http.Server{Addr: addr, Handler: e}
 	}
-	registerMempoolMetrics()
+	registerMempoolMetrics(m.log)
+	m.log.Infof("Prometheus metrics accessible at: %s", addr)
 	return m.server.ListenAndServe()
 }
 
