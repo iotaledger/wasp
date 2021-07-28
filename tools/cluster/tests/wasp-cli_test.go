@@ -83,7 +83,7 @@ func TestWaspCLI1Chain(t *testing.T) {
 	require.Regexp(t, `(?m)IOTA:\s+1$`, out[0])
 
 	// test the chainlog
-	out = w.Run("chain", "log", "root")
+	out = w.Run("chain", "events", "root")
 	require.Len(t, out, 1)
 }
 
