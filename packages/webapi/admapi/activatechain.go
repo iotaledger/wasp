@@ -46,7 +46,7 @@ func (w *chainWebAPI) handleActivateChain(c echo.Context) error {
 	}
 
 	log.Debugw("calling Chains.Activate", "chainID", rec.ChainID.String())
-	if err := w.chains().Activate(rec, w.registry); err != nil {
+	if err := w.chains().Activate(rec, w.registry, nil); err != nil {
 		return err
 	}
 

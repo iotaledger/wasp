@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -33,6 +34,8 @@ type Mempool struct {
 	blobCache               registry.BlobCache
 	solidificationLoopDelay time.Duration
 	log                     *logger.Logger
+	mempoolMetrics          metrics.MempoolMetrics
+	chainID                 *iscp.ChainID
 }
 
 type requestRef struct {
@@ -47,14 +50,16 @@ const (
 
 var _ chain.Mempool = &Mempool{}
 
-func New(stateReader state.OptimisticStateReader, blobCache registry.BlobCache, log *logger.Logger, solidificationLoopDelay ...time.Duration) *Mempool {
+func New(stateReader state.OptimisticStateReader, blobCache registry.BlobCache, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, chainID *iscp.ChainID, solidificationLoopDelay ...time.Duration) *Mempool {
 	ret := &Mempool{
-		inBuffer:    make(map[iscp.RequestID]iscp.Request),
-		stateReader: stateReader,
-		pool:        make(map[iscp.RequestID]*requestRef),
-		chStop:      make(chan struct{}),
-		blobCache:   blobCache,
-		log:         log.Named("m"),
+		inBuffer:       make(map[iscp.RequestID]iscp.Request),
+		stateReader:    stateReader,
+		pool:           make(map[iscp.RequestID]*requestRef),
+		chStop:         make(chan struct{}),
+		blobCache:      blobCache,
+		log:            log.Named("m"),
+		mempoolMetrics: mempoolMetrics,
+		chainID:        chainID,
 	}
 	if len(solidificationLoopDelay) > 0 {
 		ret.solidificationLoopDelay = solidificationLoopDelay[0]
@@ -162,6 +167,14 @@ func (m *Mempool) ReceiveRequest(req iscp.Request) bool {
 	// Not adding this check now to avoid overhead, but should be looked into in case re-gossiping happens a lot
 	if m.checkInBuffer(req) {
 		return false
+	}
+	m.inMutex.RUnlock()
+	if m.mempoolMetrics != nil {
+		if req.IsOffLedger() {
+			m.mempoolMetrics.NewOffLedgerRequest(m.chainID.String())
+		} else {
+			m.mempoolMetrics.NewOnLedgerRequest(m.chainID.String())
+		}
 	}
 	return m.addToInBuffer(req)
 }

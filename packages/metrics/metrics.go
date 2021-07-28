@@ -11,10 +11,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func init() {
-	registerProcessMetrics()
-}
-
 type Metrics struct {
 	server *http.Server
 	log    *logger.Logger
@@ -30,14 +26,13 @@ func (m *Metrics) Start(addr string) error {
 		e.HideBanner = true
 		e.Use(middleware.Recover())
 		e.GET("/metrics", func(c echo.Context) error {
-			// Update general metrics here
-			updateProcessMetrics()
 			handler := promhttp.Handler()
 			handler.ServeHTTP(c.Response(), c.Request())
 			return nil
 		})
 		m.server = &http.Server{Addr: addr, Handler: e}
 	}
+	registerMempoolMetrics()
 	return m.server.ListenAndServe()
 }
 
