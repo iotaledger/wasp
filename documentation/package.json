@@ -28,7 +28,7 @@
   "resolutions": {
     "trim": ">=0.0.3",
     "glob-parent": "^5.1.2",
-    "browserslist": "4.16.5",
+    "browserslist": "^4.16.6",
     "css-what": ">=5.0.1"
   },
   "browserslist": {
