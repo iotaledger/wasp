@@ -131,8 +131,9 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 
 	targetContract, _ := req.Target()
 	var ok bool
-	if vmctx.contractRecord, ok = vmctx.findContractByHname(targetContract); !ok {
-		vmctx.log.Panicf("inconsistency: findContractByHname")
+	vmctx.contractRecord, ok = vmctx.findContractByHname(targetContract)
+	if !ok {
+		vmctx.log.Warnf("contact not found: %s", targetContract)
 	}
 	if vmctx.contractRecord.Hname() == 0 {
 		vmctx.log.Warn("default contract will be called")

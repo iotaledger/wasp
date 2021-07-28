@@ -67,7 +67,7 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 	if err != nil {
 		return nil, err
 	}
-	retBin, err := retDict.Get(root.VarData)
+	retBin, err := retDict.Get(root.ParamContractRecData)
 	if err != nil {
 		return nil, err
 	}

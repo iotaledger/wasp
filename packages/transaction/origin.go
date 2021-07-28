@@ -3,6 +3,8 @@ package transaction
 import (
 	"time"
 
+	"github.com/iotaledger/wasp/packages/vm/core/root"
+
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -69,11 +71,8 @@ func NewRootInitRequestTransaction(
 
 	args := requestargs.New(nil)
 
-	const paramChainID = "$$chainid$$"
-	const paramDescription = "$$description$$"
-
-	args.AddEncodeSimple(paramChainID, codec.EncodeChainID(chainID))
-	args.AddEncodeSimple(paramDescription, codec.EncodeString(description))
+	args.AddEncodeSimple(root.ParamChainID, codec.EncodeChainID(chainID))
+	args.AddEncodeSimple(root.ParamDescription, codec.EncodeString(description))
 
 	metadata := request.NewMetadata().
 		WithTarget(iscp.Hn("root")).

@@ -144,12 +144,14 @@ func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-	rec, err := FindContract(ctx.State(), hname)
-	if err != nil {
-		return nil, err
-	}
+	rec, found := FindContract(ctx.State(), hname)
 	ret := dict.New()
-	ret.Set(VarData, rec.Bytes())
+	ret.Set(ParamContractRecData, rec.Bytes())
+	var foundByte [1]byte
+	if found {
+		foundByte[0] = 0xFF
+	}
+	ret.Set(ParamContractFound, foundByte[:])
 	return ret, nil
 }
 
@@ -230,7 +232,7 @@ func getFeeInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-	feeColor, ownerFee, validatorFee := GetFeeInfo(ctx.State(), hname)
+	feeColor, ownerFee, validatorFee := GetFeeInfo(ctx, hname)
 	ret := dict.New()
 	ret.Set(VarFeeColor, codec.EncodeColor(feeColor))
 	ret.Set(VarOwnerFee, codec.EncodeUint64(ownerFee))
@@ -284,10 +286,8 @@ func setContractFee(ctx iscp.Sandbox) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	hname := params.MustGetHname(ParamHname)
-	rec, err := FindContract(ctx.State(), hname)
-	if err != nil {
-		return nil, err
-	}
+	rec, found := FindContract(ctx.State(), hname)
+	a.Require(found, "contract not found")
 
 	ownerFee := params.MustGetUint64(ParamOwnerFee, 0)
 	ownerFeeSet := ownerFee >= 0 //nolint:staticcheck
