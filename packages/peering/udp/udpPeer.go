@@ -99,6 +99,10 @@ func (p *peer) handleHandshake(handshake *handshakeMsg, remoteUDPAddr *net.UDPAd
 		p.remotePubKey = &handshake.pubKey
 		p.waitReady.Done()
 		p.log.Infof("Node %v is now paired with %v", p.net.NetID(), p.remoteNetID)
+		util.LogExtended(p.log, util.ExtendedMessage{Message: "Established pairing", Tag: "udpPeer", Args: map[string]string{
+			"netID":       p.net.NetID(),
+			"remoteNetID": p.remoteNetID,
+		}})
 	} else if p.remotePubKey != nil && *p.remotePubKey == handshake.pubKey {
 		// It's just a ping.
 	} else {

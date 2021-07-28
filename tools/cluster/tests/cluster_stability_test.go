@@ -58,7 +58,7 @@ func sabotageNetwork(t *testing.T, env *chainEnv, numValidators int, clusterSize
 	}
 
 	time.Sleep(time.Second * 10)
-
+	return
 	for i := numValidators - 1; i >= numValidators-1-int(breakCount); i-- {
 		t.Logf("Breaking node: %v", i)
 		err := env.clu.UnfreezeNode(i)

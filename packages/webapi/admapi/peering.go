@@ -47,6 +47,10 @@ func addPeeringEndpoints(adm echoswagger.ApiGroup, network peering.NetworkProvid
 		AddResponse(http.StatusOK, "Trusted peer info.", listExample[0], nil).
 		SetSummary("Trust the specified peer, the pub key is passed via the path.")
 
+	adm.GET(routes.PeeringGetStatus(), handlePeeringGetStatus, addCtx).
+		AddResponse(http.StatusOK, "This node as a peer.", listExample[0], nil).
+		SetSummary("Basic peer info of the current node.")
+
 	adm.POST(routes.PeeringTrustedPost(), handlePeeringTrustedPost, addCtx).
 		AddParamBody(listExample[0], "PeeringTrustedNode", "Info of the peer to trust.", true).
 		AddResponse(http.StatusOK, "Trusted peer info.", listExample[0], nil).
@@ -64,6 +68,23 @@ func handlePeeringSelfGet(c echo.Context) error {
 		NetID:  network.Self().NetID(),
 	}
 	return c.JSON(http.StatusOK, resp)
+}
+func handlePeeringGetStatus(c echo.Context) error {
+	network := c.Get("net").(peering.NetworkProvider)
+	peeringStatus := network.PeerStatus()
+
+	peers := make([]model.PeeringNodeStatus, len(peeringStatus))
+
+	for k, v := range peeringStatus {
+		peers[k] = model.PeeringNodeStatus{
+			PubKey:   v.PubKey().String(),
+			NetID:    v.NetID(),
+			IsAlive:  v.IsAlive(),
+			NumUsers: v.NumUsers(),
+		}
+	}
+
+	return c.JSON(http.StatusOK, peers)
 }
 
 func handlePeeringTrustedList(c echo.Context) error {
