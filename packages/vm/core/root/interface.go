@@ -21,7 +21,6 @@ const (
 	VarChainOwnerID          = "o"
 	VarChainOwnerIDDelegated = "n"
 	VarContractRegistry      = "r"
-	VarData                  = "dt"
 	VarDefaultOwnerFee       = "do"
 	VarDefaultValidatorFee   = "dv"
 	VarDeployPermissions     = "dep"
@@ -34,16 +33,18 @@ const (
 
 // param variables
 const (
-	ParamChainID      = "$$chainid$$"
-	ParamChainOwner   = "$$owner$$"
-	ParamDeployer     = "$$deployer$$"
-	ParamDescription  = "$$description$$"
-	ParamFeeColor     = "$$feecolor$$"
-	ParamHname        = "$$hname$$"
-	ParamName         = "$$name$$"
-	ParamOwnerFee     = "$$ownerfee$$"
-	ParamProgramHash  = "$$proghash$$"
-	ParamValidatorFee = "$$validatorfee$$"
+	ParamChainID         = "ci"
+	ParamChainOwner      = "oi"
+	ParamDeployer        = "dp"
+	ParamDescription     = "ds"
+	ParamFeeColor        = "fc"
+	ParamHname           = "hn"
+	ParamName            = "nm"
+	ParamOwnerFee        = "of"
+	ParamProgramHash     = "ph"
+	ParamValidatorFee    = "vf"
+	ParamContractRecData = "dt"
+	ParamContractFound   = "cf"
 )
 
 // function names

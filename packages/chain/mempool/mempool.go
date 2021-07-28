@@ -160,13 +160,18 @@ func (m *Mempool) ReceiveRequests(reqs ...iscp.Request) {
 func (m *Mempool) ReceiveRequest(req iscp.Request) bool {
 	// could be worth it to check if the request was already processed in the blocklog.
 	// Not adding this check now to avoid overhead, but should be looked into in case re-gossiping happens a lot
-	m.inMutex.RLock()
-	if _, exists := m.inBuffer[req.ID()]; exists {
-		m.inMutex.RUnlock()
+	if m.checkInBuffer(req) {
 		return false
 	}
-	m.inMutex.RUnlock()
 	return m.addToInBuffer(req)
+}
+
+func (m *Mempool) checkInBuffer(req iscp.Request) bool {
+	m.inMutex.RLock()
+	defer m.inMutex.RUnlock()
+
+	_, exists := m.inBuffer[req.ID()]
+	return exists
 }
 
 // RemoveRequests removes requests from the pool
