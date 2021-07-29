@@ -8,9 +8,11 @@ import (
 	"github.com/iotaledger/hive.go/node"
 	_ "github.com/iotaledger/wasp/packages/chain/chainimpl"
 	"github.com/iotaledger/wasp/packages/chains"
+	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/ready"
 	"github.com/iotaledger/wasp/plugins/database"
+	"github.com/iotaledger/wasp/plugins/metrics"
 	"github.com/iotaledger/wasp/plugins/nodeconn"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/processors"
@@ -22,6 +24,7 @@ const PluginName = "Chains"
 var (
 	log         *logger.Logger
 	allChains   *chains.Chains
+	allMetrics  *metricspkg.Metrics
 	initialized = ready.New(PluginName)
 )
 
@@ -45,7 +48,10 @@ func run(_ *node.Plugin) {
 	)
 	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
 		allChains.Attach(nodeconn.NodeConnection())
-		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry); err != nil {
+		if parameters.GetBool(parameters.MetricsEnabled) {
+			allMetrics = metrics.AllMetrics()
+		}
+		if err := allChains.ActivateAllFromRegistry(registry.DefaultRegistry, allMetrics); err != nil {
 			log.Errorf("failed to read chain activation records from registry: %v", err)
 			return
 		}
