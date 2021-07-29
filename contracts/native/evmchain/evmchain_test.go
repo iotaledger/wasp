@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/solo/solobench"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
@@ -347,9 +348,7 @@ func TestPrePaidFees(t *testing.T) {
 	require.EqualValues(t, 999, storage.retrieve())
 }
 
-// BenchmarkEVMStorage is a benchmark for the evmchain contract running under solo.
-// run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
-func BenchmarkEVMStorage(b *testing.B) {
+func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: deploy the evmchain contract
 	log := testlogger.NewSilentLogger(b.Name(), true)
 	env := solo.NewWithLogger(b, log).WithNativeContract(Processor)
@@ -370,11 +369,21 @@ func BenchmarkEVMStorage(b *testing.B) {
 		reqs[i] = storage.chain.buildSoloRequest(FuncSendTransaction.Name, iotaOpt.transfer, FieldTransactionData, txdata)
 	}
 
-	// benchmark: send the requests.
-	// TODO: benchmark multiple requests per block -- requires support from solo
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, err := evmChain.soloChain.PostRequestSync(reqs[i], evmChain.soloChain.OriginatorKeyPair)
-		require.NoError(b, err)
-	}
+	return evmChain.soloChain, reqs
+}
+
+// BenchmarkEVMStorageSync is a benchmark for the evmchain contract running under solo,
+// processing requests synchronously, and producing 1 block per request.
+// run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
+func BenchmarkEVMStorageSync(b *testing.B) {
+	chain, reqs := initBenchmark(b)
+	solobench.RunBenchmarkSync(b, chain, reqs, nil)
+}
+
+// BenchmarkEVMStorageAsync is a benchmark for the evmchain contract running under solo,
+// processing requests asynchronously, and producing 1 block per many requests.
+// run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
+func BenchmarkEVMStorageAsync(b *testing.B) {
+	chain, reqs := initBenchmark(b)
+	solobench.RunBenchmarkAsync(b, chain, reqs, nil)
 }
