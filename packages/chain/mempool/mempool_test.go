@@ -69,7 +69,7 @@ func TestMempool(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	glb := coreutil.NewChainStateSync()
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil, nil)
 	require.NotNil(t, pool)
 	time.Sleep(2 * time.Second)
 	stats := pool.Info()
@@ -86,7 +86,7 @@ func TestAddRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil, nil)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 1)
 
@@ -104,7 +104,7 @@ func TestAddRequestInvalidState(t *testing.T) {
 	glb := coreutil.NewChainStateSync()
 	glb.InvalidateSolidIndex()
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil, nil)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 1)
 
@@ -132,7 +132,7 @@ func TestAddRequestTwice(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil, nil)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 1)
 
@@ -162,7 +162,7 @@ func TestAddOffLedgerRequest(t *testing.T) {
 	testlogger.WithLevel(log, zapcore.InfoLevel, false)
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil, nil)
 	require.NotNil(t, pool)
 	onLedgerRequests, keyPair := getRequestsOnLedger(t, 2)
 
@@ -199,7 +199,7 @@ func TestProcessedRequest(t *testing.T) {
 	rdr, vs := createStateReader(t, glb)
 	wrt := vs.KVStore()
 
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil, nil)
 	require.NotNil(t, pool)
 
 	stats := pool.Info()
@@ -236,7 +236,7 @@ func TestAddRemoveRequests(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil, nil)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
 
@@ -283,7 +283,7 @@ func TestAddRemoveRequests(t *testing.T) {
 func TestTimeLock(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), nil, nil)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
 
@@ -385,7 +385,7 @@ func TestTimeLock(t *testing.T) {
 func TestReadyFromIDs(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), nil, nil)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
 
@@ -469,7 +469,7 @@ func TestSolidification(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 	blobCache := iscp.NewInMemoryBlobCache()
-	pool := New(rdr, blobCache, log, 20*time.Millisecond) // Solidification initiated on pool creation
+	pool := New(rdr, blobCache, log, nil, nil, 20*time.Millisecond) // Solidification initiated on pool creation
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 4)
 
@@ -507,7 +507,7 @@ func TestSolidification(t *testing.T) {
 func TestRotateRequest(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), nil, nil)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
 
