@@ -15,6 +15,14 @@ var (
 	ErrContractNotFound = errors.New("smart contract not found")
 )
 
+// constants
+const (
+	MinEventSize        = 200
+	MinEventsPerRequest = 10
+	DefaultMaxEventSize = 2000    // 2Kb
+	DefaultMaxBlobSize  = 2000000 // 2Mb
+)
+
 // state variables
 const (
 	VarChainID               = "c"
@@ -29,22 +37,28 @@ const (
 	VarOwnerFee              = "of"
 	VarStateInitialized      = "i"
 	VarValidatorFee          = "vf"
+	VarMaxBlobSize           = "mb"
+	VarMaxEventSize          = "me"
+	VarMaxEventsPerReq       = "mr"
 )
 
 // param variables
 const (
-	ParamChainID         = "ci"
-	ParamChainOwner      = "oi"
-	ParamDeployer        = "dp"
-	ParamDescription     = "ds"
-	ParamFeeColor        = "fc"
-	ParamHname           = "hn"
-	ParamName            = "nm"
-	ParamOwnerFee        = "of"
-	ParamProgramHash     = "ph"
-	ParamValidatorFee    = "vf"
-	ParamContractRecData = "dt"
-	ParamContractFound   = "cf"
+	ParamChainID             = "ci"
+	ParamChainOwner          = "oi"
+	ParamDeployer            = "dp"
+	ParamDescription         = "ds"
+	ParamFeeColor            = "fc"
+	ParamHname               = "hn"
+	ParamName                = "nm"
+	ParamOwnerFee            = "of"
+	ParamProgramHash         = "ph"
+	ParamValidatorFee        = "vf"
+	ParamContractRecData     = "dt"
+	ParamContractFound       = "cf"
+	ParamMaxBlobSize         = "bs"
+	ParamMaxEventSize        = "es"
+	ParamMaxEventsPerRequest = "ne"
 )
 
 // function names
@@ -55,9 +69,9 @@ var (
 	FuncGrantDeployPermission  = coreutil.Func("grantDeployPermission")
 	FuncRevokeDeployPermission = coreutil.Func("revokeDeployPermission")
 	FuncSetContractFee         = coreutil.Func("setContractFee")
-	FuncSetDefaultFee          = coreutil.Func("setDefaultFee")
+	FuncSetChainConfig         = coreutil.Func("setChainConfig")
 	FuncFindContract           = coreutil.ViewFunc("findContract")
-	FuncGetChainInfo           = coreutil.ViewFunc("getChainInfo")
+	FuncGetChainConfig         = coreutil.ViewFunc("getChainConfig")
 	FuncGetFeeInfo             = coreutil.ViewFunc("getFeeInfo")
 )
 
@@ -84,14 +98,17 @@ type ContractRecord struct {
 	Creator *iscp.AgentID
 }
 
-// ChainInfo is an API structure which contains main properties of the chain in on place
-type ChainInfo struct {
+// ChainConfig is an API structure which contains main properties of the chain in on place
+type ChainConfig struct {
 	ChainID             iscp.ChainID
 	ChainOwnerID        iscp.AgentID
 	Description         string
 	FeeColor            colored.Color
 	DefaultOwnerFee     int64
 	DefaultValidatorFee int64
+	MaxBlobSize         uint32
+	MaxEventSize        uint16
+	MaxEventsPerReq     uint16
 }
 
 func NewContractRecord(itf *coreutil.ContractInfo, creator *iscp.AgentID) *ContractRecord {

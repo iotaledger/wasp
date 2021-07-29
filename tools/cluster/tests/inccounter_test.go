@@ -21,7 +21,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 		require.EqualValues(e.t, numRequests+3, blockIndex)
 
 		cl := e.chain.SCClient(root.Contract.Hname(), nil, i)
-		ret, err := cl.CallView(root.FuncGetChainInfo.Name, nil)
+		ret, err := cl.CallView(root.FuncGetChainConfig.Name, nil)
 		require.NoError(e.t, err)
 
 		chid, _, _ := codec.DecodeChainID(ret.MustGet(root.VarChainID))
@@ -66,7 +66,7 @@ func TestIncDeployment(t *testing.T) {
 		require.EqualValues(t, 3, blockIndex)
 
 		cl := e.chain.SCClient(root.Contract.Hname(), nil, i)
-		ret, err := cl.CallView(root.FuncGetChainInfo.Name, nil)
+		ret, err := cl.CallView(root.FuncGetChainConfig.Name, nil)
 		require.NoError(t, err)
 
 		chid, _, _ := codec.DecodeChainID(ret.MustGet(root.VarChainID))

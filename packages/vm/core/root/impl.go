@@ -30,9 +30,9 @@ var Processor = Contract.Processor(initialize,
 	FuncGrantDeployPermission.WithHandler(grantDeployPermission),
 	FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
 	FuncSetContractFee.WithHandler(setContractFee),
-	FuncSetDefaultFee.WithHandler(setDefaultFee),
+	FuncSetChainConfig.WithHandler(setChainConfig),
 	FuncFindContract.WithHandler(findContract),
-	FuncGetChainInfo.WithHandler(getChainInfo),
+	FuncGetChainConfig.WithHandler(getChainConfig),
 	FuncGetFeeInfo.WithHandler(getFeeInfo),
 )
 
@@ -82,6 +82,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	if feeColorSet {
 		state.Set(VarFeeColor, codec.EncodeColor(feeColor))
 	}
+	// TODO set maxblob, maxevent size, default fees?
 	ctx.Log().Debugf("root.initialize.success")
 	return nil, nil
 }
@@ -155,7 +156,7 @@ func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-// getChainInfo view returns general info about the chain: chain ID, chain owner ID,
+// getChainConfig view returns general info about the chain: chain ID, chain owner ID,
 // description and the whole contract registry
 // Input: none
 // Output:
@@ -163,8 +164,8 @@ func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
 // - VarChainOwnerID - AgentID
 // - VarDescription - string
 // - VarContractRegistry: a map of contract registry
-func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
-	info := MustGetChainInfo(ctx.State())
+func getChainConfig(ctx iscp.SandboxView) (dict.Dict, error) {
+	info := MustGetChainConfig(ctx.State())
 	ret := dict.New()
 	ret.Set(VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(VarChainOwnerID, codec.EncodeAgentID(&info.ChainOwnerID))
@@ -172,6 +173,9 @@ func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret.Set(VarFeeColor, codec.EncodeColor(info.FeeColor))
 	ret.Set(VarDefaultOwnerFee, codec.EncodeInt64(info.DefaultOwnerFee))
 	ret.Set(VarDefaultValidatorFee, codec.EncodeInt64(info.DefaultValidatorFee))
+	ret.Set(VarMaxBlobSize, codec.EncodeUint32(info.MaxBlobSize))
+	ret.Set(VarMaxEventSize, codec.EncodeUint16(info.MaxEventSize))
+	ret.Set(VarMaxEventsPerReq, codec.EncodeUint16(info.MaxEventsPerReq))
 
 	src := collections.NewMapReadOnly(ctx.State(), VarContractRegistry)
 	dst := collections.NewMap(ret, VarContractRegistry)
@@ -244,35 +248,35 @@ func getFeeInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 // Input:
 // - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
 // - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
-func setDefaultFee(ctx iscp.Sandbox) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
-	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setDefaultFee: not authorized")
+// func setDefaultFee(ctx iscp.Sandbox) (dict.Dict, error) {
+// 	a := assert.NewAssert(ctx.Log())
+// 	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setDefaultFee: not authorized")
 
-	params := kvdecoder.New(ctx.Params(), ctx.Log())
+// 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 
-	ownerFee := params.MustGetInt64(ParamOwnerFee, -1)
-	ownerFeeSet := ownerFee >= 0
-	validatorFee := params.MustGetInt64(ParamValidatorFee, -1)
-	validatorFeeSet := validatorFee >= 0
+// 	ownerFee := params.MustGetInt64(ParamOwnerFee, -1)
+// 	ownerFeeSet := ownerFee >= 0
+// 	validatorFee := params.MustGetInt64(ParamValidatorFee, -1)
+// 	validatorFeeSet := validatorFee >= 0
 
-	a.Require(ownerFeeSet || validatorFeeSet, "root.setDefaultFee: wrong parameters")
+// 	a.Require(ownerFeeSet || validatorFeeSet, "root.setDefaultFee: wrong parameters")
 
-	if ownerFeeSet {
-		if ownerFee > 0 {
-			ctx.State().Set(VarDefaultOwnerFee, codec.EncodeInt64(ownerFee))
-		} else {
-			ctx.State().Del(VarDefaultOwnerFee)
-		}
-	}
-	if validatorFeeSet {
-		if validatorFee > 0 {
-			ctx.State().Set(VarDefaultValidatorFee, codec.EncodeInt64(validatorFee))
-		} else {
-			ctx.State().Del(VarDefaultValidatorFee)
-		}
-	}
-	return nil, nil
-}
+// 	if ownerFeeSet {
+// 		if ownerFee > 0 {
+// 			ctx.State().Set(VarDefaultOwnerFee, codec.EncodeInt64(ownerFee))
+// 		} else {
+// 			ctx.State().Del(VarDefaultOwnerFee)
+// 		}
+// 	}
+// 	if validatorFeeSet {
+// 		if validatorFee > 0 {
+// 			ctx.State().Set(VarDefaultValidatorFee, codec.EncodeInt64(validatorFee))
+// 		} else {
+// 			ctx.State().Del(VarDefaultValidatorFee)
+// 		}
+// 	}
+// 	return nil, nil
+// }
 
 // setContractFee sets fee for the particular smart contract
 // Input:
@@ -290,10 +294,9 @@ func setContractFee(ctx iscp.Sandbox) (dict.Dict, error) {
 	a.Require(found, "contract not found")
 
 	ownerFee := params.MustGetUint64(ParamOwnerFee, 0)
-	ownerFeeSet := ownerFee >= 0 //nolint:staticcheck
+	ownerFeeSet := ownerFee > 0
 	validatorFee := params.MustGetUint64(ParamValidatorFee, 0)
-	validatorFeeSet := validatorFee >= 0 //nolint:staticcheck
-	// TODO ownerFeeSet and validatorFeeSet checks are probably obsolete and could be removed. to be refactored
+	validatorFeeSet := validatorFee > 0
 
 	a.Require(ownerFeeSet || validatorFeeSet, "root.setContractFee: wrong parameters")
 	if ownerFeeSet {
@@ -334,4 +337,66 @@ func revokeDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 	collections.NewMap(ctx.State(), VarDeployPermissions).MustDelAt(deployer.Bytes())
 	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %s", deployer))
 	return nil, nil
+}
+
+// setChainConfig sets the configuration parameters of the chain
+// Input (all optional):
+// - ParamMaxBlobSize         - uint32 maximum size of a blob to be saved in the blob contract.
+// - ParamMaxEventSize        - uint16 maximum size of a single event.
+// - ParamMaxEventsPerRequest - uint16 maximum number of events per request.
+// - ParamOwnerFee            - int64 non-negative value of the owner fee.
+// - ParamValidatorFee        - int64 non-negative value of the contract fee.
+func setChainConfig(ctx iscp.Sandbox) (dict.Dict, error) {
+	a := assert.NewAssert(ctx.Log())
+	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setContractFee: not authorized")
+
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+
+	// max blob size
+	maxBlobSize := params.MustGetUint32(ParamMaxBlobSize, 0)
+	if maxBlobSize > 0 {
+		ctx.State().Set(VarMaxBlobSize, codec.Encode(maxBlobSize))
+		ctx.Event(fmt.Sprintf("[updated chain config] max blob size: %d", maxBlobSize))
+	}
+
+	// max event size
+	maxEventSize := params.MustGetUint16(ParamMaxEventSize, 0)
+	if maxEventSize > 0 {
+		if maxEventSize < MinEventSize {
+			// don't allow to set less than MinEventSize to prevent chain owner from bricking the chain
+			maxEventSize = MinEventSize
+		}
+		ctx.State().Set(VarMaxEventSize, codec.Encode(maxEventSize))
+		ctx.Event(fmt.Sprintf("[updated chain config] max event size: %d", maxEventSize))
+	}
+
+	// max events per request
+	maxEventsPerReq := params.MustGetUint16(ParamMaxEventsPerRequest, 0)
+	if maxEventsPerReq > 0 {
+		if maxEventsPerReq < MinEventsPerRequest {
+			maxEventsPerReq = MinEventsPerRequest
+		}
+		ctx.State().Set(VarMaxEventsPerReq, codec.Encode(maxEventsPerReq))
+		ctx.Event(fmt.Sprintf("[updated chain config] max eventsPerRequest: %d", maxEventsPerReq))
+	}
+
+	// default owner fee
+	ownerFee := params.MustGetInt64(ParamOwnerFee, -1)
+	if ownerFee >= 0 {
+		ctx.State().Set(VarDefaultOwnerFee, codec.EncodeInt64(ownerFee))
+		ctx.Event(fmt.Sprintf("[updated chain config] default owner fee: %d", ownerFee))
+	}
+
+	// default validator fee
+	validatorFee := params.MustGetInt64(ParamValidatorFee, -1)
+	if validatorFee >= 0 {
+		ctx.State().Set(VarDefaultValidatorFee, codec.EncodeInt64(validatorFee))
+		ctx.Event(fmt.Sprintf("[updated chain config] default validator fee: %d", validatorFee))
+	}
+
+	return nil, nil
+
+	// TODO set default values
+
+	// then enforce the values and enforce them where needed
 }

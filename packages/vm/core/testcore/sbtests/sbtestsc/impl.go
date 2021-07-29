@@ -54,7 +54,7 @@ func testChainOwnerIDFull(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func testSandboxCall(ctx iscp.SandboxView) (dict.Dict, error) {
-	ret, err := ctx.Call(root.Contract.Hname(), root.FuncGetChainInfo.Hname(), nil)
+	ret, err := ctx.Call(root.Contract.Hname(), root.FuncGetChainConfig.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}

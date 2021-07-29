@@ -216,13 +216,13 @@ func (ll RequestLookupKeyList) Bytes() []byte {
 
 // EventLookupKey is a globally unique reference to the event:
 // block index + index of the request within block + index of the event within the request
-type EventLookupKey [7]byte
+type EventLookupKey [8]byte
 
-func NewEventLookupKey(blockIndex uint32, requestIndex uint16, eventIndex uint8) EventLookupKey {
+func NewEventLookupKey(blockIndex uint32, requestIndex uint16, eventIndex uint16) EventLookupKey {
 	ret := EventLookupKey{}
 	copy(ret[:4], util.Uint32To4Bytes(blockIndex))
 	copy(ret[4:6], util.Uint16To2Bytes(requestIndex))
-	ret[6] = eventIndex
+	copy(ret[6:8], util.Uint16To2Bytes(eventIndex))
 	return ret
 }
 
@@ -234,8 +234,8 @@ func (k EventLookupKey) RequestIndex() uint16 {
 	return util.MustUint16From2Bytes(k[4:6])
 }
 
-func (k EventLookupKey) RequestEventIndex() uint8 {
-	return k[6]
+func (k EventLookupKey) RequestEventIndex() uint16 {
+	return util.MustUint16From2Bytes(k[6:8])
 }
 
 func (k EventLookupKey) Bytes() []byte {

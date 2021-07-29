@@ -37,16 +37,19 @@ func FindContract(state kv.KVStoreReader, hname iscp.Hname) (*ContractRecord, bo
 	return NewContractRecord(_default.Contract, &iscp.NilAgentID), false
 }
 
-// MustGetChainInfo return global variables of the chain
-func MustGetChainInfo(state kv.KVStoreReader) ChainInfo {
+// MustGetChainConfig return global variables of the chain
+func MustGetChainConfig(state kv.KVStoreReader) ChainConfig {
 	d := kvdecoder.New(state)
-	ret := ChainInfo{
+	ret := ChainConfig{
 		ChainID:             *d.MustGetChainID(VarChainID),
 		ChainOwnerID:        *d.MustGetAgentID(VarChainOwnerID),
 		Description:         d.MustGetString(VarDescription, ""),
 		FeeColor:            d.MustGetColor(VarFeeColor, colored.IOTA),
 		DefaultOwnerFee:     d.MustGetInt64(VarDefaultOwnerFee, 0),
 		DefaultValidatorFee: d.MustGetInt64(VarDefaultValidatorFee, 0),
+		MaxBlobSize:         d.MustGetUint32(VarMaxBlobSize, 0),
+		MaxEventSize:        d.MustGetUint16(VarMaxEventSize, 0),
+		MaxEventsPerReq:     d.MustGetUint16(VarMaxEventsPerReq, 0),
 	}
 	return ret
 }

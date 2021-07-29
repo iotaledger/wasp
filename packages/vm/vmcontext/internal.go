@@ -1,8 +1,6 @@
 package vmcontext
 
 import (
-	"math"
-
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -55,11 +53,11 @@ func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) (*root.Con
 	return root.FindContract(vmctx.State(), contractHname)
 }
 
-func (vmctx *VMContext) mustGetChainInfo() root.ChainInfo {
+func (vmctx *VMContext) getChainConfig() root.ChainConfig {
 	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return root.MustGetChainInfo(vmctx.State())
+	return root.MustGetChainConfig(vmctx.State())
 }
 
 func (vmctx *VMContext) getFeeInfo() (colored.Color, uint64, uint64) {
@@ -143,8 +141,12 @@ func (vmctx *VMContext) mustLogRequestToBlockLog(errProvided error) {
 func (vmctx *VMContext) MustSaveEvent(contract iscp.Hname, msg string) {
 	vmctx.pushCallContext(blocklog.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
-	if vmctx.requestEventIndex == math.MaxUint8 {
+	if vmctx.requestEventIndex > vmctx.maxEventsPerReq {
 		vmctx.Panicf("too many events issued for contract: %s, request index: %d", contract.String(), vmctx.requestIndex)
+	}
+
+	if len([]byte(msg)) > int(vmctx.maxEventSize) {
+		vmctx.Panicf("event too large: %s, request index: %d", contract.String(), vmctx.requestIndex)
 	}
 
 	vmctx.log.Debugf("MustSaveEvent/%s: msg: '%s'", contract.String(), msg)
