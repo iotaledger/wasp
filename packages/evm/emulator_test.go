@@ -542,6 +542,7 @@ func benchmarkEVMEmulator(b *testing.B, k int) {
 			emu.Commit()
 		}
 	}
+	emu.Commit()
 }
 
 func BenchmarkEVMEmulator1(b *testing.B)   { benchmarkEVMEmulator(b, 1) }
