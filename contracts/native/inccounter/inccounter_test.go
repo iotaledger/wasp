@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/solo/solobench"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/stretchr/testify/require"
@@ -96,9 +97,7 @@ func TestIncWith1Post(t *testing.T) {
 	chain.CheckAccountLedger()
 }
 
-// BenchmarkEVMStorage is a benchmark for the inccounter native contract running under solo.
-// run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
-func BenchmarkInc(b *testing.B) {
+func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: deploy the inccounter contract
 	log := testlogger.NewSilentLogger(b.Name(), true)
 	env := solo.NewWithLogger(b, log).WithNativeContract(Processor)
@@ -113,11 +112,21 @@ func BenchmarkInc(b *testing.B) {
 		reqs[i] = solo.NewCallParams(incName, FuncIncCounter.Name).WithIotas(1)
 	}
 
-	// benchmark: send the requests.
-	// TODO: benchmark multiple requests per block -- requires support from solo
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_, err = chain.PostRequestSync(reqs[i], nil)
-		require.NoError(b, err)
-	}
+	return chain, reqs
+}
+
+// BenchmarkIncSync is a benchmark for the inccounter native contract running under solo,
+// processing requests synchronously, and producing 1 block per request.
+// run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
+func BenchmarkIncSync(b *testing.B) {
+	chain, reqs := initBenchmark(b)
+	solobench.RunBenchmarkSync(b, chain, reqs, nil)
+}
+
+// BenchmarkIncAsync is a benchmark for the inccounter native contract running under solo,
+// processing requests synchronously, and producing 1 block per many requests.
+// run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
+func BenchmarkIncAsync(b *testing.B) {
+	chain, reqs := initBenchmark(b)
+	solobench.RunBenchmarkAsync(b, chain, reqs, nil)
 }
