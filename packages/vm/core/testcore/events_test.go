@@ -14,6 +14,7 @@ import (
 
 var (
 	nEvents                = 10000
+	bigEventSize           = 5000 // ~5KB
 	manyEventsContractName = "ManyEventsContract"
 	manyEventsContract     = coreutil.NewContract(manyEventsContractName, "many events contract")
 
@@ -28,7 +29,7 @@ var (
 			return nil, nil
 		}),
 		funcBigEvent.WithHandler(func(ctx iscp.Sandbox) (dict.Dict, error) {
-			buf := make([]byte, 500) // ~5KB
+			buf := make([]byte, bigEventSize)
 			ctx.Event(string(buf))
 			return nil, nil
 		}),
@@ -68,6 +69,7 @@ func TestManyEvents(t *testing.T) {
 	reqID := reqs[0].ID()
 	checkNEvents(t, ch, reqID, 0) // no events are saved
 
+	// allow for more events per request in root contract
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
 			root.Contract.Name, root.FuncSetChainConfig.Name,
@@ -77,6 +79,7 @@ func TestManyEvents(t *testing.T) {
 	)
 	require.NoError(t, err)
 
+	// check events are now saved
 	tx, _, err = ch.PostRequestSyncTx(
 		solo.NewCallParams(manyEventsContract.Name, funcManyEvents.Name).WithIotas(1),
 		nil,
@@ -91,14 +94,35 @@ func TestManyEvents(t *testing.T) {
 func TestEventTooLarge(t *testing.T) {
 	ch := setupTest(t)
 
-	// post a request that issues too many events
-	req := solo.NewCallParams(manyEventsContract.Name, funcBigEvent.Name).WithIotas(1)
-	_, reqid, err := ch.RequestFromParamsToLedger(req, ch.OriginatorKeyPair)
+	// post a request that issues an event too large
+	tx, _, err := ch.PostRequestSyncTx(
+		solo.NewCallParams(manyEventsContract.Name, funcBigEvent.Name).WithIotas(1),
+		nil,
+	)
+	require.Error(t, err) // error expected (event too large)
+	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
+	require.NoError(t, err)
+	reqID := reqs[0].ID()
+	checkNEvents(t, ch, reqID, 0) // no events are saved
+
+	// allow for bigger events in root contract
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			root.Contract.Name, root.FuncSetChainConfig.Name,
+			root.ParamMaxEventSize, uint16(bigEventSize),
+		).WithIotas(1),
+		nil,
+	)
 	require.NoError(t, err)
 
-	_, err = ch.PostRequestSync(req, nil)
-	require.Error(t, err)         // error expected (event too large)
-	checkNEvents(t, ch, reqid, 0) // no events are saved
-
-	// TODO set root contract eventsize limit to 6Kb, then retry and it should succeed
+	// check event is now saved
+	tx, _, err = ch.PostRequestSyncTx(
+		solo.NewCallParams(manyEventsContract.Name, funcBigEvent.Name).WithIotas(1),
+		nil,
+	)
+	require.NoError(t, err)
+	reqs, err = ch.Env.RequestsForChain(tx, ch.ChainID)
+	require.NoError(t, err)
+	reqID = reqs[0].ID()
+	checkNEvents(t, ch, reqID, 1)
 }
