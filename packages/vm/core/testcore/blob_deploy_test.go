@@ -177,5 +177,4 @@ func TestDeployGrantFail(t *testing.T) {
 }
 
 // func TestBigBlob(t *testing.T) {
-
 // }

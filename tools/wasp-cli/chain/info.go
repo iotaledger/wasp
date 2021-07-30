@@ -4,6 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
@@ -32,7 +33,7 @@ var infoCmd = &cobra.Command{
 			log.Check(err)
 			log.Printf("Description: %s\n", description)
 
-			contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
+			contracts, err := rootimpl.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
 			log.Check(err)
 			log.Printf("#Contracts: %d\n", len(contracts))
 
@@ -46,7 +47,7 @@ var infoCmd = &cobra.Command{
 				log.Printf("Delegated owner: %s\n", delegated.String())
 			}
 
-			feeColor, defaultOwnerFee, defaultValidatorFee, err := root.GetDefaultFeeInfo(info)
+			feeColor, defaultOwnerFee, defaultValidatorFee, err := rootimpl.GetDefaultFeeInfo(info)
 			log.Check(err)
 			log.Printf("Default owner fee: %d %s\n", defaultOwnerFee, feeColor)
 			log.Printf("Default validator fee: %d %s\n", defaultValidatorFee, feeColor)

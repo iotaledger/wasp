@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
 
@@ -246,7 +247,7 @@ func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.Contra
 	if err != nil {
 		return nil, err
 	}
-	return root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+	return rootimpl.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
 }
 
 func (ch *Chain) GetCounterValue(inccounterSCHname iscp.Hname, nodeIndex ...int) (int64, error) {

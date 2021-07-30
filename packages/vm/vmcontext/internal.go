@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
 )
 
 // creditToAccount deposits transfer from request to chain account of of the called contract
@@ -50,21 +51,21 @@ func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) (*root.Con
 	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return root.FindContract(vmctx.State(), contractHname)
+	return rootimpl.FindContract(vmctx.State(), contractHname)
 }
 
 func (vmctx *VMContext) getChainConfig() root.ChainConfig {
 	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return root.MustGetChainConfig(vmctx.State())
+	return rootimpl.MustGetChainConfig(vmctx.State())
 }
 
 func (vmctx *VMContext) getFeeInfo() (colored.Color, uint64, uint64) {
 	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return root.GetFeeInfoByContractRecord(vmctx.State(), vmctx.contractRecord)
+	return rootimpl.GetFeeInfoByContractRecord(vmctx.State(), vmctx.contractRecord)
 }
 
 func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {

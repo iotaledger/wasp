@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
 )
 
 type RootInfo struct {
@@ -32,7 +33,7 @@ func (d *Dashboard) fetchRootInfo(ch chain.ChainCore) (ret RootInfo, err error) 
 		return
 	}
 
-	ret.Contracts, err = root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
+	ret.Contracts, err = rootimpl.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
 	if err != nil {
 		err = fmt.Errorf("DecodeContractRegistry() failed: %v", err)
 		return
@@ -55,7 +56,7 @@ func (d *Dashboard) fetchRootInfo(ch chain.ChainCore) (ret RootInfo, err error) 
 		return
 	}
 
-	ret.FeeColor, ret.DefaultOwnerFee, ret.DefaultValidatorFee, err = root.GetDefaultFeeInfo(info)
+	ret.FeeColor, ret.DefaultOwnerFee, ret.DefaultValidatorFee, err = rootimpl.GetDefaultFeeInfo(info)
 	if err != nil {
 		return
 	}

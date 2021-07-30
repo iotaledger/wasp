@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"golang.org/x/xerrors"
 )
@@ -68,7 +69,7 @@ func (v *Viewcontext) CallView(contractHname, epCode iscp.Hname, params dict.Dic
 
 func (v *Viewcontext) callView(contractHname, epCode iscp.Hname, params dict.Dict) (dict.Dict, error) {
 	var err error
-	contractRecord, found := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Contract.Hname()), contractHname)
+	contractRecord, found := rootimpl.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Contract.Hname()), contractHname)
 	if !found {
 		return nil, xerrors.Errorf("contract not found %s", contractHname)
 	}
