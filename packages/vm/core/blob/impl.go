@@ -24,6 +24,18 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
+func getMaxBlobSize(ctx iscp.Sandbox) uint32 {
+	r, err := ctx.Call(root.Contract.Hname(), root.FuncGetMaxBlobSize.Hname(), nil, nil)
+	if err != nil {
+		ctx.Log().Panicf("error getting max blob size, %v", err)
+	}
+	maxBlobSize, _, err := codec.DecodeUint32(r.MustGet(root.ParamMaxBlobSize))
+	if err != nil {
+		ctx.Log().Panicf("error getting max blob size, %v", err)
+	}
+	return maxBlobSize
+}
+
 // storeBlob treats parameters as names of fields and field values
 // it stores it in the state in deterministic binary representation
 // Returns hash of the blob
@@ -44,17 +56,13 @@ func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	totalSize := uint32(0)
 
-	ctx.Call(root.Contract.Hname(), root.FuncGetChainInfo.Hname(), nil, nil)
-	// TODO GET MAX SIZE FROM ROOT
-	if totalSize > maxBlobSize {
-		ctx.Log().Panicf("blob too big. max size: %d, received size: %d", maxBlobSize, totalSize)
-	}
-
 	// save record of the blob. In parallel save record of sizes of blob fields
 	sizes := make([]uint32, len(kSorted))
 	for i, k := range kSorted {
 		size := uint32(len(values[i]))
-
+		if size > getMaxBlobSize(ctx) {
+			ctx.Log().Panicf("blob too big. received size: %d", totalSize)
+		}
 		blbValues.MustSetAt([]byte(k), values[i])
 		blbSizes.MustSetAt([]byte(k), EncodeSize(size))
 		sizes[i] = size

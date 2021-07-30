@@ -74,6 +74,7 @@ var (
 	FuncFindContract           = coreutil.ViewFunc("findContract")
 	FuncGetChainInfo           = coreutil.ViewFunc("getChainInfo")
 	FuncGetFeeInfo             = coreutil.ViewFunc("getFeeInfo")
+	FuncGetMaxBlobSize         = coreutil.ViewFunc("getMaxBlobStyle")
 )
 
 // ContractRecord is a structure which contains metadata of the deployed contract instance

@@ -35,6 +35,7 @@ var Processor = root.Contract.Processor(initialize,
 	root.FuncFindContract.WithHandler(findContract),
 	root.FuncGetChainInfo.WithHandler(getChainInfo),
 	root.FuncGetFeeInfo.WithHandler(getFeeInfo),
+	root.FuncGetMaxBlobSize.WithHandler(getMaxBlobSize),
 )
 
 // initialize handles constructor, the "init" request. This is the first call to the chain
@@ -365,6 +366,15 @@ func setChainConfig(ctx iscp.Sandbox) (dict.Dict, error) {
 		ctx.State().Set(root.VarDefaultValidatorFee, codec.EncodeInt64(validatorFee))
 		ctx.Event(fmt.Sprintf("[updated chain config] default validator fee: %d", validatorFee))
 	}
-
 	return nil, nil
+}
+
+func getMaxBlobSize(ctx iscp.SandboxView) (dict.Dict, error) {
+	maxBlobSize, err := ctx.State().Get(root.VarMaxBlobSize)
+	if err != nil {
+		ctx.Log().Panicf("error getting max blob size, %v", err)
+	}
+	ret := dict.New()
+	ret.Set(root.ParamMaxBlobSize, maxBlobSize)
+	return ret, nil
 }
