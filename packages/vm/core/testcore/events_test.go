@@ -72,7 +72,7 @@ func TestManyEvents(t *testing.T) {
 	// allow for more events per request in root contract
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
-			root.Contract.Name, root.FuncSetChainConfig.Name,
+			root.Contract.Name, root.FuncSetChainInfo.Name,
 			root.ParamMaxEventsPerRequest, uint16(nEvents),
 		).WithIotas(1),
 		nil,
@@ -108,7 +108,7 @@ func TestEventTooLarge(t *testing.T) {
 	// allow for bigger events in root contract
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
-			root.Contract.Name, root.FuncSetChainConfig.Name,
+			root.Contract.Name, root.FuncSetChainInfo.Name,
 			root.ParamMaxEventSize, uint16(bigEventSize),
 		).WithIotas(1),
 		nil,

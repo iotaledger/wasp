@@ -27,7 +27,7 @@ type RootInfo struct {
 }
 
 func (d *Dashboard) fetchRootInfo(ch chain.ChainCore) (ret RootInfo, err error) {
-	info, err := d.wasp.CallView(ch, root.Contract.Hname(), root.FuncGetChainConfig.Name, nil)
+	info, err := d.wasp.CallView(ch, root.Contract.Hname(), root.FuncGetChainInfo.Name, nil)
 	if err != nil {
 		err = fmt.Errorf("root view call failed: %v", err)
 		return

@@ -95,7 +95,7 @@ func TestRequestIsProcessed(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainConfig.Name,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
 		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0).WithIotas(1)
 	tx, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
@@ -111,7 +111,7 @@ func TestRequestLogRecord(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainConfig.Name,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
 		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0).WithIotas(1)
 	tx, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
@@ -135,7 +135,7 @@ func TestRequestLogRecordsForBlocks(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainConfig.Name,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
 		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0).WithIotas(1)
 	tx, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
@@ -155,7 +155,7 @@ func TestRequestIDsForBlocks(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainConfig.Name,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
 		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0).WithIotas(1)
 	tx, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)

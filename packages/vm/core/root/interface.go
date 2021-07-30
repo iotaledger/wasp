@@ -70,9 +70,9 @@ var (
 	FuncGrantDeployPermission  = coreutil.Func("grantDeployPermission")
 	FuncRevokeDeployPermission = coreutil.Func("revokeDeployPermission")
 	FuncSetContractFee         = coreutil.Func("setContractFee")
-	FuncSetChainConfig         = coreutil.Func("setChainConfig")
+	FuncSetChainInfo           = coreutil.Func("setChainInfo")
 	FuncFindContract           = coreutil.ViewFunc("findContract")
-	FuncGetChainConfig         = coreutil.ViewFunc("getChainInfo") // keeping "getChainInfo" name for now to avoid breaking wasmlib calls
+	FuncGetChainInfo           = coreutil.ViewFunc("getChainInfo")
 	FuncGetFeeInfo             = coreutil.ViewFunc("getFeeInfo")
 )
 
@@ -99,8 +99,8 @@ type ContractRecord struct {
 	Creator *iscp.AgentID
 }
 
-// ChainConfig is an API structure which contains main properties of the chain in on place
-type ChainConfig struct {
+// ChainInfo is an API structure which contains main properties of the chain in on place
+type ChainInfo struct {
 	ChainID             iscp.ChainID
 	ChainOwnerID        iscp.AgentID
 	Description         string

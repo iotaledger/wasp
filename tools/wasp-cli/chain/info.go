@@ -26,7 +26,7 @@ var infoCmd = &cobra.Command{
 		log.Printf("Active: %v\n", chain.Active)
 
 		if chain.Active {
-			info, err := SCClient(root.Contract.Hname()).CallView(root.FuncGetChainConfig.Name, nil)
+			info, err := SCClient(root.Contract.Hname()).CallView(root.FuncGetChainInfo.Name, nil)
 			log.Check(err)
 
 			description, _, err := codec.DecodeString(info.MustGet(root.VarDescription))

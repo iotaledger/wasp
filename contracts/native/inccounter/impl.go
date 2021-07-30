@@ -153,7 +153,7 @@ func spawn(ctx iscp.Sandbox) (dict.Dict, error) {
 	_, err = ctx.Call(hname, FuncIncCounter.Hname(), nil, nil)
 	a.RequireNoError(err)
 
-	res, err := ctx.Call(root.Contract.Hname(), root.FuncGetChainConfig.Hname(), nil, nil)
+	res, err := ctx.Call(root.Contract.Hname(), root.FuncGetChainInfo.Hname(), nil, nil)
 	a.RequireNoError(err)
 
 	creg := collections.NewMapReadOnly(res, root.VarContractRegistry)

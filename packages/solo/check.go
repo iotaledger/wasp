@@ -25,7 +25,7 @@ func (env *Solo) AssertAddressIotas(addr ledgerstate.Address, expected uint64) {
 
 // CheckChain checks fundamental integrity of the chain
 func (ch *Chain) CheckChain() {
-	_, err := ch.CallView(root.Contract.Name, root.FuncGetChainConfig.Name)
+	_, err := ch.CallView(root.Contract.Name, root.FuncGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
 	for _, rec := range core.AllCoreContractsByHash {

@@ -316,7 +316,7 @@ func (vmctx *VMContext) mustFinalizeRequestCall() {
 
 // getChainConfigFromState only makes sense if chain is already deployed
 func (vmctx *VMContext) getChainConfigFromState() {
-	cfg := vmctx.getChainConfig()
+	cfg := vmctx.getChainInfo()
 	if !cfg.ChainID.Equals(&vmctx.chainID) {
 		vmctx.log.Panicf("mustSetUpRequestContext: major inconsistency of chainID")
 	}

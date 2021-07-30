@@ -264,7 +264,7 @@ func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name, fname string
 //  - agentID of the chain owner
 //  - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
 func (ch *Chain) GetInfo() (iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.ContractRecord) {
-	res, err := ch.CallView(root.Contract.Name, root.FuncGetChainConfig.Name)
+	res, err := ch.CallView(root.Contract.Name, root.FuncGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
 	chainID, ok, err := codec.DecodeChainID(res.MustGet(root.VarChainID))

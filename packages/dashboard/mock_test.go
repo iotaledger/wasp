@@ -175,7 +175,7 @@ func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, fname stri
 	}
 
 	switch {
-	case hname == root.Contract.Hname() && fname == root.FuncGetChainConfig.Name:
+	case hname == root.Contract.Hname() && fname == root.FuncGetChainInfo.Name:
 		ret := dict.New()
 		ret.Set(root.VarChainID, codec.EncodeChainID(*chainID))
 		ret.Set(root.VarChainOwnerID, codec.EncodeAgentID(iscp.NewRandomAgentID()))

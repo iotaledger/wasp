@@ -31,9 +31,9 @@ var Processor = root.Contract.Processor(initialize,
 	root.FuncGrantDeployPermission.WithHandler(grantDeployPermission),
 	root.FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
 	root.FuncSetContractFee.WithHandler(setContractFee),
-	root.FuncSetChainConfig.WithHandler(setChainConfig),
+	root.FuncSetChainInfo.WithHandler(setChainConfig),
 	root.FuncFindContract.WithHandler(findContract),
-	root.FuncGetChainConfig.WithHandler(getChainConfig),
+	root.FuncGetChainInfo.WithHandler(getChainInfo),
 	root.FuncGetFeeInfo.WithHandler(getFeeInfo),
 )
 
@@ -162,7 +162,7 @@ func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-// getChainConfig view returns general info about the chain: chain ID, chain owner ID,
+// getChainInfo view returns general info about the chain: chain ID, chain owner ID,
 // description and the whole contract registry
 // Input: none
 // Output:
@@ -170,8 +170,8 @@ func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
 // - VarChainOwnerID - AgentID
 // - VarDescription - string
 // - VarContractRegistry: a map of contract registry
-func getChainConfig(ctx iscp.SandboxView) (dict.Dict, error) {
-	info := MustGetChainConfig(ctx.State())
+func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
+	info := MustGetChainInfo(ctx.State())
 	ret := dict.New()
 	ret.Set(root.VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(root.VarChainOwnerID, codec.EncodeAgentID(&info.ChainOwnerID))

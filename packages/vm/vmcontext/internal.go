@@ -54,11 +54,11 @@ func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) (*root.Con
 	return rootimpl.FindContract(vmctx.State(), contractHname)
 }
 
-func (vmctx *VMContext) getChainConfig() root.ChainConfig {
+func (vmctx *VMContext) getChainInfo() root.ChainInfo {
 	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return rootimpl.MustGetChainConfig(vmctx.State())
+	return rootimpl.MustGetChainInfo(vmctx.State())
 }
 
 func (vmctx *VMContext) getFeeInfo() (colored.Color, uint64, uint64) {

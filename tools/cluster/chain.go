@@ -243,7 +243,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.Bl
 
 func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.ContractRecord, error) {
 	cl := ch.SCClient(root.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(root.FuncGetChainConfig.Name, nil)
+	ret, err := cl.CallView(root.FuncGetChainInfo.Name, nil)
 	if err != nil {
 		return nil, err
 	}

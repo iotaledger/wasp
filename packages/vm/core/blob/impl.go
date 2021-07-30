@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 var Processor = Contract.Processor(initialize,
@@ -43,11 +44,11 @@ func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	totalSize := uint32(0)
 
-	// ctx.Call(root.Contract.Hname(), root.FuncGetChainConfig.Hname(), nil, nil)
-	// // TODO GET MAX SIZE FROM ROOT
-	// if totalSize > maxBlobSize {
-	// 	ctx.Log().Panicf("blob too big. max size: %d, received size: %d", maxBlobSize, totalSize)
-	// }
+	ctx.Call(root.Contract.Hname(), root.FuncGetChainInfo.Hname(), nil, nil)
+	// TODO GET MAX SIZE FROM ROOT
+	if totalSize > maxBlobSize {
+		ctx.Log().Panicf("blob too big. max size: %d, received size: %d", maxBlobSize, totalSize)
+	}
 
 	// save record of the blob. In parallel save record of sizes of blob fields
 	sizes := make([]uint32, len(kSorted))
