@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func initializeStabilityTest(t *testing.T, numValidators int, clusterSize int) *chainEnv {
+func initializeStabilityTest(t *testing.T, numValidators, clusterSize int) *chainEnv {
 	cmt := util.MakeRange(0, numValidators-1)
 	quorum := uint16((2*len(cmt))/3 + 1)
 
@@ -36,36 +36,68 @@ func sendRequests(t *testing.T, env *chainEnv, numRequests int) {
 		_, err := client.PostRequest(inccounter.FuncIncCounter.Name)
 		require.NoError(t, err)
 
-		t.Logf("Posting request %v", i)
-		time.Sleep(time.Millisecond * 50)
+		time.Sleep(time.Millisecond * 15)
 	}
 }
 
-func sabotageNetwork(t *testing.T, env *chainEnv, numValidators int, clusterSize int) {
-	// Give the test time to start
-	time.Sleep(time.Second * 15)
-	breakPercentage := 0.90
+type SabotageModel struct {
+	From int
+	To   int
+	List []int
+}
+
+func createValidatorNodeSabotage(breakPercentage float64, numValidators, clusterSize int) SabotageModel {
 	breakCount := float64(numValidators) * breakPercentage
+	nodeList := []int{}
 
-	t.Logf("Break Percentage: %v, break count: %v", breakPercentage, breakCount)
+	from := clusterSize - numValidators
+	to := clusterSize - numValidators + int(breakCount)
 
-	for i := numValidators - 1; i >= numValidators-1-int(breakCount); i-- {
-		t.Logf("Breaking node: %v", i)
-		err := env.clu.FreezeNode(i)
-		require.NoError(t, err)
-
-		time.Sleep(time.Second * 5)
+	for i := from; i <= to; i++ {
+		nodeList = append(nodeList, i)
 	}
 
-	time.Sleep(time.Second * 10)
-	return
-	for i := numValidators - 1; i >= numValidators-1-int(breakCount); i-- {
+	return SabotageModel{
+		From: from,
+		To:   to,
+		List: nodeList,
+	}
+}
+
+func sabotageNodes(t *testing.T, env *chainEnv, sabotageConfiguration SabotageModel) {
+	// Give the test time to start
+	t.Log("Sabotaging the following nodes:\n")
+	t.Log(sabotageConfiguration.List)
+	time.Sleep(time.Second * 15)
+	for i := sabotageConfiguration.From; i <= sabotageConfiguration.To; i++ {
 		t.Logf("Breaking node: %v", i)
-		err := env.clu.UnfreezeNode(i)
+		err := env.clu.KillNode(i)
 		require.NoError(t, err)
 
-		time.Sleep(time.Second * 5)
+		// time.Sleep(time.Second * 5)
 	}
+}
+
+func getActiveNodeList(allNodes, brokenNodes []int) []int {
+	contains := func(x int) bool {
+		for _, n := range brokenNodes {
+			if n == x {
+				return true
+			}
+		}
+
+		return false
+	}
+
+	activeNodeList := []int{}
+
+	for _, n := range allNodes {
+		if !contains(n) {
+			activeNodeList = append(activeNodeList, n)
+		}
+	}
+
+	return activeNodeList
 }
 
 func TestOngoingFailureWithoutRecovery(t *testing.T) {
@@ -74,12 +106,17 @@ func TestOngoingFailureWithoutRecovery(t *testing.T) {
 	}
 
 	t.Run("cluster=6,N=4,req=8", func(t *testing.T) {
-		const numRequests = 99999999
+		const numRequests = 35
 		const numValidators = 10
 		const clusterSize = 15
 
+		sabotageConfiguration := createValidatorNodeSabotage(0.2, numValidators, clusterSize)
 		env := initializeStabilityTest(t, numValidators, clusterSize)
-		go sabotageNetwork(t, env, numValidators, clusterSize)
+
+		go sabotageNodes(t, env, sabotageConfiguration)
+
 		sendRequests(t, env, numRequests)
+
+		waitUntil(t, env.counterEquals(numRequests), getActiveNodeList(env.clu.Config.AllNodes(), sabotageConfiguration.List), 120*time.Second, "contract to be deployed")
 	})
 }

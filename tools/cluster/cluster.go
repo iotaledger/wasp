@@ -318,17 +318,17 @@ func (clu *Cluster) KillNode(nodeIndex int) error {
 	if nodeIndex < len(clu.waspCmds) {
 		process := clu.waspCmds[nodeIndex]
 
-		if process.ProcessState.Exited() {
-			return fmt.Errorf("[cluster] Wasp node with index %d already dead", nodeIndex)
+		if process != nil {
+			err := process.Process.Kill()
+
+			if err == nil {
+				clu.waspCmds[nodeIndex] = nil
+			}
+
+			return err
 		}
 
-		err := process.Process.Kill()
-
-		if err == nil {
-			clu.waspCmds[nodeIndex] = nil
-		}
-
-		return err
+		return nil
 	}
 	return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
 }

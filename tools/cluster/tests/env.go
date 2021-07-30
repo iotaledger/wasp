@@ -106,7 +106,7 @@ func (e *chainEnv) createNewClient() *scclient.SCClient {
 }
 
 func (e *chainEnv) getOrCreateAddress() (*ed25519.KeyPair, *ledgerstate.ED25519Address) {
-	const minTokenAmountBeforeRequestingNewFunds uint64 = 1000
+	const minTokenAmountBeforeRequestingNewFunds uint64 = 100
 
 	randomAddress := rand.NewSource(time.Now().UnixNano())
 
