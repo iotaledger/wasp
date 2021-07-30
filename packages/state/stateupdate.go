@@ -21,7 +21,7 @@ type stateUpdateImpl struct {
 }
 
 // NewStateUpdate creates a state update with timestamp mutation, if provided
-func NewStateUpdate(timestamp ...time.Time) *stateUpdateImpl {
+func NewStateUpdate(timestamp ...time.Time) *stateUpdateImpl { //nolint
 	ret := &stateUpdateImpl{
 		mutations: buffered.NewMutations(),
 	}
@@ -31,7 +31,7 @@ func NewStateUpdate(timestamp ...time.Time) *stateUpdateImpl {
 	return ret
 }
 
-func NewStateUpdateWithBlocklogValues(blockIndex uint32, timestamp time.Time, prevStateHash hashing.HashValue) *stateUpdateImpl {
+func NewStateUpdateWithBlocklogValues(blockIndex uint32, timestamp time.Time, prevStateHash hashing.HashValue) *stateUpdateImpl { //nolint
 	ret := &stateUpdateImpl{
 		mutations: buffered.NewMutations(),
 	}
@@ -118,16 +118,18 @@ func (su *stateUpdateImpl) Read(r io.Reader) error {
 	return su.mutations.Read(r)
 }
 
+const none = "(none)"
+
 func (su *stateUpdateImpl) String() string {
-	ts := "(none)"
+	ts := none
 	if t, ok := su.TimestampMutation(); ok {
 		ts = fmt.Sprintf("%v", t)
 	}
-	bi := "(none)"
+	bi := none
 	if t, ok := su.StateIndexMutation(); ok {
 		bi = fmt.Sprintf("%d", t)
 	}
-	ph := "(none)"
+	ph := none
 	if h, ok := su.PreviousStateHashMutation(); ok {
 		ph = h.Base58()
 	}
