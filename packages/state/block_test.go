@@ -59,14 +59,14 @@ func TestBatches(t *testing.T) {
 
 	block1, err := newBlock(suBlock, su1, su2)
 	require.NoError(t, err)
-	assert.EqualValues(t, 3, block1.Size())
+	assert.EqualValues(t, 3, block1.(*blockImpl).size())
 	assert.EqualValues(t, 2, block1.BlockIndex())
 	assert.True(t, block1.Timestamp().IsZero())
 
 	block1Bin := block1.Bytes()
 	block2, err := BlockFromBytes(block1Bin)
 	assert.NoError(t, err)
-	assert.EqualValues(t, 3, block2.Size())
+	assert.EqualValues(t, 3, block2.(*blockImpl).size())
 	assert.EqualValues(t, 2, block2.BlockIndex())
 	assert.EqualValues(t, block1Bin, block2.Bytes())
 	assert.EqualValues(t, block1.EssenceBytes(), block2.EssenceBytes())

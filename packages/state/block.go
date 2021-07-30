@@ -19,7 +19,7 @@ type blockImpl struct {
 }
 
 // validates, enumerates and creates a block from array of state updates
-func newBlock(stateUpdates ...StateUpdate) (*blockImpl, error) {
+func newBlock(stateUpdates ...StateUpdate) (Block, error) {
 	arr := make([]*stateUpdateImpl, len(stateUpdates))
 	for i := range arr {
 		arr[i] = stateUpdates[i].(*stateUpdateImpl) // do not clone
@@ -34,7 +34,7 @@ func newBlock(stateUpdates ...StateUpdate) (*blockImpl, error) {
 	return ret, nil
 }
 
-func BlockFromBytes(data []byte) (*blockImpl, error) { // nolint:nolint
+func BlockFromBytes(data []byte) (Block, error) {
 	ret := new(blockImpl)
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, xerrors.Errorf("BlockFromBytes: %w", err)
@@ -47,7 +47,7 @@ func BlockFromBytes(data []byte) (*blockImpl, error) { // nolint:nolint
 }
 
 // block with empty state update and nil state hash
-func newOriginBlock() *blockImpl {
+func newOriginBlock() Block {
 	ret, err := newBlock(NewStateUpdateWithBlocklogValues(0, time.Time{}, hashing.NilHash))
 	if err != nil {
 		panic(err)
@@ -66,7 +66,7 @@ func (b *blockImpl) String() string {
 	ret += fmt.Sprintf("Block: state index: %d\n", b.BlockIndex())
 	ret += fmt.Sprintf("state txid: %s\n", b.ApprovingOutputID().String())
 	ret += fmt.Sprintf("timestamp: %v\n", b.Timestamp())
-	ret += fmt.Sprintf("size: %d\n", b.Size())
+	ret += fmt.Sprintf("size: %d\n", b.size())
 	for i, su := range b.stateUpdates {
 		ret += fmt.Sprintf("   #%d: %s\n", i, su.String())
 	}
@@ -103,7 +103,7 @@ func (b *blockImpl) SetApprovingOutputID(oid ledgerstate.OutputID) {
 	b.stateOutputID = oid
 }
 
-func (b *blockImpl) Size() uint16 {
+func (b *blockImpl) size() uint16 {
 	return uint16(len(b.stateUpdates))
 }
 

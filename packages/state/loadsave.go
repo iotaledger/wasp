@@ -58,7 +58,7 @@ func (vs *virtualState) Commit(blocks ...Block) error {
 
 // CreateOriginState creates zero state which is the minimal consistent state.
 // It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
-func CreateOriginState(store kvstore.KVStore, chainID *iscp.ChainID) (*virtualState, error) {
+func CreateOriginState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualState, error) {
 	originState, originBlock := newZeroVirtualState(store, chainID)
 	if err := originState.Commit(originBlock); err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func LoadBlockBytes(store kvstore.KVStore, stateIndex uint32) ([]byte, error) {
 }
 
 // LoadBlock loads block from DB and decodes it
-func LoadBlock(store kvstore.KVStore, stateIndex uint32) (*blockImpl, error) {
+func LoadBlock(store kvstore.KVStore, stateIndex uint32) (Block, error) {
 	data, err := LoadBlockBytes(store, stateIndex)
 	if err != nil {
 		return nil, err

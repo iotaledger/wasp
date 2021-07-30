@@ -45,7 +45,7 @@ func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualState {
 	return ret
 }
 
-func newZeroVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) (*virtualState, *blockImpl) {
+func newZeroVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) (VirtualState, Block) {
 	ret := newVirtualState(db, chainID)
 	originBlock := newOriginBlock()
 	if err := ret.ApplyBlock(originBlock); err != nil {
