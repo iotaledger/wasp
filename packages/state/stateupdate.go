@@ -125,28 +125,22 @@ func (su *stateUpdateImpl) String() string {
 	t, ok, err := su.timestampMutation()
 	if err != nil {
 		ts = fmt.Sprintf("(%v)", err)
-	} else {
-		if ok {
-			ts = fmt.Sprintf("%v", t)
-		}
+	} else if ok {
+		ts = fmt.Sprintf("%v", t)
 	}
 	bi := none
 	idx, ok, err := su.stateIndexMutation()
 	if err != nil {
 		bi = fmt.Sprintf("(%v)", err)
-	} else {
-		if ok {
-			bi = fmt.Sprintf("%d", idx)
-		}
+	} else if ok {
+		bi = fmt.Sprintf("%d", idx)
 	}
 	ph := none
 	h, ok, err := su.previousStateHashMutation()
 	if err != nil {
 		ph = fmt.Sprintf("(%v)", err)
-	} else {
-		if ok {
-			ph = fmt.Sprintf("%s", h.Base58())
-		}
+	} else if ok {
+		ph = h.Base58()
 	}
 	return fmt.Sprintf("StateUpdate:: ts: %s, blockIndex: %s prevStateHash: %s muts: [%+v]", ts, bi, ph, su.mutations)
 }
