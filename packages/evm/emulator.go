@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/bloombits"
@@ -39,19 +40,27 @@ var (
 	ErrTransactionDoesNotExist = errors.New("transaction does not exist")
 )
 
+type pending struct {
+	header   *types.Header
+	state    *state.StateDB
+	txs      []*types.Transaction
+	receipts []*types.Receipt
+	gasPool  *core.GasPool
+}
+
 type EVMEmulator struct {
 	database   ethdb.Database
 	blockchain *core.BlockChain
-
-	pendingBlock *types.Block
-	pendingState *state.StateDB
+	pending    *pending
+	engine     consensus.Engine
 }
 
 var (
 	TxGas           = uint64(21000) // gas cost of simple transfer (not contract creation / call)
-	GasLimitMax     = uint64(math.MaxUint64 / 2)
 	GasLimitDefault = uint64(15000000)
 	GasPrice        = big.NewInt(0)
+	vmConfig        = vm.Config{}
+	timeDelta       = uint64(1) // amount of seconds to add to timestamp by default for new blocks
 )
 
 const DefaultChainID = 1074 // IOTA -- get it?
@@ -78,32 +87,47 @@ func Signer(chainID *big.Int) types.Signer {
 	return types.NewEIP155Signer(chainID)
 }
 
-func InitGenesis(chainID int, db ethdb.Database, alloc core.GenesisAlloc, gasLimit uint64) {
+func InitGenesis(chainID int, db ethdb.Database, alloc core.GenesisAlloc, gasLimit, timestamp uint64) {
 	stored := rawdb.ReadCanonicalHash(db, 0)
 	if (stored != common.Hash{}) {
 		panic("genesis block already initialized")
 	}
-	genesis := core.Genesis{Config: MakeConfig(chainID), Alloc: alloc, GasLimit: gasLimit}
+	genesis := core.Genesis{
+		Config:    MakeConfig(chainID),
+		Alloc:     alloc,
+		GasLimit:  gasLimit,
+		Timestamp: timestamp,
+	}
 	genesis.MustCommit(db)
 }
 
 // disable caching & shnapshotting, since it produces a nondeterministic result
 var cacheConfig = &core.CacheConfig{}
 
-func NewEVMEmulator(db ethdb.Database) *EVMEmulator {
+func NewEVMEmulator(db ethdb.Database, timestamp ...uint64) *EVMEmulator {
 	canonicalHash := rawdb.ReadCanonicalHash(db, 0)
 	if (canonicalHash == common.Hash{}) {
 		panic("must initialize genesis block first")
 	}
 
 	config := rawdb.ReadChainConfig(db, canonicalHash)
-	blockchain, _ := core.NewBlockChain(db, cacheConfig, config, ethash.NewFaker(), vm.Config{}, nil, nil)
+	engine := ethash.NewFaker()
+	blockchain, _ := core.NewBlockChain(db, cacheConfig, config, engine, vmConfig, nil, nil)
 
 	e := &EVMEmulator{
 		database:   db,
 		blockchain: blockchain,
+		engine:     engine,
 	}
-	e.Rollback()
+
+	parentTime := e.blockchain.CurrentBlock().Header().Time
+	// ensure that timestamp is larger, even when generating many blocks per second in tests
+	ts := parentTime + timeDelta
+	if len(timestamp) > 0 && timestamp[0] > parentTime {
+		ts = timestamp[0]
+	}
+
+	e.Rollback(ts)
 	return e
 }
 
@@ -113,28 +137,65 @@ func (e *EVMEmulator) Close() error {
 	return nil
 }
 
-func (e *EVMEmulator) HasPendingBlock() bool {
-	return len(e.pendingBlock.Transactions()) > 0
-}
-
 // Commit imports all the pending transactions as a single block and starts a
 // fresh new state.
 func (e *EVMEmulator) Commit() {
-	if _, err := e.blockchain.InsertChain([]*types.Block{e.pendingBlock}); err != nil {
-		panic(err) // This cannot happen unless the simulator is wrong, fail in that case
+	if len(e.pending.txs) == 0 {
+		return
 	}
-	e.Rollback()
+	if _, err := e.blockchain.InsertChain([]*types.Block{e.finalizeBlock()}); err != nil {
+		panic(err)
+	}
+	e.Rollback(e.pending.header.Time + timeDelta)
 }
 
-func (e *EVMEmulator) newBlock(f func(int, *core.BlockGen)) (*types.Block, []*types.Receipt) {
-	blocks, receipts := core.GenerateChain(e.blockchain.Config(), e.blockchain.CurrentBlock(), ethash.NewFaker(), e.database, 1, f)
-	return blocks[0], receipts[0]
+func (e *EVMEmulator) finalizeBlock() *types.Block {
+	block, err := e.engine.FinalizeAndAssemble(
+		e.blockchain,
+		e.pending.header,
+		e.pending.state,
+		e.pending.txs,
+		nil,
+		e.pending.receipts,
+	)
+	if err != nil {
+		panic(err)
+	}
+	root, err := e.pending.state.Commit(true)
+	if err != nil {
+		panic(err)
+	}
+	if err := e.pending.state.Database().TrieDB().Commit(root, false, nil); err != nil {
+		panic(err)
+	}
+	return block
 }
 
 // Rollback aborts all pending transactions, reverting to the last committed state.
-func (e *EVMEmulator) Rollback() {
-	e.pendingBlock, _ = e.newBlock(func(int, *core.BlockGen) {})
-	e.pendingState, _ = state.New(e.pendingBlock.Root(), e.blockchain.StateCache(), nil)
+func (e *EVMEmulator) Rollback(timestamp uint64) {
+	statedb, err := e.blockchain.State()
+	if err != nil {
+		panic(err)
+	}
+
+	parent := e.blockchain.CurrentBlock()
+	header := &types.Header{
+		Root:       statedb.IntermediateRoot(true),
+		ParentHash: parent.Hash(),
+		Coinbase:   parent.Coinbase(),
+		Difficulty: e.engine.CalcDifficulty(e.blockchain, timestamp, parent.Header()),
+		Number:     new(big.Int).Add(parent.Number(), common.Big1),
+		GasLimit:   parent.GasLimit(),
+		Time:       timestamp,
+	}
+
+	e.pending = &pending{
+		header:   header,
+		state:    statedb,
+		txs:      []*types.Transaction{},
+		receipts: []*types.Receipt{},
+		gasPool:  new(core.GasPool).AddGas(header.GasLimit),
+	}
 }
 
 // stateByBlockNumber retrieves a state by a given blocknumber.
@@ -192,32 +253,18 @@ func (e *EVMEmulator) TransactionReceipt(txHash common.Hash) (*types.Receipt, er
 	return receipt, nil
 }
 
-// TransactionByHash checks the pool of pending transactions in addition to the
-// blockchain. The isPending return value indicates whether the transaction has been
-// mined yet. Note that the transaction may not be part of the canonical chain even if
-// it's not pending.
-func (e *EVMEmulator) TransactionByHash(txHash common.Hash) (*types.Transaction, bool, error) {
-	tx := e.pendingBlock.Transaction(txHash)
-	if tx != nil {
-		return tx, true, nil
-	}
-	tx, _, _, _ = rawdb.ReadTransaction(e.database, txHash) //nolint:dogsled
-	if tx != nil {
-		return tx, false, nil
-	}
-	return nil, false, ethereum.NotFound
+func (e *EVMEmulator) TransactionByHash(txHash common.Hash) *types.Transaction {
+	tx, _, _, _ := rawdb.ReadTransaction(e.database, txHash) //nolint:dogsled
+	return tx
 }
 
 // BlockByHash retrieves a block based on the block hash.
-func (e *EVMEmulator) BlockByHash(hash common.Hash) (*types.Block, error) {
-	if hash == e.pendingBlock.Hash() {
-		return e.pendingBlock, nil
-	}
+func (e *EVMEmulator) BlockByHash(hash common.Hash) *types.Block {
 	block := e.blockchain.GetBlockByHash(hash)
 	if block != nil {
-		return block, nil
+		return block
 	}
-	return nil, ErrBlockDoesNotExist
+	return nil
 }
 
 // BlockByNumber retrieves a block from the database by number, caching it
@@ -229,7 +276,7 @@ func (e *EVMEmulator) BlockByNumber(number *big.Int) (*types.Block, error) {
 // blockByNumberNoLock retrieves a block from the database by number, caching it
 // (associated with its hash) if found without Lock.
 func (e *EVMEmulator) blockByNumberNoLock(number *big.Int) (*types.Block, error) {
-	if number == nil || number.Cmp(e.pendingBlock.Number()) == 0 {
+	if number == nil {
 		return e.blockchain.CurrentBlock(), nil
 	}
 	block := e.blockchain.GetBlockByNumber(uint64(number.Int64()))
@@ -241,9 +288,6 @@ func (e *EVMEmulator) blockByNumberNoLock(number *big.Int) (*types.Block, error)
 
 // HeaderByHash returns a block header from the current canonical chain.
 func (e *EVMEmulator) HeaderByHash(hash common.Hash) (*types.Header, error) {
-	if hash == e.pendingBlock.Hash() {
-		return e.pendingBlock.Header(), nil
-	}
 	header := e.blockchain.GetHeaderByHash(hash)
 	if header == nil {
 		return nil, ErrBlockDoesNotExist
@@ -254,7 +298,7 @@ func (e *EVMEmulator) HeaderByHash(hash common.Hash) (*types.Header, error) {
 // HeaderByNumber returns a block header from the current canonical chain. If number is
 // nil, the latest known header is returned.
 func (e *EVMEmulator) HeaderByNumber(block *big.Int) (*types.Header, error) {
-	if block == nil || block.Cmp(e.pendingBlock.Number()) == 0 {
+	if block == nil {
 		return e.blockchain.CurrentHeader(), nil
 	}
 	return e.blockchain.GetHeaderByNumber(uint64(block.Int64())), nil
@@ -262,9 +306,6 @@ func (e *EVMEmulator) HeaderByNumber(block *big.Int) (*types.Header, error) {
 
 // TransactionCount returns the number of transactions in a given block.
 func (e *EVMEmulator) TransactionCount(blockHash common.Hash) (uint, error) {
-	if blockHash == e.pendingBlock.Hash() {
-		return uint(e.pendingBlock.Transactions().Len()), nil
-	}
 	block := e.blockchain.GetBlockByHash(blockHash)
 	if block == nil {
 		return uint(0), ErrBlockDoesNotExist
@@ -274,15 +315,6 @@ func (e *EVMEmulator) TransactionCount(blockHash common.Hash) (uint, error) {
 
 // TransactionInBlock returns the transaction for a specific block at a specific index.
 func (e *EVMEmulator) TransactionInBlock(blockHash common.Hash, index uint) (*types.Transaction, error) {
-	if blockHash == e.pendingBlock.Hash() {
-		transactions := e.pendingBlock.Transactions()
-		if uint(len(transactions)) < index+1 {
-			return nil, ErrTransactionDoesNotExist
-		}
-
-		return transactions[index], nil
-	}
-
 	block := e.blockchain.GetBlockByHash(blockHash)
 	if block == nil {
 		return nil, ErrBlockDoesNotExist
@@ -294,11 +326,6 @@ func (e *EVMEmulator) TransactionInBlock(blockHash common.Hash, index uint) (*ty
 	}
 
 	return transactions[index], nil
-}
-
-// PendingCodeAt returns the code associated with an account in the pending state.
-func (e *EVMEmulator) PendingCodeAt(contract common.Address) ([]byte, error) {
-	return e.pendingState.GetCode(contract), nil
 }
 
 func newRevertError(result *core.ExecutionResult) *revertError {
@@ -340,22 +367,7 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg, blockNumber *big.Int) 
 	if err != nil {
 		return nil, err
 	}
-	res, err := e.callContract(call, e.blockchain.CurrentBlock(), stateDB)
-	if err != nil {
-		return nil, err
-	}
-	// If the result contains a revert reason, try to unpack and return it.
-	if len(res.Revert()) > 0 {
-		return nil, newRevertError(res)
-	}
-	return res.Return(), res.Err
-}
-
-// PendingCallContract executes a contract call on the pending state.
-func (e *EVMEmulator) PendingCallContract(call ethereum.CallMsg) ([]byte, error) {
-	defer e.pendingState.RevertToSnapshot(e.pendingState.Snapshot())
-
-	res, err := e.callContract(call, e.pendingBlock, e.pendingState)
+	res, err := e.callContract(call, e.blockchain.CurrentHeader(), stateDB)
 	if err != nil {
 		return nil, err
 	}
@@ -369,7 +381,7 @@ func (e *EVMEmulator) PendingCallContract(call ethereum.CallMsg) ([]byte, error)
 // PendingNonceAt implements PendingStateReader.PendingNonceAt, retrieving
 // the nonce currently pending for the account.
 func (e *EVMEmulator) PendingNonceAt(account common.Address) (uint64, error) {
-	return e.pendingState.GetOrNewStateObject(account).Nonce(), nil
+	return e.pending.state.GetOrNewStateObject(account).Nonce(), nil
 }
 
 // SuggestGasPrice implements ContractTransactor.SuggestGasPrice. Since the simulated
@@ -390,11 +402,11 @@ func (e *EVMEmulator) EstimateGas(call ethereum.CallMsg) (uint64, error) {
 	if call.Gas >= params.TxGas {
 		hi = call.Gas
 	} else {
-		hi = e.pendingBlock.GasLimit()
+		hi = e.pending.header.GasLimit
 	}
 	// Recap the highest gas allowance with account's balance.
 	if call.GasPrice != nil && call.GasPrice.BitLen() != 0 {
-		balance := e.pendingState.GetBalance(call.From) // from can't be nil
+		balance := e.pending.state.GetBalance(call.From) // from can't be nil
 		available := new(big.Int).Set(balance)
 		if call.Value != nil {
 			if call.Value.Cmp(available) >= 0 {
@@ -419,9 +431,9 @@ func (e *EVMEmulator) EstimateGas(call ethereum.CallMsg) (uint64, error) {
 	executable := func(gas uint64) (bool, *core.ExecutionResult, error) {
 		call.Gas = gas
 
-		snapshot := e.pendingState.Snapshot()
-		res, err := e.callContract(call, e.pendingBlock, e.pendingState)
-		e.pendingState.RevertToSnapshot(snapshot)
+		snapshot := e.pending.state.Snapshot()
+		res, err := e.callContract(call, e.pending.header, e.pending.state)
+		e.pending.state.RevertToSnapshot(snapshot)
 
 		if err != nil {
 			if errors.Is(err, core.ErrIntrinsicGas) {
@@ -469,7 +481,7 @@ func (e *EVMEmulator) EstimateGas(call ethereum.CallMsg) (uint64, error) {
 
 // callContract implements common code between normal and pending contract calls.
 // state is modified during execution, make sure to copy it if necessary.
-func (e *EVMEmulator) callContract(call ethereum.CallMsg, block *types.Block, stateDB *state.StateDB) (*core.ExecutionResult, error) {
+func (e *EVMEmulator) callContract(call ethereum.CallMsg, header *types.Header, stateDB *state.StateDB) (*core.ExecutionResult, error) {
 	// Ensure message is initialized properly.
 	if call.GasPrice == nil {
 		call.GasPrice = big.NewInt(1)
@@ -487,10 +499,10 @@ func (e *EVMEmulator) callContract(call ethereum.CallMsg, block *types.Block, st
 	msg := callMsg{call}
 
 	txContext := core.NewEVMTxContext(msg)
-	evmContext := core.NewEVMBlockContext(block.Header(), e.blockchain, nil)
+	evmContext := core.NewEVMBlockContext(header, e.blockchain, nil)
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
-	vmEnv := vm.NewEVM(evmContext, txContext, stateDB, e.blockchain.Config(), vm.Config{})
+	vmEnv := vm.NewEVM(evmContext, txContext, stateDB, e.blockchain.Config(), vmConfig)
 	gasPool := new(core.GasPool).AddGas(math.MaxUint64)
 
 	return core.NewStateTransition(vmEnv, msg, gasPool).TransitionDb()
@@ -498,28 +510,40 @@ func (e *EVMEmulator) callContract(call ethereum.CallMsg, block *types.Block, st
 
 // SendTransaction updates the pending block to include the given transaction.
 // It returns an error if the transaction is invalid.
-func (e *EVMEmulator) SendTransaction(tx *types.Transaction) (uint64, error) {
-	sender, err := types.Sender(types.NewEIP155Signer(e.blockchain.Config().ChainID), tx)
+func (e *EVMEmulator) SendTransaction(tx *types.Transaction) (*types.Receipt, error) {
+	sender, err := types.Sender(e.Signer(), tx)
 	if err != nil {
-		return 0, xerrors.Errorf("invalid transaction: %w", err)
+		return nil, xerrors.Errorf("invalid transaction: %w", err)
 	}
-	nonce := e.pendingState.GetNonce(sender)
+	nonce := e.pending.state.GetNonce(sender)
 	if tx.Nonce() != nonce {
-		return 0, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
+		return nil, xerrors.Errorf("invalid transaction nonce: got %d, want %d", tx.Nonce(), nonce)
 	}
 
-	block, receipts := e.newBlock(func(number int, block *core.BlockGen) {
-		for _, pendingTx := range e.pendingBlock.Transactions() {
-			block.AddTxWithChain(e.blockchain, pendingTx)
-		}
-		block.AddTxWithChain(e.blockchain, tx)
-	})
-	stateDB, _ := e.blockchain.State()
+	snap := e.pending.state.Snapshot()
 
-	e.pendingBlock = block
-	e.pendingState, _ = state.New(e.pendingBlock.Root(), stateDB.Database(), nil)
+	e.pending.state.Prepare(tx.Hash(), common.Hash{}, len(e.pending.txs))
 
-	return receipts[len(receipts)-1].GasUsed, nil
+	receipt, err := core.ApplyTransaction(
+		e.blockchain.Config(),
+		e.blockchain,
+		nil,
+		e.pending.gasPool,
+		e.pending.state,
+		e.pending.header,
+		tx,
+		&e.pending.header.GasUsed,
+		vmConfig,
+	)
+	if err != nil {
+		e.pending.state.RevertToSnapshot(snap)
+		return nil, err
+	}
+
+	e.pending.txs = append(e.pending.txs, tx)
+	e.pending.receipts = append(e.pending.receipts, receipt)
+
+	return receipt, nil
 }
 
 // FilterLogs executes a log filter operation, blocking during execution and
