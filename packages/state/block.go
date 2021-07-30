@@ -6,9 +6,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/hashing"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )

@@ -3,10 +3,9 @@ package state
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/kv"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
 

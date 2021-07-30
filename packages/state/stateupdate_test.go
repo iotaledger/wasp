@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/hashing"
-
 	"github.com/stretchr/testify/require"
 )
 
