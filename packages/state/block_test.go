@@ -22,33 +22,38 @@ func TestBlockBasic(t *testing.T) {
 		require.Error(t, err)
 	})
 	t.Run("ok block index", func(t *testing.T) {
-		su := NewStateUpdateWithBlockIndexMutation(42)
+		su := NewStateUpdateWithBlocklogValues(42, time.Time{}, hashing.NilHash)
 		b1, err := newBlock(su)
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
 		require.True(t, b1.Timestamp().IsZero())
+		require.EqualValues(t, hashing.NilHash, b1.PreviousStateHash())
 	})
 	t.Run("with timestamp", func(t *testing.T) {
 		nowis := time.Now()
-		su := NewStateUpdateWithBlockIndexMutation(42, nowis)
+		ph := hashing.HashStrings("dummy-dummy")
+		su := NewStateUpdateWithBlocklogValues(42, nowis, ph)
 		b1, err := newBlock(su)
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
 		require.True(t, nowis.Equal(b1.Timestamp()))
+		require.EqualValues(t, ph, b1.PreviousStateHash())
 	})
 	t.Run("several state updates", func(t *testing.T) {
 		nowis := time.Now()
-		su1 := NewStateUpdateWithBlockIndexMutation(42, nowis)
-		su2 := NewStateUpdateWithBlockIndexMutation(10)
+		ph := hashing.HashStrings("dummy-dummy")
+		su1 := NewStateUpdateWithBlocklogValues(42, nowis, ph)
+		su2 := NewStateUpdateWithBlocklogValues(10, nowis, ph)
 		b1, err := newBlock(su1, su2)
 		require.NoError(t, err)
 		require.EqualValues(t, 10, b1.BlockIndex())
 		require.True(t, nowis.Equal(b1.Timestamp()))
+		require.EqualValues(t, ph, b1.PreviousStateHash())
 	})
 }
 
 func TestBatches(t *testing.T) {
-	suBlock := NewStateUpdateWithBlockIndexMutation(2)
+	suBlock := NewStateUpdateWithBlocklogValues(2, time.Time{}, hashing.NilHash)
 	su1 := NewStateUpdate()
 	su2 := NewStateUpdate()
 
@@ -98,4 +103,8 @@ func TestOriginBlock(t *testing.T) {
 	require.True(t, b.Timestamp().IsZero())
 	require.True(t, b1.Timestamp().IsZero())
 	require.True(t, b2.Timestamp().IsZero())
+
+	require.EqualValues(t, hashing.NilHash, b.PreviousStateHash())
+	require.EqualValues(t, hashing.NilHash, b1.PreviousStateHash())
+	require.EqualValues(t, hashing.NilHash, b2.PreviousStateHash())
 }

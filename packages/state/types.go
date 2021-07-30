@@ -14,6 +14,7 @@ import (
 type VirtualState interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
+	PreviousStateHash() hashing.HashValue
 	Hash() hashing.HashValue
 	KVStoreReader() kv.KVStoreReader
 	ApplyStateUpdates(...StateUpdate)
@@ -47,12 +48,13 @@ type Block interface {
 	ApprovingOutputID() ledgerstate.OutputID
 	SetApprovingOutputID(ledgerstate.OutputID)
 	Timestamp() time.Time
+	PreviousStateHash() hashing.HashValue
 	EssenceBytes() []byte // except state transaction id
 	Bytes() []byte
 }
 
 const (
-	OriginStateHashBase58 = "4Rx7PFaQTyyYEeESYXhjbYQNpzhzbWQM6uwePRGw3U1V"
+	OriginStateHashBase58 = "HBspKtpQCbE6bx1V7QF8BAshMUsAvgNwTfPXQ9QMjrt4"
 )
 
 func OriginStateHash() hashing.HashValue {

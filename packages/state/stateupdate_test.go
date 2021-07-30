@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/hashing"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -61,13 +63,23 @@ func TestStateUpdateBasic(t *testing.T) {
 		require.NotEqualValues(t, su.Bytes(), su1.Bytes())
 	})
 	t.Run("state update with block index", func(t *testing.T) {
-		su := NewStateUpdateWithBlockIndexMutation(42)
+		ts := time.Now()
+		ph := hashing.HashStrings("dummy")
+		su := NewStateUpdateWithBlocklogValues(42, ts, ph)
 		si, ok := su.StateIndexMutation()
 		require.True(t, ok)
 		require.EqualValues(t, 42, si)
+		tsb, ok := su.TimestampMutation()
+		require.True(t, ok)
+		require.True(t, ts.Equal(tsb))
+		phb, ok := su.PreviousStateHashMutation()
+		require.True(t, ok)
+		require.EqualValues(t, ph, phb)
 	})
 	t.Run("serialize with block index", func(t *testing.T) {
-		su := NewStateUpdateWithBlockIndexMutation(42)
+		ts := time.Now()
+		ph := hashing.HashStrings("dummy")
+		su := NewStateUpdateWithBlocklogValues(42, ts, ph)
 		suBin := su.Bytes()
 		su1, err := newStateUpdateFromReader(bytes.NewReader(suBin))
 		require.NoError(t, err)
@@ -78,5 +90,11 @@ func TestStateUpdateBasic(t *testing.T) {
 		si1, ok := su1.StateIndexMutation()
 		require.True(t, ok)
 		require.EqualValues(t, 42, si1)
+		tsb, ok := su.TimestampMutation()
+		require.True(t, ok)
+		require.True(t, ts.Equal(tsb))
+		phb, ok := su.PreviousStateHashMutation()
+		require.True(t, ok)
+		require.EqualValues(t, ph, phb)
 	})
 }
