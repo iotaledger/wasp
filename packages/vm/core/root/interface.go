@@ -17,10 +17,11 @@ var (
 
 // constants
 const (
-	MinEventSize        = uint16(200)
-	MinEventsPerRequest = uint16(10)
-	DefaultMaxEventSize = uint16(2000)    // 2Kb
-	DefaultMaxBlobSize  = uint32(2000000) // 2Mb
+	MinEventSize               = uint16(200)
+	MinEventsPerRequest        = uint16(10)
+	DefaultMaxEventsPerRequest = uint16(1000)
+	DefaultMaxEventSize        = uint16(2000)    // 2Kb
+	DefaultMaxBlobSize         = uint32(2000000) // 2Mb
 )
 
 // state variables

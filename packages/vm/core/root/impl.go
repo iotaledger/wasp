@@ -82,12 +82,12 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	state.Set(VarMaxBlobSize, codec.Encode(DefaultMaxBlobSize))
 	state.Set(VarMaxEventSize, codec.Encode(DefaultMaxEventSize))
-	state.Set(VarMaxEventsPerReq, codec.Encode(MinEventsPerRequest))
+	state.Set(VarMaxEventsPerReq, codec.Encode(DefaultMaxEventsPerRequest))
 
 	if feeColorSet {
 		state.Set(VarFeeColor, codec.EncodeColor(feeColor))
 	}
-	// TODO set maxblob, maxevent size, default fees?
+
 	ctx.Log().Debugf("root.initialize.success")
 	return nil, nil
 }

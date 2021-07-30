@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	nEvents                = 10000
-	bigEventSize           = 5000 // ~5KB
+	nEvents                = int(root.DefaultMaxEventsPerRequest + 1000)
+	bigEventSize           = int(root.DefaultMaxEventSize + 1000)
 	manyEventsContractName = "ManyEventsContract"
 	manyEventsContract     = coreutil.NewContract(manyEventsContractName, "many events contract")
 
