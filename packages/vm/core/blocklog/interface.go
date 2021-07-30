@@ -131,7 +131,7 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	if err := util.ReadUint16(r, &bi.NumOffLedgerRequests); err != nil {
 		return err
 	}
-	if err := util.ReadHashValue(r, &bi.PreviousStateHash); err != nil { //nolint
+	if err := util.ReadHashValue(r, &bi.PreviousStateHash); err != nil { //nolint:nolint
 		return err
 	}
 	return nil

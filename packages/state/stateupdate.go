@@ -31,7 +31,7 @@ func NewStateUpdate(timestamp ...time.Time) *stateUpdateImpl { //nolint
 	return ret
 }
 
-func NewStateUpdateWithBlocklogValues(blockIndex uint32, timestamp time.Time, prevStateHash hashing.HashValue) *stateUpdateImpl { //nolint
+func NewStateUpdateWithBlocklogValues(blockIndex uint32, timestamp time.Time, prevStateHash hashing.HashValue) *stateUpdateImpl { //nolint:nolint
 	ret := &stateUpdateImpl{
 		mutations: buffered.NewMutations(),
 	}

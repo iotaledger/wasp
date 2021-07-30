@@ -34,7 +34,7 @@ func newBlock(stateUpdates ...StateUpdate) (*blockImpl, error) {
 	return ret, nil
 }
 
-func BlockFromBytes(data []byte) (*blockImpl, error) {
+func BlockFromBytes(data []byte) (*blockImpl, error) { // nolint:nolint
 	ret := new(blockImpl)
 	if err := ret.Read(bytes.NewReader(data)); err != nil {
 		return nil, xerrors.Errorf("BlockFromBytes: %w", err)
