@@ -79,6 +79,11 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	state.Set(VarChainID, codec.EncodeChainID(*chainID))
 	state.Set(VarChainOwnerID, codec.EncodeAgentID(ctx.Caller())) // chain owner is whoever sends init request
 	state.Set(VarDescription, codec.EncodeString(chainDescription))
+
+	state.Set(VarMaxBlobSize, codec.Encode(DefaultMaxBlobSize))
+	state.Set(VarMaxEventSize, codec.Encode(DefaultMaxEventSize))
+	state.Set(VarMaxEventsPerReq, codec.Encode(MinEventsPerRequest))
+
 	if feeColorSet {
 		state.Set(VarFeeColor, codec.EncodeColor(feeColor))
 	}
@@ -243,40 +248,6 @@ func getFeeInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret.Set(VarValidatorFee, codec.EncodeUint64(validatorFee))
 	return ret, nil
 }
-
-// setDefaultFee sets default fee values for the chain
-// Input:
-// - ParamOwnerFee int64 non-negative value of the owner fee. May be skipped, then it is not set
-// - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
-// func setDefaultFee(ctx iscp.Sandbox) (dict.Dict, error) {
-// 	a := assert.NewAssert(ctx.Log())
-// 	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setDefaultFee: not authorized")
-
-// 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-
-// 	ownerFee := params.MustGetInt64(ParamOwnerFee, -1)
-// 	ownerFeeSet := ownerFee >= 0
-// 	validatorFee := params.MustGetInt64(ParamValidatorFee, -1)
-// 	validatorFeeSet := validatorFee >= 0
-
-// 	a.Require(ownerFeeSet || validatorFeeSet, "root.setDefaultFee: wrong parameters")
-
-// 	if ownerFeeSet {
-// 		if ownerFee > 0 {
-// 			ctx.State().Set(VarDefaultOwnerFee, codec.EncodeInt64(ownerFee))
-// 		} else {
-// 			ctx.State().Del(VarDefaultOwnerFee)
-// 		}
-// 	}
-// 	if validatorFeeSet {
-// 		if validatorFee > 0 {
-// 			ctx.State().Set(VarDefaultValidatorFee, codec.EncodeInt64(validatorFee))
-// 		} else {
-// 			ctx.State().Del(VarDefaultValidatorFee)
-// 		}
-// 	}
-// 	return nil, nil
-// }
 
 // setContractFee sets fee for the particular smart contract
 // Input:
