@@ -72,7 +72,7 @@ var (
 	FuncSetContractFee         = coreutil.Func("setContractFee")
 	FuncSetChainConfig         = coreutil.Func("setChainConfig")
 	FuncFindContract           = coreutil.ViewFunc("findContract")
-	FuncGetChainConfig         = coreutil.ViewFunc("getChainConfig")
+	FuncGetChainConfig         = coreutil.ViewFunc("getChainInfo") // keeping "getChainInfo" name for now to avoid breaking wasmlib calls
 	FuncGetFeeInfo             = coreutil.ViewFunc("getFeeInfo")
 )
 

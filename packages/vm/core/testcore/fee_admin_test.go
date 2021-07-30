@@ -127,14 +127,14 @@ func TestSetDefaultFeeFailNegative1(t *testing.T) {
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainConfig.Name, root.ParamOwnerFee, -2).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
-	require.Error(t, err)
+	require.NoError(t, err)
 
 	checkFees(chain, root.Contract.Name, 0, 0)
 	checkFees(chain, accounts.Contract.Name, 0, 0)
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
-	chain.AssertCommonAccountIotas(1)
-	chain.AssertTotalIotas(1)
+	chain.AssertCommonAccountIotas(2)
+	chain.AssertTotalIotas(2)
 }
 
 func TestSetDefaultFeeFailNegative2(t *testing.T) {
@@ -143,14 +143,14 @@ func TestSetDefaultFeeFailNegative2(t *testing.T) {
 
 	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainConfig.Name, root.ParamValidatorFee, -100).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
-	require.Error(t, err)
+	require.NoError(t, err)
 
 	checkFees(chain, root.Contract.Name, 0, 0)
 	checkFees(chain, accounts.Contract.Name, 0, 0)
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
-	chain.AssertCommonAccountIotas(1)
-	chain.AssertTotalIotas(1)
+	chain.AssertCommonAccountIotas(2)
+	chain.AssertTotalIotas(2)
 }
 
 func TestSetContractValidatorFeeOk(t *testing.T) {
