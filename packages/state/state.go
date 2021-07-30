@@ -45,7 +45,7 @@ func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualState {
 	return ret
 }
 
-func newZeroVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) (*virtualState, *BlockImpl) {
+func newZeroVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) (VirtualState, Block) {
 	ret := newVirtualState(db, chainID)
 	originBlock := newOriginBlock()
 	if err := ret.ApplyBlock(originBlock); err != nil {
@@ -103,7 +103,7 @@ func (vs *virtualState) KVStoreReader() kv.KVStoreReader {
 func (vs *virtualState) BlockIndex() uint32 {
 	blockIndex, err := loadStateIndexFromState(vs.kvs)
 	if err != nil {
-		panic(xerrors.Errorf("state.BlockIndex: %v", err))
+		panic(xerrors.Errorf("state.BlockIndex: %w", err))
 	}
 	return blockIndex
 }
@@ -111,9 +111,17 @@ func (vs *virtualState) BlockIndex() uint32 {
 func (vs *virtualState) Timestamp() time.Time {
 	ts, err := loadTimestampFromState(vs.kvs)
 	if err != nil {
-		panic(xerrors.Errorf("state.OutputTimestamp: %v", err))
+		panic(xerrors.Errorf("state.OutputTimestamp: %w", err))
 	}
 	return ts
+}
+
+func (vs *virtualState) PreviousStateHash() hashing.HashValue {
+	ph, err := loadPrevStateHashFromState(vs.kvs)
+	if err != nil {
+		panic(xerrors.Errorf("state.PreviousStateHash: %w", err))
+	}
+	return ph
 }
 
 // ApplyBlock applies block of state updates. Checks consistency of the block and previous state. Updates state hash
@@ -128,9 +136,9 @@ func (vs *virtualState) ApplyBlock(b Block) error {
 	if !vs.empty && vs.Timestamp().After(b.Timestamp()) {
 		return xerrors.New("ApplyBlock: inconsistent timestamps")
 	}
-	upds := make([]StateUpdate, len(b.(*BlockImpl).stateUpdates))
+	upds := make([]StateUpdate, len(b.(*blockImpl).stateUpdates))
 	for i := range upds {
-		upds[i] = b.(*BlockImpl).stateUpdates[i]
+		upds[i] = b.(*blockImpl).stateUpdates[i]
 	}
 	vs.ApplyStateUpdates(upds...)
 	vs.empty = false
@@ -283,6 +291,21 @@ func loadTimestampFromState(chainState kv.KVStoreReader) (time.Time, error) {
 		return time.Time{}, xerrors.New("loadTimestampFromState: timestamp not found")
 	}
 	return ts, nil
+}
+
+func loadPrevStateHashFromState(chainState kv.KVStoreReader) (hashing.HashValue, error) {
+	hashBin, err := chainState.Get(kv.Key(coreutil.StatePrefixPrevStateHash))
+	if err != nil {
+		return hashing.NilHash, err
+	}
+	ph, ok, err := codec.DecodeHashValue(hashBin)
+	if err != nil {
+		return hashing.NilHash, xerrors.Errorf("loadPrevStateHashFromState: %w", err)
+	}
+	if !ok {
+		return hashing.NilHash, xerrors.New("loadPrevStateHashFromState: previous state hash not found")
+	}
+	return ph, nil
 }
 
 // endregion /////////////////////////////////////////////////////////////
