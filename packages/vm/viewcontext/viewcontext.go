@@ -2,6 +2,7 @@ package viewcontext
 
 import (
 	"fmt"
+	"runtime/debug"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -57,7 +58,8 @@ func (v *Viewcontext) CallView(contractHname, epCode iscp.Hname, params dict.Dic
 			default:
 				err = xerrors.Errorf("viewcontext: panic in VM: %v", err1)
 			}
-			v.log.Infof("+++++ debug: error returned from the view call: %v", err) // TODO remove
+			v.log.Debugf("CallView: %v", err)
+			v.log.Debugf(string(debug.Stack()))
 		}()
 		ret, err = v.callView(contractHname, epCode, params)
 	}()
