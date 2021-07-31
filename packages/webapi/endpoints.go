@@ -2,6 +2,7 @@ package webapi
 
 import (
 	"net"
+	"time"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -40,8 +41,13 @@ func Init(
 	blob.AddEndpoints(pub, func() registry.BlobCache { return registryProvider() })
 	info.AddEndpoints(pub, network)
 	reqstatus.AddEndpoints(pub, chainsProvider.ChainProvider())
-	request.AddEndpoints(pub, chainsProvider.ChainProvider(), webapiutil.GetAccountBalance)
 	state.AddEndpoints(pub, chainsProvider)
+	request.AddEndpoints(
+		pub,
+		chainsProvider.ChainProvider(),
+		webapiutil.GetAccountBalance,
+		5*time.Minute, // TODO get from  parameters
+	)
 
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")
 	admapi.AddEndpoints(

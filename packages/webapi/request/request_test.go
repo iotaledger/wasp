@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/util/expiringcache"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -86,6 +87,7 @@ func TestNewRequestBase64(t *testing.T) {
 	instance := &offLedgerReqAPI{
 		getChain:          createMockedGetChain(t),
 		getAccountBalance: getAccountBalanceMocked,
+		requestsCache:     expiringcache.New(10 * time.Second),
 	}
 
 	testutil.CallWebAPIRequestHandler(
