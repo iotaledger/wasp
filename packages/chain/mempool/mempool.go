@@ -168,7 +168,6 @@ func (m *Mempool) ReceiveRequest(req iscp.Request) bool {
 	if m.checkInBuffer(req) {
 		return false
 	}
-	m.inMutex.RUnlock()
 	if m.mempoolMetrics != nil {
 		if req.IsOffLedger() {
 			m.mempoolMetrics.NewOffLedgerRequest(m.chainID.String())
