@@ -120,7 +120,6 @@ func (d *DomainImpl) AddPeer(netID string) error {
 	}
 	d.nodes[netID] = peer
 	d.reshufflePeers()
-	util.LogExtended(d.log, util.ExtendedMessage{Message: "Added Peer", Tag: "domain", Args: map[string]string{"netID": netID}})
 
 	return nil
 }

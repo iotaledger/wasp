@@ -20,6 +20,11 @@ func addPeeringEndpoints(adm echoswagger.ApiGroup, network peering.NetworkProvid
 		{PubKey: "8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiQ", NetID: "some-host:9081"},
 		{PubKey: "8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiR", NetID: "some-host:9082"},
 	}
+	peeringStatusExample := []*model.PeeringNodeStatus{
+		{PubKey: "8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiQ", IsAlive: true, NumUsers: 1, NetID: "some-host:9081"},
+		{PubKey: "8mcS4hUaiiedX3jRud41Zuu1ZcRUZZ8zY9SuJJgXHuiR", IsAlive: true, NumUsers: 1, NetID: "some-host:9082"},
+	}
+
 	addCtx := func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			c.Set("net", network)
@@ -48,8 +53,8 @@ func addPeeringEndpoints(adm echoswagger.ApiGroup, network peering.NetworkProvid
 		SetSummary("Trust the specified peer, the pub key is passed via the path.")
 
 	adm.GET(routes.PeeringGetStatus(), handlePeeringGetStatus, addCtx).
-		AddResponse(http.StatusOK, "This node as a peer.", listExample[0], nil).
-		SetSummary("Basic peer info of the current node.")
+		AddResponse(http.StatusOK, "A list of all peers.", peeringStatusExample, nil).
+		SetSummary("Basic information about all configured peers.")
 
 	adm.POST(routes.PeeringTrustedPost(), handlePeeringTrustedPost, addCtx).
 		AddParamBody(listExample[0], "PeeringTrustedNode", "Info of the peer to trust.", true).
@@ -69,6 +74,7 @@ func handlePeeringSelfGet(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, resp)
 }
+
 func handlePeeringGetStatus(c echo.Context) error {
 	network := c.Get("net").(peering.NetworkProvider)
 	peeringStatus := network.PeerStatus()

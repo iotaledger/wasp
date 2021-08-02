@@ -326,22 +326,23 @@ func (clu *Cluster) start(dataPath string) error {
 }
 
 func (clu *Cluster) KillNode(nodeIndex int) error {
-	if nodeIndex < len(clu.waspCmds) {
-		process := clu.waspCmds[nodeIndex]
+	if nodeIndex >= len(clu.waspCmds) {
+		return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
+	}
 
-		if process != nil {
-			err := process.Process.Kill()
+	process := clu.waspCmds[nodeIndex]
 
-			if err == nil {
-				clu.waspCmds[nodeIndex] = nil
-			}
+	if process != nil {
+		err := process.Process.Kill()
 
-			return err
+		if err == nil {
+			clu.waspCmds[nodeIndex] = nil
 		}
 
-		return nil
+		return err
 	}
-	return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
+
+	return nil
 }
 
 func (clu *Cluster) FreezeNode(nodeIndex int) error {
