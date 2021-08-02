@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 )
 
@@ -69,7 +68,7 @@ func (s *sandboxview) Contract() iscp.Hname {
 }
 
 func (s *sandboxview) ContractCreator() *iscp.AgentID {
-	contractRecord, found := rootimpl.FindContract(contractStateSubpartition(s.vctx.stateReader.KVStoreReader(), root.Contract.Hname()), s.contractHname)
+	contractRecord, found := root.FindContract(contractStateSubpartition(s.vctx.stateReader.KVStoreReader(), root.Contract.Hname()), s.contractHname)
 	assert.NewAssert(s.Log()).Require(found, "failed to find contract %s", s.contractHname)
 	return contractRecord.Creator
 }

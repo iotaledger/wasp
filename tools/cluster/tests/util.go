@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,7 +40,7 @@ func (e *chainEnv) checkCoreContracts() {
 		desc, _, _ := codec.DecodeString(ret.MustGet(root.VarDescription))
 		require.EqualValues(e.t, e.chain.Description, desc)
 
-		contractRegistry, err := rootimpl.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
 		require.NoError(e.t, err)
 		for _, rec := range core.AllCoreContractsByHash {
 			cr := contractRegistry[rec.Contract.Hname()]

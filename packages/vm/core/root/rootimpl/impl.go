@@ -152,7 +152,7 @@ func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-	rec, found := FindContract(ctx.State(), hname)
+	rec, found := root.FindContract(ctx.State(), hname)
 	ret := dict.New()
 	ret.Set(root.ParamContractRecData, rec.Bytes())
 	var foundByte [1]byte
@@ -172,7 +172,7 @@ func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
 // - VarDescription - string
 // - VarContractRegistry: a map of contract registry
 func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
-	info := MustGetChainInfo(ctx.State())
+	info := root.MustGetChainInfo(ctx.State())
 	ret := dict.New()
 	ret.Set(root.VarChainID, codec.EncodeChainID(info.ChainID))
 	ret.Set(root.VarChainOwnerID, codec.EncodeAgentID(&info.ChainOwnerID))
@@ -199,7 +199,7 @@ func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 func delegateChainOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("root.delegateChainOwnership.begin")
 	a := assert.NewAssert(ctx.Log())
-	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.delegateChainOwnership: not authorized")
+	a.Require(root.CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.delegateChainOwnership: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	newOwnerID := params.MustGetAgentID(root.ParamChainOwner)
@@ -243,7 +243,7 @@ func getFeeInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	if err != nil {
 		return nil, err
 	}
-	feeColor, ownerFee, validatorFee := GetFeeInfo(ctx, hname)
+	feeColor, ownerFee, validatorFee := root.GetFeeInfo(ctx, hname)
 	ret := dict.New()
 	ret.Set(root.VarFeeColor, codec.EncodeColor(feeColor))
 	ret.Set(root.VarOwnerFee, codec.EncodeUint64(ownerFee))
@@ -258,12 +258,12 @@ func getFeeInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 // - ParamValidatorFee int64 non-negative value of the contract fee. May be skipped, then it is not set
 func setContractFee(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setContractFee: not authorized")
+	a.Require(root.CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setContractFee: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	hname := params.MustGetHname(root.ParamHname)
-	rec, found := FindContract(ctx.State(), hname)
+	rec, found := root.FindContract(ctx.State(), hname)
 	a.Require(found, "contract not found")
 
 	ownerFee := params.MustGetUint64(root.ParamOwnerFee, 0)
@@ -287,7 +287,7 @@ func setContractFee(ctx iscp.Sandbox) (dict.Dict, error) {
 //  - ParamDeployer iscp.AgentID
 func grantDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.grantDeployPermissions: not authorized")
+	a.Require(root.CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.grantDeployPermissions: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	deployer := params.MustGetAgentID(root.ParamDeployer)
@@ -302,7 +302,7 @@ func grantDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 //  - ParamDeployer iscp.AgentID
 func revokeDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.revokeDeployPermissions: not authorized")
+	a.Require(root.CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.revokeDeployPermissions: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	deployer := params.MustGetAgentID(root.ParamDeployer)
@@ -321,7 +321,7 @@ func revokeDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 // - ParamValidatorFee        - int64 non-negative value of the contract fee.
 func setChainInfo(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setContractFee: not authorized")
+	a.Require(root.CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setContractFee: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 

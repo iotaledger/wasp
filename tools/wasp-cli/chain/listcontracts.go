@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
@@ -18,10 +17,10 @@ var listContractsCmd = &cobra.Command{
 		info, err := SCClient(root.Contract.Hname()).CallView(root.FuncGetChainInfo.Name, nil)
 		log.Check(err)
 
-		contracts, err := rootimpl.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
+		contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
 		log.Check(err)
 
-		feeColor, defaultOwnerFee, defaultValidatorFee, err := rootimpl.GetDefaultFeeInfo(info)
+		feeColor, defaultOwnerFee, defaultValidatorFee, err := root.GetDefaultFeeInfo(info)
 		log.Check(err)
 
 		log.Printf("Total %d contracts in chain %s\n", len(contracts), GetCurrentChainID())

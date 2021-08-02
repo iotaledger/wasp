@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/root/rootimpl"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,7 +33,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 		desc, _, _ := codec.DecodeString(ret.MustGet(root.VarDescription))
 		require.EqualValues(e.t, e.chain.Description, desc)
 
-		contractRegistry, err := rootimpl.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, len(core.AllCoreContractsByHash)+1, len(contractRegistry))
 
@@ -79,7 +78,7 @@ func TestIncDeployment(t *testing.T) {
 		desc, _, _ := codec.DecodeString(ret.MustGet(root.VarDescription))
 		require.EqualValues(t, e.chain.Description, desc)
 
-		contractRegistry, err := rootimpl.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
 		require.NoError(t, err)
 		require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contractRegistry))
 
