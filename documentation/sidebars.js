@@ -185,5 +185,37 @@ module.exports = {
       label: 'Contribute',
       id: 'contribute',
     },
+    {
+      type: 'category',
+      label: 'Guide',
+      items: [
+        {
+          type: 'doc',
+          label: 'Overview',
+          id: 'guide/readme',
+        },
+        {
+          type: 'category',
+          label: 'Core Concepts',
+          items: [
+            {
+              type: 'doc',
+              label: 'Smart Contracts',
+              id: 'guide/core_concepts/smart-contracts',
+            },
+            {
+              type: 'doc',
+              label: 'ISCP',
+              id: 'guide/core_concepts/iscp',
+            },
+            {
+              type: 'doc',
+              label: 'ISCP Architecture',
+              id: 'guide/core_concepts/iscp-architecture',
+            },
+          ]
+        },
+      ]
+    },
   ],
 };

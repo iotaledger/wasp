@@ -31,6 +31,15 @@ const ActionList = [
       </>
     ),
   },
+  {
+    title: 'Guide',
+    link: 'docs/guide/readme',
+    description: (
+      <>
+        An overview of everything you need to more about ISCP!
+      </>
+    ),
+  },
 ];
 
 function Action({ title, link, description}) {
