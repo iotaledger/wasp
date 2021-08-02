@@ -25,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/tools/cluster/mocknode"
@@ -90,12 +91,22 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	return clu.DeployChainWithDKG("Default chain", committee, committee, uint16(quorum))
 }
 
+func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, ledgerstate.Address, error) {
+	cmt := util.MakeRange(0, committeeNodeCount)
+	quorum := uint16((2*len(cmt))/3 + 1)
+
+	address, err := clu.RunDKG(cmt, quorum)
+
+	return cmt, address, err
+}
+
 func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
 	if threshold == 0 {
 		threshold = (uint16(len(committeeNodes))*2)/3 + 1
 	}
 	apiHosts := clu.Config.APIHosts(committeeNodes)
 	peeringHosts := clu.Config.PeeringHosts(committeeNodes)
+
 	dkgInitiatorIndex := uint16(rand.Intn(len(apiHosts)))
 	return apilib.RunDKG(apiHosts, peeringHosts, threshold, dkgInitiatorIndex, timeout...)
 }
