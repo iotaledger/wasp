@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/admapi"
@@ -46,7 +47,8 @@ func Init(
 		pub,
 		chainsProvider.ChainProvider(),
 		webapiutil.GetAccountBalance,
-		5*time.Minute, // TODO get from  parameters
+		webapiutil.HasRequestBeenProcessed,
+		time.Duration(parameters.GetInt(parameters.OffledgerAPICacheTTL)),
 	)
 
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")

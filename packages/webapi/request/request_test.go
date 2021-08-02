@@ -5,21 +5,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/util/expiringcache"
-
-	"github.com/iotaledger/hive.go/events"
-	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
+	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util/expiringcache"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
@@ -69,8 +67,14 @@ func createMockedGetChain(t *testing.T) chains.ChainProvider {
 	}
 }
 
-func getAccountBalanceMocked(_ chain.ChainCore, _ *iscp.AgentID) (colored.Balances, error) {
+func getAccountBalanceMocked(_ chain.Chain, _ *iscp.AgentID) (colored.Balances, error) {
 	return colored.NewBalancesForIotas(100), nil
+}
+
+func hasRequestBeenProcessedMocked(ret bool) hasRequestBeenProcessedFn {
+	return func(_ chain.Chain, _ iscp.RequestID) (bool, error) {
+		return ret, nil
+	}
 }
 
 func dummyOffledgerRequest() *request.OffLedger {
@@ -85,9 +89,10 @@ func dummyOffledgerRequest() *request.OffLedger {
 
 func TestNewRequestBase64(t *testing.T) {
 	instance := &offLedgerReqAPI{
-		getChain:          createMockedGetChain(t),
-		getAccountBalance: getAccountBalanceMocked,
-		requestsCache:     expiringcache.New(10 * time.Second),
+		getChain:                createMockedGetChain(t),
+		getAccountBalance:       getAccountBalanceMocked,
+		hasRequestBeenProcessed: hasRequestBeenProcessedMocked(false),
+		requestsCache:           expiringcache.New(10 * time.Second),
 	}
 
 	testutil.CallWebAPIRequestHandler(
@@ -104,8 +109,10 @@ func TestNewRequestBase64(t *testing.T) {
 
 func TestNewRequestBinary(t *testing.T) {
 	instance := &offLedgerReqAPI{
-		getChain:          createMockedGetChain(t),
-		getAccountBalance: getAccountBalanceMocked,
+		getChain:                createMockedGetChain(t),
+		getAccountBalance:       getAccountBalanceMocked,
+		hasRequestBeenProcessed: hasRequestBeenProcessedMocked(false),
+		requestsCache:           expiringcache.New(10 * time.Second),
 	}
 
 	testutil.CallWebAPIRequestHandler(
@@ -117,5 +124,25 @@ func TestNewRequestBinary(t *testing.T) {
 		dummyOffledgerRequest().Bytes(),
 		nil,
 		http.StatusAccepted,
+	)
+}
+
+func TestRequestAlreadyProcessed(t *testing.T) {
+	instance := &offLedgerReqAPI{
+		getChain:                createMockedGetChain(t),
+		getAccountBalance:       getAccountBalanceMocked,
+		hasRequestBeenProcessed: hasRequestBeenProcessedMocked(true),
+		requestsCache:           expiringcache.New(10 * time.Second),
+	}
+
+	testutil.CallWebAPIRequestHandler(
+		t,
+		instance.handleNewRequest,
+		http.MethodPost,
+		routes.NewRequest(":chainID"),
+		map[string]string{"chainID": iscp.RandomChainID().Base58()},
+		dummyOffledgerRequest().Bytes(),
+		nil,
+		http.StatusBadRequest,
 	)
 }

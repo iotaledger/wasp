@@ -12,12 +12,16 @@ type cacheItem struct {
 }
 
 type ExpiringCache struct {
+	*cache
+}
+
+type cache struct {
 	items map[interface{}]cacheItem
 	ttl   time.Duration
 	mut   sync.RWMutex
 }
 
-func (c *ExpiringCache) cleanup() {
+func (c *cache) cleanup() {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 	now := time.Now().UnixNano()
@@ -28,7 +32,7 @@ func (c *ExpiringCache) cleanup() {
 	}
 }
 
-func (c *ExpiringCache) Set(k, v interface{}) {
+func (c *cache) Set(k, v interface{}) {
 	c.mut.Lock()
 	defer c.mut.Unlock()
 	c.items[k] = cacheItem{
@@ -37,7 +41,7 @@ func (c *ExpiringCache) Set(k, v interface{}) {
 	}
 }
 
-func (c *ExpiringCache) Get(k interface{}) interface{} {
+func (c *cache) Get(k interface{}) interface{} {
 	c.mut.RLock()
 	defer c.mut.RUnlock()
 	item, exists := c.items[k]
@@ -48,26 +52,38 @@ func (c *ExpiringCache) Get(k interface{}) interface{} {
 	return item.value
 }
 
-func New(ttl time.Duration) *ExpiringCache {
-	cache := &ExpiringCache{
+const defaultCleanupInterval = 60 * time.Second
+
+func New(ttl time.Duration, cleanupInterval ...time.Duration) *ExpiringCache {
+	var cleanint time.Duration
+	if len(cleanupInterval) == 1 {
+		cleanint = cleanupInterval[0]
+	} else {
+		cleanint = defaultCleanupInterval
+	}
+
+	c := &cache{
 		items: make(map[interface{}]cacheItem),
 	}
 
+	ret := &ExpiringCache{c} // prevent the cleanup loop from blocking garbage collection on `c`
+
 	stopCleanup := make(chan bool)
-	ticker := time.NewTicker(ttl)
+	ticker := time.NewTicker(cleanint)
 	go func() {
 		for {
 			<-ticker.C
-			cache.cleanup()
+			c.cleanup()
 			<-stopCleanup
 			ticker.Stop()
 			return
 		}
 	}()
 
-	runtime.SetFinalizer(cache, func() {
+	runtime.SetFinalizer(ret, func(_ *ExpiringCache) {
+		// when the exported `*ExpiringCache` is GC'd, we stop the cleanup loop and allow `c` to be GC'd
 		close(stopCleanup)
 	})
 
-	return cache
+	return ret
 }
