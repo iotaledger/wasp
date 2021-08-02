@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -124,38 +123,4 @@ func CheckAuthorizationByChainOwner(state kv.KVStore, agentID *iscp.AgentID) boo
 		panic(err)
 	}
 	return currentOwner.Equals(agentID)
-}
-
-func mustStoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, a assert.Assert) {
-	rec := NewContractRecord(i, &iscp.NilAgentID)
-	ctx.Log().Debugf("mustStoreAndInitCoreContract: '%s', hname = %s", i.Name, i.Hname())
-	mustStoreContractRecord(ctx, rec, a)
-}
-
-func mustStoreAndInitCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, a assert.Assert) {
-	mustStoreContract(ctx, i, a)
-	_, err := ctx.Call(iscp.Hn(i.Name), iscp.EntryPointInit, nil, nil)
-	a.RequireNoError(err)
-}
-
-func mustStoreContractRecord(ctx iscp.Sandbox, rec *ContractRecord, a assert.Assert) {
-	hname := rec.Hname()
-	contractRegistry := collections.NewMap(ctx.State(), VarContractRegistry)
-	a.Require(!contractRegistry.MustHasAt(hname.Bytes()), "contract '%s'/%s already exist", rec.Name, hname.String())
-	contractRegistry.MustSetAt(hname.Bytes(), rec.Bytes())
-}
-
-// isAuthorizedToDeploy checks if caller is authorized to deploy smart contract
-func isAuthorizedToDeploy(ctx iscp.Sandbox) bool {
-	caller := ctx.Caller()
-	if caller.Equals(ctx.ChainOwnerID()) {
-		// chain owner is always authorized
-		return true
-	}
-	if caller.Address().Equals(ctx.ChainID().AsAddress()) {
-		// smart contract from the same chain is always authorize
-		return true
-	}
-
-	return collections.NewMap(ctx.State(), VarDeployPermissions).MustHasAt(caller.Bytes())
 }
