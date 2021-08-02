@@ -5,28 +5,22 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type MempoolMetrics interface {
-	NewOffLedgerRequest(chainID string)
-	NewOnLedgerRequest(chainID string)
-	ProcessRequest(chainID string)
-}
-
 var (
 	offLedgerRequestCounter *prometheus.CounterVec
 	onLedgerRequestCounter  *prometheus.CounterVec
 	processedRequestCounter *prometheus.CounterVec
 )
 
-func (m *Metrics) NewOffLedgerRequest(chainID string) {
-	offLedgerRequestCounter.With(prometheus.Labels{"chain": chainID}).Inc()
+func (m *Metrics) NewOffLedgerRequest() {
+	offLedgerRequestCounter.With(prometheus.Labels{"chain": m.chainID.String()}).Inc()
 }
 
-func (m *Metrics) NewOnLedgerRequest(chainID string) {
-	onLedgerRequestCounter.With(prometheus.Labels{"chain": chainID}).Inc()
+func (m *Metrics) NewOnLedgerRequest() {
+	onLedgerRequestCounter.With(prometheus.Labels{"chain": m.chainID.String()}).Inc()
 }
 
-func (m *Metrics) ProcessRequest(chainID string) {
-	processedRequestCounter.With(prometheus.Labels{"chain": chainID}).Inc()
+func (m *Metrics) ProcessRequest() {
+	processedRequestCounter.With(prometheus.Labels{"chain": m.chainID.String()}).Inc()
 }
 
 func registerMempoolMetrics(log *logger.Logger) {

@@ -268,7 +268,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		proc:                   processors.MustNew(env.processorConfig),
 		Log:                    chainlog,
 	}
-	ret.mempool = mempool.New(ret.StateReader, env.blobCache, chainlog, nil, nil)
+	ret.mempool = mempool.New(ret.StateReader, env.blobCache, chainlog, nil)
 	require.NoError(env.T, err)
 	require.NoError(env.T, err)
 

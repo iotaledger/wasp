@@ -6,14 +6,24 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Metrics struct {
-	server *http.Server
-	log    *logger.Logger
+	server  *http.Server
+	log     *logger.Logger
+	chainID *iscp.ChainID
+}
+
+func (m *Metrics) NewChainMetrics(chainID *iscp.ChainID) *Metrics {
+	return &Metrics{
+		server:  m.server,
+		log:     m.log,
+		chainID: chainID,
+	}
 }
 
 func New(log *logger.Logger) *Metrics {

@@ -97,14 +97,14 @@ func NewChain(
 	offledgerBroadcastUpToNPeers int,
 	offledgerBroadcastInterval time.Duration,
 	pullMissingRequestsFromCommittee bool,
-	mempoolMetrics metrics.MempoolMetrics,
+	chainMetrics metrics.ChainMetrics,
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chainID.String())
 
 	chainLog := log.Named(chainID.Base58()[:6] + ".")
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
-		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, mempoolMetrics, chainID),
+		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
 		chMsg:             make(chan interface{}, 100),
 		chainID:           *chainID,
