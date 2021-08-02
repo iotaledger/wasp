@@ -31,7 +31,7 @@ var Processor = root.Contract.Processor(initialize,
 	root.FuncGrantDeployPermission.WithHandler(grantDeployPermission),
 	root.FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
 	root.FuncSetContractFee.WithHandler(setContractFee),
-	root.FuncSetChainInfo.WithHandler(setChainConfig),
+	root.FuncSetChainInfo.WithHandler(setChainInfo),
 	root.FuncFindContract.WithHandler(findContract),
 	root.FuncGetChainInfo.WithHandler(getChainInfo),
 	root.FuncGetFeeInfo.WithHandler(getFeeInfo),
@@ -312,14 +312,14 @@ func revokeDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 	return nil, nil
 }
 
-// setChainConfig sets the configuration parameters of the chain
+// setChainInfo sets the configuration parameters of the chain
 // Input (all optional):
 // - ParamMaxBlobSize         - uint32 maximum size of a blob to be saved in the blob contract.
 // - ParamMaxEventSize        - uint16 maximum size of a single event.
 // - ParamMaxEventsPerRequest - uint16 maximum number of events per request.
 // - ParamOwnerFee            - int64 non-negative value of the owner fee.
 // - ParamValidatorFee        - int64 non-negative value of the contract fee.
-func setChainConfig(ctx iscp.Sandbox) (dict.Dict, error) {
+func setChainInfo(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	a.Require(CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.setContractFee: not authorized")
 

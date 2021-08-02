@@ -73,24 +73,6 @@ func (e *chainEnv) printBlocks(expected int) {
 	require.EqualValues(e.t, expected, sum)
 }
 
-//
-//func printBlocksWithRecords(t *testing.T, ch *cluster.Chain) {
-//	recs, err := ch.GetAllBlockInfoRecordsReverse()
-//	require.NoError(t, err)
-//
-//	sum := 0
-//	for _, rec := range recs {
-//		t.Logf("---- block #%d: total: %d, off-ledger: %d, success: %d", rec.BlockIndex, rec.TotalRequests, rec.NumOffLedgerRequests, rec.NumSuccessfulRequests)
-//		sum += int(rec.TotalRequests)
-//		recs, err := ch.GetRequestReceiptsForBlock(rec.BlockIndex)
-//		require.NoError(t, err)
-//		for _, rec := range recs {
-//			t.Logf("---------- %s : %s", rec.RequestID.String(), string(rec.Error))
-//		}
-//	}
-//	t.Logf("Total requests processed: %d", sum)
-//}
-
 func TestAccessNodesOnLedger(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()

@@ -48,7 +48,7 @@ func Init(
 		chainsProvider.ChainProvider(),
 		webapiutil.GetAccountBalance,
 		webapiutil.HasRequestBeenProcessed,
-		time.Duration(parameters.GetInt(parameters.OffledgerAPICacheTTL)),
+		time.Duration(parameters.GetInt(parameters.OffledgerAPICacheTTL))*time.Second,
 	)
 
 	adm := server.Group("admin", "").SetDescription("Admin endpoints")
