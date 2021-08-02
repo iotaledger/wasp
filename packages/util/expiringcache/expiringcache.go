@@ -72,11 +72,13 @@ func New(ttl time.Duration, cleanupInterval ...time.Duration) *ExpiringCache {
 	ticker := time.NewTicker(cleanint)
 	go func() {
 		for {
-			<-ticker.C
-			c.cleanup()
-			<-stopCleanup
-			ticker.Stop()
-			return
+			select {
+			case <-ticker.C:
+				c.cleanup()
+			case <-stopCleanup:
+				ticker.Stop()
+				return
+			}
 		}
 	}()
 
