@@ -26,7 +26,15 @@ func deployCmd() *cobra.Command {
 			alias := GetChainAlias()
 
 			if peers == nil {
-				peers = committee
+				if committee != nil {
+					peers = committee
+				} else {
+					peers = []int{0, 1, 2, 3}
+				}
+			}
+
+			if committee == nil {
+				committee = peers
 			}
 
 			chainid, _, err := apilib.DeployChainWithDKG(apilib.CreateChainParams{
@@ -47,8 +55,8 @@ func deployCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().IntSliceVarP(&committee, "committee", "", []int{0, 1, 2, 3}, "indices of committee nodes")
-	cmd.Flags().IntSliceVarP(&committee, "peers", "", nil, "indices of peer nodes (default: same as committee)")
+	cmd.Flags().IntSliceVarP(&peers, "peers", "", nil, "indices of peer nodes (default: 0,1,2,3)")
+	cmd.Flags().IntSliceVarP(&committee, "committee", "", nil, "subset of peers acting as committee nodes  (default: same as peers)")
 	cmd.Flags().IntVarP(&quorum, "quorum", "", 3, "quorum")
 	cmd.Flags().StringVarP(&description, "description", "", "", "description")
 	return cmd
