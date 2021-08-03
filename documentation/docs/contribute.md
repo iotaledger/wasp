@@ -48,15 +48,15 @@ Before creating the Pull Request ensure that:
 
     - install golintci plugin: https://plugins.jetbrains.com/plugin/12496-go-linter
 
-        ![install plugin](../static/img/contributing/golintci-goland-1.png)
+        ![install plugin](/img/contributing/golintci-goland-1.png)
 
     - configure path for golangci
 
-        ![configue plugin](../static/img/contributing/golintci-goland-2.png)
+        ![configue plugin](/img/contributing/golintci-goland-2.png)
 
     - add a golangci file watcher with custom command (I recommend using --fix)
 
-        ![watcher plugin](../static/img/contributing/golintci-goland-3.png)
+        ![watcher plugin](/img/contributing/golintci-goland-3.png)
 
     **Other editors**: please look into the `golangci` official documentation.
 
