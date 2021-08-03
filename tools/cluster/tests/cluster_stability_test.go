@@ -463,7 +463,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 }
 
 func runTestOneFailingNodeAfterTheOther(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequestsEachStep int) {
-	quorum := int((2*numValidators)/3 + 1)
+	quorum := (2*numValidators)/3 + 1
 
 	t.Logf("Quorum: %v", quorum)
 	t.Logf("Maximal allowed broken nodes: %v", numValidators-quorum)
