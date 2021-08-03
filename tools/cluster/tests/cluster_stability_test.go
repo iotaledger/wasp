@@ -40,14 +40,14 @@ func InitializeStabilityTest(t *testing.T, numValidators, clusterSize int) *Sabo
 	}
 }
 
-func (e *SabotageEnv) sendRequests(numRequests int) {
+func (e *SabotageEnv) sendRequests(numRequests int, messageDelay time.Duration) {
 	for i := 0; i < numRequests; i++ {
 		client := e.chainEnv.createNewClient()
 
 		_, err := client.PostRequest(inccounter.FuncIncCounter.Name)
 		require.NoError(e.chainEnv.t, err)
 
-		time.Sleep(time.Millisecond * 250)
+		time.Sleep(messageDelay)
 	}
 }
 
@@ -166,7 +166,7 @@ func (e *SabotageEnv) getActiveNodeList() []int {
 
 func runTestSuccessfulIncCounterIncreaseWithoutInstability(t *testing.T, clusterSize, numValidators, numRequests int) {
 	env := InitializeStabilityTest(t, numValidators, clusterSize)
-	env.sendRequests(numRequests)
+	env.sendRequests(numRequests, time.Millisecond*250)
 	waitUntil(t, env.chainEnv.counterEquals(int64(numRequests)), env.getActiveNodeList(), 120*time.Second, "incCounter matches expectation")
 }
 
@@ -205,7 +205,7 @@ func runTestSuccessfulIncCounterIncreaseWithMildInstability(t *testing.T, cluste
 	env.setSabotageValidators(numBrokenNodes)
 
 	wg := env.sabotageNodes(SabotageByKill, 5*time.Second, 1*time.Second)
-	env.sendRequests(numRequests)
+	env.sendRequests(numRequests, time.Millisecond*250)
 
 	wg.Wait()
 	// quorum is not met, incCounter should not equal numRequests
@@ -277,7 +277,7 @@ func runTestFailsIncCounterIncreaseAsQuorumNotMet(t *testing.T, clusterSize, num
 	env.setSabotageAll(numBrokenNodes)
 
 	wg := env.sabotageNodes(SabotageByKill, 5*time.Second, 1*time.Second)
-	env.sendRequests(numRequests)
+	env.sendRequests(numRequests, time.Millisecond*250)
 
 	wg.Wait()
 	// quorum is not met, incCounter should not equal numRequests
@@ -326,10 +326,29 @@ func TestFailsIncCounterIncreaseAsQuorumNotMet(t *testing.T) {
 
 		runTestFailsIncCounterIncreaseAsQuorumNotMet(t, clusterSize, numValidators, numBrokenNodes, numRequests)
 	})
+
+	t.Run("cluster=11,numValidators=9,numBrokenNodes=8,req=35", func(t *testing.T) {
+		const clusterSize = 11
+		const numValidators = 9
+		const numBrokenNodes = 8
+		const numRequests = 35
+
+		runTestFailsIncCounterIncreaseAsQuorumNotMet(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+	})
+
+	t.Run("cluster=14,numValidators=12,numBrokenNodes=11,req=35", func(t *testing.T) {
+		const clusterSize = 14
+		const numValidators = 12
+		const numBrokenNodes = 11
+		const numRequests = 35
+
+		runTestFailsIncCounterIncreaseAsQuorumNotMet(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+	})
 }
 
-func runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequests int) {
+func runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure int) {
 	env := InitializeStabilityTest(t, numValidators, clusterSize)
+	env.setSabotageValidators(numBrokenNodes)
 
 	t.Cleanup(func() {
 		// This hook is just a safety measure to unfreeze all nodes when an error happens. Otherwise they stay in a zombie mode after the tests ended.
@@ -338,26 +357,28 @@ func runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t *testing.T, c
 		}
 	})
 
-	env.setSabotageValidators(numBrokenNodes)
+	env.sendRequests(numRequestsBeforeFailure, time.Millisecond*250)
+	waitUntil(t, env.chainEnv.counterEquals(int64(numRequestsBeforeFailure)), env.getActiveNodeList(), 60*time.Second, "incCounter matches expectation")
 
 	wg := env.sabotageNodes(SabotageByFreeze, 5*time.Second, 1*time.Second)
-	env.sendRequests(numRequests)
+	env.sendRequests(numRequestsAfterFailure, time.Millisecond*500)
 	wg.Wait()
 
-	// quorum is not met, work stops, incCounter should not equal numRequests
 	t.Log("Waiting for network to settle, no incCounter increases should be logged now")
 	time.Sleep(time.Second * 25)
 	counter := env.chainEnv.getCounter(incCounterSCHname)
-	require.NotEqual(env.chainEnv.t, numRequests, int(counter))
+	// quorum is not met, work stops, incCounter should not equal numRequests
+	require.NotEqual(env.chainEnv.t, numRequestsBeforeFailure+numRequestsAfterFailure, int(counter))
 
 	// unfreeze nodes, after bootstrapping it is expected to reach a full quorum leading to an equal incCounter
 	env.unfreezeNodes()
 
-	waitUntil(t, env.chainEnv.counterEquals(int64(numRequests)), env.getActiveNodeList(), 60*time.Second, "incCounter matches expectation")
+	waitUntil(t, env.chainEnv.counterEquals(int64(numRequestsBeforeFailure+numRequestsAfterFailure)), env.getActiveNodeList(), 60*time.Second, "incCounter matches expectation")
 }
 
-func runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequests int) {
+func runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure int) {
 	env := InitializeStabilityTest(t, numValidators, clusterSize)
+	env.setSabotageValidators(numBrokenNodes)
 
 	t.Cleanup(func() {
 		// This hook is just a safety measure to unfreeze all nodes when an error happens. Otherwise they stay in a zombie mode after the tests ended.
@@ -366,99 +387,104 @@ func runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t *testing.T,
 		}
 	})
 
-	env.setSabotageValidators(numBrokenNodes)
+	env.sendRequests(numRequestsBeforeFailure, time.Millisecond*250)
+	waitUntil(t, env.chainEnv.counterEquals(int64(numRequestsBeforeFailure)), env.getActiveNodeList(), 60*time.Second, "incCounter matches expectation")
 
 	wg := env.sabotageNodes(SabotageByFreeze, 5*time.Second, 1*time.Second)
-	env.sendRequests(numRequests)
+	env.sendRequests(numRequestsAfterFailure, time.Millisecond*500)
 	wg.Wait()
 
-	// quorum is not met, work stops, incCounter should not equal numRequests
-	t.Log("Waiting to see if nodes keep working, incCounter increases should be logged")
-	time.Sleep(time.Second * 25)
-	// unfreeze nodes, after bootstrapping it is expected to reach a full quorum leading to an equal incCounter
-	waitUntil(t, env.chainEnv.counterEquals(int64(numRequests)), env.getActiveNodeList(), 60*time.Second, "incCounter matches expectation")
+	waitUntil(t, env.chainEnv.counterEquals(int64(numRequestsBeforeFailure+numRequestsAfterFailure)), env.getActiveNodeList(), 60*time.Second, "incCounter matches expectation")
 	env.unfreezeNodes()
 }
 
 func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 	/**
 	* incCounter requests get sent, after reaching a matching counter value, nodes get shut down, new requests get send in parallel.
-	*	If killed nodes are below the quorum level, the incCounter count should never reach numRequests, otherwise the opposite is expected
+	*	If frozen nodes are below the quorum level, the incCounter count should not reach numRequests until unfrozen, otherwise the opposite is expected
 	 */
 
 	if testing.Short() {
 		t.SkipNow()
 	}
 
-	t.Run("cluster=5,numValidators=4,numBrokenNodes=4,req=35,quorum=NO", func(t *testing.T) {
+	t.Run("cluster=5,numValidators=4,numBrokenNodes=4,req=10,quorum=NO", func(t *testing.T) {
 		const clusterSize = 5
 		const numValidators = 4
 		const numBrokenNodes = 4
-		const numRequests = 35
+		const numRequestsBeforeFailure = 10
+		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+		runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
-	t.Run("cluster=7,numValidators=5,numBrokenNodes=5,req=35,quorum=NO", func(t *testing.T) {
+	t.Run("cluster=7,numValidators=5,numBrokenNodes=5,req=10,quorum=NO", func(t *testing.T) {
 		const clusterSize = 7
 		const numValidators = 5
 		const numBrokenNodes = 5
-		const numRequests = 35
+		const numRequestsBeforeFailure = 10
+		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+		runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
-	t.Run("cluster=12,numValidators=10,numBrokenNodes=9,req=35,quorum=NO", func(t *testing.T) {
+	t.Run("cluster=12,numValidators=10,numBrokenNodes=9,req=10,quorum=NO", func(t *testing.T) {
 		const clusterSize = 12
 		const numValidators = 10
 		const numBrokenNodes = 9
-		const numRequests = 35
+		const numRequestsBeforeFailure = 10
+		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+		runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
-	t.Run("cluster=12,numValidators=10,numBrokenNodes=9,req=35,quorum=NO", func(t *testing.T) {
+	t.Run("cluster=12,numValidators=10,numBrokenNodes=9,req=10,quorum=NO", func(t *testing.T) {
 		const clusterSize = 15
 		const numValidators = 13
 		const numBrokenNodes = 12
-		const numRequests = 35
+		const numRequestsBeforeFailure = 10
+		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+		runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
 	t.Run("cluster=4,numValidators=3,numBrokenNodes=1,req=35,quorum=YES", func(t *testing.T) {
 		const clusterSize = 4
 		const numValidators = 3
 		const numBrokenNodes = 1
-		const numRequests = 35
+		const numRequestsBeforeFailure = 10
+		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+		runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
 	t.Run("cluster=6,numValidators=4,numBrokenNodes=2,req=35,quorum=YES", func(t *testing.T) {
 		const clusterSize = 6
 		const numValidators = 4
 		const numBrokenNodes = 2
-		const numRequests = 35
+		const numRequestsBeforeFailure = 10
+		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+		runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
 	t.Run("cluster=8,numValidators=7,numBrokenNodes=3,req=35,quorum=YES", func(t *testing.T) {
 		const clusterSize = 8
 		const numValidators = 7
 		const numBrokenNodes = 3
-		const numRequests = 35
+		const numRequestsBeforeFailure = 10
+		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+		runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
 	t.Run("cluster=12,numValidators=10,numBrokenNodes=4,req=35,quorum=YES", func(t *testing.T) {
 		const clusterSize = 12
 		const numValidators = 10
 		const numBrokenNodes = 4
-		const numRequests = 35
+		const numRequestsBeforeFailure = 10
+		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+		runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 }
