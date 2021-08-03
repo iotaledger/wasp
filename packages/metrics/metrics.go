@@ -13,15 +13,18 @@ import (
 )
 
 type Metrics struct {
-	server  *http.Server
-	log     *logger.Logger
+	server *http.Server
+	log    *logger.Logger
+}
+
+type chainMetrics struct {
+	m       *Metrics
 	chainID *iscp.ChainID
 }
 
-func (m *Metrics) NewChainMetrics(chainID *iscp.ChainID) *Metrics {
-	return &Metrics{
-		server:  m.server,
-		log:     m.log,
+func (m *Metrics) NewChainMetrics(chainID *iscp.ChainID) ChainMetrics {
+	return &chainMetrics{
+		m:       m,
 		chainID: chainID,
 	}
 }

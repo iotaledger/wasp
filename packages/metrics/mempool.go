@@ -11,15 +11,15 @@ var (
 	processedRequestCounter *prometheus.CounterVec
 )
 
-func (m *Metrics) NewOffLedgerRequest() {
+func (m *chainMetrics) NewOffLedgerRequest() {
 	offLedgerRequestCounter.With(prometheus.Labels{"chain": m.chainID.String()}).Inc()
 }
 
-func (m *Metrics) NewOnLedgerRequest() {
+func (m *chainMetrics) NewOnLedgerRequest() {
 	onLedgerRequestCounter.With(prometheus.Labels{"chain": m.chainID.String()}).Inc()
 }
 
-func (m *Metrics) ProcessRequest() {
+func (m *chainMetrics) ProcessRequest() {
 	processedRequestCounter.With(prometheus.Labels{"chain": m.chainID.String()}).Inc()
 }
 

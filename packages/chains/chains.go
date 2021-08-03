@@ -86,7 +86,7 @@ func (c *Chains) Attach(nodeConn *txstream.Client) {
 	c.nodeConn.Events.UnspentAliasOutputReceived.Attach(events.NewClosure(c.dispatchUnspentAliasOutputMsg))
 }
 
-func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, chainMetrics metrics.ChainMetrics) error {
+func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, allMetrics metrics.GlobalMetrics) error {
 	chainRecords, err := registryProvider().GetChainRecords()
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, cha
 
 	for _, chr := range chainRecords {
 		if chr.Active {
-			if err := c.Activate(chr, registryProvider, chainMetrics); err != nil {
+			if err := c.Activate(chr, registryProvider, allMetrics); err != nil {
 				c.log.Errorf("cannot activate chain %s: %v", chr.ChainID, err)
 			}
 		}
@@ -112,7 +112,7 @@ func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, cha
 // - creates chain object
 // - insert it into the runtime registry
 // - subscribes for related transactions in he IOTA node
-func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.Provider, chainMetrics metrics.ChainMetrics) error {
+func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.Provider, allMetrics metrics.GlobalMetrics) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -151,7 +151,7 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 		c.offledgerBroadcastUpToNPeers,
 		c.offledgerBroadcastInterval,
 		c.pullMissingRequestsFromCommittee,
-		chainMetrics.NewChainMetrics(chr.ChainID),
+		allMetrics.NewChainMetrics(chr.ChainID),
 	)
 	if newChain == nil {
 		return xerrors.New("Chains.Activate: failed to create chain object")

@@ -2,11 +2,14 @@ package metrics
 
 import "github.com/iotaledger/wasp/packages/iscp"
 
+type GlobalMetrics interface {
+	NewChainMetrics(chainID *iscp.ChainID) ChainMetrics
+}
+
 type MempoolMetrics interface {
 	NewOffLedgerRequest()
 	NewOnLedgerRequest()
 	ProcessRequest()
-	NewChainMetrics(chainID *iscp.ChainID) *Metrics
 }
 
 // type StateManagerMetrics interface {
