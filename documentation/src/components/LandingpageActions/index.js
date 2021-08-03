@@ -6,16 +6,16 @@ import styles from './styles.module.css';
 const ActionList = [
   {
     title: 'Learn',
-    link: 'docs/welcome/',
+    link: 'docs/guide/core_concepts/smart-contracts',
     description: (
       <>
-        Learn the basics about the IOTA Smart Contract Protocol. 
+        Learn the basics about the IOTA Smart Contract Protocol.
       </>
     ),
   },
   {
     title: 'Build',
-    link: 'docs/tutorial/readme',
+    link: 'docs/guide/chains_and_nodes/setup',
     description: (
       <>
         Follow our tutorials to use ISCP in your application.
@@ -30,16 +30,7 @@ const ActionList = [
         You want to be a part of the IOTA mission? Join the IOTA community!
       </>
     ),
-  },
-  {
-    title: 'Guide',
-    link: 'docs/guide/readme',
-    description: (
-      <>
-        An overview of everything you need to more about ISCP!
-      </>
-    ),
-  },
+  }
 ];
 
 function Action({ title, link, description}) {

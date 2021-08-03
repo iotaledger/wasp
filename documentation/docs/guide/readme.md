@@ -7,23 +7,24 @@ Goal of the documentation: Give a higher level overview of what ISCP is and how 
 - [What are smart contracts?](/docs/guide/core_concepts/smart-contracts)
 - [What is ISCP?](/docs/guide/core_concepts/iscp)
 - [ISCP Architecture overview](/docs/guide/core_concepts/iscp-architecture)
-- Committees and validators, consensus
-- State, transitions and state anchoring
+- [Committees and validators](/docs/guide/core_concepts/validators)
+- [Consensus](/docs/guide/core_concepts/consensus)
+- [State, transitions and state anchoring](/docs/guide/core_concepts/states)
 - Accounts
-    - How accounts work
-    - How to deposit to a chain
-    - How to withdraw from a chain
+    - [How accounts work](/docs/guide/core_concepts/accounts/accounts-how)
+    - [How to deposit to a chain](/docs/guide/core_concepts/accounts/accounts-deposit)
+    - [How to withdraw from a chain](/docs/guide/core_concepts/accounts/accounts-withdraw)
 - Interacting with smart contracts
-    - On-ledger requests
-    - Off-ledger requests
+    - [On-ledger requests](/docs/guide/core_concepts/smartcontract-interaction/on-ledger)
+    - [Off-ledger requests](/docs/guide/core_concepts/smartcontract-interaction/on-ledger)
 - Types of VMs/Languages
-    - How ISCP works as a language/VM agnostic platform
+    - [How ISCP works as a language/VM agnostic platform](/docs/guide/core_concepts/vm-types/iscp)
     - Rust/Wasm based smart contracts
-        - Why and what does it look like?
-        - Pros and cons
+        - [Why and what does it look like?](/docs/guide/core_concepts/vm-types/rust-wasm)
+        - [Pros and cons](/docs/guide/core_concepts/vm-types/rust-wasm)
     - Solidity/EVM based smart contracts
-        - Why and what does it look like?
-        - Pros and cons
+        - [Why and what does it look like?](/docs/guide/core_concepts/vm-types/evm)
+        - [Pros and cons](/docs/guide/core_concepts/vm-types/evm)
 
 ## Running ISCP chains and nodes
 
