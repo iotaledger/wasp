@@ -55,7 +55,7 @@ func (clu *Cluster) NewKeyPairWithFunds() (*ed25519.KeyPair, ledgerstate.Address
 }
 
 func (clu *Cluster) GoshimmerClient() *goshimmer.Client {
-	return goshimmer.NewClient(clu.Config.goshimmerAPIHost(), clu.Config.FaucetPoWTarget)
+	return goshimmer.NewClient(clu.Config.goshimmerAPIHost(), clu.Config.Goshimmer.FaucetPoWTarget)
 }
 
 func (clu *Cluster) TrustAll() error {
@@ -284,7 +284,6 @@ func (clu *Cluster) start(dataPath string) error {
 			fmt.Sprintf(":%d", clu.Config.Goshimmer.TxStreamPort),
 			fmt.Sprintf(":%d", clu.Config.Goshimmer.APIPort),
 		)
-		clu.Config.FaucetPoWTarget = 0
 		fmt.Printf("[cluster] started goshimmer node\n")
 	}
 
