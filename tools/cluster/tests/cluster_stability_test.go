@@ -29,7 +29,7 @@ func InitializeStabilityTest(t *testing.T, numValidators, clusterSize int) *Sabo
 	require.NoError(t, err)
 
 	_, _ = env.chain.DeployContract(incCounterSCName, progHash.String(), "testing with inccounter", nil)
-	waitUntil(t, env.contractIsDeployed(incCounterSCName), env.clu.Config.AllNodes(), 50*time.Second, "incCounter matches expectation")
+	waitUntil(t, env.contractIsDeployed(incCounterSCName), env.clu.Config.AllNodes(), 50*time.Second, "contract is deployed")
 
 	return &SabotageEnv{
 		chainEnv:      env,
@@ -486,5 +486,87 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		const numRequestsAfterFailure = 25
 
 		runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
+	})
+}
+
+func TestOneFailingNodeAfterTheOther(t *testing.T) {
+	// In this test one node after the other gets disabled by either killing or freezing.
+	// Until quorum is unreachable, messages should all be flowing normally.
+
+	if testing.Short() {
+		t.SkipNow()
+	}
+
+	t.Run("asd", func(t *testing.T) {
+		const clusterSize = 10
+		const numValidators = 9
+		const numBrokenNodes = 1
+		const numRequestsEachStep = 10
+		const quorum = uint16((2*numValidators)/3 + 1)
+
+		t.Logf("Quorum: %v", quorum)
+
+		requestCounter := 0
+		brokenNodes := 0
+
+		env := InitializeStabilityTest(t, numValidators, clusterSize)
+		env.setSabotageValidators(numBrokenNodes)
+
+		t.Cleanup(func() {
+			// This hook is just a safety measure to unfreeze all nodes when an error happens. Otherwise they stay in a zombie mode after the tests ended.
+			if env != nil {
+				env.unfreezeNodes()
+			}
+		})
+
+		t.Logf("Nodes to break: %v", env.SabotageList)
+
+		for _, nodeID := range env.SabotageList {
+			requestCounter += numRequestsEachStep
+			go env.sendRequests(numRequestsEachStep, time.Millisecond*1)
+
+			time.Sleep(time.Millisecond * 1000)
+			env.chainEnv.clu.FreezeNode(nodeID)
+			brokenNodes++
+
+			t.Logf("on broken node: %v, quorum=%v, match=%v", brokenNodes, numValidators-quorum, brokenNodes >= int(numValidators-quorum))
+			if brokenNodes >= int(numValidators-quorum) {
+				// Wait and validate that not all messages have arrived
+				time.Sleep(15 * time.Second)
+
+				counter := env.chainEnv.getCounter(incCounterSCHname)
+				t.Logf("quorum maximum: %v", counter)
+				require.NotEqual(env.chainEnv.t, requestCounter, int(counter))
+
+				break
+			} else {
+				t.Log("Waiting for requests to come in")
+				waitUntil(t, env.chainEnv.counterEquals(int64(requestCounter)), env.getActiveNodeList(), 60*time.Second, "incCounter matches expectation")
+				counter := env.chainEnv.getCounter(incCounterSCHname)
+
+				t.Logf("Seems good? %v", counter)
+			}
+		}
+
+		// Either too many nodes are down now and the process has stopped, or quorum is still fine, requireing no further interaction.
+
+		counter := env.chainEnv.getCounter(incCounterSCHname)
+
+		if counter == int64(requestCounter) {
+			return
+		}
+
+		for _, nodeID := range env.SabotageList {
+			env.chainEnv.clu.UnfreezeNode(nodeID)
+
+			time.Sleep(time.Second * 5)
+			counter = env.chainEnv.getCounter(incCounterSCHname)
+
+			if counter == int64(requestCounter) {
+				break
+			}
+		}
+
+		require.Equal(t, requestCounter, int(counter))
 	})
 }
