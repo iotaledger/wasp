@@ -86,7 +86,7 @@ func (c *Chains) Attach(nodeConn *txstream.Client) {
 	c.nodeConn.Events.UnspentAliasOutputReceived.Attach(events.NewClosure(c.dispatchUnspentAliasOutputMsg))
 }
 
-func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, allMetrics metrics.GlobalMetrics) error {
+func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, allMetrics *metrics.Metrics) error {
 	chainRecords, err := registryProvider().GetChainRecords()
 	if err != nil {
 		return err
@@ -112,7 +112,7 @@ func (c *Chains) ActivateAllFromRegistry(registryProvider registry.Provider, all
 // - creates chain object
 // - insert it into the runtime registry
 // - subscribes for related transactions in he IOTA node
-func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.Provider, allMetrics metrics.GlobalMetrics) error {
+func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.Provider, allMetrics *metrics.Metrics) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 

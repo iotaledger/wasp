@@ -1,45 +1,44 @@
 package metrics
 
 import (
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-var (
-	offLedgerRequestCounter *prometheus.CounterVec
-	onLedgerRequestCounter  *prometheus.CounterVec
-	processedRequestCounter *prometheus.CounterVec
-)
-
-func (m *chainMetrics) NewOffLedgerRequest() {
-	offLedgerRequestCounter.With(prometheus.Labels{"chain": m.chainID.String()}).Inc()
+type MempoolMetrics interface {
+	NewOffLedgerRequest()
+	NewOnLedgerRequest()
+	ProcessRequest()
 }
 
-func (m *chainMetrics) NewOnLedgerRequest() {
-	onLedgerRequestCounter.With(prometheus.Labels{"chain": m.chainID.String()}).Inc()
+func (c *chainMetrics) NewOffLedgerRequest() {
+	c.metrics.offLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
-func (m *chainMetrics) ProcessRequest() {
-	processedRequestCounter.With(prometheus.Labels{"chain": m.chainID.String()}).Inc()
+func (c *chainMetrics) NewOnLedgerRequest() {
+	c.metrics.onLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
-func registerMempoolMetrics(log *logger.Logger) {
-	log.Info("Registering mempool metrics to prometheus")
-	offLedgerRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+func (c *chainMetrics) ProcessRequest() {
+	c.metrics.processedRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
+}
+
+func (m *Metrics) registerMempoolMetrics() {
+	m.log.Info("Registering mempool metrics to prometheus")
+	m.offLedgerRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "wasp_off_ledger_request_counter",
 		Help: "Number of ledger requests made to chains",
 	}, []string{"chain"})
-	prometheus.MustRegister(offLedgerRequestCounter)
+	prometheus.MustRegister(m.offLedgerRequestCounter)
 
-	onLedgerRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	m.onLedgerRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "wasp_on_ledger_request_counter",
 		Help: "Number of on ledger requests made to chain",
 	}, []string{"chain"})
-	prometheus.MustRegister(onLedgerRequestCounter)
+	prometheus.MustRegister(m.onLedgerRequestCounter)
 
-	processedRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	m.processedRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "wasp_processed_on_ledger_request_counter",
 		Help: "Number of requests processed on ledger",
 	}, []string{"chain"})
-	prometheus.MustRegister(processedRequestCounter)
+	prometheus.MustRegister(m.processedRequestCounter)
 }

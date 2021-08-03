@@ -9,22 +9,26 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Metrics struct {
-	server *http.Server
-	log    *logger.Logger
+	server                  *http.Server
+	log                     *logger.Logger
+	offLedgerRequestCounter *prometheus.CounterVec
+	onLedgerRequestCounter  *prometheus.CounterVec
+	processedRequestCounter *prometheus.CounterVec
 }
 
 type chainMetrics struct {
-	m       *Metrics
+	metrics *Metrics
 	chainID *iscp.ChainID
 }
 
 func (m *Metrics) NewChainMetrics(chainID *iscp.ChainID) ChainMetrics {
 	return &chainMetrics{
-		m:       m,
+		metrics: m,
 		chainID: chainID,
 	}
 }
@@ -45,7 +49,7 @@ func (m *Metrics) Start(addr string) error {
 		})
 		m.server = &http.Server{Addr: addr, Handler: e}
 	}
-	registerMempoolMetrics(m.log)
+	m.registerMempoolMetrics()
 	m.log.Infof("Prometheus metrics accessible at: %s", addr)
 	return m.server.ListenAndServe()
 }
