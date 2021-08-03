@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
+	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/webapi/admapi"
@@ -30,6 +31,7 @@ func Init(
 	chainsProvider chains.Provider,
 	nodeProvider dkg.NodeProvider,
 	shutdown admapi.ShutdownFunc,
+	metrics *metricspkg.Metrics,
 ) {
 	log = logger.NewLogger("WebAPI")
 
@@ -53,6 +55,7 @@ func Init(
 		chainsProvider,
 		nodeProvider,
 		shutdown,
+		metrics,
 	)
 	log.Infof("added web api endpoints")
 }
