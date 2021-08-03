@@ -124,15 +124,6 @@ func (e *SabotageEnv) sabotageNodes(sabotageOption SabotageOption, startDelay, i
 	return &wg
 }
 
-func (e *SabotageEnv) restartNodes() {
-	for _, nodeID := range e.SabotageList {
-		e.chainEnv.t.Logf("Restarting node %v", nodeID)
-		err := e.chainEnv.clu.RestartNode(nodeID)
-
-		require.NoError(e.chainEnv.t, err)
-	}
-}
-
 func (e *SabotageEnv) unfreezeNodes() {
 	for _, nodeID := range e.SabotageList {
 		e.chainEnv.t.Logf("Unfreezing node %v", nodeID)
@@ -204,11 +195,11 @@ func runTestSuccessfulIncCounterIncreaseWithMildInstability(t *testing.T, cluste
 	env := InitializeStabilityTest(t, numValidators, clusterSize)
 	env.setSabotageValidators(numBrokenNodes)
 
-	wg := env.sabotageNodes(SabotageByKill, 5*time.Second, 1*time.Second)
+	wg := env.sabotageNodes(SabotageByKill, 4*time.Second, 1*time.Second)
 	env.sendRequests(numRequests, time.Millisecond*250)
 
 	wg.Wait()
-	// quorum is not met, incCounter should not equal numRequests
+
 	waitUntil(t, env.chainEnv.counterEquals(int64(numRequests)), env.getActiveNodeList(), 120*time.Second, "incCounter matches expectation")
 }
 
@@ -217,54 +208,36 @@ func TestSuccessfulIncCounterIncreaseWithMildInstability(t *testing.T) {
 		t.SkipNow()
 	}
 
-	t.Run("cluster=3,numValidators=2,numBrokenNodes=1,req=35", func(t *testing.T) {
-		const clusterSize = 3
-		const numValidators = 2
+	t.Run("cluster=7,numValidators=6,numBrokenNodes=1,req=35", func(t *testing.T) {
+		const clusterSize = 7
+		const numValidators = 6
 		const numBrokenNodes = 1
 		const numRequests = 35
 
 		runTestSuccessfulIncCounterIncreaseWithMildInstability(t, clusterSize, numValidators, numBrokenNodes, numRequests)
 	})
 
-	t.Run("cluster=5,numValidators=4,numBrokenNodes=2,req=35", func(t *testing.T) {
-		const clusterSize = 5
-		const numValidators = 4
+	t.Run("cluster=10,numValidators=9,numBrokenNodes=2,req=35", func(t *testing.T) {
+		const clusterSize = 10
+		const numValidators = 9
 		const numBrokenNodes = 2
 		const numRequests = 35
 
 		runTestSuccessfulIncCounterIncreaseWithMildInstability(t, clusterSize, numValidators, numBrokenNodes, numRequests)
 	})
 
-	t.Run("cluster=7,numValidators=5,numBrokenNodes=2,req=35", func(t *testing.T) {
-		const clusterSize = 7
-		const numValidators = 5
-		const numBrokenNodes = 2
-		const numRequests = 35
-
-		runTestSuccessfulIncCounterIncreaseWithMildInstability(t, clusterSize, numValidators, numBrokenNodes, numRequests)
-	})
-
-	t.Run("cluster=8,numValidators=6,numBrokenNodes=3,req=35", func(t *testing.T) {
-		const clusterSize = 8
-		const numValidators = 6
+	t.Run("cluster=14,numValidators=13,numBrokenNodes=3,req=35", func(t *testing.T) {
+		const clusterSize = 14
+		const numValidators = 13
 		const numBrokenNodes = 3
 		const numRequests = 35
 
 		runTestSuccessfulIncCounterIncreaseWithMildInstability(t, clusterSize, numValidators, numBrokenNodes, numRequests)
 	})
 
-	t.Run("cluster=9,numValidators=7,numBrokenNodes=3,req=35", func(t *testing.T) {
-		const clusterSize = 9
-		const numValidators = 7
-		const numBrokenNodes = 3
-		const numRequests = 35
-
-		runTestSuccessfulIncCounterIncreaseWithMildInstability(t, clusterSize, numValidators, numBrokenNodes, numRequests)
-	})
-
-	t.Run("cluster=9,numValidators=7,numBrokenNodes=4,req=35", func(t *testing.T) {
-		const clusterSize = 9
-		const numValidators = 7
+	t.Run("cluster=18,numValidators=17,numBrokenNodes=4,req=35", func(t *testing.T) {
+		const clusterSize = 18
+		const numValidators = 17
 		const numBrokenNodes = 4
 		const numRequests = 35
 
@@ -276,7 +249,7 @@ func runTestFailsIncCounterIncreaseAsQuorumNotMet(t *testing.T, clusterSize, num
 	env := InitializeStabilityTest(t, numValidators, clusterSize)
 	env.setSabotageAll(numBrokenNodes)
 
-	wg := env.sabotageNodes(SabotageByKill, 5*time.Second, 1*time.Second)
+	wg := env.sabotageNodes(SabotageByKill, 5*time.Second, 500*time.Millisecond)
 	env.sendRequests(numRequests, time.Millisecond*250)
 
 	wg.Wait()

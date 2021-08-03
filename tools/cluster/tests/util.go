@@ -247,21 +247,6 @@ func (e *chainEnv) counterEquals(expected int64) conditionFn {
 	}
 }
 
-func (e *chainEnv) counterNotEquals(expected int64) conditionFn {
-	return func(t *testing.T, nodeIndex int) bool {
-		ret, err := e.chain.Cluster.WaspClient(nodeIndex).CallView(
-			e.chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name, nil,
-		)
-		if err != nil {
-			return false
-		}
-		counter, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
-		require.NoError(t, err)
-		t.Logf("node %d: counter: %d, waiting for: %d", nodeIndex, counter, expected)
-		return counter != expected
-	}
-}
-
 func (e *chainEnv) accountExists(agentID *iscp.AgentID) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
 		return e.getBalanceOnChain(agentID, colored.IOTA, nodeIndex) > 0
