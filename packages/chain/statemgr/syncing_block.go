@@ -14,7 +14,7 @@ import (
 )
 
 type syncingBlocks struct {
-	blocks            map[uint32]*syncingBlock
+	blocks            map[uint32]*syncingBlock // StateIndex -> BlockCandidates
 	log               *logger.Logger
 	initialBlockRetry time.Duration
 }

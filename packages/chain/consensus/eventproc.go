@@ -94,4 +94,14 @@ func (c *Consensus) eventTimerMsg(msg messages.TimerTick) {
 		}
 	}
 	c.takeAction()
+	if c.stateOutput != nil {
+		c.log.Debugf("eventTimerMsg: stateIndex=%v, workflow=%+v",
+			c.stateOutput.GetStateIndex(),
+			c.workflow,
+		)
+	} else {
+		c.log.Debugf("eventTimerMsg: stateIndex=nil, workflow=%+v",
+			c.workflow,
+		)
+	}
 }

@@ -22,11 +22,11 @@ func (sm *stateManager) eventGetBlockMsg(msg *messages.GetBlockMsg) {
 		"sender", msg.SenderNetID,
 		"block index", msg.BlockIndex,
 	)
-	if sm.stateOutput == nil {
+	if sm.stateOutput == nil { // Not a necessary check, only for optimization.
 		sm.log.Debugf("EventGetBlockMsg ignored: stateOutput is nil")
 		return
 	}
-	if msg.BlockIndex > sm.stateOutput.GetStateIndex() {
+	if msg.BlockIndex > sm.stateOutput.GetStateIndex() { // Not a necessary check, only for optimization.
 		sm.log.Debugf("EventGetBlockMsg ignored 1: block #%d not found. Current state index: #%d",
 			msg.BlockIndex, sm.stateOutput.GetStateIndex())
 		return
