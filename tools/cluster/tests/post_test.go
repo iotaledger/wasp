@@ -16,114 +16,111 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const name = "inc"
+const inccounterName = "inc"
 
-func deployInccounter42(t *testing.T, name string, counter int64) *iscp.AgentID {
-	hname := iscp.Hn(name)
+func (e *chainEnv) deployInccounter42(counter int64) *iscp.AgentID { //nolint:unparam
+	hname := iscp.Hn(inccounterName)
 	description := "testing contract deployment with inccounter"
-	programHash = inccounter.Contract.ProgramHash
+	programHash := inccounter.Contract.ProgramHash
 
-	_, err = chain.DeployContract(name, programHash.String(), description, map[string]interface{}{
+	_, err := e.chain.DeployContract(inccounterName, programHash.String(), description, map[string]interface{}{
 		inccounter.VarCounter: counter,
-		root.ParamName:        name,
+		root.ParamName:        inccounterName,
 	})
-	check(err, t)
+	require.NoError(e.t, err)
 
-	checkCoreContracts(t, chain)
-	for i := range chain.CommitteeNodes {
-		blockIndex, err := chain.BlockIndex(i)
-		require.NoError(t, err)
-		require.EqualValues(t, 2, blockIndex)
+	e.checkCoreContracts()
+	for i := range e.chain.CommitteeNodes {
+		blockIndex, err := e.chain.BlockIndex(i)
+		require.NoError(e.t, err)
+		require.EqualValues(e.t, 2, blockIndex)
 
-		contractRegistry, err := chain.ContractRegistry(i)
-		require.NoError(t, err)
+		contractRegistry, err := e.chain.ContractRegistry(i)
+		require.NoError(e.t, err)
 		cr := contractRegistry[hname]
 
-		require.EqualValues(t, programHash, cr.ProgramHash)
-		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
-		require.EqualValues(t, cr.Name, name)
+		require.EqualValues(e.t, programHash, cr.ProgramHash)
+		require.EqualValues(e.t, description, cr.Description)
+		require.EqualValues(e.t, 0, cr.OwnerFee)
+		require.EqualValues(e.t, cr.Name, inccounterName)
 
-		counterValue, err := chain.GetCounterValue(hname, i)
-		require.NoError(t, err)
-		require.EqualValues(t, 42, counterValue)
+		counterValue, err := e.chain.GetCounterValue(hname, i)
+		require.NoError(e.t, err)
+		require.EqualValues(e.t, 42, counterValue)
 	}
 
 	// test calling root.FuncFindContractByName view function using client
-	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
+	ret, err := e.chain.Cluster.WaspClient(0).CallView(
+		e.chain.ChainID, root.Contract.Hname(), root.FuncFindContract.Name,
 		dict.Dict{
 			root.ParamHname: hname.Bytes(),
 		})
-	check(err, t)
+	require.NoError(e.t, err)
 	recb, err := ret.Get(root.VarData)
-	check(err, t)
+	require.NoError(e.t, err)
 	rec, err := root.DecodeContractRecord(recb)
-	check(err, t)
-	require.EqualValues(t, description, rec.Description)
+	require.NoError(e.t, err)
+	require.EqualValues(e.t, description, rec.Description)
 
-	expectCounter(t, hname, counter)
-	return iscp.NewAgentID(chain.ChainID.AsAddress(), hname)
+	e.expectCounter(hname, counter)
+	return iscp.NewAgentID(e.chain.ChainID.AsAddress(), hname)
 }
 
-func expectCounter(t *testing.T, hname iscp.Hname, counter int64) {
-	c := getCounter(t, hname)
-	require.EqualValues(t, counter, c)
+func (e *chainEnv) expectCounter(hname iscp.Hname, counter int64) {
+	c := e.getCounter(hname)
+	require.EqualValues(e.t, counter, c)
 }
 
-func getCounter(t *testing.T, hname iscp.Hname) int64 {
-	ret, err := chain.Cluster.WaspClient(0).CallView(
-		chain.ChainID, hname, "getCounter", nil,
+func (e *chainEnv) getCounter(hname iscp.Hname) int64 {
+	ret, err := e.chain.Cluster.WaspClient(0).CallView(
+		e.chain.ChainID, hname, "getCounter", nil,
 	)
-	check(err, t)
+	require.NoError(e.t, err)
 
 	counter, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
-	check(err, t)
+	require.NoError(e.t, err)
 
 	return counter
 }
 
 func TestPostDeployInccounter(t *testing.T) {
-	setup(t, "test_cluster")
-
-	contractID := deployInccounter42(t, name, 42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
+	e := setupWithChain(t)
+	contractID := e.deployInccounter42(42)
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 }
 
 func TestPost1Request(t *testing.T) {
-	setup(t, "test_cluster")
+	e := setupWithChain(t)
 
-	contractID := deployInccounter42(t, name, 42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
+	contractID := e.deployInccounter42(42)
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	testOwner := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
-	err = requestFunds(clu, myAddress, "myAddress")
-	check(err, t)
+	e.requestFunds(myAddress, "myAddress")
 
-	myClient := chain.SCClient(contractID.Hname(), testOwner)
+	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
-	check(err, t)
+	require.NoError(t, err)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
-	check(err, t)
+	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+	require.NoError(t, err)
 
-	expectCounter(t, contractID.Hname(), 43)
+	e.expectCounter(contractID.Hname(), 43)
 }
 
 func TestPost3Recursive(t *testing.T) {
-	setup(t, "test_cluster")
+	e := setupWithChain(t)
 
-	contractID := deployInccounter42(t, name, 42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
+	contractID := e.deployInccounter42(42)
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	testOwner := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
-	err = requestFunds(clu, myAddress, "myAddress")
-	check(err, t)
+	e.requestFunds(myAddress, "myAddress")
 
-	myClient := chain.SCClient(contractID.Hname(), testOwner)
+	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
 
 	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Name, chainclient.PostRequestParams{
 		Transfer: iscp.NewTransferIotas(1),
@@ -131,83 +128,81 @@ func TestPost3Recursive(t *testing.T) {
 			inccounter.VarNumRepeats: 3,
 		})),
 	})
-	check(err, t)
+	require.NoError(t, err)
 
-	err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
-	check(err, t)
+	err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+	require.NoError(t, err)
 
 	// must wait for recursion to complete
 	time.Sleep(10 * time.Second)
 
-	expectCounter(t, contractID.Hname(), 43+3)
+	e.expectCounter(contractID.Hname(), 43+3)
 }
 
 func TestPost5Requests(t *testing.T) {
-	setup(t, "test_cluster")
+	e := setupWithChain(t)
 
-	contractID := deployInccounter42(t, name, 42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
+	contractID := e.deployInccounter42(42)
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	testOwner := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 	myAgentID := iscp.NewAgentID(myAddress, 0)
-	err = requestFunds(clu, myAddress, "myAddress")
-	check(err, t)
+	e.requestFunds(myAddress, "myAddress")
 
-	myClient := chain.SCClient(contractID.Hname(), testOwner)
+	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
 
 	for i := 0; i < 5; i++ {
 		tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Name)
-		check(err, t)
-		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx, 30*time.Second)
-		check(err, t)
+		require.NoError(t, err)
+		err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx, 30*time.Second)
+		require.NoError(t, err)
 	}
 
-	expectCounter(t, contractID.Hname(), 42+5)
-	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 0)
+	e.expectCounter(contractID.Hname(), 42+5)
+	e.checkBalanceOnChain(myAgentID, ledgerstate.ColorIOTA, 0)
 
-	if !clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
+	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: solo.Saldo - 5,
 	}, "myAddress in the end") {
 		t.Fail()
 	}
-	checkLedger(t, chain)
+	e.checkLedger()
 }
 
 func TestPost5AsyncRequests(t *testing.T) {
-	setup(t, "test_cluster")
+	e := setupWithChain(t)
 
-	contractID := deployInccounter42(t, name, 42)
-	t.Logf("-------------- deployed contract. Name: '%s' id: %s", name, contractID.String())
+	contractID := e.deployInccounter42(42)
+	t.Logf("-------------- deployed contract. Name: '%s' id: %s", inccounterName, contractID.String())
 
 	testOwner := wallet.KeyPair(1)
 	myAddress := ledgerstate.NewED25519Address(testOwner.PublicKey)
 	myAgentID := iscp.NewAgentID(myAddress, 0)
-	err = requestFunds(clu, myAddress, "myAddress")
-	check(err, t)
+	e.requestFunds(myAddress, "myAddress")
 
-	myClient := chain.SCClient(contractID.Hname(), testOwner)
+	myClient := e.chain.SCClient(contractID.Hname(), testOwner)
 
 	tx := [5]*ledgerstate.Transaction{}
 	var err error
 
 	for i := 0; i < 5; i++ {
 		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter.Name)
-		check(err, t)
+		require.NoError(t, err)
 	}
 
 	for i := 0; i < 5; i++ {
-		err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(chain.ChainID, tx[i], 30*time.Second)
-		check(err, t)
+		err = e.chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.chain.ChainID, tx[i], 30*time.Second)
+		require.NoError(t, err)
 	}
 
-	expectCounter(t, contractID.Hname(), 42+5)
-	checkBalanceOnChain(t, chain, myAgentID, ledgerstate.ColorIOTA, 0)
+	e.expectCounter(contractID.Hname(), 42+5)
+	e.checkBalanceOnChain(myAgentID, ledgerstate.ColorIOTA, 0)
 
-	if !clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
+	if !e.clu.VerifyAddressBalances(myAddress, solo.Saldo-5, map[ledgerstate.Color]uint64{
 		ledgerstate.ColorIOTA: solo.Saldo - 5,
 	}, "myAddress in the end") {
 		t.Fail()
 	}
-	checkLedger(t, chain)
+	e.checkLedger()
 }

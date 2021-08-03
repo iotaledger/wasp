@@ -29,9 +29,8 @@ export default function Home() {
   const {siteConfig} = useDocusaurusContext();
   return (
     <Layout
-      title={`IOTA Identity Documentation`}
-      description="Providing Trust between Individuals, Organizations and Things.
-      ">
+      title={`IOTA Smart Contracts Protocol Documentation`}
+      description="Bringing the power of smart contracts to IOTA">
       <LandingpageHeader />
       {/* <main>
         <HomepageFeatures />
