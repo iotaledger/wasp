@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -298,4 +299,9 @@ func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bo
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+// MempoolInfo returns stats about the chain mempool
+func (ch *Chain) MempoolInfo() chain.MempoolInfo {
+	return ch.mempool.Info()
 }

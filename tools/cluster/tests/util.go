@@ -5,11 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -109,7 +108,7 @@ func (e *chainEnv) getAccountsOnChain() []*iscp.AgentID {
 
 	ret := make([]*iscp.AgentID, 0)
 	for key := range r {
-		aid, err := iscp.NewAgentIDFromBytes([]byte(key))
+		aid, err := iscp.AgentIDFromBytes([]byte(key))
 		require.NoError(e.t, err)
 
 		ret = append(ret, aid)
@@ -209,11 +208,11 @@ func (e *chainEnv) findContract(name string, nodeIndex ...int) (*root.ContractRe
 	if err != nil {
 		return nil, err
 	}
-	recBin, err := ret.Get(root.VarData)
+	recBin, err := ret.Get(root.ParamContractRecData)
 	if err != nil {
 		return nil, err
 	}
-	return root.DecodeContractRecord(recBin)
+	return root.ContractRecordFromBytes(recBin)
 }
 
 // region waitUntilProcessed ///////////////////////////////////////////////////

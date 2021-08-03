@@ -18,7 +18,7 @@ import (
 )
 
 func TestAccountsBase(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, true, false)
 	chain := env.NewChain(nil, "chain1")
 	chain.CheckAccountLedger()
 	chain.AssertTotalIotas(1)

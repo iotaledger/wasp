@@ -375,3 +375,11 @@ func TestRPCCall(t *testing.T) {
 func TestRPCGetLogs(t *testing.T) {
 	newSoloTestEnv(t).TestRPCGetLogs()
 }
+
+func TestRPCEthChainID(t *testing.T) {
+	env := newSoloTestEnv(t)
+	var chainID hexutil.Uint
+	err := env.RawClient.Call(&chainID, "eth_chainId")
+	require.NoError(t, err)
+	require.EqualValues(t, evm.DefaultChainID, chainID)
+}

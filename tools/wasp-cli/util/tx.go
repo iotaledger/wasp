@@ -1,6 +1,7 @@
 package util
 
 import (
+	"os"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -31,8 +32,7 @@ func WithTransaction(f func() (*ledgerstate.Transaction, error)) *ledgerstate.Tr
 func WithOffLedgerRequest(chainID *iscp.ChainID, f func() (*request.OffLedger, error)) {
 	req, err := f()
 	log.Check(err)
-	log.Printf("Posted off-ledger request %s\n", req.ID().Base58())
-
+	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().Base58())
 	if config.WaitForCompletion {
 		log.Check(config.WaspClient().WaitUntilRequestProcessed(chainID, req.ID(), 1*time.Minute))
 	}
@@ -73,8 +73,8 @@ func logTx(tx *ledgerstate.Transaction, chainID *iscp.ChainID) {
 			plural = "s"
 		}
 		log.Printf("Posted on-ledger transaction %s containing %d request%s:\n", tx.ID().Base58(), len(reqs), plural)
-		for _, reqID := range reqs {
-			log.Printf("  - Request %s\n", reqID.Base58())
+		for i, reqID := range reqs {
+			log.Printf("  - #%d (check result with: %s chain request %s)\n", i, os.Args[0], reqID.Base58())
 		}
 	}
 }

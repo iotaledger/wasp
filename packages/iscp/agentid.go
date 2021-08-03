@@ -4,8 +4,6 @@
 package iscp
 
 import (
-	"bytes"
-	"io"
 	"strings"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -21,8 +19,6 @@ type AgentID struct {
 	a ledgerstate.Address
 	h Hname
 }
-
-const AgentIDLength = ledgerstate.AddressLength + HnameLength
 
 var NilAgentID AgentID
 
@@ -40,6 +36,9 @@ func init() {
 
 // NewAgentID makes new AgentID
 func NewAgentID(addr ledgerstate.Address, hname Hname) *AgentID {
+	if addr == nil {
+		panic("NewAgentID: address can't be nil")
+	}
 	return &AgentID{
 		a: addr.Clone(),
 		h: hname,
@@ -47,19 +46,19 @@ func NewAgentID(addr ledgerstate.Address, hname Hname) *AgentID {
 }
 
 func AgentIDFromMarshalUtil(mu *marshalutil.MarshalUtil) (*AgentID, error) {
-	data, err := mu.ReadBytes(AgentIDLength)
-	if err != nil {
+	var err error
+	ret := &AgentID{}
+	if ret.a, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
 		return nil, err
 	}
-	return NewAgentIDFromBytes(data)
+	if ret.h, err = HnameFromMarshalUtil(mu); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
-func NewAgentIDFromBytes(data []byte) (*AgentID, error) {
-	ret := AgentID{}
-	if err := ret.Read(bytes.NewReader(data)); err != nil {
-		return nil, err
-	}
-	return &ret, nil
+func AgentIDFromBytes(data []byte) (*AgentID, error) {
+	return AgentIDFromMarshalUtil(marshalutil.New(data))
 }
 
 func NewAgentIDFromBase58EncodedString(s string) (*AgentID, error) {
@@ -67,7 +66,7 @@ func NewAgentIDFromBase58EncodedString(s string) (*AgentID, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewAgentIDFromBytes(data)
+	return AgentIDFromBytes(data)
 }
 
 // NewAgentIDFromString parses the human-readable string representation
@@ -116,9 +115,13 @@ func (a *AgentID) Hname() Hname {
 }
 
 func (a *AgentID) Bytes() []byte {
-	var buf bytes.Buffer
-	_ = a.Write(&buf)
-	return buf.Bytes()
+	if a.a == nil {
+		panic("AgentID.Bytes: address == nil")
+	}
+	mu := marshalutil.New()
+	mu.Write(a.a)
+	mu.Write(a.h)
+	return mu.Bytes()
 }
 
 func (a *AgentID) Equals(a1 *AgentID) bool {
@@ -138,31 +141,6 @@ func (a *AgentID) String() string {
 
 func (a *AgentID) Base58() string {
 	return base58.Encode(a.Bytes())
-}
-
-func (a *AgentID) Write(w io.Writer) error {
-	if a.a == nil {
-		var t [ledgerstate.AddressLength]byte
-		if _, err := w.Write(t[:]); err != nil {
-			return err
-		}
-	} else if _, err := w.Write(a.a.Bytes()); err != nil {
-		return err
-	}
-	return a.h.Write(w)
-}
-
-func (a *AgentID) Read(r io.Reader) error {
-	var buf [ledgerstate.AddressLength]byte
-	if n, err := r.Read(buf[:]); err != nil || n != ledgerstate.AddressLength {
-		return xerrors.Errorf("error while parsing address. Err: %v", err)
-	}
-	if t, _, err := ledgerstate.AddressFromBytes(buf[:]); err != nil {
-		return err
-	} else { //nolint:revive
-		a.a = t
-	}
-	return a.h.Read(r)
 }
 
 func (a *AgentID) IsNil() bool {

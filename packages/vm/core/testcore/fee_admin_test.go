@@ -235,8 +235,10 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 
 func TestFeeNotEnough(t *testing.T) {
 	env := solo.New(t, false, false)
-	chain := env.NewChain(nil, "chain1")
+	_, validatorFeeTargetAddr := env.NewKeyPair()
+	validatorFeeTargetAgentID := iscp.NewAgentID(validatorFeeTargetAddr, 0)
 
+	chain := env.NewChain(nil, "chain1", validatorFeeTargetAgentID)
 	req := solo.NewCallParams(root.Contract.Name, root.FuncSetContractFee.Name,
 		root.ParamHname, root.Contract.Hname(),
 		root.ParamValidatorFee, 499,
@@ -262,10 +264,9 @@ func TestFeeNotEnough(t *testing.T) {
 	checkFees(chain, accounts.Contract.Name, 0, 0)
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
-	// TODO no validator was provided, so iotas end up in null account
-	chain.AssertIotas(&iscp.NilAgentID, 99)
 	chain.AssertCommonAccountIotas(2)
 	chain.AssertTotalIotas(101)
+	chain.AssertIotas(validatorFeeTargetAgentID, 99)
 }
 
 func TestFeeOwnerDontNeed(t *testing.T) {

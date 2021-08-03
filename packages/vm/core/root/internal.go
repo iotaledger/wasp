@@ -1,8 +1,7 @@
 package root
 
 import (
-	"errors"
-	"fmt"
+	"golang.org/x/xerrors"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
@@ -19,26 +18,23 @@ import (
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
 // It is not directly exposed to the sandbox
 // If contract is not found by the given hname, the default contract is returned
-func FindContract(state kv.KVStoreReader, hname iscp.Hname) (*ContractRecord, error) {
+// the bool flag indicates if contract was found or not. It means, if hname == 0 it will
+// return default contract and true
+func FindContract(state kv.KVStoreReader, hname iscp.Hname) (*ContractRecord, bool) {
 	contractRegistry := collections.NewMapReadOnly(state, VarContractRegistry)
 	retBin := contractRegistry.MustGetAt(hname.Bytes())
-	var ret *ContractRecord
-	var err error
 	if retBin != nil {
-		if ret, err = DecodeContractRecord(retBin); err != nil {
-			return nil, fmt.Errorf("root: %v", err)
+		ret, err := ContractRecordFromBytes(retBin)
+		if err != nil {
+			panic(xerrors.Errorf("FindContract: %w", err))
 		}
-	} else {
-		// not founc in registry
-		if hname == Contract.Hname() {
-			// if not found and it is root, it means it is chain init --> return empty root record
-			ret = NewContractRecord(Contract, &iscp.AgentID{})
-		} else {
-			// return default contract
-			ret = NewContractRecord(_default.Contract, &iscp.AgentID{})
-		}
+		return ret, true
 	}
-	return ret, nil
+	if hname == Contract.Hname() {
+		// it happens during bootstrap
+		return NewContractRecord(Contract, &iscp.NilAgentID), true
+	}
+	return NewContractRecord(_default.Contract, &iscp.NilAgentID), false
 }
 
 // MustGetChainInfo return global variables of the chain
@@ -63,16 +59,10 @@ func MustGetChainOwnerID(state kv.KVStoreReader) *iscp.AgentID {
 // GetFeeInfo is an internal utility function which returns fee info for the contract
 // It is called from within the 'root' contract as well as VMContext and viewcontext objects
 // It is not exposed to the sandbox
-func GetFeeInfo(state kv.KVStoreReader, hname iscp.Hname) (colored.Color, uint64, uint64) {
-	// returns nil of contract not found
-	rec, err := FindContract(state, hname)
-	if err != nil {
-		if !errors.Is(err, ErrContractNotFound) {
-			panic(err)
-		} else {
-			rec = nil
-		}
-	}
+func GetFeeInfo(ctx iscp.SandboxView, hname iscp.Hname) (colored.Color, uint64, uint64) {
+	state := ctx.State()
+	rec, found := FindContract(state, hname)
+	assert.NewAssert(ctx.Log()).Require(found, "contract not found")
 	return GetFeeInfoByContractRecord(state, rec)
 }
 
@@ -114,8 +104,7 @@ func DecodeContractRegistry(contractRegistry *collections.ImmutableMap) (map[isc
 			return false
 		}
 
-		var cr *ContractRecord
-		cr, err = DecodeContractRecord(v)
+		cr, err := ContractRecordFromBytes(v)
 		if err != nil {
 			return false
 		}
@@ -135,7 +124,7 @@ func CheckAuthorizationByChainOwner(state kv.KVStore, agentID *iscp.AgentID) boo
 }
 
 func mustStoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, a assert.Assert) {
-	rec := NewContractRecord(i, &iscp.AgentID{})
+	rec := NewContractRecord(i, &iscp.NilAgentID)
 	ctx.Log().Debugf("mustStoreAndInitCoreContract: '%s', hname = %s", i.Name, i.Hname())
 	mustStoreContractRecord(ctx, rec, a)
 }
@@ -150,7 +139,7 @@ func mustStoreContractRecord(ctx iscp.Sandbox, rec *ContractRecord, a assert.Ass
 	hname := rec.Hname()
 	contractRegistry := collections.NewMap(ctx.State(), VarContractRegistry)
 	a.Require(!contractRegistry.MustHasAt(hname.Bytes()), "contract '%s'/%s already exist", rec.Name, hname.String())
-	contractRegistry.MustSetAt(hname.Bytes(), EncodeContractRecord(rec))
+	contractRegistry.MustSetAt(hname.Bytes(), rec.Bytes())
 }
 
 // isAuthorizedToDeploy checks if caller is authorized to deploy smart contract

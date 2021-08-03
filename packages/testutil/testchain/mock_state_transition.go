@@ -48,7 +48,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualState, chainOutput *le
 	counter, _, err := codec.DecodeUint64(counterBin)
 	require.NoError(c.t, err)
 
-	suBlockIndex := state.NewStateUpdateWithBlockIndexMutation(prevBlockIndex + 1)
+	suBlockIndex := state.NewStateUpdateWithBlocklogValues(prevBlockIndex+1, time.Time{}, vs.Hash())
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)

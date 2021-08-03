@@ -9,8 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -21,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/database/dbmanager"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -121,16 +120,26 @@ type Chain struct {
 	mempool    chain.Mempool
 }
 
-var (
-	doOnce    = sync.Once{}
-	glbLogger *logger.Logger
-)
-
-// New creates an instance of the `solo` environment for the test instances.
-//   If solo is used for unit testing, 't' should be the *testing.T instance; otherwise it can be either nil or an instance created with NewTestContext
-//   'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
-//   'printStackTrace' controls printing stack trace in case of errors
+// New creates an instance of the `solo` environment.
+//
+// If solo is used for unit testing, 't' should be the *testing.T instance;
+// otherwise it can be either nil or an instance created with NewTestContext.
+//
+// 'debug' parameter 'true' means logging level is 'debug', otherwise 'info'
+// 'printStackTrace' controls printing stack trace in case of errors
 func New(t TestContext, debug, printStackTrace bool, seedOpt ...*ed25519.Seed) *Solo {
+	log := testlogger.NewNamedLogger(t.Name(), timeLayout)
+	if !debug {
+		log = testlogger.WithLevel(log, zapcore.InfoLevel, printStackTrace)
+	}
+	return NewWithLogger(t, log, seedOpt...)
+}
+
+// New creates an instance of the `solo` environment with the given logger.
+//
+// If solo is used for unit testing, 't' should be the *testing.T instance;
+// otherwise it can be either nil or an instance created with NewTestContext.
+func NewWithLogger(t TestContext, log *logger.Logger, seedOpt ...*ed25519.Seed) *Solo {
 	if t == nil {
 		t = NewTestContext("solo")
 	}
@@ -138,24 +147,18 @@ func New(t TestContext, debug, printStackTrace bool, seedOpt ...*ed25519.Seed) *
 	if len(seedOpt) > 0 {
 		seed = seedOpt[0]
 	}
-	doOnce.Do(func() {
-		glbLogger = testlogger.NewNamedLogger(t.Name(), timeLayout)
-		if !debug {
-			glbLogger = testlogger.WithLevel(glbLogger, zapcore.InfoLevel, printStackTrace)
-		}
-	})
 
 	processorConfig := processors.NewConfig()
 	err := processorConfig.RegisterVMType(vmtypes.WasmTime, func(binary []byte) (iscp.VMProcessor, error) {
-		return wasmproc.GetProcessor(binary, glbLogger)
+		return wasmproc.GetProcessor(binary, log)
 	})
 	require.NoError(t, err)
 
 	initialTime := time.Unix(1, 0)
 	ret := &Solo{
 		T:               t,
-		logger:          glbLogger,
-		dbmanager:       dbmanager.NewDBManager(glbLogger.Named("db"), true),
+		logger:          log,
+		dbmanager:       dbmanager.NewDBManager(log.Named("db"), true),
 		utxoDB:          utxodb.NewWithTimestamp(initialTime),
 		seed:            seed,
 		blobCache:       iscp.NewInMemoryBlobCache(),
@@ -194,7 +197,7 @@ func (env *Solo) WithNativeContract(c *coreutil.ContractProcessor) *Solo {
 //    '_default', 'blocklog', 'blob', 'accounts' and 'eventlog',
 // Upon return, the chain is fully functional to process requests
 //nolint:funlen
-func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...iscp.AgentID) *Chain {
+func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validatorFeeTarget ...*iscp.AgentID) *Chain {
 	env.logger.Debugf("deploying new chain '%s'", name)
 	var stateController ed25519.KeyPair
 	if env.seed == nil {
@@ -222,7 +225,7 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	originatorAgentID := iscp.NewAgentID(originatorAddr, 0)
 	feeTarget := originatorAgentID
 	if len(validatorFeeTarget) > 0 {
-		feeTarget = &validatorFeeTarget[0]
+		feeTarget = validatorFeeTarget[0]
 	}
 
 	bals := colored.NewBalancesForIotas(100)

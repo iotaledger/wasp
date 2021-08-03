@@ -27,7 +27,7 @@ import (
 )
 
 type evmChainInstance struct {
-	t            *testing.T
+	t            testing.TB
 	solo         *solo.Solo
 	soloChain    *solo.Chain
 	faucetKey    *ecdsa.PrivateKey
@@ -66,11 +66,15 @@ type ethCallOptions struct {
 	gasLimit uint64
 }
 
-func initEVMChain(t *testing.T, nativeContracts ...*coreutil.ContractProcessor) *evmChainInstance {
-	env := solo.New(t, true, false).WithNativeContract(Processor)
+func initEVMChain(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *evmChainInstance {
+	env := solo.New(t, false, false).WithNativeContract(Processor)
 	for _, c := range nativeContracts {
 		env = env.WithNativeContract(c)
 	}
+	return initEVMChainWithSolo(t, env)
+}
+
+func initEVMChainWithSolo(t testing.TB, env *solo.Solo) *evmChainInstance {
 	faucetKey, _ := crypto.HexToECDSA("b71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291")
 	chainID := evm.DefaultChainID
 	e := &evmChainInstance{
@@ -401,7 +405,7 @@ func (l *loopContractInstance) loop(opts ...ethCallOptions) (res callFnResult, e
 	return l.callFn(opts, "loop")
 }
 
-func generateEthereumKey(t *testing.T) (*ecdsa.PrivateKey, common.Address) {
+func generateEthereumKey(t testing.TB) (*ecdsa.PrivateKey, common.Address) {
 	key, err := crypto.GenerateKey()
 	require.NoError(t, err)
 	addr := crypto.PubkeyToAddress(key.PublicKey)

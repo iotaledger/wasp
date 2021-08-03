@@ -2,6 +2,7 @@ package viewcontext
 
 import (
 	"fmt"
+	"runtime/debug"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -12,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/_default"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -58,7 +58,8 @@ func (v *Viewcontext) CallView(contractHname, epCode iscp.Hname, params dict.Dic
 			default:
 				err = xerrors.Errorf("viewcontext: panic in VM: %v", err1)
 			}
-			v.log.Infof("+++++ debug: error returned from the view call: %v", err) // TODO remove
+			v.log.Debugf("CallView: %v", err)
+			v.log.Debugf(string(debug.Stack()))
 		}()
 		ret, err = v.callView(contractHname, epCode, params)
 	}()
@@ -67,13 +68,9 @@ func (v *Viewcontext) CallView(contractHname, epCode iscp.Hname, params dict.Dic
 
 func (v *Viewcontext) callView(contractHname, epCode iscp.Hname, params dict.Dict) (dict.Dict, error) {
 	var err error
-	contractRecord, err := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Contract.Hname()), contractHname)
-	if err != nil {
-		return nil, fmt.Errorf("inconsistency while searching for contract %s: %v", contractHname, err)
-	}
-	if contractHname != _default.Contract.Hname() && contractRecord.Hname() == _default.Contract.Hname() {
-		// in the view call we do not run default contract
-		return nil, fmt.Errorf("can't find contract '%s'", contractHname)
+	contractRecord, found := root.FindContract(contractStateSubpartition(v.stateReader.KVStoreReader(), root.Contract.Hname()), contractHname)
+	if !found {
+		return nil, xerrors.Errorf("contract not found %s", contractHname)
 	}
 	proc, err := v.processors.GetOrCreateProcessor(contractRecord, func(programHash hashing.HashValue) (string, []byte, error) {
 		if vmtype, ok := v.processors.Config.GetNativeProcessorType(programHash); ok {

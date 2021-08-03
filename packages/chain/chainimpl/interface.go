@@ -149,7 +149,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 
 func (c *chainObj) ReceiveOffLedgerRequest(req *request.OffLedger, senderNetID string) {
 	c.log.Debugf("ReceiveOffLedgerRequest: reqID: %s, peerID: %s", req.ID().Base58(), senderNetID)
-	c.sendRequestAckowledgementMsg(req.ID(), senderNetID)
+	c.sendRequestAcknowledgementMsg(req.ID(), senderNetID)
 	if !c.mempool.ReceiveRequest(req) {
 		return
 	}
@@ -157,8 +157,8 @@ func (c *chainObj) ReceiveOffLedgerRequest(req *request.OffLedger, senderNetID s
 	c.broadcastOffLedgerRequest(req)
 }
 
-func (c *chainObj) sendRequestAckowledgementMsg(reqID iscp.RequestID, peerID string) {
-	c.log.Debugf("sendRequestAckowledgementMsg: reqID: %s, peerID: %s", reqID.Base58(), peerID)
+func (c *chainObj) sendRequestAcknowledgementMsg(reqID iscp.RequestID, peerID string) {
+	c.log.Debugf("sendRequestAcknowledgementMsg: reqID: %s, peerID: %s", reqID.Base58(), peerID)
 	if peerID == "" {
 		return
 	}

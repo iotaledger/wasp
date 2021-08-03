@@ -3,13 +3,12 @@ package vmcontext
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/state"
@@ -75,21 +74,20 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 	if err != nil {
 		task.Log.Panicf("CreateVMContext: %v", err)
 	}
-	{
-		// assert consistency
-		stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
-		if err != nil {
-			return nil, xerrors.Errorf("CreateVMContext: can't parse state hash from chain input %w", err)
-		}
-		if stateHash != task.VirtualState.Hash() {
-			return nil, xerrors.New("CreateVMContext: state hash mismatch")
-		}
-		if task.VirtualState.BlockIndex() != task.ChainInput.GetStateIndex() {
-			return nil, xerrors.New("CreateVMContext: state index is inconsistent")
-		}
+
+	// assert consistency
+	stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
+	if err != nil {
+		return nil, xerrors.Errorf("CreateVMContext: can't parse state hash from chain input %w", err)
+	}
+	if stateHash != task.VirtualState.Hash() {
+		return nil, xerrors.New("CreateVMContext: state hash mismatch")
+	}
+	if task.VirtualState.BlockIndex() != task.ChainInput.GetStateIndex() {
+		return nil, xerrors.New("CreateVMContext: state index is inconsistent")
 	}
 	{
-		openingStateUpdate := state.NewStateUpdateWithBlockIndexMutation(task.VirtualState.BlockIndex()+1, task.Timestamp)
+		openingStateUpdate := state.NewStateUpdateWithBlocklogValues(task.VirtualState.BlockIndex()+1, task.Timestamp, stateHash)
 		task.VirtualState.ApplyStateUpdates(openingStateUpdate)
 	}
 	ret := &VMContext{
@@ -98,6 +96,7 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 		txBuilder:            txb,
 		virtualState:         task.VirtualState,
 		solidStateBaseline:   task.SolidStateBaseline,
+		validatorFeeTarget:   task.ValidatorFeeTarget,
 		processors:           task.Processors,
 		blockContext:         make(map[iscp.Hname]*blockContext),
 		blockContextCloseSeq: make([]iscp.Hname, 0),
@@ -146,7 +145,7 @@ func (vmctx *VMContext) checkRotationAddress() ledgerstate.Address {
 // mustSaveBlockInfo is in the blocklog partition context
 // returns rotation address if this block is a rotation block
 func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger uint16) ledgerstate.Address {
-	vmctx.currentStateUpdate = state.NewStateUpdate() // need ths before to make state valid
+	vmctx.currentStateUpdate = state.NewStateUpdate() // need this before to make state valid
 
 	if rotationAddress := vmctx.checkRotationAddress(); rotationAddress != nil {
 		// block was marked fake by the governance contract because it is a committee rotation.
@@ -164,13 +163,16 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 		TotalRequests:         numRequests,
 		NumSuccessfulRequests: numSuccess,
 		NumOffLedgerRequests:  numOffLedger,
+		PreviousStateHash:     vmctx.StateHash(),
 	}
 
 	idx := blocklog.SaveNextBlockInfo(vmctx.State(), blockInfo)
 	if idx != blockInfo.BlockIndex {
 		vmctx.log.Panicf("CloseVMContext: inconsistent block index")
 	}
-
+	if vmctx.virtualState.PreviousStateHash() != blockInfo.PreviousStateHash {
+		vmctx.log.Panicf("CloseVMContext: inconsistent previous state hash")
+	}
 	blocklog.SaveControlAddressesIfNecessary(
 		vmctx.State(),
 		vmctx.StateAddress(),
@@ -179,6 +181,7 @@ func (vmctx *VMContext) mustSaveBlockInfo(numRequests, numSuccess, numOffLedger 
 	)
 	vmctx.virtualState.ApplyStateUpdates(vmctx.currentStateUpdate)
 	vmctx.currentStateUpdate = nil // invalidate
+
 	return nil
 }
 

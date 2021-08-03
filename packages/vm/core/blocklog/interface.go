@@ -8,6 +8,8 @@ import (
 	"io"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/hashing"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -64,6 +66,7 @@ type BlockInfo struct {
 	TotalRequests         uint16
 	NumSuccessfulRequests uint16
 	NumOffLedgerRequests  uint16
+	PreviousStateHash     hashing.HashValue
 }
 
 func BlockInfoFromBytes(blockIndex uint32, data []byte) (*BlockInfo, error) {
@@ -106,7 +109,13 @@ func (bi *BlockInfo) Write(w io.Writer) error {
 	if err := util.WriteUint16(w, bi.NumSuccessfulRequests); err != nil {
 		return err
 	}
-	return util.WriteUint16(w, bi.NumOffLedgerRequests)
+	if err := util.WriteUint16(w, bi.NumOffLedgerRequests); err != nil {
+		return err
+	}
+	if _, err := w.Write(bi.PreviousStateHash.Bytes()); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (bi *BlockInfo) Read(r io.Reader) error {
@@ -119,7 +128,13 @@ func (bi *BlockInfo) Read(r io.Reader) error {
 	if err := util.ReadUint16(r, &bi.NumSuccessfulRequests); err != nil {
 		return err
 	}
-	return util.ReadUint16(r, &bi.NumOffLedgerRequests)
+	if err := util.ReadUint16(r, &bi.NumOffLedgerRequests); err != nil {
+		return err
+	}
+	if err := util.ReadHashValue(r, &bi.PreviousStateHash); err != nil { // nolint:nolint
+		return err
+	}
+	return nil
 }
 
 // endregion //////////////////////////////////////////////////////////

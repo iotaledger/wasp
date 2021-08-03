@@ -1,6 +1,7 @@
 package request
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -509,6 +510,10 @@ func (req *OffLedger) SetParams(params dict.Dict) {
 
 func (req *OffLedger) Args() requestargs.RequestArgs {
 	return req.args
+}
+
+func (req *OffLedger) String() string {
+	return fmt.Sprintf("OffLedger:: target: %s, entry point: %s, args: %s", req.contract, req.entryPoint, req.args.String())
 }
 
 // endregion /////////////////////////////////////////////////////////////////

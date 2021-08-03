@@ -67,14 +67,14 @@ func (ch *Chain) FindContract(scName string) (*root.ContractRecord, error) {
 	if err != nil {
 		return nil, err
 	}
-	retBin, err := retDict.Get(root.VarData)
+	retBin, err := retDict.Get(root.ParamContractRecData)
 	if err != nil {
 		return nil, err
 	}
 	if retBin == nil {
 		return nil, fmt.Errorf("smart contract '%s' not found", scName)
 	}
-	record, err := root.DecodeContractRecord(retBin)
+	record, err := root.ContractRecordFromBytes(retBin)
 	if err != nil {
 		return nil, err
 	}
