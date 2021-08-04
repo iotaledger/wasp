@@ -43,7 +43,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 	if vmctx.isInitChainRequest() {
 		vmctx.chainOwnerID = *vmctx.req.SenderAccount().Clone()
 	} else {
-		vmctx.mustGetBaseValuesFromState()
+		vmctx.getChainConfigFromState()
 		enoughFees := vmctx.mustHandleFees()
 		if !enoughFees {
 			return
@@ -314,13 +314,15 @@ func (vmctx *VMContext) mustFinalizeRequestCall() {
 	)
 }
 
-// mustGetBaseValuesFromState only makes sense if chain is already deployed
-func (vmctx *VMContext) mustGetBaseValuesFromState() {
-	info := vmctx.mustGetChainInfo()
-	if !info.ChainID.Equals(&vmctx.chainID) {
+// getChainConfigFromState only makes sense if chain is already deployed
+func (vmctx *VMContext) getChainConfigFromState() {
+	cfg := vmctx.getChainInfo()
+	if !cfg.ChainID.Equals(&vmctx.chainID) {
 		vmctx.log.Panicf("mustSetUpRequestContext: major inconsistency of chainID")
 	}
-	vmctx.chainOwnerID = info.ChainOwnerID
+	vmctx.chainOwnerID = cfg.ChainOwnerID
+	vmctx.maxEventSize = cfg.MaxEventSize
+	vmctx.maxEventsPerReq = cfg.MaxEventsPerReq
 	vmctx.feeColor, vmctx.ownerFee, vmctx.validatorFee = vmctx.getFeeInfo()
 }
 

@@ -32,6 +32,9 @@ func newCluster(t *testing.T, opt ...interface{}) *cluster.Cluster {
 
 	config.Goshimmer.Hostname = *goShimmerHostname
 	config.Goshimmer.UseProvidedNode = *goShimmerUseProvidedNode
+	if *goShimmerUseProvidedNode {
+		config.Goshimmer.FaucetPoWTarget = -1
+	}
 	config.Goshimmer.TxStreamPort = *goShimmerPort
 
 	nNodes := *numNodes

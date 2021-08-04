@@ -7,11 +7,10 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/vm/core"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
-
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
@@ -175,4 +174,30 @@ func TestDeployGrantFail(t *testing.T) {
 
 	err = chain.DeployWasmContract(user1, "testCore", wasmFile)
 	require.Error(t, err)
+}
+
+func TestBigBlob(t *testing.T) {
+	env := solo.New(t, false, false)
+	ch := env.NewChain(nil, "chain1")
+
+	// uploada blob that is too big
+	bigblobSize := root.DefaultMaxBlobSize + 100
+	blobBin := make([]byte, bigblobSize)
+
+	_, err := ch.UploadWasm(ch.OriginatorKeyPair, blobBin)
+	require.Error(t, err)
+
+	// update max blob size to allow for bigger blobs_
+	_, err = ch.PostRequestSync(
+		solo.NewCallParams(
+			root.Contract.Name, root.FuncSetChainInfo.Name,
+			root.ParamMaxBlobSize, bigblobSize,
+		).WithIotas(1),
+		nil,
+	)
+	require.NoError(t, err)
+
+	// blob upload must now succeed
+	_, err = ch.UploadWasm(ch.OriginatorKeyPair, blobBin)
+	require.NoError(t, err)
 }

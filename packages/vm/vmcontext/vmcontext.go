@@ -42,10 +42,13 @@ type VMContext struct {
 	feeColor           colored.Color
 	ownerFee           uint64
 	validatorFee       uint64
+	// events related
+	maxEventSize    uint16
+	maxEventsPerReq uint16
 	// request context
 	req                iscp.Request
 	requestIndex       uint16
-	requestEventIndex  uint8
+	requestEventIndex  uint16
 	currentStateUpdate state.StateUpdate
 	entropy            hashing.HashValue // mutates with each request
 	contractRecord     *root.ContractRecord

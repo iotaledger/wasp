@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -12,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/util/expiringcache"
 	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
@@ -20,13 +22,22 @@ import (
 )
 
 type (
-	getAccountBalanceFn func(ch chain.ChainCore, agentID *iscp.AgentID) (colored.Balances, error)
+	getAccountBalanceFn       func(ch chain.Chain, agentID *iscp.AgentID) (colored.Balances, error)
+	hasRequestBeenProcessedFn func(ch chain.Chain, reqID iscp.RequestID) (bool, error)
 )
 
-func AddEndpoints(server echoswagger.ApiRouter, getChain chains.ChainProvider, getChainBalance getAccountBalanceFn) {
+func AddEndpoints(
+	server echoswagger.ApiRouter,
+	getChain chains.ChainProvider,
+	getChainBalance getAccountBalanceFn,
+	hasRequestBeenProcessed hasRequestBeenProcessedFn,
+	cacheTTL time.Duration,
+) {
 	instance := &offLedgerReqAPI{
-		getChain:          getChain,
-		getAccountBalance: getChainBalance,
+		getChain:                getChain,
+		getAccountBalance:       getChainBalance,
+		hasRequestBeenProcessed: hasRequestBeenProcessed,
+		requestsCache:           expiringcache.New(cacheTTL),
 	}
 	server.POST(routes.NewRequest(":chainID"), instance.handleNewRequest).
 		SetSummary("New off-ledger request").
@@ -40,8 +51,10 @@ func AddEndpoints(server echoswagger.ApiRouter, getChain chains.ChainProvider, g
 }
 
 type offLedgerReqAPI struct {
-	getChain          chains.ChainProvider
-	getAccountBalance getAccountBalanceFn
+	getChain                chains.ChainProvider
+	getAccountBalance       getAccountBalanceFn
+	hasRequestBeenProcessed hasRequestBeenProcessedFn
+	requestsCache           *expiringcache.ExpiringCache
 }
 
 func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
@@ -59,6 +72,22 @@ func (o *offLedgerReqAPI) handleNewRequest(c echo.Context) error {
 	ch := o.getChain(chainID)
 	if ch == nil {
 		return httperrors.NotFound(fmt.Sprintf("Unknown chain: %s", chainID.Base58()))
+	}
+
+	reqID := offLedgerReq.ID()
+
+	if o.requestsCache.Get(reqID) != nil {
+		return httperrors.BadRequest("request already processed")
+	}
+
+	alreadyProcessed, err := o.hasRequestBeenProcessed(ch, reqID)
+	if err != nil {
+		return httperrors.BadRequest("internal error")
+	}
+
+	o.requestsCache.Set(reqID, true)
+	if alreadyProcessed {
+		return httperrors.BadRequest("request already processed")
 	}
 
 	// check user has on-chain balance
