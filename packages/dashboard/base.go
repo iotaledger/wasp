@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/mr-tron/base58"
@@ -37,13 +36,12 @@ type BaseTemplateParams struct {
 type WaspServices interface {
 	ConfigDump() map[string]interface{}
 	ExploreAddressBaseURL() string
-	NetworkProvider() peering.NetworkProvider
-	TrustedNetworkManager() peering.TrustedNetworkManager
+	PeeringStats() (*PeeringStats, error)
+	MyNetworkID() string
 	GetChainRecords() ([]*registry.ChainRecord, error)
 	GetChainRecord(chainID *iscp.ChainID) (*registry.ChainRecord, error)
-	GetChainState(chainID *iscp.ChainID) (*ChainState, error)
-	GetChain(chainID *iscp.ChainID) chain.ChainCore
-	CallView(chain chain.ChainCore, hname iscp.Hname, fname string, params dict.Dict) (dict.Dict, error)
+	GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.CommitteeInfo, error)
+	CallView(chainID *iscp.ChainID, scName, fname string, params dict.Dict) (dict.Dict, error)
 }
 
 type Dashboard struct {
@@ -83,7 +81,7 @@ func (d *Dashboard) BaseParams(c echo.Context, breadcrumbs ...Tab) BaseTemplateP
 		NavPages:    d.navPages,
 		Breadcrumbs: breadcrumbs,
 		Path:        c.Path(),
-		MyNetworkID: d.wasp.NetworkProvider().Self().NetID(),
+		MyNetworkID: d.wasp.MyNetworkID(),
 	}
 }
 
@@ -94,6 +92,8 @@ func (d *Dashboard) makeTemplate(e *echo.Echo, parts ...string) *template.Templa
 		"args":              args,
 		"hashref":           hashref,
 		"trim":              trim,
+		"incUint32":         incUint32,
+		"decUint32":         decUint32,
 		"bytesToString":     bytesToString,
 		"base58":            base58.Encode,
 		"replace":           strings.Replace,

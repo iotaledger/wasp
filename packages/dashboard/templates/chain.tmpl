@@ -78,12 +78,10 @@
 			</div>
 
 			<div class="card fluid">
-				<h3 class="section">State</h3>
+				<h3 class="section">Latest block</h3>
 				<dl>
-					<dt>State index</dt><dd><tt>{{.State.Index}}</tt></dd>
-					<dt>State hash</dt><dd><tt>{{.State.Hash}}</tt></dd>
-					<dt>Last updated</dt><dd><tt>{{formatTimestamp .State.Timestamp}}</tt></dd>
-					<dt>Approving Output ID</dt><dd><tt>{{.State.ApprovingOutputID.Base58}}</tt></dd>
+					<dt>Block index</dt><dd><tt>{{.LatestBlock.Index}}</tt> <a href="{{ uri "chainBlock" $chainid.Base58 .LatestBlock.Index }}">View block</a></dd>
+					<dt>Last updated</dt><dd><tt>{{formatTimestamp .LatestBlock.Info.Timestamp}}</tt></dd>
 				</dl>
 			</div>
 

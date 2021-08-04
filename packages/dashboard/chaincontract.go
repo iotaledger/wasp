@@ -43,40 +43,37 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 		Hname:   hname,
 	}
 
-	chain := d.wasp.GetChain(chainID)
-	if chain != nil {
-		r, err := d.wasp.CallView(chain, root.Contract.Hname(), root.FuncFindContract.Name, codec.MakeDict(map[string]interface{}{
-			root.ParamHname: codec.EncodeHname(hname),
-		}))
-		if err != nil {
-			return err
-		}
-		result.ContractRecord, err = root.ContractRecordFromBytes(r[root.ParamContractRecData])
-		if err != nil {
-			return err
-		}
+	r, err := d.wasp.CallView(chainID, root.Contract.Name, root.FuncFindContract.Name, codec.MakeDict(map[string]interface{}{
+		root.ParamHname: codec.EncodeHname(hname),
+	}))
+	if err != nil {
+		return err
+	}
+	result.ContractRecord, err = root.ContractRecordFromBytes(r[root.ParamContractRecData])
+	if err != nil {
+		return err
+	}
 
-		r, err = d.wasp.CallView(chain, blocklog.Contract.Hname(), blocklog.FuncGetEventsForContract.Name, codec.MakeDict(map[string]interface{}{
-			blocklog.ParamContractHname: codec.EncodeHname(hname),
-		}))
+	r, err = d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.FuncGetEventsForContract.Name, codec.MakeDict(map[string]interface{}{
+		blocklog.ParamContractHname: codec.EncodeHname(hname),
+	}))
+	if err != nil {
+		return err
+	}
+
+	recs := collections.NewArray16ReadOnly(r, blocklog.ParamEvent)
+	result.Log = make([]string, recs.MustLen())
+	for i := range result.Log {
+		data, err := recs.GetAt(uint16(i))
 		if err != nil {
 			return err
 		}
+		result.Log[i] = string(data)
+	}
 
-		recs := collections.NewArray16ReadOnly(r, blocklog.ParamEvent)
-		result.Log = make([]string, recs.MustLen())
-		for i := range result.Log {
-			data, err := recs.GetAt(uint16(i))
-			if err != nil {
-				return err
-			}
-			result.Log[i] = string(data)
-		}
-
-		result.RootInfo, err = d.fetchRootInfo(chain)
-		if err != nil {
-			return err
-		}
+	result.RootInfo, err = d.fetchRootInfo(chainID)
+	if err != nil {
+		return err
 	}
 
 	return c.Render(http.StatusOK, c.Path(), result)

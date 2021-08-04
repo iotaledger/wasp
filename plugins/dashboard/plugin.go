@@ -20,17 +20,15 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/parameters"
-	peering_pkg "github.com/iotaledger/wasp/packages/peering"
 	registry_pkg "github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/vm/viewcontext"
 	"github.com/iotaledger/wasp/plugins/chains"
-	"github.com/iotaledger/wasp/plugins/database"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"golang.org/x/xerrors"
 )
 
 const PluginName = "Dashboard"
@@ -61,42 +59,68 @@ func (w *waspServices) ExploreAddressBaseURL() string {
 	return exploreAddressURLFromGoshimmerURI(parameters.GetString(parameters.NodeAddress))
 }
 
+func (w *waspServices) PeeringStats() (*dashboard.PeeringStats, error) {
+	ret := &dashboard.PeeringStats{}
+	peers := peering.DefaultNetworkProvider().PeerStatus()
+	ret.Peers = make([]dashboard.Peer, len(peers))
+	for i, p := range peers {
+		ret.Peers[i] = dashboard.Peer{
+			NumUsers: p.NumUsers(),
+			NetID:    p.NetID(),
+			IsAlive:  p.IsAlive(),
+		}
+	}
+	tpeers, err := peering.DefaultTrustedNetworkManager().TrustedPeers()
+	if err != nil {
+		return nil, err
+	}
+	ret.TrustedPeers = make([]dashboard.TrustedPeer, len(tpeers))
+	for i, t := range tpeers {
+		ret.TrustedPeers[i] = dashboard.TrustedPeer{
+			NetID:  t.NetID,
+			PubKey: t.PubKey,
+		}
+	}
+	return ret, nil
+}
+
+func (w *waspServices) MyNetworkID() string {
+	return peering.DefaultNetworkProvider().Self().NetID()
+}
+
 func (w *waspServices) GetChainRecords() ([]*registry_pkg.ChainRecord, error) {
 	return registry.DefaultRegistry().GetChainRecords()
 }
 
 func (w *waspServices) GetChainRecord(chainID *iscp.ChainID) (*registry_pkg.ChainRecord, error) {
-	return registry.DefaultRegistry().GetChainRecordByChainID(chainID)
-}
-
-func (w *waspServices) GetChainState(chainID *iscp.ChainID) (*dashboard.ChainState, error) {
-	chainStore := database.GetKVStore(chainID)
-	virtualState, _, err := state.LoadSolidState(chainStore, chainID)
+	ch, err := registry.DefaultRegistry().GetChainRecordByChainID(chainID)
 	if err != nil {
 		return nil, err
 	}
-	block, err := state.LoadBlock(chainStore, virtualState.BlockIndex())
-	if err != nil {
-		return nil, err
+	if ch == nil {
+		return nil, xerrors.Errorf("chain record not found")
 	}
-	return &dashboard.ChainState{
-		Index:             virtualState.BlockIndex(),
-		Hash:              virtualState.Hash(),
-		Timestamp:         virtualState.Timestamp().UnixNano(),
-		ApprovingOutputID: block.ApprovingOutputID(),
-	}, nil
+	return ch, nil
 }
 
-func (w *waspServices) GetChain(chainID *iscp.ChainID) chain.ChainCore {
-	return chains.AllChains().Get(chainID)
+func (w *waspServices) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.CommitteeInfo, error) {
+	ch := chains.AllChains().Get(chainID)
+	if ch == nil {
+		return nil, xerrors.Errorf("chain not found")
+	}
+	return ch.GetCommitteeInfo(), nil
 }
 
-func (w *waspServices) CallView(ch chain.ChainCore, hname iscp.Hname, funName string, params dict.Dict) (dict.Dict, error) {
+func (w *waspServices) CallView(chainID *iscp.ChainID, scName, funName string, params dict.Dict) (dict.Dict, error) {
+	ch := chains.AllChains().Get(chainID)
+	if ch == nil {
+		return nil, xerrors.Errorf("chain not found")
+	}
 	vctx := viewcontext.NewFromChain(ch)
 	var ret dict.Dict
 	err := optimism.RetryOnStateInvalidated(func() error {
 		var err error
-		ret, err = vctx.CallView(hname, iscp.Hn(funName), params)
+		ret, err = vctx.CallView(iscp.Hn(scName), iscp.Hn(funName), params)
 		return err
 	})
 	if err != nil {
@@ -111,14 +135,6 @@ func exploreAddressURLFromGoshimmerURI(uri string) string {
 		return "http://" + url
 	}
 	return url
-}
-
-func (w *waspServices) NetworkProvider() peering_pkg.NetworkProvider {
-	return peering.DefaultNetworkProvider()
-}
-
-func (w *waspServices) TrustedNetworkManager() peering_pkg.TrustedNetworkManager {
-	return peering.DefaultTrustedNetworkManager()
 }
 
 func configure(*node.Plugin) {

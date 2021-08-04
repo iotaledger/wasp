@@ -7,7 +7,7 @@ import (
 	_ "embed"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/labstack/echo/v4"
 )
 
@@ -28,15 +28,33 @@ func (d *Dashboard) peeringInit(e *echo.Echo, r renderer) Tab {
 }
 
 func (d *Dashboard) handlePeering(c echo.Context) error {
+	p, err := d.wasp.PeeringStats()
+	if err != nil {
+		return err
+	}
 	return c.Render(http.StatusOK, c.Path(), &PeeringTemplateParams{
-		BaseTemplateParams:    d.BaseParams(c),
-		NetworkProvider:       d.wasp.NetworkProvider(),
-		TrustedNetworkManager: d.wasp.TrustedNetworkManager(),
+		BaseTemplateParams: d.BaseParams(c),
+		PeeringStats:       p,
 	})
 }
 
 type PeeringTemplateParams struct {
 	BaseTemplateParams
-	NetworkProvider       peering.NetworkProvider
-	TrustedNetworkManager peering.TrustedNetworkManager
+	*PeeringStats
+}
+
+type PeeringStats struct {
+	Peers        []Peer
+	TrustedPeers []TrustedPeer
+}
+
+type Peer struct {
+	NumUsers int
+	NetID    string
+	IsAlive  bool
+}
+
+type TrustedPeer struct {
+	NetID  string
+	PubKey ed25519.PublicKey
 }
