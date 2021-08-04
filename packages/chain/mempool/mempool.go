@@ -154,7 +154,15 @@ func (m *Mempool) addToPool(req iscp.Request) bool {
 
 // ReceiveRequests places requests into the inBuffer. InBuffer is unordered and non-deterministic
 func (m *Mempool) ReceiveRequests(reqs ...iscp.Request) {
+	if m.mempoolMetrics == nil {
+		m.mempoolMetrics = metrics.DefaultMempoolMetrics(m.log)
+	}
 	for _, req := range reqs {
+		if req.IsOffLedger() {
+			m.mempoolMetrics.NewOffLedgerRequest()
+		} else {
+			m.mempoolMetrics.NewOnLedgerRequest()
+		}
 		m.addToInBuffer(req)
 	}
 }
@@ -171,8 +179,6 @@ func (m *Mempool) ReceiveRequest(req iscp.Request) bool {
 	}
 	if req.IsOffLedger() {
 		m.mempoolMetrics.NewOffLedgerRequest()
-	} else {
-		m.mempoolMetrics.NewOnLedgerRequest()
 	}
 	return m.addToInBuffer(req)
 }
