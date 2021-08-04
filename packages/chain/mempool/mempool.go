@@ -166,6 +166,9 @@ func (m *Mempool) ReceiveRequest(req iscp.Request) bool {
 	if m.checkInBuffer(req) {
 		return false
 	}
+	if m.mempoolMetrics == nil {
+		m.mempoolMetrics = metrics.DefaultMempoolMetrics(m.log)
+	}
 	if req.IsOffLedger() {
 		m.mempoolMetrics.NewOffLedgerRequest()
 	} else {
@@ -187,6 +190,9 @@ func (m *Mempool) RemoveRequests(reqs ...iscp.RequestID) {
 	m.poolMutex.Lock()
 	defer m.poolMutex.Unlock()
 
+	if m.mempoolMetrics == nil {
+		m.mempoolMetrics = metrics.DefaultMempoolMetrics(m.log)
+	}
 	for _, rid := range reqs {
 		if _, ok := m.pool[rid]; !ok {
 			continue

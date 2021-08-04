@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -41,4 +42,25 @@ func (m *Metrics) registerMempoolMetrics() {
 		Help: "Number of requests processed on ledger",
 	}, []string{"chain"})
 	prometheus.MustRegister(m.processedRequestCounter)
+}
+
+// default mempool metrics with no counters
+type defaultMempoolMetrics struct {
+	log *logger.Logger
+}
+
+func DefaultMempoolMetrics(log *logger.Logger) MempoolMetrics {
+	return &defaultMempoolMetrics{log}
+}
+
+func (m *defaultMempoolMetrics) NewOffLedgerRequest() {
+	m.log.Info("No counter configured for off ledger requests.")
+}
+
+func (m *defaultMempoolMetrics) NewOnLedgerRequest() {
+	m.log.Info("No counter configured for on ledger requests.")
+}
+
+func (m *defaultMempoolMetrics) ProcessRequest() {
+	m.log.Info("No counter configured for processed requests.")
 }
