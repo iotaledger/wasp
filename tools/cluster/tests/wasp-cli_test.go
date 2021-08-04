@@ -23,6 +23,9 @@ func TestWaspCLINoChains(t *testing.T) {
 	w := newWaspCLITest(t)
 
 	w.Run("init")
+	if !*goShimmerUseProvidedNode {
+		w.Run("set", "goshimmer.faucetPoWTarget", "0")
+	}
 	w.Run("request-funds")
 
 	out := w.Run("address")
@@ -139,6 +142,17 @@ func TestWaspCLIContract(t *testing.T) {
 	checkCounter(45)
 }
 
+func findRequestIDInOutput(out []string) string {
+	for _, line := range out {
+		m := regexp.MustCompile(`(?m)#\d+ \(check result with: wasp-cli chain request (\w+)\)$`).FindStringSubmatch(line)
+		if len(m) == 0 {
+			continue
+		}
+		return m[1]
+	}
+	return ""
+}
+
 func TestWaspCLIBlockLog(t *testing.T) {
 	w := newWaspCLITest(t)
 	w.Run("init")
@@ -147,14 +161,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	w.Run("chain", "deploy", "--chain=chain1", committee, quorum)
 
 	out := w.Run("chain", "deposit", "IOTA:100")
-	var reqID string
-	for _, line := range out {
-		m := regexp.MustCompile(`(?m)- Request (\w+)$`).FindStringSubmatch(line)
-		if len(m) == 0 {
-			continue
-		}
-		reqID = m[1]
-	}
+	reqID := findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 
 	out = w.Run("chain", "block")
@@ -184,13 +191,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 
 	// try an unsuccessful request (missing params)
 	out = w.Run("chain", "post-request", "root", "deployContract")
-	for _, line := range out {
-		m := regexp.MustCompile(`(?m)- Request (\w+)$`).FindStringSubmatch(line)
-		if len(m) == 0 {
-			continue
-		}
-		reqID = m[1]
-	}
+	reqID = findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 
 	out = w.Run("chain", "request", reqID)

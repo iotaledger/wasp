@@ -4,8 +4,8 @@
 package evmchain
 
 import (
-	"errors"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -42,19 +42,26 @@ func getOrCreateEmulator(ctx iscp.Sandbox) *evm.EVMEmulator {
 }
 
 func createEmulator(ctx iscp.Sandbox) interface{} {
-	return evm.NewEVMEmulator(rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())))
+	return evm.NewEVMEmulator(rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())), timestamp(ctx))
+}
+
+// timestamp returns the current timestamp in seconds since epoch
+func timestamp(ctx iscp.SandboxBase) uint64 {
+	tsNano := time.Duration(ctx.GetTimestamp()) * time.Nanosecond
+	return uint64(tsNano / time.Second)
 }
 
 func commitEthereumBlock(blockContext interface{}) {
 	emu := blockContext.(*evm.EVMEmulator)
-	if emu.HasPendingBlock() {
-		emu.Commit()
-	}
+	emu.Commit()
 	emu.Close()
 }
 
 func withEmulatorR(ctx iscp.SandboxView, f func(*evm.EVMEmulator) dict.Dict) (dict.Dict, error) {
-	emu := evm.NewEVMEmulator(rawdb.NewDatabase(evm.NewKVAdapter(buffered.NewBufferedKVStore(ctx.State()))))
+	emu := evm.NewEVMEmulator(
+		rawdb.NewDatabase(evm.NewKVAdapter(buffered.NewBufferedKVStore(ctx.State()))),
+		timestamp(ctx),
+	)
 	defer emu.Close()
 	return f(emu), nil
 }
@@ -96,28 +103,19 @@ func withBlockByNumber(ctx iscp.SandboxView, f func(*evm.EVMEmulator, *types.Blo
 }
 
 func withBlockByHash(ctx iscp.SandboxView, f func(*evm.EVMEmulator, *types.Block) dict.Dict) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
 	hash := common.BytesToHash(ctx.Params().MustGet(FieldBlockHash))
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
-		block, err := emu.BlockByHash(hash)
-		if !errors.Is(err, evm.ErrBlockDoesNotExist) {
-			a.RequireNoError(err)
-		}
+		block := emu.BlockByHash(hash)
 		return f(emu, block)
 	})
 }
 
 func withTransactionByHash(ctx iscp.SandboxView, f func(*evm.EVMEmulator, *types.Transaction) dict.Dict) (dict.Dict, error) {
-	a := assert.NewAssert(ctx.Log())
 	txHash := common.BytesToHash(ctx.Params().MustGet(FieldTransactionHash))
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
-		tx, pending, err := emu.TransactionByHash(txHash)
-		a.Require(!pending, "unexpected pending transaction")
-		if !isNotFound(err) {
-			a.RequireNoError(err)
-		}
+		tx := emu.TransactionByHash(txHash)
 		return f(emu, tx)
 	})
 }

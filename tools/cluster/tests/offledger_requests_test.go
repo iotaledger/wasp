@@ -77,7 +77,7 @@ func TestOffledgerRequest(t *testing.T) {
 	require.EqualValues(t, 43, resultint64)
 }
 
-func TestOffledgerRequest1Mb(t *testing.T) {
+func TestOffledgerRequest900KB(t *testing.T) {
 	e := setupWithNoChain(t)
 
 	var err error
@@ -97,7 +97,7 @@ func TestOffledgerRequest1Mb(t *testing.T) {
 	chClient := chEnv.newWalletWithFunds(0, 1, 100, 0, 1, 2, 3)
 
 	// send big blob off-ledger request via Web API
-	size := int64(1 * 1024 * 1024) // 1 MB
+	size := int64(1 * 900 * 1024) // 900 KB
 	randomData := make([]byte, size)
 	_, err = rand.Read(randomData)
 	require.NoError(t, err)

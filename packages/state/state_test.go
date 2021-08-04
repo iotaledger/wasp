@@ -51,16 +51,24 @@ func TestOriginHashes(t *testing.T) {
 		require.EqualValues(t, OriginStateHash().String(), calcOriginStateHash().String())
 	})
 	t.Run("zero state hash == origin state hash", func(t *testing.T) {
-		z, _ := newZeroVirtualState(mapdb.NewMapDB(), nil)
+		z, origBlock := newZeroVirtualState(mapdb.NewMapDB(), nil)
+		require.EqualValues(t, 0, origBlock.BlockIndex())
+		require.True(t, origBlock.Timestamp().IsZero())
+		require.EqualValues(t, hashing.NilHash, origBlock.PreviousStateHash())
 		t.Logf("zero state hash = %s", z.Hash().String())
 		require.EqualValues(t, calcOriginStateHash(), z.Hash())
 	})
 	t.Run("origin state construct", func(t *testing.T) {
 		origBlock := newOriginBlock()
+		require.EqualValues(t, 0, origBlock.BlockIndex())
+		require.True(t, origBlock.Timestamp().IsZero())
+		require.EqualValues(t, hashing.NilHash, origBlock.PreviousStateHash())
+
 		emptyState := newVirtualState(mapdb.NewMapDB(), nil)
 		err := emptyState.ApplyBlock(origBlock)
 		require.NoError(t, err)
 		require.EqualValues(t, emptyState.Hash(), calcOriginStateHash())
+		require.EqualValues(t, hashing.NilHash, emptyState.PreviousStateHash())
 	})
 }
 
@@ -91,8 +99,10 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, vs1.Hash(), vs2.Hash())
 		require.EqualValues(t, vs1.BlockIndex(), vs2.BlockIndex())
 		require.EqualValues(t, vs1.Timestamp(), vs2.Timestamp())
+		require.EqualValues(t, vs1.PreviousStateHash(), vs2.PreviousStateHash())
 		require.True(t, vs2.Timestamp().IsZero())
 		require.EqualValues(t, 0, vs2.BlockIndex())
+		require.EqualValues(t, hashing.NilHash, vs2.PreviousStateHash())
 
 		require.EqualValues(t, vs1.Clone().Hash(), vs2.Clone().Hash())
 	})
@@ -123,7 +133,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 
 		nowis := time.Now()
-		su := NewStateUpdateWithBlockIndexMutation(1)
+		su := NewStateUpdateWithBlocklogValues(1, time.Time{}, hashing.NilHash)
 		su1 := NewStateUpdate(nowis)
 		su1.Mutations().Set("key", []byte("value"))
 		block1, err := newBlock(su, su1)
@@ -172,7 +182,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 
 		nowis := time.Now()
-		su := NewStateUpdateWithBlockIndexMutation(1)
+		su := NewStateUpdateWithBlocklogValues(1, time.Time{}, hashing.NilHash)
 		su1 := NewStateUpdate(nowis)
 		su1.Mutations().Set("key", []byte("value"))
 		block1, err := newBlock(su, su1)

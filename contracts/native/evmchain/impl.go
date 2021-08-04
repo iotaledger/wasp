@@ -55,7 +55,13 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	if !ok {
 		chainID = evm.DefaultChainID
 	}
-	evm.InitGenesis(int(chainID), rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())), genesisAlloc, evm.GasLimitDefault)
+	evm.InitGenesis(
+		int(chainID),
+		rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())),
+		genesisAlloc,
+		evm.GasLimitDefault,
+		timestamp(ctx),
+	)
 	ctx.State().Set(FieldGasPerIota, codec.EncodeUint64(DefaultGasPerIota))
 	ctx.State().Set(FieldEvmOwner, codec.EncodeAgentID(ctx.ContractCreator()))
 	return nil, nil
@@ -78,10 +84,10 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 	)
 
 	emu := getOrCreateEmulator(ctx)
-	usedGas, err := emu.SendTransaction(tx)
+	receipt, err := emu.SendTransaction(tx)
 	a.RequireNoError(err)
 
-	iotasGasFee := usedGas / gasPerIota
+	iotasGasFee := receipt.GasUsed / gasPerIota
 	if transferredIotas > iotasGasFee {
 		// refund unspent gas fee to the sender's on-chain account
 		iotasGasRefund := transferredIotas - iotasGasFee
@@ -96,7 +102,7 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	return dict.Dict{
 		FieldGasFee:  codec.EncodeUint64(iotasGasFee),
-		FieldGasUsed: codec.EncodeUint64(usedGas),
+		FieldGasUsed: codec.EncodeUint64(receipt.GasUsed),
 	}, nil
 }
 

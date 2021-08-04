@@ -40,14 +40,6 @@ in `wasp-cli.json`): `wasp-cli set <name> <value>`
 
 Example: `wasp-cli set wasp.1.api wasp1.example.com:9091`
 
-To connect to a production Goshimmer node, the faucet PoW target must also be
-set:
-
-```
-wasp-cli set goshimmer.api goshimmer.node:8080
-wasp-cli set -- goshimmer.faucetPoWTarget -1
-```
-
 ## IOTA wallet
 
 `wasp-cli` provides the following commands for manipulating an IOTA wallet:

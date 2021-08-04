@@ -14,6 +14,7 @@ type GoshimmerConfig struct {
 	TxStreamPort    int
 	APIPort         int
 	UseProvidedNode bool
+	FaucetPoWTarget int
 	Hostname        string
 }
 
@@ -32,7 +33,6 @@ type WaspConfig struct {
 type ClusterConfig struct {
 	Wasp                  WaspConfig
 	Goshimmer             GoshimmerConfig
-	FaucetPoWTarget       int
 	BlockedGoshimmerNodes map[int]bool
 }
 
@@ -51,9 +51,9 @@ func DefaultConfig() *ClusterConfig {
 			TxStreamPort:    5000,
 			APIPort:         8080,
 			UseProvidedNode: false,
+			FaucetPoWTarget: 0,
 			Hostname:        "127.0.0.1",
 		},
-		FaucetPoWTarget:       -1,
 		BlockedGoshimmerNodes: make(map[int]bool),
 	}
 }

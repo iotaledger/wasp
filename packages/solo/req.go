@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -224,13 +225,13 @@ func (ch *Chain) PostRequestSyncTx(req *CallParams, keyPair *ed25519.KeyPair) (*
 
 	tx, reqid, err := ch.RequestFromParamsToLedger(req, keyPair)
 	if err != nil {
-		return nil, nil, err
+		return tx, nil, err
 	}
 	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 	require.NoError(ch.Env.T, err)
 	res, err := ch.runRequestsSync(reqs, "post")
 	if err != nil {
-		return nil, nil, err
+		return tx, nil, err
 	}
 	return tx, res, ch.mustGetErrorFromReceipt(reqid)
 }
@@ -298,4 +299,9 @@ func (ch *Chain) WaitForRequestsThrough(numReq int, maxWait ...time.Duration) bo
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
+}
+
+// MempoolInfo returns stats about the chain mempool
+func (ch *Chain) MempoolInfo() chain.MempoolInfo {
+	return ch.mempool.Info()
 }

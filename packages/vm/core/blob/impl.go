@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 var Processor = Contract.Processor(initialize,
@@ -21,6 +22,18 @@ var Processor = Contract.Processor(initialize,
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("blob.initialize.success hname = %s", Contract.Hname().String())
 	return nil, nil
+}
+
+func getMaxBlobSize(ctx iscp.Sandbox) uint32 {
+	r, err := ctx.Call(root.Contract.Hname(), root.FuncGetMaxBlobSize.Hname(), nil, nil)
+	if err != nil {
+		ctx.Log().Panicf("error getting max blob size, %v", err)
+	}
+	maxBlobSize, _, err := codec.DecodeUint32(r.MustGet(root.ParamMaxBlobSize))
+	if err != nil {
+		ctx.Log().Panicf("error getting max blob size, %v", err)
+	}
+	return maxBlobSize
 }
 
 // storeBlob treats parameters as names of fields and field values
@@ -47,7 +60,9 @@ func storeBlob(ctx iscp.Sandbox) (dict.Dict, error) {
 	sizes := make([]uint32, len(kSorted))
 	for i, k := range kSorted {
 		size := uint32(len(values[i]))
-
+		if size > getMaxBlobSize(ctx) {
+			ctx.Log().Panicf("blob too big. received size: %d", totalSize)
+		}
 		blbValues.MustSetAt([]byte(k), values[i])
 		blbSizes.MustSetAt([]byte(k), EncodeSize(size))
 		sizes[i] = size
