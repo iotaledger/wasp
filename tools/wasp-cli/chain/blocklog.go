@@ -26,7 +26,10 @@ func blockCmd() *cobra.Command {
 			log.Printf("Total requests: %d\n", bi.TotalRequests)
 			log.Printf("Successful requests: %d\n", bi.NumSuccessfulRequests)
 			log.Printf("Off-ledger requests: %d\n", bi.NumOffLedgerRequests)
+			log.Printf("\n")
 			logRequestsInBlock(bi.BlockIndex)
+			log.Printf("\n")
+			logEventsInBlock(bi.BlockIndex)
 		},
 	}
 }
@@ -58,8 +61,8 @@ func logRequestsInBlock(index uint32) {
 	})
 	log.Check(err)
 	arr := collections.NewArray16ReadOnly(ret, blocklog.ParamRequestRecord)
-	header := []string{"request ID", "kind", "log"}
-	var rows [][]string
+	header := []string{"request ID", "kind", "error"}
+	rows := make([][]string, arr.MustLen())
 	for i := uint16(0); i < arr.MustLen(); i++ {
 		req, err := blocklog.RequestReceiptFromBytes(arr.MustGetAt(i))
 		log.Check(err)
@@ -69,14 +72,22 @@ func logRequestsInBlock(index uint32) {
 			kind = "off-ledger"
 		}
 
-		rows = append(rows, []string{
+		rows[i] = []string{
 			req.RequestID.Base58(),
 			kind,
 			fmt.Sprintf("%q", req.Error),
-		})
+		}
 	}
 	log.Printf("Total %d requests\n", arr.MustLen())
 	log.PrintTable(header, rows)
+}
+
+func logEventsInBlock(index uint32) {
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetEventsForBlock.Name, dict.Dict{
+		blocklog.ParamBlockIndex: codec.EncodeUint32(index),
+	})
+	log.Check(err)
+	logEvents(ret)
 }
 
 func requestCmd() *cobra.Command {
@@ -103,7 +114,29 @@ func requestCmd() *cobra.Command {
 			}
 
 			log.Printf("%s request %s in block %d\n", kind, reqID.Base58(), blockIndex)
-			log.Printf("Log: %q\n", req.Error)
+			log.Printf("Error: %q\n", req.Error)
+
+			log.Printf("\n")
+			logEventsInRequest(reqID)
 		},
 	}
+}
+
+func logEventsInRequest(reqID iscp.RequestID) {
+	ret, err := SCClient(blocklog.Contract.Hname()).CallView(blocklog.FuncGetEventsForRequest.Name, dict.Dict{
+		blocklog.ParamRequestID: codec.EncodeRequestID(reqID),
+	})
+	log.Check(err)
+	logEvents(ret)
+}
+
+func logEvents(ret dict.Dict) {
+	arr := collections.NewArray16ReadOnly(ret, blocklog.ParamEvent)
+	header := []string{"event"}
+	rows := make([][]string, arr.MustLen())
+	for i := uint16(0); i < arr.MustLen(); i++ {
+		rows[i] = []string{string(arr.MustGetAt(i))}
+	}
+	log.Printf("Total %d events\n", arr.MustLen())
+	log.PrintTable(header, rows)
 }
