@@ -7,23 +7,23 @@
 	<div class="card fluid">
 		<h2 class="section">Contract</h2>
 		<dl>
-			<dt>Name</dt><dd><tt>{{trim 50 $c.Name}}</tt></dd>
-			<dt>Hname</dt><dd><tt>{{.Hname}}</tt></dd>
-			<dt>Description</dt><dd><tt>{{trim 50 $c.Description}}</tt></dd>
-			<dt>Program hash</dt><dd><tt>{{$c.ProgramHash.String}}</tt></dd>
+			<dt>Name</dt><dd><code>{{trim 50 $c.Name}}</code></dd>
+			<dt>Hname</dt><dd><code>{{.Hname}}</code></dd>
+			<dt>Description</dt><dd><code>{{trim 50 $c.Description}}</code></dd>
+			<dt>Program hash</dt><dd><code>{{$c.ProgramHash.String}}</code></dd>
 			{{if $c.HasCreator}}<dt>Creator</dt><dd>{{ template "agentid" (args $chainid $c.Creator) }}</dd>{{end}}
 			<dt>Owner fee</dt><dd>
 				{{- if $c.OwnerFee -}}
-					<tt>{{- $c.OwnerFee }} {{ $rootinfo.FeeColor -}}</tt>
+					<code>{{- $c.OwnerFee }} {{ $rootinfo.FeeColor -}}</code>
 				{{- else -}}
-					<tt>{{- $rootinfo.DefaultOwnerFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
+					<code>{{- $rootinfo.DefaultOwnerFee }} {{ $rootinfo.FeeColor }}</code> (chain default)
 				{{- end -}}
 			</dd>
 			<dt>Validator fee</dt><dd>
 				{{- if $c.ValidatorFee -}}
-					<tt>{{- $c.ValidatorFee }} {{ $rootinfo.FeeColor -}}
+					<code>{{- $c.ValidatorFee }} {{ $rootinfo.FeeColor -}}
 				{{- else -}}
-					<tt>{{- $rootinfo.DefaultValidatorFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
+					<code>{{- $rootinfo.DefaultValidatorFee }} {{ $rootinfo.FeeColor }}</code> (chain default)
 				{{- end -}}
 			</dd>
 		</dl>

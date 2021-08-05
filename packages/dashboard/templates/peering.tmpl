@@ -4,7 +4,7 @@
 <div class="card fluid">
 	<h2 class="section">Peering</h2>
 	<dl>
-		<dt>Node network ID</dt><dd><tt>{{.MyNetworkID}}</tt></dd>
+		<dt>Node network ID</dt><dd><code>{{.MyNetworkID}}</code></dd>
 	</dl>
 </div>
 <div class="card fluid">
@@ -20,7 +20,7 @@
 		<tbody>
 		{{range $_, $ps := .Peers}}
 			<tr>
-				<td data-label="NetID"><tt>{{$ps.NetID}}</tt></td>
+				<td data-label="NetID"><code>{{$ps.NetID}}</code></td>
 				<td data-label="Status">{{if $ps.IsAlive}}up{{else}}down{{end}}</td>
 				<td data-label="#Users">{{$ps.NumUsers}}</td>
 			</tr>
@@ -38,8 +38,8 @@
 		<tbody>
 		{{range $_, $t := .TrustedPeers}}
 			<tr>
-				<td data-label="PublicKey"><tt>{{$t.PubKey.String}}</tt></td>
-				<td data-label="NetID"><tt>{{$t.NetID}}</tt></td>
+				<td data-label="PublicKey"><code>{{$t.PubKey.String}}</code></td>
+				<td data-label="NetID"><code>{{$t.NetID}}</code></td>
 			</tr>
 		{{end}}
 		</tbody>

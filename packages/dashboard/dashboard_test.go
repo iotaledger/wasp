@@ -25,11 +25,11 @@ func TestDashboardConfig(t *testing.T) {
 
 	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleConfig, "/", nil)
 
-	dt := html.Find("dl dt tt")
+	dt := html.Find("dl dt code")
 	require.Equal(t, 1, dt.Length())
 	require.Equal(t, "foo", dt.First().Text())
 
-	dd := html.Find("dl dd tt")
+	dd := html.Find("dl dd code")
 	require.Equal(t, 1, dd.Length())
 	require.Equal(t, "bar", dd.First().Text())
 }

@@ -5,8 +5,8 @@
 	<div class="card fluid">
 		<h2 class="section">Block #{{ .Index }}</h2>
 		<dl>
-			<dt>Timestamp</dt><dd><tt>{{ formatTimestamp .Block.Timestamp }}</tt></dd>
-			<dt>Previous state hash</dt><dd><tt>{{ .Block.PreviousStateHash.Base58 }}</tt></dd>
+			<dt>Timestamp</dt><dd><code>{{ formatTimestamp .Block.Timestamp }}</code></dd>
+			<dt>Previous state hash</dt><dd><code>{{ .Block.PreviousStateHash.Base58 }}</code></dd>
 		</dl>
 	</div>
 
@@ -30,9 +30,9 @@
 		{{range $i, $r := .Receipts}}
 			<tr>
 				<td>{{$i}}</td>
-				<td><tt>{{$r.RequestID.Base58}}</tt></td>
+				<td><code>{{$r.RequestID.Base58}}</code></td>
 				<td>{{ if $r.OffLedger -}} yes {{- else -}} no {{- end }}</td>
-				<td><tt>{{ $r.Error }}</tt></td>
+				<td><code>{{ $r.Error }}</code></td>
 			</tr>
 		{{end}}
 		</tbody>
@@ -50,7 +50,7 @@
 		<tbody>
 		{{range $i, $e := .Events}}
 			<tr>
-				<td><tt>{{$e}}</tt></td>
+				<td><code>{{$e}}</code></td>
 			</tr>
 		{{end}}
 		</tbody>
