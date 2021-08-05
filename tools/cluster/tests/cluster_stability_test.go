@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,29 +51,18 @@ func (e *SabotageEnv) sendRequests(numRequests int, messageDelay time.Duration) 
 
 func (e *SabotageEnv) setSabotageValidators(breakCount int) {
 	clusterSize := e.chainEnv.clu.Config.Wasp.NumNodes
-	nodeList := []int{}
 
 	from := clusterSize - e.NumValidators
 	to := from + breakCount - 1
 
-	for i := from; i <= to; i++ {
-		nodeList = append(nodeList, i)
-	}
-
-	e.SabotageList = nodeList
+	e.SabotageList = util.MakeRange(from, to)
 }
 
 func (e *SabotageEnv) setSabotageAll(breakCount int) {
-	nodeList := []int{}
-
 	from := 1
 	to := from + breakCount - 1
 
-	for i := from; i <= to; i++ {
-		nodeList = append(nodeList, i)
-	}
-
-	e.SabotageList = nodeList
+	e.SabotageList = util.MakeRange(from, to)
 }
 
 type SabotageOption int
