@@ -4,40 +4,36 @@
 	{{ $c := .ContractRecord }}
 	{{ $chainid := .ChainID }}
 	{{ $rootinfo := .RootInfo }}
-	{{ if $c }}
-		<div class="card fluid">
-			<h2 class="section">Contract</h2>
-			<dl>
-				<dt>Name</dt><dd><tt>{{trim 50 $c.Name}}</tt></dd>
-				<dt>Hname</dt><dd><tt>{{.Hname}}</tt></dd>
-				<dt>Description</dt><dd><tt>{{trim 50 $c.Description}}</tt></dd>
-				<dt>Program hash</dt><dd><tt>{{$c.ProgramHash.String}}</tt></dd>
-				{{if $c.HasCreator}}<dt>Creator</dt><dd>{{ template "agentid" (args $chainid $c.Creator) }}</dd>{{end}}
-				<dt>Owner fee</dt><dd>
-					{{- if $c.OwnerFee -}}
-						<tt>{{- $c.OwnerFee }} {{ $rootinfo.FeeColor -}}</tt>
-					{{- else -}}
-						<tt>{{- $rootinfo.DefaultOwnerFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
-					{{- end -}}
-				</dd>
-				<dt>Validator fee</dt><dd>
-					{{- if $c.ValidatorFee -}}
-						<tt>{{- $c.ValidatorFee }} {{ $rootinfo.FeeColor -}}
-					{{- else -}}
-						<tt>{{- $rootinfo.DefaultValidatorFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
-					{{- end -}}
-				</dd>
-			</dl>
-		</div>
+	<div class="card fluid">
+		<h2 class="section">Contract</h2>
+		<dl>
+			<dt>Name</dt><dd><tt>{{trim 50 $c.Name}}</tt></dd>
+			<dt>Hname</dt><dd><tt>{{.Hname}}</tt></dd>
+			<dt>Description</dt><dd><tt>{{trim 50 $c.Description}}</tt></dd>
+			<dt>Program hash</dt><dd><tt>{{$c.ProgramHash.String}}</tt></dd>
+			{{if $c.HasCreator}}<dt>Creator</dt><dd>{{ template "agentid" (args $chainid $c.Creator) }}</dd>{{end}}
+			<dt>Owner fee</dt><dd>
+				{{- if $c.OwnerFee -}}
+					<tt>{{- $c.OwnerFee }} {{ $rootinfo.FeeColor -}}</tt>
+				{{- else -}}
+					<tt>{{- $rootinfo.DefaultOwnerFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
+				{{- end -}}
+			</dd>
+			<dt>Validator fee</dt><dd>
+				{{- if $c.ValidatorFee -}}
+					<tt>{{- $c.ValidatorFee }} {{ $rootinfo.FeeColor -}}
+				{{- else -}}
+					<tt>{{- $rootinfo.DefaultValidatorFee }} {{ $rootinfo.FeeColor }}</tt> (chain default)
+				{{- end -}}
+			</dd>
+		</dl>
+	</div>
 
-		<div class="card fluid">
-			<h3 class="section">Events</h3>
-			{{ range $_, $rec := .Log }}
-				<pre>{{- trim 1000 ($rec) -}}</pre>
-			{{ end }}
-		</div>
-		{{ template "ws" .ChainID }}
-	{{else}}
-		<div class="card fluid error">Not found.</div>
-	{{end}}
+	<div class="card fluid">
+		<h3 class="section">Events</h3>
+		{{ range $_, $rec := .Log }}
+			<pre>{{- trim 1000 ($rec) -}}</pre>
+		{{ end }}
+	</div>
+	{{ template "ws" .ChainID }}
 {{end}}

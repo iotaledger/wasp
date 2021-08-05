@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -38,7 +37,7 @@ func (d *Dashboard) initChain(e *echo.Echo, r renderer) {
 func (d *Dashboard) handleChain(c echo.Context) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	tab := chainBreadcrumb(c.Echo(), *chainID)
@@ -107,7 +106,7 @@ func (d *Dashboard) getLatestBlock(chainID *iscp.ChainID) (*LatestBlock, error) 
 func (d *Dashboard) fetchAccounts(chainID *iscp.ChainID) ([]*iscp.AgentID, error) {
 	accs, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.FuncViewAccounts.Name, nil)
 	if err != nil {
-		return nil, fmt.Errorf("accountsc view call failed: %v", err)
+		return nil, err
 	}
 
 	ret := make([]*iscp.AgentID, 0)

@@ -30,7 +30,7 @@
 		{{range $i, $r := .Receipts}}
 			<tr>
 				<td>{{$i}}</td>
-				<td><a href="{{ uri "chainRequest" $chainid.Base58 .RequestID.Base58 }}"><tt>{{$r.RequestID.Base58}}</tt></td>
+				<td><tt>{{$r.RequestID.Base58}}</tt></td>
 				<td>{{ if $r.OffLedger -}} yes {{- else -}} no {{- end }}</td>
 				<td><tt>{{ $r.Error }}</tt></td>
 			</tr>

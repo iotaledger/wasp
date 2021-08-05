@@ -26,12 +26,12 @@ func (d *Dashboard) initChainBlock(e *echo.Echo, r renderer) {
 func (d *Dashboard) handleChainBlock(c echo.Context) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	index, err := strconv.Atoi(c.Param("index"))
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	result := &ChainBlockTemplateParams{
