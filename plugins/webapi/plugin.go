@@ -49,7 +49,7 @@ func configure(*node.Plugin) {
 
 	Server.Echo().HideBanner = true
 	Server.Echo().HidePort = true
-	Server.Echo().HTTPErrorHandler = customHTTPErrorHandler
+	Server.Echo().HTTPErrorHandler = httperrors.HTTPErrorHandler
 	Server.Echo().Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
 	}))
@@ -74,20 +74,6 @@ func configure(*node.Plugin) {
 		dkg.DefaultNode,
 		gracefulshutdown.Shutdown,
 	)
-}
-
-func customHTTPErrorHandler(err error, c echo.Context) {
-	he, ok := err.(*httperrors.HTTPError)
-	if ok {
-		if !c.Response().Committed {
-			if c.Request().Method == http.MethodHead { // Issue #608
-				err = c.NoContent(he.Code)
-			} else {
-				err = c.JSON(he.Code, he)
-			}
-		}
-	}
-	c.Echo().DefaultHTTPErrorHandler(err, c)
 }
 
 func adminWhitelist() []net.IP {

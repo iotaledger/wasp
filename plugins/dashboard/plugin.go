@@ -6,7 +6,6 @@ package dashboard
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -28,7 +27,6 @@ import (
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"golang.org/x/xerrors"
 )
 
 const PluginName = "Dashboard"
@@ -98,7 +96,7 @@ func (w *waspServices) GetChainRecord(chainID *iscp.ChainID) (*registry_pkg.Chai
 		return nil, err
 	}
 	if ch == nil {
-		return nil, xerrors.Errorf("chain record not found")
+		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain record not found")
 	}
 	return ch, nil
 }
@@ -106,7 +104,7 @@ func (w *waspServices) GetChainRecord(chainID *iscp.ChainID) (*registry_pkg.Chai
 func (w *waspServices) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.CommitteeInfo, error) {
 	ch := chains.AllChains().Get(chainID)
 	if ch == nil {
-		return nil, xerrors.Errorf("chain not found")
+		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
 	}
 	return ch.GetCommitteeInfo(), nil
 }
@@ -114,7 +112,7 @@ func (w *waspServices) GetChainCommitteeInfo(chainID *iscp.ChainID) (*chain.Comm
 func (w *waspServices) CallView(chainID *iscp.ChainID, scName, funName string, params dict.Dict) (dict.Dict, error) {
 	ch := chains.AllChains().Get(chainID)
 	if ch == nil {
-		return nil, xerrors.Errorf("chain not found")
+		return nil, echo.NewHTTPError(http.StatusNotFound, "Chain not found")
 	}
 	vctx := viewcontext.NewFromChain(ch)
 	var ret dict.Dict
@@ -123,10 +121,7 @@ func (w *waspServices) CallView(chainID *iscp.ChainID, scName, funName string, p
 		ret, err = vctx.CallView(iscp.Hn(scName), iscp.Hn(funName), params)
 		return err
 	})
-	if err != nil {
-		return nil, fmt.Errorf("root view call failed: %w", err)
-	}
-	return ret, nil
+	return ret, err
 }
 
 func exploreAddressURLFromGoshimmerURI(uri string) string {

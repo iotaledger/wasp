@@ -58,6 +58,9 @@ func Init(server *echo.Echo, waspServices WaspServices) *Dashboard {
 		stop: make(chan bool),
 		wasp: waspServices,
 	}
+
+	d.errorInit(server, r)
+
 	d.navPages = []Tab{
 		d.configInit(server, r),
 		d.peeringInit(server, r),
@@ -66,8 +69,6 @@ func Init(server *echo.Echo, waspServices WaspServices) *Dashboard {
 
 	addWsEndpoints(server)
 	d.startWsForwarder()
-
-	useHTMLErrorHandler(server)
 
 	return d
 }

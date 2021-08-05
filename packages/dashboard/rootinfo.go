@@ -1,8 +1,6 @@
 package dashboard
 
 import (
-	"fmt"
-
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -27,13 +25,11 @@ type RootInfo struct {
 func (d *Dashboard) fetchRootInfo(chainID *iscp.ChainID) (ret RootInfo, err error) {
 	info, err := d.wasp.CallView(chainID, root.Contract.Name, root.FuncGetChainInfo.Name, nil)
 	if err != nil {
-		err = fmt.Errorf("root view call failed: %v", err)
 		return
 	}
 
 	ret.Contracts, err = root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
 	if err != nil {
-		err = fmt.Errorf("DecodeContractRegistry() failed: %v", err)
 		return
 	}
 

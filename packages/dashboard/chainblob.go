@@ -30,12 +30,12 @@ func (d *Dashboard) initChainBlob(e *echo.Echo, r renderer) {
 func (d *Dashboard) handleChainBlob(c echo.Context) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	hash, err := hashing.HashValueFromBase58(c.Param("hash"))
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	result := &ChainBlobTemplateParams{
