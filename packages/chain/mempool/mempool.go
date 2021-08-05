@@ -50,6 +50,9 @@ const (
 var _ chain.Mempool = &Mempool{}
 
 func New(stateReader state.OptimisticStateReader, blobCache registry.BlobCache, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, solidificationLoopDelay ...time.Duration) *Mempool {
+	if mempoolMetrics == nil {
+		mempoolMetrics = metrics.DefaultMempoolMetrics(log)
+	}
 	ret := &Mempool{
 		inBuffer:       make(map[iscp.RequestID]iscp.Request),
 		stateReader:    stateReader,
@@ -154,9 +157,6 @@ func (m *Mempool) addToPool(req iscp.Request) bool {
 
 // ReceiveRequests places requests into the inBuffer. InBuffer is unordered and non-deterministic
 func (m *Mempool) ReceiveRequests(reqs ...iscp.Request) {
-	if m.mempoolMetrics == nil {
-		m.mempoolMetrics = metrics.DefaultMempoolMetrics(m.log)
-	}
 	for _, req := range reqs {
 		if req.IsOffLedger() {
 			m.mempoolMetrics.NewOffLedgerRequest()
@@ -173,9 +173,6 @@ func (m *Mempool) ReceiveRequest(req iscp.Request) bool {
 	// Not adding this check now to avoid overhead, but should be looked into in case re-gossiping happens a lot
 	if m.checkInBuffer(req) {
 		return false
-	}
-	if m.mempoolMetrics == nil {
-		m.mempoolMetrics = metrics.DefaultMempoolMetrics(m.log)
 	}
 	if req.IsOffLedger() {
 		m.mempoolMetrics.NewOffLedgerRequest()
@@ -196,9 +193,6 @@ func (m *Mempool) RemoveRequests(reqs ...iscp.RequestID) {
 	m.poolMutex.Lock()
 	defer m.poolMutex.Unlock()
 
-	if m.mempoolMetrics == nil {
-		m.mempoolMetrics = metrics.DefaultMempoolMetrics(m.log)
-	}
 	for _, rid := range reqs {
 		if _, ok := m.pool[rid]; !ok {
 			continue
