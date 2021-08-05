@@ -73,6 +73,16 @@ module.exports = {
                             label: 'How to withdraw from a chain',
                             id: 'guide/core_concepts/accounts/accounts-withdraw',
                         },
+                        {
+                            type: 'doc',
+                            label: 'View account balances',
+                            id: 'guide/core_concepts/accounts/accounts-views',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'The common account',
+                            id: 'guide/core_concepts/accounts/accounts-common-account',
+                        },
                     ]
                 },
                 {
