@@ -7,7 +7,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -15,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/labstack/echo/v4"
 )
 
@@ -54,31 +54,32 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 	}
 
 	if result.Record != nil && result.Record.Active {
-		result.State, err = d.wasp.GetChainState(chainID)
+		result.LatestBlock, err = d.getLatestBlock(chainID)
 		if err != nil {
 			return err
 		}
 
-		theChain := d.wasp.GetChain(chainID)
-
-		result.Committee = theChain.GetCommitteeInfo()
-
-		result.RootInfo, err = d.fetchRootInfo(theChain)
+		result.Committee, err = d.wasp.GetChainCommitteeInfo(chainID)
 		if err != nil {
 			return err
 		}
 
-		result.Accounts, err = d.fetchAccounts(theChain)
+		result.RootInfo, err = d.fetchRootInfo(chainID)
 		if err != nil {
 			return err
 		}
 
-		result.TotalAssets, err = d.fetchTotalAssets(theChain)
+		result.Accounts, err = d.fetchAccounts(chainID)
 		if err != nil {
 			return err
 		}
 
-		result.Blobs, err = d.fetchBlobs(theChain)
+		result.TotalAssets, err = d.fetchTotalAssets(chainID)
+		if err != nil {
+			return err
+		}
+
+		result.Blobs, err = d.fetchBlobs(chainID)
 		if err != nil {
 			return err
 		}
@@ -87,8 +88,24 @@ func (d *Dashboard) handleChain(c echo.Context) error {
 	return c.Render(http.StatusOK, c.Path(), result)
 }
 
-func (d *Dashboard) fetchAccounts(ch chain.ChainCore) ([]*iscp.AgentID, error) {
-	accs, err := d.wasp.CallView(ch, accounts.Contract.Hname(), accounts.FuncViewAccounts.Name, nil)
+func (d *Dashboard) getLatestBlock(chainID *iscp.ChainID) (*LatestBlock, error) {
+	ret, err := d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.FuncGetLatestBlockInfo.Name, nil)
+	if err != nil {
+		return nil, err
+	}
+	index, _, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
+	if err != nil {
+		return nil, err
+	}
+	block, err := blocklog.BlockInfoFromBytes(index, ret.MustGet(blocklog.ParamBlockInfo))
+	if err != nil {
+		return nil, err
+	}
+	return &LatestBlock{Index: index, Info: block}, nil
+}
+
+func (d *Dashboard) fetchAccounts(chainID *iscp.ChainID) ([]*iscp.AgentID, error) {
+	accs, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.FuncViewAccounts.Name, nil)
 	if err != nil {
 		return nil, fmt.Errorf("accountsc view call failed: %v", err)
 	}
@@ -104,27 +121,25 @@ func (d *Dashboard) fetchAccounts(ch chain.ChainCore) ([]*iscp.AgentID, error) {
 	return ret, nil
 }
 
-func (d *Dashboard) fetchTotalAssets(ch chain.ChainCore) (colored.Balances, error) {
-	bal, err := d.wasp.CallView(ch, accounts.Contract.Hname(), accounts.FuncViewTotalAssets.Name, nil)
+func (d *Dashboard) fetchTotalAssets(chainID *iscp.ChainID) (colored.Balances, error) {
+	bal, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.FuncViewTotalAssets.Name, nil)
 	if err != nil {
 		return nil, err
 	}
 	return accounts.DecodeBalances(bal)
 }
 
-func (d *Dashboard) fetchBlobs(ch chain.ChainCore) (map[hashing.HashValue]uint32, error) {
-	ret, err := d.wasp.CallView(ch, blob.Contract.Hname(), blob.FuncListBlobs.Name, nil)
+func (d *Dashboard) fetchBlobs(chainID *iscp.ChainID) (map[hashing.HashValue]uint32, error) {
+	ret, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.FuncListBlobs.Name, nil)
 	if err != nil {
 		return nil, err
 	}
 	return blob.DecodeDirectory(ret)
 }
 
-type ChainState struct {
-	Index             uint32
-	Hash              hashing.HashValue
-	Timestamp         int64
-	ApprovingOutputID ledgerstate.OutputID
+type LatestBlock struct {
+	Index uint32
+	Info  *blocklog.BlockInfo
 }
 
 type ChainTemplateParams struct {
@@ -133,7 +148,7 @@ type ChainTemplateParams struct {
 	ChainID *iscp.ChainID
 
 	Record      *registry.ChainRecord
-	State       *ChainState
+	LatestBlock *LatestBlock
 	RootInfo    RootInfo
 	Accounts    []*iscp.AgentID
 	TotalAssets colored.Balances

@@ -44,20 +44,17 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 		AgentID: *agentID,
 	}
 
-	theChain := d.wasp.GetChain(chainID)
-	if theChain != nil {
-		bal, err := d.wasp.CallView(theChain, accounts.Contract.Hname(), accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
-			accounts.ParamAgentID: codec.EncodeAgentID(agentID),
-		}))
-		if err != nil {
-			return err
-		}
-		result.Balances, err = accounts.DecodeBalances(bal)
-		if err != nil {
-			return err
-		}
-		result.Ok = true
+	bal, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
+		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
+	}))
+	if err != nil {
+		return err
 	}
+	result.Balances, err = accounts.DecodeBalances(bal)
+	if err != nil {
+		return err
+	}
+	result.Ok = true
 
 	return c.Render(http.StatusOK, c.Path(), result)
 }

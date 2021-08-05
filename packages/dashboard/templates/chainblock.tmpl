@@ -1,0 +1,81 @@
+{{define "title"}}Block details{{end}}
+
+{{define "body"}}
+	{{ $chainid := .ChainID }}
+	<div class="card fluid">
+		<h2 class="section">Block #{{ .Index }}</h2>
+		<dl>
+			<dt>Timestamp</dt><dd><tt>{{ formatTimestamp .Block.Timestamp }}</tt></dd>
+			<dt>Previous state hash</dt><dd><tt>{{ .Block.PreviousStateHash.Base58 }}</tt></dd>
+		</dl>
+	</div>
+
+	<div class="card fluid">
+		<h3 class="section">Requests</h3>
+		<dl>
+			<dt>#Total</dt><dd>{{ .Block.TotalRequests }}</dd>
+			<dt>#Successful</dt><dd>{{ .Block.NumSuccessfulRequests }}</dd>
+			<dt>#Off-ledger</dt><dd>{{ .Block.NumOffLedgerRequests }}</dd>
+		</dl>
+		<table>
+		<thead>
+			<tr>
+				<th>Index</th>
+				<th>ID</th>
+				<th>Off-ledger?</th>
+				<th>Error</th>
+			</tr>
+		</thead>
+		<tbody>
+		{{range $i, $r := .Receipts}}
+			<tr>
+				<td>{{$i}}</td>
+				<td><a href="{{ uri "chainRequest" $chainid.Base58 .RequestID.Base58 }}"><tt>{{$r.RequestID.Base58}}</tt></td>
+				<td>{{ if $r.OffLedger -}} yes {{- else -}} no {{- end }}</td>
+				<td><tt>{{ $r.Error }}</tt></td>
+			</tr>
+		{{end}}
+		</tbody>
+		</table>
+	</div>
+
+	<div class="card fluid">
+		<h3 class="section">Events</h3>
+		<table>
+		<thead>
+			<tr>
+				<th>Event</th>
+			</tr>
+		</thead>
+		<tbody>
+		{{range $i, $e := .Events}}
+			<tr>
+				<td><tt>{{$e}}</tt></td>
+			</tr>
+		{{end}}
+		</tbody>
+		</table>
+	</div>
+
+	<div class="card fluid">
+		<div style="display: flex">
+			<div style="flex: 1; text-align: center">
+				<a href="{{ uri "chainBlock" $chainid.Base58 0 }}">⏮ First</a>
+			</div>
+			<div style="flex: 1; text-align: center">
+				{{ if gt .Index 0 }}
+					<a href="{{ uri "chainBlock" $chainid.Base58 (decUint32 .Index) }}">◄ Previous</a>
+				{{ end }}
+			</div>
+			<div style="flex: 1; text-align: center">
+				{{ if lt .Index .LatestBlockIndex }}
+					<a href="{{ uri "chainBlock" $chainid.Base58 (incUint32 .Index) }}">Next ►</a>
+				{{ end }}
+			</div>
+			<div style="flex: 1; text-align: center">
+				<a href="{{ uri "chainBlock" $chainid.Base58 .LatestBlockIndex }}">Latest ⏭</a>
+			</div>
+		</div>
+	</div>
+	{{ template "ws" $chainid }}
+{{end}}
