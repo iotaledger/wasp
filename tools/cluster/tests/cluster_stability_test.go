@@ -5,6 +5,7 @@ This test will test the recovery capabilities of the clusterized nodes, where so
 package tests
 
 import (
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -16,8 +17,6 @@ import (
 type SabotageEnv struct {
 	chainEnv      *chainEnv
 	NumValidators int
-	From          int
-	To            int
 	SabotageList  []int
 }
 
@@ -34,8 +33,6 @@ func InitializeStabilityTest(t *testing.T, numValidators, clusterSize int) *Sabo
 	return &SabotageEnv{
 		chainEnv:      env,
 		NumValidators: numValidators,
-		From:          0,
-		To:            0,
 		SabotageList:  make([]int, 0),
 	}
 }
@@ -62,8 +59,6 @@ func (e *SabotageEnv) setSabotageValidators(breakCount int) {
 		nodeList = append(nodeList, i)
 	}
 
-	e.From = from
-	e.To = to
 	e.SabotageList = nodeList
 }
 
@@ -77,8 +72,6 @@ func (e *SabotageEnv) setSabotageAll(breakCount int) {
 		nodeList = append(nodeList, i)
 	}
 
-	e.From = from
-	e.To = to
 	e.SabotageList = nodeList
 }
 
@@ -191,7 +184,7 @@ func TestSuccessfulIncCounterIncreaseWithoutInstability(t *testing.T) {
 	})
 }
 
-func runTestSuccessfulIncCounterIncreaseWithMildInstability(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequests int) {
+func testIncCounterWithMildInstability(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequests int) {
 	env := InitializeStabilityTest(t, numValidators, clusterSize)
 	env.setSabotageValidators(numBrokenNodes)
 
@@ -214,7 +207,7 @@ func TestSuccessfulIncCounterIncreaseWithMildInstability(t *testing.T) {
 		const numBrokenNodes = 1
 		const numRequests = 35
 
-		runTestSuccessfulIncCounterIncreaseWithMildInstability(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+		testIncCounterWithMildInstability(t, clusterSize, numValidators, numBrokenNodes, numRequests)
 	})
 
 	t.Run("cluster=10,numValidators=9,numBrokenNodes=2,req=35", func(t *testing.T) {
@@ -223,7 +216,7 @@ func TestSuccessfulIncCounterIncreaseWithMildInstability(t *testing.T) {
 		const numBrokenNodes = 2
 		const numRequests = 35
 
-		runTestSuccessfulIncCounterIncreaseWithMildInstability(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+		testIncCounterWithMildInstability(t, clusterSize, numValidators, numBrokenNodes, numRequests)
 	})
 
 	t.Run("cluster=14,numValidators=13,numBrokenNodes=3,req=35", func(t *testing.T) {
@@ -232,7 +225,7 @@ func TestSuccessfulIncCounterIncreaseWithMildInstability(t *testing.T) {
 		const numBrokenNodes = 3
 		const numRequests = 35
 
-		runTestSuccessfulIncCounterIncreaseWithMildInstability(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+		testIncCounterWithMildInstability(t, clusterSize, numValidators, numBrokenNodes, numRequests)
 	})
 
 	t.Run("cluster=18,numValidators=17,numBrokenNodes=4,req=35", func(t *testing.T) {
@@ -241,7 +234,7 @@ func TestSuccessfulIncCounterIncreaseWithMildInstability(t *testing.T) {
 		const numBrokenNodes = 4
 		const numRequests = 35
 
-		runTestSuccessfulIncCounterIncreaseWithMildInstability(t, clusterSize, numValidators, numBrokenNodes, numRequests)
+		testIncCounterWithMildInstability(t, clusterSize, numValidators, numBrokenNodes, numRequests)
 	})
 }
 
@@ -319,7 +312,7 @@ func TestFailsIncCounterIncreaseAsQuorumNotMet(t *testing.T) {
 	})
 }
 
-func runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure int) {
+func testConsenseusReconnectingNodesNoQuorum(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure int) {
 	env := InitializeStabilityTest(t, numValidators, clusterSize)
 	env.setSabotageValidators(numBrokenNodes)
 
@@ -349,7 +342,7 @@ func runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t *testing.T, c
 	waitUntil(t, env.chainEnv.counterEquals(int64(numRequestsBeforeFailure+numRequestsAfterFailure)), env.getActiveNodeList(), 60*time.Second, "incCounter matches expectation")
 }
 
-func runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure int) {
+func testConsenseusReconnectingNodesHighQuorum(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure int) {
 	env := InitializeStabilityTest(t, numValidators, clusterSize)
 	env.setSabotageValidators(numBrokenNodes)
 
@@ -381,6 +374,11 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		t.SkipNow()
 	}
 
+	// Windows does not support freezing with SIGSTOP, we skip those for now.
+	if runtime.GOOS == "windows" {
+		t.Skip()
+	}
+
 	t.Run("cluster=5,numValidators=4,numBrokenNodes=4,req=10,quorum=NO", func(t *testing.T) {
 		const clusterSize = 5
 		const numValidators = 4
@@ -388,7 +386,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		const numRequestsBeforeFailure = 10
 		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
+		testConsenseusReconnectingNodesNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
 	t.Run("cluster=7,numValidators=5,numBrokenNodes=5,req=10,quorum=NO", func(t *testing.T) {
@@ -398,7 +396,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		const numRequestsBeforeFailure = 10
 		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
+		testConsenseusReconnectingNodesNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
 	t.Run("cluster=12,numValidators=10,numBrokenNodes=9,req=10,quorum=NO", func(t *testing.T) {
@@ -408,7 +406,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		const numRequestsBeforeFailure = 10
 		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
+		testConsenseusReconnectingNodesNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
 	t.Run("cluster=12,numValidators=10,numBrokenNodes=9,req=10,quorum=NO", func(t *testing.T) {
@@ -418,7 +416,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		const numRequestsBeforeFailure = 10
 		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
+		testConsenseusReconnectingNodesNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
 	t.Run("cluster=4,numValidators=3,numBrokenNodes=1,req=35,quorum=YES", func(t *testing.T) {
@@ -428,7 +426,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		const numRequestsBeforeFailure = 10
 		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
+		testConsenseusReconnectingNodesHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
 	t.Run("cluster=6,numValidators=4,numBrokenNodes=2,req=35,quorum=YES", func(t *testing.T) {
@@ -438,7 +436,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		const numRequestsBeforeFailure = 10
 		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
+		testConsenseusReconnectingNodesHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
 	t.Run("cluster=8,numValidators=7,numBrokenNodes=3,req=35,quorum=YES", func(t *testing.T) {
@@ -448,7 +446,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		const numRequestsBeforeFailure = 10
 		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
+		testConsenseusReconnectingNodesHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
 	t.Run("cluster=12,numValidators=10,numBrokenNodes=4,req=35,quorum=YES", func(t *testing.T) {
@@ -458,7 +456,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		const numRequestsBeforeFailure = 10
 		const numRequestsAfterFailure = 25
 
-		runTestSuccessfulConsenseusWithReconnectingNodesAndHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
+		testConsenseusReconnectingNodesHighQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 }
 
@@ -466,7 +464,7 @@ func runTestOneFailingNodeAfterTheOther(t *testing.T, clusterSize, numValidators
 	quorum := (2*numValidators)/3 + 1
 
 	t.Logf("Quorum: %v", quorum)
-	t.Logf("Maximal allowed broken nodes: %v", numValidators-quorum)
+	t.Logf("Maximum allowed broken nodes: %v", numValidators-quorum)
 
 	requestCounter := 0
 	brokenNodes := 0
@@ -543,6 +541,11 @@ func TestOneFailingNodeAfterTheOther(t *testing.T) {
 
 	if testing.Short() {
 		t.SkipNow()
+	}
+
+	// Windows does not support freezing with SIGSTOP, we skip those for now.
+	if runtime.GOOS == "windows" {
+		t.Skip()
 	}
 
 	t.Run("cluster=5,numValidators=4,numBrokenNodes=1", func(t *testing.T) {

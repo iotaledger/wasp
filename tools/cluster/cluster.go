@@ -207,7 +207,7 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 	}
 	if exists {
 		if !removeExisting {
-			return fmt.Errorf("%s directory exists", dataPath)
+			return xerrors.Errorf("%s directory exists", dataPath)
 		}
 		err = os.RemoveAll(dataPath)
 		if err != nil {
@@ -277,7 +277,7 @@ func (clu *Cluster) Start(dataPath string) error {
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("Data path %s does not exist", dataPath)
+		return xerrors.Errorf("Data path %s does not exist", dataPath)
 	}
 
 	if err := clu.start(dataPath); err != nil {
@@ -317,7 +317,7 @@ func (clu *Cluster) start(dataPath string) error {
 		select {
 		case <-initOk:
 		case <-time.After(10 * time.Second):
-			return fmt.Errorf("Timeout starting wasp nodes\n") //nolint:revive
+			return xerrors.Errorf("Timeout starting wasp nodes\n") 
 		}
 	}
 	fmt.Printf("[cluster] started %d Wasp nodes\n", clu.Config.Wasp.NumNodes)
@@ -326,7 +326,7 @@ func (clu *Cluster) start(dataPath string) error {
 
 func (clu *Cluster) KillNode(nodeIndex int) error {
 	if nodeIndex >= len(clu.waspCmds) {
-		return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
+		return xerrors.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
 	}
 
 	process := clu.waspCmds[nodeIndex]
@@ -346,7 +346,7 @@ func (clu *Cluster) KillNode(nodeIndex int) error {
 
 func (clu *Cluster) FreezeNode(nodeIndex int) error {
 	if nodeIndex >= len(clu.waspCmds) {
-		return fmt.Errorf("[cluster] Wasp node with index %d not found, active processes: %v", nodeIndex, len(clu.waspCmds))
+		return xerrors.Errorf("[cluster] Wasp node with index %d not found, active processes: %v", nodeIndex, len(clu.waspCmds))
 	}
 
 	process := clu.waspCmds[nodeIndex]
@@ -358,7 +358,7 @@ func (clu *Cluster) FreezeNode(nodeIndex int) error {
 
 func (clu *Cluster) UnfreezeNode(nodeIndex int) error {
 	if nodeIndex >= len(clu.waspCmds) {
-		return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
+		return xerrors.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
 	}
 
 	process := clu.waspCmds[nodeIndex]
@@ -370,7 +370,7 @@ func (clu *Cluster) UnfreezeNode(nodeIndex int) error {
 
 func (clu *Cluster) RestartNode(nodeIndex int) error {
 	if nodeIndex >= len(clu.waspCmds) {
-		return fmt.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
+		return xerrors.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
 	}
 
 	initOk := make(chan bool, 1)
@@ -383,7 +383,7 @@ func (clu *Cluster) RestartNode(nodeIndex int) error {
 	select {
 	case <-initOk:
 	case <-time.After(10 * time.Second):
-		return fmt.Errorf("Timeout starting wasp nodes\n") //nolint:revive
+		return xerrors.Errorf("Timeout starting wasp nodes\n") 
 	}
 
 	clu.waspCmds[nodeIndex] = cmd
