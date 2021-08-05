@@ -317,7 +317,7 @@ func (clu *Cluster) start(dataPath string) error {
 		select {
 		case <-initOk:
 		case <-time.After(10 * time.Second):
-			return xerrors.Errorf("Timeout starting wasp nodes\n") 
+			return xerrors.Errorf("Timeout starting wasp nodes\n")
 		}
 	}
 	fmt.Printf("[cluster] started %d Wasp nodes\n", clu.Config.Wasp.NumNodes)
@@ -383,7 +383,7 @@ func (clu *Cluster) RestartNode(nodeIndex int) error {
 	select {
 	case <-initOk:
 	case <-time.After(10 * time.Second):
-		return xerrors.Errorf("Timeout starting wasp nodes\n") 
+		return xerrors.Errorf("Timeout starting wasp nodes\n")
 	}
 
 	clu.waspCmds[nodeIndex] = cmd
