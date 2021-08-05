@@ -12,6 +12,7 @@ import (
 	"path"
 	"sort"
 	"strconv"
+	"syscall"
 	"text/template"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 	"github.com/iotaledger/wasp/tools/cluster/mocknode"
@@ -32,9 +34,10 @@ import (
 )
 
 type Cluster struct {
-	Name    string
-	Config  *ClusterConfig
-	Started bool
+	Name     string
+	Config   *ClusterConfig
+	Started  bool
+	DataPath string
 
 	goshimmer *mocknode.MockNode
 	waspCmds  []*exec.Cmd
@@ -88,12 +91,22 @@ func (clu *Cluster) DeployDefaultChain() (*Chain, error) {
 	return clu.DeployChainWithDKG("Default chain", committee, committee, uint16(quorum))
 }
 
+func (clu *Cluster) InitDKG(committeeNodeCount int) ([]int, ledgerstate.Address, error) {
+	cmt := util.MakeRange(0, committeeNodeCount)
+	quorum := uint16((2*len(cmt))/3 + 1)
+
+	address, err := clu.RunDKG(cmt, quorum)
+
+	return cmt, address, err
+}
+
 func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...time.Duration) (ledgerstate.Address, error) {
 	if threshold == 0 {
 		threshold = (uint16(len(committeeNodes))*2)/3 + 1
 	}
 	apiHosts := clu.Config.APIHosts(committeeNodes)
 	peeringHosts := clu.Config.PeeringHosts(committeeNodes)
+
 	dkgInitiatorIndex := uint16(rand.Intn(len(apiHosts)))
 	return apilib.RunDKG(apiHosts, peeringHosts, threshold, dkgInitiatorIndex, timeout...)
 }
@@ -194,7 +207,7 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 	}
 	if exists {
 		if !removeExisting {
-			return fmt.Errorf("%s directory exists", dataPath)
+			return xerrors.Errorf("%s directory exists", dataPath)
 		}
 		err = os.RemoveAll(dataPath)
 		if err != nil {
@@ -215,6 +228,9 @@ func (clu *Cluster) InitDataPath(templatesPath, dataPath string, removeExisting 
 			return err
 		}
 	}
+
+	clu.DataPath = dataPath
+
 	return clu.Config.Save(dataPath)
 }
 
@@ -261,7 +277,7 @@ func (clu *Cluster) Start(dataPath string) error {
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("Data path %s does not exist", dataPath)
+		return xerrors.Errorf("Data path %s does not exist", dataPath)
 	}
 
 	if err := clu.start(dataPath); err != nil {
@@ -301,11 +317,78 @@ func (clu *Cluster) start(dataPath string) error {
 		select {
 		case <-initOk:
 		case <-time.After(10 * time.Second):
-			return fmt.Errorf("Timeout starting wasp nodes\n") //nolint:revive
+			return xerrors.Errorf("Timeout starting wasp nodes\n")
 		}
 	}
 	fmt.Printf("[cluster] started %d Wasp nodes\n", clu.Config.Wasp.NumNodes)
 	return nil
+}
+
+func (clu *Cluster) KillNode(nodeIndex int) error {
+	if nodeIndex >= len(clu.waspCmds) {
+		return xerrors.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
+	}
+
+	process := clu.waspCmds[nodeIndex]
+
+	if process != nil {
+		err := process.Process.Kill()
+
+		if err == nil {
+			clu.waspCmds[nodeIndex] = nil
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+func (clu *Cluster) FreezeNode(nodeIndex int) error {
+	if nodeIndex >= len(clu.waspCmds) {
+		return xerrors.Errorf("[cluster] Wasp node with index %d not found, active processes: %v", nodeIndex, len(clu.waspCmds))
+	}
+
+	process := clu.waspCmds[nodeIndex]
+
+	err := process.Process.Signal(syscall.SIGSTOP)
+
+	return err
+}
+
+func (clu *Cluster) UnfreezeNode(nodeIndex int) error {
+	if nodeIndex >= len(clu.waspCmds) {
+		return xerrors.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
+	}
+
+	process := clu.waspCmds[nodeIndex]
+
+	err := process.Process.Signal(syscall.SIGCONT)
+
+	return err
+}
+
+func (clu *Cluster) RestartNode(nodeIndex int) error {
+	if nodeIndex >= len(clu.waspCmds) {
+		return xerrors.Errorf("[cluster] Wasp node with index %d not found", nodeIndex)
+	}
+
+	initOk := make(chan bool, 1)
+
+	cmd, err := clu.startServer("wasp", waspNodeDataPath(clu.DataPath, nodeIndex), nodeIndex, initOk)
+	if err != nil {
+		return err
+	}
+
+	select {
+	case <-initOk:
+	case <-time.After(10 * time.Second):
+		return xerrors.Errorf("Timeout starting wasp nodes\n")
+	}
+
+	clu.waspCmds[nodeIndex] = cmd
+
+	return err
 }
 
 func (clu *Cluster) startServer(command, cwd string, nodeIndex int, initOk chan<- bool) (*exec.Cmd, error) {

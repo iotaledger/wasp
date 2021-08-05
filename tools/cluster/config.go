@@ -92,7 +92,7 @@ func (c *ClusterConfig) waspHosts(nodeIndexes []int, getHost func(i int) string)
 	hosts := make([]string, 0)
 	for _, i := range nodeIndexes {
 		if i < 0 || i > c.Wasp.NumNodes-1 {
-			panic(fmt.Sprintf("Node index out of bounds in smart contract configuration: %d", i))
+			panic(fmt.Sprintf("Node index out of bounds in smart contract configuration: %d/%d", i, c.Wasp.NumNodes))
 		}
 		hosts = append(hosts, getHost(i))
 	}

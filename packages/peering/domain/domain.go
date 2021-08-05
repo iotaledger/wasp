@@ -120,6 +120,7 @@ func (d *DomainImpl) AddPeer(netID string) error {
 	}
 	d.nodes[netID] = peer
 	d.reshufflePeers()
+
 	return nil
 }
 
