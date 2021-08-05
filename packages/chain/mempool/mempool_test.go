@@ -72,15 +72,15 @@ type MockMempoolMetrics struct {
 	processedRequestCounter int
 }
 
-func (m *MockMempoolMetrics) NewOffLedgerRequest() {
+func (m *MockMempoolMetrics) CountOffLedgerRequestIn() {
 	m.offLedgerRequestCounter++
 }
 
-func (m *MockMempoolMetrics) NewOnLedgerRequest() {
+func (m *MockMempoolMetrics) CountOnLedgerRequestIn() {
 	m.onLedgerRequestCounter++
 }
 
-func (m *MockMempoolMetrics) ProcessRequest() {
+func (m *MockMempoolMetrics) CountRequestOut() {
 	m.processedRequestCounter++
 }
 

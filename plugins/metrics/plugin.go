@@ -29,7 +29,7 @@ func configure(_ *node.Plugin) {
 }
 
 func run(_ *node.Plugin) {
-	if !parameters.GetBool(parameters.MetricsEnabled) {
+	if !parameters.GetBool(parameters.PrometheusEnabled) {
 		return
 	}
 
@@ -37,7 +37,7 @@ func run(_ *node.Plugin) {
 	if err := daemon.BackgroundWorker("Prometheus exporter", func(shutdownSignal <-chan struct{}) {
 		log.Info("Starting Prometheus exporter ... done")
 
-		bindAddr := parameters.GetString(parameters.MetricsBindAddress)
+		bindAddr := parameters.GetString(parameters.PrometheusBindAddress)
 		stopped := make(chan struct{})
 		go func() {
 			defer close(stopped)

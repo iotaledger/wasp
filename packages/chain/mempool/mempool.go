@@ -159,9 +159,9 @@ func (m *Mempool) addToPool(req iscp.Request) bool {
 func (m *Mempool) ReceiveRequests(reqs ...iscp.Request) {
 	for _, req := range reqs {
 		if req.IsOffLedger() {
-			m.mempoolMetrics.NewOffLedgerRequest()
+			m.mempoolMetrics.CountOffLedgerRequestIn()
 		} else {
-			m.mempoolMetrics.NewOnLedgerRequest()
+			m.mempoolMetrics.CountOnLedgerRequestIn()
 		}
 		m.addToInBuffer(req)
 	}
@@ -175,7 +175,7 @@ func (m *Mempool) ReceiveRequest(req iscp.Request) bool {
 		return false
 	}
 	if req.IsOffLedger() {
-		m.mempoolMetrics.NewOffLedgerRequest()
+		m.mempoolMetrics.CountOffLedgerRequestIn()
 	}
 	return m.addToInBuffer(req)
 }
@@ -198,7 +198,7 @@ func (m *Mempool) RemoveRequests(reqs ...iscp.RequestID) {
 			continue
 		}
 		m.outPoolCounter++
-		m.mempoolMetrics.ProcessRequest()
+		m.mempoolMetrics.CountRequestOut()
 		delete(m.pool, rid)
 		m.traceOut(rid)
 	}
