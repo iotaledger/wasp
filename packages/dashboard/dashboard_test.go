@@ -82,11 +82,14 @@ func TestDashboardChainBlob(t *testing.T) {
 func TestDashboardChainBlock(t *testing.T) {
 	env := initDashboardTest(t)
 	ch := env.newChain()
-	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainBlock, "/chain/:chainid/block/:index", map[string]string{
-		"chainid": ch.ChainID.Base58(),
-		"index":   "1",
-	})
-	checkProperConversionsToString(t, html)
+
+	for _, index := range []string{"0", "1"} {
+		html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainBlock, "/chain/:chainid/block/:index", map[string]string{
+			"chainid": ch.ChainID.Base58(),
+			"index":   index,
+		})
+		checkProperConversionsToString(t, html)
+	}
 }
 
 func TestDashboardChainContract(t *testing.T) {

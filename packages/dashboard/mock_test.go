@@ -139,7 +139,7 @@ func (e *dashboardTestEnv) newChain() *solo.Chain {
 
 func initDashboardTest(t *testing.T) *dashboardTestEnv {
 	e := echo.New()
-	s := solo.New(t, false, false)
+	s := solo.New(t, false, true)
 	w := &waspServicesMock{
 		solo:   s,
 		chains: make(map[[ledgerstate.AddressLength]byte]*solo.Chain),
