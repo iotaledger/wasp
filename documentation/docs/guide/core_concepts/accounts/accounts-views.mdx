@@ -1,0 +1,105 @@
+import Tabs from "@theme/Tabs"
+import TabItem from "@theme/TabItem"
+
+# View account balances
+
+The Accounts contract provides the following views:
+
+`balance` - get the account balance of a specific account
+
+parameters:
+
+- `ParamAgentID` - account's AgentID
+
+returns:
+
+- a map of [token_color] -> [amount]
+
+examples:
+
+<Tabs
+    defaultValue="solo"
+    values={[
+        {label: 'Solo', value: 'solo'},
+        {label: 'Rust (ISCP)', value: 'rust'},
+    ]}>
+<TabItem value="solo">
+
+```go
+balances := chain.GetAccountBalance(agentID)
+```
+
+</TabItem>
+<TabItem value="rust">
+
+```rust
+// TODO does this work?
+let ret = ctx.call(ScHname::new("accounts"), ScHname::new("balance") , None);
+let balances = ret.get_map(&KEY_BALANCES).immutable()
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+`totalAssets` - get the total colored balances controlled by the chain
+
+returns:
+
+- a map of [token_color] -> [amount]
+
+<Tabs
+    defaultValue="solo"
+    values={[
+        {label: 'Solo', value: 'solo'},
+        {label: 'Rust (ISCP)', value: 'rust'},
+    ]}>
+<TabItem value="solo">
+
+```go
+balances:= chain.GetTotalAssets()
+```
+
+</TabItem>
+<TabItem value="rust">
+
+```rust
+let ret = ctx.call(ScHname::new("accounts"), ScHname::new("totalAssets") , None);
+let balances = ret.get_map(&KEY_BALANCES).immutable()
+```
+
+</TabItem>
+</Tabs>
+
+---
+
+`accounts` - get a list of all accounts existing on the chain
+
+returns:
+
+- a list of accounts (AgentIDs)
+
+<Tabs
+    defaultValue="solo"
+    values={[
+        {label: 'Solo', value: 'solo'},
+        {label: 'Rust (ISCP)', value: 'rust'},
+    ]}>
+<TabItem value="solo">
+
+```go
+accounts := chain.GetAccounts()
+```
+
+</TabItem>
+<TabItem value="rust">
+
+```rust
+// TODO does this work?
+let ret = ctx.call(ScHname::new("accounts"), ScHname::new("accounts") , None);
+let account = ret.get_agent_id_array(&KEY_PARAMS)
+```
+
+</TabItem>
+</Tabs>

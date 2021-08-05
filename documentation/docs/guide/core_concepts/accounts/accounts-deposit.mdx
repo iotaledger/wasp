@@ -1,0 +1,33 @@
+import Tabs from "@theme/Tabs"
+import TabItem from "@theme/TabItem"
+
+# How to deposit to a chain
+
+The `deposit` entrypoint credits the transfered IOTAS into your on-chain account.
+
+<Tabs
+    defaultValue="solo"
+    values={[
+        {label: 'Solo', value: 'solo'},
+        {label: 'Rust (ISCP)', value: 'rust'},
+    ]}>
+<TabItem value="solo">
+
+```go
+_, err := chain.PostRequestSync(
+	solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(N),
+	wallet,
+)
+```
+
+</TabItem>
+<TabItem value="rust">
+
+```rust
+// deposits N iotas from current SC into another chain
+let transfer = ScTransfers::iotas(N);
+ctx.post(chainID, ScHname::new("accounts"), ScHname::new("deposit") , None, transfer,0);
+```
+
+</TabItem>
+</Tabs>
