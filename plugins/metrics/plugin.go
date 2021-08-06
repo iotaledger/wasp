@@ -1,22 +1,18 @@
 package metrics
 
 import (
-	"time"
-
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util/ready"
 )
 
 const PluginName = "Metrics"
 
 var (
-	log         *logger.Logger
-	allMetrics  *metrics.Metrics
-	initialized = ready.New(PluginName)
+	log        *logger.Logger
+	allMetrics *metrics.Metrics
 )
 
 func Init() *node.Plugin {
@@ -46,7 +42,6 @@ func run(_ *node.Plugin) {
 			}
 		}()
 
-		initialized.SetReady()
 		select {
 		case <-shutdownSignal:
 		case <-stopped:
@@ -62,6 +57,5 @@ func run(_ *node.Plugin) {
 }
 
 func AllMetrics() *metrics.Metrics {
-	initialized.MustWait(5 * time.Second)
 	return allMetrics
 }

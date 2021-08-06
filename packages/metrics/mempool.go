@@ -54,13 +54,13 @@ func DefaultMempoolMetrics(log *logger.Logger) MempoolMetrics {
 }
 
 func (m *defaultMempoolMetrics) CountOffLedgerRequestIn() {
-	m.log.Info("No counter configured for off ledger requests.")
+	m.log.Debug("No counter configured for off ledger requests.")
 }
 
 func (m *defaultMempoolMetrics) CountOnLedgerRequestIn() {
-	m.log.Info("No counter configured for on ledger requests.")
+	m.log.Debug("No counter configured for on ledger requests.")
 }
 
 func (m *defaultMempoolMetrics) CountRequestOut() {
-	m.log.Info("No counter configured for processed requests.")
+	m.log.Debug("No counter configured for processed requests.")
 }
