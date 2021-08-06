@@ -5,6 +5,8 @@ import TabItem from "@theme/TabItem"
 
 The Accounts contract provides the following views:
 
+## Balance
+
 `balance` - get the account balance of a specific account
 
 parameters:
@@ -43,6 +45,8 @@ let balances = ret.get_map(&KEY_BALANCES).immutable()
 
 ---
 
+## totalAssets
+
 `totalAssets` - get the total colored balances controlled by the chain
 
 returns:
@@ -73,6 +77,8 @@ let balances = ret.get_map(&KEY_BALANCES).immutable()
 </Tabs>
 
 ---
+
+## accounts
 
 `accounts` - get a list of all accounts existing on the chain
 
