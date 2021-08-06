@@ -174,9 +174,7 @@ func (m *Mempool) ReceiveRequest(req iscp.Request) bool {
 	if m.checkInBuffer(req) {
 		return false
 	}
-	if req.IsOffLedger() {
-		m.mempoolMetrics.CountOffLedgerRequestIn()
-	}
+	m.mempoolMetrics.CountOffLedgerRequestIn()
 	return m.addToInBuffer(req)
 }
 

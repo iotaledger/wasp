@@ -27,7 +27,7 @@ func (m *Metrics) registerMempoolMetrics() {
 	m.log.Info("Registering mempool metrics to prometheus")
 	m.offLedgerRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "wasp_off_ledger_request_counter",
-		Help: "Number of off-ledger requests made to chains",
+		Help: "Number of off-ledger requests made to chain",
 	}, []string{"chain"})
 	prometheus.MustRegister(m.offLedgerRequestCounter)
 
@@ -39,7 +39,7 @@ func (m *Metrics) registerMempoolMetrics() {
 
 	m.processedRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "wasp_processed_on_ledger_request_counter",
-		Help: "Number of requests processed on ledger",
+		Help: "Number of requests processed",
 	}, []string{"chain"})
 	prometheus.MustRegister(m.processedRequestCounter)
 }
