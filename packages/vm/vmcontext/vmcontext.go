@@ -20,6 +20,11 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const (
+	MaxBlockOutputCount = ledgerstate.MaxOutputCount - 1 // -1 for the chain transition output
+	MaxBlockInputCount  = ledgerstate.MaxInputCount - 2  // // 125 (126 limit -1 for the previous state utxo)
+)
+
 // VMContext represents state of the chain during one run of the VM while processing
 // a batch of requests. VMContext object mutates with each request in the bathc.
 // The VMContext is created from immutable vm.VMTask object and UTXO state of the
@@ -37,6 +42,7 @@ type VMContext struct {
 	blockContext         map[iscp.Hname]*blockContext
 	blockContextCloseSeq []iscp.Hname
 	log                  *logger.Logger
+	blockOutputCount     uint8
 	// fee related
 	validatorFeeTarget iscp.AgentID // provided by validator
 	feeColor           colored.Color
@@ -49,6 +55,7 @@ type VMContext struct {
 	req                iscp.Request
 	requestIndex       uint16
 	requestEventIndex  uint16
+	requestOutputCount uint8
 	currentStateUpdate state.StateUpdate
 	entropy            hashing.HashValue // mutates with each request
 	contractRecord     *root.ContractRecord
@@ -143,6 +150,11 @@ func (vmctx *VMContext) checkRotationAddress() ledgerstate.Address {
 	defer vmctx.popCallContext()
 
 	return governance.GetRotationAddress(vmctx.State())
+}
+
+// ShouldStopRunningBatch is used for VMRunner to know that it should stop running the current batch of requests
+func (vmctx *VMContext) ShouldStopRunningBatch() bool {
+	return vmctx.blockOutputCount > MaxBlockOutputCount
 }
 
 // mustSaveBlockInfo is in the blocklog partition context

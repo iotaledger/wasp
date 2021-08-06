@@ -65,21 +65,31 @@ func runTask(task *vm.VMTask) {
 
 	// loop over the batch of requests and run each request on the VM.
 	// the result accumulates in the VMContext and in the list of stateUpdates
-	var numOffLedger, numSuccess uint16
+	var numOffLedger, numOnLedger, numSuccess uint16
 	for i, req := range task.Requests {
+		if req.IsOffLedger() {
+			numOffLedger++
+		} else {
+			if numOnLedger == vmcontext.MaxBlockInputCount {
+				break // max number of inputs reaches, do not process more on-ledger requests
+			}
+			numOnLedger++
+		}
+
 		vmctx.RunTheRequest(req, uint16(i))
 		lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
 
-		if req.IsOffLedger() {
-			numOffLedger++
+		if vmctx.ShouldStopRunningBatch() {
+			break
 		}
+
 		if lastErr == nil {
 			numSuccess++
 		} else {
 			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().Base58(), lastErr)
 		}
 	}
-	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d", len(task.Requests), numSuccess, numOffLedger)
+	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d", numOffLedger+numOnLedger, numSuccess, numOffLedger)
 
 	// save the block info into the 'blocklog' contract
 	// if rotationAddr != nil ir means the block is a rotation block

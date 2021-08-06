@@ -5,20 +5,17 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
-	"github.com/iotaledger/wasp/packages/kv/optimism"
-
-	"github.com/iotaledger/wasp/packages/kv"
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"golang.org/x/xerrors"
 )
 
 // TODO temporary place for the constant. In the future must be shared with pruning module
@@ -77,6 +74,10 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 			}
 		}()
 		vmctx.mustCallFromRequest()
+
+		if vmctx.blockOutputCount > MaxBlockOutputCount {
+			vmctx.log.Infof("outputs produced by this request do not fit inside the current block, reqID: %s", vmctx.req.ID().Base58())
+		}
 	}()
 
 	if vmctx.lastError != nil {
@@ -97,6 +98,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 	vmctx.req = req
 	vmctx.requestIndex = requestIndex
 	vmctx.requestEventIndex = 0
+	vmctx.requestOutputCount = 0
 	if !req.IsOffLedger() {
 		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.(*request.OnLedger).Output().ID()); err != nil {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
@@ -318,7 +320,7 @@ func (vmctx *VMContext) mustFinalizeRequestCall() {
 func (vmctx *VMContext) getChainConfigFromState() {
 	cfg := vmctx.getChainInfo()
 	if !cfg.ChainID.Equals(&vmctx.chainID) {
-		vmctx.log.Panicf("mustSetUpRequestContext: major inconsistency of chainID")
+		vmctx.log.Panicf("getChainConfigFromState: major inconsistency of chainID")
 	}
 	vmctx.chainOwnerID = cfg.ChainOwnerID
 	vmctx.maxEventSize = cfg.MaxEventSize

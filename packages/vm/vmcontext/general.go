@@ -106,13 +106,17 @@ func (vmctx *VMContext) RequestID() iscp.RequestID {
 const maxParamSize = 512
 
 // TODO implement send options
-//goland:noinspection GoUnusedParameter
 func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances, metadata *iscp.SendMetadata, options ...iscp.SendOptions) bool {
+	if vmctx.requestOutputCount >= MaxBlockOutputCount {
+		vmctx.log.Panicf("request with ID %s exceeded max number of allowed outputs (%d)", vmctx.req.ID().Base58(), MaxBlockOutputCount)
+	}
+
 	if tokens == nil || len(tokens) == 0 {
 		vmctx.log.Errorf("Send: transfer can't be empty")
 		return false
 	}
 	data := request.NewMetadata().
+		WithRequestNonce(vmctx.blockOutputCount).
 		WithSender(vmctx.CurrentContractHname())
 	if metadata != nil {
 		var args requestargs.RequestArgs
@@ -138,6 +142,8 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances
 		vmctx.log.Errorf("Send: %v", err)
 		return false
 	}
+	vmctx.requestOutputCount++
+	vmctx.blockOutputCount++
 	return true
 }
 
