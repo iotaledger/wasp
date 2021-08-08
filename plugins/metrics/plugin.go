@@ -37,16 +37,14 @@ func run(_ *node.Plugin) {
 		stopped := make(chan struct{})
 		go func() {
 			defer close(stopped)
-			if err := allMetrics.Start(bindAddr); err != nil {
-				log.Warnf("Error serving: %s", err)
-			}
+			allMetrics.Start(bindAddr)
 		}()
 
 		select {
 		case <-shutdownSignal:
 		case <-stopped:
 		}
-		log.Info("Stopping %s ...", PluginName)
+		log.Infof("Stopping %s ...", PluginName)
 		defer log.Infof("Stopping %s ... done", PluginName)
 		if err := allMetrics.Stop(); err != nil {
 			log.Errorf("Error stopping: %s", err)

@@ -3,6 +3,7 @@ package metrics
 import (
 	"context"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -37,7 +38,7 @@ func New(log *logger.Logger) *Metrics {
 	return &Metrics{log: log}
 }
 
-func (m *Metrics) Start(addr string) error {
+func (m *Metrics) Start(addr string) {
 	if m.server == nil {
 		e := echo.New()
 		e.HideBanner = true
@@ -51,7 +52,13 @@ func (m *Metrics) Start(addr string) error {
 	}
 	m.registerMempoolMetrics()
 	m.log.Infof("Prometheus metrics accessible at: %s", addr)
-	return m.server.ListenAndServe()
+	var once sync.Once
+	runServer := func() {
+		if err := m.server.ListenAndServe(); err != nil {
+			m.log.Error("Failed to start metrics server", err)
+		}
+	}
+	once.Do(runServer)
 }
 
 func (m *Metrics) Stop() error {
