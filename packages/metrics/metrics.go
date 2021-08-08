@@ -38,8 +38,10 @@ func New(log *logger.Logger) *Metrics {
 	return &Metrics{log: log}
 }
 
+var once sync.Once
+
 func (m *Metrics) Start(addr string) {
-	if m.server == nil {
+	once.Do(func() {
 		e := echo.New()
 		e.HideBanner = true
 		e.Use(middleware.Recover())
@@ -48,17 +50,13 @@ func (m *Metrics) Start(addr string) {
 			handler.ServeHTTP(c.Response(), c.Request())
 			return nil
 		})
+		m.registerMempoolMetrics()
+		m.log.Infof("Prometheus metrics accessible at: %s", addr)
 		m.server = &http.Server{Addr: addr, Handler: e}
-	}
-	m.registerMempoolMetrics()
-	m.log.Infof("Prometheus metrics accessible at: %s", addr)
-	var once sync.Once
-	runServer := func() {
 		if err := m.server.ListenAndServe(); err != nil {
 			m.log.Error("Failed to start metrics server", err)
 		}
-	}
-	once.Do(runServer)
+	})
 }
 
 func (m *Metrics) Stop() error {
