@@ -26,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -96,13 +97,14 @@ func NewChain(
 	offledgerBroadcastUpToNPeers int,
 	offledgerBroadcastInterval time.Duration,
 	pullMissingRequestsFromCommittee bool,
+	chainMetrics metrics.ChainMetrics,
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chainID.String())
 
 	chainLog := log.Named(chainID.Base58()[:6] + ".")
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
-		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog),
+		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
 		chMsg:             make(chan interface{}, 100),
 		chainID:           *chainID,
