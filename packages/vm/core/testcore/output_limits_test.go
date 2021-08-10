@@ -25,7 +25,7 @@ var (
 	funcSplitFunds = coreutil.Func("splitFunds")
 
 	manyOutputsProcessor = manyOutputsContract.Processor(nil,
-		// splits incoming puts into many outputs (chunks of 1000) (1 per iota)
+		// splits incoming puts into many outputs (chunks of 1000)
 		funcSplitFunds.WithHandler(func(ctx iscp.Sandbox) (dict.Dict, error) {
 			a := assert.NewAssert(ctx.Log())
 			par := kvdecoder.New(ctx.Params())
@@ -34,7 +34,7 @@ var (
 			for i := uint64(0); i < iotas; i += 1000 {
 				ret := ctx.Send(
 					ctx.Caller().Address(),
-					colored.NewBalancesForColor(colored.IOTA, 1),
+					colored.NewBalancesForColor(colored.IOTA, 1000),
 					nil,
 				)
 				a.Require(ret == true, "failed to send funds")
@@ -56,6 +56,7 @@ func TestTooManyOutputsInASingleCall(t *testing.T) {
 	// send 1 tx will 100_000 iotas which should result in too mant outputs, so the request must fail
 	wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
 	initialBalance := env.GetAddressBalance(address, colored.IOTA)
+
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(manyOutputsContract.Name, funcSplitFunds.Name).WithIotas(1000000),
 		wallet,
@@ -64,7 +65,7 @@ func TestTooManyOutputsInASingleCall(t *testing.T) {
 	require.Contains(t, fmt.Sprintf("%v", err), "exceeded max number of allowed outputs")
 
 	finalBalance := env.GetAddressBalance(address, colored.IOTA)
-	require.Equal(t, finalBalance, initialBalance) // TODO not charging fees, is this expected?
+	require.Equal(t, finalBalance, initialBalance)
 }
 
 func TestTooManyOutputsInBlock(t *testing.T) {
@@ -76,8 +77,9 @@ func TestTooManyOutputsInBlock(t *testing.T) {
 	err := ch.DeployContract(nil, manyOutputsContract.Name, manyOutputsContract.ProgramHash)
 	require.NoError(t, err)
 
-	initialBalance := env.GetAddressBalance(ch.OriginatorAddress, colored.IOTA)
-	initialChainBalance := ch.GetAccountBalance(&ch.OriginatorAgentID)[colored.IOTA]
+	wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
+	initialBalance := env.GetAddressBalance(address, colored.IOTA)
+
 	// send 500 tx with 1000 iotas each. all should be processed successfully, but must be split into different blocks (async post)
 	nReqs := 500
 	txs := make([]*ledgerstate.Transaction, nReqs)
@@ -86,7 +88,7 @@ func TestTooManyOutputsInBlock(t *testing.T) {
 			manyOutputsContract.Name, funcSplitFunds.Name,
 			paramShouldEmitEvent, uint16(1),
 		).WithIotas(1000)
-		txs[i], _, err = ch.RequestFromParamsToLedger(req, nil)
+		txs[i], _, err = ch.RequestFromParamsToLedger(req, wallet)
 		require.NoError(t, err)
 	}
 
@@ -106,6 +108,10 @@ func TestTooManyOutputsInBlock(t *testing.T) {
 		events, err := ch.GetEventsForRequest(reqID)
 		require.NoError(t, err)
 		require.Len(t, events, 1)
+
+		rec, _, _, ok := ch.GetRequestReceipt(reqID)
+		require.True(ch.Env.T, ok)
+		require.Len(t, rec.Error, 0)
 	}
 
 	lastBlock := ch.GetLatestBlockInfo()
@@ -117,10 +123,8 @@ func TestTooManyOutputsInBlock(t *testing.T) {
 		require.LessOrEqual(t, blockInfo.TotalRequests, uint16(vmcontext.MaxBlockOutputCount))
 	}
 
-	finalBalance := env.GetAddressBalance(ch.OriginatorAddress, colored.IOTA)
-	finalChainBalance := ch.GetAccountBalance(&ch.OriginatorAgentID)[colored.IOTA]
+	finalBalance := env.GetAddressBalance(address, colored.IOTA)
 
-	// check balance matches the expected TODO
-	require.Equal(t, initialChainBalance, finalChainBalance)
-	require.Equal(t, initialBalance, finalBalance)
+	// check balance matches the expected
+	require.Equal(t, initialBalance, finalBalance) // all iotas should have been sent back
 }
