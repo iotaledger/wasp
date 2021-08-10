@@ -50,9 +50,6 @@ const (
 var _ chain.Mempool = &Mempool{}
 
 func New(stateReader state.OptimisticStateReader, blobCache registry.BlobCache, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, solidificationLoopDelay ...time.Duration) *Mempool {
-	if mempoolMetrics == nil {
-		mempoolMetrics = metrics.DefaultMempoolMetrics(log)
-	}
 	ret := &Mempool{
 		inBuffer:       make(map[iscp.RequestID]iscp.Request),
 		stateReader:    stateReader,
