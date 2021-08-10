@@ -17,7 +17,7 @@ func TestDomainProvider(t *testing.T) {
 
 	nodeCount := 3
 	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
-	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(), log)
+	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))
 	}
@@ -63,7 +63,7 @@ func TestRandom(t *testing.T) {
 
 	nodeCount := 5
 	netIDs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))
-	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(), log)
+	nodes, netCloser := testpeers.SetupNet(netIDs, nodeIdentities, testutil.NewPeeringNetReliable(log), log)
 	for i := range nodes {
 		go nodes[i].Run(make(<-chan struct{}))
 	}

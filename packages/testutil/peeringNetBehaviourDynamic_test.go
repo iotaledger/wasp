@@ -15,7 +15,7 @@ import (
 
 func TestPeeringNetDynamicReliable(t *testing.T) {
 	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg, 1000)
 	doneCh := make(chan bool)
 	go func() {
 		for i := 0; i < 10; i++ {
@@ -39,7 +39,7 @@ func TestPeeringNetDynamicReliable(t *testing.T) {
 
 func TestPeeringNetDynamicUnreliable(t *testing.T) {
 	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg, 1000)
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
@@ -74,7 +74,7 @@ func TestPeeringNetDynamicUnreliable(t *testing.T) {
 
 func TestPeeringNetDynamicChanging(t *testing.T) {
 	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg, 1000)
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
@@ -137,7 +137,7 @@ func TestPeeringNetDynamicChanging(t *testing.T) {
 
 func TestPeeringNetDynamicLosingChannel(t *testing.T) {
 	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg, 1000)
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
@@ -160,7 +160,7 @@ func TestPeeringNetDynamicLosingChannel(t *testing.T) {
 
 func TestPeeringNetDynamicRepeatingChannel(t *testing.T) {
 	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg, 1000)
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
@@ -183,7 +183,7 @@ func TestPeeringNetDynamicRepeatingChannel(t *testing.T) {
 
 func TestPeeringNetDynamicDelayingChannel(t *testing.T) {
 	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg, 1000)
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
@@ -206,7 +206,7 @@ func TestPeeringNetDynamicDelayingChannel(t *testing.T) {
 
 func TestPeeringNetDynamicPeerDisconnected(t *testing.T) {
 	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg)
+	outCh := make(chan *peeringMsg, 1000)
 	inChD := make(chan *peeringMsg)
 	outChD := make(chan *peeringMsg)
 	stopCh := make(chan bool)
