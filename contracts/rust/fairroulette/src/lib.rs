@@ -12,7 +12,7 @@ mod types;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_LOCK_BETS, func_lock_bets);
+    
     exports.add_func(FUNC_PAY_WINNERS, func_pay_winners);
     exports.add_func(FUNC_PLACE_BET, func_place_bet);
     exports.add_func(FUNC_PLAY_PERIOD, func_play_period);
