@@ -82,7 +82,7 @@ func runTask(task *vm.VMTask) {
 			if req.IsOffLedger() {
 				numOffLedger--
 			} else {
-				numOnLedger--
+				numOnLedger-- //nolint:ineffassign
 			}
 			break
 		}
