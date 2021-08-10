@@ -160,7 +160,7 @@ func TestPeeringNetDynamicLosingChannel(t *testing.T) {
 
 func TestPeeringNetDynamicRepeatingChannel(t *testing.T) {
 	inCh := make(chan *peeringMsg)
-	outCh := make(chan *peeringMsg, 1000)
+	outCh := make(chan *peeringMsg, 10000)
 	stopCh := make(chan bool)
 	durations := make([]time.Duration, 0)
 	go testRecvLoop(outCh, &durations, stopCh)
