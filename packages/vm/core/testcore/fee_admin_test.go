@@ -39,7 +39,7 @@ func TestSetDefaultFeeNotAuthorized(t *testing.T) {
 
 	user, _ := env.NewKeyPairWithFunds()
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name, root.ParamOwnerFee, 1000)
+	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name, root.ParamOwnerFee, 1000)
 	_, err := chain.PostRequestSync(req, user)
 	require.Error(t, err)
 
@@ -73,7 +73,7 @@ func TestSetDefaultOwnerFeeOk(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
 		root.ParamOwnerFee, 1000,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
@@ -90,7 +90,7 @@ func TestSetDefaultValidatorFeeOk(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
 		root.ParamValidatorFee, 499,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
@@ -107,7 +107,7 @@ func TestSetDefaultFeeOk(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name,
+	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
 		root.ParamOwnerFee, 1000,
 		root.ParamValidatorFee, 499,
 	).WithIotas(1)
@@ -125,32 +125,32 @@ func TestSetDefaultFeeFailNegative1(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name, root.ParamOwnerFee, -2).WithIotas(1)
+	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name, root.ParamOwnerFee, -2).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
-	require.Error(t, err)
+	require.NoError(t, err)
 
 	checkFees(chain, root.Contract.Name, 0, 0)
 	checkFees(chain, accounts.Contract.Name, 0, 0)
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
-	chain.AssertCommonAccountIotas(1)
-	chain.AssertTotalIotas(1)
+	chain.AssertCommonAccountIotas(2)
+	chain.AssertTotalIotas(2)
 }
 
 func TestSetDefaultFeeFailNegative2(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name, root.ParamValidatorFee, -100).WithIotas(1)
+	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name, root.ParamValidatorFee, -100).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
-	require.Error(t, err)
+	require.NoError(t, err)
 
 	checkFees(chain, root.Contract.Name, 0, 0)
 	checkFees(chain, accounts.Contract.Name, 0, 0)
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
-	chain.AssertCommonAccountIotas(1)
-	chain.AssertTotalIotas(1)
+	chain.AssertCommonAccountIotas(2)
+	chain.AssertTotalIotas(2)
 }
 
 func TestSetContractValidatorFeeOk(t *testing.T) {
@@ -206,7 +206,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	checkFees(chain, accounts.Contract.Name, 0, 0)
 	checkFees(chain, blob.Contract.Name, 0, 1000)
 
-	req = solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name,
+	req = solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
 		root.ParamOwnerFee, 499,
 	).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
@@ -216,7 +216,7 @@ func TestSetContractFeeWithDefault(t *testing.T) {
 	checkFees(chain, accounts.Contract.Name, 499, 0)
 	checkFees(chain, blob.Contract.Name, 499, 1000)
 
-	req = solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name, root.ParamValidatorFee, 1999).WithIotas(1)
+	req = solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name, root.ParamValidatorFee, 1999).WithIotas(1)
 	//.WithTransfers(
 	//		map[ledgerstate.Color]uint64{
 	//			ledgerstate.ColorIOTA: 800,
@@ -254,7 +254,7 @@ func TestFeeNotEnough(t *testing.T) {
 	chain.AssertTotalIotas(2)
 
 	user, _ := env.NewKeyPairWithFunds()
-	req = solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name,
+	req = solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
 		root.ParamOwnerFee, 1000,
 	).WithIotas(99)
 	_, err = chain.PostRequestSync(req, user)
@@ -284,7 +284,7 @@ func TestFeeOwnerDontNeed(t *testing.T) {
 	checkFees(chain, accounts.Contract.Name, 0, 0)
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
-	req = solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name,
+	req = solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
 		root.ParamOwnerFee, 1000,
 	).WithIotas(99)
 	_, err = chain.PostRequestSync(req, nil)

@@ -14,6 +14,7 @@ type GoshimmerConfig struct {
 	TxStreamPort    int
 	APIPort         int
 	UseProvidedNode bool
+	FaucetPoWTarget int
 	Hostname        string
 }
 
@@ -21,39 +22,38 @@ type WaspConfig struct {
 	NumNodes int
 
 	// node ports are calculated as these values + node index
-	FirstAPIPort        int
-	FirstPeeringPort    int
-	FirstNanomsgPort    int
-	FirstDashboardPort  int
-	FirstProfilingPort  int
-	FirstPrometheusPort int
+	FirstAPIPort       int
+	FirstPeeringPort   int
+	FirstNanomsgPort   int
+	FirstDashboardPort int
+	FirstProfilingPort int
+	FirstMetricsPort   int
 }
 
 type ClusterConfig struct {
 	Wasp                  WaspConfig
 	Goshimmer             GoshimmerConfig
-	FaucetPoWTarget       int
 	BlockedGoshimmerNodes map[int]bool
 }
 
 func DefaultConfig() *ClusterConfig {
 	return &ClusterConfig{
 		Wasp: WaspConfig{
-			NumNodes:            4,
-			FirstAPIPort:        9090,
-			FirstPeeringPort:    4000,
-			FirstNanomsgPort:    5550,
-			FirstDashboardPort:  7000,
-			FirstProfilingPort:  6060,
-			FirstPrometheusPort: 2112,
+			NumNodes:           4,
+			FirstAPIPort:       9090,
+			FirstPeeringPort:   4000,
+			FirstNanomsgPort:   5550,
+			FirstDashboardPort: 7000,
+			FirstProfilingPort: 6060,
+			FirstMetricsPort:   2112,
 		},
 		Goshimmer: GoshimmerConfig{
 			TxStreamPort:    5000,
 			APIPort:         8080,
 			UseProvidedNode: false,
+			FaucetPoWTarget: 0,
 			Hostname:        "127.0.0.1",
 		},
-		FaucetPoWTarget:       -1,
 		BlockedGoshimmerNodes: make(map[int]bool),
 	}
 }
@@ -92,7 +92,7 @@ func (c *ClusterConfig) waspHosts(nodeIndexes []int, getHost func(i int) string)
 	hosts := make([]string, 0)
 	for _, i := range nodeIndexes {
 		if i < 0 || i > c.Wasp.NumNodes-1 {
-			panic(fmt.Sprintf("Node index out of bounds in smart contract configuration: %d", i))
+			panic(fmt.Sprintf("Node index out of bounds in smart contract configuration: %d/%d", i, c.Wasp.NumNodes))
 		}
 		hosts = append(hosts, getHost(i))
 	}
@@ -186,7 +186,7 @@ func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {
 }
 
 func (c *ClusterConfig) PrometheusPort(nodeIndex int) int {
-	return c.Wasp.FirstPrometheusPort + nodeIndex
+	return c.Wasp.FirstMetricsPort + nodeIndex
 }
 
 func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigParams {
@@ -199,7 +199,7 @@ func (c *ClusterConfig) WaspConfigTemplateParams(i int) *templates.WaspConfigPar
 		TxStreamPort:                 c.TxStreamPort(i),
 		ProfilingPort:                c.ProfilingPort(i),
 		TxStreamHost:                 c.TxStreamHost(i),
-		PrometheusPort:               c.PrometheusPort(i),
+		MetricsPort:                  c.PrometheusPort(i),
 		OffledgerBroadcastUpToNPeers: 10,
 	}
 }

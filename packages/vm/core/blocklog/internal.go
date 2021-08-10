@@ -161,8 +161,11 @@ func getRequestEventsInternal(partition kv.KVStoreReader, reqID *iscp.RequestID)
 	if err != nil {
 		return nil, err
 	}
+	if record == nil {
+		return nil, nil
+	}
 	ret := []string{}
-	eventIndex := uint8(0)
+	eventIndex := uint16(0)
 	events := collections.NewMapReadOnly(partition, StateVarRequestEvents)
 	for {
 		key := NewEventLookupKey(record.BlockIndex, record.RequestIndex, eventIndex)
@@ -218,7 +221,7 @@ func GetBlockEventsInternal(partition kv.KVStoreReader, blockIndex uint32) ([]st
 	ret := make([]string, 0)
 	events := collections.NewMapReadOnly(partition, StateVarRequestEvents)
 	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
-		eventIndex := uint8(0)
+		eventIndex := uint16(0)
 		for {
 			key := NewEventLookupKey(blockIndex, reqIdx, eventIndex)
 			msg, err := events.GetAt(key.Bytes())

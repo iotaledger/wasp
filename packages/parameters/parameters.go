@@ -43,6 +43,7 @@ const (
 
 	OffledgerBroadcastUpToNPeers = "offledger.broadcastUpToNPeers"
 	OffledgerBroadcastInterval   = "offledger.broadcastInterval"
+	OffledgerAPICacheTTL         = "offledger.apiCacheTTL"
 
 	ProfilingBindAddress = "profiling.bindAddress"
 	ProfilingEnabled     = "profiling.enabled"
@@ -86,12 +87,13 @@ func Init() *configuration.Configuration {
 
 	flag.Int(OffledgerBroadcastUpToNPeers, 10, "number of peers an offledger request is broadcasted to")
 	flag.Int(OffledgerBroadcastInterval, 1000, "time between re-broadcast of offledger requests (in ms)")
+	flag.Int(OffledgerAPICacheTTL, 5*60, "time to keep processed offledger requests in api cache (in seconds)")
 
 	flag.String(ProfilingBindAddress, "127.0.0.1:6060", "pprof http server address")
 	flag.Bool(ProfilingEnabled, false, "whether profiling is enabled")
 
-	flag.String(PrometheusBindAddress, "127.0.0.1:2112", "prometheus http server address")
-	flag.Bool(PrometheusEnabled, false, "disable and enable prometheus")
+	flag.String(PrometheusBindAddress, "127.0.0.1:2112", "prometheus metrics http server address")
+	flag.Bool(PrometheusEnabled, false, "disable and enable prometheus metrics")
 
 	return all
 }

@@ -87,6 +87,10 @@ func PeeringTrustedList() string {
 	return "/adm/peering/trusted"
 }
 
+func PeeringGetStatus() string {
+	return "/adm/peering/established"
+}
+
 func PeeringTrustedGet(pubKey string) string {
 	return "/adm/peering/trusted/" + pubKey
 }

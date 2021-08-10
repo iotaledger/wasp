@@ -2,14 +2,11 @@ package tests
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
-	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -73,24 +70,6 @@ func (e *chainEnv) printBlocks(expected int) {
 	require.EqualValues(e.t, expected, sum)
 }
 
-//
-//func printBlocksWithRecords(t *testing.T, ch *cluster.Chain) {
-//	recs, err := ch.GetAllBlockInfoRecordsReverse()
-//	require.NoError(t, err)
-//
-//	sum := 0
-//	for _, rec := range recs {
-//		t.Logf("---- block #%d: total: %d, off-ledger: %d, success: %d", rec.BlockIndex, rec.TotalRequests, rec.NumOffLedgerRequests, rec.NumSuccessfulRequests)
-//		sum += int(rec.TotalRequests)
-//		recs, err := ch.GetRequestReceiptsForBlock(rec.BlockIndex)
-//		require.NoError(t, err)
-//		for _, rec := range recs {
-//			t.Logf("---------- %s : %s", rec.RequestID.String(), string(rec.Error))
-//		}
-//	}
-//	t.Logf("Total requests processed: %d", sum)
-//}
-
 func TestAccessNodesOnLedger(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
@@ -124,42 +103,6 @@ func TestAccessNodesOnLedger(t *testing.T) {
 		const clusterSize = 15
 		testAccessNodesOnLedger(t, numRequests, numValidatorNodes, clusterSize)
 	})
-}
-
-var addressIndex uint64 = 1
-
-func (e *advancedInccounterEnv) createNewClient() *scclient.SCClient {
-	keyPair, _ := e.getOrCreateAddress()
-	client := e.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
-	return client
-}
-
-func (e *advancedInccounterEnv) getOrCreateAddress() (*ed25519.KeyPair, *ledgerstate.ED25519Address) {
-	const minTokenAmountBeforeRequestingNewFunds uint64 = 1000
-
-	randomAddress := rand.NewSource(time.Now().UnixNano())
-
-	keyPair := wallet.KeyPair(addressIndex)
-	myAddress := ledgerstate.NewED25519Address(keyPair.PublicKey)
-
-	funds, err := e.clu.GoshimmerClient().BalanceIOTA(myAddress)
-
-	require.NoError(e.t, err)
-
-	if funds <= minTokenAmountBeforeRequestingNewFunds {
-		// Requesting new token requires a new address
-
-		addressIndex = rand.New(randomAddress).Uint64()
-		e.t.Logf("Generating new address: %v", addressIndex)
-
-		keyPair = wallet.KeyPair(addressIndex)
-		myAddress = ledgerstate.NewED25519Address(keyPair.PublicKey)
-
-		e.requestFunds(myAddress, "myAddress")
-		e.t.Logf("Funds: %v, addressIndex: %v", funds, addressIndex)
-	}
-
-	return keyPair, myAddress
 }
 
 func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {

@@ -15,14 +15,14 @@ func TestMockNode(t *testing.T) {
 		t.Skip("Skipping mocknode test in short mode")
 	}
 
-	m := Start(":5000", ":8080")
+	m := Start(":5001", ":8081") // use different ports so this doesn't conflict with cluster tests
 	defer m.Stop()
 
 	time.Sleep(1 * time.Second)
 
 	_, addr := m.Ledger.NewKeyPairByIndex(2)
 
-	cl := client.NewGoShimmerAPI("http://127.0.0.1:8080")
+	cl := client.NewGoShimmerAPI("http://127.0.0.1:8081")
 	_, err := cl.SendFaucetRequest(addr.Base58(), 0)
 	require.NoError(t, err)
 

@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 )
@@ -64,12 +65,31 @@ func getRequestsOnLedger(t *testing.T, amount int) ([]*request.OnLedger, *ed2551
 	return requests, keyPair
 }
 
+type MockMempoolMetrics struct {
+	mock.Mock
+	offLedgerRequestCounter int
+	onLedgerRequestCounter  int
+	processedRequestCounter int
+}
+
+func (m *MockMempoolMetrics) CountOffLedgerRequestIn() {
+	m.offLedgerRequestCounter++
+}
+
+func (m *MockMempoolMetrics) CountOnLedgerRequestIn() {
+	m.onLedgerRequestCounter++
+}
+
+func (m *MockMempoolMetrics) CountRequestOut() {
+	m.processedRequestCounter++
+}
+
 // Test if mempool is created
 func TestMempool(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	glb := coreutil.NewChainStateSync()
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil)
 	require.NotNil(t, pool)
 	time.Sleep(2 * time.Second)
 	stats := pool.Info()
@@ -86,7 +106,8 @@ func TestAddRequest(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	mempoolMetrics := new(MockMempoolMetrics)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, mempoolMetrics)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 1)
 
@@ -97,6 +118,7 @@ func TestAddRequest(t *testing.T) {
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 1, stats.TotalPool)
 	require.EqualValues(t, 1, stats.ReadyCounter)
+	require.EqualValues(t, 1, mempoolMetrics.onLedgerRequestCounter)
 }
 
 func TestAddRequestInvalidState(t *testing.T) {
@@ -104,7 +126,7 @@ func TestAddRequestInvalidState(t *testing.T) {
 	glb := coreutil.NewChainStateSync()
 	glb.InvalidateSolidIndex()
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 1)
 
@@ -132,7 +154,7 @@ func TestAddRequestTwice(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 1)
 
@@ -162,7 +184,8 @@ func TestAddOffLedgerRequest(t *testing.T) {
 	testlogger.WithLevel(log, zapcore.InfoLevel, false)
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	mempoolMetrics := new(MockMempoolMetrics)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, mempoolMetrics)
 	require.NotNil(t, pool)
 	onLedgerRequests, keyPair := getRequestsOnLedger(t, 2)
 
@@ -175,6 +198,7 @@ func TestAddOffLedgerRequest(t *testing.T) {
 	offLedgerRequestSigned.Sign(keyPair)
 	require.NotEqual(t, offLedgerRequestUnsigned.ID(), offLedgerRequestSigned.ID())
 
+	require.EqualValues(t, 0, mempoolMetrics.offLedgerRequestCounter)
 	pool.ReceiveRequests(offLedgerRequestUnsigned)
 	require.False(t, pool.WaitRequestInPool(offLedgerRequestUnsigned.ID(), 200*time.Millisecond))
 	stats := pool.Info()
@@ -182,6 +206,7 @@ func TestAddOffLedgerRequest(t *testing.T) {
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 0, stats.TotalPool)
 	require.EqualValues(t, 0, stats.ReadyCounter)
+	require.EqualValues(t, 1, mempoolMetrics.offLedgerRequestCounter)
 
 	pool.ReceiveRequests(offLedgerRequestSigned)
 	require.True(t, pool.WaitRequestInPool(offLedgerRequestSigned.ID(), 200*time.Millisecond))
@@ -190,6 +215,7 @@ func TestAddOffLedgerRequest(t *testing.T) {
 	require.EqualValues(t, 0, stats.OutPoolCounter)
 	require.EqualValues(t, 1, stats.TotalPool)
 	require.EqualValues(t, 1, stats.ReadyCounter)
+	require.EqualValues(t, 2, mempoolMetrics.offLedgerRequestCounter)
 }
 
 // Test if processed request cannot be added to mempool
@@ -199,7 +225,7 @@ func TestProcessedRequest(t *testing.T) {
 	rdr, vs := createStateReader(t, glb)
 	wrt := vs.KVStore()
 
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil)
 	require.NotNil(t, pool)
 
 	stats := pool.Info()
@@ -236,7 +262,8 @@ func TestAddRemoveRequests(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log)
+	mempoolMetrics := new(MockMempoolMetrics)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, mempoolMetrics)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
 
@@ -277,13 +304,14 @@ func TestAddRemoveRequests(t *testing.T) {
 	require.EqualValues(t, 4, stats.OutPoolCounter)
 	require.EqualValues(t, 2, stats.TotalPool)
 	require.EqualValues(t, 2, stats.ReadyCounter)
+	require.EqualValues(t, 4, mempoolMetrics.processedRequestCounter)
 }
 
 // Test if ReadyNow and ReadyFromIDs functions respect the time lock of the request
 func TestTimeLock(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), nil)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
 
@@ -385,7 +413,7 @@ func TestTimeLock(t *testing.T) {
 func TestReadyFromIDs(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), nil)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
 
@@ -469,7 +497,7 @@ func TestSolidification(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 	blobCache := iscp.NewInMemoryBlobCache()
-	pool := New(rdr, blobCache, log, 20*time.Millisecond) // Solidification initiated on pool creation
+	pool := New(rdr, blobCache, log, nil, 20*time.Millisecond) // Solidification initiated on pool creation
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 4)
 
@@ -507,7 +535,7 @@ func TestSolidification(t *testing.T) {
 func TestRotateRequest(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t))
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), nil)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
 

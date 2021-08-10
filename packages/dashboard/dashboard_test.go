@@ -21,44 +21,48 @@ func checkProperConversionsToString(t *testing.T, html *goquery.Document) {
 }
 
 func TestDashboardConfig(t *testing.T) {
-	e, d := mockDashboard()
+	env := initDashboardTest(t)
 
-	html := testutil.CallHTMLRequestHandler(t, e, d.handleConfig, "/", nil)
+	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleConfig, "/", nil)
 
-	dt := html.Find("dl dt tt")
+	dt := html.Find("dl dt code")
 	require.Equal(t, 1, dt.Length())
 	require.Equal(t, "foo", dt.First().Text())
 
-	dd := html.Find("dl dd tt")
+	dd := html.Find("dl dd code")
 	require.Equal(t, 1, dd.Length())
 	require.Equal(t, "bar", dd.First().Text())
 }
 
 func TestDashboardPeering(t *testing.T) {
-	e, d := mockDashboard()
-	html := testutil.CallHTMLRequestHandler(t, e, d.handlePeering, "/peering", nil)
+	env := initDashboardTest(t)
+	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handlePeering, "/peering", nil)
 	require.Equal(t, 5, html.Find("table tbody tr").Length()) // 3 in peer list and 2 in trusted list.
 }
 
 func TestDashboardChainList(t *testing.T) {
-	e, d := mockDashboard()
-	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainList, "/chains", nil)
-	require.Equal(t, "mock chain", html.Find(`table tbody tr td[data-label="Description"]`).Text())
+	env := initDashboardTest(t)
+	env.newChain()
+	env.newChain()
+	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainList, "/chains", nil)
+	require.Equal(t, 2, html.Find(`table tbody tr`).Length())
 	checkProperConversionsToString(t, html)
 }
 
 func TestDashboardChainView(t *testing.T) {
-	e, d := mockDashboard()
-	html := testutil.CallHTMLRequestHandler(t, e, d.handleChain, "/chain/:chainid", map[string]string{
-		"chainid": iscp.RandomChainID().Base58(),
+	env := initDashboardTest(t)
+	ch := env.newChain()
+	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChain, "/chain/:chainid", map[string]string{
+		"chainid": ch.ChainID.Base58(),
 	})
 	checkProperConversionsToString(t, html)
 }
 
 func TestDashboardChainAccount(t *testing.T) {
-	e, d := mockDashboard()
-	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainAccount, "/chain/:chainid/account/:agentid", map[string]string{
-		"chainid": iscp.RandomChainID().Base58(),
+	env := initDashboardTest(t)
+	ch := env.newChain()
+	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainAccount, "/chain/:chainid/account/:agentid", map[string]string{
+		"chainid": ch.ChainID.Base58(),
 		"agentid": strings.Replace(iscp.NewRandomAgentID().String(), "/", ":", 1),
 	})
 	checkProperConversionsToString(t, html)
@@ -66,18 +70,33 @@ func TestDashboardChainAccount(t *testing.T) {
 }
 
 func TestDashboardChainBlob(t *testing.T) {
-	e, d := mockDashboard()
-	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainBlob, "/chain/:chainid/blob/:hash", map[string]string{
-		"chainid": iscp.RandomChainID().Base58(),
+	env := initDashboardTest(t)
+	ch := env.newChain()
+	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainBlob, "/chain/:chainid/blob/:hash", map[string]string{
+		"chainid": ch.ChainID.Base58(),
 		"hash":    hashing.RandomHash(nil).Base58(),
 	})
 	checkProperConversionsToString(t, html)
 }
 
+func TestDashboardChainBlock(t *testing.T) {
+	env := initDashboardTest(t)
+	ch := env.newChain()
+
+	for _, index := range []string{"0", "1"} {
+		html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainBlock, "/chain/:chainid/block/:index", map[string]string{
+			"chainid": ch.ChainID.Base58(),
+			"index":   index,
+		})
+		checkProperConversionsToString(t, html)
+	}
+}
+
 func TestDashboardChainContract(t *testing.T) {
-	e, d := mockDashboard()
-	html := testutil.CallHTMLRequestHandler(t, e, d.handleChainContract, "/chain/:chainid/contract/:hname", map[string]string{
-		"chainid": iscp.RandomChainID().Base58(),
+	env := initDashboardTest(t)
+	ch := env.newChain()
+	html := testutil.CallHTMLRequestHandler(t, env.echo, env.dashboard.handleChainContract, "/chain/:chainid/contract/:hname", map[string]string{
+		"chainid": ch.ChainID.Base58(),
 		"hname":   iscp.Hname(0).String(),
 	})
 	checkProperConversionsToString(t, html)

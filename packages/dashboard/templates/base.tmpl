@@ -7,20 +7,20 @@
 {{end}}
 
 {{define "address"}}
-	<tt>{{.Base58}}</tt> {{ template "exploreAddressInTangle" . }}
+	<code>{{.Base58}}</code> {{ template "exploreAddressInTangle" . }}
 {{end}}
 
 {{define "agentid"}}
 	{{ $chainid := (index . 0) }}
 	{{ $agentid := (index . 1) }}
-	<a href="{{ uri "chainAccount" $chainid.Base58 (replace $agentid.String "/" ":" 1) }}"><tt>{{ $agentid }}</tt></a>
+	<a href="{{ uri "chainAccount" $chainid.Base58 (replace $agentid.String "/" ":" 1) }}"><code>{{ $agentid }}</code></a>
 	{{ template "exploreAddressInTangle" $agentid.Address }}
 {{end}}
 
 {{define "balances"}}
 	<dl>
 		{{range $color, $bal := .}}
-			<dt><tt>{{ $color }}</tt></dt>
+			<dt><code>{{ $color }}</code></dt>
 			<dd>{{ $bal }}</dd>
 		{{end}}
 	</dl>
@@ -82,8 +82,10 @@
 			header {
 				border: none;
 			}
-			tt {
+			code {
 				font-family: Menlo, Consolas, monospace;
+				background: unset;
+				padding: unset;
 			}
 			table {
 				max-height: none !important;

@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/daemon"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/node"
+	metricspkg "github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/auth"
 	"github.com/iotaledger/wasp/packages/webapi"
@@ -17,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/plugins/chains"
 	"github.com/iotaledger/wasp/plugins/dkg"
 	"github.com/iotaledger/wasp/plugins/gracefulshutdown"
+	"github.com/iotaledger/wasp/plugins/metrics"
 	"github.com/iotaledger/wasp/plugins/peering"
 	"github.com/iotaledger/wasp/plugins/registry"
 	"github.com/labstack/echo/v4"
@@ -30,7 +32,8 @@ const PluginName = "WebAPI"
 var (
 	Server echoswagger.ApiRoot
 
-	log *logger.Logger
+	log        *logger.Logger
+	allMetrics *metricspkg.Metrics
 )
 
 func Init() *node.Plugin {
@@ -49,7 +52,7 @@ func configure(*node.Plugin) {
 
 	Server.Echo().HideBanner = true
 	Server.Echo().HidePort = true
-	Server.Echo().HTTPErrorHandler = customHTTPErrorHandler
+	Server.Echo().HTTPErrorHandler = httperrors.HTTPErrorHandler
 	Server.Echo().Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: `${time_rfc3339_nano} ${remote_ip} ${method} ${uri} ${status} error="${error}"` + "\n",
 	}))
@@ -64,6 +67,9 @@ func configure(*node.Plugin) {
 	if tnm == nil {
 		panic("dependency TrustedNetworkManager is missing in WebAPI")
 	}
+	if parameters.GetBool(parameters.PrometheusEnabled) {
+		allMetrics = metrics.AllMetrics()
+	}
 	webapi.Init(
 		Server,
 		adminWhitelist(),
@@ -73,21 +79,8 @@ func configure(*node.Plugin) {
 		chains.AllChains,
 		dkg.DefaultNode,
 		gracefulshutdown.Shutdown,
+		allMetrics,
 	)
-}
-
-func customHTTPErrorHandler(err error, c echo.Context) {
-	he, ok := err.(*httperrors.HTTPError)
-	if ok {
-		if !c.Response().Committed {
-			if c.Request().Method == http.MethodHead { // Issue #608
-				err = c.NoContent(he.Code)
-			} else {
-				err = c.JSON(he.Code, he)
-			}
-		}
-	}
-	c.Echo().DefaultHTTPErrorHandler(err, c)
 }
 
 func adminWhitelist() []net.IP {

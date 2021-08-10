@@ -67,7 +67,7 @@ func GoshimmerAPI() string {
 func GoshimmerFaucetPoWTarget() int {
 	key := "goshimmer.faucetPoWTarget"
 	if !viper.IsSet(key) {
-		return 0 // by default assume utxodb is on the other side
+		return -1
 	}
 	return viper.GetInt(key)
 }
