@@ -84,15 +84,35 @@ func (c *chainObj) IsDismissed() bool {
 	return c.dismissed.Load()
 }
 
+// ReceiveMessage accepts an incoming message asynchronously.
 func (c *chainObj) ReceiveMessage(msg interface{}) {
+	c.receiveMessage(msg, false)
+}
+
+func (c *chainObj) receiveMessage(msg interface{}, blocking bool) {
+	defer func() { // This is needed to handle possible write to a closed channel.
+		err := recover()
+		if err == "send on closed channel" {
+			c.log.Warnf("Failed to receive message, reason=%v", err)
+			return
+		}
+		if err != nil {
+			panic(err)
+		}
+	}()
 	if !c.IsDismissed() {
+		if blocking {
+			c.chMsg <- msg
+			return
+		}
 		select {
 		case c.chMsg <- msg:
 		default:
-			c.log.Warnf("ReceiveMessage with type '%T' failed. Retrying after %s", msg, chain.ReceiveMsgChannelRetryDelay)
+			overflowVal := c.chMsgOverflow.Inc()
+			c.log.Warnf("ReceiveMessage with type '%T' on full channel, current overflow=%v", msg, overflowVal)
 			go func() {
-				time.Sleep(chain.ReceiveMsgChannelRetryDelay)
-				c.ReceiveMessage(msg)
+				c.receiveMessage(msg, true)
+				c.chMsgOverflow.Dec()
 			}()
 		}
 	}
