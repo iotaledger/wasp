@@ -12,14 +12,23 @@ type MempoolMetrics interface {
 }
 
 func (c *chainMetrics) CountOffLedgerRequestIn() {
+	if c == nil || c.metrics == nil || c.metrics.offLedgerRequestCounter == nil { // TODO: Temporary workaround.
+		return
+	}
 	c.metrics.offLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
 func (c *chainMetrics) CountOnLedgerRequestIn() {
+	if c == nil || c.metrics == nil || c.metrics.onLedgerRequestCounter == nil { // TODO: Temporary workaround.
+		return
+	}
 	c.metrics.onLedgerRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
 func (c *chainMetrics) CountRequestOut() {
+	if c == nil || c.metrics == nil || c.metrics.processedRequestCounter == nil { // TODO: Temporary workaround.
+		return
+	}
 	c.metrics.processedRequestCounter.With(prometheus.Labels{"chain": c.chainID.String()}).Inc()
 }
 
