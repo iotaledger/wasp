@@ -189,7 +189,7 @@ func (m *Mempool) RemoveRequests(reqs ...iscp.RequestID) {
 	}
 }
 
-const traceInOut = true
+const traceInOut = false
 
 func (m *Mempool) traceIn(req iscp.Request) {
 	rotateStr := ""

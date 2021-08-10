@@ -78,7 +78,12 @@ func runTask(task *vm.VMTask) {
 		lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
 
 		if vmctx.ShouldStopRunningBatch() {
-			numOnLedger-- // last request exceeded the number of output limit and will be re-run next batch
+			// last request exceeded the number of output limit and will be re-run next batch
+			if req.IsOffLedger() {
+				numOffLedger--
+			} else {
+				numOnLedger--
+			}
 			break
 		}
 		task.ProcessedRequestsCount++
@@ -89,12 +94,11 @@ func runTask(task *vm.VMTask) {
 		}
 	}
 
-	totalRequests := numOffLedger + uint16(numOnLedger)
-	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d", totalRequests, numSuccess, numOffLedger)
+	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d", task.ProcessedRequestsCount, numSuccess, numOffLedger)
 
 	// save the block info into the 'blocklog' contract
 	// if rotationAddr != nil ir means the block is a rotation block
-	rotationAddr := vmctx.CloseVMContext(totalRequests, numSuccess, numOffLedger)
+	rotationAddr := vmctx.CloseVMContext(task.ProcessedRequestsCount, numSuccess, numOffLedger)
 
 	if rotationAddr == nil {
 		task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())

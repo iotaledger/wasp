@@ -53,7 +53,7 @@ func TestTooManyOutputsInASingleCall(t *testing.T) {
 	err := ch.DeployContract(nil, manyOutputsContract.Name, manyOutputsContract.ProgramHash)
 	require.NoError(t, err)
 
-	// send 1 tx will 100_000 iotas which should result in too mant outputs, so the request must fail
+	// send 1 tx will 1_000_000 iotas which should result in too mant outputs, so the request must fail
 	wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
 	initialBalance := env.GetAddressBalance(address, colored.IOTA)
 
