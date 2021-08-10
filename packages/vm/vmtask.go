@@ -28,6 +28,7 @@ type VMTask struct {
 	VirtualState             state.VirtualState // in/out  Return uncommitted updated virtual state
 	SolidStateBaseline       coreutil.StateBaseline
 	Requests                 []iscp.Request
+	ProcessedRequestsCount   uint16
 	Timestamp                time.Time
 	Entropy                  hashing.HashValue
 	ValidatorFeeTarget       iscp.AgentID

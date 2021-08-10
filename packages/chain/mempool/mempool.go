@@ -189,7 +189,7 @@ func (m *Mempool) RemoveRequests(reqs ...iscp.RequestID) {
 	}
 }
 
-const traceInOut = false
+const traceInOut = true
 
 func (m *Mempool) traceIn(req iscp.Request) {
 	rotateStr := ""
@@ -197,18 +197,14 @@ func (m *Mempool) traceIn(req iscp.Request) {
 		rotateStr = "(rotate) "
 	}
 	tl := req.TimeLock()
+	traceFn := m.log.Debugf
 	if traceInOut {
-		if tl.IsZero() {
-			m.log.Infof("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
-		} else {
-			m.log.Infof("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(tl))
-		}
+		traceFn = m.log.Infof
+	}
+	if tl.IsZero() {
+		traceFn("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
 	} else {
-		if tl.IsZero() {
-			m.log.Debugf("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
-		} else {
-			m.log.Debugf("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(tl))
-		}
+		traceFn("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(tl))
 	}
 }
 

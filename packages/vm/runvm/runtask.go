@@ -4,9 +4,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -51,8 +49,7 @@ func runTask(task *vm.VMTask) {
 		task.Log.Panicf("MustRunVMTaskAsync: must be at least 1 request")
 	}
 	// TODO access and consensus pledge
-	outputs := outputsFromRequests(task.Requests...)
-	txb := utxoutil.NewBuilder(append(outputs, task.ChainInput)...)
+	txb := utxoutil.NewBuilder(task.ChainInput)
 
 	vmctx, err := vmcontext.CreateVMContext(task, txb)
 	if err != nil {
@@ -65,13 +62,14 @@ func runTask(task *vm.VMTask) {
 
 	// loop over the batch of requests and run each request on the VM.
 	// the result accumulates in the VMContext and in the list of stateUpdates
-	var numOffLedger, numOnLedger, numSuccess uint16
+	var numOffLedger, numSuccess uint16
+	var numOnLedger uint8
 	for i, req := range task.Requests {
 		if req.IsOffLedger() {
 			numOffLedger++
 		} else {
 			if numOnLedger == vmcontext.MaxBlockInputCount {
-				break // max number of inputs reaches, do not process more on-ledger requests
+				break // max number of inputs to be included in state transition reached, do not process more on-ledger requests
 			}
 			numOnLedger++
 		}
@@ -80,20 +78,23 @@ func runTask(task *vm.VMTask) {
 		lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
 
 		if vmctx.ShouldStopRunningBatch() {
+			numOnLedger-- // last request exceeded the number of output limit and will be re-run next batch
 			break
 		}
-
+		task.ProcessedRequestsCount++
 		if lastErr == nil {
 			numSuccess++
 		} else {
 			task.Log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().Base58(), lastErr)
 		}
 	}
-	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d", numOffLedger+numOnLedger, numSuccess, numOffLedger)
+
+	totalRequests := numOffLedger + uint16(numOnLedger)
+	task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d", totalRequests, numSuccess, numOffLedger)
 
 	// save the block info into the 'blocklog' contract
 	// if rotationAddr != nil ir means the block is a rotation block
-	rotationAddr := vmctx.CloseVMContext(uint16(len(task.Requests)), numSuccess, numOffLedger)
+	rotationAddr := vmctx.CloseVMContext(totalRequests, numSuccess, numOffLedger)
 
 	if rotationAddr == nil {
 		task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
@@ -118,18 +119,6 @@ func runTask(task *vm.VMTask) {
 	task.OnFinish(lastResult, lastErr, nil)
 }
 
-// outputsFromRequests collect all outputs from requests which are on-ledger
-func outputsFromRequests(requests ...iscp.Request) []ledgerstate.Output {
-	ret := make([]ledgerstate.Output, 0)
-	for _, req := range requests {
-		if req.IsOffLedger() {
-			continue
-		}
-		ret = append(ret, req.(*request.OnLedger).Output())
-	}
-	return ret
-}
-
 func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalOnChainAssets colored.Balances) error {
 	var chainOutput *ledgerstate.AliasOutput
 	for _, o := range essence.Outputs() {
@@ -143,7 +132,7 @@ func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalOnChainA
 	balancesOnOutput := colored.BalancesFromL1Balances(chainOutput.Balances())
 	diffAssets := balancesOnOutput.Diff(lastTotalOnChainAssets)
 	// we expect assets in the chain output and total assets on-chain differs only in the amount of
-	// ant-dust tokens locked in the output. Otherwise it is inconsistency
+	// anti-dust tokens locked in the output. Otherwise it is inconsistency
 	if len(diffAssets) != 1 || diffAssets[colored.IOTA] != int64(ledgerstate.DustThresholdAliasOutputIOTA) {
 		return xerrors.Errorf("inconsistency between L1 and L2 ledgers. Diff: %+v", diffAssets)
 	}

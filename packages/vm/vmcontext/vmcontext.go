@@ -20,9 +20,9 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const (
-	MaxBlockOutputCount = ledgerstate.MaxOutputCount - 1 // -1 for the chain transition output
-	MaxBlockInputCount  = ledgerstate.MaxInputCount - 2  // // 125 (126 limit -1 for the previous state utxo)
+var (
+	MaxBlockOutputCount = uint8(ledgerstate.MaxOutputCount - 1) // -1 for the chain transition output
+	MaxBlockInputCount  = uint8(ledgerstate.MaxInputCount - 2)  // // 125 (126 limit -1 for the previous state utxo)
 )
 
 // VMContext represents state of the chain during one run of the VM while processing
@@ -63,6 +63,9 @@ type VMContext struct {
 	lastResult         dict.Dict // mutated. Used only by 'solo'
 	lastTotalAssets    colored.Balances
 	callStack          []*callContext
+
+	// shouldStopRunningBatch is used to signal that we should stop running the current batch of requests
+	shouldStopRunningBatch bool
 }
 
 type callContext struct {
@@ -154,7 +157,7 @@ func (vmctx *VMContext) checkRotationAddress() ledgerstate.Address {
 
 // ShouldStopRunningBatch is used for VMRunner to know that it should stop running the current batch of requests
 func (vmctx *VMContext) ShouldStopRunningBatch() bool {
-	return vmctx.blockOutputCount > MaxBlockOutputCount
+	return vmctx.shouldStopRunningBatch
 }
 
 // mustSaveBlockInfo is in the blocklog partition context

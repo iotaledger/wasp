@@ -29,6 +29,8 @@ const OffLedgerNonceStrictOrderTolerance = 10000
 func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 	defer vmctx.mustFinalizeRequestCall()
 
+	// snapshot tx builder to be able to rollbck and not include this request in the current block
+	snapshotTxBuilderWithoutInput := vmctx.txBuilder.Clone()
 	vmctx.mustSetUpRequestContext(req, requestIndex)
 
 	// guard against replaying off-ledger requests here to prevent replaying fee deduction
@@ -74,11 +76,15 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 			}
 		}()
 		vmctx.mustCallFromRequest()
-
-		if vmctx.blockOutputCount > MaxBlockOutputCount {
-			vmctx.log.Infof("outputs produced by this request do not fit inside the current block, reqID: %s", vmctx.req.ID().Base58())
-		}
 	}()
+
+	if vmctx.blockOutputCount > MaxBlockOutputCount {
+		vmctx.shouldStopRunningBatch = true
+		vmctx.Debugf("outputs produced by this request do not fit inside the current block, reqID: %s", vmctx.req.ID().Base58())
+		// rollback request processing, don't consume output or send funds back as this request should be processed in a following batch
+		vmctx.txBuilder = snapshotTxBuilderWithoutInput
+		vmctx.currentStateUpdate = state.NewStateUpdate()
+	}
 
 	if vmctx.lastError != nil {
 		// treating panic and error returned from request the same way
@@ -100,6 +106,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 	vmctx.requestEventIndex = 0
 	vmctx.requestOutputCount = 0
 	if !req.IsOffLedger() {
+		vmctx.txBuilder.AddConsumable(vmctx.req.(*request.OnLedger).Output())
 		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.(*request.OnLedger).Output().ID()); err != nil {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
 		}
@@ -273,6 +280,7 @@ func (vmctx *VMContext) mustSendBack(tokens colored.Balances) {
 	backToAddress := sender.Address()
 	backToContract := sender.Hname()
 	metadata := request.NewMetadata().WithTarget(backToContract)
+	vmctx.txBuilder.AddConsumable(vmctx.req.(*request.OnLedger).Output())
 	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), colored.ToL1Map(tokens))
 	if err != nil {
 		vmctx.log.Errorf("mustSendBack: %v", err)
@@ -303,6 +311,9 @@ func (vmctx *VMContext) mustUpdateOffledgerRequestMaxAssumedNonce() {
 }
 
 func (vmctx *VMContext) mustFinalizeRequestCall() {
+	if vmctx.shouldStopRunningBatch {
+		return
+	}
 	vmctx.mustLogRequestToBlockLog(vmctx.lastError) // panic not caught
 	vmctx.lastTotalAssets = vmctx.totalAssets()
 

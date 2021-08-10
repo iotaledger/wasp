@@ -11,11 +11,13 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/vmcontext"
 	"github.com/stretchr/testify/require"
 )
 
-var n = 0
+const paramShouldEmitEvent = "e"
 
 var (
 	manyOutputsContract = coreutil.NewContract("Many outputs", "")
@@ -23,23 +25,23 @@ var (
 	funcSplitFunds = coreutil.Func("splitFunds")
 
 	manyOutputsProcessor = manyOutputsContract.Processor(nil,
-		// splits incoming puts into many outputs (1 per iota)
+		// splits incoming puts into many outputs (chunks of 1000) (1 per iota)
 		funcSplitFunds.WithHandler(func(ctx iscp.Sandbox) (dict.Dict, error) {
 			a := assert.NewAssert(ctx.Log())
+			par := kvdecoder.New(ctx.Params())
+			shouldEmitEvent := par.MustGetInt16(paramShouldEmitEvent, 0) == 1
 			iotas := ctx.IncomingTransfer()[colored.IOTA]
-			for i := uint64(0); i < iotas; i++ {
+			for i := uint64(0); i < iotas; i += 1000 {
 				ret := ctx.Send(
 					ctx.Caller().Address(),
 					colored.NewBalancesForColor(colored.IOTA, 1),
 					nil,
 				)
 				a.Require(ret == true, "failed to send funds")
-				ctx.Event(fmt.Sprintf("sent funds, i: %d", i))
+				if shouldEmitEvent {
+					ctx.Event(fmt.Sprintf("reqid: %s, sent funds", ctx.RequestID()))
+				}
 			}
-			println("!!!!!!!!!!!!!!!!")
-			println(n)
-			println("!!!!!!!!!!!!!!!!")
-			n++
 			return nil, nil
 		}),
 	)
@@ -50,25 +52,40 @@ func TestTooManyOutputsInASingleCall(t *testing.T) {
 	ch := env.NewChain(nil, "chain1")
 	err := ch.DeployContract(nil, manyOutputsContract.Name, manyOutputsContract.ProgramHash)
 	require.NoError(t, err)
-	// send 1 tx will 1000 iotas which should result in 999 outputs, so the request must fail
+
+	// send 1 tx will 100_000 iotas which should result in too mant outputs, so the request must fail
+	wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
+	initialBalance := env.GetAddressBalance(address, colored.IOTA)
 	_, err = ch.PostRequestSync(
-		solo.NewCallParams(manyOutputsContract.Name, funcSplitFunds.Name).WithIotas(1000),
-		nil,
+		solo.NewCallParams(manyOutputsContract.Name, funcSplitFunds.Name).WithIotas(1000000),
+		wallet,
 	)
 	require.Error(t, err)
+	require.Contains(t, fmt.Sprintf("%v", err), "exceeded max number of allowed outputs")
+
+	finalBalance := env.GetAddressBalance(address, colored.IOTA)
+	require.Equal(t, finalBalance, initialBalance) // TODO not charging fees, is this expected?
 }
 
 func TestTooManyOutputsInBlock(t *testing.T) {
+	// Set the maximum number of outputs allowed in a block to a low value, to force the batch to overflow in produced outputs (we need this to test that the "extra" requests don't get rejected and instead are processed in the next batch)
+	vmcontext.MaxBlockOutputCount = 10
+
 	env := solo.New(t, false, false).WithNativeContract(manyOutputsProcessor)
 	ch := env.NewChain(nil, "chain1")
 	err := ch.DeployContract(nil, manyOutputsContract.Name, manyOutputsContract.ProgramHash)
 	require.NoError(t, err)
 
-	// send 100 tx with 10 iotas each. all should be processed successfully, but must be split into different blocks (async post)
-	nReqs := 100
+	initialBalance := env.GetAddressBalance(ch.OriginatorAddress, colored.IOTA)
+	initialChainBalance := ch.GetAccountBalance(&ch.OriginatorAgentID)[colored.IOTA]
+	// send 500 tx with 1000 iotas each. all should be processed successfully, but must be split into different blocks (async post)
+	nReqs := 500
 	txs := make([]*ledgerstate.Transaction, nReqs)
 	for i := 0; i < nReqs; i++ {
-		req := solo.NewCallParams(manyOutputsContract.Name, funcSplitFunds.Name).WithIotas(10)
+		req := solo.NewCallParams(
+			manyOutputsContract.Name, funcSplitFunds.Name,
+			paramShouldEmitEvent, uint16(1),
+		).WithIotas(1000)
 		txs[i], _, err = ch.RequestFromParamsToLedger(req, nil)
 		require.NoError(t, err)
 	}
@@ -77,17 +94,18 @@ func TestTooManyOutputsInBlock(t *testing.T) {
 		go ch.Env.EnqueueRequests(txs[i])
 	}
 	require.True(t, ch.WaitForRequestsThrough(nReqs+2, 10*time.Second)) // + 2 because of sc deploy and core contracts deployment
-	events, err := ch.GetEventsForContract(manyOutputsContract.Name)
-	require.NoError(t, err)
-	println(events)
 
-	for i, tx := range txs {
+	contractEvents, err := ch.GetEventsForContract(manyOutputsContract.Name)
+	require.NoError(t, err)
+	require.Len(t, contractEvents, nReqs)
+
+	for _, tx := range txs {
 		reqsInTx, err := ch.Env.RequestsForChain(tx, ch.ChainID)
 		reqID := reqsInTx[0].ID()
 		require.NoError(t, err)
 		events, err := ch.GetEventsForRequest(reqID)
 		require.NoError(t, err)
-		println(fmt.Sprintf("events for req #%d: %v", i, events))
+		require.Len(t, events, 1)
 	}
 
 	lastBlock := ch.GetLatestBlockInfo()
@@ -96,8 +114,13 @@ func TestTooManyOutputsInBlock(t *testing.T) {
 		blockInfo, _ := ch.GetBlockInfo(lastBlock.BlockIndex - 1)
 		// all requests must be successful
 		require.Equal(t, blockInfo.TotalRequests, blockInfo.NumSuccessfulRequests)
-		events, err := ch.GetEventsForBlock(i)
-		require.NoError(t, err)
-		println(events)
+		require.LessOrEqual(t, blockInfo.TotalRequests, uint16(vmcontext.MaxBlockOutputCount))
 	}
+
+	finalBalance := env.GetAddressBalance(ch.OriginatorAddress, colored.IOTA)
+	finalChainBalance := ch.GetAccountBalance(&ch.OriginatorAgentID)[colored.IOTA]
+
+	// check balance matches the expected TODO
+	require.Equal(t, initialChainBalance, finalChainBalance)
+	require.Equal(t, initialBalance, finalBalance)
 }
