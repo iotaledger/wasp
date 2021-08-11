@@ -4,7 +4,7 @@
 
 ISCP stands for IOTA Smart Contract Protocol. It is IOTA's solution for running smart contracts on top of the IOTA tangle. With ISCP, we bring scalable and flexible smart contracts into the IOTA ecosystem by allowing anyone to spin up a smart contract blockchain anchored to the IOTA tangle. 
 
-Allowing multiple blockchains to anchor to the tangle will solve several problems with smart contracts:
+Allowing multiple blockchains to anchor to the tangle will solve several problems with smart contracts.
 
 ### Scaling and Fees
 
