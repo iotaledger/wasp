@@ -13,7 +13,7 @@ Note that the ledger of accounts on the chain is consistently maintained behind 
 
 ### deposit
 
-Moves tokens attached as a transfer to a target account on the chain. If the agent ID parameter `a` is specified, the target account is the account controlled by that agent ID. Otherwise, the target account is the account controlled by the caller. This makes sense only if it is a request, not if it is an on-chain call.
+Moves tokens attached as a transfer to a target account on the chain. By default, the funds are deposited to the caller account. Optionally, a different target account can be specified with the agent ID parameter `a`.
 
 ### withdraw
 
