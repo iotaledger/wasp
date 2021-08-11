@@ -43,6 +43,11 @@ pub fn func_increment(ctx: &ScFuncContext) {
     counter.set_value(counter.value() + 1);
 }
 
+pub fn func_increment_with_delay(ctx: &ScFuncContext) {
+    let delay = ctx.params().get_int32(PARAM_DELAY).value();
+    ctx.post_self(HFUNC_CALL_INCREMENT, None, ScTransfers::iotas(1), delay);
+}
+
 pub fn func_local_state_internal_call(ctx: &ScFuncContext) {
     unsafe {
         LOCAL_STATE_MUST_INCREMENT = false;

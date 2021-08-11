@@ -18,6 +18,7 @@ const (
 	ParamCounter    = "counter"
 	ParamDummy      = "dummy"
 	ParamNumRepeats = "numRepeats"
+	ParamDelay      = "delay"
 )
 
 const ResultCounter = "counter"
@@ -32,6 +33,7 @@ const (
 	FuncCallIncrementRecurse5x = "callIncrementRecurse5x"
 	FuncEndlessLoop            = "endlessLoop"
 	FuncIncrement              = "increment"
+	FuncIncrementWithDelay     = "incrementdelay"
 	FuncInit                   = "init"
 	FuncLocalStateInternalCall = "localStateInternalCall"
 	FuncLocalStatePost         = "localStatePost"
