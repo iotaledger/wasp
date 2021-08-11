@@ -107,6 +107,7 @@ func (c *chainObj) receiveMessage(msg interface{}, blocking bool) {
 		}
 		select {
 		case c.chMsg <- msg:
+			return
 		default:
 			overflowVal := c.chMsgOverflow.Inc()
 			c.log.Warnf("ReceiveMessage with type '%T' on full channel, current overflow=%v", msg, overflowVal)

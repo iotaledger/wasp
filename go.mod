@@ -20,7 +20,7 @@ require (
 	github.com/libp2p/go-libp2p-quic-transport v0.10.0
 	github.com/libp2p/go-tcp-transport v0.2.4
 	github.com/mr-tron/base58 v1.2.0
-	github.com/multiformats/go-multiaddr v0.3.3 // indirect
+	github.com/multiformats/go-multiaddr v0.3.3
 	github.com/pangpanglabs/echoswagger/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.10.0
@@ -38,6 +38,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 )
 
-replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210715114843-cf21a85e1c0d
+replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210811125834-8601c509bea6
 
 replace go.dedis.ch/kyber/v3 v3.0.13 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3
