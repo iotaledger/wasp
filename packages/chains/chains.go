@@ -137,6 +137,7 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 
 	defaultRegistry := registryProvider()
 	chainKVStore := c.getOrCreateKVStore(chr.ChainID)
+	chainMetrics := allMetrics.NewChainMetrics(chr.ChainID)
 	newChain := chainimpl.NewChain(
 		chr.ChainID,
 		c.log,
@@ -151,7 +152,7 @@ func (c *Chains) Activate(chr *registry.ChainRecord, registryProvider registry.P
 		c.offledgerBroadcastUpToNPeers,
 		c.offledgerBroadcastInterval,
 		c.pullMissingRequestsFromCommittee,
-		allMetrics.NewChainMetrics(chr.ChainID),
+		chainMetrics,
 	)
 	if newChain == nil {
 		return xerrors.New("Chains.Activate: failed to create chain object")
