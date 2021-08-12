@@ -231,13 +231,13 @@ func (m *Mempool) traceOut(reqid iscp.RequestID) {
 }
 
 // don't process any request which deadline will expire within 10 minutes
-const FallbackDeadlineMaxAlowedInterval = time.Minute * 10
+const FallbackDeadlineMinAlowedInterval = time.Minute * 10
 
 // isRequestReady for requests with paramsReady, the result is strictly deterministic
 func isRequestReady(ref *requestRef, nowis time.Time) (isReady, shouldBeRemoved bool) {
 	// fallback options
 	if ref.req.FallbackAddress() != nil {
-		if !ref.req.FallbackDeadline().After(nowis.Add(FallbackDeadlineMaxAlowedInterval)) {
+		if !ref.req.FallbackDeadline().After(nowis.Add(FallbackDeadlineMinAlowedInterval)) {
 			return false, true
 		}
 	}
