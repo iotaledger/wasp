@@ -289,6 +289,15 @@ func (req *OnLedger) TimeLock() time.Time {
 	return req.outputObj.TimeLock()
 }
 
+func (req *OnLedger) FallbackAddress() ledgerstate.Address {
+	return req.outputObj.FallbackAddress()
+}
+
+func (req *OnLedger) FallbackDeadline() time.Time {
+	_, t := req.outputObj.FallbackOptions()
+	return t
+}
+
 func (req *OnLedger) SetMetadata(d *Metadata) {
 	req.requestMetadata = d.Clone()
 }
@@ -501,6 +510,16 @@ func (req *OffLedger) Target() (iscp.Hname, iscp.Hname) {
 // TimeLock returns time lock time or zero time if no time lock
 func (req *OffLedger) TimeLock() time.Time {
 	// no time lock, return zero time
+	return time.Time{}
+}
+
+func (req *OffLedger) FallbackAddress() ledgerstate.Address {
+	// no fallback address, return nil
+	return nil
+}
+
+func (req *OffLedger) FallbackDeadline() time.Time {
+	// no fallback deadline, return zero time
 	return time.Time{}
 }
 
