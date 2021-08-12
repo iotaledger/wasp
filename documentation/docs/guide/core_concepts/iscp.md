@@ -8,7 +8,7 @@ Allowing multiple blockchains to anchor to the tangle will solve several problem
 
 ### Scaling and Fees
 
-Due to the ordered structure and execution time of a smart contract, a single blockchain can only handle so many transactions per second before it needs to decide on which transactions need to be abandoned, as there is no processing power available for them on that chain. This eventually results in high fees on many chains, and limited functionality. 
+Due to the ordered structure and execution time of a smart contract, a single blockchain can only handle so many transactions per second before it needs to decide on which transactions need to be postponed until other blocks are produced, as there is no processing power available for them on that chain. This eventually results in high fees on many chains, and limited functionality. 
 
 By allowing many chains to be anchored to the IOTA tangle, which in turn have the option to communicate with one another, we can simply add additional chains once this becomes a problem. This results in lower fees over solutions that just use a single blockchain for all their smart contracts. 
 
