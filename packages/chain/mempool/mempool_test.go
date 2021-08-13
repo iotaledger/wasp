@@ -89,7 +89,8 @@ func TestMempool(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	glb := coreutil.NewChainStateSync()
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil)
+	mempoolMetrics := new(MockMempoolMetrics)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, mempoolMetrics)
 	require.NotNil(t, pool)
 	time.Sleep(2 * time.Second)
 	stats := pool.Info()
@@ -126,7 +127,8 @@ func TestAddRequestInvalidState(t *testing.T) {
 	glb := coreutil.NewChainStateSync()
 	glb.InvalidateSolidIndex()
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil)
+	mempoolMetrics := new(MockMempoolMetrics)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, mempoolMetrics)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 1)
 
@@ -154,7 +156,8 @@ func TestAddRequestTwice(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil)
+	mempoolMetrics := new(MockMempoolMetrics)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, mempoolMetrics)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 1)
 
@@ -225,7 +228,8 @@ func TestProcessedRequest(t *testing.T) {
 	rdr, vs := createStateReader(t, glb)
 	wrt := vs.KVStore()
 
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, nil)
+	mempoolMetrics := new(MockMempoolMetrics)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), log, mempoolMetrics)
 	require.NotNil(t, pool)
 
 	stats := pool.Info()
@@ -311,7 +315,8 @@ func TestAddRemoveRequests(t *testing.T) {
 func TestTimeLock(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), nil)
+	mempoolMetrics := new(MockMempoolMetrics)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), mempoolMetrics)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
 
@@ -413,7 +418,8 @@ func TestTimeLock(t *testing.T) {
 func TestReadyFromIDs(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), nil)
+	mempoolMetrics := new(MockMempoolMetrics)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), mempoolMetrics)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
 
@@ -497,7 +503,8 @@ func TestSolidification(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
 	blobCache := iscp.NewInMemoryBlobCache()
-	pool := New(rdr, blobCache, log, nil, 20*time.Millisecond) // Solidification initiated on pool creation
+	mempoolMetrics := new(MockMempoolMetrics)
+	pool := New(rdr, blobCache, log, mempoolMetrics, 20*time.Millisecond) // Solidification initiated on pool creation
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 4)
 
@@ -535,7 +542,8 @@ func TestSolidification(t *testing.T) {
 func TestRotateRequest(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), nil)
+	mempoolMetrics := new(MockMempoolMetrics)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), mempoolMetrics)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 6)
 

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/metrics"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
@@ -203,7 +204,8 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 			})
 		}
 	})
-	ret.Mempool = mempool.New(ret.ChainCore.GetStateReader(), iscp.NewInMemoryBlobCache(), log, nil)
+	mempoolMetrics := metrics.DefaultChainMetrics()
+	ret.Mempool = mempool.New(ret.ChainCore.GetStateReader(), iscp.NewInMemoryBlobCache(), log, mempoolMetrics)
 
 	cfg := &consensusTestConfigProvider{
 		ownNetID:  nodeID,
