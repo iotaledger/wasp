@@ -3,18 +3,16 @@ package transaction
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/vm/core/root"
-
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
@@ -71,7 +69,7 @@ func NewRootInitRequestTransaction(
 
 	args := requestargs.New(nil)
 
-	args.AddEncodeSimple(root.ParamChainID, codec.EncodeChainID(chainID))
+	// args.AddEncodeSimple(root.ParamChainID, codec.EncodeChainID(chainID))
 	args.AddEncodeSimple(root.ParamDescription, codec.EncodeString(description))
 
 	metadata := request.NewMetadata().

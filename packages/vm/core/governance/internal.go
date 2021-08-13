@@ -7,8 +7,9 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"golang.org/x/xerrors"
 )
 
 // GetRotationAddress tries to read the state of 'governance' and extract rotation address
@@ -45,16 +46,42 @@ func MustGetChainOwnerID(state kv.KVStoreReader) *iscp.AgentID {
 }
 
 // GetFeeInfo is an internal utility function which returns fee info for the contract
-// It is called from within the 'root' contract as well as VMContext and viewcontext objects
+// It is called from VMContext and viewcontext objects
 // It is not exposed to the sandbox
 func GetFeeInfo(ctx iscp.SandboxView, hname iscp.Hname) (colored.Color, uint64, uint64) {
 	state := ctx.State()
-	rec, found := root.FindContract(state, hname)
+	rec, found := FindContractFees(state, hname)
 	assert.NewAssert(ctx.Log()).Require(found, "contract not found")
-	return GetFeeInfoByContractRecord(state, rec)
+	return GetFeeInfoFromContractFeesRecord(state, rec)
 }
 
-func GetFeeInfoByContractRecord(state kv.KVStoreReader, rec *root.ContractRecord) (colored.Color, uint64, uint64) {
+// GetFeeInfoByHname is an internal utility function which returns fee info for the contract
+// It is called from VMContext and viewcontext objects
+// It is not exposed to the sandbox
+func GetFeeInfoByHname(state kv.KVStoreReader, hname iscp.Hname) (colored.Color, uint64, uint64) {
+	rec, _ := FindContractFees(state, hname)
+	return GetFeeInfoFromContractFeesRecord(state, rec)
+}
+
+// FindContractFees is an internal utility function which finds a contract in the KVStore
+// It is called from within the 'governance' contract as well as VMContext and viewcontext objects
+// It is not directly exposed to the sandbox
+// If contract fees are not found by the given hname, nil is returned
+// the bool flag indicates if a contract-fees record was found or not
+func FindContractFees(state kv.KVStoreReader, hname iscp.Hname) (*ContractFeesRecord, bool) {
+	contractRegistry := collections.NewMapReadOnly(state, VarContractFeesRegistry)
+	retBin := contractRegistry.MustGetAt(hname.Bytes())
+	if retBin == nil {
+		return nil, false
+	}
+	ret, err := ContractFeesRecordFromBytes(retBin)
+	if err != nil {
+		panic(xerrors.Errorf("FindContractFees: %w", err))
+	}
+	return ret, true
+}
+
+func GetFeeInfoFromContractFeesRecord(state kv.KVStoreReader, rec *ContractFeesRecord) (colored.Color, uint64, uint64) {
 	var ownerFee, validatorFee uint64
 	if rec != nil {
 		ownerFee = rec.OwnerFee

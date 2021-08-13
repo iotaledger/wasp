@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/sandbox/sandbox_utils"
 )
@@ -23,7 +24,7 @@ type sandboxview struct {
 
 var _ iscp.SandboxView = &sandboxview{}
 
-var getChainInfoHname = root.FuncGetChainInfo.Hname()
+var getChainInfoHname = governance.FuncGetChainInfo.Hname()
 
 func newSandboxView(vctx *Viewcontext, contractHname iscp.Hname, params dict.Dict) *sandboxview {
 	return &sandboxview{
@@ -60,7 +61,7 @@ func (s *sandboxview) ChainOwnerID() *iscp.AgentID {
 	a := assert.NewAssert(s.Log())
 	a.RequireNoError(err)
 	res := kvdecoder.New(r, s.Log())
-	return res.MustGetAgentID(root.VarChainOwnerID)
+	return res.MustGetAgentID(governance.VarChainOwnerID)
 }
 
 func (s *sandboxview) Contract() iscp.Hname {

@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 // setContractFee sets fee for the particular smart contract
@@ -23,7 +22,7 @@ func setContractFee(ctx iscp.Sandbox) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	hname := params.MustGetHname(governance.ParamHname)
-	rec, found := root.FindContract(ctx.State(), hname)
+	rec, found := governance.FindContractFees(ctx.State(), hname)
 	a.Require(found, "contract not found")
 
 	ownerFee := params.MustGetUint64(governance.ParamOwnerFee, 0)
@@ -38,7 +37,7 @@ func setContractFee(ctx iscp.Sandbox) (dict.Dict, error) {
 	if validatorFeeSet {
 		rec.ValidatorFee = validatorFee
 	}
-	collections.NewMap(ctx.State(), governance.VarContractRegistry).MustSetAt(hname.Bytes(), rec.Bytes())
+	collections.NewMap(ctx.State(), governance.VarContractFeesRegistry).MustSetAt(hname.Bytes(), rec.Bytes())
 	return nil, nil
 }
 

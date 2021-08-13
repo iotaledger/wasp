@@ -3,16 +3,16 @@ package inccounter
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -153,7 +153,7 @@ func spawn(ctx iscp.Sandbox) (dict.Dict, error) {
 	_, err = ctx.Call(hname, FuncIncCounter.Hname(), nil, nil)
 	a.RequireNoError(err)
 
-	res, err := ctx.Call(root.Contract.Hname(), root.FuncGetChainInfo.Hname(), nil, nil)
+	res, err := ctx.Call(root.Contract.Hname(), governance.FuncGetChainInfo.Hname(), nil, nil)
 	a.RequireNoError(err)
 
 	creg := collections.NewMapReadOnly(res, root.VarContractRegistry)

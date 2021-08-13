@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -21,16 +22,16 @@ func (e *contractEnv) checkSC(numRequests int) {
 		require.EqualValues(e.t, numRequests+3, blockIndex)
 
 		cl := e.chain.SCClient(root.Contract.Hname(), nil, i)
-		ret, err := cl.CallView(root.FuncGetChainInfo.Name, nil)
+		ret, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
-		chid, _, _ := codec.DecodeChainID(ret.MustGet(root.VarChainID))
+		chid, _, _ := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
 		require.EqualValues(e.t, e.chain.ChainID, chid)
 
-		aid, _, _ := codec.DecodeAgentID(ret.MustGet(root.VarChainOwnerID))
+		aid, _, _ := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
 		require.EqualValues(e.t, *e.chain.OriginatorID(), aid)
 
-		desc, _, _ := codec.DecodeString(ret.MustGet(root.VarDescription))
+		desc, _, _ := codec.DecodeString(ret.MustGet(governance.VarDescription))
 		require.EqualValues(e.t, e.chain.Description, desc)
 
 		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
@@ -41,7 +42,6 @@ func (e *contractEnv) checkSC(numRequests int) {
 		require.EqualValues(e.t, e.programHash, cr.ProgramHash)
 		require.EqualValues(e.t, incName, cr.Name)
 		require.EqualValues(e.t, incDescription, cr.Description)
-		require.EqualValues(e.t, 0, cr.OwnerFee)
 	}
 }
 
@@ -66,16 +66,16 @@ func TestIncDeployment(t *testing.T) {
 		require.EqualValues(t, 3, blockIndex)
 
 		cl := e.chain.SCClient(root.Contract.Hname(), nil, i)
-		ret, err := cl.CallView(root.FuncGetChainInfo.Name, nil)
+		ret, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
 		require.NoError(t, err)
 
-		chid, _, _ := codec.DecodeChainID(ret.MustGet(root.VarChainID))
+		chid, _, _ := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
 		require.EqualValues(t, e.chain.ChainID, chid)
 
-		aid, _, _ := codec.DecodeAgentID(ret.MustGet(root.VarChainOwnerID))
+		aid, _, _ := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
 		require.EqualValues(t, *e.chain.OriginatorID(), aid)
 
-		desc, _, _ := codec.DecodeString(ret.MustGet(root.VarDescription))
+		desc, _, _ := codec.DecodeString(ret.MustGet(governance.VarDescription))
 		require.EqualValues(t, e.chain.Description, desc)
 
 		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
@@ -87,7 +87,6 @@ func TestIncDeployment(t *testing.T) {
 		require.EqualValues(t, e.programHash, cr.ProgramHash)
 		require.EqualValues(t, incName, cr.Name)
 		require.EqualValues(t, incDescription, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
 	}
 	e.checkCounter(0)
 }

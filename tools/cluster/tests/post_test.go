@@ -42,7 +42,6 @@ func (e *chainEnv) deployInccounter42(counter int64) *iscp.AgentID { //nolint:un
 
 		require.EqualValues(e.t, programHash, cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
-		require.EqualValues(e.t, 0, cr.OwnerFee)
 		require.EqualValues(e.t, cr.Name, inccounterName)
 
 		counterValue, err := e.chain.GetCounterValue(hname, i)

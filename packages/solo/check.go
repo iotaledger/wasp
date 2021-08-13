@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -25,7 +26,7 @@ func (env *Solo) AssertAddressIotas(addr ledgerstate.Address, expected uint64) {
 
 // CheckChain checks fundamental integrity of the chain
 func (ch *Chain) CheckChain() {
-	_, err := ch.CallView(root.Contract.Name, root.FuncGetChainInfo.Name)
+	_, err := ch.CallView(root.Contract.Name, governance.FuncGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
 	for _, rec := range core.AllCoreContractsByHash {

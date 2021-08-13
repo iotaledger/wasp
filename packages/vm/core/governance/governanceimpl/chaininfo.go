@@ -11,14 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-// getChainInfo view returns general info about the chain: chain ID, chain owner ID,
-// description and the whole contract registry
-// Input: none
-// Output:
-// - VarChainID - ChainID
-// - VarChainOwnerID - AgentID
-// - VarDescription - string
-// - VarContractRegistry: a map of contract registry
+// getChainInfo view returns general info about the chain: chain ID, chain owner ID, limits and default fees
 func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	info := governance.MustGetChainInfo(ctx.State())
 	ret := dict.New()

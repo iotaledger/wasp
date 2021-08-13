@@ -1,0 +1,44 @@
+package governance
+
+import (
+	"github.com/iotaledger/hive.go/marshalutil"
+)
+
+// ContractFeesRecord is a structure which contains the fee information for a contract
+type ContractFeesRecord struct {
+	// Chain owner part of the fee. If it is 0, it means chain-global default is in effect
+	OwnerFee uint64
+	// Validator part of the fee. If it is 0, it means chain-global default is in effect
+	ValidatorFee uint64 // validator part of the fee
+	// TODO I guess we should add FeeColor here as well
+}
+
+func NewContractFeesRecord(ownerFee uint64, validatorFee uint64) *ContractFeesRecord {
+	return &ContractFeesRecord{
+		OwnerFee:     ownerFee,
+		ValidatorFee: validatorFee,
+	}
+}
+
+func ContractFeesRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ContractFeesRecord, error) {
+	ret := &ContractFeesRecord{}
+	var err error
+	if ret.OwnerFee, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	if ret.ValidatorFee, err = mu.ReadUint64(); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func (p *ContractFeesRecord) Bytes() []byte {
+	mu := marshalutil.New()
+	mu.WriteUint64(p.OwnerFee)
+	mu.WriteUint64(p.ValidatorFee)
+	return mu.Bytes()
+}
+
+func ContractFeesRecordFromBytes(data []byte) (*ContractFeesRecord, error) {
+	return ContractFeesRecordFromMarshalUtil(marshalutil.New(data))
+}

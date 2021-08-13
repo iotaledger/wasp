@@ -51,15 +51,14 @@ const (
 	VarOwnerFee              = "of"
 
 	// fees
-	VarDefaultValidatorFee = "dv"
-	VarValidatorFee        = "vf"
-	VarFeeColor            = "f"
+	VarDefaultValidatorFee  = "dv"
+	VarValidatorFee         = "vf"
+	VarFeeColor             = "f"
+	VarContractFeesRegistry = "fr"
 
 	// chain info
-	VarChainID     = "c"
-	VarDescription = "d"
-
-	// chain limits
+	VarChainID         = "c"
+	VarDescription     = "d"
 	VarMaxBlobSize     = "mb"
 	VarMaxEventSize    = "me"
 	VarMaxEventsPerReq = "mr"
