@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package consensus
 
 import (
@@ -127,7 +130,7 @@ func (c *Consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 	sort.Slice(ts, func(i, j int) bool {
 		return ts[i].Before(ts[j])
 	})
-	retTS = ts[len(props)/2]
+	retTS = ts[c.committee.Quorum()-1] // ~ 66 percentile.
 
 	indices := make([]uint16, len(props))
 	for i := range indices {
