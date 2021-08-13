@@ -364,7 +364,7 @@ func (c *Consensus) postTransactionIfNeeded() {
 		c.log.Debugf("postTransaction not needed: delayed till %v", c.postTxDeadline)
 		return
 	}
-	c.nodeConn.PostTransaction(c.finalTx) // TODO: KP: It was async before.
+	go c.nodeConn.PostTransaction(c.finalTx)
 
 	c.workflow.transactionPosted = true // TODO: Fix it, retries should be in place for robustness.
 	c.log.Infof("postTransaction: POSTED TRANSACTION: %s, number of inputs: %d, outputs: %d", c.finalTx.ID().Base58(), len(c.finalTx.Essence().Inputs()), len(c.finalTx.Essence().Outputs()))
