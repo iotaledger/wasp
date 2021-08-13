@@ -1,15 +1,51 @@
 ------------------------- MODULE IscpBatchTimestamp -------------------------
 (*`^
 
-asd
 
-$$ \forall i : a_i = b$$
+Let's assume the transaction currently being built is $t_i$ and the
+previous one is $t_{i-1}$. The following requirements apply to the
+timestamp $t_i.ts$ of the transaction $t_i$:
 
+\begin{enumerate}
+  \item
+  Transaction timestamps are non-decreasing function in a chain,
+  i.e. $$t_i.ts \geq t_{i-1}.ts.$$
+  \item
+  A transaction timestamp is not smaller than the timestamps
+  of request transactions taken as inputs in $t_i$, i.e.
+  $$\forall r \in t_i.req: t_i.ts \geq t_i.req[r].tx.ts,$$
+  where $t_i.req$ is a list of requests processed as inputs in
+  the transaction $t_i$, $t_i.req[r]$ is a particular request
+  and $t_i.req[r].tx$ is a transaction the request belongs to.
+\end{enumerate}
 
-Can we determine if proposal is invalid with regards to the timestamp?
-That is done after the ACS.
+The initial attempt was to use the timestamp $t_i.ts$ as a median of
+timestamps proposed by the committee nodes accepted to participate
+in the transaction $t_i$ by the ACS procedure. This approach conflicts
+with the rules of selecting requests for the batch (take requests that
+are mentioned in at least $F+1$ proposals). In this way it is possible
+that the median is smaller than some request transaction timestamp  .
 
+\textbf{In this document we model the case}, when we take maximal of the proposed
+timestamps excluding the $F$ highest values. This value is close to the 66th
+percentile (while median is the 50th percentile). In this case all the
+requests selected to the batch will have timestamp lower than the
+batch timestamp IF THE BATCH PROPOSALS MEET THE CONDITION
+$$\forall p \in batchProposals : \forall r \in p.req : p.req[r].tx.ts \leq p.ts.$$
 
+It is possible that it can be not the case, because of the byzantine
+nodes. The specification bellow shows, that property (2) can be violated,
+in the case of byzantine node sending timestamp lower than the requests
+in the proposal.
+
+The receiving node thus needs to check, if the proposals are correct.
+For this check it must have all the transactions received before deciding
+the final batch. The detected invalid batch proposals must be excluded
+from the following procedure. But that can decrease number of requests
+included into the final batch (because requests are included if mentioned
+in $F+1$ proposals). It is safe on the receiver side to "fix" such proposals
+by setting their timestamp to the maximal transaction timestamp of the
+requests in the proposal. 
 ^'*)
 EXTENDS Naturals, FiniteSets, TLAPS
 CONSTANT Nodes       \* A set of node identifiers.
@@ -45,21 +81,23 @@ Propose == ~proposed /\ proposed' = TRUE
   /\ npTS' \in [Nodes -> Time]                        \* Some timestamps.
   /\ \A n \in (Nodes \ Byzantine) : ProposalValid(n)' \* Fair node proposals are valid.
 -----------------------------------------------------------------------------
-Init == \* Dummy values, on init.
+Init == \* Dummy values, on init (to make TLC faster), see Propose instead. 
   /\ proposed = FALSE
   /\ npRq = [n \in Nodes |-> {}]
   /\ npTS = [n \in Nodes |-> 0]
-Spec == Init /\ [][Propose]_vars                   \* For model checking in TLC.
+Spec == Init /\ [][Propose]_vars \* For model checking in TLC.
+
 TypeOK ==
   /\ proposed \in BOOLEAN
   /\ npRq \in [Nodes -> SUBSET Requests]
   /\ npTS \in [Nodes -> Time \cup {0}]
+
 Invariant ==
   proposed => \A ts \in Time, rq \in BatchRqs: BatchTS(ts) => rq =< ts
 
 THEOREM Spec => []TypeOK /\ []Invariant
   PROOF OMITTED \* Checked with TLC.
-
+-----------------------------------------------------------------------------
 THEOREM SpecTypeOK == Spec => []TypeOK
   <1> Init => TypeOK BY DEF Init, TypeOK
   <1> TypeOK /\ [Propose]_vars => TypeOK'
