@@ -89,7 +89,6 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=15, N=4, req=1000", func(t *testing.T) {
-		t.SkipNow() // fails on low-end laptop
 		const numRequests = 1000
 		const numValidatorNodes = 4
 		const clusterSize = 15
@@ -97,7 +96,6 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=15, N=6, req=1000", func(t *testing.T) {
-		t.SkipNow() // fails on low-end laptop
 		const numRequests = 1000
 		const numValidatorNodes = 6
 		const clusterSize = 15
@@ -332,8 +330,6 @@ func TestRotation(t *testing.T) {
 }
 
 func TestRotationMany(t *testing.T) {
-	t.Skip("skipping extreme test")
-
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
