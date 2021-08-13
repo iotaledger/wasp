@@ -417,12 +417,13 @@ func TestTimeLock(t *testing.T) {
 func TestFallbackOptions(t *testing.T) {
 	glb := coreutil.NewChainStateSync().SetSolidIndex(0)
 	rdr, _ := createStateReader(t, glb)
-	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), nil)
+	mempoolMetrics := new(MockMempoolMetrics)
+	pool := New(rdr, iscp.NewInMemoryBlobCache(), testlogger.NewLogger(t), mempoolMetrics)
 	require.NotNil(t, pool)
 	requests, _ := getRequestsOnLedger(t, 3)
 
 	address := ledgerstate.NewAliasAddress([]byte{1, 2, 3})
-	validDeadline := time.Now().Add(FallbackDeadlineMinAlowedInterval).Add(time.Second)
+	validDeadline := time.Now().Add(FallbackDeadlineMinAllowedInterval).Add(time.Second)
 	pastDeadline := time.Now().Add(-time.Second)
 	requests[1].Output().(*ledgerstate.ExtendedLockedOutput).WithFallbackOptions(address, validDeadline)
 	requests[2].Output().(*ledgerstate.ExtendedLockedOutput).WithFallbackOptions(address, pastDeadline)
