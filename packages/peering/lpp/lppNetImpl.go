@@ -50,7 +50,6 @@ import (
 const (
 	maintenancePeriod = 1 * time.Second
 	recvQueueSize     = 1024 * 5
-	// recvBlockingDuration = 3 * time.Second
 
 	lppProtocolPeering   = "/iotaledger/wasp/peering/1.0.0"
 	lppProtocolHeartbeat = "/iotaledger/wasp/heartbeat/1.0.0"
