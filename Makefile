@@ -6,7 +6,7 @@ build:
 build-lint: build lint
 
 test: install
-	go test -tags rocksdb ./... --timeout 30m --count 1
+	go test -tags rocksdb ./... --timeout 30m --count 1 -failfast
 
 test-short:
 	go test -tags rocksdb --short --count 1 ./...
