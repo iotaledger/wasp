@@ -16,38 +16,39 @@ timestamp $t_i.ts$ of the transaction $t_i$:
   where $t_i.req$ is a list of requests processed as inputs in
   the transaction $t_i$, $t_i.req[r]$ is a particular request
   and $t_i.req[r].tx$ is a transaction the request belongs to.
+  This property is modelled bellow as the formula $Invariant$.
 \end{enumerate}
 
 The initial attempt was to use the timestamp $t_i.ts$ as a median of
-timestamps proposed by the committee nodes accepted to participate
-in the transaction $t_i$ by the ACS procedure. This approach conflicts
+timestamps proposed by the committee nodes (accepted to participate
+in the transaction $t_i$ by the ACS procedure). This approach conflicts
 with the rules of selecting requests for the batch (take requests that
 are mentioned in at least $F+1$ proposals). In this way it is possible
 that the median is smaller than some request transaction timestamp  .
 
-\textbf{In this document we model the case}, when we take maximal of the proposed
-timestamps excluding the $F$ highest values. This value is close to the 66th
+\textbf{In this document we model the case}, when we take maximum of the proposed
+timestamps excluding $F$ highest values. This value is close to the 66th
 percentile (while median is the 50th percentile). In this case all the
 requests selected to the batch will have timestamp lower than the
-batch timestamp IF THE BATCH PROPOSALS MEET THE CONDITION
-$$\forall p \in batchProposals : \forall r \in p.req : p.req[r].tx.ts \leq p.ts.$$
+batch timestamp IF THE BATCH PROPOSALS MEET THE CONDITION (modelled bellow
+by the formula $ProposalValid$)
+$$\forall p \in batchProposals : \forall r \in p.req : p.ts \geq p.req[r].tx.ts.$$
 
-It is possible that it can be not the case, because of the byzantine
+It is possible that this rule can be violated, because of the byzantine
 nodes. The specification bellow shows, that property (2) can be violated,
 in the case of byzantine node sending timestamp lower than the requests
 in the proposal.
 
 The receiving node thus needs to check, if the proposals are correct.
-For this check it must have all the transactions received before deciding
-the final batch. The detected invalid batch proposals must be excluded
-from the following procedure. But that can decrease number of requests
-included into the final batch (because requests are included if mentioned
-in $F+1$ proposals). It is safe on the receiver side to "fix" such proposals
-by setting their timestamp to the maximal transaction timestamp of the
-requests in the proposal.
+For this check it must have all the request transactions received before deciding
+the final batch. The invalid batch proposals cannot be used as it.
+Removing them will decrease number of requests included into the final batch
+(because requests are included if mentioned in $F+1$ proposals). It is safe
+however on the receiver side to "fix" such proposals by setting their timestamp
+to the highest transaction timestamp of the requests in the proposal.
 
 ^'*)
-EXTENDS Naturals, FiniteSets, TLAPS, FiniteSetTheorems, NaturalsInduction, FunctionTheorems
+EXTENDS Naturals, FiniteSets, TLAPS, FiniteSetTheorems, NaturalsInduction
 CONSTANT Time        \* A set of timestamps, represented as natural numbers to have =<.
 CONSTANT Nodes       \* A set of node identifiers.
 CONSTANT Byzantine   \* A set of byzantine node identifiers.
@@ -64,14 +65,16 @@ vars == <<acsNodes, npRq, npTS>>
 
 N == Cardinality(Nodes)
 F == CHOOSE F \in 0..N : 
-       /\ N >= 3*F+1                           \* Byzantine quorum assumption.
-       /\ \A f \in 0..N : N >= 3*f+1 => F >= f \* Consider maximal possible F.
-ASSUME ByzantineAssms == F \in Nat /\ N >= 3*F+1 /\ (N >= 4 => F >= 1)
+  /\ N >= 3*F+1                           \* Byzantine quorum assumption.
+  /\ \A f \in 0..N : N >= 3*f+1 => F >= f \* Consider maximal possible F.
+ASSUME ByzantineAssms ==
+  /\ F \in Nat          \* Implies CHOOSE found a suitable value.
+  /\ N >= 3*F+1         \* Standard byzantine Quorum assumption.
+  /\ (N >= 4 => F >= 1) \* Just to double-check in TLC.
 
 FQuorums  == {q \in SUBSET Nodes : Cardinality(q) = F}
 F1Quorums == {q \in SUBSET Nodes : Cardinality(q) = F+1}
 NFQuorums == {q \in SUBSET Nodes : Cardinality(q) = N-F}
-TSQuorums == {q \in SUBSET Nodes : q \subseteq acsNodes /\ Cardinality(q) = Cardinality(acsNodes) - F}
 
 (*
 BatchRqs is a set of requests selected to the batch.
@@ -87,10 +90,6 @@ BatchTS(ts) is a predicate, that is true for the timestamp that should be consid
 as a batch timestamp. It must be maximal of the batch proposals, excluding F greatest ones.
 *)
 SubsetTS(s) == {npTS[n] : n \in s}
-BatchTSx(ts) == \A q \in TSQuorums : \* TODO: Remove
-                 /\ ts \in SubsetTS(q)
-                 /\ \A x \in SubsetTS(q) : ts >= x
-                 /\ \A x \in SubsetTS(acsNodes \ q) : ts =< x
 BatchTS(ts) ==
   \A q \in FQuorums: (
     /\ q \subseteq acsNodes
@@ -280,7 +279,7 @@ THEOREM SpecInvariant == Byzantine = {} /\ Spec => []Invariant
       <3>12. q \in FQuorums /\ \A x \in q, y \in acsNodes \ q : npTS[x] >= npTS[y] BY <3>11, <3>6 DEF FQuorums
       <3>13. q \in FQuorums BY <3>11, <3>6 DEF FQuorums
       <3>14. WITNESS q \in FQuorums
-      <3> QED BY <3>12, <3>14 
+      <3>15. QED BY <3>12, <3>14 
     <2>11. \A x \in BatchRqs : x =< ts
       <3>1. TAKE x \in BatchRqs
       <3>2. x \in Requests /\ BatchRq(x) BY <3>1 DEF BatchRqs
@@ -292,38 +291,38 @@ THEOREM SpecInvariant == Byzantine = {} /\ Spec => []Invariant
         <4>4. xf1q \subseteq Nodes /\ fq \subseteq Nodes BY <3>3, <2>10 DEF F1Quorums, FQuorums
         <4>5. IsFiniteSet(xf1q) /\ IsFiniteSet(fq) BY <4>4, ConstantAssms, FS_Subset
         <4>6. QED BY <4>1, <4>2, <4>3, <4>5, FS_Subset
-      <3>6. \A n \in (xf1q \ fq) : \A r \in npRq[n] : r =< ts
-        <4>0. xf1q \ fq \subseteq acsNodes BY <2>10, <3>3
-        <4>10. TAKE xn \in (xf1q \ fq)
-        <4>11. TAKE xr \in npRq[xn]
-        <4>12. xr \in Nat BY <4>11, <4>0, ConstantAssms DEF TypeOK, Requests
-        <4>13. ts \in Nat BY ConstantAssms
-        <4>14. npTS[xn] \in Nat BY <4>10, <4>0, ConstantAssms DEF TypeOK
-        <4>1b. npTS[xn] =< ts
-          <5>1. xn \in acsNodes BY <4>10, <4>0
-          <5>2. xn \notin fq BY <4>10
+      <3>5. \A n \in (xf1q \ fq) : \A r \in npRq[n] : r =< ts
+        <4>1. xf1q \ fq \subseteq acsNodes BY <2>10, <3>3
+        <4>2. TAKE xn \in (xf1q \ fq)
+        <4>3. TAKE xr \in npRq[xn]
+        <4>4. xr \in Nat BY <4>3, <4>1, ConstantAssms DEF TypeOK, Requests
+        <4>5. ts \in Nat BY ConstantAssms
+        <4>6. npTS[xn] \in Nat BY <4>2, <4>1, ConstantAssms DEF TypeOK
+        <4>7. npTS[xn] =< ts
+          <5>1. xn \in acsNodes BY <4>2, <4>1
+          <5>2. xn \notin fq BY <4>2
           <5>3. /\ ts \in SubsetTS(acsNodes \ fq)
                 /\ \A xx \in SubsetTS(acsNodes \ fq) : ts >= xx
                 /\ \A xx \in SubsetTS(fq) : ts =< xx
                 BY <2>10 DEF BatchTS
-          <5>q. QED BY <5>1, <5>2, <5>3 DEF SubsetTS
-        <4>2b. xr =< npTS[xn]
-          <5> ProposalValid(xn) BY <4>0 DEF Init
+          <5>4. QED BY <5>1, <5>2, <5>3 DEF SubsetTS
+        <4>8. xr =< npTS[xn]
+          <5> ProposalValid(xn) BY <4>1 DEF Init
           <5> QED BY DEF ProposalValid 
-        <4> QED BY ONLY <4>1b, <4>2b, <4>12, <4>13, <4>14
-      <3>7. \E n \in (xf1q \ fq) : x \in npRq[n] BY <3>4, <3>3
-      <3> QED BY <3>6, <3>7
-    <2> QED BY <2>11
+        <4>9. QED BY ONLY <4>7, <4>8, <4>4, <4>5, <4>6
+      <3>6. \E n \in (xf1q \ fq) : x \in npRq[n] BY <3>4, <3>3
+      <3>7. QED BY <3>5, <3>6
+    <2>12. QED BY <2>11
   <1>2. Invariant /\ [Next]_vars => Invariant'
     <2>1. SUFFICES ASSUME Invariant PROVE [Next]_vars => Invariant'
           OBVIOUS
     <2>2. UNCHANGED vars => (Invariant')
           BY <2>1 DEF vars, Invariant, BatchRq, BatchRqs, BatchTS,
-                      ProposalValid, SubsetTS, TSQuorums
+                      ProposalValid, SubsetTS
     <2>3. SUFFICES ASSUME Next PROVE Invariant'
           BY <2>2
     <2>4. QED BY <2>1, <2>3 DEF vars, Next, Invariant, BatchRq,
-              BatchRqs, BatchTS, ProposalValid, SubsetTS, TSQuorums
+              BatchRqs, BatchTS, ProposalValid, SubsetTS
   <1>q. QED BY <1>1, <1>2, PTL, SpecTypeOK DEF Spec, vars
 
 =============================================================================
