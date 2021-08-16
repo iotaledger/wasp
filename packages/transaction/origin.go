@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 // NewChainOriginTransaction creates new origin transaction for the self-governed chain
@@ -69,8 +69,8 @@ func NewRootInitRequestTransaction(
 
 	args := requestargs.New(nil)
 
-	// args.AddEncodeSimple(root.ParamChainID, codec.EncodeChainID(chainID))
-	args.AddEncodeSimple(root.ParamDescription, codec.EncodeString(description))
+	args.AddEncodeSimple(governance.ParamChainID, codec.EncodeChainID(chainID))
+	args.AddEncodeSimple(governance.ParamDescription, codec.EncodeString(description))
 
 	metadata := request.NewMetadata().
 		WithTarget(iscp.Hn("root")).

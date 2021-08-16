@@ -56,7 +56,9 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	mustStoreAndInitCoreContract(ctx, blob.Contract, a)
 	mustStoreAndInitCoreContract(ctx, accounts.Contract, a)
 	mustStoreAndInitCoreContract(ctx, blocklog.Contract, a)
-	mustStoreAndInitCoreContract(ctx, governance.Contract, a)
+	govParams := ctx.Params().Clone()
+	govParams.Set(governance.ParamChainOwner, ctx.Caller().Bytes()) // chain owner is whoever sends init request
+	mustStoreAndInitCoreContract(ctx, governance.Contract, a, govParams)
 
 	state.Set(root.VarStateInitialized, []byte{0xFF})
 

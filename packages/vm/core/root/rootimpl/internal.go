@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -14,9 +15,13 @@ func mustStoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, a assert.Asse
 	mustStoreContractRecord(ctx, rec, a)
 }
 
-func mustStoreAndInitCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, a assert.Assert) {
+func mustStoreAndInitCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, a assert.Assert, params ...dict.Dict) {
 	mustStoreContract(ctx, i, a)
-	_, err := ctx.Call(iscp.Hn(i.Name), iscp.EntryPointInit, nil, nil)
+	var p dict.Dict
+	if len(params) == 1 {
+		p = params[0]
+	}
+	_, err := ctx.Call(iscp.Hn(i.Name), iscp.EntryPointInit, p, nil)
 	a.RequireNoError(err)
 }
 

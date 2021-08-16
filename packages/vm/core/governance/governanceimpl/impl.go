@@ -44,7 +44,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	feeColorSet := feeColor != colored.IOTA
 
 	state.Set(governance.VarChainID, codec.EncodeChainID(*chainID))
-	state.Set(governance.VarChainOwnerID, codec.EncodeAgentID(ctx.Caller())) // chain owner is whoever sends init request
+	state.Set(governance.VarChainOwnerID, params.MustGetAgentID(governance.ParamChainOwner).Bytes())
 	state.Set(governance.VarDescription, codec.EncodeString(chainDescription))
 
 	state.Set(governance.VarMaxBlobSize, codec.Encode(governance.DefaultMaxBlobSize))
