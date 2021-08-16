@@ -180,6 +180,8 @@ func (p *peer) IsAlive() bool {
 
 // Await implements peering.PeerSender interface for the remote peers.
 func (p *peer) Await(timeout time.Duration) error {
+	p.accessLock.RLock()
+	defer p.accessLock.RUnlock()
 	if p.trusted {
 		return nil
 	}
