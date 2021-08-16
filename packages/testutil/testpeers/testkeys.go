@@ -49,7 +49,7 @@ func SetupDkg(
 	log *logger.Logger,
 ) (ledgerstate.Address, []registry.DKShareRegistryProvider) {
 	timeout := 100 * time.Second
-	networkProviders, networkCloser := SetupNet(peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(), log)
+	networkProviders, networkCloser := SetupNet(peerNetIDs, peerIdentities, testutil.NewPeeringNetReliable(log), log)
 	//
 	// Initialize the DKG subsystem in each node.
 	dkgNodes := make([]*dkg.Node, len(peerNetIDs))

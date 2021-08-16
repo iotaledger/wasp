@@ -37,13 +37,13 @@ type stateManager struct {
 	log                    *logger.Logger
 
 	// Channels for accepting external events.
-	eventGetBlockMsgCh     chan *messages.GetBlockMsg
-	eventBlockMsgCh        chan *messages.BlockMsg
-	eventStateOutputMsgCh  chan *messages.StateMsg
-	eventOutputMsgCh       chan ledgerstate.Output
-	eventPendingBlockMsgCh chan *messages.StateCandidateMsg
-	eventTimerMsgCh        chan messages.TimerTick
-	closeCh                chan bool
+	eventGetBlockMsgCh       chan *messages.GetBlockMsg
+	eventBlockMsgCh          chan *messages.BlockMsg
+	eventStateOutputMsgCh    chan *messages.StateMsg
+	eventOutputMsgCh         chan ledgerstate.Output
+	eventStateCandidateMsgCh chan *messages.StateCandidateMsg
+	eventTimerMsgCh          chan messages.TimerTick
+	closeCh                  chan bool
 }
 
 const (
@@ -59,22 +59,22 @@ func New(store kvstore.KVStore, c chain.ChainCore, peers peering.PeerDomainProvi
 		timers = NewStateManagerTimers()
 	}
 	ret := &stateManager{
-		ready:                  ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
-		store:                  store,
-		chain:                  c,
-		nodeConn:               nodeconn,
-		peers:                  peers,
-		syncingBlocks:          newSyncingBlocks(c.Log(), timers.GetBlockRetry),
-		timers:                 timers,
-		log:                    c.Log().Named("s"),
-		pullStateRetryTime:     time.Now(),
-		eventGetBlockMsgCh:     make(chan *messages.GetBlockMsg),
-		eventBlockMsgCh:        make(chan *messages.BlockMsg),
-		eventStateOutputMsgCh:  make(chan *messages.StateMsg),
-		eventOutputMsgCh:       make(chan ledgerstate.Output),
-		eventPendingBlockMsgCh: make(chan *messages.StateCandidateMsg),
-		eventTimerMsgCh:        make(chan messages.TimerTick),
-		closeCh:                make(chan bool),
+		ready:                    ready.New(fmt.Sprintf("state manager %s", c.ID().Base58()[:6]+"..")),
+		store:                    store,
+		chain:                    c,
+		nodeConn:                 nodeconn,
+		peers:                    peers,
+		syncingBlocks:            newSyncingBlocks(c.Log(), timers.GetBlockRetry),
+		timers:                   timers,
+		log:                      c.Log().Named("s"),
+		pullStateRetryTime:       time.Now(),
+		eventGetBlockMsgCh:       make(chan *messages.GetBlockMsg),
+		eventBlockMsgCh:          make(chan *messages.BlockMsg),
+		eventStateOutputMsgCh:    make(chan *messages.StateMsg),
+		eventOutputMsgCh:         make(chan ledgerstate.Output),
+		eventStateCandidateMsgCh: make(chan *messages.StateCandidateMsg),
+		eventTimerMsgCh:          make(chan messages.TimerTick),
+		closeCh:                  make(chan bool),
 	}
 	go ret.initLoadState()
 
@@ -159,7 +159,7 @@ func (sm *stateManager) recvLoop() {
 			if ok {
 				sm.eventOutputMsg(msg)
 			}
-		case msg, ok := <-sm.eventPendingBlockMsgCh:
+		case msg, ok := <-sm.eventStateCandidateMsgCh:
 			if ok {
 				sm.eventStateCandidateMsg(msg)
 			}

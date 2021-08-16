@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package consensus
 
 import (
@@ -114,9 +117,11 @@ func (b *BatchProposal) Bytes() []byte {
 }
 
 // calcBatchParameters from a given ACS deterministically calculates timestamp, access and consensus
-// mana pledges and fee destination
-// Timestamp is calculated by taking closest value from above to the median.
-// TODO final version of pladeges and fee destination
+// mana pledges and fee destination.
+//
+// Timestamp is calculated by taking maximal proposed timestamp excluding F highest proposals.
+//
+// TODO final version of pledges and fee destination
 func (c *Consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatchParams, error) {
 	var retTS time.Time
 
@@ -127,7 +132,9 @@ func (c *Consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 	sort.Slice(ts, func(i, j int) bool {
 		return ts[i].Before(ts[j])
 	})
-	retTS = ts[len(props)/2]
+	proposalCount := len(props)                            // |acsProposals| >= N-F by ACS logic.
+	maxFaulty := c.committee.Size() - c.committee.Quorum() // T = N-F ==> F = N-T
+	retTS = ts[proposalCount-int(maxFaulty)-1]             // Max(|acsProposals|-F Lowest) ~= 66 percentile.
 
 	indices := make([]uint16, len(props))
 	for i := range indices {
