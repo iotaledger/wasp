@@ -70,14 +70,17 @@ func (p *peer) noteReceived() {
 func (p *peer) maintenanceCheck() {
 	now := time.Now()
 	old := now.Add(-inactivePingTime)
+
 	p.accessLock.RLock()
-	if p.numUsers > 0 && p.lastMsgRecv.Before(old) {
-		p.accessLock.RUnlock()
+	numUsers := p.numUsers
+	lastMsgOld := p.lastMsgRecv.Before(old)
+	trusted := p.trusted
+	p.accessLock.RUnlock()
+
+	if numUsers > 0 && lastMsgOld {
 		p.net.lppHeartbeatSend(p, true)
-	} else {
-		p.accessLock.RUnlock()
 	}
-	if p.numUsers == 0 && !p.trusted && p.lastMsgRecv.Before(old) {
+	if numUsers == 0 && !trusted && lastMsgOld {
 		p.net.delPeer(p)
 		close(p.sendCh)
 	}
