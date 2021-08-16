@@ -141,7 +141,7 @@ func findContract(ctx iscp.SandboxView) (dict.Dict, error) {
 //  - ParamDeployer iscp.AgentID
 func grantDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	a.Require(governance.CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.grantDeployPermissions: not authorized")
+	a.Require(isChainOwner(a, ctx), "root.grantDeployPermissions: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	deployer := params.MustGetAgentID(root.ParamDeployer)
@@ -156,7 +156,7 @@ func grantDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 //  - ParamDeployer iscp.AgentID
 func revokeDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	a.Require(governance.CheckAuthorizationByChainOwner(ctx.State(), ctx.Caller()), "root.revokeDeployPermissions: not authorized")
+	a.Require(isChainOwner(a, ctx), "root.revokeDeployPermissions: not authorized")
 
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 	deployer := params.MustGetAgentID(root.ParamDeployer)

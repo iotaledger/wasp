@@ -19,6 +19,7 @@ var Processor = governance.Contract.Processor(initialize,
 	// chain owner
 	governance.FuncClaimChainOwnership.WithHandler(claimChainOwnership),
 	governance.FuncDelegateChainOwnership.WithHandler(delegateChainOwnership),
+	governance.FuncGetChainOwner.WithHandler(getChainOwner),
 
 	// fees
 	governance.FuncSetContractFee.WithHandler(setContractFee),

@@ -45,3 +45,9 @@ func claimChainOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
 		currentOwner.String(), nextOwner.String())
 	return nil, nil
 }
+
+func getChainOwner(ctx iscp.SandboxView) (dict.Dict, error) {
+	ret := dict.New()
+	ret.Set(governance.ParamChainOwner, ctx.State().MustGet(governance.VarChainOwnerID))
+	return ret, nil
+}

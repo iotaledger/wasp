@@ -54,7 +54,7 @@ func (e *EVMChain) BlockNumber() (*big.Int, error) {
 }
 
 func (e *EVMChain) FeeColor() (colored.Color, error) {
-	feeInfo, err := e.backend.CallView(root.Contract.Name, governance.FuncGetFeeInfo.Name, dict.Dict{
+	feeInfo, err := e.backend.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, dict.Dict{
 		root.ParamHname: evmchain.Contract.Hname().Bytes(),
 	})
 	if err != nil {

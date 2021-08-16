@@ -27,6 +27,7 @@ var (
 	// chain owner (L1 entity that is the "owner of the chain")
 	FuncClaimChainOwnership    = coreutil.Func("claimChainOwnership")
 	FuncDelegateChainOwnership = coreutil.Func("delegateChainOwnership")
+	FuncGetChainOwner          = coreutil.ViewFunc("getChainOwner")
 
 	// fees
 	FuncSetContractFee = coreutil.Func("setContractFee")

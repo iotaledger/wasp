@@ -4,8 +4,10 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -45,4 +47,12 @@ func isAuthorizedToDeploy(ctx iscp.Sandbox) bool {
 	}
 
 	return collections.NewMap(ctx.State(), root.VarDeployPermissions).MustHasAt(caller.Bytes())
+}
+
+func isChainOwner(a assert.Assert, ctx iscp.Sandbox) bool {
+	ret, err := ctx.Call(governance.Contract.Hname(), governance.FuncGetChainOwner.Hname(), nil, nil)
+	a.RequireNoError(err)
+	owner, _, err := codec.DecodeAgentID(ret.MustGet(governance.ParamChainOwner))
+	a.RequireNoError(err)
+	return owner.Equals(ctx.Caller())
 }
