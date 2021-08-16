@@ -90,6 +90,9 @@ func (c *chainObj) ReceiveMessage(msg interface{}) {
 }
 
 func (c *chainObj) receiveMessage(msg interface{}, blocking bool) {
+	if c.IsDismissed() {
+		return
+	}
 	defer func() { // This is needed to handle possible write to a closed channel.
 		err := recover()
 		if err == "send on closed channel" {
@@ -100,22 +103,20 @@ func (c *chainObj) receiveMessage(msg interface{}, blocking bool) {
 			panic(err)
 		}
 	}()
-	if !c.IsDismissed() {
-		if blocking {
-			c.chMsg <- msg
-			return
-		}
-		select {
-		case c.chMsg <- msg:
-			return
-		default:
-			overflowVal := c.chMsgOverflow.Inc()
-			c.log.Warnf("ReceiveMessage with type '%T' on full channel, current overflow=%v", msg, overflowVal)
-			go func() {
-				c.receiveMessage(msg, true)
-				c.chMsgOverflow.Dec()
-			}()
-		}
+	if blocking {
+		c.chMsg <- msg
+		return
+	}
+	select {
+	case c.chMsg <- msg:
+		return
+	default:
+		overflowVal := c.chMsgOverflow.Inc()
+		c.log.Warnf("ReceiveMessage with type '%T' on full channel, current overflow=%v", msg, overflowVal)
+		go func() {
+			c.receiveMessage(msg, true)
+			c.chMsgOverflow.Dec()
+		}()
 	}
 }
 
