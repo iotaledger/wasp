@@ -27,6 +27,7 @@ var Processor = root.Contract.Processor(initialize,
 	root.FuncGrantDeployPermission.WithHandler(grantDeployPermission),
 	root.FuncRevokeDeployPermission.WithHandler(revokeDeployPermission),
 	root.FuncFindContract.WithHandler(findContract),
+	root.FuncGetContractRecords.WithHandler(getContractRecords),
 )
 
 // initialize handles constructor, the "init" request. This is the first call to the chain
@@ -163,4 +164,17 @@ func revokeDeployPermission(ctx iscp.Sandbox) (dict.Dict, error) {
 	collections.NewMap(ctx.State(), root.VarDeployPermissions).MustDelAt(deployer.Bytes())
 	ctx.Event(fmt.Sprintf("[revoke deploy permission] from agentID: %s", deployer))
 	return nil, nil
+}
+
+func getContractRecords(ctx iscp.SandboxView) (dict.Dict, error) {
+	src := collections.NewMapReadOnly(ctx.State(), root.VarContractRegistry)
+
+	ret := dict.New()
+	dst := collections.NewMap(ret, root.VarContractRegistry)
+	src.MustIterate(func(elemKey []byte, value []byte) bool {
+		dst.MustSetAt(elemKey, value)
+		return true
+	})
+
+	return ret, nil
 }

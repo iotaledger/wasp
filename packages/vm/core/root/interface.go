@@ -35,4 +35,5 @@ var (
 	FuncGrantDeployPermission  = coreutil.Func("grantDeployPermission")
 	FuncRevokeDeployPermission = coreutil.Func("revokeDeployPermission")
 	FuncFindContract           = coreutil.ViewFunc("findContract")
+	FuncGetContractRecords     = coreutil.ViewFunc("getContractRecords")
 )

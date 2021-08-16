@@ -263,7 +263,7 @@ func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name, fname string
 //  - agentID of the chain owner
 //  - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
 func (ch *Chain) GetInfo() (iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.ContractRecord) {
-	res, err := ch.CallView(root.Contract.Name, governance.FuncGetChainInfo.Name)
+	res, err := ch.CallView(governance.Contract.Name, governance.FuncGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
 	chainID, ok, err := codec.DecodeChainID(res.MustGet(governance.VarChainID))
@@ -273,6 +273,9 @@ func (ch *Chain) GetInfo() (iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.Con
 	chainOwnerID, ok, err := codec.DecodeAgentID(res.MustGet(governance.VarChainOwnerID))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
+
+	res, err = ch.CallView(root.Contract.Name, root.FuncGetContractRecords.Name)
+	require.NoError(ch.Env.T, err)
 
 	contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(res, root.VarContractRegistry))
 	require.NoError(ch.Env.T, err)
@@ -386,7 +389,7 @@ func (ch *Chain) GetTotalIotas() uint64 {
 // Total fee is sum of owner fee and validator fee
 func (ch *Chain) GetFeeInfo(contactName string) (colored.Color, uint64, uint64) {
 	hname := iscp.Hn(contactName)
-	ret, err := ch.CallView(root.Contract.Name, governance.FuncGetFeeInfo.Name, root.ParamHname, hname)
+	ret, err := ch.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, governance.ParamHname, hname)
 	require.NoError(ch.Env.T, err)
 	require.NotEqualValues(ch.Env.T, 0, len(ret))
 

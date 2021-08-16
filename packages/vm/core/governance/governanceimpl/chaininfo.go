@@ -25,14 +25,6 @@ func getChainInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	ret.Set(governance.VarMaxEventSize, codec.EncodeUint16(info.MaxEventSize))
 	ret.Set(governance.VarMaxEventsPerReq, codec.EncodeUint16(info.MaxEventsPerReq))
 
-	// TODO check this (probably can be moved somewhere else)
-	// src := collections.NewMapReadOnly(ctx.State(), governance.VarContractRegistry)
-	// dst := collections.NewMap(ret, governance.VarContractRegistry)
-	// src.MustIterate(func(elemKey []byte, value []byte) bool {
-	// 	dst.MustSetAt(elemKey, value)
-	// 	return true
-	// })
-
 	return ret, nil
 }
 

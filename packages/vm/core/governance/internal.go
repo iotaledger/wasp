@@ -3,7 +3,6 @@ package governance
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -50,8 +49,7 @@ func MustGetChainOwnerID(state kv.KVStoreReader) *iscp.AgentID {
 // It is not exposed to the sandbox
 func GetFeeInfo(ctx iscp.SandboxView, hname iscp.Hname) (colored.Color, uint64, uint64) {
 	state := ctx.State()
-	rec, found := FindContractFees(state, hname)
-	assert.NewAssert(ctx.Log()).Require(found, "contract not found")
+	rec, _ := FindContractFees(state, hname)
 	return GetFeeInfoFromContractFeesRecord(state, rec)
 }
 
