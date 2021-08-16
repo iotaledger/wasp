@@ -144,18 +144,9 @@ func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppee
 	}
 	//
 	// Resolve IP addresses.
-	peerIP4 := make([]string, 0)
-	peerIP6 := make([]string, 0)
 	peerIPs, err := net.LookupIP(peerHost)
 	if err != nil {
 		return libp2ppeer.ID(""), xerrors.Errorf("failed to lookup IPs for NetID=%v, error: %w", trustedPeer.NetID, err)
-	}
-	for i := range peerIPs {
-		if ip4 := peerIPs[i].To4(); ip4 != nil {
-			peerIP4 = append(peerIP4, ip4.String())
-		} else {
-			peerIP6 = append(peerIP6, peerIPs[i].String())
-		}
 	}
 	//
 	// Create multiaddresses.
@@ -165,15 +156,15 @@ func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppee
 	}
 	addrs := make([]multiaddr.Multiaddr, 0)
 	for i := range addrPatterns {
-		for j := range peerIP4 {
-			addr, err := multiaddr.NewMultiaddr(fmt.Sprintf(addrPatterns[i], "ip4", peerIP4[j], peerPort))
-			if err != nil {
-				return libp2ppeer.ID(""), xerrors.Errorf("failed to make libp2p address for NetID=%v, error: %w", trustedPeer.NetID, err)
+		for j := range peerIPs {
+			var ipVer string
+			var ipStr string
+			if ip4 := peerIPs[j].To4(); ip4 != nil {
+				ipVer, ipStr = "ip4", ip4.String()
+			} else {
+				ipVer, ipStr = "ip6", peerIPs[j].String()
 			}
-			addrs = append(addrs, addr)
-		}
-		for j := range peerIP6 {
-			addr, err := multiaddr.NewMultiaddr(fmt.Sprintf(addrPatterns[i], "ip6", peerIP6[j], peerPort))
+			addr, err := multiaddr.NewMultiaddr(fmt.Sprintf(addrPatterns[i], ipVer, ipStr, peerPort))
 			if err != nil {
 				return libp2ppeer.ID(""), xerrors.Errorf("failed to make libp2p address for NetID=%v, error: %w", trustedPeer.NetID, err)
 			}
