@@ -25,7 +25,7 @@ type RootInfo struct {
 }
 
 func (d *Dashboard) fetchRootInfo(chainID *iscp.ChainID) (ret RootInfo, err error) {
-	info, err := d.wasp.CallView(chainID, root.Contract.Name, governance.FuncGetChainInfo.Name, nil)
+	info, err := d.wasp.CallView(chainID, governance.Contract.Name, governance.FuncGetChainInfo.Name, nil)
 	if err != nil {
 		return
 	}

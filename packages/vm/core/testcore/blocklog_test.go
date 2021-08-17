@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/stretchr/testify/require"
 )
 
@@ -95,8 +95,8 @@ func TestRequestIsProcessed(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
-		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0).WithIotas(1)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
+		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0).WithIotas(1)
 	tx, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
@@ -111,8 +111,8 @@ func TestRequestLogRecord(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
-		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0).WithIotas(1)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
+		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0).WithIotas(1)
 	tx, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
@@ -135,8 +135,8 @@ func TestRequestLogRecordsForBlocks(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
-		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0).WithIotas(1)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
+		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0).WithIotas(1)
 	tx, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 
@@ -155,8 +155,8 @@ func TestRequestIDsForBlocks(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetChainInfo.Name,
-		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0).WithIotas(1)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
+		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0).WithIotas(1)
 	tx, _, err := chain.PostRequestSyncTx(req, nil)
 	require.NoError(t, err)
 

@@ -28,7 +28,7 @@ func (e *chainEnv) checkCoreContracts() {
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, []byte{0xFF}, b)
 
-		cl := e.chain.SCClient(root.Contract.Hname(), nil, i)
+		cl := e.chain.SCClient(governance.Contract.Hname(), nil, i)
 		ret, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
@@ -179,7 +179,7 @@ func (e *chainEnv) checkLedger() {
 
 func (e *chainEnv) getChainInfo() (iscp.ChainID, iscp.AgentID) {
 	ret, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, root.Contract.Hname(), governance.FuncGetChainInfo.Name, nil,
+		e.chain.ChainID, governance.Contract.Hname(), governance.FuncGetChainInfo.Name, nil,
 	)
 	require.NoError(e.t, err)
 

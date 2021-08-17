@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtypes"
 )
@@ -243,7 +242,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.Bl
 
 func (ch *Chain) ContractRegistry(nodeIndex ...int) (map[iscp.Hname]*root.ContractRecord, error) {
 	cl := ch.SCClient(root.Contract.Hname(), nil, nodeIndex...)
-	ret, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
+	ret, err := cl.CallView(root.FuncGetContractRecords.Name, nil)
 	if err != nil {
 		return nil, err
 	}
