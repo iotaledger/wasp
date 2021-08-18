@@ -29,7 +29,7 @@ func (o *ScUtility) InitObj(id, keyID int32, owner *ScDict) {
 	if TestMode {
 		// preset randomizer to generate sequence 1..8 before
 		// continuing with proper hashed values
-		o.random = make([]byte, 8*8) //nolint:gomnd
+		o.random = make([]byte, 8*8)
 		for i := 0; i < len(o.random); i += 8 {
 			o.random[i] = byte(i + 1)
 		}

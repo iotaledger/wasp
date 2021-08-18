@@ -18,8 +18,10 @@ import (
 )
 
 // program hash: the ID of the code
-const ProgramHash = "5ydEfDeAJZX6dh6Fy7tMoHcDeh42gENeqVDASGWuD64X"
-const Description = "DonateWithFeedback, a PoC smart contract"
+const (
+	ProgramHash = "5ydEfDeAJZX6dh6Fy7tMoHcDeh42gENeqVDASGWuD64X"
+	Description = "DonateWithFeedback, a PoC smart contract"
+)
 
 // implementation of 'vmtypes.VMProcessor' and 'vmtypes.VMProcessorEntryPoint' interfaces
 type dwfProcessor map[iscp.Hname]dwfEntryPoint
@@ -108,7 +110,7 @@ func donate(ctx iscp.Sandbox) error {
 		// if error occurred, return all donated tokens back to the sender
 		// in this case error message will be recorded in the donation record
 
-		//ctx.MoveTokens(sender, ledgerstate.ColorIOTA, donated)
+		// ctx.MoveTokens(sender, ledgerstate.ColorIOTA, donated)
 		di.Amount = 0
 	}
 	// store donation info record in the state (append to the timestamped log)
@@ -169,7 +171,7 @@ func withdraw(ctx iscp.Sandbox) error {
 	}
 	// transfer iotas to the owner address
 	// TODO refactor to new account system
-	//ctx.AccessSCAccount().MoveTokens(ctx.OriginatorAddress(), &ledgerstate.ColorIOTA, withdrawSum)
-	//ctx.Event(fmt.Sprintf("DonateWithFeedback: withdraw. Withdraw %d iotas", withdrawSum))
+	// ctx.AccessSCAccount().MoveTokens(ctx.OriginatorAddress(), &ledgerstate.ColorIOTA, withdrawSum)
+	// ctx.Event(fmt.Sprintf("DonateWithFeedback: withdraw. Withdraw %d iotas", withdrawSum))
 	return nil
 }
