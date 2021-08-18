@@ -9,8 +9,8 @@
 
 use wasmlib::*;
 
-use crate::*;
 use crate::types::*;
+use crate::*;
 
 // define some default configuration parameters
 
@@ -18,6 +18,8 @@ use crate::types::*;
 const MAX_NUMBER: i64 = 5;
 // the default playing period of one betting round in minutes
 const DEFAULT_PLAY_PERIOD: i32 = 120;
+// Enable this if you deploy the contract to an actual node. It will pay out the prize after a certain timeout.
+const ENABLE_SELF_POST: bool = true;
 
 // 'placeBet' is used by betters to place a bet on a number from 1 to MAX_NUMBER. The first
 // incoming bet triggers a betting round of configurable duration. After the playing period
@@ -28,7 +30,6 @@ const DEFAULT_PLAY_PERIOD: i32 = 120;
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 pub fn func_place_bet(ctx: &ScFuncContext) {
-
     // Log the fact that we have initiated the 'placeBet' Func in the log on the host.
     ctx.log("fairroulette.placeBet");
 
@@ -79,24 +80,10 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
     // Determine what the next bet number is by retrieving the length of the bets array.
     let bet_nr: i32 = bets.length();
 
-    ctx.log("Bet state before setting bet");
-    for i in 0..bets.length() {
-        // Retrieve the bytes stored at the next index
-        let bytes: Vec<u8> = bets.get_bytes(i).value();
-        let bet: Bet = Bet::from_bytes(&bytes);
-
-        let betStr = format!("{} {} {}", bet.amount, bet.number, bet.better.hname().0);
-        ctx.log(&betStr)
-    }
-
     // Append the bet data to the bets array. We get an ScBytes proxy to the bytes stored
     // using the bet number as index. Then we set the bytes value in the best array on the
     // host to the result of serializing the bet data into a bytes representation.
     bets.get_bytes(bet_nr).set_value(&bet.to_bytes());
-
-    let text: String = "Bet nr ".to_string() + &bet_nr.to_string();
-
-    ctx.log(&text);
 
     // Was this the first bet of this round?
     if bet_nr == 0 {
@@ -116,18 +103,11 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
         // amount of seconds. This will lock in the playing period, during which more bets can
         // be placed. Once the 'lockBets' function gets triggered by the ISCP it will gather all
         // bets up to that moment as the ones to consider for determining the winner.
-       // let transfer = ScTransfers::iotas(1);
-        //ctx.post_self(HFUNC_PLACE_BET, None, transfer, 0);
-    }
 
-    ctx.log("Bet state after setting bet");
-    for i in 0..bets.length() {
-        // Retrieve the bytes stored at the next index
-        let bytes: Vec<u8> = bets.get_bytes(i).value();
-        let bet: Bet = Bet::from_bytes(&bytes);
-
-        let betStr = format!("{} {} {}", bet.amount, bet.number, bet.better.hname().0);
-        ctx.log(&betStr)
+        if ENABLE_SELF_POST {
+            let transfer = ScTransfers::iotas(1);
+            ctx.post_self(HFUNC_PLACE_BET, None, transfer, 0);
+        }
     }
 
     // Finally, we log the fact that we have successfully completed execution
@@ -146,7 +126,6 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
 // the committee will be using the same pseudo-random value sequence, which in turn makes sure
 // that all nodes can agree on the outcome.
 pub fn func_pay_winners(ctx: &ScFuncContext) {
-
     // Log the fact that we have initiated the 'payWinners' Func in the log on the host.
     ctx.log("fairroulette.payWinners");
 
@@ -170,7 +149,9 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     // number if they wish. Note that this is just a silly example. We could log much more extensive
     // statistics information about each playing round in state storage and make that data available
     // through views for anyone to see.
-    state.get_int64(STATE_LAST_WINNING_NUMBER).set_value(winning_number);
+    state
+        .get_int64(STATE_LAST_WINNING_NUMBER)
+        .set_value(winning_number);
 
     // Gather all winners and calculate some totals at the same time.
     // Keep track of the total bet amount, the total win amount, and all the winners
@@ -207,7 +188,6 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
 
     // Now that we preprocessed all bets we can get rid of the data in state storage so that
     // the 'lockedBets' array is available for the next betting round.
-    ctx.log("Clearing bets here:");
     bets.clear();
 
     // Did we have any winners at all?
@@ -225,7 +205,6 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     // Loop through all winners
     let size: usize = winners.len();
     for i in 0..size {
-
         // Get the next winner
         let bet: &Bet = &winners[i];
 
@@ -252,7 +231,8 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
         }
 
         // Log who got sent what in the log on the host
-        let text: String = "Pay ".to_string() + &payout.to_string() + " to " + &bet.better.to_string();
+        let text: String =
+            "Pay ".to_string() + &payout.to_string() + " to " + &bet.better.to_string();
         ctx.log(&text);
     }
 
@@ -270,23 +250,11 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     // Finally, we log the fact that we have successfully completed execution
     // of the 'payWinners' Func in the log on the host.
     ctx.log("fairroulette.payWinners ok");
-
-    ctx.log("Bet state after payWinners (should be empty:)");
-    for i in 0..bets.length() {
-        // Retrieve the bytes stored at the next index
-        let bytes: Vec<u8> = bets.get_bytes(i).value();
-        let bet: Bet = Bet::from_bytes(&bytes);
-
-        let betStr = format!("{} {} {}", bet.amount, bet.number, bet.better.hname().0);
-        ctx.log(&betStr)
-    }
-    ctx.log("Bet state end");
 }
 
 // 'playPeriod' can be used by the contract creator to set the length of a betting round
 // to a different value than the default value, which is 120 seconds..
 pub fn func_play_period(ctx: &ScFuncContext) {
-
     // Log the fact that we have initiated the 'playPeriod' Func in the log on the host.
     ctx.log("fairroulette.playPeriod");
 
@@ -316,17 +284,16 @@ pub fn func_play_period(ctx: &ScFuncContext) {
 
     // Now we set the corresponding state variable 'playPeriod' through the state
     // map proxy to the value we just got.
-    ctx.state().get_int32(STATE_PLAY_PERIOD).set_value(play_period);
+    ctx.state()
+        .get_int32(STATE_PLAY_PERIOD)
+        .set_value(play_period);
 
     // Finally, we log the fact that we have successfully completed execution
     // of the 'playPeriod' Func in the log on the host.
     ctx.log("fairroulette.playPeriod ok");
-
-
 }
 
 pub fn view_last_winning_number(ctx: &ScViewContext) {
-
     // Log the fact that we have initiated the 'lastWinningNumber' View in the log on the host.
     ctx.log("fairroulette.lastWinningNumber");
 
@@ -343,7 +310,9 @@ pub fn view_last_winning_number(ctx: &ScViewContext) {
 
     // Set the value associated with the 'lastWinningNumber' key to the value
     // we got from state storage
-    results.get_int64(RESULT_LAST_WINNING_NUMBER).set_value(last_winning_number);
+    results
+        .get_int64(RESULT_LAST_WINNING_NUMBER)
+        .set_value(last_winning_number);
 
     // Finally, we log the fact that we have successfully completed execution
     // of the 'lastWinningNumber' View in the log on the host.
