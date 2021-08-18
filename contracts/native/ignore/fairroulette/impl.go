@@ -347,7 +347,6 @@ func playAndDistribute(ctx iscp.Sandbox) error {
 	state.Del(StateVarEntropyFromLocking)
 
 	if len(winningBets) == 0 {
-
 		ctx.Event(fmt.Sprintf("$$$$$$$$$$ nobody wins: amount of %d stays in the smart contract", totalLockedAmount))
 
 		// nobody played on winning Color -> all sums stay in the smart contract
