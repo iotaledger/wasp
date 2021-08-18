@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -33,6 +34,7 @@ type Mempool struct {
 	blobCache               registry.BlobCache
 	solidificationLoopDelay time.Duration
 	log                     *logger.Logger
+	mempoolMetrics          metrics.MempoolMetrics
 }
 
 type requestRef struct {
@@ -47,14 +49,15 @@ const (
 
 var _ chain.Mempool = &Mempool{}
 
-func New(stateReader state.OptimisticStateReader, blobCache registry.BlobCache, log *logger.Logger, solidificationLoopDelay ...time.Duration) *Mempool {
+func New(stateReader state.OptimisticStateReader, blobCache registry.BlobCache, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, solidificationLoopDelay ...time.Duration) *Mempool {
 	ret := &Mempool{
-		inBuffer:    make(map[iscp.RequestID]iscp.Request),
-		stateReader: stateReader,
-		pool:        make(map[iscp.RequestID]*requestRef),
-		chStop:      make(chan struct{}),
-		blobCache:   blobCache,
-		log:         log.Named("m"),
+		inBuffer:       make(map[iscp.RequestID]iscp.Request),
+		stateReader:    stateReader,
+		pool:           make(map[iscp.RequestID]*requestRef),
+		chStop:         make(chan struct{}),
+		blobCache:      blobCache,
+		log:            log.Named("m"),
+		mempoolMetrics: mempoolMetrics,
 	}
 	if len(solidificationLoopDelay) > 0 {
 		ret.solidificationLoopDelay = solidificationLoopDelay[0]
@@ -152,6 +155,11 @@ func (m *Mempool) addToPool(req iscp.Request) bool {
 // ReceiveRequests places requests into the inBuffer. InBuffer is unordered and non-deterministic
 func (m *Mempool) ReceiveRequests(reqs ...iscp.Request) {
 	for _, req := range reqs {
+		if req.IsOffLedger() {
+			m.mempoolMetrics.CountOffLedgerRequestIn()
+		} else {
+			m.mempoolMetrics.CountOnLedgerRequestIn()
+		}
 		m.addToInBuffer(req)
 	}
 }
@@ -163,6 +171,7 @@ func (m *Mempool) ReceiveRequest(req iscp.Request) bool {
 	if m.checkInBuffer(req) {
 		return false
 	}
+	m.mempoolMetrics.CountOffLedgerRequestIn()
 	return m.addToInBuffer(req)
 }
 
@@ -184,6 +193,7 @@ func (m *Mempool) RemoveRequests(reqs ...iscp.RequestID) {
 			continue
 		}
 		m.outPoolCounter++
+		m.mempoolMetrics.CountRequestOut()
 		delete(m.pool, rid)
 		m.traceOut(rid)
 	}

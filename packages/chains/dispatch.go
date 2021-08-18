@@ -7,6 +7,8 @@ import (
 )
 
 func (c *Chains) dispatchTransactionMsg(msg *txstream.MsgTransaction) {
+	c.log.Debugf("NodeConnImplementation::dispatchTransactionMsg...")
+	defer c.log.Debugf("NodeConnImplementation::dispatchTransactionMsg... Done")
 	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
 	if !ok {
 		c.log.Warnf("chains: cannot dispatch transaction message to non-alias address")
@@ -26,6 +28,8 @@ func (c *Chains) dispatchTransactionMsg(msg *txstream.MsgTransaction) {
 }
 
 func (c *Chains) dispatchInclusionStateMsg(msg *txstream.MsgTxInclusionState) {
+	c.log.Debugf("NodeConnImplementation::dispatchInclusionStateMsg...")
+	defer c.log.Debugf("NodeConnImplementation::dispatchInclusionStateMsg... Done")
 	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
 	if !ok {
 		c.log.Warnf("chains: cannot dispatch inclusion state message to non-alias address")
@@ -46,6 +50,8 @@ func (c *Chains) dispatchInclusionStateMsg(msg *txstream.MsgTxInclusionState) {
 }
 
 func (c *Chains) dispatchOutputMsg(msg *txstream.MsgOutput) {
+	c.log.Debugf("NodeConnImplementation::dispatchOutputMsg...")
+	defer c.log.Debugf("NodeConnImplementation::dispatchOutputMsg... Done")
 	aliasAddr, ok := msg.Address.(*ledgerstate.AliasAddress)
 	if !ok {
 		c.log.Warnf("chains: cannot dispatch output message to non-alias address")
@@ -65,6 +71,8 @@ func (c *Chains) dispatchOutputMsg(msg *txstream.MsgOutput) {
 }
 
 func (c *Chains) dispatchUnspentAliasOutputMsg(msg *txstream.MsgUnspentAliasOutput) {
+	c.log.Debugf("NodeConnImplementation::dispatchUnspentAliasOutputMsg...")
+	defer c.log.Debugf("NodeConnImplementation::dispatchUnspentAliasOutputMsg... Done")
 	chainID := iscp.NewChainID(msg.AliasAddress)
 	chain := c.Get(chainID)
 	if chain == nil {

@@ -58,7 +58,7 @@ func (d *DomainImpl) SendMsgByNetID(netID string, msg *peering.PeerMessage) {
 	defer d.mutex.RUnlock()
 	peer, ok := d.nodes[netID]
 	if !ok {
-		d.log.Warnf("SendMsgByNetID: wrong netID %s", netID)
+		d.log.Warnf("SendMsgByNetID: NetID %v is not in the domain", netID)
 		return
 	}
 	peer.SendMsg(msg)

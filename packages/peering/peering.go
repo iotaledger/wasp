@@ -14,6 +14,8 @@ import (
 	"bytes"
 	"io"
 	"math/rand"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -365,4 +367,17 @@ func (m *PeerMessage) ChunkedBytes(chunkSize int, msgChopper *chopper.Chopper, n
 
 func (m *PeerMessage) IsUserMessage() bool {
 	return m.MsgType >= FirstUserMsgCode
+}
+
+// ParseNetID parses the NetID and returns the corresponding host and port.
+func ParseNetID(netID string) (string, int, error) {
+	parts := strings.Split(netID, ":")
+	if len(parts) != 2 {
+		return "", 0, xerrors.Errorf("invalid NetID: %v", netID)
+	}
+	port, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return "", 0, xerrors.Errorf("invalid port in NetID: %v", netID)
+	}
+	return parts[0], port, nil
 }
