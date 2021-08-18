@@ -17,7 +17,7 @@ import (
 var uploadQuorum int
 
 func initUploadFlags(chainCmd *cobra.Command) {
-	chainCmd.PersistentFlags().IntVarP(&uploadQuorum, "upload-quorum", "", 3, "quorum for blob upload") //nolint:gomnd
+	chainCmd.PersistentFlags().IntVarP(&uploadQuorum, "upload-quorum", "", 3, "quorum for blob upload")
 }
 
 var storeBlobCmd = &cobra.Command{

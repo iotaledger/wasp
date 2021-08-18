@@ -203,7 +203,7 @@ func (host *KvStoreHost) PushFrame() []HostObject {
 	// create a fresh slice to allow garbage collection
 	// it's up to the caller to save and/or restore the old frame
 	pushed := host.objIDToObj
-	host.objIDToObj = make([]HostObject, 2, 16) //nolint:gomnd
+	host.objIDToObj = make([]HostObject, 2, 16)
 	copy(host.objIDToObj, pushed[:2])
 	return pushed
 }
