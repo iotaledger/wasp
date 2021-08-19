@@ -6,6 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts/commonaccount"
@@ -18,6 +19,7 @@ var Processor = Contract.Processor(initialize,
 	FuncDeposit.WithHandler(deposit),
 	FuncWithdraw.WithHandler(withdraw),
 	FuncHarvest.WithHandler(harvest),
+	FuncGetAccountNonce.WithHandler(getAccountNonce),
 )
 
 // initialize the init call
@@ -146,4 +148,13 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	a.Require(MoveBetweenAccounts(state, sourceAccount, ctx.Caller(), tokensToSend),
 		"accounts.harvest.inconsistency. failed to move tokens to owner's account")
 	return nil, nil
+}
+
+func getAccountNonce(ctx iscp.SandboxView) (dict.Dict, error) {
+	par := kvdecoder.New(ctx.Params(), ctx.Log())
+	account := par.MustGetAgentID(ParamAgentID)
+	nonce := GetMaxAssumedNonce(ctx.State(), account.Address())
+	ret := dict.New()
+	ret.Set(ParamAccountNonce, codec.EncodeUint64(nonce))
+	return ret, nil
 }
