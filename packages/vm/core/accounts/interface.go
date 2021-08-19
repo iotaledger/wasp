@@ -13,10 +13,12 @@ var (
 	FuncDeposit         = coreutil.Func("deposit")
 	FuncWithdraw        = coreutil.Func("withdraw")
 	FuncHarvest         = coreutil.Func("harvest")
+	FuncGetAccountNonce = coreutil.ViewFunc("getAccountNonce")
 )
 
 const (
 	ParamAgentID        = "a"
 	ParamWithdrawColor  = "c"
 	ParamWithdrawAmount = "m"
+	ParamAccountNonce   = "n"
 )
