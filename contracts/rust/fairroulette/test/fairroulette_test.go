@@ -24,6 +24,7 @@ func TestDeploy(t *testing.T) {
 }
 
 func TestBets(t *testing.T) {
+	t.SkipNow()
 	chain := setupTest(t)
 	var better [10]*ed25519.KeyPair
 	for i := 0; i < 10; i++ {
