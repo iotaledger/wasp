@@ -5,8 +5,11 @@ package testcore
 
 import (
 	"testing"
+	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
@@ -172,4 +175,42 @@ func TestAccountsDepositToCommon(t *testing.T) {
 
 	chain.AssertTotalIotas(43)
 	chain.AssertCommonAccountIotas(43)
+}
+
+func getAccountNonce(t *testing.T, chain *solo.Chain, address ledgerstate.Address) uint64 {
+	ret, err := chain.CallView(accounts.Contract.Name, accounts.FuncGetAccountNonce.Name,
+		accounts.ParamAgentID, iscp.NewAgentID(address, 0),
+	)
+	require.NoError(t, err)
+	nonce, _, err := codec.DecodeUint64(ret.MustGet(accounts.ParamAccountNonce))
+	require.NoError(t, err)
+	return nonce
+}
+
+func TestGetAccountNonce(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+
+	userWallet, userAddress := env.NewKeyPairWithFunds()
+
+	// initial nonce should be 0
+	require.Zero(t, getAccountNonce(t, chain, userAddress))
+
+	// deposit funds to be able to issue offledger requests
+	_, err := chain.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(1000),
+		userWallet,
+	)
+	require.NoError(t, err)
+	require.Zero(t, getAccountNonce(t, chain, userAddress))
+
+	nowNanoTs := uint64(time.Now().UnixNano())
+
+	// offledger requests are constructed with nonce = current TS in nanoseconds
+	chain.PostRequestOffLedger(
+		solo.NewCallParams("", "").WithIotas(100),
+		userWallet,
+	)
+
+	require.GreaterOrEqual(t, getAccountNonce(t, chain, userAddress), nowNanoTs)
 }
