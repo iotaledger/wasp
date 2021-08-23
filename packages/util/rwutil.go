@@ -38,7 +38,7 @@ func Uint16To2Bytes(val uint16) []byte {
 }
 
 func Uint16From2Bytes(b []byte) (uint16, error) {
-	if len(b) != 2 { //nolint:gomnd
+	if len(b) != 2 {
 		return 0, errors.New("len(b) != 2")
 	}
 	return binary.LittleEndian.Uint16(b), nil
@@ -92,7 +92,7 @@ func Uint32To4Bytes(val uint32) []byte {
 }
 
 func Uint32From4Bytes(b []byte) (uint32, error) {
-	if len(b) != 4 { //nolint:gomnd
+	if len(b) != 4 {
 		return 0, errors.New("len(b) != 4")
 	}
 	return binary.LittleEndian.Uint32(b), nil
@@ -156,7 +156,7 @@ func Uint64To8Bytes(val uint64) []byte {
 }
 
 func Uint64From8Bytes(b []byte) (uint64, error) {
-	if len(b) != 8 { //nolint:gomnd
+	if len(b) != 8 {
 		return 0, errors.New("len(b) != 8")
 	}
 	return binary.LittleEndian.Uint64(b), nil

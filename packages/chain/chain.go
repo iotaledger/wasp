@@ -55,7 +55,6 @@ type ChainRequests interface {
 type ChainEvents interface {
 	RequestProcessed() *events.Event
 	ChainTransition() *events.Event
-	StateSynced() *events.Event
 }
 
 type Chain interface {

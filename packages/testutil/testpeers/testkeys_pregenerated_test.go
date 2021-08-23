@@ -54,6 +54,6 @@ func testPregenerateDKS(t *testing.T, n, f uint16) {
 		dkb = dki.Bytes()
 		require.Nil(t, util.WriteBytes16(&buf, dkb))
 	}
-	err = ioutil.WriteFile(fmt.Sprintf("testkeys_pregenerated-%v-%v.bin", n, threshold), buf.Bytes(), 0644)
+	err = ioutil.WriteFile(fmt.Sprintf("testkeys_pregenerated-%v-%v.bin", n, threshold), buf.Bytes(), 0o644)
 	require.Nil(t, err)
 }

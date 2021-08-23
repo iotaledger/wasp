@@ -29,11 +29,13 @@ type Request interface {
 	SenderAddress() ledgerstate.Address
 	// returns contract/entry point pair
 	Target() (Hname, Hname)
-	// returns time lock time or zero time if no time lock
+	// Timestamp returns a request TX timestamp, if such TX exist, otherwise zero is returned.
+	Timestamp() time.Time
+	// TimeLock returns time lock time or zero time if no time lock
 	TimeLock() time.Time
-	// returns binary representation of the request
+	// Bytes returns binary representation of the request
 	Bytes() []byte
-	// returns the hash of the request (used for consensus)
+	// Hash returns the hash of the request (used for consensus)
 	Hash() [32]byte
 }
 

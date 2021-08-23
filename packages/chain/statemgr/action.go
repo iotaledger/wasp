@@ -53,7 +53,6 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 		ChainOutput:     sm.stateOutput,
 		OutputTimestamp: sm.stateOutputTimestamp,
 	})
-	go sm.chain.Events().StateSynced().Trigger(stateOutputID, stateOutputIndex)
 }
 
 func (sm *stateManager) isSynced() bool {
@@ -75,7 +74,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 		if sm.stateOutput == nil {
 			sm.log.Debugf("pullState not needed: retry in %v", sm.pullStateRetryTime.Sub(nowis))
 		} else {
-			sm.log.Debugf("pullState not needed at index #%d: retry in %v",
+			sm.log.Debugf("pullState not needed, have stateOutput.Index=%d: retry in %v",
 				sm.stateOutput.GetStateIndex(), sm.pullStateRetryTime.Sub(nowis))
 		}
 	}
