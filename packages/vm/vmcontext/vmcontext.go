@@ -123,6 +123,7 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 	return ret, nil
 }
 
+//nolint:revive
 func (vmctx *VMContext) GetResult() (dict.Dict, colored.Balances, error, bool) {
 	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError, vmctx.exceededBlockOutputLimit
 }
