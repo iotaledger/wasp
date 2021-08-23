@@ -31,8 +31,6 @@ type Request interface {
 	Target() (Hname, Hname)
 	// Timestamp returns a request TX timestamp, if such TX exist, otherwise zero is returned.
 	Timestamp() time.Time
-	// TimeLock returns time lock time or zero time if no time lock
-	TimeLock() time.Time
 	// Bytes returns binary representation of the request
 	Bytes() []byte
 	// Hash returns the hash of the request (used for consensus)
