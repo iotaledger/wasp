@@ -41,11 +41,15 @@ in the proposal.
 
 The receiving node thus needs to check, if the proposals are correct.
 For this check it must have all the request transactions received before deciding
-the final batch. The invalid batch proposals cannot be used as it.
-Removing them will decrease number of requests included into the final batch
+the final batch. The invalid batch proposals cannot be used as is.
+Removing them would decrease number of requests included into the final batch
 (because requests are included if mentioned in $F+1$ proposals). It is safe
-however on the receiver side to "fix" such proposals by setting their timestamp
-to the highest transaction timestamp of the requests in the proposal.
+however on the receiver side to "fix" such proposals by setting their timestamps
+to the highest transaction timestamp of the requests in the proposal or to adjust
+the final batch timestamp to the highest timestamp of the requests selected to it.
+In this way the timestamps give no additional means to censor requests
+and the batch timestamp cannot be influenced by the adversaries, because
+only requests from F+1 nodes are used for such "timestamp fix".
 
 ^'*)
 EXTENDS Naturals, FiniteSets, TLAPS, FiniteSetTheorems, NaturalsInduction

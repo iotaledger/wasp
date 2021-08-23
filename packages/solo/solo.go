@@ -356,7 +356,7 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]isc
 			lst = make([]iscp.Request, 0)
 		}
 		mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))
-		ret[arr] = append(lst, request.OnLedgerFromOutput(o, sender, mintedAmounts))
+		ret[arr] = append(lst, request.OnLedgerFromOutput(o, sender, tx.Essence().Timestamp(), mintedAmounts))
 	}
 	return ret
 }
