@@ -16,7 +16,6 @@ require (
 	github.com/labstack/echo/v4 v4.1.13
 	github.com/libp2p/go-libp2p v0.14.4
 	github.com/libp2p/go-libp2p-core v0.8.5
-	github.com/libp2p/go-libp2p-peerstore v0.2.7
 	github.com/libp2p/go-libp2p-quic-transport v0.10.0
 	github.com/libp2p/go-tcp-transport v0.2.4
 	github.com/mr-tron/base58 v1.2.0
@@ -41,3 +40,5 @@ require (
 replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210811125834-8601c509bea6
 
 replace go.dedis.ch/kyber/v3 v3.0.13 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3
+
+replace github.com/iotaledger/goshimmer => github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
