@@ -52,20 +52,18 @@ type VMContext struct {
 	maxEventSize    uint16
 	maxEventsPerReq uint16
 	// request context
-	req                iscp.Request
-	requestIndex       uint16
-	requestEventIndex  uint16
-	requestOutputCount uint8
-	currentStateUpdate state.StateUpdate
-	entropy            hashing.HashValue // mutates with each request
-	contractRecord     *root.ContractRecord
-	lastError          error     // mutated
-	lastResult         dict.Dict // mutated. Used only by 'solo'
-	lastTotalAssets    colored.Balances
-	callStack          []*callContext
-
-	// shouldStopRunningBatch is used to signal that we should stop running the current batch of requests
-	shouldStopRunningBatch bool
+	req                      iscp.Request
+	requestIndex             uint16
+	requestEventIndex        uint16
+	requestOutputCount       uint8
+	currentStateUpdate       state.StateUpdate
+	entropy                  hashing.HashValue // mutates with each request
+	contractRecord           *root.ContractRecord
+	lastError                error     // mutated
+	lastResult               dict.Dict // mutated. Used only by 'solo'
+	lastTotalAssets          colored.Balances
+	callStack                []*callContext
+	exceededBlockOutputLimit bool
 }
 
 type callContext struct {
@@ -125,8 +123,8 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 	return ret, nil
 }
 
-func (vmctx *VMContext) GetResult() (dict.Dict, colored.Balances, error) {
-	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError
+func (vmctx *VMContext) GetResult() (dict.Dict, colored.Balances, error, bool) {
+	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError, vmctx.exceededBlockOutputLimit
 }
 
 func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) (*ledgerstate.TransactionEssence, error) {
@@ -153,11 +151,6 @@ func (vmctx *VMContext) checkRotationAddress() ledgerstate.Address {
 	defer vmctx.popCallContext()
 
 	return governance.GetRotationAddress(vmctx.State())
-}
-
-// ShouldStopRunningBatch is used for VMRunner to know that it should stop running the current batch of requests
-func (vmctx *VMContext) ShouldStopRunningBatch() bool {
-	return vmctx.shouldStopRunningBatch
 }
 
 // mustSaveBlockInfo is in the blocklog partition context

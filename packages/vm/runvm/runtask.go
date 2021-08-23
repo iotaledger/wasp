@@ -59,6 +59,7 @@ func runTask(task *vm.VMTask) {
 	var lastResult dict.Dict
 	var lastErr error
 	var lastTotalAssets colored.Balances
+	var exceededBlockOutputLimit bool
 
 	// loop over the batch of requests and run each request on the VM.
 	// the result accumulates in the VMContext and in the list of stateUpdates
@@ -75,16 +76,16 @@ func runTask(task *vm.VMTask) {
 		}
 
 		vmctx.RunTheRequest(req, uint16(i))
-		lastResult, lastTotalAssets, lastErr = vmctx.GetResult()
+		lastResult, lastTotalAssets, lastErr, exceededBlockOutputLimit = vmctx.GetResult()
 
-		if vmctx.ShouldStopRunningBatch() {
-			// last request exceeded the number of output limit and will be re-run next batch
+		if exceededBlockOutputLimit {
+			// current request exceeded the number of output limit and will be re-run next batch
 			if req.IsOffLedger() {
 				numOffLedger--
 			} else {
-				numOnLedger-- //nolint:ineffassign
+				numOnLedger--
 			}
-			break
+			continue
 		}
 		task.ProcessedRequestsCount++
 		if lastErr == nil {

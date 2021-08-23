@@ -117,7 +117,7 @@ func TestTooManyOutputsInBlock(t *testing.T) {
 	lastBlock := ch.GetLatestBlockInfo()
 	// block #3 is the first block that includes "non-chain-start" events
 	for i := uint32(3); i <= lastBlock.BlockIndex; i++ {
-		blockInfo, _ := ch.GetBlockInfo(lastBlock.BlockIndex - 1)
+		blockInfo, _ := ch.GetBlockInfo(i)
 		// all requests must be successful
 		require.Equal(t, blockInfo.TotalRequests, blockInfo.NumSuccessfulRequests)
 		require.LessOrEqual(t, blockInfo.TotalRequests, uint16(vmcontext.MaxBlockOutputCount))

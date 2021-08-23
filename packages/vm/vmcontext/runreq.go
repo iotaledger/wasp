@@ -79,7 +79,8 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 	}()
 
 	if vmctx.blockOutputCount > MaxBlockOutputCount {
-		vmctx.shouldStopRunningBatch = true
+		vmctx.exceededBlockOutputLimit = true
+		vmctx.blockOutputCount -= vmctx.requestOutputCount
 		vmctx.Debugf("outputs produced by this request do not fit inside the current block, reqID: %s", vmctx.req.ID().Base58())
 		// rollback request processing, don't consume output or send funds back as this request should be processed in a following batch
 		vmctx.txBuilder = snapshotTxBuilderWithoutInput
@@ -105,6 +106,8 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 	vmctx.requestIndex = requestIndex
 	vmctx.requestEventIndex = 0
 	vmctx.requestOutputCount = 0
+	vmctx.exceededBlockOutputLimit = false
+
 	if !req.IsOffLedger() {
 		vmctx.txBuilder.AddConsumable(vmctx.req.(*request.OnLedger).Output())
 		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.(*request.OnLedger).Output().ID()); err != nil {
@@ -311,7 +314,7 @@ func (vmctx *VMContext) mustUpdateOffledgerRequestMaxAssumedNonce() {
 }
 
 func (vmctx *VMContext) mustFinalizeRequestCall() {
-	if vmctx.shouldStopRunningBatch {
+	if vmctx.exceededBlockOutputLimit {
 		return
 	}
 	vmctx.mustLogRequestToBlockLog(vmctx.lastError) // panic not caught
