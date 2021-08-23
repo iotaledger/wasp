@@ -89,7 +89,6 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=15, N=4, req=1000", func(t *testing.T) {
-		t.SkipNow() // fails on low-end laptop
 		const numRequests = 1000
 		const numValidatorNodes = 4
 		const clusterSize = 15
@@ -97,7 +96,6 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=15, N=6, req=1000", func(t *testing.T) {
-		t.SkipNow() // fails on low-end laptop
 		const numRequests = 1000
 		const numValidatorNodes = 6
 		const clusterSize = 15
@@ -143,7 +141,6 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=10,N=6,req=1000", func(t *testing.T) {
-		t.SkipNow()
 		const waitFor = 120 * time.Second
 		const numRequests = 1000
 		const numValidatorNodes = 6
@@ -152,7 +149,6 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=15,N=6,req=1000", func(t *testing.T) {
-		t.SkipNow()
 		const waitFor = 120 * time.Second
 		const numRequests = 1000
 		const numValidatorNodes = 6
@@ -161,7 +157,6 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=30,N=15,req=8", func(t *testing.T) {
-		t.SkipNow()
 		const waitFor = 60 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 15
@@ -170,7 +165,6 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=30,N=20,req=8", func(t *testing.T) {
-		t.SkipNow()
 		const waitFor = 60 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 20
@@ -207,7 +201,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), to)
+	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize), to, "requests counted")
 
 	e.printBlocks(numRequests + 4)
 }
@@ -336,8 +330,6 @@ func TestRotation(t *testing.T) {
 }
 
 func TestRotationMany(t *testing.T) {
-	t.Skip("skipping extreme test")
-
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}

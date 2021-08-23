@@ -47,7 +47,6 @@ var Processor = root.Contract.Processor(initialize,
 // Input:
 // - ParamChainID iscp.ChainID. ID of the chain. Cannot be changed
 // - ParamChainColor ledgerstate.Color
-// - ParamChainAddress ledgerstate.Address
 // - ParamDescription string defaults to "N/A"
 // - ParamFeeColor ledgerstate.Color fee color code. Defaults to IOTA color. It cannot be changed
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {

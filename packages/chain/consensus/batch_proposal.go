@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package consensus
 
 import (
@@ -27,7 +30,7 @@ type BatchProposal struct {
 }
 
 type consensusBatchParams struct {
-	medianTs        time.Time
+	timestamp       time.Time // A preliminary timestamp. It can be adjusted based on timestamps of selected requests.
 	accessPledge    identity.ID
 	consensusPledge identity.ID
 	feeDestination  *iscp.AgentID
@@ -113,10 +116,35 @@ func (b *BatchProposal) Bytes() []byte {
 	return mu.Bytes()
 }
 
+// EnsureTimestampConsistent adjusts a batch timestamp, if it is not consistent with
+// the requests in the BatchProposal and the previous transaction. The timestamp is consistent,
+// if it is not bellow the timestamps of all the on-ledger requests and the previous transaction in the chain.
+// This implement the "fixing" part described in IscpBatchTimestamp.tla.
+func (b *BatchProposal) EnsureTimestampConsistent(requests []iscp.Request, stateTimestamp time.Time) error {
+	maxReqTime := time.Time{}
+	for i := range b.RequestIDs {
+		if requests[i].Hash() != b.RequestHashes[i] {
+			return xerrors.New("inconsistent requests in EnsureTimestampConsistent")
+		}
+		if maxReqTime.Before(requests[i].Timestamp()) {
+			maxReqTime = requests[i].Timestamp()
+		}
+	}
+	if b.Timestamp.Before(maxReqTime) {
+		b.Timestamp = maxReqTime
+	}
+	if b.Timestamp.Before(stateTimestamp) {
+		b.Timestamp = stateTimestamp
+	}
+	return nil
+}
+
 // calcBatchParameters from a given ACS deterministically calculates timestamp, access and consensus
-// mana pledges and fee destination
-// Timestamp is calculated by taking closest value from above to the median.
-// TODO final version of pladeges and fee destination
+// mana pledges and fee destination.
+//
+// Timestamp is calculated by taking maximal proposed timestamp excluding F highest proposals.
+//
+// TODO final version of pledges and fee destination
 func (c *Consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatchParams, error) {
 	var retTS time.Time
 
@@ -127,7 +155,9 @@ func (c *Consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 	sort.Slice(ts, func(i, j int) bool {
 		return ts[i].Before(ts[j])
 	})
-	retTS = ts[len(props)/2]
+	proposalCount := len(props)                            // |acsProposals| >= N-F by ACS logic.
+	maxFaulty := c.committee.Size() - c.committee.Quorum() // T = N-F ==> F = N-T
+	retTS = ts[proposalCount-int(maxFaulty)-1]             // Max(|acsProposals|-F Lowest) ~= 66 percentile.
 
 	indices := make([]uint16, len(props))
 	for i := range indices {
@@ -151,7 +181,7 @@ func (c *Consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 	// selects pseudo-random based on seed, the calculated timestamp
 	selectedIndex := util.SelectDeterministicRandomUint16(indices, retTS.UnixNano())
 	return &consensusBatchParams{
-		medianTs:        retTS,
+		timestamp:       retTS,
 		accessPledge:    props[selectedIndex].AccessManaPledge,
 		consensusPledge: props[selectedIndex].ConsensusManaPledge,
 		feeDestination:  props[selectedIndex].FeeDestination,

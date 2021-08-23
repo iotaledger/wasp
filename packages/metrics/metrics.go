@@ -22,13 +22,29 @@ type Metrics struct {
 	processedRequestCounter *prometheus.CounterVec
 }
 
-type chainMetrics struct {
-	metrics *Metrics
-	chainID *iscp.ChainID
-}
-
 func (m *Metrics) NewChainMetrics(chainID *iscp.ChainID) ChainMetrics {
-	return &chainMetrics{
+	if m == nil {
+		return DefaultChainMetrics()
+	}
+	m.log.Info("Registering mempool metrics to prometheus")
+	m.offLedgerRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "wasp_off_ledger_request_counter",
+		Help: "Number of lff-ledger requests made to chain",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.offLedgerRequestCounter)
+
+	m.onLedgerRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "wasp_on_ledger_request_counter",
+		Help: "Number of on-ledger requests made to the chain",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.onLedgerRequestCounter)
+
+	m.processedRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "wasp_processed_on_ledger_request_counter",
+		Help: "Number of requests processed",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.processedRequestCounter)
+	return &chainMetricsObj{
 		metrics: m,
 		chainID: chainID,
 	}
@@ -50,7 +66,6 @@ func (m *Metrics) Start(addr string) {
 			handler.ServeHTTP(c.Response(), c.Request())
 			return nil
 		})
-		m.registerMempoolMetrics()
 		m.log.Infof("Prometheus metrics accessible at: %s", addr)
 		m.server = &http.Server{Addr: addr, Handler: e}
 		if err := m.server.ListenAndServe(); err != nil {
