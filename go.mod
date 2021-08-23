@@ -35,3 +35,5 @@ require (
 replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210715114843-cf21a85e1c0d
 
 replace go.dedis.ch/kyber/v3 v3.0.13 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3
+
+replace github.com/iotaledger/goshimmer => github.com/iotaledger/goshimmer v0.7.5-0.20210811162925-25c827e8326a
