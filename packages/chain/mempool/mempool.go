@@ -206,19 +206,19 @@ func (m *Mempool) traceIn(req iscp.Request) {
 	if rotate.IsRotateStateControllerRequest(req) {
 		rotateStr = "(rotate) "
 	}
-	tl := req.TimeLock()
+	logFn := m.log.Debugf
 	if traceInOut {
-		if tl.IsZero() {
-			m.log.Infof("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
-		} else {
-			m.log.Infof("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(tl))
-		}
+		logFn = m.log.Infof
+	}
+	tl := time.Time{}
+	if !req.IsOffLedger() {
+		tl = req.(*request.OnLedger).TimeLock()
+	}
+
+	if tl.IsZero() {
+		logFn("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
 	} else {
-		if tl.IsZero() {
-			m.log.Debugf("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
-		} else {
-			m.log.Debugf("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(tl))
-		}
+		logFn("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(tl))
 	}
 }
 
@@ -235,17 +235,21 @@ const FallbackDeadlineMinAllowedInterval = time.Minute * 10
 
 // isRequestReady for requests with paramsReady, the result is strictly deterministic
 func isRequestReady(ref *requestRef, nowis time.Time) (isReady, shouldBeRemoved bool) {
+	if ref.req.IsOffLedger() {
+		return true, false
+	}
+	r := ref.req.(*request.OnLedger)
 	// fallback options
-	if ref.req.FallbackAddress() != nil {
-		if !ref.req.FallbackDeadline().After(nowis.Add(FallbackDeadlineMinAllowedInterval)) {
+	if r.FallbackAddress() != nil {
+		if !r.FallbackDeadline().After(nowis.Add(FallbackDeadlineMinAllowedInterval)) {
 			return false, true
 		}
 	}
 	// time lock
-	if _, paramsReady := ref.req.Params(); !paramsReady {
+	if _, paramsReady := r.Params(); !paramsReady {
 		return false, false
 	}
-	return ref.req.TimeLock().IsZero() || ref.req.TimeLock().Before(nowis), false
+	return r.TimeLock().IsZero() || r.TimeLock().Before(nowis), false
 }
 
 // ReadyNow returns preliminary batch of requests for consensus.

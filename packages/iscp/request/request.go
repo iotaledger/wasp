@@ -507,22 +507,6 @@ func (req *OffLedger) Target() (iscp.Hname, iscp.Hname) {
 	return req.contract, req.entryPoint
 }
 
-// TimeLock returns time lock time or zero time if no time lock
-func (req *OffLedger) TimeLock() time.Time {
-	// no time lock, return zero time
-	return time.Time{}
-}
-
-func (req *OffLedger) FallbackAddress() ledgerstate.Address {
-	// no fallback address, return nil
-	return nil
-}
-
-func (req *OffLedger) FallbackDeadline() time.Time {
-	// no fallback deadline, return zero time
-	return time.Time{}
-}
-
 func (req *OffLedger) SetParams(params dict.Dict) {
 	req.params.Store(params)
 }
