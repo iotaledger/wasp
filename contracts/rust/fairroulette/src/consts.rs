@@ -19,6 +19,7 @@ pub const PARAM_PLAY_PERIOD: &str = "playPeriod";
 
 pub const RESULT_LAST_WINNING_NUMBER: &str = "lastWinningNumber";
 
+pub const STATE_ROUND_ACTIVE: &str = "roundActive";
 pub const STATE_BETS: &str = "bets";
 pub const STATE_LAST_WINNING_NUMBER: &str = "lastWinningNumber";
 pub const STATE_LOCKED_BETS: &str = "lockedBets";

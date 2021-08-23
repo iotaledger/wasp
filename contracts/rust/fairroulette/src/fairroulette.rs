@@ -30,6 +30,13 @@ const ENABLE_SELF_POST: bool = true;
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 pub fn func_place_bet(ctx: &ScFuncContext) {
+    let accountId = ctx.account_id();
+
+    ctx.event(&format!(
+        "fairroulette.placingBet: {0}",
+        accountId.to_string()
+    ));
+
     // Log the fact that we have initiated the 'placeBet' Func in the log on the host.
     ctx.log("fairroulette.placeBet");
 
@@ -105,6 +112,8 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
         // bets up to that moment as the ones to consider for determining the winner.
 
         if ENABLE_SELF_POST {
+            state.get_int16(STATE_ROUND_ACTIVE).set_value(1);
+            ctx.event(&format!("fairroulette.round.active: 1"));
             let transfer = ScTransfers::iotas(1);
             ctx.post_self(HFUNC_PLACE_BET, None, transfer, 0);
         }
@@ -113,6 +122,10 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
     // Finally, we log the fact that we have successfully completed execution
     // of the 'placeBet' Func in the log on the host.
     ctx.log("fairroulette.placeBet ok");
+    ctx.event(&format!(
+        "fairroulette.placedBet: {0}",
+        accountId.to_string()
+    ));
 }
 
 // 'payWinners' is a function whose execution gets initiated by the 'lockBets' function.
@@ -250,6 +263,11 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     // Finally, we log the fact that we have successfully completed execution
     // of the 'payWinners' Func in the log on the host.
     ctx.log("fairroulette.payWinners ok");
+    state.get_int16(STATE_ROUND_ACTIVE).set_value(0);
+    ctx.event(&format!(
+        "fairroulette.round.active: {0}",
+        state.get_int16(STATE_ROUND_ACTIVE).value()
+    ));
 }
 
 // 'playPeriod' can be used by the contract creator to set the length of a betting round

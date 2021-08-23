@@ -13,9 +13,9 @@
   import config from '../config.dev';
 
   const chainId = config.chainId; // TODO: Make configurable to adapt to other Wasp instances
-  const testSeed = Base58.decode('H2ddSikVwqSfwo2KAzhDf4wRnr4oqqy8SDHofwewKaJ1');
+  const testSeed = Base58.decode('GLHjvWjQ4N4iKzPVKc1iAMLRqRhWLBhysdxNV2JsBXs6');
 
-  const seed: Buffer = Seed.generate(); //testSeed;
+  const seed: Buffer = testSeed;
   const seedString: string = Base58.encode(seed);
 
   const client: BasicClient = new BasicClient({
