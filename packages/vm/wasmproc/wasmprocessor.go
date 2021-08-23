@@ -44,7 +44,7 @@ func NewWasmProcessor(vm wasmhost.WasmVM, log *logger.Logger) (*WasmProcessor, e
 	host.Init(log)
 	host.TrackObject(NewNullObject(&host.KvStoreHost))
 	host.TrackObject(host.scContext)
-	host.SetExport(0x8fff, ViewCopyAllState) //nolint:gomnd
+	host.SetExport(0x8fff, ViewCopyAllState)
 	return host, nil
 }
 

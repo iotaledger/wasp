@@ -435,7 +435,7 @@ func (m *Mempool) Close() {
 
 // the loop validates and moves request from inBuffer to the pool
 func (m *Mempool) moveToPoolLoop() {
-	buf := make([]iscp.Request, 0, 100) //nolint:gomnd
+	buf := make([]iscp.Request, 0, 100)
 	for {
 		select {
 		case <-m.chStop:

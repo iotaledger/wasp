@@ -24,12 +24,10 @@ type MockedChainCore struct {
 	processors                           *processors.Cache
 	eventStateTransition                 *events.Event
 	eventRequestProcessed                *events.Event
-	eventStateSynced                     *events.Event
 	onGlobalStateSync                    func() coreutil.ChainStateSync
 	onGetStateReader                     func() state.OptimisticStateReader
 	onEventStateTransition               func(data *chain.ChainTransitionEventData)
 	onEventRequestProcessed              func(id iscp.RequestID)
-	onEventStateSynced                   func(id ledgerstate.OutputID, blockIndex uint32)
 	onReceivePeerMessage                 func(*peering.PeerMessage)
 	onReceiveDismissChainMsg             func(*messages.DismissChainMsg)
 	onReceiveStateTransitionMsg          func(*messages.StateTransitionMsg)
@@ -58,14 +56,8 @@ func NewMockedChainCore(t *testing.T, chainID iscp.ChainID, log *logger.Logger) 
 		eventRequestProcessed: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ iscp.RequestID))(params[0].(iscp.RequestID))
 		}),
-		eventStateSynced: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(outputID ledgerstate.OutputID, blockIndex uint32))(params[0].(ledgerstate.OutputID), params[1].(uint32))
-		}),
 		onEventRequestProcessed: func(id iscp.RequestID) {
 			log.Infof("onEventRequestProcessed: %s", id)
-		},
-		onEventStateSynced: func(outputID ledgerstate.OutputID, blockIndex uint32) {
-			chain.LogSyncedEvent(outputID, blockIndex, log)
 		},
 		onReceivePeerMessage:        func(msg *peering.PeerMessage) { receiveFailFun("*peering.PeerMessage", msg) },
 		onReceiveDismissChainMsg:    func(msg *messages.DismissChainMsg) { receiveFailFun("*messages.DismissChainMs", msg) },
@@ -87,9 +79,6 @@ func NewMockedChainCore(t *testing.T, chainID iscp.ChainID, log *logger.Logger) 
 	}))
 	ret.eventRequestProcessed.Attach(events.NewClosure(func(id iscp.RequestID) {
 		ret.onEventRequestProcessed(id)
-	}))
-	ret.eventStateSynced.Attach(events.NewClosure(func(outid ledgerstate.OutputID, blockIndex uint32) {
-		ret.onEventStateSynced(outid, blockIndex)
 	}))
 	return ret
 }
@@ -153,10 +142,6 @@ func (m *MockedChainCore) ChainTransition() *events.Event {
 	return m.eventStateTransition
 }
 
-func (m *MockedChainCore) StateSynced() *events.Event {
-	return m.eventStateSynced
-}
-
 func (m *MockedChainCore) OnStateTransition(f func(data *chain.ChainTransitionEventData)) {
 	m.onEventStateTransition = f
 }
@@ -199,10 +184,6 @@ func (m *MockedChainCore) OnReceiveAsynchronousCommonSubsetMsg(f func(*messages.
 
 func (m *MockedChainCore) OnReceiveTimerTick(f func(messages.TimerTick)) {
 	m.onReceiveTimerTick = f
-}
-
-func (m *MockedChainCore) OnStateSynced(f func(out ledgerstate.OutputID, blockIndex uint32)) {
-	m.onEventStateSynced = f
 }
 
 func (m *MockedChainCore) OnGetStateReader(f func() state.OptimisticStateReader) {

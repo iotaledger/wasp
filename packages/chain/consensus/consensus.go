@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package consensus
 
 import (
@@ -133,31 +136,45 @@ func (c *Consensus) recvLoop() {
 		select {
 		case msg, ok := <-c.eventStateTransitionMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventStateTransitionMsg...")
 				c.eventStateTransitionMsg(msg)
+				c.log.Debugf("Consensus::recvLoop, eventStateTransitionMsg... Done")
 			}
 		case msg, ok := <-c.eventSignedResultMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventSignedResult...")
 				c.eventSignedResult(msg)
+				c.log.Debugf("Consensus::recvLoop, eventSignedResult... Done")
 			}
 		case msg, ok := <-c.eventSignedResultAckMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventSignedResultAck...")
 				c.eventSignedResultAck(msg)
+				c.log.Debugf("Consensus::recvLoop, eventSignedResultAck... Done")
 			}
 		case msg, ok := <-c.eventInclusionStateMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventInclusionState...")
 				c.eventInclusionState(msg)
+				c.log.Debugf("Consensus::recvLoop, eventInclusionState... Done")
 			}
 		case msg, ok := <-c.eventACSMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventAsynchronousCommonSubset...")
 				c.eventAsynchronousCommonSubset(msg)
+				c.log.Debugf("Consensus::recvLoop, eventAsynchronousCommonSubset... Done")
 			}
 		case msg, ok := <-c.eventVMResultMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventVMResultMsg...")
 				c.eventVMResultMsg(msg)
+				c.log.Debugf("Consensus::recvLoop, eventVMResultMsg... Done")
 			}
 		case msg, ok := <-c.eventTimerMsgCh:
 			if ok {
+				c.log.Debugf("Consensus::recvLoop, eventTimerMsg...")
 				c.eventTimerMsg(msg)
+				c.log.Debugf("Consensus::recvLoop, eventTimerMsg... Done")
 			}
 		case <-c.closeCh:
 			return

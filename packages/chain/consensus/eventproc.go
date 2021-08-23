@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package consensus
 
 import (
@@ -94,4 +97,14 @@ func (c *Consensus) eventTimerMsg(msg messages.TimerTick) {
 		}
 	}
 	c.takeAction()
+	if c.stateOutput != nil {
+		c.log.Debugf("Consensus::eventTimerMsg: stateIndex=%v, workflow=%+v",
+			c.stateOutput.GetStateIndex(),
+			c.workflow,
+		)
+	} else {
+		c.log.Debugf("Consensus::eventTimerMsg: stateIndex=nil, workflow=%+v",
+			c.workflow,
+		)
+	}
 }

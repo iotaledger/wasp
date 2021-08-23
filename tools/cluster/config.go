@@ -77,7 +77,7 @@ func (c *ClusterConfig) Save(dataPath string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(configPath(dataPath), b, 0600) //nolint:gomnd
+	return ioutil.WriteFile(configPath(dataPath), b, 0o600)
 }
 
 func configPath(dataPath string) string {

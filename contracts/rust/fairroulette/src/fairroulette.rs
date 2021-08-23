@@ -16,7 +16,7 @@ use crate::types::*;
 
 // the maximum number one can bet on. The range of numbers starts at 1.
 const MAX_NUMBER: i64 = 5;
-// the default playing period of one betting round in minutes
+// the default playing period of one betting round in seconds
 const DEFAULT_PLAY_PERIOD: i32 = 120;
 
 // 'placeBet' is used by betters to place a bet on a number from 1 to MAX_NUMBER. The first

@@ -20,7 +20,7 @@ var (
 var configSetCmd = &cobra.Command{
 	Use:   "set <key> <value>",
 	Short: "Set a configuration value",
-	Args:  cobra.ExactArgs(2), //nolint:gomnd
+	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		v := args[1]
 		switch v {
@@ -154,7 +154,6 @@ func committeeHost(kind string, i int) string {
 	return fmt.Sprintf("127.0.0.1:%d", defaultPort)
 }
 
-//nolint:gomnd
 func defaultWaspPort(kind string, i int) int {
 	switch kind {
 	case HostKindNanomsg:

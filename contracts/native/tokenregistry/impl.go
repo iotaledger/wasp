@@ -18,8 +18,10 @@ import (
 )
 
 // program hash is an ID of the smart contract program
-const ProgramHash = "8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p"
-const Description = "TokenRegistry, a PoC smart contract"
+const (
+	ProgramHash = "8h2RGcbsUgKckh9rZ4VUF75NUfxP4bj1FC66oSF9us6p"
+	Description = "TokenRegistry, a PoC smart contract"
+)
 
 var (
 	RequestMintSupply        = iscp.Hn("mintSupply")
@@ -112,12 +114,11 @@ func mintSupply(ctx iscp.Sandbox) error {
 		return fmt.Errorf("TokenRegistry: Supply of color %s already exist", colorOfTheSupply.String())
 	}
 	// get the number of tokens, which are minted by the request transaction - tokens which are used for requests tracking
-	//supply := ctx.AccessRequest().NumFreeMintedTokens() TODO
+	// supply := ctx.AccessRequest().NumFreeMintedTokens() TODO
 	supply := int64(0) // TODO fake
 	if supply <= 0 {
 		// no tokens were minted on top of request tokens
 		return fmt.Errorf("TokenRegistry: the free minted Supply must be > 0")
-
 	}
 	// get the description of the supply form the request argument
 	description, ok, err := codec.DecodeString(params.MustGet(VarReqDescription))
