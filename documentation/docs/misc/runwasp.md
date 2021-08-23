@@ -102,8 +102,38 @@ $ wasp
 You can check that your node is running by opening the dashboard with a web
 browser at `127.0.0.1:7000`.
 
-That's it! Repeat this process to launch as many nodes as you want for your
-committee.
+Repeat this process to launch as many nodes as you want for your committee.
+
+After starting all the `wasp` nodes, one should make them trust each other.
+Operators of the nodes should do that manually. That's their responsibility to
+accept trusted nodes only.
+
+The operator can read its node's public key and NetID by running `wasp-cli peering info`, e.g.:
+
+```
+$ wasp-cli peering info
+PubKey: 8oQ9xHWvfnShRxB22avvjbMyAumZ7EXKujuthqrzapNM
+NetID:  127.0.0.1:4000
+```
+
+PubKey and NetID should be provided to other node operators.
+They can use this info to trust your node and accept communications with it.
+That's done by invoking `wasp-cli peering trust <PubKey> <NetID>`, e.g.:
+
+```
+$ wasp-cli peering list-trusted
+$ wasp-cli peering trust 8oQ9xHWvfnShRxB22avvjbMyAumZ7EXKujuthqrzapNM 127.0.0.1:4000
+$ wasp-cli peering list-trusted
+------                                        -----
+PubKey                                        NetID
+------                                        -----
+8oQ9xHWvfnShRxB22avvjbMyAumZ7EXKujuthqrzapNM  127.0.0.1:4000
+```
+
+All the nodes in a committee must trust each other to run the chain.
+
+That's it!
+
 
 ### Wasp settings
 
