@@ -2,6 +2,7 @@ package request
 
 import (
 	"testing"
+	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -72,7 +73,7 @@ func rndOutput() *ledgerstate.ExtendedLockedOutput {
 
 func TestOnLedger(t *testing.T) {
 	t.Run("marshal", func(t *testing.T) {
-		req := OnLedgerFromOutput(rndOutput(), rndAddress())
+		req := OnLedgerFromOutput(rndOutput(), rndAddress(), time.Now())
 		reqBack, err := FromMarshalUtil(marshalutil.New(req.Bytes()))
 		require.NoError(t, err)
 		_, ok := reqBack.(*OnLedger)
