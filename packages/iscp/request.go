@@ -2,6 +2,7 @@ package iscp
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/marshalutil"
@@ -28,9 +29,11 @@ type Request interface {
 	SenderAddress() ledgerstate.Address
 	// returns contract/entry point pair
 	Target() (Hname, Hname)
-	// returns binary representation of the request
+	// Timestamp returns a request TX timestamp, if such TX exist, otherwise zero is returned.
+	Timestamp() time.Time
+	// Bytes returns binary representation of the request
 	Bytes() []byte
-	// returns the hash of the request (used for consensus)
+	// Hash returns the hash of the request (used for consensus)
 	Hash() [32]byte
 }
 

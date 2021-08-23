@@ -170,6 +170,7 @@ type OnLedger struct {
 	outputObj       *ledgerstate.ExtendedLockedOutput
 	requestMetadata *Metadata
 	senderAddress   ledgerstate.Address
+	txTimestamp     time.Time    // Timestamp of the TX contaning this request.
 	params          atomic.Value // this part is mutable
 	minted          colored.Balances
 }
@@ -177,10 +178,11 @@ type OnLedger struct {
 // implements iscp.Request interface
 var _ iscp.Request = &OnLedger{}
 
-func OnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...colored.Balances) *OnLedger {
+func OnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, txTimestamp time.Time, minted ...colored.Balances) *OnLedger {
 	ret := &OnLedger{
 		outputObj:     output,
 		senderAddress: senderAddr,
+		txTimestamp:   txTimestamp,
 	}
 	ret.requestMetadata = MetadataFromBytes(output.GetPayload())
 	if len(minted) > 0 {
@@ -201,7 +203,7 @@ func OnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr ledgerstate
 		if out, ok := o.(*ledgerstate.ExtendedLockedOutput); ok {
 			if out.Address().Equals(targetAddr) {
 				out1 := out.UpdateMintingColor().(*ledgerstate.ExtendedLockedOutput)
-				ret = append(ret, OnLedgerFromOutput(out1, senderAddr, mintedAmounts))
+				ret = append(ret, OnLedgerFromOutput(out1, senderAddr, tx.Essence().Timestamp(), mintedAmounts))
 			}
 		}
 	}
@@ -227,6 +229,7 @@ func (req *OnLedger) Bytes() []byte {
 func (req *OnLedger) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(req.Output()).
 		Write(req.senderAddress).
+		WriteTime(req.txTimestamp).
 		Write(req.requestMetadata).
 		Write(req.minted)
 }
@@ -238,6 +241,9 @@ func (req *OnLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 		return err
 	}
 	if req.senderAddress, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	if req.txTimestamp, err = mu.ReadTime(); err != nil {
 		return err
 	}
 	req.requestMetadata = MetadataFromMarshalUtil(mu)
@@ -283,6 +289,10 @@ func (req *OnLedger) SenderAddress() ledgerstate.Address {
 // Target returns target contract and target entry point
 func (req *OnLedger) Target() (iscp.Hname, iscp.Hname) {
 	return req.requestMetadata.TargetContract(), req.requestMetadata.EntryPoint()
+}
+
+func (req *OnLedger) Timestamp() time.Time {
+	return req.txTimestamp
 }
 
 func (req *OnLedger) TimeLock() time.Time {
@@ -505,6 +515,11 @@ func (req *OffLedger) SenderAddress() ledgerstate.Address {
 
 func (req *OffLedger) Target() (iscp.Hname, iscp.Hname) {
 	return req.contract, req.entryPoint
+}
+
+func (req *OffLedger) Timestamp() time.Time {
+	// no request TX, return zero time
+	return time.Time{}
 }
 
 func (req *OffLedger) SetParams(params dict.Dict) {
