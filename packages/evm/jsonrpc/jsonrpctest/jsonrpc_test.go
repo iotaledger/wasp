@@ -291,7 +291,7 @@ func TestRPCSendTransaction(t *testing.T) {
 	to := evmtest.AccountAddress(1)
 	gas := hexutil.Uint64(evm.TxGas)
 	nonce := hexutil.Uint64(env.NonceAt(from))
-	txHash := env.SendTransaction(&jsonrpc.SendTxArgs{
+	txHash := env.MustSendTransaction(&jsonrpc.SendTxArgs{
 		From:     from,
 		To:       &to,
 		Gas:      &gas,
@@ -374,6 +374,10 @@ func TestRPCCall(t *testing.T) {
 
 func TestRPCGetLogs(t *testing.T) {
 	newSoloTestEnv(t).TestRPCGetLogs()
+}
+
+func TestRPCGasLimit(t *testing.T) {
+	newSoloTestEnv(t).TestRPCGasLimit()
 }
 
 func TestRPCEthChainID(t *testing.T) {

@@ -81,3 +81,11 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 func TestEVMJsonRPCClusterGetLogs(t *testing.T) {
 	newClusterTestEnv(t).TestRPCGetLogs()
 }
+
+func TestEVMJsonRPCClusterGasLimit(t *testing.T) {
+	newClusterTestEnv(t).TestRPCGasLimit()
+}
+
+func TestEVMJsonRPCClusterInvalidNonce(t *testing.T) {
+	newClusterTestEnv(t).TestRPCInvalidNonce()
+}

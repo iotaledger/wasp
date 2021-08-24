@@ -565,3 +565,18 @@ func SolidifyArgs(req iscp.Request, reg registry.BlobCache) (bool, error) {
 	sreq.SetParams(solid)
 	return true, nil
 }
+
+func RequestsInTransaction(chainID *iscp.ChainID, tx *ledgerstate.Transaction) []iscp.RequestID {
+	var reqs []iscp.RequestID
+	for _, out := range tx.Essence().Outputs() {
+		if !out.Address().Equals(chainID.AsAddress()) {
+			continue
+		}
+		out, ok := out.(*ledgerstate.ExtendedLockedOutput)
+		if !ok {
+			continue
+		}
+		reqs = append(reqs, iscp.RequestID(out.ID()))
+	}
+	return reqs
+}

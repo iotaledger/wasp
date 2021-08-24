@@ -235,9 +235,14 @@ func (e *Env) SignTransaction(args *jsonrpc.SendTxArgs) []byte {
 	return res
 }
 
-func (e *Env) SendTransaction(args *jsonrpc.SendTxArgs) common.Hash {
+func (e *Env) SendTransaction(args *jsonrpc.SendTxArgs) (common.Hash, error) {
 	var res common.Hash
 	err := e.RawClient.Call(&res, "eth_sendTransaction", args)
+	return res, err
+}
+
+func (e *Env) MustSendTransaction(args *jsonrpc.SendTxArgs) common.Hash {
+	res, err := e.SendTransaction(args)
 	require.NoError(e.T, err)
 	return res
 }
@@ -275,7 +280,7 @@ func (e *Env) TestRPCGetLogs() {
 		Data:  callArguments,
 	}))
 	require.NoError(e.T, err)
-	e.SendTransaction(&jsonrpc.SendTxArgs{
+	e.MustSendTransaction(&jsonrpc.SendTxArgs{
 		From:     creatorAddress,
 		To:       &contractAddress,
 		Gas:      &gas,
@@ -286,4 +291,40 @@ func (e *Env) TestRPCGetLogs() {
 	})
 
 	require.Equal(e.T, 2, len(e.getLogs(filterQuery)))
+}
+
+func (e *Env) TestRPCGasLimit() {
+	from, fromAddress := evmtest.Accounts[0], evmtest.AccountAddress(0)
+	toAddress := evmtest.AccountAddress(1)
+	value := big.NewInt(1)
+	nonce := e.NonceAt(fromAddress)
+	gasLimit := evm.TxGas - 1
+	tx, err := types.SignTx(
+		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
+		e.signer(),
+		from,
+	)
+	require.NoError(e.T, err)
+
+	err = e.Client.SendTransaction(context.Background(), tx)
+	require.Error(e.T, err)
+	require.Regexp(e.T, `intrinsic gas too low: have \d+, want \d+`, err.Error())
+}
+
+func (e *Env) TestRPCInvalidNonce() {
+	from, fromAddress := evmtest.Accounts[0], evmtest.AccountAddress(0)
+	toAddress := evmtest.AccountAddress(1)
+	value := big.NewInt(1)
+	nonce := e.NonceAt(fromAddress) + 1
+	gasLimit := evm.TxGas - 1
+	tx, err := types.SignTx(
+		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
+		e.signer(),
+		from,
+	)
+	require.NoError(e.T, err)
+
+	err = e.Client.SendTransaction(context.Background(), tx)
+	require.Error(e.T, err)
+	require.Regexp(e.T, `invalid transaction nonce: got 1, want 0`, err.Error())
 }
