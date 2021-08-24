@@ -6,11 +6,11 @@ package jsonrpc
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -39,7 +39,14 @@ func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer
 	if err != nil {
 		return err
 	}
-	return w.ChainClient.WaspClient.WaitUntilAllRequestsProcessed(w.ChainClient.ChainID, tx, 1*time.Minute)
+	err = w.ChainClient.WaspClient.WaitUntilAllRequestsProcessed(w.ChainClient.ChainID, tx, 1*time.Minute)
+	if err != nil {
+		return err
+	}
+	for _, reqID := range request.RequestsInTransaction(&w.ChainClient.ChainID, tx) {
+		return w.ChainClient.CheckRequestResult(reqID)
+	}
+	panic("should not reach here")
 }
 
 func (w *WaspClientBackend) PostOffLedgerRequest(scName, funName string, transfer colored.Balances, args dict.Dict) error {
@@ -50,7 +57,11 @@ func (w *WaspClientBackend) PostOffLedgerRequest(scName, funName string, transfe
 	if err != nil {
 		return err
 	}
-	return w.ChainClient.WaspClient.WaitUntilRequestProcessed(&w.ChainClient.ChainID, req.ID(), 1*time.Minute)
+	err = w.ChainClient.WaspClient.WaitUntilRequestProcessed(&w.ChainClient.ChainID, req.ID(), 1*time.Minute)
+	if err != nil {
+		return err
+	}
+	return w.ChainClient.CheckRequestResult(req.ID())
 }
 
 func (w *WaspClientBackend) CallView(scName, funName string, args dict.Dict) (dict.Dict, error) {

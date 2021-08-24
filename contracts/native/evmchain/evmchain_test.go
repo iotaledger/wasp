@@ -263,14 +263,20 @@ func TestGasLimit(t *testing.T) {
 
 	gasPerIotas := evmChain.getGasPerIotas()
 
-	iotasForGas := uint64(10000)
-	gaslimit := iotasForGas * gasPerIotas
-
-	_, err := storage.store(123, ethCallOptions{gasLimit: gaslimit, iota: iotaCallOptions{transfer: iotasForGas - 1}})
-	require.Contains(t, err.Error(), "transferred tokens (9999) not enough")
-
-	_, err = storage.store(123, ethCallOptions{gasLimit: gaslimit, iota: iotaCallOptions{transfer: iotasForGas}})
+	// estimate gas by sending a valid tx
+	result, err := storage.store(123)
 	require.NoError(t, err)
+	gas := result.receipt.GasUsed
+
+	// send again with same gas limit but not enough iotas
+	_, err = storage.store(123, ethCallOptions{gasLimit: gas, iota: iotaCallOptions{transfer: (gas+1)/gasPerIotas - 1}})
+	require.Error(t, err)
+	require.Regexp(t, `transferred tokens \(\d+\) not enough`, err.Error())
+
+	// send again with gas limit not enough for transaction
+	_, err = storage.store(123, ethCallOptions{gasLimit: 1 * gasPerIotas, iota: iotaCallOptions{transfer: 1}})
+	require.Error(t, err)
+	require.Regexp(t, `intrinsic gas too low: have \d+, want \d+`, err.Error())
 }
 
 // ensure the amount of iotas sent impacts the amount of loop iterators (gas used)
