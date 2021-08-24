@@ -13,7 +13,7 @@ type ContractFeesRecord struct {
 	// TODO I guess we should add FeeColor here as well
 }
 
-func NewContractFeesRecord(ownerFee uint64, validatorFee uint64) *ContractFeesRecord {
+func NewContractFeesRecord(ownerFee, validatorFee uint64) *ContractFeesRecord {
 	return &ContractFeesRecord{
 		OwnerFee:     ownerFee,
 		ValidatorFee: validatorFee,

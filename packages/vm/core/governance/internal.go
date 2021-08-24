@@ -49,7 +49,7 @@ func MustGetChainOwnerID(state kv.KVStoreReader) *iscp.AgentID {
 // It is not exposed to the sandbox
 func GetFeeInfo(ctx iscp.SandboxView, hname iscp.Hname) (colored.Color, uint64, uint64) {
 	state := ctx.State()
-	rec, _ := FindContractFees(state, hname)
+	rec := FindContractFees(state, hname)
 	return GetFeeInfoFromContractFeesRecord(state, rec)
 }
 
@@ -57,7 +57,7 @@ func GetFeeInfo(ctx iscp.SandboxView, hname iscp.Hname) (colored.Color, uint64, 
 // It is called from VMContext and viewcontext objects
 // It is not exposed to the sandbox
 func GetFeeInfoByHname(state kv.KVStoreReader, hname iscp.Hname) (colored.Color, uint64, uint64) {
-	rec, _ := FindContractFees(state, hname)
+	rec := FindContractFees(state, hname)
 	return GetFeeInfoFromContractFeesRecord(state, rec)
 }
 
@@ -66,17 +66,17 @@ func GetFeeInfoByHname(state kv.KVStoreReader, hname iscp.Hname) (colored.Color,
 // It is not directly exposed to the sandbox
 // If contract fees are not found by the given hname, nil is returned
 // the bool flag indicates if a contract-fees record was found or not
-func FindContractFees(state kv.KVStoreReader, hname iscp.Hname) (*ContractFeesRecord, bool) {
+func FindContractFees(state kv.KVStoreReader, hname iscp.Hname) *ContractFeesRecord {
 	contractRegistry := collections.NewMapReadOnly(state, VarContractFeesRegistry)
 	retBin := contractRegistry.MustGetAt(hname.Bytes())
 	if retBin == nil {
-		return nil, false
+		return nil
 	}
 	ret, err := ContractFeesRecordFromBytes(retBin)
 	if err != nil {
 		panic(xerrors.Errorf("FindContractFees: %w", err))
 	}
-	return ret, true
+	return ret
 }
 
 func GetFeeInfoFromContractFeesRecord(state kv.KVStoreReader, rec *ContractFeesRecord) (colored.Color, uint64, uint64) {

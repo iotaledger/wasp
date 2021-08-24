@@ -22,8 +22,10 @@ func setContractFee(ctx iscp.Sandbox) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
 
 	hname := params.MustGetHname(governance.ParamHname)
-	rec, found := governance.FindContractFees(ctx.State(), hname)
-	a.Require(found, "contract not found")
+	rec := governance.FindContractFees(ctx.State(), hname)
+	if rec == nil {
+		rec = governance.NewContractFeesRecord(0, 0)
+	}
 
 	ownerFee := params.MustGetUint64(governance.ParamOwnerFee, 0)
 	ownerFeeSet := ownerFee > 0
