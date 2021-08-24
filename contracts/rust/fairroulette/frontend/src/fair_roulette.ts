@@ -30,14 +30,38 @@ export class FairRoulette {
     const webSocketUrl = config.waspWebSocketUrl.replace("%chainId", chainId);
 
     this.webSocket = new WebSocket(webSocketUrl);
-    this.webSocket.addEventListener("message", this.handleIncomingMessage);
+    this.webSocket.addEventListener("message", x => this.handleIncomingMessage(x));
     this.webSocket.addEventListener("open", (ev) => {
       console.log("Opened")
     });
   }
 
-  private handleIncomingMessage(message: MessageEvent<any>) {
-    console.log(message.data);
+  private handleStateMessage(message: string[]) {
+    console.log("State update")
+  }
+
+  private handleVmMessage(message: string[]) {
+
+  }
+
+  private handleIncomingMessage(message: MessageEvent<string>) {
+    const msg = message.data.split(' ');
+
+    if (msg.length == 0) {
+      return;
+    }
+
+    console.log(msg)
+
+    switch (msg[0]) {
+      case 'state':
+        return this.handleStateMessage(msg);
+
+      case 'vmmsg':
+        return this.handleVmMessage(msg);
+    }
+
+    return;
   }
 
   public async placeBet(keyPair: IKeyPair, betNumber: number, take: number) {

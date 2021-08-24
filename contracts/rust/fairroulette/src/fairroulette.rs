@@ -30,13 +30,6 @@ const ENABLE_SELF_POST: bool = true;
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 pub fn func_place_bet(ctx: &ScFuncContext) {
-    let accountId = ctx.account_id();
-
-    ctx.event(&format!(
-        "fairroulette.placingBet: {0}",
-        accountId.to_string()
-    ));
-
     // Log the fact that we have initiated the 'placeBet' Func in the log on the host.
     ctx.log("fairroulette.placeBet");
 
@@ -77,6 +70,12 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
         amount: amount,
         number: number,
     };
+    ctx.event(&format!(
+        "fairroulette.placingBet {0} {1} {2}",
+        bet.better.to_string(),
+        bet.amount,
+        bet.number
+    ));
 
     // Create an ScMutableMap proxy to the state storage map on the host.
     let state: ScMutableMap = ctx.state();
@@ -113,7 +112,10 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
 
         if ENABLE_SELF_POST {
             state.get_int16(STATE_ROUND_ACTIVE).set_value(1);
-            ctx.event(&format!("fairroulette.round.active: 1"));
+            ctx.event(&format!(
+                "fairroulette.round {0}",
+                state.get_int16(STATE_ROUND_ACTIVE).value()
+            ));
             let transfer = ScTransfers::iotas(1);
             ctx.post_self(HFUNC_PLACE_BET, None, transfer, 0);
         }
@@ -122,10 +124,6 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
     // Finally, we log the fact that we have successfully completed execution
     // of the 'placeBet' Func in the log on the host.
     ctx.log("fairroulette.placeBet ok");
-    ctx.event(&format!(
-        "fairroulette.placedBet: {0}",
-        accountId.to_string()
-    ));
 }
 
 // 'payWinners' is a function whose execution gets initiated by the 'lockBets' function.
