@@ -16,7 +16,7 @@ require (
 	github.com/labstack/echo/v4 v4.1.13
 	github.com/libp2p/go-libp2p v0.14.4
 	github.com/libp2p/go-libp2p-core v0.8.5
-	github.com/libp2p/go-libp2p-quic-transport v0.10.0
+	github.com/libp2p/go-libp2p-quic-transport v0.12.0
 	github.com/libp2p/go-tcp-transport v0.2.4
 	github.com/mr-tron/base58 v1.2.0
 	github.com/multiformats/go-multiaddr v0.3.3
@@ -31,8 +31,8 @@ require (
 	go.nanomsg.org/mangos/v3 v3.0.1
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.16.0
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
-	golang.org/x/net v0.0.0-20210423184538-5f58ad60dda6
+	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf
+	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 )
