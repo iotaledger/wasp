@@ -30,7 +30,7 @@ type BatchProposal struct {
 }
 
 type consensusBatchParams struct {
-	medianTs        time.Time
+	timestamp       time.Time // A preliminary timestamp. It can be adjusted based on timestamps of selected requests.
 	accessPledge    identity.ID
 	consensusPledge identity.ID
 	feeDestination  *iscp.AgentID
@@ -116,6 +116,29 @@ func (b *BatchProposal) Bytes() []byte {
 	return mu.Bytes()
 }
 
+// EnsureTimestampConsistent adjusts a batch timestamp, if it is not consistent with
+// the requests in the BatchProposal and the previous transaction. The timestamp is consistent,
+// if it is not bellow the timestamps of all the on-ledger requests and the previous transaction in the chain.
+// This implement the "fixing" part described in IscpBatchTimestamp.tla.
+func (b *BatchProposal) EnsureTimestampConsistent(requests []iscp.Request, stateTimestamp time.Time) error {
+	maxReqTime := time.Time{}
+	for i := range b.RequestIDs {
+		if requests[i].Hash() != b.RequestHashes[i] {
+			return xerrors.New("inconsistent requests in EnsureTimestampConsistent")
+		}
+		if maxReqTime.Before(requests[i].Timestamp()) {
+			maxReqTime = requests[i].Timestamp()
+		}
+	}
+	if b.Timestamp.Before(maxReqTime) {
+		b.Timestamp = maxReqTime
+	}
+	if b.Timestamp.Before(stateTimestamp) {
+		b.Timestamp = stateTimestamp
+	}
+	return nil
+}
+
 // calcBatchParameters from a given ACS deterministically calculates timestamp, access and consensus
 // mana pledges and fee destination.
 //
@@ -158,7 +181,7 @@ func (c *Consensus) calcBatchParameters(props []*BatchProposal) (*consensusBatch
 	// selects pseudo-random based on seed, the calculated timestamp
 	selectedIndex := util.SelectDeterministicRandomUint16(indices, retTS.UnixNano())
 	return &consensusBatchParams{
-		medianTs:        retTS,
+		timestamp:       retTS,
 		accessPledge:    props[selectedIndex].AccessManaPledge,
 		consensusPledge: props[selectedIndex].ConsensusManaPledge,
 		feeDestination:  props[selectedIndex].FeeDestination,

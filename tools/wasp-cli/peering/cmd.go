@@ -19,6 +19,7 @@ var peeringCmd = &cobra.Command{
 
 func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(peeringCmd)
+	peeringCmd.AddCommand(infoCmd)
 	peeringCmd.AddCommand(trustCmd)
 	peeringCmd.AddCommand(distrustCmd)
 	peeringCmd.AddCommand(listTrustedCmd)

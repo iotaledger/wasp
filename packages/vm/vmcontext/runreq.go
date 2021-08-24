@@ -271,7 +271,7 @@ func (vmctx *VMContext) mustSendBack(tokens colored.Balances) {
 	backToAddress := sender.Address()
 	backToContract := sender.Hname()
 	metadata := request.NewMetadata().WithTarget(backToContract)
-	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), colored.ToL1Map(tokens))
+	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), colored.ToL1Map(tokens), nil)
 	if err != nil {
 		vmctx.log.Errorf("mustSendBack: %v", err)
 	}
@@ -332,8 +332,11 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 }
 
 func isRequestTimeLockedNow(req iscp.Request, nowis time.Time) bool {
-	if req.TimeLock().IsZero() {
+	if req.IsOffLedger() {
 		return false
 	}
-	return req.TimeLock().After(nowis)
+	if req.(*request.OnLedger).TimeLock().IsZero() {
+		return false
+	}
+	return req.(*request.OnLedger).TimeLock().After(nowis)
 }

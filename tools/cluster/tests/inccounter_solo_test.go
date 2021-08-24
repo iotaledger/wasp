@@ -21,6 +21,7 @@ var incHname = iscp.Hn(incName)
 const (
 	varCounter    = "counter"
 	varNumRepeats = "numRepeats"
+	varDelay      = "delay"
 )
 
 func TestIncSoloInc(t *testing.T) {
