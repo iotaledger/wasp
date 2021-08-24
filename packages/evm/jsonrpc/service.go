@@ -127,6 +127,9 @@ func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]inter
 	if err != nil {
 		return nil, err
 	}
+	if r == nil {
+		return nil, nil
+	}
 	return RPCMarshalReceipt(r), nil
 }
 

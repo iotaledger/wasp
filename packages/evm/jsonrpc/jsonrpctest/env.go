@@ -208,8 +208,12 @@ func (e *Env) Storage(address common.Address, key common.Hash) []byte {
 	return data
 }
 
-func (e *Env) TxReceipt(hash common.Hash) *types.Receipt {
-	r, err := e.Client.TransactionReceipt(context.Background(), hash)
+func (e *Env) TxReceipt(hash common.Hash) (*types.Receipt, error) {
+	return e.Client.TransactionReceipt(context.Background(), hash)
+}
+
+func (e *Env) MustTxReceipt(hash common.Hash) *types.Receipt {
+	r, err := e.TxReceipt(hash)
 	require.NoError(e.T, err)
 	return r
 }
