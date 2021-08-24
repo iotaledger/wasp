@@ -84,7 +84,7 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) (dict.Dict, error) {
 		TargetContract: ctx.Contract(),
 		EntryPoint:     FuncIncCounter.Hname(),
 	}, iscp.SendOptions{
-		TimeLock: 5 * 60,
+		TimeLock: 5,
 	}) {
 		return nil, fmt.Errorf("incCounterAndRepeatOnce: not enough funds")
 	}

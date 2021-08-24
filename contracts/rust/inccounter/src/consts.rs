@@ -17,6 +17,7 @@ pub const HSC_NAME: ScHname = ScHname(0xaf2438e9);
 pub const PARAM_COUNTER:     &str = "counter";
 pub const PARAM_DUMMY:       &str = "dummy";
 pub const PARAM_NUM_REPEATS: &str = "numRepeats";
+pub const PARAM_DELAY:       &str = "delay";
 
 pub const RESULT_COUNTER: &str = "counter";
 
@@ -27,6 +28,8 @@ pub const FUNC_CALL_INCREMENT:            &str = "callIncrement";
 pub const FUNC_CALL_INCREMENT_RECURSE5X:  &str = "callIncrementRecurse5x";
 pub const FUNC_ENDLESS_LOOP:              &str = "endlessLoop";
 pub const FUNC_INCREMENT:                 &str = "increment";
+pub const FUNC_INCREMENT_WITH_DELAY:      &str = "incrementdelay";
+
 pub const FUNC_INIT:                      &str = "init";
 pub const FUNC_LOCAL_STATE_INTERNAL_CALL: &str = "localStateInternalCall";
 pub const FUNC_LOCAL_STATE_POST:          &str = "localStatePost";

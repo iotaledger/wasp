@@ -252,3 +252,18 @@ func TestIncViewCounter(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 1, counter)
 }
+
+func TestIncCounterDelay(t *testing.T) {
+	e := setupWithContractAndMessageCounter(t, incName, incDescription, 1)
+	e.postRequest(incHname, iscp.Hn("increment"), 0, nil)
+	e.checkCounter(1)
+
+	e.postRequest(incHname, iscp.Hn("incrementdelay"), 0, map[string]interface{}{
+		varDelay: int32(5), // 10s delay
+	})
+
+	time.Sleep(3 * time.Second)
+	e.checkCounter(1)
+	time.Sleep(3 * time.Second)
+	e.checkCounter(2)
+}

@@ -1,6 +1,7 @@
 package vmcontext
 
 import (
+	"github.com/iotaledger/goshimmer/client/wallet/packages/sendoptions"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -64,7 +65,6 @@ func (vmctx *VMContext) RequestID() iscp.RequestID {
 
 const maxParamSize = 512
 
-// TODO implement send options
 func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances, metadata *iscp.SendMetadata, options ...iscp.SendOptions) bool {
 	if vmctx.requestOutputCount >= MaxBlockOutputCount {
 		vmctx.log.Panicf("request with ID %s exceeded max number of allowed outputs (%d)", vmctx.req.ID().Base58(), MaxBlockOutputCount)
@@ -96,7 +96,11 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances
 	if !vmctx.debitFromAccount(sourceAccount, tokens) {
 		return false
 	}
-	err := vmctx.txBuilder.AddExtendedOutputSpend(target, data.Bytes(), colored.ToL1Map(tokens))
+	var opts *sendoptions.SendFundsOptions
+	if len(options) == 1 {
+		opts = options[0].ToGoshimmerSendOptions()
+	}
+	err := vmctx.txBuilder.AddExtendedOutputSpend(target, data.Bytes(), colored.ToL1Map(tokens), opts)
 	if err != nil {
 		vmctx.log.Errorf("Send: %v", err)
 		return false
