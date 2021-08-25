@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
-// TODO test dashboard
 type RootInfo struct {
 	ChainID iscp.ChainID
 
