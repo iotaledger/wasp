@@ -135,7 +135,6 @@ func TestDeployContractAndSpawn(t *testing.T) {
 
 		cr := contractRegistry[hnameNew]
 		require.EqualValues(t, dscrNew, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, nameNew, cr.Name)
 
 		counterValue, err := chain.GetCounterValue(hname, i)

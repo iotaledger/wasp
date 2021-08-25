@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -53,18 +54,18 @@ func (vmctx *VMContext) findContractByHname(contractHname iscp.Hname) (*root.Con
 	return root.FindContract(vmctx.State(), contractHname)
 }
 
-func (vmctx *VMContext) getChainInfo() root.ChainInfo {
-	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
+func (vmctx *VMContext) getChainInfo() governance.ChainInfo {
+	vmctx.pushCallContext(governance.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return root.MustGetChainInfo(vmctx.State())
+	return governance.MustGetChainInfo(vmctx.State())
 }
 
 func (vmctx *VMContext) getFeeInfo() (colored.Color, uint64, uint64) {
-	vmctx.pushCallContext(root.Contract.Hname(), nil, nil)
+	vmctx.pushCallContext(governance.Contract.Hname(), nil, nil)
 	defer vmctx.popCallContext()
 
-	return root.GetFeeInfoByContractRecord(vmctx.State(), vmctx.contractRecord)
+	return governance.GetFeeInfoByHname(vmctx.State(), vmctx.contractRecord.Hname())
 }
 
 func (vmctx *VMContext) getBinary(programHash hashing.HashValue) (string, []byte, error) {

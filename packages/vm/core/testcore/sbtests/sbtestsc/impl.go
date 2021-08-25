@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
@@ -54,11 +54,11 @@ func testChainOwnerIDFull(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func testSandboxCall(ctx iscp.SandboxView) (dict.Dict, error) {
-	ret, err := ctx.Call(root.Contract.Hname(), root.FuncGetChainInfo.Hname(), nil)
+	ret, err := ctx.Call(governance.Contract.Hname(), governance.FuncGetChainInfo.Hname(), nil)
 	if err != nil {
 		return nil, err
 	}
-	desc := ret.MustGet(root.VarDescription)
+	desc := ret.MustGet(governance.VarDescription)
 
 	ret.Set(VarSandboxCall, desc)
 

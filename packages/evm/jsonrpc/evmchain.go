@@ -6,16 +6,16 @@ package jsonrpc
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -54,13 +54,13 @@ func (e *EVMChain) BlockNumber() (*big.Int, error) {
 }
 
 func (e *EVMChain) FeeColor() (colored.Color, error) {
-	feeInfo, err := e.backend.CallView(root.Contract.Name, root.FuncGetFeeInfo.Name, dict.Dict{
+	feeInfo, err := e.backend.CallView(governance.Contract.Name, governance.FuncGetFeeInfo.Name, dict.Dict{
 		root.ParamHname: evmchain.Contract.Hname().Bytes(),
 	})
 	if err != nil {
 		return colored.Color{}, err
 	}
-	feeColor, _, err := codec.DecodeColor(feeInfo.MustGet(root.ParamFeeColor))
+	feeColor, _, err := codec.DecodeColor(feeInfo.MustGet(governance.ParamFeeColor))
 	return feeColor, err
 }
 

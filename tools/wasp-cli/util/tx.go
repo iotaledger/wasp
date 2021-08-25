@@ -54,16 +54,7 @@ func WithSCTransaction(chainID *iscp.ChainID, f func() (*ledgerstate.Transaction
 func logTx(tx *ledgerstate.Transaction, chainID *iscp.ChainID) {
 	var reqs []iscp.RequestID
 	if chainID != nil {
-		for _, out := range tx.Essence().Outputs() {
-			if !out.Address().Equals(chainID.AsAddress()) {
-				continue
-			}
-			out, ok := out.(*ledgerstate.ExtendedLockedOutput)
-			if !ok {
-				continue
-			}
-			reqs = append(reqs, iscp.RequestID(out.ID()))
-		}
+		reqs = request.RequestsInTransaction(chainID, tx)
 	}
 	if len(reqs) == 0 {
 		log.Printf("Posted on-ledger transaction %s\n", tx.ID().Base58())

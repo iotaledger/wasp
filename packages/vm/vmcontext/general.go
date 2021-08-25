@@ -59,47 +59,6 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 	return vmctx.entropy
 }
 
-// Post1Request creates a request section in the transaction with specified parameters
-// The transfer not include 1 iota for the request token but includes node fee, if eny
-//func (vmctx *VMContext) Post1Request(par iscp.PostRequestParams) bool {
-//	vmctx.log.Debugw("-- PostRequestSync",
-//		"target", par.TargetContractID.String(),
-//		"ep", par.VMProcessorEntryPoint.String(),
-//		"transfer", par.Tokens.String(),
-//	)
-//	myAgentID := vmctx.MyAgentID()
-//	if !vmctx.debitFromAccount(myAgentID, par.Tokens) {
-//		vmctx.log.Debugf("-- PostRequestSync: not enough funds")
-//		return false
-//	}
-//	reqParams := requestargs.New(nil)
-//	reqParams.AddEncodeSimpleMany(par.Params)
-//	reqSection := sctransaction_old.NewRequestSection(vmctx.CurrentContractHname(), par.TargetContractID, par.VMProcessorEntryPoint).
-//		WithTimeLock(par.TimeLock).
-//		WithTransfer(par.Tokens).
-//		WithArgs(reqParams)
-//	return vmctx.txBuilder.AddRequestSection(reqSection) == nil
-//}
-//
-//func (vmctx *VMContext) PostRequestToSelf(reqCode iscp.Hname, params dict.Dict) bool {
-//	return vmctx.Post1Request(iscp.PostRequestParams{
-//		TargetContractID: vmctx.CurrentContractID(),
-//		VMProcessorEntryPoint:       reqCode,
-//		Params:           params,
-//	})
-//}
-//
-//func (vmctx *VMContext) PostRequestToSelfWithDelay(entryPoint iscp.Hname, args dict.Dict, delaySec uint32) bool {
-//	timelock := util.NanoSecToUnixSec(vmctx.timestamp) + delaySec
-//
-//	return vmctx.Post1Request(iscp.PostRequestParams{
-//		TargetContractID: vmctx.CurrentContractID(),
-//		VMProcessorEntryPoint:       entryPoint,
-//		Params:           args,
-//		TimeLock:         timelock,
-//	})
-//}
-
 func (vmctx *VMContext) RequestID() iscp.RequestID {
 	return vmctx.req.ID()
 }
@@ -107,11 +66,16 @@ func (vmctx *VMContext) RequestID() iscp.RequestID {
 const maxParamSize = 512
 
 func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances, metadata *iscp.SendMetadata, options ...iscp.SendOptions) bool {
+	if vmctx.requestOutputCount >= MaxBlockOutputCount {
+		vmctx.log.Panicf("request with ID %s exceeded max number of allowed outputs (%d)", vmctx.req.ID().Base58(), MaxBlockOutputCount)
+	}
+
 	if tokens == nil || len(tokens) == 0 {
 		vmctx.log.Errorf("Send: transfer can't be empty")
 		return false
 	}
 	data := request.NewMetadata().
+		WithRequestNonce(vmctx.blockOutputCount).
 		WithSender(vmctx.CurrentContractHname())
 	if metadata != nil {
 		var args requestargs.RequestArgs
@@ -141,6 +105,8 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances
 		vmctx.log.Errorf("Send: %v", err)
 		return false
 	}
+	vmctx.requestOutputCount++
+	vmctx.blockOutputCount++
 	return true
 }
 

@@ -50,6 +50,8 @@ type Metadata struct {
 	targetContract iscp.Hname
 	// entry point code
 	entryPoint iscp.Hname
+	// used to prevent identical outputs from being generated
+	requestNonce uint8
 	// request arguments, not decoded yet wrt blobRefs
 	args requestargs.RequestArgs
 }
@@ -82,6 +84,11 @@ func (p *Metadata) WithTarget(t iscp.Hname) *Metadata {
 
 func (p *Metadata) WithEntryPoint(ep iscp.Hname) *Metadata {
 	p.entryPoint = ep
+	return p
+}
+
+func (p *Metadata) WithRequestNonce(nonce uint8) *Metadata {
+	p.requestNonce = nonce
 	return p
 }
 
@@ -141,7 +148,8 @@ func (p *Metadata) Bytes() []byte {
 func (p *Metadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(p.senderContract).
 		Write(p.targetContract).
-		Write(p.entryPoint)
+		Write(p.entryPoint).
+		WriteByte(p.requestNonce)
 	p.args.WriteToMarshalUtil(mu)
 }
 
@@ -154,6 +162,9 @@ func (p *Metadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 		return err
 	}
 	if p.entryPoint, err = iscp.HnameFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	if p.requestNonce, err = mu.ReadByte(); err != nil {
 		return err
 	}
 	if p.args, err = requestargs.FromMarshalUtil(mu); err != nil {
@@ -564,4 +575,19 @@ func SolidifyArgs(req iscp.Request, reg registry.BlobCache) (bool, error) {
 	}
 	sreq.SetParams(solid)
 	return true, nil
+}
+
+func RequestsInTransaction(chainID *iscp.ChainID, tx *ledgerstate.Transaction) []iscp.RequestID {
+	var reqs []iscp.RequestID
+	for _, out := range tx.Essence().Outputs() {
+		if !out.Address().Equals(chainID.AsAddress()) {
+			continue
+		}
+		out, ok := out.(*ledgerstate.ExtendedLockedOutput)
+		if !ok {
+			continue
+		}
+		reqs = append(reqs, iscp.RequestID(out.ID()))
+	}
+	return reqs
 }

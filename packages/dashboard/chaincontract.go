@@ -6,9 +6,11 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/labstack/echo/v4"
 )
@@ -54,6 +56,21 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 		return err
 	}
 
+	fees, err := d.wasp.CallView(chainID, governance.Contract.Name, governance.FuncGetFeeInfo.Name, codec.MakeDict(map[string]interface{}{
+		governance.ParamHname: codec.EncodeHname(hname),
+	}))
+	if err != nil {
+		return err
+	}
+	result.OwnerFee, _, err = codec.DecodeUint64(fees.MustGet(governance.VarOwnerFee))
+	if err != nil {
+		return err
+	}
+	result.ValidatorFee, _, err = codec.DecodeUint64(fees.MustGet(governance.VarValidatorFee))
+	if err != nil {
+		return err
+	}
+
 	r, err = d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.FuncGetEventsForContract.Name, codec.MakeDict(map[string]interface{}{
 		blocklog.ParamContractHname: codec.EncodeHname(hname),
 	}))
@@ -86,6 +103,9 @@ type ChainContractTemplateParams struct {
 	Hname   iscp.Hname
 
 	ContractRecord *root.ContractRecord
+	OwnerFee       uint64
+	ValidatorFee   uint64
+	FeeColor       colored.Color
 	Log            []string
 	RootInfo       RootInfo
 }

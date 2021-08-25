@@ -6,6 +6,7 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/webapi/model"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
@@ -35,15 +36,8 @@ func (c *WaspClient) WaitUntilRequestProcessed(chainID *iscp.ChainID, reqID iscp
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by the node
 func (c *WaspClient) WaitUntilAllRequestsProcessed(chainID iscp.ChainID, tx *ledgerstate.Transaction, timeout time.Duration) error {
-	for _, out := range tx.Essence().Outputs() {
-		if !out.Address().Equals(chainID.AsAddress()) {
-			continue
-		}
-		out, ok := out.(*ledgerstate.ExtendedLockedOutput)
-		if !ok {
-			continue
-		}
-		if err := c.WaitUntilRequestProcessed(&chainID, iscp.RequestID(out.ID()), timeout); err != nil {
+	for _, reqID := range request.RequestsInTransaction(&chainID, tx) {
+		if err := c.WaitUntilRequestProcessed(&chainID, reqID, timeout); err != nil {
 			return err
 		}
 	}

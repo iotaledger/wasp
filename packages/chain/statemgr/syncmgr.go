@@ -95,7 +95,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 		}
 		if approvedBlockCandidatesCount > 0 {
 			sm.log.Debugf("doSyncAction: trying to find candidates to commit from index %v to %v", startSyncFromIndex, i)
-			candidates, tentativeState, ok := sm.getCandidatesToCommit(make([]*candidateBlock, 0, i-startSyncFromIndex+1), startSyncFromIndex, i)
+			candidates, tentativeState, ok := sm.getCandidatesToCommit(make([]*candidateBlock, 0, i-startSyncFromIndex+1), sm.solidState.Clone(), startSyncFromIndex, i)
 			if ok {
 				sm.log.Debugf("doSyncAction: candidates to commit found, committing")
 				sm.commitCandidates(candidates, tentativeState)
@@ -106,31 +106,20 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	}
 }
 
-func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fromStateIndex, toStateIndex uint32) ([]*candidateBlock, state.VirtualState, bool) {
+func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, calculatedPrevState state.VirtualState, fromStateIndex, toStateIndex uint32) ([]*candidateBlock, state.VirtualState, bool) {
 	sm.log.Debugf("getCandidatesToCommit from %v to %v", fromStateIndex, toStateIndex)
 	if fromStateIndex > toStateIndex {
-		// Blocks gathered. Check if the correct result is received if they are applied
-		tentativeState := sm.solidState.Clone()
-		for _, candidate := range candidateAcc {
-			var err error
-			tentativeState, err = candidate.getNextState(tentativeState)
-			if err != nil {
-				sm.log.Errorf("getCandidatesToCommit from %v to %v: failed to apply synced block index #%d: %v",
-					fromStateIndex, toStateIndex, candidate.getBlock().BlockIndex(), err)
-				return nil, nil, false
-			}
-		}
 		// state hashes must be equal
-		tentativeHash := tentativeState.Hash()
-		finalHash := candidateAcc[len(candidateAcc)-1].getNextStateHash()
-		if tentativeHash != finalHash {
+		finalStateHash := calculatedPrevState.Hash()
+		finalCandidateHash := candidateAcc[len(candidateAcc)-1].getNextStateHash()
+		if finalStateHash != finalCandidateHash {
 			sm.log.Debugf("getCandidatesToCommit from %v to %v: tentative state obtained, however its hash does not match last candidate expected hash: %v != %v",
-				fromStateIndex, toStateIndex, tentativeHash.String(), finalHash.String())
+				fromStateIndex, toStateIndex, finalStateHash.String(), finalCandidateHash.String())
 			return nil, nil, false
 		}
 		sm.log.Debugf("getCandidatesToCommit from %v to %v: tentative state obtained, its hash matches last candidate expected hash: %v",
-			fromStateIndex, toStateIndex, tentativeHash.String())
-		return candidateAcc, tentativeState, true
+			fromStateIndex, toStateIndex, finalStateHash.String())
+		return candidateAcc, calculatedPrevState, true
 	}
 	var stateCandidateBlocks []*candidateBlock
 	if fromStateIndex == toStateIndex {
@@ -143,7 +132,20 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, fr
 	})
 	for i, stateCandidateBlock := range stateCandidateBlocks {
 		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i+1, len(stateCandidateBlocks))
-		resultBlocks, tentativeState, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), fromStateIndex+1, toStateIndex)
+		candidatePrevStateHash := stateCandidateBlock.getBlock().PreviousStateHash()
+		calculatedPrevStateHash := calculatedPrevState.Hash()
+		if candidatePrevStateHash != calculatedPrevStateHash {
+			sm.log.Errorf("getCandidatesToCommit from %v to %v: candidate previous state hash does not match calculated state hash: %v <> %v",
+				fromStateIndex, toStateIndex, candidatePrevStateHash.String(), calculatedPrevStateHash.String())
+			return nil, nil, false
+		}
+		calculatedState, err := stateCandidateBlock.getNextState(calculatedPrevState)
+		if err != nil {
+			sm.log.Errorf("getCandidatesToCommit from %v to %v: failed to apply synced block index #%d: %v",
+				fromStateIndex, toStateIndex, stateCandidateBlock.getBlock().BlockIndex(), err)
+			return nil, nil, false
+		}
+		resultBlocks, tentativeState, ok := sm.getCandidatesToCommit(append(candidateAcc, stateCandidateBlock), calculatedState, fromStateIndex+1, toStateIndex)
 		if ok {
 			return resultBlocks, tentativeState, true
 		}

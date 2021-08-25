@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -27,20 +28,24 @@ func (e *chainEnv) checkCoreContracts() {
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, []byte{0xFF}, b)
 
-		cl := e.chain.SCClient(root.Contract.Hname(), nil, i)
-		ret, err := cl.CallView(root.FuncGetChainInfo.Name, nil)
+		cl := e.chain.SCClient(governance.Contract.Hname(), nil, i)
+		ret, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
-		chid, _, _ := codec.DecodeChainID(ret.MustGet(root.VarChainID))
+		chid, _, _ := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
 		require.EqualValues(e.t, e.chain.ChainID, chid)
 
-		aid, _, _ := codec.DecodeAgentID(ret.MustGet(root.VarChainOwnerID))
+		aid, _, _ := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
 		require.EqualValues(e.t, *e.chain.OriginatorID(), aid)
 
-		desc, _, _ := codec.DecodeString(ret.MustGet(root.VarDescription))
+		desc, _, _ := codec.DecodeString(ret.MustGet(governance.VarDescription))
 		require.EqualValues(e.t, e.chain.Description, desc)
 
-		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+		records, err := e.chain.SCClient(root.Contract.Hname(), nil, i).
+			CallView(root.FuncGetContractRecords.Name, nil)
+		require.NoError(e.t, err)
+
+		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.VarContractRegistry))
 		require.NoError(e.t, err)
 		for _, rec := range core.AllCoreContractsByHash {
 			cr := contractRegistry[rec.Contract.Hname()]
@@ -48,7 +53,6 @@ func (e *chainEnv) checkCoreContracts() {
 
 			require.EqualValues(e.t, rec.Contract.ProgramHash, cr.ProgramHash)
 			require.EqualValues(e.t, rec.Contract.Description, cr.Description)
-			require.EqualValues(e.t, 0, cr.OwnerFee)
 			require.EqualValues(e.t, rec.Contract.Name, cr.Name)
 		}
 	}
@@ -179,15 +183,15 @@ func (e *chainEnv) checkLedger() {
 
 func (e *chainEnv) getChainInfo() (iscp.ChainID, iscp.AgentID) {
 	ret, err := e.chain.Cluster.WaspClient(0).CallView(
-		e.chain.ChainID, root.Contract.Hname(), root.FuncGetChainInfo.Name, nil,
+		e.chain.ChainID, governance.Contract.Hname(), governance.FuncGetChainInfo.Name, nil,
 	)
 	require.NoError(e.t, err)
 
-	chainID, ok, err := codec.DecodeChainID(ret.MustGet(root.VarChainID))
+	chainID, ok, err := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
 	require.NoError(e.t, err)
 	require.True(e.t, ok)
 
-	ownerID, ok, err := codec.DecodeAgentID(ret.MustGet(root.VarChainOwnerID))
+	ownerID, ok, err := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
 	require.NoError(e.t, err)
 	require.True(e.t, ok)
 	return chainID, ownerID
