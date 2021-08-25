@@ -20,6 +20,10 @@ type Metrics struct {
 	offLedgerRequestCounter *prometheus.CounterVec
 	onLedgerRequestCounter  *prometheus.CounterVec
 	processedRequestCounter *prometheus.CounterVec
+	messagesReceived        *prometheus.CounterVec
+	requestAckMessages      *prometheus.CounterVec
+	requestProcessingTime   *prometheus.GaugeVec
+	vmRunTime               *prometheus.GaugeVec
 }
 
 func (m *Metrics) NewChainMetrics(chainID *iscp.ChainID) ChainMetrics {
@@ -44,6 +48,31 @@ func (m *Metrics) NewChainMetrics(chainID *iscp.ChainID) ChainMetrics {
 		Help: "Number of requests processed",
 	}, []string{"chain"})
 	prometheus.MustRegister(m.processedRequestCounter)
+
+	m.messagesReceived = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "messages_received_per_chain",
+		Help: "Number of messages received",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.messagesReceived)
+
+	m.requestAckMessages = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "receive_requests_acknowledgement_message",
+		Help: "Receive request acknowledgement messages per chain",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.requestAckMessages)
+
+	m.requestProcessingTime = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "request_processing_time",
+		Help: "Time to process request",
+	}, []string{"chain", "request"})
+	prometheus.MustRegister(m.requestProcessingTime)
+
+	m.vmRunTime = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "vm_run_time",
+		Help: "Time it takes to run the vm",
+	}, []string{"chain"})
+	prometheus.MustRegister(m.vmRunTime)
+
 	return &chainMetricsObj{
 		metrics: m,
 		chainID: chainID,

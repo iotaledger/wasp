@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/runvm"
@@ -63,6 +64,8 @@ type Consensus struct {
 	missingRequestsFromBatch         map[iscp.RequestID][32]byte
 	missingRequestsMutex             sync.Mutex
 	pullMissingRequestsFromCommittee bool
+	vmRunStartTime                   time.Time
+	consensusMetrics                 metrics.ConsensusMetrics
 }
 
 type workflowFlags struct {
@@ -79,7 +82,7 @@ type workflowFlags struct {
 
 var _ chain.Consensus = &Consensus{}
 
-func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, timersOpt ...ConsensusTimers) *Consensus {
+func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Committee, nodeConn chain.NodeConnection, pullMissingRequestsFromCommittee bool, consensusMetrics metrics.ConsensusMetrics, timersOpt ...ConsensusTimers) *Consensus {
 	var timers ConsensusTimers
 	if len(timersOpt) > 0 {
 		timers = timersOpt[0]
@@ -107,6 +110,7 @@ func New(chainCore chain.ChainCore, mempool chain.Mempool, committee chain.Commi
 		closeCh:                          make(chan struct{}),
 		assert:                           assert.NewAssert(log),
 		pullMissingRequestsFromCommittee: pullMissingRequestsFromCommittee,
+		consensusMetrics:                 consensusMetrics,
 	}
 	ret.refreshConsensusInfo()
 	go ret.recvLoop()

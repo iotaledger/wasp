@@ -118,6 +118,7 @@ func (c *Consensus) runVMIfNeeded() {
 	}
 
 	c.log.Debugf("runVM needed: total number of requests = %d", len(reqs))
+	c.vmRunStartTime = time.Now()
 	// here reqs as a set is deterministic. Must be sorted to have fully deterministic list
 	c.sortBatch(reqs)
 
@@ -232,6 +233,8 @@ func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		c.chain.ReceiveMessage(&messages.VMResultMsg{
 			Task: task,
 		})
+		elapse := time.Since(c.vmRunStartTime)
+		c.consensusMetrics.RecordVMRunTime(elapse)
 	}
 	c.log.Debugf("prepareVMTask: VM task prepared")
 	return task
