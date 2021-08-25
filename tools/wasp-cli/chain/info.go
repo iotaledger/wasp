@@ -33,7 +33,9 @@ var infoCmd = &cobra.Command{
 			log.Check(err)
 			log.Printf("Description: %s\n", description)
 
-			contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
+			recs, err := SCClient(root.Contract.Hname()).CallView(root.FuncGetContractRecords.Name, nil)
+			log.Check(err)
+			contracts, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.VarContractRegistry))
 			log.Check(err)
 			log.Printf("#Contracts: %d\n", len(contracts))
 

@@ -30,11 +30,6 @@ func (d *Dashboard) fetchRootInfo(chainID *iscp.ChainID) (ret RootInfo, err erro
 		return
 	}
 
-	ret.Contracts, err = root.DecodeContractRegistry(collections.NewMapReadOnly(info, root.VarContractRegistry))
-	if err != nil {
-		return
-	}
-
 	ownerID, _, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
 	if err != nil {
 		return
@@ -53,6 +48,15 @@ func (d *Dashboard) fetchRootInfo(chainID *iscp.ChainID) (ret RootInfo, err erro
 	}
 
 	ret.FeeColor, ret.DefaultOwnerFee, ret.DefaultValidatorFee, err = governance.GetDefaultFeeInfo(info)
+	if err != nil {
+		return
+	}
+
+	recs, err := d.wasp.CallView(chainID, root.Contract.Name, root.FuncGetContractRecords.Name, nil)
+	if err != nil {
+		return
+	}
+	ret.Contracts, err = root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.VarContractRegistry))
 	if err != nil {
 		return
 	}

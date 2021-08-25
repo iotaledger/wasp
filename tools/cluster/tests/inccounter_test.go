@@ -22,19 +22,22 @@ func (e *contractEnv) checkSC(numRequests int) {
 		require.EqualValues(e.t, numRequests+3, blockIndex)
 
 		cl := e.chain.SCClient(governance.Contract.Hname(), nil, i)
-		ret, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
+		info, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
-		chid, _, _ := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
+		chid, _, _ := codec.DecodeChainID(info.MustGet(governance.VarChainID))
 		require.EqualValues(e.t, e.chain.ChainID, chid)
 
-		aid, _, _ := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
+		aid, _, _ := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
 		require.EqualValues(e.t, *e.chain.OriginatorID(), aid)
 
-		desc, _, _ := codec.DecodeString(ret.MustGet(governance.VarDescription))
+		desc, _, _ := codec.DecodeString(info.MustGet(governance.VarDescription))
 		require.EqualValues(e.t, e.chain.Description, desc)
 
-		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+		recs, err := e.chain.SCClient(root.Contract.Hname(), nil, i).CallView(root.FuncGetContractRecords.Name, nil)
+		require.NoError(e.t, err)
+
+		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(recs, root.VarContractRegistry))
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, len(core.AllCoreContractsByHash)+1, len(contractRegistry))
 
@@ -59,35 +62,7 @@ func TestIncDeployment(t *testing.T) {
 	if !e.counter.WaitUntilExpectationsMet() {
 		t.Fail()
 	}
-
-	for i := range e.chain.CommitteeNodes {
-		blockIndex, err := e.chain.BlockIndex(i)
-		require.NoError(t, err)
-		require.EqualValues(t, 3, blockIndex)
-
-		cl := e.chain.SCClient(governance.Contract.Hname(), nil, i)
-		ret, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
-		require.NoError(t, err)
-
-		chid, _, _ := codec.DecodeChainID(ret.MustGet(governance.VarChainID))
-		require.EqualValues(t, e.chain.ChainID, chid)
-
-		aid, _, _ := codec.DecodeAgentID(ret.MustGet(governance.VarChainOwnerID))
-		require.EqualValues(t, *e.chain.OriginatorID(), aid)
-
-		desc, _, _ := codec.DecodeString(ret.MustGet(governance.VarDescription))
-		require.EqualValues(t, e.chain.Description, desc)
-
-		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
-		require.NoError(t, err)
-		require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(contractRegistry))
-
-		cr := contractRegistry[incHname]
-
-		require.EqualValues(t, e.programHash, cr.ProgramHash)
-		require.EqualValues(t, incName, cr.Name)
-		require.EqualValues(t, incDescription, cr.Description)
-	}
+	e.checkSC(0)
 	e.checkCounter(0)
 }
 
