@@ -27,17 +27,17 @@ func setContractFee(ctx iscp.Sandbox) (dict.Dict, error) {
 		rec = governance.NewContractFeesRecord(0, 0)
 	}
 
-	ownerFee := params.MustGetUint64(governance.ParamOwnerFee, 0)
-	ownerFeeSet := ownerFee > 0
-	validatorFee := params.MustGetUint64(governance.ParamValidatorFee, 0)
-	validatorFeeSet := validatorFee > 0
+	ownerFee := params.MustGetInt64(governance.ParamOwnerFee, -1)
+	ownerFeeSet := ownerFee >= 0
+	validatorFee := params.MustGetInt64(governance.ParamValidatorFee, -1)
+	validatorFeeSet := validatorFee >= 0
 
 	a.Require(ownerFeeSet || validatorFeeSet, "governance.setContractFee: wrong parameters")
 	if ownerFeeSet {
-		rec.OwnerFee = ownerFee
+		rec.OwnerFee = uint64(ownerFee)
 	}
 	if validatorFeeSet {
-		rec.ValidatorFee = validatorFee
+		rec.ValidatorFee = uint64(validatorFee)
 	}
 	collections.NewMap(ctx.State(), governance.VarContractFeesRegistry).MustSetAt(hname.Bytes(), rec.Bytes())
 	return nil, nil

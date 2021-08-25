@@ -298,3 +298,33 @@ func TestFeeOwnerDontNeed(t *testing.T) {
 	chain.AssertCommonAccountIotas(101)
 	chain.AssertTotalIotas(101)
 }
+
+func TestRevertContractFeeToZero(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
+		governance.ParamHname, blob.Contract.Hname(),
+		governance.ParamValidatorFee, 1000,
+		governance.ParamOwnerFee, 1000,
+	).WithIotas(1)
+	_, err := chain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	checkFees(chain, root.Contract.Name, 0, 0)
+	checkFees(chain, accounts.Contract.Name, 0, 0)
+	checkFees(chain, blob.Contract.Name, 1000, 1000)
+
+	req = solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
+		governance.ParamHname, blob.Contract.Hname(),
+		governance.ParamValidatorFee, 0,
+		governance.ParamOwnerFee, 0,
+	).WithIotas(1)
+	_, err = chain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	checkFees(chain, blob.Contract.Name, 0, 0)
+
+	chain.AssertCommonAccountIotas(3)
+	chain.AssertTotalIotas(3)
+}
