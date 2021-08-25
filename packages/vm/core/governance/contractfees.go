@@ -9,8 +9,7 @@ type ContractFeesRecord struct {
 	// Chain owner part of the fee. If it is 0, it means chain-global default is in effect
 	OwnerFee uint64
 	// Validator part of the fee. If it is 0, it means chain-global default is in effect
-	ValidatorFee uint64 // validator part of the fee
-	// TODO I guess we should add FeeColor here as well
+	ValidatorFee uint64
 }
 
 func NewContractFeesRecord(ownerFee, validatorFee uint64) *ContractFeesRecord {
