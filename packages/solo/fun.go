@@ -406,6 +406,17 @@ func (ch *Chain) GetFeeInfo(contactName string) (colored.Color, uint64, uint64) 
 	return feeColor, ownerFee, validatorFee
 }
 
+func eventsFromViewResult(t TestContext, viewResult dict.Dict) []string {
+	recs := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
+	ret := make([]string, recs.MustLen())
+	for i := range ret {
+		data, err := recs.GetAt(uint16(i))
+		require.NoError(t, err)
+		ret[i] = string(data)
+	}
+	return ret
+}
+
 // GetEventsForContract calls the view in the  'blocklog' core smart contract to retrieve events for a given smart contract.
 func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
 	viewResult, err := ch.CallView(
@@ -416,15 +427,7 @@ func (ch *Chain) GetEventsForContract(name string) ([]string, error) {
 		return nil, err
 	}
 
-	recs := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
-	ret := make([]string, recs.MustLen())
-	for i := range ret {
-		data, err := recs.GetAt(uint16(i))
-		require.NoError(ch.Env.T, err)
-		ret[i] = string(data)
-	}
-
-	return ret, nil
+	return eventsFromViewResult(ch.Env.T, viewResult), nil
 }
 
 // GetEventsForRequest calls the view in the  'blocklog' core smart contract to retrieve events for a given request.
@@ -436,16 +439,19 @@ func (ch *Chain) GetEventsForRequest(reqID iscp.RequestID) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	return eventsFromViewResult(ch.Env.T, viewResult), nil
+}
 
-	recs := collections.NewArray16ReadOnly(viewResult, blocklog.ParamEvent)
-	ret := make([]string, recs.MustLen())
-	for i := range ret {
-		data, err := recs.GetAt(uint16(i))
-		require.NoError(ch.Env.T, err)
-		ret[i] = string(data)
+// GetEventsForBlock calls the view in the 'blocklog' core smart contract to retrieve events for a given block.
+func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
+	viewResult, err := ch.CallView(
+		blocklog.Contract.Name, blocklog.FuncGetEventsForBlock.Name,
+		blocklog.ParamBlockIndex, blockIndex,
+	)
+	if err != nil {
+		return nil, err
 	}
-
-	return ret, nil
+	return eventsFromViewResult(ch.Env.T, viewResult), nil
 }
 
 // CommonAccount return the agentID of the common account (controlled by the owner)
