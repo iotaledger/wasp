@@ -247,7 +247,7 @@ func TestFeeNotEnough(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	checkFees(chain, root.Contract.Name, 0, 499)
+	checkFees(chain, governance.Contract.Name, 0, 499)
 	checkFees(chain, accounts.Contract.Name, 0, 0)
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
@@ -261,7 +261,7 @@ func TestFeeNotEnough(t *testing.T) {
 	_, err = chain.PostRequestSync(req, user)
 	require.Error(t, err)
 
-	checkFees(chain, root.Contract.Name, 0, 499)
+	checkFees(chain, governance.Contract.Name, 0, 499)
 	checkFees(chain, accounts.Contract.Name, 0, 0)
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
@@ -281,17 +281,17 @@ func TestFeeOwnerDontNeed(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	checkFees(chain, root.Contract.Name, 0, 499)
+	checkFees(chain, governance.Contract.Name, 0, 499)
 	checkFees(chain, accounts.Contract.Name, 0, 0)
 	checkFees(chain, blob.Contract.Name, 0, 0)
 
-	req = solo.NewCallParams(root.Contract.Name, governance.FuncSetChainInfo.Name,
+	req = solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
 		governance.ParamOwnerFee, 1000,
 	).WithIotas(99)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	checkFees(chain, root.Contract.Name, 1000, 499)
+	checkFees(chain, governance.Contract.Name, 1000, 499)
 	checkFees(chain, accounts.Contract.Name, 1000, 0)
 	checkFees(chain, blob.Contract.Name, 1000, 0)
 

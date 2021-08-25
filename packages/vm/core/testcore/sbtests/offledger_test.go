@@ -170,7 +170,7 @@ func TestOffLedgerFeesExtra(t *testing.T) {
 		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
 		user, userAddr, userAgentID := setupDeployer(t, chain)
 
-		req := solo.NewCallParams(root.Contract.Name, governance.FuncSetContractFee.Name,
+		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 			root.ParamHname, HScName,
 			governance.ParamOwnerFee, 10,
 		).WithIotas(1)
@@ -207,7 +207,7 @@ func TestOffLedgerTransferWithFeesEnough(t *testing.T) {
 		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
 		user, userAddr, userAgentID := setupDeployer(t, chain)
 
-		req := solo.NewCallParams(root.Contract.Name, governance.FuncSetContractFee.Name,
+		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 			root.ParamHname, HScName,
 			governance.ParamOwnerFee, 10,
 		).WithIotas(1)
@@ -244,7 +244,7 @@ func TestOffLedgerTransferWithFeesNotEnough(t *testing.T) {
 		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
 		user, userAddr, userAgentID := setupDeployer(t, chain)
 
-		req := solo.NewCallParams(root.Contract.Name, governance.FuncSetContractFee.Name,
+		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 			root.ParamHname, HScName,
 			governance.ParamOwnerFee, 10,
 		).WithIotas(1)
@@ -281,7 +281,7 @@ func TestOffLedgerTransferWithFeesExtra(t *testing.T) {
 		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
 		user, userAddr, userAgentID := setupDeployer(t, chain)
 
-		req := solo.NewCallParams(root.Contract.Name, governance.FuncSetContractFee.Name,
+		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 			root.ParamHname, HScName,
 			governance.ParamOwnerFee, 10,
 		).WithIotas(1)

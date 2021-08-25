@@ -41,7 +41,11 @@ func (e *chainEnv) checkCoreContracts() {
 		desc, _, _ := codec.DecodeString(ret.MustGet(governance.VarDescription))
 		require.EqualValues(e.t, e.chain.Description, desc)
 
-		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(ret, root.VarContractRegistry))
+		records, err := e.chain.SCClient(root.Contract.Hname(), nil, i).
+			CallView(root.FuncGetContractRecords.Name, nil)
+		require.NoError(e.t, err)
+
+		contractRegistry, err := root.DecodeContractRegistry(collections.NewMapReadOnly(records, root.VarContractRegistry))
 		require.NoError(e.t, err)
 		for _, rec := range core.AllCoreContractsByHash {
 			cr := contractRegistry[rec.Contract.Hname()]
