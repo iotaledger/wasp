@@ -302,51 +302,58 @@ func TestRPCSendTransaction(t *testing.T) {
 	require.NotEqualValues(t, common.Hash{}, txHash)
 }
 
-func TestRPCGetTxReceipt(t *testing.T) {
+func TestRPCGetTxReceiptRegularTx(t *testing.T) {
 	env := newSoloTestEnv(t)
-	creator, creatorAddr := generateKey(t)
+	_, creatorAddr := generateKey(t)
 
-	// regular transaction
-	{
-		tx := env.RequestFunds(creatorAddr)
-		receipt := env.TxReceipt(tx.Hash())
+	tx := env.RequestFunds(creatorAddr)
+	receipt := env.MustTxReceipt(tx.Hash())
 
-		require.EqualValues(t, types.LegacyTxType, receipt.Type)
-		require.EqualValues(t, types.ReceiptStatusSuccessful, receipt.Status)
-		require.NotZero(t, receipt.CumulativeGasUsed)
-		require.EqualValues(t, types.Bloom{}, receipt.Bloom)
-		require.EqualValues(t, 0, len(receipt.Logs))
+	require.EqualValues(t, types.LegacyTxType, receipt.Type)
+	require.EqualValues(t, types.ReceiptStatusSuccessful, receipt.Status)
+	require.NotZero(t, receipt.CumulativeGasUsed)
+	require.EqualValues(t, types.Bloom{}, receipt.Bloom)
+	require.EqualValues(t, 0, len(receipt.Logs))
 
-		require.EqualValues(t, tx.Hash(), receipt.TxHash)
-		require.EqualValues(t, common.Address{}, receipt.ContractAddress)
-		require.NotZero(t, receipt.GasUsed)
+	require.EqualValues(t, tx.Hash(), receipt.TxHash)
+	require.EqualValues(t, common.Address{}, receipt.ContractAddress)
+	require.NotZero(t, receipt.GasUsed)
 
-		require.EqualValues(t, big.NewInt(1), receipt.BlockNumber)
-		require.EqualValues(t, env.BlockByNumber(big.NewInt(1)).Hash(), receipt.BlockHash)
-		require.EqualValues(t, 0, receipt.TransactionIndex)
-	}
+	require.EqualValues(t, big.NewInt(1), receipt.BlockNumber)
+	require.EqualValues(t, env.BlockByNumber(big.NewInt(1)).Hash(), receipt.BlockHash)
+	require.EqualValues(t, 0, receipt.TransactionIndex)
+}
 
-	// contract creation
-	{
-		contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
-		require.NoError(t, err)
-		tx, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(42))
-		receipt := env.TxReceipt(tx.Hash())
+func TestRPCGetTxReceiptContractCreation(t *testing.T) {
+	env := newSoloTestEnv(t)
+	creator, _ := generateKey(t)
 
-		require.EqualValues(t, types.LegacyTxType, receipt.Type)
-		require.EqualValues(t, types.ReceiptStatusSuccessful, receipt.Status)
-		require.NotZero(t, receipt.CumulativeGasUsed)
-		require.EqualValues(t, types.Bloom{}, receipt.Bloom)
-		require.EqualValues(t, 0, len(receipt.Logs))
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
+	require.NoError(t, err)
+	tx, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(42))
+	receipt := env.MustTxReceipt(tx.Hash())
 
-		require.EqualValues(t, tx.Hash(), receipt.TxHash)
-		require.EqualValues(t, contractAddress, receipt.ContractAddress)
-		require.NotZero(t, receipt.GasUsed)
+	require.EqualValues(t, types.LegacyTxType, receipt.Type)
+	require.EqualValues(t, types.ReceiptStatusSuccessful, receipt.Status)
+	require.NotZero(t, receipt.CumulativeGasUsed)
+	require.EqualValues(t, types.Bloom{}, receipt.Bloom)
+	require.EqualValues(t, 0, len(receipt.Logs))
 
-		require.EqualValues(t, big.NewInt(2), receipt.BlockNumber)
-		require.EqualValues(t, env.BlockByNumber(big.NewInt(2)).Hash(), receipt.BlockHash)
-		require.EqualValues(t, 0, receipt.TransactionIndex)
-	}
+	require.EqualValues(t, tx.Hash(), receipt.TxHash)
+	require.EqualValues(t, contractAddress, receipt.ContractAddress)
+	require.NotZero(t, receipt.GasUsed)
+
+	require.EqualValues(t, big.NewInt(1), receipt.BlockNumber)
+	require.EqualValues(t, env.BlockByNumber(big.NewInt(1)).Hash(), receipt.BlockHash)
+	require.EqualValues(t, 0, receipt.TransactionIndex)
+}
+
+func TestRPCGetTxReceiptMissing(t *testing.T) {
+	env := newSoloTestEnv(t)
+
+	_, err := env.TxReceipt(common.Hash{})
+	require.Error(t, err)
+	require.Equal(t, "not found", err.Error())
 }
 
 func TestRPCCall(t *testing.T) {
