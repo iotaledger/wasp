@@ -85,7 +85,6 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 
 		require.EqualValues(e.t, programHash1, cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
-		require.EqualValues(e.t, 0, cr.OwnerFee)
 		require.EqualValues(e.t, incCounterSCName, cr.Name)
 
 		counterValue, err := e.chain.GetCounterValue(hname, i)
@@ -175,7 +174,6 @@ func TestBasic2Accounts(t *testing.T) {
 
 		require.EqualValues(t, programHash1, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, incCounterSCName, cr.Name)
 
 		counterValue, err := chain.GetCounterValue(hname, i)

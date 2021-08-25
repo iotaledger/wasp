@@ -5,10 +5,12 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/solo/solobench"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
 
@@ -95,6 +97,29 @@ func TestIncWith1Post(t *testing.T) {
 
 	checkCounter(chain, 19)
 	chain.CheckAccountLedger()
+}
+
+func TestSpawn(t *testing.T) {
+	env := solo.New(t, false, false).WithNativeContract(Processor)
+	chain := env.NewChain(nil, "chain1")
+
+	err := chain.DeployContract(nil, incName, Contract.ProgramHash, VarCounter, 17)
+	require.NoError(t, err)
+	checkCounter(chain, 17)
+
+	nameNew := "spawnedContract"
+	dscrNew := "spawned contract it is"
+	req := solo.NewCallParams(incName, FuncSpawn.Name,
+		VarName, nameNew,
+		VarDescription, dscrNew,
+	).WithIotas(1)
+	_, err = chain.PostRequestSync(req, nil)
+	require.NoError(t, err)
+
+	res, err := chain.CallView(root.Contract.Name, root.FuncGetContractRecords.Name)
+	require.NoError(t, err)
+	creg := collections.NewMapReadOnly(res, root.VarContractRegistry)
+	require.True(t, int(creg.MustLen()) == len(core.AllCoreContractsByHash)+2)
 }
 
 func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {

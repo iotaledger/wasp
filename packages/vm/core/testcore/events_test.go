@@ -8,13 +8,13 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	nEvents                = int(root.DefaultMaxEventsPerRequest + 1000)
-	bigEventSize           = int(root.DefaultMaxEventSize + 1000)
+	nEvents                = int(governance.DefaultMaxEventsPerRequest + 1000)
+	bigEventSize           = int(governance.DefaultMaxEventSize + 1000)
 	manyEventsContractName = "ManyEventsContract"
 	manyEventsContract     = coreutil.NewContract(manyEventsContractName, "many events contract")
 
@@ -72,8 +72,8 @@ func TestManyEvents(t *testing.T) {
 	// allow for more events per request in root contract
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
-			root.Contract.Name, root.FuncSetChainInfo.Name,
-			root.ParamMaxEventsPerRequest, uint16(nEvents),
+			governance.Contract.Name, governance.FuncSetChainInfo.Name,
+			governance.ParamMaxEventsPerRequest, uint16(nEvents),
 		).WithIotas(1),
 		nil,
 	)
@@ -108,8 +108,8 @@ func TestEventTooLarge(t *testing.T) {
 	// allow for bigger events in root contract
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
-			root.Contract.Name, root.FuncSetChainInfo.Name,
-			root.ParamMaxEventSize, uint16(bigEventSize),
+			governance.Contract.Name, governance.FuncSetChainInfo.Name,
+			governance.ParamMaxEventSize, uint16(bigEventSize),
 		).WithIotas(1),
 		nil,
 	)
