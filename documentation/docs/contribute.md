@@ -23,7 +23,7 @@ Before creating the Pull Request ensure that:
     golangci-lint run
     ```
 
-## Lint Setup
+### Lint Setup
 
 1. Install golintci:
 
