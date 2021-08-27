@@ -27,7 +27,7 @@ $ wasp-cli set wasp.1.peering 127.0.0.1:4001
 ...
 ```
 
-Alternatively, you can edit `wasp-cli.json` file and include the desired server locations:
+Alternatively, you can edit the `wasp-cli.json` file and include the desired server locations:
 
 - the goshimmer api address:
 
