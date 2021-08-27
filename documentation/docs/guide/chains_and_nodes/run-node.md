@@ -5,7 +5,7 @@ If you prefer to use a docker image, you can find instructions on how to build i
 
 ## Requirements
 
-- Go 1.15
+- Go 1.16
 - [RocksDB](https://github.com/linxGnu/grocksdb)
 - Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node for
   production operation
