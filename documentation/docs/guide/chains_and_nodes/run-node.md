@@ -123,9 +123,9 @@ which can be accessed with a web browser.
 `prometheus.bindAddress` specifies the bind address/port for the prometheus server, where its possible to get multiple system metrics.
 By default Prometheus is disabled, and should be enabled by setting `prometheus.enabled` to `true`.
 
-### Graphana
+### Grafana
 
-Graphana provides a dashboard to visualize system metrics, it can use the prometheus metrics as a data source.
+Grafana provides a dashboard to visualize system metrics, it can use the prometheus metrics as a data source.
 // TODO
 
 ## Goshimmer provider

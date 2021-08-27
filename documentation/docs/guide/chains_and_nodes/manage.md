@@ -2,7 +2,7 @@
 
 ## Monitoring
 
-Each wasp node provides a [graphana dashboard](./run-node.md###Graphana) where its possible to visualize metrics gathered by the node.
+Each wasp node provides a [Grafana dashboard](./run-node.md###grafana) where its possible to visualize metrics gathered by the node.
 // TODO expand on this
 
 The chain state can be viewed via the [dashboard](./run-node.md###Dashboard) (by default on port `:7000`).
