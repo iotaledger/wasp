@@ -55,6 +55,11 @@ module.exports = {
                     id: 'guide/core_concepts/states',
                 },
                 {
+                    type: 'doc',
+                    label: 'Core Contracts',
+                    id: 'guide/core_concepts/core-contracts',
+                },
+                {
                     type: 'category',
                     label: 'Accounts',
                     items: [
@@ -152,13 +157,18 @@ module.exports = {
             items: [
                 {
                     type: 'doc',
-                    label: 'Setting up a chain',
-                    id: 'guide/chains_and_nodes/setup',
+                    label: 'Running a node',
+                    id: 'guide/chains_and_nodes/run-node',
                 },
                 {
                     type: 'doc',
-                    label: 'Running a node',
-                    id: 'guide/chains_and_nodes/run-node',
+                    label: 'Configuring wasp-cli',
+                    id: 'guide/chains_and_nodes/wasp-cli',
+                },
+                {
+                    type: 'doc',
+                    label: 'Setting up a chain',
+                    id: 'guide/chains_and_nodes/setup',
                 },
                 {
                     type: 'doc',

@@ -26,7 +26,7 @@ commercial settings or whenever processing of critical data is involved._
 
 ## Prerequisites
 
-- Go 1.15
+- Go 1.16
 - Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node for
   production operation
 
