@@ -118,6 +118,16 @@ can subscribe to these messages.
 `dashboard.bindAddress` specifies the bind address/port for the node dashboard,
 which can be accessed with a web browser.
 
+### Prometheus
+
+`prometheus.bindAddress` specifies the bind address/port for the prometheus server, where its possible to get multiple system metrics.
+By default Prometheus is disabled, and should be enabled by setting `prometheus.enabled` to `true`.
+
+### Graphana
+
+Graphana provides a dashboard to visualize system metrics, it can use the prometheus metrics as a data source.
+// TODO
+
 ## Goshimmer provider
 
 For the wasp node to communicate with the L1 (Tangle/Pollen Network), it needs access to a Goshimmer node with the TXStream plugin enabled.
