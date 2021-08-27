@@ -54,13 +54,13 @@ All the nodes in a committee must trust each other to run the chain.
 (If you're using a seed tha that already holds fund, you can skip this step)
 
 ```shell
-wasp-cli request-funds
+$ wasp-cli request-funds
 ```
 
 ### Deploy the ISCP chain
 
 ```shell
-wasp-cli chain deploy --committee=0,1,2,3 --quorum=3 --chain=mychain --description="My chain"
+$ wasp-cli chain deploy --committee=0,1,2,3 --quorum=3 --chain=mychain --description="My chain"
 ```
 
 The indices in `--committee=0,1,2,3` will correspond to `wasp.0`, `wasp.1`,etc in `wasp-cli.json`.
@@ -77,7 +77,7 @@ You can check that the chain was properly deployed in the Wasp node dashboard
 It's now possible deploy a Wasm contract to the chain:
 
 ```shell
-wasp-cli chain deploy-contract wasmtimevm inccounter "inccounter SC" tools/cluster/tests/wasm/inccounter_bg.wasm
+$ wasp-cli chain deploy-contract wasmtimevm inccounter "inccounter SC" tools/cluster/tests/wasm/inccounter_bg.wasm
 ```
 
 The `inccounter_bg.wasm` file is a precompiled Wasm contract included in the Wasp repo as an example.
@@ -108,7 +108,7 @@ its early stages and will likely change in the future.
 Now, let's call the `increment` function:
 
 ```shell
-wasp-cli chain post-request inccounter increment
+$ wasp-cli chain post-request inccounter increment
 ```
 
 After the request has been processed by the committee we should get a new
