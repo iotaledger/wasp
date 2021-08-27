@@ -47,7 +47,7 @@ PubKey                                        NetID
 
 All the nodes in a committee must trust each other to run the chain.
 
-## Starting the ChainId
+## Starting the chain
 
 ### Requesting test funds
 
