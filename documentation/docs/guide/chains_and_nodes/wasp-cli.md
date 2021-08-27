@@ -8,7 +8,7 @@ After going through the instructions on [Running a node](./run-node.md), you sho
 
 ## Configuration
 
-You can create a basic default configuration by running `wasp-cli init`. This will create a configuration `wasp-cli.json` file in the current directory.
+You can create a basic default configuration by running `wasp-cli init`. This will create a configuration file named `wasp-cli.json` in the current directory.
 
 Then, we need to tell `wasp-cli` the location of the Goshimmer node and the
 committee of Wasp nodes:
