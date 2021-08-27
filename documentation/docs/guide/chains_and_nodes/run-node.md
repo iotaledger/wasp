@@ -1,6 +1,6 @@
 # Running a node
 
-In the following sections we describe how to use WASP by cloning the repository and building the application.
+In the following sections we describe how to use Wasp by cloning the repository and building the application.
 If you prefer to use a docker image, you can find instructions on how to build it [here](../../misc/docker.md) (official images will be provided in the future).
 
 ## Requirements

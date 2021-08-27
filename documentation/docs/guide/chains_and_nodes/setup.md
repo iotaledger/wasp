@@ -47,7 +47,7 @@ PubKey                                        NetID
 
 All the nodes in a committee must trust each other to run the chain.
 
-## Starting the ChainId
+## Starting the chain
 
 ### Requesting test funds
 
@@ -63,7 +63,7 @@ $ wasp-cli request-funds
 $ wasp-cli chain deploy --committee=0,1,2,3 --quorum=3 --chain=mychain --description="My chain"
 ```
 
-The indices in `--committee=0,1,2,3` will correspond to `wasp.0`, `wasp.1`,etc in `wasp-cli.json`.
+The indices in `--committee=0,1,2,3` will correspond to `wasp.0`, `wasp.1`, etc in `wasp-cli.json`.
 
 The `--chain=mychain` sets up an alias for the chain. From now on all chain commands will be targeted to this chain.
 
