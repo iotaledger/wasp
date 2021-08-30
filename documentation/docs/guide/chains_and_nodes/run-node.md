@@ -130,7 +130,7 @@ Grafana provides a dashboard to visualize system metrics, it can use the prometh
 
 ## Goshimmer provider
 
-For the wasp node to communicate with the L1 (Tangle/Pollen Network), it needs access to a Goshimmer node with the TXStream plugin enabled.
+For the wasp node to communicate with the L1 (Tangle/Goshimmer Network), it needs access to a Goshimmer node with the TXStream plugin enabled.
 You can use any publicly available node, but the instructions on how to run your own node follows:
 
 The `goshimmer` command must be compiled from the Goshimmer repository:
@@ -144,8 +144,8 @@ go install -tags rocksdb
 Create an empty working directory for Goshimmer, and download the `snapshot.bin` file needed for bootstrap:
 
 ```shell
-mkdir goshimmer-pollen
-cd goshimmer-pollen
+mkdir goshimmer-node
+cd goshimmer-node
 curl 'https://raw.githubusercontent.com/iotaledger/goshimmer/master/snapshot.bin' -O
 ```
 

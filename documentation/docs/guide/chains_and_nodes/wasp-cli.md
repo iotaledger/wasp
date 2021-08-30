@@ -1,6 +1,6 @@
 # Configuring wasp-cli
 
-Here we describe step by step instructions how to use wasp-cli to interact with Wasp nodes on the Pollen network.
+Here we describe step by step instructions how to use wasp-cli to interact with Wasp nodes on the Goshimmer network.
 
 ## Requirements
 

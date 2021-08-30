@@ -218,10 +218,10 @@ Let's look at it step-by-step:
 
 1. The `wasp-cli` command creates a value transaction containing the smart contract request. 
 It takes 42 iotas from the address of the wallet, signs the transaction with the private key of the wallet. 
-Then it posts it to the UTXO Ledger, i.e to Goshimmer node, running on the Pollen network. 
+Then it posts it to the UTXO Ledger, i.e to Goshimmer node, running on the Goshimmer network. 
 (there's a bit more of a token manipulation behind scenes but we skip it here)
 
-2. Pollen network confirms the transaction containing the request. 
+2. Goshimmer network confirms the transaction containing the request. 
 It takes some ~10 seconds. After confirmation the request it becomes part of the immutable backlog for 
 the smart contract instance, represented by the target SC address.
 
@@ -233,11 +233,11 @@ called _state or anchor transaction_ which carries all the information about the
 
 5. The smart contract committee multi-signs the new state transaction. 
 
-6. The smart contract posts the state transaction to the tangle and Pollen network confirms 
+6. The smart contract posts the state transaction to the tangle and Goshimmer network confirms 
 it in yet another ~10 seconds. This is how state transition occurs. 
 
 So, all in all, it takes to produce and confirm 2 subsequent transactions to 
-update the state of the smart contract, i.e. about 20 seconds in the Pollen network. 
+update the state of the smart contract, i.e. about 20 seconds in the Goshimmer network. 
 
 It may not look very fast, however, each state update can contain hundreds of (batched) requests, 
 so even one smart contract instance is able to process many requests per second on the average. 
@@ -263,7 +263,7 @@ As mentioned above, the _on-tangle_ part of the state of the smart contract is t
 It contains tagged (colored) tokens. You can see it as the Balance in the _DonateWithFeedback_ dashboard.
 
 The state of the smart contract also contains arbitrary key/value pairs which can be interpreted as variables with values. 
-This part of the state is stored _off-tangle_, i.e. is not a part of transactions on the Pollen network 
+This part of the state is stored _off-tangle_, i.e. is not a part of transactions on the Goshimmer network 
 but instead it stored in _smart contract ledger_, the distributed database run by 
 the Wasp nodes for each smart contract. 
 

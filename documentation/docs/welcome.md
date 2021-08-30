@@ -17,7 +17,7 @@ transition from the previous state to the next, according to the attached
 program.  This ensures that the operation of smart contracts is distributed,
 fault-tolerant and leaderless.
 
-The articles below explain how to run a Wasp node on the Pollen network, as
+The articles below explain how to run a Wasp node on the Goshimmer network, as
 well as concepts and architecture of ISCP and Wasp.
 
 _Disclaimer: Wasp node and articles is a work in progress, and most likely will
@@ -68,7 +68,7 @@ tests).
 
 ## Run
 
-- [How to run a Wasp node on Pollen](misc/runwasp.md)
+- [How to run a Wasp node](misc/runwasp.md)
 - [Using `wasp-cli` to deploy a chain and a contract](misc/deploy.md)
 
 ## Learn

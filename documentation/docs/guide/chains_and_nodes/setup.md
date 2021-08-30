@@ -14,7 +14,7 @@ to connect to a different Goshimmer instance.
 
 ## Requirements
 
-- a number of many wasp nodes running with access to the same L1 network (pollen).
+- a number of many wasp nodes running with access to the same L1 network (goshimmer).
 - wasp-cli configured to interact with the wasp nodes
 
 ## Trust Setup
