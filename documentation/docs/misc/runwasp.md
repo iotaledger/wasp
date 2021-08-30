@@ -1,6 +1,6 @@
-# How to run a Wasp node on Pollen
+# How to run a Wasp node
 
-Here we describe step by step instructions how to run Wasp nodes on the Pollen network.
+Here we describe step by step instructions how to run Wasp nodes on a Goshimmer network.
 
 ## Step 1: Compile & install
 
@@ -23,13 +23,13 @@ $ cd wasp
 $ go install -tags rocksdb ./...
 ```
 
-## Step 2: Run Goshimmer connected to the Pollen network
+## Step 2: Run Goshimmer 
 
 Create an empty working directory for Goshimmer, and download the `snapshot.bin` file needed for bootstrap:
 
 ```
-$ mkdir goshimmer-pollen
-$ cd goshimmer-pollen
+$ mkdir goshimmer-node
+$ cd goshimmer-node
 $ curl 'https://raw.githubusercontent.com/iotaledger/goshimmer/master/snapshot.bin' -O
 ```
 
