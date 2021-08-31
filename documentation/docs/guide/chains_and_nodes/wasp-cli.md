@@ -15,7 +15,7 @@ Here we describe step by step instructions how to use wasp-cli to interact with 
 
 ## Requirements
 
-After going through the instructions on [Running a node](./run-node.md), you should have the wasp-cli binary available in your system.
+After going through the instructions on [Running a node](./running-a-node.md), you should have the wasp-cli binary available in your system.
 
 ## Configuration
 

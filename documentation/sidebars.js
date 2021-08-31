@@ -66,7 +66,7 @@ module.exports = {
                         {
                             type: 'doc',
                             label: 'How Accounts Work',
-                            id: 'guide/core_concepts/accounts/accounts-how',
+                            id: 'guide/core_concepts/accounts/how-accounts-work',
                         },
                         {
                             type: 'doc',
