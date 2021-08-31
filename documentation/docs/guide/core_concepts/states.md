@@ -1,6 +1,18 @@
-# State, transitions and state anchoring
+---
+keywords:
+- ISCP
+- state
+- transitions
+- Balances
+- Digital assets
+- UTXO
+- Transitions
+description: The state of the chain consists of balances of native IOTA digital assets and a collection of key/value pairs. 
+image: /img/logo/WASP_logo_dark.png
+---
+# State, Transitions and State Anchoring
 
-## State of the chain
+## State of the Chain
 
 The state of the chain consists of:
 
@@ -9,7 +21,7 @@ The state of the chain consists of:
 
 The state of the chain is an append-only (immutable) data structure maintained by the distributed consensus of its validators.
 
-## Digital assets on the chain
+## Digital Assets on the Chain
 
 The native L1 accounts of IOTA UTXO ledger are represented by addresses, each controlled by the entity holding the corresponding private/public key pair. The L1 account is a collection of UTXOs belonging to the address.
 
@@ -18,7 +30,7 @@ It is similar to how a bank holds all deposits in its vault. This way, the chain
 
 We call the consolidated assets held in the chain “total assets on-chain”, which are contained in the state output of the chain.
 
-## The data state
+## The Data State
 
 The data state of the chain consists of the collection of key/value pairs. Each key and each value are arbitrary byte arrays.
 
@@ -68,10 +80,10 @@ The *state transition* in the chain occurs atomically together with the movement
 
 At any moment of time, the data state of the chain is a result of applying the historical sequence of blocks, starting from the empty data state. Hence, blockchain.
 
-![state transitions](./img/chain0.png)
+![State transitions](/img/chain0.png)
 
 On the UTXO ledger (L1), the history of the state is represented as a sequence (chain) of UTXOs, each holding chain’s assets in a particular state and the anchoring hash of the data state. Note that not all of the state transitions history may be available: due to practical reasons the older transaction may be pruned in the snapshot process. The only thing that is guaranteed: the tip of the chain of UTXOs is always available (which includes the latest data state).
 
 The blocks and state outputs which anchor the state are computed by the Virtual Machine (VM), a deterministic processor, a “black box”. The VM is responsible for the consistency of state transition and the state itself.
 
-![chain](./img/chain1.png)
+![Chain](/img/chain1.png)

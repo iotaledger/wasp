@@ -1,4 +1,16 @@
-# Setting up a chain
+---
+keywords:
+- ISCP
+- Smart Contracts
+- Chain
+- Set up
+- Configuration
+- Nodes
+- Tests
+description: Setting up a chain requirements, configuration parameters, validators and tests.
+image: /img/logo/WASP_logo_dark.png
+---
+# Setting Up a Chain
 
 Note: it is possible to run a "committee" composed of a single Wasp node, and
 this may be fine for testing purposes. However, in normal operation the idea is
@@ -47,17 +59,17 @@ PubKey                                        NetID
 
 All the nodes in a committee must trust each other to run the chain.
 
-## Starting the chain
+## Starting The Chain
 
-### Requesting test funds
+### Requesting Test Funds
 
-(If you're using a seed tha that already holds fund, you can skip this step)
+(If you're using a seed that already holds fund, you can skip this step.)
 
 ```shell
 $ wasp-cli request-funds
 ```
 
-### Deploy the ISCP chain
+### Deploy the ISCP Chain
 
 ```shell
 $ wasp-cli chain deploy --committee=0,1,2,3 --quorum=3 --chain=mychain --description="My chain"
@@ -67,12 +79,12 @@ The indices in `--committee=0,1,2,3` will correspond to `wasp.0`, `wasp.1`, etc 
 
 The `--chain=mychain` sets up an alias for the chain. From now on all chain commands will be targeted to this chain.
 
-## Testing if it works
+## Testing If It Works
 
 You can check that the chain was properly deployed in the Wasp node dashboard
 (e.g. `127.0.0.1:7000`). Note that the chain was deployed with some [core contracts](../core_concepts/core-contracts.md).
 
-### Deploying a wasm contract
+### Deploying a Wasm Contract
 
 It's now possible deploy a Wasm contract to the chain:
 
@@ -84,7 +96,7 @@ The `inccounter_bg.wasm` file is a precompiled Wasm contract included in the Was
 
 Check again in the dashboard that the `inccounter` contract is listed in the chain.
 
-### Interacting with a Smart contract
+### Interacting With a Smart Contract
 
 We can interact with a contract by calling its exposed functions and views.
 

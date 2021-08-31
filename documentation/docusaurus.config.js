@@ -7,7 +7,7 @@ module.exports = {
   tagline: 'IOTA smart contract protocol.',
   url: 'https://iscp.docs.iota.org',
   baseUrl: '/',
-  onBrokenLinks: 'warn',
+  onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
   favicon: '/img/logo/favicon.ico',
   organizationName: 'iotaledger',
@@ -26,7 +26,7 @@ module.exports = {
       items: [
         {
           type: 'doc',
-          docId: 'welcome',
+          docId: 'overview',
           position: 'left',
           label: 'Documentation',
         },
@@ -39,8 +39,8 @@ module.exports = {
           title: 'Documentation',
           items: [
             {
-              label: 'Welcome',
-              to: '/docs/welcome',
+              label: 'Overview',
+              to: '/docs/overview',
             },
           ],
         },

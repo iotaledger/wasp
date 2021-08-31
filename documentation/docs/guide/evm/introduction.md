@@ -2,8 +2,8 @@
 keywords:
 - ISCP
 - Smart Contracts
-- Consensus
-description: ISCP Consensus
+- EVM
+description: EVM based smart contracts
 image: /img/logo/WASP_logo_dark.png
 ---
-# Consensus
+# EVM based smart contracts
