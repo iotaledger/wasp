@@ -312,7 +312,7 @@ func (e *Env) TestRPCGasLimit() {
 
 	err = e.Client.SendTransaction(context.Background(), tx)
 	require.Error(e.T, err)
-	require.Regexp(e.T, `intrinsic gas too low: have \d+, want \d+`, err.Error())
+	require.Regexp(e.T, `insufficient funds for gas \* price \+ value: address 0x\w+ have \d+ want \d+`, err.Error())
 }
 
 func (e *Env) TestRPCInvalidNonce() {
