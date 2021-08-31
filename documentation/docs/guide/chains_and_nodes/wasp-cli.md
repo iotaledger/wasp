@@ -1,3 +1,14 @@
+---
+keywords:
+- ISCP
+- Wasp-cli
+- Configuration
+- Goshimmer
+- command line
+description:  How to configure the wasp-cli. Requirements and configuration parameters.
+image: /img/logo/WASP_logo_dark.png
+---
+
 # Configuring wasp-cli
 
 Here we describe step by step instructions how to use wasp-cli to interact with Wasp nodes on the Goshimmer network.

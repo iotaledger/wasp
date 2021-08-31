@@ -7,8 +7,8 @@ keywords:
 - Configuration
 - Nodes
 - Tests
-  description:  Setting up a chain requirements, configuration parameters, validators and tests.
-  image: /img/logo/WASP_logo_dark.png
+description:  Setting up a chain requirements, configuration parameters, validators and tests.
+image: /img/logo/WASP_logo_dark.png
 ---
 # Setting Up a Chain
 
