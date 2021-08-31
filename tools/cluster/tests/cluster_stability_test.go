@@ -333,6 +333,11 @@ func testConsenseusReconnectingNodesNoQuorum(t *testing.T, clusterSize, numValid
 }
 
 func testConsenseusReconnectingNodesHighQuorum(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure int) {
+	// Windows does not support freezing with SIGSTOP, we skip those for now.
+	if runtime.GOOS == "windows" {
+		t.Skip()
+	}
+
 	env := InitializeStabilityTest(t, numValidators, clusterSize)
 	env.setSabotageValidators(numBrokenNodes)
 
