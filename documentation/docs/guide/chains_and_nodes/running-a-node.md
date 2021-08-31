@@ -146,7 +146,7 @@ Grafana provides a dashboard to visualize system metrics, it can use the prometh
 
 ## Goshimmer Provider
 
-For the wasp node to communicate with the L1 (Tangle/Goshimmer Network), it needs access to a Goshimmer node with the TXStream plugin enabled.
+For the Wasp node to communicate with the L1 (Tangle/Goshimmer Network), it needs access to a Goshimmer node with the TXStream plugin enabled.
 You can use any publicly available node, but the instructions on how to run your own node follows:
 
 The `goshimmer` command must be compiled from the Goshimmer repository:

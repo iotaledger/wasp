@@ -4,7 +4,7 @@ keywords:
 - Smart Contracts
 - Core Concepts
 - Table of Contents
-description: IOTA Smart Contract Protocol Documentation Overview.
+description: IOTA Smart Contract Protocol Documentation Overview
 image: /img/logo/WASP_logo_dark.png
 ---
 
@@ -22,8 +22,8 @@ Goal of the documentation: Give a higher level overview of what ISCP is and how 
 - [State, Transitions and State Anchoring](/docs/guide/core_concepts/states)
 - Accounts
     - [How Accounts Work](/docs/guide/core_concepts/accounts/how-accounts-work)
-    - [How To Deposit To a Chain](/docs/guide/core_concepts/accounts/how-to-deposit-to-a-chain)
-    - [How To Withdraw From a Chain](/docs/guide/core_concepts/accounts/how-to-withdraw-from-a-chain)
+    - [How to Deposit to a Chain](/docs/guide/core_concepts/accounts/how-to-deposit-to-a-chain)
+    - [How to Withdraw From a Chain](/docs/guide/core_concepts/accounts/how-to-withdraw-from-a-chain)
 - Interacting With Smart Contracts
     - [On-ledger Requests](/docs/guide/core_concepts/smartcontract-interaction/on-ledger-requests)
     - [Off-ledger Requests](/docs/guide/core_concepts/smartcontract-interaction/on-ledger-requests)

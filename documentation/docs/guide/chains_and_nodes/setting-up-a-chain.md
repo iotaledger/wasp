@@ -7,7 +7,7 @@ keywords:
 - Configuration
 - Nodes
 - Tests
-description:  Setting up a chain requirements, configuration parameters, validators and tests.
+description: Setting up a chain requirements, configuration parameters, validators and tests.
 image: /img/logo/WASP_logo_dark.png
 ---
 # Setting Up a Chain
@@ -63,7 +63,7 @@ All the nodes in a committee must trust each other to run the chain.
 
 ### Requesting Test Funds
 
-(If you're using a seed tha that already holds fund, you can skip this step)
+(If you're using a seed that already holds fund, you can skip this step.)
 
 ```shell
 $ wasp-cli request-funds

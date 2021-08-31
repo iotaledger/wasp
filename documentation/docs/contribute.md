@@ -59,7 +59,7 @@ Before creating the Pull Request ensure that:
 
     **GoLand**:
 
-    - [Install golintci plugin] (https://plugins.jetbrains.com/plugin/12496-go-linter)
+    - [Install golintci plugin](https://plugins.jetbrains.com/plugin/12496-go-linter)
 
         ![Install golintci plugin](/img/contributing/golintci-goland-1.png)
 

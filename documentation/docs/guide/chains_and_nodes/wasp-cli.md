@@ -5,7 +5,7 @@ keywords:
 - Configuration
 - Goshimmer
 - command line
-description:  How to configure the wasp-cli. Requirements and configuration parameters.
+description: How to configure the wasp-cli. Requirements and configuration parameters.
 image: /img/logo/WASP_logo_dark.png
 ---
 
