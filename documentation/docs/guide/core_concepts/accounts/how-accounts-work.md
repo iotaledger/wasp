@@ -1,8 +1,19 @@
-# How accounts work
+---
+keywords:
+- ISCP
+- Smart Contracts
+- on-chain account
+- Ownership
+- Accounts Contract
+description: ISCP chains keeps a ledger of on-chain account balances.  ON-chain accounts are identified by an AgentID.
+image: /img/logo/WASP_logo_dark.png
+---
+
+# How Accounts Work
 
 Each ISCP chain keeps a ledger of on-chain account balances.
 
-## Account ownership
+## Account Ownership
 
 An on-chain account is identified by an AgentID.
 
@@ -35,7 +46,7 @@ Internally there is a mapping of `Account (AgentID)` to `balances`, which can in
 
 By calling this contract its possible to:
 
-- [View current account balances](./accounts-views.mdx)
-- [Deposit funds to the chain](./accounts-deposit.mdx)
-- [Withdraw funds from the chain](./accounts-withdraw.mdx)
-- [Harvest](./accounts-common-account.mdx) - can only be called by the chain owner, to move funds from the chain common account to his own account.
+- [View current account balances](./view-account-balances.mdx)
+- [Deposit funds to the chain](./how-to-deposit-to-a-chain.mdx)
+- [Withdraw funds from the chain](./how-to-withdraw-from-a-chain.mdx)
+- [Harvest](./the-common-account.mdx) - can only be called by the chain owner, to move funds from the chain common account to his own account.
