@@ -1,32 +1,42 @@
+---
+keywords:
+- ISCP
+- Smart Contracts
+- Core Concepts
+- Table of Contents
+description: IOTA Smart Contract Protocol Documentation Overview.
+image: /img/logo/WASP_logo_dark.png
+---
+
 # ISCP Documentation
 
 Goal of the documentation: Give a higher level overview of what ISCP is and how it works for the average developer building applications for ISCP or looking to run a chain/node. Doesn’t need to contain every explicit detail but should contain everything you need to know to set up a smart contract chain and run and interact with smart contracts.
 
-## ISCP Core concepts
+## ISCP Core Concepts
 
-- [What are smart contracts?](/docs/guide/core_concepts/smart-contracts)
+- [What Are Smart Contracts?](/docs/guide/core_concepts/smart-contracts)
 - [What is ISCP?](/docs/guide/core_concepts/iscp)
-- [ISCP Architecture overview](/docs/guide/core_concepts/iscp-architecture)
-- [Committees and validators](/docs/guide/core_concepts/validators)
+- [ISCP Architecture Overview](/docs/guide/core_concepts/iscp-architecture)
+- [Committees and Validators](/docs/guide/core_concepts/validators)
 - [Consensus](/docs/guide/core_concepts/consensus)
-- [State, transitions and state anchoring](/docs/guide/core_concepts/states)
+- [State, Transitions and State Anchoring](/docs/guide/core_concepts/states)
 - Accounts
-    - [How accounts work](/docs/guide/core_concepts/accounts/accounts-how)
-    - [How to deposit to a chain](/docs/guide/core_concepts/accounts/accounts-deposit)
-    - [How to withdraw from a chain](/docs/guide/core_concepts/accounts/accounts-withdraw)
-- Interacting with smart contracts
-    - [On-ledger requests](/docs/guide/core_concepts/smartcontract-interaction/on-ledger)
-    - [Off-ledger requests](/docs/guide/core_concepts/smartcontract-interaction/on-ledger)
+    - [How Accounts Work](/docs/guide/core_concepts/accounts/how-accounts-work)
+    - [How To Deposit To a Chain](/docs/guide/core_concepts/accounts/how-to-deposit-to-a-chain)
+    - [How To Withdraw From a Chain](/docs/guide/core_concepts/accounts/how-to-withdraw-from-a-chain)
+- Interacting With Smart Contracts
+    - [On-ledger Requests](/docs/guide/core_concepts/smartcontract-interaction/on-ledger-requests)
+    - [Off-ledger Requests](/docs/guide/core_concepts/smartcontract-interaction/on-ledger-requests)
 - Types of VMs/Languages
-    - [How ISCP works as a language/VM agnostic platform](/docs/guide/core_concepts/vm-types/iscp)
-    - Rust/Wasm based smart contracts
-        - [Why and what does it look like?](/docs/guide/core_concepts/vm-types/rust-wasm)
-        - [Pros and cons](/docs/guide/core_concepts/vm-types/rust-wasm)
-    - Solidity/EVM based smart contracts
-        - [Why and what does it look like?](/docs/guide/core_concepts/vm-types/evm)
-        - [Pros and cons](/docs/guide/core_concepts/vm-types/evm)
+    - [How ISCP Works As a Language/VM Agnostic Platform](/docs/guide/core_concepts/vm-types/iscp-vm)
+    - Rust/Wasm Based Smart Contracts
+        - [Why and What Does It Look Like?](/docs/guide/core_concepts/vm-types/rust-wasm)
+        - [Pros and Cons](/docs/guide/core_concepts/vm-types/rust-wasm)
+    - Solidity/EVM Based Smart Contracts
+        - [Why and What Does It Look Like?](/docs/guide/core_concepts/vm-types/evm)
+        - [Pros and Cons](/docs/guide/core_concepts/vm-types/evm)
 
-## Running ISCP chains and nodes
+## Running ISCP Chains and Nodes
 
 - Setting up a chain
     - Requirements
