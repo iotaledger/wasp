@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -160,12 +161,12 @@ func getFeeColor(ctx iscp.Sandbox) colored.Color {
 	// call root contract view to get the feecolor
 	feeInfo, err := ctx.Call(
 		root.Contract.Hname(),
-		root.FuncGetFeeInfo.Hname(),
+		governance.FuncGetFeeInfo.Hname(),
 		dict.Dict{root.ParamHname: Contract.Hname().Bytes()},
 		nil,
 	)
 	a.RequireNoError(err)
-	feeColor, _, err := codec.DecodeColor(feeInfo.MustGet(root.ParamFeeColor))
+	feeColor, _, err := codec.DecodeColor(feeInfo.MustGet(governance.ParamFeeColor))
 	a.RequireNoError(err)
 	return feeColor
 }

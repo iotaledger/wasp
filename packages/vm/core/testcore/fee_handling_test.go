@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -35,9 +36,9 @@ func TestBase(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetContractFee.Name,
-		root.ParamHname, blob.Contract.Hname(),
-		root.ParamOwnerFee, 5,
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
+		governance.ParamHname, blob.Contract.Hname(),
+		governance.ParamOwnerFee, 5,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -54,9 +55,9 @@ func TestFeeIsEnough1(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetContractFee.Name,
-		root.ParamHname, blob.Contract.Hname(),
-		root.ParamOwnerFee, 1,
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
+		governance.ParamHname, blob.Contract.Hname(),
+		governance.ParamOwnerFee, 1,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -85,9 +86,9 @@ func TestFeeIsEnough2(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetContractFee.Name,
-		root.ParamHname, blob.Contract.Hname(),
-		root.ParamOwnerFee, 10,
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
+		governance.ParamHname, blob.Contract.Hname(),
+		governance.ParamOwnerFee, 10,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -115,9 +116,9 @@ func TestFeesNoNeed(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetContractFee.Name,
-		root.ParamHname, blob.Contract.Hname(),
-		root.ParamOwnerFee, 10,
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
+		governance.ParamHname, blob.Contract.Hname(),
+		governance.ParamOwnerFee, 10,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -146,9 +147,9 @@ func TestFeesNotEnough(t *testing.T) {
 	user, userAddr := env.NewKeyPairWithFunds()
 	userAgentID := iscp.NewAgentID(userAddr, 0)
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetContractFee.Name,
-		root.ParamHname, blob.Contract.Hname(),
-		root.ParamOwnerFee, 10,
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
+		governance.ParamHname, blob.Contract.Hname(),
+		governance.ParamOwnerFee, 10,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)

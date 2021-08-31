@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -46,7 +47,7 @@ func TestAccountsBase1(t *testing.T) {
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := iscp.NewAgentID(ownerAddr, 0)
-	req := solo.NewCallParams(root.Contract.Name, root.FuncDelegateChainOwnership.Name, root.ParamChainOwner, newOwnerAgentID)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name, governance.ParamChainOwner, newOwnerAgentID)
 	req.WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -56,7 +57,7 @@ func TestAccountsBase1(t *testing.T) {
 	chain.AssertIotas(chain.ContractAgentID(root.Contract.Name), 0)
 	chain.CheckAccountLedger()
 
-	req = solo.NewCallParams(root.Contract.Name, root.FuncClaimChainOwnership.Name).WithIotas(1)
+	req = solo.NewCallParams(governance.Contract.Name, governance.FuncClaimChainOwnership.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 

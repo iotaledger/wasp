@@ -21,10 +21,6 @@ type ContractRecord struct {
 	// Unique name of the contract on the chain. The real identity of the instance on the chain
 	// is hname(name) =  iscp.Hn(name)
 	Name string
-	// Chain owner part of the fee. If it is 0, it means chain-global default is in effect
-	OwnerFee uint64
-	// Validator part of the fee. If it is 0, it means chain-global default is in effect
-	ValidatorFee uint64 // validator part of the fee
 	// The agentID of the entity which deployed the instance. It can be interpreted as
 	// an priviledged user of the instance, however it is up to the smart contract.
 	Creator *iscp.AgentID
@@ -60,12 +56,6 @@ func ContractRecordFromMarshalUtil(mu *marshalutil.MarshalUtil) (*ContractRecord
 	if ret.Name, err = readString(mu); err != nil {
 		return nil, err
 	}
-	if ret.OwnerFee, err = mu.ReadUint64(); err != nil {
-		return nil, err
-	}
-	if ret.ValidatorFee, err = mu.ReadUint64(); err != nil {
-		return nil, err
-	}
 	creatorNotNil, err := mu.ReadBool()
 	if err != nil {
 		return nil, err
@@ -83,8 +73,6 @@ func (p *ContractRecord) Bytes() []byte {
 	mu.WriteBytes(p.ProgramHash[:])
 	writeString(mu, p.Description)
 	writeString(mu, p.Name)
-	mu.WriteUint64(p.OwnerFee)
-	mu.WriteUint64(p.ValidatorFee)
 	mu.WriteBool(p.Creator != nil)
 	if p.Creator != nil {
 		mu.Write(p.Creator)

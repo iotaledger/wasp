@@ -4,7 +4,10 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -14,9 +17,13 @@ func mustStoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, a assert.Asse
 	mustStoreContractRecord(ctx, rec, a)
 }
 
-func mustStoreAndInitCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, a assert.Assert) {
+func mustStoreAndInitCoreContract(ctx iscp.Sandbox, i *coreutil.ContractInfo, a assert.Assert, params ...dict.Dict) {
 	mustStoreContract(ctx, i, a)
-	_, err := ctx.Call(iscp.Hn(i.Name), iscp.EntryPointInit, nil, nil)
+	var p dict.Dict
+	if len(params) == 1 {
+		p = params[0]
+	}
+	_, err := ctx.Call(iscp.Hn(i.Name), iscp.EntryPointInit, p, nil)
 	a.RequireNoError(err)
 }
 
@@ -40,4 +47,12 @@ func isAuthorizedToDeploy(ctx iscp.Sandbox) bool {
 	}
 
 	return collections.NewMap(ctx.State(), root.VarDeployPermissions).MustHasAt(caller.Bytes())
+}
+
+func isChainOwner(a assert.Assert, ctx iscp.Sandbox) bool {
+	ret, err := ctx.Call(governance.Contract.Hname(), governance.FuncGetChainOwner.Hname(), nil, nil)
+	a.RequireNoError(err)
+	owner, _, err := codec.DecodeAgentID(ret.MustGet(governance.ParamChainOwner))
+	a.RequireNoError(err)
+	return owner.Equals(ctx.Caller())
 }

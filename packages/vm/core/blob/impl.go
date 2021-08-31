@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
 var Processor = Contract.Processor(initialize,
@@ -25,11 +25,11 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 }
 
 func getMaxBlobSize(ctx iscp.Sandbox) uint32 {
-	r, err := ctx.Call(root.Contract.Hname(), root.FuncGetMaxBlobSize.Hname(), nil, nil)
+	r, err := ctx.Call(governance.Contract.Hname(), governance.FuncGetMaxBlobSize.Hname(), nil, nil)
 	if err != nil {
 		ctx.Log().Panicf("error getting max blob size, %v", err)
 	}
-	maxBlobSize, _, err := codec.DecodeUint32(r.MustGet(root.ParamMaxBlobSize))
+	maxBlobSize, _, err := codec.DecodeUint32(r.MustGet(governance.ParamMaxBlobSize))
 	if err != nil {
 		ctx.Log().Panicf("error getting max blob size, %v", err)
 	}

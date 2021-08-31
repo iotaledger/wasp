@@ -13,18 +13,10 @@
 			<dt>Program hash</dt><dd><code>{{$c.ProgramHash.String}}</code></dd>
 			{{if $c.HasCreator}}<dt>Creator</dt><dd>{{ template "agentid" (args $chainid $c.Creator) }}</dd>{{end}}
 			<dt>Owner fee</dt><dd>
-				{{- if $c.OwnerFee -}}
-					<code>{{- $c.OwnerFee }} {{ $rootinfo.FeeColor -}}</code>
-				{{- else -}}
-					<code>{{- $rootinfo.DefaultOwnerFee }} {{ $rootinfo.FeeColor }}</code> (chain default)
-				{{- end -}}
+					<code>{{- .OwnerFee }} {{ $rootinfo.FeeColor -}}</code>
 			</dd>
 			<dt>Validator fee</dt><dd>
-				{{- if $c.ValidatorFee -}}
-					<code>{{- $c.ValidatorFee }} {{ $rootinfo.FeeColor -}}
-				{{- else -}}
-					<code>{{- $rootinfo.DefaultValidatorFee }} {{ $rootinfo.FeeColor }}</code> (chain default)
-				{{- end -}}
+					<code>{{- .ValidatorFee }} {{ $rootinfo.FeeColor -}}
 			</dd>
 		</dl>
 	</div>

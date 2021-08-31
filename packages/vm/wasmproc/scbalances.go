@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
