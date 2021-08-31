@@ -1,3 +1,14 @@
+---
+keywords:
+- ISCP
+- Smart Contracts
+- scaling
+- fees
+- flexibility
+- Tangle
+description: ISCP stands for IOTA Smart Contract Protocol and is IOTA's solution for running smart contracts on top of the IOTA tangle. Wasp is the node software we've built to let you run smart contracts in a committee using a virtual machine of choice.
+image: /img/logo/WASP_logo_dark.png
+---
 # ISCP
 
 ## What is ISCP?
@@ -12,4 +23,4 @@ This particular architecture is a bit more complex compared to how a traditional
 
 ## What is Wasp?
 
-Wasp is the node software we've build to let you run smart contracts in a committee using a virtual machine of choice. Multiple Wasp nodes connect and form a committee. If the validators in this committee reach consensus on a virtual machine state-change this state change is anchored to the IOTA tangle and becomes immutable. 
+Wasp is the node software we've built to let you run smart contracts in a committee using a virtual machine of choice. Multiple Wasp nodes connect and form a committee. If the validators in this committee reach consensus on a virtual machine state-change this state change is anchored to the IOTA tangle and becomes immutable. 

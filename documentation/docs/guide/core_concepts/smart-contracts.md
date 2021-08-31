@@ -1,4 +1,14 @@
-# What are smart contracts?
+---
+keywords:
+- ISCP
+- Smart Contracts
+- blockchain
+- parallel
+- scaling
+description: Smart contracts are applications, software, that run on a distributed network with multiple validators all executing and validating the same code. 
+image: /img/logo/WASP_logo_dark.png
+---
+# What Are Smart Contracts?
 
 Smart contracts are applications, software, that run on a distributed network with multiple validators all executing and validating the same code to ensure the application behaves as expected and there is no tampering in the execution of the program. This results in applications that you can trust because you can be certain the code that is being executed is always the same and will not change. This allows you to use smart contracts for applications where there's a trust issue. The rules of the smart contract define what the contract can and can not do making it a decentralized and predictable decision-maker.
 

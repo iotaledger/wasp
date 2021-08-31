@@ -1,3 +1,16 @@
+---
+keywords:
+- ISCP
+- Smart Contracts
+- Contribute
+- Pull Request
+- Linting
+- Go-lang
+- golangci-lint
+description:  How to contribute to ISCP. Creating a PR, setting up golangci-lint.  
+image: /img/logo/WASP_logo_dark.png
+---
+
 # Contributing
 
 If you want to contribute to this repository, consider posting a [bug report](https://github.com/iotaledger/wasp/issues/new-issue), feature request or a [pull request](https://github.com/iotaledger/wasp/pulls/).
