@@ -3,7 +3,6 @@ import resolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import { terser } from 'rollup-plugin-terser';
 
-
 const production = !process.env.ROLLUP_WATCH;
 console.log("prod: " + production)
 function serve() {
@@ -47,7 +46,6 @@ export default {
 		commonjs(),
 
 		!production && serve(),
-		!production && livereload('public'),
 		production && terser(),
 	],
 	watch: {

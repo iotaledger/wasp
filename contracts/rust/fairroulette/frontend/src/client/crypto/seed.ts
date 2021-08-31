@@ -1,8 +1,7 @@
-import { Buffer } from "../buffer";
-
-import { blake2b } from "blakejs";
-import { Base58 } from "./base58"
-import { ED25519 } from "./ed25519"
+import { Base58 } from './base58'
+import { blake2b } from 'blakejs'
+import { Buffer } from '../buffer'
+import { ED25519 } from './ed25519'
 import type { IKeyPair } from "./models/IKeyPair";
 
 export class Seed {

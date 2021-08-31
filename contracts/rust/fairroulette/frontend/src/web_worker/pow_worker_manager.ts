@@ -1,19 +1,18 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid'
 
 export interface PowWorkerRequest {
-  type: string
-  data: any
-  uuid: string
-  difficulty: number
+  type: string;
+  data: any;
+  uuid: string;
+  difficulty: number;
 }
 
 export interface PowWorkerResponse {
-  type: string
-  data: any
-  uuid: string
-  error?: Error
+  type: string;
+  data: any;
+  uuid: string;
+  error?: Error;
 }
-
 
 export class PoWWorkerManager {
 
@@ -25,14 +24,10 @@ export class PoWWorkerManager {
 
   public RequestProofOfWork(difficulty: number, data: any): Promise<number> {
     return new Promise((resolve, reject) => {
-      console.log("Requesting")
       const requestId = uuidv4();
 
-      const responseHandler = (e) => {
+      const responseHandler = (e: MessageEvent) => {
         const message: PowWorkerResponse = e.data;
-
-        console.log("Got response");
-        console.log(message);
 
         if (message.type === 'pow_response' && message.uuid === requestId) {
           this.powWorker.removeEventListener('message', responseHandler);
@@ -53,7 +48,7 @@ export class PoWWorkerManager {
       this.powWorker.postMessage(request);
 
       console.log("Pow request sent");
-      console.log(request)
+      console.log(request);
     });
   }
 }

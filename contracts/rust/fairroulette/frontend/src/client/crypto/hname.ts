@@ -1,5 +1,5 @@
-import { Buffer } from '../buffer';
-import { blake2b } from 'blakejs';
+import { blake2b } from 'blakejs'
+import { Buffer } from '../buffer'
 
 export class HName {
   public static HashAsString(textToHash: string): string {

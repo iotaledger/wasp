@@ -1,16 +1,16 @@
+import { Buffer } from './buffer'
+import { Faucet } from './binary_models/faucet_request'
+import { OffLedger } from './binary_models/off_ledger'
 import type { IAllowedManaPledgeResponse } from "./models/IAllowedManaResponse";
 import type { IResponse } from "./models/IResponse";
-import { Buffer } from "./buffer";
-import type { IFaucetRequest } from "./models/IFaucetRequest";
+import type { IFaucetRequest } from "./binary_models/IFaucetRequest";
 import type { IFaucetResponse } from "./models/IFaucetResponse";
 import type { IUnspentOutputsRequest } from "./models/IUnspentOutputsRequest";
 import type { IUnspentOutputsResponse } from "./models/IUnspentOutputsResponse";
 import type { ISendTransactionRequest } from "./models/ISendTransactionRequest";
 import type { ISendTransactionResponse } from "./models/ISendTransactionResponse";
-import { Faucet } from "./binary_models/faucet";
 import type { IOffLedger } from "./binary_models/IOffLedger";
 import type { IOffLedgerRequest } from "./models/IOffLedgerRequest";
-import { OffLedger } from "./binary_models/off_ledger";
 
 export interface IExtendedResponse<U> {
   body: U;
@@ -27,6 +27,11 @@ export interface IFaucetRequestContext {
   faucetRequest: IFaucetRequest,
   poWBuffer: any
 }
+
+export interface CallViewResponse extends IResponse {
+  Items: [{ Key: string, Value: any }];
+}
+
 
 export class Colors {
   public static IOTA_COLOR_STRING = '11111111111111111111111111111111';
@@ -107,6 +112,14 @@ export class BasicClient {
     return balance;
   }
 
+  public async callView(chainId: string, contractHName: string, entryPoint: string): Promise<CallViewResponse> {
+    const url = `chain/${chainId}/contract/${contractHName}/callview/${entryPoint}`;
+
+    const result = await this.sendRequestExt<any, CallViewResponse>(this.configuration.WaspAPIUrl, 'get', url);
+
+    return result.body;
+  }
+
   public async unspentOutputs(request: IUnspentOutputsRequest): Promise<IUnspentOutputsResponse> {
     return this.sendRequest<IUnspentOutputsRequest, IUnspentOutputsResponse>(this.configuration.GoShimmerAPIUrl,
       "post", "ledgerstate/addresses/unspentOutputs", request);
@@ -138,7 +151,7 @@ export class BasicClient {
     let fetchResponse: Response;
 
     try {
-      const headers: { [id: string]: string } = {};
+      const headers: { [id: string]: string } = { };
       headers["Content-Type"] = "application/json";
 
 
@@ -147,7 +160,7 @@ export class BasicClient {
           `${url}/${path}`,
           {
             method: "get",
-            headers
+            headers,
           }
         );
       } else if (verb === "post") {

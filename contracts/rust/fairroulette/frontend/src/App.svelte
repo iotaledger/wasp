@@ -1,22 +1,27 @@
 <script lang="ts">
   export const name = 'app';
 
-  import type { Buffer } from './client/buffer';
-  import { Seed } from './client/crypto/seed';
-  import { BasicClient, Colors } from './client/basic_client';
-  import { onMount } from 'svelte';
   import { Base58 } from './client/crypto/base58';
+  import { BasicClient, Colors } from './client/basic_client';
+  import { FairRoulette } from './client/fair_roulette_service';
+  import { onMount } from 'svelte';
   import { PoWWorkerManager } from './web_worker/pow_worker_manager';
-  import type { IKeyPair } from './client/crypto/models/IKeyPair';
-  import { FairRoulette } from './fair_roulette';
-
+  import { Seed } from './client/crypto/seed';
   import config from '../config.dev';
+  import Roulette from './Roulette.svelte';
+  import type { Bet } from './client/fair_roulette_service';
+  import type { Buffer } from './client/buffer';
+  import type { IKeyPair } from './client/crypto/models/IKeyPair';
 
-  const chainId = config.chainId; // TODO: Make configurable to adapt to other Wasp instances
+  const chainId = config.chainId;
   const testSeed = Base58.decode('GLHjvWjQ4N4iKzPVKc1iAMLRqRhWLBhysdxNV2JsBXs6');
-
   const seed: Buffer = testSeed;
-  const seedString: string = Base58.encode(seed);
+
+  let addressIndex: number = 0;
+  let keyPair: IKeyPair;
+  let fundsUpdaterHandle;
+
+  const powManager = new PoWWorkerManager();
 
   const client: BasicClient = new BasicClient({
     GoShimmerAPIUrl: config.goshimmerApiUrl,
@@ -26,26 +31,40 @@
 
   const fairRoulette: FairRoulette = new FairRoulette(client, chainId);
 
-  const powManager = new PoWWorkerManager();
+  let view = {
+    seedString: Base58.encode(seed),
+    address: '',
+    balance: 0n,
 
-  let addressIndex: number = 0;
-  let address: string;
-  let keyPair: IKeyPair;
-  let iotaBalance: bigint = BigInt(0);
+    showController: false,
+    isWorking: false,
 
-  let isWorking = false;
-  let fundsUpdaterHandle;
+    round: {
+      active: false,
+      number: 0n,
+      eventList: [] as string[],
+      betSelection: 0,
+      winningNumber: 0n,
+    },
+  };
 
-  let betSelection = 1;
+  function log(text: string) {
+    view.round.eventList.push(`${new Date().toLocaleTimeString()} | ${text}`);
+  }
 
   async function updateFunds() {
-    iotaBalance = await client.getFunds(address, Colors.IOTA_COLOR_STRING);
+    try {
+      view.balance = await client.getFunds(view.address, Colors.IOTA_COLOR_STRING);
+    } catch (ex) {
+      console.log(ex);
+      view.balance = 0n;
+    }
   }
 
   function setAddress(index: number) {
     addressIndex = index;
 
-    address = Seed.generateAddress(seed, addressIndex);
+    view.address = Seed.generateAddress(seed, addressIndex);
     keyPair = Seed.generateKeyPair(seed, addressIndex);
   }
 
@@ -61,17 +80,6 @@
     fundsUpdaterHandle = setInterval(updateFunds, 1000);
   }
 
-  function initialize() {
-    powManager.Load('/build/pow.worker.js');
-
-    createNewAddress();
-    updateFunds();
-
-    startFundsUpdater();
-  }
-
-  onMount(initialize);
-
   function isBroke(balance: bigint) {
     return balance < 200;
   }
@@ -81,26 +89,83 @@
   }
 
   async function placeBet() {
-    isWorking = true;
-    console.log('Setting bet to: ' + betSelection);
-    await fairRoulette.placeBet(keyPair, betSelection, 1234);
-    isWorking = false;
+    view.isWorking = true;
+    try {
+      await fairRoulette.placeBet(keyPair, view.round.betSelection, 1234);
+    } catch (ex) {
+      alert(ex);
+    }
+    view.isWorking = false;
   }
 
   async function sendFaucetRequest() {
-    isWorking = true;
+    view.isWorking = true;
 
-    const faucetRequestResult = await client.getFaucetRequest(address);
+    const faucetRequestResult = await client.getFaucetRequest(view.address);
 
     faucetRequestResult.faucetRequest.nonce = await powManager.RequestProofOfWork(
-      20,
+      20, // In this example a difficulty of 20 is enough, might need a retune for prod to 21 or 22
       faucetRequestResult.poWBuffer
     );
 
-    await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
+    try {
+      await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
+    } catch (ex) {
+      alert(ex);
+    }
 
-    isWorking = false;
+    view.isWorking = false;
   }
+
+  function subscribeToRouletteEvents() {
+    fairRoulette.on('roundStarted', () => {
+      view.round.active = true;
+      log('[ROUND] started');
+    });
+
+    fairRoulette.on('roundStopped', () => {
+      view.round.active = false;
+      log('[ROUND] ended');
+    });
+
+    fairRoulette.on('roundNumber', (roundNumber: bigint) => {
+      view.round.number = roundNumber;
+      log(`[ROUND] Current round number: ${roundNumber}`);
+    });
+
+    fairRoulette.on('winningNumber', (winningNumber: bigint) => {
+      view.round.winningNumber = winningNumber;
+      log(`[ROUND] The winning number was: ${winningNumber}`);
+    });
+
+    fairRoulette.on('betPlaced', (bet: Bet) => {
+      log(`[BET] Bet placed from ${bet.better} on ${bet.betNumber} with ${bet.amount}`);
+    });
+
+    fairRoulette.on('payout', (bet: Bet) => {
+      log(`[WIN] Payout for ${bet.better} with ${bet.amount}`);
+    });
+  }
+
+  async function initialize() {
+    log('Page loading');
+    powManager.Load('/build/pow.worker.js');
+
+    subscribeToRouletteEvents();
+    createNewAddress();
+    updateFunds();
+
+    startFundsUpdater();
+
+    view.round.active = (await fairRoulette.getRoundStatus()) == 1;
+    view.round.number = await fairRoulette.getRoundNumber();
+    view.round.winningNumber = await fairRoulette.getLastWinningNumber();
+    log('Page loaded');
+  }
+
+  // Entrypoint
+  onMount(initialize);
+  // Entrypoint
 </script>
 
 <main>
@@ -108,20 +173,20 @@
     <ul>
       <li>
         <span class="header_balance_title">Balance</span>
-        <span class="header_balance_text">{iotaBalance}i</span>
+        <span class="header_balance_text">{view.balance}i</span>
       </li>
       <li>
         <span class="header_seed_title">Seed</span>
-        <span class="header_seed_text">{seedString}</span>
+        <span class="header_seed_text">{view.seedString}</span>
       </li>
       <li>
         <span class="header_address_title">Address</span>
-        <span class="header_address_text">{address}</span>
+        <span class="header_address_text">{view.address}</span>
       </li>
     </ul>
   </div>
 
-  {#if isWorking}
+  {#if view.isWorking}
     <div class="loading_dim">
       <div class="loading_wrapper">
         <div class="loading_logo" />
@@ -130,46 +195,109 @@
     </div>
   {/if}
 
-  <div class="welcome_screen">
-    <div class="request_funds" class:disabled={isWealthy(iotaBalance)}>
-      <div class="request_funds_text">1 | Request funds</div>
-      <div class="request_funds_image" />
-      <button
-        class="request_funds_button"
-        disabled={isWealthy(iotaBalance)}
-        on:click={() => sendFaucetRequest()}>Request funds</button
-      >
+  {#if view.showController}
+    {#if isBroke(view.balance)}
+      <div class="welcome_screen">
+        <div class="request_funds" class:disabled={isWealthy(view.balance)}>
+          <div class="request_funds_text">1 | Request funds</div>
+          <div class="request_funds_image" />
+          <button
+            class="request_funds_button"
+            disabled={isWealthy(view.balance)}
+            on:click={() => sendFaucetRequest()}>Request funds</button
+          >
+        </div>
+      </div>
+    {/if}
+
+    {#if isWealthy(view.balance)}
+      <div class="welcome_screen">
+        <div class="place_bet" class:disabled={isBroke(view.balance)}>
+          <div class="place_bet_text">2 | Place a bet</div>
+          <div class="place_bet_image" />
+
+          <div class="bet_selection">
+            <input
+              type="radio"
+              group={view.round.betSelection}
+              name="bet_number"
+              value="1"
+              checked
+            />
+            <label for="1">1</label>
+
+            <input type="radio" group={view.round.betSelection} name="bet_number" value="2" />
+            <label for="2">2</label>
+
+            <input type="radio" group={view.round.betSelection} name="bet_number" value="3" />
+            <label for="3">3</label>
+
+            <input type="radio" group={view.round.betSelection} name="bet_number" value="4" />
+            <label for="4">4</label>
+
+            <input type="radio" group={view.round.betSelection} name="bet_number" value="5" />
+            <label for="5">5</label>
+          </div>
+
+          <button
+            class="submit_bet_button"
+            on:click={() => placeBet()}
+            disabled={isBroke(view.balance)}>Submit bet</button
+          >
+        </div>
+      </div>
+    {/if}
+  {/if}
+
+  <div class="content">
+    <div class="wheel_container">
+      <Roulette width="300" height="300" spin={view.round.active} />
+
+      <div class="wheel_status">
+        <div>Round {view.round.active ? 'started' : 'stopped'}</div>
+        <div>Round Nr. {view.round.number}</div>
+        <div>
+          Winning Nr. {view.round.active ? 'Undecided' : view.round.winningNumber}
+        </div>
+      </div>
     </div>
 
-    <div class="place_bet" class:disabled={isBroke(iotaBalance)}>
-      <div class="place_bet_text">2 | Place a bet</div>
-      <div class="place_bet_image" />
-
-      <div class="bet_selection">
-        <input type="radio" group={betSelection} name="bet_number" value="1" checked />
-        <label for="1">1</label>
-
-        <input type="radio" group={betSelection} name="bet_number" value="2" />
-        <label for="2">2</label>
-
-        <input type="radio" group={betSelection} name="bet_number" value="3" />
-        <label for="3">3</label>
-
-        <input type="radio" group={betSelection} name="bet_number" value="4" />
-        <label for="4">4</label>
-
-        <input type="radio" group={betSelection} name="bet_number" value="5" />
-        <label for="5">5</label>
-      </div>
-
-      <button class="submit_bet_button" on:click={() => placeBet()} disabled={isBroke(iotaBalance)}
-        >Submit bet</button
-      >
+    <div class="log">
+      <textarea rows="4" cols="50">{view.round.eventList.join('\n')}</textarea>
     </div>
   </div>
 </main>
 
 <style>
+  textarea {
+    width: 100%;
+    height: 100%;
+  }
+
+  .log {
+    width: 75%;
+    margin-left: 35px;
+  }
+  .wheel_container {
+    border: 1px solid white;
+    border-radius: 4px;
+    padding: 5px;
+  }
+
+  .wheel_status {
+    margin-top: 15px;
+    width: 100%;
+    height: 100px;
+    font-size: 26px;
+    color: gray;
+  }
+
+  .content {
+    display: flex;
+    width: 75%;
+    margin: 15px auto;
+  }
+
   main {
     width: 100%;
     height: 100%;

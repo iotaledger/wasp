@@ -17,7 +17,7 @@ use crate::*;
 // the maximum number one can bet on. The range of numbers starts at 1.
 const MAX_NUMBER: i64 = 5;
 // the default playing period of one betting round in seconds
-const DEFAULT_PLAY_PERIOD: i32 = 120;
+const DEFAULT_PLAY_PERIOD: i32 = 15;
 // Enable this if you deploy the contract to an actual node. It will pay out the prize after a certain timeout.
 const ENABLE_SELF_POST: bool = true;
 
@@ -70,12 +70,6 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
         amount: amount,
         number: number,
     };
-    ctx.event(&format!(
-        "fairroulette.placingBet {0} {1} {2}",
-        bet.better.to_string(),
-        bet.amount,
-        bet.number
-    ));
 
     // Create an ScMutableMap proxy to the state storage map on the host.
     let state: ScMutableMap = ctx.state();
@@ -90,6 +84,13 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
     // using the bet number as index. Then we set the bytes value in the best array on the
     // host to the result of serializing the bet data into a bytes representation.
     bets.get_bytes(bet_nr).set_value(&bet.to_bytes());
+
+    ctx.event(&format!(
+        "fairroulette.bet.placed {0} {1} {2}",
+        &bet.better.to_string(),
+        bet.amount,
+        bet.number
+    ));
 
     // Was this the first bet of this round?
     if bet_nr == 0 {
@@ -111,18 +112,28 @@ pub fn func_place_bet(ctx: &ScFuncContext) {
         // bets up to that moment as the ones to consider for determining the winner.
 
         if ENABLE_SELF_POST {
-            state.get_int16(STATE_ROUND_ACTIVE).set_value(1);
+            state.get_int16(STATE_ROUND_STATUS).set_value(1);
             ctx.event(&format!(
-                "fairroulette.round {0}",
-                state.get_int16(STATE_ROUND_ACTIVE).value()
+                "fairroulette.round.state {0}",
+                state.get_int16(STATE_ROUND_STATUS).value()
             ));
+
+            let round_number = state.get_int64(STATE_ROUND_NUMBER);
+            round_number.set_value(round_number.value() + 1);
+
+            ctx.event(&format!(
+                "fairroulette.round.number {0}",
+                round_number.value()
+            ));
+
             let transfer = ScTransfers::iotas(1);
-            ctx.post_self(HFUNC_PLACE_BET, None, transfer, 0);
+            ctx.post_self(HFUNC_PAY_WINNERS, None, transfer, play_period);
         }
     }
 
     // Finally, we log the fact that we have successfully completed execution
     // of the 'placeBet' Func in the log on the host.
+
     ctx.log("fairroulette.placeBet ok");
 }
 
@@ -143,7 +154,8 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     // Again, we don't want anyone to be able to initiate this function through a request except
     // for the smart contract itself, so we require that the caller of the function is the smart
     // contract agent id. Any other caller will panic out with an error message.
-    ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+    // ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
+    ctx.require(ctx.caller() == ctx.account_id(), "no permission");
 
     // Use the built-in random number generator which has been automatically initialized by
     // using the transaction hash as initial entropy data. Note that the pseudo-random number
@@ -201,6 +213,11 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     // the 'lockedBets' array is available for the next betting round.
     bets.clear();
 
+    ctx.event(&format!(
+        "fairroulette.round.winning_number {}",
+        winning_number
+    ));
+
     // Did we have any winners at all?
     if winners.is_empty() {
         // No winners, log this fact to the log on the host.
@@ -240,11 +257,12 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
             // host sandbox function with these values.
             ctx.transfer_to_address(&bet.better.address(), transfers);
         }
-
         // Log who got sent what in the log on the host
-        let text: String =
-            "Pay ".to_string() + &payout.to_string() + " to " + &bet.better.to_string();
-        ctx.log(&text);
+        ctx.event(&format!(
+            "fairroulette.payout {} {}",
+            &bet.better.to_string(),
+            payout
+        ));
     }
 
     // This is where we transfer the remainder after payout to the creator of the smart contract.
@@ -261,10 +279,12 @@ pub fn func_pay_winners(ctx: &ScFuncContext) {
     // Finally, we log the fact that we have successfully completed execution
     // of the 'payWinners' Func in the log on the host.
     ctx.log("fairroulette.payWinners ok");
-    state.get_int16(STATE_ROUND_ACTIVE).set_value(0);
+
+    // Set round status to 0, send out event to notify that the round has ended
+    state.get_int16(STATE_ROUND_STATUS).set_value(0);
     ctx.event(&format!(
-        "fairroulette.round.active: {0}",
-        state.get_int16(STATE_ROUND_ACTIVE).value()
+        "fairroulette.round.state {0}",
+        state.get_int16(STATE_ROUND_STATUS).value()
     ));
 }
 
@@ -333,4 +353,24 @@ pub fn view_last_winning_number(ctx: &ScViewContext) {
     // Finally, we log the fact that we have successfully completed execution
     // of the 'lastWinningNumber' View in the log on the host.
     ctx.log("fairroulette.lastWinningNumber ok");
+}
+
+pub fn view_round_status(ctx: &ScViewContext) {
+    let state: ScImmutableMap = ctx.state();
+    let round_status: i16 = state.get_int16(STATE_ROUND_STATUS).value();
+    let results: ScMutableMap = ctx.results();
+
+    results
+        .get_int16(RESULT_ROUND_STATUS)
+        .set_value(round_status);
+}
+
+pub fn view_round_number(ctx: &ScViewContext) {
+    let state: ScImmutableMap = ctx.state();
+    let round_number: i64 = state.get_int64(STATE_ROUND_NUMBER).value();
+    let results: ScMutableMap = ctx.results();
+
+    results
+        .get_int64(RESULT_ROUND_NUMBER)
+        .set_value(round_number);
 }

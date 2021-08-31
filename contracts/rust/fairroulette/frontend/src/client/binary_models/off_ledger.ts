@@ -1,13 +1,10 @@
-import blake, { blake2b } from 'blakejs';
-
-import { SimpleBufferCursor } from '../simple_buffer_cursor';
-import { Buffer } from "../buffer";
+import blake, { blake2b } from 'blakejs'
+import { Base58 } from '../crypto/base58'
+import { Buffer } from '../buffer'
+import { ED25519 } from '../crypto/ed25519'
+import { SimpleBufferCursor } from '../simple_buffer_cursor'
 import type { IOffLedger } from './IOffLedger'
 import type { IKeyPair } from '../crypto/models/IKeyPair';
-import { ED25519 } from '../crypto/ed25519';
-import { Base58 } from '../crypto/base58';
-
-
 
 export class OffLedger {
   public static ToStruct(buffer: Buffer): IOffLedger {

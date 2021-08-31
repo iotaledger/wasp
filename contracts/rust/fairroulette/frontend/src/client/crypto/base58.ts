@@ -1,8 +1,8 @@
-import { Buffer } from "../buffer";
+import { Buffer } from '../buffer'
 
 export class Base58 {
     private static readonly ALPHABET: string = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-    private static readonly ALPHABET_MAP: { [id: string]: number } = {};
+    private static readonly ALPHABET_MAP: { [id: string]: number } = { };
 
     /**
      * Encode a buffer to base58.

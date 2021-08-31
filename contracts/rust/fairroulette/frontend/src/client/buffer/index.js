@@ -1,3 +1,6 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-constant-condition */
+/* eslint-disable no-undef */
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -1809,7 +1812,7 @@ Buffer.prototype.fill = function fill(val, start, end, encoding) {
 // =============
 
 // Simplified versions from Node, changed for Buffer-only usage
-const errors = {}
+const errors = { }
 function E(sym, getMessage, Base) {
   errors[sym] = class NodeError extends Base {
     constructor() {
