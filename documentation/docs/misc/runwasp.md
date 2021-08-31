@@ -1,13 +1,13 @@
 # How to run a Wasp node
 
-Here we describe step by step instructions how to run Wasp nodes on a Goshimmer network.
+Here we describe step-by-step instructions how to run Wasp nodes on a Goshimmer network.
 
 ## Step 1: Compile & install
 
 You will need the `wasp`, `wasp-cli` and `goshimmer` commands installed in
 the system.
 
-The `goshimmer` command must be compiled from the Goshimmer repository:
+The `goshimmer` command must be compiled from the GoShimmer repository:
 
 ```
 $ git clone https://github.com/iotaledger/goshimmer.git
@@ -23,9 +23,10 @@ $ cd wasp
 $ go install -tags rocksdb ./...
 ```
 
-## Step 2: Run Goshimmer 
+## Step 2: Run GoShimmer 
 
-Create an empty working directory for Goshimmer, and download the `snapshot.bin` file needed for bootstrap:
+Create an empty working directory for GoShimmer, and download the `snapshot.bin`
+file needed for bootstrap:
 
 ```
 $ mkdir goshimmer-node
@@ -33,7 +34,7 @@ $ cd goshimmer-node
 $ curl 'https://raw.githubusercontent.com/iotaledger/goshimmer/master/snapshot.bin' -O
 ```
 
-Start the Goshimmer node:
+Start the GoShimmer node:
 
 ```
 $ goshimmer \
@@ -79,8 +80,8 @@ its own `config.json` and database. Ports and other settings must be adjusted
 accordingly.
 
 Also, for testing purposes, all Wasp nodes can be connected to the same
-Goshimmer instance.  In normal operation, it is recommended for each Wasp node
-to connect to a different Goshimmer instance.
+GoShimmer instance.  In normal operation, it is recommended for each Wasp node
+to connect to a different GoShimmer instance.
 
 Create an empty working directory for the Wasp node, copy the
 [`config.json`](https://github.com/iotaledger/wasp/blob/master/config.json)
