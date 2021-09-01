@@ -2,9 +2,9 @@ name: deploy
 
 on:
   pull_request:
-    branches: [master]
+    branches: [docs-guide]
   push:
-    branches: [master]
+    branches: [docs-guide]
 
 jobs:
   checks:
