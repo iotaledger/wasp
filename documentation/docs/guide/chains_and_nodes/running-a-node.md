@@ -38,7 +38,7 @@ be enabled via configuration.
 If the go install command is telling you it cannot find gcc you will need to
 install [MinGW-w64](https://sourceforge.net/projects/mingw-w64/). When you do
 make sure to select *x86_64* architecture instead of the preselected *i686*
-architecture. After installation make sure to add this folder to your PATH variable:
+architecture. After the installation make sure to add this folder to your PATH variable:
 
 ```
 C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
@@ -49,16 +49,16 @@ C:\Program Files\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
 - Build the `wasp` binary (Wasp node): `go build -tags rocksdb`
 - Build the `wasp-cli` binary (CLI client): `go build -tags rocksdb ./tools/wasp-cli`
 
-Alternatively, build and install everything with `go install -tags rocksdb ./...`
+Alternatively, you can build and install everything with `go install -tags rocksdb ./...`
 
-On Windows you will need to use `go install -tags rocksdb -buildmode=exe ./...` instead
+On Windows you will need to use `go install -tags rocksdb -buildmode=exe ./...` instead.
 
 ## Test
 
 - Run all tests (including integration tests which may take several minutes): `go test -tags rocksdb -timeout 20m ./...`
 - Run only unit tests: `go test -tags rocksdb -short ./...`
 
-Note: integration tests require the `wasp` and `wasp-cli` commands
+Note: Integration tests require the `wasp` and `wasp-cli` commands
 in the system path (i.e. you need to run `go install ./...` before running
 tests).
 
@@ -84,13 +84,13 @@ committee must have a unique `netid`.
 ### Goshimmer Connection Settings
 
 `nodeconn.address` specifies the Goshimmer host and port (exposed by the TXStream plugin) to
-connect to. (more information about the goshimmer node [below](#goshimmer-provider))
+connect to (more information about the goshimmer node [below](#goshimmer-provider)).
 
 ### Publisher
 
 `nanomsg.port` specifies the port for the Nanomsg event publisher. Wasp nodes
 publish important events happening in smart contracts, such as state
-transitions, incoming and processed requests and similar.  Any Nanomsg client
+transitions, incoming and processed requests and similar. Any Nanomsg client
 can subscribe to these messages.
 
 <details>
@@ -99,7 +99,7 @@ can subscribe to these messages.
   <br/>
   
   Each Wasp node publishes important events via a [Nanomsg](https://nanomsg.org/) message stream
-  (just like ZMQ is used in IRI. Possibly in the future ZMQ and MQTT publishers will be supported too).
+  (just like ZMQ is used in IRI. Possibly, in the future, ZMQ and MQTT publishers will be supported too).
 
   Any Nanomsg client can subscribe to the message stream. In Go you can use the
   `packages/subscribe` package provided in Wasp for this.
@@ -107,9 +107,9 @@ can subscribe to these messages.
   The Publisher port can be configured in `config.json` with the `nanomsg.port`
   setting.
 
-  Message format is simply a string consisting of a space separated list of tokens; and the first token
-  is the message type. Below is a list of all message types published by Wasp. (You can search for
-  `publisher.Publish` in the code to see the exact places where each message is published.)
+  The Message format is simply a string consisting of a space separated list of tokens; and the first token
+  is the message type. Below is a list of all message types published by Wasp (you can search for
+  `publisher.Publish` in the code to see the exact places where each message is published).
 
   |Message|Format|
   |:--- |:--- |
@@ -137,7 +137,7 @@ which can be accessed with a web browser.
 ### Prometheus
 
 `prometheus.bindAddress` specifies the bind address/port for the prometheus server, where its possible to get multiple system metrics.
-By default Prometheus is disabled, and should be enabled by setting `prometheus.enabled` to `true`.
+By default Prometheus is disabled and should be enabled by setting `prometheus.enabled` to `true`.
 
 ### Grafana
 
@@ -194,10 +194,10 @@ $ goshimmer \
         --drng.xteam.committeeMembers=GUdTwLDb6t6vZ7X5XzEnjFNDEVPteU7tVQ9nzKLfPjdo,68vNzBFE9HpmWLb2x4599AUUQNuimuhwn3XahTZZYUHt,Dc9n3JxYecaX3gpxVnWb4jS3KVz1K1SgSK1KpV1dzqT1,75g6r4tqGZhrgpDYZyZxVje1Qo54ezFYkCw94ELTLhPs,CN1XLXLHT9hv7fy3qNhpgNMD6uoHFkHtaNNKyNVCKybf,7SmttyqrKMkLo5NPYaiFoHs8LE6s7oCoWCQaZhui8m16,CypSmrHpTe3WQmCw54KP91F5gTmrQEL7EmTX38YStFXx
 ```
 
-Note: argument values are adapted from [these instructions](https://github.com/iotaledger/goshimmer/wiki/Setup-up-a-GoShimmer-node-%28Joining-the-pollen-testnet%29).
+Note: Argument values are adapted from [these instructions](https://github.com/iotaledger/goshimmer/wiki/Setup-up-a-GoShimmer-node-%28Joining-the-pollen-testnet%29).
 We do not provide Docker images yet.
 
-Note: by default the TXStream plugin will be listening for Wasp connections on port `5000`.
+Note: By default the TXStream plugin will be listening for Wasp connections on port `5000`.
 To change this setting you can add the argument `--txstream.port: 12345`.
 
 ## Running the Node
