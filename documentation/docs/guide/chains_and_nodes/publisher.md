@@ -1,3 +1,13 @@
+---
+keywords:
+- ISCP
+- Publisher 
+- Nanomsg
+- Messages
+description: Publishing important events via a Nanomsg message stream. Subscribing to a stream with a client. Message format description.
+image: /img/logo/WASP_logo_dark.png
+---
+
 # Wasp Publisher
 
 Each Wasp node publishes important events via a [Nanomsg](https://nanomsg.org/) message stream

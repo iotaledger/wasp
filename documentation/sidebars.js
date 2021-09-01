@@ -18,7 +18,7 @@ module.exports = {
         {
             type: 'doc',
             label: 'Overview',
-            id: 'guide/readme',
+            id: 'overview',
         },
         {
             type: 'category',
@@ -51,7 +51,7 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'State, transitions and state anchoring',
+                    label: 'State, Transitions and State Anchoring',
                     id: 'guide/core_concepts/states',
                 },
                 {
@@ -65,44 +65,44 @@ module.exports = {
                     items: [
                         {
                             type: 'doc',
-                            label: 'How accounts work',
-                            id: 'guide/core_concepts/accounts/accounts-how',
+                            label: 'How Accounts Work',
+                            id: 'guide/core_concepts/accounts/how-accounts-work',
                         },
                         {
                             type: 'doc',
-                            label: 'How to deposit to a chain',
-                            id: 'guide/core_concepts/accounts/accounts-deposit',
+                            label: 'How To Deposit To a Chain',
+                            id: 'guide/core_concepts/accounts/how-to-deposit-to-a-chain',
                         },
                         {
                             type: 'doc',
-                            label: 'How to withdraw from a chain',
-                            id: 'guide/core_concepts/accounts/accounts-withdraw',
+                            label: 'How To Withdraw From a Chain',
+                            id: 'guide/core_concepts/accounts/how-to-withdraw-from-a-chain',
                         },
                         {
                             type: 'doc',
-                            label: 'View account balances',
-                            id: 'guide/core_concepts/accounts/accounts-views',
+                            label: 'View Account Balances',
+                            id: 'guide/core_concepts/accounts/view-account-balances',
                         },
                         {
                             type: 'doc',
-                            label: 'The common account',
-                            id: 'guide/core_concepts/accounts/accounts-common-account',
+                            label: 'The Common Account',
+                            id: 'guide/core_concepts/accounts/the-common-account',
                         },
                     ]
                 },
                 {
                     type: 'category',
-                    label: 'Interacting with smart contracts',
+                    label: 'Interacting With Smart Contracts',
                     items: [
                         {
                             type: 'doc',
-                            label: 'On-ledger requests',
-                            id: 'guide/core_concepts/smartcontract-interaction/on-ledger',
+                            label: 'On-ledger Requests',
+                            id: 'guide/core_concepts/smartcontract-interaction/on-ledger-requests',
                         },
                         {
                             type: 'doc',
-                            label: 'Off-ledger requests',
-                            id: 'guide/core_concepts/smartcontract-interaction/off-ledger',
+                            label: 'Off-ledger Requests',
+                            id: 'guide/core_concepts/smartcontract-interaction/off-ledger-requests',
                         }
                     ]
                 },
@@ -112,37 +112,37 @@ module.exports = {
                     items: [
                         {
                             type: 'doc',
-                            label: 'How ISCP works as a language/VM agnostic platform',
+                            label: 'How ISCP Works As a Language/VM Agnostic Platform',
                             id: 'guide/core_concepts/vm-types/iscp-vm',
                         },
                         {
                             type: 'category',
-                            label: 'Rust/Wasm based smart contracts',
+                            label: 'Rust/Wasm Based Smart Contracts',
                             items: [
                                 {
                                     type: 'doc',
-                                    label: 'Why and what does it look like?',
+                                    label: 'Why and What Does It Look Like?',
                                     id: 'guide/core_concepts/vm-types/rust-wasm',
                                 },
                                 {
                                     type: 'doc',
-                                    label: 'Solidity/EVM based smart contracts',
+                                    label: 'Solidity/EVM Based Smart Contracts',
                                     id: 'guide/core_concepts/vm-types/rust-wasm',
                                 },
                             ]
                         },
                         {
                             type: 'category',
-                            label: 'Solidity/EVM based smart contracts',
+                            label: 'Solidity/EVM Based Smart Contracts',
                             items: [
                                 {
                                     type: 'doc',
-                                    label: 'Why and what does it look like?',
+                                    label: 'Why and What Does It Look Like?',
                                     id: 'guide/core_concepts/vm-types/evm',
                                 },
                                 {
                                     type: 'doc',
-                                    label: 'Solidity/EVM based smart contracts',
+                                    label: 'Solidity/EVM Based Smart Contracts',
                                     id: 'guide/core_concepts/vm-types/evm',
                                 },
                             ]
@@ -153,12 +153,12 @@ module.exports = {
         },
         {
             type: 'category',
-            label: 'ISCP chains and nodes',
+            label: 'ISCP Chains and Nodes',
             items: [
                 {
                     type: 'doc',
-                    label: 'Running a node',
-                    id: 'guide/chains_and_nodes/run-node',
+                    label: 'Running a Node',
+                    id: 'guide/chains_and_nodes/running-a-node',
                 },
                 {
                     type: 'doc',
@@ -167,13 +167,13 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'Setting up a chain',
-                    id: 'guide/chains_and_nodes/setup',
+                    label: 'Setting Up a Chain',
+                    id: 'guide/chains_and_nodes/setting-up-a-chain',
                 },
                 {
                     type: 'doc',
                     label: 'Chain Management',
-                    id: 'guide/chains_and_nodes/manage',
+                    id: 'guide/chains_and_nodes/chain-management',
                 },
             ]
         },
@@ -184,7 +184,7 @@ module.exports = {
                 {
                     type: 'doc',
                     label: 'Introduction',
-                    id: 'guide/rust_wasm/readme',
+                    id: 'guide/rust_wasm/introduction',
                 },
             ]
         },
@@ -195,7 +195,7 @@ module.exports = {
                 {
                     type: 'doc',
                     label: 'Introduction',
-                    id: 'guide/evm/readme',
+                    id: 'guide/evm/introduction',
                 },
             ]
         },
