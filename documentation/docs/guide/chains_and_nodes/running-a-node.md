@@ -1,4 +1,20 @@
-# Running a node
+---
+keywords:
+- ISCP
+- Smart Contracts
+- Running a node
+- Go-lang
+- GoShimmer
+- Requirements
+- Configuration
+- Dashborad
+- Grafana
+- Prometheus
+description:  How to run a node. Requirements, configuration parameters, dashboard configuration and tests.
+image: /img/logo/WASP_logo_dark.png
+---
+
+# Running a Node
 
 In the following sections we describe how to use Wasp by cloning the repository and building the application.
 If you prefer to use a docker image, you can find instructions on how to build it [here](../../misc/docker.md) (official images will be provided in the future).
@@ -65,7 +81,7 @@ node uses the `peering.port` setting to specify the port for peering.
 running, and must be reachable by other nodes in the committee. Each node in a
 committee must have a unique `netid`.
 
-### Goshimmer connection settings
+### Goshimmer Connection Settings
 
 `nodeconn.address` specifies the Goshimmer host and port (exposed by the TXStream plugin) to
 connect to. (more information about the goshimmer node [below](#goshimmer-provider))
@@ -128,9 +144,9 @@ By default Prometheus is disabled, and should be enabled by setting `prometheus.
 Grafana provides a dashboard to visualize system metrics, it can use the prometheus metrics as a data source.
 // TODO
 
-## Goshimmer provider
+## Goshimmer Provider
 
-For the wasp node to communicate with the L1 (Tangle/Goshimmer Network), it needs access to a Goshimmer node with the TXStream plugin enabled.
+For the Wasp node to communicate with the L1 (Tangle/Goshimmer Network), it needs access to a Goshimmer node with the TXStream plugin enabled.
 You can use any publicly available node, but the instructions on how to run your own node follows:
 
 The `goshimmer` command must be compiled from the Goshimmer repository:

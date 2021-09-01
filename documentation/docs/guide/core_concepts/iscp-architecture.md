@@ -1,3 +1,13 @@
+---
+keywords:
+- ISCP
+- Smart Contracts
+- Architecture
+- Ethereum
+- Implementation
+description: ISCP allows anyone to start their own chain and validators. Link to full technical description of the ISCP architecture.  
+image: /img/logo/WASP_logo_dark.png
+---
 # ISCP Architecture 
 
 With ISCP anyone can start a own chain and define the validators. Each chain has its own state 
