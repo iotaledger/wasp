@@ -15,6 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const OSWindows string = "windows"
+
 type SabotageEnv struct {
 	chainEnv      *chainEnv
 	NumValidators int
@@ -334,7 +336,7 @@ func testConsenseusReconnectingNodesNoQuorum(t *testing.T, clusterSize, numValid
 
 func testConsenseusReconnectingNodesHighQuorum(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure int) {
 	// Windows does not support freezing with SIGSTOP, we skip those for now.
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == OSWindows {
 		t.Skip()
 	}
 
@@ -370,7 +372,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 	}
 
 	// Windows does not support freezing with SIGSTOP, we skip those for now.
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == OSWindows {
 		t.Skip()
 	}
 
@@ -539,7 +541,7 @@ func TestOneFailingNodeAfterTheOther(t *testing.T) {
 	}
 
 	// Windows does not support freezing with SIGSTOP, we skip those for now.
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == OSWindows {
 		t.Skip()
 	}
 
