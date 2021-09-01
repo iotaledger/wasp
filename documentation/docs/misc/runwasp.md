@@ -1,13 +1,13 @@
 # How to run a Wasp node
 
-Here we describe step by step instructions how to run Wasp nodes on a Goshimmer network.
+Here we describe step-by-step instructions how to run Wasp nodes on a Goshimmer network.
 
 You will need the `wasp` and `wasp-cli` commands installed in the system, and
 access to a Goshimmer node.
 
 ## Step 1: Compile & install Wasp
 
-The `wasp` and `wasp-cli` commands can be installed from the repository:
+The `wasp` and `wasp-cli` commands can be installed from this repository:
 
 ```
 $ git clone https://github.com/iotaledger/wasp.git
@@ -52,7 +52,7 @@ $ cd goshimmer-node
 $ curl 'https://raw.githubusercontent.com/iotaledger/goshimmer/master/snapshot.bin' -O
 ```
 
-Start the Goshimmer node:
+Start the GoShimmer node:
 
 ```
 $ goshimmer \
