@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  wasp:
+    build:
+      context: ../../
+      dockerfile: ./tools/monitoring/Dockerfile
+    ports:
+      - "2112:2112"
+  prometheus:
+    image: "prom/prometheus"
+    ports:
+      - "9091:9090"
+    volumes:
+      - .:/etc/prometheus
+  grafana:
+    build:
+      context: ./grafana
+      dockerfile: ./Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
