@@ -55,9 +55,40 @@ module.exports = {
                     id: 'guide/core_concepts/states',
                 },
                 {
-                    type: 'doc',
+                    type: 'category',
                     label: 'Core Contracts',
-                    id: 'guide/core_concepts/core-contracts',
+                    items: [
+                        {
+                            type: 'doc',
+                            label: 'Overview',
+                            id: 'guide/core_concepts/core_contracts/overview',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Root',
+                            id: 'guide/core_concepts/core_contracts/root',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Default',
+                            id: 'guide/core_concepts/core_contracts/default',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Accounts',
+                            id: 'guide/core_concepts/core_contracts/accounts',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Blob',
+                            id: 'guide/core_concepts/core_contracts/blob',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Blocklog',
+                            id: 'guide/core_concepts/core_contracts/blocklog',
+                        },
+                    ],
                 },
                 {
                     type: 'category',
@@ -147,9 +178,30 @@ module.exports = {
                                 },
                             ]
                         }
-                    ]
+                    ],
                 },
-            ]
+                {
+                    type: 'category',
+                    label: 'Solo',
+                    items: [
+                        {
+                            type: 'doc',
+                            label: 'Solo',
+                            id: 'guide/solo/what-is-solo',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'First Example',
+                            id: 'guide/solo/first-example',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Tokens and the UTXO Ledger',
+                            id: 'guide/solo/first-example',
+                        },
+                    ]
+                }
+            ],
         },
         {
             type: 'category',
