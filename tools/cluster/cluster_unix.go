@@ -1,5 +1,5 @@
-// +build linux 
-// +build darwin
+//go:build !windows
+// +build !windows
 
 package cluster
 
