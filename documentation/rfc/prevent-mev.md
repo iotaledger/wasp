@@ -18,7 +18,7 @@ The batch will be sorted using that value to produce unpredictable order of requ
 Let's say R is a random number produced by the ACS component of the consensus and applying the BLS threshold cryptography.  
 Then we can sort the batch for example by _(requestID+R) mod 2^16_.  
 That will give a deterministic yet unpredictable order in the batch of requests.  
-MEV will become impossible because parties won't be able to influence the order of requests in the batch.
+MEV will be impossible because parties won't be able to influence the order of requests in the batch.
 
 Note: this also means that the order in which requests are processed is random for the user. This is fine because it is undefined anyway.  
 If the user needs a strict order, he/she can wait for the completion of the previous request before posting the next one.
