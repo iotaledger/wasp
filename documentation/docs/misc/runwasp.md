@@ -7,14 +7,6 @@ access to a Goshimmer node.
 
 ## Step 1: Compile & install Wasp
 
-The `goshimmer` command must be compiled from the GoShimmer repository:
-
-```
-$ git clone https://github.com/iotaledger/goshimmer.git
-$ cd goshimmer
-$ go install -tags rocksdb
-```
-
 The `wasp` and `wasp-cli` commands can be installed from this repository:
 
 ```
