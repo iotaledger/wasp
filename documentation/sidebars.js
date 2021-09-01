@@ -55,6 +55,16 @@ module.exports = {
                     id: 'guide/core_concepts/states',
                 },
                 {
+                    type: 'doc',
+                    label: 'Anatomy of a Smart Contract',
+                    id: 'guide/core_concepts/smart-contract-anatomy'
+                },
+                {
+                    type: 'doc',
+                    label: 'Sandbox Interface',
+                    id: 'guide/core_concepts/sandbox'
+                },
+                {
                     type: 'category',
                     label: 'Core Contracts',
                     items: [
@@ -199,6 +209,22 @@ module.exports = {
                             label: 'Tokens and the UTXO Ledger',
                             id: 'guide/solo/first-example',
                         },
+                        {
+                            type: 'doc',
+                            label: 'Invoking a Smart Contract',
+                            id: 'guide/solo/invoking-sc',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Calling a View',
+                            id: 'guide/solo/view-sc',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Error Handling',
+                            id: 'guide/solo/error-handling',
+                        },
+
                     ]
                 }
             ],
