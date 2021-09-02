@@ -1,25 +1,16 @@
 # Invoking smart contracts
 
-In this chapter we will describe sending requests to the smart contract as transactions on the Tangle.
-It is so called `on-ledger` requests and can be sent to any chain deployed on the Tangle without accessing Wasp node,
-just posting transaction to the Tangle. The request will find target chain itself.
-
-The alternative way of sending requests is so-called `off-ledger` requests. Its an API call to the Wasp node, which has access
-to the state of the target chain, an `access node`. The `off-ledger` request is not a transaction so
-no need to confirm it on the Tangle. The `off-ledger` requests are much faster. We will describe them in a separate chapter.
-
-The statements
+Invoking a Smart Contract's entry point in Solo looks like the following:
 
 ```go
   req := solo.NewCallParams("example1", "storeString", "paramString", "Hello, world!").WithIotas(1)
   _, err = chain.PostRequestSync(req, nil)
 ```
 
-in the example `TestTutorial3` invoke the `storeString` entry point of the
+In the example `TestTutorial3` we invoke the `storeString` entry point of the
 `example1` smart contract by posting it as a request. The parameter
 named `paramString` is passed with the string value "Hello, world!". The _Solo_
-test code itself is separate from the chain where the smart contract is
-invoked, and is not executed "on-chain".
+test code itself is separate from the chain where the smart contract is invoked, and is not executed "on-chain".
 
 `NewCallParams` creates a call object named `req` which wraps all call
 parameters into a single object. This is syntactic sugar just for convenience.
@@ -31,7 +22,7 @@ contain many parameters.
 are implemented as value transactions with additional data, and therefore we
 need to transfer at least a single token for the request to be valid.
 
-`PostRequestSync` sends the request to the chain. Let’s describe in detail what
+`PostRequestSync` sends the request to the chain. Let’s describe in detail what 
 is going on here.
 
 ![Generic process of posting an on-ledger request to the smart contract](/img/tutorial/send_request.png)
@@ -87,8 +78,8 @@ with `NewKeyPairWithFunds`.
 
 ## Off-ledger requests
 
-Alternatively in the example above, we can send an off-ledger request by using `chain.PostRequestOffLedger` instead of `PostRequestSync`,
-but in order to be able to submit off-ledger request, the account sending the request must deposit funds to the chain beforehand.
+Alternatively, in the example above, we could send an off-ledger request by using `chain.PostRequestOffLedger` instead of `PostRequestSync`.
+However, in order to be able to submit off-ledger request, the account sending the request must deposit funds to the chain beforehand.
 
 ```go
   wallet, address := env.NewKeyPairWithFunds()

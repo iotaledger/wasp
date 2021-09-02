@@ -1,6 +1,6 @@
 # Solo
 
-## What is it?
+## What is Solo?
 
 [_Solo_](https://github.com/iotaledger/wasp/tree/master/packages/solo) is a testing framework that allows developers to validate real smart contracts and entire inter-chain protocols before deploying them on the distributed network.
 
@@ -34,7 +34,8 @@ You can find example implementations of smart contracts (including source code
 and tests) in the Wasp repository, in the
 [contracts/rust folder](https://github.com/iotaledger/wasp/tree/master/contracts/rust).
 
-
 :::tip
 You can find the documentation for all the functionality available in solo in [go-docs](https://pkg.go.dev/github.com/iotaledger/wasp/packages/solo).
 :::
+
+In the following pages some usage examples will be presented. The example code can be found [here](https://github.com/iotaledger/wasp/tree/develop/documentation/tutorial-examples).

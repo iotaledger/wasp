@@ -207,7 +207,7 @@ module.exports = {
                         {
                             type: 'doc',
                             label: 'Tokens and the UTXO Ledger',
-                            id: 'guide/solo/first-example',
+                            id: 'guide/solo/tokens-and-utxos',
                         },
                         {
                             type: 'doc',
@@ -224,7 +224,26 @@ module.exports = {
                             label: 'Error Handling',
                             id: 'guide/solo/error-handling',
                         },
-
+                        {
+                            type: 'doc',
+                            label: 'Account Balances',
+                            id: 'guide/solo/balances'
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Sending tokens to a Smart Contract',
+                            id: 'guide/solo/sending-funds'
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Return of tokens in case of failure',
+                            id: 'guide/solo/reimbursed-funds'
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Sending tokens from ISCP to the Tangle',
+                            id: 'guide/solo/sending-funds-sc'
+                        },
                     ]
                 }
             ],
