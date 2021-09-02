@@ -38,6 +38,9 @@ Upon node shutdown there will be some profile files available on `./profiles`:
 These profiles can be explored in the same way as the pprof server resources 
 (using `go tool`).
 
+While running cluster tests on Linux, working directory is `/tmp/wasp-cluster/`, thus the profiling data for each node is written in `profiles` subdirectory for each specific node,
+e.g., `/tmp/wasp-cluster/wasp0/profiles/`.
+
 ## Notes
 
 - Profiling has a negative impact on performance. Use when in need.

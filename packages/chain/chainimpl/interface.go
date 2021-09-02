@@ -94,8 +94,8 @@ func (c *chainObj) receiveMessage(msg interface{}, blocking bool) {
 		return
 	}
 	defer func() { // This is needed to handle possible write to a closed channel.
-		err := recover()
-		if err == "send on closed channel" {
+		err, ok := recover().(error)
+		if ok && err.Error() == "send on closed channel" {
 			c.log.Warnf("Failed to receive message, reason=%v", err)
 			return
 		}

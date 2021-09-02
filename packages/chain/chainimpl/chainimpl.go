@@ -297,6 +297,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 				// because the state transition message is only sent only after state is committed and before consensus
 				// start new round
 				c.log.Panicf("processChainTransition. unexpected error: %v", err)
+				return // to avoid "possible nil pointer dereference" in later use of `reqids`
 			}
 			// remove processed requests from the mempool
 			c.log.Debugf("processChainTransition state %d cleaning state %d: removing %d requests", stateIndex, i, len(reqids))
