@@ -114,8 +114,8 @@ func (p *peer) SendMsg(msg *peering.PeerMessage) {
 	}
 	p.accessLock.RUnlock()
 	catch := func() {
-		err := recover()
-		if err == "send on closed channel" {
+		err, ok := recover().(error)
+		if ok && err.Error() == "send on closed channel" {
 			p.log.Warnf("Failed to send message, reason=%v", err)
 			return
 		}
