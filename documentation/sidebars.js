@@ -56,8 +56,49 @@ module.exports = {
                 },
                 {
                     type: 'doc',
+                    label: 'Anatomy of a Smart Contract',
+                    id: 'guide/core_concepts/smart-contract-anatomy'
+                },
+                {
+                    type: 'doc',
+                    label: 'Sandbox Interface',
+                    id: 'guide/core_concepts/sandbox'
+                },
+                {
+                    type: 'category',
                     label: 'Core Contracts',
-                    id: 'guide/core_concepts/core-contracts',
+                    items: [
+                        {
+                            type: 'doc',
+                            label: 'Overview',
+                            id: 'guide/core_concepts/core_contracts/overview',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Root',
+                            id: 'guide/core_concepts/core_contracts/root',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Default',
+                            id: 'guide/core_concepts/core_contracts/default',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Accounts',
+                            id: 'guide/core_concepts/core_contracts/accounts',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Blob',
+                            id: 'guide/core_concepts/core_contracts/blob',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Blocklog',
+                            id: 'guide/core_concepts/core_contracts/blocklog',
+                        },
+                    ],
                 },
                 {
                     type: 'category',
@@ -147,9 +188,65 @@ module.exports = {
                                 },
                             ]
                         }
-                    ]
+                    ],
                 },
-            ]
+                {
+                    type: 'category',
+                    label: 'Solo',
+                    items: [
+                        {
+                            type: 'doc',
+                            label: 'Solo',
+                            id: 'guide/solo/what-is-solo',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'First Example',
+                            id: 'guide/solo/first-example',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Tokens and the UTXO Ledger',
+                            id: 'guide/solo/tokens-and-utxos',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Invoking a Smart Contract',
+                            id: 'guide/solo/invoking-sc',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Calling a View',
+                            id: 'guide/solo/view-sc',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Error Handling',
+                            id: 'guide/solo/error-handling',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Account Balances',
+                            id: 'guide/solo/balances'
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Sending tokens to a Smart Contract',
+                            id: 'guide/solo/sending-funds'
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Return of tokens in case of failure',
+                            id: 'guide/solo/reimbursed-funds'
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Sending tokens from ISCP to the Tangle',
+                            id: 'guide/solo/sending-funds-sc'
+                        },
+                    ]
+                }
+            ],
         },
         {
             type: 'category',
