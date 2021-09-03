@@ -1,7 +1,6 @@
 package colored
 
 import (
-	"bytes"
 	"sort"
 
 	"github.com/iotaledger/hive.go/cerrors"
@@ -12,17 +11,13 @@ import (
 
 // Balances represents a collection of balances associated to their respective Color that maintains a
 // deterministic order of the present Colors.
-type Balances map[Color]uint64
+type Balances map[ColorKey]uint64
 
 var Balances1Iota = NewBalancesForIotas(1)
 
 // NewBalances returns a new Balances. In general, it has not deterministic order
-func NewBalances(bals ...map[Color]uint64) Balances {
-	var b map[Color]uint64
-	if len(bals) > 0 && len(bals[0]) > 0 {
-		b = bals[0]
-	}
-	return Balances(b).Clone()
+func NewBalances() Balances {
+	return make(Balances)
 }
 
 func NewBalancesForIotas(s uint64) Balances {
@@ -66,7 +61,7 @@ func BalancesFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (Balances, er
 		if balance == 0 {
 			return nil, xerrors.Errorf("zero balance found for color %s", color.String())
 		}
-		ret[color] = balance
+		ret[color.AsKey()] = balance
 
 		previousColor = &color
 	}
@@ -75,15 +70,16 @@ func BalancesFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (Balances, er
 
 // Get returns the balance of the given Color. 0 means balance is empty
 func (c Balances) Get(color Color) uint64 {
-	return c[color]
+	return c[color.AsKey()]
 }
 
 // Get returns the balance of the given Color.
 func (c Balances) Set(color Color, bal uint64) Balances {
+	k := color.AsKey()
 	if bal > 0 {
-		c[color] = bal
+		c[k] = bal
 	} else {
-		delete(c, color)
+		delete(c, k)
 	}
 	return c
 }
@@ -92,9 +88,9 @@ func (c Balances) IsEmpty() bool {
 	return len(c) == 0
 }
 
-func (c Balances) Add(color Color, bal uint64) Balances {
+func (c Balances) Add(col Color, bal uint64) Balances {
 	if bal > 0 {
-		c[color] += bal
+		c[col.AsKey()] += bal
 	}
 	return c
 }
@@ -104,13 +100,14 @@ func (c Balances) SubNoOverflow(col Color, bal uint64) Balances {
 	if bal == 0 {
 		return c
 	}
-	if bal >= c[col] {
-		c[col] = 0
+	k := col.AsKey()
+	if bal >= c[k] {
+		c[k] = 0
 	} else {
-		c[col] -= bal
+		c[k] -= bal
 	}
-	if c[col] == 0 {
-		delete(c, col)
+	if c[k] == 0 {
+		delete(c, col.AsKey())
 	}
 	return c
 }
@@ -119,7 +116,7 @@ func (c Balances) SubNoOverflow(col Color, bal uint64) Balances {
 // Non-deterministic order of iteration
 func (c Balances) ForEachRandomly(consumer func(color Color, balance uint64) bool) {
 	for col, bal := range c {
-		if bal > 0 && !consumer(col, bal) {
+		if bal > 0 && !consumer(Color(col), bal) {
 			return
 		}
 	}
@@ -128,16 +125,14 @@ func (c Balances) ForEachRandomly(consumer func(color Color, balance uint64) boo
 // ForEach calls the consumer for each element in the collection and aborts the iteration if the consumer returns false.
 // Deterministic order of iteration
 func (c Balances) ForEachSorted(consumer func(color Color, balance uint64) bool) {
-	keys := make([]Color, 0, len(c))
+	keys := make([]string, 0, len(c))
 	for col := range c {
-		keys = append(keys, col)
+		keys = append(keys, string(col))
 	}
-	sort.Slice(keys, func(i, j int) bool {
-		return bytes.Compare(keys[i][:], keys[j][:]) < 0
-	})
+	sort.Strings(keys)
 	for _, col := range keys {
-		bal := c[col]
-		if bal > 0 && !consumer(col, bal) {
+		bal := c[ColorKey(col)]
+		if bal > 0 && !consumer(Color(col), bal) {
 			return
 		}
 	}
@@ -201,8 +196,8 @@ func (c Balances) AddAll(another Balances) {
 }
 
 // Diff returns difference between two Balances color-by-color
-func (c Balances) Diff(another Balances) map[Color]int64 {
-	ret := make(map[Color]int64)
+func (c Balances) Diff(another Balances) map[ColorKey]int64 {
+	ret := make(map[ColorKey]int64)
 	for col := range allColors(c, another) {
 		cBal := c[col]
 		aBal := another[col]
@@ -216,11 +211,11 @@ func (c Balances) Diff(another Balances) map[Color]int64 {
 	return ret
 }
 
-func allColors(bals ...Balances) map[Color]bool {
-	ret := make(map[Color]bool)
+func allColors(bals ...Balances) map[ColorKey]bool {
+	ret := make(map[ColorKey]bool)
 	for _, b := range bals {
 		b.ForEachRandomly(func(col Color, bal uint64) bool {
-			ret[col] = true
+			ret[col.AsKey()] = true
 			return true
 		})
 	}
