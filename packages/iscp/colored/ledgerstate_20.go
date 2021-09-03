@@ -1,3 +1,5 @@
+// +build !l1_15
+
 package colored
 
 import "github.com/iotaledger/goshimmer/packages/ledgerstate"
