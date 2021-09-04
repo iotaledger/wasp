@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/hive.go/marshalutil"
@@ -67,7 +69,7 @@ func rndAddress() ledgerstate.Address {
 
 func rndOutput() *ledgerstate.ExtendedLockedOutput {
 	addr := rndAddress()
-	bals := colored.ToL1Map(colored.NewBalancesForIotas(42))
+	bals := colored20.ToL1Map(colored.NewBalancesForIotas(42))
 	return ledgerstate.NewExtendedLockedOutput(bals, addr)
 }
 

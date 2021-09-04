@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
@@ -50,7 +50,7 @@ func getRequestsOnLedger(t *testing.T, amount int) ([]*request.OnLedger, *ed2551
 	txBuilder := utxoutil.NewBuilder(outputs...)
 	var i uint64
 	for i = 0; int(i) < amount; i++ {
-		err = txBuilder.AddExtendedOutputConsume(targetAddr, util.Uint64To8Bytes(i), colored.Balances1IotaL1)
+		err = txBuilder.AddExtendedOutputConsume(targetAddr, util.Uint64To8Bytes(i), colored20.Balances1IotaL1)
 		require.NoError(t, err)
 	}
 	err = txBuilder.AddRemainderOutputIfNeeded(addr, nil)

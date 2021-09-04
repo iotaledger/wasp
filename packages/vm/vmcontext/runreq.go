@@ -5,6 +5,8 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -135,7 +137,7 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 		} else {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency: unexpected UTXO type")
 		}
-		vmctx.remainingAfterFees = colored.BalancesFromL1Balances(reqt.Output().Balances())
+		vmctx.remainingAfterFees = colored20.BalancesFromL1Balances(reqt.Output().Balances())
 	} else {
 		// off-ledger request
 		vmctx.remainingAfterFees = vmctx.adjustOffLedgerTransfer()
@@ -283,7 +285,7 @@ func (vmctx *VMContext) mustSendBack(tokens colored.Balances) {
 	backToAddress := sender.Address()
 	backToContract := sender.Hname()
 	metadata := request.NewMetadata().WithTarget(backToContract)
-	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), colored.ToL1Map(tokens), nil)
+	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), colored20.ToL1Map(tokens), nil)
 	if err != nil {
 		vmctx.log.Errorf("mustSendBack: %v", err)
 	}

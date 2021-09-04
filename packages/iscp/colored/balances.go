@@ -116,7 +116,7 @@ func (c Balances) SubNoOverflow(col Color, bal uint64) Balances {
 // Non-deterministic order of iteration
 func (c Balances) ForEachRandomly(consumer func(color Color, balance uint64) bool) {
 	for col, bal := range c {
-		if bal > 0 && !consumer(Color(col), bal) {
+		if !consumer(Color(col), bal) {
 			return
 		}
 	}

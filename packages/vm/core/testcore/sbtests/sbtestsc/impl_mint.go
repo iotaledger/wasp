@@ -15,8 +15,10 @@ func getMintedSupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	a.Require(len(allMinted) == 1, "test only supports one minted color")
 	var colMinted colored.Color
 	var amount uint64
+	var err error
 	for col, bal := range allMinted {
-		colMinted = col
+		colMinted, err = colored.NewColor(col)
+		a.RequireNoError(err, "creating color from key")
 		amount = bal
 	}
 	ret.Set(VarMintedSupply, codec.EncodeUint64(amount))

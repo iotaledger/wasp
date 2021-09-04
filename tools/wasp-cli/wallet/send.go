@@ -3,6 +3,8 @@ package wallet
 import (
 	"strconv"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
+
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -34,7 +36,7 @@ var sendFundsCmd = &cobra.Command{
 
 		tx := util.WithTransaction(func() (*ledgerstate.Transaction, error) {
 			txb := utxoutil.NewBuilder(outs...)
-			bals := colored.ToL1Map(colored.NewBalancesForColor(color, uint64(amount)))
+			bals := colored20.ToL1Map(colored.NewBalancesForColor(color, uint64(amount)))
 			err := txb.AddSigLockedColoredOutput(targetAddress, bals)
 			log.Check(err)
 			err = txb.AddRemainderOutputIfNeeded(sourceAddress, nil, true)

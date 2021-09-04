@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"io"
 	"math/rand"
@@ -14,6 +13,8 @@ import (
 	"strconv"
 	"text/template"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -519,7 +520,7 @@ func (clu *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpecte
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
 		return false
 	}
-	byColor, total := colored.OutputBalancesByColor(allOuts)
+	byColor, total := colored20.OutputBalancesByColor(allOuts)
 	dumpStr, assertionOk := dumpBalancesByColor(byColor, expect)
 
 	var totalExpectedStr string
@@ -544,12 +545,12 @@ func (clu *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpecte
 
 func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
 	assertionOk := true
-	lst := make([]colored.Color, 0, len(expect))
+	lst := make([]colored.ColorKey, 0, len(expect))
 	for col := range expect {
 		lst = append(lst, col)
 	}
 	sort.Slice(lst, func(i, j int) bool {
-		return bytes.Compare(lst[i][:], lst[j][:]) < 0
+		return lst[i] < lst[j]
 	})
 	ret := ""
 	for _, col := range lst {
@@ -559,7 +560,7 @@ func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
 			assertionOk = false
 			isOk = "FAIL"
 		}
-		ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col.String(), act, expect[col], isOk)
+		ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col, act, expect[col], isOk)
 	}
 	lst = lst[:0]
 	for col := range actual {
@@ -571,11 +572,11 @@ func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
 		return ret, assertionOk
 	}
 	sort.Slice(lst, func(i, j int) bool {
-		return bytes.Compare(lst[i][:], lst[j][:]) < 0
+		return lst[i] < lst[j]
 	})
 	ret += "      Unexpected colors in actual outputs:\n"
 	for _, col := range lst {
-		ret += fmt.Sprintf("         %s %d\n", col.String(), actual[col])
+		ret += fmt.Sprintf("         %s %d\n", col, actual[col])
 	}
 	return ret, assertionOk
 }

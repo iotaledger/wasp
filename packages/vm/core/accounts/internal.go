@@ -44,9 +44,11 @@ func getTotalAssetsAccountR(state kv.KVStoreReader) *collections.ImmutableMap {
 
 // CreditToAccount brings new funds to the on chain ledger.
 func CreditToAccount(state kv.KVStore, agentID *iscp.AgentID, transfer colored.Balances) {
+	mustCheckLedger(state, "CreditToAccount IN")
+	defer mustCheckLedger(state, "CreditToAccount OUT")
+
 	creditToAccount(state, getAccount(state, agentID), transfer)
 	creditToAccount(state, getTotalAssetsAccount(state), transfer)
-	mustCheckLedger(state, "CreditToAccount")
 }
 
 // creditToAccount internal
@@ -67,13 +69,15 @@ func creditToAccount(state kv.KVStore, account *collections.Map, transfer colore
 
 // DebitFromAccount removes funds from the chain ledger.
 func DebitFromAccount(state kv.KVStore, agentID *iscp.AgentID, transfer colored.Balances) bool {
+	mustCheckLedger(state, "DebitFromAccount IN")
+	defer mustCheckLedger(state, "DebitFromAccount OUT")
+
 	if !debitFromAccount(state, getAccount(state, agentID), transfer) {
 		return false
 	}
 	if !debitFromAccount(state, getTotalAssetsAccount(state), transfer) {
 		panic("debitFromAccount: inconsistent accounts ledger state")
 	}
-	mustCheckLedger(state, "DebitFromAccount")
 	return true
 }
 
@@ -85,29 +89,31 @@ func debitFromAccount(state kv.KVStore, account *collections.Map, transfer color
 	ok := true
 	// deterministic order of iteration is not important here
 	transfer.ForEachRandomly(func(col colored.Color, transferAmount uint64) bool {
-		bal := current[col]
+		bal := current[col.AsKey()]
 		if bal < transferAmount {
 			ok = false
 			return false
 		}
-		current[col] = bal - transferAmount
+		current[col.AsKey()] = bal - transferAmount
 		return true
 	})
 	if !ok {
 		return false
 	}
-
-	for col, rem := range current {
-		if rem > 0 {
-			account.MustSetAt(col[:], util.Uint64To8Bytes(rem))
+	current.ForEachRandomly(func(col colored.Color, bal uint64) bool {
+		if bal > 0 {
+			account.MustSetAt(col[:], util.Uint64To8Bytes(bal))
 		} else {
 			account.MustDelAt(col[:])
 		}
-	}
+		return true
+	})
 	return true
 }
 
 func MoveBetweenAccounts(state kv.KVStore, fromAgentID, toAgentID *iscp.AgentID, transfer colored.Balances) bool {
+	mustCheckLedger(state, "MoveBetweenAccounts.IN")
+	defer mustCheckLedger(state, "MoveBetweenAccounts.OUT")
 	if fromAgentID.Equals(toAgentID) {
 		// no need to move
 		return true
@@ -153,13 +159,10 @@ func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
 
 func getAccountBalances(account *collections.ImmutableMap) colored.Balances {
 	ret := colored.NewBalances()
-	err := account.IterateBalances(func(col colored.Color, bal uint64) bool {
-		ret[col] = bal
+	account.MustIterateBalances(func(col colored.Color, bal uint64) bool {
+		ret[col.AsKey()] = bal
 		return true
 	})
-	if err != nil {
-		panic(err)
-	}
 	return ret
 }
 
@@ -184,9 +187,7 @@ func calcTotalAssets(state kv.KVStoreReader) colored.Balances {
 		if err != nil {
 			panic(err)
 		}
-		for col, b := range getAccountBalances(getAccountR(state, agentID)) {
-			ret.Add(col, b)
-		}
+		ret.AddAll(getAccountBalances(getAccountR(state, agentID)))
 		return true
 	})
 	return ret

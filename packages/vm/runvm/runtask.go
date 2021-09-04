@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -134,11 +135,11 @@ func checkTotalAssets(essence *ledgerstate.TransactionEssence, lastTotalOnChainA
 	if chainOutput == nil {
 		return xerrors.New("inconsistency: chain output not found")
 	}
-	balancesOnOutput := colored.BalancesFromL1Balances(chainOutput.Balances())
+	balancesOnOutput := colored20.BalancesFromL1Balances(chainOutput.Balances())
 	diffAssets := balancesOnOutput.Diff(lastTotalOnChainAssets)
 	// we expect assets in the chain output and total assets on-chain differs only in the amount of
 	// anti-dust tokens locked in the output. Otherwise it is inconsistency
-	if len(diffAssets) != 1 || diffAssets[colored.IOTA] != int64(ledgerstate.DustThresholdAliasOutputIOTA) {
+	if len(diffAssets) != 1 || diffAssets[colored.IOTA.AsKey()] != int64(ledgerstate.DustThresholdAliasOutputIOTA) {
 		return xerrors.Errorf("inconsistency between L1 and L2 ledgers. Diff: %+v", diffAssets)
 	}
 	return nil

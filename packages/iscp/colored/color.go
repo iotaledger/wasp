@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-
 	"github.com/iotaledger/hive.go/cerrors"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/mr-tron/base58"
@@ -26,11 +25,12 @@ func ColorLength() int {
 	return colorLength
 }
 
-func SetColorLength(n int) {
+func Init(colLen int, iotaColor Color) {
 	if colorLength != 0 {
-		panic("SetColorLength must be called once")
+		panic("color20.init called twice")
 	}
-	colorLength = n
+	colorLength = colLen
+	IOTA = iotaColor
 }
 
 func NewColor(key ...ColorKey) (Color, error) {
@@ -39,7 +39,7 @@ func NewColor(key ...ColorKey) (Color, error) {
 		return ret, nil
 	}
 	if len(key) > 0 {
-		if len(key) != colorLength {
+		if len(key[0]) != colorLength {
 			return nil, xerrors.Errorf("ColorFromBytes: %d bytes expected", colorLength)
 		}
 	}
@@ -102,8 +102,6 @@ func (c Color) String() string {
 	switch {
 	case c.Compare(IOTA) == 0:
 		return "IOTA"
-	case c.Compare(Mint) == 0:
-		return "MINT"
 	default:
 		return c.Base58()
 	}

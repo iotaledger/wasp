@@ -3,6 +3,7 @@ package wallet
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
 	"github.com/iotaledger/wasp/tools/wasp-cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
@@ -48,9 +49,9 @@ var balanceCmd = &cobra.Command{
 }
 
 func printOutputsByColor(outs []ledgerstate.Output) uint64 {
-	byColor, total := colored.OutputBalancesByColor(outs)
-	for color, value := range byColor {
-		log.Printf("    %s: %d\n", color.String(), value)
+	byColor, total := colored20.OutputBalancesByColor(outs)
+	for col, val := range byColor {
+		log.Printf("    %s: %d\n", col, val)
 	}
 	return total
 }
@@ -59,7 +60,7 @@ func printOutputsByOutputID(outs []ledgerstate.Output) uint64 {
 	var total uint64
 	for _, out := range outs {
 		log.Printf("    output ID %s:\n", out.ID())
-		balances := colored.BalancesFromL1Balances(out.Balances())
+		balances := colored20.BalancesFromL1Balances(out.Balances())
 		balances.ForEachSorted(func(color colored.Color, balance uint64) bool {
 			log.Printf("      %s: %d\n", color.Base58(), balance)
 			total += balance

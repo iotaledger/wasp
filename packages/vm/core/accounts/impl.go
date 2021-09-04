@@ -62,7 +62,6 @@ func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("accounts.deposit.begin -- %s", ctx.IncomingTransfer())
 
 	mustCheckLedger(ctx.State(), "accounts.deposit.begin")
-	defer mustCheckLedger(ctx.State(), "accounts.deposit.exit")
 
 	caller := ctx.Caller()
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
@@ -75,6 +74,8 @@ func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	ctx.Log().Debugf("accounts.deposit.success: target: %s\n%s",
 		targetAccount, ctx.IncomingTransfer().String())
+
+	mustCheckLedger(ctx.State(), "accounts.deposit.exit")
 	return nil, nil
 }
 
@@ -82,7 +83,6 @@ func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	mustCheckLedger(state, "accounts.withdraw.begin")
-	defer mustCheckLedger(state, "accounts.withdraw.exit")
 
 	if ctx.Caller().Address().Equals(ctx.ChainID().AsAddress()) {
 		// if the caller is on the same chain, do nothing
@@ -107,6 +107,8 @@ func withdraw(ctx iscp.Sandbox) (dict.Dict, error) {
 	}), "accounts.withdraw.inconsistency: failed sending tokens ")
 
 	ctx.Log().Debugf("accounts.withdraw.success. Sent to address %s", tokensToWithdraw.String())
+
+	mustCheckLedger(state, "accounts.withdraw.exit")
 	return nil, nil
 }
 
@@ -141,7 +143,7 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	}
 	tokensToSend := bals
 	if !harvestAll {
-		balCol := bals[col]
+		balCol := bals[col.AsKey()]
 		a.Require(balCol >= amount, "accounts.harvest.error: not enough tokens")
 		tokensToSend = colored.NewBalancesForColor(col, amount)
 	}

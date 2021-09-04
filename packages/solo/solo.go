@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxodb"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
@@ -52,6 +54,10 @@ const (
 	MaxRequestsInBlock = 100
 	timeLayout         = "04:05.000000000"
 )
+
+func init() {
+	colored20.Use()
+}
 
 // Solo is a structure which contains global parameters of the test: one per test instance
 type Solo struct {
@@ -355,7 +361,7 @@ func (env *Solo) requestsByChain(tx *ledgerstate.Transaction) map[[33]byte][]isc
 		if !ok {
 			lst = make([]iscp.Request, 0)
 		}
-		mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))
+		mintedAmounts := colored20.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))
 		ret[arr] = append(lst, request.OnLedgerFromOutput(o, sender, tx.Essence().Timestamp(), mintedAmounts))
 	}
 	return ret

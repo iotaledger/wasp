@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"sort"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -286,13 +288,13 @@ func (ch *Chain) GetInfo() (iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.Con
 // on the UTXODB ledger
 func (env *Solo) GetAddressBalance(addr ledgerstate.Address, col colored.Color) uint64 {
 	bals := env.GetAddressBalances(addr)
-	ret := bals[col]
+	ret := bals[col.AsKey()]
 	return ret
 }
 
 // GetAddressBalances returns all colored balances of the address contained in the UTXODB ledger
 func (env *Solo) GetAddressBalances(addr ledgerstate.Address) colored.Balances {
-	return colored.BalancesFromL1Map(env.utxoDB.GetAddressBalances(addr))
+	return colored20.BalancesFromL1Map(env.utxoDB.GetAddressBalances(addr))
 }
 
 // GetAccounts returns all accounts on the chain with non-zero balances

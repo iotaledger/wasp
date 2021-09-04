@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
+
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -208,7 +210,7 @@ func OnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr ledgerstate
 	if err != nil {
 		return nil, err
 	}
-	mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))
+	mintedAmounts := colored20.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))
 	ret := make([]*OnLedger, 0)
 	for _, o := range tx.Essence().Outputs() {
 		if out, ok := o.(*ledgerstate.ExtendedLockedOutput); ok {
