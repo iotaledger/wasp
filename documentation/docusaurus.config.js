@@ -5,9 +5,9 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 module.exports = {
   title: 'IOTA Smart Contract Protocol',
   tagline: 'IOTA smart contract protocol.',
-  url: 'https://iscp.docs.iota.org', 
+  url: 'https://iscp.docs.iota.org',
   baseUrl: '/',
-  onBrokenLinks: 'warn',
+  onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
   favicon: '/img/logo/favicon.ico',
   organizationName: 'iotaledger',
@@ -26,7 +26,7 @@ module.exports = {
       items: [
         {
           type: 'doc',
-          docId: 'welcome',
+          docId: 'overview',
           position: 'left',
           label: 'Documentation',
         },
@@ -39,8 +39,8 @@ module.exports = {
           title: 'Documentation',
           items: [
             {
-              label: 'Welcome',
-              to: '/docs/welcome',
+              label: 'Overview',
+              to: '/docs/overview',
             },
           ],
         },
@@ -48,9 +48,9 @@ module.exports = {
       copyright: `Copyright © ${new Date().getFullYear()} IOTA Foundation, Built with Docusaurus.`,
     },
     prism: {
-        additionalLanguages: ['rust'],
-        theme: lightCodeTheme,
-        darkTheme: darkCodeTheme,
+      additionalLanguages: ['rust'],
+      theme: lightCodeTheme,
+      darkTheme: darkCodeTheme,
     },
   },
   presets: [
@@ -68,4 +68,4 @@ module.exports = {
       },
     ],
   ],
-}; 
+};

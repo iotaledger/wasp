@@ -2,7 +2,7 @@
 
 [Wasp](https://github.com/iotaledger/wasp) is a node software developed by the
 [IOTA Foundation](http://iota.org) to run the _IOTA Smart Contract Protocol_
-(_ISCP_ in short) on top of the _IOTA Tangle_.  Please find here a [high level
+(_ISCP_ in short) on top of the _IOTA Tangle_. Please find here a [high level
 introduction](https://blog.iota.org/an-introduction-to-iota-smart-contracts-16ea6f247936)
 into ISCP.
 
@@ -12,21 +12,21 @@ the contract. Since the UTXO ledger is immutable, by extension the smart
 contract state is also immutable.
 
 A _committee_ of an arbitrary number of Wasp nodes runs a _chain_ of smart
-contracts.  The main purpose of the _committee_ is to ensure consistent
+contracts. The main purpose of the _committee_ is to ensure consistent
 transition from the previous state to the next, according to the attached
-program.  This ensures that the operation of smart contracts is distributed,
+program. This ensures that the operation of smart contracts is distributed,
 fault-tolerant and leaderless.
 
-The articles below explain how to run a Wasp node on the Pollen network, as
+The articles below explain how to run a Wasp node on the Goshimmer network, as
 well as concepts and architecture of ISCP and Wasp.
 
 _Disclaimer: Wasp node and articles is a work in progress, and most likely will
-always be.  The software presented in this repository is not ready for use in
+always be. The software presented in this repository is not ready for use in
 commercial settings or whenever processing of critical data is involved._
 
 ## Prerequisites
 
-- Go 1.15
+- Go 1.16
 - Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node for
   production operation
 
@@ -68,7 +68,7 @@ tests).
 
 ## Run
 
-- [How to run a Wasp node on Pollen](misc/runwasp.md)
+- [How to run a Wasp node](misc/runwasp.md)
 - [Using `wasp-cli` to deploy a chain and a contract](misc/deploy.md)
 
 ## Learn

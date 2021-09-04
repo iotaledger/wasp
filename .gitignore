@@ -16,3 +16,4 @@ tools/wasp-cli/wasp-cli
 node_modules
 wasp
 wasp-cli
+goshimmer.log
