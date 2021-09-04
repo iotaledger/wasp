@@ -18,11 +18,11 @@ export class PoWWorkerManager {
 
   private powWorker: Worker;
 
-  public Load(url: string) {
+  public load(url: string) {
     this.powWorker = new Worker(url);
   }
 
-  public RequestProofOfWork(difficulty: number, data: any): Promise<number> {
+  public requestProofOfWork(difficulty: number, data: any): Promise<number> {
     return new Promise((resolve, reject) => {
       const requestId = uuidv4();
 

@@ -7,6 +7,9 @@ import { OffLedger } from '../client/binary_models/off_ledger'
 import type { IOffLedger } from '../client/binary_models/IOffLedger';
 import type { IKeyPair } from '../client/crypto/models/IKeyPair';
 
+type MessageHandlers = { [key: string]: (index: number) => void; };
+type ParameterResult = { [key: string]: Buffer; };
+
 export interface Bet {
   better: string,
   amount: number,
@@ -55,7 +58,7 @@ export class FairRoulette {
   }
 
   private handleVmMessage(message: string[]) {
-    const messageHandlers = {
+    const messageHandlers: MessageHandlers = {
       'fairroulette.bet.placed': (index) => {
         const bet: Bet = {
           better: message[index + 1],
@@ -138,9 +141,28 @@ export class FairRoulette {
     await this.client.sendExecutionRequest(this.chainId, OffLedger.GetId(betRequest));
   }
 
+  public async placeBetOnLedger(keyPair: IKeyPair, betNumber: number, take: number) {
+    const tokenamount = Buffer.alloc(8);
+    tokenamount.writeInt32LE(betNumber, 0);
+
+    let betRequest: IOffLedger = {
+      requestType: 1,
+      arguments: [{ key: '-number', value: betNumber }],
+      balances: [{ balance: BigInt(take), color: Colors.IOTA_COLOR_BYTES }],
+      contract: HName.HashAsNumber(this.scName),
+      entrypoint: HName.HashAsNumber(this.scPlaceBet),
+      noonce: BigInt(performance.now() + performance.timeOrigin * 10000000),
+    };
+
+    betRequest = OffLedger.Sign(betRequest, keyPair);
+
+    await this.client.sendOffLedgerRequest(this.chainId, betRequest);
+    await this.client.sendExecutionRequest(this.chainId, OffLedger.GetId(betRequest));
+  }
+
   public async callView(viewName: string, args?: any): Promise<{ [key: string]: Buffer; }> {
     const response = await this.client.callView(this.chainId, this.scHName, viewName);
-    const resultMap: { [key: string]: Buffer; } = { };
+    const resultMap: ParameterResult = {};
 
     for (let item of response.Items) {
       const key = Buffer.from(item.Key, 'base64').toString();

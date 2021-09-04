@@ -10,33 +10,20 @@
   import config from '../config.dev';
   import Roulette from './Roulette.svelte';
   import type { Bet } from './client/fair_roulette_service';
-  import type { Buffer } from './client/buffer';
-  import type { IKeyPair } from './client/crypto/models/IKeyPair';
 
-  const chainId = config.chainId;
-  const testSeed = Base58.decode('GLHjvWjQ4N4iKzPVKc1iAMLRqRhWLBhysdxNV2JsBXs6');
-  const seed: Buffer = testSeed;
+  import { seed, addressIndex, keyPair, address } from './store';
 
-  let addressIndex: number = 0;
-  let keyPair: IKeyPair;
   let fundsUpdaterHandle;
+  let client: BasicClient;
+  let fairRoulette: FairRoulette;
 
-  const powManager = new PoWWorkerManager();
+  const powManager: PoWWorkerManager = new PoWWorkerManager();
 
-  const client: BasicClient = new BasicClient({
-    GoShimmerAPIUrl: config.goshimmerApiUrl,
-    WaspAPIUrl: config.waspApiUrl,
-    SeedUnsafe: seed,
-  });
-
-  const fairRoulette: FairRoulette = new FairRoulette(client, chainId);
-
-  let view = {
-    seedString: Base58.encode(seed),
-    address: '',
+  const view = {
+    seedString: '',
     balance: 0n,
 
-    showController: false,
+    showController: true,
     isWorking: false,
 
     round: {
@@ -48,13 +35,50 @@
     },
   };
 
+  async function initialize() {
+    log('Page loading');
+
+    if (config.seed) {
+      $seed = Base58.decode(config.seed);
+    } else {
+      $seed = Seed.generate();
+    }
+
+    view.seedString = Base58.encode($seed);
+
+    client = new BasicClient({
+      GoShimmerAPIUrl: config.goshimmerApiUrl,
+      WaspAPIUrl: config.waspApiUrl,
+      SeedUnsafe: $seed,
+    });
+
+    fairRoulette = new FairRoulette(client, config.chainId);
+
+    powManager.load('/build/pow.worker.js');
+
+    subscribeToRouletteEvents();
+    createNewAddress();
+    updateFunds();
+
+    startFundsUpdater();
+
+    view.round.active = (await fairRoulette.getRoundStatus()) == 1;
+    view.round.number = await fairRoulette.getRoundNumber();
+    view.round.winningNumber = await fairRoulette.getLastWinningNumber();
+    log('Page loaded');
+  }
+
+  // Entrypoint
+  onMount(initialize);
+  // Entrypoint
+
   function log(text: string) {
     view.round.eventList.push(`${new Date().toLocaleTimeString()} | ${text}`);
   }
 
   async function updateFunds() {
     try {
-      view.balance = await client.getFunds(view.address, Colors.IOTA_COLOR_STRING);
+      view.balance = await client.getFunds($address, Colors.IOTA_COLOR_STRING);
     } catch (ex) {
       console.log(ex);
       view.balance = 0n;
@@ -62,14 +86,15 @@
   }
 
   function setAddress(index: number) {
-    addressIndex = index;
+    $addressIndex = index;
 
-    view.address = Seed.generateAddress(seed, addressIndex);
-    keyPair = Seed.generateKeyPair(seed, addressIndex);
+    $address = Seed.generateAddress($seed, $addressIndex);
+    $keyPair = Seed.generateKeyPair($seed, $addressIndex);
   }
 
   function createNewAddress() {
-    setAddress(addressIndex++);
+    setAddress($addressIndex);
+    $addressIndex++;
   }
 
   function startFundsUpdater() {
@@ -80,20 +105,12 @@
     fundsUpdaterHandle = setInterval(updateFunds, 1000);
   }
 
-  function isBroke(balance: bigint) {
-    return balance < 200;
-  }
-
-  function isWealthy(balance: bigint) {
-    return balance > 200;
-  }
-
   async function placeBet() {
     view.isWorking = true;
     try {
-      await fairRoulette.placeBet(keyPair, view.round.betSelection, 1234);
+      await fairRoulette.placeBet($keyPair, view.round.betSelection, 1234);
     } catch (ex) {
-      alert(ex);
+      log(ex.message);
     }
     view.isWorking = false;
   }
@@ -101,17 +118,18 @@
   async function sendFaucetRequest() {
     view.isWorking = true;
 
-    const faucetRequestResult = await client.getFaucetRequest(view.address);
+    const faucetRequestResult = await client.getFaucetRequest($address);
 
-    faucetRequestResult.faucetRequest.nonce = await powManager.RequestProofOfWork(
-      20, // In this example a difficulty of 20 is enough, might need a retune for prod to 21 or 22
+    // In this example a difficulty of 20 is enough, might need a retune for prod to 21 or 22
+    faucetRequestResult.faucetRequest.nonce = await powManager.requestProofOfWork(
+      20,
       faucetRequestResult.poWBuffer
     );
 
     try {
       await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
     } catch (ex) {
-      alert(ex);
+      log(ex.message);
     }
 
     view.isWorking = false;
@@ -147,25 +165,13 @@
     });
   }
 
-  async function initialize() {
-    log('Page loading');
-    powManager.Load('/build/pow.worker.js');
-
-    subscribeToRouletteEvents();
-    createNewAddress();
-    updateFunds();
-
-    startFundsUpdater();
-
-    view.round.active = (await fairRoulette.getRoundStatus()) == 1;
-    view.round.number = await fairRoulette.getRoundNumber();
-    view.round.winningNumber = await fairRoulette.getLastWinningNumber();
-    log('Page loaded');
+  function isBroke(balance: bigint) {
+    return balance < 200;
   }
 
-  // Entrypoint
-  onMount(initialize);
-  // Entrypoint
+  function isWealthy(balance: bigint) {
+    return balance > 200;
+  }
 </script>
 
 <main>
@@ -181,7 +187,7 @@
       </li>
       <li>
         <span class="header_address_title">Address</span>
-        <span class="header_address_text">{view.address}</span>
+        <span class="header_address_text">{$address}</span>
       </li>
     </ul>
   </div>
@@ -196,57 +202,53 @@
   {/if}
 
   {#if view.showController}
-    {#if isBroke(view.balance)}
-      <div class="welcome_screen">
-        <div class="request_funds" class:disabled={isWealthy(view.balance)}>
-          <div class="request_funds_text">1 | Request funds</div>
-          <div class="request_funds_image" />
-          <button
-            class="request_funds_button"
-            disabled={isWealthy(view.balance)}
-            on:click={() => sendFaucetRequest()}>Request funds</button
-          >
-        </div>
+    <div class="welcome_screen">
+      <div class="request_funds" class:disabled={isWealthy(view.balance)}>
+        <div class="request_funds_text">1 | Request funds</div>
+        <div class="request_funds_image" />
+        <button
+          class="request_funds_button"
+          disabled={isWealthy(view.balance)}
+          on:click={() => sendFaucetRequest()}>Request funds</button
+        >
       </div>
-    {/if}
 
-    {#if isWealthy(view.balance)}
-      <div class="welcome_screen">
-        <div class="place_bet" class:disabled={isBroke(view.balance)}>
-          <div class="place_bet_text">2 | Place a bet</div>
-          <div class="place_bet_image" />
+      <div class="place_bet" class:disabled={isBroke(view.balance)}>
+        <div class="place_bet_text">2 | Place a bet</div>
+        <div class="place_bet_image" />
 
-          <div class="bet_selection">
-            <input
-              type="radio"
-              group={view.round.betSelection}
-              name="bet_number"
-              value="1"
-              checked
-            />
-            <label for="1">1</label>
+        <div class="bet_selection">
+          <input
+            type="radio"
+            bind:group={view.round.betSelection}
+            name="bet_number"
+            value="1"
+            checked
+          />
+          <label for="1">1</label>
 
-            <input type="radio" group={view.round.betSelection} name="bet_number" value="2" />
-            <label for="2">2</label>
+          <input type="radio" bind:group={view.round.betSelection} name="bet_number" value="2" />
+          <label for="2">2</label>
 
-            <input type="radio" group={view.round.betSelection} name="bet_number" value="3" />
-            <label for="3">3</label>
+          <input type="radio" bind:group={view.round.betSelection} name="bet_number" value="3" />
+          <label for="3">3</label>
 
-            <input type="radio" group={view.round.betSelection} name="bet_number" value="4" />
-            <label for="4">4</label>
+          <input type="radio" bind:group={view.round.betSelection} name="bet_number" value="4" />
+          <label for="4">4</label>
 
-            <input type="radio" group={view.round.betSelection} name="bet_number" value="5" />
-            <label for="5">5</label>
-          </div>
-
-          <button
-            class="submit_bet_button"
-            on:click={() => placeBet()}
-            disabled={isBroke(view.balance)}>Submit bet</button
-          >
+          <input type="radio" bind:group={view.round.betSelection} name="bet_number" value="5" />
+          <label for="5">5</label>
         </div>
+
+        <button
+          class="submit_bet_button"
+          on:click={() => placeBet()}
+          disabled={isBroke(view.balance)}>Submit bet</button
+        >
       </div>
-    {/if}
+    </div>
+
+    <div class="welcome_screen" />
   {/if}
 
   <div class="content">
@@ -278,6 +280,7 @@
     width: 75%;
     margin-left: 35px;
   }
+
   .wheel_container {
     border: 1px solid white;
     border-radius: 4px;
@@ -383,7 +386,7 @@
 
   /**
     * Source images for this gif are from: https://www.reddit.com/r/Iota/comments/8kp9uv/created_an_iota_loading_animation_free_for_anyone/
-    * They were scaled down and the transparency was replaced with the dim background of the page.
+    * They were scaled down and the transparency was replaced with the dim background of the page or kept transparent in case the browser supports webp.
   */
   .loading_logo {
     background-image: image-set(
