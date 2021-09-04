@@ -6,6 +6,8 @@ import (
 	"github.com/iotaledger/hive.go/cerrors"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/stringify"
+	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
@@ -209,6 +211,22 @@ func (c Balances) Diff(another Balances) map[ColorKey]int64 {
 		}
 	}
 	return ret
+}
+
+func BalancesFromDict(d dict.Dict) (Balances, error) {
+	ret := NewBalances()
+	for key, value := range d {
+		col, err := ColorFromBytes([]byte(key))
+		if err != nil {
+			return nil, err
+		}
+		v, err := util.Uint64From8Bytes(value)
+		if err != nil {
+			return nil, err
+		}
+		ret[col.AsKey()] = v
+	}
+	return ret, nil
 }
 
 func allColors(bals ...Balances) map[ColorKey]bool {

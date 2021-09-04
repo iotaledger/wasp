@@ -11,7 +11,8 @@ import (
 	"golang.org/x/xerrors"
 )
 
-// Color represents a marker that is associated to a token balance and that can give tokens a certain "meaning".
+// Color is abstract color code used in ISCP.
+// It can be mapped into specific implementations of Goshimmer or Chrysalis by calling Init
 type Color []byte
 type ColorKey string
 
@@ -25,6 +26,7 @@ func ColorLength() int {
 	return colorLength
 }
 
+// Init initializes module with the specific length of the color code and specific code used as IOTA color code
 func Init(colLen int, iotaColor Color) {
 	if colorLength != 0 {
 		panic("color20.init called twice")

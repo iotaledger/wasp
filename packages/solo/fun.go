@@ -395,16 +395,16 @@ func (ch *Chain) GetFeeInfo(contactName string) (colored.Color, uint64, uint64) 
 	require.NoError(ch.Env.T, err)
 	require.NotEqualValues(ch.Env.T, 0, len(ret))
 
-	feeColor, ok, err := codec.DecodeColor(ret.MustGet(governance.VarFeeColor))
+	feeColor, ok, err := codec.DecodeColor(ret.MustGet(governance.ParamFeeColor))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 	require.NotNil(ch.Env.T, feeColor)
 
-	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(governance.VarValidatorFee))
+	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(governance.ParamValidatorFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 
-	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(governance.VarOwnerFee))
+	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(governance.ParamOwnerFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/iotaledger/hive.go/node"
+	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
 	"github.com/iotaledger/wasp/packages/parameters"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
 	"github.com/iotaledger/wasp/plugins/banner"
@@ -28,6 +29,7 @@ import (
 func main() {
 	params := parameters.Init()
 	registry.InitFlags()
+	colored20.Use()
 
 	plugins := node.Plugins(
 		banner.Init(),

@@ -41,10 +41,7 @@ func setupTest(t *testing.T) *solo.Chain {
 		ParamColor, tokenColor,
 		ParamMinimumBid, 500,
 		ParamDescription, "Cool tokens for sale!",
-	).WithTransfers(colored.NewBalances(map[colored.Color]uint64{
-		colored.IOTA: 25, // deposit, must be >=minimum*margin
-		tokenColor:   10, // the tokens to auction
-	}))
+	).WithTransfers(colored.NewBalancesForIotas(25).Add(tokenColor, 10))
 	_, err = chain.PostRequestSync(req, auctioneer)
 	require.NoError(t, err)
 	return chain

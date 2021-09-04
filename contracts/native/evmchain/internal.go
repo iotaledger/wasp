@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 func isNotFound(err error) bool {
@@ -160,9 +159,9 @@ func getFeeColor(ctx iscp.Sandbox) colored.Color {
 
 	// call root contract view to get the feecolor
 	feeInfo, err := ctx.Call(
-		root.Contract.Hname(),
+		governance.Contract.Hname(),
 		governance.FuncGetFeeInfo.Hname(),
-		dict.Dict{root.ParamHname: Contract.Hname().Bytes()},
+		dict.Dict{governance.ParamHname: Contract.Hname().Bytes()},
 		nil,
 	)
 	a.RequireNoError(err)

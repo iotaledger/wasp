@@ -347,13 +347,13 @@ func (p *Decoder) MustGetChainID(key kv.Key, def ...iscp.ChainID) *iscp.ChainID 
 func (p *Decoder) GetColor(key kv.Key, def ...colored.Color) (colored.Color, error) {
 	v, exists, err := codec.DecodeColor(p.kv.MustGet(key))
 	if err != nil {
-		return colored.Color{}, xerrors.Errorf("GetColor: decoding parameter '%s': %w", key, err)
+		return nil, xerrors.Errorf("GetColor: decoding parameter '%s': %w", key, err)
 	}
 	if exists {
 		return v, nil
 	}
 	if len(def) == 0 {
-		return colored.Color{}, xerrors.Errorf("GetColor: mandatory parameter '%s' does not exist", key)
+		return nil, xerrors.Errorf("GetColor: mandatory parameter '%s' does not exist", key)
 	}
 	return def[0], nil
 }

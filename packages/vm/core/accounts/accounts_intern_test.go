@@ -3,6 +3,8 @@ package accounts
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
+
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -21,6 +23,7 @@ func TestBasic(t *testing.T) {
 var dummyColor colored.Color
 
 func init() {
+	colored20.Use()
 	var err error
 	dummyColor, err = colored.ColorFromBase58EncodedString(hashing.HashStrings("dummy string").Base58())
 	if err != nil {
@@ -47,10 +50,7 @@ func TestCreditDebit1(t *testing.T) {
 	require.EqualValues(t, 0, len(total))
 
 	agentID1 := iscp.NewRandomAgentID()
-	transfer := colored.NewBalances(map[colored.Color]uint64{
-		colored.IOTA: 42,
-		dummyColor:   2,
-	})
+	transfer := colored.NewBalancesForIotas(42).Add(dummyColor, 2)
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp1")
 
@@ -58,17 +58,11 @@ func TestCreditDebit1(t *testing.T) {
 	require.EqualValues(t, 2, len(total))
 	require.True(t, total.Equals(transfer))
 
-	transfer = colored.NewBalances(map[colored.Color]uint64{
-		colored.IOTA: 1,
-		dummyColor:   2,
-	})
+	transfer = colored.NewBalancesForIotas(1).Add(dummyColor, 2)
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp2")
 
-	expected := colored.NewBalances(map[colored.Color]uint64{
-		colored.IOTA: 43,
-		dummyColor:   4,
-	})
+	expected := colored.NewBalancesForIotas(43).Add(dummyColor, 4)
 	require.True(t, expected.Equals(total))
 
 	require.EqualValues(t, 43, GetBalance(state, agentID1, colored.IOTA))
@@ -88,10 +82,7 @@ func TestCreditDebit2(t *testing.T) {
 	require.EqualValues(t, 0, len(total))
 
 	agentID1 := iscp.NewRandomAgentID()
-	transfer := colored.NewBalances(map[colored.Color]uint64{
-		colored.IOTA: 42,
-		dummyColor:   2,
-	})
+	transfer := colored.NewBalancesForIotas(42).Add(dummyColor, 2)
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp1")
 
@@ -119,10 +110,7 @@ func TestCreditDebit3(t *testing.T) {
 	require.EqualValues(t, 0, len(total))
 
 	agentID1 := iscp.NewRandomAgentID()
-	transfer := colored.NewBalances(map[colored.Color]uint64{
-		colored.IOTA: 42,
-		dummyColor:   2,
-	})
+	transfer := colored.NewBalancesForIotas(42).Add(dummyColor, 2)
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp1")
 
@@ -136,10 +124,7 @@ func TestCreditDebit3(t *testing.T) {
 	total = checkLedger(t, state, "cp2")
 
 	require.EqualValues(t, 2, len(total))
-	expected = colored.NewBalances(map[colored.Color]uint64{
-		colored.IOTA: 42,
-		dummyColor:   2,
-	})
+	expected = colored.NewBalancesForIotas(42).Add(dummyColor, 2)
 	require.True(t, expected.Equals(total))
 }
 
@@ -150,10 +135,7 @@ func TestCreditDebit4(t *testing.T) {
 	require.EqualValues(t, 0, len(total))
 
 	agentID1 := iscp.NewRandomAgentID()
-	transfer := colored.NewBalances(map[colored.Color]uint64{
-		colored.IOTA: 42,
-		dummyColor:   2,
-	})
+	transfer := colored.NewBalancesForIotas(42).Add(dummyColor, 2)
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp1")
 
@@ -175,18 +157,12 @@ func TestCreditDebit4(t *testing.T) {
 	keys = getAccountsIntern(state).Keys()
 	require.EqualValues(t, 2, len(keys))
 
-	expected = colored.NewBalances(map[colored.Color]uint64{
-		colored.IOTA: 42,
-		dummyColor:   2,
-	})
+	expected = colored.NewBalancesForIotas(42).Add(dummyColor, 2)
 	require.True(t, expected.Equals(total))
 
 	bm1, ok := GetAccountBalances(state, agentID1)
 	require.True(t, ok)
-	expected = colored.NewBalances(map[colored.Color]uint64{
-		colored.IOTA: 22,
-		dummyColor:   2,
-	})
+	expected = colored.NewBalancesForIotas(22).Add(dummyColor, 2)
 	require.True(t, expected.Equals(bm1))
 
 	bm2, ok := GetAccountBalances(state, agentID2)
@@ -202,10 +178,7 @@ func TestCreditDebit5(t *testing.T) {
 	require.EqualValues(t, 0, len(total))
 
 	agentID1 := iscp.NewRandomAgentID()
-	transfer := colored.NewBalances(map[colored.Color]uint64{
-		colored.IOTA: 42,
-		dummyColor:   2,
-	})
+	transfer := colored.NewBalancesForIotas(42).Add(dummyColor, 2)
 	CreditToAccount(state, agentID1, transfer)
 	total = checkLedger(t, state, "cp1")
 
@@ -227,10 +200,7 @@ func TestCreditDebit5(t *testing.T) {
 	keys = getAccountsIntern(state).Keys()
 	require.EqualValues(t, 1, len(keys))
 
-	expected = colored.NewBalances(map[colored.Color]uint64{
-		colored.IOTA: 42,
-		dummyColor:   2,
-	})
+	expected = colored.NewBalancesForIotas(42).Add(dummyColor, 2)
 	require.True(t, expected.Equals(total))
 
 	bm1, ok := GetAccountBalances(state, agentID1)
@@ -248,10 +218,7 @@ func TestCreditDebit6(t *testing.T) {
 	require.EqualValues(t, 0, len(total))
 
 	agentID1 := iscp.NewRandomAgentID()
-	transfer := colored.NewBalances(map[colored.Color]uint64{
-		colored.IOTA: 42,
-		dummyColor:   2,
-	})
+	transfer := colored.NewBalancesForIotas(42).Add(dummyColor, 2)
 	CreditToAccount(state, agentID1, transfer)
 	checkLedger(t, state, "cp1")
 

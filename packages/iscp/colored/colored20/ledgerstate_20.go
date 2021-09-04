@@ -1,3 +1,5 @@
+// the package contain all dependencies with the goshimmmer color model
+// only included for IOTA  2.0 ledger
 // +build !l1_15
 
 package colored20

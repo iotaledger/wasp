@@ -58,8 +58,8 @@ func getFeeInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	}
 	feeColor, ownerFee, validatorFee := governance.GetFeeInfo(ctx, hname)
 	ret := dict.New()
-	ret.Set(governance.VarFeeColor, codec.EncodeColor(feeColor))
-	ret.Set(governance.VarOwnerFee, codec.EncodeUint64(ownerFee))
-	ret.Set(governance.VarValidatorFee, codec.EncodeUint64(validatorFee))
+	ret.Set(governance.ParamFeeColor, codec.EncodeColor(feeColor))
+	ret.Set(governance.ParamOwnerFee, codec.EncodeUint64(ownerFee))
+	ret.Set(governance.ParamValidatorFee, codec.EncodeUint64(validatorFee))
 	return ret, nil
 }
