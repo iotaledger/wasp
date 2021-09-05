@@ -13,7 +13,7 @@ import (
 
 // Color is abstract color code used in ISCP.
 // It can be mapped into specific implementations of Goshimmer or Chrysalis by calling Init
-type Color []byte
+type Color []byte //nolint:gofumpt
 type ColorKey string
 
 // colorLength represents the length of a Color (amount of bytes).

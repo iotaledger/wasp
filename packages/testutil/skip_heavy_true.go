@@ -1,5 +1,6 @@
-// +build skipheavy
 // only included if tag=skipheavy
+//+build skipheavy
+
 package testutil
 
 func init() {
