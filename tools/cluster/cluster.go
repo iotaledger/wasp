@@ -576,7 +576,14 @@ func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
 	})
 	ret += "      Unexpected colors in actual outputs:\n"
 	for _, col := range lst {
-		ret += fmt.Sprintf("         %s %d\n", col, actual[col])
+		c, err := colored.NewColor(col)
+		var cstr string
+		if err != nil {
+			cstr = err.Error()
+		} else {
+			cstr = c.String()
+		}
+		ret += fmt.Sprintf("         %s %d\n", cstr, actual[col])
 	}
 	return ret, assertionOk
 }
