@@ -3,6 +3,9 @@
 
 package testutil
 
-func init() {
-	skipHeavy = true
+import "testing"
+
+func SkipHeavy(t *testing.T) {
+	t.Logf("skipping heavy test %s", t.Name())
+	t.SkipNow()
 }
