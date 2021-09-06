@@ -17,10 +17,11 @@ WORKDIR /
 COPY --from=build /wasp/tools/monitoring/config.json /
 COPY --from=build /wasp/wasp /
 
-EXPOSE 7000/tcp
-EXPOSE 9090/tcp
-EXPOSE 5550/tcp
-EXPOSE 2112/tcp
+EXPOSE 7000
+EXPOSE 9090
+EXPOSE 5550
+EXPOSE 2112
+EXPOSE 4000
 
 ENTRYPOINT ["/wasp"]
 
