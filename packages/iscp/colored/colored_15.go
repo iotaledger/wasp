@@ -1,5 +1,5 @@
 // a DUMMY file to check how build tags work
-// the package contain all dependencies with the hornet color model
+// the package will contain all dependencies with the Chrysalis color model
 // only included for IOTA 1.5 ledger
 
 //+build l1_15
