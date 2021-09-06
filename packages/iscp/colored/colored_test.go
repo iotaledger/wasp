@@ -1,128 +1,120 @@
-package colored20
+package colored
 
 import (
-	"bytes"
 	"sort"
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewColoredBalances(t *testing.T) {
-	Use()
-
 	t.Run("empty 1", func(t *testing.T) {
-		var cb colored.Balances
+		var cb Balances
 		require.EqualValues(t, 0, len(cb))
 		require.NotPanics(t, func() {
-			cb.ForEachSorted(func(_ colored.Color, _ uint64) bool {
+			cb.ForEachSorted(func(_ Color, _ uint64) bool {
 				return true
 			})
 		})
-		require.EqualValues(t, 0, cb.Get(colored.IOTA))
+		require.EqualValues(t, 0, cb.Get(IOTA))
 	})
 	t.Run("empty 1", func(t *testing.T) {
-		cb := colored.NewBalances()
+		cb := NewBalances()
 		require.EqualValues(t, 0, len(cb))
 	})
 	t.Run("empty 2", func(t *testing.T) {
-		cb1 := colored.NewBalances()
-		cb2 := colored.NewBalances()
+		cb1 := NewBalances()
+		cb2 := NewBalances()
 		require.True(t, cb1.Equals(cb2))
 	})
 	t.Run("empty 3", func(t *testing.T) {
-		cb1 := colored.NewBalances()
-		cb2 := colored.NewBalances()
-		cb2.Set(colored.IOTA, 0)
+		cb1 := NewBalances()
+		cb2 := NewBalances()
+		cb2.Set(IOTA, 0)
 		require.True(t, cb1.Equals(cb2))
-		cb2.Set(colored.IOTA, 5)
-		cb2.Set(colored.IOTA, 0)
+		cb2.Set(IOTA, 5)
+		cb2.Set(IOTA, 0)
 		require.True(t, cb1.Equals(cb2))
 	})
 	t.Run("with iotas 1", func(t *testing.T) {
-		cb := colored.NewBalancesForIotas(5)
+		cb := NewBalancesForIotas(5)
 		require.EqualValues(t, 1, len(cb))
-		require.EqualValues(t, 5, cb.Get(colored.IOTA))
+		require.EqualValues(t, 5, cb.Get(IOTA))
 	})
 	t.Run("with iotas 2", func(t *testing.T) {
-		cb := colored.NewBalancesForIotas(5)
+		cb := NewBalancesForIotas(5)
 		require.EqualValues(t, 1, len(cb))
-		require.EqualValues(t, 5, cb.Get(colored.IOTA))
+		require.EqualValues(t, 5, cb.Get(IOTA))
 	})
 	t.Run("with iotas sub", func(t *testing.T) {
-		cb := colored.NewBalancesForIotas(5)
+		cb := NewBalancesForIotas(5)
 		require.EqualValues(t, 1, len(cb))
-		cb.SubNoOverflow(colored.IOTA, 10)
+		cb.SubNoOverflow(IOTA, 10)
 		require.EqualValues(t, 0, len(cb))
 		require.True(t, cb.IsEmpty())
 	})
-	t.Run("new goshimmer", func(t *testing.T) {
-		cb := BalancesFromL1Balances(ledgerstate.NewColoredBalances(nil))
-		require.EqualValues(t, 0, len(cb))
-	})
 	t.Run("equals 1", func(t *testing.T) {
-		cb1 := colored.NewBalances()
-		cb1.Add(colored.IOTA, 5)
-		cb2 := colored.NewBalancesForIotas(5)
+		cb1 := NewBalances()
+		cb1.Add(IOTA, 5)
+		cb2 := NewBalancesForIotas(5)
 		require.True(t, cb1.Equals(cb2))
 	})
 	t.Run("equals 1", func(t *testing.T) {
-		cb1 := colored.NewBalances()
-		cb1.Add(colored.IOTA, 5)
-		cb2 := colored.NewBalancesForIotas(5)
+		cb1 := NewBalances()
+		cb1.Add(IOTA, 5)
+		cb2 := NewBalancesForIotas(5)
 		require.True(t, cb1.Equals(cb2))
 		cb1.AddAll(cb2)
 		require.False(t, cb1.Equals(cb2))
 	})
 	t.Run("add", func(t *testing.T) {
-		cb := colored.NewBalancesForIotas(5)
+		cb := NewBalancesForIotas(5)
 		cb.Add(MINT, 8)
 		require.EqualValues(t, 2, len(cb))
 	})
 	t.Run("marshal1", func(t *testing.T) {
-		cb := colored.NewBalancesForIotas(5)
+		cb := NewBalancesForIotas(5)
 		t.Logf("cb = %s", cb.String())
 		cb.Add(MINT, 8)
 		data := cb.Bytes()
 		t.Logf("cb = %s", cb.String())
-		cbBack, err := colored.BalancesFromBytes(data)
+		cbBack, err := BalancesFromBytes(data)
 		require.NoError(t, err)
 		require.True(t, cb.Equals(cbBack))
 	})
 	t.Run("marshal2", func(t *testing.T) {
-		cb := colored.NewBalances()
+		cb := NewBalances()
 		data := cb.Bytes()
-		cbBack, err := colored.BalancesFromBytes(data)
+		cbBack, err := BalancesFromBytes(data)
 		require.NoError(t, err)
 		require.True(t, cb.Equals(cbBack))
 	})
 	t.Run("marshal3", func(t *testing.T) {
-		var cb colored.Balances
+		var cb Balances
 		data := cb.Bytes()
-		cbBack, err := colored.BalancesFromBytes(data)
+		cbBack, err := BalancesFromBytes(data)
 		require.NoError(t, err)
 		require.True(t, cb.Equals(cbBack))
 	})
 	t.Run("for each", func(t *testing.T) {
-		const howMany = 100
-		arr := make([]colored.Color, howMany)
-		cb := colored.NewBalances()
+		const howMany = 3
+		arr := make([]Color, howMany)
+		cb := NewBalances()
 		for i := range arr {
-			arr[i] = colored.ColorRandom()
+			arr[i] = ColorRandom()
 			cb.Set(arr[i], uint64(i+1))
 		}
 		require.EqualValues(t, howMany, len(cb))
-		arr1 := make([]colored.Color, howMany)
+		arr1 := make([]Color, howMany)
 		idx := 0
-		cb.ForEachSorted(func(col colored.Color, _ uint64) bool {
+		cb.ForEachSorted(func(col Color, _ uint64) bool {
 			arr1[idx] = col
 			idx++
 			return true
 		})
+		Sort(arr1)
 		require.True(t, sort.SliceIsSorted(arr1, func(i, j int) bool {
-			return bytes.Compare(arr1[i][:], arr1[j][:]) < 0
+			return arr[i].Compare(&arr1[j]) < 0
 		}))
 	})
 }

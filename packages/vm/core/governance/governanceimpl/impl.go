@@ -42,7 +42,7 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	chainID := params.MustGetChainID(governance.ParamChainID)
 	chainDescription := params.MustGetString(governance.ParamDescription, "N/A")
 	feeColor := params.MustGetColor(governance.ParamFeeColor, colored.IOTA)
-	feeColorSet := feeColor.Compare(colored.IOTA) == 0
+	feeColorSet := feeColor == colored.IOTA
 
 	state.Set(governance.VarChainID, codec.EncodeChainID(*chainID))
 	state.Set(governance.VarChainOwnerID, params.MustGetAgentID(governance.ParamChainOwner).Bytes())

@@ -3,8 +3,8 @@ package colored
 import (
 	"bytes"
 	"crypto/rand"
+	"sort"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/cerrors"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/mr-tron/base58"
@@ -13,108 +13,79 @@ import (
 
 // Color is abstract color code used in ISCP.
 // It can be mapped into specific implementations of Goshimmer or Chrysalis by calling Init
-type Color []byte //nolint:gofumpt
-type ColorKey string
-
-// colorLength represents the length of a Color (amount of bytes).
-var colorLength int
-
-// IOTA is the zero value of the Color and represents uncolored tokens.
-var IOTA = Color(ledgerstate.ColorIOTA[:])
-
-func ColorLength() int {
-	return colorLength
-}
-
-// Init initializes module with the specific length of the color code and specific code used as IOTA color code
-func Init(colLen int, iotaColor Color) {
-	if colorLength != 0 {
-		panic("color20.init called twice")
-	}
-	colorLength = colLen
-	IOTA = iotaColor
-}
-
-func NewColor(key ...ColorKey) (Color, error) {
-	ret := make(Color, colorLength)
-	if len(key) == 0 {
-		return ret, nil
-	}
-	if len(key) > 0 {
-		if len(key[0]) != colorLength {
-			return nil, xerrors.Errorf("ColorFromBytes: %d bytes expected", colorLength)
-		}
-	}
-	copy(ret, key[0])
-	return ret, nil
-}
+type Color [ColorLength]byte
 
 // ColorFromBytes unmarshals a Color from a sequence of bytes.
-func ColorFromBytes(colorBytes []byte) (col Color, err error) {
-	return NewColor(ColorKey(colorBytes))
+func ColorFromBytes(colorBytes []byte) (ret Color, err error) {
+	ret, err = ColorFromMarshalUtil(marshalutil.New(colorBytes))
+	return
 }
 
 // ColorFromBase58EncodedString creates a Color from a base58 encoded string.
-func ColorFromBase58EncodedString(base58String string) (Color, error) {
+func ColorFromBase58EncodedString(base58String string) (ret Color, err error) {
 	parsedBytes, err := base58.Decode(base58String)
 	if err != nil {
-		return nil, xerrors.Errorf("ColorFromBase58EncodedString (%v): %w", err, cerrors.ErrBase58DecodeFailed)
+		err = xerrors.Errorf("ColorFromBase58EncodedString (%v): %w", err, cerrors.ErrBase58DecodeFailed)
+		return
 	}
-
 	col, err := ColorFromBytes(parsedBytes)
 	if err != nil {
-		return nil, xerrors.Errorf("ColorFromBase58EncodedString: %w", err)
+		err = xerrors.Errorf("ColorFromBase58EncodedString: %w", err)
+		return
 	}
 	return col, nil
 }
 
 // ColorFromMarshalUtil unmarshals a Color using a MarshalUtil (for easier unmarshaling).
-func ColorFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (Color, error) {
-	colorBytes, err := marshalUtil.ReadBytes(colorLength)
+func ColorFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (ret Color, err error) {
+	colorBytes, err := marshalUtil.ReadBytes(ColorLength)
 	if err != nil {
-		return nil, xerrors.Errorf("ColorFromMarshalUtil (%v): %w", err, cerrors.ErrParseBytesFailed)
+		err = xerrors.Errorf("ColorFromMarshalUtil (%v): %w", err, cerrors.ErrParseBytesFailed)
+		return
 	}
-	return colorBytes, nil
+	copy(ret[:], colorBytes)
+	return
 }
 
-func ColorRandom() Color {
-	ret, err := NewColor()
+func ColorRandom() (ret Color) {
+	_, err := rand.Read(ret[:])
 	if err != nil {
 		panic(err)
 	}
-	_, err = rand.Read(ret[:])
-	if err != nil {
-		panic(err)
-	}
-	return ret
+	return
+}
+
+func (c *Color) Clone() (ret Color) {
+	copy(ret[:], c[:])
+	return
 }
 
 // Bytes marshals the Color into a sequence of bytes.
-func (c Color) Bytes() []byte {
+func (c *Color) Bytes() []byte {
 	return c[:]
 }
 
 // Base58 returns a base58 encoded version of the Color.
-func (c Color) Base58() string {
+func (c *Color) Base58() string {
 	return base58.Encode(c.Bytes())
 }
 
 // String creates a human readable string of the Color.
-func (c Color) String() string {
+func (c *Color) String() string {
 	switch {
-	case c.Compare(IOTA) == 0:
+	case *c == IOTA:
 		return "IOTA"
 	default:
 		return c.Base58()
 	}
 }
 
-func (c Color) AsKey() ColorKey {
-	return ColorKey(c)
+func (c *Color) Compare(another *Color) int {
+	return bytes.Compare(c[:], another[:])
 }
 
-// Compare offers a comparator for Colors which returns -1 if otherColor is bigger, 1 if it is smaller and 0 if they are
-// the same.
-func (c Color) Compare(otherColor Color) int {
-	return bytes.Compare(c[:], otherColor[:])
+func Sort(arr []Color) {
+	sort.Slice(arr, func(i, j int) bool {
+		return arr[i].Compare(&arr[j]) < 0
+	})
 }

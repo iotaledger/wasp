@@ -3,8 +3,6 @@ package accounts
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
-
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -23,7 +21,6 @@ func TestBasic(t *testing.T) {
 var dummyColor colored.Color
 
 func init() {
-	colored20.Use()
 	var err error
 	dummyColor, err = colored.ColorFromBase58EncodedString(hashing.HashStrings("dummy string").Base58())
 	if err != nil {

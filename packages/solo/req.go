@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
-
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 
@@ -81,7 +79,7 @@ func NewCallParamsOptimized(scName, funName string, optSize int, params ...inter
 // WithTransfer is a shorthand for the most often used case where only
 // a single color is transferred by WithTransfers
 func (r *CallParams) WithTransfer(col colored.Color, amount uint64) *CallParams {
-	return r.WithTransfers(colored.Balances{col.AsKey(): amount})
+	return r.WithTransfers(colored.Balances{col: amount})
 }
 
 // WithTransfers complement CallParams structure with the colored balances of tokens
@@ -163,7 +161,7 @@ func (ch *Chain) RequestFromParamsToLedger(req *CallParams, keyPair *ed25519.Key
 
 	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(ch.Env.LogicalTime())
 	var err error
-	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), mdata, colored20.ToL1Map(req.transfer))
+	err = txb.AddExtendedOutputConsume(ch.ChainID.AsAddress(), mdata, colored.ToL1Map(req.transfer))
 	require.NoError(ch.Env.T, err)
 	if req.mintAmount > 0 {
 		err = txb.AddMintingOutputConsume(req.mintAddress, req.mintAmount)

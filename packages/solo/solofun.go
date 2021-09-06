@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
@@ -58,27 +57,27 @@ func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (colored.Col
 
 	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(env.LogicalTime())
 	if amount < DustThresholdIotas {
-		return nil, xerrors.New("can't mint number of tokens below dust threshold")
+		return colored.Color{}, xerrors.New("can't mint number of tokens below dust threshold")
 	}
 	if err := txb.AddMintingOutputConsume(addr, amount); err != nil {
-		return nil, err
+		return colored.Color{}, err
 	}
 	if err := txb.AddRemainderOutputIfNeeded(addr, nil, true); err != nil {
-		return nil, err
+		return colored.Color{}, err
 	}
 	tx, err := txb.BuildWithED25519(wallet)
 	if err != nil {
-		return nil, err
+		return colored.Color{}, err
 	}
 	if err := env.AddToLedger(tx); err != nil {
-		return nil, nil
+		return colored.Color{}, nil
 	}
 	m := utxoutil.GetMintedAmounts(tx)
 	require.EqualValues(env.T, 1, len(m))
 
 	var ret colored.Color
 	for col := range m {
-		ret = colored20.ColorFromL1Color(col)
+		ret = colored.ColorFromL1Color(col)
 		break
 	}
 	return ret, nil

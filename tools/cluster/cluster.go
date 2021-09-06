@@ -9,12 +9,9 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"sort"
 	"strconv"
 	"text/template"
 	"time"
-
-	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
 
 	"github.com/iotaledger/goshimmer/client/wallet/packages/seed"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -520,7 +517,7 @@ func (clu *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpecte
 		fmt.Printf("[cluster] GetConfirmedOutputs error: %v\n", err)
 		return false
 	}
-	byColor, total := colored20.OutputBalancesByColor(allOuts)
+	byColor, total := colored.OutputBalancesByColor(allOuts)
 	dumpStr, assertionOk := dumpBalancesByColor(byColor, expect)
 
 	var totalExpectedStr string
@@ -545,13 +542,11 @@ func (clu *Cluster) VerifyAddressBalances(addr ledgerstate.Address, totalExpecte
 
 func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
 	assertionOk := true
-	lst := make([]colored.ColorKey, 0, len(expect))
+	lst := make([]colored.Color, 0, len(expect))
 	for col := range expect {
 		lst = append(lst, col)
 	}
-	sort.Slice(lst, func(i, j int) bool {
-		return lst[i] < lst[j]
-	})
+	colored.Sort(lst)
 	ret := ""
 	for _, col := range lst {
 		act := actual[col]
@@ -571,19 +566,10 @@ func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
 	if len(lst) == 0 {
 		return ret, assertionOk
 	}
-	sort.Slice(lst, func(i, j int) bool {
-		return lst[i] < lst[j]
-	})
+	colored.Sort(lst)
 	ret += "      Unexpected colors in actual outputs:\n"
 	for _, col := range lst {
-		c, err := colored.NewColor(col)
-		var cstr string
-		if err != nil {
-			cstr = err.Error()
-		} else {
-			cstr = c.String()
-		}
-		ret += fmt.Sprintf("         %s %d\n", cstr, actual[col])
+		ret += fmt.Sprintf("         %s %d\n", col.String(), actual[col])
 	}
 	return ret, assertionOk
 }

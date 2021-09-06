@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 )
@@ -41,7 +40,7 @@ func NewRequestTransaction(par NewRequestTransactionParams) (*ledgerstate.Transa
 		} else {
 			transfer = colored.NewBalancesForIotas(1)
 		}
-		err := txb.AddExtendedOutputConsume(req.ChainID.AsAddress(), metadata, colored20.ToL1Map(transfer))
+		err := txb.AddExtendedOutputConsume(req.ChainID.AsAddress(), metadata, colored.ToL1Map(transfer))
 		if err != nil {
 			return nil, err
 		}

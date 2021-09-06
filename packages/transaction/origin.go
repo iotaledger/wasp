@@ -3,8 +3,6 @@ package transaction
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate/utxoutil"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
@@ -33,7 +31,7 @@ func NewChainOriginTransaction(
 	if len(balances) == 0 {
 		balances = colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA)
 	}
-	if err := txb.AddNewAliasMint(colored20.ToL1Map(balances), stateAddress, stateHash.Bytes()); err != nil {
+	if err := txb.AddNewAliasMint(colored.ToL1Map(balances), stateAddress, stateHash.Bytes()); err != nil {
 		return nil, iscp.ChainID{}, err
 	}
 	// adding reminder in compressing mode, i.e. all provided inputs will be consumed
@@ -80,7 +78,7 @@ func NewRootInitRequestTransaction(
 		WithArgs(args).
 		Bytes()
 
-	err := txb.AddExtendedOutputConsume(chainID.AsAddress(), metadata, colored20.Balances1IotaL1)
+	err := txb.AddExtendedOutputConsume(chainID.AsAddress(), metadata, colored.Balances1IotaL1)
 	if err != nil {
 		return nil, err
 	}

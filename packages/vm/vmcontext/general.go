@@ -6,7 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/iscp/colored/colored20"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -101,7 +100,7 @@ func (vmctx *VMContext) Send(target ledgerstate.Address, tokens colored.Balances
 	if len(options) == 1 {
 		opts = options[0].ToGoshimmerSendOptions()
 	}
-	err := vmctx.txBuilder.AddExtendedOutputSpend(target, data.Bytes(), colored20.ToL1Map(tokens), opts)
+	err := vmctx.txBuilder.AddExtendedOutputSpend(target, data.Bytes(), colored.ToL1Map(tokens), opts)
 	if err != nil {
 		vmctx.log.Errorf("Send: %v", err)
 		return false

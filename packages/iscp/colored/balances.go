@@ -1,6 +1,7 @@
 package colored
 
 import (
+	"bytes"
 	"sort"
 
 	"github.com/iotaledger/hive.go/cerrors"
@@ -13,7 +14,7 @@ import (
 
 // Balances represents a collection of balances associated to their respective Color that maintains a
 // deterministic order of the present Colors.
-type Balances map[ColorKey]uint64
+type Balances map[Color]uint64
 
 var Balances1Iota = NewBalancesForIotas(1)
 
@@ -46,42 +47,41 @@ func BalancesFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (Balances, er
 	var previousColor *Color
 	ret := NewBalances()
 	for i := uint32(0); i < balancesCount; i++ {
-		color, colorErr := ColorFromMarshalUtil(marshalUtil)
+		col, colorErr := ColorFromMarshalUtil(marshalUtil)
 		if colorErr != nil {
 			return nil, xerrors.Errorf("failed to parse Color from MarshalUtil: %w", colorErr)
 		}
 
-		// check semantic correctness (ensure ordering)
-		if previousColor != nil && previousColor.Compare(color) >= 0 {
+		// check semantic correctness (enforce ordering)
+		if previousColor != nil && bytes.Compare(previousColor[:], col[:]) >= 0 {
 			return nil, xerrors.Errorf("parsed Colors are not in correct order: %w", cerrors.ErrParseBytesFailed)
 		}
 
 		balance, balanceErr := marshalUtil.ReadUint64()
 		if balanceErr != nil {
-			return nil, xerrors.Errorf("failed to parse balance of Color %s (%v): %w", color.String(), balanceErr, cerrors.ErrParseBytesFailed)
+			return nil, xerrors.Errorf("failed to parse balance of Color %s (%v): %w", col.String(), balanceErr, cerrors.ErrParseBytesFailed)
 		}
 		if balance == 0 {
-			return nil, xerrors.Errorf("zero balance found for color %s", color.String())
+			return nil, xerrors.Errorf("zero balance found for color %s", col.String())
 		}
-		ret[color.AsKey()] = balance
+		ret[col] = balance
 
-		previousColor = &color
+		previousColor = &col
 	}
 	return ret, nil
 }
 
 // Get returns the balance of the given Color. 0 means balance is empty
 func (c Balances) Get(color Color) uint64 {
-	return c[color.AsKey()]
+	return c[color]
 }
 
 // Get returns the balance of the given Color.
-func (c Balances) Set(color Color, bal uint64) Balances {
-	k := color.AsKey()
+func (c Balances) Set(col Color, bal uint64) Balances {
 	if bal > 0 {
-		c[k] = bal
+		c[col] = bal
 	} else {
-		delete(c, k)
+		delete(c, col)
 	}
 	return c
 }
@@ -92,7 +92,7 @@ func (c Balances) IsEmpty() bool {
 
 func (c Balances) Add(col Color, bal uint64) Balances {
 	if bal > 0 {
-		c[col.AsKey()] += bal
+		c[col] += bal
 	}
 	return c
 }
@@ -102,23 +102,22 @@ func (c Balances) SubNoOverflow(col Color, bal uint64) Balances {
 	if bal == 0 {
 		return c
 	}
-	k := col.AsKey()
-	if bal >= c[k] {
-		c[k] = 0
+	if bal >= c[col] {
+		c[col] = 0
 	} else {
-		c[k] -= bal
+		c[col] -= bal
 	}
-	if c[k] == 0 {
-		delete(c, col.AsKey())
+	if c[col] == 0 {
+		delete(c, col)
 	}
 	return c
 }
 
 // ForEach calls the consumer for each element in the collection and aborts the iteration if the consumer returns false.
 // Non-deterministic order of iteration
-func (c Balances) ForEachRandomly(consumer func(color Color, balance uint64) bool) {
+func (c Balances) ForEachRandomly(consumer func(col Color, bal uint64) bool) {
 	for col, bal := range c {
-		if !consumer(Color(col), bal) {
+		if !consumer(col, bal) {
 			return
 		}
 	}
@@ -126,15 +125,17 @@ func (c Balances) ForEachRandomly(consumer func(color Color, balance uint64) boo
 
 // ForEach calls the consumer for each element in the collection and aborts the iteration if the consumer returns false.
 // Deterministic order of iteration
-func (c Balances) ForEachSorted(consumer func(color Color, balance uint64) bool) {
-	keys := make([]string, 0, len(c))
+func (c Balances) ForEachSorted(consumer func(col Color, bal uint64) bool) {
+	keys := make([]Color, 0, len(c))
 	for col := range c {
-		keys = append(keys, string(col))
+		keys = append(keys, col)
 	}
-	sort.Strings(keys)
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i].Compare(&keys[i]) < 0
+	})
 	for _, col := range keys {
-		bal := c[ColorKey(col)]
-		if bal > 0 && !consumer(Color(col), bal) {
+		bal := c[col]
+		if bal > 0 && !consumer(col, bal) {
 			return
 		}
 	}
@@ -198,8 +199,8 @@ func (c Balances) AddAll(another Balances) {
 }
 
 // Diff returns difference between two Balances color-by-color
-func (c Balances) Diff(another Balances) map[ColorKey]int64 {
-	ret := make(map[ColorKey]int64)
+func (c Balances) Diff(another Balances) map[Color]int64 {
+	ret := make(map[Color]int64)
 	for col := range allColors(c, another) {
 		cBal := c[col]
 		aBal := another[col]
@@ -224,16 +225,16 @@ func BalancesFromDict(d dict.Dict) (Balances, error) {
 		if err != nil {
 			return nil, err
 		}
-		ret[col.AsKey()] = v
+		ret[col] = v
 	}
 	return ret, nil
 }
 
-func allColors(bals ...Balances) map[ColorKey]bool {
-	ret := make(map[ColorKey]bool)
+func allColors(bals ...Balances) map[Color]bool {
+	ret := make(map[Color]bool)
 	for _, b := range bals {
 		b.ForEachRandomly(func(col Color, bal uint64) bool {
-			ret[col.AsKey()] = true
+			ret[col] = true
 			return true
 		})
 	}

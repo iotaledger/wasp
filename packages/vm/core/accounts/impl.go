@@ -143,7 +143,7 @@ func harvest(ctx iscp.Sandbox) (dict.Dict, error) {
 	}
 	tokensToSend := bals
 	if !harvestAll {
-		balCol := bals[col.AsKey()]
+		balCol := bals[col]
 		a.Require(balCol >= amount, "accounts.harvest.error: not enough tokens")
 		tokensToSend = colored.NewBalancesForColor(col, amount)
 	}

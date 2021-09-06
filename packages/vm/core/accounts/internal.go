@@ -89,12 +89,12 @@ func debitFromAccount(state kv.KVStore, account *collections.Map, transfer color
 	ok := true
 	// deterministic order of iteration is not important here
 	transfer.ForEachRandomly(func(col colored.Color, transferAmount uint64) bool {
-		bal := current[col.AsKey()]
+		bal := current[col]
 		if bal < transferAmount {
 			ok = false
 			return false
 		}
-		current[col.AsKey()] = bal - transferAmount
+		current[col] = bal - transferAmount
 		return true
 	})
 	if !ok {
@@ -160,7 +160,7 @@ func getAccountsIntern(state kv.KVStoreReader) dict.Dict {
 func getAccountBalances(account *collections.ImmutableMap) colored.Balances {
 	ret := colored.NewBalances()
 	account.MustIterateBalances(func(col colored.Color, bal uint64) bool {
-		ret[col.AsKey()] = bal
+		ret[col] = bal
 		return true
 	})
 	return ret
