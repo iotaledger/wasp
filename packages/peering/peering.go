@@ -267,9 +267,6 @@ func NewPeerMessageFromBytes(buf []byte, peerPubKey *ed25519.PublicKey) (*PeerMe
 		}
 		if peerPubKey != nil {
 			// Check the signature, if key is provided.
-			if peerPubKey == nil {
-				return nil, xerrors.New("peer pub key is mandatory to decode user messages")
-			}
 			lenBeforeSig := r.Len()
 			var signatureBin []byte
 			if signatureBin, err = util.ReadBytes16(r); err != nil {
