@@ -294,6 +294,16 @@ module.exports = {
                     label: 'Introduction',
                     id: 'guide/evm/introduction',
                 },
+                {
+                    type: 'doc',
+                    label: 'Limitations',
+                    id: 'guide/evm/limitations',
+                },
+                {
+                    type: 'doc',
+                    label: 'Creating a chain',
+                    id: 'guide/evm/create-chain',
+                }
             ]
         },
         {
