@@ -1,11 +1,9 @@
 package colored
 
 import (
-	"bytes"
 	"sort"
 	"testing"
 
-	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,7 +37,7 @@ func TestNewColoredBalances(t *testing.T) {
 		require.True(t, cb1.Equals(cb2))
 	})
 	t.Run("with iotas 1", func(t *testing.T) {
-		cb := NewBalances(map[Color]uint64{IOTA: 5})
+		cb := NewBalancesForIotas(5)
 		require.EqualValues(t, 1, len(cb))
 		require.EqualValues(t, 5, cb.Get(IOTA))
 	})
@@ -55,17 +53,15 @@ func TestNewColoredBalances(t *testing.T) {
 		require.EqualValues(t, 0, len(cb))
 		require.True(t, cb.IsEmpty())
 	})
-	t.Run("new goshimmer", func(t *testing.T) {
-		cb := BalancesFromL1Balances(ledgerstate.NewColoredBalances(nil))
-		require.EqualValues(t, 0, len(cb))
-	})
 	t.Run("equals 1", func(t *testing.T) {
-		cb1 := NewBalances(map[Color]uint64{IOTA: 5})
+		cb1 := NewBalances()
+		cb1.Add(IOTA, 5)
 		cb2 := NewBalancesForIotas(5)
 		require.True(t, cb1.Equals(cb2))
 	})
 	t.Run("equals 1", func(t *testing.T) {
-		cb1 := NewBalances(map[Color]uint64{IOTA: 5})
+		cb1 := NewBalances()
+		cb1.Add(IOTA, 5)
 		cb2 := NewBalancesForIotas(5)
 		require.True(t, cb1.Equals(cb2))
 		cb1.AddAll(cb2)
@@ -73,13 +69,15 @@ func TestNewColoredBalances(t *testing.T) {
 	})
 	t.Run("add", func(t *testing.T) {
 		cb := NewBalancesForIotas(5)
-		cb.Add(Mint, 8)
+		cb.Add(MINT, 8)
 		require.EqualValues(t, 2, len(cb))
 	})
 	t.Run("marshal1", func(t *testing.T) {
 		cb := NewBalancesForIotas(5)
-		cb.Add(Mint, 8)
+		t.Logf("cb = %s", cb.String())
+		cb.Add(MINT, 8)
 		data := cb.Bytes()
+		t.Logf("cb = %s", cb.String())
 		cbBack, err := BalancesFromBytes(data)
 		require.NoError(t, err)
 		require.True(t, cb.Equals(cbBack))
@@ -99,7 +97,7 @@ func TestNewColoredBalances(t *testing.T) {
 		require.True(t, cb.Equals(cbBack))
 	})
 	t.Run("for each", func(t *testing.T) {
-		const howMany = 100
+		const howMany = 3
 		arr := make([]Color, howMany)
 		cb := NewBalances()
 		for i := range arr {
@@ -114,8 +112,19 @@ func TestNewColoredBalances(t *testing.T) {
 			idx++
 			return true
 		})
+		Sort(arr1)
 		require.True(t, sort.SliceIsSorted(arr1, func(i, j int) bool {
-			return bytes.Compare(arr1[i][:], arr1[j][:]) < 0
+			return arr[i].Compare(&arr1[j]) < 0
 		}))
 	})
+}
+
+func TestBytesString(t *testing.T) {
+	var zeros [32]byte
+	z := zeros[:]
+	s := string(z)
+	t.Logf("s = '%s', len(s) = %d", s, len(s))
+	zBack := []byte(s)
+	t.Logf("len(zBack) = %d", len(zBack))
+	require.EqualValues(t, z, zBack)
 }

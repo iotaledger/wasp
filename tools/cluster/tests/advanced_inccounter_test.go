@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -89,6 +90,7 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=15, N=4, req=1000", func(t *testing.T) {
+		testutil.SkipHeavy(t)
 		const numRequests = 1000
 		const numValidatorNodes = 4
 		const clusterSize = 15
@@ -96,6 +98,7 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=15, N=6, req=1000", func(t *testing.T) {
+		testutil.SkipHeavy(t)
 		const numRequests = 1000
 		const numValidatorNodes = 6
 		const clusterSize = 15
@@ -141,6 +144,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=10,N=6,req=1000", func(t *testing.T) {
+		testutil.SkipHeavy(t)
 		const waitFor = 120 * time.Second
 		const numRequests = 1000
 		const numValidatorNodes = 6
@@ -149,6 +153,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=15,N=6,req=1000", func(t *testing.T) {
+		testutil.SkipHeavy(t)
 		const waitFor = 120 * time.Second
 		const numRequests = 1000
 		const numValidatorNodes = 6
@@ -157,6 +162,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=30,N=15,req=8", func(t *testing.T) {
+		testutil.SkipHeavy(t)
 		const waitFor = 60 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 15
@@ -165,6 +171,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 	})
 
 	t.Run("cluster=30,N=20,req=8", func(t *testing.T) {
+		testutil.SkipHeavy(t)
 		const waitFor = 60 * time.Second
 		const numRequests = 8
 		const numValidatorNodes = 20
@@ -208,6 +215,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 
 // extreme test
 func TestAccessNodesMany(t *testing.T) {
+	testutil.SkipHeavy(t)
 	const clusterSize = 15
 	const numValidatorNodes = 6
 	const requestsCountInitial = 2
@@ -330,6 +338,7 @@ func TestRotation(t *testing.T) {
 }
 
 func TestRotationMany(t *testing.T) {
+	testutil.SkipHeavy(t)
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}

@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -133,7 +132,8 @@ func (e *chainEnv) getBalancesOnChain() map[*iscp.AgentID]colored.Balances {
 			},
 		)
 		require.NoError(e.t, err)
-		ret[agentID] = balancesDictToMap(e.t, r)
+		ret[agentID], err = colored.BalancesFromDict(r)
+		require.NoError(e.t, err)
 	}
 	return ret
 }
@@ -143,18 +143,8 @@ func (e *chainEnv) getTotalBalance() colored.Balances {
 		e.chain.ChainID, accounts.Contract.Hname(), accounts.FuncViewTotalAssets.Name, nil,
 	)
 	require.NoError(e.t, err)
-	return balancesDictToMap(e.t, r)
-}
-
-func balancesDictToMap(t *testing.T, d dict.Dict) colored.Balances {
-	ret := colored.NewBalances()
-	for key, value := range d {
-		col, err := colored.ColorFromBytes([]byte(key))
-		require.NoError(t, err)
-		v, err := util.Uint64From8Bytes(value)
-		require.NoError(t, err)
-		ret[col] = v
-	}
+	ret, err := colored.BalancesFromDict(r)
+	require.NoError(e.t, err)
 	return ret
 }
 
@@ -164,7 +154,7 @@ func (e *chainEnv) printAccounts(title string) {
 	for aid, bals := range allBalances {
 		s += fmt.Sprintf("     %s\n", aid.String())
 		for k, v := range bals {
-			s += fmt.Sprintf("                %s: %d\n", k.String(), v)
+			s += fmt.Sprintf("                %s: %d\n", k, v)
 		}
 	}
 	fmt.Println(s)

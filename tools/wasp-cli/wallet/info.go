@@ -49,8 +49,8 @@ var balanceCmd = &cobra.Command{
 
 func printOutputsByColor(outs []ledgerstate.Output) uint64 {
 	byColor, total := colored.OutputBalancesByColor(outs)
-	for color, value := range byColor {
-		log.Printf("    %s: %d\n", color.String(), value)
+	for col, val := range byColor {
+		log.Printf("    %s: %d\n", col, val)
 	}
 	return total
 }
