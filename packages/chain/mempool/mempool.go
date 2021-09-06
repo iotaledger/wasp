@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/iscp/rotate"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -33,6 +34,7 @@ type Mempool struct {
 	blobCache               registry.BlobCache
 	solidificationLoopDelay time.Duration
 	log                     *logger.Logger
+	mempoolMetrics          metrics.MempoolMetrics
 }
 
 type requestRef struct {
@@ -47,14 +49,15 @@ const (
 
 var _ chain.Mempool = &Mempool{}
 
-func New(stateReader state.OptimisticStateReader, blobCache registry.BlobCache, log *logger.Logger, solidificationLoopDelay ...time.Duration) *Mempool {
+func New(stateReader state.OptimisticStateReader, blobCache registry.BlobCache, log *logger.Logger, mempoolMetrics metrics.MempoolMetrics, solidificationLoopDelay ...time.Duration) *Mempool {
 	ret := &Mempool{
-		inBuffer:    make(map[iscp.RequestID]iscp.Request),
-		stateReader: stateReader,
-		pool:        make(map[iscp.RequestID]*requestRef),
-		chStop:      make(chan struct{}),
-		blobCache:   blobCache,
-		log:         log.Named("m"),
+		inBuffer:       make(map[iscp.RequestID]iscp.Request),
+		stateReader:    stateReader,
+		pool:           make(map[iscp.RequestID]*requestRef),
+		chStop:         make(chan struct{}),
+		blobCache:      blobCache,
+		log:            log.Named("m"),
+		mempoolMetrics: mempoolMetrics,
 	}
 	if len(solidificationLoopDelay) > 0 {
 		ret.solidificationLoopDelay = solidificationLoopDelay[0]
@@ -152,6 +155,11 @@ func (m *Mempool) addToPool(req iscp.Request) bool {
 // ReceiveRequests places requests into the inBuffer. InBuffer is unordered and non-deterministic
 func (m *Mempool) ReceiveRequests(reqs ...iscp.Request) {
 	for _, req := range reqs {
+		if req.IsOffLedger() {
+			m.mempoolMetrics.CountOffLedgerRequestIn()
+		} else {
+			m.mempoolMetrics.CountOnLedgerRequestIn()
+		}
 		m.addToInBuffer(req)
 	}
 }
@@ -163,6 +171,7 @@ func (m *Mempool) ReceiveRequest(req iscp.Request) bool {
 	if m.checkInBuffer(req) {
 		return false
 	}
+	m.mempoolMetrics.CountOffLedgerRequestIn()
 	return m.addToInBuffer(req)
 }
 
@@ -184,6 +193,7 @@ func (m *Mempool) RemoveRequests(reqs ...iscp.RequestID) {
 			continue
 		}
 		m.outPoolCounter++
+		m.mempoolMetrics.CountRequestOut()
 		delete(m.pool, rid)
 		m.traceOut(rid)
 	}
@@ -196,19 +206,19 @@ func (m *Mempool) traceIn(req iscp.Request) {
 	if rotate.IsRotateStateControllerRequest(req) {
 		rotateStr = "(rotate) "
 	}
-	tl := req.TimeLock()
+	logFn := m.log.Debugf
 	if traceInOut {
-		if tl.IsZero() {
-			m.log.Infof("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
-		} else {
-			m.log.Infof("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(tl))
-		}
+		logFn = m.log.Infof
+	}
+	tl := time.Time{}
+	if !req.IsOffLedger() {
+		tl = req.(*request.OnLedger).TimeLock()
+	}
+
+	if tl.IsZero() {
+		logFn("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
 	} else {
-		if tl.IsZero() {
-			m.log.Debugf("IN MEMPOOL %s%s (+%d / -%d)", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter)
-		} else {
-			m.log.Debugf("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(tl))
-		}
+		logFn("IN MEMPOOL %s%s (+%d / -%d) timelocked for %v", rotateStr, req.ID(), m.inPoolCounter, m.outPoolCounter, time.Until(tl))
 	}
 }
 
@@ -220,13 +230,26 @@ func (m *Mempool) traceOut(reqid iscp.RequestID) {
 	}
 }
 
+// don't process any request which deadline will expire within 10 minutes
+const FallbackDeadlineMinAllowedInterval = time.Minute * 10
+
 // isRequestReady for requests with paramsReady, the result is strictly deterministic
-func isRequestReady(ref *requestRef, nowis time.Time) bool {
-	// TODO fallback options
-	if _, paramsReady := ref.req.Params(); !paramsReady {
-		return false
+func isRequestReady(ref *requestRef, nowis time.Time) (isReady, shouldBeRemoved bool) {
+	if ref.req.IsOffLedger() {
+		return true, false
 	}
-	return ref.req.TimeLock().IsZero() || ref.req.TimeLock().Before(nowis)
+	r := ref.req.(*request.OnLedger)
+	// fallback options
+	if r.FallbackAddress() != nil {
+		if !r.FallbackDeadline().After(nowis.Add(FallbackDeadlineMinAllowedInterval)) {
+			return false, true
+		}
+	}
+	// time lock
+	if _, paramsReady := r.Params(); !paramsReady {
+		return false, false
+	}
+	return r.TimeLock().IsZero() || r.TimeLock().Before(nowis), false
 }
 
 // ReadyNow returns preliminary batch of requests for consensus.
@@ -235,7 +258,6 @@ func isRequestReady(ref *requestRef, nowis time.Time) bool {
 // batch with only one request, the oldest committee rotation request
 func (m *Mempool) ReadyNow(now ...time.Time) []iscp.Request {
 	m.poolMutex.RLock()
-	defer m.poolMutex.RUnlock()
 
 	nowis := time.Now()
 	if len(now) > 0 {
@@ -244,9 +266,16 @@ func (m *Mempool) ReadyNow(now ...time.Time) []iscp.Request {
 	var oldestRotate iscp.Request
 	var oldestRotateTime time.Time
 
+	toRemove := []iscp.RequestID{}
+
 	ret := make([]iscp.Request, 0, len(m.pool))
 	for _, ref := range m.pool {
-		if !isRequestReady(ref, nowis) {
+		rdy, shouldBeRemoved := isRequestReady(ref, nowis)
+		if shouldBeRemoved {
+			toRemove = append(toRemove, ref.req.ID())
+			continue
+		}
+		if !rdy {
 			continue
 		}
 		ret = append(ret, ref.req)
@@ -271,6 +300,9 @@ func (m *Mempool) ReadyNow(now ...time.Time) []iscp.Request {
 			}
 		}
 	}
+	m.poolMutex.RUnlock()
+	go m.RemoveRequests(toRemove...)
+
 	if oldestRotate != nil {
 		return []iscp.Request{oldestRotate}
 	}
@@ -285,16 +317,27 @@ func (m *Mempool) ReadyNow(now ...time.Time) []iscp.Request {
 func (m *Mempool) ReadyFromIDs(nowis time.Time, reqIDs ...iscp.RequestID) ([]iscp.Request, []int, bool) {
 	requests := make([]iscp.Request, 0, len(reqIDs))
 	missingRequestIndexes := []int{}
+	toRemove := []iscp.RequestID{}
 	m.poolMutex.RLock()
-	defer m.poolMutex.RUnlock()
 	for i, reqID := range reqIDs {
 		reqref, ok := m.pool[reqID]
 		if !ok {
 			missingRequestIndexes = append(missingRequestIndexes, i)
-		} else if isRequestReady(reqref, nowis) {
+			continue
+		}
+		rdy, shouldBeRemoved := isRequestReady(reqref, nowis)
+		if rdy {
 			requests = append(requests, reqref.req)
+			continue
+		}
+		if shouldBeRemoved {
+			toRemove = append(toRemove, reqref.req.ID())
 		}
 	}
+	m.poolMutex.RUnlock()
+
+	go m.RemoveRequests(toRemove...)
+
 	return requests, missingRequestIndexes, len(missingRequestIndexes) == 0
 }
 
@@ -378,7 +421,8 @@ func (m *Mempool) Info() chain.MempoolInfo {
 	}
 	nowis := time.Now()
 	for _, ref := range m.pool {
-		if isRequestReady(ref, nowis) {
+		rdy, _ := isRequestReady(ref, nowis)
+		if rdy {
 			ret.ReadyCounter++
 		}
 	}
@@ -391,7 +435,7 @@ func (m *Mempool) Close() {
 
 // the loop validates and moves request from inBuffer to the pool
 func (m *Mempool) moveToPoolLoop() {
-	buf := make([]iscp.Request, 0, 100) //nolint:gomnd
+	buf := make([]iscp.Request, 0, 100)
 	for {
 		select {
 		case <-m.chStop:

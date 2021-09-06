@@ -26,12 +26,12 @@ func (d *Dashboard) initChainAccount(e *echo.Echo, r renderer) {
 func (d *Dashboard) handleChainAccount(c echo.Context) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	agentID, err := iscp.NewAgentIDFromString(strings.Replace(c.Param("agentid"), ":", "/", 1))
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	result := &ChainAccountTemplateParams{
@@ -44,19 +44,15 @@ func (d *Dashboard) handleChainAccount(c echo.Context) error {
 		AgentID: *agentID,
 	}
 
-	theChain := d.wasp.GetChain(chainID)
-	if theChain != nil {
-		bal, err := d.wasp.CallView(theChain, accounts.Contract.Hname(), accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
-			accounts.ParamAgentID: codec.EncodeAgentID(agentID),
-		}))
-		if err != nil {
-			return err
-		}
-		result.Balances, err = accounts.DecodeBalances(bal)
-		if err != nil {
-			return err
-		}
-		result.Ok = true
+	bal, err := d.wasp.CallView(chainID, accounts.Contract.Name, accounts.FuncViewBalance.Name, codec.MakeDict(map[string]interface{}{
+		accounts.ParamAgentID: codec.EncodeAgentID(agentID),
+	}))
+	if err != nil {
+		return err
+	}
+	result.Balances, err = accounts.DecodeBalances(bal)
+	if err != nil {
+		return err
 	}
 
 	return c.Render(http.StatusOK, c.Path(), result)
@@ -68,6 +64,5 @@ type ChainAccountTemplateParams struct {
 	ChainID iscp.ChainID
 	AgentID iscp.AgentID
 
-	Ok       bool
 	Balances colored.Balances
 }

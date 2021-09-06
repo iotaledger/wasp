@@ -75,7 +75,6 @@ func (c *chainObj) Dismiss(reason string) {
 		}
 		c.eventRequestProcessed.DetachAll()
 		c.eventChainTransition.DetachAll()
-		c.eventSynced.DetachAll()
 	})
 
 	publisher.Publish("dismissed_chain", c.chainID.Base58())
@@ -85,17 +84,39 @@ func (c *chainObj) IsDismissed() bool {
 	return c.dismissed.Load()
 }
 
+// ReceiveMessage accepts an incoming message asynchronously.
 func (c *chainObj) ReceiveMessage(msg interface{}) {
-	if !c.IsDismissed() {
-		select {
-		case c.chMsg <- msg:
-		default:
-			c.log.Warnf("ReceiveMessage with type '%T' failed. Retrying after %s", msg, chain.ReceiveMsgChannelRetryDelay)
-			go func() {
-				time.Sleep(chain.ReceiveMsgChannelRetryDelay)
-				c.ReceiveMessage(msg)
-			}()
+	c.receiveMessage(msg, false)
+}
+
+func (c *chainObj) receiveMessage(msg interface{}, blocking bool) {
+	if c.IsDismissed() {
+		return
+	}
+	defer func() { // This is needed to handle possible write to a closed channel.
+		r := recover()
+		if err, ok := r.(error); ok && err.Error() == "send on closed channel" {
+			c.log.Warnf("Failed to receive message, reason=%v", err)
+			return
 		}
+		if r != nil {
+			panic(r)
+		}
+	}()
+	if blocking {
+		c.chMsg <- msg
+		return
+	}
+	select {
+	case c.chMsg <- msg:
+		return
+	default:
+		overflowVal := c.chMsgOverflow.Inc()
+		c.log.Warnf("ReceiveMessage with type '%T' on full channel, current overflow=%v", msg, overflowVal)
+		go func() {
+			c.receiveMessage(msg, true)
+			c.chMsgOverflow.Dec()
+		}()
 	}
 }
 
@@ -260,10 +281,6 @@ func (c *chainObj) RequestProcessed() *events.Event {
 
 func (c *chainObj) ChainTransition() *events.Event {
 	return c.eventChainTransition
-}
-
-func (c *chainObj) StateSynced() *events.Event {
-	return c.eventSynced
 }
 
 func (c *chainObj) Events() chain.ChainEvents {

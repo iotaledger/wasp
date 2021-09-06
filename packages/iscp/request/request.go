@@ -50,6 +50,8 @@ type Metadata struct {
 	targetContract iscp.Hname
 	// entry point code
 	entryPoint iscp.Hname
+	// used to prevent identical outputs from being generated
+	requestNonce uint8
 	// request arguments, not decoded yet wrt blobRefs
 	args requestargs.RequestArgs
 }
@@ -82,6 +84,11 @@ func (p *Metadata) WithTarget(t iscp.Hname) *Metadata {
 
 func (p *Metadata) WithEntryPoint(ep iscp.Hname) *Metadata {
 	p.entryPoint = ep
+	return p
+}
+
+func (p *Metadata) WithRequestNonce(nonce uint8) *Metadata {
+	p.requestNonce = nonce
 	return p
 }
 
@@ -141,7 +148,8 @@ func (p *Metadata) Bytes() []byte {
 func (p *Metadata) WriteToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(p.senderContract).
 		Write(p.targetContract).
-		Write(p.entryPoint)
+		Write(p.entryPoint).
+		WriteByte(p.requestNonce)
 	p.args.WriteToMarshalUtil(mu)
 }
 
@@ -154,6 +162,9 @@ func (p *Metadata) ReadFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 		return err
 	}
 	if p.entryPoint, err = iscp.HnameFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	if p.requestNonce, err = mu.ReadByte(); err != nil {
 		return err
 	}
 	if p.args, err = requestargs.FromMarshalUtil(mu); err != nil {
@@ -170,6 +181,7 @@ type OnLedger struct {
 	outputObj       *ledgerstate.ExtendedLockedOutput
 	requestMetadata *Metadata
 	senderAddress   ledgerstate.Address
+	txTimestamp     time.Time    // Timestamp of the TX contaning this request.
 	params          atomic.Value // this part is mutable
 	minted          colored.Balances
 }
@@ -177,10 +189,11 @@ type OnLedger struct {
 // implements iscp.Request interface
 var _ iscp.Request = &OnLedger{}
 
-func OnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, minted ...colored.Balances) *OnLedger {
+func OnLedgerFromOutput(output *ledgerstate.ExtendedLockedOutput, senderAddr ledgerstate.Address, txTimestamp time.Time, minted ...colored.Balances) *OnLedger {
 	ret := &OnLedger{
 		outputObj:     output,
 		senderAddress: senderAddr,
+		txTimestamp:   txTimestamp,
 	}
 	ret.requestMetadata = MetadataFromBytes(output.GetPayload())
 	if len(minted) > 0 {
@@ -201,7 +214,7 @@ func OnLedgerFromTransaction(tx *ledgerstate.Transaction, targetAddr ledgerstate
 		if out, ok := o.(*ledgerstate.ExtendedLockedOutput); ok {
 			if out.Address().Equals(targetAddr) {
 				out1 := out.UpdateMintingColor().(*ledgerstate.ExtendedLockedOutput)
-				ret = append(ret, OnLedgerFromOutput(out1, senderAddr, mintedAmounts))
+				ret = append(ret, OnLedgerFromOutput(out1, senderAddr, tx.Essence().Timestamp(), mintedAmounts))
 			}
 		}
 	}
@@ -227,6 +240,7 @@ func (req *OnLedger) Bytes() []byte {
 func (req *OnLedger) writeToMarshalUtil(mu *marshalutil.MarshalUtil) {
 	mu.Write(req.Output()).
 		Write(req.senderAddress).
+		WriteTime(req.txTimestamp).
 		Write(req.requestMetadata).
 		Write(req.minted)
 }
@@ -238,6 +252,9 @@ func (req *OnLedger) readFromMarshalUtil(mu *marshalutil.MarshalUtil) error {
 		return err
 	}
 	if req.senderAddress, err = ledgerstate.AddressFromMarshalUtil(mu); err != nil {
+		return err
+	}
+	if req.txTimestamp, err = mu.ReadTime(); err != nil {
 		return err
 	}
 	req.requestMetadata = MetadataFromMarshalUtil(mu)
@@ -285,8 +302,21 @@ func (req *OnLedger) Target() (iscp.Hname, iscp.Hname) {
 	return req.requestMetadata.TargetContract(), req.requestMetadata.EntryPoint()
 }
 
+func (req *OnLedger) Timestamp() time.Time {
+	return req.txTimestamp
+}
+
 func (req *OnLedger) TimeLock() time.Time {
 	return req.outputObj.TimeLock()
+}
+
+func (req *OnLedger) FallbackAddress() ledgerstate.Address {
+	return req.outputObj.FallbackAddress()
+}
+
+func (req *OnLedger) FallbackDeadline() time.Time {
+	_, t := req.outputObj.FallbackOptions()
+	return t
 }
 
 func (req *OnLedger) SetMetadata(d *Metadata) {
@@ -498,9 +528,8 @@ func (req *OffLedger) Target() (iscp.Hname, iscp.Hname) {
 	return req.contract, req.entryPoint
 }
 
-// TimeLock returns time lock time or zero time if no time lock
-func (req *OffLedger) TimeLock() time.Time {
-	// no time lock, return zero time
+func (req *OffLedger) Timestamp() time.Time {
+	// no request TX, return zero time
 	return time.Time{}
 }
 
@@ -546,4 +575,19 @@ func SolidifyArgs(req iscp.Request, reg registry.BlobCache) (bool, error) {
 	}
 	sreq.SetParams(solid)
 	return true, nil
+}
+
+func RequestsInTransaction(chainID *iscp.ChainID, tx *ledgerstate.Transaction) []iscp.RequestID {
+	var reqs []iscp.RequestID
+	for _, out := range tx.Essence().Outputs() {
+		if !out.Address().Equals(chainID.AsAddress()) {
+			continue
+		}
+		out, ok := out.(*ledgerstate.ExtendedLockedOutput)
+		if !ok {
+			continue
+		}
+		reqs = append(reqs, iscp.RequestID(out.ID()))
+	}
+	return reqs
 }

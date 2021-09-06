@@ -17,3 +17,10 @@ func NewPeeringTrustedNode(tp *peering.TrustedPeer) *PeeringTrustedNode {
 		NetID:  tp.NetID,
 	}
 }
+
+type PeeringNodeStatus struct {
+	PubKey   string
+	NetID    string
+	IsAlive  bool
+	NumUsers int
+}

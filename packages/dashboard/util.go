@@ -26,6 +26,14 @@ func trim(max int, s string) string {
 	return s[1 : len(s)-1]
 }
 
+func incUint32(n uint32) uint32 {
+	return n + 1
+}
+
+func decUint32(n uint32) uint32 {
+	return n - 1
+}
+
 func bytesToString(b []byte) string {
 	return string(b)
 }

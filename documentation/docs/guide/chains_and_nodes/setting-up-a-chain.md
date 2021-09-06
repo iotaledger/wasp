@@ -82,7 +82,7 @@ The `--chain=mychain` sets up an alias for the chain. From now on all chain comm
 ## Testing If It Works
 
 You can check that the chain was properly deployed in the Wasp node dashboard
-(e.g. `127.0.0.1:7000`). Note that the chain was deployed with some [core contracts](../core_concepts/core-contracts.md).
+(e.g. `127.0.0.1:7000`). Note that the chain was deployed with some [core contracts](../core_concepts/core_contracts/overview.md).
 
 ### Deploying a Wasm Contract
 

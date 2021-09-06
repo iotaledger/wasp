@@ -4,6 +4,9 @@
 package iscp
 
 import (
+	"time"
+
+	"github.com/iotaledger/goshimmer/client/wallet/packages/sendoptions"
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
@@ -85,6 +88,14 @@ type SendOptions struct {
 	TimeLock         uint32 // unix seconds
 	FallbackAddress  ledgerstate.Address
 	FallbackDeadline uint32 // unix seconds
+}
+
+func (opt *SendOptions) ToGoshimmerSendOptions() *sendoptions.SendFundsOptions {
+	return &sendoptions.SendFundsOptions{
+		FallbackAddress:  opt.FallbackAddress,
+		FallbackDeadline: time.Unix(int64(opt.FallbackDeadline), 0),
+		LockUntil:        time.Unix(int64(opt.TimeLock), 0),
+	}
 }
 
 // RequestMetadata represents content of the data payload of the output

@@ -5,7 +5,6 @@ package chainimpl
 
 import (
 	"bytes"
-	logpkg "log"
 	"sync"
 	"time"
 
@@ -26,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -56,6 +56,7 @@ type chainObj struct {
 	stateReader                      state.OptimisticStateReader
 	procset                          *processors.Cache
 	chMsg                            chan interface{}
+	chMsgOverflow                    atomic.Int32 // To log a level of a channel overflow.
 	stateMgr                         chain.StateManager
 	consensus                        chain.Consensus
 	log                              *logger.Logger
@@ -68,7 +69,6 @@ type chainObj struct {
 	blobProvider                     registry.BlobCache
 	eventRequestProcessed            *events.Event
 	eventChainTransition             *events.Event
-	eventSynced                      *events.Event
 	peers                            *peering.PeerDomainProvider
 	offLedgerReqsAcksMutex           sync.RWMutex
 	offLedgerReqsAcks                map[iscp.RequestID][]string
@@ -96,13 +96,14 @@ func NewChain(
 	offledgerBroadcastUpToNPeers int,
 	offledgerBroadcastInterval time.Duration,
 	pullMissingRequestsFromCommittee bool,
+	chainMetrics metrics.ChainMetrics,
 ) chain.Chain {
 	log.Debugf("creating chain object for %s", chainID.String())
 
 	chainLog := log.Named(chainID.Base58()[:6] + ".")
 	chainStateSync := coreutil.NewChainStateSync()
 	ret := &chainObj{
-		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog),
+		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
 		chMsg:             make(chan interface{}, 100),
 		chainID:           *chainID,
@@ -122,9 +123,6 @@ func NewChain(
 		eventChainTransition: events.NewEvent(func(handler interface{}, params ...interface{}) {
 			handler.(func(_ *chain.ChainTransitionEventData))(params[0].(*chain.ChainTransitionEventData))
 		}),
-		eventSynced: events.NewEvent(func(handler interface{}, params ...interface{}) {
-			handler.(func(outputID ledgerstate.OutputID, blockIndex uint32))(params[0].(ledgerstate.OutputID), params[1].(uint32))
-		}),
 		offLedgerReqsAcks:                make(map[iscp.RequestID][]string),
 		offledgerBroadcastUpToNPeers:     offledgerBroadcastUpToNPeers,
 		offledgerBroadcastInterval:       offledgerBroadcastInterval,
@@ -132,7 +130,6 @@ func NewChain(
 	}
 	ret.committee.Store(&committeeStruct{})
 	ret.eventChainTransition.Attach(events.NewClosure(ret.processChainTransition))
-	ret.eventSynced.Attach(events.NewClosure(ret.processSynced))
 
 	peers, err := netProvider.PeerDomain(peerNetConfig.Neighbors())
 	if err != nil {
@@ -299,7 +296,8 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 				// The error means a database error. The optimistic state read failure can't occur here
 				// because the state transition message is only sent only after state is committed and before consensus
 				// start new round
-				logpkg.Panicf("processChainTransition. unexpected error: %v", err)
+				c.log.Panicf("processChainTransition. unexpected error: %v", err)
+				return // to avoid "possible nil pointer dereference" in later use of `reqids`
 			}
 			// remove processed requests from the mempool
 			c.log.Debugf("processChainTransition state %d cleaning state %d: removing %d requests", stateIndex, i, len(reqids))
@@ -350,10 +348,6 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 		c.log.Infof("publishNewBlockEvents: '%s'", msg)
 		publisher.Publish("vmmsg", c.chainID.Base58(), msg)
 	}
-}
-
-func (c *chainObj) processSynced(outputID ledgerstate.OutputID, blockIndex uint32) {
-	chain.LogSyncedEvent(outputID, blockIndex, c.log)
 }
 
 // processStateMessage processes the only chain output which exists on the chain's address

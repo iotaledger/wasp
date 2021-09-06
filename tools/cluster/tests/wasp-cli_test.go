@@ -23,6 +23,9 @@ func TestWaspCLINoChains(t *testing.T) {
 	w := newWaspCLITest(t)
 
 	w.Run("init")
+	if !*goShimmerUseProvidedNode {
+		w.Run("set", "goshimmer.faucetPoWTarget", "0")
+	}
 	w.Run("request-funds")
 
 	out := w.Run("address")
@@ -179,7 +182,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	t.Logf("%+v", out)
 	found = false
 	for _, line := range out {
-		if line == `Log: ""` { // log should be empty for successful request
+		if line == `Error: ""` { // error should be empty for successful request
 			found = true
 			break
 		}
@@ -194,7 +197,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	out = w.Run("chain", "request", reqID)
 	found = false
 	for _, line := range out {
-		if strings.Contains(line, "Log: ") {
+		if strings.Contains(line, "Error: ") {
 			found = true
 			require.Regexp(t, `mandatory parameter.*does not exist`, line)
 			break

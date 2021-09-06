@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/stretchr/testify/require"
 )
@@ -78,8 +79,8 @@ func TestOkCall(t *testing.T) {
 	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name,
-		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
+		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0)
 	req.WithIotas(2)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -94,8 +95,8 @@ func TestNoTokens(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 	chain.CheckControlAddresses()
 
-	req := solo.NewCallParams(root.Contract.Name, root.FuncSetDefaultFee.Name,
-		root.ParamOwnerFee, 0, root.ParamValidatorFee, 0)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetChainInfo.Name,
+		governance.ParamOwnerFee, 0, governance.ParamValidatorFee, 0)
 	_, err := chain.PostRequestSync(req, nil)
 	require.Error(t, err)
 	chain.CheckControlAddresses()

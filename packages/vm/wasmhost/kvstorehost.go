@@ -13,8 +13,9 @@ import (
 
 //nolint:revive
 const (
-	OBJTYPE_ARRAY int32 = 0x20
-	OBJTYPE_CALL  int32 = 0x40
+	OBJTYPE_ARRAY    int32 = 0x20
+	OBJTYPE_CALL     int32 = 0x40
+	OBJTYPE_TYPEMASK int32 = 0x0f
 
 	OBJTYPE_ADDRESS    int32 = 1
 	OBJTYPE_AGENT_ID   int32 = 2
@@ -203,7 +204,7 @@ func (host *KvStoreHost) PushFrame() []HostObject {
 	// create a fresh slice to allow garbage collection
 	// it's up to the caller to save and/or restore the old frame
 	pushed := host.objIDToObj
-	host.objIDToObj = make([]HostObject, 2, 16) //nolint:gomnd
+	host.objIDToObj = make([]HostObject, 2, 16)
 	copy(host.objIDToObj, pushed[:2])
 	return pushed
 }

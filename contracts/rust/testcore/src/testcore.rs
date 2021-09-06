@@ -360,7 +360,7 @@ pub fn view_test_panic_view_ep(ctx: &ScViewContext) {
 
 pub fn view_test_sandbox_call(ctx: &ScViewContext) {
     ctx.log("testcore.testSandboxCall");
-    let ret = ctx.call(corecontracts::coreroot::HSC_NAME, corecontracts::coreroot::HVIEW_GET_CHAIN_INFO, None);
+    let ret = ctx.call(corecontracts::coregovernance::HSC_NAME, corecontracts::coregovernance::HVIEW_GET_CHAIN_INFO, None);
     let desc = ret.get_string("d").value();
     ctx.results().get_string(RESULT_SANDBOX_CALL).set_value(&desc);
     ctx.log("testcore.testSandboxCall ok");

@@ -5,10 +5,14 @@ package testcore
 
 import (
 	"testing"
+	"time"
 
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -43,7 +47,7 @@ func TestAccountsBase1(t *testing.T) {
 
 	newOwner, ownerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := iscp.NewAgentID(ownerAddr, 0)
-	req := solo.NewCallParams(root.Contract.Name, root.FuncDelegateChainOwnership.Name, root.ParamChainOwner, newOwnerAgentID)
+	req := solo.NewCallParams(governance.Contract.Name, governance.FuncDelegateChainOwnership.Name, governance.ParamChainOwner, newOwnerAgentID)
 	req.WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -53,7 +57,7 @@ func TestAccountsBase1(t *testing.T) {
 	chain.AssertIotas(chain.ContractAgentID(root.Contract.Name), 0)
 	chain.CheckAccountLedger()
 
-	req = solo.NewCallParams(root.Contract.Name, root.FuncClaimChainOwnership.Name).WithIotas(1)
+	req = solo.NewCallParams(governance.Contract.Name, governance.FuncClaimChainOwnership.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
@@ -172,4 +176,42 @@ func TestAccountsDepositToCommon(t *testing.T) {
 
 	chain.AssertTotalIotas(43)
 	chain.AssertCommonAccountIotas(43)
+}
+
+func getAccountNonce(t *testing.T, chain *solo.Chain, address ledgerstate.Address) uint64 {
+	ret, err := chain.CallView(accounts.Contract.Name, accounts.FuncGetAccountNonce.Name,
+		accounts.ParamAgentID, iscp.NewAgentID(address, 0),
+	)
+	require.NoError(t, err)
+	nonce, _, err := codec.DecodeUint64(ret.MustGet(accounts.ParamAccountNonce))
+	require.NoError(t, err)
+	return nonce
+}
+
+func TestGetAccountNonce(t *testing.T) {
+	env := solo.New(t, false, false)
+	chain := env.NewChain(nil, "chain1")
+
+	userWallet, userAddress := env.NewKeyPairWithFunds()
+
+	// initial nonce should be 0
+	require.Zero(t, getAccountNonce(t, chain, userAddress))
+
+	// deposit funds to be able to issue offledger requests
+	_, err := chain.PostRequestSync(
+		solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(1000),
+		userWallet,
+	)
+	require.NoError(t, err)
+	require.Zero(t, getAccountNonce(t, chain, userAddress))
+
+	nowNanoTs := uint64(time.Now().UnixNano())
+
+	// offledger requests are constructed with nonce = current TS in nanoseconds
+	chain.PostRequestOffLedger(
+		solo.NewCallParams("", "").WithIotas(100),
+		userWallet,
+	)
+
+	require.GreaterOrEqual(t, getAccountNonce(t, chain, userAddress), nowNanoTs)
 }

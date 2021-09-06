@@ -58,7 +58,7 @@ func (d *DomainImpl) SendMsgByNetID(netID string, msg *peering.PeerMessage) {
 	defer d.mutex.RUnlock()
 	peer, ok := d.nodes[netID]
 	if !ok {
-		d.log.Warnf("SendMsgByNetID: wrong netID %s", netID)
+		d.log.Warnf("SendMsgByNetID: NetID %v is not in the domain", netID)
 		return
 	}
 	peer.SendMsg(msg)
@@ -97,6 +97,9 @@ func (d *DomainImpl) SendMsgToRandomPeersSimple(upToNumPeers uint16, msgType byt
 func (d *DomainImpl) GetRandomPeers(upToNumPeers int) []string {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
+	if upToNumPeers > len(d.netIDs) {
+		upToNumPeers = len(d.netIDs)
+	}
 	ret := make([]string, upToNumPeers)
 	for i := range ret {
 		ret[i] = d.netIDs[d.permutation.Next()]
@@ -120,6 +123,7 @@ func (d *DomainImpl) AddPeer(netID string) error {
 	}
 	d.nodes[netID] = peer
 	d.reshufflePeers()
+
 	return nil
 }
 

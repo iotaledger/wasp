@@ -15,6 +15,7 @@ fn on_load() {
     exports.add_func(FUNC_CALL_INCREMENT_RECURSE5X, func_call_increment_recurse5x);
     exports.add_func(FUNC_ENDLESS_LOOP, func_endless_loop);
     exports.add_func(FUNC_INCREMENT, func_increment);
+    exports.add_func(FUNC_INCREMENT_WITH_DELAY, func_increment_with_delay);
     exports.add_func(FUNC_INIT, func_init);
     exports.add_func(FUNC_LOCAL_STATE_INTERNAL_CALL, func_local_state_internal_call);
     exports.add_func(FUNC_LOCAL_STATE_POST, func_local_state_post);

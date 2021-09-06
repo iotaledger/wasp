@@ -3,17 +3,13 @@ package inccounter
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/assert"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
-	"github.com/iotaledger/wasp/packages/vm/core"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 var Contract = coreutil.NewContract("inccounter", "Increment counter, a PoC smart contract")
@@ -84,7 +80,7 @@ func incCounterAndRepeatOnce(ctx iscp.Sandbox) (dict.Dict, error) {
 		TargetContract: ctx.Contract(),
 		EntryPoint:     FuncIncCounter.Hname(),
 	}, iscp.SendOptions{
-		TimeLock: 5 * 60,
+		TimeLock: 5,
 	}) {
 		return nil, fmt.Errorf("incCounterAndRepeatOnce: not enough funds")
 	}
@@ -153,12 +149,6 @@ func spawn(ctx iscp.Sandbox) (dict.Dict, error) {
 	_, err = ctx.Call(hname, FuncIncCounter.Hname(), nil, nil)
 	a.RequireNoError(err)
 
-	res, err := ctx.Call(root.Contract.Hname(), root.FuncGetChainInfo.Hname(), nil, nil)
-	a.RequireNoError(err)
-
-	creg := collections.NewMapReadOnly(res, root.VarContractRegistry)
-	a.Require(int(creg.MustLen()) == len(core.AllCoreContractsByHash)+2, "unexpected contract registry len %d", creg.MustLen())
-	ctx.Log().Debugf("inccounter.spawn: new contract name = %s hname = %s", name, hname.String())
 	return nil, nil
 }
 

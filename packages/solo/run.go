@@ -94,7 +94,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict
 	if task.RotationAddress == nil {
 		// normal state transition
 		ch.State = task.VirtualState
-		ch.settleStateTransition(tx, stateOutput, iscp.TakeRequestIDs(reqs...))
+		ch.settleStateTransition(tx, stateOutput, iscp.TakeRequestIDs(reqs[0:task.ProcessedRequestsCount]...))
 	} else {
 		ch.Log.Infof("ROTATED STATE CONTROLLER to %s", stateOutput.GetStateAddress().Base58())
 	}

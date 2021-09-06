@@ -1,3 +1,6 @@
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 package consensus
 
 import (
@@ -96,29 +99,18 @@ func (c *Consensus) runVMIfNeeded() {
 	c.missingRequestsFromBatch = make(map[iscp.RequestID][32]byte) // reset list of missing requests
 
 	if !allArrived {
-		// some requests are not ready, so skip VM call this time. Maybe next time will be more luck
-		c.delayRunVMUntil = time.Now().Add(c.timers.VMRunRetryToWaitForReadyRequests)
-		c.log.Infof("runVM not needed: some requests didn't arrive yet. batch IDs: %v | batch Hashes: %v | missing indexes: %v", c.consensusBatch.RequestIDs, c.consensusBatch.RequestHashes, missingRequestIndexes)
-
-		// send message to other committee nodes asking for the missing requests
-		if !c.pullMissingRequestsFromCommittee {
-			return
-		}
-		missingRequestIds := []iscp.RequestID{}
-		for _, idx := range missingRequestIndexes {
-			reqID := c.consensusBatch.RequestIDs[idx]
-			reqHash := c.consensusBatch.RequestHashes[idx]
-			c.missingRequestsFromBatch[reqID] = reqHash
-			missingRequestIds = append(missingRequestIds, reqID)
-		}
-		c.log.Debugf("runVMIfNeeded: asking for missing requests, ids: %v", missingRequestIds)
-		msgData := messages.NewMissingRequestIDsMsg(missingRequestIds).Bytes()
-		c.committee.SendMsgToPeers(messages.MsgMissingRequestIDs, msgData, time.Now().UnixNano())
+		c.pollMissingRequests(missingRequestIndexes)
 		return
 	}
 	if len(reqs) == 0 {
 		// due to change in time, all requests became non processable ACS must be run again
 		c.log.Debugf("runVM not needed: empty list of processable requests. Reset workflow")
+		c.resetWorkflow()
+		return
+	}
+
+	if err := c.consensusBatch.EnsureTimestampConsistent(reqs, c.stateTimestamp); err != nil {
+		c.log.Errorf("Unable to ensure consistent timestamp: %v", err)
 		c.resetWorkflow()
 		return
 	}
@@ -151,6 +143,30 @@ func (c *Consensus) runVMIfNeeded() {
 	} else {
 		c.log.Errorf("runVM: error preparing VM task")
 	}
+}
+
+func (c *Consensus) pollMissingRequests(missingRequestIndexes []int) {
+	// some requests are not ready, so skip VM call this time. Maybe next time will be more luck
+	c.delayRunVMUntil = time.Now().Add(c.timers.VMRunRetryToWaitForReadyRequests)
+	c.log.Infof( // Was silently failing when entire arrays were logged instead of counts.
+		"runVM not needed: some requests didn't arrive yet. #BatchRequestIDs: %v | #BatchHashes: %v | #MissingIndexes: %v",
+		len(c.consensusBatch.RequestIDs), len(c.consensusBatch.RequestHashes), len(missingRequestIndexes),
+	)
+
+	// send message to other committee nodes asking for the missing requests
+	if !c.pullMissingRequestsFromCommittee {
+		return
+	}
+	missingRequestIds := []iscp.RequestID{}
+	for _, idx := range missingRequestIndexes {
+		reqID := c.consensusBatch.RequestIDs[idx]
+		reqHash := c.consensusBatch.RequestHashes[idx]
+		c.missingRequestsFromBatch[reqID] = reqHash
+		missingRequestIds = append(missingRequestIds, reqID)
+	}
+	c.log.Debugf("runVMIfNeeded: asking for missing requests, ids: %v", missingRequestIds)
+	msgData := messages.NewMissingRequestIDsMsg(missingRequestIds).Bytes()
+	c.committee.SendMsgToPeers(messages.MsgMissingRequestIDs, msgData, time.Now().UnixNano())
 }
 
 // sortBatch deterministically sorts batch based on the value extracted from the consensus entropy
@@ -360,7 +376,7 @@ func (c *Consensus) postTransactionIfNeeded() {
 	}
 	go c.nodeConn.PostTransaction(c.finalTx)
 
-	c.workflow.transactionPosted = true
+	c.workflow.transactionPosted = true // TODO: Fix it, retries should be in place for robustness.
 	c.log.Infof("postTransaction: POSTED TRANSACTION: %s, number of inputs: %d, outputs: %d", c.finalTx.ID().Base58(), len(c.finalTx.Essence().Inputs()), len(c.finalTx.Essence().Outputs()))
 }
 
@@ -509,7 +525,7 @@ func (c *Consensus) receiveACS(values [][]byte, sessionID uint64) {
 		StateOutputID:       c.stateOutput.ID(),
 		RequestIDs:          inBatchIDs,
 		RequestHashes:       inBatchHashes,
-		Timestamp:           par.medianTs,
+		Timestamp:           par.timestamp, // It will be possibly adjusted later, when all requests are received.
 		ConsensusManaPledge: par.consensusPledge,
 		AccessManaPledge:    par.accessPledge,
 		FeeDestination:      par.feeDestination,

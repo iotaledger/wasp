@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/wasmhost"
 )
 
@@ -126,7 +125,8 @@ func (o *ScDict) Exists(keyID, typeID int32) bool {
 	if o.typeID == (wasmhost.OBJTYPE_ARRAY | wasmhost.OBJTYPE_MAP) {
 		return uint32(keyID) <= uint32(len(o.objects))
 	}
-	return o.kvStore.MustHas(o.key(keyID, typeID))
+	ret, _ := o.kvStore.Has(o.key(keyID, typeID))
+	return ret
 }
 
 func (o *ScDict) FindOrMakeObjectID(keyID int32, factory ObjFactory) int32 {
@@ -140,6 +140,10 @@ func (o *ScDict) FindOrMakeObjectID(keyID int32, factory ObjFactory) int32 {
 	o.objects[keyID] = objID
 	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
 		o.length++
+		if o.kvStore != nil {
+			key := o.NestedKey()[1:]
+			o.kvStore.Set(kv.Key(key), codec.EncodeInt32(o.length))
+		}
 	}
 	return objID
 }
@@ -165,7 +169,7 @@ func (o *ScDict) GetObjectID(keyID, typeID int32) int32 {
 
 func (o *ScDict) GetTypeID(keyID int32) int32 {
 	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
-		return o.typeID &^ wasmhost.OBJTYPE_ARRAY
+		return o.typeID & wasmhost.OBJTYPE_TYPEMASK
 	}
 	// TODO incomplete, currently only contains used field types
 	typeID, ok := o.types[keyID]
@@ -215,11 +219,11 @@ func (o *ScDict) SetBytes(keyID, typeID int32, bytes []byte) {
 	if keyID == wasmhost.KeyLength {
 		if o.kvStore != nil {
 			// TODO this goes wrong for state, should clear map tree instead
-			o.kvStore = dict.New()
-			//if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
-			//	key := o.NestedKey()[1:]
-			//	o.kvStore.Del(kv.Key(key))
-			//}
+			// o.kvStore = dict.New()
+			if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
+				key := o.NestedKey()[1:]
+				o.kvStore.Set(kv.Key(key), codec.EncodeInt32(0))
+			}
 		}
 		o.objects = make(map[int32]int32)
 		o.length = 0
@@ -281,7 +285,7 @@ func (o *ScDict) validate(keyID, typeID int32) {
 	}
 	if (o.typeID & wasmhost.OBJTYPE_ARRAY) != 0 {
 		// actually array
-		arrayTypeID := o.typeID &^ wasmhost.OBJTYPE_ARRAY
+		arrayTypeID := o.typeID & wasmhost.OBJTYPE_TYPEMASK
 		if typeID == wasmhost.OBJTYPE_BYTES {
 			switch arrayTypeID {
 			case wasmhost.OBJTYPE_ADDRESS:
@@ -296,12 +300,15 @@ func (o *ScDict) validate(keyID, typeID int32) {
 			o.Panic("validate: Invalid type")
 		}
 		if keyID == o.length {
-			o.length++
-			if o.kvStore != nil {
+			switch o.kvStore.(type) {
+			case *ScViewState:
+				break
+			default:
+				o.length++
 				key := o.NestedKey()[1:]
 				o.kvStore.Set(kv.Key(key), codec.EncodeInt32(o.length))
+				return
 			}
-			return
 		}
 		if keyID < 0 || keyID >= o.length {
 			o.Panic("validate: Invalid index")

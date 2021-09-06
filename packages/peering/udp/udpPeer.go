@@ -152,6 +152,9 @@ func (p *peer) maintenanceCheck() {
 		p.sendHandshake(true)
 	} else {
 		p.accessLock.RUnlock()
+		// if p.numUsers == 0 && p.lastMsgRecv.Before(old) {
+		// TODO: Do a peer cleanup.
+		// }
 	}
 }
 

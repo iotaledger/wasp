@@ -13,7 +13,7 @@ import (
 var defaultConfig = cluster.DefaultConfig()
 
 var (
-	numNodes                 = flag.Int("num-nodes", 4, "amount of wasp nodes") //nolint:gomnd
+	numNodes                 = flag.Int("num-nodes", 4, "amount of wasp nodes")
 	goShimmerUseProvidedNode = flag.Bool("goshimmer-use-provided-node", defaultConfig.Goshimmer.UseProvidedNode, "If false (default), a mocked version of Goshimmer will be used")
 	goShimmerHostname        = flag.String("goshimmer-hostname", defaultConfig.Goshimmer.Hostname, "Goshimmer hostname")
 	goShimmerPort            = flag.Int("goshimmer-txport", defaultConfig.Goshimmer.TxStreamPort, "Goshimmer port")
@@ -32,6 +32,9 @@ func newCluster(t *testing.T, opt ...interface{}) *cluster.Cluster {
 
 	config.Goshimmer.Hostname = *goShimmerHostname
 	config.Goshimmer.UseProvidedNode = *goShimmerUseProvidedNode
+	if *goShimmerUseProvidedNode {
+		config.Goshimmer.FaucetPoWTarget = -1
+	}
 	config.Goshimmer.TxStreamPort = *goShimmerPort
 
 	nNodes := *numNodes

@@ -20,8 +20,10 @@ import (
 )
 
 // program has is an id of the program
-const ProgramHash = "4NbQFgvnsfgE3n9ZhtJ3p9hWZzfYUEDHfKU93wp8UowB"
-const Description = "FairAuction, a PoC smart contract"
+const (
+	ProgramHash = "4NbQFgvnsfgE3n9ZhtJ3p9hWZzfYUEDHfKU93wp8UowB"
+	Description = "FairAuction, a PoC smart contract"
+)
 
 // implement VMProcessor and VMProcessorEntryPoint interfaces
 
@@ -345,7 +347,7 @@ func startAuction(ctx iscp.Sandbox) error {
 		TimeLock:         uint32(duration * 60),
 		Params:           args,
 	})
-	//logToSC(ctx, fmt.Sprintf("start auction. For sale %d tokens of color %s. Minimum bid: %di. Duration %d minutes",
+	// logToSC(ctx, fmt.Sprintf("start auction. For sale %d tokens of color %s. Minimum bid: %di. Duration %d minutes",
 	//	tokensForSale, colorForSale.String(), minimumBid, duration))
 
 	ctx.Event(fmt.Sprintf("startAuction: success. Auction: '%s', color: %s, duration: %d",
@@ -430,13 +432,13 @@ func placeBid(ctx iscp.Sandbox) error {
 			Bidder: sender,
 			When:   ctx.GetTimestamp(),
 		})
-		//logToSC(ctx, fmt.Sprintf("place bid. Auction color %s, total %di", col.String(), bidAmount))
+		// logToSC(ctx, fmt.Sprintf("place bid. Auction color %s, total %di", col.String(), bidAmount))
 	} else {
 		// bidder has bid already. Treated it as a rise
 		bi.Total += bidAmount
 		bi.When = ctx.GetTimestamp()
 
-		//logToSC(ctx, fmt.Sprintf("rise bid. Auction color %s, total %di", col.String(), bi.Total))
+		// logToSC(ctx, fmt.Sprintf("rise bid. Auction color %s, total %di", col.String(), bi.Total))
 	}
 	// marshal the whole auction info and save it into the state (the dictionary of auctions)
 	data = util.MustBytes(ai)
@@ -506,7 +508,7 @@ func finalizeAuction(ctx iscp.Sandbox) error {
 	}
 
 	var winner *BidInfo
-	//var winnerIndex int
+	// var winnerIndex int
 
 	// SC owner takes OwnerMargin (promille) fee from either minimum bid or from winning sum but not less than 1i
 	ownerFee := (ai.MinimumBid * ai.OwnerMargin) / 1000
@@ -543,8 +545,8 @@ func finalizeAuction(ctx iscp.Sandbox) error {
 	}
 
 	// take fee for the smart contract owner TODO
-	//feeTaken := ctx.AccessSCAccount().HarvestFees(ownerFee - 1)
-	//ctx.Event(fmt.Sprintf("finalizeAuction: harvesting SC owner fee: %d (+1 self request token left in SC)", feeTaken))
+	// feeTaken := ctx.AccessSCAccount().HarvestFees(ownerFee - 1)
+	// ctx.Event(fmt.Sprintf("finalizeAuction: harvesting SC owner fee: %d (+1 self request token left in SC)", feeTaken))
 
 	if winner != nil {
 		// send sold tokens to the winner
@@ -625,10 +627,10 @@ func setOwnerMargin(ctx iscp.Sandbox) error {
 // refundFromRequest returns all tokens of the given color to the sender minus sunkFee
 func refundFromRequest(ctx iscp.Sandbox, color ledgerstate.Color, harvest int64) {
 	// TODO
-	//account := ctx.AccessSCAccount()
-	//ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
-	//available := account.AvailableBalanceFromRequest(color)
-	//sender := ctx.Caller()
-	//ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
-	//account.MoveTokensFromRequest(&sender, color, available)
+	// account := ctx.AccessSCAccount()
+	// ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
+	// available := account.AvailableBalanceFromRequest(color)
+	// sender := ctx.Caller()
+	// ctx.AccessSCAccount().HarvestFeesFromRequest(harvest)
+	// account.MoveTokensFromRequest(&sender, color, available)
 }

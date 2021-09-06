@@ -99,6 +99,11 @@ func viewGetRequestIDsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	blockIndex := params.MustGetUint32(ParamBlockIndex)
 
+	if blockIndex == 0 {
+		// block 0 is an empty state
+		return dict.Dict{}, nil
+	}
+
 	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
 	a.RequireNoError(err)
 	a.Require(found, "not found")
@@ -117,6 +122,11 @@ func viewGetRequestReceiptsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	a := assert.NewAssert(ctx.Log())
 	blockIndex := params.MustGetUint32(ParamBlockIndex)
+
+	if blockIndex == 0 {
+		// block 0 is an empty state
+		return dict.Dict{}, nil
+	}
 
 	dataArr, found, err := getRequestLogRecordsForBlockBin(ctx.State(), blockIndex)
 	a.RequireNoError(err)
@@ -170,6 +180,11 @@ func viewGetEventsForRequest(ctx iscp.SandboxView) (dict.Dict, error) {
 func viewGetEventsForBlock(ctx iscp.SandboxView) (dict.Dict, error) {
 	params := kvdecoder.New(ctx.Params())
 	blockIndex := params.MustGetUint32(ParamBlockIndex)
+
+	if blockIndex == 0 {
+		// block 0 is an empty state
+		return dict.Dict{}, nil
+	}
 
 	events, err := GetBlockEventsInternal(ctx.State(), blockIndex)
 	if err != nil {

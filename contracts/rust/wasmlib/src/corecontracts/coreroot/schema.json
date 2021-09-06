@@ -2,72 +2,43 @@
   "name": "CoreRoot",
   "description": "Core root contract",
   "funcs": {
-    "claimChainOwnership": {
-    },
-    "delegateChainOwnership": {
+    "init": {
       "params": {
-        "chainOwner=$$owner$$": "AgentID"
+        "chainID=ci": "ChainID",
+        "description=ds": "?String // default 'N/A'"
       }
     },
     "deployContract": {
       "params": {
-        "programHash=$$proghash$$": "Hash //TODO variable init params for deployed contract",
-        "name=$$name$$": "String",
-        "description=$$description$$": "?String // default 'N/A'"
+        "programHash=ph": "Hash //TODO variable init params for deployed contract",
+        "name=nm": "String",
+        "description=ds": "?String // default 'N/A'"
       }
     },
     "grantDeployPermission": {
       "params": {
-        "deployer=$$deployer$$": "AgentID"
+        "deployer=dp": "AgentID"
       }
     },
     "revokeDeployPermission": {
       "params": {
-        "deployer=$$deployer$$": "AgentID"
-      }
-    },
-    "setContractFee": {
-      "params": {
-        "hname=$$hname$$": "Hname // contract id",
-        "ownerFee=$$ownerfee$$": "?Int64 // default 0 (no fee)",
-        "validatorFee=$$validatorfee$$": "?Int64 // default 0 (no fee)"
-      }
-    },
-    "setDefaultFee": {
-      "params": {
-        "ownerFee=$$ownerfee$$": "?Int64 // default -1 (not set)",
-        "validatorFee=$$validatorfee$$": "?Int64 // default -1 (not set)"
+        "deployer=dp": "AgentID"
       }
     }
   },
   "views": {
     "findContract": {
       "params": {
-        "hname=$$hname$$": "Hname"
+        "hname=hn": "Hname"
       },
       "results": {
-        "data=dt": "Bytes // encoded contract record"
+        "contractFound=cf": "Bytes // encoded contract record",
+        "contractRecData=dt": "Bytes // encoded contract record"
       }
     },
-    "getChainInfo": {
+    "getContractRecords": {
       "results": {
-        "chainID=c": "ChainID",
-        "chainOwnerID=o": "AgentID",
-        "description=d": "String",
-        "feeColor=f": "Color",
-        "defaultOwnerFee=do": "Int64",
-        "defaultValidatorFee=dv": "Int64",
         "contractRegistry=r": "[Hname]Bytes // contract records"
-      }
-    },
-    "getFeeInfo": {
-      "params": {
-        "hname=$$hname$$": "Hname"
-      },
-      "results": {
-        "feeColor=f": "Color",
-        "ownerFee=of": "Int64",
-        "validatorFee=vf": "Int64"
       }
     }
   }

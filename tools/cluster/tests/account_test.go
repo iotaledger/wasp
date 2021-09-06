@@ -31,17 +31,26 @@ func TestBasicAccounts(t *testing.T) {
 	newChainEnv(t, e.clu, chain).testBasicAccounts(counter)
 }
 
-func TestBasicAccountsN1(t *testing.T) {
-	e := setupWithNoChain(t)
-	chainNodes := []int{0}
-	counter, err := cluster.NewMessageCounter(e.clu, chainNodes, map[string]int{
-		"state": 3,
-	})
-	require.NoError(t, err)
-	defer counter.Close()
-	chain, err := e.clu.DeployChainWithDKG("single_node_chain", chainNodes, chainNodes, 1)
-	require.NoError(t, err)
-	newChainEnv(t, e.clu, chain).testBasicAccounts(counter)
+func TestBasicAccountsNLow(t *testing.T) {
+	runTest := func(tt *testing.T, n, t int) {
+		e := setupWithNoChain(tt)
+		chainNodes := make([]int, n)
+		for i := range chainNodes {
+			chainNodes[i] = i
+		}
+		counter, err := cluster.NewMessageCounter(e.clu, chainNodes, map[string]int{
+			"state": 3,
+		})
+		require.NoError(tt, err)
+		defer counter.Close()
+		chain, err := e.clu.DeployChainWithDKG(fmt.Sprintf("low_node_chain_%v_%v", n, t), chainNodes, chainNodes, uint16(t))
+		require.NoError(tt, err)
+		newChainEnv(tt, e.clu, chain).testBasicAccounts(counter)
+	}
+	t.Run("N=1", func(tt *testing.T) { runTest(tt, 1, 1) })
+	t.Run("N=2", func(tt *testing.T) { runTest(tt, 2, 2) })
+	t.Run("N=3", func(tt *testing.T) { runTest(tt, 3, 3) })
+	t.Run("N=4", func(tt *testing.T) { runTest(tt, 4, 3) })
 }
 
 func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
@@ -76,7 +85,6 @@ func (e *chainEnv) testBasicAccounts(counter *cluster.MessageCounter) {
 
 		require.EqualValues(e.t, programHash1, cr.ProgramHash)
 		require.EqualValues(e.t, description, cr.Description)
-		require.EqualValues(e.t, 0, cr.OwnerFee)
 		require.EqualValues(e.t, incCounterSCName, cr.Name)
 
 		counterValue, err := e.chain.GetCounterValue(hname, i)
@@ -166,7 +174,6 @@ func TestBasic2Accounts(t *testing.T) {
 
 		require.EqualValues(t, programHash1, cr.ProgramHash)
 		require.EqualValues(t, description, cr.Description)
-		require.EqualValues(t, 0, cr.OwnerFee)
 		require.EqualValues(t, incCounterSCName, cr.Name)
 
 		counterValue, err := chain.GetCounterValue(hname, i)

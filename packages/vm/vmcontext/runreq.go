@@ -5,20 +5,17 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
-	"github.com/iotaledger/wasp/packages/kv/optimism"
-
-	"github.com/iotaledger/wasp/packages/kv"
-	"golang.org/x/xerrors"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/request"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"golang.org/x/xerrors"
 )
 
 // TODO temporary place for the constant. In the future must be shared with pruning module
@@ -32,6 +29,8 @@ const OffLedgerNonceStrictOrderTolerance = 10000
 func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 	defer vmctx.mustFinalizeRequestCall()
 
+	// snapshot tx builder to be able to rollbck and not include this request in the current block
+	snapshotTxBuilderWithoutInput := vmctx.txBuilder.Clone()
 	vmctx.mustSetUpRequestContext(req, requestIndex)
 
 	// guard against replaying off-ledger requests here to prevent replaying fee deduction
@@ -43,7 +42,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 	if vmctx.isInitChainRequest() {
 		vmctx.chainOwnerID = *vmctx.req.SenderAccount().Clone()
 	} else {
-		vmctx.mustGetBaseValuesFromState()
+		vmctx.getChainConfigFromState()
 		enoughFees := vmctx.mustHandleFees()
 		if !enoughFees {
 			return
@@ -79,6 +78,15 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 		vmctx.mustCallFromRequest()
 	}()
 
+	if vmctx.blockOutputCount > MaxBlockOutputCount {
+		vmctx.exceededBlockOutputLimit = true
+		vmctx.blockOutputCount -= vmctx.requestOutputCount
+		vmctx.Debugf("outputs produced by this request do not fit inside the current block, reqID: %s", vmctx.req.ID().Base58())
+		// rollback request processing, don't consume output or send funds back as this request should be processed in a following batch
+		vmctx.txBuilder = snapshotTxBuilderWithoutInput
+		vmctx.currentStateUpdate = state.NewStateUpdate()
+	}
+
 	if vmctx.lastError != nil {
 		// treating panic and error returned from request the same way
 		// restore the txbuilder and dispose mutations in the last state update
@@ -97,7 +105,11 @@ func (vmctx *VMContext) mustSetUpRequestContext(req iscp.Request, requestIndex u
 	vmctx.req = req
 	vmctx.requestIndex = requestIndex
 	vmctx.requestEventIndex = 0
+	vmctx.requestOutputCount = 0
+	vmctx.exceededBlockOutputLimit = false
+
 	if !req.IsOffLedger() {
+		vmctx.txBuilder.AddConsumable(vmctx.req.(*request.OnLedger).Output())
 		if err := vmctx.txBuilder.ConsumeInputByOutputID(req.(*request.OnLedger).Output().ID()); err != nil {
 			vmctx.log.Panicf("mustSetUpRequestContext.inconsistency : %v", err)
 		}
@@ -271,7 +283,7 @@ func (vmctx *VMContext) mustSendBack(tokens colored.Balances) {
 	backToAddress := sender.Address()
 	backToContract := sender.Hname()
 	metadata := request.NewMetadata().WithTarget(backToContract)
-	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), colored.ToL1Map(tokens))
+	err := vmctx.txBuilder.AddExtendedOutputSpend(backToAddress, metadata.Bytes(), colored.ToL1Map(tokens), nil)
 	if err != nil {
 		vmctx.log.Errorf("mustSendBack: %v", err)
 	}
@@ -301,6 +313,9 @@ func (vmctx *VMContext) mustUpdateOffledgerRequestMaxAssumedNonce() {
 }
 
 func (vmctx *VMContext) mustFinalizeRequestCall() {
+	if vmctx.exceededBlockOutputLimit {
+		return
+	}
 	vmctx.mustLogRequestToBlockLog(vmctx.lastError) // panic not caught
 	vmctx.lastTotalAssets = vmctx.totalAssets()
 
@@ -314,13 +329,15 @@ func (vmctx *VMContext) mustFinalizeRequestCall() {
 	)
 }
 
-// mustGetBaseValuesFromState only makes sense if chain is already deployed
-func (vmctx *VMContext) mustGetBaseValuesFromState() {
-	info := vmctx.mustGetChainInfo()
-	if !info.ChainID.Equals(&vmctx.chainID) {
-		vmctx.log.Panicf("mustSetUpRequestContext: major inconsistency of chainID")
+// getChainConfigFromState only makes sense if chain is already deployed
+func (vmctx *VMContext) getChainConfigFromState() {
+	cfg := vmctx.getChainInfo()
+	if !cfg.ChainID.Equals(&vmctx.chainID) {
+		vmctx.log.Panicf("getChainConfigFromState: major inconsistency of chainID")
 	}
-	vmctx.chainOwnerID = info.ChainOwnerID
+	vmctx.chainOwnerID = cfg.ChainOwnerID
+	vmctx.maxEventSize = cfg.MaxEventSize
+	vmctx.maxEventsPerReq = cfg.MaxEventsPerReq
 	vmctx.feeColor, vmctx.ownerFee, vmctx.validatorFee = vmctx.getFeeInfo()
 }
 
@@ -330,8 +347,11 @@ func (vmctx *VMContext) isInitChainRequest() bool {
 }
 
 func isRequestTimeLockedNow(req iscp.Request, nowis time.Time) bool {
-	if req.TimeLock().IsZero() {
+	if req.IsOffLedger() {
 		return false
 	}
-	return req.TimeLock().After(nowis)
+	if req.(*request.OnLedger).TimeLock().IsZero() {
+		return false
+	}
+	return req.(*request.OnLedger).TimeLock().After(nowis)
 }

@@ -6,9 +6,11 @@ import (
 	"net/http"
 
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/labstack/echo/v4"
 )
@@ -25,12 +27,12 @@ func (d *Dashboard) initChainContract(e *echo.Echo, r renderer) {
 func (d *Dashboard) handleChainContract(c echo.Context) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	hname, err := iscp.HnameFromString(c.Param("hname"))
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	result := &ChainContractTemplateParams{
@@ -43,40 +45,52 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 		Hname:   hname,
 	}
 
-	chain := d.wasp.GetChain(chainID)
-	if chain != nil {
-		r, err := d.wasp.CallView(chain, root.Contract.Hname(), root.FuncFindContract.Name, codec.MakeDict(map[string]interface{}{
-			root.ParamHname: codec.EncodeHname(hname),
-		}))
-		if err != nil {
-			return err
-		}
-		result.ContractRecord, err = root.ContractRecordFromBytes(r[root.ParamContractRecData])
-		if err != nil {
-			return err
-		}
+	r, err := d.wasp.CallView(chainID, root.Contract.Name, root.FuncFindContract.Name, codec.MakeDict(map[string]interface{}{
+		root.ParamHname: codec.EncodeHname(hname),
+	}))
+	if err != nil {
+		return err
+	}
+	result.ContractRecord, err = root.ContractRecordFromBytes(r[root.ParamContractRecData])
+	if err != nil {
+		return err
+	}
 
-		r, err = d.wasp.CallView(chain, blocklog.Contract.Hname(), blocklog.FuncGetEventsForContract.Name, codec.MakeDict(map[string]interface{}{
-			blocklog.ParamContractHname: codec.EncodeHname(hname),
-		}))
+	fees, err := d.wasp.CallView(chainID, governance.Contract.Name, governance.FuncGetFeeInfo.Name, codec.MakeDict(map[string]interface{}{
+		governance.ParamHname: codec.EncodeHname(hname),
+	}))
+	if err != nil {
+		return err
+	}
+	result.OwnerFee, _, err = codec.DecodeUint64(fees.MustGet(governance.VarOwnerFee))
+	if err != nil {
+		return err
+	}
+	result.ValidatorFee, _, err = codec.DecodeUint64(fees.MustGet(governance.VarValidatorFee))
+	if err != nil {
+		return err
+	}
+
+	r, err = d.wasp.CallView(chainID, blocklog.Contract.Name, blocklog.FuncGetEventsForContract.Name, codec.MakeDict(map[string]interface{}{
+		blocklog.ParamContractHname: codec.EncodeHname(hname),
+	}))
+	if err != nil {
+		return err
+	}
+
+	recs := collections.NewArray16ReadOnly(r, blocklog.ParamEvent)
+	result.Log = make([]string, recs.MustLen())
+	for i := range result.Log {
+		data, err := recs.GetAt(uint16(i))
 		if err != nil {
 			return err
 		}
+		result.Log[i] = string(data)
+	}
 
-		recs := collections.NewArray16ReadOnly(r, blocklog.ParamEvent)
-		result.Log = make([]string, recs.MustLen())
-		for i := range result.Log {
-			data, err := recs.GetAt(uint16(i))
-			if err != nil {
-				return err
-			}
-			result.Log[i] = string(data)
-		}
-
-		result.RootInfo, err = d.fetchRootInfo(chain)
-		if err != nil {
-			return err
-		}
+	result.RootInfo, err = d.fetchRootInfo(chainID)
+	if err != nil {
+		return err
 	}
 
 	return c.Render(http.StatusOK, c.Path(), result)
@@ -89,6 +103,9 @@ type ChainContractTemplateParams struct {
 	Hname   iscp.Hname
 
 	ContractRecord *root.ContractRecord
+	OwnerFee       uint64
+	ValidatorFee   uint64
+	FeeColor       colored.Color
 	Log            []string
 	RootInfo       RootInfo
 }

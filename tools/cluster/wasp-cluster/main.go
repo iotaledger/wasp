@@ -40,10 +40,18 @@ func main() {
 	commonFlags.BoolVarP(&config.Goshimmer.UseProvidedNode, "goshimmer-use-provided-node", "g", config.Goshimmer.UseProvidedNode, "If false (default), a mocked version of Goshimmer will be used")
 	commonFlags.IntVarP(&config.Goshimmer.TxStreamPort, "goshimmer-txport", "P", config.Goshimmer.TxStreamPort, "Goshimmer port")
 	commonFlags.StringVarP(&config.Goshimmer.Hostname, "goshimmer-hostname", "H", config.Goshimmer.Hostname, "Goshimmer hostname")
-	commonFlags.IntVarP(&config.FaucetPoWTarget, "goshimmer-faucet-pow", "w", config.FaucetPoWTarget, "Faucet PoW target")
+	commonFlags.IntVarP(&config.Goshimmer.FaucetPoWTarget, "goshimmer-faucet-pow", "w", 0, "Faucet PoW target (default = -1 if -g is set, else 0)")
 
 	if len(os.Args) < 2 {
 		usage(commonFlags)
+	}
+
+	parseFlags := func(flags *pflag.FlagSet) {
+		err := flags.Parse(os.Args[2:])
+		check(err)
+		if !flags.Changed("goshimmer-faucet-pow") && config.Goshimmer.UseProvidedNode {
+			config.Goshimmer.FaucetPoWTarget = -1
+		}
 	}
 
 	switch os.Args[1] {
@@ -51,9 +59,7 @@ func main() {
 		flags := pflag.NewFlagSet("init", pflag.ExitOnError)
 		forceRemove := flags.BoolP("force", "f", false, "Force removing cluster directory if it exists")
 		flags.AddFlagSet(commonFlags)
-
-		err := flags.Parse(os.Args[2:])
-		check(err)
+		parseFlags(flags)
 
 		if flags.NArg() != 1 {
 			fmt.Printf("Usage: %s init <path> [options]\n", os.Args[0])
@@ -62,22 +68,22 @@ func main() {
 		}
 
 		dataPath := flags.Arg(0)
-		err = cluster.New("cluster", config).InitDataPath(*templatesPath, dataPath, *forceRemove, nil)
+		err := cluster.New("cluster", config).InitDataPath(*templatesPath, dataPath, *forceRemove, nil)
 		check(err)
 
 	case "start":
 		flags := pflag.NewFlagSet("start", pflag.ExitOnError)
 		disposable := flags.BoolP("disposable", "d", false, "If set, run a disposable cluster in a temporary directory (no need for init, automatically removed when stopped)")
 		flags.AddFlagSet(commonFlags)
-
-		err := flags.Parse(os.Args[2:])
-		check(err)
+		parseFlags(flags)
 
 		if flags.NArg() > 1 {
 			fmt.Printf("Usage: %s start [path] [options]\n", os.Args[0])
 			flags.PrintDefaults()
 			os.Exit(1)
 		}
+
+		var err error
 
 		dataPath := "."
 		if flags.NArg() == 1 {

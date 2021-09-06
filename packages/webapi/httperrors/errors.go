@@ -1,7 +1,12 @@
 package httperrors
 
-import "net/http"
+import (
+	"net/http"
+)
 
+// HTTPError implements the Go error interface, and includes an HTTP response code.
+// Any webapi endpoint can return an instance of HTTPError, and it will be rendered
+// as JSON in the response.
 type HTTPError struct {
 	Code    int
 	Message string

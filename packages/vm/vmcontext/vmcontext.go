@@ -20,6 +20,11 @@ import (
 	"golang.org/x/xerrors"
 )
 
+var (
+	MaxBlockOutputCount = uint8(ledgerstate.MaxOutputCount - 1) // -1 for the chain transition output
+	MaxBlockInputCount  = uint8(ledgerstate.MaxInputCount - 2)  // // 125 (126 limit -1 for the previous state utxo)
+)
+
 // VMContext represents state of the chain during one run of the VM while processing
 // a batch of requests. VMContext object mutates with each request in the bathc.
 // The VMContext is created from immutable vm.VMTask object and UTXO state of the
@@ -37,22 +42,28 @@ type VMContext struct {
 	blockContext         map[iscp.Hname]*blockContext
 	blockContextCloseSeq []iscp.Hname
 	log                  *logger.Logger
+	blockOutputCount     uint8
 	// fee related
 	validatorFeeTarget iscp.AgentID // provided by validator
 	feeColor           colored.Color
 	ownerFee           uint64
 	validatorFee       uint64
+	// events related
+	maxEventSize    uint16
+	maxEventsPerReq uint16
 	// request context
-	req                iscp.Request
-	requestIndex       uint16
-	requestEventIndex  uint8
-	currentStateUpdate state.StateUpdate
-	entropy            hashing.HashValue // mutates with each request
-	contractRecord     *root.ContractRecord
-	lastError          error     // mutated
-	lastResult         dict.Dict // mutated. Used only by 'solo'
-	lastTotalAssets    colored.Balances
-	callStack          []*callContext
+	req                      iscp.Request
+	requestIndex             uint16
+	requestEventIndex        uint16
+	requestOutputCount       uint8
+	currentStateUpdate       state.StateUpdate
+	entropy                  hashing.HashValue // mutates with each request
+	contractRecord           *root.ContractRecord
+	lastError                error     // mutated
+	lastResult               dict.Dict // mutated. Used only by 'solo'
+	lastTotalAssets          colored.Balances
+	callStack                []*callContext
+	exceededBlockOutputLimit bool
 }
 
 type callContext struct {
@@ -112,8 +123,9 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 	return ret, nil
 }
 
-func (vmctx *VMContext) GetResult() (dict.Dict, colored.Balances, error) {
-	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError
+//nolint:revive
+func (vmctx *VMContext) GetResult() (dict.Dict, colored.Balances, error, bool) {
+	return vmctx.lastResult, vmctx.lastTotalAssets, vmctx.lastError, vmctx.exceededBlockOutputLimit
 }
 
 func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, timestamp time.Time) (*ledgerstate.TransactionEssence, error) {

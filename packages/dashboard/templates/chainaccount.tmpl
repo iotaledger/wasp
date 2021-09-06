@@ -1,19 +1,15 @@
 {{define "title"}}On-chain account details{{end}}
 
 {{define "body"}}
-	{{if .Ok}}
-		<div class="card fluid">
-			<h2 class="section">On-chain account</h2>
-			<dl>
-				<dt>AgentID</dt><dd><tt class="value-agentid">{{.AgentID.String}}</tt></dd>
-			</dl>
-		</div>
-		<div class="card fluid">
-			<h3 class="section">Balance</h3>
-			{{ template "balances" .Balances }}
-		</div>
-		{{ template "ws" .ChainID }}
-	{{else}}
-		<div class="card fluid error">Not found.</div>
-	{{end}}
+	<div class="card fluid">
+		<h2 class="section">On-chain account</h2>
+		<dl>
+			<dt>AgentID</dt><dd><code class="value-agentid">{{.AgentID.String}}</code></dd>
+		</dl>
+	</div>
+	<div class="card fluid">
+		<h3 class="section">Balance</h3>
+		{{ template "balances" .Balances }}
+	</div>
+	{{ template "ws" .ChainID }}
 {{end}}

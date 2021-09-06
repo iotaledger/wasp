@@ -233,7 +233,7 @@ func DecodeBalances(balances dict.Dict) (colored.Balances, error) {
 
 const postfixMaxAssumedNonceKey = "non"
 
-func GetMaxAssumedNonce(state kv.KVStore, address ledgerstate.Address) uint64 {
+func GetMaxAssumedNonce(state kv.KVStoreReader, address ledgerstate.Address) uint64 {
 	nonce, _, _ := codec.DecodeUint64(state.MustGet(kv.Key(address.Bytes()) + postfixMaxAssumedNonceKey))
 	return nonce
 }

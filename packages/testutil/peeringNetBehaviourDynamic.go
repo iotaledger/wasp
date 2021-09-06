@@ -142,7 +142,7 @@ func (pndT *PeeringNetDynamic) recvLoop(inCh, outCh chan *peeringMsg, closeCh ch
 					nextHandlers[0].handleSendMessage(recv, dstNetID, nextHandlers[1:], callHandlersAndSendFun, pndT.log)
 				} else {
 					pndT.log.Debugf("Network delivers message %v -%v-> %v", recv.from.netID, recv.msg.MsgType, dstNetID)
-					safeSendPeeringMsg(outCh, recv)
+					safeSendPeeringMsg(outCh, recv, pndT.log)
 				}
 			}
 			pndT.mutex.RLock()

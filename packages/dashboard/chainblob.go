@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/webapi/httperrors"
 	"github.com/labstack/echo/v4"
 	"github.com/mr-tron/base58"
 )
@@ -30,12 +30,12 @@ func (d *Dashboard) initChainBlob(e *echo.Echo, r renderer) {
 func (d *Dashboard) handleChainBlob(c echo.Context) error {
 	chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	hash, err := hashing.HashValueFromBase58(c.Param("hash"))
 	if err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	result := &ChainBlobTemplateParams{
@@ -48,29 +48,33 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 		Hash:    hash,
 	}
 
-	chain := d.wasp.GetChain(chainID)
-	if chain != nil {
-		fields, err := d.wasp.CallView(chain, blob.Contract.Hname(), blob.FuncGetBlobInfo.Name, codec.MakeDict(map[string]interface{}{
-			blob.ParamHash: hash,
+	fields, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.FuncGetBlobInfo.Name, codec.MakeDict(map[string]interface{}{
+		blob.ParamHash: hash,
+	}))
+	if err != nil {
+		return err
+	}
+	result.Blob = make([]BlobField, len(fields))
+	i := 0
+	fields.MustIterateKeysSorted("", func(key kv.Key) bool {
+		field := []byte(key)
+		var value dict.Dict
+		value, err = d.wasp.CallView(chainID, blob.Contract.Name, blob.FuncGetBlobField.Name, codec.MakeDict(map[string]interface{}{
+			blob.ParamHash:  hash,
+			blob.ParamField: field,
 		}))
 		if err != nil {
-			return err
+			return false
 		}
-		result.Blob = []BlobField{}
-		for field := range fields {
-			field := []byte(field)
-			value, err := d.wasp.CallView(chain, blob.Contract.Hname(), blob.FuncGetBlobField.Name, codec.MakeDict(map[string]interface{}{
-				blob.ParamHash:  hash,
-				blob.ParamField: field,
-			}))
-			if err != nil {
-				return err
-			}
-			result.Blob = append(result.Blob, BlobField{
-				Key:   field,
-				Value: value[blob.ParamBytes],
-			})
+		result.Blob[i] = BlobField{
+			Key:   field,
+			Value: value[blob.ParamBytes],
 		}
+		i++
+		return true
+	})
+	if err != nil {
+		return err
 	}
 
 	return c.Render(http.StatusOK, c.Path(), result)
@@ -92,12 +96,7 @@ func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
 		return err
 	}
 
-	chain := d.wasp.GetChain(chainID)
-	if chain == nil {
-		return httperrors.NotFound("Not found")
-	}
-
-	value, err := d.wasp.CallView(chain, blob.Contract.Hname(), blob.FuncGetBlobField.Name, codec.MakeDict(map[string]interface{}{
+	value, err := d.wasp.CallView(chainID, blob.Contract.Name, blob.FuncGetBlobField.Name, codec.MakeDict(map[string]interface{}{
 		blob.ParamHash:  hash,
 		blob.ParamField: field,
 	}))
