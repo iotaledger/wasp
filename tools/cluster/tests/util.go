@@ -165,7 +165,7 @@ func (e *chainEnv) checkLedger() {
 	sum := colored.NewBalances()
 	for _, bal := range balances {
 		for col, b := range bal {
-			sum.Add(colored.Color(col), b)
+			sum.Add(col, b)
 		}
 	}
 	require.True(e.t, sum.Equals(e.getTotalBalance()))
