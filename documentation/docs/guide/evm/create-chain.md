@@ -46,7 +46,7 @@ Once you have this we are ready to deploy the EVM chain with the following comma
 wasp-cli chain evm deploy --alloc 0x0ad2406D4A50C199ddD08086bC89E8189e86d9d4:1000000000000000000000000
 ```
 
-The `--alloc` parameter makes sure the provided address (`0x0ad2406D4A50C199ddD08086bC89E8189e86d9d4` in this case). Will receive 1 million tokens (it has a additional 18 zero's for decimals).
+The `--alloc` parameter makes sure the provided address (`0x0ad2406D4A50C199ddD08086bC89E8189e86d9d4` in this case) will receive 1 million tokens (it has a additional 18 zero's for decimals).
 
 Once this command has been executed successfully your EVM chain is up and running and ready to be used.
 
