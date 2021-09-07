@@ -97,6 +97,11 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 		sm.log.Errorf("addStateCandidateFromConsensus: state candidate does not contain block")
 		return false
 	}
+	if sm.solidState != nil && sm.solidState.BlockIndex() >= block.BlockIndex() {
+		// already processed
+		sm.log.Warnf("addStateCandidateFromConsensus: block index %v is not needed as solid state is already at index %v", block.BlockIndex(), sm.solidState.BlockIndex())
+		return false
+	}
 	block.SetApprovingOutputID(approvingOutput)
 	sm.addBlockAndCheckStateOutput(block, nextState)
 
