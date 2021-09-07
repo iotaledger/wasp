@@ -116,11 +116,11 @@ Now is after pullStateRetryTime</panel_attributes>
     <coordinates>
       <x>1404</x>
       <y>477</y>
-      <w>252</w>
+      <w>306</w>
       <h>54</h>
     </coordinates>
     <panel_attributes>lt=.&gt;
-m2=/StateMsg(ledgerstate.AliasOutput)/</panel_attributes>
+m2=/StateMsg(output ledgerstate.AliasOutput)/</panel_attributes>
     <additional_attributes>120.0;10.0;120.0;30.0;10.0;30.0</additional_attributes>
   </element>
   <element>
@@ -1646,33 +1646,34 @@ halign=left</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1188</x>
+      <x>1089</x>
       <y>486</y>
-      <w>207</w>
+      <w>306</w>
       <h>63</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
-stateOutput.stateIndex &lt;
-stateMsg.output.stateIndex</panel_attributes>
-    <additional_attributes>210.0;20.0;10.0;20.0;10.0;50.0</additional_attributes>
+solidState.index &lt;= output.stateIndex &amp;&amp;
+stateOutput.stateIndex &lt; output.stateIndex</panel_attributes>
+    <additional_attributes>320.0;20.0;120.0;20.0;190.0;20.0;120.0;20.0;120.0;50.0</additional_attributes>
   </element>
   <element>
     <id>Relation</id>
     <coordinates>
       <x>1386</x>
       <y>513</y>
-      <w>378</w>
-      <h>63</h>
+      <w>315</w>
+      <h>81</h>
     </coordinates>
     <panel_attributes>lt=-&gt;
-stateOutput.stateIndex &gt;= stateMsg.output.stateIndex</panel_attributes>
-    <additional_attributes>10.0;10.0;10.0;30.0;10.0;10.0;10.0;50.0</additional_attributes>
+solidState.index &gt; output.stateIndex ||
+stateOutput.stateIndex &gt;= output.stateIndex</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;50.0;10.0;10.0;10.0;70.0</additional_attributes>
   </element>
   <element>
     <id>UMLSpecialState</id>
     <coordinates>
       <x>1386</x>
-      <y>558</y>
+      <y>576</y>
       <w>18</w>
       <h>18</h>
     </coordinates>
@@ -1924,7 +1925,7 @@ halign=left</panel_attributes>
       <h>36</h>
     </coordinates>
     <panel_attributes>*StateManager*
-version: 6
+version: 7
 </panel_attributes>
     <additional_attributes/>
   </element>

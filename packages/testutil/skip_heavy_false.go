@@ -1,5 +1,6 @@
 // only included if skipheavy tag is not present
-//+build !skipheavy
+//go:build !skipheavy
+// +build !skipheavy
 
 package testutil
 
