@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"io"
 	"math/rand"
@@ -10,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"sort"
 	"strconv"
 	"text/template"
 	"time"
@@ -548,9 +546,7 @@ func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
 	for col := range expect {
 		lst = append(lst, col)
 	}
-	sort.Slice(lst, func(i, j int) bool {
-		return bytes.Compare(lst[i][:], lst[j][:]) < 0
-	})
+	colored.Sort(lst)
 	ret := ""
 	for _, col := range lst {
 		act := actual[col]
@@ -559,7 +555,7 @@ func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
 			assertionOk = false
 			isOk = "FAIL"
 		}
-		ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col.String(), act, expect[col], isOk)
+		ret += fmt.Sprintf("         %s: %d (%d)   %s\n", col, act, expect[col], isOk)
 	}
 	lst = lst[:0]
 	for col := range actual {
@@ -570,9 +566,7 @@ func dumpBalancesByColor(actual, expect colored.Balances) (string, bool) {
 	if len(lst) == 0 {
 		return ret, assertionOk
 	}
-	sort.Slice(lst, func(i, j int) bool {
-		return bytes.Compare(lst[i][:], lst[j][:]) < 0
-	})
+	colored.Sort(lst)
 	ret += "      Unexpected colors in actual outputs:\n"
 	for _, col := range lst {
 		ret += fmt.Sprintf("         %s %d\n", col.String(), actual[col])

@@ -12,7 +12,7 @@ func getMintedSupply(ctx iscp.Sandbox) (dict.Dict, error) {
 	ret := dict.New()
 	allMinted := ctx.Minted()
 	a := assert.NewAssert(ctx.Log())
-	a.Require(len(allMinted) == 1, "test only supports one minted color")
+	a.Require(len(allMinted) == 1, "test supports only one minted color")
 	var colMinted colored.Color
 	var amount uint64
 	for col, bal := range allMinted {

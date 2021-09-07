@@ -57,27 +57,27 @@ func (env *Solo) MintTokens(wallet *ed25519.KeyPair, amount uint64) (colored.Col
 
 	txb := utxoutil.NewBuilder(allOuts...).WithTimestamp(env.LogicalTime())
 	if amount < DustThresholdIotas {
-		return [32]byte{}, xerrors.New("can't mint number of tokens below dust threshold")
+		return colored.Color{}, xerrors.New("can't mint number of tokens below dust threshold")
 	}
 	if err := txb.AddMintingOutputConsume(addr, amount); err != nil {
-		return [32]byte{}, err
+		return colored.Color{}, err
 	}
 	if err := txb.AddRemainderOutputIfNeeded(addr, nil, true); err != nil {
-		return [32]byte{}, err
+		return colored.Color{}, err
 	}
 	tx, err := txb.BuildWithED25519(wallet)
 	if err != nil {
-		return [32]byte{}, err
+		return colored.Color{}, err
 	}
 	if err := env.AddToLedger(tx); err != nil {
-		return [32]byte{}, nil
+		return colored.Color{}, nil
 	}
 	m := utxoutil.GetMintedAmounts(tx)
 	require.EqualValues(env.T, 1, len(m))
 
 	var ret colored.Color
 	for col := range m {
-		ret = colored.Color(col)
+		ret = colored.ColorFromL1Color(col)
 		break
 	}
 	return ret, nil

@@ -95,7 +95,8 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 		return nil, xerrors.New("CreateVMContext: state hash mismatch")
 	}
 	if task.VirtualState.BlockIndex() != task.ChainInput.GetStateIndex() {
-		return nil, xerrors.New("CreateVMContext: state index is inconsistent")
+		return nil, xerrors.Errorf("CreateVMContext: state index is inconsistent: block: #%d != chain output: #%d",
+			task.VirtualState.BlockIndex(), task.ChainInput.GetStateIndex())
 	}
 	{
 		openingStateUpdate := state.NewStateUpdateWithBlocklogValues(task.VirtualState.BlockIndex()+1, task.Timestamp, stateHash)

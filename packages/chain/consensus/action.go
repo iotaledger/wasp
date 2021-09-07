@@ -25,10 +25,12 @@ import (
 
 // takeAction triggers actions whenever relevant
 func (c *Consensus) takeAction() {
-	if !c.workflow.stateReceived || c.workflow.finished {
-		c.log.Debugf("takeAction skipped: stateReceived %v, workflow finished %v", c.workflow.stateReceived, c.workflow.finished)
+	if !c.workflow.stateReceived || !c.workflow.inProgress {
+		c.log.Debugf("takeAction skipped: stateReceived: %v, workflow in progress: %v",
+			c.workflow.stateReceived, c.workflow.inProgress)
 		return
 	}
+
 	c.proposeBatchIfNeeded()
 	c.runVMIfNeeded()
 	c.broadcastSignedResultIfNeeded()
@@ -565,7 +567,7 @@ func (c *Consensus) processInclusionState(msg *messages.InclusionStateMsg) {
 		c.log.Debugf("processInclusionState: transaction id %v is pending.", c.finalTx.ID().Base58())
 	case ledgerstate.Confirmed:
 		c.workflow.transactionSeen = true
-		c.workflow.finished = true
+		c.workflow.inProgress = false
 		c.refreshConsensusInfo()
 		c.log.Debugf("processInclusionState: transaction id %s is confirmed; workflow finished", msg.TxID.Base58())
 	case ledgerstate.Rejected:
@@ -609,6 +611,11 @@ func (c *Consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 }
 
 func (c *Consensus) setNewState(msg *messages.StateTransitionMsg) {
+	if msg.State.BlockIndex() != msg.StateOutput.GetStateIndex() {
+		c.log.Panicf("consensus::setNewState: state index is inconsistent: block: #%d != chain output: #%d",
+			msg.State.BlockIndex(), msg.StateOutput.GetStateIndex())
+	}
+
 	c.stateOutput = msg.StateOutput
 	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp
@@ -635,6 +642,7 @@ func (c *Consensus) resetWorkflow() {
 	c.resultSigAck = c.resultSigAck[:0]
 	c.workflow = workflowFlags{
 		stateReceived: c.stateOutput != nil,
+		inProgress:    c.stateOutput != nil,
 	}
 	c.log.Debugf("Workflow reset")
 }
