@@ -75,21 +75,25 @@ in the Goshimmer repository in order to start a cluster of Goshimmer nodes.
 
 Example steps:
 
-1. Start a Goshimmer network of 2 nodes:
+1. Edit `<goshimmer>/tools/docker-network/docker-compose.yml` adding `txstream`
+   to all lines with `--node.enablePlugins=...`. (Just add `,txstream` at the
+   end of the line.)
+
+2. Start a Goshimmer network of 2 nodes:
 
 ```
 cd <goshimmer>/tools/docker-network
 ./run.sh 2 0
 ```
 
-2. In another console, initialize a cluster of 4 Wasp nodes (`-n 4`) with no
+3. In another console, initialize a cluster of 4 Wasp nodes (`-n 4`) with no
    mock Goshimmer node (`-g`).
 
 ```
 wasp-cluster init my-cluster -n 4 -g
 ```
 
-3. Start the Wasp cluster:
+4. Start the Wasp cluster:
 
 ```
 $ cd my-cluster
