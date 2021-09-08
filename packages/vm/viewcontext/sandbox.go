@@ -45,7 +45,14 @@ func (s *sandboxview) AccountID() *iscp.AgentID {
 }
 
 func (s *sandboxview) Balances() colored.Balances {
-	panic("not implemented") // TODO: Implement
+	r, err := s.Call(accounts.Contract.Hname(), accounts.FuncViewBalance.Hname(), dict.Dict{
+		accounts.ParamAgentID: s.AccountID().Bytes(),
+	})
+	a := assert.NewAssert(s.Log())
+	a.RequireNoError(err)
+	bals, err := accounts.DecodeBalances(r)
+	a.RequireNoError(err)
+	return bals
 }
 
 func (s *sandboxview) Call(contractHname, entryPoint iscp.Hname, params dict.Dict) (dict.Dict, error) {
