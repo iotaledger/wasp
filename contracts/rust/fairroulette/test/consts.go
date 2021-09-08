@@ -22,6 +22,7 @@ const (
 const (
 	ResultLastWinningNumber = "lastWinningNumber"
 	ResultRoundNumber       = "roundNumber"
+	ResultRoundStartedAt    = "roundStartedAt"
 	ResultRoundStatus       = "roundStatus"
 )
 
@@ -30,6 +31,7 @@ const (
 	StateLastWinningNumber = "lastWinningNumber"
 	StatePlayPeriod        = "playPeriod"
 	StateRoundNumber       = "roundNumber"
+	StateRoundStartedAt    = "roundStartedAt"
 	StateRoundStatus       = "roundStatus"
 )
 
@@ -39,6 +41,7 @@ const (
 	FuncPlayPeriod        = "playPeriod"
 	ViewLastWinningNumber = "lastWinningNumber"
 	ViewRoundNumber       = "roundNumber"
+	ViewRoundStartedAt    = "roundStartedAt"
 	ViewRoundStatus       = "roundStatus"
 )
 
@@ -48,5 +51,6 @@ const (
 	HFuncPlayPeriod        = iscp.Hname(0xcb94b293)
 	HViewLastWinningNumber = iscp.Hname(0x2f5f09fe)
 	HViewRoundNumber       = iscp.Hname(0x0dcfe520)
+	HViewRoundStartedAt    = iscp.Hname(0x725de8b4)
 	HViewRoundStatus       = iscp.Hname(0x145053b5)
 )

@@ -7,21 +7,25 @@
 // The intent is to showcase basic functionality of WasmLib and timed calling of functions
 // through a minimal implementation and not to come up with a complete real-world solution.
 
+use std::time::Instant;
+use std::time::{SystemTime, UNIX_EPOCH};
 use wasmlib::*;
 
 use crate::types::*;
 use crate::*;
-
 // Define some default configuration parameters.
 
 // The maximum number one can bet on. The range of numbers starts at 0.
 const MAX_NUMBER: i64 = 36;
 
 // The default playing period of one betting round in seconds.
-const DEFAULT_PLAY_PERIOD: i32 = 120;
+const DEFAULT_PLAY_PERIOD: i32 = 30;
 
 // Enable this if you deploy the contract to an actual node. It will pay out the prize after a certain timeout.
 const ENABLE_SELF_POST: bool = true;
+
+// The number to divide nano seconds to seconds.
+const NANO_TIME_DIVIDER: i64 = 1000000000;
 
 // 'placeBet' is used by betters to place a bet on a number from 0 to MAX_NUMBER. The first
 // incoming bet triggers a betting round of configurable duration. After the playing period
@@ -91,9 +95,14 @@ pub fn func_place_bet(_ctx: &ScFuncContext, _f: &PlaceBetContext) {
 
     if ENABLE_SELF_POST {
       _f.state.round_status().set_value(1);
+
+      let timestamp = (_ctx.timestamp() / NANO_TIME_DIVIDER) as i32; // timestamp is nanotime, divide by NANO_TIME_DIVIDER to get seconds => common unix timestamp
+      _f.state.round_started_at().set_value(timestamp);
+
       _ctx.event(&format!(
-        "fairroulette.round.state {0}",
-        _f.state.round_status().value()
+        "fairroulette.round.state {0} {1}",
+        _f.state.round_status().value(),
+        timestamp
       ));
 
       let round_number = _f.state.round_number();
@@ -275,10 +284,13 @@ pub fn func_play_period(_ctx: &ScFuncContext, _f: &PlayPeriodContext) {
 }
 
 pub fn view_last_winning_number(_ctx: &ScViewContext, _f: &LastWinningNumberContext) {
-  // Get the 'lastWinningNumber' int64 value from state storage.
-  let last_winning_number: i64 = _f.state.last_winning_number().value();
+  let mut last_winning_number: i64 = 0;
+  if _f.state.last_winning_number().exists() {
+    // Get the 'last_winning_number' int64 value from state storage.
+    last_winning_number = _f.state.last_winning_number().value();
+  }
 
-  // Set the 'lastWinningNumber' in results to the value from state storage.
+  // Set the 'last_winning_number' in results to the value from state storage.
   _f.results
     .last_winning_number()
     .set_value(last_winning_number);
@@ -286,16 +298,33 @@ pub fn view_last_winning_number(_ctx: &ScViewContext, _f: &LastWinningNumberCont
 
 pub fn view_round_number(_ctx: &ScViewContext, _f: &RoundNumberContext) {
   // Get the 'round_number' int64 value from state storage.
-  let round_number: i64 = _f.state.round_number().value();
+  let mut round_number: i64 = 0;
+  if _f.state.round_number().exists() {
+    round_number = _f.state.round_number().value();
+  }
 
-  // Set the 'roundNumber' in results to the value from state storage.
+  // Set the 'round_number' in results to the value from state storage.
   _f.results.round_number().set_value(round_number);
 }
 
 pub fn view_round_status(_ctx: &ScViewContext, _f: &RoundStatusContext) {
-  // Get the 'round_status' int16 value from state storage.
-  let round_status: i16 = _f.state.round_status().value();
+  let mut round_status: i16 = 0;
+  if _f.state.round_status().exists() {
+    // Get the 'round_status' int16 value from state storage.
+    round_status = _f.state.round_status().value();
+  }
 
-  // Set the 'roundNumber' in results to the value from state storage.
+  // Set the 'round_status' in results to the value from state storage.
   _f.results.round_status().set_value(round_status);
+}
+
+pub fn view_round_started_at(_ctx: &ScViewContext, _f: &RoundStartedAtContext) {
+  let mut round_started_at: i32 = 0;
+  if _f.state.round_started_at().exists() {
+    // Get the 'round_started_at' int64 value from state storage.
+    round_started_at = _f.state.round_started_at().value();
+  }
+
+  // Set the 'round_started_at' in results to the value from state storage.
+  _f.results.round_started_at().set_value(round_started_at);
 }

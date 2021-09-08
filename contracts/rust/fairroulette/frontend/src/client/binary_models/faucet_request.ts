@@ -7,7 +7,7 @@ export class Faucet {
     return null;
   }
 
-  public static ToBuffer(faucetRequest: IFaucetRequest) {
+  public static ToBuffer(faucetRequest: IFaucetRequest): Buffer {
     const buffers = [];
 
     const payloadLen = Buffer.alloc(4);
@@ -23,6 +23,7 @@ export class Faucet {
 
     const aManaPledgeBytes = Base58.decode(faucetRequest.accessManaPledgeID);
     buffers.push(aManaPledgeBytes);
+
     const cManaPledgeBytes = Base58.decode(faucetRequest.consensusManaPledgeID);
     buffers.push(cManaPledgeBytes);
 

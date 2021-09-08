@@ -52,7 +52,7 @@ export class Seed {
     if (!Base58.isValid(seed)) {
       return false;
     }
-    return Base58.decode(seed).length === Seed.SEED_SIZE;
+    return Base58.decode(seed).length == Seed.SEED_SIZE;
   }
 
   /**

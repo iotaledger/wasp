@@ -52,6 +52,10 @@ impl ImmutableFairRouletteState {
         ScImmutableInt64::new(self.id, idx_map(IDX_STATE_ROUND_NUMBER))
     }
 
+    pub fn round_started_at(&self) -> ScImmutableInt32 {
+        ScImmutableInt32::new(self.id, idx_map(IDX_STATE_ROUND_STARTED_AT))
+    }
+
     pub fn round_status(&self) -> ScImmutableInt16 {
         ScImmutableInt16::new(self.id, idx_map(IDX_STATE_ROUND_STATUS))
     }
@@ -96,6 +100,10 @@ impl MutableFairRouletteState {
 
     pub fn round_number(&self) -> ScMutableInt64 {
         ScMutableInt64::new(self.id, idx_map(IDX_STATE_ROUND_NUMBER))
+    }
+
+    pub fn round_started_at(&self) -> ScMutableInt32 {
+        ScMutableInt32::new(self.id, idx_map(IDX_STATE_ROUND_STARTED_AT))
     }
 
     pub fn round_status(&self) -> ScMutableInt16 {

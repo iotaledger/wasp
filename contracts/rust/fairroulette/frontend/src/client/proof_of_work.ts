@@ -2,14 +2,14 @@ import { blake2b } from 'blakejs'
 import { Buffer } from './buffer'
 
 export default class ProofOfWork {
-  public static numberToUInt64LE(n: bigint) {
+  public static numberToUInt64LE(n: bigint): Buffer {
     const buffer = Buffer.alloc(8);
     buffer.writeBigUInt64LE(n, 0);
 
     return buffer;
   }
 
-  public static calculateProofOfWork(target, message) {
+  public static calculateProofOfWork(target, message): number {
     for (let nonce = 0; ; nonce++) {
       const nonceLE = this.numberToUInt64LE(BigInt(nonce));
       const data = Buffer.concat([message, nonceLE]);

@@ -2,7 +2,7 @@ import { Buffer } from '../buffer'
 
 export class Base58 {
     private static readonly ALPHABET: string = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-    private static readonly ALPHABET_MAP: { [id: string]: number } = { };
+    private static readonly ALPHABET_MAP: { [id: string]: number; } = {};
 
     /**
      * Encode a buffer to base58.
@@ -10,7 +10,7 @@ export class Base58 {
      * @returns The encoded data as a string.
      */
     public static encode(buffer: Buffer): string {
-        if (!buffer || buffer.length === 0) {
+        if (!buffer || buffer.length == 0) {
             return "";
         }
         let i = 0;
@@ -39,7 +39,7 @@ export class Base58 {
             i++;
         }
         i = 0;
-        while (buffer[i] === 0 && i < buffer.length - 1) {
+        while (buffer[i] == 0 && i < buffer.length - 1) {
             digits.push(0);
             i++;
         }
@@ -54,7 +54,7 @@ export class Base58 {
      * @returns The encoded data as a string.
      */
     public static decode(encoded: string): Buffer {
-        if (!encoded || encoded.length === 0) {
+        if (!encoded || encoded.length == 0) {
             return Buffer.from("");
         }
         Base58.buildMap();
@@ -90,7 +90,7 @@ export class Base58 {
             i++;
         }
         i = 0;
-        while (encoded[i] === "1" && i < encoded.length - 1) {
+        while (encoded[i] == "1" && i < encoded.length - 1) {
             bytes.push(0);
             i++;
         }
@@ -134,7 +134,7 @@ export class Base58 {
      * Build the reverse lookup map.
      */
     private static buildMap(): void {
-        if (Object.keys(Base58.ALPHABET_MAP).length === 0) {
+        if (Object.keys(Base58.ALPHABET_MAP).length == 0) {
             let i = 0;
             while (i < Base58.ALPHABET.length) {
                 Base58.ALPHABET_MAP[Base58.ALPHABET.charAt(i)] = i;

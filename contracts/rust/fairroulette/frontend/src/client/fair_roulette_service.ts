@@ -17,7 +17,7 @@ export interface Bet {
 }
 
 export interface Events {
-  roundStarted: () => void;
+  roundStarted: (timestamp: number) => void;
   roundStopped: () => void;
   betPlaced: (bet: Bet) => void;
   roundNumber: (roundNr: bigint) => void;
@@ -26,6 +26,7 @@ export interface Events {
 }
 
 export class ViewEntrypoints {
+  public static readonly roundStartedAt: string = 'roundStartedAt';
   public static readonly roundNumber: string = 'roundNumber';
   public static readonly roundStatus: string = 'roundStatus';
   public static readonly lastWinningNumber: string = 'lastWinningNumber';
@@ -41,6 +42,7 @@ export class FairRoulette {
   private emitter: Emitter;
 
   public chainId: string;
+  public readonly roundLength: number = 30; // in seconds
 
   constructor(client: BasicClient, chainId: string) {
     this.client = client;
@@ -53,11 +55,7 @@ export class FairRoulette {
     this.webSocket.addEventListener("message", x => this.handleIncomingMessage(x));
   }
 
-  private handleStateMessage(message: string[]) {
-    console.log("State update ", message);
-  }
-
-  private handleVmMessage(message: string[]) {
+  private handleVmMessage(message: string[]): void {
     const messageHandlers: MessageHandlers = {
       'fairroulette.bet.placed': (index) => {
         const bet: Bet = {
@@ -70,8 +68,8 @@ export class FairRoulette {
       },
 
       'fairroulette.round.state': (index) => {
-        if (message[index + 1] === '1') {
-          this.emitter.emit('roundStarted');
+        if (message[index + 1] == '1') {
+          this.emitter.emit('roundStarted', message[index + 2]);
         } else {
           this.emitter.emit('roundStopped');
         }
@@ -99,30 +97,28 @@ export class FairRoulette {
     const topicIndex = 3;
     const topic = message[topicIndex];
 
-    if (typeof messageHandlers[topic] !== 'undefined') {
+    if (typeof messageHandlers[topic] != 'undefined') {
       messageHandlers[topic](topicIndex);
     }
   }
 
-  private handleIncomingMessage(message: MessageEvent<string>) {
+  private handleIncomingMessage(message: MessageEvent<string>): void {
     const msg = message.data.split(' ');
+    console.log(msg);
 
     if (msg.length == 0) {
       return;
     }
 
-    switch (msg[0]) {
-      case 'state':
-        return this.handleStateMessage(msg);
-
-      case 'vmmsg':
-        return this.handleVmMessage(msg);
+    if (msg[0] != 'vmmsg') {
+      return;
     }
 
-    return;
+
+    this.handleVmMessage(msg);
   }
 
-  public async placeBet(keyPair: IKeyPair, betNumber: number, take: number) {
+  public async placeBet(keyPair: IKeyPair, betNumber: number, take: number): Promise<void> {
     const tokenamount = Buffer.alloc(8);
     tokenamount.writeInt32LE(betNumber, 0);
 
@@ -138,10 +134,10 @@ export class FairRoulette {
     betRequest = OffLedger.Sign(betRequest, keyPair);
 
     await this.client.sendOffLedgerRequest(this.chainId, betRequest);
-    await this.client.sendExecutionRequest(this.chainId, OffLedger.GetId(betRequest));
+    await this.client.sendExecutionRequest(this.chainId, OffLedger.GetRequestId(betRequest));
   }
 
-  public async placeBetOnLedger(keyPair: IKeyPair, betNumber: number, take: number) {
+  public async placeBetOnLedger(keyPair: IKeyPair, betNumber: number, take: number): Promise<void> {
     const tokenamount = Buffer.alloc(8);
     tokenamount.writeInt32LE(betNumber, 0);
 
@@ -157,24 +153,26 @@ export class FairRoulette {
     betRequest = OffLedger.Sign(betRequest, keyPair);
 
     await this.client.sendOffLedgerRequest(this.chainId, betRequest);
-    await this.client.sendExecutionRequest(this.chainId, OffLedger.GetId(betRequest));
+    await this.client.sendExecutionRequest(this.chainId, OffLedger.GetRequestId(betRequest));
   }
 
-  public async callView(viewName: string, args?: any): Promise<{ [key: string]: Buffer; }> {
+  public async callView(viewName: string, args?: any): Promise<ParameterResult> {
     const response = await this.client.callView(this.chainId, this.scHName, viewName);
     const resultMap: ParameterResult = {};
 
-    for (let item of response.Items) {
-      const key = Buffer.from(item.Key, 'base64').toString();
-      const value = Buffer.from(item.Value, 'base64');
+    if (response.Items) {
+      for (let item of response.Items) {
+        const key = Buffer.from(item.Key, 'base64').toString();
+        const value = Buffer.from(item.Value, 'base64');
 
-      resultMap[key] = value;
+        resultMap[key] = value;
+      }
     }
 
     return resultMap;
   }
 
-  public async getRoundStatus() {
+  public async getRoundStatus(): Promise<number> {
     const response = await this.callView(ViewEntrypoints.roundStatus);
     const roundStatus = response[ViewEntrypoints.roundStatus];
 
@@ -196,7 +194,18 @@ export class FairRoulette {
     return roundNumber.readBigUInt64LE(0);
   }
 
-  public async getLastWinningNumber() {
+  public async getRoundStartedAt(): Promise<number> {
+    const response = await this.callView(ViewEntrypoints.roundStartedAt);
+    const roundStartedAt = response[ViewEntrypoints.roundStartedAt];
+
+    if (!roundStartedAt) {
+      throw Error(`Failed to get ${ViewEntrypoints.roundStartedAt}`);
+    }
+
+    return roundStartedAt.readInt32LE(0);
+  }
+
+  public async getLastWinningNumber(): Promise<bigint> {
     const response = await this.callView(ViewEntrypoints.lastWinningNumber);
     const lastWinningNumber = response[ViewEntrypoints.lastWinningNumber];
 

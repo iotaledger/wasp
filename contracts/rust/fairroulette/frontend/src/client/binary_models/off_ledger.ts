@@ -3,7 +3,7 @@ import { Base58 } from '../crypto/base58'
 import { Buffer } from '../buffer'
 import { ED25519 } from '../crypto/ed25519'
 import { SimpleBufferCursor } from '../simple_buffer_cursor'
-import type { IOffLedger } from './IOffLedger'
+import type { IOffLedger } from './IOffLedger';
 import type { IKeyPair } from '../crypto/models/IKeyPair';
 
 export class OffLedger {
@@ -17,7 +17,7 @@ export class OffLedger {
     const requestType = reader.readIntBE(1);
     const contract = reader.readUInt32LE();
     const entrypoint = reader.readUInt32LE();
-    const numArguments = reader.readUInt32LE()
+    const numArguments = reader.readUInt32LE();
 
     const args = [];
 
@@ -132,7 +132,7 @@ export class OffLedger {
     return request;
   }
 
-  public static GetId(request: IOffLedger): string {
+  public static GetRequestId(request: IOffLedger): string {
     const bufferedRequest = OffLedger.ToBuffer(request);
     const hash = blake2b(bufferedRequest, undefined, 32);
     const extendedHash = Buffer.concat([hash, Buffer.alloc(2)]);

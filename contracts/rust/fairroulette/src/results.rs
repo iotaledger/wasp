@@ -59,6 +59,28 @@ impl MutableRoundNumberResults {
 }
 
 #[derive(Clone, Copy)]
+pub struct ImmutableRoundStartedAtResults {
+    pub(crate) id: i32,
+}
+
+impl ImmutableRoundStartedAtResults {
+    pub fn round_started_at(&self) -> ScImmutableInt32 {
+        ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_ROUND_STARTED_AT))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableRoundStartedAtResults {
+    pub(crate) id: i32,
+}
+
+impl MutableRoundStartedAtResults {
+    pub fn round_started_at(&self) -> ScMutableInt32 {
+        ScMutableInt32::new(self.id, idx_map(IDX_RESULT_ROUND_STARTED_AT))
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct ImmutableRoundStatusResults {
     pub(crate) id: i32,
 }

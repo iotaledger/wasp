@@ -18,7 +18,7 @@ export class PoWWorkerManager {
 
   private powWorker: Worker;
 
-  public load(url: string) {
+  public load(url: string): void {
     this.powWorker = new Worker(url);
   }
 
@@ -29,7 +29,7 @@ export class PoWWorkerManager {
       const responseHandler = (e: MessageEvent) => {
         const message: PowWorkerResponse = e.data;
 
-        if (message.type === 'pow_response' && message.uuid === requestId) {
+        if (message.type == 'pow_response' && message.uuid == requestId) {
           this.powWorker.removeEventListener('message', responseHandler);
 
           if (!message.error) {

@@ -38,6 +38,7 @@ fn on_load() {
     exports.add_func(FUNC_PLAY_PERIOD, func_play_period_thunk);
     exports.add_view(VIEW_LAST_WINNING_NUMBER, view_last_winning_number_thunk);
     exports.add_view(VIEW_ROUND_NUMBER, view_round_number_thunk);
+    exports.add_view(VIEW_ROUND_STARTED_AT, view_round_started_at_thunk);
     exports.add_view(VIEW_ROUND_STATUS, view_round_status_thunk);
 
     unsafe {
@@ -144,6 +145,25 @@ fn view_round_number_thunk(ctx: &ScViewContext) {
     };
     view_round_number(ctx, &f);
     ctx.log("fairroulette.viewRoundNumber ok");
+}
+
+pub struct RoundStartedAtContext {
+    results: MutableRoundStartedAtResults,
+    state:   ImmutableFairRouletteState,
+}
+
+fn view_round_started_at_thunk(ctx: &ScViewContext) {
+    ctx.log("fairroulette.viewRoundStartedAt");
+    let f = RoundStartedAtContext {
+        results: MutableRoundStartedAtResults {
+            id: OBJ_ID_RESULTS,
+        },
+        state: ImmutableFairRouletteState {
+            id: OBJ_ID_STATE,
+        },
+    };
+    view_round_started_at(ctx, &f);
+    ctx.log("fairroulette.viewRoundStartedAt ok");
 }
 
 pub struct RoundStatusContext {

@@ -12,7 +12,8 @@
     "lastWinningNumber": "Int64",
     "playPeriod": "Int32",
     "roundStatus": "Int16",
-    "roundNumber": "Int64"
+    "roundNumber": "Int64",
+    "roundStartedAt": "Int32"
   },
   "funcs": {
     "placeBet": {
@@ -44,6 +45,11 @@
     "roundNumber": {
       "results": {
         "roundNumber": "Int64"
+      }
+    },
+    "roundStartedAt": {
+      "results": {
+        "roundStartedAt": "Int32"
       }
     }
   }

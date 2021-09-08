@@ -60,6 +60,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 		sm.log.Debugf("doSyncAction not needed: state is already synced at index #%d", sm.stateOutput.GetStateIndex())
 		return
 	case sm.solidState.BlockIndex() > sm.stateOutput.GetStateIndex():
+		sm.log.Debugf("BlockIndex=%v, StateIndex=%v", sm.solidState.BlockIndex(), sm.stateOutput.GetStateIndex())
 		sm.log.Panicf("doSyncAction inconsistency: solid state index is larger than state output index")
 	}
 	// not synced

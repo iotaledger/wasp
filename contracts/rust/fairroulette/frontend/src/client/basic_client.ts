@@ -46,13 +46,13 @@ export class BasicClient {
     this.configuration = configuration;
   }
 
-  public async allowedManaPledge(): Promise<IAllowedManaPledgeResponse> {
+  public async getAllowedManaPledge(): Promise<IAllowedManaPledgeResponse> {
     return this.sendRequest<null, IAllowedManaPledgeResponse>(this.configuration.GoShimmerAPIUrl,
       'get', 'mana/allowedManaPledge');
   }
 
   public async getFaucetRequest(address: string): Promise<IFaucetRequestContext> {
-    const manaPledge = await this.allowedManaPledge();
+    const manaPledge = await this.getAllowedManaPledge();
 
     const allowedManagePledge = manaPledge.accessMana.allowed[0];
     const consenseusManaPledge = manaPledge.consensusMana.allowed[0];
@@ -75,37 +75,32 @@ export class BasicClient {
   }
 
 
-  public async sendFaucetRequest(faucetRequest: IFaucetRequest) {
+  public async sendFaucetRequest(faucetRequest: IFaucetRequest): Promise<IFaucetResponse> {
     const response = await this.sendRequest<IFaucetRequest, IFaucetResponse>(this.configuration.GoShimmerAPIUrl, 'post', 'faucet', faucetRequest);
 
     return response;
   }
 
-  public async sendOffLedgerRequest(chainId: string, offLedgerRequest: IOffLedger) {
+  public async sendOffLedgerRequest(chainId: string, offLedgerRequest: IOffLedger): Promise<void> {
     const request = { Request: OffLedger.ToBuffer(offLedgerRequest).toString('base64') };
-    const response = await this.sendRequestExt<IOffLedgerRequest, null>(this.configuration.WaspAPIUrl, 'post', `request/${chainId}`, request);
 
-    console.log(response.response);
-
-    return response;
+    await this.sendRequestExt<IOffLedgerRequest, null>(this.configuration.WaspAPIUrl, "post", `request/${chainId}`, request);
   }
 
-  public async sendExecutionRequest(chainId: string, offLedgerRequestId: string) {
-    const response = await this.sendRequestExt<IOffLedgerRequest, null>(this.configuration.WaspAPIUrl, 'get', `chain/${chainId}/request/${offLedgerRequestId}/wait`);
-
-    return response;
+  public async sendExecutionRequest(chainId: string, offLedgerRequestId: string): Promise<void> {
+    await this.sendRequestExt<IOffLedgerRequest, null>(this.configuration.WaspAPIUrl, 'get', `chain/${chainId}/request/${offLedgerRequestId}/wait`);
   }
 
   public async getFunds(address: string, color: string): Promise<bigint> {
 
     const unspents = await this.unspentOutputs({ addresses: [address] });
-    const currentUnspent = unspents.unspentOutputs.find((x) => x.address.base58 === address);
+    const currentUnspent = unspents.unspentOutputs.find((x) => x.address.base58 == address);
 
     const balance = currentUnspent.outputs
       .filter(
         (o) =>
           ['ExtendedLockedOutputType', 'SigLockedColoredOutputType'].includes(o.output.type) &&
-          typeof o.output.output.balances[color] !== 'undefined'
+          typeof o.output.output.balances[color] != 'undefined'
       )
       .map((uid) => uid.output.output.balances)
       .reduce((balance: bigint, output) => (balance += BigInt(output[color])), BigInt(0));
@@ -156,7 +151,7 @@ export class BasicClient {
         'Content-Type': 'application/json'
       };
 
-      if (verb === 'get' || verb == 'delete') {
+      if (verb == 'get' || verb == 'delete') {
         fetchResponse = await fetch(
           `${url}/${path}`,
           {
@@ -164,7 +159,7 @@ export class BasicClient {
             headers,
           }
         );
-      } else if (verb === 'post' || verb === 'put') {
+      } else if (verb == 'post' || verb == 'put') {
         fetchResponse = await fetch(
           `${url}/${path}`,
           {

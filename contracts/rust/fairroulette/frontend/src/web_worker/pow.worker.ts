@@ -6,7 +6,7 @@ const ctx: Worker = self as any;
 ctx.onmessage = e => {
   const message: PowWorkerRequest = e.data;
 
-  if (message.type !== 'pow_request') {
+  if (message.type != 'pow_request') {
     return;
   }
 

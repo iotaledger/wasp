@@ -22,6 +22,7 @@
   const view = {
     seedString: '',
     balance: 0n,
+    timestamp: 0,
 
     showController: true,
     isWorking: false,
@@ -30,13 +31,15 @@
       active: false,
       number: 0n,
       eventList: [] as string[],
-      betSelection: 0,
+      betSelection: 1,
       winningNumber: 0n,
+      startedAt: 0,
     },
   };
 
+  // Entrypoint
   async function initialize() {
-    log('Page loading');
+    log('[PAGE] loading');
 
     if (config.seed) {
       $seed = Base58.decode(config.seed);
@@ -57,32 +60,33 @@
     powManager.load('/build/pow.worker.js');
 
     subscribeToRouletteEvents();
-    createNewAddress();
+    setAddress($addressIndex);
     updateFunds();
 
     startFundsUpdater();
 
-    view.round.active = (await fairRoulette.getRoundStatus()) == 1;
-    view.round.number = await fairRoulette.getRoundNumber();
-    view.round.winningNumber = await fairRoulette.getLastWinningNumber();
-    log('Page loaded');
+    // The best solution would be to call all of them in parallel. This is currently not possible.
+    // As those requests can fail in certain cases, we need to wrap them in exception handlers,
+    // to make sure that the other requests are being sent and that the page properly loads.
+    const requests = [
+      () => fairRoulette.getRoundStatus().then((x) => (view.round.active = x == 1)),
+      () => fairRoulette.getRoundNumber().then((x) => (view.round.number = x)),
+      () => fairRoulette.getLastWinningNumber().then((x) => (view.round.winningNumber = x)),
+      () => fairRoulette.getRoundStartedAt().then((x) => (view.round.startedAt = x)),
+    ];
+
+    for (let request of requests) {
+      await request().catch((e) => log(`[ERROR] ${e.message}`));
+    }
+
+    log('[PAGE] loaded');
   }
 
-  // Entrypoint
   onMount(initialize);
-  // Entrypoint
+  // /Entrypoint
 
   function log(text: string) {
     view.round.eventList.push(`${new Date().toLocaleTimeString()} | ${text}`);
-  }
-
-  async function updateFunds() {
-    try {
-      view.balance = await client.getFunds($address, Colors.IOTA_COLOR_STRING);
-    } catch (ex) {
-      console.log(ex);
-      view.balance = 0n;
-    }
   }
 
   function setAddress(index: number) {
@@ -93,13 +97,22 @@
   }
 
   function createNewAddress() {
-    setAddress($addressIndex);
     $addressIndex++;
+    setAddress($addressIndex);
+  }
+
+  async function updateFunds() {
+    try {
+      view.timestamp = Date.now() / 1000;
+      view.balance = await client.getFunds($address, Colors.IOTA_COLOR_STRING);
+    } catch (ex) {
+      view.balance = 0n;
+    }
   }
 
   function startFundsUpdater() {
     if (fundsUpdaterHandle) {
-      clearInterval(fundsUpdaterHandle);
+      fundsUpdaterHandle = clearInterval(fundsUpdaterHandle);
     }
 
     fundsUpdaterHandle = setInterval(updateFunds, 1000);
@@ -135,9 +148,30 @@
     view.isWorking = false;
   }
 
+  // To make sure the function gets called every second, we require that date.Now() is put in as a parameter to rely on sveltes change listener.
+  function calculateRoundLengthLeft(timestamp: number) {
+    const roundStarted = view.round.startedAt;
+
+    if (roundStarted == 0) {
+      return 0;
+    }
+
+    const diff = timestamp - roundStarted;
+
+    // TODO: Explain.
+    const executionCompensation = 5;
+    const roundTimeLeft = Math.round(fairRoulette.roundLength + executionCompensation - diff);
+
+    if (roundTimeLeft <= 0) {
+      return 0;
+    }
+    return roundTimeLeft;
+  }
+
   function subscribeToRouletteEvents() {
-    fairRoulette.on('roundStarted', () => {
+    fairRoulette.on('roundStarted', (timestamp) => {
       view.round.active = true;
+      view.round.startedAt = timestamp;
       log('[ROUND] started');
     });
 
@@ -260,6 +294,12 @@
         <div>Round Nr. {view.round.number}</div>
         <div>
           Winning Nr. {view.round.active ? 'Undecided' : view.round.winningNumber}
+        </div>
+        <div>
+          Round TS: {view.round.startedAt}
+        </div>
+        <div>
+          Remaining seconds: {calculateRoundLengthLeft(view.timestamp)}
         </div>
       </div>
     </div>
