@@ -25,6 +25,10 @@ func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) bool {
 func (sm *stateManager) stateOutputReceived(output *ledgerstate.AliasOutput, timestamp time.Time) bool {
 	sm.log.Debugf("stateOutputReceived: received output index: %v, id: %v, timestamp: %v",
 		output.GetStateIndex(), iscp.OID(output.ID()), timestamp)
+	if sm.solidState.BlockIndex() > output.GetStateIndex() {
+		sm.log.Warnf("stateOutputReceived: out of order state output: state manager is already at state %v", sm.solidState.BlockIndex())
+		return false
+	}
 	if sm.stateOutput != nil {
 		switch {
 		case sm.stateOutput.GetStateIndex() == output.GetStateIndex():
@@ -39,7 +43,7 @@ func (sm *stateManager) stateOutputReceived(output *ledgerstate.AliasOutput, tim
 			// it is a state controller address rotation
 
 		case sm.stateOutput.GetStateIndex() > output.GetStateIndex():
-			sm.log.Warnf("stateOutputReceived: out of order state output; stateOutput index is already larger: %v", sm.stateOutput.GetStateIndex())
+			sm.log.Warnf("stateOutputReceived: out of order state output: stateOutput index is already larger: %v", sm.stateOutput.GetStateIndex())
 			return false
 		}
 	}

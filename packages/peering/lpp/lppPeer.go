@@ -156,7 +156,7 @@ func (p *peer) sendMsgDirect(msg *peering.PeerMessage) {
 	}
 	defer stream.Close()
 	//
-	msgBytes, err := msg.Bytes(p.net.nodeKeyPair)
+	msgBytes, err := msg.Bytes(nil) // Do not use msg signatures, we are using TLS.
 	if err != nil {
 		p.log.Warnf("Failed to send outgoing message, unable to serialize, reason=%v", err)
 		return

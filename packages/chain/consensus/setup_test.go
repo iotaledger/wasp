@@ -127,7 +127,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	outputs := ret.Ledger.GetAddressOutputs(ret.OriginatorAddress)
 	require.True(t, len(outputs) == 1)
 
-	bals := colored.ToL1Map(map[colored.Color]uint64{colored.IOTA: 100})
+	bals := colored.ToL1Map(colored.NewBalancesForIotas(100))
 
 	txBuilder := utxoutil.NewBuilder(outputs...)
 	err = txBuilder.AddNewAliasMint(bals, ret.StateAddress, state.OriginStateHash().Bytes())

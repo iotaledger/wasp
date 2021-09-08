@@ -97,11 +97,21 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 		sm.log.Errorf("addStateCandidateFromConsensus: state candidate does not contain block")
 		return false
 	}
+	if sm.solidState != nil && sm.solidState.BlockIndex() >= block.BlockIndex() {
+		// already processed
+		sm.log.Warnf("addStateCandidateFromConsensus: block index %v is not needed as solid state is already at index %v", block.BlockIndex(), sm.solidState.BlockIndex())
+		return false
+	}
 	block.SetApprovingOutputID(approvingOutput)
 	sm.addBlockAndCheckStateOutput(block, nextState)
 
 	if sm.stateOutput == nil || sm.stateOutput.GetStateIndex() < block.BlockIndex() {
-		sm.log.Debugf("addStateCandidateFromConsensus: delaying pullStateRetry")
+		if sm.stateOutput == nil {
+			sm.log.Debugf("addStateCandidateFromConsensus: delaying pullStateRetry for %v: state output is nil", sm.timers.PullStateAfterStateCandidateDelay)
+		} else {
+			sm.log.Debugf("addStateCandidateFromConsensus: delaying pullStateRetry for %v: state output index %v is less than block index %v",
+				sm.timers.PullStateAfterStateCandidateDelay, sm.stateOutput.GetStateIndex(), block.BlockIndex())
+		}
 		sm.pullStateRetryTime = time.Now().Add(sm.timers.PullStateAfterStateCandidateDelay)
 	}
 

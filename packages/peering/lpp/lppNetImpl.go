@@ -42,6 +42,7 @@ import (
 	libp2ppeer "github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	libp2pquic "github.com/libp2p/go-libp2p-quic-transport"
+	libp2ptls "github.com/libp2p/go-libp2p-tls"
 	"github.com/libp2p/go-tcp-transport"
 	"github.com/multiformats/go-multiaddr"
 	"golang.org/x/xerrors"
@@ -95,6 +96,7 @@ func NewNetworkProvider(
 		),
 		libp2p.Transport(tcp.NewTCPTransport),
 		libp2p.Transport(libp2pquic.NewTransport),
+		libp2p.Security(libp2ptls.ID, libp2ptls.New),
 	)
 	if err != nil {
 		ctxCancel()
@@ -209,7 +211,7 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 		n.log.Warnf("Failed to read incoming payload from %v, reason=%v", remotePeer.remoteNetID, err)
 		return
 	}
-	peerMsg, err := peering.NewPeerMessageFromBytes(payload, remotePeer.remotePubKey)
+	peerMsg, err := peering.NewPeerMessageFromBytes(payload, nil) // Do not use the signatures, we have TLS.
 	if err != nil {
 		n.log.Warnf("Error while decoding a message, reason=%v", err)
 		return
