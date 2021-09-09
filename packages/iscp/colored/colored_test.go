@@ -97,8 +97,6 @@ func TestNewColoredBalances(t *testing.T) {
 		require.True(t, cb.Equals(cbBack))
 	})
 	t.Run("for each", func(t *testing.T) {
-		// TODO intermittent fail
-		t.SkipNow()
 		const howMany = 3
 		arr := make([]Color, howMany)
 		cb := NewBalances()
@@ -107,16 +105,16 @@ func TestNewColoredBalances(t *testing.T) {
 			cb.Set(arr[i], uint64(i+1))
 		}
 		require.EqualValues(t, howMany, len(cb))
-		arr1 := make([]Color, howMany)
+		arrToSort := make([]Color, howMany)
 		idx := 0
 		cb.ForEachSorted(func(col Color, _ uint64) bool {
-			arr1[idx] = col
+			arrToSort[idx] = col
 			idx++
 			return true
 		})
-		Sort(arr1)
-		require.True(t, sort.SliceIsSorted(arr1, func(i, j int) bool {
-			return arr[i].Compare(&arr1[j]) < 0
+		Sort(arrToSort)
+		require.True(t, sort.SliceIsSorted(arrToSort, func(i, j int) bool {
+			return arrToSort[i].Compare(&arrToSort[j]) < 0
 		}))
 	})
 }
