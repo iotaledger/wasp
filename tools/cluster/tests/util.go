@@ -248,7 +248,7 @@ func (e *chainEnv) accountExists(agentID *iscp.AgentID) conditionFn {
 	}
 }
 
-func (e *chainEnv) contractIsDeployed(contractName string) conditionFn { //nolint:unparam
+func (e *chainEnv) contractIsDeployed(contractName string) conditionFn {
 	return func(t *testing.T, nodeIndex int) bool {
 		ret, err := e.findContract(contractName, nodeIndex)
 		if err != nil {
