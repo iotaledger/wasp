@@ -179,7 +179,7 @@ func placeBet(ctx iscp.Sandbox) error {
 	}
 	firstBet := collections.NewArray16(state, StateVarBets).MustLen() == 0
 
-	reqid := ctx.RequestID()
+	reqid := ctx.Request().ID()
 	betInfo := &BetInfo{
 		Player: sender,
 		Sum:    sum,

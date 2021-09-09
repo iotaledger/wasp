@@ -104,7 +104,7 @@ func mintSupply(ctx iscp.Sandbox) error {
 	ctx.Event("TokenRegistry: mintSupply")
 	params := ctx.Params()
 
-	reqId := ctx.RequestID()
+	reqId := ctx.Request().ID()
 	colorOfTheSupply := (ledgerstate.Color)(*reqId.TransactionID())
 
 	registry := collections.NewMap(ctx.State(), VarStateTheRegistry)

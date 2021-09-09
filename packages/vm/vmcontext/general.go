@@ -59,8 +59,8 @@ func (vmctx *VMContext) Entropy() hashing.HashValue {
 	return vmctx.entropy
 }
 
-func (vmctx *VMContext) RequestID() iscp.RequestID {
-	return vmctx.req.ID()
+func (vmctx *VMContext) Request() iscp.Request {
+	return vmctx.req
 }
 
 const maxParamSize = 512
