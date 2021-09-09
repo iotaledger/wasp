@@ -36,295 +36,299 @@ const NANO_TIME_DIVIDER: i64 = 1000000000;
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 pub fn func_place_bet(_ctx: &ScFuncContext, _f: &PlaceBetContext) {
-  // Since we are sure that the 'number' parameter actually exists we can
-  // retrieve its actual value into an i64.
-  let number: i64 = _f.params.number().value();
+    _ctx.log("PLACEBET start");
+    // Since we are sure that the 'number' parameter actually exists we can
+    // retrieve its actual value into an i64.
+    let number: i64 = _f.params.number().value();
 
-  // Require that the number is a valid number to bet on, otherwise panic out.
-  _ctx.require(number >= 0 && number <= MAX_NUMBER, "invalid number");
+    // Require that the number is a valid number to bet on, otherwise panic out.
+    _ctx.require(number >= 0 && number <= MAX_NUMBER, "invalid number");
 
-  // Create ScBalances proxy to the incoming balances for this request.
-  // Note that ScBalances wraps an ScImmutableMap of token color/amount combinations
-  // in a simpler to use interface.
-  let incoming: ScBalances = _ctx.incoming();
+    // Create ScBalances proxy to the incoming balances for this request.
+    // Note that ScBalances wraps an ScImmutableMap of token color/amount combinations
+    // in a simpler to use interface.
+    let incoming: ScBalances = _ctx.incoming();
 
-  // Retrieve the amount of plain iota tokens that are part of the incoming balance.
-  let amount: i64 = incoming.balance(&ScColor::IOTA);
+    _ctx.log("PLACEBET balances");
+    // Retrieve the amount of plain iota tokens that are part of the incoming balance.
+    let amount: i64 = incoming.balance(&ScColor::IOTA);
 
-  // Require that there are actually some plain iotas there
-  _ctx.require(amount > 0, "empty bet");
+    // Require that there are actually some plain iotas there
+    _ctx.require(amount > 0, "empty bet");
 
-  // Now we gather all information together into a single serializable struct
-  // Note that we use the caller() method of the function context to determine
-  // the agent id of the better. This is where a potential pay-out will be sent.
-  let bet = Bet {
-    better: _ctx.caller(),
-    amount: amount,
-    number: number,
-  };
+    // Now we gather all information together into a single serializable struct
+    // Note that we use the caller() method of the function context to determine
+    // the agent id of the better. This is where a potential pay-out will be sent.
+    let bet = Bet {
+        better: _ctx.caller(),
+        amount: amount,
+        number: number,
+    };
 
-  // Get the array of current bets from state storage.
-  let bets: ArrayOfMutableBet = _f.state.bets();
+    _ctx.log("PLACEBET created bet obj");
+    // Get the array of current bets from state storage.
+    let bets: ArrayOfMutableBet = _f.state.bets();
 
-  // Determine what the next bet number is by retrieving the length of the bets array.
-  let bet_nr: i32 = bets.length();
+    // Determine what the next bet number is by retrieving the length of the bets array.
+    let bet_nr: i32 = bets.length();
 
-  // Append the bet data to the bets array. The bet array will automatically take care
-  // of serializing the bet struct into a bytes representation.
-  bets.get_bet(bet_nr).set_value(&bet);
+    // Append the bet data to the bets array. The bet array will automatically take care
+    // of serializing the bet struct into a bytes representation.
+    bets.get_bet(bet_nr).set_value(&bet);
 
-  _ctx.event(&format!(
-    "fairroulette.bet.placed {0} {1} {2}",
-    &bet.better.to_string(),
-    bet.amount,
-    bet.number
-  ));
+    _ctx.log("PLACEBET placed bet");
+    _ctx.event(&format!(
+        "fairroulette.bet.placed {0} {1} {2}",
+        &bet.better.to_string(),
+        bet.amount,
+        bet.number
+    ));
 
-  // Was this the first bet of this round?
-  if bet_nr == 0 {
-    // Yes it was, query the state for the length of the playing period in seconds by
-    // retrieving the playPeriod value from state storage
-    let mut play_period: i32 = _f.state.play_period().value();
+    // Was this the first bet of this round?
+    if bet_nr == 0 {
+        // Yes it was, query the state for the length of the playing period in seconds by
+        // retrieving the playPeriod value from state storage
+        let mut play_period: i32 = _f.state.play_period().value();
 
-    // if the play period is less than 10 seconds we override it with the default duration.
-    // Note that this will also happen when the play period was not set yet because in that
-    // case a zero value was returned.
-    if play_period < 10 {
-      play_period = DEFAULT_PLAY_PERIOD;
+        // if the play period is less than 10 seconds we override it with the default duration.
+        // Note that this will also happen when the play period was not set yet because in that
+        // case a zero value was returned.
+        if play_period < 10 {
+            play_period = DEFAULT_PLAY_PERIOD;
+        }
+
+        if ENABLE_SELF_POST {
+            _f.state.round_status().set_value(1);
+
+            let timestamp = (_ctx.timestamp() / NANO_TIME_DIVIDER) as i32; // timestamp is nanotime, divide by NANO_TIME_DIVIDER to get seconds => common unix timestamp
+            _f.state.round_started_at().set_value(timestamp);
+
+            _ctx.event(&format!(
+                "fairroulette.round.state {0} {1}",
+                _f.state.round_status().value(),
+                timestamp
+            ));
+
+            let round_number = _f.state.round_number();
+            round_number.set_value(round_number.value() + 1);
+
+            _ctx.event(&format!(
+                "fairroulette.round.number {0}",
+                round_number.value()
+            ));
+
+            // And now for our next trick we post a delayed request to ourselves on the Tangle.
+            // We are requesting to call the 'payWinners' function, but delay it for the play_period
+            // amount of seconds. This will lock in the playing period, during which more bets can
+            // be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather all
+            // bets up to that moment as the ones to consider for determining the winner.
+            let transfer = ScTransfers::iotas(1);
+            _ctx.post_self(HFUNC_PAY_WINNERS, None, transfer, play_period);
+        }
     }
-
-    if ENABLE_SELF_POST {
-      _f.state.round_status().set_value(1);
-
-      let timestamp = (_ctx.timestamp() / NANO_TIME_DIVIDER) as i32; // timestamp is nanotime, divide by NANO_TIME_DIVIDER to get seconds => common unix timestamp
-      _f.state.round_started_at().set_value(timestamp);
-
-      _ctx.event(&format!(
-        "fairroulette.round.state {0} {1}",
-        _f.state.round_status().value(),
-        timestamp
-      ));
-
-      let round_number = _f.state.round_number();
-      round_number.set_value(round_number.value() + 1);
-
-      _ctx.event(&format!(
-        "fairroulette.round.number {0}",
-        round_number.value()
-      ));
-
-      // And now for our next trick we post a delayed request to ourselves on the Tangle.
-      // We are requesting to call the 'payWinners' function, but delay it for the play_period
-      // amount of seconds. This will lock in the playing period, during which more bets can
-      // be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather all
-      // bets up to that moment as the ones to consider for determining the winner.
-      let transfer = ScTransfers::iotas(1);
-      _ctx.post_self(HFUNC_PAY_WINNERS, None, transfer, play_period);
-    }
-  }
 }
 
 // 'payWinners' is a function whose execution gets initiated by the 'placeBet' function.
 // It collects a list of all bets, generates a random number, sorts out the winners and transfers the calculated winning sum to each attendee.
 pub fn func_pay_winners(_ctx: &ScFuncContext, _f: &PayWinnersContext) {
-  // Use the built-in random number generator which has been automatically initialized by
-  // using the transaction hash as initial entropy data. Note that the pseudo-random number
-  // generator will use the next 8 bytes from the hash as its random Int64 number and once
-  // it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
-  // Here we determine the winning number for this round in the range of 0 thru MAX_NUMBER.
-  let winning_number: i64 = _ctx.utility().random(MAX_NUMBER);
+    // Use the built-in random number generator which has been automatically initialized by
+    // using the transaction hash as initial entropy data. Note that the pseudo-random number
+    // generator will use the next 8 bytes from the hash as its random Int64 number and once
+    // it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
+    // Here we determine the winning number for this round in the range of 0 thru MAX_NUMBER.
+    let winning_number: i64 = _ctx.utility().random(MAX_NUMBER);
 
-  // Save the last winning number in state storage under 'lastWinningNumber' so that there
-  // is (limited) time for people to call the 'getLastWinningNumber' View to verify the last
-  // winning number if they wish. Note that this is just a silly example. We could log much
-  // more extensive statistics information about each playing round in state storage and
-  // make that data available through views for anyone to see.
-  _f.state.last_winning_number().set_value(winning_number);
+    // Save the last winning number in state storage under 'lastWinningNumber' so that there
+    // is (limited) time for people to call the 'getLastWinningNumber' View to verify the last
+    // winning number if they wish. Note that this is just a silly example. We could log much
+    // more extensive statistics information about each playing round in state storage and
+    // make that data available through views for anyone to see.
+    _f.state.last_winning_number().set_value(winning_number);
 
-  // Gather all winners and calculate some totals at the same time.
-  // Keep track of the total bet amount, the total win amount, and all the winners.
-  // Note how we decided to keep the winners in a local vector instead of creating
-  // yet another array in state storage or having to go through lockedBets again.
-  let mut total_bet_amount: i64 = 0_i64;
-  let mut total_win_amount: i64 = 0_i64;
-  let mut winners: Vec<Bet> = Vec::new();
+    // Gather all winners and calculate some totals at the same time.
+    // Keep track of the total bet amount, the total win amount, and all the winners.
+    // Note how we decided to keep the winners in a local vector instead of creating
+    // yet another array in state storage or having to go through lockedBets again.
+    let mut total_bet_amount: i64 = 0_i64;
+    let mut total_win_amount: i64 = 0_i64;
+    let mut winners: Vec<Bet> = Vec::new();
 
-  // Get the 'lockedBets' array in state storage.
-  let bets: ArrayOfMutableBet = _f.state.bets();
-  // Determine the amount of bets in the 'lockedBets' array.
-  let nr_bets: i32 = bets.length();
+    // Get the 'lockedBets' array in state storage.
+    let bets: ArrayOfMutableBet = _f.state.bets();
+    // Determine the amount of bets in the 'lockedBets' array.
+    let nr_bets: i32 = bets.length();
 
-  // Loop through all indexes of the 'lockedBets' array.
-  for i in 0..nr_bets {
-    // Retrieve the bet stored at the next index
-    let bet: Bet = bets.get_bet(i).value();
+    // Loop through all indexes of the 'lockedBets' array.
+    for i in 0..nr_bets {
+        // Retrieve the bet stored at the next index
+        let bet: Bet = bets.get_bet(i).value();
 
-    // Add this bet's amount to the running total bet amount
-    total_bet_amount += bet.amount;
+        // Add this bet's amount to the running total bet amount
+        total_bet_amount += bet.amount;
 
-    // Did this better bet on the winning number?
-    if bet.number == winning_number {
-      // Yes, add this bet amount to the running total win amount.
-      total_win_amount += bet.amount;
+        // Did this better bet on the winning number?
+        if bet.number == winning_number {
+            // Yes, add this bet amount to the running total win amount.
+            total_win_amount += bet.amount;
 
-      // And save this bet in the winners vector.
-      winners.push(bet);
-    }
-  }
-
-  // Now that we preprocessed all bets we can get rid of the data in state storage so that
-  // the 'lockedBets' array becomes available for when the next betting round ends.
-  bets.clear();
-
-  _ctx.event(&format!(
-    "fairroulette.round.winning_number {}",
-    winning_number
-  ));
-
-  // Did we have any winners at all?
-  if winners.is_empty() {
-    // No winners, log this fact to the log on the host.
-    _ctx.log("Nobody wins!");
-  }
-
-  // Pay out the winners proportionally to their bet amount. Note that we could configure
-  // a small percentage that would go to the owner of the smart contract as hosting payment.
-
-  // Keep track of the total payout so we can calculate the remainder after truncation.
-  let mut total_payout: i64 = 0_i64;
-
-  // Loop through all winners.
-  let size: usize = winners.len();
-  for i in 0..size {
-    // Get the next winner.
-    let bet: &Bet = &winners[i];
-
-    // Determine the proportional win amount (we could take our percentage here)
-    let payout: i64 = total_bet_amount * bet.amount / total_win_amount;
-
-    // Anything to pay to the winner?
-    if payout != 0 {
-      // Yep, keep track of the running total payout
-      total_payout += payout;
-
-      // Set up an ScTransfers proxy that transfers the correct amount of iotas.
-      // Note that ScTransfers wraps an ScMutableMap of token color/amount combinations
-      // in a simpler to use interface. The constructor we use here creates and initializes
-      // a single token color transfer in a single statement. The actual color and amount
-      // values passed in will be stored in a new map on the host.
-      let transfers: ScTransfers = ScTransfers::iotas(payout);
-
-      // Perform the actual transfer of tokens from the smart contract to the address
-      // of the winner. The transfer_to_address() method receives the address value and
-      // the proxy to the new transfers map on the host, and will call the corresponding
-      // host sandbox function with these values.
-      _ctx.transfer_to_address(&bet.better.address(), transfers);
+            // And save this bet in the winners vector.
+            winners.push(bet);
+        }
     }
 
-    // Log who got sent what in the log on the host.
+    // Now that we preprocessed all bets we can get rid of the data in state storage so that
+    // the 'lockedBets' array becomes available for when the next betting round ends.
+    bets.clear();
+
     _ctx.event(&format!(
-      "fairroulette.payout {} {}",
-      &bet.better.to_string(),
-      payout
+        "fairroulette.round.winning_number {}",
+        winning_number
     ));
-  }
 
-  // This is where we transfer the remainder after payout to the creator of the smart contract.
-  // The bank always wins :-P
-  let remainder: i64 = total_bet_amount - total_payout;
-  if remainder != 0 {
-    // We have a remainder. First create a transfer for the remainder.
-    let transfers: ScTransfers = ScTransfers::iotas(remainder);
+    // Did we have any winners at all?
+    if winners.is_empty() {
+        // No winners, log this fact to the log on the host.
+        _ctx.log("Nobody wins!");
+    }
 
-    // Send the remainder to the contract creator.
-    _ctx.transfer_to_address(&_ctx.contract_creator().address(), transfers);
-  }
+    // Pay out the winners proportionally to their bet amount. Note that we could configure
+    // a small percentage that would go to the owner of the smart contract as hosting payment.
 
-  // Set round status to 0, send out event to notify that the round has ended
-  _f.state.round_status().set_value(0);
-  _ctx.event(&format!(
-    "fairroulette.round.state {0}",
-    _f.state.round_status().value()
-  ));
+    // Keep track of the total payout so we can calculate the remainder after truncation.
+    let mut total_payout: i64 = 0_i64;
+
+    // Loop through all winners.
+    let size: usize = winners.len();
+    for i in 0..size {
+        // Get the next winner.
+        let bet: &Bet = &winners[i];
+
+        // Determine the proportional win amount (we could take our percentage here)
+        let payout: i64 = total_bet_amount * bet.amount / total_win_amount;
+
+        // Anything to pay to the winner?
+        if payout != 0 {
+            // Yep, keep track of the running total payout
+            total_payout += payout;
+
+            // Set up an ScTransfers proxy that transfers the correct amount of iotas.
+            // Note that ScTransfers wraps an ScMutableMap of token color/amount combinations
+            // in a simpler to use interface. The constructor we use here creates and initializes
+            // a single token color transfer in a single statement. The actual color and amount
+            // values passed in will be stored in a new map on the host.
+            let transfers: ScTransfers = ScTransfers::iotas(payout);
+
+            // Perform the actual transfer of tokens from the smart contract to the address
+            // of the winner. The transfer_to_address() method receives the address value and
+            // the proxy to the new transfers map on the host, and will call the corresponding
+            // host sandbox function with these values.
+            _ctx.transfer_to_address(&bet.better.address(), transfers);
+        }
+
+        // Log who got sent what in the log on the host.
+        _ctx.event(&format!(
+            "fairroulette.payout {} {}",
+            &bet.better.to_string(),
+            payout
+        ));
+    }
+
+    // This is where we transfer the remainder after payout to the creator of the smart contract.
+    // The bank always wins :-P
+    let remainder: i64 = total_bet_amount - total_payout;
+    if remainder != 0 {
+        // We have a remainder. First create a transfer for the remainder.
+        let transfers: ScTransfers = ScTransfers::iotas(remainder);
+
+        // Send the remainder to the contract creator.
+        _ctx.transfer_to_address(&_ctx.contract_creator().address(), transfers);
+    }
+
+    // Set round status to 0, send out event to notify that the round has ended
+    _f.state.round_status().set_value(0);
+    _ctx.event(&format!(
+        "fairroulette.round.state {0}",
+        _f.state.round_status().value()
+    ));
 }
 
 // 'playPeriod' can be used by the contract creator to set the length of a betting round
 // to a different value than the default value, which is 120 seconds.
 pub fn func_play_period(_ctx: &ScFuncContext, _f: &PlayPeriodContext) {
-  // Log the fact that we have initiated the 'playPeriod' Func in the log on the host.
-  _ctx.log("fairroulette.playPeriod");
+    // Log the fact that we have initiated the 'playPeriod' Func in the log on the host.
+    _ctx.log("fairroulette.playPeriod");
 
-  // We don't want anyone to be able to initiate this function through a request except
-  // for the smart contract creator, so we require that the caller of the function is the smart
-  // contract creator. Any other caller will panic out with an error message.
-  _ctx.require(_ctx.caller() == _ctx.contract_creator(), "no permission");
+    // We don't want anyone to be able to initiate this function through a request except
+    // for the smart contract creator, so we require that the caller of the function is the smart
+    // contract creator. Any other caller will panic out with an error message.
+    _ctx.require(_ctx.caller() == _ctx.contract_creator(), "no permission");
 
-  // Since we are sure that the 'playPeriod' parameter actually exists we can
-  // retrieve its actual value into an i32 value.
-  let play_period: ScImmutableInt32 = _f.params.play_period();
+    // Since we are sure that the 'playPeriod' parameter actually exists we can
+    // retrieve its actual value into an i32 value.
+    let play_period: ScImmutableInt32 = _f.params.play_period();
 
-  // Require that the mandatory 'playPeriod' parameter actually exists in the map
-  // on the host. If it doesn't we panic out with an error message.
-  _ctx.require(play_period.exists(), "missing mandatory playPeriod");
+    // Require that the mandatory 'playPeriod' parameter actually exists in the map
+    // on the host. If it doesn't we panic out with an error message.
+    _ctx.require(play_period.exists(), "missing mandatory playPeriod");
 
-  // Now that we are sure that the 'playPeriod' parameter actually exists we can
-  // retrieve its actual value into an i64 value.
-  let play_period: i32 = play_period.value();
+    // Now that we are sure that the 'playPeriod' parameter actually exists we can
+    // retrieve its actual value into an i64 value.
+    let play_period: i32 = play_period.value();
 
-  // Require that the play period (in seconds) is not ridiculously low.
-  // Otherwise panic out with an error message.
-  _ctx.require(play_period >= 10, "invalid play period");
+    // Require that the play period (in seconds) is not ridiculously low.
+    // Otherwise panic out with an error message.
+    _ctx.require(play_period >= 10, "invalid play period");
 
-  // Require that the play period (in seconds) is not ridiculously low.
-  // Otherwise panic out with an error message.
-  _ctx.require(play_period >= 10, "invalid play period");
+    // Require that the play period (in seconds) is not ridiculously low.
+    // Otherwise panic out with an error message.
+    _ctx.require(play_period >= 10, "invalid play period");
 
-  // Now we set the corresponding variable 'playPeriod' in state storage.
-  _f.state.play_period().set_value(play_period);
+    // Now we set the corresponding variable 'playPeriod' in state storage.
+    _f.state.play_period().set_value(play_period);
 }
 
 pub fn view_last_winning_number(_ctx: &ScViewContext, _f: &LastWinningNumberContext) {
-  let mut last_winning_number: i64 = 0;
-  if _f.state.last_winning_number().exists() {
-    // Get the 'last_winning_number' int64 value from state storage.
-    last_winning_number = _f.state.last_winning_number().value();
-  }
+    let mut last_winning_number: i64 = 0;
+    if _f.state.last_winning_number().exists() {
+        // Get the 'last_winning_number' int64 value from state storage.
+        last_winning_number = _f.state.last_winning_number().value();
+    }
 
-  // Set the 'last_winning_number' in results to the value from state storage.
-  _f.results
-    .last_winning_number()
-    .set_value(last_winning_number);
+    // Set the 'last_winning_number' in results to the value from state storage.
+    _f.results
+        .last_winning_number()
+        .set_value(last_winning_number);
 }
 
 pub fn view_round_number(_ctx: &ScViewContext, _f: &RoundNumberContext) {
-  // Get the 'round_number' int64 value from state storage.
-  let mut round_number: i64 = 0;
-  if _f.state.round_number().exists() {
-    round_number = _f.state.round_number().value();
-  }
+    // Get the 'round_number' int64 value from state storage.
+    let mut round_number: i64 = 0;
+    if _f.state.round_number().exists() {
+        round_number = _f.state.round_number().value();
+    }
 
-  // Set the 'round_number' in results to the value from state storage.
-  _f.results.round_number().set_value(round_number);
+    // Set the 'round_number' in results to the value from state storage.
+    _f.results.round_number().set_value(round_number);
 }
 
 pub fn view_round_status(_ctx: &ScViewContext, _f: &RoundStatusContext) {
-  let mut round_status: i16 = 0;
-  if _f.state.round_status().exists() {
-    // Get the 'round_status' int16 value from state storage.
-    round_status = _f.state.round_status().value();
-  }
+    let mut round_status: i16 = 0;
+    if _f.state.round_status().exists() {
+        // Get the 'round_status' int16 value from state storage.
+        round_status = _f.state.round_status().value();
+    }
 
-  // Set the 'round_status' in results to the value from state storage.
-  _f.results.round_status().set_value(round_status);
+    // Set the 'round_status' in results to the value from state storage.
+    _f.results.round_status().set_value(round_status);
 }
 
 pub fn view_round_started_at(_ctx: &ScViewContext, _f: &RoundStartedAtContext) {
-  let mut round_started_at: i32 = 0;
-  if _f.state.round_started_at().exists() {
-    // Get the 'round_started_at' int64 value from state storage.
-    round_started_at = _f.state.round_started_at().value();
-  }
+    let mut round_started_at: i32 = 0;
+    if _f.state.round_started_at().exists() {
+        // Get the 'round_started_at' int64 value from state storage.
+        round_started_at = _f.state.round_started_at().value();
+    }
 
-  // Set the 'round_started_at' in results to the value from state storage.
-  _f.results.round_started_at().set_value(round_started_at);
+    // Set the 'round_started_at' in results to the value from state storage.
+    _f.results.round_started_at().set_value(round_started_at);
 }

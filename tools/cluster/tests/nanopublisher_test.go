@@ -149,39 +149,28 @@ func TestNanoPublisherFairRoulette(t *testing.T) {
 	numRequests := 10
 	myClient := chEnv.chain.SCClient(iscp.Hn("fairroulette"), keyPair)
 
+	// repeatNtimes := 100
+
+	// for i := 0; i < repeatNtimes; i++ {
 	for i := 0; i < numRequests; i++ {
 		placeBet(int64(3), myClient, t)
 	}
 
 	time.Sleep(20 * time.Second)
+	totalMsgs := len(nanoClients[0].messages)
 	for _, client := range nanoClients {
-		println(len(client.messages))
+		require.Len(t, client.messages, totalMsgs)
 	}
-
-	// MORE REQUESTS
-	for i := 0; i < numRequests; i++ {
-		placeBet(int64(3), myClient, t)
-	}
-
-	time.Sleep(20 * time.Second)
-	for _, client := range nanoClients {
-		println(len(client.messages))
-	}
-
-	// MORE REQUESTS
-	for i := 0; i < numRequests; i++ {
-		placeBet(int64(3), myClient, t)
-	}
-
-	time.Sleep(20 * time.Second)
-	for _, client := range nanoClients {
-		println(len(client.messages))
-	}
+	// }
 }
+
+// var nonce = uint64(1)
 
 func placeBet(number int64, myClient *scclient.SCClient, t *testing.T) {
 	args := requestargs.New().AddEncodeSimple(numberParam, codec.EncodeInt64(number))
-	params := chainclient.PostRequestParams{Args: args, Nonce: uint64(time.Now().UnixNano())}
+	nonce := uint64(time.Now().UnixNano())
+	params := chainclient.PostRequestParams{Args: args, Nonce: nonce}
+	// nonce++
 	_, err := myClient.PostOffLedgerRequest("placeBet", *params.WithIotas(10))
 	require.NoError(t, err)
 }
