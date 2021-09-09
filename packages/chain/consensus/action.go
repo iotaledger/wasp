@@ -233,8 +233,8 @@ func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		c.chain.ReceiveMessage(&messages.VMResultMsg{
 			Task: task,
 		})
-		elapse := time.Since(c.vmRunStartTime)
-		c.consensusMetrics.RecordVMRunTime(elapse)
+		elapsed := time.Since(c.vmRunStartTime)
+		c.consensusMetrics.RecordVMRunTime(elapsed)
 	}
 	c.log.Debugf("prepareVMTask: VM task prepared")
 	return task
