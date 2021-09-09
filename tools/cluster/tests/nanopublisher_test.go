@@ -126,7 +126,7 @@ func TestNanoPublisherFairRoulette(t *testing.T) {
 	waitUntil(t, chEnv.contractIsDeployed("fairroulette"), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
 
 	// spawn many NANOMSG nanoClients and subscribe to everything from the node
-	nanoClients := make([]nanoClientTest, 10)
+	nanoClients := make([]nanoClientTest, 0)
 	nanoURL := fmt.Sprintf("tcp://127.0.0.1:%d", chEnv.clu.Config.NanomsgPort(0))
 	for i := range nanoClients {
 		nanoClients[i] = nanoClientTest{id: i, messages: []string{}}
@@ -139,38 +139,58 @@ func TestNanoPublisherFairRoulette(t *testing.T) {
 
 	accountsClient := chEnv.chain.SCClient(accounts.Contract.Hname(), keyPair)
 	_, err = accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: colored.NewBalancesForIotas(10000),
+		Transfer: colored.NewBalancesForIotas(1000000),
 	})
 	require.NoError(t, err)
 
-	waitUntil(t, chEnv.balanceOnChainIotaEquals(myAgentID, 10000), util.MakeRange(0, 1), 60*time.Second, "send 100i")
+	waitUntil(t, chEnv.balanceOnChainIotaEquals(myAgentID, 1000000), util.MakeRange(0, 1), 60*time.Second, "send 1000000i")
+
+	// ----------------------------------------
+	// otherWallet, _ := chEnv.getOrCreateAddress()
+
+	// _, err = chEnv.chain.SCClient(accounts.Contract.Hname(), otherWallet).PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+	// 	Transfer: colored.NewBalancesForIotas(1000000),
+	// 	Args:     requestargs.New().AddEncodeSimple(accounts.ParamAgentID, codec.EncodeAgentID(myAgentID)),
+	// })
+	// require.NoError(t, err)
+
+	// waitUntil(t, chEnv.balanceOnChainIotaEquals(myAgentID, 2000000), util.MakeRange(0, 1), 60*time.Second, "send 1000000i")
+	// ----------------------------------------
 
 	// send N requests
-	numRequests := 10
+	numRequests := 1000000
 	myClient := chEnv.chain.SCClient(iscp.Hn("fairroulette"), keyPair)
 
-	// repeatNtimes := 100
+	repeatNtimes := 1
 
-	// for i := 0; i < repeatNtimes; i++ {
-	for i := 0; i < numRequests; i++ {
-		placeBet(int64(3), myClient, t)
-	}
+	for i := 0; i < repeatNtimes; i++ {
+		for i := 0; i < numRequests; i++ {
+			placeBet(int64(3), myClient, t)
+		}
 
-	time.Sleep(20 * time.Second)
-	totalMsgs := len(nanoClients[0].messages)
-	for _, client := range nanoClients {
-		require.Len(t, client.messages, totalMsgs)
+		time.Sleep(20 * time.Second)
+		totalMsgs := len(nanoClients[0].messages)
+		for _, client := range nanoClients {
+			require.Len(t, client.messages, totalMsgs)
+		}
 	}
-	// }
+	println("!!!!!!!!!!!!!!!!!!!!!!!!!!")
+	println(errors)
 }
 
-// var nonce = uint64(1)
+var (
+	nonce  = uint64(1)
+	errors = 0
+)
 
 func placeBet(number int64, myClient *scclient.SCClient, t *testing.T) {
 	args := requestargs.New().AddEncodeSimple(numberParam, codec.EncodeInt64(number))
-	nonce := uint64(time.Now().UnixNano())
+	// nonce := uint64(time.Now().UnixNano())
 	params := chainclient.PostRequestParams{Args: args, Nonce: nonce}
-	// nonce++
-	_, err := myClient.PostOffLedgerRequest("placeBet", *params.WithIotas(10))
-	require.NoError(t, err)
+	nonce++
+	_, err := myClient.PostOffLedgerRequest("placeBet", *params.WithIotas(1))
+	if err != nil {
+		errors++
+	}
+	// require.NoError(t, err)
 }
