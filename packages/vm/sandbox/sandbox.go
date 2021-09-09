@@ -98,8 +98,8 @@ func (s *sandbox) Params() dict.Dict {
 	return s.vmctx.Params()
 }
 
-func (s *sandbox) RequestID() iscp.RequestID {
-	return s.vmctx.RequestID()
+func (s *sandbox) Request() iscp.Request {
+	return s.vmctx.Request()
 }
 
 func (s *sandbox) Send(target ledgerstate.Address, tokens colored.Balances, metadata *iscp.SendMetadata, options ...iscp.SendOptions) bool {

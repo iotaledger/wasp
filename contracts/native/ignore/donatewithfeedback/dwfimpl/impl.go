@@ -93,7 +93,7 @@ func donate(ctx iscp.Sandbox) error {
 	// create donation info record
 	di := &donatewithfeedback.DonationInfo{
 		Seq:      int64(tlog.MustLen()),
-		Id:       ctx.RequestID(),
+		Id:       ctx.Request().ID(),
 		Amount:   donated,
 		Sender:   sender,
 		Feedback: feedback,

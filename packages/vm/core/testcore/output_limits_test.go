@@ -39,7 +39,7 @@ var (
 				)
 				a.Require(ret == true, "failed to send funds")
 				if shouldEmitEvent {
-					ctx.Event(fmt.Sprintf("reqid: %s, sent funds", ctx.RequestID()))
+					ctx.Event(fmt.Sprintf("reqid: %s, sent funds", ctx.Request().ID()))
 				}
 			}
 			return nil, nil

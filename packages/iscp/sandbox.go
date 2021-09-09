@@ -45,8 +45,8 @@ type Sandbox interface {
 
 	// State k/v store of the current call (in the context of the smart contract)
 	State() kv.KVStore
-	// RequestID of the request in the context of which is the current call
-	RequestID() RequestID
+	// Request return the request in the context of which the smart contract is called
+	Request() Request
 	// Balance return number of tokens of specific color in the balance of the smart contract
 	Balance(col colored.Color) uint64
 	// Call calls the entry point of the contract with parameters and transfer.
