@@ -151,8 +151,6 @@ func TestCompare(t *testing.T) {
 	}
 	require.True(t, bytes.Compare(all0[:], all1[:]) < 0)
 	require.True(t, bytes.Compare(all1[:], all0[:]) > 0)
-	require.True(t, bytes.Compare(all0[:], all0[:]) == 0)
-	require.True(t, bytes.Compare(all1[:], all1[:]) == 0)
 
 	col0, err := ColorFromBytes(all0[:])
 	require.NoError(t, err)
