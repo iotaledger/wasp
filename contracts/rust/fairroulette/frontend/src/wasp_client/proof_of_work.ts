@@ -1,5 +1,5 @@
-import { blake2b } from 'blakejs'
-import { Buffer } from './buffer'
+import { blake2b } from 'blakejs';
+import { Buffer } from './buffer';
 
 export default class ProofOfWork {
   public static numberToUInt64LE(n: bigint): Buffer {
@@ -9,7 +9,7 @@ export default class ProofOfWork {
     return buffer;
   }
 
-  public static calculateProofOfWork(target, message): number {
+  public static calculateProofOfWork(target: number, message: Buffer): number {
     for (let nonce = 0; ; nonce++) {
       const nonceLE = this.numberToUInt64LE(BigInt(nonce));
       const data = Buffer.concat([message, nonceLE]);

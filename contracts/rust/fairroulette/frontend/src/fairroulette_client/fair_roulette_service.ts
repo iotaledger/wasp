@@ -1,4 +1,4 @@
-import config from '../../config.dev'
+import config from '../../config.dev';
 import {
   BasicClient,
   Buffer,
@@ -6,9 +6,9 @@ import {
   IKeyPair,
   IOffLedger,
   OffLedger
-  } from '../wasp_client'
-import { createNanoEvents, Emitter } from 'nanoevents'
-import { HName } from '../wasp_client/crypto/hname'
+  } from '../wasp_client';
+import { createNanoEvents, Emitter } from 'nanoevents';
+import { HName } from '../wasp_client/crypto/hname';
 
 type MessageHandlers = { [key: string]: (index: number) => void; };
 type ParameterResult = { [key: string]: Buffer; };
@@ -35,7 +35,7 @@ export class ViewEntrypoints {
   public static readonly lastWinningNumber: string = 'lastWinningNumber';
 }
 
-export class FairRoulette {
+export class FairRouletteService {
   private readonly scName: string = 'fairroulette';
   private readonly scHName: string = HName.HashAsString(this.scName);
   private readonly scPlaceBet: string = 'placeBet';

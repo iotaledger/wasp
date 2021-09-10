@@ -4,7 +4,7 @@ import typescript from '@rollup/plugin-typescript';
 import { terser } from 'rollup-plugin-terser';
 
 const production = !process.env.ROLLUP_WATCH;
-console.log("prod: " + production)
+console.log("prod: " + production);
 function serve() {
 	let server;
 
@@ -27,7 +27,7 @@ function serve() {
 }
 
 export default {
-	input: 'src/web_worker/pow.worker.ts',
+	input: 'src/wasp_client/web_worker/pow.worker.ts',
 	output: {
 		sourcemap: true,
 		format: 'iife',

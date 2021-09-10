@@ -1,10 +1,11 @@
-import { Buffer } from './buffer'
+import { Base58, Seed } from '.';
+import { Buffer } from './buffer';
 import {
   Faucet,
   IFaucetRequest,
   IOffLedger,
   OffLedger
-  } from './binary_models'
+  } from './binary_models';
 
 import type {
   IAllowedManaPledgeResponse,
@@ -14,7 +15,9 @@ import type {
   IUnspentOutputsRequest,
   IUnspentOutputsResponse,
   ISendTransactionRequest,
-  ISendTransactionResponse
+  ISendTransactionResponse,
+  IKeyPair,
+  IWalletAddressOutput
 } from './models';
 
 
@@ -29,10 +32,6 @@ export interface BasicClientConfiguration {
   SeedUnsafe: Buffer;
 }
 
-export interface IFaucetRequestContext {
-  faucetRequest: IFaucetRequest,
-  poWBuffer: any;
-}
 
 export interface CallViewResponse extends IResponse {
   Items: [{ Key: string, Value: any; }];
@@ -57,29 +56,9 @@ export class BasicClient {
       'get', 'mana/allowedManaPledge');
   }
 
-  public async getFaucetRequest(address: string): Promise<IFaucetRequestContext> {
-    const manaPledge = await this.getAllowedManaPledge();
-
-    const allowedManagePledge = manaPledge.accessMana.allowed[0];
-    const consenseusManaPledge = manaPledge.consensusMana.allowed[0];
-
-    const body: IFaucetRequest = {
-      accessManaPledgeID: allowedManagePledge,
-      consensusManaPledgeID: consenseusManaPledge,
-      address: address,
-      nonce: -1
-    };
-
-    const poWBuffer = Faucet.ToBuffer(body);
-
-    const result: IFaucetRequestContext = {
-      poWBuffer: poWBuffer,
-      faucetRequest: body
-    };
-
-    return result;
+  public async postRequest(offLedger: IOffLedger, address: string, keyPair: IKeyPair) {
+    return Promise.resolve();
   }
-
 
   public async sendFaucetRequest(faucetRequest: IFaucetRequest): Promise<IFaucetResponse> {
     const response = await this.sendRequest<IFaucetRequest, IFaucetResponse>(this.configuration.GoShimmerAPIUrl, 'post', 'faucet', faucetRequest);
@@ -90,28 +69,11 @@ export class BasicClient {
   public async sendOffLedgerRequest(chainId: string, offLedgerRequest: IOffLedger): Promise<void> {
     const request = { Request: OffLedger.ToBuffer(offLedgerRequest).toString('base64') };
 
-    await this.sendRequestExt<IOffLedgerRequest, null>(this.configuration.WaspAPIUrl, "post", `request/${chainId}`, request);
+    await this.sendRequestExt<IOffLedgerRequest, null>(this.configuration.WaspAPIUrl, 'post', `request/${chainId}`, request);
   }
 
   public async sendExecutionRequest(chainId: string, offLedgerRequestId: string): Promise<void> {
     await this.sendRequestExt<IOffLedgerRequest, null>(this.configuration.WaspAPIUrl, 'get', `chain/${chainId}/request/${offLedgerRequestId}/wait`);
-  }
-
-  public async getFunds(address: string, color: string): Promise<bigint> {
-
-    const unspents = await this.unspentOutputs({ addresses: [address] });
-    const currentUnspent = unspents.unspentOutputs.find((x) => x.address.base58 == address);
-
-    const balance = currentUnspent.outputs
-      .filter(
-        (o) =>
-          ['ExtendedLockedOutputType', 'SigLockedColoredOutputType'].includes(o.output.type) &&
-          typeof o.output.output.balances[color] != 'undefined'
-      )
-      .map((uid) => uid.output.output.balances)
-      .reduce((balance: bigint, output) => (balance += BigInt(output[color])), BigInt(0));
-
-    return balance;
   }
 
   public async callView(chainId: string, contractHName: string, entryPoint: string): Promise<CallViewResponse> {

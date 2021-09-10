@@ -8,4 +8,8 @@ export * from './ISendTransactionRequest';
 export * from './ISendTransactionResponse';
 export * from './IUnspentOutputsRequest';
 export * from './IUnspentOutputsResponse';
+export * from './IWalletAddressOutput';
+export * from './IWalletOutput';
+export * from './IWalletOutputBalance';
+export * from './IWalletOutputInclusionState';
 // @endindex

@@ -3,7 +3,7 @@
 
   import { Base58 } from './wasp_client/crypto/base58';
   import { BasicClient, Colors, PoWWorkerManager } from './wasp_client';
-  import { FairRoulette } from './fairroulette_client';
+  import { FairRouletteService } from './fairroulette_client';
   import type { Bet } from './fairroulette_client';
   import { onMount } from 'svelte';
   import { Seed } from './wasp_client/crypto/seed';
@@ -11,10 +11,13 @@
   import Roulette from './Roulette.svelte';
 
   import { seed, addressIndex, keyPair, address } from './store';
+  import { WalletService } from './wasp_client';
 
   let fundsUpdaterHandle;
+
   let client: BasicClient;
-  let fairRoulette: FairRoulette;
+  let walletService: WalletService;
+  let fairRouletteService: FairRouletteService;
 
   const powManager: PoWWorkerManager = new PoWWorkerManager();
 
@@ -54,7 +57,8 @@
       SeedUnsafe: $seed,
     });
 
-    fairRoulette = new FairRoulette(client, config.chainId);
+    fairRouletteService = new FairRouletteService(client, config.chainId);
+    walletService = new WalletService(client);
 
     powManager.load('/build/pow.worker.js');
 
@@ -68,10 +72,10 @@
     // As those requests can fail in certain cases, we need to wrap them in exception handlers,
     // to make sure that the other requests are being sent and that the page properly loads.
     const requests = [
-      () => fairRoulette.getRoundStatus().then((x) => (view.round.active = x == 1)),
-      () => fairRoulette.getRoundNumber().then((x) => (view.round.number = x)),
-      () => fairRoulette.getLastWinningNumber().then((x) => (view.round.winningNumber = x)),
-      () => fairRoulette.getRoundStartedAt().then((x) => (view.round.startedAt = x)),
+      () => fairRouletteService.getRoundStatus().then((x) => (view.round.active = x == 1)),
+      () => fairRouletteService.getRoundNumber().then((x) => (view.round.number = x)),
+      () => fairRouletteService.getLastWinningNumber().then((x) => (view.round.winningNumber = x)),
+      () => fairRouletteService.getRoundStartedAt().then((x) => (view.round.startedAt = x)),
     ];
 
     for (let request of requests) {
@@ -103,7 +107,7 @@
   async function updateFunds() {
     try {
       view.timestamp = Date.now() / 1000;
-      view.balance = await client.getFunds($address, Colors.IOTA_COLOR_STRING);
+      view.balance = await walletService.getFunds($address, Colors.IOTA_COLOR_STRING);
     } catch (ex) {
       view.balance = 0n;
     }
@@ -120,7 +124,7 @@
   async function placeBet() {
     view.isWorking = true;
     try {
-      await fairRoulette.placeBet($keyPair, view.round.betSelection, 1234);
+      await fairRouletteService.placeBet($keyPair, view.round.betSelection, 1234);
     } catch (ex) {
       log(ex.message);
     }
@@ -130,7 +134,7 @@
   async function sendFaucetRequest() {
     view.isWorking = true;
 
-    const faucetRequestResult = await client.getFaucetRequest($address);
+    const faucetRequestResult = await walletService.getFaucetRequest($address);
 
     // In this example a difficulty of 20 is enough, might need a retune for prod to 21 or 22
     faucetRequestResult.faucetRequest.nonce = await powManager.requestProofOfWork(
@@ -159,7 +163,9 @@
 
     // TODO: Explain.
     const executionCompensation = 5;
-    const roundTimeLeft = Math.round(fairRoulette.roundLength + executionCompensation - diff);
+    const roundTimeLeft = Math.round(
+      fairRouletteService.roundLength + executionCompensation - diff
+    );
 
     if (roundTimeLeft <= 0) {
       return 0;
@@ -168,32 +174,32 @@
   }
 
   function subscribeToRouletteEvents() {
-    fairRoulette.on('roundStarted', (timestamp) => {
+    fairRouletteService.on('roundStarted', (timestamp) => {
       view.round.active = true;
       view.round.startedAt = timestamp;
       log('[ROUND] started');
     });
 
-    fairRoulette.on('roundStopped', () => {
+    fairRouletteService.on('roundStopped', () => {
       view.round.active = false;
       log('[ROUND] ended');
     });
 
-    fairRoulette.on('roundNumber', (roundNumber: bigint) => {
+    fairRouletteService.on('roundNumber', (roundNumber: bigint) => {
       view.round.number = roundNumber;
       log(`[ROUND] Current round number: ${roundNumber}`);
     });
 
-    fairRoulette.on('winningNumber', (winningNumber: bigint) => {
+    fairRouletteService.on('winningNumber', (winningNumber: bigint) => {
       view.round.winningNumber = winningNumber;
       log(`[ROUND] The winning number was: ${winningNumber}`);
     });
 
-    fairRoulette.on('betPlaced', (bet: Bet) => {
+    fairRouletteService.on('betPlaced', (bet: Bet) => {
       log(`[BET] Bet placed from ${bet.better} on ${bet.betNumber} with ${bet.amount}`);
     });
 
-    fairRoulette.on('payout', (bet: Bet) => {
+    fairRouletteService.on('payout', (bet: Bet) => {
       log(`[WIN] Payout for ${bet.better} with ${bet.amount}`);
     });
   }
