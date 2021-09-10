@@ -1,6 +1,5 @@
 import { Writable, writable } from 'svelte/store'
-import type { Buffer } from './client/buffer';
-import type { IKeyPair } from './client/crypto/models/IKeyPair';
+import type { Buffer, IKeyPair } from './wasp_client';
 
 export const seed: Writable<Buffer> = writable();
 export const keyPair: Writable<IKeyPair> = writable();

@@ -1,6 +1,6 @@
 import nacl from 'tweetnacl'
 import { Buffer } from '../buffer'
-import type { IKeyPair } from "./models/IKeyPair";
+import type { IKeyPair } from "../models";
 
 /**
  * Class to help with ED25519 Signature scheme.

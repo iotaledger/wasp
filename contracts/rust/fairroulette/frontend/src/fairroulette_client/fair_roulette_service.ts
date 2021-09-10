@@ -1,11 +1,14 @@
 import config from '../../config.dev'
-import { BasicClient, Colors } from '../client/basic_client'
-import { Buffer } from '../client/buffer'
+import {
+  BasicClient,
+  Buffer,
+  Colors,
+  IKeyPair,
+  IOffLedger,
+  OffLedger
+  } from '../wasp_client'
 import { createNanoEvents, Emitter } from 'nanoevents'
-import { HName } from '../client/crypto/hname'
-import { OffLedger } from '../client/binary_models/off_ledger'
-import type { IOffLedger } from '../client/binary_models/IOffLedger';
-import type { IKeyPair } from '../client/crypto/models/IKeyPair';
+import { HName } from '../wasp_client/crypto/hname'
 
 type MessageHandlers = { [key: string]: (index: number) => void; };
 type ParameterResult = { [key: string]: Buffer; };

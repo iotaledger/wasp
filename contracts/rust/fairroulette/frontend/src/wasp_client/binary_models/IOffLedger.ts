@@ -2,7 +2,7 @@ import type { Buffer } from "../buffer";
 
 export interface OffLedgerArgument {
   key: string,
-  value: number
+  value: number;
 }
 
 export interface Balance {

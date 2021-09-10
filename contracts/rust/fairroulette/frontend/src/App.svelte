@@ -1,15 +1,14 @@
 <script lang="ts">
   export const name = 'app';
 
-  import { Base58 } from './client/crypto/base58';
-  import { BasicClient, Colors } from './client/basic_client';
-  import { FairRoulette } from './client/fair_roulette_service';
+  import { Base58 } from './wasp_client/crypto/base58';
+  import { BasicClient, Colors, PoWWorkerManager } from './wasp_client';
+  import { FairRoulette } from './fairroulette_client';
+  import type { Bet } from './fairroulette_client';
   import { onMount } from 'svelte';
-  import { PoWWorkerManager } from './web_worker/pow_worker_manager';
-  import { Seed } from './client/crypto/seed';
+  import { Seed } from './wasp_client/crypto/seed';
   import config from '../config.dev';
   import Roulette from './Roulette.svelte';
-  import type { Bet } from './client/fair_roulette_service';
 
   import { seed, addressIndex, keyPair, address } from './store';
 

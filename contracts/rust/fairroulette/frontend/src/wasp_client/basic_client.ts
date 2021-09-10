@@ -1,16 +1,22 @@
 import { Buffer } from './buffer'
-import { Faucet } from './binary_models/faucet_request'
-import { OffLedger } from './binary_models/off_ledger'
-import type { IAllowedManaPledgeResponse } from './models/IAllowedManaResponse';
-import type { IResponse } from './models/IResponse';
-import type { IFaucetRequest } from './binary_models/IFaucetRequest';
-import type { IFaucetResponse } from './models/IFaucetResponse';
-import type { IUnspentOutputsRequest } from './models/IUnspentOutputsRequest';
-import type { IUnspentOutputsResponse } from './models/IUnspentOutputsResponse';
-import type { ISendTransactionRequest } from './models/ISendTransactionRequest';
-import type { ISendTransactionResponse } from './models/ISendTransactionResponse';
-import type { IOffLedger } from './binary_models/IOffLedger';
-import type { IOffLedgerRequest } from './models/IOffLedgerRequest';
+import {
+  Faucet,
+  IFaucetRequest,
+  IOffLedger,
+  OffLedger
+  } from './binary_models'
+
+import type {
+  IAllowedManaPledgeResponse,
+  IOffLedgerRequest,
+  IFaucetResponse,
+  IResponse,
+  IUnspentOutputsRequest,
+  IUnspentOutputsResponse,
+  ISendTransactionRequest,
+  ISendTransactionResponse
+} from './models';
+
 
 export interface IExtendedResponse<U> {
   body: U;

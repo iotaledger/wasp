@@ -1,6 +1,6 @@
-import { Base58 } from '../crypto/base58'
+import { Base58 } from '../crypto'
 import { Buffer } from '../buffer'
-import type { IFaucetRequest } from "./IFaucetRequest";
+import type { IFaucetRequest } from './IFaucetRequest';
 
 export class Faucet {
   public static ToStruct(buffer: Buffer): IFaucetRequest {
