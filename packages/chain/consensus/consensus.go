@@ -64,7 +64,6 @@ type Consensus struct {
 	missingRequestsFromBatch         map[iscp.RequestID][32]byte
 	missingRequestsMutex             sync.Mutex
 	pullMissingRequestsFromCommittee bool
-	vmRunStartTime                   time.Time
 	consensusMetrics                 metrics.ConsensusMetrics
 }
 

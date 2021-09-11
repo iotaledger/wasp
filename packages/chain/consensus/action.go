@@ -118,7 +118,6 @@ func (c *Consensus) runVMIfNeeded() {
 	}
 
 	c.log.Debugf("runVM needed: total number of requests = %d", len(reqs))
-	c.vmRunStartTime = time.Now()
 	// here reqs as a set is deterministic. Must be sorted to have fully deterministic list
 	c.sortBatch(reqs)
 
@@ -141,6 +140,7 @@ func (c *Consensus) runVMIfNeeded() {
 	c.log.Debugf("runVM: sorted requests and filtered onLedger request overhead, running VM with batch len = %d", len(reqsFiltered))
 	if vmTask := c.prepareVMTask(reqsFiltered); vmTask != nil {
 		c.workflow.vmStarted = true
+		vmTask.StartTime = time.Now()
 		go c.vmRunner.Run(vmTask)
 		c.log.Debugf("runVM: VM started")
 	} else {
@@ -233,7 +233,7 @@ func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		c.chain.ReceiveMessage(&messages.VMResultMsg{
 			Task: task,
 		})
-		elapsed := time.Since(c.vmRunStartTime)
+		elapsed := time.Since(task.StartTime)
 		c.consensusMetrics.RecordVMRunTime(elapsed)
 	}
 	c.log.Debugf("prepareVMTask: VM task prepared")

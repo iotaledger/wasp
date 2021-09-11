@@ -36,4 +36,5 @@ type VMTask struct {
 	OnFinish                 func(callResult dict.Dict, callError error, vmError error)
 	ResultTransactionEssence *ledgerstate.TransactionEssence // if not nil it is a normal block
 	RotationAddress          ledgerstate.Address             // if not nil, it is a rotation
+	StartTime                time.Time
 }
