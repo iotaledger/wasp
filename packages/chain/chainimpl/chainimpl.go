@@ -35,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
+	"gopkg.in/eapache/channels.v1"
 )
 
 var (
@@ -55,7 +56,7 @@ type chainObj struct {
 	chainStateSync                   coreutil.ChainStateSync
 	stateReader                      state.OptimisticStateReader
 	procset                          *processors.Cache
-	chMsg                            chan interface{}
+	chMsg                            *channels.InfiniteChannel
 	chMsgOverflow                    atomic.Int32 // To log a level of a channel overflow.
 	stateMgr                         chain.StateManager
 	consensus                        chain.Consensus
@@ -105,7 +106,7 @@ func NewChain(
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
-		chMsg:             make(chan interface{}, 100),
+		chMsg:             channels.NewInfiniteChannel(),
 		chainID:           *chainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
@@ -143,7 +144,7 @@ func NewChain(
 		ret.ReceiveMessage(recv.Msg)
 	})
 	go func() {
-		for msg := range ret.chMsg {
+		for msg := range ret.chMsg.Out() {
 			ret.dispatchMessage(msg)
 		}
 	}()

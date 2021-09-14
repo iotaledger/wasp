@@ -13,6 +13,7 @@ import (
 	libp2ppeer "github.com/libp2p/go-libp2p-core/peer"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
+	"gopkg.in/eapache/channels.v1"
 )
 
 const (
@@ -25,7 +26,7 @@ type peer struct {
 	remotePubKey   *ed25519.PublicKey
 	remoteLppID    libp2ppeer.ID
 	accessLock     *sync.RWMutex
-	sendCh         chan *peering.PeerMessage
+	sendCh         *channels.InfiniteChannel
 	sendChOverflow atomic.Uint32
 	lastMsgSent    time.Time
 	lastMsgRecv    time.Time
@@ -42,7 +43,7 @@ func newPeer(remoteNetID string, remotePubKey *ed25519.PublicKey, remoteLppID li
 		remotePubKey: remotePubKey,
 		remoteLppID:  remoteLppID,
 		accessLock:   &sync.RWMutex{},
-		sendCh:       make(chan *peering.PeerMessage, 100),
+		sendCh:       channels.NewInfiniteChannel(),
 		lastMsgSent:  time.Time{},
 		lastMsgRecv:  time.Time{},
 		numUsers:     0,
@@ -82,7 +83,7 @@ func (p *peer) maintenanceCheck() {
 	}
 	if numUsers == 0 && !trusted && lastMsgOld {
 		p.net.delPeer(p)
-		close(p.sendCh)
+		p.sendCh.Close()
 	}
 }
 
@@ -126,25 +127,25 @@ func (p *peer) SendMsg(msg *peering.PeerMessage) {
 	}
 	//
 	defer catch()
-	select {
+	/*select {
 	case p.sendCh <- msg:
 		return
 	default:
 		overflow := p.sendChOverflow.Inc()
 		p.log.Warnf("Send channel to %v overflown by %v", p.remoteNetID, overflow)
 		go func() {
-			defer catch()
-			p.sendCh <- msg
-			if overflow := p.sendChOverflow.Dec(); overflow == 0 {
+			defer catch()*/
+	p.sendCh.In() <- msg
+	/*if overflow := p.sendChOverflow.Dec(); overflow == 0 {
 				p.log.Warnf("Send channel to %v is not overflown anymore.", p.remoteNetID)
 			}
 		}()
-	}
+	}*/
 }
 
 func (p *peer) sendLoop() {
-	for msg := range p.sendCh {
-		p.sendMsgDirect(msg)
+	for msg := range p.sendCh.Out() {
+		p.sendMsgDirect(msg.(*peering.PeerMessage))
 	}
 }
 

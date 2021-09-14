@@ -4,6 +4,7 @@
 package chainimpl
 
 import (
+	"sync"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -62,7 +63,7 @@ func (c *chainObj) Dismiss(reason string) {
 	c.dismissOnce.Do(func() {
 		c.dismissed.Store(true)
 
-		close(c.chMsg)
+		c.chMsg.Close()
 
 		c.mempool.Close()
 		c.stateMgr.Close()
@@ -103,21 +104,21 @@ func (c *chainObj) receiveMessage(msg interface{}, blocking bool) {
 			panic(r)
 		}
 	}()
-	if blocking {
-		c.chMsg <- msg
-		return
-	}
-	select {
-	case c.chMsg <- msg:
-		return
-	default:
-		overflowVal := c.chMsgOverflow.Inc()
-		c.log.Warnf("ReceiveMessage with type '%T' on full channel, current overflow=%v", msg, overflowVal)
-		go func() {
-			c.receiveMessage(msg, true)
-			c.chMsgOverflow.Dec()
-		}()
-	}
+	// if blocking {
+	c.chMsg.In() <- msg
+	/*	return
+		}
+		select {
+		case c.chMsg.In() <- msg:
+			return
+		default:
+			overflowVal := c.chMsgOverflow.Inc()
+			c.log.Warnf("ReceiveMessage with type '%T' on full channel, current overflow=%v", msg, overflowVal)
+			go func() {
+				c.receiveMessage(msg, true)
+				c.chMsgOverflow.Dec()
+			}()
+		}*/
 }
 
 func shouldSendToPeer(peerID string, ackPeers []string) bool {
