@@ -4,7 +4,6 @@
 package chainimpl
 
 import (
-	"sync"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -87,38 +86,14 @@ func (c *chainObj) IsDismissed() bool {
 
 // ReceiveMessage accepts an incoming message asynchronously.
 func (c *chainObj) ReceiveMessage(msg interface{}) {
-	c.receiveMessage(msg, false)
+	c.receiveMessage(msg)
 }
 
-func (c *chainObj) receiveMessage(msg interface{}, blocking bool) {
+func (c *chainObj) receiveMessage(msg interface{}) {
 	if c.IsDismissed() {
 		return
 	}
-	defer func() { // This is needed to handle possible write to a closed channel.
-		r := recover()
-		if err, ok := r.(error); ok && err.Error() == "send on closed channel" {
-			c.log.Warnf("Failed to receive message, reason=%v", err)
-			return
-		}
-		if r != nil {
-			panic(r)
-		}
-	}()
-	// if blocking {
 	c.chMsg.In() <- msg
-	/*	return
-		}
-		select {
-		case c.chMsg.In() <- msg:
-			return
-		default:
-			overflowVal := c.chMsgOverflow.Inc()
-			c.log.Warnf("ReceiveMessage with type '%T' on full channel, current overflow=%v", msg, overflowVal)
-			go func() {
-				c.receiveMessage(msg, true)
-				c.chMsgOverflow.Dec()
-			}()
-		}*/
 }
 
 func shouldSendToPeer(peerID string, ackPeers []string) bool {

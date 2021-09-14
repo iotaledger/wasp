@@ -57,7 +57,6 @@ type chainObj struct {
 	stateReader                      state.OptimisticStateReader
 	procset                          *processors.Cache
 	chMsg                            *channels.InfiniteChannel
-	chMsgOverflow                    atomic.Int32 // To log a level of a channel overflow.
 	stateMgr                         chain.StateManager
 	consensus                        chain.Consensus
 	log                              *logger.Logger
