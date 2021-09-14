@@ -20,7 +20,7 @@ var (
 )
 
 func deployErc20(t *testing.T) *solo.Chain {
-	chain := common.StartChain(t, ScName)
+	chain := common.StartChain(t, "chain1")
 	creator, creatorAddr = chain.Env.NewKeyPairWithFunds()
 	creatorAgentID = iscp.NewAgentID(creatorAddr, 0)
 	err := common.DeployWasmContractByName(chain, ScName,
