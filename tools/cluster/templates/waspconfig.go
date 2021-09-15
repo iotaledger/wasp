@@ -16,13 +16,13 @@ type WaspConfigParams struct {
 const WaspConfig = `
 {
   "database": {
-    "inMemory": true,
+    "inMemory": false,
     "directory": "waspdb"
   },
   "logger": {
     "level": "debug",
     "disableCaller": false,
-    "disableStacktrace": true,
+    "disableStacktrace": false,
     "encoding": "console",
     "outputPaths": [
       "stdout",
@@ -60,7 +60,7 @@ const WaspConfig = `
   },
   "profiling":{
     "bindAddress": "0.0.0.0:{{.ProfilingPort}}",
-    "enabled": false
+    "enabled": true
   },
   "metrics": {
     "bindAddress": "0.0.0.0:{{.MetricsPort}}",

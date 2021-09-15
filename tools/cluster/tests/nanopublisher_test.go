@@ -9,11 +9,8 @@ import (
 	"github.com/iotaledger/wasp/client/chainclient"
 	"github.com/iotaledger/wasp/client/scclient"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/iscp/requestargs"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
 	"go.nanomsg.org/mangos/v3"
 	"go.nanomsg.org/mangos/v3/protocol/sub"
@@ -126,7 +123,7 @@ func TestNanoPublisherFairRoulette(t *testing.T) {
 	waitUntil(t, chEnv.contractIsDeployed("fairroulette"), clu.Config.AllNodes(), 50*time.Second, "contract to be deployed")
 
 	// spawn many NANOMSG nanoClients and subscribe to everything from the node
-	nanoClients := make([]nanoClientTest, 0)
+	nanoClients := make([]nanoClientTest, 1)
 	nanoURL := fmt.Sprintf("tcp://127.0.0.1:%d", chEnv.clu.Config.NanomsgPort(0))
 	for i := range nanoClients {
 		nanoClients[i] = nanoClientTest{id: i, messages: []string{}}
@@ -134,16 +131,16 @@ func TestNanoPublisherFairRoulette(t *testing.T) {
 	}
 
 	// deposit funds for offledger requests
-	keyPair, myAddress := chEnv.getOrCreateAddress()
-	myAgentID := iscp.NewAgentID(myAddress, 0)
+	keyPair, _ := chEnv.getOrCreateAddress()
+	// myAgentID := iscp.NewAgentID(myAddress, 0)
 
-	accountsClient := chEnv.chain.SCClient(accounts.Contract.Hname(), keyPair)
-	_, err = accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
-		Transfer: colored.NewBalancesForIotas(1000000),
-	})
-	require.NoError(t, err)
+	// accountsClient := chEnv.chain.SCClient(accounts.Contract.Hname(), keyPair)
+	// _, err = accountsClient.PostRequest(accounts.FuncDeposit.Name, chainclient.PostRequestParams{
+	// 	Transfer: colored.NewBalancesForIotas(1000000),
+	// })
+	// require.NoError(t, err)
 
-	waitUntil(t, chEnv.balanceOnChainIotaEquals(myAgentID, 1000000), util.MakeRange(0, 1), 60*time.Second, "send 1000000i")
+	// waitUntil(t, chEnv.balanceOnChainIotaEquals(myAgentID, 1000000), util.MakeRange(0, 1), 60*time.Second, "send 1000000i")
 
 	// ----------------------------------------
 	// otherWallet, _ := chEnv.getOrCreateAddress()
@@ -188,7 +185,7 @@ func placeBet(number int64, myClient *scclient.SCClient, t *testing.T) {
 	// nonce := uint64(time.Now().UnixNano())
 	params := chainclient.PostRequestParams{Args: args, Nonce: nonce}
 	nonce++
-	_, err := myClient.PostOffLedgerRequest("placeBet", *params.WithIotas(1))
+	_, err := myClient.PostRequest("placeBet", *params.WithIotas(1))
 	if err != nil {
 		errors++
 	}
