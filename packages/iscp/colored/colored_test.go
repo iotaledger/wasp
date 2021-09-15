@@ -1,6 +1,7 @@
 package colored
 
 import (
+	"bytes"
 	"sort"
 	"testing"
 
@@ -96,9 +97,20 @@ func TestNewColoredBalances(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, cb.Equals(cbBack))
 	})
+	t.Run("marshal4 check sort", func(t *testing.T) {
+		const howMany = 1000
+		cb := NewBalances()
+
+		for i := 0; i < howMany; i++ {
+			col := ColorRandom()
+			cb.Add(col, uint64(i))
+		}
+		data := cb.Bytes()
+		cbBack, err := BalancesFromBytes(data)
+		require.NoError(t, err)
+		require.True(t, cb.Equals(cbBack))
+	})
 	t.Run("for each", func(t *testing.T) {
-		// TODO intermittent fail
-		t.SkipNow()
 		const howMany = 3
 		arr := make([]Color, howMany)
 		cb := NewBalances()
@@ -107,16 +119,16 @@ func TestNewColoredBalances(t *testing.T) {
 			cb.Set(arr[i], uint64(i+1))
 		}
 		require.EqualValues(t, howMany, len(cb))
-		arr1 := make([]Color, howMany)
+		arrToSort := make([]Color, howMany)
 		idx := 0
 		cb.ForEachSorted(func(col Color, _ uint64) bool {
-			arr1[idx] = col
+			arrToSort[idx] = col
 			idx++
 			return true
 		})
-		Sort(arr1)
-		require.True(t, sort.SliceIsSorted(arr1, func(i, j int) bool {
-			return arr[i].Compare(&arr1[j]) < 0
+		Sort(arrToSort)
+		require.True(t, sort.SliceIsSorted(arrToSort, func(i, j int) bool {
+			return arrToSort[i].Compare(&arrToSort[j]) < 0
 		}))
 	})
 }
@@ -129,4 +141,24 @@ func TestBytesString(t *testing.T) {
 	zBack := []byte(s)
 	t.Logf("len(zBack) = %d", len(zBack))
 	require.EqualValues(t, z, zBack)
+}
+
+func TestCompare(t *testing.T) {
+	var all0 [32]byte
+	var all1 [32]byte
+	for i := range all1 {
+		all1[i] = ^byte(0)
+	}
+	require.True(t, bytes.Compare(all0[:], all1[:]) < 0)
+	require.True(t, bytes.Compare(all1[:], all0[:]) > 0)
+
+	col0, err := ColorFromBytes(all0[:])
+	require.NoError(t, err)
+	col1, err := ColorFromBytes(all1[:])
+	require.NoError(t, err)
+
+	require.True(t, col0.Compare(&col1) < 0)
+	require.True(t, col1.Compare(&col0) > 0)
+	require.True(t, col1.Compare(&col1) == 0)
+	require.True(t, col0.Compare(&col0) == 0)
 }

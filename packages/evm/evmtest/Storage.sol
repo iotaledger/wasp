@@ -1,4 +1,7 @@
-pragma solidity >=0.7.0 <0.8.0;
+// Copyright 2020 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+pragma solidity ^0.8.0;
 
 contract Storage {
     uint32 n;

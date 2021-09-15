@@ -90,7 +90,7 @@ func (o *ScContext) GetBytes(keyID, typeID int32) []byte {
 	case wasmhost.KeyContractCreator:
 		return ctx.ContractCreator().Bytes()
 	case wasmhost.KeyRequestID:
-		return ctx.RequestID().Bytes()
+		return ctx.Request().ID().Bytes()
 	case wasmhost.KeyTimestamp:
 		return codec.EncodeInt64(ctx.GetTimestamp())
 	}

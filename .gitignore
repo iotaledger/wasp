@@ -11,9 +11,9 @@ wasp-cli.json
 */pkg/
 **/target/
 .DS_Store
-tools/wasp-cli/wasp-cli
+./tools/wasp-cli/wasp-cli
 .docusaurus
 node_modules
-wasp
-wasp-cli
+./wasp-cli
+./wasp
 goshimmer.log

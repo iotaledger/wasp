@@ -1,9 +1,6 @@
 package colored
 
 import (
-	"bytes"
-	"sort"
-
 	"github.com/iotaledger/hive.go/cerrors"
 	"github.com/iotaledger/hive.go/marshalutil"
 	"github.com/iotaledger/hive.go/stringify"
@@ -53,7 +50,7 @@ func BalancesFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (Balances, er
 		}
 
 		// check semantic correctness (enforce ordering)
-		if previousColor != nil && bytes.Compare(previousColor[:], col[:]) >= 0 {
+		if previousColor != nil && previousColor.Compare(&col) >= 0 {
 			return nil, xerrors.Errorf("parsed Colors are not in correct order: %w", cerrors.ErrParseBytesFailed)
 		}
 
@@ -130,12 +127,9 @@ func (c Balances) ForEachSorted(consumer func(col Color, bal uint64) bool) {
 	for col := range c {
 		keys = append(keys, col)
 	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i].Compare(&keys[i]) < 0
-	})
+	Sort(keys)
 	for _, col := range keys {
-		bal := c[col]
-		if bal > 0 && !consumer(col, bal) {
+		if c[col] > 0 && !consumer(col, c[col]) {
 			return
 		}
 	}

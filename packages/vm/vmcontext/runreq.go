@@ -172,7 +172,7 @@ func (vmctx *VMContext) adjustOffLedgerTransfer() colored.Balances {
 				"adjusting transfer from ", bal,
 				" to available ", available,
 				" for ", sender.String(),
-				" req ", vmctx.RequestID().String(),
+				" req ", vmctx.Request().ID().String(),
 			)
 			bal = available
 		}
