@@ -2,16 +2,29 @@
   export const name = 'app';
 
   import { Base58 } from './wasp_client/crypto/base58';
-  import { BasicClient, Colors, PoWWorkerManager } from './wasp_client';
+  import {
+    BasicClient,
+    ColorCollection,
+    Colors,
+    HName,
+    IUnspentOutput,
+    IUnspentOutputAddress,
+    PoWWorkerManager,
+    SimpleBufferCursor,
+  } from './wasp_client';
+  import { Buffer } from './wasp_client/buffer';
   import { FairRouletteService } from './fairroulette_client';
   import type { Bet } from './fairroulette_client';
   import { onMount } from 'svelte';
   import { Seed } from './wasp_client/crypto/seed';
-  import config from '../config.dev';
+  import config, { chainId } from '../config.dev';
   import Roulette from './Roulette.svelte';
 
   import { seed, addressIndex, keyPair, address } from './store';
   import { WalletService } from './wasp_client';
+  import type { IOnLedger } from './wasp_client/binary_models/IOnLedger';
+  import { OnLedger } from './wasp_client/binary_models/on_ledger';
+  import { BasicWallet } from './wasp_client/basic_wallet';
 
   let fundsUpdaterHandle;
 
@@ -83,6 +96,18 @@
     }
 
     log('[PAGE] loaded');
+
+    /**
+     * ChainID => address
+     * metadata: IOnLedgerRequest
+     * transfer: {color:values}
+     */
+
+    //await walletService.sendOnLedgerRequest($address, chainId);
+
+    //   const basicWallet = new BasicWallet(client);
+
+    await walletService.sendOnLedgerRequest($address, chainId);
   }
 
   onMount(initialize);

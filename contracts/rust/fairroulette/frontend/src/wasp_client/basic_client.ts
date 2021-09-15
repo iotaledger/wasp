@@ -1,11 +1,12 @@
-import { Base58, Seed } from '.';
-import { Buffer } from './buffer';
+import { Base58, Seed } from './crypto';
 import {
   Faucet,
   IFaucetRequest,
   IOffLedger,
   OffLedger
   } from './binary_models';
+import type { Buffer } from './buffer';
+
 
 import type {
   IAllowedManaPledgeResponse,
@@ -17,7 +18,7 @@ import type {
   ISendTransactionRequest,
   ISendTransactionResponse,
   IKeyPair,
-  IWalletAddressOutput
+  ISingleUnspentOutputResponse,
 } from './models';
 
 
@@ -32,15 +33,8 @@ export interface BasicClientConfiguration {
   SeedUnsafe: Buffer;
 }
 
-
 export interface CallViewResponse extends IResponse {
-  Items: [{ Key: string, Value: any; }];
-}
-
-
-export class Colors {
-  public static IOTA_COLOR_STRING = '11111111111111111111111111111111';
-  public static IOTA_COLOR_BYTES = Buffer.alloc(32);
+  Items: [{ Key: string, Value: string; }];
 }
 
 export class BasicClient {
@@ -82,6 +76,11 @@ export class BasicClient {
     const result = await this.sendRequestExt<any, CallViewResponse>(this.configuration.WaspAPIUrl, 'get', url);
 
     return result.body;
+  }
+
+  public async getAddressUnspentOutputs(address: string) {
+    return this.sendRequest<IUnspentOutputsRequest, ISingleUnspentOutputResponse>(this.configuration.GoShimmerAPIUrl,
+      'get', `ledgerstate/addresses/${address}/unspentOutputs`);
   }
 
   public async unspentOutputs(request: IUnspentOutputsRequest): Promise<IUnspentOutputsResponse> {
