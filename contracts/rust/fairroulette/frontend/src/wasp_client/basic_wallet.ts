@@ -1,7 +1,20 @@
 import { Base58 } from './crypto';
-import { Colors } from './colors';
+import { ColorCollection, Colors } from './colors';
 import type { BasicClient } from './basic_client';
 import type { IWalletAddressOutput, IWalletOutput, IWalletOutputBalance } from './models';
+
+export type BuiltOutputResult = {
+  [address: string]: {
+    /**
+     * The color.
+     */
+    color: string;
+    /**
+     * The value.
+     */
+    value: bigint;
+  }[];
+};
 
 export class BasicWallet {
 
@@ -10,20 +23,14 @@ export class BasicWallet {
     this.client = client;
   }
 
-  private mapToArray(b: { [color: string]: bigint; }): (IWalletOutputBalance[]) {
-    const balances: IWalletOutputBalance[] = [];
+  private fakeBigBalance(balances: ColorCollection) {
+    const colorCollection: ColorCollection = {};
 
-    for (const [color, value] of Object.entries(b)) {
-      let colorName = color;
-      if (color === Base58.encode(Colors.IOTA_COLOR_BYTES)) {
-        colorName = Colors.IOTA_COLOR_STRING;
-      }
-      balances.push({
-        color: colorName,
-        value: BigInt(value)
-      });
+    for (let color in balances) {
+      colorCollection[color] = BigInt(balances[color]);
     }
-    return balances;
+
+    return colorCollection;
   }
 
   public async getUnspentOutputs(address: string) {
@@ -35,7 +42,7 @@ export class BasicWallet {
       address: uo.address.base58,
       outputs: uo.outputs.map(uid => ({
         id: uid.output.outputID.base58,
-        balances: this.mapToArray(uid.output.output.balances),
+        balances: this.fakeBigBalance(uid.output.output.balances),
         inclusionState: uid.inclusionState
       }))
     }));
@@ -43,7 +50,7 @@ export class BasicWallet {
     return unspentOutputs;
   }
 
-  public determineOutputsToConsume(unspentOutputs: IWalletAddressOutput[], destinationAddress: string, iotas: bigint): {
+  public determineOutputsToConsume(unspentOutputs: IWalletAddressOutput[], iotas: bigint): {
     [address: string]: { [outputID: string]: IWalletOutput; };
   } {
     const outputsToConsume: { [address: string]: { [outputID: string]: IWalletOutput; }; } = {};
@@ -58,15 +65,15 @@ export class BasicWallet {
       for (const output of confirmedUnspentOutputs) {
         let requiredColorFoundInOutput = false;
 
-        const balance = output.balances.find(x => x.color == Colors.IOTA_COLOR_STRING);
-
-        if (!balance) {
+        if (!output.balances[Colors.IOTA_COLOR_STRING]) {
           continue;
         }
 
+        const balance = output.balances[Colors.IOTA_COLOR_STRING];
+
         if (iotasLeft > 0n) {
-          if (iotasLeft > balance.value) {
-            iotasLeft -= balance.value;
+          if (iotasLeft > balance) {
+            iotasLeft -= balance;
           } else {
             iotasLeft = 0n;
           }
@@ -96,22 +103,8 @@ export class BasicWallet {
     return outputsToConsume;
   }
 
-
-  public buildOutputs(remainderAddress: string, destinationAddress: string, iotas: bigint, consumedFunds: { [color: string]: bigint; }): {
-    [address: string]: {
-      /**
-       * The color.
-       */
-      color: string;
-      /**
-       * The value.
-       */
-      value: bigint;
-
-      shouldShipPayload: boolean;
-    }[];
-  } {
-    const outputsByColor: { [address: string]: { [color: string]: bigint; }; } = {};
+  public buildOutputs(remainderAddress: string, destinationAddress: string, iotas: bigint, consumedFunds: ColorCollection): BuiltOutputResult {
+    const outputsByColor: { [address: string]: ColorCollection; } = {};
 
     // build outputs for destinations
 
@@ -121,12 +114,13 @@ export class BasicWallet {
 
 
     if (!outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING]) {
-      outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING] = BigInt(0);
+      outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING] = 0n;
     }
+    const t = outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING];
     outputsByColor[destinationAddress][Colors.IOTA_COLOR_STRING] += iotas;
 
     consumedFunds[Colors.IOTA_COLOR_STRING] -= iotas;
-    if (consumedFunds[Colors.IOTA_COLOR_STRING] === BigInt(0)) {
+    if (consumedFunds[Colors.IOTA_COLOR_STRING] === 0n) {
       delete consumedFunds[Colors.IOTA_COLOR_STRING];
     }
 
@@ -142,35 +136,21 @@ export class BasicWallet {
       }
       for (const consumed in consumedFunds) {
         if (!outputsByColor[remainderAddress][consumed]) {
-          outputsByColor[remainderAddress][consumed] = BigInt(0);
+          outputsByColor[remainderAddress][consumed] = 0n;
         }
         outputsByColor[remainderAddress][consumed] += consumedFunds[consumed];
       }
     }
 
     // construct result
-    const outputsBySlice: {
-      [address: string]: {
-        /**
-         * The color.
-         */
-        color: string;
-        /**
-         * The value.
-         */
-        value: bigint;
-
-        shouldShipPayload: boolean;
-      }[];
-    } = {};
+    const outputsBySlice: BuiltOutputResult = {};
 
     for (const address in outputsByColor) {
       outputsBySlice[address] = [];
       for (const color in outputsByColor[address]) {
         outputsBySlice[address].push({
           color,
-          value: outputsByColor[address][color],
-          shouldShipPayload: address == destinationAddress
+          value: outputsByColor[address][color]
         });
       }
     }
@@ -186,20 +166,22 @@ export class BasicWallet {
     /**
      * The fund that were consumed.
      */
-    consumedFunds: { [color: string]: bigint; };
+    consumedFunds: ColorCollection;
   } {
     const inputs: string[] = [];
-    const consumedFunds: { [color: string]: bigint; } = {};
+    const consumedFunds: ColorCollection = {};
 
     for (const address in outputsToUseAsInputs) {
       for (const outputID in outputsToUseAsInputs[address]) {
         inputs.push(outputID);
 
-        for (const balance of outputsToUseAsInputs[address][outputID].balances) {
-          if (!consumedFunds[balance.color]) {
-            consumedFunds[balance.color] = balance.value;
+        for (const color in outputsToUseAsInputs[address][outputID].balances) {
+          const balance = outputsToUseAsInputs[address][outputID].balances[color];
+
+          if (!consumedFunds[color]) {
+            consumedFunds[color] = balance;
           } else {
-            consumedFunds[balance.color] += balance.value;
+            consumedFunds[color] += balance;
           }
         }
       }

@@ -107,7 +107,7 @@
 
     //   const basicWallet = new BasicWallet(client);
 
-    await walletService.sendOnLedgerRequest($address, chainId);
+    await walletService.sendOnLedgerRequest($keyPair, $address, chainId);
   }
 
   onMount(initialize);

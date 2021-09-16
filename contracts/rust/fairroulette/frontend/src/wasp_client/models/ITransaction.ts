@@ -1,5 +1,6 @@
 import type { IUnlockBlock } from './IUnlockBlock';
 import type { Buffer } from '../buffer';
+import type { BuiltOutputResult } from '../basic_wallet';
 export interface ITransaction {
     /**
     * The transaction's version.
@@ -32,20 +33,7 @@ export interface ITransaction {
     /**
      * The outputs to send.
      */
-    outputs: {
-        [address: string]: {
-            /**
-             * The color.
-             */
-            color: string;
-            /**
-             * The value.
-             */
-            value: bigint;
-
-            shouldShipPayload: boolean;
-        }[];
-    };
+    outputs: BuiltOutputResult;
 
     /**
      * The signatures to send.

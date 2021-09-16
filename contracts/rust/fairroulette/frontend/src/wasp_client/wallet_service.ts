@@ -8,6 +8,8 @@ import { Transaction } from './transaction';
 import type { BasicClient } from './basic_client';
 import type { IOnLedger } from './binary_models/IOnLedger';
 import type { ITransaction } from './models/ITransaction';
+import type { IUnlockBlock } from './models/IUnlockBlock';
+import type { IKeyPair } from './models';
 
 
 
@@ -63,10 +65,7 @@ export class WalletService {
     return result;
   }
 
-  public async sendOnLedgerRequest(address: string, chainId: string) {
-    const transfer = {};
-    transfer[Colors.IOTA_COLOR_STRING] = 123;
-
+  public async sendOnLedgerRequest(keyPair: IKeyPair, address: string, chainId: string) {
     const test: IOnLedger = {
       contract: HName.HashAsNumber('fairroulette'),
       entrypoint: HName.HashAsNumber('placeBet'),
@@ -78,20 +77,22 @@ export class WalletService {
       ],
     };
 
-    const manaPledge = await this.client.getAllowedManaPledge();
-
-    const allowedManagePledge = manaPledge.accessMana.allowed[0];
-    const consenseusManaPledge = manaPledge.consensusMana.allowed[0];
-
+    /* const manaPledge = await this.client.getAllowedManaPledge();
+ 
+     const allowedManagePledge = manaPledge.accessMana.allowed[0];
+     const consenseusManaPledge = manaPledge.consensusMana.allowed[0];
+ */
     const wallet = new BasicWallet(this.client);
     const unspents = await wallet.getUnspentOutputs(address);
-    const consumeOutputs = wallet.determineOutputsToConsume(unspents, chainId, 123n);
-    const { inputs, consumedFunds } = wallet.buildInputs(consumeOutputs);
+    const consumedOutputs = wallet.determineOutputsToConsume(unspents, 123n);
+    const { inputs, consumedFunds } = wallet.buildInputs(consumedOutputs);
     const outputs = wallet.buildOutputs(address, chainId, 1n, consumedFunds);
 
-    console.log(Base58.decode(allowedManagePledge), Base58.decode(consenseusManaPledge), wallet);
+    //   console.log(Base58.decode(allowedManagePledge), Base58.decode(consenseusManaPledge), wallet);
     console.log(unspents);
     console.log(inputs, consumedFunds);
+
+    const unlockBlocks: IUnlockBlock[] = [];
 
     const tx: ITransaction = {
       version: 0,
@@ -102,10 +103,40 @@ export class WalletService {
       outputs: outputs,
       chainId: chainId,
       payload: OnLedger.ToBuffer(test),
-      unlockBlocks: null
+      unlockBlocks: []
     };
 
-    const k = Transaction.essence(tx, Buffer.alloc(0));
+    const txEssence = Transaction.essence(tx, Buffer.alloc(0));
+
+
+    const addressByOutputID: { [outputID: string]: string; } = {};
+    for (const address in consumedOutputs) {
+      for (const outputID in consumedOutputs[address]) {
+        addressByOutputID[outputID] = address;
+      }
+    }
+
+    const existingUnlockBlocks: { [address: string]: number; } = {};
+    for (const index in inputs) {
+      const addr = address == addressByOutputID[inputs[index]];
+      if (addr) {
+        if (existingUnlockBlocks[address] !== undefined) {
+          unlockBlocks.push({ type: 1, referenceIndex: existingUnlockBlocks[address], publicKey: Buffer.alloc(0), signature: Buffer.alloc(0) });
+          continue;
+        }
+
+        const signatureUnlockBlock = { type: 0, referenceIndex: 0, publicKey: keyPair.publicKey, signature: Transaction.sign(keyPair, txEssence) };
+        existingUnlockBlocks[address] = unlockBlocks.length;
+        unlockBlocks.push(signatureUnlockBlock);
+      }
+    }
+
+    tx.unlockBlocks = unlockBlocks;
+
+    const result = Transaction.bytes(tx, txEssence);
+
+    console.log(result.buffer);
+    console.log(result.toJSON().data.join(" "));
 
   }
 }
