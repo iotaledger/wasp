@@ -6,7 +6,7 @@ export interface IButton {
     label: string;
 
     /**
-     * The url.
+     * What to do when button is clicked.
      */
-    link: string;
+     onClick(): void;
 }
