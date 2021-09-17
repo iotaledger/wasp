@@ -30,6 +30,8 @@
   import type { IGeneralPanel } from './models/IGeneralPanel';
   import type { IValuePanel } from './models/IValuePanel';
   import type { IDetailsPanel } from './models/IDetailsPanel';
+  import type { IMessage } from './models/IMessage';
+  import Message from './components/message.svelte';
 
   let fundsUpdaterHandle;
 
@@ -145,6 +147,11 @@
         description: [{ value: 'Page loading...' }],
       },
     ],
+  };
+
+  const INFORMATION_MESSAGE: IMessage = {
+    title: 'Start game',
+    description: 'The round starts in 50 seconds.',
   };
 
   // Entrypoint
@@ -370,6 +377,7 @@
     </ul>
   </div>
 
+  <Message {...INFORMATION_MESSAGE} />
   <Panel {...GENERAL_PANEL} />
   <Panel {...BALANCE_PANEL} />
   <Panel {...LOGS_PANEL} />
