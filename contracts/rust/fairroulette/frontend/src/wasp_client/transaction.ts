@@ -104,7 +104,7 @@ export class Transaction {
 
         bufferOutputs.sort((a, b) => a.compare(b));
         buffers.push(Buffer.concat(bufferOutputs));
-
+        buffers.push(Buffer.alloc(4));
 
         return Buffer.concat(buffers);
     }
@@ -124,8 +124,6 @@ export class Transaction {
 
         const essenceBytes = Transaction.essence(tx);
         buffers.push(essenceBytes);
-
-        buffers.push(Buffer.alloc(4));
 
         const unlockBlocksCount = Buffer.alloc(2);
         unlockBlocksCount.writeUInt16LE(tx.unlockBlocks.length, undefined);

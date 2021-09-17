@@ -65,32 +65,17 @@ export class WalletService {
     return result;
   }
 
-  public async sendOnLedgerRequest(keyPair: IKeyPair, address: string, chainId: string) {
-    const test: IOnLedger = {
-      contract: HName.HashAsNumber('fairroulette'),
-      entrypoint: HName.HashAsNumber('placeBet'),
-      arguments: [
-        {
-          key: '-number',
-          value: 123,
-        },
-      ],
-    };
+  public async sendOnLedgerRequest(keyPair: IKeyPair, address: string, chainId: string, payload: IOnLedger, transfer: bigint = 1n) {
+    if (transfer <= 0) {
+      transfer = 1n;
+    }
 
-    /* const manaPledge = await this.client.getAllowedManaPledge();
- 
-     const allowedManagePledge = manaPledge.accessMana.allowed[0];
-     const consenseusManaPledge = manaPledge.consensusMana.allowed[0];
- */
     const wallet = new BasicWallet(this.client);
-    const unspents = await wallet.getUnspentOutputs(address);
-    const consumedOutputs = wallet.determineOutputsToConsume(unspents, 123n);
-    const { inputs, consumedFunds } = wallet.buildInputs(consumedOutputs);
-    const outputs = wallet.buildOutputs(address, chainId, 1n, consumedFunds);
 
-    //   console.log(Base58.decode(allowedManagePledge), Base58.decode(consenseusManaPledge), wallet);
-    console.log(unspents);
-    console.log(inputs, consumedFunds);
+    const unspents = await wallet.getUnspentOutputs(address);
+    const consumedOutputs = wallet.determineOutputsToConsume(unspents, transfer);
+    const { inputs, consumedFunds } = wallet.buildInputs(consumedOutputs);
+    const outputs = wallet.buildOutputs(address, chainId, transfer, consumedFunds);
 
     const unlockBlocks: IUnlockBlock[] = [];
 
@@ -102,12 +87,11 @@ export class WalletService {
       inputs: inputs,
       outputs: outputs,
       chainId: chainId,
-      payload: OnLedger.ToBuffer(test),
+      payload: OnLedger.ToBuffer(payload),
       unlockBlocks: []
     };
 
     const txEssence = Transaction.essence(tx, Buffer.alloc(0));
-
 
     const addressByOutputID: { [outputID: string]: string; } = {};
     for (const address in consumedOutputs) {
@@ -135,8 +119,10 @@ export class WalletService {
 
     const result = Transaction.bytes(tx, txEssence);
 
-    console.log(result.buffer);
-    console.log(result.toJSON().data.join(" "));
+    const response = await this.client.sendTransaction({
+      txn_bytes: result.toString("base64")
+    });
 
+    return response;
   }
 }

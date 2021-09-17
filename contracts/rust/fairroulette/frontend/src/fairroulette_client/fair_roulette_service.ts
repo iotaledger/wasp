@@ -1,14 +1,19 @@
 import config from '../../config.dev';
+import { createNanoEvents, Emitter } from 'nanoevents';
+import { HName } from '../wasp_client/crypto/hname';
 import {
   BasicClient,
+  BasicWallet,
   Buffer,
   Colors,
   IKeyPair,
   IOffLedger,
-  OffLedger
-  } from '../wasp_client';
-import { createNanoEvents, Emitter } from 'nanoevents';
-import { HName } from '../wasp_client/crypto/hname';
+  OffLedger,
+  IOnLedger,
+  WalletService,
+
+} from '../wasp_client';
+
 
 type MessageHandlers = { [key: string]: (index: number) => void; };
 type ParameterResult = { [key: string]: Buffer; };
@@ -41,13 +46,16 @@ export class FairRouletteService {
   private readonly scPlaceBet: string = 'placeBet';
 
   private client: BasicClient;
+  private walletService: WalletService;
   private webSocket: WebSocket;
   private emitter: Emitter;
+
 
   public chainId: string;
   public readonly roundLength: number = 30; // in seconds
 
   constructor(client: BasicClient, chainId: string) {
+    this.walletService = new WalletService(client);
     this.client = client;
     this.chainId = chainId;
     this.emitter = createNanoEvents();
@@ -121,14 +129,11 @@ export class FairRouletteService {
     this.handleVmMessage(msg);
   }
 
-  public async placeBet(keyPair: IKeyPair, betNumber: number, take: number): Promise<void> {
-    const tokenamount = Buffer.alloc(8);
-    tokenamount.writeInt32LE(betNumber, 0);
-
+  public async placeBet(keyPair: IKeyPair, betNumber: number, take: bigint): Promise<void> {
     let betRequest: IOffLedger = {
       requestType: 1,
       arguments: [{ key: '-number', value: betNumber }],
-      balances: [{ balance: BigInt(take), color: Colors.IOTA_COLOR_BYTES }],
+      balances: [{ balance: take, color: Colors.IOTA_COLOR_BYTES }],
       contract: HName.HashAsNumber(this.scName),
       entrypoint: HName.HashAsNumber(this.scPlaceBet),
       noonce: BigInt(performance.now() + performance.timeOrigin * 10000000),
@@ -140,23 +145,20 @@ export class FairRouletteService {
     await this.client.sendExecutionRequest(this.chainId, OffLedger.GetRequestId(betRequest));
   }
 
-  public async placeBetOnLedger(keyPair: IKeyPair, betNumber: number, take: number): Promise<void> {
-    const tokenamount = Buffer.alloc(8);
-    tokenamount.writeInt32LE(betNumber, 0);
-
-    let betRequest: IOffLedger = {
-      requestType: 1,
-      arguments: [{ key: '-number', value: betNumber }],
-      balances: [{ balance: BigInt(take), color: Colors.IOTA_COLOR_BYTES }],
+  public async placeBetOnLedger(keyPair: IKeyPair, address: string, betNumber: number, take: bigint): Promise<void> {
+    const betRequest: IOnLedger = {
       contract: HName.HashAsNumber(this.scName),
       entrypoint: HName.HashAsNumber(this.scPlaceBet),
-      noonce: BigInt(performance.now() + performance.timeOrigin * 10000000),
+      arguments: [
+        {
+          key: '-number',
+          value: betNumber,
+        },
+      ],
     };
 
-    betRequest = OffLedger.Sign(betRequest, keyPair);
+    await this.walletService.sendOnLedgerRequest(keyPair, address, this.chainId, betRequest);
 
-    await this.client.sendOffLedgerRequest(this.chainId, betRequest);
-    await this.client.sendExecutionRequest(this.chainId, OffLedger.GetRequestId(betRequest));
   }
 
   public async callView(viewName: string, args?: any): Promise<ParameterResult> {
