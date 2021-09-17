@@ -141,7 +141,6 @@
       {
         tag: 'Site',
         eyebrow: '11:24:11',
-        label: '1022 Mi',
         description: [{ value: 'Page loading...' }],
       },
     ],
