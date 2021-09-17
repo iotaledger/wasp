@@ -1,3 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@font-face {
+	font-family: 'Metropolis Bold';
+	font-style: normal;
+	font-weight: normal;
+	src: local('Metropolis Bold'), url('fonts/Metropolis-Bold.woff') format('woff');
+}
+
+@font-face {
+	font-family: 'Metropolis Regular';
+	font-style: normal;
+	font-weight: normal;
+	src: local('Metropolis Regular'), url('fonts/Metropolis-Regular.woff') format('woff');
+}
+
+@font-face {
+	font-family: 'Metropolis Medium';
+	font-style: normal;
+	font-weight: normal;
+	src: local('Metropolis Medium'), url('fonts/Metropolis-Medium.woff') format('woff');
+}
 html, body {
 	position: relative;
 	width: 100%;
@@ -11,7 +33,7 @@ body {
 	background-color: #1e2439;
 	margin: 0;
 	box-sizing: border-box;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 input, button, select, textarea {
