@@ -91,6 +91,7 @@
   const PLAYERS_PANEL: IDetailsPanel = {
     type: 'details',
     title: 'Players',
+    ordered: true,
     data: [
       {
         eyebrow: '13jnjksndf12',
@@ -98,6 +99,10 @@
           {
             label: 'Bet:',
             value: '1000i',
+          },
+          {
+            label: 'W/L:',
+            value: '600i',
           },
         ],
       },
@@ -124,15 +129,17 @@
 
   const LOGS_PANEL: IDetailsPanel = {
     type: 'details',
-    title: 'Players',
+    title: 'Logs',
     ordered: true,
     data: [
       {
+        tag: 'Round',
         eyebrow: '11:24:11',
-        label: '1022 Mi',
+        // label: '1022 Mi',
         description: [{ value: 'Page loading...' }],
       },
       {
+        tag: 'Site',
         eyebrow: '11:24:11',
         label: '1022 Mi',
         description: [{ value: 'Page loading...' }],
