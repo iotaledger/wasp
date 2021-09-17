@@ -22,8 +22,6 @@
     padding-bottom: 10px;
     width: 100%;
     @media (min-width: 1024px) {
-      margin-top: 64px;
-      margin-left: 120px;
       background: #141e31;
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 12px;
