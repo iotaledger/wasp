@@ -4,7 +4,7 @@
   import Button from '../button.svelte';
 
   export let data: IPanelDataItem;
-  export let buttons: IButton[];
+  export let buttons: IButton[] = [];
 </script>
 
 <div class="value-panel">
