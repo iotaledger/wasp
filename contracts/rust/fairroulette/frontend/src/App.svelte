@@ -78,6 +78,14 @@
       eyebrow: 'Your balance',
       label: '1022 Mi',
     },
+    buttons: [
+      {
+        label: 'Request funds',
+        onClick: () => {
+          console.log('Click on request funds');
+        },
+      },
+    ],
   };
 
   const PLAYERS_PANEL: IDetailsPanel = {

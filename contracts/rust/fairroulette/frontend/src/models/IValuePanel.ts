@@ -12,9 +12,4 @@ export interface IValuePanel extends IPanel {
      * The buttons in the panel.
      */
     buttons?: IButton[];
-
-    /**
-     * Is items ordered
-     */
-    ordered?: boolean;
 }
