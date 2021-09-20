@@ -32,6 +32,7 @@
   import type { IDetailsPanel } from './models/IDetailsPanel';
   import type { IMessage } from './models/IMessage';
   import Message from './components/message.svelte';
+  import { BettingSystem } from './components';
 
   let fundsUpdaterHandle;
 
@@ -150,6 +151,7 @@
 
   const INFORMATION_MESSAGE: IMessage = {
     title: 'Start game',
+    subtitle: 'This is a subtitle',
     description: 'The round starts in 50 seconds.',
   };
 
@@ -381,6 +383,11 @@
   <Panel {...BALANCE_PANEL} />
   <Panel {...LOGS_PANEL} />
   <Panel {...PLAYERS_PANEL} />
+  <BettingSystem />
+  <!-- <div class="roulette">
+    <img src="roulette_background.svg" alt="roulette" />
+    <img src="2.svg" alt="" />
+  </div> -->
 
   <!-- {#if view.isWorking}GENERAL
     <div class="loading_dim">
