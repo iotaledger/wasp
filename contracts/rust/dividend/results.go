@@ -24,3 +24,19 @@ type MutableGetFactorResults struct {
 func (s MutableGetFactorResults) Factor() wasmlib.ScMutableInt64 {
 	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultFactor])
 }
+
+type ImmutableGetOwnerResults struct {
+	id int32
+}
+
+func (s ImmutableGetOwnerResults) Owner() wasmlib.ScImmutableAgentID {
+	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxResultOwner])
+}
+
+type MutableGetOwnerResults struct {
+	id int32
+}
+
+func (s MutableGetOwnerResults) Owner() wasmlib.ScMutableAgentID {
+	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxResultOwner])
+}

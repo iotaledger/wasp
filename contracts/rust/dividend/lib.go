@@ -16,6 +16,7 @@ func OnLoad() {
 	exports.AddFunc(FuncMember, funcMemberThunk)
 	exports.AddFunc(FuncSetOwner, funcSetOwnerThunk)
 	exports.AddView(ViewGetFactor, viewGetFactorThunk)
+	exports.AddView(ViewGetOwner, viewGetOwnerThunk)
 
 	for i, key := range keyMap {
 		idxMap[i] = key.KeyID()
@@ -129,4 +130,23 @@ func viewGetFactorThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Address().Exists(), "missing mandatory address")
 	viewGetFactor(ctx, f)
 	ctx.Log("dividend.viewGetFactor ok")
+}
+
+type GetOwnerContext struct {
+	Results MutableGetOwnerResults
+	State   ImmutableDividendState
+}
+
+func viewGetOwnerThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("dividend.viewGetOwner")
+	f := &GetOwnerContext{
+		Results: MutableGetOwnerResults{
+			id: wasmlib.OBJ_ID_RESULTS,
+		},
+		State: ImmutableDividendState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	viewGetOwner(ctx, f)
+	ctx.Log("dividend.viewGetOwner ok")
 }

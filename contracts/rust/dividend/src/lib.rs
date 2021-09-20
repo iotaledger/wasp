@@ -37,6 +37,7 @@ fn on_load() {
     exports.add_func(FUNC_MEMBER, func_member_thunk);
     exports.add_func(FUNC_SET_OWNER, func_set_owner_thunk);
     exports.add_view(VIEW_GET_FACTOR, view_get_factor_thunk);
+    exports.add_view(VIEW_GET_OWNER, view_get_owner_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {
@@ -152,6 +153,25 @@ fn view_get_factor_thunk(ctx: &ScViewContext) {
     ctx.require(f.params.address().exists(), "missing mandatory address");
     view_get_factor(ctx, &f);
     ctx.log("dividend.viewGetFactor ok");
+}
+
+pub struct GetOwnerContext {
+    results: MutableGetOwnerResults,
+    state:   ImmutableDividendState,
+}
+
+fn view_get_owner_thunk(ctx: &ScViewContext) {
+    ctx.log("dividend.viewGetOwner");
+    let f = GetOwnerContext {
+        results: MutableGetOwnerResults {
+            id: OBJ_ID_RESULTS,
+        },
+        state: ImmutableDividendState {
+            id: OBJ_ID_STATE,
+        },
+    };
+    view_get_owner(ctx, &f);
+    ctx.log("dividend.viewGetOwner ok");
 }
 
 // @formatter:on

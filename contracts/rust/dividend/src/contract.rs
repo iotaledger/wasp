@@ -42,6 +42,11 @@ pub struct GetFactorCall {
     pub results: ImmutableGetFactorResults,
 }
 
+pub struct GetOwnerCall {
+    pub func:    ScView,
+    pub results: ImmutableGetOwnerResults,
+}
+
 pub struct ScFuncs {
 }
 
@@ -82,6 +87,14 @@ impl ScFuncs {
             results: ImmutableGetFactorResults { id: 0 },
         };
         f.func.set_ptrs(&mut f.params.id, &mut f.results.id);
+        f
+    }
+    pub fn get_owner(_ctx: & dyn ScViewCallContext) -> GetOwnerCall {
+        let mut f = GetOwnerCall {
+            func:    ScView::new(HSC_NAME, HVIEW_GET_OWNER),
+            results: ImmutableGetOwnerResults { id: 0 },
+        };
+        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
         f
     }
 }

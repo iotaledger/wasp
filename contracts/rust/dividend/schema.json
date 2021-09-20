@@ -37,6 +37,11 @@
       "results": {
         "factor": "Int64 // relative division factor"
       }
+    },
+    "getOwner": {
+      "results": {
+        "owner": "AgentID // current owner of this smart contract"
+      }
     }
   }
 }

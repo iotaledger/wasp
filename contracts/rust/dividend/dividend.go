@@ -232,3 +232,8 @@ func viewGetFactor(ctx wasmlib.ScViewContext, f *GetFactorContext) {
 	// The contents of this results map is returned to the caller of the function.
 	f.Results.Factor().SetValue(factor)
 }
+
+// 'getOwner' can be used to retrieve the current owner of the dividend contract
+func viewGetOwner(ctx wasmlib.ScViewContext, f *GetOwnerContext) {
+	f.Results.Owner().SetValue(f.State.Owner().Value())
+}

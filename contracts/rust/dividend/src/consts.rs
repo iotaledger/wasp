@@ -20,6 +20,7 @@ pub const PARAM_FACTOR:  &str = "factor";
 pub const PARAM_OWNER:   &str = "owner";
 
 pub const RESULT_FACTOR: &str = "factor";
+pub const RESULT_OWNER:  &str = "owner";
 
 pub const STATE_MEMBER_LIST:  &str = "memberList";
 pub const STATE_MEMBERS:      &str = "members";
@@ -31,11 +32,13 @@ pub const FUNC_INIT:       &str = "init";
 pub const FUNC_MEMBER:     &str = "member";
 pub const FUNC_SET_OWNER:  &str = "setOwner";
 pub const VIEW_GET_FACTOR: &str = "getFactor";
+pub const VIEW_GET_OWNER:  &str = "getOwner";
 
 pub const HFUNC_DIVIDE:     ScHname = ScHname(0xc7878107);
 pub const HFUNC_INIT:       ScHname = ScHname(0x1f44d644);
 pub const HFUNC_MEMBER:     ScHname = ScHname(0xc07da2cb);
 pub const HFUNC_SET_OWNER:  ScHname = ScHname(0x2a15fe7b);
 pub const HVIEW_GET_FACTOR: ScHname = ScHname(0x0ee668fe);
+pub const HVIEW_GET_OWNER:  ScHname = ScHname(0x137107a6);
 
 // @formatter:on

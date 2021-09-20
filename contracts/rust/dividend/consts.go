@@ -21,7 +21,10 @@ const (
 	ParamOwner   = wasmlib.Key("owner")
 )
 
-const ResultFactor = wasmlib.Key("factor")
+const (
+	ResultFactor = wasmlib.Key("factor")
+	ResultOwner  = wasmlib.Key("owner")
+)
 
 const (
 	StateMemberList  = wasmlib.Key("memberList")
@@ -36,6 +39,7 @@ const (
 	FuncMember    = "member"
 	FuncSetOwner  = "setOwner"
 	ViewGetFactor = "getFactor"
+	ViewGetOwner  = "getOwner"
 )
 
 const (
@@ -44,4 +48,5 @@ const (
 	HFuncMember    = wasmlib.ScHname(0xc07da2cb)
 	HFuncSetOwner  = wasmlib.ScHname(0x2a15fe7b)
 	HViewGetFactor = wasmlib.ScHname(0x0ee668fe)
+	HViewGetOwner  = wasmlib.ScHname(0x137107a6)
 )

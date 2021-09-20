@@ -231,3 +231,8 @@ pub fn view_get_factor(_ctx: &ScViewContext, f: &GetFactorContext) {
     // The contents of this results map is returned to the caller of the function.
     f.results.factor().set_value(factor);
 }
+
+// 'getOwner' can be used to retrieve the current owner of the dividend contract
+pub fn view_get_owner(_ctx: &ScViewContext, f: &GetOwnerContext) {
+    f.results.owner().set_value(&f.state.owner().value());
+}

@@ -34,6 +34,11 @@ type GetFactorCall struct {
 	Results ImmutableGetFactorResults
 }
 
+type GetOwnerCall struct {
+	Func    *wasmlib.ScView
+	Results ImmutableGetOwnerResults
+}
+
 type Funcs struct{}
 
 var ScFuncs Funcs
@@ -63,5 +68,11 @@ func (sc Funcs) SetOwner(ctx wasmlib.ScFuncCallContext) *SetOwnerCall {
 func (sc Funcs) GetFactor(ctx wasmlib.ScViewCallContext) *GetFactorCall {
 	f := &GetFactorCall{Func: wasmlib.NewScView(HScName, HViewGetFactor)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
+	return f
+}
+
+func (sc Funcs) GetOwner(ctx wasmlib.ScViewCallContext) *GetOwnerCall {
+	f := &GetOwnerCall{Func: wasmlib.NewScView(HScName, HViewGetOwner)}
+	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }
