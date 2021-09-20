@@ -26,9 +26,11 @@
 	
 	/*Palette*/
 	--blue-dark:#141e31;
-	--mint-green-light:#14CABF;;
+	--mint-green-light:#14CABF;
+	--mint-green:#00e0ca;
 	--mint-green-dark:#36A1AC;
 	--gray-3:#D8E1F4;
+	--gray-4:#b0bfd9;
 	--gray-5:#909FBE;
 	--white:#ffffff;
 
@@ -92,11 +94,12 @@ h1 {
 	color: var(--mint-green-dark);
 	line-height: 150%;
   }
+
 .panel{
 	background: rgba(6, 16, 35, 0.2);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 10px 24px;
+    padding: 8px 24px;
     width: 100%;
 }
 @media (min-width: 1024px) {

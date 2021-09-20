@@ -19,10 +19,7 @@
     color: var(--white);
     padding: 12px;
     @media (min-width: 1024px) {
-      padding-top: 12px;
-      padding-bottom: 12px;
-      padding-left: 31px;
-      padding-right: 31px;
+      padding: 12px 30px;
     }
     &.disabled {
       background: transparent;

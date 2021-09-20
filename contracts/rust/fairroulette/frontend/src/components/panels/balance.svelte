@@ -51,7 +51,6 @@
       }
     }
     .value-button div {
-      margin-right: 24px;
       margin-bottom: 8px;
       @media (min-width: 1024px) {
         margin: 0 auto;

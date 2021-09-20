@@ -7,10 +7,10 @@
 <div class="message">
   <h1 class="title">{title}</h1>
   {#if subtitle}
-    <span class="subtitle">{subtitle}</span>
+    <div class="subtitle">{subtitle}</div>
   {/if}
   {#if description}
-    <span class="description">{description}</span>
+    <div class="description">{description}</div>
   {/if}
   <div />
 </div>
@@ -27,7 +27,8 @@
       font-size: 24px;
       line-height: 120%;
       letter-spacing: 0.02em;
-      color: #00e0ca;
+      color: var(--mint-green);
+      margin-bottom: 8px;
     }
     .description {
       font-size: 16px;
