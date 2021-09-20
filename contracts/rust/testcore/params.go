@@ -93,6 +93,22 @@ type ImmutablePassTypesFullParams struct {
 	id int32
 }
 
+func (s ImmutablePassTypesFullParams) Address() wasmlib.ScImmutableAddress {
+	return wasmlib.NewScImmutableAddress(s.id, idxMap[IdxParamAddress])
+}
+
+func (s ImmutablePassTypesFullParams) AgentID() wasmlib.ScImmutableAgentID {
+	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamAgentID])
+}
+
+func (s ImmutablePassTypesFullParams) ChainID() wasmlib.ScImmutableChainID {
+	return wasmlib.NewScImmutableChainID(s.id, idxMap[IdxParamChainID])
+}
+
+func (s ImmutablePassTypesFullParams) ContractID() wasmlib.ScImmutableAgentID {
+	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamContractID])
+}
+
 func (s ImmutablePassTypesFullParams) Hash() wasmlib.ScImmutableHash {
 	return wasmlib.NewScImmutableHash(s.id, idxMap[IdxParamHash])
 }
@@ -123,6 +139,22 @@ func (s ImmutablePassTypesFullParams) StringZero() wasmlib.ScImmutableString {
 
 type MutablePassTypesFullParams struct {
 	id int32
+}
+
+func (s MutablePassTypesFullParams) Address() wasmlib.ScMutableAddress {
+	return wasmlib.NewScMutableAddress(s.id, idxMap[IdxParamAddress])
+}
+
+func (s MutablePassTypesFullParams) AgentID() wasmlib.ScMutableAgentID {
+	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamAgentID])
+}
+
+func (s MutablePassTypesFullParams) ChainID() wasmlib.ScMutableChainID {
+	return wasmlib.NewScMutableChainID(s.id, idxMap[IdxParamChainID])
+}
+
+func (s MutablePassTypesFullParams) ContractID() wasmlib.ScMutableAgentID {
+	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamContractID])
 }
 
 func (s MutablePassTypesFullParams) Hash() wasmlib.ScMutableHash {
@@ -317,6 +349,22 @@ type ImmutablePassTypesViewParams struct {
 	id int32
 }
 
+func (s ImmutablePassTypesViewParams) Address() wasmlib.ScImmutableAddress {
+	return wasmlib.NewScImmutableAddress(s.id, idxMap[IdxParamAddress])
+}
+
+func (s ImmutablePassTypesViewParams) AgentID() wasmlib.ScImmutableAgentID {
+	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamAgentID])
+}
+
+func (s ImmutablePassTypesViewParams) ChainID() wasmlib.ScImmutableChainID {
+	return wasmlib.NewScImmutableChainID(s.id, idxMap[IdxParamChainID])
+}
+
+func (s ImmutablePassTypesViewParams) ContractID() wasmlib.ScImmutableAgentID {
+	return wasmlib.NewScImmutableAgentID(s.id, idxMap[IdxParamContractID])
+}
+
 func (s ImmutablePassTypesViewParams) Hash() wasmlib.ScImmutableHash {
 	return wasmlib.NewScImmutableHash(s.id, idxMap[IdxParamHash])
 }
@@ -347,6 +395,22 @@ func (s ImmutablePassTypesViewParams) StringZero() wasmlib.ScImmutableString {
 
 type MutablePassTypesViewParams struct {
 	id int32
+}
+
+func (s MutablePassTypesViewParams) Address() wasmlib.ScMutableAddress {
+	return wasmlib.NewScMutableAddress(s.id, idxMap[IdxParamAddress])
+}
+
+func (s MutablePassTypesViewParams) AgentID() wasmlib.ScMutableAgentID {
+	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamAgentID])
+}
+
+func (s MutablePassTypesViewParams) ChainID() wasmlib.ScMutableChainID {
+	return wasmlib.NewScMutableChainID(s.id, idxMap[IdxParamChainID])
+}
+
+func (s MutablePassTypesViewParams) ContractID() wasmlib.ScMutableAgentID {
+	return wasmlib.NewScMutableAgentID(s.id, idxMap[IdxParamContractID])
 }
 
 func (s MutablePassTypesViewParams) Hash() wasmlib.ScMutableHash {

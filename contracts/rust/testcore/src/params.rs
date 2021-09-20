@@ -112,6 +112,22 @@ pub struct ImmutablePassTypesFullParams {
 }
 
 impl ImmutablePassTypesFullParams {
+    pub fn address(&self) -> ScImmutableAddress {
+        ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+    }
+
+    pub fn agent_id(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+    }
+
+    pub fn chain_id(&self) -> ScImmutableChainID {
+        ScImmutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+    }
+
+    pub fn contract_id(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_CONTRACT_ID))
+    }
+
     pub fn hash(&self) -> ScImmutableHash {
         ScImmutableHash::new(self.id, idx_map(IDX_PARAM_HASH))
     }
@@ -147,6 +163,22 @@ pub struct MutablePassTypesFullParams {
 }
 
 impl MutablePassTypesFullParams {
+    pub fn address(&self) -> ScMutableAddress {
+        ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+    }
+
+    pub fn agent_id(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+    }
+
+    pub fn chain_id(&self) -> ScMutableChainID {
+        ScMutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+    }
+
+    pub fn contract_id(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_CONTRACT_ID))
+    }
+
     pub fn hash(&self) -> ScMutableHash {
         ScMutableHash::new(self.id, idx_map(IDX_PARAM_HASH))
     }
@@ -390,6 +422,22 @@ pub struct ImmutablePassTypesViewParams {
 }
 
 impl ImmutablePassTypesViewParams {
+    pub fn address(&self) -> ScImmutableAddress {
+        ScImmutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+    }
+
+    pub fn agent_id(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+    }
+
+    pub fn chain_id(&self) -> ScImmutableChainID {
+        ScImmutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+    }
+
+    pub fn contract_id(&self) -> ScImmutableAgentID {
+        ScImmutableAgentID::new(self.id, idx_map(IDX_PARAM_CONTRACT_ID))
+    }
+
     pub fn hash(&self) -> ScImmutableHash {
         ScImmutableHash::new(self.id, idx_map(IDX_PARAM_HASH))
     }
@@ -425,6 +473,22 @@ pub struct MutablePassTypesViewParams {
 }
 
 impl MutablePassTypesViewParams {
+    pub fn address(&self) -> ScMutableAddress {
+        ScMutableAddress::new(self.id, idx_map(IDX_PARAM_ADDRESS))
+    }
+
+    pub fn agent_id(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_AGENT_ID))
+    }
+
+    pub fn chain_id(&self) -> ScMutableChainID {
+        ScMutableChainID::new(self.id, idx_map(IDX_PARAM_CHAIN_ID))
+    }
+
+    pub fn contract_id(&self) -> ScMutableAgentID {
+        ScMutableAgentID::new(self.id, idx_map(IDX_PARAM_CONTRACT_ID))
+    }
+
     pub fn hash(&self) -> ScMutableHash {
         ScMutableHash::new(self.id, idx_map(IDX_PARAM_HASH))
     }

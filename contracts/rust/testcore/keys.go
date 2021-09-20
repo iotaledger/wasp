@@ -16,32 +16,33 @@ const (
 	IdxParamChainID         = 3
 	IdxParamChainOwnerID    = 4
 	IdxParamContractCreator = 5
-	IdxParamCounter         = 6
-	IdxParamHash            = 7
-	IdxParamHname           = 8
-	IdxParamHnameContract   = 9
-	IdxParamHnameEP         = 10
-	IdxParamHnameZero       = 11
-	IdxParamInt64           = 12
-	IdxParamInt64Zero       = 13
-	IdxParamIntValue        = 14
-	IdxParamName            = 15
-	IdxParamString          = 16
-	IdxParamStringZero      = 17
-	IdxResultChainOwnerID   = 18
-	IdxResultCounter        = 19
-	IdxResultIntValue       = 20
-	IdxResultMintedColor    = 21
-	IdxResultMintedSupply   = 22
-	IdxResultSandboxCall    = 23
-	IdxStateCounter         = 24
-	IdxStateHnameEP         = 25
-	IdxStateInts            = 26
-	IdxStateMintedColor     = 27
-	IdxStateMintedSupply    = 28
+	IdxParamContractID      = 6
+	IdxParamCounter         = 7
+	IdxParamHash            = 8
+	IdxParamHname           = 9
+	IdxParamHnameContract   = 10
+	IdxParamHnameEP         = 11
+	IdxParamHnameZero       = 12
+	IdxParamInt64           = 13
+	IdxParamInt64Zero       = 14
+	IdxParamIntValue        = 15
+	IdxParamName            = 16
+	IdxParamString          = 17
+	IdxParamStringZero      = 18
+	IdxResultChainOwnerID   = 19
+	IdxResultCounter        = 20
+	IdxResultIntValue       = 21
+	IdxResultMintedColor    = 22
+	IdxResultMintedSupply   = 23
+	IdxResultSandboxCall    = 24
+	IdxStateCounter         = 25
+	IdxStateHnameEP         = 26
+	IdxStateInts            = 27
+	IdxStateMintedColor     = 28
+	IdxStateMintedSupply    = 29
 )
 
-const keyMapLen = 29
+const keyMapLen = 30
 
 var keyMap = [keyMapLen]wasmlib.Key{
 	ParamAddress,
@@ -50,6 +51,7 @@ var keyMap = [keyMapLen]wasmlib.Key{
 	ParamChainID,
 	ParamChainOwnerID,
 	ParamContractCreator,
+	ParamContractID,
 	ParamCounter,
 	ParamHash,
 	ParamHname,

@@ -173,6 +173,10 @@ func funcPassTypesFullThunk(ctx wasmlib.ScFuncContext) {
 			id: wasmlib.OBJ_ID_STATE,
 		},
 	}
+	ctx.Require(f.Params.Address().Exists(), "missing mandatory address")
+	ctx.Require(f.Params.AgentID().Exists(), "missing mandatory agentID")
+	ctx.Require(f.Params.ChainID().Exists(), "missing mandatory chainID")
+	ctx.Require(f.Params.ContractID().Exists(), "missing mandatory contractID")
 	ctx.Require(f.Params.Hash().Exists(), "missing mandatory hash")
 	ctx.Require(f.Params.Hname().Exists(), "missing mandatory hname")
 	ctx.Require(f.Params.HnameZero().Exists(), "missing mandatory hnameZero")
@@ -505,6 +509,10 @@ func viewPassTypesViewThunk(ctx wasmlib.ScViewContext) {
 			id: wasmlib.OBJ_ID_STATE,
 		},
 	}
+	ctx.Require(f.Params.Address().Exists(), "missing mandatory address")
+	ctx.Require(f.Params.AgentID().Exists(), "missing mandatory agentID")
+	ctx.Require(f.Params.ChainID().Exists(), "missing mandatory chainID")
+	ctx.Require(f.Params.ContractID().Exists(), "missing mandatory contractID")
 	ctx.Require(f.Params.Hash().Exists(), "missing mandatory hash")
 	ctx.Require(f.Params.Hname().Exists(), "missing mandatory hname")
 	ctx.Require(f.Params.HnameZero().Exists(), "missing mandatory hnameZero")

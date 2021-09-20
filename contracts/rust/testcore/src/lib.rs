@@ -195,6 +195,10 @@ fn func_pass_types_full_thunk(ctx: &ScFuncContext) {
             id: OBJ_ID_STATE,
         },
     };
+    ctx.require(f.params.address().exists(), "missing mandatory address");
+    ctx.require(f.params.agent_id().exists(), "missing mandatory agentID");
+    ctx.require(f.params.chain_id().exists(), "missing mandatory chainID");
+    ctx.require(f.params.contract_id().exists(), "missing mandatory contractID");
     ctx.require(f.params.hash().exists(), "missing mandatory hash");
     ctx.require(f.params.hname().exists(), "missing mandatory hname");
     ctx.require(f.params.hname_zero().exists(), "missing mandatory hnameZero");
@@ -527,6 +531,10 @@ fn view_pass_types_view_thunk(ctx: &ScViewContext) {
             id: OBJ_ID_STATE,
         },
     };
+    ctx.require(f.params.address().exists(), "missing mandatory address");
+    ctx.require(f.params.agent_id().exists(), "missing mandatory agentID");
+    ctx.require(f.params.chain_id().exists(), "missing mandatory chainID");
+    ctx.require(f.params.contract_id().exists(), "missing mandatory contractID");
     ctx.require(f.params.hash().exists(), "missing mandatory hash");
     ctx.require(f.params.hname().exists(), "missing mandatory hname");
     ctx.require(f.params.hname_zero().exists(), "missing mandatory hnameZero");

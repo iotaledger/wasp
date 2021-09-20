@@ -23,10 +23,10 @@
     },
     "checkContextFromFullEP": {
       "params": {
-        "agentID=agentID": "AgentID",
+        "agentID": "AgentID",
         "caller": "AgentID",
-        "chainID=chainID": "ChainID",
-        "chainOwnerID=chainOwnerID": "AgentID",
+        "chainID": "ChainID",
+        "chainOwnerID": "AgentID",
         "contractCreator": "AgentID"
       }
     },
@@ -50,7 +50,11 @@
         "stringZero=string-0": "String",
         "hash=Hash": "Hash",
         "hname=Hname": "Hname",
-        "hnameZero=Hname-0": "Hname"
+        "hnameZero=Hname-0": "Hname",
+        "contractID": "AgentID",
+        "chainID": "ChainID",
+        "address": "Address",
+        "agentID": "AgentID"
       }
     },
     "runRecursion": {
@@ -102,9 +106,9 @@
   "views": {
     "checkContextFromViewEP": {
       "params": {
-        "agentID=agentID": "AgentID",
-        "chainID=chainID": "ChainID",
-        "chainOwnerID=chainOwnerID": "AgentID",
+        "agentID": "AgentID",
+        "chainID": "ChainID",
+        "chainOwnerID": "AgentID",
         "contractCreator": "AgentID"
       }
     },
@@ -139,7 +143,11 @@
         "stringZero=string-0": "String",
         "hash=Hash": "Hash",
         "hname=Hname": "Hname",
-        "hnameZero=Hname-0": "Hname"
+        "hnameZero=Hname-0": "Hname",
+        "contractID": "AgentID",
+        "chainID": "ChainID",
+        "address": "Address",
+        "agentID": "AgentID"
       }
     },
     "testCallPanicViewEPFromView": {

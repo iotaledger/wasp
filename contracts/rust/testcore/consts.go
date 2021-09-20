@@ -22,6 +22,7 @@ const (
 	ParamChainID         = wasmlib.Key("chainID")
 	ParamChainOwnerID    = wasmlib.Key("chainOwnerID")
 	ParamContractCreator = wasmlib.Key("contractCreator")
+	ParamContractID      = wasmlib.Key("contractID")
 	ParamCounter         = wasmlib.Key("counter")
 	ParamHash            = wasmlib.Key("Hash")
 	ParamHname           = wasmlib.Key("Hname")
