@@ -30,8 +30,8 @@
   import type { IGeneralPanel } from './models/IGeneralPanel';
   import type { IValuePanel } from './models/IValuePanel';
   import type { IDetailsPanel } from './models/IDetailsPanel';
-  import type { IMessage } from './models/IMessage';
-  import Message from './components/message.svelte';
+  import type { IState } from './models/IState';
+  import State from './components/state.svelte';
 
   let fundsUpdaterHandle;
 
@@ -148,7 +148,7 @@
     ],
   };
 
-  const INFORMATION_MESSAGE: IMessage = {
+  const INFORMATION_STATE: IState = {
     title: 'Start game',
     description: 'The round starts in 50 seconds.',
   };
@@ -376,7 +376,7 @@
     </ul>
   </div>
 
-  <Message {...INFORMATION_MESSAGE} />
+  <State {...INFORMATION_STATE} />
   <Panel {...GENERAL_PANEL} />
   <Panel {...BALANCE_PANEL} />
   <Panel {...LOGS_PANEL} />
