@@ -38,7 +38,6 @@
       color: #00e0ca;
     }
     .description {
-    }
     font-size: 16px;
     line-height: 150%;
     text-align: center;
