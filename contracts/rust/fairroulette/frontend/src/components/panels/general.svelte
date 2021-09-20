@@ -15,7 +15,6 @@
 <style lang="scss">
   .panel {
     @media (min-width: 1024px) {
-      background: #141e31;
       padding-bottom: 24px;
     }
     .panel-data {
@@ -27,7 +26,6 @@
         grid-template-rows: 1fr 1fr;
         grid-template-columns: 1fr;
       }
-
       .label {
         width: 100%;
         font-size: 14px;
