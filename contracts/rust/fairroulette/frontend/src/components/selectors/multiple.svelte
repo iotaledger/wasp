@@ -30,11 +30,16 @@
     width: fit-content;
 
     .cell {
-      background-color: tomato;
-      width: 60px;
-      height: 60px;
+      background-color: transparent;
+      width: 56px;
+      height: 56px;
+      border: 1px solid #677695;
+      box-sizing: border-box;
+      border-radius: 6px;
+      color: var(--white);
       &.active {
-        background-color: turquoise;
+        background-color: rgba(20, 202, 191, 0.08);
+        border: 1px solid var(--mint-green-light);
       }
     }
   }

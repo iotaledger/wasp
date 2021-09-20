@@ -39,13 +39,29 @@
   <Selector {...BET_NUMBER_SELECTOR} />
   <div>
     <Selector {...BET_IOTA_AMOUNT_SELECTOR} />
-    <Button {...PLACE_BET_BUTTON} disabled={selectedNumber === undefined} />
+    <div class="bet-button">
+      <Button {...PLACE_BET_BUTTON} disabled={selectedNumber === undefined} />
+    </div>
   </div>
 </div>
 
 <style lang="scss">
   .betting-system {
     display: flex;
-    justify-content: space-around;
+    flex-direction: column;
+    align-content: center;
+    flex-wrap: wrap;
+    gap: 30px;
+    @media (min-width: 1024px) {
+      flex-direction: row;
+      justify-content: center;
+      gap: 60px;
+      align-items: flex-end;
+    }
+  }
+  .bet-button {
+    margin-top: 24px;
+    display: flex;
+    justify-content: center;
   }
 </style>
