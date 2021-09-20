@@ -15,33 +15,35 @@
 <div class="details-panel">
   <h3>{title}</h3>
   <hr />
-  <div>
+  <div class="details-content">
     {#each data as item, index}
-      {#if ordered}
-        <span class="item-index">{index}</span>
-      {/if}
-
-      <div class="tag">
-        {#if item.tag}
-          <span class="item-tag">{item.tag}</span>
+      <div class="details-tag">
+        {#if ordered}
+          <span class="item-index">{index}</span>
         {/if}
 
-        <span class="item-eyebrow">{item.eyebrow}</span>
-      </div>
+        <div class="tag">
+          {#if item.tag}
+            <span class="item-tag">{item.tag}</span>
+          {/if}
 
+          <span class="item-eyebrow">{item.eyebrow}</span>
+        </div>
+      </div>
       {#if item.label}
         <div class="item-label">{item.label}</div>
       {/if}
+      <div class="tag-description">
+        {#each item.description as { label, value }}
+          <div class="item-description">
+            {#if label}
+              <span class="description-label">{label}</span>
+            {/if}
 
-      {#each item.description as { label, value }}
-        <div class="item-description">
-          {#if label}
-            <span>{label}</span>
-          {/if}
-
-          <span>{value}</span>
-        </div>
-      {/each}
+            <span class="description-value">{value}</span>
+          </div>
+        {/each}
+      </div>
     {/each}
   </div>
 </div>
@@ -71,17 +73,65 @@
       margin-right: 16px;
       border-color: rgba(255, 255, 255, 0.12);
     }
+    .details-content {
+      padding: 0 16px;
+    }
     .item-index {
-      color: yellow;
+      font-size: 14px;
+      line-height: 150%;
+      letter-spacing: 0.5px;
+      color: #909fbe;
+      margin-right: 16px;
     }
     .tag {
-      color: violet;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
     }
-    .item-label {
-      color: red;
+    .details-tag {
+      display: flex;
+    }
+    .item-tag {
+      font-weight: bold;
+      font-size: 12px;
+      line-height: 150%;
+      background: rgba(0, 224, 202, 0.2);
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+      color: #36a1ac;
+      padding: 2px 6px;
+      margin-right: 90%;
+    }
+    .item-eyebrow {
+      font-weight: bold;
+      font-size: 14px;
+      line-height: 150%;
+      letter-spacing: 0.5px;
+      color: #d8e1f4;
+    }
+    .tag-description {
+      display: flex;
     }
     .item-description {
-      color: turquoise;
+      margin-left: 26px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      line-height: 150%;
+      letter-spacing: 0.5px;
+      color: #909fbe;
+    }
+    .description-label {
+      font-weight: bold;
+      font-size: 14px;
+      line-height: 150%;
+      letter-spacing: 0.5px;
+      color: #909fbe;
+    }
+    .description-value {
+      font-size: 14px;
+      line-height: 150%;
+      letter-spacing: 0.5px;
+      color: #909fbe;
     }
   }
 </style>

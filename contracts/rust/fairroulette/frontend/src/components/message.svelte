@@ -17,6 +17,7 @@
 
 <style lang="scss">
   .message {
+    text-align: center;
     .title {
       font-weight: 600;
       font-size: 32px;
@@ -24,7 +25,6 @@
       text-align: center;
       letter-spacing: 0.75px;
       color: #ffffff;
-      text-align: center;
       @media (min-width: 1024px) {
         font-size: 48px;
       }
@@ -33,15 +33,14 @@
       font-weight: 600;
       font-size: 24px;
       line-height: 120%;
-      text-align: center;
       letter-spacing: 0.02em;
       color: #00e0ca;
     }
     .description {
-    font-size: 16px;
-    line-height: 150%;
-    text-align: center;
-    letter-spacing: 0.75px;
-    color: #909fbe;
+      font-size: 16px;
+      line-height: 150%;
+      letter-spacing: 0.75px;
+      color: #909fbe;
+    }
   }
 </style>
