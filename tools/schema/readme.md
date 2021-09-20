@@ -89,8 +89,10 @@ Here is a list of the topics this tutorial will cover:
 * [Colored Tokens and Time Locks](docs/timelock.md)
 
 Let's start by diving deeper into a concept that is central to WasmLib smart contract
-programming: proxyobjects.
+programming: proxy objects.
 
 Next: [Data Access Proxies](docs/proxies.md)
+
+Golang version:  [Data Access Proxies](docs/go-docs/proxies.md)
 
 

@@ -22,15 +22,14 @@ tokens to the member addresses.
 The idea behind the dividend smart contract is that once we have set up the list of
 members, consisting of address/factor pairs, and knowing the total sum of the factors, we
 can automatically pay out a dividend to each of the members in the list according to the
-factors involved. Whatever amount of tokens gets sent to the 'divide' function will be
+factors involved. Whatever amount of tokens gets sent to the `divide` function will be
 divided over the members in proportion based on their respective factors. For example, you
-could set it up that address A has a factor 50, B has 30, and C has 20, for a total of
+could set it up that address A has a factor 50, B has 30, and C has 20, for a total of 100
+to divide. Then whenever an amount of tokens gets sent to the 'divide' function, address A
+will receive 50/100th, address B will receive 30/100th, and address C will receive
+20/100th of that amount.
 
-100. Then whenever an amount of tokens gets sent to the 'divide' function, address A will
-     receive 50/100th, address B will receive 30/100th, and address C will receive
-     20/100th of that amount.
-
-Here is how the 'divide' function starts:
+Here is the `divide` function:
 
 ```rust
 // 'divide' is a function that will take any iotas it receives and properly
@@ -96,7 +95,7 @@ pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
 }
 ```
 
-This completes the logic for the 'divide' function. In the next section we will introduce
-function descriptors that can be used to initiate smart contract functions.
+In the next section we will introduce function descriptors that can be used to initiate
+smart contract functions.
 
 Next: [Function Descriptors](funcdesc.md)
