@@ -25,6 +25,7 @@
 	--desktop-width:1024px; /*
 	
 	/*Palette*/
+	--blue-dark:#141e31;
 	--mint-green-light:#14CABF;;
 	--mint-green-dark:#36A1AC;
 	--gray-3:#D8E1F4;
@@ -77,6 +78,7 @@ h1 {
 @media (min-width: 1024px) {
 	h1{
 		font-size: 48px;
+		line-height: 120%;
 	}
   }
 
@@ -99,10 +101,10 @@ h1 {
 }
 @media (min-width: 1024px) {
 	.panel{
-			background: #141e31;
-	border: 1px solid rgba(255, 255, 255, 0.12);
-	border-radius: 12px;
-	padding: 16px;
+		background: var(--blue-dark);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		border-radius: 12px;
+		padding: 16px;
 	}
 
   }

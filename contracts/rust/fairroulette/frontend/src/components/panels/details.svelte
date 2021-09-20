@@ -50,7 +50,7 @@
 
 <style lang="scss">
   .details-panel {
-    background: #141e31;
+    background: var(--blue-dark);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 12px;
     padding-top: 16px;
@@ -65,7 +65,7 @@
       font-size: 18px;
       line-height: 150%;
       letter-spacing: 0.03em;
-      color: #ffffff;
+      color: var(--white);
       padding-left: 16px;
     }
     hr {
@@ -80,7 +80,7 @@
       font-size: 14px;
       line-height: 150%;
       letter-spacing: 0.5px;
-      color: #909fbe;
+      color: var(--gray-5);
       margin-right: 16px;
     }
     .tag {
@@ -99,7 +99,7 @@
       background: rgba(0, 224, 202, 0.2);
       border-radius: 6px;
       letter-spacing: 0.5px;
-      color: #36a1ac;
+      color: var(--mint-green-dark);
       padding: 2px 6px;
     }
     .item-eyebrow {
@@ -107,7 +107,7 @@
       font-size: 14px;
       line-height: 150%;
       letter-spacing: 0.5px;
-      color: #d8e1f4;
+      color: var(--gray-3);
     }
     .tag-description {
       display: flex;
@@ -118,20 +118,20 @@
       font-size: 14px;
       line-height: 150%;
       letter-spacing: 0.5px;
-      color: #909fbe;
+      color: var(--gray-5);
     }
     .description-label {
       font-weight: bold;
       font-size: 14px;
       line-height: 150%;
       letter-spacing: 0.5px;
-      color: #909fbe;
+      color: var(--gray-5);
     }
     .description-value {
       font-size: 14px;
       line-height: 150%;
       letter-spacing: 0.5px;
-      color: #909fbe;
+      color: var(--gray-5);
     }
   }
 </style>
