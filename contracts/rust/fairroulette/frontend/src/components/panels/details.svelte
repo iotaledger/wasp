@@ -87,6 +87,7 @@
       display: flex;
       justify-content: space-between;
       margin-bottom: 6px;
+      width: 100%;
     }
     .details-tag {
       display: flex;
@@ -100,7 +101,6 @@
       letter-spacing: 0.5px;
       color: #36a1ac;
       padding: 2px 6px;
-      margin-right: 90%;
     }
     .item-eyebrow {
       font-weight: bold;
