@@ -1,9 +1,10 @@
 <script lang="ts">
   export let label: string;
+  export let disabled: boolean = false;
   export let onClick: () => void;
 </script>
 
-<button on:click={onClick}>{label}</button>
+<button {disabled} on:click={onClick}>{label}</button>
 
 <style lang="scss">
   button {
