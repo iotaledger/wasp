@@ -19,15 +19,8 @@
   .message {
     text-align: center;
     .title {
-      font-weight: 600;
-      font-size: 32px;
-      line-height: 36px;
       text-align: center;
-      letter-spacing: 0.75px;
-      color: #ffffff;
-      @media (min-width: 1024px) {
-        font-size: 48px;
-      }
+      color: var(--white);
     }
     .subtitle {
       font-weight: 600;

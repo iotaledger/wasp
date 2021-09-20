@@ -3,57 +3,47 @@
   export let data: IPanelDataItem[];
 </script>
 
-<div class="general-panel">
+<div class="panel">
   {#each data as item}
     <div class="panel-data">
-      <span class="eyebrow">{item.eyebrow}</span>
-      <span class="label">{item.label ?? '-'}</span>
+      <div class="eyebrow">{item.eyebrow}</div>
+      <div class="label">{item.label ?? '-'}</div>
     </div>
   {/each}
 </div>
 
 <style lang="scss">
-  .general-panel {
-    background: rgba(6, 16, 35, 0.2);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    padding-top: 10px;
-    padding-bottom: 10px;
-    width: 100%;
+  .panel {
     @media (min-width: 1024px) {
       background: #141e31;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 12px;
-      width: 275px;
-      padding-top: 8px;
-      padding-bottom: 8px;
+      padding-bottom: 24px;
     }
     .panel-data {
-      margin-left: 24px;
-      line-height: 150%;
+      display: grid;
+      grid-template-rows: 1fr;
+      grid-template-columns: 1fr 2fr;
+      align-items: end;
       @media (min-width: 1024px) {
-        margin-top: 8px;
-        margin-bottom: 8px;
+        grid-template-rows: 1fr 1fr;
+        grid-template-columns: 1fr;
       }
-      .eyebrow {
-        text-transform: capitalize;
-        font-weight: bold;
-        font-size: 12px;
-        letter-spacing: 0.5px;
-        color: #36a1ac;
-        margin-right: 12px;
-        @media (min-width: 900px) {
-          display: block;
-          margin-right: 0;
-        }
-      }
+
       .label {
-        font-style: normal;
-        font-weight: bold;
+        width: 100%;
         font-size: 14px;
         letter-spacing: 0.5px;
-        color: #d8e1f4;
+        color: var(--gray-3);
+        line-height: 150%;
+        @media (min-width: 1024px) {
+          font-weight: bold;
+        }
+      }
+    }
+    .panel-data:not(:last-child) {
+      margin-bottom: 4px;
+
+      @media (min-width: 1024px) {
+        margin-bottom: 16px;
       }
     }
   }

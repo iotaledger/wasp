@@ -20,6 +20,18 @@
 	font-weight: normal;
 	src: local('Metropolis Medium'), url('fonts/Metropolis-Medium.woff') format('woff');
 }
+:root{
+	/* Breakpoints */
+	--desktop-width:1024px; /*
+	
+	/*Palette*/
+	--mint-green-light:#14CABF;;
+	--mint-green-dark:#36A1AC;
+	--gray-3:#D8E1F4;
+	--gray-5:#909FBE;
+	--white:#ffffff;
+
+}
 html, body {
 	position: relative;
 	width: 100%;
@@ -44,3 +56,54 @@ input, button, select, textarea {
 	border: 1px solid #ccc;
 	border-radius: 2px;
 }
+
+input, button {
+	cursor: pointer;
+}
+
+input:disabled, button:disabled {
+	cursor: default;
+	pointer-events: none;
+}
+
+h1 {
+	font-weight: 600;
+    font-size: 32px;
+    line-height: 36px;
+    letter-spacing: 0.75px;
+    color: #ffffff;
+	margin:0;
+}
+@media (min-width: 1024px) {
+	h1{
+		font-size: 48px;
+	}
+  }
+
+/* Custom utility classes */
+
+.eyebrow {
+	text-transform: capitalize;
+	font-weight: bold;
+	font-size: 12px;
+	letter-spacing: 0.5px;
+	color: var(--mint-green-dark);
+	line-height: 150%;
+  }
+.panel{
+	background: rgba(6, 16, 35, 0.2);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 10px 24px;
+    width: 100%;
+}
+@media (min-width: 1024px) {
+	.panel{
+			background: #141e31;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 12px;
+	padding: 16px;
+	}
+
+  }
+/*  */
