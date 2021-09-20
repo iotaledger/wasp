@@ -738,7 +738,7 @@ func (s *Schema) generateGoSubtypes() error {
 }
 
 func (s *Schema) GenerateGoTests() error {
-	err := os.MkdirAll("test", 0755)
+	err := os.MkdirAll("test", 0o755)
 	if err != nil {
 		return err
 	}
@@ -916,7 +916,7 @@ func (s *Schema) generateGoTypeProxy(file *os.File, typeDef *Struct, mutable boo
 }
 
 func (s *Schema) generateGoWasmMain() error {
-	err := os.MkdirAll("wasmmain", 0755)
+	err := os.MkdirAll("wasmmain", 0o755)
 	if err != nil {
 		return err
 	}

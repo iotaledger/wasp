@@ -123,7 +123,7 @@ func generateSchemaNew() error {
 	fmt.Println("initializing " + name)
 
 	subfolder := strings.ToLower(name)
-	err := os.Mkdir(subfolder, 0755)
+	err := os.Mkdir(subfolder, 0o755)
 	if err != nil {
 		return err
 	}

@@ -96,7 +96,7 @@ func (s *Schema) GenerateRust() error {
 	s.NewTypes = make(map[string]bool)
 
 	if !s.CoreContracts {
-		err := os.MkdirAll("src", 0755)
+		err := os.MkdirAll("src", 0o755)
 		if err != nil {
 			return err
 		}

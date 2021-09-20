@@ -35,7 +35,7 @@ func (s *Schema) GenerateJava() error {
 		return err
 	}
 	javaPath := "../../java/src/org/iota/wasp/contracts/" + s.Name
-	err = os.MkdirAll(javaPath, 0755)
+	err = os.MkdirAll(javaPath, 0o755)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func (s *Schema) GenerateJava() error {
 		_ = os.Chdir(currentPath)
 	}()
 
-	err = os.MkdirAll("test", 0755)
+	err = os.MkdirAll("test", 0o755)
 	if err != nil {
 		return err
 	}
@@ -177,7 +177,7 @@ func (s *Schema) GenerateJavaFuncsNew(scFileName string) error {
 }
 
 func (s *Schema) GenerateJavaLib() error {
-	err := os.MkdirAll("lib", 0755)
+	err := os.MkdirAll("lib", 0o755)
 	if err != nil {
 		return err
 	}
@@ -364,7 +364,7 @@ func (s *Schema) GenerateJavaTypes() error {
 		return nil
 	}
 
-	err := os.MkdirAll("types", 0755)
+	err := os.MkdirAll("types", 0o755)
 	if err != nil {
 		return err
 	}
