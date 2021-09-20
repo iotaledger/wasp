@@ -68,6 +68,9 @@ func testDoNothingUser(t *testing.T, w bool) {
 
 func TestWithdrawToAddress(t *testing.T) { run2(t, testWithdrawToAddress) }
 func testWithdrawToAddress(t *testing.T, w bool) {
+	if w && *wasmsolo.GoDebug {
+		t.SkipNow()
+	}
 	ctx := setupTest(t, w)
 
 	user := ctx.NewSoloAgent()
