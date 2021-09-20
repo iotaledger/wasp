@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp"
 )
 
+//nolint:unused // false positive
 var dbKeysNames = map[byte]string{
 	dbkeys.ObjectTypeDBSchemaVersion:    "Schema Version",
 	dbkeys.ObjectTypeChainRecord:        "Chain Record",
@@ -28,10 +29,9 @@ var dbKeysNames = map[byte]string{
 	dbkeys.ObjectTypeTrustedPeer:        "TrustedPeer",
 }
 
-// TODO should be a cli param
-const dbpath = "/tmp/wasp-cluster/wasp0/waspdb"
+const defaultDbpath = "/tmp/wasp-cluster/wasp0/waspdb"
 
-func printDbEntries(dbDir fs.DirEntry) {
+func printDbEntries(dbDir fs.DirEntry, dbpath string) {
 	if !dbDir.IsDir() {
 		fmt.Printf("Not a directory, skipping %s\n", dbDir.Name())
 		return
@@ -83,11 +83,17 @@ func printDbEntries(dbDir fs.DirEntry) {
 }
 
 func main() {
+	var dbpath string
+	if len(os.Args) > 1 {
+		dbpath = os.Args[1]
+	} else {
+		dbpath = defaultDbpath
+	}
 	subDirectories, err := os.ReadDir(dbpath)
 	if err != nil {
 		panic(err)
 	}
 	for _, dir := range subDirectories {
-		printDbEntries(dir)
+		printDbEntries(dir, dbpath)
 	}
 }

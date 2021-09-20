@@ -59,7 +59,13 @@ func (sm *stateManager) isSynced() bool {
 	if sm.stateOutput == nil {
 		return false
 	}
-	return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
+	x := sm.solidState.Hash().Base58()
+	println(x)
+
+	a := sm.solidState.Hash().Bytes()
+	b := sm.stateOutput.GetStateData()
+	return bytes.Equal(a, b)
+	// return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
 }
 
 func (sm *stateManager) pullStateIfNeeded() {

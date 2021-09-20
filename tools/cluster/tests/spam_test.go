@@ -8,39 +8,31 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/stretchr/testify/require"
 )
 
-// const numRequests = 1000000
 const numRequests = 100000
 
 func TestSpamOnledger(t *testing.T) {
-	// env := setupAdvancedInccounterTest(t, 4, []int{0, 1, 2, 3})
-	// single wasp node committee, to test if publishing can break state transitions
+	testutil.SkipHeavy(t)
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
-	// deposit funds for offledger requests
 	keyPair, _ := env.getOrCreateAddress()
-
 	myClient := env.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 
 	for i := 0; i < numRequests; i++ {
 		args := chainclient.NewPostRequestParams().WithIotas(1)
 		_, err := myClient.PostRequest(inccounter.FuncIncCounter.Name, *args)
 		require.NoError(t, err)
-
-		// if i%10000 == 0 {
-		// 	time.Sleep(60 * time.Second)
-		// }
-		println("???", i)
 	}
-	println("YEEEY")
 	// TODO check blocklog
 }
 
 func TestSpamOffledger(t *testing.T) {
+	testutil.SkipHeavy(t)
 	// single wasp node committee, to test if publishing can break state transitions
 	env := setupAdvancedInccounterTest(t, 1, []int{0})
 
