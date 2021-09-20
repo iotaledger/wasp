@@ -2,10 +2,9 @@
   export let label: string;
   export let disabled: boolean = false;
   export let onClick: () => void;
-  export let disabled: boolean = false;
 </script>
 
-<button {disabled} on:click={onClick}>{label}</button>
+<button {disabled} class:disabled on:click={onClick}>{label}</button>
 
 <style lang="scss">
   button {
@@ -25,7 +24,7 @@
       padding-left: 31px;
       padding-right: 31px;
     }
-    .disabled {
+    &.disabled {
       background: transparent;
       color: var(--gray-5);
     }
