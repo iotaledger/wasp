@@ -1,3 +1,3 @@
-export { default as GeneralPanel } from './general.svelte'
-export { default as ValuePanel } from './value.svelte'
-export { default as DetailsPanel } from './details.svelte'
+export { default as WalletPanel } from './wallet.svelte'
+export { default as BalancePanel } from './balance.svelte'
+export { default as EntriesPanel } from './entries.svelte'

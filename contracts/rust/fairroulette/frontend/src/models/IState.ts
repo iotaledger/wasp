@@ -1,5 +1,5 @@
 
-export interface IMessage {
+export interface IState {
     /**
      * The main title.
      */

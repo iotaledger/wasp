@@ -1,12 +1,17 @@
 <script lang="ts">
-  import { GeneralPanel, ValuePanel, DetailsPanel } from "./";
+  import { BALANCE_PANEL_TYPE } from '../../models/IBalancePanel';
 
-  export let type: string;
+  import { ENTRIES_PANEL_TYPE } from '../../models/IEntriesPanel';
+  import { WALLET_PANEL_TYPE } from '../../models/IWalletPanel';
+
+  import { WalletPanel, BalancePanel, EntriesPanel } from './';
+
+  export let type: number;
 
   const types = {
-    general: GeneralPanel,
-    details: DetailsPanel,
-    value: ValuePanel,
+    [WALLET_PANEL_TYPE]: WalletPanel,
+    [ENTRIES_PANEL_TYPE]: EntriesPanel,
+    [BALANCE_PANEL_TYPE]: BalancePanel,
   };
 </script>
 
