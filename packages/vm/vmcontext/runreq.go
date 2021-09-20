@@ -240,7 +240,7 @@ func (vmctx *VMContext) mustHandleFees() bool {
 	return false
 }
 
-// Return false if not enough feesjji
+// Return false if not enough fees
 func (vmctx *VMContext) grabFee(account *iscp.AgentID, amount uint64) bool {
 	if amount == 0 {
 		return true
