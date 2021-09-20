@@ -54,7 +54,6 @@ type Block interface {
 
 const (
 	OriginStateHashBase58 = "EHvn9Tdq75bnmAwFRSLgLBGFnqLKhtad3aXdmpRSe7EL"
-	// OriginStateHashBase58 = "HBspKtpQCbE6bx1V7QF8BAshMUsAvgNwTfPXQ9QMjrt4"
 )
 
 func OriginStateHash() hashing.HashValue {

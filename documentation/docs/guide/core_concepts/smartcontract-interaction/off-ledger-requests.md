@@ -23,8 +23,6 @@ Nonces are account-bound, the current nonce for a given account can be obtained 
 It's highly recommended to use **strictly monotonic increasing** nonces in off-ledger requests (i.e. 1,2,3,4,5).
 :::
 
-// TODO mention the get nonce endpoint in the accounts contract
-
 ## Using the WASP Web API
 
 Off-ledger requests, after constructed can be sent a Wasp node webapi `/request/<chain_id>` endpoint via POST with the request as the body binary, or as a base64 string (MIME-type must be defined accordingly).

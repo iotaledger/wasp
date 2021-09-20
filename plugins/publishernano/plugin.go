@@ -78,10 +78,6 @@ func openSocket(port int) (mangos.Socket, error) {
 	if err != nil {
 		return nil, err
 	}
-	// err = socket.SetOption(mangos.OptionSendDeadline, 500*time.Millisecond)
-	// if err != nil {
-	// 	return nil, err
-	// }
 	url := fmt.Sprintf("tcp://:%d", port)
 	if err := socket.Listen(url); err != nil {
 		return nil, err
