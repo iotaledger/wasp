@@ -129,6 +129,7 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, 
 	return deployed, extraToken
 }
 
+//nolint:deadcode,unused
 func setupERC20(t *testing.T, chain *solo.Chain, user *ed25519.KeyPair, runWasm bool) *iscp.AgentID {
 	var err error
 	if !runWasm {
@@ -171,5 +172,5 @@ func testSetup3(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
 	user, _, _ := setupDeployer(t, chain)
 	setupTestSandboxSC(t, chain, user, w)
-	setupERC20(t, chain, user, w)
+	// setupERC20(t, chain, user, w)
 }
