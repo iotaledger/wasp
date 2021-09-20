@@ -6,19 +6,13 @@ use wasmlib::*;
 use crate::*;
 use crate::types::*;
 
-pub fn func_mint_supply(ctx: &ScFuncContext) {
-    ctx.log("tokenregistry.mintSupply");
-    let p = ctx.params();
-    let param_description = p.get_string(PARAM_DESCRIPTION);
-    let param_user_defined = p.get_string(PARAM_USER_DEFINED);
-
+pub fn func_mint_supply(ctx: &ScFuncContext, f: &MintSupplyContext) {
     let minted = ctx.minted();
     let minted_colors = minted.colors();
     ctx.require(minted_colors.length() == 1, "need single minted color");
     let minted_color = minted_colors.get_color(0).value();
-    let state = ctx.state();
-    let registry = state.get_map(STATE_REGISTRY).get_bytes(&minted_color);
-    if registry.exists() {
+    let current_token = f.state.registry().get_token(&minted_color);
+    if current_token.exists() {
         // should never happen, because transaction id is unique
         ctx.panic("TokenRegistry: registry for color already exists");
     }
@@ -28,50 +22,25 @@ pub fn func_mint_supply(ctx: &ScFuncContext) {
         owner: ctx.caller(),
         created: ctx.timestamp(),
         updated: ctx.timestamp(),
-        description: param_description.value(),
-        user_defined: param_user_defined.value(),
+        description: f.params.description().value(),
+        user_defined: f.params.user_defined().value(),
     };
     if token.description.is_empty() {
         token.description += "no dscr";
     }
-    registry.set_value(&token.to_bytes());
-    let colors = state.get_color_array(STATE_COLOR_LIST);
-    colors.get_color(colors.length()).set_value(&minted_color);
-    ctx.log("tokenregistry.mintSupply ok");
+    current_token.set_value(&token);
+    let color_list = f.state.color_list();
+    color_list.get_color(color_list.length()).set_value(&minted_color);
 }
 
-pub fn func_transfer_ownership(ctx: &ScFuncContext) {
-    ctx.log("tokenregistry.transferOwnership");
-    //TODO the one who can transfer token ownership
-    ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
-
-    let p = ctx.params();
-    let param_color = p.get_color(PARAM_COLOR);
-    ctx.require(param_color.exists(), "missing mandatory color");
-
-    //TODO
-    ctx.log("tokenregistry.transferOwnership ok");
+pub fn func_transfer_ownership(_ctx: &ScFuncContext, _f: &TransferOwnershipContext) {
+    // TODO
 }
 
-pub fn func_update_metadata(ctx: &ScFuncContext) {
-    ctx.log("tokenregistry.updateMetadata");
-    //TODO the one who can change the token info
-    ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
-
-    let p = ctx.params();
-    let param_color = p.get_color(PARAM_COLOR);
-    ctx.require(param_color.exists(), "missing mandatory color");
-
-    //TODO
-    ctx.log("tokenregistry.updateMetadata ok");
+pub fn func_update_metadata(_ctx: &ScFuncContext, _f: &UpdateMetadataContext) {
+    // TODO
 }
 
-pub fn view_get_info(ctx: &ScViewContext) {
-    ctx.log("tokenregistry.getInfo");
-    let p = ctx.params();
-    let param_color = p.get_color(PARAM_COLOR);
-    ctx.require(param_color.exists(), "missing mandatory color");
-
-    //TODO
-    ctx.log("tokenregistry.getInfo ok");
+pub fn view_get_info(_ctx: &ScViewContext, _f: &GetInfoContext) {
+    // TODO
 }

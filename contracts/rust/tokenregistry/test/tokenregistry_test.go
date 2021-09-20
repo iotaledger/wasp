@@ -6,17 +6,16 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/common"
-	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/contracts/rust/tokenregistry"
+	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
-func setupTest(t *testing.T) *solo.Chain { //nolint:deadcode,unused
-	return common.StartChainAndDeployWasmContractByName(t, ScName)
+func setupTest(t *testing.T) *wasmsolo.SoloContext {
+	return wasmsolo.NewSoloContext(t, tokenregistry.ScName, tokenregistry.OnLoad)
 }
 
 func TestDeploy(t *testing.T) {
-	chain := common.StartChainAndDeployWasmContractByName(t, ScName)
-	_, err := chain.FindContract(ScName)
-	require.NoError(t, err)
+	ctx := setupTest(t)
+	require.NoError(t, ctx.ContractExists(tokenregistry.ScName))
 }

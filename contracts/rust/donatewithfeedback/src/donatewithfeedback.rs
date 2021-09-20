@@ -6,14 +6,12 @@ use wasmlib::*;
 use crate::*;
 use crate::types::*;
 
-pub fn func_donate(ctx: &ScFuncContext) {
-    ctx.log("dwf.donate");
-    let p = ctx.params();
+pub fn func_donate(ctx: &ScFuncContext, f: &DonateContext) {
     let mut donation = Donation {
         amount: ctx.incoming().balance(&ScColor::IOTA),
         donator: ctx.caller(),
         error: String::new(),
-        feedback: p.get_string(PARAM_FEEDBACK).value(),
+        feedback: f.params.feedback().value(),
         timestamp: ctx.timestamp(),
     };
     if donation.amount == 0 || donation.feedback.len() == 0 {
@@ -23,28 +21,20 @@ pub fn func_donate(ctx: &ScFuncContext) {
             donation.amount = 0;
         }
     }
-    let state = ctx.state();
-    let log = state.get_bytes_array(STATE_LOG);
-    log.get_bytes(log.length()).set_value(&donation.to_bytes());
+    let log = f.state.log();
+    log.get_donation(log.length()).set_value(&donation);
 
-    let largest_donation = state.get_int64(STATE_MAX_DONATION);
-    let total_donated = state.get_int64(STATE_TOTAL_DONATION);
+    let largest_donation = f.state.max_donation();
+    let total_donated = f.state.total_donation();
     if donation.amount > largest_donation.value() {
         largest_donation.set_value(donation.amount);
     }
     total_donated.set_value(total_donated.value() + donation.amount);
-    ctx.log("dwf.donate ok");
 }
 
-pub fn func_withdraw(ctx: &ScFuncContext) {
-    ctx.log("dwf.withdraw");
-
-    // only SC creator can withdraw donated funds
-    ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
-
+pub fn func_withdraw(ctx: &ScFuncContext, f: &WithdrawContext) {
     let balance = ctx.balances().balance(&ScColor::IOTA);
-    let p = ctx.params();
-    let mut amount = p.get_int64(PARAM_AMOUNT).value();
+    let mut amount = f.params.amount().value();
     if amount == 0 || amount > balance {
         amount = balance;
     }
@@ -55,34 +45,20 @@ pub fn func_withdraw(ctx: &ScFuncContext) {
 
     let sc_creator = ctx.contract_creator().address();
     ctx.transfer_to_address(&sc_creator, ScTransfers::iotas(amount));
-
-    ctx.log("dwf.withdraw ok");
 }
 
-pub fn view_donation(ctx: &ScViewContext) {
-    ctx.log("dwf.donation");
-    let params = ctx.params();
-    let nr = params.get_int64(PARAM_NR).value() as i32;
-    let state = ctx.state();
-    let results = ctx.results();
-    let donation = Donation::from_bytes(&state.get_bytes_array(STATE_LOG).get_bytes(nr).value());
-    results.get_int64(RESULT_AMOUNT).set_value(donation.amount);
-    results.get_agent_id(RESULT_DONATOR).set_value(&donation.donator);
-    results.get_string(RESULT_ERROR).set_value(&donation.error);
-    results.get_string(RESULT_FEEDBACK).set_value(&donation.feedback);
-    results.get_int64(RESULT_TIMESTAMP).set_value(donation.timestamp);
-
-    ctx.log("dwf.donation ok");
+pub fn view_donation(_ctx: &ScViewContext, f: &DonationContext) {
+    let nr = (f.params.nr().value()) as i32;
+    let donation = f.state.log().get_donation(nr).value();
+    f.results.amount().set_value(donation.amount);
+    f.results.donator().set_value(&donation.donator);
+    f.results.error().set_value(&donation.error);
+    f.results.feedback().set_value(&donation.feedback);
+    f.results.timestamp().set_value(donation.timestamp);
 }
 
-pub fn view_donation_info(ctx: &ScViewContext) {
-    ctx.log("dwf.donation_info");
-
-    let state = ctx.state();
-    let results = ctx.results();
-    results.get_int64(RESULT_MAX_DONATION).set_value(state.get_int64(STATE_MAX_DONATION).value());
-    results.get_int64(RESULT_TOTAL_DONATION).set_value(state.get_int64(STATE_TOTAL_DONATION).value());
-    results.get_int64(RESULT_COUNT).set_value(state.get_bytes_array(STATE_LOG).length() as i64);
-
-    ctx.log("dwf.donation_info ok");
+pub fn view_donation_info(_ctx: &ScViewContext, f: &DonationInfoContext) {
+    f.results.max_donation().set_value(f.state.max_donation().value());
+    f.results.total_donation().set_value(f.state.total_donation().value());
+    f.results.count().set_value(f.state.log().length() as i64);
 }
