@@ -2,6 +2,7 @@
   export let label: string;
   export let disabled: boolean = false;
   export let onClick: () => void;
+  export let disabled: boolean = false;
 </script>
 
 <button {disabled} on:click={onClick}>{label}</button>
