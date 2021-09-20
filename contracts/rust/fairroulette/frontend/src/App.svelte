@@ -149,7 +149,12 @@
   async function placeBet() {
     view.isWorking = true;
     try {
-      await fairRouletteService.placeBet($keyPair, view.round.betSelection, 1234n);
+      await fairRouletteService.placeBetOnLedger(
+        $keyPair,
+        $address,
+        view.round.betSelection,
+        1234n
+      );
     } catch (ex) {
       log(ex.message);
 

@@ -81,7 +81,7 @@ export class WalletService {
 
     const tx: ITransaction = {
       version: 0,
-      timestamp: 1631649777559503628n,
+      timestamp: BigInt(Date.now()) * 1000000n,
       aManaPledge: Base58.encode(Buffer.alloc(32)),
       cManaPledge: Base58.encode(Buffer.alloc(32)),
       inputs: inputs,

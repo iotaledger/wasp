@@ -60,10 +60,16 @@ export class FairRouletteService {
     this.chainId = chainId;
     this.emitter = createNanoEvents();
 
-    const webSocketUrl = config.waspWebSocketUrl.replace("%chainId", chainId);
+    this.connectWebSocket();
+  }
 
+  private connectWebSocket() {
+    const webSocketUrl = config.waspWebSocketUrl.replace('%chainId', this.chainId);
+    console.log(`Connecting to Websocket => ${webSocketUrl}`);
     this.webSocket = new WebSocket(webSocketUrl);
-    this.webSocket.addEventListener("message", x => this.handleIncomingMessage(x));
+    this.webSocket.addEventListener('message', (x) => this.handleIncomingMessage(x));
+    this.webSocket.addEventListener('close', () => setTimeout(this.connectWebSocket.bind(this), 250));
+    this.webSocket.addEventListener('error', () => setTimeout(this.connectWebSocket.bind(this), 250));
   }
 
   private handleVmMessage(message: string[]): void {
@@ -115,6 +121,7 @@ export class FairRouletteService {
 
   private handleIncomingMessage(message: MessageEvent<string>): void {
     const msg = message.data.split(' ');
+
     console.log(msg);
 
     if (msg.length == 0) {
