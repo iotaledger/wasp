@@ -243,7 +243,7 @@
 
     //   const basicWallet = new BasicWallet(client);
 
-    await walletService.sendOnLedgerRequest($address, chainId);
+    //  await fairRouletteService.placeBetOnLedger($keyPair, $address, 2, 123n);
   }
 
   onMount(initialize);
@@ -296,13 +296,16 @@
   async function placeBet() {
     view.isWorking = true;
     try {
-      await fairRouletteService.placeBet(
+      await fairRouletteService.placeBetOnLedger(
         $keyPair,
-        $selectedBetNumber,
-        $selectedBetAmount
+        $address,
+        view.round.betSelection,
+        1234n
       );
     } catch (ex) {
-      log('Round', ex.message);
+      log(ex.message);
+
+      throw ex;
     }
 
     view.isWorking = false;

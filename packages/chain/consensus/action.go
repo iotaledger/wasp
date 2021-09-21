@@ -73,8 +73,8 @@ func (c *Consensus) proposeBatchIfNeeded() {
 		})
 	})
 
-	c.log.Infof("proposeBatch: proposed batch len = %d, ACS session ID: %d, state index: %d, proposal: %+v",
-		len(reqs), c.acsSessionID, c.stateOutput.GetStateIndex(), iscp.ShortRequestIDs(proposal.RequestIDs))
+	c.log.Infof("proposeBatch: proposed batch len = %d, ACS session ID: %d, state index: %d",
+		len(reqs), c.acsSessionID, c.stateOutput.GetStateIndex())
 	c.workflow.batchProposalSent = true
 }
 

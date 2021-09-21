@@ -1,3 +1,4 @@
+import type { ColorCollection } from '../colors';
 import type { IWalletOutputBalance } from "./IWalletOutputBalance";
 import type { IWalletOutputInclusionState } from "./IWalletOutputInclusionState";
 
@@ -10,7 +11,7 @@ export interface IWalletOutput {
     /**
      * The balances.
      */
-    balances: IWalletOutputBalance[];
+    balances: ColorCollection;
 
     /**
      * Inclusion state.
