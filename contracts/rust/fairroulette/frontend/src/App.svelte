@@ -1,31 +1,38 @@
 <script lang="ts">
-  export const name = 'app';
+  export const name = "app";
 
-  import { onMount } from 'svelte';
-  import config, { chainId } from '../config.dev';
-  import { BettingSystem, Panel } from './components';
-  import State from './components/state.svelte';
-  import type { Bet } from './fairroulette_client';
-  import { FairRouletteService } from './fairroulette_client';
-  import type { IBalancePanel } from './models/IBalancePanel';
-  import { ENTRIES_PANEL_TYPE } from './models/IEntriesPanel';
-  import type { IEntriesPanel } from './models/IEntriesPanel';
-  import { LOG_ENTRIES_TYPE } from './models/ILogEntries';
-  import { PLAYER_ENTRIES_TYPE } from './models/IPlayerEntries';
-  import type { IState } from './models/IState';
-  import { BALANCE_PANEL_TYPE } from './models/IBalancePanel';
-  import { WALLET_PANEL_TYPE } from './models/IWalletPanel';
-  import type { IWalletPanel } from './models/IWalletPanel';
-  import { address, addressIndex, keyPair, seed } from './store';
+  import { onMount } from "svelte";
+  import config, { chainId } from "../config.dev";
+  import { BettingSystem, Panel, Roulette } from "./components";
+  import State from "./components/state.svelte";
+  import type { Bet } from "./fairroulette_client";
+  import { FairRouletteService } from "./fairroulette_client";
+  import type { IBalancePanel } from "./models/IBalancePanel";
+  import { BALANCE_PANEL_TYPE } from "./models/IBalancePanel";
+  import type { IEntriesPanel } from "./models/IEntriesPanel";
+  import { ENTRIES_PANEL_TYPE } from "./models/IEntriesPanel";
+  import { LOG_ENTRIES_TYPE } from "./models/ILogEntries";
+  import { PLAYER_ENTRIES_TYPE } from "./models/IPlayerEntries";
+  import type { IState } from "./models/IState";
+  import type { IWalletPanel } from "./models/IWalletPanel";
+  import { WALLET_PANEL_TYPE } from "./models/IWalletPanel";
+  import {
+    address,
+    addressIndex,
+    balance,
+    keyPair,
+    seed,
+    seedString,
+    requestingFunds
+  } from "./store";
   import {
     BasicClient,
     Colors,
     PoWWorkerManager,
     WalletService,
-  } from './wasp_client';
-  import { Base58 } from './wasp_client/crypto/base58';
-  import { Seed } from './wasp_client/crypto/seed';
-  import { Roulette } from './components';
+  } from "./wasp_client";
+  import { Base58 } from "./wasp_client/crypto/base58";
+  import { Seed } from "./wasp_client/crypto/seed";
 
   let fundsUpdaterHandle;
 
@@ -36,12 +43,9 @@
   const powManager: PoWWorkerManager = new PoWWorkerManager();
 
   const view = {
-    seedString: '',
-    balance: 0n,
     timestamp: 0,
-
-    showController: true,
     isWorking: false,
+    showController: true,
 
     round: {
       active: false,
@@ -54,66 +58,83 @@
   };
 
   // Panels located around roulette
-  const WALLET_PANEL: IWalletPanel = {
+  let walletPanel: IWalletPanel = {
     type: WALLET_PANEL_TYPE,
     data: [
       {
-        eyebrow: 'Your seed',
-        label: '13jnjkg11g33sndf12',
+        eyebrow: "Your seed",
+        label: "-",
       },
       {
-        eyebrow: 'Your address',
-        label: '13jnjkg11g33sndf12',
+        eyebrow: "Your address",
+        label: "-",
       },
     ],
   };
 
-  const BALANCE_PANEL: IBalancePanel = {
+  $: $seedString,
+    $address,
+    (walletPanel.data = [
+      {
+        eyebrow: "Your seed",
+        label: $seedString,
+      },
+      {
+        eyebrow: "Your address",
+        label: $address,
+      },
+    ]);
+
+  let balancePanel: IBalancePanel = {
     type: BALANCE_PANEL_TYPE,
     data: {
-      eyebrow: 'Your balance',
-      label: '1022 Mi',
+      eyebrow: "Your balance",
+      label: "-",
     },
     buttons: [
       {
-        label: 'Request funds',
-        onClick: () => {
-          console.log('Click on request funds');
-        },
+        label: "Request funds",
+        onClick: sendFaucetRequest,
       },
     ],
   };
 
+  $: $balance,
+    (balancePanel.data = {
+      eyebrow: "Your balance",
+      label: `${$balance.toString()}i`,
+    });
+
   const PLAYERS_PANEL: IEntriesPanel = {
     type: ENTRIES_PANEL_TYPE,
-    title: 'Players',
+    title: "Players",
     ordered: true,
     entries: {
       type: PLAYER_ENTRIES_TYPE,
       data: [
         {
-          address: 'address1',
+          address: "address1",
           fields: [
             {
-              label: 'Bet:',
-              value: '1000i',
+              label: "Bet:",
+              value: "1000i",
             },
             {
-              label: 'W/L:',
-              value: '600i',
+              label: "W/L:",
+              value: "600i",
             },
           ],
         },
         {
-          address: 'address2',
+          address: "address2",
           fields: [
             {
-              label: 'Bet:',
-              value: '1050i',
+              label: "Bet:",
+              value: "1050i",
             },
             {
-              label: 'W/L:',
-              value: '200i',
+              label: "W/L:",
+              value: "200i",
             },
           ],
         },
@@ -123,43 +144,41 @@
 
   const LOGS_PANEL: IEntriesPanel = {
     type: ENTRIES_PANEL_TYPE,
-    title: 'Logs',
+    title: "Logs",
     ordered: true,
     entries: {
       type: LOG_ENTRIES_TYPE,
       data: [
         {
-          tag: 'Round',
-          timestamp: '11:24:11',
+          tag: "Round",
+          timestamp: "11:24:11",
           // label: '1022 Mi',
-          description: 'Page loading...',
+          description: "Page loading...",
         },
         {
-          tag: 'Site',
-          timestamp: '11:24:11',
-          description: 'Page loading...',
+          tag: "Site",
+          timestamp: "11:24:11",
+          description: "Page loading...",
         },
       ],
     },
   };
 
   const INFORMATION_STATE: IState = {
-    title: 'Start game',
-    subtitle: 'This is a subtitle',
-    description: 'The round starts in 50 seconds.',
+    title: "Start game",
+    subtitle: "This is a subtitle",
+    description: "The round starts in 50 seconds.",
   };
 
   // Entrypoint
   async function initialize() {
-    log('[PAGE] loading');
+    log("[PAGE] loading");
 
     if (config.seed) {
       $seed = Base58.decode(config.seed);
     } else {
       $seed = Seed.generate();
     }
-
-    view.seedString = Base58.encode($seed);
 
     client = new BasicClient({
       GoShimmerAPIUrl: config.goshimmerApiUrl,
@@ -170,7 +189,7 @@
     fairRouletteService = new FairRouletteService(client, config.chainId);
     walletService = new WalletService(client);
 
-    powManager.load('/build/pow.worker.js');
+    powManager.load("/build/pow.worker.js");
 
     subscribeToRouletteEvents();
     setAddress($addressIndex);
@@ -204,7 +223,7 @@
       await request().catch((e) => log(`[ERROR] ${e.message}`));
     }
 
-    log('[PAGE] loaded');
+    log("[PAGE] loaded");
 
     /**
      * ChainID => address
@@ -239,15 +258,15 @@
   }
 
   async function updateFunds() {
+    let _balance = 0n;
     try {
       view.timestamp = Date.now() / 1000;
-      view.balance = await walletService.getFunds(
+      _balance = await walletService.getFunds(
         $address,
         Colors.IOTA_COLOR_STRING
       );
-    } catch (ex) {
-      view.balance = 0n;
-    }
+    } catch (ex) {}
+    balance.set(_balance);
   }
 
   function startFundsUpdater() {
@@ -273,7 +292,7 @@
   }
 
   async function sendFaucetRequest() {
-    view.isWorking = true;
+    requestingFunds.set(true)
 
     const faucetRequestResult = await walletService.getFaucetRequest($address);
 
@@ -286,8 +305,7 @@
     } catch (ex) {
       log(ex.message);
     }
-
-    view.isWorking = false;
+    requestingFunds.set(false)
   }
 
   // To make sure the function gets called every second, we require that date.Now() is put in as a parameter to rely on sveltes change listener.
@@ -313,34 +331,34 @@
   }
 
   function subscribeToRouletteEvents() {
-    fairRouletteService.on('roundStarted', (timestamp) => {
+    fairRouletteService.on("roundStarted", (timestamp) => {
       view.round.active = true;
       view.round.startedAt = timestamp;
-      log('[ROUND] started');
+      log("[ROUND] started");
     });
 
-    fairRouletteService.on('roundStopped', () => {
+    fairRouletteService.on("roundStopped", () => {
       view.round.active = false;
-      log('[ROUND] ended');
+      log("[ROUND] ended");
     });
 
-    fairRouletteService.on('roundNumber', (roundNumber: bigint) => {
+    fairRouletteService.on("roundNumber", (roundNumber: bigint) => {
       view.round.number = roundNumber;
       log(`[ROUND] Current round number: ${roundNumber}`);
     });
 
-    fairRouletteService.on('winningNumber', (winningNumber: bigint) => {
+    fairRouletteService.on("winningNumber", (winningNumber: bigint) => {
       view.round.winningNumber = winningNumber;
       log(`[ROUND] The winning number was: ${winningNumber}`);
     });
 
-    fairRouletteService.on('betPlaced', (bet: Bet) => {
+    fairRouletteService.on("betPlaced", (bet: Bet) => {
       log(
         `[BET] Bet placed from ${bet.better} on ${bet.betNumber} with ${bet.amount}`
       );
     });
 
-    fairRouletteService.on('payout', (bet: Bet) => {
+    fairRouletteService.on("payout", (bet: Bet) => {
       log(`[WIN] Payout for ${bet.better} with ${bet.amount}`);
     });
   }
@@ -355,28 +373,12 @@
 </script>
 
 <main>
-  <div class="header">
-    <ul>
-      <li>
-        <span class="header_balance_title">Balance</span>
-        <span class="header_balance_text">{view.balance}i</span>
-      </li>
-      <li>
-        <span class="header_seed_title">Seed</span>
-        <span class="header_seed_text">{view.seedString}</span>
-      </li>
-      <li>
-        <span class="header_address_title">Address</span>
-        <span class="header_address_text">{$address}</span>
-      </li>
-    </ul>
-  </div>
   <div class="layout_state">
     <div class="balance">
-      <Panel {...BALANCE_PANEL} />
+      <Panel {...balancePanel} />
     </div>
     <div class="wallet">
-      <Panel {...WALLET_PANEL} />
+      <Panel {...walletPanel} />
     </div>
     <div class="roulette_state">
       <State {...INFORMATION_STATE} />
@@ -508,36 +510,6 @@
 </main>
 
 <style>
-  textarea {
-    width: 100%;
-    height: 100%;
-  }
-
-  .log {
-    width: 75%;
-    margin-left: 35px;
-  }
-
-  .wheel_container {
-    border: 1px solid white;
-    border-radius: 4px;
-    padding: 5px;
-  }
-
-  .wheel_status {
-    margin-top: 15px;
-    width: 100%;
-    height: 100px;
-    font-size: 26px;
-    color: gray;
-  }
-
-  .content {
-    display: flex;
-    width: 75%;
-    margin: 15px auto;
-  }
-
   main {
     width: 100%;
     height: 100%;
@@ -602,8 +574,8 @@
       grid-template-rows: auto auto;
       gap: 20px 20px;
       grid-template-areas:
-        'aside-1 first aside-2'
-        'aside-1 last aside-2';
+        "aside-1 first aside-2"
+        "aside-1 last aside-2";
     }
   }
   .roulette_state {
@@ -650,8 +622,8 @@
       grid-template-rows: auto auto;
       gap: 20px 20px;
       grid-template-areas:
-        'aside-1 first aside-2'
-        'aside-1 last aside-2';
+        "aside-1 first aside-2"
+        "aside-1 last aside-2";
     }
   }
   .roulette {
@@ -684,116 +656,5 @@
     .logs {
       margin-right: 120px;
     }
-  }
-  .loading_dim {
-    background: rgba(0, 0, 0, 0.5);
-    width: 100%;
-    height: 100%;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 999;
-  }
-
-  .loading_wrapper {
-    position: absolute;
-
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-
-    width: 260px;
-    height: 260px;
-
-    margin: auto;
-  }
-
-  .loading_logo {
-    width: 160px;
-    height: 160px;
-    margin: auto;
-  }
-
-  /**
-    * Source images for this gif are from: https://www.reddit.com/r/Iota/comments/8kp9uv/created_an_iota_loading_animation_free_for_anyone/
-    * They were scaled down and the transparency was replaced with the dim background of the page or kept transparent in case the browser supports webp.
-  */
-  .loading_logo {
-    background-image: image-set(
-      url('/iota.webp') type('image/webp'),
-      url('/iota.gif') type('image/gif')
-    );
-
-    background-repeat: no-repeat;
-  }
-
-  .loading_text {
-    text-shadow: 0px 2px 2px rgba(13, 15, 4, 0.42);
-    font-size: 24px;
-    color: white;
-    text-align: center;
-  }
-
-  .welcome_screen {
-    display: flex;
-    color: white;
-    margin: 25px auto;
-    width: 25%;
-  }
-
-  .welcome_screen > .disabled {
-    color: dimgrey !important;
-  }
-
-  .request_funds {
-    width: 200px;
-  }
-
-  .place_bet {
-    width: 200px;
-  }
-
-  .request_funds_text,
-  .place_bet_text {
-    text-shadow: 0px 2px 2px rgba(13, 15, 4, 0.42);
-    font-size: 24px;
-    text-align: center;
-  }
-
-  .request_funds_image {
-    border: none;
-    background-color: transparent;
-    background-image: url(/money_w_k.png);
-    width: 96px;
-    height: 96px;
-    margin: 15px auto;
-  }
-
-  .place_bet_image {
-    border: none;
-    background-color: transparent;
-    background-image: url(/dice_w.png);
-    width: 96px;
-    height: 108px;
-    margin: 15px auto;
-  }
-
-  .request_funds_button,
-  .submit_bet_button {
-    margin: 15px auto;
-    display: block;
-  }
-
-  .bet_selection {
-    margin: 15px auto;
-    color: white;
-    display: flex;
-  }
-
-  .bet_selection input {
-    flex: 1;
   }
 </style>
