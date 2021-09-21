@@ -3,6 +3,7 @@ package statemgr
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -179,7 +180,10 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	sm.chain.GlobalStateSync().SetSolidIndex(tentativeState.BlockIndex())
 
 	if err != nil {
-		sm.log.Errorf("commitCandidates: failed to commit synced changes into DB. Restart syncing")
+		sm.log.Errorf("commitCandidates: failed to commit synced changes into DB. Restart syncing. %w", err)
+		if strings.Contains(err.Error(), "space left on device") {
+			sm.log.Panicf("Terminating WASP, no space left on disc.")
+		}
 		sm.syncingBlocks.restartSyncing()
 		return
 	}

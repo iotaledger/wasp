@@ -152,9 +152,9 @@ func (vs *virtualState) ApplyBlock(b Block) error {
 func (vs *virtualState) ApplyStateUpdates(stateUpd ...StateUpdate) {
 	for _, upd := range stateUpd {
 		upd.Mutations().ApplyTo(vs.KVStore())
-		vs.stateHash = hashing.HashData(vs.stateHash[:], upd.Bytes())
 	}
 	vs.updateLog = append(vs.updateLog, stateUpd...) // do not clone
+	vs.regenHash()
 }
 
 // ExtractBlock creates a block from update log and returns it or nil if log is empty. The log is cleared
@@ -181,6 +181,19 @@ func (vs *virtualState) ExtractBlock() (Block, error) {
 // Hash return hash of the state
 func (vs *virtualState) Hash() hashing.HashValue {
 	return vs.stateHash
+}
+
+func (vs *virtualState) regenHash() {
+	compactUpdate := NewStateUpdate()
+	for _, su := range vs.updateLog {
+		for k, v := range su.Mutations().Sets {
+			compactUpdate.mutations.Set(k, v)
+		}
+		for k := range su.Mutations().Dels {
+			compactUpdate.mutations.Del(k)
+		}
+	}
+	vs.stateHash = hashing.HashData(compactUpdate.Bytes())
 }
 
 // endregion ////////////////////////////////////////////////////////////
