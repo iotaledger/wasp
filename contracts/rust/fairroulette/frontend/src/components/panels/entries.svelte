@@ -1,50 +1,57 @@
 <script lang="ts">
+  import type { IEntriesPanel } from '../../models/IEntriesPanel';
+  import type { ILogEntries } from '../../models/ILogEntries';
+  import { LOG_ENTRIES_TYPE } from '../../models/ILogEntries';
+  import type { IPlayerEntries } from '../../models/IPlayerEntries';
+
   import type { IPanelDataItem } from './../../models/IPanelDataItem';
 
+  import { PLAYER_ENTRIES_TYPE } from './../../models/IPlayerEntries';
   export let title: string;
   export let ordered: boolean = false;
-  export let data: (IPanelDataItem & {
-    tag?: string;
-    description: {
-      label?: string;
-      value: string;
-    }[];
-  })[];
+  export let entries: ILogEntries | IPlayerEntries;
+
+  console.log('entries', entries);
 </script>
 
 <div class="details-panel">
   <h3>{title}</h3>
   <hr />
   <div class="details-content">
-    {#each data as item, index}
-      <div class="details-tag">
-        {#if ordered}
-          <span class="item-index">{index}</span>
-        {/if}
-
-        <div class="tag">
-          {#if item.tag}
-            <span class="item-tag">{item.tag}</span>
+    {#if entries.type === PLAYER_ENTRIES_TYPE}
+      <!-- Player panel -->
+      {#each entries.data as entry, index}
+        <div class="details-tag">
+          {#if ordered}
+            <span class="item-index">{index}</span>
           {/if}
-
-          <span class="item-eyebrow">{item.eyebrow}</span>
+          <div class="item-eyebrow">{entry.address}</div>
         </div>
-      </div>
-      {#if item.label}
-        <div class="item-label">{item.label}</div>
-      {/if}
-      <div class="tag-description">
-        {#each item.description as { label, value }}
+        {#each entry.fields as { label, value }}
           <div class="item-description">
             {#if label}
               <span class="description-label">{label}</span>
             {/if}
-
             <span class="description-value">{value}</span>
           </div>
         {/each}
-      </div>
-    {/each}
+      {/each}
+    {/if}
+
+    {#if entries.type === LOG_ENTRIES_TYPE}
+      <!-- Log panel -->
+      {#each entries.data as { tag, timestamp, description }, index}
+        <div class="details-tag">
+          {#if ordered}
+            <span class="item-index">{index}</span>
+          {/if}
+          <div class="item-tag">{tag}</div>
+          <span class="description-value">{timestamp}</span>
+        </div>
+
+        <span class="description-value">{description}</span>
+      {/each}
+    {/if}
   </div>
 </div>
 

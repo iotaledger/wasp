@@ -1,38 +1,28 @@
 <script lang="ts">
   export const name = 'app';
 
-  import { Base58 } from './wasp_client/crypto/base58';
+  import { onMount } from 'svelte';
+  import config, { chainId } from '../config.dev';
+  import { BettingSystem, Panel } from './components';
+  import State from './components/state.svelte';
+  import type { Bet } from './fairroulette_client';
+  import { FairRouletteService } from './fairroulette_client';
+  import type { IBalancePanel } from './models/IBalancePanel';
+  import { ENTRIES_PANEL_TYPE, IEntriesPanel } from './models/IEntriesPanel';
+  import { LOG_ENTRIES_TYPE } from './models/ILogEntries';
+  import { PLAYER_ENTRIES_TYPE } from './models/IPlayerEntries';
+  import type { IState } from './models/IState';
+  import { BALANCE_PANEL_TYPE } from './models/IBalancePanel';
+  import { IWalletPanel, WALLET_PANEL_TYPE } from './models/IWalletPanel';
+  import { address, addressIndex, keyPair, seed } from './store';
   import {
     BasicClient,
-    ColorCollection,
     Colors,
-    HName,
-    IUnspentOutput,
-    IUnspentOutputAddress,
     PoWWorkerManager,
-    SimpleBufferCursor,
+    WalletService,
   } from './wasp_client';
-  import { Buffer } from './wasp_client/buffer';
-  import { FairRouletteService } from './fairroulette_client';
-  import type { Bet } from './fairroulette_client';
-  import { onMount } from 'svelte';
+  import { Base58 } from './wasp_client/crypto/base58';
   import { Seed } from './wasp_client/crypto/seed';
-  import config, { chainId } from '../config.dev';
-  import Roulette from './Roulette.svelte';
-
-  import { seed, addressIndex, keyPair, address } from './store';
-  import { WalletService } from './wasp_client';
-  import type { IOnLedger } from './wasp_client/binary_models/IOnLedger';
-  import { OnLedger } from './wasp_client/binary_models/on_ledger';
-  import { BasicWallet } from './wasp_client/basic_wallet';
-
-  import { Panel } from './components';
-  import type { IGeneralPanel } from './models/IGeneralPanel';
-  import type { IBalancePanel } from './models/IBalancePanel';
-  import type { IDetailsPanel } from './models/IDetailsPanel';
-  import type { IState } from './models/IState';
-  import State from './components/state.svelte';
-  import { BettingSystem } from './components';
 
   let fundsUpdaterHandle;
 
@@ -61,8 +51,8 @@
   };
 
   // Panels located around roulette
-  const GENERAL_PANEL: IGeneralPanel = {
-    type: 'general',
+  const WALLET_PANEL: IWalletPanel = {
+    type: WALLET_PANEL_TYPE,
     data: [
       {
         eyebrow: 'Your seed',
@@ -76,7 +66,7 @@
   };
 
   const BALANCE_PANEL: IBalancePanel = {
-    type: 'value',
+    type: BALANCE_PANEL_TYPE,
     data: {
       eyebrow: 'Your balance',
       label: '1022 Mi',
@@ -91,62 +81,63 @@
     ],
   };
 
-  const PLAYERS_PANEL: IDetailsPanel = {
-    type: 'details',
+  const PLAYERS_PANEL: IEntriesPanel = {
+    type: ENTRIES_PANEL_TYPE,
     title: 'Players',
     ordered: true,
-    data: [
-      {
-        eyebrow: '13jnjksndf12',
-        description: [
-          {
-            label: 'Bet:',
-            value: '1000i',
-          },
-          {
-            label: 'W/L:',
-            value: '600i',
-          },
-        ],
-      },
-      {
-        eyebrow: '13jnjksndf12',
-        description: [
-          {
-            label: 'Bet:',
-            value: '2000i',
-          },
-        ],
-      },
-      {
-        eyebrow: '13jnjksndf12',
-        description: [
-          {
-            label: 'Bet:',
-            value: '3000i',
-          },
-        ],
-      },
-    ],
+    entries: {
+      type: PLAYER_ENTRIES_TYPE,
+      data: [
+        {
+          address: 'address1',
+          fields: [
+            {
+              label: 'Bet:',
+              value: '1000i',
+            },
+            {
+              label: 'W/L:',
+              value: '600i',
+            },
+          ],
+        },
+        {
+          address: 'address2',
+          fields: [
+            {
+              label: 'Bet:',
+              value: '1050i',
+            },
+            {
+              label: 'W/L:',
+              value: '200i',
+            },
+          ],
+        },
+      ],
+    },
   };
 
-  const LOGS_PANEL: IDetailsPanel = {
-    type: 'details',
+  const LOGS_PANEL: IEntriesPanel = {
+    type: ENTRIES_PANEL_TYPE,
     title: 'Logs',
     ordered: true,
-    data: [
-      {
-        tag: 'Round',
-        eyebrow: '11:24:11',
-        // label: '1022 Mi',
-        description: [{ value: 'Page loading...' }],
-      },
-      {
-        tag: 'Site',
-        eyebrow: '11:24:11',
-        description: [{ value: 'Page loading...' }],
-      },
-    ],
+    entries: {
+      type: LOG_ENTRIES_TYPE,
+      data: [
+        {
+          tag: 'Round',
+          timestamp: '11:24:11',
+          // label: '1022 Mi',
+          description: 'Page loading...',
+        },
+        {
+          tag: 'Site',
+          timestamp: '11:24:11',
+          description: 'Page loading...',
+        },
+      ],
+    },
   };
 
   const INFORMATION_STATE: IState = {
@@ -379,10 +370,10 @@
   </div>
 
   <State {...INFORMATION_STATE} />
-  <Panel {...GENERAL_PANEL} />
+  <Panel {...WALLET_PANEL} />
   <Panel {...BALANCE_PANEL} />
-  <!-- <Panel {...LOGS_PANEL} />
-  <Panel {...PLAYERS_PANEL} /> -->
+  <Panel {...LOGS_PANEL} />
+  <Panel {...PLAYERS_PANEL} />
   <BettingSystem />
   <!-- <div class="roulette">
     <img src="roulette_background.svg" alt="roulette" />
