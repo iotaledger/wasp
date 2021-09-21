@@ -13,15 +13,6 @@
     return { ...item, number: i + 1, url: `./${i + 1}.svg` };
   });
 
-  // Progress bar animation
-  const radius = 25;
-  const stroke = 1;
-  const normalizedRadius = radius - stroke;
-  const circumference = normalizedRadius * 2 * Math.PI;
-  let progress = 0;
-
-  $: strokeDashoffset = circumference - (progress / 100) * circumference;
-
   function disableAll() {
     numbers = numbers.map((n) => ({ ...n, active: false }));
   }
@@ -46,29 +37,9 @@
   onDestroy(() => {
     clearInterval(interval);
   });
-
-  const startCountdown = () => {
-    progress === 0 ? (progress = 100) : (progress = 0);
-    console.log('clicked!');
-  };
 </script>
 
-<button on:click={() => startCountdown()}>Start</button>
-
 <div class="roulette">
-  <svg class="circle-animated" height={radius * 2} width={radius * 2}>
-    <circle
-      class:animate={progress !== 0}
-      stroke="#00E0CA"
-      fill="transparent"
-      stroke-width={stroke}
-      stroke-dasharray={circumference + ' ' + circumference}
-      style={`stroke-dashoffset: ${strokeDashoffset};`}
-      r={normalizedRadius}
-      cx={radius}
-      cy={radius}
-    />
-  </svg>
   <div class="full-roulette">
     <img
       class="roulette-background"
@@ -76,12 +47,10 @@
       alt="roulette"
     />
     {#if mode === 'GAME_STARTED' && winnerNumber === undefined}
-      {#each new Array(1200) as _}
-        {#each numbers as { url, active }}
-          {#if active}
-            <img class="active" src={url} alt="active" />
-          {/if}
-        {/each}
+      {#each numbers as { url, active }}
+        {#if active}
+          <img class="active" src={url} alt="active" />
+        {/if}
       {/each}
     {:else if mode === 'GAME_STARTED' && winnerNumber > 0 && winnerNumber < 9}
       <img class="active" src={numbers[winnerNumber - 1].url} alt="active" />
