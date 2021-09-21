@@ -18,6 +18,7 @@
     text-transform: uppercase;
     color: var(--white);
     padding: 12px;
+    width: 100%;
     @media (min-width: 1024px) {
       padding: 12px 30px;
     }

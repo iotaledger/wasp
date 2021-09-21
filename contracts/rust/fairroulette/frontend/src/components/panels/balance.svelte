@@ -52,9 +52,14 @@
     }
     .value-button div {
       margin-bottom: 8px;
+      width: 80%;
+      @media (min-width: 660px) {
+        width: 45%;
+      }
       @media (min-width: 1024px) {
         margin: 0 auto;
         margin-bottom: 8px;
+        width: 15%;
       }
     }
     .value-button div:not(:last-child) {

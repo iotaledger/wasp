@@ -1,39 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
-@font-face {
-	font-family: 'Metropolis Bold';
-	font-style: normal;
-	font-weight: normal;
-	src: local('Metropolis Bold'), url('fonts/Metropolis-Bold.woff') format('woff');
-}
-
-@font-face {
-	font-family: 'Metropolis Regular';
-	font-style: normal;
-	font-weight: normal;
-	src: local('Metropolis Regular'), url('fonts/Metropolis-Regular.woff') format('woff');
-}
-
-@font-face {
-	font-family: 'Metropolis Medium';
-	font-style: normal;
-	font-weight: normal;
-	src: local('Metropolis Medium'), url('fonts/Metropolis-Medium.woff') format('woff');
-}
 :root{
 	/* Breakpoints */
-	--desktop-width:1024px; /*
+	--desktop-width: 1024px; /*
 	
 	/*Palette*/
-	--blue-dark:#141e31;
-	--mint-green-light:#14CABF;
-	--mint-green:#00e0ca;
-	--mint-green-dark:#36A1AC;
-	--gray-3:#D8E1F4;
-	--gray-4:#b0bfd9;
-	--gray-5:#909FBE;
-	--white:#ffffff;
+	--blue-dark: #141e31;
+	--mint-green-light: #14CABF;
+	--mint-green: #00e0ca;
+	--mint-green-dark: #36A1AC;
+	--gray-3: #D8E1F4;
+	--gray-4: #b0bfd9;
+	--gray-5: #909FBE;
+	--gray-7: #485776;
+	--white: #ffffff;
 
+	--border-color:rgba(255, 255, 255, 0.12);
 }
 html, body {
 	position: relative;
@@ -70,7 +50,6 @@ input:disabled, button:disabled {
 }
 
 h1 {
-	font-weight: 600;
     font-size: 32px;
     line-height: 36px;
     letter-spacing: 0.75px;
@@ -83,6 +62,7 @@ h1 {
 		line-height: 120%;
 	}
   }
+
 
 /* Custom utility classes */
 
@@ -105,10 +85,9 @@ h1 {
 @media (min-width: 1024px) {
 	.panel{
 		background: var(--blue-dark);
-		border: 1px solid rgba(255, 255, 255, 0.12);
+		border: 1px solid var(--border-color);
 		border-radius: 12px;
 		padding: 16px;
 	}
 
-  }
-/*  */
+}

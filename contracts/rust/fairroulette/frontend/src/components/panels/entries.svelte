@@ -10,10 +10,9 @@
   console.log('entries', entries);
 </script>
 
-<div class="details-panel">
+<div class="panel">
   <h3>{title}</h3>
-  <hr />
-  <div class="details-content">
+  <div>
     {#if entries.type === PLAYER_ENTRIES_TYPE}
       <!-- Player panel -->
       {#each entries.data as entry, index}
@@ -23,14 +22,14 @@
           {/if}
           <div class="item-eyebrow">{entry.address}</div>
         </div>
-        {#each entry.fields as { label, value }}
-          <div class="item-description">
+        <div class="item-description">
+          {#each entry.fields as { label, value }}
             {#if label}
               <span class="description-label">{label}</span>
             {/if}
-            <span class="description-value">{value}</span>
-          </div>
-        {/each}
+            <span class="description-value ">{value}</span>
+          {/each}
+        </div>
       {/each}
     {/if}
 
@@ -41,8 +40,10 @@
           {#if ordered}
             <span class="item-index">{index + 1}</span>
           {/if}
-          <div class="item-tag">{tag}</div>
-          <span class="description-value">{timestamp}</span>
+          <div class="tag">
+            <div class="item-tag">{tag}</div>
+            <span class="description-value">{timestamp}</span>
+          </div>
         </div>
         <span class="description-value">{description}</span>
       {/each}
@@ -51,32 +52,20 @@
 </div>
 
 <style lang="scss">
-  .details-panel {
+  .panel {
     background: var(--blue-dark);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 12px;
-    padding-top: 16px;
-    padding-bottom: 32px;
+    padding: 16px;
     width: 100%;
-    @media (min-width: 1024px) {
-      width: 275px;
-      padding-bottom: 80px;
-    }
+
     h3 {
       font-weight: bold;
       font-size: 18px;
       line-height: 150%;
       letter-spacing: 0.03em;
       color: var(--white);
-      padding-left: 16px;
-    }
-    hr {
-      margin-left: 16px;
-      margin-right: 16px;
-      border-color: rgba(255, 255, 255, 0.12);
-    }
-    .details-content {
-      padding: 0 16px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 14px;
+      margin: 0;
     }
     .item-index {
       font-size: 14px;
@@ -88,11 +77,11 @@
     .tag {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 6px;
       width: 100%;
     }
     .details-tag {
       display: flex;
+      margin-top: 12px;
     }
     .item-tag {
       font-weight: bold;
@@ -115,12 +104,14 @@
       display: flex;
     }
     .item-description {
-      margin-left: 26px;
-      margin-bottom: 16px;
+      margin: 0 0 16px 0;
       font-size: 14px;
       line-height: 150%;
       letter-spacing: 0.5px;
       color: var(--gray-5);
+      .description-value {
+        margin-left: 0;
+      }
     }
     .description-label {
       font-weight: bold;
@@ -128,8 +119,10 @@
       line-height: 150%;
       letter-spacing: 0.5px;
       color: var(--gray-5);
+      margin-left: 26px;
     }
     .description-value {
+      margin-left: 26px;
       font-size: 14px;
       line-height: 150%;
       letter-spacing: 0.5px;
