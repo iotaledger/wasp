@@ -29,6 +29,8 @@
     players,
     selectedBetAmount,
     selectedBetNumber,
+    startedAt,
+    winningNumber,
   } from './store';
   import {
     BasicClient,
@@ -220,11 +222,9 @@
       () =>
         fairRouletteService
           .getLastWinningNumber()
-          .then((x) => (view.round.winningNumber = x)),
+          .then((x) => winningNumber.set(x)),
       () =>
-        fairRouletteService
-          .getRoundStartedAt()
-          .then((x) => (view.round.startedAt = x)),
+        fairRouletteService.getRoundStartedAt().then((x) => startedAt.set(x)),
     ];
 
     for (let request of requests) {
