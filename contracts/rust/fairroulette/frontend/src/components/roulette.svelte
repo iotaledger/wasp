@@ -1,63 +1,117 @@
 <script lang="ts">
-  export let winnerNumber: number = undefined;
-  export let mode: 'GAME_STARTED' | 'GAME_FINISHED';
+  import { onDestroy, onMount } from 'svelte';
+  import { randomIntFromInterval } from '../utils/utils';
+
+  export let winnerNumber: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 = undefined;
+  export let mode: 'GAME_STARTED' | 'GAME_STOPPED';
 
   let numbers: {
     number: number;
     url: string;
     active?: boolean;
-  }[] = [
-    { number: 1, url: './1.svg' },
-    { number: 2, url: './2.svg' },
-    { number: 3, url: './3.svg' },
-    { number: 4, url: './4.svg' },
-    { number: 5, url: './5.svg' },
-    { number: 6, url: './6.svg' },
-    { number: 7, url: './7.svg' },
-    { number: 8, url: './8.svg' },
-  ];
+  }[] = new Array(8).fill({}).map((item, i) => {
+    return { ...item, number: i + 1, url: `./${i + 1}.svg` };
+  });
 
-  const TIME_ACTIVE = 500;
+  // Progress bar animation
+  const radius = 25;
+  const stroke = 1;
+  const normalizedRadius = radius - stroke;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  let progress = 0;
 
-  function randomIntFromInterval(min, max) {
-    return Math.floor(Math.random() * (max - min + 1) + min);
-  }
+  $: strokeDashoffset = circumference - (progress / 100) * circumference;
 
   function disableAll() {
-    for (let i = 0; i < numbers.length; i++) {
-      numbers[i].active = false;
-    }
+    numbers = numbers.map((n) => ({ ...n, active: false }));
   }
 
-  //   $: if (mode === 'GAME_STARTED' && winnerNumber === undefined) {
-  //     setInterval(() => {
-  //       let randomNumber = randomIntFromInterval(0, 7);
-  //       disableAll();
-  //       numbers[randomNumber].active = true;
-  //       console.log('active', numbers);
-  //     }, 500);
-  //   }
+  let interval;
+  let previousRandomNumber: number = -1;
+
+  onMount(() => {
+    interval = setInterval(() => {
+      let randomNumber;
+
+      do {
+        randomNumber = randomIntFromInterval(0, 7);
+      } while (randomNumber === previousRandomNumber);
+
+      disableAll();
+      numbers[randomNumber].active = true;
+      previousRandomNumber = randomNumber;
+    }, 500);
+  });
+
+  onDestroy(() => {
+    clearInterval(interval);
+  });
+
+  const startCountdown = () => {
+    progress === 0 ? (progress = 100) : (progress = 0);
+    console.log('clicked!');
+  };
 </script>
 
+<button on:click={() => startCountdown()}>Start</button>
+
 <div class="roulette">
+  <svg class="circle-animated" height={radius * 2} width={radius * 2}>
+    <circle
+      class:animate={progress !== 0}
+      stroke="#00E0CA"
+      fill="transparent"
+      stroke-width={stroke}
+      stroke-dasharray={circumference + ' ' + circumference}
+      style={`stroke-dashoffset: ${strokeDashoffset};`}
+      r={normalizedRadius}
+      cx={radius}
+      cy={radius}
+    />
+  </svg>
   <img
     class="roulette-background"
     src="roulette_background.svg"
     alt="roulette"
   />
-  {#each numbers as { number, url, active }}
-    {#if active}
-      <img class="active" src={url} alt="active" />
-    {/if}
-  {/each}
+  {#if mode === 'GAME_STARTED' && winnerNumber === undefined}
+    {#each new Array(1200) as _}
+      {#each numbers as { url, active }}
+        {#if active}
+          <img class="active" src={url} alt="active" />
+        {/if}
+      {/each}
+    {/each}
+  {:else if mode === 'GAME_STARTED' && winnerNumber > 0 && winnerNumber < 9}
+    <img class="active" src={numbers[winnerNumber - 1].url} alt="active" />
+  {/if}
 </div>
 
 <style lang="scss">
   .roulette {
     position: relative;
+    max-width: 800px;
+    height: 100%;
+    margin: auto;
     .roulette-background,
     .active {
       position: absolute;
+      width: 100%;
+    }
+  }
+  .circle-animated {
+    position: absolute;
+    transform: translate(-50%, calc(-50% + 20px));
+    top: 50%;
+    left: 50%;
+    opacity: 1;
+
+    circle {
+      &.animate {
+        transition: stroke-dashoffset 3s linear;
+      }
+      transform: rotate(0);
+      transform-origin: 50% 50%;
     }
   }
 </style>
