@@ -55,8 +55,6 @@
   .panel {
     background: var(--blue-dark);
     padding: 16px;
-    width: 100%;
-
     h3 {
       font-weight: bold;
       font-size: 18px;

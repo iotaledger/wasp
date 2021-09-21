@@ -371,14 +371,34 @@
       </li>
     </ul>
   </div>
+  <div class="layout_state">
+    <div class="balance">
+      <Panel {...BALANCE_PANEL} />
+    </div>
+    <div class="wallet">
+      <Panel {...WALLET_PANEL} />
+    </div>
+    <div class="roulette_state">
+      <State {...INFORMATION_STATE} />
+    </div>
+  </div>
+  <div class="layout_roulette">
+    <div class="roulette">
+      <Roulette mode="GAME_STARTED" />
 
-  <State {...INFORMATION_STATE} />
-  <Panel {...WALLET_PANEL} />
-  <Panel {...BALANCE_PANEL} />
-  <Panel {...LOGS_PANEL} />
-  <Panel {...PLAYERS_PANEL} />
-  <BettingSystem />
-  <Roulette mode="GAME_STARTED" />
+      <BettingSystem />
+    </div>
+    <div class="players">
+      <Panel {...PLAYERS_PANEL} />
+    </div>
+    <div class="logs">
+      <Panel {...LOGS_PANEL} />
+    </div>
+  </div>
+  <!-- <div class="roulette">
+    <img src="roulette_background.svg" alt="roulette" />
+    <img src="2.svg" alt="" />
+  </div> -->
 
   <!-- {#if view.isWorking}GENERAL
     <div class="loading_dim">
@@ -568,7 +588,103 @@
     font-size: 16px;
     padding-left: 5px;
   }
+  .layout_state {
+    display: grid;
+    grid-template-rows: repeat(1fr);
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    margin-top: 48px;
+  }
+  @media (min-width: 1024px) {
+    .layout_state {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 20px 20px;
+      grid-template-areas:
+        'aside-1 first aside-2'
+        'aside-1 last aside-2';
+    }
+  }
+  .roulette_state {
+    margin-top: 40px;
+  }
+  @media (min-width: 1024px) {
+    .roulette_state {
+      margin-top: 0;
+    }
+  }
+  @media (min-width: 1024px) {
+    .wallet {
+      grid-area: aside-1;
+      margin-left: 60px;
+    }
+  }
+  @media (min-width: 1300px) {
+    .wallet {
+      margin-left: 120px;
+    }
+  }
+  @media (min-width: 1024px) {
+    .balance {
+      grid-area: aside-2;
+      margin-right: 60px;
+    }
+  }
+  @media (min-width: 1300px) {
+    .balance {
+      margin-right: 120px;
+    }
+  }
+  .layout_roulette {
+    display: grid;
+    grid-template-rows: repeat(1fr);
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+    margin-top: 48px;
+  }
+  @media (min-width: 1024px) {
+    .layout_roulette {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 20px 20px;
+      grid-template-areas:
+        'aside-1 first aside-2'
+        'aside-1 last aside-2';
+    }
+  }
+  .roulette {
+    margin-bottom: 100px;
+  }
+  @media (min-width: 1024px) {
+    .roulette {
+      margin-bottom: 0;
+    }
+  }
+  @media (min-width: 1024px) {
+    .players {
+      grid-area: aside-1;
+      margin-left: 60px;
+    }
+  }
+  @media (min-width: 1300px) {
+    .players {
+      margin-left: 120px;
+    }
+  }
 
+  @media (min-width: 1024px) {
+    .logs {
+      grid-area: aside-2;
+      margin-right: 60px;
+    }
+  }
+  @media (min-width: 1300px) {
+    .logs {
+      margin-right: 120px;
+    }
+  }
   .loading_dim {
     background: rgba(0, 0, 0, 0.5);
     width: 100%;
