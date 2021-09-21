@@ -5,6 +5,7 @@
   import config, { chainId } from '../config.dev';
   import { BettingSystem, Panel, Roulette } from './components';
   import State from './components/state.svelte';
+  import Header from './components/header.svelte';
   import type { Bet } from './fairroulette_client';
   import { FairRouletteService } from './fairroulette_client';
   import type { IBalancePanel } from './models/IBalancePanel';
@@ -373,11 +374,7 @@
 </script>
 
 <main>
-  <div class="header">
-    <div class="header-logo">
-      <img src="iota-roulette.svg" alt="iota-logo-roulette" />
-    </div>
-  </div>
+  <Header />
   <div class="layout_state">
     <div class="balance">
       <Panel {...balancePanel} />
@@ -521,12 +518,6 @@
     height: 100%;
   }
 
-  div.header {
-    width: 100%;
-    background-color: rgba(72, 87, 118, 0.2);
-    height: 50px;
-    padding: 16px;
-  }
   .layout_state {
     display: grid;
     grid-template-rows: repeat(1fr);
