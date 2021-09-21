@@ -48,49 +48,27 @@
   {#if mode === 'GAME_STARTED' && winnerNumber === undefined}
     {#each numbers as { url, active }}
       {#if active}
-        <img class="active" src={url} alt="active" />
+        <img class="flashedNumber" src={url} alt="active" />
       {/if}
     {/each}
   {:else if mode === 'GAME_STARTED' && winnerNumber > 0 && winnerNumber < 9}
-    <img class="active" src={numbers[winnerNumber - 1].url} alt="active" />
+    <img class="flashedNumber" src={numbers[winnerNumber - 1].url} alt="active" />
   {/if}
 </div>
 
 <style lang="scss">
   .roulette {
     position: relative;
-    width: 75%;
-    height: 400px;
-    margin: auto;
+    width: 100%;
     .roulette-background,
-    .active {
-      position: absolute;
+    .flashedNumber {
       width: 100%;
-      img {
-        width: 100%;
-      }
+      height: auto;
     }
-    @media (min-width: 520px) {
-      margin-top: -20px;
-      height: 550px;
-    }
-    @media (min-width: 720px) {
-      margin-top: -20px;
-      height: 700px;
-    }
-    @media (min-width: 900px) {
-      margin-top: -20px;
-      height: 800px;
-    }
-    @media (min-width: 1024px) {
-      height: 500px;
-      margin-top: -20px;
-    }
-  }
-  @media (min-width: 1350px) {
-    .roulette {
-      height: 700px;
-      margin-top: -20px;
+    .flashedNumber {
+      position: absolute;
+      top: 0;
+      left: 0;
     }
   }
 </style>
