@@ -373,6 +373,11 @@
 </script>
 
 <main>
+  <div class="header">
+    <div class="header-logo">
+      <img src="iota-roulette.svg" alt="iota-logo-roulette" />
+    </div>
+  </div>
   <div class="layout_state">
     <div class="balance">
       <Panel {...balancePanel} />
@@ -387,7 +392,6 @@
   <div class="layout_roulette">
     <div class="roulette">
       <Roulette mode="GAME_STARTED" />
-
       <BettingSystem />
     </div>
     <div class="players">
@@ -518,47 +522,8 @@
   div.header {
     width: 100%;
     background-color: rgba(72, 87, 118, 0.2);
-    height: 45px;
-  }
-
-  div.header ul {
-    margin: 0;
-    padding: 0;
-    display: flex;
-    list-style: none;
-    height: 100%;
-  }
-
-  div.header li {
-    height: 100%;
-    margin: auto;
-    display: flex;
-    padding: 0;
-    align-items: center;
-    justify-content: center;
-    color: rgba(255, 255, 255, 0.9);
-
-    text-shadow: 0px 2px 2px rgba(13, 15, 4, 0.42);
-  }
-
-  .header_balance_title {
-    font-size: 24px;
-  }
-
-  .header_balance_text {
-    padding-left: 5px;
-    font-size: 26px;
-  }
-
-  .header_seed_title,
-  .header_address_title {
-    font-size: 20px;
-  }
-
-  .header_seed_text,
-  .header_address_text {
-    font-size: 16px;
-    padding-left: 5px;
+    height: 50px;
+    padding: 16px;
   }
   .layout_state {
     display: grid;
