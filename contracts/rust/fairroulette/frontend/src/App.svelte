@@ -8,12 +8,14 @@
   import type { Bet } from './fairroulette_client';
   import { FairRouletteService } from './fairroulette_client';
   import type { IBalancePanel } from './models/IBalancePanel';
-  import { ENTRIES_PANEL_TYPE, IEntriesPanel } from './models/IEntriesPanel';
+  import { ENTRIES_PANEL_TYPE } from './models/IEntriesPanel';
+  import type { IEntriesPanel } from './models/IEntriesPanel';
   import { LOG_ENTRIES_TYPE } from './models/ILogEntries';
   import { PLAYER_ENTRIES_TYPE } from './models/IPlayerEntries';
   import type { IState } from './models/IState';
   import { BALANCE_PANEL_TYPE } from './models/IBalancePanel';
-  import { IWalletPanel, WALLET_PANEL_TYPE } from './models/IWalletPanel';
+  import { WALLET_PANEL_TYPE } from './models/IWalletPanel';
+  import type { IWalletPanel } from './models/IWalletPanel';
   import { address, addressIndex, keyPair, seed } from './store';
   import {
     BasicClient,
