@@ -23,8 +23,8 @@ import (
 )
 
 var (
-	log *logger.Logger
-	wse *webSocketAPI
+	log   *logger.Logger
+	wsapi *webSocketAPI
 )
 
 func Init(
@@ -44,8 +44,8 @@ func Init(
 	server.SetResponseContentType(echo.MIMEApplicationJSON)
 
 	pub := server.Group("public", "").SetDescription("Public endpoints")
-	wse = addWsEndpoint(pub)
-	wse.startWsForwarder()
+	wsapi = addWebSocketEndpoint(pub)
+	wsapi.startWebSocketForwarder()
 
 	blob.AddEndpoints(pub, func() registry.BlobCache { return registryProvider() })
 	info.AddEndpoints(pub, network)

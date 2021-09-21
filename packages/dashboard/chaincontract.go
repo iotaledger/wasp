@@ -21,7 +21,7 @@ var tplChainContract string
 func (d *Dashboard) initChainContract(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid/contract/:hname", d.handleChainContract)
 	route.Name = "chainContract"
-	r[route.Path] = d.makeTemplate(e, tplChainContract, tplWs)
+	r[route.Path] = d.makeTemplate(e, tplChainContract, tplWebSocket)
 }
 
 func (d *Dashboard) handleChainContract(c echo.Context) error {

@@ -67,8 +67,7 @@ func Init(server *echo.Echo, waspServices WaspServices) *Dashboard {
 		d.chainsInit(server, r),
 	}
 
-	addWsEndpoints(server)
-	d.startWsForwarder()
+	d.webSocketInit(server)
 
 	return d
 }
