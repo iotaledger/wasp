@@ -1,25 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
-@font-face {
-	font-family: 'Metropolis Bold';
-	font-style: normal;
-	font-weight: normal;
-	src: local('Metropolis Bold'), url('fonts/Metropolis-Bold.woff') format('woff');
-}
-
-@font-face {
-	font-family: 'Metropolis Regular';
-	font-style: normal;
-	font-weight: normal;
-	src: local('Metropolis Regular'), url('fonts/Metropolis-Regular.woff') format('woff');
-}
-
-@font-face {
-	font-family: 'Metropolis Medium';
-	font-style: normal;
-	font-weight: normal;
-	src: local('Metropolis Medium'), url('fonts/Metropolis-Medium.woff') format('woff');
-}
 :root{
 	/* Breakpoints */
 	--desktop-width:1024px; /*
@@ -70,7 +48,6 @@ input:disabled, button:disabled {
 }
 
 h1 {
-	font-weight: 600;
     font-size: 32px;
     line-height: 36px;
     letter-spacing: 0.75px;
@@ -83,6 +60,7 @@ h1 {
 		line-height: 120%;
 	}
   }
+
 
 /* Custom utility classes */
 
