@@ -22,7 +22,7 @@ const WaspConfig = `
   "logger": {
     "level": "info",
     "disableCaller": false,
-    "disableStacktrace": false,
+    "disableStacktrace": true,
     "encoding": "console",
     "outputPaths": [
       "stdout",
