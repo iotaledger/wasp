@@ -8,7 +8,6 @@ import (
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util"
 	"golang.org/x/xerrors"
 )
 
@@ -126,16 +125,24 @@ func (b *blockImpl) Write(w io.Writer) error {
 	return nil
 }
 
-func (b *blockImpl) writeEssence(w io.Writer) error {
-	if err := util.WriteUint16(w, uint16(len(b.stateUpdates))); err != nil {
-		return err
-	}
+// compactStateUpdate returns a stateUpdate that contains all mutations in the block
+// (this is useful to trim down the binary representation of the block, because mutations to the same key on
+// different stateUpdates will be collapsed into a single one)
+func (b *blockImpl) compactStateUpdate() *stateUpdateImpl {
+	ret := NewStateUpdate()
 	for _, su := range b.stateUpdates {
-		if err := su.Write(w); err != nil {
-			return err
+		for k, v := range su.mutations.Sets {
+			ret.mutations.Set(k, v)
+		}
+		for k := range su.mutations.Dels {
+			ret.mutations.Del(k)
 		}
 	}
-	return nil
+	return ret
+}
+
+func (b *blockImpl) writeEssence(w io.Writer) error {
+	return b.compactStateUpdate().Write(w)
 }
 
 func (b *blockImpl) Read(r io.Reader) error {
@@ -149,17 +156,11 @@ func (b *blockImpl) Read(r io.Reader) error {
 }
 
 func (b *blockImpl) readEssence(r io.Reader) error {
-	var size uint16
-	if err := util.ReadUint16(r, &size); err != nil {
-		return err
-	}
-	b.stateUpdates = make([]*stateUpdateImpl, size)
+	b.stateUpdates = make([]*stateUpdateImpl, 1)
 	var err error
-	for i := range b.stateUpdates {
-		b.stateUpdates[i], err = newStateUpdateFromReader(r)
-		if err != nil {
-			return err
-		}
+	b.stateUpdates[0], err = newStateUpdateFromReader(r)
+	if err != nil {
+		return err
 	}
 	return nil
 }

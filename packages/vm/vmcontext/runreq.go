@@ -36,6 +36,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 	// guard against replaying off-ledger requests here to prevent replaying fee deduction
 	// also verifies that account for off-ledger request exists
 	if !vmctx.validateRequest() {
+		vmctx.log.Debugw("vmctx.RunTheRequest: request failed validation", "id", vmctx.req.ID())
 		return
 	}
 
@@ -204,6 +205,10 @@ func (vmctx *VMContext) validateRequest() bool {
 	// See rfc [replay-off-ledger.md]
 
 	maxAssumed := accounts.GetMaxAssumedNonce(vmctx.State(), req.SenderAddress())
+
+	vmctx.log.Debugf("vmctx.validateRequest - nonce check - maxAssumed: %d, tolerance: %d, request nonce: %d ",
+		maxAssumed, OffLedgerNonceStrictOrderTolerance, req.Nonce())
+
 	if maxAssumed < OffLedgerNonceStrictOrderTolerance {
 		return true
 	}
