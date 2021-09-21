@@ -28,7 +28,7 @@
 
   import { Panel } from './components';
   import type { IGeneralPanel } from './models/IGeneralPanel';
-  import type { IValuePanel } from './models/IValuePanel';
+  import type { IBalancePanel } from './models/IBalancePanel';
   import type { IDetailsPanel } from './models/IDetailsPanel';
   import type { IState } from './models/IState';
   import State from './components/state.svelte';
@@ -75,7 +75,7 @@
     ],
   };
 
-  const BALANCE_PANEL: IValuePanel = {
+  const BALANCE_PANEL: IBalancePanel = {
     type: 'value',
     data: {
       eyebrow: 'Your balance',
@@ -381,8 +381,8 @@
   <State {...INFORMATION_STATE} />
   <Panel {...GENERAL_PANEL} />
   <Panel {...BALANCE_PANEL} />
-  <Panel {...LOGS_PANEL} />
-  <Panel {...PLAYERS_PANEL} />
+  <!-- <Panel {...LOGS_PANEL} />
+  <Panel {...PLAYERS_PANEL} /> -->
   <BettingSystem />
   <!-- <div class="roulette">
     <img src="roulette_background.svg" alt="roulette" />

@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { GeneralPanel, ValuePanel, DetailsPanel } from "./";
+  import { GeneralPanel, BalancePanel, DetailsPanel } from './';
 
   export let type: string;
 
   const types = {
     general: GeneralPanel,
     details: DetailsPanel,
-    value: ValuePanel,
+    value: BalancePanel,
   };
 </script>
 
