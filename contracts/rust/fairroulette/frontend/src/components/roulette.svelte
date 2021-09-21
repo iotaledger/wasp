@@ -40,32 +40,84 @@
 </script>
 
 <div class="roulette">
-  <img
-    class="roulette-background"
-    src="roulette_background.svg"
-    alt="roulette"
-  />
-  {#if mode === 'GAME_STARTED' && winnerNumber === undefined}
-    {#each numbers as { url, active }}
-      {#if active}
-        <img class="active" src={url} alt="active" />
-      {/if}
-    {/each}
-  {:else if mode === 'GAME_STARTED' && winnerNumber > 0 && winnerNumber < 9}
-    <img class="active" src={numbers[winnerNumber - 1].url} alt="active" />
-  {/if}
+  <div class="full-roulette">
+    <img
+      class="roulette-background"
+      src="roulette_background.svg"
+      alt="roulette"
+    />
+    {#if mode === 'GAME_STARTED' && winnerNumber === undefined}
+      {#each numbers as { url, active }}
+        {#if active}
+          <img class="active" src={url} alt="active" />
+        {/if}
+      {/each}
+    {:else if mode === 'GAME_STARTED' && winnerNumber > 0 && winnerNumber < 9}
+      <img class="active" src={numbers[winnerNumber - 1].url} alt="active" />
+    {/if}
+  </div>
 </div>
 
 <style lang="scss">
   .roulette {
     position: relative;
-    max-width: 800px;
-    height: 100%;
+    width: 75%;
+    height: 400px;
     margin: auto;
-    .roulette-background,
-    .active {
-      position: absolute;
-      width: 100%;
+    .full-roulette {
+      max-height: 100%;
+      max-width: 100%;
+      .roulette-background,
+      .active {
+        position: absolute;
+        width: 100%;
+      }
+    }
+  }
+  @media (min-width: 520px) {
+    .roulette {
+      margin-top: -20px;
+      height: 550px;
+    }
+  }
+  @media (min-width: 720px) {
+    .roulette {
+      margin-top: -20px;
+      height: 700px;
+    }
+  }
+  @media (min-width: 900px) {
+    .roulette {
+      margin-top: -20px;
+      height: 800px;
+    }
+  }
+  @media (min-width: 1024px) {
+    .roulette {
+      height: 500px;
+      margin-top: -20px;
+    }
+  }
+  @media (min-width: 1350px) {
+    .roulette {
+      height: 700px;
+      margin-top: -20px;
+    }
+  }
+
+  .circle-animated {
+    position: absolute;
+    transform: translate(-50%, calc(-50% + 20px));
+    top: 50%;
+    left: 50%;
+    opacity: 1;
+
+    circle {
+      &.animate {
+        transition: stroke-dashoffset 3s linear;
+      }
+      transform: rotate(0);
+      transform-origin: 50% 50%;
     }
   }
 </style>
