@@ -58,7 +58,7 @@ In this case requests `3,4` will fail for no reason for the user.
 
 ## Proposed solution
 
-We propose to combine the two methods: by checking processed requests in the state and at same time requiring and enforcing
+We propose to combine the two methods: by checking the processed requests in the state and at the same time requiring and enforcing an
 incremental nonce for _off-ledger requests_:
 
 * each _off-ledger request_ is first checked in the (pruned) state if it wasn't processed before
