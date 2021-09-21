@@ -28,16 +28,16 @@
 
 <style lang="scss">
   .value {
-    color: white;
+    text-align: end;
     font-size: 14px;
     line-height: 150%;
     letter-spacing: 0.5px;
-    text-align: end;
+    color: var(--white);
   }
   .slider {
     height: 26px;
     -webkit-appearance: none;
-    margin: 10px 0;
+    margin: 7px 0;
     width: 100%;
     border: 0;
     background-color: transparent;

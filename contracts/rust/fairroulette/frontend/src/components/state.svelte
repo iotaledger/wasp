@@ -34,7 +34,7 @@
       font-size: 16px;
       line-height: 150%;
       letter-spacing: 0.75px;
-      color: #909fbe;
+      color: var(--gray-5);
     }
   }
 </style>
