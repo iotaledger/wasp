@@ -68,8 +68,8 @@
       line-height: 150%;
       letter-spacing: 0.03em;
       color: var(--white);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 14px;
       margin: 0;
     }
     .item-index {
