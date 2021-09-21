@@ -250,57 +250,16 @@ pub fn func_pay_winners(_ctx: &ScFuncContext, _f: &PayWinnersContext) {
 // 'playPeriod' can be used by the contract creator to set the length of a betting round
 // to a different value than the default value, which is 120 seconds.
 pub fn func_play_period(ctx: &ScFuncContext, f: &PlayPeriodContext) {
-
-    // Since we are sure that the 'playPeriod' parameter actually exists we can
-    // retrieve its actual value into an i32 value.
-    let play_period: i32 = f.params.play_period().value();
-
-    // Require that the play period (in seconds) is not ridiculously low.
-    // Otherwise panic out with an error message.
-    ctx.require(play_period >= 10, "invalid play period");
-
-    // Now we set the corresponding variable 'playPeriod' in state storage.
-    f.state.play_period().set_value(play_period);
-}
-
-pub fn view_last_winning_number(_ctx: &ScViewContext, f: &LastWinningNumberContext) {
-
-    // Get the 'lastWinningNumber' int64 value from state storage.
-    let last_winning_number: i64 = f.state.last_winning_number().value();
-
-    // Set the 'lastWinningNumber' in results to the value from state storage.
-    f.results.last_winning_number().set_value(last_winning_number);
-pub fn func_play_period(_ctx: &ScFuncContext, _f: &PlayPeriodContext) {
-  // Log the fact that we have initiated the 'playPeriod' Func in the log on the host.
-  _ctx.log("fairroulette.playPeriod");
-
-  // We don't want anyone to be able to initiate this function through a request except
-  // for the smart contract creator, so we require that the caller of the function is the smart
-  // contract creator. Any other caller will panic out with an error message.
-  _ctx.require(_ctx.caller() == _ctx.contract_creator(), "no permission");
-
   // Since we are sure that the 'playPeriod' parameter actually exists we can
   // retrieve its actual value into an i32 value.
-  let play_period: ScImmutableInt32 = _f.params.play_period();
-
-  // Require that the mandatory 'playPeriod' parameter actually exists in the map
-  // on the host. If it doesn't we panic out with an error message.
-  _ctx.require(play_period.exists(), "missing mandatory playPeriod");
-
-  // Now that we are sure that the 'playPeriod' parameter actually exists we can
-  // retrieve its actual value into an i64 value.
-  let play_period: i32 = play_period.value();
+  let play_period: i32 = f.params.play_period().value();
 
   // Require that the play period (in seconds) is not ridiculously low.
   // Otherwise panic out with an error message.
-  _ctx.require(play_period >= 10, "invalid play period");
-
-  // Require that the play period (in seconds) is not ridiculously low.
-  // Otherwise panic out with an error message.
-  _ctx.require(play_period >= 10, "invalid play period");
+  ctx.require(play_period >= 10, "invalid play period");
 
   // Now we set the corresponding variable 'playPeriod' in state storage.
-  _f.state.play_period().set_value(play_period);
+  f.state.play_period().set_value(play_period);
 }
 
 pub fn view_last_winning_number(_ctx: &ScViewContext, _f: &LastWinningNumberContext) {
