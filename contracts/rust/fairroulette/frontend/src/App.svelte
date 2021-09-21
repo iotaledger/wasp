@@ -25,6 +25,7 @@
   } from './wasp_client';
   import { Base58 } from './wasp_client/crypto/base58';
   import { Seed } from './wasp_client/crypto/seed';
+  import { Roulette } from './components';
 
   let fundsUpdaterHandle;
 
@@ -383,6 +384,8 @@
   </div>
   <div class="layout_roulette">
     <div class="roulette">
+      <Roulette mode="GAME_STARTED" />
+
       <BettingSystem />
     </div>
     <div class="players">
