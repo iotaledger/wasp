@@ -17,13 +17,14 @@
 
 <style lang="scss">
   .message {
+    font-family: 'Metropolis Bold';
     text-align: center;
     .title {
       text-align: center;
       color: var(--white);
     }
     .subtitle {
-      font-weight: 600;
+      font-family: 'Metropolis Bold';
       font-size: 24px;
       line-height: 120%;
       letter-spacing: 0.02em;
