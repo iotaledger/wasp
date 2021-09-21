@@ -1,21 +1,21 @@
 <script lang="ts">
-  export const name = "app";
+  export const name = 'app';
 
-  import { onMount } from "svelte";
-  import config, { chainId } from "../config.dev";
-  import { BettingSystem, Panel, Roulette } from "./components";
-  import State from "./components/state.svelte";
-  import type { Bet } from "./fairroulette_client";
-  import { FairRouletteService } from "./fairroulette_client";
-  import type { IBalancePanel } from "./models/IBalancePanel";
-  import { BALANCE_PANEL_TYPE } from "./models/IBalancePanel";
-  import type { IEntriesPanel } from "./models/IEntriesPanel";
-  import { ENTRIES_PANEL_TYPE } from "./models/IEntriesPanel";
-  import { LOG_ENTRIES_TYPE } from "./models/ILogEntries";
-  import { PLAYER_ENTRIES_TYPE } from "./models/IPlayerEntries";
-  import type { IState } from "./models/IState";
-  import type { IWalletPanel } from "./models/IWalletPanel";
-  import { WALLET_PANEL_TYPE } from "./models/IWalletPanel";
+  import { onMount } from 'svelte';
+  import config, { chainId } from '../config.dev';
+  import { BettingSystem, Panel, Roulette } from './components';
+  import State from './components/state.svelte';
+  import type { Bet } from './fairroulette_client';
+  import { FairRouletteService } from './fairroulette_client';
+  import type { IBalancePanel } from './models/IBalancePanel';
+  import { BALANCE_PANEL_TYPE } from './models/IBalancePanel';
+  import type { IEntriesPanel } from './models/IEntriesPanel';
+  import { ENTRIES_PANEL_TYPE } from './models/IEntriesPanel';
+  import { LOG_ENTRIES_TYPE } from './models/ILogEntries';
+  import { PLAYER_ENTRIES_TYPE } from './models/IPlayerEntries';
+  import type { IState } from './models/IState';
+  import type { IWalletPanel } from './models/IWalletPanel';
+  import { WALLET_PANEL_TYPE } from './models/IWalletPanel';
   import {
     address,
     addressIndex,
@@ -23,16 +23,17 @@
     keyPair,
     seed,
     seedString,
-    requestingFunds
-  } from "./store";
+    requestingFunds,
+    logs,
+  } from './store';
   import {
     BasicClient,
     Colors,
     PoWWorkerManager,
     WalletService,
-  } from "./wasp_client";
-  import { Base58 } from "./wasp_client/crypto/base58";
-  import { Seed } from "./wasp_client/crypto/seed";
+  } from './wasp_client';
+  import { Base58 } from './wasp_client/crypto/base58';
+  import { Seed } from './wasp_client/crypto/seed';
 
   let fundsUpdaterHandle;
 
@@ -62,12 +63,12 @@
     type: WALLET_PANEL_TYPE,
     data: [
       {
-        eyebrow: "Your seed",
-        label: "-",
+        eyebrow: 'Your seed',
+        label: '-',
       },
       {
-        eyebrow: "Your address",
-        label: "-",
+        eyebrow: 'Your address',
+        label: '-',
       },
     ],
   };
@@ -76,11 +77,11 @@
     $address,
     (walletPanel.data = [
       {
-        eyebrow: "Your seed",
+        eyebrow: 'Your seed',
         label: $seedString,
       },
       {
-        eyebrow: "Your address",
+        eyebrow: 'Your address',
         label: $address,
       },
     ]);
@@ -88,12 +89,12 @@
   let balancePanel: IBalancePanel = {
     type: BALANCE_PANEL_TYPE,
     data: {
-      eyebrow: "Your balance",
-      label: "-",
+      eyebrow: 'Your balance',
+      label: '-',
     },
     buttons: [
       {
-        label: "Request funds",
+        label: 'Request funds',
         onClick: sendFaucetRequest,
       },
     ],
@@ -101,40 +102,40 @@
 
   $: $balance,
     (balancePanel.data = {
-      eyebrow: "Your balance",
+      eyebrow: 'Your balance',
       label: `${$balance.toString()}i`,
     });
 
   const PLAYERS_PANEL: IEntriesPanel = {
     type: ENTRIES_PANEL_TYPE,
-    title: "Players",
+    title: 'Players',
     ordered: true,
     entries: {
       type: PLAYER_ENTRIES_TYPE,
       data: [
         {
-          address: "address1",
+          address: 'address1',
           fields: [
             {
-              label: "Bet:",
-              value: "1000i",
+              label: 'Bet:',
+              value: '1000i',
             },
             {
-              label: "W/L:",
-              value: "600i",
+              label: 'W/L:',
+              value: '600i',
             },
           ],
         },
         {
-          address: "address2",
+          address: 'address2',
           fields: [
             {
-              label: "Bet:",
-              value: "1050i",
+              label: 'Bet:',
+              value: '1050i',
             },
             {
-              label: "W/L:",
-              value: "200i",
+              label: 'W/L:',
+              value: '200i',
             },
           ],
         },
@@ -142,37 +143,39 @@
     },
   };
 
-  const LOGS_PANEL: IEntriesPanel = {
+  let logsPanel: IEntriesPanel = {
     type: ENTRIES_PANEL_TYPE,
-    title: "Logs",
+    title: 'Logs',
     ordered: true,
     entries: {
       type: LOG_ENTRIES_TYPE,
       data: [
         {
-          tag: "Round",
-          timestamp: "11:24:11",
+          tag: 'Round',
+          timestamp: '11:24:11',
           // label: '1022 Mi',
-          description: "Page loading...",
+          description: 'Page loading...',
         },
         {
-          tag: "Site",
-          timestamp: "11:24:11",
-          description: "Page loading...",
+          tag: 'Site',
+          timestamp: '11:24:11',
+          description: 'Page loading...',
         },
       ],
     },
   };
 
+  $: $logs, (logsPanel.entries.data = $logs);
+
   const INFORMATION_STATE: IState = {
-    title: "Start game",
-    subtitle: "This is a subtitle",
-    description: "The round starts in 50 seconds.",
+    title: 'Start game',
+    subtitle: 'This is a subtitle',
+    description: 'The round starts in 50 seconds.',
   };
 
   // Entrypoint
   async function initialize() {
-    log("[PAGE] loading");
+    log('Page', 'Loading');
 
     if (config.seed) {
       $seed = Base58.decode(config.seed);
@@ -189,7 +192,7 @@
     fairRouletteService = new FairRouletteService(client, config.chainId);
     walletService = new WalletService(client);
 
-    powManager.load("/build/pow.worker.js");
+    powManager.load('/build/pow.worker.js');
 
     subscribeToRouletteEvents();
     setAddress($addressIndex);
@@ -220,10 +223,10 @@
     ];
 
     for (let request of requests) {
-      await request().catch((e) => log(`[ERROR] ${e.message}`));
+      await request().catch((e) => log('Error', e.message));
     }
 
-    log("[PAGE] loaded");
+    log('Page', 'Loaded');
 
     /**
      * ChainID => address
@@ -241,8 +244,16 @@
   onMount(initialize);
   // /Entrypoint
 
-  function log(text: string) {
-    view.round.eventList.push(`${new Date().toLocaleTimeString()} | ${text}`);
+  function log(tag: string, description: string) {
+    // view.round.eventList.push(`${new Date().toLocaleTimeString()} | ${text}`);
+    logs.set([
+      ...$logs,
+      {
+        tag: tag,
+        description: description,
+        timestamp: new Date().toLocaleTimeString(),
+      },
+    ]);
   }
 
   function setAddress(index: number) {
@@ -286,13 +297,13 @@
         1234
       );
     } catch (ex) {
-      log(ex.message);
+      log('Round', ex.message);
     }
     view.isWorking = false;
   }
 
   async function sendFaucetRequest() {
-    requestingFunds.set(true)
+    requestingFunds.set(true);
 
     const faucetRequestResult = await walletService.getFaucetRequest($address);
 
@@ -303,9 +314,9 @@
     try {
       await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
     } catch (ex) {
-      log(ex.message);
+      log('Round', ex.message);
     }
-    requestingFunds.set(false)
+    requestingFunds.set(false);
   }
 
   // To make sure the function gets called every second, we require that date.Now() is put in as a parameter to rely on sveltes change listener.
@@ -331,35 +342,36 @@
   }
 
   function subscribeToRouletteEvents() {
-    fairRouletteService.on("roundStarted", (timestamp) => {
+    fairRouletteService.on('roundStarted', (timestamp) => {
       view.round.active = true;
       view.round.startedAt = timestamp;
-      log("[ROUND] started");
+      log('Round', 'Started');
     });
 
-    fairRouletteService.on("roundStopped", () => {
+    fairRouletteService.on('roundStopped', () => {
       view.round.active = false;
-      log("[ROUND] ended");
+      log('Round', 'Ended');
     });
 
-    fairRouletteService.on("roundNumber", (roundNumber: bigint) => {
+    fairRouletteService.on('roundNumber', (roundNumber: bigint) => {
       view.round.number = roundNumber;
-      log(`[ROUND] Current round number: ${roundNumber}`);
+      log('Round', `Current round number: ${roundNumber}`);
     });
 
-    fairRouletteService.on("winningNumber", (winningNumber: bigint) => {
+    fairRouletteService.on('winningNumber', (winningNumber: bigint) => {
       view.round.winningNumber = winningNumber;
-      log(`[ROUND] The winning number was: ${winningNumber}`);
+      log('Round', `The winning number was: ${winningNumber}`);
     });
 
-    fairRouletteService.on("betPlaced", (bet: Bet) => {
+    fairRouletteService.on('betPlaced', (bet: Bet) => {
       log(
-        `[BET] Bet placed from ${bet.better} on ${bet.betNumber} with ${bet.amount}`
+        'Bet',
+        `Bet placed from ${bet.better} on ${bet.betNumber} with ${bet.amount}`
       );
     });
 
-    fairRouletteService.on("payout", (bet: Bet) => {
-      log(`[WIN] Payout for ${bet.better} with ${bet.amount}`);
+    fairRouletteService.on('payout', (bet: Bet) => {
+      log('Win', `Payout for ${bet.better} with ${bet.amount}`);
     });
   }
 
@@ -398,7 +410,7 @@
       <Panel {...PLAYERS_PANEL} />
     </div>
     <div class="logs">
-      <Panel {...LOGS_PANEL} />
+      <Panel {...logsPanel} />
     </div>
   </div>
   <!-- <div class="roulette">
@@ -539,8 +551,8 @@
       grid-template-rows: auto auto;
       gap: 20px 20px;
       grid-template-areas:
-        "aside-1 first aside-2"
-        "aside-1 last aside-2";
+        'aside-1 first aside-2'
+        'aside-1 last aside-2';
     }
   }
   .roulette_state {
@@ -587,8 +599,8 @@
       grid-template-rows: auto auto;
       gap: 20px 20px;
       grid-template-areas:
-        "aside-1 first aside-2"
-        "aside-1 last aside-2";
+        'aside-1 first aside-2'
+        'aside-1 last aside-2';
     }
   }
   .roulette {

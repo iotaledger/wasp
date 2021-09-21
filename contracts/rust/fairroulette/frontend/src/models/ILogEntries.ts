@@ -6,21 +6,23 @@ import type { ITypeBase } from "./ITypeBase";
  */
 export  const LOG_ENTRIES_TYPE = 1;
 
-export interface ILogEntries extends ITypeBase<1>{
-    data: {
+export type ILogData = {
     /**
      * The label above the title.
      */
-     tag: string;
+    tag: string;
 
-     /**
-      * The timestamp.
-      */
-     timestamp: string;
- 
-     /**
-      * The data fields of a player.
-      */ 
-     description: string;
-    }[]
+    /**
+     * The timestamp.
+     */
+    timestamp: string;
+
+    /**
+     * The data fields of a player.
+     */ 
+    description: string;
+}
+
+export interface ILogEntries extends ITypeBase<1>{
+    data: ILogData []
 }
