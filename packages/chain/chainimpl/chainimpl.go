@@ -346,7 +346,7 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 
 	for _, msg := range evts {
 		c.log.Infof("publishNewBlockEvents: '%s'", msg)
-		publisher.Publish("vmmsg", c.chainID.Base58(), msg)
+		go publisher.Publish("vmmsg", c.chainID.Base58(), msg)
 	}
 }
 
