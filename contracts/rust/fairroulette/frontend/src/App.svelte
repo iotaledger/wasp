@@ -25,6 +25,7 @@
     seed,
     seedString,
     requestingFunds,
+    logs,
   } from './store';
   import {
     BasicClient,
@@ -143,7 +144,7 @@
     },
   };
 
-  const LOGS_PANEL: IEntriesPanel = {
+  let logsPanel: IEntriesPanel = {
     type: ENTRIES_PANEL_TYPE,
     title: 'Logs',
     ordered: true,
@@ -165,6 +166,8 @@
     },
   };
 
+  $: $logs, (logsPanel.entries.data = $logs);
+
   const INFORMATION_STATE: IState = {
     title: 'Start game',
     subtitle: 'This is a subtitle',
@@ -173,7 +176,7 @@
 
   // Entrypoint
   async function initialize() {
-    log('[PAGE] loading');
+    log('Page', 'Loading');
 
     if (config.seed) {
       $seed = Base58.decode(config.seed);
@@ -221,10 +224,10 @@
     ];
 
     for (let request of requests) {
-      await request().catch((e) => log(`[ERROR] ${e.message}`));
+      await request().catch((e) => log('Error', e.message));
     }
 
-    log('[PAGE] loaded');
+    log('Page', 'Loaded');
 
     /**
      * ChainID => address
@@ -242,8 +245,16 @@
   onMount(initialize);
   // /Entrypoint
 
-  function log(text: string) {
-    view.round.eventList.push(`${new Date().toLocaleTimeString()} | ${text}`);
+  function log(tag: string, description: string) {
+    // view.round.eventList.push(`${new Date().toLocaleTimeString()} | ${text}`);
+    logs.set([
+      ...$logs,
+      {
+        tag: tag,
+        description: description,
+        timestamp: new Date().toLocaleTimeString(),
+      },
+    ]);
   }
 
   function setAddress(index: number) {
@@ -287,7 +298,7 @@
         1234
       );
     } catch (ex) {
-      log(ex.message);
+      log('Round', ex.message);
     }
     view.isWorking = false;
   }
@@ -304,7 +315,7 @@
     try {
       await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
     } catch (ex) {
-      log(ex.message);
+      log('Round', ex.message);
     }
     requestingFunds.set(false);
   }
@@ -335,32 +346,33 @@
     fairRouletteService.on('roundStarted', (timestamp) => {
       view.round.active = true;
       view.round.startedAt = timestamp;
-      log('[ROUND] started');
+      log('Round', 'Started');
     });
 
     fairRouletteService.on('roundStopped', () => {
       view.round.active = false;
-      log('[ROUND] ended');
+      log('Round', 'Ended');
     });
 
     fairRouletteService.on('roundNumber', (roundNumber: bigint) => {
       view.round.number = roundNumber;
-      log(`[ROUND] Current round number: ${roundNumber}`);
+      log('Round', `Current round number: ${roundNumber}`);
     });
 
     fairRouletteService.on('winningNumber', (winningNumber: bigint) => {
       view.round.winningNumber = winningNumber;
-      log(`[ROUND] The winning number was: ${winningNumber}`);
+      log('Round', `The winning number was: ${winningNumber}`);
     });
 
     fairRouletteService.on('betPlaced', (bet: Bet) => {
       log(
-        `[BET] Bet placed from ${bet.better} on ${bet.betNumber} with ${bet.amount}`
+        'Bet',
+        `Bet placed from ${bet.better} on ${bet.betNumber} with ${bet.amount}`
       );
     });
 
     fairRouletteService.on('payout', (bet: Bet) => {
-      log(`[WIN] Payout for ${bet.better} with ${bet.amount}`);
+      log('Win', `Payout for ${bet.better} with ${bet.amount}`);
     });
   }
 
@@ -397,7 +409,7 @@
       <Panel {...PLAYERS_PANEL} />
     </div>
     <div class="logs">
-      <Panel {...LOGS_PANEL} />
+      <Panel {...logsPanel} />
     </div>
   </div>
   <!-- <div class="roulette">
