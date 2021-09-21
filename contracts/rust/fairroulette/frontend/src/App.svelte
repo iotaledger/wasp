@@ -372,10 +372,11 @@
     </div>
   </div>
   <div class="layout_roulette">
-    <div class="roulette">
+    <div class="roulette_game">
       <Roulette mode="GAME_STARTED" />
-
-      <BettingSystem />
+      <div class="bet_system">
+        <BettingSystem />
+      </div>
     </div>
     <div class="players">
       <Panel {...PLAYERS_PANEL} />
@@ -543,7 +544,6 @@
     grid-template-rows: repeat(1fr);
     grid-column-gap: 0px;
     grid-row-gap: 0px;
-    margin-top: 48px;
   }
   @media (min-width: 1024px) {
     .layout_state {
@@ -554,6 +554,7 @@
       grid-template-areas:
         'aside-1 first aside-2'
         'aside-1 last aside-2';
+      margin-top: 48px;
     }
   }
   .roulette_state {
@@ -604,11 +605,12 @@
         'aside-1 last aside-2';
     }
   }
-  .roulette {
+  .roulette_game {
     margin-bottom: 100px;
   }
+
   @media (min-width: 1024px) {
-    .roulette {
+    .roulette_game {
       margin-bottom: 0;
     }
   }
@@ -635,6 +637,12 @@
       margin-right: 120px;
     }
   }
+  @media (min-width: 1300px) {
+    .bet_system {
+      margin-top: 20px;
+    }
+  }
+
   .loading_dim {
     background: rgba(0, 0, 0, 0.5);
     width: 100%;
