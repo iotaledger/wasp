@@ -68,8 +68,8 @@ export class FairRouletteService {
     console.log(`Connecting to Websocket => ${webSocketUrl}`);
     this.webSocket = new WebSocket(webSocketUrl);
     this.webSocket.addEventListener('message', (x) => this.handleIncomingMessage(x));
-    this.webSocket.addEventListener('close', () => setTimeout(this.connectWebSocket.bind(this), 250));
-    this.webSocket.addEventListener('error', () => setTimeout(this.connectWebSocket.bind(this), 250));
+    this.webSocket.addEventListener('close', () => setTimeout(this.connectWebSocket.bind(this), 1000));
+    this.webSocket.addEventListener('error', () => setTimeout(this.connectWebSocket.bind(this), 1000));
   }
 
   private handleVmMessage(message: string[]): void {
