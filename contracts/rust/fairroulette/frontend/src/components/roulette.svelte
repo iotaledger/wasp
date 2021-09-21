@@ -66,6 +66,9 @@
     .active {
       position: absolute;
       width: 100%;
+      img {
+        width: 100%;
+      }
     }
     @media (min-width: 520px) {
       margin-top: -20px;
