@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { IPanelDataItem } from './../../models/IPanelDataItem';
-  import type { IButton } from './../../models/IButton';
   import Button from '../button.svelte';
+  import type { IButton } from './../../models/IButton';
+  import type { IPanelDataItem } from './../../models/IPanelDataItem';
 
   export let data: IPanelDataItem;
   export let buttons: IButton[] = [];

@@ -1,11 +1,7 @@
 <script lang="ts">
-  import type { IEntriesPanel } from '../../models/IEntriesPanel';
   import type { ILogEntries } from '../../models/ILogEntries';
   import { LOG_ENTRIES_TYPE } from '../../models/ILogEntries';
   import type { IPlayerEntries } from '../../models/IPlayerEntries';
-
-  import type { IPanelDataItem } from './../../models/IPanelDataItem';
-
   import { PLAYER_ENTRIES_TYPE } from './../../models/IPlayerEntries';
   export let title: string;
   export let ordered: boolean = false;
@@ -23,7 +19,7 @@
       {#each entries.data as entry, index}
         <div class="details-tag">
           {#if ordered}
-            <span class="item-index">{index}</span>
+            <span class="item-index">{index + 1}</span>
           {/if}
           <div class="item-eyebrow">{entry.address}</div>
         </div>
@@ -43,12 +39,11 @@
       {#each entries.data as { tag, timestamp, description }, index}
         <div class="details-tag">
           {#if ordered}
-            <span class="item-index">{index}</span>
+            <span class="item-index">{index + 1}</span>
           {/if}
           <div class="item-tag">{tag}</div>
           <span class="description-value">{timestamp}</span>
         </div>
-
         <span class="description-value">{description}</span>
       {/each}
     {/if}
