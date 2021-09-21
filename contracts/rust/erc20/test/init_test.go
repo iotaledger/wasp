@@ -10,7 +10,7 @@ import (
 )
 
 func TestDeployErc20(t *testing.T) {
-	chain := common.StartChain(t, ScName)
+	chain := common.StartChain(t, "chain1")
 	creator, creatorAddr = chain.Env.NewKeyPairWithFunds()
 	creatorAgentID = iscp.NewAgentID(creatorAddr, 0)
 	err := common.DeployWasmContractByName(chain, ScName,
@@ -35,7 +35,7 @@ func TestDeployErc20(t *testing.T) {
 }
 
 func TestDeployErc20Fail1(t *testing.T) {
-	chain := common.StartChain(t, ScName)
+	chain := common.StartChain(t, "chain1")
 	err := common.DeployWasmContractByName(chain, ScName)
 	require.Error(t, err)
 	_, _, rec := chain.GetInfo()
@@ -43,7 +43,7 @@ func TestDeployErc20Fail1(t *testing.T) {
 }
 
 func TestDeployErc20Fail2(t *testing.T) {
-	chain := common.StartChain(t, ScName)
+	chain := common.StartChain(t, "chain1")
 	err := common.DeployWasmContractByName(chain, ScName,
 		ParamSupply, 1000000,
 	)
@@ -53,7 +53,7 @@ func TestDeployErc20Fail2(t *testing.T) {
 }
 
 func TestDeployErc20Fail3(t *testing.T) {
-	chain := common.StartChain(t, ScName)
+	chain := common.StartChain(t, "chain1")
 	creator, creatorAddr = chain.Env.NewKeyPairWithFunds()
 	creatorAgentID = iscp.NewAgentID(creatorAddr, 0)
 	err := common.DeployWasmContractByName(chain, ScName,
@@ -65,7 +65,7 @@ func TestDeployErc20Fail3(t *testing.T) {
 }
 
 func TestDeployErc20Fail3Repeat(t *testing.T) {
-	chain := common.StartChain(t, ScName)
+	chain := common.StartChain(t, "chain1")
 	creator, creatorAddr = chain.Env.NewKeyPairWithFunds()
 	creatorAgentID = iscp.NewAgentID(creatorAddr, 0)
 	err := common.DeployWasmContractByName(chain, ScName,

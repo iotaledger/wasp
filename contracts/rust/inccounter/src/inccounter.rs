@@ -146,7 +146,9 @@ pub fn func_when_must_increment_state(ctx: &ScFuncContext) {
 pub fn view_get_counter(ctx: &ScViewContext) {
     let counter = ctx.state().get_int64(STATE_COUNTER);
     if counter.exists() {
-        ctx.results().get_int64(RESULT_COUNTER).set_value(counter.value());
+        ctx.results()
+            .get_int64(RESULT_COUNTER)
+            .set_value(counter.value());
     }
 }
 
