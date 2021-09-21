@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // This example implements 'fairroulette', a simple smart contract that can automatically handle
-// an unlimited amount of bets on a number during a timed betting round. Once a betting round
 // is over the contract will automatically pay out the winners proportionally to their bet amount.
 // The intent is to showcase basic functionality of WasmLib and timed calling of functions
 // through a minimal implementation and not to come up with a complete real-world solution.
@@ -250,6 +249,27 @@ pub fn func_pay_winners(_ctx: &ScFuncContext, _f: &PayWinnersContext) {
 
 // 'playPeriod' can be used by the contract creator to set the length of a betting round
 // to a different value than the default value, which is 120 seconds.
+pub fn func_play_period(ctx: &ScFuncContext, f: &PlayPeriodContext) {
+
+    // Since we are sure that the 'playPeriod' parameter actually exists we can
+    // retrieve its actual value into an i32 value.
+    let play_period: i32 = f.params.play_period().value();
+
+    // Require that the play period (in seconds) is not ridiculously low.
+    // Otherwise panic out with an error message.
+    ctx.require(play_period >= 10, "invalid play period");
+
+    // Now we set the corresponding variable 'playPeriod' in state storage.
+    f.state.play_period().set_value(play_period);
+}
+
+pub fn view_last_winning_number(_ctx: &ScViewContext, f: &LastWinningNumberContext) {
+
+    // Get the 'lastWinningNumber' int64 value from state storage.
+    let last_winning_number: i64 = f.state.last_winning_number().value();
+
+    // Set the 'lastWinningNumber' in results to the value from state storage.
+    f.results.last_winning_number().set_value(last_winning_number);
 pub fn func_play_period(_ctx: &ScFuncContext, _f: &PlayPeriodContext) {
   // Log the fact that we have initiated the 'playPeriod' Func in the log on the host.
   _ctx.log("fairroulette.playPeriod");
