@@ -76,6 +76,7 @@
       display: flex;
       justify-content: space-between;
       width: 100%;
+      margin-bottom: 6px;
     }
     .details-tag {
       display: flex;
