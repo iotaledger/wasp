@@ -39,7 +39,6 @@
     .balance {
       .label {
         font-family: 'Metropolis Bold';
-        font-weight: 600;
         font-size: 24px;
         line-height: 115%;
         letter-spacing: 0.5px;
@@ -53,13 +52,10 @@
     .value-button div {
       margin-bottom: 8px;
       width: 80%;
-      @media (min-width: 660px) {
-        width: 45%;
-      }
+
       @media (min-width: 1024px) {
         margin: 0 auto;
-        margin-bottom: 8px;
-        width: 15%;
+        margin-bottom: 3px;
       }
     }
     .value-button div:not(:last-child) {
