@@ -66,7 +66,7 @@ func TestBatches(t *testing.T) {
 	block1Bin := block1.Bytes()
 	block2, err := BlockFromBytes(block1Bin)
 	assert.NoError(t, err)
-	assert.EqualValues(t, 3, block2.(*blockImpl).size())
+	assert.EqualValues(t, 1, block2.(*blockImpl).size())
 	assert.EqualValues(t, 2, block2.BlockIndex())
 	assert.EqualValues(t, block1Bin, block2.Bytes())
 	assert.EqualValues(t, block1.EssenceBytes(), block2.EssenceBytes())

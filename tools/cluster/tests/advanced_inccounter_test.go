@@ -44,7 +44,9 @@ func setupAdvancedInccounterTest(t *testing.T, clusterSize int, committee []int)
 	description := "testing with inccounter"
 	progHash := inccounter.Contract.ProgramHash
 
-	_, err = chain.DeployContract(incCounterSCName, progHash.String(), description, nil)
+	params := make(map[string]interface{})
+	params[inccounter.VarCounter] = codec.EncodeInt64(0)
+	_, err = chain.DeployContract(incCounterSCName, progHash.String(), description, params)
 	require.NoError(t, err)
 
 	e := &env{t: t, clu: clu}
