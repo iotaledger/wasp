@@ -16,19 +16,21 @@
     {#if entries.type === PLAYER_ENTRIES_TYPE}
       <!-- Player panel -->
       {#each entries.data as entry, index}
-        <div class="details-tag">
+        <div>
           {#if ordered}
-            <span class="item-index">{index + 1}</span>
+            <div class="item-index">{index + 1}</div>
           {/if}
-          <div class="item-eyebrow">{entry.address}</div>
-        </div>
-        <div class="item-description">
-          {#each entry.fields as { label, value }}
-            {#if label}
-              <span class="description-label">{label}</span>
-            {/if}
-            <span class="description-value ">{value}</span>
-          {/each}
+          <div class="details-tag">
+            <div class="item-eyebrow">{entry.address}</div>
+          </div>
+          <div class="item-description">
+            {#each entry.fields as { label, value }}
+              {#if label}
+                <span class="description-label">{label}</span>
+              {/if}
+              <span class="description-value ">{value}</span>
+            {/each}
+          </div>
         </div>
       {/each}
     {/if}
@@ -36,16 +38,18 @@
     {#if entries.type === LOG_ENTRIES_TYPE}
       <!-- Log panel -->
       {#each entries.data as { tag, timestamp, description }, index}
-        <div class="details-tag">
-          {#if ordered}
-            <span class="item-index">{index + 1}</span>
-          {/if}
-          <div class="tag">
-            <div class="item-tag">{tag}</div>
-            <span class="description-value">{timestamp}</span>
+        <div class="ITEM">
+          <div class="details-tag">
+            {#if ordered}
+              <div class="item-index">{index + 1}</div>
+            {/if}
+            <div class="tag">
+              <span class="item-tag">{tag}</span>
+              <span class="description-value">{timestamp}</span>
+            </div>
           </div>
+          <div class="description-value">{description}</div>
         </div>
-        <span class="description-value">{description}</span>
       {/each}
     {/if}
   </div>
@@ -71,6 +75,7 @@
       letter-spacing: 0.5px;
       color: var(--gray-5);
       margin-right: 16px;
+      display: inline-block;
     }
     .tag {
       display: flex;
@@ -79,7 +84,7 @@
       margin-bottom: 6px;
     }
     .details-tag {
-      display: flex;
+      display: inline-flex;
       margin-top: 12px;
     }
     .item-tag {
@@ -91,6 +96,7 @@
       letter-spacing: 0.5px;
       color: var(--mint-green-dark);
       padding: 2px 6px;
+      height: min-content;
     }
     .item-eyebrow {
       font-weight: bold;
@@ -100,14 +106,18 @@
       color: var(--gray-3);
     }
     .tag-description {
-      display: flex;
+      display: inline-flex;
     }
     .item-description {
+      display: block;
       margin: 0 0 16px 0;
       font-size: 14px;
       line-height: 150%;
       letter-spacing: 0.5px;
       color: var(--gray-5);
+      @media (min-width: 1024px) {
+        display: inline-flex;
+      }
       .description-value {
         margin-left: 0;
       }
@@ -126,6 +136,9 @@
       line-height: 150%;
       letter-spacing: 0.5px;
       color: var(--gray-5);
+      @media (min-width: 1024px) {
+        display: inline-flex;
+      }
     }
   }
 </style>
