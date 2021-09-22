@@ -34,6 +34,11 @@
       padding-bottom: 14px;
       margin: 0;
     }
+    .log {
+      display: flex;
+      flex-direction: row;
+      margin-top: 10px;
+    }
     .log-index {
       font-size: 14px;
       line-height: 150%;
@@ -41,15 +46,14 @@
       color: var(--gray-5);
       margin-right: 16px;
     }
+    .log-content {
+      width: 100%;
+    }
     .log-content-header {
       display: flex;
       justify-content: space-between;
       width: 100%;
       margin-bottom: 6px;
-    }
-    .details-tag {
-      display: flex;
-      margin-top: 12px;
     }
     .log-tag {
       font-weight: bold;
@@ -68,33 +72,18 @@
       letter-spacing: 0.5px;
       color: var(--gray-3);
     }
-    .tag-description {
-      display: flex;
-    }
     .log-description {
-      margin: 0 0 16px 0;
       font-size: 14px;
       line-height: 150%;
       letter-spacing: 0.5px;
-      color: var(--gray-5);
-      .description-value {
-        margin-left: 0;
-      }
+      color: var(--gray-3);
     }
-    .description-label {
-      font-weight: bold;
-      font-size: 14px;
+    .log-timestamp {
+      font-weight: 500;
+      font-size: 12px;
       line-height: 150%;
       letter-spacing: 0.5px;
-      color: var(--gray-5);
-      margin-left: 26px;
-    }
-    .description-value {
-      margin-left: 26px;
-      font-size: 14px;
-      line-height: 150%;
-      letter-spacing: 0.5px;
-      color: var(--gray-5);
+      color: var(--gray-6);
     }
   }
 </style>
