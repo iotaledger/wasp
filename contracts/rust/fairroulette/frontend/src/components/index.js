@@ -6,6 +6,7 @@ export { default as LogsPanel } from './panels/logs.svelte'
 export { default as PlayersPanel } from './panels/players.svelte'
 export { default as WalletPanel } from './panels/wallet.svelte'
 export { default as Roulette } from './roulette.svelte'
-export { default as Selector } from './selectors/index.svelte'
 export { default as State } from './state.svelte'
+export { default as BarSelector } from './selectors/bar.svelte'
+export { default as MultipleSelector } from './selectors/multiple.svelte'
 

@@ -1,16 +1,37 @@
 <script lang="ts">
-  export let title: string;
-  export let subtitle: string = '';
-  export let description: string;
+  export let phase: string = 'GAME_STARTED';
+
+  const MESSAGES = {
+    GAME_STARTED: {
+      title: 'Start game',
+      subtitle: 'This is a subtitle',
+      description: 'The round starts in 50 seconds.',
+    },
+    GAME_STOPPED: {
+      title: 'Start game',
+      subtitle: 'This is a subtitle',
+      description: 'The round starts in 50 seconds.',
+    },
+    WINNER: {
+      title: 'Start game',
+      subtitle: 'This is a subtitle',
+      description: 'The round starts in 50 seconds.',
+    },
+    ADD_FUNDS: {
+      title: 'Start game',
+      subtitle: 'This is a subtitle',
+      description: 'The round starts in 50 seconds.',
+    },
+  };
 </script>
 
 <div class="message">
-  <h1 class="title">{title}</h1>
-  {#if subtitle}
-    <div class="subtitle">{subtitle}</div>
+  <h1 class="title">{MESSAGES[phase].title}</h1>
+  {#if MESSAGES[phase].subtitle}
+    <div class="subtitle">{MESSAGES[phase].subtitle}</div>
   {/if}
-  {#if description}
-    <div class="description">{description}</div>
+  {#if MESSAGES[phase].description}
+    <div class="description">{MESSAGES[phase].description}</div>
   {/if}
   <div />
 </div>

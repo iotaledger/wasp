@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { logs } from '../../store';
+  import { round } from '../../store';
+  import { get } from 'svelte/store';
 </script>
 
 <div class="panel">
   <h3>Logs</h3>
   <div class="logs-wraper">
-    {#each $logs as { tag, timestamp, description }, index}
+    {#each $round?.logs as { tag, timestamp, description }, index}
       <div class="log">
         <div class="log-index">{index + 1}</div>
         <div class="log-content">

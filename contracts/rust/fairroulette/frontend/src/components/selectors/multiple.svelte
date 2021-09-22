@@ -1,22 +1,23 @@
 <script lang="ts">
-  export let values: string[];
-  export let onClick: (index: number) => void;
+  import { round } from './../../store';
 
   let active;
-
-  $: onClick(active);
 </script>
 
 <div class="values">
-  {#each values as value, i}
+  {#each Array.from({ length: 8 }, (_, i) => i + 1) as number, index}
     <button
       on:click={() => {
-        active === i ? (active = undefined) : (active = i);
+        active === index ? (active = undefined) : (active = index);
+        round.update((_round) => {
+          _round.betSelection = active ? number : undefined;
+          return _round;
+        });
       }}
       class="cell"
-      class:active={active === i}
+      class:active={active === index}
     >
-      {value}
+      {number}
     </button>
   {/each}
 </div>

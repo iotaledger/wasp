@@ -1,26 +1,23 @@
 <script lang="ts">
-  export let minimum: number;
-  export let maximum: number;
-  export let step: number = undefined;
-  export let unit: string = '';
-  export let onChange: (val: number) => void;
-
-  let value = (maximum - minimum) / 2;
-
-  onChange((maximum - minimum) / 2);
+  import { balance, round } from './../../store';
+  $: value = Number($balance / 2n);
 </script>
 
 <div>
-  <div class="value">{value}{' '}{unit}</div>
+  <div class="value">{value}{' '}i</div>
   <div class="bar-selector">
     <input
       bind:value
       type="range"
-      min={minimum}
-      max={maximum}
-      {step}
+      min={0}
+      max={Number($balance)}
       id="myRange"
-      on:change={() => onChange(value)}
+      on:change={() => {
+        round.update((_round) => {
+          _round.betAmount = BigInt(value);
+          return _round;
+        });
+      }}
     />
   </div>
 </div>
