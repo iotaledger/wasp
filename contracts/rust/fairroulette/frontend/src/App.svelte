@@ -432,10 +432,6 @@
 </main>
 
 <style lang="scss">
-  main {
-    width: 100%;
-    height: 100%;
-  }
   .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -445,72 +441,76 @@
     @media (min-width: 2000px) {
       max-width: 1600px;
     }
-  }
-  .layout_state {
-    display: grid;
-    grid-template-rows: repeat(1fr);
-    grid-column-gap: 0px;
-    grid-row-gap: 0px;
-    @media (min-width: 1024px) {
+    .layout_state {
       display: grid;
-      grid-template-columns: 1fr 2fr 1fr;
-      grid-template-rows: auto auto;
-      gap: 20px 20px;
-      grid-template-areas:
-        'aside-1 first aside-2'
-        'aside-1 last aside-2';
+      grid-template-rows: repeat(1fr);
+      grid-column-gap: 0px;
+      grid-row-gap: 0px;
+      @media (min-width: 1024px) {
+        display: grid;
+        grid-template-columns: 1fr 2fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 20px 20px;
+        grid-template-areas:
+          'aside-1 first aside-2'
+          'aside-1 last aside-2';
+        margin-top: 48px;
+      }
+      .wallet {
+        @media (min-width: 1024px) {
+          grid-area: aside-1;
+        }
+      }
+      .balance {
+        @media (min-width: 1024px) {
+          grid-area: aside-2;
+        }
+      }
+
+      .roulette_state {
+        margin-top: 40px;
+        @media (min-width: 1024px) {
+          margin-top: 0;
+        }
+      }
+    }
+    .layout_roulette {
+      display: grid;
+      grid-template-rows: repeat(1fr);
+      grid-column-gap: 0px;
+      grid-row-gap: 0px;
       margin-top: 48px;
-    }
-  }
-  .roulette_state {
-    margin-top: 40px;
-    @media (min-width: 1024px) {
-      margin-top: 0;
-    }
-  }
-  .wallet {
-    @media (min-width: 1024px) {
-      grid-area: aside-1;
-    }
-  }
-  .balance {
-    @media (min-width: 1024px) {
-      grid-area: aside-2;
-    }
-  }
-  .layout_roulette {
-    display: grid;
-    grid-template-rows: repeat(1fr);
-    grid-column-gap: 0px;
-    grid-row-gap: 0px;
-    margin-top: 48px;
-    @media (min-width: 1024px) {
-      display: grid;
-      grid-template-columns: 1fr 2fr 1fr;
-      grid-template-rows: auto auto;
-      gap: 20px 20px;
-      grid-template-areas:
-        'aside-1 first aside-2'
-        'aside-1 last aside-2';
-    }
-  }
-  .roulette_game {
-    max-height: fit-content;
-    max-width: fit-content;
-    margin: 0 auto;
-  }
-  .bet_system {
-    margin-top: 40px;
-    margin-bottom: 100px;
-  }
-  .players {
-    @media (min-width: 1024px) {
-      grid-area: aside-1;
-    }
-  }
-  .logs {
-    @media (min-width: 1024px) {
-      grid-area: aside-2;
+      @media (min-width: 1024px) {
+        display: grid;
+        grid-template-columns: 1fr 2fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 20px 20px;
+        grid-template-areas:
+          'aside-1 first aside-2'
+          'aside-1 last aside-2';
+      }
+
+      .roulette_game {
+        max-height: fit-content;
+        max-width: fit-content;
+        margin: 0 auto;
+      }
+      .bet_system {
+        margin-top: 40px;
+        margin-bottom: 100px;
+      }
+      .players {
+        height: calc(100vh - 450px);
+        @media (min-width: 1024px) {
+          grid-area: aside-1;
+        }
+      }
+      .logs {
+        height: calc(100vh - 450px);
+        @media (min-width: 1024px) {
+          grid-area: aside-2;
+        }
+      }
     }
   }
 </style>
