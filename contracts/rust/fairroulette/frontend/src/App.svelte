@@ -125,15 +125,21 @@
         margin-bottom: 100px;
       }
       .players {
-        height: calc(100vh - 450px);
+        height: calc(100vh - 650px);
+        position: relative;
+        min-height: 400px;
         @media (min-width: 1024px) {
           grid-area: aside-1;
+          height: calc(100vh - 450px);
         }
       }
       .logs {
-        height: calc(100vh - 450px);
+        height: calc(100vh - 650px);
+        position: relative;
+        min-height: 400px;
         @media (min-width: 1024px) {
           grid-area: aside-2;
+          height: calc(100vh - 450px);
         }
       }
     }

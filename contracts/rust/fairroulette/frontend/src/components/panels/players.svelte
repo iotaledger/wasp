@@ -36,6 +36,10 @@
 <style lang="scss">
   .panel {
     padding: 16px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    height: 100%;
     h3 {
       font-weight: bold;
       font-size: 18px;
@@ -50,7 +54,7 @@
       flex: 1;
       overflow-y: auto;
       padding-right: 16px;
-      height: 520px;
+      margin-top: 16px;
       &::-webkit-scrollbar {
         width: 6px;
       }
@@ -63,9 +67,8 @@
       }
       .player {
         display: inline-flex;
-        margin-top: 10px;
         position: relative;
-        padding-left: 40px;
+        padding: 0 0 17px 40px;
         .player-index {
           font-size: 14px;
           line-height: 150%;
