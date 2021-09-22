@@ -66,10 +66,10 @@
       gap: 60px;
       align-items: flex-end;
     }
-  }
-  .bet-button {
-    margin-top: 24px;
-    display: flex;
-    justify-content: center;
+    .bet-button {
+      margin-top: 24px;
+      display: flex;
+      justify-content: center;
+    }
   }
 </style>

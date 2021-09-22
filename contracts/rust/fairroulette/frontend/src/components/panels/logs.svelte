@@ -4,7 +4,7 @@
 
 <div class="panel">
   <h3>Logs</h3>
-  <div class="logs-wraper">
+  <div class="logs-wrapper">
     {#each $logs as { tag, timestamp, description }, index}
       <div class="log">
         <div class="log-index">{index + 1}</div>
@@ -22,7 +22,6 @@
 
 <style lang="scss">
   .panel {
-    background: var(--blue-dark);
     padding: 16px;
     h3 {
       font-weight: bold;
@@ -34,56 +33,63 @@
       padding-bottom: 14px;
       margin: 0;
     }
-    .log {
-      display: flex;
-      flex-direction: row;
-      margin-top: 10px;
-    }
-    .log-index {
-      font-size: 14px;
-      line-height: 150%;
-      letter-spacing: 0.5px;
-      color: var(--gray-5);
-      margin-right: 16px;
-    }
-    .log-content {
-      width: 100%;
-    }
-    .log-content-header {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      margin-bottom: 6px;
-    }
-    .log-tag {
-      font-weight: bold;
-      font-size: 12px;
-      line-height: 150%;
-      background: rgba(0, 224, 202, 0.2);
-      border-radius: 6px;
-      letter-spacing: 0.5px;
-      color: var(--mint-green-dark);
-      padding: 2px 6px;
-    }
-    .log-eyebrow {
-      font-weight: bold;
-      font-size: 14px;
-      line-height: 150%;
-      letter-spacing: 0.5px;
-      color: var(--gray-3);
-    }
-    .log-description {
-      font-size: 14px;
-      line-height: 150%;
-      letter-spacing: 0.5px;
-      color: var(--gray-3);
-    }
-    .log-timestamp {
-      font-weight: 500;
-      font-size: 12px;
-      line-height: 150%;
-      letter-spacing: 0.5px;
-      color: var(--gray-6);
+    .logs-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 16px;
+      height: 520px;
+      .log {
+        display: flex;
+        flex-direction: row;
+        margin-top: 10px;
+        position: relative;
+        padding-left: 30px;
+        .log-index {
+          font-size: 14px;
+          line-height: 150%;
+          letter-spacing: 0.5px;
+          color: var(--gray-5);
+          margin-right: 16px;
+          position: absolute;
+          left: 0;
+        }
+        .log-content {
+          width: 100%;
+          .log-content-header {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 6px;
+            .log-tag {
+              font-weight: bold;
+              font-size: 12px;
+              line-height: 150%;
+              background: rgba(0, 224, 202, 0.2);
+              border-radius: 6px;
+              letter-spacing: 0.5px;
+              color: var(--mint-green-dark);
+              padding: 2px 6px;
+              word-break: break-all;
+            }
+            .log-timestamp {
+              font-weight: 500;
+              font-size: 12px;
+              line-height: 150%;
+              letter-spacing: 0.5px;
+              color: var(--gray-6);
+              flex-shrink: 0;
+              margin-left: 4px;
+            }
+          }
+
+          .log-description {
+            font-size: 14px;
+            line-height: 150%;
+            letter-spacing: 0.5px;
+            color: var(--gray-3);
+          }
+        }
+      }
     }
   }
 </style>

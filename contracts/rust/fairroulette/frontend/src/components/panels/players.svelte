@@ -18,7 +18,7 @@
     {#each $players as { address, bet }, index}
       <div class="player">
         <div class="player-index">{index + 1}</div>
-        <div class="player-content">
+        <div>
           <div class="player-address">{address}</div>
           <div class="player-bet">
             <span>Bet:</span>
@@ -32,7 +32,6 @@
 
 <style lang="scss">
   .panel {
-    background: var(--blue-dark);
     padding: 16px;
     h3 {
       font-weight: bold;
@@ -45,35 +44,40 @@
       margin: 0;
     }
     .players-wrapper {
-      margin-top: 10px;
-    }
-    .player {
-      display: inline-flex;
-    }
-    .player-index {
-      font-size: 14px;
-      line-height: 150%;
-      letter-spacing: 0.5px;
-      color: var(--gray-5);
-      margin-right: 16px;
-      display: inline-block;
-    }
-    .player-address {
-      font-weight: bold;
-      font-size: 14px;
-      line-height: 150%;
-      letter-spacing: 0.5px;
-      color: var(--gray-3);
-    }
-    .player-bet {
-      font-weight: bold;
-      font-size: 14px;
-      line-height: 150%;
-      letter-spacing: 0.5px;
-      color: var(--gray-5);
-      .bet-value {
-        font-weight: normal;
-        margin-right: 16px;
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 16px;
+      height: 520px;
+      .player {
+        display: inline-flex;
+        width: 100%;
+        margin-top: 10px;
+        .player-index {
+          font-size: 14px;
+          line-height: 150%;
+          letter-spacing: 0.5px;
+          color: var(--gray-5);
+          margin-right: 16px;
+          display: inline-block;
+        }
+        .player-address {
+          font-weight: bold;
+          font-size: 14px;
+          line-height: 150%;
+          letter-spacing: 0.5px;
+          color: var(--gray-3);
+        }
+        .player-bet {
+          font-weight: bold;
+          font-size: 14px;
+          line-height: 150%;
+          letter-spacing: 0.5px;
+          color: var(--gray-5);
+          .bet-value {
+            font-weight: normal;
+            margin-right: 16px;
+          }
+        }
       }
     }
   }
