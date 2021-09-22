@@ -13,21 +13,19 @@ import (
 
 type blockImpl struct {
 	stateOutputID ledgerstate.OutputID
-	stateUpdates  []*stateUpdateImpl
+	stateUpdate   *stateUpdateImpl
 	blockIndex    uint32 // not persistent
 }
 
 // validates, enumerates and creates a block from array of state updates
-func newBlock(stateUpdates ...StateUpdate) (Block, error) {
-	arr := make([]*stateUpdateImpl, len(stateUpdates))
-	for i := range arr {
-		arr[i] = stateUpdates[i].(*stateUpdateImpl) // do not clone
-	}
+func newBlock(stateUpdate StateUpdate) (Block, error) {
 	ret := &blockImpl{
-		stateUpdates: arr,
+		stateUpdate: &stateUpdateImpl{
+			mutations: stateUpdate.Mutations(),
+		},
 	}
 	var err error
-	if ret.blockIndex, err = findBlockIndexMutation(arr); err != nil {
+	if ret.blockIndex, err = findBlockIndexMutation(ret.stateUpdate); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -39,7 +37,7 @@ func BlockFromBytes(data []byte) (Block, error) {
 		return nil, xerrors.Errorf("BlockFromBytes: %w", err)
 	}
 	var err error
-	if ret.blockIndex, err = findBlockIndexMutation(ret.stateUpdates); err != nil {
+	if ret.blockIndex, err = findBlockIndexMutation(ret.stateUpdate); err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -66,9 +64,7 @@ func (b *blockImpl) String() string {
 	ret += fmt.Sprintf("state txid: %s\n", b.ApprovingOutputID().String())
 	ret += fmt.Sprintf("timestamp: %v\n", b.Timestamp())
 	ret += fmt.Sprintf("size: %d\n", b.size())
-	for i, su := range b.stateUpdates {
-		ret += fmt.Sprintf("   #%d: %s\n", i, su.String())
-	}
+	ret += fmt.Sprintf("state update: %s\n", (*b.stateUpdate).String())
 	return ret
 }
 
@@ -82,7 +78,7 @@ func (b *blockImpl) BlockIndex() uint32 {
 
 // Timestamp of the last state update
 func (b *blockImpl) Timestamp() time.Time {
-	ts, err := findTimestampMutation(b.stateUpdates)
+	ts, err := findTimestampMutation(b.stateUpdate)
 	if err != nil {
 		panic(err)
 	}
@@ -91,7 +87,7 @@ func (b *blockImpl) Timestamp() time.Time {
 
 // PreviousStateHash of the last state update
 func (b *blockImpl) PreviousStateHash() hashing.HashValue {
-	ph, err := findPrevStateHashMutation(b.stateUpdates)
+	ph, err := findPrevStateHashMutation(b.stateUpdate)
 	if err != nil {
 		panic(err)
 	}
@@ -103,7 +99,7 @@ func (b *blockImpl) SetApprovingOutputID(oid ledgerstate.OutputID) {
 }
 
 func (b *blockImpl) size() uint16 {
-	return uint16(len(b.stateUpdates))
+	return 0 // TODO uint16(len(b.stateUpdate))
 }
 
 // hash of all data except state transaction hash
@@ -125,24 +121,8 @@ func (b *blockImpl) Write(w io.Writer) error {
 	return nil
 }
 
-// compactStateUpdate returns a stateUpdate that contains all mutations in the block
-// (this is useful to trim down the binary representation of the block, because mutations to the same key on
-// different stateUpdates will be collapsed into a single one)
-func (b *blockImpl) compactStateUpdate() *stateUpdateImpl {
-	ret := NewStateUpdate()
-	for _, su := range b.stateUpdates {
-		for k, v := range su.mutations.Sets {
-			ret.mutations.Set(k, v)
-		}
-		for k := range su.mutations.Dels {
-			ret.mutations.Del(k)
-		}
-	}
-	return ret
-}
-
 func (b *blockImpl) writeEssence(w io.Writer) error {
-	return b.compactStateUpdate().Write(w)
+	return b.stateUpdate.Write(w)
 }
 
 func (b *blockImpl) Read(r io.Reader) error {
@@ -156,9 +136,8 @@ func (b *blockImpl) Read(r io.Reader) error {
 }
 
 func (b *blockImpl) readEssence(r io.Reader) error {
-	b.stateUpdates = make([]*stateUpdateImpl, 1)
 	var err error
-	b.stateUpdates[0], err = newStateUpdateFromReader(r)
+	b.stateUpdate, err = newStateUpdateFromReader(r)
 	if err != nil {
 		return err
 	}

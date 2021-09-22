@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -8,13 +9,30 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/stretchr/testify/require"
 )
 
 const numRequests = 100000
+
+// TODO this is copied from testcore/blocklog_test - should be refactored to be reusable...
+func eventsViewResultToStringArray(result dict.Dict) ([]string, error) {
+	entries := collections.NewArray16ReadOnly(result, blocklog.ParamEvent)
+	ret := make([]string, entries.MustLen())
+	for i := range ret {
+		data, err := entries.GetAt(uint16(i))
+		if err != nil {
+			return nil, err
+		}
+		ret[i] = string(data)
+	}
+	return ret, nil
+}
 
 func TestSpamOnledger(t *testing.T) {
 	testutil.SkipHeavy(t)
@@ -28,7 +46,14 @@ func TestSpamOnledger(t *testing.T) {
 		_, err := myClient.PostRequest(inccounter.FuncIncCounter.Name, *args)
 		require.NoError(t, err)
 	}
-	// TODO check blocklog
+
+	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
+
+	res, err := env.chain.Cluster.WaspClient(0).CallView(env.chain.ChainID, blocklog.Contract.Hname(), blocklog.FuncGetEventsForBlock.Name, dict.Dict{})
+	require.NoError(t, err)
+	events, err := eventsViewResultToStringArray(res)
+	require.NoError(t, err)
+	println(events)
 }
 
 func TestSpamOffledger(t *testing.T) {
@@ -46,13 +71,24 @@ func TestSpamOffledger(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	waitUntil(t, env.balanceOnChainIotaEquals(myAgentID, 1000000), util.MakeRange(0, 1), 60*time.Second, "send 100i")
+	waitUntil(t, env.balanceOnChainIotaEquals(myAgentID, 1000000), util.MakeRange(0, 1), 60*time.Second, "send 1000000i")
 
 	myClient := env.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
-		require.NoError(t, err)
+		if err != nil {
+			time.Sleep(5 * time.Second)
+			fmt.Printf("ERROR sending offledger request, i: %d, err: %v\n", i, err)
+		}
+		// require.NoError(t, err)
 	}
-	// TODO check blocklog
+
+	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
+
+	res, err := env.chain.Cluster.WaspClient(0).CallView(env.chain.ChainID, blocklog.Contract.Hname(), blocklog.FuncGetEventsForBlock.Name, dict.Dict{})
+	require.NoError(t, err)
+	events, err := eventsViewResultToStringArray(res)
+	require.NoError(t, err)
+	println(events)
 }

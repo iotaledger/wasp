@@ -48,11 +48,6 @@ func (vs *virtualState) Commit(blocks ...Block) error {
 	}
 
 	vs.kvs.ClearMutations()
-	// please the GC
-	for i := range vs.updateLog {
-		vs.updateLog[i] = nil
-	}
-	vs.updateLog = vs.updateLog[:0]
 	return nil
 }
 
