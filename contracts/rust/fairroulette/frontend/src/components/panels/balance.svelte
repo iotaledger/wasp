@@ -31,23 +31,13 @@
         line-height: 115%;
         letter-spacing: 0.5px;
         color: var(--white);
+        word-break: break-all;
+
         @media (min-width: 1024px) {
           font-size: 32px;
           line-height: 120%;
         }
       }
-    }
-    .request-funds-button div {
-      margin-bottom: 8px;
-      width: 80%;
-
-      @media (min-width: 1024px) {
-        margin: 0 auto;
-        margin-bottom: 3px;
-      }
-    }
-    .request-funds-button div:not(:last-child) {
-      margin-bottom: 8px;
     }
   }
 </style>
