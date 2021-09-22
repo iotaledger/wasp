@@ -291,29 +291,32 @@
 
 <main>
   <Header />
-  <div class="layout_state">
-    <div class="balance">
-      <BalancePanel />
+
+  <div class="container">
+    <div class="layout_state">
+      <div class="balance">
+        <BalancePanel />
+      </div>
+      <div class="wallet">
+        <WalletPanel />
+      </div>
+      <div class="roulette_state">
+        <State {...INFORMATION_STATE} />
+      </div>
     </div>
-    <div class="wallet">
-      <WalletPanel />
-    </div>
-    <div class="roulette_state">
-      <State {...INFORMATION_STATE} />
-    </div>
-  </div>
-  <div class="layout_roulette">
-    <div class="roulette_game">
-      <Roulette mode="GAME_STARTED" />
+    <div class="layout_roulette">
+      <div class="roulette_game">
+        <Roulette mode="GAME_STARTED" />
+      </div>
       <div class="bet_system">
         <BettingSystem onPlaceBet={placeBet} />
       </div>
-    </div>
-    <div class="players">
-      <PlayersPanel />
-    </div>
-    <div class="logs">
-      <LogsPanel />
+      <div class="players">
+        <PlayersPanel />
+      </div>
+      <div class="logs">
+        <LogsPanel />
+      </div>
     </div>
   </div>
   <!-- <div class="roulette">
@@ -428,20 +431,27 @@
   </div> -->
 </main>
 
-<style>
+<style lang="scss">
   main {
     width: 100%;
     height: 100%;
   }
-
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    @media (min-width: 1024px) {
+      padding: 0 24px;
+    }
+    @media (min-width: 2000px) {
+      max-width: 1600px;
+    }
+  }
   .layout_state {
     display: grid;
     grid-template-rows: repeat(1fr);
     grid-column-gap: 0px;
     grid-row-gap: 0px;
-  }
-  @media (min-width: 1024px) {
-    .layout_state {
+    @media (min-width: 1024px) {
       display: grid;
       grid-template-columns: 1fr 2fr 1fr;
       grid-template-rows: auto auto;
@@ -454,32 +464,18 @@
   }
   .roulette_state {
     margin-top: 40px;
-  }
-  @media (min-width: 1024px) {
-    .roulette_state {
+    @media (min-width: 1024px) {
       margin-top: 0;
     }
   }
-  @media (min-width: 1024px) {
-    .wallet {
+  .wallet {
+    @media (min-width: 1024px) {
       grid-area: aside-1;
-      margin-left: 60px;
     }
   }
-  @media (min-width: 1300px) {
-    .wallet {
-      margin-left: 120px;
-    }
-  }
-  @media (min-width: 1024px) {
-    .balance {
+  .balance {
+    @media (min-width: 1024px) {
       grid-area: aside-2;
-      margin-right: 60px;
-    }
-  }
-  @media (min-width: 1300px) {
-    .balance {
-      margin-right: 120px;
     }
   }
   .layout_roulette {
@@ -488,9 +484,7 @@
     grid-column-gap: 0px;
     grid-row-gap: 0px;
     margin-top: 48px;
-  }
-  @media (min-width: 1024px) {
-    .layout_roulette {
+    @media (min-width: 1024px) {
       display: grid;
       grid-template-columns: 1fr 2fr 1fr;
       grid-template-rows: auto auto;
@@ -501,35 +495,22 @@
     }
   }
   .roulette_game {
+    max-height: fit-content;
+    max-width: fit-content;
+    margin: 0 auto;
+  }
+  .bet_system {
+    margin-top: 40px;
     margin-bottom: 100px;
   }
-
-  @media (min-width: 1024px) {
-    .roulette_game {
-      margin-bottom: 0;
-    }
-  }
-  @media (min-width: 1024px) {
-    .players {
+  .players {
+    @media (min-width: 1024px) {
       grid-area: aside-1;
-      margin-left: 60px;
     }
   }
-  @media (min-width: 1300px) {
-    .players {
-      margin-left: 120px;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .logs {
+  .logs {
+    @media (min-width: 1024px) {
       grid-area: aside-2;
-      margin-right: 60px;
-    }
-  }
-  @media (min-width: 1300px) {
-    .logs {
-      margin-right: 120px;
     }
   }
 </style>

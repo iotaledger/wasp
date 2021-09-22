@@ -1,6 +1,6 @@
 <script lang="ts">
   import { balance } from './../../store';
-  import Button from './button.svelte';
+  import { Button } from './../../components';
 </script>
 
 <div class="panel">

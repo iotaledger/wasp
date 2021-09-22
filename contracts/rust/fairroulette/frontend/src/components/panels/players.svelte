@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { players } from '../store';
+  import { players } from '../../store';
 
   //   TODO: Delete. Only a demo.
   if ($players.length < 1) {
@@ -47,6 +47,7 @@
       letter-spacing: 0.5px;
       color: var(--gray-5);
       margin-right: 16px;
+      display: inline-block;
     }
     .tag {
       display: flex;
@@ -55,7 +56,7 @@
       margin-bottom: 6px;
     }
     .details-tag {
-      display: flex;
+      display: inline-flex;
       margin-top: 12px;
     }
     .item-tag {
@@ -67,6 +68,7 @@
       letter-spacing: 0.5px;
       color: var(--mint-green-dark);
       padding: 2px 6px;
+      height: min-content;
     }
     .player-address {
       font-weight: bold;
@@ -76,14 +78,18 @@
       color: var(--gray-3);
     }
     .tag-description {
-      display: flex;
+      display: inline-flex;
     }
     .item-description {
+      display: block;
       margin: 0 0 16px 0;
       font-size: 14px;
       line-height: 150%;
       letter-spacing: 0.5px;
       color: var(--gray-5);
+      @media (min-width: 1024px) {
+        display: inline-flex;
+      }
       .description-value {
         margin-left: 0;
       }
@@ -102,6 +108,9 @@
       line-height: 150%;
       letter-spacing: 0.5px;
       color: var(--gray-5);
+      @media (min-width: 1024px) {
+        display: inline-flex;
+      }
     }
   }
 </style>
