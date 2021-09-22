@@ -63,7 +63,6 @@ func (b *blockImpl) String() string {
 	ret += fmt.Sprintf("Block: state index: %d\n", b.BlockIndex())
 	ret += fmt.Sprintf("state txid: %s\n", b.ApprovingOutputID().String())
 	ret += fmt.Sprintf("timestamp: %v\n", b.Timestamp())
-	ret += fmt.Sprintf("size: %d\n", b.size())
 	ret += fmt.Sprintf("state update: %s\n", (*b.stateUpdate).String())
 	return ret
 }
@@ -96,10 +95,6 @@ func (b *blockImpl) PreviousStateHash() hashing.HashValue {
 
 func (b *blockImpl) SetApprovingOutputID(oid ledgerstate.OutputID) {
 	b.stateOutputID = oid
-}
-
-func (b *blockImpl) size() uint16 {
-	return 0 // TODO uint16(len(b.stateUpdate))
 }
 
 // hash of all data except state transaction hash

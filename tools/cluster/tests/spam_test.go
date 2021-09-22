@@ -9,30 +9,16 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore"
 	"github.com/stretchr/testify/require"
 )
 
 const numRequests = 100000
-
-// TODO this is copied from testcore/blocklog_test - should be refactored to be reusable...
-func eventsViewResultToStringArray(result dict.Dict) ([]string, error) {
-	entries := collections.NewArray16ReadOnly(result, blocklog.ParamEvent)
-	ret := make([]string, entries.MustLen())
-	for i := range ret {
-		data, err := entries.GetAt(uint16(i))
-		if err != nil {
-			return nil, err
-		}
-		ret[i] = string(data)
-	}
-	return ret, nil
-}
 
 func TestSpamOnledger(t *testing.T) {
 	testutil.SkipHeavy(t)
@@ -51,7 +37,7 @@ func TestSpamOnledger(t *testing.T) {
 
 	res, err := env.chain.Cluster.WaspClient(0).CallView(env.chain.ChainID, blocklog.Contract.Hname(), blocklog.FuncGetEventsForBlock.Name, dict.Dict{})
 	require.NoError(t, err)
-	events, err := eventsViewResultToStringArray(res)
+	events, err := testcore.EventsViewResultToStringArray(res)
 	require.NoError(t, err)
 	println(events)
 }
@@ -81,14 +67,14 @@ func TestSpamOffledger(t *testing.T) {
 			time.Sleep(5 * time.Second)
 			fmt.Printf("ERROR sending offledger request, i: %d, err: %v\n", i, err)
 		}
-		// require.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
 
 	res, err := env.chain.Cluster.WaspClient(0).CallView(env.chain.ChainID, blocklog.Contract.Hname(), blocklog.FuncGetEventsForBlock.Name, dict.Dict{})
 	require.NoError(t, err)
-	events, err := eventsViewResultToStringArray(res)
+	events, err := testcore.EventsViewResultToStringArray(res)
 	require.NoError(t, err)
 	println(events)
 }
