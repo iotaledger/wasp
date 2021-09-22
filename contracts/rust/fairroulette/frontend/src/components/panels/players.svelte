@@ -1,6 +1,5 @@
 <script lang="ts">
   import { round } from '../../store';
-  import { get } from 'svelte/store';
 
   //   TODO: Delete. Only a demo.
   if ($round?.players.length < 1) {

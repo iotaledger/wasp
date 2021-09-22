@@ -3,11 +3,11 @@
 
   import { onMount } from 'svelte';
   import {
-    BalancePanel,
-    BettingSystem,
-    LogsPanel,
-    PlayersPanel,
-    Roulette,
+  BalancePanel,
+  BettingSystem,
+  LogsPanel,
+  PlayersPanel,
+  Roulette
   } from './components';
   import { WalletPanel } from './components/';
   import Header from './components/header.svelte';

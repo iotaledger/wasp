@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { balance, round } from './../../store';
+  import { balance,round } from './../../store';
   $: value = Number($balance / 2n);
 </script>
 
