@@ -4,7 +4,7 @@
 
 <div class="panel">
   <h3>Logs</h3>
-  <div class="logs-wraper">
+  <div class="logs-wrapper">
     {#each $round?.logs as { tag, timestamp, description }, index}
       <div class="log">
         <div class="log-index">{index + 1}</div>
