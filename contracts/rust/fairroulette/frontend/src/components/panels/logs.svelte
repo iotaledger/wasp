@@ -38,18 +38,27 @@
       overflow-y: auto;
       padding-right: 16px;
       height: 520px;
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: #485776;
+        border-radius: 4px;
+      }
       .log {
         display: flex;
         flex-direction: row;
         margin-top: 10px;
         position: relative;
-        padding-left: 30px;
+        padding-left: 40px;
         .log-index {
           font-size: 14px;
           line-height: 150%;
           letter-spacing: 0.5px;
           color: var(--gray-5);
-          margin-right: 16px;
           position: absolute;
           left: 0;
         }

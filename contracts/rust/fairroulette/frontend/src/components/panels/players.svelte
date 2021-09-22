@@ -48,17 +48,29 @@
       overflow-y: auto;
       padding-right: 16px;
       height: 520px;
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: #485776;
+        border-radius: 4px;
+      }
       .player {
         display: inline-flex;
-        width: 100%;
         margin-top: 10px;
+        position: relative;
+        padding-left: 40px;
         .player-index {
           font-size: 14px;
           line-height: 150%;
           letter-spacing: 0.5px;
           color: var(--gray-5);
-          margin-right: 16px;
           display: inline-block;
+          position: absolute;
+          left: 0;
         }
         .player-address {
           font-weight: bold;
