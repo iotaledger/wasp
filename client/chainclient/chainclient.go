@@ -35,6 +35,7 @@ func New(
 		WaspClient:      waspClient,
 		ChainID:         chainID,
 		KeyPair:         keyPair,
+		nonces:          make(map[ed25519.PublicKey]uint64),
 	}
 }
 

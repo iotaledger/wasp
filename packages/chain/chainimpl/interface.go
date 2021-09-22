@@ -144,7 +144,7 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 			c.offLedgerReqsAcksMutex.RLock()
 			ackPeers := c.offLedgerReqsAcks[(*req).ID()]
 			c.offLedgerReqsAcksMutex.RUnlock()
-			if committee != nil && int(committee.Size()) >= len(ackPeers)-1 {
+			if committee != nil && len(ackPeers) >= int(committee.Size())-1 {
 				// this node is part of the committee and the message has already been received by every other committee node
 				return
 			}
