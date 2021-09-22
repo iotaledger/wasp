@@ -2,31 +2,29 @@
   export const name = 'app';
 
   import { onMount } from 'svelte';
-  import config, { chainId } from '../config.dev';
-  import { BettingSystem, Panel, Roulette } from './components';
-  import State from './components/state.svelte';
+  import config from '../config.dev';
+  import {
+    BalancePanel,
+    BettingSystem,
+    LogsPanel,
+    PlayersPanel,
+    Roulette,
+  } from './components';
+  import { WalletPanel } from './components/';
   import Header from './components/header.svelte';
+  import State from './components/state.svelte';
   import type { Bet } from './fairroulette_client';
   import { FairRouletteService } from './fairroulette_client';
-  import type { IBalancePanel } from './models/IBalancePanel';
-  import { BALANCE_PANEL_TYPE } from './models/IBalancePanel';
-  import type { IEntriesPanel } from './models/IEntriesPanel';
-  import { ENTRIES_PANEL_TYPE } from './models/IEntriesPanel';
-  import { LOG_ENTRIES_TYPE } from './models/ILogEntries';
-  import { PLAYER_ENTRIES_TYPE } from './models/IPlayerEntries';
   import type { IState } from './models/IState';
-  import type { IWalletPanel } from './models/IWalletPanel';
-  import { WALLET_PANEL_TYPE } from './models/IWalletPanel';
   import {
     address,
     addressIndex,
     balance,
     keyPair,
-    seed,
-    seedString,
-    requestingFunds,
     logs,
     players,
+    requestingFunds,
+    seed,
     selectedBetAmount,
     selectedBetNumber,
     startedAt,
@@ -63,116 +61,6 @@
       startedAt: 0,
     },
   };
-
-  // Panels located around roulette
-  let walletPanel: IWalletPanel = {
-    type: WALLET_PANEL_TYPE,
-    data: [
-      {
-        eyebrow: 'Your seed',
-        label: '-',
-      },
-      {
-        eyebrow: 'Your address',
-        label: '-',
-      },
-    ],
-  };
-
-  $: $seedString,
-    $address,
-    (walletPanel.data = [
-      {
-        eyebrow: 'Your seed',
-        label: $seedString,
-      },
-      {
-        eyebrow: 'Your address',
-        label: $address,
-      },
-    ]);
-
-  let balancePanel: IBalancePanel = {
-    type: BALANCE_PANEL_TYPE,
-    data: {
-      eyebrow: 'Your balance',
-      label: '-',
-    },
-    buttons: [
-      {
-        label: 'Request funds',
-        onClick: sendFaucetRequest,
-      },
-    ],
-  };
-
-  $: $balance,
-    (balancePanel.data = {
-      eyebrow: 'Your balance',
-      label: `${$balance.toString()}i`,
-    });
-
-  let playersPanel: IEntriesPanel = {
-    type: ENTRIES_PANEL_TYPE,
-    title: 'Players',
-    ordered: true,
-    entries: {
-      type: PLAYER_ENTRIES_TYPE,
-      data: [
-        {
-          address: 'address1',
-          fields: [
-            {
-              label: 'Bet:',
-              value: 1000,
-            },
-            {
-              label: 'W/L:',
-              value: 600,
-            },
-          ],
-        },
-        {
-          address: 'address2',
-          fields: [
-            {
-              label: 'Bet:',
-              value: 1050,
-            },
-            {
-              label: 'W/L:',
-              value: 200,
-            },
-          ],
-        },
-      ],
-    },
-  };
-  $: $players, (playersPanel.entries.data = $players);
-
-  let logsPanel: IEntriesPanel = {
-    type: ENTRIES_PANEL_TYPE,
-    title: 'Logs',
-    ordered: true,
-    entries: {
-      type: LOG_ENTRIES_TYPE,
-      data: [
-        {
-          tag: 'Round',
-          timestamp: '11:24:11',
-          // label: '1022 Mi',
-          description: 'Page loading...',
-        },
-        {
-          tag: 'Site',
-          timestamp: '11:24:11',
-          description: 'Page loading...',
-        },
-      ],
-    },
-  };
-
-  $: $logs, (logsPanel.entries.data = $logs);
 
   const INFORMATION_STATE: IState = {
     title: 'Start game',
@@ -299,8 +187,8 @@
       await fairRouletteService.placeBetOnLedger(
         $keyPair,
         $address,
-        view.round.betSelection,
-        1234n
+        $selectedBetNumber,
+        $selectedBetAmount
       );
     } catch (ex) {
       log(ex.message);
@@ -373,11 +261,12 @@
     });
 
     fairRouletteService.on('betPlaced', (bet: Bet) => {
+      console.log('On place bet: ', bet);
       players.set([
         ...$players,
         {
           address: bet.better,
-          fields: [{ label: 'Bet', value: bet.amount }],
+          bet: bet.amount,
         },
       ]);
       log(
@@ -404,10 +293,10 @@
   <Header />
   <div class="layout_state">
     <div class="balance">
-      <Panel {...balancePanel} />
+      <BalancePanel />
     </div>
     <div class="wallet">
-      <Panel {...walletPanel} />
+      <WalletPanel />
     </div>
     <div class="roulette_state">
       <State {...INFORMATION_STATE} />
@@ -421,10 +310,10 @@
       </div>
     </div>
     <div class="players">
-      <Panel {...playersPanel} />
+      <PlayersPanel />
     </div>
     <div class="logs">
-      <Panel {...logsPanel} />
+      <LogsPanel />
     </div>
   </div>
   <!-- <div class="roulette">

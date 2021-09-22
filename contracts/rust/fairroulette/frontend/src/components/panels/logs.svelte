@@ -1,53 +1,22 @@
 <script lang="ts">
-  import type { ILogEntries } from '../../models/ILogEntries';
-  import { LOG_ENTRIES_TYPE } from '../../models/ILogEntries';
-  import type { IPlayerEntries } from '../../models/IPlayerEntries';
-  import { PLAYER_ENTRIES_TYPE } from './../../models/IPlayerEntries';
-  export let title: string;
-  export let ordered: boolean = false;
-  export let entries: ILogEntries | IPlayerEntries;
-
-  console.log('entries', entries);
+  import { logs } from '../../store';
 </script>
 
 <div class="panel">
-  <h3>{title}</h3>
-  <div>
-    {#if entries.type === PLAYER_ENTRIES_TYPE}
-      <!-- Player panel -->
-      {#each entries.data as entry, index}
-        <div class="details-tag">
-          {#if ordered}
-            <span class="item-index">{index + 1}</span>
-          {/if}
-          <div class="item-eyebrow">{entry.address}</div>
-        </div>
-        <div class="item-description">
-          {#each entry.fields as { label, value }}
-            {#if label}
-              <span class="description-label">{label}</span>
-            {/if}
-            <span class="description-value ">{value}</span>
-          {/each}
-        </div>
-      {/each}
-    {/if}
-
-    {#if entries.type === LOG_ENTRIES_TYPE}
-      <!-- Log panel -->
-      {#each entries.data as { tag, timestamp, description }, index}
-        <div class="details-tag">
-          {#if ordered}
-            <span class="item-index">{index + 1}</span>
-          {/if}
-          <div class="tag">
-            <div class="item-tag">{tag}</div>
-            <span class="description-value">{timestamp}</span>
+  <h3>Logs</h3>
+  <div class="logs-wraper">
+    {#each $logs as { tag, timestamp, description }, index}
+      <div class="log">
+        <div class="log-index">{index + 1}</div>
+        <div class="log-content">
+          <div class="log-content-header">
+            <div class="log-tag">{tag}</div>
+            <div class="log-timestamp">{timestamp}</div>
           </div>
+          <div class="log-description">{description}</div>
         </div>
-        <span class="description-value">{description}</span>
-      {/each}
-    {/if}
+      </div>
+    {/each}
   </div>
 </div>
 
@@ -65,14 +34,14 @@
       padding-bottom: 14px;
       margin: 0;
     }
-    .item-index {
+    .log-index {
       font-size: 14px;
       line-height: 150%;
       letter-spacing: 0.5px;
       color: var(--gray-5);
       margin-right: 16px;
     }
-    .tag {
+    .log-content-header {
       display: flex;
       justify-content: space-between;
       width: 100%;
@@ -82,7 +51,7 @@
       display: flex;
       margin-top: 12px;
     }
-    .item-tag {
+    .log-tag {
       font-weight: bold;
       font-size: 12px;
       line-height: 150%;
@@ -92,7 +61,7 @@
       color: var(--mint-green-dark);
       padding: 2px 6px;
     }
-    .item-eyebrow {
+    .log-eyebrow {
       font-weight: bold;
       font-size: 14px;
       line-height: 150%;
@@ -102,7 +71,7 @@
     .tag-description {
       display: flex;
     }
-    .item-description {
+    .log-description {
       margin: 0 0 16px 0;
       font-size: 14px;
       line-height: 150%;

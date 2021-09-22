@@ -1,23 +1,24 @@
 <script lang="ts">
-  import type { IPanelDataItem } from './../../models/IPanelDataItem';
-  export let data: IPanelDataItem[];
+  import { address, seedString } from '../../store';
 </script>
 
-<div class="panel">
-  {#each data as item}
-    <div class="panel-data">
-      <div class="eyebrow">{item.eyebrow}</div>
-      <div class="label">{item.label ?? '-'}</div>
-    </div>
-  {/each}
+<div class="panel wallet">
+  <div class="wallet-data">
+    <div class="eyebrow">Your seed</div>
+    <div class="seed">{$seedString}</div>
+  </div>
+  <div class="wallet-data">
+    <div class="eyebrow">Your address</div>
+    <div class="address">{$address}</div>
+  </div>
 </div>
 
 <style lang="scss">
-  .panel {
+  .wallet {
     @media (min-width: 1024px) {
       padding-bottom: 24px;
     }
-    .panel-data {
+    .wallet-data {
       display: grid;
       grid-template-rows: 1fr;
       grid-template-columns: 1fr 2fr;
@@ -26,7 +27,8 @@
         grid-template-rows: 1fr 1fr;
         grid-template-columns: 1fr;
       }
-      .label {
+      .seed,
+      .address {
         width: 100%;
         font-size: 14px;
         letter-spacing: 0.5px;
@@ -37,7 +39,7 @@
         }
       }
     }
-    .panel-data:not(:last-child) {
+    .wallet-data:not(:last-child) {
       margin-bottom: 4px;
 
       @media (min-width: 1024px) {

@@ -1,27 +1,15 @@
 <script lang="ts">
-  import Button from '../button.svelte';
-  import type { IButton } from './../../models/IButton';
-  import type { IPanelDataItem } from './../../models/IPanelDataItem';
-
-  export let data: IPanelDataItem;
-  export let buttons: IButton[] = [];
+  import { balance } from './../../store';
+  import Button from './button.svelte';
 </script>
 
 <div class="panel">
   <div class="balance">
-    <div class="eyebrow">{data.eyebrow}</div>
-    {#if data.label}
-      <div class="label">{data.label}</div>
-    {/if}
+    <div class="eyebrow">Your balance</div>
+    <div class="balance-amount">{$balance}i</div>
   </div>
-  <div class="value-button">
-    {#if buttons}
-      {#each buttons as button}
-        <div>
-          <Button {...button} />
-        </div>
-      {/each}
-    {/if}
+  <div class="request-funds-button">
+    <Button label="Request funds" onClick={() => console.log('Place bet')} />
   </div>
 </div>
 
@@ -37,7 +25,7 @@
       grid-template-columns: 1fr;
     }
     .balance {
-      .label {
+      .balance-amount {
         font-family: 'Metropolis Bold';
         font-size: 24px;
         line-height: 115%;
@@ -49,7 +37,7 @@
         }
       }
     }
-    .value-button div {
+    .request-funds-button div {
       margin-bottom: 8px;
       width: 80%;
 
@@ -58,7 +46,7 @@
         margin-bottom: 3px;
       }
     }
-    .value-button div:not(:last-child) {
+    .request-funds-button div:not(:last-child) {
       margin-bottom: 8px;
     }
   }
