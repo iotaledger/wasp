@@ -1,6 +1,5 @@
 <script lang="ts">
   import { round } from '../../store';
-  import { get } from 'svelte/store';
 </script>
 
 <div class="panel">
@@ -23,7 +22,6 @@
 
 <style lang="scss">
   .panel {
-    background: var(--blue-dark);
     padding: 16px;
     h3 {
       font-weight: bold;
@@ -35,56 +33,72 @@
       padding-bottom: 14px;
       margin: 0;
     }
-    .log {
-      display: flex;
-      flex-direction: row;
-      margin-top: 10px;
-    }
-    .log-index {
-      font-size: 14px;
-      line-height: 150%;
-      letter-spacing: 0.5px;
-      color: var(--gray-5);
-      margin-right: 16px;
-    }
-    .log-content {
-      width: 100%;
-    }
-    .log-content-header {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      margin-bottom: 6px;
-    }
-    .log-tag {
-      font-weight: bold;
-      font-size: 12px;
-      line-height: 150%;
-      background: rgba(0, 224, 202, 0.2);
-      border-radius: 6px;
-      letter-spacing: 0.5px;
-      color: var(--mint-green-dark);
-      padding: 2px 6px;
-    }
-    .log-eyebrow {
-      font-weight: bold;
-      font-size: 14px;
-      line-height: 150%;
-      letter-spacing: 0.5px;
-      color: var(--gray-3);
-    }
-    .log-description {
-      font-size: 14px;
-      line-height: 150%;
-      letter-spacing: 0.5px;
-      color: var(--gray-3);
-    }
-    .log-timestamp {
-      font-weight: 500;
-      font-size: 12px;
-      line-height: 150%;
-      letter-spacing: 0.5px;
-      color: var(--gray-6);
+    .logs-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 16px;
+      height: 520px;
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: #485776;
+        border-radius: 4px;
+      }
+      .log {
+        display: flex;
+        flex-direction: row;
+        margin-top: 10px;
+        position: relative;
+        padding-left: 40px;
+        .log-index {
+          font-size: 14px;
+          line-height: 150%;
+          letter-spacing: 0.5px;
+          color: var(--gray-5);
+          position: absolute;
+          left: 0;
+        }
+        .log-content {
+          width: 100%;
+          .log-content-header {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 6px;
+            .log-tag {
+              font-weight: bold;
+              font-size: 12px;
+              line-height: 150%;
+              background: rgba(0, 224, 202, 0.2);
+              border-radius: 6px;
+              letter-spacing: 0.5px;
+              color: var(--mint-green-dark);
+              padding: 2px 6px;
+              word-break: break-all;
+            }
+            .log-timestamp {
+              font-weight: 500;
+              font-size: 12px;
+              line-height: 150%;
+              letter-spacing: 0.5px;
+              color: var(--gray-6);
+              flex-shrink: 0;
+              margin-left: 4px;
+            }
+          }
+
+          .log-description {
+            font-size: 14px;
+            line-height: 150%;
+            letter-spacing: 0.5px;
+            color: var(--gray-3);
+          }
+        }
+      }
     }
   }
 </style>

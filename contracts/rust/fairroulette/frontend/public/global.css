@@ -23,7 +23,6 @@ html, body {
 	margin: 0;
 	padding: 0;
 }
-
 body {
 	color: #333;
 	background-color: #1e2439;
@@ -31,7 +30,6 @@ body {
 	box-sizing: border-box;
     font-family: 'Inter', sans-serif;
 }
-
 input, button, select, textarea {
 	font-family: inherit;
 	font-size: inherit;
@@ -40,16 +38,13 @@ input, button, select, textarea {
 	border: 1px solid #ccc;
 	border-radius: 2px;
 }
-
 input, button {
 	cursor: pointer;
 }
-
 input:disabled, button:disabled {
 	cursor: default;
 	pointer-events: none;
 }
-
 h1 {
     font-size: 32px;
     line-height: 36px;
@@ -62,8 +57,7 @@ h1 {
 		font-size: 48px;
 		line-height: 120%;
 	}
-  }
-
+}
 
 /* Custom utility classes */
 
@@ -74,8 +68,7 @@ h1 {
 	letter-spacing: 0.5px;
 	color: var(--mint-green-dark);
 	line-height: 150%;
-  }
-
+}
 .panel{
 	background: rgba(6, 16, 35, 0.2);
     backdrop-filter: blur(20px);
@@ -89,5 +82,4 @@ h1 {
 		border-radius: 12px;
 		padding: 16px;
 	}
-
 }
