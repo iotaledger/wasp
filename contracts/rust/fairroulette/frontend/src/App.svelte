@@ -62,6 +62,18 @@
       $seed = Seed.generate();
     }
 
+    //TODO: Remove this at some point.
+    if (!config.chainId && config.chainResolverUrl) {
+      try {
+        const response = await fetch(config.chainResolverUrl);
+        const content = await response.json();
+
+        config.chainId = content.chainId;
+      } catch (ex) {
+        log(ex.message);
+      }
+    }
+
     view.seedString = Base58.encode($seed);
 
     client = new BasicClient({
