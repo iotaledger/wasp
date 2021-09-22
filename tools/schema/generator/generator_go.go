@@ -260,10 +260,10 @@ func (s *Schema) generateGoContractFuncs(file *os.File) {
 		keyMap := ""
 		if f.Type == InitFunc {
 			kind = f.Type + f.Kind
-			keyMap = ", ctx, keyMap[:], idxMap[:]"
+			keyMap = ", keyMap[:], idxMap[:]"
 		}
 		fmt.Fprintf(file, "\nfunc (sc Funcs) %s(ctx wasmlib.Sc%sCallContext) *%sCall {\n", f.Type, f.Kind, f.Type)
-		fmt.Fprintf(file, "\t%s &%sCall{Func: wasmlib.NewSc%s(HScName, H%s%s%s)}\n", assign, f.Type, kind, f.Kind, f.Type, keyMap)
+		fmt.Fprintf(file, "\t%s &%sCall{Func: wasmlib.NewSc%s(ctx, HScName, H%s%s%s)}\n", assign, f.Type, kind, f.Kind, f.Type, keyMap)
 		if len(f.Params) != 0 || len(f.Results) != 0 {
 			fmt.Fprintf(file, "\tf.Func.SetPtrs(%s, %s)\n", paramsID, resultsID)
 			fmt.Fprintf(file, "\treturn f\n")
@@ -940,7 +940,8 @@ func (s *Schema) generateGoWasmMain() error {
 
 	fmt.Fprintf(file, "//export on_load\n")
 	fmt.Fprintf(file, "func OnLoad() {\n")
-	fmt.Fprintf(file, "\twasmclient.ConnectWasmHost()\n")
+	fmt.Fprintf(file, "\th := &wasmclient.WasmVMHost{}\n")
+	fmt.Fprintf(file, "\th.ConnectWasmHost()\n")
 	fmt.Fprintf(file, "\t%s.OnLoad()\n", s.Name)
 	fmt.Fprintf(file, "}\n")
 

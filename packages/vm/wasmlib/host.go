@@ -35,6 +35,8 @@ const (
 var TypeSizes = [...]uint8{0, 33, 37, 0, 33, 32, 32, 4, 2, 4, 8, 0, 34, 0}
 
 type ScHost interface {
+	AddFunc(f func(ctx ScFuncContext)) []func(ctx ScFuncContext)
+	AddView(v func(ctx ScViewContext)) []func(ctx ScViewContext)
 	CallFunc(objID, keyID int32, params []byte) []byte
 	Exists(objID, keyID, typeID int32) bool
 	GetBytes(objID, keyID, typeID int32) []byte
@@ -46,6 +48,14 @@ type ScHost interface {
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 var host ScHost
+
+func AddFunc(f func(ctx ScFuncContext)) []func(ctx ScFuncContext) {
+	return host.AddFunc(f)
+}
+
+func AddView(v func(ctx ScViewContext)) []func(ctx ScViewContext) {
+	return host.AddView(v)
+}
 
 func ConnectHost(h ScHost) ScHost {
 	oldHost := host
