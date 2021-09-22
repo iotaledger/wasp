@@ -4,13 +4,14 @@
 package publisherws
 
 import (
+	"net/http"
 	"strings"
 	"sync"
 
 	"github.com/iotaledger/hive.go/events"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/publisher"
-	"golang.org/x/net/websocket"
+	"nhooyr.io/websocket"
 )
 
 type PublisherWebSocket struct {
@@ -22,14 +23,12 @@ func New() *PublisherWebSocket {
 	return &PublisherWebSocket{}
 }
 
-func (p *PublisherWebSocket) GetHandler(chainID *iscp.ChainID) websocket.Handler {
-	return websocket.Handler(func(ws *websocket.Conn) {
-		p.handleClient(ws, chainID)
-	})
-}
-
-func (p *PublisherWebSocket) handleClient(ws *websocket.Conn, chainID *iscp.ChainID) {
-	defer ws.Close()
+func (p *PublisherWebSocket) ServeHTTP(chainID *iscp.ChainID, w http.ResponseWriter, r *http.Request) error {
+	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{})
+	if err != nil {
+		return err
+	}
+	defer c.Close(websocket.StatusInternalError, "something went wrong")
 
 	v, _ := p.clients.LoadOrStore(chainID.Base58(), &sync.Map{})
 	chainWsClients := v.(*sync.Map)
@@ -38,13 +37,16 @@ func (p *PublisherWebSocket) handleClient(ws *websocket.Conn, chainID *iscp.Chai
 	chainWsClients.Store(clientCh, clientCh)
 	defer chainWsClients.Delete(clientCh)
 
+	ctx := c.CloseRead(r.Context())
 	for {
 		msg := <-clientCh
-		_, err := ws.Write([]byte(msg))
+		err = c.Write(ctx, websocket.MessageBinary, []byte(msg))
 		if err != nil {
+			c.Close(websocket.StatusInternalError, err.Error())
 			break
 		}
 	}
+	return nil
 }
 
 func (p *PublisherWebSocket) Start(msgTypes ...string) {

@@ -36,6 +36,7 @@ require (
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	gopkg.in/eapache/channels.v1 v1.1.0 // indirect
+	nhooyr.io/websocket v1.8.7 // indirect
 )
 
 replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515

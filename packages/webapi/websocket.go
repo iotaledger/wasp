@@ -28,8 +28,7 @@ func (w *webSocketAPI) handleWebSocket(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	w.pws.GetHandler(chainID).ServeHTTP(c.Response(), c.Request())
-	return nil
+	return w.pws.ServeHTTP(chainID, c.Response(), c.Request())
 }
 
 func (w *webSocketAPI) startWebSocketForwarder() {
