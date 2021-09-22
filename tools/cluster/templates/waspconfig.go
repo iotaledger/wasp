@@ -60,7 +60,7 @@ const WaspConfig = `
   },
   "profiling":{
     "bindAddress": "0.0.0.0:{{.ProfilingPort}}",
-    "enabled": true
+    "enabled": false
   },
   "metrics": {
     "bindAddress": "0.0.0.0:{{.MetricsPort}}",
