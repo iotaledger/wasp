@@ -25,22 +25,24 @@ import (
 // region VirtualState /////////////////////////////////////////////////
 
 type virtualState struct {
-	chainID     iscp.ChainID
-	db          kvstore.KVStore
-	empty       bool
-	kvs         *buffered.BufferedKVStore
-	stateHash   hashing.HashValue
-	stateUpdate StateUpdate
+	chainID             iscp.ChainID
+	db                  kvstore.KVStore
+	empty               bool
+	kvs                 *buffered.BufferedKVStore
+	stateHash           hashing.HashValue
+	stateUpdate         StateUpdate
+	isStateHashOutdated bool
 }
 
 // newVirtualState creates VirtualState interface with the partition of KVStore
 func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualState {
 	sub := subRealm(db, []byte{dbkeys.ObjectTypeStateVariable})
 	ret := &virtualState{
-		db:          db,
-		kvs:         buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(sub)),
-		empty:       true,
-		stateUpdate: NewStateUpdate(),
+		db:                  db,
+		kvs:                 buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(sub)),
+		empty:               true,
+		stateUpdate:         NewStateUpdate(),
+		isStateHashOutdated: true,
 	}
 	if chainID != nil {
 		ret.chainID = *chainID
@@ -124,7 +126,7 @@ func (vs *virtualState) PreviousStateHash() hashing.HashValue {
 	return ph
 }
 
-// ApplyBlock applies block of state updates. Checks consistency of the block and previous state. Updates state hash
+// ApplyBlock applies a block of state updates. Checks consistency of the block and previous state. Updates state hash
 func (vs *virtualState) ApplyBlock(b Block) error {
 	if vs.empty && b.BlockIndex() != 0 {
 		return xerrors.Errorf("ApplyBlock: b state index #%d can't be applied to the empty state", b.BlockIndex())
@@ -142,7 +144,7 @@ func (vs *virtualState) ApplyBlock(b Block) error {
 	return nil
 }
 
-// ApplyStateUpdate applies one state update. Doesn't change state hash: it can be changed bu Apply block
+// ApplyStateUpdate applies one state update. Doesn't change state hash: it can be changed by Apply block
 func (vs *virtualState) ApplyStateUpdates(stateUpd ...StateUpdate) {
 	for _, upd := range stateUpd {
 		upd.Mutations().ApplyTo(vs.KVStore())
@@ -153,6 +155,7 @@ func (vs *virtualState) ApplyStateUpdates(stateUpd ...StateUpdate) {
 			vs.stateUpdate.Mutations().Del(k)
 		}
 	}
+	vs.isStateHashOutdated = true
 }
 
 // ExtractBlock creates a block from update log and returns it or nil if log is empty. The log is cleared
@@ -171,11 +174,15 @@ func (vs *virtualState) ExtractBlock() (Block, error) {
 
 // Hash return hash of the state
 func (vs *virtualState) Hash() hashing.HashValue {
+	if vs.isStateHashOutdated {
+		vs.regenHash()
+	}
 	return vs.stateHash
 }
 
 func (vs *virtualState) regenHash() {
 	vs.stateHash = hashing.HashData(vs.stateUpdate.Bytes())
+	vs.isStateHashOutdated = false
 }
 
 // endregion ////////////////////////////////////////////////////////////

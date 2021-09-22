@@ -126,6 +126,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 			fromStateIndex, toStateIndex, finalStateHash.String())
 		return candidateAcc, calculatedPrevState, true
 	}
+
 	var stateCandidateBlocks []*candidateBlock
 	if fromStateIndex == toStateIndex {
 		stateCandidateBlocks = sm.syncingBlocks.getApprovedBlockCandidates(fromStateIndex)
@@ -135,6 +136,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 	sort.Slice(stateCandidateBlocks, func(i, j int) bool {
 		return stateCandidateBlocks[i].getVotes() > stateCandidateBlocks[j].getVotes()
 	})
+
 	for i, stateCandidateBlock := range stateCandidateBlocks {
 		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i+1, len(stateCandidateBlocks))
 		candidatePrevStateHash := stateCandidateBlock.getBlock().PreviousStateHash()

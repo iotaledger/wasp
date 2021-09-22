@@ -72,6 +72,7 @@ func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualState,
 	}
 	vs := newVirtualState(store, chainID)
 	vs.stateHash = stateHash
+	vs.isStateHashOutdated = false // NOTE: returned VirtualState doesn't contain the block mutations, so if the hash is re-computed, it won't match the block that was committed to the DB.
 	return vs, true, nil
 }
 

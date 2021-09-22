@@ -19,7 +19,6 @@ func TestVirtualStateBasic(t *testing.T) {
 	t.Run("create new1", func(t *testing.T) {
 		db := mapdb.NewMapDB()
 		vs1 := newVirtualState(db, nil)
-		require.EqualValues(t, hashing.NilHash, vs1.Hash())
 		require.Panics(t, func() {
 			vs1.BlockIndex()
 		})
@@ -28,8 +27,6 @@ func TestVirtualStateBasic(t *testing.T) {
 		db := mapdb.NewMapDB()
 		chainID := iscp.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
 		vs1 := newVirtualState(db, chainID)
-		h1 := vs1.Hash()
-		require.EqualValues(t, hashing.NilHash, h1)
 		require.Panics(t, func() {
 			vs1.BlockIndex()
 		})
@@ -133,10 +130,9 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 
 		nowis := time.Now()
-		su := NewStateUpdateWithBlocklogValues(1, time.Time{}, hashing.NilHash)
-		su1 := NewStateUpdate(nowis)
-		su1.Mutations().Set("key", []byte("value"))
-		block1, err := newBlock(su, su1)
+		su := NewStateUpdateWithBlocklogValues(1, nowis, hashing.NilHash)
+		su.Mutations().Set("key", []byte("value"))
+		block1, err := newBlock(su)
 		require.NoError(t, err)
 
 		err = vs1.ApplyBlock(block1)
@@ -182,10 +178,9 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 
 		nowis := time.Now()
-		su := NewStateUpdateWithBlocklogValues(1, time.Time{}, hashing.NilHash)
-		su1 := NewStateUpdate(nowis)
-		su1.Mutations().Set("key", []byte("value"))
-		block1, err := newBlock(su, su1)
+		su := NewStateUpdateWithBlocklogValues(1, nowis, hashing.NilHash)
+		su.Mutations().Set("key", []byte("value"))
+		block1, err := newBlock(su)
 		require.NoError(t, err)
 
 		err = vs1.ApplyBlock(block1)
