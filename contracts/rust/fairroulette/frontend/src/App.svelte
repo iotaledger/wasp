@@ -416,10 +416,11 @@
   <div class="layout_roulette">
     <div class="roulette_game">
       <Roulette mode="GAME_STARTED" />
-      <div class="bet_system">
-        <BettingSystem onPlaceBet={placeBet} />
-      </div>
     </div>
+    <div class="bet_system">
+      <BettingSystem onPlaceBet={placeBet} />
+    </div>
+
     <div class="players">
       <Panel {...playersPanel} />
     </div>
@@ -539,7 +540,7 @@
   </div> -->
 </main>
 
-<style>
+<style lang="scss">
   main {
     width: 100%;
     height: 100%;
@@ -550,9 +551,7 @@
     grid-template-rows: repeat(1fr);
     grid-column-gap: 0px;
     grid-row-gap: 0px;
-  }
-  @media (min-width: 1024px) {
-    .layout_state {
+    @media (min-width: 1024px) {
       display: grid;
       grid-template-columns: 1fr 2fr 1fr;
       grid-template-rows: auto auto;
@@ -563,45 +562,42 @@
       margin-top: 48px;
     }
   }
+
   .roulette_state {
     margin-top: 40px;
-  }
-  @media (min-width: 1024px) {
-    .roulette_state {
+    @media (min-width: 1024px) {
       margin-top: 0;
     }
   }
-  @media (min-width: 1024px) {
-    .wallet {
+  .wallet {
+    @media (min-width: 1024px) {
       grid-area: aside-1;
       margin-left: 60px;
     }
   }
-  @media (min-width: 1300px) {
-    .wallet {
+  .wallet {
+    @media (min-width: 1300px) {
       margin-left: 120px;
     }
   }
-  @media (min-width: 1024px) {
-    .balance {
+
+  .balance {
+    @media (min-width: 1024px) {
       grid-area: aside-2;
       margin-right: 60px;
     }
-  }
-  @media (min-width: 1300px) {
-    .balance {
+    @media (min-width: 1300px) {
       margin-right: 120px;
     }
   }
+
   .layout_roulette {
     display: grid;
     grid-template-rows: repeat(1fr);
     grid-column-gap: 0px;
     grid-row-gap: 0px;
     margin-top: 48px;
-  }
-  @media (min-width: 1024px) {
-    .layout_roulette {
+    @media (min-width: 1024px) {
       display: grid;
       grid-template-columns: 1fr 2fr 1fr;
       grid-template-rows: auto auto;
@@ -611,35 +607,30 @@
         'aside-1 last aside-2';
     }
   }
+
   .roulette_game {
+    margin-top: -30px;
+  }
+  .bet_system {
+    margin-top: 40px;
     margin-bottom: 100px;
   }
-
-  @media (min-width: 1024px) {
-    .roulette_game {
-      margin-bottom: 0;
-    }
-  }
-  @media (min-width: 1024px) {
-    .players {
+  .players {
+    @media (min-width: 1024px) {
       grid-area: aside-1;
       margin-left: 60px;
     }
-  }
-  @media (min-width: 1300px) {
-    .players {
+    @media (min-width: 1300px) {
       margin-left: 120px;
     }
   }
 
-  @media (min-width: 1024px) {
-    .logs {
+  .logs {
+    @media (min-width: 1024px) {
       grid-area: aside-2;
       margin-right: 60px;
     }
-  }
-  @media (min-width: 1300px) {
-    .logs {
+    @media (min-width: 1300px) {
       margin-right: 120px;
     }
   }
