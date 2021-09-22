@@ -549,10 +549,13 @@
     height: 100%;
   }
   .container {
-    max-width: 1600px;
+    max-width: 1200px;
     margin: 0 auto;
     @media (min-width: 1024px) {
       padding: 0 24px;
+    }
+    @media (min-width: 2000px) {
+      max-width: 1600px;
     }
   }
   .layout_state {
@@ -604,7 +607,9 @@
     }
   }
   .roulette_game {
-    margin-top: -30px;
+    max-height: fit-content;
+    max-width: fit-content;
+    margin: 0 auto;
   }
   .bet_system {
     margin-top: 40px;
