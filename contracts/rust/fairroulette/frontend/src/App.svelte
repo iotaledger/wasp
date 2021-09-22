@@ -26,6 +26,9 @@
     seedString,
     requestingFunds,
     logs,
+    players,
+    selectedBetAmount,
+    selectedBetNumber,
   } from './store';
   import {
     BasicClient,
@@ -107,7 +110,7 @@
       label: `${$balance.toString()}i`,
     });
 
-  const PLAYERS_PANEL: IEntriesPanel = {
+  let playersPanel: IEntriesPanel = {
     type: ENTRIES_PANEL_TYPE,
     title: 'Players',
     ordered: true,
@@ -119,11 +122,11 @@
           fields: [
             {
               label: 'Bet:',
-              value: '1000i',
+              value: 1000,
             },
             {
               label: 'W/L:',
-              value: '600i',
+              value: 600,
             },
           ],
         },
@@ -132,17 +135,18 @@
           fields: [
             {
               label: 'Bet:',
-              value: '1050i',
+              value: 1050,
             },
             {
               label: 'W/L:',
-              value: '200i',
+              value: 200,
             },
           ],
         },
       ],
     },
   };
+  $: $players, (playersPanel.entries.data = $players);
 
   let logsPanel: IEntriesPanel = {
     type: ENTRIES_PANEL_TYPE,
@@ -239,7 +243,7 @@
 
     //   const basicWallet = new BasicWallet(client);
 
-    await walletService.sendOnLedgerRequest($address, chainId);
+    //  await fairRouletteService.placeBetOnLedger($keyPair, $address, 2, 123n);
   }
 
   onMount(initialize);
@@ -292,14 +296,18 @@
   async function placeBet() {
     view.isWorking = true;
     try {
-      await fairRouletteService.placeBet(
+      await fairRouletteService.placeBetOnLedger(
         $keyPair,
+        $address,
         view.round.betSelection,
-        1234
+        1234n
       );
     } catch (ex) {
-      log('Round', ex.message);
+      log(ex.message);
+
+      throw ex;
     }
+
     view.isWorking = false;
   }
 
@@ -365,6 +373,13 @@
     });
 
     fairRouletteService.on('betPlaced', (bet: Bet) => {
+      players.set([
+        ...$players,
+        {
+          address: bet.better,
+          fields: [{ label: 'Bet', value: bet.amount }],
+        },
+      ]);
       log(
         'Bet',
         `Bet placed from ${bet.better} on ${bet.betNumber} with ${bet.amount}`
@@ -402,11 +417,11 @@
     <div class="roulette_game">
       <Roulette mode="GAME_STARTED" />
       <div class="bet_system">
-        <BettingSystem />
+        <BettingSystem onPlaceBet={placeBet} />
       </div>
     </div>
     <div class="players">
-      <Panel {...PLAYERS_PANEL} />
+      <Panel {...playersPanel} />
     </div>
     <div class="logs">
       <Panel {...logsPanel} />

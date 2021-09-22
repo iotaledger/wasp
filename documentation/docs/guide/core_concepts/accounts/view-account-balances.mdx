@@ -1,11 +1,11 @@
 ---
 keywords:
-- ISCP
-- view
-- account
-- balances
-- Rust
-- Solo
+  - ISCP
+  - view
+  - account
+  - balances
+  - Rust
+  - Solo
 description: The Accounts contract provides the balance, totalAssets and accounts views.
 image: /img/logo/WASP_logo_dark.png
 ---
@@ -48,7 +48,9 @@ balances := chain.GetAccountBalance(agentID)
 
 ```rust
 // TODO does this work?
-let ret = ctx.call(ScHname::new("accounts"), ScHname::new("balance") , None);
+let parms = ScMutableMap::new();
+parms.get_int64("a").set_value(AGENT_ID)
+let ret = ctx.call(ScHname::new("accounts"), ScHname::new("balance"), Some(params), None);
 let balances = ret.get_map(&KEY_BALANCES).immutable()
 ```
 
@@ -121,3 +123,49 @@ let account = ret.get_agent_id_array(&KEY_PARAMS)
 
 </TabItem>
 </Tabs>
+
+---
+
+## getAccountNonce
+
+`getAccountNonce` - get the current nonce for a given account.
+
+parameters:
+
+- `ParamAgentID` - account's AgentI
+
+returns:
+
+- the current nonce
+
+<Tabs
+    defaultValue="solo"
+    values={[
+        {label: 'Solo', value: 'solo'},
+        {label: 'Rust (ISCP)', value: 'rust'},
+    ]}>
+<TabItem value="solo">
+
+```go
+ret, err := chain.CallView(accounts.Contract.Name, accounts.FuncGetAccountNonce.Name,
+    accounts.ParamAgentID, iscp.NewAgentID(address, 0),
+)
+require.NoError(t, err)
+nonce, _, err := codec.DecodeUint64(ret.MustGet(accounts.ParamAccountNonce)
+```
+
+</TabItem>
+<TabItem value="rust">
+
+```rust
+// TODO does this work?
+let parms = ScMutableMap::new();
+parms.get_int64("a").set_value(AGENT_ID)
+let ret = ctx.call(ScHname::new("accounts"), ScHname::new("getAccountNonce"), Some(params), None);
+let nonce = ret.get_int64("n")
+``
+
+</TabItem>
+</Tabs>
+
+```

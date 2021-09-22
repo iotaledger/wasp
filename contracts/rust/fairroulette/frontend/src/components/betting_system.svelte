@@ -4,15 +4,18 @@
   import type { IMultipleSelector } from '../models/IMultipleSelector';
   import { Selector } from './';
   import Button from './button.svelte';
-
+  import { selectedBetAmount, selectedBetNumber } from './../store';
+  export let onPlaceBet: () => void;
   let betAmount;
   let selectedNumber;
 
   const BET_NUMBER_SELECTOR: IMultipleSelector = {
     type: 'multiple',
     values: [...Array(8).keys()].map((i) => (i + 1).toString()), // ["1", "2", ... ,"8"]
-    onClick: (indexSelected) =>
-      (selectedNumber = BET_NUMBER_SELECTOR.values[indexSelected]),
+    onClick: (indexSelected) => {
+      selectedNumber = BET_NUMBER_SELECTOR.values[indexSelected];
+      $selectedBetNumber = selectedNumber;
+    },
   };
 
   const BET_IOTA_AMOUNT_SELECTOR: IBarSelector = {
@@ -22,6 +25,7 @@
     unit: 'i',
     onChange: (value) => {
       betAmount = value;
+      $selectedBetAmount = betAmount;
     },
   };
 
@@ -40,7 +44,11 @@
   <div>
     <Selector {...BET_IOTA_AMOUNT_SELECTOR} />
     <div class="bet-button">
-      <Button {...PLACE_BET_BUTTON} disabled={selectedNumber === undefined} />
+      <Button
+        {...PLACE_BET_BUTTON}
+        disabled={selectedNumber === undefined}
+        onClick={() => onPlaceBet()}
+      />
     </div>
   </div>
 </div>

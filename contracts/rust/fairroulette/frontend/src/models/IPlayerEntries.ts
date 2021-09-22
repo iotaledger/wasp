@@ -5,12 +5,13 @@ import type { ITypeBase } from "./ITypeBase";
  */
 export const PLAYER_ENTRIES_TYPE = 0;
 
-export interface IPlayerEntries extends ITypeBase<0> {
-    data: {
-        address: string;
-        fields: {
-            label: string;
-            value: string;
-        }[];
+export type IPlayerData = {
+    address: string;
+    fields: {
+        label: string;
+        value: string;
     }[];
+}
+export interface IPlayerEntries extends ITypeBase<0> {
+    data: IPlayerData[];
 }

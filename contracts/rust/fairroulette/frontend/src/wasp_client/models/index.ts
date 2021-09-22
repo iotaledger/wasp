@@ -6,6 +6,8 @@ export * from './IOffLedgerRequest';
 export * from './IResponse';
 export * from './ISendTransactionRequest';
 export * from './ISendTransactionResponse';
+export * from './ITransaction';
+export * from './IUnlockBlock';
 export * from './IUnspentOutputsRequest';
 export * from './IUnspentOutputsResponse';
 export * from './IWalletAddressOutput';
