@@ -32,6 +32,7 @@
         letter-spacing: 0.5px;
         color: var(--gray-3);
         line-height: 150%;
+        word-break: break-all;
         @media (min-width: 1024px) {
           font-weight: bold;
         }
