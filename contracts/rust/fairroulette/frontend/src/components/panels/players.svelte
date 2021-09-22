@@ -1,21 +1,24 @@
 <script lang="ts">
-  import { players } from '../../store';
+  import { round } from '../../store';
 
   //   TODO: Delete. Only a demo.
-  if ($players.length < 1) {
-    players.set([
-      {
-        address: 'demo address',
-        bet: 15,
-      },
-    ]);
+  if ($round?.players.length < 1) {
+    round.update((_round) => {
+      if (_round) {
+        _round.players.push({
+          address: 'demo address',
+          bet: 15,
+        });
+      }
+      return _round;
+    });
   }
 </script>
 
 <div class="panel">
   <h3>Players</h3>
   <div class="players-wrapper">
-    {#each $players as { address, bet }, index}
+    {#each $round?.players as { address, bet }, index}
       <div class="player">
         <div class="player-index">{index + 1}</div>
         <div>

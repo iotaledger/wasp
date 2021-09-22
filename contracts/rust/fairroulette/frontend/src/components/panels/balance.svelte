@@ -1,6 +1,7 @@
 <script lang="ts">
   import { balance } from './../../store';
   import { Button } from './../../components';
+  import { sendFaucetRequest } from './../../lib';
 </script>
 
 <div class="panel">
@@ -9,7 +10,7 @@
     <div class="balance-amount">{$balance}i</div>
   </div>
   <div class="request-funds-button">
-    <Button label="Request funds" onClick={() => console.log('Place bet')} />
+    <Button label="Request funds" onClick={sendFaucetRequest} />
   </div>
 </div>
 

@@ -164,7 +164,7 @@ export class FairRouletteService {
       ],
     };
 
-    await this.walletService.sendOnLedgerRequest(keyPair, address, this.chainId, betRequest);
+    await this.walletService.sendOnLedgerRequest(keyPair, address, this.chainId, betRequest, take);
 
   }
 

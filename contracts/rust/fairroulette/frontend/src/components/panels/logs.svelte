@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { logs } from '../../store';
+  import { round } from '../../store';
 </script>
 
 <div class="panel">
   <h3>Logs</h3>
-  <div class="logs-wrapper">
-    {#each $logs as { tag, timestamp, description }, index}
+  <div class="logs-wraper">
+    {#each $round?.logs as { tag, timestamp, description }, index}
       <div class="log">
         <div class="log-index">{index + 1}</div>
         <div class="log-content">

@@ -1,6 +1,6 @@
-<div class="header">
+<header class="header">
   <img src="iota-roulette.svg" alt="iota-logo-roulette" />
-</div>
+</header>
 
 <style lang="scss">
   .header {
