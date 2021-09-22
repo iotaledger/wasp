@@ -21,9 +21,7 @@
       display: grid;
       grid-template-rows: 1fr;
       grid-template-columns: 1fr 2fr;
-      align-items: end;
       @media (min-width: 1024px) {
-        grid-template-rows: 1fr 1fr;
         grid-template-columns: 1fr;
       }
       .label {
