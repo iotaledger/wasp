@@ -3,6 +3,7 @@ package webapi
 import (
 	_ "embed"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/publisher/publisherws"
 	"github.com/labstack/echo/v4"
@@ -13,9 +14,9 @@ type webSocketAPI struct {
 	pws *publisherws.PublisherWebSocket
 }
 
-func addWebSocketEndpoint(e echoswagger.ApiGroup) *webSocketAPI {
+func addWebSocketEndpoint(e echoswagger.ApiGroup, log *logger.Logger) *webSocketAPI {
 	api := &webSocketAPI{
-		pws: publisherws.New(),
+		pws: publisherws.New(log, []string{"state", "vmmsg"}),
 	}
 
 	e.GET("/chain/:chainid/ws", api.handleWebSocket)
@@ -29,8 +30,4 @@ func (w *webSocketAPI) handleWebSocket(c echo.Context) error {
 		return err
 	}
 	return w.pws.ServeHTTP(chainID, c.Response(), c.Request())
-}
-
-func (w *webSocketAPI) startWebSocketForwarder() {
-	w.pws.Start("state", "vmmsg")
 }

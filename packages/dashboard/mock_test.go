@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/xerrors"
 )
@@ -144,7 +145,7 @@ func initDashboardTest(t *testing.T) *dashboardTestEnv {
 		solo:   s,
 		chains: make(map[[ledgerstate.AddressLength]byte]*solo.Chain),
 	}
-	d := Init(e, w)
+	d := Init(e, w, testlogger.NewLogger(t))
 	return &dashboardTestEnv{
 		wasp:      w,
 		echo:      e,

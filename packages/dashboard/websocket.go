@@ -12,7 +12,7 @@ import (
 var tplWebSocket string
 
 func (d *Dashboard) webSocketInit(e *echo.Echo) {
-	pws := publisherws.New()
+	pws := publisherws.New(d.log, []string{"state"})
 
 	route := e.GET("/chain/:chainid/ws", func(c echo.Context) error {
 		chainID, err := iscp.ChainIDFromBase58(c.Param("chainid"))
@@ -22,10 +22,4 @@ func (d *Dashboard) webSocketInit(e *echo.Echo) {
 		return pws.ServeHTTP(chainID, c.Response(), c.Request())
 	})
 	route.Name = "chainWebSocket"
-
-	pws.Start("state")
-	go func() {
-		<-d.stop
-		pws.Stop()
-	}()
 }
