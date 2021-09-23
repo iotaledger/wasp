@@ -108,18 +108,6 @@
     }
 
     log('[PAGE] loaded');
-
-    /**
-     * ChainID => address
-     * metadata: IOnLedgerRequest
-     * transfer: {color:values}
-     */
-
-    //await walletService.sendOnLedgerRequest($address, chainId);
-
-    //   const basicWallet = new BasicWallet(client);
-
-    //  await fairRouletteService.placeBetOnLedger($keyPair, $address, 2, 123n);
   }
 
   onMount(initialize);
@@ -195,7 +183,6 @@
     view.isWorking = false;
   }
 
-  // To make sure the function gets called every second, we require that date.Now() is put in as a parameter to rely on sveltes change listener.
   function calculateRoundLengthLeft(timestamp: number) {
     const roundStarted = view.round.startedAt;
 
