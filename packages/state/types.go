@@ -14,7 +14,7 @@ type VirtualState interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
 	PreviousStateHash() hashing.HashValue
-	Hash() hashing.HashValue
+	StateCommitment() hashing.HashValue
 	KVStoreReader() kv.KVStoreReader
 	ApplyStateUpdates(...StateUpdate)
 	ApplyBlock(Block) error

@@ -78,7 +78,7 @@ func (c *Consensus) eventVMResultMsg(msg *messages.VMResultMsg) {
 		essenceString = fmt.Sprintf("essence hash: %s", hashing.HashData(msg.Task.ResultTransactionEssence.Bytes()))
 	}
 	c.log.Debugf("VMResultMsg received: state index: %d state hash: %s %s",
-		msg.Task.VirtualState.BlockIndex(), msg.Task.VirtualState.Hash(), essenceString)
+		msg.Task.VirtualState.BlockIndex(), msg.Task.VirtualState.StateCommitment(), essenceString)
 	c.processVMResult(msg.Task)
 	c.takeAction()
 }

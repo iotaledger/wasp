@@ -39,7 +39,7 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 	reqstr := strings.Join(iscp.ShortRequestIDs(iscp.TakeRequestIDs(task.Requests...)), ",")
 
 	r.log.Debugf("VM input: state hash: %s, chain input: %s, requests: [%s]",
-		task.VirtualState.Hash(), iscp.OID(task.ChainInput.ID()), reqstr)
+		task.VirtualState.StateCommitment(), iscp.OID(task.ChainInput.ID()), reqstr)
 
 	r.stateTransition.NextState(task.VirtualState, task.ChainInput, task.Timestamp, task.Requests...)
 	task.ResultTransactionEssence = r.tx

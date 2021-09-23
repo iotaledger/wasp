@@ -20,7 +20,7 @@ func (vs *virtualState) Commit(blocks ...Block) error {
 	}
 	batch := vs.db.Batched()
 
-	if err := batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash), vs.Hash().Bytes()); err != nil {
+	if err := batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash), vs.StateCommitment().Bytes()); err != nil {
 		return err
 	}
 

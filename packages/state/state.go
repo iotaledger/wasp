@@ -63,7 +63,7 @@ func newZeroVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) (VirtualStat
 // calcOriginStateHash is independent from db provider nor chainID. Used for testing
 func calcOriginStateHash() hashing.HashValue {
 	emptyVirtualState, _ := newZeroVirtualState(mapdb.NewMapDB(), nil)
-	return emptyVirtualState.Hash()
+	return emptyVirtualState.StateCommitment()
 }
 
 func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
@@ -169,8 +169,8 @@ func (vs *virtualState) ExtractBlock() (Block, error) {
 	return ret, nil
 }
 
-// Hash return hash of the state. It is recursive hashing of the previous state hash and the block
-func (vs *virtualState) Hash() hashing.HashValue {
+// StateCommitment return hash of the state. It is recursive hashing of the previous state hash and the block
+func (vs *virtualState) StateCommitment() hashing.HashValue {
 	if vs.isStateHashOutdated {
 		block, err := vs.ExtractBlock()
 		if err != nil {

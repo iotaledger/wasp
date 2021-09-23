@@ -48,7 +48,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualState, chainOutput *le
 	counter, _, err := codec.DecodeUint64(counterBin)
 	require.NoError(c.t, err)
 
-	suBlockIndex := state.NewStateUpdateWithBlocklogValues(prevBlockIndex+1, time.Time{}, vs.Hash())
+	suBlockIndex := state.NewStateUpdateWithBlocklogValues(prevBlockIndex+1, time.Time{}, vs.StateCommitment())
 
 	suCounter := state.NewStateUpdate()
 	counterBin = codec.EncodeUint64(counter + 1)
@@ -63,7 +63,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualState, chainOutput *le
 	nextvs.ApplyStateUpdates(suBlockIndex, suCounter, suReqs)
 	require.EqualValues(c.t, prevBlockIndex+1, nextvs.BlockIndex())
 
-	nextStateHash := nextvs.Hash()
+	nextStateHash := nextvs.StateCommitment()
 
 	txBuilder := utxoutil.NewBuilder(chainOutput).WithTimestamp(ts)
 	err = txBuilder.AddAliasOutputAsRemainder(chainOutput.GetAliasAddress(), nextStateHash[:])

@@ -115,7 +115,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 	sm.log.Debugf("getCandidatesToCommit from %v to %v", fromStateIndex, toStateIndex)
 	if fromStateIndex > toStateIndex {
 		// state hashes must be equal
-		finalStateHash := calculatedPrevState.Hash()
+		finalStateHash := calculatedPrevState.StateCommitment()
 		finalCandidateHash := candidateAcc[len(candidateAcc)-1].getNextStateHash()
 		if finalStateHash != finalCandidateHash {
 			sm.log.Debugf("getCandidatesToCommit from %v to %v: tentative state obtained, however its hash does not match last candidate expected hash: %v != %v",
@@ -140,7 +140,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 	for i, stateCandidateBlock := range stateCandidateBlocks {
 		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i+1, len(stateCandidateBlocks))
 		candidatePrevStateHash := stateCandidateBlock.getBlock().PreviousStateHash()
-		calculatedPrevStateHash := calculatedPrevState.Hash()
+		calculatedPrevStateHash := calculatedPrevState.StateCommitment()
 		if candidatePrevStateHash != calculatedPrevStateHash {
 			sm.log.Errorf("getCandidatesToCommit from %v to %v: candidate previous state hash does not match calculated state hash: %v <> %v",
 				fromStateIndex, toStateIndex, candidatePrevStateHash.String(), calculatedPrevStateHash.String())

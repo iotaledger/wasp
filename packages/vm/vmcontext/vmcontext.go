@@ -91,7 +91,7 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 	if err != nil {
 		return nil, xerrors.Errorf("CreateVMContext: can't parse state hash from chain input %w", err)
 	}
-	if stateHash != task.VirtualState.Hash() {
+	if stateHash != task.VirtualState.StateCommitment() {
 		return nil, xerrors.New("CreateVMContext: state hash mismatch")
 	}
 	if task.VirtualState.BlockIndex() != task.ChainInput.GetStateIndex() {

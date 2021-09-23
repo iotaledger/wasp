@@ -34,7 +34,7 @@ func TestVirtualStateBasic(t *testing.T) {
 	t.Run("zero state", func(t *testing.T) {
 		db := mapdb.NewMapDB()
 		vs1, blk := newZeroVirtualState(db, nil)
-		h1 := vs1.Hash()
+		h1 := vs1.StateCommitment()
 		require.EqualValues(t, OriginStateHash(), h1)
 		require.EqualValues(t, 0, vs1.BlockIndex())
 		require.EqualValues(t, newOriginBlock().Bytes(), blk.Bytes())
@@ -52,8 +52,8 @@ func TestOriginHashes(t *testing.T) {
 		require.EqualValues(t, 0, origBlock.BlockIndex())
 		require.True(t, origBlock.Timestamp().IsZero())
 		require.EqualValues(t, hashing.NilHash, origBlock.PreviousStateHash())
-		t.Logf("zero state hash = %s", z.Hash().String())
-		require.EqualValues(t, calcOriginStateHash(), z.Hash())
+		t.Logf("zero state hash = %s", z.StateCommitment().String())
+		require.EqualValues(t, calcOriginStateHash(), z.StateCommitment())
 	})
 	t.Run("origin state construct", func(t *testing.T) {
 		origBlock := newOriginBlock()
@@ -64,7 +64,7 @@ func TestOriginHashes(t *testing.T) {
 		emptyState := newVirtualState(mapdb.NewMapDB(), nil)
 		err := emptyState.ApplyBlock(origBlock)
 		require.NoError(t, err)
-		require.EqualValues(t, emptyState.Hash(), calcOriginStateHash())
+		require.EqualValues(t, emptyState.StateCommitment(), calcOriginStateHash())
 		require.EqualValues(t, hashing.NilHash, emptyState.PreviousStateHash())
 	})
 }
@@ -93,7 +93,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, exists)
 
-		require.EqualValues(t, vs1.Hash(), vs2.Hash())
+		require.EqualValues(t, vs1.StateCommitment(), vs2.StateCommitment())
 		require.EqualValues(t, vs1.BlockIndex(), vs2.BlockIndex())
 		require.EqualValues(t, vs1.Timestamp(), vs2.Timestamp())
 		require.EqualValues(t, vs1.PreviousStateHash(), vs2.PreviousStateHash())
@@ -101,7 +101,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 0, vs2.BlockIndex())
 		require.EqualValues(t, hashing.NilHash, vs2.PreviousStateHash())
 
-		require.EqualValues(t, vs1.Clone().Hash(), vs2.Clone().Hash())
+		require.EqualValues(t, vs1.Clone().StateCommitment(), vs2.Clone().StateCommitment())
 	})
 	t.Run("load 0 block", func(t *testing.T) {
 		store := mapdb.NewMapDB()
@@ -149,7 +149,7 @@ func TestStateWithDB(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, exists)
 
-		require.EqualValues(t, vs1.Hash(), vs2.Hash())
+		require.EqualValues(t, vs1.StateCommitment(), vs2.StateCommitment())
 		require.EqualValues(t, vs1.BlockIndex(), vs2.BlockIndex())
 		require.EqualValues(t, vs1.Timestamp(), vs2.Timestamp())
 		require.EqualValues(t, 1, vs2.BlockIndex())
@@ -165,7 +165,7 @@ func TestStateWithDB(t *testing.T) {
 		data = vs2.KVStoreReader().MustGet("key")
 		require.EqualValues(t, []byte("value"), data)
 
-		require.EqualValues(t, vs1.Hash(), vs2.Hash())
+		require.EqualValues(t, vs1.StateCommitment(), vs2.StateCommitment())
 	})
 	t.Run("state reader", func(t *testing.T) {
 		store := mapdb.NewMapDB()
@@ -211,7 +211,7 @@ func TestStateWithDB(t *testing.T) {
 
 		h, err := rdr.Hash()
 		require.NoError(t, err)
-		require.EqualValues(t, vs2.Hash(), h)
+		require.EqualValues(t, vs2.StateCommitment(), h)
 		require.EqualValues(t, "value", string(rdr.KVStoreReader().MustGet("key")))
 
 		glb.InvalidateSolidIndex()
@@ -225,11 +225,11 @@ func TestVariableStateBasic(t *testing.T) {
 	chainID := iscp.NewChainID(ledgerstate.NewAliasAddress([]byte("dummy")))
 	vs1, err := CreateOriginState(mapdb.NewMapDB(), chainID)
 	require.NoError(t, err)
-	h1 := vs1.Hash()
+	h1 := vs1.StateCommitment()
 	require.EqualValues(t, OriginStateHash(), h1)
 
 	vs2 := vs1.Clone()
-	h2 := vs2.Hash()
+	h2 := vs2.StateCommitment()
 	require.EqualValues(t, h1, h2)
 
 	vs1.KVStore().Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.EncodeUint64(1))
@@ -242,12 +242,12 @@ func TestVariableStateBasic(t *testing.T) {
 	vs2.KVStore().Set("kuku", codec.EncodeString("A"))
 	vs2.KVStore().Set("num", codec.EncodeInt64(int64(123)))
 
-	require.EqualValues(t, vs1.Hash(), vs2.Hash())
+	require.EqualValues(t, vs1.StateCommitment(), vs2.StateCommitment())
 
 	vs3 := vs1.Clone()
 	vs4 := vs2.Clone()
 
-	require.EqualValues(t, vs3.Hash(), vs4.Hash())
+	require.EqualValues(t, vs3.StateCommitment(), vs4.StateCommitment())
 }
 
 func TestStateReader(t *testing.T) {

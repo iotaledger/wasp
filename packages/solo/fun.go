@@ -36,7 +36,7 @@ func (ch *Chain) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
-	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.Hash().String())
+	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.StateCommitment().String())
 	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GetGenesisAddress())
 	return buf.String()
 }
