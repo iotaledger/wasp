@@ -1,6 +1,8 @@
 <script lang="ts">
   import { round } from './../../store';
 
+  export let disabled: boolean = false;
+
   let active;
 </script>
 
@@ -16,6 +18,7 @@
       }}
       class="cell"
       class:active={active === index}
+      {disabled}
     >
       {number}
     </button>

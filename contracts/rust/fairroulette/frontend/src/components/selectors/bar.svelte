@@ -1,6 +1,8 @@
 <script lang="ts">
   import { balance, round, isWorking } from './../../store';
 
+  export let disabled: boolean = false;
+
   $: value = Number($balance / 2n); //Initial value (middle value)
 
   $: $round.betAmount = BigInt(value);
@@ -15,6 +17,7 @@
       min={0}
       max={Number($balance)}
       id="myRange"
+      {disabled}
     />
   </div>
 </div>

@@ -1,20 +1,36 @@
 <script lang="ts">
   import { BarSelector, MultipleSelector } from './../components';
   import { placeBet, sendFaucetRequest } from './../lib';
-  import { round, balance, requestingFunds } from './../store';
+  import {
+    round,
+    balance,
+    requestingFunds,
+    placingBet,
+    address,
+  } from './../store';
   import Button from './button.svelte';
+
+  //TODO: Improve disable condition
+  $: disabled = $placingBet;
+
+  $: console.log(disabled);
+  $: console.log(
+    '$round.players.filter((_player) => _player.address === $address).length > 0',
+    $round.players.filter((_player) => _player.address === $address).length > 0
+  );
 </script>
 
-<div class="betting-system">
-  <MultipleSelector />
+<div class="betting-system" class:disabled>
+  <MultipleSelector {disabled} />
   <div>
-    <BarSelector />
+    <BarSelector {disabled} />
     <div class="bet-button">
       {#if $balance > 1n}
         <Button
           label="Place bet"
-          disabled={$round.betSelection === undefined}
+          disabled={$round.betSelection === undefined || $placingBet}
           onClick={placeBet}
+          loading={$placingBet}
         />
       {:else}
         <Button
@@ -40,6 +56,9 @@
       justify-content: center;
       gap: 60px;
       align-items: flex-end;
+    }
+    &.disabled {
+      opacity: 0.5;
     }
     .bet-button {
       margin-top: 24px;

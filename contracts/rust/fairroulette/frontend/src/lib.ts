@@ -2,7 +2,7 @@ import { get } from 'svelte/store';
 import config from '../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
-import { address, addressIndex, balance, isWorking, keyPair, requestingFunds, round, seed, timestamp } from './store';
+import { address, addressIndex, balance, isWorking, placingBet, keyPair, requestingFunds, round, seed, timestamp, state, START_GAME_STATE, GAME_STARTED_STATE, ADD_FUNDS_STATE } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -63,6 +63,7 @@ export function startFundsUpdater() {
 }
 
 export async function placeBet() {
+    placingBet.set(true)
     isWorking.set(true);
     try {
         await fairRouletteService.placeBetOnLedger(
@@ -153,6 +154,7 @@ export function subscribeToRouletteEvents() {
     });
 
     fairRouletteService.on('betPlaced', (bet: Bet) => {
+        placingBet.set(false);
         round.update((_round) => {
             _round.players.push(
                 {

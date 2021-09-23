@@ -1,9 +1,12 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import { randomIntFromInterval } from '../utils/utils';
-
-  export let winnerNumber: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 = undefined;
-  export let mode: 'GAME_STARTED' | 'GAME_STOPPED';
+  import {
+    GAME_RUNNING_STATE,
+    round,
+    START_GAME_STATE,
+    state,
+  } from './../store';
 
   let numbers: {
     number: number;
@@ -45,14 +48,18 @@
     src="roulette_background.svg"
     alt="roulette"
   />
-  {#if mode === 'GAME_STARTED' && winnerNumber === undefined}
+  {#if $state === GAME_RUNNING_STATE}
     {#each numbers as { url, active }}
       {#if active}
         <img class="flashedNumber" src={url} alt="active" />
       {/if}
     {/each}
-  {:else if mode === 'GAME_STARTED' && winnerNumber > 0 && winnerNumber < 9}
-    <img class="flashedNumber" src={numbers[winnerNumber - 1].url} alt="active" />
+  {:else if $state === START_GAME_STATE && $round.winningNumber > 0n}
+    <img
+      class="flashedNumber"
+      src={numbers[Number($round.winningNumber - 1n)].url}
+      alt="active"
+    />
   {/if}
 </div>
 

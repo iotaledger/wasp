@@ -1,4 +1,4 @@
-import { derived, Readable, Writable, writable } from 'svelte/store';
+import { derived, Readable, Writable, writable, get } from 'svelte/store';
 import type { IRound } from './models/IRound';
 import type { Buffer, IKeyPair } from './wasp_client';
 import { Base58 } from "./wasp_client/crypto/base58";
@@ -13,7 +13,13 @@ export const balance: Writable<bigint> = writable(0n)
 export const timestamp: Writable<number> = writable()
 export const isWorking: Writable<boolean> = writable()
 export const requestingFunds: Writable<boolean> = writable(false)
+export const placingBet: Writable<boolean> = writable(false)
 
+export const START_GAME_STATE = "START_GAME";
+export const GAME_RUNNING_STATE = "GAME_RUNNING";
+
+export const state: Writable<string> = writable(START_GAME_STATE);
+export const showAddFunds: Writable<boolean> = writable(true);
 const RESET_ROUND: IRound = {
     active: false,
     logs: [],
@@ -29,4 +35,16 @@ export const round: Writable<IRound> = writable(RESET_ROUND);
 
 function resetRound(): void {
     round.set(RESET_ROUND)
+}
+
+export function updateGameState() {
+    if (get(balance) > 0n) {
+        showAddFunds.set(false);
+    }
+    if (get(round).active) {
+        state.set(GAME_RUNNING_STATE)
+    }
+    else {
+        state.set(START_GAME_STATE)
+    }
 }
