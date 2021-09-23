@@ -169,10 +169,14 @@ func (vs *virtualState) ExtractBlock() (Block, error) {
 	return ret, nil
 }
 
-// Hash return hash of the state
+// Hash return hash of the state. It is recursive hashing of the previous state hash and the block
 func (vs *virtualState) Hash() hashing.HashValue {
 	if vs.isStateHashOutdated {
-		vs.stateHash = hashing.HashData(vs.stateUpdate.Bytes())
+		block, err := vs.ExtractBlock()
+		if err != nil {
+			panic(xerrors.Errorf("StateCommitment: %v", err))
+		}
+		vs.stateHash = hashing.HashData(vs.stateHash[:], block.Bytes())
 		vs.isStateHashOutdated = false
 	}
 	return vs.stateHash
