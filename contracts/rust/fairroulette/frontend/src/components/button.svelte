@@ -25,12 +25,8 @@
     color: var(--white);
     padding: 12px;
     width: 100%;
-    display: flex;
     align-items: center;
     justify-content: center;
-    .label {
-      margin: 0 6px;
-    }
     @media (min-width: 1024px) {
       padding: 12px 30px;
     }
