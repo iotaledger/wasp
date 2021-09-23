@@ -18,8 +18,6 @@ const PluginName = "Profiling"
 
 var log *logger.Logger
 
-const writeProfiles = true
-
 // Init gets the plugin instance.
 func Init() *node.Plugin {
 	return node.NewPlugin(PluginName, node.Enabled, configure, run)
@@ -38,7 +36,7 @@ func run(_ *node.Plugin) {
 	runtime.SetBlockProfileRate(5)
 	runtime.SetCPUProfileRate(5)
 
-	if writeProfiles {
+	if parameters.GetBool(parameters.ProfilingWriteProfiles) {
 		profConfig := &profile.Config{
 			Path:                "./profiles",
 			EnableInterruptHook: true,
