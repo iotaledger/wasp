@@ -48,22 +48,49 @@ input:disabled, button:disabled {
 	cursor: default;
 	pointer-events: none;
 }
-h1 {
-    font-size: 32px;
-    line-height: 36px;
-    letter-spacing: 0.75px;
-    color: #ffffff;
+h1{
+	font-size: 40px;
+	line-height: 115%;
+	letter-spacing: 0.75px;
+	color:var(--white);
 	margin:0;
 }
 @media (min-width: 1024px) {
 	h1{
+		font-size: 64px;
+line-height: 120%;
+letter-spacing: 0.02em;
+	}
+}
+h2 {
+    font-size: 32px;
+    line-height: 36px;
+    letter-spacing: 0.75px;
+	color:var(--white);
+	margin:0;
+}
+@media (min-width: 1024px) {
+	h2{
 		font-size: 48px;
 		line-height: 120%;
 	}
 }
 
 /* Custom utility classes */
-
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+@media (min-width: 1024px) {
+	.container{
+		padding: 0 24px;
+	}
+}
+@media (min-width: 2000px) {
+	.container{
+		max-width: 1600px;
+	}
+}
 .eyebrow {
 	text-transform: capitalize;
 	font-weight: bold;

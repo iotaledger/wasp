@@ -26,7 +26,7 @@
 </script>
 
 <div class="message">
-  <h1 class="title">{MESSAGES[phase].title}</h1>
+  <h2 class="title">{MESSAGES[phase].title}</h2>
   {#if MESSAGES[phase].subtitle}
     <div class="subtitle">{MESSAGES[phase].subtitle}</div>
   {/if}
