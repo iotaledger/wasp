@@ -1,38 +1,38 @@
 <script lang="ts">
-  export let phase: string = 'GAME_STARTED';
-
+  import {
+    state,
+    START_GAME_STATE,
+    GAME_RUNNING_STATE,
+    showAddFunds,
+  } from './../store';
   const MESSAGES = {
-    GAME_STARTED: {
+    [START_GAME_STATE]: {
       title: 'Start game',
-      subtitle: 'This is a subtitle',
-      description: 'The round starts in 50 seconds.',
+      description: 'Start game!',
     },
-    GAME_STOPPED: {
-      title: 'Start game',
-      subtitle: 'This is a subtitle',
-      description: 'The round starts in 50 seconds.',
+
+    [GAME_RUNNING_STATE]: {
+      title: 'GAME RUNNING!',
+      description: 'The round ends in 50 seconds.',
     },
-    WINNER: {
-      title: 'Start game',
-      subtitle: 'This is a subtitle',
-      description: 'The round starts in 50 seconds.',
-    },
-    ADD_FUNDS: {
-      title: 'Start game',
-      subtitle: 'This is a subtitle',
-      description: 'The round starts in 50 seconds.',
-    },
+  };
+
+  const ADD_FUNDS_MESSAGE = {
+    title: 'Add funds',
+    description:
+      'To start the demo, you first need to request funds for your wallet. Those coins are generated from the dev-net.',
   };
 </script>
 
 <div class="message">
-  <h1 class="title">{MESSAGES[phase].title}</h1>
-  {#if MESSAGES[phase].subtitle}
-    <div class="subtitle">{MESSAGES[phase].subtitle}</div>
-  {/if}
-  {#if MESSAGES[phase].description}
-    <div class="description">{MESSAGES[phase].description}</div>
-  {/if}
+  <h1 class="title">
+    {$showAddFunds ? ADD_FUNDS_MESSAGE.title : MESSAGES[$state].title}
+  </h1>
+  <div class="description">
+    {$showAddFunds
+      ? ADD_FUNDS_MESSAGE.description
+      : MESSAGES[$state].description}
+  </div>
   <div />
 </div>
 

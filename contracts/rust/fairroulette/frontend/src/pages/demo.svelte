@@ -8,12 +8,26 @@
     LogsPanel,
     PlayersPanel,
     Roulette,
-    WalletPanel,
     State,
+    WalletPanel,
   } from './../components';
   import { initialize } from './../lib';
+  import { balance, round, updateGameState } from './../store';
 
   onMount(initialize);
+
+  $: updateGameState(), $balance, $round;
+
+  //TODO: Delete this. Force game running
+  setInterval(() => ($round.active = !$round.active), 5000);
+  setTimeout(
+    () =>
+      $round.players.push({
+        address: '12kegXymhSJ4P7H7QjirfS124bZ4ExBQzZcQYxvqgsLu1',
+        bet: 10,
+      }),
+    10000
+  );
 </script>
 
 <div class="container">
@@ -25,12 +39,12 @@
       <WalletPanel />
     </div>
     <div class="roulette_state">
-      <State phase="GAME_STARTED" />
+      <State />
     </div>
   </div>
   <div class="layout_roulette">
     <div class="roulette_game">
-      <Roulette mode="GAME_STARTED" />
+      <Roulette />
       <div class="bet_system">
         <BettingSystem />
       </div>
