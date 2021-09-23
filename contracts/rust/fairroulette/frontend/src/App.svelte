@@ -1,6 +1,20 @@
-<script lang="ts">
-  export const name = 'app';
+<!-- <script context="module">
+  const FOUNDATION_DATA_URL = 'https://webassets.iota.org/data/foundation.json';
 
+  export async function preload({ params, query, host }) {
+    let foundationData = await this.fetch(FOUNDATION_DATA_URL);
+    console.log('foundationData', foundationData);
+    if (foundationData.status === 200) {
+      return {
+        foundationData: await foundationData.json(),
+      };
+    }
+    else {
+      this.error(foundationData.status);
+    }
+  }
+</script> -->
+<script lang="ts">
   import { onMount } from 'svelte';
   import {
     BalancePanel,
@@ -8,12 +22,17 @@
     LogsPanel,
     PlayersPanel,
     Roulette,
+    Footer,
   } from './components';
   import { WalletPanel } from './components/';
   import Header from './components/header.svelte';
   import State from './components/state.svelte';
   import { initialize } from './lib';
   import type { IState } from './models/IState';
+
+  export const name = 'app';
+  export let foundationData;
+  console.log('foundationData', foundationData);
 
   const INFORMATION_STATE: IState = {
     title: 'Start game',
@@ -57,6 +76,7 @@
   </div>
 </main>
 
+<!-- <Footer {foundationData} /> -->
 <style lang="scss">
   .container {
     max-width: 1200px;

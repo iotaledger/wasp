@@ -9,4 +9,5 @@ export { default as Roulette } from './roulette.svelte'
 export { default as State } from './state.svelte'
 export { default as BarSelector } from './selectors/bar.svelte'
 export { default as MultipleSelector } from './selectors/multiple.svelte'
+export { default as Footer } from './footer.svelte'
 
