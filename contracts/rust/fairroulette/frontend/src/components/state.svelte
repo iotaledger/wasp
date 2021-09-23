@@ -25,9 +25,9 @@
 </script>
 
 <div class="message">
-  <h1 class="title">
+  <h2 class="title">
     {$showAddFunds ? ADD_FUNDS_MESSAGE.title : MESSAGES[$state].title}
-  </h1>
+  </h2>
   <div class="description">
     {$showAddFunds
       ? ADD_FUNDS_MESSAGE.description
