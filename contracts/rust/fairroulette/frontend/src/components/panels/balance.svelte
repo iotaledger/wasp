@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { balance } from './../../store';
+  import { balance, requestingFunds } from './../../store';
   import { Button } from './../../components';
   import { sendFaucetRequest } from './../../lib';
 </script>
@@ -10,7 +10,12 @@
     <div class="balance-amount">{$balance}i</div>
   </div>
   <div class="request-funds-button">
-    <Button label="Request funds" onClick={sendFaucetRequest} />
+    <Button
+      label={$requestingFunds ? 'Requesting...' : 'Request funds'}
+      onClick={sendFaucetRequest}
+      disabled={$requestingFunds || $balance > 0n}
+      loading={$requestingFunds}
+    />
   </div>
 </div>
 
