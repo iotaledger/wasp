@@ -139,7 +139,6 @@ func (vs *virtualState) ApplyBlock(b Block) error {
 		return xerrors.New("ApplyBlock: inconsistent timestamps")
 	}
 	vs.ApplyStateUpdates(b.(*blockImpl).stateUpdate)
-	vs.regenHash()
 	vs.empty = false
 	return nil
 }
@@ -170,19 +169,13 @@ func (vs *virtualState) ExtractBlock() (Block, error) {
 	return ret, nil
 }
 
-// TODO implement Merkle hashing
-
 // Hash return hash of the state
 func (vs *virtualState) Hash() hashing.HashValue {
 	if vs.isStateHashOutdated {
-		vs.regenHash()
+		vs.stateHash = hashing.HashData(vs.stateUpdate.Bytes())
+		vs.isStateHashOutdated = false
 	}
 	return vs.stateHash
-}
-
-func (vs *virtualState) regenHash() {
-	vs.stateHash = hashing.HashData(vs.stateUpdate.Bytes())
-	vs.isStateHashOutdated = false
 }
 
 // endregion ////////////////////////////////////////////////////////////

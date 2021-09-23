@@ -12,10 +12,6 @@ import (
 )
 
 func TestBlockBasic(t *testing.T) {
-	t.Run("fail no arguments", func(t *testing.T) {
-		_, err := newBlock()
-		require.Error(t, err)
-	})
 	t.Run("fail no state index", func(t *testing.T) {
 		su := NewStateUpdate()
 		_, err := newBlock(su)

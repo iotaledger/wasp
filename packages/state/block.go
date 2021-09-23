@@ -18,15 +18,10 @@ type blockImpl struct {
 }
 
 // validates, enumerates and creates a block from array of state updates
-func newBlock(stateUpdate ...StateUpdate) (Block, error) {
-	ret := &blockImpl{}
-	if len(stateUpdate) > 0 {
-		ret.stateUpdate = &stateUpdateImpl{
-			mutations: stateUpdate[0].Mutations(),
-		}
-	} else {
-		ret.stateUpdate = NewStateUpdate()
-	}
+func newBlock(stateUpdate StateUpdate) (Block, error) {
+	ret := &blockImpl{stateUpdate: &stateUpdateImpl{
+		mutations: stateUpdate.Mutations(),
+	}}
 	var err error
 	if ret.blockIndex, err = findBlockIndexMutation(ret.stateUpdate); err != nil {
 		return nil, err
