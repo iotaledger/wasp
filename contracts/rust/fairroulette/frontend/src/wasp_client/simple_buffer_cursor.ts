@@ -9,10 +9,11 @@ export class SimpleBufferCursor {
     return this._buffer;
   }
 
-  constructor(buffer: Buffer) {
+  constructor(buffer: Buffer = Buffer.alloc(0)) {
     this._buffer = buffer;
     this._traverse = 0;
   }
+
 
   readIntBE(length: number): number {
     const value = this._buffer.readIntBE(this._traverse, length);
