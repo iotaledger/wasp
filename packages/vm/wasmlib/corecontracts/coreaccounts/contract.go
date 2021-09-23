@@ -91,11 +91,11 @@ func (sc Funcs) TotalAssets(ctx wasmlib.ScViewCallContext) *TotalAssetsCall {
 
 func OnLoad() {
 	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncDeposit, nil)
-	exports.AddFunc(FuncHarvest, nil)
-	exports.AddFunc(FuncWithdraw, nil)
-	exports.AddView(ViewAccounts, nil)
-	exports.AddView(ViewBalance, nil)
-	exports.AddView(ViewGetAccountNonce, nil)
-	exports.AddView(ViewTotalAssets, nil)
+	exports.AddFunc(FuncDeposit, wasmlib.FuncError)
+	exports.AddFunc(FuncHarvest, wasmlib.FuncError)
+	exports.AddFunc(FuncWithdraw, wasmlib.FuncError)
+	exports.AddView(ViewAccounts, wasmlib.ViewError)
+	exports.AddView(ViewBalance, wasmlib.ViewError)
+	exports.AddView(ViewGetAccountNonce, wasmlib.ViewError)
+	exports.AddView(ViewTotalAssets, wasmlib.ViewError)
 }

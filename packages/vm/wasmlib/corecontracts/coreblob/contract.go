@@ -62,8 +62,8 @@ func (sc Funcs) ListBlobs(ctx wasmlib.ScViewCallContext) *ListBlobsCall {
 
 func OnLoad() {
 	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncStoreBlob, nil)
-	exports.AddView(ViewGetBlobField, nil)
-	exports.AddView(ViewGetBlobInfo, nil)
-	exports.AddView(ViewListBlobs, nil)
+	exports.AddFunc(FuncStoreBlob, wasmlib.FuncError)
+	exports.AddView(ViewGetBlobField, wasmlib.ViewError)
+	exports.AddView(ViewGetBlobInfo, wasmlib.ViewError)
+	exports.AddView(ViewListBlobs, wasmlib.ViewError)
 }

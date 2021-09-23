@@ -18,6 +18,14 @@ func OnCall(index int32) {
 	AddView(nil)[index&0x7fff](ScViewContext{})
 }
 
+func FuncError(ctx ScFuncContext) {
+	Panic("Invalid core func call")
+}
+
+func ViewError(ctx ScViewContext) {
+	Panic("Invalid core view call")
+}
+
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
 type ScExports struct {

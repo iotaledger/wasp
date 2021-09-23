@@ -234,7 +234,7 @@ func (s *Schema) generateGoContract() error {
 		fmt.Fprintf(file, "\texports := wasmlib.NewScExports()\n")
 		for _, f := range s.Funcs {
 			constName := capitalize(f.FuncName)
-			fmt.Fprintf(file, "\texports.Add%s(%s, nil)\n", f.Kind, constName)
+			fmt.Fprintf(file, "\texports.Add%s(%s, wasmlib.%sError)\n", f.Kind, constName, f.Kind)
 		}
 		fmt.Fprintf(file, "}\n")
 	}
