@@ -55,16 +55,7 @@
       overflow-y: auto;
       padding-right: 16px;
       margin-top: 16px;
-      &::-webkit-scrollbar {
-        width: 6px;
-      }
-      &::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      &::-webkit-scrollbar-thumb {
-        background: #485776;
-        border-radius: 4px;
-      }
+
       .player {
         display: inline-flex;
         position: relative;
