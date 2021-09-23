@@ -179,9 +179,9 @@
         width: 16.6667%;
         text-decoration: none;
         font-family: 'Metropolis Bold';
-        padding: 1rem 0.5rem;
         font-size: 16px;
         line-height: 24px;
+        padding: 8px;
         text-align: center;
         letter-spacing: 0.02em;
         text-transform: capitalize;
@@ -189,10 +189,17 @@
         display: flex;
         -webkit-box-pack: center;
         justify-content: center;
+        @media (min-width: 1024px) {
+          padding: 1rem 0.5rem;
+        }
+        img {
+          height: 24px;
+        }
         span {
           display: none;
           @media (min-width: 1024px) {
             display: flex;
+            margin-left: 12px;
           }
         }
       }
