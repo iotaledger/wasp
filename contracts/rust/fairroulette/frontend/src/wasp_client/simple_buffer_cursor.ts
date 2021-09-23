@@ -1,4 +1,4 @@
-import { Buffer } from './buffer'
+import { Buffer } from './buffer';
 
 export class SimpleBufferCursor {
 
@@ -52,6 +52,13 @@ export class SimpleBufferCursor {
   writeIntBE(value: number, length: number) {
     var nBuffer = Buffer.alloc(length);
     nBuffer.writeIntBE(value, 0, length);
+
+    this._buffer = Buffer.concat([this._buffer, nBuffer]);
+  }
+
+  writeInt8(value: number) {
+    var nBuffer = Buffer.alloc(1);
+    nBuffer.writeInt8(value, 0);
 
     this._buffer = Buffer.concat([this._buffer, nBuffer]);
   }

@@ -2,6 +2,7 @@ import { Base58 } from './crypto/base58';
 import { Buffer } from './buffer';
 import { Colors } from './colors';
 import { ED25519 } from './crypto/ed25519';
+import { SimpleBufferCursor } from './simple_buffer_cursor';
 import type { ITransaction } from './models/ITransaction';
 import type { IKeyPair } from "./models";
 
@@ -25,54 +26,62 @@ export class Transaction {
      * @returns The essence of the transaction.
      */
     public static essence(tx: ITransaction, payload: Buffer = Buffer.alloc(0)): Buffer {
+        var buffer = new SimpleBufferCursor(Buffer.alloc(0));
+
         const buffers: Buffer[] = [];
 
-        // version
         const version = Buffer.alloc(1);
         version.writeUInt8(tx.version, 0);
+        buffer.writeInt8(tx.version);
         buffers.push(version);
 
-        // timestamp
+
         const timestamp = Buffer.alloc(8);
         timestamp.writeBigInt64LE(tx.timestamp, undefined);
+        buffer.writeUInt64LE(tx.timestamp);
         buffers.push(timestamp);
 
-        // aManaPledge
         buffers.push(Base58.decode(tx.aManaPledge));
+        buffer.writeBytes(Base58.decode(tx.aManaPledge));
 
-        // cManaPledge
         buffers.push(Base58.decode(tx.cManaPledge));
+        buffer.writeBytes(Base58.decode(tx.cManaPledge));
 
-        // Input Size
+
         const inputsCount = Buffer.alloc(2);
         inputsCount.writeUInt16LE(tx.inputs.length, undefined);
+        buffer.writeUInt16LE(tx.inputs.length);
         buffers.push(inputsCount);
 
-        // Inputs
         for (const input of tx.inputs) {
             const inputType = Buffer.alloc(1);
             inputType.writeUInt8(0, undefined);
+            buffer.writeInt8(0);
             buffers.push(inputType);
 
             const decodedInput = Base58.decode(input);
             buffers.push(decodedInput);
+            buffer.writeBytes(decodedInput);
         }
 
-        // Output count
         const outputsCount = Buffer.alloc(2);
         outputsCount.writeUInt16LE(Object.keys(tx.outputs).length, undefined);
+        buffer.writeUInt16LE(Object.keys(tx.outputs).length);
         buffers.push(outputsCount);
 
-
-
-        // Outputs
         const bufferOutputs: Buffer[] = [];
+        const simpleBufferOutputs: SimpleBufferCursor[] = [];
+
         for (const address in tx.outputs) {
+            const sBuffer = new SimpleBufferCursor(Buffer.alloc(0));
+
             const outputType = Buffer.alloc(1);
             outputType.writeUInt8(3, undefined);
+            sBuffer.writeInt8(3);
 
             const balancesCount = Buffer.alloc(4);
             balancesCount.writeUInt32LE(tx.outputs[address].length, undefined);
+            sBuffer.writeUInt32LE(tx.outputs[address].length);
 
             const bufferColors: Buffer[] = [];
             for (const balance of tx.outputs[address]) {
@@ -82,12 +91,20 @@ export class Transaction {
             }
             bufferColors.sort((a, b) => a.compare(b));
 
+            bufferColors.forEach(x => sBuffer.writeBytes(x));
+
             const decodedAddress = Base58.decode(address);
+            sBuffer.writeBytes(decodedAddress);
 
             const type = Buffer.alloc(1);
 
             if (address == tx.chainId) {
                 type.writeInt8(4, undefined); // no timelock, no fallbackAddress, HAS payload
+
+                sBuffer.writeInt8(4);
+            } else {
+                sBuffer.writeInt8(0);
+
             }
 
             let output = Buffer.concat([outputType, balancesCount, Buffer.concat(bufferColors), decodedAddress, type]);
@@ -95,16 +112,25 @@ export class Transaction {
             if (address == tx.chainId) {
                 const payloadLength = Buffer.alloc(2);
                 payloadLength.writeUInt16LE(tx.payload.length, undefined);
+                sBuffer.writeUInt16LE(tx.payload.length);
+                sBuffer.writeBytes(tx.payload);
 
                 output = Buffer.concat([output, payloadLength, tx.payload]);
             }
 
             bufferOutputs.push(output);
+            simpleBufferOutputs.push(sBuffer);
         }
 
         bufferOutputs.sort((a, b) => a.compare(b));
+        simpleBufferOutputs.sort((a, b) => a.buffer.compare(b.buffer));
+
+        simpleBufferOutputs.forEach(x => buffer.writeBytes(x.buffer));
+
         buffers.push(Buffer.concat(bufferOutputs));
         buffers.push(Buffer.alloc(4));
+        buffer.writeUInt32LE(0);
+
 
         return Buffer.concat(buffers);
     }

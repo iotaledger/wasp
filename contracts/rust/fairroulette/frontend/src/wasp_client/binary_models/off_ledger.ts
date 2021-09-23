@@ -1,7 +1,7 @@
-import { Base58, ED25519 } from '../crypto'
-import { blake2b } from 'blakejs'
-import { Buffer } from '../buffer'
-import { SimpleBufferCursor } from '../simple_buffer_cursor'
+import { Base58, ED25519 } from '../crypto';
+import { blake2b } from 'blakejs';
+import { Buffer } from '../buffer';
+import { SimpleBufferCursor } from '../simple_buffer_cursor';
 import type { IKeyPair } from '../models';
 import type { IOffLedger } from './IOffLedger';
 

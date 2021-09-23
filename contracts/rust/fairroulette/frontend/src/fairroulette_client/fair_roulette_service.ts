@@ -1,5 +1,5 @@
 import config from '../../config.dev';
-import { createNanoEvents, Emitter } from 'nanoevents';
+import { createNanoEvents, Emitter, Unsubscribe } from 'nanoevents';
 import { HName } from '../wasp_client/crypto/hname';
 import {
   BasicClient,
@@ -63,13 +63,12 @@ export class FairRouletteService {
     this.connectWebSocket();
   }
 
-  private connectWebSocket() {
+  private connectWebSocket(): void {
     const webSocketUrl = config.waspWebSocketUrl.replace('%chainId', this.chainId);
     console.log(`Connecting to Websocket => ${webSocketUrl}`);
     this.webSocket = new WebSocket(webSocketUrl);
     this.webSocket.addEventListener('message', (x) => this.handleIncomingMessage(x));
     this.webSocket.addEventListener('close', () => setTimeout(this.connectWebSocket.bind(this), 1000));
-    this.webSocket.addEventListener('error', () => setTimeout(this.connectWebSocket.bind(this), 1000));
   }
 
   private handleVmMessage(message: string[]): void {
@@ -104,7 +103,7 @@ export class FairRouletteService {
         const bet: Bet = {
           better: message[index + 1],
           amount: Number(message[index + 2]),
-          betNumber: -1,
+          betNumber: undefined,
         };
 
         this.emitter.emit('payout', bet);
@@ -120,9 +119,7 @@ export class FairRouletteService {
   }
 
   private handleIncomingMessage(message: MessageEvent<string>): void {
-    const msg = message.data.split(' ');
-
-    console.log(msg);
+    const msg = message.data.toString().split(' ');
 
     if (msg.length == 0) {
       return;
@@ -132,11 +129,10 @@ export class FairRouletteService {
       return;
     }
 
-
     this.handleVmMessage(msg);
   }
 
-  public async placeBet(keyPair: IKeyPair, betNumber: number, take: bigint): Promise<void> {
+  public async placeBetOffLedger(keyPair: IKeyPair, betNumber: number, take: bigint): Promise<void> {
     let betRequest: IOffLedger = {
       requestType: 1,
       arguments: [{ key: '-number', value: betNumber }],
@@ -164,7 +160,7 @@ export class FairRouletteService {
       ],
     };
 
-    await this.walletService.sendOnLedgerRequest(keyPair, address, this.chainId, betRequest);
+    await this.walletService.sendOnLedgerRequest(keyPair, address, this.chainId, betRequest, take);
 
   }
 
@@ -228,7 +224,7 @@ export class FairRouletteService {
     return lastWinningNumber.readBigUInt64LE(0);
   }
 
-  public on<E extends keyof Events>(event: E, callback: Events[E]) {
+  public on<E extends keyof Events>(event: E, callback: Events[E]): Unsubscribe {
     return this.emitter.on(event, callback);
   }
 }

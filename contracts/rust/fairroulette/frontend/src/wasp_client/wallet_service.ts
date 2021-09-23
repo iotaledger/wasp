@@ -9,7 +9,7 @@ import type { BasicClient } from './basic_client';
 import type { IOnLedger } from './binary_models/IOnLedger';
 import type { ITransaction } from './models/ITransaction';
 import type { IUnlockBlock } from './models/IUnlockBlock';
-import type { IKeyPair } from './models';
+import type { IKeyPair, ISendTransactionResponse } from './models';
 
 
 
@@ -65,7 +65,7 @@ export class WalletService {
     return result;
   }
 
-  public async sendOnLedgerRequest(keyPair: IKeyPair, address: string, chainId: string, payload: IOnLedger, transfer: bigint = 1n) {
+  public async sendOnLedgerRequest(keyPair: IKeyPair, address: string, chainId: string, payload: IOnLedger, transfer: bigint = 1n): Promise<ISendTransactionResponse> {
     if (transfer <= 0) {
       transfer = 1n;
     }

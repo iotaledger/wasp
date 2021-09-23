@@ -1,7 +1,7 @@
 import { Base58 } from './crypto';
 import { ColorCollection, Colors } from './colors';
 import type { BasicClient } from './basic_client';
-import type { IWalletAddressOutput, IWalletOutput, IWalletOutputBalance } from './models';
+import type { IWalletAddressOutput, IWalletOutput } from './models';
 
 export type BuiltOutputResult = {
   [address: string]: {
@@ -60,9 +60,7 @@ export class BasicWallet {
     for (const unspentOutput of unspentOutputs) {
       let outputsFromAddressSpent = false;
 
-      const confirmedUnspentOutputs = unspentOutput.outputs.filter(o => o.inclusionState.confirmed);
-
-      for (const output of confirmedUnspentOutputs) {
+      for (const output of unspentOutput.outputs) {
         let requiredColorFoundInOutput = false;
 
         if (!output.balances[Colors.IOTA_COLOR_STRING]) {
@@ -94,7 +92,7 @@ export class BasicWallet {
       }
 
       if (outputsFromAddressSpent) {
-        for (const output of confirmedUnspentOutputs) {
+        for (const output of unspentOutput.outputs) {
           outputsToConsume[unspentOutput.address][output.id] = output;
         }
       }
