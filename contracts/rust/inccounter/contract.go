@@ -25,6 +25,11 @@ type IncrementCall struct {
 	Func *wasmlib.ScFunc
 }
 
+type IncrementWithDelayCall struct {
+	Func   *wasmlib.ScFunc
+	Params MutableIncrementWithDelayParams
+}
+
 type InitCall struct {
 	Func   *wasmlib.ScInitFunc
 	Params MutableInitParams
@@ -83,6 +88,12 @@ func (sc Funcs) EndlessLoop(ctx wasmlib.ScFuncCallContext) *EndlessLoopCall {
 
 func (sc Funcs) Increment(ctx wasmlib.ScFuncCallContext) *IncrementCall {
 	return &IncrementCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncIncrement)}
+}
+
+func (sc Funcs) IncrementWithDelay(ctx wasmlib.ScFuncCallContext) *IncrementWithDelayCall {
+	f := &IncrementWithDelayCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncIncrementWithDelay)}
+	f.Func.SetPtrs(&f.Params.id, nil)
+	return f
 }
 
 func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {

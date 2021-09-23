@@ -163,3 +163,9 @@ func whenMustIncrementState(ctx wasmlib.ScFuncContext, state MutableIncCounterSt
 	counter := state.Counter()
 	counter.SetValue(counter.Value() + 1)
 }
+
+func funcIncrementWithDelay(ctx wasmlib.ScFuncContext, f *IncrementWithDelayContext) {
+	delay := f.Params.Delay().Value()
+	inc := ScFuncs.CallIncrement(ctx)
+	inc.Func.Delay(delay).TransferIotas(1).Post()
+}
