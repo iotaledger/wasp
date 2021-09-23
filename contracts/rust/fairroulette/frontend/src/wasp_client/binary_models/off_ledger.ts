@@ -59,7 +59,7 @@ export class OffLedger {
   }
 
   public static ToBuffer(req: IOffLedger): Buffer {
-    var buffer = new SimpleBufferCursor(Buffer.alloc(0));
+    const buffer = new SimpleBufferCursor(Buffer.alloc(0));
 
     if ([0, 1].includes(req.requestType)) {
       buffer.writeIntBE(req.requestType, 1);

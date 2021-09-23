@@ -26,7 +26,7 @@ export class Transaction {
      * @returns The essence of the transaction.
      */
     public static essence(tx: ITransaction, payload: Buffer = Buffer.alloc(0)): Buffer {
-        var essenceBuffer = new SimpleBufferCursor();
+        const essenceBuffer = new SimpleBufferCursor();
 
         essenceBuffer.writeInt8(tx.version);
         essenceBuffer.writeUInt64LE(tx.timestamp);
