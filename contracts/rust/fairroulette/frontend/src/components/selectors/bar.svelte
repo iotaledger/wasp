@@ -1,6 +1,9 @@
 <script lang="ts">
-  import { balance,round } from './../../store';
-  $: value = Number($balance / 2n);
+  import { balance, round, isWorking } from './../../store';
+
+  $: value = Number($balance / 2n); //Initial value (middle value)
+
+  $: $round.betAmount = BigInt(value);
 </script>
 
 <div>
@@ -12,12 +15,6 @@
       min={0}
       max={Number($balance)}
       id="myRange"
-      on:change={() => {
-        round.update((_round) => {
-          _round.betAmount = BigInt(value);
-          return _round;
-        });
-      }}
     />
   </div>
 </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { BarSelector, MultipleSelector } from './../components';
-  import { placeBet } from './../lib';
-  import { round } from './../store';
+  import { placeBet, sendFaucetRequest } from './../lib';
+  import { round, balance, requestingFunds } from './../store';
   import Button from './button.svelte';
 </script>
 
@@ -10,11 +10,20 @@
   <div>
     <BarSelector />
     <div class="bet-button">
-      <Button
-        label="Place bet"
-        disabled={$round.betSelection === undefined}
-        onClick={() => placeBet()}
-      />
+      {#if $balance > 1n}
+        <Button
+          label="Place bet"
+          disabled={$round.betSelection === undefined}
+          onClick={placeBet}
+        />
+      {:else}
+        <Button
+          label={$requestingFunds ? 'Requesting...' : 'Request funds'}
+          onClick={sendFaucetRequest}
+          disabled={$requestingFunds}
+          loading={$requestingFunds}
+        />
+      {/if}
     </div>
   </div>
 </div>
