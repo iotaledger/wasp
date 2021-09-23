@@ -40,10 +40,9 @@ func viewGetFactor(ctx wasmlib.ScViewContext, f *GetFactorContext) {
 ```
 
 Return values are passed to the caller through the predefined `results` map associated
-with the ISCP function context. Again, this works the same way for normal functions,
-although normal functions do not necessarily return values to the caller. The schema tool
-will set up a function-specific `Results` structure with proxies to the result fields in
-this map.
+with the ISCP function context. Again, this works the same way as for Funcs, although
+Funcs do not necessarily return values to the caller. The schema tool will set up a
+function-specific `Results` structure with proxies to the result fields in this map.
 
 In the next section we will look at smart contract initialization.
 
