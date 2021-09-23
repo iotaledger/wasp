@@ -19,8 +19,8 @@
 						{{- template "agentid" (args .ChainID $rootinfo.OwnerIDDelegated) -}}
 					{{- end -}}
 				</dd>
-				<dt>Default owner fee</dt><dd><code>{{$rootinfo.DefaultOwnerFee}} {{$rootinfo.FeeColor}}</code></dd>
-				<dt>Default validator fee</dt><dd><code>{{$rootinfo.DefaultValidatorFee}} {{$rootinfo.FeeColor}}</code></dd>
+				<dt>Default owner fee</dt><dd><code>{{$rootinfo.DefaultOwnerFee}} {{colorref $rootinfo.FeeColor}}</code></dd>
+				<dt>Default validator fee</dt><dd><code>{{$rootinfo.DefaultValidatorFee}} {{colorref $rootinfo.FeeColor}}</code></dd>
 			{{end}}
 		</dl>
 	</div>
