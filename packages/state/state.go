@@ -169,7 +169,7 @@ func (vs *virtualState) ExtractBlock() (Block, error) {
 	return ret, nil
 }
 
-// StateCommitment return hash of the state. It is recursive hashing of the previous state hash and the block
+// StateCommitment returns the hash of the state, calculated as a recursive hashing of the previous state hash and the block.
 func (vs *virtualState) StateCommitment() hashing.HashValue {
 	if vs.isStateHashOutdated {
 		block, err := vs.ExtractBlock()
