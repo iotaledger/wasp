@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { round } from '../../store';
+  import { round } from "../../lib/store";
 
   //   TODO: Delete. Only a demo.
   if ($round?.players.length < 1) {
     round.update((_round) => {
       if (_round) {
         _round.players.push({
-          address: 'demo address',
+          address: "demo address",
           bet: 15,
         });
       }

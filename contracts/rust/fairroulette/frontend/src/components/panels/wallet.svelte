@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { address, seedString } from '../../store';
+  import { address, seedString } from "../../lib/store";
 </script>
 
 <div class="panel wallet">

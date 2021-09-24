@@ -20,7 +20,7 @@
 {{define "balances"}}
 	<dl>
 		{{range $color, $bal := .}}
-			<dt><code>{{ $color }}</code></dt>
+			<dt><code>{{ colorref $color }}</code></dt>
 			<dd>{{ $bal }}</dd>
 		{{end}}
 	</dl>

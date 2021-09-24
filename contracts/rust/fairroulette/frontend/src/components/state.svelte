@@ -1,26 +1,27 @@
 <script lang="ts">
   import {
-    state,
-    START_GAME_STATE,
     GAME_RUNNING_STATE,
     showAddFunds,
-  } from './../store';
+    START_GAME_STATE,
+    state,
+  } from "../lib/store";
+
   const MESSAGES = {
     [START_GAME_STATE]: {
-      title: 'Start game',
-      description: 'Start game!',
+      title: "Start game",
+      description: "Start game!",
     },
 
     [GAME_RUNNING_STATE]: {
-      title: 'GAME RUNNING!',
-      description: 'The round ends in 50 seconds.',
+      title: "GAME RUNNING!",
+      description: "The round ends in 50 seconds.",
     },
   };
 
   const ADD_FUNDS_MESSAGE = {
-    title: 'Add funds',
+    title: "Add funds",
     description:
-      'To start the demo, you first need to request funds for your wallet. Those coins are generated from the dev-net.',
+      "To start the demo, you first need to request funds for your wallet. Those coins are generated from the dev-net.",
   };
 </script>
 
@@ -38,14 +39,14 @@
 
 <style lang="scss">
   .message {
-    font-family: 'Metropolis Bold';
+    font-family: "Metropolis Bold";
     text-align: center;
     .title {
       text-align: center;
       color: var(--white);
     }
     .subtitle {
-      font-family: 'Metropolis Bold';
+      font-family: "Metropolis Bold";
       font-size: 24px;
       line-height: 120%;
       letter-spacing: 0.02em;

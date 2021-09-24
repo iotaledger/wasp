@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
-  import { randomIntFromInterval } from '../utils/utils';
+  import { onDestroy, onMount } from "svelte";
   import {
     GAME_RUNNING_STATE,
     round,
     START_GAME_STATE,
     state,
-  } from './../store';
+  } from "../lib/store";
+  import { generateRandomInt } from "../lib/utils";
 
   let numbers: {
     number: number;
@@ -16,21 +16,16 @@
     return { ...item, number: i + 1, url: `./${i + 1}.svg` };
   });
 
+  let interval;
+  let previousRandomNumber: number = -1;
+
   function disableAll() {
     numbers = numbers.map((n) => ({ ...n, active: false }));
   }
 
-  let interval;
-  let previousRandomNumber: number = -1;
-
   onMount(() => {
     interval = setInterval(() => {
-      let randomNumber;
-
-      do {
-        randomNumber = randomIntFromInterval(0, 7);
-      } while (randomNumber === previousRandomNumber);
-
+      let randomNumber = generateRandomInt(0, 7, previousRandomNumber);
       disableAll();
       numbers[randomNumber].active = true;
       previousRandomNumber = randomNumber;
