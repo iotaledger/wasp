@@ -55,13 +55,14 @@ func handleWebSocket(c echo.Context) error {
 
 func (d *Dashboard) startWsForwarder() {
 	cl := events.NewClosure(func(msgType string, parts []string) {
-		if msgType == "state" {
+		if msgType == "state" || msgType == "vmmsg" {
 			if len(parts) < 1 {
 				return
 			}
 			chainID := parts[0]
 
-			v, ok := wsClients.Load(chainID)
+			v, ok := wsClients.Load(strings.Replace(chainID, "$/", "", -1))
+
 			if !ok {
 				return
 			}

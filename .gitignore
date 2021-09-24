@@ -14,6 +14,4 @@ wasp-cli.json
 ./tools/wasp-cli/wasp-cli
 .docusaurus
 node_modules
-./wasp-cli
-./wasp
 goshimmer.log

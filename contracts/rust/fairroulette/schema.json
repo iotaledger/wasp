@@ -10,17 +10,16 @@
   "state": {
     "bets": "[]Bet",
     "lastWinningNumber": "Int64",
-    "lockedBets": "[]Bet",
-    "playPeriod": "Int32"
+    "playPeriod": "Int32",
+    "roundStatus": "Int16",
+    "roundNumber": "Int64",
+    "roundStartedAt": "Int32"
   },
   "funcs": {
     "placeBet": {
       "params": {
         "number": "Int64 // the number a better bets on"
       }
-    },
-    "lockBets": {
-      "access": "self // only SC itself can invoke this function"
     },
     "payWinners": {
       "access": "self // only SC itself can invoke this function"
@@ -36,6 +35,21 @@
     "lastWinningNumber": {
       "results": {
         "lastWinningNumber": "Int64"
+      }
+    },
+    "roundStatus": {
+      "results": {
+        "roundStatus": "Int16"
+      }
+    },
+    "roundNumber": {
+      "results": {
+        "roundNumber": "Int64"
+      }
+    },
+    "roundStartedAt": {
+      "results": {
+        "roundStartedAt": "Int32"
       }
     }
   }

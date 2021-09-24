@@ -33,35 +33,19 @@ mod fairroulette;
 #[no_mangle]
 fn on_load() {
     let exports = ScExports::new();
-    exports.add_func(FUNC_LOCK_BETS, func_lock_bets_thunk);
     exports.add_func(FUNC_PAY_WINNERS, func_pay_winners_thunk);
     exports.add_func(FUNC_PLACE_BET, func_place_bet_thunk);
     exports.add_func(FUNC_PLAY_PERIOD, func_play_period_thunk);
     exports.add_view(VIEW_LAST_WINNING_NUMBER, view_last_winning_number_thunk);
+    exports.add_view(VIEW_ROUND_NUMBER, view_round_number_thunk);
+    exports.add_view(VIEW_ROUND_STARTED_AT, view_round_started_at_thunk);
+    exports.add_view(VIEW_ROUND_STATUS, view_round_status_thunk);
 
     unsafe {
         for i in 0..KEY_MAP_LEN {
             IDX_MAP[i] = get_key_id_from_string(KEY_MAP[i]);
         }
     }
-}
-
-pub struct LockBetsContext {
-    state: MutableFairRouletteState,
-}
-
-fn func_lock_bets_thunk(ctx: &ScFuncContext) {
-    ctx.log("fairroulette.funcLockBets");
-    // only SC itself can invoke this function
-    ctx.require(ctx.caller() == ctx.account_id(), "no permission");
-
-    let f = LockBetsContext {
-        state: MutableFairRouletteState {
-            id: OBJ_ID_STATE,
-        },
-    };
-    func_lock_bets(ctx, &f);
-    ctx.log("fairroulette.funcLockBets ok");
 }
 
 pub struct PayWinnersContext {
@@ -142,6 +126,63 @@ fn view_last_winning_number_thunk(ctx: &ScViewContext) {
     };
     view_last_winning_number(ctx, &f);
     ctx.log("fairroulette.viewLastWinningNumber ok");
+}
+
+pub struct RoundNumberContext {
+    results: MutableRoundNumberResults,
+    state:   ImmutableFairRouletteState,
+}
+
+fn view_round_number_thunk(ctx: &ScViewContext) {
+    ctx.log("fairroulette.viewRoundNumber");
+    let f = RoundNumberContext {
+        results: MutableRoundNumberResults {
+            id: OBJ_ID_RESULTS,
+        },
+        state: ImmutableFairRouletteState {
+            id: OBJ_ID_STATE,
+        },
+    };
+    view_round_number(ctx, &f);
+    ctx.log("fairroulette.viewRoundNumber ok");
+}
+
+pub struct RoundStartedAtContext {
+    results: MutableRoundStartedAtResults,
+    state:   ImmutableFairRouletteState,
+}
+
+fn view_round_started_at_thunk(ctx: &ScViewContext) {
+    ctx.log("fairroulette.viewRoundStartedAt");
+    let f = RoundStartedAtContext {
+        results: MutableRoundStartedAtResults {
+            id: OBJ_ID_RESULTS,
+        },
+        state: ImmutableFairRouletteState {
+            id: OBJ_ID_STATE,
+        },
+    };
+    view_round_started_at(ctx, &f);
+    ctx.log("fairroulette.viewRoundStartedAt ok");
+}
+
+pub struct RoundStatusContext {
+    results: MutableRoundStatusResults,
+    state:   ImmutableFairRouletteState,
+}
+
+fn view_round_status_thunk(ctx: &ScViewContext) {
+    ctx.log("fairroulette.viewRoundStatus");
+    let f = RoundStatusContext {
+        results: MutableRoundStatusResults {
+            id: OBJ_ID_RESULTS,
+        },
+        state: ImmutableFairRouletteState {
+            id: OBJ_ID_STATE,
+        },
+    };
+    view_round_status(ctx, &f);
+    ctx.log("fairroulette.viewRoundStatus ok");
 }
 
 // @formatter:on
