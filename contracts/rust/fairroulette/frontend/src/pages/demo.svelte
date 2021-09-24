@@ -10,25 +10,25 @@
     State,
     WalletPanel,
   } from "../components";
-  import { initialize, sendFaucetRequest } from "../lib/app";
-  import { balance, requestingFunds, round, showAddFunds } from "../lib/store";
+  import { createNewAddress, initialize, sendFaucetRequest } from "../lib/app";
+  import {
+    balance,
+    fundsRequested,
+    newAddressNeeded,
+    requestingFunds,
+    showAddFunds,
+  } from "../lib/store";
 
   onMount(initialize);
 
   $: if ($balance > 0n) {
+    fundsRequested.set(true);
+    newAddressNeeded.set(true);
     showAddFunds.set(false);
+  } else if ($balance === 0n && $newAddressNeeded) {
+    createNewAddress();
+    newAddressNeeded.set(false);
   }
-
-  //TODO: Delete this. Force game running
-  setInterval(() => ($round.active = !$round.active), 5000);
-  setTimeout(
-    () =>
-      $round.players.push({
-        address: "12kegXymhSJ4P7H7QjirfS124bZ4ExBQzZcQYxvqgsLu1",
-        bet: 10,
-      }),
-    10000
-  );
 </script>
 
 <div class="container">
@@ -72,6 +72,18 @@
 </div>
 
 <style lang="scss">
+  .simulator {
+    color: white;
+    margin: 48px 0;
+
+    .sim-buttons {
+      display: flex;
+      justify-content: space-around;
+      .sim-button {
+        width: 350px;
+      }
+    }
+  }
   .layout_state {
     display: flex;
     flex-direction: column;
@@ -108,7 +120,7 @@
     @media (min-width: 1024px) {
       flex-direction: row;
       justify-content: space-between;
-      margin-top: 32px;
+      margin-top: 20px;
       margin-bottom: 300px;
     }
     .players {
@@ -126,12 +138,13 @@
       margin: 0 auto;
       @media (min-width: 1024px) {
         position: absolute;
+        top: -50px;
         left: 50%;
         transform: translateX(-50%);
       }
       .bet_system,
       .request_button {
-        margin-top: 40px;
+        margin-top: 20px;
         margin-bottom: 100px;
       }
       .request_button {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { showAddFunds, round } from "../lib/store";
+  import { round, showAddFunds } from "../lib/store";
 
   enum State {
     Running = "Running",
