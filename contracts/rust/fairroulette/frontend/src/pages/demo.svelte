@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount } from 'svelte';
   import {
     BalancePanel,
     BettingSystem,
@@ -8,16 +8,19 @@
     PlayersPanel,
     Roulette,
     State,
+    Toast,
     WalletPanel,
-  } from "../components";
-  import { createNewAddress, initialize, sendFaucetRequest } from "../lib/app";
+  } from '../components';
+  import { createNewAddress, initialize, sendFaucetRequest } from '../lib/app';
   import {
     balance,
     fundsRequested,
     newAddressNeeded,
     requestingFunds,
     showAddFunds,
-  } from "../lib/store";
+  } from '../lib/store';
+
+  import { ToastType } from './../lib/utils';
 
   onMount(initialize);
 
@@ -32,6 +35,9 @@
 </script>
 
 <div class="container">
+  <div class="toast">
+    <Toast title="You win!" message="Congratulations!" type={ToastType.Win} />
+  </div>
   <div class="layout_state">
     <div class="balance">
       <BalancePanel />
@@ -49,7 +55,7 @@
       {#if $showAddFunds}
         <div class="request_button">
           <Button
-            label={$requestingFunds ? "Requesting..." : "Request funds"}
+            label={$requestingFunds ? 'Requesting...' : 'Request funds'}
             onClick={sendFaucetRequest}
             disabled={$requestingFunds || $balance > 0n}
             loading={$requestingFunds}
@@ -72,18 +78,6 @@
 </div>
 
 <style lang="scss">
-  .simulator {
-    color: white;
-    margin: 48px 0;
-
-    .sim-buttons {
-      display: flex;
-      justify-content: space-around;
-      .sim-button {
-        width: 350px;
-      }
-    }
-  }
   .layout_state {
     display: flex;
     flex-direction: column;
@@ -164,5 +158,7 @@
         height: calc(100vh - 450px);
       }
     }
+  }
+  .toast {
   }
 </style>
