@@ -1,18 +1,5 @@
 <script lang="ts">
-  import { round } from "../../lib/store";
-
-  //   TODO: Delete. Only a demo.
-  if ($round?.players.length < 1) {
-    round.update((_round) => {
-      if (_round) {
-        _round.players.push({
-          address: "18Ui2x8keyMfzZL7yp5zeGy282ME1ax6FBEgR6SAgToFR",
-          bet: 15,
-        });
-      }
-      return _round;
-    });
-  }
+  import { round } from '../../lib/store';
 </script>
 
 <div class="panel">
@@ -25,7 +12,7 @@
           <div class="player-address">{address}</div>
           <div class="player-bet">
             <span>Bet:</span>
-            <span class="bet-value">{bet}</span>
+            <span class="bet-value">{bet} i</span>
           </div>
         </div>
       </div>

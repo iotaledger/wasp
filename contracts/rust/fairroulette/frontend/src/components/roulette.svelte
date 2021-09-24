@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount } from 'svelte';
   import {
     GAME_RUNNING_STATE,
     round,
     START_GAME_STATE,
     state,
-  } from "../lib/store";
-  import { generateRandomInt } from "../lib/utils";
+  } from '../lib/store';
+  import { generateRandomInt } from '../lib/utils';
 
   let numbers: {
     number: number;
@@ -52,7 +52,7 @@
   {:else if $state === START_GAME_STATE && $round.winningNumber > 0n}
     <img
       class="flashedNumber"
-      src={numbers[Number($round.winningNumber - 1n)].url}
+      src={numbers[Number($round.winningNumber - 1n)]?.url}
       alt="active"
     />
   {/if}

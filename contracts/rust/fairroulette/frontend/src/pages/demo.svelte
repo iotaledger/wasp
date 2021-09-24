@@ -24,59 +24,9 @@
   onMount(initialize);
 
   $: updateGameState(), $balance, $round;
-
-  //TODO: Delete this. Force game running
-  $: isMyAddressInPlayersPanel =
-    $round.players.filter((_player) => _player.address === $address).length > 0;
-
-  let addMyAddressToPlayers = () => {
-    round.update((_round) => {
-      _round.players.push({
-        address: $address,
-        bet: Number($round.betAmount) ?? 122,
-      });
-      return _round;
-    });
-    placingBet.set(false);
-  };
-
-  let removeMyAddressFromPlayers = () => {
-    $round.players = $round.players.filter(
-      (_player) => _player.address !== $address
-    );
-  };
 </script>
 
 <div class="container">
-  <div class="simulator">
-    <h2>Simulator</h2>
-    <div class="sim-buttons">
-      <div class="sim-button">
-        <Button
-          onClick={() =>
-            isMyAddressInPlayersPanel
-              ? removeMyAddressFromPlayers()
-              : addMyAddressToPlayers()}
-          label={isMyAddressInPlayersPanel
-            ? 'Remove me to players'
-            : 'Add me to players'}
-        />
-      </div>
-      <div class="sim-button">
-        <Button
-          onClick={() => ($round.active = !$round.active)}
-          label="Activate/Deactivate round"
-        />
-      </div>
-    </div>
-    <div>
-      <h4>INFO</h4>
-      <div>Round {$round.active ? 'active' : 'no active'}</div>
-      <div>Placing bet: {$placingBet}</div>
-      <div>New address needed: {$newAddressNeeded}</div>
-      <div>Funds requested: {$fundsRequested}</div>
-    </div>
-  </div>
   <div class="layout_state">
     <div class="balance">
       <BalancePanel />
