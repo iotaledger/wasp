@@ -17,7 +17,9 @@
     fundsRequested,
     newAddressNeeded,
     requestingFunds,
+    round,
     showAddFunds,
+    resetRound,
   } from '../lib/store';
 
   import { ToastType } from './../lib/app';

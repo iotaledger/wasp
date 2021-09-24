@@ -204,8 +204,8 @@ export function subscribeToRouletteEvents() {
     });
 
     fairRouletteService.on('roundStopped', () => {
-        round.update($round => ({ ...$round, active: false }))
         log(LogTag.Round, 'Ended');
+        round.update($round => ({ ...$round, active: false, logs: [], players: [] }))
     });
 
     fairRouletteService.on('roundNumber', (roundNumber: bigint) => {

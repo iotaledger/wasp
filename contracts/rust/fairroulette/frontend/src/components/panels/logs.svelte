@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { round } from "../../lib/store";
+  import { round } from '../../lib/store';
 </script>
 
 <div class="panel">
@@ -89,6 +89,7 @@
             line-height: 150%;
             letter-spacing: 0.5px;
             color: var(--gray-3);
+            word-break: break-all;
           }
         }
       }
