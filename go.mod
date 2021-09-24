@@ -33,9 +33,9 @@ require (
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf
-	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
-	gopkg.in/eapache/channels.v1 v1.1.0 // indirect
+	gopkg.in/eapache/channels.v1 v1.1.0
+	nhooyr.io/websocket v1.8.7
 )
 
 replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515

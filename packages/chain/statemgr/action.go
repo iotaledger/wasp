@@ -59,7 +59,7 @@ func (sm *stateManager) isSynced() bool {
 	if sm.stateOutput == nil {
 		return false
 	}
-	return bytes.Equal(sm.solidState.Hash().Bytes(), sm.stateOutput.GetStateData())
+	return bytes.Equal(sm.solidState.StateCommitment().Bytes(), sm.stateOutput.GetStateData())
 }
 
 func (sm *stateManager) pullStateIfNeeded() {
@@ -84,7 +84,7 @@ func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualSt
 	sm.log.Debugw("addStateCandidateFromConsensus: adding state candidate",
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
-		"hash", nextState.Hash(),
+		"hash", nextState.StateCommitment(),
 		"output", iscp.OID(approvingOutput),
 	)
 
@@ -163,11 +163,11 @@ func (sm *stateManager) storeSyncingData() {
 		return
 	}
 	sm.log.Debugf("storeSyncingData: storing values: Synced %v, SyncedBlockIndex %v, SyncedStateHash %v, SyncedStateTimestamp %v, StateOutputBlockIndex %v, StateOutputID %v, StateOutputHash %v, StateOutputTimestamp %v",
-		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.Hash().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateHash.String(), sm.stateOutputTimestamp)
+		sm.isSynced(), sm.solidState.BlockIndex(), sm.solidState.StateCommitment().String(), sm.solidState.Timestamp(), sm.stateOutput.GetStateIndex(), iscp.OID(sm.stateOutput.ID()), outputStateHash.String(), sm.stateOutputTimestamp)
 	sm.currentSyncData.Store(&chain.SyncInfo{
 		Synced:                sm.isSynced(),
 		SyncedBlockIndex:      sm.solidState.BlockIndex(),
-		SyncedStateHash:       sm.solidState.Hash(),
+		SyncedStateHash:       sm.solidState.StateCommitment(),
 		SyncedStateTimestamp:  sm.solidState.Timestamp(),
 		StateOutputBlockIndex: sm.stateOutput.GetStateIndex(),
 		StateOutputID:         sm.stateOutput.ID(),

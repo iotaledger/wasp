@@ -283,7 +283,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	c.log.Debugf("processChainTransition: processing state %d", stateIndex)
 	if !msg.ChainOutput.GetIsGovernanceUpdated() {
 		c.log.Debugf("processChainTransition state %d: output %s is not governance updated; state hash %s; last cleaned state is %d",
-			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.Hash().String(), c.mempoolLastCleanedIndex)
+			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String(), c.mempoolLastCleanedIndex)
 		// normal state update:
 		c.stateReader.SetBaseline()
 		chainID := iscp.NewChainID(msg.ChainOutput.GetAliasAddress())
@@ -318,7 +318,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		c.mempoolLastCleanedIndex = stateIndex
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
-			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.Hash().String())
+			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String())
 		chain.LogGovernanceTransition(msg, c.log)
 		chain.PublishGovernanceTransition(msg.ChainOutput)
 	}
@@ -328,7 +328,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		StateOutput:    msg.ChainOutput,
 		StateTimestamp: msg.OutputTimestamp,
 	})
-	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.Hash().String())
+	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.StateCommitment().String())
 }
 
 func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
@@ -344,10 +344,12 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 		c.log.Panicf("publishNewBlockEvents - something went wrong getting events for block. %v", err)
 	}
 
-	for _, msg := range evts {
-		c.log.Infof("publishNewBlockEvents: '%s'", msg)
-		publisher.Publish("vmmsg", c.chainID.Base58(), msg)
-	}
+	go func() {
+		for _, msg := range evts {
+			c.log.Infof("publishNewBlockEvents: '%s'", msg)
+			publisher.Publish("vmmsg", c.chainID.Base58(), msg)
+		}
+	}()
 }
 
 // processStateMessage processes the only chain output which exists on the chain's address

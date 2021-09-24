@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"strings"
 
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -48,15 +49,17 @@ type Dashboard struct {
 	navPages []Tab
 	stop     chan bool
 	wasp     WaspServices
+	log      *logger.Logger
 }
 
-func Init(server *echo.Echo, waspServices WaspServices) *Dashboard {
+func Init(server *echo.Echo, waspServices WaspServices, log *logger.Logger) *Dashboard {
 	r := renderer{}
 	server.Renderer = r
 
 	d := &Dashboard{
 		stop: make(chan bool),
 		wasp: waspServices,
+		log:  log.Named("dashboard"),
 	}
 
 	d.errorInit(server, r)
@@ -67,8 +70,7 @@ func Init(server *echo.Echo, waspServices WaspServices) *Dashboard {
 		d.chainsInit(server, r),
 	}
 
-	addWsEndpoints(server)
-	d.startWsForwarder()
+	d.webSocketInit(server)
 
 	return d
 }

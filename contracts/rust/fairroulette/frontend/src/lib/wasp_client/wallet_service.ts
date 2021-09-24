@@ -7,10 +7,7 @@ import { Buffer } from './buffer';
 import { Base58 } from './crypto';
 import type { IKeyPair, ISendTransactionResponse } from './models';
 import type { ITransaction } from './models/ITransaction';
-import type { IUnlockBlock } from './models/IUnlockBlock';
 import { Transaction } from './transaction';
-
-
 
 export interface IFaucetRequestContext {
   faucetRequest: IFaucetRequest;
@@ -64,6 +61,8 @@ export class WalletService {
     return result;
   }
 
+
+
   public async sendOnLedgerRequest(keyPair: IKeyPair, address: string, chainId: string, payload: IOnLedger, transfer: bigint = 1n): Promise<ISendTransactionResponse> {
     if (transfer <= 0) {
       transfer = 1n;
@@ -78,8 +77,6 @@ export class WalletService {
     console.log("address", address, "chainId", chainId, "transfer", transfer, "consumedFunds", consumedFunds);
     const outputs = wallet.buildOutputs(address, chainId, transfer, consumedFunds);
 
-    const unlockBlocks: IUnlockBlock[] = [];
-
     const tx: ITransaction = {
       version: 0,
       timestamp: BigInt(Date.now()) * 1000000n,
@@ -92,33 +89,9 @@ export class WalletService {
       unlockBlocks: []
     };
 
-    const txEssence = Transaction.essence(tx, Buffer.alloc(0));
+    tx.unlockBlocks = wallet.unlockBlocks(tx, keyPair, address, consumedOutputs, inputs);
 
-    const addressByOutputID: { [outputID: string]: string; } = {};
-    for (const address in consumedOutputs) {
-      for (const outputID in consumedOutputs[address]) {
-        addressByOutputID[outputID] = address;
-      }
-    }
-
-    const existingUnlockBlocks: { [address: string]: number; } = {};
-    for (const index in inputs) {
-      const addr = address == addressByOutputID[inputs[index]];
-      if (addr) {
-        if (existingUnlockBlocks[address] !== undefined) {
-          unlockBlocks.push({ type: 1, referenceIndex: existingUnlockBlocks[address], publicKey: Buffer.alloc(0), signature: Buffer.alloc(0) });
-          continue;
-        }
-
-        const signatureUnlockBlock = { type: 0, referenceIndex: 0, publicKey: keyPair.publicKey, signature: Transaction.sign(keyPair, txEssence) };
-        existingUnlockBlocks[address] = unlockBlocks.length;
-        unlockBlocks.push(signatureUnlockBlock);
-      }
-    }
-
-    tx.unlockBlocks = unlockBlocks;
-
-    const result = Transaction.bytes(tx, txEssence);
+    const result = Transaction.bytes(tx);
 
     const response = await this.client.sendTransaction({
       txn_bytes: result.toString("base64")

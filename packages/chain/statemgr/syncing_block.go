@@ -50,9 +50,11 @@ func (syncsT *syncingBlocks) getBlockCandidates(stateIndex uint32) []*candidateB
 	if !ok {
 		return make([]*candidateBlock, 0)
 	}
-	result := make([]*candidateBlock, 0, len(sync.blockCandidates))
+	result := make([]*candidateBlock, len(sync.blockCandidates))
+	i := 0
 	for _, candidate := range sync.blockCandidates {
-		result = append(result, candidate)
+		result[i] = candidate
+		i++
 	}
 	return result
 }

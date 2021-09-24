@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/iscp/colored"
-
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/labstack/echo/v4"
@@ -20,7 +19,7 @@ var tplChainAccount string
 func (d *Dashboard) initChainAccount(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid/account/:agentid", d.handleChainAccount)
 	route.Name = "chainAccount"
-	r[route.Path] = d.makeTemplate(e, tplChainAccount, tplWs)
+	r[route.Path] = d.makeTemplate(e, tplChainAccount, tplWebSocket)
 }
 
 func (d *Dashboard) handleChainAccount(c echo.Context) error {

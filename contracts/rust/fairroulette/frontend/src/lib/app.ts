@@ -240,10 +240,6 @@ export function subscribeToRouletteEvents() {
     });
 }
 
-export function isBroke(balance: bigint): boolean {
-    return balance < 200;
-}
-
 export function isWealthy(balance: bigint): boolean {
-    return balance > 200;
+    return balance >= 200;
 }

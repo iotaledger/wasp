@@ -1,8 +1,6 @@
 package chainclient
 
 import (
-	"time"
-
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/client"
@@ -22,6 +20,7 @@ type Client struct {
 	WaspClient      *client.WaspClient
 	ChainID         iscp.ChainID
 	KeyPair         *ed25519.KeyPair
+	nonces          map[ed25519.PublicKey]uint64
 }
 
 // New creates a new chainclient.Client
@@ -36,6 +35,7 @@ func New(
 		WaspClient:      waspClient,
 		ChainID:         chainID,
 		KeyPair:         keyPair,
+		nonces:          make(map[ed25519.PublicKey]uint64),
 	}
 }
 
@@ -78,7 +78,8 @@ func (c *Client) PostOffLedgerRequest(
 		par = params[0]
 	}
 	if par.Nonce == 0 {
-		par.Nonce = uint64(time.Now().UnixNano())
+		c.nonces[c.KeyPair.PublicKey]++
+		par.Nonce = c.nonces[c.KeyPair.PublicKey]
 	}
 	offledgerReq := request.NewOffLedger(contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
 	offledgerReq.WithNonce(par.Nonce)

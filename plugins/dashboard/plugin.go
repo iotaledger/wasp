@@ -143,7 +143,7 @@ func configure(*node.Plugin) {
 	Server.Use(middleware.Recover())
 	auth.AddAuthentication(Server, parameters.GetStringToString(parameters.DashboardAuth))
 
-	d = dashboard.Init(Server, &waspServices{})
+	d = dashboard.Init(Server, &waspServices{}, log)
 }
 
 func run(_ *node.Plugin) {

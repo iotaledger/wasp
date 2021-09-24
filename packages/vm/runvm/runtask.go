@@ -102,7 +102,7 @@ func runTask(task *vm.VMTask) {
 	rotationAddr := vmctx.CloseVMContext(task.ProcessedRequestsCount, numSuccess, numOffLedger)
 
 	if rotationAddr == nil {
-		task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(task.VirtualState.Hash(), task.VirtualState.Timestamp())
+		task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(task.VirtualState.StateCommitment(), task.VirtualState.Timestamp())
 		if err != nil {
 			task.OnFinish(nil, nil, xerrors.Errorf("RunVM.BuildTransactionEssence: %w", err))
 			return
@@ -112,7 +112,7 @@ func runTask(task *vm.VMTask) {
 		}
 		task.Log.Debug("runTask OUT. ",
 			"block index: ", task.VirtualState.BlockIndex(),
-			" variable state hash: ", task.VirtualState.Hash().String(),
+			" variable state hash: ", task.VirtualState.StateCommitment().String(),
 			" tx essence hash: ", hashing.HashData(task.ResultTransactionEssence.Bytes()).String(),
 			" tx finalTimestamp: ", task.ResultTransactionEssence.Timestamp(),
 		)

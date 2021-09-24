@@ -146,59 +146,41 @@ func (su *stateUpdateImpl) String() string {
 }
 
 // findBlockIndexMutation goes backward and searches for the 'set' mutation of the blockIndex
-func findBlockIndexMutation(stateUpdates []*stateUpdateImpl) (uint32, error) {
-	if len(stateUpdates) == 0 {
-		return 0, xerrors.New("findBlockIndexMutation: no state updates were found")
+func findBlockIndexMutation(stateUpdate *stateUpdateImpl) (uint32, error) {
+	bi, exists, err := stateUpdate.stateIndexMutation()
+	if err != nil {
+		return 0, err
 	}
-	for i := len(stateUpdates) - 1; i >= 0; i-- {
-		bi, exists, err := stateUpdates[i].stateIndexMutation()
-		if err != nil {
-			return 0, err
-		}
-		if !exists {
-			continue
-		}
-		return bi, nil
+	if !exists {
+		return 0, xerrors.Errorf("findBlockIndexMutation: state index mutation wasn't found in the block")
 	}
-	return 0, xerrors.Errorf("findBlockIndexMutation: state index mutation wasn't found in the block")
+	return bi, nil
 }
 
 // findTimestampMutation goes backward and searches for the 'set' mutation of the timestamp
 // Return zero time if not found
-func findTimestampMutation(stateUpdates []*stateUpdateImpl) (time.Time, error) {
-	if len(stateUpdates) == 0 {
-		return time.Time{}, xerrors.New("findTimestampMutation: no state updates were found")
+func findTimestampMutation(stateUpdate *stateUpdateImpl) (time.Time, error) {
+	ts, exists, err := stateUpdate.timestampMutation()
+	if err != nil {
+		return time.Time{}, err
 	}
-	for i := len(stateUpdates) - 1; i >= 0; i-- {
-		ts, exists, err := stateUpdates[i].timestampMutation()
-		if err != nil {
-			return time.Time{}, err
-		}
-		if !exists {
-			continue
-		}
-		return ts, nil
+	if !exists {
+		return time.Time{}, nil
 	}
-	return time.Time{}, nil
+	return ts, nil
 }
 
 // findPrevStateHashMutation goes backward and searches for the 'set' mutation of the previous state hash
 // Return NilHash if not found
-func findPrevStateHashMutation(stateUpdates []*stateUpdateImpl) (hashing.HashValue, error) {
-	if len(stateUpdates) == 0 {
-		return hashing.NilHash, xerrors.New("findPrevStateHashMutation: no state updates were found")
+func findPrevStateHashMutation(stateUpdate *stateUpdateImpl) (hashing.HashValue, error) {
+	h, exists, err := stateUpdate.previousStateHashMutation()
+	if err != nil {
+		return hashing.NilHash, err
 	}
-	for i := len(stateUpdates) - 1; i >= 0; i-- {
-		h, exists, err := stateUpdates[i].previousStateHashMutation()
-		if err != nil {
-			return hashing.NilHash, err
-		}
-		if !exists {
-			continue
-		}
-		return h, nil
+	if !exists {
+		return hashing.NilHash, nil
 	}
-	return hashing.NilHash, nil
+	return h, nil
 }
 
 func (su *stateUpdateImpl) setTimestampMutation(ts time.Time) {

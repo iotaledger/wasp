@@ -1,7 +1,9 @@
 import { Base58 } from './crypto';
+import { Buffer } from './buffer';
 import { ColorCollection, Colors } from './colors';
+import { Transaction } from './transaction';
 import type { BasicClient } from './basic_client';
-import type { IWalletAddressOutput, IWalletOutput } from './models';
+import type { IKeyPair, ITransaction, IUnlockBlock, IWalletAddressOutput, IWalletOutput } from './models';
 
 export type BuiltOutputResult = {
   [address: string]: {
@@ -15,6 +17,11 @@ export type BuiltOutputResult = {
     value: bigint;
   }[];
 };
+
+export type ConsumedOutputs = {
+  [address: string]: { [outputID: string]: IWalletOutput; };
+};
+
 
 export class BasicWallet {
 
@@ -50,9 +57,7 @@ export class BasicWallet {
     return unspentOutputs;
   }
 
-  public determineOutputsToConsume(unspentOutputs: IWalletAddressOutput[], iotas: bigint): {
-    [address: string]: { [outputID: string]: IWalletOutput; };
-  } {
+  public determineOutputsToConsume(unspentOutputs: IWalletAddressOutput[], iotas: bigint): ConsumedOutputs {
     const outputsToConsume: { [address: string]: { [outputID: string]: IWalletOutput; }; } = {};
 
     let iotasLeft = iotas;
@@ -188,5 +193,34 @@ export class BasicWallet {
     inputs.sort((a, b) => Base58.decode(a).compare(Base58.decode(b)));
 
     return { inputs, consumedFunds };
+  }
+
+  public unlockBlocks(tx: ITransaction, keyPair: IKeyPair, address: string, consumedOutputs: ConsumedOutputs, builtInputs: string[]) {
+    const unlockBlocks: IUnlockBlock[] = [];
+    const txEssence = Transaction.essence(tx, Buffer.alloc(0));
+
+    const addressByOutputID: { [outputID: string]: string; } = {};
+    for (const address in consumedOutputs) {
+      for (const outputID in consumedOutputs[address]) {
+        addressByOutputID[outputID] = address;
+      }
+    }
+
+    const existingUnlockBlocks: { [address: string]: number; } = {};
+    for (const index in builtInputs) {
+      const addr = address == addressByOutputID[builtInputs[index]];
+      if (addr) {
+        if (existingUnlockBlocks[address] !== undefined) {
+          unlockBlocks.push({ type: 1, referenceIndex: existingUnlockBlocks[address], publicKey: Buffer.alloc(0), signature: Buffer.alloc(0) });
+          continue;
+        }
+
+        const signatureUnlockBlock = { type: 0, referenceIndex: 0, publicKey: keyPair.publicKey, signature: Transaction.sign(keyPair, txEssence) };
+        existingUnlockBlocks[address] = unlockBlocks.length;
+        unlockBlocks.push(signatureUnlockBlock);
+      }
+    }
+
+    return unlockBlocks;
   }
 }

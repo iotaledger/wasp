@@ -5,8 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -173,19 +171,6 @@ func TestRequestIDsForBlocks(t *testing.T) {
 
 /// region test events ----------------------------------------------------------------
 
-func eventsViewResultToStringArray(result dict.Dict) ([]string, error) {
-	entries := collections.NewArray16ReadOnly(result, blocklog.ParamEvent)
-	ret := make([]string, entries.MustLen())
-	for i := range ret {
-		data, err := entries.GetAt(uint16(i))
-		if err != nil {
-			return nil, err
-		}
-		ret[i] = string(data)
-	}
-	return ret, nil
-}
-
 func incrementSCCounter(t *testing.T, chain *solo.Chain) iscp.RequestID {
 	tx, _, err := chain.PostRequestSyncTx(
 		solo.NewCallParams(inccounter.Contract.Name, inccounter.FuncIncCounter.Name).WithIotas(1),
@@ -202,7 +187,7 @@ func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID iscp.RequestID) 
 		blocklog.ParamRequestID, reqID,
 	)
 	require.NoError(t, err)
-	events, err := eventsViewResultToStringArray(res)
+	events, err := EventsViewResultToStringArray(res)
 	require.NoError(t, err)
 	return events
 }
@@ -212,7 +197,7 @@ func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber int32) []str
 		blocklog.ParamBlockIndex, blockNumber,
 	)
 	require.NoError(t, err)
-	events, err := eventsViewResultToStringArray(res)
+	events, err := EventsViewResultToStringArray(res)
 	require.NoError(t, err)
 	return events
 }
@@ -224,7 +209,7 @@ func getEventsForSC(t *testing.T, chain *solo.Chain, fromBlock, toBlock int32) [
 		blocklog.ParamToBlock, toBlock,
 	)
 	require.NoError(t, err)
-	events, err := eventsViewResultToStringArray(res)
+	events, err := EventsViewResultToStringArray(res)
 	require.NoError(t, err)
 	return events
 }

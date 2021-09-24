@@ -22,10 +22,7 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-var (
-	log *logger.Logger
-	wse *webSocketAPI
-)
+var log *logger.Logger
 
 func Init(
 	server echoswagger.ApiRoot,
@@ -44,8 +41,7 @@ func Init(
 	server.SetResponseContentType(echo.MIMEApplicationJSON)
 
 	pub := server.Group("public", "").SetDescription("Public endpoints")
-	wse = addWsEndpoint(pub)
-	wse.startWsForwarder()
+	addWebSocketEndpoint(pub, log)
 
 	blob.AddEndpoints(pub, func() registry.BlobCache { return registryProvider() })
 	info.AddEndpoints(pub, network)
