@@ -11,7 +11,6 @@ export const addressIndex: Writable<number> = writable(0)
 export const balance: Writable<bigint> = writable(0n)
 
 export const timestamp: Writable<number> = writable()
-export const isWorking: Writable<boolean> = writable()
 export const requestingFunds: Writable<boolean> = writable(false)
 export const placingBet: Writable<boolean> = writable(false)
 
