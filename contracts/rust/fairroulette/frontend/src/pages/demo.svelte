@@ -3,14 +3,15 @@
   import {
     BalancePanel,
     BettingSystem,
+    Button,
     LogsPanel,
     PlayersPanel,
     Roulette,
     State,
     WalletPanel,
   } from "../components";
-  import { initialize } from "../lib/app";
-  import { balance, round, showAddFunds } from "../lib/store";
+  import { initialize, sendFaucetRequest } from "../lib/app";
+  import { balance, requestingFunds, round, showAddFunds } from "../lib/store";
 
   onMount(initialize);
 
@@ -45,9 +46,20 @@
   <div class="layout_roulette">
     <div class="roulette_game">
       <Roulette />
-      <div class="bet_system">
-        <BettingSystem />
-      </div>
+      {#if $showAddFunds}
+        <div class="request_button">
+          <Button
+            label={$requestingFunds ? "Requesting..." : "Request funds"}
+            onClick={sendFaucetRequest}
+            disabled={$requestingFunds || $balance > 0n}
+            loading={$requestingFunds}
+          />
+        </div>
+      {:else}
+        <div class="bet_system">
+          <BettingSystem />
+        </div>
+      {/if}
     </div>
 
     <div class="players">
@@ -117,9 +129,15 @@
         left: 50%;
         transform: translateX(-50%);
       }
-      .bet_system {
+      .bet_system,
+      .request_button {
         margin-top: 40px;
         margin-bottom: 100px;
+      }
+      .request_button {
+        @media (min-width: 1024px) {
+          padding: 0 120px;
+        }
       }
     }
     .logs {
