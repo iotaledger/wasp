@@ -1,21 +1,21 @@
 <script lang="ts">
-  import { BarSelector, MultipleSelector } from './../components';
-  import { placeBet, sendFaucetRequest } from './../lib';
+  import { BarSelector, MultipleSelector } from "../components";
+  import { placeBet, sendFaucetRequest } from "../lib/app";
   import {
-    round,
-    balance,
-    requestingFunds,
-    placingBet,
     address,
-  } from './../store';
-  import Button from './button.svelte';
+    balance,
+    placingBet,
+    requestingFunds,
+    round,
+  } from "../lib/store";
+  import Button from "./button.svelte";
 
   //TODO: Improve disable condition
   $: disabled = $placingBet;
 
   $: console.log(disabled);
   $: console.log(
-    '$round.players.filter((_player) => _player.address === $address).length > 0',
+    "$round.players.filter((_player) => _player.address === $address).length > 0",
     $round.players.filter((_player) => _player.address === $address).length > 0
   );
 </script>
@@ -34,7 +34,7 @@
         />
       {:else}
         <Button
-          label={$requestingFunds ? 'Requesting...' : 'Request funds'}
+          label={$requestingFunds ? "Requesting..." : "Request funds"}
           onClick={sendFaucetRequest}
           disabled={$requestingFunds}
           loading={$requestingFunds}

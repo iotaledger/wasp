@@ -1,7 +1,7 @@
-import { derived, Readable, Writable, writable, get } from 'svelte/store';
+import { derived, get, Readable, Writable, writable } from 'svelte/store';
 import type { IRound } from './models/IRound';
 import type { Buffer, IKeyPair } from './wasp_client';
-import { Base58 } from "./wasp_client/crypto/base58";
+import { Base58 } from './wasp_client/crypto/base58';
 
 export const seed: Writable<Buffer> = writable()
 export const seedString: Readable<string> = derived(seed, $seed => Base58.encode($seed))
@@ -33,11 +33,11 @@ const RESET_ROUND: IRound = {
 
 export const round: Writable<IRound> = writable(RESET_ROUND);
 
-function resetRound(): void {
+export function resetRound(): void {
     round.set(RESET_ROUND)
 }
 
-export function updateGameState() {
+export function updateGameState(): void {
     if (get(balance) > 0n) {
         showAddFunds.set(false);
     }

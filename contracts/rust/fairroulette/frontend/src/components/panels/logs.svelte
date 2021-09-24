@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { round } from '../../store';
+  import { round } from "../../lib/store";
 </script>
 
 <div class="panel">

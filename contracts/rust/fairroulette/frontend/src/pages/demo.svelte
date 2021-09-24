@@ -1,7 +1,5 @@
 <script lang="ts">
-  export const name = 'landing';
-
-  import { onMount } from 'svelte';
+  import { onMount } from "svelte";
   import {
     BalancePanel,
     BettingSystem,
@@ -10,9 +8,9 @@
     Roulette,
     State,
     WalletPanel,
-  } from './../components';
-  import { initialize } from './../lib';
-  import { balance, round, updateGameState } from './../store';
+  } from "../components";
+  import { initialize } from "../lib/app";
+  import { balance, round, updateGameState } from "../lib/store";
 
   onMount(initialize);
 
@@ -23,7 +21,7 @@
   setTimeout(
     () =>
       $round.players.push({
-        address: '12kegXymhSJ4P7H7QjirfS124bZ4ExBQzZcQYxvqgsLu1',
+        address: "12kegXymhSJ4P7H7QjirfS124bZ4ExBQzZcQYxvqgsLu1",
         bet: 10,
       }),
     10000

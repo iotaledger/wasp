@@ -1,8 +1,9 @@
 import { get } from 'svelte/store';
-import config from '../config.dev';
+import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
-import { address, addressIndex, balance, isWorking, placingBet, keyPair, requestingFunds, round, seed, timestamp, state, START_GAME_STATE, GAME_STARTED_STATE, ADD_FUNDS_STATE } from './store';
+import { address, addressIndex, balance, isWorking, keyPair, placingBet, requestingFunds, round, seed, timestamp } from './store';
+import { log } from './utils';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -18,16 +19,69 @@ let fundsUpdaterHandle;
 
 const powManager: PoWWorkerManager = new PoWWorkerManager();
 
-export function log(tag: string, description: string) {
-    round.update((_round) => {
-        _round.logs.push({
-            tag: tag,
-            description: description,
-            timestamp: new Date().toLocaleTimeString(),
-        },
-        );
-        return _round;
-    })
+export async function initialize() {
+    log('Page', 'Loading');
+
+    if (config.seed) {
+        seed.set(Base58.decode(config.seed));
+    } else {
+        seed.set(Seed.generate());
+    }
+
+    client = new BasicClient({
+        GoShimmerAPIUrl: config.goshimmerApiUrl,
+        WaspAPIUrl: config.waspApiUrl,
+        SeedUnsafe: get(seed),
+    });
+
+    fairRouletteService = new FairRouletteService(client, config.chainId);
+    walletService = new WalletService(client);
+
+    powManager.load('/build/pow.worker.js');
+
+    subscribeToRouletteEvents();
+    setAddress(get(addressIndex));
+    updateFunds();
+
+    startFundsUpdater();
+
+    // The best solution would be to call all of them in parallel. This is currently not possible.
+    // As those requests can fail in certain cases, we need to wrap them in exception handlers,
+    // to make sure that the other requests are being sent and that the page properly loads.
+    const requests = [
+        () =>
+            fairRouletteService
+                .getRoundStatus()
+                .then((x) => round.update((_round) => {
+                    _round.active = (x == 1);
+                    return _round;
+                })),
+        () =>
+            fairRouletteService
+                .getRoundNumber()
+                .then((x) => round.update((_round) => {
+                    _round.number = x;
+                    return _round;
+                })),
+        () =>
+            fairRouletteService
+                .getLastWinningNumber()
+                .then((x) => round.update((_round) => {
+                    _round.winningNumber = x;
+                    return _round;
+                })),
+        () =>
+            fairRouletteService.getRoundStartedAt().then((x) => round.update((_round) => {
+                _round.startedAt = x;
+                return _round;
+            })),
+    ];
+
+    for (let request of requests) {
+        await request().catch((e) => log('Error', e.message));
+    }
+
+    log('Page', 'Loaded');
 }
 
 export function setAddress(index: number) {
@@ -175,87 +229,10 @@ export function subscribeToRouletteEvents() {
     });
 }
 
-export function isBroke(balance: bigint) {
+export function isBroke(balance: bigint): boolean {
     return balance < 200;
 }
 
-export function isWealthy(balance: bigint) {
+export function isWealthy(balance: bigint): boolean {
     return balance > 200;
-}
-
-export async function initialize() {
-    log('Page', 'Loading');
-
-    if (config.seed) {
-        seed.set(Base58.decode(config.seed));
-    } else {
-        seed.set(Seed.generate());
-    }
-
-    client = new BasicClient({
-        GoShimmerAPIUrl: config.goshimmerApiUrl,
-        WaspAPIUrl: config.waspApiUrl,
-        SeedUnsafe: get(seed),
-    });
-
-    fairRouletteService = new FairRouletteService(client, config.chainId);
-    walletService = new WalletService(client);
-
-    powManager.load('/build/pow.worker.js');
-
-    subscribeToRouletteEvents();
-    setAddress(get(addressIndex));
-    updateFunds();
-
-    startFundsUpdater();
-
-    // The best solution would be to call all of them in parallel. This is currently not possible.
-    // As those requests can fail in certain cases, we need to wrap them in exception handlers,
-    // to make sure that the other requests are being sent and that the page properly loads.
-    const requests = [
-        () =>
-            fairRouletteService
-                .getRoundStatus()
-                .then((x) => round.update((_round) => {
-                    _round.active = (x == 1);
-                    return _round;
-                })),
-        () =>
-            fairRouletteService
-                .getRoundNumber()
-                .then((x) => round.update((_round) => {
-                    _round.number = x;
-                    return _round;
-                })),
-        () =>
-            fairRouletteService
-                .getLastWinningNumber()
-                .then((x) => round.update((_round) => {
-                    _round.winningNumber = x;
-                    return _round;
-                })),
-        () =>
-            fairRouletteService.getRoundStartedAt().then((x) => round.update((_round) => {
-                _round.startedAt = x;
-                return _round;
-            })),
-    ];
-
-    for (let request of requests) {
-        await request().catch((e) => log('Error', e.message));
-    }
-
-    log('Page', 'Loaded');
-
-    /**
-     * ChainID => address
-     * metadata: IOnLedgerRequest
-     * transfer: {color:values}
-     */
-
-    //await walletService.sendOnLedgerRequest($address, chainId);
-
-    //   const basicWallet = new BasicWallet(client);
-
-    //  await fairRouletteService.placeBetOnLedger($keyPair, $address, 2, 123n);
 }
