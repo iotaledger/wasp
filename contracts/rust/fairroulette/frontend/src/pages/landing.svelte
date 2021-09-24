@@ -59,7 +59,10 @@
     }
     .hero-description {
       padding: 0 24px;
-
+      margin-top: -40px;
+      @media (min-width: 1000px) {
+        margin-top: 0;
+      }
       @media (min-width: 1024px) {
         width: 50%;
         padding: 0;
@@ -93,7 +96,6 @@
       }
     }
     .wheel {
-      max-width: max-content;
       margin: 0 auto;
       overflow: hidden;
       margin-top: 32px;
@@ -101,8 +103,15 @@
         margin-top: 0;
       }
       img {
-        width: 100%;
-        max-height: 400px;
+        max-height: 600px;
+        width: 220%;
+        margin-left: -210px;
+        @media (min-width: 420px) {
+          width: 100%;
+          max-height: 400px;
+          margin-left: 0;
+        }
+
         @media (min-width: 1024px) {
           max-height: 600px;
         }
