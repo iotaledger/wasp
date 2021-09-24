@@ -1,7 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { initialize } from '../lib/app';
-  import { balance, round, updateGameState, address } from '../lib/store';
+  import {
+    balance,
+    round,
+    updateGameState,
+    address,
+    placingBet,
+    newAddressNeeded,
+    fundsRequested,
+  } from '../lib/store';
   import {
     BalancePanel,
     BettingSystem,
@@ -29,6 +37,7 @@
       });
       return _round;
     });
+    placingBet.set(false);
   };
 
   let removeMyAddressFromPlayers = () => {
@@ -63,6 +72,9 @@
     <div>
       <h4>INFO</h4>
       <div>Round {$round.active ? 'active' : 'no active'}</div>
+      <div>Placing bet: {$placingBet}</div>
+      <div>New address needed: {$newAddressNeeded}</div>
+      <div>Funds requested: {$fundsRequested}</div>
     </div>
   </div>
   <div class="layout_state">
