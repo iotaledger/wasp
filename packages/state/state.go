@@ -25,22 +25,24 @@ import (
 // region VirtualState /////////////////////////////////////////////////
 
 type virtualState struct {
-	chainID   iscp.ChainID
-	db        kvstore.KVStore
-	empty     bool
-	kvs       *buffered.BufferedKVStore
-	stateHash hashing.HashValue
-	updateLog []StateUpdate
+	chainID             iscp.ChainID
+	db                  kvstore.KVStore
+	empty               bool
+	kvs                 *buffered.BufferedKVStore
+	stateHash           hashing.HashValue
+	stateUpdate         StateUpdate
+	isStateHashOutdated bool
 }
 
 // newVirtualState creates VirtualState interface with the partition of KVStore
 func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualState {
 	sub := subRealm(db, []byte{dbkeys.ObjectTypeStateVariable})
 	ret := &virtualState{
-		db:        db,
-		kvs:       buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(sub)),
-		empty:     true,
-		updateLog: make([]StateUpdate, 0),
+		db:                  db,
+		kvs:                 buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(sub)),
+		empty:               true,
+		stateUpdate:         NewStateUpdate(),
+		isStateHashOutdated: true,
 	}
 	if chainID != nil {
 		ret.chainID = *chainID
@@ -61,7 +63,7 @@ func newZeroVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) (VirtualStat
 // calcOriginStateHash is independent from db provider nor chainID. Used for testing
 func calcOriginStateHash() hashing.HashValue {
 	emptyVirtualState, _ := newZeroVirtualState(mapdb.NewMapDB(), nil)
-	return emptyVirtualState.Hash()
+	return emptyVirtualState.StateCommitment()
 }
 
 func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
@@ -73,15 +75,12 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 
 func (vs *virtualState) Clone() VirtualState {
 	ret := &virtualState{
-		chainID:   *vs.chainID.Clone(),
-		db:        vs.db,
-		stateHash: vs.stateHash,
-		updateLog: make([]StateUpdate, len(vs.updateLog), cap(vs.updateLog)),
-		empty:     vs.empty,
-		kvs:       vs.kvs.Clone(),
-	}
-	for i := range ret.updateLog {
-		ret.updateLog[i] = vs.updateLog[i] // do not clone, just reference
+		chainID:     *vs.chainID.Clone(),
+		db:          vs.db,
+		stateHash:   vs.stateHash,
+		stateUpdate: vs.stateUpdate.Clone(),
+		empty:       vs.empty,
+		kvs:         vs.kvs.Clone(),
 	}
 	return ret
 }
@@ -127,7 +126,7 @@ func (vs *virtualState) PreviousStateHash() hashing.HashValue {
 	return ph
 }
 
-// ApplyBlock applies block of state updates. Checks consistency of the block and previous state. Updates state hash
+// ApplyBlock applies a block of state updates. Checks consistency of the block and previous state. Updates state hash
 func (vs *virtualState) ApplyBlock(b Block) error {
 	if vs.empty && b.BlockIndex() != 0 {
 		return xerrors.Errorf("ApplyBlock: b state index #%d can't be applied to the empty state", b.BlockIndex())
@@ -139,61 +138,48 @@ func (vs *virtualState) ApplyBlock(b Block) error {
 	if !vs.empty && vs.Timestamp().After(b.Timestamp()) {
 		return xerrors.New("ApplyBlock: inconsistent timestamps")
 	}
-	upds := make([]StateUpdate, len(b.(*blockImpl).stateUpdates))
-	for i := range upds {
-		upds[i] = b.(*blockImpl).stateUpdates[i]
-	}
-	vs.ApplyStateUpdates(upds...)
+	vs.ApplyStateUpdates(b.(*blockImpl).stateUpdate)
 	vs.empty = false
 	return nil
 }
 
-// ApplyStateUpdate applies one state update. Doesn't change state hash: it can be changed bu Apply block
+// ApplyStateUpdate applies one state update. Doesn't change the state hash: it can be changed by Apply block
 func (vs *virtualState) ApplyStateUpdates(stateUpd ...StateUpdate) {
 	for _, upd := range stateUpd {
 		upd.Mutations().ApplyTo(vs.KVStore())
+		for k, v := range upd.Mutations().Sets {
+			vs.stateUpdate.Mutations().Set(k, v)
+		}
+		for k := range upd.Mutations().Dels {
+			vs.stateUpdate.Mutations().Del(k)
+		}
 	}
-	vs.updateLog = append(vs.updateLog, stateUpd...) // do not clone
-	vs.regenHash()
+	vs.isStateHashOutdated = true
 }
 
 // ExtractBlock creates a block from update log and returns it or nil if log is empty. The log is cleared
 func (vs *virtualState) ExtractBlock() (Block, error) {
-	if len(vs.updateLog) == 0 {
-		return nil, nil
-	}
-	ret, err := newBlock(vs.updateLog...)
+	ret, err := newBlock(vs.stateUpdate)
 	if err != nil {
 		return nil, err
 	}
 	if vs.BlockIndex() != ret.BlockIndex() {
 		return nil, xerrors.New("virtualState: internal inconsistency: index of the state is not equal to the index of the extracted block")
 	}
-	for i := range vs.updateLog {
-		vs.updateLog[i] = nil // for GC
-	}
-	vs.updateLog = vs.updateLog[:0]
 	return ret, nil
 }
 
-// TODO implement Merkle hashing
-
-// Hash return hash of the state
-func (vs *virtualState) Hash() hashing.HashValue {
-	return vs.stateHash
-}
-
-func (vs *virtualState) regenHash() {
-	compactUpdate := NewStateUpdate()
-	for _, su := range vs.updateLog {
-		for k, v := range su.Mutations().Sets {
-			compactUpdate.mutations.Set(k, v)
+// StateCommitment returns the hash of the state, calculated as a recursive hashing of the previous state hash and the block.
+func (vs *virtualState) StateCommitment() hashing.HashValue {
+	if vs.isStateHashOutdated {
+		block, err := vs.ExtractBlock()
+		if err != nil {
+			panic(xerrors.Errorf("StateCommitment: %v", err))
 		}
-		for k := range su.Mutations().Dels {
-			compactUpdate.mutations.Del(k)
-		}
+		vs.stateHash = hashing.HashData(vs.stateHash[:], block.Bytes())
+		vs.isStateHashOutdated = false
 	}
-	vs.stateHash = hashing.HashData(compactUpdate.Bytes())
+	return vs.stateHash
 }
 
 // endregion ////////////////////////////////////////////////////////////

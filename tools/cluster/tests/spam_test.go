@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -8,9 +9,12 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,7 +32,14 @@ func TestSpamOnledger(t *testing.T) {
 		_, err := myClient.PostRequest(inccounter.FuncIncCounter.Name, *args)
 		require.NoError(t, err)
 	}
-	// TODO check blocklog
+
+	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
+
+	res, err := env.chain.Cluster.WaspClient(0).CallView(env.chain.ChainID, blocklog.Contract.Hname(), blocklog.FuncGetEventsForBlock.Name, dict.Dict{})
+	require.NoError(t, err)
+	events, err := testcore.EventsViewResultToStringArray(res)
+	require.NoError(t, err)
+	println(events)
 }
 
 func TestSpamOffledger(t *testing.T) {
@@ -46,13 +57,24 @@ func TestSpamOffledger(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	waitUntil(t, env.balanceOnChainIotaEquals(myAgentID, 1000000), util.MakeRange(0, 1), 60*time.Second, "send 100i")
+	waitUntil(t, env.balanceOnChainIotaEquals(myAgentID, 1000000), util.MakeRange(0, 1), 60*time.Second, "send 1000000i")
 
 	myClient := env.chain.SCClient(iscp.Hn(incCounterSCName), keyPair)
 
 	for i := 0; i < numRequests; i++ {
 		_, err = myClient.PostOffLedgerRequest(inccounter.FuncIncCounter.Name, chainclient.PostRequestParams{Nonce: uint64(i + 1)})
+		if err != nil {
+			time.Sleep(5 * time.Second)
+			fmt.Printf("ERROR sending offledger request, i: %d, err: %v\n", i, err)
+		}
 		require.NoError(t, err)
 	}
-	// TODO check blocklog
+
+	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
+
+	res, err := env.chain.Cluster.WaspClient(0).CallView(env.chain.ChainID, blocklog.Contract.Hname(), blocklog.FuncGetEventsForBlock.Name, dict.Dict{})
+	require.NoError(t, err)
+	events, err := testcore.EventsViewResultToStringArray(res)
+	require.NoError(t, err)
+	println(events)
 }

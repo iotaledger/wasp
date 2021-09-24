@@ -126,20 +126,28 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	}
 
 	ticker := time.NewTicker(c.offledgerBroadcastInterval)
+	stopBroadcast := func() {
+		c.offLedgerReqsAcksMutex.Lock()
+		delete(c.offLedgerReqsAcks, req.ID())
+		c.offLedgerReqsAcksMutex.Unlock()
+		ticker.Stop()
+	}
+
 	go func() {
+		defer stopBroadcast()
 		for {
 			<-ticker.C
 			// check if processed (request already left the mempool)
 			if !c.mempool.HasRequest(req.ID()) {
-				c.offLedgerReqsAcksMutex.Lock()
-				delete(c.offLedgerReqsAcks, req.ID())
-				c.offLedgerReqsAcksMutex.Unlock()
-				ticker.Stop()
 				return
 			}
 			c.offLedgerReqsAcksMutex.RLock()
 			ackPeers := c.offLedgerReqsAcks[(*req).ID()]
 			c.offLedgerReqsAcksMutex.RUnlock()
+			if committee != nil && len(ackPeers) >= int(committee.Size())-1 {
+				// this node is part of the committee and the message has already been received by every other committee node
+				return
+			}
 			sendMessage(ackPeers)
 		}
 	}()

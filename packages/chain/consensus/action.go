@@ -228,7 +228,7 @@ func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 			return
 		}
 		c.log.Debugf("runVM OnFinish callback: responding by state index: %d state hash: %s",
-			task.VirtualState.BlockIndex(), task.VirtualState.Hash())
+			task.VirtualState.BlockIndex(), task.VirtualState.StateCommitment())
 		c.chain.ReceiveMessage(&messages.VMResultMsg{
 			Task: task,
 		})
@@ -625,7 +625,7 @@ func (c *Consensus) setNewState(msg *messages.StateTransitionMsg) {
 		r = " (rotate) "
 	}
 	c.log.Debugf("SET NEW STATE #%d%s, output: %s, hash: %s",
-		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), msg.State.Hash().String())
+		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), msg.State.StateCommitment().String())
 	c.resetWorkflow()
 }
 

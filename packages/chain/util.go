@@ -16,11 +16,11 @@ func LogStateTransition(msg *ChainTransitionEventData, reqids []iscp.RequestID, 
 		log.Infof("STATE TRANSITION TO #%d. requests: %d, chain output: %s",
 			msg.VirtualState.BlockIndex(), len(reqids), iscp.OID(msg.ChainOutput.ID()))
 		log.Debugf("STATE TRANSITION. State hash: %s",
-			msg.VirtualState.Hash().String())
+			msg.VirtualState.StateCommitment().String())
 	} else {
 		log.Infof("ORIGIN STATE SAVED. State output id: %s", iscp.OID(msg.ChainOutput.ID()))
 		log.Debugf("ORIGIN STATE SAVED. state hash: %s",
-			msg.VirtualState.Hash().String())
+			msg.VirtualState.StateCommitment().String())
 	}
 }
 

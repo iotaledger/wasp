@@ -12,9 +12,8 @@ import (
 // Mutations is a set of mutations: one for each key
 // It provides a deterministic serialization
 type Mutations struct {
-	Sets   map[kv.Key][]byte
-	Dels   map[kv.Key]struct{}
-	locked bool
+	Sets map[kv.Key][]byte
+	Dels map[kv.Key]struct{}
 }
 
 func NewMutations() *Mutations {
@@ -50,7 +49,6 @@ func (ms *Mutations) Write(w io.Writer) error {
 			return err
 		}
 	}
-	ms.locked = true // should be immutable once serialized
 	return nil
 }
 
@@ -122,17 +120,11 @@ func (ms *Mutations) Get(k kv.Key) ([]byte, bool) {
 }
 
 func (ms *Mutations) Set(k kv.Key, v []byte) {
-	if ms.locked {
-		panic("mutations locked")
-	}
 	delete(ms.Dels, k)
 	ms.Sets[k] = v
 }
 
 func (ms *Mutations) Del(k kv.Key) {
-	if ms.locked {
-		panic("mutations locked")
-	}
 	delete(ms.Sets, k)
 	ms.Dels[k] = struct{}{}
 }
