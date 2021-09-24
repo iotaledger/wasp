@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { BarSelector, MultipleSelector } from "../components";
-  import { placeBet } from "../lib/app";
-  import { balance, placingBet, round } from "../lib/store";
-  import Button from "./button.svelte";
+  import { BarSelector, MultipleSelector } from '../components';
+  import { placeBet } from '../lib/app';
+  import { balance, placingBet, round } from '../lib/store';
+  import Button from './button.svelte';
 
   let betAmount: number = 0;
 

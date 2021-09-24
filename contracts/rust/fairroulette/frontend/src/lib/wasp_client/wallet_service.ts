@@ -1,15 +1,14 @@
-import { Base58, HName } from './crypto';
-import { BasicWallet } from './basic_wallet';
-import { Buffer } from './buffer';
-import { Colors } from './colors';
-import { Faucet, IFaucetRequest } from './binary_models';
-import { OnLedger } from './binary_models/on_ledger';
-import { Transaction } from './transaction';
 import type { BasicClient } from './basic_client';
+import { BasicWallet } from './basic_wallet';
+import { Faucet, IFaucetRequest } from './binary_models';
 import type { IOnLedger } from './binary_models/IOnLedger';
+import { OnLedger } from './binary_models/on_ledger';
+import { Buffer } from './buffer';
+import { Base58 } from './crypto';
+import type { IKeyPair, ISendTransactionResponse } from './models';
 import type { ITransaction } from './models/ITransaction';
 import type { IUnlockBlock } from './models/IUnlockBlock';
-import type { IKeyPair, ISendTransactionResponse } from './models';
+import { Transaction } from './transaction';
 
 
 
@@ -74,7 +73,9 @@ export class WalletService {
 
     const unspents = await wallet.getUnspentOutputs(address);
     const consumedOutputs = wallet.determineOutputsToConsume(unspents, transfer);
+    console.log("consumedOutputs", consumedOutputs)
     const { inputs, consumedFunds } = wallet.buildInputs(consumedOutputs);
+    console.log("address", address, "chainId", chainId, "transfer", transfer, "consumedFunds", consumedFunds);
     const outputs = wallet.buildOutputs(address, chainId, transfer, consumedFunds);
 
     const unlockBlocks: IUnlockBlock[] = [];

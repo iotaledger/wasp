@@ -2,6 +2,8 @@ import { derived, get, Readable, Writable, writable } from 'svelte/store';
 import type { IRound } from './models/IRound';
 import type { Buffer, IKeyPair } from './wasp_client';
 import { Base58 } from './wasp_client/crypto/base58';
+import { createNewAddress } from './app';
+export const isInitialized: Writable<boolean> = writable(false);
 
 export const seed: Writable<Buffer> = writable()
 export const seedString: Readable<string> = derived(seed, $seed => Base58.encode($seed))
@@ -18,7 +20,8 @@ export const START_GAME_STATE = "START_GAME";
 export const GAME_RUNNING_STATE = "GAME_RUNNING";
 
 export const state: Writable<string> = writable(START_GAME_STATE);
-export const showAddFunds: Writable<boolean> = writable(true);
+export const fundsRequested: Writable<boolean> = writable(false);
+export const newAddressNeeded: Writable<boolean> = writable(false);
 const RESET_ROUND: IRound = {
     active: false,
     logs: [],
@@ -38,7 +41,12 @@ export function resetRound(): void {
 
 export function updateGameState(): void {
     if (get(balance) > 0n) {
-        showAddFunds.set(false);
+        fundsRequested.set(true);
+        newAddressNeeded.set(true);
+    }
+    if (get(balance) === 0n && get(newAddressNeeded)) {
+        createNewAddress();
+        newAddressNeeded.set(false);
     }
     if (get(round).active) {
         state.set(GAME_RUNNING_STATE)
@@ -47,3 +55,7 @@ export function updateGameState(): void {
         state.set(START_GAME_STATE)
     }
 }
+
+// balance.subscribe(_balance => {
+//     console.log("balance", _balance)
+// })

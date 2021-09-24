@@ -1,31 +1,29 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { initialize } from '../lib/app';
+  import {
+    balance,
+    round,
+    updateGameState,
+    address,
+    placingBet,
+    newAddressNeeded,
+    fundsRequested,
+  } from '../lib/store';
   import {
     BalancePanel,
     BettingSystem,
+    Button,
     LogsPanel,
     PlayersPanel,
     Roulette,
     State,
     WalletPanel,
-  } from '../components';
-  import { initialize } from '../lib/app';
-  import { balance, round, updateGameState } from '../lib/store';
+  } from './../components';
 
   onMount(initialize);
 
   $: updateGameState(), $balance, $round;
-
-  //TODO: Delete this. Force game running
-  setInterval(() => ($round.active = !$round.active), 5000);
-  setTimeout(
-    () =>
-      $round.players.push({
-        address: '12kegXymhSJ4P7H7QjirfS124bZ4ExBQzZcQYxvqgsLu1',
-        bet: 10,
-      }),
-    10000
-  );
 </script>
 
 <div class="container">
@@ -58,6 +56,18 @@
 </div>
 
 <style lang="scss">
+  .simulator {
+    color: white;
+    margin: 48px 0;
+
+    .sim-buttons {
+      display: flex;
+      justify-content: space-around;
+      .sim-button {
+        width: 350px;
+      }
+    }
+  }
   .layout_state {
     display: flex;
     flex-direction: column;
