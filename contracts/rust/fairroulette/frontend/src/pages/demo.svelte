@@ -20,7 +20,7 @@
     showAddFunds,
   } from '../lib/store';
 
-  import { ToastType } from './../lib/utils';
+  import { ToastType } from './../lib/app';
 
   onMount(initialize);
 
