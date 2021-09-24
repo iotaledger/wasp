@@ -20,7 +20,7 @@ var tplChainBlock string
 func (d *Dashboard) initChainBlock(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid/block/:index", d.handleChainBlock)
 	route.Name = "chainBlock"
-	r[route.Path] = d.makeTemplate(e, tplChainBlock, tplWs)
+	r[route.Path] = d.makeTemplate(e, tplChainBlock, tplWebSocket)
 }
 
 func (d *Dashboard) handleChainBlock(c echo.Context) error {

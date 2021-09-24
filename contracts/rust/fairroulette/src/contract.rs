@@ -17,10 +17,6 @@ use crate::consts::*;
 use crate::params::*;
 use crate::results::*;
 
-pub struct LockBetsCall {
-    pub func: ScFunc,
-}
-
 pub struct PayWinnersCall {
     pub func: ScFunc,
 }
@@ -40,15 +36,25 @@ pub struct LastWinningNumberCall {
     pub results: ImmutableLastWinningNumberResults,
 }
 
+pub struct RoundNumberCall {
+    pub func:    ScView,
+    pub results: ImmutableRoundNumberResults,
+}
+
+pub struct RoundStartedAtCall {
+    pub func:    ScView,
+    pub results: ImmutableRoundStartedAtResults,
+}
+
+pub struct RoundStatusCall {
+    pub func:    ScView,
+    pub results: ImmutableRoundStatusResults,
+}
+
 pub struct ScFuncs {
 }
 
 impl ScFuncs {
-    pub fn lock_bets(_ctx: & dyn ScFuncCallContext) -> LockBetsCall {
-        LockBetsCall {
-            func: ScFunc::new(HSC_NAME, HFUNC_LOCK_BETS),
-        }
-    }
     pub fn pay_winners(_ctx: & dyn ScFuncCallContext) -> PayWinnersCall {
         PayWinnersCall {
             func: ScFunc::new(HSC_NAME, HFUNC_PAY_WINNERS),
@@ -74,6 +80,30 @@ impl ScFuncs {
         let mut f = LastWinningNumberCall {
             func:    ScView::new(HSC_NAME, HVIEW_LAST_WINNING_NUMBER),
             results: ImmutableLastWinningNumberResults { id: 0 },
+        };
+        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        f
+    }
+    pub fn round_number(_ctx: & dyn ScViewCallContext) -> RoundNumberCall {
+        let mut f = RoundNumberCall {
+            func:    ScView::new(HSC_NAME, HVIEW_ROUND_NUMBER),
+            results: ImmutableRoundNumberResults { id: 0 },
+        };
+        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        f
+    }
+    pub fn round_started_at(_ctx: & dyn ScViewCallContext) -> RoundStartedAtCall {
+        let mut f = RoundStartedAtCall {
+            func:    ScView::new(HSC_NAME, HVIEW_ROUND_STARTED_AT),
+            results: ImmutableRoundStartedAtResults { id: 0 },
+        };
+        f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
+        f
+    }
+    pub fn round_status(_ctx: & dyn ScViewCallContext) -> RoundStatusCall {
+        let mut f = RoundStatusCall {
+            func:    ScView::new(HSC_NAME, HVIEW_ROUND_STATUS),
+            results: ImmutableRoundStatusResults { id: 0 },
         };
         f.func.set_ptrs(ptr::null_mut(), &mut f.results.id);
         f
