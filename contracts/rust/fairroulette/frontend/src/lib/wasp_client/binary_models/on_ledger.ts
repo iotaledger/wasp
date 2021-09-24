@@ -41,7 +41,7 @@ export class OnLedger {
   }
 
   public static ToBuffer(req: IOnLedger): Buffer {
-    var buffer = new SimpleBufferCursor(Buffer.alloc(0));
+    const buffer = new SimpleBufferCursor(Buffer.alloc(0));
 
     buffer.writeUInt32LE(0);
     buffer.writeUInt32LE(req.contract);

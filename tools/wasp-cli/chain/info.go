@@ -51,8 +51,8 @@ var infoCmd = &cobra.Command{
 
 			feeColor, defaultOwnerFee, defaultValidatorFee, err := governance.GetDefaultFeeInfo(info)
 			log.Check(err)
-			log.Printf("Default owner fee: %d %s\n", defaultOwnerFee, feeColor)
-			log.Printf("Default validator fee: %d %s\n", defaultValidatorFee, feeColor)
+			log.Printf("Default owner fee: %d %s\n", defaultOwnerFee, feeColor.String())
+			log.Printf("Default validator fee: %d %s\n", defaultValidatorFee, feeColor.String())
 		}
 	},
 }

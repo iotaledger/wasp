@@ -50,7 +50,7 @@ var balanceCmd = &cobra.Command{
 func printOutputsByColor(outs []ledgerstate.Output) uint64 {
 	byColor, total := colored.OutputBalancesByColor(outs)
 	for col, val := range byColor {
-		log.Printf("    %s: %d\n", col, val)
+		log.Printf("    %s: %d\n", col.String(), val)
 	}
 	return total
 }
@@ -61,7 +61,7 @@ func printOutputsByOutputID(outs []ledgerstate.Output) uint64 {
 		log.Printf("    output ID %s:\n", out.ID())
 		balances := colored.BalancesFromL1Balances(out.Balances())
 		balances.ForEachSorted(func(color colored.Color, balance uint64) bool {
-			log.Printf("      %s: %d\n", color.Base58(), balance)
+			log.Printf("      %s: %d\n", color.String(), balance)
 			total += balance
 			return true
 		})

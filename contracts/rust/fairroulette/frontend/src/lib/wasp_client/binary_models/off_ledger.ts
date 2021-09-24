@@ -1,7 +1,7 @@
-import { Base58, ED25519 } from '../crypto'
-import { blake2b } from 'blakejs'
-import { Buffer } from '../buffer'
-import { SimpleBufferCursor } from '../simple_buffer_cursor'
+import { Base58, ED25519 } from '../crypto';
+import { blake2b } from 'blakejs';
+import { Buffer } from '../buffer';
+import { SimpleBufferCursor } from '../simple_buffer_cursor';
 import type { IKeyPair } from '../models';
 import type { IOffLedger } from './IOffLedger';
 
@@ -59,7 +59,7 @@ export class OffLedger {
   }
 
   public static ToBuffer(req: IOffLedger): Buffer {
-    var buffer = new SimpleBufferCursor(Buffer.alloc(0));
+    const buffer = new SimpleBufferCursor(Buffer.alloc(0));
 
     if ([0, 1].includes(req.requestType)) {
       buffer.writeIntBE(req.requestType, 1);
