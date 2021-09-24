@@ -2,7 +2,7 @@ import { get } from 'svelte/store';
 import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
-import { address, addressIndex, balance, isWorking, keyPair, placingBet, requestingFunds, round, seed, timestamp } from './store';
+import { address, addressIndex, balance, fundsRequested, isWorking, keyPair, newAddressNeeded, placingBet, requestingFunds, round, seed, timestamp } from './store';
 import { log } from './utils';
 import {
     BasicClient, Colors, PoWWorkerManager,
@@ -106,6 +106,13 @@ export async function updateFunds() {
         );
     } catch (ex) { }
     balance.set(_balance);
+
+    log('Develop', `balance: ${get(balance)}, fundsRequested: ${get(fundsRequested)}`)
+    if (get(balance) === 0n && get(fundsRequested) && get(newAddressNeeded)) {
+        log('Develop', 'Create ner address')
+        createNewAddress();
+        newAddressNeeded.set(false)
+    }
 }
 
 export function startFundsUpdater() {
@@ -117,6 +124,7 @@ export function startFundsUpdater() {
 }
 
 export async function placeBet() {
+    newAddressNeeded.set(true);
     placingBet.set(true)
     isWorking.set(true);
     try {

@@ -1,34 +1,62 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount } from 'svelte';
+  import { initialize } from '../lib/app';
+  import { balance, round, updateGameState, address } from '../lib/store';
   import {
     BalancePanel,
     BettingSystem,
+    Button,
     LogsPanel,
     PlayersPanel,
     Roulette,
     State,
     WalletPanel,
-  } from "../components";
-  import { initialize } from "../lib/app";
-  import { balance, round, updateGameState } from "../lib/store";
+  } from './../components';
 
   onMount(initialize);
 
   $: updateGameState(), $balance, $round;
 
   //TODO: Delete this. Force game running
-  setInterval(() => ($round.active = !$round.active), 5000);
-  setTimeout(
-    () =>
-      $round.players.push({
-        address: "12kegXymhSJ4P7H7QjirfS124bZ4ExBQzZcQYxvqgsLu1",
-        bet: 10,
-      }),
-    10000
-  );
+  $: isMyAddressInPlayersPanel =
+    $round.players.filter((_player) => _player.address === $address).length > 0;
+
+  let addMyAddressToPlayers = () => {
+    round.update((_round) => {
+      _round.players.push({
+        address: $address,
+        bet: Number($round.betAmount) ?? 122,
+      });
+      return _round;
+    });
+  };
+
+  let removeMyAddressFromPlayers = () => {
+    $round.players = $round.players.filter(
+      (_player) => _player.address !== $address
+    );
+  };
 </script>
 
 <div class="container">
+  <div class="simulator">
+    <h2>Simulator</h2>
+    <Button
+      onClick={() =>
+        isMyAddressInPlayersPanel
+          ? removeMyAddressFromPlayers()
+          : addMyAddressToPlayers()}
+      label={isMyAddressInPlayersPanel
+        ? 'Remove me to players'
+        : 'Add me to players'}
+    />
+    <Button
+      onClick={() => ($round.active = !$round.active)}
+      label="Activate/Deactivate round"
+    />
+    <h4>Round {$round.active ? 'active' : 'no active'}</h4>
+    <h4>Round {$round.active ? 'active' : 'no active'}</h4>
+  </div>
   <div class="layout_state">
     <div class="balance">
       <BalancePanel />

@@ -20,10 +20,18 @@
   );
 </script>
 
-<div class="betting-system" class:disabled>
-  <MultipleSelector {disabled} />
+<div
+  class={`betting-system ${
+    $round.players.filter((_player) => _player.address === $address).length > 0
+      ? 'disabled'
+      : $placingBet
+      ? 'disabled'
+      : ''
+  }`}
+>
+  <MultipleSelector />
   <div>
-    <BarSelector {disabled} />
+    <BarSelector />
     <div class="bet-button">
       {#if $balance > 1n}
         <Button
