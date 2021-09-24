@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount } from 'svelte';
   import {
     BalancePanel,
     BettingSystem,
@@ -9,15 +9,15 @@
     Roulette,
     State,
     WalletPanel,
-  } from "../components";
-  import { createNewAddress, initialize, sendFaucetRequest } from "../lib/app";
+  } from '../components';
+  import { createNewAddress, initialize, sendFaucetRequest } from '../lib/app';
   import {
     balance,
     fundsRequested,
     newAddressNeeded,
     requestingFunds,
     showAddFunds,
-  } from "../lib/store";
+  } from '../lib/store';
 
   onMount(initialize);
 
@@ -49,7 +49,7 @@
       {#if $showAddFunds}
         <div class="request_button">
           <Button
-            label={$requestingFunds ? "Requesting..." : "Request funds"}
+            label={$requestingFunds ? 'Requesting...' : 'Request funds'}
             onClick={sendFaucetRequest}
             disabled={$requestingFunds || $balance > 0n}
             loading={$requestingFunds}
@@ -148,6 +148,7 @@
         margin-bottom: 100px;
       }
       .request_button {
+        margin-top: 32px;
         @media (min-width: 1024px) {
           padding: 0 120px;
         }
