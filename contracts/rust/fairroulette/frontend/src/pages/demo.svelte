@@ -10,11 +10,13 @@
     WalletPanel,
   } from "../components";
   import { initialize } from "../lib/app";
-  import { balance, round, updateGameState } from "../lib/store";
+  import { balance, round, showAddFunds } from "../lib/store";
 
   onMount(initialize);
 
-  $: updateGameState(), $balance, $round;
+  $: if ($balance > 0n) {
+    showAddFunds.set(false);
+  }
 
   //TODO: Delete this. Force game running
   setInterval(() => ($round.active = !$round.active), 5000);

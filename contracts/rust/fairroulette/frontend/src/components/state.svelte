@@ -1,41 +1,48 @@
 <script lang="ts">
-  import {
-    GAME_RUNNING_STATE,
-    showAddFunds,
-    START_GAME_STATE,
-    state,
-  } from "../lib/store";
+  import { showAddFunds, round } from "../lib/store";
+
+  enum State {
+    Running = "Running",
+    Start = "Start",
+    AddFunds = "AddFunds",
+  }
+
+  let state: State;
 
   const MESSAGES = {
-    [START_GAME_STATE]: {
+    [State.Running]: {
       title: "Start game",
-      description: "Start game!",
+      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
     },
-
-    [GAME_RUNNING_STATE]: {
+    [State.Start]: {
       title: "GAME RUNNING!",
       description: "The round ends in 50 seconds.",
     },
+    [State.AddFunds]: {
+      title: "Add funds",
+      description:
+        "To start the demo, you first need to request funds for your wallet. Those coins are generated from the dev-net.",
+    },
   };
 
-  const ADD_FUNDS_MESSAGE = {
-    title: "Add funds",
-    description:
-      "To start the demo, you first need to request funds for your wallet. Those coins are generated from the dev-net.",
-  };
+  $: state = $showAddFunds
+    ? State.AddFunds
+    : $round.active
+    ? State.Running
+    : State.Start;
 </script>
 
-<div class="message">
-  <h2 class="title">
-    {$showAddFunds ? ADD_FUNDS_MESSAGE.title : MESSAGES[$state].title}
-  </h2>
-  <div class="description">
-    {$showAddFunds
-      ? ADD_FUNDS_MESSAGE.description
-      : MESSAGES[$state].description}
+{#if state}
+  <div class="message">
+    <h2 class="title">
+      {MESSAGES[state].title}
+    </h2>
+    <div class="description">
+      {MESSAGES[state].description}
+    </div>
+    <div />
   </div>
-  <div />
-</div>
+{/if}
 
 <style lang="scss">
   .message {

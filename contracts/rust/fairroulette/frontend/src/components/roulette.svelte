@@ -1,36 +1,32 @@
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte";
-  import {
-    GAME_RUNNING_STATE,
-    round,
-    START_GAME_STATE,
-    state,
-  } from "../lib/store";
+  import { onDestroy } from "svelte";
+  import { round } from "../lib/store";
   import { generateRandomInt } from "../lib/utils";
 
-  let numbers: {
-    number: number;
-    url: string;
-    active?: boolean;
-  }[] = new Array(8).fill({}).map((item, i) => {
-    return { ...item, number: i + 1, url: `./${i + 1}.svg` };
-  });
-
+  let flashedNumber: number;
   let interval;
-  let previousRandomNumber: number = -1;
 
-  function disableAll() {
-    numbers = numbers.map((n) => ({ ...n, active: false }));
+  // TODO: review this logic when websockets are working
+  $: if ($round.winningNumber) {
+    clearInterval(interval);
+    interval = undefined;
+    flashedNumber = Number($round.winningNumber);
   }
 
-  onMount(() => {
-    interval = setInterval(() => {
-      let randomNumber = generateRandomInt(0, 7, previousRandomNumber);
-      disableAll();
-      numbers[randomNumber].active = true;
-      previousRandomNumber = randomNumber;
-    }, 500);
-  });
+  // TODO: review this logic when websockets are working
+  $: if ($round.active) {
+    if (!interval) {
+      interval = setInterval(() => {
+        flashedNumber = generateRandomInt(1, 8, flashedNumber);
+      }, 500);
+    }
+  } else {
+    if (interval) {
+      flashedNumber = undefined;
+      clearInterval(interval);
+      interval = undefined;
+    }
+  }
 
   onDestroy(() => {
     clearInterval(interval);
@@ -43,18 +39,8 @@
     src="roulette_background.svg"
     alt="roulette"
   />
-  {#if $state === GAME_RUNNING_STATE}
-    {#each numbers as { url, active }}
-      {#if active}
-        <img class="flashedNumber" src={url} alt="active" />
-      {/if}
-    {/each}
-  {:else if $state === START_GAME_STATE && $round.winningNumber > 0n}
-    <img
-      class="flashedNumber"
-      src={numbers[Number($round.winningNumber - 1n)].url}
-      alt="active"
-    />
+  {#if flashedNumber}
+    <img class="flashedNumber" src={`./${flashedNumber}.svg`} alt="active" />
   {/if}
 </div>
 
