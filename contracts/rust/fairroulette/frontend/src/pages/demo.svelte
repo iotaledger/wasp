@@ -40,9 +40,9 @@
 <div class="container">
   <div class="toast">
     <Toast title="You win!" message="Congratulations!" type={ToastType.Win} />
-    <div class="animation">
-      <Animation animation="win" loop={false} />
-    </div>
+  </div>
+  <div class="animation">
+    <Animation animation="win" loop={false} />
   </div>
   <div class="layout_state">
     <div class="balance">
