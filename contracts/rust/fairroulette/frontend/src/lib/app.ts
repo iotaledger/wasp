@@ -27,6 +27,12 @@ enum LogTag {
     Unknown = 'Unknown'
 }
 
+
+export enum ToastType {
+    Error = "error",
+    Win = "win"
+}
+
 export function log(tag: string, description: string) {
     round.update((_round) => {
         _round.logs.push({
