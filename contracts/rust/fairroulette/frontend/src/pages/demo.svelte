@@ -41,21 +41,29 @@
 <div class="container">
   <div class="simulator">
     <h2>Simulator</h2>
-    <Button
-      onClick={() =>
-        isMyAddressInPlayersPanel
-          ? removeMyAddressFromPlayers()
-          : addMyAddressToPlayers()}
-      label={isMyAddressInPlayersPanel
-        ? 'Remove me to players'
-        : 'Add me to players'}
-    />
-    <Button
-      onClick={() => ($round.active = !$round.active)}
-      label="Activate/Deactivate round"
-    />
-    <h4>Round {$round.active ? 'active' : 'no active'}</h4>
-    <h4>Round {$round.active ? 'active' : 'no active'}</h4>
+    <div class="sim-buttons">
+      <div class="sim-button">
+        <Button
+          onClick={() =>
+            isMyAddressInPlayersPanel
+              ? removeMyAddressFromPlayers()
+              : addMyAddressToPlayers()}
+          label={isMyAddressInPlayersPanel
+            ? 'Remove me to players'
+            : 'Add me to players'}
+        />
+      </div>
+      <div class="sim-button">
+        <Button
+          onClick={() => ($round.active = !$round.active)}
+          label="Activate/Deactivate round"
+        />
+      </div>
+    </div>
+    <div>
+      <h4>INFO</h4>
+      <div>Round {$round.active ? 'active' : 'no active'}</div>
+    </div>
   </div>
   <div class="layout_state">
     <div class="balance">
@@ -86,6 +94,18 @@
 </div>
 
 <style lang="scss">
+  .simulator {
+    color: white;
+    margin: 48px 0;
+
+    .sim-buttons {
+      display: flex;
+      justify-content: space-around;
+      .sim-button {
+        width: 350px;
+      }
+    }
+  }
   .layout_state {
     display: flex;
     flex-direction: column;

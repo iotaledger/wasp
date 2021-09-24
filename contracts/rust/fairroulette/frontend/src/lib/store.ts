@@ -2,7 +2,7 @@ import { derived, get, Readable, Writable, writable } from 'svelte/store';
 import type { IRound } from './models/IRound';
 import type { Buffer, IKeyPair } from './wasp_client';
 import { Base58 } from './wasp_client/crypto/base58';
-
+import { createNewAddress } from './app';
 export const isInitialized: Writable<boolean> = writable(false);
 
 export const seed: Writable<Buffer> = writable()
@@ -43,6 +43,11 @@ export function resetRound(): void {
 export function updateGameState(): void {
     if (get(balance) > 0n) {
         fundsRequested.set(true);
+        newAddressNeeded.set(true);
+    }
+    if (get(balance) === 0n && get(newAddressNeeded)) {
+        createNewAddress();
+        newAddressNeeded.set(false);
     }
     if (get(round).active) {
         state.set(GAME_RUNNING_STATE)

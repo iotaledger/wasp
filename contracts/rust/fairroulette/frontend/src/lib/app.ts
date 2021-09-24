@@ -106,13 +106,6 @@ export async function updateFunds() {
         );
     } catch (ex) { }
     balance.set(_balance);
-
-    log('Develop', `balance: ${get(balance)}, fundsRequested: ${get(fundsRequested)}`)
-    if (get(balance) === 0n && get(fundsRequested) && get(newAddressNeeded)) {
-        log('Develop', 'Create ner address')
-        createNewAddress();
-        newAddressNeeded.set(false)
-    }
 }
 
 export function startFundsUpdater() {
@@ -124,7 +117,6 @@ export function startFundsUpdater() {
 }
 
 export async function placeBet() {
-    newAddressNeeded.set(true);
     placingBet.set(true)
     isWorking.set(true);
     try {
