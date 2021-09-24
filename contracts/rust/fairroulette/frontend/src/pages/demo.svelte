@@ -104,7 +104,7 @@
     @media (min-width: 1024px) {
       flex-direction: row;
       justify-content: space-between;
-      margin-top: 20px;
+      margin-top: 32px;
       margin-bottom: 300px;
     }
     .players {
