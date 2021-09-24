@@ -21,7 +21,7 @@ var tplChainBlob string
 func (d *Dashboard) initChainBlob(e *echo.Echo, r renderer) {
 	route := e.GET("/chain/:chainid/blob/:hash", d.handleChainBlob)
 	route.Name = "chainBlob"
-	r[route.Path] = d.makeTemplate(e, tplChainBlob, tplWs)
+	r[route.Path] = d.makeTemplate(e, tplChainBlob, tplWebSocket)
 
 	route = e.GET("/chain/:chainid/blob/:hash/raw/:field", d.handleChainBlobDownload)
 	route.Name = "chainBlobDownload"
