@@ -142,6 +142,7 @@
         margin-bottom: 100px;
       }
       .request_button {
+        margin-top: 32px;
         @media (min-width: 1024px) {
           padding: 0 120px;
         }
