@@ -1,51 +1,59 @@
 <script lang="ts">
-  import {
-    GAME_RUNNING_STATE,
-    START_GAME_STATE,
-    state,
-    fundsRequested,
-  } from './../lib/store';
+  import { round, showAddFunds } from "../lib/store";
+
+  enum State {
+    Running = "Running",
+    Start = "Start",
+    AddFunds = "AddFunds",
+  }
+
+  let state: State;
+
   const MESSAGES = {
-    [START_GAME_STATE]: {
-      title: 'Start game',
-      description: 'Start game!',
+    [State.Running]: {
+      title: "Game Running!",
+      description: "The round ends in 50 seconds.",
     },
-
-    [GAME_RUNNING_STATE]: {
-      title: 'GAME RUNNING!',
-      description: 'The round ends in 50 seconds.',
+    [State.Start]: {
+      title: "Start game",
+      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    },
+    [State.AddFunds]: {
+      title: "Add funds",
+      description:
+        "To start the demo, you first need to request funds for your wallet. Those coins are generated from the dev-net.",
     },
   };
 
-  const ADD_FUNDS_MESSAGE = {
-    title: 'Add funds',
-    description:
-      'To start the demo, you first need to request funds for your wallet. Those coins are generated from the dev-net.',
-  };
+  $: state = $showAddFunds
+    ? State.AddFunds
+    : $round.active
+    ? State.Running
+    : State.Start;
 </script>
 
-<div class="message">
-  <h2 class="title">
-    {$fundsRequested ? MESSAGES[$state].title : ADD_FUNDS_MESSAGE.title}
-  </h2>
-  <div class="description">
-    {$fundsRequested
-      ? MESSAGES[$state].description
-      : ADD_FUNDS_MESSAGE.description}
+{#if state}
+  <div class="message">
+    <h2 class="title">
+      {MESSAGES[state].title}
+    </h2>
+    <div class="description">
+      {MESSAGES[state].description}
+    </div>
+    <div />
   </div>
-  <div />
-</div>
+{/if}
 
 <style lang="scss">
   .message {
-    font-family: 'Metropolis Bold';
+    font-family: "Metropolis Bold";
     text-align: center;
     .title {
       text-align: center;
       color: var(--white);
     }
     .subtitle {
-      font-family: 'Metropolis Bold';
+      font-family: "Metropolis Bold";
       font-size: 24px;
       line-height: 120%;
       letter-spacing: 0.02em;

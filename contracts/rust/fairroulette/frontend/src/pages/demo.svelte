@@ -1,15 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { initialize } from '../lib/app';
-  import {
-    balance,
-    round,
-    updateGameState,
-    address,
-    placingBet,
-    newAddressNeeded,
-    fundsRequested,
-  } from '../lib/store';
+  import { onMount } from "svelte";
   import {
     BalancePanel,
     BettingSystem,
@@ -19,11 +9,26 @@
     Roulette,
     State,
     WalletPanel,
-  } from './../components';
+  } from "../components";
+  import { createNewAddress, initialize, sendFaucetRequest } from "../lib/app";
+  import {
+    balance,
+    fundsRequested,
+    newAddressNeeded,
+    requestingFunds,
+    showAddFunds,
+  } from "../lib/store";
 
   onMount(initialize);
 
-  $: updateGameState(), $balance, $round;
+  $: if ($balance > 0n) {
+    fundsRequested.set(true);
+    newAddressNeeded.set(true);
+    showAddFunds.set(false);
+  } else if ($balance === 0n && $newAddressNeeded) {
+    createNewAddress();
+    newAddressNeeded.set(false);
+  }
 </script>
 
 <div class="container">
@@ -41,9 +46,20 @@
   <div class="layout_roulette">
     <div class="roulette_game">
       <Roulette />
-      <div class="bet_system">
-        <BettingSystem />
-      </div>
+      {#if $showAddFunds}
+        <div class="request_button">
+          <Button
+            label={$requestingFunds ? "Requesting..." : "Request funds"}
+            onClick={sendFaucetRequest}
+            disabled={$requestingFunds || $balance > 0n}
+            loading={$requestingFunds}
+          />
+        </div>
+      {:else}
+        <div class="bet_system">
+          <BettingSystem />
+        </div>
+      {/if}
     </div>
 
     <div class="players">
@@ -126,9 +142,15 @@
         left: 50%;
         transform: translateX(-50%);
       }
-      .bet_system {
+      .bet_system,
+      .request_button {
         margin-top: 20px;
         margin-bottom: 100px;
+      }
+      .request_button {
+        @media (min-width: 1024px) {
+          padding: 0 120px;
+        }
       }
     }
     .logs {
