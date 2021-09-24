@@ -53,7 +53,7 @@ export class FairRouletteService {
     this.chainId = chainId;
     this.emitter = createNanoEvents();
 
-    // this.connectWebSocket();
+    this.connectWebSocket();
   }
 
   private connectWebSocket(): void {
