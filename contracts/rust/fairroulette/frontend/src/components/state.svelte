@@ -53,6 +53,7 @@
       margin-bottom: 8px;
     }
     .description {
+      padding: 16px;
       font-size: 16px;
       line-height: 150%;
       letter-spacing: 0.75px;
