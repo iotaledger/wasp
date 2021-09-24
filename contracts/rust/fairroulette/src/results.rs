@@ -35,3 +35,69 @@ impl MutableLastWinningNumberResults {
         ScMutableInt64::new(self.id, idx_map(IDX_RESULT_LAST_WINNING_NUMBER))
     }
 }
+
+#[derive(Clone, Copy)]
+pub struct ImmutableRoundNumberResults {
+    pub(crate) id: i32,
+}
+
+impl ImmutableRoundNumberResults {
+    pub fn round_number(&self) -> ScImmutableInt64 {
+        ScImmutableInt64::new(self.id, idx_map(IDX_RESULT_ROUND_NUMBER))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableRoundNumberResults {
+    pub(crate) id: i32,
+}
+
+impl MutableRoundNumberResults {
+    pub fn round_number(&self) -> ScMutableInt64 {
+        ScMutableInt64::new(self.id, idx_map(IDX_RESULT_ROUND_NUMBER))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct ImmutableRoundStartedAtResults {
+    pub(crate) id: i32,
+}
+
+impl ImmutableRoundStartedAtResults {
+    pub fn round_started_at(&self) -> ScImmutableInt32 {
+        ScImmutableInt32::new(self.id, idx_map(IDX_RESULT_ROUND_STARTED_AT))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableRoundStartedAtResults {
+    pub(crate) id: i32,
+}
+
+impl MutableRoundStartedAtResults {
+    pub fn round_started_at(&self) -> ScMutableInt32 {
+        ScMutableInt32::new(self.id, idx_map(IDX_RESULT_ROUND_STARTED_AT))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct ImmutableRoundStatusResults {
+    pub(crate) id: i32,
+}
+
+impl ImmutableRoundStatusResults {
+    pub fn round_status(&self) -> ScImmutableInt16 {
+        ScImmutableInt16::new(self.id, idx_map(IDX_RESULT_ROUND_STATUS))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableRoundStatusResults {
+    pub(crate) id: i32,
+}
+
+impl MutableRoundStatusResults {
+    pub fn round_status(&self) -> ScMutableInt16 {
+        ScMutableInt16::new(self.id, idx_map(IDX_RESULT_ROUND_STATUS))
+    }
+}
