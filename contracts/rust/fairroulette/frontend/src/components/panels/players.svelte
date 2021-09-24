@@ -6,7 +6,7 @@
     round.update((_round) => {
       if (_round) {
         _round.players.push({
-          address: "demo address",
+          address: "18Ui2x8keyMfzZL7yp5zeGy282ME1ax6FBEgR6SAgToFR",
           bet: 15,
         });
       }

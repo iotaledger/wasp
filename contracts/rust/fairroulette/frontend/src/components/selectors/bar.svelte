@@ -1,10 +1,8 @@
 <script lang="ts">
-  import { balance, round } from "../../lib/store";
+  import { balance } from "../../lib/store";
 
+  export let value: number;
   export let disabled: boolean = false;
-
-  $: value = Number($balance / 2n); //Initial value (middle value)
-  $: $round.betAmount = BigInt(value);
 </script>
 
 <div>

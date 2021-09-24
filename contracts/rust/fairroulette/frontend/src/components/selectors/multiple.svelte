@@ -1,22 +1,17 @@
 <script lang="ts">
+  import { BETTING_NUMBERS } from "../../lib/app";
   import { round } from "../../lib/store";
 
+  export let onClick: (number: number) => void = () => {};
   export let disabled: boolean = false;
-
-  let activeIndex;
-
-  function onClick(index) {
-    activeIndex = activeIndex !== index ? index : undefined;
-    round.update(($round) => ({ ...$round, betSelection: activeIndex }));
-  }
 </script>
 
 <div class="values">
-  {#each Array.from({ length: 8 }, (_, i) => i + 1) as number, index}
+  {#each Array.from({ length: BETTING_NUMBERS }, (_, i) => i + 1) as number, index}
     <button
-      on:click={() => onClick(index)}
+      on:click={() => onClick(index + 1)}
       class="cell"
-      class:active={activeIndex === index}
+      class:active={$round?.betSelection - 1 === index}
       {disabled}
     >
       {number}
