@@ -2,6 +2,7 @@ import { Base58 } from './crypto/base58';
 import { Buffer } from './buffer';
 import { Colors } from './colors';
 import { ED25519 } from './crypto/ed25519';
+import { SimpleBufferCursor } from './simple_buffer_cursor';
 import type { ITransaction } from './models/ITransaction';
 import type { IKeyPair } from "./models";
 
@@ -25,88 +26,61 @@ export class Transaction {
      * @returns The essence of the transaction.
      */
     public static essence(tx: ITransaction, payload: Buffer = Buffer.alloc(0)): Buffer {
-        const buffers: Buffer[] = [];
+        const essenceBuffer = new SimpleBufferCursor();
 
-        // version
-        const version = Buffer.alloc(1);
-        version.writeUInt8(tx.version, 0);
-        buffers.push(version);
+        essenceBuffer.writeInt8(tx.version);
+        essenceBuffer.writeUInt64LE(tx.timestamp);
+        essenceBuffer.writeBytes(Base58.decode(tx.aManaPledge));
+        essenceBuffer.writeBytes(Base58.decode(tx.cManaPledge));
 
-        // timestamp
-        const timestamp = Buffer.alloc(8);
-        timestamp.writeBigInt64LE(tx.timestamp, undefined);
-        buffers.push(timestamp);
-
-        // aManaPledge
-        buffers.push(Base58.decode(tx.aManaPledge));
-
-        // cManaPledge
-        buffers.push(Base58.decode(tx.cManaPledge));
-
-        // Input Size
-        const inputsCount = Buffer.alloc(2);
-        inputsCount.writeUInt16LE(tx.inputs.length, undefined);
-        buffers.push(inputsCount);
-
-        // Inputs
+        essenceBuffer.writeUInt16LE(tx.inputs.length);
         for (const input of tx.inputs) {
-            const inputType = Buffer.alloc(1);
-            inputType.writeUInt8(0, undefined);
-            buffers.push(inputType);
-
+            essenceBuffer.writeInt8(0);
             const decodedInput = Base58.decode(input);
-            buffers.push(decodedInput);
+            essenceBuffer.writeBytes(decodedInput);
         }
 
-        // Output count
-        const outputsCount = Buffer.alloc(2);
-        outputsCount.writeUInt16LE(Object.keys(tx.outputs).length, undefined);
-        buffers.push(outputsCount);
+        essenceBuffer.writeUInt16LE(Object.keys(tx.outputs).length);
 
+        const outputBuffers: SimpleBufferCursor[] = [];
 
-
-        // Outputs
-        const bufferOutputs: Buffer[] = [];
         for (const address in tx.outputs) {
-            const outputType = Buffer.alloc(1);
-            outputType.writeUInt8(3, undefined);
+            const outputBuffer = new SimpleBufferCursor();
 
-            const balancesCount = Buffer.alloc(4);
-            balancesCount.writeUInt32LE(tx.outputs[address].length, undefined);
+            outputBuffer.writeInt8(3);
+            outputBuffer.writeUInt32LE(tx.outputs[address].length);
 
             const bufferColors: Buffer[] = [];
+
             for (const balance of tx.outputs[address]) {
                 const colorValueBuffer = Buffer.alloc(8);
                 colorValueBuffer.writeBigUInt64LE(balance.value, undefined);
                 bufferColors.push(Buffer.concat([Colors.IOTA_COLOR_BYTES, colorValueBuffer]));
             }
+
             bufferColors.sort((a, b) => a.compare(b));
+            bufferColors.forEach(x => outputBuffer.writeBytes(x));
 
             const decodedAddress = Base58.decode(address);
-
-            const type = Buffer.alloc(1);
-
-            if (address == tx.chainId) {
-                type.writeInt8(4, undefined); // no timelock, no fallbackAddress, HAS payload
-            }
-
-            let output = Buffer.concat([outputType, balancesCount, Buffer.concat(bufferColors), decodedAddress, type]);
+            outputBuffer.writeBytes(decodedAddress);
 
             if (address == tx.chainId) {
-                const payloadLength = Buffer.alloc(2);
-                payloadLength.writeUInt16LE(tx.payload.length, undefined);
-
-                output = Buffer.concat([output, payloadLength, tx.payload]);
+                outputBuffer.writeInt8(4);
+                outputBuffer.writeUInt16LE(tx.payload.length);
+                outputBuffer.writeBytes(tx.payload);
+            } else {
+                outputBuffer.writeInt8(0);
             }
 
-            bufferOutputs.push(output);
+            outputBuffers.push(outputBuffer);
         }
 
-        bufferOutputs.sort((a, b) => a.compare(b));
-        buffers.push(Buffer.concat(bufferOutputs));
-        buffers.push(Buffer.alloc(4));
+        outputBuffers.sort((a, b) => a.buffer.compare(b.buffer));
+        outputBuffers.forEach(x => essenceBuffer.writeBytes(x.buffer));
 
-        return Buffer.concat(buffers);
+        essenceBuffer.writeUInt32LE(0);
+
+        return essenceBuffer.buffer;
     }
 
     /**
@@ -116,45 +90,35 @@ export class Transaction {
      * @returns The bytes of the transaction.
      */
     public static bytes(tx: ITransaction, essence?: Buffer): Buffer {
-        const buffers: Buffer[] = [];
+        const buffer = new SimpleBufferCursor();
 
-        const payloadType = Buffer.alloc(4);
-        payloadType.writeUInt32LE(1337, undefined);
-        buffers.push(payloadType);
+        buffer.writeUInt32LE(1337);
 
         const essenceBytes = Transaction.essence(tx);
-        buffers.push(essenceBytes);
-
-        const unlockBlocksCount = Buffer.alloc(2);
-        unlockBlocksCount.writeUInt16LE(tx.unlockBlocks.length, undefined);
-        buffers.push(unlockBlocksCount);
+        buffer.writeBytes(essenceBytes);
+        buffer.writeUInt16LE(tx.unlockBlocks.length);
 
         for (const index in tx.unlockBlocks) {
             const ubType = tx.unlockBlocks[index].type;
 
-            const unlockBlockType = Buffer.alloc(1);
-            unlockBlockType.writeUInt8(ubType, undefined);
-            buffers.push(unlockBlockType);
+            buffer.writeInt8(ubType);
 
             if (ubType === 0) {
-                const ED25519Type = Buffer.alloc(1);
-                ED25519Type.writeUInt8(0, undefined);
-                buffers.push(ED25519Type);
-                buffers.push(tx.unlockBlocks[index].publicKey);
-                buffers.push(tx.unlockBlocks[index].signature);
+                buffer.writeInt8(0);
+                buffer.writeBytes(tx.unlockBlocks[index].publicKey);
+                buffer.writeBytes(tx.unlockBlocks[index].signature);
+
                 continue;
             }
 
-            const referencedIndex = Buffer.alloc(2);
-            referencedIndex.writeUInt16LE(tx.unlockBlocks[index].referenceIndex, undefined);
-            buffers.push(referencedIndex);
+            buffer.writeUInt16LE(tx.unlockBlocks[index].referenceIndex);
         }
 
-        const payloadSize = Buffer.concat(buffers).length;
-        const payloadSizeBuffer = Buffer.alloc(4);
-        payloadSizeBuffer.writeUInt32LE(payloadSize, undefined);
-        buffers.unshift(payloadSizeBuffer);
+        const returnBuffer = new SimpleBufferCursor();
 
-        return Buffer.concat(buffers);
+        returnBuffer.writeUInt32LE(buffer.buffer.length);
+        returnBuffer.writeBytes(buffer.buffer);
+
+        return returnBuffer.buffer;
     }
 }

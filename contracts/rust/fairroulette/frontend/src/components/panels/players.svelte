@@ -75,6 +75,7 @@
           line-height: 150%;
           letter-spacing: 0.5px;
           color: var(--gray-3);
+          word-break: break-all;
         }
         .player-bet {
           font-weight: bold;

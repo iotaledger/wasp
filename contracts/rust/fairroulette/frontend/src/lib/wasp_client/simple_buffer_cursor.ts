@@ -1,4 +1,4 @@
-import { Buffer } from './buffer'
+import { Buffer } from './buffer';
 
 export class SimpleBufferCursor {
 
@@ -9,10 +9,11 @@ export class SimpleBufferCursor {
     return this._buffer;
   }
 
-  constructor(buffer: Buffer) {
+  constructor(buffer: Buffer = Buffer.alloc(0)) {
     this._buffer = buffer;
     this._traverse = 0;
   }
+
 
   readIntBE(length: number): number {
     const value = this._buffer.readIntBE(this._traverse, length);
@@ -50,28 +51,35 @@ export class SimpleBufferCursor {
   }
 
   writeIntBE(value: number, length: number) {
-    var nBuffer = Buffer.alloc(length);
+    const nBuffer = Buffer.alloc(length);
     nBuffer.writeIntBE(value, 0, length);
 
     this._buffer = Buffer.concat([this._buffer, nBuffer]);
   }
 
+  writeInt8(value: number) {
+    const nBuffer = Buffer.alloc(1);
+    nBuffer.writeInt8(value, 0);
+
+    this._buffer = Buffer.concat([this._buffer, nBuffer]);
+  }
+
   writeUInt32LE(value: number) {
-    var nBuffer = Buffer.alloc(4);
+    const nBuffer = Buffer.alloc(4);
     nBuffer.writeUInt32LE(value, 0);
 
     this._buffer = Buffer.concat([this._buffer, nBuffer]);
   }
 
   writeUInt64LE(value: bigint) {
-    var nBuffer = Buffer.alloc(8);
+    const nBuffer = Buffer.alloc(8);
     nBuffer.writeBigUInt64LE(value, 0);
 
     this._buffer = Buffer.concat([this._buffer, nBuffer]);
   }
 
   writeUInt16LE(value: number) {
-    var nBuffer = Buffer.alloc(2);
+    const nBuffer = Buffer.alloc(2);
     nBuffer.writeUInt16LE(value, 0);
 
     this._buffer = Buffer.concat([this._buffer, nBuffer]);

@@ -72,16 +72,16 @@ func passTypesFull(ctx iscp.Sandbox) (dict.Dict, error) {
 	if hname0 != 0 {
 		ctx.Log().Panicf("wrong Hname-0")
 	}
-	_, exists, err = codec.DecodeHname(ctx.Params().MustGet("ContractID"))
+	_, exists, err = codec.DecodeHname(ctx.Params().MustGet(ParamContractID))
 	checkFull(ctx, exists, err)
 
-	_, exists, err = codec.DecodeHname(ctx.Params().MustGet("ChainID"))
+	_, exists, err = codec.DecodeHname(ctx.Params().MustGet(ParamChainID))
 	checkFull(ctx, exists, err)
 
-	_, exists, err = codec.DecodeHname(ctx.Params().MustGet("Address"))
+	_, exists, err = codec.DecodeHname(ctx.Params().MustGet(ParamAddress))
 	checkFull(ctx, exists, err)
 
-	_, exists, err = codec.DecodeHname(ctx.Params().MustGet("AgentID"))
+	_, exists, err = codec.DecodeHname(ctx.Params().MustGet(ParamAgentID))
 	checkFull(ctx, exists, err)
 	return nil, nil
 }
@@ -117,16 +117,16 @@ func passTypesView(ctx iscp.SandboxView) (dict.Dict, error) {
 	if hname0 != 0 {
 		ctx.Log().Panicf("wrong hname-0")
 	}
-	_, exists, err = codec.DecodeHname(ctx.Params().MustGet("ContractID"))
+	_, exists, err = codec.DecodeHname(ctx.Params().MustGet(ParamContractID))
 	checkView(ctx, exists, err)
 
-	_, exists, err = codec.DecodeHname(ctx.Params().MustGet("ChainID"))
+	_, exists, err = codec.DecodeHname(ctx.Params().MustGet(ParamChainID))
 	checkView(ctx, exists, err)
 
-	_, exists, err = codec.DecodeHname(ctx.Params().MustGet("Address"))
+	_, exists, err = codec.DecodeHname(ctx.Params().MustGet(ParamAddress))
 	checkView(ctx, exists, err)
 
-	_, exists, err = codec.DecodeHname(ctx.Params().MustGet("AgentID"))
+	_, exists, err = codec.DecodeHname(ctx.Params().MustGet(ParamAgentID))
 	checkView(ctx, exists, err)
 	return nil, nil
 }

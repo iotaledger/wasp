@@ -3,21 +3,20 @@
 
   export let disabled: boolean = false;
 
-  let active;
+  let activeIndex;
+
+  function onClick(index) {
+    activeIndex = activeIndex !== index ? index : undefined;
+    round.update(($round) => ({ ...$round, betSelection: activeIndex }));
+  }
 </script>
 
 <div class="values">
   {#each Array.from({ length: 8 }, (_, i) => i + 1) as number, index}
     <button
-      on:click={() => {
-        active === index ? (active = undefined) : (active = index);
-        round.update((_round) => {
-          _round.betSelection = active ? number : undefined;
-          return _round;
-        });
-      }}
+      on:click={() => onClick(index)}
       class="cell"
-      class:active={active === index}
+      class:active={activeIndex === index}
       {disabled}
     >
       {number}

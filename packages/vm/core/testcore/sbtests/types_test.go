@@ -23,10 +23,10 @@ func testTypesFull(t *testing.T, w bool) {
 		"Hash", hashing.HashStrings("Hash"),
 		"Hname", iscp.Hn("Hname"),
 		"Hname-0", iscp.Hname(0),
-		"ContractID", cID,
-		"ChainID", chain.ChainID,
-		"Address", chain.ChainID.AsAddress(),
-		"AgentID", chain.OriginatorAgentID,
+		"contractID", cID,
+		"chainID", chain.ChainID,
+		"address", chain.ChainID.AsAddress(),
+		"agentID", chain.OriginatorAgentID,
 	).WithIotas(1)
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
@@ -45,10 +45,10 @@ func testTypesView(t *testing.T, w bool) {
 		"Hash", hashing.HashStrings("Hash"),
 		"Hname", iscp.Hn("Hname"),
 		"Hname-0", iscp.Hname(0),
-		"ContractID", cID,
-		"ChainID", chain.ChainID,
-		"Address", chain.ChainID.AsAddress(),
-		"AgentID", chain.OriginatorAgentID,
+		"contractID", cID,
+		"chainID", chain.ChainID,
+		"address", chain.ChainID.AsAddress(),
+		"agentID", chain.OriginatorAgentID,
 	)
 	require.NoError(t, err)
 }

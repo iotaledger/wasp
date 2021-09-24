@@ -2,7 +2,7 @@ import { get } from 'svelte/store';
 import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
-import { address, addressIndex, balance, fundsRequested, isWorking, keyPair, newAddressNeeded, placingBet, requestingFunds, round, seed, timestamp } from './store';
+import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, round, seed, timestamp } from './store';
 import { log } from './utils';
 import {
     BasicClient, Colors, PoWWorkerManager,
@@ -118,7 +118,6 @@ export function startFundsUpdater() {
 
 export async function placeBet() {
     placingBet.set(true)
-    isWorking.set(true);
     try {
         await fairRouletteService.placeBetOnLedger(
             get(keyPair),
@@ -131,7 +130,6 @@ export async function placeBet() {
 
         throw ex;
     }
-    isWorking.set(false);
 }
 
 export async function sendFaucetRequest() {
@@ -151,7 +149,6 @@ export async function sendFaucetRequest() {
     requestingFunds.set(false);
 }
 
-// To make sure the function gets called every second, we require that date.Now() is put in as a parameter to rely on sveltes change listener.
 export function calculateRoundLengthLeft(timestamp: number) {
     const roundStarted = get(round).startedAt;
 
