@@ -163,9 +163,8 @@ let parms = ScMutableMap::new();
 parms.get_int64("a").set_value(AGENT_ID)
 let ret = ctx.call(ScHname::new("accounts"), ScHname::new("getAccountNonce"), Some(params), None);
 let nonce = ret.get_int64("n")
-``
+```
 
 </TabItem>
 </Tabs>
 
-```
