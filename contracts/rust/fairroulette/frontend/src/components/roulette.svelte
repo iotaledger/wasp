@@ -36,11 +36,11 @@
 <div class="roulette">
   <img
     class="roulette-background"
-    src="roulette_background.svg"
+    src="/assets/roulette_background.svg"
     alt="roulette"
   />
   {#if flashedNumber}
-    <img class="flashedNumber" src={`./${flashedNumber}.svg`} alt="active" />
+    <img class="flashedNumber" src={`/assets/${flashedNumber}.svg`} alt="active" />
   {/if}
 </div>
 

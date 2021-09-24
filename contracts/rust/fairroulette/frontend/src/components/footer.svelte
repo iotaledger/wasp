@@ -1,5 +1,7 @@
 <script lang="ts">
-  export let foundationData;
+  import type { IFoundationData } from "../lib/models/IWebassets";
+
+  export let foundationData: IFoundationData;
 
   const { registeredAddress, visitingAddress, information } = foundationData;
   const SOCIAL_LINKS = [
@@ -57,7 +59,7 @@
 <footer>
   <div class="container">
     <div class="logo">
-      <img src="iota-footer.svg" alt="IOTA roulette" />
+      <img src="/assets/iota-logo.svg" alt="IOTA roulette" />
     </div>
     {#if registeredAddress || visitingAddress || information}
       <div class="address">
@@ -102,13 +104,13 @@
   <div class="icons">
     {#each SOCIAL_LINKS as link}
       <a
-        href={link?.url}
+        href={link.url}
         color={link.color}
         class="icon"
-        style="background-color:{link?.color}"
+        style="background-color:{link.color}"
       >
-        <img src={link?.icon} alt={link?.name} />
-        <span>{link?.name}</span>
+        <img src="/assets/{link.icon}" alt={link.name} />
+        <span>{link.name}</span>
       </a>
     {/each}
   </div>
