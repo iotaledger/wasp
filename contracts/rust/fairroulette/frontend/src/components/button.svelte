@@ -37,7 +37,7 @@
     .spinner {
       position: relative;
       top: 10px;
-      left: 10px;
+      left: 50%;
       width: 20px;
       height: 20px;
       animation: pulse 1s ease-in-out infinite;
