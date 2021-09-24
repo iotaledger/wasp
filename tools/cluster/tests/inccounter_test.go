@@ -232,8 +232,8 @@ func TestIncCounterDelay(t *testing.T) {
 	e.postRequest(incHname, iscp.Hn("increment"), 0, nil)
 	e.checkCounter(1)
 
-	e.postRequest(incHname, iscp.Hn("incrementdelay"), 0, map[string]interface{}{
-		varDelay: int32(5), // 10s delay
+	e.postRequest(incHname, iscp.Hn("incrementWithDelay"), 0, map[string]interface{}{
+		varDelay: int32(5), // 5s delay
 	})
 
 	time.Sleep(3 * time.Second)

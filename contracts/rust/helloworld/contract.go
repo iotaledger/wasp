@@ -23,11 +23,11 @@ type Funcs struct{}
 var ScFuncs Funcs
 
 func (sc Funcs) HelloWorld(ctx wasmlib.ScFuncCallContext) *HelloWorldCall {
-	return &HelloWorldCall{Func: wasmlib.NewScFunc(HScName, HFuncHelloWorld)}
+	return &HelloWorldCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncHelloWorld)}
 }
 
 func (sc Funcs) GetHelloWorld(ctx wasmlib.ScViewCallContext) *GetHelloWorldCall {
-	f := &GetHelloWorldCall{Func: wasmlib.NewScView(HScName, HViewGetHelloWorld)}
+	f := &GetHelloWorldCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetHelloWorld)}
 	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }

@@ -4,6 +4,8 @@
 package wasmlib
 
 type InitHost struct {
+	funcs  []func(ctx ScFuncContext)
+	views  []func(ctx ScViewContext)
 	params map[int32][]byte
 }
 
@@ -11,6 +13,20 @@ var _ ScHost = &InitHost{}
 
 func NewInitHost() *InitHost {
 	return &InitHost{params: make(map[int32][]byte)}
+}
+
+func (h InitHost) AddFunc(f func(ctx ScFuncContext)) []func(ctx ScFuncContext) {
+	if f != nil {
+		h.funcs = append(h.funcs, f)
+	}
+	return h.funcs
+}
+
+func (h InitHost) AddView(v func(ctx ScViewContext)) []func(ctx ScViewContext) {
+	if v != nil {
+		h.views = append(h.views, v)
+	}
+	return h.views
 }
 
 func (h InitHost) CallFunc(objID, keyID int32, params []byte) []byte {
