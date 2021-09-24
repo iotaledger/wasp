@@ -16,7 +16,7 @@ cryptographically signed. These kind of request don't rely on the Tangle for con
 
 ## Nonce
 
-In order to [prevent replay attacks](../../../../rfc/prevent-mev.md), it is required for off-ledger requests to include a special parameter, the `nonce`.
+In order to [prevent replay attacks](../../../rfc/prevent-mev.md), it is required for off-ledger requests to include a special parameter, the `nonce`.
 Nonces are account-bound, the current nonce for a given account can be obtained via the [`accounts`](../core_contracts/accounts.md) core contract `getAccountNonce` view.
 
 :::info Important
