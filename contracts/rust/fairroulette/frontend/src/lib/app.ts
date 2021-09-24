@@ -48,6 +48,17 @@ export async function initialize() {
         seed.set(Seed.generate());
     }
 
+    //TODO: Remove this at some point.
+    if (!config.chainId && config.chainResolverUrl) {
+        try {
+            const response = await fetch(config.chainResolverUrl);
+            const content = await response.json();
+            config.chainId = content.chainId;
+        } catch (ex) {
+            log(LogTag.Error, ex.message);
+        }
+    }
+
     client = new BasicClient({
         GoShimmerAPIUrl: config.goshimmerApiUrl,
         WaspAPIUrl: config.waspApiUrl,
