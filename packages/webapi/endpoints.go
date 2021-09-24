@@ -22,9 +22,7 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 )
 
-var (
-	log *logger.Logger
-)
+var log *logger.Logger
 
 func Init(
 	server echoswagger.ApiRoot,
