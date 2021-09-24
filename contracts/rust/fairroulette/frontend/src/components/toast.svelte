@@ -18,23 +18,54 @@
       on:click={() => {
         show = false;
       }}
-      class="close">X</button
+      class="close"><img src="close.svg" alt="close" /></button
     >
   </div>
 {/if}
 
 <style lang="scss">
   .toast {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-sizing: border-box;
+    border-radius: 12px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-
+    align-items: flex-start;
+    padding: 20px 16px;
+    @media (min-width: 1024px) {
+      padding: 20px 40px;
+      align-items: center;
+    }
     &.error {
-      background: tomato;
+      background: rgba(238, 91, 77, 0.24);
     }
 
     &.win {
-      background: turquoise;
+      background: rgba(0, 224, 202, 0.4);
+    }
+    .title {
+      font-family: 'Metropolis Bold';
+      font-size: 24px;
+      line-height: 120%;
+      letter-spacing: 0.02em;
+      color: var(--gray-1);
+    }
+    .message {
+      padding-top: 8px;
+      font-size: 14px;
+      line-height: 150%;
+      letter-spacing: 0.5px;
+      color: var(--gray-3);
+      @media (min-width: 1024px) {
+        font-size: 16px;
+        line-height: 150%;
+        letter-spacing: 0.75px;
+      }
+    }
+    button {
+      background: transparent;
+      border: none;
+      color: var(--white);
     }
   }
 </style>

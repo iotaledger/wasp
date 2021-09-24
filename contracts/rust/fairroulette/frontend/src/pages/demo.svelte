@@ -161,5 +161,9 @@
     }
   }
   .toast {
+    padding: 8px 16px;
+    @media (min-width: 1024px) {
+      padding: 32px 0 0 0;
+    }
   }
 </style>
