@@ -344,10 +344,12 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 		c.log.Panicf("publishNewBlockEvents - something went wrong getting events for block. %v", err)
 	}
 
-	for _, msg := range evts {
-		c.log.Infof("publishNewBlockEvents: '%s'", msg)
-		go publisher.Publish("vmmsg", c.chainID.Base58(), msg)
-	}
+	go func() {
+		for _, msg := range evts {
+			c.log.Infof("publishNewBlockEvents: '%s'", msg)
+			publisher.Publish("vmmsg", c.chainID.Base58(), msg)
+		}
+	}()
 }
 
 // processStateMessage processes the only chain output which exists on the chain's address
