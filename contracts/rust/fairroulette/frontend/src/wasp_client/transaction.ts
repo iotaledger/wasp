@@ -89,7 +89,7 @@ export class Transaction {
      * @param essence Existing essence.
      * @returns The bytes of the transaction.
      */
-    public static bytes(tx: ITransaction, essence?: Buffer): Buffer {
+    public static bytes(tx: ITransaction): Buffer {
         const buffer = new SimpleBufferCursor();
 
         buffer.writeUInt32LE(1337);

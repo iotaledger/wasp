@@ -235,12 +235,8 @@
     });
   }
 
-  function isBroke(balance: bigint) {
-    return balance < 200;
-  }
-
   function isWealthy(balance: bigint) {
-    return balance > 200;
+    return balance >= 200;
   }
 </script>
 
@@ -283,7 +279,7 @@
         >
       </div>
 
-      <div class="place_bet" class:disabled={isBroke(view.balance)}>
+      <div class="place_bet" class:disabled={!isWealthy(view.balance)}>
         <div class="place_bet_text">2 | Place a bet</div>
         <div class="place_bet_image" />
 
@@ -313,7 +309,7 @@
         <button
           class="submit_bet_button"
           on:click={() => placeBet()}
-          disabled={isBroke(view.balance)}>Submit bet</button
+          disabled={!isWealthy(view.balance)}>Submit bet</button
         >
       </div>
     </div>
