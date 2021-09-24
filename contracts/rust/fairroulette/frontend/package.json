@@ -41,6 +41,7 @@
     "uuid": "^8.3.2"
   },
   "dependencies": {
+    "lottie-web": "^5.7.13",
     "svelte-router-spa": "^6.0.2"
   }
 }

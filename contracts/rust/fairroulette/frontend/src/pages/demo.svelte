@@ -10,6 +10,7 @@
     State,
     Toast,
     WalletPanel,
+    Animation,
   } from '../components';
   import { createNewAddress, initialize, sendFaucetRequest } from '../lib/app';
   import {
@@ -39,6 +40,9 @@
 <div class="container">
   <div class="toast">
     <Toast title="You win!" message="Congratulations!" type={ToastType.Win} />
+    <div class="animation">
+      <Animation animation="win" loop={false} />
+    </div>
   </div>
   <div class="layout_state">
     <div class="balance">
@@ -80,6 +84,10 @@
 </div>
 
 <style lang="scss">
+  .animation {
+    position: absolute;
+    z-index: 1;
+  }
   .layout_state {
     display: flex;
     flex-direction: column;
