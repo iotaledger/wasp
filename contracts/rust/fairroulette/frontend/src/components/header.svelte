@@ -5,7 +5,9 @@
   <div class="container">
     <img src="iota-roulette.svg" alt="iota-logo-roulette" />
   </div>
-  <a href="/demo">Try demo</a>
+  {#if window.location.pathname !== '/demo'}
+    <a href="/demo">Try demo</a>
+  {/if}
 </header>
 
 <style lang="scss">
