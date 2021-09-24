@@ -35,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
+	"gopkg.in/eapache/channels.v1"
 )
 
 var (
@@ -55,8 +56,7 @@ type chainObj struct {
 	chainStateSync                   coreutil.ChainStateSync
 	stateReader                      state.OptimisticStateReader
 	procset                          *processors.Cache
-	chMsg                            chan interface{}
-	chMsgOverflow                    atomic.Int32 // To log a level of a channel overflow.
+	chMsg                            *channels.InfiniteChannel
 	stateMgr                         chain.StateManager
 	consensus                        chain.Consensus
 	log                              *logger.Logger
@@ -105,7 +105,7 @@ func NewChain(
 	ret := &chainObj{
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
-		chMsg:             make(chan interface{}, 100),
+		chMsg:             channels.NewInfiniteChannel(),
 		chainID:           *chainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
@@ -143,7 +143,7 @@ func NewChain(
 		ret.ReceiveMessage(recv.Msg)
 	})
 	go func() {
-		for msg := range ret.chMsg {
+		for msg := range ret.chMsg.Out() {
 			ret.dispatchMessage(msg)
 		}
 	}()
@@ -283,7 +283,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 	c.log.Debugf("processChainTransition: processing state %d", stateIndex)
 	if !msg.ChainOutput.GetIsGovernanceUpdated() {
 		c.log.Debugf("processChainTransition state %d: output %s is not governance updated; state hash %s; last cleaned state is %d",
-			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.Hash().String(), c.mempoolLastCleanedIndex)
+			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String(), c.mempoolLastCleanedIndex)
 		// normal state update:
 		c.stateReader.SetBaseline()
 		chainID := iscp.NewChainID(msg.ChainOutput.GetAliasAddress())
@@ -318,7 +318,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		c.mempoolLastCleanedIndex = stateIndex
 	} else {
 		c.log.Debugf("processChainTransition state %d: output %s is governance updated; state hash %s",
-			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.Hash().String())
+			stateIndex, iscp.OID(msg.ChainOutput.ID()), msg.VirtualState.StateCommitment().String())
 		chain.LogGovernanceTransition(msg, c.log)
 		chain.PublishGovernanceTransition(msg.ChainOutput)
 	}
@@ -328,7 +328,7 @@ func (c *chainObj) processChainTransition(msg *chain.ChainTransitionEventData) {
 		StateOutput:    msg.ChainOutput,
 		StateTimestamp: msg.OutputTimestamp,
 	})
-	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.Hash().String())
+	c.log.Debugf("processChainTransition completed: state index: %d, state hash: %s", stateIndex, msg.VirtualState.StateCommitment().String())
 }
 
 func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
@@ -344,10 +344,12 @@ func (c *chainObj) publishNewBlockEvents(blockIndex uint32) {
 		c.log.Panicf("publishNewBlockEvents - something went wrong getting events for block. %v", err)
 	}
 
-	for _, msg := range evts {
-		c.log.Infof("publishNewBlockEvents: '%s'", msg)
-		publisher.Publish("vmmsg", c.chainID.Base58(), msg)
-	}
+	go func() {
+		for _, msg := range evts {
+			c.log.Infof("publishNewBlockEvents: '%s'", msg)
+			publisher.Publish("vmmsg", c.chainID.Base58(), msg)
+		}
+	}()
 }
 
 // processStateMessage processes the only chain output which exists on the chain's address

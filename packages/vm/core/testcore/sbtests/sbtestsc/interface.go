@@ -110,6 +110,7 @@ const (
 	ParamCaller          = "caller"
 	ParamAgentID         = "agentID"
 	ParamContractCreator = "contractCreator"
+	ParamContractID      = "contractID"
 	ParamIntParamName    = "intParamName"
 	ParamIntParamValue   = "intParamValue"
 	ParamHnameContract   = "hnameContract"

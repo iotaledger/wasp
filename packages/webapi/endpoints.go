@@ -41,6 +41,8 @@ func Init(
 	server.SetResponseContentType(echo.MIMEApplicationJSON)
 
 	pub := server.Group("public", "").SetDescription("Public endpoints")
+	addWebSocketEndpoint(pub, log)
+
 	blob.AddEndpoints(pub, func() registry.BlobCache { return registryProvider() })
 	info.AddEndpoints(pub, network)
 	reqstatus.AddEndpoints(pub, chainsProvider.ChainProvider())

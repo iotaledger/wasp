@@ -25,10 +25,12 @@ import (
 
 // takeAction triggers actions whenever relevant
 func (c *Consensus) takeAction() {
-	if !c.workflow.stateReceived || c.workflow.finished {
-		c.log.Debugf("takeAction skipped: stateReceived %v, workflow finished %v", c.workflow.stateReceived, c.workflow.finished)
+	if !c.workflow.stateReceived || !c.workflow.inProgress {
+		c.log.Debugf("takeAction skipped: stateReceived: %v, workflow in progress: %v",
+			c.workflow.stateReceived, c.workflow.inProgress)
 		return
 	}
+
 	c.proposeBatchIfNeeded()
 	c.runVMIfNeeded()
 	c.broadcastSignedResultIfNeeded()
@@ -71,8 +73,8 @@ func (c *Consensus) proposeBatchIfNeeded() {
 		})
 	})
 
-	c.log.Infof("proposeBatch: proposed batch len = %d, ACS session ID: %d, state index: %d, proposal: %+v",
-		len(reqs), c.acsSessionID, c.stateOutput.GetStateIndex(), iscp.ShortRequestIDs(proposal.RequestIDs))
+	c.log.Infof("proposeBatch: proposed batch len = %d, ACS session ID: %d, state index: %d",
+		len(reqs), c.acsSessionID, c.stateOutput.GetStateIndex())
 	c.workflow.batchProposalSent = true
 }
 
@@ -226,7 +228,7 @@ func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 			return
 		}
 		c.log.Debugf("runVM OnFinish callback: responding by state index: %d state hash: %s",
-			task.VirtualState.BlockIndex(), task.VirtualState.Hash())
+			task.VirtualState.BlockIndex(), task.VirtualState.StateCommitment())
 		c.chain.ReceiveMessage(&messages.VMResultMsg{
 			Task: task,
 		})
@@ -565,7 +567,7 @@ func (c *Consensus) processInclusionState(msg *messages.InclusionStateMsg) {
 		c.log.Debugf("processInclusionState: transaction id %v is pending.", c.finalTx.ID().Base58())
 	case ledgerstate.Confirmed:
 		c.workflow.transactionSeen = true
-		c.workflow.finished = true
+		c.workflow.inProgress = false
 		c.refreshConsensusInfo()
 		c.log.Debugf("processInclusionState: transaction id %s is confirmed; workflow finished", msg.TxID.Base58())
 	case ledgerstate.Rejected:
@@ -609,6 +611,11 @@ func (c *Consensus) finalizeTransaction(sigSharesToAggregate [][]byte) (*ledgers
 }
 
 func (c *Consensus) setNewState(msg *messages.StateTransitionMsg) {
+	if msg.State.BlockIndex() != msg.StateOutput.GetStateIndex() {
+		c.log.Panicf("consensus::setNewState: state index is inconsistent: block: #%d != chain output: #%d",
+			msg.State.BlockIndex(), msg.StateOutput.GetStateIndex())
+	}
+
 	c.stateOutput = msg.StateOutput
 	c.currentState = msg.State
 	c.stateTimestamp = msg.StateTimestamp
@@ -618,7 +625,7 @@ func (c *Consensus) setNewState(msg *messages.StateTransitionMsg) {
 		r = " (rotate) "
 	}
 	c.log.Debugf("SET NEW STATE #%d%s, output: %s, hash: %s",
-		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), msg.State.Hash().String())
+		msg.StateOutput.GetStateIndex(), r, iscp.OID(msg.StateOutput.ID()), msg.State.StateCommitment().String())
 	c.resetWorkflow()
 }
 
@@ -635,6 +642,7 @@ func (c *Consensus) resetWorkflow() {
 	c.resultSigAck = c.resultSigAck[:0]
 	c.workflow = workflowFlags{
 		stateReceived: c.stateOutput != nil,
+		inProgress:    c.stateOutput != nil,
 	}
 	c.log.Debugf("Workflow reset")
 }

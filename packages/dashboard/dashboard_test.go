@@ -7,6 +7,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/webapi/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -18,6 +19,8 @@ func checkProperConversionsToString(t *testing.T, html *goquery.Document) {
 	require.NotContains(t, strings.ToLower(html.Text()), "{alias")
 	require.NotContains(t, strings.ToLower(html.Text()), "address {")
 	require.NotContains(t, strings.ToLower(html.Text()), "$/")
+	// For colored.Color we need to use String() instead of .Base58() ¯\_(ツ)_/¯
+	require.NotContains(t, strings.ToLower(html.Text()), "["+strings.Repeat("0 ", colored.ColorLength-1)+"0]")
 }
 
 func TestDashboardConfig(t *testing.T) {

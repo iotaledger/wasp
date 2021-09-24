@@ -16,11 +16,11 @@ func LogStateTransition(msg *ChainTransitionEventData, reqids []iscp.RequestID, 
 		log.Infof("STATE TRANSITION TO #%d. requests: %d, chain output: %s",
 			msg.VirtualState.BlockIndex(), len(reqids), iscp.OID(msg.ChainOutput.ID()))
 		log.Debugf("STATE TRANSITION. State hash: %s",
-			msg.VirtualState.Hash().String())
+			msg.VirtualState.StateCommitment().String())
 	} else {
 		log.Infof("ORIGIN STATE SAVED. State output id: %s", iscp.OID(msg.ChainOutput.ID()))
 		log.Debugf("ORIGIN STATE SAVED. state hash: %s",
-			msg.VirtualState.Hash().String())
+			msg.VirtualState.StateCommitment().String())
 	}
 }
 
@@ -34,7 +34,7 @@ func LogGovernanceTransition(msg *ChainTransitionEventData, log *logger.Logger) 
 func PublishRequestsSettled(chainID *iscp.ChainID, stateIndex uint32, reqids []iscp.RequestID) {
 	for _, reqid := range reqids {
 		publisher.Publish("request_out",
-			chainID.String(),
+			chainID.Base58(),
 			reqid.String(),
 			strconv.Itoa(int(stateIndex)),
 			strconv.Itoa(len(reqids)),
@@ -46,7 +46,7 @@ func PublishStateTransition(chainID *iscp.ChainID, stateOutput *ledgerstate.Alia
 	stateHash, _ := hashing.HashValueFromBytes(stateOutput.GetStateData())
 
 	publisher.Publish("state",
-		chainID.String(),
+		chainID.Base58(),
 		strconv.Itoa(int(stateOutput.GetStateIndex())),
 		strconv.Itoa(reqIDsLength),
 		iscp.OID(stateOutput.ID()),
@@ -59,7 +59,7 @@ func PublishGovernanceTransition(stateOutput *ledgerstate.AliasOutput) {
 	chainID := iscp.NewChainID(stateOutput.GetAliasAddress())
 
 	publisher.Publish("rotate",
-		chainID.String(),
+		chainID.Base58(),
 		strconv.Itoa(int(stateOutput.GetStateIndex())),
 		iscp.OID(stateOutput.ID()),
 		stateHash.String(),

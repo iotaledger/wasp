@@ -36,7 +36,7 @@ func (ch *Chain) String() string {
 	var buf bytes.Buffer
 	fmt.Fprintf(&buf, "Chain ID: %s\n", ch.ChainID)
 	fmt.Fprintf(&buf, "Chain state controller: %s\n", ch.StateControllerAddress)
-	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.Hash().String())
+	fmt.Fprintf(&buf, "State hash: %s\n", ch.State.StateCommitment().String())
 	fmt.Fprintf(&buf, "UTXODB genesis address: %s\n", ch.Env.utxoDB.GetGenesisAddress())
 	return buf.String()
 }
@@ -393,16 +393,16 @@ func (ch *Chain) GetFeeInfo(contactName string) (colored.Color, uint64, uint64) 
 	require.NoError(ch.Env.T, err)
 	require.NotEqualValues(ch.Env.T, 0, len(ret))
 
-	feeColor, ok, err := codec.DecodeColor(ret.MustGet(governance.VarFeeColor))
+	feeColor, ok, err := codec.DecodeColor(ret.MustGet(governance.ParamFeeColor))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 	require.NotNil(ch.Env.T, feeColor)
 
-	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(governance.VarValidatorFee))
+	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(governance.ParamValidatorFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 
-	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(governance.VarOwnerFee))
+	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(governance.ParamOwnerFee))
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, ok)
 

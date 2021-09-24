@@ -36,19 +36,32 @@ func run(_ *node.Plugin) {
 	runtime.SetBlockProfileRate(5)
 	runtime.SetCPUProfileRate(5)
 
-	profConfig := &profile.Config{
-		Path:                "./profiles",
-		EnableInterruptHook: true,
-	}
+	if parameters.GetBool(parameters.ProfilingWriteProfiles) {
+		profConfig := &profile.Config{
+			Path:                "./profiles",
+			EnableInterruptHook: true,
+		}
 
-	profs := make([]*profile.Profile, 7)
-	profs[0] = profile.CPUProfile(profConfig).Start()
-	profs[1] = profile.MemProfile(profConfig).Start()
-	profs[2] = profile.GoroutineProfile(profConfig).Start()
-	profs[3] = profile.MutexProfile(profConfig).Start()
-	profs[4] = profile.BlockProfile(profConfig).Start()
-	profs[5] = profile.TraceProfile(profConfig).Start()
-	profs[6] = profile.ThreadCreationProfile(profConfig).Start()
+		profs := make([]*profile.Profile, 7)
+		profs[0] = profile.CPUProfile(profConfig).Start()
+		profs[1] = profile.MemProfile(profConfig).Start()
+		profs[2] = profile.GoroutineProfile(profConfig).Start()
+		profs[3] = profile.MutexProfile(profConfig).Start()
+		profs[4] = profile.BlockProfile(profConfig).Start()
+		profs[5] = profile.TraceProfile(profConfig).Start()
+		profs[6] = profile.ThreadCreationProfile(profConfig).Start()
+
+		err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
+			<-shutdownSignal
+			for _, p := range profs {
+				p.Stop()
+			}
+			log.Infof("%s shutdown,writing performance profiles", PluginName)
+		})
+		if err != nil {
+			panic(err)
+		}
+	}
 
 	go func() {
 		bindAddr := parameters.GetString(parameters.ProfilingBindAddress)
@@ -58,15 +71,4 @@ func run(_ *node.Plugin) {
 			panic(err)
 		}
 	}()
-
-	err := daemon.BackgroundWorker(PluginName, func(shutdownSignal <-chan struct{}) {
-		<-shutdownSignal
-		for _, p := range profs {
-			p.Stop()
-		}
-		log.Infof("%s shutdown,writing performance profiles", PluginName)
-	})
-	if err != nil {
-		panic(err)
-	}
 }

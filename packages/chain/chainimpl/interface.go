@@ -62,7 +62,7 @@ func (c *chainObj) Dismiss(reason string) {
 	c.dismissOnce.Do(func() {
 		c.dismissed.Store(true)
 
-		close(c.chMsg)
+		c.chMsg.Close()
 
 		c.mempool.Close()
 		c.stateMgr.Close()
@@ -86,38 +86,14 @@ func (c *chainObj) IsDismissed() bool {
 
 // ReceiveMessage accepts an incoming message asynchronously.
 func (c *chainObj) ReceiveMessage(msg interface{}) {
-	c.receiveMessage(msg, false)
+	c.receiveMessage(msg)
 }
 
-func (c *chainObj) receiveMessage(msg interface{}, blocking bool) {
+func (c *chainObj) receiveMessage(msg interface{}) {
 	if c.IsDismissed() {
 		return
 	}
-	defer func() { // This is needed to handle possible write to a closed channel.
-		r := recover()
-		if err, ok := r.(error); ok && err.Error() == "send on closed channel" {
-			c.log.Warnf("Failed to receive message, reason=%v", err)
-			return
-		}
-		if r != nil {
-			panic(r)
-		}
-	}()
-	if blocking {
-		c.chMsg <- msg
-		return
-	}
-	select {
-	case c.chMsg <- msg:
-		return
-	default:
-		overflowVal := c.chMsgOverflow.Inc()
-		c.log.Warnf("ReceiveMessage with type '%T' on full channel, current overflow=%v", msg, overflowVal)
-		go func() {
-			c.receiveMessage(msg, true)
-			c.chMsgOverflow.Dec()
-		}()
-	}
+	c.chMsg.In() <- msg
 }
 
 func shouldSendToPeer(peerID string, ackPeers []string) bool {
@@ -150,20 +126,28 @@ func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	}
 
 	ticker := time.NewTicker(c.offledgerBroadcastInterval)
+	stopBroadcast := func() {
+		c.offLedgerReqsAcksMutex.Lock()
+		delete(c.offLedgerReqsAcks, req.ID())
+		c.offLedgerReqsAcksMutex.Unlock()
+		ticker.Stop()
+	}
+
 	go func() {
+		defer stopBroadcast()
 		for {
 			<-ticker.C
 			// check if processed (request already left the mempool)
 			if !c.mempool.HasRequest(req.ID()) {
-				c.offLedgerReqsAcksMutex.Lock()
-				delete(c.offLedgerReqsAcks, req.ID())
-				c.offLedgerReqsAcksMutex.Unlock()
-				ticker.Stop()
 				return
 			}
 			c.offLedgerReqsAcksMutex.RLock()
 			ackPeers := c.offLedgerReqsAcks[(*req).ID()]
 			c.offLedgerReqsAcksMutex.RUnlock()
+			if committee != nil && len(ackPeers) >= int(committee.Size())-1 {
+				// this node is part of the committee and the message has already been received by every other committee node
+				return
+			}
 			sendMessage(ackPeers)
 		}
 	}()

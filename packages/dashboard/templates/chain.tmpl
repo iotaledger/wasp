@@ -19,8 +19,8 @@
 						{{- template "agentid" (args .ChainID $rootinfo.OwnerIDDelegated) -}}
 					{{- end -}}
 				</dd>
-				<dt>Default owner fee</dt><dd><code>{{$rootinfo.DefaultOwnerFee}} {{$rootinfo.FeeColor}}</code></dd>
-				<dt>Default validator fee</dt><dd><code>{{$rootinfo.DefaultValidatorFee}} {{$rootinfo.FeeColor}}</code></dd>
+				<dt>Default owner fee</dt><dd><code>{{$rootinfo.DefaultOwnerFee}} {{colorref $rootinfo.FeeColor}}</code></dd>
+				<dt>Default validator fee</dt><dd><code>{{$rootinfo.DefaultValidatorFee}} {{colorref $rootinfo.FeeColor}}</code></dd>
 			{{end}}
 		</dl>
 	</div>
@@ -83,35 +83,36 @@
 				<dt>Last updated</dt><dd><code>{{formatTimestamp .LatestBlock.Info.Timestamp}}</code></dd>
 			</dl>
 		</div>
-
-		<div class="card fluid">
-			<h3 class="section">Committee</h3>
-			<dl>
-			<dt>Address</dt>      <dd>{{template "address" .Committee.Address}}</dd>
-			<dt>Size</dt>      <dd><code>{{.Committee.Size}}</code></dd>
-			<dt>Quorum</dt>    <dd><code>{{.Committee.Quorum}}</code></dd>
-			<dt>Quorum status</dt>    <dd>{{if .Committee.QuorumIsAlive}}up{{else}}down{{end}}</dd>
-			</dl>
-			<h4>Peer status</h4>
-			<table>
-			<thead>
-				<tr>
-					<th>Index</th>
-					<th>ID</th>
-					<th>Status</th>
-				</tr>
-			</thead>
-			<tbody>
-			{{range $_, $s := .Committee.PeerStatus}}
-				<tr>
-					<td>{{$s.Index}}</td>
-					<td><code>{{$s.PeeringID}}</code></td>
-					<td>{{if $s.Connected}}up{{else}}down{{end}}</td>
-				</tr>
-			{{end}}
-			</tbody>
-			</table>
-		</div>
+		{{if .Committee}}
+			<div class="card fluid">
+				<h3 class="section">Committee</h3>
+				<dl>
+				<dt>Address</dt>      <dd>{{template "address" .Committee.Address}}</dd>
+				<dt>Size</dt>      <dd><code>{{.Committee.Size}}</code></dd>
+				<dt>Quorum</dt>    <dd><code>{{.Committee.Quorum}}</code></dd>
+				<dt>Quorum status</dt>    <dd>{{if .Committee.QuorumIsAlive}}up{{else}}down{{end}}</dd>
+				</dl>
+				<h4>Peer status</h4>
+				<table>
+				<thead>
+					<tr>
+						<th>Index</th>
+						<th>ID</th>
+						<th>Status</th>
+					</tr>
+				</thead>
+				<tbody>
+				{{range $_, $s := .Committee.PeerStatus}}
+					<tr>
+						<td>{{$s.Index}}</td>
+						<td><code>{{$s.PeeringID}}</code></td>
+						<td>{{if $s.Connected}}up{{else}}down{{end}}</td>
+					</tr>
+				{{end}}
+				</tbody>
+				</table>
+			</div>
+		{{end}}
 	{{end}}
 	{{ template "ws" .ChainID }}
 {{end}}

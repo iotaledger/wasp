@@ -11,8 +11,8 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/peering"
 	libp2ppeer "github.com/libp2p/go-libp2p-core/peer"
-	"go.uber.org/atomic"
 	"golang.org/x/xerrors"
+	"gopkg.in/eapache/channels.v1"
 )
 
 const (
@@ -21,18 +21,17 @@ const (
 )
 
 type peer struct {
-	remoteNetID    string
-	remotePubKey   *ed25519.PublicKey
-	remoteLppID    libp2ppeer.ID
-	accessLock     *sync.RWMutex
-	sendCh         chan *peering.PeerMessage
-	sendChOverflow atomic.Uint32
-	lastMsgSent    time.Time
-	lastMsgRecv    time.Time
-	numUsers       int
-	trusted        bool
-	net            *netImpl
-	log            *logger.Logger
+	remoteNetID  string
+	remotePubKey *ed25519.PublicKey
+	remoteLppID  libp2ppeer.ID
+	accessLock   *sync.RWMutex
+	sendCh       *channels.InfiniteChannel
+	lastMsgSent  time.Time
+	lastMsgRecv  time.Time
+	numUsers     int
+	trusted      bool
+	net          *netImpl
+	log          *logger.Logger
 }
 
 func newPeer(remoteNetID string, remotePubKey *ed25519.PublicKey, remoteLppID libp2ppeer.ID, n *netImpl) *peer {
@@ -42,7 +41,7 @@ func newPeer(remoteNetID string, remotePubKey *ed25519.PublicKey, remoteLppID li
 		remotePubKey: remotePubKey,
 		remoteLppID:  remoteLppID,
 		accessLock:   &sync.RWMutex{},
-		sendCh:       make(chan *peering.PeerMessage, 100),
+		sendCh:       channels.NewInfiniteChannel(),
 		lastMsgSent:  time.Time{},
 		lastMsgRecv:  time.Time{},
 		numUsers:     0,
@@ -82,7 +81,7 @@ func (p *peer) maintenanceCheck() {
 	}
 	if numUsers == 0 && !trusted && lastMsgOld {
 		p.net.delPeer(p)
-		close(p.sendCh)
+		p.sendCh.Close()
 	}
 }
 
@@ -113,38 +112,12 @@ func (p *peer) SendMsg(msg *peering.PeerMessage) {
 		return
 	}
 	p.accessLock.RUnlock()
-	catch := func() {
-		r := recover()
-		if err, ok := r.(error); ok && err.Error() == "send on closed channel" {
-			p.log.Warnf("Failed to send message, reason=%v", err)
-			return
-		}
-		if r != nil {
-			p.log.Errorf("Failed to send message, reason=%v", r)
-			panic(r)
-		}
-	}
-	//
-	defer catch()
-	select {
-	case p.sendCh <- msg:
-		return
-	default:
-		overflow := p.sendChOverflow.Inc()
-		p.log.Warnf("Send channel to %v overflown by %v", p.remoteNetID, overflow)
-		go func() {
-			defer catch()
-			p.sendCh <- msg
-			if overflow := p.sendChOverflow.Dec(); overflow == 0 {
-				p.log.Warnf("Send channel to %v is not overflown anymore.", p.remoteNetID)
-			}
-		}()
-	}
+	p.sendCh.In() <- msg
 }
 
 func (p *peer) sendLoop() {
-	for msg := range p.sendCh {
-		p.sendMsgDirect(msg)
+	for msg := range p.sendCh.Out() {
+		p.sendMsgDirect(msg.(*peering.PeerMessage))
 	}
 }
 
@@ -156,7 +129,7 @@ func (p *peer) sendMsgDirect(msg *peering.PeerMessage) {
 	}
 	defer stream.Close()
 	//
-	msgBytes, err := msg.Bytes(p.net.nodeKeyPair)
+	msgBytes, err := msg.Bytes(nil) // Do not use msg signatures, we are using TLS.
 	if err != nil {
 		p.log.Warnf("Failed to send outgoing message, unable to serialize, reason=%v", err)
 		return

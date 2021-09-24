@@ -112,3 +112,17 @@ func MustIterateKeysSorted(kvs KVStoreReader, prefix Key, f func(key Key) bool) 
 		panic(err)
 	}
 }
+
+const nilprefix = ""
+
+func ByteSize(s KVStoreReader) int {
+	accLen := 0
+	err := s.Iterate(nilprefix, func(k Key, v []byte) bool {
+		accLen += len([]byte(k)) + len(v)
+		return true
+	})
+	if err != nil {
+		return 0
+	}
+	return accLen
+}

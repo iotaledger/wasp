@@ -12,24 +12,14 @@ use crate::*;
 // inputs:
 //  - PARAM_DELEGATION: agentID
 //  - PARAM_AMOUNT: i64
-pub fn func_approve(ctx: &ScFuncContext) {
-    ctx.trace("erc20.approve");
-
-    let p = ctx.params();
-    let param_amount = p.get_int64(PARAM_AMOUNT);
-    let param_delegation = p.get_agent_id(PARAM_DELEGATION);
-
-    ctx.require(param_amount.exists(), "missing mandatory amount");
-    ctx.require(param_delegation.exists(), "missing mandatory delegation");
-
-    let delegation = param_delegation.value();
-    let amount = param_amount.value();
+pub fn func_approve(ctx: &ScFuncContext, f: &ApproveContext) {
+    let delegation = f.params.delegation().value();
+    let amount = f.params.amount().value();
     ctx.require(amount > 0, "erc20.approve.fail: wrong 'amount' parameter");
 
     // all allowances are in the map under the name of he owner
-    let allowances = ctx.state().get_map(&ctx.caller());
+    let allowances = f.state.all_allowances().get_allowances_for_agent(&ctx.caller());
     allowances.get_int64(&delegation).set_value(amount);
-    ctx.log("erc20.approve.success");
 }
 
 // on_init is a constructor entry point. It initializes the smart contract with the
@@ -37,25 +27,16 @@ pub fn func_approve(ctx: &ScFuncContext) {
 // - input:
 //   -- PARAM_SUPPLY must be nonzero positive integer. Mandatory
 //   -- PARAM_CREATOR is the AgentID where initial supply is placed. Mandatory
-pub fn func_init(ctx: &ScFuncContext) {
-    ctx.trace("erc20.on_init.begin");
-
-    let p = ctx.params();
-    let param_creator = p.get_agent_id(PARAM_CREATOR);
-    let param_supply = p.get_int64(PARAM_SUPPLY);
-
-    ctx.require(param_creator.exists(), "missing mandatory creator");
-    ctx.require(param_supply.exists(), "missing mandatory supply");
-
-    let supply = param_supply.value();
+pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
+    let supply = f.params.supply().value();
     ctx.require(supply > 0, "erc20.on_init.fail: wrong 'supply' parameter");
-    ctx.state().get_int64(STATE_SUPPLY).set_value(supply);
+    f.state.supply().set_value(supply);
 
     // we cannot use 'caller' here because on_init is always called from the 'root'
     // so, owner of the initial supply must be provided as a parameter PARAM_CREATOR to constructor (on_init)
     // assign the whole supply to creator
-    let creator = param_creator.value();
-    ctx.state().get_map(STATE_BALANCES).get_int64(&creator).set_value(supply);
+    let creator = f.params.creator().value();
+    f.state.balances().get_int64(&creator).set_value(supply);
 
     let t = "erc20.on_init.success. Supply: ".to_string() + &supply.to_string() +
         &", creator:".to_string() + &creator.to_string();
@@ -66,31 +47,21 @@ pub fn func_init(ctx: &ScFuncContext) {
 // Input:
 // - PARAM_ACCOUNT: agentID
 // - PARAM_AMOUNT: i64
-pub fn func_transfer(ctx: &ScFuncContext) {
-    ctx.trace("erc20.transfer");
-
-    let p = ctx.params();
-    let param_account = p.get_agent_id(PARAM_ACCOUNT);
-    let param_amount = p.get_int64(PARAM_AMOUNT);
-
-    ctx.require(param_account.exists(), "missing mandatory account");
-    ctx.require(param_amount.exists(), "missing mandatory amount");
-
-    let amount = param_amount.value();
+pub fn func_transfer(ctx: &ScFuncContext, f: &TransferContext) {
+    let amount = f.params.amount().value();
     ctx.require(amount > 0, "erc20.transfer.fail: wrong 'amount' parameter");
 
-    let balances = ctx.state().get_map(STATE_BALANCES);
+    let balances = f.state.balances();
     let source_balance = balances.get_int64(&ctx.caller());
     ctx.require(source_balance.value() >= amount, "erc20.transfer.fail: not enough funds");
 
-    let target_addr = param_account.value();
+    let target_addr = f.params.account().value();
     let target_balance = balances.get_int64(&target_addr);
     let result = target_balance.value() + amount;
     ctx.require(result > 0, "erc20.transfer.fail: overflow");
 
     source_balance.set_value(source_balance.value() - amount);
     target_balance.set_value(target_balance.value() + amount);
-    ctx.log("erc20.transfer.success");
 }
 
 // Moves the amount of tokens from sender to recipient using the allowance mechanism.
@@ -99,30 +70,19 @@ pub fn func_transfer(ctx: &ScFuncContext) {
 // - PARAM_ACCOUNT: agentID   the spender
 // - PARAM_RECIPIENT: agentID   the target
 // - PARAM_AMOUNT: i64
-pub fn func_transfer_from(ctx: &ScFuncContext) {
-    ctx.trace("erc20.transfer_from");
-
-    let p = ctx.params();
-    let param_account = p.get_agent_id(PARAM_ACCOUNT);
-    let param_amount = p.get_int64(PARAM_AMOUNT);
-    let param_recipient = p.get_agent_id(PARAM_RECIPIENT);
-
-    ctx.require(param_account.exists(), "missing mandatory account");
-    ctx.require(param_amount.exists(), "missing mandatory amount");
-    ctx.require(param_recipient.exists(), "missing mandatory recipient");
-
+pub fn func_transfer_from(ctx: &ScFuncContext, f: &TransferFromContext) {
     // validate parameters
-    let account = param_account.value();
-    let recipient = param_recipient.value();
-    let amount = param_amount.value();
+    let account = f.params.account().value();
+    let recipient = f.params.recipient().value();
+    let amount = f.params.amount().value();
     ctx.require(amount > 0, "erc20.transfer_from.fail: wrong 'amount' parameter");
 
     // allowances are in the map under the name of the account
-    let allowances = ctx.state().get_map(&account);
+    let allowances = f.state.all_allowances().get_allowances_for_agent(&account);
     let allowance = allowances.get_int64(&recipient);
     ctx.require(allowance.value() >= amount, "erc20.transfer_from.fail: not enough allowance");
 
-    let balances = ctx.state().get_map(STATE_BALANCES);
+    let balances = f.state.balances();
     let source_balance = balances.get_int64(&account);
     ctx.require(source_balance.value() >= amount, "erc20.transfer_from.fail: not enough funds");
 
@@ -133,8 +93,6 @@ pub fn func_transfer_from(ctx: &ScFuncContext) {
     source_balance.set_value(source_balance.value() - amount);
     recipient_balance.set_value(recipient_balance.value() + amount);
     allowance.set_value(allowance.value() - amount);
-
-    ctx.log("erc20.transfer_from.success");
 }
 
 // the view returns max number of tokens the owner PARAM_ACCOUNT of the account
@@ -144,44 +102,25 @@ pub fn func_transfer_from(ctx: &ScFuncContext) {
 // - PARAM_DELEGATION: agentID
 // Output:
 // - PARAM_AMOUNT: i64
-pub fn view_allowance(ctx: &ScViewContext) {
-    ctx.trace("erc20.allowance");
-
-    let p = ctx.params();
-    let param_account = p.get_agent_id(PARAM_ACCOUNT);
-    let param_delegation = p.get_agent_id(PARAM_DELEGATION);
-
-    ctx.require(param_account.exists(), "missing mandatory account");
-    ctx.require(param_delegation.exists(), "missing mandatory delegation");
-
+pub fn view_allowance(_ctx: &ScViewContext, f: &AllowanceContext) {
     // all allowances of the address 'owner' are stored in the map of the same name
-    let allowances = ctx.state().get_map(&param_account.value());
-    let allow = allowances.get_int64(&param_delegation.value()).value();
-    ctx.results().get_int64(RESULT_AMOUNT).set_value(allow);
-    ctx.trace("erc20.allowance ok");
+    let allowances = f.state.all_allowances().get_allowances_for_agent(&f.params.account().value());
+    let allow = allowances.get_int64(&f.params.delegation().value()).value();
+    f.results.amount().set_value(allow);
 }
 
 // the view returns balance of the token held in the account
 // Input:
 // - PARAM_ACCOUNT: agentID
-pub fn view_balance_of(ctx: &ScViewContext) {
-    ctx.trace("erc20.balanceOf");
-    let p = ctx.params();
-    let param_account = p.get_agent_id(PARAM_ACCOUNT);
-    ctx.require(param_account.exists(), "missing mandatory account");
-
-    let balances = ctx.state().get_map(STATE_BALANCES);
-    let balance = balances.get_int64(&param_account.value()).value();
-    ctx.results().get_int64(RESULT_AMOUNT).set_value(balance);
-    ctx.trace("erc20.balanceOf ok");
+pub fn view_balance_of(_ctx: &ScViewContext, f: &BalanceOfContext) {
+    let balances = f.state.balances();
+    let balance = balances.get_int64(&f.params.account().value());
+    f.results.amount().set_value(balance.value());
 }
 
 // the view returns total supply set when creating the contract (a constant).
 // Output:
 // - PARAM_SUPPLY: i64
-pub fn view_total_supply(ctx: &ScViewContext) {
-    ctx.trace("erc20.totalSupply");
-    let supply = ctx.state().get_int64(STATE_SUPPLY).value();
-    ctx.results().get_int64(RESULT_SUPPLY).set_value(supply);
-    ctx.trace("erc20.totalSupply ok");
+pub fn view_total_supply(_ctx: &ScViewContext, f: &TotalSupplyContext) {
+    f.results.supply().set_value(f.state.supply().value());
 }

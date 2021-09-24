@@ -14,7 +14,7 @@ type VirtualState interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
 	PreviousStateHash() hashing.HashValue
-	Hash() hashing.HashValue
+	StateCommitment() hashing.HashValue
 	KVStoreReader() kv.KVStoreReader
 	ApplyStateUpdates(...StateUpdate)
 	ApplyBlock(Block) error
@@ -52,9 +52,7 @@ type Block interface {
 	Bytes() []byte
 }
 
-const (
-	OriginStateHashBase58 = "HBspKtpQCbE6bx1V7QF8BAshMUsAvgNwTfPXQ9QMjrt4"
-)
+const OriginStateHashBase58 = "7TMFsjHpp8RH11sfNfYSR24WqDiTNYijPGj2eTi5Yfph"
 
 func OriginStateHash() hashing.HashValue {
 	ret, err := hashing.HashValueFromBase58(OriginStateHashBase58)

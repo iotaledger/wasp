@@ -49,7 +49,7 @@ Then, create an empty working directory for Goshimmer, and download the
 ```
 $ mkdir goshimmer-node
 $ cd goshimmer-node
-$ curl 'https://raw.githubusercontent.com/iotaledger/goshimmer/master/snapshot.bin' -O
+$ wget -O snapshot.bin https://dbfiles-goshimmer.s3.eu-central-1.amazonaws.com/snapshots/nectar/snapshot-latest.bin
 ```
 
 Start the GoShimmer node:

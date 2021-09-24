@@ -74,7 +74,7 @@ type workflowFlags struct {
 	transactionFinalized bool
 	transactionPosted    bool
 	transactionSeen      bool
-	finished             bool
+	inProgress           bool
 }
 
 var _ chain.Consensus = &Consensus{}

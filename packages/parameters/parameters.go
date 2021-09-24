@@ -45,8 +45,9 @@ const (
 	OffledgerBroadcastInterval   = "offledger.broadcastInterval"
 	OffledgerAPICacheTTL         = "offledger.apiCacheTTL"
 
-	ProfilingBindAddress = "profiling.bindAddress"
-	ProfilingEnabled     = "profiling.enabled"
+	ProfilingBindAddress   = "profiling.bindAddress"
+	ProfilingEnabled       = "profiling.enabled"
+	ProfilingWriteProfiles = "profiling.writeProfiles"
 
 	PrometheusBindAddress = "prometheus.bindAddress"
 	PrometheusEnabled     = "prometheus.enabled"
@@ -85,12 +86,13 @@ func Init() *configuration.Configuration {
 
 	flag.String(IpfsGatewayAddress, "https://ipfs.io/", "the address of HTTP(s) gateway to which download from ipfs requests will be forwarded")
 
-	flag.Int(OffledgerBroadcastUpToNPeers, 10, "number of peers an offledger request is broadcasted to")
-	flag.Int(OffledgerBroadcastInterval, 1000, "time between re-broadcast of offledger requests (in ms)")
+	flag.Int(OffledgerBroadcastUpToNPeers, 2, "number of peers an offledger request is broadcasted to")
+	flag.Int(OffledgerBroadcastInterval, 5000, "time between re-broadcast of offledger requests (in ms)")
 	flag.Int(OffledgerAPICacheTTL, 5*60, "time to keep processed offledger requests in api cache (in seconds)")
 
 	flag.String(ProfilingBindAddress, "127.0.0.1:6060", "pprof http server address")
 	flag.Bool(ProfilingEnabled, false, "whether profiling is enabled")
+	flag.Bool(ProfilingWriteProfiles, false, "whether to write profiling profiles to disk on node shutdown (when enabled some metrics will be unavailable via pprof runtime endpoint)")
 
 	flag.String(PrometheusBindAddress, "127.0.0.1:2112", "prometheus metrics http server address")
 	flag.Bool(PrometheusEnabled, false, "disable and enable prometheus metrics")

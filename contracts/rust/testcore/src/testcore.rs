@@ -4,364 +4,208 @@
 use wasmlib::*;
 
 use crate::*;
+use crate::contract::*;
 
 const CONTRACT_NAME_DEPLOYED: &str = "exampleDeployTR";
 const MSG_FULL_PANIC: &str = "========== panic FULL ENTRY POINT =========";
 const MSG_VIEW_PANIC: &str = "========== panic VIEW =========";
 
-pub fn func_call_on_chain(ctx: &ScFuncContext) {
-    ctx.log("testcore.callOnChain");
+pub fn func_call_on_chain(ctx: &ScFuncContext, f: &CallOnChainContext) {
+    let param_int = f.params.int_value().value();
 
-    let p = ctx.params();
-    let param_hname_contract = p.get_hname(PARAM_HNAME_CONTRACT);
-    let param_hname_ep = p.get_hname(PARAM_HNAME_EP);
-    let param_int_value = p.get_int64(PARAM_INT_VALUE);
-
-    ctx.require(param_int_value.exists(), "missing mandatory intValue");
-
-    let param_int = param_int_value.value();
-
-    let mut target_contract = ctx.contract();
-    if param_hname_contract.exists() {
-        target_contract = param_hname_contract.value()
+    let mut hname_contract = ctx.contract();
+    if f.params.hname_contract().exists() {
+        hname_contract = f.params.hname_contract().value();
     }
 
-    let mut target_ep = HFUNC_CALL_ON_CHAIN;
-    if param_hname_ep.exists() {
-        target_ep = param_hname_ep.value()
+    let mut hname_ep = HFUNC_CALL_ON_CHAIN;
+    if f.params.hname_ep().exists() {
+        hname_ep = f.params.hname_ep().value();
     }
 
-    let var_counter = ctx.state().get_int64(STATE_COUNTER);
-    let counter = var_counter.value();
-    var_counter.set_value(counter + 1);
+    let counter = f.state.counter();
+    ctx.log(&format!("call depth = {}, hnameContract = {}, hnameEP = {}, counter = {}",
+                     &f.params.int_value().to_string(),
+                     &hname_contract.to_string(),
+                     &hname_ep.to_string(),
+                     &counter.to_string()));
 
-    ctx.log(&format!("call depth = {} hnameContract = {} hnameEP = {} counter = {}",
-                     param_int, &target_contract.to_string(), &target_ep.to_string(), counter));
+    counter.set_value(counter.value() + 1);
 
     let parms = ScMutableMap::new();
     parms.get_int64(PARAM_INT_VALUE).set_value(param_int);
-    let ret = ctx.call(target_contract, target_ep, Some(parms), None);
-
+    let ret = ctx.call(hname_contract, hname_ep, Some(parms), None);
     let ret_val = ret.get_int64(RESULT_INT_VALUE);
-    ctx.results().get_int64(RESULT_INT_VALUE).set_value(ret_val.value());
-    ctx.log("testcore.callOnChain ok");
+    f.results.int_value().set_value(ret_val.value());
 }
 
-pub fn func_check_context_from_full_ep(ctx: &ScFuncContext) {
-    ctx.log("testcore.checkContextFromFullEP");
-
-    let p = ctx.params();
-    let param_agent_id = p.get_agent_id(PARAM_AGENT_ID);
-    let param_caller = p.get_agent_id(PARAM_CALLER);
-    let param_chain_id = p.get_chain_id(PARAM_CHAIN_ID);
-    let param_chain_owner_id = p.get_agent_id(PARAM_CHAIN_OWNER_ID);
-    let param_contract_creator = p.get_agent_id(PARAM_CONTRACT_CREATOR);
-
-    ctx.require(param_agent_id.value() == ctx.account_id(), "fail: agentID");
-    ctx.require(param_caller.value() == ctx.caller(), "fail: caller");
-    ctx.require(param_chain_id.value() == ctx.chain_id(), "fail: chainID");
-    ctx.require(param_chain_owner_id.value() == ctx.chain_owner_id(), "fail: chainOwnerID");
-    ctx.require(param_contract_creator.value() == ctx.contract_creator(), "fail: contractCreator");
-    ctx.log("testcore.checkContextFromFullEP ok");
+pub fn func_check_context_from_full_ep(ctx: &ScFuncContext, f: &CheckContextFromFullEPContext) {
+    ctx.require(f.params.agent_id().value() == ctx.account_id(), "fail: agentID");
+    ctx.require(f.params.caller().value() == ctx.caller(), "fail: caller");
+    ctx.require(f.params.chain_id().value() == ctx.chain_id(), "fail: chainID");
+    ctx.require(f.params.chain_owner_id().value() == ctx.chain_owner_id(), "fail: chainOwnerID");
+    ctx.require(f.params.contract_creator().value() == ctx.contract_creator(), "fail: contractCreator");
 }
 
-pub fn func_do_nothing(ctx: &ScFuncContext) {
-    ctx.log("testcore.doNothing");
-    ctx.log("testcore.doNothing ok");
+pub fn func_do_nothing(ctx: &ScFuncContext, _f: &DoNothingContext) {
+    ctx.log("doing nothing...");
 }
 
-pub fn func_get_minted_supply(ctx: &ScFuncContext) {
-    ctx.log("testcore.getMintedSupply");
+pub fn func_get_minted_supply(ctx: &ScFuncContext, f: &GetMintedSupplyContext) {
     let minted = ctx.minted();
     let minted_colors = minted.colors();
     ctx.require(minted_colors.length() == 1, "test only supports one minted color");
     let color = minted_colors.get_color(0).value();
     let amount = minted.balance(&color);
-    ctx.results().get_int64(RESULT_MINTED_SUPPLY).set_value(amount);
-    ctx.results().get_color(RESULT_MINTED_COLOR).set_value(&color);
-    ctx.log("testcore.setInt ok");
+    f.results.minted_supply().set_value(amount);
+    f.results.minted_color().set_value(&color);
 }
 
-pub fn func_inc_counter(ctx: &ScFuncContext) {
-    ctx.log("testcore.incCounter");
-    ctx.state().get_int64(STATE_COUNTER).set_value(ctx.state().get_int64(STATE_COUNTER).value() + 1);
-    ctx.log("testcore.incCounter ok");
+pub fn func_inc_counter(_ctx: &ScFuncContext, f: &IncCounterContext) {
+    let counter = f.state.counter();
+    counter.set_value(counter.value() + 1);
 }
 
-pub fn func_init(ctx: &ScFuncContext) {
-    ctx.log("testcore.init");
-    ctx.log("testcore.init ok");
+pub fn func_init(ctx: &ScFuncContext, _f: &InitContext) {
+    ctx.log("doing nothing...");
 }
 
-pub fn func_pass_types_full(ctx: &ScFuncContext) {
-    ctx.log("testcore.passTypesFull");
-
-    let p = ctx.params();
-    let param_hash = p.get_hash(PARAM_HASH);
-    let param_hname = p.get_hname(PARAM_HNAME);
-    let param_hname_zero = p.get_hname(PARAM_HNAME_ZERO);
-    let param_int64 = p.get_int64(PARAM_INT64);
-    let param_int64_zero = p.get_int64(PARAM_INT64_ZERO);
-    let param_string = p.get_string(PARAM_STRING);
-    let param_string_zero = p.get_string(PARAM_STRING_ZERO);
-
-    ctx.require(param_hash.exists(), "missing mandatory hash");
-    ctx.require(param_hname.exists(), "missing mandatory hname");
-    ctx.require(param_hname_zero.exists(), "missing mandatory hnameZero");
-    ctx.require(param_int64.exists(), "missing mandatory int64");
-    ctx.require(param_int64_zero.exists(), "missing mandatory int64Zero");
-    ctx.require(param_string.exists(), "missing mandatory string");
-    ctx.require(param_string_zero.exists(), "missing mandatory stringZero");
-
+pub fn func_pass_types_full(ctx: &ScFuncContext, f: &PassTypesFullContext) {
     let hash = ctx.utility().hash_blake2b(PARAM_HASH.as_bytes());
-    ctx.require(param_hash.value() == hash, "Hash wrong");
-    ctx.require(param_int64.value() == 42, "int64 wrong");
-    ctx.require(param_int64_zero.value() == 0, "int64-0 wrong");
-    ctx.require(param_string.value() == PARAM_STRING, "string wrong");
-    ctx.require(param_string_zero.value() == "", "string-0 wrong");
-    ctx.require(param_hname.value() == ScHname::new(PARAM_HNAME), "Hname wrong");
-    ctx.require(param_hname_zero.value() == ScHname(0), "Hname-0 wrong");
-    ctx.log("testcore.passTypesFull ok");
+    ctx.require(f.params.hash().value() == hash, "Hash wrong");
+    ctx.require(f.params.int64().value() == 42, "int64 wrong");
+    ctx.require(f.params.int64_zero().value() == 0, "int64-0 wrong");
+    ctx.require(f.params.string().value() == PARAM_STRING, "string wrong");
+    ctx.require(f.params.string_zero().value() == "", "string-0 wrong");
+    ctx.require(f.params.hname().value() == ScHname::new(PARAM_HNAME), "Hname wrong");
+    ctx.require(f.params.hname_zero().value() == ScHname(0), "Hname-0 wrong");
 }
 
-pub fn func_run_recursion(ctx: &ScFuncContext) {
-    ctx.log("testcore.runRecursion");
-
-    let p = ctx.params();
-    let param_int_value = p.get_int64(PARAM_INT_VALUE);
-
-    ctx.require(param_int_value.exists(), "missing mandatory intValue");
-
-    let depth = param_int_value.value();
+pub fn func_run_recursion(ctx: &ScFuncContext, f: &RunRecursionContext) {
+    let depth = f.params.int_value().value();
     if depth <= 0 {
         return;
     }
 
-    let parms = ScMutableMap::new();
-    parms.get_int64(PARAM_INT_VALUE).set_value(depth - 1);
-    parms.get_hname(PARAM_HNAME_EP).set_value(HFUNC_RUN_RECURSION);
-    ctx.call_self(HFUNC_CALL_ON_CHAIN, Some(parms), None);
-    // TODO how would I return result of the call ???
-    ctx.results().get_int64(RESULT_INT_VALUE).set_value(depth - 1);
-    ctx.log("testcore.runRecursion ok");
+    let call_on_chain = ScFuncs::call_on_chain(ctx);
+    call_on_chain.params.int_value().set_value(depth - 1);
+    call_on_chain.params.hname_ep().set_value(HFUNC_RUN_RECURSION);
+    call_on_chain.func.call();
+    let ret_val = call_on_chain.results.int_value().value();
+    f.results.int_value().set_value(ret_val);
 }
 
-pub fn func_send_to_address(ctx: &ScFuncContext) {
-    ctx.log("testcore.sendToAddress");
-
-    ctx.require(ctx.caller() == ctx.contract_creator(), "no permission");
-
-    let p = ctx.params();
-    let param_address = p.get_address(PARAM_ADDRESS);
-
-    ctx.require(param_address.exists(), "missing mandatory address");
-
+pub fn func_send_to_address(ctx: &ScFuncContext, f: &SendToAddressContext) {
     let balances = ScTransfers::new_transfers_from_balances(ctx.balances());
-    ctx.transfer_to_address(&param_address.value(), balances);
-    ctx.log("testcore.sendToAddress ok");
+    ctx.transfer_to_address(&f.params.address().value(), balances);
 }
 
-pub fn func_set_int(ctx: &ScFuncContext) {
-    ctx.log("testcore.setInt");
-
-    let p = ctx.params();
-    let param_int_value = p.get_int64(PARAM_INT_VALUE);
-    let param_name = p.get_string(PARAM_NAME);
-
-    ctx.require(param_int_value.exists(), "missing mandatory intValue");
-    ctx.require(param_name.exists(), "missing mandatory name");
-
-    ctx.state().get_int64(&param_name.value()).set_value(param_int_value.value());
-    ctx.log("testcore.setInt ok");
+pub fn func_set_int(_ctx: &ScFuncContext, f: &SetIntContext) {
+    f.state.ints().get_int64(&f.params.name().value()).set_value(f.params.int_value().value());
 }
 
-pub fn func_test_call_panic_full_ep(ctx: &ScFuncContext) {
-    ctx.log("testcore.testCallPanicFullEP");
-    ctx.call_self(HFUNC_TEST_PANIC_FULL_EP, None, None);
-    ctx.log("testcore.testCallPanicFullEP ok");
+pub fn func_test_call_panic_full_ep(ctx: &ScFuncContext, _f: &TestCallPanicFullEPContext) {
+    ScFuncs::test_panic_full_ep(ctx).func.call();
 }
 
-pub fn func_test_call_panic_view_ep_from_full(ctx: &ScFuncContext) {
-    ctx.log("testcore.testCallPanicViewEPFromFull");
-    ctx.call_self(HVIEW_TEST_PANIC_VIEW_EP, None, None);
-    ctx.log("testcore.testCallPanicViewEPFromFull ok");
+pub fn func_test_call_panic_view_ep_from_full(ctx: &ScFuncContext, _f: &TestCallPanicViewEPFromFullContext) {
+    ScFuncs::test_panic_view_ep(ctx).func.call();
 }
 
-pub fn func_test_chain_owner_id_full(ctx: &ScFuncContext) {
-    ctx.log("testcore.testChainOwnerIDFull");
-    ctx.results().get_agent_id(RESULT_CHAIN_OWNER_ID).set_value(&ctx.chain_owner_id());
-    ctx.log("testcore.testChainOwnerIDFull ok");
+pub fn func_test_chain_owner_id_full(ctx: &ScFuncContext, f: &TestChainOwnerIDFullContext) {
+    f.results.chain_owner_id().set_value(&ctx.chain_owner_id());
 }
 
-pub fn func_test_event_log_deploy(ctx: &ScFuncContext) {
-    ctx.log("testcore.testEventLogDeploy");
-    //Deploy the same contract with another name
+pub fn func_test_event_log_deploy(ctx: &ScFuncContext, _f: &TestEventLogDeployContext) {
+    // deploy the same contract with another name
     let program_hash = ctx.utility().hash_blake2b("testcore".as_bytes());
     ctx.deploy(&program_hash, CONTRACT_NAME_DEPLOYED, "test contract deploy log", None);
-    ctx.log("testcore.testEventLogDeploy ok");
 }
 
-pub fn func_test_event_log_event_data(ctx: &ScFuncContext) {
-    ctx.log("testcore.testEventLogEventData");
+pub fn func_test_event_log_event_data(ctx: &ScFuncContext, _f: &TestEventLogEventDataContext) {
     ctx.event("[Event] - Testing Event...");
-    ctx.log("testcore.testEventLogEventData ok");
 }
 
-pub fn func_test_event_log_generic_data(ctx: &ScFuncContext) {
-    ctx.log("testcore.testEventLogGenericData");
-
-    let p = ctx.params();
-    let param_counter = p.get_int64(PARAM_COUNTER);
-
-    ctx.require(param_counter.exists(), "missing mandatory counter");
-
-    let event = "[GenericData] Counter Number: ".to_string() + &param_counter.to_string();
+pub fn func_test_event_log_generic_data(ctx: &ScFuncContext, f: &TestEventLogGenericDataContext) {
+    let event = "[GenericData] Counter Number: ".to_string() + &f.params.counter().to_string();
     ctx.event(&event);
-    ctx.log("testcore.testEventLogGenericData ok");
 }
 
-pub fn func_test_panic_full_ep(ctx: &ScFuncContext) {
-    ctx.log("testcore.testPanicFullEP");
+pub fn func_test_panic_full_ep(ctx: &ScFuncContext, _f: &TestPanicFullEPContext) {
     ctx.panic(MSG_FULL_PANIC);
-    ctx.log("testcore.testPanicFullEP ok");
 }
 
-pub fn func_withdraw_to_chain(ctx: &ScFuncContext) {
-    ctx.log("testcore.withdrawToChain");
-
-    let p = ctx.params();
-    let param_chain_id = p.get_chain_id(PARAM_CHAIN_ID);
-
-    ctx.require(param_chain_id.exists(), "missing mandatory chainID");
-
-    let transfer = ScTransfers::iotas(1);
-    ctx.post(&param_chain_id.value(), corecontracts::coreaccounts::HSC_NAME, corecontracts::coreaccounts::HFUNC_WITHDRAW, None, transfer, 0);
-    ctx.log("testcore.withdrawToChain ok");
+pub fn func_withdraw_to_chain(ctx: &ScFuncContext, f: &WithdrawToChainContext) {
+    let xx = corecontracts::coreaccounts::ScFuncs::withdraw(ctx);
+    xx.func.transfer_iotas(1).post_to_chain(f.params.chain_id().value());
 }
 
-pub fn view_check_context_from_view_ep(ctx: &ScViewContext) {
-    ctx.log("testcore.checkContextFromViewEP");
-
-    let p = ctx.params();
-    let param_agent_id = p.get_agent_id(PARAM_AGENT_ID);
-    let param_chain_id = p.get_chain_id(PARAM_CHAIN_ID);
-    let param_chain_owner_id = p.get_agent_id(PARAM_CHAIN_OWNER_ID);
-    let param_contract_creator = p.get_agent_id(PARAM_CONTRACT_CREATOR);
-
-    ctx.require(param_agent_id.value() == ctx.account_id(), "fail: agentID");
-    ctx.require(param_chain_id.value() == ctx.chain_id(), "fail: chainID");
-    ctx.require(param_chain_owner_id.value() == ctx.chain_owner_id(), "fail: chainOwnerID");
-    ctx.require(param_contract_creator.value() == ctx.contract_creator(), "fail: contractCreator");
-    ctx.log("testcore.checkContextFromViewEP ok");
+pub fn view_check_context_from_view_ep(ctx: &ScViewContext, f: &CheckContextFromViewEPContext) {
+    ctx.require(f.params.agent_id().value() == ctx.account_id(), "fail: agentID");
+    ctx.require(f.params.chain_id().value() == ctx.chain_id(), "fail: chainID");
+    ctx.require(f.params.chain_owner_id().value() == ctx.chain_owner_id(), "fail: chainOwnerID");
+    ctx.require(f.params.contract_creator().value() == ctx.contract_creator(), "fail: contractCreator");
 }
 
-pub fn view_fibonacci(ctx: &ScViewContext) {
-    ctx.log("testcore.fibonacci");
-
-    let p = ctx.params();
-    let param_int_value = p.get_int64(PARAM_INT_VALUE);
-
-    ctx.require(param_int_value.exists(), "missing mandatory intValue");
-
-    let n = param_int_value.value();
+pub fn view_fibonacci(ctx: &ScViewContext, f: &FibonacciContext) {
+    let n = f.params.int_value().value();
     if n == 0 || n == 1 {
-        ctx.results().get_int64(RESULT_INT_VALUE).set_value(n);
+        f.results.int_value().set_value(n);
         return;
     }
-    let parms1 = ScMutableMap::new();
-    parms1.get_int64(PARAM_INT_VALUE).set_value(n - 1);
-    let results1 = ctx.call_self(HVIEW_FIBONACCI, Some(parms1));
-    let n1 = results1.get_int64(RESULT_INT_VALUE).value();
 
-    let parms2 = ScMutableMap::new();
-    parms2.get_int64(PARAM_INT_VALUE).set_value(n - 2);
-    let results2 = ctx.call_self(HVIEW_FIBONACCI, Some(parms2));
-    let n2 = results2.get_int64(RESULT_INT_VALUE).value();
+    let fib = ScFuncs::fibonacci(ctx);
+    fib.params.int_value().set_value(n - 1);
+    fib.func.call();
+    let n1 = fib.results.int_value().value();
 
-    ctx.results().get_int64(RESULT_INT_VALUE).set_value(n1 + n2);
-    ctx.log("testcore.fibonacci ok");
+    fib.params.int_value().set_value(n - 2);
+    fib.func.call();
+    let n2 = fib.results.int_value().value();
+
+    f.results.int_value().set_value(n1 + n2);
 }
 
-pub fn view_get_counter(ctx: &ScViewContext) {
-    ctx.log("testcore.getCounter");
-    let counter = ctx.state().get_int64(STATE_COUNTER);
-    ctx.results().get_int64(RESULT_COUNTER).set_value(counter.value());
-    ctx.log("testcore.getCounter ok");
+pub fn view_get_counter(_ctx: &ScViewContext, f: &GetCounterContext) {
+    f.results.counter().set_value(f.state.counter().value());
 }
 
-pub fn view_get_int(ctx: &ScViewContext) {
-    ctx.log("testcore.getInt");
-
-    let p = ctx.params();
-    let param_name = p.get_string(PARAM_NAME);
-
-    ctx.require(param_name.exists(), "missing mandatory name");
-
-    let name = param_name.value();
-    let value = ctx.state().get_int64(&name);
+pub fn view_get_int(ctx: &ScViewContext, f: &GetIntContext) {
+    let name = f.params.name().value();
+    let value = f.state.ints().get_int64(&name);
     ctx.require(value.exists(), "param 'value' not found");
-    ctx.results().get_int64(&name).set_value(value.value());
-    ctx.log("testcore.getInt ok");
+    f.results.values().get_int64(&name).set_value(value.value());
 }
 
-pub fn view_just_view(ctx: &ScViewContext) {
-    ctx.log("testcore.justView");
-    ctx.log("testcore.justView ok");
+pub fn view_just_view(ctx: &ScViewContext, _f: &JustViewContext) {
+    ctx.log("doing nothing...");
 }
 
-pub fn view_pass_types_view(ctx: &ScViewContext) {
-    ctx.log("testcore.passTypesView");
-
-    let p = ctx.params();
-    let param_hash = p.get_hash(PARAM_HASH);
-    let param_hname = p.get_hname(PARAM_HNAME);
-    let param_hname_zero = p.get_hname(PARAM_HNAME_ZERO);
-    let param_int64 = p.get_int64(PARAM_INT64);
-    let param_int64_zero = p.get_int64(PARAM_INT64_ZERO);
-    let param_string = p.get_string(PARAM_STRING);
-    let param_string_zero = p.get_string(PARAM_STRING_ZERO);
-
-    ctx.require(param_hash.exists(), "missing mandatory hash");
-    ctx.require(param_hname.exists(), "missing mandatory hname");
-    ctx.require(param_hname_zero.exists(), "missing mandatory hnameZero");
-    ctx.require(param_int64.exists(), "missing mandatory int64");
-    ctx.require(param_int64_zero.exists(), "missing mandatory int64Zero");
-    ctx.require(param_string.exists(), "missing mandatory string");
-    ctx.require(param_string_zero.exists(), "missing mandatory stringZero");
-
+pub fn view_pass_types_view(ctx: &ScViewContext, f: &PassTypesViewContext) {
     let hash = ctx.utility().hash_blake2b(PARAM_HASH.as_bytes());
-    ctx.require(param_hash.value() == hash, "Hash wrong");
-    ctx.require(param_int64.value() == 42, "int64 wrong");
-    ctx.require(param_int64_zero.value() == 0, "int64-0 wrong");
-    ctx.require(param_string.value() == PARAM_STRING, "string wrong");
-    ctx.require(param_string_zero.value() == "", "string-0 wrong");
-    ctx.require(param_hname.value() == ScHname::new(PARAM_HNAME), "Hname wrong");
-    ctx.require(param_hname_zero.value() == ScHname(0), "Hname-0 wrong");
-    ctx.log("testcore.passTypesView ok");
+    ctx.require(f.params.hash().value() == hash, "Hash wrong");
+    ctx.require(f.params.int64().value() == 42, "int64 wrong");
+    ctx.require(f.params.int64_zero().value() == 0, "int64-0 wrong");
+    ctx.require(f.params.string().value() == PARAM_STRING, "string wrong");
+    ctx.require(f.params.string_zero().value() == "", "string-0 wrong");
+    ctx.require(f.params.hname().value() == ScHname::new(PARAM_HNAME), "Hname wrong");
+    ctx.require(f.params.hname_zero().value() == ScHname(0), "Hname-0 wrong");
 }
 
-pub fn view_test_call_panic_view_ep_from_view(ctx: &ScViewContext) {
-    ctx.log("testcore.testCallPanicViewEPFromView");
-    ctx.call_self(HVIEW_TEST_PANIC_VIEW_EP, None);
-    ctx.log("testcore.testCallPanicViewEPFromView ok");
+pub fn view_test_call_panic_view_ep_from_view(ctx: &ScViewContext, _f: &TestCallPanicViewEPFromViewContext) {
+    ScFuncs::test_panic_view_ep(ctx).func.call();
 }
 
-pub fn view_test_chain_owner_id_view(ctx: &ScViewContext) {
-    ctx.log("testcore.testChainOwnerIDView");
-    ctx.results().get_agent_id(RESULT_CHAIN_OWNER_ID).set_value(&ctx.chain_owner_id());
-    ctx.log("testcore.testChainOwnerIDView ok");
+pub fn view_test_chain_owner_id_view(ctx: &ScViewContext, f: &TestChainOwnerIDViewContext) {
+    f.results.chain_owner_id().set_value(&ctx.chain_owner_id());
 }
 
-pub fn view_test_panic_view_ep(ctx: &ScViewContext) {
-    ctx.log("testcore.testPanicViewEP");
+pub fn view_test_panic_view_ep(ctx: &ScViewContext, _f: &TestPanicViewEPContext) {
     ctx.panic(MSG_VIEW_PANIC);
-    ctx.log("testcore.testPanicViewEP ok");
 }
 
-pub fn view_test_sandbox_call(ctx: &ScViewContext) {
-    ctx.log("testcore.testSandboxCall");
-    let ret = ctx.call(corecontracts::coregovernance::HSC_NAME, corecontracts::coregovernance::HVIEW_GET_CHAIN_INFO, None);
-    let desc = ret.get_string("d").value();
-    ctx.results().get_string(RESULT_SANDBOX_CALL).set_value(&desc);
-    ctx.log("testcore.testSandboxCall ok");
+pub fn view_test_sandbox_call(ctx: &ScViewContext, f: &TestSandboxCallContext) {
+    let get_chain_info = corecontracts::coregovernance::ScFuncs::get_chain_info(ctx);
+    get_chain_info.func.call();
+    f.results.sandbox_call().set_value(&get_chain_info.results.description().value());
 }

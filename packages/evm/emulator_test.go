@@ -460,7 +460,7 @@ func testERC20Contract(t testing.TB, db ethdb.Database) {
 	// call `transferFrom` as recipient with allowance => ok
 	receipt = callFn(recipient, "transferFrom", erc20OwnerAddress, recipientAddress, transferAmount)
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
-	require.Equal(t, 2, len(receipt.Logs))
+	require.Equal(t, 1, len(receipt.Logs))
 
 	// call `balanceOf` view => check balance of recipient = 2 * 1337 TestCoin
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(new(big.Int).Mul(transferAmount, big.NewInt(2))))

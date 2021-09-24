@@ -19,7 +19,7 @@ type VMRunner interface {
 }
 
 // VMTask is task context (for batch of requests). It is used to pass parameters and take results
-// It is assumed that all requests/inputs are unlock-able by alaisAddress of provided ChainInput
+// It is assumed that all requests/inputs are unlock-able by aliasAddress of provided ChainInput
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
 	ACSSessionID             uint64

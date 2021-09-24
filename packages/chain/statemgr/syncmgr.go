@@ -3,6 +3,7 @@ package statemgr
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
@@ -25,6 +26,10 @@ func (sm *stateManager) outputPulled(output *ledgerstate.AliasOutput) bool {
 func (sm *stateManager) stateOutputReceived(output *ledgerstate.AliasOutput, timestamp time.Time) bool {
 	sm.log.Debugf("stateOutputReceived: received output index: %v, id: %v, timestamp: %v",
 		output.GetStateIndex(), iscp.OID(output.ID()), timestamp)
+	if sm.solidState.BlockIndex() > output.GetStateIndex() {
+		sm.log.Warnf("stateOutputReceived: out of order state output: state manager is already at state %v", sm.solidState.BlockIndex())
+		return false
+	}
 	if sm.stateOutput != nil {
 		switch {
 		case sm.stateOutput.GetStateIndex() == output.GetStateIndex():
@@ -39,7 +44,7 @@ func (sm *stateManager) stateOutputReceived(output *ledgerstate.AliasOutput, tim
 			// it is a state controller address rotation
 
 		case sm.stateOutput.GetStateIndex() > output.GetStateIndex():
-			sm.log.Warnf("stateOutputReceived: out of order state output; stateOutput index is already larger: %v", sm.stateOutput.GetStateIndex())
+			sm.log.Warnf("stateOutputReceived: out of order state output: stateOutput index is already larger: %v", sm.stateOutput.GetStateIndex())
 			return false
 		}
 	}
@@ -60,6 +65,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 		sm.log.Debugf("doSyncAction not needed: state is already synced at index #%d", sm.stateOutput.GetStateIndex())
 		return
 	case sm.solidState.BlockIndex() > sm.stateOutput.GetStateIndex():
+		sm.log.Debugf("BlockIndex=%v, StateIndex=%v", sm.solidState.BlockIndex(), sm.stateOutput.GetStateIndex())
 		sm.log.Panicf("doSyncAction inconsistency: solid state index is larger than state output index")
 	}
 	// not synced
@@ -110,7 +116,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 	sm.log.Debugf("getCandidatesToCommit from %v to %v", fromStateIndex, toStateIndex)
 	if fromStateIndex > toStateIndex {
 		// state hashes must be equal
-		finalStateHash := calculatedPrevState.Hash()
+		finalStateHash := calculatedPrevState.StateCommitment()
 		finalCandidateHash := candidateAcc[len(candidateAcc)-1].getNextStateHash()
 		if finalStateHash != finalCandidateHash {
 			sm.log.Debugf("getCandidatesToCommit from %v to %v: tentative state obtained, however its hash does not match last candidate expected hash: %v != %v",
@@ -121,6 +127,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 			fromStateIndex, toStateIndex, finalStateHash.String())
 		return candidateAcc, calculatedPrevState, true
 	}
+
 	var stateCandidateBlocks []*candidateBlock
 	if fromStateIndex == toStateIndex {
 		stateCandidateBlocks = sm.syncingBlocks.getApprovedBlockCandidates(fromStateIndex)
@@ -130,10 +137,11 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 	sort.Slice(stateCandidateBlocks, func(i, j int) bool {
 		return stateCandidateBlocks[i].getVotes() > stateCandidateBlocks[j].getVotes()
 	})
+
 	for i, stateCandidateBlock := range stateCandidateBlocks {
 		sm.log.Debugf("getCandidatesToCommit from %v to %v: checking block %v of %v", fromStateIndex, toStateIndex, i+1, len(stateCandidateBlocks))
 		candidatePrevStateHash := stateCandidateBlock.getBlock().PreviousStateHash()
-		calculatedPrevStateHash := calculatedPrevState.Hash()
+		calculatedPrevStateHash := calculatedPrevState.StateCommitment()
 		if candidatePrevStateHash != calculatedPrevStateHash {
 			sm.log.Errorf("getCandidatesToCommit from %v to %v: candidate previous state hash does not match calculated state hash: %v <> %v",
 				fromStateIndex, toStateIndex, candidatePrevStateHash.String(), calculatedPrevStateHash.String())
@@ -175,7 +183,10 @@ func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentative
 	sm.chain.GlobalStateSync().SetSolidIndex(tentativeState.BlockIndex())
 
 	if err != nil {
-		sm.log.Errorf("commitCandidates: failed to commit synced changes into DB. Restart syncing")
+		sm.log.Errorf("commitCandidates: failed to commit synced changes into DB. Restart syncing. %w", err)
+		if strings.Contains(err.Error(), "space left on device") {
+			sm.log.Panicf("Terminating WASP, no space left on disc.")
+		}
 		sm.syncingBlocks.restartSyncing()
 		return
 	}

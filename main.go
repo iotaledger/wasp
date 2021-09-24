@@ -44,11 +44,11 @@ func main() {
 		processors.Init(),
 		wasmtimevm.Init(),
 		chains.Init(),
+		metrics.Init(),
 		webapi.Init(),
 		publishernano.Init(),
 		dashboard.Init(),
 		profiling.Init(),
-		metrics.Init(),
 	)
 
 	node.Run(

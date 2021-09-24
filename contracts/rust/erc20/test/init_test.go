@@ -3,87 +3,81 @@ package test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/contracts/common"
-	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/contracts/rust/erc20"
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core"
+	"github.com/iotaledger/wasp/packages/vm/wasmsolo"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDeployErc20(t *testing.T) {
-	chain := common.StartChain(t, ScName)
-	creator, creatorAddr = chain.Env.NewKeyPairWithFunds()
-	creatorAgentID = iscp.NewAgentID(creatorAddr, 0)
-	err := common.DeployWasmContractByName(chain, ScName,
-		ParamSupply, 1000000,
-		ParamCreator, creatorAgentID,
-	)
-	require.NoError(t, err)
+	setupTest(t)
+
+	init := erc20.ScFuncs.Init(nil)
+	init.Params.Supply().SetValue(solo.Saldo)
+	init.Params.Creator().SetValue(creator.ScAgentID())
+	ctx := wasmsolo.NewSoloContextForChain(t, chain, erc20.ScName, erc20.OnLoad, init.Func)
+	require.NoError(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
 	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
 
-	_, err = chain.FindContract(ScName)
-	require.NoError(t, err)
+	require.NoError(t, ctx.ContractExists(erc20.ScName))
 
 	// deploy second time
-	err = common.DeployWasmContractByName(chain, ScName,
-		ParamSupply, 1000000,
-		ParamCreator, creatorAgentID,
-	)
-	require.Error(t, err)
+	init = erc20.ScFuncs.Init(nil)
+	init.Params.Supply().SetValue(solo.Saldo)
+	init.Params.Creator().SetValue(creator.ScAgentID())
+	ctx = wasmsolo.NewSoloContextForChain(t, chain, erc20.ScName, erc20.OnLoad, init.Func)
+	require.Error(t, ctx.Err)
 	_, _, rec = chain.GetInfo()
 	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
 }
 
 func TestDeployErc20Fail1(t *testing.T) {
-	chain := common.StartChain(t, ScName)
-	err := common.DeployWasmContractByName(chain, ScName)
-	require.Error(t, err)
+	setupTest(t)
+	ctx := wasmsolo.NewSoloContextForChain(t, chain, erc20.ScName, erc20.OnLoad)
+	require.Error(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
 	require.EqualValues(t, len(core.AllCoreContractsByHash), len(rec))
 }
 
 func TestDeployErc20Fail2(t *testing.T) {
-	chain := common.StartChain(t, ScName)
-	err := common.DeployWasmContractByName(chain, ScName,
-		ParamSupply, 1000000,
-	)
-	require.Error(t, err)
+	setupTest(t)
+	init := erc20.ScFuncs.Init(nil)
+	init.Params.Supply().SetValue(solo.Saldo)
+	ctx := wasmsolo.NewSoloContextForChain(t, chain, erc20.ScName, erc20.OnLoad, init.Func)
+	require.Error(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
 	require.EqualValues(t, len(core.AllCoreContractsByHash), len(rec))
 }
 
 func TestDeployErc20Fail3(t *testing.T) {
-	chain := common.StartChain(t, ScName)
-	creator, creatorAddr = chain.Env.NewKeyPairWithFunds()
-	creatorAgentID = iscp.NewAgentID(creatorAddr, 0)
-	err := common.DeployWasmContractByName(chain, ScName,
-		ParamCreator, creatorAgentID,
-	)
-	require.Error(t, err)
+	setupTest(t)
+	init := erc20.ScFuncs.Init(nil)
+	init.Params.Creator().SetValue(creator.ScAgentID())
+	ctx := wasmsolo.NewSoloContextForChain(t, chain, erc20.ScName, erc20.OnLoad, init.Func)
+	require.Error(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
 	require.EqualValues(t, len(core.AllCoreContractsByHash), len(rec))
 }
 
 func TestDeployErc20Fail3Repeat(t *testing.T) {
-	chain := common.StartChain(t, ScName)
-	creator, creatorAddr = chain.Env.NewKeyPairWithFunds()
-	creatorAgentID = iscp.NewAgentID(creatorAddr, 0)
-	err := common.DeployWasmContractByName(chain, ScName,
-		ParamCreator, creatorAgentID,
-	)
-	require.Error(t, err)
+	setupTest(t)
+	init := erc20.ScFuncs.Init(nil)
+	init.Params.Creator().SetValue(creator.ScAgentID())
+	ctx := wasmsolo.NewSoloContextForChain(t, chain, erc20.ScName, erc20.OnLoad, init.Func)
+	require.Error(t, ctx.Err)
 	_, _, rec := chain.GetInfo()
 	require.EqualValues(t, len(core.AllCoreContractsByHash), len(rec))
+	require.Error(t, ctx.ContractExists(erc20.ScName))
 
 	// repeat after failure
-	err = common.DeployWasmContractByName(chain, ScName,
-		ParamSupply, 1000000,
-		ParamCreator, creatorAgentID,
-	)
-	require.NoError(t, err)
+	init = erc20.ScFuncs.Init(nil)
+	init.Params.Supply().SetValue(solo.Saldo)
+	init.Params.Creator().SetValue(creator.ScAgentID())
+	ctx = wasmsolo.NewSoloContextForChain(t, chain, erc20.ScName, erc20.OnLoad, init.Func)
+	require.NoError(t, ctx.Err)
 	_, _, rec = chain.GetInfo()
 	require.EqualValues(t, len(core.AllCoreContractsByHash)+1, len(rec))
-
-	_, err = chain.FindContract(ScName)
-	require.NoError(t, err)
+	require.NoError(t, ctx.ContractExists(erc20.ScName))
 }

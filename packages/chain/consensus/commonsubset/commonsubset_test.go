@@ -26,8 +26,14 @@ func TestBasic(t *testing.T) {
 	if !testing.Short() {
 		t.Run("N=10/T=7/allRandom=true", func(tt *testing.T) { testBasic(tt, 10, 7, true) })
 		t.Run("N=10/T=7/allRandom=false", func(tt *testing.T) { testBasic(tt, 10, 7, false) })
-		t.Run("N=40/T=27/allRandom=true", func(tt *testing.T) { testBasic(tt, 40, 27, true) })
-		t.Run("N=40/T=27/allRandom=false", func(tt *testing.T) { testBasic(tt, 40, 27, false) })
+		t.Run("N=40/T=27/allRandom=true", func(tt *testing.T) {
+			testutil.SkipHeavy(tt)
+			testBasic(tt, 40, 27, true)
+		})
+		t.Run("N=40/T=27/allRandom=false", func(tt *testing.T) {
+			testutil.SkipHeavy(tt)
+			testBasic(tt, 40, 27, false)
+		})
 	}
 }
 
