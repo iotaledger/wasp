@@ -1,53 +1,36 @@
 <script lang="ts">
-  import { BarSelector, MultipleSelector } from "../components";
-  import { placeBet, sendFaucetRequest } from "../lib/app";
-  import {
-    address,
-    balance,
-    placingBet,
-    requestingFunds,
-    round,
-  } from "../lib/store";
-  import Button from "./button.svelte";
+  import { BarSelector, MultipleSelector } from '../components';
+  import { placeBet } from '../lib/app';
+  import { balance, placingBet, round } from '../lib/store';
+  import Button from './button.svelte';
 
-  //TODO: Improve disable condition
-  $: disabled = $placingBet;
+  let betAmount: number = 0;
 
-  $: console.log(disabled);
-  $: console.log(
-    "$round.players.filter((_player) => _player.address === $address).length > 0",
-    $round.players.filter((_player) => _player.address === $address).length > 0
-  );
+  $: betAmount, onBarChange();
+
+  function onNumberClick(number): void {
+    let betSelection = $round?.betSelection !== number ? number : undefined;
+    round.update(($round) => ({ ...$round, betSelection }));
+  }
+
+  function onBarChange() {
+    $round.betAmount = BigInt(betAmount);
+  }
 </script>
 
-<div
-  class={`betting-system ${
-    $round.players.filter((_player) => _player.address === $address).length > 0
-      ? 'disabled'
-      : $placingBet
-      ? 'disabled'
-      : ''
-  }`}
->
-  <MultipleSelector />
+<div class="betting-system" class:disabled={$placingBet}>
+  <MultipleSelector disabled={$placingBet} onClick={onNumberClick} />
   <div>
-    <BarSelector />
+    <BarSelector disabled={$placingBet} bind:value={betAmount} />
     <div class="bet-button">
-      {#if $balance > 1n}
-        <Button
-          label="Place bet"
-          disabled={$round.betSelection === undefined || $placingBet}
-          onClick={placeBet}
-          loading={$placingBet}
-        />
-      {:else}
-        <Button
-          label={$requestingFunds ? "Requesting..." : "Request funds"}
-          onClick={sendFaucetRequest}
-          disabled={$requestingFunds}
-          loading={$requestingFunds}
-        />
-      {/if}
+      <Button
+        label="Place bet"
+        disabled={!$round.betSelection ||
+          $round.betAmount === 0n ||
+          $placingBet}
+        onClick={placeBet}
+        loading={$placingBet}
+      />
     </div>
   </div>
 </div>

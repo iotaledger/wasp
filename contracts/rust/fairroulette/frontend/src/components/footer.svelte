@@ -4,52 +4,52 @@
   const { registeredAddress, visitingAddress, information } = foundationData;
   const SOCIAL_LINKS = [
     {
-      name: 'Youtube',
-      icon: 'youtube.svg',
-      url: 'https://www.youtube.com/c/iotafoundation',
-      color: '#131F37',
+      name: "Youtube",
+      icon: "youtube.svg",
+      url: "https://www.youtube.com/c/iotafoundation",
+      color: "#131F37",
     },
     {
-      name: 'GitHub',
-      icon: 'github.svg',
-      url: 'https://github.com/iotaledger/',
-      color: '#2C3850',
+      name: "GitHub",
+      icon: "github.svg",
+      url: "https://github.com/iotaledger/",
+      color: "#2C3850",
     },
     {
-      name: 'Discord',
-      icon: 'discord.svg',
-      url: 'https://discord.iota.org/',
-      color: '#4B576F',
+      name: "Discord",
+      icon: "discord.svg",
+      url: "https://discord.iota.org/",
+      color: "#4B576F",
     },
     {
-      name: 'Twitter',
-      icon: 'twitter.svg',
-      url: 'https://twitter.com/iota',
-      color: '#6A768E',
+      name: "Twitter",
+      icon: "twitter.svg",
+      url: "https://twitter.com/iota",
+      color: "#6A768E",
     },
     {
-      name: 'Reddit',
-      icon: 'reddit.svg',
-      url: 'https://www.reddit.com/r/Iota/',
-      color: '#7D89A1',
+      name: "Reddit",
+      icon: "reddit.svg",
+      url: "https://www.reddit.com/r/Iota/",
+      color: "#7D89A1",
     },
     {
-      name: 'LinkedIn',
-      icon: 'linkedin.svg',
-      url: 'https://www.linkedin.com/company/iotafoundation/',
-      color: '#8995AD',
+      name: "LinkedIn",
+      icon: "linkedin.svg",
+      url: "https://www.linkedin.com/company/iotafoundation/",
+      color: "#8995AD",
     },
     {
-      name: 'Instagram',
-      icon: 'instagram.svg',
-      url: 'https://www.instagram.com/iotafoundation/',
-      color: '#99A5BD',
+      name: "Instagram",
+      icon: "instagram.svg",
+      url: "https://www.instagram.com/iotafoundation/",
+      color: "#99A5BD",
     },
     {
-      name: 'Facebook',
-      icon: 'facebook.svg',
-      url: 'https://www.facebook.com/TheIOTAFoundation/',
-      color: '#BAC6DE',
+      name: "Facebook",
+      icon: "facebook.svg",
+      url: "https://www.facebook.com/TheIOTAFoundation/",
+      color: "#BAC6DE",
     },
   ];
 </script>
@@ -64,11 +64,11 @@
         {#if registeredAddress || visitingAddress}
           <div class="registered-address">
             <div>
-              <p>{registeredAddress?.value?.join('\n') ?? ''}</p>
+              <p>{registeredAddress?.value?.join("\n") ?? ""}</p>
             </div>
             <div>
-              <p>{visitingAddress?.label ?? ''}</p>
-              <p>{visitingAddress?.value?.join('\n') ?? ''}</p>
+              <p>{visitingAddress?.label ?? ""}</p>
+              <p>{visitingAddress?.value?.join("\n") ?? ""}</p>
             </div>
           </div>
         {/if}
@@ -78,7 +78,7 @@
           {#each information as informationLine}
             <div>
               <span
-                >{informationLine?.label?.replace(/&copy;/g, '©') ?? ''}</span
+                >{informationLine?.label?.replace(/&copy;/g, "©") ?? ""}</span
               >
               {#if informationLine?.urls}
                 {#each informationLine?.urls as url, i}
@@ -178,7 +178,7 @@
         background: rgb(19, 31, 54);
         width: 16.6667%;
         text-decoration: none;
-        font-family: 'Metropolis Bold';
+        font-family: "Metropolis Bold";
         font-size: 16px;
         line-height: 24px;
         padding: 8px;

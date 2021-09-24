@@ -154,7 +154,7 @@
     @media (min-width: 1024px) {
       flex-direction: row;
       justify-content: space-between;
-      margin-top: 32px;
+      margin-top: 20px;
       margin-bottom: 300px;
     }
     .players {
@@ -172,11 +172,12 @@
       margin: 0 auto;
       @media (min-width: 1024px) {
         position: absolute;
+        top: -50px;
         left: 50%;
         transform: translateX(-50%);
       }
       .bet_system {
-        margin-top: 40px;
+        margin-top: 20px;
         margin-bottom: 100px;
       }
     }

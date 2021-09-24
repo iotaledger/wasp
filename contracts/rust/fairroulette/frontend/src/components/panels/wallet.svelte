@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { address, seedString } from "../../lib/store";
+  import { address, seedString } from '../../lib/store';
 </script>
 
 <div class="panel wallet">
@@ -15,9 +15,6 @@
 
 <style lang="scss">
   .wallet {
-    @media (min-width: 1024px) {
-      padding-bottom: 24px;
-    }
     .wallet-data {
       display: grid;
       grid-template-rows: 1fr;
