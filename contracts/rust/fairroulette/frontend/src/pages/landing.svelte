@@ -30,7 +30,7 @@
       <p class="description">{HEADINGS.description}</p>
       <div class="demo-button">
         <Navigate to="/demo">
-          <Button label="Try the demo" /></Navigate
+          <Button label="Try demo" /></Navigate
         >
       </div>
     </div>
@@ -61,7 +61,7 @@
       padding: 0 24px;
 
       @media (min-width: 1024px) {
-        width: 40%;
+        width: 50%;
         padding: 0;
       }
       .eyebrow {
@@ -83,7 +83,6 @@
         line-height: 150%;
         letter-spacing: 0.75px;
         color: var(--gray-3);
-        margin-top: 16px;
         @media (min-width: 1024px) {
           margin-top: 24px;
         }
@@ -94,16 +93,18 @@
       }
     }
     .wheel {
+      max-width: max-content;
+      margin: 0 auto;
       overflow: hidden;
+      margin-top: 32px;
       @media (min-width: 1024px) {
-        width: 60%;
+        margin-top: 0;
       }
       img {
-        width: 175%;
-        margin: 36px 0 0 -115px;
-        @media (min-width: 600px) {
-          width: 100%;
-          margin-left: 0;
+        width: 100%;
+        max-height: 400px;
+        @media (min-width: 1024px) {
+          max-height: 600px;
         }
       }
     }
