@@ -35,7 +35,7 @@
       </div>
     </div>
     <div class="wheel">
-      <img src="wheel.svg" alt="wheel" />
+      <img src="/assets/wheel.svg" alt="wheel" />
     </div>
   </div>
   <div class="cards">

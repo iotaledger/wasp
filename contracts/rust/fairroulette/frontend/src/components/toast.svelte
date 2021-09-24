@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ToastType } from './../lib/utils';
+  import type { ToastType } from './../lib/app';
 
   export let title: string;
   export let message: string;

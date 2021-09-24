@@ -3,7 +3,7 @@
 
 <header class="header">
   <div class="container">
-    <img src="iota-roulette.svg" alt="iota-logo-roulette" />
+    <img src="/assets/iota-roulette-logo.svg" alt="iota-logo-roulette" />
   </div>
   {#if window.location.pathname !== '/demo'}
     <a href="/demo">Try demo</a>
