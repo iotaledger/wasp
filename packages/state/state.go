@@ -143,7 +143,7 @@ func (vs *virtualState) ApplyBlock(b Block) error {
 	return nil
 }
 
-// ApplyStateUpdate applies one state update. Doesn't change state hash: it can be changed by Apply block
+// ApplyStateUpdate applies one state update. Doesn't change the state hash: it can be changed by Apply block
 func (vs *virtualState) ApplyStateUpdates(stateUpd ...StateUpdate) {
 	for _, upd := range stateUpd {
 		upd.Mutations().ApplyTo(vs.KVStore())
