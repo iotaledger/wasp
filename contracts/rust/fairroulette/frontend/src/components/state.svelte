@@ -11,12 +11,12 @@
 
   const MESSAGES = {
     [State.Running]: {
-      title: "Start game",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit",
+      title: "Game Running!",
+      description: "The round ends in 50 seconds.",
     },
     [State.Start]: {
-      title: "GAME RUNNING!",
-      description: "The round ends in 50 seconds.",
+      title: "Start game",
+      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
     },
     [State.AddFunds]: {
       title: "Add funds",
