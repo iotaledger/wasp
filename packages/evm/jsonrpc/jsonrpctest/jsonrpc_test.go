@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -43,7 +44,7 @@ func newSoloTestEnv(t *testing.T) *soloTestEnv {
 	chain := s.NewChain(chainOwner, "iscpchain")
 	err := chain.DeployContract(chainOwner, "evmchain", evmchain.Contract.ProgramHash,
 		evmchain.FieldChainID, codec.EncodeUint16(uint16(chainID)),
-		evmchain.FieldGenesisAlloc, evmchain.EncodeGenesisAlloc(core.GenesisAlloc{
+		evmchain.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(core.GenesisAlloc{
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 		}),
 	)

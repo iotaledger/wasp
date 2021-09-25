@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/spf13/cobra"
 )
@@ -62,7 +63,7 @@ func (d *DeployParams) GetGenesis(def core.GenesisAlloc) core.GenesisAlloc {
 	// --alloc-bytes provided
 	b, err := base64.StdEncoding.DecodeString(d.allocBase64)
 	log.Check(err)
-	ret, err := evmchain.DecodeGenesisAlloc(b)
+	ret, err := evmtypes.DecodeGenesisAlloc(b)
 	log.Check(err)
 	return ret
 }

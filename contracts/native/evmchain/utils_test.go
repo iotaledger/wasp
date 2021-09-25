@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/hive.go/crypto/ed25519"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -67,7 +68,7 @@ type ethCallOptions struct {
 }
 
 func initEVMChain(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *evmChainInstance {
-	env := solo.New(t, false, false).WithNativeContract(Processor)
+	env := solo.New(t, true, true).WithNativeContract(Processor)
 	for _, c := range nativeContracts {
 		env = env.WithNativeContract(c)
 	}
@@ -87,7 +88,7 @@ func initEVMChainWithSolo(t testing.TB, env *solo.Solo) *evmChainInstance {
 	}
 	err := e.soloChain.DeployContract(nil, "evmchain", Contract.ProgramHash,
 		FieldChainID, codec.EncodeUint16(uint16(chainID)),
-		FieldGenesisAlloc, EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
+		FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(map[common.Address]core.GenesisAccount{
 			e.faucetAddress(): {Balance: e.faucetSupply},
 		}),
 	)
@@ -204,7 +205,7 @@ func (e *evmChainInstance) deployLoopContract(creator *ecdsa.PrivateKey) *loopCo
 }
 
 func (e *evmChainInstance) signer() types.Signer {
-	return evm.Signer(big.NewInt(int64(e.chainID)))
+	return evmtypes.Signer(big.NewInt(int64(e.chainID)))
 }
 
 func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) *evmContractInstance {
@@ -260,7 +261,7 @@ func (e *evmChainInstance) deployContract(creator *ecdsa.PrivateKey, abiJSON str
 }
 
 func (e *evmChainInstance) estimateGas(callMsg ethereum.CallMsg) uint64 {
-	ret, err := e.callView(FuncEstimateGas.Name, FieldCallMsg, EncodeCallMsg(callMsg))
+	ret, err := e.callView(FuncEstimateGas.Name, FieldCallMsg, evmtypes.EncodeCallMsg(callMsg))
 	if err != nil {
 		e.t.Logf("%v", err)
 		return evm.GasLimitDefault - 1
@@ -322,7 +323,7 @@ func (e *evmContractInstance) buildEthTxData(opts []ethCallOptions, fnName strin
 
 type callFnResult struct {
 	tx             *types.Transaction
-	receipt        *Receipt
+	receipt        *types.Receipt
 	iotaChargedFee uint64
 }
 
@@ -346,7 +347,7 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 	receiptResult, err := e.chain.callView(FuncGetReceipt.Name, FieldTransactionHash, tx.Hash().Bytes())
 	require.NoError(e.chain.t, err)
 
-	res.receipt, err = DecodeReceipt(receiptResult.MustGet(FieldResult))
+	res.receipt, err = evmtypes.DecodeReceiptFull(receiptResult.MustGet(FieldResult))
 	require.NoError(e.chain.t, err)
 
 	require.LessOrEqual(e.chain.t, res.receipt.GasUsed, gasUsed)
@@ -366,7 +367,7 @@ func (e *evmContractInstance) callView(opts []ethCallOptions, fnName string, arg
 		Value:    opt.value,
 		Data:     callArguments,
 	})
-	ret, err := e.chain.callView(FuncCallContract.Name, FieldCallMsg, EncodeCallMsg(callMsg))
+	ret, err := e.chain.callView(FuncCallContract.Name, FieldCallMsg, evmtypes.EncodeCallMsg(callMsg))
 	require.NoError(e.chain.t, err)
 	if v != nil {
 		err = e.abi.UnpackIntoInterface(v, fnName, ret.MustGet(FieldResult))

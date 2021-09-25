@@ -13,12 +13,9 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/require"
 )
@@ -40,8 +37,7 @@ func estimateGas(t testing.TB, emu *EVMEmulator, from common.Address, to *common
 func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, receiverAddress common.Address, amount *big.Int, data []byte) *types.Receipt {
 	senderAddress := crypto.PubkeyToAddress(sender.PublicKey)
 
-	nonce, err := emu.PendingNonceAt(senderAddress)
-	require.NoError(t, err)
+	nonce := emu.StateDB().GetNonce(senderAddress)
 	gas := estimateGas(t, emu, senderAddress, &receiverAddress, amount, data)
 
 	tx, err := types.SignTx(
@@ -51,29 +47,13 @@ func sendTransaction(t testing.TB, emu *EVMEmulator, sender *ecdsa.PrivateKey, r
 	)
 	require.NoError(t, err)
 
-	_, err = emu.SendTransaction(tx)
-	require.NoError(t, err)
-	emu.Commit()
-
-	receipt, err := emu.TransactionReceipt(tx.Hash())
+	receipt, err := emu.SendTransaction(tx)
 	require.NoError(t, err)
 
 	return receipt
 }
 
 func TestBlockchain(t *testing.T) {
-	db := rawdb.NewMemoryDatabase()
-	defer db.Close()
-	testBlockchain(t, db)
-}
-
-func TestBlockchainWithKVStoreBackend(t *testing.T) {
-	db := rawdb.NewDatabase(NewKVAdapter(dict.New()))
-	defer db.Close()
-	testBlockchain(t, db)
-}
-
-func testBlockchain(t testing.TB, db ethdb.Database) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
@@ -89,15 +69,16 @@ func testBlockchain(t testing.TB, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(DefaultChainID, db, genesisAlloc, GasLimitDefault, 0)
-
-	emu := NewEVMEmulator(db)
-	defer emu.Close()
-
-	genesis := emu.Blockchain().Genesis()
+	db := dict.Dict{}
+	Init(db, DefaultChainID, GasLimitDefault, 0, genesisAlloc)
+	emu := NewEVMEmulator(db, 1)
 
 	// some assertions
 	{
+		require.EqualValues(t, GasLimitDefault, emu.BlockchainDB().GetGasLimit())
+		require.EqualValues(t, DefaultChainID, emu.BlockchainDB().GetChainID())
+
+		genesis := emu.BlockchainDB().GetBlockByNumber(common.Big0)
 		require.NotNil(t, genesis)
 
 		// the genesis block has block number 0
@@ -105,25 +86,22 @@ func testBlockchain(t testing.TB, db ethdb.Database) {
 		// the genesis block has 0 transactions
 		require.EqualValues(t, 0, genesis.Transactions().Len())
 
-		var genesisHash common.Hash
 		{
 			// assert that current block is genesis
-			block := emu.Blockchain().CurrentBlock()
+			block := emu.BlockchainDB().GetCurrentBlock()
 			require.NotNil(t, block)
 			require.EqualValues(t, GasLimitDefault, block.Header().GasLimit)
-			genesisHash = block.Hash()
 		}
 
 		{
 			// same, getting the block by hash
-			genesis2 := emu.Blockchain().GetBlockByHash(genesisHash)
+			genesis2 := emu.BlockchainDB().GetBlockByHash(genesis.Hash())
 			require.NotNil(t, genesis2)
-			require.EqualValues(t, genesisHash, genesis2.Hash())
+			require.EqualValues(t, genesis.Hash(), genesis2.Hash())
 		}
 
 		{
-			state, err := emu.Blockchain().State()
-			require.NoError(t, err)
+			state := emu.StateDB()
 			// check the balance of the faucet address
 			require.EqualValues(t, faucetSupply, state.GetBalance(faucetAddress))
 			require.EqualValues(t, big.NewInt(0), state.GetBalance(receiverAddress))
@@ -134,15 +112,19 @@ func testBlockchain(t testing.TB, db ethdb.Database) {
 
 	// send a transaction transferring 1000 ETH to receiverAddress
 	{
-		sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil)
+		receipt := sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil)
 
-		require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
-		require.EqualValues(t, GasLimitDefault, emu.Blockchain().CurrentBlock().Header().GasLimit)
+		require.EqualValues(t, 1, emu.BlockchainDB().GetNumber().Uint64())
+		block := emu.BlockchainDB().GetCurrentBlock()
+		require.EqualValues(t, 1, block.Header().Number.Uint64())
+		require.EqualValues(t, GasLimitDefault, block.Header().GasLimit)
+		require.EqualValues(t, receipt.Bloom, block.Bloom())
+		require.EqualValues(t, receipt.GasUsed, block.GasUsed())
+		require.EqualValues(t, emu.BlockchainDB().GetBlockByNumber(common.Big0).Hash(), block.ParentHash())
 	}
 
 	{
-		state, err := emu.Blockchain().State()
-		require.NoError(t, err)
+		state := emu.StateDB()
 		// check the new balances
 		require.EqualValues(t, (&big.Int{}).Sub(faucetSupply, transferAmount), state.GetBalance(faucetAddress))
 		require.EqualValues(t, transferAmount, state.GetBalance(receiverAddress))
@@ -150,18 +132,6 @@ func testBlockchain(t testing.TB, db ethdb.Database) {
 }
 
 func TestBlockchainPersistence(t *testing.T) {
-	db := rawdb.NewMemoryDatabase()
-	defer db.Close()
-	testBlockchainPersistence(t, db)
-}
-
-func TestBlockchainPersistenceWithKVStoreBackend(t *testing.T) {
-	db := rawdb.NewDatabase(NewKVAdapter(dict.New()))
-	defer db.Close()
-	testBlockchainPersistence(t, db)
-}
-
-func testBlockchainPersistence(t testing.TB, db ethdb.Database) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
@@ -178,23 +148,19 @@ func testBlockchainPersistence(t testing.TB, db ethdb.Database) {
 	receiverAddress := crypto.PubkeyToAddress(receiver.PublicKey)
 	transferAmount := big.NewInt(1000)
 
-	InitGenesis(DefaultChainID, db, genesisAlloc, GasLimitDefault, 0)
+	db := dict.Dict{}
+	Init(db, DefaultChainID, GasLimitDefault, 0, genesisAlloc)
 
 	// do a transfer using one instance of EVMEmulator
 	func() {
-		emu := NewEVMEmulator(db)
-		defer emu.Close()
-
+		emu := NewEVMEmulator(db, 1)
 		sendTransaction(t, emu, faucet, receiverAddress, transferAmount, nil)
 	}()
 
 	// initialize a new EVMEmulator using the same DB and check the state
 	{
-		emu := NewEVMEmulator(db)
-		defer emu.Close()
-
-		state, err := emu.Blockchain().State()
-		require.NoError(t, err)
+		emu := NewEVMEmulator(db, 2)
+		state := emu.StateDB()
 		// check the new balances
 		require.EqualValues(t, (&big.Int{}).Sub(faucetSupply, transferAmount), state.GetBalance(faucetAddress))
 		require.EqualValues(t, transferAmount, state.GetBalance(receiverAddress))
@@ -206,8 +172,7 @@ type contractFnCaller func(sender *ecdsa.PrivateKey, name string, args ...interf
 func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey, contractABI abi.ABI, contractBytecode []byte, args ...interface{}) (common.Address, contractFnCaller) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
-	nonce, err := emu.PendingNonceAt(creatorAddress)
-	require.NoError(t, err)
+	nonce := emu.StateDB().GetNonce(creatorAddress)
 
 	txValue := big.NewInt(0)
 
@@ -230,29 +195,24 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 	)
 	require.NoError(t, err)
 
-	_, err = emu.SendTransaction(tx)
+	receipt, err := emu.SendTransaction(tx)
 	require.NoError(t, err)
-	emu.Commit()
 
 	contractAddress := crypto.CreateAddress(creatorAddress, nonce)
 
 	// assertions
 	{
-		require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
-		require.EqualValues(t, GasLimitDefault, emu.Blockchain().CurrentBlock().Header().GasLimit)
+		require.EqualValues(t, 1, emu.BlockchainDB().GetNumber().Uint64())
 
 		// verify contract address
 		{
-			receipt, err := emu.TransactionReceipt(tx.Hash())
-			require.NoError(t, err)
 			require.EqualValues(t, contractAddress, receipt.ContractAddress)
 			require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 		}
 
 		// verify contract code
 		{
-			code, err := emu.CodeAt(contractAddress, nil)
-			require.NoError(t, err)
+			code := emu.StateDB().GetCode(contractAddress)
 			require.NotEmpty(t, code)
 		}
 	}
@@ -279,18 +239,6 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 }
 
 func TestStorageContract(t *testing.T) {
-	db := rawdb.NewMemoryDatabase()
-	defer db.Close()
-	testStorageContract(t, db)
-}
-
-func TestStorageContractWithKVStoreBackend(t *testing.T) {
-	db := rawdb.NewDatabase(NewKVAdapter(dict.New()))
-	defer db.Close()
-	testStorageContract(t, db)
-}
-
-func testStorageContract(t testing.TB, db ethdb.Database) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
@@ -301,10 +249,9 @@ func testStorageContract(t testing.TB, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(DefaultChainID, db, genesisAlloc, GasLimitDefault, 0)
-
-	emu := NewEVMEmulator(db)
-	defer emu.Close()
+	db := dict.Dict{}
+	Init(db, DefaultChainID, GasLimitDefault, 0, genesisAlloc)
+	emu := NewEVMEmulator(db, 1)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
@@ -324,7 +271,7 @@ func testStorageContract(t testing.TB, db ethdb.Database) {
 		require.NoError(t, err)
 		require.NotEmpty(t, callArguments)
 
-		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
+		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments})
 		require.NoError(t, err)
 		require.NotEmpty(t, res)
 
@@ -334,13 +281,13 @@ func testStorageContract(t testing.TB, db ethdb.Database) {
 		require.EqualValues(t, 42, v)
 
 		// no state change
-		require.EqualValues(t, 1, emu.Blockchain().CurrentBlock().NumberU64())
+		require.EqualValues(t, 1, emu.BlockchainDB().GetNumber().Uint64())
 	}
 
 	// send tx that calls `store(43)`
 	{
 		callFn(faucet, "store", uint32(43))
-		require.EqualValues(t, 2, emu.Blockchain().CurrentBlock().NumberU64())
+		require.EqualValues(t, 2, emu.BlockchainDB().GetNumber().Uint64())
 	}
 
 	// call `retrieve` view again, get 43
@@ -351,7 +298,7 @@ func testStorageContract(t testing.TB, db ethdb.Database) {
 		res, err := emu.CallContract(ethereum.CallMsg{
 			To:   &contractAddress,
 			Data: callArguments,
-		}, nil)
+		})
 		require.NoError(t, err)
 		require.NotEmpty(t, res)
 
@@ -361,23 +308,11 @@ func testStorageContract(t testing.TB, db ethdb.Database) {
 		require.EqualValues(t, 43, v)
 
 		// no state change
-		require.EqualValues(t, 2, emu.Blockchain().CurrentBlock().NumberU64())
+		require.EqualValues(t, 2, emu.BlockchainDB().GetNumber().Uint64())
 	}
 }
 
 func TestERC20Contract(t *testing.T) {
-	db := rawdb.NewMemoryDatabase()
-	defer db.Close()
-	testERC20Contract(t, db)
-}
-
-func TestERC20ContractWithKVStoreBackend(t *testing.T) {
-	db := rawdb.NewDatabase(NewKVAdapter(dict.New()))
-	defer db.Close()
-	testERC20Contract(t, db)
-}
-
-func testERC20Contract(t testing.TB, db ethdb.Database) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(t, err)
@@ -388,10 +323,9 @@ func testERC20Contract(t testing.TB, db ethdb.Database) {
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(DefaultChainID, db, genesisAlloc, GasLimitDefault, 0)
-
-	emu := NewEVMEmulator(db)
-	defer emu.Close()
+	db := dict.Dict{}
+	Init(db, DefaultChainID, GasLimitDefault, 0, genesisAlloc)
+	emu := NewEVMEmulator(db, 1)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.ERC20ContractABI))
 	require.NoError(t, err)
@@ -414,7 +348,7 @@ func testERC20Contract(t testing.TB, db ethdb.Database) {
 		callArguments, err := contractABI.Pack(name, args...)
 		require.NoError(t, err)
 
-		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments}, nil)
+		res, err := emu.CallContract(ethereum.CallMsg{To: &contractAddress, Data: callArguments})
 		require.NoError(t, err)
 
 		v := new(big.Int)
@@ -467,10 +401,7 @@ func testERC20Contract(t testing.TB, db ethdb.Database) {
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(new(big.Int).Mul(transferAmount, big.NewInt(2))))
 }
 
-func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict) {
-	d := dict.New()
-	db := rawdb.NewDatabase(NewKVAdapter(d))
-
+func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(b, err)
@@ -481,10 +412,9 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 		faucetAddress: {Balance: faucetSupply},
 	}
 
-	InitGenesis(DefaultChainID, db, genesisAlloc, GasLimitDefault, 0)
-
-	emu := NewEVMEmulator(db)
-	defer emu.Close()
+	db := dict.Dict{}
+	Init(db, DefaultChainID, GasLimitDefault, 0, genesisAlloc)
+	emu := NewEVMEmulator(db, 1)
 
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(b, err)
@@ -520,45 +450,22 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict)
 		require.NoError(b, err)
 	}
 
-	return emu, txs, d
+	return emu, txs
 }
 
-// benchmarkEVMEmulator is a benchmark for the EVMEmulator that sends an EVM transaction
-// that calls `storage.store()`, committing a block every k transactions.
+// BenchmarkEVMEmulator is a benchmark for the EVMEmulator that sends N EVM transactions.
 //
 // run with: go test -benchmem -cpu=1 -run=' ' -bench='Bench.*'
 //
 // To generate mem and cpu profiles, add -cpuprofile=cpu.out -memprofile=mem.out
 // Then: go tool pprof -http :8080 {cpu,mem}.out
-func benchmarkEVMEmulator(b *testing.B, k int) {
+func BenchmarkEVMEmulator(b *testing.B) {
 	// setup: deploy the storage contract and prepare N transactions to send
-	emu, txs, db := initBenchmark(b)
+	emu, txs := initBenchmark(b)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := emu.SendTransaction(txs[i])
 		require.NoError(b, err)
-
-		// commit a block every n txs
-		if i%k == 0 {
-			emu.Commit()
-		}
 	}
-	emu.Commit()
-
-	b.ReportMetric(dbSize(db)/float64(b.N), "db:bytes/op")
 }
-
-func dbSize(db kv.KVStore) float64 {
-	r := float64(0)
-	db.MustIterate("", func(key kv.Key, value []byte) bool {
-		r += float64(len(key) + len(value))
-		return true
-	})
-	return r
-}
-
-func BenchmarkEVMEmulator1(b *testing.B)   { benchmarkEVMEmulator(b, 1) }
-func BenchmarkEVMEmulator10(b *testing.B)  { benchmarkEVMEmulator(b, 10) }
-func BenchmarkEVMEmulator50(b *testing.B)  { benchmarkEVMEmulator(b, 50) }
-func BenchmarkEVMEmulator100(b *testing.B) { benchmarkEVMEmulator(b, 100) }

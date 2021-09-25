@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -71,7 +72,7 @@ func start(cmd *cobra.Command, args []string) {
 	chain := env.NewChain(chainOwner, "iscpchain")
 	err := chain.DeployContract(chainOwner, deployParams.Name, evmchain.Contract.ProgramHash,
 		evmchain.FieldChainID, codec.EncodeUint16(uint16(deployParams.ChainID)),
-		evmchain.FieldGenesisAlloc, evmchain.EncodeGenesisAlloc(deployParams.GetGenesis(core.GenesisAlloc{
+		evmchain.FieldGenesisAlloc, evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(core.GenesisAlloc{
 			evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 		})),
 		evmchain.FieldGasPerIota, deployParams.GasPerIOTA,

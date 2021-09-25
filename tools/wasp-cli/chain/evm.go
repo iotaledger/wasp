@@ -6,6 +6,7 @@ package chain
 import (
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -39,7 +40,7 @@ func initEVMDeploy(evmCmd *cobra.Command) {
 		Run: func(cmd *cobra.Command, args []string) {
 			deployContract(deployParams.Name, deployParams.Description, evmchain.Contract.ProgramHash, dict.Dict{
 				evmchain.FieldChainID:      codec.EncodeUint16(uint16(deployParams.ChainID)),
-				evmchain.FieldGenesisAlloc: evmchain.EncodeGenesisAlloc(deployParams.GetGenesis(nil)),
+				evmchain.FieldGenesisAlloc: evmtypes.EncodeGenesisAlloc(deployParams.GetGenesis(nil)),
 			})
 			log.Printf("%s contract successfully deployed.\n", evmchain.Contract.Name)
 		},

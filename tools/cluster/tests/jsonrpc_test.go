@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -44,7 +45,7 @@ func newClusterTestEnv(t *testing.T) *clusterTestEnv {
 		"EVM chain on top of ISCP",
 		map[string]interface{}{
 			evmchain.FieldChainID: codec.EncodeUint16(uint16(chainID)),
-			evmchain.FieldGenesisAlloc: evmchain.EncodeGenesisAlloc(core.GenesisAlloc{
+			evmchain.FieldGenesisAlloc: evmtypes.EncodeGenesisAlloc(core.GenesisAlloc{
 				evmtest.FaucetAddress: {Balance: evmtest.FaucetSupply},
 			}),
 		},

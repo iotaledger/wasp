@@ -130,7 +130,11 @@ func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]inter
 	if r == nil {
 		return nil, nil
 	}
-	return RPCMarshalReceipt(r), nil
+	tx, _, _, _, err := e.evmChain.TransactionByHash(txHash) // nolint:dogsled
+	if err != nil {
+		return nil, err
+	}
+	return RPCMarshalReceipt(r, tx), nil
 }
 
 func (e *EthService) SendRawTransaction(txBytes hexutil.Bytes) (common.Hash, error) {

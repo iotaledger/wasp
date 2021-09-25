@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
-	"github.com/iotaledger/wasp/packages/evm"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -30,7 +30,7 @@ func NewEVMChain(backend ChainBackend, chainID int, contractName string) *EVMCha
 }
 
 func (e *EVMChain) Signer() types.Signer {
-	return evm.Signer(big.NewInt(int64(e.chainID)))
+	return evmtypes.Signer(big.NewInt(int64(e.chainID)))
 }
 
 func (e *EVMChain) GasPerIota() (uint64, error) {
@@ -139,14 +139,14 @@ func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
 		return nil, nil
 	}
 
-	block, err := evmchain.DecodeBlock(ret.MustGet(evmchain.FieldResult))
+	block, err := evmtypes.DecodeBlock(ret.MustGet(evmchain.FieldResult))
 	if err != nil {
 		return nil, err
 	}
 	return block, nil
 }
 
-func (e *EVMChain) getTransactionBy(funcName string, args dict.Dict) (tx *types.Transaction, blockHash common.Hash, blockNumber, index uint64, err error) {
+func (e *EVMChain) getTransactionBy(funcName string, args dict.Dict) (tx *types.Transaction, blockHash common.Hash, blockNumber, index uint64, err error) { // nolint:unparam
 	var ret dict.Dict
 	ret, err = e.backend.CallView(e.contractName, funcName, args)
 	if err != nil {
@@ -157,7 +157,7 @@ func (e *EVMChain) getTransactionBy(funcName string, args dict.Dict) (tx *types.
 		return
 	}
 
-	tx, err = evmchain.DecodeTransaction(ret.MustGet(evmchain.FieldTransaction))
+	tx, err = evmtypes.DecodeTransaction(ret.MustGet(evmchain.FieldTransaction))
 	if err != nil {
 		return
 	}
@@ -166,7 +166,7 @@ func (e *EVMChain) getTransactionBy(funcName string, args dict.Dict) (tx *types.
 	if err != nil {
 		return
 	}
-	index, err = codec.DecodeUint64(ret.MustGet(evmchain.FieldTransactionIndex), 0)
+	// index is always 0
 	return
 }
 
@@ -177,16 +177,21 @@ func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, b
 }
 
 func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumber, indexRet uint64, err error) {
-	return e.getTransactionBy(evmchain.FuncGetTransactionByBlockHashAndIndex.Name, dict.Dict{
-		evmchain.FieldBlockHash:        hash.Bytes(),
-		evmchain.FieldTransactionIndex: codec.EncodeUint64(index),
+	if index != 0 {
+		// all blocks have 1 tx
+		return
+	}
+	return e.getTransactionBy(evmchain.FuncGetTransactionByBlockHash.Name, dict.Dict{
+		evmchain.FieldBlockHash: hash.Bytes(),
 	})
 }
 
 func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index uint64) (tx *types.Transaction, blockHash common.Hash, blockNumberRet, indexRet uint64, err error) {
-	return e.getTransactionBy(evmchain.FuncGetTransactionByBlockNumberAndIndex.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
-		evmchain.FieldTransactionIndex: codec.EncodeUint64(index),
-	}))
+	if index != 0 {
+		// all blocks have 1 tx
+		return
+	}
+	return e.getTransactionBy(evmchain.FuncGetTransactionByBlockNumber.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{}))
 }
 
 func (e *EVMChain) BlockByHash(hash common.Hash) (*types.Block, error) {
@@ -201,14 +206,14 @@ func (e *EVMChain) BlockByHash(hash common.Hash) (*types.Block, error) {
 		return nil, nil
 	}
 
-	block, err := evmchain.DecodeBlock(ret.MustGet(evmchain.FieldResult))
+	block, err := evmtypes.DecodeBlock(ret.MustGet(evmchain.FieldResult))
 	if err != nil {
 		return nil, err
 	}
 	return block, nil
 }
 
-func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*evmchain.Receipt, error) {
+func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*types.Receipt, error) {
 	ret, err := e.backend.CallView(e.contractName, evmchain.FuncGetReceipt.Name, dict.Dict{
 		evmchain.FieldTransactionHash: txHash.Bytes(),
 	})
@@ -220,7 +225,7 @@ func (e *EVMChain) TransactionReceipt(txHash common.Hash) (*evmchain.Receipt, er
 		return nil, nil
 	}
 
-	receipt, err := evmchain.DecodeReceipt(ret.MustGet(evmchain.FieldResult))
+	receipt, err := evmtypes.DecodeReceiptFull(ret.MustGet(evmchain.FieldResult))
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +244,7 @@ func (e *EVMChain) TransactionCount(address common.Address, blockNumber *big.Int
 
 func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
 	ret, err := e.backend.CallView(e.contractName, evmchain.FuncCallContract.Name, paramsWithOptionalBlockNumber(blockNumber, dict.Dict{
-		evmchain.FieldCallMsg: evmchain.EncodeCallMsg(args),
+		evmchain.FieldCallMsg: evmtypes.EncodeCallMsg(args),
 	}))
 	if err != nil {
 		return nil, err
@@ -249,7 +254,7 @@ func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumber *big.Int) ([]
 
 func (e *EVMChain) EstimateGas(args ethereum.CallMsg) (uint64, error) {
 	ret, err := e.backend.CallView(e.contractName, evmchain.FuncEstimateGas.Name, dict.Dict{
-		evmchain.FieldCallMsg: evmchain.EncodeCallMsg(args),
+		evmchain.FieldCallMsg: evmtypes.EncodeCallMsg(args),
 	})
 	if err != nil {
 		return 0, err
@@ -269,7 +274,7 @@ func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumbe
 }
 
 func (e *EVMChain) BlockTransactionCountByHash(blockHash common.Hash) (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evmchain.FuncGetBlockTransactionCountByHash.Name, dict.Dict{
+	ret, err := e.backend.CallView(e.contractName, evmchain.FuncGetTransactionCountByBlockHash.Name, dict.Dict{
 		evmchain.FieldBlockHash: blockHash.Bytes(),
 	})
 	if err != nil {
@@ -279,7 +284,7 @@ func (e *EVMChain) BlockTransactionCountByHash(blockHash common.Hash) (uint64, e
 }
 
 func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, error) {
-	ret, err := e.backend.CallView(e.contractName, evmchain.FuncGetBlockTransactionCountByNumber.Name, paramsWithOptionalBlockNumber(blockNumber, nil))
+	ret, err := e.backend.CallView(e.contractName, evmchain.FuncGetTransactionCountByBlockNumber.Name, paramsWithOptionalBlockNumber(blockNumber, nil))
 	if err != nil {
 		return 0, err
 	}
@@ -288,10 +293,10 @@ func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, 
 
 func (e *EVMChain) Logs(q *ethereum.FilterQuery) ([]*types.Log, error) {
 	ret, err := e.backend.CallView(e.contractName, evmchain.FuncGetLogs.Name, dict.Dict{
-		evmchain.FieldFilterQuery: evmchain.EncodeFilterQuery(q),
+		evmchain.FieldFilterQuery: evmtypes.EncodeFilterQuery(q),
 	})
 	if err != nil {
 		return nil, err
 	}
-	return evmchain.DecodeLogs(ret.MustGet(evmchain.FieldResult))
+	return evmtypes.DecodeLogs(ret.MustGet(evmchain.FieldResult))
 }

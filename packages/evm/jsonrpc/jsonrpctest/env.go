@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/stretchr/testify/require"
 )
@@ -31,7 +32,7 @@ type Env struct {
 }
 
 func (e *Env) signer() types.Signer {
-	return evm.Signer(big.NewInt(int64(e.ChainID)))
+	return evmtypes.Signer(big.NewInt(int64(e.ChainID)))
 }
 
 var RequestFundsAmount = big.NewInt(1e18) // 1 ETH
@@ -269,7 +270,10 @@ func (e *Env) TestRPCGetLogs() {
 
 	require.Empty(e.T, e.getLogs(filterQuery))
 
-	e.DeployEVMContract(creator, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+	tx, _ := e.DeployEVMContract(creator, contractABI, evmtest.ERC20ContractBytecode, "TestCoin", "TEST")
+
+	receipt := e.MustTxReceipt(tx.Hash())
+	require.Equal(e.T, 1, len(receipt.Logs))
 
 	require.Equal(e.T, 1, len(e.getLogs(filterQuery)))
 
@@ -284,7 +288,7 @@ func (e *Env) TestRPCGetLogs() {
 		Data:  callArguments,
 	}))
 	require.NoError(e.T, err)
-	e.MustSendTransaction(&jsonrpc.SendTxArgs{
+	txHash := e.MustSendTransaction(&jsonrpc.SendTxArgs{
 		From:     creatorAddress,
 		To:       &contractAddress,
 		Gas:      &gas,
@@ -293,6 +297,9 @@ func (e *Env) TestRPCGetLogs() {
 		Nonce:    &nonce,
 		Data:     (*hexutil.Bytes)(&callArguments),
 	})
+
+	receipt = e.MustTxReceipt(txHash)
+	require.Equal(e.T, 1, len(receipt.Logs))
 
 	require.Equal(e.T, 2, len(e.getLogs(filterQuery)))
 }
