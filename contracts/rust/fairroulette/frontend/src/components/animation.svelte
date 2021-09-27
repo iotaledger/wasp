@@ -30,10 +30,11 @@
       loop,
       autoplay,
     };
-    destroyAnimation();
+    setInterval(() => {
+      destroyAnimation();
+    }, 3000);
     lottieAnimation = lottie.loadAnimation(options);
   }
-
   $: if (lottieAnimation && segments) {
     lottieAnimation.removeEventListener('DOMLoaded', handleSegments);
     lottieAnimation.addEventListener('DOMLoaded', handleSegments);
