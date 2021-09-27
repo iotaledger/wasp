@@ -32,7 +32,7 @@
       autoplay,
     };
     if (timeout) {
-      setInterval(() => {
+      setTimeout(() => {
         destroyAnimation();
       }, 3000);
     }

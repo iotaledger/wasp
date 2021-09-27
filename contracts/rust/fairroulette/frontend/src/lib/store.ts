@@ -19,6 +19,8 @@ export const showAddFunds: Writable<boolean> = writable(true);
 export const fundsRequested: Writable<boolean> = writable(false);
 export const newAddressNeeded: Writable<boolean> = writable(false);
 
+export const betPlaced: Writable<boolean> = writable(false);
+
 const RESET_ROUND: IRound = {
     active: false,
     logs: [],
