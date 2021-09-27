@@ -10,4 +10,5 @@ export interface IRound {
     winningNumber: bigint
     startedAt: number
     number: bigint
+    betPlaced: boolean
 }

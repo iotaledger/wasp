@@ -18,16 +18,23 @@
   }
 </script>
 
-<div class="betting-system" class:disabled={$placingBet}>
-  <MultipleSelector disabled={$placingBet} onClick={onNumberClick} />
+<div class="betting-system" class:disabled={$placingBet || $round.betPlaced}>
+  <MultipleSelector
+    disabled={$placingBet || $round.betPlaced}
+    onClick={onNumberClick}
+  />
   <div>
-    <BarSelector disabled={$placingBet} bind:value={betAmount} />
+    <BarSelector
+      disabled={$placingBet || $round.betPlaced}
+      bind:value={betAmount}
+    />
     <div class="bet-button">
       <Button
         label="Place bet"
         disabled={!$round.betSelection ||
           $round.betAmount === 0n ||
-          $placingBet}
+          $placingBet ||
+          $round.betPlaced}
         onClick={placeBet}
         loading={$placingBet}
       />

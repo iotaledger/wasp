@@ -2,7 +2,7 @@ import { get } from 'svelte/store';
 import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
-import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, round, seed, timestamp, betPlaced } from './store';
+import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, round, seed, timestamp } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -205,7 +205,7 @@ export function subscribeToRouletteEvents() {
 
     fairRouletteService.on('roundStopped', () => {
         log(LogTag.Round, 'Ended');
-        round.update($round => ({ ...$round, active: false, logs: [], players: [] }))
+        round.update($round => ({ ...$round, active: false, logs: [], players: [], betPlaced: false }))
     });
 
     fairRouletteService.on('roundNumber', (roundNumber: bigint) => {
@@ -220,8 +220,10 @@ export function subscribeToRouletteEvents() {
 
     fairRouletteService.on('betPlaced', (bet: Bet) => {
         placingBet.set(false);
-        betPlaced.set(true);
         round.update(($round) => {
+            $round.betPlaced = true;
+            $round.betSelection = undefined;
+            $round.betAmount = 0n;
             $round.players.push(
                 {
                     address: bet.better,
