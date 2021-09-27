@@ -5,18 +5,20 @@
 <div class="panel">
   <h3>Players</h3>
   <div class="players-wrapper">
-    {#each $round?.players as { address, bet }, index}
-      <div class="player">
-        <div class="player-index">{index + 1}</div>
-        <div>
-          <div class="player-address">{address}</div>
-          <div class="player-bet">
-            <span>Bet:</span>
-            <span class="bet-value">{bet} i</span>
+    <div>
+      {#each $round?.players as { address, bet }, index}
+        <div class="player">
+          <div class="player-index">{index + 1}</div>
+          <div>
+            <div class="player-address">{address}</div>
+            <div class="player-bet">
+              <span>Bet:</span>
+              <span class="bet-value">{bet} i</span>
+            </div>
           </div>
         </div>
-      </div>
-    {/each}
+      {/each}
+    </div>
   </div>
 </div>
 
@@ -25,7 +27,6 @@
     padding: 16px;
     display: flex;
     flex-direction: column;
-    flex-wrap: wrap;
     height: 100%;
     h3 {
       font-weight: bold;
@@ -38,7 +39,8 @@
       margin: 0;
     }
     .players-wrapper {
-      flex: 1;
+      display: flex;
+      flex-direction: column-reverse;
       overflow-y: auto;
       padding-right: 16px;
       margin-top: 16px;

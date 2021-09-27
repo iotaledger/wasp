@@ -30,7 +30,7 @@
     />
     <div class="bet-button">
       <Button
-        label="Place bet"
+        label={$placingBet ? 'Placing bet...' : 'Place bet'}
         disabled={!$round.betSelection ||
           $round.betAmount === 0n ||
           $placingBet ||

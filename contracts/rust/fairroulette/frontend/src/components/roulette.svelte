@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { round, betPlaced } from '../lib/store';
+  import { round } from '../lib/store';
   import { generateRandomInt } from '../lib/utils';
   import Animation from './animation.svelte';
 
@@ -35,11 +35,11 @@
 </script>
 
 <div class="roulette">
-  {#if !$round.active && betPlaced}
+  <!-- {#if !$round.active && betPlaced}
     <div class="animation">
       <Animation animation="loading" loop />
     </div>
-  {/if}
+  {/if} -->
   <img
     class="roulette-background"
     src="/assets/roulette_background.svg"

@@ -5,18 +5,20 @@
 <div class="panel">
   <h3>Logs</h3>
   <div class="logs-wrapper">
-    {#each $round?.logs as { tag, timestamp, description }, index}
-      <div class="log">
-        <div class="log-index">{index + 1}</div>
-        <div class="log-content">
-          <div class="log-content-header">
-            <div class="log-tag">{tag}</div>
-            <div class="log-timestamp">{timestamp}</div>
+    <div>
+      {#each $round?.logs as { tag, timestamp, description }, index}
+        <div class="log">
+          <div class="log-index">{index + 1}</div>
+          <div class="log-content">
+            <div class="log-content-header">
+              <div class="log-tag">{tag}</div>
+              <div class="log-timestamp">{timestamp}</div>
+            </div>
+            <div class="log-description">{description}</div>
           </div>
-          <div class="log-description">{description}</div>
         </div>
-      </div>
-    {/each}
+      {/each}
+    </div>
   </div>
 </div>
 
@@ -25,7 +27,6 @@
     padding: 16px;
     display: flex;
     flex-direction: column;
-    flex-wrap: wrap;
     height: 100%;
     h3 {
       font-weight: bold;
@@ -38,10 +39,12 @@
       margin: 0;
     }
     .logs-wrapper {
-      flex: 1;
+      // flex: 1;
       overflow-y: auto;
       padding-right: 16px;
       margin-top: 16px;
+      display: flex;
+      flex-direction: column-reverse;
       .log {
         display: flex;
         flex-direction: row;
