@@ -7,6 +7,7 @@
   export let autoplay = true;
   export let segments = undefined;
   export let renderer = 'svg';
+  export let timeout;
 
   const animations = {
     win: {
@@ -30,9 +31,11 @@
       loop,
       autoplay,
     };
-    setInterval(() => {
-      destroyAnimation();
-    }, 3000);
+    if (timeout) {
+      setInterval(() => {
+        destroyAnimation();
+      }, 3000);
+    }
     lottieAnimation = lottie.loadAnimation(options);
   }
   $: if (lottieAnimation && segments) {

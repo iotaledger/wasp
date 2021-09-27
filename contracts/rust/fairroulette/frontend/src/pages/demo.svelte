@@ -42,7 +42,7 @@
     <Toast title="You win!" message="Congratulations!" type={ToastType.Win} />
   </div>
   <div class="animation">
-    <Animation animation="win" loop={false} />
+    <Animation animation="win" loop={false} timeout />
   </div>
   <div class="layout_state">
     <div class="balance">
