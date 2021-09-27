@@ -189,7 +189,7 @@ func RPCMarshalLog(r *evmchain.Receipt, logIndex uint) map[string]interface{} {
 		"transactionHash":  r.TxHash,
 		"transactionIndex": hexutil.Uint64(r.TransactionIndex),
 		"address":          log.Address,
-		"data":             log.Data,
+		"data":             hexutil.Bytes(log.Data),
 		"topics":           log.Topics,
 	}
 }
@@ -200,7 +200,7 @@ type RPCCallArgs struct {
 	Gas      *hexutil.Uint64 `json:"gas"`
 	GasPrice *hexutil.Big    `json:"gasPrice"`
 	Value    *hexutil.Big    `json:"value"`
-	Data     hexutil.Bytes   `json:"data"`
+	Data     *hexutil.Bytes  `json:"data"`
 }
 
 func (c *RPCCallArgs) parse() (ret ethereum.CallMsg) {
@@ -211,7 +211,9 @@ func (c *RPCCallArgs) parse() (ret ethereum.CallMsg) {
 	}
 	ret.GasPrice = (*big.Int)(c.GasPrice)
 	ret.Value = (*big.Int)(c.Value)
-	ret.Data = []byte(c.Data)
+	if c.Data != nil {
+		ret.Data = []byte(*c.Data)
+	}
 	return
 }
 
