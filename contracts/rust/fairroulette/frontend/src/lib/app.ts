@@ -2,7 +2,8 @@ import { get } from 'svelte/store';
 import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
-import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, round, seed, timestamp, toasts } from './store';
+import { showNotification } from './notifications';
+import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, round, seed, timestamp, toasts, isAWinnerPlayer } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -28,7 +29,7 @@ enum LogTag {
     Unknown = 'Unknown'
 }
 
-let isAWinnerPlayer: boolean = get(round).betSelection === Number(get(round).winningNumber) && get(round).betPlaced;
+
 export enum ToastType {
     Error = "error",
     Win = "win"
@@ -70,14 +71,11 @@ export async function initialize() {
             const content = await response.json();
             config.chainId = content.chainId;
         } catch (ex) {
-
-            let _toast = {
-                title: "Resolve chain error",
+            showNotification({
+                type: 'error',
+                title: 'Chain resolver failed.',
                 message: ex.message,
-                type: ToastType.Error,
-                autoDismiss: true
-            }
-            addToast(_toast);
+            })
             log(LogTag.Error, ex.message);
         }
     }
@@ -170,13 +168,12 @@ export async function placeBet() {
             get(round).betAmount,
         );
     } catch (ex) {
-        let _toast = {
-            title: "Place bet error",
+        showNotification({
+            type: 'error',
+            title: 'Error placing bet.',
             message: ex.message,
-            type: ToastType.Error,
-            autoDismiss: true
-        }
-        addToast(_toast);
+        })
+
         log(LogTag.Unknown, ex.message);
 
         throw ex;
@@ -195,13 +192,12 @@ export async function sendFaucetRequest() {
     try {
         await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
     } catch (ex) {
-        let _toast = {
-            title: "Faucet request error",
+        showNotification({
+            type: 'error',
+            title: 'Faucet request error',
             message: ex.message,
-            type: ToastType.Error,
-            autoDismiss: true
-        }
-        addToast(_toast);
+        })
+
         log(LogTag.Round, ex.message);
     }
     requestingFunds.set(false);
@@ -235,15 +231,20 @@ export function subscribeToRouletteEvents() {
     });
 
     fairRouletteService.on('roundStopped', () => {
-        if (isAWinnerPlayer) {
-            let _toast = {
-                title: "You win",
+        // let isAWinnerPlayer: boolean = (get(round).betSelection === Number(get(round).winningNumber)) && get(round).betPlaced;
+
+        if (get(isAWinnerPlayer)) {
+            showNotification({
+                type: 'winner',
+                title: 'You win',
                 message: "Congratulations",
-                type: ToastType.Error,
-            }
-            addToast(_toast);
+            })
         }
         log(LogTag.Round, 'Ended');
+        console.log("Round finished: winning number: ", get(round).winningNumber);
+        console.log("get(round).betSelection", get(round).betSelection)
+        console.log("Number(get(round).winningNumber)", Number(get(round).winningNumber))
+        console.log("get(round).betPlaced", get(round).betPlaced)
         round.update($round => ({ ...$round, active: false, logs: [], players: [], betPlaced: false }))
     });
 
@@ -260,9 +261,10 @@ export function subscribeToRouletteEvents() {
     fairRouletteService.on('betPlaced', (bet: Bet) => {
         placingBet.set(false);
         round.update(($round) => {
-            $round.betPlaced = true;
-            $round.betSelection = undefined;
-            $round.betAmount = 0n;
+            if (bet.better === get(address)) {
+                $round.betPlaced = true;
+                $round.betAmount = 0n;
+            }
             $round.players.push(
                 {
                     address: bet.better,

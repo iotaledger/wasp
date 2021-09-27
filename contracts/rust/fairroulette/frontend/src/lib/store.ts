@@ -35,6 +35,8 @@ const RESET_ROUND: IRound = {
 }
 
 export const round: Writable<IRound> = writable(RESET_ROUND);
+export const isAWinnerPlayer: Readable<boolean> = derived(round, $round => (($round).betSelection === Number(($round).winningNumber)) && ($round).betPlaced);
+
 
 export function resetRound(): void {
     round.set(RESET_ROUND)

@@ -7,7 +7,8 @@
   export let autoplay = true;
   export let segments = undefined;
   export let renderer = 'svg';
-  export let timeout;
+  export let destroyWhenFinished = false;
+
 
   const animations = {
     win: {
@@ -31,16 +32,18 @@
       loop,
       autoplay,
     };
-    if (timeout) {
-      setTimeout(() => {
-        destroyAnimation();
-      }, 3000);
-    }
     lottieAnimation = lottie.loadAnimation(options);
   }
+
   $: if (lottieAnimation && segments) {
     lottieAnimation.removeEventListener('DOMLoaded', handleSegments);
     lottieAnimation.addEventListener('DOMLoaded', handleSegments);
+  }
+
+  $: if (lottieAnimation && destroyWhenFinished) {
+    lottieAnimation.onComplete = function () {
+      destroyAnimation();
+    };
   }
 
   function handleSegments() {

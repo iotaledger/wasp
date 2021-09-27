@@ -2,43 +2,31 @@
   import { onDestroy, onMount } from 'svelte';
   import { fade } from 'svelte/transition';
 
+  import { removeDisplayNotification } from './../lib/notifications';
   import type { ToastType } from './../lib/app';
   import { AUTODISMISS_TOAST_TIME } from './../lib/app';
 
   export let title: string;
   export let message: string;
-  export let type: ToastType;
-  export let autoDismiss: boolean = false;
+  export let type: 'winner' | 'error';
+  export let id: string = '';
+  export let timeout: number = undefined;
 
   let show: boolean = true;
-
-  let timeout;
-
-  onMount(() => {
-    if (autoDismiss) {
-      timeout = setTimeout(() => {
-        show = false;
-      }, AUTODISMISS_TOAST_TIME);
-    }
-  });
-
-  onDestroy(() => clearTimeout(timeout));
 </script>
 
-{#if show}
-  <div in:fade out:fade class={`toast ${type}`}>
-    <div class="toast-content">
-      <div class="title">{title}</div>
-      <div class="message">{message}</div>
-    </div>
-    <button
-      on:click={() => {
-        show = false;
-      }}
-      class="close"><img src="close.svg" alt="close" /></button
-    >
+<div in:fade out:fade class={`toast ${type}`}>
+  <div class="toast-content">
+    <div class="title">{title}</div>
+    <div class="message">{message}</div>
   </div>
-{/if}
+  <button
+    on:click={() => {
+      removeDisplayNotification(id);
+    }}
+    class="close"><img src="close.svg" alt="close" /></button
+  >
+</div>
 
 <style lang="scss">
   .toast {

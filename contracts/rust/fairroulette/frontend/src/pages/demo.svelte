@@ -19,9 +19,13 @@
     requestingFunds,
     showAddFunds,
     toasts,
+    round,
+    isAWinnerPlayer,
   } from '../lib/store';
 
+  import { displayNotifications } from './../lib/notifications';
   import { ToastType } from '../lib/app';
+  import Animation from '../components/animation.svelte';
 
   onMount(initialize);
 
@@ -33,6 +37,7 @@
     createNewAddress();
     newAddressNeeded.set(false);
   }
+
 </script>
 
 <div class="container">
@@ -42,9 +47,14 @@
   <div class="animation">
     <Animation animation="win" loop={false} timeout />
   </div> -->
+  {#if $isAWinnerPlayer}
+    <div class="animation">
+      <Animation animation="win" loop={false} destroyWhenFinished />
+    </div>
+  {/if}
   <div class="toast-container">
-    {#each $toasts as toast}
-      <Toast {...toast} />
+    {#each $displayNotifications as notification}
+      <Toast {...notification} />
     {/each}
   </div>
   <div class="layout_state">

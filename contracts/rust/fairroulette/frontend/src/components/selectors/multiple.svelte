@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { BETTING_NUMBERS } from "../../lib/app";
-  import { round } from "../../lib/store";
+  import { BETTING_NUMBERS } from '../../lib/app';
+  import { round } from '../../lib/store';
 
   export let onClick: (number: number) => void = () => {};
   export let disabled: boolean = false;
@@ -11,7 +11,7 @@
     <button
       on:click={() => onClick(index + 1)}
       class="cell"
-      class:active={$round?.betSelection - 1 === index}
+      class:active={$round?.betSelection - 1 === index || disabled}
       {disabled}
     >
       {number}
