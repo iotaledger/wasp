@@ -5,11 +5,11 @@
 <div class="panel wallet">
   <div class="wallet-data">
     <div class="eyebrow">Your seed</div>
-    <div class="seed">{$seedString}</div>
+    <div class="seed">{$seedString ?? '-'}</div>
   </div>
   <div class="wallet-data">
     <div class="eyebrow">Your address</div>
-    <div class="address">{$address}</div>
+    <div class="address">{$address ?? '-'}</div>
   </div>
 </div>
 

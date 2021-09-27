@@ -10,7 +10,6 @@
     State,
     Toast,
     WalletPanel,
-    Animation,
   } from '../components';
   import { createNewAddress, initialize, sendFaucetRequest } from '../lib/app';
   import {
@@ -18,12 +17,11 @@
     fundsRequested,
     newAddressNeeded,
     requestingFunds,
-    round,
     showAddFunds,
-    resetRound,
+    toasts,
   } from '../lib/store';
 
-  import { ToastType } from './../lib/app';
+  import { ToastType } from '../lib/app';
 
   onMount(initialize);
 
@@ -38,11 +36,16 @@
 </script>
 
 <div class="container">
-  <div class="toast">
+  <!-- <div class="toast">
     <Toast title="You win!" message="Congratulations!" type={ToastType.Win} />
   </div>
   <div class="animation">
     <Animation animation="win" loop={false} timeout />
+  </div> -->
+  <div class="toast-container">
+    {#each $toasts as toast}
+      <Toast {...toast} />
+    {/each}
   </div>
   <div class="layout_state">
     <div class="balance">
@@ -84,6 +87,11 @@
 </div>
 
 <style lang="scss">
+  .toast-container {
+    display: grid;
+    grid-template-columns: auto;
+    row-gap: 16px;
+  }
   .animation {
     position: absolute;
     z-index: 1;

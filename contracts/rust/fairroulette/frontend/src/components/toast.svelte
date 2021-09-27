@@ -1,15 +1,32 @@
 <script lang="ts">
+  import { onDestroy, onMount } from 'svelte';
+  import { fade } from 'svelte/transition';
+
   import type { ToastType } from './../lib/app';
+  import { AUTODISMISS_TOAST_TIME } from './../lib/app';
 
   export let title: string;
   export let message: string;
   export let type: ToastType;
+  export let autoDismiss: boolean = false;
 
   let show: boolean = true;
+
+  let timeout;
+
+  onMount(() => {
+    if (autoDismiss) {
+      timeout = setTimeout(() => {
+        show = false;
+      }, AUTODISMISS_TOAST_TIME);
+    }
+  });
+
+  onDestroy(() => clearTimeout(timeout));
 </script>
 
 {#if show}
-  <div class={`toast ${type}`}>
+  <div in:fade out:fade class={`toast ${type}`}>
     <div class="toast-content">
       <div class="title">{title}</div>
       <div class="message">{message}</div>

@@ -2,7 +2,7 @@ import { get } from 'svelte/store';
 import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
-import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, round, seed, timestamp } from './store';
+import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, round, seed, timestamp, toasts } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -18,6 +18,7 @@ let fundsUpdaterHandle;
 
 const powManager: PoWWorkerManager = new PoWWorkerManager();
 export const BETTING_NUMBERS = 8
+export const AUTODISMISS_TOAST_TIME = 7000;     // in milliseconds
 
 enum LogTag {
     Page = 'Page',
@@ -27,11 +28,19 @@ enum LogTag {
     Unknown = 'Unknown'
 }
 
-
+let isAWinnerPlayer: boolean = get(round).betSelection === Number(get(round).winningNumber) && get(round).betPlaced;
 export enum ToastType {
     Error = "error",
     Win = "win"
 }
+
+export type IToast = {
+    type: ToastType
+    title: string
+    message: string
+    autoDismiss?: boolean
+}
+
 
 export function log(tag: string, description: string) {
     round.update((_round) => {
@@ -61,6 +70,14 @@ export async function initialize() {
             const content = await response.json();
             config.chainId = content.chainId;
         } catch (ex) {
+
+            let _toast = {
+                title: "Resolve chain error",
+                message: ex.message,
+                type: ToastType.Error,
+                autoDismiss: true
+            }
+            addToast(_toast);
             log(LogTag.Error, ex.message);
         }
     }
@@ -153,6 +170,13 @@ export async function placeBet() {
             get(round).betAmount,
         );
     } catch (ex) {
+        let _toast = {
+            title: "Place bet error",
+            message: ex.message,
+            type: ToastType.Error,
+            autoDismiss: true
+        }
+        addToast(_toast);
         log(LogTag.Unknown, ex.message);
 
         throw ex;
@@ -171,6 +195,13 @@ export async function sendFaucetRequest() {
     try {
         await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
     } catch (ex) {
+        let _toast = {
+            title: "Faucet request error",
+            message: ex.message,
+            type: ToastType.Error,
+            autoDismiss: true
+        }
+        addToast(_toast);
         log(LogTag.Round, ex.message);
     }
     requestingFunds.set(false);
@@ -204,6 +235,14 @@ export function subscribeToRouletteEvents() {
     });
 
     fairRouletteService.on('roundStopped', () => {
+        if (isAWinnerPlayer) {
+            let _toast = {
+                title: "You win",
+                message: "Congratulations",
+                type: ToastType.Error,
+            }
+            addToast(_toast);
+        }
         log(LogTag.Round, 'Ended');
         round.update($round => ({ ...$round, active: false, logs: [], players: [], betPlaced: false }))
     });
@@ -245,4 +284,10 @@ export function subscribeToRouletteEvents() {
 
 export function isWealthy(balance: bigint): boolean {
     return balance >= 200;
+}
+
+function addToast(toast: IToast): void {
+    let _toasts = get(toasts);
+    _toasts.push(toast)
+    toasts.set(_toasts)
 }
