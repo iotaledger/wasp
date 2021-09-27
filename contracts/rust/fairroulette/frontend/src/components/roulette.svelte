@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
-  import { round } from "../lib/store";
-  import { generateRandomInt } from "../lib/utils";
+  import { onDestroy } from 'svelte';
+  import { round, betPlaced } from '../lib/store';
+  import { generateRandomInt } from '../lib/utils';
+  import Animation from './animation.svelte';
 
   let flashedNumber: number;
   let interval;
@@ -34,13 +35,22 @@
 </script>
 
 <div class="roulette">
+  {#if !$round.active && betPlaced}
+    <div class="animation">
+      <Animation animation="loading" loop />
+    </div>
+  {/if}
   <img
     class="roulette-background"
     src="/assets/roulette_background.svg"
     alt="roulette"
   />
   {#if flashedNumber}
-    <img class="flashedNumber" src={`/assets/${flashedNumber}.svg`} alt="active" />
+    <img
+      class="flashedNumber"
+      src={`/assets/${flashedNumber}.svg`}
+      alt="active"
+    />
   {/if}
 </div>
 
@@ -57,6 +67,12 @@
       position: absolute;
       top: 0;
       left: 0;
+    }
+    .animation {
+      // position: absolute;
+      // max-width: 50%;
+      // top: 25%;
+      // left: 25%;
     }
   }
 </style>
