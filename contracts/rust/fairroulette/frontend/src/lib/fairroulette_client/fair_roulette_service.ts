@@ -153,8 +153,6 @@ export class FairRouletteService {
       ],
     };
 
-    console.log("betRequest", betRequest);
-
     await this.walletService.sendOnLedgerRequest(keyPair, address, this.chainId, betRequest, take);
 
   }

@@ -188,7 +188,7 @@ export function calculateRoundLengthLeft(timestamp: number) {
     // TODO: Explain.
     const executionCompensation = 5;
     const roundTimeLeft = Math.round(
-        fairRouletteService.roundLength + executionCompensation - diff
+        fairRouletteService?.roundLength + executionCompensation - diff
     );
 
     if (roundTimeLeft <= 0) {

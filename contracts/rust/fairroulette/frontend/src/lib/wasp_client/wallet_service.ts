@@ -72,9 +72,7 @@ export class WalletService {
 
     const unspents = await wallet.getUnspentOutputs(address);
     const consumedOutputs = wallet.determineOutputsToConsume(unspents, transfer);
-    console.log("consumedOutputs", consumedOutputs)
     const { inputs, consumedFunds } = wallet.buildInputs(consumedOutputs);
-    console.log("address", address, "chainId", chainId, "transfer", transfer, "consumedFunds", consumedFunds);
     const outputs = wallet.buildOutputs(address, chainId, transfer, consumedFunds);
 
     const tx: ITransaction = {
