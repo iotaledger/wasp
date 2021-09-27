@@ -17,35 +17,35 @@ var _ Queue = &LimitedPriorityHashQueue{}
 
 const Infinity = 0
 
-func NewDefaultLimitedPriorityHashQueue() *LimitedPriorityHashQueue {
+func NewDefaultLimitedPriorityHashQueue() Queue {
 	return NewHashLimitedPriorityHashQueue(false)
 }
 
-func NewPriorityLimitedPriorityHashQueue(fun func(interface{}) bool) *LimitedPriorityHashQueue {
+func NewPriorityLimitedPriorityHashQueue(fun func(interface{}) bool) Queue {
 	return NewPriorityHashLimitedPriorityHashQueue(fun, false)
 }
 
-func NewLimitLimitedPriorityHashQueue(limit int) *LimitedPriorityHashQueue {
+func NewLimitLimitedPriorityHashQueue(limit int) Queue {
 	return NewLimitHashLimitedPriorityHashQueue(limit, false)
 }
 
-func NewLimitPriorityLimitedPriorityHashQueue(fun func(interface{}) bool, limit int) *LimitedPriorityHashQueue {
+func NewLimitPriorityLimitedPriorityHashQueue(fun func(interface{}) bool, limit int) Queue {
 	return NewLimitedPriorityHashQueue(fun, limit, false)
 }
 
-func NewHashLimitedPriorityHashQueue(hashNeeded bool) *LimitedPriorityHashQueue {
+func NewHashLimitedPriorityHashQueue(hashNeeded bool) Queue {
 	return NewLimitHashLimitedPriorityHashQueue(Infinity, hashNeeded)
 }
 
-func NewPriorityHashLimitedPriorityHashQueue(fun func(interface{}) bool, hashNeeded bool) *LimitedPriorityHashQueue {
+func NewPriorityHashLimitedPriorityHashQueue(fun func(interface{}) bool, hashNeeded bool) Queue {
 	return NewLimitedPriorityHashQueue(fun, Infinity, hashNeeded)
 }
 
-func NewLimitHashLimitedPriorityHashQueue(limit int, hashNeeded bool) *LimitedPriorityHashQueue {
+func NewLimitHashLimitedPriorityHashQueue(limit int, hashNeeded bool) Queue {
 	return NewLimitedPriorityHashQueue(func(interface{}) bool { return false }, limit, hashNeeded)
 }
 
-func NewLimitedPriorityHashQueue(fun func(interface{}) bool, limit int, hashNeeded bool) *LimitedPriorityHashQueue {
+func NewLimitedPriorityHashQueue(fun func(interface{}) bool, limit int, hashNeeded bool) Queue {
 	var initBufSize int
 	if (limit != Infinity) && (limit < minQueueLen) {
 		initBufSize = limit
