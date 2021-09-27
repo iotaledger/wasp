@@ -27,6 +27,8 @@
   import { ToastType } from '../lib/app';
   import Animation from '../components/animation.svelte';
 
+  import { removeDisplayNotification } from './../lib/notifications';
+
   onMount(initialize);
 
   $: if ($balance > 0n) {
@@ -37,7 +39,6 @@
     createNewAddress();
     newAddressNeeded.set(false);
   }
-
 </script>
 
 <div class="container">
@@ -54,7 +55,10 @@
   {/if}
   <div class="toast-container">
     {#each $displayNotifications as notification}
-      <Toast {...notification} />
+      <Toast
+        {...notification}
+        onClose={() => removeDisplayNotification(notification.id)}
+      />
     {/each}
   </div>
   <div class="layout_state">

@@ -1,18 +1,12 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
   import { fade } from 'svelte/transition';
-
-  import { removeDisplayNotification } from './../lib/notifications';
-  import type { ToastType } from './../lib/app';
-  import { AUTODISMISS_TOAST_TIME } from './../lib/app';
 
   export let title: string;
   export let message: string;
   export let type: 'winner' | 'error';
   export let id: string = '';
   export let timeout: number = undefined;
-
-  let show: boolean = true;
+  export let onClose: () => void;
 </script>
 
 <div in:fade out:fade class={`toast ${type}`}>
@@ -20,11 +14,8 @@
     <div class="title">{title}</div>
     <div class="message">{message}</div>
   </div>
-  <button
-    on:click={() => {
-      removeDisplayNotification(id);
-    }}
-    class="close"><img src="close.svg" alt="close" /></button
+  <button on:click={onClose} class="close"
+    ><img src="close.svg" alt="close" /></button
   >
 </div>
 

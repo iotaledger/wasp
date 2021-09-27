@@ -3,7 +3,7 @@ import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
 import { showNotification } from './notifications';
-import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, round, seed, timestamp, toasts, isAWinnerPlayer } from './store';
+import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, round, seed, showWinnerAnimation, timestamp } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -231,20 +231,7 @@ export function subscribeToRouletteEvents() {
     });
 
     fairRouletteService.on('roundStopped', () => {
-        // let isAWinnerPlayer: boolean = (get(round).betSelection === Number(get(round).winningNumber)) && get(round).betPlaced;
-
-        if (get(isAWinnerPlayer)) {
-            showNotification({
-                type: 'winner',
-                title: 'You win',
-                message: "Congratulations",
-            })
-        }
         log(LogTag.Round, 'Ended');
-        console.log("Round finished: winning number: ", get(round).winningNumber);
-        console.log("get(round).betSelection", get(round).betSelection)
-        console.log("Number(get(round).winningNumber)", Number(get(round).winningNumber))
-        console.log("get(round).betPlaced", get(round).betPlaced)
         round.update($round => ({ ...$round, active: false, logs: [], players: [], betPlaced: false }))
     });
 
@@ -280,16 +267,18 @@ export function subscribeToRouletteEvents() {
     });
 
     fairRouletteService.on('payout', (bet: Bet) => {
+        if (bet.better === get(address)) {
+            showNotification({
+                type: 'winner',
+                title: 'You win',
+                message: "Congratulations",
+            })
+            showWinnerAnimation();
+        }
         log(LogTag.Win, `Payout for ${bet.better} with ${bet.amount}`);
     });
 }
 
 export function isWealthy(balance: bigint): boolean {
     return balance >= 200;
-}
-
-function addToast(toast: IToast): void {
-    let _toasts = get(toasts);
-    _toasts.push(toast)
-    toasts.set(_toasts)
 }

@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { Router } from "svelte-router-spa";
-  import Footer from "./components/footer.svelte";
-  import Header from "./components/header.svelte";
-  import { routes } from "./routes";
+  import { Router } from 'svelte-router-spa';
+  import { ToastType } from './lib/app';
+  import { toasts } from './lib/store';
+  import Footer from './components/footer.svelte';
+  import Header from './components/header.svelte';
+  import { routes } from './routes';
 
-  const FOUNDATION_DATA_URL = "https://webassets.iota.org/data/foundation.json";
+  const FOUNDATION_DATA_URL = 'https://webassets.iota.org/data/foundation.json';
 
   async function getFoundationData() {
     let response = await fetch(FOUNDATION_DATA_URL);
