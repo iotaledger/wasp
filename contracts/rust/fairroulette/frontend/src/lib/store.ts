@@ -16,6 +16,7 @@ export const requestingFunds: Writable<boolean> = writable(false)
 export const placingBet: Writable<boolean> = writable(false)
 
 export const showAddFunds: Writable<boolean> = writable(true);
+export const showWinningNumber: Writable<boolean> = writable(false);
 
 export const fundsRequested: Writable<boolean> = writable(false);
 export const newAddressNeeded: Writable<boolean> = writable(false);
@@ -36,10 +37,8 @@ export const round: Writable<IRound> = writable(RESET_ROUND);
 export const isAWinnerPlayer: Writable<boolean> = writable(false);
 
 export function resetRound(): void {
-    round.set(RESET_ROUND)
-
     // Guetto patch: force to reset logs and players
-    round.update(_round => { _round.logs = []; _round.players = []; return _round })
+    round.set({ ...RESET_ROUND, winningNumber: get(round)?.winningNumber, players: [] })
 }
 
 export function showWinnerAnimation(): void {
