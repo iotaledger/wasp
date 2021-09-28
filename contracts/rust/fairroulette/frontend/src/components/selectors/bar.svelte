@@ -1,12 +1,15 @@
 <script lang="ts">
-  import { balance } from "../../lib/store";
+  import { balance } from '../../lib/store';
 
   export let value: number;
   export let disabled: boolean = false;
+
+  // Default value
+  $: $balance, (value = Number($balance / 2n));
 </script>
 
 <div>
-  <div class="value">{value}{" "}i</div>
+  <div class="value">{value}{' '}i</div>
   <div class="bar-selector">
     <input
       bind:value
