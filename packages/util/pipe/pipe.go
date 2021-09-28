@@ -13,35 +13,35 @@ type InfinitePipe struct {
 
 var _ Pipe = &InfinitePipe{}
 
-func NewDefaultInfinitePipe() *InfinitePipe {
+func NewDefaultInfinitePipe() Pipe {
 	return newInfinitePipe(NewDefaultLimitedPriorityHashQueue())
 }
 
-func NewPriorityInfinitePipe(fun func(interface{}) bool) *InfinitePipe {
+func NewPriorityInfinitePipe(fun func(interface{}) bool) Pipe {
 	return newInfinitePipe(NewPriorityLimitedPriorityHashQueue(fun))
 }
 
-func NewLimitInfinitePipe(limit int) *InfinitePipe {
+func NewLimitInfinitePipe(limit int) Pipe {
 	return newInfinitePipe(NewLimitLimitedPriorityHashQueue(limit))
 }
 
-func NewLimitPriorityInfinitePipe(fun func(interface{}) bool, limit int) *InfinitePipe {
+func NewLimitPriorityInfinitePipe(fun func(interface{}) bool, limit int) Pipe {
 	return newInfinitePipe(NewLimitPriorityLimitedPriorityHashQueue(fun, limit))
 }
 
-func NewHashInfinitePipe() *InfinitePipe {
+func NewHashInfinitePipe() Pipe {
 	return newInfinitePipe(NewHashLimitedPriorityHashQueue(true))
 }
 
-func NewPriorityHashInfinitePipe(fun func(interface{}) bool) *InfinitePipe {
+func NewPriorityHashInfinitePipe(fun func(interface{}) bool) Pipe {
 	return newInfinitePipe(NewPriorityHashLimitedPriorityHashQueue(fun, true))
 }
 
-func NewLimitHashInfinitePipe(limit int) *InfinitePipe {
+func NewLimitHashInfinitePipe(limit int) Pipe {
 	return newInfinitePipe(NewLimitHashLimitedPriorityHashQueue(limit, true))
 }
 
-func NewInfinitePipe(fun func(interface{}) bool, limit int) *InfinitePipe {
+func NewInfinitePipe(fun func(interface{}) bool, limit int) Pipe {
 	return newInfinitePipe(NewLimitedPriorityHashQueue(fun, limit, true))
 }
 
