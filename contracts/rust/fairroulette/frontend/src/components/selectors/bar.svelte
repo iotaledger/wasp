@@ -12,7 +12,7 @@
     <input
       bind:value
       type="range"
-      min={0}
+      min={1}
       max={Number($balance)}
       id="myRange"
       {disabled}
