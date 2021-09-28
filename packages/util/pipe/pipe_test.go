@@ -4,6 +4,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestDefaultInfinitePipeWriteReadLen(t *testing.T) {
@@ -117,22 +119,14 @@ func testPipeWriteReadLen(p Pipe, elementsToWrite int, elementsToRead int, resul
 	for i := 0; i < elementsToWrite; i++ {
 		p.In() <- i
 	}
-	obtained := p.Len()
-	if obtained != elementsToRead {
-		t.Errorf("expected full channel length %d, obtained %d", elementsToWrite, obtained)
-	}
+	fullLength := p.Len()
+	require.Equalf(t, elementsToRead, fullLength, "full channel length missmatch")
 	p.Close()
-	obtained = p.Len()
-	if obtained != elementsToRead {
-		t.Errorf("expected closed channel length %d, obtained %d", elementsToWrite, obtained)
-	}
+	closedLength := p.Len()
+	require.Equalf(t, elementsToRead, closedLength, "closed channel length missmatch")
 	for i := 0; i < elementsToRead; i++ {
 		val := <-p.Out()
-		expected := result(i)
-		obtained := val.(int)
-		if obtained != expected {
-			t.Errorf("read %d obtained %d instead of %d", i, obtained, expected)
-		}
+		require.Equalf(t, result(i), val.(int), "read %d missmatch", i)
 	}
 }
 
@@ -239,11 +233,7 @@ func testPipeConcurrentWriteReadLen(p Pipe, elementsToWrite int, elementsToRead 
 		for i := 0; i < elementsToRead; i++ {
 			val := <-p.Out()
 			if result != nil {
-				expected := (*result)(i)
-				obtained := val.(int)
-				if obtained != expected {
-					t.Errorf("concurent read %d obtained %d instead of %d", i, obtained, expected)
-				}
+				require.Equalf(t, (*result)(i), val.(int), "concurent read %d missmatch", i)
 			}
 			read++
 		}
@@ -266,10 +256,6 @@ func testPipeConcurrentWriteReadLen(p Pipe, elementsToWrite int, elementsToRead 
 
 	wg.Wait()
 	stop <- true
-	if written != elementsToWrite {
-		t.Errorf("concurent write written %d should have %d", written, elementsToWrite)
-	}
-	if read != elementsToRead {
-		t.Errorf("concurent read read %d should have %d", read, elementsToRead)
-	}
+	require.Equalf(t, elementsToWrite, written, "concurent write elements written missmatch")
+	require.Equalf(t, elementsToRead, read, "concurent read elements read missmatch")
 }
