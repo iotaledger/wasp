@@ -4,8 +4,6 @@
   export let value: number;
   export let disabled: boolean = false;
 
-  // Default value
-  $: $balance, (value = Number($balance / 2n));
 </script>
 
 <div>

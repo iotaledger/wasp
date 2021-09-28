@@ -16,6 +16,10 @@
   function onBarChange() {
     $round.betAmount = BigInt(betAmount);
   }
+
+  function resetBar() {
+    betAmount = 0;
+  }
 </script>
 
 <div class="betting-system" class:disabled={$placingBet || $round.betPlaced}>
@@ -35,7 +39,10 @@
           $round.betAmount === 0n ||
           $placingBet ||
           $round.betPlaced}
-        onClick={placeBet}
+        onClick={() => {
+          placeBet();
+          resetBar();
+        }}
         loading={$placingBet}
       />
     </div>

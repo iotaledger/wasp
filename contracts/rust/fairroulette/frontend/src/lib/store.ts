@@ -1,8 +1,8 @@
 import { derived, Readable, Writable, writable } from 'svelte/store';
+import { calculateRoundLengthLeft, IToast } from './../lib/app';
 import type { IRound } from './models/IRound';
 import type { Buffer, IKeyPair } from './wasp_client';
 import { Base58 } from './wasp_client/crypto/base58';
-import { calculateRoundLengthLeft, IToast } from './../lib/app'
 export const seed: Writable<Buffer> = writable()
 export const seedString: Readable<string> = derived(seed, $seed => Base58.encode($seed))
 export const keyPair: Writable<IKeyPair> = writable()

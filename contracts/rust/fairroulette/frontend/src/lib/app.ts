@@ -3,7 +3,7 @@ import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
 import { showNotification } from './notifications';
-import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, round, seed, showWinnerAnimation, timestamp } from './store';
+import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, resetRound, round, seed, showWinnerAnimation, timestamp } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -232,7 +232,7 @@ export function subscribeToRouletteEvents() {
 
     fairRouletteService.on('roundStopped', () => {
         log(LogTag.Round, 'Ended');
-        round.update($round => ({ ...$round, active: false, logs: [], players: [], betPlaced: false }))
+        resetRound();
     });
 
     fairRouletteService.on('roundNumber', (roundNumber: bigint) => {
