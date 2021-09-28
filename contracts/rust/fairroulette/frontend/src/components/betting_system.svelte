@@ -4,7 +4,7 @@
   import { placingBet, round } from '../lib/store';
   import Button from './button.svelte';
 
-  let betAmount: number = 0;
+  let betAmount: number = 1;
 
   $: betAmount, onBarChange();
 
@@ -18,7 +18,7 @@
   }
 
   function resetBar() {
-    betAmount = 0;
+    betAmount = 1;
   }
 </script>
 
