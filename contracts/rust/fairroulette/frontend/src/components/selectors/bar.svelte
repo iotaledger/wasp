@@ -14,7 +14,6 @@
 
   function updateLabel() {
     textValue = value;
-    console.log('Text value: ', textValue);
   }
 
   const VALIDATION_ERRORS = {
