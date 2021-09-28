@@ -2,36 +2,27 @@ package pipe
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func testQueueBasicAddLengthPeekRemove(q Queue, elementsToAdd int, add func(index int) int, addResult func(index int) bool, elementsToRemove int, result func(index int) int, t *testing.T) {
 	for i := 0; i < elementsToAdd; i++ {
 		value := add(i)
-		expected := addResult(i)
-		obtained := q.Add(value)
-		if obtained != expected {
-			t.Errorf("add result of element %d value %d expected %v obtained %v", i, value, expected, obtained)
-		}
+		actualAddResult := q.Add(value)
+		require.Equalf(t, addResult(i), actualAddResult, "add result of element %d value %d missmatch", i, value)
 	}
-	obtained := q.Length()
-	if obtained != elementsToRemove {
-		t.Errorf("expected full queue length %d, obtained %d", elementsToAdd, obtained)
-	}
+	fullLength := q.Length()
+	require.Equalf(t, elementsToRemove, fullLength, "full queue length missmatch")
 	for i := 0; i < elementsToRemove; i++ {
 		expected := result(i)
-		obtained = q.Peek().(int)
-		if obtained != expected {
-			t.Errorf("peek %d obtained %d instead of %d", i, obtained, expected)
-		}
-		obtained = q.Remove().(int)
-		if obtained != expected {
-			t.Errorf("remove %d obtained %d instead of %d", i, obtained, expected)
-		}
+		peekResult := q.Peek().(int)
+		require.Equalf(t, expected, peekResult, "peek %d missmatch", i)
+		removeResult := q.Remove().(int)
+		require.Equalf(t, expected, removeResult, "remove %d missmatch", i)
 	}
-	obtained = q.Length()
-	if obtained != 0 {
-		t.Errorf("expected empty queue length 0, obtained %d", obtained)
-	}
+	emptyLength := q.Length()
+	require.Equalf(t, 0, emptyLength, "empty queue length missmatch")
 }
 
 //--
@@ -502,37 +493,25 @@ func testDefaultQueueAddRemove(q Queue, t *testing.T) {
 
 func testQueueAddRemove(q Queue, elementsToAdd int, elementsToRemoveAdd int, elementsToRemove int, result func(index int) int, t *testing.T) {
 	for i := 0; i < elementsToAdd; i++ {
-		if !q.Add(i) {
-			t.Errorf("failed to add element %d", i)
-		}
+		require.Truef(t, q.Add(i), "failed to add element %d", i)
 	}
 	for i := 0; i < elementsToRemoveAdd; i++ {
 		q.Remove()
 		add := elementsToAdd + i
-		if !q.Add(add) {
-			t.Errorf("failed to add element %d", add)
-		}
+		require.Truef(t, q.Add(add), "failed to add element %d", add)
 	}
-	obtained := q.Length()
-	if obtained != elementsToRemove {
-		t.Errorf("expected full queue length %d, obtained %d", elementsToAdd, obtained)
-	}
+	fullLength := q.Length()
+	require.Equalf(t, elementsToRemove, fullLength, "full queue length missmatch")
 
 	for i := 0; i < elementsToRemove; i++ {
 		expected := result(i)
-		obtained = q.Peek().(int)
-		if obtained != expected {
-			t.Errorf("peek %d obtained %d instead of %d", i, obtained, expected)
-		}
-		obtained = q.Remove().(int)
-		if obtained != expected {
-			t.Errorf("remove %d obtained %d instead of %d", i, obtained, expected)
-		}
+		peekResult := q.Peek().(int)
+		require.Equalf(t, expected, peekResult, "peek %d missmatch", i)
+		removeResult := q.Remove().(int)
+		require.Equalf(t, expected, removeResult, "remove %d missmatch", i)
 	}
-	obtained = q.Length()
-	if obtained != 0 {
-		t.Errorf("expected empty queue length 0, obtained %d", obtained)
-	}
+	emptyLength := q.Length()
+	require.Equalf(t, 0, emptyLength, "empty queue length missmatch")
 }
 
 //--
@@ -621,33 +600,24 @@ func testDefaultQueueLength(q Queue, t *testing.T) {
 }
 
 func testQueueLength(q Queue, elementsToRemoveAdd int, elementsToRemove int, t *testing.T) {
-	obtained := q.Length()
-	if obtained != 0 {
-		t.Errorf("empty queue length is %d", obtained)
-	}
+	emptyLength := q.Length()
+	require.Equalf(t, 0, emptyLength, "empty queue length missmatch")
 
 	for i := 0; i < elementsToRemoveAdd; i++ {
-		if !q.Add(i) {
-			t.Errorf("failed to add element %d", i)
-		}
+		require.Truef(t, q.Add(i), "failed to add element %d", i)
 		var expected int
 		if i >= elementsToRemove {
 			expected = elementsToRemove
 		} else {
 			expected = i + 1
 		}
-		obtained := q.Length()
-		if obtained != expected {
-			t.Errorf("adding: expected queue length %d, obtained %d", expected, obtained)
-		}
+		currLength := q.Length()
+		require.Equalf(t, expected, currLength, "adding %d: expected queue length missmatch", i)
 	}
 	for i := 0; i < elementsToRemove; i++ {
 		q.Remove()
-		expected := elementsToRemove - i - 1
-		obtained := q.Length()
-		if obtained != expected {
-			t.Errorf("removing: expected queue length %d, obtained %d", expected, obtained)
-		}
+		currLength := q.Length()
+		require.Equalf(t, elementsToRemove-i-1, currLength, "removing %d: expected queue length missmatch", i)
 	}
 }
 
@@ -761,18 +731,13 @@ func testDefaultQueueGet(q Queue, t *testing.T) {
 
 func testQueueGet(q Queue, elementsToAdd int, result func(iteration int, index int) int, t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping Get test in short mode")
+		t.Skip("skipping Get test in short mode") // although it is not clear, why. Replacing require.Equalf in this code with `if a != b {t.Errorf(...)}` increases this test's performance significantly
 	}
 	for i := 0; i < elementsToAdd; i++ {
-		if !q.Add(i) {
-			t.Errorf("failed to add element %d", i)
-		}
+		require.Truef(t, q.Add(i), "failed to add element %d", i)
 		for j := 0; j < q.Length(); j++ {
-			expected := result(i, j)
-			obtained := q.Get(j).(int)
-			if obtained != expected {
-				t.Errorf("iteration %d index %d contains %d instead of %d", i, j, obtained, expected)
-			}
+			getResult := q.Get(j).(int)
+			require.Equalf(t, result(i, j), getResult, "iteration %d index %d missmatch", i, j)
 		}
 	}
 }
@@ -882,18 +847,13 @@ func testDefaultQueueGetNegative(q Queue, t *testing.T) {
 
 func testQueueGetNegative(q Queue, elementsToAdd int, result func(iteration int, index int) int, t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping GetNegative test in short mode")
+		t.Skip("skipping GetNegative test in short mode") // although it is not clear, why. Replacing require.Equalf in this code with `if a != b {t.Errorf(...)}` increases this test's performance significantly
 	}
 	for i := 0; i < elementsToAdd; i++ {
-		if !q.Add(i) {
-			t.Errorf("failed to add element %d", i)
-		}
+		require.Truef(t, q.Add(i), "failed to add element %d", i)
 		for j := -1; j >= -q.Length(); j-- {
-			expected := result(i, j)
-			obtained := q.Get(j).(int)
-			if obtained != expected {
-				t.Errorf("iteration %d index %d contains %d instead of %d", i, j, obtained, expected)
-			}
+			getResult := q.Get(j).(int)
+			require.Equalf(t, result(i, j), getResult, "iteration %d index %d missmatch", i, j)
 		}
 	}
 }
@@ -952,18 +912,10 @@ func testPriorityQueueGetOutOfRangePanics(makePriorityQueueFun func(func(i inter
 
 func testQueueGetOutOfRangePanics(q Queue, t *testing.T) {
 	for i := 0; i < 3; i++ {
-		if !q.Add(i) {
-			t.Errorf("failed to add element %d", i)
-		}
+		require.Truef(t, q.Add(i), "failed to add element %d", i)
 	}
-
-	assertPanics(t, "should panic when negative index", func() {
-		q.Get(-4)
-	})
-
-	assertPanics(t, "should panic when index greater than length", func() {
-		q.Get(4)
-	})
+	require.Panicsf(t, func() { q.Get(-4) }, "should panic when too negative index")
+	require.Panicsf(t, func() { q.Get(4) }, "should panic when index greater than length")
 }
 
 //--
@@ -1019,18 +971,10 @@ func testPriorityQueuePeekOutOfRangePanics(makePriorityQueueFun func(func(i inte
 }
 
 func testQueuePeekOutOfRangePanics(q Queue, t *testing.T) {
-	assertPanics(t, "should panic when peeking empty queue", func() {
-		q.Peek()
-	})
-
-	if !q.Add(0) {
-		t.Errorf("failed to add element 0")
-	}
+	require.Panicsf(t, func() { q.Peek() }, "should panic when peeking empty queue")
+	require.Truef(t, q.Add(0), "failed to add element 0")
 	q.Remove()
-
-	assertPanics(t, "should panic when peeking emptied queue", func() {
-		q.Peek()
-	})
+	require.Panicsf(t, func() { q.Peek() }, "should panic when peeking emptied queue")
 }
 
 //--
@@ -1086,18 +1030,10 @@ func testPriorityQueueRemoveOutOfRangePanics(makePriorityQueueFun func(func(i in
 }
 
 func testQueueRemoveOutOfRangePanics(q Queue, t *testing.T) {
-	assertPanics(t, "should panic when removing empty queue", func() {
-		q.Remove()
-	})
-
-	if !q.Add(0) {
-		t.Errorf("failed to add element 0")
-	}
+	require.Panicsf(t, func() { q.Remove() }, "should panic when removing empty queue")
+	require.Truef(t, q.Add(0), "failed to add element 0")
 	q.Remove()
-
-	assertPanics(t, "should panic when removing emptied queue", func() {
-		q.Remove()
-	})
+	require.Panicsf(t, func() { q.Remove() }, "should panic when removing emptied queue")
 }
 
 //--
@@ -1120,14 +1056,4 @@ func newLimitHashLimitedPriorityHashQueue(limit int) Queue {
 
 func newLimitPriorityHashLimitedPriorityHashQueue(fun func(i interface{}) bool, limit int) Queue {
 	return NewLimitedPriorityHashQueue(fun, limit, true)
-}
-
-func assertPanics(t *testing.T, name string, f func()) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("%s: didn't panic as expected", name)
-		}
-	}()
-
-	f()
 }
