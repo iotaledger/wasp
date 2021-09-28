@@ -35,11 +35,14 @@
 </script>
 
 <div class="roulette">
-  <!-- {#if !$round.active && betPlaced}
+  {#if !$round.active && $round.betPlaced}
     <div class="animation">
       <Animation animation="loading" loop />
     </div>
-  {/if} -->
+  {:else}
+    <img class="swirl" src="/assets/swirl.svg" alt="IOTA logo" />
+  {/if}
+
   <img
     class="roulette-background"
     src="/assets/roulette_background.svg"
@@ -68,11 +71,18 @@
       top: 0;
       left: 0;
     }
+    .swirl {
+      position: absolute;
+      max-width: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
     .animation {
-      // position: absolute;
-      // max-width: 50%;
-      // top: 25%;
-      // left: 25%;
+      position: absolute;
+      max-width: 50%;
+      top: 25%;
+      left: 25%;
     }
   }
 </style>

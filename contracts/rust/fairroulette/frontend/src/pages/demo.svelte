@@ -11,23 +11,20 @@
     Toast,
     WalletPanel,
   } from '../components';
+  import Animation from '../components/animation.svelte';
   import { createNewAddress, initialize, sendFaucetRequest } from '../lib/app';
   import {
     balance,
     fundsRequested,
+    isAWinnerPlayer,
     newAddressNeeded,
     requestingFunds,
     showAddFunds,
-    toasts,
-    round,
-    isAWinnerPlayer,
   } from '../lib/store';
-
-  import { displayNotifications } from './../lib/notifications';
-  import { ToastType } from '../lib/app';
-  import Animation from '../components/animation.svelte';
-
-  import { removeDisplayNotification } from './../lib/notifications';
+  import {
+    displayNotifications,
+    removeDisplayNotification,
+  } from './../lib/notifications';
 
   onMount(initialize);
 
@@ -42,12 +39,6 @@
 </script>
 
 <div class="container">
-  <!-- <div class="toast">
-    <Toast title="You win!" message="Congratulations!" type={ToastType.Win} />
-  </div>
-  <div class="animation">
-    <Animation animation="win" loop={false} timeout />
-  </div> -->
   {#if $isAWinnerPlayer}
     <div class="animation">
       <Animation animation="win" loop={false} destroyWhenFinished />
