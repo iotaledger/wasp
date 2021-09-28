@@ -68,13 +68,11 @@ func testLimitedPriorityPipeWriteReadLen(makeLimitedPriorityPipeFun func(fun fun
 	result := func(index int) int {
 		if index <= 333 {
 			return -3*index + 999
-		} else {
-			if index%2 == 0 {
-				return 3*index/2 - 200
-			} else {
-				return (3*index - 401) / 2
-			}
 		}
+		if index%2 == 0 {
+			return 3*index/2 - 200
+		}
+		return (3*index - 401) / 2
 	}
 	testPipeWriteReadLen(p, 1000, limit, result, t)
 }
@@ -100,13 +98,11 @@ func testPriorityPipeWriteReadLen(makePriorityPipeFun func(func(i interface{}) b
 	result := func(index int) int {
 		if index <= 333 {
 			return -3*index + 999
-		} else {
-			if index%2 == 0 {
-				return 3*index/2 - 500
-			} else {
-				return (3*index - 1001) / 2
-			}
 		}
+		if index%2 == 0 {
+			return 3*index/2 - 500
+		}
+		return (3*index - 1001) / 2
 	}
 	testDefaultPipeWriteReadLen(p, 1000, result, t)
 }
@@ -115,7 +111,7 @@ func testDefaultPipeWriteReadLen(p Pipe, elementsToWrite int, result func(index 
 	testPipeWriteReadLen(p, elementsToWrite, elementsToWrite, result, t)
 }
 
-func testPipeWriteReadLen(p Pipe, elementsToWrite int, elementsToRead int, result func(index int) int, t *testing.T) {
+func testPipeWriteReadLen(p Pipe, elementsToWrite, elementsToRead int, result func(index int) int, t *testing.T) {
 	for i := 0; i < elementsToWrite; i++ {
 		p.In() <- i
 	}
@@ -214,7 +210,7 @@ func testDefaultPipeConcurrentWriteReadLen(p Pipe, elementsToWrite int, result *
 	testPipeConcurrentWriteReadLen(p, elementsToWrite, elementsToWrite, result, t)
 }
 
-func testPipeConcurrentWriteReadLen(p Pipe, elementsToWrite int, elementsToRead int, result *func(index int) int, t *testing.T) {
+func testPipeConcurrentWriteReadLen(p Pipe, elementsToWrite, elementsToRead int, result *func(index int) int, t *testing.T) {
 	var wg sync.WaitGroup
 	written := 0
 	read := 0

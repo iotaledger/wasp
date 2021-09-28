@@ -123,7 +123,7 @@ func testDefaultQueueSimple(q Queue, t *testing.T) {
 	testQueueSimple(q, elementsToAdd, elementsToAdd, identityFun, t)
 }
 
-func testQueueSimple(q Queue, elementsToAdd int, elementsToRemove int, result func(index int) int, t *testing.T) {
+func testQueueSimple(q Queue, elementsToAdd, elementsToRemove int, result func(index int) int, t *testing.T) {
 	testQueueBasicAddLengthPeekRemove(q, elementsToAdd, identityFun, alwaysTrueFun, elementsToRemove, result, t)
 }
 
@@ -170,15 +170,13 @@ func TestLimitPriorityLimitedPriorityHashQueueTwice(t *testing.T) {
 		} else if index <= 46 {
 			if index%2 == 0 {
 				return 3*index/2 - 20
-			} else {
-				return (3*index - 41) / 2
 			}
+			return (3*index - 41) / 2
 		} else {
 			if index%2 == 1 {
 				return (3*index - 139) / 2
-			} else {
-				return 3*index/2 - 70
 			}
+			return 3*index/2 - 70
 		}
 	}
 	testQueueTwice(q, elementsToAddSingle, alwaysTrueFun, limit, resultFun, t)
@@ -223,13 +221,11 @@ func TestLimitedPriorityHashQueueTwice(t *testing.T) {
 	resultFun := func(index int) int {
 		if index <= 16 {
 			return 48 - 3*index
-		} else {
-			if index%2 == 1 {
-				return (3*index + 11) / 2
-			} else {
-				return 3*index/2 + 5
-			}
 		}
+		if index%2 == 1 {
+			return (3*index + 11) / 2
+		}
+		return 3*index/2 + 5
 	}
 	testQueueTwice(q, elementsToAddSingle, addResultFun, limit, resultFun, t)
 }
@@ -250,13 +246,11 @@ func testPriorityHashQueueTwice(makePriorityHashQueueFun func(fun func(i interfa
 	resultFun := func(index int) int {
 		if index <= 16 {
 			return 48 - 3*index
-		} else {
-			if index%2 == 1 {
-				return (3*index - 49) / 2
-			} else {
-				return 3*index/2 - 25
-			}
 		}
+		if index%2 == 1 {
+			return (3*index - 49) / 2
+		}
+		return 3*index/2 - 25
 	}
 	testQueueTwice(q, elementsToAddSingle, addResultFun, elementsToAddSingle, resultFun, t)
 }
@@ -274,15 +268,13 @@ func testPriorityQueueTwice(makePriorityQueueFun func(func(i interface{}) bool) 
 		} else if index <= 66 {
 			if index%2 == 0 {
 				return 3*index/2 - 50
-			} else {
-				return (3*index - 101) / 2
 			}
+			return (3*index - 101) / 2
 		} else {
 			if index%2 == 1 {
 				return (3*index - 199) / 2
-			} else {
-				return 3*index/2 - 100
 			}
+			return 3*index/2 - 100
 		}
 	}
 	testQueueTwice(q, elementsToAddSingle, alwaysTrueFun, 2*elementsToAddSingle, resultFun, t)
@@ -316,9 +308,8 @@ func TestLimitPriorityLimitedPriorityHashQueueOverflow(t *testing.T) {
 	resultFun := func(index int) int {
 		if index < 25 {
 			return 24 - index
-		} else {
-			return 49 - index
 		}
+		return 49 - index
 	}
 	testQueueTwice(q, elementsToAddSingle, addResultFun, limit, resultFun, t)
 }
@@ -338,9 +329,8 @@ func TestLimitedPriorityHashQueueOverflow(t *testing.T) {
 	resultFun := func(index int) int {
 		if index < 10 {
 			return 49 - index
-		} else {
-			return 29 - index
 		}
+		return 29 - index
 	}
 	testQueueTwice(q, elementsToAddSingle, addResultFun, limit, resultFun, t)
 }
@@ -356,9 +346,8 @@ func TestLimitedPriorityHashQueueDuplicates(t *testing.T) {
 	addFun := func(index int) int {
 		if index < elementsToAddFirstIteration {
 			return 2 * index
-		} else {
-			return index - elementsToAddFirstIteration
 		}
+		return index - elementsToAddFirstIteration
 	}
 	addResultFun := func(index int) bool {
 		return (index < elementsToAddFirstIteration) || ((index-elementsToAddFirstIteration)%2 == 1)
@@ -371,15 +360,13 @@ func TestLimitedPriorityHashQueueDuplicates(t *testing.T) {
 		} else if index <= 46 {
 			if index%2 == 0 {
 				return 3*index - 40
-			} else {
-				return 3*index - 41
 			}
+			return 3*index - 41
 		} else {
 			if index%2 == 0 {
 				return 3*index - 139
-			} else {
-				return 3*index - 140
 			}
+			return 3*index - 140
 		}
 	}
 	testQueueBasicAddLengthPeekRemove(q, 3*elementsToAddFirstIteration, addFun, addResultFun, limit, resultFun, t)
@@ -447,9 +434,8 @@ func testLimitedPriorityQueueAddRemove(makeLimitedPriorityQueueFun func(fun func
 	result := func(index int) int {
 		if index%2 == 0 {
 			return 3*index/2 + 31
-		} else {
-			return (3*index + 61) / 2
 		}
+		return (3*index + 61) / 2
 	}
 	testQueueAddRemove(q, 100, 50, limit, result, t)
 }
@@ -477,9 +463,8 @@ func testPriorityQueueAddRemove(makePriorityQueueFun func(func(i interface{}) bo
 	result := func(index int) int {
 		if index%2 == 0 {
 			return 3*index/2 + 1
-		} else {
-			return (3*index + 1) / 2
 		}
+		return (3*index + 1) / 2
 	}
 	elementsToAdd := 100
 	testQueueAddRemove(q, elementsToAdd, 50, elementsToAdd, result, t)
@@ -491,7 +476,7 @@ func testDefaultQueueAddRemove(q Queue, t *testing.T) {
 	testQueueAddRemove(q, elementsToAdd, elementsToRemoveAdd, elementsToAdd, func(index int) int { return index + elementsToRemoveAdd }, t)
 }
 
-func testQueueAddRemove(q Queue, elementsToAdd int, elementsToRemoveAdd int, elementsToRemove int, result func(index int) int, t *testing.T) {
+func testQueueAddRemove(q Queue, elementsToAdd, elementsToRemoveAdd, elementsToRemove int, result func(index int) int, t *testing.T) {
 	for i := 0; i < elementsToAdd; i++ {
 		require.Truef(t, q.Add(i), "failed to add element %d", i)
 	}
@@ -599,7 +584,7 @@ func testDefaultQueueLength(q Queue, t *testing.T) {
 	testQueueLength(q, elementsToAdd, elementsToAdd, t)
 }
 
-func testQueueLength(q Queue, elementsToRemoveAdd int, elementsToRemove int, t *testing.T) {
+func testQueueLength(q Queue, elementsToRemoveAdd, elementsToRemove int, t *testing.T) {
 	emptyLength := q.Length()
 	require.Equalf(t, 0, emptyLength, "empty queue length missmatch")
 
@@ -683,13 +668,11 @@ func testLimitedPriorityQueueGet(makeLimitedPriorityQueueFun func(fun func(i int
 	result := func(iteration int, index int) int {
 		if index <= iteration/2 {
 			return iteration - iteration%2 - 2*index
-		} else {
-			if iteration < limit {
-				return -iteration + iteration%2 + 2*index - 1
-			} else {
-				return iteration + iteration%2 + 2*index - 2*limit + 1
-			}
 		}
+		if iteration < limit {
+			return -iteration + iteration%2 + 2*index - 1
+		}
+		return iteration + iteration%2 + 2*index - 2*limit + 1
 	}
 	testQueueGet(q, 1000, result, t)
 }
@@ -704,9 +687,8 @@ func testLimitedQueueGet(makeLimitedQueueFun func(limit int) Queue, t *testing.T
 	result := func(iteration int, index int) int {
 		if iteration < limit {
 			return index
-		} else {
-			return index + iteration - limit + 1
 		}
+		return index + iteration - limit + 1
 	}
 	testQueueGet(q, 1000, result, t)
 }
@@ -718,9 +700,8 @@ func testPriorityQueueGet(makePriorityQueueFun func(func(i interface{}) bool) Qu
 	result := func(iteration int, index int) int {
 		if index <= iteration/2 {
 			return iteration - iteration%2 - 2*index
-		} else {
-			return -iteration + iteration%2 + 2*index - 1
 		}
+		return -iteration + iteration%2 + 2*index - 1
 	}
 	testQueueGet(q, 1000, result, t)
 }
@@ -805,16 +786,13 @@ func testLimitedPriorityQueueGetNegative(makeLimitedPriorityQueueFun func(fun fu
 		if iteration < limit {
 			if index >= -(iteration+iteration%2)/2 {
 				return iteration + iteration%2 + 2*index + 1
-			} else {
-				return -iteration - iteration%2 - 2*index - 2
 			}
-		} else {
-			if index <= (iteration-iteration%2)/2-limit {
-				return iteration - iteration%2 - 2*index - 2*limit
-			} else {
-				return iteration + iteration%2 + 2*index + 1
-			}
+			return -iteration - iteration%2 - 2*index - 2
 		}
+		if index <= (iteration-iteration%2)/2-limit {
+			return iteration - iteration%2 - 2*index - 2*limit
+		}
+		return iteration + iteration%2 + 2*index + 1
 	}
 	testQueueGetNegative(q, 1000, result, t)
 }
@@ -834,9 +812,8 @@ func testPriorityQueueGetNegative(makePriorityQueueFun func(func(i interface{}) 
 	result := func(iteration int, index int) int {
 		if index >= -(iteration+iteration%2)/2 {
 			return iteration + iteration%2 + 2*index + 1
-		} else {
-			return -iteration - iteration%2 - 2*index - 2
 		}
+		return -iteration - iteration%2 - 2*index - 2
 	}
 	testQueueGetNegative(q, 1000, result, t)
 }
