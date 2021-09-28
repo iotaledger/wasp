@@ -401,7 +401,7 @@ func TestERC20Contract(t *testing.T) {
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(new(big.Int).Mul(transferAmount, big.NewInt(2))))
 }
 
-func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction) {
+func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
 	require.NoError(b, err)
@@ -450,7 +450,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction) {
 		require.NoError(b, err)
 	}
 
-	return emu, txs
+	return emu, txs, db
 }
 
 // BenchmarkEVMEmulator is a benchmark for the EVMEmulator that sends N EVM transactions.
@@ -461,11 +461,22 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction) {
 // Then: go tool pprof -http :8080 {cpu,mem}.out
 func BenchmarkEVMEmulator(b *testing.B) {
 	// setup: deploy the storage contract and prepare N transactions to send
-	emu, txs := initBenchmark(b)
+	emu, txs, db := initBenchmark(b)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := emu.SendTransaction(txs[i])
 		require.NoError(b, err)
 	}
+
+	b.ReportMetric(dbSize(db)/float64(b.N), "db:bytes/op")
+}
+
+func dbSize(db kv.KVStore) float64 {
+	r := float64(0)
+	db.MustIterate("", func(key kv.Key, value []byte) bool {
+		r += float64(len(key) + len(value))
+		return true
+	})
+	return r
 }
