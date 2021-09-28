@@ -1,41 +1,42 @@
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { round } from '../lib/store';
+  import { placingBet, round, showWinningNumber } from '../lib/store';
   import { generateRandomInt } from '../lib/utils';
   import Animation from './animation.svelte';
 
   let flashedNumber: number;
   let interval;
 
-  // TODO: review this logic when websockets are working
-  $: if ($round.winningNumber) {
-    clearInterval(interval);
-    interval = undefined;
-    flashedNumber = Number($round.winningNumber);
+  $: $round.active,
+    $round.winningNumber,
+    $showWinningNumber,
+    updateFlashedNumber();
+
+  onDestroy(reset);
+
+  function updateFlashedNumber() {
+    if ($round.active) {
+      if (!interval) {
+        interval = setInterval(() => {
+          flashedNumber = generateRandomInt(1, 8, flashedNumber);
+        }, 500);
+      }
+    } else {
+      reset();
+      if ($showWinningNumber && $round.winningNumber) {
+        flashedNumber = Number($round.winningNumber);
+      }
+    }
   }
 
-  // TODO: review this logic when websockets are working
-  $: if ($round.active) {
-    if (!interval) {
-      interval = setInterval(() => {
-        flashedNumber = generateRandomInt(1, 8, flashedNumber);
-      }, 500);
-    }
-  } else {
-    if (interval) {
-      flashedNumber = undefined;
-      clearInterval(interval);
-      interval = undefined;
-    }
-  }
-
-  onDestroy(() => {
+  function reset() {
     clearInterval(interval);
-  });
+    interval = flashedNumber = undefined;
+  }
 </script>
 
 <div class="roulette">
-  {#if !$round.active && $round.betPlaced}
+  {#if !$round.active && ($placingBet || $round.betPlaced)}
     <div class="animation">
       <Animation animation="loading" loop />
     </div>

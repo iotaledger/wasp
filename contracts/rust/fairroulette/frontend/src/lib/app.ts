@@ -3,7 +3,7 @@ import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
 import { NotificationType, showNotification } from './notifications';
-import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, resetRound, round, seed, showWinnerAnimation, timestamp } from './store';
+import { address, addressIndex, balance, displayWinningNumber, keyPair, placingBet, requestingFunds, resetRound, round, seed, showWinnerAnimation, showWinningNumber, timestamp } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -58,7 +58,7 @@ export async function initialize() {
         } catch (ex) {
             showNotification({
                 type: NotificationType.Error,
-                title: 'Chain resolver failed.',
+                title: 'Chain resolver failed',
                 message: ex.message,
             })
             log(LogTag.Error, ex.message);
@@ -145,6 +145,7 @@ export function startFundsUpdater() {
 
 export async function placeBet() {
     placingBet.set(true)
+    showWinningNumber.set(false)
     try {
         await fairRouletteService.placeBetOnLedger(
             get(keyPair),
@@ -155,7 +156,7 @@ export async function placeBet() {
     } catch (ex) {
         showNotification({
             type: NotificationType.Error,
-            title: 'Error placing bet.',
+            title: 'Error placing bet',
             message: ex.message,
         })
 
@@ -211,13 +212,14 @@ export function calculateRoundLengthLeft(timestamp: number) {
 
 export function subscribeToRouletteEvents() {
     fairRouletteService.on('roundStarted', (timestamp) => {
-        round.update($round => ({ ...$round, active: true, startedAt: timestamp }))
+        showWinningNumber.set(false);
+        round.update($round => ({ ...$round, active: true, startedAt: timestamp, logs: [] }))
         log(LogTag.Round, 'Started');
     });
 
     fairRouletteService.on('roundStopped', () => {
-        log(LogTag.Round, 'Ended');
         resetRound();
+        log(LogTag.Round, 'Ended');
     });
 
     fairRouletteService.on('roundNumber', (roundNumber: bigint) => {
@@ -227,6 +229,7 @@ export function subscribeToRouletteEvents() {
 
     fairRouletteService.on('winningNumber', (winningNumber: bigint) => {
         round.update($round => ({ ...$round, winningNumber }))
+        showWinningNumber.set(true);
         log(LogTag.Round, `The winning number was: ${winningNumber}`);
     });
 
