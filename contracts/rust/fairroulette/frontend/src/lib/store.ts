@@ -1,5 +1,5 @@
-import { derived, Readable, Writable, writable } from 'svelte/store';
-import { calculateRoundLengthLeft, IToast } from './../lib/app';
+import { derived, get, Readable, Writable, writable } from 'svelte/store';
+import { calculateRoundLengthLeft } from './../lib/app';
 import type { IRound } from './models/IRound';
 import type { Buffer, IKeyPair } from './wasp_client';
 import { Base58 } from './wasp_client/crypto/base58';
@@ -20,8 +20,6 @@ export const showAddFunds: Writable<boolean> = writable(true);
 export const fundsRequested: Writable<boolean> = writable(false);
 export const newAddressNeeded: Writable<boolean> = writable(false);
 
-export const toasts: Writable<IToast[]> = writable([])
-
 const RESET_ROUND: IRound = {
     active: false,
     logs: [],
@@ -39,6 +37,9 @@ export const isAWinnerPlayer: Writable<boolean> = writable(false);
 
 export function resetRound(): void {
     round.set(RESET_ROUND)
+
+    // Guetto patch: force to reset logs and players
+    round.update(_round => { _round.logs = []; _round.players = []; return _round })
 }
 
 export function showWinnerAnimation(): void {

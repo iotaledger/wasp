@@ -2,7 +2,7 @@ import { get } from 'svelte/store';
 import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
-import { showNotification } from './notifications';
+import { NotificationType, showNotification } from './notifications';
 import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, resetRound, round, seed, showWinnerAnimation, timestamp } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
@@ -19,7 +19,6 @@ let fundsUpdaterHandle;
 
 const powManager: PoWWorkerManager = new PoWWorkerManager();
 export const BETTING_NUMBERS = 8
-export const AUTODISMISS_TOAST_TIME = 7000;     // in milliseconds
 
 enum LogTag {
     Page = 'Page',
@@ -28,20 +27,6 @@ enum LogTag {
     Error = 'Error',
     Unknown = 'Unknown'
 }
-
-
-export enum ToastType {
-    Error = "error",
-    Win = "win"
-}
-
-export type IToast = {
-    type: ToastType
-    title: string
-    message: string
-    autoDismiss?: boolean
-}
-
 
 export function log(tag: string, description: string) {
     round.update((_round) => {
@@ -72,7 +57,7 @@ export async function initialize() {
             config.chainId = content.chainId;
         } catch (ex) {
             showNotification({
-                type: 'error',
+                type: NotificationType.Error,
                 title: 'Chain resolver failed.',
                 message: ex.message,
             })
@@ -169,7 +154,7 @@ export async function placeBet() {
         );
     } catch (ex) {
         showNotification({
-            type: 'error',
+            type: NotificationType.Error,
             title: 'Error placing bet.',
             message: ex.message,
         })
@@ -193,7 +178,7 @@ export async function sendFaucetRequest() {
         await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
     } catch (ex) {
         showNotification({
-            type: 'error',
+            type: NotificationType.Error,
             title: 'Faucet request error',
             message: ex.message,
         })
@@ -269,7 +254,7 @@ export function subscribeToRouletteEvents() {
     fairRouletteService.on('payout', (bet: Bet) => {
         if (bet.better === get(address)) {
             showNotification({
-                type: 'winner',
+                type: NotificationType.Success,
                 title: 'You win',
                 message: "Congratulations",
             })

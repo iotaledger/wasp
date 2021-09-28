@@ -1,7 +1,5 @@
 <script lang="ts">
   import { Router } from 'svelte-router-spa';
-  import { ToastType } from './lib/app';
-  import { toasts } from './lib/store';
   import Footer from './components/footer.svelte';
   import Header from './components/header.svelte';
   import { routes } from './routes';

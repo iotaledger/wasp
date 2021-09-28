@@ -1,9 +1,10 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
+  import type { NotificationType } from '../lib/notifications';
 
   export let title: string;
   export let message: string;
-  export let type: 'winner' | 'error';
+  export let type: NotificationType;
   export let id: string = '';
   export let timeout: number = undefined;
   export let onClose: () => void;
@@ -36,7 +37,7 @@
       background: rgba(238, 91, 77, 0.24);
     }
 
-    &.win {
+    &.success {
       background: rgba(0, 224, 202, 0.4);
     }
     .title {
