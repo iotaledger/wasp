@@ -29,6 +29,9 @@ const (
 	keyBlockNumberByTxHash    = "th:n"
 )
 
+// Amount of blocks to keep in DB. Older blocks will be pruned every time a transaction is added
+const keepAmount = 100
+
 type BlockchainDB struct {
 	kv kv.KVStore
 }
@@ -118,7 +121,25 @@ func (bc *BlockchainDB) AddTransaction(tx *types.Transaction, receipt *types.Rec
 		makeBlockNumberByTxHashKey(tx.Hash()),
 		receipt.BlockNumber.Bytes(),
 	)
-	bc.AddBlock(bc.makeHeader(tx, receipt, timestamp))
+	header := bc.makeHeader(tx, receipt, timestamp)
+	bc.AddBlock(header)
+
+	bc.prune(header.Number)
+}
+
+func (bc *BlockchainDB) prune(currentNumber *big.Int) {
+	forget := new(big.Int).Sub(currentNumber, big.NewInt(int64(keepAmount)))
+	if forget.Cmp(common.Big1) >= 0 {
+		blockHash := bc.GetBlockHashByBlockNumber(forget)
+		txHash := bc.GetTransactionByBlockNumber(forget).Hash()
+
+		bc.kv.Del(makeTransactionByBlockNumberKey(forget))
+		bc.kv.Del(makeReceiptByBlockNumberKey(forget))
+		bc.kv.Del(makeTimestampByBlockNumberKey(forget))
+		bc.kv.Del(makeBlockHashByBlockNumberKey(forget))
+		bc.kv.Del(makeBlockNumberByBlockHashKey(blockHash))
+		bc.kv.Del(makeBlockNumberByTxHashKey(txHash))
+	}
 }
 
 func (bc *BlockchainDB) AddBlock(header *types.Header) {
