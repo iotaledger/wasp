@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { updateFunds } from '../../lib/app';
+
   import { balance } from '../../lib/store';
 
   export let value: number;
@@ -8,25 +10,27 @@
 
   $: value, updateLabel();
 
+  $: textValue, validate();
+
   function updateLabel() {
     textValue = value;
     console.log('Text value: ', textValue);
   }
 
-  $: textValue, validate();
-
-  $: console.log('value', value);
+  const VALIDATION_ERRORS = {
+    UNDER_RANGE_OF_BALANCE: `Value must be less than or equal to ${$balance}.`,
+    MUST_BE_INTEGER: 'Value must be an integer.',
+  };
 
   function validate(): void {
+    let regex = new RegExp(/^\d+$/);
     invalidMessage = undefined;
-    console.log('TextValue: ', textValue, 'typeof value', typeof value);
-    if (Number(textValue) < 0 || Number(textValue) > $balance) {
-      invalidMessage = `Value must be less than or equal to ${$balance}.`;
-    } else if (Number(textValue) % 1 !== 0) {
-      invalidMessage = 'Value must be an integer.';
-    } else {
-      console.log('Validado: ', textValue);
 
+    if (textValue < 0 || textValue > $balance) {
+      invalidMessage = VALIDATION_ERRORS.UNDER_RANGE_OF_BALANCE;
+    } else if (!regex.test(textValue)) {
+      invalidMessage = VALIDATION_ERRORS.MUST_BE_INTEGER;
+    } else {
       value = textValue;
     }
   }
