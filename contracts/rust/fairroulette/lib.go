@@ -11,33 +11,17 @@ import "github.com/iotaledger/wasp/packages/vm/wasmlib"
 
 func OnLoad() {
 	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncLockBets, funcLockBetsThunk)
 	exports.AddFunc(FuncPayWinners, funcPayWinnersThunk)
 	exports.AddFunc(FuncPlaceBet, funcPlaceBetThunk)
 	exports.AddFunc(FuncPlayPeriod, funcPlayPeriodThunk)
 	exports.AddView(ViewLastWinningNumber, viewLastWinningNumberThunk)
+	exports.AddView(ViewRoundNumber, viewRoundNumberThunk)
+	exports.AddView(ViewRoundStartedAt, viewRoundStartedAtThunk)
+	exports.AddView(ViewRoundStatus, viewRoundStatusThunk)
 
 	for i, key := range keyMap {
 		idxMap[i] = key.KeyID()
 	}
-}
-
-type LockBetsContext struct {
-	State MutableFairRouletteState
-}
-
-func funcLockBetsThunk(ctx wasmlib.ScFuncContext) {
-	ctx.Log("fairroulette.funcLockBets")
-	// only SC itself can invoke this function
-	ctx.Require(ctx.Caller() == ctx.AccountID(), "no permission")
-
-	f := &LockBetsContext{
-		State: MutableFairRouletteState{
-			id: wasmlib.OBJ_ID_STATE,
-		},
-	}
-	funcLockBets(ctx, f)
-	ctx.Log("fairroulette.funcLockBets ok")
 }
 
 type PayWinnersContext struct {
@@ -118,4 +102,61 @@ func viewLastWinningNumberThunk(ctx wasmlib.ScViewContext) {
 	}
 	viewLastWinningNumber(ctx, f)
 	ctx.Log("fairroulette.viewLastWinningNumber ok")
+}
+
+type RoundNumberContext struct {
+	Results MutableRoundNumberResults
+	State   ImmutableFairRouletteState
+}
+
+func viewRoundNumberThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("fairroulette.viewRoundNumber")
+	f := &RoundNumberContext{
+		Results: MutableRoundNumberResults{
+			id: wasmlib.OBJ_ID_RESULTS,
+		},
+		State: ImmutableFairRouletteState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	viewRoundNumber(ctx, f)
+	ctx.Log("fairroulette.viewRoundNumber ok")
+}
+
+type RoundStartedAtContext struct {
+	Results MutableRoundStartedAtResults
+	State   ImmutableFairRouletteState
+}
+
+func viewRoundStartedAtThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("fairroulette.viewRoundStartedAt")
+	f := &RoundStartedAtContext{
+		Results: MutableRoundStartedAtResults{
+			id: wasmlib.OBJ_ID_RESULTS,
+		},
+		State: ImmutableFairRouletteState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	viewRoundStartedAt(ctx, f)
+	ctx.Log("fairroulette.viewRoundStartedAt ok")
+}
+
+type RoundStatusContext struct {
+	Results MutableRoundStatusResults
+	State   ImmutableFairRouletteState
+}
+
+func viewRoundStatusThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("fairroulette.viewRoundStatus")
+	f := &RoundStatusContext{
+		Results: MutableRoundStatusResults{
+			id: wasmlib.OBJ_ID_RESULTS,
+		},
+		State: ImmutableFairRouletteState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	viewRoundStatus(ctx, f)
+	ctx.Log("fairroulette.viewRoundStatus ok")
 }

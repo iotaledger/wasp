@@ -24,3 +24,51 @@ type MutableLastWinningNumberResults struct {
 func (s MutableLastWinningNumberResults) LastWinningNumber() wasmlib.ScMutableInt64 {
 	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultLastWinningNumber])
 }
+
+type ImmutableRoundNumberResults struct {
+	id int32
+}
+
+func (s ImmutableRoundNumberResults) RoundNumber() wasmlib.ScImmutableInt64 {
+	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxResultRoundNumber])
+}
+
+type MutableRoundNumberResults struct {
+	id int32
+}
+
+func (s MutableRoundNumberResults) RoundNumber() wasmlib.ScMutableInt64 {
+	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxResultRoundNumber])
+}
+
+type ImmutableRoundStartedAtResults struct {
+	id int32
+}
+
+func (s ImmutableRoundStartedAtResults) RoundStartedAt() wasmlib.ScImmutableInt32 {
+	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxResultRoundStartedAt])
+}
+
+type MutableRoundStartedAtResults struct {
+	id int32
+}
+
+func (s MutableRoundStartedAtResults) RoundStartedAt() wasmlib.ScMutableInt32 {
+	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxResultRoundStartedAt])
+}
+
+type ImmutableRoundStatusResults struct {
+	id int32
+}
+
+func (s ImmutableRoundStatusResults) RoundStatus() wasmlib.ScImmutableInt16 {
+	return wasmlib.NewScImmutableInt16(s.id, idxMap[IdxResultRoundStatus])
+}
+
+type MutableRoundStatusResults struct {
+	id int32
+}
+
+func (s MutableRoundStatusResults) RoundStatus() wasmlib.ScMutableInt16 {
+	return wasmlib.NewScMutableInt16(s.id, idxMap[IdxResultRoundStatus])
+}
