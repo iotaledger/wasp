@@ -3,7 +3,7 @@ import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
 import { NotificationType, showNotification } from './notifications';
-import { address, addressIndex, balance, displayWinningNumber, keyPair, placingBet, requestingFunds, resetRound, round, seed, showWinnerAnimation, showWinningNumber, timestamp } from './store';
+import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, resetRound, round, seed, showWinnerAnimation, showWinningNumber, timestamp } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -19,6 +19,7 @@ let fundsUpdaterHandle;
 
 const powManager: PoWWorkerManager = new PoWWorkerManager();
 export const BETTING_NUMBERS = 8
+export const ROUND_LENGTH = 30 //in seconds
 
 enum LogTag {
     Page = 'Page',
