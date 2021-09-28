@@ -1038,14 +1038,6 @@ func testQueueRemoveOutOfRangePanics(q Queue, t *testing.T) {
 
 //--
 
-func identityFun(index int) int {
-	return index
-}
-
-func alwaysTrueFun(index int) bool {
-	return true
-}
-
 func newPriorityHashLimitedPriorityHashQueue(fun func(i interface{}) bool) Queue {
 	return NewPriorityHashLimitedPriorityHashQueue(fun, true)
 }
