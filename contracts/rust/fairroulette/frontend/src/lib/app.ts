@@ -19,7 +19,7 @@ let fundsUpdaterHandle;
 
 const powManager: PoWWorkerManager = new PoWWorkerManager();
 export const BETTING_NUMBERS = 8
-export const ROUND_LENGTH = 30 //in seconds
+export const ROUND_LENGTH = 60 //in seconds
 
 enum LogTag {
     Page = 'Page',

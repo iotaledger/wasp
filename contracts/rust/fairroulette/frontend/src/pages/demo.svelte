@@ -20,6 +20,7 @@
     newAddressNeeded,
     requestingFunds,
     showAddFunds,
+    round,
   } from '../lib/store';
   import {
     displayNotifications,
@@ -32,7 +33,7 @@
     fundsRequested.set(true);
     newAddressNeeded.set(true);
     showAddFunds.set(false);
-  } else if ($balance === 0n && $newAddressNeeded) {
+  } else if ($balance === 0n && $newAddressNeeded && $round.betPlaced) {
     createNewAddress();
     newAddressNeeded.set(false);
   }

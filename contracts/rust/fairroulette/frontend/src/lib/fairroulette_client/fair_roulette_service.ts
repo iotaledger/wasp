@@ -45,7 +45,7 @@ export class FairRouletteService {
 
 
   public chainId: string;
-  public readonly roundLength: number = 30; // in seconds
+  public readonly roundLength: number = 60; // in seconds
 
   constructor(client: BasicClient, chainId: string) {
     this.walletService = new WalletService(client);

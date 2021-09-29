@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button } from '../../components';
   import { sendFaucetRequest } from '../../lib/app';
-  import { balance, requestingFunds } from '../../lib/store';
+  import { balance, requestingFunds, placingBet } from '../../lib/store';
 </script>
 
 <div class="panel">
@@ -13,7 +13,7 @@
     <Button
       label={$requestingFunds ? 'Requesting...' : 'Request funds'}
       onClick={sendFaucetRequest}
-      disabled={$requestingFunds || $balance > 0n}
+      disabled={$requestingFunds || $placingBet || $balance > 0n}
       loading={$requestingFunds}
     />
   </div>
