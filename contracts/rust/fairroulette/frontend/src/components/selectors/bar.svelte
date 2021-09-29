@@ -35,7 +35,7 @@
   }
 </script>
 
-<div>
+<div class="bar-value">
   <div class="value">
     <input bind:value={textValue} />{' '}i
   </div>
@@ -55,44 +55,64 @@
 </div>
 
 <style lang="scss">
-  .value {
-    text-align: end;
-    font-size: 14px;
-    line-height: 150%;
-    letter-spacing: 0.5px;
-    color: var(--white);
-  }
-  .invalid-message {
-    font-size: 11px;
-    color: tomato;
-    margin-top: 8px;
-  }
-  .bar-selector {
+  .bar-value {
     position: relative;
-    margin: 7px 0;
-    width: 100%;
-    input {
-      height: 26px;
-      -webkit-appearance: none;
-      width: 100%;
-      border: 0;
-      background-color: transparent;
-      &::-webkit-slider-runnable-track {
-        width: 100%;
-        height: 8px;
-        animate: 0.2s;
-        border-radius: 4px;
-        border: 4px solid var(--gray-7);
+
+    .value {
+      text-align: end;
+      font-size: 14px;
+      line-height: 150%;
+      letter-spacing: 0.5px;
+      color: var(--white);
+      padding-bottom: 20px;
+      input {
+        background: transparent;
+        box-shadow: inset 0px 0px 5px var(--mint-green-light);
+        border: var(--gray-7);
+        border-radius: 5px;
+        text-align: end;
+        color: var(--gray-1);
+        padding: 5px 8px;
+        &:focus {
+          outline: none;
+        }
       }
-      &::-webkit-slider-thumb {
-        box-shadow: 0px 0px 0px var(--gray-7);
-        border: 0px solid var(--mint-green-light);
-        height: 20px;
-        width: 20px;
-        border-radius: 50px;
-        background: var(--mint-green-light);
+    }
+    .invalid-message {
+      position: absolute;
+      top: 40%;
+      font-size: 10px;
+      color: var(--mint-green-light);
+      padding: 2px 5px;
+      letter-spacing: 0.5px;
+    }
+    .bar-selector {
+      position: relative;
+      margin: 7px 0;
+      width: 100%;
+      input {
+        height: 26px;
         -webkit-appearance: none;
-        margin-top: -8px;
+        width: 100%;
+        border: 0;
+        background-color: transparent;
+        &::-webkit-slider-runnable-track {
+          width: 100%;
+          height: 8px;
+          animate: 0.2s;
+          border-radius: 4px;
+          border: 4px solid var(--gray-7);
+        }
+        &::-webkit-slider-thumb {
+          box-shadow: 0px 0px 0px var(--gray-7);
+          border: 0px solid var(--mint-green-light);
+          height: 20px;
+          width: 20px;
+          border-radius: 50px;
+          background: var(--mint-green-light);
+          -webkit-appearance: none;
+          margin-top: -8px;
+        }
       }
     }
   }
