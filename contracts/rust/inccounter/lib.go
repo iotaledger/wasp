@@ -15,6 +15,7 @@ func OnLoad() {
 	exports.AddFunc(FuncCallIncrementRecurse5x, funcCallIncrementRecurse5xThunk)
 	exports.AddFunc(FuncEndlessLoop, funcEndlessLoopThunk)
 	exports.AddFunc(FuncIncrement, funcIncrementThunk)
+	exports.AddFunc(FuncIncrementWithDelay, funcIncrementWithDelayThunk)
 	exports.AddFunc(FuncInit, funcInitThunk)
 	exports.AddFunc(FuncLocalStateInternalCall, funcLocalStateInternalCallThunk)
 	exports.AddFunc(FuncLocalStatePost, funcLocalStatePostThunk)
@@ -88,6 +89,26 @@ func funcIncrementThunk(ctx wasmlib.ScFuncContext) {
 	}
 	funcIncrement(ctx, f)
 	ctx.Log("inccounter.funcIncrement ok")
+}
+
+type IncrementWithDelayContext struct {
+	Params ImmutableIncrementWithDelayParams
+	State  MutableIncCounterState
+}
+
+func funcIncrementWithDelayThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("inccounter.funcIncrementWithDelay")
+	f := &IncrementWithDelayContext{
+		Params: ImmutableIncrementWithDelayParams{
+			id: wasmlib.OBJ_ID_PARAMS,
+		},
+		State: MutableIncCounterState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	ctx.Require(f.Params.Delay().Exists(), "missing mandatory delay")
+	funcIncrementWithDelay(ctx, f)
+	ctx.Log("inccounter.funcIncrementWithDelay ok")
 }
 
 type InitContext struct {

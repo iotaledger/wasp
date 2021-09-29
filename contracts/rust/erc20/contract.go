@@ -51,43 +51,43 @@ type Funcs struct{}
 var ScFuncs Funcs
 
 func (sc Funcs) Approve(ctx wasmlib.ScFuncCallContext) *ApproveCall {
-	f := &ApproveCall{Func: wasmlib.NewScFunc(HScName, HFuncApprove)}
+	f := &ApproveCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncApprove)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {
-	f := &InitCall{Func: wasmlib.NewScInitFunc(HScName, HFuncInit, ctx, keyMap[:], idxMap[:])}
+	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit, keyMap[:], idxMap[:])}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) Transfer(ctx wasmlib.ScFuncCallContext) *TransferCall {
-	f := &TransferCall{Func: wasmlib.NewScFunc(HScName, HFuncTransfer)}
+	f := &TransferCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTransfer)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) TransferFrom(ctx wasmlib.ScFuncCallContext) *TransferFromCall {
-	f := &TransferFromCall{Func: wasmlib.NewScFunc(HScName, HFuncTransferFrom)}
+	f := &TransferFromCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncTransferFrom)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) Allowance(ctx wasmlib.ScViewCallContext) *AllowanceCall {
-	f := &AllowanceCall{Func: wasmlib.NewScView(HScName, HViewAllowance)}
+	f := &AllowanceCall{Func: wasmlib.NewScView(ctx, HScName, HViewAllowance)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) BalanceOf(ctx wasmlib.ScViewCallContext) *BalanceOfCall {
-	f := &BalanceOfCall{Func: wasmlib.NewScView(HScName, HViewBalanceOf)}
+	f := &BalanceOfCall{Func: wasmlib.NewScView(ctx, HScName, HViewBalanceOf)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) TotalSupply(ctx wasmlib.ScViewCallContext) *TotalSupplyCall {
-	f := &TotalSupplyCall{Func: wasmlib.NewScView(HScName, HViewTotalSupply)}
+	f := &TotalSupplyCall{Func: wasmlib.NewScView(ctx, HScName, HViewTotalSupply)}
 	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }

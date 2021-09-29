@@ -106,9 +106,6 @@ Anyway, to show you an example of the initially generated Go code, `mysmartcontr
 looks like this before you even start modifying it:
 
 ```golang
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
-
 package mysmartcontract
 
 import "github.com/iotaledger/wasp/packages/vm/wasmlib"

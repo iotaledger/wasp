@@ -25,16 +25,33 @@ func hostSetBytes(objID, keyID, typeID int32, value *byte, size int32)
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
 
-type WasmVMHost struct{}
+type WasmVMHost struct{
+	funcs []func(ctx wasmlib.ScFuncContext)
+	views []func(ctx wasmlib.ScViewContext)
+}
 
 // implements wasmlib.ScHost interface
 var _ wasmlib.ScHost = &WasmVMHost{}
 
-func ConnectWasmHost() {
-	wasmlib.ConnectHost(WasmVMHost{})
+func (w *WasmVMHost) AddFunc(f func(ctx wasmlib.ScFuncContext)) []func(ctx wasmlib.ScFuncContext) {
+	if f != nil {
+		w.funcs = append(w.funcs, f)
+	}
+	return w.funcs
 }
 
-func (w WasmVMHost) CallFunc(objID, keyID int32, params []byte) []byte {
+func (w *WasmVMHost) AddView(v func(ctx wasmlib.ScViewContext)) []func(ctx wasmlib.ScViewContext) {
+	if v != nil {
+		w.views = append(w.views, v)
+	}
+	return w.views
+}
+
+func (w *WasmVMHost) ConnectWasmHost() {
+	wasmlib.ConnectHost(w)
+}
+
+func (w *WasmVMHost) CallFunc(objID, keyID int32, params []byte) []byte {
 	args := (*byte)(nil)
 	size := int32(len(params))
 	if size != 0 {
@@ -56,14 +73,14 @@ func (w WasmVMHost) CallFunc(objID, keyID int32, params []byte) []byte {
 	return result
 }
 
-func (w WasmVMHost) Exists(objID, keyID, typeID int32) bool {
+func (w *WasmVMHost) Exists(objID, keyID, typeID int32) bool {
 	// negative length (-1) means only test for existence
 	// returned size -1 indicates keyID not found (or error)
 	// this removes the need for a separate hostExists function
 	return hostGetBytes(objID, keyID, typeID, nil, -1) >= 0
 }
 
-func (w WasmVMHost) GetBytes(objID, keyID, typeID int32) []byte {
+func (w *WasmVMHost) GetBytes(objID, keyID, typeID int32) []byte {
 	size := int32(wasmlib.TypeSizes[typeID])
 	if size == 0 {
 		// variable-sized type, first query expected length of bytes array
@@ -83,7 +100,7 @@ func (w WasmVMHost) GetBytes(objID, keyID, typeID int32) []byte {
 	return result
 }
 
-func (w WasmVMHost) GetKeyIDFromBytes(bytes []byte) int32 {
+func (w *WasmVMHost) GetKeyIDFromBytes(bytes []byte) int32 {
 	size := int32(len(bytes))
 	// &bytes[0] will panic on zero length slice, so use nil instead
 	// negative size indicates this was from bytes
@@ -93,7 +110,7 @@ func (w WasmVMHost) GetKeyIDFromBytes(bytes []byte) int32 {
 	return hostGetKeyID(&bytes[0], -size-1)
 }
 
-func (w WasmVMHost) GetKeyIDFromString(key string) int32 {
+func (w *WasmVMHost) GetKeyIDFromString(key string) int32 {
 	bytes := []byte(key)
 	size := int32(len(bytes))
 	// &bytes[0] will panic on zero length slice, so use nil instead
@@ -104,11 +121,11 @@ func (w WasmVMHost) GetKeyIDFromString(key string) int32 {
 	return hostGetKeyID(&bytes[0], size)
 }
 
-func (w WasmVMHost) GetObjectID(objID, keyID, typeID int32) int32 {
+func (w *WasmVMHost) GetObjectID(objID, keyID, typeID int32) int32 {
 	return hostGetObjectID(objID, keyID, typeID)
 }
 
-func (w WasmVMHost) SetBytes(objID, keyID, typeID int32, value []byte) {
+func (w *WasmVMHost) SetBytes(objID, keyID, typeID int32, value []byte) {
 	// &bytes[0] will panic on zero length slice, so use nil instead
 	size := int32(len(value))
 	if size == 0 {

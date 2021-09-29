@@ -273,14 +273,6 @@ func (ctx ScFuncContext) CallSelf(hFunction ScHname, params *ScMutableMap, trans
 	return ctx.Call(ctx.Contract(), hFunction, params, transfer)
 }
 
-func (ctx ScFuncContext) CanCallFunc() {
-	panic("CanCallFunc")
-}
-
-func (ctx ScFuncContext) CanCallView() {
-	panic("CanCallView")
-}
-
 // deploys a smart contract
 func (ctx ScFuncContext) Deploy(programHash ScHash, name, description string, params *ScMutableMap) {
 	encode := NewBytesEncoder()
@@ -307,6 +299,12 @@ func (ctx ScFuncContext) Host() ScHost {
 // access the incoming balances for all token colors
 func (ctx ScFuncContext) Incoming() ScBalances {
 	return ScBalances{Root.GetMap(KeyIncoming).Immutable()}
+}
+
+func (ctx ScFuncContext) InitFuncCallContext() {
+}
+
+func (ctx ScFuncContext) InitViewCallContext() {
 }
 
 // retrieve the tokens that were minted in this transaction
@@ -381,8 +379,7 @@ func (ctx ScViewContext) CallSelf(function ScHname, params *ScMutableMap) ScImmu
 	return ctx.Call(ctx.Contract(), function, params)
 }
 
-func (ctx ScViewContext) CanCallView() {
-	panic("CanCallView")
+func (ctx ScViewContext) InitViewCallContext() {
 }
 
 // access to immutable state storage

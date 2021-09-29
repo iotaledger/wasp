@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/stretchr/testify/require"
 )
@@ -466,8 +467,9 @@ func testERC20Contract(t testing.TB, db ethdb.Database) {
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(new(big.Int).Mul(transferAmount, big.NewInt(2))))
 }
 
-func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction) {
-	db := rawdb.NewDatabase(NewKVAdapter(dict.New()))
+func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict) {
+	d := dict.New()
+	db := rawdb.NewDatabase(NewKVAdapter(d))
 
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()
@@ -518,7 +520,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction) {
 		require.NoError(b, err)
 	}
 
-	return emu, txs
+	return emu, txs, d
 }
 
 // benchmarkEVMEmulator is a benchmark for the EVMEmulator that sends an EVM transaction
@@ -530,7 +532,7 @@ func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction) {
 // Then: go tool pprof -http :8080 {cpu,mem}.out
 func benchmarkEVMEmulator(b *testing.B, k int) {
 	// setup: deploy the storage contract and prepare N transactions to send
-	emu, txs := initBenchmark(b)
+	emu, txs, db := initBenchmark(b)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -543,6 +545,17 @@ func benchmarkEVMEmulator(b *testing.B, k int) {
 		}
 	}
 	emu.Commit()
+
+	b.ReportMetric(dbSize(db)/float64(b.N), "db:bytes/op")
+}
+
+func dbSize(db kv.KVStore) float64 {
+	r := float64(0)
+	db.MustIterate("", func(key kv.Key, value []byte) bool {
+		r += float64(len(key) + len(value))
+		return true
+	})
+	return r
 }
 
 func BenchmarkEVMEmulator1(b *testing.B)   { benchmarkEVMEmulator(b, 1) }

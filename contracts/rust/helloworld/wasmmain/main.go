@@ -17,6 +17,7 @@ func main() {
 
 //export on_load
 func OnLoad() {
-	wasmclient.ConnectWasmHost()
+	h := &wasmclient.WasmVMHost{}
+	h.ConnectWasmHost()
 	helloworld.OnLoad()
 }
