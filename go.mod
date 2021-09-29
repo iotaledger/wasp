@@ -41,3 +41,5 @@ require (
 replace github.com/anthdm/hbbft => github.com/kape1395/hbbft v0.0.0-20210824083459-b949585b7515
 
 replace go.dedis.ch/kyber/v3 v3.0.13 => github.com/kape1395/kyber/v3 v3.0.14-0.20210622094514-fefb81148dc3
+
+replace github.com/ethereum/go-ethereum => /home/dessaya/work/iota/go-ethereum

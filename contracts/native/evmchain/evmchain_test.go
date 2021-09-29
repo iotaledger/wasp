@@ -354,6 +354,40 @@ func TestPrePaidFees(t *testing.T) {
 	require.EqualValues(t, 999, storage.retrieve())
 }
 
+func TestISCPContract(t *testing.T) {
+	// deploy the evmchain contract, which starts an EVM chain and automatically
+	// deploys the iscp.sol EVM contract at address 0x1074
+	evmChain := initEVMChain(t)
+
+	// deploy the iscp-test.sol EVM contract
+	iscpTest := evmChain.deployISCPTestContract(evmChain.faucetKey)
+
+	// call the getChainId() view function of iscp-test.sol which in turn:
+	//  calls the getChainId() view function of iscp.sol, which:
+	//   returns the ChainID of the underlying ISCP chain
+	chainID := iscpTest.getChainID()
+
+	require.Equal(t, evmChain.soloChain.ChainID.Array(), chainID.Array())
+}
+
+func TestISCPEvent(t *testing.T) {
+	evmChain := initEVMChain(t)
+	iscpTest := evmChain.deployISCPTestContract(evmChain.faucetKey)
+
+	// call the triggerEvent(string) function of iscp-test.sol which in turn:
+	//  calls the triggerEvent(string) function of iscp.sol, which:
+	//   executes a custom opcode, which:
+	//    gets intercepted by the evmchain contract, which:
+	//     triggers an ISCP event with the given string parameter
+	res, err := iscpTest.triggerEvent("Hi from EVM!")
+	require.NoError(t, err)
+	require.Equal(t, types.ReceiptStatusSuccessful, res.receipt.Status)
+	ev, err := evmChain.soloChain.GetEventsForBlock(evmChain.soloChain.GetLatestBlockInfo().BlockIndex)
+	require.NoError(t, err)
+	require.Len(t, ev, 1)
+	require.Contains(t, ev[0], "Hi from EVM!")
+}
+
 func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: deploy the evmchain contract
 	log := testlogger.NewSilentLogger(b.Name(), true)

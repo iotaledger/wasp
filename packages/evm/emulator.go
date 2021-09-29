@@ -28,13 +28,13 @@ type EVMEmulator struct {
 	timestamp   uint64
 	chainConfig *params.ChainConfig
 	kv          kv.KVStore
+	IEVMBackend vm.ISCPBackend
 }
 
 var (
 	TxGas           = uint64(21000) // gas cost of simple transfer (not contract creation / call)
 	GasLimitDefault = uint64(15000000)
 	GasPrice        = big.NewInt(0)
-	vmConfig        = vm.Config{}
 )
 
 const DefaultChainID = 1074 // IOTA -- get it?
@@ -94,7 +94,7 @@ func Init(store kv.KVStore, chainID uint16, gasLimit, timestamp uint64, alloc co
 	}
 }
 
-func NewEVMEmulator(store kv.KVStore, timestamp uint64) *EVMEmulator {
+func NewEVMEmulator(store kv.KVStore, timestamp uint64, backend vm.ISCPBackend) *EVMEmulator {
 	bdb := newBlockchainDB(store)
 	if !bdb.Initialized() {
 		panic("must initialize genesis block first")
@@ -103,6 +103,7 @@ func NewEVMEmulator(store kv.KVStore, timestamp uint64) *EVMEmulator {
 		timestamp:   timestamp,
 		chainConfig: makeConfig(int(bdb.GetChainID())),
 		kv:          store,
+		IEVMBackend: backend,
 	}
 }
 
@@ -212,10 +213,20 @@ func (e *EVMEmulator) callContract(call ethereum.CallMsg) (*core.ExecutionResult
 	evmContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
-	vmEnv := vm.NewEVM(evmContext, txContext, statedb, e.chainConfig, vmConfig)
+	vmEnv := vm.NewEVM(evmContext, txContext, statedb, e.chainConfig, e.vmConfig())
 	gasPool := new(core.GasPool).AddGas(math.MaxUint64)
 
 	return core.NewStateTransition(vmEnv, msg, gasPool).TransitionDb()
+}
+
+func (e *EVMEmulator) vmConfig() vm.Config {
+	return vm.Config{
+		JumpTable: vm.NewISCPInstructionSet(e.GetIEVMBackend),
+	}
+}
+
+func (e *EVMEmulator) GetIEVMBackend() vm.ISCPBackend {
+	return e.IEVMBackend
 }
 
 // SendTransaction updates the pending block to include the given transaction.
@@ -242,7 +253,7 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction) (*types.Receipt, er
 	}
 	statedb := buf.StateDB()
 	blockContext := core.NewEVMBlockContext(pendingHeader, e.ChainContext(), nil)
-	evm := vm.NewEVM(blockContext, vm.TxContext{}, statedb, e.chainConfig, vmConfig)
+	evm := vm.NewEVM(blockContext, vm.TxContext{}, statedb, e.chainConfig, e.vmConfig())
 	txContext := core.NewEVMTxContext(msg)
 	evm.Reset(txContext, statedb)
 	result, err := core.ApplyMessage(evm, msg, &gasPool)

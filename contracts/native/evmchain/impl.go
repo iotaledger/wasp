@@ -6,6 +6,7 @@ package evmchain
 import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/iotaledger/wasp/contracts/native/evmchain/iscpcontract"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -56,6 +57,10 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	genesisAlloc, err := evmtypes.DecodeGenesisAlloc(ctx.Params().MustGet(FieldGenesisAlloc))
 	a.RequireNoError(err)
+
+	// add the standard ISCP contract at arbitrary address 0x1074
+	iscpcontract.DeployOnGenesis(genesisAlloc, ctx.ChainID())
+
 	chainID, err := codec.DecodeUint16(ctx.Params().MustGet(FieldChainID), evm.DefaultChainID)
 	a.RequireNoError(err)
 	evm.Init(

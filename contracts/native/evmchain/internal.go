@@ -9,6 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/iscp"
@@ -27,11 +28,11 @@ func evmStateSubrealm(state kv.KVStore) kv.KVStore {
 }
 
 func createEmulator(ctx iscp.Sandbox) *evm.EVMEmulator {
-	return evm.NewEVMEmulator(evmStateSubrealm(ctx.State()), timestamp(ctx))
+	return evm.NewEVMEmulator(evmStateSubrealm(ctx.State()), timestamp(ctx), &iscpBackend{ctx})
 }
 
 func createEmulatorR(ctx iscp.SandboxView) *evm.EVMEmulator {
-	return evm.NewEVMEmulator(evmStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())), timestamp(ctx))
+	return evm.NewEVMEmulator(evmStateSubrealm(buffered.NewBufferedKVStoreAccess(ctx.State())), timestamp(ctx), &iscpBackendR{ctx})
 }
 
 // timestamp returns the current timestamp in seconds since epoch
@@ -140,3 +141,21 @@ func getFeeColor(ctx iscp.Sandbox) colored.Color {
 	a.RequireNoError(err)
 	return feeColor
 }
+
+type iscpBackend struct {
+	ctx iscp.Sandbox
+}
+
+var _ vm.ISCPBackend = &iscpBackend{}
+
+func (i *iscpBackend) Event(s string) {
+	i.ctx.Event(s)
+}
+
+type iscpBackendR struct {
+	ctx iscp.SandboxView
+}
+
+var _ vm.ISCPBackend = &iscpBackendR{}
+
+func (i *iscpBackendR) Event(s string) { panic("should not happen") }
