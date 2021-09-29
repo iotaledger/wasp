@@ -15,10 +15,10 @@ use crate::*;
 // Define some default configuration parameters.
 
 // The maximum number one can bet on. The range of numbers starts at 0.
-const MAX_NUMBER: i64 = 36;
+const MAX_NUMBER: i64 = 8;
 
 // The default playing period of one betting round in seconds.
-const DEFAULT_PLAY_PERIOD: i32 = 30;
+const DEFAULT_PLAY_PERIOD: i32 = 60;
 
 // Enable this if you deploy the contract to an actual node. It will pay out the prize after a certain timeout.
 const ENABLE_SELF_POST: bool = true;
@@ -40,7 +40,7 @@ pub fn func_place_bet(_ctx: &ScFuncContext, _f: &PlaceBetContext) {
   let number: i64 = _f.params.number().value();
 
   // Require that the number is a valid number to bet on, otherwise panic out.
-  _ctx.require(number >= 0 && number <= MAX_NUMBER, "invalid number");
+  _ctx.require(number >= 1 && number <= MAX_NUMBER, "invalid number");
 
   // Create ScBalances proxy to the incoming balances for this request.
   // Note that ScBalances wraps an ScImmutableMap of token color/amount combinations
@@ -71,10 +71,9 @@ pub fn func_place_bet(_ctx: &ScFuncContext, _f: &PlaceBetContext) {
   // Append the bet data to the bets array. The bet array will automatically take care
   // of serializing the bet struct into a bytes representation.
   bets.get_bet(bet_nr).set_value(&bet);
-
   _ctx.event(&format!(
     "fairroulette.bet.placed {0} {1} {2}",
-    &bet.better.to_string(),
+    &bet.better.address().to_string(),
     bet.amount,
     bet.number
   ));
@@ -223,7 +222,7 @@ pub fn func_pay_winners(_ctx: &ScFuncContext, _f: &PayWinnersContext) {
     // Log who got sent what in the log on the host.
     _ctx.event(&format!(
       "fairroulette.payout {} {}",
-      &bet.better.to_string(),
+      &bet.better.address().to_string(),
       payout
     ));
   }
