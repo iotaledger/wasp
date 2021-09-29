@@ -37,7 +37,7 @@
 
 <div>
   <div class="value">
-    <input bind:value={textValue} on:keydown={() => validate()} />{' '}i
+    <input bind:value={textValue} />{' '}i
   </div>
   {#if invalidMessage}
     <div class="invalid-message">{invalidMessage}</div>
