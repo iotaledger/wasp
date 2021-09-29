@@ -26,10 +26,8 @@ commercial settings or whenever processing of critical data is involved._
 
 ## Prerequisites
 
- // TODO MENTION SPECIFIC VERSIONS!!!!!!!!!!
-
 - Go 1.16
-- Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node. ( GoShimmer is a developing prototype, so some things are prone to break, for a smoother development experience it is recommend to use the GoShimmer code at [this commit](https://github.com/iotaledger/goshimmer/commit/25c827e8326a))
+- Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node. (GoShimmer is a developing prototype, so some things are prone to break, for a smoother development experience it is recommend to use the GoShimmer code at [this commit](https://github.com/iotaledger/goshimmer/commit/25c827e8326a))
 
 Note: The Wasp node requires the Goshimmer node to have the
 [TXStream](https://github.com/iotaledger/goshimmer/tree/master/plugins/txstream)
