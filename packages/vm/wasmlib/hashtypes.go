@@ -48,9 +48,9 @@ type ScAgentID struct {
 	id [37]byte
 }
 
-func NewScAgentID(chainID ScChainID, hContract ScHname) ScAgentID {
+func NewScAgentID(address ScAddress, hContract ScHname) ScAgentID {
 	o := ScAgentID{}
-	copy(o.id[:], chainID.Bytes())
+	copy(o.id[:], address.Bytes())
 	copy(o.id[33:], hContract.Bytes())
 	return o
 }
@@ -83,7 +83,7 @@ func (o ScAgentID) KeyID() Key32 {
 }
 
 func (o ScAgentID) IsAddress() bool {
-	return o.Address().AsAgentID() == o
+	return o.Hname() == ScHname(0)
 }
 
 func (o ScAgentID) String() string {

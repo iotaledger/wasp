@@ -227,7 +227,11 @@ func (o *ScContext) processPost(bytes []byte) {
 	}
 	o.Tracef("POST c'%s' f'%s'", contract.String(), function.String())
 	params := o.getParams(decode.Int32())
-	transfer := o.getTransfer(decode.Int32())
+	transferID := decode.Int32()
+	if transferID == 0 {
+		o.Panic("transfer is required for post")
+	}
+	transfer := o.getTransfer(transferID)
 	metadata := &iscp.SendMetadata{
 		TargetContract: contract,
 		EntryPoint:     function,

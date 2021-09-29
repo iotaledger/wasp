@@ -134,9 +134,23 @@ func StartChain(t *testing.T, chainName string) *solo.Chain {
 	return env.NewChain(nil, chainName)
 }
 
+func (ctx *SoloContext) AccountID() wasmlib.ScAgentID {
+	return ctx.Agent().ScAgentID()
+}
+
 // AdvanceClockBy is used to forward the internal clock by the provided step duration.
 func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 	ctx.Chain.Env.AdvanceClockBy(step)
+}
+
+// Agent returns a SoloAgent for the smart contract associated with ctx
+func (ctx *SoloContext) Agent() *SoloAgent {
+	return &SoloAgent{
+		env:     ctx.Chain.Env,
+		pair:    nil,
+		address: ctx.Chain.ChainID.AsAddress(),
+		hname:   iscp.Hn(ctx.scName),
+	}
 }
 
 // Balance returns the account balance of the specified agent on the chain associated with ctx.
@@ -162,6 +176,10 @@ func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmlib.ScColor) int6
 		require.Fail(ctx.Chain.Env.T, "too many color arguments")
 		return 0
 	}
+}
+
+func (ctx *SoloContext) ChainID() wasmlib.ScChainID {
+	return ctx.Convertor.ScChainID(ctx.Chain.ChainID)
 }
 
 // ContractExists checks to see if the contract named scName exists in the chain associated with ctx.
