@@ -11,7 +11,7 @@ export const addressIndex: Writable<number> = writable(0)
 export const balance: Writable<bigint> = writable(0n)
 
 export const timestamp: Writable<number> = writable()
-export const timeToFinished: Readable<number> = derived(timestamp, $timestamp => calculateRoundLengthLeft($timestamp));
+export const timeToFinished: Readable<number> = derived(timestamp, $timestamp => $timestamp ? calculateRoundLengthLeft($timestamp) : 0);
 export const requestingFunds: Writable<boolean> = writable(false)
 export const placingBet: Writable<boolean> = writable(false)
 
@@ -37,8 +37,7 @@ export const round: Writable<IRound> = writable(RESET_ROUND);
 export const isAWinnerPlayer: Writable<boolean> = writable(false);
 
 export function resetRound(): void {
-    // Guetto patch: force to reset logs and players
-    round.set({ ...RESET_ROUND, winningNumber: get(round)?.winningNumber, players: [] })
+    round.set({ ...RESET_ROUND, winningNumber: get(round)?.winningNumber, players: [], logs: get(round)?.logs })
 }
 
 export function showWinnerAnimation(): void {
