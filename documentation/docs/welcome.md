@@ -27,15 +27,14 @@ commercial settings or whenever processing of critical data is involved._
 ## Prerequisites
 
 - Go 1.16
-- Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node for
-  production operation
+- Access to a [GoShimmer](https://github.com/iotaledger/goshimmer) node. (GoShimmer is a developing prototype, so some things are prone to break, for a smoother development experience it is recommend to use the GoShimmer code at [this commit](https://github.com/iotaledger/goshimmer/commit/25c827e8326a))
 
 Note: The Wasp node requires the Goshimmer node to have the
 [TXStream](https://github.com/iotaledger/goshimmer/tree/master/plugins/txstream)
 plugin enabled. Being an experimental plugin, it is currently disabled by default and can
 be enabled via configuration.
 
-- [RocksDB](https://github.com/facebook/rocksdb/blob/master/INSTALL.md)
+- [RocksDB 6.15.5](https://github.com/facebook/rocksdb/blob/master/INSTALL.md) (due to an open [issue](https://github.com/tecbot/gorocksdb/issues/203#issuecomment-801067439) more recent versions of rocksdb might not work currently)
 
 ### Microsoft Windows Installation Errors
 
