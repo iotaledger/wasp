@@ -7,9 +7,10 @@
     timeToFinished,
   } from '../lib/store';
   import { generateRandomInt } from '../lib/utils';
+  import { ROUND_LENGTH } from './../lib/app';
   import Animation from './animation.svelte';
 
-  import { ROUND_LENGTH } from './../lib/app';
+  // Highlighted number
   let flashedNumber: number;
   let interval;
 
@@ -17,8 +18,33 @@
     $round.winningNumber,
     $showWinningNumber,
     updateFlashedNumber();
+  // --
 
-  onDestroy(reset);
+  // Progress bar
+  const radius = 250;
+  const stroke = 4;
+  const normalizedRadius = radius - stroke;
+  const circumference = normalizedRadius * 2 * Math.PI;
+
+  let roundTimeAgo = 0;
+  let progress = 0;
+  let strokeDashoffset = 0;
+  let animateProgressBar = false;
+
+  let timeout;
+
+  $: if ($round.active) {
+    if ($timeToFinished > 0) {
+      initializeProgressBar();
+    }
+  } else {
+    resetProgressBar();
+  }
+
+  $: strokeDashoffset = $round.active
+    ? circumference - (progress / ROUND_LENGTH) * circumference
+    : circumference;
+  // --
 
   function updateFlashedNumber() {
     if ($round.active) {
@@ -28,62 +54,39 @@
         }, 500);
       }
     } else {
-      reset();
+      resetFlashedNumber();
       if ($showWinningNumber && $round.winningNumber) {
         flashedNumber = Number($round.winningNumber);
       }
     }
   }
 
-  function reset() {
-    clearInterval(interval);
-    interval = flashedNumber = undefined;
-  }
-
-  // Progress bar
-  const radius = 250;
-  const stroke = 4;
-  const normalizedRadius = radius - stroke;
-  const circumference = normalizedRadius * 2 * Math.PI;
-
-  let start = 0;
-  let progress = 0;
-
-  let startLoaded = false;
-  let strokeDashOffsetLoaded = false;
-
-  let timeout;
-
-  $: $timeToFinished, initializeProgressBar();
-
   function initializeProgressBar() {
-    if (!isNaN($timeToFinished) && $timeToFinished !== 0 && !startLoaded) {
-      start = ROUND_LENGTH - $timeToFinished;
-      startLoaded = true;
-      progress = start;
+    if (!timeout) {
+      roundTimeAgo = ROUND_LENGTH - $timeToFinished;
+      progress = roundTimeAgo;
       timeout = setTimeout(() => {
         progress = ROUND_LENGTH;
-        strokeDashOffsetLoaded = true;
+        animateProgressBar = true;
       }, 100);
     }
   }
 
-  $: $round.active, resetProgressBar();
-
-  function resetProgressBar() {
-    if (!$round.active) {
-      progress = 0;
-      start = 0;
-      startLoaded = false;
-      strokeDashOffsetLoaded = false;
-    }
+  function resetFlashedNumber() {
+    clearInterval(interval);
+    interval = timeout = flashedNumber = undefined;
   }
 
-  onDestroy(() => clearTimeout(timeout));
+  function resetProgressBar() {
+    clearTimeout(timeout);
+    animateProgressBar = false;
+    progress = roundTimeAgo = 0;
+  }
 
-  $: strokeDashoffset = $round.active
-    ? circumference - (progress / ROUND_LENGTH) * circumference
-    : circumference;
+  onDestroy(() => {
+    resetFlashedNumber();
+    resetProgressBar();
+  });
 </script>
 
 <div class="roulette-wrapper">
@@ -96,12 +99,12 @@
       <circle
         stroke="#00E0CA"
         fill="transparent"
-        stroke-dasharray={circumference + ' ' + circumference}
-        style={`stroke-dashoffset: ${strokeDashoffset ?? 0}; transition: ${
-          progress !== 0 && strokeDashOffsetLoaded
-            ? `stroke-dashoffset ${ROUND_LENGTH - start}s linear;`
-            : ''
-        }`}
+        stroke-dasharray="{circumference} {circumference}"
+        style="stroke-dashoffset: {strokeDashoffset};
+        {animateProgressBar &&
+          `transition: stroke-dashoffset ${
+            ROUND_LENGTH - roundTimeAgo
+          }s linear`}"
         stroke-width={stroke}
         r={normalizedRadius}
         cx={radius}
