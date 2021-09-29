@@ -168,3 +168,9 @@ fn when_must_increment_state(ctx: &ScFuncContext, state: &MutableIncCounterState
     let counter = state.counter();
     counter.set_value(counter.value() + 1);
 }
+
+pub fn func_increment_with_delay(ctx: &ScFuncContext, f: &IncrementWithDelayContext) {
+    let delay = f.params.delay().value();
+    let inc = inccounter::ScFuncs::call_increment(ctx);
+    inc.func.delay(delay).transfer_iotas(1).post();
+}

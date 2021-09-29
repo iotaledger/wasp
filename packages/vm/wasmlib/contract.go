@@ -1,11 +1,11 @@
 package wasmlib
 
 type ScFuncCallContext interface {
-	CanCallFunc()
+	InitFuncCallContext()
 }
 
 type ScViewCallContext interface {
-	CanCallView()
+	InitViewCallContext()
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -17,7 +17,8 @@ type ScView struct {
 	resultsID *int32
 }
 
-func NewScView(hContract, hFunction ScHname) *ScView {
+func NewScView(ctx ScViewCallContext, hContract, hFunction ScHname) *ScView {
+	ctx.InitViewCallContext()
 	return &ScView{hContract, hFunction, nil, nil}
 }
 
@@ -67,19 +68,30 @@ type ScInitFunc struct {
 	host       ScHost
 }
 
-func NewScInitFunc(hContract, hFunction ScHname, ctx ScFuncCallContext, keys []Key, indexes []Key32) *ScInitFunc {
+func NewScInitFunc(ctx ScFuncCallContext, hContract, hFunction ScHname, keys []Key, indexes []Key32) *ScInitFunc {
 	f := &ScInitFunc{}
 	f.hContract = hContract
 	f.hFunction = hFunction
-	if ctx == nil {
-		f.keys = keys
-		f.oldIndexes = append(f.oldIndexes, indexes...)
-		f.indexes = indexes
-		for i := 0; i < len(indexes); i++ {
-			indexes[i] = Key32(i)
-		}
-		f.host = ConnectHost(NewInitHost())
+	if ctx != nil {
+		ctx.InitFuncCallContext()
+		return f
 	}
+
+	// Special initialization for SoloContext usage
+	// Note that we do not have a contract context that can talk to the host
+	// until *after* deployment of the contract, so we cannot use the normal
+	// params proxy to pass parameters because it does not exist yet.
+	// Instead, we use a special temporary host implementation that knows
+	// just enough to gather the parameter data and pass it correctly to
+	// solo's contract deployment function, which in turn passes it to the
+	// contract's init() function
+	f.keys = keys
+	f.oldIndexes = append(f.oldIndexes, indexes...)
+	f.indexes = indexes
+	for i := 0; i < len(indexes); i++ {
+		indexes[i] = Key32(i)
+	}
+	f.host = ConnectHost(NewInitHost())
 	return f
 }
 
@@ -115,7 +127,8 @@ type ScFunc struct {
 	transferID int32
 }
 
-func NewScFunc(hContract, hFunction ScHname) *ScFunc {
+func NewScFunc(ctx ScFuncCallContext, hContract, hFunction ScHname) *ScFunc {
+	ctx.InitFuncCallContext()
 	return &ScFunc{ScView{hContract, hFunction, nil, nil}, 0, 0}
 }
 

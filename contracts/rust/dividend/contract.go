@@ -44,35 +44,35 @@ type Funcs struct{}
 var ScFuncs Funcs
 
 func (sc Funcs) Divide(ctx wasmlib.ScFuncCallContext) *DivideCall {
-	return &DivideCall{Func: wasmlib.NewScFunc(HScName, HFuncDivide)}
+	return &DivideCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDivide)}
 }
 
 func (sc Funcs) Init(ctx wasmlib.ScFuncCallContext) *InitCall {
-	f := &InitCall{Func: wasmlib.NewScInitFunc(HScName, HFuncInit, ctx, keyMap[:], idxMap[:])}
+	f := &InitCall{Func: wasmlib.NewScInitFunc(ctx, HScName, HFuncInit, keyMap[:], idxMap[:])}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) Member(ctx wasmlib.ScFuncCallContext) *MemberCall {
-	f := &MemberCall{Func: wasmlib.NewScFunc(HScName, HFuncMember)}
+	f := &MemberCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncMember)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) SetOwner(ctx wasmlib.ScFuncCallContext) *SetOwnerCall {
-	f := &SetOwnerCall{Func: wasmlib.NewScFunc(HScName, HFuncSetOwner)}
+	f := &SetOwnerCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetOwner)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) GetFactor(ctx wasmlib.ScViewCallContext) *GetFactorCall {
-	f := &GetFactorCall{Func: wasmlib.NewScView(HScName, HViewGetFactor)}
+	f := &GetFactorCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetFactor)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) GetOwner(ctx wasmlib.ScViewCallContext) *GetOwnerCall {
-	f := &GetOwnerCall{Func: wasmlib.NewScView(HScName, HViewGetOwner)}
+	f := &GetOwnerCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetOwner)}
 	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }

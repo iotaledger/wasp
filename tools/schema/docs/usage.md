@@ -106,9 +106,6 @@ Anyway, to show you an example of the initially generated Rust code, `mysmartcon
 looks like this before you even start modifying it:
 
 ```rust
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
-
 use wasmlib::*;
 
 use crate::*;

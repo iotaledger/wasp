@@ -27,7 +27,7 @@ func (s MutableGetFactorResults) Factor() wasmlib.ScMutableInt64 {
 Note that the schema tool will also generate an immutable version of the structure,
 suitable for accessing the results after calling this smart contract function.
 
-In the next section we will look at the specifics of view functions.
+In the next section we will look at how so-called thunk functions encapsulate access and
+parameter checking and set up the type-safe function-specific contexts.
 
-Next: [View-Only Functions](views.md)
-
+Next: [Thunk Functions](thunks.md)

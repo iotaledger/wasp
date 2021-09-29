@@ -16,6 +16,7 @@ const (
 
 const (
 	ParamCounter    = wasmlib.Key("counter")
+	ParamDelay      = wasmlib.Key("delay")
 	ParamDummy      = wasmlib.Key("dummy")
 	ParamNumRepeats = wasmlib.Key("numRepeats")
 )
@@ -32,6 +33,7 @@ const (
 	FuncCallIncrementRecurse5x = "callIncrementRecurse5x"
 	FuncEndlessLoop            = "endlessLoop"
 	FuncIncrement              = "increment"
+	FuncIncrementWithDelay     = "incrementWithDelay"
 	FuncInit                   = "init"
 	FuncLocalStateInternalCall = "localStateInternalCall"
 	FuncLocalStatePost         = "localStatePost"
@@ -48,6 +50,7 @@ const (
 	HFuncCallIncrementRecurse5x = wasmlib.ScHname(0x8749fbff)
 	HFuncEndlessLoop            = wasmlib.ScHname(0x365f0929)
 	HFuncIncrement              = wasmlib.ScHname(0xd351bd12)
+	HFuncIncrementWithDelay     = wasmlib.ScHname(0xa235bba7)
 	HFuncInit                   = wasmlib.ScHname(0x1f44d644)
 	HFuncLocalStateInternalCall = wasmlib.ScHname(0xecfc5d33)
 	HFuncLocalStatePost         = wasmlib.ScHname(0x3fd54d13)
