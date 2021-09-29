@@ -11,7 +11,7 @@
   $: MESSAGES = {
     [State.Running]: {
       title: 'Game Running!',
-      description: `The round ends in ${$timeToFinished} seconds.`,
+      description: `The round ends in ${$timeToFinished ?? '...'} seconds.`,
     },
     [State.Start]: {
       title: 'Start game',

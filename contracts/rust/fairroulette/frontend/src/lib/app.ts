@@ -192,6 +192,8 @@ export async function sendFaucetRequest() {
 
 export function calculateRoundLengthLeft(timestamp: number) {
     const roundStarted = get(round).startedAt;
+    
+    if(!timestamp || !roundStarted) return undefined
 
     if (roundStarted == 0) {
         return 0;
