@@ -8,7 +8,9 @@
 <button {disabled} class:disabled on:click={onClick}>
   <div class="label">{label}</div>
   {#if loading}
-    <div class="spinner" />
+    <div>
+      <div class="spinner" />
+    </div>
   {/if}
 </button>
 
@@ -25,8 +27,9 @@
     color: var(--white);
     padding: 12px;
     width: 100%;
+    display: flex;
+    justify-content: space-around;
     align-items: center;
-    justify-content: center;
     @media (min-width: 1024px) {
       padding: 12px 30px;
     }
