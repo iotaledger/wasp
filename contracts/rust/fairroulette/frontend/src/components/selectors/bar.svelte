@@ -66,13 +66,12 @@
       color: var(--white);
       padding-bottom: 20px;
       input {
-        background: transparent;
-        box-shadow: inset 0px 0px 5px var(--mint-green-light);
-        border: var(--gray-7);
         border-radius: 5px;
         text-align: end;
         color: var(--gray-1);
-        padding: 5px 8px;
+        background: var(--blue-dark);
+        border: 1px solid var(--border-color);
+        padding: 8px;
         &:focus {
           outline: none;
         }
@@ -80,9 +79,9 @@
     }
     .invalid-message {
       position: absolute;
-      top: 40%;
+      top: 36px;
       font-size: 10px;
-      color: var(--mint-green-light);
+      color: var(--error);
       padding: 2px 5px;
       letter-spacing: 0.5px;
     }
