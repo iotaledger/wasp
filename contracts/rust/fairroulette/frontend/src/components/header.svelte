@@ -1,12 +1,18 @@
 <script lang="ts">
+  import { navigateTo, routeIsActive } from 'svelte-router-spa';
+
+  export let currentRoute;
+  let isLanding: boolean = false;
+
+  $: currentRoute, (isLanding = routeIsActive('/'));
 </script>
 
 <header class="header">
   <div class="container">
     <img src="/assets/iota-roulette-logo.svg" alt="iota-logo-roulette" />
   </div>
-  {#if window.location.pathname !== '/demo'}
-    <a href="/demo">Try demo</a>
+  {#if isLanding}
+    <button on:click={() => navigateTo('/demo')}>Try demo</button>
   {/if}
 </header>
 
@@ -27,8 +33,10 @@
         max-width: 300px;
       }
     }
-    a {
+    button {
       position: absolute;
+      border: 0;
+      border-radius: 0;
       right: 0;
       top: 0;
       height: 50px;

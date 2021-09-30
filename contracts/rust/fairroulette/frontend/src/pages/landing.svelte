@@ -1,6 +1,6 @@
 <script lang="ts">
   import Button from '../components/button.svelte';
-  import { Navigate } from 'svelte-router-spa';
+  import { navigateTo } from 'svelte-router-spa';
 
   const HEADINGS = {
     eyebrow: 'PoC for Smart Contracts',
@@ -29,9 +29,7 @@
       <h1 class="title">{HEADINGS.title}</h1>
       <p class="description">{HEADINGS.description}</p>
       <div class="demo-button">
-        <Navigate to="/demo">
-          <Button label="Try demo" /></Navigate
-        >
+        <Button label="Try demo" onClick={() => navigateTo('demo')} />
       </div>
     </div>
     <div class="wheel">
