@@ -139,6 +139,11 @@
 
 <style lang="scss">
   .roulette-wrapper {
+    @media (min-width: 1024px) {
+      max-width: calc(100vh - 480px);
+      min-width: 400px;
+      margin: 0 auto;
+    }
     .progress-bar {
       position: relative;
       display: flex;
