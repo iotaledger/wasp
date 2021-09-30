@@ -4,6 +4,7 @@ object "ISCPYul" {
     require(iszero(callvalue()))
 
     switch selector()
+
     case 0xe6c75c6b /* "triggerEvent(string)" */ {
 	  // triggerEvent("asd") ->
 	  //   00 e6c75c6b                                                         first 4 bytes of keccak("triggerEvent(string)")
@@ -15,6 +16,13 @@ object "ISCPYul" {
 	  calldatacopy(offset, 0x44, size)
       verbatim_2i_0o(hex"c0", offset, size)
     }
+
+    case 0x47ce07cc /* "entropy()" */ {
+      let e := verbatim_0i_1o(hex"c1")
+	  mstore(0, e)
+      return(0, 0x20)
+	}
+
     default {
       revert(0, 0)
     }

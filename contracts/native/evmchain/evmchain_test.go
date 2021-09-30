@@ -370,12 +370,12 @@ func TestISCPContract(t *testing.T) {
 	require.Equal(t, evmChain.soloChain.ChainID.Array(), chainID.Array())
 }
 
-func TestISCPEvent(t *testing.T) {
+func TestISCPTriggerEvent(t *testing.T) {
 	evmChain := initEVMChain(t)
 	iscpTest := evmChain.deployISCPTestContract(evmChain.faucetKey)
 
 	// call the triggerEvent(string) function of iscp-test.sol which in turn:
-	//  calls the triggerEvent(string) function of iscp.sol, which:
+	//  calls the iscpTriggerEvent(string) function of iscp.sol, which:
 	//   executes a custom opcode, which:
 	//    gets intercepted by the evmchain contract, which:
 	//     triggers an ISCP event with the given string parameter
@@ -386,6 +386,25 @@ func TestISCPEvent(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, ev, 1)
 	require.Contains(t, ev[0], "Hi from EVM!")
+}
+
+func TestISCPEntropy(t *testing.T) {
+	evmChain := initEVMChain(t)
+	iscpTest := evmChain.deployISCPTestContract(evmChain.faucetKey)
+
+	// call the emitEntropy() function of iscp-test.sol which in turn:
+	//  calls the iscpEntropy() function of iscp.sol, which:
+	//   executes a custom opcode, which:
+	//    gets intercepted by the evmchain contract, which:
+	//     returns the entropy value from the sandbox
+	//  emits an EVM event (aka log) with the entropy value
+	res, err := iscpTest.emitEntropy()
+	require.NoError(t, err)
+	require.Equal(t, types.ReceiptStatusSuccessful, res.receipt.Status)
+	require.Len(t, res.receipt.Logs, 1)
+	entropy := res.receipt.Logs[0].Data
+	require.Len(t, entropy, 32)
+	require.NotEqualValues(t, entropy, make([]byte, 32))
 }
 
 func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {

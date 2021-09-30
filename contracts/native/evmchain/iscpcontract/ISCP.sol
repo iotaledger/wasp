@@ -28,3 +28,9 @@ function iscpTriggerEvent(string memory s) {
 	(bool success, ) = ISCP_YUL_ADDRESS.delegatecall(abi.encodeWithSignature("triggerEvent(string)", s));
 	assert(success);
 }
+
+function iscpEntropy() returns (bytes32) {
+	(bool success, bytes memory result) = ISCP_YUL_ADDRESS.delegatecall(abi.encodeWithSignature("entropy()"));
+	assert(success);
+    return abi.decode(result, (bytes32));
+}

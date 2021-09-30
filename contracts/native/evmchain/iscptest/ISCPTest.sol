@@ -16,4 +16,11 @@ contract ISCPTest {
 	function triggerEvent(string memory s) public {
 		iscpTriggerEvent(s);
 	}
+
+	event EntropyEvent(bytes32 entropy);
+
+	function emitEntropy() public {
+		bytes32 e = iscpEntropy();
+		emit EntropyEvent(e);
+	}
 }

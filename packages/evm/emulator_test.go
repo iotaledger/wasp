@@ -487,5 +487,6 @@ type iscpBackend struct {
 
 var _ vm.ISCPBackend = &iscpBackend{}
 
-func (i *iscpBackend) Event(s string) {
-}
+func (i *iscpBackend) Event(s string) {}
+
+func (i *iscpBackend) Entropy() [32]byte { return [32]byte{} }

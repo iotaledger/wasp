@@ -152,10 +152,15 @@ func (i *iscpBackend) Event(s string) {
 	i.ctx.Event(s)
 }
 
+func (i *iscpBackend) Entropy() [32]byte {
+	return i.ctx.GetEntropy()
+}
+
 type iscpBackendR struct {
 	ctx iscp.SandboxView
 }
 
 var _ vm.ISCPBackend = &iscpBackendR{}
 
-func (i *iscpBackendR) Event(s string) { panic("should not happen") }
+func (i *iscpBackendR) Event(s string)    { panic("should not happen") }
+func (i *iscpBackendR) Entropy() [32]byte { panic("should not happen") }
