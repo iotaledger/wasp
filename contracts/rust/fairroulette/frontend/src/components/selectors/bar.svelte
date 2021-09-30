@@ -112,6 +112,18 @@
           -webkit-appearance: none;
           margin-top: -8px;
         }
+        &::-moz-range-track {
+          height: 8px;
+          border-radius: 4px;
+          background: var(--gray-7);
+        }
+        &::-moz-range-thumb {
+          border: 0px solid var(--mint-green-light);
+          background: var(--mint-green-light);
+          height: 20px;
+          width: 20px;
+          border-radius: 50px;
+        }
       }
     }
   }
