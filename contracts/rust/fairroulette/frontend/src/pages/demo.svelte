@@ -109,7 +109,7 @@
     @media (min-width: 1024px) {
       flex-direction: row-reverse;
       justify-content: space-between;
-      margin-top: 48px;
+      margin-top: 24px;
     }
     .wallet {
       @media (min-width: 1024px) {
@@ -138,7 +138,6 @@
     @media (min-width: 1024px) {
       flex-direction: row;
       justify-content: space-between;
-      margin-top: 32px;
       margin-bottom: 300px;
     }
     .players {
@@ -149,6 +148,7 @@
       @media (min-width: 1024px) {
         width: 25%;
         height: calc(100vh - 450px);
+        margin-top: 32px;
       }
     }
     .roulette_game {
@@ -181,6 +181,7 @@
         margin-bottom: 0;
         width: 25%;
         height: calc(100vh - 450px);
+        margin-top: 32px;
       }
     }
   }
