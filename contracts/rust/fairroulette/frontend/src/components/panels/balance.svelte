@@ -37,7 +37,7 @@
         line-height: 115%;
         letter-spacing: 0.5px;
         color: var(--white);
-        word-break: break-all;
+        word-break: break-word;
 
         @media (min-width: 1024px) {
           font-size: 32px;

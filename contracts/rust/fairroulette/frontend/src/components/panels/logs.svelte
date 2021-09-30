@@ -74,7 +74,7 @@
               letter-spacing: 0.5px;
               color: var(--mint-green-dark);
               padding: 2px 6px;
-              word-break: break-all;
+              word-break: break-word;
             }
             .log-timestamp {
               font-weight: 500;
@@ -92,7 +92,7 @@
             line-height: 150%;
             letter-spacing: 0.5px;
             color: var(--gray-3);
-            word-break: break-all;
+            word-break: break-word;
           }
         }
       }
