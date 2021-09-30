@@ -154,9 +154,6 @@ func (f *ScFunc) Post() {
 }
 
 func (f *ScFunc) PostToChain(chainID ScChainID) {
-	if f.transferID == 0 {
-		Panic("transfer is required for post")
-	}
 	encode := NewBytesEncoder()
 	encode.ChainID(chainID)
 	encode.Hname(f.hContract)

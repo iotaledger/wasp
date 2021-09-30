@@ -34,13 +34,20 @@ func (s ImmutableFairRouletteState) LastWinningNumber() wasmlib.ScImmutableInt64
 	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateLastWinningNumber])
 }
 
-func (s ImmutableFairRouletteState) LockedBets() ArrayOfImmutableBet {
-	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateLockedBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
-	return ArrayOfImmutableBet{objID: arrID}
-}
-
 func (s ImmutableFairRouletteState) PlayPeriod() wasmlib.ScImmutableInt32 {
 	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxStatePlayPeriod])
+}
+
+func (s ImmutableFairRouletteState) RoundNumber() wasmlib.ScImmutableInt64 {
+	return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxStateRoundNumber])
+}
+
+func (s ImmutableFairRouletteState) RoundStartedAt() wasmlib.ScImmutableInt32 {
+	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxStateRoundStartedAt])
+}
+
+func (s ImmutableFairRouletteState) RoundStatus() wasmlib.ScImmutableInt16 {
+	return wasmlib.NewScImmutableInt16(s.id, idxMap[IdxStateRoundStatus])
 }
 
 type ArrayOfMutableBet struct {
@@ -72,11 +79,18 @@ func (s MutableFairRouletteState) LastWinningNumber() wasmlib.ScMutableInt64 {
 	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateLastWinningNumber])
 }
 
-func (s MutableFairRouletteState) LockedBets() ArrayOfMutableBet {
-	arrID := wasmlib.GetObjectID(s.id, idxMap[IdxStateLockedBets], wasmlib.TYPE_ARRAY|wasmlib.TYPE_BYTES)
-	return ArrayOfMutableBet{objID: arrID}
-}
-
 func (s MutableFairRouletteState) PlayPeriod() wasmlib.ScMutableInt32 {
 	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxStatePlayPeriod])
+}
+
+func (s MutableFairRouletteState) RoundNumber() wasmlib.ScMutableInt64 {
+	return wasmlib.NewScMutableInt64(s.id, idxMap[IdxStateRoundNumber])
+}
+
+func (s MutableFairRouletteState) RoundStartedAt() wasmlib.ScMutableInt32 {
+	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxStateRoundStartedAt])
+}
+
+func (s MutableFairRouletteState) RoundStatus() wasmlib.ScMutableInt16 {
+	return wasmlib.NewScMutableInt16(s.id, idxMap[IdxStateRoundStatus])
 }

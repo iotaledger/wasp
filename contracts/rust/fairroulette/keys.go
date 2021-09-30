@@ -13,22 +13,32 @@ const (
 	IdxParamNumber             = 0
 	IdxParamPlayPeriod         = 1
 	IdxResultLastWinningNumber = 2
-	IdxStateBets               = 3
-	IdxStateLastWinningNumber  = 4
-	IdxStateLockedBets         = 5
-	IdxStatePlayPeriod         = 6
+	IdxResultRoundNumber       = 3
+	IdxResultRoundStartedAt    = 4
+	IdxResultRoundStatus       = 5
+	IdxStateBets               = 6
+	IdxStateLastWinningNumber  = 7
+	IdxStatePlayPeriod         = 8
+	IdxStateRoundNumber        = 9
+	IdxStateRoundStartedAt     = 10
+	IdxStateRoundStatus        = 11
 )
 
-const keyMapLen = 7
+const keyMapLen = 12
 
 var keyMap = [keyMapLen]wasmlib.Key{
 	ParamNumber,
 	ParamPlayPeriod,
 	ResultLastWinningNumber,
+	ResultRoundNumber,
+	ResultRoundStartedAt,
+	ResultRoundStatus,
 	StateBets,
 	StateLastWinningNumber,
-	StateLockedBets,
 	StatePlayPeriod,
+	StateRoundNumber,
+	StateRoundStartedAt,
+	StateRoundStatus,
 }
 
 var idxMap [keyMapLen]wasmlib.Key32
