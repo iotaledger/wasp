@@ -55,10 +55,16 @@ Once this command has been executed successfully your EVM chain is up and runnin
 In order to communicate with the EVM contract we need to run a additional server application that is compatible with how interaction usually takes place on other networks. This allows us to use other tools from those ecosystems to connect to our EVM chain like [MetaMask](https://metamask.io) and [Hardhat](https://hardhat.org/). To run this server simply run 
 
 ```bash=
-wasp-cli chain evm jsonrpc
+wasp-cli chain evm jsonrpc --chainid 1074
 ```
 
-This will start the JSON/RPC server on port 8545 for us. We can now simply point MetaMask or Hardhat to that servers address on port 8545 and interact with it like any other EVM based chain.
+This will start the JSON/RPC server on port 8545 for us with Chain ID 1074. We can now simply point MetaMask or Hardhat to that servers address on port 8545 and interact with it like any other EVM based chain.
+
+:::caution
+
+re-using a existing Chain ID is not recommended and can be a security risk. For any serious chain you will be running make sure you register a unique Chain ID on [Chainlist](https://chainlist.org/) and use that instead of the default.
+
+:::
 
 :::warning
 

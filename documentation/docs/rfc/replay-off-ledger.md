@@ -14,11 +14,11 @@ same _off-ledger request_ is re-posted again.
 
 ## Replay protection by request receipts in the state
 
-The VM through [blocklog core contract](../../packages/vm/core/blocklog/interface.go) stores the ID of each request processed
+The VM through [blocklog core contract](https://github.com/iotaledger/wasp/blob/develop/packages/vm/core/blocklog/interface.go) stores the ID of each request processed
 by the chain in the state, together with the result information (receipt). It can be retrieved by its _request id_.
 The _blocklog_ core contract also provides a way for fast check if the request was already processed in the past.
 
-The [mempool](../../packages/chain/mempool/mempool.go#L116) checks the state and removes any requests which are already processed.  
+The [mempool](https://github.com/iotaledger/wasp/blob/develop/packages/chain/mempool/mempool.go) checks the state and removes any requests which are already processed.  
 The processed request will never appear in the batch proposal during the consensus process.
 
 The above is valid for both _off-ledger_ and _on-ledger_ requests. It means current implementation is fundamentally protected  
