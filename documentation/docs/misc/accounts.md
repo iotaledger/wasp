@@ -56,7 +56,7 @@ full control of its on-chain funds.
 The `Sandbox` interface provides `TransferToAddress` method for the smart contract 
 to transfer its funds to any address on the Tangle.
 
-For more information see [accounts contract](../contract_core/accounts.md).
+For more information see [accounts contract](../guide/core_concepts/core_contracts/accounts.md).
 
 ## How secure are the on-chain accounts?
 

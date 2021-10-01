@@ -1,3 +1,0 @@
-# The `governance` contract
-
-TODO
