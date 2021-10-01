@@ -282,7 +282,7 @@ module.exports = {
                     type: 'doc',
                     label: 'Introduction',
                     id: 'guide/rust_wasm/introduction',
-                },
+                }
             ]
         },
         {
@@ -314,6 +314,17 @@ module.exports = {
                     label: 'Tooling',
                     id: 'guide/evm/tooling',
                 }
+            ]
+        },
+        {
+            type: 'category',
+            label: 'Example projects',
+            items: [
+                {
+                    type: 'doc',
+                    label: 'Fair Roulette',
+                    id: 'guide/example_projects/fair_roulette',
+                },
             ]
         },
         {
