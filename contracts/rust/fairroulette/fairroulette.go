@@ -120,7 +120,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	// using the transaction hash as initial entropy data. Note that the pseudo-random number
 	// generator will use the next 8 bytes from the hash as its random Int64 number and once
 	// it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
-	// Here we determine the winning number for this round in the range of 0 thru MaxNumber.
+	// Here we determine the winning number for this round in the range of 1 thru MaxNumber.
 	winningNumber := ctx.Utility().Random(MaxNumber-1) + 1
 
 	// Save the last winning number in state storage under 'lastWinningNumber' so that there
