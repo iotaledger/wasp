@@ -16,10 +16,10 @@ import (
 // Define some default configuration parameters.
 
 // The maximum number one can bet on. The range of numbers starts at 0.
-const MaxNumber = 36
+const MaxNumber = 8
 
 // The default playing period of one betting round in seconds.
-const DefaultPlayPeriod = 30
+const DefaultPlayPeriod = 60
 
 // Enable this if you deploy the contract to an actual node. It will pay out the prize after a certain timeout.
 const EnableSelfPost = true
@@ -32,7 +32,7 @@ const NanoTimeDivider = 1000_000_000
 // expires the smart contract will automatically pay out any winners and start a new betting
 // round upon arrival of a new bet.
 // The 'placeBet' function takes 1 mandatory parameter:
-// - 'number', which must be an Int64 number from 0 to MAX_NUMBER
+// - 'number', which must be an Int64 number from 1 to MAX_NUMBER
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
@@ -121,7 +121,7 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	// generator will use the next 8 bytes from the hash as its random Int64 number and once
 	// it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
 	// Here we determine the winning number for this round in the range of 0 thru MaxNumber.
-	winningNumber := ctx.Utility().Random(MaxNumber)
+	winningNumber := ctx.Utility().Random(MaxNumber-1) + 1
 
 	// Save the last winning number in state storage under 'lastWinningNumber' so that there
 	// is (limited) time for people to call the 'getLastWinningNumber' View to verify the last

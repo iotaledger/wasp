@@ -26,7 +26,7 @@ const ENABLE_SELF_POST: bool = true;
 // The number to divide nano seconds to seconds.
 const NANO_TIME_DIVIDER: i64 = 1000000000;
 
-// 'placeBet' is used by betters to place a bet on a number from 0 to MAX_NUMBER. The first
+// 'placeBet' is used by betters to place a bet on a number from 1 to MAX_NUMBER. The first
 // incoming bet triggers a betting round of configurable duration. After the playing period
 // expires the smart contract will automatically pay out any winners and start a new betting
 // round upon arrival of a new bet.
@@ -133,7 +133,7 @@ pub fn func_pay_winners(ctx: &ScFuncContext, f: &PayWinnersContext) {
   // generator will use the next 8 bytes from the hash as its random Int64 number and once
   // it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
   // Here we determine the winning number for this round in the range of 0 thru MAX_NUMBER.
-  let winning_number: i64 = ctx.utility().random(MAX_NUMBER);
+  let winning_number: i64 = ctx.utility().random(MAX_NUMBER - 1) + 1;
 
   // Save the last winning number in state storage under 'lastWinningNumber' so that there
   // is (limited) time for people to call the 'getLastWinningNumber' View to verify the last
