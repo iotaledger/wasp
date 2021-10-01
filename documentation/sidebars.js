@@ -303,6 +303,16 @@ module.exports = {
                     type: 'doc',
                     label: 'Creating a chain',
                     id: 'guide/evm/create-chain',
+                },
+                {
+                    type: 'doc',
+                    label: 'Example contract',
+                    id: 'guide/evm/example',
+                },
+                {
+                    type: 'doc',
+                    label: 'Tooling',
+                    id: 'guide/evm/tooling',
                 }
             ]
         },

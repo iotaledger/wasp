@@ -83,7 +83,6 @@ Goal of the documentation: Give a higher level overview of what ISCP is and how 
     - CLI
     - Metamask configuration
     - Hardhat configuration
-    - Redux configuration
     - Web3/Ethers.js setup
 - External EVM references
 - Examples/Tutorials
