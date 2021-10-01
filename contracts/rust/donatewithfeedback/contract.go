@@ -35,25 +35,25 @@ type Funcs struct{}
 var ScFuncs Funcs
 
 func (sc Funcs) Donate(ctx wasmlib.ScFuncCallContext) *DonateCall {
-	f := &DonateCall{Func: wasmlib.NewScFunc(HScName, HFuncDonate)}
+	f := &DonateCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDonate)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) Withdraw(ctx wasmlib.ScFuncCallContext) *WithdrawCall {
-	f := &WithdrawCall{Func: wasmlib.NewScFunc(HScName, HFuncWithdraw)}
+	f := &WithdrawCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncWithdraw)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) Donation(ctx wasmlib.ScViewCallContext) *DonationCall {
-	f := &DonationCall{Func: wasmlib.NewScView(HScName, HViewDonation)}
+	f := &DonationCall{Func: wasmlib.NewScView(ctx, HScName, HViewDonation)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) DonationInfo(ctx wasmlib.ScViewCallContext) *DonationInfoCall {
-	f := &DonationInfoCall{Func: wasmlib.NewScView(HScName, HViewDonationInfo)}
+	f := &DonationInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewDonationInfo)}
 	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }

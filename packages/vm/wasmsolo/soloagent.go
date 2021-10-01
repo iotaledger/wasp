@@ -6,6 +6,7 @@ package wasmsolo
 import (
 	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/hive.go/crypto/ed25519"
+	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/wasmlib"
@@ -16,6 +17,7 @@ type SoloAgent struct {
 	env     *solo.Solo
 	pair    *ed25519.KeyPair
 	address ledgerstate.Address
+	hname   iscp.Hname
 }
 
 func NewSoloAgent(env *solo.Solo) *SoloAgent {
@@ -29,7 +31,7 @@ func (a *SoloAgent) ScAddress() wasmlib.ScAddress {
 }
 
 func (a *SoloAgent) ScAgentID() wasmlib.ScAgentID {
-	return a.ScAddress().AsAgentID()
+	return wasmlib.NewScAgentID(a.ScAddress(), wasmlib.ScHname(a.hname))
 }
 
 func (a *SoloAgent) Balance(color ...wasmlib.ScColor) int64 {

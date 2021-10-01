@@ -14,6 +14,11 @@
     },
     "increment": {
     },
+    "incrementWithDelay": {
+      "params": {
+        "delay": "Int32 // delay in seconds"
+      }
+    },
     "callIncrement": {
     },
     "callIncrementRecurse5x": {

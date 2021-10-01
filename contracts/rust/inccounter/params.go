@@ -9,6 +9,22 @@ package inccounter
 
 import "github.com/iotaledger/wasp/packages/vm/wasmlib"
 
+type ImmutableIncrementWithDelayParams struct {
+	id int32
+}
+
+func (s ImmutableIncrementWithDelayParams) Delay() wasmlib.ScImmutableInt32 {
+	return wasmlib.NewScImmutableInt32(s.id, idxMap[IdxParamDelay])
+}
+
+type MutableIncrementWithDelayParams struct {
+	id int32
+}
+
+func (s MutableIncrementWithDelayParams) Delay() wasmlib.ScMutableInt32 {
+	return wasmlib.NewScMutableInt32(s.id, idxMap[IdxParamDelay])
+}
+
 type ImmutableInitParams struct {
 	id int32
 }

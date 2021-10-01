@@ -57,10 +57,10 @@ pub struct ScAgentID {
 }
 
 impl ScAgentID {
-    // construct from chain id and contract name hash
-    pub fn new(chain_id: &ScChainID, hname: &ScHname) -> ScAgentID {
+    // construct from address and contract name hash
+    pub fn new(address: &ScAddress, hname: &ScHname) -> ScAgentID {
         let mut agent_id = ScAgentID { id: [0; 37] };
-        agent_id.id[..33].copy_from_slice(&chain_id.to_bytes());
+        agent_id.id[..33].copy_from_slice(&address.to_bytes());
         agent_id.id[33..].copy_from_slice(&hname.to_bytes());
         agent_id
     }
@@ -84,7 +84,7 @@ impl ScAgentID {
 
     // checks to see if agent id represents a Tangle address
     pub fn is_address(&self) -> bool {
-        self.address().as_agent_id() == *self
+        self.hname() == Hname(0)
     }
 
     // convert to byte array representation

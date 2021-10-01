@@ -161,10 +161,6 @@ impl ScFunc {
     }
 
     pub fn post_to_chain(&self, chain_id: ScChainID) {
-        if self.transfer_id == 0 {
-            panic("transfer is required for post")
-        }
-
         let mut encode = BytesEncoder::new();
         encode.chain_id(&chain_id);
         encode.hname(&self.view.h_contract);

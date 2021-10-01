@@ -15,6 +15,28 @@ use crate::*;
 use crate::keys::*;
 
 #[derive(Clone, Copy)]
+pub struct ImmutableIncrementWithDelayParams {
+    pub(crate) id: i32,
+}
+
+impl ImmutableIncrementWithDelayParams {
+    pub fn delay(&self) -> ScImmutableInt32 {
+        ScImmutableInt32::new(self.id, idx_map(IDX_PARAM_DELAY))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableIncrementWithDelayParams {
+    pub(crate) id: i32,
+}
+
+impl MutableIncrementWithDelayParams {
+    pub fn delay(&self) -> ScMutableInt32 {
+        ScMutableInt32::new(self.id, idx_map(IDX_PARAM_DELAY))
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct ImmutableInitParams {
     pub(crate) id: i32,
 }
