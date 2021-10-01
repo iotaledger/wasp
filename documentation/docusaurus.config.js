@@ -6,7 +6,7 @@ module.exports = {
   title: 'IOTA Smart Contract Protocol',
   tagline: 'IOTA smart contract protocol.',
   url: 'https://iscp.docs.iota.org',
-  baseUrl: '/wasp/',
+  baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
   favicon: '/img/logo/favicon.ico',
