@@ -31,11 +31,6 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'ISCP',
-                    id: 'guide/core_concepts/iscp',
-                },
-                {
-                    type: 'doc',
                     label: 'ISCP Architecture',
                     id: 'guide/core_concepts/iscp-architecture',
                 },
