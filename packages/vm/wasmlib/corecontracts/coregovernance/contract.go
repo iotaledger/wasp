@@ -74,87 +74,87 @@ type Funcs struct{}
 var ScFuncs Funcs
 
 func (sc Funcs) AddAllowedStateControllerAddress(ctx wasmlib.ScFuncCallContext) *AddAllowedStateControllerAddressCall {
-	f := &AddAllowedStateControllerAddressCall{Func: wasmlib.NewScFunc(HScName, HFuncAddAllowedStateControllerAddress)}
+	f := &AddAllowedStateControllerAddressCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncAddAllowedStateControllerAddress)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) ClaimChainOwnership(ctx wasmlib.ScFuncCallContext) *ClaimChainOwnershipCall {
-	return &ClaimChainOwnershipCall{Func: wasmlib.NewScFunc(HScName, HFuncClaimChainOwnership)}
+	return &ClaimChainOwnershipCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncClaimChainOwnership)}
 }
 
 func (sc Funcs) DelegateChainOwnership(ctx wasmlib.ScFuncCallContext) *DelegateChainOwnershipCall {
-	f := &DelegateChainOwnershipCall{Func: wasmlib.NewScFunc(HScName, HFuncDelegateChainOwnership)}
+	f := &DelegateChainOwnershipCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncDelegateChainOwnership)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) RemoveAllowedStateControllerAddress(ctx wasmlib.ScFuncCallContext) *RemoveAllowedStateControllerAddressCall {
-	f := &RemoveAllowedStateControllerAddressCall{Func: wasmlib.NewScFunc(HScName, HFuncRemoveAllowedStateControllerAddress)}
+	f := &RemoveAllowedStateControllerAddressCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRemoveAllowedStateControllerAddress)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) RotateStateController(ctx wasmlib.ScFuncCallContext) *RotateStateControllerCall {
-	f := &RotateStateControllerCall{Func: wasmlib.NewScFunc(HScName, HFuncRotateStateController)}
+	f := &RotateStateControllerCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncRotateStateController)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) SetChainInfo(ctx wasmlib.ScFuncCallContext) *SetChainInfoCall {
-	f := &SetChainInfoCall{Func: wasmlib.NewScFunc(HScName, HFuncSetChainInfo)}
+	f := &SetChainInfoCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetChainInfo)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) SetContractFee(ctx wasmlib.ScFuncCallContext) *SetContractFeeCall {
-	f := &SetContractFeeCall{Func: wasmlib.NewScFunc(HScName, HFuncSetContractFee)}
+	f := &SetContractFeeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetContractFee)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) SetDefaultFee(ctx wasmlib.ScFuncCallContext) *SetDefaultFeeCall {
-	f := &SetDefaultFeeCall{Func: wasmlib.NewScFunc(HScName, HFuncSetDefaultFee)}
+	f := &SetDefaultFeeCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncSetDefaultFee)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) GetAllowedStateControllerAddresses(ctx wasmlib.ScViewCallContext) *GetAllowedStateControllerAddressesCall {
-	f := &GetAllowedStateControllerAddressesCall{Func: wasmlib.NewScView(HScName, HViewGetAllowedStateControllerAddresses)}
+	f := &GetAllowedStateControllerAddressesCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetAllowedStateControllerAddresses)}
 	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) GetChainInfo(ctx wasmlib.ScViewCallContext) *GetChainInfoCall {
-	f := &GetChainInfoCall{Func: wasmlib.NewScView(HScName, HViewGetChainInfo)}
+	f := &GetChainInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetChainInfo)}
 	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) GetFeeInfo(ctx wasmlib.ScViewCallContext) *GetFeeInfoCall {
-	f := &GetFeeInfoCall{Func: wasmlib.NewScView(HScName, HViewGetFeeInfo)}
+	f := &GetFeeInfoCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetFeeInfo)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) GetMaxBlobSize(ctx wasmlib.ScViewCallContext) *GetMaxBlobSizeCall {
-	f := &GetMaxBlobSizeCall{Func: wasmlib.NewScView(HScName, HViewGetMaxBlobSize)}
+	f := &GetMaxBlobSizeCall{Func: wasmlib.NewScView(ctx, HScName, HViewGetMaxBlobSize)}
 	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }
 
 func OnLoad() {
 	exports := wasmlib.NewScExports()
-	exports.AddFunc(FuncAddAllowedStateControllerAddress, nil)
-	exports.AddFunc(FuncClaimChainOwnership, nil)
-	exports.AddFunc(FuncDelegateChainOwnership, nil)
-	exports.AddFunc(FuncRemoveAllowedStateControllerAddress, nil)
-	exports.AddFunc(FuncRotateStateController, nil)
-	exports.AddFunc(FuncSetChainInfo, nil)
-	exports.AddFunc(FuncSetContractFee, nil)
-	exports.AddFunc(FuncSetDefaultFee, nil)
-	exports.AddView(ViewGetAllowedStateControllerAddresses, nil)
-	exports.AddView(ViewGetChainInfo, nil)
-	exports.AddView(ViewGetFeeInfo, nil)
-	exports.AddView(ViewGetMaxBlobSize, nil)
+	exports.AddFunc(FuncAddAllowedStateControllerAddress, wasmlib.FuncError)
+	exports.AddFunc(FuncClaimChainOwnership, wasmlib.FuncError)
+	exports.AddFunc(FuncDelegateChainOwnership, wasmlib.FuncError)
+	exports.AddFunc(FuncRemoveAllowedStateControllerAddress, wasmlib.FuncError)
+	exports.AddFunc(FuncRotateStateController, wasmlib.FuncError)
+	exports.AddFunc(FuncSetChainInfo, wasmlib.FuncError)
+	exports.AddFunc(FuncSetContractFee, wasmlib.FuncError)
+	exports.AddFunc(FuncSetDefaultFee, wasmlib.FuncError)
+	exports.AddView(ViewGetAllowedStateControllerAddresses, wasmlib.ViewError)
+	exports.AddView(ViewGetChainInfo, wasmlib.ViewError)
+	exports.AddView(ViewGetFeeInfo, wasmlib.ViewError)
+	exports.AddView(ViewGetMaxBlobSize, wasmlib.ViewError)
 }

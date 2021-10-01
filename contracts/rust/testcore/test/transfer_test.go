@@ -68,9 +68,6 @@ func testDoNothingUser(t *testing.T, w bool) {
 
 func TestWithdrawToAddress(t *testing.T) { run2(t, testWithdrawToAddress) }
 func testWithdrawToAddress(t *testing.T, w bool) {
-	if w && *wasmsolo.GoDebug {
-		t.SkipNow()
-	}
 	ctx := setupTest(t, w)
 
 	user := ctx.NewSoloAgent()
@@ -81,7 +78,7 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	grant.Func.TransferIotas(1).Post()
 	require.NoError(t, ctxRoot.Err)
 
-	nop := testcore.ScFuncs.DoNothing(ctx.Switch().Sign(user))
+	nop := testcore.ScFuncs.DoNothing(ctx.Sign(user))
 	nop.Func.TransferIotas(42).Post()
 	require.NoError(t, ctx.Err)
 

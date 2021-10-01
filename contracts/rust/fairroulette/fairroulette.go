@@ -15,18 +15,24 @@ import (
 
 // Define some default configuration parameters.
 
-// The maximum number one can bet on. The range of numbers starts at 1.
-const MaxNumber = 5
+// The maximum number one can bet on. The range of numbers starts at 0.
+const MaxNumber = 36
 
 // The default playing period of one betting round in seconds.
-const DefaultPlayPeriod = 1200
+const DefaultPlayPeriod = 30
+
+// Enable this if you deploy the contract to an actual node. It will pay out the prize after a certain timeout.
+const EnableSelfPost = true
+
+// The number to divide nano seconds to seconds.
+const NanoTimeDivider = 1000_000_000
 
 // 'placeBet' is used by betters to place a bet on a number from 1 to MAX_NUMBER. The first
 // incoming bet triggers a betting round of configurable duration. After the playing period
 // expires the smart contract will automatically pay out any winners and start a new betting
 // round upon arrival of a new bet.
 // The 'placeBet' function takes 1 mandatory parameter:
-// - 'number', which must be an Int64 number from 1 to MAX_NUMBER
+// - 'number', which must be an Int64 number from 0 to MAX_NUMBER
 // The 'member' function will save the number together with the address of the better and
 // the amount of incoming iotas as the bet amount in its state.
 func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
@@ -80,69 +86,42 @@ func funcPlaceBet(ctx wasmlib.ScFuncContext, f *PlaceBetContext) {
 			playPeriod = DefaultPlayPeriod
 		}
 
-		// And now for our next trick we post a delayed request to ourselves on the Tangle.
-		// We are requesting to call the 'lockBets' function, but delay it for the play_period
-		// amount of seconds. This will lock in the playing period, during which more bets can
-		// be placed. Once the 'lockBets' function gets triggered by the ISCP it will gather all
-		// bets up to that moment as the ones to consider for determining the winner.
-		ScFuncs.LockBets(ctx).Func.Delay(playPeriod).TransferIotas(1).Post()
+		if EnableSelfPost {
+			f.State.RoundStatus().SetValue(1)
+
+			// timestamp is nanotime, divide by NanoTimeDivider to get seconds => common unix timestamp
+			timestamp := int32(ctx.Timestamp() / NanoTimeDivider)
+			f.State.RoundStartedAt().SetValue(timestamp)
+
+			ctx.Event("fairroulette.round.state " + f.State.RoundStatus().String() +
+				" " + ctx.Utility().String(int64(timestamp)))
+
+			roundNumber := f.State.RoundNumber()
+			roundNumber.SetValue(roundNumber.Value() + 1)
+
+			ctx.Event("fairroulette.round.number " + roundNumber.String())
+
+			// And now for our next trick we post a delayed request to ourselves on the Tangle.
+			// We are requesting to call the 'payWinners' function, but delay it for the playPeriod
+			// amount of seconds. This will lock in the playing period, during which more bets can
+			// be placed. Once the 'payWinners' function gets triggered by the ISCP it will gather
+			// all bets up to that moment as the ones to consider for determining the winner.
+			ScFuncs.PayWinners(ctx).Func.Delay(playPeriod).TransferIotas(1).Post()
+		}
 	}
 }
 
-// 'lockBets' is a function whose execution gets initiated by the 'placeBets' function as soon as
-// the first bet comes in and will be triggered after a configurable number of seconds that defines
-// the length of the playing round that started with that first bet. While this function is waiting
-// to get triggered by the ISCP at the correct time any other incoming bets are added to the "bets"
-// array in state storage. Once the 'lockBets' function gets triggered it will move all bets to a
-// second state storage array called "lockedBets", after which it will request the 'payWinners'
-// function to be run. Note that any bets coming in after that moment will start the cycle from
-// scratch, with the first incoming bet triggering a new delayed execution of 'lockBets'.
-func funcLockBets(ctx wasmlib.ScFuncContext, f *LockBetsContext) {
-	// Get the bets array in state storage.
-	bets := f.State.Bets()
-
-	// Get the lockedBets array in state storage.
-	lockedBets := f.State.LockedBets()
-
-	// Determine the amount of bets in the 'bets' array.
-	nrBets := bets.Length()
-
-	// Copy all bet data from the 'bets' array to the 'lockedBets' array by
-	// looping through all indexes of the array and copying the bets one by one.
-	for i := int32(0); i < nrBets; i++ {
-		// Get the bet data stored at the next index in the 'bets' array.
-		bet := bets.GetBet(i).Value()
-
-		// Save the bet data at the next index in the 'lockedBets' array.
-		lockedBets.GetBet(i).SetValue(bet)
-	}
-
-	// Now that we have a copy of all bets it is safe to clear the 'bets' array
-	// This will reset the length to zero, so that the next incoming bet will once
-	// again trigger the delayed 'lockBets' request.
-	bets.Clear()
-
-	// Next we trigger an immediate request to the 'payWinners' function
-	ScFuncs.PayWinners(ctx).Func.TransferIotas(1).Post()
-}
-
-// 'payWinners' is a function whose execution gets initiated by the 'lockBets' function.
-// The reason that the 'lockBets' function does not immediately take care of paying the winners
-// itself is that we need to introduce some unpredictability in the outcome of the randomizer
-// used in selecting the winning number. To prevent people from observing the 'lockBets' request
-// and potentially calculating the winning value in advance the 'lockBets' function instead asks
-// the 'payWinners' function to do this once the bets have been locked. This will generate a new
-// transaction with completely unpredictable transaction hash. This hash is what we will use as
-// a deterministic source of entropy for the random number generator. In this way every node in
-// the committee will be using the same pseudo-random value sequence, which in turn makes sure
-// that all nodes can agree on the outcome.
+// 'payWinners' is a function whose execution gets initiated by the 'placeBet' function.
+// It collects a list of all bets, generates a random number, sorts out the winners and transfers
+// the calculated winning sum to each attendee.
+//nolint:funlen
 func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	// Use the built-in random number generator which has been automatically initialized by
 	// using the transaction hash as initial entropy data. Note that the pseudo-random number
 	// generator will use the next 8 bytes from the hash as its random Int64 number and once
 	// it runs out of data it simply hashes the previous hash for a next pseudo-random sequence.
-	// Here we determine the winning number for this round in the range of 1 thru MaxNumber.
-	winningNumber := ctx.Utility().Random(MaxNumber) + 1
+	// Here we determine the winning number for this round in the range of 0 thru MaxNumber.
+	winningNumber := ctx.Utility().Random(MaxNumber)
 
 	// Save the last winning number in state storage under 'lastWinningNumber' so that there
 	// is (limited) time for people to call the 'getLastWinningNumber' View to verify the last
@@ -159,16 +138,16 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 	totalWinAmount := int64(0)
 	winners := make([]*Bet, 0)
 
-	// Get the 'lockedBets' array in state storage.
-	lockedBets := f.State.LockedBets()
+	// Get the 'bets' array in state storage.
+	bets := f.State.Bets()
 
-	// Determine the amount of bets in the 'lockedBets' array.
-	nrBets := lockedBets.Length()
+	// Determine the amount of bets in the 'bets' array.
+	nrBets := bets.Length()
 
-	// Loop through all indexes of the 'lockedBets' array.
+	// Loop through all indexes of the 'bets' array.
 	for i := int32(0); i < nrBets; i++ {
 		// Retrieve the bet stored at the next index
-		bet := lockedBets.GetBet(i).Value()
+		bet := bets.GetBet(i).Value()
 
 		// Add this bet's amount to the running total bet amount
 		totalBetAmount += bet.Amount
@@ -183,14 +162,12 @@ func funcPayWinners(ctx wasmlib.ScFuncContext, f *PayWinnersContext) {
 		}
 	}
 
-	// Now that we preprocessed all bets we can get rid of the data in state storage so that
-	// the 'lockedBets' array becomes available for when the next betting round ends.
-	lockedBets.Clear()
+	// Now that we preprocessed all bets we can get rid of the data in state storage
+	// so that the 'bets' array becomes available for when the next betting round ends.
+	bets.Clear()
 
-	payWinnersProportionally(ctx, winners, totalBetAmount, totalWinAmount)
-}
+	ctx.Event("fairroulette.round.winning_number " + ctx.Utility().String(winningNumber))
 
-func payWinnersProportionally(ctx wasmlib.ScFuncContext, winners []*Bet, totalBetAmount, totalWinAmount int64) {
 	// Did we have any winners at all?
 	if len(winners) == 0 {
 		// No winners, log this fact to the log on the host.
@@ -231,9 +208,8 @@ func payWinnersProportionally(ctx wasmlib.ScFuncContext, winners []*Bet, totalBe
 			ctx.TransferToAddress(bet.Better.Address(), transfers)
 		}
 
-		// Log who got sent what in the log on the host.
-		text := "Pay " + ctx.Utility().String(payout) + " to " + bet.Better.String()
-		ctx.Log(text)
+		// Announce who got sent what as event.
+		ctx.Event("fairroulette.payout " + bet.Better.String() + " " + ctx.Utility().String(payout))
 	}
 
 	// This is where we transfer the remainder after payout to the creator of the smart contract.
@@ -246,6 +222,10 @@ func payWinnersProportionally(ctx wasmlib.ScFuncContext, winners []*Bet, totalBe
 		// Send the remainder to the contract creator.
 		ctx.TransferToAddress(ctx.ContractCreator().Address(), transfers)
 	}
+
+	// Set round status to 0, send out event to notify that the round has ended
+	f.State.RoundStatus().SetValue(0)
+	ctx.Event("fairroulette.round.state " + f.State.RoundStatus().String())
 }
 
 // 'playPeriod' can be used by the contract creator to set the length of a betting round
@@ -256,7 +236,7 @@ func funcPlayPeriod(ctx wasmlib.ScFuncContext, f *PlayPeriodContext) {
 	playPeriod := f.Params.PlayPeriod().Value()
 
 	// Require that the play period (in seconds) is not ridiculously low.
-	// Otherwise panic out with an error message.
+	// Otherwise, panic out with an error message.
 	ctx.Require(playPeriod >= 10, "invalid play period")
 
 	// Now we set the corresponding variable 'playPeriod' in state storage.
@@ -269,4 +249,28 @@ func viewLastWinningNumber(ctx wasmlib.ScViewContext, f *LastWinningNumberContex
 
 	// Set the 'lastWinningNumber' in results to the value from state storage.
 	f.Results.LastWinningNumber().SetValue(lastWinningNumber)
+}
+
+func viewRoundNumber(ctx wasmlib.ScViewContext, f *RoundNumberContext) {
+	// Get the 'roundNumber' int64 value from state storage.
+	roundNumber := f.State.RoundNumber().Value()
+
+	// Set the 'roundNumber' in results to the value from state storage.
+	f.Results.RoundNumber().SetValue(roundNumber)
+}
+
+func viewRoundStatus(ctx wasmlib.ScViewContext, f *RoundStatusContext) {
+	// Get the 'roundStatus' int16 value from state storage.
+	roundStatus := f.State.RoundStatus().Value()
+
+	// Set the 'roundStatus' in results to the value from state storage.
+	f.Results.RoundStatus().SetValue(roundStatus)
+}
+
+func viewRoundStartedAt(ctx wasmlib.ScViewContext, f *RoundStartedAtContext) {
+	// Get the 'roundStartedAt' int32 value from state storage.
+	roundStartedAt := f.State.RoundStartedAt().Value()
+
+	// Set the 'roundStartedAt' in results to the value from state storage.
+	f.Results.RoundStartedAt().SetValue(roundStartedAt)
 }

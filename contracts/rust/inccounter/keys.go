@@ -11,17 +11,19 @@ import "github.com/iotaledger/wasp/packages/vm/wasmlib"
 
 const (
 	IdxParamCounter    = 0
-	IdxParamDummy      = 1
-	IdxParamNumRepeats = 2
-	IdxResultCounter   = 3
-	IdxStateCounter    = 4
-	IdxStateNumRepeats = 5
+	IdxParamDelay      = 1
+	IdxParamDummy      = 2
+	IdxParamNumRepeats = 3
+	IdxResultCounter   = 4
+	IdxStateCounter    = 5
+	IdxStateNumRepeats = 6
 )
 
-const keyMapLen = 6
+const keyMapLen = 7
 
 var keyMap = [keyMapLen]wasmlib.Key{
 	ParamCounter,
+	ParamDelay,
 	ParamDummy,
 	ParamNumRepeats,
 	ResultCounter,

@@ -8,8 +8,8 @@ it asynchronously.
 
 The schema tool will generate a specific function descriptor for each func and view. It
 will also generate an interface called ScFuncs that can be used to create and initialize
-each function descriptor. Here is the code generated for the `dividend`
-example:
+each function descriptor. Here is the code generated for the `dividend` example
+in `contract.rs`:
 
 ```rust
 // @formatter:off

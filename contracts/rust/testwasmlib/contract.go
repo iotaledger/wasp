@@ -63,55 +63,55 @@ type Funcs struct{}
 var ScFuncs Funcs
 
 func (sc Funcs) ArrayClear(ctx wasmlib.ScFuncCallContext) *ArrayClearCall {
-	f := &ArrayClearCall{Func: wasmlib.NewScFunc(HScName, HFuncArrayClear)}
+	f := &ArrayClearCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayClear)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) ArrayCreate(ctx wasmlib.ScFuncCallContext) *ArrayCreateCall {
-	f := &ArrayCreateCall{Func: wasmlib.NewScFunc(HScName, HFuncArrayCreate)}
+	f := &ArrayCreateCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArrayCreate)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) ArraySet(ctx wasmlib.ScFuncCallContext) *ArraySetCall {
-	f := &ArraySetCall{Func: wasmlib.NewScFunc(HScName, HFuncArraySet)}
+	f := &ArraySetCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncArraySet)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) ParamTypes(ctx wasmlib.ScFuncCallContext) *ParamTypesCall {
-	f := &ParamTypesCall{Func: wasmlib.NewScFunc(HScName, HFuncParamTypes)}
+	f := &ParamTypesCall{Func: wasmlib.NewScFunc(ctx, HScName, HFuncParamTypes)}
 	f.Func.SetPtrs(&f.Params.id, nil)
 	return f
 }
 
 func (sc Funcs) ArrayLength(ctx wasmlib.ScViewCallContext) *ArrayLengthCall {
-	f := &ArrayLengthCall{Func: wasmlib.NewScView(HScName, HViewArrayLength)}
+	f := &ArrayLengthCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayLength)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) ArrayValue(ctx wasmlib.ScViewCallContext) *ArrayValueCall {
-	f := &ArrayValueCall{Func: wasmlib.NewScView(HScName, HViewArrayValue)}
+	f := &ArrayValueCall{Func: wasmlib.NewScView(ctx, HScName, HViewArrayValue)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) BlockRecord(ctx wasmlib.ScViewCallContext) *BlockRecordCall {
-	f := &BlockRecordCall{Func: wasmlib.NewScView(HScName, HViewBlockRecord)}
+	f := &BlockRecordCall{Func: wasmlib.NewScView(ctx, HScName, HViewBlockRecord)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) BlockRecords(ctx wasmlib.ScViewCallContext) *BlockRecordsCall {
-	f := &BlockRecordsCall{Func: wasmlib.NewScView(HScName, HViewBlockRecords)}
+	f := &BlockRecordsCall{Func: wasmlib.NewScView(ctx, HScName, HViewBlockRecords)}
 	f.Func.SetPtrs(&f.Params.id, &f.Results.id)
 	return f
 }
 
 func (sc Funcs) IotaBalance(ctx wasmlib.ScViewCallContext) *IotaBalanceCall {
-	f := &IotaBalanceCall{Func: wasmlib.NewScView(HScName, HViewIotaBalance)}
+	f := &IotaBalanceCall{Func: wasmlib.NewScView(ctx, HScName, HViewIotaBalance)}
 	f.Func.SetPtrs(nil, &f.Results.id)
 	return f
 }

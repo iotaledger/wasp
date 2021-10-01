@@ -3,11 +3,6 @@
 
 package wasmlib
 
-var (
-	funcs []func(ctx ScFuncContext)
-	views []func(ctx ScViewContext)
-)
-
 //export on_call
 func OnCall(index int32) {
 	ctx := ScFuncContext{}
@@ -15,11 +10,20 @@ func OnCall(index int32) {
 	ctx.Require(GetObjectID(OBJ_ID_ROOT, KeyParams, TYPE_MAP) == OBJ_ID_PARAMS, "object id mismatch")
 	ctx.Require(GetObjectID(OBJ_ID_ROOT, KeyResults, TYPE_MAP) == OBJ_ID_RESULTS, "object id mismatch")
 
-	if (index & 0x8000) != 0 {
-		views[index&0x7fff](ScViewContext{})
+	if (index & 0x8000) == 0 {
+		AddFunc(nil)[index](ctx)
 		return
 	}
-	funcs[index](ctx)
+
+	AddView(nil)[index&0x7fff](ScViewContext{})
+}
+
+func FuncError(ctx ScFuncContext) {
+	Panic("Invalid core func call")
+}
+
+func ViewError(ctx ScViewContext) {
+	Panic("Invalid core view call")
 }
 
 // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\ // \\
@@ -29,8 +33,6 @@ type ScExports struct {
 }
 
 func NewScExports() ScExports {
-	funcs = nil
-	views = nil
 	exports := Root.GetStringArray(KeyExports)
 	// tell host what our highest predefined key is
 	// this helps detect missing or extra keys
@@ -39,13 +41,11 @@ func NewScExports() ScExports {
 }
 
 func (ctx ScExports) AddFunc(name string, f func(ctx ScFuncContext)) {
-	index := int32(len(funcs))
-	funcs = append(funcs, f)
+	index := int32(len(AddFunc(f))) - 1
 	ctx.exports.GetString(index).SetValue(name)
 }
 
-func (ctx ScExports) AddView(name string, f func(ctx ScViewContext)) {
-	index := int32(len(views))
-	views = append(views, f)
+func (ctx ScExports) AddView(name string, v func(ctx ScViewContext)) {
+	index := int32(len(AddView(v))) - 1
 	ctx.exports.GetString(index | 0x8000).SetValue(name)
 }

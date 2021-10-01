@@ -78,6 +78,7 @@ Here is a list of the topics this tutorial will cover:
 * [Limiting Access](docs/access.md)
 * [Function Parameters](docs/params.md)
 * [Function Results](docs/results.md)
+* [Thunk Functions](docs/thunks.md)
 * [View-Only Functions](docs/views.md)
 * [Smart Contract Initialization](docs/init.md)
 * [Token Transfers](docs/transfers.md)

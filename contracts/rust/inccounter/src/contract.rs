@@ -33,6 +33,11 @@ pub struct IncrementCall {
     pub func: ScFunc,
 }
 
+pub struct IncrementWithDelayCall {
+    pub func:   ScFunc,
+    pub params: MutableIncrementWithDelayParams,
+}
+
 pub struct InitCall {
     pub func:   ScInitFunc,
     pub params: MutableInitParams,
@@ -96,6 +101,14 @@ impl ScFuncs {
         IncrementCall {
             func: ScFunc::new(HSC_NAME, HFUNC_INCREMENT),
         }
+    }
+    pub fn increment_with_delay(_ctx: & dyn ScFuncCallContext) -> IncrementWithDelayCall {
+        let mut f = IncrementWithDelayCall {
+            func:   ScFunc::new(HSC_NAME, HFUNC_INCREMENT_WITH_DELAY),
+            params: MutableIncrementWithDelayParams { id: 0 },
+        };
+        f.func.set_ptrs(&mut f.params.id, ptr::null_mut());
+        f
     }
     pub fn init(_ctx: & dyn ScFuncCallContext) -> InitCall {
         let mut f = InitCall {

@@ -19,27 +19,38 @@ const (
 	ParamPlayPeriod = wasmlib.Key("playPeriod")
 )
 
-const ResultLastWinningNumber = wasmlib.Key("lastWinningNumber")
+const (
+	ResultLastWinningNumber = wasmlib.Key("lastWinningNumber")
+	ResultRoundNumber       = wasmlib.Key("roundNumber")
+	ResultRoundStartedAt    = wasmlib.Key("roundStartedAt")
+	ResultRoundStatus       = wasmlib.Key("roundStatus")
+)
 
 const (
 	StateBets              = wasmlib.Key("bets")
 	StateLastWinningNumber = wasmlib.Key("lastWinningNumber")
-	StateLockedBets        = wasmlib.Key("lockedBets")
 	StatePlayPeriod        = wasmlib.Key("playPeriod")
+	StateRoundNumber       = wasmlib.Key("roundNumber")
+	StateRoundStartedAt    = wasmlib.Key("roundStartedAt")
+	StateRoundStatus       = wasmlib.Key("roundStatus")
 )
 
 const (
-	FuncLockBets          = "lockBets"
 	FuncPayWinners        = "payWinners"
 	FuncPlaceBet          = "placeBet"
 	FuncPlayPeriod        = "playPeriod"
 	ViewLastWinningNumber = "lastWinningNumber"
+	ViewRoundNumber       = "roundNumber"
+	ViewRoundStartedAt    = "roundStartedAt"
+	ViewRoundStatus       = "roundStatus"
 )
 
 const (
-	HFuncLockBets          = wasmlib.ScHname(0xe163b43c)
 	HFuncPayWinners        = wasmlib.ScHname(0xfb2b0144)
 	HFuncPlaceBet          = wasmlib.ScHname(0xdfba7d1b)
 	HFuncPlayPeriod        = wasmlib.ScHname(0xcb94b293)
 	HViewLastWinningNumber = wasmlib.ScHname(0x2f5f09fe)
+	HViewRoundNumber       = wasmlib.ScHname(0x0dcfe520)
+	HViewRoundStartedAt    = wasmlib.ScHname(0x725de8b4)
+	HViewRoundStatus       = wasmlib.ScHname(0x145053b5)
 )

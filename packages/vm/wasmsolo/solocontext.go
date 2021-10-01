@@ -134,9 +134,23 @@ func StartChain(t *testing.T, chainName string) *solo.Chain {
 	return env.NewChain(nil, chainName)
 }
 
+func (ctx *SoloContext) AccountID() wasmlib.ScAgentID {
+	return ctx.Agent().ScAgentID()
+}
+
 // AdvanceClockBy is used to forward the internal clock by the provided step duration.
 func (ctx *SoloContext) AdvanceClockBy(step time.Duration) {
 	ctx.Chain.Env.AdvanceClockBy(step)
+}
+
+// Agent returns a SoloAgent for the smart contract associated with ctx
+func (ctx *SoloContext) Agent() *SoloAgent {
+	return &SoloAgent{
+		env:     ctx.Chain.Env,
+		pair:    nil,
+		address: ctx.Chain.ChainID.AsAddress(),
+		hname:   iscp.Hn(ctx.scName),
+	}
 }
 
 // Balance returns the account balance of the specified agent on the chain associated with ctx.
@@ -164,14 +178,8 @@ func (ctx *SoloContext) Balance(agent *SoloAgent, color ...wasmlib.ScColor) int6
 	}
 }
 
-// CanCallFunc is a dummy function that is required to use SoloContext as an ScFuncCallContext
-func (ctx *SoloContext) CanCallFunc() {
-	panic("SoloContext.CanCallFunc")
-}
-
-// CanCallView is a dummy function that is required to use SoloContext as an ScViewCallContext
-func (ctx *SoloContext) CanCallView() {
-	panic("SoloContext,CanCallView")
+func (ctx *SoloContext) ChainID() wasmlib.ScChainID {
+	return ctx.Convertor.ScChainID(ctx.Chain.ChainID)
 }
 
 // ContractExists checks to see if the contract named scName exists in the chain associated with ctx.
@@ -197,6 +205,16 @@ func (ctx *SoloContext) init(onLoad func()) *SoloContext {
 	return ctx
 }
 
+// InitFuncCallContext is a function that is required to use SoloContext as an ScFuncCallContext
+func (ctx *SoloContext) InitFuncCallContext() {
+	_ = wasmlib.ConnectHost(&ctx.wasmHost)
+}
+
+// InitViewCallContext is a function that is required to use SoloContext as an ScViewCallContext
+func (ctx *SoloContext) InitViewCallContext() {
+	_ = wasmlib.ConnectHost(&ctx.wasmHost)
+}
+
 // NewSoloAgent creates a new SoloAgent with solo.Saldo tokens in its address
 func (ctx *SoloContext) NewSoloAgent() *SoloAgent {
 	return NewSoloAgent(ctx.Chain.Env)
@@ -211,12 +229,6 @@ func (ctx *SoloContext) Originator() *SoloAgent {
 // Sign is used to force a different agent for signing a Post() request
 func (ctx *SoloContext) Sign(agent *SoloAgent) *SoloContext {
 	ctx.keyPair = agent.pair
-	return ctx
-}
-
-// Sign is used to force a different agent for signing a Post() request
-func (ctx *SoloContext) Switch() *SoloContext {
-	_ = wasmlib.ConnectHost(&ctx.wasmHost)
 	return ctx
 }
 

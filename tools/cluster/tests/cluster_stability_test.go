@@ -384,7 +384,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Run("cluster=5,numValidators=4,numBrokenNodes=4,req=10,quorum=NO", func(t *testing.T) {
+	t.Run("cluster=5,numValidators=4,numBrokenNodes=4,req=35,quorum=NO", func(t *testing.T) {
 		const clusterSize = 5
 		const numValidators = 4
 		const numBrokenNodes = 4
@@ -394,7 +394,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		testConsenseusReconnectingNodesNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
-	t.Run("cluster=7,numValidators=5,numBrokenNodes=5,req=10,quorum=NO", func(t *testing.T) {
+	t.Run("cluster=7,numValidators=5,numBrokenNodes=5,req=35,quorum=NO", func(t *testing.T) {
 		const clusterSize = 7
 		const numValidators = 5
 		const numBrokenNodes = 5
@@ -404,7 +404,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		testConsenseusReconnectingNodesNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
-	t.Run("cluster=12,numValidators=10,numBrokenNodes=9,req=10,quorum=NO", func(t *testing.T) {
+	t.Run("cluster=12,numValidators=10,numBrokenNodes=9,req=35,quorum=NO", func(t *testing.T) {
 		testutil.SkipHeavy(t)
 		const clusterSize = 12
 		const numValidators = 10
@@ -415,7 +415,7 @@ func TestSuccessfulConsenseusWithReconnectingNodes(t *testing.T) {
 		testConsenseusReconnectingNodesNoQuorum(t, clusterSize, numValidators, numBrokenNodes, numRequestsBeforeFailure, numRequestsAfterFailure)
 	})
 
-	t.Run("cluster=12,numValidators=10,numBrokenNodes=9,req=10,quorum=NO", func(t *testing.T) {
+	t.Run("cluster=15,numValidators=13,numBrokenNodes=12,req=35,quorum=NO", func(t *testing.T) {
 		testutil.SkipHeavy(t)
 		const clusterSize = 15
 		const numValidators = 13
