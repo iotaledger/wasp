@@ -3,8 +3,10 @@ keywords:
 - ISCP
 - Smart Contracts
 - Rust
+- JavaScript
+- TypeScript
 - WASM
-description: An example project
+description: An example game project with frontend and contract 
 image: /img/logo/WASP_logo_dark.png
 ---
 
