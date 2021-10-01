@@ -317,6 +317,17 @@ module.exports = {
             ]
         },
         {
+            type: 'category',
+            label: 'Example projects',
+            items: [
+                {
+                    type: 'doc',
+                    label: 'Fair Roulette',
+                    id: 'guide/example_projects/fair_roulette',
+                },
+            ]
+        },
+        {
             type: 'doc',
             label: 'Contribute',
             id: 'contribute',
