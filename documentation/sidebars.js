@@ -282,7 +282,7 @@ module.exports = {
                     type: 'doc',
                     label: 'Introduction',
                     id: 'guide/rust_wasm/introduction',
-                }
+                },
             ]
         },
         {
