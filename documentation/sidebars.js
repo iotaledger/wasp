@@ -245,6 +245,127 @@ module.exports = {
                     label: 'Introduction',
                     id: 'guide/rust_wasm/introduction',
                 },
+                {
+                    type: 'category',
+                    label: 'Schema tool',
+                    items: [
+                        {
+                            type: 'doc',
+                            label: 'Smart Contract Schemas',
+                            id: 'guide/schema/intro',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Data Access Proxies',
+                            id: 'guide/schema/proxies',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'WasmLib Data Types',
+                            id: 'guide/schema/types',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Function Call Context',
+                            id: 'guide/schema/context',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Smart Contract Schema Tool',
+                            id: 'guide/schema/schema',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Using the Schema Tool',
+                            id: 'guide/schema/usage',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Structured Data Types',
+                            id: 'guide/schema/structs',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Type Definitions',
+                            id: 'guide/schema/typedefs',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Smart Contract State',
+                            id: 'guide/schema/state',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Function Definitions',
+                            id: 'guide/schema/funcs',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Limiting Access',
+                            id: 'guide/schema/access',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Function Parameters',
+                            id: 'guide/schema/params',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Function Results',
+                            id: 'guide/schema/results',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Thunk Functions',
+                            id: 'guide/schema/thunks',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'View-Only Functions',
+                            id: 'guide/schema/views',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Smart Contract Initialization',
+                            id: 'guide/schema/init',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Token Transfers',
+                            id: 'guide/schema/transfers',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Function Descriptors',
+                            id: 'guide/schema/funcdesc',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Calling Functions',
+                            id: 'guide/schema/call',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Posting Asynchronous Requests',
+                            id: 'guide/schema/post',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Testing Smart Contracts',
+                            id: 'guide/schema/test',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Example Tests',
+                            id: 'guide/schema/examples',
+                        },
+                        {
+                            type: 'doc',
+                            label: 'Colored Tokens and Time Locks',
+                            id: 'guide/schema/timelock',
+                        },
+                    ]
+                },
             ]
         },
         {
