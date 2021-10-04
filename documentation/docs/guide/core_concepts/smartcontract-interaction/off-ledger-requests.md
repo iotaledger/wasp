@@ -12,7 +12,7 @@ image: /img/logo/WASP_logo_dark.png
 The alternative way of sending requests is by the so-called `off-ledger` requests. It is an API call to a Wasp node, which has access
 to the state of the target chain, an `access node` (which can be a committee node, or not).
 The `off-ledger` request is not a transaction, it just contains the same information as an on-ledger request and it is
-cryptographically signed. These kind of requests do not rely on the Tangle for confirmation, so they are much faster.
+cryptographically signed. These kinds of requests do not rely on the Tangle for confirmation, so they are much faster.
 
 ## Nonce
 
