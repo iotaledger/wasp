@@ -5,7 +5,7 @@ keywords:
 - on-chain account
 - Ownership
 - Accounts Contract
-description: ISCP chains keeps a ledger of on-chain account balances.  ON-chain accounts are identified by an AgentID.
+description: ISCP chains keeps a ledger of on-chain account balances.  ON-chain accounts are identified by an AgentID
 image: /img/logo/WASP_logo_dark.png
 ---
 
@@ -13,8 +13,8 @@ image: /img/logo/WASP_logo_dark.png
 
 ISCP provides secure, trustless transfers of digitized assets:
 
-- between smart contracts on the same or on different chains
-- between smart contracts and L1 addresses on the UTXO Ledger.
+- Between smart contracts on the same or on different chains
+- Between smart contracts and L1 addresses on the UTXO Ledger
 
 On the UTXO Ledger, just like with any DLT, we have **trustless** and **atomic**
 transfers of assets between addresses on the ledger. The tokens contained in the
@@ -40,15 +40,15 @@ entities. Each type involves a different mechanism of transfer:
 
 To make the system homogenous, we introduce the following two concepts:
 
-* `Agent ID` which represents an owner of tokens independently of the type of
-  owning entity.
-* `On-chain account` which represents the unit of ownership on the chain.
+* `Agent ID`, which represents an owner of tokens independently of the type of
+  owning entity
+* `On-chain account`, which represents the unit of ownership on the chain.
 
-Each ISCP chain keeps a ledger of on-chain account balances.
+Each ISCP chain keeps a ledger of on-chain account balances
 
 ## Account Ownership
 
-### Smart contract ID
+### Smart Contract ID
 
 Unlike with blockchain systems like Ethereum, we cannot simply represent the
 smart contract by a blockchain address: ISCP can have many blockchains, not just
@@ -102,7 +102,7 @@ Given that an on-chain account is identified by an AgentID:
 
 The `Accounts` contract manages what funds are owned by which accounts.
 
-Internally there is a mapping of `Account (AgentID)` to `balances`, which can include normal IOTAs and/or any colored tokens.
+Internally there is a mapping of `Account (AgentID)` to `balances`, which can include normal IOTAs and / or any colored tokens.
 
 By calling this contract its possible to:
 
@@ -111,7 +111,7 @@ By calling this contract its possible to:
 - [Withdraw funds from the chain](./how-to-withdraw-from-a-chain.mdx)
 - [Harvest](./the-common-account.mdx) - can only be called by the chain owner, to move funds from the chain common account to his own account.
 
-## Interoperability between chains
+## Interoperability Between Chains
 
 Each chain contains any number of accounts. Each account owns colored
 tokens: a collection of `color: balance` pairs.
