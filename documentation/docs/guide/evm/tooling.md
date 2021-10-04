@@ -16,7 +16,7 @@ EVM on ISCP has been integrated in such a way that existing EVM tooling is compa
 ## Tooling Considerations
 
  1. Please make sure you use the correct JSON / RPC endpoint URL in your tooling for your chain. If you run locally this will simply be `localhost:8545`.
- 2. Please make sure you are using the right `Chain ID` as configured while starting the JSON/RPC service. If you did not explicitly define this while starting the service, the default Chain ID will be `1074`. 
+ 2. Please make sure you are using the right `Chain ID` as configured while starting the JSON / RPC service. If you did not explicitly define this while starting the service, the default Chain ID will be `1074`. 
  3. Fees are being handled on the ISCP chain level, not EVM level. Because of this you can simply always use a gas price of 0 on EVM level at this point in time.
 
 :::caution
@@ -37,7 +37,7 @@ wasp-cli chain evm
 
 [MetaMask](https://metamask.io/) is a popular EVM compatible wallet running in a browser extension that allows you to let your wallet interact with web applications utilizing a EVM chain (dApps). 
 
-To use your EVM chain with MetaMask, simply open up MetaMask and click on the network drop-down list at the very top. At the bottom of this list you'll see the option `Custom RPC`, click on this. For a local setup use the values as shown in the image below:
+To use your EVM chain with MetaMask, simply open up MetaMask and click on the network drop-down list at the very top. At the bottom of this list you will see the option `Custom RPC`, click on this. For a local setup use the values as shown in the image below:
 
 ![MetaMask Network](/img/metamask_network.png)
 
@@ -62,7 +62,7 @@ networks: {
 
 :::caution
 
-Currently there is no validation service available yet for EVM/Solidity smart contracts on ISCP which is often offered through block explorer API's.
+Currently there is no validation service available yet for EVM / Solidity smart contracts on ISCP which is often offered through block explorer API's.
 
 :::
 
