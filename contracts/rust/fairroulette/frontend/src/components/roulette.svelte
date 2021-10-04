@@ -90,29 +90,24 @@
 </script>
 
 <div class="roulette-wrapper">
-  <div class="progress-bar">
-    <svg
-      class="circle-animated"
-      viewBox="0 0 500 500"
-      preserveAspectRatio="xMinYMin meet"
-    >
-      <circle
-        stroke="#00E0CA"
-        fill="transparent"
-        stroke-dasharray="{circumference} {circumference}"
-        style="stroke-dashoffset: {strokeDashoffset};
-        {animateProgressBar &&
-          `transition: stroke-dashoffset ${
-            ROUND_LENGTH - roundTimeAgo
-          }s linear`}"
-        stroke-width={stroke}
-        r={normalizedRadius}
-        cx={radius}
-        cy={radius}
-      />
-    </svg>
-  </div>
-
+  <svg
+    class="circle-animated"
+    viewBox="0 0 500 500"
+    preserveAspectRatio="xMinYMin meet"
+  >
+    <circle
+      stroke="#00E0CA"
+      fill="transparent"
+      stroke-dasharray="{circumference} {circumference}"
+      style="stroke-dashoffset: {strokeDashoffset};
+      {animateProgressBar &&
+        `transition: stroke-dashoffset ${ROUND_LENGTH - roundTimeAgo}s linear`}"
+      stroke-width={stroke}
+      r={normalizedRadius}
+      cx={radius}
+      cy={radius}
+    />
+  </svg>
   <div class="roulette">
     {#if !$round.active && ($placingBet || $round.betPlaced)}
       <div class="animation">
@@ -139,28 +134,25 @@
 
 <style lang="scss">
   .roulette-wrapper {
-    .progress-bar {
-      position: relative;
-      display: flex;
-      align-items: center;
-      outline: none;
-      svg {
-        position: absolute;
-        top: 3px;
-        padding: 13px;
-        &.circle-animated {
-          circle {
-            &.animate {
-              transition: stroke-dashoffset 0.5s linear;
-            }
-            transform: rotate(-90deg);
-            transform-origin: 50% 50%;
-          }
+    position: relative;
+    @media (min-width: 1024px) {
+      max-width: calc(100vh - 480px);
+      min-width: 400px;
+      margin: 0 auto;
+    }
+    .circle-animated {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, calc(-50% + 3px));
+      width: calc(100% - 25px);
+      height: calc(100% - 25px);
+      circle {
+        &.animate {
+          transition: stroke-dashoffset 0.5s linear;
         }
-
-        path {
-          fill: transparent;
-        }
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
       }
     }
     .roulette {
