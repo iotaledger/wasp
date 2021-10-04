@@ -7,11 +7,24 @@
   $: currentRoute, (isLanding = routeIsActive('/'));
 
   let isRepositoriesExpanded: boolean = false;
+  let isMenuExpanded: boolean = false;
 
-  const REPOSITORIES: { name: string; link: string }[] = [
+  const REPOSITORIES: { label: string; link: string }[] = [
     {
-      name: 'Dummy repo',
+      label: 'Dummy repo',
       link: 'http://www.iota.org',
+    },
+  ];
+
+  const NAV_LINKS: {
+    label: string;
+    href: string;
+    target: '_blank' | 'self';
+  }[] = [
+    {
+      label: 'Visit the Wiki',
+      href: 'https://wiki.iota.org/',
+      target: '_blank',
     },
   ];
 </script>
@@ -22,8 +35,11 @@
       <img src="/assets/iota-roulette-logo.svg" alt="iota-logo-roulette" />
     </div>
 
+    <!-- Desktop menu -->
     <div class="nav-items">
-      <a target="_blank" href="https://wiki.iota.org/">Visit the Wiki</a>
+      {#each NAV_LINKS as { label, href, target }}
+        <a {target} {href}>{label}</a>
+      {/each}
 
       <div
         class="repositories"
@@ -31,27 +47,76 @@
           isRepositoriesExpanded = !isRepositoriesExpanded;
         }}
       >
-        <img src="/assets/github.svg" alt="iota-logo-roulette" />
-        <span>Repositories</span>
-        <img
-          class:expanded={isRepositoriesExpanded}
-          src="/assets/dropdown.svg"
-          alt="iota-logo-roulette"
-        />
+        <img src="/assets/github.svg" alt="github" />
+        <div class="dropdown">
+          <span>Repositories</span>
+          <img
+            class:expanded={isRepositoriesExpanded}
+            src="/assets/dropdown.svg"
+            alt="iota-logo-roulette"
+          />
+          {#if isRepositoriesExpanded}
+            <div class="repositories-expanded">
+              {#each REPOSITORIES as { label, link }}
+                <a class="repo" target="_blank" href={link}>{label}</a>
+              {/each}
+            </div>
+          {/if}
+        </div>
       </div>
     </div>
+
+    <!-- Mobile menu -->
+    <div
+      class="open-menu"
+      on:click={() => {
+        isMenuExpanded = true;
+      }}
+    >
+      <img src="/assets/burger.svg" alt="menu" />
+    </div>
+
+    {#if isMenuExpanded}
+      <div class="menu-expanded">
+        <div
+          on:click={() => {
+            isMenuExpanded = false;
+          }}
+        >
+          <img src="/assets/close.svg" alt="close" />
+        </div>
+        <div>
+          {#each NAV_LINKS as { label, href, target }}
+            <a {target} {href}>{label}</a>
+          {/each}
+          <div
+            class="dropdown"
+            on:click={() => {
+              isRepositoriesExpanded = !isRepositoriesExpanded;
+            }}
+          >
+            <span>Repositories</span>
+            <img
+              class:expanded={isRepositoriesExpanded}
+              src="/assets/dropdown.svg"
+              alt="iota-logo-roulette"
+            />
+            {#if isRepositoriesExpanded}
+              <div class="repositories-expanded">
+                {#each REPOSITORIES as { label, link }}
+                  <a class="repo" target="_blank" href={link}>{label}</a>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        </div>
+      </div>
+    {/if}
   </div>
   {#if isLanding}
     <button class="try-demo" on:click={() => navigateTo('/demo')}
       >Try demo</button
     >
-  {/if}
-  {#if isRepositoriesExpanded}
-    <div class="repositories-expanded">
-      {#each REPOSITORIES as { name, link }}
-        <a class="repo" target="_blank" href={link}>{name}</a>
-      {/each}
-    </div>
   {/if}
 </header>
 
@@ -97,23 +162,42 @@
           align-items: center;
           gap: 8px;
           cursor: pointer;
-          img {
-            transition: transform 0.2s ease;
-            &.expanded {
-              transform: rotate(180deg);
-            }
-          }
+        }
+      }
+      .dropdown {
+        position: relative;
+      }
+      img {
+        transition: transform 0.2s ease;
+        &.expanded {
+          transform: rotate(180deg);
+        }
+      }
+      .burger-menu {
+        z-index: 2;
+      }
+      .menu-expanded {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100vh;
+        background-color: #262e44;
+        color: white;
+        z-index: 2;
+        .repositories-expanded {
+          position: static;
+          padding: 8px 16px;
         }
       }
     }
     .repositories-expanded {
       position: absolute;
-      border-top: 1px solid #1e2439;
+      padding: 24px 4px;
       top: 100%;
       width: 100%;
       background-color: #262e44;
-      min-height: 250px;
-      padding: 64px;
+      min-height: 50px;
       z-index: 2;
     }
     @media (min-width: 1024px) {
