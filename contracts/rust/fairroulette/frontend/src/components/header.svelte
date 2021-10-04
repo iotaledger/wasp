@@ -1,5 +1,6 @@
 <script lang="ts">
   import { navigateTo, routeIsActive } from 'svelte-router-spa';
+  import { fly, slide } from 'svelte/transition';
 
   export let currentRoute;
   let isLanding: boolean = false;
@@ -77,8 +78,9 @@
     </div>
 
     {#if isMenuExpanded}
-      <div class="menu-expanded">
+      <aside class="aside-expanded" transition:slide={{ duration: 1000 }}>
         <div
+          class="close-expanded"
           on:click={() => {
             isMenuExpanded = false;
           }}
@@ -102,7 +104,10 @@
               alt="iota-logo-roulette"
             />
             {#if isRepositoriesExpanded}
-              <div class="repositories-expanded">
+              <div
+                class="repositories-expanded"
+                transition:slide={{ duration: 500 }}
+              >
                 {#each REPOSITORIES as { label, link }}
                   <a class="repo" target="_blank" href={link}>{label}</a>
                 {/each}
@@ -110,7 +115,7 @@
             {/if}
           </div>
         </div>
-      </div>
+      </aside>
     {/if}
   </div>
   {#if isLanding}
@@ -148,27 +153,51 @@
         display: flex;
         justify-content: flex-end;
         align-items: center;
-
+        font-size: 16px;
+        line-height: 150%;
+        letter-spacing: 0.75px;
+        color: var(--gray-3);
         width: 100%;
-        gap: 32px;
-
+        gap: 50px;
         font-family: 'Inter', sans-serif;
         font-size: 14px;
         line-height: 21px;
         letter-spacing: 0.5px;
         color: white;
+        a {
+          display: none;
+          @media (min-width: 1024px) {
+            display: flex;
+          }
+        }
+
         .repositories {
-          display: flex;
           align-items: center;
           gap: 8px;
           cursor: pointer;
+          display: none;
+          @media (min-width: 1024px) {
+            display: flex;
+          }
+        }
+      }
+      .open-menu {
+        display: flex;
+        margin-right: 15px;
+        @media (min-width: 1024px) {
+          display: none;
         }
       }
       .dropdown {
         position: relative;
+        font-size: 16px;
+        line-height: 150%;
+        letter-spacing: 0.75px;
+        color: var(--gray-3);
+        font-family: 'Inter';
       }
       img {
-        transition: transform 0.2s ease;
+        transition: transform 0.4s ease;
         &.expanded {
           transform: rotate(180deg);
         }
@@ -176,18 +205,34 @@
       .burger-menu {
         z-index: 2;
       }
-      .menu-expanded {
+      .aside-expanded {
         position: fixed;
         left: 0;
         top: 0;
         width: 100%;
-        height: 100vh;
+        height: 100%;
         background-color: #262e44;
         color: white;
         z-index: 2;
+        padding: 60px;
         .repositories-expanded {
           position: static;
-          padding: 8px 16px;
+          padding: 16px;
+        }
+        .close-expanded {
+          display: flex;
+          justify-content: flex-end;
+          margin-bottom: 30px;
+
+          @media (min-width: 1024px) {
+            display: hidden;
+          }
+        }
+        .dropdown {
+          margin-top: 20px;
+          a {
+            padding: 15px 0;
+          }
         }
       }
     }
@@ -199,13 +244,21 @@
       background-color: #262e44;
       min-height: 50px;
       z-index: 2;
+      @media (min-width: 1024px) {
+        left: -50px;
+        padding: 50px 30px;
+        width: 170%;
+      }
     }
     @media (min-width: 1024px) {
       height: 80px;
     }
 
     a {
-      color: white;
+      font-size: 16px;
+      line-height: 150%;
+      letter-spacing: 0.75px;
+      color: var(--gray-3);
       text-decoration: none;
       font-family: 'Inter';
     }
