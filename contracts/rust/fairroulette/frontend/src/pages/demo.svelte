@@ -21,6 +21,7 @@
     requestingFunds,
     showAddFunds,
     round,
+    requestBet,
   } from '../lib/store';
   import {
     displayNotifications,
@@ -77,9 +78,14 @@
           />
         </div>
       {:else}
-        <div class="bet_system">
+        <!-- <div class="bet_system">
           <BettingSystem />
-        </div>
+        </div> -->
+        <Button
+          disabled={$round.betPlaced}
+          onClick={() => ($requestBet = true)}
+          label="Choose your bet"
+        />
       {/if}
     </div>
 

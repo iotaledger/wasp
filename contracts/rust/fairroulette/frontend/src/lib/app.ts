@@ -3,7 +3,7 @@ import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
 import { NotificationType, showNotification } from './notifications';
-import { address, addressIndex, balance, keyPair, placingBet, requestingFunds, resetRound, round, seed, showWinnerAnimation, showWinningNumber, timestamp } from './store';
+import { address, addressIndex, balance, keyPair, placingBet, requestBet, requestingFunds, resetRound, round, seed, showWinnerAnimation, showWinningNumber, timestamp } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -192,8 +192,8 @@ export async function sendFaucetRequest() {
 
 export function calculateRoundLengthLeft(timestamp: number) {
     const roundStarted = get(round).startedAt;
-    
-    if(!timestamp || !roundStarted) return undefined
+
+    if (!timestamp || !roundStarted) return undefined
 
     if (roundStarted == 0) {
         return 0;
@@ -255,6 +255,7 @@ export function subscribeToRouletteEvents() {
             'Bet',
             `Bet placed from ${bet.better} on ${bet.betNumber} with ${bet.amount}`
         );
+        requestBet.set(false);
     });
 
     fairRouletteService.on('payout', (bet: Bet) => {

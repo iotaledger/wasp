@@ -2,6 +2,7 @@
   import { onDestroy } from 'svelte';
   import {
     placingBet,
+    requestBet,
     round,
     showWinningNumber,
     timeToFinished,
@@ -9,6 +10,7 @@
   import { generateRandomInt } from '../lib/utils';
   import { ROUND_LENGTH } from './../lib/app';
   import Animation from './animation.svelte';
+  import BettingSystem from './betting_system.svelte';
 
   // Highlighted number
   let flashedNumber: number;
@@ -109,25 +111,36 @@
     />
   </svg>
   <div class="roulette">
-    {#if !$round.active && ($placingBet || $round.betPlaced)}
-      <div class="animation">
-        <Animation animation="loading" loop />
+    {#if $requestBet}
+      <img
+        class="roulette-progress-road"
+        src="/assets/progress.svg"
+        alt="progress"
+      />
+      <div class="betting-system">
+        <BettingSystem />
       </div>
     {:else}
-      <img class="swirl" src="/assets/swirl.svg" alt="IOTA logo" />
-    {/if}
+      {#if !$round.active && ($placingBet || $round.betPlaced)}
+        <div class="animation">
+          <Animation animation="loading" loop />
+        </div>
+      {:else}
+        <img class="swirl" src="/assets/swirl.svg" alt="IOTA logo" />
+      {/if}
 
-    <img
-      class="roulette-background"
-      src="/assets/roulette_background.svg"
-      alt="roulette"
-    />
-    {#if flashedNumber}
       <img
-        class="flashedNumber"
-        src={`/assets/${flashedNumber}.svg`}
-        alt="active"
+        class="roulette-background"
+        src="/assets/roulette_background.svg"
+        alt="roulette"
       />
+      {#if flashedNumber}
+        <img
+          class="flashedNumber"
+          src={`/assets/${flashedNumber}.svg`}
+          alt="active"
+        />
+      {/if}
     {/if}
   </div>
 </div>
@@ -158,6 +171,18 @@
     .roulette {
       position: relative;
       width: 100%;
+
+      .roulette-progress-road {
+        width: 100%;
+        height: auto;
+        position: relative;
+      }
+      .betting-system {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
       .roulette-background,
       .flashedNumber {
         width: 100%;
