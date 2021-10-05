@@ -1,21 +1,24 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import {
-  BalancePanel,
-  Button,
-  LogsPanel,
-  PlayersPanel,
-  Roulette,
-  State,
-  WalletPanel
+    BalancePanel,
+    Button,
+    LogsPanel,
+    PlayersPanel,
+    Roulette,
+    State,
+    WalletPanel,
   } from '../components';
   import Animation from '../components/animation.svelte';
   import ToastContainer from '../components/toast_container.svelte';
-  import { initialize,State as StateType } from '../lib/app';
+  import { initialize, State as StateType } from '../lib/app';
   import {
-  balance,
-  firstTimeRequestingFunds,isAWinnerPlayer,requestBet,
-  round
+    balance,
+    firstTimeRequestingFunds,
+    isAWinnerPlayer,
+    requestBet,
+    round,
+    placingBet,
   } from '../lib/store';
 
   onMount(initialize);
@@ -41,11 +44,19 @@
   <div class="layout_roulette">
     <div class="roulette_game">
       <Roulette />
-      {#if !$requestBet && $balance > 0n}
+      {#if !$requestBet && $balance > 0n && !$placingBet}
         <Button
           disabled={$round.betPlaced}
           onClick={() => ($requestBet = true)}
           label={$round.active ? 'Join the game' : 'Choose your bet'}
+        />
+      {/if}
+      {#if $placingBet}
+        <Button
+          disabled
+          onClick={() => {}}
+          label={'Placing bet...'}
+          loading={$placingBet}
         />
       {/if}
       {#if $round.active && $balance === 0n && !$firstTimeRequestingFunds}

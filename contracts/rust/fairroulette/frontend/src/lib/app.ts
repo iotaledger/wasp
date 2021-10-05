@@ -277,7 +277,6 @@ export function subscribeToRouletteEvents() {
             'Bet',
             `Bet placed from ${bet.better} on ${bet.betNumber} with ${bet.amount}`
         );
-        requestBet.set(false);
     });
 
     fairRouletteService.on('payout', (bet: Bet) => {

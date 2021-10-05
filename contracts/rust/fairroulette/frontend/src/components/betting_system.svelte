@@ -5,8 +5,8 @@
     placingBet,
     round,
     balance,
-    requestBet,
     bettingStep,
+    requestBet,
   } from '../lib/store';
   import Button from './button.svelte';
 
@@ -25,6 +25,10 @@
 
   function resetBar() {
     betAmount = 1;
+  }
+
+  function resetNumber() {
+    $round.betSelection = undefined;
   }
 </script>
 
@@ -72,6 +76,9 @@
         if ($bettingStep === BettingStep.AmountChoice) {
           placeBet();
           resetBar();
+          resetNumber();
+          $requestBet = false;
+          $bettingStep = BettingStep.NumberChoice;
         } else if ($bettingStep === BettingStep.NumberChoice) {
           $bettingStep = BettingStep.AmountChoice;
         }

@@ -189,7 +189,7 @@
         left: 0;
 
         &.blink {
-          animation: blink 1s linear 5s;
+          animation: 1s blink linear 5;
         }
         @keyframes blink {
           50% {
