@@ -33,8 +33,15 @@
       height: 56px;
       border: 1px solid #677695;
       box-sizing: border-box;
-      border-radius: 6px;
+      border-radius: 50%;
       color: var(--white);
+      font-weight: normal;
+      line-height: 31px;
+      @media (min-width: 1024px) {
+        width: 80px;
+        height: 80px;
+        font-size: 26px;
+      }
       &.active {
         background-color: rgba(20, 202, 191, 0.08);
         border: 1px solid var(--mint-green-light);
