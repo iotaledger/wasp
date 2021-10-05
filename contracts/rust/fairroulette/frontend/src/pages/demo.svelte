@@ -11,7 +11,7 @@
   } from '../components';
   import Animation from '../components/animation.svelte';
   import ToastContainer from '../components/toast_container.svelte';
-  import { createNewAddress, initialize } from '../lib/app';
+  import { createNewAddress, initialize, State as StateType } from '../lib/app';
   import {
     balance,
     fundsRequested,
@@ -60,6 +60,9 @@
           onClick={() => ($requestBet = true)}
           label={$round.active ? 'Join the game' : 'Choose your bet'}
         />
+      {/if}
+      {#if $round.active && $balance === 0n}
+        <State forceState={StateType.AddFundsRunning} />
       {/if}
     </div>
 

@@ -34,6 +34,15 @@ export enum BettingStep {
     AmountChoice = 2,
 }
 
+export enum State {
+    Running = 'Running',
+    Start = 'Start',
+    AddFunds = 'AddFunds',
+    AddFundsRunning = 'AddFundsRunning',
+    ChoosingNumber = 'ChoosingNumber',
+    ChoosingAmount = 'ChoosingAmount',
+}
+
 export function log(tag: string, description: string) {
     round.update((_round) => {
         _round.logs.push({

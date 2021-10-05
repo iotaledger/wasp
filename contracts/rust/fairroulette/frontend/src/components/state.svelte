@@ -7,16 +7,11 @@
     bettingStep,
     requestBet,
   } from '../lib/store';
-  import { BettingStep } from '../lib/app';
-  enum State {
-    Running = 'Running',
-    Start = 'Start',
-    AddFunds = 'AddFunds',
-    ChoosingNumber = 'ChoosingNumber',
-    ChoosingAmount = 'ChoosingAmount',
-  }
+  import { BettingStep, State } from '../lib/app';
 
   let state: State;
+
+  export let forceState: State = undefined;
 
   $: MESSAGES = {
     [State.Running]: {
@@ -33,6 +28,11 @@
       description:
         'To play, first request funds for your wallet. Those are dev-net tokens and hold no value.',
     },
+    [State.AddFundsRunning]: {
+      title: undefined,
+      description:
+        'To play, first request funds for your wallet. Those are dev-net tokens and hold no value.',
+    },
     [State.ChoosingNumber]: {
       title: 'Choose a number',
       description:
@@ -44,22 +44,27 @@
     },
   };
 
-  $: state = $showAddFunds
-    ? State.AddFunds
-    : $requestBet && $bettingStep === BettingStep.NumberChoice
-    ? State.ChoosingNumber
-    : $requestBet && $bettingStep === BettingStep.AmountChoice
-    ? State.ChoosingAmount
-    : $round.active
-    ? State.Running
-    : State.Start;
+  $: forceState
+    ? (state = forceState)
+    : (state =
+        $requestBet && $bettingStep === BettingStep.NumberChoice
+          ? State.ChoosingNumber
+          : $requestBet && $bettingStep === BettingStep.AmountChoice
+          ? State.ChoosingAmount
+          : $round.active
+          ? State.Running
+          : $showAddFunds
+          ? State.AddFunds
+          : State.Start);
 </script>
 
 {#if state}
   <div class="message">
-    <h2 class="title">
-      {MESSAGES[state].title}
-    </h2>
+    {#if MESSAGES[state].title}
+      <h2 class="title">
+        {MESSAGES[state].title}
+      </h2>
+    {/if}
     <div class="description">
       {MESSAGES[state].description}
     </div>
