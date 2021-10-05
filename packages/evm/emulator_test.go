@@ -402,6 +402,8 @@ func TestERC20Contract(t *testing.T) {
 	require.Zero(t, callIntViewFn("balanceOf", recipientAddress).Cmp(new(big.Int).Mul(transferAmount, big.NewInt(2))))
 }
 
+// TODO: test a contract calling selfdestruct
+
 func initBenchmark(b *testing.B) (*EVMEmulator, []*types.Transaction, dict.Dict) {
 	// faucet address with initial supply
 	faucet, err := crypto.GenerateKey()

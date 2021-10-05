@@ -134,9 +134,28 @@ func (s *StateDB) SetState(addr common.Address, key, value common.Hash) {
 	s.kv.Set(accountStateKey(addr, key), value.Bytes())
 }
 
-// TODO: implement selfdestruct?
-func (s *StateDB) Suicide(common.Address) bool     { panic("not implemented") }
-func (s *StateDB) HasSuicided(common.Address) bool { panic("not implemented") }
+func (s *StateDB) Suicide(addr common.Address) bool {
+	if !s.Exist(addr) {
+		return false
+	}
+
+	s.kv.Del(accountBalanceKey(addr))
+	s.kv.Del(accountNonceKey(addr))
+	s.kv.Del(accountCodeKey(addr))
+
+	keys := make([]kv.Key, 0)
+	s.kv.IterateKeys(accountKey(keyAccountState, addr), func(key kv.Key) bool {
+		keys = append(keys, key)
+		return true
+	})
+	for _, k := range keys {
+		s.kv.Del(k)
+	}
+
+	return true
+}
+
+func (s *StateDB) HasSuicided(common.Address) bool { return false }
 
 // Exist reports whether the given account exists in state.
 // Notably this should also return true for suicided accounts.
@@ -146,7 +165,9 @@ func (s *StateDB) Exist(addr common.Address) bool {
 
 // Empty returns whether the given account is empty. Empty
 // is defined according to EIP161 (balance = nonce = code = 0).
-func (s *StateDB) Empty(common.Address) bool { panic("not implemented") }
+func (s *StateDB) Empty(addr common.Address) bool {
+	return s.GetNonce(addr) == 0 && s.GetBalance(addr).Sign() == 0 && s.GetCodeSize(addr) == 0
+}
 
 func (s *StateDB) PrepareAccessList(sender common.Address, dest *common.Address, precompiles []common.Address, txAccesses types.AccessList) {
 }
