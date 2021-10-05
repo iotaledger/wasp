@@ -241,7 +241,8 @@
       z-index: 2;
       @media (min-width: 1024px) {
         left: -50px;
-        padding: 30px;
+        padding: 0 30px 30px 30px;
+        margin: 28px;
         width: 170%;
       }
     }
