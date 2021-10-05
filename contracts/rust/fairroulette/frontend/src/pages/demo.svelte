@@ -1,37 +1,24 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import {
-    BalancePanel,
-    Button,
-    LogsPanel,
-    PlayersPanel,
-    Roulette,
-    State,
-    WalletPanel,
+  BalancePanel,
+  Button,
+  LogsPanel,
+  PlayersPanel,
+  Roulette,
+  State,
+  WalletPanel
   } from '../components';
   import Animation from '../components/animation.svelte';
   import ToastContainer from '../components/toast_container.svelte';
-  import { createNewAddress, initialize, State as StateType } from '../lib/app';
+  import { initialize,State as StateType } from '../lib/app';
   import {
-    balance,
-    fundsRequested,
-    isAWinnerPlayer,
-    newAddressNeeded,
-    requestBet,
-    round,
-    showAddFunds,
+  balance,
+  firstTimeRequestingFunds,isAWinnerPlayer,requestBet,
+  round
   } from '../lib/store';
 
   onMount(initialize);
-
-  $: if ($balance > 0n) {
-    fundsRequested.set(true);
-    newAddressNeeded.set(true);
-    showAddFunds.set(false);
-  } else if ($balance === 0n && $newAddressNeeded && $round.betPlaced) {
-    createNewAddress();
-    newAddressNeeded.set(false);
-  }
 </script>
 
 <div class="container">
@@ -61,7 +48,7 @@
           label={$round.active ? 'Join the game' : 'Choose your bet'}
         />
       {/if}
-      {#if $round.active && $balance === 0n}
+      {#if $round.active && $balance === 0n && !$firstTimeRequestingFunds}
         <State forceState={StateType.AddFundsRunning} />
       {/if}
     </div>
