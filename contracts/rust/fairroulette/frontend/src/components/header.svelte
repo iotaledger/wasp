@@ -194,8 +194,14 @@
       .arrow {
         transition: transform 0.4s ease;
         transform: rotate(270deg);
+        @media (min-width: 1024px) {
+          transform: rotate(180deg);
+        }
         &.expanded {
           transform: rotate(1deg);
+          @media (min-width: 1024px) {
+            transform: rotate(359deg);
+          }
         }
       }
       .burger-menu {
