@@ -6,6 +6,12 @@
 
   let betAmount: number = 1;
 
+  enum Step {
+    NumberChoice = 1,
+    AmountChoice = 2,
+  }
+  let step: Step = Step.NumberChoice;
+
   $: betAmount, onBarChange();
 
   function onNumberClick(number): void {
@@ -20,33 +26,47 @@
   function resetBar() {
     betAmount = 1;
   }
+
 </script>
 
-<div class="betting-system" class:disabled={$placingBet || $round.betPlaced}>
-  <MultipleSelector
-    disabled={$placingBet || $round.betPlaced}
-    onClick={onNumberClick}
-  />
-  <div>
-    <BarSelector
+<div class="betting-system">
+  {#if step === Step.NumberChoice}
+    <MultipleSelector
       disabled={$placingBet || $round.betPlaced}
-      bind:value={betAmount}
+      onClick={onNumberClick}
     />
-    <div class="bet-button">
-      <Button
-        label={$placingBet ? 'Placing bet...' : 'Place bet'}
-        disabled={!$round.betSelection ||
-          $round.betAmount === 0n ||
-          $placingBet ||
-          $round.betPlaced}
-        onClick={() => {
-          placeBet();
-          resetBar();
-        }}
-        loading={$placingBet}
-      />
-    </div>
-  </div>
+  {/if}
+  {#if step === Step.AmountChoice}
+    <BarSelector bind:value={betAmount} />
+  {/if}
+  <Button
+    label="Back"
+    disabled={step === Step.NumberChoice}
+    onClick={() => {
+      step = Step.NumberChoice;
+    }}
+  />
+  <Button
+    label={step === Step.NumberChoice
+      ? 'Next'
+      : $placingBet
+      ? 'Placing bet...'
+      : 'Place bet'}
+    disabled={step === Step.NumberChoice
+      ? !$round.betSelection
+      : $round.betAmount === 0n || $placingBet || $round.betPlaced}
+    onClick={() => {
+      if (step === Step.AmountChoice) {
+        console.log('Place beeeet');
+        placeBet();
+        resetBar();
+      }
+      if (step === Step.NumberChoice) {
+        step = Step.AmountChoice;
+      }
+    }}
+    loading={$placingBet}
+  />
 </div>
 
 <style lang="scss">
