@@ -1,8 +1,9 @@
 import { derived, get, Readable, Writable, writable } from 'svelte/store';
-import { calculateRoundLengthLeft } from './../lib/app';
+import { calculateRoundLengthLeft, BettingStep } from './../lib/app';
 import type { IRound } from './models/IRound';
 import type { Buffer, IKeyPair } from './wasp_client';
 import { Base58 } from './wasp_client/crypto/base58';
+
 export const seed: Writable<Buffer> = writable()
 export const seedString: Readable<string> = derived(seed, $seed => Base58.encode($seed))
 export const keyPair: Writable<IKeyPair> = writable()
@@ -36,6 +37,9 @@ const RESET_ROUND: IRound = {
 
 export const round: Writable<IRound> = writable(RESET_ROUND);
 export const isAWinnerPlayer: Writable<boolean> = writable(false);
+
+export const bettingStep: Writable<BettingStep> = writable(1)
+
 
 export function resetRound(): void {
     round.set({ ...RESET_ROUND, winningNumber: get(round)?.winningNumber, players: [], logs: get(round)?.logs })

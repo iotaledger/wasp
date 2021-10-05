@@ -29,6 +29,11 @@ enum LogTag {
     Unknown = 'Unknown'
 }
 
+export enum BettingStep {
+    NumberChoice = 1,
+    AmountChoice = 2,
+}
+
 export function log(tag: string, description: string) {
     round.update((_round) => {
         _round.logs.push({

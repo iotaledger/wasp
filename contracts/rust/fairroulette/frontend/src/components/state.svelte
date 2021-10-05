@@ -1,9 +1,19 @@
 <script lang="ts">
-  import { round, showAddFunds, timestamp, timeToFinished } from '../lib/store';
+  import {
+    round,
+    showAddFunds,
+    timestamp,
+    timeToFinished,
+    bettingStep,
+    requestBet,
+  } from '../lib/store';
+  import { BettingStep } from '../lib/app';
   enum State {
     Running = 'Running',
     Start = 'Start',
     AddFunds = 'AddFunds',
+    ChoosingNumber = 'ChoosingNumber',
+    ChoosingAmount = 'ChoosingAmount',
   }
 
   let state: State;
@@ -15,17 +25,31 @@
     },
     [State.Start]: {
       title: 'Start game',
-      description: `Lorem ipsum`,
+      description:
+        'Press the “Choose your bet” button below and follow on-screen instructions.',
     },
     [State.AddFunds]: {
       title: 'Add funds',
       description:
-        'To start the demo, you first need to request funds for your wallet. Those coins are generated from the dev-net.',
+        'To play, first request funds for your wallet. Those are dev-net tokens and hold no value.',
+    },
+    [State.ChoosingNumber]: {
+      title: 'Choose a number',
+      description:
+        'Select a number of the roulette that you want to bet on randomly winning',
+    },
+    [State.ChoosingAmount]: {
+      title: 'Set your amount',
+      description: 'Feeling lucky? How much will you risk?',
     },
   };
 
   $: state = $showAddFunds
     ? State.AddFunds
+    : $requestBet && $bettingStep === BettingStep.NumberChoice
+    ? State.ChoosingNumber
+    : $requestBet && $bettingStep === BettingStep.AmountChoice
+    ? State.ChoosingAmount
     : $round.active
     ? State.Running
     : State.Start;

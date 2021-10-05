@@ -1,16 +1,16 @@
 <script lang="ts">
   import { BarSelector, MultipleSelector } from '../components';
-  import { placeBet } from '../lib/app';
-  import { placingBet, round, balance, requestBet } from '../lib/store';
+  import { BettingStep, placeBet } from '../lib/app';
+  import {
+    placingBet,
+    round,
+    balance,
+    requestBet,
+    bettingStep,
+  } from '../lib/store';
   import Button from './button.svelte';
 
   let betAmount: number = 1;
-
-  enum Step {
-    NumberChoice = 1,
-    AmountChoice = 2,
-  }
-  let step: Step = Step.NumberChoice;
 
   $: betAmount, onBarChange();
 
@@ -31,16 +31,16 @@
 <div class="betting-system">
   <div class="betting-panel">
     <div class="step-title">
-      {`Step ${step} of 2`}
+      {`Step ${$bettingStep} of 2`}
     </div>
     <div class="selector">
-      {#if step === Step.NumberChoice}
+      {#if $bettingStep === BettingStep.NumberChoice}
         <MultipleSelector
           disabled={$placingBet || $round.betPlaced}
           onClick={onNumberClick}
         />
       {/if}
-      {#if step === Step.AmountChoice}
+      {#if $bettingStep === BettingStep.AmountChoice}
         <BarSelector bind:value={betAmount} />
       {/if}
     </div>
@@ -51,29 +51,29 @@
       label="Back"
       disabled={$placingBet}
       onClick={() => {
-        step === Step.NumberChoice
+        $bettingStep === BettingStep.NumberChoice
           ? ($requestBet = false)
-          : (step = Step.NumberChoice);
+          : ($bettingStep = BettingStep.NumberChoice);
       }}
     />
     <Button
-      label={step === Step.NumberChoice
+      label={$bettingStep === BettingStep.NumberChoice
         ? 'Next'
         : $placingBet
         ? 'Placing bet...'
         : 'Place bet'}
-      disabled={step === Step.NumberChoice
+      disabled={$bettingStep === BettingStep.NumberChoice
         ? !$round.betSelection
         : $balance < 1n ||
           $round.betAmount === 0n ||
           $placingBet ||
           $round.betPlaced}
       onClick={() => {
-        if (step === Step.AmountChoice) {
+        if ($bettingStep === BettingStep.AmountChoice) {
           placeBet();
           resetBar();
-        } else if (step === Step.NumberChoice) {
-          step = Step.AmountChoice;
+        } else if ($bettingStep === BettingStep.NumberChoice) {
+          $bettingStep = BettingStep.AmountChoice;
         }
       }}
       loading={$placingBet}
