@@ -137,6 +137,7 @@
       {#if flashedNumber}
         <img
           class="flashedNumber"
+          class:blink={$showWinningNumber}
           src={`/assets/${flashedNumber}.svg`}
           alt="active"
         />
@@ -186,6 +187,15 @@
         position: absolute;
         top: 0;
         left: 0;
+
+        &.blink {
+          animation: blink 1s linear 5s;
+        }
+        @keyframes blink {
+          50% {
+            opacity: 0;
+          }
+        }
       }
       .swirl {
         position: absolute;
