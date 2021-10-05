@@ -1,3 +1,4 @@
+export { default as Animation } from './animation.svelte'
 export { default as BettingSystem } from './betting_system.svelte'
 export { default as Button } from './button.svelte'
 export { default as Footer } from './footer.svelte'
@@ -11,5 +12,5 @@ export { default as BarSelector } from './selectors/bar.svelte'
 export { default as MultipleSelector } from './selectors/multiple.svelte'
 export { default as State } from './state.svelte'
 export { default as Toast } from './toast.svelte'
-export { default as Animation } from './animation.svelte'
+export { default as ToastContainer } from './toast_container.svelte'
 

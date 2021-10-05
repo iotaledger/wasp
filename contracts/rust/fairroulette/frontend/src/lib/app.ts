@@ -2,7 +2,7 @@ import { get } from 'svelte/store';
 import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
-import { NotificationType, showNotification } from './notifications';
+import { Notification, NOTIFICATION_TIMEOUT_NEVER, showNotification } from './notifications';
 import { address, addressIndex, balance, keyPair, placingBet, requestBet, requestingFunds, resetRound, round, seed, showWinnerAnimation, showWinningNumber, timestamp } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
@@ -58,9 +58,9 @@ export async function initialize() {
             config.chainId = content.chainId;
         } catch (ex) {
             showNotification({
-                type: NotificationType.Error,
-                title: 'Chain resolver failed',
+                type: Notification.Error,
                 message: ex.message,
+                timeout: NOTIFICATION_TIMEOUT_NEVER
             })
             log(LogTag.Error, ex.message);
         }
@@ -156,9 +156,10 @@ export async function placeBet() {
         );
     } catch (ex) {
         showNotification({
-            type: NotificationType.Error,
+            type: Notification.Error,
             title: 'Error placing bet',
             message: ex.message,
+            timeout: NOTIFICATION_TIMEOUT_NEVER
         })
 
         log(LogTag.Unknown, ex.message);
@@ -180,9 +181,9 @@ export async function sendFaucetRequest() {
         await client.sendFaucetRequest(faucetRequestResult.faucetRequest);
     } catch (ex) {
         showNotification({
-            type: NotificationType.Error,
-            title: 'Faucet request error',
+            type: Notification.Error,
             message: ex.message,
+            timeout: NOTIFICATION_TIMEOUT_NEVER
         })
 
         log(LogTag.Round, ex.message);
@@ -221,6 +222,13 @@ export function subscribeToRouletteEvents() {
     });
 
     fairRouletteService.on('roundStopped', () => {
+        if (get(placingBet) || get(requestBet)) {
+            showNotification({
+                type: Notification.Info,
+                message: 'The current round just ended. Your bet will be placed in the next round. ',
+                timeout: NOTIFICATION_TIMEOUT_NEVER
+            })
+        }
         resetRound();
         log(LogTag.Round, 'Ended');
     });
@@ -261,11 +269,18 @@ export function subscribeToRouletteEvents() {
     fairRouletteService.on('payout', (bet: Bet) => {
         if (bet.better === get(address)) {
             showNotification({
-                type: NotificationType.Success,
-                title: 'You win',
-                message: "Congratulations",
+                type: Notification.Win,
+                message: `Congratulations! You just won the round. You received ${bet.amount} iotas.`,
+                timeout: NOTIFICATION_TIMEOUT_NEVER
             })
             showWinnerAnimation();
+        }
+        else if (get(round).betPlaced) {
+            showNotification({
+                type: Notification.Info,
+                message: 'Sorry, you have lost. Try your luck again.',
+                timeout: NOTIFICATION_TIMEOUT_NEVER
+            })
         }
         log(LogTag.Win, `Payout for ${bet.better} with ${bet.amount}`);
     });

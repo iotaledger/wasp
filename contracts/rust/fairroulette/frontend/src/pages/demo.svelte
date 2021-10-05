@@ -7,10 +7,10 @@
     PlayersPanel,
     Roulette,
     State,
-    Toast,
     WalletPanel,
   } from '../components';
   import Animation from '../components/animation.svelte';
+  import ToastContainer from '../components/toast_container.svelte';
   import { createNewAddress, initialize } from '../lib/app';
   import {
     balance,
@@ -21,10 +21,6 @@
     round,
     showAddFunds,
   } from '../lib/store';
-  import {
-    displayNotifications,
-    removeDisplayNotification,
-  } from './../lib/notifications';
 
   onMount(initialize);
 
@@ -44,14 +40,6 @@
       <Animation animation="win" loop={false} destroyWhenFinished />
     </div>
   {/if}
-  <div class="toast-container">
-    {#each $displayNotifications as notification}
-      <Toast
-        {...notification}
-        onClose={() => removeDisplayNotification(notification.id)}
-      />
-    {/each}
-  </div>
   <div class="layout_state">
     <div class="balance">
       <BalancePanel />
@@ -82,14 +70,10 @@
       <LogsPanel />
     </div>
   </div>
+  <ToastContainer />
 </div>
 
 <style lang="scss">
-  .toast-container {
-    display: grid;
-    grid-template-columns: auto;
-    row-gap: 16px;
-  }
   .animation {
     position: absolute;
     z-index: 1;
@@ -175,12 +159,6 @@
         height: calc(100vh - 450px);
         margin-top: 32px;
       }
-    }
-  }
-  .toast {
-    padding: 8px 16px;
-    @media (min-width: 1024px) {
-      padding: 32px 0 0 0;
     }
   }
 </style>

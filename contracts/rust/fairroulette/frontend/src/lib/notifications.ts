@@ -4,13 +4,14 @@ import { generateRandomId } from "./utils"
 const NOTIFICATION_TIMEOUT_DEFAULT = 5000
 export const NOTIFICATION_TIMEOUT_NEVER = -1
 
-export enum NotificationType {
-    Success = 'success',
-    Error = 'error'
+export enum Notification {
+    Win = 'win',
+    Error = 'error',
+    Info = 'info'
 }
 export type NotificationData = {
-    type: NotificationType
-    title: string
+    type: Notification
+    title?: string
     message: string
     id?: string
     timeout?: number

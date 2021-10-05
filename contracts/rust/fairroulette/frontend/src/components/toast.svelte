@@ -1,23 +1,22 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
-  import type { NotificationType } from '../lib/notifications';
+  import type { Notification } from '../lib/notifications';
 
-  export let title: string;
+  export let title: string = undefined;
   export let message: string;
-  export let type: NotificationType;
+  export let type: Notification;
   export let id: string = '';
-  export let timeout: number = undefined;
   export let onClose: () => void;
 </script>
 
 <div in:fade out:fade class={`toast ${type}`}>
   <div class="toast-content">
-    <div class="title">{title}</div>
+    {#if title}
+      <div class="title">{title}</div>
+    {/if}
     <div class="message">{message}</div>
   </div>
-  <button on:click={onClose} class="close"
-    ><img src="close.svg" alt="close" /></button
-  >
+  <button on:click={onClose} class="close">Dismiss</button>
 </div>
 
 <style lang="scss">
@@ -34,11 +33,14 @@
       align-items: center;
     }
     &.error {
-      background: rgba(238, 91, 77, 0.24);
+      background: rgb(238, 91, 77);
     }
 
-    &.success {
-      background: rgba(0, 224, 202, 0.4);
+    &.win {
+      background: rgb(0, 224, 202);
+    }
+    &.info {
+      background: green;
     }
     .title {
       font-family: 'Metropolis Bold';
