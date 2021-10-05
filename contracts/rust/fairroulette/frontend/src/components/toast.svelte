@@ -23,24 +23,25 @@
   .toast {
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-sizing: border-box;
-    border-radius: 12px;
+    border-radius: 16px;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     padding: 20px 16px;
+    font-family: 'DM Sans', sans-serif;
     @media (min-width: 1024px) {
-      padding: 20px 40px;
+      padding: 30px;
       align-items: center;
     }
     &.error {
-      background: rgb(238, 91, 77);
+      background: rgba(238, 91, 77, 0.2);
     }
 
     &.win {
-      background: rgb(0, 224, 202);
+      background: rgba(0, 224, 202, 0.6);
     }
     &.info {
-      background: green;
+      background: rgba(0, 224, 202, 0.2);
     }
     .title {
       font-family: 'Metropolis Bold';
@@ -52,18 +53,23 @@
     .message {
       padding-top: 8px;
       font-size: 14px;
-      line-height: 150%;
+      line-height: 140%;
       letter-spacing: 0.5px;
-      color: var(--gray-3);
+      color: var(--white);
+      font-weight: 500;
       @media (min-width: 1024px) {
-        font-size: 16px;
-        line-height: 150%;
         letter-spacing: 0.75px;
       }
     }
     button {
+      font-weight: 500;
+      font-size: 12px;
+      line-height: 12px;
       background: transparent;
       border: none;
+      letter-spacing: 0.75px;
+      font-weight: 500;
+
       color: var(--white);
     }
   }
