@@ -1,13 +1,12 @@
 <script lang="ts">
-  import {
-    round,
-    showAddFunds,
-    timestamp,
-    timeToFinished,
-    bettingStep,
-    requestBet,
-  } from '../lib/store';
   import { BettingStep, State } from '../lib/app';
+  import {
+    bettingStep,
+    firstTimeRequestingFunds,
+    requestBet,
+    round,
+    timeToFinished,
+  } from '../lib/store';
 
   let state: State;
 
@@ -53,7 +52,7 @@
           ? State.ChoosingAmount
           : $round.active
           ? State.Running
-          : $showAddFunds
+          : !$firstTimeRequestingFunds
           ? State.AddFunds
           : State.Start);
 </script>

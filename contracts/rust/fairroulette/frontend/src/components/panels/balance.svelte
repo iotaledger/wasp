@@ -1,7 +1,12 @@
 <script lang="ts">
   import { Button } from '../../components';
-  import { sendFaucetRequest } from '../../lib/app';
-  import { balance, requestingFunds, placingBet } from '../../lib/store';
+  import { createNewAddress, sendFaucetRequest } from '../../lib/app';
+  import {
+    balance,
+    requestingFunds,
+    placingBet,
+    firstTimeRequestingFunds,
+  } from '../../lib/store';
 </script>
 
 <div class="panel">
@@ -12,7 +17,13 @@
   <div class="request-funds-button">
     <Button
       label={$requestingFunds ? 'Requesting...' : 'Request funds'}
-      onClick={sendFaucetRequest}
+      onClick={() => {
+        if ($firstTimeRequestingFunds) {
+          createNewAddress();
+        }
+        sendFaucetRequest();
+        $firstTimeRequestingFunds = true;
+      }}
       disabled={$requestingFunds || $placingBet || $balance > 0n}
       loading={$requestingFunds}
     />

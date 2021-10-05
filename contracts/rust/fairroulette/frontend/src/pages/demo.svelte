@@ -11,27 +11,16 @@
   } from '../components';
   import Animation from '../components/animation.svelte';
   import ToastContainer from '../components/toast_container.svelte';
-  import { createNewAddress, initialize, State as StateType } from '../lib/app';
+  import { initialize, State as StateType } from '../lib/app';
   import {
     balance,
-    fundsRequested,
+    firstTimeRequestingFunds,
     isAWinnerPlayer,
-    newAddressNeeded,
     requestBet,
     round,
-    showAddFunds,
   } from '../lib/store';
 
   onMount(initialize);
-
-  $: if ($balance > 0n) {
-    fundsRequested.set(true);
-    newAddressNeeded.set(true);
-    showAddFunds.set(false);
-  } else if ($balance === 0n && $newAddressNeeded && $round.betPlaced) {
-    createNewAddress();
-    newAddressNeeded.set(false);
-  }
 </script>
 
 <div class="container">

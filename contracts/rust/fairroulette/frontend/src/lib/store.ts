@@ -13,23 +13,22 @@ export const balance: Writable<bigint> = writable(0n)
 
 export const timestamp: Writable<number> = writable()
 export const timeToFinished: Readable<number> = derived(timestamp, $timestamp => $timestamp ? calculateRoundLengthLeft($timestamp) : 0);
-export const requestingFunds: Writable<boolean> = writable(false)
 export const placingBet: Writable<boolean> = writable(false)
 
-export const showAddFunds: Writable<boolean> = writable(true);
 export const showWinningNumber: Writable<boolean> = writable(false);
 
-export const fundsRequested: Writable<boolean> = writable(false);
-export const newAddressNeeded: Writable<boolean> = writable(false);
-
 export const requestBet: Writable<boolean> = writable(false);
+
+export const firstTimeRequestingFunds: Writable<boolean> = writable(false);
+export const requestingFunds: Writable<boolean> = writable(false)
+
 const RESET_ROUND: IRound = {
     active: false,
     logs: [],
     players: [],
     betSelection: undefined,
     betAmount: undefined,
-    betPlaced: undefined,
+    betPlaced: false,
     winningNumber: undefined,
     startedAt: undefined,
     number: undefined,
