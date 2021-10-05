@@ -78,7 +78,7 @@
     </div>
 
     {#if isMenuExpanded}
-      <aside class="aside-expanded" transition:slide={{ duration: 1000 }}>
+      <aside class="aside-expanded" transition:slide={{ duration: 700 }}>
         <div
           class="close-expanded"
           on:click={() => {
@@ -104,10 +104,7 @@
               alt="iota-logo-roulette"
             />
             {#if isRepositoriesExpanded}
-              <div
-                class="repositories-expanded"
-                transition:slide={{ duration: 500 }}
-              >
+              <div class="repositories-expanded">
                 {#each REPOSITORIES as { label, link }}
                   <a class="repo" target="_blank" href={link}>{label}</a>
                 {/each}
@@ -132,12 +129,10 @@
     height: 50px;
     position: relative;
     display: flex;
-
     .container {
       display: flex;
       align-items: center;
       width: 100%;
-
       .logo {
         cursor: pointer;
         img {
@@ -159,18 +154,16 @@
         color: var(--gray-3);
         width: 100%;
         gap: 50px;
-        font-family: 'Inter', sans-serif;
         font-size: 14px;
         line-height: 21px;
         letter-spacing: 0.5px;
-        color: white;
+        color: var(--white);
         a {
           display: none;
           @media (min-width: 1024px) {
             display: flex;
           }
         }
-
         .repositories {
           align-items: center;
           gap: 8px;
@@ -223,16 +216,15 @@
           display: flex;
           justify-content: flex-end;
           margin-bottom: 30px;
-
-          @media (min-width: 1024px) {
-            display: hidden;
-          }
         }
         .dropdown {
           margin-top: 20px;
           a {
             padding: 15px 0;
           }
+        }
+        @media (min-width: 1024px) {
+          display: none;
         }
       }
     }
@@ -246,14 +238,13 @@
       z-index: 2;
       @media (min-width: 1024px) {
         left: -50px;
-        padding: 50px 30px;
+        padding: 30px;
         width: 170%;
       }
     }
     @media (min-width: 1024px) {
       height: 80px;
     }
-
     a {
       font-size: 16px;
       line-height: 150%;
