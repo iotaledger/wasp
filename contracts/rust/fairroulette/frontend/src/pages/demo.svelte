@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import {
     BalancePanel,
-    BettingSystem,
     Button,
     LogsPanel,
     PlayersPanel,
@@ -12,16 +11,15 @@
     WalletPanel,
   } from '../components';
   import Animation from '../components/animation.svelte';
-  import { createNewAddress, initialize, sendFaucetRequest } from '../lib/app';
+  import { createNewAddress, initialize } from '../lib/app';
   import {
     balance,
     fundsRequested,
     isAWinnerPlayer,
     newAddressNeeded,
-    requestingFunds,
-    showAddFunds,
-    round,
     requestBet,
+    round,
+    showAddFunds,
   } from '../lib/store';
   import {
     displayNotifications,
@@ -68,23 +66,11 @@
   <div class="layout_roulette">
     <div class="roulette_game">
       <Roulette />
-      {#if $showAddFunds}
-        <div class="request_button">
-          <Button
-            label={$requestingFunds ? 'Requesting...' : 'Request funds'}
-            onClick={sendFaucetRequest}
-            disabled={$requestingFunds || $balance > 0n}
-            loading={$requestingFunds}
-          />
-        </div>
-      {:else}
-        <!-- <div class="bet_system">
-          <BettingSystem />
-        </div> -->
+      {#if !$requestBet && $balance > 0n}
         <Button
           disabled={$round.betPlaced}
           onClick={() => ($requestBet = true)}
-          label="Choose your bet"
+          label={$round.active ? 'Join the game' : 'Choose your bet'}
         />
       {/if}
     </div>

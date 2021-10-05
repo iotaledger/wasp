@@ -177,12 +177,6 @@
         height: auto;
         position: relative;
       }
-      .betting-system {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-      }
       .roulette-background,
       .flashedNumber {
         width: 100%;
