@@ -54,7 +54,8 @@
           <img
             class:expanded={isRepositoriesExpanded}
             src="/assets/dropdown.svg"
-            alt="iota-logo-roulette"
+            alt="dropdown"
+            class="arrow"
           />
           {#if isRepositoriesExpanded}
             <div class="repositories-expanded">
@@ -101,7 +102,8 @@
             <img
               class:expanded={isRepositoriesExpanded}
               src="/assets/dropdown.svg"
-              alt="iota-logo-roulette"
+              alt="dropdown"
+              class="arrow"
             />
             {#if isRepositoriesExpanded}
               <div class="repositories-expanded">
@@ -189,10 +191,11 @@
         color: var(--gray-3);
         font-family: 'Inter';
       }
-      img {
+      .arrow {
         transition: transform 0.4s ease;
+        transform: rotate(270deg);
         &.expanded {
-          transform: rotate(180deg);
+          transform: rotate(1deg);
         }
       }
       .burger-menu {
@@ -207,7 +210,7 @@
         background-color: #262e44;
         color: white;
         z-index: 2;
-        padding: 60px;
+        padding: 24px;
         .repositories-expanded {
           position: static;
           padding: 16px;
