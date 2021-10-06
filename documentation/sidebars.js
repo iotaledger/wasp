@@ -31,11 +31,6 @@ module.exports = {
                 },
                 {
                     type: 'doc',
-                    label: 'ISCP',
-                    id: 'guide/core_concepts/iscp',
-                },
-                {
-                    type: 'doc',
                     label: 'ISCP Architecture',
                     id: 'guide/core_concepts/iscp-architecture',
                 },
@@ -98,6 +93,11 @@ module.exports = {
                             label: 'Blocklog',
                             id: 'guide/core_concepts/core_contracts/blocklog',
                         },
+                        {
+                            type: 'doc',
+                            label: 'Governance',
+                            id: 'guide/core_concepts/core_contracts/governance',
+                        },
                     ],
                 },
                 {
@@ -146,49 +146,6 @@ module.exports = {
                             id: 'guide/core_concepts/smartcontract-interaction/off-ledger-requests',
                         }
                     ]
-                },
-                {
-                    type: 'category',
-                    label: 'Types of VMs/Languages',
-                    items: [
-                        {
-                            type: 'doc',
-                            label: 'How ISCP Works As a Language/VM Agnostic Platform',
-                            id: 'guide/core_concepts/vm-types/iscp-vm',
-                        },
-                        {
-                            type: 'category',
-                            label: 'Rust/Wasm Based Smart Contracts',
-                            items: [
-                                {
-                                    type: 'doc',
-                                    label: 'Why and What Does It Look Like?',
-                                    id: 'guide/core_concepts/vm-types/rust-wasm',
-                                },
-                                {
-                                    type: 'doc',
-                                    label: 'Solidity/EVM Based Smart Contracts',
-                                    id: 'guide/core_concepts/vm-types/rust-wasm',
-                                },
-                            ]
-                        },
-                        {
-                            type: 'category',
-                            label: 'Solidity/EVM Based Smart Contracts',
-                            items: [
-                                {
-                                    type: 'doc',
-                                    label: 'Why and What Does It Look Like?',
-                                    id: 'guide/core_concepts/vm-types/evm',
-                                },
-                                {
-                                    type: 'doc',
-                                    label: 'Solidity/EVM Based Smart Contracts',
-                                    id: 'guide/core_concepts/vm-types/evm',
-                                },
-                            ]
-                        }
-                    ],
                 },
                 {
                     type: 'category',
@@ -314,6 +271,17 @@ module.exports = {
                     label: 'Tooling',
                     id: 'guide/evm/tooling',
                 }
+            ]
+        },
+        {
+            type: 'category',
+            label: 'Example projects',
+            items: [
+                {
+                    type: 'doc',
+                    label: 'Fair Roulette',
+                    id: 'guide/example_projects/fair_roulette',
+                },
             ]
         },
         {

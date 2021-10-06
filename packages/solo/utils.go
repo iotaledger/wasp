@@ -12,7 +12,7 @@ func (ch *Chain) GrantDeployPermission(keyPair *ed25519.KeyPair, deployerAgentID
 		keyPair = ch.OriginatorKeyPair
 	}
 
-	req := NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name, root.ParamDeployer, deployerAgentID)
+	req := NewCallParams(root.Contract.Name, root.FuncGrantDeployPermission.Name, root.ParamDeployer, deployerAgentID).WithIotas(1)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }
@@ -23,7 +23,7 @@ func (ch *Chain) RevokeDeployPermission(keyPair *ed25519.KeyPair, deployerAgentI
 		keyPair = ch.OriginatorKeyPair
 	}
 
-	req := NewCallParams(root.Contract.Name, root.FuncRevokeDeployPermission.Name, root.ParamDeployer, deployerAgentID)
+	req := NewCallParams(root.Contract.Name, root.FuncRevokeDeployPermission.Name, root.ParamDeployer, deployerAgentID).WithIotas(1)
 	_, err := ch.PostRequestSync(req, keyPair)
 	return err
 }

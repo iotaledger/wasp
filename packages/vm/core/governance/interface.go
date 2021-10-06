@@ -36,7 +36,7 @@ var (
 	// chain info
 	FuncSetChainInfo   = coreutil.Func("setChainInfo")
 	FuncGetChainInfo   = coreutil.ViewFunc("getChainInfo")
-	FuncGetMaxBlobSize = coreutil.ViewFunc("getMaxBlobStyle")
+	FuncGetMaxBlobSize = coreutil.ViewFunc("getMaxBlobSize")
 )
 
 // state variables

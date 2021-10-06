@@ -23,4 +23,4 @@ Lastly, each Wasp node will produce a log file (`wasp.log`) where the behaviour 
 
 ## Managing Chain Configuration and Validators
 
-Managing the chain configuration and committee of validators can be done by interacting with the [Governance contract](../../contract_core/governance.md).
+Managing the chain configuration and committee of validators can be done by interacting with the [Governance contract](../core_concepts/core_contracts/governance.md).
