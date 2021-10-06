@@ -127,7 +127,7 @@
 <style lang="scss">
   .header {
     width: 100%;
-    background-color: rgba(72, 87, 118, 0.2);
+    background-color: #091326;
     height: 50px;
     position: relative;
     display: flex;

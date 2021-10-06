@@ -1,18 +1,20 @@
 <script lang="ts">
-  import { BarSelector, MultipleSelector } from '../components';
-  import { BettingStep, placeBet } from '../lib/app';
+  import { BarSelector, MultipleSelector } from "../components";
+  import { BettingStep, placeBet } from "../lib/app";
   import {
-    placingBet,
-    round,
-    balance,
     bettingStep,
-    requestBet,
-  } from '../lib/store';
-  import Button from './button.svelte';
+    placingBet,
+    resetBettingSystem,
+    round,
+  } from "../lib/store";
+  import Button from "./button.svelte";
 
   let betAmount: number = 1;
 
   $: betAmount, onBarChange();
+
+  $: isFirstStep = $bettingStep === BettingStep.NumberChoice;
+  $: isLastStep = $bettingStep === BettingStep.AmountChoice;
 
   function onNumberClick(number): void {
     let betSelection = $round?.betSelection !== number ? number : undefined;
@@ -23,8 +25,21 @@
     $round.betAmount = BigInt(betAmount);
   }
 
-  function resetBar() {
-    betAmount = 1;
+  function onNextClick() {
+    if (isLastStep) {
+      placeBet();
+      resetBettingSystem();
+    } else {
+      bettingStep.update((_step) => _step + 1);
+    }
+  }
+
+  function onBackClick() {
+    if (isFirstStep) {
+      resetBettingSystem();
+    } else {
+      bettingStep.update((_step) => _step - 1);
+    }
   }
 
   function resetNumber() {
@@ -51,38 +66,12 @@
   </div>
 
   <div class="betting-actions">
+    <Button label="Back" disabled={$placingBet} onClick={onBackClick} />
     <Button
-      label="Back"
-      disabled={$placingBet}
-      onClick={() => {
-        $bettingStep === BettingStep.NumberChoice
-          ? ($requestBet = false)
-          : ($bettingStep = BettingStep.NumberChoice);
-      }}
-    />
-    <Button
-      label={$bettingStep === BettingStep.NumberChoice
-        ? 'Next'
-        : $placingBet
-        ? 'Placing bet...'
-        : 'Place bet'}
-      disabled={$bettingStep === BettingStep.NumberChoice
-        ? !$round.betSelection
-        : $balance < 1n ||
-          $round.betAmount === 0n ||
-          $placingBet ||
-          $round.betPlaced}
-      onClick={() => {
-        if ($bettingStep === BettingStep.AmountChoice) {
-          placeBet();
-          resetBar();
-          resetNumber();
-          $requestBet = false;
-          $bettingStep = BettingStep.NumberChoice;
-        } else if ($bettingStep === BettingStep.NumberChoice) {
-          $bettingStep = BettingStep.AmountChoice;
-        }
-      }}
+      label={isFirstStep ? "Next" : "Place bet"}
+      disabled={(isFirstStep && !$round.betSelection) ||
+        (isLastStep && !$round.betAmount)}
+      onClick={onNextClick}
       loading={$placingBet}
     />
   </div>

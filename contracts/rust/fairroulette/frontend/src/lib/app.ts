@@ -3,7 +3,7 @@ import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
 import { Notification, NOTIFICATION_TIMEOUT_NEVER, showNotification } from './notifications';
-import { address, addressIndex, balance, keyPair, placingBet, requestBet, requestingFunds, resetRound, round, seed, showWinnerAnimation, showWinningNumber, timestamp } from './store';
+import { address, addressIndex, balance, firstTimeRequestingFunds, keyPair, placingBet, requestingFunds, resetRound, round, seed, showBettingSystem, showWinnerAnimation, showWinningNumber, timestamp } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -34,11 +34,10 @@ export enum BettingStep {
     AmountChoice = 2,
 }
 
-export enum State {
+export enum StateMessage {
     Running = 'Running',
     Start = 'Start',
     AddFunds = 'AddFunds',
-    AddFundsRunning = 'AddFundsRunning',
     ChoosingNumber = 'ChoosingNumber',
     ChoosingAmount = 'ChoosingAmount',
 }
@@ -160,6 +159,7 @@ export function startFundsUpdater() {
 
 export async function placeBet() {
     placingBet.set(true)
+    showBettingSystem.set(false)
     showWinningNumber.set(false)
     try {
         await fairRouletteService.placeBetOnLedger(
@@ -183,6 +183,12 @@ export async function placeBet() {
 }
 
 export async function sendFaucetRequest() {
+
+    if (!get(firstTimeRequestingFunds)) {
+        createNewAddress();
+        firstTimeRequestingFunds.set(false);
+    }
+
     requestingFunds.set(true);
 
     const faucetRequestResult = await walletService.getFaucetRequest(get(address));
@@ -236,7 +242,7 @@ export function subscribeToRouletteEvents() {
     });
 
     fairRouletteService.on('roundStopped', () => {
-        if (get(placingBet) || get(requestBet)) {
+        if (get(placingBet) || get(showBettingSystem)) {
             showNotification({
                 type: Notification.Info,
                 message: 'The current round just ended. Your bet will be placed in the next round. ',
