@@ -79,7 +79,7 @@
     @media (min-width: 1024px) {
       flex-direction: row-reverse;
       justify-content: space-between;
-      margin-top: 24px;
+      margin-top: 50px;
     }
     .wallet {
       @media (min-width: 1024px) {
