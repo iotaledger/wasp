@@ -10,7 +10,6 @@ export { default as WalletPanel } from './panels/wallet.svelte'
 export { default as Roulette } from './roulette.svelte'
 export { default as BarSelector } from './selectors/bar.svelte'
 export { default as MultipleSelector } from './selectors/multiple.svelte'
-export { default as State } from './state.svelte'
 export { default as Toast } from './toast.svelte'
 export { default as ToastContainer } from './toast_container.svelte'
 
