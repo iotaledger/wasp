@@ -65,7 +65,7 @@
       letter-spacing: 0.5px;
       color: var(--white);
       padding-bottom: 20px;
-      font-family: 'Metropolis Bold';
+      font-family: 'Metropolis Semi Bold';
       @media (min-width: 1024px) {
         font-size: 48px;
         padding-bottom: 45px;
@@ -78,7 +78,7 @@
         border: 1px solid var(--border-color);
         padding: 8px;
         width: 88%;
-        font-family: 'Metropolis Bold';
+        font-family: 'Metropolis Semi Bold';
         &:focus {
           outline: none;
         }
