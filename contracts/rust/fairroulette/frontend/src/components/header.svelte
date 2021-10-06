@@ -190,6 +190,11 @@
         letter-spacing: 0.75px;
         color: var(--gray-3);
         font-family: 'Inter';
+        display: flex;
+        justify-content: space-between;
+        @media (min-width: 1024px) {
+          display: block;
+        }
       }
       .arrow {
         transition: transform 0.4s ease;
@@ -218,7 +223,6 @@
         z-index: 2;
         padding: 24px;
         .repositories-expanded {
-          position: static;
           padding: 16px;
         }
         .close-expanded {
