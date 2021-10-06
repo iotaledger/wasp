@@ -4,13 +4,14 @@
 package evm
 
 import (
+	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/core"
@@ -32,7 +33,6 @@ type EVMEmulator struct {
 }
 
 var (
-	TxGas           = uint64(21000) // gas cost of simple transfer (not contract creation / call)
 	GasLimitDefault = uint64(15000000)
 	GasPrice        = big.NewInt(0)
 )
@@ -165,14 +165,67 @@ func (e *EVMEmulator) CallContract(call ethereum.CallMsg) ([]byte, error) {
 // EstimateGas executes the requested code against the current state and
 // returns the used amount of gas, discarding state changes
 func (e *EVMEmulator) EstimateGas(call ethereum.CallMsg) (uint64, error) {
-	if call.Gas < params.TxGas {
-		call.Gas = e.GasLimit()
+	// Determine the lowest and highest possible gas limits to binary search in between
+	var (
+		lo  uint64 = params.TxGas - 1
+		hi  uint64
+		max uint64
+	)
+	if call.Gas >= params.TxGas {
+		hi = call.Gas
+	} else {
+		hi = e.GasLimit()
 	}
-	res, err := e.callContract(call)
-	if err != nil {
-		return 0, err
+	max = hi
+
+	// Create a helper to check if a gas allowance results in an executable transaction
+	executable := func(gas uint64) (bool, *core.ExecutionResult, error) {
+		call.Gas = gas
+		res, err := e.callContract(call)
+		if err != nil {
+			if errors.Is(err, core.ErrIntrinsicGas) {
+				return true, nil, nil // Special case, raise gas limit
+			}
+			return true, nil, fmt.Errorf("Bail out: %w", err)
+		}
+		return res.Failed(), res, nil //nolint:gocritic
 	}
-	return res.UsedGas, nil
+
+	// Execute the binary search and hone in on an executable gas limit
+	for lo+1 < hi {
+		mid := (hi + lo) / 2
+		failed, _, err := executable(mid)
+		// If the error is not nil(consensus error), it means the provided message
+		// call or transaction will never be accepted no matter how much gas it is
+		// assigned. Return the error directly, don't struggle any more
+		if err != nil {
+			return 0, fmt.Errorf("executable(mid): %w", err)
+		}
+		if failed {
+			lo = mid
+		} else {
+			hi = mid
+		}
+	}
+
+	// Reject the transaction as invalid if it still fails at the highest allowance
+	if hi == max {
+		failed, result, err := executable(hi)
+		if err != nil {
+			return 0, fmt.Errorf("executable(hi): %w", err)
+		}
+		if failed {
+			if result != nil && !errors.Is(result.Err, vm.ErrOutOfGas) {
+				if len(result.Revert()) > 0 {
+					return 0, newRevertError(result)
+				}
+				return 0, fmt.Errorf("revert: %w", result.Err)
+			}
+			// Otherwise, the specified gas cap is too low
+			return 0, fmt.Errorf("gas required exceeds allowance (%d)", max)
+		}
+	}
+	return hi, nil
 }
 
 func (e *EVMEmulator) PendingHeader() *types.Header {
@@ -191,7 +244,6 @@ func (e *EVMEmulator) ChainContext() core.ChainContext {
 }
 
 func (e *EVMEmulator) callContract(call ethereum.CallMsg) (*core.ExecutionResult, error) {
-	header := e.PendingHeader()
 	// Ensure message is initialized properly.
 	if call.GasPrice == nil {
 		call.GasPrice = big.NewInt(0)
@@ -203,20 +255,22 @@ func (e *EVMEmulator) callContract(call ethereum.CallMsg) (*core.ExecutionResult
 		call.Value = new(big.Int)
 	}
 
-	// Execute the call.
 	msg := callMsg{call}
 
 	// run the EVM code on a buffered state (so that writes are not committed)
 	statedb := e.StateDB().Buffered().StateDB()
 
-	txContext := core.NewEVMTxContext(msg)
-	evmContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
-	// Create a new environment which holds all relevant information
-	// about the transaction and calling mechanisms.
-	vmEnv := vm.NewEVM(evmContext, txContext, statedb, e.chainConfig, e.vmConfig())
-	gasPool := new(core.GasPool).AddGas(math.MaxUint64)
+	return e.applyMessage(msg, statedb)
+}
 
-	return core.NewStateTransition(vmEnv, msg, gasPool).TransitionDb()
+func (e *EVMEmulator) applyMessage(msg core.Message, statedb vm.StateDB) (*core.ExecutionResult, error) {
+	pendingHeader := e.PendingHeader()
+	blockContext := core.NewEVMBlockContext(pendingHeader, e.ChainContext(), nil)
+	txContext := core.NewEVMTxContext(msg)
+	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, e.vmConfig())
+	gasPool := core.GasPool(msg.Gas())
+	vmEnv.Reset(txContext, statedb)
+	return core.ApplyMessage(vmEnv, msg, &gasPool)
 }
 
 func (e *EVMEmulator) vmConfig() vm.Config {
@@ -243,20 +297,15 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction) (*types.Receipt, er
 
 	buf := e.StateDB().Buffered()
 
-	gasPool := core.GasPool(e.GasLimit())
-
 	pendingHeader := e.PendingHeader()
-
 	msg, err := tx.AsMessage(types.MakeSigner(e.chainConfig, pendingHeader.Number), pendingHeader.BaseFee)
 	if err != nil {
 		return nil, err
 	}
+
 	statedb := buf.StateDB()
-	blockContext := core.NewEVMBlockContext(pendingHeader, e.ChainContext(), nil)
-	evm := vm.NewEVM(blockContext, vm.TxContext{}, statedb, e.chainConfig, e.vmConfig())
-	txContext := core.NewEVMTxContext(msg)
-	evm.Reset(txContext, statedb)
-	result, err := core.ApplyMessage(evm, msg, &gasPool)
+
+	result, err := e.applyMessage(msg, statedb)
 	if err != nil {
 		return nil, err
 	}
@@ -271,12 +320,13 @@ func (e *EVMEmulator) SendTransaction(tx *types.Transaction) (*types.Receipt, er
 	}
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 	if result.Failed() {
+		fmt.Printf("%s - gas limit %d - gas used %d - refund %d\n", result.Err, msg.Gas(), result.UsedGas, statedb.GetRefund())
 		receipt.Status = types.ReceiptStatusFailed
 	} else {
 		receipt.Status = types.ReceiptStatusSuccessful
 	}
 	if msg.To() == nil {
-		receipt.ContractAddress = crypto.CreateAddress(evm.TxContext.Origin, tx.Nonce())
+		receipt.ContractAddress = crypto.CreateAddress(msg.From(), tx.Nonce())
 	}
 
 	buf.Commit()

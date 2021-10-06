@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/packages/evm"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -41,7 +42,7 @@ func (e *Env) RequestFunds(target common.Address) *types.Transaction {
 	nonce, err := e.Client.NonceAt(context.Background(), evmtest.FaucetAddress, nil)
 	require.NoError(e.T, err)
 	tx, err := types.SignTx(
-		types.NewTransaction(nonce, target, RequestFundsAmount, evm.TxGas, evm.GasPrice, nil),
+		types.NewTransaction(nonce, target, RequestFundsAmount, params.TxGas, evm.GasPrice, nil),
 		e.signer(),
 		evmtest.FaucetKey,
 	)
@@ -309,7 +310,7 @@ func (e *Env) TestRPCGasLimit() {
 	toAddress := evmtest.AccountAddress(1)
 	value := big.NewInt(1)
 	nonce := e.NonceAt(fromAddress)
-	gasLimit := evm.TxGas - 1
+	gasLimit := params.TxGas - 1
 	tx, err := types.SignTx(
 		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
 		e.signer(),
@@ -327,7 +328,7 @@ func (e *Env) TestRPCInvalidNonce() {
 	toAddress := evmtest.AccountAddress(1)
 	value := big.NewInt(1)
 	nonce := e.NonceAt(fromAddress) + 1
-	gasLimit := evm.TxGas - 1
+	gasLimit := params.TxGas - 1
 	tx, err := types.SignTx(
 		types.NewTransaction(nonce, toAddress, value, gasLimit, evm.GasPrice, nil),
 		e.signer(),

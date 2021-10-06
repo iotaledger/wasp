@@ -4,6 +4,7 @@
 package evm
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -44,8 +45,9 @@ func accountStateKey(addr common.Address, hash common.Hash) kv.Key {
 
 // StateDB implements vm.StateDB with a kv.KVStore as backend
 type StateDB struct {
-	kv   kv.KVStore
-	logs []*types.Log
+	kv     kv.KVStore
+	logs   []*types.Log
+	refund uint64
 }
 
 var _ vm.StateDB = &StateDB{}
@@ -117,10 +119,20 @@ func (s *StateDB) GetCodeSize(addr common.Address) int {
 	return len(s.GetCode(addr))
 }
 
-// TODO: implement refund?
-func (s *StateDB) AddRefund(n uint64) {}
-func (s *StateDB) SubRefund(n uint64) {}
-func (s *StateDB) GetRefund() uint64  { return 0 }
+func (s *StateDB) AddRefund(n uint64) {
+	s.refund += n
+}
+
+func (s *StateDB) SubRefund(n uint64) {
+	if n > s.refund {
+		panic(fmt.Sprintf("Refund counter below zero (gas: %d > refund: %d)", n, s.refund))
+	}
+	s.refund -= n
+}
+
+func (s *StateDB) GetRefund() uint64 {
+	return s.refund
+}
 
 func (s *StateDB) GetCommittedState(addr common.Address, key common.Hash) common.Hash {
 	return s.GetState(addr, key)
@@ -144,7 +156,7 @@ func (s *StateDB) Suicide(addr common.Address) bool {
 	s.kv.Del(accountCodeKey(addr))
 
 	keys := make([]kv.Key, 0)
-	s.kv.IterateKeys(accountKey(keyAccountState, addr), func(key kv.Key) bool {
+	s.kv.MustIterateKeys(accountKey(keyAccountState, addr), func(key kv.Key) bool {
 		keys = append(keys, key)
 		return true
 	})

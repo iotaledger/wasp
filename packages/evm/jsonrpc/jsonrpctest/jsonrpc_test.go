@@ -18,6 +18,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/iotaledger/wasp/contracts/native/evmchain"
 	"github.com/iotaledger/wasp/packages/evm"
@@ -265,7 +266,7 @@ func TestRPCSignTransaction(t *testing.T) {
 
 	from := evmtest.AccountAddress(0)
 	to := evmtest.AccountAddress(1)
-	gas := hexutil.Uint64(evm.TxGas)
+	gas := hexutil.Uint64(params.TxGas)
 	nonce := hexutil.Uint64(env.NonceAt(from))
 	signed := env.SignTransaction(&jsonrpc.SendTxArgs{
 		From:     from,
@@ -290,7 +291,7 @@ func TestRPCSendTransaction(t *testing.T) {
 	env.RequestFunds(from)
 
 	to := evmtest.AccountAddress(1)
-	gas := hexutil.Uint64(evm.TxGas)
+	gas := hexutil.Uint64(params.TxGas)
 	nonce := hexutil.Uint64(env.NonceAt(from))
 	txHash := env.MustSendTransaction(&jsonrpc.SendTxArgs{
 		From:     from,

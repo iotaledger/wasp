@@ -484,8 +484,7 @@ func dbSize(db kv.KVStore) float64 {
 	return r
 }
 
-type iscpBackend struct {
-}
+type iscpBackend struct{}
 
 var _ vm.ISCPBackend = &iscpBackend{}
 
