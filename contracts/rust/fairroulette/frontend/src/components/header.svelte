@@ -58,17 +58,17 @@
               alt="dropdown"
               class="arrow"
             />
-            {#if isRepositoriesExpanded}
-              <div class="repositories-expanded">
-                {#each REPOSITORIES as { label, link }}
-                  <a class="repo" target="_blank" href={link}>{label}</a>
-                {/each}
-              </div>
-            {/if}
           </div>
+          {#if isRepositoriesExpanded}
+            <div class="repositories-expanded">
+              {#each REPOSITORIES as { label, link }}
+                <a class="repo" target="_blank" href={link}>{label}</a>
+              {/each}
+            </div>
+          {/if}
         </div>
         {#if isLanding}
-          <button class="try-demo" on:click={() => navigateTo('/demo')}
+          <button class="try-demo" on:click={() => navigateTo("/demo")}
             >Try demo</button
           >
         {/if}
@@ -99,7 +99,7 @@
             <a {target} {href}>{label}</a>
           {/each}
           <div
-            class="dropdown"
+            class="dropdown flex-shrink-0"
             on:click={() => {
               isRepositoriesExpanded = !isRepositoriesExpanded;
             }}
@@ -132,6 +132,7 @@
     height: 50px;
     position: relative;
     display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     .container {
       display: flex;
       align-items: center;
@@ -179,6 +180,8 @@
           gap: 8px;
           cursor: pointer;
           display: none;
+          position: relative;
+          flex-shrink: 0;
           @media (min-width: 1024px) {
             display: flex;
           }
@@ -197,7 +200,7 @@
         line-height: 150%;
         letter-spacing: 0.75px;
         color: var(--gray-3);
-        font-family: 'Inter';
+        font-family: "Inter";
         display: flex;
         justify-content: space-between;
         @media (min-width: 1024px) {
@@ -251,12 +254,12 @@
       min-height: 50px;
       z-index: 2;
       @media (min-width: 1024px) {
-        left: -50px;
-        padding: 0 30px 30px 30px;
-        margin: 28px;
-        width: 170%;
-        box-shadow: 0px 3px 8px 0px rgba(20, 30, 49, 0.93);
-        border-radius: 12px;
+        padding: 0 20px 20px 20px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        top: 51px;
+        width: 100%;
       }
     }
     @media (min-width: 1024px) {
@@ -268,7 +271,7 @@
       letter-spacing: 0.75px;
       color: var(--gray-3);
       text-decoration: none;
-      font-family: 'Inter';
+      font-family: "Inter";
     }
     .try-demo {
       border: 0;
