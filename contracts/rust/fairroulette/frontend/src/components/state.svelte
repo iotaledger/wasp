@@ -73,14 +73,13 @@
 
 <style lang="scss">
   .message {
-    font-family: 'Metropolis Bold';
+    font-family: 'Metropolis Semi Bold';
     text-align: center;
     .title {
       text-align: center;
       color: var(--white);
     }
     .subtitle {
-      font-family: 'Metropolis Bold';
       font-size: 24px;
       line-height: 120%;
       letter-spacing: 0.02em;
@@ -88,7 +87,7 @@
       margin-bottom: 8px;
     }
     .description {
-      padding: 16px;
+      padding: 20px;
       font-size: 16px;
       line-height: 150%;
       letter-spacing: 0.75px;
