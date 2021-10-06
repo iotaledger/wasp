@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount } from 'svelte';
   import {
     BalancePanel,
     Button,
@@ -7,10 +7,10 @@
     PlayersPanel,
     Roulette,
     WalletPanel,
-  } from "../components";
-  import Animation from "../components/animation.svelte";
-  import ToastContainer from "../components/toast_container.svelte";
-  import { BettingStep, initialize, StateMessage } from "../lib/app";
+  } from '../components';
+  import Animation from '../components/animation.svelte';
+  import ToastContainer from '../components/toast_container.svelte';
+  import { BettingStep, initialize, StateMessage } from '../lib/app';
   import {
     balance,
     bettingStep,
@@ -20,7 +20,7 @@
     round,
     showBettingSystem,
     timeToFinished,
-  } from "../lib/store";
+  } from '../lib/store';
 
   let message: StateMessage;
 
@@ -32,27 +32,27 @@
 
   $: MESSAGES = {
     [StateMessage.Running]: {
-      title: "Game Running!",
-      description: `The round ends in ${$timeToFinished ?? "..."} seconds.`,
+      title: 'Game Running!',
+      description: `The round ends in ${$timeToFinished ?? '...'} seconds.`,
     },
     [StateMessage.Start]: {
-      title: "Start game",
+      title: 'Start game',
       description:
-        "Press the “Choose your bet” button below and follow on-screen instructions.",
+        'Press the “Choose your bet” button below and follow on-screen instructions.',
     },
     [StateMessage.AddFunds]: {
-      title: "Add funds",
+      title: 'Add funds',
       description:
-        "To play, first request funds for your wallet. Those are dev-net tokens and hold no value.",
+        'To play, first request funds for your wallet. Those are dev-net tokens and hold no value.',
     },
     [StateMessage.ChoosingNumber]: {
-      title: "Choose a number",
+      title: 'Choose a number',
       description:
-        "Select a number of the roulette that you want to bet on randomly winning",
+        'Select a number of the roulette that you want to bet on randomly winning',
     },
     [StateMessage.ChoosingAmount]: {
-      title: "Set your amount",
-      description: "Feeling lucky? How much will you risk?",
+      title: 'Set your amount',
+      description: 'Feeling lucky? How much will you risk?',
     },
   };
 
@@ -113,10 +113,10 @@
             onClick={() => showBettingSystem.set(true)}
             loading={$placingBet}
             label={$placingBet
-              ? "Placing bet"
+              ? 'Placing bet'
               : $round.active
-              ? "Join the game"
-              : "Choose your bet"}
+              ? 'Join the game'
+              : 'Choose your bet'}
           />
         {/if}
       </div>
@@ -159,7 +159,7 @@
     }
     .message {
       margin-top: 40px;
-      font-family: "Metropolis Semi Bold";
+      font-family: 'Metropolis Semi Bold';
       text-align: center;
       @media (min-width: 1024px) {
         margin-top: 0;
@@ -179,7 +179,7 @@
         margin-bottom: 8px;
       }
       .description {
-        padding: 20px;
+        padding: 10px 20px;
         font-size: 16px;
         line-height: 150%;
         letter-spacing: 0.75px;
