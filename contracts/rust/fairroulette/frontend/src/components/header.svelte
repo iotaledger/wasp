@@ -164,6 +164,7 @@
           display: none;
           @media (min-width: 1024px) {
             display: flex;
+            padding: 16px 0;
           }
         }
         .repositories {
@@ -198,15 +199,8 @@
       }
       .arrow {
         transition: transform 0.4s ease;
-        transform: rotate(-90deg);
-        @media (min-width: 1024px) {
-          transform: rotate(180deg);
-        }
         &.expanded {
-          transform: rotate(0);
-          @media (min-width: 1024px) {
-            transform: rotate(359deg);
-          }
+          transform: rotate(-90deg);
         }
       }
       .burger-menu {
@@ -218,7 +212,7 @@
         top: 0;
         width: 100%;
         height: 100%;
-        background-color: #262e44;
+        background-color: #091326;
         color: white;
         z-index: 2;
         padding: 24px;
@@ -246,7 +240,7 @@
       padding: 24px 4px;
       top: 100%;
       width: 100%;
-      background-color: #262e44;
+      background-color: #091326;
       min-height: 50px;
       z-index: 2;
       @media (min-width: 1024px) {
@@ -254,6 +248,8 @@
         padding: 0 30px 30px 30px;
         margin: 28px;
         width: 170%;
+        box-shadow: 0px 3px 8px 0px rgba(20, 30, 49, 0.93);
+        border-radius: 12px;
       }
     }
     @media (min-width: 1024px) {
