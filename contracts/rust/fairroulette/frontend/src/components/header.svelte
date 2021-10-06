@@ -190,12 +190,23 @@
         letter-spacing: 0.75px;
         color: var(--gray-3);
         font-family: 'Inter';
+        display: flex;
+        justify-content: space-between;
+        @media (min-width: 1024px) {
+          display: block;
+        }
       }
       .arrow {
         transition: transform 0.4s ease;
-        transform: rotate(270deg);
+        transform: rotate(-90deg);
+        @media (min-width: 1024px) {
+          transform: rotate(180deg);
+        }
         &.expanded {
-          transform: rotate(1deg);
+          transform: rotate(0);
+          @media (min-width: 1024px) {
+            transform: rotate(359deg);
+          }
         }
       }
       .burger-menu {
@@ -212,7 +223,6 @@
         z-index: 2;
         padding: 24px;
         .repositories-expanded {
-          position: static;
           padding: 16px;
         }
         .close-expanded {
@@ -241,7 +251,8 @@
       z-index: 2;
       @media (min-width: 1024px) {
         left: -50px;
-        padding: 30px;
+        padding: 0 30px 30px 30px;
+        margin: 28px;
         width: 170%;
       }
     }

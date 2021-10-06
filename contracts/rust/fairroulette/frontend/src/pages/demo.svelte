@@ -44,21 +44,23 @@
   <div class="layout_roulette">
     <div class="roulette_game">
       <Roulette />
-      {#if !$requestBet && $balance > 0n && !$placingBet}
-        <Button
-          disabled={$round.betPlaced}
-          onClick={() => ($requestBet = true)}
-          label={$round.active ? 'Join the game' : 'Choose your bet'}
-        />
-      {/if}
-      {#if $placingBet}
-        <Button
-          disabled
-          onClick={() => {}}
-          label={'Placing bet...'}
-          loading={$placingBet}
-        />
-      {/if}
+      <div class="start_button">
+        {#if !$requestBet && $balance > 0n && !$placingBet}
+          <Button
+            disabled={$round.betPlaced}
+            onClick={() => ($requestBet = true)}
+            label={$round.active ? 'Join the game' : 'Choose your bet'}
+          />
+        {/if}
+        {#if $placingBet}
+          <Button
+            disabled
+            onClick={() => {}}
+            label={'Placing bet...'}
+            loading={$placingBet}
+          />
+        {/if}
+      </div>
       {#if $round.active && $balance === 0n && !$firstTimeRequestingFunds}
         <State forceState={StateType.AddFundsRunning} />
       {/if}
@@ -131,11 +133,17 @@
     .roulette_game {
       max-width: max-content;
       margin: 0 auto;
+      margin-bottom: 50px;
       @media (min-width: 1024px) {
         position: absolute;
         top: -50px;
         left: 50%;
         transform: translateX(-50%);
+      }
+      .start_button {
+        width: 50%;
+        margin: 0 auto;
+        margin-top: 50px;
       }
       .bet_system,
       .request_button {

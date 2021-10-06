@@ -111,14 +111,31 @@
     }
     .betting-actions {
       display: flex;
+      gap: 32px;
+      width: 250px;
+      margin-top: 24px;
+
+      @media (min-width: 1024px) {
+        width: 350px;
+        margin-top: 32px;
+      }
     }
     .betting-panel {
       position: absolute;
-      top: 50%;
+      top: 40%;
       left: 50%;
       transform: translate(-50%, -50%);
       .step-title {
-        color: white;
+        font-weight: 600;
+        font-size: 20px;
+        line-height: 140%;
+        text-align: center;
+        letter-spacing: 0.02em;
+        color: #909fbe;
+        margin-bottom: 40px;
+        @media (min-width: 1024px) {
+          margin-bottom: 60px;
+        }
       }
     }
   }

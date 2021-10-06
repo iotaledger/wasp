@@ -60,11 +60,16 @@
 
     .value {
       text-align: end;
-      font-size: 14px;
+      font-size: 24px;
       line-height: 150%;
       letter-spacing: 0.5px;
       color: var(--white);
       padding-bottom: 20px;
+      font-family: 'Metropolis Bold';
+      @media (min-width: 1024px) {
+        font-size: 48px;
+        padding-bottom: 45px;
+      }
       input {
         border-radius: 5px;
         text-align: end;
@@ -72,6 +77,8 @@
         background: var(--blue-dark);
         border: 1px solid var(--border-color);
         padding: 8px;
+        width: 88%;
+        font-family: 'Metropolis Bold';
         &:focus {
           outline: none;
         }
