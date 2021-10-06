@@ -200,7 +200,7 @@
       .arrow {
         transition: transform 0.4s ease;
         &.expanded {
-          transform: rotate(-90deg);
+          transform: rotate(-180deg);
         }
       }
       .burger-menu {
