@@ -37,47 +37,53 @@
     </div>
 
     <!-- Desktop menu -->
-    <div class="nav-items">
-      {#each NAV_LINKS as { label, href, target }}
-        <a {target} {href}>{label}</a>
-      {/each}
+    <div class="reverse-navbar-items">
+      <div class="nav-items">
+        {#each NAV_LINKS as { label, href, target }}
+          <a {target} {href}>{label}</a>
+        {/each}
 
+        <div
+          class="repositories"
+          on:click={() => {
+            isRepositoriesExpanded = !isRepositoriesExpanded;
+          }}
+        >
+          <img src="/assets/github.svg" alt="github" />
+          <div class="dropdown">
+            <span>Repositories</span>
+            <img
+              class:expanded={isRepositoriesExpanded}
+              src="/assets/dropdown.svg"
+              alt="dropdown"
+              class="arrow"
+            />
+            {#if isRepositoriesExpanded}
+              <div class="repositories-expanded">
+                {#each REPOSITORIES as { label, link }}
+                  <a class="repo" target="_blank" href={link}>{label}</a>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        </div>
+        {#if isLanding}
+          <button class="try-demo" on:click={() => navigateTo('/demo')}
+            >Try demo</button
+          >
+        {/if}
+      </div>
+
+      <!-- Mobile menu -->
       <div
-        class="repositories"
+        class="open-menu"
         on:click={() => {
-          isRepositoriesExpanded = !isRepositoriesExpanded;
+          isMenuExpanded = true;
         }}
       >
-        <img src="/assets/github.svg" alt="github" />
-        <div class="dropdown">
-          <span>Repositories</span>
-          <img
-            class:expanded={isRepositoriesExpanded}
-            src="/assets/dropdown.svg"
-            alt="dropdown"
-            class="arrow"
-          />
-          {#if isRepositoriesExpanded}
-            <div class="repositories-expanded">
-              {#each REPOSITORIES as { label, link }}
-                <a class="repo" target="_blank" href={link}>{label}</a>
-              {/each}
-            </div>
-          {/if}
-        </div>
+        <img src="/assets/burger.svg" alt="menu" />
       </div>
     </div>
-
-    <!-- Mobile menu -->
-    <div
-      class="open-menu"
-      on:click={() => {
-        isMenuExpanded = true;
-      }}
-    >
-      <img src="/assets/burger.svg" alt="menu" />
-    </div>
-
     {#if isMenuExpanded}
       <aside class="aside-expanded" transition:slide={{ duration: 700 }}>
         <div
@@ -117,11 +123,6 @@
       </aside>
     {/if}
   </div>
-  {#if isLanding}
-    <button class="try-demo" on:click={() => navigateTo('/demo')}
-      >Try demo</button
-    >
-  {/if}
 </header>
 
 <style lang="scss">
@@ -135,6 +136,7 @@
       display: flex;
       align-items: center;
       width: 100%;
+      justify-content: space-between;
       .logo {
         cursor: pointer;
         img {
@@ -146,6 +148,11 @@
           }
         }
       }
+      .reverse-navbar-items {
+        display: flex;
+        flex-direction: row-reverse;
+      }
+
       .nav-items {
         display: flex;
         justify-content: flex-end;
@@ -280,7 +287,7 @@
       font-weight: bold;
       font-size: 14px;
       line-height: 120%;
-      padding: 10px;
+      padding: 16px;
       @media (min-width: 1024px) {
         padding: 30px;
         font-size: 16px;
