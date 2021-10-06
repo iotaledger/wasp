@@ -3,7 +3,7 @@ import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
 import { Notification, NOTIFICATION_TIMEOUT_NEVER, showNotification } from './notifications';
-import { address, addressIndex, balance, firstTimeRequestingFunds, keyPair, placingBet, requestingFunds, resetRound, round, seed, showBettingSystem, showWinnerAnimation, showWinningNumber, timestamp } from './store';
+import { address, addressesHistory, addressIndex, balance, firstTimeRequestingFunds, isAWinnerPlayer, keyPair, placingBet, requestingFunds, resetRound, round, seed, showBettingSystem, showWinnerAnimation, showWinningNumber, timestamp } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
     WalletService
@@ -133,6 +133,7 @@ export function setAddress(index: number) {
 }
 
 export function createNewAddress() {
+    addressesHistory.update(_history => [..._history, get(address)])
     addressIndex.update(($addressIndex) => $addressIndex + 1);
     setAddress(get(addressIndex));
 }
@@ -186,8 +187,8 @@ export async function sendFaucetRequest() {
 
     if (!get(firstTimeRequestingFunds)) {
         createNewAddress();
-        firstTimeRequestingFunds.set(false);
     }
+    firstTimeRequestingFunds.set(false);
 
     requestingFunds.set(true);
 
@@ -249,6 +250,14 @@ export function subscribeToRouletteEvents() {
                 timeout: NOTIFICATION_TIMEOUT_NEVER
             })
         }
+        if (!get(isAWinnerPlayer)) {
+            showNotification({
+                type: Notification.Info,
+                message: 'You loose, try again!',
+                timeout: NOTIFICATION_TIMEOUT_NEVER
+            })
+        }
+
         resetRound();
         log(LogTag.Round, 'Ended');
     });
@@ -261,6 +270,7 @@ export function subscribeToRouletteEvents() {
     fairRouletteService.on('winningNumber', (winningNumber: bigint) => {
         round.update($round => ({ ...$round, winningNumber }))
         showWinningNumber.set(true);
+
         log(LogTag.Round, `The winning number was: ${winningNumber}`);
     });
 
@@ -286,7 +296,8 @@ export function subscribeToRouletteEvents() {
     });
 
     fairRouletteService.on('payout', (bet: Bet) => {
-        if (bet.better === get(address)) {
+
+        if (bet.better === get(address) || get(addressesHistory).includes(bet.better)) {
             showNotification({
                 type: Notification.Win,
                 message: `Congratulations! You just won the round. You received ${bet.amount} iotas.`,
@@ -294,13 +305,7 @@ export function subscribeToRouletteEvents() {
             })
             showWinnerAnimation();
         }
-        else if (get(round).betPlaced) {
-            showNotification({
-                type: Notification.Info,
-                message: 'Sorry, you have lost. Try your luck again.',
-                timeout: NOTIFICATION_TIMEOUT_NEVER
-            })
-        }
+
         log(LogTag.Win, `Payout for ${bet.better} with ${bet.amount}`);
     });
 }

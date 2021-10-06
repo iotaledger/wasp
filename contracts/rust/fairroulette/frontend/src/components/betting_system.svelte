@@ -41,10 +41,6 @@
       bettingStep.update((_step) => _step - 1);
     }
   }
-
-  function resetNumber() {
-    $round.betSelection = undefined;
-  }
 </script>
 
 <div class="betting-system">
