@@ -85,6 +85,17 @@ h2 {
   }
 }
 
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #485776;
+  border-radius: 4px;
+}
+
 /* Custom utility classes */
 .container {
   max-width: 1200px;
@@ -121,14 +132,4 @@ h2 {
     border-radius: 12px;
     padding: 16px;
   }
-}
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #485776;
-  border-radius: 4px;
 }
