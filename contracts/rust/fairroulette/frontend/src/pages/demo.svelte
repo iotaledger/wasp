@@ -225,7 +225,7 @@
       .start_button {
         width: 50%;
         margin: 0 auto;
-        margin-top: 50px;
+        margin-top: 30px;
       }
       .bet_system,
       .request_button {
