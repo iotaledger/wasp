@@ -1,3 +1,6 @@
+import Tabs from "@theme/Tabs"
+import TabItem from "@theme/TabItem"
+
 # Function Call Context
 
 We saw that proxy objects provide generic access capabilities to the data on the host. It
@@ -41,29 +44,43 @@ other function-related data through its context object.
 Here is a (simplified) example from the `dividend` example smart contract that we will use
 to showcase some features of WasmLib:
 
+<Tabs defaultValue="go"
+      values={[
+          {label: 'Go', value: 'go'},
+          {label: 'Rust', value: 'rust'},
+      ]}>
+
+<TabItem value="go">
+
 ```go
 func OnLoad() {
-	exports := wasmlib.NewScExports()
-	exports.AddFunc("divide", funcDivide)
-	exports.AddFunc("init", funcInit)
-	exports.AddFunc("member", funcMember)
-	exports.AddFunc("setOwner", funcSetOwner)
-	exports.AddView("getFactor", viewGetFactor)
-	exports.AddView("getOwner", viewGetOwner)
+    exports := wasmlib.NewScExports()
+    exports.AddFunc("divide", funcDivide)
+    exports.AddFunc("init", funcInit)
+    exports.AddFunc("member", funcMember)
+    exports.AddFunc("setOwner", funcSetOwner)
+    exports.AddView("getFactor", viewGetFactor)
+    exports.AddView("getOwner", viewGetOwner)
 }
 ```
 
+</TabItem>
+<TabItem value="rust">
+
 ```rust
 fn on_load() {
-	let exports = ScExports::new();
-	exports.add_func("divide", func_divide);
-	exports.add_func("init", func_init);
-	exports.add_func("member", func_member);
-	exports.add_func("setOwner", func_set_owner);
-	exports.add_view("getFactor", view_get_factor);
-	exports.add_view("getOwner", view_get_owner);
+    let exports = ScExports::new();
+    exports.add_func("divide", func_divide);
+    exports.add_func("init", func_init);
+    exports.add_func("member", func_member);
+    exports.add_func("setOwner", func_set_owner);
+    exports.add_view("getFactor", view_get_factor);
+    exports.add_view("getOwner", view_get_owner);
 }
 ```
+
+</TabItem>
+</Tabs>
 
 As you can see this on_load() function first creates the required ScExports context and
 then proceeds to define four Funcs named `divide`, `init`, `member`, and `setOwner`. It
@@ -77,57 +94,71 @@ In its simplest form this is all that is necessary to initialize a smart contrac
 finalize this example, here is what the skeleton function implementations for the above
 smart contract definition would look like:
 
+<Tabs defaultValue="go"
+      values={[
+          {label: 'Go', value: 'go'},
+          {label: 'Rust', value: 'rust'},
+      ]}>
+
+<TabItem value="go">
+
 ```go
 func funcDivide(ctx wasmlib.ScFuncContext) {
-	ctx.Log("dividend.funcDivide")
+    ctx.Log("dividend.funcDivide")
 }
 
 func funcInit(ctx wasmlib.ScFuncContext) {
-	ctx.Log("dividend.funcInit")
+    ctx.Log("dividend.funcInit")
 }
 
 func funcMember(ctx wasmlib.ScFuncContext) {
-	ctx.Log("dividend.funcMember")
+    ctx.Log("dividend.funcMember")
 }
 
 func funcSetOwner(ctx wasmlib.ScFuncContext) {
-	ctx.Log("dividend.funcSetOwner")
+    ctx.Log("dividend.funcSetOwner")
 }
 
 func viewGetFactor(ctx wasmlib.ScViewContext) {
-	ctx.Log("dividend.viewGetFactor")
+    ctx.Log("dividend.viewGetFactor")
 }
 
 func viewGetOwner(ctx wasmlib.ScViewContext) {
-	ctx.Log("dividend.viewGetOwner")
+    ctx.Log("dividend.viewGetOwner")
 }
 ```
+
+</TabItem>
+<TabItem value="rust">
 
 ```rust
 fn func_divide(ctx: &ScFuncContext) {
-	ctx.log("Calling dividend.divide");
+    ctx.log("Calling dividend.divide");
 }
 
 fn func_init(ctx: &ScFuncContext) {
-	ctx.log("Calling dividend.init");
+    ctx.log("Calling dividend.init");
 }
 
 fn func_member(ctx: &ScFuncContext) {
-	ctx.log("Calling dividend.member");
+    ctx.log("Calling dividend.member");
 }
 
 fn func_set_owner(ctx: &ScFuncContext) {
-	ctx.log("Calling dividend.setOwner");
+    ctx.log("Calling dividend.setOwner");
 }
 
 fn view_get_factor(ctx: &ScViewContext) {
-	ctx.log("Calling dividend.getFactor");
+    ctx.log("Calling dividend.getFactor");
 }
 
 fn view_get_owner(ctx: &ScViewContext) {
-	ctx.log("Calling dividend.getOwner");
+    ctx.log("Calling dividend.getOwner");
 }
 ```
+
+</TabItem>
+</Tabs>
 
 As you can see the functions are each provided with a context parameter, which is
 conventionally named _ctx_. Notice that the four Funcs are passed an ScFuncContext,

@@ -1,8 +1,11 @@
+import Tabs from "@theme/Tabs"
+import TabItem from "@theme/TabItem"
+
 # Function Parameters
 
 The optional `params` subsection contains field definitions for each of the parameters
 that a function takes. The layout of the field definitions is identical to that of
-the [state](state.md) field definitions, with one addition. The field type can be prefixed
+the [state](state.mdx) field definitions, with one addition. The field type can be prefixed
 with a question mark, which indicates that that parameter is optional.
 
 The schema tool will automatically generate an immutable structure with member variables
@@ -18,6 +21,14 @@ passed to the function.
 For example, here is the structure generated for the immutable params for the `member`
 function:
 
+<Tabs defaultValue="go"
+    values={[
+        {label: 'Go', value: 'go'},
+        {label: 'Rust', value: 'rust'},
+    ]}>
+
+<TabItem value="go">
+
 ```go
 type ImmutableMemberParams struct {
     id int32
@@ -31,6 +42,9 @@ func (s ImmutableMemberParams) Factor() wasmlib.ScImmutableInt64 {
     return wasmlib.NewScImmutableInt64(s.id, idxMap[IdxParamFactor])
 }
 ```
+
+</TabItem>
+<TabItem value="rust">
 
 ```rust
 #[derive(Clone, Copy)]
@@ -48,6 +62,9 @@ impl ImmutableMemberParams {
     }
 }
 ```
+
+</TabItem>
+</Tabs>
 
 Note that the schema tool will also generate a mutable version of the structure, suitable
 for providing the parameters when calling this smart contract function.

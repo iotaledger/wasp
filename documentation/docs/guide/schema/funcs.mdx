@@ -1,8 +1,18 @@
+import Tabs from "@theme/Tabs"
+import TabItem from "@theme/TabItem"
+
 # Function Definitions
 
 Here is the full schema.json file for the `dividend` example. We will now focus on
 its `funcs` and `views` sections. Since they are structured identically we will only need
 to explain the layout of these sections once.
+
+<Tabs defaultValue="json"
+    values={[
+        {label: 'schema.json', value: 'json'},
+    ]}>
+
+<TabItem value="json">
 
 ```json
 {
@@ -48,6 +58,9 @@ to explain the layout of these sections once.
   }
 }
 ```
+
+</TabItem>
+</Tabs>
 
 As you can see each of the `funcs` and `views` sections defines their functions in the
 same way. The only resulting difference is in the way the schema tool generates code for

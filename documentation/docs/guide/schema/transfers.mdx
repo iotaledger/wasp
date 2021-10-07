@@ -1,3 +1,6 @@
+import Tabs from "@theme/Tabs"
+import TabItem from "@theme/TabItem"
+
 # Token Transfers
 
 There are two methods in the ISCP function context that deal with token balances. The
@@ -31,6 +34,14 @@ will receive 50/100th, address B will receive 30/100th, and address C will recei
 
 Here is the `divide` function:
 
+<Tabs defaultValue="go"
+    values={[
+        {label: 'Go', value: 'go'},
+        {label: 'Rust', value: 'rust'},
+    ]}>
+
+<TabItem value="go">
+
 ```go
 // 'divide' is a function that will take any iotas it receives and properly
 // disperse them to the addresses in the member list according to the dispersion
@@ -46,34 +57,34 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
     // smart contract. Note that ScBalances wraps an ScImmutableMap of
     // token color/amount combinations in a simpler to use interface.
     var balances wasmlib.ScBalances = ctx.Balances()
-    
+
     // Retrieve the amount of plain iota tokens from the account balance
     var amount int64 = balances.Balance(wasmlib.IOTA)
-    
+
     // Retrieve the pre-calculated totalFactor value from the state storage.
     var totalFactor int64 = f.State.TotalFactor().Value()
-    
+
     // Get the proxy to the 'members' map in the state storage.
     var members MapAddressToMutableInt64 = f.State.Members()
-    
+
     // Get the proxy to the 'memberList' array in the state storage.
     var memberList ArrayOfMutableAddress = f.State.MemberList()
-    
+
     // Determine the current length of the memberList array.
     var size int32 = memberList.Length()
-    
+
     // Loop through all indexes of the memberList array.
     for i := int32(0); i < size; i++ {
         // Retrieve the next indexed address from the memberList array.
         var address wasmlib.ScAddress = memberList.GetAddress(i).Value()
-        
+
         // Retrieve the factor associated with the address from the members map.
         var factor int64 = members.GetInt64(address).Value()
-        
+
         // Calculate the fair share of iotas to disperse to this member based on the
         // factor we just retrieved. Note that the result will been truncated.
         var share int64 = amount * factor / totalFactor
-        
+
         // Is there anything to disperse to this member?
         if share > 0 {
             // Yes, so let's set up an ScTransfers map proxy that transfers the
@@ -83,7 +94,7 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
             // single token color transfer in a single statement. The actual color
             // and amount values passed in will be stored in a new map on the host.
             var transfers wasmlib.ScTransfers = wasmlib.NewScTransferIotas(share)
-            
+
             // Perform the actual transfer of tokens from the smart contract to the
             // member address. The transfer_to_address() method receives the address
             // value and the proxy to the new transfers map on the host, and will
@@ -93,6 +104,9 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
     }
 }
 ```
+
+</TabItem>
+<TabItem value="rust">
 
 ```rust
 // 'divide' is a function that will take any iotas it receives and properly
@@ -105,7 +119,6 @@ func funcDivide(ctx wasmlib.ScFuncContext, f *DivideContext) {
 // to any next round of tokens received prior to calculation of the new
 // dividend amounts.
 pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
-
     // Create an ScBalances map proxy to the account balances for this
     // smart contract. Note that ScBalances wraps an ScImmutableMap of
     // token color/amount combinations in a simpler to use interface.
@@ -157,6 +170,9 @@ pub fn func_divide(ctx: &ScFuncContext, f: &DivideContext) {
     }
 }
 ```
+
+</TabItem>
+</Tabs>
 
 In the next section we will introduce function descriptors that can be used to initiate
 smart contract functions.
