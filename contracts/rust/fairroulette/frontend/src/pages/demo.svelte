@@ -21,6 +21,7 @@
     showBettingSystem,
     timeToFinished,
   } from "../lib/store";
+  import { fade } from "svelte/transition";
 
   let message: StateMessage;
 
@@ -38,12 +39,12 @@
     [StateMessage.Start]: {
       title: "Start game",
       description:
-        "Press the “Choose your bet” button below and follow on-screen instructions.",
+        "Press the “Choose bet” button below and follow on-screen instructions.",
     },
     [StateMessage.AddFunds]: {
       title: "Add funds",
       description:
-        "To play, first request funds for your wallet. Those are dev-net tokens and hold no value.",
+        "To play, first request funds for your wallet. These are dev-net tokens and hold no value.",
     },
     [StateMessage.ChoosingNumber]: {
       title: "Choose a number",
@@ -111,18 +112,19 @@
           <Button
             disabled={$round.betPlaced || $placingBet}
             onClick={() => showBettingSystem.set(true)}
-            loading={$placingBet}
+            loading={$placingBet ||
+              (!$placingBet && $round.active && $round.betPlaced)}
             label={$placingBet
               ? "Placing bet"
-              : $round.active
-              ? "Join the game"
-              : "Choose your bet"}
+              : $round.active && $round.betPlaced
+              ? "In progress"
+              : "Choose bet"}
           />
         {/if}
       </div>
       {#if $round.active && $balance === 0n}
         <div class="description">
-          To play, first request funds for your wallet. Those are dev-net tokens
+          To play, first request funds for your wallet. These are dev-net tokens
           and hold no value.
         </div>
       {/if}

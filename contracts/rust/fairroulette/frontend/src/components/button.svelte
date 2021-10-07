@@ -1,11 +1,14 @@
 <script lang="ts">
+  import { fade } from "svelte/transition";
+
   export let label: string;
   export let disabled: boolean = false;
   export let onClick: () => void;
   export let loading: boolean = false;
+  export let secondary: boolean = false;
 </script>
 
-<button {disabled} class:disabled on:click={onClick}>
+<button {disabled} class:disabled class:secondary on:click={onClick}>
   <div class="label">{label}</div>
   {#if loading}
     <div>

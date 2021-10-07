@@ -1,16 +1,17 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+  import { onDestroy } from "svelte";
   import {
     placingBet,
     round,
     showBettingSystem,
     showWinningNumber,
     timeToFinished,
-  } from '../lib/store';
-  import { generateRandomInt } from '../lib/utils';
-  import { ROUND_LENGTH } from './../lib/app';
-  import Animation from './animation.svelte';
-  import BettingSystem from './betting_system.svelte';
+  } from "../lib/store";
+  import { generateRandomInt } from "../lib/utils";
+  import { ROUND_LENGTH } from "./../lib/app";
+  import Animation from "./animation.svelte";
+  import BettingSystem from "./betting_system.svelte";
+  import { fade } from "svelte/transition";
 
   // Highlighted number
   let flashedNumber: number;
@@ -117,7 +118,7 @@
         src="/assets/progress.svg"
         alt="progress"
       />
-      <div class="betting-system">
+      <div class="betting-system" in:fade>
         <BettingSystem />
       </div>
     {:else}

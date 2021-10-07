@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { BETTING_NUMBERS } from '../../lib/app';
-  import { round } from '../../lib/store';
+  import { BETTING_NUMBERS } from "../../lib/app";
+  import { round } from "../../lib/store";
 
   export let onClick: (number: number) => void = () => {};
   export let disabled: boolean = false;
@@ -38,8 +38,8 @@
       font-weight: normal;
       line-height: 31px;
       @media (min-width: 1024px) {
-        width: 80px;
-        height: 80px;
+        width: 70px;
+        height: 70px;
         font-size: 26px;
       }
       &.active {
