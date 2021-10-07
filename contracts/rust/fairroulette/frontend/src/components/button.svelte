@@ -40,6 +40,11 @@
       background: transparent;
       color: var(--gray-5);
     }
+
+    &.secondary {
+      background: var(--gray-7);
+      border-color: var(--gray-7);
+    }
     .spinner {
       position: relative;
       top: 10px;

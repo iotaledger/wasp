@@ -62,7 +62,12 @@
   </div>
 
   <div class="betting-actions">
-    <Button label="Back" disabled={$placingBet} onClick={onBackClick} />
+    <Button
+      label="Back"
+      secondary
+      disabled={$placingBet}
+      onClick={onBackClick}
+    />
     <Button
       label={isFirstStep ? "Next" : "Place bet"}
       disabled={(isFirstStep && !$round.betSelection) ||
