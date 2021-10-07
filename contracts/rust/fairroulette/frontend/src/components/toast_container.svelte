@@ -49,7 +49,7 @@
   .toast-container {
     position: fixed;
     right: 20px;
-    bottom: 20px;
+    bottom: 50px;
     width: 100%;
     @media (min-width: 600px) {
       width: 400px;
