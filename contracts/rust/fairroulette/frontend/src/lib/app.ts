@@ -2,7 +2,7 @@ import { get } from 'svelte/store';
 import config from '../../config.dev';
 import type { Bet } from './fairroulette_client';
 import { FairRouletteService } from './fairroulette_client';
-import { Notification, NOTIFICATION_TIMEOUT_NEVER, showNotification } from './notifications';
+import { Notification, showNotification } from './notifications';
 import { address, addressesHistory, addressIndex, balance, firstTimeRequestingFunds, isAWinnerPlayer, keyPair, placingBet, requestingFunds, resetRound, round, seed, showBettingSystem, showWinnerAnimation, showWinningNumber, timestamp } from './store';
 import {
     BasicClient, Colors, PoWWorkerManager,
@@ -73,7 +73,7 @@ export async function initialize() {
             showNotification({
                 type: Notification.Error,
                 message: ex.message,
-                timeout: NOTIFICATION_TIMEOUT_NEVER
+                timeout: 3000
             })
             log(LogTag.Error, ex.message);
         }
@@ -174,7 +174,7 @@ export async function placeBet() {
             type: Notification.Error,
             title: 'Error placing bet',
             message: ex.message,
-            timeout: NOTIFICATION_TIMEOUT_NEVER
+            timeout: 3000
         })
 
         log(LogTag.Unknown, ex.message);
@@ -204,7 +204,7 @@ export async function sendFaucetRequest() {
         showNotification({
             type: Notification.Error,
             message: ex.message,
-            timeout: NOTIFICATION_TIMEOUT_NEVER
+            timeout: 3000
         })
 
         log(LogTag.Round, ex.message);
@@ -247,14 +247,14 @@ export function subscribeToRouletteEvents() {
             showNotification({
                 type: Notification.Info,
                 message: 'The current round just ended. Your bet will be placed in the next round. ',
-                timeout: NOTIFICATION_TIMEOUT_NEVER
+                timeout: 3000
             })
         }
         else if (!get(isAWinnerPlayer)) {
             showNotification({
                 type: Notification.Info,
-                message: 'You loose, try again!',
-                timeout: NOTIFICATION_TIMEOUT_NEVER
+                message: 'Sorry, you lost this round. Try again!',
+                timeout: 3000
             })
         }
 
@@ -301,7 +301,7 @@ export function subscribeToRouletteEvents() {
             showNotification({
                 type: Notification.Win,
                 message: `Congratulations! You just won the round. You received ${bet.amount} iotas.`,
-                timeout: NOTIFICATION_TIMEOUT_NEVER
+                timeout: 3000
             })
             showWinnerAnimation();
         }
