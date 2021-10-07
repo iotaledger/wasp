@@ -39,8 +39,8 @@ func TestBase(t *testing.T) {
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 		governance.ParamHname, blob.Contract.Hname(),
 		governance.ParamOwnerFee, 5,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+	)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2)
@@ -58,8 +58,8 @@ func TestFeeIsEnough1(t *testing.T) {
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 		governance.ParamHname, blob.Contract.Hname(),
 		governance.ParamOwnerFee, 1,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+	)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2)
@@ -89,8 +89,8 @@ func TestFeeIsEnough2(t *testing.T) {
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 		governance.ParamHname, blob.Contract.Hname(),
 		governance.ParamOwnerFee, 10,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+	)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2)
@@ -119,8 +119,8 @@ func TestFeesNoNeed(t *testing.T) {
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 		governance.ParamHname, blob.Contract.Hname(),
 		governance.ParamOwnerFee, 10,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+	)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
 	chain.AssertCommonAccountIotas(2)
@@ -150,8 +150,8 @@ func TestFeesNotEnough(t *testing.T) {
 	req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
 		governance.ParamHname, blob.Contract.Hname(),
 		governance.ParamOwnerFee, 10,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+	)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
 	checkFees(chain, blob.Contract.Name, 10, 0)

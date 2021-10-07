@@ -5,16 +5,16 @@ keywords:
 - Architecture
 - Ethereum
 - Implementation
-description: ISCP allows anyone to start their own chain and validators. Link to full technical description of the ISCP architecture.  
+description: ISCP allows anyone to start their own chain and validators. Link to full technical description of the ISCP architecture  
 image: /img/logo/WASP_logo_dark.png
 ---
 # ISCP Architecture
 
-With ISCP anyone can start their own chain and define the validators.
+With ISCP, anyone can start their own chain and define the validators.
 
-Each chain has its own state where a state update (going from one block to the next) is hashed and published to the tangle, which moves the state anchor on Layer 1.
+Each chain has its own state where a state update (going from one block to the next) is hashed and published to the Tangle, which moves the state anchor on Layer 1.
 
-The multi-chain nature of ISCP makes it a more complex implementation of smart contracts over say Ethereum as illustrated here:
+The multi-chain nature of ISCP makes it a more complex implementation of smart contracts, over say Ethereum, as illustrated here:
 
 ![ISCP multichain architecture](/img/multichain.png)
 

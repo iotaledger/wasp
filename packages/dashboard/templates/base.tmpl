@@ -127,7 +127,7 @@
 		</style>
 
 		<header>
-				<a class="logo" href="#" style="color: var(--light-green)">Wasp</a>
+				<a class="logo" href="#" style="color: var(--light-green)">Wasp <span style="font-size: small; color: var(--gray2)">{{.Version}}</span></a>
 				{{$path := .Path}}
 				{{range $_, $tab := .NavPages}}
 					{{ template "tab" (args $tab.Title $tab.Href (eq $path $tab.Path)) }}

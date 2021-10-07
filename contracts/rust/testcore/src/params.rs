@@ -107,6 +107,28 @@ impl MutableCheckContextFromFullEPParams {
 }
 
 #[derive(Clone, Copy)]
+pub struct ImmutableInitParams {
+    pub(crate) id: i32,
+}
+
+impl ImmutableInitParams {
+    pub fn fail(&self) -> ScImmutableInt64 {
+        ScImmutableInt64::new(self.id, idx_map(IDX_PARAM_FAIL))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableInitParams {
+    pub(crate) id: i32,
+}
+
+impl MutableInitParams {
+    pub fn fail(&self) -> ScMutableInt64 {
+        ScMutableInt64::new(self.id, idx_map(IDX_PARAM_FAIL))
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct ImmutablePassTypesFullParams {
     pub(crate) id: i32,
 }
@@ -283,6 +305,28 @@ impl MutableSetIntParams {
 }
 
 #[derive(Clone, Copy)]
+pub struct ImmutableSpawnParams {
+    pub(crate) id: i32,
+}
+
+impl ImmutableSpawnParams {
+    pub fn prog_hash(&self) -> ScImmutableHash {
+        ScImmutableHash::new(self.id, idx_map(IDX_PARAM_PROG_HASH))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableSpawnParams {
+    pub(crate) id: i32,
+}
+
+impl MutableSpawnParams {
+    pub fn prog_hash(&self) -> ScMutableHash {
+        ScMutableHash::new(self.id, idx_map(IDX_PARAM_PROG_HASH))
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct ImmutableTestEventLogGenericDataParams {
     pub(crate) id: i32,
 }
@@ -413,6 +457,28 @@ pub struct MutableGetIntParams {
 impl MutableGetIntParams {
     pub fn name(&self) -> ScMutableString {
         ScMutableString::new(self.id, idx_map(IDX_PARAM_NAME))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct ImmutableGetStringValueParams {
+    pub(crate) id: i32,
+}
+
+impl ImmutableGetStringValueParams {
+    pub fn var_name(&self) -> ScImmutableString {
+        ScImmutableString::new(self.id, idx_map(IDX_PARAM_VAR_NAME))
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct MutableGetStringValueParams {
+    pub(crate) id: i32,
+}
+
+impl MutableGetStringValueParams {
+    pub fn var_name(&self) -> ScMutableString {
+        ScMutableString::new(self.id, idx_map(IDX_PARAM_VAR_NAME))
     }
 }
 

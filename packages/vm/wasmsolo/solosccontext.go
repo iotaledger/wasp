@@ -4,6 +4,7 @@
 package wasmsolo
 
 import (
+	"github.com/iotaledger/goshimmer/packages/ledgerstate"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -39,7 +40,7 @@ func (o *SoloScContext) GetBytes(keyID, typeID int32) []byte {
 }
 
 func (o *SoloScContext) GetObjectID(keyID, typeID int32) int32 {
-	host := &o.ctx.wasmHost
+	host := o.ctx.wasmHost
 	return wasmproc.GetMapObjectID(o, keyID, typeID, wasmproc.ObjFactories{
 		// wasmhost.KeyBalances:  func() wasmproc.WaspObject { return wasmproc.NewScBalances(o.vm, keyID) },
 		wasmhost.KeyExports: func() wasmproc.WaspObject { return wasmproc.NewScExports(host) },
@@ -51,7 +52,7 @@ func (o *SoloScContext) GetObjectID(keyID, typeID int32) int32 {
 		wasmhost.KeyReturn:  func() wasmproc.WaspObject { return wasmproc.NewScDict(&host.KvStoreHost, dict.New()) },
 		// wasmhost.KeyState:     func() wasmproc.WaspObject { return wasmproc.NewScDict(o.host, o.vm.state()) },
 		// wasmhost.KeyTransfers: func() wasmproc.WaspObject { return wasmproc.NewScTransfers(o.vm) },
-		// wasmhost.KeyUtility:   func() wasmproc.WaspObject { return wasmproc.NewScUtility(o.vm) },
+		wasmhost.KeyUtility: func() wasmproc.WaspObject { return wasmproc.NewScUtility(nil) },
 	})
 }
 
@@ -83,22 +84,23 @@ func (o *SoloScContext) processCall(bytes []byte) {
 		return
 	}
 
-	funcName := o.ctx.wasmHost.FunctionFromCode(uint32(function))
+	ctx := o.ctx
+	funcName := ctx.wasmHost.FunctionFromCode(uint32(function))
 	if funcName == "" {
 		o.Panic("unknown function")
 	}
-	o.Tracef("CALL %s.%s", o.ctx.scName, funcName)
+	o.Tracef("CALL %s.%s", ctx.scName, funcName)
 	params := o.getParams(paramsID)
-	_ = wasmlib.ConnectHost(SoloHost)
-	res, err := o.ctx.Chain.CallView(o.ctx.scName, funcName, params)
-	_ = wasmlib.ConnectHost(&o.ctx.wasmHost)
-	o.ctx.Err = err
+	_ = wasmlib.ConnectHost(ctx.wasmHostOld)
+	res, err := ctx.Chain.CallView(ctx.scName, funcName, params)
+	_ = wasmlib.ConnectHost(ctx.wasmHost)
+	ctx.Err = err
 	if err != nil {
 		// o.Panic("failed to invoke call: " + err.Error())
 		return
 	}
 	returnID := o.GetObjectID(int32(wasmlib.KeyReturn), wasmlib.TYPE_MAP)
-	o.ctx.wasmHost.FindObject(returnID).(*wasmproc.ScDict).SetKvStore(res)
+	ctx.wasmHost.FindObject(returnID).(*wasmproc.ScDict).SetKvStore(res)
 }
 
 func (o *SoloScContext) processPost(bytes []byte) {
@@ -187,27 +189,43 @@ func (o *SoloScContext) postSync(contract, function iscp.Hname, paramsID, transf
 	if delay != 0 {
 		o.Panic("unsupported nonzero delay for SoloContext")
 	}
-	if contract != iscp.Hn(o.ctx.scName) {
+	ctx := o.ctx
+	if contract != iscp.Hn(ctx.scName) {
 		o.Panic("invalid contract")
 	}
-	funcName := o.ctx.wasmHost.FunctionFromCode(uint32(function))
+	funcName := ctx.wasmHost.FunctionFromCode(uint32(function))
 	if funcName == "" {
 		o.Panic("unknown function")
 	}
-	o.Tracef("POST %s.%s", o.ctx.scName, funcName)
+	o.Tracef("POST %s.%s", ctx.scName, funcName)
 	params := o.getParams(paramsID)
-	req := solo.NewCallParamsFromDic(o.ctx.scName, funcName, params)
+	req := solo.NewCallParamsFromDic(ctx.scName, funcName, params)
 	if transferID != 0 {
 		transfer := o.getTransfer(transferID)
 		req.WithTransfers(transfer)
 	}
-	_ = wasmlib.ConnectHost(SoloHost)
-	res, err := o.ctx.Chain.PostRequestSync(req, o.ctx.keyPair)
-	_ = wasmlib.ConnectHost(&o.ctx.wasmHost)
-	o.ctx.Err = err
-	if err != nil {
+	if ctx.mint > 0 {
+		mintAddress := ledgerstate.NewED25519Address(ctx.keyPair.PublicKey)
+		req.WithMint(mintAddress, ctx.mint)
+	}
+	_ = wasmlib.ConnectHost(ctx.wasmHostOld)
+	var res dict.Dict
+	if ctx.offLedger {
+		ctx.offLedger = false
+		res, ctx.Err = ctx.Chain.PostRequestOffLedger(req, ctx.keyPair)
+	} else if !ctx.isRequest {
+		ctx.Tx, res, ctx.Err = ctx.Chain.PostRequestSyncTx(req, ctx.keyPair)
+	} else {
+		ctx.isRequest = false
+		ctx.Tx, _, ctx.Err = ctx.Chain.RequestFromParamsToLedger(req, nil)
+		if ctx.Err == nil {
+			ctx.Chain.Env.EnqueueRequests(ctx.Tx)
+		}
+	}
+	_ = wasmlib.ConnectHost(ctx.wasmHost)
+	if ctx.Err != nil {
 		return
 	}
 	returnID := o.GetObjectID(int32(wasmlib.KeyReturn), wasmlib.TYPE_MAP)
-	o.ctx.wasmHost.FindObject(returnID).(*wasmproc.ScDict).SetKvStore(res)
+	ctx.wasmHost.FindObject(returnID).(*wasmproc.ScDict).SetKvStore(res)
 }

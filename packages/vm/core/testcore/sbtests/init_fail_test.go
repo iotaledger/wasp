@@ -8,20 +8,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSuccess(t *testing.T) {
+func TestInitSuccess(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	err := chain.DeployContract(nil, ScName, sbtestsc.Contract.ProgramHash)
 	require.NoError(t, err)
 }
 
-func TestFail(t *testing.T) {
+func TestInitFail(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	err := chain.DeployContract(nil, ScName, sbtestsc.Contract.ProgramHash,
 		sbtestsc.ParamFail, 1)
 	require.Error(t, err)
 }
 
-func TestFailRepeat(t *testing.T) {
+func TestInitFailRepeat(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	err := chain.DeployContract(nil, ScName, sbtestsc.Contract.ProgramHash,
 		sbtestsc.ParamFail, 1)

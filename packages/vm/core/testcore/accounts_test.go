@@ -32,8 +32,8 @@ func TestAccountsBase(t *testing.T) {
 func TestAccountsRepeatInit(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
-	req := solo.NewCallParams(accounts.Contract.Name, "init").WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+	req := solo.NewCallParams(accounts.Contract.Name, "init")
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.Error(t, err)
 	chain.CheckAccountLedger()
 	chain.AssertTotalIotas(1)
@@ -76,9 +76,8 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 
 	newOwner, newOwnerAddr := env.NewKeyPairWithFunds()
 	newOwnerAgentID := iscp.NewAgentID(newOwnerAddr, 0)
-	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).
-		WithIotas(42)
-	_, err := chain.PostRequestSync(req, newOwner)
+	req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name)
+	_, err := chain.PostRequestSync(req.WithIotas(42), newOwner)
 	require.NoError(t, err)
 
 	chain.AssertAccountBalance(newOwnerAgentID, colored.IOTA, 42)
@@ -119,16 +118,14 @@ func TestAccountsHarvest(t *testing.T) {
 	chain.CheckAccountLedger()
 
 	// default EP will be called and tokens deposited
-	req := solo.NewCallParams(blocklog.Contract.Name, "").
-		WithIotas(42)
-	_, err := chain.PostRequestSync(req, nil)
+	req := solo.NewCallParams(blocklog.Contract.Name, "")
+	_, err := chain.PostRequestSync(req.WithIotas(42), nil)
 	require.NoError(t, err)
 
 	chain.AssertTotalIotas(43)
 	chain.AssertCommonAccountIotas(43)
 
-	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncHarvest.Name).
-		WithIotas(1)
+	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncHarvest.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
@@ -143,9 +140,8 @@ func TestAccountsHarvestFail(t *testing.T) {
 	chain.CheckAccountLedger()
 
 	// default EP will be called and tokens deposited
-	req := solo.NewCallParams(blocklog.Contract.Name, "").
-		WithIotas(42)
-	_, err := chain.PostRequestSync(req, nil)
+	req := solo.NewCallParams(blocklog.Contract.Name, "")
+	_, err := chain.PostRequestSync(req.WithIotas(42), nil)
 	require.NoError(t, err)
 
 	chain.AssertTotalIotas(43)
@@ -153,8 +149,7 @@ func TestAccountsHarvestFail(t *testing.T) {
 
 	kp, _ := env.NewKeyPairWithFunds()
 
-	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncHarvest.Name).
-		WithIotas(1)
+	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncHarvest.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, kp)
 	require.Error(t, err)
 
@@ -169,9 +164,8 @@ func TestAccountsDepositToCommon(t *testing.T) {
 	chain.CheckAccountLedger()
 
 	// default EP will be called and tokens deposited
-	req := solo.NewCallParams("", "").
-		WithIotas(42)
-	_, err := chain.PostRequestSync(req, nil)
+	req := solo.NewCallParams("", "")
+	_, err := chain.PostRequestSync(req.WithIotas(42), nil)
 	require.NoError(t, err)
 
 	chain.AssertTotalIotas(43)

@@ -16,9 +16,8 @@ func testGetSet(t *testing.T, w bool) {
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
 		sbtestsc.ParamIntParamName, "ppp",
-		sbtestsc.ParamIntParamValue, 314,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+		sbtestsc.ParamIntParamValue, 314)
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetInt.Name,
@@ -34,14 +33,13 @@ func testGetSet(t *testing.T, w bool) {
 func TestCallRecursive(t *testing.T) { run2(t, testCallRecursive) }
 func testCallRecursive(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
-	cID, _ := setupTestSandboxSC(t, chain, nil, w)
+	setupTestSandboxSC(t, chain, nil, w)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamIntParamValue, 31,
-		sbtestsc.ParamHnameContract, cID.Hname(),
-		sbtestsc.ParamHnameEP, sbtestsc.FuncRunRecursion.Hname(),
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, nil)
+		sbtestsc.ParamHnameContract, HScName,
+		sbtestsc.ParamHnameEP, sbtestsc.FuncRunRecursion.Hname())
+	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
@@ -80,14 +78,13 @@ func testCallFibonacci(t *testing.T, w bool) {
 func TestCallFibonacciIndirect(t *testing.T) { run2(t, testCallFibonacciIndirect) }
 func testCallFibonacciIndirect(t *testing.T, w bool) {
 	_, chain := setupChain(t, nil)
-	cID, _ := setupTestSandboxSC(t, chain, nil, w)
+	setupTestSandboxSC(t, chain, nil, w)
 
 	req := solo.NewCallParams(ScName, sbtestsc.FuncCallOnChain.Name,
 		sbtestsc.ParamIntParamValue, n,
-		sbtestsc.ParamHnameContract, cID.Hname(),
-		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacci.Hname(),
-	).WithIotas(1)
-	ret, err := chain.PostRequestSync(req, nil)
+		sbtestsc.ParamHnameContract, HScName,
+		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacci.Hname())
+	ret, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 	r, exists, err := codec.DecodeInt64(ret.MustGet(sbtestsc.ParamIntParamValue))
 	require.NoError(t, err)

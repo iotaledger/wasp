@@ -10,20 +10,20 @@ keywords:
 description: The state of the chain consists of balances of native IOTA digital assets and a collection of key/value pairs. 
 image: /img/logo/WASP_logo_dark.png
 ---
-# State, Transitions and State Anchoring
+# State, Transitions, and State Anchoring
 
 ## State of the Chain
 
 The state of the chain consists of:
 
-- Balances of the native IOTA digital assets, colored tokens. The chain acts as a custodian for those funds
+- Balances of the native IOTA digital assets, colored tokens. The chain acts as a custodian for those funds.
 - A collection of arbitrary key/value pairs, the data state, which represents use case-specific data stored in the chain by its smart contracts outside of the UTXO ledger.
 
 The state of the chain is an append-only (immutable) data structure maintained by the distributed consensus of its validators.
 
 ## Digital Assets on the Chain
 
-The native L1 accounts of IOTA UTXO ledger are represented by addresses, each controlled by the entity holding the corresponding private/public key pair. The L1 account is a collection of UTXOs belonging to the address.
+The native L1 accounts of IOTA UTXO ledger are represented by addresses, each controlled by the entity holding the corresponding private / public key pair. The L1 account is a collection of UTXOs belonging to the address.
 
 Similarly, the chain holds all tokens entrusted to it in one special UTXO, the state output (see above) which is always located in the address controlled by the chain.
 It is similar to how a bank holds all deposits in its vault. This way, the chain (entity controlling the state output) becomes a custodian for the assets owned by its clients, in the same sense the bank’s client owns the money deposited in the bank.
@@ -32,14 +32,14 @@ We call the consolidated assets held in the chain “total assets on-chain”, w
 
 ## The Data State
 
-The data state of the chain consists of the collection of key/value pairs. Each key and each value are arbitrary byte arrays.
+The data state of the chain consists of the collection of key / value pairs. Each key and each value are arbitrary byte arrays.
 
-In its persistent form, the data state is stored in the key/value database outside of the UTXO ledger and maintained by the validator nodes of the chain.
+In its persistent form, the data state is stored in the key / value database outside of the UTXO ledger and maintained by the validator nodes of the chain.
 The state stored in the database is called a solid state.
 
-The virtual state is a in-memory collection of key/value pairs which can become solid upon being committed to the database. An essential property of the virtual state is the possibility to have several virtual states in parallel as candidates, with a possibility for one of them to be solidified.
+The virtual state is a in-memory collection of key / value pairs which can become solid upon being committed to the database. An essential property of the virtual state is the possibility to have several virtual states in parallel as candidates, with a possibility for one of them to be solidified.
 
-The data state in any form has: a state hash, timestamp and state index.
+The data state in any form has: a state hash, timestamp, and state index.
 (State hash is usually a Merkle root but it can be any hashing function of all data contained in the data state)
 
 The data state and the on-chain assets are both contained in one atomic unit on the ledger: the state UTXO. The state hash can only be changed by the same entity which controls the funds (the committee). So, the state mutation (state transition) of the chain is an atomic event between funds and the data state.
@@ -50,15 +50,15 @@ The data state is stored outside of the ledger, on the distributed database main
 
 By anchoring the state we mean: placing the hash of the data state into one special transaction and one special UTXO (an output) and adding it (confirming) on the UTXO ledger.
 
-The UTXO ledger guarantees that at every moment there’s *exactly one* such output for each chain on the UTXO ledger. We call this output the *state output* (or state anchor) and the containing transaction *state transaction* (or anchor transaction) of the chain.
+The UTXO ledger guarantees that at every moment there is *exactly one* such output for each chain on the UTXO ledger. We call this output the *state output* (or state anchor) and the containing transaction *state transaction* (or anchor transaction) of the chain.
 
 The state output is controlled (i.e. can be unlocked/consumed) by the entity running the chain.
 
 With the anchoring mechanism the UTXO ledger supports the ISCP chain the following way:
 
-- guarantees global consensus on the state of the chain
-- makes the state immutable and tamper-proof
-- makes the state consistent (see below)
+- Guarantees global consensus on the state of the chain
+- Makes the state immutable and tamper-proof
+- Makes the state consistent (see below)
 
 The state output contains:
 
@@ -68,7 +68,7 @@ The state output contains:
 
 ## State Transitions
 
-The Data state is updated by mutations of its key value pairs. Each mutation is either setting a value for a key, or deleting a key (and associeted value). Any update to the data state can be reduced to the partially ordered sequence of mutations.
+The Data state is updated by mutations of its key value pairs. Each mutation is either setting a value for a key, or deleting a key (and associated value). Any update to the data state can be reduced to the partially ordered sequence of mutations.
 
 The collection of mutations to the data state which is applied in a transition we call a *block*:
 

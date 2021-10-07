@@ -84,7 +84,7 @@ impl ScAgentID {
 
     // checks to see if agent id represents a Tangle address
     pub fn is_address(&self) -> bool {
-        self.hname() == Hname(0)
+        self.hname() == ScHname(0)
     }
 
     // convert to byte array representation

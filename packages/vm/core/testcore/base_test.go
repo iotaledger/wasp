@@ -29,8 +29,8 @@ func TestNoContractPost(t *testing.T) {
 	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
 
-	req := solo.NewCallParams("dummyContract", "dummyEP").WithIotas(2)
-	_, err := chain.PostRequestSync(req, nil)
+	req := solo.NewCallParams("dummyContract", "dummyEP")
+	_, err := chain.PostRequestSync(req.WithIotas(2), nil)
 	require.NoError(t, err)
 	env.WaitPublisher()
 	chain.CheckControlAddresses()
@@ -55,8 +55,8 @@ func TestNoEPPost(t *testing.T) {
 	chain := env.NewChain(nil, "chain1")
 	chain.CheckControlAddresses()
 
-	req := solo.NewCallParams(root.Contract.Name, "dummyEP").WithIotas(2)
-	_, err := chain.PostRequestSync(req, nil)
+	req := solo.NewCallParams(root.Contract.Name, "dummyEP")
+	_, err := chain.PostRequestSync(req.WithIotas(2), nil)
 	require.NoError(t, err)
 	env.WaitPublisher()
 	chain.CheckControlAddresses()
