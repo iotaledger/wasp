@@ -7,6 +7,7 @@ use crate::*;
 use crate::contract::*;
 
 const CONTRACT_NAME_DEPLOYED: &str = "exampleDeployTR";
+const MSG_CORE_ONLY_PANIC: &str = "========== core only =========";
 const MSG_FULL_PANIC: &str = "========== panic FULL ENTRY POINT =========";
 const MSG_VIEW_PANIC: &str = "========== panic VIEW =========";
 
@@ -66,8 +67,10 @@ pub fn func_inc_counter(_ctx: &ScFuncContext, f: &IncCounterContext) {
     counter.set_value(counter.value() + 1);
 }
 
-pub fn func_init(ctx: &ScFuncContext, _f: &InitContext) {
-    ctx.log("doing nothing...");
+pub fn func_init(ctx: &ScFuncContext, f: &InitContext) {
+    if f.params.fail().exists() {
+        ctx.panic("failing on purpose");
+    }
 }
 
 pub fn func_pass_types_full(ctx: &ScFuncContext, f: &PassTypesFullContext) {
@@ -208,4 +211,27 @@ pub fn view_test_sandbox_call(ctx: &ScViewContext, f: &TestSandboxCallContext) {
     let get_chain_info = corecontracts::coregovernance::ScFuncs::get_chain_info(ctx);
     get_chain_info.func.call();
     f.results.sandbox_call().set_value(&get_chain_info.results.description().value());
+}
+
+pub fn func_test_block_context1(ctx: &ScFuncContext, _f: &TestBlockContext1Context) {
+    ctx.panic(MSG_CORE_ONLY_PANIC);
+}
+
+pub fn func_test_block_context2(ctx: &ScFuncContext, _f: &TestBlockContext2Context) {
+    ctx.panic(MSG_CORE_ONLY_PANIC);
+}
+
+pub fn view_get_string_value(ctx: &ScViewContext, _f: &GetStringValueContext) {
+    ctx.panic(MSG_CORE_ONLY_PANIC);
+}
+
+pub fn func_spawn(ctx: &ScFuncContext, f: &SpawnContext) {
+    let spawn_name = SC_NAME.to_string() + "_spawned";
+    let spawn_descr = "spawned contract description";
+    ctx.deploy(&f.params.prog_hash().value(), &spawn_name, spawn_descr, None);
+
+    let spawn_hname = ScHname::new(&spawn_name);
+    for _i in 0..5 {
+        ctx.call(spawn_hname, HFUNC_INC_COUNTER, None, None);
+    }
 }

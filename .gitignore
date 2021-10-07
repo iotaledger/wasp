@@ -8,7 +8,7 @@ dist/
 .vscode/
 *.bak
 wasp-cli.json
-*/pkg/
+**/pkg/
 **/target/
 .DS_Store
 ./tools/wasp-cli/wasp-cli

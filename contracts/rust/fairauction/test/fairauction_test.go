@@ -51,8 +51,8 @@ func TestFaStartAuction(t *testing.T) {
 	ctx := startAuction(t)
 
 	// note 1 iota should be stuck in the delayed finalize_auction
-	require.EqualValues(t, 25-1, ctx.Balance(nil))
-	require.EqualValues(t, 10, ctx.Balance(nil, tokenColor))
+	require.EqualValues(t, 25-1, ctx.Balance(ctx.Account()))
+	require.EqualValues(t, 10, ctx.Balance(ctx.Account(), tokenColor))
 
 	// auctioneer sent 25 deposit + 10 tokenColor
 	require.EqualValues(t, solo.Saldo-25-10, auctioneer.Balance())
