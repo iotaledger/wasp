@@ -2,402 +2,373 @@
 package test
 
 import (
-	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/iscp"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/contracts/rust/testcore"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/stretchr/testify/require"
 )
 
 func TestOffLedgerFailNoAccount(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		env, chain := setupChain(t, nil)
-		cAID, _ := setupTestSandboxSC(t, chain, nil, w)
+		ctx := setupTest(t, w)
+		chainAccountBalances(ctx, w, 2, 2)
 
-		owner, ownerAddr := env.NewKeyPairWithFunds()
-		ownerAgentID := iscp.NewAgentID(ownerAddr, 0)
+		user := ctx.NewSoloAgent()
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 
-		chain.AssertIotas(ownerAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		// no deposit yet, so account is unverified
 
-		// NOTE: NO deposit into owner account
-		//req := solo.NewCallParams(accounts.Interface.Name, accounts.FuncDeposit,
-		//).WithIotas(10)
-		//_, err := chain.PostRequestSync(req, owner)
-		//require.NoError(t, err)
+		f := testcore.ScFuncs.SetInt(ctx.OffLedger(user))
+		f.Params.Name().SetValue("ppp")
+		f.Params.IntValue().SetValue(314)
+		f.Func.Post()
+		require.Error(t, ctx.Err)
+		require.Contains(t, ctx.Err.Error(), "unverified account")
 
-		chain.AssertIotas(ownerAgentID, 0)
-		chain.AssertIotas(cAID, 1)
-
-		req := solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
-			sbtestsc.ParamIntParamName, "ppp",
-			sbtestsc.ParamIntParamValue, 314,
-		)
-		_, err := chain.PostRequestOffLedger(req, owner)
-		require.Error(t, err)
-		require.True(t, strings.Contains(err.Error(), "unverified account"))
-
-		chain.AssertIotas(ownerAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 2, 2)
 	})
 }
 
 func TestOffLedgerNoFeeNoTransfer(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		env, chain := setupChain(t, nil)
-		cAID, _ := setupTestSandboxSC(t, chain, nil, w)
+		ctx := setupTest(t, w)
+		chainAccountBalances(ctx, w, 2, 2)
 
-		owner, ownerAddr := env.NewKeyPairWithFunds()
-		ownerAgentID := iscp.NewAgentID(ownerAddr, 0)
+		user := ctx.NewSoloAgent()
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 
-		chain.AssertIotas(ownerAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		deposit(t, ctx, user, nil, 10)
+		require.EqualValues(t, solo.Saldo-10, user.Balance())
+		require.EqualValues(t, 10, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 2, 2+10)
 
-		// deposit into owner account
-		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(10)
-		_, err := chain.PostRequestSync(req, owner)
-		require.NoError(t, err)
+		// Look, Ma! No .TransferIotas() necessary when doing off-ledger request!
+		// we're using setInt() here to be able to verify the state update was done
+		f := testcore.ScFuncs.SetInt(ctx.OffLedger(user))
+		f.Params.Name().SetValue("ppp")
+		f.Params.IntValue().SetValue(314)
+		f.Func.Post()
+		require.NoError(t, ctx.Err)
 
-		chain.AssertIotas(ownerAgentID, 10)
-		chain.AssertIotas(cAID, 1)
+		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+		require.EqualValues(t, solo.Saldo-10, user.Balance())
+		require.EqualValues(t, 10, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 2, 2+10)
 
-		req = solo.NewCallParams(ScName, sbtestsc.FuncSetInt.Name,
-			sbtestsc.ParamIntParamName, "ppp",
-			sbtestsc.ParamIntParamValue, 314,
-		)
-		// Look, Ma! No .WithIotas() necessary when doing off-ledger request!
-		_, err = chain.PostRequestOffLedger(req, owner)
-		require.NoError(t, err)
-
-		chain.AssertIotas(ownerAgentID, 10)
-		chain.AssertIotas(cAID, 1)
-
-		ret, err := chain.CallView(ScName, sbtestsc.FuncGetInt.Name,
-			sbtestsc.ParamIntParamName, "ppp")
-		require.NoError(t, err)
-
-		retInt, exists, err := codec.DecodeInt64(ret.MustGet("ppp"))
-		require.NoError(t, err)
-		require.True(t, exists)
-		require.EqualValues(t, 314, retInt)
+		// verify state update
+		v := testcore.ScFuncs.GetInt(ctx)
+		v.Params.Name().SetValue("ppp")
+		v.Func.Call()
+		require.NoError(t, ctx.Err)
+		require.EqualValues(t, 314, v.Results.Values().GetInt64("ppp").Value())
 	})
 }
 
 func TestOffLedgerFeesEnough(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		env, chain := setupChain(t, nil)
-		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
-		user, userAddr, userAgentID := setupDeployer(t, chain)
+		ctx := setupTest(t, w)
+		chainAccountBalances(ctx, w, 2, 2)
 
-		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
-			root.ParamHname, HScName,
-			governance.ParamOwnerFee, 10,
-		).WithIotas(1)
-		_, err := chain.PostRequestSync(req, nil)
-		require.NoError(t, err)
+		user := ctx.NewSoloAgent()
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		setOwnerFee(t, ctx, 10)
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3, 3)
 
-		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(10)
-		_, err = chain.PostRequestSync(req, user)
-		require.NoError(t, err)
+		deposit(t, ctx, user, nil, 10)
+		require.EqualValues(t, solo.Saldo-10, user.Balance())
+		require.EqualValues(t, 10, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3, 3+10)
 
-		chain.AssertIotas(userAgentID, 10)
-		chain.AssertIotas(cAID, 1)
+		// pay enough fees for the request
+		nop := testcore.ScFuncs.DoNothing(ctx.OffLedger(user))
+		nop.Func.TransferIotas(10).Post()
+		require.NoError(t, ctx.Err)
 
-		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(10)
-		_, err = chain.PostRequestOffLedger(req, user)
-		require.NoError(t, err)
-
-		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
-		env.AssertAddressIotas(userAddr, solo.Saldo-10)
-		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
-		chain.AssertCommonAccountIotas(4 + extraToken + 10)
+		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+		require.EqualValues(t, solo.Saldo-10, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3+10, 3+10)
 	})
 }
 
 func TestOffLedgerFeesNotEnough(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		env, chain := setupChain(t, nil)
-		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
-		user, userAddr, userAgentID := setupDeployer(t, chain)
+		ctx := setupTest(t, w)
+		chainAccountBalances(ctx, w, 2, 2)
 
-		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
-			root.ParamHname, HScName,
-			governance.ParamOwnerFee, 10,
-		).WithIotas(1)
-		_, err := chain.PostRequestSync(req, nil)
-		require.NoError(t, err)
+		user := ctx.NewSoloAgent()
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		setOwnerFee(t, ctx, 10)
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3, 3)
 
-		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(9)
-		_, err = chain.PostRequestSync(req, user)
-		require.NoError(t, err)
+		deposit(t, ctx, user, nil, 9)
+		require.EqualValues(t, solo.Saldo-9, user.Balance())
+		require.EqualValues(t, 9, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3, 3+9)
 
-		chain.AssertIotas(userAgentID, 9)
-		chain.AssertIotas(cAID, 1)
+		// try to pay enough fees for the request
+		nop := testcore.ScFuncs.DoNothing(ctx.OffLedger(user))
+		nop.Func.TransferIotas(10).Post()
+		require.Error(t, ctx.Err)
+		require.Contains(t, ctx.Err.Error(), "not enough fees")
 
-		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(10)
-		_, err = chain.PostRequestOffLedger(req, user)
-		require.Error(t, err)
-		require.True(t, strings.Contains(err.Error(), "not enough fees"))
-
-		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
-		env.AssertAddressIotas(userAddr, solo.Saldo-9)
-		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
-		chain.AssertCommonAccountIotas(4 + extraToken + 9)
+		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+		require.EqualValues(t, solo.Saldo-9, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3+9, 3+9)
 	})
 }
 
 func TestOffLedgerFeesExtra(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		env, chain := setupChain(t, nil)
-		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
-		user, userAddr, userAgentID := setupDeployer(t, chain)
+		ctx := setupTest(t, w)
+		chainAccountBalances(ctx, w, 2, 2)
 
-		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
-			root.ParamHname, HScName,
-			governance.ParamOwnerFee, 10,
-		).WithIotas(1)
-		_, err := chain.PostRequestSync(req, nil)
-		require.NoError(t, err)
+		user := ctx.NewSoloAgent()
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		setOwnerFee(t, ctx, 10)
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3, 3)
 
-		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(11)
-		_, err = chain.PostRequestSync(req, user)
-		require.NoError(t, err)
+		deposit(t, ctx, user, nil, 11)
+		require.EqualValues(t, solo.Saldo-11, user.Balance())
+		require.EqualValues(t, 11, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3, 3+11)
 
-		chain.AssertIotas(userAgentID, 11)
-		chain.AssertIotas(cAID, 1)
+		// we have enough fees for the request
+		nop := testcore.ScFuncs.DoNothing(ctx.OffLedger(user))
+		nop.Func.TransferIotas(10).Post()
+		require.NoError(t, ctx.Err)
 
-		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(10)
-		_, err = chain.PostRequestOffLedger(req, user)
-		require.NoError(t, err)
-
-		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 1)
-		chain.AssertIotas(cAID, 1)
-		env.AssertAddressIotas(userAddr, solo.Saldo-11)
-		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
-		chain.AssertCommonAccountIotas(4 + extraToken + 10)
+		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+		require.EqualValues(t, solo.Saldo-11, user.Balance())
+		require.EqualValues(t, 1, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3+10, 3+10+1)
 	})
 }
 
 func TestOffLedgerTransferWithFeesEnough(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		env, chain := setupChain(t, nil)
-		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
-		user, userAddr, userAgentID := setupDeployer(t, chain)
+		ctx := setupTest(t, w)
+		chainAccountBalances(ctx, w, 2, 2)
 
-		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
-			root.ParamHname, HScName,
-			governance.ParamOwnerFee, 10,
-		).WithIotas(1)
-		_, err := chain.PostRequestSync(req, nil)
-		require.NoError(t, err)
+		user := ctx.NewSoloAgent()
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		setOwnerFee(t, ctx, 10)
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3, 3)
 
-		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(10 + 42)
-		_, err = chain.PostRequestSync(req, user)
-		require.NoError(t, err)
+		deposit(t, ctx, user, nil, 10+42)
+		require.EqualValues(t, solo.Saldo-10-42, user.Balance())
+		require.EqualValues(t, 10+42, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3, 3+10+42)
 
-		chain.AssertIotas(userAgentID, 10+42)
-		chain.AssertIotas(cAID, 1)
+		// we have enough fees for the request plus transfer
+		nop := testcore.ScFuncs.DoNothing(ctx.OffLedger(user))
+		nop.Func.TransferIotas(10 + 42).Post()
+		require.NoError(t, ctx.Err)
 
-		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(10 + 42)
-		_, err = chain.PostRequestOffLedger(req, user)
-		require.NoError(t, err)
-
-		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1+42)
-		env.AssertAddressIotas(userAddr, solo.Saldo-10-42)
-		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
-		chain.AssertCommonAccountIotas(4 + extraToken + 10)
+		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+		require.EqualValues(t, solo.Saldo-10-42, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 42, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3+10, 3+10+42)
 	})
 }
 
 func TestOffLedgerTransferWithFeesNotEnough(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		env, chain := setupChain(t, nil)
-		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
-		user, userAddr, userAgentID := setupDeployer(t, chain)
+		ctx := setupTest(t, w)
+		chainAccountBalances(ctx, w, 2, 2)
 
-		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
-			root.ParamHname, HScName,
-			governance.ParamOwnerFee, 10,
-		).WithIotas(1)
-		_, err := chain.PostRequestSync(req, nil)
-		require.NoError(t, err)
+		user := ctx.NewSoloAgent()
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		setOwnerFee(t, ctx, 10)
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3, 3)
 
-		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(10 + 41)
-		_, err = chain.PostRequestSync(req, user)
-		require.NoError(t, err)
+		deposit(t, ctx, user, nil, 10+41)
+		require.EqualValues(t, solo.Saldo-10-41, user.Balance())
+		require.EqualValues(t, 10+41, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3, 3+10+41)
 
-		chain.AssertIotas(userAgentID, 10+41)
-		chain.AssertIotas(cAID, 1)
+		// not enough in account for fee + transfer
+		nop := testcore.ScFuncs.DoNothing(ctx.OffLedger(user))
+		nop.Func.TransferIotas(10 + 42).Post()
+		require.NoError(t, ctx.Err)
 
-		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(10 + 42)
-		_, err = chain.PostRequestOffLedger(req, user)
-		require.NoError(t, err)
-
-		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1+41)
-		env.AssertAddressIotas(userAddr, solo.Saldo-10-41)
-		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
-		chain.AssertCommonAccountIotas(4 + extraToken + 10)
+		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+		require.EqualValues(t, solo.Saldo-10-41, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 41, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3+10, 3+10+41)
 	})
 }
 
 func TestOffLedgerTransferWithFeesExtra(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		env, chain := setupChain(t, nil)
-		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
-		user, userAddr, userAgentID := setupDeployer(t, chain)
+		ctx := setupTest(t, w)
+		chainAccountBalances(ctx, w, 2, 2)
 
-		req := solo.NewCallParams(governance.Contract.Name, governance.FuncSetContractFee.Name,
-			root.ParamHname, HScName,
-			governance.ParamOwnerFee, 10,
-		).WithIotas(1)
-		_, err := chain.PostRequestSync(req, nil)
-		require.NoError(t, err)
+		user := ctx.NewSoloAgent()
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		setOwnerFee(t, ctx, 10)
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3, 3)
 
-		req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(10 + 43)
-		_, err = chain.PostRequestSync(req, user)
-		require.NoError(t, err)
+		deposit(t, ctx, user, nil, 10+43)
+		require.EqualValues(t, solo.Saldo-10-43, user.Balance())
+		require.EqualValues(t, 10+43, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3, 3+10+43)
 
-		chain.AssertIotas(userAgentID, 10+43)
-		chain.AssertIotas(cAID, 1)
+		// more than enough in account for fee + transfer
+		nop := testcore.ScFuncs.DoNothing(ctx.OffLedger(user))
+		nop.Func.TransferIotas(10 + 42).Post()
+		require.NoError(t, ctx.Err)
 
-		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(10 + 42)
-		_, err = chain.PostRequestOffLedger(req, user)
-		require.NoError(t, err)
-
-		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 1)
-		chain.AssertIotas(cAID, 1+42)
-		env.AssertAddressIotas(userAddr, solo.Saldo-10-43)
-		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-5-extraToken)
-		chain.AssertCommonAccountIotas(4 + extraToken + 10)
+		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+		require.EqualValues(t, solo.Saldo-10-43, user.Balance())
+		require.EqualValues(t, 1, ctx.Balance(user))
+		require.EqualValues(t, 42, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 3+10, 3+10+42+1)
 	})
 }
 
 func TestOffLedgerTransferEnough(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		env, chain := setupChain(t, nil)
-		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
-		user, userAddr, userAgentID := setupDeployer(t, chain)
+		ctx := setupTest(t, w)
+		chainAccountBalances(ctx, w, 2, 2)
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		user := ctx.NewSoloAgent()
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 
-		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(42)
-		_, err := chain.PostRequestSync(req, user)
-		require.NoError(t, err)
+		deposit(t, ctx, user, nil, 42)
+		require.EqualValues(t, solo.Saldo-42, user.Balance())
+		require.EqualValues(t, 42, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 2, 2+42)
 
-		chain.AssertIotas(userAgentID, 42)
-		chain.AssertIotas(cAID, 1)
+		// pay enough fees for the request
+		nop := testcore.ScFuncs.DoNothing(ctx.OffLedger(user))
+		nop.Func.TransferIotas(42).Post()
+		require.NoError(t, ctx.Err)
 
-		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(42)
-		_, err = chain.PostRequestOffLedger(req, user)
-		require.NoError(t, err)
-
-		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1+42)
-		env.AssertAddressIotas(userAddr, solo.Saldo-42)
-		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
-		chain.AssertCommonAccountIotas(3 + extraToken)
+		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+		require.EqualValues(t, solo.Saldo-42, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 42, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 2, 2+42)
 	})
 }
 
 func TestOffLedgerTransferNotEnough(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		env, chain := setupChain(t, nil)
-		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
-		user, userAddr, userAgentID := setupDeployer(t, chain)
+		ctx := setupTest(t, w)
+		chainAccountBalances(ctx, w, 2, 2)
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		user := ctx.NewSoloAgent()
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 
-		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(41)
-		_, err := chain.PostRequestSync(req, user)
-		require.NoError(t, err)
+		deposit(t, ctx, user, nil, 41)
+		require.EqualValues(t, solo.Saldo-41, user.Balance())
+		require.EqualValues(t, 41, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 2, 2+41)
 
-		chain.AssertIotas(userAgentID, 41)
-		chain.AssertIotas(cAID, 1)
+		// pay enough fees for the request
+		nop := testcore.ScFuncs.DoNothing(ctx.OffLedger(user))
+		nop.Func.TransferIotas(42).Post()
+		require.NoError(t, ctx.Err)
 
-		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(42)
-		_, err = chain.PostRequestOffLedger(req, user)
-		require.NoError(t, err)
-
-		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1+41)
-		env.AssertAddressIotas(userAddr, solo.Saldo-41)
-		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
-		chain.AssertCommonAccountIotas(3 + extraToken)
+		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+		require.EqualValues(t, solo.Saldo-41, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 41, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 2, 2+41)
 	})
 }
 
 func TestOffLedgerTransferExtra(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		env, chain := setupChain(t, nil)
-		cAID, extraToken := setupTestSandboxSC(t, chain, nil, w)
-		user, userAddr, userAgentID := setupDeployer(t, chain)
+		ctx := setupTest(t, w)
+		chainAccountBalances(ctx, w, 2, 2)
 
-		chain.AssertIotas(userAgentID, 0)
-		chain.AssertIotas(cAID, 1)
+		user := ctx.NewSoloAgent()
+		require.EqualValues(t, solo.Saldo, user.Balance())
+		require.EqualValues(t, 0, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
 
-		req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(43)
-		_, err := chain.PostRequestSync(req, user)
-		require.NoError(t, err)
+		deposit(t, ctx, user, nil, 43)
+		require.EqualValues(t, solo.Saldo-43, user.Balance())
+		require.EqualValues(t, 43, ctx.Balance(user))
+		require.EqualValues(t, 0, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 2, 2+43)
 
-		chain.AssertIotas(userAgentID, 43)
-		chain.AssertIotas(cAID, 1)
+		// pay enough fees for the request
+		nop := testcore.ScFuncs.DoNothing(ctx.OffLedger(user))
+		nop.Func.TransferIotas(42).Post()
+		require.NoError(t, ctx.Err)
 
-		req = solo.NewCallParams(ScName, sbtestsc.FuncDoNothing.Name).WithIotas(42)
-		_, err = chain.PostRequestOffLedger(req, user)
-		require.NoError(t, err)
-
-		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
-		chain.AssertIotas(userAgentID, 1)
-		chain.AssertIotas(cAID, 1+42)
-		env.AssertAddressIotas(userAddr, solo.Saldo-43)
-		env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-4-extraToken)
-		chain.AssertCommonAccountIotas(3 + extraToken)
+		t.Logf("dump accounts:\n%s", ctx.Chain.DumpAccounts())
+		require.EqualValues(t, solo.Saldo-43, user.Balance())
+		require.EqualValues(t, 1, ctx.Balance(user))
+		require.EqualValues(t, 42, ctx.Balance(ctx.Account()))
+		chainAccountBalances(ctx, w, 2, 2+43)
 	})
 }

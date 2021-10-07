@@ -22,6 +22,9 @@ func OnLoad() {
 	exports.AddFunc(FuncRunRecursion, funcRunRecursionThunk)
 	exports.AddFunc(FuncSendToAddress, funcSendToAddressThunk)
 	exports.AddFunc(FuncSetInt, funcSetIntThunk)
+	exports.AddFunc(FuncSpawn, funcSpawnThunk)
+	exports.AddFunc(FuncTestBlockContext1, funcTestBlockContext1Thunk)
+	exports.AddFunc(FuncTestBlockContext2, funcTestBlockContext2Thunk)
 	exports.AddFunc(FuncTestCallPanicFullEP, funcTestCallPanicFullEPThunk)
 	exports.AddFunc(FuncTestCallPanicViewEPFromFull, funcTestCallPanicViewEPFromFullThunk)
 	exports.AddFunc(FuncTestChainOwnerIDFull, funcTestChainOwnerIDFullThunk)
@@ -34,6 +37,7 @@ func OnLoad() {
 	exports.AddView(ViewFibonacci, viewFibonacciThunk)
 	exports.AddView(ViewGetCounter, viewGetCounterThunk)
 	exports.AddView(ViewGetInt, viewGetIntThunk)
+	exports.AddView(ViewGetStringValue, viewGetStringValueThunk)
 	exports.AddView(ViewJustView, viewJustViewThunk)
 	exports.AddView(ViewPassTypesView, viewPassTypesViewThunk)
 	exports.AddView(ViewTestCallPanicViewEPFromView, viewTestCallPanicViewEPFromViewThunk)
@@ -144,12 +148,16 @@ func funcIncCounterThunk(ctx wasmlib.ScFuncContext) {
 }
 
 type InitContext struct {
-	State MutableTestCoreState
+	Params ImmutableInitParams
+	State  MutableTestCoreState
 }
 
 func funcInitThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Log("testcore.funcInit")
 	f := &InitContext{
+		Params: ImmutableInitParams{
+			id: wasmlib.OBJ_ID_PARAMS,
+		},
 		State: MutableTestCoreState{
 			id: wasmlib.OBJ_ID_STATE,
 		},
@@ -253,6 +261,56 @@ func funcSetIntThunk(ctx wasmlib.ScFuncContext) {
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	funcSetInt(ctx, f)
 	ctx.Log("testcore.funcSetInt ok")
+}
+
+type SpawnContext struct {
+	Params ImmutableSpawnParams
+	State  MutableTestCoreState
+}
+
+func funcSpawnThunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testcore.funcSpawn")
+	f := &SpawnContext{
+		Params: ImmutableSpawnParams{
+			id: wasmlib.OBJ_ID_PARAMS,
+		},
+		State: MutableTestCoreState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	ctx.Require(f.Params.ProgHash().Exists(), "missing mandatory progHash")
+	funcSpawn(ctx, f)
+	ctx.Log("testcore.funcSpawn ok")
+}
+
+type TestBlockContext1Context struct {
+	State MutableTestCoreState
+}
+
+func funcTestBlockContext1Thunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testcore.funcTestBlockContext1")
+	f := &TestBlockContext1Context{
+		State: MutableTestCoreState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	funcTestBlockContext1(ctx, f)
+	ctx.Log("testcore.funcTestBlockContext1 ok")
+}
+
+type TestBlockContext2Context struct {
+	State MutableTestCoreState
+}
+
+func funcTestBlockContext2Thunk(ctx wasmlib.ScFuncContext) {
+	ctx.Log("testcore.funcTestBlockContext2")
+	f := &TestBlockContext2Context{
+		State: MutableTestCoreState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	funcTestBlockContext2(ctx, f)
+	ctx.Log("testcore.funcTestBlockContext2 ok")
 }
 
 type TestCallPanicFullEPContext struct {
@@ -477,6 +535,30 @@ func viewGetIntThunk(ctx wasmlib.ScViewContext) {
 	ctx.Require(f.Params.Name().Exists(), "missing mandatory name")
 	viewGetInt(ctx, f)
 	ctx.Log("testcore.viewGetInt ok")
+}
+
+type GetStringValueContext struct {
+	Params  ImmutableGetStringValueParams
+	Results MutableGetStringValueResults
+	State   ImmutableTestCoreState
+}
+
+func viewGetStringValueThunk(ctx wasmlib.ScViewContext) {
+	ctx.Log("testcore.viewGetStringValue")
+	f := &GetStringValueContext{
+		Params: ImmutableGetStringValueParams{
+			id: wasmlib.OBJ_ID_PARAMS,
+		},
+		Results: MutableGetStringValueResults{
+			id: wasmlib.OBJ_ID_RESULTS,
+		},
+		State: ImmutableTestCoreState{
+			id: wasmlib.OBJ_ID_STATE,
+		},
+	}
+	ctx.Require(f.Params.VarName().Exists(), "missing mandatory varName")
+	viewGetStringValue(ctx, f)
+	ctx.Log("testcore.viewGetStringValue ok")
 }
 
 type JustViewContext struct {

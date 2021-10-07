@@ -24,6 +24,7 @@ const (
 	ParamContractCreator = wasmlib.Key("contractCreator")
 	ParamContractID      = wasmlib.Key("contractID")
 	ParamCounter         = wasmlib.Key("counter")
+	ParamFail            = wasmlib.Key("initFailParam")
 	ParamHash            = wasmlib.Key("Hash")
 	ParamHname           = wasmlib.Key("Hname")
 	ParamHnameContract   = wasmlib.Key("hnameContract")
@@ -33,8 +34,10 @@ const (
 	ParamInt64Zero       = wasmlib.Key("int64-0")
 	ParamIntValue        = wasmlib.Key("intParamValue")
 	ParamName            = wasmlib.Key("intParamName")
+	ParamProgHash        = wasmlib.Key("progHash")
 	ParamString          = wasmlib.Key("string")
 	ParamStringZero      = wasmlib.Key("string-0")
+	ParamVarName         = wasmlib.Key("varName")
 )
 
 const (
@@ -65,6 +68,9 @@ const (
 	FuncRunRecursion                = "runRecursion"
 	FuncSendToAddress               = "sendToAddress"
 	FuncSetInt                      = "setInt"
+	FuncSpawn                       = "spawn"
+	FuncTestBlockContext1           = "testBlockContext1"
+	FuncTestBlockContext2           = "testBlockContext2"
 	FuncTestCallPanicFullEP         = "testCallPanicFullEP"
 	FuncTestCallPanicViewEPFromFull = "testCallPanicViewEPFromFull"
 	FuncTestChainOwnerIDFull        = "testChainOwnerIDFull"
@@ -77,6 +83,7 @@ const (
 	ViewFibonacci                   = "fibonacci"
 	ViewGetCounter                  = "getCounter"
 	ViewGetInt                      = "getInt"
+	ViewGetStringValue              = "getStringValue"
 	ViewJustView                    = "justView"
 	ViewPassTypesView               = "passTypesView"
 	ViewTestCallPanicViewEPFromView = "testCallPanicViewEPFromView"
@@ -96,6 +103,9 @@ const (
 	HFuncRunRecursion                = wasmlib.ScHname(0x833425fd)
 	HFuncSendToAddress               = wasmlib.ScHname(0x63ce4634)
 	HFuncSetInt                      = wasmlib.ScHname(0x62056f74)
+	HFuncSpawn                       = wasmlib.ScHname(0xec929d12)
+	HFuncTestBlockContext1           = wasmlib.ScHname(0x796d4136)
+	HFuncTestBlockContext2           = wasmlib.ScHname(0x758b0452)
 	HFuncTestCallPanicFullEP         = wasmlib.ScHname(0x4c878834)
 	HFuncTestCallPanicViewEPFromFull = wasmlib.ScHname(0xfd7e8c1d)
 	HFuncTestChainOwnerIDFull        = wasmlib.ScHname(0x2aff1167)
@@ -108,6 +118,7 @@ const (
 	HViewFibonacci                   = wasmlib.ScHname(0x7940873c)
 	HViewGetCounter                  = wasmlib.ScHname(0xb423e607)
 	HViewGetInt                      = wasmlib.ScHname(0x1887e5ef)
+	HViewGetStringValue              = wasmlib.ScHname(0xcf0a4d32)
 	HViewJustView                    = wasmlib.ScHname(0x33b8972e)
 	HViewPassTypesView               = wasmlib.ScHname(0x1a5b87ea)
 	HViewTestCallPanicViewEPFromView = wasmlib.ScHname(0x91b10c99)

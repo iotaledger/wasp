@@ -18,31 +18,34 @@ const (
 	IdxParamContractCreator = 5
 	IdxParamContractID      = 6
 	IdxParamCounter         = 7
-	IdxParamHash            = 8
-	IdxParamHname           = 9
-	IdxParamHnameContract   = 10
-	IdxParamHnameEP         = 11
-	IdxParamHnameZero       = 12
-	IdxParamInt64           = 13
-	IdxParamInt64Zero       = 14
-	IdxParamIntValue        = 15
-	IdxParamName            = 16
-	IdxParamString          = 17
-	IdxParamStringZero      = 18
-	IdxResultChainOwnerID   = 19
-	IdxResultCounter        = 20
-	IdxResultIntValue       = 21
-	IdxResultMintedColor    = 22
-	IdxResultMintedSupply   = 23
-	IdxResultSandboxCall    = 24
-	IdxStateCounter         = 25
-	IdxStateHnameEP         = 26
-	IdxStateInts            = 27
-	IdxStateMintedColor     = 28
-	IdxStateMintedSupply    = 29
+	IdxParamFail            = 8
+	IdxParamHash            = 9
+	IdxParamHname           = 10
+	IdxParamHnameContract   = 11
+	IdxParamHnameEP         = 12
+	IdxParamHnameZero       = 13
+	IdxParamInt64           = 14
+	IdxParamInt64Zero       = 15
+	IdxParamIntValue        = 16
+	IdxParamName            = 17
+	IdxParamProgHash        = 18
+	IdxParamString          = 19
+	IdxParamStringZero      = 20
+	IdxParamVarName         = 21
+	IdxResultChainOwnerID   = 22
+	IdxResultCounter        = 23
+	IdxResultIntValue       = 24
+	IdxResultMintedColor    = 25
+	IdxResultMintedSupply   = 26
+	IdxResultSandboxCall    = 27
+	IdxStateCounter         = 28
+	IdxStateHnameEP         = 29
+	IdxStateInts            = 30
+	IdxStateMintedColor     = 31
+	IdxStateMintedSupply    = 32
 )
 
-const keyMapLen = 30
+const keyMapLen = 33
 
 var keyMap = [keyMapLen]wasmlib.Key{
 	ParamAddress,
@@ -53,6 +56,7 @@ var keyMap = [keyMapLen]wasmlib.Key{
 	ParamContractCreator,
 	ParamContractID,
 	ParamCounter,
+	ParamFail,
 	ParamHash,
 	ParamHname,
 	ParamHnameContract,
@@ -62,8 +66,10 @@ var keyMap = [keyMapLen]wasmlib.Key{
 	ParamInt64Zero,
 	ParamIntValue,
 	ParamName,
+	ParamProgHash,
 	ParamString,
 	ParamStringZero,
+	ParamVarName,
 	ResultChainOwnerID,
 	ResultCounter,
 	ResultIntValue,

@@ -26,9 +26,8 @@ func testMainCallsFromFullEP(t *testing.T, w bool) {
 		sbtestsc.ParamAgentID, iscp.NewAgentID(chain.ChainID.AsAddress(), HScName),
 		sbtestsc.ParamCaller, userAgentID,
 		sbtestsc.ParamChainOwnerID, chain.OriginatorAgentID,
-		sbtestsc.ParamContractCreator, userAgentID,
-	).WithIotas(1)
-	_, err := chain.PostRequestSync(req, user)
+		sbtestsc.ParamContractCreator, userAgentID)
+	_, err := chain.PostRequestSync(req.WithIotas(1), user)
 	require.NoError(t, err)
 }
 
@@ -58,9 +57,8 @@ func testMintedSupplyOk(t *testing.T, w bool) {
 
 	newSupply := uint64(42)
 	req := solo.NewCallParams(ScName, sbtestsc.FuncGetMintedSupply.Name).
-		WithIotas(1).
 		WithMint(userAddress, newSupply)
-	tx, ret, err := chain.PostRequestSyncTx(req, user)
+	tx, ret, err := chain.PostRequestSyncTx(req.WithIotas(1), user)
 	require.NoError(t, err)
 
 	mintedAmounts := colored.BalancesFromL1Map(utxoutil.GetMintedAmounts(tx))

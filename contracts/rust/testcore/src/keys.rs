@@ -21,30 +21,33 @@ pub const IDX_PARAM_CHAIN_OWNER_ID:   usize = 4;
 pub const IDX_PARAM_CONTRACT_CREATOR: usize = 5;
 pub const IDX_PARAM_CONTRACT_ID:      usize = 6;
 pub const IDX_PARAM_COUNTER:          usize = 7;
-pub const IDX_PARAM_HASH:             usize = 8;
-pub const IDX_PARAM_HNAME:            usize = 9;
-pub const IDX_PARAM_HNAME_CONTRACT:   usize = 10;
-pub const IDX_PARAM_HNAME_EP:         usize = 11;
-pub const IDX_PARAM_HNAME_ZERO:       usize = 12;
-pub const IDX_PARAM_INT64:            usize = 13;
-pub const IDX_PARAM_INT64_ZERO:       usize = 14;
-pub const IDX_PARAM_INT_VALUE:        usize = 15;
-pub const IDX_PARAM_NAME:             usize = 16;
-pub const IDX_PARAM_STRING:           usize = 17;
-pub const IDX_PARAM_STRING_ZERO:      usize = 18;
-pub const IDX_RESULT_CHAIN_OWNER_ID:  usize = 19;
-pub const IDX_RESULT_COUNTER:         usize = 20;
-pub const IDX_RESULT_INT_VALUE:       usize = 21;
-pub const IDX_RESULT_MINTED_COLOR:    usize = 22;
-pub const IDX_RESULT_MINTED_SUPPLY:   usize = 23;
-pub const IDX_RESULT_SANDBOX_CALL:    usize = 24;
-pub const IDX_STATE_COUNTER:          usize = 25;
-pub const IDX_STATE_HNAME_EP:         usize = 26;
-pub const IDX_STATE_INTS:             usize = 27;
-pub const IDX_STATE_MINTED_COLOR:     usize = 28;
-pub const IDX_STATE_MINTED_SUPPLY:    usize = 29;
+pub const IDX_PARAM_FAIL:             usize = 8;
+pub const IDX_PARAM_HASH:             usize = 9;
+pub const IDX_PARAM_HNAME:            usize = 10;
+pub const IDX_PARAM_HNAME_CONTRACT:   usize = 11;
+pub const IDX_PARAM_HNAME_EP:         usize = 12;
+pub const IDX_PARAM_HNAME_ZERO:       usize = 13;
+pub const IDX_PARAM_INT64:            usize = 14;
+pub const IDX_PARAM_INT64_ZERO:       usize = 15;
+pub const IDX_PARAM_INT_VALUE:        usize = 16;
+pub const IDX_PARAM_NAME:             usize = 17;
+pub const IDX_PARAM_PROG_HASH:        usize = 18;
+pub const IDX_PARAM_STRING:           usize = 19;
+pub const IDX_PARAM_STRING_ZERO:      usize = 20;
+pub const IDX_PARAM_VAR_NAME:         usize = 21;
+pub const IDX_RESULT_CHAIN_OWNER_ID:  usize = 22;
+pub const IDX_RESULT_COUNTER:         usize = 23;
+pub const IDX_RESULT_INT_VALUE:       usize = 24;
+pub const IDX_RESULT_MINTED_COLOR:    usize = 25;
+pub const IDX_RESULT_MINTED_SUPPLY:   usize = 26;
+pub const IDX_RESULT_SANDBOX_CALL:    usize = 27;
+pub const IDX_STATE_COUNTER:          usize = 28;
+pub const IDX_STATE_HNAME_EP:         usize = 29;
+pub const IDX_STATE_INTS:             usize = 30;
+pub const IDX_STATE_MINTED_COLOR:     usize = 31;
+pub const IDX_STATE_MINTED_SUPPLY:    usize = 32;
 
-pub const KEY_MAP_LEN: usize = 30;
+pub const KEY_MAP_LEN: usize = 33;
 
 pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
     PARAM_ADDRESS,
@@ -55,6 +58,7 @@ pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
     PARAM_CONTRACT_CREATOR,
     PARAM_CONTRACT_ID,
     PARAM_COUNTER,
+    PARAM_FAIL,
     PARAM_HASH,
     PARAM_HNAME,
     PARAM_HNAME_CONTRACT,
@@ -64,8 +68,10 @@ pub const KEY_MAP: [&str; KEY_MAP_LEN] = [
     PARAM_INT64_ZERO,
     PARAM_INT_VALUE,
     PARAM_NAME,
+    PARAM_PROG_HASH,
     PARAM_STRING,
     PARAM_STRING_ZERO,
+    PARAM_VAR_NAME,
     RESULT_CHAIN_OWNER_ID,
     RESULT_COUNTER,
     RESULT_INT_VALUE,

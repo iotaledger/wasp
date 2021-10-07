@@ -50,7 +50,7 @@ func TestDonateOnce(t *testing.T) {
 
 	// 42 iota transferred from wallet to contract
 	require.EqualValues(t, solo.Saldo-42, donator1.Balance())
-	require.EqualValues(t, 42, ctx.Balance(nil))
+	require.EqualValues(t, 42, ctx.Balance(ctx.Account()))
 }
 
 func TestDonateTwice(t *testing.T) {
@@ -77,5 +77,5 @@ func TestDonateTwice(t *testing.T) {
 
 	require.EqualValues(t, solo.Saldo-42, donator1.Balance())
 	require.EqualValues(t, solo.Saldo-69, donator2.Balance())
-	require.EqualValues(t, 42+69, ctx.Balance(nil))
+	require.EqualValues(t, 42+69, ctx.Balance(ctx.Account()))
 }

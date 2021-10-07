@@ -298,10 +298,11 @@ dependencies = [
 [[package]]
 name = "wasmlib"
 version = "0.1.0"
-source = "git+https://github.com/iotaledger/wasp?branch=wasmvm#e9177549e303c25d82d0302bccecfb205a5b867e"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",
+ "wasm-bindgen-test",
+ "wee_alloc",
 ]
 
 [[package]]
