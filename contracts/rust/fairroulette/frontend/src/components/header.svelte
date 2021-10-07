@@ -12,9 +12,13 @@
 
   const REPOSITORIES: { label: string; link: string }[] = [
     {
-      label: 'Dummy repo',
-      link: 'http://www.iota.org',
+      label: 'Fair Roulette',
+      link: 'https://github.com/iotaledger/wasp/tree/roulette_poc/contracts/rust/fairroulette',
     },
+    {
+      label: 'Wasp',
+      link: 'https://github.com/iotaledger/wasp',
+    }
   ];
 
   const NAV_LINKS: {
@@ -24,7 +28,7 @@
   }[] = [
     {
       label: 'Visit the Wiki',
-      href: 'https://wiki.iota.org/',
+      href: 'https://wiki.iota.org/wasp/welcome/',
       target: '_blank',
     },
   ];
