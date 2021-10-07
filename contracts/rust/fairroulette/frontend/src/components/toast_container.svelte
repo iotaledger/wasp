@@ -51,7 +51,10 @@
     position: absolute;
     right: 20px;
     bottom: 20px;
-    width: 400px;
+    width: 100%;
+    @media (min-width: 600px) {
+      width: 400px;
+    }
     ul {
       display: flex;
       flex-direction: column;

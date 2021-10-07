@@ -29,7 +29,7 @@
     align-items: flex-start;
     padding: 20px 16px;
     font-family: 'DM Sans', sans-serif;
-    @media (min-width: 1024px) {
+    @media (min-width: 600px) {
       padding: 30px;
       align-items: center;
     }
