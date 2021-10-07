@@ -250,7 +250,7 @@ export function subscribeToRouletteEvents() {
                 timeout: NOTIFICATION_TIMEOUT_NEVER
             })
         }
-        if (!get(isAWinnerPlayer)) {
+        else if (!get(isAWinnerPlayer)) {
             showNotification({
                 type: Notification.Info,
                 message: 'You loose, try again!',
