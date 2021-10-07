@@ -1,13 +1,21 @@
 <script lang="ts">
-  import { round } from '../../lib/store';
+  import {
+    round,
+    address as currentAddress,
+    addressesHistory,
+  } from "../../lib/store";
 </script>
 
 <div class="panel">
   <h3>Players</h3>
   <div class="players-wrapper">
     <div>
-      {#each $round?.players as { address, bet }, index}
-        <div class="player">
+      {#each $round.players as { address, bet }, index}
+        <div
+          class="player"
+          class:highlight={$currentAddress === address ||
+            $addressesHistory.includes(address)}
+        >
           <div class="player-index">{index + 1}</div>
           <div>
             <div class="player-address">{address}</div>
@@ -42,21 +50,27 @@
       display: flex;
       flex-direction: column-reverse;
       overflow-y: auto;
-      padding-right: 16px;
       margin-top: 16px;
 
       .player {
         display: inline-flex;
         position: relative;
-        padding: 0 0 17px 40px;
+        padding: 4px;
+        width: 100%;
+
+        gap: 12px;
+        margin-bottom: 8px;
+
+        &.highlight {
+          background: rgba(0, 224, 202, 0.2);
+          border-radius: 10px;
+        }
         .player-index {
           font-size: 14px;
           line-height: 150%;
           letter-spacing: 0.5px;
           color: var(--gray-5);
           display: inline-block;
-          position: absolute;
-          left: 0;
         }
         .player-address {
           font-weight: bold;
