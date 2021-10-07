@@ -47,7 +47,7 @@
 
 <style type="text/scss">
   .toast-container {
-    position: absolute;
+    position: fixed;
     right: 20px;
     bottom: 20px;
     width: 400px;
