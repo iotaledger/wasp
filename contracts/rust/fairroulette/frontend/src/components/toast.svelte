@@ -26,12 +26,11 @@
     border-radius: 16px;
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     padding: 20px 16px;
     font-family: 'DM Sans', sans-serif;
     @media (min-width: 600px) {
       padding: 30px;
-      align-items: center;
     }
     &.error {
       background: rgba(238, 91, 77, 0.2);

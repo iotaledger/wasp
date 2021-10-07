@@ -55,6 +55,7 @@
       width: 400px;
     }
     ul {
+      list-style-type: none;
       display: flex;
       flex-direction: column;
       z-index: 3;
