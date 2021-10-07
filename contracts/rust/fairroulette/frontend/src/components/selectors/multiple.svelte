@@ -25,6 +25,7 @@
     grid-template-columns: auto auto auto auto;
     grid-column-gap: 4px;
     grid-row-gap: 8px;
+    width: -moz-fit-content;
     width: fit-content;
 
     .cell {
