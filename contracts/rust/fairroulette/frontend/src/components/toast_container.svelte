@@ -38,7 +38,6 @@
       <li in:fade={{ duration: 100 }} out:fade={{ duration: 100 }}>
         <Toast
           {...notification}
-          timeout={NOTIFICATION_TIMEOUT_NEVER}
           onClose={() => removeDisplayNotification(notification.id)}
         />
       </li>
@@ -48,7 +47,7 @@
 
 <style type="text/scss">
   .toast-container {
-    position: absolute;
+    position: fixed;
     right: 20px;
     bottom: 20px;
     width: 100%;

@@ -39,6 +39,8 @@ export const requestingFunds: Writable<boolean> = writable(false)
 
 export const isAWinnerPlayer: Writable<boolean> = writable(false)
 
+export const addressesHistory: Writable<string[]> = writable([])
+
 export function resetRound(): void {
     round.set({ ...RESET_ROUND, winningNumber: get(round)?.winningNumber, players: [], logs: get(round)?.logs })
 }
