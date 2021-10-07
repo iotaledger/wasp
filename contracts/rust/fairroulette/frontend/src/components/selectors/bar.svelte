@@ -77,7 +77,7 @@
         background: var(--blue-dark);
         border: 1px solid var(--border-color);
         padding: 8px;
-        width: 88%;
+        width: 89%;
         font-family: 'Metropolis Semi Bold';
         &:focus {
           outline: none;
@@ -86,11 +86,16 @@
     }
     .invalid-message {
       position: absolute;
-      top: 36px;
+      top: 50px;
       font-size: 10px;
       color: var(--error);
       padding: 2px 5px;
       letter-spacing: 0.5px;
+      text-align: center;
+      width: 100%;
+      @media (min-width: 1024px) {
+        top: 85px;
+      }
     }
     .bar-selector {
       position: relative;
