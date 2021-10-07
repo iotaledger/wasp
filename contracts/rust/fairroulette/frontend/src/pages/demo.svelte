@@ -122,7 +122,7 @@
           />
         {/if}
       </div>
-      {#if $round.active && $balance === 0n}
+      {#if $round.active && $balance === 0n && !$round.betPlaced}
         <div class="description">
           To play, first request funds for your wallet. These are dev-net tokens
           and hold no value.
