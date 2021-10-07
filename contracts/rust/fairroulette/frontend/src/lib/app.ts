@@ -250,7 +250,7 @@ export function subscribeToRouletteEvents() {
                 timeout: 3000
             })
         }
-        else if (!get(isAWinnerPlayer)) {
+        else if (get(round).betPlaced && !get(isAWinnerPlayer)) {
             showNotification({
                 type: Notification.Info,
                 message: 'Sorry, you lost this round. Try again!',
@@ -285,6 +285,7 @@ export function subscribeToRouletteEvents() {
                 {
                     address: bet.better,
                     bet: bet.amount,
+                    number: bet.betNumber
                 },
             );
             return $round;
