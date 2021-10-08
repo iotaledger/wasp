@@ -16,15 +16,15 @@ func (vmctx *VMContext) AccountID() *iscp.AgentID {
 	case root.Contract.Hname(), accounts.Contract.Hname(), blob.Contract.Hname(), blocklog.Contract.Hname():
 		hname = 0
 	}
-	return iscp.NewAgentID(vmctx.ChainID().AsAddress(), hname)
+	return iscp.NewAgentID(vmctx.ChainID().AliasAddress, hname)
 }
 
 func (vmctx *VMContext) adjustAccount(agentID *iscp.AgentID) *iscp.AgentID {
-	return commonaccount.AdjustIfNeeded(agentID, &vmctx.chainID)
+	return commonaccount.AdjustIfNeeded(agentID, vmctx.chainID)
 }
 
 func (vmctx *VMContext) commonAccount() *iscp.AgentID {
-	return commonaccount.Get(&vmctx.chainID)
+	return commonaccount.Get(vmctx.chainID)
 }
 
 func (vmctx *VMContext) GetBalance(col colored.Color) uint64 {

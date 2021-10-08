@@ -125,18 +125,13 @@ func TestOpenChannelTwice(t *testing.T) {
 		ParamServiceAddress, providerAddr,
 	)
 	require.NoError(t, err)
-	warrant, exists, err := codec.DecodeUint64(ret.MustGet(ParamWarrant))
+	warrant, err := codec.DecodeUint64(ret.MustGet(ParamWarrant))
 	require.NoError(t, err)
-	require.True(t, exists)
 	require.EqualValues(t, 600+600, int(warrant))
 
-	_, exists, err = codec.DecodeUint64(ret.MustGet(ParamRevoked))
-	require.NoError(t, err)
-	require.False(t, exists)
+	require.False(t, ret.MustHas(ParamRevoked))
 
-	_, exists, err = codec.DecodeUint64(ret.MustGet(ParamLastOrd))
-	require.NoError(t, err)
-	require.False(t, exists)
+	require.False(t, ret.MustHas(ParamLastOrd))
 }
 
 func TestRevokeWarrant(t *testing.T) {
@@ -174,14 +169,11 @@ func TestRevokeWarrant(t *testing.T) {
 		ParamServiceAddress, providerAddr,
 	)
 	require.NoError(t, err)
-	warrant, exists, err := codec.DecodeUint64(ret.MustGet(ParamWarrant))
+	warrant, err := codec.DecodeUint64(ret.MustGet(ParamWarrant))
 	require.NoError(t, err)
-	require.True(t, exists)
 	require.EqualValues(t, 600, warrant)
 
-	_, exists, err = codec.DecodeUint64(ret.MustGet(ParamRevoked))
-	require.NoError(t, err)
-	require.False(t, exists)
+	require.False(t, ret.MustHas(ParamRevoked))
 
 	req = solo.NewCallParams("micropay", FuncRevokeWarrant.Name,
 		ParamServiceAddress, providerAddr,
@@ -196,14 +188,12 @@ func TestRevokeWarrant(t *testing.T) {
 		ParamServiceAddress, providerAddr,
 	)
 	require.NoError(t, err)
-	warrant, exists, err = codec.DecodeUint64(ret.MustGet(ParamWarrant))
+	warrant, err = codec.DecodeUint64(ret.MustGet(ParamWarrant))
 	require.NoError(t, err)
-	require.True(t, exists)
 	require.EqualValues(t, 600, warrant)
 
-	_, exists, err = codec.DecodeInt64(ret.MustGet(ParamRevoked))
+	_, err = codec.DecodeInt64(ret.MustGet(ParamRevoked))
 	require.NoError(t, err)
-	require.True(t, exists)
 
 	env.AdvanceClockBy(31 * time.Minute)
 	require.True(t, chain.WaitForRequestsThrough(6))
@@ -213,17 +203,11 @@ func TestRevokeWarrant(t *testing.T) {
 		ParamServiceAddress, providerAddr,
 	)
 	require.NoError(t, err)
-	_, exists, err = codec.DecodeInt64(ret.MustGet(ParamWarrant))
-	require.NoError(t, err)
-	require.False(t, exists)
+	require.False(t, ret.MustHas(ParamWarrant))
 
-	_, exists, err = codec.DecodeInt64(ret.MustGet(ParamRevoked))
-	require.NoError(t, err)
-	require.False(t, exists)
+	require.False(t, ret.MustHas(ParamRevoked))
 
-	_, exists, err = codec.DecodeInt64(ret.MustGet(ParamLastOrd))
-	require.NoError(t, err)
-	require.False(t, exists)
+	require.False(t, ret.MustHas(ParamLastOrd))
 }
 
 func TestPayment(t *testing.T) {
@@ -260,17 +244,12 @@ func TestPayment(t *testing.T) {
 		ParamPayerAddress, payerAddr,
 		ParamServiceAddress, providerAddr,
 	)
-	var ok bool
-	var w uint64
 	require.NoError(t, err)
-	w, ok, err = codec.DecodeUint64(res.MustGet(ParamWarrant))
+	w, err := codec.DecodeUint64(res.MustGet(ParamWarrant))
 	require.NoError(t, err)
-	require.True(t, ok)
 	require.EqualValues(t, 600, w)
 
-	_, ok, err = codec.DecodeUint64(res.MustGet(ParamRevoked))
-	require.NoError(t, err)
-	require.False(t, ok)
+	require.False(t, res.MustHas(ParamRevoked))
 
 	pay1 := NewPayment(uint32(time.Now().Unix()), 42, providerAddr, payer).Bytes()
 	time.Sleep(1 * time.Second)
@@ -292,17 +271,13 @@ func TestPayment(t *testing.T) {
 		ParamServiceAddress, providerAddr,
 	)
 	require.NoError(t, err)
-	warrant, exists, err := codec.DecodeInt64(res.MustGet(ParamWarrant))
+	warrant, err := codec.DecodeInt64(res.MustGet(ParamWarrant))
 	require.NoError(t, err)
-	require.True(t, exists)
 	require.EqualValues(t, 600-42-41, warrant)
 
-	_, exists, err = codec.DecodeInt64(res.MustGet(ParamRevoked))
-	require.NoError(t, err)
-	require.False(t, exists)
+	require.False(t, res.MustHas(ParamRevoked))
 
-	lastOrd, exists, err := codec.DecodeInt64(res.MustGet(ParamLastOrd))
+	lastOrd, err := codec.DecodeInt64(res.MustGet(ParamLastOrd))
 	require.NoError(t, err)
-	require.True(t, exists)
 	require.EqualValues(t, last, lastOrd)
 }

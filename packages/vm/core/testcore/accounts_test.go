@@ -52,7 +52,7 @@ func TestAccountsBase1(t *testing.T) {
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(newOwnerAgentID, 0)
 	chain.AssertIotas(chain.ContractAgentID(root.Contract.Name), 0)
 	chain.CheckAccountLedger()
@@ -61,7 +61,7 @@ func TestAccountsBase1(t *testing.T) {
 	_, err = chain.PostRequestSync(req, newOwner)
 	require.NoError(t, err)
 
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(newOwnerAgentID, 0)
 	chain.AssertIotas(chain.ContractAgentID(root.Contract.Name), 0)
 	chain.CheckAccountLedger()
@@ -93,14 +93,14 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 
 	// withdraw owner's iotas
 	_, ownerFromChain, _ := chain.GetInfo()
-	require.True(t, chain.OriginatorAgentID.Equals(&ownerFromChain))
+	require.True(t, chain.OriginatorAgentID.Equals(ownerFromChain))
 	t.Logf("origintor/owner: %s", chain.OriginatorAgentID.String())
 
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).WithIotas(1)
 	_, err = chain.PostRequestSync(req, chain.OriginatorKeyPair)
 	require.NoError(t, err)
 	chain.AssertTotalIotas(2)
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(2)
 
 	req = solo.NewCallParams(accounts.Contract.Name, accounts.FuncHarvest.Name).WithIotas(1)
@@ -108,7 +108,7 @@ func TestAccountsDepositWithdrawToAddress(t *testing.T) {
 
 	require.NoError(t, err)
 	chain.AssertTotalIotas(3)
-	chain.AssertIotas(&chain.OriginatorAgentID, 3)
+	chain.AssertIotas(chain.OriginatorAgentID, 3)
 	chain.AssertCommonAccountIotas(0)
 }
 
@@ -177,7 +177,7 @@ func getAccountNonce(t *testing.T, chain *solo.Chain, address ledgerstate.Addres
 		accounts.ParamAgentID, iscp.NewAgentID(address, 0),
 	)
 	require.NoError(t, err)
-	nonce, _, err := codec.DecodeUint64(ret.MustGet(accounts.ParamAccountNonce))
+	nonce, err := codec.DecodeUint64(ret.MustGet(accounts.ParamAccountNonce), 0)
 	require.NoError(t, err)
 	return nonce
 }

@@ -15,8 +15,8 @@ import (
 // If succeeds, it means this block is fake.
 // If fails, return nil
 func GetRotationAddress(state kv.KVStoreReader) ledgerstate.Address {
-	ret, ok, err := codec.DecodeAddress(state.MustGet(StateVarRotateToAddress))
-	if !ok || err != nil {
+	ret, err := codec.DecodeAddress(state.MustGet(StateVarRotateToAddress), nil)
+	if err != nil {
 		return nil
 	}
 	return ret
@@ -26,8 +26,8 @@ func GetRotationAddress(state kv.KVStoreReader) ledgerstate.Address {
 func MustGetChainInfo(state kv.KVStoreReader) ChainInfo {
 	d := kvdecoder.New(state)
 	ret := ChainInfo{
-		ChainID:             *d.MustGetChainID(VarChainID),
-		ChainOwnerID:        *d.MustGetAgentID(VarChainOwnerID),
+		ChainID:             d.MustGetChainID(VarChainID),
+		ChainOwnerID:        d.MustGetAgentID(VarChainOwnerID),
 		Description:         d.MustGetString(VarDescription, ""),
 		FeeColor:            d.MustGetColor(VarFeeColor, colored.IOTA),
 		DefaultOwnerFee:     d.MustGetInt64(VarDefaultOwnerFee, 0),
@@ -107,7 +107,7 @@ func GetDefaultFeeInfo(state kv.KVStoreReader) (colored.Color, uint64, uint64, e
 }
 
 func CheckAuthorizationByChainOwner(state kv.KVStore, agentID *iscp.AgentID) bool {
-	currentOwner, _, err := codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
+	currentOwner, err := codec.DecodeAgentID(state.MustGet(VarChainOwnerID))
 	if err != nil {
 		panic(err)
 	}

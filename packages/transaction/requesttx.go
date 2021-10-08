@@ -11,7 +11,7 @@ import (
 )
 
 type RequestParams struct {
-	ChainID    iscp.ChainID
+	ChainID    *iscp.ChainID
 	Contract   iscp.Hname
 	EntryPoint iscp.Hname
 	Transfer   colored.Balances

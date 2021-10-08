@@ -15,11 +15,11 @@ func (cvt SoloConvertor) ScAddress(address ledgerstate.Address) wasmlib.ScAddres
 	return wasmlib.NewScAddressFromBytes(address.Bytes())
 }
 
-func (cvt SoloConvertor) ScAgentID(agentID iscp.AgentID) wasmlib.ScAgentID {
+func (cvt SoloConvertor) ScAgentID(agentID *iscp.AgentID) wasmlib.ScAgentID {
 	return wasmlib.NewScAgentIDFromBytes(agentID.Bytes())
 }
 
-func (cvt SoloConvertor) ScChainID(chainID iscp.ChainID) wasmlib.ScChainID {
+func (cvt SoloConvertor) ScChainID(chainID *iscp.ChainID) wasmlib.ScChainID {
 	return wasmlib.NewScChainIDFromBytes(chainID.Bytes())
 }
 

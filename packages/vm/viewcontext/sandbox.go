@@ -60,7 +60,7 @@ func (s *sandboxview) Call(contractHname, entryPoint iscp.Hname, params dict.Dic
 }
 
 func (s *sandboxview) ChainID() *iscp.ChainID {
-	return &s.vctx.chainID
+	return s.vctx.chainID
 }
 
 func (s *sandboxview) ChainOwnerID() *iscp.AgentID {

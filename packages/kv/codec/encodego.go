@@ -44,9 +44,9 @@ func Encode(v interface{}) []byte {
 	case colored.Color:
 		return EncodeColor(vt)
 	case *iscp.ChainID:
-		return EncodeChainID(*vt)
-	case iscp.ChainID:
 		return EncodeChainID(vt)
+	case iscp.ChainID:
+		return EncodeChainID(&vt)
 	case *iscp.AgentID:
 		return EncodeAgentID(vt)
 	case iscp.AgentID:

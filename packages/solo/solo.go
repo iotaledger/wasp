@@ -94,16 +94,16 @@ type Chain struct {
 	OriginatorKeyPair *ed25519.KeyPair
 
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
-	ChainID iscp.ChainID
+	ChainID *iscp.ChainID
 
 	// OriginatorAddress is the alias for OriginatorKeyPair.Address()
 	OriginatorAddress ledgerstate.Address
 
 	// OriginatorAgentID is the OriginatorAddress represented in the form of AgentID
-	OriginatorAgentID iscp.AgentID
+	OriginatorAgentID *iscp.AgentID
 
 	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default is its equal to OriginatorAddress
-	ValidatorFeeTarget iscp.AgentID
+	ValidatorFeeTarget *iscp.AgentID
 
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
 	State       state.VirtualState
@@ -244,8 +244,8 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	env.logger.Infof("     chain '%s'. originator address: %s", chainID.String(), originatorAddr.Base58())
 
 	chainlog := env.logger.Named(name)
-	store := env.dbmanager.GetOrCreateKVStore(&chainID)
-	vs, err := state.CreateOriginState(store, &chainID)
+	store := env.dbmanager.GetOrCreateKVStore(chainID)
+	vs, err := state.CreateOriginState(store, chainID)
 	require.NoError(env.T, err)
 	require.EqualValues(env.T, 0, vs.BlockIndex())
 	require.True(env.T, vs.Timestamp().IsZero())
@@ -261,8 +261,8 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 		StateControllerAddress: stateAddr,
 		OriginatorKeyPair:      chainOriginator,
 		OriginatorAddress:      originatorAddr,
-		OriginatorAgentID:      *originatorAgentID,
-		ValidatorFeeTarget:     *feeTarget,
+		OriginatorAgentID:      originatorAgentID,
+		ValidatorFeeTarget:     feeTarget,
 		State:                  vs,
 		StateReader:            srdr,
 		GlobalSync:             glbSync,
@@ -325,7 +325,7 @@ func (env *Solo) AddToLedger(tx *ledgerstate.Transaction) error {
 }
 
 // RequestsForChain parses the transaction and returns all requests contained in it which have chainID as the target
-func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID iscp.ChainID) ([]iscp.Request, error) {
+func (env *Solo) RequestsForChain(tx *ledgerstate.Transaction, chainID *iscp.ChainID) ([]iscp.Request, error) {
 	env.glbMutex.RLock()
 	defer env.glbMutex.RUnlock()
 

@@ -7,8 +7,8 @@ import (
 
 // ChainInfo is an API structure which contains main properties of the chain in on place
 type ChainInfo struct {
-	ChainID             iscp.ChainID
-	ChainOwnerID        iscp.AgentID
+	ChainID             *iscp.ChainID
+	ChainOwnerID        *iscp.AgentID
 	Description         string
 	FeeColor            colored.Color
 	DefaultOwnerFee     int64

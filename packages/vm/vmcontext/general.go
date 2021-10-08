@@ -12,11 +12,11 @@ import (
 )
 
 func (vmctx *VMContext) ChainID() *iscp.ChainID {
-	return &vmctx.chainID
+	return vmctx.chainID
 }
 
 func (vmctx *VMContext) ChainOwnerID() *iscp.AgentID {
-	return &vmctx.chainOwnerID
+	return vmctx.chainOwnerID
 }
 
 func (vmctx *VMContext) ContractCreator() *iscp.AgentID {
@@ -47,8 +47,7 @@ func (vmctx *VMContext) IsRequestContext() bool {
 }
 
 func (vmctx *VMContext) Caller() *iscp.AgentID {
-	ret := vmctx.getCallContext().caller
-	return &ret
+	return vmctx.getCallContext().caller
 }
 
 func (vmctx *VMContext) Timestamp() int64 {

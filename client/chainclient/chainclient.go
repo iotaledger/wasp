@@ -18,7 +18,7 @@ import (
 type Client struct {
 	GoshimmerClient *goshimmer.Client
 	WaspClient      *client.WaspClient
-	ChainID         iscp.ChainID
+	ChainID         *iscp.ChainID
 	KeyPair         *ed25519.KeyPair
 	nonces          map[ed25519.PublicKey]uint64
 }
@@ -27,7 +27,7 @@ type Client struct {
 func New(
 	goshimmerClient *goshimmer.Client,
 	waspClient *client.WaspClient,
-	chainID iscp.ChainID,
+	chainID *iscp.ChainID,
 	keyPair *ed25519.KeyPair,
 ) *Client {
 	return &Client{
@@ -84,7 +84,7 @@ func (c *Client) PostOffLedgerRequest(
 	offledgerReq := request.NewOffLedger(contractHname, entrypoint, par.Args).WithTransfer(par.Transfer)
 	offledgerReq.WithNonce(par.Nonce)
 	offledgerReq.Sign(c.KeyPair)
-	return offledgerReq, c.WaspClient.PostOffLedgerRequest(&c.ChainID, offledgerReq)
+	return offledgerReq, c.WaspClient.PostOffLedgerRequest(c.ChainID, offledgerReq)
 }
 
 // NewPostRequestParams simplifies encoding of request parameters

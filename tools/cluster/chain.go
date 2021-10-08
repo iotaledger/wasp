@@ -35,7 +35,7 @@ type Chain struct {
 	Quorum         uint16
 	StateAddress   ledgerstate.Address
 
-	ChainID iscp.ChainID
+	ChainID *iscp.ChainID
 
 	Cluster *Cluster
 }
@@ -213,8 +213,7 @@ func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
 	if err != nil {
 		return 0, err
 	}
-	n, _, err := codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex))
-	return n, err
+	return codec.DecodeUint32(ret.MustGet(blocklog.ParamBlockIndex), 0)
 }
 
 func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*blocklog.BlockInfo, error) {
@@ -255,8 +254,7 @@ func (ch *Chain) GetCounterValue(inccounterSCHname iscp.Hname, nodeIndex ...int)
 	if err != nil {
 		return 0, err
 	}
-	n, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
-	return n, err
+	return codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
 }
 
 func (ch *Chain) GetStateVariable(contractHname iscp.Hname, key string, nodeIndex ...int) ([]byte, error) {

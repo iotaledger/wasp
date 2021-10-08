@@ -157,7 +157,7 @@ func (clu *Cluster) DeployChain(description string, allPeers, committeeNodes []i
 	}
 
 	chain.StateAddress = stateAddr
-	chain.ChainID = *chainid
+	chain.ChainID = chainid
 
 	return chain, nil
 }

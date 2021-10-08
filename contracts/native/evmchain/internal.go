@@ -123,7 +123,7 @@ func withTransactionByHash(ctx iscp.SandboxView, f func(*evm.EVMEmulator, *types
 func withTransactionByBlockHashAndIndex(ctx iscp.SandboxView, f func(*evm.EVMEmulator, *types.Transaction) dict.Dict) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	blockHash := common.BytesToHash(ctx.Params().MustGet(FieldBlockHash))
-	index, _, err := codec.DecodeUint64(ctx.Params().MustGet(FieldTransactionIndex))
+	index, err := codec.DecodeUint64(ctx.Params().MustGet(FieldTransactionIndex), 0)
 	a.RequireNoError(err)
 
 	return withEmulatorR(ctx, func(emu *evm.EVMEmulator) dict.Dict {
@@ -137,7 +137,7 @@ func withTransactionByBlockHashAndIndex(ctx iscp.SandboxView, f func(*evm.EVMEmu
 
 func withTransactionByBlockNumberAndIndex(ctx iscp.SandboxView, f func(*evm.EVMEmulator, *types.Transaction) dict.Dict) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
-	index, _, err := codec.DecodeUint64(ctx.Params().MustGet(FieldTransactionIndex))
+	index, err := codec.DecodeUint64(ctx.Params().MustGet(FieldTransactionIndex), 0)
 	a.RequireNoError(err)
 	return withBlockByNumber(ctx, func(emu *evm.EVMEmulator, block *types.Block) dict.Dict {
 		if block == nil || index >= uint64(len(block.Transactions())) {
@@ -165,7 +165,7 @@ func getFeeColor(ctx iscp.Sandbox) colored.Color {
 		nil,
 	)
 	a.RequireNoError(err)
-	feeColor, _, err := codec.DecodeColor(feeInfo.MustGet(governance.ParamFeeColor))
+	feeColor, err := codec.DecodeColor(feeInfo.MustGet(governance.ParamFeeColor))
 	a.RequireNoError(err)
 	return feeColor
 }

@@ -57,19 +57,19 @@ func ValueFromString(vtype, s string) []byte {
 func ValueToString(vtype string, v []byte) string {
 	switch vtype {
 	case "color":
-		col, _, err := codec.DecodeColor(v)
+		col, err := codec.DecodeColor(v)
 		log.Check(err)
 		return col.String()
 	case "agentid":
-		aid, _, err := codec.DecodeAgentID(v)
+		aid, err := codec.DecodeAgentID(v)
 		log.Check(err)
 		return aid.String()
 	case "uint64":
-		n, _, err := codec.DecodeUint64(v)
+		n, err := codec.DecodeUint64(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
 	case "int", "int64":
-		n, _, err := codec.DecodeInt64(v)
+		n, err := codec.DecodeInt64(v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
 	case "string":

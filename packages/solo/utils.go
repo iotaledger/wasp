@@ -7,7 +7,7 @@ import (
 )
 
 // GrantDeployPermission gives permission to the specified agentID to deploy SCs into the chain
-func (ch *Chain) GrantDeployPermission(keyPair *ed25519.KeyPair, deployerAgentID iscp.AgentID) error {
+func (ch *Chain) GrantDeployPermission(keyPair *ed25519.KeyPair, deployerAgentID *iscp.AgentID) error {
 	if keyPair == nil {
 		keyPair = ch.OriginatorKeyPair
 	}
@@ -18,7 +18,7 @@ func (ch *Chain) GrantDeployPermission(keyPair *ed25519.KeyPair, deployerAgentID
 }
 
 // RevokeDeployPermission removes permission of the specified agentID to deploy SCs into the chain
-func (ch *Chain) RevokeDeployPermission(keyPair *ed25519.KeyPair, deployerAgentID iscp.AgentID) error {
+func (ch *Chain) RevokeDeployPermission(keyPair *ed25519.KeyPair, deployerAgentID *iscp.AgentID) error {
 	if keyPair == nil {
 		keyPair = ch.OriginatorKeyPair
 	}

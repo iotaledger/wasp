@@ -20,7 +20,7 @@ func testDoNothing(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(cAID, 43)
 	chain.AssertCommonAccountIotas(2 + extraToken)
 	env.AssertAddressIotas(chain.OriginatorAddress, solo.Saldo-solo.ChainDustThreshold-2-1-42-extraToken)
@@ -36,7 +36,7 @@ func testDoNothingUser(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 43)
 	env.AssertAddressIotas(userAddr, solo.Saldo-42)
@@ -56,7 +56,7 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 43)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -72,7 +72,7 @@ func testWithdrawToAddress(t *testing.T, w bool) {
 	require.NoError(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 0)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -88,7 +88,7 @@ func testDoPanicUser(t *testing.T, w bool) {
 	user, userAddress, userAgentID := setupDeployer(t, chain)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -101,7 +101,7 @@ func testDoPanicUser(t *testing.T, w bool) {
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -117,7 +117,7 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	user, userAddress, userAgentID := setupDeployer(t, chain)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -130,7 +130,7 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -142,7 +142,7 @@ func testDoPanicUserFeeless(t *testing.T, w bool) {
 	_, err = chain.PostRequestSync(req.WithIotas(1), user)
 	require.NoError(t, err)
 
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(4 + extraToken)
@@ -158,7 +158,7 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	user, userAddress, userAgentID := setupDeployer(t, chain)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -172,7 +172,7 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	_, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
 
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(4 + extraToken)
@@ -185,7 +185,7 @@ func testDoPanicUserFee(t *testing.T, w bool) {
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(14 + extraToken)
@@ -201,7 +201,7 @@ func testRequestToView(t *testing.T, w bool) {
 	user, userAddress, userAgentID := setupDeployer(t, chain)
 
 	t.Logf("dump accounts 1:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)
@@ -215,7 +215,7 @@ func testRequestToView(t *testing.T, w bool) {
 	require.Error(t, err)
 
 	t.Logf("dump accounts 2:\n%s", chain.DumpAccounts())
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertIotas(userAgentID, 0)
 	chain.AssertIotas(cAID, 1)
 	chain.AssertCommonAccountIotas(3 + extraToken)

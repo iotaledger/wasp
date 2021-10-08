@@ -278,11 +278,11 @@ func (o *ScContext) getTransfer(transferID int32) colored.Balances {
 	transfer := colored.NewBalances()
 	transferDict := o.host.FindObject(transferID).(*ScDict).kvStore
 	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
-		col, _, err := codec.DecodeColor([]byte(key))
+		col, err := codec.DecodeColor([]byte(key))
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		amount, _, err := codec.DecodeUint64(value)
+		amount, err := codec.DecodeUint64(value)
 		if err != nil {
 			o.Panic(err.Error())
 		}

@@ -134,7 +134,7 @@ func (e *evmChainInstance) getCode(addr common.Address) []byte {
 func (e *evmChainInstance) getGasPerIotas() uint64 {
 	ret, err := e.callView(FuncGetGasPerIota.Name)
 	require.NoError(e.t, err)
-	gasPerIotas, _, err := codec.DecodeUint64(ret.MustGet(FieldResult))
+	gasPerIotas, err := codec.DecodeUint64(ret.MustGet(FieldResult))
 	require.NoError(e.t, err)
 	return gasPerIotas
 }
@@ -178,16 +178,15 @@ func (e *evmChainInstance) getBalance(addr common.Address) *big.Int {
 func (e *evmChainInstance) getNonce(addr common.Address) uint64 {
 	ret, err := e.callView(FuncGetNonce.Name, FieldAddress, addr.Bytes())
 	require.NoError(e.t, err)
-	nonce, ok, err := codec.DecodeUint64(ret.MustGet(FieldResult))
+	nonce, err := codec.DecodeUint64(ret.MustGet(FieldResult))
 	require.NoError(e.t, err)
-	require.True(e.t, ok)
 	return nonce
 }
 
-func (e *evmChainInstance) getOwner() iscp.AgentID {
+func (e *evmChainInstance) getOwner() *iscp.AgentID {
 	ret, err := e.callView(FuncGetOwner.Name)
 	require.NoError(e.t, err)
-	owner, _, err := codec.DecodeAgentID(ret.MustGet(FieldResult))
+	owner, err := codec.DecodeAgentID(ret.MustGet(FieldResult))
 	require.NoError(e.t, err)
 	return owner
 }
@@ -266,7 +265,7 @@ func (e *evmChainInstance) estimateGas(callMsg ethereum.CallMsg) uint64 {
 		e.t.Logf("%v", err)
 		return evm.GasLimitDefault - 1
 	}
-	gas, _, err := codec.DecodeUint64(ret.MustGet(FieldResult))
+	gas, err := codec.DecodeUint64(ret.MustGet(FieldResult))
 	require.NoError(e.t, err)
 	return gas
 }
@@ -338,10 +337,10 @@ func (e *evmContractInstance) callFn(opts []ethCallOptions, fnName string, args 
 		return
 	}
 
-	res.iotaChargedFee, _, err = codec.DecodeUint64(result.MustGet(FieldGasFee))
+	res.iotaChargedFee, err = codec.DecodeUint64(result.MustGet(FieldGasFee))
 	require.NoError(e.chain.t, err)
 
-	gasUsed, _, err := codec.DecodeUint64(result.MustGet(FieldGasUsed))
+	gasUsed, err := codec.DecodeUint64(result.MustGet(FieldGasUsed))
 	require.NoError(e.chain.t, err)
 
 	receiptResult, err := e.chain.callView(FuncGetReceipt.Name, FieldTransactionHash, tx.Hash().Bytes())

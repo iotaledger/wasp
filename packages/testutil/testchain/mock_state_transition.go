@@ -45,7 +45,7 @@ func (c *MockedStateTransition) NextState(vs state.VirtualState, chainOutput *le
 	counterBin, err := nextvs.KVStore().Get(counterKey)
 	require.NoError(c.t, err)
 
-	counter, _, err := codec.DecodeUint64(counterBin)
+	counter, err := codec.DecodeUint64(counterBin, 0)
 	require.NoError(c.t, err)
 
 	suBlockIndex := state.NewStateUpdateWithBlocklogValues(prevBlockIndex+1, time.Time{}, vs.StateCommitment())
