@@ -31,8 +31,8 @@ var (
 // chain address contained in the statetxbuilder.Builder
 type VMContext struct {
 	// same for the block
-	chainID              iscp.ChainID
-	chainOwnerID         iscp.AgentID
+	chainID              *iscp.ChainID
+	chainOwnerID         *iscp.AgentID
 	chainInput           *ledgerstate.AliasOutput
 	processors           *processors.Cache
 	txBuilder            *utxoutil.Builder
@@ -44,7 +44,7 @@ type VMContext struct {
 	log                  *logger.Logger
 	blockOutputCount     uint8
 	// fee related
-	validatorFeeTarget iscp.AgentID // provided by validator
+	validatorFeeTarget *iscp.AgentID // provided by validator
 	feeColor           colored.Color
 	ownerFee           uint64
 	validatorFee       uint64
@@ -68,7 +68,7 @@ type VMContext struct {
 
 type callContext struct {
 	isRequestContext bool             // is called from the request (true) or from another SC (false)
-	caller           iscp.AgentID     // calling agent
+	caller           *iscp.AgentID    // calling agent
 	contract         iscp.Hname       // called contract
 	params           dict.Dict        // params passed
 	transfer         colored.Balances // transfer passed
@@ -103,7 +103,7 @@ func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error)
 		task.VirtualState.ApplyStateUpdates(openingStateUpdate)
 	}
 	ret := &VMContext{
-		chainID:              *chainID,
+		chainID:              chainID,
 		chainInput:           task.ChainInput,
 		txBuilder:            txb,
 		virtualState:         task.VirtualState,

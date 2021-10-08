@@ -77,7 +77,7 @@ func (e *chainEnv) getCounter(hname iscp.Hname) int64 {
 	)
 	require.NoError(e.t, err)
 
-	counter, _, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
+	counter, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter), 0)
 	require.NoError(e.t, err)
 
 	return counter

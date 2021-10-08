@@ -219,11 +219,11 @@ func EncodeBalances(balances colored.Balances) dict.Dict {
 func DecodeBalances(balances dict.Dict) (colored.Balances, error) {
 	ret := colored.NewBalances()
 	for col, bal := range balances {
-		c, _, err := codec.DecodeColor([]byte(col))
+		c, err := codec.DecodeColor([]byte(col))
 		if err != nil {
 			return nil, err
 		}
-		b, _, err := codec.DecodeUint64(bal)
+		b, err := codec.DecodeUint64(bal)
 		if err != nil {
 			return nil, err
 		}
@@ -235,7 +235,10 @@ func DecodeBalances(balances dict.Dict) (colored.Balances, error) {
 const postfixMaxAssumedNonceKey = "non"
 
 func GetMaxAssumedNonce(state kv.KVStoreReader, address ledgerstate.Address) uint64 {
-	nonce, _, _ := codec.DecodeUint64(state.MustGet(kv.Key(address.Bytes()) + postfixMaxAssumedNonceKey))
+	nonce, err := codec.DecodeUint64(state.MustGet(kv.Key(address.Bytes())+postfixMaxAssumedNonceKey), 0)
+	if err != nil {
+		panic(err)
+	}
 	return nonce
 }
 

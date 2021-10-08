@@ -185,27 +185,17 @@ func getWarrantInfo(ctx iscp.SandboxView) (dict.Dict, error) {
 	return ret, nil
 }
 
-//  utility
-//nolint:ineffassign,staticcheck // TODO err is never checked, shouldn't errors be handled?
 func getWarrantInfoIntern(state kv.KVStoreReader, payer, service ledgerstate.Address, a assert.Assert) (uint64, uint64, uint64) {
 	payerInfo := collections.NewMapReadOnly(state, string(payer.Bytes()))
-	warrantBin, err := payerInfo.GetAt(service.Bytes())
+	warrantBin := payerInfo.MustGetAt(service.Bytes())
+	warrant, err := codec.DecodeUint64(warrantBin, 0)
 	a.RequireNoError(err)
-	warrant, exists, err := codec.DecodeUint64(warrantBin)
+	revokeBin := payerInfo.MustGetAt(getRevokeKey(service))
+	revoke, err := codec.DecodeUint64(revokeBin, 0)
 	a.RequireNoError(err)
-	if !exists {
-		warrant = 0
-	}
-	revokeBin, err := payerInfo.GetAt(getRevokeKey(service))
-	revoke, exists, err := codec.DecodeUint64(revokeBin)
-	if !exists {
-		revoke = 0
-	}
-	lastOrdBin, err := payerInfo.GetAt(getLastOrdKey(service))
-	lastOrd, exists, err := codec.DecodeUint64(lastOrdBin)
-	if !exists {
-		lastOrd = 0
-	}
+	lastOrdBin := payerInfo.MustGetAt(getLastOrdKey(service))
+	lastOrd, err := codec.DecodeUint64(lastOrdBin, 0)
+	a.RequireNoError(err)
 	return warrant, revoke, lastOrd
 }
 

@@ -25,13 +25,16 @@ func (e *contractEnv) checkSC(numRequests int) {
 		info, err := cl.CallView(governance.FuncGetChainInfo.Name, nil)
 		require.NoError(e.t, err)
 
-		chid, _, _ := codec.DecodeChainID(info.MustGet(governance.VarChainID))
+		chid, err := codec.DecodeChainID(info.MustGet(governance.VarChainID))
+		require.NoError(e.t, err)
 		require.EqualValues(e.t, e.chain.ChainID, chid)
 
-		aid, _, _ := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
-		require.EqualValues(e.t, *e.chain.OriginatorID(), aid)
+		aid, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
+		require.NoError(e.t, err)
+		require.EqualValues(e.t, e.chain.OriginatorID(), aid)
 
-		desc, _, _ := codec.DecodeString(info.MustGet(governance.VarDescription))
+		desc, err := codec.DecodeString(info.MustGet(governance.VarDescription), "")
+		require.NoError(e.t, err)
 		require.EqualValues(e.t, e.chain.Description, desc)
 
 		recs, err := e.chain.SCClient(root.Contract.Hname(), nil, i).CallView(root.FuncGetContractRecords.Name, nil)
@@ -181,12 +184,14 @@ func TestIncRepeatManyIncrement(t *testing.T) {
 	for i := range e.chain.CommitteeNodes {
 		b, err := e.chain.GetStateVariable(incHname, varCounter, i)
 		require.NoError(t, err)
-		counterValue, _, _ := codec.DecodeInt64(b)
+		counterValue, err := codec.DecodeInt64(b, 0)
+		require.NoError(t, err)
 		require.EqualValues(t, numRepeats+1, counterValue)
 
 		b, err = e.chain.GetStateVariable(incHname, varNumRepeats, i)
 		require.NoError(t, err)
-		repeats, _, _ := codec.DecodeInt64(b)
+		repeats, err := codec.DecodeInt64(b, 0)
+		require.NoError(t, err)
 		require.EqualValues(t, 0, repeats)
 	}
 }
@@ -222,7 +227,7 @@ func TestIncViewCounter(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
+	counter, err := codec.DecodeInt64(ret.MustGet(varCounter), 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, counter)
 }

@@ -16,7 +16,7 @@ const (
 	defaultOptimisticReadTimeout     = 1100 * time.Millisecond
 )
 
-func (c *WaspClient) CallView(chainID iscp.ChainID, hContract iscp.Hname, functionName string, args dict.Dict, optimisticReadTimeout ...time.Duration) (dict.Dict, error) {
+func (c *WaspClient) CallView(chainID *iscp.ChainID, hContract iscp.Hname, functionName string, args dict.Dict, optimisticReadTimeout ...time.Duration) (dict.Dict, error) {
 	deadline := time.Now().Add(defaultOptimisticReadTimeout)
 	if len(optimisticReadTimeout) > 0 {
 		deadline = time.Now().Add(optimisticReadTimeout[0])

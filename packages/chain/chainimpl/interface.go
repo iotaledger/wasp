@@ -23,7 +23,7 @@ import (
 )
 
 func (c *chainObj) ID() *iscp.ChainID {
-	return &c.chainID
+	return c.chainID
 }
 
 func (c *chainObj) GlobalStateSync() coreutil.ChainStateSync {
@@ -107,7 +107,7 @@ func shouldSendToPeer(peerID string, ackPeers []string) bool {
 
 func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
-	msgData := messages.NewOffLedgerRequestMsg(&c.chainID, req).Bytes()
+	msgData := messages.NewOffLedgerRequestMsg(c.chainID, req).Bytes()
 	committee := c.getCommittee()
 	getPeerIDs := (*c.peers).GetRandomPeers
 

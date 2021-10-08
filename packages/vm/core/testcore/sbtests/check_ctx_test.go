@@ -79,14 +79,12 @@ func testMintedSupplyOk(t *testing.T, w bool) {
 	chain.Env.AssertAddressIotas(userAddress, solo.Saldo-3-extraIota-newSupply)
 	chain.Env.AssertAddressBalance(userAddress, col, newSupply)
 
-	colorBack, ok, err := codec.DecodeColor(ret.MustGet(sbtestsc.VarMintedColor))
+	colorBack, err := codec.DecodeColor(ret.MustGet(sbtestsc.VarMintedColor))
 	require.NoError(t, err)
-	require.True(t, ok)
 	t.Logf("color back: %s", colorBack.Base58())
 	require.EqualValues(t, col, colorBack)
-	supplyBack, ok, err := codec.DecodeUint64(ret.MustGet(sbtestsc.VarMintedSupply))
+	supplyBack, err := codec.DecodeUint64(ret.MustGet(sbtestsc.VarMintedSupply))
 	require.NoError(t, err)
-	require.True(t, ok)
 	t.Logf("supply back: %d", supplyBack)
 	require.EqualValues(t, int(newSupply), int(supplyBack))
 }

@@ -58,7 +58,7 @@ type MockedEnv struct {
 	NetworkBehaviour  *testutil.PeeringNetDynamic
 	NetworkCloser     io.Closer
 	DKSRegistries     []registry.DKShareRegistryProvider
-	ChainID           iscp.ChainID
+	ChainID           *iscp.ChainID
 	MockedACS         chain.AsynchronousCommonSubsetRunner
 	InitStateOutput   *ledgerstate.AliasOutput
 	mutex             sync.Mutex
@@ -142,7 +142,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	ret.InitStateOutput, err = utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
-	ret.ChainID = *iscp.NewChainID(ret.InitStateOutput.GetAliasAddress())
+	ret.ChainID = iscp.NewChainID(ret.InitStateOutput.GetAliasAddress())
 
 	return ret, originTx
 }
@@ -223,7 +223,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	}
 	cmt, err := committee.New(
 		cmtRec,
-		&env.ChainID,
+		env.ChainID,
 		env.NetworkProviders[nodeIndex],
 		cfg,
 		env.DKSRegistries[nodeIndex],
@@ -234,7 +234,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	cmt.Attach(ret.ChainCore)
 
 	ret.StateOutput = env.InitStateOutput
-	ret.SolidState, err = state.CreateOriginState(ret.store, &env.ChainID)
+	ret.SolidState, err = state.CreateOriginState(ret.store, env.ChainID)
 	ret.stateSync.SetSolidIndex(0)
 	require.NoError(env.T, err)
 

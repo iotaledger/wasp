@@ -2,17 +2,17 @@ package codec
 
 import (
 	"github.com/iotaledger/wasp/packages/iscp"
+	"golang.org/x/xerrors"
 )
 
-func DecodeAgentID(b []byte) (iscp.AgentID, bool, error) {
+func DecodeAgentID(b []byte, def ...*iscp.AgentID) (*iscp.AgentID, error) {
 	if b == nil {
-		return iscp.AgentID{}, false, nil
+		if len(def) == 0 {
+			return nil, xerrors.Errorf("cannot decode nil bytes")
+		}
+		return def[0], nil
 	}
-	ret, err := iscp.AgentIDFromBytes(b)
-	if err != nil {
-		return iscp.AgentID{}, false, err
-	}
-	return *ret, true, nil
+	return iscp.AgentIDFromBytes(b)
 }
 
 func EncodeAgentID(value *iscp.AgentID) []byte {

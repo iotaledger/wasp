@@ -10,7 +10,7 @@ import (
 )
 
 type RootInfo struct {
-	ChainID iscp.ChainID
+	ChainID *iscp.ChainID
 
 	OwnerID          *iscp.AgentID
 	OwnerIDDelegated *iscp.AgentID
@@ -29,19 +29,19 @@ func (d *Dashboard) fetchRootInfo(chainID *iscp.ChainID) (ret RootInfo, err erro
 		return
 	}
 
-	ownerID, _, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
+	ownerID, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerID))
 	if err != nil {
 		return
 	}
-	ret.OwnerID = &ownerID
-	delegated, ok, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerIDDelegated))
-	if err != nil {
-		return
+	ret.OwnerID = ownerID
+	if info.MustHas(governance.VarChainOwnerIDDelegated) {
+		delegated, err := codec.DecodeAgentID(info.MustGet(governance.VarChainOwnerIDDelegated))
+		if err != nil {
+			return ret, err
+		}
+		ret.OwnerIDDelegated = delegated
 	}
-	if ok {
-		ret.OwnerIDDelegated = &delegated
-	}
-	ret.Description, _, err = codec.DecodeString(info.MustGet(governance.VarDescription))
+	ret.Description, err = codec.DecodeString(info.MustGet(governance.VarDescription), "")
 	if err != nil {
 		return
 	}

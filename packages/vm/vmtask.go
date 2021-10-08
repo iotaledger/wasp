@@ -31,7 +31,7 @@ type VMTask struct {
 	ProcessedRequestsCount   uint16
 	Timestamp                time.Time
 	Entropy                  hashing.HashValue
-	ValidatorFeeTarget       iscp.AgentID
+	ValidatorFeeTarget       *iscp.AgentID
 	Log                      *logger.Logger
 	OnFinish                 func(callResult dict.Dict, callError error, vmError error)
 	ResultTransactionEssence *ledgerstate.TransactionEssence // if not nil it is a normal block

@@ -35,7 +35,7 @@ func TestIncSoloInc(t *testing.T) {
 	require.NoError(t, err)
 	ret, err := chain.CallView(incName, "getCounter")
 	require.NoError(t, err)
-	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
+	counter, err := codec.DecodeInt64(ret.MustGet(varCounter))
 	require.NoError(t, err)
 	require.EqualValues(t, 1, counter)
 }
@@ -53,7 +53,7 @@ func TestIncSoloRepeatMany(t *testing.T) {
 	// chain.WaitForEmptyBacklog()
 	ret, err := chain.CallView(incName, "getCounter")
 	require.NoError(t, err)
-	counter, _, err := codec.DecodeInt64(ret.MustGet(varCounter))
+	counter, err := codec.DecodeInt64(ret.MustGet(varCounter))
 	require.NoError(t, err)
 	require.EqualValues(t, 3, counter)
 }

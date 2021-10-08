@@ -81,9 +81,8 @@ func TestOffLedgerNoFeeNoTransfer(t *testing.T) {
 			sbtestsc.ParamIntParamName, "ppp")
 		require.NoError(t, err)
 
-		retInt, exists, err := codec.DecodeInt64(ret.MustGet("ppp"))
+		retInt, err := codec.DecodeInt64(ret.MustGet("ppp"))
 		require.NoError(t, err)
-		require.True(t, exists)
 		require.EqualValues(t, 314, retInt)
 	})
 }
@@ -115,7 +114,7 @@ func TestOffLedgerFeesEnough(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
+		chain.AssertIotas(chain.OriginatorAgentID, 0)
 		chain.AssertIotas(userAgentID, 0)
 		chain.AssertIotas(cAID, 1)
 		env.AssertAddressIotas(userAddr, solo.Saldo-10)
@@ -152,7 +151,7 @@ func TestOffLedgerFeesNotEnough(t *testing.T) {
 		require.Contains(t, err.Error(), "not enough fees")
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
+		chain.AssertIotas(chain.OriginatorAgentID, 0)
 		chain.AssertIotas(userAgentID, 0)
 		chain.AssertIotas(cAID, 1)
 		env.AssertAddressIotas(userAddr, solo.Saldo-9)
@@ -188,7 +187,7 @@ func TestOffLedgerFeesExtra(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
+		chain.AssertIotas(chain.OriginatorAgentID, 0)
 		chain.AssertIotas(userAgentID, 1)
 		chain.AssertIotas(cAID, 1)
 		env.AssertAddressIotas(userAddr, solo.Saldo-11)
@@ -224,7 +223,7 @@ func TestOffLedgerTransferWithFeesEnough(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
+		chain.AssertIotas(chain.OriginatorAgentID, 0)
 		chain.AssertIotas(userAgentID, 0)
 		chain.AssertIotas(cAID, 1+42)
 		env.AssertAddressIotas(userAddr, solo.Saldo-10-42)
@@ -260,7 +259,7 @@ func TestOffLedgerTransferWithFeesNotEnough(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
+		chain.AssertIotas(chain.OriginatorAgentID, 0)
 		chain.AssertIotas(userAgentID, 0)
 		chain.AssertIotas(cAID, 1+41)
 		env.AssertAddressIotas(userAddr, solo.Saldo-10-41)
@@ -296,7 +295,7 @@ func TestOffLedgerTransferWithFeesExtra(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
+		chain.AssertIotas(chain.OriginatorAgentID, 0)
 		chain.AssertIotas(userAgentID, 1)
 		chain.AssertIotas(cAID, 1+42)
 		env.AssertAddressIotas(userAddr, solo.Saldo-10-43)
@@ -326,7 +325,7 @@ func TestOffLedgerTransferEnough(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
+		chain.AssertIotas(chain.OriginatorAgentID, 0)
 		chain.AssertIotas(userAgentID, 0)
 		chain.AssertIotas(cAID, 1+42)
 		env.AssertAddressIotas(userAddr, solo.Saldo-42)
@@ -356,7 +355,7 @@ func TestOffLedgerTransferNotEnough(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
+		chain.AssertIotas(chain.OriginatorAgentID, 0)
 		chain.AssertIotas(userAgentID, 0)
 		chain.AssertIotas(cAID, 1+41)
 		env.AssertAddressIotas(userAddr, solo.Saldo-41)
@@ -386,7 +385,7 @@ func TestOffLedgerTransferExtra(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Logf("dump accounts:\n%s", chain.DumpAccounts())
-		chain.AssertIotas(&chain.OriginatorAgentID, 0)
+		chain.AssertIotas(chain.OriginatorAgentID, 0)
 		chain.AssertIotas(userAgentID, 1)
 		chain.AssertIotas(cAID, 1+42)
 		env.AssertAddressIotas(userAddr, solo.Saldo-43)

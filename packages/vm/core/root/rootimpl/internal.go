@@ -52,7 +52,7 @@ func isAuthorizedToDeploy(ctx iscp.Sandbox) bool {
 func isChainOwner(a assert.Assert, ctx iscp.Sandbox) bool {
 	ret, err := ctx.Call(governance.Contract.Hname(), governance.FuncGetChainOwner.Hname(), nil, nil)
 	a.RequireNoError(err)
-	owner, _, err := codec.DecodeAgentID(ret.MustGet(governance.ParamChainOwner))
+	owner, err := codec.DecodeAgentID(ret.MustGet(governance.ParamChainOwner))
 	a.RequireNoError(err)
 	return owner.Equals(ctx.Caller())
 }

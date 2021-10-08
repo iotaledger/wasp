@@ -95,7 +95,7 @@ func DeployChain(par CreateChainParams, stateControllerAddr ledgerstate.Address)
 	peers := multiclient.New(par.CommitteeAPIHosts)
 
 	// ---------- wait until the request is processed at least in all committee nodes
-	if err = peers.WaitUntilAllRequestsProcessed(*chainID, initRequestTx, 30*time.Second); err != nil {
+	if err = peers.WaitUntilAllRequestsProcessed(chainID, initRequestTx, 30*time.Second); err != nil {
 		fmt.Fprintf(textout, "waiting root init request transaction.. FAILED: %v\n", err)
 		return nil, xerrors.Errorf("DeployChain: %w", err)
 	}
@@ -158,7 +158,7 @@ func CreateChainOrigin(node *goshimmer.Client, originator *ed25519.KeyPair, stat
 		return nil, nil, xerrors.Errorf("CreateChainOrigin: %w", err)
 	}
 
-	return &chainID, reqTx, nil
+	return chainID, reqTx, nil
 }
 
 // ActivateChainOnAccessNodes puts chain records into nodes and activates its
@@ -174,7 +174,7 @@ func ActivateChainOnAccessNodes(apiHosts, peers []string, chainID *iscp.ChainID)
 		return xerrors.Errorf("ActivateChainOnAccessNodes: %w", err)
 	}
 	// ------------- activate chain
-	err = nodes.ActivateChain(*chainID)
+	err = nodes.ActivateChain(chainID)
 	if err != nil {
 		return xerrors.Errorf("ActivateChainOnAccessNodes: %w", err)
 	}
