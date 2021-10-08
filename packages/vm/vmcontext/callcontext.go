@@ -58,7 +58,7 @@ func (vmctx *VMContext) pushCallContext(contract iscp.Hname, params dict.Dict, t
 	}
 	vmctx.callStack = append(vmctx.callStack, &callContext{
 		isRequestContext: isRequestContext,
-		caller:           *caller.Clone(),
+		caller:           caller.Clone(),
 		contract:         contract,
 		params:           params.Clone(),
 		transfer:         transfer,

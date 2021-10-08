@@ -212,7 +212,7 @@ func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		ChainInput:         c.stateOutput,
 		SolidStateBaseline: c.chain.GlobalStateSync().GetSolidIndexBaseline(),
 		Entropy:            c.consensusEntropy,
-		ValidatorFeeTarget: *c.consensusBatch.FeeDestination,
+		ValidatorFeeTarget: c.consensusBatch.FeeDestination,
 		Requests:           reqs,
 		Timestamp:          c.consensusBatch.Timestamp,
 		VirtualState:       c.currentState.Clone(),

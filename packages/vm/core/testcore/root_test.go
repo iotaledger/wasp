@@ -144,7 +144,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 	require.NoError(t, err)
 
 	_, ownerAgentID, _ = chain.GetInfo()
-	require.True(t, newOwnerAgentID.Equals(&ownerAgentID))
+	require.True(t, newOwnerAgentID.Equals(ownerAgentID))
 }
 
 func TestChangeOwnerUnauthorized(t *testing.T) {

@@ -116,13 +116,13 @@ func (ch *Chain) settleStateTransition(stateTx *ledgerstate.Transaction, stateOu
 	err = ch.State.Commit(block)
 	require.NoError(ch.Env.T, err)
 
-	blockBack, err := state.LoadBlock(ch.Env.dbmanager.GetKVStore(&ch.ChainID), ch.State.BlockIndex())
+	blockBack, err := state.LoadBlock(ch.Env.dbmanager.GetKVStore(ch.ChainID), ch.State.BlockIndex())
 	require.NoError(ch.Env.T, err)
 	require.True(ch.Env.T, bytes.Equal(block.Bytes(), blockBack.Bytes()))
 	require.EqualValues(ch.Env.T, stateOutput.ID(), blockBack.ApprovingOutputID())
 
-	chain.PublishStateTransition(&ch.ChainID, stateOutput, len(reqids))
-	chain.PublishRequestsSettled(&ch.ChainID, stateOutput.GetStateIndex(), reqids)
+	chain.PublishStateTransition(ch.ChainID, stateOutput, len(reqids))
+	chain.PublishRequestsSettled(ch.ChainID, stateOutput.GetStateIndex(), reqids)
 
 	ch.Log.Infof("state transition --> #%d. Requests in the block: %d. Outputs: %d",
 		ch.State.BlockIndex(), len(reqids), len(stateTx.Essence().Outputs()))

@@ -22,15 +22,15 @@ import (
 type Viewcontext struct {
 	processors  *processors.Cache
 	stateReader state.OptimisticStateReader
-	chainID     iscp.ChainID
+	chainID     *iscp.ChainID
 	log         *logger.Logger
 }
 
 func NewFromChain(ch chain.ChainCore) *Viewcontext {
-	return New(*ch.ID(), ch.GetStateReader(), ch.Processors(), ch.Log().Named("view"))
+	return New(ch.ID(), ch.GetStateReader(), ch.Processors(), ch.Log().Named("view"))
 }
 
-func New(chainID iscp.ChainID, stateReader state.OptimisticStateReader, proc *processors.Cache, log *logger.Logger) *Viewcontext {
+func New(chainID *iscp.ChainID, stateReader state.OptimisticStateReader, proc *processors.Cache, log *logger.Logger) *Viewcontext {
 	return &Viewcontext{
 		processors:  proc,
 		stateReader: stateReader,

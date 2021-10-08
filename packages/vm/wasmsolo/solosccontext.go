@@ -109,7 +109,7 @@ func (o *SoloScContext) processPost(bytes []byte) {
 	if err != nil {
 		o.Panic(err.Error())
 	}
-	if !chainID.Equals(&o.ctx.Chain.ChainID) {
+	if !chainID.Equals(o.ctx.Chain.ChainID) {
 		o.Panic("invalid chainID")
 	}
 	contract, err := iscp.HnameFromBytes(decode.Bytes())
@@ -170,11 +170,11 @@ func (o *SoloScContext) getTransfer(transferID int32) colored.Balances {
 	transfer := colored.NewBalances()
 	transferDict := o.ctx.wasmHost.FindObject(transferID).(*wasmproc.ScDict).KvStore()
 	transferDict.MustIterate("", func(key kv.Key, value []byte) bool {
-		color, _, err := codec.DecodeColor([]byte(key))
+		color, err := codec.DecodeColor([]byte(key))
 		if err != nil {
 			o.Panic(err.Error())
 		}
-		amount, _, err := codec.DecodeUint64(value)
+		amount, err := codec.DecodeUint64(value)
 		if err != nil {
 			o.Panic(err.Error())
 		}

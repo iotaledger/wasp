@@ -90,20 +90,9 @@ func getFibonacci(ctx iscp.SandboxView) (dict.Dict, error) {
 // ParamIntParamValue
 func setInt(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Infof(FuncSetInt.Name)
-	paramName, exists, err := codec.DecodeString(ctx.Params().MustGet(ParamIntParamName))
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
-	if !exists {
-		ctx.Log().Panicf("parameter '%s' wasn't provided", ParamIntParamName)
-	}
-	paramValue, exists, err := codec.DecodeInt64(ctx.Params().MustGet(ParamIntParamValue))
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
-	if !exists {
-		ctx.Log().Panicf("parameter '%s' wasn't provided", ParamIntParamValue)
-	}
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	paramName := params.MustGetString(ParamIntParamName)
+	paramValue := params.MustGetInt64(ParamIntParamValue)
 	ctx.State().Set(kv.Key(paramName), codec.EncodeInt64(paramValue))
 	return nil, nil
 }
@@ -111,20 +100,10 @@ func setInt(ctx iscp.Sandbox) (dict.Dict, error) {
 // ParamIntParamName
 func getInt(ctx iscp.SandboxView) (dict.Dict, error) {
 	ctx.Log().Infof(FuncGetInt.Name)
-	paramName, exists, err := codec.DecodeString(ctx.Params().MustGet(ParamIntParamName))
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
-	if !exists {
-		ctx.Log().Panicf("parameter '%s' wasn't provided", ParamIntParamName)
-	}
-	paramValue, exists, err := codec.DecodeInt64(ctx.State().MustGet(kv.Key(paramName)))
-	if err != nil {
-		ctx.Log().Panicf("%v", err)
-	}
-	if !exists {
-		paramValue = 0
-	}
+	params := kvdecoder.New(ctx.Params(), ctx.Log())
+	paramName := params.MustGetString(ParamIntParamName)
+	state := kvdecoder.New(ctx.State(), ctx.Log())
+	paramValue := state.MustGetInt64(kv.Key(paramName), 0)
 	ret := dict.New()
 	ret.Set(kv.Key(paramName), codec.EncodeInt64(paramValue))
 	return ret, nil

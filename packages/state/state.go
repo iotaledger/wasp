@@ -25,7 +25,7 @@ import (
 // region VirtualState /////////////////////////////////////////////////
 
 type virtualState struct {
-	chainID             iscp.ChainID
+	chainID             *iscp.ChainID
 	db                  kvstore.KVStore
 	empty               bool
 	kvs                 *buffered.BufferedKVStore
@@ -45,7 +45,7 @@ func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualState {
 		isStateHashOutdated: true,
 	}
 	if chainID != nil {
-		ret.chainID = *chainID
+		ret.chainID = chainID
 	}
 	return ret
 }
@@ -75,7 +75,7 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 
 func (vs *virtualState) Clone() VirtualState {
 	ret := &virtualState{
-		chainID:     *vs.chainID.Clone(),
+		chainID:     vs.chainID.Clone(),
 		db:          vs.db,
 		stateHash:   vs.stateHash,
 		stateUpdate: vs.stateUpdate.Clone(),
@@ -285,12 +285,9 @@ func loadTimestampFromState(chainState kv.KVStoreReader) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	ts, ok, err := codec.DecodeTime(tsBin)
+	ts, err := codec.DecodeTime(tsBin)
 	if err != nil {
 		return time.Time{}, xerrors.Errorf("loadTimestampFromState: %w", err)
-	}
-	if !ok {
-		return time.Time{}, xerrors.New("loadTimestampFromState: timestamp not found")
 	}
 	return ts, nil
 }
@@ -300,12 +297,9 @@ func loadPrevStateHashFromState(chainState kv.KVStoreReader) (hashing.HashValue,
 	if err != nil {
 		return hashing.NilHash, err
 	}
-	ph, ok, err := codec.DecodeHashValue(hashBin)
+	ph, err := codec.DecodeHashValue(hashBin)
 	if err != nil {
 		return hashing.NilHash, xerrors.Errorf("loadPrevStateHashFromState: %w", err)
-	}
-	if !ok {
-		return hashing.NilHash, xerrors.New("loadPrevStateHashFromState: previous state hash not found")
 	}
 	return ph, nil
 }

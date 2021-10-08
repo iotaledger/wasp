@@ -43,7 +43,7 @@ func (w *WaspClientBackend) PostOnLedgerRequest(scName, funName string, transfer
 	if err != nil {
 		return err
 	}
-	for _, reqID := range request.RequestsInTransaction(&w.ChainClient.ChainID, tx) {
+	for _, reqID := range request.RequestsInTransaction(w.ChainClient.ChainID, tx) {
 		return w.ChainClient.CheckRequestResult(reqID)
 	}
 	panic("should not reach here")
@@ -57,7 +57,7 @@ func (w *WaspClientBackend) PostOffLedgerRequest(scName, funName string, transfe
 	if err != nil {
 		return err
 	}
-	err = w.ChainClient.WaspClient.WaitUntilRequestProcessed(&w.ChainClient.ChainID, req.ID(), 1*time.Minute)
+	err = w.ChainClient.WaspClient.WaitUntilRequestProcessed(w.ChainClient.ChainID, req.ID(), 1*time.Minute)
 	if err != nil {
 		return err
 	}

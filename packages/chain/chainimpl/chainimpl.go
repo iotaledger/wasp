@@ -52,7 +52,7 @@ type chainObj struct {
 	mempoolLastCleanedIndex          uint32
 	dismissed                        atomic.Bool
 	dismissOnce                      sync.Once
-	chainID                          iscp.ChainID
+	chainID                          *iscp.ChainID
 	chainStateSync                   coreutil.ChainStateSync
 	stateReader                      state.OptimisticStateReader
 	procset                          *processors.Cache
@@ -106,7 +106,7 @@ func NewChain(
 		mempool:           mempool.New(state.NewOptimisticStateReader(db, chainStateSync), blobProvider, chainLog, chainMetrics),
 		procset:           processors.MustNew(processorConfig),
 		chMsg:             channels.NewInfiniteChannel(),
-		chainID:           *chainID,
+		chainID:           chainID,
 		log:               chainLog,
 		nodeConn:          nodeconnimpl.New(txstreamClient, chainLog),
 		db:                db,
@@ -444,7 +444,7 @@ func (c *chainObj) createNewCommitteeAndConsensus(cmtRec *registry.CommitteeReco
 	c.log.Debugf("createNewCommitteeAndConsensus: creating a new committee...")
 	cmt, err := committee.New(
 		cmtRec,
-		&c.chainID,
+		c.chainID,
 		c.netProvider,
 		c.peerNetworkConfig,
 		c.dksProvider,

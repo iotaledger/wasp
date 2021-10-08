@@ -36,7 +36,7 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 	}
 
 	result := &ChainContractTemplateParams{
-		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
+		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), chainID), Tab{
 			Path:  c.Path(),
 			Title: fmt.Sprintf("Contract %d", hname),
 			Href:  "#",
@@ -62,11 +62,11 @@ func (d *Dashboard) handleChainContract(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	result.OwnerFee, _, err = codec.DecodeUint64(fees.MustGet(governance.VarOwnerFee))
+	result.OwnerFee, err = codec.DecodeUint64(fees.MustGet(governance.VarOwnerFee))
 	if err != nil {
 		return err
 	}
-	result.ValidatorFee, _, err = codec.DecodeUint64(fees.MustGet(governance.VarValidatorFee))
+	result.ValidatorFee, err = codec.DecodeUint64(fees.MustGet(governance.VarValidatorFee))
 	if err != nil {
 		return err
 	}

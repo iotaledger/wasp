@@ -70,7 +70,7 @@ func testConcurrency(t *testing.T, w bool) {
 	if w {
 		extraIota = 1
 	}
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(extraIota + 2)
 	agentID := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
 	chain.AssertIotas(agentID, uint64(sum)+1)
@@ -122,7 +122,7 @@ func testConcurrency2(t *testing.T, w bool) {
 	if w {
 		extraIota = 1
 	}
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(extraIota + 2)
 	agentID := iscp.NewAgentID(chain.ChainID.AsAddress(), HScName)
 	chain.AssertIotas(agentID, uint64(sum)+1)

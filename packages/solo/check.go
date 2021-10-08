@@ -48,7 +48,7 @@ func (ch *Chain) CheckAccountLedger() {
 	sum := colored.NewBalances()
 	for i := range accs {
 		acc := accs[i]
-		bals := ch.GetAccountBalance(&acc)
+		bals := ch.GetAccountBalance(acc)
 		bals.ForEachRandomly(func(col colored.Color, bal uint64) bool {
 			sum.Add(col, bal)
 			return true

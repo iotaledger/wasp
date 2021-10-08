@@ -50,11 +50,8 @@ func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 	genesisAlloc, err := DecodeGenesisAlloc(ctx.Params().MustGet(FieldGenesisAlloc))
 	a.RequireNoError(err)
-	chainID, ok, err := codec.DecodeUint16(ctx.Params().MustGet(FieldChainID))
+	chainID, err := codec.DecodeUint16(ctx.Params().MustGet(FieldChainID), evm.DefaultChainID)
 	a.RequireNoError(err)
-	if !ok {
-		chainID = evm.DefaultChainID
-	}
 	evm.InitGenesis(
 		int(chainID),
 		rawdb.NewDatabase(evm.NewKVAdapter(ctx.State())),
@@ -75,7 +72,7 @@ func applyTransaction(ctx iscp.Sandbox) (dict.Dict, error) {
 	a.RequireNoError(err)
 
 	transferredIotas := ctx.IncomingTransfer().Get(getFeeColor(ctx))
-	gasPerIota, _, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasPerIota))
+	gasPerIota, err := codec.DecodeUint64(ctx.State().MustGet(FieldGasPerIota), 0)
 	a.RequireNoError(err)
 
 	a.Require(
@@ -268,7 +265,7 @@ func estimateGas(ctx iscp.SandboxView) (dict.Dict, error) {
 // EVM chain management functions ///////////////////////////////////////////////////////////////////////////////////////
 
 func requireOwner(ctx iscp.Sandbox) {
-	contractOwner, _, err := codec.DecodeAgentID(ctx.State().MustGet(FieldEvmOwner))
+	contractOwner, err := codec.DecodeAgentID(ctx.State().MustGet(FieldEvmOwner))
 	a := assert.NewAssert(ctx.Log())
 	a.RequireNoError(err)
 	a.Require(contractOwner.Equals(ctx.Caller()), "can only be called by the contract owner")
@@ -284,11 +281,11 @@ func setNextOwner(ctx iscp.Sandbox) (dict.Dict, error) {
 func claimOwnership(ctx iscp.Sandbox) (dict.Dict, error) {
 	a := assert.NewAssert(ctx.Log())
 
-	nextOwner, _, err := codec.DecodeAgentID(ctx.State().MustGet(FieldNextEvmOwner))
+	nextOwner, err := codec.DecodeAgentID(ctx.State().MustGet(FieldNextEvmOwner))
 	a.RequireNoError(err)
 	a.Require(nextOwner.Equals(ctx.Caller()), "Can only be called by the contract owner")
 
-	ctx.State().Set(FieldEvmOwner, codec.EncodeAgentID(&nextOwner))
+	ctx.State().Set(FieldEvmOwner, codec.EncodeAgentID(nextOwner))
 	return nil, nil
 }
 
@@ -313,7 +310,7 @@ func withdrawGasFees(ctx iscp.Sandbox) (dict.Dict, error) {
 	requireOwner(ctx)
 
 	paramsDecoder := kvdecoder.New(ctx.Params(), ctx.Log())
-	targetAgentID := paramsDecoder.MustGetAgentID(FieldAgentID, *ctx.Caller())
+	targetAgentID := paramsDecoder.MustGetAgentID(FieldAgentID, ctx.Caller())
 
 	isOnChain := targetAgentID.Address().Equals(ctx.ChainID().AsAddress())
 

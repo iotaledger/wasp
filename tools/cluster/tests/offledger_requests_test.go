@@ -64,7 +64,7 @@ func TestOffledgerRequest(t *testing.T) {
 	// send off-ledger request via Web API
 	offledgerReq, err := chClient.PostOffLedgerRequest(incCounterSCHname, inccounter.FuncIncCounter.Hname())
 	require.NoError(t, err)
-	err = chain.CommitteeMultiClient().WaitUntilRequestProcessed(&chain.ChainID, offledgerReq.ID(), 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilRequestProcessed(chain.ChainID, offledgerReq.ID(), 30*time.Second)
 	require.NoError(t, err)
 
 	// check off-ledger request was successfully processed
@@ -72,8 +72,8 @@ func TestOffledgerRequest(t *testing.T) {
 		chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name, nil,
 	)
 	require.NoError(t, err)
-	result, _ := ret.Get(inccounter.VarCounter)
-	resultint64, _, _ := codec.DecodeInt64(result)
+	resultint64, err := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
+	require.NoError(t, err)
 	require.EqualValues(t, 43, resultint64)
 }
 
@@ -113,7 +113,7 @@ func TestOffledgerRequest900KB(t *testing.T) {
 		})
 	require.NoError(t, err)
 
-	err = chain.CommitteeMultiClient().WaitUntilRequestProcessed(&chain.ChainID, offledgerReq.ID(), 30*time.Second)
+	err = chain.CommitteeMultiClient().WaitUntilRequestProcessed(chain.ChainID, offledgerReq.ID(), 30*time.Second)
 	require.NoError(t, err)
 
 	// ensure blob was stored by the cluster
@@ -161,7 +161,6 @@ func TestOffledgerRequestAccessNode(t *testing.T) {
 		chain.ChainID, incCounterSCHname, inccounter.FuncGetCounter.Name, nil,
 	)
 	require.NoError(t, err)
-	result, _ := ret.Get(inccounter.VarCounter)
-	resultint64, _, _ := codec.DecodeInt64(result)
+	resultint64, _ := codec.DecodeInt64(ret.MustGet(inccounter.VarCounter))
 	require.EqualValues(t, 43, resultint64)
 }

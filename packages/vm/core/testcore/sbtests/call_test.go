@@ -24,9 +24,8 @@ func testGetSet(t *testing.T, w bool) {
 		sbtestsc.ParamIntParamName, "ppp")
 	require.NoError(t, err)
 
-	retInt, exists, err := codec.DecodeInt64(ret.MustGet("ppp"))
+	retInt, err := codec.DecodeInt64(ret.MustGet("ppp"))
 	require.NoError(t, err)
-	require.True(t, exists)
 	require.EqualValues(t, 314, retInt)
 }
 
@@ -45,9 +44,8 @@ func testCallRecursive(t *testing.T, w bool) {
 	ret, err := chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
-	r, exists, err := codec.DecodeInt64(ret.MustGet(sbtestsc.VarCounter))
+	r, err := codec.DecodeInt64(ret.MustGet(sbtestsc.VarCounter))
 	require.NoError(t, err)
-	require.True(t, exists)
 	require.EqualValues(t, 32, r)
 }
 
@@ -69,9 +67,8 @@ func testCallFibonacci(t *testing.T, w bool) {
 		sbtestsc.ParamIntParamValue, n,
 	)
 	require.NoError(t, err)
-	val, exists, err := codec.DecodeInt64(ret.MustGet(sbtestsc.ParamIntParamValue))
+	val, err := codec.DecodeInt64(ret.MustGet(sbtestsc.ParamIntParamValue))
 	require.NoError(t, err)
-	require.True(t, exists)
 	require.EqualValues(t, fibo(n), val)
 }
 
@@ -86,16 +83,14 @@ func testCallFibonacciIndirect(t *testing.T, w bool) {
 		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacci.Hname())
 	ret, err := chain.PostRequestSync(req.WithIotas(1), nil)
 	require.NoError(t, err)
-	r, exists, err := codec.DecodeInt64(ret.MustGet(sbtestsc.ParamIntParamValue))
+	r, err := codec.DecodeInt64(ret.MustGet(sbtestsc.ParamIntParamValue))
 	require.NoError(t, err)
-	require.True(t, exists)
 	require.EqualValues(t, fibo(n), r)
 
 	ret, err = chain.CallView(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
-	r, exists, err = codec.DecodeInt64(ret.MustGet(sbtestsc.VarCounter))
+	r, err = codec.DecodeInt64(ret.MustGet(sbtestsc.VarCounter))
 	require.NoError(t, err)
-	require.True(t, exists)
 	require.EqualValues(t, 1, r)
 }

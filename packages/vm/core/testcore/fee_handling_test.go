@@ -21,7 +21,7 @@ func TestInit(t *testing.T) {
 	env := solo.New(t, false, false)
 	chain := env.NewChain(nil, "chain1")
 
-	chain.AssertIotas(&chain.OriginatorAgentID, 0)
+	chain.AssertIotas(chain.OriginatorAgentID, 0)
 	chain.AssertCommonAccountIotas(1)
 	env.AssertAddressBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-1)
 	chain.AssertTotalIotas(1)
@@ -77,7 +77,7 @@ func TestFeeIsEnough1(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2 + 1)
 	chain.AssertTotalIotas(2 + 1)
-	chain.AssertAccountBalance(&chain.OriginatorAgentID, colored.IOTA, 0)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, colored.IOTA, 0)
 	env.AssertAddressBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2-1)
 }
 
@@ -108,7 +108,7 @@ func TestFeeIsEnough2(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2 + 10)
 	chain.AssertTotalIotas(2 + 10)
-	chain.AssertAccountBalance(&chain.OriginatorAgentID, colored.IOTA, 0)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, colored.IOTA, 0)
 	env.AssertAddressBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2-10)
 }
 
@@ -136,7 +136,7 @@ func TestFeesNoNeed(t *testing.T) {
 
 	chain.AssertCommonAccountIotas(2 + 7)
 	chain.AssertTotalIotas(2 + 7)
-	chain.AssertAccountBalance(&chain.OriginatorAgentID, colored.IOTA, 0)
+	chain.AssertAccountBalance(chain.OriginatorAgentID, colored.IOTA, 0)
 	env.AssertAddressBalance(chain.OriginatorAddress, colored.IOTA, solo.Saldo-solo.ChainDustThreshold-2-7)
 }
 

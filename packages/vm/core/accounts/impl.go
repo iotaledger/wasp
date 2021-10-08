@@ -65,7 +65,7 @@ func deposit(ctx iscp.Sandbox) (dict.Dict, error) {
 
 	caller := ctx.Caller()
 	params := kvdecoder.New(ctx.Params(), ctx.Log())
-	targetAccount := params.MustGetAgentID(ParamAgentID, *caller)
+	targetAccount := params.MustGetAgentID(ParamAgentID, caller)
 	targetAccount = commonaccount.AdjustIfNeeded(targetAccount, ctx.ChainID())
 
 	// funds currently are in the common account (because call is to 'accounts'), they must be moved to the target

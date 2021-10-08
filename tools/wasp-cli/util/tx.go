@@ -45,7 +45,7 @@ func WithSCTransaction(chainID *iscp.ChainID, f func() (*ledgerstate.Transaction
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
-		log.Check(config.WaspClient().WaitUntilAllRequestsProcessed(*chainID, tx, 1*time.Minute))
+		log.Check(config.WaspClient().WaitUntilAllRequestsProcessed(chainID, tx, 1*time.Minute))
 	}
 
 	return tx
