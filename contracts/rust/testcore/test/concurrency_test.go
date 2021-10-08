@@ -12,7 +12,7 @@ import (
 
 func TestCounter(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.IncCounter(ctx)
 		f.Func.TransferIotas(1)
@@ -30,7 +30,7 @@ func TestCounter(t *testing.T) {
 
 func TestSynchronous(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.IncCounter(ctx)
 		f.Func.TransferIotas(1)
@@ -66,7 +66,7 @@ func TestSynchronous(t *testing.T) {
 
 func TestConcurrency(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		// note that because SoloContext is not thread-safe we cannot use
 		// the following in parallel go-routines
@@ -106,7 +106,7 @@ func TestConcurrency(t *testing.T) {
 
 func TestConcurrency2(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		// note that because SoloContext is not thread-safe we cannot use
 		// the following in parallel go-routines

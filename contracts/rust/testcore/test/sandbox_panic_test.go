@@ -24,7 +24,7 @@ func verifyReceipts(t *testing.T, w bool, ctx *wasmsolo.SoloContext, requests, p
 
 func TestPanicFull(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestPanicFullEP(ctx)
 		f.Func.TransferIotas(1).Post()
@@ -37,7 +37,7 @@ func TestPanicFull(t *testing.T) {
 
 func TestPanicViewCall(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestPanicViewEP(ctx)
 		f.Func.Call()
@@ -50,7 +50,7 @@ func TestPanicViewCall(t *testing.T) {
 
 func TestCallPanicFull(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestCallPanicFullEP(ctx)
 		f.Func.TransferIotas(1).Post()
@@ -63,7 +63,7 @@ func TestCallPanicFull(t *testing.T) {
 
 func TestCallPanicViewFromFull(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestCallPanicViewEPFromFull(ctx)
 		f.Func.TransferIotas(1).Post()
@@ -76,7 +76,7 @@ func TestCallPanicViewFromFull(t *testing.T) {
 
 func TestCallPanicViewFromView(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 
 		f := testcore.ScFuncs.TestCallPanicViewEPFromView(ctx)
 		f.Func.Call()

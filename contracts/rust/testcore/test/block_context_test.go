@@ -8,7 +8,7 @@ import (
 )
 
 func TestBasicBlockContext1(t *testing.T) {
-	ctx := setupTest(t, false)
+	ctx := deployTestCore(t, false)
 
 	f := testcore.ScFuncs.TestBlockContext1(ctx)
 	f.Func.TransferIotas(1).Post()
@@ -16,7 +16,7 @@ func TestBasicBlockContext1(t *testing.T) {
 }
 
 func TestBasicBlockContext2(t *testing.T) {
-	ctx := setupTest(t, false)
+	ctx := deployTestCore(t, false)
 
 	f := testcore.ScFuncs.TestBlockContext2(ctx)
 	f.Func.TransferIotas(1).Post()

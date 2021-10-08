@@ -16,25 +16,40 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
-	t.Run(fmt.Sprintf("run CORE version of %s", t.Name()), func(t *testing.T) {
-		test(t, false)
-	})
+func deployTestCore(t *testing.T, runWasm bool, addCreator ...bool) *wasmsolo.SoloContext {
+	chain := wasmsolo.StartChain(t, "chain1")
 
-	if len(skipWasm) != 0 && skipWasm[0] {
-		t.Logf("skipped WASM version of '%s'", t.Name())
-		return
+	var creator *wasmsolo.SoloAgent
+	if len(addCreator) != 0 && addCreator[0] {
+		creator = wasmsolo.NewSoloAgent(chain.Env)
+		setDeployer(t, &wasmsolo.SoloContext{Chain: chain}, creator)
 	}
+
+	ctx := deployTestCoreOnChain(t, runWasm, chain, creator)
+	require.NoError(t, ctx.Err)
+	return ctx
+}
+
+func deployTestCoreOnChain(t *testing.T, runWasm bool, chain *solo.Chain, creator *wasmsolo.SoloAgent, init ...*wasmlib.ScInitFunc) *wasmsolo.SoloContext {
+	if runWasm {
+		return wasmsolo.NewSoloContextForChain(t, chain, creator, testcore.ScName, testcore.OnLoad, init...)
+	}
+
+	return wasmsolo.NewSoloContextForNative(t, chain, creator, testcore.ScName, testcore.OnLoad, sbtestsc.Processor, init...)
+}
+
+func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
+	//t.Run(fmt.Sprintf("run CORE version of %s", t.Name()), func(t *testing.T) {
+	//	test(t, false)
+	//})
+	//
+	//if len(skipWasm) != 0 && skipWasm[0] {
+	//	t.Logf("skipped WASM version of '%s'", t.Name())
+	//	return
+	//}
 
 	saveGoDebug := *wasmsolo.GoDebug
 	saveGoWasm := *wasmsolo.GoWasm
-
-	*wasmsolo.GoDebug = true
-	*wasmsolo.GoWasm = false
-	wasmlib.ConnectHost(nil)
-	t.Run(fmt.Sprintf("run GOVM version of %s", t.Name()), func(t *testing.T) {
-		test(t, true)
-	})
 
 	exists, _ := util.ExistsFilePath("../pkg/testcore_bg.wasm")
 	if exists {
@@ -56,42 +71,27 @@ func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
 		})
 	}
 
+	*wasmsolo.GoDebug = true
+	*wasmsolo.GoWasm = false
+	wasmlib.ConnectHost(nil)
+	t.Run(fmt.Sprintf("run GOVM version of %s", t.Name()), func(t *testing.T) {
+		test(t, true)
+	})
+
 	*wasmsolo.GoDebug = saveGoDebug
 	*wasmsolo.GoWasm = saveGoWasm
 }
 
-func setupTest(t *testing.T, runWasm bool, addCreator ...bool) *wasmsolo.SoloContext {
-	chain := wasmsolo.StartChain(t, "chain1")
-
-	var creator *wasmsolo.SoloAgent
-	if len(addCreator) != 0 && addCreator[0] {
-		creator = wasmsolo.NewSoloAgent(chain.Env)
-		setDeployer(t, &wasmsolo.SoloContext{Chain: chain}, creator)
-	}
-
-	ctx := setupTestForChain(t, runWasm, chain, creator)
-	require.NoError(t, ctx.Err)
-	return ctx
-}
-
-func setupTestForChain(t *testing.T, runWasm bool, chain *solo.Chain, creator *wasmsolo.SoloAgent, init ...*wasmlib.ScInitFunc) *wasmsolo.SoloContext {
-	if runWasm {
-		return wasmsolo.NewSoloContextForChain(t, chain, creator, testcore.ScName, testcore.OnLoad, init...)
-	}
-
-	return wasmsolo.NewSoloContextForNative(t, chain, creator, testcore.ScName, testcore.OnLoad, sbtestsc.Processor, init...)
-}
-
-func TestSetup1(t *testing.T) {
+func TestDeployTestCore(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w)
+		ctx := deployTestCore(t, w)
 		require.EqualValues(t, ctx.Originator(), ctx.Creator())
 	})
 }
 
-func TestSetup2(t *testing.T) {
+func TestDeployTestCoreWithCreator(t *testing.T) {
 	run2(t, func(t *testing.T, w bool) {
-		ctx := setupTest(t, w, true)
+		ctx := deployTestCore(t, w, true)
 		require.NotEqualValues(t, ctx.Originator(), ctx.Creator())
 	})
 }
@@ -128,10 +128,10 @@ func deposit(t *testing.T, ctx *wasmsolo.SoloContext, user, target *wasmsolo.Sol
 	require.NoError(t, ctxAcc.Err)
 }
 
-func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, creator *wasmsolo.SoloAgent) {
+func setDeployer(t *testing.T, ctx *wasmsolo.SoloContext, deployer *wasmsolo.SoloAgent) {
 	ctxRoot := ctx.SoloContextForCore(t, coreroot.ScName, coreroot.OnLoad)
 	f := coreroot.ScFuncs.GrantDeployPermission(ctxRoot)
-	f.Params.Deployer().SetValue(creator.ScAgentID())
+	f.Params.Deployer().SetValue(deployer.ScAgentID())
 	f.Func.TransferIotas(1).Post()
 	require.NoError(t, ctxRoot.Err)
 }
