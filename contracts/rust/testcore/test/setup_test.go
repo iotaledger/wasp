@@ -39,14 +39,14 @@ func deployTestCoreOnChain(t *testing.T, runWasm bool, chain *solo.Chain, creato
 }
 
 func run2(t *testing.T, test func(*testing.T, bool), skipWasm ...bool) {
-	//t.Run(fmt.Sprintf("run CORE version of %s", t.Name()), func(t *testing.T) {
-	//	test(t, false)
-	//})
-	//
-	//if len(skipWasm) != 0 && skipWasm[0] {
-	//	t.Logf("skipped WASM version of '%s'", t.Name())
-	//	return
-	//}
+	t.Run(fmt.Sprintf("run CORE version of %s", t.Name()), func(t *testing.T) {
+		test(t, false)
+	})
+
+	if len(skipWasm) != 0 && skipWasm[0] {
+		t.Logf("skipped WASM versions of '%s'", t.Name())
+		return
+	}
 
 	saveGoDebug := *wasmsolo.GoDebug
 	saveGoWasm := *wasmsolo.GoWasm

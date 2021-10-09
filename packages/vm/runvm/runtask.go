@@ -16,7 +16,7 @@ type VMRunner struct{}
 
 func (r VMRunner) Run(task *vm.VMTask) {
 	// panic catcher for the whole VM task
-	// ir returns gracefully if the panic was about invalidated state
+	// it returns gracefully if the panic was about invalidated state
 	// otherwise it panics again
 	// The smart contract panics are processed inside and do not reach this point
 	defer func() {
