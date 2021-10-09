@@ -30,7 +30,7 @@ func TestOptimismBasic(t *testing.T) {
 	require.False(t, base.IsValid())
 	_, err = r.Get("a")
 	require.Error(t, err)
-	require.EqualValues(t, err, ErrStateHasBeenInvalidated)
+	require.EqualValues(t, err, coreutil.ErrStateHasBeenInvalidated)
 
 	r.SetBaseline()
 	b, err = r.Get("a")
@@ -40,5 +40,5 @@ func TestOptimismBasic(t *testing.T) {
 	glb.InvalidateSolidIndex()
 	_, err = r.Get("a")
 	require.Error(t, err)
-	require.EqualValues(t, err, ErrStateHasBeenInvalidated)
+	require.EqualValues(t, err, coreutil.ErrStateHasBeenInvalidated)
 }

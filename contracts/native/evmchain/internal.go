@@ -54,12 +54,12 @@ func timestamp(ctx iscp.SandboxBase) uint64 {
 func commitEthereumBlock(blockContext interface{}) {
 	emu := blockContext.(*evm.EVMEmulator)
 	emu.Commit()
-	emu.Close()
+	_ = emu.Close()
 }
 
 func withEmulatorR(ctx iscp.SandboxView, f func(*evm.EVMEmulator) dict.Dict) (dict.Dict, error) {
 	emu := evm.NewEVMEmulator(
-		rawdb.NewDatabase(evm.NewKVAdapter(buffered.NewBufferedKVStore(ctx.State()))),
+		rawdb.NewDatabase(evm.NewKVAdapter(buffered.NewBufferedKVStoreAccess(ctx.State()))),
 		timestamp(ctx),
 	)
 	defer emu.Close()

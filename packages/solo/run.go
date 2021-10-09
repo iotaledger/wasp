@@ -44,7 +44,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict
 		ChainInput:         ch.GetChainOutput(),
 		Requests:           reqs,
 		Timestamp:          ch.Env.LogicalTime(),
-		VirtualState:       ch.State.Clone(),
+		VirtualStateAccess: ch.State.Copy(),
 		Entropy:            hashing.RandomHash(nil),
 		ValidatorFeeTarget: ch.ValidatorFeeTarget,
 		Log:                ch.Log,
@@ -93,7 +93,7 @@ func (ch *Chain) runRequestsNolock(reqs []iscp.Request, trace string) (dict.Dict
 
 	if task.RotationAddress == nil {
 		// normal state transition
-		ch.State = task.VirtualState
+		ch.State = task.VirtualStateAccess
 		ch.settleStateTransition(tx, stateOutput, iscp.TakeRequestIDs(reqs[0:task.ProcessedRequestsCount]...))
 	} else {
 		ch.Log.Infof("ROTATED STATE CONTROLLER to %s", stateOutput.GetStateAddress().Base58())

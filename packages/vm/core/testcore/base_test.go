@@ -25,7 +25,7 @@ func Test1(t *testing.T) {
 }
 
 func TestNoContractPost(t *testing.T) {
-	env := solo.New(t, false, false)
+	env := solo.New(t, true, false)
 	env.EnablePublisher(true)
 	chain := env.NewChain(nil, "chain1")
 

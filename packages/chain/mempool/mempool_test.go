@@ -28,7 +28,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.OptimisticStateReader, state.VirtualState) {
+func createStateReader(t *testing.T, glb coreutil.ChainStateSync) (state.OptimisticStateReader, state.VirtualStateAccess) {
 	store := mapdb.NewMapDB()
 	vs, err := state.CreateOriginState(store, nil)
 	require.NoError(t, err)

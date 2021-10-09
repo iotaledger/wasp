@@ -22,8 +22,8 @@ import (
 type MockedStateTransition struct {
 	t           *testing.T
 	chainKey    *ed25519.KeyPair
-	onNextState func(virtualState state.VirtualState, tx *ledgerstate.Transaction)
-	onVMResult  func(virtualState state.VirtualState, tx *ledgerstate.TransactionEssence)
+	onNextState func(virtualState state.VirtualStateAccess, tx *ledgerstate.Transaction)
+	onVMResult  func(virtualState state.VirtualStateAccess, tx *ledgerstate.TransactionEssence)
 }
 
 func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedStateTransition {
@@ -33,12 +33,12 @@ func NewMockedStateTransition(t *testing.T, chainKey *ed25519.KeyPair) *MockedSt
 	}
 }
 
-func (c *MockedStateTransition) NextState(vs state.VirtualState, chainOutput *ledgerstate.AliasOutput, ts time.Time, reqs ...iscp.Request) {
+func (c *MockedStateTransition) NextState(vs state.VirtualStateAccess, chainOutput *ledgerstate.AliasOutput, ts time.Time, reqs ...iscp.Request) {
 	if c.chainKey != nil {
 		require.True(c.t, chainOutput.GetStateAddress().Equals(ledgerstate.NewED25519Address(c.chainKey.PublicKey)))
 	}
 
-	nextvs := vs.Clone()
+	nextvs := vs.Copy()
 	prevBlockIndex := vs.BlockIndex()
 	counterKey := kv.Key(coreutil.StateVarBlockIndex + "counter")
 
@@ -80,10 +80,10 @@ func (c *MockedStateTransition) NextState(vs state.VirtualState, chainOutput *le
 	}
 }
 
-func (c *MockedStateTransition) OnNextState(f func(virtualStats state.VirtualState, tx *ledgerstate.Transaction)) {
+func (c *MockedStateTransition) OnNextState(f func(virtualStats state.VirtualStateAccess, tx *ledgerstate.Transaction)) {
 	c.onNextState = f
 }
 
-func (c *MockedStateTransition) OnVMResult(f func(virtualStats state.VirtualState, tx *ledgerstate.TransactionEssence)) {
+func (c *MockedStateTransition) OnVMResult(f func(virtualStats state.VirtualStateAccess, tx *ledgerstate.TransactionEssence)) {
 	c.onVMResult = f
 }

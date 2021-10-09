@@ -74,7 +74,7 @@ type mockedNode struct {
 	Mempool     chain.Mempool              // Consensus needs
 	Consensus   chain.Consensus            // Consensus needs
 	store       kvstore.KVStore            // State manager mock
-	SolidState  state.VirtualState         // State manager mock
+	SolidState  state.VirtualStateAccess   // State manager mock
 	StateOutput *ledgerstate.AliasOutput   // State manager mock
 	Log         *logger.Logger
 	mutex       sync.Mutex
@@ -337,7 +337,7 @@ func (n *mockedNode) EventStateTransition() {
 	n.ChainCore.GlobalStateSync().SetSolidIndex(n.SolidState.BlockIndex())
 
 	n.Consensus.EventStateTransitionMsg(&messages.StateTransitionMsg{
-		State:          n.SolidState.Clone(),
+		State:          n.SolidState.Copy(),
 		StateOutput:    n.StateOutput,
 		StateTimestamp: time.Now(),
 	})
