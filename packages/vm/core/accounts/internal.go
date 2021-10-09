@@ -197,7 +197,8 @@ func mustCheckLedger(state kv.KVStore, checkpoint string) {
 	a := GetTotalAssets(state)
 	c := calcTotalAssets(state)
 	if !a.Equals(c) {
-		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'", checkpoint))
+		panic(fmt.Sprintf("inconsistent on-chain account ledger @ checkpoint '%s'\n total assets: %s\ncalc total: %s\n",
+			checkpoint, a.String(), c.String()))
 	}
 }
 

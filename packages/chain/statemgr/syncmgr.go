@@ -101,7 +101,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 		}
 		if approvedBlockCandidatesCount > 0 {
 			sm.log.Debugf("doSyncAction: trying to find candidates to commit from index %v to %v", startSyncFromIndex, i)
-			candidates, tentativeState, ok := sm.getCandidatesToCommit(make([]*candidateBlock, 0, i-startSyncFromIndex+1), sm.solidState.Clone(), startSyncFromIndex, i)
+			candidates, tentativeState, ok := sm.getCandidatesToCommit(make([]*candidateBlock, 0, i-startSyncFromIndex+1), sm.solidState.Copy(), startSyncFromIndex, i)
 			if ok {
 				sm.log.Debugf("doSyncAction: candidates to commit found, committing")
 				sm.commitCandidates(candidates, tentativeState)
@@ -112,7 +112,7 @@ func (sm *stateManager) doSyncActionIfNeeded() {
 	}
 }
 
-func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, calculatedPrevState state.VirtualState, fromStateIndex, toStateIndex uint32) ([]*candidateBlock, state.VirtualState, bool) {
+func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, calculatedPrevState state.VirtualStateAccess, fromStateIndex, toStateIndex uint32) ([]*candidateBlock, state.VirtualStateAccess, bool) {
 	sm.log.Debugf("getCandidatesToCommit from %v to %v", fromStateIndex, toStateIndex)
 	if fromStateIndex > toStateIndex {
 		// state hashes must be equal
@@ -161,7 +161,7 @@ func (sm *stateManager) getCandidatesToCommit(candidateAcc []*candidateBlock, ca
 	return nil, nil, false
 }
 
-func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentativeState state.VirtualState) {
+func (sm *stateManager) commitCandidates(candidates []*candidateBlock, tentativeState state.VirtualStateAccess) {
 	blocks := make([]state.Block, len(candidates))
 	for i, candidate := range candidates {
 		block := candidate.getBlock()

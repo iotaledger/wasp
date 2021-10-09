@@ -9,9 +9,9 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -67,7 +67,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 			switch err := r.(type) {
 			case *kv.DBError:
 				panic(err)
-			case *optimism.ErrorStateInvalidated:
+			case *coreutil.ErrorStateInvalidated:
 				panic(err)
 			default:
 				vmctx.lastResult = nil

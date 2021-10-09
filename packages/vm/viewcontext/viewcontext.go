@@ -8,9 +8,9 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -53,7 +53,7 @@ func (v *Viewcontext) CallView(contractHname, epCode iscp.Hname, params dict.Dic
 			switch err1 := r.(type) {
 			case *kv.DBError:
 				v.log.Panicf("DB error: %v", err1)
-			case *optimism.ErrorStateInvalidated:
+			case *coreutil.ErrorStateInvalidated:
 				err = err1
 			default:
 				err = xerrors.Errorf("viewcontext: panic in VM: %v", err1)

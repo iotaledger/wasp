@@ -27,7 +27,7 @@ type Consensus struct {
 	mempool                          chain.Mempool
 	nodeConn                         chain.NodeConnection
 	vmRunner                         vm.VMRunner
-	currentState                     state.VirtualState
+	currentState                     state.VirtualStateAccess
 	stateOutput                      *ledgerstate.AliasOutput
 	stateTimestamp                   time.Time
 	acsSessionID                     uint64
@@ -41,7 +41,7 @@ type Consensus struct {
 	delayRunVMUntil                  time.Time
 	delaySendingSignedResult         time.Time
 	resultTxEssence                  *ledgerstate.TransactionEssence
-	resultState                      state.VirtualState
+	resultState                      state.VirtualStateAccess
 	resultSignatures                 []*messages.SignedResultMsg
 	resultSigAck                     []uint16
 	finalTx                          *ledgerstate.Transaction
