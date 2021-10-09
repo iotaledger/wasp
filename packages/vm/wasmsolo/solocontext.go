@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	Debug      = true
+	Debug      = false
 	StackTrace = false
 	TraceHost  = false
 )

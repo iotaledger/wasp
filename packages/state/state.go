@@ -258,7 +258,7 @@ type mustOptimisticVirtualStateAccess struct {
 
 // WrapMustOptimisticVirtualStateAccess wraps virtual state with state baseline in on object
 // Does not copy buffers
-func WrapMustOptimisticVirtualStateAccess(state VirtualStateAccess, baseline coreutil.StateBaseline) *mustOptimisticVirtualStateAccess {
+func WrapMustOptimisticVirtualStateAccess(state VirtualStateAccess, baseline coreutil.StateBaseline) VirtualStateAccess {
 	return &mustOptimisticVirtualStateAccess{
 		state:    state,
 		baseline: baseline,
