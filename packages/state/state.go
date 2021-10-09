@@ -25,24 +25,21 @@ import (
 // region VirtualState /////////////////////////////////////////////////
 
 type virtualState struct {
-	chainID             *iscp.ChainID
-	db                  kvstore.KVStore
-	empty               bool
-	kvs                 *buffered.BufferedKVStore
-	stateHash           hashing.HashValue
-	stateUpdate         StateUpdate
-	isStateHashOutdated bool
+	chainID        *iscp.ChainID
+	db             kvstore.KVStore
+	empty          bool
+	kvs            *buffered.BufferedKVStore
+	committedHash  hashing.HashValue
+	uncommitedHash hashing.HashValue
 }
 
 // newVirtualState creates VirtualState interface with the partition of KVStore
 func newVirtualState(db kvstore.KVStore, chainID *iscp.ChainID) *virtualState {
 	sub := subRealm(db, []byte{dbkeys.ObjectTypeStateVariable})
 	ret := &virtualState{
-		db:                  db,
-		kvs:                 buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(sub)),
-		empty:               true,
-		stateUpdate:         NewStateUpdate(),
-		isStateHashOutdated: true,
+		db:    db,
+		kvs:   buffered.NewBufferedKVStore(kv.NewHiveKVStoreReader(sub)),
+		empty: true,
 	}
 	if chainID != nil {
 		ret.chainID = chainID
@@ -75,21 +72,22 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 
 func (vs *virtualState) Clone() VirtualState {
 	ret := &virtualState{
-		chainID:     vs.chainID.Clone(),
-		db:          vs.db,
-		stateHash:   vs.stateHash,
-		stateUpdate: vs.stateUpdate.Clone(),
-		empty:       vs.empty,
-		kvs:         vs.kvs.Clone(),
+		chainID:        vs.chainID.Clone(),
+		db:             vs.db,
+		committedHash:  vs.committedHash,
+		uncommitedHash: vs.uncommitedHash,
+		empty:          vs.empty,
+		kvs:            vs.kvs.Clone(),
 	}
 	return ret
 }
 
 func (vs *virtualState) DangerouslyConvertToString() string {
-	return fmt.Sprintf("#%d, ts: %v, hash, %s\n%s",
+	return fmt.Sprintf("#%d, ts: %v, committed hash: %s, uncommitted hash: %s\n%s",
 		vs.BlockIndex(),
 		vs.Timestamp(),
-		vs.stateHash.String(),
+		vs.committedHash.String(),
+		vs.uncommitedHash.String(),
 		vs.KVStore().DangerouslyDumpToString(),
 	)
 }
@@ -143,23 +141,22 @@ func (vs *virtualState) ApplyBlock(b Block) error {
 	return nil
 }
 
-// ApplyStateUpdate applies one state update. Doesn't change the state hash: it can be changed by Apply block
+// ApplyStateUpdates applies one state update. Doesn't change the state hash: it can be changed by Apply block
 func (vs *virtualState) ApplyStateUpdates(stateUpd ...StateUpdate) {
 	for _, upd := range stateUpd {
 		upd.Mutations().ApplyTo(vs.KVStore())
 		for k, v := range upd.Mutations().Sets {
-			vs.stateUpdate.Mutations().Set(k, v)
+			vs.kvs.Mutations().Set(k, v)
 		}
 		for k := range upd.Mutations().Dels {
-			vs.stateUpdate.Mutations().Del(k)
+			vs.kvs.Mutations().Del(k)
 		}
 	}
-	vs.isStateHashOutdated = true
 }
 
 // ExtractBlock creates a block from update log and returns it or nil if log is empty. The log is cleared
 func (vs *virtualState) ExtractBlock() (Block, error) {
-	ret, err := newBlock(vs.stateUpdate)
+	ret, err := newBlock(vs.kvs.Mutations())
 	if err != nil {
 		return nil, err
 	}
@@ -171,15 +168,18 @@ func (vs *virtualState) ExtractBlock() (Block, error) {
 
 // StateCommitment returns the hash of the state, calculated as a recursive hashing of the previous state hash and the block.
 func (vs *virtualState) StateCommitment() hashing.HashValue {
-	if vs.isStateHashOutdated {
+	if vs.kvs.Mutations().IsEmpty() {
+		return vs.committedHash
+	}
+	if vs.kvs.Mutations().IsModified() {
 		block, err := vs.ExtractBlock()
 		if err != nil {
 			panic(xerrors.Errorf("StateCommitment: %v", err))
 		}
-		vs.stateHash = hashing.HashData(vs.stateHash[:], block.Bytes())
-		vs.isStateHashOutdated = false
+		vs.uncommitedHash = hashing.HashData(block.Bytes())
+		vs.kvs.Mutations().ResetModified()
 	}
-	return vs.stateHash
+	return hashing.HashData(vs.committedHash[:], vs.uncommitedHash[:])
 }
 
 // endregion ////////////////////////////////////////////////////////////
@@ -219,7 +219,7 @@ func (r *OptimisticStateReaderImpl) Timestamp() (time.Time, error) {
 
 func (r *OptimisticStateReaderImpl) Hash() (hashing.HashValue, error) {
 	if !r.chainState.IsStateValid() {
-		return [32]byte{}, optimism.ErrStateHasBeenInvalidated
+		return [32]byte{}, coreutil.ErrStateHasBeenInvalidated
 	}
 	hashBIn, err := r.db.Get(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash))
 	if err != nil {
@@ -230,7 +230,7 @@ func (r *OptimisticStateReaderImpl) Hash() (hashing.HashValue, error) {
 		return [32]byte{}, err
 	}
 	if !r.chainState.IsStateValid() {
-		return [32]byte{}, optimism.ErrStateHasBeenInvalidated
+		return [32]byte{}, coreutil.ErrStateHasBeenInvalidated
 	}
 	return ret, nil
 }
@@ -244,6 +244,111 @@ func (r *OptimisticStateReaderImpl) SetBaseline() {
 }
 
 // endregion ////////////////////////////////////////////////////////
+
+// region mustOptimisticVirtualState ////////////////////////////////
+
+// MustOptimisticVirtualState is a virtual state wrapper with global state baseline
+// Once baseline is invalidated globally any subsequent access to the mustOptimisticVirtualState
+// will lead to panic(coreutil.ErrStateHasBeenInvalidated)
+type mustOptimisticVirtualState struct {
+	state    VirtualState
+	baseline coreutil.StateBaseline
+}
+
+// WrapMustOptimisticVirtualStateAccess wraps virtual state with state baseline in on object
+// Does not copy buffers
+func WrapMustOptimisticVirtualStateAccess(state VirtualState, baseline coreutil.StateBaseline) *mustOptimisticVirtualState {
+	return &mustOptimisticVirtualState{
+		state:    state,
+		baseline: baseline,
+	}
+}
+
+func (s *mustOptimisticVirtualState) BlockIndex() uint32 {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.BlockIndex()
+}
+
+func (s *mustOptimisticVirtualState) Timestamp() time.Time {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.Timestamp()
+}
+
+func (s *mustOptimisticVirtualState) PreviousStateHash() hashing.HashValue {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.PreviousStateHash()
+}
+
+func (s *mustOptimisticVirtualState) StateCommitment() hashing.HashValue {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.StateCommitment()
+}
+
+func (s *mustOptimisticVirtualState) KVStoreReader() kv.KVStoreReader {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.KVStoreReader()
+}
+
+func (s *mustOptimisticVirtualState) ApplyStateUpdates(upd ...StateUpdate) {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	s.state.ApplyStateUpdates(upd...)
+}
+
+func (s *mustOptimisticVirtualState) ApplyBlock(block Block) error {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.ApplyBlock(block)
+}
+
+func (s *mustOptimisticVirtualState) ExtractBlock() (Block, error) {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.ExtractBlock()
+}
+
+func (s *mustOptimisticVirtualState) Commit(blocks ...Block) error {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.Commit(blocks...)
+}
+
+func (s *mustOptimisticVirtualState) KVStore() *buffered.BufferedKVStore {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.KVStore()
+}
+
+func (s *mustOptimisticVirtualState) Clone() VirtualState {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.Clone()
+}
+
+func (s *mustOptimisticVirtualState) DangerouslyConvertToString() string {
+	s.baseline.MustValidate()
+	defer s.baseline.MustValidate()
+
+	return s.state.DangerouslyConvertToString()
+}
+
+// endregion /////////////////////////////////////
 
 // region helpers //////////////////////////////////////////////////
 

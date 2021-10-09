@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/webapi/routes"
 )
 
@@ -34,7 +34,7 @@ func (c *WaspClient) CallView(chainID *iscp.ChainID, hContract iscp.Hname, funct
 			return res, err
 		case strings.Contains(err.Error(), "virtual state has been invalidated"):
 			if time.Now().After(deadline) {
-				return nil, optimism.ErrStateHasBeenInvalidated
+				return nil, coreutil.ErrStateHasBeenInvalidated
 			}
 			time.Sleep(retryTimeoutOnOptimisticReadFail)
 		default:

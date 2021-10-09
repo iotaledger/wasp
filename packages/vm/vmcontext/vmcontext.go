@@ -79,34 +79,47 @@ type blockContext struct {
 	onClose func(interface{})
 }
 
-// CreateVMContext a constructor
-func CreateVMContext(task *vm.VMTask, txb *utxoutil.Builder) (*VMContext, error) {
+// CreateVMContext creates a context for the whole batch run
+func CreateVMContext(task *vm.VMTask) (*VMContext, error) {
+	// assert consistency. It is a bit redundant double check
+
+	if len(task.Requests) == 0 {
+		return nil, xerrors.Errorf("CreateVMContext.invalid params: must be at least 1 request")
+	}
+	txb := utxoutil.NewBuilder(task.ChainInput)
+
 	chainID, err := iscp.ChainIDFromAddress(task.ChainInput.Address())
 	if err != nil {
-		task.Log.Panicf("CreateVMContext: %v", err)
+		// should never happen
+		task.Log.Panicf("CreateVMContext.inconsistency: %v", err)
 	}
+
+	// we create optimistic state access wrapper to be used inside the VM call.
+	// It will panic any time the state is accessed.
+	// The panic will be caught above and VM call will be abandoned peacefully
+	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualState, task.SolidStateBaseline)
 
 	// assert consistency
 	stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
 	if err != nil {
 		return nil, xerrors.Errorf("CreateVMContext: can't parse state hash from chain input %w", err)
 	}
-	if stateHash != task.VirtualState.StateCommitment() {
+	if stateHash != optimisticStateAccess.StateCommitment() {
 		return nil, xerrors.New("CreateVMContext: state hash mismatch")
 	}
-	if task.VirtualState.BlockIndex() != task.ChainInput.GetStateIndex() {
+	blockIndex := optimisticStateAccess.BlockIndex()
+	if blockIndex != task.ChainInput.GetStateIndex() {
 		return nil, xerrors.Errorf("CreateVMContext: state index is inconsistent: block: #%d != chain output: #%d",
-			task.VirtualState.BlockIndex(), task.ChainInput.GetStateIndex())
+			blockIndex, task.ChainInput.GetStateIndex())
 	}
-	{
-		openingStateUpdate := state.NewStateUpdateWithBlocklogValues(task.VirtualState.BlockIndex()+1, task.Timestamp, stateHash)
-		task.VirtualState.ApplyStateUpdates(openingStateUpdate)
-	}
+	openingStateUpdate := state.NewStateUpdateWithBlocklogValues(optimisticStateAccess.BlockIndex()+1, task.Timestamp, stateHash)
+	optimisticStateAccess.ApplyStateUpdates(openingStateUpdate)
+
 	ret := &VMContext{
 		chainID:              chainID,
 		chainInput:           task.ChainInput,
 		txBuilder:            txb,
-		virtualState:         task.VirtualState,
+		virtualState:         optimisticStateAccess,
 		solidStateBaseline:   task.SolidStateBaseline,
 		validatorFeeTarget:   task.ValidatorFeeTarget,
 		processors:           task.Processors,
@@ -142,10 +155,14 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 
 // CloseVMContext does the closing actions on the block
 // return nil for normal block and rotation address for rotation block
-func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) ledgerstate.Address {
+func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, hashing.HashValue, time.Time, ledgerstate.Address) {
 	rotationAddr := vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
+	blockIndex := vmctx.virtualState.BlockIndex()
+	stateCommitment := vmctx.virtualState.StateCommitment()
+	timestamp := vmctx.virtualState.Timestamp()
+
 	vmctx.closeBlockContexts()
-	return rotationAddr
+	return blockIndex, stateCommitment, timestamp, rotationAddr
 }
 
 func (vmctx *VMContext) checkRotationAddress() ledgerstate.Address {

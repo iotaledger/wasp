@@ -9,7 +9,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
 
-// VirtualState virtualized access to the chain's database
+// VirtualState is a virtualized access to the chain's database
+// It consistes of state reader and the buffer to collect updates to key values
 type VirtualState interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
@@ -52,7 +53,7 @@ type Block interface {
 	Bytes() []byte
 }
 
-const OriginStateHashBase58 = "7TMFsjHpp8RH11sfNfYSR24WqDiTNYijPGj2eTi5Yfph"
+const OriginStateHashBase58 = "4izFrcU7RCMLPwbtRjkoT3aAdZJrxR6h1TSYJiE5DZ6d"
 
 func OriginStateHash() hashing.HashValue {
 	ret, err := hashing.HashValueFromBase58(OriginStateHashBase58)

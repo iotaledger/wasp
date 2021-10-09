@@ -20,7 +20,8 @@ func (vs *virtualState) Commit(blocks ...Block) error {
 	}
 	batch := vs.db.Batched()
 
-	if err := batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash), vs.StateCommitment().Bytes()); err != nil {
+	stateCommitment := vs.StateCommitment()
+	if err := batch.Set(dbkeys.MakeKey(dbkeys.ObjectTypeStateHash), stateCommitment.Bytes()); err != nil {
 		return err
 	}
 
@@ -48,6 +49,8 @@ func (vs *virtualState) Commit(blocks ...Block) error {
 	}
 
 	vs.kvs.ClearMutations()
+	vs.kvs.Mutations().ResetModified()
+	vs.committedHash = stateCommitment
 	return nil
 }
 
@@ -71,8 +74,8 @@ func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualState,
 		return nil, false, nil
 	}
 	vs := newVirtualState(store, chainID)
-	vs.stateHash = stateHash
-	vs.isStateHashOutdated = false // NOTE: returned VirtualState doesn't contain the block mutations, so if the hash is re-computed, it won't match the block that was committed to the DB.
+	vs.committedHash = stateHash
+	vs.kvs.Mutations().ResetModified()
 	return vs, true, nil
 }
 

@@ -246,6 +246,8 @@ func (env *Solo) NewChain(chainOriginator *ed25519.KeyPair, name string, validat
 	chainlog := env.logger.Named(name)
 	store := env.dbmanager.GetOrCreateKVStore(chainID)
 	vs, err := state.CreateOriginState(store, chainID)
+	env.logger.Infof("     chain '%s'. origin state hash: %s", chainID.String(), vs.StateCommitment().String())
+
 	require.NoError(env.T, err)
 	require.EqualValues(env.T, 0, vs.BlockIndex())
 	require.True(env.T, vs.Timestamp().IsZero())
