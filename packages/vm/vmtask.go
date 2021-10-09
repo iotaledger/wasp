@@ -25,7 +25,7 @@ type VMTask struct {
 	ACSSessionID             uint64
 	Processors               *processors.Cache
 	ChainInput               *ledgerstate.AliasOutput
-	VirtualState             state.VirtualState // in/out  Return uncommitted updated virtual state
+	VirtualStateAccess       state.VirtualStateAccess
 	SolidStateBaseline       coreutil.StateBaseline
 	Requests                 []iscp.Request
 	ProcessedRequestsCount   uint16

@@ -100,7 +100,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 0, vs2.BlockIndex())
 		require.EqualValues(t, hashing.NilHash, vs2.PreviousStateHash())
 
-		require.EqualValues(t, vs1.Clone().StateCommitment(), vs2.Clone().StateCommitment())
+		require.EqualValues(t, vs1.Copy().StateCommitment(), vs2.Copy().StateCommitment())
 	})
 	t.Run("load 0 block", func(t *testing.T) {
 		store := mapdb.NewMapDB()
@@ -227,7 +227,7 @@ func TestVariableStateBasic(t *testing.T) {
 	h1 := vs1.StateCommitment()
 	require.EqualValues(t, OriginStateHash(), h1)
 
-	vs2 := vs1.Clone()
+	vs2 := vs1.Copy()
 	h2 := vs2.StateCommitment()
 	require.EqualValues(t, h1, h2)
 
@@ -243,8 +243,8 @@ func TestVariableStateBasic(t *testing.T) {
 
 	require.EqualValues(t, vs1.StateCommitment(), vs2.StateCommitment())
 
-	vs3 := vs1.Clone()
-	vs4 := vs2.Clone()
+	vs3 := vs1.Copy()
+	vs4 := vs2.Copy()
 
 	require.EqualValues(t, vs3.StateCommitment(), vs4.StateCommitment())
 }

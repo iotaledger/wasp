@@ -9,9 +9,9 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
 
-// VirtualState is a virtualized access to the chain's database
-// It consistes of state reader and the buffer to collect updates to key values
-type VirtualState interface {
+// VirtualStateAccess is a virtualized access interface to the chain's database
+// It consists of state reader and the buffer to collect mutations to key values
+type VirtualStateAccess interface {
 	BlockIndex() uint32
 	Timestamp() time.Time
 	PreviousStateHash() hashing.HashValue
@@ -21,8 +21,8 @@ type VirtualState interface {
 	ApplyBlock(Block) error
 	ExtractBlock() (Block, error)
 	Commit(blocks ...Block) error
-	KVStore() *buffered.BufferedKVStore
-	Clone() VirtualState
+	KVStore() *buffered.BufferedKVStoreAccess
+	Copy() VirtualStateAccess
 	DangerouslyConvertToString() string
 }
 

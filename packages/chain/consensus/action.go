@@ -224,7 +224,7 @@ func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 		ValidatorFeeTarget: c.consensusBatch.FeeDestination,
 		Requests:           reqs,
 		Timestamp:          c.consensusBatch.Timestamp,
-		VirtualState:       c.currentState.Clone(),
+		VirtualStateAccess: c.currentState.Copy(),
 		Log:                c.log,
 	}
 	task.OnFinish = func(_ dict.Dict, err error, vmError error) {
@@ -233,7 +233,7 @@ func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 			return
 		}
 		c.log.Debugf("runVM OnFinish callback: responding by state index: %d state hash: %s",
-			task.VirtualState.BlockIndex(), task.VirtualState.StateCommitment())
+			task.VirtualStateAccess.BlockIndex(), task.VirtualStateAccess.StateCommitment())
 		c.chain.ReceiveMessage(&messages.VMResultMsg{
 			Task: task,
 		})
@@ -671,7 +671,7 @@ func (c *Consensus) processVMResult(result *vm.VMTask) {
 		// It is and ordinary state transition
 		c.assert.Require(result.ResultTransactionEssence != nil, "processVMResult: result.ResultTransactionEssence != nil")
 		c.resultTxEssence = result.ResultTransactionEssence
-		c.resultState = result.VirtualState
+		c.resultState = result.VirtualStateAccess
 	}
 
 	essenceBytes := c.resultTxEssence.Bytes()

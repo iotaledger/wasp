@@ -49,7 +49,7 @@ func (sm *stateManager) notifyChainTransitionIfNeeded() {
 	sm.log.Debugf("notifyStateTransition: %sstate IS SYNCED to index %d and is approved by output %v",
 		gu, stateOutputIndex, iscp.OID(stateOutputID))
 	sm.chain.Events().ChainTransition().Trigger(&chain.ChainTransitionEventData{
-		VirtualState:    sm.solidState.Clone(),
+		VirtualState:    sm.solidState.Copy(),
 		ChainOutput:     sm.stateOutput,
 		OutputTimestamp: sm.stateOutputTimestamp,
 	})
@@ -80,7 +80,7 @@ func (sm *stateManager) pullStateIfNeeded() {
 	}
 }
 
-func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualState, approvingOutput ledgerstate.OutputID) bool {
+func (sm *stateManager) addStateCandidateFromConsensus(nextState state.VirtualStateAccess, approvingOutput ledgerstate.OutputID) bool {
 	sm.log.Debugw("addStateCandidateFromConsensus: adding state candidate",
 		"index", nextState.BlockIndex(),
 		"timestamp", nextState.Timestamp(),
@@ -135,7 +135,7 @@ func (sm *stateManager) addBlockFromPeer(block state.Block) bool {
 }
 
 // addBlockAndCheckStateOutput function adds block to candidate list and returns true iff the block is new and is not yet approved by current stateOutput
-func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState state.VirtualState) bool {
+func (sm *stateManager) addBlockAndCheckStateOutput(block state.Block, nextState state.VirtualStateAccess) bool {
 	isBlockNew, candidate := sm.syncingBlocks.addBlockCandidate(block, nextState)
 	if candidate == nil {
 		return false

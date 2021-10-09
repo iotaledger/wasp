@@ -106,7 +106,7 @@ type Chain struct {
 	ValidatorFeeTarget *iscp.AgentID
 
 	// State ia an interface to access virtual state of the chain: the collection of key/value pairs
-	State       state.VirtualState
+	State       state.VirtualStateAccess
 	GlobalSync  coreutil.ChainStateSync
 	StateReader state.OptimisticStateReader
 

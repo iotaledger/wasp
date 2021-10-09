@@ -36,7 +36,7 @@ type VMContext struct {
 	chainInput           *ledgerstate.AliasOutput
 	processors           *processors.Cache
 	txBuilder            *utxoutil.Builder
-	virtualState         state.VirtualState
+	virtualState         state.VirtualStateAccess
 	solidStateBaseline   coreutil.StateBaseline
 	remainingAfterFees   colored.Balances
 	blockContext         map[iscp.Hname]*blockContext
@@ -97,7 +97,7 @@ func CreateVMContext(task *vm.VMTask) (*VMContext, error) {
 	// we create optimistic state access wrapper to be used inside the VM call.
 	// It will panic any time the state is accessed.
 	// The panic will be caught above and VM call will be abandoned peacefully
-	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualState, task.SolidStateBaseline)
+	optimisticStateAccess := state.WrapMustOptimisticVirtualStateAccess(task.VirtualStateAccess, task.SolidStateBaseline)
 
 	// assert consistency
 	stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())

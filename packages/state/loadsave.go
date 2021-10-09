@@ -13,7 +13,7 @@ import (
 // Commit saves updates collected in the virtual state to DB together with the provided blocks in one transaction
 // Mutations must be non-empty otherwise it is NOP
 // It the log of updates is not taken into account
-func (vs *virtualState) Commit(blocks ...Block) error {
+func (vs *virtualStateAccess) Commit(blocks ...Block) error {
 	if vs.kvs.Mutations().IsEmpty() {
 		// nothing to commit
 		return nil
@@ -56,7 +56,7 @@ func (vs *virtualState) Commit(blocks ...Block) error {
 
 // CreateOriginState creates zero state which is the minimal consistent state.
 // It is not committed it is an origin state. It has statically known hash coreutils.OriginStateHashBase58
-func CreateOriginState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualState, error) {
+func CreateOriginState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateAccess, error) {
 	originState, originBlock := newZeroVirtualState(store, chainID)
 	if err := originState.Commit(originBlock); err != nil {
 		return nil, err
@@ -64,8 +64,8 @@ func CreateOriginState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualSta
 	return originState, nil
 }
 
-// LoadSolidState establishes VirtualState interface with the solid state in DB. Checks consistency of DB
-func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualState, bool, error) {
+// LoadSolidState establishes VirtualStateAccess interface with the solid state in DB. Checks consistency of DB
+func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualStateAccess, bool, error) {
 	stateHash, exists, err := loadStateHashFromDb(store)
 	if err != nil {
 		return nil, exists, xerrors.Errorf("LoadSolidState: %w", err)
