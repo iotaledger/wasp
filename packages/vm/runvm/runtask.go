@@ -85,7 +85,7 @@ func runTask(task *vm.VMTask) {
 
 	blockIndex, stateCommitment, timestamp, rotationAddr := vmctx.CloseVMContext(task.ProcessedRequestsCount, numSuccess, numOffLedger)
 
-	task.Log.Debugf("closed VMContext: block index: %d, state hash: %s timestamp: %v, rtationAddr: %s",
+	task.Log.Debugf("closed VMContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
 		blockIndex, stateCommitment, timestamp, rotationAddr)
 
 	if rotationAddr == nil {

@@ -122,29 +122,15 @@ func (ms *Mutations) Get(k kv.Key) ([]byte, bool) {
 }
 
 func (ms *Mutations) Set(k kv.Key, v []byte) {
-	if _, ok := ms.Dels[k]; ok {
-		delete(ms.Dels, k)
-		ms.Sets[k] = v
-		ms.modified = true
-	} else {
-		if vOld, ok := ms.Sets[k]; !ok {
-			ms.Sets[k] = v
-			ms.modified = true
-		} else {
-			if bytes.Compare(vOld, v) != 0 {
-				ms.Sets[k] = v
-				ms.modified = true
-			}
-		}
-	}
+	delete(ms.Dels, k)
+	ms.Sets[k] = v
+	ms.modified = true
 }
 
 func (ms *Mutations) Del(k kv.Key) {
-	if _, ok := ms.Sets[k]; ok {
-		delete(ms.Sets, k)
-		ms.Dels[k] = struct{}{}
-		ms.modified = true
-	}
+	delete(ms.Sets, k)
+	ms.Dels[k] = struct{}{}
+	ms.modified = true
 }
 
 func (ms *Mutations) ApplyTo(w kv.KVWriter) {

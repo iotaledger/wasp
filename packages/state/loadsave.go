@@ -75,6 +75,7 @@ func LoadSolidState(store kvstore.KVStore, chainID *iscp.ChainID) (VirtualState,
 	}
 	vs := newVirtualState(store, chainID)
 	vs.committedHash = stateHash
+
 	vs.kvs.Mutations().ResetModified()
 	return vs, true, nil
 }

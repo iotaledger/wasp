@@ -104,8 +104,10 @@ func CreateVMContext(task *vm.VMTask) (*VMContext, error) {
 	if err != nil {
 		return nil, xerrors.Errorf("CreateVMContext: can't parse state hash from chain input %w", err)
 	}
-	if stateHash != optimisticStateAccess.StateCommitment() {
-		return nil, xerrors.New("CreateVMContext: state hash mismatch")
+	stateHashFromState := optimisticStateAccess.StateCommitment()
+	if stateHash != stateHashFromState {
+		return nil, xerrors.Errorf("CreateVMContext: state hash from output (%s) != commitment from state (%s)",
+			stateHash.String(), stateHashFromState.String())
 	}
 	blockIndex := optimisticStateAccess.BlockIndex()
 	if blockIndex != task.ChainInput.GetStateIndex() {
@@ -157,11 +159,12 @@ func (vmctx *VMContext) BuildTransactionEssence(stateHash hashing.HashValue, tim
 // return nil for normal block and rotation address for rotation block
 func (vmctx *VMContext) CloseVMContext(numRequests, numSuccess, numOffLedger uint16) (uint32, hashing.HashValue, time.Time, ledgerstate.Address) {
 	rotationAddr := vmctx.mustSaveBlockInfo(numRequests, numSuccess, numOffLedger)
+	vmctx.closeBlockContexts()
+
 	blockIndex := vmctx.virtualState.BlockIndex()
 	stateCommitment := vmctx.virtualState.StateCommitment()
 	timestamp := vmctx.virtualState.Timestamp()
 
-	vmctx.closeBlockContexts()
 	return blockIndex, stateCommitment, timestamp, rotationAddr
 }
 

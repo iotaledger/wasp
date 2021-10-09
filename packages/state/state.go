@@ -25,12 +25,12 @@ import (
 // region VirtualState /////////////////////////////////////////////////
 
 type virtualState struct {
-	chainID        *iscp.ChainID
-	db             kvstore.KVStore
-	empty          bool
-	kvs            *buffered.BufferedKVStore
-	committedHash  hashing.HashValue
-	uncommitedHash hashing.HashValue
+	chainID         *iscp.ChainID
+	db              kvstore.KVStore
+	empty           bool
+	kvs             *buffered.BufferedKVStore
+	committedHash   hashing.HashValue
+	uncommittedHash hashing.HashValue
 }
 
 // newVirtualState creates VirtualState interface with the partition of KVStore
@@ -72,12 +72,12 @@ func subRealm(db kvstore.KVStore, realm []byte) kvstore.KVStore {
 
 func (vs *virtualState) Clone() VirtualState {
 	ret := &virtualState{
-		chainID:        vs.chainID.Clone(),
-		db:             vs.db,
-		committedHash:  vs.committedHash,
-		uncommitedHash: vs.uncommitedHash,
-		empty:          vs.empty,
-		kvs:            vs.kvs.Clone(),
+		chainID:         vs.chainID.Clone(),
+		db:              vs.db,
+		committedHash:   vs.committedHash,
+		uncommittedHash: vs.uncommittedHash,
+		empty:           vs.empty,
+		kvs:             vs.kvs.Clone(),
 	}
 	return ret
 }
@@ -87,7 +87,7 @@ func (vs *virtualState) DangerouslyConvertToString() string {
 		vs.BlockIndex(),
 		vs.Timestamp(),
 		vs.committedHash.String(),
-		vs.uncommitedHash.String(),
+		vs.uncommittedHash.String(),
 		vs.KVStore().DangerouslyDumpToString(),
 	)
 }
@@ -176,10 +176,11 @@ func (vs *virtualState) StateCommitment() hashing.HashValue {
 		if err != nil {
 			panic(xerrors.Errorf("StateCommitment: %v", err))
 		}
-		vs.uncommitedHash = hashing.HashData(block.Bytes())
+		vs.uncommittedHash = hashing.HashData(block.Bytes())
 		vs.kvs.Mutations().ResetModified()
 	}
-	return hashing.HashData(vs.committedHash[:], vs.uncommitedHash[:])
+	ret := hashing.HashData(vs.committedHash[:], vs.uncommittedHash[:])
+	return ret
 }
 
 // endregion ////////////////////////////////////////////////////////////
