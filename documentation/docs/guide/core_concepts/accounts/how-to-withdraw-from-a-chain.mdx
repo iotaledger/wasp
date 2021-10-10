@@ -28,7 +28,7 @@ The `withdraw` endpoint sends funds owned by the callee to their L1 address.
 
 ```go
 _, err := chain.PostRequestSync(
-	solo.NewCallParams(accounts.Contract.Name, accounts.FuncDeposit.Name).WithIotas(N),
+	solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).WithIotas(1),
 	wallet,
 )
 ```

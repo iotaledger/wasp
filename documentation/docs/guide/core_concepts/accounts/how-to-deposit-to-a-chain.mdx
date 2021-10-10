@@ -38,7 +38,7 @@ _, err := chain.PostRequestSync(
 ```rust
 // deposits N iotas from current SC into another chain
 let transfer = ScTransfers::iotas(N);
-ctx.post(chainID, ScHname::new("accounts"), ScHname::new("deposit") , None, transfer,0);
+ctx.post(chainID, ScHname::new("accounts"), ScHname::new("deposit") , None, transfer, 0);
 ```
 
 </TabItem>
