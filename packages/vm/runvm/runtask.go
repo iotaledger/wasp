@@ -37,10 +37,7 @@ func NewVMRunner() VMRunner {
 
 // runTask runs batch of requests on VM
 func runTask(task *vm.VMTask) {
-	vmctx, err := vmcontext.CreateVMContext(task)
-	if err != nil {
-		task.Log.Panicf("runTask: CreateVMContext returned: %v", err)
-	}
+	vmctx := vmcontext.CreateVMContext(task)
 
 	var lastResult dict.Dict
 	var lastErr error
@@ -89,6 +86,7 @@ func runTask(task *vm.VMTask) {
 		blockIndex, stateCommitment, timestamp, rotationAddr)
 
 	if rotationAddr == nil {
+		var err error
 		// rotation does not happen
 		task.ResultTransactionEssence, err = vmctx.BuildTransactionEssence(stateCommitment, timestamp)
 		if err != nil {
