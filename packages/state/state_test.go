@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/stretchr/testify/require"
 )
 
@@ -101,7 +100,7 @@ func TestStateWithDB(t *testing.T) {
 		require.EqualValues(t, 0, vs2.BlockIndex())
 		require.EqualValues(t, hashing.NilHash, vs2.PreviousStateHash())
 
-		require.EqualValues(t, vs1.Clone().StateCommitment(), vs2.Clone().StateCommitment())
+		require.EqualValues(t, vs1.Copy().StateCommitment(), vs2.Copy().StateCommitment())
 	})
 	t.Run("load 0 block", func(t *testing.T) {
 		store := mapdb.NewMapDB()
@@ -132,7 +131,7 @@ func TestStateWithDB(t *testing.T) {
 		nowis := time.Now()
 		su := NewStateUpdateWithBlocklogValues(1, nowis, hashing.NilHash)
 		su.Mutations().Set("key", []byte("value"))
-		block1, err := newBlock(su)
+		block1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
 
 		err = vs1.ApplyBlock(block1)
@@ -180,7 +179,7 @@ func TestStateWithDB(t *testing.T) {
 		nowis := time.Now()
 		su := NewStateUpdateWithBlocklogValues(1, nowis, hashing.NilHash)
 		su.Mutations().Set("key", []byte("value"))
-		block1, err := newBlock(su)
+		block1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
 
 		err = vs1.ApplyBlock(block1)
@@ -217,7 +216,7 @@ func TestStateWithDB(t *testing.T) {
 		glb.InvalidateSolidIndex()
 		_, err = rdr.Hash()
 		require.Error(t, err)
-		require.EqualValues(t, err, optimism.ErrStateHasBeenInvalidated)
+		require.EqualValues(t, err, coreutil.ErrStateHasBeenInvalidated)
 	})
 }
 
@@ -228,7 +227,7 @@ func TestVariableStateBasic(t *testing.T) {
 	h1 := vs1.StateCommitment()
 	require.EqualValues(t, OriginStateHash(), h1)
 
-	vs2 := vs1.Clone()
+	vs2 := vs1.Copy()
 	h2 := vs2.StateCommitment()
 	require.EqualValues(t, h1, h2)
 
@@ -244,8 +243,8 @@ func TestVariableStateBasic(t *testing.T) {
 
 	require.EqualValues(t, vs1.StateCommitment(), vs2.StateCommitment())
 
-	vs3 := vs1.Clone()
-	vs4 := vs2.Clone()
+	vs3 := vs1.Copy()
+	vs4 := vs2.Copy()
 
 	require.EqualValues(t, vs3.StateCommitment(), vs4.StateCommitment())
 }
@@ -264,4 +263,61 @@ func TestStateReader(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, ok)
 	})
+}
+
+func TestVirtualStateMustOptimistic1(t *testing.T) {
+	db := mapdb.NewMapDB()
+	glb := coreutil.NewChainStateSync()
+	glb.SetSolidIndex(0)
+	baseline := glb.GetSolidIndexBaseline()
+	chainID := iscp.RandomChainID([]byte("1"))
+	vs, err := CreateOriginState(db, chainID)
+	require.NoError(t, err)
+
+	vsOpt := WrapMustOptimisticVirtualStateAccess(vs, baseline)
+
+	h1 := vsOpt.StateCommitment()
+	require.EqualValues(t, OriginStateHash(), h1)
+	require.EqualValues(t, 0, vsOpt.BlockIndex())
+
+	glb.InvalidateSolidIndex()
+	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+		_ = vsOpt.StateCommitment()
+	})
+	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+		_ = vsOpt.BlockIndex()
+	})
+	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+		_, _ = vsOpt.ExtractBlock()
+	})
+	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+		_ = vsOpt.PreviousStateHash()
+	})
+	require.PanicsWithValue(t, coreutil.ErrStateHasBeenInvalidated, func() {
+		_ = vsOpt.KVStore()
+	})
+}
+
+func TestVirtualStateMustOptimistic2(t *testing.T) {
+	db := mapdb.NewMapDB()
+	glb := coreutil.NewChainStateSync()
+	glb.SetSolidIndex(0)
+	baseline := glb.GetSolidIndexBaseline()
+	chainID := iscp.RandomChainID([]byte("1"))
+	vs, err := CreateOriginState(db, chainID)
+	require.NoError(t, err)
+
+	vsOpt := WrapMustOptimisticVirtualStateAccess(vs, baseline)
+
+	hash := vs.StateCommitment()
+	hashOpt := vsOpt.StateCommitment()
+	require.EqualValues(t, hash, hashOpt)
+
+	hashPrev := hash
+	upd := NewStateUpdateWithBlocklogValues(vsOpt.BlockIndex()+1, vsOpt.Timestamp().Add(1*time.Second), vsOpt.PreviousStateHash())
+	vsOpt.ApplyStateUpdates(upd)
+	hash = vs.StateCommitment()
+	hashOpt = vsOpt.StateCommitment()
+	require.EqualValues(t, hash, hashOpt)
+	require.NotEqualValues(t, hashPrev, hashOpt)
 }

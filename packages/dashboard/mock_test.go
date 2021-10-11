@@ -74,7 +74,7 @@ func (w *waspServicesMock) MyNetworkID() string {
 func (w *waspServicesMock) GetChainRecords() ([]*registry.ChainRecord, error) {
 	var ret []*registry.ChainRecord
 	for _, ch := range w.chains {
-		chr, err := w.GetChainRecord(&ch.ChainID)
+		chr, err := w.GetChainRecord(ch.ChainID)
 		if err != nil {
 			return nil, err
 		}

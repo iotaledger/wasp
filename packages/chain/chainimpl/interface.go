@@ -23,7 +23,7 @@ import (
 )
 
 func (c *chainObj) ID() *iscp.ChainID {
-	return &c.chainID
+	return c.chainID
 }
 
 func (c *chainObj) GlobalStateSync() coreutil.ChainStateSync {
@@ -87,6 +87,7 @@ func (c *chainObj) IsDismissed() bool {
 // ReceiveMessage accepts an incoming message asynchronously.
 func (c *chainObj) ReceiveMessage(msg interface{}) {
 	c.receiveMessage(msg)
+	c.chainMetrics.CountMessages()
 }
 
 func (c *chainObj) receiveMessage(msg interface{}) {
@@ -107,7 +108,7 @@ func shouldSendToPeer(peerID string, ackPeers []string) bool {
 
 func (c *chainObj) broadcastOffLedgerRequest(req *request.OffLedger) {
 	c.log.Debugf("broadcastOffLedgerRequest: toNPeers: %d, reqID: %s", c.offledgerBroadcastUpToNPeers, req.ID().Base58())
-	msgData := messages.NewOffLedgerRequestMsg(&c.chainID, req).Bytes()
+	msgData := messages.NewOffLedgerRequestMsg(c.chainID, req).Bytes()
 	committee := c.getCommittee()
 	getPeerIDs := (*c.peers).GetRandomPeers
 
@@ -177,6 +178,7 @@ func (c *chainObj) ReceiveRequestAckMessage(reqID *iscp.RequestID, peerID string
 	c.offLedgerReqsAcksMutex.Lock()
 	defer c.offLedgerReqsAcksMutex.Unlock()
 	c.offLedgerReqsAcks[*reqID] = append(c.offLedgerReqsAcks[*reqID], peerID)
+	c.chainMetrics.CountRequestAckMessages()
 }
 
 // SendMissingRequestsToPeer sends the requested missing requests by a peer

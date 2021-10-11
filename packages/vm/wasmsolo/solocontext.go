@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	Debug      = true
+	Debug      = false
 	StackTrace = false
 	TraceHost  = false
 )
@@ -82,7 +82,7 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	if creator != nil {
 		keyPair = creator.Pair
 	}
-	ctx.upload(keyPair, onLoad)
+	ctx.upload(keyPair)
 	if ctx.Err != nil {
 		return ctx
 	}
@@ -91,7 +91,14 @@ func NewSoloContextForChain(t *testing.T, chain *solo.Chain, creator *SoloAgent,
 	if len(init) != 0 {
 		params = init[0].Params()
 	}
-	ctx.Err = ctx.Chain.DeployContract(keyPair, scName, ctx.Hprog, params...)
+	if *GoDebug {
+		wasmproc.GoWasmVM = wasmhost.NewWasmGoVM(ctx.scName, onLoad)
+	}
+	ctx.Err = ctx.Chain.DeployContract(keyPair, ctx.scName, ctx.Hprog, params...)
+	if *GoDebug {
+		// just in case deploy failed we don't want to leave this around
+		wasmproc.GoWasmVM = nil
+	}
 	if ctx.Err != nil {
 		return ctx
 	}
@@ -303,9 +310,8 @@ func (ctx *SoloContext) Transfer() wasmlib.ScTransfers {
 // TODO can we make upload work through an off-ledger request instead?
 // that way we can get rid of all the extra token code when checking balances
 
-func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair, onLoad func()) {
+func (ctx *SoloContext) upload(keyPair *ed25519.KeyPair) {
 	if *GoDebug {
-		wasmproc.GoWasmVM = wasmhost.NewWasmGoVM(ctx.scName, onLoad)
 		ctx.Hprog, ctx.Err = ctx.Chain.UploadWasm(keyPair, []byte("go:"+ctx.scName))
 		return
 	}

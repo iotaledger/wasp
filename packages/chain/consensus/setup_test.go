@@ -58,7 +58,7 @@ type MockedEnv struct {
 	NetworkBehaviour  *testutil.PeeringNetDynamic
 	NetworkCloser     io.Closer
 	DKSRegistries     []registry.DKShareRegistryProvider
-	ChainID           iscp.ChainID
+	ChainID           *iscp.ChainID
 	MockedACS         chain.AsynchronousCommonSubsetRunner
 	InitStateOutput   *ledgerstate.AliasOutput
 	mutex             sync.Mutex
@@ -74,7 +74,7 @@ type mockedNode struct {
 	Mempool     chain.Mempool              // Consensus needs
 	Consensus   chain.Consensus            // Consensus needs
 	store       kvstore.KVStore            // State manager mock
-	SolidState  state.VirtualState         // State manager mock
+	SolidState  state.VirtualStateAccess   // State manager mock
 	StateOutput *ledgerstate.AliasOutput   // State manager mock
 	Log         *logger.Logger
 	mutex       sync.Mutex
@@ -142,7 +142,7 @@ func newMockedEnv(t *testing.T, n, quorum uint16, debug, mockACS bool) (*MockedE
 	ret.InitStateOutput, err = utxoutil.GetSingleChainedAliasOutput(originTx)
 	require.NoError(t, err)
 
-	ret.ChainID = *iscp.NewChainID(ret.InitStateOutput.GetAliasAddress())
+	ret.ChainID = iscp.NewChainID(ret.InitStateOutput.GetAliasAddress())
 
 	return ret, originTx
 }
@@ -223,7 +223,7 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	}
 	cmt, err := committee.New(
 		cmtRec,
-		&env.ChainID,
+		env.ChainID,
 		env.NetworkProviders[nodeIndex],
 		cfg,
 		env.DKSRegistries[nodeIndex],
@@ -234,11 +234,11 @@ func (env *MockedEnv) NewNode(nodeIndex uint16, timers ConsensusTimers) *mockedN
 	cmt.Attach(ret.ChainCore)
 
 	ret.StateOutput = env.InitStateOutput
-	ret.SolidState, err = state.CreateOriginState(ret.store, &env.ChainID)
+	ret.SolidState, err = state.CreateOriginState(ret.store, env.ChainID)
 	ret.stateSync.SetSolidIndex(0)
 	require.NoError(env.T, err)
 
-	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn, true, timers)
+	cons := New(ret.ChainCore, ret.Mempool, cmt, ret.NodeConn, true, metrics.DefaultChainMetrics(), timers)
 	cons.vmRunner = testchain.NewMockedVMRunner(env.T, log)
 	ret.Consensus = cons
 
@@ -337,7 +337,7 @@ func (n *mockedNode) EventStateTransition() {
 	n.ChainCore.GlobalStateSync().SetSolidIndex(n.SolidState.BlockIndex())
 
 	n.Consensus.EventStateTransitionMsg(&messages.StateTransitionMsg{
-		State:          n.SolidState.Clone(),
+		State:          n.SolidState.Copy(),
 		StateOutput:    n.StateOutput,
 		StateTimestamp: time.Now(),
 	})

@@ -14,12 +14,12 @@ import (
 func TestBlockBasic(t *testing.T) {
 	t.Run("fail no state index", func(t *testing.T) {
 		su := NewStateUpdate()
-		_, err := newBlock(su)
+		_, err := newBlock(su.Mutations())
 		require.Error(t, err)
 	})
 	t.Run("ok block index", func(t *testing.T) {
 		su := NewStateUpdateWithBlocklogValues(42, time.Time{}, hashing.NilHash)
-		b1, err := newBlock(su)
+		b1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
 		require.True(t, b1.Timestamp().IsZero())
@@ -29,7 +29,7 @@ func TestBlockBasic(t *testing.T) {
 		nowis := time.Now()
 		ph := hashing.HashStrings("dummy-dummy")
 		su := NewStateUpdateWithBlocklogValues(42, nowis, ph)
-		b1, err := newBlock(su)
+		b1, err := newBlock(su.Mutations())
 		require.NoError(t, err)
 		require.EqualValues(t, 42, b1.BlockIndex())
 		require.True(t, nowis.Equal(b1.Timestamp()))
@@ -40,7 +40,7 @@ func TestBlockBasic(t *testing.T) {
 func TestBatches(t *testing.T) {
 	suBlock := NewStateUpdateWithBlocklogValues(2, time.Time{}, hashing.NilHash)
 
-	block1, err := newBlock(suBlock)
+	block1, err := newBlock(suBlock.Mutations())
 	require.NoError(t, err)
 	assert.EqualValues(t, 2, block1.BlockIndex())
 	assert.True(t, block1.Timestamp().IsZero())

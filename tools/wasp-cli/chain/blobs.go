@@ -86,7 +86,7 @@ var listBlobsCmd = &cobra.Command{
 		rows := make([][]string, len(ret))
 		i := 0
 		for k, size := range blobs {
-			hash, _, err := codec.DecodeHashValue([]byte(k))
+			hash, err := codec.DecodeHashValue([]byte(k))
 			log.Check(err)
 			rows[i] = []string{hash.String(), fmt.Sprintf("%d", size)}
 			i++

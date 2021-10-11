@@ -49,7 +49,7 @@ func (ch *Chain) DumpAccounts() string {
 	for i := range acc {
 		aid := acc[i]
 		ret += fmt.Sprintf("  %s:\n", aid.String())
-		bals := ch.GetAccountBalance(&aid)
+		bals := ch.GetAccountBalance(aid)
 		bals.ForEachRandomly(func(col colored.Color, bal uint64) bool {
 			ret += fmt.Sprintf("       %s: %d\n", col, bal)
 			return true
@@ -123,12 +123,12 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 		return
 	}
 	resBin := res.MustGet(blob.ParamHash)
-	ret, ok, err := codec.DecodeHashValue(resBin)
-	if err != nil {
+	if resBin == nil {
+		err = fmt.Errorf("internal error: no hash returned")
 		return
 	}
-	if !ok {
-		err = fmt.Errorf("internal error: no hash returned")
+	ret, err = codec.DecodeHashValue(resBin)
+	if err != nil {
 		return
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
@@ -136,8 +136,8 @@ func (ch *Chain) UploadBlob(keyPair *ed25519.KeyPair, params ...interface{}) (re
 }
 
 // UploadBlobOptimized does the same as UploadBlob, only better but more complicated
-// It allows  big data chunks to bypass the request transaction. Instead, in transaction only hash of the data is put
-// The data itself must be uploaded to the node (in this case into Solo environment, separately
+// It allows big data chunks to bypass the request transaction. Instead, in transaction only hash of the data is put.
+// The data itself must be uploaded to the node (in this case into Solo environment), separately.
 // Before running the request in VM, the hash references contained in the request transaction are resolved with
 // the real data, previously uploaded directly.
 func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, params ...interface{}) (ret hashing.HashValue, err error) {
@@ -166,12 +166,12 @@ func (ch *Chain) UploadBlobOptimized(optimalSize int, keyPair *ed25519.KeyPair, 
 		return
 	}
 	resBin := res.MustGet(blob.ParamHash)
-	ret, ok, err := codec.DecodeHashValue(resBin)
-	if err != nil {
+	if resBin == nil {
+		err = fmt.Errorf("internal error: no hash returned")
 		return
 	}
-	if !ok {
-		err = fmt.Errorf("internal error: no hash returned")
+	ret, err = codec.DecodeHashValue(resBin)
+	if err != nil {
 		return
 	}
 	require.EqualValues(ch.Env.T, expectedHash, ret)
@@ -186,7 +186,7 @@ const (
 // UploadWasm is a syntactic sugar of the UploadBlob used to upload Wasm binary to the chain.
 //  parameter 'binaryCode' is the binary of Wasm smart contract program
 //
-// The blob for the Wasm binary used fixed field names which are statically known by the .
+// The blob for the Wasm binary used fixed field names which are statically known by the
 // 'root' smart contract which is responsible for the deployment of contracts on the chain
 func (ch *Chain) UploadWasm(keyPair *ed25519.KeyPair, binaryCode []byte) (ret hashing.HashValue, err error) {
 	if OptimizeUpload {
@@ -262,17 +262,15 @@ func (ch *Chain) DeployWasmContract(keyPair *ed25519.KeyPair, name, fname string
 //  - chainID
 //  - agentID of the chain owner
 //  - blobCache of contract deployed on the chain in the form of map 'contract hname': 'contract record'
-func (ch *Chain) GetInfo() (iscp.ChainID, iscp.AgentID, map[iscp.Hname]*root.ContractRecord) {
+func (ch *Chain) GetInfo() (*iscp.ChainID, *iscp.AgentID, map[iscp.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(governance.Contract.Name, governance.FuncGetChainInfo.Name)
 	require.NoError(ch.Env.T, err)
 
-	chainID, ok, err := codec.DecodeChainID(res.MustGet(governance.VarChainID))
+	chainID, err := codec.DecodeChainID(res.MustGet(governance.VarChainID))
 	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
 
-	chainOwnerID, ok, err := codec.DecodeAgentID(res.MustGet(governance.VarChainOwnerID))
+	chainOwnerID, err := codec.DecodeAgentID(res.MustGet(governance.VarChainOwnerID))
 	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
 
 	res, err = ch.CallView(root.Contract.Name, root.FuncGetContractRecords.Name)
 	require.NoError(ch.Env.T, err)
@@ -296,15 +294,14 @@ func (env *Solo) GetAddressBalances(addr ledgerstate.Address) colored.Balances {
 }
 
 // GetAccounts returns all accounts on the chain with non-zero balances
-func (ch *Chain) GetAccounts() []iscp.AgentID {
+func (ch *Chain) GetAccounts() []*iscp.AgentID {
 	d, err := ch.CallView(accounts.Contract.Name, accounts.FuncViewAccounts.Name)
 	require.NoError(ch.Env.T, err)
 	keys := d.KeysSorted()
-	ret := make([]iscp.AgentID, 0, len(keys)-1)
+	ret := make([]*iscp.AgentID, 0, len(keys)-1)
 	for _, key := range keys {
-		aid, ok, err := codec.DecodeAgentID([]byte(key))
+		aid, err := codec.DecodeAgentID([]byte(key))
 		require.NoError(ch.Env.T, err)
-		require.True(ch.Env.T, ok)
 		ret = append(ret, aid)
 	}
 	return ret
@@ -317,9 +314,9 @@ func (ch *Chain) parseAccountBalance(d dict.Dict, err error) colored.Balances {
 	}
 	ret := colored.NewBalances()
 	err = d.Iterate("", func(key kv.Key, value []byte) bool {
-		col, _, err := codec.DecodeColor([]byte(key))
+		col, err := codec.DecodeColor([]byte(key))
 		require.NoError(ch.Env.T, err)
-		val, _, err := codec.DecodeUint64(value)
+		val, err := codec.DecodeUint64(value)
 		require.NoError(ch.Env.T, err)
 		ret.Set(col, val)
 		return true
@@ -332,7 +329,7 @@ func (ch *Chain) GetOnChainLedger() map[string]colored.Balances {
 	accs := ch.GetAccounts()
 	ret := make(map[string]colored.Balances)
 	for i := range accs {
-		ret[accs[i].String()] = ch.GetAccountBalance(&accs[i])
+		ret[accs[i].String()] = ch.GetAccountBalance(accs[i])
 	}
 	return ret
 }
@@ -393,18 +390,15 @@ func (ch *Chain) GetFeeInfo(contactName string) (colored.Color, uint64, uint64) 
 	require.NoError(ch.Env.T, err)
 	require.NotEqualValues(ch.Env.T, 0, len(ret))
 
-	feeColor, ok, err := codec.DecodeColor(ret.MustGet(governance.ParamFeeColor))
+	feeColor, err := codec.DecodeColor(ret.MustGet(governance.ParamFeeColor))
 	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
 	require.NotNil(ch.Env.T, feeColor)
 
-	validatorFee, ok, err := codec.DecodeUint64(ret.MustGet(governance.ParamValidatorFee))
+	validatorFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamValidatorFee))
 	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
 
-	ownerFee, ok, err := codec.DecodeUint64(ret.MustGet(governance.ParamOwnerFee))
+	ownerFee, err := codec.DecodeUint64(ret.MustGet(governance.ParamOwnerFee))
 	require.NoError(ch.Env.T, err)
-	require.True(ch.Env.T, ok)
 
 	return feeColor, ownerFee, validatorFee
 }
@@ -459,7 +453,7 @@ func (ch *Chain) GetEventsForBlock(blockIndex uint32) ([]string, error) {
 
 // CommonAccount return the agentID of the common account (controlled by the owner)
 func (ch *Chain) CommonAccount() *iscp.AgentID {
-	return commonaccount.Get(&ch.ChainID)
+	return commonaccount.Get(ch.ChainID)
 }
 
 // GetLatestBlockInfo return BlockInfo for the latest block in the chain
@@ -624,9 +618,8 @@ func (ch *Chain) GetAllowedStateControllerAddresses() []ledgerstate.Address {
 	ret := make([]ledgerstate.Address, 0)
 	arr := collections.NewArray16ReadOnly(res, governance.ParamAllowedStateControllerAddresses)
 	for i := uint16(0); i < arr.MustLen(); i++ {
-		a, ok, err := codec.DecodeAddress(arr.MustGetAt(i))
+		a, err := codec.DecodeAddress(arr.MustGetAt(i))
 		require.NoError(ch.Env.T, err)
-		require.True(ch.Env.T, ok)
 		ret = append(ret, a)
 	}
 	return ret

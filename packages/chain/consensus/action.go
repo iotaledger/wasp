@@ -94,11 +94,10 @@ func (c *Consensus) runVMIfNeeded() {
 		c.log.Debugf("runVM not needed: delayed till %v", c.delayRunVMUntil)
 		return
 	}
+
 	reqs, missingRequestIndexes, allArrived := c.mempool.ReadyFromIDs(c.consensusBatch.Timestamp, c.consensusBatch.RequestIDs...)
 
-	c.missingRequestsMutex.Lock()
-	defer c.missingRequestsMutex.Unlock()
-	c.missingRequestsFromBatch = make(map[iscp.RequestID][32]byte) // reset list of missing requests
+	c.cleanMissingRequests()
 
 	if !allArrived {
 		c.pollMissingRequests(missingRequestIndexes)
@@ -139,9 +138,15 @@ func (c *Consensus) runVMIfNeeded() {
 
 	c.log.Debugf("runVM: sorted requests and filtered onLedger request overhead, running VM with batch len = %d", len(reqsFiltered))
 	if vmTask := c.prepareVMTask(reqsFiltered); vmTask != nil {
+		c.log.Debugw("runVMIfNeeded: starting VM task",
+			"chainID", vmTask.ChainInput.Address().Base58(),
+			"timestamp", vmTask.Timestamp,
+			"block index", vmTask.ChainInput.GetStateIndex(),
+			"num req", len(vmTask.Requests),
+		)
 		c.workflow.vmStarted = true
+		vmTask.StartTime = time.Now()
 		go c.vmRunner.Run(vmTask)
-		c.log.Debugf("runVM: VM started")
 	} else {
 		c.log.Errorf("runVM: error preparing VM task")
 	}
@@ -206,21 +211,22 @@ func (c *Consensus) sortBatch(reqs []iscp.Request) {
 }
 
 func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
+	stateBaseline := c.chain.GlobalStateSync().GetSolidIndexBaseline()
+	if !stateBaseline.IsValid() {
+		c.log.Debugf("prepareVMTask: solid state baseline is invalid. Do not even start the VM")
+		return nil
+	}
 	task := &vm.VMTask{
 		ACSSessionID:       c.acsSessionID,
 		Processors:         c.chain.Processors(),
 		ChainInput:         c.stateOutput,
-		SolidStateBaseline: c.chain.GlobalStateSync().GetSolidIndexBaseline(),
+		SolidStateBaseline: stateBaseline,
 		Entropy:            c.consensusEntropy,
-		ValidatorFeeTarget: *c.consensusBatch.FeeDestination,
+		ValidatorFeeTarget: c.consensusBatch.FeeDestination,
 		Requests:           reqs,
 		Timestamp:          c.consensusBatch.Timestamp,
-		VirtualState:       c.currentState.Clone(),
+		VirtualStateAccess: c.currentState.Copy(),
 		Log:                c.log,
-	}
-	if !task.SolidStateBaseline.IsValid() {
-		c.log.Debugf("prepareVMTask: solid state baseline is invalid. Do not even start the VM")
-		return nil
 	}
 	task.OnFinish = func(_ dict.Dict, err error, vmError error) {
 		if vmError != nil {
@@ -228,10 +234,12 @@ func (c *Consensus) prepareVMTask(reqs []iscp.Request) *vm.VMTask {
 			return
 		}
 		c.log.Debugf("runVM OnFinish callback: responding by state index: %d state hash: %s",
-			task.VirtualState.BlockIndex(), task.VirtualState.StateCommitment())
+			task.VirtualStateAccess.BlockIndex(), task.VirtualStateAccess.StateCommitment())
 		c.chain.ReceiveMessage(&messages.VMResultMsg{
 			Task: task,
 		})
+		elapsed := time.Since(task.StartTime)
+		c.consensusMetrics.RecordVMRunTime(elapsed)
 	}
 	c.log.Debugf("prepareVMTask: VM task prepared")
 	return task
@@ -666,7 +674,7 @@ func (c *Consensus) processVMResult(result *vm.VMTask) {
 		// It is and ordinary state transition
 		c.assert.Require(result.ResultTransactionEssence != nil, "processVMResult: result.ResultTransactionEssence != nil")
 		c.resultTxEssence = result.ResultTransactionEssence
-		c.resultState = result.VirtualState
+		c.resultState = result.VirtualStateAccess
 	}
 
 	essenceBytes := c.resultTxEssence.Bytes()
@@ -756,12 +764,15 @@ func (c *Consensus) receiveSignedResultAck(msg *messages.SignedResultAckMsg) {
 	c.resultSigAck = append(c.resultSigAck, msg.SenderIndex)
 }
 
-// ShouldReceiveMissingRequest returns whether or not a request is missing, if the incoming request matches the expetec ID/Hash it is removed from the list
+// TODO mutex inside is not good
+
+// ShouldReceiveMissingRequest returns whether the request is missing, if the incoming request matches the expects ID/Hash it is removed from the list
 func (c *Consensus) ShouldReceiveMissingRequest(req iscp.Request) bool {
 	c.log.Debugf("ShouldReceiveMissingRequest: reqID %s, hash %v", req.ID(), req.Hash())
 
 	c.missingRequestsMutex.Lock()
 	defer c.missingRequestsMutex.Unlock()
+
 	expectedHash, exists := c.missingRequestsFromBatch[req.ID()]
 	if !exists {
 		return false
@@ -772,4 +783,11 @@ func (c *Consensus) ShouldReceiveMissingRequest(req iscp.Request) bool {
 		delete(c.missingRequestsFromBatch, req.ID())
 	}
 	return result
+}
+
+func (c *Consensus) cleanMissingRequests() {
+	c.missingRequestsMutex.Lock()
+	defer c.missingRequestsMutex.Unlock()
+
+	c.missingRequestsFromBatch = make(map[iscp.RequestID][32]byte) // reset list of missing requests
 }

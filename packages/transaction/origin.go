@@ -23,7 +23,7 @@ func NewChainOriginTransaction(
 	balances colored.Balances,
 	timestamp time.Time,
 	allInputs ...ledgerstate.Output,
-) (*ledgerstate.Transaction, iscp.ChainID, error) {
+) (*ledgerstate.Transaction, *iscp.ChainID, error) {
 	walletAddr := ledgerstate.NewED25519Address(keyPair.PublicKey)
 	txb := utxoutil.NewBuilder(allInputs...).WithTimestamp(timestamp)
 
@@ -32,26 +32,26 @@ func NewChainOriginTransaction(
 		balances = colored.NewBalancesForIotas(ledgerstate.DustThresholdAliasOutputIOTA)
 	}
 	if err := txb.AddNewAliasMint(colored.ToL1Map(balances), stateAddress, stateHash.Bytes()); err != nil {
-		return nil, iscp.ChainID{}, err
+		return nil, nil, err
 	}
 	// adding reminder in compressing mode, i.e. all provided inputs will be consumed
 	if err := txb.AddRemainderOutputIfNeeded(walletAddr, nil, true); err != nil {
-		return nil, iscp.ChainID{}, err
+		return nil, nil, err
 	}
 	tx, err := txb.BuildWithED25519(keyPair)
 	if err != nil {
-		return nil, iscp.ChainID{}, err
+		return nil, nil, err
 	}
 	// determine aliasAddress of the newly minted chain
 	chained, err := utxoutil.GetSingleChainedAliasOutput(tx)
 	if err != nil {
-		return nil, iscp.ChainID{}, err
+		return nil, nil, err
 	}
 	chainID, err := iscp.ChainIDFromAddress(chained.Address())
 	if err != nil {
-		return nil, iscp.ChainID{}, err
+		return nil, nil, err
 	}
-	return tx, *chainID, nil
+	return tx, chainID, nil
 }
 
 // NewRootInitRequestTransaction is a first request to be sent to the uninitialized
@@ -60,7 +60,7 @@ func NewChainOriginTransaction(
 // TransactionEssence must be signed by the same address which created origin transaction
 func NewRootInitRequestTransaction(
 	keyPair *ed25519.KeyPair,
-	chainID iscp.ChainID,
+	chainID *iscp.ChainID,
 	description string,
 	timestamp time.Time,
 	allInputs ...ledgerstate.Output,

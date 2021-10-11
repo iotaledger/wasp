@@ -15,10 +15,10 @@ type candidateBlock struct {
 	votes         int
 	approved      bool
 	nextStateHash hashing.HashValue
-	nextState     state.VirtualState
+	nextState     state.VirtualStateAccess
 }
 
-func newCandidateBlock(block state.Block, nextStateIfProvided state.VirtualState) *candidateBlock {
+func newCandidateBlock(block state.Block, nextStateIfProvided state.VirtualStateAccess) *candidateBlock {
 	var local bool
 	var stateHash hashing.HashValue
 	if nextStateIfProvided == nil {
@@ -83,7 +83,7 @@ func (cT *candidateBlock) getNextStateHash() hashing.HashValue {
 	return cT.nextStateHash
 }
 
-func (cT *candidateBlock) getNextState(currentState state.VirtualState) (state.VirtualState, error) {
+func (cT *candidateBlock) getNextState(currentState state.VirtualStateAccess) (state.VirtualStateAccess, error) {
 	if cT.isLocal() {
 		return cT.nextState, nil
 	}

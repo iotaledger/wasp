@@ -38,8 +38,7 @@ func (e *EVMChain) GasPerIota() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	gpi, _, err := codec.DecodeUint64(ret.MustGet(evmchain.FieldResult))
-	return gpi, err
+	return codec.DecodeUint64(ret.MustGet(evmchain.FieldResult))
 }
 
 func (e *EVMChain) BlockNumber() (*big.Int, error) {
@@ -60,8 +59,7 @@ func (e *EVMChain) FeeColor() (colored.Color, error) {
 	if err != nil {
 		return colored.Color{}, err
 	}
-	feeColor, _, err := codec.DecodeColor(feeInfo.MustGet(governance.ParamFeeColor))
-	return feeColor, err
+	return codec.DecodeColor(feeInfo.MustGet(governance.ParamFeeColor))
 }
 
 func (e *EVMChain) GasLimitFee(tx *types.Transaction) (colored.Color, uint64, error) {
@@ -163,14 +161,11 @@ func (e *EVMChain) getTransactionBy(funcName string, args dict.Dict) (tx *types.
 		return
 	}
 	blockHash = common.BytesToHash(ret.MustGet(evmchain.FieldBlockHash))
-	blockNumber, _, err = codec.DecodeUint64(ret.MustGet(evmchain.FieldBlockNumber))
+	blockNumber, err = codec.DecodeUint64(ret.MustGet(evmchain.FieldBlockNumber), 0)
 	if err != nil {
 		return
 	}
-	index, _, err = codec.DecodeUint64(ret.MustGet(evmchain.FieldTransactionIndex))
-	if err != nil {
-		return
-	}
+	index, err = codec.DecodeUint64(ret.MustGet(evmchain.FieldTransactionIndex), 0)
 	return
 }
 
@@ -238,12 +233,7 @@ func (e *EVMChain) TransactionCount(address common.Address, blockNumber *big.Int
 	if err != nil {
 		return 0, err
 	}
-
-	n, _, err := codec.DecodeUint64(ret.MustGet(evmchain.FieldResult))
-	if err != nil {
-		return 0, err
-	}
-	return n, nil
+	return codec.DecodeUint64(ret.MustGet(evmchain.FieldResult), 0)
 }
 
 func (e *EVMChain) CallContract(args ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
@@ -263,8 +253,7 @@ func (e *EVMChain) EstimateGas(args ethereum.CallMsg) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	gas, _, err := codec.DecodeUint64(ret.MustGet(evmchain.FieldResult))
-	return gas, err
+	return codec.DecodeUint64(ret.MustGet(evmchain.FieldResult), 0)
 }
 
 func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
@@ -285,8 +274,7 @@ func (e *EVMChain) BlockTransactionCountByHash(blockHash common.Hash) (uint64, e
 	if err != nil {
 		return 0, err
 	}
-	n, _, err := codec.DecodeUint64(ret.MustGet(evmchain.FieldResult))
-	return n, err
+	return codec.DecodeUint64(ret.MustGet(evmchain.FieldResult), 0)
 }
 
 func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, error) {
@@ -294,8 +282,7 @@ func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, 
 	if err != nil {
 		return 0, err
 	}
-	n, _, err := codec.DecodeUint64(ret.MustGet(evmchain.FieldResult))
-	return n, err
+	return codec.DecodeUint64(ret.MustGet(evmchain.FieldResult), 0)
 }
 
 func (e *EVMChain) Logs(q *ethereum.FilterQuery) ([]*types.Log, error) {

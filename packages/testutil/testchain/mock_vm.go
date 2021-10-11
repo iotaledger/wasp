@@ -16,7 +16,7 @@ import (
 
 type MockedVMRunner struct {
 	stateTransition *MockedStateTransition
-	nextState       state.VirtualState
+	nextState       state.VirtualStateAccess
 	tx              *ledgerstate.TransactionEssence
 	log             *logger.Logger
 	t               *testing.T
@@ -28,7 +28,7 @@ func NewMockedVMRunner(t *testing.T, log *logger.Logger) *MockedVMRunner {
 		log:             log,
 		t:               t,
 	}
-	ret.stateTransition.OnVMResult(func(vs state.VirtualState, tx *ledgerstate.TransactionEssence) {
+	ret.stateTransition.OnVMResult(func(vs state.VirtualStateAccess, tx *ledgerstate.TransactionEssence) {
 		ret.nextState = vs
 		ret.tx = tx
 	})
@@ -39,11 +39,11 @@ func (r *MockedVMRunner) Run(task *vm.VMTask) {
 	reqstr := strings.Join(iscp.ShortRequestIDs(iscp.TakeRequestIDs(task.Requests...)), ",")
 
 	r.log.Debugf("VM input: state hash: %s, chain input: %s, requests: [%s]",
-		task.VirtualState.StateCommitment(), iscp.OID(task.ChainInput.ID()), reqstr)
+		task.VirtualStateAccess.StateCommitment(), iscp.OID(task.ChainInput.ID()), reqstr)
 
-	r.stateTransition.NextState(task.VirtualState, task.ChainInput, task.Timestamp, task.Requests...)
+	r.stateTransition.NextState(task.VirtualStateAccess, task.ChainInput, task.Timestamp, task.Requests...)
 	task.ResultTransactionEssence = r.tx
-	task.VirtualState = r.nextState
+	task.VirtualStateAccess = r.nextState
 	newOut := transaction.GetAliasOutputFromEssence(task.ResultTransactionEssence, task.ChainInput.GetAliasAddress())
 	require.NotNil(r.t, newOut)
 	require.EqualValues(r.t, task.ChainInput.GetStateIndex()+1, newOut.GetStateIndex())

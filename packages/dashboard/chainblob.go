@@ -39,12 +39,12 @@ func (d *Dashboard) handleChainBlob(c echo.Context) error {
 	}
 
 	result := &ChainBlobTemplateParams{
-		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), *chainID), Tab{
+		BaseTemplateParams: d.BaseParams(c, chainBreadcrumb(c.Echo(), chainID), Tab{
 			Path:  c.Path(),
 			Title: fmt.Sprintf("Blob %.8s…", c.Param("hash")),
 			Href:  "#",
 		}),
-		ChainID: *chainID,
+		ChainID: chainID,
 		Hash:    hash,
 	}
 
@@ -110,7 +110,7 @@ func (d *Dashboard) handleChainBlobDownload(c echo.Context) error {
 type ChainBlobTemplateParams struct {
 	BaseTemplateParams
 
-	ChainID iscp.ChainID
+	ChainID *iscp.ChainID
 	Hash    hashing.HashValue
 
 	Blob []BlobField

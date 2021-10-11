@@ -13,7 +13,7 @@ use wasmlib::*;
 
 use crate::*;
 
-pub const IDX_RESULT_HELLO_WORLD: usize = 0;
+pub(crate) const IDX_RESULT_HELLO_WORLD: usize = 0;
 
 pub const KEY_MAP_LEN: usize = 1;
 

@@ -40,7 +40,7 @@ const (
 func initialize(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.init in %s", ctx.Contract().String())
 	params := ctx.Params()
-	val, _, err := codec.DecodeInt64(params.MustGet(VarCounter))
+	val, err := codec.DecodeInt64(params.MustGet(VarCounter), 0)
 	if err != nil {
 		return nil, fmt.Errorf("incCounter: %v", err)
 	}
@@ -71,7 +71,10 @@ func incCounter(ctx iscp.Sandbox) (dict.Dict, error) {
 func incCounterAndRepeatOnce(ctx iscp.Sandbox) (dict.Dict, error) {
 	ctx.Log().Debugf("inccounter.incCounterAndRepeatOnce")
 	state := ctx.State()
-	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
+	val, err := codec.DecodeInt64(state.MustGet(VarCounter), 0)
+	if err != nil {
+		ctx.Log().Panicf("%s", err)
+	}
 
 	ctx.Log().Debugf(fmt.Sprintf("incCounterAndRepeatOnce: increasing counter value: %d", val))
 	state.Set(VarCounter, codec.EncodeInt64(val+1))
@@ -94,16 +97,22 @@ func incCounterAndRepeatMany(ctx iscp.Sandbox) (dict.Dict, error) {
 	state := ctx.State()
 	params := ctx.Params()
 
-	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
-	state.Set(VarCounter, codec.EncodeInt64(val+1))
-	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: increasing counter value: %d", val)
-
-	numRepeats, ok, err := codec.DecodeInt64(params.MustGet(VarNumRepeats))
+	val, err := codec.DecodeInt64(state.MustGet(VarCounter), 0)
 	if err != nil {
 		ctx.Log().Panicf("%s", err)
 	}
-	if !ok {
-		numRepeats, _, _ = codec.DecodeInt64(state.MustGet(VarNumRepeats))
+
+	state.Set(VarCounter, codec.EncodeInt64(val+1))
+	ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: increasing counter value: %d", val)
+
+	var numRepeats int64
+	if params.MustHas(VarNumRepeats) {
+		numRepeats, err = codec.DecodeInt64(params.MustGet(VarNumRepeats), 0)
+	} else {
+		numRepeats, err = codec.DecodeInt64(state.MustGet(VarNumRepeats), 0)
+	}
+	if err != nil {
+		ctx.Log().Panicf("%s", err)
 	}
 	if numRepeats == 0 {
 		ctx.Log().Debugf("inccounter.incCounterAndRepeatMany: finished chain of requests. counter value: %d", val)
@@ -154,7 +163,10 @@ func spawn(ctx iscp.Sandbox) (dict.Dict, error) {
 
 func getCounter(ctx iscp.SandboxView) (dict.Dict, error) {
 	state := ctx.State()
-	val, _, _ := codec.DecodeInt64(state.MustGet(VarCounter))
+	val, err := codec.DecodeInt64(state.MustGet(VarCounter), 0)
+	if err != nil {
+		ctx.Log().Panicf("%s", err)
+	}
 	ret := dict.New()
 	ret.Set(VarCounter, codec.EncodeInt64(val))
 	return ret, nil

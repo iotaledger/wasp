@@ -8,9 +8,9 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blob"
@@ -22,15 +22,15 @@ import (
 type Viewcontext struct {
 	processors  *processors.Cache
 	stateReader state.OptimisticStateReader
-	chainID     iscp.ChainID
+	chainID     *iscp.ChainID
 	log         *logger.Logger
 }
 
 func NewFromChain(ch chain.ChainCore) *Viewcontext {
-	return New(*ch.ID(), ch.GetStateReader(), ch.Processors(), ch.Log().Named("view"))
+	return New(ch.ID(), ch.GetStateReader(), ch.Processors(), ch.Log().Named("view"))
 }
 
-func New(chainID iscp.ChainID, stateReader state.OptimisticStateReader, proc *processors.Cache, log *logger.Logger) *Viewcontext {
+func New(chainID *iscp.ChainID, stateReader state.OptimisticStateReader, proc *processors.Cache, log *logger.Logger) *Viewcontext {
 	return &Viewcontext{
 		processors:  proc,
 		stateReader: stateReader,
@@ -53,7 +53,7 @@ func (v *Viewcontext) CallView(contractHname, epCode iscp.Hname, params dict.Dic
 			switch err1 := r.(type) {
 			case *kv.DBError:
 				v.log.Panicf("DB error: %v", err1)
-			case *optimism.ErrorStateInvalidated:
+			case *coreutil.ErrorStateInvalidated:
 				err = err1
 			default:
 				err = xerrors.Errorf("viewcontext: panic in VM: %v", err1)
@@ -84,7 +84,7 @@ func (v *Viewcontext) callView(contractHname, epCode iscp.Hname, params dict.Dic
 
 	ep, ok := proc.GetEntryPoint(epCode)
 	if !ok {
-		return nil, fmt.Errorf("trying to call contract '%s': can't find entry point '%s'", proc.GetDescription(), epCode.String())
+		return nil, fmt.Errorf("trying to call contract '%s': can't find entry point '%s'", proc.GetDescription(), epCode)
 	}
 
 	if !ep.IsView() {

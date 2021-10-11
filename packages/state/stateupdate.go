@@ -91,7 +91,7 @@ func (su *stateUpdateImpl) timestampMutation() (time.Time, bool, error) {
 	if !ok {
 		return time.Time{}, false, nil
 	}
-	ret, _, err := codec.DecodeTime(timeBin)
+	ret, err := codec.DecodeTime(timeBin)
 	if err != nil {
 		return time.Time{}, false, err
 	}
@@ -103,7 +103,7 @@ func (su *stateUpdateImpl) previousStateHashMutation() (hashing.HashValue, bool,
 	if !ok {
 		return hashing.NilHash, false, nil
 	}
-	ret, _, err := codec.DecodeHashValue(hashBin)
+	ret, err := codec.DecodeHashValue(hashBin)
 	if err != nil {
 		return hashing.NilHash, false, err
 	}

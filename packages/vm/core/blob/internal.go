@@ -112,7 +112,7 @@ func DecodeDirectory(blobs dict.Dict) (map[hashing.HashValue]uint32, error) {
 		if err != nil {
 			return nil, err
 		}
-		h, _, err := codec.DecodeHashValue([]byte(hash))
+		h, err := codec.DecodeHashValue([]byte(hash))
 		if err != nil {
 			return nil, err
 		}

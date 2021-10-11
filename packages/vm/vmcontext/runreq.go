@@ -9,9 +9,9 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/iscp"
 	"github.com/iotaledger/wasp/packages/iscp/colored"
+	"github.com/iotaledger/wasp/packages/iscp/coreutil"
 	"github.com/iotaledger/wasp/packages/iscp/request"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/optimism"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -41,7 +41,7 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 	}
 
 	if vmctx.isInitChainRequest() {
-		vmctx.chainOwnerID = *vmctx.req.SenderAccount().Clone()
+		vmctx.chainOwnerID = vmctx.req.SenderAccount().Clone()
 	} else {
 		vmctx.getChainConfigFromState()
 		enoughFees := vmctx.mustHandleFees()
@@ -67,11 +67,11 @@ func (vmctx *VMContext) RunTheRequest(req iscp.Request, requestIndex uint16) {
 			switch err := r.(type) {
 			case *kv.DBError:
 				panic(err)
-			case *optimism.ErrorStateInvalidated:
+			case *coreutil.ErrorStateInvalidated:
 				panic(err)
 			default:
 				vmctx.lastResult = nil
-				vmctx.lastError = xerrors.Errorf("panic in VM: %v", r)
+				vmctx.lastError = xerrors.Errorf("panic in VM: %v", err)
 				vmctx.Debugf("%v", vmctx.lastError)
 				vmctx.Debugf(string(debug.Stack()))
 			}
@@ -227,7 +227,7 @@ func (vmctx *VMContext) mustHandleFees() bool {
 
 	// process fees for owner and validator
 	if vmctx.grabFee(vmctx.commonAccount(), vmctx.ownerFee) &&
-		vmctx.grabFee(&vmctx.validatorFeeTarget, vmctx.validatorFee) {
+		vmctx.grabFee(vmctx.validatorFeeTarget, vmctx.validatorFee) {
 		// there were enough fees for both
 		return true
 	}
@@ -337,7 +337,7 @@ func (vmctx *VMContext) mustFinalizeRequestCall() {
 // getChainConfigFromState only makes sense if chain is already deployed
 func (vmctx *VMContext) getChainConfigFromState() {
 	cfg := vmctx.getChainInfo()
-	if !cfg.ChainID.Equals(&vmctx.chainID) {
+	if !cfg.ChainID.Equals(vmctx.chainID) {
 		vmctx.log.Panicf("getChainConfigFromState: major inconsistency of chainID")
 	}
 	vmctx.chainOwnerID = cfg.ChainOwnerID
