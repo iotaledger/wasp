@@ -1,9 +1,22 @@
-# The `root` contract
+---
+description: The root contract is the first smart contract deployed on the chain. It functions as a smart contract factory for the chain, and manages chain ownership and fees.
+image: /img/logo/WASP_logo_dark.png
+keywords:
+- ISCP
+- core
+- root
+- initialization
+- entry points
+- fees
+- ownership
+- Views
+--- 
+# The `root` Contract
 
 The `root` contract is one of the [core contracts](overview.md) on each ISCP
 chain.
 
-The `root` contract provides the following functions:
+The `root` contract provides the following functionalities:
 
 - It is the first smart contract deployed on the chain. Upon receiving the `init` request, bootstraps the state of the chain. Part of the state initialization is the deployment of all other core contracts.
 
@@ -11,19 +24,20 @@ The `root` contract provides the following functions:
 
 - The contract registry keeps a list of contract records, which contain their respective name, hname, description and creator.
 
-### Entry points
+## Entry Points
 
-The following are the functions / entry points of the `root` contract. Some of
+The following are the functions/entry points of the `root` contract. Some of
 them may require authorisation, i.e. can only be invoked by a specific caller,
 for example the _chain owner_.
 
-* **init** - The constructor. Automatically posted to the chain immediately after
-  confirmation of the origin transaction, as the first call.
-    * Initializes base values of the chain according to parameters
-    * sets the caller as the _chain owner_
-    * sets chain fee color (default is _IOTA color_)
-    * deploys all core contracts. The core contracts become part of the immutable state.
-      It makes them callable just like any other smart contract deployed on the chain.
+### init
+
+The constructor. Automatically posted to the chain immediately after confirmation of the origin transaction, as the first call.
+* Initializes base values of the chain according to parameters
+* Sets the caller as the _chain owner_
+* Sets chain fee color (default is _IOTA color_)
+* Deploys all core contracts. The core contracts become part of the immutable state.
+  It makes them callable just like any other smart contract deployed on the chain.
 
 * **deployContract** - Deploys a smart contract on the chain, if the caller has
   deploy permission. Parameters:
@@ -31,14 +45,15 @@ for example the _chain owner_.
     * name of the instance. This is later used in the hashed form of _hname_
     * description of the instance
 
-* **grantDeployPermission** - Chain owner grants deploy permission to an agent ID
+* Hash of the _blob_ with the binary of the program and VM type
+* Name of the instance. This is later used in the hashed form of _hname_
+* Description of the instance
 
-* **revokeDeployPermission** - Chain owner revokes deploy permission from an agent ID
+### grantDeployPermission
 
 ### Views
 
-Can be called directly. Calling a view does not modify the state of the smart
-contract.
+### setContractFee
 
 * **findContract** - Returns the record for a given smart contract (if it
   exists).

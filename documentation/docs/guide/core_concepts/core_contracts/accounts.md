@@ -1,3 +1,14 @@
+---
+description: The `accounts` contract keeps a consistent ledger of on-chain accounts in its state for the agents that control them. There are two types of agents who can do it, L1 addresses and smart contracts.
+image: /img/logo/WASP_logo_dark.png
+keywords:
+- core contracts
+- accounts
+- deposit
+- withdraw
+- assets
+- balance
+--- 
 # The `accounts` Contract
 
 The `accounts` contract is one of the [core contracts](overview.md) on each ISCP
