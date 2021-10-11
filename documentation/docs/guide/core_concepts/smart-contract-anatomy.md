@@ -1,8 +1,20 @@
+---
+keywords:
+- ISCP
+- Smart Contracts
+- structure
+- State
+- Entry points
+- WASM
+description: Each smart contract instance has a program with a collection of entry points and a state. 
+image: /img/tutorial/SC-structure.png
+---
+
 # Anatomy of a Smart Contract
 
-Smart contracts are programs, immutably stored in the chain.
+Smart contracts are programs which are immutably stored in the chain.
 
-The logical structure of an ISCP smart contract is independent of the VM type we
+The logical structure of an ISCP smart contract is independent of the VM type you
 use, be it a _Wasm_ smart contract or any other VM type.
 
 ![Smart Contract Structure](/img/tutorial/SC-structure.png)
@@ -13,14 +25,13 @@ Each smart contract on the chain is identified by its name hashed into 4 bytes
 and interpreted as `uint32` value: the `hname`.
 
 For example, the `hname` of the root contract is `0xcebf5908`, the unique identifier of the
-`root` contract in every chain. The exception is `_default` contract which always has hname `0x00000000`.
+`root` contract in every chain. The exception is the `_default` contract which always has `hname` `0x00000000`.
 
 Each smart contract instance has a program with a collection of entry points and
 a state. An entry point is a function of the program through which the program
 can be invoked.
 
-There are several ways to invoke an entry point: a request, a call and a view
-call, depending on the type of the entry point.
+Depending on the type of the entry point there are several ways to invoke an entry point: a request, a call and a view call
 
 The smart contract program can access its state and account through an interface
 layer called the _Sandbox_.
@@ -46,20 +57,20 @@ the ledger, be it a wallet with an address or another smart contract.
 
 See [Accounts](../core_concepts/accounts/how-accounts-work.md) for more info on sending and receiving tokens.
 
-## Entry points
+## Entry Points
 
 There are two types of entry points:
 
-- _Full entry points_ or just _entry points_. These functions can modify
-  (mutate) the state of the smart contract.
-- _View entry points_ or _views_. These are read-only functions. They are used
-  only to retrieve the information from the smart contract state. They can’t
+- _Full entry points_(or just _entry points_): These functions can modify
+  (mutate) the smart contract's state.
+- _View entry points_(or _views_): These are read-only functions. They are only used
+  to retrieve the information from the smart contract state. They cannot
   modify the state, i.e. are read-only calls.
 
 ## Execution Results
 
 After a request to a Smart Contract is executed (a call to a "full entry point"),
-There will be a `receipt` added to the [`BlockLog`](../core_concepts/core_contracts/blocklog.md)
+a `receipt` will be added to the [`BlockLog`](../core_concepts/core_contracts/blocklog.md)
 detailing the execution results of said request: whether it was successful, the block it was
 included in, and other information. Any events dispatched by the Smart Contract in context of
 this execution will also be added to the BlockLog.
@@ -70,4 +81,3 @@ When a smart contract execution is interrupted for some reason (exception), or i
 error (missing parameter, or other inconsistency), the funds will be refunded to the caller,
 except the fees. Any error that resulted from the SC execution can be viewed on the contract
 `receipt` (present in the [`BlockLog`](../core_concepts/core_contracts/blocklog.md)).
-
