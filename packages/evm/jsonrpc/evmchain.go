@@ -96,13 +96,14 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 }
 
 func paramsWithOptionalBlockNumber(blockNumber *big.Int, params dict.Dict) dict.Dict {
+	ret := params
 	if params == nil {
-		return nil
+		ret = dict.Dict{}
 	}
 	if blockNumber != nil {
-		params.Set(evmchain.FieldBlockNumber, blockNumber.Bytes())
+		ret.Set(evmchain.FieldBlockNumber, blockNumber.Bytes())
 	}
-	return params
+	return ret
 }
 
 func (e *EVMChain) Balance(address common.Address, blockNumber *big.Int) (*big.Int, error) {
