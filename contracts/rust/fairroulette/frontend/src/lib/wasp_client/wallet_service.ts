@@ -1,17 +1,13 @@
-import { Base58, HName } from './crypto';
-import { BasicWallet, ConsumedOutputs } from './basic_wallet';
-import { Buffer } from './buffer';
-import { Colors } from './colors';
-import { Faucet, IFaucetRequest } from './binary_models';
-import { OnLedger } from './binary_models/on_ledger';
-import { Transaction } from './transaction';
 import type { BasicClient } from './basic_client';
+import { BasicWallet } from './basic_wallet';
+import { Faucet, IFaucetRequest } from './binary_models';
 import type { IOnLedger } from './binary_models/IOnLedger';
-import type { ITransaction } from './models/ITransaction';
-import type { IUnlockBlock } from './models/IUnlockBlock';
+import { OnLedger } from './binary_models/on_ledger';
+import { Buffer } from './buffer';
+import { Base58 } from './crypto';
 import type { IKeyPair, ISendTransactionResponse } from './models';
-
-
+import type { ITransaction } from './models/ITransaction';
+import { Transaction } from './transaction';
 
 export interface IFaucetRequestContext {
   faucetRequest: IFaucetRequest;
@@ -65,7 +61,7 @@ export class WalletService {
     return result;
   }
 
-  
+
 
   public async sendOnLedgerRequest(keyPair: IKeyPair, address: string, chainId: string, payload: IOnLedger, transfer: bigint = 1n): Promise<ISendTransactionResponse> {
     if (transfer <= 0) {

@@ -1,0 +1,132 @@
+<script lang="ts">
+  import { BarSelector, MultipleSelector } from "../components";
+  import { BettingStep, placeBet } from "../lib/app";
+  import {
+    bettingStep,
+    placingBet,
+    resetBettingSystem,
+    round,
+  } from "../lib/store";
+  import Button from "./button.svelte";
+
+  let betAmount: number = 1;
+
+  $: betAmount, onBarChange();
+
+  $: isFirstStep = $bettingStep === BettingStep.NumberChoice;
+  $: isLastStep = $bettingStep === BettingStep.AmountChoice;
+
+  function onNumberClick(number): void {
+    let betSelection = $round?.betSelection !== number ? number : undefined;
+    round.update(($round) => ({ ...$round, betSelection }));
+  }
+
+  function onBarChange() {
+    $round.betAmount = BigInt(betAmount);
+  }
+
+  function onNextClick() {
+    if (isLastStep) {
+      placeBet();
+      resetBettingSystem();
+    } else {
+      bettingStep.update((_step) => _step + 1);
+    }
+  }
+
+  function onBackClick() {
+    if (isFirstStep) {
+      resetBettingSystem();
+    } else {
+      bettingStep.update((_step) => _step - 1);
+    }
+  }
+</script>
+
+<div class="betting-system">
+  <div class="betting-panel">
+    <div class="step-title">
+      {`Step ${$bettingStep} of 2`}
+    </div>
+    <div class="selector">
+      {#if $bettingStep === BettingStep.NumberChoice}
+        <MultipleSelector
+          disabled={$placingBet || $round.betPlaced}
+          onClick={onNumberClick}
+        />
+      {/if}
+      {#if $bettingStep === BettingStep.AmountChoice}
+        <BarSelector bind:value={betAmount} />
+      {/if}
+    </div>
+  </div>
+
+  <div class="betting-actions">
+    <Button
+      label="Back"
+      secondary
+      disabled={$placingBet}
+      onClick={onBackClick}
+    />
+    <Button
+      label={isFirstStep ? "Next" : "Place bet"}
+      disabled={(isFirstStep && !$round.betSelection) ||
+        (isLastStep && !$round.betAmount)}
+      onClick={onNextClick}
+      loading={$placingBet}
+    />
+  </div>
+</div>
+
+<style lang="scss">
+  .betting-system {
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    flex-wrap: wrap;
+    gap: 30px;
+    @media (min-width: 1024px) {
+      flex-direction: row;
+      justify-content: center;
+      gap: 60px;
+      align-items: flex-end;
+    }
+    &.disabled {
+      opacity: 0.5;
+    }
+    .bet-button {
+      margin-top: 24px;
+      display: flex;
+      justify-content: center;
+    }
+    .betting-actions {
+      display: flex;
+      gap: 32px;
+      width: 250px;
+      margin-top: 24px;
+
+      @media (min-width: 1024px) {
+        width: 350px;
+        margin-top: 32px;
+      }
+    }
+    .betting-panel {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      .step-title {
+        font-weight: 600;
+        font-size: 20px;
+        line-height: 140%;
+        text-align: center;
+        letter-spacing: 0.02em;
+        color: #909fbe;
+        margin-bottom: 40px;
+        @media (min-width: 1024px) {
+          margin-bottom: 60px;
+        }
+      }
+    }
+  }
+</style>
