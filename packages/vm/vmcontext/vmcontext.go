@@ -80,11 +80,12 @@ type blockContext struct {
 }
 
 // CreateVMContext creates a context for the whole batch run
-func CreateVMContext(task *vm.VMTask) (*VMContext, error) {
+func CreateVMContext(task *vm.VMTask) *VMContext {
 	// assert consistency. It is a bit redundant double check
 
 	if len(task.Requests) == 0 {
-		return nil, xerrors.Errorf("CreateVMContext.invalid params: must be at least 1 request")
+		// should never happen
+		task.Log.Panicf("CreateVMContext.invalid params: must be at least 1 request")
 	}
 	txb := utxoutil.NewBuilder(task.ChainInput)
 
@@ -102,19 +103,16 @@ func CreateVMContext(task *vm.VMTask) (*VMContext, error) {
 	// assert consistency
 	stateHash, err := hashing.HashValueFromBytes(task.ChainInput.GetStateData())
 	if err != nil {
-		return nil, xerrors.Errorf("CreateVMContext: can't parse state hash from chain input %w", err)
+		// should never happen
+		task.Log.Panicf("CreateVMContext: can't parse state hash from chain input %w", err)
 	}
 	stateHashFromState := optimisticStateAccess.StateCommitment()
-	if stateHash != stateHashFromState {
-		return nil, xerrors.Errorf("CreateVMContext: state hash from output (%s) != commitment from state (%s)",
-			stateHash.String(), stateHashFromState.String())
-	}
 	blockIndex := optimisticStateAccess.BlockIndex()
-	if blockIndex != task.ChainInput.GetStateIndex() {
-		return nil, xerrors.Errorf("CreateVMContext: state index is inconsistent: block: #%d != chain output: #%d",
-			blockIndex, task.ChainInput.GetStateIndex())
+	if stateHash != stateHashFromState || blockIndex != task.ChainInput.GetStateIndex() {
+		// leaving earlier, state is not consistent and optimistic reader sync didn't catch it
+		panic(coreutil.ErrStateHasBeenInvalidated)
 	}
-	openingStateUpdate := state.NewStateUpdateWithBlocklogValues(optimisticStateAccess.BlockIndex()+1, task.Timestamp, stateHash)
+	openingStateUpdate := state.NewStateUpdateWithBlocklogValues(blockIndex+1, task.Timestamp, stateHash)
 	optimisticStateAccess.ApplyStateUpdates(openingStateUpdate)
 
 	ret := &VMContext{
@@ -134,9 +132,10 @@ func CreateVMContext(task *vm.VMTask) (*VMContext, error) {
 	// consume chain input
 	err = txb.ConsumeAliasInput(task.ChainInput.Address())
 	if err != nil {
-		return nil, xerrors.Errorf("CreateVMContext: consume chain input %w", err)
+		// should never happen
+		task.Log.Panicf("CreateVMContext: consume chain input %v", err)
 	}
-	return ret, nil
+	return ret
 }
 
 //nolint:revive
