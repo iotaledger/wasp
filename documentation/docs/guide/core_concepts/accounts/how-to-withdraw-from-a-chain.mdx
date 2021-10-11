@@ -22,24 +22,47 @@ The `withdraw` endpoint sends funds owned by the callee to their L1 address.
     defaultValue="solo"
     values={[
         {label: 'Solo', value: 'solo'},
-        {label: 'Rust (ISCP)', value: 'rust'},
+        {label: 'Solo (Schema)', value: 'soloctx'},
+        {label: 'Rust (Schema)', value: 'rust'},
+        {label: 'Go (Schema)', value: 'go'},
     ]}>
 <TabItem value="solo">
 
 ```go
-_, err := chain.PostRequestSync(
-	solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name).WithIotas(1),
-	wallet,
-)
+// withdraw from chain to wallet
+req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncWithdraw.Name)
+_, err := chain.PostRequestSync(req.WithIotas(1), wallet)
+require.NoError(t, err)
+```
+
+</TabItem>
+<TabItem value="soloctx">
+
+```go
+// withdraw from chain *chainID* to wallet
+w := coreaccounts.ScFuncs.Withdraw(ctx.Sign(wallet))
+w.Func.TransferIotas(1).PostToChain(chainID)
+require.NoError(t, ctx.Err)
 ```
 
 </TabItem>
 <TabItem value="rust">
 
 ```rust
-// withdrawals from a chain (funds go to the common account, as there is no way to specify hname for withdrawals)
-let transfer = ScTransfers::iotas(1);
-ctx.post(chainID, ScHname::new("accounts"), ScHname::new("withdraw"), None, transfer, 0);
+// withdraw from chain *chainID* to current common account
+// (there is no way to specify hname for withdrawals)
+let w = coreaccounts::ScFuncs::withdraw(ctx);
+w.func.transfer_iotas(1).post_to_chain(chainID);
+```
+
+</TabItem>
+<TabItem value="go">
+
+```go
+// withdraw from chain *chainID* to current common account
+// (there is no way to specify hname for withdrawals)
+w := coreaccounts.ScFuncs.Withdraw(ctx)
+w.Func.TransferIotas(1).PostToChain(chainID)
 ```
 
 </TabItem>

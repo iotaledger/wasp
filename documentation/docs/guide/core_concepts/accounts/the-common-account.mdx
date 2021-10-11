@@ -28,24 +28,41 @@ parameters:
     defaultValue="solo"
     values={[
         {label: 'Solo', value: 'solo'},
-        {label: 'Rust (ISCP)', value: 'rust'},
+        {label: 'Solo (Schema)', value: 'soloctx'},
+        {label: 'Rust (Schema)', value: 'rust'},
+        {label: 'Go (Schema)', value: 'go'},
     ]}>
 <TabItem value="solo">
 
 ```go
-_, err := chain.PostRequestSync(
-	solo.NewCallParams(
-    accounts.Contract.Name, accounts.FuncHarvest.Name).WithIotas(N),
-	wallet,
-)
+req := solo.NewCallParams(accounts.Contract.Name, accounts.FuncHarvest.Name)
+_, err := chain.PostRequestSync(req.WithIotas(1), wallet)
+require.NoError(t, err)
+```
+
+</TabItem>
+<TabItem value="soloctx">
+
+```go
+w := coreaccounts.ScFuncs.Harvest(ctx.Sign(wallet))
+w.Func.TransferIotas(1).PostToChain(chainID)
+require.NoError(t, ctx.Err)
 ```
 
 </TabItem>
 <TabItem value="rust">
 
 ```rust
-let transfer = ScTransfers::iotas(1);
-ctx.post(chainID, ScHname::new("accounts"), ScHname::new("harvest"), None, transfer, 0);
+let h = coreaccounts::ScFuncs::harvest(ctx);
+h.func.transfer_iotas(1).post_to_chain(chainID);
+```
+
+</TabItem>
+<TabItem value="go">
+
+```go
+w := coreaccounts.ScFuncs.Harvest(ctx)
+w.Func.TransferIotas(1).PostToChain(chainID)
 ```
 
 </TabItem>

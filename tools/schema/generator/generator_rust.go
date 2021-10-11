@@ -219,7 +219,7 @@ func (s *Schema) generateRustConsts() error {
 	}
 	hName := iscp.Hn(scName)
 	s.appendConst("HSC_NAME", "ScHname = ScHname(0x"+hName.String()+")")
-	s.flushRustConsts(file)
+	s.flushRustConsts(file, false)
 
 	s.generateRustConstsFields(file, s.Params, "PARAM_")
 	s.generateRustConstsFields(file, s.Results, "RESULT_")
@@ -230,14 +230,14 @@ func (s *Schema) generateRustConsts() error {
 			constName := upper(snake(f.FuncName))
 			s.appendConst(constName, "&str = \""+f.String+"\"")
 		}
-		s.flushRustConsts(file)
+		s.flushRustConsts(file, s.CoreContracts)
 
 		for _, f := range s.Funcs {
 			constHname := "H" + upper(snake(f.FuncName))
 			hName = iscp.Hn(f.String)
 			s.appendConst(constHname, "ScHname = ScHname(0x"+hName.String()+")")
 		}
-		s.flushRustConsts(file)
+		s.flushRustConsts(file, s.CoreContracts)
 	}
 
 	formatter(file, true)
@@ -254,7 +254,7 @@ func (s *Schema) generateRustConstsFields(file *os.File, fields []*Field, prefix
 			value := "&str = \"" + field.Alias + "\""
 			s.appendConst(name, value)
 		}
-		s.flushRustConsts(file)
+		s.flushRustConsts(file, s.CoreContracts)
 	}
 }
 
@@ -447,7 +447,7 @@ func (s *Schema) generateRustKeys() error {
 	s.generateRustKeysIndexes(s.Params, "PARAM_")
 	s.generateRustKeysIndexes(s.Results, "RESULT_")
 	s.generateRustKeysIndexes(s.StateVars, "STATE_")
-	s.flushRustConsts(file)
+	s.flushRustConsts(file, true)
 
 	size := s.KeyID
 	fmt.Fprintf(file, "\npub const KEY_MAP_LEN: usize = %d;\n", size)
@@ -1050,13 +1050,17 @@ func (s *Schema) generateRustTypeProxy(file *os.File, typeDef *Struct, mutable b
 	fmt.Fprintf(file, "}\n")
 }
 
-func (s *Schema) flushRustConsts(file *os.File) {
+func (s *Schema) flushRustConsts(file *os.File, crateOnly bool) {
 	if len(s.ConstNames) == 0 {
 		return
 	}
 
+	crate := ""
+	if crateOnly {
+		crate = "(crate)"
+	}
 	fmt.Fprintln(file)
 	s.flushConsts(func(name string, value string, padLen int) {
-		fmt.Fprintf(file, "pub const %s %s;\n", pad(name+":", padLen+1), value)
+		fmt.Fprintf(file, "pub%s const %s %s;\n", crate, pad(name+":", padLen+1), value)
 	})
 }

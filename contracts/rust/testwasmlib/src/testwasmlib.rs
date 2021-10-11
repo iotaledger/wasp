@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use wasmlib::*;
+use wasmlib::corecontracts::*;
 
 use crate::*;
 
@@ -49,7 +50,7 @@ pub fn func_param_types(ctx: &ScFuncContext, f: &ParamTypesContext) {
 }
 
 pub fn view_block_record(ctx: &ScViewContext, f: &BlockRecordContext) {
-    let records = corecontracts::coreblocklog::ScFuncs::get_request_receipts_for_block(ctx);
+    let records = coreblocklog::ScFuncs::get_request_receipts_for_block(ctx);
     records.params.block_index().set_value(f.params.block_index().value());
     records.func.call();
     let record_index = f.params.record_index().value();
@@ -58,7 +59,7 @@ pub fn view_block_record(ctx: &ScViewContext, f: &BlockRecordContext) {
 }
 
 pub fn view_block_records(ctx: &ScViewContext, f: &BlockRecordsContext) {
-    let records = corecontracts::coreblocklog::ScFuncs::get_request_receipts_for_block(ctx);
+    let records = coreblocklog::ScFuncs::get_request_receipts_for_block(ctx);
     records.params.block_index().set_value(f.params.block_index().value());
     records.func.call();
     f.results.count().set_value(records.results.request_record().length());
